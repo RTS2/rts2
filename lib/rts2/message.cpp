@@ -44,7 +44,7 @@ Message::Message (const char *in_messageOName, messageType_t in_messageType, con
 
 Message::Message (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString)
 {
-#ifdef HAVE_TRUNC
+#ifdef RTS2_HAVE_TRUNC
 	messageTime.tv_sec = trunc (in_messageTime);
 #else
 	messageTime.tv_sec = (time_t) floor (in_messageTime);

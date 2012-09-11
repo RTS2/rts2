@@ -2,7 +2,7 @@
 
 instdir = @PG_CONFIG_SERVER_LIBS@
 
-AM_CFLAGS = @LIBPG_SERVER_CFLAGS@ @LIBPG_CFLAGS@
+AM_CFLAGS = @LIBPG_SERVER_CFLAGS@ @LIBPG_CFLAGS@ -I../../include
 
 if PGSQL
 
@@ -20,7 +20,7 @@ inst_LTLIBRARIES += pg_wcs.la
 
 pg_wcs_la_SOURCES = pg_wcs.c
 pg_wcs_la_LDFLAGS = -module @LIB_M@ @LIBWCS_LDFLAGS@
-pg_wcs_la_CFLAGS = ${AM_CFLAGS} @LIBWCS_CFLAGS@
+pg_wcs_la_CFLAGS = ${AM_CFLAGS} @LIBWCS_CFLAGS@ 
 
 AM_CFLAGS += @LIBWCS_CFLAGS@
 

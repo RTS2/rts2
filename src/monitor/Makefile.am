@@ -10,20 +10,20 @@ rts2_mon_SOURCES = nmonitor.cpp nwindow.cpp daemonwindow.cpp nmenu.cpp nmsgbox.c
 
 if PGSQL
 
-rts2_mon_CXXFLAGS = @LIBXML_CFLAGS@ @LIBNCURSES_CFLAGS@ @NOVA_CFLAGS@ @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+rts2_mon_CXXFLAGS = @LIBXML_CFLAGS@ @LIBNCURSES_CFLAGS@ @NOVA_CFLAGS@ @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
 rts2_mon_LDADD = -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 @LIB_CFITSIO@ @LIB_JPEG@ @LIBNCURSES_LDFLAGS@ @LIBXML_LIBS@ @LIB_M@ @LIB_CRYPT@ @LIB_NOVA@ @LIB_ECPG@
 
 else
 
-rts2_mon_CXXFLAGS = @LIBNCURSES_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+rts2_mon_CXXFLAGS = @LIBNCURSES_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
 rts2_mon_LDADD = -L../../lib/rts2 -lrts2 @LIB_CFITSIO@ @LIB_JPEG@ @LIBNCURSES_LDFLAGS@ @LIB_M@ @LIB_NOVA@
 
 endif
 
 rts2_cmon_SOURCES = cmonitor.cpp
-rts2_cmon_CXXFLAGS = @NOVA_CFLAGS@
+rts2_cmon_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 rts2_cmon_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@ @LIB_M@ 
 
 rts2_talker_SOURCES = talker.cpp
-rts2_talker_CXXFLAGS = @NOVA_CFLAGS@
+rts2_talker_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 rts2_talker_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@ @LIB_M@ 

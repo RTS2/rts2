@@ -6,7 +6,7 @@ noinst_HEADERS = kernel/phot.h
 
 LDADD = -lrts2 -L../../lib/rts2 @LIB_NOVA@
 
-AM_CXXFLAGS=@NOVA_CFLAGS@
+AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
 if SUNOS
 EXTRA_DIST = phot_optec.cpp

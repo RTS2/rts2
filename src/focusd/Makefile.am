@@ -3,7 +3,7 @@ SUBDIRS =
 bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl rts2-focusd-atc2 rts2-focusd-microfocuser
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
-AM_CXXFLAGS = @NOVA_CFLAGS@
+AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
 rts2_focusd_optec_SOURCES = optec.cpp
 
@@ -24,10 +24,10 @@ bin_PROGRAMS += rts2-focusd-fli
 bin_PROGRAMS += rts2-focusd-flitc
 rts2_focusd_fli_SOURCES = fli.cpp
 rts2_focusd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
-rts2_focusd_fli_CPPFLAGS = @INC_FLI@
+rts2_focusd_fli_CPPFLAGS = @INC_FLI@ -I../../include
 rts2_focusd_flitc_SOURCES = flitc.cpp
 rts2_focusd_flitc_LDFLAGS = @LIB_FLI@ @LIB_M@
-rts2_focusd_flitc_CPPFLAGS = @INC_FLI@
+rts2_focusd_flitc_CPPFLAGS = @INC_FLI@ -I../../include
 else
 EXTRA_DIST += fli.cpp
 EXTRA_DIST += flitc.cpp
@@ -38,11 +38,11 @@ bin_PROGRAMS += rts2-focusd-mdm rts2-focusd-mdm-bait
 
 rts2_focusd_mdm_SOURCES = mdm.cpp
 rts2_focusd_mdm_LDFLAGS = @LIB_MDMTCS@
-rts2_focusd_mdm_CPPFLAGS = @INC_MDMTCS@
+rts2_focusd_mdm_CPPFLAGS = @INC_MDMTCS@ -I../../include
 
 rts2_focusd_mdm_bait_SOURCES = mdm_bait.cpp
 rts2_focusd_mdm_bait_LDFLAGS = @LIB_MDMTCS@
-rts2_focusd_mdm_bait_CPPFLAGS = @INC_MDMTCS@
+rts2_focusd_mdm_bait_CPPFLAGS = @INC_MDMTCS@ -I../../include
 
 else
 EXTRA_DIST += mdm.cpp mdm_bait.cpp

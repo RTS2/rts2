@@ -208,7 +208,7 @@ void ValueBoxFloat::sendValue (rts2core::Connection * connection)
 	char buf[200];
 	char *endptr;
 	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
-#ifdef HAVE_STRTOF
+#ifdef RTS2_HAVE_STRTOF
 	float tval = strtof (buf, &endptr);
 #else
 	float tval = strtod (buf, &endptr);

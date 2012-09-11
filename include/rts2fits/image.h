@@ -23,7 +23,7 @@
 #include <list>
 #include <ostream>
 #include <vector>
-#include <config.h>
+#include <rts2-config.h>
 #include <fitsio.h>
 
 #include "imghdr.h"
@@ -38,12 +38,12 @@
 
 #define NUM_WCS_VALUES    7
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
 
 // TODO remove this once Libnova 0.13.0 becomes mainstream
-#if !HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
+#if !RTS2_HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
 double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object);
 #endif
 
@@ -282,7 +282,7 @@ class Image:public FitsFile
 
 		void getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset);
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 		/**
 		 * Return image data as Magick::Image class.
 		 *
@@ -589,7 +589,7 @@ class Image:public FitsFile
 		void setObserver ()
 		{
 			if (writeRTS2Values)
-				setValue ("OBSERVER", "RTS2 " VERSION, "observer");
+				setValue ("OBSERVER", "RTS2 " RTS2_VERSION, "observer");
 		}
 
 		void setOrigin (const char *orig)

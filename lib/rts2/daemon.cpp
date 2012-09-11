@@ -164,7 +164,7 @@ int Daemon::checkLockFile (const char *_lock_fname)
 			<< sendLog;
 		return -1;
 	}
-#ifdef HAVE_FLOCK
+#ifdef RTS2_HAVE_FLOCK
 	ret = flock (lock_file, LOCK_EX | LOCK_NB);
 #else
 	ret = lockf (lock_file, F_TLOCK, 0);
@@ -204,7 +204,7 @@ int Daemon::doDaemonize ()
 	if (daemonize != DO_DAEMONIZE)
 		return 0;
 	int ret;
-#ifndef HAVE_FLOCK
+#ifndef RTS2_HAVE_FLOCK
 	// close and release lock file, as we will lock it again in child - there isn't way how to pass closed file descriptor to child without flock function
 	close (lock_file);
 	lock_file = 0;
@@ -254,7 +254,7 @@ int Daemon::doDaemonize ()
 const char * Daemon::getLockPrefix ()
 {
 	if (lockPrefix == NULL)
-		return LOCK_PREFIX;
+		return RTS2_LOCK_PREFIX;
 	return lockPrefix;
 }
 

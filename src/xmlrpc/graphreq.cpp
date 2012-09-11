@@ -19,7 +19,7 @@
 
 #include "xmlrpcd.h"
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 using namespace rts2xmlrpc;
 
@@ -176,4 +176,4 @@ void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpP
 	memcpy (response, blob.data(), response_length);
 }
 
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG

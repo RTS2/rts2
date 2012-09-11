@@ -20,21 +20,21 @@
 #ifndef __RTS2_HTTPREQ__
 #define __RTS2_HTTPREQ__
 
-#include "config.h"
+#include "rts2-config.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/recvals.h"
 #include "rts2db/records.h"
 #include "rts2db/devicedb.h"
 #include "rts2db/targetset.h"
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #include "valueplot.h"
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 #include "configuration.h"
 #else
 
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 
 #include "xmlrpc++/XmlRpc.h"
 
@@ -161,7 +161,7 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		bool executePermission;
 };
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 /**
  * Plot current position of telescope, target and next target position.
@@ -174,11 +174,11 @@ class CurrentPosition:public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 /**
  * Plot targets on the alt-az graph.
@@ -193,9 +193,9 @@ class AltAzTarget: public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
-#endif /* HAVE_LIBJPEG */ 
+#endif /* RTS2_HAVE_LIBJPEG */ 
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 }
 

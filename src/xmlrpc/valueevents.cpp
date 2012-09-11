@@ -56,14 +56,14 @@ void ValueChange::postEvent (Event *event)
 	Object::postEvent (event);
 }
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 
 void ValueChangeRecord::run (rts2core::Value *val, double validTime)
 {
 	std::cout << Timestamp (validTime) << " value: " << deviceName.c_str () << " " << valueName.c_str () << val->getDisplayValue () << std::endl;
 }
 
-#endif /* ! HAVE_PGSQL */
+#endif /* ! RTS2_HAVE_PGSQL */
 
 void ValueChangeCommand::run (rts2core::Value *val, double validTime)
 {

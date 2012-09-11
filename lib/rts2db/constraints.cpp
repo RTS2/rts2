@@ -21,12 +21,12 @@
 #include "utilsfunc.h"
 #include "configuration.h"
 
-#ifndef HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
+#ifndef RTS2_HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
 double ln_get_alt_from_airmass (double X, double airmass_scale)
 {
 	return ln_rad_to_deg (asin ((2 * airmass_scale + 1 - X * X) / (2 * X * airmass_scale)));
 }
-#endif // ! HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
+#endif // ! RTS2_HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
 
 bool between (double val, double low, double upper)
 {
@@ -131,7 +131,7 @@ void ConstraintInterval::parse (const char *arg)
 
 	if (cp != sint)
 	{
-#ifdef HAVE_STRTOF
+#ifdef RTS2_HAVE_STRTOF
 		lower = strtof (sint, &endp);
 #else
 		lower = strtod (sint, &endp);
@@ -142,7 +142,7 @@ void ConstraintInterval::parse (const char *arg)
 	
 	if (*(cp + 1) != '\0')
 	{
-#ifdef HAVE_STRTOF
+#ifdef RTS2_HAVE_STRTOF
 		upper = strtof (cp + 1, &endp);
 #else
 		upper = strtod (cp + 1, &endp);

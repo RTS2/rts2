@@ -24,21 +24,21 @@
 #include "rts2db/simbadtarget.h"
 #include "command.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/observationset.h"
 #include "rts2db/imageset.h"
 #include "rts2db/targetset.h"
 #include "rts2db/constraints.h"
 #include "rts2db/planset.h"
 #include "rts2db/labels.h"
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 #include "radecparser.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 
 Targets::Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "target list", s)
 {
@@ -130,13 +130,13 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 					printTargetPlan (tar, response_type, response, response_length);
 					break;
 				}
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 				if (vals[1] == "altplot")
 				{
 					plotTarget (tar, params, response_type, response, response_length);
 					break;
 				}
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 			case 3:
 				if (vals[1] == "api")
 				{
@@ -195,9 +195,9 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 
 	_os << "<form action='form' method='GET'><div id='targets'>Loading...</div>\n";
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	_os << "<input type='submit' value='Plot target altitude' name='plot'/> (please select at least one target to plot something interesting)";
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 	_os << "</form>";
 	
 	printFooter (_os);
@@ -210,7 +210,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 
 void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	if (!strcmp (params->getString ("plot", "xxx"), "Plot target altitude"))
 	{
 		response_type = "image/jpeg";
@@ -257,7 +257,7 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 		memcpy (response, blob.data(), response_length);
 		return;
 	}
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 }
 
 void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -950,7 +950,7 @@ void Targets::printTargetPlan (rts2db::Target *tar, const char* &response_type, 
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 void Targets::plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -986,7 +986,7 @@ void Targets::plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const
 	memcpy (response, blob.data(), response_length);
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
 void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -1176,4 +1176,4 @@ void AddTarget::schedule (int tarid, const char* &response_type, char* &response
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */

@@ -29,4 +29,4 @@ librts2xmlrpc_la_SOURCES = \
 	XmlRpcUtil.cpp \
 	XmlRpcValue.cpp
 
-librts2xmlrpc_la_CXXFLAGS = @NOVA_CFLAGS@
+librts2xmlrpc_la_CXXFLAGS = @NOVA_CFLAGS@ -I../../include

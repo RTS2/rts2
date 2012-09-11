@@ -20,11 +20,11 @@
 #ifndef __RTS2_CONNNOTIFY__
 #define __RTS2_CONNNOTIFY__
 
-#include "config.h"
+#include "rts2-config.h"
 
 #include "connnosend.h"
 
-#ifdef HAVE_SYS_INOTIFY_H
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 #include <sys/inotify.h>
 #endif
 
@@ -74,7 +74,7 @@ class ConnNotify:public ConnNoSend
 
 		bool getDebug () { return debug; }
 
-#ifdef HAVE_SYS_INOTIFY_H
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 		int addWatch (const char *filename, uint32_t mask = IN_MODIFY);
 #else
 		int addWatch (const char *filename, uint32_t mask = 0);

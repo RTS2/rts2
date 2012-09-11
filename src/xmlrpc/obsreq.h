@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "config.h"
+#include "rts2-config.h"
 #include "httpreq.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "xmlrpc++/XmlRpc.h"
 
 namespace rts2xmlrpc

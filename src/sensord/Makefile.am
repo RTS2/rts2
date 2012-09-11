@@ -12,7 +12,7 @@ noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h t
 EXTRA_DIST = 
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
-AM_CXXFLAGS = @NOVA_CFLAGS@
+AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
 
@@ -69,6 +69,7 @@ bin_PROGRAMS += rts2-sensor-tps534 rts2-sensor-niratir
 
 rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c 
 rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD}
+rts2_sensor_tps534_CFLAGS = @LIB_NOVA@ -I../../include
 
 rts2_sensor_niratir_SOURCES = niratir.cpp
 endif
@@ -92,11 +93,11 @@ bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe
 
 rts2_sensor_bootes2_SOURCES = bootes2.cpp
 rts2_sensor_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
-rts2_sensor_bootes2_CPPFLAGS = @INC_COMEDI@
+rts2_sensor_bootes2_CPPFLAGS = @INC_COMEDI@ -I../../include
 
 rts2_sensor_lpnhe_SOURCES = lpnhe.cpp
 rts2_sensor_lpnhe_LDFLAGS = @LIB_COMEDI@ @LIB_M@
-rts2_sensor_lpnhe_CPPFLAGS = @INC_COMEDI@
+rts2_sensor_lpnhe_CPPFLAGS = @INC_COMEDI@ -I../../include
 
 else
 EXTRA_DIST += bootes2.cpp
@@ -145,7 +146,7 @@ if A3200
 bin_PROGRAMS += rts2-sensor-a3200
 
 rts2_sensor_a3200_SOURCES = a3200.cpp
-rts2_sensor_a3200_CXXFLAGS = @INC_A3200@
+rts2_sensor_a3200_CXXFLAGS = @INC_A3200@ -I../../include
 rts2_sensor_a3200_LDADD = @LIB_A3200@ ${LDADD}
 
 else
@@ -159,7 +160,7 @@ if BOLTWOOD
 bin_PROGRAMS += rts2-sensor-bwcloudsensorii-weather
 
 rts2_sensor_bwcloudsensorii_weather_SOURCES = boltwood.cpp
-rts2_sensor_bwcloudsensorii_weather_CXXFLAGS = @INC_BOLTWOOD@
+rts2_sensor_bwcloudsensorii_weather_CXXFLAGS = @INC_BOLTWOOD@ -I../../include
 rts2_sensor_bwcloudsensorii_weather_LDADD = @LIB_BOLTWOOD@ ${LDADD}
 
 else
@@ -173,7 +174,7 @@ if BIGNG
 bin_PROGRAMS += rts2-sensor-bigng
 
 rts2_sensor_bigng_SOURCES = bigng.cpp
-rts2_sensor_bigng_CXXFLAGS = @INC_BIGNG@ 
+rts2_sensor_bigng_CXXFLAGS = @INC_BIGNG@ -I../../include
 rts2_sensor_bigng_LDADD = @LIB_BIGNG@ ${LDADD} 
 
 else

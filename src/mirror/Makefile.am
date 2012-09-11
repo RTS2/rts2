@@ -5,7 +5,7 @@ bin_PROGRAMS = rts2-mirror-dummy
 EXTRA_DIST = 
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
-AM_CXXFLAGS = @NOVA_CFLAGS@
+AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
 if SUNOS
 EXTRA_DIST += fram.cpp

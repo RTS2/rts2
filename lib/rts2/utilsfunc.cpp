@@ -356,7 +356,7 @@ int charToBool (const char *in_value, bool &ret)
 	return 0;
 }
 
-#ifndef HAVE_ISINF
+#ifndef RTS2_HAVE_ISINF
 int isinf(double x)
 {
 	return !finite(x) && x==x;
@@ -370,7 +370,7 @@ int isfinite(double x)
 }
 #endif
 
-#ifndef HAVE_STRCASESTR
+#ifndef RTS2_HAVE_STRCASESTR
 char * strcasestr(const char * haystack, const char * needle)
 {
 	const char *p = haystack;
@@ -383,9 +383,9 @@ char * strcasestr(const char * haystack, const char * needle)
 	}
 	return NULL;
 }
-#endif // HAVE_STRCASESTR
+#endif // RTS2_HAVE_STRCASESTR
 
-#ifndef HAVE_GETLINE
+#ifndef RTS2_HAVE_GETLINE
 ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 {
 	if (*lineptr == NULL)

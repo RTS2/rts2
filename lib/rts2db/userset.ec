@@ -100,7 +100,7 @@ int createUser (std::string login, std::string password, std::string email)
 		return -1;
 	}
 
-#ifdef HAVE_CRYPT
+#ifdef RTS2_HAVE_CRYPT
 	char salt[101];
 	strcpy (salt, "$6$");
 	random_salt (salt + 3, 8);

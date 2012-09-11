@@ -37,7 +37,7 @@ PG_MODULE_MAGIC;
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 
-#include <config.h>
+#include <rts2-config.h>
 
 struct kwcs2
 {
@@ -343,7 +343,7 @@ imgrange2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-#ifdef HAVE_PGSQL_SET_VARSIZE
+#ifdef RTS2_HAVE_PGSQL_SET_VARSIZE
   SET_VARSIZE (res, VARHDRSZ + l);
 #else
   VARATT_SIZEP (res) = VARHDRSZ + l;

@@ -99,7 +99,7 @@
 #include "rts2fits/image.h"
 #include "bsc.h"
 #include "dirsupport.h"
-#ifdef HAVE_LIBARCHIVE
+#ifdef RTS2_HAVE_LIBARCHIVE
 #include <archive.h>
 #include <archive_entry.h>
 #endif
@@ -213,7 +213,7 @@ void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevs
 		_os << "  <a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'>" << i << "</a>" << std::endl;
 }
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 #include <Magick++.h>
 using namespace Magick;
@@ -396,7 +396,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
 void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -425,7 +425,7 @@ void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 
-#ifndef HAVE_LIBARCHIVE
+#ifndef RTS2_HAVE_LIBARCHIVE
 	throw XmlRpcException ("missing libArchive - cannot download data");
 }
 
@@ -508,4 +508,4 @@ int close_callback (struct archive *a, void *client_data)
 	return ARCHIVE_OK;
 }
 
-#endif // HAVE_LIBARCHIVE
+#endif // RTS2_HAVE_LIBARCHIVE

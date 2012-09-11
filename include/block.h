@@ -34,7 +34,7 @@
 
 #include <sstream>
 
-#ifdef HAVE_SYS_INOTIFY_H
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 #include <sys/inotify.h>
 #endif
 

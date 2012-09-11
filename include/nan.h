@@ -20,9 +20,9 @@
 #ifndef __RTS2_NAN__
 #define __RTS2_NAN__
 
-#include <config.h>
+#include <rts2-config.h>
 
-#ifndef HAVE_ISINF
+#ifndef RTS2_HAVE_ISINF
 #include <ieeefp.h>
 #endif
 

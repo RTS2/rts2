@@ -24,7 +24,7 @@
 
 #include "displayvalue.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/recvals.h"
 #include "rts2db/records.h"
 #include "rts2db/recordsavg.h"
@@ -40,7 +40,7 @@
 #else
 #include "configuration.h"
 #include "device.h"
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 using namespace rts2xmlrpc;
 
@@ -719,7 +719,7 @@ void GetMessages::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 
 }
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 
 void ListTargets::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
@@ -1081,4 +1081,4 @@ void UserLogin::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcV
 	result = verifyUser (params[0], params[1], executePermission);
 }
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */

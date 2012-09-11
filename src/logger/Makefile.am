@@ -4,7 +4,7 @@ noinst_HEADERS = rts2loggerbase.h
 
 EXTRA_DIST = rts2loggerbase.cpp
 
-AM_CXXFLAGS=@NOVA_CFLAGS@
+AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
 LDADD = rts2loggerbase.o -L../../lib/rts2 -lrts2 @LIB_NOVA@ @LIB_M@
 

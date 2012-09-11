@@ -445,13 +445,13 @@ AC_SUBST(INC_BIGNG)
 
 # Define prefix variable
 
-AH_TEMPLATE([RTS2_PREFIX],[prefix])
+AH_TEMPLATE([PREFIX],[prefix])
 if test "x${prefix}" = "xNONE"; then
-        AC_DEFINE_UNQUOTED(RTS2_PREFIX, "", [prefix])
+        AC_DEFINE_UNQUOTED(PREFIX, "", [prefix])
 else
-        AC_DEFINE_UNQUOTED(RTS2_PREFIX, "$prefix", [prefix])
+        AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [prefix])
 fi
-AC_SUBST(RTS2_PREFIX)
+AC_SUBST(PREFIX)
   
 # Define lock file prefix
 AC_ARG_WITH(lock,
@@ -790,7 +790,8 @@ AM_CONDITIONAL(HAVE_DB2MAN, test x$DB2MAN != xno)
 AM_CONDITIONAL(HAVE_DB2FOP, test x$DB2FOP != xno)
 
 AC_CONFIG_SRCDIR(src)
-AC_CONFIG_HEADER(include/config.h)
+AM_CONFIG_HEADER(config.h)
+AX_PREFIX_CONFIG_H(include/rts2-config.h)
 
 AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
 AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)

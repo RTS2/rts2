@@ -22,17 +22,17 @@
 #ifndef __RTS2_XMLRPCD__
 #define __RTS2_XMLRPCD__
 
-#include "config.h"
+#include "rts2-config.h"
 #include <deque>
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/devicedb.h"
 #include "graphreq.h"
 #else
 #include "configuration.h"
 #include "device.h"
 #include "userlogins.h"
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 #include "directory.h"
 #include "events.h"
@@ -374,7 +374,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
  *
  * @addgroup XMLRPC
  */
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 class XmlRpcd:public rts2db::DeviceDb, XmlRpc::XmlRpcServer
 #else
 class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
@@ -458,7 +458,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		void scriptProgress (double start, double end);
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 		bool verifyUser (std::string username, std::string pass, bool &executePermission);
 #endif
 
@@ -487,7 +487,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 	protected:
 		virtual int idle ();
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 		virtual int willConnect (NetworkAddress * _addr);
 #endif
 		virtual int processOption (int in_opt);
@@ -521,7 +521,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		rts2core::ValueBool *send_emails;
 		rts2core::ValueInteger *bbCadency;
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 		const char *config_file;
 
 		// user - login fields
@@ -555,7 +555,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		IncValue incValue;
 		GetMessages _getMessages;
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		ListTargets listTargets;
 		ListTargetsByType listTargetsByType;
 		TargetInfo targetInfo;
@@ -568,31 +568,31 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		Records records;
 		RecordsAverage recordsAverage;
 		UserLogin userLogin;
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		JpegImageRequest jpegRequest;
 		JpegPreview jpegPreview;
 		DownloadRequest downloadRequest;
 		CurrentPosition current;
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		Graph graph;
 		AltAzTarget altAzTarget;
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 		ImageReq imageReq;
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 		FitsImageRequest fitsRequest;
 		LibJavaScript javaScriptRequests;
 		LibCSS cssRequests;
 		API api;
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		Auger auger;
 		Night night;
 		Observation observation;
 		Targets targets;
 		AddTarget addTarget;
 		Plan plan;
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 		SwitchState switchState;
 		Devices devices;
 
@@ -600,7 +600,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 };
 
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 bool verifyUser (std::string username, std::string pass, bool &executePermission);
 #endif
 

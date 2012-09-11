@@ -22,7 +22,7 @@
 #include <stddef.h>
 #include "dirsupport.h"
 
-#ifndef HAVE_SCANDIR
+#ifndef RTS2_HAVE_SCANDIR
 int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const struct dirent *), int (*compar)(const void *, const void *))
 {
 	DIR *d = opendir (dirp);
@@ -60,12 +60,12 @@ int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const st
 		qsort (*namelist, nmeb, sizeof (dirent *), compar);
 	return nmeb;
 }
-#endif // !HAVE_SCANDIR
+#endif // !RTS2_HAVE_SCANDIR
 
 /**
  * Sort two file structure entries by cdate.
  */
-#if (not (defined(_POSIX_C_SOURCE)) || _POSIX_C_SOURCE > 200200L) && defined(HAVE_SCANDIR)
+#if (not (defined(_POSIX_C_SOURCE)) || _POSIX_C_SOURCE > 200200L) && defined(RTS2_HAVE_SCANDIR)
 int cdatesort(const struct dirent **a, const struct dirent **b)
 {
 	struct stat s_a, s_b;
@@ -97,9 +97,9 @@ int cdatesort(const void *a, const void *b)
 }
 #endif  // _POSIX_C_SOURCE
 
-#ifndef HAVE_ALPHASORT
+#ifndef RTS2_HAVE_ALPHASORT
 
-#if _POSIX_C_SOURCE > 200200L && defined(HAVE_SCANDIR)
+#if _POSIX_C_SOURCE > 200200L && defined(RTS2_HAVE_SCANDIR)
 int alphasort(const struct dirent **a, const struct dirent **b)
 {
 	return strcmp ((*a)->d_name, (*b)->d_name);
@@ -113,6 +113,6 @@ int alphasort(const void *a, const void *b)
 }
 #endif // _POSIX_C_SOURCE
 
-#endif // !HAVE_ALPHASORT
+#endif // !RTS2_HAVE_ALPHASORT
 
 

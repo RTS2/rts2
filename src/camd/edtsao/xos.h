@@ -28,11 +28,11 @@ char *strncpy ();
 void *memset ();
 #endif
 
-#ifndef HAVE_STRCHR
+#ifndef RTS2_HAVE_STRCHR
 #define strchr index
 #define strrchr rindex
 #endif
-#ifndef HAVE_MEMCPY
+#ifndef RTS2_HAVE_MEMCPY
 #ifndef memcpy
 #define memcpy(d, s, n) bcopy ((s), (d), (n))
 #endif
@@ -45,7 +45,7 @@ void *memset ();
 #endif
 #endif
 
-#ifdef HAVE_MALLOC_H
+#ifdef RTS2_HAVE_MALLOC_H
 #include <malloc.h>
 #else
 void *malloc ();

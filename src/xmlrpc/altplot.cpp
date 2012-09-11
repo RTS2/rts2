@@ -21,7 +21,7 @@
 
 #include "altplot.h"
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 #include "configuration.h"
 #include "expander.h"
@@ -194,4 +194,4 @@ void AltPlot::plotRange (double x, double y, double x_end, double y_end)
 	}
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */

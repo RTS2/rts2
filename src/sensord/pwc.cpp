@@ -18,10 +18,10 @@
  */
 
 #include "sensord.h"
-#include "config.h"
-#ifdef HAVE_SYS_IOCCOM_H
+#include "rts2-config.h"
+#ifdef RTS2_HAVE_SYS_IOCCOM_H
 #include <sys/ioccom.h>
-#endif // HAVE_SYS_IOCCOM_H
+#endif // RTS2_HAVE_SYS_IOCCOM_H
 #include "pwc-ioctl.h"
 
 #include <sys/ioctl.h>

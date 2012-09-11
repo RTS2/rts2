@@ -19,7 +19,7 @@
 
 #include "altaz.h"
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 
 #include <math.h>
 #include <iostream>
@@ -104,4 +104,4 @@ void AltAz::setCenter ()
 	l = ((c - 20 ) / 6) * 6;
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */

@@ -1,6 +1,6 @@
 # Process this file with automake to produce Makefile.in
 
-AM_CXXFLAGS=@NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @LIBPG_CFLAGS@ @LIBXML_CFLAGS@ @JPEG_CFLAGS@ -I../
+AM_CXXFLAGS=@NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @LIBPG_CFLAGS@ @LIBXML_CFLAGS@ @JPEG_CFLAGS@ -I../../include -I../
 
 noinst_HEADERS = rts2prop.h \
 	rts2targetplanet.h targetgrb.h \

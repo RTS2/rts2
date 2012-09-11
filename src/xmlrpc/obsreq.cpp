@@ -22,7 +22,7 @@
 #include "xmlrpc++/urlencoding.h"
 #include "rts2db/observation.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 
 using namespace rts2xmlrpc;
 
@@ -144,4 +144,4 @@ void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &r
 	returnJSON (_os, response_type, response, response_length);
 }
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */

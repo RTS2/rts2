@@ -21,12 +21,11 @@
 #ifndef __RTS2_NWINDOW__
 #define __RTS2_NWINDOW__
 
+#include <rts2-config.h>
 
-#include <config.h>
-
-#ifdef HAVE_CURSES_H
+#ifdef RTS2_HAVE_CURSES_H
 #include <curses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
+#elif defined(RTS2_HAVE_NCURSES_CURSES_H)
 #include <ncurses/curses.h>
 #endif
 

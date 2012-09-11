@@ -20,19 +20,19 @@
 #ifndef __RTS2_TARGETREQ__
 #define __RTS2_TARGETREQ__
 
-#include "config.h"
+#include "rts2-config.h"
 #include "httpreq.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/targetset.h"
 #include "rts2db/camlist.h"
-#if defined(HAVE_LIBJPEG)
+#if defined(RTS2_HAVE_LIBJPEG)
 #include <Magick++.h>
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 #include "configuration.h"
 #else
 
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 
 #include "xmlrpc++/XmlRpc.h"
 
@@ -41,7 +41,7 @@
 namespace rts2xmlrpc
 {
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 
 class Targets: public GetRequestAuthorized
 {
@@ -67,9 +67,9 @@ class Targets: public GetRequestAuthorized
 
 		rts2db::CamList cameras;
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		void plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 };
 
 /**
@@ -92,7 +92,7 @@ class AddTarget: public GetRequestAuthorized
 		void schedule (int tarid, const char* &response_type, char* &response, size_t &response_length);
 };
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 }
 

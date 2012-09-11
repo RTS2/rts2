@@ -19,7 +19,7 @@
 
 #include "httpreq.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 
 namespace rts2xmlrpc
 {

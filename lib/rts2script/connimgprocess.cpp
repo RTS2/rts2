@@ -41,7 +41,7 @@ ConnProcess::ConnProcess (rts2core::Block * in_master, const char *in_exe, int i
 {
 	astrometryStat = NOT_ASTROMETRY;
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	last_good_jpeg = NULL;
 	last_trash_jpeg = NULL;
 #endif
@@ -168,7 +168,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 		return;
 	}
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	ImageDb *image;
 	try
 	{
@@ -198,7 +198,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 		{
 			case NOT_ASTROMETRY:
 			case TRASH:
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 				if (last_trash_jpeg)
 					image->writeAsJPEG (last_trash_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
@@ -207,7 +207,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 					image->toTrash ();
 				break;
 			case GET:
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 				if (last_good_jpeg)
 					image->writeAsJPEG (last_good_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
@@ -331,7 +331,7 @@ void ConnImgOnlyProcess::checkAstrometry ()
 
 ConnObsProcess::ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
 {
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	obsId = in_obsId;
 	obs = new rts2db::Observation (obsId);
 	if (obs->load ())

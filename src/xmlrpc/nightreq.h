@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "config.h"
+#include "rts2-config.h"
 #include "httpreq.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "xmlrpc++/XmlRpc.h"
 
 namespace rts2xmlrpc
@@ -41,12 +41,12 @@ class Night: public GetRequestAuthorized
 		void printAllImages (int year, int month, int day, XmlRpc::HttpParams *params, char* &response, size_t &response_length);
 		void callAPI(int year, int month, int day, char* &response, const char* &response_type, size_t &response_length);
 		void printTable (int year, int month, int day, char* &response, size_t &response_length);
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		void printAlt (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void printAltAz (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 };
 
 }
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */

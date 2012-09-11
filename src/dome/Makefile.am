@@ -8,8 +8,8 @@ SUBDIRS = zelio
 EXTRA_DIST = 
 
 LDADD = -lrts2 -L../../lib/rts2 @LIB_NOVA@
-AM_CXXFLAGS = @NOVA_CFLAGS@
-AM_CFLAGS = @NOVA_CFLAGS@
+AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
+AM_CFLAGS = @NOVA_CFLAGS@ -I../../include
 
 noinst_HEADERS =  ahe.h
 
@@ -56,11 +56,11 @@ bin_PROGRAMS += rts2-dome-bootes2 rts2-dome-ieec
 
 rts2_dome_bootes2_SOURCES = bootes2.cpp
 rts2_dome_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
-rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@
+rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@ -I../../include
 
 rts2_dome_ieec_SOURCES = ieec.cpp
 rts2_dome_ieec_LDFLAGS = @LIB_COMEDI@ @LIB_M@
-rts2_dome_ieec_CPPFLAGS = @INC_COMEDI@
+rts2_dome_ieec_CPPFLAGS = @INC_COMEDI@ -I../../include
 
 else
 EXTRA_DIST += bootes2.cpp ieec.cpp

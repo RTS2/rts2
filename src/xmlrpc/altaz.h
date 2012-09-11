@@ -20,9 +20,9 @@
 #ifndef __RTS2_MAGICK_ALTAZ__
 #define __RTS2_MAGICK_ALTAZ__
 
-#include "config.h"
+#include "rts2-config.h"
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #include <libnova/libnova.h>
 

@@ -29,7 +29,7 @@
 #include <iostream>
 #include <stdio.h>
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/devicedb.h"
 #else
 #include "device.h"
@@ -44,7 +44,7 @@ namespace rts2plan
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 class ImageProc:public rts2db::DeviceDb
 #else
 class ImageProc:public rts2core::Device
@@ -83,7 +83,7 @@ class ImageProc:public rts2core::Device
 
 	protected:
 		virtual int reloadConfig ();
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 		virtual int processOption (int opt);
 		virtual int init ();
 #endif
@@ -93,7 +93,7 @@ class ImageProc:public rts2core::Device
 		}
 
 	private:
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 		const char *configFile;
 #endif
 		std::list < ConnProcess * >imagesQue;
@@ -142,7 +142,7 @@ class ImageProc:public rts2core::Device
 using namespace rts2plan;
 
 ImageProc::ImageProc (int _argc, char **_argv)
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 :rts2db::DeviceDb (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
 #else
 :rts2core::Device (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
@@ -193,12 +193,12 @@ ImageProc::ImageProc (int _argc, char **_argv)
 
 	sendStop = 0;
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 	configFile = NULL;
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 #endif
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	Magick::InitializeMagick (".");
 #endif
 }
@@ -215,7 +215,7 @@ int ImageProc::reloadConfig ()
 	int ret;
 	
 	Configuration *config;
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	ret = rts2db::DeviceDb::reloadConfig ();
 	config = Configuration::instance ();
 #else
@@ -245,7 +245,7 @@ int ImageProc::reloadConfig ()
 	return ret;
 }
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 int ImageProc::processOption (int opt)
 {
 	switch (opt)
@@ -279,7 +279,7 @@ void ImageProc::postEvent (rts2core::Event * event)
 			queObs (obsId);
 			break;
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	rts2db::DeviceDb::postEvent (event);
 #else
 	rts2core::Device::postEvent (event);
@@ -296,7 +296,7 @@ int ImageProc::idle ()
 		imagesQue.erase (img_iter);
 		changeRunning (newImage);
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::idle ();
 #else
 	return rts2core::Device::idle ();
@@ -307,7 +307,7 @@ int ImageProc::info ()
 {
 	queSize->setValueInteger ((int) imagesQue.size () + (runningImage ? 1 : 0));
 	sendValueAll (queSize);
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::info ();
 #else
 	return rts2core::Device::info ();
@@ -357,7 +357,7 @@ void ImageProc::changeMasterState (int old_state, int new_state)
 				checkNotProcessed ();
 	}
 	// start dark & flat processing
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	rts2db::DeviceDb::changeMasterState (old_state, new_state);
 #else
 	rts2core::Device::changeMasterState (old_state, new_state);
@@ -468,7 +468,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 			}
 		}
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::deleteConnection (conn);
 #else
 	return rts2core::Device::deleteConnection (conn);
@@ -504,7 +504,7 @@ void ImageProc::changeRunning (ConnProcess * newImage)
 	}
 	else if (ret == 0)
 	{
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		if (isnan (lastGood->getValueDouble ()) || lastGood->getValueDouble () < runningImage->getExposureEnd ())
 			runningImage->setLastGoodJpeg (last_good_jpeg);
 		if (isnan (lastGood->getValueDouble ()) || lastTrash->getValueDouble() < runningImage->getExposureEnd ())
@@ -613,7 +613,7 @@ int ImageProc::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return queObs (obsId);
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	return rts2db::DeviceDb::commandAuthorized (conn);
 #else
 	return rts2core::Device::commandAuthorized (conn);

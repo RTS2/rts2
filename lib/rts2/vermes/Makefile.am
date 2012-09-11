@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = librts2vermes.la
 
-AM_CFLAGS=@NOVA_CFLAGS@ 
+AM_CFLAGS=@NOVA_CFLAGS@  -I../../../include
 
 librts2vermes_la_SOURCES= move_door.c \
 	move_to_target_az.c barcodereader.c ssd650v_comm.c \

@@ -24,12 +24,12 @@
 #include "directory.h"
 #include "dirsupport.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/observationset.h"
 #include "rts2db/imageset.h"
 #include "rts2db/user.h"
 #include "rts2db/targetset.h"
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 #include "radecparser.h"
 
@@ -125,7 +125,7 @@ void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const 
 	includeJavaScript (os, name);
 }
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -167,7 +167,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 		}
 	}
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	conn = serv->getOpenConnection (DEVICE_TYPE_EXECUTOR);
 	if (conn)
 	{
@@ -195,7 +195,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 			}
 		}
 	}
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 	Magick::Blob blob;
 	altaz.write (&blob, "jpeg");
@@ -207,11 +207,11 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 	memcpy (response, blob.data(), response_length);
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -252,6 +252,6 @@ void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 	memcpy (response, blob.data(), response_length);
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */

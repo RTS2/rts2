@@ -97,14 +97,14 @@ class ValueChangeRecord: public ValueChange
 		ValueChangeRecord (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test) {}
 
 		virtual void run (rts2core::Value *val, double validTime);
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	private:
 		std::map <const char *, int> dbValueIds;
 		int getRecvalId (const char *suffix, int recval_type);
 		void recordValueInteger (int recval_id, int val, double validTime);
 		void recordValueDouble (int recval_id, double val, double validTime);
 		void recordValueBoolean (int recval_id, bool val, double validTime);
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 };
 
 

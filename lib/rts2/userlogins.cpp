@@ -97,7 +97,7 @@ bool UserLogins::verifyUser (std::string username, std::string pass, bool &execu
 	if (logins.find (username) == logins.end ())
 		return false;
 	// crypt password using salt..
-#ifdef HAVE_CRYPT
+#ifdef RTS2_HAVE_CRYPT
 	char *crp = crypt (pass.c_str (), logins[username].c_str ());
 	return logins[username] == std::string(crp);
 #else
@@ -107,7 +107,7 @@ bool UserLogins::verifyUser (std::string username, std::string pass, bool &execu
 
 void UserLogins::setUserPassword (std::string username, std::string newpass)
 {
-#ifdef HAVE_CRYPT
+#ifdef RTS2_HAVE_CRYPT
 	char salt[100];
 	strcpy (salt, "$6$");
 	random_salt (salt + 3, 8);

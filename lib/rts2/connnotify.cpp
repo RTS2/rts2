@@ -20,7 +20,7 @@
 #include "connnotify.h"
 
 #include <sys/ioctl.h>
-#ifndef HAVE_INOTIFY_INIT1
+#ifndef RTS2_HAVE_INOTIFY_INIT1
 #include <fcntl.h>
 #endif
 
@@ -33,14 +33,14 @@ ConnNotify::ConnNotify (rts2core::Block *_master):ConnNoSend (_master)
 
 int ConnNotify::init ()
 {
-#ifdef HAVE_INOTIFY_INIT1
+#ifdef RTS2_HAVE_INOTIFY_INIT1
 	sock = inotify_init1 (IN_NONBLOCK);
-#elif defined(HAVE_SYS_INOTIFY_H)
+#elif defined(RTS2_HAVE_SYS_INOTIFY_H)
 	sock = inotify_init ();
 	fcntl (sock, O_NONBLOCK);
 #endif
 
-#if defined(HAVE_INOTIFY_INIT1) || defined(HAVE_SYS_INOTIFY_H)
+#if defined(RTS2_HAVE_INOTIFY_INIT1) || defined(RTS2_HAVE_SYS_INOTIFY_H)
         if (sock == -1)
         {
 //		throw Error ("cannot initialize notify FD");
@@ -56,7 +56,7 @@ int ConnNotify::receive (fd_set * readset)
 {
 	if (sock >= 0 && FD_ISSET (sock, readset))
 	{
-#ifdef HAVE_SYS_INOTIFY_H
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 		int len;
 		if (ioctl (sock, FIONREAD, &len))
 		{
@@ -100,7 +100,7 @@ int ConnNotify::receive (fd_set * readset)
 
 int ConnNotify::addWatch (const char *filename, uint32_t mask)
 {
-#ifdef HAVE_SYS_INOTIFY_H
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 	return inotify_add_watch (sock, filename, mask);
 #else
 	return -1;

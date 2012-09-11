@@ -22,7 +22,7 @@
 
 #include "valueplot.h"
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 #include "expander.h"
 #include "libnova_cpp.h"
@@ -200,4 +200,4 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 	}
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */

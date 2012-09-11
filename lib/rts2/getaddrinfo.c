@@ -49,7 +49,7 @@
  * `netdb.h'.  `getaddrinfo.h' defines `struct addrinfo' and AI_, NI_,
  * EAI_ macros.
  *
- *    #ifndef HAVE_GETADDRINFO
+ *    #ifndef RTS2_HAVE_GETADDRINFO
  *    #include "getaddrinfo.h"
  *    #endif
  *
@@ -76,7 +76,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "rts2-config.h"
 #endif
 
 #include <sys/types.h>
@@ -86,16 +86,16 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#if defined(STDC_HEADERS) || defined(HAVE_STRING_H)
+#if defined(STDC_HEADERS) || defined(RTS2_HAVE_STRING_H)
 #include <string.h>
-#if !defined(STDC_HEADERS) && defined(HAVE_MEMORY_H)
+#if !defined(STDC_HEADERS) && defined(RTS2_HAVE_MEMORY_H)
 #include <memory.h>
-#endif							 /* not STDC_HEADERS and HAVE_MEMORY_H */
-#else							 /* not STDC_HEADERS and not HAVE_STRING_H */
+#endif							 /* not STDC_HEADERS and RTS2_HAVE_MEMORY_H */
+#else							 /* not STDC_HEADERS and not RTS2_HAVE_STRING_H */
 #include <strings.h>
-#endif							 /* not STDC_HEADERS and not HAVE_STRING_H */
+#endif							 /* not STDC_HEADERS and not RTS2_HAVE_STRING_H */
 
-#ifdef HAVE_STDLIB_H
+#ifdef RTS2_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
@@ -107,7 +107,7 @@
 #include <libintl.h>
 #endif
 
-#ifndef HAVE_MEMCPY
+#ifndef RTS2_HAVE_MEMCPY
 #define memcpy(d, s, n) bcopy((s), (d), (n))
 #ifdef __STDC__
 void *memchr(const void *, int, size_t);
@@ -120,7 +120,7 @@ int memcmp();
 char *memmove();
 char *memset();
 #endif							 /* not __STDC__ */
-#endif							 /* not HAVE_MEMCPY */
+#endif							 /* not RTS2_HAVE_MEMCPY */
 
 #ifndef H_ERRNO_DECLARED
 extern int h_errno;

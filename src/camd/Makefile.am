@@ -7,14 +7,14 @@ bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-
 noinst_HEADERS = ccd_msg.h reflex.h
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
-AM_CXXFLAGS = @NOVA_CFLAGS@
+AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
 rts2_camd_miniccd_SOURCES = miniccd.cpp
 
 rts2_camd_miniccd_il_SOURCES = miniccd_il.cpp
 
 rts2_camd_dummy_SOURCES = dummy.cpp
-rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
 rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @LIB_CFITSIO@ @LIB_JPEG@
 
 rts2_camd_sidecar_SOURCES = sidecar.cpp
@@ -38,7 +38,7 @@ if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
 rts2_camd_sbigusb_SOURCES = sbigusb.cpp
 rts2_camd_sbigusb_LDFLAGS = @LIB_SBIG@ ${LDADD}
-rts2_camd_sbigusb_CXXFLAGS = @INC_SBIG@
+rts2_camd_sbigusb_CXXFLAGS = @INC_SBIG@ -I../../include
 else
 EXTRA_DIST += sbigusb.cpp
 endif
@@ -55,10 +55,10 @@ if ALTA
 bin_PROGRAMS += rts2-camd-alta rts2-camd-altanet
 rts2_camd_alta_SOURCES = alta.cpp
 rts2_camd_alta_LDADD = @LIB_ALTA_USB@ @LIB_M@ ${LDADD}
-rts2_camd_alta_CXXFLAGS = @INC_ALTA@
+rts2_camd_alta_CXXFLAGS = @INC_ALTA@ -I../../include
 rts2_camd_altanet_SOURCES = alta.cpp
 rts2_camd_altanet_LDADD = @LIB_ALTA_NET@ @LIB_M@ ${LDADD} -lcurl
-rts2_camd_altanet_CXXFLAGS = @INC_ALTA@
+rts2_camd_altanet_CXXFLAGS = @INC_ALTA@ -I../../include
 else
 EXTRA_DIST += alta.cpp
 endif
@@ -67,7 +67,7 @@ if FLI
 bin_PROGRAMS += rts2-camd-fli
 rts2_camd_fli_SOURCES = fli.cpp
 rts2_camd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
-rts2_camd_fli_CXXFLAGS = @INC_FLI@
+rts2_camd_fli_CXXFLAGS = @INC_FLI@ -I../../include
 else
 EXTRA_DIST += fli.cpp
 endif
@@ -76,7 +76,7 @@ if MICCD
 bin_PROGRAMS += rts2-camd-miccd
 rts2_camd_miccd_SOURCES = miccd.cpp
 rts2_camd_miccd_LDFLAGS = @LIB_MICCD@ @LIB_K8055@
-rts2_camd_miccd_CXXFLAGS = @INC_MICCD@
+rts2_camd_miccd_CXXFLAGS = @INC_MICCD@ -I../../include
 else
 EXTRA_DIST += miccd.cpp
 endif
@@ -86,11 +86,11 @@ bin_PROGRAMS += rts2-camd-edtsao rts2-camd-reflex
 
 rts2_camd_edtsao_SOURCES = edtsao.cpp
 rts2_camd_edtsao_LDFLAGS = edtsao/libedtsao.a @LIB_PTHREAD@ @LIB_EDTPDV@
-rts2_camd_edtsao_CXXFLAGS = @INC_EDTPDV@
+rts2_camd_edtsao_CXXFLAGS = @INC_EDTPDV@ -I../../include
 
 rts2_camd_reflex_SOURCES = reflex.cpp
 rts2_camd_reflex_LDFLAGS = @LIB_PTHREAD@ @LIB_EDTPDV@ 
-rts2_camd_reflex_CXXFLAGS = @INC_EDTPDV@
+rts2_camd_reflex_CXXFLAGS = @INC_EDTPDV@ -I../../include
 
 else
 EXTRA_DIST += edtsao.cpp reflex.cpp
@@ -100,7 +100,7 @@ if ARC
 bin_PROGRAMS += rts2-camd-arc
 rts2_camd_arc_SOURCES = arc.cpp
 rts2_camd_arc_LDFLAGS = @LIB_ARC@
-rts2_camd_arc_CXXFLAGS = @INC_ARC@
+rts2_camd_arc_CXXFLAGS = @INC_ARC@ -I../../include
 else
 EXTRA_DIST += arc.cpp
 endif

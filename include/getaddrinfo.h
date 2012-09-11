@@ -30,7 +30,7 @@
 #define GETADDRINFO_H
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "rts2-config.h"
 #endif
 
 #include <sys/types.h>
@@ -131,7 +131,7 @@
  * Fake struct and function names.
  * <netdb.h> might declares all or some of them.
  */
-#if defined(HAVE_GETADDRINFO) || defined(HAVE_GETNAMEINFO)
+#if defined(RTS2_HAVE_GETADDRINFO) || defined(RTS2_HAVE_GETNAMEINFO)
 #define addrinfo my_addrinfo
 #define gai_strerror my_gai_strerror
 #define freeaddrinfo my_freeaddrinfo

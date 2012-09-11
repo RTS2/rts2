@@ -6,7 +6,7 @@ noinst_HEADERS = xmlstream.h xmlrpcd.h httpreq.h r2x.h session.h stateevents.h v
 	directory.h expandstrings.h xmlapi.h jsonvalue.h asyncapi.h
 
 AM_LDADD = @LIB_M@ @LIB_NOVA@
-AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ -I../../lib/
+AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ -I../../lib/ -I../../include
 
 if PGSQL
 

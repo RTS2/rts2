@@ -20,9 +20,9 @@
 #ifndef __RTS2_PLOT__
 #define __RTS2_PLOT__
 
-#include <config.h>
+#include <rts2-config.h>
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 #include <Magick++.h>
 #include "rts2db/records.h"
@@ -84,6 +84,6 @@ class Plot
 
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
 #endif /* !__RTS2_PLOT__ */

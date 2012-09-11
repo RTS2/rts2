@@ -41,7 +41,7 @@ class ConnProcess:public rts2script::ConnExe
 	
 		double getExposureEnd () { return expDate; };
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		void setLastGoodJpeg (const char *_last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
 		void setLastTrashJpeg (const char *_last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
 #endif
@@ -50,7 +50,7 @@ class ConnProcess:public rts2script::ConnExe
 		astrometry_stat_t astrometryStat;
 		double expDate;
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		const char *last_good_jpeg;
 		const char *last_trash_jpeg;
 #endif

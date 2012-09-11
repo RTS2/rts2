@@ -267,7 +267,7 @@ int User::setPassword (std::string newPass)
 		return -1;
 	}
 
-#ifdef HAVE_CRYPT
+#ifdef RTS2_HAVE_CRYPT
 	char salt[100];
 	strcpy (salt, "$6$");
 	random_salt (salt + 3, 8);
@@ -372,7 +372,7 @@ bool verifyUser (std::string username, std::string pass, bool &executePermission
 			return true;
 		d_passwd.arr[d_passwd.len] = '\0';
 		EXEC SQL ROLLBACK;
-#ifdef HAVE_CRYPT
+#ifdef RTS2_HAVE_CRYPT
 		return strcmp (crypt (pass.c_str (), d_passwd.arr), d_passwd.arr) == 0;
 #else
 		return pass == std::string (d_passwd.arr);

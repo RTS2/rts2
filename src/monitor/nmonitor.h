@@ -31,7 +31,7 @@
 
 #include "rts2fits/devcliimg.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/simbadtarget.h"
 #endif
 
@@ -168,7 +168,7 @@ class NMonitor:public rts2core::Client
 
 		void sendCommand ();
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		rts2db::SimbadTarget *tarArg;
 #endif
 

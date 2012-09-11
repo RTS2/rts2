@@ -76,7 +76,7 @@ class SelectorDev:public rts2db::DeviceDb
 		virtual void postEvent (rts2core::Event * event);
 		virtual void changeMasterState (int old_state, int new_state);
 
-#ifdef HAVE_SYS_INOTIFY_H
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 		virtual void fileModified (struct inotify_event *event);
 #endif
 
@@ -754,7 +754,7 @@ void SelectorDev::changeMasterState (int old_state, int new_state)
 	rts2db::DeviceDb::changeMasterState (old_state, new_state);
 }
 
-#ifdef HAVE_SYS_INOTIFY_H
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 void SelectorDev::fileModified (struct inotify_event *event)
 {
 	sel->revalidateConstraints (event->wd);

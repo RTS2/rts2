@@ -1,5 +1,5 @@
 LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
-AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
 
 bin_PROGRAMS = rts2-image rts2-user
 
@@ -18,7 +18,7 @@ noinst_HEADERS = rts2targetapp.h
 rts2_image_LDADD = ${PG_LDADD}
 
 rts2_targetinfo_SOURCES = targetinfo.cpp
-rts2_targetinfo_CXXFLAGS = ${AM_CXXFLAGS} @JPEG_CFLAGS@
+rts2_targetinfo_CXXFLAGS = ${AM_CXXFLAGS} @JPEG_CFLAGS@ -I../../include
 rts2_targetinfo_LDADD = ${PG_LDADD} @LIB_JPEG@
 
 rts2_nightreport_SOURCES = nightreport.cpp
@@ -40,15 +40,15 @@ rts2_user_SOURCES = user.cpp
 rts2_user_LDADD = ${PG_LDADD}
 
 rts2_newtarget_SOURCES = newtarget.cpp rts2targetapp.cpp
-rts2_newtarget_CXXFLAGS = @LIBXML_CFLAGS@ ${AM_CXXFLAGS}
+rts2_newtarget_CXXFLAGS = @LIBXML_CFLAGS@ ${AM_CXXFLAGS} -I../../include
 rts2_newtarget_LDADD = ${PG_LDADD}
 
 rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
-rts2_simbadinfo_CXXFLAGS = @LIBXML_CFLAGS@ ${AM_CXXFLAGS}
+rts2_simbadinfo_CXXFLAGS = @LIBXML_CFLAGS@ ${AM_CXXFLAGS} -I../../include
 rts2_simbadinfo_LDADD = ${PG_LDADD}
 
 rts2_plan_SOURCES = planapp.cpp
-rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
+rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
 rts2_plan_LDADD = ${PG_LDADD}
 
 nodist_rts2_airmasscale_SOURCES = airmasscale.cpp

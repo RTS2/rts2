@@ -21,7 +21,7 @@
    Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "rts2-config.h"
 #endif
 
 #ifndef __STDC__

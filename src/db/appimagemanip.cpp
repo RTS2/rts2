@@ -17,14 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <config.h>
+#include <rts2-config.h>
 #include <strings.h>
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2fits/appdbimage.h"
 #else
 #include "rts2fits/appimage.h"
-#endif							 /* HAVE_PGSQL */
+#endif							 /* RTS2_HAVE_PGSQL */
 #include "configuration.h"
 #include "rts2format.h"
 
@@ -33,15 +33,15 @@
 
 #include <list>
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 #include <Magick++.h>
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 
 #define IMAGEOP_NOOP            0x0000
 #define IMAGEOP_ADDDATE         0x0001
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #define IMAGEOP_INSERT          0x0002
-#endif							 /* HAVE_PGSQL */
+#endif							 /* RTS2_HAVE_PGSQL */
 #define IMAGEOP_TEST            0x0004
 #define IMAGEOP_PRINT           0x0008
 #define IMAGEOP_FPRINT          0x0010
@@ -72,11 +72,11 @@
 namespace rts2image
 {
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 class AppImage:public AppDbImage
 #else
 class AppImage:public rts2image::AppImageCore
-#endif							 /* HAVE_PGSQL */
+#endif							 /* RTS2_HAVE_PGSQL */
 {
 	public:
 		AppImage (int in_argc, char **in_argv, bool in_readOnly);
@@ -84,16 +84,16 @@ class AppImage:public rts2image::AppImageCore
 
 	protected:
 		virtual int processOption (int in_opt);
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		virtual int init ();
 #endif
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		virtual bool doInitDB ();
 
 		virtual int processImage (rts2image::ImageDb * image);
 #else
 		virtual int processImage (rts2image::Image * image);
-#endif						 /* HAVE_PGSQL */
+#endif						 /* RTS2_HAVE_PGSQL */
 
 		virtual void usage ();
 
@@ -106,7 +106,7 @@ class AppImage:public rts2image::AppImageCore
 
 		char rts2opera_ext;
 		int writeRTS2OperaHeaders (rts2image::Image * image, char ext);
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		int insert (rts2image::ImageDb * image);
 #endif
 		void testImage (rts2image::Image * image);
@@ -120,7 +120,7 @@ class AppImage:public rts2image::AppImageCore
 		const char* distance_expr;
 		const char* link_expr;
 		const char* move_expr;
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 		const char* jpeg_expr;
 		const char* label;
 		double zoom;
@@ -200,7 +200,7 @@ int AppImage::writeRTS2OperaHeaders (Image * image, char ext)
 }
 
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 int AppImage::insert (ImageDb * image)
 {
   	if (obsid > 0)
@@ -215,7 +215,7 @@ int AppImage::insert (ImageDb * image)
 
 	return image->saveImage ();
 }
-#endif							 /* HAVE_PGSQL */
+#endif							 /* RTS2_HAVE_PGSQL */
 
 void AppImage::testImage (Image * image)
 {
@@ -298,11 +298,11 @@ int AppImage::processOption (int in_opt)
 			operation |= IMAGEOP_ADDHELIO;
 			readOnly = false;
 			break;
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		case 'i':
 			operation |= IMAGEOP_INSERT;
 			break;
-#endif					 /* HAVE_PGSQL */
+#endif					 /* RTS2_HAVE_PGSQL */
 		case OPT_OBSID:
 			obsid = atoi (optarg);
 			break;
@@ -339,7 +339,7 @@ int AppImage::processOption (int in_opt)
 		case 't':
 			operation |= IMAGEOP_TEST;
 			break;
-		#ifdef HAVE_LIBJPEG
+		#ifdef RTS2_HAVE_LIBJPEG
 		case 'j':
 			if (jpeg_expr)
 				return -1;
@@ -352,7 +352,7 @@ int AppImage::processOption (int in_opt)
 		case OPT_ZOOM:
 			zoom = atof (optarg);
 			break;
-		#endif /* HAVE_LIBJPEG */
+		#endif /* RTS2_HAVE_LIBJPEG */
 		case OPT_RTS2OPERA_WCS:
 			operation |= IMAGEOP_RTS2OPERA_WCS;
 			if (optarg[1] != '\0')
@@ -378,42 +378,42 @@ int AppImage::processOption (int in_opt)
 			break;
 		default:
 
-		#ifdef HAVE_PGSQL
+		#ifdef RTS2_HAVE_PGSQL
 			return AppDbImage::processOption (in_opt);
 		#else
 			return rts2image::AppImageCore::processOption (in_opt);
-		#endif /* HAVE_PGSQL */
+		#endif /* RTS2_HAVE_PGSQL */
 	}
 	return 0;
 }
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 int AppImage::init ()
 {
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	int ret = AppDbImage::init ();
 #else
 	int ret = rts2image::AppImageCore::init ();
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 	if (ret)
 		return ret;
 	Magick::InitializeMagick (".");
 	return 0;
 }
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 bool AppImage::doInitDB ()
 {
 	return (operation & IMAGEOP_MOVE) || (operation & IMAGEOP_INSERT);
 }
 #endif
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 int AppImage::processImage (ImageDb * image)
 #else
 int AppImage::processImage (Image * image)
-#endif							 /* HAVE_PGSQL */
+#endif							 /* RTS2_HAVE_PGSQL */
 {
 	if (operation == IMAGEOP_NOOP)
 		help ();
@@ -426,7 +426,7 @@ int AppImage::processImage (Image * image)
 		image->getCoordMount (tel);
 		image->setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &tel), "heliocentric JD");
 	}
-	#ifdef HAVE_PGSQL
+	#ifdef RTS2_HAVE_PGSQL
 	if (operation & IMAGEOP_INSERT)
 		insert (image);
 	#endif
@@ -453,10 +453,10 @@ int AppImage::processImage (Image * image)
 		for (std::vector <rts2core::IniParser *>::iterator iter = fitsTemplates.begin (); iter != fitsTemplates.end (); iter++)
 			image->addTemplate (*iter);
 	}
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, zoom, label);
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 	return 0;
 }
 
@@ -471,7 +471,7 @@ void AppImage::usage ()
 }
 
 AppImage::AppImage (int in_argc, char **in_argv, bool in_readOnly):
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 AppDbImage (in_argc, in_argv, in_readOnly)
 #else
 rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
@@ -484,7 +484,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	distance_expr = NULL;
 	link_expr = NULL;
 	move_expr = NULL;
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	jpeg_expr = NULL;
 	label = NULL;
 	zoom = 1;
@@ -521,11 +521,11 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption (OPT_RTS2OPERA_WCS, "rts2opera-fix", 1, "add headers necessary for RTS2opera functionality");
 	addOption (OPT_ADD_TEMPLATE, "add-template", 1, "add fixed-value headers from template file specified as an argument");
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
 	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
 	addOption (OPT_ZOOM, "zoom", 1, "zoom the image before writing its label");
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 }
 
 AppImage::~AppImage ()
@@ -534,9 +534,9 @@ AppImage::~AppImage ()
 	for (std::vector <rts2core::IniParser *>::iterator iter = fitsTemplates.begin (); iter != fitsTemplates.end (); iter++)
 		delete *iter;
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
   	MagickLib::DestroyMagick ();
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 }
 
 int main (int argc, char **argv)

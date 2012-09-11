@@ -463,7 +463,7 @@ int IniParser::getFloat (const char *section, const char *valueName, float &valu
 	ret = getString (section, valueName, valbuf);
 	if (ret)
 		return ret;
-#ifdef HAVE_STRTOF	
+#ifdef RTS2_HAVE_STRTOF	
 	value = strtof (valbuf.c_str (), &retv);
 #else	
 	value = strtod (valbuf.c_str (), &retv);

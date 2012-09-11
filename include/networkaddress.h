@@ -23,10 +23,10 @@
 #include <string.h>
 
 #include "status.h"
-#include <config.h>
+#include <rts2-config.h>
 
 // CYGWIN workaround
-#ifndef HAVE_GETADDRINFO
+#ifndef RTS2_HAVE_GETADDRINFO
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>

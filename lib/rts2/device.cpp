@@ -21,7 +21,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-#include <config.h>
+#include <rts2-config.h>
 #include "status.h"
 #include "device.h"
 #include "command.h"
@@ -741,7 +741,7 @@ void Device::beforeRun ()
 	ret = doDaemonize ();
 	if (ret)
 		exit (ret);
-#ifndef HAVE_FLOCK
+#ifndef RTS2_HAVE_FLOCK
 	// reopen..
 	ret = checkLockFile (s.c_str ());
 	if (ret < 0)

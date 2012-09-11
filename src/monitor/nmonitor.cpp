@@ -36,7 +36,7 @@
 //default refresh rate
 #define MONITOR_REFRESH   0.1
 
-#ifdef HAVE_XCURSES
+#ifdef RTS2_HAVE_XCURSES
 char *XCursesProgramName = "rts2-mon";
 #endif
 
@@ -147,7 +147,7 @@ int NMonitor::processOption (int in_opt)
 
 int NMonitor::processArgs (const char *arg)
 {
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	tarArg = new rts2db::SimbadTarget (arg);
 	try
 	{
@@ -383,7 +383,7 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	hideDebugValues = true;
 	hideDebugMenu = NULL;
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	tarArg = NULL;
 #endif
 	addOption (OPT_MONITOR_SHOW_DEBUG, "show-debug", 0, "show debug values");
@@ -417,7 +417,7 @@ NMonitor::~NMonitor (void)
 
 	delete masterLayout;
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	delete tarArg;
 #endif
 }
@@ -570,7 +570,7 @@ rts2core::ConnClient * NMonitor::createClientConnection (int _centrald_num, char
 rts2core::DevClient * NMonitor::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	rts2core::DevClient *retC = rts2core::Client::createOtherType (conn, other_device_type);
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
 	{
 		struct ln_equ_posn tarPos;

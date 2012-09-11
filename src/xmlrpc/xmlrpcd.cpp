@@ -20,15 +20,15 @@
 
 #include "xmlrpcd.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/messagedb.h"
 #else
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 #include <Magick++.h>
 using namespace Magick;
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 
 #include "r2x.h"
 
@@ -430,14 +430,14 @@ int XmlRpcd::idle ()
 		}
 	}
 	// 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	return DeviceDb::idle ();
 #else
 	return rts2core::Device::idle ();
 #endif
 }
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 int XmlRpcd::willConnect (NetworkAddress *_addr)
 {
 	if (_addr->getType () < getDeviceType ()
@@ -461,7 +461,7 @@ int XmlRpcd::processOption (int in_opt)
 		case OPT_NO_EMAILS:
 			send_emails->setValueBool (false);
 			break;
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		default:
 			return DeviceDb::processOption (in_opt);
 #else
@@ -477,7 +477,7 @@ int XmlRpcd::processOption (int in_opt)
 
 int XmlRpcd::init ()
 {
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	int ret = DeviceDb::init ();
 #else
 	int ret = rts2core::Device::init ();
@@ -526,7 +526,7 @@ int XmlRpcd::init ()
 	if (events.bbServers.size () != 0)
 		addTimer (30, new Event (EVENT_XMLRPC_BB));
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 	ret = Configuration::instance ()->loadFile (config_file);
 	if (ret)
 		return ret;
@@ -542,15 +542,15 @@ int XmlRpcd::init ()
 	// auth_localhost
 	auth_localhost = Configuration::instance ()->getBoolean ("xmlrpcd", "auth_localhost", auth_localhost);
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	Magick::InitializeMagick (".");
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 	return ret;
 }
 
 void XmlRpcd::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	DeviceDb::addSelectSocks (read_set, write_set, exp_set);
 #else
 	rts2core::Device::addSelectSocks (read_set, write_set, exp_set);
@@ -560,7 +560,7 @@ void XmlRpcd::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_s
 
 void XmlRpcd::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	DeviceDb::selectSuccess (read_set, write_set, exp_set);
 #else
 	rts2core::Device::selectSuccess (read_set, write_set, exp_set);
@@ -570,7 +570,7 @@ void XmlRpcd::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_se
 
 void XmlRpcd::signaledHUP ()
 {
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	DeviceDb::signaledHUP ();
 #else
 	rts2core::Device::signaledHUP ();
@@ -600,7 +600,7 @@ void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 			iter++;
 		}
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	DeviceDb::connectionRemoved (conn);
 #else
 	rts2core::Device::connectionRemoved (conn);
@@ -627,7 +627,7 @@ void XmlRpcd::removeConnection (XmlRpcServerConnection *source)
 	XmlRpcServer::removeConnection (source);
 }
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 XmlRpcd::XmlRpcd (int argc, char **argv): DeviceDb (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC")
 #else
 XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC")
@@ -652,7 +652,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   setValueByType (this),
   incValue (this),
   _getMessages (this),
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
   listTargets (this),
   listTargetsByType (this),
   targetInfo (this),
@@ -665,32 +665,32 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   records (this),
   recordsAverage (this),
   userLogin (this),
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 
   // web requeusts
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
   jpegRequest ("/jpeg", this),
   jpegPreview ("/preview", "/", this),
   downloadRequest ("/download", this),
   current ("/current", this),
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
   graph ("/graph", this),
   altAzTarget ("/altaz", this),
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
   imageReq ("/images", this),
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
   fitsRequest ("/fits", this),
   javaScriptRequests ("/js", this),
   cssRequests ("/css", this),
   api ("/api", this),
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
   auger ("/auger", this),
   night ("/nights", this),
   observation ("/observations", this),
   targets ("/targets", this),
   addTarget ("/addtarget", this),
   plan ("/plan", this),
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
   switchState ("/switchstate", this),
   devices ("/devices", this)
 {
@@ -713,7 +713,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	createValue (bbCadency, "bb_cadency", "cadency (in seconds) of upstream BB messages", false, RTS2_VALUE_WRITABLE);
 	bbCadency->setValueInteger (60);
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
@@ -735,9 +735,9 @@ XmlRpcd::~XmlRpcd ()
 		delete (*iter).second;
 	}
 	sessions.clear ();
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	MagickLib::DestroyMagick ();
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 }
 
 rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int other_device_type)
@@ -769,7 +769,7 @@ int XmlRpcd::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 			return (*iter)->setTemplateFilename (new_value->getValue ()) ? -2 : 0;
 		}
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	return DeviceDb::setValue (old_value, new_value);
 #else
 	return rts2core::Device::setValue (old_value, new_value);
@@ -830,7 +830,7 @@ void XmlRpcd::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * 
 void XmlRpcd::message (Message & msg)
 {
 // log message to DB, if database is present
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	if (msg.isNotDebug ())
 	{
 		rts2db::MessageDB msgDB (msg);
@@ -888,7 +888,7 @@ void XmlRpcd::postEvent (Event *event)
 			addTimer (bbCadency->getValueInteger (), event);
 			return;
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	DeviceDb::postEvent (event);
 #else
 	rts2core::Device::postEvent (event);
@@ -940,7 +940,7 @@ void XmlRpcd::reloadEventsFile ()
 	}
 }
 
-#ifndef HAVE_PGSQL
+#ifndef RTS2_HAVE_PGSQL
 bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
 {
 	return userLogins.verifyUser (username, pass, executePermission);
@@ -950,7 +950,7 @@ bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &execu
 {
 	return ((XmlRpcd *) getMasterApp ())->verifyUser (username, pass, executePermission);
 }
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 int main (int argc, char **argv)
 {

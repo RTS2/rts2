@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "config.h"
+#include "rts2-config.h"
 #include "httpreq.h"
 #include "xmlapi.h"
 
@@ -72,7 +72,7 @@ class Previewer
 		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char * label, bool selected, float quantiles, int chan);
 };
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 
 /**
  * Returns JPEG image, generated from FITS file. Usefull for quick display of images in 
@@ -103,7 +103,7 @@ class JpegPreview:public GetRequestAuthorized
 		const char *dirPath;
 };
 
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 
 /**
  * Returns raw FITS file as it is written on the disk.
@@ -127,7 +127,7 @@ class FitsImageRequest:public GetRequestAuthorized
 class DownloadRequest:public GetRequestAuthorized
 {
 	public:
-#ifdef HAVE_LIBARCHIVE
+#ifdef RTS2_HAVE_LIBARCHIVE
 		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) { buf = NULL; buf_size = 0; }
 		virtual ~DownloadRequest () { if (buf) free (buf); }
 #else
@@ -135,7 +135,7 @@ class DownloadRequest:public GetRequestAuthorized
 #endif
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
-#ifdef HAVE_LIBARCHIVE
+#ifdef RTS2_HAVE_LIBARCHIVE
 		char *buf;
 		ssize_t buf_size;
 #endif
@@ -143,10 +143,10 @@ class DownloadRequest:public GetRequestAuthorized
 
 }
 
-#ifdef HAVE_LIBARCHIVE
+#ifdef RTS2_HAVE_LIBARCHIVE
 
 int open_callback (struct archive *a, void *client_data);
 ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length);
 int close_callback (struct archive *a, void *client_data);
 
-#endif // HAVE_LIBARCHIVE
+#endif // RTS2_HAVE_LIBARCHIVE

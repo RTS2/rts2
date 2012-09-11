@@ -29,9 +29,9 @@
 #include "rts2script/elementblock.h"
 #include "rts2script/elementtarget.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2script/elementacquire.h"
-#endif							 /* HAVE_PGSQL */
+#endif							 /* RTS2_HAVE_PGSQL */
 
 #include "rts2db/scriptcommands.h"
 #include <string.h>
@@ -428,7 +428,7 @@ Element *Script::parseBuf (Rts2Target * target)
 			return NULL;
 		return new ElementWaitSignal (this, signalNum);
 	}
-	#ifdef HAVE_PGSQL
+	#ifdef RTS2_HAVE_PGSQL
 	else if (!strcmp (commandStart, COMMAND_ACQUIRE))
 	{
 		double precision;
@@ -440,7 +440,7 @@ Element *Script::parseBuf (Rts2Target * target)
 			return new ElementNone (this);
 		return new ElementAcquire (this, precision, expTime, &target_pos);
 	}
-	#endif						 /* HAVE_PGSQL */
+	#endif						 /* RTS2_HAVE_PGSQL */
 	else if (!strcmp (commandStart, COMMAND_BLOCK_WAITSIG))
 	{
 		int waitSig;

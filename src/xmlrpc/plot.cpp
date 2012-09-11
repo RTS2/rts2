@@ -22,7 +22,7 @@
 
 #include "plot.h"
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 #include "expander.h"
 #include "libnova_cpp.h"
@@ -331,4 +331,4 @@ void Plot::plotXDate (bool shadowSun, bool localdate)
 	}
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */

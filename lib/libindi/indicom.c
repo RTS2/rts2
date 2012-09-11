@@ -40,9 +40,9 @@
 #include <errno.h>
 #include <stdarg.h>
 
-#include <config.h>
+#include <rts2-config.h>
 
-#ifdef HAVE_NOVA_H
+#ifdef RTS2_HAVE_NOVA_H
 #include <libnova.h>
 #endif
 
@@ -72,7 +72,7 @@ void getSexComponents(double value, int *d, int *m, int *s);
 
 int extractISOTime(char *timestr, struct ln_date *iso_date)
 {
-  #ifdef HAVE_NOVA_H	
+  #ifdef RTS2_HAVE_NOVA_H	
   struct tm utm;
 
   if (strptime(timestr, "%Y/%m/%dT%H:%M:%S", &utm))

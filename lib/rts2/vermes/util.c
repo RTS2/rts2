@@ -42,7 +42,7 @@
 #include <syslog.h>
 #endif
 
-#ifdef HAVE_PWD_H
+#ifdef RTS2_HAVE_PWD_H
 #include <pwd.h>
 #endif
 
@@ -189,7 +189,7 @@ tilde_expand(const char * name)
   /* If `~user' or `~user/', look up user in the passwd database (but
      OS/2 doesn't have this concept.  */
   } else {
-#ifdef HAVE_PWD_H
+#ifdef RTS2_HAVE_PWD_H
       struct passwd *p;
       char * user;
       unsigned c = 2;
@@ -214,11 +214,11 @@ tilde_expand(const char * name)
         c++; /* If HOME ends in /, omit the / after ~user. */
 
       expansion = concat(home, name + c, NULL);
-#else /* not HAVE_PWD_H */
+#else /* not RTS2_HAVE_PWD_H */
       /* Since we don't know how to look up a user name, just return the
          original string. */
       expansion = name;
-#endif /* not HAVE_PWD_H */
+#endif /* not RTS2_HAVE_PWD_H */
   }
 
   /* We may return the same thing as the original, and then we might not

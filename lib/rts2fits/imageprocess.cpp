@@ -309,7 +309,7 @@ int Image::radius (unsigned short *in_data, double px, double py, int rmax)
 	return (r);
 }
 
-#ifndef HAVE_ROUND
+#ifndef RTS2_HAVE_ROUND
 #define round(x)  ((int) x)
 #endif
 

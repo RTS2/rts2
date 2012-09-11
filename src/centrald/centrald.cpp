@@ -550,7 +550,7 @@ int Centrald::init ()
 	if (ret < 0)
 		return ret;
 
-#ifndef HAVE_FLOCK
+#ifndef RTS2_HAVE_FLOCK
 	// reopen..
 	ret = checkLockFile (_os.str ().c_str ());
 	if (ret)

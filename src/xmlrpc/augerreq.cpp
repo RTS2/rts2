@@ -20,11 +20,11 @@
 #include "augerreq.h"
 #include "nightdur.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "../../lib/rts2db/augerset.h"
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 #include "altaz.h"
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 #include "configuration.h"
 
 using namespace XmlRpc;
@@ -70,7 +70,7 @@ void Auger::printTarget (int auger_id, const char* &response_type, char* &respon
 	ta.getEquPositions (pos);
 
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 	double JD = ta.getShowerJD ();
 
 	AltAz aa = AltAz ();
@@ -106,7 +106,7 @@ void Auger::printTarget (int auger_id, const char* &response_type, char* &respon
 	memcpy (response, blob.data(), response_length);
 #else
 	throw XmlRpcException ("Images not supported");
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 }
 
 void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
@@ -177,4 +177,4 @@ void Auger::printTable (int year, int month, int day, char* &response, size_t &r
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */

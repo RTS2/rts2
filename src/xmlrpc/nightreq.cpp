@@ -22,13 +22,13 @@
 #include "xmlrpcd.h"
 #include "xmlrpc++/urlencoding.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/observationset.h"
 #include "rts2db/imageset.h"
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 #include "altaz.h"
 #include "altplot.h"
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 #include "configuration.h"
 
 using namespace XmlRpc;
@@ -54,12 +54,12 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 				action = IMAGES;
 			else if (vals[3] == "api")
 				action = API;
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 			else if (vals[3] == "alt")
 				action = ALT;
 			else if (vals[3] == "altaz")
 			  	action = ALTAZ;
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 			else
 				throw rts2core::Error ("Invalid path for all observations");
 		case 3:
@@ -86,14 +86,14 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 				case API:
 					callAPI (year, month, day, response, response_type, response_length);
 					break;
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 				case ALT:
 					printAlt (year, month, day, params, response_type, response, response_length);
 					break;
 				case ALTAZ:
 					printAltAz (year, month, day, params, response_type, response, response_length);
 					break;
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 				default:
 					printTable (year, month, day, response, response_length);
 			}
@@ -188,7 +188,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 void Night::printAlt (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
@@ -257,7 +257,7 @@ void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
 }
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 
 void Night::callAPI (int year, int month, int day, char* &response, const char* &response_type, size_t &response_length)
 {
@@ -363,9 +363,9 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 
 		"</script>\n";
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 	_os << "&nbsp;<a href='altaz'>Night images alt-az plot</a>&nbsp;<a href='alt'>Night images alt</a>";
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG
 
 	_os << "</p><p><div id='observations'>Loading..</div>";
 
@@ -378,4 +378,4 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */

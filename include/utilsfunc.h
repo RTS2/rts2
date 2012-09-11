@@ -31,11 +31,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
+#include "rts2-config.h"
 #include "nan.h"
 #include <math.h>
 
-#ifndef HAVE_ISINF
+#ifndef RTS2_HAVE_ISINF
 #include <ieeefp.h>
 #endif
 
@@ -146,7 +146,7 @@ template < typename T > void fillIn (char **p, T val)
 /**
  * Replacement for isinf - on Solaris platform
  */
-#ifndef HAVE_ISINF
+#ifndef RTS2_HAVE_ISINF
 int isinf(double x);
 #endif
 
@@ -239,11 +239,11 @@ int isfinite(double x);
   } while (0)
 #endif
 
-#ifndef HAVE_ISBLANK
+#ifndef RTS2_HAVE_ISBLANK
 #define isblank(x)   (isspace(x) || x == '\t')
 #endif
 
-#ifndef HAVE_STRCASESTR
+#ifndef RTS2_HAVE_STRCASESTR
 char * strcasestr(const char * haystack, const char * needle);
 #endif
 
@@ -276,7 +276,7 @@ struct ci_char_traits : public std::char_traits<char>
 
 typedef std::basic_string<char, ci_char_traits> ci_string;
 
-#ifndef HAVE_GETLINE
+#ifndef RTS2_HAVE_GETLINE
 ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #endif
 

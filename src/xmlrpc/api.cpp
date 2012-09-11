@@ -83,7 +83,7 @@ digraph "JSON API calls handling" {
 #include "rts2db/planset.h"
 #include "rts2script/script.h"
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 #include "rts2db/labellist.h"
 #include "rts2db/simbadtarget.h"
 #include "rts2db/messagedb.h"
@@ -310,7 +310,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 		os << "]";
 	}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 	else if (vals.size () == 1 && vals[0] == "script")
 	{
 		rts2db::Target *target = getTarget (params);
@@ -346,7 +346,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 		os << "]";
 	}
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 	else if (vals.size () == 1)
 	{
 		os << "{";
@@ -713,7 +713,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			camdev->killScript ();
 			os << "\"d\":\"" << d << "\",\"s\":\"\"";
 		}
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 		// returns target information specified by target name
 		else if (vals[0] == "tbyname")
 		{
@@ -1310,7 +1310,7 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 	memcpy (response, os.str ().c_str (), response_length);
 }
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom, XmlRpc::XmlRpcServerConnection * chunked)
 {
 	bool extended = params->getInteger ("e", false);
@@ -1535,9 +1535,9 @@ void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
 	}
 	os << "]";
 }
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 rts2db::Target * API::getTarget (XmlRpc::HttpParams *params)
 {
 	int id = params->getInteger ("id", -1);
@@ -1548,4 +1548,4 @@ rts2db::Target * API::getTarget (XmlRpc::HttpParams *params)
 		throw JSONException ("cannot find target with given ID");
 	return target;
 }
-#endif // HAVE_PGSQL
+#endif // RTS2_HAVE_PGSQL

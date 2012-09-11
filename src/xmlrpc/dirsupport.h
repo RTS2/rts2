@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <config.h>
+#include <rts2-config.h>
 
 #include <fcntl.h>
 #include <dirent.h>
@@ -25,27 +25,27 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifndef HAVE_SCANDIR
+#ifndef RTS2_HAVE_SCANDIR
 int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const struct dirent *), int (*compar)(const void *, const void *));
-#endif // !HAVE_SCANDIR
+#endif // !RTS2_HAVE_SCANDIR
 
 /**
  * Sort two file structure entries by cdate.
  */
-#if (not (defined(_POSIX_C_SOURCE)) || _POSIX_C_SOURCE > 200200L) && defined(HAVE_SCANDIR)
+#if (not (defined(_POSIX_C_SOURCE)) || _POSIX_C_SOURCE > 200200L) && defined(RTS2_HAVE_SCANDIR)
 int cdatesort(const struct dirent **a, const struct dirent **b);
 #else
 int cdatesort(const void *a, const void *b);
 #endif  // _POSIX_C_SOURCE
 
-#ifndef HAVE_ALPHASORT
+#ifndef RTS2_HAVE_ALPHASORT
 
-#if _POSIX_C_SOURCE > 200200L && defined(HAVE_SCANDIR)
+#if _POSIX_C_SOURCE > 200200L && defined(RTS2_HAVE_SCANDIR)
 int alphasort(const struct dirent **a, const struct dirent **b);
 #else
 int alphasort(const void *a, const void *b);
 #endif // _POSIX_C_SOURCE
 
-#endif // !HAVE_ALPHASORT
+#endif // !RTS2_HAVE_ALPHASORT
 
 

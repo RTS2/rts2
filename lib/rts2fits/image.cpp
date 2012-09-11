@@ -40,7 +40,7 @@
 using namespace rts2image;
 
 // TODO remove this once Libnova 0.13.0 becomes mainstream
-#if !HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
+#if !RTS2_HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
 double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object)
 {
 	struct ln_nutation nutation;
@@ -382,7 +382,7 @@ int Image::createImage (bool _overwrite)
 	}
 
 	// add history
-	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
+	writeHistory ("Created with RTS2 version " RTS2_VERSION " build on " __DATE__ " " __TIME__ ".");
 
 	logStream (MESSAGE_DEBUG) << "creating image " << getFileName () << sendLog;
 
@@ -1254,7 +1254,7 @@ void Image::getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &
 	}
 }
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 Magick::Image Image::getMagickImage (const char *label, float quantiles, int chan)
 {
 	unsigned char *buf = NULL;
@@ -1426,7 +1426,7 @@ void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles
 	}
 }
 
-#endif /* HAVE_LIBJPEG */
+#endif /* RTS2_HAVE_LIBJPEG */
 
 double Image::getAstrometryErr ()
 {

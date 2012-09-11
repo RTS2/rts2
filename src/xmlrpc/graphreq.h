@@ -19,7 +19,7 @@
 
 #include "httpreq.h"
 
-#ifdef HAVE_LIBJPEG
+#ifdef RTS2_HAVE_LIBJPEG
 
 namespace rts2xmlrpc
 {
@@ -46,4 +46,4 @@ class Graph: public GetRequestAuthorized
 
 }
 
-#endif // HAVE_LIBJPEG
+#endif // RTS2_HAVE_LIBJPEG

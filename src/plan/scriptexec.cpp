@@ -19,7 +19,7 @@
 
 #include "scriptexec.h"
 #include "rts2devcliphot.h"
-#include "config.h"
+#include "rts2-config.h"
 #include "configuration.h"
 
 #include "rts2script/execcli.h"
@@ -29,10 +29,10 @@
 #include <fstream>
 #include <vector>
 
-#ifdef HAVE_CURSES_H
+#ifdef RTS2_HAVE_CURSES_H
 #include <curses.h>
 #include <term.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
+#elif defined(RTS2_HAVE_NCURSES_CURSES_H)
 #include <ncurses/curses.h>
 #include <ncurses/term.h>
 #endif
@@ -336,7 +336,7 @@ int ScriptExec::init ()
 
 	// create current target
 	currentTarget = new rts2script::ScriptTarget (this);
-#if defined(HAVE_ISATTY) && (defined(HAVE_CURSES_H) || defined(HAVE_NCURSES_CURSES_H))
+#if defined(RTS2_HAVE_ISATTY) && (defined(RTS2_HAVE_CURSES_H) || defined(RTS2_HAVE_NCURSES_CURSES_H))
 	if (isatty (fileno (stdout)))
 	{
 		usesNcurses = true;
@@ -345,7 +345,7 @@ int ScriptExec::init ()
 		curs_set (0);
 		addTimer (CHECK_TIMER, new rts2core::Event (EVENT_EXP_CHECK));
 	}
-#endif // HAVE_ISATTY
+#endif // RTS2_HAVE_ISATTY
 	return 0;
 }
 

@@ -21,7 +21,7 @@
 #define __RTS2_XMLAPI__
 
 #include "xmlrpc++/XmlRpc.h"
-#include "config.h"
+#include "rts2-config.h"
 #include "r2x.h"
 #include "block.h"
 
@@ -326,7 +326,7 @@ class GetMessages: public SessionMethod
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result);
 };
 
-#ifdef HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
 /*
  *
  */
@@ -451,6 +451,6 @@ class UserLogin: public XmlRpcServerMethod
 		bool executePermission;
 };
 
-#endif /* HAVE_PGSQL */
+#endif /* RTS2_HAVE_PGSQL */
 
 #endif // __RTS2_XMLAPI__
