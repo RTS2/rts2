@@ -134,6 +134,9 @@ else
 	graphicsmagic_config="no"
 fi
 
+dnl check for JSON Glib
+PKG_CHECK_MODULES([JSONGLIB], [json-glib-1.0 >= 0.1 libsoup-2.4 >= 0.1])
+
 dnl Check for ROOT (to build contrib scripts)
 
 AC_ARG_WITH(cern-root,
@@ -884,9 +887,9 @@ echo "
   CERN ROOT     ${ROOT_VERS}
   libarchive    ${libarchive}
   crypt         ${LIB_CRYPT}
+  libgjson	${JSONGLIB_CFLAGS} ${JSONGLIB_LIBS}
 
-
-CCD's:
+CCDs:
   alta          ${ALTA}
   andor         ${ANDOR}
   arc           ${ARC}
@@ -896,14 +899,14 @@ CCD's:
   miccd         ${MICCD}
   sbig          ${SBIG}
 
-MONT's:
+MOUNTs:
   paralib       ${PARALIB}
   mdmtcs        ${MDMTCS}
 
-DOME's:
+DOMEs:
   PCI8255       ${PCI8255}
 
-SENSOR's:
+SENSORs:
   A3200         ${A3200}
   BOLTWOOD      ${BOLTWOOD}
   BIGNG         ${BIGNG}
