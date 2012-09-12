@@ -398,6 +398,21 @@ class Telescope:public rts2core::Device
 		}
 
 		/**
+		 * Set telescope origin, object and offsets.
+		 *
+		 * @param ra New RA.
+		 * @param dec New declination.
+		 * @param ora RA offset.
+		 * @param odec Declination offset.
+		 */
+		void setOriginOffset (double ra, double dec, double ora, double odec)
+		{
+			oriRaDec->setValueRaDec (ra, dec);
+			objRaDec->setValueRaDec (ra + ora, dec + odec);
+			offsRaDec->setValueRaDec (ora, odec);
+		}
+
+		/**
 		 * Sets new movement target.
 		 *
 		 * @param ra New object right ascenation.
