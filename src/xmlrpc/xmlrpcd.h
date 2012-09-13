@@ -53,6 +53,8 @@
 #include "libjavascript.h"
 #include "libcss.h"
 #include "api.h"
+#include "bbapi.h"
+
 #include "images.h"
 #include "connnotify.h"
 #include "rts2script/execcli.h"
@@ -585,6 +587,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		LibJavaScript javaScriptRequests;
 		LibCSS cssRequests;
 		API api;
+		BBAPI bbapi;
 #ifdef RTS2_HAVE_PGSQL
 		Auger auger;
 		Night night;

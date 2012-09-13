@@ -18,34 +18,32 @@
  */
 
 #include "bbserver.h"
-#include "r2x.h"
 
 #include "hoststring.h"
 #include "daemon.h"
 
 using namespace rts2xmlrpc;
 
-void BBServer::sendUpdate (XmlRpcValue *data)
+void BBServer::sendUpdate (XmlRpcd *server)
 {
-	if (xmlClient == NULL)
+	if (session == NULL)
 	{
-		HostString serverUrl (_serverName.c_str ());
-		xmlClient = new XmlRpcClient (serverUrl.getHostname (), serverUrl.getPort (), "rts2:rts2");
+		session = soup_session_sync_new_with_options (
+			SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_CONTENT_DECODER,
+			SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_COOKIE_JAR,
+			SOUP_SESSION_USER_AGENT, "rts2bb ",
+			NULL);
+
+		logger = soup_logger_new (SOUP_LOGGER_LOG_BODY, -1);
+		soup_logger_attach (logger, session);
 	}
 
-	XmlRpcValue send;
-	send["observatory"] = _observatoryName;
-	send["data"] = *data;
-
-	XmlRpcValue result;
-
-	int ret = xmlClient->execute (R2X_BB_UPDATE_OBSERVATORY, send, result);
-	if (!ret)
-		logStream (MESSAGE_ERROR) << "error calling " R2X_BB_UPDATE_OBSERVATORY << sendLog;
+	SoupMessage *msg;
+	msg = soup_message_new (SOUP_METHOD_GET, _serverApi.c_str ());
 }
 
-void BBServers::sendUpdate (XmlRpcValue *values)
+void BBServers::sendUpdate (XmlRpcd *server)
 {
 	for (BBServers::iterator iter = begin (); iter != end (); iter++)
-		iter->sendUpdate (values);
+		iter->sendUpdate (server);
 }

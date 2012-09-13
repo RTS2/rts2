@@ -25,10 +25,17 @@
 
 #include <vector>
 
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
+#include <libsoup/soup.h>
+#include <libsoup/soup-request-http.h>
+
 using namespace XmlRpc;
 
 namespace rts2xmlrpc
 {
+
+class XmlRpcd;
 
 /**
  * Big Brother server.
@@ -38,7 +45,7 @@ namespace rts2xmlrpc
 class BBServer
 {
 	public:
-		BBServer (char *serverName, const char *observatoryName):_serverName (serverName), _observatoryName(observatoryName) {xmlClient = NULL; }
+		BBServer (char *serverApi, const char *observatoryName):_serverApi (serverApi), _observatoryName(observatoryName) {session = NULL; }
 		~BBServer () {}
 
 		/**
@@ -46,12 +53,14 @@ class BBServer
 		 *
 		 * @param data  data to send to BB server
 		 */
-		void sendUpdate (XmlRpcValue *data);
+		void sendUpdate (XmlRpcd *server);
 
 	private:
-		std::string _serverName;
+		std::string _serverApi;
 		std::string _observatoryName;
-		XmlRpcClient* xmlClient;
+
+		SoupSession *session;
+		SoupLogger *logger;
 };
 
 
@@ -60,7 +69,7 @@ class BBServers:public std::vector <BBServer>
 	public:
 		BBServers (): std::vector <BBServer> () {}
 
-		void sendUpdate (XmlRpcValue *values);
+		void sendUpdate (XmlRpcd *server);
 };
 
 }

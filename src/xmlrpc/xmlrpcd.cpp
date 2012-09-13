@@ -683,6 +683,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   javaScriptRequests ("/js", this),
   cssRequests ("/css", this),
   api ("/api", this),
+  bbapi ("/bbapi", this),
 #ifdef RTS2_HAVE_PGSQL
   auger ("/auger", this),
   night ("/nights", this),
@@ -914,19 +915,7 @@ void XmlRpcd::scriptProgress (double start, double end)
 
 void XmlRpcd::sendBB ()
 {
-	// construct data..
-	XmlRpcValue data;
-
-	connections_t::iterator iter;
-
-	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
-	{
-		XmlRpcValue connData;
-		connectionValuesToXmlRpc (*iter, connData, false);
-		data[(*iter)->getName ()] = connData;
-	}
-
-	events.bbServers.sendUpdate (&data);
+	events.bbServers.sendUpdate (this);
 }
 
 void XmlRpcd::reloadEventsFile ()
