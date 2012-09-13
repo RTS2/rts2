@@ -23,6 +23,7 @@
 #include "libnova_cpp.h"
 
 #include <map>
+#include <iomanip>
 
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
@@ -669,26 +670,32 @@ int Client::getTypes ()
 	return 0;
 }
 
+void printMessage (JsonArray *array, guint index, JsonNode *node, gpointer user_data)
+{
+	JsonArray *arr = json_node_get_array (node);
+	std::cout << std::setw (5) << std::right << (index + 1) << ": "
+		<< LibnovaDateDouble (json_array_get_double_element (arr, 0)) << " "
+		<< json_array_get_string_element (arr, 1) << " "
+		<< json_array_get_int_element (arr, 2) << " "
+		<< json_array_get_string_element (arr, 3)
+		<< std::endl;
+}
+
 int Client::getMessages ()
 {
-/*	XmlRpcValue nullArg, result;
+	JsonParser *result = NULL;
 
-	int ret = runXmlMethod (R2X_MESSAGES_GET, nullArg, result, false);
-
-	std::cout << "size " << result.size () << std::endl;
-
-	for (int i = 0; i < result.size (); i++)
+	int ret = runJsonMethod ("/api/msgqueue", result);
+	if (ret)
 	{
-		std::cout << std::setw (5) << std::right << (i + 1) << ": "
-			<< result[i]["timestamp"] << " "
-			<< result[i]["origin"] << " "
-			<< result[i]["type"] << " "
-			<< result[i]["message"]
-			<< std::endl;
+		g_object_unref (result);
+		return ret;
 	}
-	
-	return ret; */
-	return 0;
+
+	json_array_foreach_element (json_object_get_array_member (json_node_get_object (json_parser_get_root (result)), "d"), printMessage, NULL);
+
+	g_object_unref (result);
+	return ret;
 }
 
 void Client::printTargets (JsonNode *results)
@@ -946,7 +953,7 @@ int Client::init ()
 		SOUP_SESSION_USER_AGENT, "rts2 ",
 		NULL);
 
-	if (verbosity > 2)
+	if (verbosity > 1)
 	{
 		logger = soup_logger_new (SOUP_LOGGER_LOG_BODY, -1);
 		soup_logger_attach (logger, session);

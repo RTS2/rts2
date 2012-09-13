@@ -246,7 +246,7 @@ void MasterStateIs::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		if (params[0] == "on")
 		{
 			result = (ms & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF
-				&& (ms & SERVERD_STANDBY_MASK) != SERVERD_SOFT_OFF
+				&& (ms & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF
 				&& !(ms & SERVERD_STANDBY_MASK);
 		}
 		else if (params[0] == "standby")

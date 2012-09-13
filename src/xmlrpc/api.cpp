@@ -1191,6 +1191,23 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			os << "]";
 		}
 #endif
+		else if (vals[0] == "msgqueue")
+		{
+			os << std::fixed << "\"h\":["
+				"{\"n\":\"Time\",\"t\":\"t\",\"c\":0},"
+				"{\"n\":\"Component\",\"t\":\"s\",\"c\":1},"
+				"{\"n\":\"Type\",\"t\":\"n\",\"c\":2},"
+				"{\"n\":\"Text\",\"t\":\"s\",\"c\":3}],"
+				"\"d\":[";
+
+			for (std::deque <Message>::iterator iter = ((XmlRpcd *) getMasterApp ())->getMessages ().begin (); iter != ((XmlRpcd *) getMasterApp ())->getMessages ().end (); iter++)
+			{
+				if (iter != ((XmlRpcd *) getMasterApp ())->getMessages ().begin ())
+					os << ",";
+				os << "[" << iter->getMessageTime () << ",\"" << iter->getMessageOName () << "\"," << iter->getType () << ",\"" << iter->getMessageString () << "\"]";
+			}
+			os << "]";
+		}
 		else
 		{
 			throw JSONException ("invalid request " + path);
