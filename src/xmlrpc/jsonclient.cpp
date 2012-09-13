@@ -22,6 +22,8 @@
 #include "iniparser.h"
 #include "libnova_cpp.h"
 
+#include <map>
+
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
 #include <libsoup/soup.h>
@@ -305,16 +307,10 @@ void printArray (JsonArray *array, guint index, JsonNode *node, gpointer user_da
 	printNode (node);
 }
 
-void printValue (JsonObject *object, const gchar *member_name, JsonNode *node, gpointer user_data)
-{
-	if (user_data)
-	{
-		if (*((int *)user_data))
-			std::cout << ",";
-		(*((int *) user_data))++;
-	}
-	std::cout << member_name << "=";
+void printValue (JsonObject *object, const gchar *member_name, JsonNode *node, gpointer user_data);
 
+void printNodeValue (JsonNode *node, bool pretty)
+{
 	switch (json_node_get_node_type (node))
 	{
 		case JSON_NODE_VALUE:
@@ -326,17 +322,46 @@ void printValue (JsonObject *object, const gchar *member_name, JsonNode *node, g
 			std::cout << "]";
 			break;
 		case JSON_NODE_OBJECT:
+			if (pretty)
 			{
 				int count = 0;
 				std::cout << "{";
 				json_object_foreach_member (json_node_get_object (node), printValue, &count);
 				std::cout << "}";
 			}
+			else
+			{
+				int count = -1;
+				json_object_foreach_member (json_node_get_object (node), printValue, &count);
+			}
 			break;
 		case JSON_NODE_NULL:
 			std::cout << "NULL";
 			break;
 	}
+}
+
+void printValue (JsonObject *object, const gchar *member_name, JsonNode *node, gpointer user_data)
+{
+	if (user_data)
+	{
+		if (*((int *)user_data) < 0)
+		{
+			if (*((int *)user_data) < -1)
+				std::cout << " ";
+
+			(*((int *) user_data))--;
+		}
+		else
+		{
+			if (*((int *)user_data))
+				std::cout << ",";
+			(*((int *) user_data))++;
+			std::cout << member_name << "=";
+		}
+	}
+
+	printNodeValue (node, user_data != NULL);
 }
 
 void printValues (JsonObject *object, const gchar *member_name, JsonNode *member_node, gpointer user_data)
@@ -518,25 +543,36 @@ int Client::getState (const char *devName)
 
 int Client::getMasterState ()
 {
-	XmlRpcValue oneArg, result;
-	int ret;
-
-	if (masterStateQuery)
-	{
-		oneArg[0] = masterStateQuery;
-		ret = runXmlMethod (R2X_MASTER_STATE_IS, oneArg, result, false);
-	}
-	else
-	{
-		ret = runXmlMethod (R2X_MASTER_STATE, oneArg, result, false);
-	}
+	JsonParser *parser;
+	int ret = runJsonMethod ("/api/get?d=centrald", parser);
 	if (ret)
 		return ret;
+	bool res;
+
+	uint64_t state = json_object_get_int_member (json_node_get_object (json_parser_get_root (parser)), "state");
 	if (masterStateQuery)
-		std::cout << result << std::endl;
+	{
+		if (!strcasecmp (masterStateQuery, "on"))
+			res = (state & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF && (state & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF && !(state & SERVERD_STANDBY_MASK);
+		else if (!strcasecmp (masterStateQuery, "standby"))
+			res = state & SERVERD_STANDBY_MASK;
+		else if (!strcasecmp (masterStateQuery, "off"))
+			res = (state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF || (state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF;
+		else if (!strcasecmp (masterStateQuery, "rnight"))
+			res = (state & SERVERD_STATUS_MASK) == SERVERD_NIGHT && !(state & SERVERD_STANDBY_MASK);
+		else
+		{
+			std::cerr << "Invalid state parameter " << masterStateQuery << std::endl;
+			return -1;
+		}
+
+		std::cout << res << std::endl;
+	}
 	else
-		std::cout << (unsigned int) ((int) result) << std::endl;
-	return ret; 
+	{
+		std::cout << state << std::endl;
+	}
+	return 0;
 }
 
 int Client::schedTicketInfo (int ticketId)
@@ -550,9 +586,9 @@ int Client::schedTicketInfo (int ticketId)
 
 int Client::getVariables (bool pretty)
 {
-/*	int e = 0;
+	int e = 0;
 	// store results per device
-	std::map <const char*, XmlRpcValue> results;
+	std::map <const char*, JsonParser *> results;
 	char* a = NULL;
 	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 	{
@@ -574,53 +610,43 @@ int Client::getVariables (bool pretty)
 		// get device - if it isn't present
 		if (results.find (a) == results.end ())
 		{
-			XmlRpcValue oneArg, result;
-			oneArg = a;
-			int ret = runXmlMethod (pretty ? R2X_DEVICES_VALUES_PRETTYLIST : R2X_DEVICES_VALUES_LIST, oneArg, result, false);
+			std::ostringstream os;
+			os << "/api/get?d=" << uri_encode (a);
+			int ret = runJsonMethod (os.str ().c_str (), results[a]);
 			if (ret)
 			{
 				e++;
 				continue;
 			}
-			results[a] = result;
 		}
 		// find value among result..
-		std::map <const char *, XmlRpcValue>::iterator riter = results.find (a);
-		int j;
-		for (j = 0; j < (*riter).second.size(); j++)
+		std::map <const char*, JsonParser*>::iterator riter = results.find (a);
+
+		JsonNode *n = json_object_get_member (json_object_get_object_member (json_node_get_object (json_parser_get_root (riter->second)), "d"), dot);
+		if (n)
 		{
-			if ((*riter).second[j]["name"] == std::string (dot))
+			if (getVariablesPrintNames)
 			{
-				bool printEndAmp = false;
-				std::ostringstream osv;
-                                if (getVariablesPrintNames)
-				{
-				        std::cout << a << "_" << dot << "=";
-					osv << (*riter).second[j]["value"];
-					std::string val = osv.str ();
-					if (val.find (' ') != std::string::npos)
-					{
-						std::cout << '"';
-						printEndAmp = true;
-					}
-				}
-				std::cout << std::fixed << (*riter).second[j]["value"];
-				if (printEndAmp)
-					std::cout << '"';
-				std::cout << std::endl;
-				break;
+				std::cout << a << "_" << dot << "=";
 			}
+
+			printNodeValue (json_object_get_member (json_object_get_object_member (json_node_get_object (json_parser_get_root (riter->second)), "d"), dot), false);
+			std::cout << std::endl;
 		}
-		if (j == (*riter).second.size ())
+		else
 		{
 			if (verbosity >= 0)
 				std::cerr << "Cannot find " << a << "." << dot << std::endl;
 			e++;
 		}
   	}
+
+	for (std::map <const char*, JsonParser*>::iterator iter = results.begin (); iter != results.end (); iter++)
+	{
+		g_object_unref (iter->second);
+	}
 	delete[] a;
-	return (e == 0) ? 0 : -1; */
-	return 0;
+	return (e == 0) ? 0 : -1;
 }
 
 int Client::getTypes ()
