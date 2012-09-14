@@ -23,7 +23,7 @@
 #include "configuration.h"
 #include "libnova_cpp.h"
 
-#include "targetgrb.h"
+#include "rts2db/targetgrb.h"
 
 #include <sstream>
 

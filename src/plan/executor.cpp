@@ -21,6 +21,7 @@
 #include "valuearray.h"
 #include "rts2db/devicedb.h"
 #include "rts2db/target.h"
+#include "rts2db/targetgrb.h"
 #include "rts2script/executorque.h"
 #include "rts2script/execcli.h"
 #include "rts2script/execclidb.h"
@@ -684,7 +685,7 @@ int Executor::setNow (rts2db::Target * newTarget)
 
 int Executor::setGrb (int grbId)
 {
-	rts2db::Target *grbTarget;
+	rts2db::Target *grbTarget = NULL;
 	struct ln_hrz_posn grbHrz;
 	int ret;
 
@@ -718,11 +719,26 @@ int Executor::setGrb (int grbId)
 			logStream (MESSAGE_INFO)
 				<< "ignored execution request for GRB target " << grbTarget->getTargetName ()
 				<< " (# " << grbTarget->getObsTargetID () << ") because this target is disabled" << sendLog;
+			delete grbTarget;
 			return -2;
 		}
 		if (!currentTarget)
 		{
 			return setNow (grbTarget);
+		}
+
+		if (currentTarget->getTargetType () == TYPE_GRB && grbTarget->getTargetType () == TYPE_GRB)
+		{
+			// targets closer than 5 minutes are probably same GRBs. Then choose one with lower error box
+			if (fabs (((rts2db::TargetGRB *) grbTarget)->getGrbDate () - ((rts2db::TargetGRB *) currentTarget)->getGrbDate ()) < 300)
+			{
+				if (((rts2db::TargetGRB *) grbTarget)->getErrorBox () > ((rts2db::TargetGRB *) currentTarget)->getErrorBox ())
+				{
+					logStream (MESSAGE_INFO) << "GRB targets " << grbTarget->getTargetID () << " and " << currentTarget->getTargetID () << ", errors " << ((rts2db::TargetGRB *) grbTarget)->getErrorBox () << " and " << ((rts2db::TargetGRB *) currentTarget)->getErrorBox () << " are probably same, ignoring update" << sendLog;
+					delete grbTarget;
+					return 0;
+				}
+			}
 		}
 		// it's not same..
 		ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit->getValueDouble ());
@@ -739,6 +755,7 @@ int Executor::setGrb (int grbId)
 				<< currentTarget->getTargetName () << " (#" << currentTarget->getObsTargetID ()
 				<< ") is below separation limit of " << LibnovaDegDist (grb_min_sep->getValueDouble ())
 				<< "." << sendLog;
+			delete grbTarget;
 			return 0;
 		}
 		// otherwise set us as next target
@@ -749,6 +766,7 @@ int Executor::setGrb (int grbId)
 	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set grb target with ID " << grbId << " :" << er << sendLog;
+		delete grbTarget;
 		return -2;
 	}
 }

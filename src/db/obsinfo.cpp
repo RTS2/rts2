@@ -32,7 +32,7 @@ ObservationInfo::ObservationInfo (int in_argc, char **in_argv):rts2db::AppDb (in
 	obsset = new rts2db::ObservationSet ();
 	imageFlag = 0;
 	addOption ('a', "action", 1,
-		"i->images, a->with astrometry, t->trash images, q->que images (not yet processed)\n\tf->falts, d->darks");
+		"i->images, a->with astrometry, t->trash images, q->que images (not yet processed)\n\tf->flats, d->darks");
 	addOption ('l', "filenames", 0, "print filenames");
 	addOption ('s', "short", 0, "short image listing");
 	action = BASIC_INFO;

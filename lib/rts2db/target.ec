@@ -20,7 +20,7 @@
 #include "rts2db/target_auger.h"
 #include "rts2db/targetell.h"
 #include "rts2targetplanet.h"
-#include "targetgrb.h"
+#include "rts2db/targetgrb.h"
 
 #include "rts2db/constraints.h"
 #include "rts2db/target.h"

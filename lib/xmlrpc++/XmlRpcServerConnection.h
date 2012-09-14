@@ -95,6 +95,8 @@ namespace XmlRpc
 			// return true if connection is in chunged mode
 			bool isChunked () { return _contentLength == -1; }
 
+			std::string getRequest () { return _request; }
+
 		protected:
 
 			bool readHeader();
