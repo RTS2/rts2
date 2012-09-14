@@ -881,7 +881,9 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				<< d_tar_id
 				<< " grb_id: " << d_grb_id
 				<< " grb_seqn: " << d_grb_seqn
-				<< " ra dec: " << LibnovaRaDec (d_grb_ra, d_grb_dec) << sendLog;
+				<< " ra dec: " << LibnovaRaDec (d_grb_ra, d_grb_dec) 
+				<< " grb errorbox: " << d_grb_errorbox
+				<< sendLog;
 			EXEC SQL COMMIT;
 		}
 	}
@@ -968,7 +970,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				else
 				{
 					logStream (MESSAGE_INFO) << "ConnGrb::addGcnPoint grb updated: tar_id: "
-						<< d_tar_id << " grb_id: " << d_grb_id << " grb_seqn: " << d_grb_seqn << sendLog;
+						<< d_tar_id << " grb_id: " << d_grb_id << " grb_errorbox: " << d_grb_errorbox << " grb_seqn: " << d_grb_seqn << sendLog;
 					EXEC SQL COMMIT;
 				}
 			}
