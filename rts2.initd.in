@@ -96,12 +96,12 @@ case $system in
 		;;
 esac
 
-CENTRALD_FILE=@RTS2_PREFIX@/etc/rts2/centrald
-DEVICE_CONFIG=@RTS2_PREFIX@/etc/rts2/devices
-SERVICE_CONFIG=@RTS2_PREFIX@/etc/rts2/services
+CENTRALD_FILE=@PREFIX@/etc/rts2/centrald
+DEVICE_CONFIG=@PREFIX@/etc/rts2/devices
+SERVICE_CONFIG=@PREFIX@/etc/rts2/services
 RTS2_BIN_PREFIX=@prefix@/bin
-RTS2_PID_PREFIX=@RTS2_PREFIX@/var/run/rts2_
-RTS2_LOG=@RTS2_PREFIX@/var/log/rts2-debug
+RTS2_PID_PREFIX=@PREFIX@/var/run/rts2_
+RTS2_LOG=@PREFIX@/var/log/rts2-debug
 
 function rts2_log_daemon_msg
 {
