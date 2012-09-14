@@ -367,9 +367,9 @@ bool verifyUser (std::string username, std::string pass, bool &executePermission
 	if (sqlca.sqlcode == 0)
 	{
 		executePermission = d_executePermission;
-		// empty password - all passwords are allowed
-		if (d_pass_ind > 0)
-			return true;
+		// null password - user blocked
+		if (d_pass_ind)
+			return false;
 		d_passwd.arr[d_passwd.len] = '\0';
 		EXEC SQL ROLLBACK;
 #ifdef RTS2_HAVE_CRYPT

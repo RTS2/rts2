@@ -107,8 +107,8 @@ def parse_time(s, n=time.time(), hour_nextday=False):
 if __name__ == '__main__':
 	server = 'localhost:8889'
 
-  	parser = OptionParser(usage="""rts2-queue [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--verbose] <target1>..
-       rts2-queue --with-times [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--verbose] <target1> <start> <end>..
+  	parser = OptionParser(usage="""rts2-queue [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--quiet][--debug] <target1>..
+       rts2-queue --with-times [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--debug][--quiet] <target1> <start> <end>..
 
 Queue target to the queues. Targets are queued to rts2-selector service using JSON interface provided by rts2-xmlrpc, so those two services must run on target machine. Start and end times can be specified in various times, either absolute or relative to the current time.
 
@@ -134,17 +134,19 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
 	parser.add_option("--user",help="user name",action="store",dest='username',default='rts2obs')
 	parser.add_option("--password",help="user password",action="store",dest='password',default='&#Karel')
-	parser.add_option('--verbose',help='print in/out communication',action='store_true',dest='verbose',default=False)
+	parser.add_option('--quiet',help="don't print messages",action='store_true',dest='quiet',default=False)
+	parser.add_option('--debug',help='debug JSON communication',action='store_true',dest='debug',default=False)
 
 	(options,args)=parser.parse_args()
 
-	rts2.createProxy(url=options.server, username=options.username, password=options.password, verbose=options.verbose)
+	rts2.createProxy(url=options.server, username=options.username, password=options.password, verbose=options.debug)
 	
 	q = rts2.Queue(options.queue)
 
 	if options.clear:
 		resp = q.clear()
-		print "cleared queue {0}".format(options.queue)
+		if not options.quiet:
+			print "cleared queue {0}".format(options.queue)
 
 	n = time.time()
 
@@ -182,7 +184,8 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 					startend += 'ends {0}'.format(time.strftime('%c %Z', time.localtime(end)))
 				startend += ')'
 		  	tids.append(t[0])
-			print 'Queued to queue {0} target {1} {2}with ID {3} on RA {4} DEC {5}'.format(options.queue, startend, t[1], t[0], t[2], t[3])
+			if not options.quiet:
+				print 'Queued to queue {0} target {1} {2}with ID {3} on RA {4} DEC {5}'.format(options.queue, startend, t[1], t[0], t[2], t[3])
 	
 	q.load()
 	
@@ -190,4 +193,5 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 		for xml in options.load_x:
 			rts2.queue.load_xml(xml)
 	q.load()
-	print "Queue {0}: {1}".format(options.queue,q)
+	if not options.quiet:
+		print "Queue {0}: {1}".format(options.queue,q)
