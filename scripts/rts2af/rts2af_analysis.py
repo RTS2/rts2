@@ -149,26 +149,41 @@ class Analysis(rts2af.AFScript):
             else:
                 self.logger.error('rts2af_analysis.py: could not analyze file: {0}'.format(fits))
 
+
+
+        try:
+            len(cats)
+        except:
+            print 'FOCUS: -6'
+            self.logger.warn('rts2af_analysis.py: exiting due to no catalogues found')
+            sys.exit(1)
+
+        if len(cats)< 2: # that is the reference catalogue alone
+            print 'FOCUS: -7'
+            self.logger.warn('rts2af_analysis.py: exiting due too few catalogues found')
+            sys.exit(1)
+
+
         fitResult= cats.fitValues()
         if not fitResult:
-            self.logger.error("rts2af_offline.py: fit matching result failed, trying fit all objects")
+            self.logger.error('rts2af_analysis.py: fit matching result failed, trying fit all objects')
             fitResult= cats.fitAllValues()
 
 # fall back first matched objects, then all objects then weighted mean or extreme max/min
         if fitResult and not fitResult.error:
-            # rts2af_offline is often called as a subprocess
             print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
             self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName))
         else:
-            self.logger.error('rts2af_offline.py: fit result is erroneous')
-            self.logger.warning("rts2af_offline.py: no fit result, using either weighted mean or minFocPos or maxFocPos")
+            self.logger.error('rts2af_analysis.py: fit result is erroneous')
+            self.logger.warning('rts2af_analysis.py: no fit result, using either weighted mean or minFocPos or maxFocPos')
             (focpos, extreme)=cats.findExtreme()
             
             if focpos:
                 print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, -271.15, -1., -1., self.referenceFitsName)
                 self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, -271.15, -1., -1., self.referenceFitsName))
             else:
-                print 'FOCUS: {0}'.format(-1)
+                self.logger.warning('rts2af_analysis.py: no focus available')
+                print 'FOCUS: -8'
 
 
         self.logger.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(os.getpid(), self.referenceFitsName))

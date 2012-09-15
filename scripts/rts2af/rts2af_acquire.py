@@ -79,6 +79,7 @@ class Acquire():
         self.setFocDefFwhmUpperLimit= self.env.rtc.value('SET_FOC_DEF_FWHM_UPPER_THRESHOLD')
         # ToDo: read the runtime configuration of rts2-focusd-flitc not ours!
         self.temperatureCompensation= self.env.rtc.value('FOCUSER_TEMPERATURE_COMPENSATION')
+        #self.temperatureCompensation= False
 
         self.binning= self.env.rtc.value(self.env.rtc.ccd.binning)
         self.windowOffsetX= self.env.rtc.ccd.windowOffsetX
@@ -411,9 +412,24 @@ class Acquire():
             msgRaw= analysis[filter.name].stdout.readline()
             msg= re.split('\n', msgRaw)
             r2c.log('E','rts2af_acquire: received from pipe: {0}'.format(msg[0]))
-            if msg[0] == 'FOCUS: -1':  # check creation of reference catalogue
-                r2c.log('I','rts2af_acquire: continue with next filter')
-                continue # something went wrong                                                                                                  
+            # check of msg FOCUS: -1, -2, -3, ... appears
+            try:
+                parts= msg.split()
+            except:
+                # it is a traceback
+                r2c.log('I','rts2af_acquire: continue with next filter due to {0}'.format(msg))
+                continue                                                                           
+                
+            val= None
+            try:
+                val= int(parts[1])
+            except:
+                pass
+
+            if parts[0] == 'FOCUS:':  # check creation of reference catalogue
+                if val and val < 0:
+                    r2c.log('I','rts2af_acquire: continue with next filter')
+                    continue # something went wrong                                                                                                  
 
             # loop over the focuser steps
             for offset in filter.offsets:
