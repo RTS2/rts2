@@ -1955,7 +1955,7 @@ int APGTO::setBasicData()
 	if (checkSiderealTime( 1./60.) == 0)
 	{
 		logStream (MESSAGE_INFO) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
-		//	return 0 ;
+		return 0 ;
 	}
 
 	logStream (MESSAGE_INFO) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
