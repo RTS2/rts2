@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <string>
 #include "libnova_cpp.h"
 #include "configuration.h"
 
@@ -168,9 +169,9 @@ class APGTO:public TelLX200 {
                 rts2core::ValueBool    *tracking ;
                 rts2core::ValueBool    *transition_while_tracking ; 
 
-                rts2core::ValueDouble  *APlocal_sidereal_time;
-
-  //rts2core::ValueDouble  *APlocal_time;
+                rts2core::ValueDouble  *APlocalSiderealTime;
+                rts2core::ValueDouble  *APhourAngle;
+                rts2core::ValueDouble  *APTime;
          	// RTS2 counts positive to the East, AP positive to the West
                 rts2core::ValueDouble  *APlongitude;
                 rts2core::ValueDouble  *APlatitude;
@@ -191,6 +192,7 @@ class APGTO:public TelLX200 {
                 rts2core::Configuration *config ;
                 int getAPLongitude ();
                 int getAPLatitude ();
+                int getAPlocalSiderealTime ();
 
 };
 }
@@ -432,11 +434,8 @@ int APGTO::setAPLongitude ()
 	int d, m, s;
 	char temp_string[32];
 	char retstr[1];
-	//ToDo: tell pk: this is wrong
-	// fix east longitudes..
-	//if (Long < 0)
-	//	Long += 360;
-	double APlng = fmod (360. - telLongitude->getValueDouble(), 360.0);
+
+	double APlng = fmod (360. - telLongitude->getValueDouble(), 360.0); //telLongitude is read from rts2.ini
 	
 	dtoints (APlng, &d, &m, &s);
 	snprintf (temp_string, sizeof( temp_string ), "#:Sg %03d*%02d:%02d#", d, m, s);
@@ -750,7 +749,7 @@ int APGTO::tel_slew_to (double ra, double dec)
     if ( setAPTrackingMode() < 0 ) { 
       logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
       if( (abortAnyMotion () !=0)) {
-	logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+	logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to abortAnyMotion failed" << sendLog;
       }
       return -1;
     } 
@@ -1153,7 +1152,7 @@ int APGTO::startResync ()
 		ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 		if (ret) {
 		  if( (abortAnyMotion () !=0)) {
-		    logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+		    logStream (MESSAGE_ERROR) << "APGTO::startResync abortAnyMotion failed" << sendLog;
 		  }
 		  return -1;
 		}
@@ -1622,14 +1621,14 @@ int APGTO::info ()
     logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve ra, dec  " << sendLog;
   } else {
 
-    //logStream (MESSAGE_WARNING) << "APGTO::info retrieved ra, dec  "<< getTelRa() << "  " << getTelDec() << sendLog;
+    //logStream (MESSA::infoGE_WARNING) << "APGTO::info retrieved ra, dec  "<< getTelRa() << "  " << getTelDec() << sendLog;
   }
 
   if(( ret= tel_read_local_time()) != 0) {
     error = ERROR_IN_INFO ;
     logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve localtime  " << sendLog;
   }
-  if(( ret= tel_read_sidereal_time()) != 0) {
+  if(( ret= getAPlocalSiderealTime()) != 0) {
     error = ERROR_IN_INFO ;
     logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve sidereal time  " << sendLog;
   }
@@ -1757,7 +1756,10 @@ int APGTO::info ()
   // There is a bug in the revision D Astro-Physics controller
   // find out, when the local sidereal time gets wrong, difference is 237 sec
   // Check if the sidereal time read from the mount is correct 
-  double diff_loc_time = localSiderealTime() - lst->getValueDouble ();
+  if(( ret=getAPlocalSiderealTime()) !=0)
+    return -1 ;
+
+  double diff_loc_time = localSiderealTime() - APlocalSiderealTime->getValueDouble ();
   if (diff_loc_time >= 180.)
     {
       diff_loc_time -=360. ;
@@ -1768,9 +1770,9 @@ int APGTO::info ()
     }
   if (fabs( diff_loc_time) > (1./8.) )
     { // 30 time seconds
-      logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
+      logStream (MESSAGE_WARNING) << "APGTO::info  local sidereal time, calculated time " 
 				<< localSiderealTime() << " mount: "
-				<< lst->getValueDouble() 
+				<< APlocalSiderealTime->getValueDouble() 
 				<< " difference " << diff_loc_time <<sendLog;
 
       logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   telAltAz->getAlt() << " az " << telAltAz->getAz()  <<sendLog;
@@ -1799,17 +1801,19 @@ int APGTO::info ()
 	return -1;
       if(( ret= tel_read_local_time()) != 0)
 	return -1 ;
-      if(( ret= tel_read_sidereal_time()) != 0)
+      //if(( ret= tel_read_sidereal_time()) != 0)
+      if(( ret= getAPlocalSiderealTime()) != 0) 
 	return -1 ;
-      diff_loc_time = localSiderealTime() - lst->getValueDouble() ;
+      
+      diff_loc_time = localSiderealTime() - APlocalSiderealTime->getValueDouble() ;
       
       logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   telAltAz->getAlt() << " az " << telAltAz->getAz()  <<sendLog;
       
       logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
 				<< localSiderealTime() << " mount: "
-				<< lst->getValueDouble() 
+				<< APlocalSiderealTime->getValueDouble() 
 				<< " difference " << diff_loc_time <<sendLog;
-    } 
+    }     
   // The mount unexpectedly starts to track, stop that
   if( ! tracking->getValueBool()) {
 
@@ -1828,6 +1832,11 @@ int APGTO::info ()
       
     }
   }
+  if(( ret= getAPlocalSiderealTime()) != 0)
+	return -1;
+  APhourAngle->setValueDouble (APlocalSiderealTime->getValueDouble () - getTelRa());
+
+
   return TelLX200::info ();
 }
 int
@@ -1853,21 +1862,22 @@ int APGTO::checkSiderealTime( double limit)
   // Check if the sidereal time read from the mount is correct 
   double local_sidereal_time= localSiderealTime() ;
 
-  if(( ret= tel_read_sidereal_time()) != 0) {
+  //if(( ret= tel_read_sidereal_time()) != 0) {
+  if(( ret= getAPlocalSiderealTime()) != 0) {
     // ToDo remove error = ERROR_IN_INFO ;
     logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime could not retrieve sidereal time  " << sendLog;
   }
   logStream (MESSAGE_DEBUG) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
 			    << local_sidereal_time << " mount: "
-			    << lst->getValueDouble() 
-			    << " difference " << local_sidereal_time- lst->getValueDouble()<<sendLog;
+			    << APlocalSiderealTime->getValueDouble() 
+			    << " difference " << local_sidereal_time- APlocalSiderealTime->getValueDouble()<<sendLog;
 	
-  if( fabs(local_sidereal_time- lst->getValueDouble()) > limit ) { // usually 30 time seconds
-    logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- lst->getValueDouble() << sendLog;
+  if( fabs(local_sidereal_time- APlocalSiderealTime->getValueDouble()) > limit ) { // usually 30 time seconds
+    logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- APlocalSiderealTime->getValueDouble() << sendLog;
     logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
 			    << local_sidereal_time << " mount: "
-			    << lst->getValueDouble() 
-			    << " difference " << local_sidereal_time- lst->getValueDouble()<<sendLog;
+			    << APlocalSiderealTime->getValueDouble() 
+			    << " difference " << local_sidereal_time- APlocalSiderealTime->getValueDouble()<<sendLog;
     return -1 ;
   } 
   return 0 ;
@@ -1924,6 +1934,14 @@ int APGTO::checkLongitudeLatitude (double limit) {
   }
   return 0 ;
 }
+int APGTO::getAPlocalSiderealTime ()
+{
+	double new_sidereal_time;
+	if (tel_read_hms (&new_sidereal_time, "#:GS#"))
+		return -1;
+  	APlocalSiderealTime->setValueDouble (new_sidereal_time *15.);
+	return 0;
+}
 
 int APGTO::setBasicData()
 {
@@ -1937,7 +1955,7 @@ int APGTO::setBasicData()
 	if (checkSiderealTime( 1./60.) == 0)
 	{
 		logStream (MESSAGE_INFO) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
-		return 0 ;
+		//	return 0 ;
 	}
 
 	logStream (MESSAGE_INFO) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
@@ -1956,10 +1974,10 @@ int APGTO::setBasicData()
 	struct ln_date utm;
 	struct ln_zonedate ltm;
 
-	ln_get_date_from_sys( &utm) ;
+	ln_get_date_from_sys( &utm) ; // That's UTC, good
 	ln_date_to_zonedate (&utm, &ltm, -1 * timezone + 3600 * daylight); 
-	logStream (MESSAGE_ERROR) << "APGTO::setBasicData           utc time h:"<<utm.hours << " m:"<<utm.minutes<<" s:"<<utm.seconds  << sendLog;
-	logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time h:"<<ltm.hours << " m:"<<ltm.minutes<<" s:"<<ltm.seconds  << sendLog;
+	logStream (MESSAGE_INFO) << "APGTO::setBasicData           utc time h: "<<utm.hours << " m: "<<utm.minutes<<" s: "<<utm.seconds << sendLog;
+	logStream (MESSAGE_INFO) << "APGTO::setBasicData setting local time h: "<<ltm.hours << " m: "<<ltm.minutes<<" s: "<<ltm.seconds << " timezone (val):" << timezone << " daylight: " << daylight << " timezone name: " << tzname[0] << ", "<< tzname[1] << sendLog;
 	// this is local time including dst
 	if (setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)
 	{
@@ -1983,16 +2001,8 @@ int APGTO::setBasicData()
 		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
 		return -1;
 	}
-        // ToDo: make it version dependent 
-	//if (setAPUTCOffset((int) (timezone / 3600) - daylight) < 0)
-	//{
-	//	logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
-	//	return -1;
-	//}
 
-
-        // ToDo: No DST (CEST) is given to the AP mount, so local time is off by 1 hour during DST
-        // CET                           22:56:06  -1:03:54, -1.065 (valid for Obs Vermes CET)
+        // CET APUTC offset:     22:56:06  -1:03:54, -1.065 (valid for Obs Vermes CET)
         // This value has been determied in the following way
         // longitude from google earth
         // set it in the AP controller
@@ -2019,11 +2029,23 @@ int APGTO::setBasicData()
         //Howard Hedlund
         //Astro-Physics, Inc.
 
-        //if(( ret = setAPUTCOffset( -2)) < 0) {
-	if(( ret = setAPUTCOffset( -2.065)) < 0) {
-           logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
-           return -1;
-        }
+	if (getAPVersionNumber() != 0)
+	  return -1;
+
+	if(APfirmware->getValueString().compare("D") ==0){
+	  double off;
+	  if( daylight==1) {
+	    off= -2.065;
+	  } else {
+	    off= -1.065;
+	  }
+	  logStream (MESSAGE_ERROR) << "APGTO::setBasicData This is a version D chip, seting UTC offset to:"<< off << sendLog;
+	  if(( ret = setAPUTCOffset( off)) < 0) {
+	    logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
+	    return -1;
+	  }
+	}
+
 	if (setAPUnPark() < 0)
 	{
 		logStream (MESSAGE_WARNING) << "APGTO::setBasicData unparking failed" << sendLog;
@@ -2228,7 +2250,7 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	// limitSwitchName = NULL;
 
 	createValue (fixedOffsets, "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
-	fixedOffsets->setValueRaDec (0, 0);
+	fixedOffsets->setValueRaDec (0., 0.);
 	
 	createValue (DECaxis_HAcoordinate, "DECXHA", "DEC axis HA coordinate, West/East",true);
 
@@ -2257,18 +2279,13 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	createRaGuide ();
 	createDecGuide ();
 	
-	createValue (APutc_offset, "APUTCOFFSET", "AP mount UTC offset", true,  RTS2_DT_RA);
-	createValue (APfirmware, "APVERSION", "AP mount firmware revision", true);
-	createValue (assume_parked, "ASSUME_PARKED", "true check initial position",    false);
 	createValue (collision_detection, "COLLILSION_DETECTION", "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
+	collision_detection->setValueBool (true) ;
 	//wswitch	createValue (avoidBellowHorizon, "AVOID_HORIZON", "avoid movements bellow horizon", true, RTS2_VALUE_WRITABLE);
 	//avoidBellowHorizon->setValueBool (false);
 
-	collision_detection->setValueBool (true) ;
-	assume_parked->setValueBool (false);
-
 	addOption (OPT_APGTO_ASSUME_PARKED, "parked", 0, "assume a regularly parked mount");
-	addOption (OPT_APGTO_KEEP_HORIZON, "avoid-horizon", 0, "avoid movements bellow horizon");
+	//addOption (OPT_APGTO_KEEP_HORIZON, "avoid-horizon", 0, "avoid movements bellow horizon");
 	//wswitch
 	//	addOption (OPT_APGTO_LIMIT_SWITCH, "limit-switch", 1, "use limit switch with given name");
 
@@ -2281,9 +2298,15 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
         createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",   false);
 	// AP mount counts positive to the west, RTS2 to east
 	// in order to sperate these values:
+        createValue (APhourAngle,              "APHOURANGLE", "AP mount hour angle",         true,  RTS2_DT_RA);
+        createValue (APlocalSiderealTime,      "APLOCSIDTME", "AP mount local sidereal time",true,  RTS2_DT_RA);
         createValue (APlongitude,              "APLONGITUDE", "AP mount longitude",          true,  RTS2_DT_DEGREES);
         createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",           true,  RTS2_DT_DEGREES);
-
+	createValue (APutc_offset, "APUTCOFFSET", "AP mount UTC offset", true,  RTS2_DT_RA);
+	createValue (APfirmware, "APVERSION", "AP mount firmware revision", true);
+	createValue (assume_parked, "ASSUME_PARKED", "true check initial position",    false);
+	assume_parked->setValueBool (false);
+        createValue (APTime,                   "APTIME",      "AP mount time see LOCATIME!", true,  RTS2_DT_RA);
 }
 
 int main (int argc, char **argv)
