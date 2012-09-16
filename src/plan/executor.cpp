@@ -679,7 +679,7 @@ int Executor::setNow (rts2db::Target * newTarget)
 	struct ln_equ_posn pos;
 	currentTarget->getPosition (&pos);
 
-	logStream (MESSAGE_INFO) << "executing now target " << currentTarget->getTargetName () << " at RA DEC " << LibnovaRaDec (&pos) << sendLog;
+	logStream (MESSAGE_INFO) << "executing now target " << currentTarget->getTargetName () << "(#" << currentTarget->getTargetID () << ") at RA DEC " << LibnovaRaDec (&pos) << sendLog;
 	return 0;
 }
 
