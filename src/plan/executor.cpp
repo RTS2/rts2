@@ -521,8 +521,8 @@ void Executor::changeMasterState (int old_state, int new_state)
 			// kill darks if they are running from evening
 			if (currentTarget && currentTarget->getTargetType () == TYPE_DARK)
 			{
+				next_night->setValueBool (true);
 				setNow (activeQueue->getValueInteger ());
-				next_night->setValueBool (false);
 			}
 			else
 			{
@@ -611,9 +611,11 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 		// kill darks during nights..
 		if (next_night->getValueBool () && getMasterState () == SERVERD_NIGHT && currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != TYPE_DARK)
 		{
-			next_night->setValueBool (false);
-			sendValueAll (next_night);
-			return setNow (nt);
+			if (setNow (nt) == 0)
+			{
+				next_night->setValueBool (false);
+				sendValueAll (next_night);
+			}
 		}
 		getActiveQueue ()->addTarget (nt, t_start, t_end);
 		if (!currentTarget)
