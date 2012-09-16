@@ -260,27 +260,33 @@ int ConnFork::init ()
 	int filedes[2];
 	int filedeserr[2];
 	int filedeswrite[2];
-	ret = pipe (filedes);
+	ret = pipe2 (filedes, O_NONBLOCK);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "ConnFork::init cannot create pipe for process: " << strerror (errno) << sendLog;
 		initFailed ();
 		return -1;
 	}
-	ret = pipe (filedeserr);
+	ret = pipe2 (filedeserr, O_NONBLOCK);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "ConnFork::init cannot create error pipe for process: " << strerror (errno) << sendLog;
+		close (filedes[0]);
+		close (filedes[1]);
 		initFailed ();
 		return -1;
 	}
 
 	if (sockwrite == -2)
 	{
-		ret = pipe (filedeswrite);
+		ret = pipe2 (filedeswrite, O_NONBLOCK);
 		if (ret)
 		{
 		  	logStream (MESSAGE_ERROR) << "ConnFork::init cannot create write pipe for process: " << strerror (errno) << sendLog;
+			close (filedes[0]);
+			close (filedes[1]);
+			close (filedeserr[0]);
+			close (filedeserr[1]);
 			initFailed ();
 			return -1;
 		}
@@ -292,6 +298,16 @@ int ConnFork::init ()
 	if (childPid == -1)
 	{
 		logStream (MESSAGE_ERROR) << "ConnFork::init cannot fork: " << strerror (errno) << sendLog;
+		close (filedes[0]);
+		close (filedes[1]);
+		close (filedeserr[0]);
+		close (filedeserr[1]);
+		if (sockwrite > 0)
+		{
+			close (filedeswrite[0]);
+			close (filedeswrite[1]);
+		}
+
 		initFailed ();
 		return -1;
 	}
@@ -306,11 +322,8 @@ int ConnFork::init ()
 		{
 			sockwrite = filedeswrite[1];
 			close (filedeswrite[0]);
-			fcntl (sockwrite, F_SETFL, O_NONBLOCK);
 		}
 
-		fcntl (sock, F_SETFL, O_NONBLOCK);
-		fcntl (sockerr, F_SETFL, O_NONBLOCK);
 		return 0;
 	}
 	// child
