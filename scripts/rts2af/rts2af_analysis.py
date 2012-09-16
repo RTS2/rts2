@@ -49,8 +49,8 @@ class Analysis(rts2af.AFScript):
         paramsSexctractor.readSExtractorParams()
 
         if paramsSexctractor==None:
-            print 'FOCUS: -1'
-            self.logger('run: exiting')
+            print 'EXIT'
+            self.logger('run: exiting due to no sextractor parameters (see SEXREFERENCE_PARAM)')
             sys.exit(1)
 
 # create the reference catalogue
@@ -72,22 +72,21 @@ class Analysis(rts2af.AFScript):
             if catr.createCatalogue():
 
                 if catr.cleanUpReference()==0:
-                    self.logger.error('rts2af_analysis.py: exitinging due to no objects found')
-                    print 'FOCUS: -2'
+                    print 'EXIT'
                     sys.stdout.flush()
+                    self.logger.error('rts2af_analysis.py: exiting due to no objects found')
                     sys.exit(1)
 
                 catr.writeCatalogue()
                 cats= rts2af.Catalogues(env=self.env, referenceCatalogue=catr)
             else:
-                print 'FOCUS: -3'
+                print 'EXIT'
                 sys.stdout.flush()
-
                 self.logger.error('rts2af_analysis.py: exiting due to invalid reference catalogue or file not found: {0}'.format(self.referenceFitsName))
                 sys.exit(1)
 
         else:
-            print 'FOCUS: -4'
+            print 'EXIT'
             sys.stdout.flush()
 
             self.logger.error('rts2af_analysis.py: exiting due to invalid hdur.headerProperties or file not found: {0}'.format(self.referenceFitsName))
@@ -95,7 +94,7 @@ class Analysis(rts2af.AFScript):
 
 
         if catr.numberReferenceObjects() < self.rtc.value('MINIMUM_OBJECTS'):
-            print 'FOCUS: -5'
+            print 'EXIT'
             sys.stdout.flush()
 
             self.logger.error('rts2af_analysis.py: exiting due to too few sxObjects found: {0} of {1}'.format(catr.numberReferenceObjects(), runTimeConfig.value('MINIMUM_OBJECTS')))
@@ -105,6 +104,7 @@ class Analysis(rts2af.AFScript):
         # is needed!
         print 'info: reference catalogue created'
         sys.stdout.flush()
+
 
 # read the files sys.stdin.readline() normally rts2af_analysis.py is fed by rts2af_acquire.py
         while True:
@@ -144,22 +144,18 @@ class Analysis(rts2af.AFScript):
                 cats.CataloguesAllFocPosList.append(cat)
                 if cat.matching():
                     cats.CataloguesList.append(cat)
+                    self.logger.error('rts2af_analysis.py: added catalogue at FOC_POS: {0}, file: {1}'.format(hdu.variableHeaderElements['FOC_POS'], hdu.fitsFileName))
+                    self.logger.info('rts2af_analysis.py: added catalogue at FOC_POS: {0}, file: {1}'.format(hdu.variableHeaderElements['FOC_POS'], hdu.fitsFileName))
                 else:
                     self.logger.error('rts2af_analysis.py: discarded catalogue at FOC_POS: {0}, file: {1}'.format(hdu.variableHeaderElements['FOC_POS'], hdu.fitsFileName))
             else:
                 self.logger.error('rts2af_analysis.py: could not analyze file: {0}'.format(fits))
 
 
-
-        try:
-            len(cats)
-        except:
-            print 'FOCUS: -6'
-            self.logger.warn('rts2af_analysis.py: exiting due to no catalogues found')
-            sys.exit(1)
-
-        if len(cats)< 2: # that is the reference catalogue alone
-            print 'FOCUS: -7'
+        if len(cats.CataloguesList)< 2: # that is the reference catalogue alone
+            print 'EXIT'
+            sys.stdout.flush()
+                    
             self.logger.warn('rts2af_analysis.py: exiting due too few catalogues found')
             sys.exit(1)
 
@@ -183,7 +179,8 @@ class Analysis(rts2af.AFScript):
                 self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, -271.15, -1., -1., self.referenceFitsName))
             else:
                 self.logger.warning('rts2af_analysis.py: no focus available')
-                print 'FOCUS: -8'
+                print 'EXIT'
+                sys.stdout.flush()
 
 
         self.logger.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(os.getpid(), self.referenceFitsName))
