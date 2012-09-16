@@ -794,7 +794,7 @@ void ExecutorQueue::updateVals ()
 
 ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const int reason)
 {
-	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") because " << reason << sendLog;
+	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ", start " << LibnovaDateDouble (iter->t_start) << ", end " << LibnovaDateDouble (iter->t_end) << ") because " << reason << sendLog;
 
 	// add why,..
 	if (reason < 0)
