@@ -45,4 +45,4 @@ rts2_xmlrpcclient_LDADD = -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xml
 
 rts2_jsonclient_SOURCES = jsonclient.cpp
 rts2_jsonclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
-rts2_jsonclient_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
+rts2_jsonclient_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@ $(AM_LDADD)

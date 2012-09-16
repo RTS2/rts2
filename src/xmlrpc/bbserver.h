@@ -28,7 +28,6 @@
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
 #include <libsoup/soup.h>
-#include <libsoup/soup-request-http.h>
 
 using namespace XmlRpc;
 
