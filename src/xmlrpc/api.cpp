@@ -151,6 +151,8 @@ void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value)
 
 }
 
+void jsonObservation (rts2db::Observation *obs, std::ostream &os);
+
 void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -1112,21 +1114,19 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (ret)
 				throw JSONException ("cannot find last observation");
 
-			struct ln_equ_posn equ;
-			obs.getTarget ()->getPosition (&equ);
+			jsonObservation (&obs, os);
+		}
+		else if (vals[0] == "obyid")
+		{
+			int obs_id = params->getInteger ("id", -1);
+			if (obs_id < 0)
+				throw JSONException ("unknow observation ID");
 
-			os << std::fixed << "\"observation\":{\"id\":" << obs.getObsId ()
-				<< ",\"slew\":" << JsonDouble (obs.getObsSlew ())
-				<< ",\"start\":" << JsonDouble (obs.getObsStart ())
-				<< ",\"end\":" << JsonDouble (obs.getObsEnd ())
-				<< ",\"images\":" << obs.getNumberOfImages ()
-				<< ",\"good\":" << obs.getNumberOfGoodImages ()
-				<< "},\"target\":{\"id\":" << obs.getTarget ()->getTargetID ()
-				<< ",\"name\":\"" << JsonString (obs.getTarget ()->getTargetName ())
-				<< "\",\"ra\":" << JsonDouble (equ.ra)
-				<< ",\"dec\":" << JsonDouble (equ.dec)
-				<< ",\"description\":\"" << JsonString (obs.getTarget ()->getTargetInfo ())
-				<< "\"}";
+			rts2db::Observation obs (obs_id);
+			if (obs.load ())
+				throw JSONException ("cannot load observation with given ID");
+
+			jsonObservation (&obs, os);
 		}
 		else if (vals[0] == "plan")
 		{
@@ -1507,6 +1507,25 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRp
 	{
 		os << "]";
 	}	
+}
+
+void jsonObservation (rts2db::Observation *obs, std::ostream &os)
+{
+	struct ln_equ_posn equ;
+	obs->getTarget ()->getPosition (&equ);
+
+	os << std::fixed << "\"observation\":{\"id\":" << obs->getObsId ()
+		<< ",\"slew\":" << JsonDouble (obs->getObsSlew ())
+		<< ",\"start\":" << JsonDouble (obs->getObsStart ())
+		<< ",\"end\":" << JsonDouble (obs->getObsEnd ())
+		<< ",\"images\":" << obs->getNumberOfImages ()
+		<< ",\"good\":" << obs->getNumberOfGoodImages ()
+		<< "},\"target\":{\"id\":" << obs->getTarget ()->getTargetID ()
+		<< ",\"name\":\"" << JsonString (obs->getTarget ()->getTargetName ())
+		<< "\",\"ra\":" << JsonDouble (equ.ra)
+		<< ",\"dec\":" << JsonDouble (equ.dec)
+		<< ",\"description\":\"" << JsonString (obs->getTarget ()->getTargetInfo ())
+		<< "\"}";
 }
 
 void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
