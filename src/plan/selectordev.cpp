@@ -132,6 +132,9 @@ class SelectorDev:public rts2db::DeviceDb
 
 		rts2core::ValueSelection *lastQueue;
 
+		rts2core::ValueInteger *current_target;
+		rts2core::ValueInteger *current_obs;
+
 		rts2plan::Queues queues;
 
 		rts2core::ValueTime *simulTime;
@@ -193,6 +196,11 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (nextTime, "next_time", "time when selection method was run", false);
 	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
 	interrupt->setValueBool (false);
+
+	createValue (current_target, "current_target", "current target ID", false);
+	current_target->setValueInteger (-1);
+	createValue (current_obs, "current_obs", "current observation ID", false);
+	current_obs->setValueInteger (-1);
 
 	createValue (idle_select, "idle_select", "delay in sec for selection", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 	idle_select->setValueInteger (300);
@@ -488,6 +496,11 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 				eq->beforeChange (getNow ());
 			}
 		}
+		current_target->setValueInteger (tar_id);
+		current_obs->setValueInteger (obs_id);
+
+		sendValueAll (current_target);
+		sendValueAll (current_obs);
 	}
 	next_id->setValueInteger (selectNext ());
 	sendValueAll (next_id);
