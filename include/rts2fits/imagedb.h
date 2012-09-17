@@ -136,7 +136,10 @@ template < class img > img * setValueImageType (img * in_image)
 	if (in_image->getShutter () == SHUT_CLOSED)
 	{
 		ret_i = in_image;
-		imgTypeText = "dark";
+		if (in_image->getExposureLength () == 0)
+			imgTypeText = "zero";
+		else
+			imgTypeText = "dark";
 	}
 	else if (in_image->getShutter () == SHUT_UNKNOW)
 	{
