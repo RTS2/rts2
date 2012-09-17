@@ -235,8 +235,11 @@ void ConnFork::fillConnectionEnv (Connection *conn, const char *prefix)
 				(*siter) = '_';
 		}
 
-		envV = new char [strlen (prefix) + valn.length () + strlen (val->getDisplayValue ()) + 3];
-		sprintf (envV, "%s_%s=%s", prefix, valn.c_str (), val->getDisplayValue ());
+		std::ostringstream os;
+		os << prefix << "_" << valn << "=" << val->getDisplayValue ();
+		envV = new char [os.str ().length () + 1];
+		memcpy (envV, os.str ().c_str (), os.str ().length ());
+		envV[os.str ().length ()] = '\0';
 		putenv (envV);
 	}
 }
