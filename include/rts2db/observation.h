@@ -51,7 +51,7 @@ class Observation
 		/**
 		 * Create class from DB
 		 */
-		Observation (int in_obs_id);
+		Observation (int in_obs_id = -1);
 		/**
 		 * Create class from informations provided.
 		 *
@@ -63,6 +63,7 @@ class Observation
 			double in_obs_start, int in_obs_state, double in_obs_end);
 		virtual ~ Observation (void);
 		int load ();
+		int loadLastObservation ();
 		int loadImages ();
 		int loadCounts ();
 

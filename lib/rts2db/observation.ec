@@ -81,26 +81,26 @@ Observation::~Observation (void)
 int Observation::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
-		VARCHAR db_tar_name[150];
-		int db_tar_id;
-		char db_tar_type;
-		int db_obs_id = obs_id;
-		double db_obs_ra;
-		int ind_obs_ra;
-		double db_obs_dec;
-		int ind_obs_dec;
-		double db_obs_alt;
-		int ind_obs_alt;
-		double db_obs_az;
-		int ind_obs_az;
-		double db_obs_slew;
-		int ind_obs_slew;
-		double db_obs_start;
-		int ind_obs_start;
-		int db_obs_state;
-		double db_obs_end;
-		int ind_obs_end;
+	// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
+	VARCHAR db_tar_name[150];
+	int db_tar_id;
+	char db_tar_type;
+	int db_obs_id = obs_id;
+	double db_obs_ra;
+	int ind_obs_ra;
+	double db_obs_dec;
+	int ind_obs_dec;
+	double db_obs_alt;
+	int ind_obs_alt;
+	double db_obs_az;
+	int ind_obs_az;
+	double db_obs_slew;
+	int ind_obs_slew;
+	double db_obs_start;
+	int ind_obs_start;
+	int db_obs_state;
+	double db_obs_end;
+	int ind_obs_end;
 	EXEC SQL END DECLARE SECTION;
 
 	// already loaded
@@ -173,6 +173,23 @@ int Observation::load ()
 	if (ind_obs_end >= 0)
 		obs_end = db_obs_end;
 	return 0;
+}
+
+int Observation::loadLastObservation ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_obs_id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT max(obs_id) INTO :db_obs_id FROM observations;
+
+	EXEC SQL ROLLBACK;
+
+	if (sqlca.sqlcode)
+		return -1;
+	
+	obs_id = db_obs_id;
+	return load();
 }
 
 int Observation::loadImages ()

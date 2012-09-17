@@ -1104,6 +1104,30 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			jsonObservations (&obss, os);
 			
 		}
+		else if (vals[0] == "lastobs")
+		{
+			rts2db::Observation obs;
+
+			int ret = obs.loadLastObservation ();
+			if (ret)
+				throw JSONException ("cannot find last observation");
+
+			struct ln_equ_posn equ;
+			obs.getTarget ()->getPosition (&equ);
+
+			os << std::fixed << "\"observation\":{\"id\":" << obs.getObsId ()
+				<< ",\"slew\":" << JsonDouble (obs.getObsSlew ())
+				<< ",\"start\":" << JsonDouble (obs.getObsStart ())
+				<< ",\"end\":" << JsonDouble (obs.getObsEnd ())
+				<< ",\"images\":" << obs.getNumberOfImages ()
+				<< ",\"good\":" << obs.getNumberOfGoodImages ()
+				<< "},\"target\":{\"id\":" << obs.getTarget ()->getTargetID ()
+				<< ",\"name\":\"" << JsonString (obs.getTarget ()->getTargetName ())
+				<< "\",\"ra\":" << JsonDouble (equ.ra)
+				<< ",\"dec\":" << JsonDouble (equ.dec)
+				<< ",\"description\":\"" << JsonString (obs.getTarget ()->getTargetInfo ())
+				<< "\"}";
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", getNow ()), params->getDouble ("to", NAN));
