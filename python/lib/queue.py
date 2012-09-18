@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Queue JSON interface.
 # (C) 2012 Petr Kubanek, Institute of Physics
 #

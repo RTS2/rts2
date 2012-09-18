@@ -127,7 +127,7 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 
 	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
-	parser.add_option("--queue", help='specify queue name on which to act', action='store', dest='queue', default='plan')
+	parser.add_option("--queue", help='specify queue name on which to act', action='store', dest='queue', default=None)
 	parser.add_option('--load', help='add targets from XML file', action='append', dest='load_xml')
 	parser.add_option('--save', help='save queues to XML file', action='store', dest='save_xml')
 	parser.add_option("--with-times",help="specify observation time",action="store_true",dest="with_times",default=False)
@@ -140,15 +140,30 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 	(options,args)=parser.parse_args()
 
 	rts2.createProxy(url=options.server, username=options.username, password=options.password, verbose=options.debug)
+
+	if options.save_xml and options.load_xml:
+		print >>sys.stderr, "cannot perform both load and save operations"
+		sys.exit(4)
 	
-	q = rts2.Queue(options.queue)
+	q = None
+	if options.queue:
+		q = rts2.Queue(options.queue)
+
+	def test_q():
+		if q is None:
+			print >>sys.stderr, "you must specify queue with --queue argument"
+			sys.exit(6)
 
 	if options.clear:
+		test_q()
 		resp = q.clear()
 		if not options.quiet:
 			print "cleared queue {0}".format(options.queue)
 
 	n = time.time()
+
+	if len(args):
+		test_q()
 
 	while len(args):
 		x = args[0]
@@ -186,12 +201,29 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 		  	tids.append(t[0])
 			if not options.quiet:
 				print 'Queued to queue {0} target {1} {2}with ID {3} on RA {4} DEC {5}'.format(options.queue, startend, t[1], t[0], t[2], t[3])
-	
-	q.load()
-	
+
+	if q is not None:	
+		q.load()
+
+	if options.save_xml:
+	  	qs = rts2.Queues()
+		qs.load()
+		qs.save_xml(options.save_xml)
+			
 	if options.load_xml:
-		for xml in options.load_x:
-			rts2.queue.load_xml(xml)
-	q.load()
+		qs = rts2.Queues()
+		for xml in options.load_xml:
+			qs.load_xml(xml)
+		qs.save()
+
+
 	if not options.quiet:
-		print "Queue {0}: {1}".format(options.queue,q)
+
+		if q is not None:
+			q.load()
+			print "Queue {0}: {1}".format(options.queue, q)
+		else:
+			qs = rts2.Queues()
+			qs.load()
+			for q in qs.queues:
+				print "Queue {0}: {1}".format(qs.queues[q].name, qs.queues[q])
