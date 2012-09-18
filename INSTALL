@@ -14,7 +14,7 @@ Instalation from SVN
    subversion postgresql postgresql-server-dev libecpg-dev automake libtool
    libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev
    libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev
-   libjson-glib-dev libsoup2.4-dev
+   libjson-glib-dev libsoup2.4-dev pkg-config
 
    Please note that postgresql-server-dev is actually postgresql-server-dev-8.3
    on Ubuntu 9.04 and postgresql-server-dev-8.4 on 9.10.

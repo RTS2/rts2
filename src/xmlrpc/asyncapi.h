@@ -24,6 +24,7 @@
 #include "httpreq.h"
 #include "rts2fits/image.h"
 #include "xmlrpc++/XmlRpc.h"
+#include "device.h"
 
 namespace rts2xmlrpc
 {
