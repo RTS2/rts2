@@ -260,6 +260,9 @@ void TargetAuger::load (int auger_id)
 	double db_DegTrackObs;    /// Observed track length angle (deg)
 	double db_TTrackObs;      /// Observed track length time (100 ns)
 
+	VARCHAR db_shower_params[2000]; // Shower parameters
+	int db_shower_ind;
+
 	int db_cut = 0;
 	EXEC SQL END DECLARE SECTION;
 
@@ -331,7 +334,8 @@ void TargetAuger::load (int auger_id)
 		XFOVMax,
 		XTrackObs,
 		DegTrackObs,
-		TTrackObs
+		TTrackObs,
+		ShowerParams
 	INTO
 		:d_auger_t3id,
 		:d_auger_date,
@@ -400,7 +404,8 @@ void TargetAuger::load (int auger_id)
 		:db_XFOVMax,
 		:db_XTrackObs,
 		:db_DegTrackObs,
-		:db_TTrackObs
+		:db_TTrackObs,
+		:db_shower_params :db_shower_ind
 	FROM
 		auger
 	WHERE
@@ -485,6 +490,19 @@ void TargetAuger::load (int auger_id)
 	XTrackObs = db_XTrackObs;
 	DegTrackObs = db_DegTrackObs;
 	TTrackObs = db_TTrackObs;
+
+	if (db_shower_ind == 0)
+	{
+		db_shower_params.arr[db_shower_params.len] = '\0';
+
+		std::istringstream iss (db_shower_params.arr);
+		while (!iss.fail())
+		{
+			double d1, d2;
+			iss >> d1 >> d2;
+			showerparams.push_back (std::pair <double, double> (d1, d2));
+		}
+	}
 
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL COMMIT;
@@ -657,6 +675,15 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		i++;
 	}
 
+	std::ostringstream profile;
+
+	for (std::vector <std::pair <double, double> >::iterator iter = showerparams.begin (); iter != showerparams.end (); iter++)
+	{
+		if (iter != showerparams.begin ())
+			profile << " ";
+		profile << iter->first << " " << iter->second;
+	}
+
 	_os
 		<< std::endl
 		<< InfoVal<int> ("T3ID", t3id)
@@ -739,7 +766,9 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<double> ("DegTrackObs", DegTrackObs)
 		<< InfoVal<double> ("TTrackObs", TTrackObs)
 
-		<< InfoVal<int> ("cut", cut);
+		<< InfoVal<int> ("cut", cut)
+		<< InfoVal<std::string> ("Profile", profile.str ());
+
 
 	ConstTarget::printExtra (_os, JD);
 }

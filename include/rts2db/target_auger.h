@@ -154,6 +154,8 @@ class TargetAuger:public rts2db::ConstTarget
 		double DegTrackObs;    /// Observed track length angle (deg)
 		double TTrackObs;      /// Observed track length time (100 ns)
 
+		std::vector <std::pair <double, double> > showerparams; // shower parameters - sland depth, florescence
+
 		int cut;               /// Cuts pased by shower
 
 		std::vector <double> showeParams;
