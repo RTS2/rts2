@@ -87,6 +87,7 @@ digraph "JSON API calls handling" {
 #include "rts2db/labellist.h"
 #include "rts2db/simbadtarget.h"
 #include "rts2db/messagedb.h"
+#include "rts2db/target_auger.h"
 #endif
 
 using namespace rts2xmlrpc;
@@ -1229,6 +1230,24 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				if (iter != ((XmlRpcd *) getMasterApp ())->getMessages ().begin ())
 					os << ",";
 				os << "[" << iter->getMessageTime () << ",\"" << iter->getMessageOName () << "\"," << iter->getType () << ",\"" << iter->getMessageString () << "\"]";
+			}
+			os << "]";
+		}
+		else if (vals[0] == "auger")
+		{
+			int obs_id = params->getInteger ("id", -1);
+			if (obs_id < 0)
+				throw JSONException ("invalid observation ID");
+			rts2db::TargetAuger ta (-1, Configuration::instance ()->getObserver (), 10);
+			ta.load (obs_id);
+
+			os << std::fixed << "\"profile\":[";
+
+			for (std::vector <std::pair <double, double> >::iterator iter = ta.showerparams.begin (); iter != ta.showerparams.end (); iter++)
+			{
+				if (iter != ta.showerparams.begin ())
+					os << ",";
+				os << "[" << iter->first << "," << iter->second << "]";
 			}
 			os << "]";
 		}
