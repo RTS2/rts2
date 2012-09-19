@@ -263,14 +263,14 @@ int ConnFork::init ()
 	int filedes[2];
 	int filedeserr[2];
 	int filedeswrite[2];
-	ret = pipe2 (filedes, O_NONBLOCK);
+	ret = pipe (filedes);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "ConnFork::init cannot create pipe for process: " << strerror (errno) << sendLog;
 		initFailed ();
 		return -1;
 	}
-	ret = pipe2 (filedeserr, O_NONBLOCK);
+	ret = pipe (filedeserr);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "ConnFork::init cannot create error pipe for process: " << strerror (errno) << sendLog;
@@ -327,6 +327,8 @@ int ConnFork::init ()
 			close (filedeswrite[0]);
 			fcntl (sockwrite, F_SETFL, O_NONBLOCK);
 		}
+		fcntl (sock, F_SETFL, O_NONBLOCK);
+		fcntl (sockerr, F_SETFL, O_NONBLOCK);
 
 		return 0;
 	}
