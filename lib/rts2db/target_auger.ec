@@ -510,6 +510,25 @@ void TargetAuger::load (int auger_id)
 		Target::load ();
 }
 
+void TargetAuger::loadByOid (int obs_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_obs_id = obs_id;
+	int db_auger_t3id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT auger_t3id INTO :db_auger_t3id FROM auger_observation WHERE obs_id = :db_obs_id;
+
+	if (sqlca.sqlcode)
+	{
+		logMsgDb ("TargetAuger::startSlew SQL error", MESSAGE_ERROR);
+		EXEC SQL ROLLBACK;
+		throw SqlError ("cannot find auger record for a given observation ID");
+	}
+
+	load (db_auger_t3id);
+}
+
 void TargetAuger::updateShowerFields ()
 {
 	time_t aug_date = auger_date;

@@ -45,12 +45,21 @@ class TargetAuger:public rts2db::ConstTarget
 		virtual ~ TargetAuger (void);
 
 		virtual void load ();
+
 		/**
 		 * Load target from given target_id.
 		 *
 		 * @param auger_id  Auger id.
 		 */
 		void load (int auger_id);
+
+		/**
+		 * Load by observation ID.
+		 *
+		 * @param obs_id   Observation ID.
+		 */
+		void loadByOid (int obs_id);
+
 		virtual bool getScript (const char *device_name, std::string & buf);
 		virtual float getBonus (double JD);
 		virtual moveType afterSlewProcessed ();

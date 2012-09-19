@@ -1235,11 +1235,19 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 		else if (vals[0] == "auger")
 		{
-			int obs_id = params->getInteger ("id", -1);
-			if (obs_id < 0)
-				throw JSONException ("invalid observation ID");
+			int a_id = params->getInteger ("id", -1);
 			rts2db::TargetAuger ta (-1, Configuration::instance ()->getObserver (), 10);
-			ta.load (obs_id);
+			if (a_id < 0)
+			{
+				a_id = params->getInteger ("obs_id", -1);
+				if (a_id < 0)
+					throw JSONException ("invalid observation ID");
+				ta.loadByOid (a_id);
+			}
+			else
+			{
+				ta.load (a_id);
+			}
 
 			os << std::fixed << "\"profile\":[";
 
