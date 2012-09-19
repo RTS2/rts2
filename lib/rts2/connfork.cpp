@@ -282,7 +282,7 @@ int ConnFork::init ()
 
 	if (sockwrite == -2)
 	{
-		ret = pipe2 (filedeswrite, O_NONBLOCK);
+		ret = pipe (filedeswrite);
 		if (ret)
 		{
 		  	logStream (MESSAGE_ERROR) << "ConnFork::init cannot create write pipe for process: " << strerror (errno) << sendLog;
@@ -325,6 +325,7 @@ int ConnFork::init ()
 		{
 			sockwrite = filedeswrite[1];
 			close (filedeswrite[0]);
+			fcntl (sockwrite, F_SETFL, O_NONBLOCK);
 		}
 
 		return 0;
