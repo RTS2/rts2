@@ -137,9 +137,13 @@ fi
 AH_TEMPLATE([JSONSOUP],[JSON and SOUP libraries are present])
 
 dnl check for JSON Glib
-PKG_CHECK_MODULES([JSONGLIB], [json-glib-1.0 >= 0.1 libsoup-2.4 >= 0.1], AC_DEFINE_UNQUOTED(JSONSOUP, "1", [JSON and SOUP libraries are present]),AC_MSG_RESULT(not found))
+PKG_CHECK_MODULES([JSONGLIB], [json-glib-1.0 >= 0.1 libsoup-2.4 >= 0.1],,AC_MSG_RESULT(not found))
 
-AM_CONDITIONAL(JSONSOUP, test x$JSONGLIB_CFLAGS != x)
+AM_CONDITIONAL(JSONSOUP, test "x$JSONGLIB_CFLAGS" != x)
+
+if test "x$JSONGLIB_CFLAGS" != x; then
+	AC_DEFINE_UNQUOTED(JSONSOUP, "1", [JSON and SOUP libraries are present])
+fi
 
 dnl Check for ROOT (to build contrib scripts)
 
