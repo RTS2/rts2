@@ -287,6 +287,9 @@
 /* Define to 1 if `vfork' works. */
 #undef HAVE_WORKING_VFORK
 
+/* JSON and SOUP libraries are present */
+#undef JSONSOUP
+
 /* Lock file prefix path */
 #undef LOCK_PREFIX
 
