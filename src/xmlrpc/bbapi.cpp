@@ -20,8 +20,10 @@
 #include "xmlrpcd.h"
 #include "jsonvalue.h"
 
+#ifdef RTS2_JSONSOUP
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
+#endif // RTS2_JSONSOUP
 
 using namespace rts2xmlrpc;
 

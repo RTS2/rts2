@@ -19,6 +19,8 @@
 
 #include "bbserver.h"
 
+#ifdef RTS2_JSONSOUP
+
 #include "hoststring.h"
 #include "daemon.h"
 
@@ -47,3 +49,5 @@ void BBServers::sendUpdate (XmlRpcd *server)
 	for (BBServers::iterator iter = begin (); iter != end (); iter++)
 		iter->sendUpdate (server);
 }
+
+#endif // RTS2_JSONSOUP

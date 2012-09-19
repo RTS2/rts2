@@ -327,6 +327,7 @@ void Events::parseEvents (xmlNodePtr ev)
 
 void Events::parseBB (xmlNodePtr ev)
 {
+#ifdef RTS2_JSONSOUP
 	if (ev == NULL)
 		throw XmlMissingElement (ev, "server description for BB");
 	
@@ -354,6 +355,9 @@ void Events::parseBB (xmlNodePtr ev)
 	if (on == NULL)
 		throw XmlMissingElement (ev, "observatory name");
 	bbServers.push_back (BBServer (sn,on));
+#else
+	throw rts2core::Error ("missing BB server support (missing soup and json libraries?");
+#endif	
 }
 
 void Events::load (const char *file)

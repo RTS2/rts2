@@ -112,6 +112,22 @@ class AsyncValueAPI:public AsyncAPI
 		void sendValue (const std::string &device, rts2core::Value *_value);
 };
 
+/**
+ * API call to simulate routine.
+ * Provides pushed updates with queued targets, as they are recevied from
+ * selector.
+ *
+ * This call depends on specific order of selector variables.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
+class AsyncSimulateAPI:public AsyncValueAPI
+{
+	public:	
+		AsyncSimulateAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params);
+	private:
+};
+
 class AsyncDataAPI:public AsyncAPI
 {
 	public:

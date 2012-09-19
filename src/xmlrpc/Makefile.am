@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-xmlrpcd rts2-xmlrpcclient rts2-jsonclient
+bin_PROGRAMS = rts2-xmlrpcd rts2-xmlrpcclient
 
 noinst_HEADERS = xmlstream.h xmlrpcd.h httpreq.h r2x.h session.h stateevents.h valueevents.h events.h plot.h altplot.h \
 	valueplot.h emailaction.h altaz.h augerreq.h nightdur.h nightreq.h imgpreview.h obsreq.h targetreq.h dirsupport.h \
@@ -43,6 +43,16 @@ rts2_xmlrpcclient_SOURCES = xmlrpcclient.cpp
 rts2_xmlrpcclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
 rts2_xmlrpcclient_LDADD = -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIB_NOVA@ $(AM_LDADD)
 
+if JSONSOUP
+
+bin_PROGRAMS += rts2-jsonclient
+
 rts2_jsonclient_SOURCES = jsonclient.cpp
 rts2_jsonclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
 rts2_jsonclient_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@ $(AM_LDADD)
+
+else
+
+EXTRA_DIST += jsonclient.cpp
+
+endif

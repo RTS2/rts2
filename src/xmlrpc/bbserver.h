@@ -20,6 +20,10 @@
 #ifndef __RTS2__BBSERVER__
 #define __RTS2__BBSERVER__
 
+#include "rts2-config.h"
+
+#ifdef RTS2_JSONSOUP
+
 #include "xmlrpc++/XmlRpcValue.h"
 #include "xmlrpc++/XmlRpcClient.h"
 
@@ -72,5 +76,7 @@ class BBServers:public std::vector <BBServer>
 };
 
 }
+
+#endif // RTS2_JSONSOUP
 
 #endif // !__RTS2__BBSERVER__

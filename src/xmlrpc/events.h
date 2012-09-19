@@ -65,7 +65,9 @@ class Events
 		ValueCommands valueCommands;
 		MessageCommands messageCommands;
 
+#ifdef RTS2_JSONSOUP
 		BBServers bbServers;
+#endif // RTS2_JSONSOUP
 
 		std::vector <std::string> publicPaths;
 		std::vector <std::string> allskyPaths;

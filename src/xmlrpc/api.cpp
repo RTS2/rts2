@@ -583,6 +583,13 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			throw XmlRpc::XmlRpcAsynchronous ();
 		}
+		else if (vals[0] == "simulate")
+		{
+			AsyncSimulateAPI *aa = new AsyncSimulateAPI (this, connection, params);
+			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+
+			throw XmlRpc::XmlRpcAsynchronous ();
+		}
 		// execute command on server
 		else if (vals[0] == "cmd")
 		{

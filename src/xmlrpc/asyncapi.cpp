@@ -197,6 +197,10 @@ void AsyncValueAPI::sendValue (const std::string &device, rts2core::Value *_valu
 		asyncFinished ();
 }
 
+AsyncSimulateAPI::AsyncSimulateAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params): AsyncValueAPI (_req, _source, params)
+{
+}
+
 AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
 {
 	data = _data;
