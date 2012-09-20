@@ -1330,10 +1330,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				<< ",\"DegTrackObs\":" << JsonDouble (ta.DegTrackObs)    /// Observed track length angle (deg)
 				<< ",\"TTrackObs\":" << JsonDouble (ta.TTrackObs)      /// Observed track length time (100 ns)
 
-				<< ",\"cut\":" << ta.cut;               /// Cuts pased by shower
+				<< ",\"cut\":" << ta.cut               /// Cuts pased by shower
 
-
-			os << std::fixed << "\"profile\":[";
+				<< ",\"profile\":[";
 
 			for (std::vector <std::pair <double, double> >::iterator iter = ta.showerparams.begin (); iter != ta.showerparams.end (); iter++)
 			{
