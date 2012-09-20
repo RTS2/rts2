@@ -167,8 +167,6 @@ class TargetAuger:public rts2db::ConstTarget
 
 		int cut;               /// Cuts pased by shower
 
-		std::vector <double> showeParams;
-
 	private:
 		int augerPriorityTimeout;
 		// core coordinates

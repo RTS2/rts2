@@ -1256,6 +1256,83 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				ta.load (a_id);
 			}
 
+			os << "\"t3id\":" << ta.t3id 
+				<< ",\"auger_date\":" << JsonDouble (ta.auger_date)
+				<< ",\"Eye\":" << ta.Eye
+				<< ",\"Run\":" << ta.Run
+				<< ",\"Event\":" << ta.Event
+				<< ",\"AugerId\":\"" << ta.AugerId 
+				<< "\",\"GPSSec\":" << ta.GPSSec
+				<< ",\"GPSNSec\":" << ta.GPSNSec
+				<< ",\"SDId\":" << ta.SDId
+				<< ",\"NPix\":" << ta.NPix
+	
+				<< ",\"SDPTheta\":" << JsonDouble (ta.SDPTheta)       /// Zenith angle of SDP normal vector (deg)
+				<< ",\"SDPThetaErr\":" << JsonDouble (ta.SDPThetaErr)    /// Uncertainty of SDPtheta
+				<< ",\"SDPPhi\":" << JsonDouble (ta.SDPPhi)         /// Azimuth angle of SDP normal vector (deg)
+				<< ",\"SDPPhiErr\":" << JsonDouble (ta.SDPPhiErr)      /// Uncertainty of SDPphi
+				<< ",\"SDPChi2\":" << JsonDouble (ta.SDPChi2)        /// Chi^2 of SDP db_it
+				<< ",\"SDPNdf\":" << ta.SDPNdf         /// Degrees of db_reedom of SDP db_it
+	
+				<< ",\"Rp\":" << JsonDouble (ta.Rp)             /// Shower impact parameter Rp (m)
+				<< ",\"RpErr\":" << JsonDouble (ta.RpErr)          /// Uncertainty of Rp (m)
+				<< ",\"Chi0\":" << JsonDouble (ta.Chi0)           /// Angle of shower in the SDP (deg)
+				<< ",\"Chi0Err\":" << JsonDouble (ta.Chi0Err)        /// Uncertainty of Chi0 (deg)
+				<< ",\"T0\":" << JsonDouble (ta.T0)             /// FD time db_it T_0 (ns)
+				<< ",\"T0Err\":" << JsonDouble (ta.T0Err)          /// Uncertainty of T_0 (ns)
+				<< ",\"TimeChi2\":" << JsonDouble (ta.TimeChi2)       /// Full Chi^2 of axis db_it
+				<< ",\"TimeChi2FD\":" << JsonDouble (ta.TimeChi2FD)     /// Chi^2 of axis db_it (FD only)
+				<< ",\"TimeNdf\":" << ta.TimeNdf        /// Degrees of db_reedom of axis db_it
+	
+				<< ",\"Easting\":" << JsonDouble (ta.Easting)        /// Core position in easting coordinate (m)
+				<< ",\"Northing\":" << JsonDouble (ta.Northing)       /// Core position in northing coordinate (m)
+				<< ",\"Altitude\":" << JsonDouble (ta.Altitude)       /// Core position altitude (m)
+				<< ",\"NorthingErr\":" << JsonDouble (ta.NorthingErr)    /// Uncertainty of northing coordinate (m)
+				<< ",\"EastingErr\":" << JsonDouble (ta.EastingErr)     /// Uncertainty of easting coordinate (m)
+				<< ",\"Theta\":" << JsonDouble (ta.Theta)          /// Shower zenith angle in core coords. (deg)
+				<< ",\"ThetaErr\":" << JsonDouble (ta.ThetaErr)       /// Uncertainty of zenith angle (deg)
+				<< ",\"Phi\":" << JsonDouble (ta.Phi)            /// Shower azimuth angle in core coords. (deg)
+				<< ",\"PhiErr\":" << JsonDouble (ta.PhiErr)         /// Uncertainty of azimuth angle (deg)
+	
+				<< ",\"dEdXmax\":" << JsonDouble (ta.dEdXmax)        /// Energy deposit at shower max (GeV/(g/cm^2))
+				<< ",\"dEdXmaxErr\":" << JsonDouble (ta.dEdXmaxErr)     /// Uncertainty of Nmax (GeV/(g/cm^2))
+				<< ",\"Xmax\":" << JsonDouble (ta.Xmax)           /// Slant depth of shower maximum (g/cm^2)
+				<< ",\"XmaxErr\":" << JsonDouble (ta.XmaxErr)        /// Uncertainty of Xmax (g/cm^2)
+				<< ",\"X0\":" << JsonDouble (ta.X0)             /// X0 Gaisser-Hillas db_it (g/cm^2)
+				<< ",\"X0Err\":" << JsonDouble (ta.X0Err)          /// Uncertainty of X0 (g/cm^2)
+				<< ",\"Lambda\":" << JsonDouble (ta.Lambda)         /// Lambda of Gaisser-Hillas db_it (g/cm^2)
+				<< ",\"LambdaErr\":" << JsonDouble (ta.LambdaErr)      /// Uncertainty of Lambda (g/cm^2)
+				<< ",\"GHChi2\":" << JsonDouble (ta.GHChi2)         /// Chi^2 of Gaisser-Hillas db_it
+				<< ",\"GHNdf\":" << ta.GHNdf          /// Degrees of db_reedom of GH db_it
+				<< ",\"LineFitChi2\":" << JsonDouble (ta.LineFitChi2)    /// Chi^2 of linear db_it to profile
+	
+				<< ",\"EmEnergy\":" << JsonDouble (ta.EmEnergy)       /// Calorimetric energy db_rom GH db_it (EeV)
+				<< ",\"EmEnergyErr\":" << JsonDouble (ta.EmEnergyErr)    /// Uncertainty of Eem (EeV)
+				<< ",\"Energy\":" << JsonDouble (ta.Energy)         /// Total energy db_rom GH db_it (EeV)
+				<< ",\"EnergyErr\":" << JsonDouble (ta.EnergyErr)      /// Uncertainty of Etot (EeV)
+	
+				<< ",\"MinAngle\":" << JsonDouble (ta.MinAngle)       /// Minimum viewing angle (deg)
+				<< ",\"MaxAngle\":" << JsonDouble (ta.MaxAngle)       /// Maximum viewing angle (deg)
+				<< ",\"MeanAngle\":" << JsonDouble (ta.MeanAngle)      /// Mean viewing angle (deg)
+		
+				<< ",\"NTank\":" << ta.NTank          /// Number of stations in hybrid db_it
+				<< ",\"HottestTank\":" << ta.HottestTank    /// Station used in hybrid-geometry reco
+				<< ",\"AxisDist\":" << JsonDouble (ta.AxisDist)       /// Shower axis distance to hottest station (m)
+				<< ",\"SDPDist\":" << JsonDouble (ta.SDPDist)        /// SDP distance to hottest station (m)
+	
+				<< ",\"SDFDdT\":" << JsonDouble (ta.SDFDdT)         /// SD/FD time offset after the minimization (ns)
+				<< ",\"XmaxEyeDist\":" << JsonDouble (ta.XmaxEyeDist)    /// Distance to shower maximum (m)
+				<< ",\"XTrackMin\":" << JsonDouble (ta.XTrackMin)      /// First recorded slant depth of track (g/cm^2)
+				<< ",\"XTrackMax\":" << JsonDouble (ta.XTrackMax)      /// Last recorded slant depth of track (g/cm^2)
+				<< ",\"XFOVMin\":" << JsonDouble (ta.XFOVMin)        /// First slant depth inside FOV (g/cm^2)
+				<< ",\"XFOVMax\":" << JsonDouble (ta.XFOVMax)        /// Last slant depth inside FOV (g/cm^2)
+				<< ",\"XTrackObs\":" << JsonDouble (ta.XTrackObs)      /// Observed track length depth (g/cm^2)
+				<< ",\"DegTrackObs\":" << JsonDouble (ta.DegTrackObs)    /// Observed track length angle (deg)
+				<< ",\"TTrackObs\":" << JsonDouble (ta.TTrackObs)      /// Observed track length time (100 ns)
+
+				<< ",\"cut\":" << ta.cut;               /// Cuts pased by shower
+
+
 			os << std::fixed << "\"profile\":[";
 
 			for (std::vector <std::pair <double, double> >::iterator iter = ta.showerparams.begin (); iter != ta.showerparams.end (); iter++)
