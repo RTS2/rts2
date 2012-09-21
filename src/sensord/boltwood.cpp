@@ -132,7 +132,7 @@ void CloudSensorII::csII_reportSensorData(BWCloudSensorII *csII,
 	}
 
 	switch (report.rainCond)
-    {
+	{
 		case 0: rain = "unknown";break;
 		case 1: rain = "none"; break;
 		case 2: rain = "recent"; break;
