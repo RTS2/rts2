@@ -71,12 +71,19 @@ int AHE::readSerial(const char send, char reply, const char exitState)
     cmdSent = 0;
     reply = 'L';
 
+    //read all the extra hearbeat junk
+    while(sconn->readPortNoBlock(&reply, 1) != 0)
+    {
+        //tiny bust loop :(
+        logStream(MESSAGE_DEBUG) << "Busy loopin'" << sendLog;
+    }
+
     while(reply != exitState && cmdSent < MAX_COMMANDS)
     {
         sconn->writePort(send);
         usleep(SERIAL_SLEEP); 
         sconn->readPort(reply);
-        logStream(MESSAGE_DEBUG) << "Just read port" << sendLog;
+        logStream(MESSAGE_DEBUG) << "Just read port " << reply << sendLog;
         cmdSent ++;
     }
 
@@ -188,7 +195,7 @@ int AHE::startOpen()
     status = OPENING;
     domeStatus->setValueString("Opening....");
     sendValueAll(domeStatus);
-    if(openALeaf() && openBLeaf())
+    if(openBLeaf() && openALeaf())
     {
         status = OPENED;
         domeStatus->setValueString("Opened");
@@ -215,7 +222,7 @@ int AHE::startClose()
     status = CLOSING;
     domeStatus->setValueString("Closing....");
     sendValueAll(domeStatus);
-    if(closeALeaf() && closeBLeaf())
+    if(closeBLeaf() && closeALeaf())
     {
         status = CLOSED;
         domeStatus->setValueString("Closed");
@@ -271,17 +278,16 @@ int AHE::endClose()
 AHE::AHE(int argc, char **argv):Dome(argc, argv)
 {
     logStream (MESSAGE_DEBUG) << "AHE Dome constructor called" << sendLog;
-    devFile = "/dev/ttyS0";
+    devFile = "/dev/ttyS5";
     response = '\x00';
     ignoreCommands = false;
 
 
-    createValue(domeStatus, "status", "current dome status", true);
+    createValue(domeStatus, "dome_status", "current dome status", true);
     createValue(closeDome, "state", "switch state of dome", false, RTS2_VALUE_WRITABLE);
     createValue(ignoreComm,"ignore_com","driver will ignore commands (not open/close dome)", false, RTS2_VALUE_WRITABLE);
 
     addOption('f',NULL,1, "path to device, default is /dev/ttyUSB0");
-
     closeDome->addSelVal("Close");
     closeDome->addSelVal("Open");
 
