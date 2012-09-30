@@ -134,7 +134,8 @@ class SolveField():
 
         if center!=None:
             if len(center)==2:
-                self.logger.debug('SolveField: found center {0} {1} H.d, D'.format( ephem.degrees(center[0]), ephem.degrees(center[1])))
+#                self.logger.debug('SolveField: found center {0} {1} H.d, D'.format( ephem.degrees(center[0]), ephem.degrees(center[1])))
+                self.logger.debug('SolveField: found center {0} {1} H.d, D'.format( center[0], center[1]))
                 return SolverResult( ra=center[0], dec=center[1], jd=self.jd, date_obs=self.date_obs, lon=self.lon, lat=self.lat, fn=self.fn)
             else:
                 self.logger.debug('SolveField: center not found')
@@ -191,6 +192,7 @@ class MeasurementThread(threading.Thread):
 
                             if len(self.results) > 1:
                                 kinga=KingA(self.results)
+                                self.logger.debug('MeasurementThread: fits {0}'.format(path))      
                                 self.logger.debug('MeasurementThread: KingA dx={0} dy={1} arcsec'.format(math.degrees(kinga.dX) *3600., math.degrees(kinga.dY) *3600.))      
                                 self.logger.debug('MeasurementThread: KingA dtau={0} arcsec RA= {1} HA={2}'.format( kinga.dtau,sr.ra,math.degrees(kinga.tau)))
                                 self.logger.debug('MeasurementThread: KingA HA={0} deg lambda={1} arcsec A={2}, k={3} arcsec'.format( math.degrees(kinga.ha), math.degrees(kinga.lambda_r)*3600,math.degrees(kinga.A) *3600., math.degrees(kinga.k) * 3600.))
@@ -264,10 +266,13 @@ class AcquireData(rts2pa.PAScript):
 
         self.takeImages(path_q, ul)
 
-        for i in range (0, ul):
+        lr=0
+        while lr < ul:
             results= result_q.get()
-            for sr in results:
-                self.logger.info('run: field center at  {0} {1} for fits image {2}'.format(ephem.degrees(sr.ra), ephem.degrees(sr.dec), sr.fn))
+            lr= len(results)
+
+        for sr in results:
+            self.logger.info('run: field center at  {0} {1} for fits image {2}'.format(sr.ra, sr.dec, sr.fn))
 
         mt.join(1.)
 
