@@ -382,9 +382,7 @@ int LX200::endPark ()
 	return 0;
 }
 
-
-int
-LX200::startDir (char *dir)
+int LX200::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -398,9 +396,7 @@ LX200::startDir (char *dir)
 	return -2;
 }
 
-
-int
-LX200::stopDir (char *dir)
+int LX200::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -413,9 +409,7 @@ LX200::stopDir (char *dir)
 	return -2;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	LX200 device = LX200 (argc, argv);
 	return device.run ();
