@@ -73,7 +73,7 @@ endif
 <!-- grab guider image -->
 <xsl:variable name="grabguide">
 	rts2-logcom "Grabing autoguider image"
-	tele grab
+	<!-- tele grab -->
 	set lllastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
 	set dir=/Realtime/guider/frames/ROBOT_`rts2-state -e %N`
 	mkdir -p $dir
@@ -88,6 +88,7 @@ endif
 	tele glev 100
 	tele autog ON
 	@ retr = 5
+	sleep 10
 	while ( $retr &gt;= 0 )
 		set gs=`tele autog ?`
 		if ( $gs == 'ON' ) then
@@ -99,14 +100,16 @@ endif
 		set isguiding=`$xmlrpc --quiet -G TELE.isguiding`
 		rts2-logcom "Autoguider started, but star still not acquired. FWHMS $fwhms SEG $guide_seg isguiding $isguiding"
 		@ retr --
+		sleep 20
 	end
 	@ nextautog = $nowdate + 1200
 	@ guideon = $nowdate + 60
+	set guide_seg=`$xmlrpc --quiet -G TELE.guide_seg`
 	if ( $retr &gt; 0 ) then
-		rts2-logcom "Successfully switched autoguider to ON"
+		rts2-logcom "Successfully switched autoguider to ON on segment $guide_seg"
 	else
 		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
-		rts2-logcom "Autoguider command failed, will try again on $textdate"
+		rts2-logcom "Autoguider command failed, will try again on $textdate; segment $guide_seg"
 	endif
 	<xsl:copy-of select="$grabguide"/>
 	rts2-logcom "Current guider image saved to $lastgrab"
@@ -263,10 +266,11 @@ if ( $continue == 1 ) then
 	ccd gowait $exposure
 	<xsl:copy-of select='$abort'/>
 	dstore
-	set fwhm2=`$xmlrpc --quiet -G IMGP.fwhm_KCAM_2`
-	set flux=`$xmlrpc --quiet -G IMGP.flux_A`
+	set fwhm2=`$RTS2/bin/rts2-json -G IMGP.fwhm_KCAM_2`
+	set flux=`$RTS2/bin/rts2-json -G IMGP.flux_A`
+	set peak=`$RTS2/bin/rts2-json -G IMGP.peak_A`
 	if ( $last_obs_id == $obs_id ) then
-		rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f' $ora_l $odec_l $fwhm2 $flux`
+		rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f MFL %.0f' $ora_l $odec_l $fwhm2 $flux $peak`
 	else
 		rts2-logcom "Exposure done; last flux " `printf '%.0f' $flux`
 	endif
@@ -396,7 +400,7 @@ end
 if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 
 if ( $last_acq_obs_id != $obs_id ) then
-	rts2-logcom "Starting acquistion/centering for observatinon with ID $obs_id"
+	rts2-logcom "Starting acquistion/centering for observation with ID $obs_id"
 	source $RTS2/bin/rts2_tele_filter i
 	object test
 	if ( $autog == 'ON' ) then
