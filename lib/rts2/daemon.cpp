@@ -91,6 +91,8 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 
 	state_start = state_expected_end = NAN;
 
+	groups = NULL;
+
 	info_time = new ValueTime (RTS2_VALUE_INFOTIME, "time of last update", false);
 
 	idleInfoInterval = -1;
@@ -1231,6 +1233,13 @@ int Daemon::setMode (int new_mode)
 	IniSection *sect = (*modeconf)[new_mode];
 
 	return setSectionValues (sect, new_mode);
+}
+
+void Daemon::addGroup (const char *groupname)
+{
+	if (groups == NULL)
+		createValue (groups, "GROUPS", "name of RTS2 groups", false);
+	groups->addValue (std::string (groupname));
 }
 
 int Daemon::setSectionValues (IniSection *sect, int new_mode)

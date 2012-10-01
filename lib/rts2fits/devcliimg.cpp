@@ -389,7 +389,7 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 		else
 		{
 			logStream (MESSAGE_ERROR) << "getData, but not all metainfo - size of images:" << images.size () << sendLog;
-			getMaster ()->addTimer (60, new rts2core::Event (EVENT_METADATA_TIMEOUT, this));
+			getMaster ()->addTimer (180, new rts2core::Event (EVENT_METADATA_TIMEOUT, this));
 			checkImages.push_back (iter->second->image);
 		}
 	}
@@ -434,6 +434,7 @@ void DevClientCameraImage::fitsData (const char *fn)
 	catch (rts2core::Error &ex)
 	{
 		logStream (MESSAGE_ERROR) << "cannot process fits_data image " << img->getAbsoluteFileName () << " " << ex << sendLog;
+		exposureFailed (-1);
 	}
 	delete data;
 

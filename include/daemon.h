@@ -562,7 +562,18 @@ class Daemon:public rts2core::Block
 
 		rts2core::ValueSelection *modesel;
 
+		/**
+		 * Add group to group list. Group values are values prefixed with 
+		 * group name, followed by '.'.
+		 *
+		 * For example if group list specify groups with names A and B, A.aa and
+		 * B.bb are group values. A_aa is not a group value.
+		 */
+		void addGroup (const char *groupname);
+
 	private:
+		rts2core::StringArray *groups;
+
 		// 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
 		enum { DONT_DAEMONIZE, DO_DAEMONIZE, IS_DAEMONIZED, CENTRALD_OK } daemonize;
 		// <= 0 - don't autorestart, > 0 - wait autorestart seconds, then restart daemon

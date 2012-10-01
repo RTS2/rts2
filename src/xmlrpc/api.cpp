@@ -19,21 +19,6 @@
  */
 
 /**
- * @page JSON JSON (Java Script Object Notation) API calls
- *
- * The <a href='http://www.json.org'>Java Script Object Notation</a> is a
- * lightweight data-interchange format. <a href='http://rts2.org'>RTS2</a>
- * provides JSON API which allows external programs to control the
- * observatories and other systems running RTS2. Calls are realized over HTTP
- * protocol as GET/POST requests, with arguments used to parametrize call.
- * Calls are handled by XMLRPCD component of the RTS2. Data returned through
- * HTTP protocol are JSON encoded data.
- *
- * In order to be able to use JSON API, \ref rts2-xmlrpcd must be installed and
- * running on your system. Its manual page, available on most systems under
- * <i>man rts2-xmlrpcd</i>, provides details needed for its configuration.
- * Those pages documents available calls.
- *
  * @section Propagation of call through RTS2.
  *
  * JSON calls need to be propagated through RTS2 system. Response to call must

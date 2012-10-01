@@ -41,6 +41,9 @@ int Configuration::getSpecialValues ()
 	// load horizon file..
 	getString ("observatory", "horizon", horizon_file, "-");
 
+	// load UT offset
+	getFloat ("observatory", "ut_offset", utOffset, observer.lng / 15.0);
+
 	getStringVector ("observatory", "required_devices", obs_requiredDevices, false);
 	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices, false);
 
@@ -138,7 +141,7 @@ time_t Configuration::getNight (int year, int month, int day)
 	_tm.tm_year = year - 1900;
 	_tm.tm_mon = month - 1;
 	_tm.tm_mday = day;
-	_tm.tm_hour = 12 - getObservatoryLongitude () / 15;
+	_tm.tm_hour = 12 - getUTOffset ();
 	_tm.tm_min = _tm.tm_sec = 0;
 #if !(defined (sun) || defined(__CYGWIN__))
 	_tm.tm_gmtoff = 0;

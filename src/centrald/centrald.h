@@ -125,8 +125,7 @@ class Centrald:public Daemon
 		 */
 		rts2core::Connection *getConnection (int conn_num);
 
-		void sendMessage (messageType_t in_messageType,
-			const char *in_messageString);
+		void sendMessage (messageType_t in_messageType, const char *in_messageString);
 
 		virtual void message (Message & msg);
 

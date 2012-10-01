@@ -1458,6 +1458,8 @@ int Camera::camStartExposure ()
 			sendValueAll (waitingForNotBop);
 		}
 
+		logStream (MESSAGE_DEBUG) << "should ask for exposure block " << (getDeviceBopState () & BOP_EXPOSURE) << " " << (getMasterStateFull () & BOP_EXPOSURE) << " " << (getDeviceBopState () & BOP_TRIG_EXPOSE) << " " << (getMasterStateFull () & BOP_TRIG_EXPOSE) << sendLog;
+
 		if (!((getDeviceBopState () & BOP_EXPOSURE) || (getMasterStateFull () & BOP_EXPOSURE)) && ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
 			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", NAN, NAN, exposureConn);
 

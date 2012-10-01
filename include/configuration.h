@@ -37,7 +37,7 @@ namespace rts2core
 
 /**
  * Represent full Config class, which includes support for Libnova types and
- * holds some special values. The phylosophy behind this class is to allow
+ * holds some special values. The philosophy behind this class is to allow
  * quick access, without need to parse configuration file or to search for
  * configuration file string entries. Each value in configuration file should
  * be mapped to apporpriate privat member variable of this class, and public
@@ -77,10 +77,7 @@ class Configuration:public IniParser
 		/**
 		 * Returns airmass callibration distance, which is used for callibartion observations.
 		 */
-		double getCalibrationAirmassDistance ()
-		{
-			return calibrationAirmassDistance;
-		}
+		double getCalibrationAirmassDistance () { return calibrationAirmassDistance; }
 
 		/**
 		 * Returns min flux of the device, usefull when taking flat frames.
@@ -92,10 +89,7 @@ class Configuration:public IniParser
 		 *
 		 * @return Number of seconds of the timeout.
 		 */
-		int getAstrometryTimeout ()
-		{
-			return astrometryTimeout;
-		}
+		int getAstrometryTimeout () { return astrometryTimeout; }
 
 		/**
 		 * Return observing processing timeout.
@@ -104,40 +98,28 @@ class Configuration:public IniParser
 		 *
 		 * @return number of seconds for timeout.
 		 */
-		int getObsProcessTimeout ()
-		{
-			return astrometryTimeout;
-		}
+		int getObsProcessTimeout () { return astrometryTimeout; }
 
 		/**
 		 * Returns number of seconds for dark processing timeout.
 		 *
 		 * @see Configuration::getAstrometryTimeout()
 		 */
-		int getDarkProcessTimeout ()
-		{
-			return astrometryTimeout;
-		}
+		int getDarkProcessTimeout () { return astrometryTimeout; }
 
 		/**
 		 * Returns number of seconds for flat processing timeout.
 		 *
 		 * @see Configuration::getAstrometryTimeout
 		 */
-		int getFlatProcessTimeout ()
-		{
-			return astrometryTimeout;
-		}
+		int getFlatProcessTimeout () { return astrometryTimeout; }
 
 		/**
 		 * Returns minimal heigh for flat observations.
 		 *
 		 * @return Minmal flat heigh.
 		 */
-		double getMinFlatHeigh ()
-		{
-			return minFlatHeigh;
-		}
+		double getMinFlatHeigh () { return minFlatHeigh; }
 
 		/**
 		 * Returns minimal lunar distance for calibration targets. It's recorded in
@@ -145,10 +127,7 @@ class Configuration:public IniParser
 		 *
 		 * @return Separation in degrees.
 		 */
-		double getCalibrationLunarDist ()
-		{
-			return calibrationLunarDist;
-		}
+		double getCalibrationLunarDist () { return calibrationLunarDist; }
 
 		/**
 		 * Calibration valid time. If we take at given airmass range image
@@ -157,10 +136,7 @@ class Configuration:public IniParser
 		 *
 		 * @return Time in seconds for which calibration observation is valid.
 		 */
-		int getCalibrationValidTime ()
-		{
-			return calibrationValidTime;
-		}
+		int getCalibrationValidTime () { return calibrationValidTime; }
 
 		/**
 		 * Calibration maximal time in seconds. After that time, calibration
@@ -171,26 +147,17 @@ class Configuration:public IniParser
 		 *
 		 * @return Time in seconds.
 		 */
-		int getCalibrationMaxDelay ()
-		{
-			return calibrationMaxDelay;
-		}
+		int getCalibrationMaxDelay () { return calibrationMaxDelay; }
 
 		/**
 		 * Calibration minimal bonus. Calibration bonus will not be lower then this value. Default to 1.
 		 */
-		float getCalibrationMinBonus ()
-		{
-			return calibrationMinBonus;
-		}
+		float getCalibrationMinBonus () { return calibrationMinBonus; }
 
 		/**
 		 * Calibration maximal bonus. Calibration bonus will not be greater then this value. Default to 300.
 		 */
-		float getCalibrationMaxBonus ()
-		{
-			return calibrationMaxBonus;
-		}
+		float getCalibrationMaxBonus () { return calibrationMaxBonus; }
 
 		/**
 		 * Returns observer coordinates. Those are recored in configuration file.
@@ -209,12 +176,17 @@ class Configuration:public IniParser
 		const double getObservatoryLongitude ()	{ return getObserver ()->lng; }
 
 		/**
+		 * Returns observatory UT offset. The offset is used for
+		 * calculation of time dividing two consecutive nights. If
+		 * current time is after 12 + UT offset, then the night is current local day. If
+		 * current time is before 12 + UT offset, then the night is preceeding local day.
+		 */
+		const float getUTOffset () { return utOffset; }
+
+		/**
 		 * Return observatory altitude.
 		 */
-		const double getObservatoryAltitude ()
-		{
-			return observatoryAltitude;
-		}
+		const double getObservatoryAltitude () { return observatoryAltitude; }
 
 		ObjectCheck *getObjectChecker ();
 
@@ -225,10 +197,7 @@ class Configuration:public IniParser
 		 *
 		 * @callergraph
 		 */
-		const float getSwiftMinHorizon ()
-		{
-			return swift_min_horizon;
-		}
+		const float getSwiftMinHorizon () { return swift_min_horizon; }
 
 		/**
 		 * Returns Swift soft horizon. Swift target, which was selected (because it
@@ -237,10 +206,7 @@ class Configuration:public IniParser
 		 *
 		 * @callergraph
 		 */
-		const float getSwiftSoftHorizon ()
-		{
-			return swift_soft_horizon;
-		}
+		const float getSwiftSoftHorizon () { return swift_soft_horizon; }
 
 		/**
 		 * If burst which is shown as know transient source and invalid
@@ -249,18 +215,12 @@ class Configuration:public IniParser
 		 * @return True if know sources and invalid GRBs should be
 		 * followed.
 		 */
-		const bool grbdFollowTransients ()
-		{
-			return grbd_follow_transients;
-		}
+		const bool grbdFollowTransients () { return grbd_follow_transients; }
 
 		/**
 		 * Duration for which GRB observation will be followed.
 		 */
-		const int grbdValidity ()
-		{
-			return grbd_validity;
-		}
+		const int grbdValidity () { return grbd_validity; }
 
 		/**
 		 * Get names of devices which are necessary for system
@@ -270,11 +230,7 @@ class Configuration:public IniParser
 		 *
 		 * @return List of devices.
 		 */
-		std::vector <std::string> observatoryRequiredDevices ()
-		{
-			return obs_requiredDevices;
-		}
-
+		std::vector <std::string> observatoryRequiredDevices () { return obs_requiredDevices; }
 
 		/**
 		 * Get names of devices which shall be ignored for astrometry
@@ -282,11 +238,7 @@ class Configuration:public IniParser
 		 *
 		 * @return List of device names, which shall be ignored.
 		 */
-		std::vector <std::string> imgprocAstrometryDevices ()
-		{
-			return imgproc_astrometryDevices;
-		}
-
+		std::vector <std::string> imgprocAstrometryDevices () { return imgproc_astrometryDevices; }
 
 		/**
 		 * Returns false if astrometry from this device should be ignored
@@ -306,76 +258,49 @@ class Configuration:public IniParser
 		 *
 		 * @return observatory base path
 		 */
-		std::string observatoryBasePath ()
-		{
-			return obs_basePath;
-		}
-
+		std::string observatoryBasePath () { return obs_basePath; }
 
 		/**
 		 * Return extension pattern for que images.
 		 *
 		 * @return Extension pattern (observatory/que_path entry in config file)
 		 */
-		std::string observatoryQuePath ()
-		{
-			return obs_quePath;
-		}
-
+		std::string observatoryQuePath () { return obs_quePath; }
 
 		/**
 		 * Return extension pattern for acqusition images.
 		 *
 		 * @return Extension pattern (observatory/acq_path entry in config file).
 		 */
-		std::string observatoryAcqPath ()
-		{
-			return obs_acqPath;
-		}
-
+		std::string observatoryAcqPath () { return obs_acqPath; }
 
 		/**
 		 * Return extension pattern for archive images.
 		 *
 		 * @return Extension pattern (observatory/archive_path entry in config file).
 		 */
-		std::string observatoryArchivePath ()
-		{
-			return obs_archive;
-		}
-
+		std::string observatoryArchivePath () { return obs_archive; }
 
 		/**
 		 * Return extension pattern for trash images.
 		 *
 		 * @return Extension pattern (observatory/trash_path entry in config file).
 		 */
-		std::string observatoryTrashPath ()
-		{
-			return obs_trash;
-		}
-
+		std::string observatoryTrashPath () { return obs_trash; }
 
 		/**
 		 * Return extension pattern for flat images.
 		 *
 		 * @return Extension pattern (observatory/flat_path entry in config file).
 		 */
-		std::string observatoryFlatPath ()
-		{
-			return obs_flats;
-		}
-
+		std::string observatoryFlatPath () { return obs_flats; }
 
 		/**
 		 * Return extension pattern for dark images.
 		 *
 		 * @return Extension pattern (observatory/dark_path entry in config file).
 		 */
-		std::string observatoryDarkPath ()
-		{
-			return obs_darks;
-		}
+		std::string observatoryDarkPath () { return obs_darks; }
 
 		/**
 		 * Returns vector of environment variables, which shall be recorded in FITS header.
@@ -402,16 +327,16 @@ class Configuration:public IniParser
 		 */
 		time_t getNight (time_t _in)
 		{
-			return _in + time_t (Configuration::instance ()->getObservatoryLongitude () * (86400.0 / 360.0) - 86400 / 2);
+			return _in + time_t (Configuration::instance ()->getUTOffset () * (15.0 * 86400.0 / 360.0) - 86400 / 2);
 		}
 
 		/**
 		 * Returns begining time in "night" time. Night time starts
 		 * around noon on given day and run till next day noon.
 		 *
-		 * @param year  Year for which night will be calculated.
-		 * @param month Month for which night will be calculated.
-		 * @param day   Day for which night will be calculated.
+		 * @param year  Year for which night will be calculated (2000+).
+		 * @param month Month for which night will be calculated (1-12).
+		 * @param day   Day for which night will be calculated (1-31).
 		 *
 		 * @return Time of night start - UT midi of day on which night starts.
 		 */
@@ -429,6 +354,7 @@ class Configuration:public IniParser
 	private:
 		static Configuration *pInstance;
 		struct ln_lnlat_posn observer;
+		float utOffset;
 		double observatoryAltitude;
 		bool storeSexadecimals;
 		ObjectCheck *checker;

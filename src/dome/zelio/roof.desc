@@ -72,14 +72,14 @@ The programme has the following characteristics:
     It is reseted by pressing emergency stop or power cycling the unit.
 
   * **Q9** is extra switch, used for all-sky power cycle (1 - power to all sky
-    cut), controlled by J2XT1 - see bellow.
+    cut), controlled by J2XT1 - see below.
 
   When it is 1:
 
   * **Q7** is engaged in emergency situation - e.g. when timeout is detected.
     It is reseted by pressing emergency stop or power cycling the unit.
 
-  * **Q8,Q9,QA** are extra outputs, controlled by J2XT1 - see bellow.
+  * **Q8,Q9,QA** are extra outputs, controlled by J2XT1 - see below.
 
 ===== Ethernet inputs ======
 
