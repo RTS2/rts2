@@ -61,6 +61,8 @@ using namespace rts2filterd;
 int Ifw::homeFilter ()
 {
 	int ret;
+	ifwConn->flushPortIO ();
+
 	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 6, '\r');
 	if (ret == -1)
 		return ret;
