@@ -48,6 +48,8 @@ class Arduino:public Sensor
 		rts2core::ValueBool *decHome;
 		rts2core::ValueBool *raHome;
 		rts2core::ValueBool *raLimit;
+		rts2core::ValueBool *mountPowered;
+		rts2core::ValueBool *mountProtected;
 
 		rts2core::ValueFloat *a1_x;
 		rts2core::ValueFloat *a1_y;
@@ -56,6 +58,10 @@ class Arduino:public Sensor
 		rts2core::ValueFloat *a2_x;
 		rts2core::ValueFloat *a2_y;
 		rts2core::ValueFloat *a2_z;
+
+		rts2core::ValueFloat *cwa;
+		rts2core::ValueFloat *zenithAngle;
+		rts2core::ValueInteger *zenithCounter;
 };
 
 }
@@ -70,6 +76,8 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	createValue (decHome, "DEC_HOME", "DEC axis home sensor", false, RTS2_DT_ONOFF);
 	createValue (raHome, "RA_HOME", "RA axis home sensor", false, RTS2_DT_ONOFF);
 	createValue (raLimit, "RA_LIMIT", "RA limit switch", false, RTS2_DT_ONOFF);
+	createValue (mountPowered, "MOUNT_POWER", "mount powered", false, RTS2_DT_ONOFF);
+	createValue (mountProtected, "MOUNT_PROTECTED", "mount protected", false);
 
 	createValue (a1_x, "RA_X", "RA accelometer X", false);
 	createValue (a1_y, "RA_Y", "RA accelometer Y", false);
@@ -78,6 +86,10 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	createValue (a2_x, "DEC_X", "DEC accelometer X", false);
 	createValue (a2_y, "DEC_Y", "DEC accelometer Y", false);
 	createValue (a2_z, "DEC_Z", "DEC accelometer Z", false);
+
+	createValue (cwa, "CWA", "counter weight angle", true);
+	createValue (zenithAngle, "ZENITH_ANGLE", "calculated zenith angle", true);
+	createValue (zenithCounter, "ZENITH_COUNTER", "counter of zenith passes", true);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for Arduino USB serial connection)");
 
@@ -125,13 +137,15 @@ int Arduino::init ()
 		return -1;
 	}
 
-	arduinoConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 10);
+	arduinoConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
 	ret = arduinoConn->init ();
 	if (ret)
 		return ret;
+
+	sleep (1);
 	
 	arduinoConn->flushPortIO ();
-	arduinoConn->setDebug (false);
+	arduinoConn->setDebug (getDebug ());
 
 	return 0;
 }
@@ -143,10 +157,10 @@ int Arduino::info ()
 	if (ret < 0)
 		return -1;
 
-	int i;
-	double a0,a1,a2,a3,a4,a5;
+	int i,zc;
+	double a0,a1,a2,a3,a4,a5,c,za;
 
-	if (sscanf (buf, "%d %lf %lf %lf %lf %lf %lf", &i, &a0, &a1, &a2, &a3, &a4, &a5) != 7)
+	if (sscanf (buf, "%d %lf %lf %lf %lf %lf %lf %lf %lf %d", &i, &a0, &a1, &a2, &a3, &a4, &a5, &c, &za, &zc) != 10)
 	{
 		buf[ret] = '\0';
 		logStream (MESSAGE_ERROR) << "invalid reply from arudiono: " << buf << sendLog;
@@ -157,6 +171,9 @@ int Arduino::info ()
 	raHome->setValueBool (i & 0x02);
 	decHome->setValueBool (i & 0x01);
 
+	mountPowered->setValueBool (i & 0x08);
+	mountProtected->setValueBool (i & 0x10);
+
 #define V_TO_G   1
 
 	a1_x->setValueFloat (a0 * V_TO_G);
@@ -166,6 +183,10 @@ int Arduino::info ()
 	a2_x->setValueFloat (a3 * V_TO_G);
 	a2_y->setValueFloat (a4 * V_TO_G);
 	a2_z->setValueFloat (a5 * V_TO_G);
+
+	cwa->setValueFloat (c);
+	zenithAngle->setValueFloat (za);
+	zenithCounter->setValueInteger (zc);
 
 	if (raLimit->getValueBool ())
 		setStopState (true, "RA axis beyond limits");
