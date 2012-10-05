@@ -2008,7 +2008,11 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 				if (rts2core::Configuration::instance ()->getStoreSexadecimals ())
 				{
 					std::ostringstream _ra;
-					_ra << LibnovaRa (((rts2core::ValueRaDec *) val)->getRa ());
+					if (val->getValueDisplayType () == RTS2_DT_DEG_DIST_180)
+						// this is to record distance in degrees, not as Ra HMS
+						_ra << LibnovaDec (((rts2core::ValueRaDec *) val)->getRa ());
+					else
+						_ra << LibnovaRa (((rts2core::ValueRaDec *) val)->getRa ());
 					setValue (v_name, _ra.str ().c_str (), v_desc);
 				}
 				else
