@@ -702,6 +702,7 @@ int Zelio::init ()
 			zelioModelString->setValueString ("ZELIO_BOOTES3");
 			break;
 		case ZS_COMPRESSOR | ZS_FRAM:
+		case ZS_COMPRESSOR | ZS_FRAM | ZS_3RELAYS:
 			zelioModel = ZELIO_FRAM;
 			haveBatteryLevel = true;
 			zelioModelString->setValueString ("ZELIO_FRAM");
