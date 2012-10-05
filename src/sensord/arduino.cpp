@@ -90,7 +90,7 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	createValue (a2_z, "DEC_Z", "DEC accelometer Z", false);
 
 	createValue (cwa, "CWA", "counter weight angle", true);
-	createValue (zenithAngle, "ZENITH_ANGLE", "calculated zenith angle", true);
+	createValue (zenithAngle, "ZENITH_ANGLE", "calculated zenith angle", true, RTS2_DT_DEGREES);
 	createValue (zenithCounter, "ZENITH_COUNTER", "counter of zenith passes", true);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for Arduino USB serial connection)");
@@ -176,18 +176,16 @@ int Arduino::info ()
 	mountPowered->setValueBool (i & 0x08);
 	mountProtected->setValueBool (i & 0x10);
 
-#define V_TO_G   1
+	a1_x->setValueFloat (a0);
+	a1_y->setValueFloat (a1);
+	a1_z->setValueFloat (a2);
 
-	a1_x->setValueFloat (a0 * V_TO_G);
-	a1_y->setValueFloat (a1 * V_TO_G);
-	a1_z->setValueFloat (a2 * V_TO_G);
-
-	a2_x->setValueFloat (a3 * V_TO_G);
-	a2_y->setValueFloat (a4 * V_TO_G);
-	a2_z->setValueFloat (a5 * V_TO_G);
+	a2_x->setValueFloat (a3);
+	a2_y->setValueFloat (a4);
+	a2_z->setValueFloat (a5);
 
 	cwa->setValueFloat (c);
-	zenithAngle->setValueFloat (za);
+	zenithAngle->setValueFloat (ln_rad_to_deg (za));
 	zenithCounter->setValueInteger (zc);
 
 	if (raLimit->getValueBool ())
