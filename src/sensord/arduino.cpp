@@ -41,6 +41,8 @@ class Arduino:public Sensor
 		virtual int init ();
 		virtual int info ();
 
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 	private:
 		char *device_file;
 		rts2core::ConnSerial *arduinoConn;
@@ -77,7 +79,7 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	createValue (raHome, "RA_HOME", "RA axis home sensor", false, RTS2_DT_ONOFF);
 	createValue (raLimit, "RA_LIMIT", "RA limit switch", false, RTS2_DT_ONOFF);
 	createValue (mountPowered, "MOUNT_POWER", "mount powered", false, RTS2_DT_ONOFF);
-	createValue (mountProtected, "MOUNT_PROTECTED", "mount protected", false);
+	createValue (mountProtected, "MOUNT_PROTECTED", "mount protected", false, RTS2_VALUE_WRITABLE);
 
 	createValue (a1_x, "RA_X", "RA accelometer X", false);
 	createValue (a1_y, "RA_Y", "RA accelometer Y", false);
@@ -192,6 +194,15 @@ int Arduino::info ()
 		setStopState (true, "RA axis beyond limits");
 
 	return Sensor::info ();
+}
+
+int Arduino::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == mountProtected)
+	{
+		arduinoConn->writePort (((rts2core::ValueBool *) newValue)->getValueBool () ? 'A' : '_');
+	}
+	return rts2sensord::Sensor::setValue (oldValue, newValue);
 }
 
 int main (int argc, char **argv)
