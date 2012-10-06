@@ -251,11 +251,11 @@ class AcquireData(rts2pa.PAScript):
     def run(self):
         """Set up thread MeasurementThread and start image tacking"""
 
+        self.setMount()
         path_q = Queue.Queue()
         result_q = Queue.Queue()
         mt= MeasurementThread( path_q, result_q, self.rtc, self.logger) 
         mt.start()
-        self.setMount()
 
         try:
             ul= 1+ int(self.rtc.cp.getfloat('data_taking','DURATION')/self.rtc.cp.getfloat('data_taking','SLEEP'))
@@ -264,6 +264,7 @@ class AcquireData(rts2pa.PAScript):
         except:
             self.logger.debug('run: sleep must not be zero: {0}'.format(self.rtc.cp.getfloat('data_taking', 'SLEEP')))
 
+        time.sleep(120)
         self.takeImages(path_q, ul)
 
         lr=0
@@ -272,8 +273,11 @@ class AcquireData(rts2pa.PAScript):
             lr= len(results)
 
         for sr in results:
-            self.logger.info('run: field center at  {0} {1} for fits image {2}'.format(sr.ra, sr.dec, sr.fn))
-
+            try:
+                self.logger.info('run: field center at {0} {1} for fits image {2}'.format(sr.ra, sr.dec, sr.fn))
+            except:
+                pass # error messages indication that thread has a problem already logged to file
+                
         mt.join(1.)
 
 
