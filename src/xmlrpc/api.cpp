@@ -1225,6 +1225,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 			os << "]";
 		}
+#ifdef RTS2_HAVE_PGSQL
 		else if (vals[0] == "auger")
 		{
 			int a_id = params->getInteger ("id", -1);
@@ -1327,6 +1328,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 			os << "]";
 		}
+#endif // RTS2_HAVE_PGSQL
 		else
 		{
 			throw JSONException ("invalid request " + path);
