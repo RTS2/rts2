@@ -84,7 +84,7 @@
       sequence. This specifies that observations should be carried either
       before 8th August 2010 14:13:13 UT, or between 10th August 2010 14:15:16
       and 8th November 2010 11:12:13 UT, with airmas >= 2.0 and hour angle
-      between -2 hours and +2hours (e.g. four hours around object transit
+      within [-2,2] hours corresponding to [-30,30] degrees (e.g. four hours around object transit
       time). The object will be also observed for 10 times. If the object was
       already observed 10 times, it will not be observed again.
       <programlisting>
@@ -106,8 +106,8 @@
         </airmass>
         <HA>
                 <interval>
-                        <lower>-2</lower>
-                        <upper>2</upper>
+                        <lower>-30</lower>
+                        <upper>30</upper>
                 </interval>
         </HA>
 	<maxRepeats>10</maxRepeats>
@@ -177,7 +177,7 @@
         <term>HA</term>
 	<listitem>
 	  <para>
-	    Allowed hour angle. Hour angle 0 is at local meridian (e.g. when
+	    Allowed hour angle in units of degrees [0, +/-360]. Hour angle 0 is at local meridian (e.g. when
 	    the object is at the highest altitude). Both negative and positive
 	    values can be used to specify the constraint.
 	  </para>
