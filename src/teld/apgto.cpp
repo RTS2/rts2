@@ -175,7 +175,6 @@ class APGTO:public TelLX200 {
          	// RTS2 counts positive to the East, AP positive to the West
                 rts2core::ValueDouble  *APlongitude;
                 rts2core::ValueDouble  *APlatitude;
-                rts2core::ValueAltAz   *APAltAz ;
 
                 void set_move_timeout (time_t plus_time);
                 time_t move_timeout;
@@ -1344,9 +1343,8 @@ int APGTO::startPark ()
 
   notMoveCupola() ;
   double park_ra= fmod(localSiderealTime()+ PARK_POSITION_RA, 360.);
-  //logStream (MESSAGE_DEBUG) <<"APGTO::startPark "<< park_ra<<  sendLog;
+  logStream (MESSAGE_DEBUG) <<"APGTO::startPark "<< park_ra<<  sendLog;
   setTarget ( park_ra, PARK_POSITION_DEC);
-  //startCupolaSync() ;
   return startResync ();
 }
 
@@ -1720,11 +1718,11 @@ int APGTO::info ()
 	      logStream (MESSAGE_WARNING) << "APGTO::info collision detected (East)" << sendLog ;
 	    }
 	  } else {
-	    if( APAltAz->getAlt() < 10.) {
-	      if( tracking->getValueBool()) {
-		stop= 1 ;
-		notMoveCupola() ;
-		logStream (MESSAGE_WARNING) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
+	     if( telAltAz->getAlt() < 10.) {
+	       if( tracking->getValueBool()) {
+	   	stop= 1 ;
+	   	notMoveCupola() ;
+	   	logStream (MESSAGE_WARNING) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
 	      }
 	    }
 	  }
@@ -2143,6 +2141,7 @@ int APGTO::initValues ()
         // mount is not at this position assume that position is
         // undefined or incorrect. A visual check is required.
 
+	int block= 1 ;
 	if( assume_parked->getValueBool()) {
 
            struct ln_equ_posn object;
@@ -2162,29 +2161,30 @@ int APGTO::initValues ()
            }
 
            double diff_dec= fabs(( park_position.dec- object.dec));
-           int block= 0 ;
            if(( diff_ra < PARK_POSITION_DIFFERENCE_MAX) && ( diff_dec < PARK_POSITION_DIFFERENCE_MAX)) {
               if( !( strcmp( PARK_POSITION_ANGLE, DECaxis_HAcoordinate->getValue()))) {
-	      // ok
-              } else {
-	         block= 1 ;
+		// ok
+		block= 0 ;
               }
-           } else {
-              block= 1 ;
-           }
-           if( block) {
-	     trackingRate->setValueInteger (0);
+	   }
+	   if( block) {
+	   logStream (MESSAGE_WARNING) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << " dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
+	   }
+        } 
+	if( block) {
+	  trackingRate->setValueInteger (0);
+	  
+	  block_sync_apgto->setValueBool(true) ;
+	  block_move_apgto->setValueBool(true) ;
+	  logStream (MESSAGE_WARNING) << "APGTO::initValues blocked any sync and slew opertion" << sendLog;
+	} 
 
-              block_sync_apgto->setValueBool(true) ;
-              block_move_apgto->setValueBool(true) ;
-              logStream (MESSAGE_WARNING) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << " dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
-           } 
-        }
         if(( ret= setAPTrackingMode()) < 0 ) { 
 	  logStream (MESSAGE_WARNING) << "APGTO::initValues setting tracking mode:"  << trackingRate->getData() << " failed." << sendLog;
            return -1;
         }
 	//exit(1) ;
+	  logStream (MESSAGE_ERROR) << "APGTO::initValues entering TelLX200::initValues ():"   << sendLog;
 	return TelLX200::initValues ();
 }
 
