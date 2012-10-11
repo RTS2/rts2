@@ -844,7 +844,7 @@ void TargetInfo::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		}
 
 		retVar["HOUR"] = tar->getHourAngle (JD);
-		tar->sendInfo (xs, JD);
+		tar->sendInfo (xs, JD, 0);
 		result[i++] = retVar;
 	}
 }

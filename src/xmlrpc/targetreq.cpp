@@ -786,7 +786,7 @@ void Targets::printTargetInfo (rts2db::Target *tar, const char* &response_type, 
 
 	double JD = ln_get_julian_from_sys ();
 	Rts2InfoValOStream ivos (&_os);
-	tar->sendInfo (ivos, JD);
+	tar->sendInfo (ivos, JD, 0);
 
 	_os << "</pre>";
 	
