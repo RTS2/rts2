@@ -605,9 +605,9 @@ class Target:public Rts2Target
 		 * @param _os stream to print that
 		 * @param JD date for which to print info
 		 */
-		virtual void sendPositionInfo (Rts2InfoValStream & _os, double JD);
-		void sendInfo (Rts2InfoValStream & _os) { sendInfo (_os, ln_get_julian_from_sys ()); }
-		virtual void sendInfo (Rts2InfoValStream & _os, double JD);
+		virtual void sendPositionInfo (Rts2InfoValStream & _os, double JD, int extended);
+		void sendInfo (Rts2InfoValStream & _os) { sendInfo (_os, ln_get_julian_from_sys (), 0); }
+		void sendInfo (Rts2InfoValStream & _os, double JD, int extended);
 
 		/**
 		 * Print constraints.
@@ -701,6 +701,11 @@ class Target:public Rts2Target
 		 * @param JD    Date for which metadata will be written.
 		 */
 		virtual void writeToImage (rts2image::Image * image, double JD);
+
+		/**
+		 * Return target error box (in degrees).
+		 */
+		virtual double getErrorBox () { return NAN; }
 
 
 		/**

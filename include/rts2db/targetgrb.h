@@ -72,7 +72,7 @@ class TargetGRB:public ConstTarget
 
 		virtual void writeToImage (rts2image::Image * image, double JD);
 
-		double getErrorBox () { return errorbox; }
+		virtual double getErrorBox () { return errorbox; }
 
 	protected:
 		virtual void getDBScript (const char *camera_name, std::string & script);
