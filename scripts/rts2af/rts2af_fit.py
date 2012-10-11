@@ -35,6 +35,10 @@ __author__ = 'markus.wildi@one-arcsec.org'
 
 
 import sys
+# see http://stackoverflow.com/questions/2801882/generating-a-png-with-matplotlib-when-display-is-undefined
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize
