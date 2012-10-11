@@ -99,135 +99,43 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 		old_settings = _os.flags ();
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		
-		_os << "H   ";
-
-		char old_fill = _os.fill ('0');
-		for (i = h_start; i <= h_end; i+=h_step)
-		{
-			_os << "  " << std::setw (2) << i;
-		}
-		_os.fill (old_fill);
-		_os << std::endl;
-	}
-
-	// print alt + az + airmass or bonus
-	std::ostringstream _os2;
-	std::ostringstream _os3;
-
-	if (header)
-	{
-		_os << "ALT ";
-		_os2 << "AZ  ";
-		_os2.precision (0);
-		_os2.setf (std::ios_base::fixed, std::ios_base::floatfield);
-		_os3 << "AIR ";
-		_os3.precision (1);
-		_os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		_os << " H ALT  AZ HA  AIR  LD  SD SAL SAZ LAL LAZ" << std::endl;
 	}
 
 	jd = jd_start;
 	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
 	{
 		getAltAz (&hrz, jd);
-		_os << " " << std::setw (3) << hrz.alt;
-		_os2 << " " << std::setw (3) << hrz.az;
+		char old_fill = _os.fill ('0');
+		_os << std::setw (2) << i << " ";
+		_os.fill (old_fill);
+		_os << std::setw (3) << hrz.alt << " " << std::setw (3) << hrz.az << " " << std::setw (3) << (getHourAngle (jd)  / 15.0) << " ";
+
+		_os.precision (2);
 		if (header)
 		{
-			_os3 << " ";
-			writeAirmass (_os3, jd);
+			writeAirmass (_os, jd);
 		}
 		else
 		{
-			_os3 << " " << getBonus (jd);
+			_os << getBonus (jd);
 		}
-	}
-	if (header)
-	{
-		_os
-			<< std::endl
-			<< _os2.str ()
-			<< std::endl
-			<< _os3.str ()
-			<< std::endl;
-	}
-	else
-	{
-		_os << _os2.str () << _os3.str ();
-		return;
-	}
+		_os.precision (0);
 
-	// print lunar distances and airmass
-	if (header)
-	{
-		_os << "LD  ";
-	}
-	jd = jd_start;
-	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
-	{
-		_os << " " << std::setw(3) << getLunarDistance (jd);
-	}
-	if (header)
-	{
-		_os << std::endl;
-	}
-
-	// print solar distance
-	if (header)
-	{
-		_os << "SD  ";
-	}
-	jd = jd_start;
-	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
-	{
-		_os << " " << std::setw(3) << getSolarDistance (jd);
-	}
-	if (header)
-	{
-		_os << std::endl;
-	}
-
-	// print sun position
-	std::ostringstream _os4, os_lal, os_laz;
-	
-	// lunar position
-
-	if (header)
-	{
-		_os << "SAL ";
-		_os4 << "SAZ ";
-		_os4.precision (0);
-		_os4.setf (std::ios_base::fixed, std::ios_base::floatfield);
-
-		os_lal << "LAL ";
-		os_laz << "LAZ ";
-		os_lal.precision (0);
-		os_lal.setf (std::ios_base::fixed, std::ios_base::floatfield);
-		os_laz.precision (0);
-		os_laz.setf (std::ios_base::fixed, std::ios_base::floatfield);
-
-	}
-
-	jd = jd_start;
-	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
-	{
 		ln_get_solar_equ_coords (jd, &pos);
 		ln_get_hrz_from_equ (&pos, getObserver (), jd, &hrz);
-		_os << " " << std::setw (3) << hrz.alt;
-		_os4 << " " << std::setw (3) << hrz.az;
+
+		_os << " " << std::setw(3) << getLunarDistance (jd)
+			<< " " << std::setw(3) << getSolarDistance (jd)
+			<< " " << std::setw(3) << hrz.alt
+			<< " " << std::setw(3) << hrz.az;
 
 		ln_get_lunar_equ_coords (jd, &pos);
 		ln_get_hrz_from_equ (&pos, getObserver (), jd, &hrz);
-		os_lal << " " << std::setw (3) << hrz.alt;
-		os_laz << " " << std::setw (3) << hrz.az;
-	}
+		_os << " " << std::setw (3) << hrz.alt
+			<< " " << std::setw (3) << hrz.az;
 
-	if (header)
-	{
-		_os << std::endl << _os4.str () << std::endl << os_lal.str () << std::endl << os_laz.str () << std::endl;
-	}
-	else
-	{
-		_os << _os4.str () << os_lal.str () << os_laz.str ();
+		_os << std::endl;
 	}
 
 	if (header)
@@ -248,9 +156,7 @@ void Target::printAltTable (std::ostream & _os, double JD)
 		<< std::endl
 		<< std::endl;
 
-	printAltTable (_os, jd_start, -1, 11);
-	_os << std::endl;
-	printAltTable (_os, jd_start, 12, 24);
+	printAltTable (_os, jd_start, -1, 24);
 }
 
 void Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step)
@@ -1863,7 +1769,7 @@ Target *createTargetByName (const char *tar_name, struct ln_lnlat_posn * obs)
 	return NULL;
 }
 
-void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
+void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD, int extended)
 {
 	struct ln_hrz_posn hrz;
 	struct ln_gal_posn gal;
@@ -1973,7 +1879,7 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 			}
 	}
 
-	if (_os.getStream ())
+	if (_os.getStream () && extended > 1)
 		printAltTable (*(_os.getStream ()), JD);
 
 	ConstraintsList violated;
@@ -2023,7 +1929,7 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< std::endl;
 }
 
-void Target::sendInfo (Rts2InfoValStream & _os, double JD)
+void Target::sendInfo (Rts2InfoValStream & _os, double JD, int extended)
 {
 	struct ln_equ_posn pos;
 	double gst;
@@ -2051,7 +1957,7 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<LibnovaDecJ2000> ("DEC", LibnovaDecJ2000 (pos.dec))
 		<< std::endl;
 
-	sendPositionInfo (_os, JD);
+	sendPositionInfo (_os, JD, extended);
 
 	last = now - 86400;
 	_os

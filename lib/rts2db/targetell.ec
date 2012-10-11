@@ -136,6 +136,15 @@ void EllTarget::writeToImage (rts2image::Image * image, double JD)
 	image->setValue ("ELL_PERI", orbit.w, "perihelium parameter");
 	image->setValue ("ELL_NODE", orbit.omega, "node angle");
 	image->setValue ("ELL_INCL", orbit.i, "orbit inclination");
+
+	image->setValue ("EARTH_DISTANCE", getEarthDistance (JD), "Earth distance (in AU)");
+	image->setValue ("SOLAR_DISTANCE", getSolarDistance (JD), "Solar distance (in AU)");
+
+	struct ln_equ_posn pos, parallax;
+	getPosition (&pos, JD, &parallax);
+
+	image->setValue ("PARALLAX_RA", parallax.ra, "RA parallax");
+	image->setValue ("PARALLAX_RA", parallax.dec, "DEC parallax");
 }
 
 double EllTarget::getEarthDistance (double JD)
