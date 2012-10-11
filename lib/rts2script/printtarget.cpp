@@ -359,7 +359,7 @@ void PrintTarget::printTarget (rts2db::Target *target)
 					break;
 				default:
 					Rts2InfoValOStream ivos (&std::cout);
-					target->sendInfo (ivos, JD);
+					target->sendInfo (ivos, JD, printExtended);
 					// print constraints..
 					if (printExtended > 1)
 					{
@@ -374,7 +374,7 @@ void PrintTarget::printTarget (rts2db::Target *target)
 	
 							std::cout << "==================================" << std::
 								endl << "Date: " << LibnovaDate (JD) << std::endl;
-							target->sendPositionInfo (ivos, JD);
+							target->sendPositionInfo (ivos, JD, printExtended);
 						}
 					}
 					printScripts (target, "script for camera ");
