@@ -34,25 +34,6 @@ Directory::Directory (const char* prefix, const char *_dirPath, const char *_def
 	responseTypes["css"] = "text/css";
 }
 
-void parseFd (int f, char * &response, size_t &response_length)
-{
-	xmlDoc *doc = NULL;
-	xmlNodePtr root_element = NULL;
-	doc = xmlReadFd (f, NULL, NULL, XML_PARSE_NOBLANKS);
-	if (doc == NULL)
-		throw XmlRpcException ("cannot parse RTS2 file");
-	root_element = xmlDocGetRootElement (doc);
-
-	ExpandStrings rts2file (((XmlRpcd *) getMasterApp ()) -> getPagePrefix ());
-	rts2file.expandXML (root_element, "centrald", true);
-	
-	std::string es = rts2file.getString ();
-
-	response_length = es.length ();
-	response = new char[response_length];
-	memcpy (response, es.c_str (), response_length);
-}
-
 void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
@@ -168,4 +149,23 @@ void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 	response_length = _os.str ().length ();
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void Directory::parseFd (int f, char * &response, size_t &response_length)
+{
+	xmlDoc *doc = NULL;
+	xmlNodePtr root_element = NULL;
+	doc = xmlReadFd (f, NULL, NULL, XML_PARSE_NOBLANKS);
+	if (doc == NULL)
+		throw XmlRpcException ("cannot parse RTS2 file");
+	root_element = xmlDocGetRootElement (doc);
+
+	ExpandStrings rts2file (((XmlRpcd *) getMasterApp ()) -> getPagePrefix (), this);
+	rts2file.expandXML (root_element, "centrald", true);
+	
+	std::string es = rts2file.getString ();
+
+	response_length = es.length ();
+	response = new char[response_length];
+	memcpy (response, es.c_str (), response_length);
 }

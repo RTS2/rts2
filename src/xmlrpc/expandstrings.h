@@ -27,8 +27,9 @@
 #include <string>
 #include <string.h>
 #include <sstream>
-
 #include <iostream>
+
+#include "xmlrpc++/XmlRpcServerGetRequest.h"
 
 namespace rts2xmlrpc
 {
@@ -117,16 +118,34 @@ class ExpandStringScript:public ExpandString
 		char *script;
 };
 
+class ExpandStringUsername:public ExpandString
+{
+	public:
+		ExpandStringUsername (const char *_username):ExpandString () { username = _username; }
+		~ExpandStringUsername () {}
+
+		virtual void writeTo (std::ostream &os);
+
+	private:
+		const char *username;
+};
+
 class ExpandStrings:public std::list <ExpandString *>
 {
 	public:
-		ExpandStrings (const char *_pagePrefix = NULL) { pagePrefix = _pagePrefix; };
+		ExpandStrings (const char *_pagePrefix = NULL, XmlRpc::XmlRpcServerGetRequest *_request = NULL)
+		{
+			pagePrefix = _pagePrefix;
+			request = _request;
+		}
+
 		~ExpandStrings () { for (ExpandStrings::iterator iter = begin (); iter != end (); iter++) delete *iter; clear (); }
 		void expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bool ignoreUnknownTags = false);
 		std::string getString ();
 
 	private:
 		const char *pagePrefix;
+		XmlRpc::XmlRpcServerGetRequest *request;
 };
 
 }

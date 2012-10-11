@@ -89,6 +89,10 @@ void ExpandStringScript::writeTo (std::ostream &os)
 	os << "<script type='text/javascript' src='" << script << "'></script>";
 }
 
+void ExpandStringUsername::writeTo (std::ostream &os)
+{
+	os << username;
+}
 
 ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valueName)
 {
@@ -197,6 +201,10 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bo
 			if (script == NULL)
 				throw XmlMissingAttribute (ptr, "script");
 			push_back (new ExpandStringScript (pagePrefix, (char *) script->children->content));
+		}
+		else if (xmlStrEqual (ptr->name, (xmlChar *) "username"))
+		{
+			push_back (new ExpandStringUsername (request->getUsername ().c_str ()));
 		}
 		else
 		{

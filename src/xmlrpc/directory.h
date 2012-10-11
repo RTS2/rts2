@@ -44,6 +44,8 @@ class Directory: public GetRequestAuthorized
 
 		// file type, based on file extension
 		std::map <std::string, const char *> responseTypes;
+
+		void parseFd (int f, char * &response, size_t &response_length);
 };
 
 }
