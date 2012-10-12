@@ -99,7 +99,7 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 		old_settings = _os.flags ();
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		
-		_os << " H ALT  AZ HA  AIR  LD  SD SAL SAZ LAL LAZ" << std::endl;
+		_os << " H ALT  AZ  HA  AIR  LD  SD SAL SAZ LAL LAZ" << std::endl;
 	}
 
 	jd = jd_start;
