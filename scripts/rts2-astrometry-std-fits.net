@@ -1,0 +1,104 @@
+#!/usr/bin/python
+"""This scirpt is derived form Petr's rts2-astrometry.net and deals with standard RTS2 FITS files, e.g. no scale available"""
+import pyfits
+
+import sys
+from optparse import OptionParser
+
+def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, radius=5, scale_relative_error=0.05, scale=None, timeout=None, print_results=True):
+	import rts2.astrometry
+	import rts2.libnova
+
+	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error)
+
+	ff=pyfits.fitsopen(fn,'readonly')
+
+	ra = dec = None
+
+	if not(blind):
+		if wcs_keys is not None:
+			ra=ff[0].header[wcs_keys[0]]
+			dec=ff[0].header[wcs_keys[1]]
+			if not scale:
+				scale=ff[0].header[wcs_keys[2]]
+		else:
+			ra=ff[0].header['CRVAL1' + multiwcs]
+			dec=ff[0].header['CRVAL2' + multiwcs]
+
+			for k in ['CDELT1' + multiwcs,'CD1_1' + multiwcs]:
+				try:
+					scale=abs(float(ff[0].header[k]) * 3600.0)
+					break
+				except KeyError,ke:
+					pass
+
+	object = None
+	num = None
+
+	try:
+		object=ff[0].header['OBJECT']
+		num=ff[0].header['IMGID']
+	except KeyError,ke:
+		pass
+			
+	ff.close()
+
+	ret=a.run(replace=True,verbose=verbose) if blind else a.run(scale=scale, ra=ra, dec=dec, radius=radius, replace=True, timeout=timeout, verbose=verbose)
+
+	if ret and print_results:
+		# script needs to reopen file 
+		
+		ff=pyfits.fitsopen(fn,'readonly')
+		fh=ff[0].header
+		ff.close()
+
+		raorig=ra
+		decorig=dec
+
+		rastrxy = rts2.astrometry.xy2wcs(fh['NAXIS1']/2.0, fh['NAXIS2']/2.0, fh)
+
+		#rastrxy=[float(ret[0])*15.0,float(ret[1])]
+
+		err = rts2.libnova.angularSeparation(raorig, decorig, rastrxy[0], rastrxy[1])
+
+		print "corrwerr 1 {0:.10f} {1:.10f} {2:.10f} {3:.10f} {4:.10f}".format(rastrxy[0], rastrxy[1], raorig-rastrxy[0], decorig-rastrxy[1], err)
+
+		import rts2.scriptcomm
+		c = rts2.scriptcomm.Rts2Comm()
+		c.doubleValue('real_ra','[hours] image ra as calculated from astrometry',rastrxy[0])
+		c.doubleValue('real_dec','[deg] image dec as calculated from astrometry',rastrxy[1])
+
+		c.doubleValue('tra','[hours] telescope ra',raorig)
+		c.doubleValue('tdec','[deg] telescope dec',decorig)
+
+		c.doubleValue('ora','[arcdeg] offsets ra ac calculated from astrometry',raorig-rastrxy[0])
+		c.doubleValue('odec','[arcdeg] offsets dec as calculated from astrometry',decorig-rastrxy[1])
+
+		c.stringValue('object','astrometry object',object)
+		c.integerValue('img_num','last astrometry number',num)
+
+
+parser = OptionParser()
+parser.add_option('--multi-wcs', help='Multiple WCS extension', action='store', dest='multiwcs', default='')
+parser.add_option('--wcs-keys', help='WCS keys (RA, DEC, scale) separated with ","', action='store', dest='wcs_keys', default=None)
+parser.add_option('--blind', help='Blind solve', action='store_true', dest='blind', default=False)
+parser.add_option('--radius', help='Error radius', action='store', dest='radius', default=5)
+parser.add_option('--scale-error', help='scale error in %', action='store', dest='scale_error', default=5)
+parser.add_option('--scale', help='scale [arcsec/pix]', action='store', dest='scale', default=1.41)
+parser.add_option('--timeout', help='Process timeout', action='store', dest='timeout', default=None)
+parser.add_option('--verbose', help='Be verbose, print what the script is doing', action='store_true', dest='verbose', default=False)
+parser.add_option('--quiet', help="don't compute ora, odec,..", action='store_true', dest='quiet', default=False)
+
+(options,args) = parser.parse_args()
+
+if not(len(args) == 1):
+	print 'Usage: {0} <fits filenames>'.format(sys.argv[0])
+	sys.exit(1)
+
+wcs_keys = None
+
+if options.wcs_keys:
+	wcs_keys = options.wcs_keys.split(',')
+
+for x in args:
+	run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0,scale=options.scale, timeout=options.timeout, print_results=not(options.quiet))
