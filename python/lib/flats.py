@@ -502,9 +502,13 @@ class FlatScript (scriptcomm.Rts2Comm):
 		self.finish ()
 
 	def sendEmail(self,email,observatoryName):
-		msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,self.goodFlats),';'),string.join(map(Flat.signature,self.badFlats),';'))
-		for flat in self.usedFlats:
-			msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
+		msg = ''
+		try:
+			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,self.goodFlats),';'),string.join(map(Flat.signature,self.badFlats),';'))
+			for flat in self.usedFlats:
+				msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
+		except TypeError,te:
+			msg = 'Cannot get flats - good: %s, bad: %s' % (self.goodFlats,self.badFlats)
 
 		mimsg = MIMEText(msg)
 		mimsg['Subject'] = 'Flats report from %s' % (observatoryName)
