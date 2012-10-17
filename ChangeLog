@@ -1,3 +1,6 @@
+2012-10-16
+ * images are by default created only in memory, written to disk when saving them
+
 2012-09-10
  * added BB (Big Brother)
  * moved config.h from include into ../, create prefixed version with AX_PREFIX_CONFIG_H

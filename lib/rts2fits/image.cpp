@@ -186,6 +186,7 @@ Image::Image (Image * in_image):FitsFile (in_image)
 Image::Image (const struct timeval *in_exposureStart):FitsFile (in_exposureStart)
 {
 	initData ();
+	createImage ();
 	flags = IMAGE_KEEP_DATA;
 	writeExposureStart ();
 }
@@ -947,11 +948,17 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 	{
 		if (dataType == RTS2_DATA_SBYTE)
 		{
-			fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
+			if (isMemImage ())
+				fits_create_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
+			else
+				fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
 		}
 		else
 		{
-			fits_resize_img (getFitsFile (), dataType, 2, sizes, &fits_status);
+			if (isMemImage ())
+				fits_create_img (getFitsFile (), dataType, 2, sizes, &fits_status);
+			else
+				fits_resize_img (getFitsFile (), dataType, 2, sizes, &fits_status);
 		}
 		if (fits_status)
 		{
