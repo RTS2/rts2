@@ -25,6 +25,8 @@
 #include "clicupola.h"
 #include "pier-collision.h"
 
+#define OPT_PARK_POS             OPT_LOCAL + 60
+
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
 #define OPT_APGTO_KEEP_HORIZON   OPT_LOCAL + 58
@@ -135,6 +137,8 @@ class APGTO:public TelLX200 {
 		int isInPosition(double coord1, double coord2, double err1, double err2, char coord); // Alonso: coord e {'a', 'c'} a = coordenadas en altaz y c lo otro
 
 		int tel_check_coords (double ra, double dec);
+
+		rts2core::ValueAltAz *parkPos;
 
 		// fixed offsets
 		rts2core::ValueRaDec *fixedOffsets;
@@ -1122,7 +1126,7 @@ int APGTO::setTo (double ra, double dec)
  */
 int APGTO::startPark ()
 {
-	setTargetAltAz (0, 355);
+	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
 	return moveAltAz () ? -1 : 1;
 }
 
@@ -1464,12 +1468,10 @@ double APGTO::siderealTime()
 int APGTO::checkSiderealTime( double limit) 
 {
   int ret ;
-  int error= -1 ;
   // Check if the sidereal time read from the mount is correct 
   double local_sidereal_time= siderealTime() ;
 
   if(( ret= tel_read_sidereal_time()) != 0) {
-    error = ERROR_IN_INFO ;
     logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve sidereal time  " << sendLog;
   }
   logStream (MESSAGE_DEBUG) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
@@ -1654,6 +1656,23 @@ int APGTO::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case OPT_PARK_POS:
+			{
+				std::istringstream *is;
+				is = new std::istringstream (std::string(optarg));
+				double palt,paz;
+				char c;
+				*is >> palt >> c >> paz;
+				if (is->fail () || c != ':')
+				{
+					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
+					delete is;
+					return -1;
+				}
+				delete is;
+				parkPos->setValueAltAz (palt, paz);
+			}
+			break;
 		case OPT_APGTO_ASSUME_PARKED:
 			assume_parked->setValueBool(true);
 			break;
@@ -1675,6 +1694,9 @@ int APGTO::processOption (int in_opt)
 APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 {
 	limitSwitchName = NULL;
+
+	createValue (parkPos, "park_pos", "parking position", false, RTS2_VALUE_WRITABLE);
+	parkPos->setValueAltAz (0, 355);
 
 	createValue (fixedOffsets, "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	fixedOffsets->setValueRaDec (0, 0);
@@ -1720,6 +1742,8 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	addOption (OPT_APGTO_FORCE_START, "force_start", 0, "start with wrong declination axis orientation");
 	addOption (OPT_APGTO_KEEP_HORIZON, "avoid-horizon", 0, "avoid movements bellow horizon");
 	addOption (OPT_APGTO_LIMIT_SWITCH, "limit-switch", 1, "use limit switch with given name");
+
+	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
 }
 
 int main (int argc, char **argv)
