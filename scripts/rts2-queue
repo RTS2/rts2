@@ -123,7 +123,8 @@ Following list is an example of valid string for date and time:
 Example use:
 
 rts2-queue --queue manual SN2012A
-rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
+rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h
+rts2-queue --load circular.q""")
 
 	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
