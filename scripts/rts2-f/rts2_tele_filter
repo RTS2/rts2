@@ -8,8 +8,10 @@ switch ($1)
 		if ($curfilt != $1) then
 			rts2-logcom -n "Moving filter wheel to $1"
 			tele filter $1
-#		else
+			exit 1
+		else
 #			rts2-logcom "Filter $1 already set"
+		  	exit 0
 		endif
 		breaksw
 	default:
@@ -24,8 +26,10 @@ switch ($1)
 				rts2-logcom -n "Moving filter wheel to $1"
 				tele filter $filt
 			endif
-#		else	
+			exit 1
+		else	
 #		  	rts2-logcom "Filter $1 already set"
+			exit 0
 		endif	
 		breaksw
 endsw
