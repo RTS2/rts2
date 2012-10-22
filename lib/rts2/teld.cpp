@@ -573,6 +573,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	struct ln_equ_posn hadec;
 	double ra;
 	double ls;
+	double un_dec;
 	// normalize correction to prevent runaway
 	if (!model || calModel->getValueBool () == false)
 	{
@@ -603,6 +604,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		hadec.ra = fhadec.getRa ();
 		hadec.dec = fhadec.getDec ();
 
+		un_dec = hadec.dec;
 		model->reverse (&hadec);
 
 		// now flip back
@@ -616,6 +618,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	}
 	else
 	{
+		un_dec = hadec.dec;
 		model->reverse (&hadec);
 	}
 
@@ -661,7 +664,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		model_change->dec -= corrRaDec->getDec();
 	}
 
-	telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
+	telTargetRaDec->setValueRaDec (pos->ra, un_dec);
 }
 
 int Telescope::init ()
