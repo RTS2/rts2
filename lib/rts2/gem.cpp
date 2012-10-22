@@ -151,7 +151,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
+int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec, double &un_dec)
 {
 	double JD, ls;
 	int32_t homeOff;
@@ -170,6 +170,8 @@ int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 	dec = (double) (dc / decCpd) - decZero;
 
 	ra = ls - ra;
+
+	un_dec = dec;
 
 	// flipped
 	if (fabs (dec) > 90)

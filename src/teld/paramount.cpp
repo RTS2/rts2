@@ -908,9 +908,10 @@ int Paramount::info ()
 		return ret;
 	double t_telRa;
 	double t_telDec;
-	ret = counts2sky (ac, dc, t_telRa, t_telDec);
+	double ut_telDec;
+	ret = counts2sky (ac, dc, t_telRa, t_telDec, ut_telDec);
 	setTelRa (t_telRa);
-	setTelDec (t_telDec);
+	setTelDec (ut_telDec);
 	axRa->setValueLong (ac);
 	axDec->setValueLong (dc);
 
