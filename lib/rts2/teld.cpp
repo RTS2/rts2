@@ -615,6 +615,15 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 
 		hadec.ra = fhadec.getRa ();
 		hadec.dec = fhadec.getDec ();
+
+		double t_dec = tarRaDec->getDec ();
+
+		if (observer.lat > 0 && un_dec > 90.0)
+			t_dec = 180.0 - t_dec;
+		else if (observer.lat < 0 && un_dec < -90.0)
+			t_dec = -180.0 - t_dec;
+
+		tarRaDec->setDec (t_dec);
 	}
 	else
 	{
