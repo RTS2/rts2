@@ -21,6 +21,9 @@
 
 #include <iomanip>
 
+namespace rts2json
+{
+
 /**
  * Display double value as JSON - instead of nan, write null.
  *
@@ -92,6 +95,8 @@ class JsonString
 	private:
 		std::string sv;
 };
+
+}
 
 void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
 

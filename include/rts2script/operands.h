@@ -41,6 +41,7 @@ class Operand
 {
 	public:
 		Operand () {};
+		virtual ~Operand () {}
 
 		virtual std::ostream & writeTo (std::ostream &_os) = 0;
 

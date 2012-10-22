@@ -44,6 +44,8 @@ class StateChange
 			newStateValue = _newStateValue;
 		}
 
+		virtual ~StateChange () {}
+
 		/**
 		 * Returns true if command should be executed on state change between two states.
 		 *

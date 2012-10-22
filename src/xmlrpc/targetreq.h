@@ -21,7 +21,7 @@
 #define __RTS2_TARGETREQ__
 
 #include "rts2-config.h"
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/targetset.h"
@@ -43,10 +43,10 @@ namespace rts2xmlrpc
 
 #ifdef RTS2_HAVE_PGSQL
 
-class Targets: public GetRequestAuthorized
+class Targets: public rts2json::GetRequestAuthorized
 {
 	public:
-		Targets (const char *prefix, XmlRpc::XmlRpcServer *s);
+		Targets (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s);
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
 	private:
@@ -78,10 +78,10 @@ class Targets: public GetRequestAuthorized
 
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class AddTarget: public GetRequestAuthorized
+class AddTarget: public rts2json::GetRequestAuthorized
 {
 	public:
-		AddTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "add new target", s) {};
+		AddTarget (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "add new target", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

@@ -62,7 +62,7 @@ digraph "JSON API calls handling" {
  */
 
 #include "xmlrpcd.h"
-#include "jsonvalue.h"
+#include "rts2json/jsonvalue.h"
 
 #include "rts2db/constraints.h"
 #include "rts2db/planset.h"
@@ -103,7 +103,7 @@ void getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long 
 
 /** Camera API classes */
 
-API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
+API::API (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s)
 {
 }
 
@@ -903,7 +903,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 						os << ",[";
 					else
 						os << "[";
-					os << JsonDouble (di->getLower ()) << "," << JsonDouble (di->getUpper ()) << "]";
+					os << rts2json::JsonDouble (di->getLower ()) << "," << rts2json::JsonDouble (di->getUpper ()) << "]";
 				}
 				os << "]";
 			}
@@ -1243,7 +1243,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 
 			os << "\"t3id\":" << ta.t3id 
-				<< ",\"auger_date\":" << JsonDouble (ta.auger_date)
+				<< ",\"auger_date\":" << rts2json::JsonDouble (ta.auger_date)
 				<< ",\"Eye\":" << ta.Eye
 				<< ",\"Run\":" << ta.Run
 				<< ",\"Event\":" << ta.Event
@@ -1253,68 +1253,68 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				<< ",\"SDId\":" << ta.SDId
 				<< ",\"NPix\":" << ta.NPix
 	
-				<< ",\"SDPTheta\":" << JsonDouble (ta.SDPTheta)       /// Zenith angle of SDP normal vector (deg)
-				<< ",\"SDPThetaErr\":" << JsonDouble (ta.SDPThetaErr)    /// Uncertainty of SDPtheta
-				<< ",\"SDPPhi\":" << JsonDouble (ta.SDPPhi)         /// Azimuth angle of SDP normal vector (deg)
-				<< ",\"SDPPhiErr\":" << JsonDouble (ta.SDPPhiErr)      /// Uncertainty of SDPphi
-				<< ",\"SDPChi2\":" << JsonDouble (ta.SDPChi2)        /// Chi^2 of SDP db_it
+				<< ",\"SDPTheta\":" << rts2json::JsonDouble (ta.SDPTheta)       /// Zenith angle of SDP normal vector (deg)
+				<< ",\"SDPThetaErr\":" << rts2json::JsonDouble (ta.SDPThetaErr)    /// Uncertainty of SDPtheta
+				<< ",\"SDPPhi\":" << rts2json::JsonDouble (ta.SDPPhi)         /// Azimuth angle of SDP normal vector (deg)
+				<< ",\"SDPPhiErr\":" << rts2json::JsonDouble (ta.SDPPhiErr)      /// Uncertainty of SDPphi
+				<< ",\"SDPChi2\":" << rts2json::JsonDouble (ta.SDPChi2)        /// Chi^2 of SDP db_it
 				<< ",\"SDPNdf\":" << ta.SDPNdf         /// Degrees of db_reedom of SDP db_it
 	
-				<< ",\"Rp\":" << JsonDouble (ta.Rp)             /// Shower impact parameter Rp (m)
-				<< ",\"RpErr\":" << JsonDouble (ta.RpErr)          /// Uncertainty of Rp (m)
-				<< ",\"Chi0\":" << JsonDouble (ta.Chi0)           /// Angle of shower in the SDP (deg)
-				<< ",\"Chi0Err\":" << JsonDouble (ta.Chi0Err)        /// Uncertainty of Chi0 (deg)
-				<< ",\"T0\":" << JsonDouble (ta.T0)             /// FD time db_it T_0 (ns)
-				<< ",\"T0Err\":" << JsonDouble (ta.T0Err)          /// Uncertainty of T_0 (ns)
-				<< ",\"TimeChi2\":" << JsonDouble (ta.TimeChi2)       /// Full Chi^2 of axis db_it
-				<< ",\"TimeChi2FD\":" << JsonDouble (ta.TimeChi2FD)     /// Chi^2 of axis db_it (FD only)
+				<< ",\"Rp\":" << rts2json::JsonDouble (ta.Rp)             /// Shower impact parameter Rp (m)
+				<< ",\"RpErr\":" << rts2json::JsonDouble (ta.RpErr)          /// Uncertainty of Rp (m)
+				<< ",\"Chi0\":" << rts2json::JsonDouble (ta.Chi0)           /// Angle of shower in the SDP (deg)
+				<< ",\"Chi0Err\":" << rts2json::JsonDouble (ta.Chi0Err)        /// Uncertainty of Chi0 (deg)
+				<< ",\"T0\":" << rts2json::JsonDouble (ta.T0)             /// FD time db_it T_0 (ns)
+				<< ",\"T0Err\":" << rts2json::JsonDouble (ta.T0Err)          /// Uncertainty of T_0 (ns)
+				<< ",\"TimeChi2\":" << rts2json::JsonDouble (ta.TimeChi2)       /// Full Chi^2 of axis db_it
+				<< ",\"TimeChi2FD\":" << rts2json::JsonDouble (ta.TimeChi2FD)     /// Chi^2 of axis db_it (FD only)
 				<< ",\"TimeNdf\":" << ta.TimeNdf        /// Degrees of db_reedom of axis db_it
 	
-				<< ",\"Easting\":" << JsonDouble (ta.Easting)        /// Core position in easting coordinate (m)
-				<< ",\"Northing\":" << JsonDouble (ta.Northing)       /// Core position in northing coordinate (m)
-				<< ",\"Altitude\":" << JsonDouble (ta.Altitude)       /// Core position altitude (m)
-				<< ",\"NorthingErr\":" << JsonDouble (ta.NorthingErr)    /// Uncertainty of northing coordinate (m)
-				<< ",\"EastingErr\":" << JsonDouble (ta.EastingErr)     /// Uncertainty of easting coordinate (m)
-				<< ",\"Theta\":" << JsonDouble (ta.Theta)          /// Shower zenith angle in core coords. (deg)
-				<< ",\"ThetaErr\":" << JsonDouble (ta.ThetaErr)       /// Uncertainty of zenith angle (deg)
-				<< ",\"Phi\":" << JsonDouble (ta.Phi)            /// Shower azimuth angle in core coords. (deg)
-				<< ",\"PhiErr\":" << JsonDouble (ta.PhiErr)         /// Uncertainty of azimuth angle (deg)
+				<< ",\"Easting\":" << rts2json::JsonDouble (ta.Easting)        /// Core position in easting coordinate (m)
+				<< ",\"Northing\":" << rts2json::JsonDouble (ta.Northing)       /// Core position in northing coordinate (m)
+				<< ",\"Altitude\":" << rts2json::JsonDouble (ta.Altitude)       /// Core position altitude (m)
+				<< ",\"NorthingErr\":" << rts2json::JsonDouble (ta.NorthingErr)    /// Uncertainty of northing coordinate (m)
+				<< ",\"EastingErr\":" << rts2json::JsonDouble (ta.EastingErr)     /// Uncertainty of easting coordinate (m)
+				<< ",\"Theta\":" << rts2json::JsonDouble (ta.Theta)          /// Shower zenith angle in core coords. (deg)
+				<< ",\"ThetaErr\":" << rts2json::JsonDouble (ta.ThetaErr)       /// Uncertainty of zenith angle (deg)
+				<< ",\"Phi\":" << rts2json::JsonDouble (ta.Phi)            /// Shower azimuth angle in core coords. (deg)
+				<< ",\"PhiErr\":" << rts2json::JsonDouble (ta.PhiErr)         /// Uncertainty of azimuth angle (deg)
 	
-				<< ",\"dEdXmax\":" << JsonDouble (ta.dEdXmax)        /// Energy deposit at shower max (GeV/(g/cm^2))
-				<< ",\"dEdXmaxErr\":" << JsonDouble (ta.dEdXmaxErr)     /// Uncertainty of Nmax (GeV/(g/cm^2))
-				<< ",\"Xmax\":" << JsonDouble (ta.Xmax)           /// Slant depth of shower maximum (g/cm^2)
-				<< ",\"XmaxErr\":" << JsonDouble (ta.XmaxErr)        /// Uncertainty of Xmax (g/cm^2)
-				<< ",\"X0\":" << JsonDouble (ta.X0)             /// X0 Gaisser-Hillas db_it (g/cm^2)
-				<< ",\"X0Err\":" << JsonDouble (ta.X0Err)          /// Uncertainty of X0 (g/cm^2)
-				<< ",\"Lambda\":" << JsonDouble (ta.Lambda)         /// Lambda of Gaisser-Hillas db_it (g/cm^2)
-				<< ",\"LambdaErr\":" << JsonDouble (ta.LambdaErr)      /// Uncertainty of Lambda (g/cm^2)
-				<< ",\"GHChi2\":" << JsonDouble (ta.GHChi2)         /// Chi^2 of Gaisser-Hillas db_it
+				<< ",\"dEdXmax\":" << rts2json::JsonDouble (ta.dEdXmax)        /// Energy deposit at shower max (GeV/(g/cm^2))
+				<< ",\"dEdXmaxErr\":" << rts2json::JsonDouble (ta.dEdXmaxErr)     /// Uncertainty of Nmax (GeV/(g/cm^2))
+				<< ",\"Xmax\":" << rts2json::JsonDouble (ta.Xmax)           /// Slant depth of shower maximum (g/cm^2)
+				<< ",\"XmaxErr\":" << rts2json::JsonDouble (ta.XmaxErr)        /// Uncertainty of Xmax (g/cm^2)
+				<< ",\"X0\":" << rts2json::JsonDouble (ta.X0)             /// X0 Gaisser-Hillas db_it (g/cm^2)
+				<< ",\"X0Err\":" << rts2json::JsonDouble (ta.X0Err)          /// Uncertainty of X0 (g/cm^2)
+				<< ",\"Lambda\":" << rts2json::JsonDouble (ta.Lambda)         /// Lambda of Gaisser-Hillas db_it (g/cm^2)
+				<< ",\"LambdaErr\":" << rts2json::JsonDouble (ta.LambdaErr)      /// Uncertainty of Lambda (g/cm^2)
+				<< ",\"GHChi2\":" << rts2json::JsonDouble (ta.GHChi2)         /// Chi^2 of Gaisser-Hillas db_it
 				<< ",\"GHNdf\":" << ta.GHNdf          /// Degrees of db_reedom of GH db_it
-				<< ",\"LineFitChi2\":" << JsonDouble (ta.LineFitChi2)    /// Chi^2 of linear db_it to profile
+				<< ",\"LineFitChi2\":" << rts2json::JsonDouble (ta.LineFitChi2)    /// Chi^2 of linear db_it to profile
 	
-				<< ",\"EmEnergy\":" << JsonDouble (ta.EmEnergy)       /// Calorimetric energy db_rom GH db_it (EeV)
-				<< ",\"EmEnergyErr\":" << JsonDouble (ta.EmEnergyErr)    /// Uncertainty of Eem (EeV)
-				<< ",\"Energy\":" << JsonDouble (ta.Energy)         /// Total energy db_rom GH db_it (EeV)
-				<< ",\"EnergyErr\":" << JsonDouble (ta.EnergyErr)      /// Uncertainty of Etot (EeV)
+				<< ",\"EmEnergy\":" << rts2json::JsonDouble (ta.EmEnergy)       /// Calorimetric energy db_rom GH db_it (EeV)
+				<< ",\"EmEnergyErr\":" << rts2json::JsonDouble (ta.EmEnergyErr)    /// Uncertainty of Eem (EeV)
+				<< ",\"Energy\":" << rts2json::JsonDouble (ta.Energy)         /// Total energy db_rom GH db_it (EeV)
+				<< ",\"EnergyErr\":" << rts2json::JsonDouble (ta.EnergyErr)      /// Uncertainty of Etot (EeV)
 	
-				<< ",\"MinAngle\":" << JsonDouble (ta.MinAngle)       /// Minimum viewing angle (deg)
-				<< ",\"MaxAngle\":" << JsonDouble (ta.MaxAngle)       /// Maximum viewing angle (deg)
-				<< ",\"MeanAngle\":" << JsonDouble (ta.MeanAngle)      /// Mean viewing angle (deg)
+				<< ",\"MinAngle\":" << rts2json::JsonDouble (ta.MinAngle)       /// Minimum viewing angle (deg)
+				<< ",\"MaxAngle\":" << rts2json::JsonDouble (ta.MaxAngle)       /// Maximum viewing angle (deg)
+				<< ",\"MeanAngle\":" << rts2json::JsonDouble (ta.MeanAngle)      /// Mean viewing angle (deg)
 		
 				<< ",\"NTank\":" << ta.NTank          /// Number of stations in hybrid db_it
 				<< ",\"HottestTank\":" << ta.HottestTank    /// Station used in hybrid-geometry reco
-				<< ",\"AxisDist\":" << JsonDouble (ta.AxisDist)       /// Shower axis distance to hottest station (m)
-				<< ",\"SDPDist\":" << JsonDouble (ta.SDPDist)        /// SDP distance to hottest station (m)
+				<< ",\"AxisDist\":" << rts2json::JsonDouble (ta.AxisDist)       /// Shower axis distance to hottest station (m)
+				<< ",\"SDPDist\":" << rts2json::JsonDouble (ta.SDPDist)        /// SDP distance to hottest station (m)
 	
-				<< ",\"SDFDdT\":" << JsonDouble (ta.SDFDdT)         /// SD/FD time offset after the minimization (ns)
-				<< ",\"XmaxEyeDist\":" << JsonDouble (ta.XmaxEyeDist)    /// Distance to shower maximum (m)
-				<< ",\"XTrackMin\":" << JsonDouble (ta.XTrackMin)      /// First recorded slant depth of track (g/cm^2)
-				<< ",\"XTrackMax\":" << JsonDouble (ta.XTrackMax)      /// Last recorded slant depth of track (g/cm^2)
-				<< ",\"XFOVMin\":" << JsonDouble (ta.XFOVMin)        /// First slant depth inside FOV (g/cm^2)
-				<< ",\"XFOVMax\":" << JsonDouble (ta.XFOVMax)        /// Last slant depth inside FOV (g/cm^2)
-				<< ",\"XTrackObs\":" << JsonDouble (ta.XTrackObs)      /// Observed track length depth (g/cm^2)
-				<< ",\"DegTrackObs\":" << JsonDouble (ta.DegTrackObs)    /// Observed track length angle (deg)
-				<< ",\"TTrackObs\":" << JsonDouble (ta.TTrackObs)      /// Observed track length time (100 ns)
+				<< ",\"SDFDdT\":" << rts2json::JsonDouble (ta.SDFDdT)         /// SD/FD time offset after the minimization (ns)
+				<< ",\"XmaxEyeDist\":" << rts2json::JsonDouble (ta.XmaxEyeDist)    /// Distance to shower maximum (m)
+				<< ",\"XTrackMin\":" << rts2json::JsonDouble (ta.XTrackMin)      /// First recorded slant depth of track (g/cm^2)
+				<< ",\"XTrackMax\":" << rts2json::JsonDouble (ta.XTrackMax)      /// Last recorded slant depth of track (g/cm^2)
+				<< ",\"XFOVMin\":" << rts2json::JsonDouble (ta.XFOVMin)        /// First slant depth inside FOV (g/cm^2)
+				<< ",\"XFOVMax\":" << rts2json::JsonDouble (ta.XFOVMax)        /// Last slant depth inside FOV (g/cm^2)
+				<< ",\"XTrackObs\":" << rts2json::JsonDouble (ta.XTrackObs)      /// Observed track length depth (g/cm^2)
+				<< ",\"DegTrackObs\":" << rts2json::JsonDouble (ta.DegTrackObs)    /// Observed track length angle (deg)
+				<< ",\"TTrackObs\":" << rts2json::JsonDouble (ta.TTrackObs)      /// Observed track length time (100 ns)
 
 				<< ",\"cut\":" << ta.cut               /// Cuts pased by shower
 
@@ -1377,11 +1377,11 @@ void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * 
 				firstMMax = false;
 			else
 				os << ",";
-			os << "\"" << v->getName () << "\":[" << JsonDouble (v->getMin ()) << "," << JsonDouble (v->getMax ()) << "]";
+			os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
 		}
 	}
 
-	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"sstart\":" << JsonDouble (conn->getProgressStart ()) << ",\"send\":" << JsonDouble (conn->getProgressEnd ()) << ",\"f\":" << JsonDouble (mfrom);
+	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"sstart\":" << rts2json::JsonDouble (conn->getProgressStart ()) << ",\"send\":" << rts2json::JsonDouble (conn->getProgressEnd ()) << ",\"f\":" << rts2json::JsonDouble (mfrom);
 }
 
 void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended)
@@ -1415,11 +1415,11 @@ void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double fro
 				firstMMax = false;
 			else
 				os << ",";
-			os << "\"" << v->getName () << "\":[" << JsonDouble (v->getMin ()) << "," << JsonDouble (v->getMax ()) << "]";
+			os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
 		}
 	}
 
-	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << JsonDouble (from); 
+	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << rts2json::JsonDouble (from); 
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -1522,12 +1522,12 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRp
 		if (n == NULL)
 			os << "null,";
 		else
-			os << "\"" << JsonString (n) << "\",";
+			os << "\"" << rts2json::JsonString (n) << "\",";
 
-		os << JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec) << ",\"" << JsonString (tar->getTargetInfo ()) << "\"";
+		os << rts2json::JsonDouble (equ.ra) << ',' << rts2json::JsonDouble (equ.dec) << ",\"" << rts2json::JsonString (tar->getTargetInfo ()) << "\"";
 
 		if (dfrom)
-			os << ',' << JsonDouble (tar->getDistance (dfrom, JD));
+			os << ',' << rts2json::JsonDouble (tar->getDistance (dfrom, JD));
 
 		if (extended)
 		{
@@ -1574,7 +1574,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRp
 				struct ln_rst_time rst;
 				tar->getRST (&rst, JD, 0);
 
-				os << "," << JsonDouble (rst.transit) 
+				os << "," << rts2json::JsonDouble (rst.transit) 
 					<< "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
 			}
 		}
@@ -1591,7 +1591,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRp
 					pm.ra = pm.dec = NAN;
 			}
 
-			os << "," << JsonDouble (pm.ra) << "," << JsonDouble (pm.dec);
+			os << "," << rts2json::JsonDouble (pm.ra) << "," << rts2json::JsonDouble (pm.dec);
 		}
 		os << "]";
 		if (chunked)
@@ -1612,16 +1612,16 @@ void jsonObservation (rts2db::Observation *obs, std::ostream &os)
 	obs->getTarget ()->getPosition (&equ);
 
 	os << std::fixed << "\"observation\":{\"id\":" << obs->getObsId ()
-		<< ",\"slew\":" << JsonDouble (obs->getObsSlew ())
-		<< ",\"start\":" << JsonDouble (obs->getObsStart ())
-		<< ",\"end\":" << JsonDouble (obs->getObsEnd ())
+		<< ",\"slew\":" << rts2json::JsonDouble (obs->getObsSlew ())
+		<< ",\"start\":" << rts2json::JsonDouble (obs->getObsStart ())
+		<< ",\"end\":" << rts2json::JsonDouble (obs->getObsEnd ())
 		<< ",\"images\":" << obs->getNumberOfImages ()
 		<< ",\"good\":" << obs->getNumberOfGoodImages ()
 		<< "},\"target\":{\"id\":" << obs->getTarget ()->getTargetID ()
-		<< ",\"name\":\"" << JsonString (obs->getTarget ()->getTargetName ())
-		<< "\",\"ra\":" << JsonDouble (equ.ra)
-		<< ",\"dec\":" << JsonDouble (equ.dec)
-		<< ",\"description\":\"" << JsonString (obs->getTarget ()->getTargetInfo ())
+		<< ",\"name\":\"" << rts2json::JsonString (obs->getTarget ()->getTargetName ())
+		<< "\",\"ra\":" << rts2json::JsonDouble (equ.ra)
+		<< ",\"dec\":" << rts2json::JsonDouble (equ.dec)
+		<< ",\"description\":\"" << rts2json::JsonString (obs->getTarget ()->getTargetInfo ())
 		<< "\"}";
 }
 
@@ -1643,9 +1643,9 @@ void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 		if (iter != obss->begin ())
 			os << ",";
 		os << "[" << iter->getObsId () << ","
-			<< JsonDouble(iter->getObsSlew ()) << ","
-			<< JsonDouble(iter->getObsStart ()) << ","
-			<< JsonDouble(iter->getObsEnd ()) << ","
+			<< rts2json::JsonDouble(iter->getObsSlew ()) << ","
+			<< rts2json::JsonDouble(iter->getObsStart ()) << ","
+			<< rts2json::JsonDouble(iter->getObsEnd ()) << ","
 			<< iter->getNumberOfImages () << ","
 			<< iter->getNumberOfGoodImages ()
 			<< "]";
@@ -1669,8 +1669,8 @@ void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpP
 		if (iter != img_set->begin ())
 			os << ",";
 		os << "[\"" << (*iter)->getFileName () << "\","
-			<< JsonDouble ((*iter)->getExposureSec () + (*iter)->getExposureUsec () / USEC_SEC) << ","
-			<< JsonDouble ((*iter)->getExposureLength ()) << ",\""
+			<< rts2json::JsonDouble ((*iter)->getExposureSec () + (*iter)->getExposureUsec () / USEC_SEC) << ","
+			<< rts2json::JsonDouble ((*iter)->getExposureLength ()) << ",\""
 			<< (*iter)->getFilter () << "\",\""
 			<< (*iter)->getAbsoluteFileName () << "\"]";
 	}

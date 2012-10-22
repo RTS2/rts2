@@ -20,7 +20,7 @@
 #ifndef __RTS2_DIRECTORY__
 #define __RTS2_DIRECTORY__
 
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 #include "xmlrpcd.h"
 
 namespace rts2xmlrpc
@@ -31,10 +31,10 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Directory: public GetRequestAuthorized
+class Directory: public rts2json::GetRequestAuthorized
 {
 	public:
-		Directory (const char* prefix, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s);
+		Directory (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s);
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

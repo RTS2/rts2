@@ -36,7 +36,7 @@
 
 #include "directory.h"
 #include "events.h"
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 #include "session.h"
 #include "xmlrpc++/XmlRpc.h"
 
@@ -377,9 +377,9 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
  * @addgroup XMLRPC
  */
 #ifdef RTS2_HAVE_PGSQL
-class XmlRpcd:public rts2db::DeviceDb, XmlRpc::XmlRpcServer
+class XmlRpcd:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 #else
-class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
+class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 #endif
 {
 	public:
@@ -409,16 +409,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		 */
 		std::string addSession (std::string _username, time_t _timeout);
 
-
-		/**
-		 * Returns true if session with a given sessionId exists.
-		 *
-		 * @param sessionId  Session ID.
-		 *
-		 * @return True if session with a given session ID exists.
-		 */
-		bool existsSession (std::string sessionId);
-
 		/**
 		 * If XmlRpcd is allowed to send emails.
 		 */
@@ -431,10 +421,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		 */
 		std::deque <Message> & getMessages () { return messages; }
 
-		/**
-		 * Return prefix for generated pages - usefull for pages behind proxy.
-		 */
-		const char* getPagePrefix () { return page_prefix.c_str (); }
+		virtual const char* getPagePrefix () { return page_prefix.c_str (); }
 
 		/**
 		 * Default channel for display.
@@ -446,10 +433,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		 */
 		bool authorizeLocalhost () { return auth_localhost; }
 
-		/**
-		 * Returns true, if given path is marked as being public - accessible to all.
-		 */
-		bool isPublic (struct sockaddr_in *saddr, const std::string &path);
+		virtual bool isPublic (struct sockaddr_in *saddr, const std::string &path);
+
+		virtual bool existsSession (std::string sessionId);
 
 		/**
 		 * Return default image label.
@@ -485,7 +471,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		void clientFullDataReceived (Connection *conn, DataChannels *data);
 		void clientExposureFailed (Connection *conn, int status);
 
-		void addExecutedPage () { numRequests->inc (); }
+		virtual void addExecutedPage () { numRequests->inc (); }
 
 	protected:
 		virtual int idle ();

@@ -17,11 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "jsonvalue.h"
+#include "rts2json/jsonvalue.h"
 
 #include "valuearray.h"
 #include "valuestat.h"
 #include "valuerectangle.h"
+
+using namespace rts2json;
 
 void sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 {

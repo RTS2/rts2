@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 #include "asyncapi.h"
 
 /** @file bbapi.h
@@ -33,10 +33,10 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class BBAPI:public GetRequestAuthorized
+class BBAPI:public rts2json::GetRequestAuthorized
 {
 	public:
-		BBAPI (const char* prefix, XmlRpc::XmlRpcServer* s);
+		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s);
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

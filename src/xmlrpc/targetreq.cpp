@@ -40,7 +40,7 @@ using namespace rts2xmlrpc;
 
 #ifdef RTS2_HAVE_PGSQL
 
-Targets::Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "target list", s)
+Targets::Targets (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, _http_server, "target list", s)
 {
 	displaySeconds = false;
 }

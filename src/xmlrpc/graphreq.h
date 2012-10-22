@@ -1,6 +1,6 @@
 /* 
  * Classes to plot graph interface.
- * Copyright (C) 2009-2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2009-2010,2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,22 +17,61 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
+
+#ifdef RTS2_HAVE_PGSQL
+#include "rts2db/recvals.h"
+#endif // RTS2_HAVE_LIBJPEG
 
 #ifdef RTS2_HAVE_LIBJPEG
 
 namespace rts2xmlrpc
 {
+#ifdef RTS2_HAVE_LIBJPEG
+
+/**
+ * Plot current position of telescope, target and next target position.
+ */
+class CurrentPosition:public rts2json::GetRequestAuthorized
+{
+	public:
+		CurrentPosition (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "current telescope position", s) {};
+
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+};
+
+#endif /* RTS2_HAVE_LIBJPEG */
+
+#ifdef RTS2_HAVE_PGSQL
+
+#ifdef RTS2_HAVE_LIBJPEG
+
+/**
+ * Plot targets on the alt-az graph.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class AltAzTarget: public rts2json::GetRequestAuthorized
+{
+	public:
+		AltAzTarget (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "altitude target graph", s) {};
+
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+};
+
+#endif /* RTS2_HAVE_LIBJPEG */ 
+
+#endif /* RTS2_HAVE_PGSQL */
 
 /**
  * Draw graph of variables.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Graph: public GetRequestAuthorized
+class Graph: public rts2json::GetRequestAuthorized
 {
 	public:
-		Graph (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "plot graphs of recorded system values", s) {};
+		Graph (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "plot graphs of recorded system values", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

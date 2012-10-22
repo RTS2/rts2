@@ -512,10 +512,10 @@ int XmlRpcd::init ()
 	}
 
 	for (std::vector <DirectoryMapping>::iterator iter = events.dirs.begin (); iter != events.dirs.end (); iter++)
-		directories.push_back (new Directory (iter->getTo (), iter->getPath (), "", this));
+		directories.push_back (new Directory (iter->getTo (), this, iter->getPath (), "", this));
 	
 	if (events.docroot.length () > 0)
-		XmlRpcServer::setDefaultGetRequest (new Directory (NULL, events.docroot.c_str (), "index.html", NULL));
+		XmlRpcServer::setDefaultGetRequest (new Directory (NULL, this, events.docroot.c_str (), "index.html", NULL));
 	if (events.defchan != INT_MAX)
 		defchan = events.defchan;
 	else
@@ -671,31 +671,31 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 
   // web requeusts
 #ifdef RTS2_HAVE_LIBJPEG
-  jpegRequest ("/jpeg", this),
-  jpegPreview ("/preview", "/", this),
-  downloadRequest ("/download", this),
-  current ("/current", this),
+  jpegRequest ("/jpeg", this, this),
+  jpegPreview ("/preview", this, "/", this),
+  downloadRequest ("/download", this, this),
+  current ("/current", this, this),
 #ifdef RTS2_HAVE_PGSQL
-  graph ("/graph", this),
-  altAzTarget ("/altaz", this),
+  graph ("/graph", this, this),
+  altAzTarget ("/altaz", this, this),
 #endif // RTS2_HAVE_PGSQL
   imageReq ("/images", this),
 #endif /* RTS2_HAVE_LIBJPEG */
-  fitsRequest ("/fits", this),
-  javaScriptRequests ("/js", this),
-  cssRequests ("/css", this),
-  api ("/api", this),
-  bbapi ("/bbapi", this),
+  fitsRequest ("/fits", this, this),
+  javaScriptRequests ("/js", this, this),
+  cssRequests ("/css", this, this),
+  api ("/api", this, this),
+  bbapi ("/bbapi", this, this),
 #ifdef RTS2_HAVE_PGSQL
-  auger ("/auger", this),
-  night ("/nights", this),
-  observation ("/observations", this),
-  targets ("/targets", this),
-  addTarget ("/addtarget", this),
-  plan ("/plan", this),
+  auger ("/auger", this, this),
+  night ("/nights", this, this),
+  observation ("/observations", this, this),
+  targets ("/targets", this, this),
+  addTarget ("/addtarget", this, this),
+  plan ("/plan", this, this),
 #endif // RTS2_HAVE_PGSQL
-  switchState ("/switchstate", this),
-  devices ("/devices", this)
+  switchState ("/switchstate", this, this),
+  devices ("/devices", this, this)
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;

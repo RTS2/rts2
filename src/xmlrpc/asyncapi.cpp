@@ -20,7 +20,7 @@
 
 #include "asyncapi.h"
 #include "api.h"
-#include "jsonvalue.h"
+#include "rts2json/jsonvalue.h"
 
 using namespace rts2xmlrpc;
 

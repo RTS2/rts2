@@ -1,6 +1,6 @@
 /* 
- * Switch state support.
- * Copyright (C) 2010 Petr Kubanek <kubanek@fzu.cz> Institute of Physics, Czech Republic
+ * BB API access for RTS2.
+ * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,14 +19,23 @@
 
 #include "rts2json/httpreq.h"
 
-namespace rts2xmlrpc
+namespace rts2bb
 {
-
-class SwitchState: public rts2json::GetRequestAuthorized
+/**
+ * Class for BB API requests.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
+ */
+class BBAPI:public rts2json::GetRequestAuthorized
 {
 	public:
-		SwitchState (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "switchstate", s) {}
+		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s);
+
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+
+		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
+	private:
+		void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 }

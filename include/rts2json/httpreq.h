@@ -20,31 +20,24 @@
 #ifndef __RTS2_HTTPREQ__
 #define __RTS2_HTTPREQ__
 
+#include "httpserver.h"
 #include "rts2-config.h"
 
-#ifdef RTS2_HAVE_PGSQL
-#include "rts2db/recvals.h"
-#include "rts2db/records.h"
-#include "rts2db/devicedb.h"
-#include "rts2db/targetset.h"
-#if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
-#include <Magick++.h>
-#include "valueplot.h"
-#endif // RTS2_HAVE_LIBJPEG
 #include "configuration.h"
-#else
-
-#endif // RTS2_HAVE_PGSQL
 
 #include "xmlrpc++/XmlRpc.h"
 
 #include "libnova_cpp.h"
+
 #include <string.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
 
 // maximal age of static documents
 #define CACHE_MAX_STATIC   864000
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 /**
@@ -61,9 +54,13 @@ namespace rts2xmlrpc
 class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 {
 	public:
-		GetRequestAuthorized (const char* prefix, const char *description = NULL, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, description, s) { executePermission = false; }
+		GetRequestAuthorized (const char* prefix, HTTPServer *_http_server, const char *description = NULL, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, description, s)
+		{
+			http_server = _http_server;
+			executePermission = false;
+		}
 
-		virtual void execute (XmlRpc::XmlRpcSource *source, struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
+		virtual void execute (XmlRpc::XmlRpcSource *source, struct ::sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
 		/**
 		 * Received exact path and HTTP params. Returns response - MIME
@@ -82,10 +79,6 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
 
 	protected:
-		/**
-		 * Register asynchronous call.
-		 */
-
 		/**
 		 * Prints document header.
 		 *
@@ -159,43 +152,11 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 
 	private:
 		bool executePermission;
+
+		HTTPServer *http_server;
+
+		HTTPServer *getServer () { return http_server; }
 };
-
-#ifdef RTS2_HAVE_LIBJPEG
-
-/**
- * Plot current position of telescope, target and next target position.
- */
-class CurrentPosition:public GetRequestAuthorized
-{
-	public:
-		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "current telescope position", s) {};
-
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-};
-
-#endif /* RTS2_HAVE_LIBJPEG */
-
-#ifdef RTS2_HAVE_PGSQL
-
-#ifdef RTS2_HAVE_LIBJPEG
-
-/**
- * Plot targets on the alt-az graph.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class AltAzTarget: public GetRequestAuthorized
-{
-	public:
-		AltAzTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "altitude target graph", s) {};
-
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-};
-
-#endif /* RTS2_HAVE_LIBJPEG */ 
-
-#endif /* RTS2_HAVE_PGSQL */
 
 }
 

@@ -17,17 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "xmlrpcd.h"
+#include "xmlrpc++/XmlRpc.h"
 #include "rts2json/jsonvalue.h"
+#include "error.h"
+#include "bbapi.h"
+#include "bbdb.h"
 
 #ifdef RTS2_JSONSOUP
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
 #endif // RTS2_JSONSOUP
 
-using namespace rts2xmlrpc;
+using namespace rts2bb;
 
-BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s)
+BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, NULL, s)
 {
 }
 
@@ -39,13 +42,13 @@ void BBAPI::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	}
 	catch (rts2core::Error &er)
 	{
-		throw JSONException (er.what ());
+		throw XmlRpc::JSONException (er.what ());
 	}
 }
 
 void BBAPI::authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
-	throw JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
+	throw XmlRpc::JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
 }
 
 void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -55,7 +58,6 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 
 	os.precision (8);
 
-	XmlRpcd * master = (XmlRpcd *) getMasterApp ();
 	// calls returning binary data
 	if (vals.size () == 1 && vals[0] == "obsvalues")
 	{

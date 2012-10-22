@@ -18,7 +18,7 @@
  */
 
 #include "rts2-config.h"
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "xmlrpc++/XmlRpc.h"
@@ -31,10 +31,10 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */ 
-class Auger: public GetRequestAuthorized
+class Auger: public rts2json::GetRequestAuthorized
 {
 	public:
-		Auger (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "access to auger shower data", s) {};
+		Auger (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, _http_server, "access to auger shower data", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:

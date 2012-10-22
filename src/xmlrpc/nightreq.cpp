@@ -18,7 +18,7 @@
  */
 
 #include "nightdur.h"
-#include "jsonvalue.h"
+#include "rts2json/jsonvalue.h"
 #include "xmlrpcd.h"
 #include "xmlrpc++/urlencoding.h"
 
@@ -280,7 +280,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 		{
 			if (iter != as.begin ())
 				_os << ",";
-			_os << "[" << iter->first << "," << iter->second.c << "," << iter->second.i << "," << iter->second.gi << "," << JsonDouble (iter->second.tt) << "]\n";
+			_os << "[" << iter->first << "," << iter->second.c << "," << iter->second.i << "," << iter->second.gi << "," << rts2json::JsonDouble (iter->second.tt) << "]\n";
 		}
 		_os << "]}";
 	}
@@ -318,12 +318,12 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			_os << "[" << iter->getObsId () << ","
 				<< iter->getTargetId () << ","
 				<< "\"" << iter->getTargetName () << "\","
-				<< JsonDouble (iter->getObsSlew ()) << ","
-				<< JsonDouble (iter->getObsStart ()) << ","
-				<< JsonDouble (iter->getObsEnd ()) << ","
+				<< rts2json::JsonDouble (iter->getObsSlew ()) << ","
+				<< rts2json::JsonDouble (iter->getObsStart ()) << ","
+				<< rts2json::JsonDouble (iter->getObsEnd ()) << ","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages () << ","
-				<< JsonDouble (iter->getTimeOnSky ())
+				<< rts2json::JsonDouble (iter->getTimeOnSky ())
 				<< "]";
 		}
 

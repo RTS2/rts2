@@ -1,6 +1,6 @@
-/* 
- * Switch state support.
- * Copyright (C) 2010 Petr Kubanek <kubanek@fzu.cz> Institute of Physics, Czech Republic
+/**
+ * RTS2 BB Database API
+ * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,16 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2json/httpreq.h"
-
-namespace rts2xmlrpc
+namespace rts2bb
 {
 
-class SwitchState: public rts2json::GetRequestAuthorized
-{
-	public:
-		SwitchState (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "switchstate", s) {}
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-};
+/***
+ * Register new target mapping into BB database.
+ *
+ * @param observatory_id  ID of observatory requesting the change
+ * @param tar_id          ID of target in central database
+ * @param obs_tar_id      ID of target in observatory database
+ */
+void createMapping (int observatory_id, int tar_id, int obs_tar_id);
 
 }

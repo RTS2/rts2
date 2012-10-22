@@ -18,7 +18,7 @@
  */
 
 #include "rts2-config.h"
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "xmlrpc++/XmlRpc.h"
@@ -31,10 +31,10 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Observation: public GetRequestAuthorized
+class Observation: public rts2json::GetRequestAuthorized
 {
 	public:
-		Observation (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "observations by observation IDs", s) {};
+		Observation (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "observations by observation IDs", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:

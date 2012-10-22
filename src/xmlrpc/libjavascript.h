@@ -20,7 +20,7 @@
 #ifndef __RTS2_LIBJAVASCRIPT__
 #define __RTS2_LIBJAVASCRIPT__
 
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 
 namespace rts2xmlrpc
 {
@@ -30,10 +30,10 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class LibJavaScript: public GetRequestAuthorized
+class LibJavaScript: public rts2json::GetRequestAuthorized
 {
 	public:
-		LibJavaScript (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
+		LibJavaScript (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:

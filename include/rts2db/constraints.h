@@ -88,7 +88,8 @@ class ConstraintDoubleInterval
 class Constraint
 {
 	public:
-		Constraint () {};
+		Constraint () {}
+		virtual ~Constraint () {}
 
 		virtual void load (xmlNodePtr cons) = 0;
 		virtual bool satisfy (Target *tar, double JD) = 0;

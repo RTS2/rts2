@@ -18,7 +18,7 @@
  */
 
 #include "bb.h"
-#include "httpreq.h"
+#include "bbapi.h"
 #include "observatory.h"
 
 using namespace XmlRpc;
@@ -108,9 +108,5 @@ void BB::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 int main (int argc, char **argv)
 {
 	BB device (argc, argv);
-
-	// create HTTP methods
-	Status status ("collected observatories status", &xmlrpc_server, &device);
-
 	return device.run ();
 }

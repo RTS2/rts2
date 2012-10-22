@@ -18,10 +18,135 @@
  */
 
 #include "xmlrpcd.h"
+#include "altaz.h"
+#include "valueplot.h"
 
 #ifdef RTS2_HAVE_LIBJPEG
 
 using namespace rts2xmlrpc;
+
+void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	int s = params->getInteger ("s", 250);
+	AltAz altaz = AltAz (s, s);
+	altaz.plotAltAzGrid ();
+
+	struct ln_equ_posn pos;
+	struct ln_hrz_posn hrz;
+
+	double JD = ln_get_julian_from_sys ();
+
+	// get current target position..
+	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	rts2core::Connection *conn = serv->getOpenConnection (DEVICE_TYPE_MOUNT);
+	rts2core::Value *val;
+	if (conn)
+	{
+		val = conn->getValue ("TEL_");
+		if (val && val->getValueType () == RTS2_VALUE_ALTAZ)
+		{
+			hrz.alt = ((rts2core::ValueAltAz *) val)->getAlt ();
+			hrz.az = ((rts2core::ValueAltAz *) val)->getAz ();
+
+			altaz.plotCross (&hrz, "Telescope", "green");
+		}
+
+		val = conn->getValue ("TAR");
+		if (val && val->getValueType () == RTS2_VALUE_RADEC)
+		{
+			pos.ra = ((rts2core::ValueRaDec *) val)->getRa ();
+			pos.dec  = ((rts2core::ValueRaDec *) val)->getDec ();
+
+			if (!(isnan (pos.ra) || isnan (pos.dec)))
+			{
+				ln_get_hrz_from_equ (&pos, Configuration::instance ()->getObserver (), JD, &hrz);
+				altaz.plotCross (&hrz, NULL, "blue");
+			}
+		}
+	}
+
+#ifdef RTS2_HAVE_PGSQL
+	conn = serv->getOpenConnection (DEVICE_TYPE_EXECUTOR);
+	if (conn)
+	{
+		rts2db::Target *tar;
+		val = conn->getValue ("current");
+		if (val && val->getValueInteger () >= 0)
+		{
+			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			if (tar)
+			{
+				tar->getAltAz (&hrz, JD);
+				altaz.plotCross (&hrz, tar->getTargetName (), "green");
+				delete tar;
+			}
+		}
+		val = conn->getValue ("next");
+		if (val && val->getValueInteger () >= 0)
+		{
+			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			if (tar)
+			{
+				tar->getAltAz (&hrz, JD);
+				altaz.plotCross (&hrz, tar->getTargetName (), "blue");
+				delete tar;
+			}
+		}
+	}
+#endif /* RTS2_HAVE_PGSQL */
+
+	Magick::Blob blob;
+	altaz.write (&blob, "jpeg");
+
+	response_type = "image/jpeg";
+
+	response_length = blob.length();
+	response = new char[response_length];
+	memcpy (response, blob.data(), response_length);
+}
+
+#ifdef RTS2_HAVE_PGSQL
+
+void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	// get new AltAz graph
+	AltAz altaz = AltAz ();
+
+	// plot its AltAz grid
+	altaz.plotAltAzGrid ();
+
+	struct ln_hrz_posn hrz;
+
+	// retrieve from database set of all targets..
+	rts2db::TargetSet ts = rts2db::TargetSet ();
+	ts.load ();
+
+	// iterate through the set, plot location of each target
+	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
+	{
+	  	// retrieve target AltAz coordinates
+		(*iter).second->getAltAz (&hrz);
+
+		// and plot them with proper caption
+		if (hrz.alt > -2)
+			altaz.plotCross (&hrz, (*iter).second->getTargetName ());
+	}
+	
+	// write image to blob as JPEG
+	Magick::Blob blob;
+	altaz.write (&blob, "jpeg");
+
+	// set MIME response type
+	response_type = "image/jpeg";
+
+	// lenght of response
+	response_length = blob.length();
+	// create and fill response buffer
+	response = new char[response_length];
+	memcpy (response, blob.data(), response_length);
+}
+
+#endif /* RTS2_HAVE_PGSQL */
 
 void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {

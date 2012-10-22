@@ -40,6 +40,7 @@ class ExpandString
 {
 	public:
 		ExpandString () {}
+		virtual ~ExpandString () {}
 		virtual void writeTo (std::ostream &os) = 0;
 };
 
@@ -47,7 +48,7 @@ class ExpandStringString:public ExpandString
 {
 	public:
 		ExpandStringString (const char * chrt) { str = new char[strlen (chrt) + 1]; strcpy (str, chrt); }
-		~ExpandStringString () { delete []str; }
+		virtual ~ExpandStringString () { delete []str; }
 		virtual void writeTo (std::ostream &os) { os << str; }
 	private:
 		char *str;
@@ -87,7 +88,7 @@ class ExpandStringDevice:public ExpandString
 {
 	public:
 		ExpandStringDevice (const char *_deviceName);
-		~ExpandStringDevice () { delete []deviceName; }
+		virtual ~ExpandStringDevice () { delete []deviceName; }
 		virtual void writeTo (std::ostream &os);
 
 	private:
@@ -98,7 +99,7 @@ class ExpandStringValue:public ExpandString
 {
 	public:
 		ExpandStringValue (const char *_deviceName, const char *_valueName);
-		~ExpandStringValue () { delete []deviceName; delete []valueName; delete []subName; }
+		virtual ~ExpandStringValue () { delete []deviceName; delete []valueName; delete []subName; }
 		virtual void writeTo (std::ostream &os);
 
 	private:
@@ -111,7 +112,7 @@ class ExpandStringScript:public ExpandString
 {
 	public:
 		ExpandStringScript (const char *pagePrefix, const char *_script);
-		~ExpandStringScript () { delete []script; }
+		virtual ~ExpandStringScript () { delete []script; }
 		virtual void writeTo (std::ostream &os);
 
 	private:
@@ -122,7 +123,7 @@ class ExpandStringUsername:public ExpandString
 {
 	public:
 		ExpandStringUsername (const char *_username):ExpandString () { username = _username; }
-		~ExpandStringUsername () {}
+		virtual ~ExpandStringUsername () {}
 
 		virtual void writeTo (std::ostream &os);
 
@@ -139,7 +140,7 @@ class ExpandStrings:public std::list <ExpandString *>
 			request = _request;
 		}
 
-		~ExpandStrings () { for (ExpandStrings::iterator iter = begin (); iter != end (); iter++) delete *iter; clear (); }
+		virtual ~ExpandStrings () { for (ExpandStrings::iterator iter = begin (); iter != end (); iter++) delete *iter; clear (); }
 		void expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bool ignoreUnknownTags = false);
 		std::string getString ();
 

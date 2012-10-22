@@ -34,6 +34,7 @@ class MessageEvent
 {
 	public:
 		MessageEvent (XmlRpcd *_master, std::string _deviceName, int _type);
+		virtual ~MessageEvent () {}
 
 		bool isForMessage (rts2core::Message *message) { return deviceName == message->getMessageOName () && message->passMask (type); }
 

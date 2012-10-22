@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 
 #ifdef RTS2_HAVE_PGSQL
 
@@ -29,10 +29,10 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Plan: public GetRequestAuthorized
+class Plan: public rts2json::GetRequestAuthorized
 {
 	public:
-		Plan (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "observing plan management", s) {}
+		Plan (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "observing plan management", s) {}
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:

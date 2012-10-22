@@ -24,7 +24,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-Directory::Directory (const char* prefix, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _dirPath, s)
+Directory::Directory (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, _dirPath, s)
 {
 	dirPath = std::string (_dirPath);
 	defaultFile = std::string (_defaultFile);

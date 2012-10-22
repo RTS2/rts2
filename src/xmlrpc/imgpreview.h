@@ -18,7 +18,7 @@
  */
 
 #include "rts2-config.h"
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 #include "xmlapi.h"
 
 #define DEFAULT_QUANTILES    0.005
@@ -80,10 +80,10 @@ class Previewer
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class JpegImageRequest: public GetRequestAuthorized
+class JpegImageRequest: public rts2json::GetRequestAuthorized
 {
 	public:
-		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
+		JpegImageRequest (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
@@ -93,10 +93,10 @@ class JpegImageRequest: public GetRequestAuthorized
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class JpegPreview:public GetRequestAuthorized
+class JpegPreview:public rts2json::GetRequestAuthorized
 {
 	public:
-		JpegPreview (const char* prefix, const char *_dirPath, XmlRpcServer *s):GetRequestAuthorized (prefix, "JPEG image preview", s) { dirPath = _dirPath; }
+		JpegPreview (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "JPEG image preview", s) { dirPath = _dirPath; }
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
@@ -110,10 +110,10 @@ class JpegPreview:public GetRequestAuthorized
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class FitsImageRequest:public GetRequestAuthorized
+class FitsImageRequest:public rts2json::GetRequestAuthorized
 {
 	public:
-		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
+		FitsImageRequest (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
@@ -124,14 +124,14 @@ class FitsImageRequest:public GetRequestAuthorized
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DownloadRequest:public GetRequestAuthorized
+class DownloadRequest:public rts2json::GetRequestAuthorized
 {
 	public:
 #ifdef RTS2_HAVE_LIBARCHIVE
-		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) { buf = NULL; buf_size = 0; }
+		DownloadRequest (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) { buf = NULL; buf_size = 0; }
 		virtual ~DownloadRequest () { if (buf) free (buf); }
 #else
-		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
+		DownloadRequest (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 #endif
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

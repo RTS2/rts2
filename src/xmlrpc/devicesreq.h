@@ -18,7 +18,7 @@
  */
 
 #include "rts2-config.h"
-#include "httpreq.h"
+#include "rts2json/httpreq.h"
 
 namespace rts2xmlrpc
 {
@@ -28,10 +28,10 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Devices: public GetRequestAuthorized
+class Devices: public rts2json::GetRequestAuthorized
 {
 	public:
-		Devices (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "access to devices present in the observatory", s) {}
+		Devices (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "access to devices present in the observatory", s) {}
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void printList (char* &response, size_t &response_length);
