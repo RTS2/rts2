@@ -201,7 +201,10 @@ int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec, double &
 	ra = ln_range_degrees (ra);
 
 	if (telLatitude->getValueDouble () < 0)
+	{
 		dec *= -1;
+		un_dec *= -1;
+	}
 
 	return 0;
 }
