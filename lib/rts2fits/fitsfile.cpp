@@ -292,7 +292,7 @@ int FitsFile::createFile (bool _overwrite)
 	{
 		memsize = new size_t;
 		*memsize = 2880;
-		*imgbuf = new void*;
+		imgbuf = new void*;
 		*imgbuf = malloc (*memsize);
 		fits_create_memfile (&ffile, imgbuf, memsize, 10 * (*memsize), realloc, &fits_status);
 		if (fits_status)
