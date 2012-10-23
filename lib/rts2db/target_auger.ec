@@ -510,10 +510,10 @@ void TargetAuger::load (int auger_id)
 		Target::load ();
 }
 
-void TargetAuger::loadByOid (int obs_id)
+void TargetAuger::loadByOid (int _obs_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-	int db_obs_id = obs_id;
+	int db_obs_id = _obs_id;
 	int db_auger_t3id;
 	EXEC SQL END DECLARE SECTION;
 

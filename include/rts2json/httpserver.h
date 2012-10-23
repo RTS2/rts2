@@ -19,6 +19,9 @@
 
 #include <string>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 namespace rts2json
 {
 

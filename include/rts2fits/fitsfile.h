@@ -333,8 +333,8 @@ class FitsFile: public rts2core::Expander
 
 		bool memFile;
 
-		size_t memsize;
-		void *imgbuf;
+		size_t *memsize;
+		void **imgbuf;
 };
 
 /**

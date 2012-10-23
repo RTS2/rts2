@@ -81,6 +81,8 @@ ColumnData::ColumnData (std::string _name, std::vector <int> _data, bool isBoole
 FitsFile::FitsFile ():rts2core::Expander ()
 {
   	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	ffile = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -97,6 +99,11 @@ FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 	_fitsfile->setFitsFile (NULL);
 
 	memFile = _fitsfile->memFile;
+	memsize = _fitsfile->memsize;
+	imgbuf = _fitsfile->imgbuf;
+
+	_fitsfile->memsize = NULL;
+	_fitsfile->imgbuf = NULL;
 
 	setFileName (_fitsfile->getFileName ());
 
@@ -107,6 +114,8 @@ FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 FitsFile::FitsFile (const char *_fileName, bool _overwrite):rts2core::Expander ()
 {
 	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
@@ -119,6 +128,8 @@ FitsFile::FitsFile (const char *_fileName, bool _overwrite):rts2core::Expander (
 FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	ffile = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -129,6 +140,8 @@ FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 FitsFile::FitsFile (const char *_expression, const struct timeval *_tv, bool _overwrite):rts2core::Expander (_tv)
 {
 	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
@@ -140,6 +153,13 @@ FitsFile::FitsFile (const char *_expression, const struct timeval *_tv, bool _ov
 FitsFile::~FitsFile (void)
 {
 	closeFile ();
+
+	if (imgbuf)
+	{
+		free (*imgbuf);
+	}
+
+	delete memsize;
 
 	if (fileName != absoluteFileName)
 		delete[] absoluteFileName;
@@ -274,9 +294,10 @@ int FitsFile::createFile (bool _overwrite)
 
 	if (memFile)
 	{
-		memsize = 2880;
-		imgbuf = malloc (memsize);
-		fits_create_memfile (&ffile, &imgbuf, &memsize, 10 * memsize, realloc, &fits_status);
+		memsize = new size_t;
+		*memsize = 2880;
+		*imgbuf = malloc (*memsize);
+		fits_create_memfile (&ffile, imgbuf, memsize, 10 * (*memsize), realloc, &fits_status);
 		if (fits_status)
 		{
 			logStream (MESSAGE_ERROR) << "FitsFile::createImage memimage " << getFitsErrors () << sendLog;
