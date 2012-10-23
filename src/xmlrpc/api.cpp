@@ -220,17 +220,20 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	// calls returning arrays
 	else if (vals.size () == 1 && vals[0] == "devices")
 	{
+		int ext = params->getInteger ("e", 0);
 		os << "[";
-		bool first = true;
+		if (ext)
+			os << "[\"" << ((XmlRpcd *) getMasterApp ())->getDeviceName () << "\"," << DEVICE_TYPE_XMLRPC << ']';
+		else
+			os << '"' << ((XmlRpcd *) getMasterApp ())->getDeviceName () << '"';
 		for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
 		{
 			if ((*iter)->getName ()[0] == '\0')
 				continue;
-			if (first)
-				first = false;
+			if (ext)
+				os << ",[\"" << (*iter)->getName () << "\"," << (*iter)->getOtherType () << ']';
 			else
-				os << ",";
-			os << '"' << (*iter)->getName () << '"';
+				os << ",\"" << (*iter)->getName () << '"';
 		}
 		os << "]";
 	}
