@@ -18,17 +18,23 @@ switch ($1)
 		set filters=(`cat /Realtime/lib/filt.dat`)
 		set curfilname=$filters[$curfilt]
 
-		if ($curfilname != $1) then
-			set filt=`grep -n "$1" /Realtime/lib/filt.dat | cut -f1 -d:`
+		set fname=$1
+		set fa=`grep "^$fname " $RTS2/etc/rts2/aliases | cut -f2 -d ' '`
+		if ($? == 0) then
+			set fname=$fa
+		endif
+
+		if ($curfilname != $fname) then
+			set filt=`grep -n "$fname" /Realtime/lib/filt.dat | cut -f1 -d:`
 			if ($? != 0) then
-				rts2-logcom "filter $1 not present, ignoring the request"
+				rts2-logcom "filter $fname not present, ignoring the request"
 			else
-				rts2-logcom -n "Moving filter wheel to $1"
+				rts2-logcom -n "Moving filter wheel to $fname"
 				tele filter $filt
 			endif
 			exit 1
 		else	
-#		  	rts2-logcom "Filter $1 already set"
+#		  	rts2-logcom "Filter $fname already set"
 			exit 0
 		endif	
 		breaksw
