@@ -947,19 +947,9 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 	if (nchan == 1)
 	{
 		if (dataType == RTS2_DATA_SBYTE)
-		{
-			if (isMemImage ())
-				fits_create_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
-			else
-				fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
-		}
+			fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
 		else
-		{
-			if (isMemImage ())
-				fits_create_img (getFitsFile (), dataType, 2, sizes, &fits_status);
-			else
-				fits_resize_img (getFitsFile (), dataType, 2, sizes, &fits_status);
-		}
+			fits_resize_img (getFitsFile (), dataType, 2, sizes, &fits_status);
 		if (fits_status)
 		{
 			logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors () << "dataType " << dataType << sendLog;
