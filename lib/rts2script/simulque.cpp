@@ -112,13 +112,13 @@ double SimulQueue::step ()
 		if (!found)
 		{
 			// something is ready in the queue, use its start time as next time..
-			if (!isnan (e_end))
+			if (!isnan (e_end) && e_end > t)
 				t = e_end;
 			else
 				t += 60;
 		}
 		from = t;
-		return (t - from) / (to - from);
+		return 0;
 	}
 
 	for (sq = sqs.begin (); sq != sqs.end (); sq++)
