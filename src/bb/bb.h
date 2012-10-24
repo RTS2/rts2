@@ -20,9 +20,13 @@
 #ifndef __RTS2_BB__
 #define __RTS2_BB__
 
+#include "bbapi.h"
 #include "observatory.h"
 #include "rts2db/devicedb.h"
 #include "xmlrpc++/XmlRpc.h"
+
+#include <sys/types.h>
+#include <sys/socket.h>
 
 using namespace XmlRpc;
 
@@ -35,7 +39,7 @@ namespace rts2bb
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class BB:public rts2db::DeviceDb
+class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 {
 	public:
 		BB (int argc, char **argv);
@@ -47,6 +51,11 @@ class BB:public rts2db::DeviceDb
 		std::map <std::string, Observatory>::iterator omBegin () { return om.begin (); }
 		std::map <std::string, Observatory>::iterator omEnd () { return om.end (); }
 
+		virtual bool isPublic (struct rts2json::sockaddr_in *saddr, const std::string &path) { return true; }
+		virtual bool existsSession (std::string sessionId) { return false; }
+		virtual void addExecutedPage () {}
+		virtual const char* getPagePrefix () { return ""; }
+
 	protected:
 		virtual int processOption (int opt);
 
@@ -57,7 +66,8 @@ class BB:public rts2db::DeviceDb
 
 	private:
 		int rpcPort;
-		rts2bb::ObservatoryMap om;
+		ObservatoryMap om;
+		BBAPI bbApi;
 };
 
 /**

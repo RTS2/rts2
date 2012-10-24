@@ -18,15 +18,14 @@
  */
 
 #include "bb.h"
-#include "bbapi.h"
 #include "observatory.h"
 
 using namespace XmlRpc;
 using namespace rts2bb;
 
-XmlRpcServer xmlrpc_server;
-
-BB::BB (int argc, char ** argv):rts2db::DeviceDb (argc, argv, 0, "BB")
+BB::BB (int argc, char ** argv):
+	rts2db::DeviceDb (argc, argv, 0, "BB"),
+	bbApi ("/api", this, this)
 {
 	rpcPort = 8889;
 
@@ -87,8 +86,8 @@ int BB::init ()
 	if (printDebug ())
 		XmlRpc::setVerbosity (5);
 
-	xmlrpc_server.bindAndListen (rpcPort);
-	xmlrpc_server.enableIntrospection (true);
+	XmlRpcServer::bindAndListen (rpcPort);
+	XmlRpcServer::enableIntrospection (true);
 
 	return ret;
 }
@@ -96,13 +95,13 @@ int BB::init ()
 void BB::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	rts2db::DeviceDb::addSelectSocks (read_set, write_set, exp_set);
-	xmlrpc_server.addToFd (&read_set, &write_set, &exp_set);
+	XmlRpcServer::addToFd (&read_set, &write_set, &exp_set);
 }
 
 void BB::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	rts2db::DeviceDb::selectSuccess (read_set, write_set, exp_set);
-	xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
+	XmlRpcServer::checkFd (&read_set, &write_set, &exp_set);
 }
 
 int main (int argc, char **argv)

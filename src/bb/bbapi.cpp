@@ -59,9 +59,20 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 	os.precision (8);
 
 	// calls returning binary data
-	if (vals.size () == 1 && vals[0] == "obsvalues")
+	if (vals.size () == 1 && vals[0] == "mapping")
 	{
-		std::cout << connection->getRequest () << std::endl;
+		int observatory_id = params->getInteger ("observatory_id", -1);
+		if (observatory_id < 0)
+			throw XmlRpc::JSONException ("unknown observatory ID");
+		int tar_id = params->getInteger ("tar_id", -1);
+		if (tar_id < 0)
+			throw XmlRpc::JSONException ("unknown target ID");
+		int obs_tar_id = params->getInteger ("obs_tar_id", -1);
+		if (obs_tar_id < 0)
+			throw XmlRpc::JSONException ("unknown local target ID");
+
+		createMapping (observatory_id, tar_id, obs_tar_id);
+
 		os << "{\"ret\":0}";
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);

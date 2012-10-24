@@ -29,7 +29,7 @@ using namespace rts2bb;
  * @param tar_id          ID of target in central database
  * @param obs_tar_id      ID of target in observatory database
  */
-void createMapping (int observatory_id, int tar_id, int obs_tar_id)
+void rts2bb::createMapping (int observatory_id, int tar_id, int obs_tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
