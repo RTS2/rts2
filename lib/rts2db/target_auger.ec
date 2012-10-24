@@ -97,6 +97,70 @@ void dirToEqu (vec *dir, struct ln_lnlat_posn *observer, double JD, struct ln_eq
 	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
 }
 
+float Ddist (float a, float b, float d, float e)
+{
+	int dist;
+	dist = sqrt((a-d)*(a-d)+(b-e)*(b-e));
+	return dist;
+}
+
+/* calculate slant depth */  
+float slantd_elev (float est, float nor, float X, float azimut, float sdphi, float theta, int month)
+{
+	float param[12][5][4] = {{{6.5,-185.45512,1217.75792,1051253.676},{13.1,-77.961719233,1149.3974354,879044.2975},{35.1,1.0659697329,1536.7105029,610800.76274},{100.0,0.000317101,670.97827193,743424.16762},{10000.0,0.01128292,1.0,1000000000.0}},{{6,-193.482906649,1227.277526,1057565.8919},{12.3,-88.047606534,1152.3562565,897335.90273},{37.6,0.67671779025,1457.9361143,625248.19669},{100,0.000318027297,664.79773683,743878.54879},{10000.0,0.01128292,1.0,1000000000.0}},{{7,-171.23355185,1207.1490848, 1026045.9111},{12.9,-73.878750552,1154.8360718,862344.55423},{35.7,0.94871056328,1508.6973496,612947.06993},{100, 0.00044621670109,658.64089387,743345.02082},{10000.0,0.01128292,1.0,1000000000.0}},{{8,-143.09810516,1181.8291825,980060.24638},{12.1,-76.979091502,1161.8632157,856027.7804},{36.2,0.83594885933,1440.4714686,620377.25203},{100,0.00033614110605,656.86460489,743498.68639},{10000.0,0.01128292,1.0,1000000000.0}},{{4.5,-273.88905394,1309.5120835,1129207.4375},{11.8,-98.373681864,1157.6082795,903757.61519},{36.3,0.82578384579,1447.8069611,617971.89079},{100,0.00035413747604,646.83919414,743288.08998},
+		{10000.0,0.01128292,1.0,1000000000.0}},{{8.9,-148.08345247,1189.0575867,972111.82261},{13.5,-26.154607106,1212.2994332,723093.94615},{36.4,0.79538251139,1420.2496317,619111.17794},{100,0.00036902177863,639.35345217,743038.7238},
+		{10000.0,0.01128292,1.0,1000000000.0}},{{9,-146.11959987,1187.8837556,971965.53755},{13.9,-24.213336126,1216.6305834,720173.65642},{36.1,0.8451498785,1436.5439047,617971.32975},{100,0.00035837316229,645.89014934,743116.71676},{10000.0,0.01128292,1.0,1000000000.0}},{{7,-177.43352676,1217.6174485,1002673.5826},{12.4,-51.167425841,1158.3369382,793680.93946},{35.8,0.86038576465,1393.5697049,623636.4628},{100,0.00033471821682,658.76353049,743422.13408},{10000.0,0.01128292,1.0,1000000000.0}},{{6.8,-162.00591523,1205.1568777,983444.97916},{11.8,-65.658426267,1154.9309051,826467.09708},{36.6,0.74755311473,1377.3533786,628338.66854},{100,0.00032665957565,660.22102783,743767.87925},{10000.0,0.01128292,1.0,1000000000.0}},{{5.9,-211.44374611,1247.6302703,1052538.3549},{11.7,-76.981259878,1153.125055,853838.85144},{36.5,0.76787883237,1389.7534388,627217.41029},{100,0.00032265825392,661.7309533,743872.51473},{10000.0,0.01128292,1.0,1000000000.0}},{{5,-272.848922,1303.7845877,1138387.7904},{11.9,-93.151868349,1155.0540363,894957.20606},{35.5,0.93890348893,1444.3630867,619397.04191},{100,0.0003225458181,665.9739223,743525.48653},{10000.0,0.01128292,1.0,1000000000.0}},{{6.4,-224.57497779,1256.7556773,1083848.7232},{12.9,-61.11725221,1152.7165161,829418.27646},{36.5,0.8079227276,1461.2679827,618371.09904},{100,0.00034574221706,650.81800915,743446.46709},{10000.0,0.01128292,1.0,1000000000.0}}};
+
+	float elev = 0;
+	float dis = 0;
+	float dist = 0;
+	int i = 0;
+	float depth = 0;
+	float haltitude = 0;
+	float altitude = 0.0;
+	float alpha = 0.0;
+	float az_alpha = 0.0;
+	float delta = 0.0;
+	float gamma = 0.0;
+	float disttopoint = 0.0;
+	const float east = 459218.67;
+	const float north = 6071875.9;
+	const float elevat = 1418.575; //vyska
+	dist = Ddist(est,nor,east,north);
+	alpha = atan((est-east)/(nor-north));
+	az_alpha = M_PI + alpha;
+	azimut = azimut + M_PI; //pro fram od jihu po smeru hodinovych rucicek, transformace na klasicky azimut
+	if (alpha<0)
+		delta = fabs(azimut-(alpha+2*M_PI));
+	else
+		delta = fabs(azimut-alpha);
+	sdphi = sdphi;
+	sdphi = (2*M_PI-sdphi)+M_PI/2;
+	theta = theta;
+	gamma = fabs(sdphi-az_alpha);
+	delta = M_PI-(delta+gamma);
+	disttopoint =dist * sin(gamma)/sin(delta);
+	depth = X*cos(theta);
+	altitude = -param[month][0][3]*log((depth-param[month][0][1])/param[month][0][2]);
+	haltitude = altitude/100000;
+	while (haltitude >= 0)
+	{
+		haltitude = haltitude-param[month-1][i][0];
+		i = i+1;
+	}
+	if (i==2)
+	{
+		altitude = -param[month][1][3]*log((depth-param[month][1][1])/param[month][1][2]);
+	}
+	if (i==3)
+	{
+		altitude = -param[month][2][3]*log((depth-param[month][2][1])/param[month][2][2]);
+	}
+	altitude = altitude/100-elevat;
+	elev = atan(altitude/disttopoint);
+	return elev;
+}
+
 /*****************************************************************/
 
 TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, _obs)
@@ -684,7 +748,7 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		_osra << "RA " << i;
 
 		std::ostringstream _osdec;
-		_osdec << "RA " << i;
+		_osdec << "DEC " << i;
 
 		_os
 			<< std::endl
@@ -695,12 +759,17 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 	}
 
 	std::ostringstream profile;
+	std::ostringstream slants;
 
 	for (std::vector <std::pair <double, double> >::iterator iter = showerparams.begin (); iter != showerparams.end (); iter++)
 	{
 		if (iter != showerparams.begin ())
+		{
 			profile << " ";
+			slants << " ";
+		}
 		profile << iter->first << " " << iter->second;
+		slants << slantd_elev (Easting, Northing, iter->first, 0, SDPPhi, Theta, 0);
 	}
 
 	_os
