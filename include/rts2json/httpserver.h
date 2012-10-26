@@ -56,7 +56,7 @@ class HTTPServer
 		/**
 		 * Verify user credentials.
 		 */
-		virtual bool verifyUser (std::string username, std::string pass, bool &executePermission) = 0;
+		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission) = 0;
 };
 
 }

@@ -21,6 +21,7 @@ CREATE TABLE observatory_observations (
 	obs_slew	timestamp,
 	obs_start	timestamp,
 	obs_end		timestamp,
+	onsky		float8, -- total second of on-sky images
 	good_images	integer,
 	bad_images	integer
 );

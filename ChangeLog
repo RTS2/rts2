@@ -1,3 +1,6 @@
+2012-10-26
+ * bb server with mapping and observations calls
+
 2012-10-22
  * Changed telescope driver to display "model" DEC (-180..180 range)
 

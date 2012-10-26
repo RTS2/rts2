@@ -21,6 +21,7 @@
 #include "xmlrpcd.h"
 
 #ifdef RTS2_HAVE_PGSQL
+#include "rts2db/user.h"
 #include "rts2db/messagedb.h"
 #else
 #endif /* RTS2_HAVE_PGSQL */
@@ -934,13 +935,13 @@ void XmlRpcd::reloadEventsFile ()
 }
 
 #ifdef RTS2_HAVE_PGSQL
-bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
+bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission)
 {
-	return rts2db::verifyUser (username, pass, executePermission);
+	return verifyUser (username, pass, executePermission);
 }
 
 #else
-bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
+bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission)
 {
 	return userLogins.verifyUser (username, pass, executePermission);
 }

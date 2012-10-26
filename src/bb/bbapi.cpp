@@ -94,8 +94,13 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			double obs_slew = params->getDouble ("obs_slew", NAN);
 			double obs_start = params->getDouble ("obs_start", NAN);
 			double obs_end = params->getDouble ("obs_end", NAN);
+			double onsky = params->getDouble ("onsky", NAN);
 			int good_images = params->getInteger ("good_images", 0);
 			int bad_images = params->getInteger ("bad_images", 0);
+
+			reportObservation (observatory_id, obs_id, tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images);
+
+			os << "{\"ret\":0}";
 		}
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);

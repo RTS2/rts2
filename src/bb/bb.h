@@ -23,6 +23,7 @@
 #include "bbapi.h"
 #include "observatory.h"
 #include "rts2db/devicedb.h"
+#include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
 
 #include <sys/types.h>
@@ -55,6 +56,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		virtual bool existsSession (std::string sessionId) { return false; }
 		virtual void addExecutedPage () {}
 		virtual const char* getPagePrefix () { return ""; }
+		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission) { return verifyUser (username, pass, executePermission); }
 
 	protected:
 		virtual int processOption (int opt);

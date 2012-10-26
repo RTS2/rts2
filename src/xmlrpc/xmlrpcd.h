@@ -446,7 +446,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		void scriptProgress (double start, double end);
 
-		virtual bool verifyUser (std::string username, std::string pass, bool &executePermission);
+		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission);
 
 		/**
 		 *

@@ -42,7 +42,7 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 		}
 	}
 
-	if (getServer ()->verifyUser (getUsername (), getPassword (), executePermission) == false)
+	if (getServer ()->verifyDBUser (getUsername (), getPassword (), executePermission) == false)
 	{
 		authorizePage (http_code, response_type, response, response_length);
 		return;
