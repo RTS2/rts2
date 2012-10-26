@@ -23,8 +23,6 @@
 #include "rts2db/recvals.h"
 #endif // RTS2_HAVE_LIBJPEG
 
-#ifdef RTS2_HAVE_LIBJPEG
-
 namespace rts2xmlrpc
 {
 #ifdef RTS2_HAVE_LIBJPEG
@@ -61,8 +59,6 @@ class AltAzTarget: public rts2json::GetRequestAuthorized
 
 #endif /* RTS2_HAVE_LIBJPEG */ 
 
-#endif /* RTS2_HAVE_PGSQL */
-
 /**
  * Draw graph of variables.
  *
@@ -83,6 +79,6 @@ class Graph: public rts2json::GetRequestAuthorized
 		void plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
-}
+#endif /* RTS2_HAVE_PGSQL */
 
-#endif // RTS2_HAVE_LIBJPEG
+}

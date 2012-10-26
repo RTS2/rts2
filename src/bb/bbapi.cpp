@@ -59,21 +59,44 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 	os.precision (8);
 
 	// calls returning binary data
-	if (vals.size () == 1 && vals[0] == "mapping")
+	if (vals.size () == 1)
 	{
-		int observatory_id = params->getInteger ("observatory_id", -1);
-		if (observatory_id < 0)
-			throw XmlRpc::JSONException ("unknown observatory ID");
-		int tar_id = params->getInteger ("tar_id", -1);
-		if (tar_id < 0)
-			throw XmlRpc::JSONException ("unknown target ID");
-		int obs_tar_id = params->getInteger ("obs_tar_id", -1);
-		if (obs_tar_id < 0)
-			throw XmlRpc::JSONException ("unknown local target ID");
+		if (vals[0] == "mapping")
+		{
+			int observatory_id = params->getInteger ("observatory_id", -1);
+			if (observatory_id < 0)
+				throw XmlRpc::JSONException ("unknown observatory ID");
+			int tar_id = params->getInteger ("tar_id", -1);
+			if (tar_id < 0)
+				throw XmlRpc::JSONException ("unknown target ID");
+			int obs_tar_id = params->getInteger ("obs_tar_id", -1);
+			if (obs_tar_id < 0)
+				throw XmlRpc::JSONException ("unknown local target ID");
 
-		createMapping (observatory_id, tar_id, obs_tar_id);
+			createMapping (observatory_id, tar_id, obs_tar_id);
 
-		os << "{\"ret\":0}";
+			os << "{\"ret\":0}";
+		}
+		// report observation on slave node
+		if (vals[0] == "observation")
+		{
+			int observatory_id = params->getInteger ("observatory_id", -1);
+			if (observatory_id < 0)
+				throw XmlRpc::JSONException ("unknown observatory ID");
+			int obs_id = params->getInteger ("obs_id", -1);
+			if (obs_id < 0)
+				throw XmlRpc::JSONException ("unknown observation ID");
+			int tar_id = params->getInteger ("tar_id", -1);
+			if (tar_id < 0)
+				throw XmlRpc::JSONException ("unknown target ID");
+			double obs_ra = params->getDouble ("obs_ra", NAN);
+			double obs_dec = params->getDouble ("obs_dec", NAN);
+			double obs_slew = params->getDouble ("obs_slew", NAN);
+			double obs_start = params->getDouble ("obs_start", NAN);
+			double obs_end = params->getDouble ("obs_end", NAN);
+			int good_images = params->getInteger ("good_images", 0);
+			int bad_images = params->getInteger ("bad_images", 0);
+		}
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }

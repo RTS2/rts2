@@ -52,6 +52,11 @@ class HTTPServer
 		 * Return prefix for generated pages - usefull for pages behind proxy.
 		 */
 		virtual const char* getPagePrefix () = 0;
+
+		/**
+		 * Verify user credentials.
+		 */
+		virtual bool verifyUser (std::string username, std::string pass, bool &executePermission) = 0;
 };
 
 }

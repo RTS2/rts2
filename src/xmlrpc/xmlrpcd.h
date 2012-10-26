@@ -27,13 +27,13 @@
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/devicedb.h"
-#include "graphreq.h"
 #else
 #include "configuration.h"
 #include "device.h"
 #include "userlogins.h"
 #endif /* RTS2_HAVE_PGSQL */
 
+#include "graphreq.h"
 #include "directory.h"
 #include "events.h"
 #include "rts2json/httpreq.h"
@@ -446,9 +446,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		void scriptProgress (double start, double end);
 
-#ifndef RTS2_HAVE_PGSQL
-		bool verifyUser (std::string username, std::string pass, bool &executePermission);
-#endif
+		virtual bool verifyUser (std::string username, std::string pass, bool &executePermission);
 
 		/**
 		 *

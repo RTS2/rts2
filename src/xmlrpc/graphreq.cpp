@@ -146,8 +146,6 @@ void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 	memcpy (response, blob.data(), response_length);
 }
 
-#endif /* RTS2_HAVE_PGSQL */
-
 void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
@@ -300,5 +298,7 @@ void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpP
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
 }
+
+#endif /* RTS2_HAVE_PGSQL */
 
 #endif // RTS2_HAVE_LIBJPEG

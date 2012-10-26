@@ -933,7 +933,13 @@ void XmlRpcd::reloadEventsFile ()
 	}
 }
 
-#ifndef RTS2_HAVE_PGSQL
+#ifdef RTS2_HAVE_PGSQL
+bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
+{
+	return rts2db::verifyUser (username, pass, executePermission);
+}
+
+#else
 bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
 {
 	return userLogins.verifyUser (username, pass, executePermission);

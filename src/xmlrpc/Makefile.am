@@ -28,7 +28,7 @@ CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
 else
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
-	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp dirsupport.cpp devicesreq.cpp libjavascript.cpp \
+	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp dirsupport.cpp devicesreq.cpp libjavascript.cpp graphreq.cpp \
 	libcss.cpp bbserver.cpp api.cpp bbapi.cpp images.cpp messageevents.cpp switchstatereq.cpp directory.cpp expandstrings.cpp \
 	xmlapi.cpp asyncapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
@@ -37,7 +37,7 @@ rts2_xmlrpcd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrt
 
 endif
 
-EXTRA_DIST = stateeventsdb.ec valueeventsdb.ec graphreq.cpp
+EXTRA_DIST = stateeventsdb.ec valueeventsdb.ec
 
 rts2_xmlrpcclient_SOURCES = xmlrpcclient.cpp
 rts2_xmlrpcclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
