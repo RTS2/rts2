@@ -114,7 +114,8 @@ class Arc:public Camera
 		rts2core::ValueBool *synthetic;
 		
 		// if chip should be clear during exposure..
-		rts2core::ValueSelection *clearCCD;
+		rts2core::ValueInteger *partial;
+		rts2core::ValueBool *firstPartial;
 #endif
 };
 
@@ -147,12 +148,11 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 #ifdef RTS2_ARC_API_1_7
 
 #else
-	createValue (clearCCD, "CLEAR", "clear CCD before exposure", false, RTS2_VALUE_WRITABLE);
-	clearCCD->addSelVal ("normal");
-	clearCCD->addSelVal ("first in sequence");
-	clearCCD->addSelVal ("in sequence");
-	clearCCD->addSelVal ("last in sequence");
-	clearCCD->setValueInteger (0);
+	createValue (partial, "PARTIAL", "partial exposures (handy for focusing)", false, RTS2_VALUE_WRITABLE);
+	partial->setValueInteger (-1);
+
+	createValue (firstPartial, "first_partial", "first partial image", false, RTS2_VALUE_WRITABLE);
+	firstPartial->setValueBool (false);
 
 	createValue (synthetic, "synthetic", "use synthetic image", true, RTS2_VALUE_WRITABLE);
 	synthetic->setValueBool (false);
@@ -206,7 +206,8 @@ int Arc::info ()
 
 int Arc::scriptEnds ()
 {
-	clearCCD->setValueInteger (0);
+	partial->setValueInteger (-1);
+	firstPartial->setValueBool (false);
 	return Camera::scriptEnds ();
 }
 
@@ -360,7 +361,15 @@ int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		return 0;
 	}
 #else
-	if (old_value == synthetic)
+	if (old_value == partial)
+	{
+		if (partial->getValueInteger () != -1)
+			return -2;
+		firstPartial->setValueBool (true);
+		return 0;
+	}
+	
+	else if (old_value == synthetic)
 	{
 		controller.SetSyntheticImageMode (((rts2core::ValueBool *) new_value)->getValueBool ());
 		return 0;
@@ -478,14 +487,25 @@ int Arc::startExposure ()
 			int oRows, oCols;
 			controller.SetSubArray (oRows, oCols, y, x, bh, bw, getWidth (), 0);
 		}
-		if (clearCCD->getValueInteger ())
+		if (partial->getValueInteger () > 0)
 		{
-			if (clearCCD->getValueInteger () == 1)
-				controller.Command (arc::TIM_ID, CLR);
-			controller.Command (arc::TIM_ID, OSH);
-			return 1;
+			if (firstPartial->getValueBool ())
+			{
+				lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000 * partial->getValueInteger ()));
+				firstPartial->setValueBool (false);
+				sendValueAll (firstPartial);
+			}
+			else
+			{
+				lReply = controller.Command (arc::TIM_ID, REX);
+				controller.CheckReply (lReply);
+				return 0;
+			}
 		}
-		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
+		else
+		{
+			lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
+		}
 		controller.CheckReply (lReply);
 		controller.SetOpenShutter (getExpType () == 0);
 		// start exposure..
@@ -511,13 +531,15 @@ long Arc::isExposing ()
 
 	return -2;
 #else
-	if (clearCCD->getValueInteger ())
+	if (partial->getValueInteger () > 1)
 	{
 		int ret = Camera::isExposing ();
 		if (ret == -2)
 		{
-			controller.Command (arc::TIM_ID, CSH);
-			return (clearCCD->getValueInteger () == 3) ? -2 : -4;
+			controller.Command (arc::TIM_ID, PEX);
+			partial->dec ();
+			sendValueAll (partial);
+			return -4;
 		}
 		return ret;
 	}
@@ -574,6 +596,11 @@ int Arc::doReadout ()
 	}
 	return USEC_SEC / 8.0;
 #else
+	if (partial->getValueInteger () == 1)
+	{
+		partial->setValueInteger (0);
+		sendValueAll (partial);
+	}
 	try
 	{
 		if (controller.IsReadout ())
@@ -584,6 +611,8 @@ int Arc::doReadout ()
 		arc::CDeinterlace deint;
 		deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
 		sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
+		partial->setValueInteger (-1);
+		sendValueAll (partial);
 		return -2;
 	}
 	catch (std::runtime_error &er)
