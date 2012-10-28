@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
 import pyfits
+import rts2.dms
 
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, radius=5, scale_relative_error=0.05, timeout=None, print_results=True):
+def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None):
 	import rts2.astrometry
 	import rts2.libnova
 
@@ -20,6 +21,16 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 			ra=ff[0].header[wcs_keys[0]]
 			dec=ff[0].header[wcs_keys[1]]
 			scale=ff[0].header[wcs_keys[2]]
+
+			# parse WCS keys
+			try:
+				ra = float(ra)
+			except ValueError:
+				ra = rts2.dms.parseDMS(ra) * 15.0
+			try:
+				dec = float(dec)
+			except ValueError:
+				dec = rts2.dms.parseDMS(dec)
 		else:
 			ra=ff[0].header['CRVAL1' + multiwcs]
 			dec=ff[0].header['CRVAL2' + multiwcs]
@@ -58,7 +69,7 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 
 		#rastrxy=[float(ret[0])*15.0,float(ret[1])]
 
-		err = rts2.libnova.angularSeparation(raorig, decorig, rastrxy[0], rastrxy[1])
+		err = rts2.libnova.angularSeparation(raorig, decorig, rastrxy[0] + x_offset/3600.0, rastrxy[1] + y_offset/3600.0)
 
 		print "corrwerr 1 {0:.10f} {1:.10f} {2:.10f} {3:.10f} {4:.10f}".format(rastrxy[0], rastrxy[1], raorig-rastrxy[0], decorig-rastrxy[1], err)
 
@@ -69,6 +80,11 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 
 		c.doubleValue('tra','[hours] telescope ra',raorig)
 		c.doubleValue('tdec','[deg] telescope dec',decorig)
+
+		if x_offset is not None:
+			c.doubleValue('xoffs', '[arcsec] x offset', x_offset)
+		if y_offset is not None:
+			c.doubleValue('yoffs', '[arcsec] y offset', x_offset)
 
 		c.doubleValue('ora','[arcdeg] offsets ra ac calculated from astrometry',raorig-rastrxy[0])
 		c.doubleValue('odec','[arcdeg] offsets dec as calculated from astrometry',decorig-rastrxy[1])
@@ -86,6 +102,8 @@ parser.add_option('--scale-error', help='scale error in %', action='store', dest
 parser.add_option('--timeout', help='Process timeout', action='store', dest='timeout', default=None)
 parser.add_option('--verbose', help='Be verbose, print what the script is doing', action='store_true', dest='verbose', default=False)
 parser.add_option('--quiet', help="don't compute ora, odec,..", action='store_true', dest='quiet', default=False)
+parser.add_option('--xoffset', help="X offset (used in mosaic images)", action='store', dest='x_offset', default=None)
+parser.add_option('--yoffset', help="Y offset (used in mosaic images)", action='store', dest='y_offset', default=None)
 
 (options,args) = parser.parse_args()
 
@@ -98,5 +116,8 @@ wcs_keys = None
 if options.wcs_keys:
 	wcs_keys = options.wcs_keys.split(',')
 
+if options.timeout is not None:
+	options.timeout = int(options.timeout)
+
 for x in args:
-	run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet))
+	run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=float(options.x_offset), y_offset=float(options.y_offset))

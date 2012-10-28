@@ -140,7 +140,9 @@ class AstrometryScript:
 
 		if timeout is not None:
 			def __term_proc(sig, stack):
-				proc.terminate()
+				os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+				if verbose:
+					print 'killing process, as timeout was reached'
 			signal.signal(signal.SIGALRM, __term_proc)
 			signal.alarm(timeout)
 
