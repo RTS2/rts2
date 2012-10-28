@@ -175,4 +175,15 @@ class Queue:
 		if len(self.entries):
 			ids = map(lambda q:str(q.id), self.entries)
 			return ' '.join(ids)
-		return 'empty'	
+		return 'empty'
+
+def load_xml(filename, queues=None):
+	"""Load ques from XML file. Queues parameter can specify name of queue(s) to fill in."""
+	f = open(filename, 'r')
+	document = xml.dom.minidom.parse(f)		
+	f.close()
+
+	for qu in document.documentElement.getElementsByTagName('queue'):
+		qname = qu.getAttribute('name')
+		if queues is not None and not(qname in queues):
+			continue
