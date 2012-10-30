@@ -769,6 +769,7 @@ const char *rts2Central =
   "}\n"
   "hr.send(null);\n"
 "}\n"
+
 ;
 
 const char *tableScript = 
@@ -1131,9 +1132,64 @@ const char *setGetApi =
  "hr.send(null);\n"
  "}\n"
 
+"function getTargetInfo(id, func){\n"
+ "var hr = new XMLHttpRequest();\n"
+ "hr.open('GET','../api/tbyid?e=1&id=' + id, true);\n"
+ "hr.func = func;\n"
+ "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t);\n"
+  "}\n"
+ "hr.send(null);\n"
+ "}\n"
 
+
+
+"function getTaltitudes(id, func){\n"
+ "var hr = new XMLHttpRequest();\n"
+ "hr.open('GET','../api/taltitudes?id=' + id, true);\n"
+ "hr.func = func;\n"
+ "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t);\n"
+  "}\n"
+ "hr.send(null);\n"
+ "}\n"
+
+"function getTargetCamScript(id, cameraName, func){\n"
+ "var hr = new XMLHttpRequest();\n"
+ "hr.open('GET','../api/script?id=' + id + '&cn=' + cameraName, true);\n"
+ "hr.func = func;\n"
+ "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t);\n"
+  "}\n"
+ "hr.send(null);\n"
+ "}\n"
 
 ;
+
+const char *labels =
+"function getLabels(func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/labellist', true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+;
+
+
+
+
 
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -1169,6 +1225,8 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 	  	reply = setGetApi;
         else if (vals[0] == "rts2centrald.js")
                 reply = rts2Central;
+	else if (vals[0] == "labels.js")
+	        reply = labels;
 	else
 		throw rts2core::Error ("JavaScript not found");
 
