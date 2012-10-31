@@ -948,7 +948,7 @@ bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &execut
 
 bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission)
 {
-	return ((XmlRpcd *) getMasterApp ())->verifyUser (username, pass, executePermission);
+	return ((XmlRpcd *) getMasterApp ())->verifyDBUser (username, pass, executePermission);
 }
 #endif /* RTS2_HAVE_PGSQL */
 
