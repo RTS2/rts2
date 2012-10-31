@@ -67,10 +67,10 @@ if ( $tar_id > 0 ) then
 		set rra=`printf "%.0f" $ora`
 		set rdec=`printf "%.0f" $odec`
 		#rts2-logcom "initial offsets $rra $rdec $last_obs_id $obs_id"
-		if ( $rra > -15 && $rra < 15 ) then
+		if ( $rra > -180 && $rra < 180 ) then
 			set rra = 0
 		endif
-		if ( $rdec > -15 && $rdec < 15 ) then
+		if ( $rdec > -180 && $rdec < 180 ) then
 			set rdec = 0
 		endif
 		if ( ( $rra != 0 || $rdec != 0 ) && $last_obs_id == $obs_id ) then
@@ -82,11 +82,11 @@ if ( $tar_id > 0 ) then
 			set of_ra=`echo $rra $xoff $teldec | awk '{printf "%d",$1 - $2;}'`
 			#set of_ra=`echo $rra $xoff | awk '{printf "%d",$1 - $2;}'`
 			set of_dec=`echo $rdec $yoff | awk '{printf "%d",$1 - $2;}'`
-			#rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
-			#tele offset $of_ra $of_dec
-			#sleep 6
-			#rts2-logcom "executing tele set"
-			#tele set
+			rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
+			tele offset $of_ra $of_dec
+			sleep 6
+			rts2-logcom "executing tele set"
+			tele set
 		#else
 			#rts2-logcom "initial offsets are zero or not available, not offseting ($rra $rdec; $last_obs_id $obs_id)"
 		endif
