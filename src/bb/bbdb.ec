@@ -72,6 +72,8 @@ void rts2bb::reportObservation (int observatory_id, int obs_id, int tar_id, doub
 	int db_obs_end_ind = 0;
 	EXEC SQL END DECLARE SECTION;
 
+	tar_id = findMapping (observatory_id, tar_id);
+
 	if (isnan (obs_slew))
 	{
 		db_obs_slew = NAN;
@@ -123,4 +125,42 @@ void rts2bb::reportObservation (int observatory_id, int obs_id, int tar_id, doub
 		}
 	}
 	EXEC SQL COMMIT;
+}
+
+int rts2bb::findMapping (int observatory_id, int obs_tar_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_observatory_id = observatory_id;
+	int db_obs_tar_id = obs_tar_id;
+	int db_tar_id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT tar_id INTO :db_tar_id FROM targets_observatories WHERE observatory_id = :db_observatory_id AND obs_tar_id = :db_obs_tar_id;
+
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+	EXEC SQL ROLLBACK;
+	return db_tar_id;
+}
+
+int rts2bb::findObservatoryMapping (int observatory_id, int tar_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_observatory_id = observatory_id;
+	int db_obs_tar_id;
+	int db_tar_id = tar_id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT obs_tar_id INTO :db_obs_tar_id FROM targets_observatories WHERE observatory_id = :db_observatory_id AND tar_id = :db_tar_id;
+
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+	EXEC SQL ROLLBACK;
+	return db_obs_tar_id;
 }

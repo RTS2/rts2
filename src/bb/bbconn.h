@@ -1,5 +1,4 @@
-/**
- * RTS2 BB Database API
+/*
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,25 +16,25 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_BBCONN__
+#define __RTS2_BBCONN__
+
+#include "rts2script/connexe.h"
+
 namespace rts2bb
 {
 
-/***
- * Register new target mapping into BB database.
- *
- * @param observatory_id  ID of observatory requesting the change
- * @param tar_id          ID of target in central database
- * @param obs_tar_id      ID of target in observatory database
- */
-void createMapping (int observatory_id, int tar_id, int obs_tar_id);
+class ConnBBQueue:public rts2script::ConnExe
+{
+	public:
+		ConnBBQueue (rts2core::Block * _master, const char *_exec);
 
-void reportObservation (int observatory_id, int obs_id, int tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images);
+		virtual void processCommand (char *cmd);
+	
+	private:
+};
 
-/**
- * Find mapping for a given target.
- */
-int findMapping (int observatory_id, int obs_tar_id);
-
-int findObservatoryMapping (int observatory_id, int tar_id);
 
 }
+
+#endif // __RTS2_BBCONN__

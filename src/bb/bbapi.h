@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_BBAPI__
+#define __RTS2_BBAPI__
+
 #include "rts2json/httpreq.h"
 
 namespace rts2bb
@@ -39,3 +42,5 @@ class BBAPI:public rts2json::GetRequestAuthorized
 };
 
 }
+
+#endif // __RTS2_BBAPI__

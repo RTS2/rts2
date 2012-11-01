@@ -337,6 +337,9 @@
 /* Define to the type of arg 5 for `select'. */
 #undef SELECT_TYPE_ARG5
 
+/* share prefix */
+#undef SHARE_PREFIX
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

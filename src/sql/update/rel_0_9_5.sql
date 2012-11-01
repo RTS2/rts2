@@ -36,3 +36,10 @@ SELECT images.*, date_part('day', (timestamptz(images.img_date) - interval '12:0
 	date_part('month', (timestamptz(images.img_date) - interval '12:00')) AS img_month, 
 	date_part('year', (timestamptz(images.img_date) - interval '12:00')) AS img_year 
 	FROM images;
+
+CREATE TABLE schedules (
+	queue_id    integer NOT NULL,
+	tar_id 	    integer REFERENCES targets(tar_id),
+	time_start  timestamp,
+	time_end    timestamp
+);

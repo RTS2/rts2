@@ -17,11 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "xmlrpc++/XmlRpc.h"
-#include "rts2json/jsonvalue.h"
-#include "error.h"
+#include "bb.h"
 #include "bbapi.h"
 #include "bbdb.h"
+#include "bbconn.h"
+
+#include "xmlrpc++/XmlRpc.h"
+#include "rts2db/target.h"
+#include "rts2db/sqlerror.h"
+#include "rts2json/jsonvalue.h"
+#include "error.h"
 
 #ifdef RTS2_JSONSOUP
 #include <glib-object.h>
@@ -101,6 +106,40 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			reportObservation (observatory_id, obs_id, tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images);
 
 			os << "{\"ret\":0}";
+		}
+		// schedule observation on the telescope
+		if (vals[0] == "schedule")
+		{
+			int observatory_id = params->getInteger ("observatory_id", -1);
+			if (observatory_id < 0)
+				throw XmlRpc::JSONException ("unknown observatory ID");
+			int tar_id = params->getInteger ("tar_id", -1);
+			if (tar_id < 0)
+				throw XmlRpc::JSONException ("unknown target ID");
+			
+			rts2db::Target *target = createTarget (tar_id, Configuration::instance ()->getObserver ());
+			if (target == NULL)
+				throw JSONException ("cannot find target with given ID");
+
+			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), RTS2_SHARE_PREFIX "/rts2/bb/schedule_target.py");
+
+			try
+			{
+				int obs_tar_id = findObservatoryMapping (observatory_id, tar_id);
+				bbqueue->addArg ("--obs-tar-id");
+				bbqueue->addArg (obs_tar_id);
+			}
+			catch (rts2db::SqlError er)
+			{
+				bbqueue->addArg ("--create");
+				bbqueue->addArg (tar_id);
+			}
+
+			int ret = bbqueue->init ();
+			if (ret)
+				throw JSONException ("cannot execute schedule script");
+
+			((BB *) getMasterApp ())->addConnection (bbqueue);
 		}
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);

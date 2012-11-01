@@ -457,10 +457,13 @@ AC_SUBST(INC_BIGNG)
 # Define prefix variable
 
 AH_TEMPLATE([PREFIX],[prefix])
-if test "x${prefix}" = "xNONE"; then
+AH_TEMPLATE([SHARE_PREFIX],[share prefix])
+if test "x${prefix}" == "xNONE" -o "x${prefix}" == "x/" -o "x${prefix}" == "x"; then
         AC_DEFINE_UNQUOTED(PREFIX, "", [prefix])
+        AC_DEFINE_UNQUOTED(SHARE_PREFIX, "/usr/share", [share prefix])
 else
         AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [prefix])
+        AC_DEFINE_UNQUOTED(SHARE_PREFIX, "${prefix}/share", [share prefix])
 fi
 AC_SUBST(PREFIX)
   

@@ -1,5 +1,4 @@
-/**
- * RTS2 BB Database API
+/*
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,25 +16,30 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace rts2bb
+#include "bbconn.h"
+#include "bbdb.h"
+
+using namespace rts2bb;
+
+ConnBBQueue::ConnBBQueue (rts2core::Block * _master, const char *_exec):rts2script::ConnExe (_master, _exec, false)
 {
+}
 
-/***
- * Register new target mapping into BB database.
- *
- * @param observatory_id  ID of observatory requesting the change
- * @param tar_id          ID of target in central database
- * @param obs_tar_id      ID of target in observatory database
- */
-void createMapping (int observatory_id, int tar_id, int obs_tar_id);
+void ConnBBQueue::processCommand (char *cmd)
+{
+	// create mapping
+	if (!strcasecmp (cmd, "mapping"))
+	{
+		int observatory_id;
+		int tar_id;
+		int obs_tar_id;
 
-void reportObservation (int observatory_id, int obs_id, int tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images);
-
-/**
- * Find mapping for a given target.
- */
-int findMapping (int observatory_id, int obs_tar_id);
-
-int findObservatoryMapping (int observatory_id, int tar_id);
-
+		if (paramNextInteger (&observatory_id) || paramNextInteger (&tar_id) || paramNextInteger (&obs_tar_id))
+			return;
+		createMapping (observatory_id, tar_id, obs_tar_id);
+	}
+	else
+	{
+		rts2script::ConnExe::processCommand (cmd);
+	}
 }
