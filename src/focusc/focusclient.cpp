@@ -19,7 +19,6 @@
 
 #include "focusclient.h"
 #include "configuration.h"
-#include "../../lib/rts2fits/memimage.h"
 
 #include <config.h>
 
@@ -112,7 +111,7 @@ rts2image::Image *FocusCameraClient::createImage (const struct timeval *expStart
 		return image;
 	}
 	// memory-only image
-	image = new rts2image::MemImage (expStart);
+	image = new rts2image::Image (expStart);
 	return image;
 }
 

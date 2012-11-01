@@ -320,6 +320,8 @@ class FitsFile: public rts2core::Expander
 		void fitsStatusSetValue (const char *valname, bool required = true);
 		void fitsStatusGetValue (const char *valname, bool required);
 
+		bool isMemImage () { return memFile; }
+
 	private:
 		/**
 		 * Pointer to fits file.
@@ -328,6 +330,11 @@ class FitsFile: public rts2core::Expander
 
 		char *fileName;
 		char *absoluteFileName;
+
+		bool memFile;
+
+		size_t *memsize;
+		void **imgbuf;
 };
 
 /**

@@ -80,6 +80,9 @@ ColumnData::ColumnData (std::string _name, std::vector <int> _data, bool isBoole
 
 FitsFile::FitsFile ():rts2core::Expander ()
 {
+  	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	ffile = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -95,6 +98,13 @@ FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 	setFitsFile (_fitsfile->getFitsFile ());
 	_fitsfile->setFitsFile (NULL);
 
+	memFile = _fitsfile->memFile;
+	memsize = _fitsfile->memsize;
+	imgbuf = _fitsfile->imgbuf;
+
+	_fitsfile->memsize = NULL;
+	_fitsfile->imgbuf = NULL;
+
 	setFileName (_fitsfile->getFileName ());
 
 	fits_status = _fitsfile->fits_status;
@@ -103,6 +113,9 @@ FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 
 FitsFile::FitsFile (const char *_fileName, bool _overwrite):rts2core::Expander ()
 {
+	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
@@ -114,6 +127,9 @@ FitsFile::FitsFile (const char *_fileName, bool _overwrite):rts2core::Expander (
 
 FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 {
+	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	ffile = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -123,6 +139,9 @@ FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 
 FitsFile::FitsFile (const char *_expression, const struct timeval *_tv, bool _overwrite):rts2core::Expander (_tv)
 {
+	memFile = true;
+	memsize = NULL;
+	imgbuf = NULL;
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
@@ -134,6 +153,13 @@ FitsFile::FitsFile (const char *_expression, const struct timeval *_tv, bool _ov
 FitsFile::~FitsFile (void)
 {
 	closeFile ();
+
+	if (imgbuf)
+	{
+		free (*imgbuf);
+	}
+
+	delete memsize;
 
 	if (fileName != absoluteFileName)
 		delete[] absoluteFileName;
@@ -166,12 +192,29 @@ void FitsFile::openFile (const char *_fileName, bool readOnly, bool _verbose)
 		}
 		throw ErrorOpeningFitsFile (getFileName ());
 	}
+
+	memFile = false;
 }
 
 int FitsFile::closeFile ()
 {
 	if (getFitsFile ())
 	{
+		if (memFile)
+		{
+			fitsfile *ofptr = getFitsFile ();
+			memFile = false;
+			if (createFile ())
+				return -1;
+			fits_copy_file (ofptr, getFitsFile (), 1, 1, 1, &fits_status);
+			if (fits_status)
+			{
+				logStream (MESSAGE_ERROR) << "fits_copy_file: " << getFitsErrors () << sendLog;
+				fits_close_file (ofptr, &fits_status);
+				return -1;
+			}
+			fits_close_file (ofptr, &fits_status);
+		}
 		fits_close_file (getFitsFile (), &fits_status);
 		if (fits_status)
 		{
@@ -249,6 +292,20 @@ int FitsFile::createFile (bool _overwrite)
 	fits_status = 0;
 	ffile = NULL;
 
+	if (memFile)
+	{
+		memsize = new size_t;
+		*memsize = 2880;
+		*imgbuf = malloc (*memsize);
+		fits_create_memfile (&ffile, imgbuf, memsize, 10 * (*memsize), realloc, &fits_status);
+		if (fits_status)
+		{
+			logStream (MESSAGE_ERROR) << "FitsFile::createImage memimage " << getFitsErrors () << sendLog;
+			return -1;
+		}
+
+		return 0;
+	}
 	int ret;
 	// make path for us..
 	ret = mkpath (getFileName (), 0777);
@@ -387,8 +444,7 @@ void FitsFile::setValue (const char *name, const char *value, const char *commen
 			return;
 		openFile ();
 	}
-	fits_update_key_longstr (getFitsFile (), (char *) name, (char *) value, (char *) comment,
-		&fits_status);
+	fits_update_key_longstr (getFitsFile (), (char *) name, (char *) value, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
