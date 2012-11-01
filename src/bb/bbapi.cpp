@@ -139,6 +139,9 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			if (ret)
 				throw JSONException ("cannot execute schedule script");
 
+			if (((BB *) getMasterApp ())->getDebugConn ())
+				bbqueue->setConnectionDebug (true);
+
 			((BB *) getMasterApp ())->addConnection (bbqueue);
 		}
 	}

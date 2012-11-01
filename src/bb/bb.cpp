@@ -29,6 +29,9 @@ BB::BB (int argc, char ** argv):
 {
 	rpcPort = 8889;
 
+	createValue (debugConn, "debug_conn", "debug connections calls", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	debugConn->setValueBool (false);
+
 	addOption ('p', NULL, 1, "RPC listening port");
 }
 

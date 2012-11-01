@@ -58,6 +58,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		virtual const char* getPagePrefix () { return ""; }
 		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission) { return verifyUser (username, pass, executePermission); }
 
+		bool getDebugConn () { return debugConn->getValueBool (); }
+
 	protected:
 		virtual int processOption (int opt);
 
@@ -70,6 +72,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		int rpcPort;
 		ObservatoryMap om;
 		BBAPI bbApi;
+
+		rts2core::ValueBool *debugConn;
 };
 
 /**
