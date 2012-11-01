@@ -1313,25 +1313,25 @@ int Daemon::createSectionValues (IniSection *sect)
 		if (suffix.length () > 0)
 		{
 			if (strcasestr (suffix.c_str (), "ia"))
-				createValue ((IntegerArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+				createValue ((IntegerArray *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr(suffix.c_str (), "IA") == 0, flags);
 			else if (strcasestr (suffix.c_str (), "da"))
-				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
-			else if (strcasestr (suffix.c_str (), "ba"))
-				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "DA") == 0, flags);
 			else if (strcasestr (suffix.c_str (), "bao"))
-				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags | RTS2_DT_ONOFF);
+				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "BAO") == 0, flags | RTS2_DT_ONOFF);
+			else if (strcasestr (suffix.c_str (), "ba"))
+				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "BA") == 0, flags);
 			else if (strcasestr (suffix.c_str (), "std"))
-				createValue ((ValueDoubleStat *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+				createValue ((ValueDoubleStat *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "STD") == 0, flags);
 			else if (strcasestr (suffix.c_str (), "i"))
-				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "I") == 0, flags);
 			else if (strcasestr (suffix.c_str (), "d"))
-				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "D") == 0, flags);
+			else if (strcasestr (suffix.c_str (), "bo"))
+				createValue ((ValueBool *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "BO") == 0, flags | RTS2_DT_ONOFF);
 			else if (strcasestr (suffix.c_str (), "b"))
-				createValue ((ValueBool *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
-			else if (strcasestr (suffix.c_str (), "b"))
-				createValue ((ValueBool *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags | RTS2_DT_ONOFF);
+				createValue ((ValueBool *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "B") == 0, flags);
 			else if (!strcasecmp (suffix.c_str (), "s"))
-				createValue ((ValueString *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+				createValue ((ValueString *&) val, iter->getValueName ().c_str (), iter->getComment (), strstr (suffix.c_str (), "S") == 0, flags);
 			else
 			{
 				logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
