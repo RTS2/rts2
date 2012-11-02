@@ -121,7 +121,10 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			if (target == NULL)
 				throw JSONException ("cannot find target with given ID");
 
-			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), RTS2_SHARE_PREFIX "/rts2/bb/schedule_target.py");
+			std::ostringstream os;
+			os << rts2core::Configuration::instance ()->getString ("BB", "script_dir", "/usr/share") << "/schedule_target.py";
+
+			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), os.str ().c_str ());
 
 			try
 			{
