@@ -335,8 +335,8 @@ int ImageSkyDb::updateAstrometry ()
 	double crota[2];
 	double equinox;
 
-	ctype[0] = (char *) malloc (50);
-	ctype[1] = (char *) malloc (50);
+	ctype[0] = new char[50];
+	ctype[1] = new char[50];
 
 	ctype[0][0] = ctype[1][0] = '\0';
 
@@ -352,6 +352,8 @@ int ImageSkyDb::updateAstrometry ()
 	}
 	catch (rts2core::Error &er)
 	{
+		delete[] ctype[0];
+		delete[] ctype[1];
 		return -1;
 	}
 
@@ -383,6 +385,10 @@ int ImageSkyDb::updateAstrometry ()
 			obs_id = :d_obs_id
 		AND img_id = :d_img_id;
 	EXEC SQL COMMIT;
+
+	delete[] ctype[0];
+	delete[] ctype[1];
+
 	if (sqlca.sqlcode != 0)
 	{
 		reportSqlError ("astrometry update");
