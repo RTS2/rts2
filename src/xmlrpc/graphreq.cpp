@@ -25,7 +25,7 @@
 
 using namespace rts2xmlrpc;
 
-void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	int s = params->getInteger ("s", 250);
 	AltAz altaz = AltAz (s, s);
@@ -107,7 +107,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 
 #ifdef RTS2_HAVE_PGSQL
 
-void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void AltAzTarget::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get new AltAz graph
 	AltAz altaz = AltAz ();
@@ -146,7 +146,7 @@ void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 	memcpy (response, blob.data(), response_length);
 }
 
-void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Graph::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
 

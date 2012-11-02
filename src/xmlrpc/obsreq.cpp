@@ -26,7 +26,7 @@
 
 using namespace rts2xmlrpc;
 
-void Observation::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Observation::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));

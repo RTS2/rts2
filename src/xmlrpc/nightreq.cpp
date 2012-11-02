@@ -34,7 +34,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Night::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "text/html";
 

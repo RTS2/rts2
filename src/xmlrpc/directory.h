@@ -36,7 +36,7 @@ class Directory: public rts2json::GetRequestAuthorized
 	public:
 		Directory (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s);
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:
 		std::string dirPath;

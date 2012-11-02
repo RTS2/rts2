@@ -31,7 +31,7 @@ BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::Xm
 {
 }
 
-void BBAPI::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void BBAPI::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	try
 	{

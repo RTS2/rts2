@@ -35,7 +35,7 @@ class LibJavaScript: public rts2json::GetRequestAuthorized
 	public:
 		LibJavaScript (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void processVrml (std::string file, const char* &response_type, char* &response, size_t &response_length);
 };

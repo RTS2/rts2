@@ -107,7 +107,7 @@ API::API (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpc
 {
 }
 
-void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void API::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	try
 	{

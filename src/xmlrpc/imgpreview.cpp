@@ -218,7 +218,7 @@ void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevs
 #include <Magick++.h>
 using namespace Magick;
 
-void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
 	rts2image::Image image;
@@ -240,7 +240,7 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	memcpy (response, blob.data(), response_length);
 }
 
-void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// size of previews
 	int prevsize = params->getInteger ("ps", 128);
@@ -398,7 +398,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 #endif /* RTS2_HAVE_LIBJPEG */
 
-void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/fits";
 	int f = open (path.c_str (), O_RDONLY);
@@ -422,7 +422,7 @@ void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	close (f);
 }
 
-void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 
 #ifndef RTS2_HAVE_LIBARCHIVE

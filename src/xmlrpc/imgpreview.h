@@ -85,7 +85,7 @@ class JpegImageRequest: public rts2json::GetRequestAuthorized
 	public:
 		JpegImageRequest (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 /**
@@ -98,7 +98,7 @@ class JpegPreview:public rts2json::GetRequestAuthorized
 	public:
 		JpegPreview (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "JPEG image preview", s) { dirPath = _dirPath; }
 
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		const char *dirPath;
 };
@@ -115,7 +115,7 @@ class FitsImageRequest:public rts2json::GetRequestAuthorized
 	public:
 		FitsImageRequest (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 /**
@@ -133,7 +133,7 @@ class DownloadRequest:public rts2json::GetRequestAuthorized
 #else
 		DownloadRequest (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s) {}
 #endif
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 #ifdef RTS2_HAVE_LIBARCHIVE
 		char *buf;

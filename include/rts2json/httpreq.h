@@ -76,7 +76,7 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		 *
 		 * @see GetRequestAuthorized::execute
 		 */
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
 
 	protected:
 		/**

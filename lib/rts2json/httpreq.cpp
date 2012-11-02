@@ -29,7 +29,7 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 	if (getServer ()->isPublic (saddr, getPrefix () + path))
 	{
 		http_code = HTTP_OK;
-		authorizedExecute (path, params, response_type, response, response_length);
+		authorizedExecute (source, path, params, response_type, response, response_length);
 		return;
 	}
 
@@ -49,7 +49,7 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 	}
 	http_code = HTTP_OK;
 
-	authorizedExecute (path, params, response_type, response, response_length);
+	authorizedExecute (source, path, params, response_type, response, response_length);
 
 	getServer ()->addExecutedPage ();
 }

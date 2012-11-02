@@ -45,7 +45,7 @@ Targets::Targets (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc
 	displaySeconds = false;
 }
 
-void Targets::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -988,7 +988,7 @@ void Targets::plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const
 
 #endif /* RTS2_HAVE_LIBJPEG */
 
-void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void AddTarget::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));

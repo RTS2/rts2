@@ -36,7 +36,7 @@ class Auger: public rts2json::GetRequestAuthorized
 	public:
 		Auger (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, _http_server, "access to auger shower data", s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void printTarget (int auger_id, const char* &response_type, char* &response, size_t &response_length);
 

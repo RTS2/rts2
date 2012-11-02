@@ -23,7 +23,7 @@
 
 using namespace rts2xmlrpc;
 
-void Plan::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Plan::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
 	response_type = "text/html";

@@ -39,11 +39,11 @@ BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::Xm
 {
 }
 
-void BBAPI::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void BBAPI::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	try
 	{
-		executeJSON (path, params, response_type, response, response_length);
+		executeJSON (source, path, params, response_type, response, response_length);
 	}
 	catch (rts2core::Error &er)
 	{
@@ -56,7 +56,7 @@ void BBAPI::authorizePage (int &http_code, const char* &response_type, char* &re
 	throw XmlRpc::JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
 }
 
-void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
@@ -176,6 +176,8 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			int observatory_id = params->getInteger ("observatory_id", -1);
 			if (observatory_id < 0)
 				throw XmlRpc::JSONException ("unknown observatory ID");
+
+			os << std::fixed << getNow ();
 		}
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);

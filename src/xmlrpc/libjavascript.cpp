@@ -1187,11 +1187,7 @@ const char *labels =
 
 ;
 
-
-
-
-
-void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void LibJavaScript::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *reply = NULL;
 	

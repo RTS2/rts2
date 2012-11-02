@@ -150,7 +150,7 @@ const char *tableCss =
   "cursor: pointer;\n"
 "}\n";
 
-void LibCSS::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void LibCSS::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *reply = NULL;
 	

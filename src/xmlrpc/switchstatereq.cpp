@@ -22,7 +22,7 @@
 
 using namespace rts2xmlrpc;
 
-void SwitchState::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void SwitchState::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
 	if (vals.size () == 1)

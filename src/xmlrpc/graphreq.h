@@ -35,7 +35,7 @@ class CurrentPosition:public rts2json::GetRequestAuthorized
 	public:
 		CurrentPosition (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "current telescope position", s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 #endif /* RTS2_HAVE_LIBJPEG */
@@ -54,7 +54,7 @@ class AltAzTarget: public rts2json::GetRequestAuthorized
 	public:
 		AltAzTarget (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "altitude target graph", s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 #endif /* RTS2_HAVE_LIBJPEG */ 
@@ -69,7 +69,7 @@ class Graph: public rts2json::GetRequestAuthorized
 	public:
 		Graph (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "plot graphs of recorded system values", s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:
 		void printDevices (const char* &response_type, char* &response, size_t &response_length);

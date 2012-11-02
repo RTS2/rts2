@@ -36,7 +36,7 @@ class Night: public rts2json::GetRequestAuthorized
 	public:
 		Night (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "access to nights logs", s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void printAllImages (int year, int month, int day, XmlRpc::HttpParams *params, char* &response, size_t &response_length);
 		void callAPI(int year, int month, int day, char* &response, const char* &response_type, size_t &response_length);

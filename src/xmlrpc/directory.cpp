@@ -34,7 +34,7 @@ Directory::Directory (const char* prefix, rts2json::HTTPServer *_http_server, co
 	responseTypes["css"] = "text/css";
 }
 
-void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Directory::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
