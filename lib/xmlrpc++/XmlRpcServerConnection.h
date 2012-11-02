@@ -95,8 +95,6 @@ namespace XmlRpc
 			// return true if connection is in chunged mode
 			bool isChunked () { return _contentLength == -1; }
 
-			std::string getRequest () { return _request; }
-
 		protected:
 
 			bool readHeader();
@@ -131,7 +129,7 @@ namespace XmlRpc
 			XmlRpcServer* _server;
 
 			// Possible IO states for the connection
-			enum ServerConnectionState { READ_HEADER, READ_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE, WAIT_ASYNC, WRITE_ASYNC_RESPONSE };
+			enum ServerConnectionState { READ_HEADER, READ_REQUEST, READ_GET_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE, WAIT_ASYNC, WRITE_ASYNC_RESPONSE };
 			ServerConnectionState _connectionState;
 
 			// Request headers
@@ -153,7 +151,6 @@ namespace XmlRpc
 			int _contentLength;
 
 			// Request body
-			std::string _request;
 			char* _request_buf;
 			int _request_length;
 

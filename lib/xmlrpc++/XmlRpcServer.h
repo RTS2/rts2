@@ -64,10 +64,10 @@ namespace XmlRpc
 			void setDefaultGetRequest(XmlRpcServerGetRequest *defaultGetRequest);
 
 			//! Add a GET request to the HTTP server
-			void addGetRequest(XmlRpcServerGetRequest* getRequest);
+			void addGetRequest(XmlRpcServerGetRequest* serverGetRequest);
 
 			//! Remove a GET request from HTTP server
-			void removeGetRequest(XmlRpcServerGetRequest* getRequest);
+			void removeGetRequest(XmlRpcServerGetRequest* serverGetRequest);
 
 			//! Lookup a get request by prefix
 			XmlRpcServerGetRequest* findGetRequest(const std::string& prefix) const;

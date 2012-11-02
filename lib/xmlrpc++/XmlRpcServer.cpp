@@ -68,15 +68,15 @@ void XmlRpcServer::setDefaultGetRequest(XmlRpcServerGetRequest *defaultGetReques
 }
 
 // Add a GET request to the HTTP server
-void XmlRpcServer::addGetRequest(XmlRpcServerGetRequest* getRequest)
+void XmlRpcServer::addGetRequest(XmlRpcServerGetRequest* serverGetRequest)
 {
-	_requests[getRequest->getPrefix()] = getRequest;
+	_requests[serverGetRequest->getPrefix()] = serverGetRequest;
 }
 
 // Remove a GET request from HTTP server
-void XmlRpcServer::removeGetRequest(XmlRpcServerGetRequest* getRequest)
+void XmlRpcServer::removeGetRequest(XmlRpcServerGetRequest* serverGetRequest)
 {
-	RequestMap::iterator i = _requests.find(getRequest->getPrefix());
+	RequestMap::iterator i = _requests.find(serverGetRequest->getPrefix());
 	if (i != _requests.end())
 		_requests.erase(i);
 }

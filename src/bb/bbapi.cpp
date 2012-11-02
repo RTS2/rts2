@@ -177,6 +177,8 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (observatory_id < 0)
 				throw XmlRpc::JSONException ("unknown observatory ID");
 
+			std::cout << "obs request" << std::endl << source->getRequest () << std::endl << "end" << std::endl;
+
 			os << std::fixed << getNow ();
 		}
 	}

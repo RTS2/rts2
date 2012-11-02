@@ -8,6 +8,8 @@
 # pragma warning(disable:4786)	 // identifier was truncated in debug info
 #endif
 
+#include <string>
+
 namespace XmlRpc
 {
 
@@ -40,6 +42,11 @@ namespace XmlRpc
 			virtual unsigned handleEvent(unsigned eventType) = 0;
 
 			virtual void goAsync () = 0;
+
+			std::string getRequest () { return _request; }
+
+		protected:
+			std::string _request;
 
 		private:
 

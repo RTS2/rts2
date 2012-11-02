@@ -55,7 +55,6 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 
 	os.precision (8);
 
-	XmlRpcd * master = (XmlRpcd *) getMasterApp ();
 	// calls returning binary data
 	if (vals.size () == 1 && vals[0] == "obsvalues")
 	{
