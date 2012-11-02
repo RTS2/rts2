@@ -36,6 +36,7 @@ Command::Command (Block * _owner)
 Command::Command (Block * _owner, const char *_text)
 {
 	owner = _owner;
+	text = NULL;
 	setCommand (_text);
 	bopMask = 0;
 	originator = NULL;
@@ -44,6 +45,7 @@ Command::Command (Block * _owner, const char *_text)
 Command::Command (Command * _command)
 {
 	owner = _command->owner;
+	text = NULL;
 	connection = _command->connection;
 	setCommand (_command->getText ());
 	bopMask = _command->getBopMask ();
@@ -53,6 +55,7 @@ Command::Command (Command * _command)
 Command::Command (Command & _command)
 {
 	owner = _command.owner;
+	text = NULL;
 	connection = _command.connection;
 	setCommand (_command.getText ());
 	bopMask = _command.getBopMask ();
@@ -66,13 +69,14 @@ void Command::setCommand (std::ostringstream &_os)
 
 void Command::setCommand (const char *_text)
 {
+	delete[] text;
 	text = new char[strlen (_text) + 1];
 	strcpy (text, _text);
 }
 
 Command::~Command (void)
 {
-	delete[]text;
+	delete[] text;
 }
 
 int Command::send ()
