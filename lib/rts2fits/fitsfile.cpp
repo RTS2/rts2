@@ -155,7 +155,7 @@ FitsFile::~FitsFile (void)
 	closeFile ();
 
 	if (imgbuf)
-		delete *imgbuf;
+		free (*imgbuf);
 	delete imgbuf;
 	delete memsize;
 
