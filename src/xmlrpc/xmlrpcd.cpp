@@ -524,10 +524,8 @@ int XmlRpcd::init ()
 
 	setMessageMask (MESSAGE_MASK_ALL);
 
-#ifdef RTS2_JSONSOUP
 	if (events.bbServers.size () != 0)
-		addTimer (30, new Event (EVENT_XMLRPC_BB));
-#endif // RTS2_JSONSOUP
+		addTimer (1, new Event (EVENT_XMLRPC_BB));
 
 #ifndef RTS2_HAVE_PGSQL
 	ret = Configuration::instance ()->loadFile (config_file);
@@ -918,9 +916,7 @@ void XmlRpcd::scriptProgress (double start, double end)
 
 void XmlRpcd::sendBB ()
 {
-#ifdef RTS2_JSONSOUP
 	events.bbServers.sendUpdate (this);
-#endif
 }
 
 void XmlRpcd::reloadEventsFile ()

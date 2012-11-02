@@ -83,7 +83,7 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			os << "{\"ret\":0}";
 		}
 		// report observation on slave node
-		if (vals[0] == "observation")
+		else if (vals[0] == "observation")
 		{
 			int observatory_id = params->getInteger ("observatory_id", -1);
 			if (observatory_id < 0)
@@ -108,7 +108,7 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			os << "{\"ret\":0}";
 		}
 		// schedule observation on the telescope
-		if (vals[0] == "schedule")
+		else if (vals[0] == "schedule")
 		{
 			int observatory_id = params->getInteger ("observatory_id", -1);
 			if (observatory_id < 0)
@@ -121,10 +121,15 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			if (target == NULL)
 				throw JSONException ("cannot find target with given ID");
 
+			Observatory obs (observatory_id);
+			obs.load ();
+
 			std::ostringstream p_os;
 			p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", "/usr/local/share") << "/schedule_target.py";
 
 			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str ());
+
+			rts2db::Target *tar = NULL;
 
 			try
 			{
@@ -135,7 +140,25 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			catch (rts2db::SqlError er)
 			{
 				bbqueue->addArg ("--create");
+
+				tar = createTarget (tar_id, obs.getPosition ());
+
+				if (tar == NULL)
+					throw JSONException ("cannot find target with given ID");
+
 				bbqueue->addArg (tar_id);
+			}
+
+			bbqueue->addArg (obs.getURL ());
+			bbqueue->addArg (tar_id);
+
+			if (tar)
+			{
+				struct ln_equ_posn pos;
+				tar->getPosition (&pos);
+
+				bbqueue->addArg (pos.ra);
+				bbqueue->addArg (pos.dec);
 			}
 
 			int ret = bbqueue->init ();
@@ -146,6 +169,13 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 				bbqueue->setConnectionDebug (true);
 
 			((BB *) getMasterApp ())->addConnection (bbqueue);
+		}
+		// obseravtory update
+		else if (vals[0] == "observatory")
+		{
+			int observatory_id = params->getInteger ("observatory_id", -1);
+			if (observatory_id < 0)
+				throw XmlRpc::JSONException ("unknown observatory ID");
 		}
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);

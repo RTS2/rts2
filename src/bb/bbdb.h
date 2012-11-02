@@ -31,6 +31,10 @@ class Observatory
 	public:
 		Observatory (int id);
 		void load ();
+
+		struct ln_lnlat_posn * getPosition () { return &position; }
+		double getAltitude () { return altitude; }
+		const char * getURL () { return url.c_str (); }
 	private:
 		int observatory_id;
 		struct ln_lnlat_posn position;

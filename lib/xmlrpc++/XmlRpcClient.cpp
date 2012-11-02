@@ -49,6 +49,13 @@ XmlRpcClient::XmlRpcClient(char *path, const char **uri)
 		host = str + 1;
 	}
 
+	str = strchr (host, ':');
+	if (str)
+	{
+		port = atoi (str + 1);
+		*str = '\0';
+	}
+
 	// separate host and uri
 	str = strchr (host, '/');
 	if (str)
@@ -135,6 +142,11 @@ bool XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpc
 
 bool XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
 {
+	return executeGetRequest(path, NULL, reply, reply_length);
+}
+
+bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length)
+{
 	XmlRpcUtil::log(1, "XmlRpcClient::execute: path %s (_connectionState %d):", path, _connectionState);
 
 	if (_executing != NOEXEC)
@@ -149,7 +161,7 @@ bool XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
 	if ( ! setupConnection())
 		return false;
 
-	if ( ! generateGetRequest(path))
+	if ( ! generateGetRequest(path, body))
 		return false;
 
 	double msTime = -1.0;
@@ -300,13 +312,19 @@ bool XmlRpcClient::generateRequest(const char* methodName, XmlRpcValue const& pa
 	return true;
 }
 
-bool XmlRpcClient::generateGetRequest(const char* path)
+bool XmlRpcClient::generateGetRequest(const char* path, const std::string &body)
 {
 	if (path)
-		_request = generateGetHeader(path);
+		_request = generateGetHeader(path, body);
 	else
-		_request = generateGetHeader(std::string(""));
+		_request = generateGetHeader(std::string(""), body);
 	XmlRpcUtil::log(4, "XmlRpcClient::generateGetRequest: header is %d bytes.", _request.length ());
+
+	if (body.length () > 0)
+	{
+		_request += body;
+		_request += "\r\n";
+	}
 	return true;
 }
 

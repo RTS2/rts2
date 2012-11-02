@@ -22,16 +22,10 @@
 
 #include "rts2-config.h"
 
-#ifdef RTS2_JSONSOUP
-
 #include "xmlrpc++/XmlRpcValue.h"
 #include "xmlrpc++/XmlRpcClient.h"
 
 #include <vector>
-
-#include <glib-object.h>
-#include <json-glib/json-glib.h>
-#include <libsoup/soup.h>
 
 using namespace XmlRpc;
 
@@ -48,8 +42,8 @@ class XmlRpcd;
 class BBServer
 {
 	public:
-		BBServer (char *serverApi, const char *observatoryName):_serverApi (serverApi), _observatoryName(observatoryName) {session = NULL; }
-		~BBServer () {}
+		BBServer (char *serverApi, int observatoryId):_serverApi (serverApi), _observatoryId(observatoryId) { client = NULL; _uri = NULL; }
+		~BBServer () { delete client; }
 
 		/**
 		 * Sends update message to BB server. Data part is specified in data parameter.
@@ -60,10 +54,10 @@ class BBServer
 
 	private:
 		std::string _serverApi;
-		std::string _observatoryName;
+		int _observatoryId;
+		const char *_uri;
 
-		SoupSession *session;
-		SoupLogger *logger;
+		XmlRpcClient *client;
 };
 
 
@@ -76,7 +70,5 @@ class BBServers:public std::vector <BBServer>
 };
 
 }
-
-#endif // RTS2_JSONSOUP
 
 #endif // !__RTS2__BBSERVER__

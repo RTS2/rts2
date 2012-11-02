@@ -76,6 +76,8 @@ namespace XmlRpc
 			//! This is synchronous version of the request.
 			bool executeGet(const char* path, char* &reply, int &reply_length);
 
+			bool executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length);
+
 			//! Returns true if the result of the last execute() was a fault response.
 			bool isFault() const { return _isFault; }
 
@@ -96,7 +98,7 @@ namespace XmlRpc
 			virtual bool setupConnection();
 
 			virtual bool generateRequest(const char* method, XmlRpcValue const& params);
-			virtual bool generateGetRequest(const char* path);
+			virtual bool generateGetRequest(const char* path, const std::string &body);
 			virtual std::string generateHeader(std::string const& body);
 			virtual std::string generateGetHeader(std::string const& path, size_t contentLength);
 			virtual std::string generateGetHeader(std::string const& path, std::string const& body = std::string(""));

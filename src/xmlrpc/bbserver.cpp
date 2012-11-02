@@ -19,8 +19,6 @@
 
 #include "bbserver.h"
 
-#ifdef RTS2_JSONSOUP
-
 #include "hoststring.h"
 #include "daemon.h"
 
@@ -28,20 +26,31 @@ using namespace rts2xmlrpc;
 
 void BBServer::sendUpdate (XmlRpcd *server)
 {
-	if (session == NULL)
+	if (client == NULL)
 	{
-		session = soup_session_sync_new_with_options (
-			SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_CONTENT_DECODER,
-			SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_COOKIE_JAR,
-			SOUP_SESSION_USER_AGENT, "rts2bb ",
-			NULL);
-
-		logger = soup_logger_new (SOUP_LOGGER_LOG_BODY, -1);
-		soup_logger_attach (logger, session);
+		client = new XmlRpcClient ((char *) _serverApi.c_str (), &_uri);
 	}
 
-	SoupMessage *msg;
-	msg = soup_message_new (SOUP_METHOD_GET, _serverApi.c_str ());
+	std::ostringstream body;
+
+	body << "DEVICE \n";
+
+	char * reply;
+	int reply_length;
+
+	std::ostringstream url;
+	url << "/api/observatory?observatory_id=" << _observatoryId;
+
+	int ret = client->executeGetRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
+	if (!ret)
+	{
+		logStream (MESSAGE_ERROR) << "Error requesting " << _serverApi.c_str () << sendLog;
+		delete client;
+		client = NULL;
+		return;
+	}
+
+	free (reply);
 }
 
 void BBServers::sendUpdate (XmlRpcd *server)
@@ -49,5 +58,3 @@ void BBServers::sendUpdate (XmlRpcd *server)
 	for (BBServers::iterator iter = begin (); iter != end (); iter++)
 		iter->sendUpdate (server);
 }
-
-#endif // RTS2_JSONSOUP
