@@ -2,7 +2,7 @@ EXTRA_DIST = bbdb.ec
 
 bbsdir = ${datadir}/@PACKAGE@/bb
 
-dist_bbs_SCRIPTS = create_target.py
+dist_bbs_SCRIPTS = schedule_target.py
 
 noinst_HEADERS = bb.h bbdb.h bbapi.h observatory.h bbconn.h
 
