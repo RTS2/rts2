@@ -26,6 +26,13 @@ using namespace rts2db;
 
 EXEC SQL include sqlca;
 
+double getNow ()
+{
+	struct timeval infot;
+	gettimeofday (&infot, NULL);
+	return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
+}
+
 int DeviceDb::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	if (in_addr->getType () < getDeviceType () || (in_addr->getType () == getDeviceType () && strcmp (in_addr->getName (), getDeviceName ()) < 0))

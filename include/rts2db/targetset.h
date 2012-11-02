@@ -26,7 +26,8 @@
 #include <vector>
 #include <ostream>
 
-#include "utilsfunc.h"
+#include <math.h>
+#include "nan.h"
 
 namespace rts2db
 {
