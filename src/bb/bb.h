@@ -21,7 +21,6 @@
 #define __RTS2_BB__
 
 #include "bbapi.h"
-#include "observatory.h"
 #include "rts2db/devicedb.h"
 #include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
@@ -47,11 +46,6 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		void update (XmlRpcValue &value);
 
-		XmlRpcValue *findValues (const std::string &name);
-
-		std::map <std::string, Observatory>::iterator omBegin () { return om.begin (); }
-		std::map <std::string, Observatory>::iterator omEnd () { return om.end (); }
-
 		virtual bool isPublic (struct rts2json::sockaddr_in *saddr, const std::string &path) { return true; }
 		virtual bool existsSession (std::string sessionId) { return false; }
 		virtual void addExecutedPage () {}
@@ -70,36 +64,9 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 	private:
 		int rpcPort;
-		ObservatoryMap om;
 		BBAPI bbApi;
 
 		rts2core::ValueBool *debugConn;
-};
-
-/**
- * Represents session methods. Those must be executed either with user name and
- * password, or with "session_id" passed as username and session ID passed in password.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- *
- * @addgroup XMLRPC
- */
-class SessionMethod: public XmlRpcServerMethod
-{
-	public:
-		SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s)
-		{
-		}
-
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
-		{
-			if (! (getUsername() ==  std::string ("rts2") && getPassword() == std::string ("rts2")))
-				throw XmlRpcException ("Login not supported");
-
-			sessionExecute (params, result);
-		}
-
-		virtual void sessionExecute (XmlRpcValue& params, XmlRpcValue& result) = 0;
 };
 
 }

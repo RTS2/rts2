@@ -17,8 +17,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <libnova/libnova.h>
+#include <string>
+
+#ifndef __RTS2_BBDB__
+#define __RTS2_BBDB__
+
 namespace rts2bb
 {
+
+class Observatory
+{
+	public:
+		Observatory (int id);
+		void load ();
+	private:
+		int observatory_id;
+		struct ln_lnlat_posn position;
+		double altitude;
+		std::string url;
+};
 
 /***
  * Register new target mapping into BB database.
@@ -39,3 +57,5 @@ int findMapping (int observatory_id, int obs_tar_id);
 int findObservatoryMapping (int observatory_id, int tar_id);
 
 }
+
+#endif   // __RTS2_BBDB__

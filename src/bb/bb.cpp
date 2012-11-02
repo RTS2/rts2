@@ -18,7 +18,6 @@
  */
 
 #include "bb.h"
-#include "observatory.h"
 
 using namespace XmlRpc;
 using namespace rts2bb;
@@ -33,36 +32,6 @@ BB::BB (int argc, char ** argv):
 	debugConn->setValueBool (false);
 
 	addOption ('p', NULL, 1, "RPC listening port");
-}
-
-void BB::update (XmlRpcValue &value)
-{
-	try
-	{
-		std::string n = value["observatory"];
-		XmlRpcValue d = value["data"];
-		std::map <std::string, Observatory>::iterator iter = om.find (n);
-		if (iter != om.end ())
-		{
-			iter->second.update (d);
-		}
-		else
-		{
-			om[n] = Observatory (d);
-		}
-	}
-	catch (XmlRpcException &ex)
-	{
-		std::cerr << ex << std::endl;
-	}
-}
-
-XmlRpcValue *BB::findValues (const std::string &name)
-{
-	std::map <std::string, Observatory>::iterator iter = om.find (name);
-	if (iter == om.end())
-		throw rts2core::Error (std::string ("cannot find observatory record for ") + name);
-	return iter->second.getValues ();
 }
 
 int BB::processOption (int opt)

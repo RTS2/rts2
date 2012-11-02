@@ -24,6 +24,52 @@
 
 using namespace rts2bb;
 
+Observatory::Observatory (int id)
+{
+	observatory_id = id;
+	position.lng = NAN;
+	position.lat = NAN;
+	altitude = NAN;
+}
+
+void Observatory::load ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_observatory_id = observatory_id;
+	double db_longitude;
+	double db_latitude;
+	double db_altitude;
+	VARCHAR db_apiurl[100];
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT
+		longitude,
+		latitude,
+		altitude,
+		apiurl
+	INTO
+		:db_longitude,
+		:db_latitude,
+		:db_altitude,
+		:db_apiurl
+	FROM
+		observatories
+	WHERE
+		observatory_id = :db_observatory_id;
+	
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+
+	position.lng = db_longitude;
+	position.lat = db_latitude;
+	altitude = db_altitude;
+
+	EXEC SQL COMMIT;
+}
+
 /***
  * Register new target mapping into BB database.
  *
