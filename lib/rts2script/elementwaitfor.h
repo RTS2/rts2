@@ -39,10 +39,7 @@ class ElementWaitFor:public Element
 		virtual int idle ();
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_WAITFOR << " " << valueName << " " << tarval << " " << range; }
-	protected:
-		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	private:
-		std::string deviceName;
 		std::string valueName;
 		double tarval;
 		double range;

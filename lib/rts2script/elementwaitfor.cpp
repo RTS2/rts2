@@ -21,15 +21,11 @@
 
 using namespace rts2script;
 
-void ElementWaitFor::getDevice (char new_device[DEVICE_NAME_SIZE])
-{
-	strncpy (new_device, deviceName.c_str (), DEVICE_NAME_SIZE);
-}
-
 ElementWaitFor::ElementWaitFor (Script * _script, const char *new_device, char *_valueName, double _tarval, double _range):Element (_script)
 {
 	valueName = std::string (_valueName);
-	deviceName = std::string (new_device);
+	deviceName = new char[strlen (new_device) + 1];
+	strcpy (deviceName, new_device);
 	// if value contain device..
 	tarval = _tarval;
 	range = _range;
@@ -43,10 +39,10 @@ int ElementWaitFor::defnextCommand (rts2core::DevClient * client, rts2core::Comm
 
 int ElementWaitFor::idle ()
 {
-	rts2core::Value *val = script->getMaster ()->getValue (deviceName.c_str (), valueName.c_str ());
+	rts2core::Value *val = script->getMaster ()->getValue (deviceName, valueName.c_str ());
 	if (!val)
 	{
-		NetworkAddress *add = script->getMaster ()->findAddress (deviceName.c_str ());
+		NetworkAddress *add = script->getMaster ()->findAddress (deviceName);
 		// we will get device..
 		if (add != NULL)
 			return NEXT_COMMAND_KEEP;

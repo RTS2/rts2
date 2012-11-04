@@ -32,6 +32,8 @@ using namespace rts2image;
 
 Element::Element (Script * _script)
 {
+	deviceName = NULL;
+
 	script = _script;
 	startPos = script->getParsedStartPos ();
 	timerclear (&idleTimeout);
@@ -40,11 +42,15 @@ Element::Element (Script * _script)
 
 Element::~Element ()
 {
+	delete[] deviceName;
 }
 
 void Element::getDevice (char new_device[DEVICE_NAME_SIZE])
 {
-	script->getDefaultDevice (new_device);
+	if (deviceName)
+		strncpy (new_device, deviceName, DEVICE_NAME_SIZE);
+	else
+		script->getDefaultDevice (new_device);
 }
 
 int Element::processImage (Image * image)
@@ -392,7 +398,6 @@ ElementChangeValue::ElementChangeValue (Script * _script, const char *new_device
 
 ElementChangeValue::~ElementChangeValue (void)
 {
-	delete[]deviceName;
 }
 
 void ElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])

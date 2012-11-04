@@ -39,16 +39,12 @@ class Object
 		/**
 		 * Default object constructor.
 		 */
-		Object ()
-		{
-		}
+		Object () {}
 
 		/**
 		 * Default object destructor.
 		 */
-		virtual ~ Object (void)
-		{
-		}
+		virtual ~ Object (void) {}
 
 		/**
 		 * Distribute event throught class.

@@ -203,6 +203,10 @@ class Element:public Object
 	protected:
 		Script * script;
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
+
+		// script device; if NULL, default script device is used
+		char *deviceName;
+
 	private:
 		int startPos;
 		int len;
@@ -283,7 +287,7 @@ class ElementChange:public Element
 {
 	public:
 		ElementChange (Script * _script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec);
-		virtual ~ElementChange (void) { delete [] deviceName; }
+		virtual ~ElementChange (void) {}
 		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		void setChangeRaDec (double in_ra, double in_dec)
 		{
@@ -294,7 +298,6 @@ class ElementChange:public Element
 		virtual void prettyPrint (std::ostream &os) { os << "offset " << ra << " " << dec; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_CHANGE " " << ra << " " << dec; }
 	private:
-		char *deviceName;
 		double ra;
 		double dec;
 };
@@ -385,7 +388,6 @@ class ElementChangeValue:public Element
 	protected:
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	private:
-		char *deviceName;
 		std::string valName;
 		char op;
 		rts2operands::OperandsSet operands;

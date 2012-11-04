@@ -99,7 +99,6 @@ ElementHex::ElementHex (Script * in_script, char new_device[DEVICE_NAME_SIZE], d
 
 ElementHex::~ElementHex (void)
 {
-	delete [] deviceName;
 	changeEl = NULL;
 }
 

@@ -101,8 +101,6 @@ class ElementHex: public ElementBlock
 		ElementChange *changeEl;
 		double getRa ();
 		double getDec ();
-
-		char *deviceName;
 };
 
 /**
