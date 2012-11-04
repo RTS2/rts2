@@ -177,9 +177,9 @@
         <term>HA</term>
 	<listitem>
 	  <para>
-	    Allowed hour angle in units of degrees [0, +/-360]. Hour angle 0 is at local meridian (e.g. when
-	    the object is at the highest altitude). Both negative and positive
-	    values can be used to specify the constraint.
+	    Allowed hour angle in units of degrees [0, +/-180]. Hour angle 0 is
+	    at local meridian (e.g. when the object is at the highest
+	    altitude), and is 180 (or -180) 12 hours after that. 
 	  </para>
 	</listitem>
       </varlistentry>
