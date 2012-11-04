@@ -118,6 +118,7 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueInteger *current_id_sel;
 		rts2core::ValueString *current_name;
 		rts2core::ValueString *current_type;
+		rts2core::ValueDouble *current_errorbox;
 		rts2core::ValueInteger *current_obsid;
 
 		rts2core::ValueString *pi;
@@ -168,6 +169,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (current_id_sel, "current_sel", "ID of currently selected target", false);
 	createValue (current_name, "current_name", "name of current target", false);
 	createValue (current_type, "current_type", "type of current target", false);
+	createValue (current_errorbox, "current_errorbox", "current target error box (if any)", false);
 	createValue (current_obsid, "obsid", "ID of observation", false);
 
 	createValue (pi, "PI", "project investigator of the target", true, RTS2_VALUE_WRITABLE);
@@ -478,6 +480,7 @@ int Executor::info ()
 		buf[0] = currentTarget->getTargetType ();
 		buf[1] = '\0';
 		current_type->setValueCharArr (buf);
+		current_errorbox->setValueDouble (currentTarget->getErrorBox ());
 		current_name->setValueCharArr (currentTarget->getTargetName ());
 		img_id->setValueInteger (currentTarget->getCurrImgId ());
 		current_obsid->setValueInteger (currentTarget->getObsId ());
@@ -486,6 +489,7 @@ int Executor::info ()
 	{
 		current_id->setValueInteger (-1);
 		current_id_sel->setValueInteger (-1);
+		current_errorbox->setValueDouble (NAN);
 		current_name->setValueCharArr (NULL);
 		img_id->setValueInteger (-1);
 		current_obsid->setValueInteger (-1);
