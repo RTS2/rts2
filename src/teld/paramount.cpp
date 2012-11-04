@@ -141,7 +141,7 @@ class Paramount:public GEM
 		virtual int info ();
 
 	protected:
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int initValues ();
 
 		virtual int processOption (int in_opt);
@@ -631,16 +631,12 @@ int Paramount::processOption (int in_opt)
 	return 0;
 }
 
-int Paramount::init ()
+int Paramount::initHardware ()
 {
 	CWORD16 motorState0, motorState1;
 	CWORD32 pos0, pos1;
 	int ret;
 	int i;
-
-	ret = GEM::init ();
-	if (ret)
-		return ret;
 
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
@@ -658,7 +654,7 @@ int Paramount::init ()
 		hourRa->setValueLong (-1 * hourRa->getValueLong ());
 	}
 
-	ret = MKS3Init ((char *) device_name);
+	ret = MKS3Init (device_name);
 	if (ret)
 		return -1;
 
@@ -841,7 +837,7 @@ int Paramount::idle ()
 	{
 		sleep (10);
 		MKS3Free ();
-		MKS3Init ((char *) device_name);
+		MKS3Init (device_name);
 		return rts2core::Device::idle ();
 	}
 	ret = getHomeOffset (homeOff);
