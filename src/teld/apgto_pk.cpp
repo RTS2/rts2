@@ -44,6 +44,8 @@ namespace rts2teld
 /**
  * Driver for Astro-Physics GTO protocol based mount. Some functions are
  * borrowed from INDI to make the transition smoother.
+ *
+ * http://www.pulseguide.com/WebHelp/Appendix_A_ASTRO-PHYSICS_COMMAND_PROTOCOL_FOR_GTO_MOUNTS_%28Version_D_or_KD_%29.htm
  * 
  * @author Markus Wildi
  * @author Petr Kubanek
