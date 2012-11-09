@@ -941,6 +941,9 @@ class Camera:public rts2core::ScriptDevice
 		char** dataBuffers;
 		size_t *dataWritten;
 
+		int histories;
+		int comments;
+
 		// readout - ideally time for data->computer. Camera driver should start markReadoutStart and markReadoutEnd to mark start/end times
 		double timeReadoutStart;
 		// readout time including transfer (TCP/IP,..) overhead

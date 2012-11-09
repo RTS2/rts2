@@ -196,6 +196,16 @@
  */
 #define RTS2_DT_SCRIPT                0x000d0000
 
+/**
+ * Write value as FITS history.
+ */
+#define RTS2_DT_HISTORY               0x000e0000
+
+/**
+ * Write value as FITS comment.
+ */
+#define RTS2_DT_COMMENT               0x000f0000
+
 // value is WCS
 #define RTS2_DT_WCS_MASK              0x00100000
 
@@ -215,7 +225,7 @@
 
 // auxiliary CRPIX offsets
 #define RTS2_DT_AUXWCS_CRPIX1         0x001a0000
-#define RTS2_DT_AUXWCS_CRPIX2         0x001b0000 
+#define RTS2_DT_AUXWCS_CRPIX2         0x001b0000
 
 // direct system to write values to FITS headers, even if it is an array
 #define RTS2_FITS_HEADERS             0x00400000
@@ -267,8 +277,7 @@
 /**
  * Value is out-of-limits.
  */
-#define RTS2_VALUE_ERROR              0x20000000  
-
+#define RTS2_VALUE_ERROR              0x20000000
 
 #define VALUE_BUF_LEN                 200
 

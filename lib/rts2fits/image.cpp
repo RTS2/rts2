@@ -1950,7 +1950,21 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 	switch (val->getValueBaseType ())
 	{
 		case RTS2_VALUE_STRING:
-			setValue (name, val->getValue (), desc);
+			{
+				switch (val->getValueDisplayType ())
+				{
+					case RTS2_DT_HISTORY:
+						if (strlen (val->getValue ()))
+							writeHistory (val->getValue ());
+						break;
+					case RTS2_DT_COMMENT:
+						if (strlen (val->getValue ()))
+							writeComment (val->getValue ());
+						break;
+					default:
+						setValue (name, val->getValue (), desc);
+				}
+			}
 			break;
 		case RTS2_VALUE_INTEGER:
 			setValue (name, val->getValueInteger (), desc);
@@ -2168,7 +2182,6 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 		strcat (name, ".");
 		strcat (name, val->getName ().c_str ());
 	}
-
 
 	switch (val->getValueExtType ())
 	{

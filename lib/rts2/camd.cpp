@@ -48,6 +48,8 @@
 #define OPT_TRIMS_XY          OPT_LOCAL + 411
 #define OPT_TRIMS_END         OPT_LOCAL + 412
 #define OPT_WCS_AUXS          OPT_LOCAL + 420
+#define OPT_COMMENTS          OPT_LOCAL + 421
+#define OPT_HISTORIES         OPT_LOCAL + 422
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
@@ -411,6 +413,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	dataBuffers = NULL;
 	dataWritten = NULL;
 
+	histories = 0;
+	comments = 0;
+
 	sharedData = NULL;
 	sharedMemNum = -1;
 
@@ -507,6 +512,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	focuserMoving->setValueBool (false);
 
 	// other options..
+	addOption (OPT_COMMENTS, "add-comments", 1, "add given number of comment fields");
+	addOption (OPT_HISTORIES, "add-history", 1, "add given number of history fields");
 	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
 	addOption (OPT_WHEEL, "wheeldev", 1, "name of device which is used as filter wheel");
 	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
@@ -724,6 +731,12 @@ int Camera::processOption (int in_opt)
 	std::vector <std::string> params;
 	switch (in_opt)
 	{
+		case OPT_HISTORIES:
+			histories = atoi (optarg);
+			break;
+		case OPT_COMMENTS:
+			comments = atoi (optarg);
+			break;
 		case OPT_FOCUS:
 			focuserDevice = optarg;
 			break;
@@ -1063,6 +1076,20 @@ const int Camera::maxPixelByteSize ()
 
 int Camera::initValues ()
 {
+	for (int i = 0; i < histories; i++)
+	{
+		rts2core::ValueString *val;
+		std::ostringstream os;
+		os << "hist_" << i;
+		createValue (val, os.str ().c_str (), "history", true, RTS2_VALUE_WRITABLE | RTS2_DT_HISTORY);
+	}
+	for (int i = 0; i < comments; i++)
+	{
+		rts2core::ValueString *val;
+		std::ostringstream os;
+		os << "comm_" << i;
+		createValue (val, os.str ().c_str (), "comment", true, RTS2_VALUE_WRITABLE | RTS2_DT_COMMENT);
+	}
 	if (focuserDevice)
 	{
 		addConstValue ("focuser", focuserDevice);
