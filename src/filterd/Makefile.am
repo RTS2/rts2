@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-filterd-ifw rts2-filterd-dummy
+bin_PROGRAMS = rts2-filterd-ifw rts2-filterd-dummy rts2-filterd-fw102c
 
 EXTRA_DIST = 
 
@@ -8,6 +8,9 @@ AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 rts2_filterd_ifw_SOURCES = ifw.cpp
 
 rts2_filterd_dummy_SOURCES = dummy.cpp
+
+rts2_filterd_fw102c_SOURCES = fw102c.cpp
+rts2_filterd_fw102c_LDFLAGS = -lrts2gpib @LIB_GPIB@
 
 if FLI
 bin_PROGRAMS += rts2-filterd-fli
