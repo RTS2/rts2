@@ -304,10 +304,8 @@ int Alta::initHardware ()
 		return -1;
 
 	// set data bits..
-
-	strcpy (ccdType, "Alta ");
-	strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
-	sprintf (serialNumber, "%i", alta->m_CameraId);
+	ccdRealType->setValueCharArr (alta->m_ApnSensorInfo->m_Sensor);
+	serialNumber->setValueCharArr (alta->m_CameraId);
 
 	return initChips ();
 }

@@ -368,8 +368,8 @@ int Urvc2::init ()
 	logStream (MESSAGE_DEBUG) << "urvc2 init return " << Cams[eePtr.model].
 		horzImage << sendLog;
 
-	strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
-	strcpy (serialNumber, (char *) eePtr.serialNumber);
+	ccdRealType->setValueCharArr ((char *) Cams[eePtr.model].fullName);
+	serialNumber->setValueCharArr ((char *) eePtr.serialNumber);
 
 	return initChips ();
 }

@@ -322,8 +322,8 @@ int Sidecar::init ()
 	if (ret)
 		return ret;
 
-	strcpy (ccdType, "SIDECAR");
-	strcpy (serialNumber, "1");
+	ccdRealType->setValueCharArr ("SIDECAR");
+	serialNumber->setValueCharArr ("1");
 
 	if (sidecarServer == NULL)
 	{

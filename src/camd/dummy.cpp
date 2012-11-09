@@ -187,8 +187,8 @@ class Dummy:public Camera
 			expMax->setValueDouble (3600);
 
 			usleep (infoSleep);
-			strcpy (ccdType, "Dummy");
-			strcpy (serialNumber, "1");
+			ccdRealType->setValueCharArr ("Dummy");
+			serialNumber->setValueCharArr ("1");
 
 			srand (time (NULL));
 

@@ -596,9 +596,8 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::DoubleArray *trimx2;
 		rts2core::DoubleArray *trimy2;
 
-		char ccdType[64];
-		char *ccdRealType;
-		char serialNumber[64];
+		rts2core::ValueString *ccdRealType;
+		rts2core::ValueSelection *serialNumber;
 
 		virtual void checkQueChanges (int fakeState);
 

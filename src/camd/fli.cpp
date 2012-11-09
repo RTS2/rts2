@@ -471,10 +471,11 @@ int Fli::initHardware ()
 	}
 
 	FLIGetDeviceName (dev, &devnam);
-	strncpy (serialNumber, devnam, 64);
+	serialNumber->setValueCharArr (devnam);
 
 	long hwrev;
 	long fwrev;
+	char ccdType[64];
 	ret = FLIGetModel (dev, ccdType, 64);
 	if (ret)
 		return -1;
@@ -485,6 +486,7 @@ int Fli::initHardware ()
 	if (ret)
 		return -1;
 	sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
+	ccdRealType->setValueCharArr (ccdType);
 
 	long devid;
 	ret = FLIGetDeviceID (dev, &devid);

@@ -830,9 +830,8 @@ int Apogee::init ()
 	if (status < 0)
 		return -1;
 
-	strcpy (ccdType, "Apogee_");
-	strncat (ccdType, camera->m_Sensor, 10);
-	strcpy (serialNumber, "007");
+	ccdRealType->setValueCharArr (camera->m_Sensor);
+	serialNumber->setValueCharArr ("007");
 
 	return initChips ();
 }

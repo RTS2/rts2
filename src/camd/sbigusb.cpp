@@ -451,7 +451,9 @@ int Sbig::initHardware ()
 	pcam->GetDriverInfo (DRIVER_STD, gccdir0);
 	if (pcam->GetError () != CE_NO_ERROR)
 		return initError ();
+	char ccdType[64];
 	sprintf (ccdType, "SBIG_%i", pcam->GetCameraType ());
+	ccdRealType->setValue (ccdType);
 	// get serial number
 
 	GetCCDInfoParams reqI;
@@ -461,7 +463,7 @@ int Sbig::initHardware ()
 	ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &reqI, &resI);
 	if (ret != CE_NO_ERROR)
 		return initError ();
-	strcpy (serialNumber, resI.serialNumber);
+	serialNumber->setValue (resI.serialNumber);
 
 	clearHWError ();
 

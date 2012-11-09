@@ -1142,7 +1142,7 @@ int Andor::initHardware ()
 	if (printSpeedInfo)
 		printInfo ();
 
-	sprintf (ccdType, "ANDOR");
+	ccdRealType->setValueCharArr ("ANDOR");
 
 	int serNum;
 	ret = GetCameraSerialNumber (&serNum);
@@ -1151,7 +1151,7 @@ int Andor::initHardware ()
 		logStream (MESSAGE_ERROR) << "cannot get serial number" << sendLog;
 		return -1;
 	}
-	sprintf (serialNumber, "%i", serNum);
+	serialNumber->setValueCharArr (serNum);
 
 	// default to EMON off
 	ret = setHSSpeed (1, HSpeed->getValueInteger ());

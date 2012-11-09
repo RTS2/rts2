@@ -1,4 +1,5 @@
 2012-11-09
+ * camera serial and type are writable and autosaved
  * moved GPIB to connection (from sensord)
 
 2012-11-09
