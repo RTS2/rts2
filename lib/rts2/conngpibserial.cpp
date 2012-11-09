@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "conngpibserial.h"
+#include "connection/conngpibserial.h"
 
-using namespace rts2sensord;
+using namespace rts2core;
 
 ConnGpibSerial::ConnGpibSerial (rts2core::Block *_master, const char *_device, rts2core::bSpeedT _baudSpeed, rts2core::cSizeT _cSize, rts2core::parityT _parity, const char *_sep):ConnGpib (), rts2core::ConnSerial (_device, _master, _baudSpeed, _cSize, _parity, 40)
 {

@@ -19,10 +19,10 @@
 
 #include "sensorgpib.h"
 
-#include "conngpiblinux.h"
-#include "conngpibenet.h"
-#include "conngpibprologix.h"
-#include "conngpibserial.h"
+#include "connection/conngpiblinux.h"
+#include "connection/conngpibenet.h"
+#include "connection/conngpibprologix.h"
+#include "connection/conngpibserial.h"
 
 using namespace rts2sensord;
 
@@ -179,20 +179,20 @@ int Gpib::initHardware ()
 			std::cerr << "unknown pad number" << std::endl;
 			return -1;
 		}
-		connGpib = new ConnGpibEnet (this, enet_addr->getHostname (), enet_addr->getPort (), pad);
+		connGpib = new rts2core::ConnGpibEnet (this, enet_addr->getHostname (), enet_addr->getPort (), pad);
 	}
 	// prologix USB
 	else if (prologix != NULL)
 	{
-		connGpib = new ConnGpibPrologix (this, prologix, pad);
+		connGpib = new rts2core::ConnGpibPrologix (this, prologix, pad);
 	}
 	else if (serial_port != NULL)
 	{
-		connGpib = new ConnGpibSerial (this, serial_port, serial_baud, serial_csize, serial_parity, serial_sep);
+		connGpib = new rts2core::ConnGpibSerial (this, serial_port, serial_baud, serial_csize, serial_parity, serial_sep);
 	}
 	else if (pad >= 0)
 	{
-		connGpib = new ConnGpibLinux (minor, pad);
+		connGpib = new rts2core::ConnGpibLinux (minor, pad);
 	}
 	else
 	{

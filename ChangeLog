@@ -1,4 +1,7 @@
 2012-11-09
+ * moved GPIB to connection (from sensord)
+
+2012-11-09
  * support for HISTORY and COMMENTS fields
 
 2012-10-26

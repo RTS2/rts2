@@ -21,7 +21,7 @@
 #define __RTS2_SENSOR_GPIB__
 
 #include "sensord.h"
-#include "conngpib.h"
+#include "connection/conngpib.h"
 #include "connection/serial.h"
 
 namespace rts2sensord
@@ -101,7 +101,7 @@ class Gpib:public Sensor
 		rts2core::parityT serial_parity;
 		const char *serial_sep;
 
-		ConnGpib *connGpib;
+		rts2core::ConnGpib *connGpib;
 		
 		bool debug;
 };

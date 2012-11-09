@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "conngpibprologix.h"
+#include "connection/conngpibprologix.h"
 
-using namespace rts2sensord;
+using namespace rts2core;
 
 ConnGpibPrologix::ConnGpibPrologix (rts2core::Block *_master, const char *_device, int _pad):ConnGpib (), rts2core::ConnSerial (_device, _master, rts2core::BS115200, rts2core::C8, rts2core::NONE, 40)
 {

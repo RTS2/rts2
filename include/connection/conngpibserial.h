@@ -1,5 +1,5 @@
 /* 
- * Connection for GPIB-serial manufactured by Prologix.biz
+ * Connection for GPIB-serial manufactured by Serial.biz
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,29 +17,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_CONN_GPIB_PROLOGIX__
-#define __RTS2_CONN_GPIB_PROLOGIX__
+#ifndef __RTS2_CONN_GPIB_SERIAL__
+#define __RTS2_CONN_GPIB_SERIAL__
 
 #include "conngpib.h"
 
 #include "block.h"
 #include "connection/serial.h"
 
-
-namespace rts2sensord
+namespace rts2core
 {
 /**
- * Prologix GPIB-USB convertor.
+ * Serial connection emulating GPIB (IEEE-488).
  *
- * Manual at http://prologix.biz/getfile?attachment_id=2
  *
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
-class ConnGpibPrologix:public ConnGpib, rts2core::ConnSerial
+class ConnGpibSerial:public ConnGpib, rts2core::ConnSerial
 {
 	public:
-		ConnGpibPrologix (rts2core::Block *_master, const char *_device, int _pad);
-		virtual ~ ConnGpibPrologix (void);
+		ConnGpibSerial (rts2core::Block *_master, const char *_device, rts2core::bSpeedT _baudSpeed = rts2core::BS9600, rts2core::cSizeT _cSize = rts2core::C8, rts2core::parityT _parity = rts2core::NONE, const char *_sep = "\n");
+		virtual ~ ConnGpibSerial (void);
 
 		virtual void setDebug (bool _debug = true) { rts2core::ConnSerial::setDebug (_debug); }
 
@@ -51,30 +49,22 @@ class ConnGpibPrologix:public ConnGpib, rts2core::ConnSerial
 
 		virtual void gpibWaitSRQ ();
 
-		virtual void devClear ();
-
+		virtual void devClear () { flushPortIO (); }
 		virtual float gettmo () { return timeout; };
 		virtual void settmo (float _sec);
 
-		/**
-		 * Sets EOT flag - whenever end characters are send.
-		 */
-		void setEot (int _eot)
-		{
-			eot = _eot;
-		}
+		virtual bool isSerial () { return true; }
 
 	private:
 		void readUSBGpib (char *reply, int blen);
 
-		int pad;
-		int eot;
 		int eos;
 
 		float timeout;
 
-		uint16_t len;
+		const char *sep;
+		size_t seplen;
 };
 
 };
-#endif		 /* !__RTS2_CONN_GPIB_PROLOGIX__ */
+#endif		 /* !__RTS2_CONN_GPIB_SERIAL__ */

@@ -17,12 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "conngpib.h"
+#include "connection/conngpib.h"
 
 #include "error.h"
 #include "app.h"
 
-using namespace rts2sensord;
+using namespace rts2core;
 
 void ConnGpib::readInt (const char *buf, int &val)
 {

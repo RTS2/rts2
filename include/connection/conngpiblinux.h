@@ -20,13 +20,13 @@
 #ifndef __RTS2_CONN_GPIB_LINUX__
 #define __RTS2_CONN_GPIB_LINUX__
 
-#include "conngpib.h"
+#include "connection/conngpib.h"
 #include "error.h"
 
 #include <gpib/ib.h>
 #include <sstream>
 
-namespace rts2sensord
+namespace rts2core
 {
 
 class GpibLinuxError: public rts2core::Error

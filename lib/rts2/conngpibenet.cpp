@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "conngpibenet.h"
+#include "connection/conngpibenet.h"
 
-using namespace rts2sensord;
+using namespace rts2core;
 
 /**
  * Internal error, thrown when flags is not equal 0. This can signal error or end of data

@@ -24,7 +24,7 @@
 
 #include <list>
 
-namespace rts2sensord
+namespace rts2core
 {
 
 /**

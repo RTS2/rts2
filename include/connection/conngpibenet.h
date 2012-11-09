@@ -26,7 +26,7 @@
 #include "connection/tcp.h"
 
 
-namespace rts2sensord
+namespace rts2core
 {
 
 class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP

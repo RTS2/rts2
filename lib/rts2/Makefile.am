@@ -28,7 +28,13 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
 	teld.cpp camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	gem.cpp fork.cpp tgdrive.cpp \
-	clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c 
+	clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp
+
+if GPIBLIB
+librts2_la_SOURCES += conngpiblinux.cpp
+else
+EXTRA_DIST += 
+endif
 	
 if SUNCYG
 EXTRA_DIST += OakFeatureReports.c OakHidBase.c

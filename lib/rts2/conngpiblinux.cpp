@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "conngpiblinux.h"
+#include "connection/conngpiblinux.h"
 
 #include "connnosend.h"
 
-using namespace rts2sensord;
+using namespace rts2core;
 
 void ConnGpibLinux::gpibWriteBuffer (const char *cmd, int len)
 {

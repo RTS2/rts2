@@ -7,7 +7,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-arduino rts2-sensor-mdm-bait rts2-sensor-colores rts2-sensor-micropirani-925 rts2-sensor-dws-t5
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h \
-	sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h conngpibprologix.h conngpibserial.h
+	sensorgpib.h
 
 EXTRA_DIST = 
 
@@ -107,7 +107,7 @@ if GPIBLIB
 
 lib_LTLIBRARIES = librts2sensorgpib.la
 
-librts2sensorgpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp
+librts2sensorgpib_la_SOURCES = sensorgpib.cpp
 
 LDADD += -lrts2sensorgpib @LIB_GPIB@
 
