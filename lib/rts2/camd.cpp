@@ -388,10 +388,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	chan1delta = NULL;
 	chan2delta = NULL;
 
-	ccdType[0] = '\0';
-	ccdRealType = ccdType;
-	serialNumber[0] = '\0';
-
 	timeReadoutStart = NAN;
 	timeTransferStart = NAN;
 
@@ -519,7 +515,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
 	addOption (OPT_OFFSETS_FILE, "offsets-file", 1, "configuration file for camera filter offsets. Filter names are separated with space from filter offsets");
 	addOption ('e', NULL, 1, "default exposure");
-	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption (OPT_WCS_AUXS, "wcs-aux", 1, "suffixes of auxiliary WCS values, separated with :");
 	addOption (OPT_WCS_CDELT, "wcs", 1, "WCS CD matrix (CRPIX1:CRPIX2:CDELT1:CDELT2:CROTA in default, unbinned configuration)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
@@ -758,9 +753,6 @@ int Camera::processOption (int in_opt)
 			break;
 		case 'e':
 			exposure->setValueCharArr (optarg);
-			break;
-		case 't':
-			ccdRealType = optarg;
 			break;
 		case 'c':
 			if (nightCoolTemp == NULL)
@@ -1115,8 +1107,8 @@ int Camera::initValues ()
 		}
 	}
 
-	addConstValue ("CCD_TYPE", "camera type", ccdRealType);
-	addConstValue ("CCD_SER", "camera serial number", serialNumber);
+	createValue (ccdRealType, "CCD_TYPE", "camera type", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (serialNumber, "CCD_SER", "camera serial number", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
 	addConstValue ("chips", 1);
 
