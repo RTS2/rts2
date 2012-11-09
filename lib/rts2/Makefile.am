@@ -33,7 +33,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 librts2gpib_la_SOURCES = conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp
 
 if GPIBLIB
-librts2_la_SOURCES += conngpiblinux.cpp
+librts2gpib_la_SOURCES += conngpiblinux.cpp
 else
 EXTRA_DIST += conngpiblinux.cpp
 endif
