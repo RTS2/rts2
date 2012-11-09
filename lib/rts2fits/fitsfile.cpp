@@ -155,10 +155,8 @@ FitsFile::~FitsFile (void)
 	closeFile ();
 
 	if (imgbuf)
-	{
 		free (*imgbuf);
-	}
-
+	delete imgbuf;
 	delete memsize;
 
 	if (fileName != absoluteFileName)
@@ -214,6 +212,13 @@ int FitsFile::closeFile ()
 				return -1;
 			}
 			fits_close_file (ofptr, &fits_status);
+
+			free (*imgbuf);
+			delete imgbuf;
+			delete memsize;
+
+			imgbuf = NULL;
+			memsize = NULL;
 		}
 		fits_close_file (getFitsFile (), &fits_status);
 		if (fits_status)
