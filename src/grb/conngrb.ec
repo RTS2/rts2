@@ -909,21 +909,40 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			&& d_grb_ra > -300
 			&& d_grb_dec > -300)
 		{
+
 			// update target informations..
-			EXEC SQL
-				UPDATE
-					targets
-				SET
-					tar_ra = :d_grb_ra,
-					tar_dec = :d_grb_dec,
-					tar_enabled = :d_tar_enabled
-				WHERE
-					tar_id = :d_tar_id;
+			if (master->getCreateDisabled ())
+			{
+				// don't update tar_enabled if targets are created disabled
+				EXEC SQL
+					UPDATE
+						targets
+					SET
+						tar_ra = :d_grb_ra,
+						tar_dec = :d_grb_dec
+					WHERE
+						tar_id = :d_tar_id;
+			}
+			else
+			{
+				EXEC SQL
+					UPDATE
+						targets
+					SET
+						tar_ra = :d_grb_ra,
+						tar_dec = :d_grb_dec,
+						tar_enabled = :d_tar_enabled
+					WHERE
+						tar_id = :d_tar_id;
+			}
 			if (sqlca.sqlcode)
 			{
 			  	throw rts2db::SqlError ("cannot update GRB target coordinates");
 			}
-			logStream (MESSAGE_INFO) << "Update target #" << d_tar_id << " RA DEC: " << LibnovaRaDec (d_grb_ra, d_grb_dec) << ", set state to " << (d_tar_enabled ? "enabled" : "disabled") << sendLog;
+			if (master->getCreateDisabled ())
+				logStream (MESSAGE_INFO) << "Update target #" << d_tar_id << " RA DEC: " << LibnovaRaDec (d_grb_ra, d_grb_dec) << ", target enabled/disabled state not updated" << sendLog;
+			else
+				logStream (MESSAGE_INFO) << "Update target #" << d_tar_id << " RA DEC: " << LibnovaRaDec (d_grb_ra, d_grb_dec) << ", set state to " << (d_tar_enabled ? "enabled" : "disabled") << sendLog;
 
 			// update grb informations..
 			// do updates only when new position is better then old one
