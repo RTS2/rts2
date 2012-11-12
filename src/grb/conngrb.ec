@@ -379,6 +379,13 @@ int ConnGrb::pr_agile ()
 	grb_ra = lbuf[BURST_RA] / 10000.0;
 	grb_dec = lbuf[BURST_DEC] / 10000.0;
 
+	if (!do_hete_test
+		&& (grb_type == TYPE_AGILE_GRB_POS_TEST))
+	{
+		logStream (MESSAGE_DEBUG) << "ConnGrb::pr_agile test packet" << sendLog;
+		return 0;
+	}
+
 	getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
 
 	grb_errorbox = (float) lbuf[BURST_ERROR] / 10000.0;
