@@ -242,15 +242,17 @@ bool XmlRpcServerConnection::readHeader()
 	// Decode content length
 	if (lp == 0)
 	{
-		XmlRpcUtil::error("XmlRpcServerConnection::readHeader: No Content-length specified");
-		return false;			 // We could try to figure it out by parsing as we read, but for now...
+		// TODO please note this does not handle chunk transfers..
+		_contentLength = 0;
 	}
-
-	_contentLength = atoi(lp);
-	if (_contentLength <= 0)
+	else
 	{
-		XmlRpcUtil::error("XmlRpcServerConnection::readHeader: Invalid Content-length specified (%d).", _contentLength);
-		return false;
+		_contentLength = atoi(lp);
+		if (_contentLength < 0)
+		{
+			XmlRpcUtil::error("XmlRpcServerConnection::readHeader: Invalid Content-length specified (%d).", _contentLength);
+			return false;
+		}
 	}
 
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::readHeader: specified content length is %d.", _contentLength);
