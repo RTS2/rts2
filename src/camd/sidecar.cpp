@@ -417,6 +417,8 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	
 	else if (old_value == nResets)
 	{
+		if (new_value->getValueInteger () < 1)
+			return -2;
 		sidecarConn->callMethod ("SetRampParam", new_value->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
