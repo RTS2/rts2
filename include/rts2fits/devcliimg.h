@@ -130,6 +130,12 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 	private:
 		// queue for images needed to be checked for metadata arrival
 		std::vector <Image *> checkImages;
+
+		/**
+		 * Write camera related meatadat to FITS header.
+		 */
+		void cameraMetadata (Image * image);
+
 		/**
 		 * Convert FITS image to DataChannels.
 		 */

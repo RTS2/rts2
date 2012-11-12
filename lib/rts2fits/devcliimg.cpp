@@ -176,6 +176,33 @@ void DevClientCameraImage::postEvent (rts2core::Event * event)
 	rts2core::DevClientCamera::postEvent (event);
 }
 
+void DevClientCameraImage::cameraMetadata (Image *image)
+{
+	double exposureTime = getConnection ()->getValueDouble ("exposure");
+	image->setTemplate (fitsTemplate);
+
+	image->setObjectName (getConnection ());
+
+	image->setExposureLength (exposureTime);
+	
+	image->setCameraName (getName ());
+	image->setInstrument (instrume.c_str ());
+	image->setTelescope (telescop.c_str ());
+	image->setOrigin (origin.c_str ());
+
+	rts2core::Value *wcsaux = getConnection ()->getValue ("WCSAUX");
+	if (wcsaux && wcsaux->getValueBaseType () == RTS2_VALUE_STRING && wcsaux->getValueExtType () == RTS2_VALUE_ARRAY)
+		image->setAUXWCS ((rts2core::StringArray *) wcsaux);
+
+	image->setEnvironmentalValues ();
+
+	const char *focuser = getConnection ()->getValueChar ("focuser");
+	if (focuser)
+	{
+		image->setFocuserName (focuser);
+	}
+}
+
 void DevClientCameraImage::fits2DataChannels (Image *img, rts2core::DataChannels *&data)
 {
 	data = new rts2core::DataChannels ();
@@ -506,9 +533,7 @@ void DevClientCameraImage::stateChanged (rts2core::ServerState * state)
 
 void DevClientCameraImage::exposureStarted (bool expectImage)
 {
-	double exposureTime = getConnection ()->getValueDouble ("exposure");
 	struct timeval expStart;
-	const char *focuser;
 	gettimeofday (&expStart, NULL);
 
 	Image *image = NULL;
@@ -523,28 +548,7 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 
 		if (image == NULL)
 			return;
-		image->setTemplate (fitsTemplate);
-
-		image->setObjectName (getConnection ());
-
-		image->setExposureLength (exposureTime);
-	
-		image->setCameraName (getName ());
-		image->setInstrument (instrume.c_str ());
-		image->setTelescope (telescop.c_str ());
-		image->setOrigin (origin.c_str ());
-
-		rts2core::Value *wcsaux = getConnection ()->getValue ("WCSAUX");
-		if (wcsaux && wcsaux->getValueBaseType () == RTS2_VALUE_STRING && wcsaux->getValueExtType () == RTS2_VALUE_ARRAY)
-			image->setAUXWCS ((rts2core::StringArray *) wcsaux);
-	
-		image->setEnvironmentalValues ();
-
-		focuser = getConnection ()->getValueChar ("focuser");
-		if (focuser)
-		{
-			image->setFocuserName (focuser);
-		}
+		cameraMetadata (image);
 		// delete old image
 		delete actualImage;
 		// create image
@@ -603,6 +607,15 @@ void DevClientCameraImage::writeToFitsTransfer (Image *img)
 	img->setValue ("CCD_NAME", getConnection ()->getName (), "camera name");
 	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
 	img->writeExposureStart ();
+
+	cameraMetadata (img);
+
+	prematurelyReceived.clear ();
+		
+	img->writePrimaryHeader (getName ());
+
+	img->writeConn (getConnection (), EXPOSURE_START);
+	img->writeConn (getConnection (), EXPOSURE_END);
 }
 
 rts2core::DoubleArray * DevClientCameraImage::getDoubleArray (const char *name)
