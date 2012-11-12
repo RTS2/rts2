@@ -130,7 +130,7 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueInteger *next_id;
 		rts2core::ValueString *next_name;
 
-		rts2core::ValueBool *doDarks;
+		rts2core::ValueSelection *doDarks;
 		rts2core::ValueBool *flatsDone;
 		rts2core::ValueBool *ignoreDay;
 
@@ -190,7 +190,10 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (img_id, "img_id", "ID of current image", false);
 
 	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false, RTS2_VALUE_WRITABLE);
-	doDarks->setValueBool (true);
+	doDarks->addSelVal ("not at all");
+	doDarks->addSelVal ("just from queue");
+	doDarks->addSelVal ("from queue or if system is in standby");
+	doDarks->setValueInteger (2);
 
 	createValue (flatsDone, "flats_done", "if current skyflat routine was finished", false, RTS2_VALUE_WRITABLE);
 	flatsDone->setValueBool (false);
@@ -224,7 +227,7 @@ int Executor::processOption (int in_opt)
 			ignoreDay->setValueBool (true);
 			break;
 		case OPT_DONT_DARK:
-			doDarks->setValueBool (false);
+			doDarks->setValueInteger (0);
 			break;
 		case OPT_DISABLE_AUTO:
 			autoLoop->setValueBool (false);
@@ -378,11 +381,11 @@ void Executor::postEvent (rts2core::Event * event)
 			break;
 		case EVENT_SCRIPT_ENDED:
 			updateScriptCount ();
-		#ifdef DEBUG_EXTRA
+		//#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<
 				"EVENT_SCRIPT_ENDED Executor currentTarget " << currentTarget <<
 				" next que  " << getActiveQueue ()->size () << sendLog;
-		#endif					 /* DEBUG_EXTRA */
+		//#endif					 /* DEBUG_EXTRA */
 			if (currentTarget)
 			{
 				if (scriptCount->getValueInteger () == 0
@@ -551,7 +554,7 @@ void Executor::changeMasterState (int old_state, int new_state)
 		case (SERVERD_DUSK | SERVERD_STANDBY):
 			stop ();
 			// next will be dark..
-			if (doDarks->getValueBool () == true)
+			if (doDarks->getValueInteger () == 2)
 			{
 			  	try
 				{
@@ -562,7 +565,7 @@ void Executor::changeMasterState (int old_state, int new_state)
 				catch (rts2core::Error &er)
 				{
 					logStream (MESSAGE_ERROR) << "cannot start dark target in standby : " << er << sendLog;
-					doDarks->setValueBool (false);
+					doDarks->setValueInteger (1);
 					sendValueAll (doDarks);
 				}
 			}
@@ -595,7 +598,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 		rts2db::Target *nt = createTarget (tarId, observer, notifyConn);
 		if (!nt)
 			return -2;
-		if (nt->getTargetType () == TYPE_DARK && doDarks->getValueBool () == false)
+		if (nt->getTargetType () == TYPE_DARK && doDarks->getValueInteger () == 0)
 		{
 			if (currentTarget == NULL || currentTarget->getTargetType () != TYPE_FLAT)
 				stop ();
