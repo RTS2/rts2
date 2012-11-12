@@ -97,8 +97,6 @@ template <typename pixel_type> void computeDataStatistics (pixel_type *data, lon
 	while (pixel < fullTop)
 	{
 		pixelSum += *pixel;
-		if (*pixel < 0)
-			std::cout << "< 0" << *pixel << std::endl;
 		pixel++;
 	}
 	if (totalPixels > 0)
