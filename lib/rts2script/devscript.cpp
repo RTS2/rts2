@@ -101,6 +101,12 @@ void DevScript::postEvent (rts2core::Event * event)
 	AcquireQuery *ac;
 	switch (event->getType ())
 	{
+		case EVENT_STOP_TARGET:
+			if (currentTarget)
+			{
+				dont_execute_for = currentTarget->getTargetID ();
+				dont_execute_for_obsid = currentTarget->getObsId ();
+			}
 		case EVENT_KILL_ALL:
 		case EVENT_SET_TARGET_KILL:
 		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
@@ -117,11 +123,15 @@ void DevScript::postEvent (rts2core::Event * event)
 			script.null ();
 			delete nextComd;
 			nextComd = NULL;
-			// null dont_execute_for
-			dont_execute_for = -1;
-			dont_execute_for_obsid = -1;
+			if (event->getType () != EVENT_STOP_TARGET)
+			{
+				// null dont_execute_for
+				dont_execute_for = -1;
+				dont_execute_for_obsid = -1;
+			}
 			switch (event->getType ())
 			{
+				case EVENT_STOP_TARGET:
 				case EVENT_SET_TARGET_KILL:
 					scriptKillCommand = new rts2core::CommandKillAll (script_connection->getMaster ());
 					scriptKillCommand->setOriginator (script_connection);
