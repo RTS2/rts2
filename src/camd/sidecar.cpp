@@ -24,8 +24,9 @@
 
 #include <dirent.h>
 
-#define OPT_IMAGE_DIR     OPT_LOCAL + 727
-#define OPT_IMAGE_SUFFIX  OPT_LOCAL + 728
+#define OPT_IMAGE_DIR                OPT_LOCAL + 727
+#define OPT_IMAGE_SUFFIX_FSRAMP      OPT_LOCAL + 728
+#define OPT_IMAGE_SUFFIX_UPTHERAMP   OPT_LOCAL + 729
 
 namespace rts2camd
 {
@@ -132,7 +133,8 @@ class Sidecar:public Camera
 		// path to the last data
 		rts2core::ValueString *imageDir;
        		rts2core::ValueString *lastDataDir;
-		rts2core::ValueString *fileSuffix;
+		rts2core::ValueString *fileSuffixFSRamp;
+		rts2core::ValueString *fileSuffixUpTheRamp;
 
 		// internal variables
 		rts2core::ValueSelection *fsMode;
@@ -220,7 +222,8 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createValue (imageDir, "image_dir", "current image directory", false, RTS2_VALUE_WRITABLE);
 	createValue (lastDataDir, "last_data", "last data directory", false);
-	createValue (fileSuffix, "file_suffix", "file suffix (will be added to last data directory", false, RTS2_VALUE_WRITABLE);
+	createValue (fileSuffixFSRamp, "file_suffix_fsramp", "file suffix for FS Ramp (will be added to last data directory)", false, RTS2_VALUE_WRITABLE);
+	createValue (fileSuffixUpTheRamp, "file_suffix_uptheramp", "file suffix for UpTheRamp (will be added to last data directory)", false, RTS2_VALUE_WRITABLE);
 
 	// name for fsMode, as shown in rts2-mon, will be fs_mode, "mode of.. " is the comment.
 	// false means that it will not be recorded to FITS
@@ -289,7 +292,8 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	addOption ('t', NULL, 1, "Teledyne host name and double colon separated port (port defaults to 5000)");
 	addOption (OPT_IMAGE_DIR, "image-dir", 1, "path to images");
-	addOption (OPT_IMAGE_SUFFIX, "image-suffix", 1, "suffix to add to newly found directory to get to image");
+	addOption (OPT_IMAGE_SUFFIX_FSRAMP, "image-suffix-fsramp", 1, "suffix for FSRamp mode to add to newly found directory to get to image");
+	addOption (OPT_IMAGE_SUFFIX_UPTHERAMP, "image-suffix-uptheramp", 1, "suffix for UpTheRamp mode to add to newly found directory to get to image");
 }
 
 Sidecar::~Sidecar ()
@@ -306,8 +310,11 @@ int Sidecar::processOption (int in_opt)
 		case OPT_IMAGE_DIR:
 			imageDir->setValueCharArr (optarg);
 			break;
-		case OPT_IMAGE_SUFFIX:
-			fileSuffix->setValueCharArr (optarg);
+		case OPT_IMAGE_SUFFIX_FSRAMP:
+			fileSuffixFSRamp->setValueCharArr (optarg);
+			break;
+		case OPT_IMAGE_SUFFIX_UPTHERAMP:
+			fileSuffixUpTheRamp->setValueCharArr (optarg);
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -534,7 +541,9 @@ int Sidecar::doReadout ()
 {
 	// get filename
 	struct dirent **res;
-	int nd = scandir (imageDir->getValueString ().c_str (), &res, NULL, alphasort);
+	// construct dirname - it depends on mode
+	std::string imgdir = imageDir->getValueString () + (fsMode->getValueInteger () == 0 ? "UpTheRamp" : "FSRamp");
+	int nd = scandir (imgdir.c_str (), &res, NULL, alphasort);
 
 	int i;
 	
@@ -552,7 +561,7 @@ int Sidecar::doReadout ()
 	// pass it as FITS data..
 
 	std::ostringstream os;
-	os << imageDir->getValueString () << "/" << lastDataDir->getValueString () << "/" << fileSuffix->getValueString ();
+	os << imageDir->getValueString () << "/" << lastDataDir->getValueString () << "/" << (fsMode->getValueInteger () == 0 ? fileSuffixUpTheRamp->getValueString () : fileSuffixFSRamp->getValueString ());
 
 	fitsDataTransfer (os.str ().c_str ());
 
