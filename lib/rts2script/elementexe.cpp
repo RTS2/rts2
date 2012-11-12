@@ -321,6 +321,16 @@ void ConnExecute::processCommand (char *cmd)
 		masterElement->requestEndScript ();
 		notActive ();
 	}
+	else if (!strcmp (cmd, "end_target"))
+	{
+		notActive ();
+		master->postEvent (new rts2core::Event (EVENT_STOP_OBSERVATION));
+	}
+	else if (!strcmp (cmd, "stop_target"))
+	{
+		notActive ();
+		master->postEvent (new rts2core::Event (EVENT_KILL_ALL));
+	}
 	else if (!strcmp (cmd, "target_disable"))
 	{
 		if (masterElement->getTarget ())

@@ -739,6 +739,19 @@ echo value WINDOW = 0 0 10 10
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>end_target</option></term>
+        <listitem><para>
+	  End target execution. Ends scripts of all cameras, and execute next
+          target if there is some available.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>stop_target</option></term>
+        <listitem><para>
+	  Stop target execution. Ends scripts of all cameras, and stop the executor.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>loopcount</option></term>
 	<listitem><para>
 	  Print current loopcount. It is 0 when target script is executed for
