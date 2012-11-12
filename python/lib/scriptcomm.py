@@ -320,12 +320,12 @@ class Rts2Comm:
 		print "double_array_add",name,' '.join(map(str,values))
 		sys.stdout.flush()
 
-	def statAdd(self,name,desc,num,value):
+	def statAdd(self, name, desc, num, value):
 		"""Add to statistics boolean value."""
 		print "stat_add",name,'"{0}"'.format(desc),num,value
 		sys.stdout.flush()
 
-	def log(self,level,text):
+	def log(self,level, text):
 		print "log",level,text
 		sys.stdout.flush()
 	
@@ -333,3 +333,15 @@ class Rts2Comm:
 		"""Returns true if is evening - sun is on West"""
 		sun_az = self.getValueFloat('sun_az','centrald')
 		return sun_az < 180.0
+
+	def tempentry(self, entry):
+		print 'tempentry',entry
+		sys.stdout.flush()
+
+	def endTarget(self):
+		print 'end_target'
+		sys.stdout.flush()
+
+	def stopTarget(self):
+		print 'stop_target'
+		sys.stdout.flush()
