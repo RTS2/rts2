@@ -192,8 +192,13 @@ void TargetQueue::sortQueue (double now)
 
 bool TargetQueue::filter (double now, double maxLength)
 {
-	bool ret = false;
 	filterExpired (now);
+
+	// don't filter for visibility
+	if (getBlockUntilVisible () == true)
+		return true;
+	
+	bool ret = false;
 	std::list <QueuedTarget> skipped;
 	filterUnobservable (now, maxLength, skipped);
 	TargetQueue::iterator it = begin ();
@@ -498,6 +503,9 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 
 	master->createValue (removeAfterExecution, (sn + "_remove_executed").c_str (), "remove observations once they are executed - run script only once", false, read_only_fl);
 	removeAfterExecution->setValueBool (true);
+
+	master->createValue (blockUntilVisible, (sn + "_block_until_visible").c_str (), "block queue if the top target is not visible", false, read_only_fl);
+	blockUntilVisible->setValueBool (false);
 
 	master->createValue (queueEnabled, (sn + "_enabled").c_str (), "enable queuei for selection", false, read_only_fl);
 	queueEnabled->setValueBool (true);

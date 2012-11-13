@@ -27,6 +27,7 @@ SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.master,
 	removeAfterExecution = eq.getRemoveAfterExecution ();
 	skipBelowHorizon = eq.getSkipBelowHorizon ();
 	testConstraints = eq.getTestConstraints ();
+	blockUntilVisible = eq.getBlockUntilVisible ();
 
 	for (ExecutorQueue::iterator qi = eq.begin (); qi != eq.end (); qi++)
 		push_back ( QueuedTarget (*qi, createTarget (qi->target->getTargetID(), *observer, NULL) ) );

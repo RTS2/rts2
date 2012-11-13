@@ -38,9 +38,10 @@ class SimulQueueTargets:public TargetQueue
 
 	protected:
 		virtual int getQueueType () { return queueType; }
-		virtual bool getRemoveAfterExecution () { return removeAfterExecution; };
-		virtual bool getSkipBelowHorizon () { return skipBelowHorizon; }
-		virtual bool getTestConstraints () { return testConstraints; }
+		virtual const bool getSkipBelowHorizon () { return skipBelowHorizon; }
+		virtual const bool getTestConstraints () { return testConstraints; }
+		virtual const bool getRemoveAfterExecution () { return removeAfterExecution; };
+		virtual const bool getBlockUntilVisible () { return blockUntilVisible; }
 
 		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const int reason);
 	private:
@@ -48,6 +49,7 @@ class SimulQueueTargets:public TargetQueue
 		bool removeAfterExecution;
 		bool skipBelowHorizon;
 		bool testConstraints;
+		bool blockUntilVisible;
 };
 
 /**

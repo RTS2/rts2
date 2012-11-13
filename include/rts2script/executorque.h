@@ -169,10 +169,15 @@ class TargetQueue:public std::list <QueuedTarget>
 		struct ln_lnlat_posn **observer;
 
 		virtual int getQueueType () = 0;
-		virtual bool getRemoveAfterExecution () = 0;
-		virtual bool getSkipBelowHorizon () = 0;
-		virtual bool getTestConstraints () = 0;
+		virtual const bool getSkipBelowHorizon () = 0;
+		virtual const bool getTestConstraints () = 0;
+		virtual const bool getRemoveAfterExecution () = 0;
 
+		/**
+		 * If true, queue will not be reordered and will wait until
+		 * target becomes visible.
+		 */
+		virtual const bool getBlockUntilVisible () = 0;
 
 		/**
 		 * Sort targets by west-east priority on west, by altitude on
@@ -285,7 +290,7 @@ class ExecutorQueue:public TargetQueue
 		// prints queue configuration into stream
 		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
 		{
-			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " enabled " << eq->queueEnabled->getValueBool () << " contains";
+			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " block until visible " << eq->blockUntilVisible->getValueBool () << " enabled " << eq->queueEnabled->getValueBool () << " contains";
 			std::vector <int>::iterator niditer = eq->nextIds->valueBegin ();
 			std::vector <double>::iterator startiter = eq->nextStartTimes->valueBegin ();
 			std::vector <double>::iterator enditer = eq->nextEndTimes->valueBegin ();
@@ -307,9 +312,10 @@ class ExecutorQueue:public TargetQueue
 
 	protected:
 		virtual int getQueueType () { return queueType->getValueInteger (); }
-		virtual bool getRemoveAfterExecution () { return removeAfterExecution->getValueBool (); }
-		virtual bool getSkipBelowHorizon () { return skipBelowHorizon->getValueBool (); }
-		virtual bool getTestConstraints () { return testConstraints->getValueBool (); }
+		virtual const bool getSkipBelowHorizon () { return skipBelowHorizon->getValueBool (); }
+		virtual const bool getTestConstraints () { return testConstraints->getValueBool (); }
+		virtual const bool getRemoveAfterExecution () { return removeAfterExecution->getValueBool (); }
+		virtual const bool getBlockUntilVisible () { return blockUntilVisible->getValueBool (); }
 
 	private:
 		rts2core::IntegerArray *nextIds;
@@ -335,6 +341,7 @@ class ExecutorQueue:public TargetQueue
 		rts2core::ValueBool *skipBelowHorizon;
 		rts2core::ValueBool *testConstraints;
 		rts2core::ValueBool *removeAfterExecution;
+		rts2core::ValueBool *blockUntilVisible;
 		rts2core::ValueBool *queueEnabled;
 
 		double timerAdded;
