@@ -103,6 +103,7 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueDouble *grb_min_sep;
 
 		rts2core::ValueBool *enabled;
+		rts2core::ValueBool *selectorNext;
 
 		rts2core::ValueInteger *acqusitionOk;
 		rts2core::ValueInteger *acqusitionFailed;
@@ -155,6 +156,9 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 
 	createValue (enabled, "enabled", "if false, executor will not perform its duties, thus enabling problem-free full manual control", false, RTS2_VALUE_WRITABLE);
 	enabled->setValueBool (true);
+
+	createValue (selectorNext, "selector_next", "enables execution of next targets from selector", false, RTS2_VALUE_WRITABLE);
+	selectorNext->setValueBool (true);
 
 	createValue (acqusitionOk, "acqusition_ok", "number of acqusitions completed sucesfully", false);
 	acqusitionOk->setValueInteger (0);
@@ -990,6 +994,8 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand ("now"))
 	{
 		// change observation imediatelly - in case of burst etc..
+		selectorNext->setValueBool (true);
+		sendValueAll (selectorNext);
 		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
 			return -2;
 		return setNow (tar_id);
@@ -1032,8 +1038,17 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("next"))
 	{
+		switch (conn->getOtherType ())
+		{
+			case DEVICE_TYPE_SELECTOR:
+				if (selectorNext->getValueBool () == false)
+					return -2;
+				break;
+		}
 		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
 			return -2;
+		selectorNext->setValueBool (true);
+		sendValueAll (selectorNext);
 		return setNext (tar_id);
 	}
 	else if (conn->isCommand ("end"))
@@ -1046,6 +1061,8 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
+		selectorNext->setValueBool (false);
+		sendValueAll (selectorNext);
 		end ();
 		return stop ();
 	}
