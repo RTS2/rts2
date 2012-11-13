@@ -35,6 +35,7 @@
 
 #include <list>
 
+#define NEXT_COMMAND_STOP_TARGET       -3
 #define NEXT_COMMAND_NEXT              -2
 #define NEXT_COMMAND_END_SCRIPT        -1
 #define NEXT_COMMAND_KEEP               1

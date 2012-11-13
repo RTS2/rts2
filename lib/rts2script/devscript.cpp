@@ -465,6 +465,13 @@ int DevScript::nextPreparedCommand ()
 		case NEXT_COMMAND_WAIT_SEARCH:
 			waitScript = WAIT_SEARCH;
 			break;
+		case NEXT_COMMAND_STOP_TARGET:
+			if (currentTarget)
+			{
+				dont_execute_for = currentTarget->getTargetID ();
+				dont_execute_for_obsid = currentTarget->getObsId ();
+			}
+			break;
 	}
 	return ret;
 }
