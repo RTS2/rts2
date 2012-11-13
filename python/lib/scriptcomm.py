@@ -98,6 +98,11 @@ class Rts2Comm:
 		sys.stdout.flush()
 		return self.readline()
 
+	def getOwnValue(self, value):
+		print 'get_own', value
+		sys.stdout.flush()
+		return self.readline()
+
 	def getLoopCount(self):
 		print 'loopcount'
 		sys.stdout.flush()
