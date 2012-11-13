@@ -348,11 +348,11 @@ class Rts2Comm:
 		print 'stop_target'
 		sys.stdout.flush()
 
-        def waitTargetMove(self):
-                """Returns after move was commanded"""
-                print 'wait_target_move'
-                sys.stdout.flush()
-                return self.readline()
+	def waitTargetMove(self):
+		"""Returns after move was commanded"""
+		print 'wait_target_move'
+		sys.stdout.flush()
+		return self.readline()
 
 	def queueClear(self, queue, selector=None):
 		"""Clear selector queue"""
