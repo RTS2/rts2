@@ -165,7 +165,6 @@ void DevScript::postEvent (rts2core::Event * event)
 			startTarget (event->getType () != EVENT_SET_TARGET_NOT_CLEAR);
 			nextCommand ();
 			break;
-			// when we finish move, we can observe
 		case EVENT_MOVE_OK:
 		case EVENT_CORRECTING_OK:
 			break;

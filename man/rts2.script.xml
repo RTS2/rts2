@@ -752,6 +752,14 @@ echo value WINDOW = 0 0 10 10
         </para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>wait_target_move</option></term>
+        <listitem><para>
+          Wait for target movement command completion. When this command returns with 0,
+          system telescope daemon is guarantee to have proper target coordinates for the
+          next target execution.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>loopcount</option></term>
 	<listitem><para>
 	  Print current loopcount. It is 0 when target script is executed for

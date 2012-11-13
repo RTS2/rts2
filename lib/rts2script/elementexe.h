@@ -41,6 +41,8 @@ class ConnExecute:public ConnExe
 		ConnExecute (Execute *_masterElement, rts2core::Block * _master, const char *_exec);
 		virtual ~ConnExecute ();
 
+		virtual void postEvent (rts2core::Event *event);
+
 		virtual void notActive ();
 
 		void nullMasterElement () { masterElement = NULL; }
@@ -68,6 +70,9 @@ class ConnExecute:public ConnExe
 		int exposure_started;
 		// if set, don't autodelete next acquired image
 		bool keep_next_image;
+
+		// if set, EVENT_MOVE_OK / FAILED will be handled and response will be printed on stdout
+		bool waitTargetMove;
 
 		void deleteImage (rts2image::Image *image)
 		{

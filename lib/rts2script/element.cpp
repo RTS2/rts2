@@ -301,8 +301,7 @@ ElementSendSignal::ElementSendSignal (Script * _script, int in_sig):Element (_sc
 ElementSendSignal::~ElementSendSignal ()
 {
 	if (askedFor)
-		script->getMaster ()->
-			postEvent (new rts2core::Event (EVENT_SIGNAL, (void *) &sig));
+		script->getMaster ()->postEvent (new rts2core::Event (EVENT_SIGNAL, (void *) &sig));
 }
 
 void ElementSendSignal::postEvent (rts2core::Event * event)

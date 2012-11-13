@@ -29,6 +29,7 @@ ConnExecute::ConnExecute (Execute *_masterElement, rts2core::Block *_master, con
 	masterElement = _masterElement;
 	exposure_started = 0;
 	keep_next_image = false;
+	waitTargetMove = false;
 }
 
 ConnExecute::~ConnExecute ()
@@ -46,6 +47,29 @@ ConnExecute::~ConnExecute ()
 		(*iter)->deleteImage ();
 		deleteImage (*iter);
 	}
+}
+
+void ConnExecute::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_MOVE_OK:
+			if (waitTargetMove)
+				writeToProcess ("0");
+			if (masterElement && masterElement->getConnection ())
+				logStream (MESSAGE_DEBUG) << masterElement->getConnection ()->getName () << " elementexe get EVENT_MOVE_FAILED" << sendLog;
+			break;
+		case EVENT_MOVE_FAILED:
+			if (waitTargetMove)
+			{
+				writeToProcess ("! move failed");
+				writeToProcess ("ERR");
+			}
+			if (masterElement && masterElement->getConnection ())
+				logStream (MESSAGE_DEBUG) << masterElement->getConnection ()->getName () << " elementexe get EVENT_MOVE_FAILED" << sendLog;
+			break;
+	}
+	ConnExe::postEvent (event);
 }
 
 void ConnExecute::notActive ()
@@ -330,6 +354,25 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		notActive ();
 		master->postEvent (new rts2core::Event (EVENT_STOP_TARGET));
+	}
+	else if (!strcmp (cmd, "wait_target_move"))
+	{
+		if (masterElement->getTarget ())
+		{
+			if (masterElement->getTarget ()->wasMoved ())
+			{
+				writeToProcess ("0");
+			}
+			else
+			{
+				waitTargetMove = true;
+			}
+		}
+		else
+		{
+			writeToProcess ("! there isn't target to wait for");
+			writeToProcess ("ERR");
+		}
 	}
 	else if (!strcmp (cmd, "target_disable"))
 	{
