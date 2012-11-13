@@ -821,9 +821,12 @@ G W0 filter
         <term><option>waitidle {device name} {timeout}</option></term>
 	<listitem><para>
 	  Waits for <emphasis>timeout</emphasis> number of seconds for
-	  specified device to enter idle state. This function is equvivalent to
-	  calling <emphasis>S</emphasis> command, compare status and return if
-	  status is 0 for maximaum of <emphasis>timeout</emphasis> seconds.
+	  specified device to enter idle state. Return either 1 if device
+	  reached idle status, or 0 if the call timeouts.
+        </para><para>
+	  This function is equvivalent to calling <emphasis>S</emphasis>
+	  command, compare status and return 1 if device properly reached idle,
+	  0 if it timeouts.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
