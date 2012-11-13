@@ -131,11 +131,15 @@ class Rts2Comm:
 		print "VT",device,name,'+=',new_value
 		sys.stdout.flush()
 
-	def setValue(self,name,new_value,device = None):
+	def setValue(self, name, new_value, device = None):
 		if (device is None):
 			print "value",name,'=',new_value
 		else:
 			print "V",device,name,'=',new_value
+		sys.stdout.flush()
+
+	def setOwnValue(self, name, new_value):
+		print 'set_own', name, new_value
 		sys.stdout.flush()
 
 	def setValueByType(self,device,name,new_value):
