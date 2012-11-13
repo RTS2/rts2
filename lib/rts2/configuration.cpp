@@ -58,6 +58,8 @@ int Configuration::getSpecialValues ()
 	getString ("observatory", "target_path", targetDir, RTS2_PREFIX "/etc/rts2/targets");
 	masterConsFile = targetDir + "/constraints.xml";
 
+	targetConstraintsWithName = getBoolean ("observatory", "target_constraints_with_name", targetConstraintsWithName);
+
 	getString ("observatory", "nightlogs", nightDir, RTS2_PREFIX "/etc/rts2/nights/%N.fits");
 
 	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
@@ -92,6 +94,7 @@ Configuration::Configuration (bool defaultSection):IniParser (defaultSection)
 	checker = NULL;
 	// default to 120 seconds
 	astrometryTimeout = 120;
+	targetConstraintsWithName = false;
 }
 
 Configuration::~Configuration (void)

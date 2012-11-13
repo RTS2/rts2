@@ -352,13 +352,23 @@
 	  <term>
 	    <option>target_path</option>
 	  </term>
-	  <listitem>
-	    <para>
-	      Location of paths with per-target files. Default is PREFIX directory + 
-	      "/etc/rts2/targets". This path holds auxiliary target data -
-	      observing constraints, logs, and so on.
-	    </para>
-	  </listitem>
+	  <listitem><para>
+	    Location of paths with per-target files. Default is PREFIX directory + 
+	    "/etc/rts2/targets". This path holds auxiliary target data -
+	    observing constraints, logs, and so on.
+	  </para></listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><option>target_constraints_with_name</option></term>
+	  <listitem><para>
+	    If set to true, path to constraint file will be composed from
+	    target name. If false, path will include target id. The path is
+	    prefixed with value of <emphasis>target_path</emphasis>, and
+	    constraints are held in constraints.xml file. Please see output
+	    of
+	    <citerefentry><refentrytitle>rts2-targetinfo</refentrytitle><manvolnum>1</manvolnum></citerefentry> -ee for details.
+	    Defaults to false.
+	  </para></listitem>
 	</varlistentry>
 	<varlistentry>
 	  <term>

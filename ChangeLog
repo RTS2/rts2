@@ -1,3 +1,6 @@
+2012-11-13
+ * target_constraints_with_name
+
 2012-11-09
  * camera serial and type are writable and autosaved
  * moved GPIB to connection (from sensord)

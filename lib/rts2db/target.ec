@@ -2100,7 +2100,12 @@ const char *Target::getConstraintFile ()
 		return constraintFile;
 
 	std::ostringstream os;
-	os << rts2core::Configuration::instance ()->getTargetDir () << "/" << getTargetID () << "/constraints.xml";
+	os << rts2core::Configuration::instance ()->getTargetDir () << "/";
+	if (rts2core::Configuration::instance ()->getTargetConstraintsWithName ())
+		os << getTargetName ();
+	else
+		os << getTargetID ();
+	os << "/constraints.xml";
 	constraintFile = new char[os.str ().length () + 1];
 	strcpy (constraintFile, os.str ().c_str ());
 	return constraintFile;

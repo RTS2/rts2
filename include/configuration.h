@@ -344,6 +344,8 @@ class Configuration:public IniParser
 
 		const char *getTargetDir () { return targetDir.c_str (); }
 
+		bool getTargetConstraintsWithName () { return targetConstraintsWithName; }
+
 		const char *getNightDir () { return nightDir.c_str (); }
 
 		const char *getMasterConstraintFile () { return masterConsFile.c_str (); }
@@ -386,6 +388,7 @@ class Configuration:public IniParser
 		std::string obs_darks;
 
 		std::string targetDir;
+		bool targetConstraintsWithName;
 		std::string nightDir;
 		std::string masterConsFile;
 };
