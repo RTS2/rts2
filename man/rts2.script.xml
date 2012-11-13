@@ -703,6 +703,13 @@ echo VT CCD WINDOW = 0 0 10 10 # set all CCDs WINDOW (readout area).
 	</literallayout></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>set_own {value name} {new value}</option></term>
+        <listitem><para>
+	  Change own value. Particularly usefull for values created with
+          <emphasis>string</emphasis> and similar commands.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>value {value name} {operator} {operand1 [operand2..]}</option></term>
 	<listitem><para>
 	  Change value of variable of script device. This is shortcut to easily
@@ -792,6 +799,14 @@ G W0 filter
 	</literallayout><para>
 	  If filter is set to number 5, 5 will be printed (followed by line
 	  feed) on standard output.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>get_own {value name}</option></term>
+	<listitem><para>
+	  Retrieves own value. This is similar to <emphasis>G</emphasis> or <emphasis>?</emphasis>. It
+	  is handy to retrieve values created by <emphasis>string</emphasis> and other value cleation
+	  commands.
 	</para></listitem>
       </varlistentry>
       <varlistentry>

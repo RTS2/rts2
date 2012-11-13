@@ -128,6 +128,19 @@ void ConnExe::processCommand (char *cmd)
 			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
 		}
 	}
+	else if (!strcmp (cmd, "set_own"))
+	{
+		if (!checkActive ())
+			return;
+		if (paramNextString (&value) || (operand = paramNextWholeString ()) == NULL || master == NULL)
+			return;
+		rts2core::Value *val = ((rts2core::Daemon *) master)->getOwnValue (value);
+		if (val)
+		{
+			val->setValueCharArr (operand);
+			((rts2core::Daemon *) master)->sendValueAll (val);
+		}
+	}
 	else if (!strcmp (cmd, "G"))
 	{
 		if (paramNextString (&device) || paramNextString (&value) || master == NULL)
@@ -139,6 +152,23 @@ void ConnExe::processCommand (char *cmd)
 			val = master->getSingleCentralConn ()->getValue (value);
 		else
 			val = master->getValue (device, value);
+
+		if (val)
+		{
+			writeToProcess (val->getValue ());
+			return;
+		}
+		else
+		{
+			writeToProcess ("ERR");
+		}
+	}
+	else if (!strcmp (cmd, "get_own"))
+	{
+		if (paramNextString (&value) || master == NULL)
+			return;
+
+		rts2core::Value *val = ((rts2core::Daemon *) master)->getOwnValue (value);
 
 		if (val)
 		{
