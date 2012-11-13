@@ -32,6 +32,8 @@ DEVICE_FOCUS       = "FOCUS"
 DEVICE_CUPOLA      = "CUPOLA"
 DEVICE_FW          = "FW"
 DEVICE_SENSOR      = "SENSOR"
+DEVICE_EXECUTOR    = "EXEC"
+DEVICE_SELECTOR    = "SELECTOR"
 
 # constants for dataypes
 
@@ -345,3 +347,20 @@ class Rts2Comm:
 	def stopTarget(self):
 		print 'stop_target'
 		sys.stdout.flush()
+
+        def waitTargetMove(self):
+                """Returns after move was commanded"""
+                print 'wait_target_move'
+                sys.stdout.flush()
+                return self.readline()
+
+	def queueClear(self, queue, selector=None):
+		"""Clear selector queue"""
+		if selector is None:
+			selector=self.getDeviceByType(DEVICE_SELECTOR)
+		return self.sendCommand('clear {0}'.format(queue), selector)
+
+	def queueAppend(self, queue, target_id, selector=None):
+		if selector is None:
+			selector=self.getDeviceByType(DEVICE_SELECTOR)
+		return self.command('queue {0} {1}'.format(queue, target_id), selector)
