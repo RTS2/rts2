@@ -467,26 +467,27 @@ rts2core::Connection *ConnExe::getConnectionForScript (const char *_name)
 
 int ConnExe::getDeviceType (const char *_name)
 {
-	if (!strcasecmp (_name, "TELESCOPE"))
-		return DEVICE_TYPE_MOUNT;
-	else if (!strcasecmp (_name, "CCD"))
-	  	return DEVICE_TYPE_CCD;
-	else if (!strcasecmp (_name, "DOME"))
-	  	return DEVICE_TYPE_DOME;
-	else if (!strcasecmp (_name, "WEATHER"))
-	  	return DEVICE_TYPE_WEATHER;
-	else if (!strcasecmp (_name, "PHOT"))
-	  	return DEVICE_TYPE_PHOT;
-	else if (!strcasecmp (_name, "PLAN"))
-	  	return DEVICE_TYPE_PLAN;
-	else if (!strcasecmp (_name, "FOCUS"))
-	  	return DEVICE_TYPE_FOCUS;
-	else if (!strcasecmp (_name, "CUPOLA"))
-	  	return DEVICE_TYPE_CUPOLA;
-	else if (!strcasecmp (_name, "FW"))
-	  	return DEVICE_TYPE_FW;
-	else if (!strcasecmp (_name, "SENSOR"))
-	  	return DEVICE_TYPE_SENSOR;
+	#define NUMTYPES   12
+	struct { const char *dev; int type; } types[NUMTYPES] = 
+	{	
+		{"TELESCOPE", DEVICE_TYPE_MOUNT},
+		{"CCD",       DEVICE_TYPE_CCD},
+		{"DOME",      DEVICE_TYPE_DOME},
+		{"WEATHER",   DEVICE_TYPE_WEATHER},
+		{"PHOT",      DEVICE_TYPE_PHOT},
+		{"PLAN",      DEVICE_TYPE_PLAN},
+		{"FOCUS",     DEVICE_TYPE_FOCUS},
+		{"COPULA",    DEVICE_TYPE_CUPOLA},
+		{"FW",        DEVICE_TYPE_FW},
+		{"SENSOR",    DEVICE_TYPE_SENSOR},
+		{"EXEC",      DEVICE_TYPE_EXECUTOR},
+		{"SELECTOR",  DEVICE_TYPE_SELECTOR}
+	};
+
+	for (int i = 0; i < NUMTYPES; i++)
+		if (!strcasecmp (_name, types[i].dev))
+			return types[i].type;
+	#undef NUMTYPES
 	throw rts2core::Error (std::string ("unknow device type ") + _name);
 }
 
