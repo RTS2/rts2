@@ -442,6 +442,8 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 	else if (old_value == nGroups)
 	{
+		if (new_value->getValueInteger () > 32)
+			return -2;
 		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), new_value->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
@@ -449,6 +451,8 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 	else if (old_value == nDropFrames)
 	{
+		if (new_value->getValueInteger () > 128)
+			return -2;
 		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), new_value->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
@@ -456,6 +460,8 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 	else if (old_value == nRamps)
 	{
+		if (new_value->getValueInteger () > 32)
+			return -2;
 		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), new_value->getValueInteger (), &is);
 		delete is;
 		return 0;
