@@ -156,6 +156,8 @@ long Camera::isExposing ()
 
 int Camera::endExposure (int ret)
 {
+	if (modeCount)
+		bzero (modeCount, modeCountSize * sizeof (uint32_t));
 	if (exposureConn)
 	{
 		logStream (MESSAGE_INFO) << "end exposure for " << exposureConn->getName () << sendLog;
@@ -420,10 +422,14 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	filterOffsetFile = NULL;
 
+	createValue (ccdRealType, "CCD_TYPE", "camera type", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (serialNumber, "CCD_SER", "camera serial number", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+
 	createValue (objectName, "OBJECT", "target object name", false, RTS2_VALUE_WRITABLE);
 
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
+	calculateStatistics->addSelVal ("without mode");
 	calculateStatistics->addSelVal ("only statistics");
 	calculateStatistics->addSelVal ("no");
 	calculateStatistics->setValueInteger (STATISTIC_YES);
@@ -432,6 +438,11 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (max, "max", "maximum pixel value", false);
 	createValue (min, "min", "minimal pixel value", false);
 	createValue (sum, "sum", "sum of pixels readed out", false);
+	createValue (mode, "mode", "mode (most often pixel value", false);
+
+	// mode histogram
+	modeCount = NULL;
+	modeCountSize = 0;
 
 	createValue (computedPix, "computed", "number of pixels so far computed", false);
 
@@ -535,6 +546,8 @@ Camera::~Camera ()
 
 	delete dataBuffers;
 	delete dataWritten;
+	
+	delete[] modeCount;
 }
 
 int Camera::willConnect (rts2core::NetworkAddress * in_addr)
@@ -937,6 +950,21 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		computedPix->setValueLong (computedPix->getValueLong () + totPix);
 		average->setValueDouble (sum->getValueDouble () / computedPix->getValueLong ());
 
+		// find maximal mode value
+		if (modeCount != NULL)
+		{
+			uint32_t modeNum = 0;
+			for (unsigned int i = 0; i < modeCountSize; i++)
+			{
+				if (modeCount[i] > modeNum)
+				{
+					mode->setValueInteger (i);
+					modeNum = modeCount[i];
+				}
+			}
+			sendValueAll (mode);
+		}
+
 		sendValueAll (average);
 		sendValueAll (max);
 		sendValueAll (min);
@@ -1106,9 +1134,6 @@ int Camera::initValues ()
 			camFilterVals.push_back (FilterVal (this, *iter, fil));
 		}
 	}
-
-	createValue (ccdRealType, "CCD_TYPE", "camera type", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	createValue (serialNumber, "CCD_SER", "camera serial number", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
 	addConstValue ("chips", 1);
 

@@ -31,8 +31,9 @@
 
 /** calculateStatistics indices */
 #define STATISTIC_YES     0
-#define STATISTIC_ONLY    1
-#define STATISTIC_NO      2
+#define STATISTIC_NOMODE  1
+#define STATISTIC_ONLY    2
+#define STATISTIC_NO      3
 
 /**
  * Camera and CCD interfaces.
@@ -994,6 +995,10 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueDouble *min;
 		rts2core::ValueDouble *max;
 		rts2core::ValueDouble *sum;
+		rts2core::ValueDouble *mode;
+
+		uint32_t *modeCount;
+		long long unsigned int modeCountSize;
 
 		rts2core::ValueLong *computedPix;
 
@@ -1038,6 +1043,13 @@ class Camera:public rts2core::ScriptDevice
 			double tMax = max->getValueDouble ();
 			int pixNum = 0;
 			t *tData = data;
+			if (modeCountSize < (((long long unsigned int) 1) << (sizeof (t) * 8)))
+			{
+				delete[] modeCount;
+				modeCountSize = ((long long unsigned int) 1) << (sizeof (t) * 8);
+				modeCount = new uint32_t[modeCountSize];
+				bzero (modeCount, modeCountSize * sizeof (uint32_t));
+			}
 			while (((char *) tData) < ((char *) data) + dataSize)
 			{
 				t tD = *tData;
@@ -1046,6 +1058,7 @@ class Camera:public rts2core::ScriptDevice
 					tMin = tD;
 				if (tD > tMax)
 				  	tMax = tD;
+				modeCount[(long) tD]++;
 				tData++;
 				pixNum++;
 			}
