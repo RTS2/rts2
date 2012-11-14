@@ -546,6 +546,12 @@ int Sidecar::doReadout ()
 	int nd = scandir (imgdir.c_str (), &res, NULL, alphasort);
 
 	int i;
+
+	if (nd < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot find files in " << imgdir << ":" << strerror (errno) << sendLog;
+		return -1;
+	}
 	
 	for (i = 0; i < nd; i++)
 	{
