@@ -456,6 +456,8 @@ void DevClientCameraImage::fitsData (const char *fn)
 		images[0]->setExEnd (getNow ());
 		writeToFitsTransfer (img);
 
+		img->unkeepImage ();
+
 		fullDataReceived (0, data);
 	}
 	catch (rts2core::Error &ex)
