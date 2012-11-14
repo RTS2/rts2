@@ -530,9 +530,22 @@ int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 	return 0;
 }
 
-int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int plan_id, bool hard)
+int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int index, int plan_id, bool hard)
 {
-	push_back (QueuedTarget (nt, t_start, t_end, plan_id, hard));
+	ExecutorQueue::iterator iter;
+	if (index < 0)
+	{
+		iter = end ();
+		for (int i = index; i < -1 && iter != begin (); i++)
+			iter--;
+	}
+	else
+	{
+		iter = begin ();
+		for (int i = index; i > 0 && iter != end (); i--)
+			iter++;
+	}
+	insert (iter, QueuedTarget (nt, t_start, t_end, plan_id, hard));
 	updateVals ();
 	return 0;
 }
@@ -581,7 +594,7 @@ int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_s
 		now = to;
 	}
 	// if everything fails, add target to the end
-	addTarget (nt, t_start, t_end, plan_id, hard);
+	addTarget (nt, t_start, t_end, -1, plan_id, hard);
 	updateVals ();
 	return 0;
 }
@@ -705,7 +718,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 	return -1;
 }
 
-int ExecutorQueue::queueFromConn (rts2core::Connection *conn, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start)
+int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start)
 {
 	double t_start = NAN;
 	double t_end = NAN;
@@ -753,7 +766,7 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, bool withTimes, rt
 		if (tryFirstPossible)
 			addFirst (nt, fo, n_start, t_start, t_end);
 		else
-			addTarget (nt, t_start, t_end);
+			addTarget (nt, t_start, t_end, index);
 	}
 	return failed;
 }

@@ -1,5 +1,6 @@
 2012-11-14
- * mode calculation
+ * insert command for selector/queues
+ * image mode calculation
 
 2012-11-13
  * block until visible queue option

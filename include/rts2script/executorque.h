@@ -248,7 +248,7 @@ class ExecutorQueue:public TargetQueue
 		virtual ~ExecutorQueue ();
 
 		int addFront (rts2db::Target *nt, double t_start = NAN, double t_end = NAN);
-		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int plan_id = -1, bool hard = false);
+		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int index = -1, int plan_id = -1, bool hard = false);
 
 		/**
 		 * Add target to the first possible position.
@@ -283,7 +283,7 @@ class ExecutorQueue:public TargetQueue
 		 * @param tryFirstPossible     try to set observation on the first possible place
 		 * @param n_start              start of the night
 		 */
-		int queueFromConn (rts2core::Connection *conn, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start);
+		int queueFromConn (rts2core::Connection *conn, int index, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
 

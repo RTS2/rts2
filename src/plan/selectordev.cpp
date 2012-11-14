@@ -621,9 +621,10 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return updateNext (true, tar_id, obs_id) == 0 ? 0 : -2;
 	}
-	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan"))
+	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan") || conn->isCommand ("insert"))
 	{
 		bool withTimes = conn->isCommand ("queue_at");
+		int index = -1;
 		if (conn->paramNextString (&name))
 			return -2;
 		// try to find queue with name..
@@ -647,9 +648,14 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 			updateNext ();
 			return 0;
 		}
+		else if (conn->isCommand ("insert"))
+		{
+			if (conn->paramNextInteger (&index))
+				return -2;
+		}
 		try
 		{
-			if (q->queueFromConn (conn, withTimes, notifyConn, false, NAN))
+			if (q->queueFromConn (conn, index, withTimes, notifyConn, false, NAN))
 				return -2;
 			if (getMasterState () == SERVERD_NIGHT)
 			{

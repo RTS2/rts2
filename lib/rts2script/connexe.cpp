@@ -460,6 +460,18 @@ void ConnExe::processCommand (char *cmd)
 		vds->calculate ();
 		((rts2core::Daemon *) master)->sendValueAll (vds);
 	}
+	else if (!strcasecmp (cmd, "register_randevous"))
+	{
+		if (paramNextString (&vname))
+			throw rts2core::Error ("missing randevous variable name");
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		v->setRandevous ();
+		master->updateMetaInformations (v);
+	}
+	else if (!strcasecmp (cmd, "wait_randevous"))
+	{
+
+	}
 	else
 	{
 		throw rts2core::Error (std::string ("unknow command ") + cmd);
