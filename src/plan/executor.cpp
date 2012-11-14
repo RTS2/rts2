@@ -385,11 +385,11 @@ void Executor::postEvent (rts2core::Event * event)
 			break;
 		case EVENT_SCRIPT_ENDED:
 			updateScriptCount ();
-		//#ifdef DEBUG_EXTRA
+		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<
 				"EVENT_SCRIPT_ENDED Executor currentTarget " << currentTarget <<
 				" next que  " << getActiveQueue ()->size () << sendLog;
-		//#endif					 /* DEBUG_EXTRA */
+		#endif					 /* DEBUG_EXTRA */
 			if (currentTarget)
 			{
 				if (scriptCount->getValueInteger () == 0
