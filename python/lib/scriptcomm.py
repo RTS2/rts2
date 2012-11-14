@@ -373,3 +373,8 @@ class Rts2Comm:
 		if selector is None:
 			selector=self.getDeviceByType(DEVICE_SELECTOR)
 		return self.command('queue {0} {1}'.format(queue, target_id), selector)
+
+	def queueInsert(self, queue, target_id, index=0, selector=None):
+		if selector is None:
+			selector=self.getDeviceByType(DEVICE_SELECTOR)
+		return self.command('insert {0} {1} {2}'.format(queue, index, target_id), selector)
