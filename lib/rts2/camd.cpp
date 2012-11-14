@@ -438,7 +438,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (max, "max", "maximum pixel value", false);
 	createValue (min, "min", "minimal pixel value", false);
 	createValue (sum, "sum", "sum of pixels readed out", false);
-	createValue (mode, "mode", "mode (most often pixel value", false);
+	createValue (image_mode, "image_mode", "mode (most often pixel value", false);
 
 	// mode histogram
 	modeCount = NULL;
@@ -958,11 +958,11 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 			{
 				if (modeCount[i] > modeNum)
 				{
-					mode->setValueInteger (i);
+					image_mode->setValueInteger (i);
 					modeNum = modeCount[i];
 				}
 			}
-			sendValueAll (mode);
+			sendValueAll (image_mode);
 		}
 
 		sendValueAll (average);

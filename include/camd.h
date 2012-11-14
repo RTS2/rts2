@@ -995,7 +995,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueDouble *min;
 		rts2core::ValueDouble *max;
 		rts2core::ValueDouble *sum;
-		rts2core::ValueDouble *mode;
+		rts2core::ValueDouble *image_mode;
 
 		uint32_t *modeCount;
 		long long unsigned int modeCountSize;
