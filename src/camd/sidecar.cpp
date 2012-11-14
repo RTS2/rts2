@@ -567,7 +567,7 @@ int Sidecar::doReadout ()
 	// pass it as FITS data..
 
 	std::ostringstream os;
-	os << imageDir->getValueString () << "/" << lastDataDir->getValueString () << "/" << (fsMode->getValueInteger () == 0 ? fileSuffixUpTheRamp->getValueString () : fileSuffixFSRamp->getValueString ());
+	os << imgdir << "/" << lastDataDir->getValueString () << "/" << (fsMode->getValueInteger () == 0 ? fileSuffixUpTheRamp->getValueString () : fileSuffixFSRamp->getValueString ());
 
 	fitsDataTransfer (os.str ().c_str ());
 
