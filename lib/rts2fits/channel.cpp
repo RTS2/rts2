@@ -168,9 +168,3 @@ Channels::~Channels ()
 	for (Channels::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter);
 }
-
-void Channels::deallocate ()
-{
-	for (Channels::iterator iter = begin (); iter != end (); iter++)
-		(*iter)->deallocate ();
-}

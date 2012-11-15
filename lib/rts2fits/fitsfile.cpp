@@ -754,6 +754,38 @@ void FitsFile::addTemplate (rts2core::IniParser *templ)
 	}
 }
 
+void FitsFile::appendFITS (const char *afile, int index)
+{
+	if (!getFitsFile ())
+		openFile ();
+
+	fitsfile *affile;
+	fits_open_diskfile (&affile, afile, READONLY, &fits_status);
+	if (fits_status)
+		throw ErrorOpeningFitsFile (afile);
+	appendFITS (affile, afile, index);
+}
+
+void FitsFile::appendFITS (fitsfile *affile, const char *ename, int index)
+{
+	fits_movabs_hdu (affile, index, NULL, &fits_status);
+	if (fits_status)
+	{
+		fits_close_file (affile, &fits_status);
+		throw rts2core::Error ("cannot move to requested HDU");
+	}
+	fits_copy_hdu (affile, getFitsFile (), 1, &fits_status);
+	if (fits_status)
+	{
+		fits_close_file (affile, &fits_status);
+		throw rts2core::Error ("cannot copy HDU");
+	}
+	fits_close_file (affile, &fits_status);
+	moveHDU (getTotalHDUs ());
+	if (ename)
+		setValue ("EXTNAME", ename, "extension name");
+}
+
 int FitsFile::getTotalHDUs ()
 {
 	fits_status = 0;

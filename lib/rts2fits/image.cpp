@@ -136,9 +136,9 @@ Image::Image (Image * in_image):FitsFile (in_image)
 	templateDeviceName = NULL;
 
 	exposureLength = in_image->exposureLength;
+	
 	channels = in_image->channels;
 	dataType = in_image->dataType;
-	in_image->channels.deallocate ();
 	in_image->channels.clear ();
 	focPos = in_image->focPos;
 	signalNoise = in_image->signalNoise;

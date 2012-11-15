@@ -452,11 +452,11 @@ void DevClientCameraImage::fitsData (const char *fn)
 		// convert FITS to data
 		fits2DataChannels (img, data);
 
+		img->unkeepImage ();
+
 		images[0] = new CameraImage (img, getNow (), prematurelyReceived);
 		images[0]->setExEnd (getNow ());
 		writeToFitsTransfer (img);
-
-		img->unkeepImage ();
 
 		fullDataReceived (0, data);
 	}

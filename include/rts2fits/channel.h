@@ -90,8 +90,6 @@ class Channel
 
 		const char *getData () { return (char *) data; }
 
-		void deallocate () { data = NULL; }
-
 		void computeStatistics (size_t _from = 0, size_t _dataSize = 0);
 
 	private:
@@ -115,8 +113,6 @@ class Channels:public std::vector<Channel *>
 	public:
 		Channels ();
 		~Channels ();
-		
-		void deallocate ();
 };
 
 }
