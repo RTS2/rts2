@@ -576,23 +576,30 @@ void ValueSelection::addSelVals (const char **vals)
 	}
 }
 
+int ValueSelection::sendSelections (Connection * connection)
+{
+	// now send selection values..
+	std::ostringstream _os;
+
+	// empty PROTO_SELMETAINFO means delete selections
+	_os << PROTO_SELMETAINFO << " \"" << getName () << "\"\n";
+
+	for (std::vector < SelVal >::iterator iter = selBegin (); iter != selEnd (); iter++)
+	{
+		std::string val = (*iter).name;
+		_os << PROTO_SELMETAINFO << " \"" << getName () << "\" \"" << val << "\"\n";
+	}
+
+	return connection->sendMsg (_os.str ());
+}
+
 int ValueSelection::sendTypeMetaInfo (Connection * connection)
 {
 	int ret;
 	ret = ValueInteger::sendTypeMetaInfo (connection);
 	if (ret)
 		return ret;
-	// now send selection values..
-	std::ostringstream _os;
-
-	for (std::vector < SelVal >::iterator iter = selBegin (); iter != selEnd (); iter++)
-	{
-		std::string val = (*iter).name;
-		_os << PROTO_SELMETAINFO << " \"" << getName () << "\" \"" << val <<
-			"\"\n";
-	}
-
-	return connection->sendMsg (_os.str ());
+	return sendSelections (connection);
 }
 
 void ValueSelection::duplicateSelVals (ValueSelection * otherValue)

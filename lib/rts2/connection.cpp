@@ -715,11 +715,18 @@ void Connection::processLine ()
 	{
 		char *m_name;
 		char *sel_name;
-		if (paramNextString (&m_name) || paramNextString (&sel_name) || !paramEnd ())
+		if (paramNextString (&m_name))
 		{
 		  	ret = -2;
 		}
-		else
+		else if (paramEnd ())
+		{
+			ret = selMetaClear (m_name);
+		}
+		else if (paramNextString (&sel_name) || !paramEnd ())
+		{
+			ret = -2;
+		}
 		{
 			ret = selMetaInfo (m_name, sel_name);
 		}
@@ -1950,17 +1957,33 @@ ValueVector::iterator & Connection::getFailedValue (ValueVector::iterator &iter)
 	return iter;
 }
 
-void Connection::addValue (Value * value)
+void Connection::addValue (Value * value, const ValueVector::iterator eiter)
 {
 	if (value->isValue (RTS2_VALUE_INFOTIME))
 		info_time = (ValueTime *) value;
-	// if value exists, remove it from list
-	ValueVector::iterator eiter = values.removeValue (value->getName ().c_str ());
 	values.insert (eiter, value);
 }
 
 int Connection::metaInfo (int rts2Type, std::string m_name, std::string desc)
 {
+	// if value exists, update it
+	Value *existing_value = values.getValue (m_name.c_str ());
+	ValueVector::iterator eiter;
+	if (existing_value)
+	{
+		if (existing_value->getValueType () == (rts2Type & RTS2_VALUE_MASK))
+		{
+			existing_value->setFlags (rts2Type);
+			existing_value->setDescription (desc);
+			return -1;
+		}
+		eiter = values.removeValue (m_name.c_str ());
+	}
+	else
+	{
+		eiter = values.end ();
+	}
+
 	Value *new_value;
 	switch (rts2Type & RTS2_EXT_TYPE)
 	{
@@ -2005,7 +2028,16 @@ int Connection::metaInfo (int rts2Type, std::string m_name, std::string desc)
 			logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type << sendLog;
 			return -2;
 	}
-	addValue (new_value);
+	addValue (new_value, eiter);
+	return -1;
+}
+
+int Connection::selMetaClear (const char *value_name)
+{
+	Value *val = getValue (value_name);
+	if (!val || val->getValueType () != RTS2_VALUE_SELECTION)
+		return -2;
+	((ValueSelection *) val)->clear ();
 	return -1;
 }
 

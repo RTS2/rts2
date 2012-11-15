@@ -412,6 +412,8 @@ class Value
 
 		std::string getDescription () { return description; }
 
+		void setDescription (std::string ndesc) { description = ndesc; }
+
 		const int getValueType () { return rts2Type & RTS2_VALUE_MASK; }
 
 		const int getValueExtType () { return rts2Type & RTS2_EXT_TYPE; }
@@ -441,6 +443,11 @@ class Value
 		void setRandevous () { rts2Type |= RTS2_VALUE_RANDEVOUS_WAIT; }
 
 		int32_t getFlags () { return rts2Type; }
+
+		/**
+		 * Set value flags, except for bits in RTS2_VALUE_MASK
+		 */
+		void setFlags (int32_t nflags) { rts2Type = (nflags & ~RTS2_VALUE_MASK) | (rts2Type & RTS2_VALUE_MASK); }
 
 		/**
 		 * Sends value metainformations, including description.
@@ -871,6 +878,8 @@ class ValueSelection:public ValueInteger
 		int selSize () { return values.size (); }
 
 		void duplicateSelVals (ValueSelection * otherValue);
+
+		int sendSelections (Connection *connection);
 
 	protected:
 		virtual int sendTypeMetaInfo (Connection * connection);

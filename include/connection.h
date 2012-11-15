@@ -24,6 +24,7 @@
  * @file Contains Connection class.
  */
 
+#include <algorithm>
 #include <map>
 #include <string>
 #include <string.h>
@@ -491,6 +492,11 @@ class Connection:public Object
 		Value *getValue (const char *value_name);
 
 		/**
+		 * Returns true if connection has given value.
+		 */
+		bool hasValue (Value *val) { return std::find (values.begin (), values.end (), val) != values.end (); }
+
+		/**
 		 * Returns value with given name and type. Throw error if such value does not exists.
 		 *
 		 * @param value_name   name of the searched value
@@ -524,9 +530,10 @@ class Connection:public Object
 
 
 		// value management functions
-		void addValue (Value * value);
+		void addValue (Value * value, const ValueVector::iterator eiter);
 
 		int metaInfo (int rts2Type, std::string m_name, std::string desc);
+		int selMetaClear (const char *value_name);
 		int selMetaInfo (const char *value_name, char *sel_name);
 
 		const char *getValueChar (const char *value_name);
@@ -743,7 +750,7 @@ class Connection:public Object
 		in_addr addr;
 		int port;				 // local port & connection
 
-		std::list < Command * >commandQue;
+		std::list < Command * > commandQue;
 		Command *runningCommand;
 		enum {WAITING, SEND, RETURNING}
 		runningCommandStatus;
