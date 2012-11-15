@@ -279,6 +279,13 @@
  */
 #define RTS2_VALUE_ERROR              0x20000000
 
+/**
+ * Randevouz value, used for synchronization.
+ */
+#define RTS2_VALUE_RANDEVOUS_MASK     0xc0000000
+#define RTS2_VALUE_RANDEVOUS_WAIT     0x40000000
+#define RTS2_VALUE_RANDEVOUS_TRIGGER  0x80000000
+
 #define VALUE_BUF_LEN                 200
 
 // BOP mask is taken from status.h, and occupied highest byte (0xff000000)
@@ -430,6 +437,8 @@ class Value
 		bool prefixWithDevice () { return (rts2Type & RTS2_VALUE_DEVPREFIX); }
 
 		void setWritable () { rts2Type |= RTS2_VALUE_WRITABLE; }
+
+		void setRandevous () { rts2Type |= RTS2_VALUE_RANDEVOUS_WAIT; }
 
 		int32_t getFlags () { return rts2Type; }
 
