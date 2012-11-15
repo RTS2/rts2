@@ -114,14 +114,14 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 		createValue (axmaxv[i], (prs + "MAX_VEL").c_str (), "axis maximal velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 		createValue (axbasev[i], (prs + "BASE_VEL").c_str (), "axis base velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		// axmaxv[i]->setValueLong (1000);
-		// axbasev[i]->setValueLong (0);
+		axmaxv[i]->setValueInteger (1500);
+		axbasev[i]->setValueInteger (0);
 
 		createValue (axacceleration[i], (prs + "ACC").c_str (), "axis acceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 		createValue (axdeceleration[i], (prs + "DEC").c_str (), "axis deceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		// axacceleration[i]->setValueLong (1000);
-		// axdeceleration[i]->setValueLong (1000);
+		axacceleration[i]->setValueInteger (1500);
+		axdeceleration[i]->setValueInteger (1500);
 
 		createValue (axenabled[i], (prs + "ENB").c_str (), "axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 		axenabled[i]->setValueBool (true);
@@ -188,8 +188,6 @@ int NIRatir::initHardware ()
 	{
 		flex_configure_stepper_output (NIMC_AXIS1 + i, NIMC_STEP_AND_DIRECTION, NIMC_ACTIVE_HIGH, 0);
 		flex_load_counts_steps_rev (NIMC_AXIS1 + i, NIMC_STEPS, 24);
-		
-		//Enable at start up
 		flex_config_inhibit_output (NIMC_AXIS1 + i, 0, 0, 0);
 
 		flex_load_base_vel (NIMC_AXIS1 + i, axbasev[i]->getValueInteger ());
