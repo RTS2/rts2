@@ -102,8 +102,7 @@ void DevClientLogger::infoOK ()
 	// check if we have to change log file..
 	changeOutputStream ();
 	*outputStream << getName ();
-	for (std::list < rts2core::Value * >::iterator iter = logValues.begin ();
-		iter != logValues.end (); iter++)
+	for (std::list < rts2core::Value * >::iterator iter = logValues.begin (); iter != logValues.end (); iter++)
 	{
 		*outputStream << " " << getDisplayValue (*iter);
 	}
