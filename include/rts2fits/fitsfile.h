@@ -249,6 +249,15 @@ class FitsFile: public rts2core::Expander
 		void addTemplate (rts2core::IniParser *templ);
 
 		/**
+		 * Append FITS file as extension to the current file.
+		 *
+		 * @param afile   file which extension will be appended
+		 * @param index   index of extension to append, counted from 1
+		 */
+		void appendFITS (const char *afile, int index = 1);
+		void appendFITS (fitsfile *affile, const char *ename = NULL, int index = 1);
+
+		/**
 		 * Move current HDU.
 		 */
 		void moveHDU (int hdu, int *hdutype = NULL);
