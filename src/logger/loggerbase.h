@@ -25,6 +25,9 @@
 
 #define EVENT_SET_LOGFILE RTS2_LOCAL_EVENT+800
 
+namespace rts2logd
+{
+
 /**
  * This class logs given values to given file.
  *
@@ -32,7 +35,7 @@
  *
  * @ingroup RTS2Logger
  */
-class Rts2DevClientLogger:public rts2core::DevClient
+class DevClientLogger:public rts2core::DevClient
 {
 	public:
 		/**
@@ -43,9 +46,9 @@ class Rts2DevClientLogger:public rts2core::DevClient
 		 * @param in_fileCreationInterval  Interval between file creation.
 		 * @param in_logNames              String with space separated names of values which will be logged.
 		 */
-		Rts2DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
+		DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
 
-		virtual ~ Rts2DevClientLogger (void);
+		virtual ~ DevClientLogger (void);
 		virtual void infoOK ();
 		virtual void infoFailed ();
 
@@ -105,15 +108,14 @@ class Rts2DevClientLogger:public rts2core::DevClient
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2LogValName
+class LogValName
 {
 	public:
 		std::string devName;
 		double timeout;
 		std::list < std::string > valueList;
 
-		Rts2LogValName (std::string in_devName, double in_timeout,
-			std::list < std::string > in_valueList)
+		LogValName (std::string in_devName, double in_timeout, std::list < std::string > in_valueList)
 		{
 			devName = in_devName;
 			timeout = in_timeout;
@@ -122,22 +124,24 @@ class Rts2LogValName
 };
 
 /**
- * Bse class for logging. Provides functions for both rts2core::App and Rts2Device, which
+ * Bse class for logging. Provides functions for both rts2core::App and rts2core::Device, which
  * shall be called from the respective program bodies.
  *
  * @ingroup RTS2Logger
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2LoggerBase
+class LoggerBase
 {
 	public:
-		Rts2LoggerBase ();
+		LoggerBase ();
 		rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 	protected:
 		int readDevices (std::istream & is);
 
-		Rts2LogValName *getLogVal (const char *name);
+		LogValName *getLogVal (const char *name);
 		int willConnect (rts2core::NetworkAddress * in_addr);
 	private:
-		std::list < Rts2LogValName > devicesNames;
+		std::list < LogValName > devicesNames;
 };
+
+}

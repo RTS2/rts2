@@ -17,9 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2loggerbase.h"
+#include "loggerbase.h"
 
-Rts2DevClientLogger::Rts2DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames):rts2core::DevClient (in_conn)
+using namespace rts2logd;
+
+DevClientLogger::DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames):rts2core::DevClient (in_conn)
 {
 	exp = NULL;
 
@@ -35,17 +37,16 @@ Rts2DevClientLogger::Rts2DevClientLogger (rts2core::Connection * in_conn, double
 	outputStream = &std::cout;
 }
 
-Rts2DevClientLogger::~Rts2DevClientLogger (void)
+DevClientLogger::~DevClientLogger (void)
 {
 	if (outputStream != &std::cout)
 		delete outputStream;
 	delete exp;
 }
 
-void Rts2DevClientLogger::fillLogValues ()
+void DevClientLogger::fillLogValues ()
 {
-	for (std::list < std::string >::iterator iter = logNames.begin ();
-		iter != logNames.end (); iter++)
+	for (std::list < std::string >::iterator iter = logNames.begin (); iter != logNames.end (); iter++)
 	{
 		rts2core::Value *val = getConnection ()->getValue ((*iter).c_str ());
 		if (val)
@@ -54,14 +55,13 @@ void Rts2DevClientLogger::fillLogValues ()
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "Cannot find value '" << *iter <<
-				"' of device '" << getName () << "', exiting." << sendLog;
+			logStream (MESSAGE_ERROR) << "Cannot find value '" << *iter << "' of device '" << getName () << "', exiting." << sendLog;
 			getMaster ()->endRunLoop ();
 		}
 	}
 }
 
-void Rts2DevClientLogger::setOutputFile (const char *pattern)
+void DevClientLogger::setOutputFile (const char *pattern)
 {
 	if (exp == NULL)
 	{
@@ -71,7 +71,7 @@ void Rts2DevClientLogger::setOutputFile (const char *pattern)
 	changeOutputStream ();
 }
 
-void Rts2DevClientLogger::changeOutputStream ()
+void DevClientLogger::changeOutputStream ()
 {
 	struct timeval tv;
 	getConnection ()->getInfoTime (tv);
@@ -95,7 +95,7 @@ void Rts2DevClientLogger::changeOutputStream ()
 	outputStream = nstream;
 }
 
-void Rts2DevClientLogger::infoOK ()
+void DevClientLogger::infoOK ()
 {
 	if (logValues.empty ())
 		fillLogValues ();
@@ -110,13 +110,13 @@ void Rts2DevClientLogger::infoOK ()
 	*outputStream << std::endl;
 }
 
-void Rts2DevClientLogger::infoFailed ()
+void DevClientLogger::infoFailed ()
 {
  	changeOutputStream ();
 	*outputStream << "info failed" << std::endl;
 }
 
-void Rts2DevClientLogger::idle ()
+void DevClientLogger::idle ()
 {
 	struct timeval now;
 	gettimeofday (&now, NULL);
@@ -127,7 +127,7 @@ void Rts2DevClientLogger::idle ()
 	}
 }
 
-void Rts2DevClientLogger::postEvent (rts2core::Event * event)
+void DevClientLogger::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -138,11 +138,11 @@ void Rts2DevClientLogger::postEvent (rts2core::Event * event)
 	rts2core::DevClient::postEvent (event);
 }
 
-Rts2LoggerBase::Rts2LoggerBase ()
+LoggerBase::LoggerBase ()
 {
 }
 
-int Rts2LoggerBase::readDevices (std::istream & is)
+int LoggerBase::readDevices (std::istream & is)
 {
 	while (!is.eof () && !is.fail ())
 	{
@@ -160,8 +160,7 @@ int Rts2LoggerBase::readDevices (std::istream & is)
 
 		if (is.eof () || is.fail ())
 		{
-			logStream (MESSAGE_ERROR) <<
-				"Cannot read device name or timeout, please correct line " <<
+			logStream (MESSAGE_ERROR) << "Cannot read device name or timeout, please correct line " <<
 				sendLog;
 			return -1;
 		}
@@ -178,18 +177,17 @@ int Rts2LoggerBase::readDevices (std::istream & is)
 		}
 		if (valueList.empty ())
 		{
-			logStream (MESSAGE_ERROR) << "Value list for device " << devName <<
-				" is empty, please correct that." << sendLog;
+			logStream (MESSAGE_ERROR) << "Value list for device " << devName << " is empty, please correct that." << sendLog;
 			return -1;
 		}
-		devicesNames.push_back (Rts2LogValName (devName, timeout, valueList));
+		devicesNames.push_back (LogValName (devName, timeout, valueList));
 	}
 	return 0;
 }
 
-Rts2LogValName * Rts2LoggerBase::getLogVal (const char *name)
+LogValName * LoggerBase::getLogVal (const char *name)
 {
-	for (std::list < Rts2LogValName >::iterator iter = devicesNames.begin ();
+	for (std::list < LogValName >::iterator iter = devicesNames.begin ();
 		iter != devicesNames.end (); iter++)
 	{
 		if ((*iter).devName == name)
@@ -198,17 +196,17 @@ Rts2LogValName * Rts2LoggerBase::getLogVal (const char *name)
 	return NULL;
 }
 
-int Rts2LoggerBase::willConnect (rts2core::NetworkAddress * in_addr)
+int LoggerBase::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	if (getLogVal (in_addr->getName ()))
 		return 1;
 	return 0;
 }
 
-rts2core::DevClient * Rts2LoggerBase::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient * LoggerBase::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
-	Rts2LogValName *val = getLogVal (conn->getName ());
+	LogValName *val = getLogVal (conn->getName ());
 	if (val)
-		return new Rts2DevClientLogger (conn, val->timeout, 60, val->valueList);
+		return new DevClientLogger (conn, val->timeout, 60, val->valueList);
 	return NULL;
 }
