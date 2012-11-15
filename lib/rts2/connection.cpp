@@ -727,6 +727,7 @@ void Connection::processLine ()
 		{
 			ret = -2;
 		}
+		else
 		{
 			ret = selMetaInfo (m_name, sel_name);
 		}
