@@ -764,6 +764,7 @@ void FitsFile::appendFITS (const char *afile, int index)
 	if (fits_status)
 		throw ErrorOpeningFitsFile (afile);
 	appendFITS (affile, afile, index);
+	fits_close_file (affile, &fits_status);
 }
 
 void FitsFile::appendFITS (fitsfile *affile, const char *ename, int index)
@@ -780,7 +781,6 @@ void FitsFile::appendFITS (fitsfile *affile, const char *ename, int index)
 		fits_close_file (affile, &fits_status);
 		throw rts2core::Error ("cannot copy HDU");
 	}
-	fits_close_file (affile, &fits_status);
 	moveHDU (getTotalHDUs ());
 	if (ename)
 		setValue ("EXTNAME", ename, "extension name");

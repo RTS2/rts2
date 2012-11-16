@@ -37,23 +37,24 @@
 #include <Magick++.h>
 #endif // RTS2_HAVE_LIBJPEG
 
-#define IMAGEOP_NOOP            0x0000
-#define IMAGEOP_ADDDATE         0x0001
+#define IMAGEOP_NOOP            0x00000
+#define IMAGEOP_ADDDATE         0x00001
 #ifdef RTS2_HAVE_PGSQL
-#define IMAGEOP_INSERT          0x0002
+#define IMAGEOP_INSERT          0x00002
 #endif							 /* RTS2_HAVE_PGSQL */
-#define IMAGEOP_TEST            0x0004
-#define IMAGEOP_PRINT           0x0008
-#define IMAGEOP_FPRINT          0x0010
-#define IMAGEOP_COPY            0x0020
-#define IMAGEOP_SYMLINK	        0x0040
-#define IMAGEOP_MOVE            0x0080
-#define IMAGEOP_ADDHELIO        0x0400
-#define IMAGEOP_MODEL           0x0800
-#define IMAGEOP_JPEG            0x1000
-#define IMAGEOP_STAT            0x2000
-#define IMAGEOP_RTS2OPERA_WCS   0x4000
-#define IMAGEOP_ADD_TEMPLATE    0x8000
+#define IMAGEOP_TEST            0x00004
+#define IMAGEOP_PRINT           0x00008
+#define IMAGEOP_FPRINT          0x00010
+#define IMAGEOP_COPY            0x00020
+#define IMAGEOP_SYMLINK	        0x00040
+#define IMAGEOP_MOVE            0x00080
+#define IMAGEOP_ADDHELIO        0x00400
+#define IMAGEOP_MODEL           0x00800
+#define IMAGEOP_JPEG            0x01000
+#define IMAGEOP_STAT            0x02000
+#define IMAGEOP_RTS2OPERA_WCS   0x04000
+#define IMAGEOP_ADD_TEMPLATE    0x08000
+#define IMAGEOP_APPEND_EXT      0x10000
 
 #define OPT_ADDDATE             OPT_LOCAL + 5
 #define OPT_ADDHELIO            OPT_LOCAL + 6
@@ -68,6 +69,7 @@
 #define OPT_ERR                 OPT_LOCAL + 15
 #define OPT_RTS2OPERA_WCS       OPT_LOCAL + 16
 #define OPT_ADD_TEMPLATE        OPT_LABEL + 17
+#define OPT_APPEND_EXTENSIONS   OPT_LABEL + 18
 
 namespace rts2image
 {
@@ -131,6 +133,7 @@ class AppImage:public rts2image::AppImageCore
 
 		const char *cameraName;
 		const char *mountName;
+		rts2image::FitsFile *appendOutput;
 
 		double err_ra;
 		double err_dec;
@@ -376,6 +379,10 @@ int AppImage::processOption (int in_opt)
 				readOnly = false;
 			}
 			break;
+		case OPT_APPEND_EXTENSIONS:
+			operation |= IMAGEOP_APPEND_EXT;
+			appendOutput = new FitsFile (optarg, true);
+			break;
 		default:
 
 		#ifdef RTS2_HAVE_PGSQL
@@ -457,6 +464,8 @@ int AppImage::processImage (Image * image)
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, zoom, label);
 #endif /* RTS2_HAVE_LIBJPEG */
+	if (operation & IMAGEOP_APPEND_EXT)
+		appendOutput->appendFITS (image->getFitsFile ());
 	return 0;
 }
 
@@ -495,11 +504,13 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 
 	cameraName = NULL;
 	mountName = NULL;
+	appendOutput = NULL;
 
 	rts2opera_ext = '-';
 
 	err_ra = err_dec = err = NAN;
 
+	addOption (OPT_APPEND_EXTENSIONS, "append-extensions", 1, "append images specified as arguments to the given (new) image specified as option");
 	addOption ('p', NULL, 1, "print image expression");
 	addOption ('P', NULL, 1, "print filename followed by expression");
 	addOption ('r', NULL, 0, "print referencig status - usefull for modelling checks");
@@ -533,6 +544,8 @@ AppImage::~AppImage ()
 
 	for (std::vector <rts2core::IniParser *>::iterator iter = fitsTemplates.begin (); iter != fitsTemplates.end (); iter++)
 		delete *iter;
+
+	delete appendOutput;
 
 #ifdef RTS2_HAVE_LIBJPEG
   	MagickLib::DestroyMagick ();
