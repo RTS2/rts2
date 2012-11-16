@@ -4,8 +4,6 @@ SUBDIRS = model vermes
 
 noinst_PROGRAMS = test
 
-bin_PROGRAMS=rts2-horizon
-
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 AM_CFLAGS=@NOVA_CFLAGS@ -I../../include
 
@@ -78,6 +76,3 @@ EXTRA_DIST += nimotion.c
 else
 librts2_la_SOURCES += nimotion.c
 endif
-
-rts2_horizon_SOURCES = horizonapp.cpp
-rts2_horizon_LDADD = -lrts2 @LIB_NOVA@

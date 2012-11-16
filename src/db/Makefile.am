@@ -1,9 +1,11 @@
 LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
 
-bin_PROGRAMS = rts2-image rts2-user
+bin_PROGRAMS = rts2-image rts2-user rts2-horizon
 
 rts2_image_SOURCES = appimagemanip.cpp
+
+rts2_horizon_SOURCES = horizonapp.cpp
 
 EXTRA_DIST = airmasscale.ec
 CLEANFILES = airmasscale.cpp
