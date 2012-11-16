@@ -1151,7 +1151,7 @@ int Andor::initHardware ()
 		logStream (MESSAGE_ERROR) << "cannot get serial number" << sendLog;
 		return -1;
 	}
-	serialNumber->setValueCharArr (serNum);
+	serialNumber->setValueInteger (serNum);
 
 	// default to EMON off
 	ret = setHSSpeed (1, HSpeed->getValueInteger ());
