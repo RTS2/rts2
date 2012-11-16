@@ -232,9 +232,8 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 	double JD;
 	double mean_sidereal;
 	float expo;
-	int imageFlip;
-	double aux0;
-	double aux1;
+	double aux0 = NAN;
+	double aux1 = NAN;
 
 	image->getCoordAstrometry (actual);
 	switch (tarCorType)
@@ -295,7 +294,7 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 			break;
 	}
 
-	_os << spaceDegSep << target << " " << lst << " " << imageFlip << " " << aux1 << std::endl;
+	_os << spaceDegSep << target << " " << lst << " " << aux0 << " " << aux1 << std::endl;
 	return 0;
 }
 
