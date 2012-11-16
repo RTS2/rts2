@@ -611,7 +611,11 @@ class CommandExecNow:public Command
 class CommandExecGrb:public Command
 {
 	public:
-		CommandExecGrb (Block * _master, int grb_id);
+		CommandExecGrb (Block * _master, int _grb_id);
+
+		int getGrbID () { return grb_id; }
+	private:
+		int grb_id;
 };
 
 class CommandQueueNow:public Command

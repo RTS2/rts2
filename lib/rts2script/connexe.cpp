@@ -465,8 +465,26 @@ void ConnExe::processCommand (char *cmd)
 		if (paramNextString (&vname))
 			throw rts2core::Error ("missing randevous variable name");
 		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		if (v == NULL)
+		{
+			rts2core::ValueString *vs;
+			((rts2core::Daemon *) master)->createValue (vs, vname, "randevous variable", false, RTS2_VALUE_WRITABLE);
+			v = vs;
+		}
 		v->setRandevous ();
 		master->updateMetaInformations (v);
+		// create synronization value
+		if (paramNextString (&value))
+			throw rts2core::Error ("missing lock variable name");
+		rts2core::Value *vsynch = ((rts2core::Daemon *) master)->getOwnValue (value);
+		if (vsynch == NULL)
+		{
+			rts2core::ValueBool *vb;
+			((rts2core::Daemon *) master)->createValue (vb, value, "lock variable", false, RTS2_VALUE_WRITABLE);
+			v = vb;
+			master->updateMetaInformations (v);
+		}
+		v->setValueInteger (0);
 	}
 	else if (!strcasecmp (cmd, "wait_randevous"))
 	{

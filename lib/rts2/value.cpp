@@ -939,7 +939,7 @@ Value *newValue (int rts2Type, std::string name, std::string desc)
 		case RTS2_VALUE_INTEGER:
 			return new ValueInteger (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 		case RTS2_VALUE_TIME:
-			return new  ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			return new ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 		case RTS2_VALUE_DOUBLE:
 			return new ValueDouble (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 		case RTS2_VALUE_FLOAT:

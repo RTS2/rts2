@@ -42,6 +42,7 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 	addExe = NULL;
 	execFollowups = 0;
 	queueName = NULL;
+	execC = NULL;
 
 	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false, RTS2_VALUE_WRITABLE);
 	grb_enabled->setValueBool (true);
@@ -260,6 +261,23 @@ void Grbd::postEvent (rts2core::Event * event)
 				addTimer (60, new rts2core::Event (EVENT_TIMER_GCNCNN_INIT, this));
 			}
 			break;
+		case EVENT_COMMAND_FAILED:
+			if (event->getArg () == execC)
+			{
+				if (queueName)
+				{
+					int num = 0;
+					rts2core::CommandQueueNowOnce cmd (this, queueName, execC->getGrbID ());
+					queueCommandForType (DEVICE_TYPE_SELECTOR, cmd, &num);
+					if (num == 0)
+						logStream (MESSAGE_ERROR) << "GRB with ID " << execC->getGrbID () << " returned with error, and cannot find any running selector to queue it in" << sendLog;
+				}
+				else
+				{
+					logStream (MESSAGE_INFO) << "GRB with ID " << execC->getGrbID () << " returned with error, and selector queue was not specified" << sendLog;
+				}
+			}
+			break;
 	}
 	DeviceDb::postEvent (event);
 }
@@ -276,7 +294,8 @@ int Grbd::newGcnGrb (int tar_id)
 	exec = getOpenConnection ("EXEC");
 	if (exec)
 	{
-		exec->queCommand (new rts2core::CommandExecGrb (this, tar_id));
+		execC = new rts2core::CommandExecGrb (this, tar_id);
+		exec->queCommand (execC, 0, this);
 	}
 	else if (!queueName)
 	{

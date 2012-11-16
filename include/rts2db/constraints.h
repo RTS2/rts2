@@ -316,6 +316,13 @@ class ConstraintsList:public std::list <ConstraintPtr>
 		}
 		
 		void printJSON (std::ostream &os);
+
+		std::string toString ()
+		{
+			std::ostringstream os;
+			os << (*this);
+			return os.str ();
+		}
 };
 
 /**

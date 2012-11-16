@@ -91,6 +91,8 @@ class Grbd:public rts2db::DeviceDb
 
 		char *queueName;
 
+		rts2core::CommandExecGrb *execC;
+
 		rts2core::ValueBool *grb_enabled;
 		rts2core::ValueBool *createDisabled;
 

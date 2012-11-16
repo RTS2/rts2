@@ -19,6 +19,7 @@
  */
 
 #include "valuearray.h"
+#include "rts2db/constraints.h"
 #include "rts2db/devicedb.h"
 #include "rts2db/target.h"
 #include "rts2db/targetgrb.h"
@@ -699,7 +700,6 @@ int Executor::setNow (rts2db::Target * newTarget)
 int Executor::setGrb (int grbId)
 {
 	rts2db::Target *grbTarget = NULL;
-	struct ln_hrz_posn grbHrz;
 	int ret;
 
 	// is during night and ready?
@@ -712,20 +712,23 @@ int Executor::setGrb (int grbId)
 	{
 		if (Configuration::instance ()->grbdValidity () == 0)
 		{
-			logStream (MESSAGE_INFO) << "GRB event with target id " << grbId << " ignored, will be scheduled from selector" << sendLog;
+			logStream (MESSAGE_INFO) << "GRBs has 0 validity period, grb command ignored for GRB with target id " << grbId << sendLog;
 			return 0;
 		}
 		grbTarget = createTarget (grbId, observer, notifyConn);
 
 		if (!grbTarget)
 			return -2;
-		grbTarget->getAltAz (&grbHrz);
-		if (grbHrz.alt < 0)
+
+		double JD = ln_get_julian_from_sys ();
+
+		if (grbTarget->checkConstraints (JD))
 		{
-			logStream (MESSAGE_DEBUG) << "GRB is below horizon and is ignored. GRB altitude " << grbHrz.alt << sendLog;
+			logStream (MESSAGE_INFO) << "GRB does not meet constraints: violated " << grbTarget->getViolatedConstraints (JD).toString () << ", satisfied " << grbTarget->getSatisfiedConstraints (JD).toString () << sendLog;
 			delete grbTarget;
 			return -2;
 		}
+
 		// if we're already disabled, don't execute us
 		if (grbTarget->getTargetEnabled () == false)
 		{
@@ -733,7 +736,7 @@ int Executor::setGrb (int grbId)
 				<< "ignored execution request for GRB target " << grbTarget->getTargetName ()
 				<< " (# " << grbTarget->getObsTargetID () << ") because this target is disabled" << sendLog;
 			delete grbTarget;
-			return -2;
+			return 0;
 		}
 		if (!currentTarget)
 		{

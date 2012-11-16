@@ -561,9 +561,10 @@ CommandExecNow::CommandExecNow (Block * _master, int now_id):Command (_master)
 	setCommand (_os);
 }
 
-CommandExecGrb::CommandExecGrb (Block * _master, int grb_id):Command (_master)
+CommandExecGrb::CommandExecGrb (Block * _master, int _grb_id):Command (_master)
 {
 	std::ostringstream _os;
+	grb_id = _grb_id;
 	_os << "grb " << grb_id;
 	setCommand (_os);
 }

@@ -1885,25 +1885,8 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD, int extended)
 	ConstraintsList violated;
 	getViolatedConstraints (JD, violated);
 
-	std::ostringstream violatedNames;
-	for (ConstraintsList::iterator iter = violated.begin (); iter != violated.end (); iter++)
-	{
-		if (iter != violated.begin ())
-			violatedNames << " ";
-		violatedNames << (*iter)->getName ();
-	}
-
 	ConstraintsList satisfied;
 	getSatisfiedConstraints (JD, satisfied);
-
-	std::ostringstream satisfiedNames;
-	for (ConstraintsList::iterator iter = satisfied.begin (); iter != satisfied.end (); iter++)
-	{
-		if (iter != satisfied.begin ())
-			satisfiedNames << " ";
-		satisfiedNames << (*iter)->getName ();
-	}
-
 
 	getGalLng (&gal, JD);
 	_os
@@ -1924,8 +1907,8 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD, int extended)
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", getConstraintFile ())
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_TARGET) ? "used" : "empty/not used")
 		<< InfoVal<const char*> ("CONSTRAINTS", checkConstraints (JD) ? "satisfied" : "not met")
-		<< InfoVal<std::string> ("VIOLATED", violatedNames.str ())
-		<< InfoVal<std::string> ("SATISFIED", satisfiedNames.str ())
+		<< InfoVal<std::string> ("VIOLATED", violated.toString ())
+		<< InfoVal<std::string> ("SATISFIED", satisfied.toString ())
 		<< std::endl;
 }
 
