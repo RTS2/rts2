@@ -38,6 +38,7 @@ class FW102c:public Filterd
 	protected:
 		virtual int processOption (int opt);
 		virtual int initHardware ();
+		virtual int initValues ();
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
@@ -89,6 +90,14 @@ int FW102c::initHardware ()
 	return 0;
 }
 
+int FW102c::initValues ()
+{
+        rts2core::ValueString *model = new rts2core::ValueString ("model");
+        fwConn->getValue ("*idn", model);
+        addConstValue (model);
+        return Filterd::initValues ();
+}
+
 int FW102c::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == sensorMode)
@@ -99,9 +108,9 @@ int FW102c::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 int FW102c::getFilterNum ()
 {
 	int val;
-	if (fwConn->getInt ("pcount", val))
+	if (fwConn->getInt ("pos", val))
 		return -1;
-	return val;
+	return val - 1;
 }
 
 int FW102c::setFilterNum (int new_filter)
