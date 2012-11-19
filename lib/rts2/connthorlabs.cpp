@@ -75,6 +75,7 @@ int ConnThorLabs::getValue (const char *vname, rts2core::Value *value)
 				return ret;
 			return 0;
 	}
+	return -1;
 }
 
 int ConnThorLabs::setValue (const char *vname, rts2core::Value *value)
@@ -94,19 +95,6 @@ int ConnThorLabs::getInt (const char *vname, int &value)
 	ret = writeRead (buf, ret, buf, 50, '\r');
 	if (ret < 0)
 		return ret;
-	if ((buf[0] != '<' && buf[0] != '>') || strncmp (buf + 2, vname, strlen (vname)))
-	{
-		buf[ret] = '\0';
-		logStream (MESSAGE_ERROR) << "invalid reply while quering for value " << vname << " : " << buf << sendLog;
-		return -1;
-	}
-	ret = readPort (buf, 50, '\r');
-	if (ret < 0)
-		return ret;
-	if (ret == 0)
-		throw rts2core::Error ("empty reply");
-	buf[ret - 1] = '\0';
-	value = atoi (buf);
 	return 0;
 }
 
@@ -117,5 +105,41 @@ int ConnThorLabs::setInt (const char *vname, int value)
 	ret = writeRead (buf, strlen (buf), buf, 50, '\r');
 	if (ret < 0)
 		return ret;
-	return 0;
+	switch (thorlabsType)
+	{
+		case LASER:
+			if ((buf[0] != '<' && buf[0] != '>') || strncmp (buf + 2, vname, strlen (vname)))
+			{
+				buf[ret] = '\0';
+				logStream (MESSAGE_ERROR) << "invalid reply while quering for value " << vname << " : " << buf << sendLog;
+				return -1;
+			}
+			ret = readPort (buf, 50, '\r');
+			if (ret < 0)
+				return ret;
+			if (ret == 0)
+				throw rts2core::Error ("empty reply");
+			buf[ret - 1] = '\0';
+			value = atoi (buf);
+			return 0;
+		case FW:
+			if (strncmp (buf, vname, strlen (vname)))
+			{
+				buf[ret] = '\0';
+				logStream (MESSAGE_ERROR) << "invalid reply while quering for value " << vname << " : " << buf << sendLog;
+				return -1;
+			}
+			ret = readPort (buf, 50, '\r');
+			if (ret < 0)
+				return ret;
+			if (ret == 0)
+				throw rts2core::Error ("empty reply");
+			buf[ret - 1] = '\0';
+			value = atoi (buf);
+			ret = readPort (buf, 50, '>');
+			if (ret < 0)
+				return ret;
+			return 0;
+	}
+	return -1;
 }
