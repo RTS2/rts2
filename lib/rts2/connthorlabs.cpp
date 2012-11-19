@@ -95,16 +95,6 @@ int ConnThorLabs::getInt (const char *vname, int &value)
 	ret = writeRead (buf, ret, buf, 50, '\r');
 	if (ret < 0)
 		return ret;
-	return 0;
-}
-
-int ConnThorLabs::setInt (const char *vname, int value)
-{
-	int ret = sprintf (buf, "%s=%d\r", vname, value);
-
-	ret = writeRead (buf, strlen (buf), buf, 50, '\r');
-	if (ret < 0)
-		return ret;
 	switch (thorlabsType)
 	{
 		case LASER:
@@ -141,5 +131,15 @@ int ConnThorLabs::setInt (const char *vname, int value)
 				return ret;
 			return 0;
 	}
+	return 0;
+}
+
+int ConnThorLabs::setInt (const char *vname, int value)
+{
+	int ret = sprintf (buf, "%s=%d\r", vname, value);
+
+	ret = writeRead (buf, strlen (buf), buf, 50, '\r');
+	if (ret < 0)
+		return ret;
 	return -1;
 }
