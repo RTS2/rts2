@@ -92,7 +92,7 @@ int FW102c::initHardware ()
 int FW102c::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == sensorMode)
-		return fwConn->setValue ("sensors", new_value, 100) ? -2 : 0;
+		return fwConn->setValue ("sensors", new_value, 10) ? -2 : 0;
 	return Filterd::setValue (old_value, new_value);
 }
 
@@ -106,7 +106,7 @@ int FW102c::getFilterNum ()
 
 int FW102c::setFilterNum (int new_filter)
 {
-	return fwConn->setInt ("pos", new_filter);
+	return fwConn->setInt ("pos", new_filter, 100);
 }
 
 int main (int argc, char **argv)
