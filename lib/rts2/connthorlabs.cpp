@@ -70,7 +70,7 @@ int ConnThorLabs::getValue (const char *vname, rts2core::Value *value)
 				((rts2core::ValueBool *) value)->setValueBool (buf[0] == '1');
 			else	
 				value->setValueCharArr (buf);
-			ret = readPort (buf, 50, '>');
+			ret = readPort (buf, 50, ' ');
 			if (ret < 0)
 				return ret;
 			return 0;
@@ -136,7 +136,7 @@ int ConnThorLabs::setInt (const char *vname, int value)
 				throw rts2core::Error ("empty reply");
 			buf[ret - 1] = '\0';
 			value = atoi (buf);
-			ret = readPort (buf, 50, '>');
+			ret = readPort (buf, 50, ' ');
 			if (ret < 0)
 				return ret;
 			return 0;
