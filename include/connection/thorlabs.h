@@ -34,10 +34,10 @@ class ConnThorLabs:public ConnSerial
 		ConnThorLabs (const char *device_file, Block *master, int thorlabsType);
 
 		int getValue (const char *name, rts2core::Value *value);
-		int setValue (const char *name, rts2core::Value *value);
+		int setValue (const char *name, rts2core::Value *value, int tmo=10);
 
 		int getInt (const char *name, int &value);
-		int setInt (const char *name, int value);
+		int setInt (const char *name, int value, int tmo=10);
 	
 	private:
 		// connection type

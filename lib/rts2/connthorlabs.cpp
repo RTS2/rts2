@@ -78,14 +78,27 @@ int ConnThorLabs::getValue (const char *vname, rts2core::Value *value)
 	return 0;
 }
 
-int ConnThorLabs::setValue (const char *vname, rts2core::Value *value)
+int ConnThorLabs::setValue (const char *vname, rts2core::Value *value, int timeout)
 {
 	int ret = sprintf (buf, "%s=%s\r", vname, value->getValue ());
+
+	setVTime (timeout);
 
 	ret = writeRead (buf, strlen (buf), buf, 50, '\r');
 	if (ret < 0)
 		return ret;
-	return -1;
+	switch (thorlabsType)
+	{
+		case LASER:
+			break;
+		case FW:
+			ret = readPort (buf, 50, ' ');
+			if (ret < 0)
+				return ret;
+			break;
+	}
+	setVTime (10);
+	return 0;
 }
 
 int ConnThorLabs::getInt (const char *vname, int &value)
@@ -134,9 +147,11 @@ int ConnThorLabs::getInt (const char *vname, int &value)
 	return 0;
 }
 
-int ConnThorLabs::setInt (const char *vname, int value)
+int ConnThorLabs::setInt (const char *vname, int value, int tmo)
 {
 	int ret = sprintf (buf, "%s=%d\r", vname, value);
+
+	setVTime (tmo);
 
 	ret = writeRead (buf, strlen (buf), buf, 50, '\r');
 	if (ret < 0)
@@ -151,5 +166,6 @@ int ConnThorLabs::setInt (const char *vname, int value)
 				return ret;
 			break;
 	}
+	setVTime (10);
 	return 0;
 }
