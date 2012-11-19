@@ -106,7 +106,7 @@ int FW102c::getFilterNum ()
 
 int FW102c::setFilterNum (int new_filter)
 {
-	return fwConn->setInt ("pos", new_filter, 100);
+	return fwConn->setInt ("pos", new_filter + 1, 100);
 }
 
 int main (int argc, char **argv)
