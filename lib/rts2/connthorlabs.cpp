@@ -52,7 +52,7 @@ int ConnThorLabs::getValue (const char *vname, rts2core::Value *value)
 				((rts2core::ValueBool *) value)->setValueBool (buf[0] == '1');
 			else	
 				value->setValueCharArr (buf);
-			return 0;
+			break;
 		case FW:
 			if (strncmp (buf, vname, strlen (vname)))
 			{
@@ -73,9 +73,9 @@ int ConnThorLabs::getValue (const char *vname, rts2core::Value *value)
 			ret = readPort (buf, 50, ' ');
 			if (ret < 0)
 				return ret;
-			return 0;
+			break;
 	}
-	return -1;
+	return 0;
 }
 
 int ConnThorLabs::setValue (const char *vname, rts2core::Value *value)
@@ -111,7 +111,7 @@ int ConnThorLabs::getInt (const char *vname, int &value)
 				throw rts2core::Error ("empty reply");
 			buf[ret - 1] = '\0';
 			value = atoi (buf);
-			return 0;
+			break;
 		case FW:
 			if (strncmp (buf, vname, strlen (vname)))
 			{
@@ -129,7 +129,7 @@ int ConnThorLabs::getInt (const char *vname, int &value)
 			ret = readPort (buf, 50, ' ');
 			if (ret < 0)
 				return ret;
-			return 0;
+			break;
 	}
 	return 0;
 }
@@ -141,5 +141,15 @@ int ConnThorLabs::setInt (const char *vname, int value)
 	ret = writeRead (buf, strlen (buf), buf, 50, '\r');
 	if (ret < 0)
 		return ret;
-	return -1;
+	switch (thorlabsType)
+	{
+		case LASER:
+			break;
+		case FW:
+			ret = readPort (buf, 50, ' ');
+			if (ret < 0)
+				return ret;
+			break;
+	}
+	return 0;
 }
