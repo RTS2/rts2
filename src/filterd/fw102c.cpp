@@ -17,7 +17,7 @@
  */
 
 #include "filterd.h"
-#include "connection/conngpibserial.h"
+#include "connection/thorlabs.h"
 
 using namespace rts2filterd;
 
@@ -46,7 +46,7 @@ class FW102c:public Filterd
 	
 	private:
 		// FW102c is communicationg over GPIB-style serial
-		rts2core::ConnGpibSerial *fwConn;
+		rts2core::ConnThorLabs *fwConn;
 		const char *fwDev;
 
 		rts2core::ValueBool *sensorMode;
@@ -82,37 +82,31 @@ int FW102c::processOption (int opt)
 
 int FW102c::initHardware ()
 {
-	fwConn = new rts2core::ConnGpibSerial (this, fwDev, rts2core::BS115200, rts2core::C8, rts2core::NONE, "\r");
+	fwConn = new rts2core::ConnThorLabs (fwDev, this);
 	fwConn->setDebug (getDebug ());
-	fwConn->initGpib ();
+	if (fwConn->init ())
+		return -1;
 	return 0;
 }
 
 int FW102c::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == sensorMode)
-	{
-		std::ostringstream os;
-		os << "sensors=" << new_value->getValueInteger ();
-		fwConn->gpibWrite (os.str ().c_str ());
-		return 0;
-	}
+		return fwConn->setValue ("sensors", new_value) ? -2 : 0;
 	return Filterd::setValue (old_value, new_value);
 }
 
 int FW102c::getFilterNum ()
 {
 	int val;
-	fwConn->readInt ("pos?", val);
+	if (fwConn->getInt ("pcount", val))
+		return -1;
 	return val;
 }
 
 int FW102c::setFilterNum (int new_filter)
 {
-	std::ostringstream os;
-	os << "pos=" << new_filter;
-	fwConn->gpibWrite (os.str ().c_str ());
-	return 0;
+	return fwConn->setInt ("pos", new_filter);
 }
 
 int main (int argc, char **argv)
