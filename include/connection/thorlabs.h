@@ -22,6 +22,8 @@
 namespace rts2core
 {
 
+typedef enum {LASER, FW} modelTypes;
+
 /**
  * Connection for ThorLabs variant of SCPI. ThorLabs uses local echo
  * and > to delimit reply start, command structure match SCPI.
@@ -29,13 +31,18 @@ namespace rts2core
 class ConnThorLabs:public ConnSerial
 {
 	public:
-		ConnThorLabs (const char *device_file, Block *master);
+		ConnThorLabs (const char *device_file, Block *master, int thorlabsType);
 
 		int getValue (const char *name, rts2core::Value *value);
 		int setValue (const char *name, rts2core::Value *value);
 
 		int getInt (const char *name, int &value);
 		int setInt (const char *name, int value);
+	
+	private:
+		// connection type
+		// 0 works for Laser, 1 for Filter wheels (which has local echo)
+		int thorlabsType;
 };
 
 }

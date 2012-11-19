@@ -21,8 +21,9 @@
 
 using namespace rts2core;
 
-ConnThorLabs::ConnThorLabs (const char *device_file, Block * _master):ConnSerial (device_file, _master, rts2core::BS115200, rts2core::C8, rts2core::NONE, 10)
+ConnThorLabs::ConnThorLabs (const char *device_file, Block * _master, int _thorlabsType):ConnSerial (device_file, _master, rts2core::BS115200, rts2core::C8, rts2core::NONE, 10)
 {
+	thorlabsType = _thorlabsType;
 }
 
 int ConnThorLabs::getValue (const char *vname, rts2core::Value *value)
@@ -32,23 +33,48 @@ int ConnThorLabs::getValue (const char *vname, rts2core::Value *value)
 	ret = writeRead (buf, ret, buf, 50, '\r');
 	if (ret < 0)
 		return ret;
-	if ((buf[0] != '<' && buf[0] != '>') || strncmp (buf + 2, vname, strlen (vname)))
+	switch (thorlabsType)
 	{
-		buf[ret] = '\0';
-		logStream (MESSAGE_ERROR) << "invalid reply while quering for value " << vname << " : " << buf << sendLog;
-		return -1;
+		case LASER:
+			if ((buf[0] != '<' && buf[0] != '>') || strncmp (buf + 2, vname, strlen (vname)))
+			{
+				buf[ret] = '\0';
+				logStream (MESSAGE_ERROR) << "invalid reply while quering for value " << vname << " : " << buf << sendLog;
+				return -1;
+			}
+			ret = readPort (buf, 50, '\r');
+			if (ret < 0)
+				return ret;
+			if (ret == 0)
+				throw rts2core::Error ("empty reply");
+			buf[ret - 1] = '\0';
+			if (value->getValueBaseType () == RTS2_VALUE_BOOL)
+				((rts2core::ValueBool *) value)->setValueBool (buf[0] == '1');
+			else	
+				value->setValueCharArr (buf);
+			return 0;
+		case FW:
+			if (strncmp (buf, vname, strlen (vname)))
+			{
+				buf[ret] = '\0';
+				logStream (MESSAGE_ERROR) << "invalid reply while quering for value " << vname << " : " << buf << sendLog;
+				return -1;
+			}
+			ret = readPort (buf, 50, '\r');
+			if (ret < 0)
+				return ret;
+			if (ret == 0)
+				throw rts2core::Error ("empty reply");
+			buf[ret - 1] = '\0';
+			if (value->getValueBaseType () == RTS2_VALUE_BOOL)
+				((rts2core::ValueBool *) value)->setValueBool (buf[0] == '1');
+			else	
+				value->setValueCharArr (buf);
+			ret = readPort (buf, 50, '>');
+			if (ret < 0)
+				return ret;
+			return 0;
 	}
-	ret = readPort (buf, 50, '\r');
-	if (ret < 0)
-		return ret;
-	if (ret == 0)
-		throw rts2core::Error ("empty reply");
-	buf[ret - 1] = '\0';
-	if (value->getValueBaseType () == RTS2_VALUE_BOOL)
-		((rts2core::ValueBool *) value)->setValueBool (buf[0] == '1');
-	else	
-		value->setValueCharArr (buf);
-	return 0;
 }
 
 int ConnThorLabs::setValue (const char *vname, rts2core::Value *value)

@@ -82,7 +82,7 @@ int FW102c::processOption (int opt)
 
 int FW102c::initHardware ()
 {
-	fwConn = new rts2core::ConnThorLabs (fwDev, this);
+	fwConn = new rts2core::ConnThorLabs (fwDev, this, rts2core::FW);
 	fwConn->setDebug (getDebug ());
 	if (fwConn->init ())
 		return -1;
