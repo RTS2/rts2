@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2012-11-04</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-bb">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote this manual page.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2012</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>
+      Big Brother. Uses as meta-server above RTS2 observatories. Coordinates execution
+      of observations on observatory nodes.
+    </refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt"><option>-p <replaceable>port number</replaceable></option></arg>
+      &deviceapp;
+    </cmdsynopsis>
+
+    &helpsynopsis;
+
+  </refsynopsisdiv>
+
+  <refsect1 id="scripting">
+    <title>SCRIPTING COMMANDS</title>
+    <variablelist>
+      <varlistentry>
+        <term>mapping <replaceable class="parameter">observatory id</replaceable> <replaceable class="parameter">target id</replaceable> <replaceable class="parameter">observatory target id</replaceable></term>
+	<listitem>
+	  <para>
+	    Creates new target mapping. Inserts new row into
+	    targets_observatories table.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    &optiongnu;
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-p <replaceable class="parameter">port number</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify XML-RPC port. Daemon will listen on this port for incoming
+	    XML-RPC connections.
+	  </para>
+        </listitem>
+      </varlistentry>
+      
+      &deviceapplist;
+
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-xmlrpcd</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+    </para>
+  </refsect1>
+</refentry>

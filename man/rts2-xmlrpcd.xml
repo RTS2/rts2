@@ -357,6 +357,10 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
         <refentrytitle>rts2-xmlrpcclient</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-bb</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
     </para>
 
   </refsect1>
