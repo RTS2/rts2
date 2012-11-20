@@ -196,6 +196,25 @@ int Fli::initHardware ()
 		}
 		setPosition (defaultPosition->getValueInteger ());
 	}
+	else
+	{
+		long steps;
+		ret = FLIGetStepperPosition (dev, &steps);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "cannot get focuser position during initialization: " << ret << sendLog;
+			return -1;
+		}
+		if (steps == -1)
+		{
+			ret = FLIHomeFocuser (dev);
+			if (ret)
+			{
+				logStream (MESSAGE_ERROR) << "cannot home focuser (in non-default init), return value: " << ret << sendLog;
+				return -1;
+			}
+		}
+	}
 
 	return 0;
 }
@@ -285,6 +304,14 @@ int Fli::isFocusing ()
 	}
 	if (rem == 0)
 		return -2;
+	ret = FLIGetStepperPosition (dev, &rem);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot get focuser position during move: " << ret << sendLog;
+		return -1;
+	}
+	position->setValueInteger ((int) rem);
+	sendValueAll (position);
 	return USEC_SEC / 100;
 }
 
