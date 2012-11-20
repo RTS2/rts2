@@ -361,7 +361,7 @@ int Fli::initHardware ()
 	char *nam_sep;
 	char **nam;					 // current name
 
-	const char devnam[50];
+	char devnam[50];
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, fliDebug);
