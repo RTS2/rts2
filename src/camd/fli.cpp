@@ -361,7 +361,7 @@ int Fli::initHardware ()
 	char *nam_sep;
 	char **nam;					 // current name
 
-	const char *devnam;
+	const char devnam[50];
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, fliDebug);
@@ -392,7 +392,7 @@ int Fli::initHardware ()
 				nam++;
 				continue;
 			}
-			ret = FLIGetDeviceName (dev, &devnam);
+			ret = FLIGetSerialString (dev, devnam, 50);
 			if (!ret && !strcmp (devnam, camName))
 			{
 				break;
@@ -488,19 +488,11 @@ int Fli::initHardware ()
 	sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
 	ccdRealType->setValueCharArr (ccdType);
 
-	long devid;
-	ret = FLIGetDeviceID (dev, &devid);
+	createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
+	useBgFlush->setValueBool (bgFlush == 1);
+	ret = FLIControlBackgroundFlush (dev, useBgFlush->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP);
 	if (ret)
-	  	return -1;
-
-	if ((devid == FLIUSB_PROLINE_ID && fwrev > 0x0100) || bgFlush != -1)
-	{
-		createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
-		useBgFlush->setValueBool (bgFlush == 1);
-		ret = FLIControlBackgroundFlush (dev, useBgFlush->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP);
-		if (ret)
-			return -1;
-	}
+		return -1;
 
 	double cp;
 	ret = FLIGetCoolerPower (dev, &cp);
