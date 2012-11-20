@@ -155,6 +155,8 @@ class ConnSerial: public ConnNoSend
 
 		void dropDTR ();
 
+		void setDSR ();
+
 		std::string getModemBits ();
 
 		/**

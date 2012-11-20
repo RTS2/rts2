@@ -464,6 +464,17 @@ void ConnSerial::dropDTR ()
 	ioctl (sock, TIOCMSET, &ret);
 }
 
+void ConnSerial::setDSR ()
+{
+	int ret;
+	// get current state of control signals
+	ioctl (sock, TIOCMGET, &ret);
+
+	// Drop DTR
+	ret &= TIOCM_LE;
+	ioctl (sock, TIOCMSET, &ret);
+}
+
 std::string ConnSerial::getModemBits ()
 {
 	int flags;
