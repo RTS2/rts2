@@ -470,7 +470,7 @@ int Fli::initHardware ()
 		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush->getValueInteger () <<	sendLog;
 	}
 
-	FLIGetDeviceName (dev, &devnam);
+	FLIGetSerialString (dev, devnam, 50);
 	serialNumber->setValueCharArr (devnam);
 
 	long hwrev;
