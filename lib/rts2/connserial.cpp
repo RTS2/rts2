@@ -464,6 +464,38 @@ void ConnSerial::dropDTR ()
 	ioctl (sock, TIOCMSET, &ret);
 }
 
+std::string ConnSerial::getModemBits ()
+{
+	int flags;
+	std::string ret;
+	if (ioctl (sock, TIOCMGET, &flags))
+	{
+		throw rts2core::Error ("cannot get modem status");
+	}
+	if (flags & TIOCM_LE)
+		ret += "DSR ";
+	if (flags & TIOCM_DTR)
+		ret += "DTR ";
+	if (flags & TIOCM_RTS)
+		ret += "RTS ";
+	if (flags & TIOCM_ST)
+		ret += "TXD ";
+	if (flags & TIOCM_SR)
+	 	ret += "RXD ";
+	if (flags & TIOCM_CTS)
+		ret += "CTS ";
+	if (flags & TIOCM_CAR)
+		ret += "DCD ";
+	if (flags & TIOCM_RNG)
+		ret += "RNG ";
+	if (flags & TIOCM_DSR)
+		ret += "DSR ";
+
+	if (ret.length ())
+		ret = ret.substr (0, ret.length () - 1);
+	return ret;
+}
+
 int ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen)
 {
 	int ret;

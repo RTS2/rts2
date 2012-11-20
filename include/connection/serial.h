@@ -155,6 +155,8 @@ class ConnSerial: public ConnNoSend
 
 		void dropDTR ();
 
+		std::string getModemBits ();
+
 		/**
 		 * Flush serial port (make sure all data were sended and received).
 		 */
