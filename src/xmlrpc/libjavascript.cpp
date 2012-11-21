@@ -1185,6 +1185,20 @@ const char *labels =
   "hr.send(null);\n"
 "}\n"
 
+"function setLabel(id,label_str,ltype,func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/tlabs_add?id=' + id + '&ltext=' + label_str + '&ltype=' + ltype, true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+ 
+
+
 ;
 
 void LibJavaScript::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
