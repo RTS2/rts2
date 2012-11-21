@@ -65,6 +65,7 @@ class QueuedTarget
 			t_start = qt.t_start;
 			t_end = qt.t_end;
 			planid = qt.planid;
+			unobservable_reported = qt.unobservable_reported;
 		}
 
 		QueuedTarget (const QueuedTarget &qt, rts2db::Target *_target)
@@ -74,6 +75,7 @@ class QueuedTarget
 			t_start = qt.t_start;
 			t_end = qt.t_end;
 			planid = qt.planid;
+			unobservable_reported = false;
 		}
 
 		~QueuedTarget () {}
@@ -89,6 +91,8 @@ class QueuedTarget
 		double t_end;
 		int planid;
 		bool hard;
+
+		bool unobservable_reported;
 };
 
 /**

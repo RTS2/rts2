@@ -34,6 +34,7 @@ QueuedTarget::QueuedTarget (rts2db::Target * _target, double _t_start, double _t
 	t_end = _t_end;
 	planid = _plan_id;
 	hard = _hard;
+	unobservable_reported = false;
 }
 
 /**
@@ -408,7 +409,10 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 			else if (isnan (maxLength))
 			{
 				if (isAboveHorizon (*iter, tjd))
+				{
+					iter->unobservable_reported = false;
 					return;
+				}
 			}
 			else
 			{
@@ -426,7 +430,11 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 
 			if (getSkipBelowHorizon () || shift_circular)
 			{
-				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " unobservable" << sendLog;
+				if (iter->unobservable_reported == false)
+				{
+					logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " unobservable" << sendLog;
+					iter->unobservable_reported = true;
+				}
 
 				skipped.push_back (*iter);
 				iter = erase (iter);
