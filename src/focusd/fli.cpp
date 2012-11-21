@@ -55,8 +55,6 @@ class Fli:public Focusd
 		const char *name;
 
 		int fliDebug;
-
-
 };
 
 };
@@ -232,6 +230,13 @@ int Fli::initValues ()
 		return -1;
 	}
 	focType = std::string (ft);
+
+	rts2core::ValueString *sern = new rts2core::ValueString ("serial", "serial number", true);
+	char serial[50];
+	FLIGetSerialString (dev, serial, 50);
+	sern->setValueCharArr (serial);
+	addConstValue (sern);
+
 	return Focusd::initValues ();
 }
 
