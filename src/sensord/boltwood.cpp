@@ -35,8 +35,6 @@ class CloudSensorII:public SensorWeather, public BWCSII_Listener
 
 		virtual void postEvent (rts2core::Event *event);
 
-		//virtual int changeMasterState (int new_state);
-
 		virtual int commandAuthorized (rts2core::Connection *conn);
 
 		virtual void csII_reportSensorData(BWCloudSensorII *csII,
@@ -47,7 +45,7 @@ class CloudSensorII:public SensorWeather, public BWCSII_Listener
 
 		virtual int info ();
 
-		//virtual bool isGoodWeather ();
+		virtual bool isGoodWeather ();
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
@@ -91,7 +89,7 @@ int CloudSensorII::info ()
 {
 	csII->checkForData();
 
-	if (closeRequested->getValue ())
+	if (closeRequested->getValueBool())
 	{
 		setWeatherState(false, "Cloud Sensor II reports dome should be closed");
 		setWeatherTimeout (300, "weather is bad, sleeping 300 seconds");
@@ -142,6 +140,7 @@ void CloudSensorII::csII_reportSensorData(BWCloudSensorII *csII,
 
 	switch (report.skyCond)
 	{
+        case 0: sky = "unknown"; break;
 		case 1: sky = "clear"; break;
 		case 2: sky = "cloudy"; break;
 		case 3: sky = "very cloudy"; break;
@@ -252,23 +251,6 @@ void CloudSensorII::postEvent (rts2core::Event *event)
 	SensorWeather::postEvent (event);
 }
 
-/*
-int CloudSensorII::changeMasterState (int new_state)
-{
-	int master = new_state & SERVERD_STATUS_MASK;
-	switch (master)
-	{
-		case SERVERD_DUSK:
-		case SERVERD_NIGHT:
-		case SERVERD_DAWN:
-			break;
-		default:
-			break;
-	}
-
-	return SensorWeather::changeMasterState (new_state);
-}
-*/
 
 int CloudSensorII::init ()
 {
@@ -290,12 +272,17 @@ int CloudSensorII::init ()
 }
 
 
-/*
+
 bool CloudSensorII::isGoodWeather ()
 {
-	return closeRequested->getValue();
+    if(closeRequested->getValueBool() == true)
+    {
+        return false;
+    }
+
+    return SensorWeather::isGoodWeather();
 }
-*/
+
 
 
 int CloudSensorII::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
