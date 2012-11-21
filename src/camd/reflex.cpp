@@ -53,6 +53,14 @@
 #define CL_BAUDRATE_460800                      460800
 #define CL_BAUDRATE_921600                      921600
 
+const int NUM_RING_BUFFERS = 2;
+
+#else
+
+#include <clallserial.h>
+
+#endif
+
 // parameters expected at Reflex configuration file.
 // please see man rts2-camd-reflex for details.
 #define pLCLK          "LCLK"
@@ -72,15 +80,6 @@
 #define pLIGHT         "LIGHT"
 
 #define TWAIT          "TWAIT"
-
-const int NUM_RING_BUFFERS = 2;
-
-#else
-
-#include <clallserial.h>
-
-#endif
-
 
 namespace rts2camd
 {
@@ -484,6 +483,8 @@ Reflex::~Reflex (void)
 
 #ifdef CL_EDT
 	edt_close (CLHandle);
+#else
+	clSerialClose(CLHandle);
 #endif
 }
 
@@ -524,13 +525,15 @@ int Reflex::startExposure ()
 
 #ifdef CL_EDT
 	int ret;
-	std::cout << "chan " << dataChannels->getValueInteger () << std::endl;
 	if (rawmode->getValueBool ())
 		ret = pdv_setsize (CLHandle, width * channels->size (), height);
 	else if (hdrmode)
 		ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger () * 2, height);
 	else
 		ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
+	
+	std::cout << "rawmode " << rawmode->getValueBool () << " hdrmode " << hdrmode << " " << width * dataChannels->getValueInteger () << " " << height << std::endl;
+		
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "call to pdv_setsize failed" << sendLog;
@@ -543,7 +546,7 @@ int Reflex::startExposure ()
 		return -1;
 	}
 	pdv_flush_fifo (CLHandle);
-	//ret = pdv_multibuf (CLHandle, 1); // NUM_RING_BUFFERS);
+	// ret = pdv_multibuf (CLHandle, 2); // NUM_RING_BUFFERS);
 	ret = pdv_set_buffers (CLHandle, 1, NULL);
 	if (ret)
 	{
@@ -551,9 +554,45 @@ int Reflex::startExposure ()
 		return -1;
 	}
 
-  	pdv_set_timeout (CLHandle, 30000);
+  	pdv_set_timeout (CLHandle, 900000);
 
 	pdv_start_image (CLHandle);
+#elif defined(CL_EURESYS)
+	if (McSetParamInt(channel, MC_TapConfiguration, MC_TapConfiguration_BASE_2T8))
+		throw rts2core::Error ("cannot set MC_TapConfiguration");
+	if (McSetParamInt(channel, MC_TapGeometry, MC_TapGeometry_1X2_1Y))
+		throw rts2core::Error ("cannot set MC_TapGeometry");
+	if (McSetParamInt(channel, MC_DvalMode, MC_DvalMode_DG))
+		throw rts2core::Error ("cannot set MC_DvalMode");
+	if (McSetParamInt(channel, MC_Hactive_Px, width * dataChannels->getValueInteger ()))
+		throw rts2core::Error ("cannot set MC_Hactive_Px");
+	if (McSetParamInt(channel, MC_Vactive_Ln, height))
+		throw rts2core::Error ("cannot set MC_Vactive_Ln");
+	if (McGetParamInt(channel, MC_BufferPitch, &pitch))
+		throw rts2core::Error ("cannot set MC_BufferPitch");
+	pitch /= 2;
+	if (McSetParamInt(channel, MC_SurfaceCount, 2))
+		throw rts2core::Error ("cannot set MC_SurfaceCount");
+	if (McSetParamInt(channel, MC_SeqLength_Fr, MC_INDETERMINATE))
+		throw rts2core::Error ("cannot set MC_SeqLength_Fr");
+	if (McSetParamInt(channel, MC_AcqTimeout_ms, MC_INFINITE))
+		throw rts2core::Error ("cannot set MC_AcqTimeout_ms");
+	// Enable Multicam signals
+	if (McSetParamInt(channel, MC_SignalEnable + MC_SIG_SURFACE_FILLED, MC_SignalEnable_ON))
+		throw rts2core::Error ("cannot set MC_SignalEnable + MC_SIG_SURFACE_FILLED");
+	if (McSetParamInt(channel, MC_SignalEnable + MC_SIG_ACQUISITION_FAILURE, MC_SignalEnable_ON))
+		throw rts2core::Error ("cannot set MC_SignalEnable + MC_SIG_ACQUISITION_FAILURE");
+	if (McSetParamInt(channel, MC_SignalEnable + MC_SIG_END_CHANNEL_ACTIVITY, MC_SignalEnable_ON))
+		throw rts2core::Error ("cannot set MC_SignalEnable + MC_SIG_END_CHANNEL_ACTIVITY");
+	if (McSetParamInt(channel, MC_SignalHandling + MC_SIG_SURFACE_FILLED, MC_SignalHandling_WAITING_SIGNALING))
+		throw rts2core::Error ("cannot set MC_SignalHandling + MC_SIG_SURFACE_FILLED");
+	if (McSetParamInt(channel, MC_SignalHandling + MC_SIG_ACQUISITION_FAILURE, MC_SignalHandling_WAITING_SIGNALING))
+		throw rts2core::Error ("cannot set MC_SignalHandling + MC_SIG_ACQUISITION_FAILURE");
+	if (McSetParamInt(channel, MC_SignalHandling + MC_SIG_END_CHANNEL_ACTIVITY, MC_SignalHandling_WAITING_SIGNALING))
+		throw rts2core::Error ("cannot set MC_SignalHandling + MC_SIG_END_CHANNEL_ACTIVITY");
+	// Begin acquisition
+	if (McSetParamInt(channel, MC_ChannelState, MC_ChannelState_ACTIVE))
+		throw rts2core::Error ("cannot set MC_ChannelState to MC_ChannelState_ACTIVE");
 #endif
 	std::string s;
 	//interfaceCommand (">TH\r", s, 3000, true);
@@ -564,8 +603,10 @@ int Reflex::startExposure ()
 	setParameter (pROWREAD, height);
 	setParameter (pROWOVER, getHeight () - chipTopY () - height);
 
+	std::cout << "pixskip " << chipTopX () << " read " << width << " over " << (getWidth () - chipTopX () - width) << std::endl;
+
 	setParameter (pPIXSKIP, chipTopX ());
-	setParameter (pPIXREAD, width - 1);
+	setParameter (pPIXREAD, width);
 	setParameter (pPIXOVER, getWidth () - chipTopX () - width);
 
 	setParameter (pLIGHT, getExpType () ? 0 : 1);
@@ -607,7 +648,7 @@ int Reflex::readoutStart ()
 #ifdef CL_EDT
 	readout_started = getNow () + 30;
 	last_bytes = 0;
-	next_bytes_check = getNow () + 5;
+	next_bytes_check = getNow () + 10;
 #endif
 	return Camera::readoutStart ();
 }
@@ -633,7 +674,7 @@ int Reflex::doReadout ()
 				return -1;
 			}
 			last_bytes = edt_bytes->getValueInteger ();
-			next_bytes_check = n + 2;
+			next_bytes_check = n + 10;
 			sendValueAll (edt_bytes);
 		}
 		return 100;
@@ -814,7 +855,7 @@ int Reflex::initHardware ()
 			return -1;
 	}
 
-	/*ret = pdv_set_buffers (CLHandle, 1, NULL);
+/*	ret = pdv_set_buffers (CLHandle, 1, NULL);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot initialize buffers" << sendLog;
@@ -985,7 +1026,7 @@ int Reflex::openInterface (int CLport)
 		return -1;
 	}
 	pdv_set_serial_delimiters (CLHandle, (char *) "", (char *) "");
-#else
+#elif defined(CL_EURESYS)
 	int err = clSerialInit (CLport, &CLHandle);
 	if (err != CL_ERR_NO_ERR)
 	{
@@ -1001,6 +1042,31 @@ int Reflex::openInterface (int CLport)
 		logStream (MESSAGE_ERROR) << "Error setting CameraLink baud rate" << sendLog;
 		return -1;
 	}
+
+	MCSTATUS e;
+	e  = McOpenDriver (NULL);
+	if (e)
+	{
+		logStream (MESSAGE_ERROR) << "cannot open camera link driver" << sendLog;
+		return -1;
+	}
+
+	MCHANDLE channel;
+	e = McCreate (MC_CHANNEL, &channel);
+	if (e)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create camera link channel" << sendLog;
+		return -1;
+	}
+
+	if (McSetParamInt(channel, MC_DriverIndex, deviceindex))
+		throw rts2core::Error ("cannot set MC_DriverIndex parameter");
+
+	if (McSetParamStr(channel, MC_Connector, "M"))
+		throw rts2core::Error ("cannot set MC_Connector");
+
+	if (McSetParamStr(channel, MC_CamFile, "MyCameraLink_PxxSC"))
+		throw rts2core::Error ("cannot set MC_CamFile");
 #endif
 	return 0;
 }
@@ -1012,7 +1078,7 @@ int Reflex::closeInterface ()
 	{
 #ifdef CL_EDT
 		pdv_close (CLHandle);
-#else
+#elif defined(CL_EURESYS)
 		clSerialClose (CLHandle);
 #endif
 		CLHandle = 0;
