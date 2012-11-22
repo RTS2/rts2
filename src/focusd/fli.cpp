@@ -53,6 +53,7 @@ class Fli:public Focusd
 		flidev_t dev;
 		flidomain_t deviceDomain;
 		const char *name;
+		const char *focuserName;
 
 		int fliDebug;
 };
@@ -67,8 +68,10 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
 	name = NULL;
+	focuserName = NULL;
 
-	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+	addOption ('N', NULL, 1, "focuser serial number (string, device name)");
+	addOption ('D', "domain", 1, "focuser omain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 	addOption ('f', NULL, 1, "FLI device path");
 }
@@ -82,6 +85,9 @@ int Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case 'N':
+			focuserName = optarg;
+			break;
 		case 'D':
 			deviceDomain = FLIDEVICE_FOCUSER;
 			if (!strcasecmp ("USB", optarg))
@@ -126,6 +132,7 @@ int Fli::initHardware ()
 {
 	LIBFLIAPI ret;
 	char **names;
+	char **nam;
 	char *nam_sep;
 
 	if (fliDebug)
@@ -137,18 +144,44 @@ int Fli::initHardware ()
 		dev = -1;
 	}
 
-	if (name == NULL)
+	ret = FLIList (deviceDomain, &names);
+	if (ret)
+		return -1;
+
+	if (names[0] == NULL)
 	{
-		ret = FLIList (deviceDomain, &names);
-		if (ret)
-			return -1;
+		logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
+		return -1;
+	}
 
-		if (names[0] == NULL)
+	// find device based on serial number..
+	if (focuserName != NULL)
+	{
+		nam = names;
+		while (*nam)
 		{
-			logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
-			return -1;
+			// separate semicolon
+			nam_sep = strchr (*nam, ';');
+			if (nam_sep)
+				*nam_sep = '\0';
+			ret = FLIOpen (&dev, *nam, deviceDomain);
+			if (ret)
+			{
+				nam++;
+				continue;
+			}
+			ret = FLIGetSerialString (dev, devnam, 50);
+			if (!ret && !strcmp (devnam, focuserName))
+			{
+				break;
+			}
+			// skip to next camera
+			FLIClose (dev);
+			nam++;
 		}
-
+	}
+	else if (name == NULL)
+	{
 		nam_sep = strchr (names[0], ';');
 		if (nam_sep)
 			*nam_sep = '\0';
