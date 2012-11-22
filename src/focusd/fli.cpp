@@ -170,6 +170,7 @@ int Fli::initHardware ()
 				nam++;
 				continue;
 			}
+			char devnam[50];
 			ret = FLIGetSerialString (dev, devnam, 50);
 			if (!ret && !strcmp (devnam, focuserName))
 			{
