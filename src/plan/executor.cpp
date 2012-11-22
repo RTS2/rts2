@@ -105,6 +105,7 @@ class Executor:public rts2db::DeviceDb
 
 		rts2core::ValueBool *enabled;
 		rts2core::ValueBool *selectorNext;
+		bool selector_next_reported;
 
 		rts2core::ValueInteger *acqusitionOk;
 		rts2core::ValueInteger *acqusitionFailed;
@@ -160,6 +161,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 
 	createValue (selectorNext, "selector_next", "enables execution of next targets from selector", false, RTS2_VALUE_WRITABLE);
 	selectorNext->setValueBool (true);
+	selector_next_reported = false;
 
 	createValue (acqusitionOk, "acqusition_ok", "number of acqusitions completed sucesfully", false);
 	acqusitionOk->setValueInteger (0);
@@ -542,6 +544,9 @@ void Executor::changeMasterState (int old_state, int new_state)
 			}
 			sendValueAll (next_night);
 		case SERVERD_MORNING:
+			// re-enables selector selection
+			selectorNext->setValueBool (true);
+			sendValueAll (selectorNext);
 			// switch target if current is flats or darks
 			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT)
 				setNow (activeQueue->getValueInteger ());
@@ -998,6 +1003,7 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 	{
 		// change observation imediatelly - in case of burst etc..
 		selectorNext->setValueBool (true);
+		selector_next_reported = false;
 		sendValueAll (selectorNext);
 		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
 			return -2;
@@ -1041,16 +1047,24 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("next"))
 	{
+		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+			return -2;
 		switch (conn->getOtherType ())
 		{
 			case DEVICE_TYPE_SELECTOR:
 				if (selectorNext->getValueBool () == false)
+				{
+					if (selector_next_reported == false)
+					{
+						logStream (MESSAGE_WARNING) << "ignoring selector next, as selector_next is set to false (for target #" << tar_id << ")" << sendLog;
+						selector_next_reported = true;
+					}
 					return -2;
+				}
 				break;
 		}
-		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
-			return -2;
 		selectorNext->setValueBool (true);
+		selector_next_reported = false;
 		sendValueAll (selectorNext);
 		return setNext (tar_id);
 	}
@@ -1065,6 +1079,7 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return -2;
 		selectorNext->setValueBool (false);
+		selector_next_reported = false;
 		sendValueAll (selectorNext);
 		end ();
 		return stop ();
