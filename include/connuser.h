@@ -22,6 +22,8 @@
 
 #include "status.h"
 
+#include <string>
+
 namespace rts2core
 {
 
@@ -32,13 +34,17 @@ namespace rts2core
  */
 class ConnUser
 {
+	public:
+		ConnUser (int in_centralId, const char *in_login, const char *in_name);
+		virtual ~ ConnUser ();
+		int update (int in_centralId, const char *new_login, const char *new_name);
+
+		const char *getName () { return name.c_str (); }
+
 	private:
 		int centralId;
-		char login[DEVICE_NAME_SIZE];
-	public:
-		ConnUser (int in_centralId, const char *in_login);
-		virtual ~ ConnUser ();
-		int update (int in_centralId, const char *new_login);
+		std::string login;
+		std::string name;
 };
 
 }

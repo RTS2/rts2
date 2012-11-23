@@ -18,7 +18,6 @@
  */
 
 #include "scriptexec.h"
-#include "rts2devcliphot.h"
 #include "rts2-config.h"
 #include "configuration.h"
 
@@ -238,7 +237,7 @@ void ScriptExec::usage ()
 	  << "  " << "while true; do " << getAppName () << " -e /tmp/%n.fits -d C0 -S 'for 1000 { E 1 }' | while read x; do xpaset ds9 fits < $x; rm $x; done ; done" << std::endl;
 }
 
-ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv), rts2script::ScriptInterface ()
+ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv, "scriptexec"), rts2script::ScriptInterface ()
 {
 	waitState = 0;
 	currentTarget = NULL;

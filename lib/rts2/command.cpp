@@ -292,16 +292,14 @@ CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valNam
 CommandChangeValue::CommandChangeValue (DevClient * _client,std::string _valName, char op, bool _operand):Command (_client->getMaster ())
 {
 	std::ostringstream _os;
-	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " 
-		<< (_operand ? 1 : 0);
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << (_operand ? 1 : 0);
 	setCommand (_os);
 }
 
 CommandChangeValue::CommandChangeValue (DevClient * _client,std::string _valName, char op, int x, int y, int w, int h):Command (_client->getMaster ())
 {
 	std::ostringstream _os;
-	_os << PROTO_SET_VALUE " " << _valName << " " << op
-		<< " " << x << " " << y << " " << w << " " << h;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << x << " " << y << " " << w << " " << h;
 	setCommand (_os);
 }
 
@@ -310,13 +308,11 @@ CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valNam
 	std::ostringstream _os;
 	if (raw)
 	{
-		_os << PROTO_SET_VALUE " " << _valName << " " << op
-			<< " " << _operand;
+		_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
 	}
 	else
 	{
-		_os << PROTO_SET_VALUE " " << _valName << " " << op
-			<< " \"" << _operand << "\"";
+		_os << PROTO_SET_VALUE " " << _valName << " " << op << " \"" << _operand << "\"";
 	}
 	setCommand (_os);
 }

@@ -163,8 +163,12 @@ void NDevListWindow::draw ()
 	}
 	for (iter = conns->begin (); iter != conns->end (); iter++)
 	{
-		rts2core::Connection *conn = *iter;
-		wprintw (scrolpad, "%s\n", conn->getName ());
+		wprintw (scrolpad, "%s\n", (*iter)->getName ());
+		maxrow++;
+	}
+	for (rts2core::clients_t::iterator cli = block->getClients ()->begin (); cli != block->getClients ()->end (); cli++)
+	{
+		wprintw (scrolpad, "%s\n", (*cli)->getName ());
 		maxrow++;
 	}
 	wprintw (scrolpad, "status");

@@ -178,7 +178,7 @@ void NMonitor::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_
 
 rts2core::ConnCentraldClient * NMonitor::createCentralConn ()
 {
-	return new NMonCentralConn (this, getCentralLogin (), getCentralPassword (), getCentralHost (), getCentralPort ());
+	return new NMonCentralConn (this, getCentralLogin (), getName (), getCentralPassword (), getCentralHost (), getCentralPort ());
 }
 
 void NMonitor::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
@@ -359,7 +359,7 @@ void NMonitor::changeListConnection ()
 	resize ();
 }
 
-NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
+NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv, "monitor")
 {
 	masterLayout = NULL;
 	daemonLayout = NULL;

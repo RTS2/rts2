@@ -65,7 +65,6 @@ Connection::Connection (Block * in_master):Object ()
 	buf_top = buf;
 	full_data_end = NULL;
 
-	*name = '\0';
 	key = 0;
 	centrald_num = -1;
 	centrald_id = -1;
@@ -107,7 +106,6 @@ Connection::Connection (int in_sock, Block * in_master):Object ()
 	buf_top = buf;
 	full_data_end = NULL;
 
-	*name = '\0';
 	key = 0;
 	centrald_num = -1;
 	centrald_id = -1;
@@ -1185,15 +1183,17 @@ int Connection::command ()
 		setCommandInProgress (false);
 		return -1;
 	}
-	else if (isCommand ("user"))
+	else if (isCommand ("client"))
 	{
 		int p_centraldId;
 		char *p_login;
+		char *p_name;
 		if (paramNextInteger (&p_centraldId)
 			|| paramNextString (&p_login)
+			|| paramNextString (&p_name)
 			|| !paramEnd ())
 			return -2;
-		master->addUser (p_centraldId, p_login);
+		master->addClient (p_centraldId, p_login, p_name);
 		setCommandInProgress (false);
 		return -1;
 	}

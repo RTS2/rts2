@@ -94,6 +94,8 @@ namespace rts2core
 /** Hold list of connections. It is used to store @see Connection objects. */
 typedef std::vector < Connection * > connections_t;
 
+typedef std::list <ConnUser * > clients_t;
+
 class Rts2Command;
 
 class DevClient;
@@ -453,8 +455,8 @@ class Block: public App
 		void deleteAddress (int p_centrald_num, const char *p_name);
 
 		virtual DevClient *createOtherType (Connection * conn, int other_device_type);
-		void addUser (int p_centraldId, const char *p_login);
-		int addUser (ConnUser * in_user);
+		void addClient (int p_centraldId, const char *p_login, const char *p_name);
+		int addClient (ConnUser * in_user);
 
 		/**
 		 * Return established connection to device with given name.
@@ -536,6 +538,14 @@ class Block: public App
 		connections_t* getConnections ()
 		{
 			return &connections;
+		}
+
+		/**
+		 * Returns list of connected clients.
+		 */
+		clients_t* getClients ()
+		{
+			return &blockUsers;
 		}
 
 		/**
@@ -800,7 +810,7 @@ class Block: public App
 		connections_t centraldConns_added;
 
 		std::list <NetworkAddress *> blockAddress;
-		std::list <ConnUser * > blockUsers;
+		clients_t blockUsers;
 
 		unsigned int masterState;
 		Connection *stateMasterConn;

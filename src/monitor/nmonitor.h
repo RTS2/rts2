@@ -221,11 +221,13 @@ class NMonCentralConn:public rts2core::ConnCentraldClient
 	public:
 		NMonCentralConn (NMonitor * in_master,
 			const char *in_login,
+			const char *in_name,
 			const char *in_password,
 			const char *in_master_host,
 			const char
 			*in_master_port):rts2core::ConnCentraldClient (in_master,
 			in_login,
+			in_name,
 			in_password,
 			in_master_host,
 			in_master_port)

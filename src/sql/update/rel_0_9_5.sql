@@ -43,3 +43,5 @@ CREATE TABLE schedules (
 	time_start  timestamp,
 	time_end    timestamp
 );
+
+ALTER TABLE targets ADD COLUMN tar_telescope_mode integer default NULL;

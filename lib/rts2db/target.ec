@@ -169,6 +169,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
 	watchConn = NULL;
+	tar_telescope_mode = -1;
 
 	observer = in_obs;
 
@@ -205,6 +206,7 @@ Target::Target ()
 	config = rts2core::Configuration::instance ();
 
 	watchConn = NULL;
+	tar_telescope_mode = -1;
 
 	observer = config->getObserver ();
 
@@ -274,6 +276,8 @@ void Target::loadTarget (int in_tar_id)
 	int d_tar_next_observable_ind;
 	bool d_tar_enabled;
 	int db_tar_id = in_tar_id;
+	int d_tar_telescope_mode;
+	int db_tar_telescope_mode_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
@@ -284,7 +288,8 @@ void Target::loadTarget (int in_tar_id)
 		tar_bonus,
 		EXTRACT (EPOCH FROM tar_bonus_time),
 		EXTRACT (EPOCH FROM tar_next_observable),
-		tar_enabled
+		tar_enabled,
+		tar_telescope_mode
 	INTO
 		:d_tar_name,
 		:d_tar_info :d_tar_info_ind,
@@ -292,7 +297,8 @@ void Target::loadTarget (int in_tar_id)
 		:d_tar_bonus :d_tar_bonus_ind,
 		:d_tar_bonus_time :d_tar_bonus_time_ind,
 		:d_tar_next_observable :d_tar_next_observable_ind,
-		:d_tar_enabled
+		:d_tar_enabled,
+		:d_tar_telescope_mode :db_tar_telescope_mode_ind
 	FROM
 		targets
 	WHERE
@@ -342,6 +348,11 @@ void Target::loadTarget (int in_tar_id)
 	else
 		tar_next_observable = 0;
 
+	if (db_tar_telescope_mode_ind >= 0)
+		tar_telescope_mode = d_tar_telescope_mode;
+	else
+		tar_telescope_mode = -1;
+
 	setTargetEnabled (d_tar_enabled, false);
 }
 
@@ -388,20 +399,23 @@ int Target::saveWithID (bool overwrite, int tar_id)
 {
 	// first, try an update..
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = tar_id;
-		char db_type_id = getTargetType ();
-		VARCHAR db_tar_name[150];
-		int db_tar_name_ind = 0;
-		VARCHAR db_tar_comment[2000];
-		int db_tar_comment_ind = 0;
-		float db_tar_priority = getTargetPriority ();
-		float db_tar_bonus = getTargetBonus ();
-		int db_tar_bonus_ind;
-		long db_tar_bonus_time = *(getTargetBonusTime ());
-		int db_tar_bonus_time_ind;
-		bool db_tar_enabled = getTargetEnabled ();
-		VARCHAR db_tar_info[2000];
-		int db_tar_info_ind;
+	int db_tar_id = tar_id;
+	char db_type_id = getTargetType ();
+	VARCHAR db_tar_name[150];
+	int db_tar_name_ind = 0;
+	VARCHAR db_tar_comment[2000];
+	int db_tar_comment_ind = 0;
+	float db_tar_priority = getTargetPriority ();
+	float db_tar_bonus = getTargetBonus ();
+	int db_tar_bonus_ind;
+	long db_tar_bonus_time = *(getTargetBonusTime ());
+	int db_tar_bonus_time_ind;
+	bool db_tar_enabled = getTargetEnabled ();
+	VARCHAR db_tar_info[2000];
+	int db_tar_info_ind;
+
+	int d_tar_telescope_mode = tar_telescope_mode;
+	int db_tar_telescope_mode_ind = tar_telescope_mode < 0 ? -1 : 0;
 	EXEC SQL END DECLARE SECTION;
 	// fill in name and comment..
 	if (getTargetName ())
@@ -472,7 +486,8 @@ int Target::saveWithID (bool overwrite, int tar_id)
 			tar_bonus_time,
 			tar_next_observable,
 			tar_enabled,
-			tar_info
+			tar_info,
+			tar_telescope_mode
 			)
 		VALUES
 			(
@@ -483,9 +498,10 @@ int Target::saveWithID (bool overwrite, int tar_id)
 			:db_tar_priority,
 			:db_tar_bonus :db_tar_bonus_ind,
 			to_timestamp (:db_tar_bonus_time :db_tar_bonus_time_ind),
-		null,
+			null,
 			:db_tar_enabled,
-			:db_tar_info :db_tar_info_ind
+			:db_tar_info :db_tar_info_ind,
+			:d_tar_telescope_mode :db_tar_telescope_mode_ind
 			);
 	// insert failed - try update
 	if (sqlca.sqlcode)
@@ -508,7 +524,8 @@ int Target::saveWithID (bool overwrite, int tar_id)
 				tar_bonus = :db_tar_bonus :db_tar_bonus_ind,
 				tar_bonus_time = to_timestamp(:db_tar_bonus_time :db_tar_bonus_time_ind),
 				tar_enabled = :db_tar_enabled,
-				tar_info = :db_tar_info :db_tar_info_ind
+				tar_info = :db_tar_info :db_tar_info_ind,
+				tar_telescope_mode = :d_tar_telescope_mode :db_tar_telescope_mode_ind
 			WHERE
 				tar_id = :db_tar_id;
 

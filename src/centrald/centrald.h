@@ -295,7 +295,7 @@ class ConnCentrald:public rts2core::Connection
 {
 	private:
 		int authorized;
-		char login[CLIENT_LOGIN_SIZE];
+		std::string login;
 		Centrald *master;
 		char hostname[HOST_NAME_MAX];
 		int port;

@@ -164,12 +164,11 @@ DoorVermes::valueChanged (rts2core::Value * changed_value)
     // do not set status here
   } else {
     last_oak_digin_thread_heart_beat= oak_digin_thread_heart_beat ;
-    int ret ;
     struct timespec sl ;
     struct timespec rsl ;
     sl.tv_sec= 0. ;
     sl.tv_nsec= WAITING_FOR_HEART_BEAT_NANO_SEC; 
-    ret= nanosleep( &sl, &rsl) ;
+    nanosleep( &sl, &rsl) ;
 
     if( oak_digin_thread_heart_beat != last_oak_digin_thread_heart_beat) {
       //logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged heart beat present" << sendLog ;
@@ -397,12 +396,11 @@ DoorVermes::valueChanged (rts2core::Value * changed_value)
       updateDoorStatus () ;
 
       last_oak_digin_thread_heart_beat= oak_digin_thread_heart_beat ;
-      int ret ;
       struct timespec sl ;
       struct timespec rsl ;
       sl.tv_sec= 0. ;
       sl.tv_nsec= WAITING_FOR_HEART_BEAT_NANO_SEC; 
-      ret= nanosleep( &sl, &rsl) ;
+      nanosleep( &sl, &rsl) ;
 
       if( oak_digin_thread_heart_beat != last_oak_digin_thread_heart_beat) {
 	//logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged heart beat present" << sendLog ;
@@ -480,12 +478,11 @@ DoorVermes::info ()
     oak_thread_state= THREAD_STATE_RUNNING ;
   } else {
     last_oak_digin_thread_heart_beat= oak_digin_thread_heart_beat ;
-    int ret ;
     struct timespec sl ;
     struct timespec rsl ;
     sl.tv_sec= 0. ;
     sl.tv_nsec= WAITING_FOR_HEART_BEAT_NANO_SEC; 
-    ret= nanosleep( &sl, &rsl) ;
+    nanosleep( &sl, &rsl) ;
 
     if( oak_digin_thread_heart_beat != last_oak_digin_thread_heart_beat) {
       //logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged heart beat present" << sendLog ;

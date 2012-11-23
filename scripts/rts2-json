@@ -27,8 +27,6 @@ parser.add_option('--push',help='print value on its updates',action='store_true'
 
 (options,args)=parser.parse_args()
 
-# default authorization; changed if needed
-auth = 'user:test'
 j = rts2.json.JSONProxy(options.server,options.user,options.password,verbose=options.verbose)
 
 try:

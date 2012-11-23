@@ -132,13 +132,15 @@ int Client::willConnect (NetworkAddress * in_addr)
 	return 1;
 }
 
-Client::Client (int in_argc, char **in_argv):Block (in_argc, in_argv)
+Client::Client (int in_argc, char **in_argv, const char *_name):Block (in_argc, in_argv)
 {
 	central_host = "localhost";
 	central_port = RTS2_CENTRALD_PORT;
 
 	login = "petr";
 	password = "petr";
+
+	name = _name;
 
 	addOption (OPT_PORT, "port", 1, "port of centrald server");
 	addOption (OPT_SERVER, "server", 1, "hostname of central server; default to localhost");
@@ -166,7 +168,7 @@ int Client::processOption (int in_opt)
 
 ConnCentraldClient * Client::createCentralConn ()
 {
-	return new ConnCentraldClient (this, getCentralLogin (), getCentralPassword (), getCentralHost (), getCentralPort ());
+	return new ConnCentraldClient (this, getCentralLogin (), name, getCentralPassword (), getCentralHost (), getCentralPort ());
 }
 
 int Client::init ()
@@ -211,12 +213,13 @@ int Client::run ()
 	return 0;
 }
 
-ConnCentraldClient::ConnCentraldClient (Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):Connection (in_master)
+ConnCentraldClient::ConnCentraldClient (Block * in_master, const char *in_login, const char *in_name, const char *in_password, const char *in_master_host, const char *in_master_port):Connection (in_master)
 {
 	master_host = in_master_host;
 	master_port = in_master_port;
 
 	login = in_login;
+	setName (-1, in_name);
 	password = in_password;
 
 	setOtherType (DEVICE_TYPE_SERVERD);
@@ -249,7 +252,7 @@ int ConnCentraldClient::init ()
 		return -1;
 	setConnState (CONN_CONNECTED);
 
-	queCommand (new CommandLogin (master, login, password));
+	queCommand (new CommandLogin (master, login, getName (), password));
 	return 0;
 }
 
@@ -289,12 +292,12 @@ void ConnCentraldClient::setState (int in_value, char * msg)
 	master->setMasterState (this, in_value);
 }
 
-CommandLogin::CommandLogin (Block * in_master, const char *in_login, const char *in_password):Command (in_master)
+CommandLogin::CommandLogin (Block * in_master, const char *in_login, const char *name, const char *in_password):Command (in_master)
 {
 	std::ostringstream _os;
 	login = in_login;
 	password = in_password;
-	_os << "login " << login;
+	_os << "login " << login << " " << name;
 	setCommand (_os);
 	state = LOGIN_SEND;
 }

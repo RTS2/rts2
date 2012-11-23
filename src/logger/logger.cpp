@@ -41,7 +41,7 @@ class Logger:public rts2core::Client, public LoggerBase
 
 using namespace rts2logd;
 
-Logger::Logger (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
+Logger::Logger (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv, "logger")
 {
 	setTimeout (USEC_SEC);
 	inputStream = NULL;

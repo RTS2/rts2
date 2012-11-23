@@ -236,6 +236,8 @@ class Target:public Rts2Target
 
 		struct ln_lnlat_posn *getObserver () { return observer; }
 
+		int getTelescopeMode () { return tar_telescope_mode; }
+
 		// return target semi-diameter, in degrees
 		double getSDiam () { return getSDiam (ln_get_julian_from_sys ()); }
 
@@ -794,6 +796,8 @@ class Target:public Rts2Target
 
 		int type;				// light, dark, flat, flat_dark
 		std::string tar_info;
+
+		int tar_telescope_mode;			// telescope mode - from modefiles, target will be set to it before movement start
 
 		int startCalledNum;			// how many times startObservation was called - good to know for targets
 		double airmassScale;

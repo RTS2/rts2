@@ -80,10 +80,7 @@ class Rts2CMonitor:public rts2core::Client
 		virtual rts2core::ConnClient * createClientConnection (char *_deviceName);
 
 	public:
-		Rts2CMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
-		{
-
-		}
+		Rts2CMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv, "cmonitor") {}
 		virtual int idle ();
 		virtual int run ();
 };

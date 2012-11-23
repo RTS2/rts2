@@ -746,21 +746,20 @@ DevClient * Block::createOtherType (Connection * conn, int other_device_type)
 	}
 }
 
-void Block::addUser (int p_centraldId, const char *p_login)
+void Block::addClient (int p_centraldId, const char *p_login, const char *p_name)
 {
 	int ret;
 	std::list < ConnUser * >::iterator user_iter;
 	for (user_iter = blockUsers.begin (); user_iter != blockUsers.end (); user_iter++)
 	{
-		ret =
-			(*user_iter)->update (p_centraldId, p_login);
+		ret = (*user_iter)->update (p_centraldId, p_login, p_name);
 		if (!ret)
 			return;
 	}
-	addUser (new ConnUser (p_centraldId, p_login));
+	addClient (new ConnUser (p_centraldId, p_login, p_name));
 }
 
-int Block::addUser (ConnUser * in_user)
+int Block::addClient (ConnUser * in_user)
 {
 	blockUsers.push_back (in_user);
 	return 0;

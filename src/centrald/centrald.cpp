@@ -105,9 +105,10 @@ int ConnCentrald::sendConnectedInfo (rts2core::Connection * conn)
 	switch (getType ())
 	{
 		case CLIENT_SERVER:
-			_os << "user "
+			_os << "client "
 				<< getCentraldId () << " "
-				<< login;
+				<< login << " "
+				<< getName ();
 			ret = conn->sendMsg (_os);
 			break;
 		case DEVICE_SERVER:
@@ -241,7 +242,7 @@ int ConnCentrald::commandClient ()
 		if (paramNextString (&passwd) || !paramEnd ())
 			return -2;
 
-		if (strncmp (passwd, login, CLIENT_LOGIN_SIZE) == 0)
+		if (login == passwd)
 		{
 			std::ostringstream _os;
 			authorized = 1;
@@ -270,19 +271,19 @@ int ConnCentrald::commandClient ()
 		}
 		if (isCommand ("on"))
 		{
-			return master->changeStateOn (login);
+			return master->changeStateOn (login.c_str ());
 		}
 		if (isCommand ("standby"))
 		{
-			return master->changeStateStandby (login);
+			return master->changeStateStandby (login.c_str ());
 		}
 		if (isCommand ("off"))
 		{
-			return master->changeStateHardOff (login);
+			return master->changeStateHardOff (login.c_str ());
 		}
 		if (isCommand ("soft_off"))
 		{
-			return master->changeStateSoftOff (login);
+			return master->changeStateSoftOff (login.c_str ());
 		}
 	}
 	return rts2core::Connection::command ();
@@ -295,13 +296,15 @@ int ConnCentrald::command ()
 		if (getType () == NOT_DEFINED_SERVER)
 		{
 			char *in_login;
+			char *in_name;
 
 			srandom (time (NULL));
 
-			if (paramNextString (&in_login) || !paramEnd ())
+			if (paramNextString (&in_login) || paramNextString (&in_name) || !paramEnd ())
 				return -2;
 
-			strncpy (login, in_login, CLIENT_LOGIN_SIZE);
+			login = std::string (in_login);
+			setName (getCentraldId (), in_name);
 
 			setType (CLIENT_SERVER);
 			master->connAdded (this);
@@ -309,8 +312,7 @@ int ConnCentrald::command ()
 		}
 		else
 		{
-			sendCommandEnd (DEVDEM_E_COMMAND,
-				"cannot switch server type to CLIENT_SERVER");
+			sendCommandEnd (DEVDEM_E_COMMAND, "cannot switch server type to CLIENT_SERVER");
 			return -1;
 		}
 	}

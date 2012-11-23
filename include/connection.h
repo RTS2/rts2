@@ -303,13 +303,12 @@ class Connection:public Object
 		void setOtherType (int other_device_type);
 		void getAddress (char *addrBuf, int _buf_size);
 		int getLocalPort () { return port; }
-		const char *getName () { return name; };
+		const char *getName () { return name.c_str (); };
 		int isName (const char *in_name) { return (!strcmp (getName (), in_name)); }
-		void setName (int _centrald_num, char *in_name)
+		void setName (int _centrald_num, const char *in_name)
 		{
 			centrald_num = _centrald_num;
-			strncpy (name, in_name, DEVICE_NAME_SIZE);
-			name[DEVICE_NAME_SIZE - 1] = '\0';
+			name = std::string (in_name);
 		}
 		int getKey () { return key; };
 		virtual void setKey (int in_key)
@@ -742,8 +741,9 @@ class Connection:public Object
 		char *full_data_end;	 // points to end of full data
 
 		conn_type_t type;
-								 // name of device/client this connection goes to
-		char name[DEVICE_NAME_SIZE];
+
+		std::string name; // name of device/client this connection goes to
+
 		int key;
 		int centrald_num;		// number of centrald connection
 		int centrald_id;		// id of connection on central server

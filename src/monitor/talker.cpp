@@ -48,7 +48,7 @@ class Talker:public rts2core::Client
 
 using namespace rts2mon;
 
-Talker::Talker (int argc, char **argv):rts2core::Client (argc, argv)
+Talker::Talker (int argc, char **argv):rts2core::Client (argc, argv, "talker")
 {
 	messageMask = MESSAGE_INFO;
 

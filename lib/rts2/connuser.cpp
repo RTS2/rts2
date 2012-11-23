@@ -24,24 +24,22 @@
 
 using namespace rts2core;
 
-ConnUser::ConnUser (int in_centralId, const char *in_login)
+ConnUser::ConnUser (int in_centralId, const char *in_login, const char *in_name)
 {
 	centralId = in_centralId;
-	strncpy (login, in_login, DEVICE_NAME_SIZE);
-	login[DEVICE_NAME_SIZE - 1] = '\0';
+	login = std::string (in_login);
+	name = std::string (in_name);
 }
-
 
 ConnUser::~ConnUser (void)
 {
 }
 
-
-int ConnUser::update (int in_centralId, const char *new_login)
+int ConnUser::update (int in_centralId, const char *new_login, const char *new_name)
 {
 	if (in_centralId != centralId)
 		return -1;
-	strncpy (login, new_login, DEVICE_NAME_SIZE);
-	login[DEVICE_NAME_SIZE - 1] = '\0';
+	login = std::string (new_login);
+	name = std::string (new_name);
 	return 0;
 }

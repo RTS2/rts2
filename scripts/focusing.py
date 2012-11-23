@@ -59,8 +59,8 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 
 	def __init__(self):
 		rts2.scriptcomm.Rts2Comm.__init__(self)
-		self.exptime = 20 # 60 # 10
-		self.step = 50 # 0.2
+		self.exptime = 2 # 60 # 10
+		self.step = 1 # 0.2
 		self.attempts = 20 #30 # 20
 		self.focuser = self.getValue('focuser')
 		# if |offset| is above this value, try linear fit
@@ -204,7 +204,7 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 
 	def run(self):
 		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
-		a.altaz (82,10)
+		self.altaz (82,10)
 
 		b,fit = self.takeImages()
 		if fit == LINEAR:

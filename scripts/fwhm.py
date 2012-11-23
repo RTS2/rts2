@@ -42,7 +42,8 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 	ff = pyfits.fitsopen(fn)
 
 	if d:
-		d.set('file mosaicimage iraf ' + fn)
+		d.set('file ' + fn)
+		#d.set('file mosaicimage iraf ' + fn)
 	
 	sc = rts2.Rts2Comm()
 

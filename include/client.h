@@ -81,7 +81,7 @@ class ConnClient:public Connection
 class ConnCentraldClient:public Connection
 {
 	public:
-		ConnCentraldClient (Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port);
+		ConnCentraldClient (Block * in_master, const char *in_login, const char *in_name, const char *in_password, const char *in_master_host, const char *in_master_port);
 		virtual int init ();
 
 		virtual int command ();
@@ -100,7 +100,7 @@ class ConnCentraldClient:public Connection
 class CommandLogin:public Command
 {
 	public:
-		CommandLogin (Block * master, const char *in_login, const char *in_password);
+		CommandLogin (Block * master, const char *in_login, const char *name, const char *in_password);
 		virtual int commandReturnOK (Connection * conn);
 
 	private:
@@ -122,7 +122,7 @@ class CommandLogin:public Command
 class Client:public Block
 {
 	public:
-		Client (int in_argc, char **in_argv);
+		Client (int in_argc, char **in_argv, const char *_name);
 		virtual ~ Client (void);
 
 		virtual int run ();
@@ -140,6 +140,10 @@ class Client:public Block
 		const char *getCentralLogin ()
 		{
 			return login;
+		}
+		const char *getName ()
+		{
+			return name;
 		}
 		const char *getCentralPassword ()
 		{
@@ -159,6 +163,8 @@ class Client:public Block
 		const char *central_port;
 		const char *login;
 		const char *password;
+
+		const char *name;
 };
 
 }
