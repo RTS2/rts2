@@ -702,6 +702,17 @@ const char *targetEdit =
   "hr.send(null);\n"
 "}\n"
 
+"function enableTarget (id, ena){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET',encodeURI('../api/update_target?id=' + id + '&enabled=' + ena), true);\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+
+
 ;
 
 const char *rts2Central = 
