@@ -810,8 +810,6 @@ int Trencin::setTo (double set_ra, double set_dec)
 	pos.ra = set_ra;
 	pos.dec = set_dec;
 
-	double JD = ln_get_julian_from_sys ();
-
 	setTarget (pos.ra, pos.dec);
 	ret = sky2counts (u_ra, u_dec);
 	if (ret)
