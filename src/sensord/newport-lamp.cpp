@@ -21,8 +21,6 @@
 
 #include "connection/serial.h"
 
-#define EVENT_LAMP_POWERCHECK     RTS2_LOCAL_EVENT + 277
-
 namespace rts2sensord
 {
 
@@ -36,8 +34,6 @@ class NewportLamp: public Sensor
 	public:
 		NewportLamp (int in_argc, char **in_argv);
 		virtual ~NewportLamp (void);
-
-		virtual void postEvent (rts2core::Event *event);
 
 	protected:
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
@@ -104,39 +100,28 @@ NewportLamp::~NewportLamp ()
 	delete lampSerial;
 }
 
-void NewportLamp::postEvent (rts2core::Event *event)
-{
-	switch (event->getType ())
-	{
-		case EVENT_LAMP_POWERCHECK:
-			int ret;
-			ret = readStatus ("STB", status);
-			if (ret)
-				break;
-			if (on->getValueBool () == (status->getValueInteger () & 0x80))
-			{
-				addTimer (1, event);
-				return;
-			}
-			on->setValueBool (status->getValueInteger () & 0x80);
-			sendValueAll (on);
-			maskState (SENSOR_INPROGRESS, 0, "power change finished");
-			break;
-	}
-	Sensor::postEvent (event);
-}
-
 int NewportLamp::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	int ret;
 	if (old_value == on)
 	{
+		double now = getNow ();
+		maskState (SENSOR_INPROGRESS, SENSOR_INPROGRESS, "change lamp power state", getNow (), now + 10);
 		if (((rts2core::ValueBool *) new_value)->getValueBool ())
 			ret = writeCommand ("START") == 0 ? 0 : -2;
 		else
 			ret = writeCommand ("STOP") == 0 ? 0 : -2;
-		addTimer (1, new rts2core::Event (EVENT_LAMP_POWERCHECK));
-		maskState (SENSOR_INPROGRESS, SENSOR_INPROGRESS, "change lamp power state", getNow (), 10);
+		if (ret)
+		{
+			maskState (DEVICE_ERROR_MASK | SENSOR_INPROGRESS, DEVICE_ERROR_HW, "power change finished with error");
+			return ret;
+		}
+		maskState (SENSOR_INPROGRESS, 0, "power change finished");
+		ret = readStatus ("STB", status);
+		if (ret)
+			return ret;
+		on->setValueBool (status->getValueInteger () & 0x80);
+		sendValueAll (on);
 		return ret;
 	}
 	if (old_value == apreset)
@@ -190,13 +175,10 @@ int NewportLamp::initHardware ()
 int NewportLamp::info ()
 {
 	int ret;
-	if (!(getState () & SENSOR_INPROGRESS))
-	{
-		ret = readStatus ("STB", status);
-		if (ret)
-			return ret;
-		on->setValueBool (status->getValueInteger () & 0x80);
-	}
+	ret = readStatus ("STB", status);
+	if (ret)
+		return ret;
+	on->setValueBool (status->getValueInteger () & 0x80);
 	ret = readStatus ("ESR", esr);
 	if (ret)
 		return ret;
