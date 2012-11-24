@@ -240,6 +240,11 @@ class Image:public FitsFile
 			if (writeRTS2Values)
 				setValue (name, value, comment);
 		}
+		void setRTS2Value (const char *name, const char *value, const char *comment)
+		{
+			if (writeRTS2Values)
+				setValue (name, value, comment);
+		}
 
 		int writeData (char *in_data, char *fullTop, int nchan);
 
@@ -369,11 +374,8 @@ class Image:public FitsFile
 		void setExposureLength (float in_exposureLength)
 		{
 			exposureLength = in_exposureLength;
-			if (writeRTS2Values)
-			{
-				setValue ("EXPOSURE", exposureLength, "exposure length in seconds");
-				setValue ("EXPTIME", exposureLength, "exposure length in seconds");
-			}
+			setRTS2Value ("EXPOSURE", exposureLength, "exposure length in seconds");
+			setRTS2Value ("EXPTIME", exposureLength, "exposure length in seconds");
 		}
 
 		float getExposureLength () { return exposureLength; }
@@ -576,26 +578,22 @@ class Image:public FitsFile
 
 		void setInstrument (const char *instr)
 		{
-			if (writeRTS2Values)
-				setValue ("INSTRUME", instr, "name of the data acqusition instrument");
+			setRTS2Value ("INSTRUME", instr, "name of the data acqusition instrument");
 		}
 
 		void setTelescope (const char *tel)
 		{
-			if (writeRTS2Values)
-				setValue ("TELESCOP", tel, "name of the data acqusition telescope");
+			setRTS2Value ("TELESCOP", tel, "name of the data acqusition telescope");
 		}
 
 		void setObserver ()
 		{
-			if (writeRTS2Values)
-				setValue ("OBSERVER", "RTS2 " RTS2_VERSION, "observer");
+			setRTS2Value ("OBSERVER", "RTS2 " RTS2_VERSION, "observer");
 		}
 
 		void setOrigin (const char *orig)
 		{
-			if (writeRTS2Values)
-				setValue ("ORIGIN", orig, "organisation responsible for data");
+			setRTS2Value ("ORIGIN", orig, "organisation responsible for data");
 		}
 
 		/**
