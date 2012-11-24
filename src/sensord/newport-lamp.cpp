@@ -21,6 +21,8 @@
 
 #include "connection/serial.h"
 
+#define EVENT_LAMP_POWERCHECK     RTS2_LOCAL_EVENT + 277
+
 namespace rts2sensord
 {
 
@@ -35,10 +37,12 @@ class NewportLamp: public Sensor
 		NewportLamp (int in_argc, char **in_argv);
 		virtual ~NewportLamp (void);
 
+		virtual void postEvent (rts2core::Event *event);
+
 	protected:
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int info ();
 
 	private:
@@ -71,6 +75,160 @@ class NewportLamp: public Sensor
 };
 
 using namespace rts2sensord;
+
+NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
+{
+	lampSerial = NULL;
+
+	createValue (on, "ON", "lamp on", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
+	createValue (status, "status", "power supply status", false, RTS2_DT_HEX);
+	createValue (esr, "esr", "power supply error register", false, RTS2_DT_HEX);
+
+	createValue (amps, "AMPS", "Amps as displayed on front panel", true);
+	createValue (volts, "VOLTS", "Volts as displayed on front panel", true);
+	createValue (watts, "WATTS", "Watts as displayed on front panel", true);
+	createValue (apreset, "A_PRESET", "Current preset", true, RTS2_VALUE_WRITABLE);
+	createValue (ppreset, "P_PRESET", "Power preset", true, RTS2_VALUE_WRITABLE);
+	createValue (alim, "A_LIM", "Current limit", true);
+	createValue (plim, "P_LIM", "Power limit", true);
+
+	createValue (idn, "identification", "Identification", true);
+	createValue (hours, "hours", "Lamp hours", true);
+
+	addOption ('f', NULL, 1, "/dev/ttyS entry of the lamp serial port");
+}
+
+NewportLamp::~NewportLamp ()
+{
+	delete lampSerial;
+}
+
+void NewportLamp::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_LAMP_POWERCHECK:
+			int ret;
+			ret = readStatus ("STB", status);
+			if (ret)
+				break;
+			if (on->getValueBool () == (status->getValueInteger () & 0x80))
+			{
+				addTimer (1, event);
+				return;
+			}
+			on->setValueBool (status->getValueInteger () & 0x80);
+			sendValueAll (on);
+			maskState (SENSOR_INPROGRESS, 0, "power change finished");
+			break;
+	}
+	Sensor::postEvent (event);
+}
+
+int NewportLamp::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
+{
+	int ret;
+	if (old_value == on)
+	{
+		if (((rts2core::ValueBool *) new_value)->getValueBool ())
+			ret = writeCommand ("START") == 0 ? 0 : -2;
+		else
+			ret = writeCommand ("STOP") == 0 ? 0 : -2;
+		addTimer (1, new rts2core::Event (EVENT_LAMP_POWERCHECK));
+		maskState (SENSOR_INPROGRESS, SENSOR_INPROGRESS, "change lamp power state", getNow (), 10);
+		return ret;
+	}
+	if (old_value == apreset)
+	{
+	  	return writeValue ("A-PRESET", new_value->getValueFloat ()) == 0 ? 0 : -2;
+	}
+	if (old_value == ppreset)
+	{
+	  	return writeValue ("P-PRESET", new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	return Sensor::setValue (old_value, new_value);
+}
+
+int NewportLamp::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'f':
+			lampDev = optarg;
+			break;
+		default:
+			return Sensor::processOption (in_opt);
+	}
+	return 0;
+}
+
+int NewportLamp::initHardware ()
+{
+	int ret;
+
+	lampSerial = new rts2core::ConnSerial (lampDev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 100);
+	ret = lampSerial->init ();
+	if (ret)
+	  	return ret;
+	
+	// confirm it is working..
+	ret = readStatus ("STB", status);
+	if (ret)
+	{
+		// sometimes lamp init may fail
+		lampSerial->flushPortIO ();
+		sleep (1);
+		ret = readStatus ("STB", status);
+		if (ret)
+			return ret;
+	}
+
+	return info ();
+}
+
+int NewportLamp::info ()
+{
+	int ret;
+	if (!(getState () & SENSOR_INPROGRESS))
+	{
+		ret = readStatus ("STB", status);
+		if (ret)
+			return ret;
+		on->setValueBool (status->getValueInteger () & 0x80);
+	}
+	ret = readStatus ("ESR", esr);
+	if (ret)
+		return ret;
+	ret = readValue ("AMPS", amps);
+	if (ret)
+		return ret;
+	ret = readValue ("VOLTS", volts);
+	if (ret)
+		return ret;
+	ret = readValue ("WATTS", watts);
+	if (ret)
+		return ret;
+	ret = readValue ("A-PRESET", apreset);
+	if (ret)
+		return ret;
+	ret = readValue ("P-PRESET", ppreset);
+	if (ret)
+		return ret;
+	ret = readValue ("A-LIM", alim);
+	if (ret)
+		return ret;
+	ret = readValue ("P-LIM", plim);
+	if (ret)
+		return ret;
+	ret = readValue ("IDN", idn);
+	if (ret)
+		return ret; 
+	ret = readValue ("LAMP HRS", hours);
+	if (ret)
+		return ret;
+	return Sensor::info (); 
+}
 
 int NewportLamp::writeCommand (const char *cmd)
 {
@@ -148,137 +306,6 @@ int NewportLamp::readStatus (const char *valueName, rts2core::ValueInteger *val)
 	if (ret < 0)
 	  	return ret;
 	return getStatus (valueName, val);
-}
-
-NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
-{
-	lampSerial = NULL;
-
-	createValue (on, "ON", "lamp on", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-
-	createValue (status, "status", "power supply status", false, RTS2_DT_HEX);
-	createValue (esr, "esr", "power supply error register", false, RTS2_DT_HEX);
-
-	createValue (amps, "AMPS", "Amps as displayed on front panel", true);
-	createValue (volts, "VOLTS", "Volts as displayed on front panel", true);
-	createValue (watts, "WATTS", "Watts as displayed on front panel", true);
-	createValue (apreset, "A_PRESET", "Current preset", true, RTS2_VALUE_WRITABLE);
-	createValue (ppreset, "P_PRESET", "Power preset", true, RTS2_VALUE_WRITABLE);
-	createValue (alim, "A_LIM", "Current limit", true);
-	createValue (plim, "P_LIM", "Power limit", true);
-
-	createValue (idn, "identification", "Identification", true);
-	createValue (hours, "hours", "Lamp hours", true);
-
-	addOption ('f', NULL, 1, "/dev/ttyS entry of the lamp serial port");
-}
-
-NewportLamp::~NewportLamp ()
-{
-	delete lampSerial;
-}
-
-int NewportLamp::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
-{
-	int ret;
-	if (old_value == on)
-	{
-		if (((rts2core::ValueBool *) new_value)->getValueBool ())
-			ret = writeCommand ("START") == 0 ? 0 : -2;
-		else
-			ret = writeCommand ("STOP") == 0 ? 0 : -2;
-		return ret;
-	}
-	if (old_value == apreset)
-	{
-	  	return writeValue ("A-PRESET", new_value->getValueFloat ()) == 0 ? 0 : -2;
-	}
-	if (old_value == ppreset)
-	{
-	  	return writeValue ("P-PRESET", new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	return Sensor::setValue (old_value, new_value);
-}
-
-int NewportLamp::processOption (int in_opt)
-{
-	switch (in_opt)
-	{
-		case 'f':
-			lampDev = optarg;
-			break;
-		default:
-			return Sensor::processOption (in_opt);
-	}
-	return 0;
-}
-
-int NewportLamp::init ()
-{
-	int ret;
-
-	ret = Sensor::init ();
-	if (ret)
-		return ret;
-	
-	lampSerial = new rts2core::ConnSerial (lampDev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 100);
-	ret = lampSerial->init ();
-	if (ret)
-	  	return ret;
-	
-	// confirm it is working..
-	ret = readStatus ("STB", status);
-	if (ret)
-	{
-		// sometimes lamp init may fail
-		lampSerial->flushPortIO ();
-		sleep (1);
-		ret = readStatus ("STB", status);
-		if (ret)
-			return ret;
-	}
-
-	return info ();
-}
-
-int NewportLamp::info ()
-{
-	int ret;
-	ret = readStatus ("STB", status);
-	if (ret)
-		return ret;
-	on->setValueBool (status->getValueInteger () & 0x80);
-	ret = readStatus ("ESR", esr);
-	if (ret)
-		return ret;
-	ret = readValue ("AMPS", amps);
-	if (ret)
-		return ret;
-	ret = readValue ("VOLTS", volts);
-	if (ret)
-		return ret;
-	ret = readValue ("WATTS", watts);
-	if (ret)
-		return ret;
-	ret = readValue ("A-PRESET", apreset);
-	if (ret)
-		return ret;
-	ret = readValue ("P-PRESET", ppreset);
-	if (ret)
-		return ret;
-	ret = readValue ("A-LIM", alim);
-	if (ret)
-		return ret;
-	ret = readValue ("P-LIM", plim);
-	if (ret)
-		return ret;
-	ret = readValue ("IDN", idn);
-	if (ret)
-		return ret; 
-	ret = readValue ("LAMP HRS", hours);
-	if (ret)
-		return ret;
-	return Sensor::info (); 
 }
 
 int main (int argc, char **argv)
