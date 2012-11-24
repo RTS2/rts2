@@ -224,6 +224,9 @@
 #define TEL_MASK_NEED_STOP  0x0080
 #define TEL_NEED_STOP       0x0080
 
+// sensor performing command
+#define SENSOR_INPROGRESS   0x0001
+
 // telescope movement dirs
 
 #define DIR_NORTH           'n'

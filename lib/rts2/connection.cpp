@@ -407,7 +407,10 @@ std::string Connection::getStateString ()
 				_os << "idle";
 			break;
 		case DEVICE_TYPE_SELECTOR:
-			_os << "selector " << real_state;
+			if (real_state & SENSOR_INPROGRESS)
+				_os << "CHANGING";
+			else
+				_os << "idle";
 			break;
 		case DEVICE_TYPE_XMLRPC:
 			switch (real_state & EXEC_MASK_SCRIPT)
