@@ -305,7 +305,7 @@ int Alta::initHardware ()
 
 	// set data bits..
 	ccdRealType->setValueCharArr (alta->m_ApnSensorInfo->m_Sensor);
-	serialNumber->setValueCharArr (alta->m_CameraId);
+	serialNumber->setValueInteger (alta->m_CameraId);
 
 	return initChips ();
 }
