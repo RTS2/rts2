@@ -95,6 +95,27 @@ bool StringArray::isEqual (rts2core::Value *other_val)
 	return !strcmp (getValue (), other_val->getValue ());
 }
 
+void StringArray::setValueArray (std::vector <std::string> _arr)
+{
+	std::vector <std::string>::iterator niter = _arr.begin ();
+	std::vector <std::string>::iterator viter = value.begin ();
+	for (; viter != value.end () && niter != _arr.end (); viter++, niter++)
+	{
+		if (*viter != *niter)
+		{
+			value = _arr;
+			changed ();
+			return;
+		}
+	}
+	if (viter != value.end () || niter != _arr.end ())
+	{
+		value = _arr;
+		changed ();
+		return;
+	}
+}
+
 DoubleArray::DoubleArray (std::string _val_name):ValueArray (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
@@ -195,6 +216,27 @@ bool DoubleArray::isEqual (rts2core::Value *other_val)
 		return true;
 	}
 	return false;
+}
+
+void DoubleArray::setValueArray (std::vector <double> _arr)
+{
+	std::vector <double>::iterator niter = _arr.begin ();
+	std::vector <double>::iterator viter = value.begin ();
+	for (; viter != value.end () && niter != _arr.end (); viter++, niter++)
+	{
+		if (*viter != *niter)
+		{
+			value = _arr;
+			changed ();
+			return;
+		}
+	}
+	if (viter != value.end () || niter != _arr.end ())
+	{
+		value = _arr;
+		changed ();
+		return;
+	}
 }
 
 double DoubleArray::calculateMedianIndex ()
@@ -382,6 +424,27 @@ bool IntegerArray::isEqual (rts2core::Value *other_val)
 	return false;
 }
 
+void IntegerArray::setValueArray (std::vector <int> _arr)
+{
+	std::vector <int>::iterator niter = _arr.begin ();
+	std::vector <int>::iterator viter = value.begin ();
+	for (; viter != value.end () && niter != _arr.end (); viter++, niter++)
+	{
+		if (*viter != *niter)
+		{
+			value = _arr;
+			changed ();
+			return;
+		}
+	}
+	if (viter != value.end () || niter != _arr.end ())
+	{
+		value = _arr;
+		changed ();
+		return;
+	}
+}
+
 BoolArray::BoolArray (std::string val_name):IntegerArray (val_name)
 {
 	rts2Type &= ~RTS2_VALUE_INTEGER;
@@ -499,4 +562,23 @@ bool BoolArray::isEqual (rts2core::Value *other_val)
 		return true;
 	}
 	return false;
+}
+
+void BoolArray::setValueArray (std::vector <bool> _arr)
+{
+	std::vector <bool>::iterator niter = _arr.begin ();
+	std::vector <int>::iterator viter = value.begin ();
+	for (; viter != value.end () && niter != _arr.end (); viter++, niter++)
+	{
+		if (*viter != *niter)
+		{
+			setFromBoolArray (_arr);
+			return;
+		}
+	}
+	if (viter != value.end () || niter != _arr.end ())
+	{
+		setFromBoolArray (_arr);
+		return;
+	}
 }

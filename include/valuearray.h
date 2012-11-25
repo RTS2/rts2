@@ -69,11 +69,7 @@ class StringArray: public ValueArray
 		virtual void setFromValue (rts2core::Value * newValue);
 		virtual bool isEqual (rts2core::Value *other_val);
 
-		void setValueArray (std::vector <std::string> _arr)
-		{
-			value = _arr;
-			changed ();
-		}
+		void setValueArray (std::vector <std::string> _arr);
 
 		/**
 		 * Add value to array.
@@ -137,11 +133,7 @@ class DoubleArray: public ValueArray
 		virtual void setFromValue (rts2core::Value *newValue);
 		virtual bool isEqual (rts2core::Value *other_val);
 
-		void setValueArray (std::vector <double> _arr)
-		{
-			value = _arr;
-			changed ();
-		}
+		void setValueArray (std::vector <double> _arr);
 
 		/**
 		 * Add value to array.
@@ -218,11 +210,7 @@ class IntegerArray: public ValueArray
 
 		void setValueInteger (int i, int v) { value[i] = v; }
 
-		void setValueArray (std::vector <int> _arr)
-		{
-			value = _arr;
-			changed ();
-		}
+		void setValueArray (std::vector <int> _arr);
 
 		/**
 		 * Add value to array.
@@ -301,15 +289,18 @@ class BoolArray: public IntegerArray
 		virtual void setFromValue (rts2core::Value *newValue);
 		virtual bool isEqual (rts2core::Value *other_val);
 
-		void setValueArray (std::vector <bool> _arr)
+		void setValueArray (std::vector <bool> _arr);
+
+		bool operator[] (int i) { return value[i] ? true : false; }
+
+	private:
+		void setFromBoolArray (std::vector <bool> _arr)
 		{
 			value.clear ();
 			for (std::vector <bool>::iterator iter = _arr.begin (); iter != _arr.end (); iter++)
 				value.push_back (*iter);
 			changed ();
 		}
-
-		bool operator[] (int i) { return value[i] ? true : false; }
 };
 
 }
