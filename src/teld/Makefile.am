@@ -1,7 +1,3 @@
-noinst_HEADERS = pier-collision.h hms.h tellx200.h
-
-lib_LTLIBRARIES = librts2pier-collision.la librts2tellx200.la
-
 EXTRA_DIST = 
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
@@ -10,48 +6,41 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar \
 	rts2-teld-lx200gps rts2-teld-meade rts2-teld-indi
 
-librts2tellx200_la_SOURCES = tellx200.cpp hms.c
-librts2tellx200_la_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
-librts2tellx200_la_CFLAGS = @NOVA_CFLAGS@ -I../../include
-
-librts2pier_collision_la_SOURCES = pier-collision.cpp
-librts2pier_collision_la_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
-
 LDADD = -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
 rts2_teld_gemini_SOURCES = gemini.cpp
-rts2_teld_gemini_LDADD = -lrts2tellx200 ${LDADD}
+rts2_teld_gemini_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 ${LDADD}
 
 rts2_teld_dummy_SOURCES = dummy.cpp
 
 rts2_teld_mm2_SOURCES = mm2.cpp
-rts2_teld_mm2_LDADD = -lrts2tellx200 ${LDADD}
+rts2_teld_mm2_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 ${LDADD}
 
 rts2_teld_lx200_SOURCES = lx200.cpp
-rts2_teld_lx200_LDADD = -lrts2tellx200 ${LDADD}
+rts2_teld_lx200_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 ${LDADD}
 
 rts2_teld_meade_SOURCES = meade.cpp
-rts2_teld_meade_LDADD = -lrts2tellx200 ${LDADD}
+rts2_teld_meade_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 ${LDADD}
 
-rts2_teld_indi_SOURCES = indibridge.cpp hms.c
-rts2_teld_indi_LDADD = -L../../lib/libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
+rts2_teld_indi_SOURCES = indibridge.cpp
+rts2_teld_indi_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -L../../lib/libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
 rts2_teld_indi_CPPFLAGS = -I../../lib/libindi ${CPPFLAGS} -I../../include
 
 rts2_teld_lx200gps_SOURCES = lx200gps.cpp
-rts2_teld_lx200gps_LDADD = -lrts2tellx200 ${LDADD}
+rts2_teld_lx200gps_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 ${LDADD}
 
 rts2_teld_lx200test_SOURCES = lx200test.cpp
-rts2_teld_lx200test_LDADD = -lrts2tellx200 -lrts2pier-collision ${LDADD}
+rts2_teld_lx200test_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
 
 # comment this and uncomment next for alternative APT-GOTO driver
 
 rts2_teld_apgto_SOURCES = apgto.cpp
-rts2_teld_apgto_LDADD = -lrts2tellx200 -lrts2pier-collision ${LDADD}
+rts2_teld_apgto_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
 
 #rts2_teld_apgto_SOURCES = apgto_pk.cpp
-#rts2_teld_apgto_LDADD = -lrts2tellx200 -lrts2pier-collision ${LDADD}
+#rts2_teld_apgto_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
 
 rts2_teld_d50_SOURCES = d50.cpp
 

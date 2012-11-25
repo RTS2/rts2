@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = connection rts2db rts2script rts2fits rts2scheduler vermes
+SUBDIRS = connection rts2db rts2script rts2fits rts2lx200 rts2scheduler vermes
 
 noinst_HEADERS = rts2.h imghdr.h status.h telescope_info.h imgdisplay.h connection.h logstream.h \
 		message.h strtok.h xmlerror.h teld.h camd.h dome.h cupola.h sensord.h focusd.h filterd.h phot.h rotad.h \

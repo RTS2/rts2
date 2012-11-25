@@ -825,6 +825,14 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		/**
+		 * Returns count of active channels.
+		 */
+		int getUsedChannels ()
+		{
+			return dataChannels->getValueInteger ();
+		}
+
+		/**
 		 * Create value for air temperature camera sensor. Use on CCDs which
 		 * can sense air temperature.
 		 */

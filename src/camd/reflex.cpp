@@ -528,11 +528,11 @@ int Reflex::startExposure ()
 	if (rawmode->getValueBool ())
 		ret = pdv_setsize (CLHandle, width * channels->size (), height);
 	else if (hdrmode)
-		ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger () * 2, height);
+		ret = pdv_setsize (CLHandle, width * getUsedChannels () * 2, height);
 	else
-		ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
+		ret = pdv_setsize (CLHandle, width * getUsedChannels (), height);
 	
-	std::cout << "rawmode " << rawmode->getValueBool () << " hdrmode " << hdrmode << " " << width * dataChannels->getValueInteger () << " " << height << std::endl;
+	//std::cout << "rawmode " << rawmode->getValueBool () << " hdrmode " << hdrmode << " " << width * getUsedChannels () << " " << height << std::endl;
 		
 	if (ret)
 	{
@@ -554,7 +554,7 @@ int Reflex::startExposure ()
 		return -1;
 	}
 
-  	pdv_set_timeout (CLHandle, 900000);
+  	pdv_set_timeout (CLHandle, 30000);
 
 	pdv_start_image (CLHandle);
 #elif defined(CL_EURESYS)
@@ -564,7 +564,7 @@ int Reflex::startExposure ()
 		throw rts2core::Error ("cannot set MC_TapGeometry");
 	if (McSetParamInt(channel, MC_DvalMode, MC_DvalMode_DG))
 		throw rts2core::Error ("cannot set MC_DvalMode");
-	if (McSetParamInt(channel, MC_Hactive_Px, width * dataChannels->getValueInteger ()))
+	if (McSetParamInt(channel, MC_Hactive_Px, width * getUsedChannels ()))
 		throw rts2core::Error ("cannot set MC_Hactive_Px");
 	if (McSetParamInt(channel, MC_Vactive_Ln, height))
 		throw rts2core::Error ("cannot set MC_Vactive_Ln");
@@ -708,24 +708,29 @@ int Reflex::doReadout ()
 	{
 		size_t i,j;
 		int lw = getUsedWidth () * 2;
-		int dw = lw * channels->size ();
+		int dw = lw * getUsedChannels ();
 		// buffer for a single channel
 		unsigned char chanbuf[lw * getUsedHeight ()];
+		int byte_size = pdv_get_dmasize (CLHandle);
+		// actual channel
 		for (i = 0, j = 0; i < channels->size (); i++)
 		{
 			if ((*channels)[i])
 			{
 				// copy channel to channel buffer
 				// line start pointer
-				unsigned char *ls = buf + lw * i;
+				unsigned char *ls = buf + lw * j;
 				unsigned char *ds = chanbuf;
-				for (int l = 0; l < getUsedHeight (); l++)
+				int l;
+				for (l = 0; l < getUsedHeight () && ls < buf + byte_size; l++)
 				{
 					memcpy (ds, ls, lw);
 					ls += dw;
 					ds += lw;
 				}
-				int ret = sendChannel (i, chanbuf, j, dataChannels->getValueInteger ());
+				if (l < getUsedHeight ())
+					logStream (MESSAGE_ERROR) << "wrong bytesize, at row " << l << ", passing " << byte_size << "size" << sendLog;
+				int ret = sendChannel (i, chanbuf, j, getUsedChannels ());
 				if (ret < 0)
 					return -1;
 				j++;
@@ -873,6 +878,10 @@ int Reflex::info ()
 	edt_count->setValueInteger (edt_done_count (CLHandle));
 	edt_bytes->setValueInteger (edt_get_bytecount (CLHandle));
 #endif
+	// don't read registers during data readout
+	if (getState () & CAM_READING)
+		return Camera::info ();
+
 	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
 	{
 		if (iter->second->infoUpdate ())

@@ -32,11 +32,11 @@
 #include <sys/ioctl.h>
 
 #include "teld.h"
-#include "hms.h"
+#include "rts2lx200/hms.h"
 #include "status.h"
 #include "configuration.h"
 #include "clicupola.h"
-#include "pier-collision.h"
+#include "rts2lx200/pier-collision.h"
 
 #include <termios.h>
 // uncomment following line, if you want all tel_desc read logging (will

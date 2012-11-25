@@ -20,10 +20,10 @@
 #include "libnova_cpp.h"
 #include "configuration.h"
 
-#include "tellx200.h"
-#include "hms.h"
+#include "rts2lx200/tellx200.h"
+#include "rts2lx200/hms.h"
 #include "clicupola.h"
-#include "pier-collision.h"
+#include "rts2lx200/pier-collision.h"
 
 #define OPT_PARK_POS             OPT_LOCAL + 60
 

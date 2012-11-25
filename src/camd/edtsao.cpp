@@ -1059,7 +1059,7 @@ int EdtSao::readoutStart ()
 	{
 		height = getUsedHeight ();
 	}
-	ret = pdv_setsize (pd, width * dataChannels->getValueInteger (), height);
+	ret = pdv_setsize (pd, width * getUsedChannels (), height);
 	if (ret == -1)
 	{
 		logStream (MESSAGE_ERROR) << "call to pdv_setsize failed" << sendLog;
@@ -1183,7 +1183,7 @@ int EdtSao::doReadout ()
 	{
 		if ((*channels)[i])
 		{
-			ret = sendChannel (i, bufs[0], j, dataChannels->getValueInteger ());
+			ret = sendChannel (i, bufs[0], j, getUsedChannels ());
 			if (ret < 0)
 				return -1;
 			j++;

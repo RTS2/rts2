@@ -29,7 +29,7 @@
 #include <sys/ioctl.h>
 
 #include "teld.h"
-#include "hms.h"
+#include "rts2lx200/hms.h"
 #include "status.h"
 #include "configuration.h"
 

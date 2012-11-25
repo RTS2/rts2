@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <libnova/libnova.h>
 
-#include "pier-collision.h"
+#include "rts2lx200/pier-collision.h"
 
 #include "utilsfunc.h"
 

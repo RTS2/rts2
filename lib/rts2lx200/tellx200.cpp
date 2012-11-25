@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "tellx200.h"
-#include "hms.h"
+#include "rts2lx200/tellx200.h"
+#include "rts2lx200/hms.h"
 
 #define OPT_CONN_DEBUG     OPT_LOCAL + 2000
 

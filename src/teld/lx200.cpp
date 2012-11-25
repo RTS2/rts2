@@ -12,7 +12,7 @@
  * @author john,petr
  */
 
-#include "tellx200.h"
+#include "rts2lx200/tellx200.h"
 #include "configuration.h"
 
 #define RATE_FIND 'M'

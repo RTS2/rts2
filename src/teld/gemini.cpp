@@ -27,7 +27,7 @@
 #include <libnova/libnova.h>
 
 #include "teld.h"
-#include "hms.h"
+#include "rts2lx200/hms.h"
 #include "configuration.h"
 #include "utilsfunc.h"
 

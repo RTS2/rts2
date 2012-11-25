@@ -821,6 +821,7 @@ AC_OUTPUT([Makefile
 	   include/connection/Makefile
 	   include/rts2db/Makefile
 	   include/rts2fits/Makefile
+	   include/rts2lx200/Makefile
 	   include/rts2script/Makefile
 	   include/rts2scheduler/Makefile
 	   include/rts2json/Makefile
@@ -837,6 +838,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2/vermes/Makefile
 	   lib/rts2fits/Makefile
 	   lib/rts2db/Makefile
+	   lib/rts2lx200/Makefile
 	   lib/rts2script/Makefile
 	   lib/rts2scheduler/Makefile
 	   lib/rts2json/Makefile
