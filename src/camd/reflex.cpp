@@ -266,6 +266,16 @@ class Reflex:public Camera
 		int readRegister (uint32_t addr, uint32_t& data);
 		int writeRegister (uint32_t addr, uint32_t data);
 
+		/**
+		 * Write to register, produce log output
+		 */
+		int writeRegisterValue (uint32_t addr, rts2core::Value *old, rts2core::Value *value, conversion_t conversion);
+
+		/**
+		 * Change power state.
+		 */
+		int changePower (bool on);
+
 		void setParameter (const char *pname, uint32_t value);
 
 		/**
@@ -767,39 +777,17 @@ int Reflex::processOption (int in_opt)
 
 int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
-	int ret;
 	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
 	{
 		if (old_value == iter->second->value)
 		{
-			std::string s;
 			switch (iter->first)
 			{
 				// special registers first
 				case 0x00000004:
-					ret = interfaceCommand ((new_value->getValueInteger () > 0 ? ">P1\r" : ">P0\r"), s, 5000, true) ? -2 : 0;
-					if (ret)
-						return -2;
-					info ();
-					if (new_value->getValueInteger () > 0)
-						return interfaceCommand (">TS\r", s, 5000, true) ? -2 : 0;
-					// don't start timing if powering down
-					return 0;
+					return changePower (new_value->getValueInteger () > 0) ? - 2 : 0;
 				default:
-					switch (iter->second->getConversionType ())
-					{
-						case CONVERSION_NONE:
-							return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
-						case CONVERSION_MILI:
-						case CONVERSION_MILI_LIMITS:
-							return writeRegister (iter->first, new_value->getValueFloat () * 1000.0) ? -2 : 0;
-						case CONVERSION_10000hex:
-							return writeRegister (iter->first, new_value->getValueFloat () * 0x10000) ? -2 : 0;
-						case CONVERSION_65k:
-							return writeRegister (iter->first, new_value->getValueFloat () * 65536.0) ? -2 : 0;
-						case CONVERSION_mK:
-							return writeRegister (iter->first, (new_value->getValueFloat () + 273.15) * 1000.0) ? -2 : 0;
-					}
+					return writeRegisterValue (iter->first, old_value, new_value, iter->second->getConversionType ()) ? -2 : 0;
 			}
 		}
 	}
@@ -843,6 +831,8 @@ int Reflex::initHardware ()
 		throw rts2core::Error ("cannot parse .rcf configuration file");
 	}
 
+	logStream (MESSAGE_INFO) << "======== starting power up sequence =======" << sendLog;
+
 	createBoards ();
 
 	rereadAllRegisters ();
@@ -851,14 +841,12 @@ int Reflex::initHardware ()
 
 	if (powerUp)
 	{
-		std::string s;
-		ret = interfaceCommand (">P1\r", s, 5000, true);
-		if (ret)
-			return -1;
-		ret = interfaceCommand (">TS\r", s, 5000, true) ? -1 : 0;
+		ret = changePower (true);
 		if (ret)
 			return -1;
 	}
+
+	logStream (MESSAGE_INFO) << "======== device powered up  =======" << sendLog;
 
 /*	ret = pdv_set_buffers (CLHandle, 1, NULL);
 	if (ret)
@@ -1228,7 +1216,7 @@ int Reflex::interfaceCommand (const char *cmd, std::string &response, int timeou
 	return CLCommand (cmd, response, timeout, log);
 }
 
-int Reflex::readRegister (unsigned addr, unsigned& data)
+int Reflex::readRegister (uint32_t addr, uint32_t& data)
 {
 	char s[100];
 	std::string ret;
@@ -1246,7 +1234,7 @@ int Reflex::readRegister (unsigned addr, unsigned& data)
 	return 0;
 }
 
-int Reflex::writeRegister (unsigned addr, unsigned data)
+int Reflex::writeRegister (uint32_t addr, uint32_t data)
 {
 	char s[100];
 	std::string ret;
@@ -1257,6 +1245,47 @@ int Reflex::writeRegister (unsigned addr, unsigned data)
 	return 0;
 }
 
+int Reflex::writeRegisterValue (uint32_t addr, rts2core::Value *old, rts2core::Value *value, conversion_t conversion)
+{
+	uint32_t data = 0;
+	switch (conversion)
+	{
+		case CONVERSION_NONE:
+			data = value->getValueInteger ();
+			break;
+		case CONVERSION_MILI:
+		case CONVERSION_MILI_LIMITS:
+			data = value->getValueFloat () * 1000.0;
+			break;
+		case CONVERSION_10000hex:
+			data = value->getValueFloat () * 0x10000;
+			break;
+		case CONVERSION_65k:
+			data = value->getValueFloat () * 65536.0;
+			break;
+		case CONVERSION_mK:
+			data = (value->getValueFloat () + 273.15) * 1000.0;
+			break;
+	}
+	logStream (MESSAGE_INFO) << "changing value " << value->getName () << " from " << old->getDisplayValue () << " to " << value->getDisplayValue () << ", after conversion " << data << sendLog;
+	return writeRegister (addr, data);
+}
+
+int Reflex::changePower (bool on)
+{
+	int ret;
+	std::string s;
+	logStream (MESSAGE_INFO) << "powering " << (on ? "up" : "down") << sendLog;
+	ret = interfaceCommand ((on ? ">P1\r" : ">P0\r"), s, 5000, true) ? -2 : 0;
+	if (ret)
+		return -1;
+	info ();
+	if (on)
+		return interfaceCommand (">TS\r", s, 5000, true);
+	// don't start timing if powering down
+	return 0;
+}
+
 void Reflex::setParameter (const char *pname, uint32_t value)
 {
 	int pi = parameterIndex (pname);
@@ -1264,6 +1293,8 @@ void Reflex::setParameter (const char *pname, uint32_t value)
 		throw rts2core::Error (std::string ("cannot find parameter with name ") + pname);
 	if (writeRegister (SYSTEM_CONTROL_ADDR + 1 + pi, value) < 0)
 		throw rts2core::Error (std::string ("cannot set parameter ") + pname);
+
+	logStream (MESSAGE_INFO) << "set parameter " << pname << " to " << value << sendLog;
 
 	// propagate changed parameter
 	rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + 1 + pi]->value;
