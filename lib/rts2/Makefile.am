@@ -2,13 +2,8 @@
 
 SUBDIRS = model vermes  
 
-noinst_PROGRAMS = test
-
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 AM_CFLAGS=@NOVA_CFLAGS@ -I../../include
-
-test_SOURCES = test.cpp
-test_LDADD = -lrts2 @LIB_NOVA@
 
 EXTRA_DIST =
 
