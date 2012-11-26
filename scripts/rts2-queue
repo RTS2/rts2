@@ -215,7 +215,7 @@ rts2-queue --load circular.q""")
 		qs = rts2.Queues()
 		for xml in options.load_xml:
 			qs.load_xml(xml)
-		qs.save()
+		qs.save(True)
 
 
 	if not options.quiet:

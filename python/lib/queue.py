@@ -63,13 +63,13 @@ class QueueEntry:
 	
 	def get_xmlnode(self,document):
 		en = document.createElement('queueEntry')
-		en.setAttribute('id',str(self.id))
+		en.setAttribute('id', str(self.id))
 
-		en.setAttribute('name',self.get_target().name)
+		en.setAttribute('name', self.get_target().name)
 		if self.get_start() is not None:
-			en.setAttribute('start',iso8601.str(self.get_start()))
+			en.setAttribute('start', iso8601.str(self.get_start()))
 		if self.get_end() is not None:
-			en.setAttribute('end',iso8601.str(self.get_end()))
+			en.setAttribute('end', iso8601.str(self.get_end()))
 		return en
 	
 	def get_start(self):
@@ -121,11 +121,12 @@ class Queue:
 		self.entries = []
 
 		for i in range(0,len(ids)):
-			self.entries.append(self.queueType(ids[i],start[i],end[i],qid[i]))
+			self.entries.append(self.queueType(ids[i], start[i], end[i], qid[i]))
 
-	def save(self):
+	def save(self, clear=False, remove_new=False):
 		"""Save queue settings to the server."""
-		self.clear()
+		if clear:
+			self.clear()
 		json.getProxy().setValues({
 			'{0}_skip_below'.format(self.name):self.skip_below,
 			'{0}_test_constr'.format(self.name):self.test_constr,
@@ -133,13 +134,24 @@ class Queue:
 			'{0}_queing'.format(self.name):self.queueing
 		},device=self.service)
 		queue_cmd = ''
-		for x in self.entries:
-			queue_cmd += ' {0} {1} {2}'.format(x.id,_nanNone(x.get_start()),_nanNone(x.get_end()))
-		json.getProxy().executeCommand(self.service,'queue_at {0}{1}'.format(self.name,queue_cmd))
+		if clear:
+			for x in self.entries:
+				queue_cmd += ' {0} {1} {2}'.format(x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
+			json.getProxy().executeCommand(self.service,'queue {0}{1}'.format(self.name, queue_cmd))
+		else:
+			for x in self.entries:
+				queue_cmd += ' {0} {1} {2} {3}'.format(x.qid, x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
+
+			if remove_new:
+				for x in self.entries:
+					if x.qid < 0:
+						self.entries.remove(x)
+
+			json.getProxy().executeCommand(self.service,'queue_qids {0}{1}'.format(self.name, queue_cmd))
 	
 	def add_target(self,id,start=None,end=None):
 		"""Add target to queue."""
-		json.getProxy().executeCommand(self.service,'queue_at {0} {1} {2} {3}'.format(self.name,id,_nanNone(start),_nanNone(end)))
+		json.getProxy().executeCommand(self.service,'queue_at {0} {1} {2} {3}'.format(self.name, id, _nanNone(start), _nanNone(end)))
 
 	def get_XMLdoc(self):
 		"""Serialize queue to XML document."""
@@ -148,18 +160,18 @@ class Queue:
 		return document
 
 	def to_xml(self,document,node):
-		node.setAttribute('skip_below',_xmlQueueBoolAttribute(self.skip_below))
-		node.setAttribute('test_constr',_xmlQueueBoolAttribute(self.test_constr))
-		node.setAttribute('remove_executed',_xmlQueueBoolAttribute(self.remove_executed))
-		node.setAttribute('queueing',str(self.queueing))
+		node.setAttribute('skip_below', _xmlQueueBoolAttribute(self.skip_below))
+		node.setAttribute('test_constr', _xmlQueueBoolAttribute(self.test_constr))
+		node.setAttribute('remove_executed', _xmlQueueBoolAttribute(self.remove_executed))
+		node.setAttribute('queueing', str(self.queueing))
 
 		map(lambda x:node.appendChild(x.get_xmlnode(document)),self.entries)
 
 	def from_xml(self,node):
 		"""Construct queue from XML representation."""
-		self.skip_below = _getXmlBoolAttribute(node,'skip_below')
-		self.test_constr = _getXmlBoolAttribute(node,'test_constr')
-		self.remove_executed = _getXmlBoolAttribute(node,'remove_executed')
+		self.skip_below = _getXmlBoolAttribute(node, 'skip_below')
+		self.test_constr = _getXmlBoolAttribute(node, 'test_constr')
+		self.remove_executed = _getXmlBoolAttribute(node, 'remove_executed')
 		self.queueing = int(node.getAttribute('queueing'))
 
 		for el in node.getElementsByTagName('queueEntry'):

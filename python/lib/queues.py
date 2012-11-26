@@ -47,8 +47,8 @@ class Queues:
 			q.from_xml(qu)
 			self.queues[qname] = q
 
-	def save(self):
-		map(lambda q: self.queues[q].save(), self.queues)
+	def save(self, clear=False):
+		map(lambda q: self.queues[q].save(clear), self.queues)
 
 	def save_xml(self, fn):
 		document = self.get_xml()

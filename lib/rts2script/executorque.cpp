@@ -766,7 +766,7 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 			}
 		}
 		rts2db::Target *nt = createTarget (tar_id, *observer, watchConn);
-		if (!nt)
+		if (nt == NULL)
 		{
 			failed++;
 			continue;
@@ -775,6 +775,80 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 			addFirst (nt, fo, n_start, t_start, t_end);
 		else
 			addTarget (nt, t_start, t_end, index);
+	}
+	return failed;
+}
+
+int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn, rts2core::ConnNotify *watchConn)
+{
+	int failed = 0;
+	ExecutorQueue::iterator iter = begin ();
+	// QIDs which should be kept; all others will be deleted
+	std::vector <int> knowQuids;
+	while (!conn->paramEnd ())
+	{
+		int queue_id;
+		int tar_id;
+		double t_start, t_end;
+		if (conn->paramNextInteger (&queue_id) || conn->paramNextInteger (&tar_id) || conn->paramNextDoubleTime (&t_start) || conn->paramNextDoubleTime (&t_end))
+		{
+			failed++;
+			continue;
+		}
+		rts2db::Target *nt = createTarget (tar_id, *observer, watchConn);
+		if (nt == NULL)
+		{
+			failed++;
+			continue;
+		}
+		// new entry
+		if (queue_id == -1)
+		{
+			QueuedTarget qt (nt, t_start, t_end);
+			iter = insert (iter, qt);
+			knowQuids.push_back (qt.qid);
+		}
+		else
+		{
+			// if entry with given quid don't exists, fail
+			ExecutorQueue::iterator it;
+			for (it = begin (); it != end (); it++)
+			{
+				if (it->qid == queue_id)
+					break;
+			}
+			// quid not found - failure
+			if (it == end ())
+			{
+				failed++;
+				continue;
+			}
+			// remove it, and put it after iter, the current position
+			it->t_start = t_start;
+			it->t_end = t_end;
+			if (iter != it)
+			{
+				iter = insert (iter, *it);
+				erase (it);
+			}
+			knowQuids.push_back (queue_id);
+		}
+		iter++;
+	}
+	// remove quieds which were not send on queue line
+	for (iter = begin (); iter != end ();)
+	{
+		if (iter->qid > 0)
+		{
+			if (std::find (knowQuids.begin (), knowQuids.end (), iter->qid) != knowQuids.end ())
+				iter++;
+			else
+				iter = erase (iter);
+		}
+		else
+		{
+			iter++;
+		}
 	}
 	return failed;
 }

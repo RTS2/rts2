@@ -158,6 +158,8 @@ class SelectorDev:public rts2db::DeviceDb
 		 * update it.
 		 */
 		void updateSelectLength ();
+
+		void afterQueueChange (rts2plan::ExecutorQueue *q);
 };
 
 }
@@ -657,37 +659,35 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		{
 			if (q->queueFromConn (conn, index, withTimes, notifyConn, false, NAN))
 				return -2;
-			if (getMasterState () == SERVERD_NIGHT)
-			{
-				q->beforeChange (getNow ());
-			}
-			else
-			{
-				time_t now;
-				rts2core::Connection *centralConn = getSingleCentralConn ();
-				if (centralConn == NULL)
-				{
-					time (&now);
-				}
-				else
-				{
-					rts2core::Value *night_start = centralConn->getValue ("night_start");
-					if (night_start != NULL)
-						now = night_start->getValueDouble ();
-					else
-						time (&now);
-				}
-				q->sortQueue (now);
-				q->updateVals ();
-			}
+			afterQueueChange (q);
 		}
 		catch (rts2core::Error &er)
 		{
 			logStream (MESSAGE_ERROR) << er << sendLog;
 			return -2;
 		}
-		if (getMasterState () == SERVERD_NIGHT)
-			updateNext ();
+		return 0;
+	}
+	else if (conn->isCommand ("queue_qids"))
+	{
+		if (conn->paramNextString (&name))
+			return -2;
+		// try to find queue with name..
+		rts2plan::Queues::iterator qi = findQueue (name);
+		if (qi == queues.end ())
+			return -2;
+		rts2plan::ExecutorQueue * q = &(*qi);
+		try
+		{
+			if (q->queueFromConnQids (conn, notifyConn))
+				return -2;
+			afterQueueChange (q);
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << er << sendLog;
+			return -2;
+		}
 		return 0;
 	}
 	else if (conn->isCommand ("now") || conn->isCommand ("now_once"))
@@ -795,6 +795,34 @@ void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
 	{
 		q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd (), iter->getPlanId ());
 		iter->clearTarget ();
+	}
+}
+
+void SelectorDev::afterQueueChange (rts2plan::ExecutorQueue *q)
+{
+	if (getMasterState () == SERVERD_NIGHT)
+	{
+		q->beforeChange (getNow ());
+		updateNext ();
+	}
+	else
+	{
+		time_t now;
+		rts2core::Connection *centralConn = getSingleCentralConn ();
+		if (centralConn == NULL)
+		{
+			time (&now);
+		}
+		else
+		{
+			rts2core::Value *night_start = centralConn->getValue ("night_start");
+			if (night_start != NULL)
+				now = night_start->getValueDouble ();
+			else
+				time (&now);
+		}
+		q->sortQueue (now);
+		q->updateVals ();
 	}
 }
 
