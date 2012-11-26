@@ -137,7 +137,7 @@ class Queue:
 		if clear:
 			for x in self.entries:
 				queue_cmd += ' {0} {1} {2}'.format(x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
-			json.getProxy().executeCommand(self.service,'queue {0}{1}'.format(self.name, queue_cmd))
+			json.getProxy().executeCommand(self.service,'queue_at {0}{1}'.format(self.name, queue_cmd))
 		else:
 			for x in self.entries:
 				queue_cmd += ' {0} {1} {2} {3}'.format(x.qid, x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
