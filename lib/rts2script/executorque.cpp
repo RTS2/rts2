@@ -430,9 +430,22 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 
 			if (getSkipBelowHorizon () || shift_circular)
 			{
+				// if not in CIRCULAR, and target has time information, let's remove it from the queue
+				switch (getQueueType ())
+				{
+					case QUEUE_CIRCULAR:
+						break;
+					default:
+						if (!(isnan (iter->t_start) && isnan (iter->t_end)) && iter->target->observationStarted ())
+						{
+							logStream (MESSAGE_WARNING) << "target " << iter->target->getTargetName () << " was observed, and as it has specified start or end times (" << LibnovaDateDouble (iter->t_start) << " to " << LibnovaDateDouble (iter->t_end) << "), and queue is not circular (" << getQueueType () << "), it will be removed" << sendLog;
+							iter = erase (iter);
+							continue;
+						}
+				}
 				if (iter->unobservable_reported == false)
 				{
-					logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " unobservable" << sendLog;
+					logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " unobservable, putting it on back of the queue" << sendLog;
 					iter->unobservable_reported = true;
 				}
 
