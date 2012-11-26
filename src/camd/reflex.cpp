@@ -286,7 +286,7 @@ class Reflex:public Camera
 		int sendChannel (int chan, u_char *buf, int chanorder, int totalchanel);
 
 		// related to configuration file..
-		const char *configFile;
+		rts2core::ValueString *configFile;
 		rts2core::IniParser *config;
 
 		void reloadConfig (bool force);
@@ -398,6 +398,8 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createDataChannels ();
 	setNumChannels (1);
 
+	createValue (configFile, "CONFIG", "path to the reflex configuration file", true);
+
 #ifdef CL_EDT
 	createValue (edt_count, "edt_count", "number of done images", false);
 	createValue (edt_bytes, "edt_bytes", "bytes read from the image", false);
@@ -477,7 +479,6 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createRegister (SYSTEM_CONTROL_ADDR, "sys.timing_lines", "Number of lines of timining data", true, true, false);
 
-	configFile = NULL;
 	config = NULL;
 
 	addOption ('c', NULL, 1, "configuration file (.rcf)");
@@ -761,7 +762,7 @@ int Reflex::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case 'c':
-			configFile = optarg;
+			configFile->setValueCharArr (optarg);
 			break;
 		case OPT_DRY:
 			dry_run = true;
@@ -818,14 +819,14 @@ int Reflex::initHardware ()
 
 	rereadAllRegisters ();
 
-	if (!configFile)
+	if (strlen (configFile->getValue ()) == 0)
 	{
 		logStream (MESSAGE_WARNING) << "empty configuration file (missing -c option?), camera is assumed to be configured" << sendLog;
 		return -1;
 	}
 
 	config = new rts2core::IniParser ();
-	if (config->loadFile (configFile, true))
+	if (config->loadFile (configFile->getValue (), true))
 	{
 		config = NULL;
 		throw rts2core::Error ("cannot parse .rcf configuration file");
@@ -890,7 +891,11 @@ void Reflex::signaledHUP ()
 {
 	Camera::signaledHUP ();
 
+	logStream (MESSAGE_INFO) << "========= reloading configuration ===========" << sendLog;
+
 	reloadConfig (true);
+
+	logStream (MESSAGE_INFO) << "========= configuration reloaded ===========" << sendLog;
 }
 
 int Reflex::initValues ()
@@ -1328,7 +1333,7 @@ void Reflex::reloadConfig (bool force)
 	if (config == NULL || force)
 	{
 		config = new rts2core::IniParser ();
-		if (config->loadFile (configFile, true))
+		if (config->loadFile (configFile->getValue (), true))
 		{
 			config = NULL;
 			throw rts2core::Error ("cannot parse .rcf configuration file");
