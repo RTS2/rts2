@@ -23,7 +23,7 @@ import re
 
 def str(t):
 	"""Returns time as UT string in ISO8601 format"""
-	return time.strftime("%Y-%m-%dT%H:%M:%S",time.gmtime(t))
+	return time.strftime("%Y-%m-%dU%H:%M:%S",time.gmtime(t))
 
 def ctime(s):
 	# special format string - if only time is specified, it means tonight..
@@ -40,6 +40,6 @@ def ctime(s):
 		else:
 			# for morning hours, add 1 day - put them to tomorrow
 			ld = time.strftime('%Y%m%d',time.localtime(time.time() + 86400))
-		s = ld + 'T' + s
+		s = ld + 'U' + s
 
-	return calendar.timegm(time.strptime(s.replace("-", ""),"%Y%m%dT%H:%M:%S"))
+	return calendar.timegm(time.strptime(s.replace("-", ""),"%Y%m%dU%H:%M:%S"))
