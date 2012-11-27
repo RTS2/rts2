@@ -352,6 +352,8 @@ class Reflex:public Camera
 		// return board type for given board
 		int boardType (int board) { return (registers[BOARD_TYPE_BP + board]->value->getValueInteger () >> 24) & 0xFF; }
 		int boardRevision (int board) { return (registers[BOARD_TYPE_BP + board]->value->getValueInteger () >> 16) & 0xFF; }
+		// board build number
+		int boardBuild (int board) { return (registers[BUILD_BP + board]->value->getValueInteger ()); }
 #ifdef CL_EDT
 		PdvDev *CLHandle;
 #else
@@ -2894,13 +2896,29 @@ void Reflex::configBoard (int board)
 					if ((dtemp < -12.0) || (dtemp > 12.0))
 						throw rts2core::Error ("Requested driver low level out of range (" + skey + "/LOWLEVEL" + subkey + ")");
 					if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_LOW + 3 * i), int (dtemp * 1000.0)))
-						throw rts2core::Error ("Error setting driver low level (" + subkey + ")");
+						throw rts2core::Error ("Error setting driver low level (" + skey + "/LOWLEVEL" + subkey + ")");
 					if (config->getDouble (key, ("HIGHLEVEL" + subkey).c_str (), dtemp))
 						throw rts2core::Error ("Error parsing driver high level (" + skey + "/HIGHLEVEL" + subkey + ")");
 					if ((dtemp < -12.0) || (dtemp > 12.0))
 						throw rts2core::Error ("Requested driver high level out of range (" + skey + "/HIGHLEVEL" + subkey + ")");
 					if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_HIGH + 3 * i), int (dtemp * 1000.0)))
 						throw rts2core::Error ("Error setting driver high level (" + skey + "/HIGHLEVEL" + subkey + ")");
+					if (boardBuild (BOARD_IF) >= 384)
+					{
+						if (config->getDouble (key, ("ALEVEL" + subkey).c_str (), dtemp))
+							throw ("Error parsing driver A level (" + skey + "/ALEVEL" + subkey + ")");
+						if ((dtemp < -12.0) || (dtemp > 12.0))
+							throw ("Requested driver A level out of range (" + skey + "/ALEVEL" + subkey + ")");
+						if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_A + 2 * i), int(dtemp * 1000.0)))
+							throw ("Error setting driver A level (" + skey + "/ALEVEL" + subkey + ")");
+
+						if (config->getDouble (key, ("BLEVEL" + subkey).c_str (), dtemp))
+							throw ("Error parsing driver B level (" + skey + "/BLEVEL" + subkey + ")");
+						if ((dtemp < -12.0) || (dtemp > 12.0))
+							throw ("Requested driver B level out of range (" + skey + "/BLEVEL" + subkey + ")");
+						if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_A + 2 * i), int(dtemp * 1000.0)))
+							throw ("Error setting driver B level (" + skey + "/BLEVEL" + subkey + ")");
+					}
 					if (config->getDouble (key, ("SLEWRATE" + subkey).c_str (), dtemp))
 						throw rts2core::Error ("Error parsing driver slew rate (" + skey + "/SLEWRATE" + subkey + ")");
 					if ((dtemp < 0.001) || (dtemp > 5000.0))
