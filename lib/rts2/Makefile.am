@@ -37,8 +37,6 @@ else
 librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c
 endif
 
-librts2_la_LIBADD = model/librts2model.la
-
 
 librts2users_la_SOURCES = userlogins.cpp
 

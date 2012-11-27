@@ -471,8 +471,10 @@ void ConnSerial::setDSR ()
 	ioctl (sock, TIOCMGET, &ret);
 
 	// Drop DTR
+#ifndef __CYGWIN__
 	ret &= TIOCM_LE;
 	ioctl (sock, TIOCMSET, &ret);
+#endif
 }
 
 std::string ConnSerial::getModemBits ()
@@ -483,16 +485,20 @@ std::string ConnSerial::getModemBits ()
 	{
 		throw rts2core::Error ("cannot get modem status");
 	}
+#ifndef __CYGWIN__
 	if (flags & TIOCM_LE)
 		ret += "DSR ";
+#endif
 	if (flags & TIOCM_DTR)
 		ret += "DTR ";
 	if (flags & TIOCM_RTS)
 		ret += "RTS ";
+#ifndef __CYGWIN__
 	if (flags & TIOCM_ST)
 		ret += "TXD ";
 	if (flags & TIOCM_SR)
 	 	ret += "RXD ";
+#endif
 	if (flags & TIOCM_CTS)
 		ret += "CTS ";
 	if (flags & TIOCM_CAR)
