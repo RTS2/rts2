@@ -18,6 +18,7 @@
 import json
 import iso8601
 import target
+import time
 import xml.dom.minidom
 
 QUEUE_FIFO                   = 0
@@ -62,6 +63,17 @@ class QueueEntry:
 		return self.target
 	
 	def get_xmlnode(self,document):
+		def localstr(t):
+			return time.strftime('%Y-%m-%dL%H:%M:%S %Z', time.localtime(t))
+		cm = ''
+		if self.get_start() is not None:
+			cm = ' localstart=' + localstr(self.get_start()) + ' '
+		if self.get_end() is not None:
+			cm += 'localend=' + localstr(self.get_end()) + ' '
+		cel = None
+		if cm:
+			cel = document.createComment(cm)
+
 		en = document.createElement('queueEntry')
 		en.setAttribute('id', str(self.id))
 
@@ -70,7 +82,7 @@ class QueueEntry:
 			en.setAttribute('start', iso8601.str(self.get_start()))
 		if self.get_end() is not None:
 			en.setAttribute('end', iso8601.str(self.get_end()))
-		return en
+		return (cel, en)
 	
 	def get_start(self):
 		return self.__start
@@ -163,7 +175,13 @@ class Queue:
 		node.setAttribute('remove_executed', _xmlQueueBoolAttribute(self.remove_executed))
 		node.setAttribute('queueing', str(self.queueing))
 
-		map(lambda x:node.appendChild(x.get_xmlnode(document)),self.entries)
+		def appendEntry(x):
+			cel,en = x.get_xmlnode(document)
+			if cel:
+				node.appendChild(cel)
+			node.appendChild(en)
+
+		map(lambda x:appendEntry(x), self.entries)
 
 	def from_xml(self,node):
 		"""Construct queue from XML representation."""

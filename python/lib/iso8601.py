@@ -22,6 +22,7 @@ import time
 import re
 
 def str(t):
+	"""Returns time as UT string in ISO8601 format"""
 	return time.strftime("%Y-%m-%dT%H:%M:%S",time.gmtime(t))
 
 def ctime(s):
