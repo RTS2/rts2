@@ -2916,7 +2916,7 @@ void Reflex::configBoard (int board)
 							throw ("Error parsing driver B level (" + skey + "/BLEVEL" + subkey + ")");
 						if ((dtemp < -12.0) || (dtemp > 12.0))
 							throw ("Requested driver B level out of range (" + skey + "/BLEVEL" + subkey + ")");
-						if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_A + 2 * i), int(dtemp * 1000.0)))
+						if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_B + 2 * i), int(dtemp * 1000.0)))
 							throw ("Error setting driver B level (" + skey + "/BLEVEL" + subkey + ")");
 					}
 					if (config->getDouble (key, ("SLEWRATE" + subkey).c_str (), dtemp))
