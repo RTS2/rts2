@@ -6,7 +6,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar \
 	rts2-teld-lx200gps rts2-teld-meade rts2-teld-indi
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
+LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
@@ -59,7 +59,7 @@ if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
 
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
-rts2_telmodeltest_LDADD = -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2/model -lrts2model -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_JPEG@ @LIB_CFITSIO@ @LIBXML_LIBS@ @LIB_CRYPT@
+rts2_telmodeltest_LDADD = -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_JPEG@ @LIB_CFITSIO@ @LIBXML_LIBS@ @LIB_CRYPT@
 rts2_telmodeltest_CPPFLAGS = @JPEG_CFLAGS@ @CFITSIO_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
 
 else
