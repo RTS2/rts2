@@ -1,0 +1,64 @@
+#!/usr/bin/python
+#   Log viewer, analyser
+#   (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2, or (at your option)
+#   any later version.
+#
+#   Please visit http://www.gnu.org/licenses/gpl.html for license informations.
+
+from optparse import OptionParser
+import gzip
+import glob
+import calendar
+import time
+import re
+import sys
+
+class LogFile:
+	def __init__(self, filename, device=None, output=None):
+		f = gzip.open(filename, 'r')
+		self.records=[]
+
+		tmatch = re.compile('(^.*)(\.[0-9]*)$')
+
+		l = f.readline()
+		lt = time.time()
+		while l:
+			l = l.rstrip().split()
+			t, s = tmatch.match(l[0]).groups()
+			r = [calendar.timegm(time.strptime(t, '%Y-%m-%dT%H:%M:%S')) + float(s), l[2], l[3], ' '.join(l[4:])]
+			if device is None or r[1] in device:
+				if output:
+					print self.print_r(r)
+				self.records.append(r)
+			lt = time.time()
+			l = f.readline()
+
+		print 'done LogFile', lt, time.time()-lt
+
+	def print_r(self, r):
+		return ' '.join((time.strftime('%x %X', time.localtime(r[0])), r[1], r[2], r[3]))
+
+	def filter_device(self, device):
+		"""Filter from log lines with given device."""
+		for r in self.records:
+			if r[1] == device:
+				print_r(r)
+
+parser = OptionParser(usage="""rts2-log [--device <device name>] ..
+
+Filter log file.
+""")
+
+parser.add_option('--device', help='specify device name to list', action='append', dest='device', default=None)
+
+(options,args)=parser.parse_args()
+
+for f in glob.glob('/var/log/rts2-debug.9.gz'):
+	print f
+	LogFile(f, device=options.device, output=sys.stdout)
+
+print 'done'
