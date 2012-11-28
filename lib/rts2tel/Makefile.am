@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = librts2model.la
 
-AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../../include
+AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
-librts2model_la_SOURCES = teld.cpp telmodel.cpp modelterm.cpp
+librts2model_la_SOURCES = teld.cpp telmodel.cpp modelterm.cpp fork.cpp gem.cpp
