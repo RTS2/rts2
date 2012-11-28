@@ -20,6 +20,10 @@
 #include "sensord.h"
 
 #include <Windows.h>
+
+#define DLLIMPORT __declspec(dllimport)
+#define STDCALL __stdcall
+
 #include <AerSys.h>
 
 #define AX_SCALE1 50000
