@@ -834,7 +834,6 @@ AC_OUTPUT([Makefile
 	   lib/Makefile
 	   lib/xmlrpc++/Makefile
 	   lib/rts2/Makefile
-	   lib/rts2/model/Makefile
 	   lib/rts2/vermes/Makefile
 	   lib/rts2fits/Makefile
 	   lib/rts2db/Makefile
@@ -842,6 +841,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2script/Makefile
 	   lib/rts2scheduler/Makefile
 	   lib/rts2json/Makefile
+	   lib/rts2tel/Makefile
 	   lib/libindi/Makefile 
 	   python/Makefile
 	   python/lib/Makefile
