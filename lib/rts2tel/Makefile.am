@@ -1,4 +1,4 @@
-lib_LTLIBRARIES = librts2model.la
+lib_LTLIBRARIES = librts2tel.la
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
