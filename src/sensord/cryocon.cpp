@@ -264,7 +264,7 @@ Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	{
 		chans[i] = new ValueTempInput (this, 'A' + i);
 		std::ostringstream tsn;
-		tsn << ('A' + i) << ".timeserie";
+		tsn << char ('A' + i) << ".timeserie";
 		createValue (ts[i], tsn.str ().c_str (), "temperature trending", false); 
 	}
 
