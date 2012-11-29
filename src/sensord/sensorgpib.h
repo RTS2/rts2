@@ -59,6 +59,8 @@ class Gpib:public Sensor
 
 		void readInt (const char *buf, int &val) { connGpib->readInt (buf, val); }
 
+		void readDouble (const char *buf, double &val) { connGpib->readDouble (buf, val); }
+
 		void readValue (const char *buf, rts2core::Value *val) { connGpib->readValue (buf, val); }
 
 		void readValue (const char *subsystem, std::list < rts2core::Value * >&vals, int prefix_num) { connGpib->readValue (subsystem, vals, prefix_num); }

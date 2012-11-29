@@ -34,6 +34,17 @@ void ConnGpib::readInt (const char *buf, int &val)
 	val = atol (rb);
 }
 
+void ConnGpib::readDouble (const char *buf, double &val)
+{
+	char rb[50];
+	gpibWriteRead (buf,rb, 50);
+	char *sep = strchr (rb, '\n');
+	if (sep)
+		*sep = '\0';
+	val = atof (rb);
+}
+
+
 void ConnGpib::readValue (const char *buf, rts2core::Value * val)
 {
 	switch (val->getValueType ())

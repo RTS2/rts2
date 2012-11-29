@@ -21,6 +21,8 @@
 
 #include "error.h"
 
+#define EVENT_TIMESERIE_COLLECT   RTS2_LOCAL_EVENT + 1002
+
 namespace rts2sensord
 {
 
@@ -99,11 +101,15 @@ class Cryocon:public Gpib
 			delete[] n;
 		}
 
-		virtual int info ();
+		virtual void postEvent (rts2core::Event *event);
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
+		virtual int initHardware ();
+
+		virtual int info ();
+
 		virtual int setValue (rts2core::Value * oldValue, rts2core::Value * newValue);
 
 	private:
@@ -120,6 +126,8 @@ class Cryocon:public Gpib
 		rts2core::ValueFloat *htrread;
 		rts2core::ValueFloat *htrhst;
 		rts2core::ValueBool *heaterEnabled;
+
+		rts2core::ValueDoubleTimeserie *ts[4];
 };
 
 };
@@ -255,6 +263,9 @@ Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	for (i = 0; i < 4; i++)
 	{
 		chans[i] = new ValueTempInput (this, 'A' + i);
+		std::ostringstream tsn;
+		tsn << ('A' + i) << ".timeserie";
+		createValue (ts[i], tsn.str ().c_str (), "temperature trending", false); 
 	}
 
 	for (i = 0; i < 2; i++)
@@ -291,6 +302,38 @@ void Cryocon::createTempInputValue (rts2core::ValueDouble ** val, char chan, con
 	createValue (*val, n, d, true);
 	delete[]n;
 	delete[]d;
+}
+
+void Cryocon::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TIMESERIE_COLLECT:
+			for (int i = 0; i < 4; i++)
+			{
+				std::ostringstream os;
+				os << "INPUT " << chans[i]->getChannel () << ":TEMP?";
+				double v;
+				readDouble (os.str ().c_str (), v);
+				ts[i]->addValue (v, getNow (), 20);
+				ts[i]->calculate ();
+				sendValueAll (ts[i]);
+			}
+
+			addTimer (5, event);
+			return;
+	}
+	Gpib::postEvent (event);
+}
+
+int Cryocon::initHardware ()
+{
+	int ret;
+	ret = Gpib::initHardware ();
+	if (ret)
+		return ret;
+	addTimer (1, new rts2core::Event (EVENT_TIMESERIE_COLLECT));
+	return 0;
 }
 
 int Cryocon::info ()

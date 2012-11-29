@@ -88,6 +88,8 @@ class ConnGpib
 
 		void readInt (const char *buf, int &val);
 
+		void readDouble (const char *buf, double &val);
+
 		/**
 		 * Read value from GPIB bus.
 		 */
