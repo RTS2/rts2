@@ -660,6 +660,9 @@ Value * Daemon::duplicateValue (Value * old_value, bool withVal)
 			}
 			if (dup_val)
 				break;
+		case RTS2_VALUE_TIMESERIE:
+			dup_val = new ValueDoubleTimeserie (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
+			break;
 		default:
 			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->getValueExtType () << sendLog;
 			return NULL;

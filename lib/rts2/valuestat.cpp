@@ -45,16 +45,14 @@ void ValueDoubleStat::calculate ()
 	max = *(--sorted.end ());
 	numMes = valueList.size ();
 	double sum = 0;
-	for (std::deque < double >::iterator iter = sorted.begin ();
-		iter != sorted.end (); iter++)
+	for (std::deque < double >::iterator iter = sorted.begin (); iter != sorted.end (); iter++)
 	{
 		sum += (*iter);
 	}
 	setValueDouble (sum / numMes);
 	// calculate stdev
 	stdev = 0;
-	for (std::deque < double >::iterator iter = sorted.begin ();
-		iter != sorted.end (); iter++)
+	for (std::deque < double >::iterator iter = sorted.begin (); iter != sorted.end (); iter++)
 	{
 		sum = *iter - getValueDouble ();
 		sum *= sum;
@@ -122,5 +120,133 @@ void ValueDoubleStat::setFromValue (Value * newValue)
 		max = ((ValueDoubleStat *) newValue)->getMax ();
 		stdev = ((ValueDoubleStat *) newValue)->getStdev ();
 		valueList = ((ValueDoubleStat *) newValue)->getMesList ();
+	}
+}
+
+void ValueDoubleTimeserie::clearStat ()
+{
+	numMes = 0;
+	mode = NAN;
+	min = NAN;
+	max = NAN;
+	stdev = NAN;
+	alpha = NAN;
+	beta = NAN;
+	valueList.clear ();
+	changed ();
+}
+
+void ValueDoubleTimeserie::calculate ()
+{
+	if (valueList.size () == 0)
+		return;
+	std::deque < std::pair <double, double> > sorted = valueList;
+	std::sort (sorted.begin (), sorted.end ());
+	min = sorted.begin ()->first;
+	max = (--sorted.end ())->first;
+	numMes = valueList.size ();
+	double sum = 0;
+	double sum2 = 0;
+	for (std::deque < std::pair <double, double> >::iterator iter = sorted.begin (); iter != sorted.end (); iter++)
+	{
+		sum += iter->first;
+		sum2 += iter->second;
+	}
+	setValueDouble (sum / numMes);
+
+	alpha = 0;
+	beta = 0;
+
+	sum2 /= numMes;
+
+	double std = 0;
+	double alpha2 = 0;
+	double sx = 0;
+
+	// calculate stdev, alpha, beta
+	stdev = 0;
+	for (std::deque < std::pair <double, double> >::iterator iter = sorted.begin (); iter != sorted.end (); iter++)
+	{
+		std = iter->first - getValueDouble ();
+		std *= std;
+		stdev += std;
+
+		double x = (iter->second - sum2);
+		sx += x;
+		alpha += x * iter->first;
+		alpha2 += x * x;
+	}
+	stdev = sqrt (stdev / numMes);
+
+	beta = (alpha - sx * sum / numMes) / (alpha2 - sx * sx / numMes);
+	// transform alpha to median value of X
+	alpha = (sum - beta * alpha) / numMes;
+
+	if ((numMes % 2) == 1)
+		mode = sorted[numMes / 2].first;
+	else
+		mode = (sorted[numMes / 2 - 1].first + sorted[numMes / 2].first) / 2.0;
+	changed ();
+}
+
+ValueDoubleTimeserie::ValueDoubleTimeserie (std::string in_val_name):ValueDouble (in_val_name)
+{
+	clearStat ();
+	rts2Type |= RTS2_VALUE_TIMESERIE | RTS2_VALUE_DOUBLE;
+}
+
+ValueDoubleTimeserie::ValueDoubleTimeserie (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):ValueDouble (in_val_name, in_description, writeToFits,flags)
+{
+	clearStat ();
+	rts2Type |= RTS2_VALUE_TIMESERIE | RTS2_VALUE_DOUBLE;
+}
+
+int ValueDoubleTimeserie::setValue (Connection * connection)
+{
+	if (connection->paramNextDouble (&value)
+		|| connection->paramNextInteger (&numMes)
+		|| connection->paramNextDouble (&mode)
+		|| connection->paramNextDouble (&min)
+		|| connection->paramNextDouble (&max)
+		|| connection->paramNextDouble (&stdev)
+		|| connection->paramNextDouble (&alpha)
+		|| connection->paramNextDouble (&beta)
+		|| !connection->paramEnd ())
+		return -2;
+	return 0;
+}
+
+const char * ValueDoubleTimeserie::getValue ()
+{
+	sprintf (buf, "%.20le %i %.20le %.20le %.20le %.20le %.20le %.20le", value, numMes, mode, min, max, stdev, alpha, beta);
+	return buf;
+}
+
+const char * ValueDoubleTimeserie::getDisplayValue ()
+{
+	sprintf (buf, "%f %i %f %f %f %f %f %f", getValueDouble (), numMes, mode, min, max, stdev, alpha, beta);
+	return buf;
+}
+
+void ValueDoubleTimeserie::send (Connection * connection)
+{
+	if (numMes != (int) valueList.size ())
+		calculate ();
+	ValueDouble::send (connection);
+}
+
+void ValueDoubleTimeserie::setFromValue (Value * newValue)
+{
+	ValueDouble::setFromValue (newValue);
+	if (newValue->getValueType () == (RTS2_VALUE_TIMESERIE | RTS2_VALUE_DOUBLE))
+	{
+		numMes = ((ValueDoubleTimeserie *) newValue)->getNumMes ();
+		mode = ((ValueDoubleTimeserie *) newValue)->getMode ();
+		min = ((ValueDoubleTimeserie *) newValue)->getMin ();
+		max = ((ValueDoubleTimeserie *) newValue)->getMax ();
+		stdev = ((ValueDoubleTimeserie *) newValue)->getStdev ();
+		alpha = ((ValueDoubleTimeserie *) newValue)->getAlpha ();
+		beta = ((ValueDoubleTimeserie *) newValue)->getBeta ();
+		valueList = ((ValueDoubleTimeserie *) newValue)->getMesList ();
 	}
 }

@@ -2028,6 +2028,9 @@ int Connection::metaInfo (int rts2Type, std::string m_name, std::string desc)
 					exit (10);
 			}
 			break;
+		case RTS2_VALUE_TIMESERIE:
+			new_value = new ValueDoubleTimeserie (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			break;
 		default:
 			logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type << sendLog;
 			return -2;

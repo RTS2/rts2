@@ -127,6 +127,12 @@
 #define RTS2_VALUE_ARRAY              0x00000040
 
 /**
+ * Timeserie (value + statistic).
+ * @ingroup RTS2Value
+ */
+#define RTS2_VALUE_TIMESERIE          0x00000070
+
+/**
  * Base type mask.
  * @ingroup RTS2Value
  */

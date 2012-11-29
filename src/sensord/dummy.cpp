@@ -66,7 +66,8 @@ class Dummy:public SensorWeather
 
 			createValue (timeArray, "times", "tests of time array", true, RTS2_VALUE_WRITABLE);
 
-			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
+			createValue (statTest5, "test_stat_5", "test statiscal value", true);
+			createValue (timeserieTest6, "test_timeserie_6", "test timeserie value (with trending)", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
 			createValue (hwError, "hw_error", "device current hardware error", false, RTS2_VALUE_WRITABLE);
 
@@ -140,6 +141,7 @@ class Dummy:public SensorWeather
 			if (conn->isCommand ("add"))
 			{
 				double aval;
+				double now = getNow ();
 				if (conn->paramNextDouble (&aval) || !conn->paramEnd ())
 					return -2;
 				statTest->addValue (aval);
@@ -151,7 +153,9 @@ class Dummy:public SensorWeather
 
 				statTest5->addValue (aval, 5);
 				statTest5->calculate ();
-				timeArray->addValue (getNow ());
+				timeserieTest6->addValue (aval, now);
+				timeserieTest6->calculate ();
+				timeArray->addValue (now);
 
 				infoAll ();
 				return 0;
@@ -176,6 +180,7 @@ class Dummy:public SensorWeather
 		rts2core::BoolArray *boolArray;
 		rts2core::TimeArray *timeArray;
 		rts2core::ValueDoubleStat *statTest5;
+		rts2core::ValueDoubleTimeserie *timeserieTest6;
 		rts2core::ValueDoubleMinMax *minMaxTest;
 		rts2core::ValueBool *hwError;
 
