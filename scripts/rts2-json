@@ -10,45 +10,52 @@ import rts2.json
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
-parser.add_option('--user',help='RTS2 web server username',action='store',dest='user',default=None)
-parser.add_option('--password',help='password for web user',action='store',dest='password',default=None)
-parser.add_option('--verbose',help='print in/out communication',action='store_true',dest='verbose',default=False)
-parser.add_option('--good-weather-and-on',help='return 1 if system is in good weather and on, ready to observe',action='store_true',dest='gw_on',default=False)
-parser.add_option('-G',help='get value from JSON server',action='append',dest='get_array')
-parser.add_option('--get-int',help='get value from JSON server as integer value',action='append',dest='get_int_array')
-parser.add_option('--cmd',help='run command. Device must be specified with --device option',action='append',dest='cmd_array')
-parser.add_option('--run-script',help='run script on device. Device must be specified with --device option',action='store',dest='runscript')
-parser.add_option('--kill-script',help='attempt to kill running script',action='store_true',dest='kill_script',default=False)
-parser.add_option('--device',help='device for cmd and run-script options',action='store',dest='device')
-parser.add_option('--url',help='load and parse given URL. String after first ? is regarded as parameter and is escaped',action='append',dest='urls')
+parser.add_option('--server', help='URL to RTS2 XML-RPC server', action='store', dest='server', default='http://localhost:8889')
+parser.add_option('--user', help='RTS2 web server username', action='store', dest='user', default=None)
+parser.add_option('--password', help='password for web user', action='store', dest='password', default=None)
+parser.add_option('--verbose', help='print in/out communication', action='store_true', dest='verbose', default=False)
+parser.add_option('--good-weather-and-on', help='return 1 if system is in good weather and on, ready to observe', action='store_true', dest='gw_on', default=False)
+parser.add_option('-G', help='get value from JSON server', action='append', dest='get_array')
+parser.add_option('--get-int', help='get value from JSON server as integer value', action='append', dest='get_int_array')
+parser.add_option('--cmd', help='run command. Device must be specified with --device option', action='append', dest='cmd_array')
+parser.add_option('--run-script', help='run script on device. Device must be specified with --device option', action='store', dest='runscript')
+parser.add_option('--kill-script', help='attempt to kill currently running script', action='store_true', dest='kill_script', default=False)
+parser.add_option('--list-minmax', help='list miminal/maximal values', action='store_true', dest='list_minmax', default=False)
+parser.add_option('--device', help='device for cmd and run-script options', action='store', dest='device')
+parser.add_option('--url', help='load and parse given URL. String after first ? is regarded as parameter and is escaped', action='append', dest='urls')
 
-parser.add_option('--push',help='print value on its updates',action='store_true',dest='push',default=False)
+parser.add_option('--push', help='print value on its updates', action='store_true', dest='push', default=False)
 
 (options,args)=parser.parse_args()
 
-j = rts2.json.JSONProxy(options.server,options.user,options.password,verbose=options.verbose)
+j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+
+if (options.runscript or options.list_minmax) and not (options.device):
+	print >>sys.stderr,'--device argument must be specified with --cmd option'
+	sys.exit(1)
 
 try:
 	if options.get_array:
 		for g in options.get_array:
 			device,value = g.split('.')
-			print j.getValue(device,value,refresh_not_found=True)
+			print j.getValue(device, value, refresh_not_found=True)
 	if options.get_int_array:
 		for g in options.get_int_array:
 			device,value = g.split('.')
-			print int(j.getValue(device,value,refresh_not_found=True))
+			print int(j.getValue(device, value, refresh_not_found=True))
 	if options.cmd_array:
 		if not (options.device):
 			print >>sys.stderr,'--device argument must be specified with --cmd option'
 			sys.exit(1)
 		for g in options.cmd_array:
-			print 'executing command ',g,':',j.loadJson('/api/cmd',{'d':options.device,'c':g})
+			print 'executing command ', g, ':', j.loadJson('/api/cmd', {'d':options.device, 'c':g})
+	if options.list_minmax:
+		for v in j.getDevice(options.device, refresh_not_found=True):
+			if j.getVariable(options.device, v)[0] & rts2.json.RTS2_VALUE_MMAX:
+				print '{0}.min ='.format(v)
+				print '{0}.max ='.format(v)
 	if options.runscript:
-		if not (options.device):
-			print >>sys.stderr,'--device argument must be specified with --run-script option'
-			sys.exit(1)
-		print 'running script',options.runscript,j.loadJson('/api/runscript',{'d':options.device,'s':options.runscript,'kill': 1 if options.kill_script else 0})
+		print 'running script', options.runscript, j.loadJson('/api/runscript', {'d':options.device, 's':options.runscript, 'kill': 1 if options.kill_script else 0})
 
 	if options.urls:
 		for u in options.urls:
