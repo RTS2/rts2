@@ -1029,7 +1029,7 @@ long EdtSao::isExposing ()
 	if ((!overrun && shutter) || overrun)
 		return 100;
 	pdv_serial_wait (pd, 100, 4);
-	usleep (shutterDelay->getValueFloat () * USEC_SEC);
+	usleep (shutterDelay->getValueFloat () * 1000);
 //	writeBinFile ("e2v_unfreezesc.bin");
 	return -2;
 }
@@ -1238,7 +1238,7 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('6', NULL, 0, "sixteen channel readout electronics");
 	addOption (OPT_SIGNALFILE, "signalfile", 1, "default signal file");
 
-	createValue (shutterDelay, "SHUTDEL", "[s] delay before readout (after closing shutter)", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (shutterDelay, "SHUTDEL", "[ms] delay before readout (after closing shutter)", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	shutterDelay->setValueFloat (0);
 
 	createValue (edtGain, "GAIN", "gain (high or low)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
