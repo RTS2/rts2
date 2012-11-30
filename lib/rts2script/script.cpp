@@ -643,6 +643,13 @@ Element *Script::parseBuf (Rts2Target * target)
 			return NULL;
 		return new Execute (this, getMaster (), exe, target);
 	}
+	else if (!strcmp (commandStart, COMMAND_COMMAND))
+	{
+		char *cmd;
+		if (getNextParamString (&cmd))
+			return NULL;
+		return new ElementCommand (this, cmd);
+	}
 
 	// setValue fallback
 	else if (strchr (commandStart, '='))

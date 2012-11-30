@@ -967,6 +967,19 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 		}
 		return interfaceCommand (">A\r", s, 3000, true);
 	}
+	else if (conn->isCommand ("apply_all"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		for (int i=1; i < 8; i++)
+		{
+			char cmd[5] = ">Bx\r";
+			cmd[2] = i + '0';
+			if (int ret = interfaceCommand (cmd, s, 3000, true))
+				return ret;
+		}
+		return 0;
+	}
 	return Camera::commandAuthorized (conn);
 }
 

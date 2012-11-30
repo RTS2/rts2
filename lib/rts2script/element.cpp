@@ -475,3 +475,10 @@ int ElementComment::defnextCommand (rts2core::DevClient * client, rts2core::Comm
 	getDevice (new_device);
 	return 0;
 }
+
+int ElementCommand::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	*new_command = new rts2core::Command (script->getMaster (), cmd.c_str ());
+	getDevice (new_device);
+	return 0;
+}

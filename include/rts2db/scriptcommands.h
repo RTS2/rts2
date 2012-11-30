@@ -48,6 +48,7 @@
 #define COMMAND_SLEEP           "sleep"
 #define COMMAND_WAIT_FOR_IDLE   "wait_idle"
 #define COMMAND_EXE             "exe"
+#define COMMAND_COMMAND         "cmd"
 
 // hex pattern
 #define COMMAND_HEX             "hex"

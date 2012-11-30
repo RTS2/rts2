@@ -411,5 +411,23 @@ class ElementComment:public Element
 		int cnum;
 };
 
+/**
+ * Execute arbitary command on device.
+ */
+class ElementCommand:public Element
+{
+	public:
+		ElementCommand (Script * _script, const char *_cmd):Element (_script) { cmd = std::string (_cmd); };
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "command " << cmd; }
+		virtual void printXml (std::ostream &os) { os << "  <cmd command='" << cmd << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_COMMAND " " << cmd; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_COMMAND << "\",\"command\":\"" << cmd << "\""; }
+	private:
+		std::string cmd;
+};
+
+
 }
 #endif							 /* !__RTS2_SCRIPTELEMENT__ */
