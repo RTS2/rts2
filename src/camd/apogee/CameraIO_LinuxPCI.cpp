@@ -120,16 +120,15 @@ GetPriorityClass (HANDLE hProcess)
 int
 SetPriorityClass (HANDLE hProcess, int hPriority)
 {
-	int i;
 	sched_param p;
 
 	if (hPriority)
 	{
-		i = sched_setscheduler (0, SCHED_RR, &p);
+		sched_setscheduler (0, SCHED_RR, &p);
 	}
 	else
 	{
-		i = sched_setscheduler (0, SCHED_OTHER, &p);
+		sched_setscheduler (0, SCHED_OTHER, &p);
 	}
 	return 1;
 }
@@ -138,9 +137,9 @@ SetPriorityClass (HANDLE hProcess, int hPriority)
 void
 Sleep (int hTime)
 {
-	timespec t;
-	t.tv_sec = 0;
-	t.tv_nsec = hTime * 1000000;
+	//timespec t;
+	//t.tv_sec = 0;
+	//t.tv_nsec = hTime * 1000000;
 	//    nanosleep(&t);
 }
 
@@ -555,13 +554,7 @@ CCameraIO::BufferImage (char *bufferName)
 {
 	unsigned short *pImageData;
 	bool status;
-	short cols, rows, hbin, vbin;
 	short xSize, ySize;
-
-	cols = m_NumX * m_BinX;
-	rows = m_NumY * m_BinY;
-	hbin = m_BinX;
-	vbin = m_BinY;
 
 	pImageData = NULL;			 //(unsigned short *)CCD_locate_buffer(bufferName, 2 , cols, rows, hbin, vbin );
 	if (pImageData == NULL)
@@ -861,7 +854,7 @@ int nblock)
 {
 	unsigned short *pImageData, *ptr;
 	int irow;
-	short cols, rows, hbin, vbin;
+	//short cols, rows, hbin, vbin;
 	struct timespec tdrift;
 	struct timeval now1, now2;
 	struct timezone zone;
@@ -869,10 +862,10 @@ int nblock)
 	long waitfor, diff;
 	int iblock;
 
-	cols = m_NumX * m_BinX;
-	rows = rowCount;
-	hbin = m_BinX;
-	vbin = 1;
+	//cols = m_NumX * m_BinX;
+	//rows = rowCount;
+	//hbin = m_BinX;
+	//vbin = 1;
 
 	pImageData = NULL;			 //(unsigned short *)CCD_locate_buffer(bufferName, 2 , cols, rows, hbin, vbin );
 	if (pImageData == NULL)
@@ -1762,7 +1755,6 @@ CCameraIO::InitDriver (unsigned short camnum)
 long
 CCameraIO::Write (unsigned short reg, unsigned short val)
 {
-	int status;
 	unsigned short RegNumber;
 	struct apIOparam request;
 
@@ -1798,7 +1790,7 @@ CCameraIO::Write (unsigned short reg, unsigned short val)
 	}
 	request.reg = RegNumber;
 	request.param1 = (int) val;
-	status = ioctl (fileHandle, APPCI_WRITE_USHORT, (unsigned long) &request);
+	ioctl (fileHandle, APPCI_WRITE_USHORT, (unsigned long) &request);
 	return 0;
 }
 
@@ -1806,7 +1798,7 @@ CCameraIO::Write (unsigned short reg, unsigned short val)
 long
 CCameraIO::Read (unsigned short reg, unsigned short &val)
 {
-	int retval, status;
+	int retval;
 	struct apIOparam request;
 	unsigned short RegNumber;
 
@@ -1856,7 +1848,7 @@ CCameraIO::Read (unsigned short reg, unsigned short &val)
 
 	request.reg = RegNumber;
 	request.param1 = (unsigned long) &retval;
-	status = ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
+	ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
 	val = (unsigned short) retval;
 	return 0;
 }
@@ -1868,7 +1860,7 @@ CCameraIO::ReadLine (long SkipPixels, long Pixels,
 unsigned short *pLineBuffer)
 {
 	int j;
-	int retval, status;
+	int retval;
 	struct apIOparam request;
 
 	if (!m_TDI)
@@ -1890,13 +1882,11 @@ unsigned short *pLineBuffer)
 
 	for (j = 0; j < SkipPixels; j++)
 	{
-		status =
-			ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
+		ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
 	}
 	for (j = 0; j < Pixels; j++)
 	{
-		status =
-			ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
+		ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
 		*pLineBuffer++ = (unsigned short) retval;
 	}
 	/////////////////////////////////////
@@ -1970,7 +1960,7 @@ CCameraIO::InternalReadLine (bool KeepData, long SkipC, long XEnd,
 unsigned short *pLineBuffer)
 {
 	struct apIOparam request;
-	int retval, status;
+	int retval;
 
 	/////////////////////////////////////
 	// Clock out the line
@@ -1987,22 +1977,20 @@ unsigned short *pLineBuffer)
 	request.param1 = (unsigned long) &retval;
 
 	for (long j = 0; j < SkipC; j++)
-		status = ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
+		ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
 
 	if (KeepData)
 	{
 		for (long j = 0; j < XEnd; j++)
 		{
-			status =
-				ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
+			ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
 			*pLineBuffer++ = (unsigned short) retval;
 		}
 	}
 	else
 	{
 		for (long j = 0; j < XEnd; j++)
-			status =
-				ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
+			ioctl (fileHandle, APPCI_READ_USHORT, (unsigned long) &request);
 	}
 
 	/////////////////////////////////////
