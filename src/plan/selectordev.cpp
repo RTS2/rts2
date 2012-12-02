@@ -690,6 +690,29 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		}
 		return 0;
 	}
+	else if (conn->isCommand ("remove"))
+	{
+		int index;
+		if (conn->paramNextString (&name) || conn->paramNextInteger (&index) || !conn->paramEnd ())
+			return -2;
+		// try to find queue with name..
+		rts2plan::Queues::iterator qi = findQueue (name);
+		if (qi == queues.end ())
+			return -2;
+		rts2plan::ExecutorQueue * q = &(*qi);
+		try
+		{
+			if (q->removeIndex (index))
+				return -2;
+			afterQueueChange (q);
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << er << sendLog;
+			return -2;
+		}
+		return 0;
+	}
 	else if (conn->isCommand ("now") || conn->isCommand ("now_once"))
 	{
 		int tar_id;

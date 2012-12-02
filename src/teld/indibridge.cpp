@@ -192,9 +192,7 @@ INDIBridge::set_move_timeout (time_t plus_time)
 int
 INDIBridge::startResync ()
 {
-	int ret ;
-
-	ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
+	tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 	move_state = MOVE_REAL;
 	set_move_timeout (100);
 	lastMoveRa = getTelTargetRa ();
@@ -308,7 +306,6 @@ INDIBridge::init ()
 int
 INDIBridge::initValues ()
 {
-	int result ;
 	pthread_t  thread_0;
 
 	indi_ra =0. ;
@@ -325,7 +322,7 @@ INDIBridge::initValues ()
 
 	telFlip->setValueInteger (0);
 
-	result = pthread_create( &thread_0, NULL, rts2listenINDIthread, indidevice) ;
+	pthread_create( &thread_0, NULL, rts2listenINDIthread, indidevice) ;
 	return Telescope::initValues ();
 }
 

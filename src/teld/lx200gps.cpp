@@ -258,12 +258,10 @@ void LX200::set_move_timeout (time_t plus_time)
 
 int LX200::startResync ()
 {
-	int ret;
-
 	if ((getState () & TEL_PARKED) || (getState () & TEL_PARKING))
 		serConn->writePort (":PO#", 4);
 
-	ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
+	tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 
 	set_move_timeout (100);
 	return 0;

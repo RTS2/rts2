@@ -553,20 +553,22 @@ int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 
 int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int index, int plan_id, bool hard)
 {
-	ExecutorQueue::iterator iter;
-	if (index < 0)
-	{
-		iter = end ();
-		for (int i = index; i < -1 && iter != begin (); i++)
-			iter--;
-	}
+	insert (findIndex (index), QueuedTarget (nt, t_start, t_end, plan_id, hard));
+	updateVals ();
+	return 0;
+}
+
+int ExecutorQueue::removeIndex (int index)
+{
+	ExecutorQueue::iterator iter = findIndex (index);
+	if (iter == end ())
+		return -1;
+	
+	if (iter->target != currentTarget)
+		delete iter->target;
 	else
-	{
-		iter = begin ();
-		for (int i = index; i > 0 && iter != end (); i--)
-			iter++;
-	}
-	insert (iter, QueuedTarget (nt, t_start, t_end, plan_id, hard));
+		currentTarget = NULL;
+	erase (findIndex (index));
 	updateVals ();
 	return 0;
 }
@@ -945,4 +947,22 @@ ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &ite
 	else
 		currentTarget = NULL;
 	return erase (iter);
+}
+
+ExecutorQueue::iterator ExecutorQueue::findIndex (int index)
+{
+	ExecutorQueue::iterator iter;
+	if (index < 0)
+	{
+		iter = end ();
+		for (int i = index; i < -1 && iter != begin (); i++)
+			iter--;
+	}
+	else
+	{
+		iter = begin ();
+		for (int i = index; i > 0 && iter != end (); i--)
+			iter++;
+	}
+	return iter;
 }
