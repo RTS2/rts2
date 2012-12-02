@@ -102,6 +102,8 @@ class NMonitor:public rts2core::Client
 
 		virtual int deleteConnection (rts2core::Connection * conn);
 
+		virtual void deleteClient (int p_centraldId);
+
 		virtual void message (rts2core::Message & msg);
 
 		void resize ();

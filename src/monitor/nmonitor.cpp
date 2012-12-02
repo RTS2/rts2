@@ -600,6 +600,12 @@ int NMonitor::deleteConnection (rts2core::Connection * conn)
 	return ret;
 }
 
+void NMonitor::deleteClient (int p_centraldId)
+{
+	rts2core::Client::deleteClient (p_centraldId);
+	repaint ();
+}
+
 void NMonitor::message (rts2core::Message & msg)
 {
 	*msgwindow << msg;

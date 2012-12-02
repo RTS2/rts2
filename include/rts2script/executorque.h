@@ -255,6 +255,11 @@ class ExecutorQueue:public TargetQueue
 		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int index = -1, int plan_id = -1, bool hard = false);
 
 		/**
+		 * Remove entry with given index from the queue.
+		 */
+		int removeIndex (int index);
+
+		/**
 		 * Add target to the first possible position.
 		 */
 		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = NAN, double t_end = NAN, int plan_id = -1, bool hard = false);
@@ -364,6 +369,9 @@ class ExecutorQueue:public TargetQueue
 
 		// remove target with debug entry why it was removed from the queue
 		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const int reason);
+
+		// find target with given index
+		ExecutorQueue::iterator findIndex (int index);
 
 		rts2db::Target *currentTarget;
 

@@ -278,6 +278,8 @@ class DataAbstractWrite
 {
 	public:
 		DataAbstractWrite () {}
+		virtual ~DataAbstractWrite () {}
+
 		virtual size_t getDataSize () = 0;
 		virtual size_t getChannelSize (int chan) = 0;
 

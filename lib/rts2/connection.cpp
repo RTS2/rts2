@@ -1186,6 +1186,15 @@ int Connection::command ()
 		setCommandInProgress (false);
 		return -1;
 	}
+	else if (isCommand ("delete_device"))
+	{
+		int p_centrald_num;
+		char *p_name;
+		if (paramNextInteger (&p_centrald_num) || paramNextString (&p_name) || !paramEnd ())
+			return -2;
+		master->deleteAddress (p_centrald_num, p_name);
+		return -1;
+	}
 	else if (isCommand ("client"))
 	{
 		int p_centraldId;
@@ -1198,6 +1207,14 @@ int Connection::command ()
 			return -2;
 		master->addClient (p_centraldId, p_login, p_name);
 		setCommandInProgress (false);
+		return -1;
+	}
+	else if (isCommand ("delete_client"))
+	{
+		int p_centraldId;
+		if (paramNextInteger (&p_centraldId) || !paramEnd ())
+			return -2;
+		master->deleteClient (p_centraldId);
 		return -1;
 	}
 	else if (isCommand ("status_info"))

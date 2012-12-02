@@ -40,6 +40,7 @@ class ConnUser
 		int update (int in_centralId, const char *new_login, const char *new_name);
 
 		const char *getName () { return name.c_str (); }
+		int getCentraldId () { return centralId; }
 
 	private:
 		int centralId;

@@ -765,6 +765,19 @@ int Block::addClient (ConnUser * in_user)
 	return 0;
 }
 
+void Block::deleteClient (int p_centraldId)
+{
+	std::list < ConnUser * >::iterator user_iter;
+	for (user_iter = blockUsers.begin (); user_iter != blockUsers.end (); user_iter++)
+	{
+		if ((*user_iter)->getCentraldId () == p_centraldId)
+		{
+			blockUsers.erase (user_iter);
+			return;
+		}
+	}
+}
+
 Connection * Block::getOpenConnection (const char *deviceName)
 {
 	connections_t::iterator iter;

@@ -600,11 +600,24 @@ void Centrald::connectionRemoved (rts2core::Connection * conn)
 	stopChanged (conn->getName (), "connection removed");
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
-	connections_t::iterator iter;
 	// and make sure we aren't the last who block status info
-	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+	for (connections_t::iterator iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		(*iter)->updateStatusWait (NULL);
+		std::ostringstream os;
+		switch (conn->getType ())
+		{
+			case CLIENT_SERVER:
+				os << "delete_client " << conn->getCentraldId ();
+				(*iter)->sendMsg (os.str ());
+				break;
+			case DEVICE_SERVER:
+				os << "delete_device " << conn->getCentraldId () << " " << conn->getName ();
+				(*iter)->sendMsg (os.str ());
+				break;
+			default:
+				break;
+		}
 	}
 }
 

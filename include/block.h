@@ -458,6 +458,8 @@ class Block: public App
 		void addClient (int p_centraldId, const char *p_login, const char *p_name);
 		int addClient (ConnUser * in_user);
 
+		virtual void deleteClient (int p_centraldId);
+
 		/**
 		 * Return established connection to device with given name.
 		 *
