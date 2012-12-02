@@ -135,7 +135,7 @@ void jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os)
 	os << "\"" << value->getName () << "\":";
 	if (extended)
 		os << "[" << value->getFlags () << ",";
-  	if (value->getValueExtType() & RTS2_VALUE_ARRAY)
+  	if (value->getValueExtType() == RTS2_VALUE_ARRAY)
 	{
 	  	sendArrayValue (value, os);
 	}
