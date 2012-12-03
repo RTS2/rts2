@@ -36,6 +36,8 @@ set xpa=0
 
 set defoc_toffs=0
 
+set lastamp=0
+
 if ( ! (${?autog}) ) set autog='UNKNOWN'
 
 <xsl:copy-of select='$printd'/> "script running"
@@ -102,7 +104,7 @@ endif
 		@ retr --
 		sleep 20
 	end
-	@ nextautog = $nowdate + 1200
+	@ nextautog = $nowdate + 7200
 	@ guideon = $nowdate + 60
 	set guide_seg=`$xmlrpc --quiet -G TELE.guide_seg`
 	if ( $retr &gt; 0 ) then
@@ -201,7 +203,7 @@ if ( $continue == 1 ) then
 		endif	  	
 	<xsl:if test='$debug != 0'>
 	else
-		rts2-logcom "Not offseting - correction from different target (observing $name, correction from $cname)"  -->
+		rts2-logcom "Not offseting - correction from different target (observing $name, correction from $cname)"
 	</xsl:if>	
 	endif
 	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
@@ -336,9 +338,10 @@ if ( $continue == 1 ) then
 		rts2-logcom 'Ampcen set to <xsl:value-of select='@operands'/>'
 	<xsl:if test='$debug != 0'>
 	else
-		echo `date +"%D %T.%3N %Z"` "ampcen already on $ampstatus, not changing it" -->
+		echo `date +"%D %T.%3N %Z"` "ampcen already on $ampstatus, not changing it"
 	</xsl:if>	
 	endif
+	set lastamp=<xsl:value-of select='@operands'/>
 endif
 </xsl:if>
 <xsl:if test='@value = "autoguide"'>
@@ -369,7 +372,7 @@ if ( $continue == 1 ) then
 			endif
 		<xsl:if test='$debug != 0'>	
 		else
-			echo `date +"%D %T.%3N %Z"` "autog already in $guidestatus status, not changing it" -->
+			echo `date +"%D %T.%3N %Z"` "autog already in $guidestatus status, not changing it"
 		</xsl:if>	
 		endif
 		set autog=$new_guide
@@ -403,6 +406,8 @@ if ( $last_acq_obs_id != $obs_id ) then
 	rts2-logcom "Starting acquistion/centering for observation with ID $obs_id"
 	source $RTS2/bin/rts2_tele_filter i
 	object test
+<!--	tele ampcen 0 -->
+	<xsl:copy-of select='$printd'/> "ampcen to 0"
 	if ( $autog == 'ON' ) then
 		tele autog OFF
 		$autog = 'OFF'
@@ -439,6 +444,9 @@ if ( $last_acq_obs_id != $obs_id ) then
 					if ( $err > $pre ) then
 						rts2-logcom "Acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err arcsecs"
 						tele offset $ora $odec
+                                                sleep 3
+                                                rts2-logcom "FIX POINTING: set telescope position after offsets."
+                                                tele set
 						@ err = 0
 					else
 						rts2-logcom "Error is less than $pre arcsecs ( $ora_l $odec_l ), stop acquistion"
@@ -454,6 +462,8 @@ if ( $last_acq_obs_id != $obs_id ) then
 		rts2-logcom "maximal number of attemps exceeded"
 	endif
 	object $name
+ <!-- 	tele ampcen $lastamp  -->
+	<xsl:copy-of select='$printd'/> "ampcen to $lastamp"
 <xsl:if test='$debug != 0'>
 else
 	rts2-logcom "already acquired for $obs_id"
