@@ -1124,6 +1124,18 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			jsonObservation (&obs, os);
 		}
+		else if (vals[0] == "obylid")
+		{
+			int label_id = params->getInteger ("id", -1);
+			if (label_id < 0)
+				throw JSONException ("unknow label ID");
+
+			rts2db::ImageSetLabel isl (label_id);
+			if (isl.load ())
+				throw JSONException ("cannot load observations with given label ID");
+
+			os << "\"observations\":" << isl.getAllStat ().count << ",\"skytime\":" << isl.getAllStat ().exposure;
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", getNow ()), params->getDouble ("to", NAN));

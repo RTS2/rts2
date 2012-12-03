@@ -280,6 +280,11 @@ int ImageSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
 	return aNum;
 }
 
+const ImageSetStat ImageSet::getAllStat ()
+{
+	return allStat;
+}
+
 std::vector <ImageSetStat>::iterator ImageSet::getStat (int in_filter)
 {
 	std::vector <ImageSetStat>::iterator iter;
@@ -340,5 +345,13 @@ int ImageSetDate::load ()
 		<< ") AND (observations.obs_end is NULL OR observations.obs_end < to_timestamp ("
 		<< to
 			<< "))";
+	return ImageSet::load (_os.str ());
+}
+
+int ImageSetLabel::load ()
+{
+	std::ostringstream _os;
+	_os << "exists (select * from target_labels where observations.tar_id = target_labels.tar_id and target_labels.label_id = " << label << ")";
+
 	return ImageSet::load (_os.str ());
 }

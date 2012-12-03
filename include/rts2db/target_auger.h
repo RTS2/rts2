@@ -47,7 +47,7 @@ class TargetAuger:public rts2db::ConstTarget
 		virtual void load ();
 
 		/**
-		 * Load target from given target_id.
+		 * Load target from given auger_id.
 		 *
 		 * @param auger_id  Auger id.
 		 */

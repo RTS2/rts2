@@ -854,7 +854,8 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<double> ("TTrackObs", TTrackObs)
 
 		<< InfoVal<int> ("cut", cut)
-		<< InfoVal<std::string> ("Profile", profile.str ());
+		<< InfoVal<std::string> ("Profile", profile.str ())
+		<< InfoVal<std::string> ("Slant depths", slants.str ());
 
 
 	ConstTarget::printExtra (_os, JD);

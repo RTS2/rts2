@@ -26,6 +26,7 @@ class ImageSetStat
 			img_err_dec = 0;
 			count = 0;
 			astro_count = 0;
+			exposure = 0;
 		}
 
 		~ImageSetStat (void) {}

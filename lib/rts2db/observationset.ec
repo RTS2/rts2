@@ -74,7 +74,7 @@ void ObservationSet::loadTarget (int _tar_id, const time_t * start_t, const time
 		<< *end_t
 		<< "))";
 	}
-	load (os.str());
+	load (os.str ());
 }
 
 void ObservationSet::loadTime (const time_t * start_t, const time_t * end_t)
@@ -94,7 +94,7 @@ void ObservationSet::loadTime (const time_t * start_t, const time_t * end_t)
 			<< *end_t
 			<< "))";
 	}
-	load (os.str());
+	load (os.str ());
 }
 
 void ObservationSet::loadType (char type_id, int state_mask, bool inv)
@@ -110,7 +110,7 @@ void ObservationSet::loadType (char type_id, int state_mask, bool inv)
 	os << "= "
 		<< state_mask
 		<< ")";
-	load (os.str());
+	load (os.str ());
 }
 
 void ObservationSet::loadRadius (struct ln_equ_posn * position, double radius)
@@ -120,7 +120,14 @@ void ObservationSet::loadRadius (struct ln_equ_posn * position, double radius)
 		<< position->ra << ", "
 		<< position->dec << ") < "
 		<< radius;
-	load (os.str());
+	load (os.str ());
+}
+
+void ObservationSet::loadLabel (int label_id)
+{
+	std::ostringstream os;
+	os << "exists (select * from target_labels where observations.tar_id = target_labels.tar_id and label_id = " << label_id << ")";
+	load (os.str ());
 }
 
 void ObservationSet::load (std::string in_where)

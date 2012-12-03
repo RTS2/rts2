@@ -50,6 +50,8 @@ class ImageSet:public std::vector <rts2image::Image * >
 		void print (std::ostream & _os, int printImages);
 		int getAverageErrors (double &eRa, double &eDec, double &eRad);
 
+		const ImageSetStat getAllStat ();
+
 		std::vector < ImageSetStat >::iterator getStat (int in_filter);
 
 		friend std::ostream & operator << (std::ostream & _os, ImageSet & img_set)
@@ -108,6 +110,15 @@ class ImageSetDate:public ImageSet
 	private:
 		time_t from;
 		time_t to;
+};
+
+class ImageSetLabel:public ImageSet
+{
+	public:
+		ImageSetLabel (int label_id) { label = label_id; }
+		virtual int load ();
+	private:
+		int label;
 };
 
 }

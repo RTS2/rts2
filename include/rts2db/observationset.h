@@ -51,6 +51,11 @@ class ObservationSet:public std::vector <Observation>, public TimeLog
 		void loadType (char type_id, int state_mask, bool inv = false);
 		void loadRadius (struct ln_equ_posn *position, double radius);
 
+		/**
+		 * Load all targets with given label_id.
+		 */
+		void loadLabel (int label_id);
+
 		void  printImages (int _images) { images = _images; }
 		int getPrintImages () { return images; }
 
