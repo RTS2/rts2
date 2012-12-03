@@ -183,6 +183,8 @@ class Telescope:public rts2core::Device
 		{
 			equ->ra = getTelTargetRa ();
 			equ->dec = getTelTargetDec ();
+			if (equ->dec < -90 || equ->dec > 90)
+				equ->ra = ln_range_degrees (equ->ra + 180.0);
 		}
 		  
 		/**
