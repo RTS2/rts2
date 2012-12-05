@@ -115,10 +115,17 @@ class ImageSetDate:public ImageSet
 class ImageSetLabel:public ImageSet
 {
 	public:
-		ImageSetLabel (int label_id) { label = label_id; }
+		ImageSetLabel (int label_id, double _from, double _to)
+		{
+			label = label_id;
+			from = _from;
+			to = _to;
+		}
 		virtual int load ();
 	private:
 		int label;
+		double from;
+		double to;
 };
 
 }
