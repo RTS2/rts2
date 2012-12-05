@@ -98,10 +98,9 @@ namespace XmlRpc
 			virtual bool setupConnection();
 
 			virtual bool generateRequest(const char* method, XmlRpcValue const& params);
-			virtual bool generateGetRequest(const char* path, const std::string &body);
+			virtual bool generateGetRequest(const char* path, const char* body);
 			virtual std::string generateHeader(std::string const& body);
 			virtual std::string generateGetHeader(std::string const& path, size_t contentLength);
-			virtual std::string generateGetHeader(std::string const& path, std::string const& body = std::string(""));
 			virtual bool writeRequest();
 			virtual bool readHeader();
 			virtual bool readResponse();

@@ -312,15 +312,18 @@ bool XmlRpcClient::generateRequest(const char* methodName, XmlRpcValue const& pa
 	return true;
 }
 
-bool XmlRpcClient::generateGetRequest(const char* path, const std::string &body)
+bool XmlRpcClient::generateGetRequest(const char* path, const char* body)
 {
+	size_t bsize = 0;
+	if (body)
+		bsize = strlen(body);
 	if (path)
-		_request = generateGetHeader(path, body);
+		_request = generateGetHeader(path, bsize);
 	else
-		_request = generateGetHeader(std::string(""), body);
+		_request = generateGetHeader(std::string(""), bsize);
 	XmlRpcUtil::log(4, "XmlRpcClient::generateGetRequest: header is %d bytes.", _request.length ());
 
-	if (body.length () > 0)
+	if (bsize > 0)
 	{
 		_request += body;
 		_request += "\r\n";
@@ -405,11 +408,6 @@ std::string XmlRpcClient::generateGetHeader(std::string const& path, size_t cont
 	header += buff;
 
 	return header;
-}
-
-inline std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string const& body)
-{
-	return generateGetHeader(path, body.size());
 }
 
 bool XmlRpcClient::writeRequest()
