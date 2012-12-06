@@ -142,9 +142,7 @@ int Fli::startExposure ()
 	if (ret)
 		return -1;
 
-	ret = FLISetImageArea (dev,
-		chipTopX(), chipTopY(),
-		chipTopX () + getUsedWidthBinned (), chipTopY () + getUsedHeightBinned ());
+	ret = FLISetImageArea (dev, chipTopX (), chipTopY (), chipTopX () + getUsedWidthBinned (), chipTopY () + getUsedHeightBinned ());
 	if (ret)
 		return -1;
 

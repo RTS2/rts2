@@ -200,19 +200,27 @@ int FitsFile::closeFile ()
 	{
 		if (memFile)
 		{
-			fitsfile *ofptr = getFitsFile ();
 			memFile = false;
-			if (createFile ())
-				return -1;
-			fits_copy_file (ofptr, getFitsFile (), 1, 1, 1, &fits_status);
-			if (fits_status)
+			// only save file if its path was specified
+			if (getFileName ())
 			{
-				logStream (MESSAGE_ERROR) << "fits_copy_file: " << getFitsErrors () << sendLog;
+				fitsfile *ofptr = getFitsFile ();
+				if (createFile ())
+					return -1;
+				fits_copy_file (ofptr, getFitsFile (), 1, 1, 1, &fits_status);
+				if (fits_status)
+				{
+					logStream (MESSAGE_ERROR) << "fits_copy_file: " << getFitsErrors () << sendLog;
+					fits_close_file (ofptr, &fits_status);
+					return -1;
+				}
 				fits_close_file (ofptr, &fits_status);
-				return -1;
 			}
-			fits_close_file (ofptr, &fits_status);
-
+			else
+			{
+				fits_close_file (getFitsFile (), &fits_status);
+				setFitsFile (NULL);
+			}
 			free (*imgbuf);
 			delete imgbuf;
 			delete memsize;

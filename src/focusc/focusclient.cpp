@@ -279,7 +279,7 @@ FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 	{
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
-			printf ("Get conn: %s\n", cam->getName ());
+			logStream (MESSAGE_DEBUG) << "exposing on " << cam->getName () << sendLog;
 			cam->queCommand (new rts2core::CommandExposure (this, cam, bop));
 		}
 	}
