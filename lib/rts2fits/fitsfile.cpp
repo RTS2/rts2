@@ -218,6 +218,7 @@ int FitsFile::closeFile ()
 			}
 			else
 			{
+				// memfile MUST be closed before its memory is freed
 				fits_close_file (getFitsFile (), &fits_status);
 				setFitsFile (NULL);
 			}
@@ -228,10 +229,13 @@ int FitsFile::closeFile ()
 			imgbuf = NULL;
 			memsize = NULL;
 		}
-		fits_close_file (getFitsFile (), &fits_status);
-		if (fits_status)
+		if (getFitsFile ())
 		{
-			logStream (MESSAGE_ERROR) << "while saving fits file " << getFileName () << ": " << getFitsErrors () << sendLog;
+			fits_close_file (getFitsFile (), &fits_status);
+			if (fits_status)
+			{
+				logStream (MESSAGE_ERROR) << "while saving fits file " << getFileName () << ": " << getFitsErrors () << sendLog;
+			}
 		}
 		flags &= ~IMAGE_SAVE;
 
