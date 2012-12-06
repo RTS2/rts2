@@ -65,10 +65,9 @@ int ConnGrb::pr_test ()
 int ConnGrb::pr_imalive ()
 {
 	deltaValue = here_sod - getPktSod ();
-	logStream (MESSAGE_DEBUG) << "ConnGrb::pr_imalive last packet SN="
-		<< getPktSod ()
-		<< " delta=" << deltaValue
-		<< " last_delta=" << (getPktSod () - last_imalive_sod) << sendLog;
+#ifdef DEBUG
+	logStream (MESSAGE_DEBUG) << "ConnGrb::pr_imalive last packet SN=" << getPktSod () << " delta=" << deltaValue << " last_delta=" << (getPktSod () - last_imalive_sod) << sendLog;
+#endif
 	last_imalive_sod = getPktSod ();
 	return 0;
 }
@@ -1330,8 +1329,7 @@ int ConnGrb::idle ()
 			}
 			break;
 		case CONN_CONNECTED:
-			if (last_packet.tv_sec + getConnTimeout () < now
-				&& nextTime < now)
+			if (last_packet.tv_sec + getConnTimeout () < now && nextTime < now)
 				connectionError (-1);
 			break;
 		default:
@@ -1445,7 +1443,7 @@ int ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 
 void ConnGrb::connectionError (int last_data_size)
 {
-	logStream (MESSAGE_DEBUG) << "ConnGrb::connectionError" << sendLog;
+	logStream (MESSAGE_ERROR) << "lost GCN connection - SN=" << getPktSod () << " delta=" << deltaValue << " last_delta=" << (getPktSod () - last_imalive_sod) << sendLog;
 	if (sock > 0)
 	{
 		close (sock);
