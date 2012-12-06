@@ -308,7 +308,12 @@ int Sidecar::processOption (int in_opt)
 			sidecarServer = new HostString (optarg, "5000");
 			break;
 		case OPT_IMAGE_DIR:
-			imageDir->setValueCharArr (optarg);
+			{
+				std::string imgd (optarg);
+				if (imgd[imgd.length() - 1] != '/')
+					imgd += "/";
+				imageDir->setValueCharArr (imgd.c_str ());
+			}
 			break;
 		case OPT_IMAGE_SUFFIX_FSRAMP:
 			fileSuffixFSRamp->setValueCharArr (optarg);
