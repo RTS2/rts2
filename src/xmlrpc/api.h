@@ -62,7 +62,7 @@ class API:public rts2json::GetRequestAuthorized
 		void jsonObservations (rts2db::ObservationSet *obss, std::ostream &os);
 		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
 		void jsonLabels (rts2db::Target *tar, std::ostream &os);
-		rts2db::Target * getTarget (XmlRpc::HttpParams *params);
+		rts2db::Target * getTarget (XmlRpc::HttpParams *params, const char *paramname = "id");
 #endif
 };
 

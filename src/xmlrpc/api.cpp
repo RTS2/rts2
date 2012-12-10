@@ -1180,6 +1180,32 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			os << "]";
 		}
+		// return time the observatory might be able to schedule the request
+		else if (vals[0] == "bb_schedule")
+		{
+			rts2db::Target *tar = getTarget (params);
+			double from = params->getDouble ("from", getNow ());
+			double to = params->getDouble ("to", NAN);
+			if (to < from)
+				throw JSONException ("to time is before from time");
+
+			// get target observability
+			rts2db::ConstraintsList violated;
+			time_t f = from;
+			double JD = ln_get_julian_from_timet (&f);
+			if (isnan (to))
+				to = from + 86400;
+			time_t tto = to;
+			double JD_end = ln_get_julian_from_timet (&tto);
+			double dur = rts2script::getMaximalScriptDuration (tar, ((XmlRpcd *) getMasterApp ())->cameras);
+			if (dur < 60)
+				dur = 60;
+			// go through nights
+			for (double t = from; t < to; t += dur)
+			{
+				//if (tar->getViolatedConstraints (JD) == 0)
+			}
+		}
 		else if (vals[0] == "labellist")
 		{
 			rts2db::LabelList ll;
@@ -1713,9 +1739,9 @@ void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
 #endif // RTS2_HAVE_PGSQL
 
 #ifdef RTS2_HAVE_PGSQL
-rts2db::Target * API::getTarget (XmlRpc::HttpParams *params)
+rts2db::Target * API::getTarget (XmlRpc::HttpParams *params, const char *paramname)
 {
-	int id = params->getInteger ("id", -1);
+	int id = params->getInteger (paramname, -1);
 	if (id <= 0)
 		throw JSONException ("invalid id parameter");
 	rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
