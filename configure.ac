@@ -458,16 +458,23 @@ AC_SUBST(INC_BIGNG)
 
 AH_TEMPLATE([PREFIX],[prefix])
 AH_TEMPLATE([SHARE_PREFIX],[share prefix])
-if test "x${prefix}" == "xNONE" -o "x${prefix}" == "x/" -o "x${prefix}" == "x"; then
+
+if test "x$(prefix)" = "xNONE" -o "x$(prefix)" = "x/"; then
         AC_DEFINE_UNQUOTED(PREFIX, "", [prefix])
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "/usr/share", [share prefix])
+	AC_ERROR("prefix ${prefix} '$(prefix)' @prefix@ @bindir@")
 else
-        AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [prefix])
-        AC_DEFINE_UNQUOTED(SHARE_PREFIX, "${prefix}/share", [share prefix])
+	if test "x$(prefix)" = "x"; then
+		loc_prefix="/usr/local"
+	else
+		loc_prefix="$(prefix)"
+	fi
+        AC_DEFINE_UNQUOTED(PREFIX, "$loc_prefix", [prefix])
+        AC_DEFINE_UNQUOTED(SHARE_PREFIX, "${loc_prefix}/share", [share prefix])
 fi
 AC_SUBST(PREFIX)
 AC_SUBST(SHARE_PREFIX)
-  
+
 # Define lock file prefix
 AC_ARG_WITH(lock,
 [  --with-lock             specify lock file path prefix, default to /var/run/rts2_],
@@ -586,14 +593,14 @@ exit 1])
 AH_TEMPLATE([HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF],[If Libnova provides ln_get_heliocentric_time_diff function])
 
 AC_CHECK_DECL(ln_get_heliocentric_time_diff, , ,[#include <libnova/libnova.h>])
-if test "x"$ac_cv_have_decl_ln_get_heliocentric_time_diff = "xyes"; then
+if test "x$ac_cv_have_decl_ln_get_heliocentric_time_diff" = "xyes"; then
 	AC_DEFINE_UNQUOTED(HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF, 1, [If Libnova provides ln_get_heliocentric_time_diff function])
 fi
 
 AH_TEMPLATE([HAVE_DECL_LN_GET_ALT_FROM_AIRMASS],[If Libnova provides ln_get_alt_from_airmass function])
 
 AC_CHECK_DECL(ln_get_alt_from_airmass, , ,[#include <libnova/libnova.h>])
-if test "x"$ac_cv_have_decl_ln_get_alt_from_airmass= "xyes"; then
+if test "x$ac_cv_have_decl_ln_get_alt_from_airmass" = "xyes"; then
 	AC_DEFINE_UNQUOTED(HAVE_DECL_LN_GET_ALT_FROM_AIRMASS, 1, [If Libnova provides ln_get_alt_from_airmass function])
 fi
 
@@ -928,6 +935,7 @@ SENSORs:
   BIGNG         ${BIGNG}
   K8055         ${K8055}
 
+  prefix        ${prefix}
   lock prefix   ${LOCK_PREFIX}
   centrald port	${CENTRALD_PORT}
 
