@@ -125,7 +125,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			obs.load ();
 
 			std::ostringstream p_os;
-			p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", "/usr/local/share") << "/schedule_target.py";
+			p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", RTS2_SHARE_PREFIX "/rts2") << "/schedule_target.py";
 
 			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str ());
 

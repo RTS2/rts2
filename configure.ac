@@ -466,6 +466,7 @@ else
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "${prefix}/share", [share prefix])
 fi
 AC_SUBST(PREFIX)
+AC_SUBST(SHARE_PREFIX)
   
 # Define lock file prefix
 AC_ARG_WITH(lock,
