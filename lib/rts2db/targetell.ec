@@ -93,7 +93,8 @@ void EllTarget::printExtra (Rts2InfoValStream & _os, double JD)
 	struct ln_equ_posn pos, parallax;
 	getPosition (&pos, JD, &parallax);
 	_os
-		<< InfoVal<TimeJD> ("EPOCH", TimeJD (orbit.JD));
+		<< InfoVal<TimeJD> ("EPOCH", TimeJD (orbit.JD))
+		<< InfoVal<double> ("EPOCH_JD",  orbit.JD);
 	if (orbit.e < 1.0)
 	{
 		_os
