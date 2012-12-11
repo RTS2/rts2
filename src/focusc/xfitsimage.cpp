@@ -47,8 +47,10 @@ int cmpuint16_t (const void *a, const void *b)
 #undef B
 }
 
-XFitsImage::XFitsImage ()
+XFitsImage::XFitsImage (rts2core::Connection *_connection)
 {
+	connection = _connection;
+
 	window = 0L;
 	pixmap = 0L;
 	ximage = NULL;
@@ -77,6 +79,10 @@ XFitsImage::XFitsImage ()
 
 XFitsImage::~XFitsImage ()
 {
+	if (ximage)
+		XDestroyImage (ximage);
+	if (gc)
+		XFreeGC (display, gc);
 }
 
 void XFitsImage::XeventLoop ()
@@ -294,7 +300,7 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 	// draw window with image..
 	if (!ximage)
 	{
-		std::cout << "Create ximage " << pixmapWidth << "x" << pixmapHeight << std::endl;
+		logStream (MESSAGE_DEBUG) << "creating ximage " << pixmapWidth << "x" << pixmapHeight << sendLog;
 		ximage = XCreateImage (display, visual, depth, ZPixmap, 0, 0, pixmapWidth, pixmapHeight, 8, 0);
 		ximage->data = (char *) malloc (ximage->bytes_per_line * pixmapHeight);
 	}
@@ -611,11 +617,13 @@ void XFitsImage::buildWindow ()
 	XSelectInput (display, window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask);
 	XMapRaised (display, window);
 
-	cameraName = new char[5]; //strlen (connection->getName ()) + 1];
-	strcpy (cameraName, "TEST"); //connection->getName ());
+	cameraName = new char[strlen (connection->getName ()) + 1];
+	strcpy (cameraName, connection->getName ());
 
 	XStringListToTextProperty (&cameraName, 1, &window_title);
 	XSetWMName (display, window, &window_title);
+
+	delete[] cameraName;
 }
 
 // called to rebuild window on the screen

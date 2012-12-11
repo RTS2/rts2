@@ -83,6 +83,7 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 DevClientCameraImage::~DevClientCameraImage (void)
 {
 	delete fitsTemplate;
+	delete actualImage;
 }
 
 Image * DevClientCameraImage::setImage (Image * old_img, Image * new_image)
