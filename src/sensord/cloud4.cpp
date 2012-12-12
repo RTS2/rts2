@@ -305,6 +305,9 @@ void Cloud4::changeMasterState (int old_state, int new_state)
 			case SERVERD_DUSK:
 			case SERVERD_NIGHT:
 			case SERVERD_DAWN:
+			case SERVERD_STANDBY | SERVERD_DUSK:
+			case SERVERD_STANDBY | SERVERD_NIGHT:
+			case SERVERD_STANDBY | SERVERD_DAWN:
 				addTimer (heatInterval->getValueInteger (), new rts2core::Event (EVENT_CLOUD_HEATER, this));
 				break;
 			default:
