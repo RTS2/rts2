@@ -281,6 +281,7 @@ void Cloud4::postEvent (rts2core::Event * event)
 						t_diff = heatInterval->getValueInteger ();
 					else
 						t_diff = heatDuration->getValueInteger ();
+					deleteTimers (EVENT_CLOUD_HEATER);
 					heater->setValueBool (!heater->getValueBool ());
 					addTimer (t_diff, new rts2core::Event (EVENT_CLOUD_HEATER, this));
 					heatStateChangeTime->setValueDouble (getNow () + t_diff);
