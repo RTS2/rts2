@@ -459,17 +459,18 @@ AC_SUBST(INC_BIGNG)
 AH_TEMPLATE([PREFIX],[prefix])
 AH_TEMPLATE([SHARE_PREFIX],[share prefix])
 
-if test "x$(prefix)" = "xNONE" -o "x$(prefix)" = "x/"; then
+if test "x${prefix}" = "x/"; then
         AC_DEFINE_UNQUOTED(PREFIX, "", [prefix])
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "/usr/share", [share prefix])
-	AC_ERROR("prefix ${prefix} '$(prefix)' @prefix@ @bindir@")
 else
-	if test "x$(prefix)" = "x"; then
+	if test "x${prefix}" = "x" -o "x${prefix}" = "xNONE"; then
 		loc_prefix="/usr/local"
+		main_prefix=""
 	else
-		loc_prefix="$(prefix)"
+		loc_prefix="${prefix}"
+		main_prefix="${prefix}"
 	fi
-        AC_DEFINE_UNQUOTED(PREFIX, "$loc_prefix", [prefix])
+        AC_DEFINE_UNQUOTED(PREFIX, "${main_prefix}", [prefix])
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "${loc_prefix}/share", [share prefix])
 fi
 AC_SUBST(PREFIX)
