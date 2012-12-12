@@ -70,6 +70,22 @@
 	  </para>
 	</listitem>
       </varlistentry>
+      <varlistentry>
+        <term>targetinfo <replaceable class="parameter">target id</replaceable></term>
+	<listitem>
+	  <para>
+	    Returns target information - name, ra, dec, and info.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>obsapiurl <replaceable class="parameter">observatory id</replaceable></term>
+	<listitem>
+	  <para>
+	    Returns URL to observatory API.
+	  </para>
+	</listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>

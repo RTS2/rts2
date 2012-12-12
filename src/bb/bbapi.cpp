@@ -125,7 +125,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			obs.load ();
 
 			std::ostringstream p_os;
-			p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", RTS2_SHARE_PREFIX "/rts2") << "/schedule_target.py";
+			p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", RTS2_SHARE_PREFIX "/rts2/bb") << "/schedule_target.py";
 
 			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str ());
 
@@ -140,7 +140,6 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			catch (rts2db::SqlError er)
 			{
 				bbqueue->addArg ("--create");
-
 				tar = createTarget (tar_id, obs.getPosition ());
 
 				if (tar == NULL)
@@ -149,17 +148,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				bbqueue->addArg (tar_id);
 			}
 
-			bbqueue->addArg (obs.getURL ());
-			bbqueue->addArg (tar_id);
-
-			if (tar)
-			{
-				struct ln_equ_posn pos;
-				tar->getPosition (&pos);
-
-				bbqueue->addArg (pos.ra);
-				bbqueue->addArg (pos.dec);
-			}
+			bbqueue->addArg (observatory_id);
 
 			int ret = bbqueue->init ();
 			if (ret)

@@ -67,6 +67,10 @@ void Observatory::load ()
 	position.lat = db_latitude;
 	altitude = db_altitude;
 
+	db_apiurl.arr[db_apiurl.len] = '\0';
+
+	url = std::string (db_apiurl.arr);
+
 	EXEC SQL COMMIT;
 }
 
