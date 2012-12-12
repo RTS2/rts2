@@ -498,6 +498,8 @@ void ConnExe::processCommand (char *cmd)
 
 void ConnExe::processLine ()
 {
+	rts2core::ConnFork::processLine ();
+
 	char *cmd;
 
 	if (paramNextString (&cmd))
