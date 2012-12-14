@@ -1200,10 +1200,22 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			double dur = rts2script::getMaximalScriptDuration (tar, ((XmlRpcd *) getMasterApp ())->cameras);
 			if (dur < 60)
 				dur = 60;
+			dur /= 86400.0;
 			// go through nights
-			for (double t = from; t < to; t += dur)
+			for (double t = JD; t < JD_end; t += dur)
 			{
-				//if (tar->getViolatedConstraints (JD) == 0)
+				if (tar->getViolatedConstraints (t).size () == 0)
+				{
+					// check full duration interval
+					for (double t2 = t; t2 < t + dur; t2 += 60 / 86400.0)
+					{
+						if (tar->getViolatedConstraints (t2).size () > 0)
+						{
+							t = t2;
+							continue;
+						}
+					}
+				}
 			}
 		}
 		else if (vals[0] == "labellist")
