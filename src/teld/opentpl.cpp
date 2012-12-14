@@ -115,6 +115,7 @@ class OpenTPL:public Telescope
 		std::string errorList;
 
 		rts2core::ValueBool *debugConn;
+		rts2core::ValueBool *noRepower;
 
 		rts2core::ValueBool *cabinetPower;
 		rts2core::ValueFloat *cabinetPowerState;
@@ -353,6 +354,9 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 
 	createValue (debugConn, "debug_connection", "debug TCP/IP connection to NTM", false, RTS2_VALUE_WRITABLE);
 	debugConn->setValueBool (false);
+
+	createValue (noRepower, "no_repower", "when set to true, do not attempt to repower once power == 0 is detected", false, RTS2_VALUE_WRITABLE);
+	noRepower->setValueBool (false);
 
 	createValue (cabinetPower, "cabinet_power", "power of cabinet", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
@@ -687,7 +691,7 @@ void OpenTPL::checkPower ()
 		return;
 	}
 
-	if (power_state == 1)
+	if (power_state == 1 || noRepower->getValueBool () == true)
 	{
 		opentplConn->setDebug (debugConn->getValueBool ());
 		return;
