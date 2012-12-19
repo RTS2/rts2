@@ -406,7 +406,12 @@ int FlwoWeather::info ()
 				}
 				processed |= 1 << 8;	
 			}
-			else if (strstr (name, "sample_date") != name)
+			else if (strstr (name, "sample_date") == name)
+			{
+				if (*ch == '?')
+					et = 0;
+			}
+			else
 			{
 			  	logStream (MESSAGE_ERROR) << "invalid line from " << weatherFile << ": " << line << sendLog;
 			  	et = 0;
