@@ -65,6 +65,8 @@ class FlwoWeather:public SensorWeather
 		rts2core::ValueFloat *wait_wind;
 		rts2core::ValueFloat *wait_skytemp;
 
+		rts2core::ValueFloat *ignore_nodata;
+
 		rts2core::ValueFloat *outsideTemp;
 		rts2core::ValueDoubleStat *windSpeed;
 		rts2core::ValueInteger *windSpeedAvg;
@@ -197,10 +199,14 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (wait_wind, "wait_wind", "[s] set bad weather when wind is over limit for this number of seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (wait_skytemp, "wait_skytemp", "[s] wait for this number of seconds if skytemp is outside limit", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
+	createValue (ignore_nodata, "ignore_nodata", "[s] no data packet will be ignored for the given period", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+
 	wait_nodata->setValueFloat (300);
 	wait_humidity->setValueFloat (300);
 	wait_wind->setValueFloat (300);
 	wait_skytemp->setValueFloat (900);
+
+	ignore_nodata->setValueInteger (300);
 
 	createValue (outsideTemp, "outside_temp", "[C] outside temperature", false);
 	createValue (windSpeed, "wind_speed", "[mph] windspeed", false);
@@ -222,8 +228,11 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", false);
 	createValue (hatRain, "HAT_rain", "hat rain status", false);
 	createValue (lastPool, "last_pool", "last file pool", false);
+	lastPool->setValueDouble (NAN);
 
 	createValue (me_mjd, "me_mjd", "MEarth MJD", false);
+	me_mjd->setValueDouble (NAN);
+
 	createValue (me_winddir, "me_winddir", "MEarth wind direction", false);
 	createValue (me_windspeed, "me_windspeed", "MEarth wind speed", false);
 	createValue (me_temp, "me_temp", "MEarth temperature", false);
@@ -415,27 +424,48 @@ int FlwoWeather::info ()
 	if (et > 0 && processed == 0x1ff)
 	{
 		lastPool->setValueInteger (et);
-		if (!isnan (me_mjd->getValueDouble ()) && et < me_mjd->getValueDouble ())
-			setInfoTime (et);
-		else
-			setInfoTime (me_mjd->getValueDouble ());
+		processed = 0;
 	}
 	else
 	{
-		setInfoTime (NAN);
-		return -1;
+		processed = -1;
 	}
 
-	return 0;
+	if (!isnan (me_mjd->getValueDouble ()) && !isnan (lastPool->getValueDouble ()))
+	{
+		if (me_mjd->getValueDouble () > lastPool->getValueDouble ())
+			setInfoTime (lastPool->getValueInteger ());
+		else
+			setInfoTime (me_mjd->getValueInteger ());
+	}
+
+	// processed is overwritten, see above
+	return processed;
 }
 
 bool FlwoWeather::isGoodWeather ()
 {
   	bool ret = true;
-	if (getLastInfoTime () > 60)
+	double lastNow = getNow () - ignore_nodata->getValueFloat ();
+	if (getLastInfoTime () > ignore_nodata->getValueFloat ())
   	{
 	  	setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not recived");
+		if (isnan (lastPool->getValueDouble ()) || lastPool->getValueDouble () < lastNow)
+			valueError (lastPool);
+		else
+			valueGood (lastPool);
+
+		if (isnan (me_mjd->getValueDouble ()) || me_mjd->getValueDouble () < lastNow)
+			valueError (me_mjd);
+		else
+			valueGood (me_mjd);
+
 		ret = false;
+	}
+	else
+	{
+		valueGood (lastPool);
+		valueGood (me_mjd);
 	}
 	if (humidity->getValueFloat () > humidity_limit->getValueFloat ())
 	{
