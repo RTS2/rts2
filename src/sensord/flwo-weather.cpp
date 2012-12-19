@@ -78,6 +78,7 @@ class FlwoWeather:public SensorWeather
 		rts2core::ValueFloat *rain;
 		rts2core::ValueFloat *dewpoint;
 		rts2core::ValueBool *hatRain;
+		rts2core::ValueTime *lastPool;
 
 		// ME values
 		rts2core::ValueTime *me_mjd;
@@ -220,6 +221,7 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (rain, "rain", "[inch] total accumulated rain", false);
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", false);
 	createValue (hatRain, "HAT_rain", "hat rain status", false);
+	createValue (lastPool, "last_pool", "last file pool", false);
 
 	createValue (me_mjd, "me_mjd", "MEarth MJD", false);
 	createValue (me_winddir, "me_winddir", "MEarth wind direction", false);
@@ -411,9 +413,18 @@ int FlwoWeather::info ()
 	ifile.close ();
 
 	if (et > 0 && processed == 0x1ff)
-		setInfoTime (et);
+	{
+		lastPool->setValueInteger (et);
+		if (!isnan (me_mjd->getValueDouble ()) && et < me_mjd->getValueDouble ())
+			setInfoTime (et);
+		else
+			setInfoTime (me_mjd->getValueDouble ());
+	}
 	else
+	{
+		setInfoTime (NAN);
 		return -1;
+	}
 
 	return 0;
 }
