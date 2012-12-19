@@ -454,7 +454,7 @@ bool FlwoWeather::isGoodWeather ()
 	double lastNow = getNow () - ignore_nodata->getValueFloat ();
 	if (getLastInfoTime () > ignore_nodata->getValueFloat ())
   	{
-	  	setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not recived");
+	  	setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not received");
 		if (isnan (lastPool->getValueDouble ()) || lastPool->getValueDouble () < lastNow)
 			valueError (lastPool);
 		else
