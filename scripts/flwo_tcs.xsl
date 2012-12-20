@@ -176,10 +176,10 @@ if ( $continue == 1 ) then
 								rts2-logcom "Zero offsets, not offseting ($rra $rdec; $ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
 							</xsl:if>
 							endif
-							if ( ${?lastimage} ) then
+							<!--if ( ${?lastimage} ) then
 								set lastoffimage=`echo $lastimage | sed 's#.*/\([0-9][0-9][0-9][0-9]\).*#\1#'`
 								<xsl:copy-of select='$printd'/> "setting last $lastoffimage"
-							endif
+							endif -->
 						else
 							<xsl:copy-of select='$printd'/> "applying first offsets ($ora_l $odec_l; $xoffs $yoffs) $tar_id $last_offtarget"
 							$xmlrpc -s TELE.OFFS -- "${ora_l}s ${odec_l}s"
@@ -403,7 +403,7 @@ end
 if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 
 if ( $last_acq_obs_id != $obs_id ) then
-	rts2-logcom "Starting acquistion/centering for observation with ID $obs_id"
+	rts2-logcom "Starting acqusition/centering for observation with ID $obs_id"
 	source $RTS2/bin/rts2_tele_filter i
 	object test
 <!--	tele ampcen 0 -->
