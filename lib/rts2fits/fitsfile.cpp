@@ -20,6 +20,8 @@
 
 #include "rts2fits/fitsfile.h"
 
+#include "configuration.h"
+
 #include "block.h"
 #include "utilsfunc.h"
 #include "radecparser.h"
@@ -363,6 +365,16 @@ int FitsFile::createFile (std::string _fileName, bool _overwrite)
 	return createFile (_overwrite);
 }
 
+std::string FitsFile::replaceHeader (const char *name)
+{
+	std::string repl = rts2core::Configuration::instance ()->observatoryHeaderReplace ();
+	std::string ret (name);
+	size_t i, j;
+	for (i = 0, j = 1; j < repl.length (); i += 2, j += 2)
+		std::replace (ret.begin (), ret.end (), repl[i], repl[j]);
+	return ret;
+}
+
 void FitsFile::setValue (const char *name, bool value, const char *comment)
 {
 	if (!getFitsFile ())
@@ -372,7 +384,7 @@ void FitsFile::setValue (const char *name, bool value, const char *comment)
 		openFile ();
 	}
 	int i_val = value ? 1 : 0;
-	fits_update_key (getFitsFile (), TLOGICAL, (char *) name, &i_val, (char *) comment, &fits_status);
+	fits_update_key (getFitsFile (), TLOGICAL, (char *) replaceHeader (name).c_str (), &i_val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name, true);
 }
@@ -385,7 +397,7 @@ void FitsFile::setValue (const char *name, int value, const char *comment)
 			return;
 		openFile ();
 	}
-	fits_update_key (getFitsFile (), TINT, (char *) name, &value, (char *) comment, &fits_status);
+	fits_update_key (getFitsFile (), TINT, (char *) replaceHeader (name).c_str (), &value, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name, true);
 }
@@ -398,7 +410,7 @@ void FitsFile::setValue (const char *name, long value, const char *comment)
 			return;
 		openFile ();
 	}
-	fits_update_key (getFitsFile (), TLONG, (char *) name, &value, (char *) comment, &fits_status);
+	fits_update_key (getFitsFile (), TLONG, (char *) replaceHeader (name).c_str (), &value, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
@@ -414,7 +426,7 @@ void FitsFile::setValue (const char *name, float value, const char *comment)
 	}
 	if (isnan (val) || isinf (val))
 		val = FLOATNULLVALUE;
-	fits_update_key (getFitsFile (), TFLOAT, (char *) name, &val, (char *) comment, &fits_status);
+	fits_update_key (getFitsFile (), TFLOAT, (char *) replaceHeader (name).c_str (), &val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
@@ -430,7 +442,7 @@ void FitsFile::setValue (const char *name, double value, const char *comment)
 	}
 	if (isnan (val) || isinf (val))
 		val = DOUBLENULLVALUE;
-	fits_update_key (getFitsFile (), TDOUBLE, (char *) name, &val, (char *) comment, &fits_status);
+	fits_update_key (getFitsFile (), TDOUBLE, (char *) replaceHeader (name).c_str (), &val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
@@ -446,7 +458,7 @@ void FitsFile::setValue (const char *name, char value, const char *comment)
 	}
 	val[0] = value;
 	val[1] = '\0';
-	fits_update_key (getFitsFile (), TSTRING, (char *) name, (void *) val, (char *) comment, &fits_status);
+	fits_update_key (getFitsFile (), TSTRING, (char *) replaceHeader (name).c_str (), (void *) val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
@@ -462,7 +474,7 @@ void FitsFile::setValue (const char *name, const char *value, const char *commen
 			return;
 		openFile ();
 	}
-	fits_update_key_longstr (getFitsFile (), (char *) name, (char *) value, (char *) comment, &fits_status);
+	fits_update_key_longstr (getFitsFile (), (char *) replaceHeader (name).c_str (), (char *) value, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
@@ -646,8 +658,7 @@ void FitsFile::getValues (const char *name, int *values, int num, bool required,
 		throw ErrorOpeningFitsFile (getFileName ());
 
 	int nfound;
-	fits_read_keys_log (getFitsFile (), (char *) name, nstart, num, values, &nfound,
-		&fits_status);
+	fits_read_keys_log (getFitsFile (), (char *) name, nstart, num, values, &nfound, &fits_status);
 	fitsStatusGetValue (name, required);
 }
 
@@ -657,8 +668,7 @@ void FitsFile::getValues (const char *name, long *values, int num, bool required
 		throw ErrorOpeningFitsFile (getFileName ());
 
 	int nfound;
-	fits_read_keys_lng (getFitsFile (), (char *) name, nstart, num, values, &nfound,
-		&fits_status);
+	fits_read_keys_lng (getFitsFile (), (char *) name, nstart, num, values, &nfound, &fits_status);
 	fitsStatusGetValue (name, required);
 }
 
@@ -668,8 +678,7 @@ void FitsFile::getValues (const char *name, double *values, int num, bool requir
 		throw ErrorOpeningFitsFile (getFileName ());
 
 	int nfound;
-	fits_read_keys_dbl (getFitsFile (), (char *) name, nstart, num, values, &nfound,
-		&fits_status);
+	fits_read_keys_dbl (getFitsFile (), (char *) name, nstart, num, values, &nfound, &fits_status);
 	fitsStatusGetValue (name, required);
 }
 

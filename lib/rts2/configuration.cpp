@@ -55,6 +55,8 @@ int Configuration::getSpecialValues ()
 	getString ("observatory", "flat_path", obs_flats, "");
 	getString ("observatory", "dark_path", obs_darks, "");
 
+	getString ("observatory", "header_replace", obs_header_replace, "");
+
 	getString ("observatory", "target_path", targetDir, RTS2_PREFIX "/etc/rts2/targets");
 	masterConsFile = targetDir + "/constraints.xml";
 

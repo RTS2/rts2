@@ -303,6 +303,13 @@ class Configuration:public IniParser
 		std::string observatoryDarkPath () { return obs_darks; }
 
 		/**
+		 * Return replacing string for an observatory.
+		 *
+		 * @return Replacing string.
+		 */
+		std::string observatoryHeaderReplace () { return obs_header_replace; }
+
+		/**
 		 * Returns vector of environment variables, which shall be recorded in FITS header.
 		 *
 		 * @param deviceName   Device for which environmental list is returned.
@@ -386,6 +393,8 @@ class Configuration:public IniParser
 		std::string obs_trash;
 		std::string obs_flats;
 		std::string obs_darks;
+
+		std::string obs_header_replace;
 
 		std::string targetDir;
 		bool targetConstraintsWithName;

@@ -183,6 +183,8 @@ class FitsFile: public rts2core::Expander
 		 */
 		virtual int closeFile ();
 
+		std::string replaceHeader (const char *name);
+
 		void setValue (const char *name, bool value, const char *comment);
 		void setValue (const char *name, int value, const char *comment);
 		void setValue (const char *name, long value, const char *comment);
