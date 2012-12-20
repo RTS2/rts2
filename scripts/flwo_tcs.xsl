@@ -268,13 +268,16 @@ if ( $continue == 1 ) then
 	ccd gowait $exposure
 	<xsl:copy-of select='$abort'/>
 	dstore
-	set fwhm2=`$RTS2/bin/rts2-json -G IMGP.fwhm_KCAM_2`
-	set flux=`$RTS2/bin/rts2-json -G IMGP.flux_A`
-	set peak=`$RTS2/bin/rts2-json -G IMGP.peak_A`
-	if ( $last_obs_id == $obs_id ) then
-		rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f MFL %.0f' $ora_l $odec_l $fwhm2 $flux $peak`
+	set json_ret=0
+	set fwhm2=`$RTS2/bin/rts2-json -G IMGP.fwhm_KCAM_2` &amp;&amp; set flux=`$RTS2/bin/rts2-json -G IMGP.flux_A` &amp;&amp; set peak=`$RTS2/bin/rts2-json -G IMGP.peak_A`
+	if ( $? != 0 ) then
+		rts2-logcom "Exposure done; last image data are not available, please check if IMGP module is running (or if fresh restarted, wait for next image)"
 	else
-		rts2-logcom "Exposure done; last flux " `printf '%.0f' $flux`
+		if ( $last_obs_id == $obs_id ) then
+			rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f MFL %.0f' $ora_l $odec_l $fwhm2 $flux $peak`
+		else
+			rts2-logcom "Exposure done; last flux " `printf '%.0f' $flux`
+		endif
 	endif
 	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`

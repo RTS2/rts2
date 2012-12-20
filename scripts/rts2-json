@@ -9,7 +9,16 @@ import rts2.json
 
 from optparse import OptionParser
 
-parser = OptionParser()
+parser = OptionParser(usage="""rts2-json [--server <url>] [--user <username>] [--password <password>] [--verbose] [--good-weather-and-on] [--G <variable> ...] [--get-int <variable> ...] [--cmd <command>] [--run-script <script>] [--kill-script] [--list-minmax] [--device <device name>] [--url <url>] [--push]
+
+Return:
+   0 on success, 1 on failure. Errors are not reported - you must enable their reporting with --verbose.
+
+Example use:
+
+rts2-json -G C0.infotime -G C0.exposure
+rts2-json --server http://example.rts2.org:8889 -G C0.infotime
+""" )
 parser.add_option('--server', help='URL to RTS2 XML-RPC server', action='store', dest='server', default='http://localhost:8889')
 parser.add_option('--user', help='RTS2 web server username', action='store', dest='user', default=None)
 parser.add_option('--password', help='password for web user', action='store', dest='password', default=None)
@@ -100,9 +109,11 @@ try:
 		r = j.getResponse('/api/push',args=arg)
 		while True:
 			print j.chunkJson(r)
+	sys.exit(0)
 
 except Exception,ex:
 	if options.verbose:
 		import traceback
 		traceback.print_exc()
-	print >>sys.stderr,'cannot run: {0}'.format(str(ex))
+
+	sys.exit(1)
