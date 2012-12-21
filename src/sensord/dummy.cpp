@@ -41,6 +41,7 @@ class Dummy:public SensorWeather
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_AUTOSAVE, 0);
 			createValue (testDouble, "TEST_DOUBLE", "test double value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			createValue (testDoubleLimit, "test_limit", "test value for double; if < TEST_DOUBLE, weather will be swicthed to bad", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (randomDouble, "random_double", "random double value", false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (stopMove, "stop_move", "if dummy sensor should stop any movement", false, RTS2_VALUE_WRITABLE);
@@ -168,6 +169,7 @@ class Dummy:public SensorWeather
 	private:
 		rts2core::ValueInteger *testInt;
 		rts2core::ValueDouble *testDouble;
+		rts2core::ValueDouble *testDoubleLimit;
 		rts2core::ValueDouble *randomDouble;
 		rts2core::ValueBool *goodWeather;
 		rts2core::ValueBool *stopMove;
@@ -254,10 +256,19 @@ int Dummy::initHardware ()
 
 bool Dummy::isGoodWeather ()
 {
-	if (goodWeather->getValueBool () == true)
-		return SensorWeather::isGoodWeather ();
-	setWeatherTimeout (60, "waiting for next good weather");
-	return false;
+	if (testDouble->getValueDouble () < testDoubleLimit->getValueDouble ())
+	{
+		std::ostringstream os;
+		os << "test value " << testDouble->getValueDouble () << " below limit " << testDoubleLimit->getValueDouble ();
+		setWeatherTimeout (60, os.str ().c_str ());
+		return false;
+	}
+	else if (goodWeather->getValueBool () == false)
+	{
+		setWeatherTimeout (60, "waiting for next good weather");
+		return false;
+	}
+	return SensorWeather::isGoodWeather ();
 }
 
 int main (int argc, char **argv)

@@ -152,6 +152,11 @@ class Centrald:public Daemon
 		void weatherChanged (const char * device, const char * msg);
 
 		/**
+		 * Call to update weather state of a connection.
+		 */
+		int weatherUpdate (rts2core::Connection *conn);
+
+		/**
 		 * Called when some device signal stop state.
 		 *
 		 * @callgraph
@@ -237,6 +242,7 @@ class Centrald:public Daemon
 		StringArray *failedDevices;
 
 		rts2core::ValueString *badWeatherReason;
+		rts2core::ValueString *badWeatherDevice;
 
 		char *configFile;
 		std::string logFile;

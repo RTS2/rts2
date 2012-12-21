@@ -583,6 +583,18 @@ int Device::commandAuthorized (Connection * conn)
 	return -5;
 }
 
+void Device::setWeatherState (bool good_weather, const char *msg)
+{
+	Daemon::setWeatherState (good_weather, msg);
+	if (good_weather == false && (getState () & BAD_WEATHER))
+	{
+		std::ostringstream os;
+		os << "weather_update \"" << getDeviceName () << "\" \"" << msg << "\"";
+		for (connections_t::iterator iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+			(*iter)->queCommand (new Command (this, os.str ().c_str ()));
+	}
+}
+
 int Device::processOption (int in_opt)
 {
 	switch (in_opt)

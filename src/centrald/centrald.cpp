@@ -153,8 +153,7 @@ int ConnCentrald::commandDevice ()
 	{
 		int client;
 		int dev_key;
-		if (paramNextInteger (&client)
-			|| paramNextInteger (&dev_key) || !paramEnd ())
+		if (paramNextInteger (&client) || paramNextInteger (&dev_key) || !paramEnd ())
 			return -2;
 
 		if (client < 0)
@@ -168,8 +167,7 @@ int ConnCentrald::commandDevice ()
 		// client vanished when we processed data..
 		if (conn == NULL)
 		{
-			sendCommandEnd (DEVDEM_E_SYSTEM,
-				"client vanished during auth sequence");
+			sendCommandEnd (DEVDEM_E_SYSTEM, "client vanished during auth sequence");
 			return -1;
 		}
 
@@ -216,6 +214,10 @@ int ConnCentrald::commandDevice ()
 	if (isCommand ("soft_off"))
 	{
 		return master->changeStateSoftOff (getName ());
+	}
+	if (isCommand ("weather_update"))
+	{
+		return (master->weatherUpdate (this));
 	}
 	return rts2core::Connection::command ();
 }
@@ -389,6 +391,7 @@ Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF 
 	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
 
 	createValue (badWeatherReason, "weather_reason", "why system was switched to bad weather", false);
+	createValue (badWeatherDevice, "weather_device", "device reporting as the first bad weather", false);
 
 	createValue (nextStateChange, "next_state_change", "time of next state change", false);
 	createValue (nextState, "next_state", "next server state", false);
@@ -874,8 +877,9 @@ void Centrald::weatherChanged (const char * device, const char * msg)
 			{
 				if (msg == NULL)
 					msg = "NULL";
-				badWeatherReason->setValueCharArr ((std::string (device) + ": " + msg).c_str ());
-				logStream (MESSAGE_INFO) << "received bad weather from " << device << " claiming that: '" << msg << "'" << sendLog;
+				badWeatherReason->setValueCharArr (msg);
+				badWeatherDevice->setValueCharArr (device);
+				logStream (MESSAGE_INFO) << "received bad weather from " << device << " claiming that " << device << ": '" << msg << "'" << sendLog;
 			}
 		}
 	}
@@ -894,8 +898,25 @@ void Centrald::weatherChanged (const char * device, const char * msg)
 	else
 	{
 		badWeatherReason->setValueCharArr ("");
+		badWeatherDevice->setValueCharArr ("");
 	}
 	sendValueAll (badWeatherReason);
+	sendValueAll (badWeatherDevice);
+}
+
+int Centrald::weatherUpdate (rts2core::Connection *conn)
+{
+	char *w_device;
+	char *w_update;
+	if (conn->paramNextString (&w_device) || conn->paramNextString (&w_update) || !conn->paramEnd ())
+		return -2;
+	
+	if (!strcmp (w_device, badWeatherDevice->getValue ()))
+	{
+		badWeatherReason->setValueCharArr (w_update);
+		sendValueAll (badWeatherReason);
+	}
+	return 0;
 }
 
 void Centrald::stopChanged (const char * device, const char * msg)

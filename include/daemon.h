@@ -523,7 +523,7 @@ class Daemon:public rts2core::Block
 		 * @param good_weather If true, weather is good.
 		 * @param msg Text message for state transition - in case of bad weather, it will be recorded in centrald
 		 */
-		void setWeatherState (bool good_weather, const char *msg)
+		virtual void setWeatherState (bool good_weather, const char *msg)
 		{
 			maskState (WEATHER_MASK, good_weather ? GOOD_WEATHER : BAD_WEATHER, msg);
 		}

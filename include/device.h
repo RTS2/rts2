@@ -300,6 +300,8 @@ class Device:public Daemon
 		 */
 		bool requireAuthorization () { return doAuth; }
 
+		virtual void setWeatherState (bool good_weather, const char *msg);
+
 		friend class MultiDev;
 
 	protected:
