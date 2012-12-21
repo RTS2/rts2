@@ -18,6 +18,7 @@
  */
 
 #include "bbdb.h"
+#include "utilsfunc.h"
 #include "rts2db/sqlerror.h"
 
 #include <math.h>
@@ -102,12 +103,12 @@ void rts2bb::createMapping (int observatory_id, int tar_id, int obs_tar_id)
 	EXEC SQL COMMIT;
 }
 
-void rts2bb::reportObservation (int observatory_id, int obs_id, int tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images)
+void rts2bb::reportObservation (int observatory_id, int obs_id, int obs_tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
 	int db_obs_id = obs_id;
-	int db_tar_id = tar_id;
+	int db_tar_id;
 	double db_obs_ra = obs_ra;
 	double db_obs_dec = obs_dec;
 	double db_obs_slew = obs_slew;
@@ -117,56 +118,51 @@ void rts2bb::reportObservation (int observatory_id, int obs_id, int tar_id, doub
 	int db_good_images = good_images;
 	int db_bad_images = bad_images;
 
-	int db_obs_slew_ind = 0;
-	int db_obs_start_ind = 0;
-	int db_obs_end_ind = 0;
+	int db_obs_ra_ind = db_nan_indicator (obs_ra);
+	int db_obs_dec_ind = db_nan_indicator (obs_dec);
+	int db_obs_slew_ind = db_nan_indicator (obs_slew);
+	int db_obs_start_ind = db_nan_indicator (obs_start);
+	int db_obs_end_ind = db_nan_indicator (obs_end);
+	int db_onsky_ind = db_nan_indicator (onsky);
+
+	int db_obs_count;
 	EXEC SQL END DECLARE SECTION;
 
-	tar_id = findMapping (observatory_id, tar_id);
+	db_tar_id = findMapping (observatory_id, obs_tar_id);
 
-	if (isnan (obs_slew))
+	EXEC SQL SELECT count(*) INTO :db_obs_count FROM observatory_observations WHERE observatory_id = :db_observatory_id AND obs_id = :db_obs_id;
+
+	if (db_obs_count == 1)
 	{
-		db_obs_slew = NAN;
-		db_obs_slew_ind = -1;
+		EXEC SQL UPDATE observatory_observations SET
+			tar_id = :db_tar_id,
+			obs_ra = :db_obs_ra :db_obs_ra_ind,
+			obs_dec = :db_obs_dec :db_obs_dec_ind,
+			obs_slew = to_timestamp (:db_obs_slew :db_obs_slew_ind),
+			obs_start = to_timestamp (:db_obs_start :db_obs_start_ind),
+			obs_end = to_timestamp (:db_obs_end :db_obs_end_ind),
+			onsky = :db_onsky :db_onsky_ind,
+			good_images = :db_good_images,
+			bad_images = :db_bad_images
+		WHERE
+			observatory_id = :db_observatory_id AND obs_id = :db_obs_id;
+
+		if (sqlca.sqlcode)
+		{
+			EXEC SQL ROLLBACK;
+			throw rts2db::SqlError ();
+		}
 	}
-
-	if (isnan (obs_start))
+	else
 	{
-		db_obs_start = NAN;
-		db_obs_start_ind = -1;
-	}
-
-	if (isnan (obs_end))
-	{
-		db_obs_end = NAN;
-		db_obs_end_ind = -1;
-	}
-
-	EXEC SQL UPDATE observatory_observations SET
-		tar_id = :db_tar_id,
-		obs_ra = :db_obs_ra,
-		obs_dec = :db_obs_dec,
-		obs_slew = to_timestamp (:db_obs_slew :db_obs_slew_ind),
-		obs_start = to_timestamp (:db_obs_start :db_obs_start_ind),
-		obs_end = to_timestamp (:db_obs_end :db_obs_end_ind),
-		onsky = :db_onsky,
-		good_images = :db_good_images,
-		bad_images = :db_bad_images
-	WHERE
-		observatory_id = :db_observatory_id AND obs_id = :db_obs_id;
-	
-	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
-
 		EXEC SQL INSERT INTO observatory_observations
 			(observatory_id, obs_id, tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images)
 		VALUES
-			(:db_observatory_id, :db_obs_id, :db_tar_id, :db_obs_ra, :db_obs_dec,
+			(:db_observatory_id, :db_obs_id, :db_tar_id, :db_obs_ra :db_obs_ra_ind, :db_obs_dec :db_obs_dec_ind,
 			to_timestamp (:db_obs_slew :db_obs_slew_ind),
 			to_timestamp (:db_obs_start :db_obs_start_ind),
 			to_timestamp (:db_obs_end :db_obs_end_ind),
-			:db_onsky, :db_good_images, :db_bad_images);
+			:db_onsky :db_onsky_ind, :db_good_images, :db_bad_images);
 
 		if (sqlca.sqlcode)
 		{

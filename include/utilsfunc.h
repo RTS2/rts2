@@ -338,4 +338,9 @@ double getNow ();
  */
 const char * multiWCS (const char *name, char multi_wcs);
 
+/**
+ * Put -1 to indicator if value is NAN.
+ */
+int db_nan_indicator (double value);
+
 #endif							 /* !__RTS_UTILSFUNC__ */

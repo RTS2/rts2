@@ -91,8 +91,8 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			int obs_id = params->getInteger ("obs_id", -1);
 			if (obs_id < 0)
 				throw XmlRpc::JSONException ("unknown observation ID");
-			int tar_id = params->getInteger ("tar_id", -1);
-			if (tar_id < 0)
+			int obs_tar_id = params->getInteger ("obs_tar_id", -1);
+			if (obs_tar_id < 0)
 				throw XmlRpc::JSONException ("unknown target ID");
 			double obs_ra = params->getDouble ("obs_ra", NAN);
 			double obs_dec = params->getDouble ("obs_dec", NAN);
@@ -103,7 +103,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			int good_images = params->getInteger ("good_images", 0);
 			int bad_images = params->getInteger ("bad_images", 0);
 
-			reportObservation (observatory_id, obs_id, tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images);
+			reportObservation (observatory_id, obs_id, obs_tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images);
 
 			os << "{\"ret\":0}";
 		}

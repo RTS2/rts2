@@ -416,3 +416,9 @@ const char * multiWCS (const char *name, char multi_wcs)
 	}
 	return ret;
 }
+
+int db_nan_indicator (double value)
+{
+	return isnan (value) ? -1 : 0;
+}
+
