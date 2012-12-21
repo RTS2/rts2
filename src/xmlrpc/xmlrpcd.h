@@ -472,6 +472,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		virtual void addExecutedPage () { numRequests->inc (); }
 
 	protected:
+		virtual int info ();
+
 		virtual int idle ();
 #ifndef RTS2_HAVE_PGSQL
 		virtual int willConnect (NetworkAddress * _addr);
@@ -506,6 +508,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		rts2core::ValueInteger *sumAsync;
 		rts2core::ValueBool *send_emails;
 		rts2core::ValueInteger *bbCadency;
+		rts2core::ValueInteger *bbQueueSize;
 
 #ifndef RTS2_HAVE_PGSQL
 		const char *config_file;

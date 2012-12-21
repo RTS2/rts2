@@ -19,7 +19,6 @@
  */
 
 #include "xmlrpcd.h"
-#include "tsqueue.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/user.h"
@@ -414,6 +413,16 @@ rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * im
 	return rts2image::IMAGE_KEEP_COPY;
 }
 
+int XmlRpcd::info ()
+{
+	bbQueueSize->setValueInteger (events.bbServers.queueSize ());
+#ifdef RTS2_HAVE_PGSQL
+	return DeviceDb::info ();
+#else
+	return rts2core::Device::info ();
+#endif
+}
+
 int XmlRpcd::idle ()
 {
 	// delete freed async, check for shared memory data
@@ -716,6 +725,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	createValue (bbCadency, "bb_cadency", "cadency (in seconds) of upstream BB messages", false, RTS2_VALUE_WRITABLE);
 	bbCadency->setValueInteger (60);
 
+	createValue (bbQueueSize, "bb_queuesize", "size of BB requests queue", false);
+
 #ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
 
@@ -917,7 +928,7 @@ void XmlRpcd::scriptProgress (double start, double end)
 
 void XmlRpcd::sendBB ()
 {
-	events.bbServers.sendUpdate (this);
+	events.bbServers.sendUpdate ();
 }
 
 void XmlRpcd::reloadEventsFile ()

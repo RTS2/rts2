@@ -22,10 +22,13 @@
 
 #include "rts2-config.h"
 
+#include "tsqueue.h"
+
 #include "xmlrpc++/XmlRpcValue.h"
 #include "xmlrpc++/XmlRpcClient.h"
 
 #include <vector>
+#include <pthread.h>
 
 using namespace XmlRpc;
 
@@ -42,15 +45,32 @@ class XmlRpcd;
 class BBServer
 {
 	public:
-		BBServer (char *serverApi, int observatoryId):_serverApi (serverApi), _observatoryId(observatoryId) { client = NULL; _uri = NULL; }
-		~BBServer () { delete client; }
+		BBServer (XmlRpcd *_server, char *serverApi, int observatoryId):_serverApi (serverApi), _observatoryId(observatoryId)
+		{
+			server = _server;
+			client = NULL;
+			_uri = NULL;
+			send_thread = 0;
+		}
+
+		~BBServer ()
+		{
+			pthread_cancel (send_thread);
+			delete client;
+		}
 
 		/**
 		 * Sends update message to BB server. Data part is specified in data parameter.
 		 *
 		 * @param data  data to send to BB server
 		 */
-		void sendUpdate (XmlRpcd *server);
+		void sendUpdate ();
+
+		void queueUpdate ();
+
+		size_t queueSize () { return requests.size (); }
+
+		TSQueue <int> requests;
 
 	private:
 		std::string _serverApi;
@@ -58,6 +78,9 @@ class BBServer
 		const char *_uri;
 
 		XmlRpcClient *client;
+		XmlRpcd *server;
+
+		pthread_t send_thread;
 };
 
 
@@ -66,7 +89,9 @@ class BBServers:public std::vector <BBServer>
 	public:
 		BBServers (): std::vector <BBServer> () {}
 
-		void sendUpdate (XmlRpcd *server);
+		void sendUpdate ();
+
+		size_t queueSize ();
 };
 
 }

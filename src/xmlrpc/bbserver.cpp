@@ -24,7 +24,24 @@
 
 using namespace rts2xmlrpc;
 
-void BBServer::sendUpdate (XmlRpcd *server)
+// thread routine
+void *updateBB (void *arg)
+{
+	BBServer *bbserver = (BBServer *) arg;
+
+	while (true)
+	{
+		switch (bbserver->requests.pop (true))
+		{
+			case 1:
+				bbserver->sendUpdate ();
+				break;
+		}
+	}
+	return NULL;
+}
+
+void BBServer::sendUpdate ()
 {
 	if (client == NULL)
 	{
@@ -53,8 +70,26 @@ void BBServer::sendUpdate (XmlRpcd *server)
 	free (reply);
 }
 
-void BBServers::sendUpdate (XmlRpcd *server)
+void BBServer::queueUpdate ()
+{
+	if (send_thread == 0)
+	{
+		pthread_create (&send_thread, NULL, updateBB, (void *) this);
+	}
+	requests.push (1);
+}
+
+void BBServers::sendUpdate ()
 {
 	for (BBServers::iterator iter = begin (); iter != end (); iter++)
-		iter->sendUpdate (server);
+		iter->queueUpdate ();
+}
+
+size_t BBServers::queueSize ()
+{
+	size_t ret = 0;
+	for (BBServers::iterator iter = begin (); iter != end (); iter++)
+		ret += iter->queueSize ();
+	
+	return ret;
 }

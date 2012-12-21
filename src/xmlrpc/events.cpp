@@ -354,7 +354,7 @@ void Events::parseBB (xmlNodePtr ev)
 		throw XmlMissingElement (ev, "server name");
 	if (oid < 0)
 		throw XmlMissingElement (ev, "observatory name");
-	bbServers.push_back (BBServer (sn,oid));
+	bbServers.push_back (BBServer (master, sn, oid));
 #else
 	throw rts2core::Error ("missing BB server support (missing soup and json libraries?");
 #endif	

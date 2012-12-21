@@ -44,7 +44,7 @@ template <class T, class Container = std::deque <T> > class TSQueue
 			pthread_cond_destroy (&m_condition);
 		}
 
-		void push (T &value)
+		void push (T value)
 		{
 			pthread_mutex_lock (&m_mutex);
 			m_queue.push (value);
@@ -53,7 +53,7 @@ template <class T, class Container = std::deque <T> > class TSQueue
 			pthread_mutex_unlock (&m_mutex);
 		}
 
-		T& pop (bool block = false)
+		T pop (bool block = false)
 		{
 			pthread_mutex_lock (&m_mutex);
 			if (block)
@@ -72,6 +72,15 @@ template <class T, class Container = std::deque <T> > class TSQueue
 			m_queue.pop ();
 	
 			pthread_mutex_unlock (&m_mutex);
+			return ret;
+		}
+
+		size_t size ()
+		{
+			pthread_mutex_lock (&m_mutex);
+			size_t ret = m_queue.size ();
+			pthread_mutex_unlock (&m_mutex);
+
 			return ret;
 		}
 
