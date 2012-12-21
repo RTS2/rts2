@@ -1,7 +1,7 @@
 /* 
  * Various utility functions.
  * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2011 Petr Kubanek, Insitute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

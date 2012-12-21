@@ -10,4 +10,4 @@ noinst_HEADERS = rts2.h imghdr.h status.h telescope_info.h imgdisplay.h connecti
 		valueminmax.h valuerectangle.h data.h error.h nan.h riseset.h nimotion.h connnosend.h connnotify.h \
 		radecparser.h askchoice.h cliapp.h rts2target.h domeford.h client.h displayvalue.h clicupola.h fork.h gem.h \
 		telmodel.h modelterm.h expander.h expression.h counted_ptr.h infoval.h userlogins.h door_vermes.h vermes.h \
-		slitazimuth.h OakHidBase.h OakFeatureReports.h
+		slitazimuth.h OakHidBase.h OakFeatureReports.h tsqueue.h

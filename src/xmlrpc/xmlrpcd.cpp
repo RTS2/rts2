@@ -19,6 +19,7 @@
  */
 
 #include "xmlrpcd.h"
+#include "tsqueue.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/user.h"
