@@ -58,7 +58,7 @@ void BBServer::sendUpdate ()
 	std::ostringstream url;
 	url << "/api/observatory?observatory_id=" << _observatoryId;
 
-	int ret = client->executeGetRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
+	int ret = client->executePostRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
 	if (!ret)
 	{
 		logStream (MESSAGE_ERROR) << "Error requesting " << _serverApi.c_str () << sendLog;

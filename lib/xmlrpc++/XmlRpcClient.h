@@ -21,7 +21,7 @@ namespace XmlRpc
 	// Arguments and results are represented by XmlRpcValues
 	class XmlRpcValue;
 
-	typedef enum {NOEXEC, XML_RPC, HTTP_GET} ExecutingType;
+	typedef enum {NOEXEC, XML_RPC, HTTP_GET, HTTP_POST} ExecutingType;
 
 	//! A class to send XML RPC requests to a server and return the results.
 	class XmlRpcClient : public XmlRpcSource
@@ -78,6 +78,10 @@ namespace XmlRpc
 
 			bool executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length);
 
+			bool executePost(const char* path, char* &reply, int &reply_length);
+
+			bool executePostRequest(const char* path, const char *body, char* &reply, int &reply_length);
+
 			//! Returns true if the result of the last execute() was a fault response.
 			bool isFault() const { return _isFault; }
 
@@ -99,8 +103,9 @@ namespace XmlRpc
 
 			virtual bool generateRequest(const char* method, XmlRpcValue const& params);
 			virtual bool generateGetRequest(const char* path, const char* body);
+			virtual bool generatePostRequest(const char* path, const char* body);
 			virtual std::string generateHeader(std::string const& body);
-			virtual std::string generateGetHeader(std::string const& path, size_t contentLength);
+			virtual std::string generateGetPostHeader(std::string const& path, size_t contentLength, bool post);
 			virtual bool writeRequest();
 			virtual bool readHeader();
 			virtual bool readResponse();

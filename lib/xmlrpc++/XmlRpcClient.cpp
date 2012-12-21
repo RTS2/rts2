@@ -147,7 +147,7 @@ bool XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
 
 bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length)
 {
-	XmlRpcUtil::log(1, "XmlRpcClient::execute: path %s (_connectionState %d):", path, _connectionState);
+	XmlRpcUtil::log(1, "XmlRpcClient::executeGetRequest: GET %s (_connectionState %d):", path, _connectionState);
 
 	if (_executing != NOEXEC)
 		return false;
@@ -174,7 +174,45 @@ bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &
 	reply = new char[reply_length + 1];
 	memcpy (reply, _response_buf, reply_length);
 	reply[reply_length] = '\0';
-	XmlRpcUtil::log(1, "XmlRpcClient::executeGet: path %s retrieved. Reply size: %i", path, reply_length);
+	XmlRpcUtil::log(1, "XmlRpcClient::executeGetRequest: GET %s retrieved. Reply size: %i", path, reply_length);
+	return true;
+}
+
+bool XmlRpcClient::executePost(const char* path, char* &reply, int &reply_length)
+{
+	return executePostRequest(path, NULL, reply, reply_length);
+}
+
+bool XmlRpcClient::executePostRequest(const char* path, const char *body, char* &reply, int &reply_length)
+{
+	XmlRpcUtil::log(1, "XmlRpcClient::executePostRequest: POST %s (_connectionState %d).", path, _connectionState);
+
+	if (_executing != NOEXEC)
+		return false;
+
+	_executing = HTTP_POST;
+	ClearFlagOnExit cf(_executing);
+
+	_sendAttempts = 0;
+	_isFault = false;
+
+	if ( ! setupConnection())
+		return false;
+
+	if ( ! generatePostRequest(path, body))
+		return false;
+
+	double msTime = -1.0;		 // Process until exit is called
+	_disp.work(msTime);
+
+	if (_connectionState != IDLE)
+		return false;
+
+	reply_length = _response_length;
+	reply = new char[reply_length + 1];
+	memcpy (reply, _response_buf, reply_length);
+	reply[reply_length] = '\0';
+	XmlRpcUtil::log(1, "XmlRpcClient::executePostRequest: POST %s completed.", path);
 	return true;
 }
 
@@ -318,10 +356,29 @@ bool XmlRpcClient::generateGetRequest(const char* path, const char* body)
 	if (body)
 		bsize = strlen(body);
 	if (path)
-		_request = generateGetHeader(path, bsize);
+		_request = generateGetPostHeader(path, bsize, false);
 	else
-		_request = generateGetHeader(std::string(""), bsize);
+		_request = generateGetPostHeader(std::string(""), bsize, false);
 	XmlRpcUtil::log(4, "XmlRpcClient::generateGetRequest: header is %d bytes.", _request.length ());
+
+	if (bsize > 0)
+	{
+		_request += body;
+		_request += "\r\n";
+	}
+	return true;
+}
+
+bool XmlRpcClient::generatePostRequest(const char* path, const char* body)
+{
+	size_t bsize = 0;
+	if (body)
+		bsize = strlen(body);
+	if (path)
+		_request = generateGetPostHeader(path, bsize, true);
+	else
+		_request = generateGetPostHeader(std::string(""), bsize, true);
+	XmlRpcUtil::log(4, "XmlRpcClient::generatePostRequest: header is %d bytes.", _request.length ());
 
 	if (bsize > 0)
 	{
@@ -365,9 +422,13 @@ std::string XmlRpcClient::generateHeader(std::string const& body)
 }
 
 // Prepare GET request header
-std::string XmlRpcClient::generateGetHeader(std::string const& path, size_t contentLength)
+std::string XmlRpcClient::generateGetPostHeader(std::string const& path, size_t contentLength, bool post)
 {
-	std::string header = "GET ";
+	std::string header;
+	if (post)
+		header = "POST ";
+	else  
+		header = "GET ";
 
 	char buff[40];
 	if (_port != 80)
