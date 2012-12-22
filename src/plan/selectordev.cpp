@@ -407,6 +407,7 @@ int SelectorDev::selectNext ()
 		double next_time = NAN;
 		double next_length = NAN;
 		double selectLength = selectUntil->getValueDouble ();
+		bool removeObserved = true;
 		if (!isnan (selectLength))
 		{
 			selectLength -= getNow ();
@@ -425,7 +426,11 @@ int SelectorDev::selectNext ()
 			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
 				bool hard;
-				id = iter->selectNextObservation (n_pid, n_qid, hard, next_time, next_length);
+				id = iter->selectNextObservation (n_pid, n_qid, hard, next_time, next_length, removeObserved);
+				// don't remove target from the queue, if the queue will be interrupted
+				if (!isnan (next_time))
+					removeObserved = false;
+
 				if (id >= 0)
 				{
 					lastQueue->setValueInteger (q);

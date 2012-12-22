@@ -161,7 +161,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		 *
 		 * @return true if front queue target can be observed, false otherwise
 		 */
-		bool filter (double now, double maxLength = NAN);
+		bool filter (double now, double maxLength = NAN, bool removeObserved = true);
 
 		/**
 		 * Update values from the target list. Must be called after queue content changed.
@@ -227,7 +227,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		 * if skipBelowHorizon is set to false (default), remove observations which are currently
 		 * below horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
 		 */
-		void filterUnobservable (double now, double maxLength, std::list <QueuedTarget> &skipped);
+		void filterUnobservable (double now, double maxLength, std::list <QueuedTarget> &skipped, bool removeObserved = true);
 };
 
 class SimulQueueTargets;
@@ -279,7 +279,7 @@ class ExecutorQueue:public TargetQueue
 		 * 
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */
-		int selectNextObservation (int &pid, int &qid, bool &hard, double &next_time, double next_length);
+		int selectNextObservation (int &pid, int &qid, bool &hard, double &next_time, double next_length, bool removeObserved = true);
 
 		/**
 		 * Simulate selection of next observation from the queue. Adjust sq list if 

@@ -191,7 +191,7 @@ void TargetQueue::sortQueue (double now)
 	}
 }
 
-bool TargetQueue::filter (double now, double maxLength)
+bool TargetQueue::filter (double now, double maxLength, bool removeObserved)
 {
 	filterExpired (now);
 
@@ -201,7 +201,7 @@ bool TargetQueue::filter (double now, double maxLength)
 	
 	bool ret = false;
 	std::list <QueuedTarget> skipped;
-	filterUnobservable (now, maxLength, skipped);
+	filterUnobservable (now, maxLength, skipped, removeObserved);
 	TargetQueue::iterator it = begin ();
 	if (!empty ())
 	{
@@ -389,7 +389,7 @@ void TargetQueue::filterExpired (double now)
 	}
 }
 
-void TargetQueue::filterUnobservable (double now, double maxLength, std::list <QueuedTarget> &skipped)
+void TargetQueue::filterUnobservable (double now, double maxLength, std::list <QueuedTarget> &skipped, bool removeObserved)
 {
 	if (!empty ())
 	{
@@ -423,8 +423,8 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 				}
 				// calculate target script length..
 				double tl = rts2script::getMaximalScriptDuration (iter->target, *cameras);
-				// if target length is smaller then horizon, and target isAbove..
-				if (tl < maxLength && isAboveHorizon (*iter, tjd))
+				// if target will fit into available time, and target isAbove..
+				if (((getRemoveAfterExecution () == false && removeObserved == false) || tl < maxLength) && isAboveHorizon (*iter, tjd))
 					return;
 			}	
 
@@ -438,7 +438,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 					default:
 						if (!(isnan (iter->t_start) && isnan (iter->t_end)) && iter->target->observationStarted ())
 						{
-							logStream (MESSAGE_WARNING) << "target " << iter->target->getTargetName () << " was observed, and as it has specified start or end times (" << LibnovaDateDouble (iter->t_start) << " to " << LibnovaDateDouble (iter->t_end) << "), and queue is not circular (" << getQueueType () << "), it will be removed" << sendLog;
+							logStream (MESSAGE_WARNING) << "target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") was observed, and as it has specified start or end times (" << LibnovaDateDouble (iter->t_start) << " to " << LibnovaDateDouble (iter->t_end) << "), and queue is not circular (" << getQueueType () << "), it will be removed" << sendLog;
 							iter = erase (iter);
 							continue;
 						}
@@ -636,14 +636,14 @@ void ExecutorQueue::clearNext ()
 	updateVals ();
 }
 
-int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double &next_time, double next_length)
+int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double &next_time, double next_length, bool removeObserved)
 {
 	if (queueEnabled->getValueBool () == false)
 		return -1;
 	if (size () > 0)
 	{
 		double now = getNow ();
-		if (filter (now, next_length) && front ().notExpired (now))
+		if (filter (now, next_length, removeObserved) && front ().notExpired (now))
 		{
 			if (isnan (next_length))
 			{
@@ -654,6 +654,8 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 			else
 			{
 				// calculate target script length..
+				// the code will go there even if top long targets were not removed, making sure 
+				// it will still ignore too long targets
 				double tl = rts2script::getMaximalScriptDuration (front ().target, master->cameras);
 				if (tl < next_length)
 				{
