@@ -94,6 +94,16 @@ double SimulQueue::step ()
 			// remove target from simulation..
 			if (n_id > 0)
 			{
+				// check if there is target in upper queues..
+				for (Queues::iterator qi2 = queues->begin (); qi2 != qi; qi2++)
+				{
+					if (!isnan (qi2->front ().t_start) && qi2->front ().t_start < e_end)
+					{
+						e_end = qi2->front ().t_start;
+						break;		
+					}
+						
+				}
 				t = e_end;
 				rts2db::Target *tar = createTarget (n_id, *observer, NULL);
 				addTarget (tar, from, t);
