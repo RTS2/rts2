@@ -22,6 +22,8 @@
 
 #include "rts2json/httpreq.h"
 
+#include <json-glib/json-glib.h>
+
 namespace rts2bb
 {
 /**
@@ -39,6 +41,8 @@ class BBAPI:public rts2json::GetRequestAuthorized
 		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+
+		std::map <int, JsonParser *> observatoriesJsons;
 };
 
 }

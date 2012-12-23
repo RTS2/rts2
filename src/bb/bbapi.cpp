@@ -37,6 +37,7 @@ using namespace rts2bb;
 
 BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, NULL, s)
 {
+	g_type_init ();
 }
 
 void BBAPI::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -166,10 +167,60 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (observatory_id < 0)
 				throw XmlRpc::JSONException ("unknown observatory ID");
 
-			std::cout << "obs request" << std::endl << source->getRequest () << std::endl << "end" << std::endl;
+			JsonParser *newJson = json_parser_new ();
+			GError *error = NULL;
 
-			os << std::fixed << getNow ();
+			json_parser_load_from_data (newJson, source->getRequest ().c_str (), source->getRequest ().length (), &error);
+			if (error)
+			{
+				logStream (MESSAGE_ERROR) << "unable to parse request from observatory " << observatory_id << error->code << ":" << error->message << sendLog;
+				g_error_free (error);
+				g_object_unref (newJson);
+				throw JSONException ("unable to parse request");
+			}
+			else
+			{
+				observatoriesJsons[observatory_id] = newJson;
+				os << std::fixed << getNow ();
+			}
 		}
+	}
+	// observatory API - proxy
+	else if (vals[0] == "o")
+	{
+		if (vals.size () < 3)
+			throw JSONException ("insuficient number of subdirs");
+		int observatory_id = atoi (vals[1].c_str ());
+		std::map <int, JsonParser*>::iterator iter = observatoriesJsons.find (observatory_id);
+		if (iter == observatoriesJsons.end ())
+			throw JSONException ("cannot find data for observatory");
+		if (vals[2] == "api")
+		{
+			if (vals[3] == "getall")
+			{
+				JsonGenerator *gen = json_generator_new ();
+				json_generator_set_root (gen, json_parser_get_root (iter->second));
+
+				gchar *out = json_generator_to_data (gen, NULL);
+				os << out;
+
+				std::cout << os.str () << std::endl;
+
+				g_free (out);
+			}
+			else
+			{
+				throw JSONException ("invalid request in observatory API");
+			}
+		}
+		else
+		{
+			throw JSONException ("invalid request");
+		}
+	}
+	else
+	{
+		throw JSONException ("invalid directory");
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }

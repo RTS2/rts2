@@ -54,25 +54,22 @@ void BBServer::sendUpdate ()
 
 	bool first = true;
 
+	body << "{";
+
 	for (rts2core::connections_t::iterator iter = server->getConnections ()->begin (); iter != server->getConnections ()->end (); iter++)
 	{
-		std::string dn ((*iter)->getName ());
-		XmlRpc::urlencode (dn);
-		for (ValueVector::iterator vi = (*iter)->valueBegin (); vi != (*iter)->valueEnd (); vi++)
-		{
-			std::string vn ((*vi)->getName ());
-			XmlRpc::urlencode (vn);
-
-			std::string vv ((*vi)->getValue ());
-			XmlRpc::urlencode (vv);
-
-			if (first)
-				first = false;
-			else
-				body << "&";
-			body << dn << "." << vn << "=" << vv;
-		}
+		if ((*iter)->getName ()[0] == '\0')
+			continue;
+		if (first)
+			first = false;
+		else
+			body << ",";
+		body << "\"" << (*iter)->getName () << "\":{";
+		rts2json::sendConnectionValues (body, *iter, NULL, NAN, true);
+		body << "}";
 	}
+
+	body << "}";
 
 	char * reply;
 	int reply_length;
@@ -80,7 +77,7 @@ void BBServer::sendUpdate ()
 	std::ostringstream url;
 	url << "/api/observatory?observatory_id=" << _observatoryId;
 
-	int ret = client->executePostRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
+	int ret = client->executeGetRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
 	if (!ret)
 	{
 		logStream (MESSAGE_ERROR) << "Error requesting " << _serverApi.c_str () << sendLog;
