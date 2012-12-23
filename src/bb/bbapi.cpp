@@ -196,7 +196,20 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			throw JSONException ("cannot find data for observatory");
 		if (vals[2] == "api")
 		{
-			if (vals[3] == "getall")
+			if (vals[3] == "devices")
+			{
+				os << "[";
+				GList *devices = json_object_get_members (json_node_get_object (json_parser_get_root (iter->second)));
+				for (GList *giter = g_list_first (devices); giter != g_list_last (devices); giter = g_list_next (giter))
+				{
+					if (giter != g_list_first (devices))
+						os << ",";
+					os << "\"" << ((gchar *) g_list_nth_data (giter, 0)) << "\"";
+				}
+				g_list_free (devices);
+				os << "]";
+			}
+			else if (vals[3] == "getall")
 			{
 				JsonGenerator *gen = json_generator_new ();
 				json_generator_set_root (gen, json_parser_get_root (iter->second));
@@ -207,6 +220,19 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				std::cout << os.str () << std::endl;
 
 				g_free (out);
+			}
+			else if (vals[3] == "get")
+			{
+				const char *device = params->getString ("d", "");
+				JsonNode *node = json_object_get_member (json_node_get_object (json_parser_get_root (iter->second)), device);
+				if (node == NULL)
+					throw JSONException ("cannot find device");
+
+				JsonGenerator *gen = json_generator_new ();
+				json_generator_set_root (gen, node);
+				gchar *out = json_generator_to_data (gen, NULL);
+				os << out;
+				g_free (gen);
 			}
 			else
 			{
