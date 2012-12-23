@@ -64,14 +64,6 @@ void XmlDevInterface::valueChanged (rts2core::Value * value)
 	(getMaster ())->valueChangedEvent (getConnection (), value);
 }
 
-double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
-{
-	std::map <rts2core::Value *, double>::iterator iter = changedTimes.find (value);
-	if (iter == changedTimes.end ())
-		return NAN;
-	return iter->second;
-}
-
 XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), screxpand (""), currentTarget (this)
 {
 	previmage = NULL;

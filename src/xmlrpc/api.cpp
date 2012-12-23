@@ -347,7 +347,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
 			if (iter == master->getConnections ()->end ())
 			 	throw JSONException ("executor is not connected");
-			sendConnectionValues (os, *iter, params);
+			rts2json::sendConnectionValues (os, *iter, params);
 		}
 		// device information
 		else if (vals[0] == "deviceinfo")
@@ -401,7 +401,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				if (async)
 				{
 					conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
-					sendConnectionValues (os, conn, params, ext);
+					rts2json::sendConnectionValues (os, conn, params, ext);
 				}
 				else
 				{
@@ -538,7 +538,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				if ((*iter)->getName ()[0] == '\0')
 					continue;
 				os << ",\"" << (*iter)->getName () << "\":{";
-				sendConnectionValues (os, *iter, params, from, ext);
+				rts2json::sendConnectionValues (os, *iter, params, from, ext);
 				os << '}';
 			}
 		}
@@ -556,7 +556,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 					conn = master->getOpenConnection (device);
 				if (conn == NULL)
 					throw JSONException ("cannot find device");
-				sendConnectionValues (os, conn, params, from, ext);
+				rts2json::sendConnectionValues (os, conn, params, from, ext);
 			}
 			else
 			{
@@ -598,7 +598,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				if (async)
 				{
 					conn->queCommand (new rts2core::Command (master, cmd));
-					sendConnectionValues (os, conn, params, NAN, ext);
+					rts2json::sendConnectionValues (os, conn, params, NAN, ext);
 				}
 				else
 				{
@@ -1395,51 +1395,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }
 
-void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * conn, HttpParams *params, double from, bool extended)
-{
-	os << "\"d\":{" << std::fixed;
-	double mfrom = NAN;
-	bool first = true;
-	rts2core::ValueVector::iterator iter;
-
-	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
-	{
-		if ((isnan (from) || from > 0) && conn->getOtherDevClient ())
-		{
-			double ch = ((XmlDevInterface *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
-			if (isnan (mfrom) || ch > mfrom)
-				mfrom = ch;
-			if (!isnan (from) && !isnan (ch) && ch < from)
-				continue;
-		}
-
-		if (first)
-			first = false;
-		else
-			os << ",";
-
-		jsonValue (*iter, extended, os);
-	}
-	os << "},\"minmax\":{";
-
-	bool firstMMax = true;
-
-	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
-	{
-		if ((*iter)->getValueExtType () == RTS2_VALUE_MMAX && (*iter)->getValueBaseType () == RTS2_VALUE_DOUBLE)
-		{
-			rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (*iter);
-			if (firstMMax)
-				firstMMax = false;
-			else
-				os << ",";
-			os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
-		}
-	}
-
-	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"sstart\":" << rts2json::JsonDouble (conn->getProgressStart ()) << ",\"send\":" << rts2json::JsonDouble (conn->getProgressEnd ()) << ",\"f\":" << rts2json::JsonDouble (mfrom);
-}
-
 void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended)
 {
 	os << "\"d\":{" << std::fixed;
@@ -1455,7 +1410,7 @@ void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double fro
 		else
 			os << ",";
 
-		jsonValue ((*iter)->getValue (), extended, os);
+		rts2json::jsonValue ((*iter)->getValue (), extended, os);
 	}
 	os << "},\"minmax\":{";
 

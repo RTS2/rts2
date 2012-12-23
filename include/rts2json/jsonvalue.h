@@ -17,7 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_JSONVALUE__
+#define __RTS2_JSONVALUE__
+
 #include "value.h"
+#include "connection.h"
+#include "httpreq.h"
 
 #include <iomanip>
 
@@ -96,7 +101,22 @@ class JsonString
 		std::string sv;
 };
 
-}
+/**
+ * Support class/interface for operations needed by XmlDevClient and XmlDevClientCamera.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DevInterface
+{
+	public:
+		DevInterface ():changedTimes () {}
+
+		double getValueChangedTime (rts2core::Value *value);
+
+	protected:
+		// value change times
+		std::map <rts2core::Value *, double> changedTimes;
+};
 
 void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
 
@@ -108,3 +128,13 @@ void sendValue (rts2core::Value *value, std::ostringstream &os);
 
 // encode value to JSON
 void jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os);
+
+/**
+ * Send connection values as JSON string to the client.
+ *
+ * @param time from which changed values will be reported. nan means that all values will be reported.
+ */
+void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = NAN, bool extended = false);
+}
+
+#endif // !__RTS2_JSONVALUE__

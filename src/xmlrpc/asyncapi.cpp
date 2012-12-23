@@ -48,14 +48,14 @@ void AsyncAPI::postEvent (rts2core::Event *event)
 		{
 			case EVENT_COMMAND_OK:
 				os << "{";
-				req->sendConnectionValues (os, conn, NULL, -1, ext);
+				rts2json::sendConnectionValues (os, conn, NULL, -1, ext);
 				os << ",\"ret\":0}";
 				req->sendAsyncJSON (os, source);
 				asyncFinished ();
 				break;
 			case EVENT_COMMAND_FAILED:
 				os << "{";
-				req->sendConnectionValues (os, conn, NULL, -1, ext);
+				rts2json::sendConnectionValues (os, conn, NULL, -1, ext);
 				os << ",\"ret\":-1}";
 				req->sendAsyncJSON (os, source);
 				asyncFinished ();
@@ -191,7 +191,7 @@ void AsyncValueAPI::sendValue (const std::string &device, rts2core::Value *_valu
 {
 	std::ostringstream os;
 	os << "{\"d\":\"" << device << "\",\"t\":" << getNow () << ",\"v\":{";
-	jsonValue (_value, true, os);
+	rts2json::jsonValue (_value, true, os);
 	os << "}}";
 	if (source == NULL || source->sendChunked (os.str ()) == false)
 		asyncFinished ();

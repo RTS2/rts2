@@ -45,12 +45,6 @@ class API:public rts2json::GetRequestAuthorized
 		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
-		/**
-		 * Send connection values as JSON string to the client.
-		 *
-		 * @param time from which changed values will be reported. nan means that all values will be reported.
-		 */
-		void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = NAN, bool extended = false);
 
 		void sendOwnValues (std::ostringstream & os, XmlRpc::HttpParams *params, double from, bool extended);
 	private:

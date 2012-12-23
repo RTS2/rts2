@@ -22,10 +22,19 @@
 #include "valuearray.h"
 #include "valuestat.h"
 #include "valuerectangle.h"
+#include "valueminmax.h"
 
 using namespace rts2json;
 
-void sendArrayValue (rts2core::Value *value, std::ostringstream &os)
+double DevInterface::getValueChangedTime (rts2core::Value *value)
+{
+	std::map <rts2core::Value *, double>::iterator iter = changedTimes.find (value);
+	if (iter == changedTimes.end ())
+		return NAN;
+	return iter->second;
+}
+
+void rts2json::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 {
 	os << "[";
 	switch (value->getValueBaseType ())
@@ -70,7 +79,7 @@ void sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 	os << "]";
 }
 
-void sendStatValue (rts2core::Value *value, std::ostringstream &os)
+void rts2json::sendStatValue (rts2core::Value *value, std::ostringstream &os)
 {
 	os << "[";
 	switch (value->getValueBaseType ())
@@ -93,13 +102,13 @@ void sendStatValue (rts2core::Value *value, std::ostringstream &os)
 	os << "]";
 }
 
-void sendRectangleValue (rts2core::Value *value, std::ostringstream &os)
+void rts2json::sendRectangleValue (rts2core::Value *value, std::ostringstream &os)
 {
 	rts2core::ValueRectangle *r = (rts2core::ValueRectangle *) value;
 	os << "[" << r->getXInt () << "," << r->getYInt () << "," << r->getWidthInt () << "," << r->getHeightInt () << "]";
 }
 
-void sendValue (rts2core::Value *value, std::ostringstream &os)
+void rts2json::sendValue (rts2core::Value *value, std::ostringstream &os)
 {
 	switch (value->getValueBaseType ())
 	{
@@ -130,7 +139,7 @@ void sendValue (rts2core::Value *value, std::ostringstream &os)
 }
 
 // encode value to JSON
-void jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os)
+void rts2json::jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os)
 {
 	os << "\"" << value->getName () << "\":";
 	if (extended)
@@ -153,4 +162,49 @@ void jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os)
 	}
 	if (extended)
 		os << "," << value->isError () << "," << value->isWarning () << ",\"" << value->getDescription () << "\"]";
+}
+
+void rts2json::sendConnectionValues (std::ostringstream & os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from, bool extended)
+{
+	os << "\"d\":{" << std::fixed;
+	double mfrom = NAN;
+	bool first = true;
+	rts2core::ValueVector::iterator iter;
+
+	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
+	{
+		if ((isnan (from) || from > 0) && conn->getOtherDevClient ())
+		{
+			double ch = ((DevInterface *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
+			if (isnan (mfrom) || ch > mfrom)
+				mfrom = ch;
+			if (!isnan (from) && !isnan (ch) && ch < from)
+				continue;
+		}
+
+		if (first)
+			first = false;
+		else
+			os << ",";
+
+		jsonValue (*iter, extended, os);
+	}
+	os << "},\"minmax\":{";
+
+	bool firstMMax = true;
+
+	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
+	{
+		if ((*iter)->getValueExtType () == RTS2_VALUE_MMAX && (*iter)->getValueBaseType () == RTS2_VALUE_DOUBLE)
+		{
+			rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (*iter);
+			if (firstMMax)
+				firstMMax = false;
+			else
+				os << ",";
+			os << "\"" << v->getName () << "\":[" << rts2json::JsonDouble (v->getMin ()) << "," << rts2json::JsonDouble (v->getMax ()) << "]";
+		}
+	}
+
+	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"sstart\":" << rts2json::JsonDouble (conn->getProgressStart ()) << ",\"send\":" << rts2json::JsonDouble (conn->getProgressEnd ()) << ",\"f\":" << rts2json::JsonDouble (mfrom);
 }

@@ -37,6 +37,7 @@
 #include "directory.h"
 #include "events.h"
 #include "rts2json/httpreq.h"
+#include "rts2json/jsonvalue.h"
 #include "session.h"
 #include "xmlrpc++/XmlRpc.h"
 
@@ -84,15 +85,13 @@ class Directory;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class XmlDevInterface
+class XmlDevInterface:public rts2json::DevInterface
 {
 	public:
 		XmlDevInterface ():changedTimes () {}
 		void stateChanged (rts2core::ServerState * state);
 
 		void valueChanged (rts2core::Value * value);
-
-		double getValueChangedTime (rts2core::Value *value);
 
 	protected:
 		virtual XmlRpcd *getMaster () = 0;
