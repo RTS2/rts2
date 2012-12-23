@@ -656,7 +656,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 				// calculate target script length..
 				// the code will go there even if top long targets were not removed, making sure 
 				// it will still ignore too long targets
-				double tl = rts2script::getMaximalScriptDuration (front ().target, master->cameras);
+				double tl = rts2script::getMaximalScriptDuration (front ().target, master->cameras, NULL, front().target->observationStarted () ? 1 : 0);
 				if (tl < next_length)
 				{
 					pid = front ().planid;
