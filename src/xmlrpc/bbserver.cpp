@@ -18,6 +18,8 @@
  */
 
 #include "bbserver.h"
+#include "xmlrpc++/urlencoding.h"
+#include "xmlrpcd.h"
 
 #include "hoststring.h"
 #include "daemon.h"
@@ -50,7 +52,27 @@ void BBServer::sendUpdate ()
 
 	std::ostringstream body;
 
-	body << "DEVICE \n";
+	bool first = true;
+
+	for (rts2core::connections_t::iterator iter = server->getConnections ()->begin (); iter != server->getConnections ()->end (); iter++)
+	{
+		std::string dn ((*iter)->getName ());
+		XmlRpc::urlencode (dn);
+		for (ValueVector::iterator vi = (*iter)->valueBegin (); vi != (*iter)->valueEnd (); vi++)
+		{
+			std::string vn ((*vi)->getName ());
+			XmlRpc::urlencode (vn);
+
+			std::string vv ((*vi)->getValue ());
+			XmlRpc::urlencode (vv);
+
+			if (first)
+				first = false;
+			else
+				body << "&";
+			body << dn << "." << vn << "=" << vv;
+		}
+	}
 
 	char * reply;
 	int reply_length;
