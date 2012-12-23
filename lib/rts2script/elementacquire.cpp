@@ -199,8 +199,10 @@ void ElementAcquire::cancelCommands ()
 	processingState = FAILED;
 }
 
-double ElementAcquire::getExpectedDuration ()
+double ElementAcquire::getExpectedDuration (int runnum)
 {
-	// conservative estimate: 3 images, 5 minutes to run astrometry on them
-	return (expTime + script->getFullReadoutTime ()) * 3 + 300;
+	if (runnum == 0)
+		// conservative estimate: 2 images, 2 minutes to run astrometry on them
+		return (expTime + script->getFullReadoutTime ()) * 3 + 120;
+	return 0;
 }

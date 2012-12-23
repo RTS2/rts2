@@ -190,8 +190,9 @@ class Script:public Object, public std::list <Element *>
 		 * Return expected script duration in seconds.
 		 *
 		 * @param tel  current telescope position (or NULL if it is unknow/unimportant).
+		 * @param runnum Observation number. Can be used for script which needs some initialization.
 		 */
-		double getExpectedDuration (struct ln_equ_posn *tel = NULL);
+		double getExpectedDuration (struct ln_equ_posn *tel = NULL, int runnum = 0);
 
 		/**
 		 * Return expected script total of light time (shutter opened, system taking science data)
@@ -336,8 +337,9 @@ typedef counted_ptr <Script> ScriptPtr;
  * @param tar     target for which scripts will be retrieved
  * @param cameras list of cameras for which to retrieve scripts.
  * @param tel     current telescope position, used to estimate time needed for telescope movement
+ * @param runnum  Script run number (= 0 before script was run,..)
  */
-double getMaximalScriptDuration (Rts2Target *tar, rts2db::CamList &cameras, struct ln_equ_posn *tel = NULL);
+double getMaximalScriptDuration (Rts2Target *tar, rts2db::CamList &cameras, struct ln_equ_posn *tel = NULL, int runnum = 0);
 
 }
 

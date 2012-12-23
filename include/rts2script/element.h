@@ -186,7 +186,7 @@ class Element:public Object
 		/**
 		 * Return expected element duration in seconds.
 		 */
-		virtual double getExpectedDuration () { return 0; }
+		virtual double getExpectedDuration (int runnum) { return 0; }
 
 		/**
 		 * Return expected element duration of light time (shutter opened, taking science data).
@@ -233,7 +233,7 @@ class ElementExpose:public Element
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXPOSURE " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXPOSURE << "\",\"duration\":" << expTime; }
 
-		virtual double getExpectedDuration ();
+		virtual double getExpectedDuration (int runnum);
 		virtual double getExpectedLightTime ();
 		virtual int getExpectedImages () { return 1; }
 	private:
@@ -252,7 +252,7 @@ class ElementDark:public Element
 		virtual void printScript (std::ostream &os) { os << COMMAND_DARK " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_DARK "\",\"duration\":" << expTime; }
 
-		virtual double getExpectedDuration ();
+		virtual double getExpectedDuration (int runnum);
 		virtual int getExpectedImages () { return 1; }
 	private:
 		float expTime;
@@ -381,7 +381,7 @@ class ElementChangeValue:public Element
 		virtual void printScript (std::ostream &os);
 		virtual void printJson (std::ostream &os);
 
-		virtual double getExpectedDuration ();
+		virtual double getExpectedDuration (int runnum);
 
 		std::string getOperands ();
 

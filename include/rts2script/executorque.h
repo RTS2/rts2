@@ -139,7 +139,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		// order by given target list
 		void orderByTargetList (std::list <rts2db::Target *> tl);
 
-		double getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn *currentp = NULL);
+		double getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn *currentp = NULL, int runnum = 0);
 
 		/**
 		 * Put next target on front of the queue.

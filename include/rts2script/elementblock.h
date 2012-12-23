@@ -67,7 +67,7 @@ class ElementBlock:public Element
 
 		virtual void printScript (std::ostream &os);
 
-		virtual double getExpectedDuration ();
+		virtual double getExpectedDuration (int runnum);
 		virtual double getExpectedLightTime ();
 		virtual int getExpectedImages ();
 
@@ -179,7 +179,7 @@ class ElementFor:public ElementBlock
 		virtual void printScript (std::ostream &os);
 		virtual void printJson (std::ostream &os);
 
-		virtual double getExpectedDuration ();
+		virtual double getExpectedDuration (int runnum);
 		virtual double getExpectedLightTime ();
 		virtual int getExpectedImages ();
 

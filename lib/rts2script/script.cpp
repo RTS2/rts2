@@ -893,7 +893,7 @@ Script::iterator Script::findElement (const char *name, Script::iterator start)
 	return iter;
 }
 
-double Script::getExpectedDuration (struct ln_equ_posn *tel)
+double Script::getExpectedDuration (struct ln_equ_posn *tel, int runnum)
 {
 	double ret = 0;
 	if (tel && !isnan (target_pos.ra) && !isnan (target_pos.dec))
@@ -902,7 +902,7 @@ double Script::getExpectedDuration (struct ln_equ_posn *tel)
 		ret += dist * getTelescopeSpeed ();
 	}
 	for (Script::iterator iter = begin (); iter != end (); iter++)
-		ret += (*iter)->getExpectedDuration ();
+		ret += (*iter)->getExpectedDuration (runnum);
 	return ret;
 }
 
@@ -922,7 +922,7 @@ int Script::getExpectedImages ()
 	return ret;
 }
 
-double rts2script::getMaximalScriptDuration (Rts2Target *tar, rts2db::CamList &cameras, struct ln_equ_posn *tel)
+double rts2script::getMaximalScriptDuration (Rts2Target *tar, rts2db::CamList &cameras, struct ln_equ_posn *tel, int runnum)
 {
   	double md = 0;
 	for (rts2db::CamList::iterator cam = cameras.begin (); cam != cameras.end (); cam++)
@@ -931,7 +931,7 @@ double rts2script::getMaximalScriptDuration (Rts2Target *tar, rts2db::CamList &c
 		rts2script::Script script;
 		tar->getScript (cam->c_str(), script_buf);
 		script.setTarget (cam->c_str (), tar);
-		double d = script.getExpectedDuration (tel);
+		double d = script.getExpectedDuration (tel, runnum);
 		if (d > md)
 			md = d;  
 	}

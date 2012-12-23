@@ -129,11 +129,11 @@ bool QueuedTarget::notExpired (double now)
 	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end > now);
 }
 
-double TargetQueue::getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn *currentp)
+double TargetQueue::getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn *currentp, int runnum)
 {
 	try
 	{
-		return rts2script::getMaximalScriptDuration (tar, master->cameras, currentp);
+		return rts2script::getMaximalScriptDuration (tar, master->cameras, currentp, runnum);
 	}
 	catch (rts2core::Error &er)
 	{
@@ -422,7 +422,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 					cameras->load ();
 				}
 				// calculate target script length..
-				double tl = rts2script::getMaximalScriptDuration (iter->target, *cameras);
+				double tl = getMaximalDuration (iter->target, NULL, iter->target->observationStarted () ? 1 : 0);
 				// if target will fit into available time, and target isAbove..
 				if (((getRemoveAfterExecution () == false && removeObserved == false) || tl < maxLength) && isAboveHorizon (*iter, tjd))
 					return;

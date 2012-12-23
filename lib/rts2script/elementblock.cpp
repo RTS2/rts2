@@ -274,11 +274,11 @@ void ElementBlock::printScript (std::ostream &os)
 	os << " }";
 }
 
-double ElementBlock::getExpectedDuration ()
+double ElementBlock::getExpectedDuration (int runnum)
 {
 	double ret = 0;
 	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
-		ret += (*iter)->getExpectedDuration ();
+		ret += (*iter)->getExpectedDuration (runnum);
 	return ret;
 }
 
@@ -501,9 +501,9 @@ void ElementFor::printJson (std::ostream &os)
 	os << "}]";
 }
 
-double ElementFor::getExpectedDuration ()
+double ElementFor::getExpectedDuration (int runnum)
 {
-	return max * ElementBlock::getExpectedDuration ();
+	return max * ElementBlock::getExpectedDuration (runnum);
 }
 
 double ElementFor::getExpectedLightTime ()

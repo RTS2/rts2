@@ -153,7 +153,7 @@ int ElementExpose::nextCommand (rts2core::DevClientCamera * camera, rts2core::Co
 	return 0;
 }
 
-double ElementExpose::getExpectedDuration ()
+double ElementExpose::getExpectedDuration (int runnum)
 {
 	return expTime + script->getFullReadoutTime ();
 }
@@ -202,7 +202,7 @@ int ElementDark::nextCommand (rts2core::DevClientCamera * camera, rts2core::Comm
 	return 0;
 }
 
-double ElementDark::getExpectedDuration ()
+double ElementDark::getExpectedDuration (int runnum)
 {
 	return expTime + script->getFullReadoutTime ();
 }
@@ -439,13 +439,13 @@ void ElementChangeValue::printJson (std::ostream &os)
 	os << "\"cmd\":\"" << op << "\",\"device\":\"" << deviceName << "\",\"name\":\"" << valName << "\",\"operands\":\"" << operands << "\"";
 }
 
-double ElementChangeValue::getExpectedDuration ()
+double ElementChangeValue::getExpectedDuration (int runnum)
 {
 	if (valName == "filter")
 	{
 		return script->getFilterMovement ();
 	}
-	return Element::getExpectedDuration ();
+	return Element::getExpectedDuration (runnum);
 }
 
 std::string ElementChangeValue::getOperands ()
