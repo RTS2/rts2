@@ -105,25 +105,32 @@ class TimeJD:public Timestamp
 
 class TimeDiff
 {
-	private:
-		double time_1, time_2;
 	public:
 		TimeDiff () {}
 
-		TimeDiff (double in_time)
+		TimeDiff (double in_time, bool _print_milisec = true)
 		{
 			time_1 = 0;
 			time_2 = in_time;
+			print_milisec = _print_milisec;
 		}
 
 		/**
 		 * Construct time diff from two doubles.
 		 *
 		 */
-		TimeDiff (double in_time_1, double in_time_2)
+		TimeDiff (double in_time_1, double in_time_2, bool _print_milisec = true)
 		{
 			time_1 = in_time_1;
 			time_2 = in_time_2;
+			print_milisec = _print_milisec;
+		}
+
+		TimeDiff (double in_time_1, time_t in_time_2, bool _print_milisec = true)
+		{
+			time_1 = in_time_1;
+			time_2 = in_time_2;
+			print_milisec = _print_milisec;
 		}
 
 		double getTimeDiff ()
@@ -132,6 +139,10 @@ class TimeDiff
 		}
 
 		friend std::ostream & operator << (std::ostream & _os, TimeDiff _td);
+
+	private:
+		double time_1, time_2;
+		bool print_milisec;
 };
 
 std::ostream & operator << (std::ostream & _os, TimeDiff _td);

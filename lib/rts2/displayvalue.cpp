@@ -23,7 +23,7 @@
 #include <sstream>
 #include <iomanip>
 
-std::string rts2core::getDisplayValue (rts2core::Value * value)
+std::string rts2core::getDisplayValue (rts2core::Value * value, bool print_milisec)
 {
 	std::ostringstream _os;
 	const char *tmp_val;
@@ -73,7 +73,7 @@ std::string rts2core::getDisplayValue (rts2core::Value * value)
 			_os << std::setiosflags (std::ios_base::fixed) << std::setprecision (2) << sval << munits[sind];
 			break;
 		case RTS2_DT_TIMEINTERVAL:
-			_os << TimeDiff (value->getValueDouble ());
+			_os << TimeDiff (value->getValueDouble (), print_milisec);
 			break;
 		case RTS2_DT_ONOFF:
 			if (!(value->getFlags () & RTS2_VALUE_ARRAY))

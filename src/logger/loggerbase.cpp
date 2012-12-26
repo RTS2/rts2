@@ -104,7 +104,7 @@ void DevClientLogger::infoOK ()
 	*outputStream << getName ();
 	for (std::list < rts2core::Value * >::iterator iter = logValues.begin (); iter != logValues.end (); iter++)
 	{
-		*outputStream << " " << getDisplayValue (*iter);
+		*outputStream << " " << rts2core::getDisplayValue (*iter);
 	}
 	*outputStream << std::endl;
 }

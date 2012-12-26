@@ -38,7 +38,7 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-std::string getDisplayValue (rts2core::Value * value);
+std::string getDisplayValue (rts2core::Value * value, bool print_milisec = true);
 
 }
 #endif							 /* !__RTS2_DISPLAYVALUE__ */

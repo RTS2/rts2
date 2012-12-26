@@ -32,6 +32,7 @@
 
 #define OPT_MONITOR_COMMAND    OPT_LOCAL + 307
 #define OPT_MONITOR_SHOW_DEBUG OPT_LOCAL + 308
+#define OPT_MILISEC            OPT_LOCAL + 309
 
 //default refresh rate
 #define MONITOR_REFRESH   0.1
@@ -138,6 +139,9 @@ int NMonitor::processOption (int in_opt)
 			break;
 		case OPT_MONITOR_SHOW_DEBUG:
 			hideDebugValues = false;
+			break;
+		case OPT_MILISEC:
+			showMilisec = true;
 			break;
 		default:
 			return rts2core::Client::processOption (in_opt);
@@ -344,10 +348,10 @@ void NMonitor::changeListConnection ()
 		rts2core::connections_t::iterator iter;
 		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 			if (conn == (*iter))
-				daemonWindow = new NDeviceCentralWindow (conn);
+				daemonWindow = new NDeviceCentralWindow (conn, showMilisec);
 		// otherwise it is normal device connection
 		if (daemonWindow == NULL)
-			daemonWindow = new NDeviceWindow (conn, hideDebugValues);
+			daemonWindow = new NDeviceWindow (conn, hideDebugValues, showMilisec);
 	}
 	else
 	{
@@ -383,6 +387,8 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	hideDebugValues = true;
 	hideDebugMenu = NULL;
 
+	showMilisec = false;
+
 #ifdef RTS2_HAVE_PGSQL
 	tarArg = NULL;
 #endif
@@ -390,6 +396,7 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	addOption ('c', NULL, 0, "don't use colors");
 	addOption ('r', NULL, 1, "refersh rate (in seconds)");
 	addOption (OPT_MONITOR_COMMAND, "command", 1, "send command to device; separate command and device with .");
+	addOption (OPT_MILISEC, "show-milisec", 0, "show milliseconds in time");
 
 	char buf[HOST_NAME_MAX];
 
@@ -530,7 +537,7 @@ int NMonitor::init ()
 	windowStack.push_back (deviceList);
 	deviceList->enter ();
 	statusWindow = new NStatusWindow (comWindow, this);
-	daemonWindow = new NDeviceCentralWindow (*(getCentraldConns ()->begin ()));
+	daemonWindow = new NDeviceCentralWindow (*(getCentraldConns ()->begin ()), showMilisec);
 
 	// init layout
 	daemonLayout = new LayoutBlockFixedB (daemonWindow, comWindow, false, 3);
