@@ -438,6 +438,8 @@ class Device:public Daemon
 
 		int blockState;
 		CommandDeviceStatusInfo *deviceStatusCommand;
+
+		char *last_weathermsg;
 };
 
 }

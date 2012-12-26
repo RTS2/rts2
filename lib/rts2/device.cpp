@@ -508,6 +508,8 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 	doCheck = true;
 	doAuth = true;
 
+	last_weathermsg = NULL;
+
 	// now add options..
 	addOption (OPT_NOAUTH, "noauth", 0, "allow unauthorized connections");
 	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some recomended values are not set");
@@ -518,6 +520,7 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 
 Device::~Device (void)
 {
+	delete[] last_weathermsg;
 	delete device_host;
 }
 
@@ -586,10 +589,17 @@ int Device::commandAuthorized (Connection * conn)
 void Device::setWeatherState (bool good_weather, const char *msg)
 {
 	Daemon::setWeatherState (good_weather, msg);
-	if (good_weather == false && (getState () & BAD_WEATHER))
+	if (good_weather == false && (getState () & BAD_WEATHER) && (last_weathermsg == NULL || !strcmp (msg, last_weathermsg)))
 	{
 		std::ostringstream os;
 		os << "weather_update \"" << getDeviceName () << "\" \"" << msg << "\"";
+
+		delete[] last_weathermsg;
+
+		size_t len = strlen (msg) + 1;
+		last_weathermsg = new char[len];
+		memcpy (last_weathermsg, msg, len);
+
 		for (connections_t::iterator iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 			(*iter)->queCommand (new Command (this, os.str ().c_str ()));
 	}
