@@ -186,7 +186,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		}
 	}
 	// observatory API - proxy
-	else if (vals[0] == "o")
+	else if (vals.size () > 1 && vals[0] == "o")
 	{
 		if (vals.size () < 3)
 			throw JSONException ("insuficient number of subdirs");
