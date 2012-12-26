@@ -47,7 +47,7 @@ void BBServer::sendUpdate ()
 {
 	if (client == NULL)
 	{
-		client = new XmlRpcClient ((char *) _serverApi.c_str (), &_uri);
+		client = new XmlRpcClient (_serverApi.c_str (), &_uri);
 	}
 
 	std::ostringstream body;

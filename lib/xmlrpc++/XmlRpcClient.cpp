@@ -26,19 +26,23 @@ const char XmlRpcClient::REQUEST_END[] = "</methodCall>\r\n";
 const char XmlRpcClient::METHODRESPONSE_TAG[] = "<methodResponse>";
 const char XmlRpcClient::FAULT_TAG[] = "<fault>";
 
-XmlRpcClient::XmlRpcClient(char *path, const char **uri)
+XmlRpcClient::XmlRpcClient(const char *path, const char **uri)
 {
 	char *host;
 	int port = 80;
 	char *authorization = NULL;
 	*uri = NULL;
 
+	size_t len = strlen(path) + 1;
+	fullPath = new char[len];
+	memcpy(fullPath, path, len);
+	
 	// try to parse path..
 
-	if (strstr(path,"http://") == path)
-		host = path + 7;
+	if (strstr(fullPath,"http://") == fullPath)
+		host = fullPath + 7;
 	else
-		host = path;
+		host = fullPath;
 	
 	// find authorization - look for @
 	char *str = strchr(host,'@');
@@ -69,12 +73,14 @@ XmlRpcClient::XmlRpcClient(char *path, const char **uri)
 
 XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization, const char *uri)
 {
+	fullPath = NULL;
 	setupHost(host,port,authorization,uri);
 }
 
 
 XmlRpcClient::~XmlRpcClient()
 {
+	delete fullPath;
 }
 
 

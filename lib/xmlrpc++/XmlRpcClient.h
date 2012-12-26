@@ -42,7 +42,7 @@ namespace XmlRpc
 			//! Construct a client to connect to the server at the specified host:port address
 			//!  @param path           The complete URI of requested resource
 			//!  @param uri            String which will hold URI part of the resource
-			XmlRpcClient(char *path, const char **uri);
+			XmlRpcClient(const char *path, const char **uri);
 
 			//! Construct a client to connect to the server at the specified host:port address
 			//!  @param host           The name of the remote machine hosting the server
@@ -163,6 +163,8 @@ namespace XmlRpc
 		private:
 			void setupProxy ();
 			void setupHost (const char *host, int port, const char *authorization, const char *uri);
+
+			char *fullPath;
 
 	};							 // class XmlRpcClient
 

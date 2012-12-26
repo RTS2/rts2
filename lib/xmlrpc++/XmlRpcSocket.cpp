@@ -233,6 +233,7 @@ XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 		}
 		else
 		{
+			XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send error %s (%d)", strerror(errno), errno);
 			return -1;		 // Error
 		}
 	}
