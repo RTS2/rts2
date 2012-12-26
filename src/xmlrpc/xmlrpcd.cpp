@@ -211,6 +211,12 @@ void XmlRpcd::clientExposureFailed (Connection *conn, int status)
 		(*iter)->exposureFailed (conn, status);
 }
 
+void XmlRpcd::bbSend (double t)
+{
+	bbLastSuccess->setValueDouble (t);
+	sendValueAll (bbLastSuccess);
+}
+
 void XmlDevCameraClient::setCallScriptEnds (bool nv)
 {
 	callScriptEnds->setValueBool (nv);

@@ -473,7 +473,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		/**
 		 * Called when BB information were succesfully transmitted.
 		 */
-		void bbSend (double t) { bbLastSuccess->setValueDouble (t); }
+		void bbSend (double t);
 
 	protected:
 		virtual int info ();
