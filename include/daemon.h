@@ -359,10 +359,31 @@ class Daemon:public rts2core::Block
 		/**
 		 * Sets value from the program. Should be called if the code
 		 * needs to change value and cannot gurantee change to happen at
-		 * correct time.
+		 * correct time - e.g. when device is idle, if the value require so.
+		 *
+		 * @param value   value which is to change (or queue for change)
+		 * @param nval    new value
 		 */
 		void changeValue (Value * value, int nval);
+
+		/**
+		 * Sets value from the program. Should be called if the code
+		 * needs to change value and cannot gurantee change to happen at
+		 * correct time - e.g. when device is idle, if the value require so.
+		 *
+		 * @param value   value which is to change (or queue for change)
+		 * @param nval    new value
+		 */
 		void changeValue (Value * value, bool nval);
+
+		/**
+		 * Sets value from the program. Should be called if the code
+		 * needs to change value and cannot gurantee change to happen at
+		 * correct time - e.g. when device is idle, if the value require so.
+		 *
+		 * @param value   value which is to change (or queue for change)
+		 * @param nval    new value
+		 */
 		void changeValue (Value * value, double nval);
 
 		/**
