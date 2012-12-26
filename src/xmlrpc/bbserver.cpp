@@ -86,6 +86,8 @@ void BBServer::sendUpdate ()
 		return;
 	}
 
+	server->bbSend (atof (reply));
+
 	free (reply);
 }
 

@@ -719,6 +719,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 
 	createValue (bbQueueSize, "bb_queuesize", "size of BB requests queue", false);
 
+	createValue (bbLastSuccess, "bb_lastsucess", "last successful transmision with BB", false);
+
 #ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
 
