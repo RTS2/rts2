@@ -6,6 +6,7 @@ dist_bbs_SCRIPTS = schedule_target.py
 
 noinst_HEADERS = bb.h bbdb.h bbapi.h bbconn.h
 
+if JSONSOUP
 if PGSQL
 
 bin_PROGRAMS = rts2-bb
@@ -23,5 +24,12 @@ CLEANFILES = bbdb.cpp
 else
 
 EXTRA_DIST += bb.cpp httpreq.cpp bbapi.cpp observatory.cpp bbconn.cpp
+
+endif
+else
+
+EXTRA_DIST += bb.cpp httpreq.cpp bbapi.cpp observatory.cpp bbconn.cpp
+
+else
 
 endif
