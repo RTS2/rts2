@@ -141,7 +141,7 @@ int NMonitor::processOption (int in_opt)
 			hideDebugValues = false;
 			break;
 		case OPT_MILISEC:
-			showMilisec = true;
+			rts2core::Configuration::instance ()->setShowMilliseconds (true);
 			break;
 		default:
 			return rts2core::Client::processOption (in_opt);
@@ -348,10 +348,10 @@ void NMonitor::changeListConnection ()
 		rts2core::connections_t::iterator iter;
 		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 			if (conn == (*iter))
-				daemonWindow = new NDeviceCentralWindow (conn, showMilisec);
+				daemonWindow = new NDeviceCentralWindow (conn);
 		// otherwise it is normal device connection
 		if (daemonWindow == NULL)
-			daemonWindow = new NDeviceWindow (conn, hideDebugValues, showMilisec);
+			daemonWindow = new NDeviceWindow (conn, hideDebugValues);
 	}
 	else
 	{
@@ -387,7 +387,7 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	hideDebugValues = true;
 	hideDebugMenu = NULL;
 
-	showMilisec = false;
+	rts2core::Configuration::instance ()->setShowMilliseconds (false);
 
 #ifdef RTS2_HAVE_PGSQL
 	tarArg = NULL;
@@ -396,7 +396,7 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	addOption ('c', NULL, 0, "don't use colors");
 	addOption ('r', NULL, 1, "refersh rate (in seconds)");
 	addOption (OPT_MONITOR_COMMAND, "command", 1, "send command to device; separate command and device with .");
-	addOption (OPT_MILISEC, "show-milisec", 0, "show milliseconds in time");
+	addOption (OPT_MILISEC, "show-milliseconds", 0, "show milliseconds in time differences");
 
 	char buf[HOST_NAME_MAX];
 
@@ -537,7 +537,7 @@ int NMonitor::init ()
 	windowStack.push_back (deviceList);
 	deviceList->enter ();
 	statusWindow = new NStatusWindow (comWindow, this);
-	daemonWindow = new NDeviceCentralWindow (*(getCentraldConns ()->begin ()), showMilisec);
+	daemonWindow = new NDeviceCentralWindow (*(getCentraldConns ()->begin ()));
 
 	// init layout
 	daemonLayout = new LayoutBlockFixedB (daemonWindow, comWindow, false, 3);

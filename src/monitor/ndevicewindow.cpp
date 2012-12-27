@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "configuration.h"
 #include "nmonitor.h"
 #include "ndevicewindow.h"
 
@@ -29,14 +30,13 @@
 
 using namespace rts2ncurses;
 
-NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection, bool _hide_debug, bool _print_milisec):NSelWindow (10, 1, COLS - 10, LINES - 25)
+NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection, bool _hide_debug):NSelWindow (10, 1, COLS - 10, LINES - 25)
 {
 	connection = in_connection;
 	connection->resetInfoTime ();
 	valueBox = NULL;
 	valueBegins = 20;
 	hide_debug = _hide_debug;
-	print_milisec = _print_milisec;
 
 	draw ();
 }
@@ -157,7 +157,7 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 			wprintw (getWriteWindow (), "%c %-20s %5i %24s\n", value->isWritable () ? 'W' : ' ', value->getName ().c_str (), value->getValueInteger (), ((rts2core::ValueSelection *) value)->getSelName ());
 			break;
 		default:
-			printValue (value->getName ().c_str (), getDisplayValue (value, print_milisec).c_str (), value->isWritable ());
+			printValue (value->getName ().c_str (), getDisplayValue (value).c_str (), value->isWritable ());
 	}
 }
 
@@ -328,7 +328,7 @@ bool NDeviceWindow::setCursor ()
 	return NSelWindow::setCursor ();
 }
 
-NDeviceCentralWindow::NDeviceCentralWindow (rts2core::Connection * in_connection, bool _print_milisec):NDeviceWindow (in_connection, false, _print_milisec)
+NDeviceCentralWindow::NDeviceCentralWindow (rts2core::Connection * in_connection):NDeviceWindow (in_connection, false)
 {
 }
 
@@ -346,7 +346,7 @@ void NDeviceCentralWindow::printValues ()
 		for (std::vector < FutureStateChange >::iterator iter = stateChanges.begin (); iter != stateChanges.end (); iter++)
 		{
 			std::ostringstream _os;
-			_os << Timestamp ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime (), print_milisec) << ")";
+			_os << Timestamp ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime (), rts2core::Configuration::instance ()->getShowMilliseconds ()) << ")";
 
 			printValue (((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
 		}

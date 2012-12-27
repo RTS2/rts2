@@ -23,6 +23,7 @@
 
 #include "libnova_cpp.h"
 #include "block.h"
+#include "configuration.h"
 #include "value.h"
 #include "timestamp.h"
 
@@ -337,7 +338,7 @@ const char * ValueTime::getDisplayValue ()
 
 	std::ostringstream _os;
 	_os << Timestamp (getValueDouble ())
-		<< " (" << TimeDiff (infot.tv_sec + (double) infot.tv_usec / USEC_SEC, getValueDouble ()) << ")";
+		<< " (" << TimeDiff (infot.tv_sec + (double) infot.tv_usec / USEC_SEC, getValueDouble (), rts2core::Configuration::instance ()->getShowMilliseconds ()) << ")";
 
 	strncpy (buf, _os.str ().c_str (), VALUE_BUF_LEN - 1);
 	return buf;

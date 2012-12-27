@@ -97,6 +97,7 @@ Configuration::Configuration (bool defaultSection):IniParser (defaultSection)
 	// default to 120 seconds
 	astrometryTimeout = 120;
 	targetConstraintsWithName = false;
+	showMilliseconds = true;
 }
 
 Configuration::~Configuration (void)

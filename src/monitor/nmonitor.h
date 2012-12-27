@@ -193,8 +193,6 @@ class NMonitor:public rts2core::Client
 		double refresh_rate;
 
 		std::map <std::string, std::list <std::string> > initCommands;
-
-		bool showMilisec;
 };
 
 /**

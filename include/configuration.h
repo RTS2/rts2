@@ -357,6 +357,13 @@ class Configuration:public IniParser
 
 		const char *getMasterConstraintFile () { return masterConsFile.c_str (); }
 
+		/**
+		 * Show milliseconds in time prinouts.
+		 */
+		bool getShowMilliseconds () { return showMilliseconds; }
+
+		void setShowMilliseconds (bool show) { showMilliseconds = show; }
+
 	protected:
 		virtual int getSpecialValues ();
 
@@ -400,6 +407,8 @@ class Configuration:public IniParser
 		bool targetConstraintsWithName;
 		std::string nightDir;
 		std::string masterConsFile;
+
+		bool showMilliseconds;
 };
 
 }

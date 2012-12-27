@@ -19,11 +19,12 @@
 
 #include "displayvalue.h"
 #include "timestamp.h"
+#include "configuration.h"
 
 #include <sstream>
 #include <iomanip>
 
-std::string rts2core::getDisplayValue (rts2core::Value * value, bool print_milisec)
+std::string rts2core::getDisplayValue (rts2core::Value * value)
 {
 	std::ostringstream _os;
 	const char *tmp_val;
@@ -73,7 +74,7 @@ std::string rts2core::getDisplayValue (rts2core::Value * value, bool print_milis
 			_os << std::setiosflags (std::ios_base::fixed) << std::setprecision (2) << sval << munits[sind];
 			break;
 		case RTS2_DT_TIMEINTERVAL:
-			_os << TimeDiff (value->getValueDouble (), print_milisec);
+			_os << TimeDiff (value->getValueDouble (), rts2core::Configuration::instance ()->getShowMilliseconds ());
 			break;
 		case RTS2_DT_ONOFF:
 			if (!(value->getFlags () & RTS2_VALUE_ARRAY))
