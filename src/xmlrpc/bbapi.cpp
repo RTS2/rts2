@@ -18,6 +18,7 @@
  */
 
 #include "xmlrpcd.h"
+#include "rts2db/constraints.h"
 #include "rts2json/jsonvalue.h"
 
 #ifdef RTS2_JSONSOUP
@@ -27,25 +28,8 @@
 
 using namespace rts2xmlrpc;
 
-BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s)
+BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::JSONRequest (prefix, _http_server, s)
 {
-}
-
-void BBAPI::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
-{
-	try
-	{
-		executeJSON (path, params, response_type, response, response_length);
-	}
-	catch (rts2core::Error &er)
-	{
-		throw JSONException (er.what ());
-	}
-}
-
-void BBAPI::authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length)
-{
-	throw JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
 }
 
 void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -56,10 +40,51 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 	os.precision (8);
 
 	// calls returning binary data
-	if (vals.size () == 1 && vals[0] == "obsvalues")
+	if (vals.size () == 1)
 	{
-		std::cout << connection->getRequest () << std::endl;
-		os << "{\"ret\":0}";
+		// return time the observatory might be able to schedule the request
+		if (vals[0] == "schedule")
+		{
+			rts2db::Target *tar = getTarget (params);
+			double from = params->getDouble ("from", getNow ());
+			double to = params->getDouble ("to", NAN);
+			if (to < from)
+				throw JSONException ("to time is before from time");
+
+			// get target observability
+			rts2db::ConstraintsList violated;
+			time_t f = from;
+			double JD = ln_get_julian_from_timet (&f);
+			if (isnan (to))
+				to = from + 86400;
+			time_t tto = to;
+			double JD_end = ln_get_julian_from_timet (&tto);
+			double dur = rts2script::getMaximalScriptDuration (tar, ((XmlRpcd *) getMasterApp ())->cameras);
+			if (dur < 60)
+				dur = 60;
+			dur /= 86400.0;
+			// go through nights
+			for (double t = JD; t < JD_end; t += dur)
+			{
+				if (tar->getViolatedConstraints (t).size () == 0)
+				{
+					// check full duration interval
+					for (double t2 = t; t2 < t + dur; t2 += 60 / 86400.0)
+					{
+						if (tar->getViolatedConstraints (t2).size () > 0)
+						{
+							t = t2;
+							continue;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			throw JSONException ("invalid request" + path);
+		}
+
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }

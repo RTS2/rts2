@@ -103,25 +103,8 @@ void getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long 
 
 /** Camera API classes */
 
-API::API (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::GetRequestAuthorized (prefix, _http_server, NULL, s)
+API::API (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):rts2json::JSONRequest (prefix, _http_server, s)
 {
-}
-
-void API::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
-{
-	try
-	{
-		executeJSON (path, params, response_type, response, response_length);
-	}
-	catch (rts2core::Error &er)
-	{
-		throw JSONException (er.what ());
-	}
-}
-
-void API::authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length)
-{
-	throw JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
 }
 
 void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value)
@@ -1180,44 +1163,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			os << "]";
 		}
-		// return time the observatory might be able to schedule the request
-		else if (vals[0] == "bb_schedule")
-		{
-			rts2db::Target *tar = getTarget (params);
-			double from = params->getDouble ("from", getNow ());
-			double to = params->getDouble ("to", NAN);
-			if (to < from)
-				throw JSONException ("to time is before from time");
-
-			// get target observability
-			rts2db::ConstraintsList violated;
-			time_t f = from;
-			double JD = ln_get_julian_from_timet (&f);
-			if (isnan (to))
-				to = from + 86400;
-			time_t tto = to;
-			double JD_end = ln_get_julian_from_timet (&tto);
-			double dur = rts2script::getMaximalScriptDuration (tar, ((XmlRpcd *) getMasterApp ())->cameras);
-			if (dur < 60)
-				dur = 60;
-			dur /= 86400.0;
-			// go through nights
-			for (double t = JD; t < JD_end; t += dur)
-			{
-				if (tar->getViolatedConstraints (t).size () == 0)
-				{
-					// check full duration interval
-					for (double t2 = t; t2 < t + dur; t2 += 60 / 86400.0)
-					{
-						if (tar->getViolatedConstraints (t2).size () > 0)
-						{
-							t = t2;
-							continue;
-						}
-					}
-				}
-			}
-		}
 		else if (vals[0] == "labellist")
 		{
 			rts2db::LabelList ll;
@@ -1702,18 +1647,5 @@ void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
 		os << iter->lid << "," << iter->ltype << ",\"" << iter->ltext << "\"]";
 	}
 	os << "]";
-}
-#endif // RTS2_HAVE_PGSQL
-
-#ifdef RTS2_HAVE_PGSQL
-rts2db::Target * API::getTarget (XmlRpc::HttpParams *params, const char *paramname)
-{
-	int id = params->getInteger (paramname, -1);
-	if (id <= 0)
-		throw JSONException ("invalid id parameter");
-	rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
-	if (target == NULL)
-		throw JSONException ("cannot find target with given ID");
-	return target;
 }
 #endif // RTS2_HAVE_PGSQL

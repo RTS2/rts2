@@ -37,18 +37,17 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class API:public rts2json::GetRequestAuthorized
+class API:public rts2json::JSONRequest
 {
 	public:
 		API (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s);
 
-		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-
-		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
-
 		void sendOwnValues (std::ostringstream & os, XmlRpc::HttpParams *params, double from, bool extended);
+
+	protected:
+		virtual void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+	
 	private:
-		void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 #ifdef RTS2_HAVE_PGSQL
@@ -56,7 +55,6 @@ class API:public rts2json::GetRequestAuthorized
 		void jsonObservations (rts2db::ObservationSet *obss, std::ostream &os);
 		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
 		void jsonLabels (rts2db::Target *tar, std::ostream &os);
-		rts2db::Target * getTarget (XmlRpc::HttpParams *params, const char *paramname = "id");
 #endif
 };
 

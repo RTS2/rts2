@@ -54,7 +54,7 @@ namespace rts2json
 class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 {
 	public:
-		GetRequestAuthorized (const char* prefix, HTTPServer *_http_server, const char *description = NULL, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, description, s)
+		GetRequestAuthorized (const char* prefix, HTTPServer *_http_server, const char *description = NULL, XmlRpc::XmlRpcServer* s = NULL):XmlRpcServerGetRequest (prefix, description, s)
 		{
 			http_server = _http_server;
 			executePermission = false;
@@ -62,6 +62,7 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 
 		virtual void execute (XmlRpc::XmlRpcSource *source, struct ::sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
+	protected:
 		/**
 		 * Received exact path and HTTP params. Returns response - MIME
 		 * type, its data and length. This request is password
@@ -78,7 +79,6 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		 */
 		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
 
-	protected:
 		/**
 		 * Prints document header.
 		 *
@@ -156,6 +156,19 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		HTTPServer *http_server;
 
 		HTTPServer *getServer () { return http_server; }
+};
+
+class JSONRequest:public GetRequestAuthorized
+{
+	public:
+		JSONRequest (const char *prefix, HTTPServer *_http_server, XmlRpc::XmlRpcServer* s);
+
+		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
+
+	protected:
+		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+
+		virtual void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
 };
 
 }

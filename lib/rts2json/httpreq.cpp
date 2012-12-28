@@ -112,4 +112,23 @@ void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const 
 	includeJavaScript (os, name);
 }
 
+JSONRequest::JSONRequest (const char *prefix, HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, NULL, s)
+{
+}
 
+void JSONRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	try
+	{
+		executeJSON (path, params, response_type, response, response_length);
+	}
+	catch (rts2core::Error &er)
+	{
+		throw JSONException (er.what ());
+	}
+}
+
+void JSONRequest::authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length)
+{
+	throw JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
+}

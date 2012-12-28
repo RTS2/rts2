@@ -33,16 +33,13 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class BBAPI:public rts2json::GetRequestAuthorized
+class BBAPI:public rts2json::JSONRequest
 {
 	public:
 		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s);
 
-		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-
-		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
-	private:
-		void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+	protected:
+		virtual void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 }

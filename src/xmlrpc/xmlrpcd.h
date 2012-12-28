@@ -598,6 +598,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 #ifndef RTS2_HAVE_PGSQL
 bool verifyUser (std::string username, std::string pass, bool &executePermission);
+#else
+rts2db::Target * getTarget (XmlRpc::HttpParams *params, const char *paramname = "id");
 #endif
 
 };

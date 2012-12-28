@@ -948,6 +948,16 @@ bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &execut
 	return verifyUser (username, pass, executePermission);
 }
 
+rts2db::Target * rts2xmlrpc::getTarget (XmlRpc::HttpParams *params, const char *paramname)
+{
+	int id = params->getInteger (paramname, -1);
+	if (id <= 0)
+		throw JSONException ("invalid id parameter");
+	rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+	if (target == NULL)
+		throw JSONException ("cannot find target with given ID");
+	return target;
+}
 #else
 bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission)
 {
