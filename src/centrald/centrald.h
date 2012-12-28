@@ -227,6 +227,9 @@ class Centrald:public Daemon
 		virtual void signaledHUP ();
 
 	private:
+		// called to change state, check if last_night_on should be set
+		void maskCentralState (int state_mask, int new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
+
 		// -1 if no connection has priority, -2 if the process is exiting and there aren't any valid connections,
 		// otherwise connection number of priority client
 		int priority_client;
@@ -273,6 +276,9 @@ class Centrald:public Daemon
 
 		rts2core::ValueTime *nightStart;
 		rts2core::ValueTime *nightStop;
+
+		// time when system was last switched to ON and was in ready_night
+		rts2core::ValueTime *lastOn;
 
 		rts2core::ValueDouble *sunAlt;
 		rts2core::ValueDouble *sunAz;

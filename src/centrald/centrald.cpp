@@ -414,6 +414,8 @@ Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF 
 	createValue (nightStart, "night_start", "beginning of current or next night", false);
 	createValue (nightStop, "night_stop", "end of current or next night", false);
 
+	createValue (lastOn, "last_night_on", "time when system was last switched to on in ready night state", false);
+
 	createValue (sunAlt, "sun_alt", "Sun altitude", false, RTS2_DT_DEC);
 	createValue (sunAz, "sun_az", "Sun azimuth", false, RTS2_DT_DEGREES);
 
@@ -581,11 +583,11 @@ int Centrald::initValues ()
 
 	if (config->getBoolean ("centrald", "reboot_on", false))
 	{
-		maskState (SERVERD_STATUS_MASK, call_state, "switched on centrald reboot");
+		maskCentralState (SERVERD_STATUS_MASK, call_state, "switched on centrald reboot");
 	}
 	else
 	{
-		maskState (SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "switched on centrald reboot");
+		maskCentralState (SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "switched on centrald reboot");
 	}
 
 	nextStateChange->setValueTime (next_event_time);
@@ -684,7 +686,7 @@ int Centrald::changeState (int new_state, const char *user)
 {
 	logStream (MESSAGE_INFO) << "State switched to " << rts2core::CentralState::getString (new_state) << " by " <<
 		user << sendLog;
-	maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
+	maskCentralState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
 	return 0;
 }
 
@@ -758,15 +760,15 @@ int Centrald::idle ()
 				&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 			{
 				if (morning_off->getValueBool ())
-					maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "by idle routine");
+					maskCentralState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "by idle routine");
 				else if (morning_standby->getValueBool ())
-					maskState (SERVERD_STANDBY_MASK, SERVERD_STANDBY, "by idle routine");
+					maskCentralState (SERVERD_STANDBY_MASK, SERVERD_STANDBY, "by idle routine");
 				else
-					maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
+					maskCentralState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 			}
 			else
 			{
-				maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
+				maskCentralState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 			}
 		}
 
@@ -1025,6 +1027,19 @@ int Centrald::getStateForConnection (rts2core::Connection * conn)
 		sta |= test_conn->getBopState ();
 	}
 	return sta;
+}
+
+void Centrald::maskCentralState (int state_mask, int new_state, const char *description, double start, double end, Connection *commandedConn)
+{
+	maskState (state_mask, new_state, description, start, end, commandedConn);
+	if (state_mask & SERVERD_STATUS_MASK)
+	{
+		if ((new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT && !(new_state & SERVERD_STANDBY))
+			lastOn->setValueDouble (getNow ());
+		else
+			lastOn->setValueDouble (NAN);
+		sendValueAll (lastOn);
+	}
 }
 
 int main (int argc, char **argv)
