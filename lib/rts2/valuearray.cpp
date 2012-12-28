@@ -276,7 +276,7 @@ const char *TimeArray::getDisplayValue ()
 	oss.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	while (iter != valueEnd ())
 	{
-		oss << LibnovaDateDouble (*iter);
+		oss << Timestamp (*iter);
 		iter++;
 		if (iter == valueEnd ())
 			break;
