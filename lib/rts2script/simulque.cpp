@@ -63,6 +63,7 @@ SimulQueue::~SimulQueue ()
 void SimulQueue::start (double _from, double _to)
 {
   	from = _from;
+	fr = from;
 	to = _to;
 	t = from;
 
@@ -106,8 +107,8 @@ double SimulQueue::step ()
 				}
 				t = e_end;
 				rts2db::Target *tar = createTarget (n_id, *observer, NULL);
-				addTarget (tar, from, t);
-				logStream (MESSAGE_DEBUG) << "adding to simulation:" << n_id << " " << tar->getTargetName () << " from " << LibnovaDateDouble (from) << " to " << LibnovaDateDouble (t) << sendLog;
+				addTarget (tar, fr, t);
+				logStream (MESSAGE_DEBUG) << "adding to simulation:" << n_id << " " << tar->getTargetName () << " from " << LibnovaDateDouble (fr) << " to " << LibnovaDateDouble (t) << sendLog;
 				sq->front ().target->startObservation ();
 				sq->beforeChange (t);
 				found = true;
@@ -128,8 +129,11 @@ double SimulQueue::step ()
 			else
 				t += 60;
 		}
-		from = t;
-		return 0;
+		fr = t;
+		if (found)
+			return (t - from) / (to - from);
+		else
+			return (from - t) / (to - from);
 	}
 
 	for (sq = sqs.begin (); sq != sqs.end (); sq++)

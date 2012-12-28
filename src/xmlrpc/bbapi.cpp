@@ -38,6 +38,7 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
   	std::ostringstream os;
 
 	os.precision (8);
+	os << std::fixed;
 
 	// calls returning binary data
 	if (vals.size () == 1)
@@ -47,7 +48,7 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 		{
 			rts2db::Target *tar = getTarget (params);
 			double from = params->getDouble ("from", getNow ());
-			double to = params->getDouble ("to", NAN);
+			double to = params->getDouble ("to", from + 86400);
 			if (to < from)
 				throw JSONException ("to time is before from time");
 
@@ -55,8 +56,6 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			rts2db::ConstraintsList violated;
 			time_t f = from;
 			double JD = ln_get_julian_from_timet (&f);
-			if (isnan (to))
-				to = from + 86400;
 			time_t tto = to;
 			double JD_end = ln_get_julian_from_timet (&tto);
 			double dur = rts2script::getMaximalScriptDuration (tar, ((XmlRpcd *) getMasterApp ())->cameras);
@@ -64,12 +63,14 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 				dur = 60;
 			dur /= 86400.0;
 			// go through nights
-			for (double t = JD; t < JD_end; t += dur)
+			double t;
+			for (t = JD; t < JD_end; t += dur)
 			{
 				if (tar->getViolatedConstraints (t).size () == 0)
 				{
+					double t2;
 					// check full duration interval
-					for (double t2 = t; t2 < t + dur; t2 += 60 / 86400.0)
+					for (t2 = t; t2 < t + dur; t2 += 60 / 86400.0)
 					{
 						if (tar->getViolatedConstraints (t2).size () > 0)
 						{
@@ -77,8 +78,15 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 							continue;
 						}
 					}
+					if (t2 >= t + dur)
+					{
+						os << t;
+						break;
+					}
 				}
 			}
+			if (t >= JD_end)
+				os << "0";
 		}
 		else
 		{

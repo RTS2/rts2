@@ -135,6 +135,11 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::ValueInteger *current_target;
 		rts2core::ValueInteger *current_obs;
 
+		rts2core::TimeArray *free_start;
+		rts2core::TimeArray *free_end;
+
+		double last_p;
+
 		rts2plan::Queues queues;
 
 		rts2core::ValueTime *simulTime;
@@ -160,6 +165,10 @@ class SelectorDev:public rts2db::DeviceDb
 		void updateSelectLength ();
 
 		void afterQueueChange (rts2plan::ExecutorQueue *q);
+
+		double simulStart;
+		// expected simulation duration
+		rts2core::ValueDouble *simulExpected;
 };
 
 }
@@ -204,6 +213,9 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (current_obs, "current_obs", "current observation ID", false);
 	current_obs->setValueInteger (-1);
 
+	createValue (free_start, "free_start", "start times of free intervals", false);
+	createValue (free_end, "free_end", "end times of free intervals", false);
+
 	createValue (idle_select, "idle_select", "delay in sec for selection", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 	idle_select->setValueInteger (300);
 
@@ -220,6 +232,9 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (flatSunMax, "flat_sun_max", "maximal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
 	createValue (nightDisabledTypes, "night_disabled_types", "list of target types which will not be selected during night", false, RTS2_VALUE_WRITABLE);
+
+	createValue (simulExpected, "simul_expected", "[s] expected simulation duration", RTS2_DT_TIMEINTERVAL);
+	simulExpected->setValueDouble (60);
 
 	addOption (OPT_IDLE_SELECT, "idle-select", 1, "selection timeout (reselect every I seconds)");
 
@@ -344,12 +359,34 @@ int SelectorDev::idle ()
 		if (p == 2)
 		{
 			maskState (SEL_SIMULATING, SEL_IDLE, "simulation finished");
+			simulExpected->setValueDouble (getNow () - simulStart);
+			sendValueAll (simulExpected);
+
+			if (last_p < 0)
+			{
+				free_end->addValue (simulQueue->getSimulationTime ());
+				sendValueAll (free_end);
+			}
+
 			setTimeout (60 * USEC_SEC);
 		}
 		else
 		{
+			if (last_p < 0 && p > 0)
+			{
+				free_end->addValue (simulTime->getValueDouble ());
+				sendValueAll (free_end);
+			}
+			else if (last_p > 0 && p < 0)
+			{
+				free_start->addValue (simulTime->getValueDouble ());
+				sendValueAll (free_start);
+			}
+
 			simulTime->setValueDouble (simulQueue->getSimulationTime ());
 			sendValueAll (simulTime);
+
+			last_p = p;
 		}
 	}
 	return rts2db::DeviceDb::idle ();
@@ -759,8 +796,20 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		double to;
 		if (conn->paramNextDouble (&from) || conn->paramNextDouble (&to) || !conn->paramEnd ())
 			return -2;
+		simulStart = getNow ();
+
+		last_p = 0;
+		free_start->clear ();
+		free_end->clear ();
+
+		sendValueAll (free_start);
+		sendValueAll (free_end);
+
+		simulTime->setValueDouble (from);
+		sendValueAll (simulTime);
+
 		simulQueue->start (from, to);
-		maskState (SEL_SIMULATING, SEL_SIMULATING, "starting simulation");
+		maskState (SEL_SIMULATING, SEL_SIMULATING, "starting simulation", simulStart, simulStart + simulExpected->getValueDouble ());
 		setTimeout (0);
 		return 0;
 	}

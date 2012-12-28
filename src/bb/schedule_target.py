@@ -37,5 +37,6 @@ for obs_id in args:
 		obs_tar_id = int(options.obs_tar_id)
 
 	# contact about when the target will be able to schedule..
-	ret = rts2.json.getProxy().loadJson('/api/bb_schedule', {'id':obs_tar_id})
+	ret = rts2.json.getProxy().loadJson('/bbapi/schedule', {'id':obs_tar_id})
 
+	print 'log I schedule returns {0}'.format(ret)	

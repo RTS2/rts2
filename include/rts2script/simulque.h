@@ -68,7 +68,7 @@ class SimulQueue:public ExecutorQueue
 		/**
 		 * Performs one step of the simulation.
 		 *
-		 * @return Progress (0-1 range) of the simulation, 2 if simulation was done
+		 * @return Progress (0-1 range) of the simulation, 2 if simulation was done. Negative values means that queue target cannot be selected, but progress is reporetd anyway
 		 */
 		double step ();
 		
@@ -88,6 +88,7 @@ class SimulQueue:public ExecutorQueue
 		std::vector <SimulQueueTargets> sqs;
 
 		double from;
+		double fr;
 		double to;
 		double t;
 
