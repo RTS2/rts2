@@ -169,6 +169,8 @@ class SelectorDev:public rts2db::DeviceDb
 		double simulStart;
 		// expected simulation duration
 		rts2core::ValueDouble *simulExpected;
+
+		double from;
 };
 
 }
@@ -364,6 +366,11 @@ int SelectorDev::idle ()
 
 			if (last_p < 0)
 			{
+				if (free_start->size () == 0)
+				{
+					free_start->addValue (from);
+					sendValueAll (free_start);
+				}
 				free_end->addValue (simulQueue->getSimulationTime ());
 				sendValueAll (free_end);
 			}
@@ -792,7 +799,6 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("simulate"))
 	{
-		double from;
 		double to;
 		if (conn->paramNextDouble (&from) || conn->paramNextDouble (&to) || !conn->paramEnd ())
 			return -2;
