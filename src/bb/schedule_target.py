@@ -3,6 +3,7 @@
 import sys
 import rts2.json
 import re
+import time
 import sys
 from optparse import OptionParser
 
@@ -39,4 +40,4 @@ for obs_id in args:
 	# contact about when the target will be able to schedule..
 	ret = rts2.json.getProxy().loadJson('/bbapi/schedule', {'id':obs_tar_id})
 
-	print 'log I schedule returns {0}'.format(ret)	
+	print 'log I schedule returns {0}'.format(time.ctime(int(ret)))	
