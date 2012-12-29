@@ -52,6 +52,40 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			if (to < from)
 				throw JSONException ("to time is before from time");
 
+			// find free spots
+			XmlRpcd *master = (XmlRpcd*) getMasterApp ();
+			connections_t::iterator iter = master->getConnections ()->begin ();
+
+			master->getOpenConnectionType (DEVICE_TYPE_SELECTOR, iter);
+			
+			rts2core::TimeArray *free_start = NULL;
+			rts2core::TimeArray *free_end = NULL;
+
+			std::vector <double>::iterator iter_fstart;
+			std::vector <double>::iterator iter_fend;
+
+			if (iter != master->getConnections ()->end ())
+			{
+				rts2core::Value *f_start = (*iter)->getValue ("free_start");
+				rts2core::Value *f_end = (*iter)->getValue ("free_end");
+				if (f_start == NULL || f_end == NULL)
+				{
+					logStream (MESSAGE_WARNING) << "cannot find free_start or free_end variables in " << (*iter)->getName () << sendLog;
+				}
+				else if (f_start->getValueType () == (RTS2_VALUE_TIME | RTS2_VALUE_ARRAY) && f_end->getValueType () == (RTS2_VALUE_TIME | RTS2_VALUE_ARRAY))
+				{
+					free_start = (rts2core::TimeArray*) f_start;
+					free_end = (rts2core::TimeArray*) f_end;
+
+					iter_fstart = free_start->valueBegin ();
+					iter_fend = free_end->valueBegin ();
+				}
+				else
+				{
+					logStream (MESSAGE_WARNING) << "invalid free_start or free_end types: " << std::hex << f_start->getValueType () << " " << std::hex << f_end->getValueType () << sendLog;
+				}
+			}
+
 			// get target observability
 			rts2db::ConstraintsList violated;
 			time_t f = from;
@@ -64,8 +98,42 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 			dur /= 86400.0;
 			// go through nights
 			double t;
+			
+			double fstart_JD = NAN;
+			double fend_JD = NAN;
+
+			if (free_start && iter_fstart != free_start->valueEnd () && iter_fend != free_end->valueEnd ())
+			{
+				f = *iter_fstart;
+				fstart_JD = ln_get_julian_from_timet (&f);
+
+				f = *iter_fend;
+				fend_JD = ln_get_julian_from_timet (&f);
+
+				if (JD < fstart_JD)
+					JD = fstart_JD;
+			}
+
 			for (t = JD; t < JD_end; t += dur)
 			{
+				if (t > fend_JD)
+				{
+					iter_fstart++;
+					iter_fend++;
+					if (iter_fstart == free_start->valueEnd () || iter_fend == free_end->valueEnd ())
+					{
+						t = JD_end;
+						break;
+					}
+					else
+					{
+						f = *iter_fstart;
+						fstart_JD = ln_get_julian_from_timet (&f);
+
+						f = *iter_fend;
+						fend_JD = ln_get_julian_from_timet (&f);
+					}
+				}
 				if (tar->getViolatedConstraints (t).size () == 0)
 				{
 					double t2;
@@ -80,7 +148,8 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 					}
 					if (t2 >= t + dur)
 					{
-						os << t;
+						ln_get_timet_from_julian (t, &f);
+						os << f;
 						break;
 					}
 				}
