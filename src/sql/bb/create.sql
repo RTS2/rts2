@@ -18,9 +18,9 @@ CREATE TABLE bb_schedules (
 );
 
 CREATE TABLE observatory_schedules (
-	schedule_id	integer REFERENCES schedules (schedule_id),
+	schedule_id	integer REFERENCES bb_schedules (schedule_id),
 	observatory_id	integer REFERENCES observatories (observatory_id),
-	state		integer NOT NULL
+	state		integer NOT NULL,
 	created		timestamp NOT NULL,
 	last_update	timestamp
 );
