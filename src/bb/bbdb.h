@@ -19,6 +19,7 @@
 
 #include <libnova/libnova.h>
 #include <string>
+#include <list>
 
 #ifndef __RTS2_BBDB__
 #define __RTS2_BBDB__
@@ -35,11 +36,20 @@ class Observatory
 		struct ln_lnlat_posn * getPosition () { return &position; }
 		double getAltitude () { return altitude; }
 		const char * getURL () { return url.c_str (); }
+		int getId () { return observatory_id; }
 	private:
 		int observatory_id;
 		struct ln_lnlat_posn position;
 		double altitude;
 		std::string url;
+};
+
+class Observatories:public std::list <Observatory>
+{
+	public:
+		Observatories ():std::list <Observatory> () {}
+
+		void load ();
 };
 
 /***
@@ -59,6 +69,13 @@ void reportObservation (int observatory_id, int obs_id, int obs_tar_id, double o
 int findMapping (int observatory_id, int obs_tar_id);
 
 int findObservatoryMapping (int observatory_id, int tar_id);
+
+/**
+ * Creates new schedule.
+ */
+int createSchedule (int target_id);
+
+void updateSchedule (int schedule_id, int observatory_id, int state);
 
 }
 

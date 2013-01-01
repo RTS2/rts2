@@ -108,7 +108,24 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			os << "{\"ret\":0}";
 		}
-		// schedule observation on the telescope
+		// schedule observation on all nodes
+		else if (vals[0] == "schedule_all")
+		{
+			int tar_id = params->getInteger ("tar_id", -1);
+			if (tar_id < 0)
+				throw XmlRpc::JSONException ("unknown target ID");
+
+			Observatories obs;
+			obs.load ();
+
+			int schedule_id = createSchedule (tar_id);
+
+			for (Observatories::iterator iter = obs.begin (); iter != obs.end (); iter++)
+			{
+				updateSchedule (schedule_id, iter->getId (), 0);
+			}
+		}
+		// schedule observation on one observatory
 		else if (vals[0] == "schedule")
 		{
 			int observatory_id = params->getInteger ("observatory_id", -1);
@@ -118,19 +135,17 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (tar_id < 0)
 				throw XmlRpc::JSONException ("unknown target ID");
 			
+			Observatory obs (observatory_id);
+			obs.load ();
+
 			rts2db::Target *target = createTarget (tar_id, Configuration::instance ()->getObserver ());
 			if (target == NULL)
 				throw JSONException ("cannot find target with given ID");
-
-			Observatory obs (observatory_id);
-			obs.load ();
 
 			std::ostringstream p_os;
 			p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", RTS2_SHARE_PREFIX "/rts2/bb") << "/schedule_target.py";
 
 			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str ());
-
-			rts2db::Target *tar = NULL;
 
 			try
 			{
@@ -141,11 +156,6 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			catch (rts2db::SqlError er)
 			{
 				bbqueue->addArg ("--create");
-				tar = createTarget (tar_id, obs.getPosition ());
-
-				if (tar == NULL)
-					throw JSONException ("cannot find target with given ID");
-
 				bbqueue->addArg (tar_id);
 			}
 
@@ -160,7 +170,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			((BB *) getMasterApp ())->addConnection (bbqueue);
 		}
-		// obseravtory update
+		// observatory update
 		else if (vals[0] == "observatory")
 		{
 			int observatory_id = params->getInteger ("observatory_id", -1);

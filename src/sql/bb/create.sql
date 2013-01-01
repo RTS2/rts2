@@ -12,6 +12,19 @@ CREATE TABLE targets_observatories (
 	obs_tar_id	integer NOT NULL
 );
 
+CREATE TABLE bb_schedules (
+	schedule_id	integer PRIMARY KEY,
+	tar_id		integer REFERENCES targets (tar_id)
+);
+
+CREATE TABLE observatory_schedules (
+	schedule_id	integer REFERENCES schedules (schedule_id),
+	observatory_id	integer REFERENCES observatories (observatory_id),
+	state		integer NOT NULL
+	created		timestamp NOT NULL,
+	last_update	timestamp
+);
+
 CREATE TABLE observatory_observations (
 	observatory_id	integer REFERENCES observatories (observatory_id),
 	obs_id 		integer NOT NULL,
@@ -25,3 +38,5 @@ CREATE TABLE observatory_observations (
 	good_images	integer,
 	bad_images	integer
 );
+
+CREATE SEQUENCE bb_schedule_id;

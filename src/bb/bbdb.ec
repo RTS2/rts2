@@ -75,6 +75,35 @@ void Observatory::load ()
 	EXEC SQL COMMIT;
 }
 
+void Observatories::load ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_observatory_id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL DECLARE cur_observatories CURSOR FOR
+		SELECT
+			observatory_id
+		FROM
+			observatories;
+	EXEC SQL OPEN cur_observatories;
+	while (true)
+	{
+		EXEC SQL FETCH next FROM cur_observatories INTO
+			:db_observatory_id;
+		if (sqlca.sqlcode)
+		{
+			if (sqlca.sqlcode == ECPG_NOT_FOUND)
+				break;
+			EXEC SQL ROLLBACK;
+			throw rts2db::SqlError ();
+		}
+		push_back (Observatory (db_observatory_id));
+		back ().load ();
+	}
+	EXEC SQL ROLLBACK;
+}
+
 /***
  * Register new target mapping into BB database.
  *
@@ -209,4 +238,71 @@ int rts2bb::findObservatoryMapping (int observatory_id, int tar_id)
 	}
 	EXEC SQL ROLLBACK;
 	return db_obs_tar_id;
+}
+
+int rts2bb::createSchedule (int target_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_schedule_id;
+	int db_target_id = target_id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT nextval('bb_schedule_id') INTO :db_schedule_id;
+
+	EXEC SQL INSERT INTO
+		bb_schedules
+	VALUES (
+		:db_schedule_id,
+		:db_target_id
+	);
+
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+
+	EXEC SQL COMMIT;
+	return db_schedule_id;
+}
+
+void rts2bb::updateSchedule (int schedule_id, int observatory_id, int state)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_schedule_id = schedule_id;
+	int db_observatory_id = observatory_id;
+	int db_state = state;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT
+		state 
+	FROM
+		observatory_schedules
+	WHERE
+		schedule_id = :db_schedule_id
+		AND observatory_id = :db_observatory_id;
+
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL INSERT INTO
+			observatory_schedules
+		VALUES (:db_schedule_id, :db_observatory_id, :db_state, now (), NULL);
+	}
+	else
+	{
+		EXEC SQL UPDATE
+			observatory_schedules
+		SET
+			state = :db_state,
+			last_update = now ()
+		WHERE
+			schedule_id = :db_schedule_id
+			AND observatory_id = :db_observatory_id;
+	}
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+	EXEC SQL COMMIT;
 }
