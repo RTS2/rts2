@@ -64,4 +64,8 @@
       </value>
     </device>
   </events>
+  <bb>
+    <server>http://localhost:8890</server>
+    <observatory>1</observatory>
+  </bb>
 </config>
