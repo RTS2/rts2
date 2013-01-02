@@ -229,8 +229,13 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			{
 				if (iter != obs.begin ())
 					os << ",";
-				os << "\"" << iter->getId () << "\":[" 
-					<< iter->getPosition ()->lat
+
+				std::map <int, std::pair <double, JsonParser*> >::iterator obs_iter = observatoriesJsons.find (iter->getId ());
+				if (obs_iter == observatoriesJsons.end ())
+					throw JSONException ("cannot find data for observatory");
+
+				os << "\"" << iter->getId () << "\":[" << obs_iter->second.first 
+					<< "," << iter->getPosition ()->lat
 					<< "," << iter->getPosition ()->lng
 					<< "," << iter->getAltitude ()
 					<< ",\"" << iter->getURL () << "\"]";

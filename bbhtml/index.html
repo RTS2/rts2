@@ -1,0 +1,53 @@
+<html>
+<head>
+  <title>Test page</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta http-equiv="content-language" content="en">
+  <meta name="author" content="Petr Kubanek (petr@kubanek.net)">
+</head>
+
+<script language="JavaScript" src="js/setgetapi.js" type="text/javascript"></script>
+<script language="JavaScript">
+function create()
+{
+	function obs_list (obslist)
+	{
+		var p = document.getElementById("obslist");
+		var table = document.createElement("table");
+		p.innerHTML = "";
+		p.appendChild(table);
+		for (var o in obslist)
+		{
+			var tr = document.createElement("tr");
+
+			var tdd = document.createElement("td");
+			tdd.innerHTML = o;
+			tr.appendChild(tdd);
+
+			for (var t in obslist[o])
+			{
+				var td = document.createElement("td");
+				if (t == 0)
+				{
+					var d = new Date(obslist[o][t] * 1000);
+					td.innerHTML = d.toLocaleString();
+				}
+				else
+				{
+					td.innerHTML = obslist[o][t];
+				}
+				tr.appendChild(td);
+			}
+
+			table.appendChild(tr);
+		}
+	}
+
+	jsonCall('../api/o/list', obs_list);
+}
+</script>
+
+<body onLoad="create();">
+ <h1>List of observatories &amp; their status</h1>
+ <p id="obslist">Loading..</p>
+</body>
