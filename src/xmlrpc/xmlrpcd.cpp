@@ -521,10 +521,10 @@ int XmlRpcd::init ()
 	}
 
 	for (std::vector <DirectoryMapping>::iterator iter = events.dirs.begin (); iter != events.dirs.end (); iter++)
-		directories.push_back (new Directory (iter->getTo (), this, iter->getPath (), "", this));
+		directories.push_back (new rts2json::Directory (iter->getTo (), this, iter->getPath (), "", this));
 	
 	if (events.docroot.length () > 0)
-		XmlRpcServer::setDefaultGetRequest (new Directory (NULL, this, events.docroot.c_str (), "index.html", NULL));
+		XmlRpcServer::setDefaultGetRequest (new rts2json::Directory (NULL, this, events.docroot.c_str (), "index.html", NULL));
 	if (events.defchan != INT_MAX)
 		defchan = events.defchan;
 	else
@@ -741,7 +741,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 
 XmlRpcd::~XmlRpcd ()
 {
-	for (std::vector <Directory *>::iterator id = directories.begin (); id != directories.end (); id++)
+	for (std::vector <rts2json::Directory *>::iterator id = directories.begin (); id != directories.end (); id++)
 		delete *id;
 
 	for (std::map <std::string, Session *>::iterator iter = sessions.begin (); iter != sessions.end (); iter++)

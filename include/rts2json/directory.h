@@ -20,10 +20,9 @@
 #ifndef __RTS2_DIRECTORY__
 #define __RTS2_DIRECTORY__
 
-#include "rts2json/httpreq.h"
-#include "xmlrpcd.h"
+#include "httpreq.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 /**

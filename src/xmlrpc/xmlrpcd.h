@@ -34,7 +34,7 @@
 #endif /* RTS2_HAVE_PGSQL */
 
 #include "graphreq.h"
-#include "directory.h"
+#include "rts2json/directory.h"
 #include "events.h"
 #include "rts2json/httpreq.h"
 #include "rts2json/jsonvalue.h"
@@ -77,8 +77,6 @@ using namespace XmlRpc;
  */
 namespace rts2xmlrpc
 {
-
-class Directory;
 
 /**
  * Support class/interface for operations needed by XmlDevClient and XmlDevClientCamera.
@@ -502,7 +500,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		std::list <XmlDevCameraClient *> camClis;
 
-		std::vector <Directory *> directories;
+		std::vector <rts2json::Directory *> directories;
 		std::list <AsyncAPI *> asyncAPIs;
 
 		Events events;

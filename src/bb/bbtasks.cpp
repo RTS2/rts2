@@ -18,6 +18,7 @@
  */
 
 #include "bb.h"
+#include "bbdb.h"
 #include "bbtasks.h"
 #include "app.h"
 
@@ -31,11 +32,13 @@ int BBTaskSchedule::run ()
 			state = BB_SCHEDULE_REQUESTED;
 			return 1;
 		case BB_SCHEDULE_REQUESTED:
+			state = BB_SCHEDULE_REPLIED;
 			return 1;
 		default:
 			logStream (MESSAGE_WARNING) << "unknow BBTaskSchedule state: " << state << sendLog;
 			return 0;
 	}
+	updateSchedule (schedule_id, observatory_id, state);
 }
 
 BBTasks::BBTasks (BB *_server):TSQueue <BBTask *> ()

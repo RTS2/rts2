@@ -18,14 +18,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "expandstrings.h"
-#include "xmlrpcd.h"
+#include "rts2json/expandstrings.h"
+#include "xmlerror.h"
 
 #include "block.h"
 #include "connection.h"
 #include "displayvalue.h"
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 ExpandStringOpenTag::ExpandStringOpenTag (xmlNodePtr ptr, bool closeTag):ExpandStringTag ()
 {

@@ -150,12 +150,12 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 			memcpy (response, _os.str ().c_str (), response_length);
 		}
 
+		HTTPServer *getServer () { return http_server; }
+
 	private:
 		bool executePermission;
 
 		HTTPServer *http_server;
-
-		HTTPServer *getServer () { return http_server; }
 };
 
 class JSONRequest:public GetRequestAuthorized

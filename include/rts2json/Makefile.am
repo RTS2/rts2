@@ -1,1 +1,1 @@
-noinst_HEADERS = httpreq.h jsonvalue.h httpserver.h
+noinst_HEADERS = httpreq.h jsonvalue.h httpserver.h directory.h expandstrings.h 

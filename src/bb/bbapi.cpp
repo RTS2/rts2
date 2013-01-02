@@ -41,6 +41,15 @@ BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::Xm
 	queue = _queue;
 }
 
+BBAPI::~BBAPI ()
+{
+	for (std::map <int, std::pair <double, JsonParser*> >::iterator iter = observatoriesJsons.begin (); iter != observatoriesJsons.end (); iter++)
+	{
+		g_object_unref (iter->second.second);
+	}
+	observatoriesJsons.clear ();
+}
+
 void BBAPI::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	try
@@ -203,7 +212,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			}
 			else
 			{
-				observatoriesJsons[observatory_id] = newJson;
+				observatoriesJsons[observatory_id] = std::pair <double, JsonParser *> (getNow (), newJson);
 				os << std::fixed << getNow ();
 			}
 		}
@@ -214,7 +223,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		if (vals.size () < 3)
 			throw JSONException ("insuficient number of subdirs");
 		int observatory_id = atoi (vals[1].c_str ());
-		std::map <int, JsonParser*>::iterator iter = observatoriesJsons.find (observatory_id);
+		std::map <int, std::pair <double, JsonParser*> >::iterator iter = observatoriesJsons.find (observatory_id);
 		if (iter == observatoriesJsons.end ())
 			throw JSONException ("cannot find data for observatory");
 		if (vals[2] == "api")
@@ -222,7 +231,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (vals[3] == "devices")
 			{
 				os << "[";
-				GList *devices = json_object_get_members (json_node_get_object (json_parser_get_root (iter->second)));
+				GList *devices = json_object_get_members (json_node_get_object (json_parser_get_root (iter->second.second)));
 				for (GList *giter = g_list_first (devices); giter != g_list_last (devices); giter = g_list_next (giter))
 				{
 					if (giter != g_list_first (devices))
@@ -235,7 +244,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			else if (vals[3] == "getall")
 			{
 				JsonGenerator *gen = json_generator_new ();
-				json_generator_set_root (gen, json_parser_get_root (iter->second));
+				json_generator_set_root (gen, json_parser_get_root (iter->second.second));
 
 				gchar *out = json_generator_to_data (gen, NULL);
 				os << out;
@@ -247,7 +256,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			else if (vals[3] == "get")
 			{
 				const char *device = params->getString ("d", "");
-				JsonNode *node = json_object_get_member (json_node_get_object (json_parser_get_root (iter->second)), device);
+				JsonNode *node = json_object_get_member (json_node_get_object (json_parser_get_root (iter->second.second)), device);
 				if (node == NULL)
 					throw JSONException ("cannot find device");
 
@@ -262,7 +271,10 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				throw JSONException ("invalid request in observatory API");
 			}
 		}
-		else
+		else if (vals[2] == "last_update")
+		{
+			os << iter->second.first;
+		}
 		{
 			throw JSONException ("invalid request");
 		}

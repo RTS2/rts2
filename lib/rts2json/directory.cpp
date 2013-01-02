@@ -17,14 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "directory.h"
 #include "dirsupport.h"
-#include "expandstrings.h"
+#include "rts2json/directory.h"
+#include "rts2json/expandstrings.h"
 
 using namespace XmlRpc;
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
-Directory::Directory (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, _dirPath, s)
+Directory::Directory (const char* prefix, HTTPServer *_http_server, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, _dirPath, s)
 {
 	dirPath = std::string (_dirPath);
 	defaultFile = std::string (_defaultFile);
@@ -131,7 +131,7 @@ void Directory::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string pat
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/'>" << fname << "</a> ";
+			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/'>" << fname << "</a> ";
 		}
 	}
 
@@ -160,7 +160,7 @@ void Directory::parseFd (int f, char * &response, size_t &response_length)
 		throw XmlRpcException ("cannot parse RTS2 file");
 	root_element = xmlDocGetRootElement (doc);
 
-	ExpandStrings rts2file (((XmlRpcd *) getMasterApp ()) -> getPagePrefix (), this);
+	ExpandStrings rts2file (getServer ()->getPagePrefix (), this);
 	rts2file.expandXML (root_element, "centrald", true);
 	
 	std::string es = rts2file.getString ();

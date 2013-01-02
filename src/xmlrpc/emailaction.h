@@ -23,7 +23,7 @@
 #include <libxml/parser.h>
 #include <string>
 
-#include "expandstrings.h"
+#include "rts2json/expandstrings.h"
 
 namespace rts2xmlrpc
 {
@@ -44,8 +44,8 @@ class EmailAction
 		std::list <std::string> cc;
 		std::list <std::string> bcc;
 
-		ExpandStrings subject;
-		ExpandStrings body;
+		rts2json::ExpandStrings subject;
+		rts2json::ExpandStrings body;
 };
 
 }

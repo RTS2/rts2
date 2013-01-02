@@ -31,7 +31,7 @@
 
 #include "xmlrpc++/XmlRpcServerGetRequest.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 class XmlRpcd;

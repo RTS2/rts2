@@ -36,6 +36,7 @@ class BBAPI:public rts2json::GetRequestAuthorized
 {
 	public:
 		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue);
+		virtual ~BBAPI ();
 
 		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
@@ -43,7 +44,7 @@ class BBAPI:public rts2json::GetRequestAuthorized
 	private:
 		void executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
-		std::map <int, JsonParser *> observatoriesJsons;
+		std::map <int, std::pair <double, JsonParser *> > observatoriesJsons;
 
 		BBTasks *queue;
 };

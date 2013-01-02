@@ -18,6 +18,9 @@
  */
 
 #include "bb.h"
+#include "rts2json/directory.h"
+
+#define OPT_WWW_DIR    OPT_LOCAL + 1
 
 using namespace XmlRpc;
 using namespace rts2bb;
@@ -35,6 +38,7 @@ BB::BB (int argc, char ** argv):
 	debugConn->setValueBool (false);
 
 	addOption ('p', NULL, 1, "RPC listening port");
+	addOption (OPT_WWW_DIR, "www-directory", 1, "default directory for BB requests");
 }
 
 void BB::postEvent (rts2core::Event *event)
@@ -54,6 +58,9 @@ int BB::processOption (int opt)
 	{
 		case 'p':
 			rpcPort = atoi (optarg);
+			break;
+		case OPT_WWW_DIR:
+			XmlRpcServer::setDefaultGetRequest (new rts2json::Directory (NULL, this, optarg, "index.html", NULL));
 			break;
 		default:
 			return rts2db::DeviceDb::processOption (opt);
