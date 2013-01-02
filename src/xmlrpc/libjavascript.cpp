@@ -1020,7 +1020,7 @@ const char *setGetApi =
 "}\n"
 
 "function getCallFunction (device, variable, func){\n"
-  "jsonCall ('../api/get?d=' + device, function (ret) {func (ret.d[variable]); });\n"
+  "jsonCall ('../api/get?d=' + device, function (ret) { func(ret.d[variable]); });\n"
 "}\n"
 
 "function getCall (device, variable, input){\n"
@@ -1061,53 +1061,46 @@ const char *setGetApi =
       "document.getElementById(device + '_' + v).innerHTML = ret.d[v];\n"
     "}\n"  
   "}\n"
-  "jsonCall ('../api/get?d=' + device + '&e=1', func);\n"
+  "jsonCall('../api/get?d=' + device + '&e=1', func);\n"
 "}\n"
 
 "function deviceGetAll(device, func){\n"
- "jsonCall('../api/get?d=' + device, func);\n"
+  "jsonCall('../api/get?d=' + device, func);\n"
 "}\n"
 
 "function getTargetInfo(id, func){\n"
- "jsonCall('../api/tbyid?e=1&id=' + id, func);\n"
+  "jsonCall('../api/tbyid?e=1&id=' + id, func);\n"
 "}\n"
 
 "function getTaltitudes(id, func){\n"
- "jsonCall('../api/taltitudes?id=' + id, func);\n"
+  "jsonCall('../api/taltitudes?id=' + id, func);\n"
 "}\n"
 
 "function getTargetCamScript(id, cameraName, func){\n"
- "jsonCall('../api/script?id=' + id + '&cn=' + cameraName, func);\n"
+  "jsonCall('../api/script?id=' + id + '&cn=' + cameraName, func);\n"
 "}\n"
 ;
 
 const char *labels =
-"function getLabels(func){\n"
+"function jsonCall (url, func){\n"
   "var hr = new XMLHttpRequest();\n"
-  "hr.open('GET','../api/labellist', true);\n"
+  "hr.open('GET', url, true);\n"
   "hr.func = func;\n"
   "hr.onreadystatechange = function(){\n"
-    "if (this.readyState != 4 || this.status != 200) { return; }\n"
-    "var t = JSON.parse(this.responseText);\n"
-    "this.func(t);\n"
-  "}\n"
+     "if (this.readyState != 4 || this.status != 200) { return; }\n"
+     "var t = JSON.parse(this.responseText);\n"
+     "this.func(t);\n"
+   "}\n"
   "hr.send(null);\n"
+"}\n"
+
+"function getLabels(func){\n"
+  "jsonCall('../api/labellist', func);\n"
 "}\n"
 
 "function setLabel(id,label_str,ltype,func){\n"
-  "var hr = new XMLHttpRequest();\n"
-  "hr.open('GET','../api/tlabs_add?id=' + id + '&ltext=' + label_str + '&ltype=' + ltype, true);\n"
-  "hr.func = func;\n"
-  "hr.onreadystatechange = function(){\n"
-    "if (this.readyState != 4 || this.status != 200) { return; }\n"
-    "var t = JSON.parse(this.responseText);\n"
-    "this.func(t);\n"
-  "}\n"
-  "hr.send(null);\n"
+  "jsonCall('../api/tlabs_add?id=' + id + '&ltext=' + label_str + '&ltype=' + ltype, func);\n"
 "}\n"
- 
-
-
 ;
 
 void LibJavaScript::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
