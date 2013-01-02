@@ -220,6 +220,25 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 	// observatory API - proxy
 	else if (vals.size () > 1 && vals[0] == "o")
 	{
+		if (vals[1] == "list")
+		{
+			os << "{";
+			Observatories obs;
+			obs.load ();
+			for (Observatories::iterator iter = obs.begin (); iter != obs.end (); iter++)
+			{
+				if (iter != obs.begin ())
+					os << ",";
+				os << "\"" << iter->getId () << "\":[" 
+					<< iter->getPosition ()->lat
+					<< "," << iter->getPosition ()->lng
+					<< "," << iter->getAltitude ()
+					<< ",\"" << iter->getURL () << "\"]";
+			}
+			os << "}";
+			returnJSON (os.str ().c_str (), response_type, response, response_length);
+			return;
+		}
 		if (vals.size () < 3)
 			throw JSONException ("insuficient number of subdirs");
 		int observatory_id = atoi (vals[1].c_str ());

@@ -99,8 +99,10 @@ void Observatories::load ()
 			throw rts2db::SqlError ();
 		}
 		push_back (Observatory (db_observatory_id));
-		back ().load ();
 	}
+
+	for (Observatories::iterator iter = begin (); iter != end (); iter++)
+		iter->load ();
 	EXEC SQL ROLLBACK;
 }
 

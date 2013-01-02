@@ -28,6 +28,7 @@ using namespace rts2bb;
 BB::BB (int argc, char ** argv):
 	rts2db::DeviceDb (argc, argv, 0, "BB"),
 	bbApi ("/api", this, this, &task_queue),
+	javaScriptRequests ("/js", this, this),
 	task_queue (this)
 {
 	rpcPort = 8889;
