@@ -191,6 +191,8 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				bbqueue->setConnectionDebug (true);
 
 			((BB *) getMasterApp ())->addConnection (bbqueue);
+
+			os << "{\"ret\":0}";
 		}
 		// observatory update
 		else if (vals[0] == "observatory")
@@ -230,11 +232,13 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				if (iter != obs.begin ())
 					os << ",";
 
-				std::map <int, std::pair <double, JsonParser*> >::iterator obs_iter = observatoriesJsons.find (iter->getId ());
-				if (obs_iter == observatoriesJsons.end ())
-					throw JSONException ("cannot find data for observatory");
+				double lastup = NAN;
 
-				os << "\"" << iter->getId () << "\":[" << obs_iter->second.first 
+				std::map <int, std::pair <double, JsonParser*> >::iterator obs_iter = observatoriesJsons.find (iter->getId ());
+				if (obs_iter != observatoriesJsons.end ())
+					lastup = obs_iter->second.first;
+
+				os << "\"" << iter->getId () << "\":[" << rts2json::JsonDouble (lastup)
 					<< "," << iter->getPosition ()->lat
 					<< "," << iter->getPosition ()->lng
 					<< "," << iter->getAltitude ()
