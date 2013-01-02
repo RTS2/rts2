@@ -84,6 +84,15 @@ template <class T, class Container = std::deque <T> > class TSQueue
 			return ret;
 		}
 
+		bool empty ()
+		{
+			pthread_mutex_lock (&m_mutex);
+			bool ret = m_queue.empty ();
+			pthread_mutex_unlock (&m_mutex);
+
+			return ret;
+		}
+
 	private:
 		std::queue<T> m_queue;
 		pthread_mutex_t m_mutex;
