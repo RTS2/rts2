@@ -21,12 +21,16 @@
 #define __RTS2_BB__
 
 #include "bbapi.h"
+#include "bbtasks.h"
 #include "rts2db/devicedb.h"
 #include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <pthread.h>
+
+#define EVENT_TASK_SCHEDULE       1500
 
 using namespace XmlRpc;
 
@@ -44,6 +48,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 	public:
 		BB (int argc, char **argv);
 
+		virtual void postEvent (rts2core::Event *event);
+
 		void update (XmlRpcValue &value);
 
 		virtual bool isPublic (struct rts2json::sockaddr_in *saddr, const std::string &path) { return true; }
@@ -58,6 +64,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		virtual int processOption (int opt);
 
 		virtual int init ();
+		virtual int info ();
 
 		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
 		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
@@ -67,6 +74,9 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		BBAPI bbApi;
 
 		rts2core::ValueBool *debugConn;
+		rts2core::ValueInteger *queueSize;
+
+		BBTasks task_queue;
 };
 
 }

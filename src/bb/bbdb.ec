@@ -104,6 +104,80 @@ void Observatories::load ()
 	EXEC SQL ROLLBACK;
 }
 
+void BBSchedules::load ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_schedule_id = schedule_id;
+	int db_tar_id;
+
+	int db_observatory_id;
+	int db_state;
+	double db_created;
+	double db_last_update;
+	double db_sched_from;
+	double db_sched_to;
+
+	int db_created_ind;
+	int db_last_update_ind;
+	int db_sched_from_ind;
+	int db_sched_to_ind;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT tar_id INTO :db_tar_id FROM bb_schedules WHERE schedule_id = :db_schedule_id;
+
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+
+	// load all schedules
+	EXEC SQL DECLARE cur_schedules CURSOR FOR
+		SELECT
+			observatory_id,
+			state,
+			EXTRACT (EPOCH FROM created),
+			EXTRACT (EPOCH FROM last_update),
+			EXTRACT (EPOCH FROM sched_from),
+			EXTRACT (EPOCH FROM sched_to)
+		FROM
+			observatory_schedules
+		WHERE
+			schedule_id = :db_schedule_id;
+
+	EXEC SQL OPEN cur_schedules;
+
+	while (true)
+	{
+		EXEC SQL FETCH next FROM
+			cur_schedules
+		INTO
+			:db_observatory_id,
+			:db_state,
+			:db_created :db_created_ind,
+			:db_last_update :db_last_update_ind,
+			:db_sched_from :db_sched_from_ind,
+			:db_sched_to :db_sched_to_ind
+		;
+		if (sqlca.sqlcode)
+		{
+			if (sqlca.sqlcode == ECPG_NOT_FOUND)
+			{
+				break;
+			}
+			else
+			{
+				EXEC SQL ROLLBACK;
+				throw rts2db::SqlError ();
+			}
+		}
+
+		push_back (ObservatorySchedule (db_schedule_id, db_observatory_id, db_state, db_nan_double (db_created, db_created_ind), db_nan_double (db_last_update, db_last_update_ind), db_nan_double (db_sched_from, db_sched_from_ind), db_nan_double (db_sched_to, db_sched_to_ind)));
+	}
+
+	EXEC SQL ROLLBACK;
+}
+
 /***
  * Register new target mapping into BB database.
  *

@@ -21,6 +21,7 @@
 #define __RTS2_BBAPI__
 
 #include "rts2json/httpreq.h"
+#include "bbtasks.h"
 
 #include <json-glib/json-glib.h>
 
@@ -34,7 +35,7 @@ namespace rts2bb
 class BBAPI:public rts2json::GetRequestAuthorized
 {
 	public:
-		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s);
+		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue);
 
 		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
@@ -43,6 +44,8 @@ class BBAPI:public rts2json::GetRequestAuthorized
 		void executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 		std::map <int, JsonParser *> observatoriesJsons;
+
+		BBTasks *queue;
 };
 
 }

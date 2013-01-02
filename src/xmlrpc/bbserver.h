@@ -38,7 +38,7 @@ namespace rts2xmlrpc
 class XmlRpcd;
 
 /**
- * Big Brother server.
+ * Big Brother server communication.
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
@@ -82,7 +82,6 @@ class BBServer
 
 		pthread_t send_thread;
 };
-
 
 class BBServers:public std::vector <BBServer>
 {

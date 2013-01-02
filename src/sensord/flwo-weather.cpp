@@ -429,6 +429,7 @@ int FlwoWeather::info ()
 	if (et > 0 && processed == 0x1ff)
 	{
 		lastPool->setValueInteger (et);
+		sendValueAll (lastPool);
 		processed = 0;
 	}
 	else

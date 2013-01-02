@@ -22,7 +22,10 @@ CREATE TABLE observatory_schedules (
 	observatory_id	integer REFERENCES observatories (observatory_id),
 	state		integer NOT NULL,
 	created		timestamp NOT NULL,
-	last_update	timestamp
+	last_update	timestamp,
+	-- first time the observation can be scheduled
+	sched_from      timestamp,
+	sched_to        timestamp
 );
 
 CREATE TABLE observatory_observations (

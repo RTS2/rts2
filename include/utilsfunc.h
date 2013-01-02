@@ -343,4 +343,8 @@ const char * multiWCS (const char *name, char multi_wcs);
  */
 int db_nan_indicator (double value);
 
+/**
+ * Return NAN if indicator signaled NULL value.
+ */
+double db_nan_double (double value, int ind);
 #endif							 /* !__RTS_UTILSFUNC__ */

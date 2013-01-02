@@ -52,6 +52,41 @@ class Observatories:public std::list <Observatory>
 		void load ();
 };
 
+class ObservatorySchedule
+{
+	public:
+		ObservatorySchedule (int _schedule_id, int _observatory_id, int _state, double _created, double _last_update, double _from, double _to)
+		{
+			schedule_id = _schedule_id;
+			observatory_id = _observatory_id;
+			state = _state;
+			created = _created;
+			last_update = _last_update;
+			from = _from;
+			to = _to;
+		}
+	
+	private:
+		int schedule_id;
+		int observatory_id;
+		int state;
+		double created;
+		double last_update;
+		double from;
+		double to;
+};
+
+class BBSchedules:public std::list <ObservatorySchedule>
+{
+	public:
+		BBSchedules (int _schedule_id) { schedule_id = _schedule_id; }
+		void load ();
+
+	private:
+		int schedule_id;
+		int tar_id;
+};
+
 /***
  * Register new target mapping into BB database.
  *
@@ -76,6 +111,13 @@ int findObservatoryMapping (int observatory_id, int tar_id);
 int createSchedule (int target_id);
 
 void updateSchedule (int schedule_id, int observatory_id, int state);
+
+//* BB schedule request was created
+#define BB_SCHEDULE_CREATED      0
+//* BB schedule request was send to the observatory
+#define BB_SCHEDULE_REQUESTED    1
+//* Observatory node replied with schedule status
+#define BB_SCHEDULE_REPLIED      2
 
 }
 

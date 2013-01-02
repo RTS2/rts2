@@ -24,14 +24,28 @@ using namespace rts2bb;
 
 BB::BB (int argc, char ** argv):
 	rts2db::DeviceDb (argc, argv, 0, "BB"),
-	bbApi ("/api", this, this)
+	bbApi ("/api", this, this, &task_queue),
+	task_queue (this)
 {
 	rpcPort = 8889;
+
+	createValue (queueSize, "queue_size", "task queue size", false);
 
 	createValue (debugConn, "debug_conn", "debug connections calls", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	debugConn->setValueBool (false);
 
 	addOption ('p', NULL, 1, "RPC listening port");
+}
+
+void BB::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TASK_SCHEDULE:
+			task_queue.push ((BBTask *) event->getArg ());
+			break;
+	}
+	rts2db::DeviceDb::postEvent (event);
 }
 
 int BB::processOption (int opt)
@@ -62,6 +76,12 @@ int BB::init ()
 	XmlRpcServer::enableIntrospection (true);
 
 	return ret;
+}
+
+int BB::info ()
+{
+	queueSize->setValueInteger (task_queue.size ());
+	return rts2db::DeviceDb::info ();
 }
 
 void BB::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)

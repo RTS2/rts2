@@ -35,9 +35,10 @@
 
 using namespace rts2bb;
 
-BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, NULL, s)
+BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue):GetRequestAuthorized (prefix, _http_server, NULL, s)
 {
 	g_type_init ();
+	queue = _queue;
 }
 
 void BBAPI::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -123,7 +124,19 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			for (Observatories::iterator iter = obs.begin (); iter != obs.end (); iter++)
 			{
 				updateSchedule (schedule_id, iter->getId (), 0);
+				// queue targets into scheduling thread
+				queue->queueTask (new BBTaskSchedule (schedule_id, iter->getId ()));
 			}
+			os << schedule_id;
+		}
+		// schedule status
+		else if (vals[0] == "schedule_status")
+		{
+			int schedule_id = params->getInteger ("id", -1);
+			if (schedule_id < 0)
+				throw XmlRpc::JSONException ("missing schedule ID");
+
+
 		}
 		// schedule observation on one observatory
 		else if (vals[0] == "schedule")

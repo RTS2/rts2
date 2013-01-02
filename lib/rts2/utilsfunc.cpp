@@ -422,3 +422,7 @@ int db_nan_indicator (double value)
 	return isnan (value) ? -1 : 0;
 }
 
+double db_nan_double (double value, int ind)
+{
+	return ind ? NAN : value;
+}

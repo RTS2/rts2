@@ -40,4 +40,8 @@ for obs_id in args:
 	# contact about when the target will be able to schedule..
 	ret = rts2.json.getProxy().loadJson('/bbapi/schedule', {'id':obs_tar_id})
 
+	if int(ret) == 0:
+		print 'log I cannot schedule'
+		sys.exit(1)
+
 	print 'log I schedule returns {0}'.format(time.ctime(int(ret)))	
