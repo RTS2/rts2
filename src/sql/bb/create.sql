@@ -1,9 +1,9 @@
 CREATE TABLE observatories (
-	observatory_id	integer PRIMARY KEY,
-	longitude	float8, -- geographical informations
-	latitude	float8,
-	altitude	float8,
-	apiurl		VARCHAR(100)
+	observatory_id	integer PRIMARY KEY NOT NULL,
+	longitude	float8 NOT NULL, -- geographical informations
+	latitude	float8 NOT NULL,
+	altitude	float8 NOT NULL,
+	apiurl		VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE targets_observatories (
