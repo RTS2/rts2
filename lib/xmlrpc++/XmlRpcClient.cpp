@@ -798,10 +798,8 @@ void XmlRpcClient::setupHost(const char *host, int port, const char *authorizati
 	_host = host;
 	_port = port;
 
-	if (authorization != NULL)
-		_authorization = authorization;
-	else
-		_authorization = std::string("");
+	setAuthorization (authorization);
+
 	if (uri != NULL)
 		_uri = uri;
 	else

@@ -54,6 +54,15 @@ namespace XmlRpc
 			//! Destructor
 			virtual ~XmlRpcClient();
 
+			//! Set client authorization
+			void setAuthorization (const char *authorization)
+			{
+				if (authorization != NULL)
+					_authorization = authorization;
+				else
+					_authorization = std::string("");
+			}
+
 			//! Execute the named procedure on the remote server.
 			//!  @param method The name of the remote procedure to execute
 			//!  @param params An array of the arguments for the method
