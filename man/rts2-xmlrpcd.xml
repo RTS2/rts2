@@ -152,9 +152,23 @@
     <title>Events section</title>
     <para>
       <emphasis>Events</emphasis> section configures
-      <command>&dhpackage;</command> reactions to change of system
+      <command>&dhpackage;</command> reactions to changes of system
       environment.
     </para>
+
+    <para>
+      The section contains entries for response to events on various devices.
+      It contains multiple device nodes. Device to which the node applies is
+      identified by name attribute. The node contains child nodes applying
+      trigger either on value or device state change.
+    </para>
+    <para>
+      Value change expects name of the value being specified as node "name"
+      attribute. The actions specified are executed every time the variable
+      value is changed and its match an optional test. Test is specified as an
+      node attribute called "test".
+    </para>
+
     <refsect2>
       <title>Event actions</title>
 
@@ -217,6 +231,32 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
         </programlisting>
       </refsect3>
     </refsect2>  
+  </refsect1>
+  <refsect1>
+    <title>BB section</title>
+    <para>
+      This section provides details about BB (Big Brother) connections. Please
+      see <citerefentry><refentrytitle>rts2-bb</refentrytitle></citerefentry>
+      for details.
+    </para>
+    <refsect2>
+      <title>server</title>
+      <para>
+        BB server URL.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>observatory</title>
+      <para>
+        Observatory ID. Number identifing observatory on BB.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>password</title>
+      <para>
+        Password for the observatory. Username on the BB side is observatory ID.
+      </para>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>Event trigger configuration file</title>
@@ -305,32 +345,6 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 	  </listitem>
         </itemizedlist>
       </para>
-    </refsect2>
-    <refsect2>
-      <title>events section</title>
-      <para>
-	The section contains entries for response to events on various devices.
-	It contains multiple device nodes. Device to which the node applies is
-	identified by name attribute. The node contains child nodes applying
-	trigger either on value or device state change.
-      </para>
-      <para>
-	Value change expects name of the value being specified as node "name"
-	attribute. The actions specified are executed every time the variable
-	value is changed and its match an optional test. Test is specified as
-	an node attribute called "test".
-      </para>
-      <para>
-      </para>
-    </refsect2>
-    <refsect2>
-      <title>command action</title>
-    </refsect2>
-    <refsect2>
-      <title>record action</title>
-    </refsect2>
-    <refsect2>
-      <title>email action</title>
     </refsect2>
   </refsect1>
   <refsect1>

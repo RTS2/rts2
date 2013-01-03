@@ -45,7 +45,7 @@ class XmlRpcd;
 class BBServer
 {
 	public:
-		BBServer (XmlRpcd *_server, char *serverApi, int observatoryId):_serverApi (serverApi), _observatoryId(observatoryId)
+		BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password):serverApi (_serverApi), observatoryId (_observatoryId), password (_password)
 		{
 			server = _server;
 			client = NULL;
@@ -73,8 +73,9 @@ class BBServer
 		TSQueue <int> requests;
 
 	private:
-		std::string _serverApi;
-		int _observatoryId;
+		std::string serverApi;
+		int observatoryId;
+		std::string password;
 		const char *_uri;
 
 		XmlRpcClient *client;

@@ -53,11 +53,11 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		void update (XmlRpcValue &value);
 
-		virtual bool isPublic (struct rts2json::sockaddr_in *saddr, const std::string &path) { return true; }
+		virtual bool isPublic (struct rts2json::sockaddr_in *saddr, const std::string &path) { return false; }
 		virtual bool existsSession (std::string sessionId) { return false; }
 		virtual void addExecutedPage () {}
 		virtual const char* getPagePrefix () { return ""; }
-		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission) { return verifyUser (username, pass, executePermission); }
+		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission);
 
 		bool getDebugConn () { return debugConn->getValueBool (); }
 

@@ -47,7 +47,13 @@ void BBServer::sendUpdate ()
 {
 	if (client == NULL)
 	{
-		client = new XmlRpcClient (_serverApi.c_str (), &_uri);
+		client = new XmlRpcClient (serverApi.c_str (), &_uri);
+		if (password.length ())
+		{
+			std::ostringstream auth;
+			auth << observatoryId << ":" << password;
+			client->setAuthorization (auth.str ().c_str ());
+		}
 	}
 
 	std::ostringstream body;
@@ -75,12 +81,12 @@ void BBServer::sendUpdate ()
 	int reply_length;
 
 	std::ostringstream url;
-	url << "/api/observatory?observatory_id=" << _observatoryId;
+	url << "/api/observatory?observatory_id=" << observatoryId;
 
 	int ret = client->executeGetRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
 	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "Error requesting " << _serverApi.c_str () << sendLog;
+		logStream (MESSAGE_ERROR) << "Error requesting " << serverApi.c_str () << sendLog;
 		delete client;
 		client = NULL;
 		return;

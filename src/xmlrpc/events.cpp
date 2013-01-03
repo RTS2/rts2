@@ -332,6 +332,7 @@ void Events::parseBB (xmlNodePtr ev)
 		throw XmlMissingElement (ev, "server description for BB");
 	
 	char *sn = NULL;
+	char *password = NULL;
 	int oid = -1;
 
 	for (xmlNodePtr chil = ev->children; chil; chil = chil->next)
@@ -348,13 +349,19 @@ void Events::parseBB (xmlNodePtr ev)
 		{
 			oid = atoi ((char *)chil->children->content);
 		}
+		else if (xmlStrEqual (chil->name, (xmlChar *) "password"))
+		{
+			password = (char *)chil->children->content;
+		}
 		else throw XmlUnexpectedNode (chil);
 	}
 	if (sn == NULL)
 		throw XmlMissingElement (ev, "server name");
 	if (oid < 0)
 		throw XmlMissingElement (ev, "observatory name");
-	bbServers.push_back (BBServer (master, sn, oid));
+	if (password == NULL)
+		throw XmlMissingElement (ev, "password");
+	bbServers.push_back (BBServer (master, sn, oid, password));
 #else
 	throw rts2core::Error ("missing BB server support (missing soup and json libraries?");
 #endif	
