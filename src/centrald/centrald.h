@@ -1,6 +1,6 @@
 /*
  * Centrald - RTS2 coordinator
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2013 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -276,6 +276,8 @@ class Centrald:public Daemon
 
 		rts2core::ValueTime *nightStart;
 		rts2core::ValueTime *nightStop;
+
+		rts2core::TimeArray *switchedStandby;
 
 		// time when system was last switched to ON and was in ready_night
 		rts2core::ValueTime *lastOn;

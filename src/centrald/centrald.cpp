@@ -1,6 +1,6 @@
 /*
  * Centrald - RTS2 coordinator
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2013 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -414,6 +414,8 @@ Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF 
 	createValue (nightStart, "night_start", "beginning of current or next night", false);
 	createValue (nightStop, "night_stop", "end of current or next night", false);
 
+	createValue (switchedStandby, "switched_standby", "times when the system was switched to standby", false);
+
 	createValue (lastOn, "last_night_on", "time when system was last switched to on in ready night state", false);
 
 	createValue (sunAlt, "sun_alt", "Sun altitude", false, RTS2_DT_DEC);
@@ -684,8 +686,7 @@ rts2core::Connection * Centrald::getConnection (int conn_num)
 
 int Centrald::changeState (int new_state, const char *user)
 {
-	logStream (MESSAGE_INFO) << "State switched to " << rts2core::CentralState::getString (new_state) << " by " <<
-		user << sendLog;
+	logStream (MESSAGE_INFO) << "State switched to " << rts2core::CentralState::getString (new_state) << " by " << user << sendLog;
 	maskCentralState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
 	return 0;
 }
@@ -1031,6 +1032,22 @@ int Centrald::getStateForConnection (rts2core::Connection * conn)
 
 void Centrald::maskCentralState (int state_mask, int new_state, const char *description, double start, double end, Connection *commandedConn)
 {
+	if ((switchedStandby->size () && (*switchedStandby)[0] < (getNow () - 86400))
+		|| ((state_mask & SERVERD_STATUS_MASK) && !((new_state & SERVERD_DUSK) || (new_state & SERVERD_NIGHT) || (new_state & SERVERD_DAWN))))
+	{
+		switchedStandby->clear ();
+	}
+	if (!(getState () & SERVERD_STANDBY))
+	{
+		switch (getState () & SERVERD_STATUS_MASK)
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
+				switchedStandby->addValue (getNow ());
+				break;
+		}
+	}
 	maskState (state_mask, new_state, description, start, end, commandedConn);
 	if (state_mask & SERVERD_STATUS_MASK)
 	{
@@ -1040,6 +1057,7 @@ void Centrald::maskCentralState (int state_mask, int new_state, const char *desc
 			lastOn->setValueDouble (NAN);
 		sendValueAll (lastOn);
 	}
+	sendValueAll (switchedStandby);
 }
 
 int main (int argc, char **argv)
