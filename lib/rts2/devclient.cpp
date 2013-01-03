@@ -581,3 +581,7 @@ DevClientImgproc::DevClientImgproc (Connection * _connection):DevClient (_connec
 DevClientGrb::DevClientGrb (Connection * _connection):DevClient (_connection)
 {
 }
+
+DevClientBB::DevClientBB (Connection * _connection):DevClient (_connection)
+{
+}

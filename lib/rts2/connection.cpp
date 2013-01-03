@@ -432,6 +432,9 @@ std::string Connection::getStateString ()
 		case DEVICE_TYPE_SCRIPTOR:
 			_os << "scriptor " << real_state;
 			break;
+		case DEVICE_TYPE_BB:
+			_os << "bb " << real_state;
+			break;
 		default:
 			_os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
 	}

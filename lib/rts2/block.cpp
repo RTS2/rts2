@@ -740,7 +740,8 @@ DevClient * Block::createOtherType (Connection * conn, int other_device_type)
 			return new DevClientSelector (conn);
 		case DEVICE_TYPE_GRB:
 			return new DevClientGrb (conn);
-
+		case DEVICE_TYPE_BB:
+			return new DevClientBB (conn);
 		default:
 			return new DevClient (conn);
 	}

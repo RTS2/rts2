@@ -323,5 +323,11 @@ class DevClientGrb:public DevClient
 		DevClientGrb (Connection * in_connection);
 };
 
+class DevClientBB:public DevClient
+{
+	public:
+		DevClientBB (Connection * in_connection);
+};
+
 }
 #endif							 /* !__RTS2_DEVCLIENT__ */
