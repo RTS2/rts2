@@ -753,6 +753,12 @@ int Centrald::idle ()
 		nextStateChange->setValueTime (next_event_time);
 		nextState->setValueInteger (next_event_type);
 
+		if (next_event_type == SERVERD_DUSK)
+		{
+			switchedStandby->clear ();
+			sendValueAll (switchedStandby);
+		}
+
 		// update state only if state isn't OFF or SOFT_OFF
 		if ((getState () & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF
 			&& (getState () & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF)
@@ -1032,11 +1038,6 @@ int Centrald::getStateForConnection (rts2core::Connection * conn)
 
 void Centrald::maskCentralState (int state_mask, int new_state, const char *description, double start, double end, Connection *commandedConn)
 {
-	if ((switchedStandby->size () && (*switchedStandby)[0] < (getNow () - 86400))
-		|| ((state_mask & SERVERD_STATUS_MASK) && !((new_state & SERVERD_DUSK) || (new_state & SERVERD_NIGHT) || (new_state & SERVERD_DAWN))))
-	{
-		switchedStandby->clear ();
-	}
 	if (!(getState () & SERVERD_STANDBY))
 	{
 		switch (getState () & SERVERD_STATUS_MASK)
@@ -1045,6 +1046,7 @@ void Centrald::maskCentralState (int state_mask, int new_state, const char *desc
 			case SERVERD_NIGHT:
 			case SERVERD_DAWN:
 				switchedStandby->addValue (getNow ());
+				sendValueAll (switchedStandby);
 				break;
 		}
 	}
@@ -1057,7 +1059,6 @@ void Centrald::maskCentralState (int state_mask, int new_state, const char *desc
 			lastOn->setValueDouble (NAN);
 		sendValueAll (lastOn);
 	}
-	sendValueAll (switchedStandby);
 }
 
 int main (int argc, char **argv)
