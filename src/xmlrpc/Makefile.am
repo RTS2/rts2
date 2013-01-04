@@ -29,7 +29,7 @@ else
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
 	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp devicesreq.cpp libjavascript.cpp graphreq.cpp \
-	libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp expandstrings.cpp \
+	libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp asyncapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_xmlrpcd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \
