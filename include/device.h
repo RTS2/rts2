@@ -223,7 +223,7 @@ class Device:public Daemon
 		int authorize (int centrald_num, DevConnection * conn);
 
 		/**
-		 * Send commands to all masters which device has connected.
+		 * Send command to all masters which device has connected.
 		 *
 		 * @param msg Message that will be send to the masters.
 		 *

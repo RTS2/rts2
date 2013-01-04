@@ -1381,7 +1381,7 @@ int Connection::commandReturn ()
 {
 	int ret;
 	int stat = atoi (getCommand ());
-	// ignore (for the moment) retuns recieved without command
+	// log retuns recieved without command
 	if (!runningCommand)
 	{
 		logStream (MESSAGE_ERROR) << "Connection::commandReturn null on connection with '"

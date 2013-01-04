@@ -790,7 +790,7 @@ int Device::sendMasters (const char *msg)
 	connections_t::iterator iter;
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 	{
-		(*iter)->sendMsg (msg);
+		(*iter)->queCommand (new Command (this, msg));
 	}
 	return 0;
 }
