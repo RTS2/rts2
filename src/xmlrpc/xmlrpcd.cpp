@@ -694,8 +694,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   javaScriptRequests ("/js", this, this),
   cssRequests ("/css", this, this),
   api ("/api", this, this),
-  bbapi ("/bbapi", this, this),
 #ifdef RTS2_HAVE_PGSQL
+  bbapi ("/bbapi", this, this),
   auger ("/auger", this, this),
   night ("/nights", this, this),
   observation ("/observations", this, this),

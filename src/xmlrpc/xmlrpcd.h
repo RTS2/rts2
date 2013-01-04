@@ -27,6 +27,7 @@
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/devicedb.h"
+#include "bbapi.h"
 #else
 #include "configuration.h"
 #include "device.h"
@@ -54,7 +55,6 @@
 #include "libjavascript.h"
 #include "libcss.h"
 #include "api.h"
-#include "bbapi.h"
 
 #include "images.h"
 #include "connnotify.h"
@@ -576,8 +576,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		LibJavaScript javaScriptRequests;
 		LibCSS cssRequests;
 		API api;
-		BBAPI bbapi;
 #ifdef RTS2_HAVE_PGSQL
+		BBAPI bbapi;
 		Auger auger;
 		Night night;
 		Observation observation;
