@@ -88,7 +88,7 @@ unsigned XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 	if (_connectionState == READ_HEADER)
 		if ( ! readHeader()) return 0;
 
-	if (_connectionState == READ_REQUEST || _connectionState == READ_GET_REQUEST)
+	if (_connectionState == READ_REQUEST || _connectionState == READ_GET_REQUEST || _connectionState == READ_POST_REQUEST)
 		if ( ! readRequest()) return 0;
 
 	if (_connectionState == GET_REQUEST)
@@ -274,7 +274,7 @@ bool XmlRpcServerConnection::readHeader()
 	if (_post == std::string("/RPC2"))
 		_connectionState = READ_REQUEST;
 	else if (_connectionState != READ_GET_REQUEST)
-		_connectionState = POST_REQUEST;
+		_connectionState = READ_POST_REQUEST;
 	return true;				 // Continue monitoring this source
 }
 
@@ -305,7 +305,7 @@ bool XmlRpcServerConnection::readRequest()
 	// Otherwise, parse and dispatch the request
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::readRequest read %d bytes.", _request_length);
 
-	_connectionState = _connectionState == READ_GET_REQUEST ? GET_REQUEST : WRITE_RESPONSE;
+	_connectionState = _connectionState == READ_GET_REQUEST ? GET_REQUEST : (_connectionState == READ_POST_REQUEST ? POST_REQUEST : WRITE_RESPONSE);
 
 	_request = _request_buf;
 

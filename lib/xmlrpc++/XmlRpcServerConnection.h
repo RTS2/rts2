@@ -129,7 +129,7 @@ namespace XmlRpc
 			XmlRpcServer* _server;
 
 			// Possible IO states for the connection
-			enum ServerConnectionState { READ_HEADER, READ_REQUEST, READ_GET_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE, WAIT_ASYNC, WRITE_ASYNC_RESPONSE };
+			enum ServerConnectionState { READ_HEADER, READ_REQUEST, READ_GET_REQUEST, READ_POST_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE, WAIT_ASYNC, WRITE_ASYNC_RESPONSE };
 			ServerConnectionState _connectionState;
 
 			// Request headers
