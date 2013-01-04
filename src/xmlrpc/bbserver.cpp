@@ -43,6 +43,18 @@ void *updateBB (void *arg)
 	return NULL;
 }
 
+void BBServer::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_XMLRPC_BB:
+			sendUpdate ();
+			server->addTimer (getCadency (), event);
+			return;
+	}
+	rts2core::Object::postEvent (event);
+}
+
 void BBServer::sendUpdate ()
 {
 	if (client == NULL)

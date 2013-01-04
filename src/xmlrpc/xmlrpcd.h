@@ -411,8 +411,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		 */
 		bool sendEmails () { return send_emails->getValueBool (); }
 
-		virtual void postEvent (Event *event);
-
 		/**
 		 * Returns messages buffer.
 		 */

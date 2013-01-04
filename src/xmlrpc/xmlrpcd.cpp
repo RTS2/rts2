@@ -532,8 +532,10 @@ int XmlRpcd::init ()
 
 	setMessageMask (MESSAGE_MASK_ALL);
 
-	if (events.bbServers.size () != 0)
-		addTimer (1, new Event (EVENT_XMLRPC_BB));
+	for (BBServers::iterator iter = events.bbServers.begin (); iter != events.bbServers.end (); iter++)
+	{
+		addTimer (1, new Event (EVENT_XMLRPC_BB, (void*) &(*iter)));
+	}
 
 #ifndef RTS2_HAVE_PGSQL
 	ret = Configuration::instance ()->loadFile (config_file);
@@ -775,6 +777,11 @@ rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int
 
 int XmlRpcd::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
+	if (old_value == bbCadency)
+	{
+		for (BBServers::iterator iter = events.bbServers.begin (); iter != events.bbServers.end (); iter++)
+			iter->setCadency (new_value->getValueInteger ());
+	}
 	// if it is a template file, load it immediately
 	for (std::list <XmlDevCameraClient *>::iterator iter = camClis.begin (); iter != camClis.end (); iter++)
 	{
@@ -891,22 +898,6 @@ bool XmlRpcd::existsSession (std::string sessionId)
 		return false;
 	}
 	return true;
-}
-
-void XmlRpcd::postEvent (Event *event)
-{
-	switch (event->getType ())
-	{
-		case EVENT_XMLRPC_BB:
-			sendBB ();
-			addTimer (bbCadency->getValueInteger (), event);
-			return;
-	}
-#ifdef RTS2_HAVE_PGSQL
-	DeviceDb::postEvent (event);
-#else
-	rts2core::Device::postEvent (event);
-#endif
 }
 
 bool XmlRpcd::isPublic (struct sockaddr_in *saddr, const std::string &path)

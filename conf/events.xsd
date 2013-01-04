@@ -158,6 +158,12 @@
       <xs:element name="observatory" minOccurs="1" maxOccurs="1" type="xs:string">
         <xs:annotation><xs:documentation>Name of the observatory. This string is used to identify observatory on BB server.</xs:documentation></xs:annotation>
       </xs:element>
+      <xs:element name="password" minOccurs="1" maxOccurs="1" type="xs:string">
+        <xs:annotation><xs:documentation>Password for observatory access.</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="cadency" minOccurs="0" maxOccurs="1" type="xs:integer">
+        <xs:annotation><xs:documentation>Interval in seconds for master host re-posts</xs:documentation></xs:annotation>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 

@@ -257,6 +257,12 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
         Password for the observatory. Username on the BB side is observatory ID.
       </para>
     </refsect2>
+    <refsect2>
+      <title>cadency</title>
+      <para>
+        Time interval between reposts of observatory status. Default to 60 seconds.
+      </para>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>Event trigger configuration file</title>

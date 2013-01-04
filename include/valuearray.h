@@ -32,7 +32,7 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValueArray: public rts2core::Value
+class ValueArray: public Value
 {
 	public:
 		ValueArray (std::string _val_name):rts2core::Value (_val_name) {}

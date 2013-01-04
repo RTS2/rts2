@@ -20,6 +20,7 @@
 #ifndef __RTS2__BBSERVER__
 #define __RTS2__BBSERVER__
 
+#include "object.h"
 #include "rts2-config.h"
 
 #include "tsqueue.h"
@@ -42,10 +43,10 @@ class XmlRpcd;
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class BBServer
+class BBServer:public rts2core::Object
 {
 	public:
-		BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password):serverApi (_serverApi), observatoryId (_observatoryId), password (_password)
+		BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency):serverApi (_serverApi), observatoryId (_observatoryId), password (_password), cadency (_cadency)
 		{
 			server = _server;
 			client = NULL;
@@ -58,6 +59,8 @@ class BBServer
 			pthread_cancel (send_thread);
 			delete client;
 		}
+
+		virtual void postEvent (rts2core::Event *event);
 
 		/**
 		 * Sends update message to BB server. Data part is specified in data parameter.
@@ -72,6 +75,10 @@ class BBServer
 
 		TSQueue <int> requests;
 
+		int getCadency () { return cadency; }
+
+		void setCadency (int _cadency) { cadency = _cadency; }
+
 	private:
 		std::string serverApi;
 		int observatoryId;
@@ -82,6 +89,8 @@ class BBServer
 		XmlRpcd *server;
 
 		pthread_t send_thread;
+
+		int cadency;
 };
 
 class BBServers:public std::vector <BBServer>

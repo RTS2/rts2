@@ -67,5 +67,7 @@
   <bb>
     <server>http://localhost:8890</server>
     <observatory>1</observatory>
+    <password>secret Password</password>
+    <!-- <cadency>300</cadency> -->
   </bb>
 </config>
