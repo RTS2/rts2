@@ -85,7 +85,9 @@ void Observatories::load ()
 		SELECT
 			observatory_id
 		FROM
-			observatories;
+			observatories
+		ORDER BY
+			observatory_id;
 	EXEC SQL OPEN cur_observatories;
 	while (true)
 	{
