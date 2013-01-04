@@ -218,13 +218,13 @@ XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 	while ( nToWrite > 0 )
 	{
 		int n = send(fd, sp, nToWrite, 0);
-		XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send/write returned %d.", n);
 
 		if (n > 0)
 		{
 			sp += n;
 			*bytesSoFar += n;
 			nToWrite -= n;
+			XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send/write returned %d.", n);
 		}
 		else if (nonFatalError())
 		{
