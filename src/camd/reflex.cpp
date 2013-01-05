@@ -26,8 +26,9 @@
 #include "valuearray.h"
 #include "iniparser.h"
 
-#define OPT_DRY           OPT_LOCAL + 1
-#define OPT_POWERUP       OPT_LOCAL + 2
+#define OPT_DRY             OPT_LOCAL + 1
+#define OPT_POWERUP         OPT_LOCAL + 2
+#define OPT_CONFIGURED_TAP  OPT_LOCAL + 3
 
 // only constants; class is kept in reflex.cpp
 #include "reflex.h"
@@ -231,6 +232,9 @@ class Reflex:public Camera
 		// if controller should be powered up after startup
 		bool powerUp;
 
+		// if tap order specified in configuration file should be used. If false, linear order will be programmed
+		bool configuredTap;
+
 		// last tap parameters
 		int last_taplength;
 		int last_height;
@@ -390,6 +394,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	CLHandle = NULL;
 	dry_run = false;
 	powerUp = false;
+	configuredTap = false;
 	last_taplength = -1;
 	last_height = -1;
 
@@ -483,6 +488,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	config = NULL;
 
+	addOption (OPT_CONFIGURED_TAP, "configured-tap", 0, "use tap order from configuration file");
 	addOption ('c', NULL, 1, "configuration file (.rcf)");
 	addOption (OPT_DRY, "dry-run", 0, "don't perform any writes or commands");
 	addOption (OPT_POWERUP, "power-up", 0, "auto power up controller");
@@ -771,6 +777,9 @@ int Reflex::processOption (int in_opt)
 			break;
 		case OPT_POWERUP:
 			powerUp = true;
+			break;
+		case OPT_CONFIGURED_TAP:
+			configuredTap = true;
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -2371,7 +2380,7 @@ void Reflex::configureTaps (int taplength, int height, bool raw, bool hdrmode)
 					throw rts2core::Error ("Duplicate tap entry");
 				tapenable[board][adc] = true;
 				channeltap[ct++] = std::pair <int, int> (board, adc);
-				if (dir == 'L')
+				if (dir == 'L' || configuredTap == false)
 				{
 					tapstart[board][adc] = tapcount * taplength;
 					tapdelta[board][adc] = 1;
