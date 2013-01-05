@@ -128,6 +128,11 @@ class Cryocon:public Gpib
 		rts2core::ValueBool *heaterEnabled;
 
 		rts2core::ValueDoubleTimeserie *ts[4];
+		rts2core::ValueDouble *trendMax[4];
+		rts2core::ValueDouble *trendMin[4];
+		rts2core::ValueTime *trendFrom[4];
+		rts2core::ValueDouble *trendRateMax[4];
+		rts2core::ValueDouble *trendRateMin[4];
 };
 
 };
@@ -264,8 +269,14 @@ Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	{
 		chans[i] = new ValueTempInput (this, 'A' + i);
 		std::ostringstream tsn;
-		tsn << char ('A' + i) << ".timeserie";
-		createValue (ts[i], tsn.str ().c_str (), "temperature trending", false); 
+		tsn << char ('A' + i);
+		createValue (ts[i], (tsn.str () + ".timeserie").c_str (), "temperature trending", false); 
+
+		createValue (trendMax[i], (tsn.str () + ".trend_max").c_str (), "maximal value during trending", false);
+		createValue (trendMin[i], (tsn.str () + ".trend_min").c_str (), "minimal value during trending", false);
+		createValue (trendFrom[i], (tsn.str () + ".trend_from").c_str (), "trending changed on this date", false);
+		createValue (trendRateMax[i], (tsn.str () + ".trend_rate_max").c_str (), "maximal rate value during trending", false);
+		createValue (trendRateMin[i], (tsn.str () + ".trend_rate_min").c_str (), "minimal rate value during trending", false);
 	}
 
 	for (i = 0; i < 2; i++)
@@ -317,6 +328,31 @@ void Cryocon::postEvent (rts2core::Event *event)
 				readDouble (os.str ().c_str (), v);
 				ts[i]->addValue (v, getNow (), 20);
 				ts[i]->calculate ();
+
+				if (isnan(trendMin[i]->getValueDouble ()) || ts[i]->getMin () < trendMin[i]->getValueDouble ())
+				{
+					trendMin[i]->setValueDouble (ts[i]->getMin ());
+					sendValueAll (trendMin[i]);
+				}
+
+				if (isnan(trendMax[i]->getValueDouble ()) || ts[i]->getMax () > trendMax[i]->getValueDouble ())
+				{
+					trendMax[i]->setValueDouble (ts[i]->getMax ());
+					sendValueAll (trendMax[i]);
+				}
+
+				if (isnan(trendRateMin[i]->getValueDouble ()) || ts[i]->getBeta () < trendRateMin[i]->getValueDouble ())
+				{
+					trendRateMin[i]->setValueDouble (ts[i]->getBeta ());
+					sendValueAll (trendRateMin[i]);
+				}
+
+				if (isnan(trendRateMax[i]->getValueDouble ()) || ts[i]->getBeta () > trendRateMax[i]->getValueDouble ())
+				{
+					trendRateMax[i]->setValueDouble (ts[i]->getBeta ());
+					sendValueAll (trendRateMax[i]);
+				}
+
 				sendValueAll (ts[i]);
 			}
 
