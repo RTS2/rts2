@@ -83,6 +83,15 @@
 
     <variablelist>
       <varlistentry>
+        <term><option>cmd {command}</option></term>
+	<listitem>
+	  <para>
+	    Execute arbitrary command on the device. Currently command cannot
+	    have any parameters.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term>
 	  <option>exe {executable filename}</option>
 	</term>
