@@ -108,6 +108,53 @@ void Observatories::load ()
 	EXEC SQL ROLLBACK;
 }
 
+void ObservatorySchedule::load ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_schedule_id = schedule_id;
+	int db_observatory_id = observatory_id;
+	int db_state;
+
+	double db_created;
+	double db_last_update;
+	double db_sched_from;
+	double db_sched_to;
+
+	int db_created_ind;
+	int db_last_update_ind;
+	int db_sched_from_ind;
+	int db_sched_to_ind;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT 
+		state,
+		EXTRACT (EPOCH FROM created),
+		EXTRACT (EPOCH FROM last_update),
+		EXTRACT (EPOCH FROM sched_from),
+		EXTRACT (EPOCH FROM sched_to)
+	INTO
+		:db_state,
+		:db_created :db_created_ind,
+		:db_last_update :db_last_update_ind,
+		:db_sched_from :db_sched_from_ind,
+		:db_sched_to :db_sched_to_ind
+	FROM
+		observatory_schedules
+	WHERE
+		schedule_id = :db_schedule_id
+		AND observatory_id = :observatory_id;
+	
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+
+	state = db_state;
+
+
+}
+
 void BBSchedules::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;

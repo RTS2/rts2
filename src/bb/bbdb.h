@@ -55,6 +55,17 @@ class Observatories:public std::list <Observatory>
 class ObservatorySchedule
 {
 	public:
+		ObservatorySchedule (int _schedule_id, int _observatory_id)
+		{
+			schedule_id = _schedule_id;
+			observatory_id = _observatory_id;
+			state = -1;
+			created = NAN;
+			last_update = NAN;
+			from = NAN;
+			to = NAN;
+		}
+
 		ObservatorySchedule (int _schedule_id, int _observatory_id, int _state, double _created, double _last_update, double _from, double _to)
 		{
 			schedule_id = _schedule_id;
@@ -65,6 +76,8 @@ class ObservatorySchedule
 			from = _from;
 			to = _to;
 		}
+
+		void load ();
 	
 	private:
 		int schedule_id;
@@ -113,11 +126,13 @@ int createSchedule (int target_id);
 void updateSchedule (int schedule_id, int observatory_id, int state);
 
 //* BB schedule request was created
-#define BB_SCHEDULE_CREATED      0
+#define BB_SCHEDULE_CREATED           0
+//* Create target request was send to observatory
+#define BB_SCHEDULE_CREATE_TARGET     1
 //* BB schedule request was send to the observatory
-#define BB_SCHEDULE_REQUESTED    1
+#define BB_SCHEDULE_REQUESTED         2
 //* Observatory node replied with schedule status
-#define BB_SCHEDULE_REPLIED      2
+#define BB_SCHEDULE_REPLIED           3
 
 }
 
