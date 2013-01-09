@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "utilsfunc.h"
+
 #include <libnova/libnova.h>
 #include <string>
 #include <list>
@@ -78,7 +80,13 @@ class ObservatorySchedule
 		}
 
 		void load ();
-	
+
+		void updateState (int state);
+
+		void toJSON (std::ostream &os);
+
+		int getState () { return state; }
+
 	private:
 		int schedule_id;
 		int observatory_id;
@@ -122,8 +130,6 @@ int findObservatoryMapping (int observatory_id, int tar_id);
  * Creates new schedule.
  */
 int createSchedule (int target_id);
-
-void updateSchedule (int schedule_id, int observatory_id, int state);
 
 //* BB schedule request was created
 #define BB_SCHEDULE_CREATED           0

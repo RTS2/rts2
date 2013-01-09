@@ -18,8 +18,8 @@
  */
 
 #include "bbdb.h"
-#include "utilsfunc.h"
 #include "rts2db/sqlerror.h"
+#include "rts2json/jsonvalue.h"
 
 #include <math.h>
 
@@ -142,7 +142,7 @@ void ObservatorySchedule::load ()
 		observatory_schedules
 	WHERE
 		schedule_id = :db_schedule_id
-		AND observatory_id = :observatory_id;
+		AND observatory_id = :db_observatory_id;
 	
 	if (sqlca.sqlcode)
 	{
@@ -153,6 +153,57 @@ void ObservatorySchedule::load ()
 	state = db_state;
 
 
+}
+
+void ObservatorySchedule::updateState (int _state)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_schedule_id = schedule_id;
+	int db_observatory_id = observatory_id;
+	int db_state = _state;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT
+		state 
+	FROM
+		observatory_schedules
+	WHERE
+		schedule_id = :db_schedule_id
+		AND observatory_id = :db_observatory_id;
+
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL INSERT INTO
+			observatory_schedules
+		VALUES (:db_schedule_id, :db_observatory_id, :db_state, now (), NULL);
+	}
+	else
+	{
+		EXEC SQL UPDATE
+			observatory_schedules
+		SET
+			state = :db_state,
+			last_update = now ()
+		WHERE
+			schedule_id = :db_schedule_id
+			AND observatory_id = :db_observatory_id;
+	}
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		throw rts2db::SqlError ();
+	}
+	EXEC SQL COMMIT;
+	state = _state;
+}
+
+void ObservatorySchedule::toJSON (std::ostream &os)
+{
+	os << "\"state\":" << state
+		<< ",\"created\":" << rts2json::JsonDouble (created)
+		<< ",\"last_update\":" << rts2json::JsonDouble (last_update)
+		<< ",\"from\":" << rts2json::JsonDouble (from)
+		<< ",\"to\":" << rts2json::JsonDouble (to);
 }
 
 void BBSchedules::load ()
@@ -389,45 +440,4 @@ int rts2bb::createSchedule (int target_id)
 
 	EXEC SQL COMMIT;
 	return db_schedule_id;
-}
-
-void rts2bb::updateSchedule (int schedule_id, int observatory_id, int state)
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-	int db_schedule_id = schedule_id;
-	int db_observatory_id = observatory_id;
-	int db_state = state;
-	EXEC SQL END DECLARE SECTION;
-
-	EXEC SQL SELECT
-		state 
-	FROM
-		observatory_schedules
-	WHERE
-		schedule_id = :db_schedule_id
-		AND observatory_id = :db_observatory_id;
-
-	if (sqlca.sqlcode)
-	{
-		EXEC SQL INSERT INTO
-			observatory_schedules
-		VALUES (:db_schedule_id, :db_observatory_id, :db_state, now (), NULL);
-	}
-	else
-	{
-		EXEC SQL UPDATE
-			observatory_schedules
-		SET
-			state = :db_state,
-			last_update = now ()
-		WHERE
-			schedule_id = :db_schedule_id
-			AND observatory_id = :db_observatory_id;
-	}
-	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
-		throw rts2db::SqlError ();
-	}
-	EXEC SQL COMMIT;
 }

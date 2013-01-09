@@ -26,19 +26,20 @@ using namespace rts2bb;
 
 int BBTaskSchedule::run ()
 {
-	switch (state)
+	int new_state = obs_sched.getState ();
+	switch (new_state)
 	{
 		case BB_SCHEDULE_CREATED:
-			state = BB_SCHEDULE_REQUESTED;
+			new_state = BB_SCHEDULE_REQUESTED;
 			return 1;
 		case BB_SCHEDULE_REQUESTED:
-			state = BB_SCHEDULE_REPLIED;
+			new_state = BB_SCHEDULE_REPLIED;
 			return 1;
 		default:
-			logStream (MESSAGE_WARNING) << "unknow BBTaskSchedule state: " << state << sendLog;
+			logStream (MESSAGE_WARNING) << "unknow BBTaskSchedule state: " << new_state << sendLog;
 			return 0;
 	}
-	updateSchedule (schedule_id, observatory_id, state);
+	obs_sched.updateState (new_state);
 }
 
 BBTasks::BBTasks (BB *_server):TSQueue <BBTask *> ()

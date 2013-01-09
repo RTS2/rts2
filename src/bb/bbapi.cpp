@@ -132,7 +132,8 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			for (Observatories::iterator iter = obs.begin (); iter != obs.end (); iter++)
 			{
-				updateSchedule (schedule_id, iter->getId (), BB_SCHEDULE_CREATED);
+				ObservatorySchedule oss (schedule_id, iter->getId ());
+				oss.updateState (BB_SCHEDULE_CREATED);
 				// queue targets into scheduling thread
 				queue->queueTask (new BBTaskSchedule (schedule_id, iter->getId ()));
 			}
@@ -148,8 +149,14 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (observatory_id < 0)
 				throw XmlRpc::JSONException ("unknown observatory ID");
 
-			ObservatorySchedule sched (id, observatory_id);
+			ObservatorySchedule sched (schedule_id, observatory_id);
 			sched.load ();
+
+			os << "{";
+
+			sched.toJSON (os);
+
+			os << "}";
 		}
 		// schedule observation on one observatory
 		else if (vals[0] == "schedule")

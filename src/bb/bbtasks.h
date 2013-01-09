@@ -55,18 +55,14 @@ class BBTask
 class BBTaskSchedule:public BBTask
 {
 	public:
-		BBTaskSchedule (int _schedule_id, int _observatory_id)
+		BBTaskSchedule (int _schedule_id, int _observatory_id):obs_sched (_schedule_id, _observatory_id)
 		{
-			schedule_id = _schedule_id;
-			observatory_id = _observatory_id;
 		}
 
 		virtual int run ();
 
 	private:
-		int schedule_id;
-		int observatory_id;
-		int state;
+		ObservatorySchedule obs_sched;
 };
 
 /**
