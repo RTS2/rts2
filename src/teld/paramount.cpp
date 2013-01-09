@@ -184,11 +184,11 @@ class Paramount:public GEM
 		int ret0;
 		int ret1;
 
-		CWORD16 status0;
-		CWORD16 status1;
-
 		rts2core::ValueInteger *statusRa;
 		rts2core::ValueInteger *statusDec;
+
+		rts2core::ValueInteger *motorStatusRa;
+		rts2core::ValueInteger *motorStatusDec;
 
 		rts2core::ValueLong *speedRa;
 		rts2core::ValueLong *speedDec;
@@ -390,22 +390,44 @@ int Paramount::checkRet ()
 
 int Paramount::updateStatus ()
 {
-	CWORD16 old_status = status0;
-	ret0 = MKS3StatusGet (axis0, &status0);
-	if (status0 != old_status)
-		logStream (MESSAGE_DEBUG) << "changed axis 0 state from " << std::hex << old_status << " to " << status0 << sendLog;
-	statusRa->setValueInteger (status0);
-	old_status = status1;
-	ret1 = MKS3StatusGet (axis1, &status1);
-	if (status1 != old_status)
-		logStream (MESSAGE_DEBUG) << "changed axis 1 state from " << std::hex << old_status << " to " << status1 << sendLog;
-	statusDec->setValueInteger (status1);
+	CWORD16 new_status;
+	ret0 = MKS3StatusGet (axis0, &new_status);
+	if (statusRa->getValueInteger () != new_status)
+	{
+		logStream (MESSAGE_DEBUG) << "changed axis 0 state from " << std::hex << statusRa->getValueInteger () << " to " << new_status << sendLog;
+		statusRa->setValueInteger (new_status);
+	}
+
+	ret1 = MKS3StatusGet (axis1, &new_status);
+	if (statusDec->getValueInteger () != new_status)
+	{
+		logStream (MESSAGE_DEBUG) << "changed axis 1 state from " << std::hex << statusDec->getValueInteger () << " to " << new_status << sendLog;
+		statusDec->setValueInteger (new_status);
+	}
+
+	if (checkRet ())
+		return -1;
 
 	// set / unset HW error
 	if ((status0 & 0x02) || (status1 & 0x02) || status0 == 0x500 || status1 == 0x500 || status0 == 0xd00 || status1 == 0xd00 || status0 == 0xc00 || status1 == 0xc00)
 		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "set error - axis failed");
 	else
 		maskState (DEVICE_ERROR_HW, 0, "cleared error conditions");
+
+	// motor status..
+	ret0 = MKS3MotorStatusGet (axis0, &new_status);
+	if (motorStatusRa->getValueInteger () != new_status)
+	{
+		logStream (MESSAGE_DEBUG) << "changed motor 0 state from " << std::hex << motorStatusRa->getValueInteger () << " to " << new_status << sendLog;
+		motorStatusRa->setValueInteger (new_status);
+	}
+
+	ret1 = MKS3MotorStatusGet (axis1, &new_status);
+	if (motorStatusDec->getValueInteger () != new_status)
+	{
+		logStream (MESSAGE_DEBUG) << "changed motor 1 state from " << std::hex << motorStatusDec->getValueInteger () << " to " << new_status << sendLog;
+		motorStatusDec->setValueInteger (new_status);
+	}
 
 	return checkRet ();
 }
@@ -489,6 +511,9 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 
 	createValue (statusRa, "status_ra", "RA axis status", false, RTS2_DT_HEX);
 	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
+
+	createValue (motorStatusRa, "motor_status_ra", "RA motor status", false, RTS2_DT_HEX);
+	createValue (motorStatusDec, "motor_status_dec", "DEC motor status", false, RTS2_DT_HEX);
 
 	createValue (speedRa, "SPEED_RA", "[???] RA axis maximal speed", false, RTS2_VALUE_WRITABLE);
 	createValue (speedDec, "SPEED_DEC", "[???] DEC axis maximal speed", false, RTS2_VALUE_WRITABLE);
@@ -633,7 +658,6 @@ int Paramount::processOption (int in_opt)
 
 int Paramount::initHardware ()
 {
-	CWORD16 motorState0, motorState1;
 	CWORD32 pos0, pos1;
 	int ret;
 	int i;
