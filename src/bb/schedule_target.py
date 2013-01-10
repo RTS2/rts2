@@ -45,3 +45,4 @@ for obs_id in args:
 		sys.exit(1)
 
 	print 'log I schedule returns {0}'.format(time.ctime(int(ret)))	
+	print 'schedule_from',int(ret)

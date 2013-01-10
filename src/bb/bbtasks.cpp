@@ -26,11 +26,11 @@ using namespace rts2bb;
 
 int BBTaskSchedule::run ()
 {
-	int new_state = obs_sched.getState ();
+	int new_state = obs_sched->getState ();
 	switch (new_state)
 	{
 		case BB_SCHEDULE_CREATED:
-			sched_process = scheduleTarget (tar_id, obs_sched.getObservatoryId ());
+			sched_process = scheduleTarget (tar_id, obs_sched->getObservatoryId (), obs_sched);
 			return 0;
 		default:
 			logStream (MESSAGE_WARNING) << "unknow BBTaskSchedule state: " << new_state << sendLog;

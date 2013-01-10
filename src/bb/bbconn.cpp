@@ -25,8 +25,9 @@
 
 using namespace rts2bb;
 
-ConnBBQueue::ConnBBQueue (rts2core::Block * _master, const char *_exec):rts2script::ConnExe (_master, _exec, false)
+ConnBBQueue::ConnBBQueue (rts2core::Block * _master, const char *_exec, ObservatorySchedule *_obs_sched):rts2script::ConnExe (_master, _exec, false)
 {
+	obs_sched = _obs_sched;
 }
 
 void ConnBBQueue::processCommand (char *cmd)
@@ -73,18 +74,29 @@ void ConnBBQueue::processCommand (char *cmd)
 
 		writeToProcess (obs.getURL ());
 	}
+	else if (!strcasecmp (cmd, "schedule_from"))
+	{
+		double from_time;
+		if (paramNextDouble (&from_time))
+		{
+			from_time = NAN;
+			return;
+		}
+		if (obs_sched)
+			obs_sched->updateState (BB_SCHEDULE_REPLIED, from_time, NAN);
+	}
 	else
 	{
 		rts2script::ConnExe::processCommand (cmd);
 	}
 }
 
-ConnBBQueue *rts2bb::scheduleTarget (int tar_id, int observatory_id)
+ConnBBQueue *rts2bb::scheduleTarget (int tar_id, int observatory_id, ObservatorySchedule *obs_sched)
 {
 	std::ostringstream p_os;
 	p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", RTS2_SHARE_PREFIX "/rts2/bb") << "/schedule_target.py";
 
-	ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str ());
+	ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str (), obs_sched);
 
 	try
 	{

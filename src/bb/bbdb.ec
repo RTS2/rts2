@@ -151,20 +151,26 @@ void ObservatorySchedule::load ()
 	}
 
 	state = db_state;
-
-
 }
 
-void ObservatorySchedule::updateState (int _state)
+void ObservatorySchedule::updateState (int _state, double _from, double _to)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_schedule_id = schedule_id;
 	int db_observatory_id = observatory_id;
 	int db_state = _state;
+	int db_old_state;
+
+	double db_sched_from = _from;
+	int db_sched_from_ind = db_nan_indicator (_from);
+	double db_sched_to = _to;
+	int db_sched_to_ind = db_nan_indicator (_to);
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL SELECT
-		state 
+		state
+	INTO
+		:db_old_state
 	FROM
 		observatory_schedules
 	WHERE
@@ -175,7 +181,7 @@ void ObservatorySchedule::updateState (int _state)
 	{
 		EXEC SQL INSERT INTO
 			observatory_schedules
-		VALUES (:db_schedule_id, :db_observatory_id, :db_state, now (), NULL);
+		VALUES (:db_schedule_id, :db_observatory_id, :db_state, now (), now (), to_timestamp (:db_sched_from :db_sched_from_ind), to_timestamp (:db_sched_to :db_sched_to_ind));
 	}
 	else
 	{
@@ -183,7 +189,9 @@ void ObservatorySchedule::updateState (int _state)
 			observatory_schedules
 		SET
 			state = :db_state,
-			last_update = now ()
+			last_update = now (),
+			sched_from = to_timestamp (:db_sched_from :db_sched_from_ind),
+			sched_to = to_timestamp (:db_sched_to :db_sched_to_ind)
 		WHERE
 			schedule_id = :db_schedule_id
 			AND observatory_id = :db_observatory_id;

@@ -132,10 +132,10 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			for (Observatories::iterator iter = obs.begin (); iter != obs.end (); iter++)
 			{
-				ObservatorySchedule oss (schedule_id, iter->getId ());
-				oss.updateState (BB_SCHEDULE_CREATED);
+				ObservatorySchedule *oss = new ObservatorySchedule (schedule_id, iter->getId ());
+				oss->updateState (BB_SCHEDULE_CREATED);
 				// queue targets into scheduling thread
-				queue->queueTask (new BBTaskSchedule (schedule_id, tar_id, iter->getId ()));
+				queue->queueTask (new BBTaskSchedule (oss, tar_id, iter->getId ()));
 			}
 			os << schedule_id;
 		}

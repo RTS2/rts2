@@ -27,14 +27,19 @@ namespace rts2bb
 class ConnBBQueue:public rts2script::ConnExe
 {
 	public:
-		ConnBBQueue (rts2core::Block * _master, const char *_exec);
+		ConnBBQueue (rts2core::Block * _master, const char *_exec, ObservatorySchedule *obs_sched);
+		virtual ~ConnBBQueue ()
+		{
+			delete obs_sched;
+		}
 
 		virtual void processCommand (char *cmd);
 	
 	private:
+		ObservatorySchedule *obs_sched;
 };
 
-ConnBBQueue *scheduleTarget (int tar_id, int observatory_id);
+ConnBBQueue *scheduleTarget (int tar_id, int observatory_id, ObservatorySchedule *obs_sched = NULL);
 
 }
 

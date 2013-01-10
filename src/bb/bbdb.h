@@ -81,7 +81,7 @@ class ObservatorySchedule
 
 		void load ();
 
-		void updateState (int state);
+		void updateState (int state, double from=NAN, double to=NAN);
 
 		void toJSON (std::ostream &os);
 
