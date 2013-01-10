@@ -135,7 +135,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				ObservatorySchedule oss (schedule_id, iter->getId ());
 				oss.updateState (BB_SCHEDULE_CREATED);
 				// queue targets into scheduling thread
-				queue->queueTask (new BBTaskSchedule (schedule_id, iter->getId ()));
+				queue->queueTask (new BBTaskSchedule (schedule_id, tar_id, iter->getId ()));
 			}
 			os << schedule_id;
 		}
@@ -175,33 +175,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (target == NULL)
 				throw JSONException ("cannot find target with given ID");
 
-			std::ostringstream p_os;
-			p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", RTS2_SHARE_PREFIX "/rts2/bb") << "/schedule_target.py";
-
-			ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str ());
-
-			try
-			{
-				int obs_tar_id = findObservatoryMapping (observatory_id, tar_id);
-				bbqueue->addArg ("--obs-tar-id");
-				bbqueue->addArg (obs_tar_id);
-			}
-			catch (rts2db::SqlError er)
-			{
-				bbqueue->addArg ("--create");
-				bbqueue->addArg (tar_id);
-			}
-
-			bbqueue->addArg (observatory_id);
-
-			int ret = bbqueue->init ();
-			if (ret)
-				throw JSONException ("cannot execute schedule script");
-
-			if (((BB *) getMasterApp ())->getDebugConn ())
-				bbqueue->setConnectionDebug (true);
-
-			((BB *) getMasterApp ())->addConnection (bbqueue);
+			scheduleTarget (tar_id, observatory_id);
 
 			os << "{\"ret\":0}";
 		}

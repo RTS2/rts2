@@ -86,6 +86,7 @@ class ObservatorySchedule
 		void toJSON (std::ostream &os);
 
 		int getState () { return state; }
+		int getObservatoryId () { return observatory_id; }
 
 	private:
 		int schedule_id;

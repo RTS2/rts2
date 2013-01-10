@@ -30,16 +30,12 @@ int BBTaskSchedule::run ()
 	switch (new_state)
 	{
 		case BB_SCHEDULE_CREATED:
-			new_state = BB_SCHEDULE_REQUESTED;
-			return 1;
-		case BB_SCHEDULE_REQUESTED:
-			new_state = BB_SCHEDULE_REPLIED;
-			return 1;
+			sched_process = scheduleTarget (tar_id, obs_sched.getObservatoryId ());
+			return 0;
 		default:
 			logStream (MESSAGE_WARNING) << "unknow BBTaskSchedule state: " << new_state << sendLog;
 			return 0;
 	}
-	obs_sched.updateState (new_state);
 }
 
 BBTasks::BBTasks (BB *_server):TSQueue <BBTask *> ()
@@ -59,7 +55,7 @@ BBTasks::~BBTasks ()
 
 void BBTasks::run ()
 {
-	BBTask *t = pop ();
+	BBTask *t = pop (true);
 	int ret = t->run ();
 	if (ret)
 	{

@@ -34,6 +34,7 @@ class ConnBBQueue:public rts2script::ConnExe
 	private:
 };
 
+ConnBBQueue *scheduleTarget (int tar_id, int observatory_id);
 
 }
 

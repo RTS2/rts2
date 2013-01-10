@@ -16,9 +16,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "bb.h"
 #include "bbconn.h"
 #include "bbdb.h"
 #include "rts2db/target.h"
+#include "rts2db/sqlerror.h"
 #include "configuration.h"
 
 using namespace rts2bb;
@@ -75,4 +77,36 @@ void ConnBBQueue::processCommand (char *cmd)
 	{
 		rts2script::ConnExe::processCommand (cmd);
 	}
+}
+
+ConnBBQueue *rts2bb::scheduleTarget (int tar_id, int observatory_id)
+{
+	std::ostringstream p_os;
+	p_os << rts2core::Configuration::instance ()->getStringDefault ("bb", "script_dir", RTS2_SHARE_PREFIX "/rts2/bb") << "/schedule_target.py";
+
+	ConnBBQueue *bbqueue = new ConnBBQueue (((BB * ) getMasterApp ()), p_os.str ().c_str ());
+
+	try
+	{
+		int obs_tar_id = findObservatoryMapping (observatory_id, tar_id);
+		bbqueue->addArg ("--obs-tar-id");
+		bbqueue->addArg (obs_tar_id);
+	}
+	catch (rts2db::SqlError er)
+	{
+		bbqueue->addArg ("--create");
+		bbqueue->addArg (tar_id);
+	}
+
+	bbqueue->addArg (observatory_id);
+
+	int ret = bbqueue->init ();
+	if (ret)
+		throw JSONException ("cannot execute schedule script");
+
+	if (((BB *) getMasterApp ())->getDebugConn ())
+		bbqueue->setConnectionDebug (true);
+
+	((BB *) getMasterApp ())->addConnection (bbqueue);
+	return bbqueue;
 }

@@ -23,6 +23,7 @@
 #include "tsqueue.h"
 
 #include "bbdb.h"
+#include "bbconn.h"
 
 #include <pthread.h>
 
@@ -55,14 +56,18 @@ class BBTask
 class BBTaskSchedule:public BBTask
 {
 	public:
-		BBTaskSchedule (int _schedule_id, int _observatory_id):obs_sched (_schedule_id, _observatory_id)
+		BBTaskSchedule (int _schedule_id, int _tar_id, int _observatory_id):obs_sched (_schedule_id, _observatory_id)
 		{
+			tar_id = _tar_id;
+			sched_process = NULL;
 		}
 
 		virtual int run ();
 
 	private:
 		ObservatorySchedule obs_sched;
+		int tar_id;
+		ConnBBQueue *sched_process;
 };
 
 /**
