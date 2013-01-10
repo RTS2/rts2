@@ -409,7 +409,7 @@ int Paramount::updateStatus ()
 		return -1;
 
 	// set / unset HW error
-	if ((status0 & 0x02) || (status1 & 0x02) || status0 == 0x500 || status1 == 0x500 || status0 == 0xd00 || status1 == 0xd00 || status0 == 0xc00 || status1 == 0xc00)
+	if ((statusRa->getValueInteger () & 0x02) || (statusDec->getValueInteger () & 0x02) || statusRa->getValueInteger () == 0x500 || statusDec->getValueInteger () == 0x500 || statusRa->getValueInteger () == 0xd00 || statusDec->getValueInteger () == 0xd00 || statusRa->getValueInteger () == 0xc00 || statusDec->getValueInteger () == 0xc00)
 		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "set error - axis failed");
 	else
 		maskState (DEVICE_ERROR_HW, 0, "cleared error conditions");
@@ -709,6 +709,7 @@ int Paramount::initHardware ()
 		ret = updateStatus ();
 		if (ret)
 			return ret;
+		CWORD16 motorState0, motorState1;
 		ret0 = MKS3MotorStatusGet (axis0, &motorState0);
 		ret1 = MKS3MotorStatusGet (axis1, &motorState1);
 		ret = checkRet ();
@@ -963,8 +964,8 @@ int Paramount::info ()
 	ret = updateStatus ();
 	if (ret)
 		return ret;
-	motorRa->setValueBool (!(status0 & MOTOR_OFF));
-	motorDec->setValueBool (!(status1 & MOTOR_OFF));
+	motorRa->setValueBool (!(statusRa->getValueInteger () & MOTOR_OFF));
+	motorDec->setValueBool (!(statusDec->getValueInteger () & MOTOR_OFF));
 
 	return GEM::info ();
 }
@@ -988,25 +989,25 @@ int Paramount::startResync ()
 	ret0 = MKS_OK;
 	ret1 = MKS_OK;
 	// when we are homing, we will move after home finish
-	if (status0 & MOTOR_HOMING)
+	if (statusRa->getValueInteger () & MOTOR_HOMING)
 	{
 		moveState = TEL_FORCED_HOMING0;
 		return 0;
 	}
-	if (status1 & MOTOR_HOMING)
+	if (statusDec->getValueInteger () & MOTOR_HOMING)
 	{
 		moveState = TEL_FORCED_HOMING1;
 		return 0;
 	}
-	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+	if ((statusRa->getValueInteger () & MOTOR_SLEWING) || (statusDec->getValueInteger () & MOTOR_SLEWING))
 	{
 		logStream (MESSAGE_DEBUG) << "Aborting move, as mount is slewing" << sendLog;
-		if (status0 & MOTOR_SLEWING)
+		if (statusRa->getValueInteger () & MOTOR_SLEWING)
 		{
 			ret0 = MKS3PosAbort (axis0);
 			MKS3MotorOff (axis0);
 		}
-		if (status1 & MOTOR_SLEWING)
+		if (statusDec->getValueInteger () & MOTOR_SLEWING)
 		{
 			ret1 = MKS3PosAbort (axis1);
 			MKS3MotorOff (axis1);
@@ -1016,18 +1017,18 @@ int Paramount::startResync ()
 		if (ret)
 			return -1;
 	}
-	if ((status0 & MOTOR_OFF) || (status1 & MOTOR_OFF))
+	if ((statusRa->getValueInteger () & MOTOR_OFF) || (statusDec->getValueInteger () & MOTOR_OFF))
 	{
 		ret0 = MKS3MotorOn (axis0);
 		ret1 = MKS3MotorOn (axis1);
 		usleep (USEC_SEC / 10);
 	}
-	if (!(status0 & MOTOR_HOMED))
+	if (!(statusRa->getValueInteger () & MOTOR_HOMED))
 	{
 		MKS3Home (axis0, 0);
 		moveState |= TEL_FORCED_HOMING0;
 	}
-	if (!(status1 & MOTOR_HOMED))
+	if (!(statusDec->getValueInteger () & MOTOR_HOMED))
 	{
 		MKS3Home (axis1, 1);
 		moveState |= TEL_FORCED_HOMING1;
@@ -1088,14 +1089,14 @@ int Paramount::isMoving ()
 	// we were called from idle loop
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
 	{
-		if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+		if ((statusRa->getValueInteger () & MOTOR_HOMING) || (statusDec->getValueInteger () & MOTOR_HOMING))
 			return USEC_SEC / 10;
 		moveState = TEL_SLEW;
 		// re-move
 		return startResync ();
 	}
 	// check axis state..
-	if (status0 & SERVO_STATE_UN)
+	if (statusRa->getValueInteger () & SERVO_STATE_UN)
 	{
 		sleep (10);
 		// switch motor off
@@ -1107,7 +1108,7 @@ int Paramount::isMoving ()
 		setParkTimeNow ();
 		return USEC_SEC / 10;
 	}
-	if (status1 & SERVO_STATE_UN)
+	if (statusDec->getValueInteger () & SERVO_STATE_UN)
 	{
 		sleep (10);
 		// switch motor off
@@ -1119,7 +1120,7 @@ int Paramount::isMoving ()
 		setParkTimeNow ();
 		return USEC_SEC / 10;
 	}
-	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+	if ((statusRa->getValueInteger () & MOTOR_SLEWING) || (statusDec->getValueInteger () & MOTOR_SLEWING))
 		return USEC_SEC / 10;
 	// we reached destination
 	return -2;
@@ -1167,7 +1168,7 @@ int Paramount::stopMove ()
 	ret = updateStatus ();
 	if (ret)
 		return -1;
-	if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+	if ((statusRa->getValueInteger () & MOTOR_HOMING) || (statusDec->getValueInteger () & MOTOR_HOMING))
 		return 0;
 	ret0 = MKS3PosAbort (axis0);
 	ret1 = MKS3PosAbort (axis1);
@@ -1194,13 +1195,13 @@ int Paramount::startPark ()
 	if (ret)
 		return -1;
 
-	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+	if ((statusRa->getValueInteger () & MOTOR_SLEWING) || (statusDec->getValueInteger () & MOTOR_SLEWING))
 	{
-		if (status0 & MOTOR_SLEWING)
+		if (statusRa->getValueInteger () & MOTOR_SLEWING)
 		{
 			ret0 = MKS3PosAbort (axis0);
 		}
-		if (status1 & MOTOR_SLEWING)
+		if (statusDec->getValueInteger () & MOTOR_SLEWING)
 		{
 			ret0 = MKS3PosAbort (axis1);
 		}
@@ -1219,7 +1220,7 @@ int Paramount::isParking ()
 	int ret;
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
 	{
-		if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+		if ((statusRa->getValueInteger () & MOTOR_HOMING) || (statusDec->getValueInteger () & MOTOR_HOMING))
 			return USEC_SEC / 10;
 		moveState = TEL_SLEW;
 		// move to park position
@@ -1231,7 +1232,7 @@ int Paramount::isParking ()
 		return USEC_SEC / 10;
 	}
 	// home finished, only check if we get to proper position
-	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+	if ((statusRa->getValueInteger () & MOTOR_SLEWING) || (statusDec->getValueInteger () & MOTOR_SLEWING))
 		return USEC_SEC / 10;
 	return -2;
 }
@@ -1281,7 +1282,7 @@ int Paramount::endPark ()
 	ret = updateStatus ();
 	if (ret)
 		return -1;
-	if (!(status0 & MOTOR_HOMED) || !(status1 & MOTOR_HOMED))
+	if (!(statusRa->getValueInteger () & MOTOR_HOMED) || !(statusDec->getValueInteger () & MOTOR_HOMED))
 		return -1;
 	ret0 = MKS3MotorOff (axis0);
 	ret1 = MKS3MotorOff (axis1);
