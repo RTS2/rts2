@@ -65,7 +65,7 @@ template <class T, class Container = std::deque <T> > class TSQueue
 			if (m_queue.empty ())
 			{
 				pthread_mutex_unlock (&m_mutex);
-				throw rts2core::Error ("emtpy queue");
+				throw rts2core::Error ("empty threads save queue");
 			}
 
 			T ret = m_queue.front ();
