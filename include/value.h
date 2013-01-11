@@ -883,7 +883,7 @@ class ValueSelection:public ValueInteger
 
 		int selSize () { return values.size (); }
 
-		void duplicateSelVals (ValueSelection * otherValue);
+		void duplicateSelVals (ValueSelection * otherValue, int index = 0);
 
 		int sendSelections (Connection *connection);
 

@@ -17,8 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "rts2db/target.h"
 #include "rts2json/httpreq.h"
 #include "asyncapi.h"
+#include "bbapidb.h"
 
 /** @file bbapi.h
  *
@@ -40,6 +42,14 @@ class BBAPI:public rts2json::JSONRequest
 
 	protected:
 		virtual void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+	
+	private:
+		/**
+		 * Confirm observation schedule.
+		 */
+		void confirmSchedule (rts2db::Target *tar, double f, const char *schedule_id);
+
+		BBSchedules schedules;
 };
 
 }

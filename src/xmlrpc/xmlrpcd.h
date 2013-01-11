@@ -385,6 +385,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
+		virtual void deviceReady (rts2core::Connection *conn);
+
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 		void stateChangedEvent (rts2core::Connection *conn, rts2core::ServerState *new_state);
@@ -509,6 +511,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		rts2core::ValueBool *send_emails;
 		rts2core::ValueInteger *bbCadency;
 		rts2core::ValueInteger *bbQueueSize;
+		rts2core::ValueSelection *bbSelectorQueue;
 
 		rts2core::ValueTime *bbLastSuccess;
 

@@ -603,12 +603,15 @@ int ValueSelection::sendTypeMetaInfo (Connection * connection)
 	return sendSelections (connection);
 }
 
-void ValueSelection::duplicateSelVals (ValueSelection * otherValue)
+void ValueSelection::duplicateSelVals (ValueSelection * otherValue, int index)
 {
 	deleteValues ();
 	for (std::vector < SelVal >::iterator iter = otherValue->selBegin (); iter != otherValue->selEnd (); iter++)
 	{
-		addSelVal (*iter);
+		if (index > 0)
+			index--;
+		else
+			addSelVal (*iter);
 	}
 }
 

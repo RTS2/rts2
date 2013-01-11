@@ -44,13 +44,27 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 	if (vals.size () == 1)
 	{
 		// return time the observatory might be able to schedule the request
-		if (vals[0] == "schedule")
+		if (vals[0] == "schedule" || vals[0] == "confirm")
 		{
 			rts2db::Target *tar = getTarget (params);
 			double from = params->getDouble ("from", getNow ());
 			double to = params->getDouble ("to", from + 86400);
 			if (to < from)
+			{
+				delete tar;
 				throw JSONException ("to time is before from time");
+			}
+
+			const char *schedule_id;
+			if (vals[0] == "confirm")
+			{
+				schedule_id = params->getString ("schedule_id", "");
+				if (schedule_id[0] == '\0')
+				{
+					delete tar;
+					throw JSONException ("missing schedule ID");
+				}
+			}
 
 			// find free spots
 			XmlRpcd *master = (XmlRpcd*) getMasterApp ();
@@ -150,12 +164,23 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 					{
 						ln_get_timet_from_julian (t, &f);
 						os << f;
+						if (vals[0] == "confirm")
+							confirmSchedule (tar, f, schedule_id);
 						break;
 					}
 				}
 			}
 			if (t >= JD_end)
 				os << "0";
+			delete tar;
+		}
+		else if (vals[0] == "cancel")
+		{
+			const char *schedule_id = params->getString ("schedule_id", "");
+
+			BBSchedules::iterator iter = schedules.find (schedule_id);
+			if (iter == schedules.end ())
+				throw JSONException ("invalid schedule id");
 		}
 		else
 		{
@@ -164,4 +189,13 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
+}
+
+void BBAPI::confirmSchedule (rts2db::Target *tar, double f, const char *schedule_id)
+{
+	BBSchedules::iterator iter = schedules.find (schedule_id);
+	if (iter != schedules.end ())
+		delete iter->second;
+	
+	schedules[std::string (schedule_id)] = new BBSchedule (std::string (schedule_id), tar->getTargetID (), f);
 }

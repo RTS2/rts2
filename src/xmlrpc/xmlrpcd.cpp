@@ -726,8 +726,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	bbCadency->setValueInteger (60);
 
 	createValue (bbQueueSize, "bb_queuesize", "size of BB requests queue", false);
-
 	createValue (bbLastSuccess, "bb_lastsucess", "last successful transmision with BB", false);
+	createValue (bbSelectorQueue, "bb_selectorQueue", "", false, RTS2_VALUE_WRITABLE);
 
 #ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
@@ -772,6 +772,24 @@ rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int
 			return new XmlDevFocusClient (conn);
 		default:
 			return new XmlDevClient (conn);
+	}
+}
+
+void XmlRpcd::deviceReady (rts2core::Connection * conn)
+{
+#ifdef RTS2_HAVE_PGSQL
+	DeviceDb::deviceReady (conn);
+#else
+	rts2core::Device::deviceReady (conn);
+#endif
+	if (conn->getOtherType () == DEVICE_TYPE_SELECTOR)
+	{
+		rts2core::Value *qv = conn->getValue ("last_queue");
+		if (qv && qv->getValueType () == RTS2_VALUE_SELECTION)
+		{
+			bbSelectorQueue->duplicateSelVals ((rts2core::ValueSelection *) qv, 1);
+			updateMetaInformations (bbSelectorQueue);
+		}
 	}
 }
 
