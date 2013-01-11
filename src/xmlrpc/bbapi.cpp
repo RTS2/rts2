@@ -196,6 +196,10 @@ void BBAPI::confirmSchedule (rts2db::Target *tar, double f, const char *schedule
 	BBSchedules::iterator iter = schedules.find (schedule_id);
 	if (iter != schedules.end ())
 		delete iter->second;
+
+	BBSchedule *sched = new BBSchedule (std::string (schedule_id), tar->getTargetID (), f);
 	
-	schedules[std::string (schedule_id)] = new BBSchedule (std::string (schedule_id), tar->getTargetID (), f);
+	schedules[std::string (schedule_id)] = sched;
+
+	((XmlRpcd*) getMasterApp ())->confirmSchedule (sched);
 }

@@ -32,6 +32,8 @@ class BBSchedule
 			quid = -1;
 		}
 
+		int getTargetID () { return target_id; }
+
 	private:
 		std::string schedule_id;
 		int target_id;

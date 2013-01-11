@@ -217,6 +217,18 @@ void XmlRpcd::bbSend (double t)
 	sendValueAll (bbLastSuccess);
 }
 
+#ifdef RTS2_HAVE_PGSQL
+void XmlRpcd::confirmSchedule (BBSchedule *schedule)
+{
+	rts2core::Connection *selConn = getOpenConnection (DEVICE_TYPE_SELECTOR);
+	if (selConn == NULL)
+		throw rts2core::Error ("cannot find selector connection");
+	std::ostringstream os;
+	os << "queue " << bbSelectorQueue->getSelName () << " " << schedule->getTargetID ();
+	selConn->queCommand (new rts2core::Command (this, os.str ().c_str ()));
+}
+#endif
+
 void XmlDevCameraClient::setCallScriptEnds (bool nv)
 {
 	callScriptEnds->setValueBool (nv);

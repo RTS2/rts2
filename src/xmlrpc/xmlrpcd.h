@@ -473,6 +473,10 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		 */
 		void bbSend (double t);
 
+#ifdef RTS2_HAVE_PGSQL
+		void confirmSchedule (BBSchedule *schedule);
+#endif
+
 	protected:
 		virtual int info ();
 
