@@ -32,6 +32,7 @@
 #include <pthread.h>
 
 #define EVENT_TASK_SCHEDULE       1500
+#define EVENT_SCHEDULING_DONE     1501
 
 using namespace XmlRpc;
 
@@ -79,6 +80,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		rts2core::ValueInteger *queueSize;
 
 		BBTasks task_queue;
+
+		void processSchedule (ObservatorySchedule *obs_sched);
 };
 
 }

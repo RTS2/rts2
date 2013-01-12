@@ -49,6 +49,9 @@ void BB::postEvent (rts2core::Event *event)
 		case EVENT_TASK_SCHEDULE:
 			task_queue.push ((BBTask *) event->getArg ());
 			break;
+		case EVENT_SCHEDULING_DONE:
+			processSchedule ((ObservatorySchedule *) event->getArg ());
+			break;
 	}
 	rts2db::DeviceDb::postEvent (event);
 }
@@ -107,6 +110,44 @@ void BB::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	rts2db::DeviceDb::selectSuccess (read_set, write_set, exp_set);
 	XmlRpcServer::checkFd (&read_set, &write_set, &exp_set);
+}
+
+void BB::processSchedule (ObservatorySchedule *obs_sched)
+{
+	try
+	{
+		BBSchedules all (obs_sched->getScheduleId ());
+		all.load ();
+
+		BBSchedules::iterator iter;
+
+		double min_time = NAN;
+		int min_observatory = -1;
+
+		for (iter = all.begin (); iter != all.end (); iter++)
+		{
+			if (!(iter->getState () == BB_SCHEDULE_REPLIED || iter->getState () == BB_SCHEDULE_UNSCHEDULED))
+				break;
+			if (!isnan (iter->getFrom ()) && (isnan (min_time) || iter->getFrom () < min_time))
+			{
+				min_time = iter->getFrom ();
+				min_observatory = iter->getObservatoryId ();
+			}
+		}
+
+		if (iter != all.end ())
+		{
+			// some requests weren't processed
+			return;
+		}
+
+		// inform selected observatory..
+		task_queue.queueTask (new BBConfirmTask (obs_sched->getScheduleId (), min_observatory));
+	}
+	catch (rts2core::Error)
+	{
+		logStream (MESSAGE_ERROR) << "cannot process schedule requests " << obs_sched->getScheduleId () << sendLog;
+	}
 }
 
 int main (int argc, char **argv)

@@ -86,7 +86,10 @@ class ObservatorySchedule
 		void toJSON (std::ostream &os);
 
 		int getState () { return state; }
+		int getScheduleId () { return schedule_id; }
 		int getObservatoryId () { return observatory_id; }
+
+		double getFrom () { return from; }
 
 	private:
 		int schedule_id;
@@ -140,6 +143,8 @@ int createSchedule (int target_id);
 #define BB_SCHEDULE_REQUESTED         2
 //* Observatory node replied with schedule status
 #define BB_SCHEDULE_REPLIED           3
+//* Observatory node was unable to schedule observation
+#define BB_SCHEDULE_UNSCHEDULED       4
 
 }
 

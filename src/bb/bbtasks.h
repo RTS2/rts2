@@ -76,6 +76,30 @@ class BBTaskSchedule:public BBTask
 };
 
 /**
+ * Confirm observatory selection.
+ */
+class BBConfirmTask:public BBTask
+{
+	public:
+		BBConfirmTask (int _schedule_id, int _observatory_id)
+		{
+			schedule_id = _schedule_id;
+			observatory_id = _observatory_id;
+		}
+		virtual ~BBConfirmTask ()
+		{
+
+		}
+
+		virtual int run ();
+
+	private:
+		int schedule_id;
+		int observatory_id;
+};
+
+
+/**
  * Queue holding all tasks.
  */
 class BBTasks:public TSQueue <BBTask *>

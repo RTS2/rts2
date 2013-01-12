@@ -28,10 +28,7 @@ class ConnBBQueue:public rts2script::ConnExe
 {
 	public:
 		ConnBBQueue (rts2core::Block * _master, const char *_exec, ObservatorySchedule *obs_sched);
-		virtual ~ConnBBQueue ()
-		{
-			delete obs_sched;
-		}
+		virtual ~ConnBBQueue ();
 
 		virtual void processCommand (char *cmd);
 	

@@ -38,6 +38,11 @@ int BBTaskSchedule::run ()
 	}
 }
 
+int BBConfirmTask::run ()
+{
+	return 0;
+}
+
 BBTasks::BBTasks (BB *_server):TSQueue <BBTask *> ()
 {
 	send_thread = 0;
