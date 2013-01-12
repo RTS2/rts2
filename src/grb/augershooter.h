@@ -47,6 +47,7 @@ class DevAugerShooter:public rts2db::DeviceDb
 		}
 
 		virtual int init ();
+		void augerMessage ();
 		void rejectedShower (double lastDate, double ra, double dec);
 		void newShower (double lastDate, double ra, double dec);
 		bool wasSeen (double lastDate, double ra, double dec);
@@ -63,6 +64,7 @@ class DevAugerShooter:public rts2db::DeviceDb
 
 		rts2core::ValueTime *lastAugerSeen;
 		rts2core::ValueTime *lastAugerDate;
+		rts2core::ValueTime *lastAugerMessage;
 		rts2core::ValueDouble *lastAugerRa;
 		rts2core::ValueDouble *lastAugerDec;
 

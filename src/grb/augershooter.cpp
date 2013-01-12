@@ -40,6 +40,7 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):DeviceDb (in_argc
 
 	createValue (lastAugerSeen, "last_rejected", "date of last rejected shower", false);	
 	createValue (lastAugerDate, "last_date", "date of last accepted shower", false);
+	createValue (lastAugerMessage, "last_message", "date of last message", false);
 	createValue (lastAugerRa, "last_ra", "RA of last shower", false, RTS2_DT_RA);
 	createValue (lastAugerDec, "last_dec", "DEC of last shower", false, RTS2_DT_DEC);
 
@@ -222,6 +223,12 @@ int DevAugerShooter::init ()
 	addConnection (shootercnn);
 
 	return ret;
+}
+
+void DevAugerShooter::augerMessage ()
+{
+	lastAugerMessage->setValueDouble (getNow ());
+	sendValueAll (lastAugerMessage);
 }
 
 void DevAugerShooter::rejectedShower (double lastDate, double ra, double dec)

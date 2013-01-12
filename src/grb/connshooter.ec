@@ -259,6 +259,7 @@ int ConnShooter::processAuger ()
 
 	if (_is.fail ())
 	{
+		((DevAugerShooter*) master)->augerMessage ();
 		logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream at " << _is.tellg () << " " << _is.str () << sendLog;
 		return -1;
 	}
