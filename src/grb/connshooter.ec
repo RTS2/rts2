@@ -140,6 +140,29 @@ int ConnShooter::processAuger ()
 	time_t now;
 
 	std::string AugerId;
+	std::string YYMMDD;
+	std::string HHMMSS;
+	std::string TelEvtBits;
+	std::string TelDAQBits;
+
+	double MoonCycle;
+	double RecLevel;
+	double RhoPT;
+	double RA;
+	double Dec;
+	double RAErr;
+	double DecErr;
+	double RhoRD;
+	double GalLong;
+	double GalLat;
+	double GalLongErr;
+	double GalLatErr;
+	double RhoLL;
+	double ChkovFrac;
+	double EyeXmaxAtt;
+	double MieDatabase;
+	double BadPeriod;
+	double dEdX;
 
 	char rest[2000];
 
@@ -150,7 +173,13 @@ int ConnShooter::processAuger ()
 		>> AugerId
 		>> db_GPSSec
 		>> db_GPSNSec
+		>> YYMMDD
+		>> HHMMSS
 		>> db_SDId
+		>> TelEvtBits
+		>> TelDAQBits
+		>> MoonCycle
+		>> RecLevel
 		>> db_NPix
 		>> db_SDPTheta
 		>> db_SDPThetaErr
@@ -176,6 +205,17 @@ int ConnShooter::processAuger ()
 		>> db_ThetaErr
 		>> db_Phi
 		>> db_PhiErr
+		>> RhoPT
+		>> RA
+		>> Dec
+		>> RAErr
+		>> DecErr
+		>> RhoRD
+		>> GalLong
+		>> GalLat
+		>> GalLongErr
+		>> GalLatErr
+		>> RhoLL
 		>> db_dEdXmax
 		>> db_dEdXmaxErr
 		>> db_Xmax
@@ -198,19 +238,24 @@ int ConnShooter::processAuger ()
 		>> db_MinAngle
 		>> db_MaxAngle
 		>> db_MeanAngle
+		>> ChkovFrac
 		>> db_NTank
 		>> db_HottestTank
 		>> db_AxisDist
 		>> db_SDPDist
 		>> db_SDFDdT
 		>> db_XmaxEyeDist
+		>> EyeXmaxAtt
 		>> db_XTrackMin
 		>> db_XTrackMax
 		>> db_XFOVMin
 		>> db_XFOVMax
 		>> db_XTrackObs
 		>> db_DegTrackObs
-		>> db_TTrackObs;
+		>> db_TTrackObs
+		>> MieDatabase
+		>> BadPeriod
+		>> dEdX;
 
 	if (_is.fail ())
 	{
@@ -692,9 +737,12 @@ int ConnShooter::receive (fd_set * set)
 			{
 				*it = '\0';
 				logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::processing data: " << nbuf << sendLog;
-				processAuger ();
-				// enable others to catch-up (FW connections will forward packet to their sockets)
-				getMaster ()->postEvent (new rts2core::Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
+				if (nbuf[0] != '#')
+				{
+					processAuger ();
+					// enable others to catch-up (FW connections will forward packet to their sockets)
+					getMaster ()->postEvent (new rts2core::Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
+				}
 
 				// move unprocessed to begging
 				it++;
