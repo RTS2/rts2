@@ -111,7 +111,8 @@ class Rts2JSON:
 	def __init__(self,url='http://localhost:8889',username=None,password=None,verbose=False,http_proxy=None):
 		use_proxy = False
 		prefix = ''
-		if os.environ.has_key('http_proxy') or http_proxy:
+		# use proxy only if not connecting to localhost
+		if url.find('localhost') == -1 and (os.environ.has_key('http_proxy') or http_proxy):
 			if not(re.match('^http',url)):
 				prefix = 'http://' + url
 			if http_proxy:
