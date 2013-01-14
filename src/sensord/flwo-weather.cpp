@@ -159,7 +159,10 @@ void MEarthWeather::paramNextDoubleStatME (rts2core::ValueDoubleStat *val, int n
 {
 	double v = paramNextDouble ();
 	if (isnan (v))
+	{
+		logStream (MESSAGE_WARNING) << "nan weather value received" << sendLog;
 		return;
+	}
 	val->addValue (v, nv);
 	val->calculate ();
 }
