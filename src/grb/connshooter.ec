@@ -147,7 +147,7 @@ int ConnShooter::processAuger ()
 
 	double MoonCycle;
 	double RecLevel;
-	double RhoneNE;
+	double RhoNE;
 	double RhoPT;
 	double RA;
 	double Dec;
