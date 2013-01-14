@@ -147,6 +147,7 @@ int ConnShooter::processAuger ()
 
 	double MoonCycle;
 	double RecLevel;
+	double RhoneNE;
 	double RhoPT;
 	double RA;
 	double Dec;
@@ -201,6 +202,7 @@ int ConnShooter::processAuger ()
 		>> db_Altitude
 		>> db_NorthingErr
 		>> db_EastingErr
+		>> RhoNE
 		>> db_Theta
 		>> db_ThetaErr
 		>> db_Phi
@@ -226,7 +228,6 @@ int ConnShooter::processAuger ()
 		>> db_LambdaErr
 		>> db_GHChi2
 		>> db_GHNdf
-		// 3 double
 		>> db_DGHXmax1
 		>> db_DGHXmax2
 		>> db_DGHChi2Improv
