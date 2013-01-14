@@ -95,7 +95,7 @@ namespace XmlRpc
 			void checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd);
 
 			//! Temporarily stop processing client requests and exit the work() method.
-			void exit();
+			void exitWork();
 
 			//! Close all connections with clients and the socket file descriptor
 			void shutdown();

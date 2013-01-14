@@ -70,7 +70,7 @@ namespace XmlRpc
 			void checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd);
 
 			//! Exit from work routine
-			void exit();
+			void exitWork();
 
 			//! Clear all sources from the monitored sources list. Sources are closed.
 			void clear();

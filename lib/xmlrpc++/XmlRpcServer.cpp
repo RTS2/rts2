@@ -225,9 +225,9 @@ void XmlRpcServer::removeConnection(XmlRpcServerConnection* sc)
 }
 
 // Stop processing client requests
-void XmlRpcServer::exit()
+void XmlRpcServer::exitWork()
 {
-	_disp.exit();
+	_disp.exitWork();
 }
 
 // Close the server socket file descriptor and stop monitoring connections

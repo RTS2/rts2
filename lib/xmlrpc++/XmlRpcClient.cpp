@@ -89,7 +89,7 @@ void XmlRpcClient::close()
 {
 	XmlRpcUtil::log(4, "XmlRpcClient::close: fd %d.", getfd());
 	_connectionState = NO_CONNECTION;
-	_disp.exit();
+	_disp.exitWork();
 	_disp.removeSource(this);
 	XmlRpcSource::close();
 }

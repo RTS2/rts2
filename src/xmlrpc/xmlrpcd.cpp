@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "rts2script/connexe.h"
 #include "xmlrpcd.h"
 
 #ifdef RTS2_HAVE_PGSQL
@@ -37,10 +38,12 @@ using namespace Magick;
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #define OPT_STATE_CHANGE        OPT_LOCAL + 76
 #define OPT_NO_EMAILS           OPT_LOCAL + 77
+#define OPT_TESTSCRIPT          OPT_LOCAL + 78
 
 using namespace XmlRpc;
 
@@ -489,6 +492,9 @@ int XmlRpcd::processOption (int in_opt)
 		case OPT_CONFIG:
 			config_file = optarg;
 			break;
+		case OPT_TESTSCRIPT:
+			testScripts.push_back (optarg);
+			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
 #endif
@@ -547,6 +553,20 @@ int XmlRpcd::init ()
 	for (BBServers::iterator iter = events.bbServers.begin (); iter != events.bbServers.end (); iter++)
 	{
 		addTimer (1, new Event (EVENT_XMLRPC_BB, (void*) &(*iter)));
+	}
+
+	for (std::list <const char *>::iterator iter = testScripts.begin (); iter != testScripts.end (); iter++)
+	{
+		// add connections..
+		rts2script::ConnExe *conn = new rts2script::ConnExe (this, *iter, true, 3600);
+		if (conn->init ())
+		{
+			delete conn;
+			logStream (MESSAGE_ERROR) << "cannot run test script " << *iter << ": " << strerror (errno) << sendLog;
+			exit (1);
+		}
+
+		addConnection (conn);
 	}
 
 #ifndef RTS2_HAVE_PGSQL
@@ -749,6 +769,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
 	addOption (OPT_NO_EMAILS, "no-emails", 0, "do not send emails");
+	addOption (OPT_TESTSCRIPT, "test-script", 1, "test script to run on background");
 	XmlRpc::setVerbosity (0);
 }
 

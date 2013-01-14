@@ -331,7 +331,7 @@ class ElementPhotometer:public Element
 		ElementPhotometer (Script * _script, int in_filter, float in_exposure, int in_count);
 		virtual int nextCommand (rts2core::DevClientPhot * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		virtual void printScript (std::ostream &os) { os << COMMAND_PHOTOMETER << " " << filter << " " << exposure << " " << count; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_PHOTOMETER " " << filter << " " << exposure << " " << count; }
 	private:
 		int filter;
 		float exposure;
@@ -347,7 +347,7 @@ class ElementSendSignal:public Element
 		virtual void postEvent (rts2core::Event * event);
 		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		virtual void printScript (std::ostream &os) { os << COMMAND_SEND_SIGNAL << " " << sig; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_SEND_SIGNAL " " << sig; }
 	private:
 		int sig;
 		bool askedFor;
@@ -422,8 +422,8 @@ class ElementCommand:public Element
 
 		virtual void prettyPrint (std::ostream &os) { os << "command " << cmd; }
 		virtual void printXml (std::ostream &os) { os << "  <cmd command='" << cmd << "'/>"; }
-		virtual void printScript (std::ostream &os) { os << COMMAND_COMMAND " " << cmd; }
-		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_COMMAND << "\",\"command\":\"" << cmd << "\""; }
+		virtual void printScript (std::ostream &os);
+		virtual void printJson (std::ostream &os);
 	private:
 		std::string cmd;
 };

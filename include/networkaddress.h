@@ -33,6 +33,8 @@
 #include "getaddrinfo.h"
 #endif
 
+struct addrinfo;
+
 namespace rts2core
 {
 

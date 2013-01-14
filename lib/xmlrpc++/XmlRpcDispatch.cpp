@@ -195,7 +195,7 @@ XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 // Exit from work routine. Presumably this will be called from
 // one of the source event handlers.
 void
-XmlRpcDispatch::exit()
+XmlRpcDispatch::exitWork()
 {
 	_endTime = 0.0;				 // Return from work asap
 }

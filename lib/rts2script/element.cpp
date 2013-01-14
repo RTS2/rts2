@@ -482,3 +482,13 @@ int ElementCommand::defnextCommand (rts2core::DevClient * client, rts2core::Comm
 	getDevice (new_device);
 	return 0;
 }
+
+void ElementCommand::printScript (std::ostream &os)
+{
+	os << COMMAND_COMMAND " " << cmd;
+}
+
+void ElementCommand::printJson (std::ostream &os)
+{
+	os << "\"cmd\":\"" << COMMAND_COMMAND "\",\"command\":\"" << cmd << "\"";
+}
