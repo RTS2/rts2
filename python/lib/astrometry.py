@@ -89,7 +89,7 @@ def cd2crota(fitsh):
 
 class AstrometryScript:
 	"""calibrate a fits image with astrometry.net."""
-	def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/home/petr/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex'):
+	def __init__(self, fits_file, odir=None, scale_relative_error=0.05, astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex'):
 		self.scale_relative_error=scale_relative_error
 		self.astrometry_bin=astrometry_bin
 
