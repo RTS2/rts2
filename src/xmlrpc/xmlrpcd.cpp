@@ -44,6 +44,7 @@ using namespace Magick;
 #define OPT_STATE_CHANGE        OPT_LOCAL + 76
 #define OPT_NO_EMAILS           OPT_LOCAL + 77
 #define OPT_TESTSCRIPT          OPT_LOCAL + 78
+#define OPT_DEBUG_TESTSCRIPT    OPT_LOCAL + 79
 
 using namespace XmlRpc;
 
@@ -495,6 +496,9 @@ int XmlRpcd::processOption (int in_opt)
 		case OPT_TESTSCRIPT:
 			testScripts.push_back (optarg);
 			break;
+		case OPT_DEBUG_TESTSCRIPT:
+			debugTestscript = true;
+			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
 #endif
@@ -559,6 +563,7 @@ int XmlRpcd::init ()
 	{
 		// add connections..
 		rts2script::ConnExe *conn = new rts2script::ConnExe (this, *iter, true, 3600);
+		conn->setConnectionDebug (debugTestscript);
 		if (conn->init ())
 		{
 			delete conn;
@@ -761,6 +766,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	createValue (bbLastSuccess, "bb_lastsucess", "last successful transmision with BB", false);
 	createValue (bbSelectorQueue, "bb_selectorQueue", "", false, RTS2_VALUE_WRITABLE);
 
+	debugTestscript = false;
+
 #ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
 
@@ -769,6 +776,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
 	addOption (OPT_NO_EMAILS, "no-emails", 0, "do not send emails");
+	addOption (OPT_DEBUG_TESTSCRIPT, "debug-test-script", 0, "print test script debugging");
 	addOption (OPT_TESTSCRIPT, "test-script", 1, "test script to run on background");
 	XmlRpc::setVerbosity (0);
 }

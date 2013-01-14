@@ -598,6 +598,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		rts2core::ConnNotify *notifyConn;
 
 		std::list <const char *> testScripts;
+		bool debugTestscript;
 };
 
 
