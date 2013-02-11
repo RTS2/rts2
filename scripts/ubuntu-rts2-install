@@ -255,7 +255,7 @@ else
 		echo "Please remove rts2 file and rerun!"
 	else
 		echo "Retrieving RTS2 source code"
-		svn co https://rts-2.svn.sourceforge.net/svnroot/rts-2/trunk/rts-2 rts2
+		svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts-2 rts2
 	fi
 fi
 
@@ -269,7 +269,7 @@ else
 		echo "Please remove pyrts2 file and rerun!"
 	else
 		echo "Retrieving PyRTS2 source code"
-		svn co https://rts-2.svn.sourceforge.net/svnroot/rts-2/trunk/pyrts2 pyrts2
+		svn co svn://svn.code.sf.net/p/rts-2/code/trunk/pyrts2 pyrts2
 	fi
 fi
 

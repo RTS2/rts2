@@ -54,7 +54,7 @@ user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/
 
    For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
 
-user@host:$ svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
+user@host:$ svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts-2 rts2
 user@host:$ cd rts2
 user@host:~/rts2$ ./autogen.sh
 user@host:~/rts2$ ./configure --without-wcs
