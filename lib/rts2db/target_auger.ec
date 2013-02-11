@@ -242,6 +242,16 @@ void TargetAuger::load ()
 	EXEC SQL ROLLBACK;
 }
 
+void TargetAuger::getPosition (struct ln_equ_posn *pos, double JD)
+{
+	struct ln_hrz_posn hrz;
+
+	hrz.alt = 90 - SDPTheta;
+	hrz.az = SDPPhi;
+
+	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
+}
+
 void TargetAuger::load (int auger_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -604,8 +614,10 @@ void TargetAuger::updateShowerFields ()
 	cor.y = Northing - 6071873;
 	cor.z = Altitude - 1422;
 
-	getPosition (&pos, JD);
-	ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+	hrz.alt = 90 - SDPTheta;
+	hrz.az = SDPPhi;
+
+	ln_get_equ_from_hrz (&hrz, observer, JD, &pos);
 
 	hrz.az = ln_deg_to_rad (hrz.az);
 	hrz.alt = ln_deg_to_rad (hrz.alt);
@@ -672,7 +684,7 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strcmp (device_name, "WF"))
+	if (!strcmp (device_name, "WF3"))
 	{
 		std::ostringstream _os;
 	 	_os << "filter=B ";
@@ -749,10 +761,21 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		std::ostringstream _osdec;
 		_osdec << "DEC " << i;
 
+		std::ostringstream _osalt;
+		_osalt << "ALT " << i;
+
+		std::ostringstream _osaz;
+		_osaz << "AZ " << i;
+
+		struct ln_hrz_posn hrz;
+		ln_get_hrz_from_equ (&(*iter), observer, JD, &hrz);
+
 		_os
 			<< std::endl
 			<< InfoVal<LibnovaRaJ2000> (_osra.str ().c_str (), LibnovaRaJ2000 (iter->ra))
-			<< InfoVal<LibnovaRaJ2000> (_osdec.str ().c_str (), LibnovaRaJ2000 (iter->dec));
+			<< InfoVal<LibnovaRaJ2000> (_osdec.str ().c_str (), LibnovaRaJ2000 (iter->dec))
+			<< InfoVal<LibnovaDeg90> (_osalt.str ().c_str (), LibnovaDeg90 (hrz.alt))
+			<< InfoVal<LibnovaDeg360> (_osaz.str ().c_str (), LibnovaDeg360 (hrz.az));
 
 		i++;
 	}

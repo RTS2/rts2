@@ -1251,236 +1251,8 @@ void Image::getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &
 	}
 }
 
-
-
-
-template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y, int colourVariant)
-{
-	if (buf == NULL)
-		buf = new bt[3 * s];
-	
-	double n;
-	bt nR, nG, nB;
-
-	bt *k = buf;
-
-	if (invert_y)
-		k += 3 * (getChannelWidth (chan) + offset) * (getChannelHeight (chan) - 1);
-
-	const void *imageData = getChannelData (chan);
-
-	int chw = getChannelWidth (chan);
-	int j = chw;
-
-	for (int i = 0; (long) i < s; i++)
-	{
-		dt pix = ((dt *)imageData)[i];
-
-		if ( pix < low )
-			pix = low;
-		if ( pix > high )
-			pix = high;
-
-		switch (colourVariant)
-		{
-			case PSEUDOCOLOUR_VARIANT_GREY:
-				n = 255.0 * double (pix - low) / double (high - low);
-				nR = n;
-				nG = nR;
-				nB = nR;
-				break;
-			case PSEUDOCOLOUR_VARIANT_GREY_INV:
-				n = 255.0 * ( 1.0 - double (pix - low) / double (high - low) );
-				nR = n;
-				nG = nR;
-				nB = nR;
-				break;
-			case PSEUDOCOLOUR_VARIANT_BLUE:
-				n = 511.0 * double (pix - low) / double (high - low);
-				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nG = n / 2.0;
-				nB = (n < 256.0) ? n : 255;
-				break;
-			case PSEUDOCOLOUR_VARIANT_BLUE_INV:
-				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
-				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nG = n / 2.0;
-				nB = (n < 256.0) ? n : 255;
-				break;
-			case PSEUDOCOLOUR_VARIANT_RED:
-				n = 511.0 * double (pix - low) / double (high - low);
-				nR = (n < 256.0) ? n : 255;
-				nG = n / 2.0;
-				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				break;
-			case PSEUDOCOLOUR_VARIANT_RED_INV:
-				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
-				nR = (n < 256.0) ? n : 255;
-				nG = n / 2.0;
-				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				break;
-			case PSEUDOCOLOUR_VARIANT_GREEN:
-				n = 511.0 * double (pix - low) / double (high - low);
-				nR = n / 2.0;
-				nG = (n < 256.0) ? n : 255;
-				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				break;
-			case PSEUDOCOLOUR_VARIANT_GREEN_INV:
-				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
-				nR = n / 2.0;
-				nG = (n < 256.0) ? n : 255;
-				nB = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				break;
-			case PSEUDOCOLOUR_VARIANT_VIOLET:
-				n = 511.0 * double (pix - low) / double (high - low);
-				nR = n / 2.0;
-				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nB = (n < 256.0) ? n : 255;
-				break;
-			case PSEUDOCOLOUR_VARIANT_VIOLET_INV:
-				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
-				nR = n / 2.0;
-				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nB = (n < 256.0) ? n : 255;
-				break;
-			case PSEUDOCOLOUR_VARIANT_MAGENTA:
-				n = 511.0 * double (pix - low) / double (high - low);
-				nR = (n < 256.0) ? n : 255;
-				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nB = n / 2.0;
-				break;
-			case PSEUDOCOLOUR_VARIANT_MAGENTA_INV:
-				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
-				nR = (n < 256.0) ? n : 255;
-				nG = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nB = n / 2.0;
-				break;
-			case PSEUDOCOLOUR_VARIANT_MALACHIT:
-				n = 511.0 * double (pix - low) / double (high - low);
-				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nG = (n < 256.0) ? n : 255;
-				nB = n / 2.0;
-				break;
-			case PSEUDOCOLOUR_VARIANT_MALACHIT_INV:
-				n = 511.0 * ( 1.0 - double (pix - low) / double (high - low) );
-				nR = ((n - 256.0) > 0.0) ? n - 256.0 : 0;
-				nG = (n < 256.0) ? n : 255;
-				nB = n / 2.0;
-				break;
-			default:
-				logStream (MESSAGE_ERROR) << "Unknown colourVariant" << colourVariant << sendLog;
-		}
-
-		*k = nR;
-		k++;
-		*k = nG;
-		k++;
-		*k = nB;
-		k++;
-		if (offset != 0 || invert_y)
-		{
-			j--;
-			if (j == 0)
-			{
-				if (invert_y)
-					k -= 3 * (2 * chw + offset);
-				else
-			  		k += 3 * offset;
-				j = chw;
-			}
-		}
-	}
-}
-
-
-template <typename bt, typename dt> void Image::getChannelPseudocolourBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y, int colourVariant)
-{
-	long hist[65535];
-	getChannelHistogram (chan, hist, 65535);
-
-	long psum = 0;
-	dt low = minval;
-	dt high = minval;
-
-	uint32_t i;
-
-	long s = getChannelNPixels (chan);
-
-	// find quantiles
-	for (i = 0; (dt) i < mval; i++)
-	{
-		psum += hist[i];
-		if (psum > s * quantiles)
-		{
-			low = i;
-			break;
-		}
-	}
-
-	if (low == minval)
-	{
-		low = minval;
-		high = mval;
-	}
-	else
-	{
-		for (; (dt) i < mval; i++)
-		{
-			psum += hist[i];
-			if (psum > s * (1 - quantiles))
-			{
-				high = i;
-				break;
-			}
-		}
-		if (high == minval)
-		{
-			high = mval;
-		}
-	}
-
-	getChannelPseudocolourByteBuffer (chan, buf, black, low, high, s, offset, invert_y, colourVariant);
-}
-
-
-void Image::getChannelPseudocolourImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset, int colourVariant)
-{
-	switch (_dataType)
-	{
-		case RTS2_DATA_BYTE:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (int8_t) 0, (int8_t) 255, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_SHORT:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (int16_t) SHRT_MIN, (int16_t) SHRT_MAX, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_LONG:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (int) INT_MIN, (int) INT_MAX, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_LONGLONG:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (LONGLONG) LLONG_MIN, (LONGLONG) LLONG_MAX, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_FLOAT:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (float) 0, (float) INT_MAX, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_DOUBLE:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (double) INT_MIN, (double) INT_MAX, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_SBYTE:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (signed char) SHRT_MIN, (signed char) SHRT_MAX, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_USHORT:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (short unsigned int) 0, (short unsigned int) USHRT_MAX, quantiles, offset, true, colourVariant);
-			break;
-		case RTS2_DATA_ULONG:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (unsigned int) 0, (unsigned int) UINT_MAX, quantiles, offset, true, colourVariant);
-			break;
-		default:
-			logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
-	}
-}
-
 #if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
-Magick::Image Image::getMagickImage (const char *label, float quantiles, int chan, int colourVariant)
+Magick::Image Image::getMagickImage (const char *label, float quantiles, int chan)
 {
 	unsigned char *buf = NULL;
 	try
@@ -1496,11 +1268,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 			if ((size_t) chan >= channels.size ())
 				throw rts2core::Error ("invalid channel specified");
 
-			if (colourVariant == PSEUDOCOLOUR_VARIANT_GREY)
-				getChannelGrayscaleImage (dataType, chan, buf, quantiles, 0);
-			else
-				getChannelPseudocolourImage (dataType, chan, buf, quantiles, 0, colourVariant);
-				
+			getChannelGrayscaleImage (dataType, chan, buf, quantiles, 0);
 		  	// single channel
 			tw = getChannelWidth (chan);
 			th = getChannelHeight (chan);
@@ -1546,10 +1314,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 			th = maxh * th;
 
 			// copy grayscales
-			if (colourVariant == PSEUDOCOLOUR_VARIANT_GREY)
-				buf = new unsigned char[tw * th];
-			else
-				buf = new unsigned char[3 * tw * th];
+			buf = new unsigned char[tw * th];
 
 			lw = 0;
 			lh = 0;
@@ -1575,17 +1340,9 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 				size_t offset = tw - (*iter)->getWidth ();
 
+				unsigned char *bstart = buf + lh * tw + loff;
 
-				if (colourVariant == PSEUDOCOLOUR_VARIANT_GREY)
-				{
-					unsigned char *bstart = buf + lh * tw + loff;
-				  	getChannelGrayscaleImage (dataType, (*iter)->getChannelNumber (), bstart, quantiles, offset);
-				}
-				else
-				{
-					unsigned char *bstart = buf + 3 * (lh * tw + loff);
-				  	getChannelPseudocolourImage (dataType, (*iter)->getChannelNumber (), bstart, quantiles, offset, colourVariant);
-				}
+			  	getChannelGrayscaleImage (dataType, (*iter)->getChannelNumber (), bstart, quantiles, offset);
 
 				if ((*iter)->getHeight () > lw)
 				  	lw = (*iter)->getHeight ();
@@ -1594,23 +1351,19 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 		}
 
-		Magick::Image * image;
-		if (colourVariant == PSEUDOCOLOUR_VARIANT_GREY)
-			image = new Magick::Image (tw, th, "K", Magick::CharPixel, buf);
-		else
-			image = new Magick::Image (tw, th, "RGB", Magick::CharPixel, buf);
+		Magick::Image image (tw, th, "K", Magick::CharPixel, buf);
 
 		if (label && label[0] != '\0')
 		{
-			(*image).font("helvetica");
-			(*image).strokeColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-			(*image).fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+			image.font("helvetica");
+			image.strokeColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+			image.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
 
-			writeLabel (*image, 2, (*image).size ().height () - 2, 20, label);
+			writeLabel (image, 2, image.size ().height () - 2, 20, label);
 		}
 
 		delete[] buf;
-		return *image;
+		return image;
 	}
 	catch (Magick::Exception &ex)
 	{
@@ -1632,7 +1385,7 @@ void Image::writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, co
 	mimage.draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
 }
 
-void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles , int chan, int colourVariant)
+void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles)
 {
 	std::string new_filename = expandPath (expand_str);
 	
@@ -1644,7 +1397,7 @@ void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label,
 	}
 
 	try {
-		Magick::Image image = getMagickImage (NULL, quantiles, chan, colourVariant);
+		Magick::Image image = getMagickImage (NULL, quantiles);
 		if (zoom != 1.0)
 			image.zoom (Magick::Geometry (image.size ().height () * zoom, image.size ().width () * zoom));
 		writeLabel (image, 2, image.size ().height () - 2, 20, label);
@@ -1657,10 +1410,10 @@ void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label,
 	}
 }
 
-void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles, int chan, int colourVariant)
+void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles)
 {
 	try {
-		Magick::Image image = getMagickImage (label, quantiles, chan, colourVariant);
+		Magick::Image image = getMagickImage (label, quantiles);
 		image.write (&blob, "jpeg");
 	}
 	catch (Magick::Exception &ex)

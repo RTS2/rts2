@@ -8,7 +8,7 @@ import math
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None):
+def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None):
 	import rts2.astrometry
 	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir)
 
@@ -20,7 +20,7 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 		if wcs_keys is not None:
 			ra=ff[0].header[wcs_keys[0]]
 			dec=ff[0].header[wcs_keys[1]]
-			scale=abs(float(ff[0].header[wcs_keys[2]])) * 3600.0
+			scale=abs(float(ff[0].header[wcs_keys[2]])) * wcs_scale
 
 			# parse WCS keys
 			try:
@@ -32,12 +32,18 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 			except ValueError:
 				dec = rts2.dms.parseDMS(dec)
 		else:
-			ra=ff[0].header['CRVAL1' + multiwcs]
-			dec=ff[0].header['CRVAL2' + multiwcs]
+			try:
+				ra=ff[0].header['CRVAL1' + multiwcs]
+				dec=ff[0].header['CRVAL2' + multiwcs]
+			except KeyError,ke:
+				if verbose:
+					import traceback
+					traceback.print_exc()
+				ra = dec = None
 
 			for k in ['CDELT1' + multiwcs,'CD1_1' + multiwcs]:
 				try:
-					scale=abs(float(ff[0].header[k]) * 3600.0)
+					scale = abs(float(ff[0].header[k]) * 3600.0)
 					break
 				except KeyError,ke:
 					pass
@@ -105,9 +111,18 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 		return 0
 	return 1
 
-parser = OptionParser()
+parser = OptionParser(usage="""rts2-astrometry [--multi-wcs <key>] [--wcs-keys 'RA,DEC,scale'] [--wcs-scale (arcdeg|arcmin|arcsec)] [--blind] [--radius <deg>] [--scale-error <percents>] [--tmp-dir <directory>] [--timeout <seconds>] [--verbose] [--quiet] [--xoffset <pixels>] [--yoffset <pixels>] [--bashrc <file>]
+
+Calls solve-field from astrometry.net package on given files.
+If input file has multiple WCS with one extension holding telescope WCS, please use --multi-wcs <suffix> option.
+For solving files with RTS2 de-factor standart TELRA,TELDEC and XPLATE keywords, please use:
+
+--wcs-keys 'TELRA,TELDEC,XPLATE' --wcs-scale 'arcsec'
+
+""")
 parser.add_option('--multi-wcs', help='Multiple WCS extension', action='store', dest='multiwcs', default='')
-parser.add_option('--wcs-keys', help='WCS keys (RA, DEC, scale) separated with ","', action='store', dest='wcs_keys', default=None)
+parser.add_option('--wcs-keys', help='WCS keys (RA [arcdeg], DEC [arcdeg], scale [arcdeg]) separated with ","', action='store', dest='wcs_keys', default=None)
+parser.add_option('--wcs-scale', help='Scale for WCS scale keyword (arcdeg, arcmin or arcsec; default to arcsec)', action='store', dest='wcsscale', default=None)
 parser.add_option('--blind', help='Blind solve', action='store_true', dest='blind', default=False)
 parser.add_option('--radius', help='Error radius', action='store', dest='radius', default=5)
 parser.add_option('--scale-error', help='scale error in %', action='store', dest='scale_error', default=5)
@@ -139,9 +154,21 @@ if options.x_offset is not None:
 if options.y_offset is not None:
 	options.y_offset = float(options.y_offset)
 
+wcs_scale = 1
+if options.wcsscale is not None:
+	if options.wcsscale == 'arcdeg':
+		wcs_scale = 3600.0
+	elif options.wcsscale == 'arcmin':
+		wcs_scale = 60.0
+	elif options.wcsscale == 'arcsec':
+		wcs_scale = 1
+	else:
+		print 'Invalid WCS scale - expected arcdeg, arcmin or arcsec, received {0}'.format(options.wcsscale)
+		sys.exit(2)
+
 ret = 0	
 
 for x in args:
-	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc)
+	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc)
 
 sys.exit(ret)

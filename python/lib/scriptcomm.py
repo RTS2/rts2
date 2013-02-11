@@ -274,6 +274,16 @@ class Rts2Comm:
 		print "double_w",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
 
+	def timeValue(self,name,desc,value,rts2_type=None):
+		"""Add to device time value."""
+		print "timevalue",name,'"{0}"'.format(desc),value,rts2_type if rts2_type else ''
+		sys.stdout.flush()
+
+	def timeVariable(self,name,desc,value):
+		"""Add to device time writable variable."""
+		print "timevalue_w",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+
 	def integerValue(self,name,desc,value):
 		"""Add to device integer value."""
 		print "integer",name,'"{0}"'.format(desc),value

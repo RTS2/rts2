@@ -126,12 +126,26 @@ void BB::processSchedule (ObservatorySchedule *obs_sched)
 
 		for (iter = all.begin (); iter != all.end (); iter++)
 		{
-			if (!(iter->getState () == BB_SCHEDULE_REPLIED || iter->getState () == BB_SCHEDULE_UNSCHEDULED))
-				break;
-			if (!isnan (iter->getFrom ()) && (isnan (min_time) || iter->getFrom () < min_time))
+			if (iter->getState () == BB_SCHEDULE_FAILED)
 			{
-				min_time = iter->getFrom ();
-				min_observatory = iter->getObservatoryId ();
+				continue;
+			}
+			else if (iter->getState () == BB_SCHEDULE_OBSERVABLE)
+			{
+				if (!isnan (iter->getFrom ()) && (isnan (min_time) || iter->getFrom () < min_time))
+				{
+					min_time = iter->getFrom ();
+					min_observatory = iter->getObservatoryId ();
+				}
+			}
+			else if (iter->getState () == BB_SCHEDULE_CREATED)
+			{
+				break;
+			}
+			else
+			{
+				logStream (MESSAGE_WARNING) << "wrong state of schedule entry with id " << iter->getScheduleId () << " for observatory " << iter->getObservatoryId () << sendLog;
+				break;
 			}
 		}
 

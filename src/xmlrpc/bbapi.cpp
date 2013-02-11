@@ -19,6 +19,7 @@
 
 #include "xmlrpcd.h"
 #include "rts2db/constraints.h"
+#include "rts2db/plan.h"
 #include "rts2json/jsonvalue.h"
 
 #ifdef RTS2_JSONSOUP
@@ -178,9 +179,13 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 		{
 			const char *schedule_id = params->getString ("schedule_id", "");
 
-			BBSchedules::iterator iter = schedules.find (schedule_id);
-			if (iter == schedules.end ())
+			rts2db::Plan p;
+			if (p.loadBBSchedule (schedule_id))
 				throw JSONException ("invalid schedule id");
+			p.setPlanStatus (PLAN_STATUS_CANCELLED);
+			if (p.save ())
+				throw JSONException ("cannot update schedule request");
+			os << "0";
 		}
 		else
 		{
@@ -193,13 +198,16 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 
 void BBAPI::confirmSchedule (rts2db::Target *tar, double f, const char *schedule_id)
 {
-	BBSchedules::iterator iter = schedules.find (schedule_id);
-	if (iter != schedules.end ())
-		delete iter->second;
+	rts2db::Plan p;
+	if (p.loadBBSchedule (schedule_id) == 0)
+		throw JSONException ("cannot confirm already created schedule");
 
-	BBSchedule *sched = new BBSchedule (std::string (schedule_id), tar->getTargetID (), f);
-	
-	schedules[std::string (schedule_id)] = sched;
+	p.setTargetId (tar->getTargetID ());
+	p.setPlanStart (f);
+	p.setBBScheduleId (schedule_id);
 
-	((XmlRpcd*) getMasterApp ())->confirmSchedule (sched);
+	if (p.save ())
+		throw JSONException ("cannot create plan schedule");
+
+	((XmlRpcd*) getMasterApp ())->confirmSchedule (p);
 }

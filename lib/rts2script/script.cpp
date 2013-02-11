@@ -648,7 +648,21 @@ Element *Script::parseBuf (Rts2Target * target)
 		char *cmd;
 		if (getNextParamString (&cmd))
 			return NULL;
-		return new ElementCommand (this, cmd);
+		// check for () in cmd
+		char *open_b = strchr (cmd, '(');
+		char *close_b = strchr (cmd, ')');
+		// if either of open_c or close_c is present alone..
+		if ((open_b == NULL) ^ (close_b == NULL))
+			return NULL;
+		std::vector <std::string> args;
+		if (open_b) // close_b is present due to nature of XOR above
+		{
+			*open_b = '\0';
+			open_b++;
+			*close_b = '\0';
+			args = SplitStr (std::string (open_b), std::string (","));
+		}
+		return new ElementCommand (this, cmd, args);
 	}
 
 	// setValue fallback

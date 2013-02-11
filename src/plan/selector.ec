@@ -29,10 +29,9 @@
 
 using namespace rts2plan;
 
-Selector::Selector (rts2core::ConnNotify *_notifyConn, rts2db::CamList *cameras)
+Selector::Selector (rts2db::CamList *cameras)
 {
 	observer = NULL;
-	notifyConn = _notifyConn;
 	cameraList = cameras;
 }
 
@@ -130,7 +129,7 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 		return;
 
 	// add us..
-	newTar = createTarget (consider_tar_id, observer, notifyConn);
+	newTar = createTarget (consider_tar_id, observer);
 	if (!newTar)
 		return;
 	ret = newTar->considerForObserving (JD);

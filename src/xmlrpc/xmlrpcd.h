@@ -27,6 +27,7 @@
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/devicedb.h"
+#include "rts2db/plan.h"
 #include "bbapi.h"
 #else
 #include "configuration.h"
@@ -66,6 +67,7 @@
 
 #define EVENT_XMLRPC_VALUE_TIMER    RTS2_LOCAL_EVENT + 850
 #define EVENT_XMLRPC_BB             RTS2_LOCAL_EVENT + 851
+#define EVENT_TERMINATE_TEST        RTS2_LOCAL_EVENT + 852
 
 using namespace XmlRpc;
 
@@ -398,6 +400,10 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		virtual void message (Message & msg);
 
+		virtual int commandAuthorized (rts2core::Connection * conn);
+
+		virtual void fileModified (struct inotify_event *event);
+
 		/**
 		 * Create new session for given user.
 		 *
@@ -474,7 +480,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		void bbSend (double t);
 
 #ifdef RTS2_HAVE_PGSQL
-		void confirmSchedule (BBSchedule *schedule);
+		void confirmSchedule (rts2db::Plan &plan);
 #endif
 
 	protected:
@@ -533,6 +539,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		void sendBB ();
 
 		void reloadEventsFile ();
+
+		int startTestScript ();
 
 		// pages
 		Login login;

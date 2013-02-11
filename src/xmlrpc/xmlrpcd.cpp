@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "rts2db/constraints.h"
 #include "rts2script/connexe.h"
 #include "xmlrpcd.h"
 
@@ -56,6 +57,25 @@ using namespace XmlRpc;
  */
 
 using namespace rts2xmlrpc;
+
+/**
+ * Class for test connection. Can be terminated on event.
+ */
+class TestConn:public rts2script::ConnExe
+{
+	public:
+		TestConn (rts2core::Block *_master, const char *_exec, bool fillConnEnv, int timeout = 0):ConnExe (_master, _exec, fillConnEnv, timeout) {}
+		virtual void postEvent (rts2core::Event *event)
+		{
+			switch (event->getType ())
+			{
+				case EVENT_TERMINATE_TEST:
+					terminate ();
+					break;
+			}
+			rts2script::ConnExe::postEvent (event);
+		}
+};
 
 void XmlDevInterface::stateChanged (rts2core::ServerState * state)
 {
@@ -222,13 +242,13 @@ void XmlRpcd::bbSend (double t)
 }
 
 #ifdef RTS2_HAVE_PGSQL
-void XmlRpcd::confirmSchedule (BBSchedule *schedule)
+void XmlRpcd::confirmSchedule (rts2db::Plan &_plan)
 {
 	rts2core::Connection *selConn = getOpenConnection (DEVICE_TYPE_SELECTOR);
 	if (selConn == NULL)
 		throw rts2core::Error ("cannot find selector connection");
 	std::ostringstream os;
-	os << "queue " << bbSelectorQueue->getSelName () << " " << schedule->getTargetID ();
+	os << "queue " << bbSelectorQueue->getSelName () << " " << _plan.getTargetId ();
 	selConn->queCommand (new rts2core::Command (this, os.str ().c_str ()));
 }
 #endif
@@ -486,18 +506,18 @@ int XmlRpcd::processOption (int in_opt)
 		case OPT_NO_EMAILS:
 			send_emails->setValueBool (false);
 			break;
+		case OPT_TESTSCRIPT:
+			testScripts.push_back (optarg);
+			break;
+		case OPT_DEBUG_TESTSCRIPT:
+			debugTestscript = true;
+			break;
 #ifdef RTS2_HAVE_PGSQL
 		default:
 			return DeviceDb::processOption (in_opt);
 #else
 		case OPT_CONFIG:
 			config_file = optarg;
-			break;
-		case OPT_TESTSCRIPT:
-			testScripts.push_back (optarg);
-			break;
-		case OPT_DEBUG_TESTSCRIPT:
-			debugTestscript = true;
 			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
@@ -559,20 +579,8 @@ int XmlRpcd::init ()
 		addTimer (1, new Event (EVENT_XMLRPC_BB, (void*) &(*iter)));
 	}
 
-	for (std::list <const char *>::iterator iter = testScripts.begin (); iter != testScripts.end (); iter++)
-	{
-		// add connections..
-		rts2script::ConnExe *conn = new rts2script::ConnExe (this, *iter, true, 3600);
-		conn->setConnectionDebug (debugTestscript);
-		if (conn->init ())
-		{
-			delete conn;
-			logStream (MESSAGE_ERROR) << "cannot run test script " << *iter << ": " << strerror (errno) << sendLog;
-			exit (1);
-		}
-
-		addConnection (conn);
-	}
+	if (startTestScript ())
+		exit (1);	
 
 #ifndef RTS2_HAVE_PGSQL
 	ret = Configuration::instance ()->loadFile (config_file);
@@ -750,6 +758,9 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	auth_localhost = true;
 
 	notifyConn = new rts2core::ConnNotify (this);
+#ifdef RTS2_HAVE_PGSQL
+	rts2db::MasterConstraints::setNotifyConnection (notifyConn);
+#endif
 
 	createValue (numRequests, "num_requests", "total pages served", false);
 	createValue (numberAsyncAPIs, "async_APIs", "number of active async APIs", false);
@@ -942,6 +953,28 @@ void XmlRpcd::message (Message & msg)
 	messages.push_back (msg);
 }
 
+int XmlRpcd::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("test_restart"))
+	{
+		postEvent (new rts2core::Event (EVENT_TERMINATE_TEST));\
+		startTestScript ();
+		return 0;
+	}
+#ifdef RTS2_HAVE_PGSQL
+	return DeviceDb::commandAuthorized (conn);
+#else
+	return rts2core::Device::commandAuthorized (conn);
+#endif
+}
+
+void XmlRpcd::fileModified (struct inotify_event *event)
+{
+#ifdef RTS2_HAVE_PGSQL
+	rts2db::MasterConstraints::clearCache ();
+#endif
+}
+
 std::string XmlRpcd::addSession (std::string _username, time_t _timeout)
 {
 	Session *s = new Session (_username, time(NULL) + _timeout);
@@ -1003,7 +1036,7 @@ rts2db::Target * rts2xmlrpc::getTarget (XmlRpc::HttpParams *params, const char *
 	int id = params->getInteger (paramname, -1);
 	if (id <= 0)
 		throw JSONException ("invalid id parameter");
-	rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+	rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver ());
 	if (target == NULL)
 		throw JSONException ("cannot find target with given ID");
 	return target;
@@ -1019,6 +1052,25 @@ bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &execu
 	return ((XmlRpcd *) getMasterApp ())->verifyDBUser (username, pass, executePermission);
 }
 #endif /* RTS2_HAVE_PGSQL */
+
+int XmlRpcd::startTestScript ()
+{
+	for (std::list <const char *>::iterator iter = testScripts.begin (); iter != testScripts.end (); iter++)
+	{
+		// add connections..
+		rts2script::ConnExe *conn = new TestConn (this, *iter, true);
+		conn->setConnectionDebug (debugTestscript);
+		if (conn->init ())
+		{
+			delete conn;
+			logStream (MESSAGE_ERROR) << "cannot run test script " << *iter << ": " << strerror (errno) << sendLog;
+			return -1;
+		}
+
+		addConnection (conn);
+	}
+	return 0;
+}
 
 int main (int argc, char **argv)
 {

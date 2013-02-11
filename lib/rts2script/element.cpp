@@ -478,7 +478,12 @@ int ElementComment::defnextCommand (rts2core::DevClient * client, rts2core::Comm
 
 int ElementCommand::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new rts2core::Command (script->getMaster (), cmd.c_str ());
+	std::ostringstream os;
+	os << cmd;
+	for (std::vector <std::string>::iterator iter = args.begin (); iter != args.end (); iter++)
+		os << " " << *iter;
+
+	*new_command = new rts2core::Command (script->getMaster (), os.str ().c_str ());
 	getDevice (new_device);
 	return 0;
 }
@@ -486,9 +491,18 @@ int ElementCommand::defnextCommand (rts2core::DevClient * client, rts2core::Comm
 void ElementCommand::printScript (std::ostream &os)
 {
 	os << COMMAND_COMMAND " " << cmd;
+	for (std::vector <std::string>::iterator iter = args.begin (); iter != args.end (); iter++)
+		os << " " << *iter;
 }
 
 void ElementCommand::printJson (std::ostream &os)
 {
-	os << "\"cmd\":\"" << COMMAND_COMMAND "\",\"command\":\"" << cmd << "\"";
+	os << "\"cmd\":\"" << COMMAND_COMMAND "\",\"command\":\"" << cmd << "\",\"arguments\":[";
+	for (std::vector <std::string>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+	  	if (iter != args.begin ())
+			os << ',';
+		os << '"' << *iter << '"';
+	}
+	os << "]";
 }

@@ -47,21 +47,6 @@
 double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object);
 #endif
 
-#define PSEUDOCOLOUR_VARIANT_GREY		0
-#define PSEUDOCOLOUR_VARIANT_GREY_INV		1
-#define PSEUDOCOLOUR_VARIANT_BLUE		2
-#define PSEUDOCOLOUR_VARIANT_BLUE_INV		3
-#define PSEUDOCOLOUR_VARIANT_RED		4
-#define PSEUDOCOLOUR_VARIANT_RED_INV		5
-#define PSEUDOCOLOUR_VARIANT_GREEN		6
-#define PSEUDOCOLOUR_VARIANT_GREEN_INV		7
-#define PSEUDOCOLOUR_VARIANT_VIOLET		8
-#define PSEUDOCOLOUR_VARIANT_VIOLET_INV		9
-#define PSEUDOCOLOUR_VARIANT_MAGENTA		10
-#define PSEUDOCOLOUR_VARIANT_MAGENTA_INV	11
-#define PSEUDOCOLOUR_VARIANT_MALACHIT		12
-#define PSEUDOCOLOUR_VARIANT_MALACHIT_INV	13
-
 namespace rts2image
 {
 
@@ -302,25 +287,6 @@ class Image:public FitsFile
 
 		void getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset);
 
-
-		template <typename bt, typename dt> void getChannelPseudocolourByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y, int colourVariant = PSEUDOCOLOUR_VARIANT_BLUE);
-
-		/**
-		 * Returns image pseudocolour buffer. Black have value equal to black parameter, white is 0.
-		 *
-		 * @param chan       channel number
-		 * @param buf        buffer (will be allocated by image routine). You must delete it.
-		 * @param black      black value.
-		 * @param quantiles  quantiles in 0-1 range for image scaling.
-		 * @param offset     offset after each line
-		 * @param invert_y   invert with Y axis (rows)
-		 * @param colourVariant   variant of pseudocolour
-		 */
-		template <typename bt, typename dt> void getChannelPseudocolourBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles=0.005, size_t offset = 0, bool invert_y = false, int colourVariant = PSEUDOCOLOUR_VARIANT_BLUE);
-
-		void getChannelPseudocolourImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset, int colourVariant = PSEUDOCOLOUR_VARIANT_BLUE);
-
-
 #if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 		/**
 		 * Return image data as Magick::Image class.
@@ -329,7 +295,7 @@ class Image:public FitsFile
 		 *
 		 * @throw Exception
 		 */
-		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
+		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005, int chan = -1);
 
 		/**
 		 * Write lable to given position. Label text will be expanded.
@@ -353,12 +319,12 @@ class Image:public FitsFile
 		 *
 		 * @throw Exception
 		 */
-		void writeAsJPEG (std::string expand_str, double zoom = 1.0, const char * label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
+		void writeAsJPEG (std::string expand_str, double zoom = 1.0, const char * label = NULL, float quantiles=0.005);
 
 		/**
 		 * Store image to blob, which can be used to get data etc..
 		 */
-		void writeAsBlob (Magick::Blob &blob, const char * label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
+		void writeAsBlob (Magick::Blob &blob, const char * label = NULL, float quantiles=0.005);
 #endif
 
 		double getAstrometryErr ();

@@ -274,6 +274,31 @@ void ConnExe::processCommand (char *cmd)
 			master->updateMetaInformations (vd);
 		}
 	}
+	else if (isValueCommand (cmd, "timevalue", vflags))
+	{
+		double val;
+		char *rts2_type = NULL;
+		if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || (!paramEnd () && ( paramNextString (&rts2_type) || !paramEnd () )) )
+			throw rts2core::Error ("invalid double string");
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		// either variable with given name exists..
+		if (v)
+		{
+			if (v->getValueBaseType () != RTS2_VALUE_TIME)
+				throw rts2core::Error (std::string ("value is not time ") + vname);
+			testWritableVariable (cmd, vflags, v);
+			((rts2core::ValueTime *) v)->setValueDouble (val);
+			((rts2core::Daemon *) master)->sendValueAll (v);
+		}
+		// or create it and distribute it..
+		else
+		{
+			rts2core::ValueTime *vd;
+			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false, vflags | typeFromString (rts2_type));
+			vd->setValueDouble (val);
+			master->updateMetaInformations (vd);
+		}
+	}
 	else if (isValueCommand (cmd, "integer", vflags))
 	{
 		int val;

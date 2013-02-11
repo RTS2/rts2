@@ -30,7 +30,7 @@ SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.master,
 	blockUntilVisible = eq.getBlockUntilVisible ();
 
 	for (ExecutorQueue::iterator qi = eq.begin (); qi != eq.end (); qi++)
-		push_back ( QueuedTarget (*qi, createTarget (qi->target->getTargetID(), *observer, NULL) ) );
+		push_back ( QueuedTarget (*qi, createTarget (qi->target->getTargetID(), *observer) ) );
 }
 
 SimulQueueTargets::~SimulQueueTargets ()
@@ -50,7 +50,7 @@ TargetQueue::iterator SimulQueueTargets::removeEntry (TargetQueue::iterator &ite
 	return erase (iter);
 }
 
-SimulQueue::SimulQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues):ExecutorQueue (_master, name, _observer, true)
+SimulQueue::SimulQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues):ExecutorQueue (_master, name, _observer, -1, true)
 {
 	queues = _queues;
 }
@@ -106,8 +106,8 @@ double SimulQueue::step ()
 						
 				}
 				t = e_end;
-				rts2db::Target *tar = createTarget (n_id, *observer, NULL);
-				addTarget (tar, fr, t);
+				rts2db::Target *tar = createTarget (n_id, *observer);
+				addTarget (tar, fr, t, -1, -1, false, false);
 				logStream (MESSAGE_DEBUG) << "adding to simulation:" << n_id << " " << tar->getTargetName () << " from " << LibnovaDateDouble (fr) << " to " << LibnovaDateDouble (t) << sendLog;
 				sq->front ().target->startObservation ();
 				sq->beforeChange (t);

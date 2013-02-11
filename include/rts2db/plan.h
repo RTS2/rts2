@@ -25,6 +25,12 @@
 
 #include <ostream>
 
+/**
+ * Plan status.
+ */
+#define PLAN_STATUS_ENTERED        1
+#define PLAN_STATUS_CANCELLED      20
+
 namespace rts2db
 {
 
@@ -45,6 +51,7 @@ class Plan
 		Plan (const Plan &cp);
 		virtual ~ Plan (void);
 		int load ();
+		int loadBBSchedule (const char *bb_schedule_id);
 		int save ();
 		int del ();
 
@@ -73,6 +80,14 @@ class Plan
 
 		double getPlanEnd () { return plan_end; }
 
+		void setPlanStatus (int s) { plan_status = s; }
+
+		int getPlanStatus () { return plan_status; }
+
+		void setBBScheduleId (const char *bb_id) { bb_schedule_id = std::string (bb_id); }
+
+		const char *getBBScheduleId () { return bb_schedule_id.c_str (); }
+
 
 		friend std::ostream & operator << (std::ostream & _os, Plan & plan) { plan.print (_os); return _os; }
 		friend Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Plan * plan) { plan->printInfoVal (_os); return _os; }
@@ -88,6 +103,7 @@ class Plan
 		double plan_end;
 
 		int plan_status;
+		std::string bb_schedule_id;
 
 		Target *target;
 		Observation *observation;

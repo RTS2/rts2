@@ -42,10 +42,10 @@ class QueueEntry:
 	def __init__(self, id, start, end, qid):
 		self.id = id
 		self.__start = self.__end = None
+		self.target = None
 		self.set_start(start)
 		self.set_end(end)
 		self.qid = qid
-		self.target = None
 	
 	def from_xml(self,el):
 		start = el.getAttribute('start')
@@ -105,6 +105,7 @@ class Queue:
 		self.service = service
 		self.entries = []
 		self.queueing = None
+		self.window = None
 		self.skip_below = True
 		self.test_constr = True
 		self.remove_executed = True
@@ -120,10 +121,13 @@ class Queue:
 	def load(self):
 		"""Refresh queue from server."""
 		json.getProxy().refresh(self.service)
-		self.queueing = json.getProxy().getValue(self.service,self.name + '_queing')
-		self.skip_below = json.getProxy().getValue(self.service,self.name + '_skip_below')
-		self.test_constr = json.getProxy().getValue(self.service,self.name + '_test_constr')
-		self.remove_executed = json.getProxy().getValue(self.service,self.name + '_remove_executed')
+
+		self.window = json.getProxy().getValue(self.service, self.name + '_window')
+
+		self.queueing = json.getProxy().getValue(self.service, self.name + '_queing')
+		self.skip_below = json.getProxy().getValue(self.service, self.name + '_skip_below')
+		self.test_constr = json.getProxy().getValue(self.service, self.name + '_test_constr')
+		self.remove_executed = json.getProxy().getValue(self.service, self.name + '_remove_executed')
 
 		ids = json.getProxy().getValue(self.service,self.name + '_ids')
 		start = json.getProxy().getValue(self.service,self.name + '_start')
@@ -139,7 +143,9 @@ class Queue:
 		"""Save queue settings to the server."""
 		if clear:
 			self.clear()
+
 		json.getProxy().setValues({
+		  	'{0}_window'.format(self.name):_nanNone(self.window),
 			'{0}_skip_below'.format(self.name):self.skip_below,
 			'{0}_test_constr'.format(self.name):self.test_constr,
 			'{0}_remove_executed'.format(self.name):self.remove_executed,
@@ -170,6 +176,7 @@ class Queue:
 		return document
 
 	def to_xml(self,document,node):
+		node.setAttribute('window', str(self.window))
 		node.setAttribute('skip_below', _xmlQueueBoolAttribute(self.skip_below))
 		node.setAttribute('test_constr', _xmlQueueBoolAttribute(self.test_constr))
 		node.setAttribute('remove_executed', _xmlQueueBoolAttribute(self.remove_executed))
@@ -185,6 +192,10 @@ class Queue:
 
 	def from_xml(self,node):
 		"""Construct queue from XML representation."""
+		try:
+			self.window = float(node.getAttribute('window'))
+		except ValueError,ve:
+			self.window = None
 		self.skip_below = _getXmlBoolAttribute(node, 'skip_below')
 		self.test_constr = _getXmlBoolAttribute(node, 'test_constr')
 		self.remove_executed = _getXmlBoolAttribute(node, 'remove_executed')

@@ -64,13 +64,12 @@
 #define OPT_MOUNTNAME           OPT_LOCAL + 10
 #define OPT_LABEL               OPT_LOCAL + 11
 #define OPT_ZOOM                OPT_LOCAL + 12
-#define OPT_COLOURVARIANT	OPT_LOCAL + 13
-#define OPT_ERR_RA              OPT_LOCAL + 14
-#define OPT_ERR_DEC             OPT_LOCAL + 15
-#define OPT_ERR                 OPT_LOCAL + 16
-#define OPT_RTS2OPERA_WCS       OPT_LOCAL + 17
-#define OPT_ADD_TEMPLATE        OPT_LOCAL + 18
-#define OPT_APPEND_EXTENSIONS   OPT_LOCAL + 19
+#define OPT_ERR_RA              OPT_LOCAL + 13
+#define OPT_ERR_DEC             OPT_LOCAL + 14
+#define OPT_ERR                 OPT_LOCAL + 15
+#define OPT_RTS2OPERA_WCS       OPT_LOCAL + 16
+#define OPT_ADD_TEMPLATE        OPT_LABEL + 17
+#define OPT_APPEND_EXTENSIONS   OPT_LABEL + 18
 
 namespace rts2image
 {
@@ -127,7 +126,6 @@ class AppImage:public rts2image::AppImageCore
 		const char* jpeg_expr;
 		const char* label;
 		double zoom;
-		int colourvariant;
 #endif
 
 		int obsid;
@@ -357,9 +355,6 @@ int AppImage::processOption (int in_opt)
 		case OPT_ZOOM:
 			zoom = atof (optarg);
 			break;
-		case OPT_COLOURVARIANT:
-			colourvariant = atoi (optarg);
-			break;
 		#endif /* RTS2_HAVE_LIBJPEG */
 		case OPT_RTS2OPERA_WCS:
 			operation |= IMAGEOP_RTS2OPERA_WCS;
@@ -467,7 +462,7 @@ int AppImage::processImage (Image * image)
 	}
 #ifdef RTS2_HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
-	  	image->writeAsJPEG (jpeg_expr, zoom, label, 0.005, -1, colourvariant);
+	  	image->writeAsJPEG (jpeg_expr, zoom, label);
 #endif /* RTS2_HAVE_LIBJPEG */
 	if (operation & IMAGEOP_APPEND_EXT)
 		appendOutput->appendFITS (image->getFitsFile ());
@@ -502,7 +497,6 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	jpeg_expr = NULL;
 	label = NULL;
 	zoom = 1;
-	colourvariant = 0;
 #endif
 
 	obsid = -1;
@@ -524,7 +518,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption ('n', NULL, 0, "print numbers only - do not pretty print degrees,..");
 	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
-	addOption (OPT_ADDHELIO, "add-heliocentric", 0, "add JD_HELIO to image header (contains heliocentric time)");
+	addOption (OPT_ADDHELIO, "add-heliocentric", 0, "add JD_HELIO to image header (contains heliocentrict time)");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");
 	addOption (OPT_OBSID, "obsid", 1, "force observation ID for image operations");
 	addOption (OPT_IMGID, "imgid", 1, "force image ID for image operations");
@@ -539,10 +533,9 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption (OPT_RTS2OPERA_WCS, "rts2opera-fix", 1, "add headers necessary for RTS2opera functionality");
 	addOption (OPT_ADD_TEMPLATE, "add-template", 1, "add fixed-value headers from template file specified as an argument");
 #ifdef RTS2_HAVE_LIBJPEG
-	addOption (OPT_ZOOM, "zoom", 1, "zoom the image before writing its label");
-	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
-	addOption (OPT_COLOURVARIANT, "colourvariant", 1, "colour variant of jpeg; 0=grey (default)");
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
+	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
+	addOption (OPT_ZOOM, "zoom", 1, "zoom the image before writing its label");
 #endif /* RTS2_HAVE_LIBJPEG */
 }
 

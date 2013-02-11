@@ -138,8 +138,7 @@ class ConnObsProcess:public ConnProcess
 		char *obsTarIdCh;
 		char *obsTarTypeCh;
 	public:
-		ConnObsProcess (rts2core::Block * in_master,
-			const char *in_exe, int in_obsId, int in_timeout);
+		ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout);
 
 		virtual int newProcess ();
 		virtual void processLine ();
@@ -148,8 +147,7 @@ class ConnObsProcess:public ConnProcess
 class ConnDarkProcess:public ConnProcess
 {
 	public:
-		ConnDarkProcess (rts2core::Block * in_master,
-			const char *in_exe, int in_timeout);
+		ConnDarkProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout);
 
 		virtual void processLine ();
 };
@@ -157,8 +155,7 @@ class ConnDarkProcess:public ConnProcess
 class ConnFlatProcess:public ConnProcess
 {
 	public:
-		ConnFlatProcess (rts2core::Block * in_master,
-			const char *in_exe, int in_timeout);
+		ConnFlatProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout);
 
 		virtual void processLine ();
 };

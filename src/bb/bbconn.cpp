@@ -35,7 +35,7 @@ ConnBBQueue::~ConnBBQueue ()
 	if (obs_sched)
 	{
 		if (obs_sched->getState () == BB_SCHEDULE_CREATED)
-			obs_sched->updateState (BB_SCHEDULE_UNSCHEDULED);
+			obs_sched->updateState (BB_SCHEDULE_OBSERVABLE);
 		master->postEvent (new rts2core::Event (EVENT_SCHEDULING_DONE, (void *) obs_sched));
 	}
 	delete obs_sched;
@@ -89,12 +89,14 @@ void ConnBBQueue::processCommand (char *cmd)
 	{
 		double from_time;
 		if (paramNextDouble (&from_time))
-		{
-			from_time = NAN;
 			return;
-		}
 		if (obs_sched)
-			obs_sched->updateState (BB_SCHEDULE_REPLIED, from_time, NAN);
+			obs_sched->updateState (BB_SCHEDULE_OBSERVABLE, from_time, NAN);
+	}
+	else if (!strcasecmp (cmd, "unscheduled"))
+	{
+		if (obs_sched)
+			obs_sched->updateState (BB_SCHEDULE_FAILED);
 	}
 	else
 	{

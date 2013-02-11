@@ -21,6 +21,7 @@
 #ifndef __RTS2_CONSTRAINTS__
 #define __RTS2_CONSTRAINTS__
 
+#include "connnotify.h"
 #include "target.h"
 
 #include <libxml/parser.h>
@@ -454,6 +455,11 @@ class MasterConstraints
 
 		static Constraints * getTargetConstraints (int tar_id);
 		static void setTargetConstraints (int tar_id, Constraints * _constraints);
+
+		static void setNotifyConnection (rts2core::ConnNotify *_watchConn);
+		static rts2core::ConnNotify *getNotifyConnection ();
+
+		static void clearCache ();
 };
 
 }

@@ -84,7 +84,7 @@ void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path,
 			if (tar_id < 0)
 				throw rts2core::Error ("Target id < 0");
 
-			tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			tar = createTarget (tar_id, Configuration::instance ()->getObserver ());
 		}	
 		if (tar == NULL)
 			throw rts2core::Error ("Cannot find target with given ID");
@@ -1157,7 +1157,7 @@ void AddTarget::schedule (int tarid, const char* &response_type, char* &response
 {
 	std::ostringstream _os;
 
-	rts2db::Target *tar = createTarget (tarid, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+	rts2db::Target *tar = createTarget (tarid, Configuration::instance ()->getObserver ());
 
 	if (tar == NULL)
 		throw XmlRpcException ("Cannot find target with given ID!");

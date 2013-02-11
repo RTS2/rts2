@@ -39,7 +39,7 @@ class MEarthWeather:public rts2core::ConnUDP
 		double paramNextDouble ();
 
 		void paramNextFloatME (rts2core::ValueFloat *val);
-		void paramNextDoubleStatME (rts2core::ValueDoubleStat *val, int nv);
+		void paramNextSkyME (rts2core::ValueDoubleStat *val, rts2core::ValueBool *rainv, int nv);
 };
 
 class FlwoWeather:public SensorWeather
@@ -64,6 +64,7 @@ class FlwoWeather:public SensorWeather
 		rts2core::ValueFloat *wait_humidity;
 		rts2core::ValueFloat *wait_wind;
 		rts2core::ValueFloat *wait_skytemp;
+		rts2core::ValueFloat *wait_me_rain;
 
 		rts2core::ValueFloat *ignore_nodata;
 
@@ -99,6 +100,7 @@ class FlwoWeather:public SensorWeather
 		rts2core::ValueDoubleStat *me_sky_temp;
 		rts2core::ValueInteger *me_sky_avg;
 		rts2core::ValueFloat *me_sky_limit;
+		rts2core::ValueBool *me_rain;
 
 		friend class MEarthWeather;
 };
@@ -155,7 +157,7 @@ void MEarthWeather::paramNextFloatME (rts2core::ValueFloat *val)
 	val->setValueFloat (paramNextDouble ());
 }
 
-void MEarthWeather::paramNextDoubleStatME (rts2core::ValueDoubleStat *val, int nv)
+void MEarthWeather::paramNextSkyME (rts2core::ValueDoubleStat *val, rts2core::ValueBool *rainv, int nv)
 {
 	double v = paramNextDouble ();
 	if (isnan (v))
@@ -163,6 +165,13 @@ void MEarthWeather::paramNextDoubleStatME (rts2core::ValueDoubleStat *val, int n
 		logStream (MESSAGE_WARNING) << "nan weather value received" << sendLog;
 		return;
 	}
+	if (v < -400)
+	{
+		logStream (MESSAGE_DEBUG) << "value below -400, wet sensor?" << sendLog;
+		rainv->setValueBool (true);
+		return;
+	}
+	rainv->setValueBool (false);
 	val->addValue (v, nv);
 	val->calculate ();
 }
@@ -184,7 +193,7 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 		paramNextFloatME (((FlwoWeather *) master)->me_hail_accumulation);
 		paramNextFloatME (((FlwoWeather *) master)->me_hail_duration);
 		paramNextFloatME (((FlwoWeather *) master)->me_hail_intensity);
-		paramNextDoubleStatME (((FlwoWeather *) master)->me_sky_temp, ((FlwoWeather *) master)->me_sky_avg->getValueInteger ());
+		paramNextSkyME (((FlwoWeather *) master)->me_sky_temp, ((FlwoWeather *) master)->me_rain, ((FlwoWeather *) master)->me_sky_avg->getValueInteger ());
 	}
 	catch (rts2core::Error er)
 	{
@@ -201,6 +210,7 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (wait_humidity, "wait_humidity", "[s] set bad weather when humidity is over limit for this seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (wait_wind, "wait_wind", "[s] set bad weather when wind is over limit for this number of seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (wait_skytemp, "wait_skytemp", "[s] wait for this number of seconds if skytemp is outside limit", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (wait_me_rain, "wait_me_rain", "[s] wait time when ME detects rain", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
 	createValue (ignore_nodata, "ignore_nodata", "[s] no data packet will be ignored for the given period", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
@@ -208,6 +218,7 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	wait_humidity->setValueFloat (300);
 	wait_wind->setValueFloat (300);
 	wait_skytemp->setValueFloat (900);
+	wait_me_rain->setValueFloat (900);
 
 	ignore_nodata->setValueInteger (300);
 
@@ -253,6 +264,8 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	me_sky_avg->setValueInteger (10);
 	createValue (me_sky_limit, "me_sky_limit", "sky limit (if sky_temp < sky_limit, there aren't clouds)", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	me_sky_limit->setValueFloat (-20);
+
+	createValue (me_rain, "me_rain", "true if sky temp sensor detect rain", false);
 
 	weatherFile = NULL;
 
@@ -517,6 +530,16 @@ bool FlwoWeather::isGoodWeather ()
 	else
 	{
 		valueGood (me_sky_temp);
+	}
+	if (me_rain->getValueBool ())
+	{
+		setWeatherTimeout (wait_me_rain->getValueInteger (), "ME RAIN");
+		valueError (me_rain);
+		ret = false;
+	}
+	else
+	{
+		valueGood (me_rain);
 	}
 	if (ret == false)
 		return ret;  

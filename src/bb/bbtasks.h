@@ -26,6 +26,9 @@
 #include "bbconn.h"
 
 #include <pthread.h>
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
+#include <libsoup/soup.h>
 
 namespace rts2bb
 {
@@ -48,6 +51,9 @@ class BBTask
 		 * @return 0 if task should not be re-run. > 0 specifies seconds after which task should be rescheduled.
 		 */
 		virtual int run () = 0;
+	
+	protected:
+		JsonParser *jsonRequest (int observatory_id, std::string url);
 };
 
 /**
@@ -96,6 +102,8 @@ class BBConfirmTask:public BBTask
 	private:
 		int schedule_id;
 		int observatory_id;
+
+		void confirmTarget (BBSchedules &bbsch, ObservatorySchedule &schedule);
 };
 
 

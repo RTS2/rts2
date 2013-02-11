@@ -30,6 +30,7 @@
 #include "rts2db/sqlerror.h"
 #include "rts2db/simbadtarget.h"
 
+#include "connnotify.h"
 #include "infoval.h"
 #include "app.h"
 #include "configuration.h"
@@ -64,6 +65,7 @@ void Target::getTargetSubject (std::string &subj)
 
 void Target::addWatch (const char *filename)
 {
+	rts2core::ConnNotify *watchConn = MasterConstraints::getNotifyConnection ();
 	if (watchConn == NULL)
 		return;
 	int ret = watchConn->addWatch (filename);
@@ -168,7 +170,6 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 {
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
-	watchConn = NULL;
 	tar_telescope_mode = -1;
 
 	observer = in_obs;
@@ -205,7 +206,6 @@ Target::Target ()
 	rts2core::Configuration *config;
 	config = rts2core::Configuration::instance ();
 
-	watchConn = NULL;
 	tar_telescope_mode = -1;
 
 	observer = config->getObserver ();
@@ -1684,7 +1684,7 @@ int Target::printImages (double JD, std::ostream &_os, int flags)
 	return img_set.size ();
 }
 
-Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs, rts2core::ConnNotify *watchConn)
+Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = _tar_id;
@@ -1763,9 +1763,6 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs, rts2core::ConnNot
 			retTarget = new ConstTarget (_tar_id, _obs);
 			break;
 	}
-
-	if (watchConn)
-		retTarget->setWatchConnection (watchConn);
 
 	retTarget->setTargetType (db_type_id);
 	retTarget->load ();

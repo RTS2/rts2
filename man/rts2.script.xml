@@ -83,11 +83,12 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>cmd {command}</option></term>
+        <term><option>cmd {command}[({arg{,arg2..}})]</option></term>
 	<listitem>
 	  <para>
-	    Execute arbitrary command on the device. Currently command cannot
-	    have any parameters.
+	    Execute arbitrary command on the device. Command parameters can be
+	    specified in round bracket, separated with comma, without any space
+	    between command and ending bracket.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -929,6 +930,14 @@ double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>time {variable name} {variable description} {value}</option></term>
+        <term><option>time_w {variable name} {variable description} {value}</option></term>
+	<listitem><para>
+	  Creates or update device time value. Similar to
+	  <emphasis>double</emphasis> and <emphasis>double_w</emphasis> commands, described above.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>integer {variable name} {variable description} {value}</option></term>
         <term><option>integer_w {variable name} {variable description} {value}</option></term>
 	<listitem><para>
@@ -1179,6 +1188,12 @@ done
     </para>
 
     <para>WINDOW=(10,10,20,20) do 200 { E 1 wait_idle } while (.average > 2000) WINDOW=(-1,-1,-1,-1) do 200 { E 1 wait_idle } while (.average > 1000)</para>
+
+    <para>
+      Call command with arguments 5 and 1.
+    </para>
+
+    <para>cmd apply(5,1)</para>
 
   </refsect1>
   <refsect1>

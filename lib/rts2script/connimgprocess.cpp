@@ -76,7 +76,12 @@ int ConnImgOnlyProcess::init ()
 	}
 	catch (rts2core::Error &e)
 	{
-		logStream (MESSAGE_ERROR) << "error processing " << imgPath.c_str () << " :" << e << sendLog;
+		int ret = unlink (imgPath.c_str ());
+		if (ret)
+			logStream (MESSAGE_ERROR) << "error removing " << imgPath << ":" << strerror (errno) << sendLog;
+		else
+			logStream (MESSAGE_WARNING) << "removed " << imgPath << sendLog;
+		astrometryStat = BAD;
 		return -2;
 	}
 	return ConnProcess::init ();

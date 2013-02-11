@@ -17,14 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_BBDB__
+#define __RTS2_BBDB__
+
 #include "utilsfunc.h"
 
 #include <libnova/libnova.h>
 #include <string>
 #include <list>
 
-#ifndef __RTS2_BBDB__
-#define __RTS2_BBDB__
+#include <libsoup/soup.h>
 
 namespace rts2bb
 {
@@ -39,6 +41,11 @@ class Observatory
 		double getAltitude () { return altitude; }
 		const char * getURL () { return url.c_str (); }
 		int getId () { return observatory_id; }
+
+		/**
+		 * Authorize soup request (fill in username and password).
+		 */
+		void auth (SoupAuth *auth);
 	private:
 		int observatory_id;
 		struct ln_lnlat_posn position;
@@ -107,6 +114,8 @@ class BBSchedules:public std::list <ObservatorySchedule>
 		BBSchedules (int _schedule_id) { schedule_id = _schedule_id; }
 		void load ();
 
+		int getTargetId () { return tar_id; }
+
 	private:
 		int schedule_id;
 		int tar_id;
@@ -137,14 +146,14 @@ int createSchedule (int target_id);
 
 //* BB schedule request was created
 #define BB_SCHEDULE_CREATED           0
-//* Create target request was send to observatory
-#define BB_SCHEDULE_CREATE_TARGET     1
-//* BB schedule request was send to the observatory
-#define BB_SCHEDULE_REQUESTED         2
-//* Observatory node replied with schedule status
-#define BB_SCHEDULE_REPLIED           3
-//* Observatory node was unable to schedule observation
-#define BB_SCHEDULE_UNSCHEDULED       4
+//* Scheduling request for some reason failed
+#define BB_SCHEDULE_FAILED            10
+//* Observation is possible
+#define BB_SCHEDULE_OBSERVABLE        11
+//* Observation is possible, but it was (for now) not selected
+#define BB_SCHEDULE_BACKUP            12
+//* Observation was scheduled on this observatory 
+#define BB_SCHEDULE_CONFIRMED         13
 
 }
 

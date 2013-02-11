@@ -26,15 +26,25 @@ using namespace rts2plan;
 
 int qid_seq = 0;
 
-QueuedTarget::QueuedTarget (rts2db::Target * _target, double _t_start, double _t_end, int _plan_id, bool _hard)
+QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, double _t_start, double _t_end, int _plan_id, bool _hard, bool _persistent):QueueEntry (0, _queue_id)
 {
 	target = _target;
-	qid = ++qid_seq;
+
+	qid = nextQid ();
 	t_start = _t_start;
 	t_end = _t_end;
-	planid = _plan_id;
+	plan_id = _plan_id;
+	tar_id = target->getTargetID ();
 	hard = _hard;
 	unobservable_reported = false;
+
+	create ();
+}
+
+QueuedTarget::QueuedTarget (unsigned int _queue_id, unsigned int _qid, struct ln_lnlat_posn *observer):QueueEntry (_qid, _queue_id)
+{
+	load ();
+	target = createTarget (tar_id, observer);
 }
 
 /**
@@ -153,7 +163,7 @@ void TargetQueue::beforeChange (double now)
 			// shift only if queue is not empty 
 			if (!empty ())
 			{
-				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ())));
+				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer)));
 				delete front ().target;
 				pop_front ();
 			}
@@ -212,6 +222,16 @@ bool TargetQueue::filter (double now, double maxLength, bool removeObserved)
 	updateVals ();
 	// if front target was not skipped, it can be observed
 	return ret;
+}
+
+void TargetQueue::load (int queue_id)
+{
+	std::list <unsigned int> qids = rts2db::queueQids (queue_id);
+
+	for (std::list <unsigned int>::iterator iter = qids.begin (); iter != qids.end (); iter++)
+		push_back (QueuedTarget (queue_id, *iter, *observer));
+	
+	updateVals ();
 }
 
 const TargetQueue::iterator TargetQueue::findTarget (rts2db::Target *tar)
@@ -439,6 +459,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 						if (!(isnan (iter->t_start) && isnan (iter->t_end)) && iter->target->observationStarted ())
 						{
 							logStream (MESSAGE_WARNING) << "target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") was observed, and as it has specified start or end times (" << LibnovaDateDouble (iter->t_start) << " to " << LibnovaDateDouble (iter->t_end) << "), and queue is not circular (" << getQueueType () << "), it will be removed" << sendLog;
+							iter->remove ();
 							iter = erase (iter);
 							continue;
 						}
@@ -455,6 +476,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 			else
 			{
 				logStream (MESSAGE_WARNING) << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " below horizon" << sendLog;
+				iter->remove ();
 				iter = erase (iter);
 			}
 		}
@@ -488,11 +510,12 @@ bool TargetQueue::frontTimeExpires (double now)
 	return !iter->notExpired (now);
 }
 
-ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, bool read_only):TargetQueue (_master, _observer)
+ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, int _queue_id, bool read_only):TargetQueue (_master, _observer)
 {
 	std::string sn (name);
 	currentTarget = NULL;
 	timerAdded = NAN;
+	queue_id = _queue_id;
 
 	int read_only_fl = read_only ? 0 : RTS2_VALUE_WRITABLE;
 
@@ -528,8 +551,10 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 	master->createValue (blockUntilVisible, (sn + "_block_until_visible").c_str (), "block queue if the top target is not visible", false, read_only_fl);
 	blockUntilVisible->setValueBool (false);
 
-	master->createValue (queueEnabled, (sn + "_enabled").c_str (), "enable queuei for selection", false, read_only_fl);
+	master->createValue (queueEnabled, (sn + "_enabled").c_str (), "enable queue for selection", false, read_only_fl);
 	queueEnabled->setValueBool (true);
+
+	master->createValue (queueWindow, (sn + "_window").c_str (), "queue selection window", false, read_only_fl | RTS2_DT_TIMEINTERVAL);
 
 	queueType->addSelVal ("FIFO");
 	queueType->addSelVal ("CIRCULAR");
@@ -546,14 +571,14 @@ ExecutorQueue::~ExecutorQueue ()
 
 int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 {
-	push_front (QueuedTarget (nt, t_start, t_end));
+	push_front (QueuedTarget (queue_id, nt, t_start, t_end));
 	updateVals ();
 	return 0;
 }
 
-int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int index, int plan_id, bool hard)
+int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int index, int plan_id, bool hard, bool persistent)
 {
-	insert (findIndex (index), QueuedTarget (nt, t_start, t_end, plan_id, hard));
+	insert (findIndex (index), QueuedTarget (queue_id, nt, t_start, t_end, plan_id, hard, persistent));
 	updateVals ();
 	return 0;
 }
@@ -568,7 +593,8 @@ int ExecutorQueue::removeIndex (int index)
 		delete iter->target;
 	else
 		currentTarget = NULL;
-	erase (findIndex (index));
+	iter->remove ();
+	erase (iter);
 	updateVals ();
 	return 0;
 }
@@ -610,7 +636,7 @@ int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_s
 		}
 		if (skip == false && (isinf (satDuration) || satDuration))
 		{
-			insert (iter, QueuedTarget (nt, t_start, t_end, plan_id, hard));
+			insert (iter, QueuedTarget (queue_id, nt, t_start, t_end, plan_id, hard));
 			updateVals ();
 			return 0;
 		}
@@ -631,6 +657,8 @@ void ExecutorQueue::clearNext ()
 			iter->target = NULL;
 		else
 			delete iter->target;
+		// remove entry from database
+		iter->remove ();
 	}
 	clear ();
 	updateVals ();
@@ -647,7 +675,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 		{
 			if (isnan (next_length))
 			{
-				pid = front ().planid;
+				pid = front ().plan_id;
 				qid = front ().qid;
 				return front ().target->getTargetID ();
 			}
@@ -659,7 +687,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 				double tl = rts2script::getMaximalScriptDuration (front ().target, master->cameras, NULL, front().target->observationStarted () ? 1 : 0);
 				if (tl < next_length)
 				{
-					pid = front ().planid;
+					pid = front ().plan_id;
 					qid = front ().qid;
 					if (isnan (front().t_start))
 					{
@@ -695,7 +723,11 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 				}
 			}
 			if (!isnan (t_start) && (isnan(next_time) || next_time > t_start))
+			{
 				next_time = t_start;
+				if (!isnan (queueWindow->getValueFloat ()))
+					next_time += queueWindow->getValueFloat ();
+			}
 		}
 	}
 	return -1;
@@ -743,7 +775,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 	return -1;
 }
 
-int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start)
+int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start)
 {
 	double t_start = NAN;
 	double t_end = NAN;
@@ -782,7 +814,7 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 				continue;
 			}
 		}
-		rts2db::Target *nt = createTarget (tar_id, *observer, watchConn);
+		rts2db::Target *nt = createTarget (tar_id, *observer);
 		if (nt == NULL)
 		{
 			failed++;
@@ -796,7 +828,7 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 	return failed;
 }
 
-int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn, rts2core::ConnNotify *watchConn)
+int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn)
 {
 	int failed = 0;
 	ExecutorQueue::iterator iter = begin ();
@@ -804,24 +836,24 @@ int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn, rts2core::Conn
 	std::vector <int> knowQuids;
 	while (!conn->paramEnd ())
 	{
-		int queue_id;
+		int _qid;
 		int tar_id;
 		double t_start, t_end;
-		if (conn->paramNextInteger (&queue_id) || conn->paramNextInteger (&tar_id) || conn->paramNextDoubleTime (&t_start) || conn->paramNextDoubleTime (&t_end))
+		if (conn->paramNextInteger (&_qid) || conn->paramNextInteger (&tar_id) || conn->paramNextDoubleTime (&t_start) || conn->paramNextDoubleTime (&t_end))
 		{
 			failed++;
 			continue;
 		}
-		rts2db::Target *nt = createTarget (tar_id, *observer, watchConn);
+		rts2db::Target *nt = createTarget (tar_id, *observer);
 		if (nt == NULL)
 		{
 			failed++;
 			continue;
 		}
 		// new entry
-		if (queue_id == -1)
+		if (_qid == -1)
 		{
-			QueuedTarget qt (nt, t_start, t_end);
+			QueuedTarget qt (queue_id, nt, t_start, t_end);
 			iter = insert (iter, qt);
 			knowQuids.push_back (qt.qid);
 		}
@@ -831,7 +863,7 @@ int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn, rts2core::Conn
 			ExecutorQueue::iterator it;
 			for (it = begin (); it != end (); it++)
 			{
-				if (it->qid == queue_id)
+				if ((int) it->qid == _qid)
 					break;
 			}
 			// quid not found - failure
@@ -848,7 +880,7 @@ int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn, rts2core::Conn
 				iter = insert (iter, *it);
 				erase (it);
 			}
-			knowQuids.push_back (queue_id);
+			knowQuids.push_back (_qid);
 		}
 		iter++;
 	}
@@ -858,9 +890,14 @@ int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn, rts2core::Conn
 		if (iter->qid > 0)
 		{
 			if (std::find (knowQuids.begin (), knowQuids.end (), iter->qid) != knowQuids.end ())
+			{
 				iter++;
+			}
 			else
+			{
+				iter->remove ();
 				iter = erase (iter);
+			}
 		}
 		else
 		{
@@ -885,15 +922,22 @@ void ExecutorQueue::updateVals ()
 	std::vector <double> _end_arr;
 	std::vector <int> _plan_arr;
 	std::vector <bool> _hard_arr;
-	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+
+	int order = 0;
+
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++, order++)
 	{
 		_id_arr.push_back (iter->target->getTargetID ());
 		_name_arr.push_back (iter->target->getTargetName ());
 		_qid_arr.push_back (iter->qid);
 		_start_arr.push_back (iter->t_start);
 		_end_arr.push_back (iter->t_end);
-		_plan_arr.push_back (iter->planid);
+		_plan_arr.push_back (iter->plan_id);
 		_hard_arr.push_back (iter->hard);
+
+		iter->queue_order = order;
+
+		iter->update ();
 	}
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
@@ -948,6 +992,9 @@ ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &ite
 		delete iter->target;
 	else
 		currentTarget = NULL;
+
+	iter->remove ();
+
 	return erase (iter);
 }
 

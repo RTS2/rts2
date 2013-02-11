@@ -99,6 +99,8 @@ class ImageProc:public rts2core::Device
 		std::list < ConnProcess * >imagesQue;
 		ConnProcess *runningImage;
 
+		rts2core::ValueString *image_glob;
+
 		rts2core::ValueBool *applyCorrections;
 
 		rts2core::ValueInteger *goodImages;
@@ -186,6 +188,8 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (nightDarks, "night_darks", "number of dark images taken during night", false);
 	createValue (nightFlats, "night_flats", "number of flat images taken during night", false);
 
+	createValue (image_glob, "image_glob", "glob path for images processed in standy mode", false, RTS2_VALUE_WRITABLE);
+
 	imageGlob.gl_pathc = 0;
 	imageGlob.gl_offs = 0;
 	globC = 0;
@@ -215,6 +219,7 @@ int ImageProc::reloadConfig ()
 	int ret;
 	
 	Configuration *config;
+	std::string imgglob;
 #ifdef RTS2_HAVE_PGSQL
 	ret = rts2db::DeviceDb::reloadConfig ();
 	config = Configuration::instance ();
@@ -238,6 +243,11 @@ int ImageProc::reloadConfig ()
 	{
 		logStream (MESSAGE_ERROR) << "ImageProc::reloadConfig cannot get obs process script, exiting" << sendLog;
 	}
+
+	ret = config->getString ("imgproc", "imageglob", imgglob);
+	if (ret || imgglob.length () == 0)
+		return ret;
+	image_glob->setValueCharArr (imgglob.c_str ());
 
 	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL);
 	last_good_jpeg = config->getStringDefault ("imgproc", "last_good_jpeg", NULL);
@@ -496,10 +506,13 @@ void ImageProc::changeRunning (ConnProcess * newImage)
 	ret = runningImage->init ();
 	if (ret < 0)
 	{
+		deleteConnection (runningImage);
 		delete runningImage;
 		runningImage = NULL;
 		maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, DEVICE_ERROR_HW | IMGPROC_IDLE);
 		infoAll ();
+		if (reprocessingPossible)
+			checkNotProcessed ();
 		return;
 	}
 	else if (ret == 0)
@@ -551,17 +564,9 @@ int ImageProc::queObs (int obsId)
 
 int ImageProc::checkNotProcessed ()
 {
-	std::string image_glob;
 	int ret;
 
-	Configuration *config;
-	config = Configuration::instance ();
-
-	ret = config->getString ("imgproc", "imageglob", image_glob);
-	if (ret || image_glob.length () == 0)
-		return ret;
-
-	ret = glob (image_glob.c_str (), 0, NULL, &imageGlob);
+	ret = glob (image_glob->getValue (), 0, NULL, &imageGlob);
 	if (ret)
 	{
 		globfree (&imageGlob);

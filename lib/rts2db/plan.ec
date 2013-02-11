@@ -62,6 +62,7 @@ Plan::Plan (const Plan &cp)
 	plan_start = cp.plan_start;
 	plan_end = cp.plan_end;
 	plan_status = cp.plan_status;
+	bb_schedule_id = cp.bb_schedule_id;
 	target = cp.target;
 
 	target = NULL;
@@ -76,36 +77,115 @@ Plan::~Plan (void)
 int Plan::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_plan_id = plan_id;
-		int db_prop_id;
-		int db_prop_id_ind;
-		int db_tar_id;
-		int db_obs_id;
-		int db_obs_id_ind;
-		double db_plan_start;
-		double db_plan_end;
-		int db_plan_end_ind;
-		int db_plan_status;
+	int db_plan_id = plan_id;
+	int db_prop_id;
+	int db_prop_id_ind;
+	int db_tar_id;
+	int db_obs_id;
+	int db_obs_id_ind;
+	double db_plan_start;
+	double db_plan_end;
+	int db_plan_end_ind;
+	int db_plan_status;
+	VARCHAR db_bb_schedule_id[50];
+	int db_bb_schedule_id_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL SELECT
-			prop_id,
-			tar_id,
-			obs_id,
-			EXTRACT (EPOCH FROM plan_start),
-			EXTRACT (EPOCH FROM plan_end),
-			plan_status
-		INTO
-			:db_prop_id :db_prop_id_ind,
-			:db_tar_id,
-			:db_obs_id :db_obs_id_ind,
-			:db_plan_start,
-			:db_plan_end :db_plan_end_ind,
-			:db_plan_status
-		FROM
-			plan
-		WHERE
-			plan_id = :db_plan_id;
+		prop_id,
+		tar_id,
+		obs_id,
+		EXTRACT (EPOCH FROM plan_start),
+		EXTRACT (EPOCH FROM plan_end),
+		plan_status,
+		bb_schedule_id
+	INTO
+		:db_prop_id :db_prop_id_ind,
+		:db_tar_id,
+		:db_obs_id :db_obs_id_ind,
+		:db_plan_start,
+		:db_plan_end :db_plan_end_ind,
+		:db_plan_status,
+		:db_bb_schedule_id :db_bb_schedule_id_ind
+	FROM
+		plan
+	WHERE
+		plan_id = :db_plan_id;
+
+	if (sqlca.sqlcode)
+	{
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+	if (db_prop_id_ind)
+		prop_id = -1;
+	else
+		prop_id = db_prop_id;
+	tar_id = db_tar_id;
+	if (db_obs_id_ind)
+		db_obs_id = -1;
+	else
+		obs_id = db_obs_id;
+	plan_start = (long) db_plan_start;
+	if (db_plan_end_ind)
+		plan_end = NAN;
+	else
+		plan_end = db_plan_end;
+	plan_status = db_plan_status;
+	db_bb_schedule_id.arr[db_bb_schedule_id.len] = '\0';
+	if (db_bb_schedule_id_ind)
+		bb_schedule_id = std::string ();
+	else
+		bb_schedule_id = std::string (db_bb_schedule_id.arr);
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+int Plan::loadBBSchedule (const char *bb_schedule_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_plan_id;
+	int db_prop_id;
+	int db_prop_id_ind;
+	int db_tar_id;
+	int db_obs_id;
+	int db_obs_id_ind;
+	double db_plan_start;
+	double db_plan_end;
+	int db_plan_end_ind;
+	int db_plan_status;
+	VARCHAR db_bb_schedule_id[50];
+	EXEC SQL END DECLARE SECTION;
+
+	size_t l = strlen (bb_schedule_id);
+
+	if (l >= 50)
+		throw rts2core::Error ("too long schedule id");
+
+	memcpy (db_bb_schedule_id.arr, bb_schedule_id, l);
+	db_bb_schedule_id.len = l;
+
+	EXEC SQL SELECT
+		plan_id,
+		prop_id,
+		tar_id,
+		obs_id,
+		EXTRACT (EPOCH FROM plan_start),
+		EXTRACT (EPOCH FROM plan_end),
+		plan_status
+	INTO
+		:db_plan_id,
+		:db_prop_id :db_prop_id_ind,
+		:db_tar_id,
+		:db_obs_id :db_obs_id_ind,
+		:db_plan_start,
+		:db_plan_end :db_plan_end_ind,
+		:db_plan_status
+	FROM
+		plan
+	WHERE
+		bb_schedule_id = :db_bb_schedule_id;
+
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
@@ -130,19 +210,22 @@ int Plan::load ()
 	return 0;
 }
 
+
 int Plan::save ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_plan_id = plan_id;
-		int db_tar_id = tar_id;
-		int db_prop_id = prop_id;
-		int db_prop_id_ind;
-		int db_obs_id = obs_id;
-		int db_obs_id_ind;
-		double db_plan_start = plan_start;
-		double db_plan_end = plan_end;
-		int db_plan_end_ind = (isnan (plan_end) ? -1 : 0);
-		int db_plan_status = plan_status;
+	int db_plan_id = plan_id;
+	int db_tar_id = tar_id;
+	int db_prop_id = prop_id;
+	int db_prop_id_ind;
+	int db_obs_id = obs_id;
+	int db_obs_id_ind;
+	double db_plan_start = plan_start;
+	double db_plan_end = plan_end;
+	int db_plan_end_ind = (isnan (plan_end) ? -1 : 0);
+	int db_plan_status = plan_status;
+	VARCHAR db_bb_schedule_id[50];
+	int db_bb_schedule_id_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	// don't save entries with same target id as master plan
@@ -151,11 +234,10 @@ int Plan::save ()
 
 	if (db_plan_id == -1)
 	{
-		EXEC SQL
-			SELECT
+		EXEC SQL SELECT
 			nextval ('plan_id')
-			INTO
-				:db_plan_id;
+		INTO
+			:db_plan_id;
 		if (sqlca.sqlcode)
 		{
 			logStream(MESSAGE_ERROR) << "Error getting nextval" << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << sendLog;
@@ -184,40 +266,60 @@ int Plan::save ()
 		db_obs_id_ind = 0;
 	}
 
+	strncpy (db_bb_schedule_id.arr, bb_schedule_id.c_str (), 50);
+	if (bb_schedule_id.length () == 0)
+	{
+		db_bb_schedule_id_ind = -1;
+	}
+	else if (bb_schedule_id.length () > 50)
+	{
+		db_bb_schedule_id.len = 50;
+		db_bb_schedule_id_ind = 0;
+	}
+	else
+	{
+		db_bb_schedule_id.len = bb_schedule_id.length ();
+		db_bb_schedule_id_ind = 0;
+	}
+
 	EXEC SQL INSERT INTO plan (
-			plan_id,
-			tar_id,
-			prop_id,
-			obs_id,
-			plan_start,
-			plan_end,
-			plan_status
-			)
-		VALUES (
-			:db_plan_id,
-			:db_tar_id,
-			:db_prop_id :db_prop_id_ind,
-			:db_obs_id :db_obs_id_ind,
-			to_timestamp (:db_plan_start),
-			to_timestamp (:db_plan_end :db_plan_end_ind),
-			:db_plan_status
-			);
+		plan_id,
+		tar_id,
+		prop_id,
+		obs_id,
+		plan_start,
+		plan_end,
+		plan_status,
+		bb_schedule_id
+	)
+	VALUES (
+		:db_plan_id,
+		:db_tar_id,
+		:db_prop_id :db_prop_id_ind,
+		:db_obs_id :db_obs_id_ind,
+		to_timestamp (:db_plan_start),
+		to_timestamp (:db_plan_end :db_plan_end_ind),
+		:db_plan_status,
+		:db_bb_schedule_id :db_bb_schedule_id_ind
+	);
+
 	if (sqlca.sqlcode)
 	{
 		logStream(MESSAGE_ERROR) << "Error inserting plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc
 			<< " prop_id:" << db_prop_id << " ind:" << db_prop_id_ind << sendLog;
 		// try update
 		EXEC SQL UPDATE
-				plan
-			SET
-				tar_id = :db_tar_id,
-				prop_id = :db_prop_id :db_prop_id_ind,
-				obs_id = :db_obs_id :db_obs_id_ind,
-				plan_start = to_timestamp (:db_plan_start),
-				plan_end = to_timestamp (:db_plan_end :db_plan_end_ind),
-				plan_status = :db_plan_status
-			WHERE
-				plan_id = :db_plan_id;
+			plan
+		SET
+			tar_id = :db_tar_id,
+			prop_id = :db_prop_id :db_prop_id_ind,
+			obs_id = :db_obs_id :db_obs_id_ind,
+			plan_start = to_timestamp (:db_plan_start),
+			plan_end = to_timestamp (:db_plan_end :db_plan_end_ind),
+			plan_status = :db_plan_status,
+			bb_schedule_id = :db_bb_schedule_id
+		WHERE
+			plan_id = :db_plan_id;
 		if (sqlca.sqlcode)
 		{
 			logStream(MESSAGE_ERROR) << "Error updating plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << sendLog;
@@ -232,16 +334,16 @@ int Plan::save ()
 int Plan::del ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_plan_id = plan_id;
+	int db_plan_id = plan_id;
 	EXEC SQL END DECLARE SECTION;
 
 	if (db_plan_id == -1)
 		return 0;
 
 	EXEC SQL DELETE FROM
-			plan
-		WHERE
-			plan_id = :db_plan_id;
+		plan
+	WHERE
+		plan_id = :db_plan_id;
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;

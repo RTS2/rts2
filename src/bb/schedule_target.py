@@ -42,7 +42,7 @@ for obs_id in args:
 
 	if int(ret) == 0:
 		print 'log I cannot schedule'
-		sys.exit(1)
-
+		print 'unscheduled'
+	
 	print 'log I schedule returns {0}'.format(time.ctime(int(ret)))	
 	print 'schedule_from',int(ret)

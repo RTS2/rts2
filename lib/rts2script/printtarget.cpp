@@ -69,6 +69,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):rts2db::AppDb (in_argc, i
 {
 	obs = NULL;
 	printExtended = 0;
+	printConstraints = false;
 	printCalTargets = false;
 	printObservations = false;
 	printSatisfied = false;
@@ -144,6 +145,9 @@ int PrintTarget::processOption (int in_opt)
 	{
 		case 'e':
 			printExtended++;
+			break;
+		case 'E':
+			printConstraints = true;
 			break;
 		case 'g':
 			if (optarg)
@@ -355,16 +359,20 @@ void PrintTarget::printTarget (rts2db::Target *target)
 				case 0:
 					target->printShortInfo (std::cout, JD);
 					std::cout << std::endl;
+					if (printConstraints)
+					{
+						Rts2InfoValOStream ivos (&std::cout);
+						target->sendConstraints (ivos, JD);
+					}
 					printScripts (target, "       ");
 					break;
 				default:
 					Rts2InfoValOStream ivos (&std::cout);
 					target->sendInfo (ivos, JD, printExtended);
 					// print constraints..
-					if (printExtended > 1)
-					{
+					if (printExtended > 1 || printConstraints)
 						target->sendConstraints (ivos, JD);
-					}
+
 					// print scripts..
 					if (printExtended > 2)
 					{

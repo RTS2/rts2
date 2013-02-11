@@ -21,6 +21,7 @@
 #define __RTS2_EXECUTORQUEUE__
 
 #include "rts2db/devicedb.h"
+#include "rts2db/queues.h"
 #include "rts2db/target.h"
 
 // queue modes
@@ -50,31 +51,25 @@ namespace rts2plan
  *
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
-class QueuedTarget
+class QueuedTarget:public rts2db::QueueEntry
 {
 	public:
-		QueuedTarget (rts2db::Target * _target, double _t_start = NAN, double _t_end = NAN, int _plan_id = -1, bool _hard = false);
+		QueuedTarget (unsigned int queue_id, rts2db::Target * _target, double _t_start = NAN, double _t_end = NAN, int _plan_id = -1, bool _hard = false, bool persistent = true);
+
+		QueuedTarget (unsigned int queue_id, unsigned int qid, struct ln_lnlat_posn *observer);
 
 		/**
 		 * Copy constructor. Used in simulation queue to create copy of QueuedTarget.
 		 */
-		QueuedTarget (const QueuedTarget &qt)
+		QueuedTarget (const QueuedTarget &qt):rts2db::QueueEntry (qt)
 		{
 			target = qt.target;
-			qid = qt.qid;
-			t_start = qt.t_start;
-			t_end = qt.t_end;
-			planid = qt.planid;
 			unobservable_reported = qt.unobservable_reported;
 		}
 
-		QueuedTarget (const QueuedTarget &qt, rts2db::Target *_target)
+		QueuedTarget (const QueuedTarget &qt, rts2db::Target *_target):rts2db::QueueEntry (qt)
 		{
 			target = _target;
-			qid = qt.qid;
-			t_start = qt.t_start;
-			t_end = qt.t_end;
-			planid = qt.planid;
 			unobservable_reported = false;
 		}
 
@@ -86,10 +81,7 @@ class QueuedTarget
 		bool notExpired (double now);
 
 		rts2db::Target *target;
-		int qid;
-		double t_start;
-		double t_end;
-		int planid;
+
 		bool hard;
 
 		bool unobservable_reported;
@@ -167,6 +159,13 @@ class TargetQueue:public std::list <QueuedTarget>
 		 * Update values from the target list. Must be called after queue content changed.
 		 */
 		virtual void updateVals () {}
+
+		/**
+		 * Load target queue from database.
+		 *
+		 * @param queue_id     ID of queue (its number).
+		 */
+		void load (int queue_id);
 
 	protected:
 		rts2db::DeviceDb *master;
@@ -248,11 +247,11 @@ class ExecutorQueue:public TargetQueue
 		/**
 		 * If read-only is set, queue cannot be changed.
 		 */
-		ExecutorQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, bool read_only = false);
+		ExecutorQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, int queue_id, bool read_only = false);
 		virtual ~ExecutorQueue ();
 
 		int addFront (rts2db::Target *nt, double t_start = NAN, double t_end = NAN);
-		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int index = -1, int plan_id = -1, bool hard = false);
+		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int index = -1, int plan_id = -1, bool hard = false, bool persistent = true);
 
 		/**
 		 * Remove entry with given index from the queue.
@@ -292,7 +291,7 @@ class ExecutorQueue:public TargetQueue
 		 * @param tryFirstPossible     try to set observation on the first possible place
 		 * @param n_start              start of the night
 		 */
-		int queueFromConn (rts2core::Connection *conn, int index, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start);
+		int queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start);
 
 		/**
 		 * Updates queue. Each queue entry record consists of four parameters:
@@ -304,14 +303,17 @@ class ExecutorQueue:public TargetQueue
 		 * If queud ID is 0, new entry is created. Negative GUIds are
 		 * for removal of given QUID from the queue.
 		 */
-		int queueFromConnQids (rts2core::Connection *conn, rts2core::ConnNotify *watchConn);
+		int queueFromConnQids (rts2core::Connection *conn);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
 
 		// prints queue configuration into stream
 		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
 		{
-			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " block until visible " << eq->blockUntilVisible->getValueBool () << " enabled " << eq->queueEnabled->getValueBool () << " contains";
+			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " block until visible " << eq->blockUntilVisible->getValueBool () << " enabled " << eq->queueEnabled->getValueBool ();
+			if (!isnan (eq->queueWindow->getValueFloat ()))
+				os << " with window " << eq->queueWindow->getValueFloat () << "s";
+			os << " contains";
 			std::vector <int>::iterator niditer = eq->nextIds->valueBegin ();
 			std::vector <double>::iterator startiter = eq->nextStartTimes->valueBegin ();
 			std::vector <double>::iterator enditer = eq->nextEndTimes->valueBegin ();
@@ -364,8 +366,10 @@ class ExecutorQueue:public TargetQueue
 		rts2core::ValueBool *removeAfterExecution;
 		rts2core::ValueBool *blockUntilVisible;
 		rts2core::ValueBool *queueEnabled;
+		rts2core::ValueFloat *queueWindow;
 
 		double timerAdded;
+		int queue_id;
 
 		// remove target with debug entry why it was removed from the queue
 		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const int reason);

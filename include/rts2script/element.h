@@ -417,7 +417,7 @@ class ElementComment:public Element
 class ElementCommand:public Element
 {
 	public:
-		ElementCommand (Script * _script, const char *_cmd):Element (_script) { cmd = std::string (_cmd); };
+		ElementCommand (Script * _script, const char *_cmd, std::vector <std::string> _args):Element (_script) { cmd = std::string (_cmd); args = _args; };
 		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "command " << cmd; }
@@ -426,6 +426,7 @@ class ElementCommand:public Element
 		virtual void printJson (std::ostream &os);
 	private:
 		std::string cmd;
+		std::vector <std::string> args;
 };
 
 

@@ -45,6 +45,7 @@ class TargetAuger:public rts2db::ConstTarget
 		virtual ~ TargetAuger (void);
 
 		virtual void load ();
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 
 		/**
 		 * Load target from given auger_id.

@@ -20,7 +20,6 @@
 #include "rts2db/target.h"
 #include "rts2json/httpreq.h"
 #include "asyncapi.h"
-#include "bbapidb.h"
 
 /** @file bbapi.h
  *
@@ -48,8 +47,6 @@ class BBAPI:public rts2json::JSONRequest
 		 * Confirm observation schedule.
 		 */
 		void confirmSchedule (rts2db::Target *tar, double f, const char *schedule_id);
-
-		BBSchedules schedules;
 };
 
 }

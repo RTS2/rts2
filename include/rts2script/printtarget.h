@@ -65,6 +65,7 @@ class PrintTarget:public rts2db::AppDb
 	private:
 		std::vector <std::string> scriptCameras;
 		int printExtended;
+		bool printConstraints;
 		bool printCalTargets;
 		bool printObservations;
 		bool printSatisfied;

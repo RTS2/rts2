@@ -244,15 +244,15 @@ void mergeIntervals (const interval_arr_t master, const interval_arr_t &add, int
 		ret.clear ();
 		return;
 	}
-	interval_arr_t::const_iterator addi = add.begin ();
 	for (interval_arr_t::const_iterator mi = master.begin (); mi != master.end (); mi++)
 	{
+		interval_arr_t::const_iterator addi = add.begin ();
 		while (addi->first < mi->second)
 		{
 			findFirst (addi, add.end (), mi->first);
 			if (addi == add.end ())
 				break;
-			// intervals have empty conjunction
+			// intervals have empty intersection
 			if (addi->first > mi->second)
 				continue;
 			ret.push_back (std::pair <time_t, time_t> (max (mi->first, addi->first), min (mi->second, addi->second)));
@@ -839,6 +839,7 @@ static Constraints *masterCons = NULL;
 
 // target->constraint hash
 static std::map <int, Constraints *> constraintsCache;
+static rts2core::ConnNotify *watchConn = NULL;
 
 void ConstraintsList::printJSON (std::ostream &os)
 {
@@ -884,4 +885,21 @@ void MasterConstraints::setTargetConstraints (int tar_id, Constraints * _constra
 	if (old)
 		delete old;
 	constraintsCache[tar_id] = _constraints;
+}
+
+void MasterConstraints::setNotifyConnection (rts2core::ConnNotify *_watchConn)
+{
+	watchConn = _watchConn;
+}
+
+rts2core::ConnNotify *MasterConstraints::getNotifyConnection ()
+{
+	return watchConn;
+}
+
+void MasterConstraints::clearCache ()
+{
+	for (std::map <int, Constraints *>::iterator ci = constraintsCache.begin (); ci != constraintsCache.end (); ci++)
+		delete ci->second;
+	constraintsCache.clear ();
 }

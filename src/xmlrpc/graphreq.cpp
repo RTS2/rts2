@@ -73,7 +73,7 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 		val = conn->getValue ("current");
 		if (val && val->getValueInteger () >= 0)
 		{
-			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver ());
 			if (tar)
 			{
 				tar->getAltAz (&hrz, JD);
@@ -84,7 +84,7 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 		val = conn->getValue ("next");
 		if (val && val->getValueInteger () >= 0)
 		{
-			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver ());
 			if (tar)
 			{
 				tar->getAltAz (&hrz, JD);

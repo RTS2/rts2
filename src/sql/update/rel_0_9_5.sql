@@ -37,11 +37,19 @@ SELECT images.*, date_part('day', (timestamptz(images.img_date) - interval '12:0
 	date_part('year', (timestamptz(images.img_date) - interval '12:00')) AS img_year 
 	FROM images;
 
-CREATE TABLE schedules (
+CREATE TABLE queues_targets (
+	qid         integer PRIMARY KEY,
 	queue_id    integer NOT NULL,
 	tar_id 	    integer REFERENCES targets(tar_id),
+	plan_id     integer REFERENCES plan(plan_id),
 	time_start  timestamp,
-	time_end    timestamp
+	time_end    timestamp,
+	queue_order integer
 );
+
+CREATE SEQUENCE qid;
+
+-- add bb ID for planned entries
+ALTER TABLE plan ADD COLUMN bb_schedule_id varchar(50);
 
 ALTER TABLE targets ADD COLUMN tar_telescope_mode integer default NULL;

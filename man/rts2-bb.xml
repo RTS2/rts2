@@ -86,6 +86,14 @@
 	  </para>
 	</listitem>
       </varlistentry>
+      <varlistentry>
+        <term>schedule_from <replaceable class="parameter">from_time</replaceable></term>
+	<listitem>
+	  <para>
+	    Observatory reports possible scheduling times.
+	  </para>
+	</listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>

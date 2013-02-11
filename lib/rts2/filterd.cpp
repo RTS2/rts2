@@ -25,7 +25,7 @@ Filterd::Filterd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_arg
 {
 	createValue (filter, "filter", "used filter", false, RTS2_VALUE_WRITABLE);
 
-	addOption ('F', NULL, 1, "filter names, separated by space(s)");
+	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
 }
 
 Filterd::~Filterd (void)

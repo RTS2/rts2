@@ -59,10 +59,7 @@ void Observatory::load ()
 		observatory_id = :db_observatory_id;
 	
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
 
 	position.lng = db_longitude;
 	position.lat = db_latitude;
@@ -73,6 +70,11 @@ void Observatory::load ()
 	url = std::string (db_apiurl.arr);
 
 	EXEC SQL COMMIT;
+}
+
+void Observatory::auth (SoupAuth *_auth)
+{
+	soup_auth_authenticate (_auth, "petr", "test");
 }
 
 void Observatories::load ()
@@ -97,7 +99,6 @@ void Observatories::load ()
 		{
 			if (sqlca.sqlcode == ECPG_NOT_FOUND)
 				break;
-			EXEC SQL ROLLBACK;
 			throw rts2db::SqlError ();
 		}
 		push_back (Observatory (db_observatory_id));
@@ -145,10 +146,7 @@ void ObservatorySchedule::load ()
 		AND observatory_id = :db_observatory_id;
 	
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
 
 	state = db_state;
 }
@@ -197,10 +195,8 @@ void ObservatorySchedule::updateState (int _state, double _from, double _to)
 			AND observatory_id = :db_observatory_id;
 	}
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
+
 	EXEC SQL COMMIT;
 	state = _state;
 }
@@ -236,10 +232,9 @@ void BBSchedules::load ()
 	EXEC SQL SELECT tar_id INTO :db_tar_id FROM bb_schedules WHERE schedule_id = :db_schedule_id;
 
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
+	
+	tar_id = db_tar_id;
 
 	// load all schedules
 	EXEC SQL DECLARE cur_schedules CURSOR FOR
@@ -272,14 +267,8 @@ void BBSchedules::load ()
 		if (sqlca.sqlcode)
 		{
 			if (sqlca.sqlcode == ECPG_NOT_FOUND)
-			{
 				break;
-			}
-			else
-			{
-				EXEC SQL ROLLBACK;
-				throw rts2db::SqlError ();
-			}
+			throw rts2db::SqlError ();
 		}
 
 		push_back (ObservatorySchedule (db_schedule_id, db_observatory_id, db_state, db_nan_double (db_created, db_created_ind), db_nan_double (db_last_update, db_last_update_ind), db_nan_double (db_sched_from, db_sched_from_ind), db_nan_double (db_sched_to, db_sched_to_ind)));
@@ -309,10 +298,8 @@ void rts2bb::createMapping (int observatory_id, int tar_id, int obs_tar_id)
 		(:db_observatory_id, :db_tar_id, :db_obs_tar_id);
 
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
+	
 	EXEC SQL COMMIT;
 }
 
@@ -361,10 +348,7 @@ void rts2bb::reportObservation (int observatory_id, int obs_id, int obs_tar_id, 
 			observatory_id = :db_observatory_id AND obs_id = :db_obs_id;
 
 		if (sqlca.sqlcode)
-		{
-			EXEC SQL ROLLBACK;
 			throw rts2db::SqlError ();
-		}
 	}
 	else
 	{
@@ -378,10 +362,7 @@ void rts2bb::reportObservation (int observatory_id, int obs_id, int obs_tar_id, 
 			:db_onsky :db_onsky_ind, :db_good_images, :db_bad_images);
 
 		if (sqlca.sqlcode)
-		{
-			EXEC SQL ROLLBACK;
 			throw rts2db::SqlError ();
-		}
 	}
 	EXEC SQL COMMIT;
 }
@@ -397,10 +378,8 @@ int rts2bb::findMapping (int observatory_id, int obs_tar_id)
 	EXEC SQL SELECT tar_id INTO :db_tar_id FROM targets_observatories WHERE observatory_id = :db_observatory_id AND obs_tar_id = :db_obs_tar_id;
 
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
+
 	EXEC SQL ROLLBACK;
 	return db_tar_id;
 }
@@ -416,10 +395,8 @@ int rts2bb::findObservatoryMapping (int observatory_id, int tar_id)
 	EXEC SQL SELECT obs_tar_id INTO :db_obs_tar_id FROM targets_observatories WHERE observatory_id = :db_observatory_id AND tar_id = :db_tar_id;
 
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
+
 	EXEC SQL ROLLBACK;
 	return db_obs_tar_id;
 }
@@ -441,10 +418,7 @@ int rts2bb::createSchedule (int target_id)
 	);
 
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw rts2db::SqlError ();
-	}
 
 	EXEC SQL COMMIT;
 	return db_schedule_id;

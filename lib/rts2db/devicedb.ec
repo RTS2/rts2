@@ -20,6 +20,8 @@
 #include "rts2db/devicedb.h"
 #include "configuration.h"
 
+#include <pwd.h>
+
 #define OPT_DEBUGDB    OPT_LOCAL + 201
 
 using namespace rts2db;
@@ -162,7 +164,8 @@ int DeviceDb::initDB ()
 		EXEC SQL CONNECT TO :c_db;
 		if (sqlca.sqlcode != 0)
 		{
-			logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db << "'. Please check if the database server is running (on specified port, or on port 5432, which is the default one; please be aware that RTS2 does not parse PostgreSQL configuration, so if the database is running on the non-default port, it will not be accessible unless you specify the port) : " << sqlca.sqlerrm.sqlerrmc << sendLog;
+			struct passwd *up = getpwuid (geteuid ());
+			logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db << "'. Please check if the database server is running (on specified port, or on port 5432, which is the default one; please be aware that RTS2 does not parse PostgreSQL configuration, so if the database is running on the non-default port, it will not be accessible unless you specify the port). Also please make sure that the current user, " << up->pw_name << "(" << up->pw_uid << ") can log into database: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 			return -1;
 		}
 	}

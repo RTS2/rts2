@@ -19,6 +19,7 @@
  */
 
 #include "selector.h"
+#include "rts2db/constraints.h"
 #include "rts2script/connselector.h"
 #include "rts2script/executorque.h"
 #include "rts2script/simulque.h"
@@ -190,6 +191,7 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 
 	notifyConn = new rts2core::ConnNotify (this);
 	addConnection (notifyConn);
+	rts2db::MasterConstraints::setNotifyConnection (notifyConn);
 
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
@@ -292,7 +294,7 @@ int SelectorDev::reloadConfig ()
 
 	delete sel;
 
-	sel = new rts2plan::Selector (notifyConn, &cameras);
+	sel = new rts2plan::Selector (&cameras);
 
 	sel->setObserver (observer);
 	sel->init ();
@@ -332,12 +334,15 @@ int SelectorDev::init ()
 	createValue (selQueNames, "queue_names", "selector queue names", false);
 	createValue (lastQueue, "last_queue", "queue used for last selection", false);
 	lastQueue->addSelVal ("automatic");
-	
-	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
-	{
-		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer));
-		lastQueue->addSelVal (*iter);
 
+	int i = 0;
+	
+	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++, i++)
+	{
+		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer, i));
+		queues.back ().load (i);
+
+		lastQueue->addSelVal (*iter);
 		selQueNames->addValue (std::string (*iter));
 	}
 
@@ -706,7 +711,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		}
 		try
 		{
-			if (q->queueFromConn (conn, index, withTimes, notifyConn, false, NAN))
+			if (q->queueFromConn (conn, index, withTimes, false, NAN))
 				return -2;
 			afterQueueChange (q);
 		}
@@ -728,7 +733,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		rts2plan::ExecutorQueue * q = &(*qi);
 		try
 		{
-			if (q->queueFromConnQids (conn, notifyConn))
+			if (q->queueFromConnQids (conn))
 				return -2;
 			afterQueueChange (q);
 		}
@@ -778,7 +783,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 				return -2;
 			}
 		}
-		rts2db::Target *tar = createTarget (tar_id, observer, notifyConn);
+		rts2db::Target *tar = createTarget (tar_id, observer);
 		if (tar == NULL)
 			return -2;
 		qi->addFront (tar);

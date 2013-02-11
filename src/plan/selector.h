@@ -70,10 +70,9 @@ class Selector
 		/**
 		 * Selector constructor.
 		 *
-		 * @param _notifyConn  notification connection
 		 * @param cameras      list of cameras to select from
 		 */
-		Selector (rts2core::ConnNotify *_notifyConn = NULL, rts2db::CamList *cameras = NULL);
+		Selector (rts2db::CamList *cameras = NULL);
 		virtual ~ Selector (void);
 
 		void setObserver (struct ln_lnlat_posn *in_observer) { observer = in_observer; }
@@ -176,8 +175,6 @@ class Selector
 		{
 			return (std::find (nightDisabledTypes.begin (), nightDisabledTypes.end (), target_type) != nightDisabledTypes.end ());
 		}
-
-		rts2core::ConnNotify *notifyConn;
 };
 
 template <class Predicate> void Selector::printPossible (std::ostream &os, Predicate pred)

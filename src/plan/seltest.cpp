@@ -90,7 +90,7 @@ class SelectorApp:public PrintTarget
 
 using namespace rts2plan;
 
-SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv),sel(NULL, &cameras)
+SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv), sel(&cameras)
 {
 	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
 	addOption (OPT_FILTER_FILE, "filter-file", 1, "available filter for camera and file separated with :");

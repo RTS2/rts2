@@ -65,6 +65,8 @@ class Executor:public rts2db::DeviceDb
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
+		virtual void fileModified (struct inotify_event *event);
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -153,6 +155,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	scriptCount->setValueInteger (-1);
 
 	notifyConn = new rts2core::ConnNotify (this);
+	rts2db::MasterConstraints::setNotifyConnection (notifyConn);
 
 	waitState = 0;
 
@@ -568,7 +571,7 @@ void Executor::changeMasterState (int old_state, int new_state)
 			{
 			  	try
 				{
-					getActiveQueue ()->addFront (createTarget (1, observer, notifyConn));
+					getActiveQueue ()->addFront (createTarget (1, observer));
 					if (!currentTarget)
 						switchTarget ();
 				}
@@ -605,7 +608,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 {
 	try
 	{
-		rts2db::Target *nt = createTarget (tarId, observer, notifyConn);
+		rts2db::Target *nt = createTarget (tarId, observer);
 		if (!nt)
 			return -2;
 		if (nt->getTargetType () == TYPE_DARK && doDarks->getValueInteger () == 0)
@@ -650,7 +653,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 
 void Executor::createQueue (const char *name)
 {
-  	queues.push_back (ExecutorQueue (this, name, &observer));
+  	queues.push_back (ExecutorQueue (this, name, &observer, -1));
 	activeQueue->addSelVal (name, (Rts2SelData *) &(queues.back()));
 }
 
@@ -663,7 +666,7 @@ int Executor::setNow (int nextId)
 
 	try
 	{
-		newTarget = createTarget (nextId, observer, notifyConn);
+		newTarget = createTarget (nextId, observer);
 		if (!newTarget)
 			// error..
 			return -2;
@@ -720,7 +723,7 @@ int Executor::setGrb (int grbId)
 			logStream (MESSAGE_INFO) << "GRBs has 0 validity period, grb command ignored for GRB with target id " << grbId << sendLog;
 			return 0;
 		}
-		grbTarget = createTarget (grbId, observer, notifyConn);
+		grbTarget = createTarget (grbId, observer);
 
 		if (!grbTarget)
 			return -2;
@@ -837,7 +840,7 @@ void Executor::doSwitch ()
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ()))
 	{
 		// create again our target..since conditions changed, we will get different target id
-		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer, notifyConn));
+		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer));
 	}
 	if (autoLoop->getValueBool () == false && currentTarget && currentTarget->observationStarted ())
 	{
@@ -1103,6 +1106,14 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		return 0;
 	}
 	return rts2db::DeviceDb::commandAuthorized (conn);
+}
+
+
+void Executor::fileModified (struct inotify_event *event)
+{
+	currentTarget->revalidateConstraints (event->wd);
+	for (std::list <ExecutorQueue>::iterator iter = queues.begin (); iter != queues.end (); iter++)
+		iter->revalidateConstraints (event->wd);
 }
 
 int main (int argc, char **argv)

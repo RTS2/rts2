@@ -882,6 +882,15 @@ int Reflex::info ()
 	if (getState () & CAM_READING)
 		return Camera::info ();
 
+	std::string s;
+
+	// forcle all boards to be polled for their status
+	if (interfaceCommand (">L2\r", s, 1000, false))
+	{
+		logStream (MESSAGE_ERROR) << "error polling status" << sendLog;
+		return -1;
+	}
+
 	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
 	{
 		if (iter->second->infoUpdate ())

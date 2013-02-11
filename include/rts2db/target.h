@@ -33,7 +33,6 @@
 #include "objectcheck.h"
 #include "device.h"
 #include "rts2target.h"
-#include "connnotify.h"
 #include "counted_ptr.h"
 
 #include "targetset.h"
@@ -731,10 +730,6 @@ class Target:public Rts2Target
 		 */
 		virtual bool checkConstraints (double JD);
 
-		void setWatchConnection (rts2core::ConnNotify *watchC) { watchConn = watchC; }
-
-		rts2core::ConnNotify *getWatchConnection () { return watchConn; }
-
 		/**
 		 * Check if given ID is among watches for constraints
 		 * associated to the target. Delete constrainst if it is
@@ -789,7 +784,6 @@ class Target:public Rts2Target
 		// holds current target observation
 		Observation * observation;
 
-		rts2core::ConnNotify *watchConn;
 		std::vector <int> watchIDs;		// 
 
 		void addWatch (const char *filename);
@@ -1151,7 +1145,7 @@ Rts2InfoValStream & operator << (Rts2InfoValStream & _os, rts2db::Target & targe
  *
  * @return New target if it can be found. Otherwise will return NULL.
  */
-rts2db::Target *createTarget (int tar_id, struct ln_lnlat_posn *obs, rts2core::ConnNotify *watchConn = NULL);
+rts2db::Target *createTarget (int tar_id, struct ln_lnlat_posn *obs);
 
 /**
  * Create target by name.
