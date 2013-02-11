@@ -764,7 +764,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				throw JSONException ("cannot parse target");
 			struct ln_equ_posn pos;
 			target->getPosition (&pos);
-			os << "\"name\":\"" << tar_name << "\",\"ra\":" << pos.ra << ",\"dec\":" << pos.dec << ",\"desc\":\"" << target->getTargetInfo () << "\"";
+			os << "\"name\":\"" << tar_name << "\",\"ra\":" << pos.ra << ",\"dec\":" << pos.dec << ",\"info\":\"" << target->getTargetInfo () << "\"";
 			double nearest = params->getDouble ("nearest", -1);
 			if (nearest >= 0)
 			{
@@ -942,8 +942,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *tn = params->getString ("tn", "");
 			double ra = params->getDouble ("ra", NAN);
 			double dec = params->getDouble ("dec", NAN);
-			const char *desc = params->getString ("desc", "");
 			const char *type = params->getString ("type", "O");
+			const char *info = params->getString ("info", "");
+			const char *comment = params->getString ("comment", "");
 
 			if (strlen (tn) == 0)
 				throw JSONException ("empty target name");
@@ -953,7 +954,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			rts2db::ConstTarget nt;
 			nt.setTargetName (tn);
 			nt.setPosition (ra, dec);
-			nt.setTargetInfo (std::string (desc));
+			nt.setTargetInfo (std::string (info));
+			nt.setTargetComment (comment);
 			nt.setTargetType (type[0]);
 			nt.save (false);
 
@@ -980,7 +982,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 					double pm_ra = params->getDouble ("pm_ra", NAN);
 					double pm_dec = params->getDouble ("pm_dec", NAN);
 					bool enabled = params->getInteger ("enabled", tar->getTargetEnabled ());
-					const char *desc = params->getString ("desc", NULL);
+					const char *info = params->getString ("info", NULL);
 
 					if (strlen (tn) > 0)
 						tar->setTargetName (tn);
@@ -999,8 +1001,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 						}
 					}
 					tar->setTargetEnabled (enabled, true);
-					if (desc != NULL)
-						tar->setTargetInfo (std::string (desc));
+					if (info != NULL)
+						tar->setTargetInfo (std::string (info));
 					tar->save (true);
 		
 					os << "\"id\":" << tar->getTargetID ();
