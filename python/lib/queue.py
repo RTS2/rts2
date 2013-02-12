@@ -42,10 +42,11 @@ class QueueEntry:
 	def __init__(self, id, start, end, qid):
 		self.id = id
 		self.__start = self.__end = None
+		self.qid = qid
 		self.target = None
+
 		self.set_start(start)
 		self.set_end(end)
-		self.qid = qid
 	
 	def from_xml(self,el):
 		start = el.getAttribute('start')
