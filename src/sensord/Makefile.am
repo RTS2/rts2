@@ -4,12 +4,21 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
 	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-aag rts2-sensor-pwc \
 	rts2-sensor-hygrowin rts2-sensor-fram rts2-sensor-flwo-weather rts2-sensor-thorlaser \
-	rts2-sensor-arduino rts2-sensor-mdm-bait rts2-sensor-colores rts2-sensor-micropirani-925 rts2-sensor-dws-t5
+	rts2-sensor-arduino rts2-sensor-mdm-bait rts2-sensor-colores rts2-sensor-micropirani-925 rts2-sensor-dws-t5 \
+	rts2-sensor-cryocon rts2-sensor-keithley-scpi \
+	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
+	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
+	rts2-sensor-agilent-e3631a
+
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h \
 	sensorgpib.h
 
 EXTRA_DIST = 
+
+lib_LTLIBRARIES = librts2sensorgpib.la
+
+librts2sensorgpib_la_SOURCES = sensorgpib.cpp
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
@@ -62,6 +71,33 @@ rts2_sensor_hygrowin_SOURCES = hygrowin.cpp
 
 rts2_sensor_fram_SOURCES = fram.cpp
 
+rts2_sensor_cryocon_SOURCES = cryocon.cpp
+rts2_sensor_cryocon_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_keithley_scpi_SOURCES = keithley-scpi.cpp
+rts2_sensor_keithley_scpi_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
+rts2_sensor_keithley_487_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
+rts2_sensor_lakeshore_325_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_lakeshore_330_SOURCES = lakeshore-330.cpp
+rts2_sensor_lakeshore_330_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_lakeshore_340_SOURCES = lakeshore-340.cpp
+rts2_sensor_lakeshore_340_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_triax_SOURCES = triax.cpp
+rts2_sensor_triax_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_mm2500_SOURCES = mm2500.cpp
+rts2_sensor_mm2500_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
+rts2_sensor_agilent_e3631a_SOURCES = agilent-e3631a.cpp
+rts2_sensor_agilent_e3631a_LDADD = -lrts2sensorgpib -lrts2gpib ${LDADD}
+
 if SUNCYG
 EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp
 else
@@ -105,34 +141,7 @@ endif
 
 if GPIBLIB
 
-lib_LTLIBRARIES = librts2sensorgpib.la
-
-librts2sensorgpib_la_SOURCES = sensorgpib.cpp
-
-LDADD += -lrts2sensorgpib -lrts2gpib @LIB_GPIB@
-
-bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
-	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
-	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
-	rts2-sensor-agilent-e3631a
-
-rts2_sensor_cryocon_SOURCES = cryocon.cpp
-
-rts2_sensor_keithley_scpi_SOURCES = keithley-scpi.cpp
-
-rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
-
-rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
-
-rts2_sensor_lakeshore_330_SOURCES = lakeshore-330.cpp
-
-rts2_sensor_lakeshore_340_SOURCES = lakeshore-340.cpp
-
-rts2_sensor_triax_SOURCES = triax.cpp
-
-rts2_sensor_mm2500_SOURCES = mm2500.cpp
-
-rts2_sensor_agilent_e3631a_SOURCES = agilent-e3631a.cpp
+LDADD += @LIB_GPIB@
 
 else
 

@@ -18,8 +18,12 @@
  */
 
 #include "sensorgpib.h"
+#include "rts2-config.h"
 
+#ifdef RTS2_HAVE_GPIB_IB_H
 #include "connection/conngpiblinux.h"
+#endif
+
 #include "connection/conngpibenet.h"
 #include "connection/conngpibprologix.h"
 #include "connection/conngpibserial.h"
@@ -190,10 +194,12 @@ int Gpib::initHardware ()
 	{
 		connGpib = new rts2core::ConnGpibSerial (this, serial_port, serial_baud, serial_csize, serial_parity, serial_sep);
 	}
+#ifdef RTS2_HAVE_GPIB_IB_H
 	else if (pad >= 0)
 	{
 		connGpib = new rts2core::ConnGpibLinux (minor, pad);
 	}
+#endif
 	else
 	{
 		std::cerr << "Device connection was not specified, exiting" << std::endl;
