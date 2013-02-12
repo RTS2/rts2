@@ -148,7 +148,7 @@ root@host:rts2$ cp rts2.initd /etc/init.d/rts2
 
 Before you will run to:
 
-root@host:rts2$ cp services devices centrald sd /etc/rts2
+root@host:rts2$ cp conf/services conf/devices conf/centrald conf/sd /etc/rts2
 
 and editing /etc/rts2/devices (please see man rts2.devices for details what to
 enter), so you will be able to do start RTS2 with:
