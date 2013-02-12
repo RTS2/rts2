@@ -49,10 +49,21 @@ int Dome::domeCloseStart ()
 	if (isClosed () == -2)
 		return 0;
 
-	if (startClose ())
+	int ret = startClose ();
+
+	if (ret < 0)
 	{
 		logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
 		return -1;
+	}
+	if (ret > 0)
+	{
+		if ((getState () & DOME_DOME_MASK) != DOME_WAIT_CLOSING)
+		{
+			logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "wait for equipment to stow" << sendLog;
+		}
+		maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_WAIT_CLOSING, "wait for equipment to stow");
+		return 0;
 	}
 	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
 	{

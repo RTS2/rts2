@@ -236,13 +236,14 @@
 
 // dome status
 
-#define DOME_DOME_MASK      0x0f
+#define DOME_DOME_MASK      0x1f
 
 #define DOME_UNKNOW         0x00
 #define DOME_CLOSED         0x01
 #define DOME_OPENING        0x02
 #define DOME_OPENED         0x04
 #define DOME_CLOSING        0x08
+#define DOME_WAIT_CLOSING   0x10
 
 #define DOME_CUP_MASK       0xc0
 

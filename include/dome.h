@@ -114,7 +114,7 @@ class Dome:public rts2core::Device
 		 * Called when dome needs to be closed. Should start dome
 		 * closing sequence.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @return -1 on error, 0 on success, 1 if dome will close (trigger for close) after equipment is stowed
 		 */
 		virtual int startClose () = 0;
 
