@@ -229,7 +229,7 @@ int App::processOption (int in_opt)
 		case OPT_VERSION:
 			std::cout << "Part of RTS2 version: " << RTS2_VERSION << std::endl
 				<< std::endl
-				<< "(C) 2001-2008 Petr Kubanek and others, see AUTHORS file for complete list"
+				<< "(C) 2001-2013 Petr Kubanek and others, see AUTHORS file for complete list"
 				<< std::endl
 				<< std::endl
 				<< "This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org. \
