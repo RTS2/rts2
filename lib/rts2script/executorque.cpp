@@ -779,7 +779,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 		sq.front ().target->getPosition (nextp, JD);
 		ln_get_hrz_from_equ (nextp, *observer, JD, &hrz);
 		double md = getMaximalDuration (sq.front ().target, currentp);
-		if (sq.front ().target->isAboveHorizon (&hrz) && sq.front ().notExpired (from) && from + md < to)
+		if (isAboveHorizon (sq.front(), JD) && sq.front ().notExpired (from) && from + md < to)
 		{
 		  	// single execution?
 			if (removeAfterExecution->getValueBool ())
