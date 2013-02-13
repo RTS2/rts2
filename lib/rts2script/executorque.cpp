@@ -214,9 +214,9 @@ bool TargetQueue::filter (double now, double maxLength, bool removeObserved)
 	std::list <QueuedTarget> skipped;
 	filterUnobservable (now, maxLength, skipped, removeObserved);
 	TargetQueue::iterator it = begin ();
-	if (!empty ())
+	if (!empty () && (isnan (front().t_start) || front().t_start <= now))
 	{
-		ret = true;	
+		ret = true;
 		it++;
 	}
 	insert (it, skipped.begin (), skipped.end ());
@@ -773,11 +773,9 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 		return -1;
 	if (sq.size () > 0)
 	{
-		struct ln_hrz_posn hrz;
 		time_t tn = from;
 		double JD = ln_get_julian_from_timet (&tn);
 		sq.front ().target->getPosition (nextp, JD);
-		ln_get_hrz_from_equ (nextp, *observer, JD, &hrz);
 		double md = getMaximalDuration (sq.front ().target, currentp);
 		if (isAboveHorizon (sq.front(), JD) && sq.front ().notExpired (from) && from + md < to)
 		{
