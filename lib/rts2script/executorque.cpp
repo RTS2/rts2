@@ -21,6 +21,7 @@
 #include "rts2script/executorque.h"
 #include "rts2script/script.h"
 #include "rts2db/constraints.h"
+#include "rts2db/sqlerror.h"
 
 using namespace rts2plan;
 
@@ -510,7 +511,7 @@ bool TargetQueue::frontTimeExpires (double now)
 	return !iter->notExpired (now);
 }
 
-ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, int _queue_id, bool read_only):TargetQueue (_master, _observer)
+ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, int _queue_id, bool read_only):TargetQueue (_master, _observer), queue (_queue_id)
 {
 	std::string sn (name);
 	currentTarget = NULL;
@@ -562,6 +563,33 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 	queueType->addSelVal ("WESTEAST");
 	queueType->addSelVal ("WESTEAST_MERIDIAN");
 	queueType->addSelVal ("SET_TIMES");
+
+	if (queue_id >= 0)
+	{
+		try
+		{
+			queue.load ();
+
+			queueType->setValueInteger (queue.queue_type);
+			skipBelowHorizon->setValueBool (queue.skip_below_horizon);
+			testConstraints->setValueBool (queue.test_constraints);
+			removeAfterExecution->setValueBool (queue.remove_after_execution);
+			blockUntilVisible->setValueBool (queue.block_until_visible);
+			queueEnabled->setValueBool (queue.queue_enabled);
+			queueWindow->setValueFloat (queue.queue_window);
+		}
+		catch (rts2db::SqlError)
+		{
+			queue.queue_type = getQueueType ();
+			queue.skip_below_horizon = getSkipBelowHorizon ();
+			queue.test_constraints = getTestConstraints ();
+			queue.remove_after_execution = getRemoveAfterExecution ();
+			queue.block_until_visible = getBlockUntilVisible ();
+			queue.queue_enabled = queueEnabled->getValueBool ();
+			queue.queue_window = queueWindow->getValueFloat ();
+			queue.create ();
+		}
+	}
 }
 
 ExecutorQueue::~ExecutorQueue ()
@@ -941,6 +969,20 @@ void ExecutorQueue::updateVals ()
 
 		iter->update ();
 	}
+
+	if (queue_id >= 0)
+	{
+		queue.queue_type = getQueueType ();
+		queue.skip_below_horizon = getSkipBelowHorizon ();
+		queue.test_constraints = getTestConstraints ();
+		queue.remove_after_execution = getRemoveAfterExecution ();
+		queue.block_until_visible = getBlockUntilVisible ();
+		queue.queue_enabled = queueEnabled->getValueBool ();
+		queue.queue_window = queueWindow->getValueFloat ();
+
+		queue.update ();
+	}
+
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
 	nextStartTimes->setValueArray (_start_arr);

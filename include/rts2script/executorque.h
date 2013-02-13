@@ -389,6 +389,7 @@ class ExecutorQueue:public TargetQueue
 		ExecutorQueue::iterator findIndex (int index);
 
 		rts2db::Target *currentTarget;
+		rts2db::Queue queue;
 
 		// to allow SimulQueueTargets access to protected methods
 		friend class SimulQueueTargets;

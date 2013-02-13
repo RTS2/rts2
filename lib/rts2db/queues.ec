@@ -295,6 +295,26 @@ void Queue::load ()
 	EXEC SQL ROLLBACK;
 }
 
+void Queue::save ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_queue_id = queue_id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT queue_id FROM queues WHERE queue_id = :db_queue_id;
+
+	if (sqlca.sqlcode)
+	{
+		if (sqlca.sqlcode != ECPG_NOT_FOUND)
+			throw SqlError ();
+		create ();
+	}
+	else
+	{
+		update ();
+	}
+}
+
 void Queue::create ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;

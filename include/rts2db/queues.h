@@ -116,9 +116,10 @@ class Queue
 		Queue (int queue_id);
 
 		void load ();
+		void save ();
 		void create ();
 		void update ();
-	private:
+
 		int queue_id;
 		int queue_type;
 		bool skip_below_horizon;
