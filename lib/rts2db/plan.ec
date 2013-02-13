@@ -39,6 +39,7 @@ Plan::Plan ()
 	observation = NULL;
 	plan_status = 0;
 	plan_start = plan_end = NAN;
+	qid = -1;
 }
 
 Plan::Plan (int in_plan_id)
@@ -51,6 +52,7 @@ Plan::Plan (int in_plan_id)
 	observation = NULL;
 	plan_status = 0;
 	plan_start = plan_end = NAN;
+	qid = -1;
 }
 
 Plan::Plan (const Plan &cp)
@@ -63,6 +65,7 @@ Plan::Plan (const Plan &cp)
 	plan_end = cp.plan_end;
 	plan_status = cp.plan_status;
 	bb_schedule_id = cp.bb_schedule_id;
+	qid = cp.qid;
 	target = cp.target;
 
 	target = NULL;
@@ -89,6 +92,8 @@ int Plan::load ()
 	int db_plan_status;
 	VARCHAR db_bb_schedule_id[50];
 	int db_bb_schedule_id_ind;
+	int db_qid;
+	int db_qid_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL SELECT
@@ -98,7 +103,8 @@ int Plan::load ()
 		EXTRACT (EPOCH FROM plan_start),
 		EXTRACT (EPOCH FROM plan_end),
 		plan_status,
-		bb_schedule_id
+		bb_schedule_id,
+		qid
 	INTO
 		:db_prop_id :db_prop_id_ind,
 		:db_tar_id,
@@ -106,7 +112,8 @@ int Plan::load ()
 		:db_plan_start,
 		:db_plan_end :db_plan_end_ind,
 		:db_plan_status,
-		:db_bb_schedule_id :db_bb_schedule_id_ind
+		:db_bb_schedule_id :db_bb_schedule_id_ind,
+		:db_qid :db_qid_ind
 	FROM
 		plan
 	WHERE
@@ -137,11 +144,16 @@ int Plan::load ()
 		bb_schedule_id = std::string ();
 	else
 		bb_schedule_id = std::string (db_bb_schedule_id.arr);
+	if (db_qid_ind)
+		qid = -1;
+	else
+		qid = db_qid;
+
 	EXEC SQL COMMIT;
 	return 0;
 }
 
-int Plan::loadBBSchedule (const char *bb_schedule_id)
+int Plan::loadBBSchedule (const char *_bb_schedule_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_plan_id;
@@ -155,14 +167,16 @@ int Plan::loadBBSchedule (const char *bb_schedule_id)
 	int db_plan_end_ind;
 	int db_plan_status;
 	VARCHAR db_bb_schedule_id[50];
+	int db_qid;
+	int db_qid_ind;
 	EXEC SQL END DECLARE SECTION;
 
-	size_t l = strlen (bb_schedule_id);
+	size_t l = strlen (_bb_schedule_id);
 
 	if (l >= 50)
 		throw rts2core::Error ("too long schedule id");
 
-	memcpy (db_bb_schedule_id.arr, bb_schedule_id, l);
+	memcpy (db_bb_schedule_id.arr, _bb_schedule_id, l);
 	db_bb_schedule_id.len = l;
 
 	EXEC SQL SELECT
@@ -172,7 +186,8 @@ int Plan::loadBBSchedule (const char *bb_schedule_id)
 		obs_id,
 		EXTRACT (EPOCH FROM plan_start),
 		EXTRACT (EPOCH FROM plan_end),
-		plan_status
+		plan_status,
+		qid
 	INTO
 		:db_plan_id,
 		:db_prop_id :db_prop_id_ind,
@@ -180,7 +195,8 @@ int Plan::loadBBSchedule (const char *bb_schedule_id)
 		:db_obs_id :db_obs_id_ind,
 		:db_plan_start,
 		:db_plan_end :db_plan_end_ind,
-		:db_plan_status
+		:db_plan_status,
+		:db_qid :db_qid_ind
 	FROM
 		plan
 	WHERE
@@ -206,6 +222,10 @@ int Plan::loadBBSchedule (const char *bb_schedule_id)
 	else
 		plan_end = db_plan_end;
 	plan_status = db_plan_status;
+	if (db_qid_ind)
+		qid = -1;
+	else
+		qid = db_qid;
 	EXEC SQL COMMIT;
 	return 0;
 }
@@ -226,6 +246,8 @@ int Plan::save ()
 	int db_plan_status = plan_status;
 	VARCHAR db_bb_schedule_id[50];
 	int db_bb_schedule_id_ind;
+	int db_qid;
+	int db_qid_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	// don't save entries with same target id as master plan
@@ -282,6 +304,12 @@ int Plan::save ()
 		db_bb_schedule_id_ind = 0;
 	}
 
+	db_qid = qid;
+	if (qid > 0)
+		db_qid_ind = 0;
+	else
+		db_qid_ind = -1;
+
 	EXEC SQL INSERT INTO plan (
 		plan_id,
 		tar_id,
@@ -290,7 +318,8 @@ int Plan::save ()
 		plan_start,
 		plan_end,
 		plan_status,
-		bb_schedule_id
+		bb_schedule_id,
+		qid
 	)
 	VALUES (
 		:db_plan_id,
@@ -300,7 +329,8 @@ int Plan::save ()
 		to_timestamp (:db_plan_start),
 		to_timestamp (:db_plan_end :db_plan_end_ind),
 		:db_plan_status,
-		:db_bb_schedule_id :db_bb_schedule_id_ind
+		:db_bb_schedule_id :db_bb_schedule_id_ind,
+		:db_qid :db_qid_ind
 	);
 
 	if (sqlca.sqlcode)
@@ -317,7 +347,8 @@ int Plan::save ()
 			plan_start = to_timestamp (:db_plan_start),
 			plan_end = to_timestamp (:db_plan_end :db_plan_end_ind),
 			plan_status = :db_plan_status,
-			bb_schedule_id = :db_bb_schedule_id
+			bb_schedule_id = :db_bb_schedule_id,
+			qid = :db_qid :db_qid_ind
 		WHERE
 			plan_id = :db_plan_id;
 		if (sqlca.sqlcode)
@@ -414,6 +445,26 @@ void Plan::setObsId (int in_obs_id)
 		EXEC SQL COMMIT;
 		obs_id = db_obs_id;
 	}
+}
+
+void Plan::setQid (int _qid)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_plan_id = plan_id;
+	int db_qid = _qid;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL UPDATE
+		plan
+	SET
+		qid = :db_qid
+	WHERE
+		plan_id = :db_plan_id;
+	
+	if (sqlca.sqlcode)
+		throw SqlError();
+	
+	EXEC SQL COMMIT;
 }
 
 void Plan::print (std::ostream & _os)

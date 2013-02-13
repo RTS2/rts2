@@ -250,7 +250,18 @@ class ExecutorQueue:public TargetQueue
 		ExecutorQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, int queue_id, bool read_only = false);
 		virtual ~ExecutorQueue ();
 
+		/**
+		 * Add new queue entry on front of the queue.
+		 *
+		 * @return Added queue ID.
+		 */
 		int addFront (rts2db::Target *nt, double t_start = NAN, double t_end = NAN);
+
+		/**
+		 * Add new queue entry at the given position.
+		 *
+		 * @return Inserted queue ID.
+		 */
 		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int index = -1, int plan_id = -1, bool hard = false, bool persistent = true);
 
 		/**

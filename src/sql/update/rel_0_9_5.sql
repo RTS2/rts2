@@ -51,5 +51,6 @@ CREATE SEQUENCE qid;
 
 -- add bb ID for planned entries
 ALTER TABLE plan ADD COLUMN bb_schedule_id varchar(50);
+ALTER TABLE plan ADD COLUMN qid integer REFERENCES queues_targets(qid);
 
 ALTER TABLE targets ADD COLUMN tar_telescope_mode integer default NULL;

@@ -248,7 +248,7 @@ void XmlRpcd::confirmSchedule (rts2db::Plan &_plan)
 	if (selConn == NULL)
 		throw rts2core::Error ("cannot find selector connection");
 	std::ostringstream os;
-	os << "queue " << bbSelectorQueue->getSelName () << " " << _plan.getTargetId ();
+	os << "queue_plan_id " << bbSelectorQueue->getSelName () << " " << _plan.getPlanId ();
 	selConn->queCommand (new rts2core::Command (this, os.str ().c_str ()));
 }
 #endif

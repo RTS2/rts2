@@ -571,16 +571,18 @@ ExecutorQueue::~ExecutorQueue ()
 
 int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 {
-	push_front (QueuedTarget (queue_id, nt, t_start, t_end));
+	QueuedTarget qt (queue_id, nt, t_start, t_end);
+	push_front (qt);
 	updateVals ();
-	return 0;
+	return qt.qid;
 }
 
 int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int index, int plan_id, bool hard, bool persistent)
 {
-	insert (findIndex (index), QueuedTarget (queue_id, nt, t_start, t_end, plan_id, hard, persistent));
+  	QueuedTarget qt (queue_id, nt, t_start, t_end, plan_id, hard, persistent);
+	insert (findIndex (index), qt);
 	updateVals ();
-	return 0;
+	return qt.qid;
 }
 
 int ExecutorQueue::removeIndex (int index)

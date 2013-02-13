@@ -67,6 +67,7 @@ class Plan
 		int getObsId () { return obs_id; }
 
 		void setObsId (int in_obs_id);
+		void setQid (int qid);
 
 		void setTargetId (int id) { tar_id = id; }
 
@@ -104,6 +105,7 @@ class Plan
 
 		int plan_status;
 		std::string bb_schedule_id;
+		int qid;
 
 		Target *target;
 		Observation *observation;

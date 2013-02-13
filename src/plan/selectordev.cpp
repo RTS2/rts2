@@ -155,7 +155,8 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::ConnNotify *notifyConn;
 
 		// load plan to queue
-		void queuePlan (rts2plan::ExecutorQueue *, double t);
+		void queuePlan (rts2plan::ExecutorQueue *q, double t);
+		void queuePlanId (rts2plan::ExecutorQueue *q, int plan_id);
 
 		rts2plan::Queues::iterator findQueue (const char *name);
 
@@ -677,7 +678,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return updateNext (true, tar_id, obs_id) == 0 ? 0 : -2;
 	}
-	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan") || conn->isCommand ("insert"))
+	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan") || conn->isCommand ("queue_plan_id") || conn->isCommand ("insert"))
 	{
 		bool withTimes = conn->isCommand ("queue_at");
 		int index = -1;
@@ -701,6 +702,15 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 			if (conn->paramNextDouble (&t) || !conn->paramEnd ())
 				return -2;
 			queuePlan (q, t);
+			updateNext ();
+			return 0;
+		}
+		else if (conn->isCommand ("queue_plan_id"))
+		{
+			int plan_id;
+			if (conn->paramNextInteger (&plan_id) || !conn->paramEnd ())
+				return -2;
+			queuePlanId (q, plan_id);
 			updateNext ();
 			return 0;
 		}
@@ -881,9 +891,19 @@ void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
 	p.load ();
 	for (rts2db::PlanSet::iterator iter = p.begin (); iter != p.end (); iter++)
 	{
-		q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd (), iter->getPlanId ());
+		int qid = q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd (), iter->getPlanId ());
+		iter->setQid (qid);
 		iter->clearTarget ();
 	}
+}
+
+void SelectorDev::queuePlanId (rts2plan::ExecutorQueue *q, int plan_id)
+{
+	rts2db::Plan p (plan_id);
+	p.load ();
+
+	int qid = q->addTarget (p.getTarget (), p.getPlanStart (), p.getPlanEnd (), p.getPlanId ());
+	p.setQid (qid);
 }
 
 void SelectorDev::afterQueueChange (rts2plan::ExecutorQueue *q)
