@@ -41,7 +41,7 @@ Rts2TargetApp::~Rts2TargetApp (void)
 
 void Rts2TargetApp::getObject (const char *obj_text)
 {
-	target = createTargetByString (obj_text);
+	target = createTargetByString (obj_text, getDebug ());
 }
 
 int Rts2TargetApp::askForDegrees (const char *desc, double &val)

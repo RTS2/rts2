@@ -63,9 +63,10 @@ class SimbadTarget:public ConstTarget
  *
  * @param tar_string  String containing target name, RA DEC position, MPEC one-line or anything else that can be usefull to
  *               identify target.
+ * @param debug Print debug data.
  *
  * @return new target object. Caller must deallocate target object (delete it).
  */
-rts2db::Target *createTargetByString (const char *tar_string);
+rts2db::Target *createTargetByString (const char *tar_string, bool debug);
 
 #endif							 /* !__RTS2__SIMBADTARGET__ */

@@ -47,6 +47,17 @@ CREATE TABLE queues_targets (
 	queue_order integer
 );
 
+CREATE TABLE queues (
+	queue_id                integer PRIMARY KEY,
+	queue_type              integer NOT NULL,
+	skip_below_horizon      boolean NOT NULL,
+	test_constraints        boolean NOT NULL,
+	remove_after_execution  boolean NOT NULL,
+	block_until_visible     boolean NOT NULL,
+	queue_enabled           boolean NOT NULL,
+	queue_window            float NOT NULL
+);
+
 CREATE SEQUENCE qid;
 
 -- add bb ID for planned entries

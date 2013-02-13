@@ -204,6 +204,12 @@ class App:public Object
 
 		bool usesLocalTime () { return useLocalTime; }
 
+		/**
+		 * Return set debug level.
+		 *
+		 * @return debug level
+		 */
+		int getDebug () { return debug; }
 	protected:
 		/**
 		 * Called to process options of the programme.
@@ -260,12 +266,6 @@ class App:public Object
 		 */
 		virtual int init ();
 
-		/**
-		 * Return set debug level.
-		 *
-		 * @return debug level
-		 */
-		int getDebug () { return debug; }
 	private:
 		/**
 		 * Holds options which might be passed to the program.

@@ -233,7 +233,7 @@ void SimbadTarget::printExtra (Rts2InfoValStream & _ivs)
 	}
 }
 
-Target *createTargetByString (const char *tar_string)
+Target *createTargetByString (const char *tar_string, bool debug)
 {
 	Target *rtar = NULL;
 
@@ -260,13 +260,15 @@ Target *createTargetByString (const char *tar_string)
 	}
 	// if it's MPC ephemeris..
 	rtar = new EllTarget ();
-	ret = ((EllTarget *) rtar)->orbitFromMPC (tar_string);
+	ret = ((EllTarget *) rtar)->orbitFromMPC (tar_string, debug);
 	if (ret == 0)
 	{
 		return rtar;
 	}
 
 	delete rtar;
+
+	XmlRpcLogHandler::setVerbosity (debug ? 5 : 0);
 
 	// try to get target from SIMBAD
 	try

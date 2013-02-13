@@ -25,6 +25,7 @@ GRANT ALL ON filters TO GROUP observers;
 GRANT ALL ON calibration_observation TO GROUP observers;
 GRANT ALL ON labels TO GROUP observers;
 GRANT ALL ON target_labels TO GROUP observers;
+GRANT ALL ON queues TO GROUP observers;
 GRANT ALL ON queues_targets TO GROUP observers;
 GRANT ALL ON qid TO GROUP observers;
 GRANT ALL ON swift_observation TO GROUP observers;

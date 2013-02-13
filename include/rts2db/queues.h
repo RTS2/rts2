@@ -107,6 +107,28 @@ class QueueEntry
  */
 std::list <unsigned int> queueQids (int queue_id);
 
+/**
+ * Class representing a queue.
+ */
+class Queue
+{
+	public:
+		Queue (int queue_id);
+
+		void load ();
+		void create ();
+		void update ();
+	private:
+		int queue_id;
+		int queue_type;
+		bool skip_below_horizon;
+		bool test_constraints;
+		bool remove_after_execution;
+		bool block_until_visible;
+		bool queue_enabled;
+		float queue_window;
+};
+
 }
 
 #endif // __RTS2_QUEUES__

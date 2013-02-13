@@ -144,10 +144,8 @@ void QueueEntry::create ()
 		:db_queue_order
 	);
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw SqlError ();
-	}
+
 	EXEC SQL COMMIT;
 }
 
@@ -181,10 +179,8 @@ void QueueEntry::update ()
 	WHERE
 		qid = :db_qid;
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw SqlError ();
-	}
+	
 	EXEC SQL COMMIT;
 }
 
@@ -200,10 +196,8 @@ void QueueEntry::remove ()
 	EXEC SQL DELETE FROM queues_targets WHERE qid = :db_qid;
 
 	if (sqlca.sqlcode)
-	{
-		EXEC SQL ROLLBACK;
 		throw SqlError ();
-	}
+
 	EXEC SQL COMMIT;
 }
 
@@ -240,10 +234,136 @@ std::list <unsigned int> rts2db::queueQids (int queue_id)
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		EXEC SQL CLOSE cur_queues;
-		EXEC SQL ROLLBACK;
 		throw SqlError ();
 	}
 	EXEC SQL CLOSE cur_queues;
 	EXEC SQL ROLLBACK;
 	return ret;
+}
+
+Queue::Queue (int _queue_id)
+{
+	queue_id = _queue_id;
+}
+
+void Queue::load ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_queue_id = queue_id;
+
+	int db_queue_type;
+	bool db_skip_below_horizon;
+	bool db_test_constraints;
+	bool db_remove_after_execution;
+	bool db_block_until_visible;
+	bool db_queue_enabled;
+	float db_queue_window;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT
+		queue_type,
+		skip_below_horizon,
+		test_constraints,
+		remove_after_execution,
+		block_until_visible,
+		queue_enabled,
+		queue_window
+	INTO
+		:db_queue_type,
+		:db_skip_below_horizon,
+		:db_test_constraints,
+		:db_remove_after_execution,
+		:db_block_until_visible,
+		:db_queue_enabled,
+		:db_queue_window
+	FROM
+		queues
+	WHERE
+		queue_id = :db_queue_id;
+	
+	if (sqlca.sqlcode)
+		throw SqlError ();
+
+	queue_type = db_queue_type;
+	skip_below_horizon = db_skip_below_horizon;
+	test_constraints = db_test_constraints;
+	remove_after_execution = db_remove_after_execution;
+	block_until_visible = db_block_until_visible;
+	queue_enabled = db_queue_enabled;
+	queue_window = db_queue_window;
+	
+	EXEC SQL ROLLBACK;
+}
+
+void Queue::create ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_queue_id = queue_id;
+
+	int db_queue_type = queue_type;
+	bool db_skip_below_horizon = skip_below_horizon;
+	bool db_test_constraints = test_constraints;
+	bool db_remove_after_execution = remove_after_execution;
+	bool db_block_until_visible = block_until_visible;
+	bool db_queue_enabled = queue_enabled;
+	float db_queue_window = queue_window;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL INSERT INTO queues(
+		queue_id,
+		queue_type,
+		skip_below_horizon,
+		test_constraints,
+		remove_after_execution,
+		block_until_visible,
+		queue_enabled,
+		queue_window)
+	VALUES (
+		:db_queue_id,
+		:db_queue_type,
+		:db_skip_below_horizon,
+		:db_test_constraints,
+		:db_remove_after_execution,
+		:db_block_until_visible,
+		:db_queue_enabled,
+		:db_queue_window
+	);
+	
+	if (sqlca.sqlcode)
+		throw SqlError ();
+	
+	EXEC SQL COMMIT;
+}
+
+void Queue::update ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_queue_id = queue_id;
+
+	int db_queue_type = queue_type;
+	bool db_skip_below_horizon = skip_below_horizon;
+	bool db_test_constraints = test_constraints;
+	bool db_remove_after_execution = remove_after_execution;
+	bool db_block_until_visible = block_until_visible;
+	bool db_queue_enabled = queue_enabled;
+	float db_queue_window = queue_window;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL UPDATE
+		queues
+	SET
+		queue_type = :db_queue_type,
+		skip_below_horizon = :db_skip_below_horizon,
+		test_constraints = :db_test_constraints,
+		remove_after_execution = :db_remove_after_execution,
+		block_until_visible = :db_block_until_visible,
+		queue_enabled = :db_queue_enabled,
+		queue_window = :db_queue_window
+	WHERE
+		queue_id = :db_queue_id;
+	
+	if (sqlca.sqlcode)
+		throw SqlError ();
+	
+	EXEC SQL COMMIT;
 }

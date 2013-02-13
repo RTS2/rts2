@@ -39,7 +39,7 @@ void EllTarget::load ()
 	  	throw rts2core::Error (std::string ("cannot parse MPEC string ") + getTargetInfo ());
 }
 
-int EllTarget::orbitFromMPC (const char *mpc)
+int EllTarget::orbitFromMPC (const char *mpc, bool debug)
 {
 	int ret;
 	if ((ret = LibnovaEllFromMPC (&orbit, designation, mpc)) && (ret = LibnovaEllFromMPCComet (&orbit, designation, mpc)))

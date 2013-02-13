@@ -759,7 +759,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *tar_name = params->getString ("ts", "");
 			if (tar_name[0] == '\0')
 				throw JSONException ("empty ts parameter");
-			rts2db::Target *target = createTargetByString (tar_name);
+			rts2db::Target *target = createTargetByString (tar_name, master->getDebug ());
 			if (target == NULL)
 				throw JSONException ("cannot parse target");
 			struct ln_equ_posn pos;
