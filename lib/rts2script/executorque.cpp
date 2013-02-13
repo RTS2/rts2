@@ -594,7 +594,11 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 
 ExecutorQueue::~ExecutorQueue ()
 {
-	clearNext ();
+	currentTarget = NULL;
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+	{
+		delete iter->target;
+	}
 }
 
 int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
