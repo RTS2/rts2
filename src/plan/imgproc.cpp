@@ -362,9 +362,12 @@ void ImageProc::changeMasterState (int old_state, int new_state)
 			break;
 
 		default:
-			reprocessingPossible = 1;
-			if (!runningImage && imagesQue.size () == 0)
-				checkNotProcessed ();
+			if (strlen (image_glob->getValue ()))
+			{
+				reprocessingPossible = 1;
+				if (!runningImage && imagesQue.size () == 0)
+					checkNotProcessed ();
+			}
 	}
 	// start dark & flat processing
 #ifdef RTS2_HAVE_PGSQL
