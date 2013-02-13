@@ -262,9 +262,8 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				gchar *out = json_generator_to_data (gen, NULL);
 				os << out;
 
-				std::cout << os.str () << std::endl;
-
 				g_free (out);
+				g_object_unref (gen);
 			}
 			else if (vals[3] == "get")
 			{
@@ -277,7 +276,9 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				json_generator_set_root (gen, node);
 				gchar *out = json_generator_to_data (gen, NULL);
 				os << out;
-				g_free (gen);
+
+				g_free (out);
+				g_object_unref (gen);
 			}
 			else
 			{
@@ -288,6 +289,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		{
 			os << iter->second.first;
 		}
+		else
 		{
 			throw JSONException ("invalid request");
 		}

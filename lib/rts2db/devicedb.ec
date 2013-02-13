@@ -49,7 +49,7 @@ DeviceDb::~DeviceDb (void)
 {
 	EXEC SQL DISCONNECT;
 	if (connectString)
-		delete connectString;
+		delete[] connectString;
 }
 
 void DeviceDb::postEvent (rts2core::Event *event)
