@@ -35,7 +35,7 @@ ConnBBQueue::~ConnBBQueue ()
 	if (obs_sched)
 	{
 		if (obs_sched->getState () == BB_SCHEDULE_CREATED)
-			obs_sched->updateState (BB_SCHEDULE_OBSERVABLE);
+			obs_sched->updateState (BB_SCHEDULE_OBSERVABLE, obs_sched->getFrom (), obs_sched->getTo ());
 		master->postEvent (new rts2core::Event (EVENT_SCHEDULING_DONE, (void *) obs_sched));
 	}
 	delete obs_sched;

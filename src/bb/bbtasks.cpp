@@ -75,7 +75,6 @@ JsonParser *BBTask::jsonRequest (int observatory_id, std::string path)
 		return NULL;
 	}
 
-	g_error_free (error);
 	g_object_unref (msg);
 	g_object_unref (session);
 
@@ -110,7 +109,7 @@ int BBConfirmTask::run ()
 			}
 			else
 			{
-				iter->updateState (BB_SCHEDULE_BACKUP);
+				iter->updateState (BB_SCHEDULE_BACKUP, iter->getFrom (), iter->getTo ());
 			}
 		}
 	}
@@ -127,8 +126,12 @@ void BBConfirmTask::confirmTarget (BBSchedules &bbsch, ObservatorySchedule &sche
 	std::ostringstream url;
 
 	url << "/bbapi/confirm?id=" << findObservatoryMapping (schedule.getObservatoryId (), bbsch.getTargetId ()) << "&schedule_id=OO" << schedule.getScheduleId ();
-	jsonRequest (schedule.getObservatoryId (), url.str ().c_str ());
-	schedule.updateState (BB_SCHEDULE_CONFIRMED);
+	JsonParser *ret = jsonRequest (schedule.getObservatoryId (), url.str ().c_str ());
+	if (ret)
+	{
+		schedule.updateState (BB_SCHEDULE_CONFIRMED, json_node_get_int (json_parser_get_root (ret)), schedule.getTo ());
+		g_object_unref (ret);
+	}
 }
 
 BBTasks::BBTasks (BB *_server):TSQueue <BBTask *> ()

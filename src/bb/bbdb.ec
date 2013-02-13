@@ -149,6 +149,8 @@ void ObservatorySchedule::load ()
 		throw rts2db::SqlError ();
 
 	state = db_state;
+	from = db_nan_double (db_sched_from, db_sched_from_ind);
+	to = db_nan_double (db_sched_to, db_sched_to_ind);
 }
 
 void ObservatorySchedule::updateState (int _state, double _from, double _to)
@@ -199,6 +201,8 @@ void ObservatorySchedule::updateState (int _state, double _from, double _to)
 
 	EXEC SQL COMMIT;
 	state = _state;
+	from = db_nan_double (db_sched_from, db_sched_from_ind);
+	to = db_nan_double (db_sched_to, db_sched_to_ind);
 }
 
 void ObservatorySchedule::toJSON (std::ostream &os)

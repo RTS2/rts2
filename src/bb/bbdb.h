@@ -97,6 +97,7 @@ class ObservatorySchedule
 		int getObservatoryId () { return observatory_id; }
 
 		double getFrom () { return from; }
+		double getTo () { return to; }
 
 	private:
 		int schedule_id;
