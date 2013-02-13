@@ -121,14 +121,11 @@ double SimulQueue::step ()
 				t_to = e_end;
 			sq++;
 		}
-		if (!found)
-		{
-			// something is ready in the queue, use its start time as next time..
-			if (!isnan (e_end) && e_end > t)
-				t = e_end;
-			else
-				t += 60;
-		}
+		if (found && !isnan (e_end) && e_end > t)
+			t = e_end;
+		else
+			t += 60;
+
 		fr = t;
 		if (found)
 			return (t - from) / (to - from);
