@@ -384,7 +384,8 @@ void ConstraintTime::load (xmlNodePtr cons)
 
 bool ConstraintTime::satisfy (Target *target, double JD, double *nextJD)
 {
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (JD);
 }
 
@@ -409,9 +410,12 @@ bool ConstraintAirmass::satisfy (Target *tar, double JD, double *nextJD)
 	double am = tar->getAirmass (JD);
 	if (isnan (am))
 	{
-		*nextJD = NAN;
+		if (nextJD)
+			*nextJD = NAN;
 		return true;
 	}
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (am);
 }
 
@@ -434,10 +438,12 @@ bool ConstraintZenithDistance::satisfy (Target *tar, double JD, double *nextJD)
 	double zd = tar->getZenitDistance (JD);
 	if (isnan (zd))
 	{
-		*nextJD = NAN;
+		if (nextJD)
+			*nextJD = NAN;
 		return true;
 	}
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween(zd);
 }
 
@@ -460,10 +466,12 @@ bool ConstraintHA::satisfy (Target *tar, double JD, double *nextJD)
 	double ha = tar->getHourAngle (JD);
 	if (isnan (ha))
 	{
-		*nextJD = NAN;
+	 	if (nextJD)
+			*nextJD = NAN;
 		return true;
 	}
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (ha);
 }
 
@@ -472,10 +480,12 @@ bool ConstraintLunarDistance::satisfy (Target *tar, double JD, double *nextJD)
 	double ld = tar->getLunarDistance (JD);
 	if (isnan (ld))
 	{
-		*nextJD = NAN;
+		if (nextJD)
+			*nextJD = NAN;
 		return true;
 	}
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (ld);
 }
 
@@ -485,13 +495,15 @@ bool ConstraintLunarAltitude::satisfy (Target *tar, double JD, double *nextJD)
 	struct ln_hrz_posn hrz_lun;
 	ln_get_lunar_equ_coords (JD, &eq_lun);
 	ln_get_hrz_from_equ (&eq_lun, rts2core::Configuration::instance ()->getObserver (), JD, &hrz_lun);
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (hrz_lun.alt);
 }
 
 bool ConstraintLunarPhase::satisfy (Target *tar, double JD, double *nextJD)
 {
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (ln_get_lunar_phase (JD));
 }
 
@@ -500,10 +512,12 @@ bool ConstraintSolarDistance::satisfy (Target *tar, double JD, double *nextJD)
 	double sd = tar->getSolarDistance (JD);
 	if (isnan (sd))
 	{
-	  	*nextJD = NAN;
+		if (nextJD)
+		  	*nextJD = NAN;
 		return true;
 	}
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (sd);
 }
 
@@ -513,7 +527,8 @@ bool ConstraintSunAltitude::satisfy (Target *tar, double JD, double *nextJD)
 	struct ln_hrz_posn hrz_sun;
 	ln_get_solar_equ_coords (JD, &eq_sun);
 	ln_get_hrz_from_equ (&eq_sun, rts2core::Configuration::instance ()->getObserver (), JD, &hrz_sun);
-	*nextJD = 0;
+	if (nextJD)
+		*nextJD = 0;
 	return isBetween (hrz_sun.alt);
 }
 
@@ -526,7 +541,8 @@ void ConstraintMaxRepeat::load (xmlNodePtr cons)
 
 bool ConstraintMaxRepeat::satisfy (Target *tar, double JD, double *nextJD)
 {
-	*nextJD = NAN;
+	if (nextJD)
+		*nextJD = NAN;
 	if (maxRepeat > 0)
 		return tar->getTotalNumberOfObservations () < maxRepeat;
 	return true;
