@@ -450,6 +450,10 @@ class Target:public Rts2Target
 		void setTargetBonusTime (time_t * new_time) { tar_bonus_time = *new_time; }
 
 		int getRST (struct ln_rst_time *rst) { return getRST (rst, ln_get_julian_from_sys (), LN_STAR_STANDART_HORIZON); }
+
+		/**
+		 * Return next rise/set time for given horizon.
+		 */
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon) = 0;
 
 		// return if object is visible at observatory location during specified night

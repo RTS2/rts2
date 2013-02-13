@@ -267,6 +267,9 @@ std::string Connection::getStateString ()
 				case DOME_CLOSING:
 					_os << "CLOSING";
 					break;
+				case DOME_WAIT_CLOSING:
+					_os << "WAIT FOR CLOSE";
+					break;
 				default:
 					_os << "UNKNOW";
 			}

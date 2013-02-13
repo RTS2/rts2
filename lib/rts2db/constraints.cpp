@@ -72,8 +72,6 @@ void ConstraintDoubleInterval::printJSON (std::ostream &os)
 	os << "]";
 }
 
-
-
 ConstraintInterval::ConstraintInterval (ConstraintInterval &cons)
 {
 	for (std::list <ConstraintDoubleInterval>::iterator iter = cons.intervals.begin (); iter != cons.intervals.end (); iter++)
@@ -268,9 +266,10 @@ void Constraint::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int
 	double to_JD = ln_get_julian_from_timet (&to);
 
 	double t;
-	for (t = ln_get_julian_from_timet (&from); t < to_JD; t += step / 86400.0)
+	for (t = ln_get_julian_from_timet (&from); t < to_JD;)
 	{
-		if (satisfy (tar, t))
+		double nextJD;
+		if (satisfy (tar, t, &nextJD))
 		{
 			if (isnan (vf))
 				vf = t;
@@ -282,6 +281,12 @@ void Constraint::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int
 			ret.push_back (std::pair <time_t, time_t> (from, to));
 			vf = NAN;
 		}
+		if (isnan (nextJD))
+			t = to_JD;
+		else if (nextJD > 0)
+			t = nextJD;
+		else
+			t += step / 86400.0;
 	}
 	if (!isnan (vf))
 	{
@@ -377,8 +382,9 @@ void ConstraintTime::load (xmlNodePtr cons)
 	}
 }
 
-bool ConstraintTime::satisfy (Target *target, double JD)
+bool ConstraintTime::satisfy (Target *target, double JD, double *nextJD)
 {
+	*nextJD = 0;
 	return isBetween (JD);
 }
 
@@ -398,11 +404,14 @@ void ConstraintTime::getSatisfiedIntervals (Target *tar, time_t from, time_t to,
 	}
 }
 
-bool ConstraintAirmass::satisfy (Target *tar, double JD)
+bool ConstraintAirmass::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double am = tar->getAirmass (JD);
 	if (isnan (am))
+	{
+		*nextJD = NAN;
 		return true;
+	}
 	return isBetween (am);
 }
 
@@ -420,11 +429,15 @@ void ConstraintAirmass::getAltitudeIntervals (std::vector <ConstraintDoubleInter
 	}
 }
 
-bool ConstraintZenithDistance::satisfy (Target *tar, double JD)
+bool ConstraintZenithDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double zd = tar->getZenitDistance (JD);
 	if (isnan (zd))
+	{
+		*nextJD = NAN;
 		return true;
+	}
+	*nextJD = 0;
 	return isBetween(zd);
 }
 
@@ -442,50 +455,65 @@ void ConstraintZenithDistance::getAltitudeIntervals (std::vector <ConstraintDoub
 	}
 }
 
-bool ConstraintHA::satisfy (Target *tar, double JD)
+bool ConstraintHA::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double ha = tar->getHourAngle (JD);
 	if (isnan (ha))
+	{
+		*nextJD = NAN;
 		return true;
+	}
+	*nextJD = 0;
 	return isBetween (ha);
 }
 
-bool ConstraintLunarDistance::satisfy (Target *tar, double JD)
+bool ConstraintLunarDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double ld = tar->getLunarDistance (JD);
 	if (isnan (ld))
+	{
+		*nextJD = NAN;
 		return true;
+	}
+	*nextJD = 0;
 	return isBetween (ld);
 }
 
-bool ConstraintLunarAltitude::satisfy (Target *tar, double JD)
+bool ConstraintLunarAltitude::satisfy (Target *tar, double JD, double *nextJD)
 {
 	struct ln_equ_posn eq_lun;
 	struct ln_hrz_posn hrz_lun;
 	ln_get_lunar_equ_coords (JD, &eq_lun);
 	ln_get_hrz_from_equ (&eq_lun, rts2core::Configuration::instance ()->getObserver (), JD, &hrz_lun);
+	*nextJD = 0;
 	return isBetween (hrz_lun.alt);
 }
 
-bool ConstraintLunarPhase::satisfy (Target *tar, double JD)
+bool ConstraintLunarPhase::satisfy (Target *tar, double JD, double *nextJD)
 {
+	*nextJD = 0;
 	return isBetween (ln_get_lunar_phase (JD));
 }
 
-bool ConstraintSolarDistance::satisfy (Target *tar, double JD)
+bool ConstraintSolarDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double sd = tar->getSolarDistance (JD);
 	if (isnan (sd))
+	{
+	  	*nextJD = NAN;
 		return true;
+	}
+	*nextJD = 0;
 	return isBetween (sd);
 }
 
-bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
+bool ConstraintSunAltitude::satisfy (Target *tar, double JD, double *nextJD)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn hrz_sun;
 	ln_get_solar_equ_coords (JD, &eq_sun);
 	ln_get_hrz_from_equ (&eq_sun, rts2core::Configuration::instance ()->getObserver (), JD, &hrz_sun);
+	*nextJD = 0;
 	return isBetween (hrz_sun.alt);
 }
 
@@ -496,8 +524,9 @@ void ConstraintMaxRepeat::load (xmlNodePtr cons)
 	maxRepeat = atoi ((const char *) cons->children->content);
 }
 
-bool ConstraintMaxRepeat::satisfy (Target *tar, double JD)
+bool ConstraintMaxRepeat::satisfy (Target *tar, double JD, double *nextJD)
 {
+	*nextJD = NAN;
 	if (maxRepeat > 0)
 		return tar->getTotalNumberOfObservations () < maxRepeat;
 	return true;
@@ -628,7 +657,7 @@ bool Constraints::satisfy (Target *tar, double JD)
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (!(iter->second->satisfy (tar, JD)))
+		if (!(iter->second->satisfy (tar, JD, NULL)))
 			return false;
 	}
 	return true;
@@ -638,7 +667,7 @@ size_t Constraints::getViolated (Target *tar, double JD, ConstraintsList &violat
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (!(iter->second->satisfy (tar, JD)))
+		if (!(iter->second->satisfy (tar, JD, NULL)))
 			violated.push_back (iter->second);
 	}
 	return violated.size ();
@@ -648,7 +677,7 @@ size_t Constraints::getSatisfied (Target *tar, double JD, ConstraintsList &satis
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (iter->second->satisfy (tar, JD))
+		if (iter->second->satisfy (tar, JD, NULL))
 			satisfied.push_back (iter->second);
 	}
 	return satisfied.size ();

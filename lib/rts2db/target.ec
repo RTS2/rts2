@@ -1995,7 +1995,7 @@ ConstraintsList Target::getViolatedConstraints (double JD)
 
 bool Target::isViolated (Constraint *cons, double JD)
 {
-	return !(cons->satisfy (this, JD));
+	return !(cons->satisfy (this, JD, NULL));
 }
 
 size_t Target::getSatisfiedConstraints (double JD, ConstraintsList &satisfied)

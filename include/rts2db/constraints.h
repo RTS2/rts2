@@ -93,7 +93,17 @@ class Constraint
 		virtual ~Constraint () {}
 
 		virtual void load (xmlNodePtr cons) = 0;
-		virtual bool satisfy (Target *tar, double JD) = 0;
+		/**
+		 * Check if constraint is satisfied at given time.
+		 *
+		 * @param tar  target which is checked for constraint
+		 * @param JD   date (Julian Day) checked
+		 * @param nextJD  returned hint about next time a change in satisfy/violated might occur; nan if the hint is not available, 0 if it cannot be computed
+		 *
+		 * @return true if constraint is satisfied
+		 *
+		 */
+		virtual bool satisfy (Target *tar, double JD, double *nextJD) = 0;
 
 		Constraint *th () { return this; }
 
@@ -179,6 +189,7 @@ class ConstraintInterval: public Constraint
 		}
 
 		virtual const char* getName () = 0;
+
 	protected:
 		void clearIntervals () { intervals.clear (); }
 		void add (const ConstraintDoubleInterval &inte) { intervals.push_back (inte); }
@@ -197,7 +208,7 @@ class ConstraintTime:public ConstraintInterval
 {
 	public:
 		virtual void load (xmlNodePtr cons);
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_TIME; }
 
@@ -207,7 +218,7 @@ class ConstraintTime:public ConstraintInterval
 class ConstraintAirmass:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_AIRMASS; }
 
@@ -217,7 +228,7 @@ class ConstraintAirmass:public ConstraintInterval
 class ConstraintZenithDistance:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_ZENITH_DIST; }
 
@@ -227,7 +238,7 @@ class ConstraintZenithDistance:public ConstraintInterval
 class ConstraintHA:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_HA; }
 };
@@ -235,7 +246,7 @@ class ConstraintHA:public ConstraintInterval
 class ConstraintLunarDistance:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_LDISTANCE; }
 };
@@ -243,7 +254,7 @@ class ConstraintLunarDistance:public ConstraintInterval
 class ConstraintLunarAltitude:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_LALTITUDE; }
 };
@@ -251,7 +262,7 @@ class ConstraintLunarAltitude:public ConstraintInterval
 class ConstraintLunarPhase:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_LPHASE; }
 };
@@ -259,7 +270,7 @@ class ConstraintLunarPhase:public ConstraintInterval
 class ConstraintSolarDistance:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_SDISTANCE; }
 };
@@ -267,7 +278,7 @@ class ConstraintSolarDistance:public ConstraintInterval
 class ConstraintSunAltitude:public ConstraintInterval
 {
 	public:
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
 };
@@ -277,7 +288,7 @@ class ConstraintMaxRepeat:public Constraint
 	public:
 		ConstraintMaxRepeat ():Constraint () { maxRepeat = -1; }
 		virtual void load (xmlNodePtr cons);
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual void parse (const char *arg);
 
