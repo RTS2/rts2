@@ -614,8 +614,9 @@ bool XmlRpcClient::readHeader()
 	if (_response_buf)
 		free (_response_buf);
 
-	_response_buf = (char *) malloc (_response_length);
+	_response_buf = (char *) malloc (_response_length + 1);
 	memcpy (_response_buf, bp, _response_length);
+	_response_buf[_response_length] = '\0';
 
 	_chunkStart = _response_buf;
 
