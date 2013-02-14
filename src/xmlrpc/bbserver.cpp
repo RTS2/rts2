@@ -106,7 +106,7 @@ void BBServer::sendUpdate ()
 
 	server->bbSend (atof (reply));
 
-	free (reply);
+	delete[] reply;
 }
 
 void BBServer::queueUpdate ()
