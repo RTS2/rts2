@@ -80,7 +80,7 @@ XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization
 
 XmlRpcClient::~XmlRpcClient()
 {
-	delete fullPath;
+	delete[] fullPath;
 }
 
 
