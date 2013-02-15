@@ -268,8 +268,7 @@ bool XmlRpcClient::setupConnection()
 	_bytesWritten = 0;
 
 	// Notify the dispatcher to listen on this source (calls handleEvent when the socket is writable)
-	_disp.removeSource(this);	 // Make sure nothing is left over
-	_disp.addSource(this, XmlRpcDispatch::WritableEvent | XmlRpcDispatch::Exception);
+	_disp.setSourceEvents(this, XmlRpcDispatch::WritableEvent | XmlRpcDispatch::Exception);
 
 	return true;
 }
