@@ -179,7 +179,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 	if options.create is not None:
 		test_q()
 		(ra,dec) = rts2.radec.parse(options.create_radec)
-		tar_id = rts2.target.create_target(options.create,ra,dec)
+		tar_id = rts2.target.create(options.create,ra,dec)
 		q.add_target(tar_id)
 		if not options.quiet:
 			print 'Created and queued {0} on coordinates {1} to queue {2}'.format(options.create, options.create_radec, options.queue)
@@ -187,7 +187,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
 	while len(args):
 		x = args[0]
-		tars = rts2.target.get_target(x)
+		tars = rts2.target.get(x)
 		if len(tars) == 0:
 			print >>sys.stderr, "cannot find target with name {0}".format(x)
 			sys.exit(1)

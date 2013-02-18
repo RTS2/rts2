@@ -35,12 +35,12 @@ class Target:
 		except Exception,ex:
 			self.name = None
 
-def get_target(name):
+def get(name):
 	"""Return array with targets matching given name or target ID"""
 	try:
 		return json.getProxy().loadJson('/api/tbyid',{'id':int(name)})['d']
 	except ValueError:
 		return json.getProxy().loadJson('/api/tbyname',{'n':name})['d']
 
-def create_target(name,ra,dec):
+def create(name,ra,dec):
 	return json.getProxy().loadJson('/api/create_target', {'tn':name, 'ra':ra, 'dec':dec})['id']
