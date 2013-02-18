@@ -43,4 +43,4 @@ def get_target(name):
 		return json.getProxy().loadJson('/api/tbyname',{'n':name})['d']
 
 def create_target(name,ra,dec):
-	return json.getProxy().load_json('/api/create_target', {'tn':name, 'ra':ra, 'dec':dec})
+	return json.getProxy().loadJson('/api/create_target', {'tn':name, 'ra':ra, 'dec':dec})['id']

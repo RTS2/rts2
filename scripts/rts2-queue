@@ -14,6 +14,7 @@ import sys
 import string
 import rts2
 import rts2.target
+import rts2.radec
 import re
 import time
 import calendar
@@ -108,7 +109,7 @@ if __name__ == '__main__':
 	server = 'localhost:8889'
 
   	parser = OptionParser(usage="""rts2-queue [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--quiet][--debug] <target1>..
-       rts2-queue --with-times [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--debug][--quiet] <target1> <start> <end>..
+       rts2-queue --with-times [--create <target name> --create-radec "<10:20:30> <+40:20:10>"][--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--debug][--quiet] <target1> <start> <end>..
 
 Queue target to the queues. Targets are queued to rts2-selector service using JSON interface provided by rts2-xmlrpc, so those two services must run on target machine. Start and end times can be specified in various times, either absolute or relative to the current time.
 
@@ -124,7 +125,8 @@ Example use:
 
 rts2-queue --queue manual SN2012A
 rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h
-rts2-queue --load circular.q""")
+rts2-queue --load circular.q
+rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
 	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
@@ -137,6 +139,8 @@ rts2-queue --load circular.q""")
 	parser.add_option("--password",help="user password",action="store",dest='password',default='&#Karel')
 	parser.add_option('--quiet',help="don't print messages",action='store_true',dest='quiet',default=False)
 	parser.add_option('--debug',help='debug JSON communication',action='store_true',dest='debug',default=False)
+	parser.add_option('--create',help='name of the target to create',action='store',dest='create',default=None)
+	parser.add_option('--create-radec',help="create target with following ra/dec; needs --create option",action='store',dest='create_radec',default=None)
 
 	(options,args)=parser.parse_args()
 
@@ -145,7 +149,12 @@ rts2-queue --load circular.q""")
 	if options.save_xml and options.load_xml:
 		print >>sys.stderr, "cannot perform both load and save operations"
 		sys.exit(4)
-	
+
+	if (options.create is None) != (options.create_radec is None):
+		print >>sys.stderr, "you have to specify both target name and its coordinates (with --create and --create-radec options)"
+		sys.exit(5)
+
+		
 	q = None
 	if options.queue:
 		q = rts2.Queue(options.queue)
@@ -165,6 +174,16 @@ rts2-queue --load circular.q""")
 
 	if len(args):
 		test_q()
+
+	# above test make sure create_radec is also defined	
+	if options.create is not None:
+		test_q()
+		(ra,dec) = rts2.radec.parse(options.create_radec)
+		tar_id = rts2.target.create_target(options.create,ra,dec)
+		q.add_target(tar_id)
+		if not options.quiet:
+			print 'Created and queued {0} on coordinates {1} to queue {2}'.format(options.create, options.create_radec, options.queue)
+		
 
 	while len(args):
 		x = args[0]
