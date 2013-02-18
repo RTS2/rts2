@@ -2,6 +2,7 @@
 
 import sys
 import rts2.json
+import rts2.target
 import re
 import time
 import sys
@@ -27,7 +28,7 @@ for obs_id in args:
 		a = sys.stdin.readline().rstrip('\n')
 		(tar_name, tar_ra, tar_dec) = re.match('"([^"]*)" (\S*) (\S*)', a).groups()
 
-		ret = rts2.json.getProxy().loadJson('/api/create_target', {'tn':tar_name, 'ra':tar_ra, 'dec':tar_dec})
+		ret = rts2.target.create(tar_name, tar_ra, tar_dec)
 		obs_tar_id = int(ret['id'])
 		print 'mapping', obs_id, options.create, obs_tar_id
 		sys.stdout.flush()
