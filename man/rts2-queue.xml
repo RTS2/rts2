@@ -58,6 +58,10 @@
       <arg choice='opt'><option>--server</option>=<replaceable class='parameter'>SERVER</replaceable></arg>
       <arg choice='opt'><option>--user</option>=<replaceable class='parameter'>USERNAME</replaceable></arg>
       <arg choice='opt'><option>--password</option>=<replaceable class='parameter'>PASSWORD</replaceable></arg>
+      <arg choice='opt'><option>--quiet</option></arg>
+      <arg choice='opt'><option>--debug</option></arg>
+      <arg choice='opt'><option>--create</option> <replaceable class='parameter'>TARGET NAME</replaceable></arg>
+      <arg choice='opt'><option>--create-radec</option> <replaceable class='parameter'>TARGET RA DEC</replaceable></arg>
       <arg choice='opt' rep='repeat'>target name</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -150,6 +154,40 @@
 	<listitem>
 	  <para>
 	    Specify password for server login.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--quiet</option></term>
+	<listitem>
+	  <para>
+	    Be quiet, do not print anything on standard output.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--debug</option></term>
+	<listitem>
+	  <para>
+	    Print RTS2 JSON calls needed to acomplish the goal.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--create</option></term>
+	<listitem>
+	  <para>
+	    Create new target with the given name. This option must be followed
+	    with <option>--create-radec</option> to specify target coordinates.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--create-radec</option></term>
+	<listitem>
+	  <para>
+	    Specify new target coordinates. This option can only be specified together with
+	    <option>--create</option> option.
 	  </para>
 	</listitem>
       </varlistentry>
