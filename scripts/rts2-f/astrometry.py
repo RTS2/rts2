@@ -86,7 +86,7 @@ class imgAstrometryScript:
 	       break
 	    match=radecline.match(a)
 	    if match:
-	       ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
+	       ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]
 	       
         # cleanup
         shutil.rmtree(self.odir)
@@ -125,8 +125,8 @@ if __name__ == '__main__':
     ret=a.run(scale=0.67,ra=ra,dec=dec)
 
     if ret:
-	    raorig=dms.parseDMS(ra)*15.0
-	    decorig=dms.parseDMS(dec)
+	    raorig=dms.parse(ra)*15.0
+	    decorig=dms.parse(dec)
 
 	    raastr=float(ret[0])*15.0
 	    decastr=float(ret[1])

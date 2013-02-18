@@ -19,7 +19,7 @@
 
 __author__ = 'kubanek@fzu.cz'
 
-def parseDMS(strin):
+def parse(strin):
 	"""Parse string in degrees notation to float"""
 	mul=1.
 	fraction=1.
@@ -61,7 +61,7 @@ def parseDMS(strin):
 	return ret	
 
 if __name__ == '__main__':
-	print parseDMS('14:15:16.545') 
-	print parseDMS('-14:15:16')
-	print parseDMS('+14:15:16')
-	print parseDMS('+1-4:15:16') 
+	print parse('14:15:16.545') 
+	print parse('-14:15:16')
+	print parse('+14:15:16')
+	print parse('+1-4:15:16') 

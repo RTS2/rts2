@@ -161,7 +161,7 @@ class AstrometryScript:
 				print a,
 			match=radecline.match(a)
 			if match:
-				ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
+				ret=[dms.parse(match.group(1)),dms.parse(match.group(2))]
 		if replace and ret is not None:
 			shutil.move(self.odir+'/input.new',self.fits_file)
 	       

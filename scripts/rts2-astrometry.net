@@ -26,11 +26,11 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, wcs
 			try:
 				ra = float(ra)
 			except ValueError:
-				ra = rts2.dms.parseDMS(ra) * 15.0
+				ra = rts2.dms.parse(ra) * 15.0
 			try:
 				dec = float(dec)
 			except ValueError:
-				dec = rts2.dms.parseDMS(dec)
+				dec = rts2.dms.parse(dec)
 		else:
 			try:
 				ra=ff[0].header['CRVAL1' + multiwcs]

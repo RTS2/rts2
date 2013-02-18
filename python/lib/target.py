@@ -41,3 +41,6 @@ def get_target(name):
 		return json.getProxy().loadJson('/api/tbyid',{'id':int(name)})['d']
 	except ValueError:
 		return json.getProxy().loadJson('/api/tbyname',{'n':name})['d']
+
+def create_target(name,ra,dec):
+	return json.getProxy().load_json('/api/create_target', {'tn':name, 'ra':ra, 'dec':dec})
