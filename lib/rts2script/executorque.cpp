@@ -202,7 +202,7 @@ void TargetQueue::sortQueue (double now)
 	}
 }
 
-bool TargetQueue::filter (double now, double maxLength, bool removeObserved)
+bool TargetQueue::filter (double now, double maxLength, bool removeObserved, double *next_time)
 {
 	filterExpired (now);
 
@@ -214,6 +214,9 @@ bool TargetQueue::filter (double now, double maxLength, bool removeObserved)
 	std::list <QueuedTarget> skipped;
 	filterUnobservable (now, maxLength, skipped, removeObserved);
 	TargetQueue::iterator it = begin ();
+	// there is some observation which needs to be observed at correct time
+	if (next_time && !empty () && !isnan (front().t_start))
+		*next_time = front().t_start;
 	if (!empty () && (isnan (front().t_start) || front().t_start <= now))
 	{
 		ret = true;
@@ -705,7 +708,8 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 	if (size () > 0)
 	{
 		double now = getNow ();
-		if (filter (now, next_length, removeObserved) && front ().notExpired (now))
+		double t_start = NAN;
+		if (filter (now, next_length, removeObserved, &t_start) && front ().notExpired (now))
 		{
 			if (isnan (next_length))
 			{
@@ -741,7 +745,6 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 		{
 			double t = now + 60;
 			// add timers..
-			double t_start = front ().t_start;
 			if (!isnan (t_start) && (isnan (timerAdded) || t_start != timerAdded) && t_start > t)
 			{
 				master->addTimer (t_start - t, new rts2core::Event (EVENT_NEXT_START));
