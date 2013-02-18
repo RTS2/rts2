@@ -48,7 +48,7 @@ class ConnGrb:public rts2core::ConnNoSend
 		virtual void connectionError (int last_data_size);
 		virtual int receive (fd_set * set);
 
-		int lastPacket ();
+		double lastPacket ();
 		double delta ();
 		char *lastTarget ();
 		double lastTargetTime () { return last_target_time; }

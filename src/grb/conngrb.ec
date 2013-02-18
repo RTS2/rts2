@@ -1248,8 +1248,7 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, c
 	gcn_port = in_gcn_port;
 	gcn_listen_sock = -1;
 
-	time (&last_packet.tv_sec);
-	last_packet.tv_sec -= 600;
+	last_packet.tv_sec = 0;
 	last_packet.tv_usec = 0;
 	last_imalive_sod = -1;
 
@@ -1635,8 +1634,10 @@ int ConnGrb::receive (fd_set *set)
 	return ret;
 }
 
-int ConnGrb::lastPacket ()
+double ConnGrb::lastPacket ()
 {
+	if (last_packet.tv_sec == 0)
+		return NAN;
 	return last_packet.tv_sec;
 }
 
