@@ -153,7 +153,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		 *
 		 * @return true if front queue target can be observed, false otherwise
 		 */
-		bool filter (double now, double maxLength = NAN, bool removeObserved = true);
+		bool filter (double now, double maxLength = NAN, bool removeObserved = true, double *next_time = NULL);
 
 		/**
 		 * Update values from the target list. Must be called after queue content changed.
