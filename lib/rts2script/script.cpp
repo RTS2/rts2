@@ -131,6 +131,7 @@ Script::Script (int scriptLoopCount, rts2core::Block * _master):Object ()
 
 	fullReadoutTime = 0;
 	filterMovement = 0;
+	telescopeSettleTime = 0;
 	telescopeSpeed = 0;
 }
 
@@ -242,6 +243,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 	Configuration *config = Configuration::instance ();
 	config->getFloat (cam_name, "readout_time", fullReadoutTime, fullReadoutTime);
 	config->getFloat (cam_name, "filter_movement", filterMovement, filterMovement);
+	config->getFloat ("observatory", "telescope_settle_time", telescopeSettleTime, telescopeSettleTime);
 	config->getFloat ("observatory", "telescope_speed", telescopeSpeed, telescopeSpeed);
 	
 	commentNumber = 1;
@@ -913,7 +915,7 @@ double Script::getExpectedDuration (struct ln_equ_posn *tel, int runnum)
 	if (tel && !isnan (target_pos.ra) && !isnan (target_pos.dec))
 	{
 		double dist = ln_get_angular_separation (tel, &target_pos);
-		ret += dist * getTelescopeSpeed ();
+		ret += getTelescopeSettleTime () + dist * getTelescopeSpeed ();
 	}
 	for (Script::iterator iter = begin (); iter != end (); iter++)
 		ret += (*iter)->getExpectedDuration (runnum);

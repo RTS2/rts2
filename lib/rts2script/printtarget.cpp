@@ -295,6 +295,7 @@ void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 				<< pref << " \\-- expected duration: " << TimeDiff (0, script.getExpectedDuration ()) << std::endl;
 		}
 	}
+	std::cout << "     Expected maximal script duration: " << TimeDiff (0, rts2script::getMaximalScriptDuration (target, cameras)) << std::endl;
 }
 
 void PrintTarget::printTarget (rts2db::Target *target)

@@ -115,6 +115,11 @@ class Script:public Object, public std::list <Element *>
 
 		float getFullReadoutTime () { return fullReadoutTime; }
 		float getFilterMovement () { return filterMovement; }
+
+		/**
+		 * Return time telescope need to settle down.
+		 */
+		float getTelescopeSettleTime () { return telescopeSettleTime; }
 		float getTelescopeSpeed () { return telescopeSpeed; }
 
 		/**
@@ -259,6 +264,9 @@ class Script:public Object, public std::list <Element *>
 
 		// average filter movement time in seconds
 		float filterMovement;
+
+		// settle time of the telescope
+		float telescopeSettleTime;
 
 		// telescope average speed (in degrees per second)
 		float telescopeSpeed;
