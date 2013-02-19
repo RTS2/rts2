@@ -63,8 +63,10 @@ XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 		if (it->getSource() == source)
 		{
 			it->getMask() = eventMask;
-			break;
+			return;
 		}
+	// if not found, add it
+	addSource(source, eventMask);	
 }
 
 
