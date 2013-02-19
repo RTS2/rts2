@@ -93,7 +93,9 @@ void BBServer::sendUpdate ()
 	int reply_length;
 
 	std::ostringstream url;
-	url << _uri << "/api/observatory?observatory_id=" << observatoryId;
+	if (_uri)
+		url << _uri;
+	url << "/api/observatory?observatory_id=" << observatoryId;
 
 	int ret = client->executePostRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
 	if (!ret)
