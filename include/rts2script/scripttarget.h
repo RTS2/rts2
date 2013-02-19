@@ -53,7 +53,7 @@ class ScriptTarget:public Rts2Target
 		virtual int save (bool overwrite);
 		virtual int saveWithID (bool overwrite, int tar_id);
 
-		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position = true);
+		virtual moveType startSlew (struct ln_equ_posn *position, int plan_id = -1);
 		virtual int startObservation ();
 		virtual void writeToImage (rts2image::Image * image, double JD);
 };

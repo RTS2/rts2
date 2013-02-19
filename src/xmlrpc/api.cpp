@@ -1133,7 +1133,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
 				"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
 				"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
-				"{\"n\":\"Obs ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/observations/\",\"href\":3,\"c\":3},"
 				"{\"n\":\"Start\",\"t\":\"t\",\"c\":4},"
 				"{\"n\":\"End\",\"t\":\"t\",\"c\":5},"
 				"{\"n\":\"RA\",\"t\":\"r\",\"c\":6},"
@@ -1155,8 +1154,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				tar->getAltAz (&hrz, JDstart);
 				os << "[" << iter->getPlanId () << ","
 					<< iter->getTargetId () << ",\""
-					<< tar->getTargetName () << "\","
-					<< iter->getObsId () << ",\""
+					<< tar->getTargetName () << "\",\""
 					<< iter->getPlanStart () << "\",\""
 					<< iter->getPlanEnd () << "\","
 					<< equ.ra << "," << equ.dec << ","

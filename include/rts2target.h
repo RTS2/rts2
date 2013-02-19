@@ -222,7 +222,7 @@ class Rts2Target
 		// called when we can move to next observation - good to generate next target in mosaic observation etc..
 		virtual int beforeMove () { return 0; }
 
-		virtual moveType startSlew (struct ln_equ_posn * position, bool update_position = true) = 0;
+		virtual moveType startSlew (struct ln_equ_posn * position, int plan_id = -1) = 0;
 		virtual int startObservation () = 0;
 
 		int getObsId () { return obs_id; }

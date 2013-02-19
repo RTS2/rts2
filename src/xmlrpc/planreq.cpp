@@ -116,22 +116,6 @@ void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 		_os << "<tr><td>At the end</td><td>" << printTarget (tar, p.getPlanEnd ()) << "</td></tr>";
 	_os << "</table>";
 
- 	rts2db::Observation *o = p.getObservation ();
-	if (o == NULL)
-	{
-		_os << "<p>Plan was not observed.</p>";
-	}
-	else
-	{
-		_os << "<p>Plan was observed as observation <a href='../../observations/" << o->getObsId () << "/'>" << o->getObsId () << "</a></p>";
-
-		_os << "<table><tr><td>Slew</td><td>" << Timestamp (o->getObsSlew ()) << "</td></tr>"
-			"<tr><td>Start</td><td>" << Timestamp (o->getObsStart ()) << "</td></tr>"
-			"<tr><td>End</td><td>" << Timestamp (o->getObsEnd ()) << "</td></tr>"
-			"<tr><td>Images</td><td>" << o->getNumberOfImages () << "</td></tr>"
-			"</table>";
-	}
-
 	printFooter (_os);
 
 	response_length = _os.str ().length ();

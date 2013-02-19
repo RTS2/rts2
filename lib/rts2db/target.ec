@@ -550,7 +550,7 @@ int Target::compareWithTarget (Target *in_target, double in_sep_limit)
 	return (getDistance (&other_position) < in_sep_limit);
 }
 
-moveType Target::startSlew (struct ln_equ_posn *position, bool update_position)
+moveType Target::startSlew (struct ln_equ_posn *position, int plan_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = getObsTargetID ();
@@ -560,12 +560,11 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position)
 	float d_obs_alt;
 	float d_obs_az;
 	int d_pos_ind;
+	int d_plan_id = plan_id;
+	int d_plan_id_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_hrz_posn hrz;
-
-	if (update_position)
-		getPosition (position);
 
 	if (getObsId () > 0)		 // we already observe that target
 		return OBS_ALREADY_STARTED;
@@ -585,6 +584,8 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position)
 		d_pos_ind = 0;
 	}
 
+	d_plan_id_ind = (plan_id < 0) ? -1 : 0;
+
 	EXEC SQL
 		SELECT
 		nextval ('obs_id')
@@ -600,7 +601,8 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position)
 			obs_ra,
 			obs_dec,
 			obs_alt,
-			obs_az
+			obs_az,
+			plan_id
 			)
 		VALUES
 			(
@@ -610,7 +612,8 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position)
 			:d_obs_ra :d_pos_ind,
 			:d_obs_dec :d_pos_ind,
 			:d_obs_alt :d_pos_ind,
-			:d_obs_az :d_pos_ind
+			:d_obs_az :d_pos_ind,
+			:d_plan_id :d_plan_id_ind
 			);
 	if (sqlca.sqlcode != 0)
 	{
@@ -636,7 +639,7 @@ int Target::newObsSlew (struct ln_equ_posn *position)
 int Target::updateSlew (struct ln_equ_posn *position)
 {
 	if (observation == NULL)
-		return startSlew (position, false) == OBS_MOVE_FAILED ? -1 : 0;
+		return startSlew (position) == OBS_MOVE_FAILED ? -1 : 0;
 
 	struct ln_hrz_posn hrz;
 	ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);

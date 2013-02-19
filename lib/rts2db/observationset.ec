@@ -147,6 +147,7 @@ void ObservationSet::load (std::string in_where)
 	double db_obs_start;
 	int db_obs_state;
 	double db_obs_end;
+	int db_plan_id;
 
 	int db_tar_ind;
 	char db_tar_type;
@@ -158,6 +159,7 @@ void ObservationSet::load (std::string in_where)
 	int db_obs_start_ind;
 	int db_obs_state_ind;
 	int db_obs_end_ind;
+	int db_plan_id_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	std::ostringstream _os;
@@ -174,7 +176,8 @@ void ObservationSet::load (std::string in_where)
 		"EXTRACT (EPOCH FROM obs_slew),"
 		"EXTRACT (EPOCH FROM obs_start),"
 		"obs_state,"
-		"EXTRACT (EPOCH FROM obs_end)"
+		"EXTRACT (EPOCH FROM obs_end),"
+		"plan_id"
 		" FROM "
 		"observations, targets"
 		" WHERE "
@@ -205,7 +208,8 @@ void ObservationSet::load (std::string in_where)
 				:db_obs_slew :db_obs_slew_ind,
 				:db_obs_start :db_obs_start_ind,
 				:db_obs_state :db_obs_state_ind,
-				:db_obs_end :db_obs_end_ind;
+				:db_obs_end :db_obs_end_ind,
+				:db_plan_id :db_plan_id_ind;
 		if (sqlca.sqlcode)
 			break;
 		if (db_tar_ind < 0)
@@ -226,10 +230,12 @@ void ObservationSet::load (std::string in_where)
 			db_obs_state = 0;
 		if (db_obs_end_ind < 0)
 			db_obs_end = NAN;
+		if (db_plan_id_ind < 0)
+			db_plan_id = -1;
 
 		// add new observations to vector
 		Observation obs = Observation (db_tar_id, db_tar_name.arr, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
-			db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end);
+			db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end, db_plan_id);
 		push_back (obs);
 		if (db_obs_state & OBS_BIT_STARTED)
 		{

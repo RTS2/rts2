@@ -64,11 +64,6 @@ class Plan
 
 		Observation *getObservation ();
 
-		int getObsId () { return obs_id; }
-
-		void setObsId (int in_obs_id);
-		void setQid (int qid);
-
 		void setTargetId (int id) { tar_id = id; }
 
 		int getTargetId () { return tar_id; }
@@ -99,16 +94,13 @@ class Plan
 		int plan_id;
 		int prop_id;
 		int tar_id;
-		int obs_id;
 		double plan_start;
 		double plan_end;
 
 		int plan_status;
 		std::string bb_schedule_id;
-		int qid;
 
 		Target *target;
-		Observation *observation;
 
 		void print (std::ostream & _os);
 		void printInfoVal (Rts2InfoValStream & _os);

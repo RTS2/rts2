@@ -109,6 +109,7 @@ class SelectorDev:public rts2db::DeviceDb
 
 		rts2core::ValueInteger *next_id;
 		rts2core::ValueInteger *next_qid;
+		rts2core::ValueInteger *next_plan_id;
 		rts2core::ValueBool *next_started;
 		rts2core::ValueTime *selectUntil;
 		rts2core::ValueTime *queueSelectUntil;
@@ -197,8 +198,11 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
 
-	createValue (next_qid, "next_qid", "QID of next plan (only used if next target is from queue)", false);
+	createValue (next_qid, "next_qid", "QID of next target (only used if next target is from queue)", false);
 	next_qid->setValueInteger (-1);
+
+	createValue (next_plan_id, "next_plan_id", "plan_id of next planned target", false);
+	next_plan_id->setValueInteger (-1);
 
 	createValue (next_started, "next_started", "if true, next observation was already started - queue operation is not needed", false);
 	next_started->setValueBool (false);
@@ -490,6 +494,7 @@ int SelectorDev::selectNext ()
 						sendValueAll (next_started);
 					}
 					next_qid->setValueInteger (n_qid);
+					next_plan_id->setValueInteger (n_pid);
 					interrupt->setValueBool (hard);
 					sendValueAll (queueSelectUntil);
 					return id;
@@ -543,10 +548,6 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 				// update plan entry..
 				if (next_started->getValueBool () == false)
 				{
-					rts2db::Plan p (next_qid->getValueInteger ());
-					p.load ();
-					p.setObsId (obs_id);
-
 					next_started->setValueBool (true);
 					sendValueAll (next_started);
 				}
@@ -562,6 +563,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 	next_id->setValueInteger (selectNext ());
 	sendValueAll (next_id);
 	sendValueAll (next_qid);
+	sendValueAll (next_plan_id);
 	nextTime->setValueDouble (getNow ());
 	sendValueAll (nextTime);
 
@@ -891,8 +893,7 @@ void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
 	p.load ();
 	for (rts2db::PlanSet::iterator iter = p.begin (); iter != p.end (); iter++)
 	{
-		int qid = q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd (), iter->getPlanId ());
-		iter->setQid (qid);
+		q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd (), iter->getPlanId ());
 		iter->clearTarget ();
 	}
 }
@@ -902,8 +903,7 @@ void SelectorDev::queuePlanId (rts2plan::ExecutorQueue *q, int plan_id)
 	rts2db::Plan p (plan_id);
 	p.load ();
 
-	int qid = q->addTarget (p.getTarget (), p.getPlanStart (), p.getPlanEnd (), p.getPlanId ());
-	p.setQid (qid);
+	q->addTarget (p.getTarget (), p.getPlanStart (), p.getPlanEnd (), p.getPlanId ());
 }
 
 void SelectorDev::afterQueueChange (rts2plan::ExecutorQueue *q)

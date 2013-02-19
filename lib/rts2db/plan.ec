@@ -35,11 +35,8 @@ Plan::Plan ()
 	tar_id = -1;
 	prop_id = -1;
 	target = NULL;
-	obs_id = -1;
-	observation = NULL;
 	plan_status = 0;
 	plan_start = plan_end = NAN;
-	qid = -1;
 }
 
 Plan::Plan (int in_plan_id)
@@ -48,11 +45,8 @@ Plan::Plan (int in_plan_id)
 	tar_id = -1;
 	prop_id = -1;
 	target = NULL;
-	obs_id = -1;
-	observation = NULL;
 	plan_status = 0;
 	plan_start = plan_end = NAN;
-	qid = -1;
 }
 
 Plan::Plan (const Plan &cp)
@@ -60,16 +54,13 @@ Plan::Plan (const Plan &cp)
 	plan_id = cp.plan_id;
 	prop_id = cp.prop_id;
 	tar_id = cp.tar_id;
-	obs_id = cp.obs_id;
 	plan_start = cp.plan_start;
 	plan_end = cp.plan_end;
 	plan_status = cp.plan_status;
 	bb_schedule_id = cp.bb_schedule_id;
-	qid = cp.qid;
 	target = cp.target;
 
 	target = NULL;
-	observation = NULL;
 }
 
 Plan::~Plan (void)
@@ -84,36 +75,28 @@ int Plan::load ()
 	int db_prop_id;
 	int db_prop_id_ind;
 	int db_tar_id;
-	int db_obs_id;
-	int db_obs_id_ind;
 	double db_plan_start;
 	double db_plan_end;
 	int db_plan_end_ind;
 	int db_plan_status;
 	VARCHAR db_bb_schedule_id[50];
 	int db_bb_schedule_id_ind;
-	int db_qid;
-	int db_qid_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL SELECT
 		prop_id,
 		tar_id,
-		obs_id,
 		EXTRACT (EPOCH FROM plan_start),
 		EXTRACT (EPOCH FROM plan_end),
 		plan_status,
-		bb_schedule_id,
-		qid
+		bb_schedule_id
 	INTO
 		:db_prop_id :db_prop_id_ind,
 		:db_tar_id,
-		:db_obs_id :db_obs_id_ind,
 		:db_plan_start,
 		:db_plan_end :db_plan_end_ind,
 		:db_plan_status,
-		:db_bb_schedule_id :db_bb_schedule_id_ind,
-		:db_qid :db_qid_ind
+		:db_bb_schedule_id :db_bb_schedule_id_ind
 	FROM
 		plan
 	WHERE
@@ -129,10 +112,6 @@ int Plan::load ()
 	else
 		prop_id = db_prop_id;
 	tar_id = db_tar_id;
-	if (db_obs_id_ind)
-		db_obs_id = -1;
-	else
-		obs_id = db_obs_id;
 	plan_start = (long) db_plan_start;
 	if (db_plan_end_ind)
 		plan_end = NAN;
@@ -144,10 +123,6 @@ int Plan::load ()
 		bb_schedule_id = std::string ();
 	else
 		bb_schedule_id = std::string (db_bb_schedule_id.arr);
-	if (db_qid_ind)
-		qid = -1;
-	else
-		qid = db_qid;
 
 	EXEC SQL COMMIT;
 	return 0;
@@ -160,15 +135,11 @@ int Plan::loadBBSchedule (const char *_bb_schedule_id)
 	int db_prop_id;
 	int db_prop_id_ind;
 	int db_tar_id;
-	int db_obs_id;
-	int db_obs_id_ind;
 	double db_plan_start;
 	double db_plan_end;
 	int db_plan_end_ind;
 	int db_plan_status;
 	VARCHAR db_bb_schedule_id[50];
-	int db_qid;
-	int db_qid_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	size_t l = strlen (_bb_schedule_id);
@@ -183,20 +154,16 @@ int Plan::loadBBSchedule (const char *_bb_schedule_id)
 		plan_id,
 		prop_id,
 		tar_id,
-		obs_id,
 		EXTRACT (EPOCH FROM plan_start),
 		EXTRACT (EPOCH FROM plan_end),
-		plan_status,
-		qid
+		plan_status
 	INTO
 		:db_plan_id,
 		:db_prop_id :db_prop_id_ind,
 		:db_tar_id,
-		:db_obs_id :db_obs_id_ind,
 		:db_plan_start,
 		:db_plan_end :db_plan_end_ind,
-		:db_plan_status,
-		:db_qid :db_qid_ind
+		:db_plan_status
 	FROM
 		plan
 	WHERE
@@ -212,20 +179,12 @@ int Plan::loadBBSchedule (const char *_bb_schedule_id)
 	else
 		prop_id = db_prop_id;
 	tar_id = db_tar_id;
-	if (db_obs_id_ind)
-		db_obs_id = -1;
-	else
-		obs_id = db_obs_id;
 	plan_start = (long) db_plan_start;
 	if (db_plan_end_ind)
 		plan_end = NAN;
 	else
 		plan_end = db_plan_end;
 	plan_status = db_plan_status;
-	if (db_qid_ind)
-		qid = -1;
-	else
-		qid = db_qid;
 	EXEC SQL COMMIT;
 	return 0;
 }
@@ -238,16 +197,12 @@ int Plan::save ()
 	int db_tar_id = tar_id;
 	int db_prop_id = prop_id;
 	int db_prop_id_ind;
-	int db_obs_id = obs_id;
-	int db_obs_id_ind;
 	double db_plan_start = plan_start;
 	double db_plan_end = plan_end;
 	int db_plan_end_ind = (isnan (plan_end) ? -1 : 0);
 	int db_plan_status = plan_status;
 	VARCHAR db_bb_schedule_id[50];
 	int db_bb_schedule_id_ind;
-	int db_qid;
-	int db_qid_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	// don't save entries with same target id as master plan
@@ -278,16 +233,6 @@ int Plan::save ()
 		db_prop_id_ind = 0;
 	}
 
-	if (db_obs_id == -1)
-	{
-		db_obs_id = 0;
-		db_obs_id_ind = -1;
-	}
-	else
-	{
-		db_obs_id_ind = 0;
-	}
-
 	strncpy (db_bb_schedule_id.arr, bb_schedule_id.c_str (), 50);
 	if (bb_schedule_id.length () == 0)
 	{
@@ -304,33 +249,23 @@ int Plan::save ()
 		db_bb_schedule_id_ind = 0;
 	}
 
-	db_qid = qid;
-	if (qid > 0)
-		db_qid_ind = 0;
-	else
-		db_qid_ind = -1;
-
 	EXEC SQL INSERT INTO plan (
 		plan_id,
 		tar_id,
 		prop_id,
-		obs_id,
 		plan_start,
 		plan_end,
 		plan_status,
-		bb_schedule_id,
-		qid
+		bb_schedule_id
 	)
 	VALUES (
 		:db_plan_id,
 		:db_tar_id,
 		:db_prop_id :db_prop_id_ind,
-		:db_obs_id :db_obs_id_ind,
 		to_timestamp (:db_plan_start),
 		to_timestamp (:db_plan_end :db_plan_end_ind),
 		:db_plan_status,
-		:db_bb_schedule_id :db_bb_schedule_id_ind,
-		:db_qid :db_qid_ind
+		:db_bb_schedule_id :db_bb_schedule_id_ind
 	);
 
 	if (sqlca.sqlcode)
@@ -343,12 +278,10 @@ int Plan::save ()
 		SET
 			tar_id = :db_tar_id,
 			prop_id = :db_prop_id :db_prop_id_ind,
-			obs_id = :db_obs_id :db_obs_id_ind,
 			plan_start = to_timestamp (:db_plan_start),
 			plan_end = to_timestamp (:db_plan_end :db_plan_end_ind),
 			plan_status = :db_plan_status,
-			bb_schedule_id = :db_bb_schedule_id,
-			qid = :db_qid :db_qid_ind
+			bb_schedule_id = :db_bb_schedule_id
 		WHERE
 			plan_id = :db_plan_id;
 		if (sqlca.sqlcode)
@@ -386,14 +319,7 @@ int Plan::del ()
 
 moveType Plan::startSlew (struct ln_equ_posn *position, bool update_position)
 {
-	moveType ret;
-	ret = getTarget ()->startSlew (position, update_position);
-	if (obs_id > 0)
-		return ret;
-
-	setObsId (getTarget()->getObsId ());
-
-	return ret;
+	return getTarget ()->startSlew (position, update_position);
 }
 
 Target * Plan::getTarget ()
@@ -402,69 +328,6 @@ Target * Plan::getTarget ()
 		return target;
 	target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver ());
 	return target;
-}
-
-Observation * Plan::getObservation ()
-{
-	int ret;
-	if (observation)
-		return observation;
-	if (obs_id <= 0)
-		return NULL;
-	observation = new Observation (obs_id);
-	ret = observation->load ();
-	if (ret)
-	{
-		delete observation;
-		observation = NULL;
-	}
-	return observation;
-}
-
-void Plan::setObsId (int in_obs_id)
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-	int db_plan_id = plan_id;
-	int db_obs_id = in_obs_id;
-	EXEC SQL END DECLARE SECTION;
-	EXEC SQL UPDATE
-		plan
-	SET
-		obs_id = :db_obs_id,
-		plan_status = plan_status | 1
-	WHERE
-		plan_id = :db_plan_id;
-
-	if (sqlca.sqlcode)
-	{
-		logStream (MESSAGE_ERROR) << "Plan::startSlew " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
-		EXEC SQL ROLLBACK;
-	}
-	else
-	{
-		EXEC SQL COMMIT;
-		obs_id = db_obs_id;
-	}
-}
-
-void Plan::setQid (int _qid)
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-	int db_plan_id = plan_id;
-	int db_qid = _qid;
-	EXEC SQL END DECLARE SECTION;
-
-	EXEC SQL UPDATE
-		plan
-	SET
-		qid = :db_qid
-	WHERE
-		plan_id = :db_plan_id;
-	
-	if (sqlca.sqlcode)
-		throw SqlError();
-	
-	EXEC SQL COMMIT;
 }
 
 void Plan::print (std::ostream & _os)
@@ -493,7 +356,6 @@ void Plan::print (std::ostream & _os)
 		<< std::setw (8) << prop_id << SEP
 		<< std::left << std::setw (20) << tar_name << SEP
 		<< std::right << std::setw (8) << tar_id << SEP
-		<< std::setw (8) << obs_id << SEP
 		<< std::setw (9) << Timestamp (plan_start) << SEP
 		<< std::setw (9) << Timestamp (plan_end) << SEP
 		<< std::setw (8) << plan_status << SEP

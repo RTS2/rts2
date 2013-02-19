@@ -504,7 +504,6 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 
 		_os << "{\"h\":["
 			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
-			"{\"n\":\"Obs ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":1,\"c\":1},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":3},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":4},"
@@ -523,8 +522,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 			tar->getPosition (&equ, JDstart);
 			struct ln_hrz_posn hrz;
 			tar->getAltAz (&hrz, JDstart);
-			_os << "[" << iter->getPlanId () << "," 
-				<< iter->getObsId () << ",\""
+			_os << "[" << iter->getPlanId () << ",\"" 
 				<< iter->getPlanStart () << "\",\""
 				<< iter->getPlanEnd () << "\","
 				<< equ.ra << "," << equ.dec << ","

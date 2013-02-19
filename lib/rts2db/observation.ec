@@ -46,7 +46,7 @@ Observation::Observation (int in_obs_id)
 	printHeader = true;
 }
 
-Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start, int in_obs_state, double in_obs_end)
+Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start, int in_obs_state, double in_obs_end, int in_plan_id)
 {
 	tar_id = in_tar_id;
 	tar_name = std::string (in_tar_name);
@@ -60,6 +60,7 @@ Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_ty
 	obs_start = in_obs_start;
 	obs_state = in_obs_state;
 	obs_end = in_obs_end;
+	plan_id = in_plan_id;
 	imgset = NULL;
 	displayImages = 0;
 	displayCounts = 0;
@@ -101,6 +102,8 @@ int Observation::load ()
 	int db_obs_state;
 	double db_obs_end;
 	int ind_obs_end;
+	int db_plan_id;
+	int ind_plan_id;
 	EXEC SQL END DECLARE SECTION;
 
 	// already loaded
@@ -128,7 +131,8 @@ int Observation::load ()
 			EXTRACT (EPOCH FROM obs_slew),
 			EXTRACT (EPOCH FROM obs_start),
 			obs_state,
-			EXTRACT (EPOCH FROM obs_end)
+			EXTRACT (EPOCH FROM obs_end),
+			plan_id
 		INTO
 			:db_tar_name,
 			:db_tar_id,
@@ -140,7 +144,8 @@ int Observation::load ()
 			:db_obs_slew   :ind_obs_slew,
 			:db_obs_start  :ind_obs_start,
 			:db_obs_state,
-			:db_obs_end    :ind_obs_end
+			:db_obs_end    :ind_obs_end,
+			:db_plan_id    :ind_plan_id
 		FROM
 			observations,
 			targets
@@ -172,6 +177,10 @@ int Observation::load ()
 	obs_state = db_obs_state;
 	if (ind_obs_end >= 0)
 		obs_end = db_obs_end;
+	if (ind_plan_id >= 0)
+		plan_id = db_plan_id;
+	else
+		plan_id = -1;
 	return 0;
 }
 

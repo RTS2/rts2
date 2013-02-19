@@ -60,7 +60,7 @@ class Observation
 		Observation (int in_tar_id, const char *in_tar_name, char in_tar_type,
 			int in_obs_id, double in_obs_ra, double in_obs_dec,
 			double in_obs_alt, double in_obs_az, double in_obs_slew,
-			double in_obs_start, int in_obs_state, double in_obs_end);
+			double in_obs_start, int in_obs_state, double in_obs_end, int in_plan_id);
 		virtual ~ Observation (void);
 		int load ();
 		int loadLastObservation ();
@@ -321,6 +321,9 @@ class Observation
 		int obs_state;
 		// nan when observations wasn't ended
 		double obs_end;
+
+		// -1 if observation is not from plan
+		int plan_id;
 };
 
 class ObservationState
