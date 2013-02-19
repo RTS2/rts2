@@ -41,7 +41,6 @@ class NStep:public Focusd
 		virtual int setTo (double num);
   		virtual double tcOffset () {return 0.;};
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int isFocusing ();
@@ -51,10 +50,18 @@ class NStep:public Focusd
 			return false;
 		}
 
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 	private:
 		char buf[15];
 		const char *device_file;
                 rts2core::ConnSerial *NSConn; // communication port with microfocuser
+
+		rts2core::ValueFloat *temp_change;
+		rts2core::ValueInteger *temp_steps;
+		rts2core::ValueSelection *temp_mode;
+		rts2core::ValueInteger *temp_backlash;
+		rts2core::ValueInteger *temp_timer;
 };
 
 }
@@ -65,6 +72,16 @@ NStep::NStep (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 	NSConn = NULL;
+
+	createValue (temp_change, "temp_change", "[C] temperature change for compensation", false, RTS2_VALUE_WRITABLE);
+	createValue (temp_steps, "temp_steps", "temperature compensation move, steps per temperature change", false, RTS2_VALUE_WRITABLE);
+	createValue (temp_mode, "temp_mode", "temperature compensation mode", false, RTS2_VALUE_WRITABLE);
+	temp_mode->addSelVal ("off");
+	temp_mode->addSelVal ("one shot");
+	temp_mode->addSelVal ("auto");
+
+	createValue (temp_backlash, "temp_backlash", "temperature compensation backlash", false, RTS2_VALUE_WRITABLE);
+	createValue (temp_timer, "temp_timer", "temperature compensation timer", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('f', NULL, 1, "device file (ussualy /dev/ttyACMx");
 }
@@ -158,23 +175,110 @@ int NStep::info ()
 		return -1;
 	}
 	buf[7] = '\0';
-
 	position->setValueDouble (atoi (buf));
+
+	ret = NSConn->writeRead (":RA", 3, buf, 4);
+	if (ret != 4)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read temperature change for compensation" << sendLog;
+		return -1;
+	}
+	buf[4] = '\0';
+	temp_change->setValueFloat (atof (buf) / 10.0);
+
+	ret = NSConn->writeRead (":RB", 3, buf, 3);
+	if (ret != 3)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read temperature step for compensation" << sendLog;
+		return -1;
+	}
+	buf[3] = '\0';
+	temp_steps->setValueInteger (atoi (buf));
+
+	ret = NSConn->writeRead (":RG", 3, buf, 1);
+	if (ret != 1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read temperature compensation mode" << sendLog;
+		return -1;
+	}
+	buf[1] = '\0';
+	temp_mode->setValueInteger (atoi (buf));
+
+	ret = NSConn->writeRead (":RE", 3, buf, 3);
+	if (ret != 3)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read temperature compensation backlash" << sendLog;
+		return -1;
+	}
+	buf[3] = '\0';
+	temp_backlash->setValueInteger (atoi (buf));
+
+	ret = NSConn->writeRead (":RH", 3, buf, 2);
+	if (ret != 2)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read temperature compensation timer" << sendLog;
+		return -1;
+	}
+	buf[2] = '\0';
+	temp_timer->setValueInteger (atoi (buf));
 
 	return Focusd::info ();
 }
 
-int NStep::commandAuthorized (rts2core::Connection * conn)
+int NStep::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
-	return Focusd::commandAuthorized (conn);
+	int ret;
+	if (oldValue == temp_change)
+	{
+		sprintf (buf, ":TT%+04d#", int (newValue->getValueFloat () * 10.0));
+		ret = NSConn->writePort (buf, 8);
+		return (ret == 8) ? 0 : -1;
+	}
+	if (oldValue == temp_steps)
+	{
+		sprintf (buf, ":TS%+03d#", newValue->getValueInteger ());
+		ret = NSConn->writePort (buf, 7);
+		return (ret == 7) ? 0 : -1;
+	}
+	if (oldValue == temp_mode)
+	{
+		sprintf (buf, ":TA%1d", newValue->getValueInteger ());
+		ret = NSConn->writePort (buf, 4);
+		return (ret == 4) ? 0 : -1;
+
+	}
+	if (oldValue == temp_backlash)
+	{
+		sprintf (buf, ":TB%03d#", newValue->getValueInteger ());
+		ret = NSConn->writePort (buf, 7);
+		return (ret == 7) ? 0 : -1;
+	}
+	if (oldValue == temp_timer)
+	{
+		sprintf (buf, ":TB%03d#", newValue->getValueInteger ());
+		ret = NSConn->writePort (buf, 7);
+		return (ret == 7) ? 0 : -1;
+	}
+	return Focusd::setValue (oldValue, newValue);
 }
 
 int NStep::setTo (double num)
 {
+	int ret = info ();
+	if (ret)
+		return -1;
+
 	double diff = num - position->getValueDouble ();
 	// ignore sub-step requests
 	if (fabs (diff) < 1)
 		return 0;
+	
+	if (fabs (diff) > 999)
+	{
+		diff = 999;
+		if (diff < 0)
+			diff *= -1;
+	}
 
 	// compare as well strings we will send..
 	snprintf (buf, 9, ":F%c%d%03d#", (diff > 0) ? '1' : '0', 0, (int) (fabs (diff)));
@@ -196,7 +300,16 @@ int NStep::isFocusing ()
 		return -1;
 	if (buf[0] == '1')
 		return USEC_SEC;
-	return -2;
+	
+	// check if it reached position..
+	ret = info ();
+	if (ret)
+		return -1;
+	
+	if (getTarget () == getPosition ())
+		return -2;
+
+	return setTo (getTarget ());
 }
 
 int main (int argc, char **argv)
