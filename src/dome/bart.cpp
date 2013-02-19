@@ -19,7 +19,7 @@
 
 #include "domeford.h"
 
-#define CAS_NA_OTEVRENI              30
+#define CAS_NA_OTEVRENI              20
 
 typedef enum
 {
@@ -28,15 +28,15 @@ typedef enum
 	KONCAK_OTEVRENI_SEVER, KONCAK_ZAVRENI_SEVER
 } vystupy;
 
-#define NUM_ZAS   5
+#define NUM_ZAS   6
 
 #define OFF   0
 #define STANDBY   1
 #define OBSERVING 2
 
-// zasuvka c.1 kamera, c.3 kamera, c.5 montaz. c.6 topeni /Ford 21.10.04
+// zasuvka c.1 kamera (NF), c.2 kamera (WF), c.5 montaz. c.6 topeni /Torman 18.2.2013
 int zasuvky_index[NUM_ZAS] =
-{ ZASUVKA_1, ZASUVKA_2, ZASUVKA_3, ZASUVKA_5, ZASUVKA_6 };
+{ ZASUVKA_1, ZASUVKA_2, ZASUVKA_3, ZASUVKA_4, ZASUVKA_5, ZASUVKA_6 };
 
 enum stavy
 { ZAS_VYP, ZAS_ZAP };
@@ -45,11 +45,11 @@ enum stavy
 enum stavy zasuvky_stavy[3][NUM_ZAS] =
 {
 	// off
-	{ZAS_ZAP, ZAS_ZAP, ZAS_VYP, ZAS_ZAP, ZAS_VYP},
+	{ZAS_ZAP, ZAS_ZAP, ZAS_VYP, ZAS_ZAP, ZAS_ZAP, ZAS_VYP},
 	// standby
-	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP},
+	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_VYP},
 	// observnig
-	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
+	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
 using namespace rts2dome;
@@ -73,11 +73,17 @@ class Bart:public Ford
 		time_t domeTimeout;
 
 		rts2core::ValueInteger *sw_state;
+		rts2core::ValueBool *socket1, *socket2, *socket3, *socket4, *socket5, *socket6;
+		rts2core::ValueBool *domeMotorPower;
+		rts2core::ValueSelection *domeMotorDirection, *domeSouthSwitchOpened, *domeSouthSwitchClosed;
 
 	protected:
 		virtual int init ();
 
+
 		virtual int info ();
+
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual int startOpen ();
 		virtual long isOpened ();
@@ -102,6 +108,22 @@ Bart::Bart (int argc, char **argv):Ford (argc, argv)
 	domeTimeout = 0;
 
 	createValue (sw_state, "sw_state", "state of dome switches", false, RTS2_DT_HEX);
+	createValue (domeMotorPower, "motor_power", "power to dome-motor", false, RTS2_DT_ONOFF);
+	createValue (domeMotorDirection, "motor_direction", "dome-motor direction", false, RTS2_DT_ONOFF);
+	domeMotorDirection->addSelVal ("opening (off)");
+	domeMotorDirection->addSelVal ("closing (on)");
+	createValue (domeSouthSwitchOpened, "south_roof_opened", "switch on south roof, opened state", false, RTS2_DT_ONOFF);
+	domeSouthSwitchOpened->addSelVal ("---");
+	domeSouthSwitchOpened->addSelVal ("OPENED");
+	createValue (domeSouthSwitchClosed, "south_roof_closed", "switch on south roof, closed state", false, RTS2_DT_ONOFF);
+	domeSouthSwitchClosed->addSelVal ("---");
+	domeSouthSwitchClosed->addSelVal ("CLOSED");
+	createValue (socket1, "socket1", "wall socket #1 (camera CNF0)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket2, "socket2", "wall socket #2 (camera CWF1)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket3, "socket3", "wall socket #3", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket4, "socket4", "wall socket #4", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket5, "socket5", "wall socket #5 (mount T0)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (socket6, "socket6", "wall socket #6 (anti-dew heating of NF & WF)", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 }
 
 Bart::~Bart ()
@@ -255,6 +277,77 @@ int Bart::handle_zasuvky (int zas)
 	return 0;
 }
 
+int Bart::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
+{
+	if (old_value == socket1)
+	{
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
+		{
+			return VYP(ZASUVKA_1) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return ZAP(ZASUVKA_1) == 0 ? 0 : -2;
+		}
+	}
+	if (old_value == socket2)
+	{
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
+		{
+			return VYP(ZASUVKA_2) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return ZAP(ZASUVKA_2) == 0 ? 0 : -2;
+		}
+	}
+	if (old_value == socket3)
+	{
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
+		{
+			return VYP(ZASUVKA_3) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return ZAP(ZASUVKA_3) == 0 ? 0 : -2;
+		}
+	}
+	if (old_value == socket4)
+	{
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
+		{
+			return VYP(ZASUVKA_4) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return ZAP(ZASUVKA_4) == 0 ? 0 : -2;
+		}
+	}
+	if (old_value == socket5)
+	{
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
+		{
+			return VYP(ZASUVKA_5) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return ZAP(ZASUVKA_5) == 0 ? 0 : -2;
+		}
+	}
+	if (old_value == socket6)
+	{
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
+		{
+			return VYP(ZASUVKA_6) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return ZAP(ZASUVKA_6) == 0 ? 0 : -2;
+		}
+	}
+	return Ford::setValue (old_value, new_value);
+}
+
 int Bart::info ()
 {
 	int ret;
@@ -265,6 +358,16 @@ int Bart::info ()
 	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (SMER) << 1));
 	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (KONCAK_ZAVRENI_JIH) << 2));
 	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (MOTOR) << 3));
+	domeMotorPower->setValueBool (getPortState (MOTOR));
+	domeMotorDirection->setValueInteger (getPortState (SMER));
+	domeSouthSwitchOpened->setValueInteger (getPortState (KONCAK_OTEVRENI_JIH));
+	domeSouthSwitchClosed->setValueInteger (getPortState (KONCAK_ZAVRENI_JIH));
+	socket1->setValueBool (!getPortState (ZASUVKA_1));
+	socket2->setValueBool (!getPortState (ZASUVKA_2));
+	socket3->setValueBool (!getPortState (ZASUVKA_3));
+	socket4->setValueBool (!getPortState (ZASUVKA_4));
+	socket5->setValueBool (!getPortState (ZASUVKA_5));
+	socket6->setValueBool (!getPortState (ZASUVKA_6));
 	return Ford::info ();
 }
 
