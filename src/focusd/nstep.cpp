@@ -177,7 +177,7 @@ int NStep::setTo (double num)
 		return 0;
 
 	// compare as well strings we will send..
-	snprintf (buf, 9, ":F%c%d%03d#", (diff > 0) ? '1' : '0', 1, (int) (fabs (diff)));
+	snprintf (buf, 9, ":F%c%d%03d#", (diff > 0) ? '1' : '0', 0, (int) (fabs (diff)));
 
 	if (NSConn->writePort (buf, 8))
 		return -1;
