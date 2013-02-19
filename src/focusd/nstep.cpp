@@ -57,6 +57,9 @@ class NStep:public Focusd
 		const char *device_file;
                 rts2core::ConnSerial *NSConn; // communication port with microfocuser
 
+		rts2core::ValueBool *coils;
+		rts2core::ValueInteger *step_speed;
+
 		rts2core::ValueFloat *temp_change;
 		rts2core::ValueInteger *temp_steps;
 		rts2core::ValueSelection *temp_mode;
@@ -72,6 +75,9 @@ NStep::NStep (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 	NSConn = NULL;
+
+	createValue (coils, "coils", "coil on after move", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (step_speed, "step_speed", "max step speed", false, RTS2_VALUE_WRITABLE);
 
 	createValue (temp_change, "temp_change", "[C] temperature change for compensation", false, RTS2_VALUE_WRITABLE);
 	createValue (temp_steps, "temp_steps", "temperature compensation move, steps per temperature change", false, RTS2_VALUE_WRITABLE);
@@ -168,6 +174,23 @@ int NStep::info ()
 		temperature->setValueFloat (atof (buf) / 10);
 	}
 
+	ret = NSConn->writeRead (":RC", 3, buf, 1);
+	if (ret != 1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read coil state" << sendLog;
+		return -1;
+	}
+	coils->setValueBool (buf[0] == '0');
+
+	ret = NSConn->writeRead (":RS", 3, buf, 3);
+	if (ret != 3)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read current position" << sendLog;
+		return -1;
+	}
+	buf[3] = '\0';
+	step_speed->setValueInteger (atoi (buf));
+
 	ret = NSConn->writeRead ("#:RP", 4, buf, 7);
 	if (ret != 7)
 	{
@@ -228,6 +251,18 @@ int NStep::info ()
 int NStep::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	int ret;
+	if (oldValue == coils)
+	{
+		sprintf (buf, ":CC%c#", ((rts2core::ValueBool *) newValue)->getValueBool () ? '0' : '1');
+		ret = NSConn->writePort (buf, 5);
+		return (ret == 5) ? 0 : -1;
+	}
+	if (oldValue == step_speed)
+	{
+		sprintf (buf, ":CS%03d#", newValue->getValueInteger ());
+		ret = NSConn->writePort (buf, 7);
+		return (ret == 7) ? 0 : -1;
+	}
 	if (oldValue == temp_change)
 	{
 		sprintf (buf, ":TT%+04d#", int (newValue->getValueFloat () * 10.0));
