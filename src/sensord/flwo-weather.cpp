@@ -473,14 +473,96 @@ bool FlwoWeather::isGoodWeather ()
   	{
 	  	setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not received");
 		if (isnan (lastPool->getValueDouble ()) || lastPool->getValueDouble () < lastNow)
+		{
+			humidity->setValueFloat (NAN);
+			valueError (humidity);
+			sendValueAll (humidity);
+
+			outsideTemp->setValueFloat (NAN);
+			sendValueAll (outsideTemp);
+
+			windSpeed->clearStat ();
+			valueError (windSpeed);
+			sendValueAll (windSpeed);
+
+			windSpeedAvg->setValueInteger (-1);
+			sendValueAll (windSpeedAvg);
+
+			windGustSpeed->setValueFloat (NAN);
+			valueError (windGustSpeed);
+			sendValueAll (windGustSpeed);
+
+			windDir->setValueFloat (NAN);
+			sendValueAll (windDir);
+
+			pressure->setValueFloat (NAN);
+			sendValueAll (pressure);
+
+			rain->setValueFloat (NAN);
+			sendValueAll (rain);
+
+			dewpoint->setValueFloat (NAN);
+			sendValueAll (dewpoint);
+
+			hatRain->setValueInteger (0);
+			sendValueAll (hatRain);
+
 			valueError (lastPool);
+		}
 		else
+		{
 			valueGood (lastPool);
+		}
 
 		if (isnan (me_mjd->getValueDouble ()) || me_mjd->getValueDouble () < lastNow)
+		{
+			me_winddir->setValueFloat (NAN);
+			sendValueAll (me_winddir);
+
+			me_windspeed->setValueFloat (NAN);
+			sendValueAll (me_windspeed);
+
+			me_temp->setValueFloat (NAN);
+			sendValueAll (me_temp);
+
+			me_dewpoint->setValueFloat (NAN);
+			sendValueAll (me_dewpoint);
+
+			me_pressure->setValueFloat (NAN);
+			sendValueAll (me_pressure);
+
+			me_rain_accumulation->setValueFloat (NAN);
+			sendValueAll (me_rain_accumulation);
+
+			me_rain_duration->setValueFloat (NAN);
+			sendValueAll (me_rain_duration);
+
+			me_rain_intensity->setValueFloat (NAN);
+			sendValueAll (me_rain_intensity);
+
+			me_hail_accumulation->setValueFloat (NAN);
+			sendValueAll (me_hail_accumulation);
+
+			me_hail_duration->setValueFloat (NAN);
+			sendValueAll (me_hail_duration);
+
+			me_hail_intensity->setValueFloat (NAN);
+			sendValueAll (me_hail_intensity);
+
+			me_sky_temp->clearStat ();
+			valueError (me_sky_temp);
+			sendValueAll (me_sky_temp);
+
+			me_rain->setValueInteger (0);
+			valueError (me_rain);
+			sendValueAll (me_rain);
+
 			valueError (me_mjd);
+		}
 		else
+		{
 			valueGood (me_mjd);
+		}
 
 		ret = false;
 	}
