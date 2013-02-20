@@ -852,8 +852,8 @@ int ModelTarget::beforeMove ()
 moveType ModelTarget::afterSlewProcessed ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_obs_id;
-		int d_step = step;
+	int d_obs_id;
+	int d_step = step;
 	EXEC SQL END DECLARE SECTION;
 
 	d_obs_id = getObsId ();
@@ -1632,7 +1632,7 @@ void TargetPlan::refreshNext ()
 		FROM
 			plan
 		WHERE
-			plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= to_timestamp (:db_next) AND obs_id IS NULL);
+			plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= to_timestamp (:db_next));
 	if (sqlca.sqlcode)
 	{
 		logMsgDb ("TargetPlan::refreshNext cannot load next target",
@@ -1668,8 +1668,6 @@ void TargetPlan::load (double JD)
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_cur_plan_id;
 	double db_cur_plan_start;
-	int db_obs_id;
-	int db_obs_id_ind;
 
 	long last;
 	EXEC SQL END DECLARE SECTION;
@@ -1696,7 +1694,6 @@ void TargetPlan::load (double JD)
 	EXEC SQL DECLARE cur_plan CURSOR FOR
 	SELECT
 		plan_id,
-		obs_id,
 		EXTRACT (EPOCH FROM plan_start)
 	FROM
 		plan
@@ -1711,7 +1708,6 @@ void TargetPlan::load (double JD)
 	{
 		EXEC SQL FETCH next FROM cur_plan INTO
 			:db_cur_plan_id,
-			:db_obs_id :db_obs_id_ind,
 			:db_cur_plan_start;
 		if (sqlca.sqlcode)
 			break;
@@ -1725,7 +1721,7 @@ void TargetPlan::load (double JD)
 			db_next_plan_id = db_cur_plan_id;
 			break;
 		}
-		if (db_obs_id_ind < 0 && db_cur_plan_start > considerPlans)
+		if (db_cur_plan_start > considerPlans)
 		{
 			// we found current plan - one that wasn't observed and is close enought to current time
 			if (db_plan_id == -1)
@@ -1743,8 +1739,7 @@ void TargetPlan::load (double JD)
 	}
 	if (sqlca.sqlcode)
 	{
-		if (sqlca.sqlcode != ECPG_NOT_FOUND
-			|| db_next_plan_id == -1)
+		if (sqlca.sqlcode != ECPG_NOT_FOUND || db_next_plan_id == -1)
 		{
 			if (sqlca.sqlcode != ECPG_NOT_FOUND)
 				logMsgDb ("TargetPlan::load cannot find any plan", MESSAGE_ERROR);
