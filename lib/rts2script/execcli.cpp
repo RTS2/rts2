@@ -562,7 +562,7 @@ int DevClientTelescopeExec::syncTarget (bool now)
 		return -1;
 	getEqu (&coord);
 	// startSlew fills coordinates, if needed..
-	ret = currentTarget->startSlew (&coord);
+	ret = currentTarget->startSlew (&coord, true);
 	if (isnan (coord.ra) || isnan (coord.dec))
 		return 0;
 	int bopTel = now ? 0 : BOP_TEL_MOVE;

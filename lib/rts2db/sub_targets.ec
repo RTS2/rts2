@@ -249,7 +249,7 @@ void DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
 	*pos = currPos;
 }
 
-moveType DarkTarget::startSlew (struct ln_equ_posn *position, int plan_id)
+moveType DarkTarget::startSlew (struct ln_equ_posn *position, bool update_position, int plan_id)
 {
 	currPos.ra = position->ra;
 	currPos.dec = position->dec;
@@ -258,7 +258,7 @@ moveType DarkTarget::startSlew (struct ln_equ_posn *position, int plan_id)
 		currPos.ra = -999;
 	if (isnan (currPos.dec))
 		currPos.dec = -999;
-	Target::startSlew (position, plan_id);
+	Target::startSlew (position, update_position, plan_id);
 	return OBS_DONT_MOVE;
 }
 
@@ -1850,7 +1850,7 @@ int TargetPlan::beforeMove ()
 	return Target::beforeMove ();
 }
 
-moveType TargetPlan::startSlew (struct ln_equ_posn *pos, int plan_id)
+moveType TargetPlan::startSlew (struct ln_equ_posn *pos, bool update_position, int plan_id)
 {
 	moveType ret;
 	if (selectedPlan)
@@ -1859,7 +1859,7 @@ moveType TargetPlan::startSlew (struct ln_equ_posn *pos, int plan_id)
 		setObsId (selectedPlan->getTarget()->getObsId ());
 		return ret;
 	}
-	return Target::startSlew (pos, plan_id);
+	return Target::startSlew (pos, update_position, plan_id);
 }
 
 void TargetPlan::printExtra (Rts2InfoValStream & _os, double JD)

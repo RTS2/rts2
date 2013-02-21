@@ -550,7 +550,7 @@ int Target::compareWithTarget (Target *in_target, double in_sep_limit)
 	return (getDistance (&other_position) < in_sep_limit);
 }
 
-moveType Target::startSlew (struct ln_equ_posn *position, int plan_id)
+moveType Target::startSlew (struct ln_equ_posn *position, bool update_position, int plan_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = getObsTargetID ();
@@ -565,6 +565,9 @@ moveType Target::startSlew (struct ln_equ_posn *position, int plan_id)
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_hrz_posn hrz;
+
+	if (update_position)
+		getPosition (position);
 
 	if (getObsId () > 0)		 // we already observe that target
 		return OBS_ALREADY_STARTED;
@@ -639,7 +642,7 @@ int Target::newObsSlew (struct ln_equ_posn *position, int plan_id)
 int Target::updateSlew (struct ln_equ_posn *position, int plan_id)
 {
 	if (observation == NULL)
-		return startSlew (position, plan_id) == OBS_MOVE_FAILED ? -1 : 0;
+		return startSlew (position, false, plan_id) == OBS_MOVE_FAILED ? -1 : 0;
 
 	struct ln_hrz_posn hrz;
 	ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);
