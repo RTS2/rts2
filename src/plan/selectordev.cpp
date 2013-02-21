@@ -715,7 +715,15 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 			int plan_id;
 			if (conn->paramNextInteger (&plan_id) || !conn->paramEnd ())
 				return -2;
-			queuePlanId (q, plan_id);
+			try
+			{
+				queuePlanId (q, plan_id);
+			}
+			catch (rts2core::Error &er)
+			{
+				logStream (MESSAGE_ERROR) << er << sendLog;
+				return -2;
+			}
 			updateNext ();
 			return 0;
 		}
@@ -906,7 +914,8 @@ void SelectorDev::queuePlanId (rts2plan::ExecutorQueue *q, int plan_id)
 	rts2db::Plan p (plan_id);
 	p.load ();
 
-	q->addTarget (p.getTarget (), p.getPlanStart (), p.getPlanEnd (), p.getPlanId ());
+	q->addTarget (p.getTarget (), p.getPlanStart (), p.getPlanEnd (), -1, p.getPlanId ());
+	p.clearTarget ();
 }
 
 void SelectorDev::afterQueueChange (rts2plan::ExecutorQueue *q)

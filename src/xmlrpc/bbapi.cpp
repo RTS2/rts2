@@ -204,7 +204,6 @@ void BBAPI::confirmSchedule (rts2db::Target *tar, double f, const char *schedule
 
 	p.setTargetId (tar->getTargetID ());
 	p.setPlanStart (f);
-	p.setBBScheduleId (schedule_id);
 
 	if (p.save ())
 		throw JSONException ("cannot create plan schedule");
