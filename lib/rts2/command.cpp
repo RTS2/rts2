@@ -550,6 +550,13 @@ CommandExecNext::CommandExecNext (Block * _master, int next_id):Command (_master
 	setCommand (_os);
 }
 
+CommandExecNextPlan::CommandExecNextPlan (Block * _master, int next_plan_id):Command (_master)
+{
+	std::ostringstream _os;
+	_os << "next_plan " << next_plan_id;
+	setCommand (_os);
+}
+
 CommandExecNow::CommandExecNow (Block * _master, int now_id):Command (_master)
 {
 	std::ostringstream _os;

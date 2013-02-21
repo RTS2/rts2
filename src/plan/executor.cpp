@@ -21,6 +21,7 @@
 #include "valuearray.h"
 #include "rts2db/constraints.h"
 #include "rts2db/devicedb.h"
+#include "rts2db/plan.h"
 #include "rts2db/target.h"
 #include "rts2db/targetgrb.h"
 #include "rts2script/executorque.h"
@@ -83,8 +84,9 @@ class Executor:public rts2db::DeviceDb
 		int switchTarget ();
 
 		int setNext (int nextId);
-		int queueTarget (int nextId, double t_start = NAN, double t_end = NAN);
-		int setNow (int nextId);
+		int setNextPlan (int nextPlanId);
+		int queueTarget (int nextId, double t_start = NAN, double t_end = NAN, int plan_id = -1);
+		int setNow (int nextId, int plan_id);
 		int setGrb (int grbId);
 		int setShower ();
 
@@ -114,7 +116,7 @@ class Executor:public rts2db::DeviceDb
 
 		rts2core::ValueBool *next_night;
 
-		int setNow (rts2db::Target * newTarget);
+		int setNow (rts2db::Target * newTarget, int plan_id);
 
 		void processTarget (rts2db::Target * in_target);
 		void updateScriptCount ();
@@ -122,6 +124,7 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueInteger *current_id;
 		rts2core::ValueInteger *current_id_sel;
 		rts2core::ValueString *current_name;
+		rts2core::ValueInteger *current_plan_id;
 		rts2core::ValueString *current_type;
 		rts2core::ValueDouble *current_errorbox;
 		rts2core::ValueInteger *current_obsid;
@@ -134,6 +137,7 @@ class Executor:public rts2db::DeviceDb
 
 		rts2core::ValueInteger *next_id;
 		rts2core::ValueString *next_name;
+		rts2core::ValueInteger *next_plan_id;
 
 		rts2core::ValueSelection *doDarks;
 		rts2core::ValueBool *flatsDone;
@@ -178,6 +182,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (current_id, "current", "ID of current target", false);
 	createValue (current_id_sel, "current_sel", "ID of currently selected target", false);
 	createValue (current_name, "current_name", "name of current target", false);
+	createValue (current_plan_id, "current_plan_id", "plan id of current target", false);
 	createValue (current_type, "current_type", "type of current target", false);
 	createValue (current_errorbox, "current_errorbox", "current target error box (if any)", false);
 	createValue (current_obsid, "obsid", "ID of observation", false);
@@ -193,6 +198,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 
 	createValue (next_id, "next", "ID of next target", false, RTS2_VALUE_WRITABLE);
 	createValue (next_name, "next_name", "name of next target", false);
+	createValue (next_plan_id, "next_plan_id", "next plan ID", false);
 
 	createValue (activeQueue, "queue", "selected queueu", true, RTS2_VALUE_WRITABLE);
 	createQueue ("next");
@@ -327,10 +333,10 @@ void Executor::postEvent (rts2core::Event * event)
 			maskState (EXEC_STATE_MASK, EXEC_MOVE);
 			break;
 		case EVENT_NEW_TARGET:
-			currentTarget->newObsSlew ((struct ln_equ_posn *) event->getArg ());
+			currentTarget->newObsSlew ((struct ln_equ_posn *) event->getArg (), current_plan_id->getValueInteger ());
 			break;
 		case EVENT_CHANGE_TARGET:
-			currentTarget->updateSlew ((struct ln_equ_posn *) event->getArg ());
+			currentTarget->updateSlew ((struct ln_equ_posn *) event->getArg (), current_plan_id->getValueInteger ());
 			break;
 		case EVENT_NEW_TARGET_ALTAZ:
 		case EVENT_CHANGE_TARGET_ALTAZ:
@@ -339,9 +345,9 @@ void Executor::postEvent (rts2core::Event * event)
 				struct ln_equ_posn pos;
 				ln_get_equ_from_hrz (hrz, observer, ln_get_julian_from_sys (), &pos);
 				if (event->getType () == EVENT_NEW_TARGET_ALTAZ)
-					currentTarget->newObsSlew (&pos);
+					currentTarget->newObsSlew (&pos, current_plan_id->getValueInteger ());
 				else
-					currentTarget->updateSlew (&pos);
+					currentTarget->updateSlew (&pos, current_plan_id->getValueInteger ());
 			}
 			break;
 		case EVENT_OBSERVE:
@@ -502,6 +508,7 @@ int Executor::info ()
 	{
 		current_id->setValueInteger (-1);
 		current_id_sel->setValueInteger (-1);
+		current_plan_id->setValueInteger (-1);
 		current_errorbox->setValueDouble (NAN);
 		current_name->setValueCharArr (NULL);
 		img_id->setValueInteger (-1);
@@ -513,11 +520,13 @@ int Executor::info ()
 	{
 		next_id->setValueInteger (-1);
 		next_name->setValueCharArr (NULL);
+		next_plan_id->setValueInteger (-1);
 	}
 	else
 	{
 		next_id->setValueInteger (getActiveQueue ()->front ().target->getTargetID ());
 		next_name->setValueCharArr (getActiveQueue ()->front ().target->getTargetName ());
+		next_plan_id->setValueInteger (getActiveQueue ()->front ().plan_id);
 	}
 
 	return rts2db::DeviceDb::info ();
@@ -536,10 +545,10 @@ void Executor::changeMasterState (int old_state, int new_state)
 			flatsDone->setValueBool (false);
 			sendValueAll (flatsDone);
 			// kill darks if they are running from evening
-			if (currentTarget && currentTarget->getTargetType () == TYPE_DARK)
+			if (currentTarget && currentTarget->getTargetType () == TYPE_DARK && !(getActiveQueue ()->empty ()))
 			{
 				next_night->setValueBool (true);
-				setNow (activeQueue->getValueInteger ());
+				setNow (getActiveQueue()->front().target->getTargetID (), getActiveQueue ()->front ().plan_id);
 			}
 			else
 			{
@@ -551,8 +560,8 @@ void Executor::changeMasterState (int old_state, int new_state)
 			selectorNext->setValueBool (true);
 			sendValueAll (selectorNext);
 			// switch target if current is flats or darks
-			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT)
-				setNow (activeQueue->getValueInteger ());
+			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && !(getActiveQueue ()->empty ()))
+				setNow (getActiveQueue ()->front ().target->getTargetID (), getActiveQueue ()->front ().plan_id);
 		case SERVERD_EVENING:
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
@@ -604,7 +613,22 @@ int Executor::setNext (int nextId)
 	return queueTarget (nextId);
 }
 
-int Executor::queueTarget (int tarId, double t_start, double t_end)
+int Executor::setNextPlan (int nextPlanId)
+{
+	if (getActiveQueue ()->size() != 0)
+	{
+		if (getActiveQueue ()->front ().plan_id == nextPlanId && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
+			// asked for same target
+			return 0;
+		clearNextTargets ();
+	}
+	rts2db::Plan p (nextPlanId);
+	p.load ();
+
+	return queueTarget (p.getTarget ()->getTargetID (), NAN, NAN, nextPlanId);
+}
+
+int Executor::queueTarget (int tarId, double t_start, double t_end, int plan_id)
 {
 	try
 	{
@@ -621,17 +645,17 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 		if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && nt->getTargetType () != TYPE_FLAT
 			 && (getMasterState () == SERVERD_NIGHT || getMasterState () == SERVERD_MORNING))
 		{
-			return setNow (nt);
+			return setNow (nt, plan_id);
 		}
 		// switch immediately to flats if in twilight
 		if ((getMasterState () == SERVERD_DUSK || getMasterState () == SERVERD_DAWN) && nt->getTargetType () == TYPE_FLAT && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
 		{
-			return setNow (nt);
+			return setNow (nt, plan_id);
 		}
 		// kill darks during nights..
 		if (next_night->getValueBool () && getMasterState () == SERVERD_NIGHT && currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != TYPE_DARK)
 		{
-			if (setNow (nt) == 0)
+			if (setNow (nt, plan_id) == 0)
 			{
 				next_night->setValueBool (false);
 				sendValueAll (next_night);
@@ -657,7 +681,7 @@ void Executor::createQueue (const char *name)
 	activeQueue->addSelVal (name, (Rts2SelData *) &(queues.back()));
 }
 
-int Executor::setNow (int nextId)
+int Executor::setNow (int nextId, int plan_id)
 {
 	rts2db::Target *newTarget;
 
@@ -670,7 +694,7 @@ int Executor::setNow (int nextId)
 		if (!newTarget)
 			// error..
 			return -2;
-		return setNow (newTarget);
+		return setNow (newTarget, plan_id);
 	}
 	catch (rts2core::Error &er)
 	{
@@ -679,7 +703,7 @@ int Executor::setNow (int nextId)
 	}
 }
 
-int Executor::setNow (rts2db::Target * newTarget)
+int Executor::setNow (rts2db::Target * newTarget, int plan_id)
 {
 	if (currentTarget)
 	{
@@ -687,6 +711,8 @@ int Executor::setNow (rts2db::Target * newTarget)
 		processTarget (currentTarget);
 	}
 	currentTarget = newTarget;
+	current_plan_id->setValueInteger (plan_id);
+	sendValueAll (current_plan_id);
 
 	// at this situation, we would like to get rid of nextTarget as
 	// well
@@ -748,7 +774,7 @@ int Executor::setGrb (int grbId)
 		}
 		if (!currentTarget)
 		{
-			return setNow (grbTarget);
+			return setNow (grbTarget, -1);
 		}
 
 		if (currentTarget->getTargetType () == TYPE_GRB && grbTarget->getTargetType () == TYPE_GRB)
@@ -768,7 +794,7 @@ int Executor::setGrb (int grbId)
 		ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit->getValueDouble ());
 		if (ret == 0)
 		{
-			return setNow (grbTarget);
+			return setNow (grbTarget, -1);
 		}
 		// if that's only few arcsec update, don't change
 		ret = grbTarget->compareWithTarget (currentTarget, grb_min_sep->getValueDouble ());
@@ -804,7 +830,7 @@ int Executor::setShower ()
 		return -2;
 	}
 
-	return setNow (TARGET_SHOWER);
+	return setNow (TARGET_SHOWER, -1);
 }
 
 int Executor::stop ()
@@ -1010,7 +1036,7 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		sendValueAll (selectorNext);
 		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
 			return -2;
-		return setNow (tar_id);
+		return setNow (tar_id, -1);
 	}
 	else if (conn->isCommand ("queue"))
 	{
@@ -1070,6 +1096,29 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		selector_next_reported = false;
 		sendValueAll (selectorNext);
 		return setNext (tar_id);
+	}
+	else if (conn->isCommand ("next_plan"))
+	{
+		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+			return -2;
+		switch (conn->getOtherType ())
+		{
+			case DEVICE_TYPE_SELECTOR:
+				if (selectorNext->getValueBool () == false)
+				{
+					if (selector_next_reported == false)
+					{
+						logStream (MESSAGE_WARNING) << "ignoring selector next, as selector_next is set to false (for target #" << tar_id << ")" << sendLog;
+						selector_next_reported = true;
+					}
+					return -2;
+				}
+				break;
+		}
+		selectorNext->setValueBool (true);
+		selector_next_reported = false;
+		sendValueAll (selectorNext);
+		return setNextPlan (tar_id);
 	}
 	else if (conn->isCommand ("end"))
 	{

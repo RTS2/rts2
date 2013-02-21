@@ -597,6 +597,12 @@ class CommandExecNext:public Command
 		CommandExecNext (Block * _master, int next_id);
 };
 
+class CommandExecNextPlan:public Command
+{
+	public:
+		CommandExecNextPlan (Block * _master, int next_plan_id);
+};
+
 class CommandExecNow:public Command
 {
 	public:

@@ -584,7 +584,10 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 			}
 			else
 			{
-				(*iexec)->queCommand (new rts2core::CommandExecNext (this, next_id->getValueInteger ()));
+				if (next_plan_id->getValueInteger () > 0)
+					(*iexec)->queCommand (new rts2core::CommandExecNextPlan (this, next_plan_id->getValueInteger ()));
+				else
+					(*iexec)->queCommand (new rts2core::CommandExecNext (this, next_id->getValueInteger ()));
 			}
 		}
 		return 0;

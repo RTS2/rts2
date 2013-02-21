@@ -470,12 +470,12 @@ class Target:public Rts2Target
 		/**
 		 * Start new observation of the target.
 		 */
-		int newObsSlew (struct ln_equ_posn *position);
+		int newObsSlew (struct ln_equ_posn *position, int plan_id);
 
 		/**
 		 * Update slew position - record in Observation class.
 		 */
-		int updateSlew (struct ln_equ_posn *position);
+		int updateSlew (struct ln_equ_posn *position, int plan_id);
 
 		virtual moveType afterSlewProcessed ();
 		virtual int startObservation ();

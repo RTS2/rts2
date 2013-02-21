@@ -627,19 +627,19 @@ moveType Target::startSlew (struct ln_equ_posn *position, int plan_id)
 	return afterSlewProcessed ();
 }
 
-int Target::newObsSlew (struct ln_equ_posn *position)
+int Target::newObsSlew (struct ln_equ_posn *position, int plan_id)
 {
 	endObservation (-1);
 	delete observation;
 	observation = NULL;
 	nullImgId ();
-	return updateSlew (position);
+	return updateSlew (position, plan_id);
 }
 
-int Target::updateSlew (struct ln_equ_posn *position)
+int Target::updateSlew (struct ln_equ_posn *position, int plan_id)
 {
 	if (observation == NULL)
-		return startSlew (position) == OBS_MOVE_FAILED ? -1 : 0;
+		return startSlew (position, plan_id) == OBS_MOVE_FAILED ? -1 : 0;
 
 	struct ln_hrz_posn hrz;
 	ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);
