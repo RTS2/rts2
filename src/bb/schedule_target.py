@@ -28,8 +28,7 @@ for obs_id in args:
 		a = sys.stdin.readline().rstrip('\n')
 		(tar_name, tar_ra, tar_dec) = re.match('"([^"]*)" (\S*) (\S*)', a).groups()
 
-		ret = rts2.target.create(tar_name, tar_ra, tar_dec)
-		obs_tar_id = int(ret['id'])
+		obs_tar_id = rts2.target.create(tar_name, tar_ra, tar_dec)
 		print 'mapping', obs_id, options.create, obs_tar_id
 		sys.stdout.flush()
 	else:
