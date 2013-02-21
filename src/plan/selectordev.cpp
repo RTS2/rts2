@@ -419,8 +419,13 @@ rts2core::DevClient *SelectorDev::createOtherType (rts2core::Connection * conn, 
 		case DEVICE_TYPE_EXECUTOR:
 			ret = rts2db::DeviceDb::createOtherType (conn, other_device_type);
 			updateNext ();
-			if (next_id->getValueInteger () > 0 && selEnabled->getValueBool ())
-				conn->queCommand (new rts2core::CommandExecNext (this, next_id->getValueInteger ()));
+			if (selEnabled->getValueBool ())
+			{
+				if (next_plan_id->getValueInteger () > 0)
+					conn->queCommand (new rts2core::CommandExecNextPlan (this, next_plan_id->getValueInteger ()));
+				else if (next_id->getValueInteger () > 0)
+					conn->queCommand (new rts2core::CommandExecNext (this, next_id->getValueInteger ()));
+			}
 			return ret;
 		default:
 			return rts2db::DeviceDb::createOtherType (conn, other_device_type);
