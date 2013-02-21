@@ -159,7 +159,7 @@ class Queue:
 			json.getProxy().executeCommand(self.service,'queue_at {0}{1}'.format(self.name, queue_cmd))
 		else:
 			for x in self.entries:
-				queue_cmd += ' {0} {1} {2} {3}'.format(x.qid, x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
+				queue_cmd += ' {0} {1} {2} {3}'.format(-1 if x.qid is None else x.qid, x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
 
 			if remove_new:
 				self.entries = filter(lambda x: x.qid > 0, self.entries)
