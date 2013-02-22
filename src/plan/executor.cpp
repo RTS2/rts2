@@ -661,7 +661,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end, int plan_id)
 				sendValueAll (next_night);
 			}
 		}
-		getActiveQueue ()->addTarget (nt, t_start, t_end);
+		getActiveQueue ()->addTarget (nt, t_start, t_end, -1, plan_id);
 		if (!currentTarget)
 			return switchTarget () == 0 ? 0 : -2;
 		else
@@ -720,7 +720,7 @@ int Executor::setNow (rts2db::Target * newTarget, int plan_id)
 
 	clearAll ();
 	postEvent (new rts2core::Event (EVENT_SET_TARGET_KILL, (void *) currentTarget));
-	postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET_NOW));
+	postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET_NOW, (void *) current_plan_id));
 
 	infoAll ();
 
@@ -872,6 +872,7 @@ void Executor::doSwitch ()
 	{
 		// don't execute already started observation, if auto loop is off
 		currentTarget = NULL;
+		current_plan_id->setValueInteger (-1);
 	}
 	if (getActiveQueue ()->size () != 0)
 	{
@@ -895,6 +896,7 @@ void Executor::doSwitch ()
 		else
 		{
 			currentTarget = getActiveQueue ()->front ().target;
+			current_plan_id->setValueInteger (getActiveQueue ()->front ().plan_id);
 		}
 	}
 	if (currentTarget)
@@ -902,7 +904,7 @@ void Executor::doSwitch ()
 		// send script_ends to all devices..
 		queAll (new rts2core::CommandScriptEnds (this));
 		postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
-		postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET));
+		postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET, (void *) current_plan_id));
 		// send note to selector..
 		connections_t::iterator c = getConnections ()->begin ();
 		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);

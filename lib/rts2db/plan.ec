@@ -118,11 +118,15 @@ int Plan::load ()
 	else
 		plan_end = db_plan_end;
 	plan_status = db_plan_status;
-	db_bb_schedule_id.arr[db_bb_schedule_id.len] = '\0';
 	if (db_bb_schedule_id_ind)
+	{
 		bb_schedule_id = std::string ();
+	}
 	else
+	{
+		db_bb_schedule_id.arr[db_bb_schedule_id.len] = '\0';
 		bb_schedule_id = std::string (db_bb_schedule_id.arr);
+	}
 
 	EXEC SQL COMMIT;
 	return 0;

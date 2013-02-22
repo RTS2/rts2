@@ -491,7 +491,7 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 			if (currentTarget)
 			{
 				currentTarget->beforeMove ();
-				ret = syncTarget (event->getType () == EVENT_SLEW_TO_TARGET_NOW);
+				ret = syncTarget (event->getType () == EVENT_SLEW_TO_TARGET_NOW, ((ValueInteger *) event->getArg ())->getValueInteger ());
 				switch (ret)
 				{
 					case OBS_DONT_MOVE:
@@ -554,7 +554,7 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 	DevClientTelescopeImage::postEvent (event);
 }
 
-int DevClientTelescopeExec::syncTarget (bool now)
+int DevClientTelescopeExec::syncTarget (bool now, int plan_id)
 {
 	struct ln_equ_posn coord;
 	int ret;
@@ -562,7 +562,7 @@ int DevClientTelescopeExec::syncTarget (bool now)
 		return -1;
 	getEqu (&coord);
 	// startSlew fills coordinates, if needed..
-	ret = currentTarget->startSlew (&coord, true);
+	ret = currentTarget->startSlew (&coord, true, plan_id);
 	if (isnan (coord.ra) || isnan (coord.dec))
 		return 0;
 	int bopTel = now ? 0 : BOP_TEL_MOVE;

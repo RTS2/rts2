@@ -158,7 +158,7 @@ class DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 
 		struct ln_equ_posn fixedOffset;
 
-		int syncTarget (bool now = false);
+		int syncTarget (bool now = false, int plan_id = -1);
 		void checkInterChange ();
 	protected:
 		virtual void moveEnd ();
