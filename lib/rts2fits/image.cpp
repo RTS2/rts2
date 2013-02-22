@@ -1647,10 +1647,10 @@ void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label,
 	Magick::Image *image = NULL;
 
 	try {
-		Magick::Image *image = getMagickImage (NULL, quantiles, chan, colourVariant);
+		image = getMagickImage (NULL, quantiles, chan, colourVariant);
 		if (zoom != 1.0)
 			image->zoom (Magick::Geometry (image->size ().height () * zoom, image->size ().width () * zoom));
-		writeLabel (image, 2, image.size ().height () - 2, 20, label);
+		writeLabel (image, 2, image->size ().height () - 2, 20, label);
 		image->write (new_filename.c_str ());
 		delete image;
 	}
@@ -1664,13 +1664,17 @@ void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label,
 
 void Image::writeAsBlob (Magick::Blob &blob, const char * label, float quantiles, int chan, int colourVariant)
 {
-	try {
-		Magick::Image image = getMagickImage (label, quantiles, chan, colourVariant);
-		image.write (&blob, "jpeg");
+	Magick::Image *image = NULL;
+	try
+	{
+		image = getMagickImage (label, quantiles, chan, colourVariant);
+		image->write (&blob, "jpeg");
+		delete image;
 	}
 	catch (Magick::Exception &ex)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot create image " << ex.what () << sendLog;
+		delete image;
 		throw ex;
 	}
 }
