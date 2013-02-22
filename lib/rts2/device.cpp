@@ -589,7 +589,7 @@ int Device::commandAuthorized (Connection * conn)
 void Device::setWeatherState (bool good_weather, const char *msg)
 {
 	Daemon::setWeatherState (good_weather, msg);
-	if (good_weather == false && (getState () & BAD_WEATHER) && (last_weathermsg == NULL || !strcmp (msg, last_weathermsg)))
+	if (good_weather == false && (getState () & BAD_WEATHER) && (last_weathermsg == NULL || strcmp (msg, last_weathermsg)))
 	{
 		std::ostringstream os;
 		os << "weather_update \"" << getDeviceName () << "\" \"" << msg << "\"";
