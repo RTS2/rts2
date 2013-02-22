@@ -1480,10 +1480,10 @@ void Image::getChannelPseudocolourImage (int _dataType, int chan, unsigned char 
 }
 
 #if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
-Magick::Image Image::getMagickImage (const char *label, float quantiles, int chan, int colourVariant)
+Magick::Image *Image::getMagickImage (const char *label, float quantiles, int chan, int colourVariant)
 {
 	unsigned char *buf = NULL;
-	Magick::Image * image = NULL;
+	Magick::Image *image = NULL;
 	try
 	{
 		int tw = 0;
@@ -1602,15 +1602,15 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 		if (label && label[0] != '\0')
 		{
-			(*image).font("helvetica");
-			(*image).strokeColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-			(*image).fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+			image->font("helvetica");
+			image->strokeColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+			image->fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
 
-			writeLabel (*image, 2, (*image).size ().height () - 2, 20, label);
+			writeLabel (image, 2, image->size ().height () - 2, 20, label);
 		}
 
 		delete[] buf;
-		return *image;
+		return image;
 	}
 	catch (Magick::Exception &ex)
 	{
@@ -1620,17 +1620,17 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 	}
 }
 
-void Image::writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, const char *labelText)
+void Image::writeLabel (Magick::Image *mimage, int x, int y, unsigned int fs, const char *labelText)
 {
 	// no label, no work
 	if (labelText == NULL || labelText[0] == '\0')
 		return;
-	mimage.fontPointsize (fs);
-	mimage.fillColor (Magick::Color (0, 0, 0, MaxRGB / 2));
-	mimage.draw (Magick::DrawableRectangle (x, y - fs - 4, mimage.size (). width () - x - 2, y));
+	mimage->fontPointsize (fs);
+	mimage->fillColor (Magick::Color (0, 0, 0, MaxRGB / 2));
+	mimage->draw (Magick::DrawableRectangle (x, y - fs - 4, mimage->size (). width () - x - 2, y));
 
-	mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-	mimage.draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
+	mimage->fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+	mimage->draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
 }
 
 void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles , int chan, int colourVariant)
@@ -1644,16 +1644,20 @@ void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label,
 		throw rts2core::Error ("Cannot create directory");
 	}
 
+	Magick::Image *image = NULL;
+
 	try {
-		Magick::Image image = getMagickImage (NULL, quantiles, chan, colourVariant);
+		Magick::Image *image = getMagickImage (NULL, quantiles, chan, colourVariant);
 		if (zoom != 1.0)
-			image.zoom (Magick::Geometry (image.size ().height () * zoom, image.size ().width () * zoom));
+			image->zoom (Magick::Geometry (image->size ().height () * zoom, image->size ().width () * zoom));
 		writeLabel (image, 2, image.size ().height () - 2, 20, label);
-		image.write (new_filename.c_str ());
+		image->write (new_filename.c_str ());
+		delete image;
 	}
 	catch (Magick::Exception &ex)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot create image " << new_filename << ", " << ex.what () << sendLog;
+		delete image;
 		throw ex;
 	}
 }

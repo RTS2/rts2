@@ -329,7 +329,7 @@ class Image:public FitsFile
 		 *
 		 * @throw Exception
 		 */
-		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
+		Magick::Image *getMagickImage (const char *label = NULL, float quantiles=0.005, int chan = -1, int colourVariant = PSEUDOCOLOUR_VARIANT_GREY);
 
 		/**
 		 * Write lable to given position. Label text will be expanded.
@@ -339,7 +339,7 @@ class Image:public FitsFile
 		 * @param y         Y coordinate of rectangle with label.
 		 * @param labelText Text of label. It will be expanded through expandVariable.
 		 */
-		void writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, const char *labelText);
+		void writeLabel (Magick::Image *mimage, int x, int y, unsigned int fs, const char *labelText);
 
 		/**
 		 * Write image as JPEG to provided data buffer.

@@ -230,14 +230,16 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
 	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
 
-	Magick::Image mimage = image.getMagickImage (label, quantiles, chan);
+	Magick::Image *mimage = image.getMagickImage (label, quantiles, chan);
 
 	cacheMaxAge (CACHE_MAX_STATIC);
 
-	mimage.write (&blob, "jpeg");
+	mimage->write (&blob, "jpeg");
 	response_length = blob.length();
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
+
+	delete mimage;
 }
 
 void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -268,23 +270,25 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		image.openFile (absPath, true, false);
 		Blob blob;
 
-		Magick::Image mimage = image.getMagickImage (NULL, quantiles, chan);
+		Magick::Image *mimage = image.getMagickImage (NULL, quantiles, chan);
 		if (prevsize > 0)
 		{
-			mimage.zoom (Magick::Geometry (prevsize, prevsize));
+			mimage->zoom (Magick::Geometry (prevsize, prevsize));
 			image.writeLabel (mimage, 1, prevsize - 2, 10, label);
 		}
 		else
 		{
-			image.writeLabel (mimage, 1, mimage.rows () - 2, 10, label);
+			image.writeLabel (mimage, 1, mimage->rows () - 2, 10, label);
 		}
 
 		cacheMaxAge (CACHE_MAX_STATIC);
 
-		mimage.write (&blob, "jpeg");
+		mimage->write (&blob, "jpeg");
 		response_length = blob.length();
 		response = new char[response_length];
 		memcpy (response, blob.data(), response_length);
+
+		delete mimage;
 		return;
 	}
 
