@@ -168,4 +168,6 @@ void Directory::parseFd (int f, char * &response, size_t &response_length)
 	response_length = es.length ();
 	response = new char[response_length];
 	memcpy (response, es.c_str (), response_length);
+
+	delete doc;
 }

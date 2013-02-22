@@ -1483,6 +1483,7 @@ void Image::getChannelPseudocolourImage (int _dataType, int chan, unsigned char 
 Magick::Image Image::getMagickImage (const char *label, float quantiles, int chan, int colourVariant)
 {
 	unsigned char *buf = NULL;
+	Magick::Image * image = NULL;
 	try
 	{
 		int tw = 0;
@@ -1594,7 +1595,6 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 		}
 
-		Magick::Image * image;
 		if (colourVariant == PSEUDOCOLOUR_VARIANT_GREY)
 			image = new Magick::Image (tw, th, "K", Magick::CharPixel, buf);
 		else
@@ -1615,6 +1615,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 	catch (Magick::Exception &ex)
 	{
 		delete[] buf;
+		delete image;
 		throw ex;
 	}
 }
