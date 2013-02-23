@@ -59,6 +59,7 @@ class ElementSleep:public Element
 		virtual int idle ();
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_SLEEP " " << sec; }
+		virtual void printJson (std::ostream &os);
 	private:
 		double sec;
 };

@@ -75,6 +75,11 @@ int ElementSleep::idle ()
 	return NEXT_COMMAND_NEXT;
 }
 
+void ElementSleep::printJson (std::ostream &os)
+{
+	os << "\"cmd\":\"sleep\",\"seconds\":" << sec;
+}
+
 int ElementWaitForIdle::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (client->getConnection ()->queEmptyForOriginator (client) == false)
