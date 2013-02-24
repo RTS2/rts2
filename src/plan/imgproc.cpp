@@ -326,12 +326,9 @@ int ImageProc::info ()
 
 void ImageProc::changeMasterState (int old_state, int new_state)
 {
-	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	switch (new_state & (SERVERD_STATUS_MASK))
 	{
 		case SERVERD_DUSK:
-		case SERVERD_DUSK | SERVERD_STANDBY_MASK:
-		case SERVERD_SOFT_OFF:
-		case SERVERD_HARD_OFF:
 			nightGoodImages->setValueInteger (0);
 			nightTrashImages->setValueInteger (0);
 			nightBadImages->setValueInteger (0);
@@ -343,24 +340,19 @@ void ImageProc::changeMasterState (int old_state, int new_state)
 			sendValueAll (nightBadImages);
 			sendValueAll (nightDarks);
 			sendValueAll (nightFlats);
-
-			if ((new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)) == SERVERD_SOFT_OFF
-				|| (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)) == SERVERD_HARD_OFF)
-				break;
-
 		case SERVERD_NIGHT:
-		case SERVERD_NIGHT | SERVERD_STANDBY_MASK:
 		case SERVERD_DAWN:
-		case SERVERD_DAWN | SERVERD_STANDBY_MASK:
-			if (imageGlob.gl_pathc)
+			if (!(new_state & SERVERD_ONOFF_MASK))
 			{
-				globfree (&imageGlob);
-				imageGlob.gl_pathc = 0;
-				globC = 0;
+				if (imageGlob.gl_pathc)
+				{
+					globfree (&imageGlob);
+					imageGlob.gl_pathc = 0;
+					globC = 0;
+				}
+				reprocessingPossible = 0;
+				break;
 			}
-			reprocessingPossible = 0;
-			break;
-
 		default:
 			if (strlen (image_glob->getValue ()))
 			{

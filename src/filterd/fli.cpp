@@ -169,7 +169,7 @@ int Fli::initHardware ()
 
 void Fli::changeMasterState (int old_state, int new_state)
 {
-	if ((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY || (new_state & SERVERD_STATUS_MASK) == SERVERD_STANDBY_MASK || new_state == SERVERD_SOFT_OFF || new_state == SERVERD_HARD_OFF)
+	if ((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		homeFilter ();
 	Filterd::changeMasterState (old_state, new_state);
 }

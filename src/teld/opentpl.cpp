@@ -1450,7 +1450,7 @@ int OpenTPL::stopWorm ()
 
 void OpenTPL::changeMasterState (int old_state, int new_state)
 {
-	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK))
 	{
 		case SERVERD_DUSK:
 		case SERVERD_NIGHT:

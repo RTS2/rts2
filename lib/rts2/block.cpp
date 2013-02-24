@@ -524,14 +524,14 @@ int Block::setMasterState (Connection *_conn, int new_state)
 	// ignore connections from wrong master..
 	if (stateMasterConn != NULL && _conn != stateMasterConn)
 	{
-		if ((new_state & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF && (new_state & WEATHER_MASK) != BAD_WEATHER && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+		if ((new_state & SERVERD_ONOFF_MASK) != SERVERD_HARD_OFF && (new_state & WEATHER_MASK) != BAD_WEATHER && (new_state & SERVERD_ONOFF_MASK) != SERVERD_STANDBY)
 		{
 			if ((old_state & ~BOP_MASK) != (new_state & ~BOP_MASK))
 				logStream (MESSAGE_DEBUG) << "ignoring state change, as it does not arrive from master connection" << sendLog;
 			return 0;
 		}
 		// ignore request from non-master server asking us to switch to standby, when we are in hard off
-		if ((masterState & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF && (new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+		if ((masterState & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF && (new_state & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
 			return 0;
 	}
 	// change state NOW, before it will mess in processing routines

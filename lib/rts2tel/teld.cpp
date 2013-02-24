@@ -876,9 +876,7 @@ void Telescope::changeMasterState (int old_state, int new_state)
 
 	// park us during day..
 	if ((((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
-		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
-		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
-		|| (new_state & SERVERD_STANDBY_MASK)) && standbyPark->getValueInteger () != 0)
+		|| (new_state & SERVERD_ONOFF_MASK)) && standbyPark->getValueInteger () != 0)
 	{
 		// ignore nighttime park request
 		if (standbyPark->getValueInteger () == 2 || ! ((new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT || (new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN))
@@ -890,14 +888,10 @@ void Telescope::changeMasterState (int old_state, int new_state)
 
 	if (blockOnStandby->getValueBool () == true)
 	{
-		if ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
-		  || (new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
-		  || (new_state & SERVERD_STANDBY_MASK))
+		if (new_state & SERVERD_ONOFF_MASK)
 			blockMove->setValueBool (true);
 		// only set blockMove to false if switching from off/standy
-		else if ((old_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
-		  || (old_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
-		  || (old_state & SERVERD_STANDBY_MASK))
+		else if (old_state & SERVERD_ONOFF_MASK)
 			blockMove->setValueBool (false);
 	}
 

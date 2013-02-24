@@ -387,11 +387,11 @@ class Block: public App
 		 *
 		 * @see Block::getMasterStateFull()
 		 *
-		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)
+		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK)
 		 */
 		const unsigned int getMasterState ()
 		{
-			return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK);
+			return masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK);
 		}
 
 		/**

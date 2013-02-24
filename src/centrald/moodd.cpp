@@ -42,8 +42,7 @@ class MoodD: public Device
 using namespace rts2core;
 
 
-void
-MoodD::checkCentarlds ()
+void MoodD::checkCentarlds ()
 {
 	connections_t::iterator iter;
 	if (getCentraldConns ()->size () == 0)
@@ -59,7 +58,7 @@ MoodD::checkCentarlds ()
 			setWeatherState (false, "some centrald connection is not running");
 			return;
 		}
-		if (((*iter)->getState () & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
+		if (((*iter)->getState () & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF)
 		{
 			setWeatherState (false, "some centrald is in off state");
 			return;

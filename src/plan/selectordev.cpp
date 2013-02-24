@@ -860,31 +860,32 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 
 void SelectorDev::changeMasterState (int old_state, int new_state)
 {
-	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+ 	// don't do anything in OFF modes
+	switch (new_state & SERVERD_ONOFF_MASK)
+	{
+		case SERVERD_SOFT_OFF:
+		case SERVERD_HARD_OFF:
+			rts2db::DeviceDb::changeMasterState (old_state, new_state);
+			return;
+	}
+	// do something only in night/dawn/dusk
+	switch (new_state & SERVERD_STATUS_MASK)
 	{
 		case SERVERD_DUSK:
 		case SERVERD_DAWN:
 			// low latency select to catch right moment for flats
 			idle_select->setValueInteger (30);
 			sendValueAll (idle_select);
-		case SERVERD_MORNING:
-		case SERVERD_MORNING | SERVERD_STANDBY:
-		case SERVERD_SOFT_OFF:
-		case SERVERD_HARD_OFF:
 			break;
 		case SERVERD_NIGHT:
 			idle_select->setValueInteger (night_idle_select->getValueInteger ());
 			sendValueAll (idle_select);
 			break;
-	}
-	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
-	{
-		case SERVERD_SOFT_OFF:
-		case SERVERD_HARD_OFF:
-			break;
 		default:
-			updateSelectLength ();
+			rts2db::DeviceDb::changeMasterState (old_state, new_state);
+			return;
 	}
+	updateSelectLength ();
 	updateNext ();
 	rts2db::DeviceDb::changeMasterState (old_state, new_state);
 }

@@ -233,7 +233,7 @@ int Dome::idle ()
 	checkOpening ();
 	if (isGoodWeather ())
 	{
-		if (weatherOpensDome->getValueBool () == true && (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+		if (weatherOpensDome->getValueBool () == true && (getMasterState () & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
 		{
 			setMasterOn ();
 		}
@@ -295,9 +295,7 @@ int Dome::off ()
 
 int Dome::setMasterStandby ()
 {
-	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
-		&& getMasterState () != SERVERD_UNKNOW && (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY
-		&& !centralServerInState (SERVERD_HARD_OFF))
+	if (!(getMasterState () & SERVERD_ONOFF_MASK) && ((getMasterState () & SERVERD_STATUS_MASK) != SERVERD_UNKNOW))
 	{
 		return sendMasters ("standby");
 	}
@@ -306,8 +304,7 @@ int Dome::setMasterStandby ()
 
 int Dome::setMasterOn ()
 {
-	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
-		&& (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	if ((getMasterState () & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
 	{
 		return sendMasters ("on");
 	}
@@ -321,7 +318,7 @@ void Dome::changeMasterState (int old_state, int new_state)
 	{
 		logStream (MESSAGE_INFO) << "ignoring bad weather trigerred state change" << sendLog;
 	}
-	else if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	else if ((new_state & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
 	{
 		switch (new_state & SERVERD_STATUS_MASK)
 		{

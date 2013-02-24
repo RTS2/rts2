@@ -553,13 +553,13 @@ int Client::getMasterState ()
 	if (masterStateQuery)
 	{
 		if (!strcasecmp (masterStateQuery, "on"))
-			res = (state & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF && (state & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF && !(state & SERVERD_STANDBY_MASK);
+			res = !(state & SERVERD_ONOFF_MASK);
 		else if (!strcasecmp (masterStateQuery, "standby"))
-			res = state & SERVERD_STANDBY_MASK;
+			res = (state & SERVERD_ONOFF_MASK == SERVERD_STANDBY);
 		else if (!strcasecmp (masterStateQuery, "off"))
-			res = (state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF || (state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF;
+			res = (state & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF || (state & SERVERD_ONOFF_MASK) == SERVERD_SOFT_OFF;
 		else if (!strcasecmp (masterStateQuery, "rnight"))
-			res = (state & SERVERD_STATUS_MASK) == SERVERD_NIGHT && !(state & SERVERD_STANDBY_MASK);
+			res = (state & SERVERD_STATUS_MASK) == SERVERD_NIGHT && !(state & SERVERD_ONOFF_MASK);
 		else
 		{
 			std::cerr << "Invalid state parameter " << masterStateQuery << std::endl;

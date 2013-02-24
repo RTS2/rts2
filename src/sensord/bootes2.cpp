@@ -356,12 +356,12 @@ void Bootes2::valueChanged (rts2core::Value *v)
 
 void Bootes2::changeMasterState (int old_state, int new_state)
 {
-	if (new_state & SERVERD_STANDBY_MASK)
+	if ((new_state & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
 	{
 		comedi_dio_write (comediDevice, 2, 6, 1);
 		comedi_dio_write (comediDevice, 2, 7, 1);
 	}
-	switch (new_state & SERVERD_STATUS_MASK)
+	switch (new_state & SERVERD_ONOFF_MASK)
 	{
 		case SERVERD_HARD_OFF:
 		case SERVERD_SOFT_OFF:

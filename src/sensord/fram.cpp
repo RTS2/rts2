@@ -234,7 +234,7 @@ int Fram::getWDCTemp (int id)
 void Fram::changeMasterState (int old_state, int new_state)
 {
 
-	if ((new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+	if (!(new_state & SERVERD_ONOFF_MASK))
 	{
 		switch (new_state & SERVERD_STATUS_MASK)
 		{
@@ -245,8 +245,6 @@ void Fram::changeMasterState (int old_state, int new_state)
 					extraSwitch->VYP (SWITCH_BATBACK);
 				Sensor::changeMasterState (old_state, new_state);
 				return;
-			default:
-				break;
 		}
 	}
 	if (extraSwitch)

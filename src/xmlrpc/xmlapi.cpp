@@ -245,22 +245,20 @@ void MasterStateIs::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	{
 		if (params[0] == "on")
 		{
-			result = (ms & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF
-				&& (ms & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF
-				&& !(ms & SERVERD_STANDBY_MASK);
+			result = !(ms & SERVERD_ONOFF_MASK);
 		}
 		else if (params[0] == "standby")
 		{
-			result = (bool) (ms & SERVERD_STANDBY_MASK);
+			result = (ms & SERVERD_ONOFF_MASK) == SERVERD_STANDBY;
 		}
 		else if (params[0] == "off")
 		{
-			result = (ms & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
-				|| (ms & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF;
+			result = (ms & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF
+				|| (ms & SERVERD_ONOFF_MASK) == SERVERD_SOFT_OFF;
 		}
 		else if (params[0] == "rnight")
 		{
-			result = (ms & SERVERD_STATUS_MASK) == SERVERD_NIGHT && !(ms & SERVERD_STANDBY_MASK);
+			result = (ms & SERVERD_STATUS_MASK) == SERVERD_NIGHT && !(ms & SERVERD_ONOFF_MASK);
 		}
 		else
 		{

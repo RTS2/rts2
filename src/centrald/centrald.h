@@ -99,7 +99,7 @@ class Centrald:public Daemon
 		 */
 		int changeStateHardOff (const char *user)
 		{
-			return changeState (SERVERD_HARD_OFF, user);
+			return changeState (SERVERD_HARD_OFF | ((next_event_type + 5) % 6), user);
 		}
 
 		/**
@@ -109,7 +109,7 @@ class Centrald:public Daemon
 		 */
 		int changeStateSoftOff (const char *user)
 		{
-			return changeState (SERVERD_SOFT_OFF, user);
+			return changeState (SERVERD_SOFT_OFF | ((next_event_type + 5) % 6), user);
 		}
 
 		virtual rts2core::Connection *createConnection (int in_sock);

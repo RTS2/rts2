@@ -276,16 +276,16 @@
 #define SERVERD_DAWN           4
 #define SERVERD_MORNING        5
 
-#define SERVERD_SOFT_OFF      11
-// set when it is a real off state blocking all domes
-#define SERVERD_HARD_OFF      12
-
 #define SERVERD_UNKNOW        13
 
 #define SERVERD_STATUS_MASK   0x0f
-#define SERVERD_STANDBY_MASK  0x30
+#define SERVERD_ONOFF_MASK    0x30
 
 #define SERVERD_STANDBY       0x10
+
+#define SERVERD_SOFT_OFF      0x20
+// set when it is a real off state blocking all domes
+#define SERVERD_HARD_OFF      0x30
 
 // "executor" and related states..
 #define EXEC_STATE_MASK     0x0f

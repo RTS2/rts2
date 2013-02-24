@@ -1,3 +1,6 @@
+2013-02-23
+ * HARD_OFF/SOFT_OFF states becomes part of ONOFF_MASK, not direct status
+
 2013-02-14
  * added support for GCUSB-nStep focuser
 

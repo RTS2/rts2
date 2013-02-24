@@ -585,11 +585,11 @@ int Centrald::initValues ()
 
 	if (config->getBoolean ("centrald", "reboot_on", false))
 	{
-		maskCentralState (SERVERD_STATUS_MASK, call_state, "switched on centrald reboot");
+		maskCentralState (SERVERD_ONOFF_MASK, 0, "switched on centrald reboot");
 	}
 	else
 	{
-		maskCentralState (SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "switched on centrald reboot");
+		maskCentralState (SERVERD_ONOFF_MASK, SERVERD_HARD_OFF, "switched on centrald reboot");
 	}
 
 	nextStateChange->setValueTime (next_event_time);
@@ -687,7 +687,7 @@ rts2core::Connection * Centrald::getConnection (int conn_num)
 int Centrald::changeState (int new_state, const char *user)
 {
 	logStream (MESSAGE_INFO) << "State switched to " << rts2core::CentralState::getString (new_state) << " by " << user << sendLog;
-	maskCentralState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
+	maskCentralState (SERVERD_ONOFF_MASK | SERVERD_STATUS_MASK, new_state, user);
 	return 0;
 }
 
@@ -760,24 +760,15 @@ int Centrald::idle ()
 		}
 
 		// update state only if state isn't OFF or SOFT_OFF
-		if ((getState () & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF
-			&& (getState () & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF)
+		if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING && (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		{
-			if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
-				&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
-			{
-				if (morning_off->getValueBool ())
-					maskCentralState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "by idle routine");
-				else if (morning_standby->getValueBool ())
-					maskCentralState (SERVERD_STANDBY_MASK, SERVERD_STANDBY, "by idle routine");
-				else
-					maskCentralState (SERVERD_STATUS_MASK, call_state, "by idle routine");
-			}
-			else
-			{
-				maskCentralState (SERVERD_STATUS_MASK, call_state, "by idle routine");
-			}
+			if (morning_off->getValueBool ())
+				maskCentralState (SERVERD_ONOFF_MASK, SERVERD_HARD_OFF, "switched off on day by idle routine");
+			else if (morning_standby->getValueBool ())
+				maskCentralState (SERVERD_ONOFF_MASK, SERVERD_STANDBY, "switched to standby on day by idle routine");
 		}
+
+		maskCentralState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 
 		time_t nt = curr_time;
 

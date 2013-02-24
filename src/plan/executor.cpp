@@ -539,7 +539,7 @@ void Executor::changeMasterState (int old_state, int new_state)
 
 	next_night->setValueBool (false);
 
-	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK))
 	{
 		case SERVERD_NIGHT:
 			flatsDone->setValueBool (false);

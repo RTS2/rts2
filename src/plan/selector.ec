@@ -76,7 +76,7 @@ int Selector::selectNext (int masterState, double length)
 	int ret;
 	// take care of state - select to make darks when we are able to
 	// make darks.
-	switch (masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	switch (masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK))
 	{
 		case SERVERD_NIGHT:
 			return selectNextNight (0, false, length);

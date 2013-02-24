@@ -57,23 +57,21 @@ std::string CentralState::getString (int _state)
 	{
 		os << "stop | ";
 	}
-	if ((_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
+	if ((_state & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF)
 	{
-		os << "HARD OFF";
-		return os.str ();
+		os << "HARD OFF ";
         }
-	if ((_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
+	else if ((_state & SERVERD_ONOFF_MASK) == SERVERD_SOFT_OFF)
 	{
-		os << "SOFT OFF";
-		return os.str ();
+		os << "SOFT OFF ";
 	}
-	if ((_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	else if ((_state & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
 	{
 		os << "standby ";
 	}
 	else
 	{
-		os << "ready ";
+		os << "ON ";
 	}
 	os << getStringShort (_state);
 	// check for blocking
