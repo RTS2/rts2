@@ -47,7 +47,7 @@ void ConnModbus::callFunction (char func, const void *data, size_t data_size, vo
 		sendData (send_data, data_size);
 		reply_size += 8;
 		char reply_data[reply_size];
-		receiveData (reply_data, reply_size, 2);
+		receiveData (reply_data, reply_size, 50);
 
 		if (reply_data[7] & 0x80)
 		{
