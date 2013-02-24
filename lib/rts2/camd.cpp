@@ -1927,6 +1927,12 @@ void Camera::setFullBopState (int new_state)
 		}
 		else
 		{
+			// do not start if already exposing
+			if ((getStateChip (0) & CAM_EXPOSING) || (!supportFrameTransfer () && (getStateChip (0) & CAM_READING)))
+			{
+				logStream (MESSAGE_DEBUG) << "ignore state change, as camera is exposing (state " << getStateChip (0) << sendLog;
+				return;
+			}
 			waitingForNotBop->setValueBool (false);
 			quedExpNumber->dec ();
 			camStartExposureWithoutCheck ();
