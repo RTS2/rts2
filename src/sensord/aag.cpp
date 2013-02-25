@@ -142,7 +142,6 @@ AAG::AAGRainState( double rain, double ambient, double rain_frequency, double po
 {
     static double last_rain_frequency= 0. ;
     static int rain_state= IS_UNDEFINED ;
-    static int last_rain_state= IS_UNDEFINED ;
     int ret ;
     double duty=0. ;   // PWM Duty cycle
 /* define the heating strategy here */
@@ -220,7 +219,6 @@ AAG::AAGRainState( double rain, double ambient, double rain_frequency, double po
 // 				  << rain << ", time differneces w" << sendLog;  
     }
     last_rain_frequency= rain_frequency ;
-    last_rain_state= rain_state ;
     if(( ret= AAGSetPWMValue( duty * 100.))== 0)
     {
 // ToDo: can used to display the stat        return rain_state ;
