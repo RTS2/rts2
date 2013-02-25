@@ -993,7 +993,7 @@ void Executor::processTarget (rts2db::Target * in_target)
 			acqusitionFailed->inc ();
 			break;
 	}
-	logStream (INFO_OBSERVATION_END | MESSAGE_INFO) << current_obsid->getValueInteger () << sendLog;
+	logStream (INFO_OBSERVATION_END | MESSAGE_INFO) << current_obsid->getValueInteger () << " " << in_target->getTargetID () << sendLog;
 	// if the target was flat..
 	if (in_target->getTargetType () == TYPE_FLAT)
 	{
