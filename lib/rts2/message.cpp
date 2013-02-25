@@ -84,3 +84,27 @@ std::string Message::toConn ()
 		<< " " << messageOName << " " << messageType << " " << msg;
 	return os.str ();
 }
+
+const std::string Message::getMessageString ()
+{
+	std::ostringstream os;
+	switch (messageType & MESSAGE_TYPE_MASK)
+	{
+		case INFO_OBSERVATION_SLEW:
+			os << "slew to observation #" << messageString;
+			break;
+		case INFO_OBSERVATION_STARTED:
+			os << "observation " << messageString << " started";
+			break;
+		case INFO_OBSERVATION_END:
+			os << "observation " << messageString << " ended";
+			break;
+		case INFO_OBSERVATION_INTERRUPTED:
+			os << "observation " << messageString << " interrupted";
+			break;
+		default:
+			return messageString;
+	}
+
+	return os.str ();
+}

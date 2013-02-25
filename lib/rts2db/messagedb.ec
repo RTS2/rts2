@@ -54,8 +54,10 @@ void MessageDB::insertDB ()
 	if (d_message_oname.len > 8)
 		d_message_oname.len = 8;
 
-	strncpy (d_message_string.arr, messageString.c_str(), 200);
-	d_message_string.len = strlen (d_message_string.arr);
+	std::string msgStr = getMessageString ();
+
+	strncpy (d_message_string.arr, msgStr.c_str(), 200);
+	d_message_string.len = msgStr.length ();
 	if (d_message_string.len > 200)
 		d_message_string.len = 200;
 

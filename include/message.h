@@ -24,27 +24,37 @@
 #include <message.h>
 
 #include <sys/time.h>
+#include <stdint.h>
 #include <string>
 #include <fstream>
 
 #include "timestamp.h"
 
-typedef int messageType_t;
+typedef uint32_t messageType_t;
 
-#define MESSAGE_CRITICAL                0x0010
-#define MESSAGE_ERROR                   0x0001
-#define MESSAGE_WARNING                 0x0002
-#define MESSAGE_INFO                    0x0004
-#define MESSAGE_DEBUG                   0x0008
+#define MESSAGE_ERROR                   0x000001
+#define MESSAGE_WARNING                 0x000002
+#define MESSAGE_INFO                    0x000004
+#define MESSAGE_DEBUG                   0x000008
 
-#define MESSAGE_REPORTIT                0x1000
+#define MESSAGE_CRITICAL                0x000010
 
-#define CRITICAL_TELESCOPE_FAILURE      0x0110
-#define CRITICAL_DOME_FAILURE           0x0210
-#define CRITICAL_CAMERA_FAILURE         0x0310
-#define CRITICAL_REQUIRED_FAILURE       0x0410
+#define MESSAGE_REPORTIT                0x100000
 
-#define MESSAGE_MASK_ALL                0xFFFF
+#define MESSAGE_TYPE_MASK               0x0FFF00
+
+#define CRITICAL_TELESCOPE_FAILURE      0x000110
+#define CRITICAL_DOME_FAILURE           0x000210
+#define CRITICAL_CAMERA_FAILURE         0x000310
+#define CRITICAL_REQUIRED_FAILURE       0x000410
+
+// INFO_OBSERVATION_xx messages contains as only argument observation ID
+#define INFO_OBSERVATION_SLEW           0x000500
+#define INFO_OBSERVATION_STARTED        0x000600
+#define INFO_OBSERVATION_END            0x000700
+#define INFO_OBSERVATION_INTERRUPTED    0x000800
+
+#define MESSAGE_MASK_ALL                0xFFFFFF
 
 namespace rts2core
 {
@@ -70,11 +80,10 @@ class Message
 		virtual ~ Message (void);
 
 		std::string toConn ();
-		std::string toString ();
 
 		const char *getMessageOName () { return messageOName.c_str (); }
 
-		const char *getMessageString () { return messageString.c_str (); }
+		const std::string getMessageString ();
 
 		bool passMask (int in_mask) { return (((int) messageType) & in_mask); }
 
@@ -121,7 +130,7 @@ class Message
 
 		friend std::ostream & operator << (std::ostream & _of, Message & msg)
 		{
-			_of << Timestamp (&msg.messageTime) << " " << msg.messageOName << " " << msg.messageType << " " << msg.messageString;
+			_of << Timestamp (&msg.messageTime) << " " << msg.messageOName << " " << msg.messageType << " " << msg.getMessageString ();
 			return _of;
 		}
 

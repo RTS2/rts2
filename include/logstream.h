@@ -40,12 +40,7 @@ class App;
  */
 class LogStream
 {
-	private:
-		rts2core::App * masterApp;
-		messageType_t messageType;
-		std::ostringstream ls;
 	public:
-
 		LogStream (rts2core::App * in_master, messageType_t in_type)
 		{
 			masterApp = in_master;
@@ -115,6 +110,11 @@ class LogStream
 		inline void sendLog ();
 
 		inline void sendLogNoEndl ();
+
+	private:
+		rts2core::App * masterApp;
+		messageType_t messageType;
+		std::ostringstream ls;
 };
 
 }

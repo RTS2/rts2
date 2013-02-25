@@ -81,7 +81,7 @@ void NMsgWindow::draw ()
 
 		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %c %s %s",
 			tmesg.tm_hour, tmesg.tm_min, tmesg.tm_sec, (int) (msg.getMessageTimeUSec () / 1000),
-			mt, msg.getMessageOName (), msg.getMessageString ());
+			mt, msg.getMessageOName (), msg.getMessageString ().c_str ());
 
 		wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 		maxrow++;
