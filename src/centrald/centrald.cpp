@@ -764,7 +764,7 @@ int Centrald::idle ()
 		{
 			if (morning_off->getValueBool ())
 				maskCentralState (SERVERD_ONOFF_MASK, SERVERD_HARD_OFF, "switched off on day by idle routine");
-			else if (morning_standby->getValueBool ())
+			else if (morning_standby->getValueBool () && !((getState () & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF || (getState () & SERVERD_ONOFF_MASK) == SERVERD_SOFT_OFF))
 				maskCentralState (SERVERD_ONOFF_MASK, SERVERD_STANDBY, "switched to standby on day by idle routine");
 		}
 
