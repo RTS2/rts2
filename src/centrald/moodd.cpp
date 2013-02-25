@@ -27,7 +27,7 @@ namespace rts2core
 class MoodD: public Device
 {
 	private:
-		void checkCentarlds ();
+		void checkCentralds ();
 	public:
 		MoodD (int argc, char **argv);
 
@@ -42,7 +42,7 @@ class MoodD: public Device
 using namespace rts2core;
 
 
-void MoodD::checkCentarlds ()
+void MoodD::checkCentralds ()
 {
 	connections_t::iterator iter;
 	if (getCentraldConns ()->size () == 0)
@@ -71,13 +71,13 @@ void MoodD::checkCentarlds ()
 void MoodD::centraldConnRunning (Connection *conn)
 {
 	Device::centraldConnRunning (conn);
-	checkCentarlds ();
+	checkCentralds ();
 }
 
 void MoodD::centraldConnBroken (Connection *conn)
 {
 	Device::centraldConnBroken (conn);
- 	checkCentarlds ();
+ 	checkCentralds ();
 }
 
 MoodD::MoodD (int argc, char **argv):Device (argc, argv, DEVICE_TYPE_SENSOR, "MOODD")
@@ -88,7 +88,7 @@ MoodD::MoodD (int argc, char **argv):Device (argc, argv, DEVICE_TYPE_SENSOR, "MO
 int MoodD::setMasterState (Connection *_conn, int new_state)
 {
 	Device::setMasterState (_conn, new_state);
-	checkCentarlds ();
+	checkCentralds ();
 	return 0;
 }
 
