@@ -85,6 +85,13 @@ class Message
 
 		const std::string getMessageString ();
 
+		/**
+		 * Returns n-th message argument, assuming arguments are separated with space.
+		 *
+		 * @param n argument index - 0 based
+		 */
+		const std::string getMessageArg (int n);
+
 		bool passMask (int in_mask) { return (((int) messageType) & in_mask); }
 
 		/**
@@ -139,6 +146,9 @@ class Message
 		std::string messageOName;
 		messageType_t messageType;
 		std::string messageString;
+
+	private:
+		const std::string expandString (const char *str);
 };
 
 }

@@ -91,20 +91,62 @@ const std::string Message::getMessageString ()
 	switch (messageType & MESSAGE_TYPE_MASK)
 	{
 		case INFO_OBSERVATION_SLEW:
-			os << "slew to observation #" << messageString;
+			os << expandString ("slew to observation #$0");
 			break;
 		case INFO_OBSERVATION_STARTED:
-			os << "observation " << messageString << " started";
+			os << expandString ("observation $0 started");
 			break;
 		case INFO_OBSERVATION_END:
-			os << "observation " << messageString << " ended";
+			os << expandString ("observation $0 ended");
 			break;
 		case INFO_OBSERVATION_INTERRUPTED:
-			os << "observation " << messageString << " interrupted";
+			os << expandString ("observation $0 interrupted");
 			break;
 		default:
 			return messageString;
 	}
 
 	return os.str ();
+}
+
+const std::string Message::getMessageArg (int n)
+{
+	size_t ibeg = 0;
+	if (n > 0)
+	{
+		while (n > 0)
+		{
+			ibeg = messageString.find (' ');
+			if (ibeg == std::string::npos)
+				return std::string ();
+			n--;
+		}
+		ibeg++;
+	}
+	return messageString.substr (ibeg, messageString.find (' ', ibeg + 1));
+}
+
+const std::string Message::expandString (const char *str)
+{
+	std::string ret;
+	while (*str != '\0')
+	{
+		if (*str == '$')
+		{
+			int arg = 0;
+			str++;
+			while (*str != '\0' && isdigit (*str))
+			{
+				arg = 10 * arg + (*str - '0');
+				str++;
+			}
+			ret += getMessageArg (arg);
+		}
+		else
+		{
+			ret += *str;
+			str++;
+		}
+	}
+	return ret;
 }
