@@ -350,8 +350,8 @@ void Executor::postEvent (rts2core::Event * event)
 					currentTarget->updateSlew (&pos, current_plan_id->getValueInteger ());
 			}
 			break;
+		// EVENT_OBSERVE is send for continues observation
 		case EVENT_OBSERVE:
-			// we can get EVENT_OBSERVE in case of continues observation
 		case EVENT_SCRIPT_STARTED:
 			maskState (EXEC_STATE_MASK, EXEC_OBSERVE);
 			break;

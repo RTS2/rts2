@@ -627,6 +627,9 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position, 
 	EXEC SQL COMMIT;
 	setObsId (d_obs_id);
 	observation = new Observation (d_obs_id);
+
+	logStream (MESSAGE_INFO | INFO_OBSERVATION_SLEW) << getObsId () << " " << getTargetID () << sendLog;
+
 	return afterSlewProcessed ();
 }
 
@@ -672,6 +675,7 @@ int Target::startObservation ()
 	{
 		observation->startObservation ();
 		obsStarted ();
+		logStream (MESSAGE_INFO | INFO_OBSERVATION_STARTED) << getObsId () << " " << getTargetID () << sendLog;
 	}
 	return 0;
 }

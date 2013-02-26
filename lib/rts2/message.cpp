@@ -91,10 +91,10 @@ const std::string Message::getMessageString ()
 	switch (messageType & MESSAGE_TYPE_MASK)
 	{
 		case INFO_OBSERVATION_SLEW:
-			os << expandString ("slew to observation #$0");
+			os << expandString ("slew to observation #$0 of target #$1");
 			break;
 		case INFO_OBSERVATION_STARTED:
-			os << expandString ("observation $0 started");
+			os << expandString ("observation #$0 of target #$1 started");
 			break;
 		case INFO_OBSERVATION_END:
 			os << expandString ("observation #$0 of target #$1 ended");
