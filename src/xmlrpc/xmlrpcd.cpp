@@ -775,7 +775,10 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 
 	createValue (bbQueueSize, "bb_queuesize", "size of BB requests queue", false);
 	createValue (bbLastSuccess, "bb_lastsucess", "last successful transmision with BB", false);
-	createValue (bbSelectorQueue, "bb_selectorQueue", "", false, RTS2_VALUE_WRITABLE);
+	createValue (bbSelectorQueue, "bb_selectorQueue", "queue used for scheduler entries", false, RTS2_VALUE_WRITABLE);
+
+	createValue (messageBufferSize, "message_buffer_size", "number of last messages to kept in memory", false, RTS2_VALUE_WRITABLE);
+	messageBufferSize->setValueInteger (100);
 
 	debugTestscript = false;
 
@@ -945,7 +948,7 @@ void XmlRpcd::message (Message & msg)
 		}
 	}
 	
-	while (messages.size () > 42) // messagesBufferSize ())
+	while (messages.size () > (size_t) (messageBufferSize->getValueInteger ()))
 	{
 		messages.pop_front ();
 	}
