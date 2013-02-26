@@ -37,6 +37,8 @@ Plan::Plan ()
 	target = NULL;
 	plan_status = 0;
 	plan_start = plan_end = NAN;
+	bb_observatory_id = -1;
+	bb_schedule_id = -1;
 }
 
 Plan::Plan (int in_plan_id)
@@ -47,6 +49,8 @@ Plan::Plan (int in_plan_id)
 	target = NULL;
 	plan_status = 0;
 	plan_start = plan_end = NAN;
+	bb_observatory_id = -1;
+	bb_schedule_id = -1;
 }
 
 Plan::Plan (const Plan &cp)
@@ -57,6 +61,7 @@ Plan::Plan (const Plan &cp)
 	plan_start = cp.plan_start;
 	plan_end = cp.plan_end;
 	plan_status = cp.plan_status;
+	bb_observatory_id = cp.bb_observatory_id;
 	bb_schedule_id = cp.bb_schedule_id;
 	target = cp.target;
 
@@ -79,7 +84,9 @@ int Plan::load ()
 	double db_plan_end;
 	int db_plan_end_ind;
 	int db_plan_status;
-	VARCHAR db_bb_schedule_id[50];
+	int db_bb_observatory_id;
+	int db_bb_observatory_id_ind;
+	int db_bb_schedule_id;
 	int db_bb_schedule_id_ind;
 	EXEC SQL END DECLARE SECTION;
 
@@ -89,6 +96,7 @@ int Plan::load ()
 		EXTRACT (EPOCH FROM plan_start),
 		EXTRACT (EPOCH FROM plan_end),
 		plan_status,
+		bb_observatory_id,
 		bb_schedule_id
 	INTO
 		:db_prop_id :db_prop_id_ind,
@@ -96,6 +104,7 @@ int Plan::load ()
 		:db_plan_start,
 		:db_plan_end :db_plan_end_ind,
 		:db_plan_status,
+		:db_bb_observatory_id :db_bb_observatory_id_ind,
 		:db_bb_schedule_id :db_bb_schedule_id_ind
 	FROM
 		plan
@@ -118,21 +127,30 @@ int Plan::load ()
 	else
 		plan_end = db_plan_end;
 	plan_status = db_plan_status;
-	if (db_bb_schedule_id_ind)
+
+	if (db_bb_observatory_id_ind)
 	{
-		bb_schedule_id = std::string ();
+		bb_observatory_id = -1;
 	}
 	else
 	{
-		db_bb_schedule_id.arr[db_bb_schedule_id.len] = '\0';
-		bb_schedule_id = std::string (db_bb_schedule_id.arr);
+		bb_observatory_id = db_bb_observatory_id;
+	}
+
+	if (db_bb_schedule_id_ind)
+	{
+		bb_schedule_id = -1;
+	}
+	else
+	{
+		bb_schedule_id = db_bb_schedule_id;
 	}
 
 	EXEC SQL COMMIT;
 	return 0;
 }
 
-int Plan::loadBBSchedule (const char *_bb_schedule_id)
+int Plan::loadBBSchedule (int _bb_observatory_id, int _bb_schedule_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_plan_id;
@@ -143,16 +161,9 @@ int Plan::loadBBSchedule (const char *_bb_schedule_id)
 	double db_plan_end;
 	int db_plan_end_ind;
 	int db_plan_status;
-	VARCHAR db_bb_schedule_id[50];
+	int db_bb_observatory_id = _bb_observatory_id;
+	int db_bb_schedule_id = _bb_schedule_id;
 	EXEC SQL END DECLARE SECTION;
-
-	size_t l = strlen (_bb_schedule_id);
-
-	if (l >= 50)
-		throw rts2core::Error ("too long schedule id");
-
-	memcpy (db_bb_schedule_id.arr, _bb_schedule_id, l);
-	db_bb_schedule_id.len = l;
 
 	EXEC SQL SELECT
 		plan_id,
@@ -171,6 +182,7 @@ int Plan::loadBBSchedule (const char *_bb_schedule_id)
 	FROM
 		plan
 	WHERE
+		bb_observatory_id = :db_bb_observatory_id AND
 		bb_schedule_id = :db_bb_schedule_id;
 
 	if (sqlca.sqlcode)
@@ -205,7 +217,9 @@ int Plan::save ()
 	double db_plan_end = plan_end;
 	int db_plan_end_ind = (isnan (plan_end) ? -1 : 0);
 	int db_plan_status = plan_status;
-	VARCHAR db_bb_schedule_id[50];
+	int db_bb_observatory_id = bb_observatory_id;
+	int db_bb_observatory_id_ind;
+	int db_bb_schedule_id = bb_schedule_id;
 	int db_bb_schedule_id_ind;
 	EXEC SQL END DECLARE SECTION;
 
@@ -237,21 +251,11 @@ int Plan::save ()
 		db_prop_id_ind = 0;
 	}
 
-	strncpy (db_bb_schedule_id.arr, bb_schedule_id.c_str (), 50);
-	if (bb_schedule_id.length () == 0)
-	{
+	if (bb_observatory_id < 0)
+		db_bb_observatory_id_ind = -1;
+
+	if (bb_schedule_id < 0)
 		db_bb_schedule_id_ind = -1;
-	}
-	else if (bb_schedule_id.length () > 50)
-	{
-		db_bb_schedule_id.len = 50;
-		db_bb_schedule_id_ind = 0;
-	}
-	else
-	{
-		db_bb_schedule_id.len = bb_schedule_id.length ();
-		db_bb_schedule_id_ind = 0;
-	}
 
 	EXEC SQL INSERT INTO plan (
 		plan_id,
@@ -260,6 +264,7 @@ int Plan::save ()
 		plan_start,
 		plan_end,
 		plan_status,
+		bb_observatory_id,
 		bb_schedule_id
 	)
 	VALUES (
@@ -269,6 +274,7 @@ int Plan::save ()
 		to_timestamp (:db_plan_start),
 		to_timestamp (:db_plan_end :db_plan_end_ind),
 		:db_plan_status,
+		:db_bb_observatory_id :db_bb_observatory_id_ind,
 		:db_bb_schedule_id :db_bb_schedule_id_ind
 	);
 
@@ -285,7 +291,8 @@ int Plan::save ()
 			plan_start = to_timestamp (:db_plan_start),
 			plan_end = to_timestamp (:db_plan_end :db_plan_end_ind),
 			plan_status = :db_plan_status,
-			bb_schedule_id = :db_bb_schedule_id
+			bb_observatory_id = :db_bb_observatory_id :db_bb_observatory_id_ind,
+			bb_schedule_id = :db_bb_schedule_id :db_bb_schedule_id_ind
 		WHERE
 			plan_id = :db_plan_id;
 		if (sqlca.sqlcode)

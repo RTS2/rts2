@@ -125,7 +125,7 @@ void BBConfirmTask::confirmTarget (BBSchedules &bbsch, ObservatorySchedule &sche
 {
 	std::ostringstream url;
 
-	url << "/bbapi/confirm?id=" << findObservatoryMapping (schedule.getObservatoryId (), bbsch.getTargetId ()) << "&schedule_id=OO" << schedule.getScheduleId ();
+	url << "/bbapi/confirm?id=" << findObservatoryMapping (schedule.getObservatoryId (), bbsch.getTargetId ()) << "&schedule_id=" << schedule.getScheduleId () << "&observatory_id=" << schedule.getObservatoryId ();
 	JsonParser *ret = jsonRequest (schedule.getObservatoryId (), url.str ().c_str ());
 	if (ret)
 	{

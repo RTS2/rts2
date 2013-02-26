@@ -46,7 +46,7 @@ class BBAPI:public rts2json::JSONRequest
 		/**
 		 * Confirm observation schedule.
 		 */
-		void confirmSchedule (rts2db::Target *tar, double f, const char *schedule_id);
+		void confirmSchedule (rts2db::Target *tar, double f, int observatory_id, int schedule_id);
 };
 
 }

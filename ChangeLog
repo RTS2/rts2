@@ -1,3 +1,6 @@
+2013-02-26
+ * added bb_observatory_id to plan table
+
 2013-02-25
  * introduced messages types - currently only for observation slew/start/end/interruptions
 

@@ -88,7 +88,7 @@ std::string Message::toConn ()
 const std::string Message::getMessageString ()
 {
 	std::ostringstream os;
-	switch (messageType & MESSAGE_TYPE_MASK)
+	switch (getID ())
 	{
 		case INFO_OBSERVATION_SLEW:
 			os << expandString ("slew to observation #$0 of target #$1");
@@ -124,6 +124,11 @@ const std::string Message::getMessageArg (int n)
 		ibeg++;
 	}
 	return messageString.substr (ibeg, messageString.find (' ', ibeg + 1));
+}
+
+int Message::getMessageArgInt (int n)
+{
+	return atoi (getMessageArg (n).c_str ());
 }
 
 const std::string Message::expandString (const char *str)

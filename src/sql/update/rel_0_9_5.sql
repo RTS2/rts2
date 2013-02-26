@@ -61,7 +61,8 @@ CREATE TABLE queues (
 CREATE SEQUENCE qid;
 
 -- add bb ID for planned entries
-ALTER TABLE plan ADD COLUMN bb_schedule_id varchar(50);
+ALTER TABLE plan ADD COLUMN bb_observatory_id integer;
+ALTER TABLE plan ADD COLUMN bb_schedule_id integer;
 
 ALTER TABLE observations ADD COLUMN plan_id integer REFERENCES plan(plan_id);
 ALTER TABLE plan DROP COLUMN obs_id;

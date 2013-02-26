@@ -51,7 +51,7 @@ class Plan
 		Plan (const Plan &cp);
 		virtual ~ Plan (void);
 		int load ();
-		int loadBBSchedule (const char *bb_schedule_id);
+		int loadBBSchedule (int bb_observatory_id, int bb_schedule_id);
 		int save ();
 		int del ();
 
@@ -80,9 +80,10 @@ class Plan
 
 		int getPlanStatus () { return plan_status; }
 
-		void setBBScheduleId (const char *bb_id) { bb_schedule_id = std::string (bb_id); }
+		void setBBScheduleId (int bb_obs, int bb_id) { bb_observatory_id = bb_obs; bb_schedule_id = bb_id; }
 
-		const char *getBBScheduleId () { return bb_schedule_id.c_str (); }
+		const int getBBObservatoryId () { return bb_observatory_id; }
+		const int getBBScheduleId () { return bb_schedule_id; }
 
 
 		friend std::ostream & operator << (std::ostream & _os, Plan & plan) { plan.print (_os); return _os; }
@@ -98,7 +99,9 @@ class Plan
 		double plan_end;
 
 		int plan_status;
-		std::string bb_schedule_id;
+
+		int bb_observatory_id;
+		int bb_schedule_id;
 
 		Target *target;
 

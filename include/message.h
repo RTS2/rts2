@@ -32,6 +32,8 @@
 
 typedef uint32_t messageType_t;
 
+#define MESSAGE_LEVEL_MASK              0x00001F
+
 #define MESSAGE_ERROR                   0x000001
 #define MESSAGE_WARNING                 0x000002
 #define MESSAGE_INFO                    0x000004
@@ -41,14 +43,14 @@ typedef uint32_t messageType_t;
 
 #define MESSAGE_REPORTIT                0x100000
 
-#define MESSAGE_TYPE_MASK               0x0FFF00
+#define MESSAGE_ID_MASK                 0x0FFF00
 
 #define CRITICAL_TELESCOPE_FAILURE      0x000110
 #define CRITICAL_DOME_FAILURE           0x000210
 #define CRITICAL_CAMERA_FAILURE         0x000310
 #define CRITICAL_REQUIRED_FAILURE       0x000410
 
-// INFO_OBSERVATION_xx messages contains as only argument observation ID
+// INFO_OBSERVATION_xx messages contains as arguments observation ID and target ID
 #define INFO_OBSERVATION_SLEW           0x000500
 #define INFO_OBSERVATION_STARTED        0x000600
 #define INFO_OBSERVATION_END            0x000700
@@ -92,6 +94,13 @@ class Message
 		 */
 		const std::string getMessageArg (int n);
 
+		/**
+		 * Returns n-th message argument as integer.
+		 *
+		 * @see Message::getMessageArg(int)
+		 */
+		int getMessageArgInt (int n);
+
 		bool passMask (int in_mask) { return (((int) messageType) & in_mask); }
 
 		/**
@@ -108,6 +117,13 @@ class Message
 		 * @return Message flags.
 		 */
 		messageType_t getType () { return messageType; }
+
+		messageType_t getLevel () { return messageType & MESSAGE_LEVEL_MASK; }
+
+		/**
+		 * Returns message number.
+		 */
+		messageType_t getID () { return messageType & MESSAGE_ID_MASK; }
 
 		/**
 		 * Return message type as string.

@@ -931,6 +931,14 @@ void XmlRpcd::message (Message & msg)
 		msgDB.insertDB ();
 	}
 #endif
+	switch (msg.getID ())
+	{
+		case INFO_OBSERVATION_SLEW:
+		case INFO_OBSERVATION_STARTED:
+		case INFO_OBSERVATION_END:
+		case INFO_OBSERVATION_INTERRUPTED:
+			break;
+	}
 	// look if there is some state change command entry, which match us..
 	for (MessageCommands::iterator iter = events.messageCommands.begin (); iter != events.messageCommands.end (); iter++)
 	{

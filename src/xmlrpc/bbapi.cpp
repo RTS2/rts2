@@ -56,11 +56,13 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 				throw JSONException ("to time is before from time");
 			}
 
-			const char *schedule_id;
+			int observatory_id = -1;
+			int schedule_id = -1;
 			if (vals[0] == "confirm")
 			{
-				schedule_id = params->getString ("schedule_id", "");
-				if (schedule_id[0] == '\0')
+				observatory_id = params->getInteger ("observatory_id", -1);
+				schedule_id = params->getInteger ("schedule_id", -1);
+				if (observatory_id == -1 || schedule_id == -1)
 				{
 					delete tar;
 					throw JSONException ("missing schedule ID");
@@ -166,7 +168,9 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 						ln_get_timet_from_julian (t, &f);
 						os << f;
 						if (vals[0] == "confirm")
-							confirmSchedule (tar, f, schedule_id);
+						{
+							confirmSchedule (tar, f, observatory_id, schedule_id);
+						}
 						break;
 					}
 				}
@@ -177,10 +181,11 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 		}
 		else if (vals[0] == "cancel")
 		{
-			const char *schedule_id = params->getString ("schedule_id", "");
+			int observatory_id = params->getInteger ("observatory_id", -1);
+			int schedule_id = params->getInteger ("schedule_id", -1);
 
 			rts2db::Plan p;
-			if (p.loadBBSchedule (schedule_id))
+			if (p.loadBBSchedule (observatory_id, schedule_id))
 				throw JSONException ("invalid schedule id");
 			p.setPlanStatus (PLAN_STATUS_CANCELLED);
 			if (p.save ())
@@ -196,14 +201,15 @@ void BBAPI::executeJSON (std::string path, XmlRpc::HttpParams *params, const cha
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }
 
-void BBAPI::confirmSchedule (rts2db::Target *tar, double f, const char *schedule_id)
+void BBAPI::confirmSchedule (rts2db::Target *tar, double f, int observatory_id, int schedule_id)
 {
 	rts2db::Plan p;
-	if (p.loadBBSchedule (schedule_id) == 0)
+	if (p.loadBBSchedule (observatory_id, schedule_id) == 0)
 		throw JSONException ("cannot confirm already created schedule");
 
 	p.setTargetId (tar->getTargetID ());
 	p.setPlanStart (f);
+	p.setBBScheduleId (observatory_id, schedule_id);
 
 	if (p.save ())
 		throw JSONException ("cannot create plan schedule");
