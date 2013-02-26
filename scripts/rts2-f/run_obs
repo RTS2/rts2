@@ -67,24 +67,16 @@ if ( $tar_id > 0 ) then
 		set rra=`printf "%.0f" $ora`
 		set rdec=`printf "%.0f" $odec`
 		#rts2-logcom "initial offsets $rra $rdec $last_obs_id $obs_id"
-		if ( $rra > -180 && $rra < 180 ) then
+		if ( $rra > -15 && $rra < 15 ) then
 			set rra = 0
 		endif
-		if ( $rdec > -180 && $rdec < 180 ) then
+		if ( $rdec > -15 && $rdec < 15 ) then
 			set rdec = 0
 		endif
 		if ( ( $rra != 0 || $rdec != 0 ) && $last_obs_id == $obs_id ) then
-			# offset by xoff/yoff
-			set xoff=`$xmlrpc -G TELE.offs_x`
-			set yoff=`$xmlrpc -G TELE.offs_y`
-			set tel=`$xmlrpc -G TELE.TEL`
-			set teldec=`echo $tel | awk '{print cos($1*3.14159265/180);}'`
-			set of_ra=`echo $rra $xoff $teldec | awk '{printf "%d",$1 - $2;}'`
-			#set of_ra=`echo $rra $xoff | awk '{printf "%d",$1 - $2;}'`
-			set of_dec=`echo $rdec $yoff | awk '{printf "%d",$1 - $2;}'`
-			rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
-			tele offset $of_ra $of_dec
-			sleep 6
+			rts2-logcom "initial offset $rra $rdec"
+			tele offset $rra $rdec
+			sleep 3
 			rts2-logcom "executing tele set"
 			tele set
 		#else
