@@ -525,6 +525,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		rts2core::ValueTime *bbLastSuccess;
 
+		rts2core::ValueInteger *messageBufferSize;
+
 #ifndef RTS2_HAVE_PGSQL
 		const char *config_file;
 
