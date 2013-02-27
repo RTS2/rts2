@@ -332,6 +332,11 @@ void Dome::changeMasterState (int old_state, int new_state)
 				off ();
 		}
 	}
+	// HARD_OFF or SOFT_OFF states - STANDBY is above
+	else if (new_state & SERVERD_ONOFF_MASK)
+	{
+		off ();
+	}
 	else
 	{
 		switch (new_state & SERVERD_STATUS_MASK)
