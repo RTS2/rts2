@@ -756,7 +756,7 @@ int Executor::setGrb (int grbId)
 
 		double JD = ln_get_julian_from_sys ();
 
-		if (grbTarget->checkConstraints (JD))
+		if (grbTarget->checkConstraints (JD) == false)
 		{
 			logStream (MESSAGE_INFO) << "GRB does not meet constraints: violated " << grbTarget->getViolatedConstraints (JD).toString () << ", satisfied " << grbTarget->getSatisfiedConstraints (JD).toString () << sendLog;
 			delete grbTarget;
