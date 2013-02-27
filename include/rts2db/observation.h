@@ -271,6 +271,10 @@ class Observation
 		 */
 		double getTimeOnSky ();
 
+		int getPlanId () { return plan_id; }
+
+		void setPlanId (int _plan_id) { plan_id = _plan_id; }
+
 		void maskState (int newBits);
 		void unmaskState (int newBits);
 

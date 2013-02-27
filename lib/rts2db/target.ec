@@ -627,8 +627,9 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position, 
 	EXEC SQL COMMIT;
 	setObsId (d_obs_id);
 	observation = new Observation (d_obs_id);
+	observation->setPlanId (plan_id);
 
-	logStream (MESSAGE_INFO | INFO_OBSERVATION_SLEW) << getObsId () << " " << getTargetID () << sendLog;
+	logStream (MESSAGE_INFO | INFO_OBSERVATION_SLEW) << getObsId () << " " << getTargetID () << " " << observation->getPlanId () << sendLog;
 
 	return afterSlewProcessed ();
 }
@@ -675,7 +676,7 @@ int Target::startObservation ()
 	{
 		observation->startObservation ();
 		obsStarted ();
-		logStream (MESSAGE_INFO | INFO_OBSERVATION_STARTED) << getObsId () << " " << getTargetID () << sendLog;
+		logStream (MESSAGE_INFO | INFO_OBSERVATION_STARTED) << getObsId () << " " << getTargetID () << " " << observation->getPlanId () << sendLog;
 	}
 	return 0;
 }
@@ -742,6 +743,16 @@ int Target::secToObjectRise (double JD)
 		// hope we get current set, we are interested in next set..
 		return ret + ((int (ret/86400) + 1) * -86400);
 	return ret;
+}
+
+int Target::getObsId ()
+{
+	return observation ? observation->getObsId () : -1;
+}
+
+int Target::getPlanId ()
+{
+	return observation ? observation->getPlanId () : -1;
 }
 
 int Target::secToObjectMeridianPass (double JD)

@@ -253,9 +253,13 @@ int Plan::save ()
 
 	if (bb_observatory_id < 0)
 		db_bb_observatory_id_ind = -1;
+	else
+		db_bb_observatory_id_ind = 0;
 
 	if (bb_schedule_id < 0)
 		db_bb_schedule_id_ind = -1;
+	else
+		db_bb_schedule_id_ind = 0;
 
 	EXEC SQL INSERT INTO plan (
 		plan_id,

@@ -896,8 +896,9 @@ void Executor::doSwitch ()
 		else
 		{
 			currentTarget = getActiveQueue ()->front ().target;
-			current_plan_id->setValueInteger (getActiveQueue ()->front ().plan_id);
 		}
+		current_plan_id->setValueInteger (getActiveQueue ()->front ().plan_id);
+		sendValueAll (current_plan_id);
 	}
 	if (currentTarget)
 	{
@@ -993,7 +994,7 @@ void Executor::processTarget (rts2db::Target * in_target)
 			acqusitionFailed->inc ();
 			break;
 	}
-	logStream (INFO_OBSERVATION_END | MESSAGE_INFO) << current_obsid->getValueInteger () << " " << in_target->getTargetID () << sendLog;
+	logStream (INFO_OBSERVATION_END | MESSAGE_INFO) << in_target->getObsId () << " " << in_target->getTargetID () << " " << in_target->getObsId () << " " << in_target->getPlanId () << sendLog;
 	// if the target was flat..
 	if (in_target->getTargetType () == TYPE_FLAT)
 	{

@@ -524,6 +524,8 @@ int SelectorDev::selectNext ()
 				logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
 				last_auto_id = id;
 			}
+			next_qid->setValueInteger (-1);
+			next_plan_id->setValueInteger (-1);
 			return id;
 		}
 		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;

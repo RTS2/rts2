@@ -69,7 +69,14 @@ class BBServer:public rts2core::Object
 		 */
 		void sendUpdate ();
 
-		void queueUpdate ();
+		void sendObservationUpdate (int observationId);
+
+		/**
+		 * Add observatory update to the queue. Positive IDs are for observation update (representing obs_id), 
+		 * negative IDs are as follow:
+		 *  - -1 to send BB observatory update (as JSON)
+		 */
+		void queueUpdate (int reqId);
 
 		size_t queueSize () { return requests.size (); }
 
@@ -78,6 +85,8 @@ class BBServer:public rts2core::Object
 		int getCadency () { return cadency; }
 
 		void setCadency (int _cadency) { cadency = _cadency; }
+
+		bool isObservatory (int _observatoryId) { return observatoryId == _observatoryId; }
 
 	private:
 		std::string serverApi;
@@ -99,6 +108,7 @@ class BBServers:public std::vector <BBServer>
 		BBServers (): std::vector <BBServer> () {}
 
 		void sendUpdate ();
+		void sendObservatoryUpdate (int observatoryId, int request);
 
 		size_t queueSize ();
 };

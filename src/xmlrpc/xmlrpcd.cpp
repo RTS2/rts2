@@ -904,7 +904,6 @@ void XmlRpcd::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * 
 		else
 			name = conn->getName ();
 		if (vc->isForValue (name, new_value->getName (), now))
-		 
 		{
 			try
 			{
@@ -937,6 +936,7 @@ void XmlRpcd::message (Message & msg)
 		case INFO_OBSERVATION_STARTED:
 		case INFO_OBSERVATION_END:
 		case INFO_OBSERVATION_INTERRUPTED:
+			updateObservation (msg.getMessageArgInt (0), msg.getMessageArgInt (2));
 			break;
 	}
 	// look if there is some state change command entry, which match us..
@@ -1023,6 +1023,17 @@ void XmlRpcd::scriptProgress (double start, double end)
 void XmlRpcd::sendBB ()
 {
 	events.bbServers.sendUpdate ();
+}
+
+void XmlRpcd::updateObservation (int obs_id, int plan_id)
+{
+	rts2db::Plan p(plan_id);
+	if (p.load ())
+	{
+		return;
+	}
+	
+	events.bbServers.sendObservatoryUpdate (p.getBBObservatoryId (), obs_id);
 }
 
 void XmlRpcd::reloadEventsFile ()

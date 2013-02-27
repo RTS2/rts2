@@ -415,6 +415,10 @@ class Target:public Rts2Target
 
 		int secToObjectMeridianPass (double JD);
 
+		int getObsId ();
+
+		int getPlanId ();
+
 		/**
 		 * Sets target information string.
 		 *

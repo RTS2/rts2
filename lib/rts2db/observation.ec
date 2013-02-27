@@ -44,6 +44,7 @@ Observation::Observation (int in_obs_id)
 	displayImages = 0;
 	displayCounts = 0;
 	printHeader = true;
+	plan_id = -1;
 }
 
 Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start, int in_obs_state, double in_obs_end, int in_plan_id)

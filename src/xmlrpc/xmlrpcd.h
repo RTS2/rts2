@@ -539,6 +539,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		std::string page_prefix;
 
 		void sendBB ();
+		void updateObservation (int obs_id, int plan_id);
 
 		void reloadEventsFile ();
 

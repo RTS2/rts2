@@ -21,6 +21,8 @@
 #include "xmlrpc++/urlencoding.h"
 #include "xmlrpcd.h"
 
+#include "rts2db/observation.h"
+
 #include "hoststring.h"
 #include "daemon.h"
 
@@ -33,10 +35,14 @@ void *updateBB (void *arg)
 
 	while (true)
 	{
-		switch (bbserver->requests.pop (true))
+		int rid = bbserver->requests.pop (true);
+		switch (rid)
 		{
-			case 1:
+			case -1:
 				bbserver->sendUpdate ();
+				break;
+			default:
+				bbserver->sendObservationUpdate (rid);
 				break;
 		}
 	}
@@ -48,7 +54,7 @@ void BBServer::postEvent (rts2core::Event *event)
 	switch (event->getType ())
 	{
 		case EVENT_XMLRPC_BB:
-			queueUpdate ();
+			queueUpdate (-1);
 			server->addTimer (getCadency (), event);
 			return;
 	}
@@ -111,19 +117,69 @@ void BBServer::sendUpdate ()
 	delete[] reply;
 }
 
-void BBServer::queueUpdate ()
+void addNonNan (std::ostringstream &os, double val, const char *vname)
+{
+	if (!isnan (val))
+		os << "&" << vname << "=" << val;
+}
+
+void BBServer::sendObservationUpdate (int observationId)
+{
+	rts2db::Observation obs(observationId);
+	if (obs.load ())
+		return;
+	// find and load associated plan
+	rts2db::Plan plan(obs.getPlanId ());
+	if (plan.load ())
+		return;
+	
+	std::ostringstream url;
+	url << "/api/observation?observatory_id=" << observatoryId << "&obs_id=" << obs.getObsId () << "&obs_tar_id=" << obs.getTargetId ();
+
+	addNonNan (url, obs.getObsRa (), "obs_ra");
+	addNonNan (url, obs.getObsDec (), "obs_dec");
+	addNonNan (url, obs.getObsSlew (), "obs_slew");
+	addNonNan (url, obs.getObsStart (), "obs_start");
+	addNonNan (url, obs.getObsEnd (), "obs_end");
+
+	char * reply;
+	int reply_length;
+
+	int ret = client->executePostRequest (url.str ().c_str (), NULL, reply, reply_length);
+	if (!ret)
+	{
+		logStream (MESSAGE_ERROR) << "Error requesting " << serverApi.c_str () << sendLog;
+		delete client;
+		client = NULL;
+		return;
+	}
+}
+
+void BBServer::queueUpdate (int reqId)
 {
 	if (send_thread == 0)
 	{
 		pthread_create (&send_thread, NULL, updateBB, (void *) this);
 	}
-	requests.push (1);
+	requests.push (reqId);
 }
 
 void BBServers::sendUpdate ()
 {
 	for (BBServers::iterator iter = begin (); iter != end (); iter++)
-		iter->queueUpdate ();
+		iter->queueUpdate (-1);
+}
+
+void BBServers::sendObservatoryUpdate (int observatoryId, int request)
+{
+	for (BBServers::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->isObservatory (observatoryId))
+		{
+			iter->queueUpdate (request);
+			return;
+		}
+	}
 }
 
 size_t BBServers::queueSize ()

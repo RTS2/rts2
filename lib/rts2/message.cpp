@@ -116,7 +116,7 @@ const std::string Message::getMessageArg (int n)
 	{
 		while (n > 0)
 		{
-			ibeg = messageString.find (' ');
+			ibeg = messageString.find (' ', ibeg);
 			if (ibeg == std::string::npos)
 				return std::string ();
 			n--;
