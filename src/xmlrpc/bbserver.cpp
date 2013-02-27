@@ -48,7 +48,7 @@ void BBServer::postEvent (rts2core::Event *event)
 	switch (event->getType ())
 	{
 		case EVENT_XMLRPC_BB:
-			sendUpdate ();
+			queueUpdate ();
 			server->addTimer (getCadency (), event);
 			return;
 	}

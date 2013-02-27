@@ -968,7 +968,7 @@ int XmlRpcd::commandAuthorized (rts2core::Connection *conn)
 {
 	if (conn->isCommand ("test_restart"))
 	{
-		postEvent (new rts2core::Event (EVENT_TERMINATE_TEST));\
+		postEvent (new rts2core::Event (EVENT_TERMINATE_TEST));
 		startTestScript ();
 		return 0;
 	}
