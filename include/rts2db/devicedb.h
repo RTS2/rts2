@@ -45,17 +45,20 @@ class DeviceDb:public rts2core::Device
 
 		CamList cameras;
 
+		/**
+		 * Create database connection.
+		 *
+		 * @param conn_name   connection name
+		 *
+		 * @return -1 on error, 0 on sucess. 
+		 */
+		int initDB (const char *conn_name);
+
 	protected:
 		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
 
-		/**
-		 * Init database connection.
-		 *
-		 * @return -1 on error, 0 on sucess. 
-		 */
-		int initDB ();
 		virtual int init ();
 		virtual void forkedInstance ();
 

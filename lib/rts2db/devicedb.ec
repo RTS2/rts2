@@ -58,7 +58,7 @@ void DeviceDb::postEvent (rts2core::Event *event)
 	{
 		case EVENT_DB_LOST_CONN:
 			EXEC SQL DISCONNECT;
-			if (initDB ())
+			if (initDB ("master"))
 			{
 				addTimer (20, event);
 				return;
@@ -98,7 +98,7 @@ int DeviceDb::reloadConfig ()
 	return config->loadFile (configFile);
 }
 
-int DeviceDb::initDB ()
+int DeviceDb::initDB (const char *conn_name)
 {
 	int ret;
 	std::string cs;
@@ -106,6 +106,7 @@ int DeviceDb::initDB ()
 	const char *c_db;
 	const char *c_username;
 	const char *c_password;
+	const char *c_connection = conn_name;
 	EXEC SQL END DECLARE SECTION;
 	// try to connect to DB
 
@@ -137,7 +138,7 @@ int DeviceDb::initDB ()
 		if (config->getString ("database", "password", db_password) == 0)
 		{
 			c_password = db_password.c_str ();
-			EXEC SQL CONNECT TO :c_db USER  :c_username USING :c_password;
+			EXEC SQL CONNECT TO :c_db AS :c_connection USER  :c_username USING :c_password;
 			if (sqlca.sqlcode != 0)
 			{
 				logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db 
@@ -149,7 +150,7 @@ int DeviceDb::initDB ()
 		}
 		else
 		{
-			EXEC SQL CONNECT TO :c_db USER  :c_username;
+			EXEC SQL CONNECT TO :c_db AS :c_connection USER  :c_username;
 			if (sqlca.sqlcode != 0)
 			{
 				logStream (MESSAGE_ERROR) << "cannot connect to DB '" << c_db 
@@ -161,7 +162,7 @@ int DeviceDb::initDB ()
 	}
 	else
 	{
-		EXEC SQL CONNECT TO :c_db;
+		EXEC SQL CONNECT TO :c_db AS :c_connection;
 		if (sqlca.sqlcode != 0)
 		{
 			struct passwd *up = getpwuid (geteuid ());
@@ -184,7 +185,7 @@ int DeviceDb::init ()
 		return ret;
 
 	// load config.
-	return initDB ();
+	return initDB ("master");
 }
 
 void DeviceDb::forkedInstance ()

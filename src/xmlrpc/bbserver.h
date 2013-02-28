@@ -88,6 +88,8 @@ class BBServer:public rts2core::Object
 
 		bool isObservatory (int _observatoryId) { return observatoryId == _observatoryId; }
 
+		int getObservatoryId () { return observatoryId; }
+
 	private:
 		std::string serverApi;
 		int observatoryId;

@@ -33,6 +33,11 @@ void *updateBB (void *arg)
 {
 	BBServer *bbserver = (BBServer *) arg;
 
+	char *conn_name;
+	asprintf (&conn_name, "connection_%d", bbserver->getObservatoryId ());
+
+	((rts2db::DeviceDb *) getMasterApp ())->initDB (conn_name);
+
 	while (true)
 	{
 		int rid = bbserver->requests.pop (true);
