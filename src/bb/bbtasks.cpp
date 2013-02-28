@@ -177,6 +177,11 @@ void BBTasks::queueTask (BBTask *t)
 	if (send_thread == 0)
 	{
 		pthread_create (&send_thread, NULL, processTasks, (void *) this);
+
+		char *conn_name;
+		asprintf (&conn_name, "thread_%d", send_thread);
+
+		((rts2db::DeviceDb *) getMasterApp ())->initDB (conn_name);
 	}
 	push (t);
 }

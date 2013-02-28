@@ -124,7 +124,12 @@ const std::string Message::getMessageArg (int n)
 				ibeg++;
 		}
 	}
-	return messageString.substr (ibeg, messageString.find (' ', ibeg + 1));
+	size_t iend = messageString.find (' ', ibeg + 1);
+
+	if (iend == std::string::npos)
+		return messageString.substr (ibeg);
+	else
+		return messageString.substr (ibeg, iend);
 }
 
 int Message::getMessageArgInt (int n)
