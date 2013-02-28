@@ -120,8 +120,9 @@ const std::string Message::getMessageArg (int n)
 			if (ibeg == std::string::npos)
 				return std::string ();
 			n--;
+			while (messageString[ibeg] == ' ')
+				ibeg++;
 		}
-		ibeg++;
 	}
 	return messageString.substr (ibeg, messageString.find (' ', ibeg + 1));
 }

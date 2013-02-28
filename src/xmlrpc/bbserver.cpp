@@ -134,6 +134,7 @@ void BBServer::sendObservationUpdate (int observationId)
 		return;
 	
 	std::ostringstream url;
+	url.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	url << "/api/observation?observatory_id=" << observatoryId << "&obs_id=" << obs.getObsId () << "&obs_tar_id=" << obs.getTargetId ();
 
 	addNonNan (url, obs.getObsRa (), "obs_ra");
