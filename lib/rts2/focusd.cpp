@@ -161,12 +161,12 @@ void Focusd::setFocusExtend (double foc_min, double foc_max)
 	defaultPosition->setMax (foc_max);
 	updateMetaInformations (defaultPosition);
 
-	focusingOffset->setMin (foc_min);
-	focusingOffset->setMax (foc_max);
+	focusingOffset->setMin (foc_min - defaultPosition->getValueFloat ());
+	focusingOffset->setMax (foc_max - defaultPosition->getValueFloat ());
 	updateMetaInformations (focusingOffset);
 
-	tempOffset->setMin (foc_min);
-	tempOffset->setMax (foc_max);
+	tempOffset->setMin (foc_min - defaultPosition->getValueFloat ());
+	tempOffset->setMax (foc_max - defaultPosition->getValueFloat ());
 	updateMetaInformations (tempOffset);
 }
 
@@ -180,7 +180,16 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	if (old_value == defaultPosition)
 	{
-		return setPosition (new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ()+tco )? -2 : 0;
+		float newPosition = new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ()+tco;
+		int ret = setPosition (newPosition)? -2 : 0;
+		focusingOffset->setMin (defaultPosition->getMin () - newPosition);
+		focusingOffset->setMax (defaultPosition->getMax () - newPosition);
+		updateMetaInformations (focusingOffset);
+
+		tempOffset->setMin (defaultPosition->getMin () - newPosition);
+		tempOffset->setMax (defaultPosition->getMax () - newPosition);
+		updateMetaInformations (tempOffset);
+		return ret;
 	}
 	if (old_value == focusingOffset)
 	{
