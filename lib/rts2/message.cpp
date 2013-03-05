@@ -100,7 +100,7 @@ const std::string Message::getMessageString ()
 			os << expandString ("observation #$0 of target #$1 ended");
 			break;
 		case INFO_OBSERVATION_INTERRUPTED:
-			os << expandString ("observation $0 interrupted");
+			os << expandString ("observation #$0 of target #$1 interrupted");
 			break;
 		default:
 			return messageString;
