@@ -92,6 +92,8 @@ class SelectorDev:public rts2db::DeviceDb
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
+		virtual void message (Message & msg);
+
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
@@ -137,6 +139,8 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::ValueInteger *current_target;
 		rts2core::ValueInteger *current_qid;
 		rts2core::ValueInteger *current_plan_id;
+		rts2core::ValueTime *current_start;
+		rts2core::ValueTime *current_end;
 		rts2core::ValueSelection *current_queue;
 		rts2core::ValueInteger *current_obs;
 
@@ -228,6 +232,10 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	current_qid->setValueInteger (-1);
 	createValue (current_plan_id, "current_plan_id", "current target plan ID", false);
 	current_plan_id->setValueInteger (-1);
+	createValue (current_start, "current_start", "current target start time", false);
+	current_start->setValueDouble (NAN);
+	createValue (current_end, "current_end", "current target end time", false);
+	current_end->setValueDouble (NAN);
 	createValue (current_queue, "current_queue", "current target queue", false);
 	current_queue->addSelVal ("automatic");
 	createValue (current_obs, "current_obs", "current observation ID", false);
@@ -348,6 +356,8 @@ int SelectorDev::init ()
 		return ret;
 
 	int i = 0;
+
+	setMessageMask (INFO_OBSERVATION_INTERRUPTED);
 	
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++, i++)
 	{
@@ -564,6 +574,8 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 				qfind = true;
 				current_qid->setValueInteger (eq->front ().qid);
 				current_plan_id->setValueInteger (eq->front ().plan_id);
+				current_start->setValueDouble (eq->front ().t_start);
+				current_end->setValueDouble (eq->front ().t_end);
 				eq->front ().target->startObservation ();
 				// update plan entry..
 				if (next_started->getValueBool () == false)
@@ -585,12 +597,16 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		{
 			current_qid->setValueInteger (-1);
 			current_plan_id->setValueInteger (-1);
+			current_start->setValueDouble (NAN);
+			current_end->setValueDouble (NAN);
 			current_queue->setValueInteger (0);			
 		}
 
 		sendValueAll (current_target);
 		sendValueAll (current_qid);
 		sendValueAll (current_plan_id);
+		sendValueAll (current_start);
+		sendValueAll (current_end);
 		sendValueAll (current_queue);
 		sendValueAll (current_obs);
 	}
@@ -696,6 +712,28 @@ void SelectorDev::updateSelectLength ()
 	}
 	logStream (MESSAGE_WARNING) << "centrald not running, setting selection length to tomorrow" << sendLog;
 	selectUntil->setValueDouble (getNow () + 86400);
+}
+
+void SelectorDev::message (Message & msg)
+{
+	switch (msg.getID ())
+	{
+		case INFO_OBSERVATION_INTERRUPTED:
+			if (current_queue->getValueInteger () > 0 && current_target->getValueInteger () == msg.getMessageArgInt (1))
+			{
+				rts2plan::ExecutorQueue *eq = &(queues[current_queue->getValueInteger () - 1]);
+				if (!(isnan (current_start->getValueDouble ()) && isnan (current_end->getValueDouble ())) && eq->size () > 0 && eq->front ().target->getTargetID () == current_target->getValueInteger ())
+				{
+					logStream (MESSAGE_INFO) << "not re-queueing target #" << current_target->getValueInteger () << ", as it is still in the queue" << sendLog;
+					return;
+				}
+				rts2db::Target *tar = createTarget (current_target->getValueInteger (), observer);
+				if (tar == NULL)
+					return;
+				eq->addFront (tar, current_start->getValueDouble (), current_end->getValueDouble ());
+			}
+			break;
+	}
 }
 
 int SelectorDev::commandAuthorized (rts2core::Connection * conn)
