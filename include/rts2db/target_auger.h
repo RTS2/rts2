@@ -72,7 +72,7 @@ class TargetAuger:public rts2db::ConstTarget
 		}
 		virtual int isContinues ()
 		{
-			return 1;
+			return 0;
 		}
 
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);

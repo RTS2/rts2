@@ -81,10 +81,10 @@ vec rotateVector(struct vec * axis, struct vec * b, double angle)
 {
 	struct vec ret;
 	struct vec cross;
-	crossProduct(axis, b, &cross);
-	ret.x = b->x * cos(angle) + cross.x * sin(angle);
-	ret.y = b->y * cos(angle) + cross.y * sin(angle);
-	ret.z = b->z * cos(angle) + cross.z * sin(angle);
+	crossProduct (axis, b, &cross);
+	ret.x = b->x * cos (angle) + cross.x * sin (angle);
+	ret.y = b->y * cos (angle) + cross.y * sin (angle);
+	ret.z = b->z * cos (angle) + cross.z * sin (angle);
 	return ret;
 }
 
@@ -662,7 +662,7 @@ void TargetAuger::updateShowerFields ()
 			addShowerOffset (equ);
         	if (prev_dir.z >= 0.034899497 && dir.z > 0.011635266 && dir.z < 0.034899497)
 			addShowerOffset (equ);
-		
+
 		prev_dir = dir;
 		prev_equ = equ;
 
@@ -684,7 +684,7 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strcmp (device_name, "WF3"))
+	if (!strcmp (device_name, "WF4"))
 	{
 		std::ostringstream _os;
 	 	_os << "filter=B ";
