@@ -135,6 +135,9 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::ValueSelection *lastQueue;
 
 		rts2core::ValueInteger *current_target;
+		rts2core::ValueInteger *current_qid;
+		rts2core::ValueInteger *current_plan_id;
+		rts2core::ValueSelection *current_queue;
 		rts2core::ValueInteger *current_obs;
 
 		rts2core::TimeArray *free_start;
@@ -185,8 +188,6 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	sel = NULL;
 	observer = NULL;
 
-	lastQueue = NULL;
-
 	simulQueue = NULL;
 
 	last_auto_id = -2;
@@ -207,6 +208,10 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (next_started, "next_started", "if true, next observation was already started - queue operation is not needed", false);
 	next_started->setValueBool (false);
 
+	createValue (selQueNames, "queue_names", "selector queue names", false);
+	createValue (lastQueue, "last_queue", "queue used for last selection", false);
+	lastQueue->addSelVal ("automatic");
+
 	createValue (selectUntil, "select_until", "observations should end by this time", false, RTS2_VALUE_WRITABLE);
 	selectUntil->setValueDouble (NAN);
 
@@ -219,6 +224,12 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 
 	createValue (current_target, "current_target", "current target ID", false);
 	current_target->setValueInteger (-1);
+	createValue (current_qid, "current_qid", "current target queue ID", false);
+	current_qid->setValueInteger (-1);
+	createValue (current_plan_id, "current_plan_id", "current target plan ID", false);
+	current_plan_id->setValueInteger (-1);
+	createValue (current_queue, "current_queue", "current target queue", false);
+	current_queue->addSelVal ("automatic");
 	createValue (current_obs, "current_obs", "current observation ID", false);
 	current_obs->setValueInteger (-1);
 
@@ -336,10 +347,6 @@ int SelectorDev::init ()
 	if (ret)
 		return ret;
 
-	createValue (selQueNames, "queue_names", "selector queue names", false);
-	createValue (lastQueue, "last_queue", "queue used for last selection", false);
-	lastQueue->addSelVal ("automatic");
-
 	int i = 0;
 	
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++, i++)
@@ -348,6 +355,7 @@ int SelectorDev::init ()
 		queues.back ().load (i);
 
 		lastQueue->addSelVal (*iter);
+		current_queue->addSelVal (*iter);
 		selQueNames->addValue (std::string (*iter));
 	}
 
@@ -358,6 +366,7 @@ int SelectorDev::init ()
 	simulQueue = new rts2plan::SimulQueue (this, "simul", &observer, &queues);
 
 	lastQueue->addSelVal ("simul");
+	current_queue->addSelVal ("simul");
 	selQueNames->addValue ("simul");
 
 	return 0;
@@ -475,7 +484,7 @@ int SelectorDev::selectNext ()
 
 		queueSelectUntil->setValueDouble (NAN);
 
-	 	if (getMasterState () == SERVERD_NIGHT && lastQueue != NULL)
+	 	if (getMasterState () == SERVERD_NIGHT && queues.size () > 0)
 		{
 			int id = -1;
 			int q = 1;
@@ -544,13 +553,17 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		// see what was selected from the queue..
 		interrupt->setValueBool (false);
 		sendValueAll (interrupt);
-		if (lastQueue && lastQueue->getValueInteger () > 0)
+		bool qfind = false;
+		if (lastQueue->getValueInteger () > 0)
 		{
 			rts2plan::ExecutorQueue *eq = &(queues[lastQueue->getValueInteger () - 1]);
 			if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
 			{
 				// log it..
-				logStream (MESSAGE_INFO) << "Selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << ", " << eq << sendLog;
+				logStream (MESSAGE_INFO) << "selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << ", " << eq << sendLog;
+				qfind = true;
+				current_qid->setValueInteger (eq->front ().qid);
+				current_plan_id->setValueInteger (eq->front ().plan_id);
 				eq->front ().target->startObservation ();
 				// update plan entry..
 				if (next_started->getValueBool () == false)
@@ -560,11 +573,25 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 				}
 				eq->beforeChange (getNow ());
 			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "cannot find target with ID " << tar_id << " in queue " << lastQueue->getValueInteger () << sendLog;
+			}
 		}
 		current_target->setValueInteger (tar_id);
 		current_obs->setValueInteger (obs_id);
+		current_queue->setValueInteger (lastQueue->getValueInteger ());
+		if (qfind == false)
+		{
+			current_qid->setValueInteger (-1);
+			current_plan_id->setValueInteger (-1);
+			current_queue->setValueInteger (0);			
+		}
 
 		sendValueAll (current_target);
+		sendValueAll (current_qid);
+		sendValueAll (current_plan_id);
+		sendValueAll (current_queue);
 		sendValueAll (current_obs);
 	}
 	next_id->setValueInteger (selectNext ());
@@ -574,8 +601,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 	nextTime->setValueDouble (getNow ());
 	sendValueAll (nextTime);
 
-	if (lastQueue)
-		sendValueAll (lastQueue);
+	sendValueAll (lastQueue);
 
 	if (next_id->getValueInteger () > 0)
 	{
