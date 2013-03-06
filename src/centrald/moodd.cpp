@@ -34,7 +34,7 @@ class MoodD: public Device
 		virtual void centraldConnRunning (Connection *conn);
 		virtual void centraldConnBroken (Connection *conn);
 
-		virtual int setMasterState (Connection *_conn, int new_state);
+		virtual int setMasterState (Connection *_conn, rts2_status_t new_state);
 };
 
 }
@@ -85,7 +85,7 @@ MoodD::MoodD (int argc, char **argv):Device (argc, argv, DEVICE_TYPE_SENSOR, "MO
 
 }
 
-int MoodD::setMasterState (Connection *_conn, int new_state)
+int MoodD::setMasterState (Connection *_conn, rts2_status_t new_state)
 {
 	Device::setMasterState (_conn, new_state);
 	checkCentralds ();
