@@ -75,7 +75,7 @@ class Fram:public Sensor
 		virtual int init ();
 		virtual int idle ();
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
@@ -231,7 +231,7 @@ int Fram::getWDCTemp (int id)
 	return i;
 }
 
-void Fram::changeMasterState (int old_state, int new_state)
+void Fram::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 
 	if (!(new_state & SERVERD_ONOFF_MASK))

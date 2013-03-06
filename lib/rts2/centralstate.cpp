@@ -24,7 +24,7 @@
 
 using namespace rts2core;
 
-const char * CentralState::getStringShort (int _state)
+const char * CentralState::getStringShort (rts2_status_t _state)
 {
 	switch (_state & SERVERD_STATUS_MASK)
 	{
@@ -45,34 +45,30 @@ const char * CentralState::getStringShort (int _state)
 	return "unknow";
 }
 
-std::string CentralState::getString (int _state)
+std::string CentralState::getString (rts2_status_t _state)
 {
 	std::ostringstream os;
 	// check for weather
 	if ((_state & WEATHER_MASK) == BAD_WEATHER)
-	{
 		os << "bad weather | ";
-	}
+	if ((_state & WR_RAIN))
+		os << "rain |";
+	if ((_state & WR_WIND))
+		os << "wind |";
+	if ((_state & WR_HUMIDITY))
+		os << "humidity |";
+	if ((_state & WR_CLOUD))
+		os << "cloud |";
 	if ((_state & STOP_MASK) == STOP_EVERYTHING)
-	{
 		os << "stop | ";
-	}
 	if ((_state & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF)
-	{
 		os << "HARD OFF ";
-        }
 	else if ((_state & SERVERD_ONOFF_MASK) == SERVERD_SOFT_OFF)
-	{
 		os << "SOFT OFF ";
-	}
 	else if ((_state & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
-	{
 		os << "standby ";
-	}
 	else
-	{
 		os << "ON ";
-	}
 	os << getStringShort (_state);
 	// check for blocking
 	if (_state & BOP_EXPOSURE)

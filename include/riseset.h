@@ -23,6 +23,8 @@
 #include <libnova/ln_types.h>
 #include <time.h>
 
+#include "status.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -32,7 +34,7 @@ extern "C"
 	 *
 	 * @author Petr Kubanek <petr@kubanek.net>
 	 */
-	int next_event (struct ln_lnlat_posn *observer, time_t * start_time, int *curr_type, int *type, time_t * ev_time, double night_horizon, double day_horizon, int in_eve_time, int in_mor_time, bool verbose = false);
+	int next_event (struct ln_lnlat_posn *observer, time_t * start_time, rts2_status_t *curr_type, rts2_status_t *type, time_t * ev_time, double night_horizon, double day_horizon, int in_eve_time, int in_mor_time, bool verbose = false);
 
 	#ifdef __cplusplus
 };

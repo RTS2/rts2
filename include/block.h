@@ -259,7 +259,7 @@ class Block: public App
 		 *
 		 * @see PROTO_STATUS
 		 */
-		void sendStatusMessage (int state, const char * msg = NULL, Connection *commandedConn = NULL);
+		void sendStatusMessage (rts2_status_t state, const char * msg = NULL, Connection *commandedConn = NULL);
 
 		/**
 		 * Send status message to one connection.
@@ -271,7 +271,7 @@ class Block: public App
 		 *
 		 * @see PROTO_STATUS
 		 */
-		void sendStatusMessageConn (int state, Connection *conn);
+		void sendStatusMessageConn (rts2_status_t state, Connection *conn);
 
 		/**
 		 * Send BOP state to all connections.
@@ -282,7 +282,7 @@ class Block: public App
 		 *
 		 * @see PROTO_BOP_STATE
 		 */
-		void sendBopMessage (int state, int bop_state);
+		void sendBopMessage (rts2_status_t state, rts2_status_t bop_state);
 
 		/**
 		 * Send BOP message to a single connection.
@@ -294,7 +294,7 @@ class Block: public App
 		 *
 		 * @see PROTO_BOP_STATE
 		 */
-		void sendBopMessage (int state, int bop_state, Connection *conn);
+		void sendBopMessage (rts2_status_t state, rts2_status_t bop_state, Connection *conn);
 
 		/**
 		 * Send message to all connections.
@@ -374,12 +374,12 @@ class Block: public App
 		 * @param old_state  old system state
 		 * @param new_state  new system state (as commanded by system state change).
 		 */
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		/**
 		 * Called when new state information arrives.
 		 */
-		virtual int setMasterState (Connection *_conn, int new_state);
+		virtual int setMasterState (Connection *_conn, rts2_status_t new_state);
 
 		/**
 		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
@@ -389,7 +389,7 @@ class Block: public App
 		 *
 		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK)
 		 */
-		const unsigned int getMasterState ()
+		const rts2_status_t getMasterState ()
 		{
 			return masterState & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK);
 		}
@@ -399,7 +399,7 @@ class Block: public App
 		 *
 		 * @return Master state.
 		 */
-		const unsigned int getMasterStateFull ()
+		const rts2_status_t getMasterStateFull ()
 		{
 			return masterState;
 		}
@@ -775,7 +775,7 @@ class Block: public App
 		 * state. This routine is used to check if some of the servers
 		 * is in HARD_OFF state.
 		 */
-		bool centralServerInState (int state);
+		bool centralServerInState (rts2_status_t state);
 
 		/**
 		 * Make sure that the value is reporting all good - e.g. is inside limits.
@@ -814,7 +814,7 @@ class Block: public App
 		std::list <NetworkAddress *> blockAddress;
 		clients_t blockUsers;
 
-		unsigned int masterState;
+		rts2_status_t masterState;
 		Connection *stateMasterConn;
 
 		/**

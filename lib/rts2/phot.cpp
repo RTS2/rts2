@@ -185,7 +185,7 @@ int Rts2DevPhot::scriptEnds ()
 	return ScriptDevice::scriptEnds ();
 }
 
-void Rts2DevPhot::changeMasterState (int old_state, int new_state)
+void Rts2DevPhot::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{

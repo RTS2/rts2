@@ -191,7 +191,7 @@ class Centrald:public Daemon
 		/**
 		 * @param new_state	new state, if -1 -> 3
 		 */
-		int changeState (int new_state, const char *user);
+		int changeState (rts2_status_t new_state, const char *user);
 
 		virtual int processOption (int in_opt);
 
@@ -222,19 +222,19 @@ class Centrald:public Daemon
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
-		virtual void stateChanged (int new_state, int old_state, const char *description, rts2core::Connection *commandedConn);
+		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, rts2core::Connection *commandedConn);
 
 		virtual void signaledHUP ();
 
 	private:
 		// called to change state, check if last_night_on should be set
-		void maskCentralState (int state_mask, int new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
+		void maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
 
 		// -1 if no connection has priority, -2 if the process is exiting and there aren't any valid connections,
 		// otherwise connection number of priority client
 		int priority_client;
 
-		int next_event_type;
+		rts2_status_t next_event_type;
 		time_t next_event_time;
 		struct ln_lnlat_posn *observer;
 
@@ -341,7 +341,7 @@ class ConnCentrald:public rts2core::Connection
 		int messageMask;
 
 	protected:
-		virtual void setState (int in_value, char * msg);
+		virtual void setState (rts2_status_t in_value, char * msg);
 
 	public:
 		ConnCentrald (int in_sock, Centrald * in_master, int in_centrald_id);

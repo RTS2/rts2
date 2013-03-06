@@ -48,21 +48,21 @@ class ServerState
 
 		virtual ~ ServerState (void) {}
 
-		void setValue (int new_value)
+		void setValue (rts2_status_t new_value)
 		{
 			time (&lastUpdate);
 			oldValue = value;
 			value = new_value;
 		}
 
-		unsigned int getValue () { return value; }
+		rts2_status_t getValue () { return value; }
 
-		unsigned int getOldValue () { return oldValue; }
+		rts2_status_t getOldValue () { return oldValue; }
 
-		bool maskValueChanged (unsigned int q_mask) { return (getValue () & q_mask) != (getOldValue () & q_mask); }
+		bool maskValueChanged (rts2_status_t  q_mask) { return (getValue () & q_mask) != (getOldValue () & q_mask); }
 	private:
-		unsigned int value;
-		unsigned int oldValue;
+		rts2_status_t value;
+		rts2_status_t oldValue;
 		time_t lastUpdate;
 };
 

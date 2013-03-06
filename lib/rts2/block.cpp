@@ -235,7 +235,7 @@ void Block::sendMessageAll (Message & msg)
 		(*iter)->sendMessage (msg);
 }
 
-void Block::sendStatusMessage (int state, const char * msg, Connection *commandedConn)
+void Block::sendStatusMessage (rts2_status_t state, const char * msg, Connection *commandedConn)
 {
 	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;
@@ -252,21 +252,21 @@ void Block::sendStatusMessage (int state, const char * msg, Connection *commande
 	}
 }
 
-void Block::sendStatusMessageConn (int state, Connection * conn)
+void Block::sendStatusMessageConn (rts2_status_t state, Connection * conn)
 {
  	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;
 	conn->sendMsg (_os);
 }
 
-void Block::sendBopMessage (int state, int bopState)
+void Block::sendBopMessage (rts2_status_t state, rts2_status_t bopState)
 {
 	std::ostringstream _os;
 	_os << PROTO_BOP_STATE << " " << state << " " << bopState;
 	sendAll (_os);
 }
 
-void Block::sendBopMessage (int state, int bopState, Connection * conn)
+void Block::sendBopMessage (rts2_status_t state, rts2_status_t bopState, Connection * conn)
 {
 	std::ostringstream _os;
 	_os << PROTO_BOP_STATE << " " << state << " " << bopState;
@@ -454,7 +454,7 @@ void Block::deviceIdle (Connection * conn)
 {
 }
 
-void Block::changeMasterState (int old_state, int new_state)
+void Block::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	connections_t::iterator iter;
 	// send message to all connections that they can possibly continue executing..
@@ -508,7 +508,7 @@ std::map <Connection *, std::vector <Value *> > Block::failedValues ()
 	return ret;
 }
 
-bool Block::centralServerInState (int state)
+bool Block::centralServerInState (rts2_status_t state)
 {
 	for (connections_t::iterator iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
 	{
@@ -518,9 +518,9 @@ bool Block::centralServerInState (int state)
 	return false;
 }
 
-int Block::setMasterState (Connection *_conn, int new_state)
+int Block::setMasterState (Connection *_conn, rts2_status_t new_state)
 {
-	int old_state = masterState;
+	rts2_status_t old_state = masterState;
 	// ignore connections from wrong master..
 	if (stateMasterConn != NULL && _conn != stateMasterConn)
 	{

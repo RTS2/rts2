@@ -61,8 +61,7 @@ int DevConnection::command ()
 		ret = master->authorize (centraldNum, this);
 		if (ret)
 		{
-			sendCommandEnd (DEVDEM_E_SYSTEM,
-				"cannot authorize; try again later");
+			sendCommandEnd (DEVDEM_E_SYSTEM, "cannot authorize; try again later");
 			setConnState (CONN_AUTH_FAILED);
 			return -1;
 		}
@@ -96,12 +95,10 @@ int DevConnection::init ()
 
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "NetworkAddress::getAddress getaddrinfor for host " << address->getHost () << ":"
-			<< gai_strerror (ret) << sendLog;
+		logStream (MESSAGE_ERROR) << "NetworkAddress::getAddress getaddrinfor for host " << address->getHost () << ":" << gai_strerror (ret) << sendLog;
 		return -1;
 	}
-	sock = socket (device_addr->ai_family,
-		device_addr->ai_socktype, device_addr->ai_protocol);
+	sock = socket (device_addr->ai_family, device_addr->ai_socktype, device_addr->ai_protocol);
 	if (sock == -1)
 	{
 		return -1;
@@ -148,9 +145,7 @@ int DevConnection::authorizationOK ()
 
 int DevConnection::authorizationFailed ()
 {
-	logStream (MESSAGE_DEBUG) << "authorization failed: " << getName ()
-		<< getCentraldId () << " " << getCentraldNum ()
-		<< sendLog;
+	logStream (MESSAGE_DEBUG) << "authorization failed: " << getName () << getCentraldId () << " " << getCentraldNum () << sendLog;
 	setCentraldId (-1);
 	setConnState (CONN_DELETE);
 	sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
@@ -181,9 +176,7 @@ void DevConnection::connConnected ()
 	#endif
 	if (address == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "null address record in DevConnection::connConnected for device " << getName ()
-			<< " centrald num " << getCentraldNum ()
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "null address record in DevConnection::connConnected for device " << getName () << " centrald num " << getCentraldNum () << sendLog;
 		return;
 	}
 
@@ -220,9 +213,7 @@ void DevConnection::setDeviceKey (int _centraldId, int _key)
 		else
 		{
 			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) 
-				<< "DevConnection::setKey invalid connection state: "
-				<< getConnState () << sendLog;
+			logStream (MESSAGE_DEBUG) << "DevConnection::setKey invalid connection state: "	<< getConnState () << sendLog;
 			#endif
 		}
 	}
@@ -236,8 +227,7 @@ void DevConnection::setConnState (conn_state_t new_conn_state)
 	if (new_conn_state == CONN_AUTH_OK)
 	{
 	 	std::ostringstream _os;
-		_os << "this_device " << master->getDeviceName ()
-			<< " " << master->getDeviceType ();
+		_os << "this_device " << master->getDeviceName () << " " << master->getDeviceType ();
 		sendMsg (_os);
 		master->sendMetaInfo (this);
 		master->baseInfo (this);
@@ -319,9 +309,7 @@ int DevConnectionMaster::init ()
 	}
 	else
 	{
-		logStream (MESSAGE_ERROR) <<
-			"DevConnectionMaster::init cannot get host name " << master_host << " "
-			<< strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "DevConnectionMaster::init cannot get host name " << master_host << " " << strerror (errno) << sendLog;
 		connectionError (-1);
 		return -1;
 	}
@@ -329,9 +317,7 @@ int DevConnectionMaster::init ()
 	sock = socket (PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"DevConnectionMaster::init cannot create socket: " << strerror (errno)
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "DevConnectionMaster::init cannot create socket: " << strerror (errno) << sendLog;
 		connectionError (-1);
 		return -1;
 	}
@@ -439,13 +425,13 @@ int DevConnectionMaster::command ()
 	return Connection::command ();
 }
 
-void DevConnectionMaster::setState (int in_value, char * msg)
+void DevConnectionMaster::setState (rts2_status_t in_value, char * msg)
 {
 	Connection::setState (in_value, msg);
 	master->setMasterState (this, in_value);
 }
 
-void DevConnectionMaster::setBopState (int in_value)
+void DevConnectionMaster::setBopState (rts2_status_t in_value)
 {
 	Connection::setBopState (in_value);
 	((Device *) master)->setFullBopState (in_value);
@@ -665,7 +651,7 @@ Connection * Device::createClientConnection (NetworkAddress * in_addres)
 	return conn;
 }
 
-void Device::checkQueChanges (int fakeState)
+void Device::checkQueChanges (rts2_status_t fakeState)
 {
 	int ret;
 	bool changed = false;
@@ -710,7 +696,7 @@ void Device::checkQueChanges (int fakeState)
 	}
 }
 
-void Device::stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn)
+void Device::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn)
 {
 	Daemon::stateChanged (new_state, old_state, description, commandedConn);
 	// try to wake-up queued changes..
@@ -847,7 +833,7 @@ int Device::statusInfo (Connection * conn)
 	return 0;
 }
 
-void Device::setFullBopState (int new_state)
+void Device::setFullBopState (rts2_status_t new_state)
 {
 	for (rts2core::ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); iter++)
 	{
@@ -870,7 +856,7 @@ rts2core::Value * Device::getValue (const char *_device_name, const char *value_
 	return Daemon::getValue (_device_name, value_name);
 }
 
-int Device::maskQueValueBopState (int new_state, int valueQueCondition)
+int Device::maskQueValueBopState (rts2_status_t new_state, int valueQueCondition)
 {
 	return new_state;
 }

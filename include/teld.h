@@ -85,7 +85,7 @@ class Telescope:public rts2core::Device
 
 		virtual void postEvent (rts2core::Event * event);
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
@@ -148,7 +148,7 @@ class Telescope:public rts2core::Device
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
-		virtual void setFullBopState (int new_state);
+		virtual void setFullBopState (rts2_status_t new_state);
 
 	protected:
 		void applyOffsets (struct ln_equ_posn *pos)

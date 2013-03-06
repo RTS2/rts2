@@ -116,7 +116,7 @@ class Daemon:public rts2core::Block
 		 *
 		 * @return Block state.
 		 */
-		int getState () { return state; }
+		rts2_status_t getState () { return state; }
 
 		/**
 		 * Retrieve value with given name.
@@ -417,7 +417,7 @@ class Daemon:public rts2core::Block
 		 * @param old_value CondValue object describing the old_value
 		 * @param fakeState Server state agains which value change will be checked.
 		 */
-		bool queValueChange (CondValue * old_value, int fakeState)
+		bool queValueChange (CondValue * old_value, rts2_status_t fakeState)
 		{
 			return old_value->queValueChange (fakeState);
 		}
@@ -462,7 +462,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Called to set new state value
 		 */
-		void setState (int new_state, const char *description, Connection *commandedConn);
+		void setState (rts2_status_t new_state, const char *description, Connection *commandedConn);
 
 		/**
 		 * Called when state of the device is changed.
@@ -471,7 +471,7 @@ class Daemon:public rts2core::Block
 		 * @param old_state   Old device state.
 		 * @param description Text description of state change.
 		 */
-		virtual void stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn);
+		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn);
 
 		/**
 		 * Called from idle loop after HUP signal occured.
@@ -486,7 +486,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Send state change to all connection.
 		 */
-		void maskState (int state_mask, int new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
+		void maskState (rts2_status_t state_mask, rts2_status_t new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
 
 		/**
 		 * Raise hardware error status bit.
@@ -608,7 +608,7 @@ class Daemon:public rts2core::Block
 		const char *runAs;
 
 		// daemon state
-		int state;
+		rts2_status_t state;
 
 		CondValueVector values;
 		// values which do not change, they are send only once at connection

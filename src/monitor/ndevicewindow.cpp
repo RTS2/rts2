@@ -389,7 +389,7 @@ void NDeviceCentralWindow::drawValuesList ()
 		{
 			stateChanges.clear ();
 
-			int curr_type = -1, next_type = -1;
+			rts2_status_t curr_type = -1, next_type = -1;
 			time_t t_start;
 			time_t t_start_t;
 			time_t ev_time = tvNow.tv_sec;

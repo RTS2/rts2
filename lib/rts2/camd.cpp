@@ -1458,7 +1458,7 @@ int Camera::idle ()
 	return rts2core::ScriptDevice::idle ();
 }
 
-void Camera::changeMasterState (int old_state, int new_state)
+void Camera::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
@@ -1910,7 +1910,7 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 	return rts2core::ScriptDevice::commandAuthorized (conn);
 }
 
-int Camera::maskQueValueBopState (int new_state, int valueQueCondition)
+int Camera::maskQueValueBopState (rts2_status_t new_state, int valueQueCondition)
 {
 	if (valueQueCondition & CAM_EXPOSING)
 		new_state |= BOP_EXPOSURE;
@@ -1919,7 +1919,7 @@ int Camera::maskQueValueBopState (int new_state, int valueQueCondition)
 	return new_state;
 }
 
-void Camera::setFullBopState (int new_state)
+void Camera::setFullBopState (rts2_status_t new_state)
 {
 	rts2core::ScriptDevice::setFullBopState (new_state);
 	if (!(new_state & BOP_EXPOSURE) && quedExpNumber->getValueInteger () > 0 && waitingForNotBop->getValueBool ())

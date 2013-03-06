@@ -47,7 +47,7 @@ class Cloud4: public SensorWeather
 
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -295,7 +295,7 @@ void Cloud4::postEvent (rts2core::Event * event)
 	SensorWeather::postEvent (event);
 }
 
-void Cloud4::changeMasterState (int old_state, int new_state)
+void Cloud4::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0)
 	{

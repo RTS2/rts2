@@ -311,7 +311,7 @@ int Dome::setMasterOn ()
 	return 0;
 }
 
-void Dome::changeMasterState (int old_state, int new_state)
+void Dome::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	// detect state changes triggered by bad weather
 	if ((old_state & WEATHER_MASK) == GOOD_WEATHER && (new_state & WEATHER_MASK) == BAD_WEATHER && getIgnoreMeteo () == true)

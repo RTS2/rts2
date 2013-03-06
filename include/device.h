@@ -99,8 +99,8 @@ class DevConnectionMaster:public Connection
 		virtual void setConnState (conn_state_t new_conn_state);
 	protected:
 		virtual int command ();
-		virtual void setState (int in_value, char * msg);
-		virtual void setBopState (int in_value);
+		virtual void setState (rts2_status_t in_value, char * msg);
+		virtual void setBopState (rts2_status_t in_value);
 		virtual void connConnected ();
 		virtual void connectionError (int last_data_size);
 	private:
@@ -269,7 +269,7 @@ class Device:public Daemon
 		 *
 		 * @param new_state New BOP state.
 		 */
-		virtual void setFullBopState (int new_state);
+		virtual void setFullBopState (rts2_status_t new_state);
 
 		virtual rts2core::Value *getValue (const char *_device_name, const char *value_name);
 
@@ -281,7 +281,7 @@ class Device:public Daemon
 		 *
 		 * @return Masked BOP state.
 		 */
-		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
+		virtual int maskQueValueBopState (rts2_status_t new_state, int valueQueCondition);
 
 		/**
 		 * Called when status_info command ends.
@@ -331,7 +331,7 @@ class Device:public Daemon
 		 * This state is specific for device, and contains BOP values
 		 * only from devices which can block us.
 		 */
-		int getDeviceBopState () { return fullBopState;	}
+		rts2_status_t getDeviceBopState () { return fullBopState; }
 
 		/**
 		 * Return central connection for given central server name.
@@ -413,9 +413,9 @@ class Device:public Daemon
 		 * @param fakeState State of the device. This one is not set in
 		 * server state, it's only used during value tests.
 		 */
-		virtual void checkQueChanges (int fakeState);
+		virtual void checkQueChanges (rts2_status_t fakeState);
 
-		virtual void stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn);
+		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 

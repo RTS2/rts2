@@ -451,6 +451,14 @@ std::string Connection::getStateString ()
 	// report bad weather
 	if (getState () & BAD_WEATHER)
 	  	_os << " | BAD WEATHER";
+	if (getState () & WR_RAIN)
+		_os << " | rain";
+	if (getState () & WR_WIND)
+		_os << " | wind";
+	if (getState () & WR_HUMIDITY)
+		_os << " | humidity";
+	if (getState () & WR_CLOUD)
+		_os << " | cloud";
 
 	// stop everything..
 	if (getState () & STOP_EVERYTHING)
@@ -581,7 +589,7 @@ int Connection::acceptConn ()
 	}
 }
 
-void Connection::setState (int in_value, char * msg)
+void Connection::setState (rts2_status_t in_value, char * msg)
 {
 	serverState->setValue (in_value);
 	if (otherDevice)
@@ -598,7 +606,7 @@ void Connection::setState (int in_value, char * msg)
 	}
 }
 
-void Connection::setBopState (int in_value)
+void Connection::setBopState (rts2_status_t in_value)
 {
 	bopState->setValue (in_value);
 	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_RUN)

@@ -38,7 +38,7 @@ namespace rts2core
 class CentralState:public ServerState
 {
 	public:
-		CentralState (int in_state):ServerState ()
+		CentralState (rts2_status_t in_state):ServerState ()
 		{
 			setValue (in_state);
 		}
@@ -59,8 +59,8 @@ class CentralState:public ServerState
 		/**
 		 * Function to retrieve state character description.
 		 */
-		static const char *getStringShort (int _state);
-		static std::string getString (int _state);
+		static const char *getStringShort (rts2_status_t _state);
+		static std::string getString (rts2_status_t _state);
 
 		friend std::ostream & operator << (std::ostream & _os, CentralState c_state)
 		{

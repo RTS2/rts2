@@ -49,7 +49,7 @@ class Bootes2: public SensorWeather
 		virtual int info ();
 
 		virtual void valueChanged (rts2core::Value *v);
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 	private:
 		comedi_t *comediDevice;
@@ -354,7 +354,7 @@ void Bootes2::valueChanged (rts2core::Value *v)
 	SensorWeather::valueChanged (v);
 }
 
-void Bootes2::changeMasterState (int old_state, int new_state)
+void Bootes2::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	if ((new_state & SERVERD_ONOFF_MASK) == SERVERD_STANDBY)
 	{

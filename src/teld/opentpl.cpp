@@ -65,7 +65,7 @@ class OpenTPL:public Telescope
 		virtual int isParking ();
 		virtual int endPark ();
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 	protected:
 		rts2core::OpenTpl *opentplConn;
@@ -1448,7 +1448,7 @@ int OpenTPL::stopWorm ()
 	return 0;
 }
 
-void OpenTPL::changeMasterState (int old_state, int new_state)
+void OpenTPL::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK))
 	{

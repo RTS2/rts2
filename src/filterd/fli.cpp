@@ -32,7 +32,7 @@ class Fli:public Filterd
 		virtual int processOption (int in_opt);
 		virtual int initHardware ();
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		virtual int getFilterNum (void);
 		virtual int setFilterNum (int new_filter);
@@ -167,7 +167,7 @@ int Fli::initHardware ()
 	return 0;
 }
 
-void Fli::changeMasterState (int old_state, int new_state)
+void Fli::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	if ((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		homeFilter ();

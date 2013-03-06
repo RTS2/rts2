@@ -286,7 +286,7 @@ int ConnCentraldClient::command ()
 	return Connection::command ();
 }
 
-void ConnCentraldClient::setState (int in_value, char * msg)
+void ConnCentraldClient::setState (rts2_status_t in_value, char * msg)
 {
 	Connection::setState (in_value, msg);
 	master->setMasterState (this, in_value);

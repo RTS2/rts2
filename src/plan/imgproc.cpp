@@ -59,7 +59,7 @@ class ImageProc:public rts2core::Device
 
 		virtual int info ();
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		virtual int deleteConnection (rts2core::Connection * conn);
 
@@ -324,7 +324,7 @@ int ImageProc::info ()
 #endif
 }
 
-void ImageProc::changeMasterState (int old_state, int new_state)
+void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK))
 	{

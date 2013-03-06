@@ -151,7 +151,7 @@ class Connection:public Object
 		 */
 		void setCommandInProgress (bool in_progress) { commandInProgress = in_progress; }
 
-		unsigned int getState () { return serverState->getValue (); }
+		rts2_status_t getState () { return serverState->getValue (); }
 		
 		/**
 		 * Get weather state of the connection.
@@ -172,22 +172,22 @@ class Connection:public Object
 		 */
 		bool canMove () { return (getState () & STOP_MASK) == CAN_MOVE; }
 
-		int getErrorState () { return getState () & DEVICE_ERROR_MASK; }
-		int getBopState () { return getState () & BOP_MASK; }
+		rts2_status_t getErrorState () { return getState () & DEVICE_ERROR_MASK; }
+		rts2_status_t getBopState () { return getState () & BOP_MASK; }
 
 		/**
 		 * Returns full BOP state, which include connections mentioned in block_by.
 		 *
 		 * @return Connection full BOP state.
 		 */
-		int getFullBopState () { return bopState->getValue (); }
+		rts2_status_t getFullBopState () { return bopState->getValue (); }
 
 		/**
 		 * Get state without any error bits
 		 *
 		 * \return State without error bits
 		 */
-		int getRealState () { return getState () & DEVICE_STATUS_MASK; }
+		rts2_status_t getRealState () { return getState () & DEVICE_STATUS_MASK; }
 		std::string getCameraChipState (int chipN);
 		std::string getStateString ();
 		virtual int init () { return -1; }
@@ -670,7 +670,7 @@ class Connection:public Object
 		 *
 		 * @param in_value New state value.
 		 */
-		virtual void setState (int in_value, char * msg);
+		virtual void setState (rts2_status_t in_value, char * msg);
 
 		/**
 		 * Set device full BOP state.
@@ -680,7 +680,7 @@ class Connection:public Object
 		 *
 		 * @param in_value New full BOP state value.
 		 */
-		virtual void setBopState (int in_value);
+		virtual void setBopState (rts2_status_t in_value);
 
 		/**
 		 * Reference to other device client.

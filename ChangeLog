@@ -1,3 +1,6 @@
+2013-03-04
+ * rts2_status_t for device status
+
 2013-02-28
  * initDB with connection name parameter, allowning multiple connection for multi-thread applications
 

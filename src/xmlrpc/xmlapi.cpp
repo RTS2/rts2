@@ -303,7 +303,7 @@ void DeviceState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		throw XmlRpcException ("Cannot find specified device");
 	}
 	result[0] = conn->getStateString ();
-	result[1] = conn->getRealState ();
+	result[1] = (int) conn->getRealState ();
 }
 
 void ListValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)

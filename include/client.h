@@ -87,7 +87,7 @@ class ConnCentraldClient:public Connection
 		virtual int command ();
 
 	protected:
-		virtual void setState (int in_value, char * msg);
+		virtual void setState (rts2_status_t in_value, char * msg);
 
 	private:
 		const char *master_host;

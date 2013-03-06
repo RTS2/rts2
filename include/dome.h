@@ -41,7 +41,7 @@ class Dome:public rts2core::Device
 		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
 		virtual ~Dome ();
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		/**
 		 * Increases ignore timeout by given amount of seconds.

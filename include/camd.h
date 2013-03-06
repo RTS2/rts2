@@ -221,7 +221,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual void postEvent (rts2core::Event * event);
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		virtual int idle ();
 
@@ -300,9 +300,9 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
-		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
+		virtual int maskQueValueBopState (rts2_status_t new_state, int valueQueCondition);
 
-		virtual void setFullBopState (int new_state);
+		virtual void setFullBopState (rts2_status_t new_state);
 
 	protected:
 		double pixelX;

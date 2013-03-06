@@ -75,7 +75,7 @@ class SelectorDev:public rts2db::DeviceDb
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 		virtual void postEvent (rts2core::Event * event);
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 #ifdef RTS2_HAVE_SYS_INOTIFY_H
 		virtual void fileModified (struct inotify_event *event);
@@ -924,7 +924,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 	}
 }
 
-void SelectorDev::changeMasterState (int old_state, int new_state)
+void SelectorDev::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
  	// don't do anything in OFF modes
 	switch (new_state & SERVERD_ONOFF_MASK)

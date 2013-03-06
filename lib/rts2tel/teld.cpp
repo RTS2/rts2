@@ -856,7 +856,7 @@ rts2core::DevClient *Telescope::createOtherType (rts2core::Connection * conn, in
 	return rts2core::Device::createOtherType (conn, other_device_type);
 }
 
-void Telescope::changeMasterState (int old_state, int new_state)
+void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	// stop when STOP is triggered
 	if ((getState () & STOP_MASK) != STOP_EVERYTHING && (new_state & STOP_MASK) == STOP_EVERYTHING)
@@ -1518,7 +1518,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	return rts2core::Device::commandAuthorized (conn);
 }
 
-void Telescope::setFullBopState (int new_state)
+void Telescope::setFullBopState (rts2_status_t new_state)
 {
 	rts2core::Device::setFullBopState (new_state);
 	if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()) && !(new_state & BOP_TEL_MOVE))

@@ -38,7 +38,7 @@ class Ifw:public Filterd
 		virtual ~ Ifw (void);
 		virtual int processOption (int in_opt);
 		virtual int init (void);
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 		virtual int getFilterNum (void);
 		virtual int setFilterNum (int new_filter);
 
@@ -152,7 +152,7 @@ int Ifw::init (void)
 	return 0;
 }
 
-void Ifw::changeMasterState (int old_state, int new_state)
+void Ifw::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{

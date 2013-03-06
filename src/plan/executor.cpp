@@ -54,7 +54,7 @@ class Executor:public rts2db::DeviceDb
 
 		virtual int info ();
 
-		virtual void changeMasterState (int old_state, int new_state);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		int end ()
 		{
@@ -532,7 +532,7 @@ int Executor::info ()
 	return rts2db::DeviceDb::info ();
 }
 
-void Executor::changeMasterState (int old_state, int new_state)
+void Executor::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	if (ignoreDay->getValueBool () == true)
 		return rts2db::DeviceDb::changeMasterState (old_state, new_state);

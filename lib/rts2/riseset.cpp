@@ -30,7 +30,6 @@
 
 #include "libnova_cpp.h"
 #include "riseset.h"
-#include "status.h"
 
 int next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst, struct ln_rst_time *rst_naut, int *sun_rs, double night_horizon, double day_horizon)
 {
@@ -113,7 +112,7 @@ int next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rs
 	return 0;
 }
 
-int next_event (struct ln_lnlat_posn *observer, time_t * start_time, int *curr_type, int *type, time_t * ev_time, double night_horizon, double day_horizon, int in_eve_time, int in_mor_time, bool verbose)
+int next_event (struct ln_lnlat_posn *observer, time_t * start_time, rts2_status_t *curr_type, rts2_status_t *type, time_t * ev_time, double night_horizon, double day_horizon, int in_eve_time, int in_mor_time, bool verbose)
 {
 	double jd_time = ln_get_julian_from_timet (start_time);
 	struct ln_rst_time rst, rst_naut;

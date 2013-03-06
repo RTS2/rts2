@@ -1102,19 +1102,19 @@ err:
 	return ret;
 }
 
-void Daemon::setState (int new_state, const char *description, Connection *commandedConn)
+void Daemon::setState (rts2_status_t new_state, const char *description, Connection *commandedConn)
 {
 	if (state == new_state)
 		return;
 	stateChanged (new_state, state, description, commandedConn);
 }
 
-void Daemon::stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn)
+void Daemon::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn)
 {
 	state = new_state;
 }
 
-void Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end, Connection *commandedConn)
+void Daemon::maskState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Connection *commandedConn)
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
@@ -1125,7 +1125,7 @@ void Daemon::maskState (int state_mask, int new_state, const char *description, 
 		<< " end: " << end
 		<< sendLog;
 	#endif
-	int masked_state = state;
+	rts2_status_t masked_state = state;
 	// null from state all errors..
 	masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
 	masked_state |= new_state;

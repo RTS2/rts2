@@ -154,7 +154,7 @@ void StateApp::printAltTable (std::ostream & _os)
 void StateApp::printDayStates (std::ostream & _os)
 {
 	time_t ev_time, curr_time;
-	int curr_type, next_type;
+	rts2_status_t curr_type, next_type;
 
 	curr_time = currTime;
 
@@ -309,7 +309,7 @@ int StateApp::run ()
 {
 	int ret;
 	time_t ev_time;
-	int curr_type, next_type;
+	rts2_status_t curr_type, next_type;
 
 	struct ln_lnlat_posn *obs;
 

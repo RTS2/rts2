@@ -25,7 +25,7 @@
 
 using namespace rts2centrald;
 
-void ConnCentrald::setState (int in_value, char *msg)
+void ConnCentrald::setState (rts2_status_t in_value, char *msg)
 {
 	rts2core::Connection::setState (in_value, msg);
 	// distribute weather updates..
@@ -572,7 +572,7 @@ int Centrald::initValues ()
 {
 	time_t curr_time;
 
-	int call_state;
+	rts2_status_t call_state;
 
 	curr_time = time (NULL);
 
@@ -643,7 +643,7 @@ int Centrald::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	return rts2core::Daemon::setValue (old_value, new_value);
 }
 
-void Centrald::stateChanged (int new_state, int old_state, const char *description, rts2core::Connection *commandedConn)
+void Centrald::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, rts2core::Connection *commandedConn)
 {
 	Daemon::stateChanged (new_state, old_state, description, commandedConn);
 	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
@@ -684,7 +684,7 @@ rts2core::Connection * Centrald::getConnection (int conn_num)
 	return NULL;
 }
 
-int Centrald::changeState (int new_state, const char *user)
+int Centrald::changeState (rts2_status_t new_state, const char *user)
 {
 	logStream (MESSAGE_INFO) << "State switched to " << rts2core::CentralState::getString (new_state) << " by " << user << sendLog;
 	maskCentralState (SERVERD_ONOFF_MASK | SERVERD_STATUS_MASK, new_state, user);
@@ -736,7 +736,7 @@ int Centrald::idle ()
 {
 	time_t curr_time;
 
-	int call_state;
+	rts2_status_t call_state;
 
 	curr_time = time (NULL);
 
@@ -778,7 +778,7 @@ int Centrald::idle ()
 		while (nt < (curr_time + 86400) && (nsta || nsto))
 		{
 			time_t t_start_t = nt + 1;
-			int net;
+			rts2_status_t net;
 			next_event (observer, &t_start_t, &call_state, &net,
 				&nt, nightHorizon->getValueDouble (),
 				dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
@@ -1027,7 +1027,7 @@ int Centrald::getStateForConnection (rts2core::Connection * conn)
 	return sta;
 }
 
-void Centrald::maskCentralState (int state_mask, int new_state, const char *description, double start, double end, Connection *commandedConn)
+void Centrald::maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Connection *commandedConn)
 {
 	if (!(getState () & SERVERD_STANDBY))
 	{

@@ -44,6 +44,10 @@ class Dummy:public SensorWeather
 			createValue (testDoubleLimit, "test_limit", "test value for double; if < TEST_DOUBLE, weather will be swicthed to bad", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (randomDouble, "random_double", "random double value", false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
+			createValue (wrRain, "wr_rain", "weather reason rain", true, RTS2_VALUE_WRITABLE);
+			createValue (wrWind, "wr_wind", "weather reason wind", true, RTS2_VALUE_WRITABLE);
+			createValue (wrHumidity, "wr_humidity", "weather reason humidity", true, RTS2_VALUE_WRITABLE);
+			createValue (wrCloud, "wr_cloud", "weather reason cloud", true, RTS2_VALUE_WRITABLE);
 			createValue (stopMove, "stop_move", "if dummy sensor should stop any movement", false, RTS2_VALUE_WRITABLE);
 			createValue (stopMoveErr, "stop_move_err", "error state of stop_move", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_DEBUG);
 			stopMoveErr->addSelVal ("good");
@@ -95,7 +99,22 @@ class Dummy:public SensorWeather
 		  	if (old_value == hwError)
 			{
 				maskState (DEVICE_ERROR_MASK, ((rts2core::ValueBool *) newValue)->getValueBool () ? DEVICE_ERROR_HW : 0);
-				return 0;
+			}
+			if (old_value == wrRain)
+			{
+				maskState (WR_RAIN, ((rts2core::ValueBool *) newValue)->getValueBool () ? WR_RAIN : 0);
+			}
+			if (old_value == wrWind)
+			{
+				maskState (WR_WIND, ((rts2core::ValueBool *) newValue)->getValueBool () ? WR_WIND : 0);
+			}
+			if (old_value == wrHumidity)
+			{
+				maskState (WR_HUMIDITY, ((rts2core::ValueBool *) newValue)->getValueBool () ? WR_HUMIDITY : 0);
+			}
+			if (old_value == wrCloud)
+			{
+				maskState (WR_CLOUD, ((rts2core::ValueBool *) newValue)->getValueBool () ? WR_CLOUD : 0);
 			}
 			if (old_value == stopMove)
 			{
@@ -172,6 +191,10 @@ class Dummy:public SensorWeather
 		rts2core::ValueDouble *testDoubleLimit;
 		rts2core::ValueDouble *randomDouble;
 		rts2core::ValueBool *goodWeather;
+		rts2core::ValueBool *wrRain;
+		rts2core::ValueBool *wrWind;
+		rts2core::ValueBool *wrHumidity;
+		rts2core::ValueBool *wrCloud;
 		rts2core::ValueBool *stopMove;
 		rts2core::ValueSelection *stopMoveErr;
 		rts2core::ValueBool *testOnOff;
