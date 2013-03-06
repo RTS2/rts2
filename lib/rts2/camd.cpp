@@ -1338,7 +1338,7 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	if (old_value == camFilterVal)
 	{
-		int ret = setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
+		int ret = setFilterNum (new_value->getValueInteger (), wheelDevices[0]) == 0 ? 0 : -2;
 		if (ret == 0)
 			offsetForFilter (new_value->getValueInteger (), camFilterVals.end ());
 		return ret;
