@@ -92,7 +92,7 @@ class Dummy:public SensorWeather
 
 
 		/** Handles logic of BOP_WILL_EXPOSE and BOP_TRIG_EXPOSE. */
-		virtual void setFullBopState (int new_state);
+		virtual void setFullBopState (rts2_status_t new_state);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * newValue)
 		{
@@ -253,7 +253,7 @@ void Dummy::postEvent (rts2core::Event *event)
 	SensorWeather::postEvent (event);
 }
 
-void Dummy::setFullBopState (int new_state)
+void Dummy::setFullBopState (rts2_status_t new_state)
 {
 	if ((new_state & BOP_WILL_EXPOSE) && !(getDeviceBopState () & BOP_WILL_EXPOSE))
 	{
