@@ -297,6 +297,9 @@ class Reflex:public Camera
 
 		// parse states for program
 		void parseStates ();
+
+		std::string compileState (std::string value, int bt, int bb);
+
 		// compile states, fill compiled member of RState
 		void compileStates ();
 
@@ -1477,7 +1480,10 @@ void getToken (std::string &tokens, std::string &token)
 	tokens = tokens.substr (i);
 }
 
-std::string compileState (std::string value, int bt)
+/**
+ * @param bb Board Build
+ */
+std::string Reflex::compileState (std::string value, int bt, int bb)
 {
 	std::ostringstream ret;
 	ret.fill ('0');
@@ -1514,8 +1520,9 @@ std::string compileState (std::string value, int bt)
 		err << "invalid length of value for board type " << std::hex << bt << ": expected " << count << " characters, string is " << value;
 		throw rts2core::Error (err.str ());
 	}
-	uint16_t clockdata = 0;
-	uint16_t keepdata = 0;
+	uint32_t clockdata = 0;
+	uint32_t keepdata = 0;
+	uint32_t abdata = 0;
 	int bit = 1;
 	for (unsigned  clock = 0; clock < count; clock++)
 	{
@@ -1528,6 +1535,10 @@ std::string compileState (std::string value, int bt)
 				break;
 			case '2':
 				keepdata |= bit;
+				break;
+			case '3':
+			case '4':
+				abdata |= bit;
 				break;
 		}
 		bit <<= 1;
@@ -1550,8 +1561,19 @@ std::string compileState (std::string value, int bt)
 			// Slots for LVAL still exists, though FVAL is now sync and LVAL is don't care.  Realign remaining clocks.
 			clockdata = (clockdata & 0x1) | ((clockdata & 0x3FE) << 1);
 			keepdata = (keepdata & 0x1) | ((keepdata & 0x3FE) << 1);
-		case BT_DRIVER:
 			ret << std::setw (4) << clockdata << std::setw (4) << keepdata;
+			break;
+		case BT_DRIVER:
+			if ((boardBuild (BOARD_IF) >= 384) && (bb >= 384))
+			{
+				clockdata |= abdata << 12;
+				keepdata |= keepdata << 12;
+				ret << std::setw (6) << clockdata << std::setw (6) << keepdata;
+			}
+			else
+			{
+				ret << std::setw (4) << clockdata << std::setw (4) << keepdata;
+			}
 			break;
 	}
 	return ret.str ();
@@ -1561,9 +1583,9 @@ void Reflex::compileStates ()
 {
 	for (RStates::iterator iter = states.begin (); iter != states.end (); iter++)
 	{
-		iter->compiled = compileState (iter->value_backplane, BT_BPX6) + compileState (iter->value_interface, BT_CLIF);
+		iter->compiled = compileState (iter->value_backplane, BT_BPX6, 0) + compileState (iter->value_interface, BT_CLIF, 0);
 		for (uint32_t i = 0; i < MAX_DAUGHTER_COUNT; i++)
-			iter->compiled += compileState (iter->daughter_values[i], boardType (BOARD_DAUGHTERS + i));
+			iter->compiled += compileState (iter->daughter_values[i], boardType (BOARD_DAUGHTERS + i), boardBuild (BOARD_DAUGHTERS + i));
 	}
 }
 
