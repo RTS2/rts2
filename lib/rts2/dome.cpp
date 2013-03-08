@@ -251,6 +251,7 @@ int Dome::idle ()
 	bool allCen = allCentraldRunning ();
 	if (allCen && getNextOpen () < getNow ())
 	{
+		valueGood (nextGoodWeather);
 		setWeatherState (true, "can open dome");
 	}
 	else
@@ -376,6 +377,7 @@ void Dome::setWeatherTimeout (time_t wait_time, const char *msg)
 	next += wait_time;
 	if (next > nextGoodWeather->getValueInteger ())
 	{
+		valueError (nextGoodWeather);
 		setWeatherState (false, msg);
 		nextGoodWeather->setValueInteger (next);
 		sendValueAll (nextGoodWeather);
@@ -400,11 +402,13 @@ int Dome::commandAuthorized (rts2core::Connection * conn)
 		if (next_good < 0)
 			return -2;
 		nextGoodWeather->setValueDouble (getNow () + next_good);
+		valueError (nextGoodWeather);
 		return (domeCloseStart () == 0 ? 0 : -2);
 	}
 	else if (conn->isCommand ("reset_next"))
 	{
 		nextGoodWeather->setValueDouble (getNow () - 1);
+		valueGood (nextGoodWeather);
 		return 0;
 	}
 	return Device::commandAuthorized (conn);
