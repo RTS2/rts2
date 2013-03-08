@@ -84,15 +84,13 @@ int BartRain::init ()
 	rain_port = open (rain_detector, O_RDWR | O_NOCTTY);
 	if (rain_port == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Bart::init cannot open " 
-			<< rain_detector << " " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Bart::init cannot open " << rain_detector << " " << strerror (errno) << sendLog;
 		return -1;
 	}
 	ret = ioctl (rain_port, TIOCMGET, &flags);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Bart::init cannot get flags: " << strerror (errno)
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "Bart::init cannot get flags: " << strerror (errno) << sendLog;
 		return -1;
 	}
 	flags &= ~TIOCM_DTR;
@@ -100,8 +98,7 @@ int BartRain::init ()
 	ret = ioctl (rain_port, TIOCMSET, &flags);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Bart::init cannot set flags: " << strerror (errno)
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "Bart::init cannot set flags: " << strerror (errno) << sendLog;
 		return -1;
 	}
 	return 0;
@@ -112,17 +109,18 @@ int BartRain::info ()
 	int flags;
 	int ret;
 	ret = ioctl (rain_port, TIOCMGET, &flags);
-	logStream (MESSAGE_DEBUG) << "Bart::isGoodWeather flags: " << flags << " rain: "
-		<< (flags & TIOCM_RI) << sendLog;
+	logStream (MESSAGE_DEBUG) << "Bart::isGoodWeather flags: " << flags << " rain: " << (flags & TIOCM_RI) << sendLog;
 		// ioctl failed or it's raining..
 	if (ret || !(flags & TIOCM_RI))
 	{
 		rain->setValueBool (true);
 		setWeatherTimeout (timeoutRain->getValueInteger (), "raining");
+		maskState (WR_RAIN, WR_RAIN, "rain detected from rain sensor");
 	}
 	else
 	{
 		rain->setValueBool (false);
+		maskState (WR_RAIN, 0, "no rain");
 	}
 	return SensorWeather::info ();
 }
