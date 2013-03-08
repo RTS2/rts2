@@ -438,7 +438,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (max, "max", "maximum pixel value", false);
 	createValue (min, "min", "minimal pixel value", false);
 	createValue (sum, "sum", "sum of pixels readed out", false);
-	createValue (image_mode, "image_mode", "mode (most often pixel value", false);
+	createValue (image_mode, "image_mode", "mode (most often pixel value)", false);
 
 	// mode histogram
 	modeCount = NULL;
@@ -522,7 +522,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption (OPT_COMMENTS, "add-comments", 1, "add given number of comment fields");
 	addOption (OPT_HISTORIES, "add-history", 1, "add given number of history fields");
 	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
-	addOption (OPT_WHEEL, "wheeldev", 1, "name of device which is used as filter wheel");
+	addOption (OPT_WHEEL, "wheeldev", 1, "name of device which is used as filter wheel; - for internal wheel device");
 	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
 	addOption (OPT_OFFSETS_FILE, "offsets-file", 1, "configuration file for camera filter offsets. Filter names are separated with space from filter offsets");
 	addOption ('e', NULL, 1, "default exposure");
@@ -749,7 +749,10 @@ int Camera::processOption (int in_opt)
 			focuserDevice = optarg;
 			break;
 		case OPT_WHEEL:
-			wheelDevices.push_back (optarg);
+			if (!strcmp (optarg, "-"))
+				wheelDevices.push_back (NULL);
+			else
+				wheelDevices.push_back (optarg);
 			break;
 		case OPT_FILTER_OFFSETS:
 			createFilter ();
@@ -1338,7 +1341,11 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	if (old_value == camFilterVal)
 	{
-		int ret = setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
+		int ret;
+		if (wheelDevices.size () > 0)
+			ret = setFilterNum (new_value->getValueInteger (), wheelDevices[0]) == 0 ? 0 : -2;
+		else
+			ret = setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
 		if (ret == 0)
 			offsetForFilter (new_value->getValueInteger (), camFilterVals.end ());
 		return ret;
