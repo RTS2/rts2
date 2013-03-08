@@ -471,7 +471,9 @@ bool FlwoWeather::isGoodWeather ()
 	double lastNow = getNow () - ignore_nodata->getValueFloat ();
 	if (getLastInfoTime () > ignore_nodata->getValueFloat ())
   	{
-	  	setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not received");
+	  	std::ostringstream os;
+		os << "weather data not received, Pairitel:" << Timestamp (lastPool->getValueDouble ()) << ", ME: " << Timestamp (me_mjd->getValueDouble ());
+		setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not received");
 		if (isnan (lastPool->getValueDouble ()) || lastPool->getValueDouble () < lastNow)
 		{
 			humidity->setValueFloat (NAN);
@@ -573,7 +575,8 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (humidity->getValueFloat () > humidity_limit->getValueFloat ())
 	{
-	  	setWeatherTimeout (wait_humidity->getValueInteger (), "humidity is above limit");
+	  	if (ret)
+			setWeatherTimeout (wait_humidity->getValueInteger (), "humidity is above limit");
 	  	valueError (humidity);
 		ret = false;
 	}
@@ -583,7 +586,8 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (windSpeed->getValueFloat () > windSpeed_limit->getValueFloat ())
 	{
-		setWeatherTimeout (wait_wind->getValueInteger (), "windspeed is above limit");
+		if (ret)
+			setWeatherTimeout (wait_wind->getValueInteger (), "windspeed is above limit");
 		valueError (windSpeed);
 		ret = false;
 	}
@@ -593,7 +597,8 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (windGustSpeed->getValueFloat () > windGustSpeed_limit->getValueFloat ())
 	{
-		setWeatherTimeout (wait_wind->getValueInteger (), "wind gust speed is above limit");
+		if (ret)
+			setWeatherTimeout (wait_wind->getValueInteger (), "wind gust speed is above limit");
 		valueError (windGustSpeed);
 		ret = false;
 	}
@@ -603,9 +608,12 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (me_sky_temp->getValueFloat () > me_sky_limit->getValueFloat ())
 	{
-		std::ostringstream _os;
-		_os << "SKYTEMP " << me_sky_temp->getValueFloat () << "C, above limit of " << me_sky_limit->getValueFloat () << "C";
-		setWeatherTimeout (wait_skytemp->getValueInteger (), _os.str ().c_str ());
+		if (ret)
+		{
+			std::ostringstream _os;
+			_os << "SKYTEMP " << me_sky_temp->getValueFloat () << "C, above limit of " << me_sky_limit->getValueFloat () << "C";
+			setWeatherTimeout (wait_skytemp->getValueInteger (), _os.str ().c_str ());
+		}
 		valueError (me_sky_temp);
 		ret = false;
 	}
@@ -615,7 +623,8 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (me_rain->getValueBool ())
 	{
-		setWeatherTimeout (wait_me_rain->getValueInteger (), "ME RAIN");
+		if (ret)
+			setWeatherTimeout (wait_me_rain->getValueInteger (), "ME RAIN");
 		valueError (me_rain);
 		ret = false;
 	}
