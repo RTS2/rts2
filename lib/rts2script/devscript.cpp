@@ -86,9 +86,7 @@ void DevScript::startTarget (bool callScriptEnds)
 	nextComd = NULL;
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "DevScript::startTarget currentTarget " <<
-		currentTarget->getTargetID () << " OBS ID " << currentTarget->
-		getObsTargetID () << sendLog;
+	logStream (MESSAGE_DEBUG) << "DevScript::startTarget currentTarget " << currentTarget->getTargetID () << " OBS ID " << currentTarget->getObsTargetID () << sendLog;
 	#endif
 
 	script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_SCRIPT_STARTED));

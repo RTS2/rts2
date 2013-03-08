@@ -1142,7 +1142,6 @@ int TargetSwiftFOV::considerForObserving (double JD)
 	// find pointing
 	int ret;
 	struct ln_equ_posn curr_position;
-	double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
 	load ();
 
@@ -1156,7 +1155,7 @@ int TargetSwiftFOV::considerForObserving (double JD)
 
 	getPosition (&curr_position, JD);
 
-	ret = isGood (lst, JD, &curr_position);
+	ret = isGood (JD, &curr_position);
 
 	if (!ret)
 	{
@@ -1398,7 +1397,6 @@ int TargetIntegralFOV::considerForObserving (double JD)
 	// find pointing
 	int ret;
 	struct ln_equ_posn curr_position;
-	double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
 	load ();
 
@@ -1412,7 +1410,7 @@ int TargetIntegralFOV::considerForObserving (double JD)
 
 	getPosition (&curr_position, JD);
 
-	ret = isGood (lst, JD, &curr_position);
+	ret = isGood (JD, &curr_position);
 
 	if (!ret)
 	{

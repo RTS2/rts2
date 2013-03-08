@@ -1202,7 +1202,7 @@ int Target::selectedAsGood ()
 /**
  * return 0 if we cannot observe that target, 1 if it's above horizon.
  */
-bool Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
+bool Target::isGood (double JD, struct ln_equ_posn * pos)
 {
 	struct ln_hrz_posn hrz;
 	getAltAz (&hrz, JD);
@@ -1213,7 +1213,7 @@ bool Target::isGood (double JD)
 {
 	struct ln_equ_posn pos;
 	getPosition (&pos, JD);
-	return isGood (ln_get_mean_sidereal_time (JD) + observer->lng / 15.0, JD, &pos);
+	return isGood (JD, &pos);
 }
 
 bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
@@ -1230,11 +1230,10 @@ int Target::considerForObserving (double JD)
 {
 	// horizon constrain..
 	struct ln_equ_posn curr_position;
-	double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 	int ret;
 	getPosition (&curr_position, JD);
 
-	ret = isGood (lst, JD, &curr_position);
+	ret = isGood (JD, &curr_position);
 	if (!ret)
 	{
 		struct ln_rst_time rst;
@@ -1950,8 +1949,6 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD, int extended)
 void Target::sendInfo (Rts2InfoValStream & _os, double JD, int extended)
 {
 	struct ln_equ_posn pos;
-	double gst;
-	double lst;
 	time_t now, last;
 
 	const char *name = getTargetName ();
@@ -1978,20 +1975,13 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD, int extended)
 	sendPositionInfo (_os, JD, extended);
 
 	last = now - 86400;
-	_os
-		<< InfoVal<int> ("24 HOURS OBS", getNumObs (&last, &now));
+	_os << InfoVal<int> ("24 HOURS OBS", getNumObs (&last, &now));
 	last = now - 7 * 86400;
 	_os
 		<< InfoVal<int> ("7 DAYS OBS", getNumObs (&last, &now))
 		<< InfoVal<double> ("BONUS", getBonus (JD));
 
-	// is above horizon?
-	gst = ln_get_mean_sidereal_time (JD);
-	lst = gst + getObserver()->lng / 15.0;
-	_os << (isGood (lst, JD, & pos)
-		? "Target is above local horizon."
-		: "Target is below local horizon, it's not possible to observe it.")
-		<< std::endl;
+	_os << (isGood (JD, &pos) ? "Target is above local horizon." : "Target is below local horizon, it's not possible to observe it.") << std::endl;
 	printExtra (_os, JD);
 }
 

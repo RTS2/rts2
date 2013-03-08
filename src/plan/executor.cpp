@@ -759,7 +759,14 @@ int Executor::setGrb (int grbId)
 
 		if (grbTarget->checkConstraints (JD) == false)
 		{
-			logStream (MESSAGE_INFO) << "GRB does not meet constraints: violated " << grbTarget->getViolatedConstraints (JD).toString () << ", satisfied " << grbTarget->getSatisfiedConstraints (JD).toString () << sendLog;
+			logStream (MESSAGE_INFO) << "GRB " << grbTarget->getTargetName () << " (" << grbTarget->getTargetID () << ") does not meet constraints: violated " << grbTarget->getViolatedConstraints (JD).toString () << ", satisfied " << grbTarget->getSatisfiedConstraints (JD).toString () << sendLog;
+			delete grbTarget;
+			return -2;
+		}
+
+		if (grbTarget->isGood (JD) == false)
+		{
+			logStream (MESSAGE_INFO) << "GRB " << grbTarget->getTargetName () << " (" << grbTarget->getTargetID () << ") is not visible, ignoring GRB request" << sendLog;
 			delete grbTarget;
 			return -2;
 		}
