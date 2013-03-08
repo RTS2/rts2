@@ -1259,9 +1259,9 @@ int Connection::command ()
 
 int Connection::status ()
 {
-	int value;
+	long long int value;
 	char *msg = NULL;
-	if (paramNextInteger (&value) || !(paramEnd () || (paramNextString (&msg) == 0 && paramEnd ())))
+	if (paramNextLongLong (&value) || !(paramEnd () || (paramNextString (&msg) == 0 && paramEnd ())))
 		return -2;
 	setState (value, msg);
 	return -1;
@@ -1269,9 +1269,9 @@ int Connection::status ()
 
 int Connection::bopStatus ()
 {
-	int masterStatus;
-	int masterBopState;
-	if (paramNextInteger (&masterStatus) || paramNextInteger (&masterBopState) || !paramEnd ())
+	long long int masterStatus;
+	long long int masterBopState;
+	if (paramNextLongLong (&masterStatus) || paramNextLongLong (&masterBopState) || !paramEnd ())
 		return -2;
 	setBopState (masterBopState);
 	setState (masterStatus, NULL);
@@ -1826,6 +1826,18 @@ int Connection::paramNextLong (long int *num)
 	if (paramNextString (&str_num, ","))
 		return -1;
 	*num = strtol (str_num, &num_end, 10);
+	if (*num_end)
+		return -1;
+	return 0;
+}
+
+int Connection::paramNextLongLong (long long int *num)
+{
+	char *str_num;
+	char *num_end;
+	if (paramNextString (&str_num, ","))
+		return -1;
+	*num = strtoll (str_num, &num_end, 10);
 	if (*num_end)
 		return -1;
 	return 0;

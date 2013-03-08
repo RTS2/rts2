@@ -457,6 +457,7 @@ class Connection:public Object
 		int paramNextStringNull (char **str);
 		int paramNextInteger (int *num);
 		int paramNextLong (long int *num);
+		int paramNextLongLong (long long int *num);
 		int paramNextSizeT (size_t * num);
 		int paramNextSSizeT (ssize_t * num);
 		int paramNextDouble (double *num);
