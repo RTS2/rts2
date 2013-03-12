@@ -207,7 +207,7 @@ class TargetSet:public std::map <int, Target * >
 		 */
 		void appendConstraints (Constraints &cons);
 
-		int save (bool overwrite = true);
+		int save (bool overwrite = true, bool clean = false);
 		std::ostream &print (std::ostream & _os, double JD);
 
 		std::ostream &printBonusList (std::ostream & _os, double JD);

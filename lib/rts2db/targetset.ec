@@ -397,7 +397,7 @@ void TargetSet::appendConstraints (Constraints &cons)
 	}
 }
 
-int TargetSet::save (bool overwrite)
+int TargetSet::save (bool overwrite, bool clean)
 {
 	int ret = 0;
 	int ret_s;
@@ -407,6 +407,11 @@ int TargetSet::save (bool overwrite)
 		ret_s = iter->second->save (overwrite);
 		if (ret_s)
 			ret--;
+		if (clean)
+		{
+			delete iter->second;
+			iter->second = NULL;
+		}
 	}
 	// return number of targets for which save failed
 	return ret;

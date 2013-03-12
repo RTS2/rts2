@@ -615,8 +615,7 @@ int TargetApp::doProcessing ()
 			struct ln_equ_posn pos;
 			tar->startSlew (&pos, true);
 			std::cout << tar->getObsId () << std::endl;
-			tar->setObsId (-1);
-			return 0;
+			return target_set.save (true, true);
 		}
 		if (op & OP_PI_NAME)
 		{
@@ -635,7 +634,7 @@ int TargetApp::doProcessing ()
 			return runInteractive ();
 		}
 
-		return target_set.save (true);
+		return target_set.save (true, true);
 	}
 	catch (rts2db::UnresolvedTarget ut)
 	{
