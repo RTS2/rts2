@@ -197,7 +197,7 @@ int ElementDark::nextCommand (rts2core::DevClientCamera * camera, rts2core::Comm
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 		return NEXT_COMMAND_KEEP;
 	}
-	*new_command = new rts2core::CommandExposure (script->getMaster (), camera, 0);
+	*new_command = new rts2core::CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 	callProgress = first;
 	return 0;
 }
