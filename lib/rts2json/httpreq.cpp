@@ -120,7 +120,7 @@ void JSONRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 {
 	try
 	{
-		executeJSON (path, params, response_type, response, response_length);
+		executeJSON (source, path, params, response_type, response, response_length);
 	}
 	catch (rts2core::Error &er)
 	{

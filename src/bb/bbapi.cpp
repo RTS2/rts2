@@ -35,7 +35,7 @@
 
 using namespace rts2bb;
 
-BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue):GetRequestAuthorized (prefix, _http_server, NULL, s)
+BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue):rts2json::JSONRequest (prefix, _http_server, s)
 {
 	g_type_init ();
 	queue = _queue;
@@ -48,23 +48,6 @@ BBAPI::~BBAPI ()
 		g_object_unref (iter->second.second);
 	}
 	observatoriesJsons.clear ();
-}
-
-void BBAPI::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
-{
-	try
-	{
-		executeJSON (source, path, params, response_type, response, response_length);
-	}
-	catch (rts2core::Error &er)
-	{
-		throw XmlRpc::JSONException (er.what ());
-	}
-}
-
-void BBAPI::authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length)
-{
-	throw XmlRpc::JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
 }
 
 void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)

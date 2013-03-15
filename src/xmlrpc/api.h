@@ -45,7 +45,7 @@ class API:public rts2json::JSONRequest
 		void sendOwnValues (std::ostringstream & os, XmlRpc::HttpParams *params, double from, bool extended);
 
 	protected:
-		virtual void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		virtual void executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
 	private:
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);

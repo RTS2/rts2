@@ -120,9 +120,26 @@ void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value)
 
 }
 
-void jsonObservation (rts2db::Observation *obs, std::ostream &os);
+void jsonObservation (rts2db::Observation *obs, std::ostream &os)
+{
+	struct ln_equ_posn equ;
+	obs->getTarget ()->getPosition (&equ);
 
-void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+	os << std::fixed << "\"observation\":{\"id\":" << obs->getObsId ()
+		<< ",\"slew\":" << rts2json::JsonDouble (obs->getObsSlew ())
+		<< ",\"start\":" << rts2json::JsonDouble (obs->getObsStart ())
+		<< ",\"end\":" << rts2json::JsonDouble (obs->getObsEnd ())
+		<< ",\"images\":" << obs->getNumberOfImages ()
+		<< ",\"good\":" << obs->getNumberOfGoodImages ()
+		<< "},\"target\":{\"id\":" << obs->getTarget ()->getTargetID ()
+		<< ",\"name\":\"" << rts2json::JsonString (obs->getTarget ()->getTargetName ())
+		<< "\",\"ra\":" << rts2json::JsonDouble (equ.ra)
+		<< ",\"dec\":" << rts2json::JsonDouble (equ.dec)
+		<< ",\"description\":\"" << rts2json::JsonString (obs->getTarget ()->getTargetInfo ())
+		<< "\"}";
+}
+
+void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
@@ -1560,25 +1577,6 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRp
 	{
 		os << "]";
 	}	
-}
-
-void jsonObservation (rts2db::Observation *obs, std::ostream &os)
-{
-	struct ln_equ_posn equ;
-	obs->getTarget ()->getPosition (&equ);
-
-	os << std::fixed << "\"observation\":{\"id\":" << obs->getObsId ()
-		<< ",\"slew\":" << rts2json::JsonDouble (obs->getObsSlew ())
-		<< ",\"start\":" << rts2json::JsonDouble (obs->getObsStart ())
-		<< ",\"end\":" << rts2json::JsonDouble (obs->getObsEnd ())
-		<< ",\"images\":" << obs->getNumberOfImages ()
-		<< ",\"good\":" << obs->getNumberOfGoodImages ()
-		<< "},\"target\":{\"id\":" << obs->getTarget ()->getTargetID ()
-		<< ",\"name\":\"" << rts2json::JsonString (obs->getTarget ()->getTargetName ())
-		<< "\",\"ra\":" << rts2json::JsonDouble (equ.ra)
-		<< ",\"dec\":" << rts2json::JsonDouble (equ.dec)
-		<< ",\"description\":\"" << rts2json::JsonString (obs->getTarget ()->getTargetInfo ())
-		<< "\"}";
 }
 
 void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)

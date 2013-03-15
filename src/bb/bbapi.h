@@ -32,15 +32,12 @@ namespace rts2bb
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class BBAPI:public rts2json::GetRequestAuthorized
+class BBAPI:public rts2json::JSONRequest
 {
 	public:
 		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue);
 		virtual ~BBAPI ();
 
-		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-
-		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
