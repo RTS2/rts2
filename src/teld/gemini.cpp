@@ -17,12 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#define DEBUG_EXTRA
 /**
  * @file Driver file for LOSMANDY Gemini telescope systems
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
+
+#define DEBUG_EXTRA
+#define L4_GUIDE
 
 #include <libnova/libnova.h>
 
@@ -330,7 +332,7 @@ class Gemini:public Telescope
 		//		int startMoveFixedReal ();
 	#ifdef L4_GUIDE
 		bool isGuiding (struct timeval *now);
-		int guide (char direction, double val);
+		int guide (char direction, unsigned int val);
 		int changeDec ();
 	#endif
 		int change_real (double chng_ra, double chng_dec);
@@ -397,11 +399,14 @@ int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 {
 	int ret;
 	ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
+	usleep (USEC_SEC / 15);
 	if (ret < 0)
 	{
 		// try rebooting
 		tel_gemini_reset ();
+		usleep (USEC_SEC / 5);
 		ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
+		usleep (USEC_SEC / 15);
 	}
 	return ret;
 }
@@ -409,9 +414,11 @@ int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 int Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount = tel_conn->writeRead (wbuf, wcount, rbuf, rcount, '#');
+	usleep (USEC_SEC / 15);
 	if (tmp_rcount < 0)
 	{
 		tel_gemini_reset ();
+		usleep (USEC_SEC / 5);
 		return -1;
 	}
 	// end hash..
@@ -473,34 +480,41 @@ int Gemini::tel_gemini_setch (int id, char *in_buf)
 	len++;
 	buf[len] = '\0';
 	ret = tel_conn->writePort (buf, len);
+	usleep (USEC_SEC / 15);
 	free (buf);
 	return ret;
 }
 
 int Gemini::tel_gemini_set (int id, int32_t val)
 {
-	char buf[15];
+	char buf[25];
 	int len;
+	int ret;
 	len = sprintf (buf, ">%i:%i", id, val);
 	buf[len] = tel_gemini_checksum (buf);
 	len++;
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	return tel_conn->writePort (buf, len);
+	ret = tel_conn->writePort (buf, len);
+	usleep (USEC_SEC / 15);
+	return ret;
 }
 
 int Gemini::tel_gemini_set (int id, double val)
 {
-	char buf[15];
+	char buf[25];
 	int len;
+	int ret;
 	len = sprintf (buf, ">%i:%0.1f", id, val);
 	buf[len] = tel_gemini_checksum (buf);
 	len++;
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	return tel_conn->writePort (buf, len);
+	ret = tel_conn->writePort (buf, len);
+	usleep (USEC_SEC / 15);
+	return ret;
 }
 
 int Gemini::tel_gemini_getch (int id, char *buf)
@@ -528,6 +542,7 @@ int Gemini::tel_gemini_getch (int id, char *buf)
 		if (*buf || checksum)
 			sleep (5);
 		tel_gemini_reset ();
+		usleep (USEC_SEC / 5);
 		*buf = '\0';
 		return -1;
 	}
@@ -536,7 +551,7 @@ int Gemini::tel_gemini_getch (int id, char *buf)
 
 int Gemini::tel_gemini_get (int id, int32_t & val)
 {
-	char buf[9], *ptr, checksum;
+	char buf[19], *ptr, checksum;
 	int len, ret;
 	len = sprintf (buf, "<%i:", id);
 	buf[len] = tel_gemini_checksum (buf);
@@ -558,6 +573,7 @@ int Gemini::tel_gemini_get (int id, int32_t & val)
 		if (*buf)
 			sleep (5);
 		tel_conn->flushPortIO ();
+		usleep (USEC_SEC / 15);
 		return -1;
 	}
 	val = atol (buf);
@@ -566,7 +582,7 @@ int Gemini::tel_gemini_get (int id, int32_t & val)
 
 int Gemini::tel_gemini_get (int id, double &val)
 {
-	char buf[9], *ptr, checksum;
+	char buf[19], *ptr, checksum;
 	int len, ret;
 	len = sprintf (buf, "<%i:", id);
 	buf[len] = tel_gemini_checksum (buf);
@@ -588,6 +604,7 @@ int Gemini::tel_gemini_get (int id, double &val)
 		if (*buf)
 			sleep (5);
 		tel_conn->flushPortIO ();
+		usleep (USEC_SEC / 15);
 		return -1;
 	}
 	val = atof (buf);
@@ -619,10 +636,12 @@ int Gemini::tel_gemini_reset ()
 	// write_read_hash
 	if (tel_conn->flushPortIO () < 0)
 		return -1;
+	usleep (USEC_SEC / 15);
 
 	if (tel_conn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
 	{
 		tel_conn->flushPortIO ();
+		usleep (USEC_SEC / 15);
 		return -1;
 	}
 
@@ -632,12 +651,15 @@ int Gemini::tel_gemini_reset ()
 		{
 			case 0:
 				tel_conn->writePort ("bR#", 3);
+				usleep (USEC_SEC / 15);
 				break;
 			case 1:
 				tel_conn->writePort ("bW#", 3);
+				usleep (USEC_SEC / 15);
 				break;
 			case 2:
 				tel_conn->writePort ("bC#", 3);
+				usleep (USEC_SEC / 15);
 				break;
 		}
 		resetState->setValueInteger (0);
@@ -684,6 +706,7 @@ Gemini::matchTime ()
 	}
 	// read spaces
 	ret = tel_conn->readPort (buf, 26, '#');
+	usleep (USEC_SEC / 15);
 	if (ret)
 	{
 		matchCount = 1;
@@ -759,6 +782,7 @@ int Gemini::tel_rep_write (char *command)
 			break;
 		sleep (1);
 		tel_conn->flushPortIO ();
+		usleep (USEC_SEC / 15);
 		logStream (MESSAGE_DEBUG) << "Losmandy tel_rep_write - for " << count <<
 			" time" << sendLog;
 	}
@@ -1040,6 +1064,7 @@ int Gemini::setCorrection ()
 		return tel_conn->writePort (":p2#", 4);
 	if (!calculateAberation () && !calculatePrecession () && !calculateRefraction ())
 		return tel_conn->writePort (":p3#", 4);
+	usleep (USEC_SEC / 15);
 	return -1;
 }
 
@@ -1074,6 +1099,7 @@ int Gemini::init ()
 			setCorrection ();
 
 			tel_conn->writePort (":hW#", 4);
+			usleep (USEC_SEC / 15);
 
 			return ret;
 		}
@@ -1262,6 +1288,7 @@ int Gemini::idle ()
 			ret = -1;
 		}
 	}
+	//sleep (5);
 	return Telescope::idle ();
 }
 
@@ -1300,8 +1327,11 @@ int Gemini::info ()
 int Gemini::tel_set_rate (char new_rate)
 {
 	char command[6];
+	int ret;
 	sprintf (command, ":R%c#", new_rate);
-	return tel_conn->writePort (command, 5);
+	ret = tel_conn->writePort (command, 5);
+	usleep (USEC_SEC / 15);
+	return ret;
 }
 
 int Gemini::telescope_start_move (char direction)
@@ -1332,19 +1362,23 @@ int Gemini::telescope_start_move (char direction)
 int Gemini::telescope_stop_move (char direction)
 {
 	char command[6];
+	int ret;
 	sprintf (command, ":Q%c#", direction);
 	if (worm_move_needed && (direction == DIR_EAST || direction == DIR_WEST))
 	{
 		worm_move_needed = 0;
 		stopWorm ();
 	}
-	return tel_conn->writePort (command, 5);
+	ret = tel_conn->writePort (command, 5);
+	usleep (USEC_SEC / 15);
+	return ret;
 }
 
 void Gemini::telescope_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
 	tel_conn->writePort (":Q#", 3);
+	usleep (USEC_SEC / 15);
 	if (lastMotorState & 8)
 	{
 		lastMotorState &= ~8;
@@ -1373,6 +1407,7 @@ int Gemini::tel_start_move ()
 	}
 	// otherwise read reply..
 	tel_conn->readPort (buf, 53, '#');
+	usleep (USEC_SEC / 15);
 	if (retstr == '3')			 // manual control..
 		return 0;
 	return -1;
@@ -1899,7 +1934,9 @@ int Gemini::guide (char direction, unsigned int val)
 	int len;
 	int ret;
 	len = sprintf (buf, ":Mi%c%i#", direction, val);
-	return tel_conn->writePort (buf, len);
+	ret = tel_conn->writePort (buf, len);
+	usleep (USEC_SEC / 15);
+	return ret;
 }
 
 int Gemini::changeDec ()
@@ -2144,6 +2181,7 @@ int Gemini::startPark ()
 		return -1;
 	stopMove ();
 	ret = tel_conn->writePort (":hP#", 4);
+	usleep (USEC_SEC / 15);
 	if (ret < 0)
 		return -1;
 	sleep (1);
