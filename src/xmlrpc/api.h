@@ -21,8 +21,10 @@
 #include "asyncapi.h"
 #include "block.h"
 #include "rts2json/httpreq.h"
-#include "rts2db/imageset.h"
-#include "rts2db/observationset.h"
+
+#ifdef RTS2_HAVE_PGSQL
+#include "rts2json/jsondb.h"
+#endif
 
 /** @file api.h
  *
@@ -37,7 +39,11 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
+#ifdef RTS2_HAVE_PGSQL
+class API:public rts2json::JSONDBRequest
+#else
 class API:public rts2json::JSONRequest
+#endif
 {
 	public:
 		API (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s);
@@ -49,13 +55,6 @@ class API:public rts2json::JSONRequest
 	
 	private:
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-
-#ifdef RTS2_HAVE_PGSQL
-		void jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom = NULL, XmlRpc::XmlRpcServerConnection *chunked = NULL);
-		void jsonObservations (rts2db::ObservationSet *obss, std::ostream &os);
-		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
-		void jsonLabels (rts2db::Target *tar, std::ostream &os);
-#endif
 };
 
 }

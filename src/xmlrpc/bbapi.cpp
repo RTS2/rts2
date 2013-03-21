@@ -20,6 +20,7 @@
 #include "xmlrpcd.h"
 #include "rts2db/constraints.h"
 #include "rts2db/plan.h"
+#include "rts2json/jsondb.h"
 #include "rts2json/jsonvalue.h"
 
 #ifdef RTS2_JSONSOUP
@@ -47,7 +48,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		// return time the observatory might be able to schedule the request
 		if (vals[0] == "schedule" || vals[0] == "confirm")
 		{
-			rts2db::Target *tar = getTarget (params);
+			rts2db::Target *tar = rts2json::getTarget (params);
 			double from = params->getDouble ("from", getNow ());
 			double to = params->getDouble ("to", from + 86400);
 			if (to < from)
