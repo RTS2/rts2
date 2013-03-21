@@ -35,7 +35,7 @@
 
 using namespace rts2bb;
 
-BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue):rts2json::JSONRequest (prefix, _http_server, s)
+BBAPI::BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue):rts2json::JSONDBRequest (prefix, _http_server, s)
 {
 	g_type_init ();
 	queue = _queue;
@@ -279,7 +279,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 	}
 	else
 	{
-		throw JSONException ("invalid directory");
+		dbJSON (vals, source, path, params, os);
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }

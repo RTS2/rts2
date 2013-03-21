@@ -20,7 +20,7 @@
 #ifndef __RTS2_BBAPI__
 #define __RTS2_BBAPI__
 
-#include "rts2json/httpreq.h"
+#include "rts2json/jsondb.h"
 #include "bbtasks.h"
 
 #include <json-glib/json-glib.h>
@@ -32,7 +32,7 @@ namespace rts2bb
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class BBAPI:public rts2json::JSONRequest
+class BBAPI:public rts2json::JSONDBRequest
 {
 	public:
 		BBAPI (const char* prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer* s, BBTasks *_queue);
