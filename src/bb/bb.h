@@ -58,6 +58,11 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		virtual bool existsSession (std::string sessionId) { return false; }
 		virtual void addExecutedPage () {}
 		virtual const char* getPagePrefix () { return ""; }
+
+		virtual bool getDebug () { return rts2db::DeviceDb::getDebug (); }
+
+		virtual rts2db::CamList *getCameras () { return &(rts2db::DeviceDb::cameras); }
+
 		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission);
 
 		bool getDebugConn () { return debugConn->getValueBool (); }

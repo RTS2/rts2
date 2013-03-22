@@ -115,7 +115,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		const char *tar_name = params->getString ("ts", "");
 		if (tar_name[0] == '\0')
 			throw XmlRpc::JSONException ("empty ts parameter");
-		rts2db::Target *target = createTargetByString (tar_name, ((rts2db::DeviceDb *) getMasterApp())->getDebug ());
+		rts2db::Target *target = createTargetByString (tar_name, getServer ()->getDebug ());
 		if (target == NULL)
 			throw XmlRpc::JSONException ("cannot parse target");
 		struct ln_equ_posn pos;
@@ -756,14 +756,14 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 		{
 			double md = -1;
 			std::ostringstream cs;
-			for (rts2db::CamList::iterator cam = ((rts2db::DeviceDb *) getMasterApp ())->cameras.begin (); cam != ((rts2db::DeviceDb *) getMasterApp ())->cameras.end (); cam++)
+			for (rts2db::CamList::iterator cam = getServer ()->getCameras ()->begin (); cam != getServer ()->getCameras ()->end (); cam++)
 			{
 				try
 				{
 					std::string script_buf;
 					rts2script::Script script;
 					tar->getScript (cam->c_str(), script_buf);
-					if (cam != ((rts2db::DeviceDb *) getMasterApp ())->cameras.begin ())
+					if (cam != getServer ()->getCameras ()->begin ())
 						cs << ",";
 					script.setTarget (cam->c_str (), tar);
 					double d = script.getExpectedDuration ();

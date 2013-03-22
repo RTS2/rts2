@@ -25,9 +25,9 @@
 
 #include "configuration.h"
 
-#include "xmlrpc++/XmlRpc.h"
-
 #include "libnova_cpp.h"
+
+#include "xmlrpc++/XmlRpc.h"
 
 #include <string.h>
 

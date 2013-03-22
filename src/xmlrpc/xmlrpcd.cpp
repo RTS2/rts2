@@ -1003,6 +1003,24 @@ bool XmlRpcd::existsSession (std::string sessionId)
 	return true;
 }
 
+bool XmlRpcd::getDebug ()
+{
+#ifdef RTS2_HAVE_PGSQL
+	return rts2db::DeviceDb::getDebug ();
+#else
+	return rts2core::Device::getDebug ();
+#endif
+}
+
+rts2db::CamList *XmlRpcd::getCameras ()
+{
+#ifdef RTS2_HAVE_PGSQL
+	return &(rts2db::DeviceDb::cameras);
+#else
+	return NULL;
+#endif
+}
+
 bool XmlRpcd::isPublic (struct sockaddr_in *saddr, const std::string &path)
 {
 	if (authorizeLocalhost () || ntohl (saddr->sin_addr.s_addr) != INADDR_LOOPBACK)

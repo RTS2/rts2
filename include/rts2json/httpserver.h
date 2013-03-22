@@ -22,6 +22,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "rts2db/camlist.h"
+
 namespace rts2json
 {
 
@@ -52,6 +54,10 @@ class HTTPServer
 		 * Return prefix for generated pages - usefull for pages behind proxy.
 		 */
 		virtual const char* getPagePrefix () = 0;
+
+		virtual bool getDebug () = 0;
+
+		virtual rts2db::CamList *getCameras () = 0;
 
 		/**
 		 * Verify user credentials.

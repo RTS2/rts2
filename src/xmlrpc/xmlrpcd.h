@@ -426,6 +426,10 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		virtual const char* getPagePrefix () { return page_prefix.c_str (); }
 
+		virtual bool getDebug ();
+
+		virtual rts2db::CamList *getCameras ();
+
 		/**
 		 * Default channel for display.
 		 */
