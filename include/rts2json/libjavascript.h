@@ -22,7 +22,7 @@
 
 #include "rts2json/httpreq.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 /**

@@ -24,7 +24,7 @@
 
 #include "XmlRpcException.h"
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 static const char *equScript = 
 

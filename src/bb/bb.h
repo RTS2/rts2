@@ -25,7 +25,8 @@
 #include "rts2db/devicedb.h"
 #include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
-#include "libjavascript.h"
+
+#include "rts2json/libjavascript.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -83,7 +84,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 	private:
 		int rpcPort;
 		BBAPI bbApi;
-		LibJavaScript javaScriptRequests;
+		rts2json::LibJavaScript javaScriptRequests;
 
 		rts2core::ValueBool *debugConn;
 		rts2core::ValueInteger *queueSize;
