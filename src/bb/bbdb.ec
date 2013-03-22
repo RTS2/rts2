@@ -289,7 +289,7 @@ void BBSchedules::toJSON (std::ostream &os)
 	{
 		if (iter != begin ())
 			os << ",";
-		os << "[" << iter->getObservatoryId () << "," << iter->getState () << "," << iter->getFrom () << "," << iter->getTo () << "," << iter->getCreated () << "]";
+		os << std::fixed << "[" << iter->getObservatoryId () << "," << iter->getState () << "," << rts2json::JsonDouble (iter->getFrom ()) << "," << rts2json::JsonDouble (iter->getTo ()) << "," << rts2json::JsonDouble (iter->getCreated ()) << "," << rts2json::JsonDouble (iter->getLastUpdate ()) << "]";
 	}
 
 	os << "]";

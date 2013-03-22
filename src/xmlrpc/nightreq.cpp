@@ -285,9 +285,9 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 	else
 	{
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
-			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
-			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
+			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
+			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1},"
+			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1},"
 			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
 			"{\"n\":\"Start\",\"t\":\"tT\",\"c\":4},"
 			"{\"n\":\"End\",\"t\":\"tT\",\"c\":5},"

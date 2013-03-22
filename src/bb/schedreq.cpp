@@ -40,11 +40,16 @@ void SchedReq::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path
 
 		title << "Scheduling status of " << sched_id << " for target #" << sched.getTargetId ();
 
-		printHeader (_os, title.str ().c_str ());
+		printHeader (_os, title.str ().c_str (), NULL, "/css/table.css", "schedules.refresh ()");
 
-		_os << "<p>Status of schedule " << sched_id << "</p>" << std::endl;
+		includeJavaScriptWithPrefix (_os, "table.js");
 
-		_os << "</body></html>";
+		_os << "<p>Status of schedule " << sched_id << "</p>" << std::endl
+			<< "<script type='text/javascript'>" << std::endl
+			<< "schedules = new Table('../api/schedules?id=" << sched_id << "', 'schedules', 'schedules');" << std::endl
+			<< "</script>" << std::endl
+			<< "<p><div id='schedules'>Loading..</div></p>" << std::endl
+			<< "</body></html>";
 	}
 	else
 	{

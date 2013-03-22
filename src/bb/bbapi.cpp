@@ -153,7 +153,16 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			os << "{";
 
-			os << "\"schedule_id\":" << schedule_id << ",\"tar_id\":" << schedules.getTargetId () << ",\"d\":";
+			os << "\"schedule_id\":" << schedule_id << ",\"tar_id\":" << schedules.getTargetId ()
+			<< ",\"h\":["
+				"{\"n\":\"Observatory\",\"t\":\"n\",\"c\":0},"
+				"{\"n\":\"State\",\"t\":\"n\",\"c\":1},"
+				"{\"n\":\"From\",\"t\":\"t\",\"c\":2},"
+				"{\"n\":\"To\",\"t\":\"t\",\"c\":3},"
+				"{\"n\":\"Created\",\"t\":\"t\",\"c\":4},"
+				"{\"n\":\"Last update\",\"t\":\"t\",\"c\":5}"
+				"]"
+			",\"d\":";
 
 			schedules.toJSON (os);
 
