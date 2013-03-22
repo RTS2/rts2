@@ -188,7 +188,9 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		}
 		else
 		{
+			os << "{";
 			dbJSON (vals, source, path, params, os);
+			os << "}";
 		}
 	}
 	// observatory API - proxy
