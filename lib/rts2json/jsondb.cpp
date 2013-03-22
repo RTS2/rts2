@@ -51,8 +51,6 @@ rts2db::Target * rts2json::getTarget (XmlRpc::HttpParams *params, const char *pa
 
 void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, std::ostringstream &os)
 {
-	HTTPServer * master = (HTTPServer *) getMasterApp ();
-
 	// returns target information specified by target name
 	if (vals[0] == "tbyname")
 	{
@@ -488,9 +486,9 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		ps.load ();
 
 		os << "\"h\":["
-			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
-			"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
-			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
+			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
+			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":4},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":5},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":6},"
@@ -684,8 +682,8 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 		os << "\"rows\":" << tar_set.size () << ",";
 
 	os << "\"h\":["
-		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((HTTPServer *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
-		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((HTTPServer *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
+		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
 		"{\"n\":\"Description\",\"t\":\"s\",\"c\":4}";
@@ -853,7 +851,7 @@ void JSONDBRequest::jsonObservation (rts2db::Observation *obs, std::ostream &os)
 void JSONDBRequest::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 {
 	os << "\"h\":["
-		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << ((HTTPServer *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
+		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << getServer ()->getPagePrefix () << "/observations/\",\"href\":0},"
 		"{\"n\":\"Slew\",\"t\":\"t\",\"c\":1},"
 		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":2},"
 		"{\"n\":\"End\",\"t\":\"tT\",\"c\":3},"

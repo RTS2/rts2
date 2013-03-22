@@ -186,6 +186,10 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				os << std::fixed << getNow ();
 			}
 		}
+		else
+		{
+			dbJSON (vals, source, path, params, os);
+		}
 	}
 	// observatory API - proxy
 	else if (vals.size () > 1 && vals[0] == "o")
@@ -279,7 +283,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 	}
 	else
 	{
-		dbJSON (vals, source, path, params, os);
+		throw JSONException ("invalid path");
 	}
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }
