@@ -596,7 +596,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		Graph graph;
 		AltAzTarget altAzTarget;
 #endif // RTS2_HAVE_PGSQL
-		ImageReq imageReq;
+		rts2json::ImageReq imageReq;
 #endif /* RTS2_HAVE_LIBJPEG */
 		FitsImageRequest fitsRequest;
 		rts2json::LibJavaScript javaScriptRequests;

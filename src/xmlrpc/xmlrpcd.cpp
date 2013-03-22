@@ -1030,12 +1030,12 @@ rts2core::connections_t *XmlRpcd::getConnections ()
 #endif
 }
 
-void XmlRpcd::getOpenConnectionType (int devType, rts2core::connections_t::iterator &current)
+void XmlRpcd::getOpenConnectionType (int devType, rts2core::connections_t::iterator &cur)
 {
 #ifdef RTS2_HAVE_PGSQL
-	rts2db::DeviceDb::getOpenConnectionType (devType, current);
+	rts2db::DeviceDb::getOpenConnectionType (devType, cur);
 #else
-	rts2core::Device::getOpenConnectionType (devType, current);
+	rts2core::Device::getOpenConnectionType (devType, cur);
 #endif
 }
 
