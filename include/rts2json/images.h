@@ -17,7 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2json/httpreq.h"
+#include "httpreq.h"
+
+namespace rts2json
+{
 
 class ImageReq: public XmlRpc::XmlRpcServerGetRequest
 {
@@ -26,3 +29,5 @@ class ImageReq: public XmlRpc::XmlRpcServerGetRequest
 
 		virtual void execute (XmlRpc::XmlRpcSource *source, struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 };
+
+}

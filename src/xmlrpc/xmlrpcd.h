@@ -39,6 +39,7 @@
 #include "rts2json/directory.h"
 #include "events.h"
 #include "rts2json/httpreq.h"
+#include "rts2json/images.h"
 #include "rts2json/libjavascript.h"
 #include "rts2json/jsonvalue.h"
 #include "session.h"
@@ -57,7 +58,6 @@
 #include "libcss.h"
 #include "api.h"
 
-#include "images.h"
 #include "connnotify.h"
 #include "rts2script/execcli.h"
 #include "rts2script/scriptinterface.h"
