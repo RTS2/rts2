@@ -2,7 +2,7 @@ bin_PROGRAMS = rts2-xmlrpcd rts2-xmlrpcclient
 
 noinst_HEADERS = xmlstream.h xmlrpcd.h r2x.h session.h stateevents.h valueevents.h events.h plot.h altplot.h \
 	valueplot.h emailaction.h altaz.h augerreq.h nightdur.h nightreq.h imgpreview.h obsreq.h targetreq.h \
-	devicesreq.h planreq.h graphreq.h bsc.h libjavascript.h libcss.h bbserver.h api.h bbapi.h images.h messageevents.h switchstatereq.h \
+	devicesreq.h planreq.h graphreq.h bsc.h libcss.h bbserver.h api.h bbapi.h images.h messageevents.h switchstatereq.h \
 	xmlapi.h asyncapi.h
 
 AM_LDADD = @LIB_M@ @LIB_NOVA@ @JSONGLIB_LIBS@
@@ -13,7 +13,7 @@ if PGSQL
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp stateeventsdb.cpp valueevents.cpp \
 	valueeventsdb.cpp emailaction.cpp plot.cpp altplot.cpp valueplot.cpp altaz.cpp augerreq.cpp nightdur.cpp \
 	nightreq.cpp imgpreview.cpp obsreq.cpp targetreq.cpp devicesreq.cpp planreq.cpp graphreq.cpp \
-	libjavascript.cpp libcss.cpp bbserver.cpp api.cpp bbapi.cpp images.cpp messageevents.cpp switchstatereq.cpp \
+	libcss.cpp bbserver.cpp api.cpp bbapi.cpp images.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp asyncapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_xmlrpcd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -lrts2scheduler -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db \
@@ -28,7 +28,7 @@ CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
 else
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
-	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp devicesreq.cpp libjavascript.cpp graphreq.cpp \
+	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp devicesreq.cpp graphreq.cpp \
 	libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp asyncapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}

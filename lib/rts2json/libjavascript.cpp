@@ -17,8 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "libjavascript.h"
-#include "xmlrpcd.h"
+#include "rts2json/libjavascript.h"
 #include "utilsfunc.h"
 #include "error.h"
 
@@ -1152,10 +1151,9 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 {
 	std::ostringstream _os;
 
-	XmlRpcd *master = (XmlRpcd *) getMasterApp ();
-	connections_t::iterator iter = master->getConnections ()->begin ();
-	master->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
-	if (iter == master->getConnections ()->end ())
+	connections_t::iterator iter = getServer ()->getConnections ()->begin ();
+	getServer ()->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
+	if (iter == getServer ()->getConnections ()->end ())
 	  	throw XmlRpcException ("Telescope is not connected");
 	
 	_os << "function initialize() {\n";
@@ -1187,9 +1185,9 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 	}
 	else if (file == "roof_script.js")
 	{
-		connections_t::iterator iter_dome = master->getConnections ()->begin ();
-		master->getOpenConnectionType (DEVICE_TYPE_DOME, iter_dome);
-		if (iter_dome == master->getConnections ()->end ())
+		connections_t::iterator iter_dome = getServer ()->getConnections ()->begin ();
+		getServer ()->getOpenConnectionType (DEVICE_TYPE_DOME, iter_dome);
+		if (iter_dome == getServer ()->getConnections ()->end ())
 		  	throw XmlRpcException ("Dome is not connected");
 	    	_os << "set_state = " << (((*iter_dome)->getState () & DOME_OPENED) ? "opened" : "closed") << "; // closed OR opened\n";
 	}

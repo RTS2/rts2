@@ -8,11 +8,12 @@
 
 <script language="JavaScript" src="js/setgetapi.js" type="text/javascript"></script>
 <script language='JavaScript'>
-function searchTarget(text)
+function searchTarget(text, func)
 {
 	var hr = new XMLHttpRequest();
-	hr.open('GET','api/create_target',)
-	..
+	hr.open('GET',encodeURI'api/tbyname?tn=' + text);
+	hr.func = func;
+	hr.onreadystatechange = function()
 }
 
 </script>
