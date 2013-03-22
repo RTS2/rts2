@@ -48,6 +48,7 @@ function schedule(tid)
 	function scheduled(schedule)
 	{
 		alert('Scheduled with ID ' + schedule.schedule_id);
+		window.location='schedules/' + schedule.schedule_id;
 	}
 	jsonCall(encodeURI('api/schedule_all?tar_id=' + tid.options[tid.selectedIndex].value), scheduled);
 }

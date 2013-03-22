@@ -22,6 +22,7 @@
 
 #include "bbapi.h"
 #include "bbtasks.h"
+#include "schedreq.h"
 #include "rts2db/devicedb.h"
 #include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
@@ -84,6 +85,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 	private:
 		int rpcPort;
 		BBAPI bbApi;
+		SchedReq sched;
 		rts2json::LibJavaScript javaScriptRequests;
 
 		rts2core::ValueBool *debugConn;
