@@ -34,6 +34,8 @@
 
 #include <sstream>
 
+#include "rts2-config.h"
+
 #ifdef RTS2_HAVE_SYS_INOTIFY_H
 #include <sys/inotify.h>
 #endif

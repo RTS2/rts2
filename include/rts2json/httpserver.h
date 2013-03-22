@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "block.h"
 #include "rts2db/camlist.h"
 
 namespace rts2json
@@ -58,6 +59,10 @@ class HTTPServer
 		virtual bool getDebug () = 0;
 
 		virtual rts2db::CamList *getCameras () = 0;
+
+		virtual rts2core::connections_t *getConnections () = 0;
+
+		virtual void getOpenConnectionType (int deviceType, rts2core::connections_t::iterator &current) = 0;
 
 		/**
 		 * Verify user credentials.

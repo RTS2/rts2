@@ -1021,6 +1021,24 @@ rts2db::CamList *XmlRpcd::getCameras ()
 #endif
 }
 
+rts2core::connections_t *XmlRpcd::getConnections ()
+{
+#ifdef RTS2_HAVE_PGSQL
+	return rts2db::DeviceDb::getConnections ();
+#else
+	return rts2core::Device::getConnections ();
+#endif
+}
+
+void XmlRpcd::getOpenConnectionType (int devType, rts2core::connections_t::iterator &current)
+{
+#ifdef RTS2_HAVE_PGSQL
+	rts2db::DeviceDb::getOpenConnectionType (devType, current);
+#else
+	rts2core::Device::getOpenConnectionType (devType, current);
+#endif
+}
+
 bool XmlRpcd::isPublic (struct sockaddr_in *saddr, const std::string &path)
 {
 	if (authorizeLocalhost () || ntohl (saddr->sin_addr.s_addr) != INADDR_LOOPBACK)

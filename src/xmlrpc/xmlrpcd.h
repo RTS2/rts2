@@ -39,6 +39,7 @@
 #include "rts2json/directory.h"
 #include "events.h"
 #include "rts2json/httpreq.h"
+#include "rts2json/libjavascript.h"
 #include "rts2json/jsonvalue.h"
 #include "session.h"
 #include "xmlrpc++/XmlRpc.h"
@@ -53,7 +54,6 @@
 #include "devicesreq.h"
 #include "planreq.h"
 #include "switchstatereq.h"
-#include "libjavascript.h"
 #include "libcss.h"
 #include "api.h"
 
@@ -429,6 +429,10 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		virtual bool getDebug ();
 
 		virtual rts2db::CamList *getCameras ();
+
+		virtual rts2core::connections_t *getConnections ();
+
+		virtual void getOpenConnectionType (int deviceType, rts2core::connections_t::iterator &current);
 
 		/**
 		 * Default channel for display.

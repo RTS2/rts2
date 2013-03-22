@@ -54,7 +54,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		void update (XmlRpcValue &value);
 
-		virtual bool isPublic (struct rts2json::sockaddr_in *saddr, const std::string &path) { return false; }
+		virtual bool isPublic (struct sockaddr_in *saddr, const std::string &path) { return false; }
 		virtual bool existsSession (std::string sessionId) { return false; }
 		virtual void addExecutedPage () {}
 		virtual const char* getPagePrefix () { return ""; }
@@ -62,6 +62,10 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		virtual bool getDebug () { return rts2db::DeviceDb::getDebug (); }
 
 		virtual rts2db::CamList *getCameras () { return &(rts2db::DeviceDb::cameras); }
+
+		virtual rts2core::connections_t *getConnections () { return rts2db::DeviceDb::getConnections (); }
+
+		virtual void getOpenConnectionType (int deviceType, rts2core::connections_t::iterator &current) { return getOpenConnectionType (deviceType, current); }
 
 		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission);
 

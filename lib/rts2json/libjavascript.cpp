@@ -18,8 +18,11 @@
  */
 
 #include "rts2json/libjavascript.h"
+#include "block.h"
 #include "utilsfunc.h"
 #include "error.h"
+
+#include "XmlRpcException.h"
 
 using namespace rts2xmlrpc;
 
@@ -1151,10 +1154,10 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 {
 	std::ostringstream _os;
 
-	connections_t::iterator iter = getServer ()->getConnections ()->begin ();
+	rts2core::connections_t::iterator iter = getServer ()->getConnections ()->begin ();
 	getServer ()->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
 	if (iter == getServer ()->getConnections ()->end ())
-	  	throw XmlRpcException ("Telescope is not connected");
+	  	throw XmlRpc::XmlRpcException ("Telescope is not connected");
 	
 	_os << "function initialize() {\n";
 
@@ -1185,15 +1188,15 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 	}
 	else if (file == "roof_script.js")
 	{
-		connections_t::iterator iter_dome = getServer ()->getConnections ()->begin ();
+		rts2core::connections_t::iterator iter_dome = getServer ()->getConnections ()->begin ();
 		getServer ()->getOpenConnectionType (DEVICE_TYPE_DOME, iter_dome);
 		if (iter_dome == getServer ()->getConnections ()->end ())
-		  	throw XmlRpcException ("Dome is not connected");
+		  	throw XmlRpc::XmlRpcException ("Dome is not connected");
 	    	_os << "set_state = " << (((*iter_dome)->getState () & DOME_OPENED) ? "opened" : "closed") << "; // closed OR opened\n";
 	}
 	else
 	{
-		throw XmlRpcException ("");
+		throw XmlRpc::XmlRpcException ("");
 	}
 
 	_os << "}";
