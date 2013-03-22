@@ -281,6 +281,20 @@ void BBSchedules::load ()
 	EXEC SQL ROLLBACK;
 }
 
+void BBSchedules::toJSON (std::ostream &os)
+{
+	os << "[";
+	
+	for (BBSchedules::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter != begin ())
+			os << ",";
+		os << "[" << iter->getObservatoryId () << "," << iter->getState () << "," << iter->getFrom () << "," << iter->getTo () << "," << iter->getCreated () << "]";
+	}
+
+	os << "]";
+}
+
 /***
  * Register new target mapping into BB database.
  *

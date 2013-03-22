@@ -120,7 +120,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				// queue targets into scheduling thread
 				queue->queueTask (new BBTaskSchedule (oss, tar_id, iter->getId ()));
 			}
-			os << schedule_id;
+			os << "{\"target_id\":" << tar_id << ",\"schedule_id\":" << schedule_id << "}";
 		}
 		// schedule status
 		else if (vals[0] == "schedule_status")
@@ -138,6 +138,24 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			os << "{";
 
 			sched.toJSON (os);
+
+			os << "}";
+		}
+		// return all schedules
+		else if (vals[0] == "schedules")
+		{
+			int schedule_id = params->getInteger ("id", -1);
+			if (schedule_id < 0)
+				throw XmlRpc::JSONException ("missing schedule ID");
+
+			BBSchedules schedules (schedule_id);
+			schedules.load ();
+
+			os << "{";
+
+			os << "\"schedule_id\":" << schedule_id << ",\"tar_id\":" << schedules.getTargetId () << ",\"d\":";
+
+			schedules.toJSON (os);
 
 			os << "}";
 		}

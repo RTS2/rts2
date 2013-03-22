@@ -99,6 +99,9 @@ class ObservatorySchedule
 		double getFrom () { return from; }
 		double getTo () { return to; }
 
+		double getCreated () { return created; }
+		double getLastUpdate () { return last_update; }
+
 	private:
 		int schedule_id;
 		int observatory_id;
@@ -114,6 +117,8 @@ class BBSchedules:public std::list <ObservatorySchedule>
 	public:
 		BBSchedules (int _schedule_id) { schedule_id = _schedule_id; }
 		void load ();
+
+		void toJSON (std::ostream &os);
 
 		int getTargetId () { return tar_id; }
 
