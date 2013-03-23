@@ -29,6 +29,7 @@ BB::BB (int argc, char ** argv):
 	rts2db::DeviceDb (argc, argv, DEVICE_TYPE_BB, "BB"),
 	bbApi ("/api", this, this, &task_queue),
 	sched ("/schedules", this, this),
+  	imageReq ("/images", this),
 	javaScriptRequests ("/js", this, this),
 	task_queue (this)
 {

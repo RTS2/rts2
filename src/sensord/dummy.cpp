@@ -288,9 +288,12 @@ bool Dummy::isGoodWeather ()
 	}
 	else if (goodWeather->getValueBool () == false)
 	{
+		valueError (goodWeather);
 		setWeatherTimeout (60, "waiting for next good weather");
 		return false;
 	}
+
+	valueGood (goodWeather);
 	return SensorWeather::isGoodWeather ();
 }
 

@@ -27,6 +27,7 @@
 #include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
 
+#include "rts2json/images.h"
 #include "rts2json/libjavascript.h"
 
 #include <sys/types.h>
@@ -86,6 +87,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		int rpcPort;
 		BBAPI bbApi;
 		SchedReq sched;
+
+		rts2json::ImageReq imageReq;
 		rts2json::LibJavaScript javaScriptRequests;
 
 		rts2core::ValueBool *debugConn;
