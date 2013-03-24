@@ -26,6 +26,10 @@
 #include "hoststring.h"
 #include "daemon.h"
 
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
+#include <libsoup/soup.h>
+
 using namespace rts2xmlrpc;
 
 // thread routine
@@ -117,8 +121,23 @@ void BBServer::sendUpdate ()
 		return;
 	}
 
-	server->bbSend (atof (reply));
+	JsonParser *result = json_parser_new ();
 
+	GError *error = NULL;
+	json_parser_load_from_data (result, reply, reply_length, &error);
+	if (error)
+	{
+		logStream (MESSAGE_ERROR) << "unable to parse JSON " << reply << sendLog;
+		g_error_free (error);
+		g_object_unref (result);
+		delete[] reply;
+		return;
+	}
+
+	server->bbSend (json_object_get_double_member (json_node_get_object (json_parser_get_root (result)), "localtime"));
+
+	g_error_free (error);
+	g_object_unref (result);
 	delete[] reply;
 }
 

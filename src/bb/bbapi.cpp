@@ -218,7 +218,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			else
 			{
 				observatoriesJsons[observatory_id] = std::pair <double, JsonParser *> (getNow (), newJson);
-				os << std::fixed << getNow ();
+				os << "\"localtime\":" << std::fixed << getNow ();
 			}
 		}
 		else
