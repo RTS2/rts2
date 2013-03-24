@@ -60,6 +60,8 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 	// calls returning binary data
 	if (vals.size () == 1)
 	{
+		os << "{";
+
 		if (vals[0] == "mapping")
 		{
 			int observatory_id = params->getInteger ("observatory_id", -1);
@@ -74,7 +76,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			createMapping (observatory_id, tar_id, obs_tar_id);
 
-			os << "{\"ret\":0}";
+			os << "\"ret\":0";
 		}
 		// report observation on slave node
 		else if (vals[0] == "observation")
@@ -99,7 +101,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			reportObservation (observatory_id, obs_id, obs_tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images);
 
-			os << "{\"ret\":0}";
+			os << "\"ret\":0";
 		}
 		// schedule observation on all nodes
 		else if (vals[0] == "schedule_all")
@@ -120,7 +122,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				// queue targets into scheduling thread
 				queue->queueTask (new BBTaskSchedule (oss, tar_id, iter->getId ()));
 			}
-			os << "{\"target_id\":" << tar_id << ",\"schedule_id\":" << schedule_id << "}";
+			os << "\"target_id\":" << tar_id << ",\"schedule_id\":" << schedule_id;
 		}
 		// schedule status
 		else if (vals[0] == "schedule_status")
@@ -135,25 +137,19 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			ObservatorySchedule sched (schedule_id, observatory_id);
 			sched.load ();
 
-			os << "{";
-
 			sched.toJSON (os);
-
-			os << "}";
 		}
 		// return all schedules
-		else if (vals[0] == "schedules")
+		else if (vals[0] == "get_schedule")
 		{
 			int schedule_id = params->getInteger ("id", -1);
 			if (schedule_id < 0)
 				throw XmlRpc::JSONException ("missing schedule ID");
 
-			BBSchedules schedules (schedule_id);
-			schedules.load ();
+			BBSchedules bb_schedules (schedule_id);
+			bb_schedules.load ();
 
-			os << "{";
-
-			os << "\"schedule_id\":" << schedule_id << ",\"tar_id\":" << schedules.getTargetId ()
+			os << "\"schedule_id\":" << schedule_id << ",\"tar_id\":" << bb_schedules.getTargetId ()
 			<< ",\"h\":["
 				"{\"n\":\"Observatory\",\"t\":\"n\",\"c\":0},"
 				"{\"n\":\"State\",\"t\":\"n\",\"c\":1},"
@@ -164,9 +160,21 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				"]"
 			",\"d\":";
 
+			bb_schedules.toJSON (os);
+		}
+		else if (vals[0] == "get_all_schedules")
+		{
+			Schedules schedules;
+			schedules.load ();
+
+			os << "\"h\":["
+				"{\"n\":\"Schedule ID\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"c\":0},"
+				"{\"n\":\"Target\",\"t\":\"a\",\"prefix\":\"../targets/\",\"href\":1,\"c\":2}"
+			"],\"d\":[";
+
 			schedules.toJSON (os);
 
-			os << "}";
+			os << "]";
 		}
 		// schedule observation on one observatory
 		else if (vals[0] == "schedule")
@@ -187,7 +195,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 			scheduleTarget (tar_id, observatory_id);
 
-			os << "{\"ret\":0}";
+			os << "\"ret\":0";
 		}
 		// observatory update
 		else if (vals[0] == "observatory")
@@ -215,10 +223,9 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		}
 		else
 		{
-			os << "{";
 			dbJSON (vals, source, path, params, os);
-			os << "}";
 		}
+		os << "}";
 	}
 	// observatory API - proxy
 	else if (vals.size () > 1 && vals[0] == "o")

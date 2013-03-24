@@ -127,6 +127,35 @@ class BBSchedules:public std::list <ObservatorySchedule>
 		int tar_id;
 };
 
+/**
+ * Class holding a single bbschedule row, with target name and target RA&DEC.
+ */
+class BBSchedule
+{
+	public:
+		BBSchedule (int sched_id, int tar_id, const char *tar_name):schedule_id (sched_id), target_id (tar_id), target_name (tar_name) {}
+
+		int schedule_id;
+		int target_id;
+		std::string target_name;
+};
+
+/**
+ * Collect schedule data.
+ */
+class Schedules:public std::vector <BBSchedule>
+{
+	public:
+		Schedules () {}
+
+		/**
+		 * Load all schedules.
+		 */
+		void load ();
+
+		void toJSON (std::ostream &os);
+};
+
 /***
  * Register new target mapping into BB database.
  *

@@ -28,7 +28,22 @@ void SchedReq::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path
 	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
 	std::ostringstream _os;
 
-	if (vals.size () == 1)
+	if (vals.size () == 0)
+	{
+		std::ostringstream title;
+
+		printHeader (_os, "All schedules", NULL, "/css/table.css", "schedules.refresh ()");
+
+		includeJavaScriptWithPrefix (_os, "table.js");
+
+		_os << "<p>All schedules</p>" << std::endl
+			<< "<script type='text/javascript'>" << std::endl
+			<< "schedules = new Table('../api/get_all_schedules', 'schedules', 'schedules');" << std::endl
+			<< "</script>" << std::endl
+			<< "<p><div id='schedules'>Loading..</div></p>" << std::endl
+			<< "</body></html>";
+	}
+	else if (vals.size () == 1)
 	{
 		// assume it is schedule id
 		int sched_id = atoi (vals[0].c_str ());
@@ -40,15 +55,15 @@ void SchedReq::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path
 
 		title << "Scheduling status of " << sched_id << " for target #" << sched.getTargetId ();
 
-		printHeader (_os, title.str ().c_str (), NULL, "/css/table.css", "schedules.refresh ()");
+		printHeader (_os, title.str ().c_str (), NULL, "/css/table.css", "schedule.refresh ()");
 
 		includeJavaScriptWithPrefix (_os, "table.js");
 
 		_os << "<p>Status of schedule " << sched_id << "</p>" << std::endl
 			<< "<script type='text/javascript'>" << std::endl
-			<< "schedules = new Table('../api/schedules?id=" << sched_id << "', 'schedules', 'schedules');" << std::endl
+			<< "schedule = new Table('../../api/get_schedule?id=" << sched_id << "', 'schedule', 'schedule');" << std::endl
 			<< "</script>" << std::endl
-			<< "<p><div id='schedules'>Loading..</div></p>" << std::endl
+			<< "<p><div id='schedule'>Loading..</div></p>" << std::endl
 			<< "</body></html>";
 	}
 	else

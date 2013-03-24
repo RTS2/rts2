@@ -295,6 +295,58 @@ void BBSchedules::toJSON (std::ostream &os)
 	os << "]";
 }
 
+void Schedules::load ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_schedule_id;
+	int db_tar_id;
+	VARCHAR db_tar_name[151];
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL DECLARE cur_bb_schedules CURSOR FOR
+	SELECT
+		bb_schedules.schedule_id,
+		targets.tar_id,
+		targets.tar_name
+	FROM
+		bb_schedules, targets
+	WHERE
+		bb_schedules.tar_id = targets.tar_id;
+
+	EXEC SQL OPEN cur_bb_schedules;
+
+	while (true)
+	{
+		EXEC SQL FETCH next FROM
+			cur_bb_schedules
+		INTO
+			:db_schedule_id,
+			:db_tar_id,
+			:db_tar_name;
+		if (sqlca.sqlcode)
+		{
+			if (sqlca.sqlcode == ECPG_NOT_FOUND)
+				break;
+			throw rts2db::SqlError ();
+		}
+
+		db_tar_name.arr[db_tar_name.len] = '\0';
+
+		push_back (BBSchedule (db_schedule_id, db_tar_id, db_tar_name.arr));
+	}
+	EXEC SQL ROLLBACK;
+}
+
+void Schedules::toJSON (std::ostream &os)
+{
+	for (Schedules::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter != begin ())
+			os << ",";
+		os << "[" << iter->schedule_id << "," << iter->target_id << ",\"" << iter->target_name << "\"]";
+	}
+}
+
 /***
  * Register new target mapping into BB database.
  *

@@ -357,7 +357,7 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 	_os << "<p><a href='all'>All images</a>";
 
 	_os << "<script type='text/javascript'>\n"
-		"observations = new Table('api/','observations','observations');\n"
+		"observations = new Table('api','observations','observations');\n"
 
 		"</script>\n";
 
