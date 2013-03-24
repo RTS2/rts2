@@ -46,19 +46,8 @@ class XmlRpcd;
 class BBServer:public rts2core::Object
 {
 	public:
-		BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency):serverApi (_serverApi), observatoryId (_observatoryId), password (_password), cadency (_cadency)
-		{
-			server = _server;
-			client = NULL;
-			_uri = NULL;
-			send_thread = 0;
-		}
-
-		~BBServer ()
-		{
-			pthread_cancel (send_thread);
-			delete client;
-		}
+		BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency);
+		~BBServer ();
 
 		virtual void postEvent (rts2core::Event *event);
 

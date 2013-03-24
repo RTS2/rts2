@@ -58,6 +58,22 @@ void *updateBB (void *arg)
 	return NULL;
 }
 
+BBServer::BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency):serverApi (_serverApi), observatoryId (_observatoryId), password (_password), cadency (_cadency)
+{
+	server = _server;
+	client = NULL;
+	_uri = NULL;
+	send_thread = 0;
+
+	g_type_init ();
+}
+
+BBServer::~BBServer ()
+{
+	pthread_cancel (send_thread);
+	delete client;
+}
+
 void BBServer::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
