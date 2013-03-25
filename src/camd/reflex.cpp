@@ -894,7 +894,7 @@ int Reflex::info ()
 		return -1;
 	}
 
-	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
+	for (std::map <uint32_t, RRegister *>::iterator iter = registers.begin (); iter != registers.end (); iter++)
 	{
 		if (iter->second->infoUpdate ())
 		{
@@ -1320,10 +1320,27 @@ int Reflex::changePower (bool on)
 	ret = interfaceCommand ((on ? ">P1\r" : ">P0\r"), s, 5000, true) ? -2 : 0;
 	if (ret)
 		return -1;
-	info ();
+        // don't start timing if powering down
 	if (on)
 		return interfaceCommand (">TS\r", s, 5000, true);
-	// don't start timing if powering down
+
+	if (interfaceCommand (">L2\r", s, 1000, false))
+	{
+		logStream (MESSAGE_ERROR) << "error polling status" << sendLog;
+		return -1;
+	}
+
+	for (std::map <uint32_t, RRegister *>::iterator iter = registers.begin (); iter != registers.end (); iter++)
+	{
+		uint32_t rval;
+		if (readRegister (iter->first, rval))
+		{
+			logStream (MESSAGE_ERROR) << "error reading register 0x" << std::setw (8) << std::setfill ('0') << std::hex << iter->first << sendLog;
+			return -1;
+		}
+		iter->second->setRegisterValue (rval);
+	}
+
 	return 0;
 }
 
