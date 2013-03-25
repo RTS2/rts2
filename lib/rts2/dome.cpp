@@ -173,7 +173,8 @@ int Dome::checkOpening ()
 		{
 			endOpen ();
 			infoAll ();
-			maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "opening finished with error");
+			logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome opening interrupted" << sendLog;
+			maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome opening interrupted");
 		}
 		if (ret == -2)
 		{
@@ -181,7 +182,8 @@ int Dome::checkOpening ()
 			infoAll ();
 			if (ret)
 			{
-				maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome opened with error");
+				logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome did not open propely" << sendLog;
+				maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome did not open properly");
 			}
 			else
 			{
@@ -202,8 +204,8 @@ int Dome::checkOpening ()
 		{
 			endClose ();
 			infoAll ();
+			logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome closing interrupted" << sendLog;
 			maskState (DOME_DOME_MASK, DOME_CLOSED, "closing finished with error");
-			logStream (MESSAGE_ERROR) << "dome closing finished with error" << sendLog;
 		}
 		if (ret == -2)
 		{
@@ -211,8 +213,8 @@ int Dome::checkOpening ()
 			infoAll ();
 			if (ret)
 			{
-				maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed with error");
-				logStream (MESSAGE_ERROR) << "dome closing finished with error from endClose" << sendLog;
+				logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome did not close properly" << sendLog;
+				maskState (DOME_DOME_MASK, DOME_CLOSED, "dome did not close propely");
 			}
 			else
 			{
