@@ -2844,7 +2844,7 @@ void Reflex::configBoard (int board)
 		throw rts2core::Error ("Invalid board number specified");
 
 	// Silently ignore boards that aren't installed
-	if (!boardType (board))
+	if (!boardType (BOARD_DAUGHTERS + board))
 		return;
 	ss_key << "BOARD" << (board + 1);
 
