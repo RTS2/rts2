@@ -105,11 +105,11 @@ int BBConfirmTask::run ()
 			if (iter->getObservatoryId () == observatory_id)
 			{
 				confirmTarget (scheds, *iter);
-				break;
 			}
 			else
 			{
-				iter->updateState (BB_SCHEDULE_BACKUP, iter->getFrom (), iter->getTo ());
+				if (iter->getState () == BB_SCHEDULE_OBSERVABLE)
+					iter->updateState (BB_SCHEDULE_BACKUP, iter->getFrom (), iter->getTo ());
 			}
 		}
 	}
