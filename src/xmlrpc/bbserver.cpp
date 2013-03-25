@@ -131,7 +131,7 @@ void BBServer::sendUpdate ()
 	int ret = client->executePostRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length);
 	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "Error requesting " << serverApi.c_str () << sendLog;
+		logStream (MESSAGE_ERROR) << "Error requesting " << serverApi.c_str () << url.str () << sendLog;
 		delete client;
 		client = NULL;
 		return;
@@ -191,11 +191,12 @@ void BBServer::sendObservationUpdate (int observationId)
 	int ret = client->executePostRequest (url.str ().c_str (), NULL, reply, reply_length);
 	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "Error requesting " << serverApi.c_str () << sendLog;
+		logStream (MESSAGE_ERROR) << "Error requesting " << serverApi.c_str () << url.str () << sendLog;
 		delete client;
 		client = NULL;
 		return;
 	}
+	logStream (MESSAGE_DEBUG) << "Send " << serverApi.c_str () << url.str () << sendLog;
 }
 
 void BBServer::queueUpdate (int reqId)
