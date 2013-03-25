@@ -149,6 +149,8 @@ void ObservatorySchedule::load ()
 		throw rts2db::SqlError ();
 
 	state = db_state;
+	created = db_nan_double (db_created, db_created_ind);
+	last_update = db_nan_double (db_last_update, db_last_update_ind);
 	from = db_nan_double (db_sched_from, db_sched_from_ind);
 	to = db_nan_double (db_sched_to, db_sched_to_ind);
 }
@@ -161,6 +163,7 @@ void ObservatorySchedule::updateState (int _state, double _from, double _to)
 	int db_state = _state;
 	int db_old_state;
 
+	double db_last_update;
 	double db_sched_from = _from;
 	int db_sched_from_ind = db_nan_indicator (_from);
 	double db_sched_to = _to;
@@ -185,11 +188,12 @@ void ObservatorySchedule::updateState (int _state, double _from, double _to)
 	}
 	else
 	{
+		db_last_update = getNow ();
 		EXEC SQL UPDATE
 			observatory_schedules
 		SET
 			state = :db_state,
-			last_update = now (),
+			last_update = to_timestamp (:db_last_update),
 			sched_from = to_timestamp (:db_sched_from :db_sched_from_ind),
 			sched_to = to_timestamp (:db_sched_to :db_sched_to_ind)
 		WHERE
@@ -201,6 +205,7 @@ void ObservatorySchedule::updateState (int _state, double _from, double _to)
 
 	EXEC SQL COMMIT;
 	state = _state;
+	last_update = db_last_update;
 	from = db_nan_double (db_sched_from, db_sched_from_ind);
 	to = db_nan_double (db_sched_to, db_sched_to_ind);
 }
