@@ -35,7 +35,7 @@ ValuePlot::ValuePlot (int _recvalId, int _valType, int w, int h):Plot (w, h)
 	valueType = _valType;
 }
 
-Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow, bool plotSun, bool plotShadow, bool localDate)
+Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, rts2json::PlotType _plotType, int linewidth, int shadow, bool plotSun, bool plotShadow, bool localDate)
 {
 	// first load values..
 	rts2db::RecordsSet rs (recvalId);
@@ -84,8 +84,8 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 		case RTS2_VALUE_BOOL:
 			min = -0.1;
 			max = 1.1;
-			if (plotType == PLOTTYPE_AUTO)
-				plotType = PLOTTYPE_FILL_SHARP;
+			if (plotType == rts2json::PLOTTYPE_AUTO)
+				plotType = rts2json::PLOTTYPE_FILL_SHARP;
 			plotYBoolean ();
 			break;
 		case RTS2_VALUE_DOUBLE:
@@ -98,8 +98,8 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 				image->strokeWidth (3);
 				plotYGrid (size.height () - x_axis_height - (scaleY * -min));
 			}
-			if (plotType == PLOTTYPE_AUTO)
-				plotType = PLOTTYPE_LINE;
+			if (plotType == rts2json::PLOTTYPE_AUTO)
+				plotType = rts2json::PLOTTYPE_LINE;
 			switch (valueType & RTS2_TYPE_MASK)
 			{
 				case RTS2_DT_RA:
@@ -168,30 +168,30 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 
 		switch (plotType)
 		{
-			case PLOTTYPE_AUTO:
-			case PLOTTYPE_LINE:
+			case rts2json::PLOTTYPE_AUTO:
+			case rts2json::PLOTTYPE_LINE:
 				image->draw (Magick::DrawableLine (x, y, x_end, y_end));
 				break;
-			case PLOTTYPE_LINE_SHARP:
+			case rts2json::PLOTTYPE_LINE_SHARP:
 				image->draw (Magick::DrawableLine (x, y, x_end, y));
 				image->draw (Magick::DrawableLine (x_end, y, x_end, y_end));
 				break;
-			case PLOTTYPE_CROSS:
+			case rts2json::PLOTTYPE_CROSS:
 				image->draw (Magick::DrawableLine (x - 2, y, x + 2, y));
 				image->draw (Magick::DrawableLine (x, y - 2, x, y + 2));
 				break;
-			case PLOTTYPE_CIRCLES:
+			case rts2json::PLOTTYPE_CIRCLES:
 				image->draw (Magick::DrawableCircle (x, y, x - 2, y));
 				break;
-			case PLOTTYPE_SQUARES:
+			case rts2json::PLOTTYPE_SQUARES:
 				image->draw (Magick::DrawableRectangle (x - 1, y - 1, y + 1, x + 1));
 				break;
-			case PLOTTYPE_FILL:
-			case PLOTTYPE_FILL_SHARP:
+			case rts2json::PLOTTYPE_FILL:
+			case rts2json::PLOTTYPE_FILL_SHARP:
 				std::list <Magick::Coordinate> pol;
 				pol.push_back (Magick::Coordinate (x, size.height () - x_axis_height));
 				pol.push_back (Magick::Coordinate (x, y));
-				pol.push_back (Magick::Coordinate (x_end - 1, (plotType == PLOTTYPE_FILL_SHARP ? y : y_end)));
+				pol.push_back (Magick::Coordinate (x_end - 1, (plotType == rts2json::PLOTTYPE_FILL_SHARP ? y : y_end)));
 				pol.push_back (Magick::Coordinate (x_end - 1, size.height () - x_axis_height));
 				image->draw (Magick::DrawablePolygon (pol));
 		}

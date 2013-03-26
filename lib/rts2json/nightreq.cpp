@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "rts2json/altaz.h"
 #include "rts2json/nightdur.h"
 #include "rts2json/nightreq.h"
 #include "rts2json/jsonvalue.h"
@@ -239,7 +240,7 @@ void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params
 		struct ln_hrz_posn hrz;
 		try
 		{
-			(*iter)->getCoordBestAltAz (hrz, Configuration::instance ()->getObserver ());
+			(*iter)->getCoordBestAltAz (hrz, rts2core::Configuration::instance ()->getObserver ());
 			(*iter)->closeFile ();
 			altaz.plotCross (&hrz, NULL, "green");
 		}

@@ -225,10 +225,10 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 	image.openFile (path.c_str (), true, false);
 	Blob blob;
 
-	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
+	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
+	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
 
 	Magick::Image *mimage = image.getMagickImage (label, quantiles, chan);
 
@@ -249,14 +249,14 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	// image type
 	// const char *t = params->getString ("t", "p");
 
-	const char *label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
+	const char *label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
 	
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
+	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
 
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();
@@ -300,7 +300,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		pageno = 1;
 
 	std::ostringstream _os;
-	Previewer preview = Previewer ();
+	Previewer preview = Previewer (getServer ());
 
 	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style() );
 
@@ -340,7 +340,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 	if (n < 0)
 	{
-		throw XmlRpcException ("Cannot open directory");
+		throw XmlRpc::XmlRpcException ("Cannot open directory");
 	}
 
 	// first show directories..

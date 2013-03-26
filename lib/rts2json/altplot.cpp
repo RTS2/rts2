@@ -29,7 +29,7 @@
 
 #include "rts2db/target.h"
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 AltPlot::AltPlot (int w, int h):Plot (w, h)
 {

@@ -28,7 +28,7 @@ using namespace rts2xmlrpc;
 void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	int s = params->getInteger ("s", 250);
-	AltAz altaz = AltAz (s, s);
+	rts2json::AltAz altaz = rts2json::AltAz (s, s);
 	altaz.plotAltAzGrid ();
 
 	struct ln_equ_posn pos;
@@ -110,7 +110,7 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 void AltAzTarget::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get new AltAz graph
-	AltAz altaz = AltAz ();
+	rts2json::AltAz altaz = rts2json::AltAz ();
 
 	// plot its AltAz grid
 	altaz.plotAltAzGrid ();
@@ -240,34 +240,34 @@ void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpP
 
 	const char *type = params->getString ("t", "A");
 
-	PlotType pt;
+	rts2json::PlotType pt;
 
 	switch (*type)
 	{
 		case 'l':
-			pt = PLOTTYPE_LINE;
+			pt = rts2json::PLOTTYPE_LINE;
 			break;
 		case 'L':
-			pt = PLOTTYPE_LINE_SHARP;
+			pt = rts2json::PLOTTYPE_LINE_SHARP;
 			break;
 		case 'c':
-			pt = PLOTTYPE_CROSS;
+			pt = rts2json::PLOTTYPE_CROSS;
 			break;
 		case 'C':
-			pt = PLOTTYPE_CIRCLES;
+			pt = rts2json::PLOTTYPE_CIRCLES;
 			break;
 		case 's':
-			pt = PLOTTYPE_SQUARES;
+			pt = rts2json::PLOTTYPE_SQUARES;
 			break;
 		case 'f':
-			pt = PLOTTYPE_FILL;
+			pt = rts2json::PLOTTYPE_FILL;
 			break;
 		case 'F':
-			pt = PLOTTYPE_FILL_SHARP;
+			pt = rts2json::PLOTTYPE_FILL_SHARP;
 			break;
 		case 'A':
 		default:
-			pt = PLOTTYPE_AUTO;
+			pt = rts2json::PLOTTYPE_AUTO;
 	}
 	
 	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));

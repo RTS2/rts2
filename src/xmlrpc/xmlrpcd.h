@@ -591,9 +591,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 #endif // RTS2_HAVE_PGSQL
 
 #ifdef RTS2_HAVE_LIBJPEG
-		JpegImageRequest jpegRequest;
-		JpegPreview jpegPreview;
-		DownloadRequest downloadRequest;
+		rts2json::JpegImageRequest jpegRequest;
+		rts2json::JpegPreview jpegPreview;
+		rts2json::DownloadRequest downloadRequest;
 		CurrentPosition current;
 #ifdef RTS2_HAVE_PGSQL
 		Graph graph;

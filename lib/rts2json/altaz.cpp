@@ -24,7 +24,7 @@
 #include <math.h>
 #include <iostream>
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 void AltAz::plotAltAzGrid ()
 {

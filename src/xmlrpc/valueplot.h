@@ -23,7 +23,7 @@
 
 #include <Magick++.h>
 #include "rts2db/records.h"
-#include "plot.h"
+#include "rts2json/plot.h"
 
 namespace rts2xmlrpc
 {
@@ -33,7 +33,7 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValuePlot:public Plot
+class ValuePlot:public rts2json::Plot
 {
 	public:
 		/**
@@ -56,7 +56,7 @@ class ValuePlot:public Plot
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5, bool plotSun = true, bool plotShadow = true, bool localDate = true);
+		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, rts2json::PlotType _plotType = rts2json::PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5, bool plotSun = true, bool plotShadow = true, bool localDate = true);
 	
 	private:
 		int recvalId;

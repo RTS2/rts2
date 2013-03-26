@@ -101,7 +101,7 @@ class JpegImageRequest: public rts2json::GetRequestAuthorized
 class JpegPreview:public rts2json::GetRequestAuthorized
 {
 	public:
-		JpegPreview (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "JPEG image preview", s) { dirPath = _dirPath; }
+		JpegPreview (const char* prefix, rts2json::HTTPServer *_http_server, const char *_dirPath, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "JPEG image preview", s) { dirPath = _dirPath; }
 
 		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:

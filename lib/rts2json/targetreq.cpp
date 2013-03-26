@@ -22,7 +22,6 @@
 #include "rts2json/targetreq.h"
 #include "dirsupport.h"
 #include "xmlrpc++/urlencoding.h"
-#include "rts2db/simbadtarget.h"
 #include "command.h"
 
 #ifdef RTS2_HAVE_PGSQL

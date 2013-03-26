@@ -26,7 +26,7 @@
 #include <Magick++.h>
 #include <libnova/libnova.h>
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 /**

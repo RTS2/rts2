@@ -28,7 +28,7 @@
 #include "libnova_cpp.h"
 #include "configuration.h"
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 Plot::Plot (int w, int h)
 {

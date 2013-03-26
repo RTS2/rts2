@@ -27,7 +27,7 @@
 #include <Magick++.h>
 #include "rts2db/records.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 typedef enum {PLOTTYPE_AUTO, PLOTTYPE_LINE, PLOTTYPE_LINE_SHARP, PLOTTYPE_CROSS, PLOTTYPE_CIRCLES, PLOTTYPE_SQUARES, PLOTTYPE_FILL, PLOTTYPE_FILL_SHARP} PlotType;

@@ -73,7 +73,7 @@ void Auger::printTarget (int auger_id, const char* &response_type, char* &respon
 #if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
 	double JD = ta.getShowerJD ();
 
-	AltAz aa = AltAz ();
+	rts2json::AltAz aa = rts2json::AltAz ();
 
 	aa.plotAltAzGrid ();
 

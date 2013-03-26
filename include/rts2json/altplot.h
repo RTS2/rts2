@@ -26,7 +26,7 @@
 #include "rts2db/targetset.h"
 #include "plot.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 /**
