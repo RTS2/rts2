@@ -6,10 +6,10 @@ librts2json_la_CXXFLAGS = -I../../include @LIBXML_CFLAGS@ -I../ -I../xmlrpc++ @J
 
 if PGSQL
 
-librts2json_la_SOURCES += jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp
+librts2json_la_SOURCES += jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp addtargetreq.cpp
 
 else
 
-EXTRA_DIST = jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp
+EXTRA_DIST = jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp addtargetreq.cpp
 
 endif
