@@ -19,7 +19,7 @@
 
 #include <time.h>
 
-#include "altplot.h"
+#include "rts2json/altplot.h"
 
 #ifdef RTS2_HAVE_LIBJPEG
 

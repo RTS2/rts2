@@ -17,8 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "xmlrpcd.h"
-#include "altplot.h"
+#include "rts2json/altplot.h"
+#include "rts2json/imgpreview.h"
+#include "rts2json/targetreq.h"
 #include "dirsupport.h"
 #include "xmlrpc++/urlencoding.h"
 #include "rts2db/simbadtarget.h"
@@ -35,8 +36,7 @@
 
 #include "radecparser.h"
 
-using namespace XmlRpc;
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 #ifdef RTS2_HAVE_PGSQL
 
@@ -45,7 +45,7 @@ Targets::Targets (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc
 	displaySeconds = false;
 }
 
-void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -72,7 +72,7 @@ void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path,
 		int tar_id = strtol (vals[0].c_str (), &endptr, 10);
 		if (*endptr != '\0')
 		{
-			rts2db::TargetSet ts (Configuration::instance()->getObserver ());
+			rts2db::TargetSet ts (rts2core::Configuration::instance()->getObserver ());
 			ts.loadByName (vals[0].c_str ());
 			if (ts.size () != 1)
 				throw rts2core::Error ("Cannot find target with name" + vals[0]);
@@ -84,7 +84,7 @@ void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path,
 			if (tar_id < 0)
 				throw rts2core::Error ("Target id < 0");
 
-			tar = createTarget (tar_id, Configuration::instance ()->getObserver ());
+			tar = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver ());
 		}	
 		if (tar == NULL)
 			throw rts2core::Error ("Cannot find target with given ID");
@@ -166,7 +166,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 			"var st = ln_get_mean_sidereal_time(jd);\n"
 			"hAz = new DMS();\n"
 			"hAlt = new DMS();\n"
-			"observer = new LngLat(" << Configuration::instance ()->getObserver ()->lng << "," << Configuration::instance ()->getObserver ()->lat << ")\n;"
+			"observer = new LngLat(" << rts2core::Configuration::instance ()->getObserver ()->lng << "," << rts2core::Configuration::instance ()->getObserver ()->lat << ")\n;"
 			"for (var i in this.data) {\n"
 				"var t = this.data[i];\n"
 				"var radec = new RaDec(table.data[i][2],table.data[i][3], observer);\n"
@@ -337,7 +337,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 void Targets::printTargetHeader (int tar_id, const char *current, std::ostringstream &_os)
 {
 	std::ostringstream prefix;
-	prefix << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/" << tar_id << "/";
+	prefix << getServer ()->getPagePrefix () << "/targets/" << tar_id << "/";
 
 	_os << "<p>";
 
@@ -346,7 +346,7 @@ void Targets::printTargetHeader (int tar_id, const char *current, std::ostringst
 	printSubMenus (_os, prefix.str ().c_str (), current, subm);
 }
 
-void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *e = params->getString ("jd", NULL);
 	if (e != NULL)
@@ -383,7 +383,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		return;
 	}	
 	if (!canExecute ())
-		throw XmlRpcException ("you do not have permission to change anything");
+		throw XmlRpc::XmlRpcException ("you do not have permission to change anything");
 	e = params->getString ("e", NULL);
 	if (e != NULL)
 	{
@@ -395,14 +395,13 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 	e = params->getString ("slew", NULL);
 	if (e != NULL)
 	{
-		XmlRpcd *master = (XmlRpcd *) getMasterApp ();
-		connections_t::iterator iter = master->getConnections ()->begin ();
-		master->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
-		if (iter == master->getConnections ()->end ())
-		  	throw XmlRpcException ("Telescope is not connected");
+		rts2core::connections_t::iterator iter = getServer ()->getConnections ()->begin ();
+		getServer ()->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
+		if (iter == getServer ()->getConnections ()->end ())
+		  	throw XmlRpc::XmlRpcException ("Telescope is not connected");
 		struct ln_equ_posn pos;
 		tar->getPosition (&pos);
-		(*iter)->queCommand (new rts2core::CommandMove (master, NULL, pos.ra, pos.dec));
+		(*iter)->queCommand (new rts2core::CommandMove (((rts2core::Block *) getMasterApp ()), NULL, pos.ra, pos.dec));
 
 		// return status..
 		rts2core::ValueRaDec *telRaDec = (rts2core::ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
@@ -421,12 +420,11 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 	e = params->getString ("next", NULL);
 	if (e != NULL)
 	{
-		XmlRpcd *master = (XmlRpcd *) getMasterApp ();
-		connections_t::iterator iter = master->getConnections ()->begin ();
-		master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
-		if (iter == master->getConnections ()->end ())
-		  	throw XmlRpcException ("Executor is not running");
-		(*iter)->queCommand (new rts2core::CommandExecNext (master, tar->getTargetID ()));
+		rts2core::connections_t::iterator iter = getServer ()->getConnections ()->begin ();
+		getServer ()->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
+		if (iter == getServer ()->getConnections ()->end ())
+		  	throw XmlRpc::XmlRpcException ("Executor is not running");
+		(*iter)->queCommand (new rts2core::CommandExecNext (((rts2core::Block *) getMasterApp ()), tar->getTargetID ()));
 
 		std::ostringstream os;
 		os << "{\"status\":0}";
@@ -436,12 +434,11 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 	e = params->getString ("now", NULL);
 	if (e != NULL)
 	{
-		XmlRpcd *master = (XmlRpcd *) getMasterApp ();
-		connections_t::iterator iter = master->getConnections ()->begin ();
-		master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
-		if (iter == master->getConnections ()->end ())
-		  	throw XmlRpcException ("Executor is not running");
-		(*iter)->queCommand (new rts2core::CommandExecNow (master, tar->getTargetID ()));
+		rts2core::connections_t::iterator iter = getServer ()->getConnections ()->begin ();
+		getServer ()->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
+		if (iter == getServer ()->getConnections ()->end ())
+		  	throw XmlRpc::XmlRpcException ("Executor is not running");
+		(*iter)->queCommand (new rts2core::CommandExecNow (((rts2core::Block *) getMasterApp ()), tar->getTargetID ()));
 
 		returnJSON ("{\"status\":0}", response_type, response, response_length);
 		return;
@@ -454,7 +451,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		returnJSON ("{\"status\":0}", response_type, response, response_length);
 		return;
 	}
-	throw XmlRpcException ("invalid API request");
+	throw XmlRpc::XmlRpcException ("invalid API request");
 }
 
 
@@ -468,7 +465,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		os.loadTarget (tar->getTargetID ());
 
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/observations/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":1},"
 			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":2},"
 			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
@@ -503,7 +500,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		ps.load ();
 
 		_os << "{\"h\":["
-			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":3},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":4},"
@@ -534,7 +531,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		returnJSON (_os, response_type, response, response_length);
 		return;
 	}
-	throw XmlRpcException ("invalid API call");
+	throw XmlRpc::XmlRpcException ("invalid API call");
 }
 
 void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
@@ -552,7 +549,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 	tar->getPosition (&tradec);
 
 	_os << "<script type='text/javascript'>\n"
-	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ", new LngLat(" << Configuration::instance ()->getObserver ()->lng << "," << Configuration::instance ()->getObserver ()->lat << "));\n"
+	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ", new LngLat(" << rts2core::Configuration::instance ()->getObserver ()->lng << "," << rts2core::Configuration::instance ()->getObserver ()->lat << "));\n"
 	"hAlt = new DMS();\n"
 	"hAz = new DMS();\n"
 	"hSt = new HMS();\n"
@@ -719,7 +716,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 			"<div id='genscript'></div>"
 			"<div>Camera: <select id='cam'>";
 
-		connections_t::iterator camiter = ((rts2core::Block *) getMasterApp ())->getConnections ()->begin ();
+		rts2core::connections_t::iterator camiter = ((rts2core::Block *) getMasterApp ())->getConnections ()->begin ();
 
 		while (true)
 		{
@@ -820,7 +817,7 @@ void Targets::printTargetStat (rts2db::Target *tar, const char* &response_type, 
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -835,15 +832,15 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
+	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
+	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
 
-	Previewer preview = Previewer ();
+	Previewer preview = Previewer (getServer ());
 
 	printHeader (_os, (std::string ("Images of target ") + tar->getTargetName ()).c_str (), preview.style ());
 
@@ -1135,7 +1132,7 @@ void AddTarget::newTarget (const char *oriname, const char *name, int tarid, dou
 		ret = ((rts2db::Target *) constTarget)->save (false);
 	
 	if (ret)
-		throw XmlRpcException ("Target with given ID already exists");
+		throw XmlRpc::XmlRpcException ("Target with given ID already exists");
 
 	printHeader (_os, "Create new target");
 	
@@ -1155,10 +1152,10 @@ void AddTarget::schedule (int tarid, const char* &response_type, char* &response
 {
 	std::ostringstream _os;
 
-	rts2db::Target *tar = createTarget (tarid, Configuration::instance ()->getObserver ());
+	rts2db::Target *tar = createTarget (tarid, rts2core::Configuration::instance ()->getObserver ());
 
 	if (tar == NULL)
-		throw XmlRpcException ("Cannot find target with given ID!");
+		throw XmlRpc::XmlRpcException ("Cannot find target with given ID!");
 
 	printHeader (_os, (std::string ("Scheduling target ") + tar->getTargetName ()).c_str ());
 	

@@ -97,7 +97,8 @@
 #endif
 
 #include "rts2fits/image.h"
-#include "bsc.h"
+#include "rts2json/bsc.h"
+#include "rts2json/imgpreview.h"
 #include "dirsupport.h"
 #ifdef RTS2_HAVE_LIBARCHIVE
 #include <archive.h>
@@ -105,9 +106,8 @@
 #endif
 
 #include "xmlrpc++/urlencoding.h"
-#include "xmlrpcd.h"
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 const char *Previewer::style ()
 {
@@ -145,10 +145,10 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
     "}\n"
   "}\n"
   "else if (document.forms['download'].elements['act'][2].checked)\n"
-  "{ window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
+  "{ window.open('" << getServer ()->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
   "}\n"
   "else\n"
-  "{ w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "', 'Preview');\n"
+  "{ w2 = window.open('" << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "', 'Preview');\n"
     "w2.focus ();"
   "}\n"
 "}\n"
@@ -170,7 +170,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
 
 void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, const char *label)
 {
-	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
+	_os << "<form name='download' method='post' action='" << getServer ()->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
 	"<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
 	"<form name='label' method='get' action='./'>"
 #ifdef CHANNELS
@@ -202,7 +202,7 @@ void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, in
 	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")";
 	if (prevsize > 0)
 		_os << "' width='" << prevsize << "' height='" << prevsize;
-	_os << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'/>" << std::endl;
+	_os << "' src='" << getServer ()->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'/>" << std::endl;
 }
 
 void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected, float quantiles, int chan)
@@ -218,7 +218,7 @@ void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevs
 #include <Magick++.h>
 using namespace Magick;
 
-void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
 	rts2image::Image image;
@@ -242,7 +242,7 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 	delete mimage;
 }
 
-void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// size of previews
 	int prevsize = params->getInteger ("ps", 128);
@@ -354,7 +354,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "&chan=" << chan << "&q=" << quantiles << "'>" << fname << "</a> ";
+			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "&chan=" << chan << "&q=" << quantiles << "'>" << fname << "</a> ";
 		}
 	}
 
@@ -402,17 +402,17 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 #endif /* RTS2_HAVE_LIBJPEG */
 
-void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/fits";
 	int f = open (path.c_str (), O_RDONLY);
 	if (f == -1)
 	{
-		throw XmlRpcException ("Cannot open file");
+		throw XmlRpc::XmlRpcException ("Cannot open file");
 	}
 	struct stat st;
 	if (fstat (f, &st) == -1)
-		throw XmlRpcException ("Cannot get file properties");
+		throw XmlRpc::XmlRpcException ("Cannot get file properties");
 	
 	response_length = st.st_size;
 	response = new char[response_length];
@@ -421,12 +421,12 @@ void FitsImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 	if (ret != (ssize_t) response_length)
 	{
 		delete[] response;
-		throw XmlRpcException ("Cannot read data");
+		throw XmlRpc::XmlRpcException ("Cannot read data");
 	}
 	close (f);
 }
 
-void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 
 #ifndef RTS2_HAVE_LIBARCHIVE
@@ -448,7 +448,7 @@ void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 
 	archive_write_open (a, this, &open_callback, &write_callback, &close_callback);
 
-	for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
+	for (XmlRpc::HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 	{
 		if (!strcmp (iter->getName (), "files"))
 		{
@@ -460,7 +460,7 @@ void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 
 			int fd = open (fn, O_RDONLY);
 			if (fd < 0)
-				throw XmlRpcException ("Cannot open file for packing");
+				throw XmlRpc::XmlRpcException ("Cannot open file for packing");
 			fstat (fd, &st);
 			archive_entry_copy_stat (entry, &st);
 			archive_entry_set_pathname (entry, basename (fn));
@@ -487,7 +487,7 @@ void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 
 int open_callback (struct archive *a, void *client_data)
 {
-	rts2xmlrpc::DownloadRequest *dr = (rts2xmlrpc::DownloadRequest *) client_data;
+	DownloadRequest *dr = (DownloadRequest *) client_data;
 
 	if (dr->buf)
 		free (dr->buf);
@@ -499,7 +499,7 @@ int open_callback (struct archive *a, void *client_data)
 
 ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length)
 {
-	rts2xmlrpc::DownloadRequest * dr = (rts2xmlrpc::DownloadRequest *) client_data;
+	DownloadRequest * dr = (DownloadRequest *) client_data;
 	dr->buf = (char *) realloc (dr->buf, dr->buf_size + length);
 	memcpy (dr->buf + dr->buf_size, buffer, length);
 	dr->buf_size += length;

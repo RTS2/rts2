@@ -18,31 +18,35 @@
  */
 
 #include "rts2-config.h"
-#include "rts2json/httpreq.h"
+#include "httpreq.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "xmlrpc++/XmlRpc.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 /**
- * Browse and prints observations..
+ * Browse and prints informations about auger showers.
  *
  * @author Petr Kubanek <petr@kubanek.net>
- */
-class Observation: public rts2json::GetRequestAuthorized
+ */ 
+class Night: public rts2json::GetRequestAuthorized
 {
 	public:
-		Observation (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "observations by observation IDs", s) {};
+		Night (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "access to nights logs", s) {};
 
 		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
-		void printQuery (const char* &response_type, char* &response, size_t &response_length);
-		void printObs (int obs_id, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-		void obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void printAllImages (int year, int month, int day, XmlRpc::HttpParams *params, char* &response, size_t &response_length);
+		void callAPI(int year, int month, int day, char* &response, const char* &response_type, size_t &response_length);
+		void printTable (int year, int month, int day, char* &response, size_t &response_length);
+#ifdef RTS2_HAVE_LIBJPEG
+		void printAlt (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void printAltAz (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+#endif // RTS2_HAVE_LIBJPEG
 };
 
 }
 
-#endif
+#endif /* RTS2_HAVE_PGSQL */

@@ -20,7 +20,7 @@
 
 #include <time.h>
 
-#include "plot.h"
+#include "rts2json/plot.h"
 
 #ifdef RTS2_HAVE_LIBJPEG
 

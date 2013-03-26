@@ -18,12 +18,12 @@
  */
 
 #include "augerreq.h"
-#include "nightdur.h"
+#include "rts2json/nightdur.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "../../lib/rts2db/augerset.h"
 #if defined(RTS2_HAVE_LIBJPEG) && RTS2_HAVE_LIBJPEG == 1
-#include "altaz.h"
+#include "rts2json/altaz.h"
 #endif // RTS2_HAVE_LIBJPEG
 #include "configuration.h"
 

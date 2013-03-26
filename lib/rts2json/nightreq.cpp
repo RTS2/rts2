@@ -17,22 +17,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "nightdur.h"
+#include "rts2json/nightdur.h"
+#include "rts2json/nightreq.h"
 #include "rts2json/jsonvalue.h"
-#include "xmlrpcd.h"
+#include "rts2json/imgpreview.h"
 #include "xmlrpc++/urlencoding.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/observationset.h"
 #include "rts2db/imageset.h"
 #ifdef RTS2_HAVE_LIBJPEG
-#include "altaz.h"
-#include "altplot.h"
+#include "rts2json/altaz.h"
+#include "rts2json/altplot.h"
 #endif // RTS2_HAVE_LIBJPEG
 #include "configuration.h"
 
 using namespace XmlRpc;
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 void Night::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -136,13 +137,13 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
+	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
+	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
 
 	time_t from;
 	int64_t duration;
@@ -151,7 +152,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 
 	time_t end = from + duration;
 
-	Previewer preview = Previewer ();
+	Previewer preview = Previewer (getServer ());
 	preview.script (_os, label_encoded, quantiles, chan);
 
 	_os << "<p>";

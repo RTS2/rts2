@@ -21,7 +21,7 @@
 #define __RTS2_TARGETREQ__
 
 #include "rts2-config.h"
-#include "rts2json/httpreq.h"
+#include "httpreq.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/targetset.h"
@@ -38,7 +38,7 @@
 
 #include "libnova_cpp.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 #ifdef RTS2_HAVE_PGSQL

@@ -18,7 +18,7 @@
  */
 
 #include "xmlrpcd.h"
-#include "altaz.h"
+#include "rts2json/altaz.h"
 #include "valueplot.h"
 
 #ifdef RTS2_HAVE_LIBJPEG

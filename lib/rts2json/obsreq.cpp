@@ -17,14 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "xmlrpcd.h"
+#include "rts2json/imgpreview.h"
+#include "rts2json/obsreq.h"
+#include "rts2db/observation.h"
+
 #include "xmlrpc++/XmlRpcException.h"
 #include "xmlrpc++/urlencoding.h"
-#include "rts2db/observation.h"
 
 #ifdef RTS2_HAVE_PGSQL
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 void Observation::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -71,19 +73,19 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
+	const char * label = params->getString ("lb", getServer ()->getDefaultImageLabel ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
+	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
 
 	std::ostringstream _os;
 	std::ostringstream _title;
 	_title << "Images for observation " << obs.getObsId () << " of " << obs.getTargetName ();
 
-	Previewer preview = Previewer ();
+	Previewer preview = Previewer (getServer ());
 
 	printHeader (_os, _title.str ().c_str (), preview.style ());
 

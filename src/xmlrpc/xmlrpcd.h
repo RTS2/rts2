@@ -42,16 +42,16 @@
 #include "rts2json/images.h"
 #include "rts2json/libjavascript.h"
 #include "rts2json/jsonvalue.h"
+#include "rts2json/targetreq.h"
+#include "rts2json/obsreq.h"
+#include "rts2json/imgpreview.h"
+#include "rts2json/nightreq.h"
 #include "session.h"
 #include "xmlrpc++/XmlRpc.h"
 
 #include "xmlapi.h"
 
 #include "augerreq.h"
-#include "nightreq.h"
-#include "obsreq.h"
-#include "targetreq.h"
-#include "imgpreview.h"
 #include "devicesreq.h"
 #include "planreq.h"
 #include "switchstatereq.h"
@@ -451,7 +451,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		/**
 		 * Return default image label.
 		 */
-		const char *getDefaultImageLabel ();
+		virtual const char *getDefaultImageLabel ();
+
+		virtual int getDefaultChannel () { return defchan; }
 
 		rts2core::ConnNotify * getNotifyConnection () { return notifyConn; }
 
@@ -598,17 +600,17 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 #endif // RTS2_HAVE_PGSQL
 		rts2json::ImageReq imageReq;
 #endif /* RTS2_HAVE_LIBJPEG */
-		FitsImageRequest fitsRequest;
+		rts2json::FitsImageRequest fitsRequest;
 		rts2json::LibJavaScript javaScriptRequests;
 		LibCSS cssRequests;
 		API api;
 #ifdef RTS2_HAVE_PGSQL
 		BBAPI bbapi;
 		Auger auger;
-		Night night;
-		Observation observation;
-		Targets targets;
-		AddTarget addTarget;
+		rts2json::Night night;
+		rts2json::Observation observation;
+		rts2json::Targets targets;
+		rts2json::AddTarget addTarget;
 		Plan plan;
 #endif // RTS2_HAVE_PGSQL
 		SwitchState switchState;

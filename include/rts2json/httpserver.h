@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2__HTTPSERVER__
+#define __RTS2__HTTPSERVER__
+
 #include <string>
 
 #include <sys/types.h>
@@ -65,9 +68,21 @@ class HTTPServer
 		virtual void getOpenConnectionType (int deviceType, rts2core::connections_t::iterator &current) = 0;
 
 		/**
+		 * Return default label for image preview.
+		 */
+		virtual const char *getDefaultImageLabel () { return "%Y-%m-%d %H:%M:%S @OBJECT"; }
+
+		/**
+		 * Return default channel for image preview.
+		 */
+		virtual int getDefaultChannel () { return 0; }
+
+		/**
 		 * Verify user credentials.
 		 */
 		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission) = 0;
 };
 
 }
+
+#endif // !__RTS2__HTTPSERVER__

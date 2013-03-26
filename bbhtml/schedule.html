@@ -53,6 +53,11 @@ function schedule(tid)
 	jsonCall(encodeURI('api/schedule_all?tar_id=' + tid.options[tid.selectedIndex].value), scheduled);
 }
 
+function new_target(name)
+{
+
+}
+
 </script>
 
 <body>
@@ -61,5 +66,6 @@ function schedule(tid)
     <select name='available'></select>
     <button type='button' onClick='searchTarget(this.form.target.value, this.form.available, this.form.schedb);'>Search</button>
     <button name='schedb' type='button' onClick='schedule(this.form.available);' disabled>Schedule</button>
+    <button type='button' onClick='new_target(this.form.target.value)'>Create new target</button>
   </form>
 </body>
