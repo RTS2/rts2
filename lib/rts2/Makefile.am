@@ -19,7 +19,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	riseset.cpp valuerectangle.cpp data.cpp radecparser.cpp \
 	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
-	camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
+	camd.cpp sensord.cpp sensorgpib.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c connthorlabs.cpp \
 	dirsupport.cpp
 
