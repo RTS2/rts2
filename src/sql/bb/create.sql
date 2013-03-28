@@ -30,7 +30,7 @@ CREATE TABLE observatory_schedules (
 
 CREATE TABLE observatory_observations (
 	observatory_id	integer REFERENCES observatories (observatory_id),
-	schedule_id	integer REFERENCES observatory_schedules (schedule_id),
+	schedule_id	integer REFERENCES bb_schedules (schedule_id),
 	obs_id 		integer NOT NULL,
 	tar_id		integer REFERENCES targets (tar_id),
 	obs_ra		float8,
