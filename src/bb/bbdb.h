@@ -165,7 +165,7 @@ class Schedules:public std::vector <BBSchedule>
  */
 void createMapping (int observatory_id, int tar_id, int obs_tar_id);
 
-void reportObservation (int observatory_id, int obs_id, int obs_tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images);
+void reportObservation (int observatory_id, int schedule_id, int obs_id, int obs_tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images);
 
 /**
  * Find mapping for a given target.

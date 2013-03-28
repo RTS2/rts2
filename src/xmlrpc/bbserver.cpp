@@ -177,7 +177,7 @@ void BBServer::sendObservationUpdate (int observationId)
 	url.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	if (_uri)
 		url << _uri;
-	url << "/api/observation?observatory_id=" << observatoryId << "&obs_id=" << obs.getObsId () << "&obs_tar_id=" << obs.getTargetId ();
+	url << "/api/observation?observatory_id=" << observatoryId << "&obs_id=" << obs.getObsId () << "&schedule_id=" << plan.getBBScheduleId () << "&obs_tar_id=" << obs.getTargetId ();
 
 	addNonNan (url, obs.getObsRa (), "obs_ra");
 	addNonNan (url, obs.getObsDec (), "obs_dec");

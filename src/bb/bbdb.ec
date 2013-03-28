@@ -378,10 +378,11 @@ void rts2bb::createMapping (int observatory_id, int tar_id, int obs_tar_id)
 	EXEC SQL COMMIT;
 }
 
-void rts2bb::reportObservation (int observatory_id, int obs_id, int obs_tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images)
+void rts2bb::reportObservation (int observatory_id, int schedule_id, int obs_id, int obs_tar_id, double obs_ra, double obs_dec, double obs_slew, double obs_start, double obs_end, double onsky, int good_images, int bad_images)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_observatory_id = observatory_id;
+	int db_schedule_id = schedule_id;
 	int db_obs_id = obs_id;
 	int db_tar_id;
 	double db_obs_ra = obs_ra;
@@ -410,6 +411,7 @@ void rts2bb::reportObservation (int observatory_id, int obs_id, int obs_tar_id, 
 	if (db_obs_count == 1)
 	{
 		EXEC SQL UPDATE observatory_observations SET
+			schedule_id = :db_schedule_id,
 			tar_id = :db_tar_id,
 			obs_ra = :db_obs_ra :db_obs_ra_ind,
 			obs_dec = :db_obs_dec :db_obs_dec_ind,
@@ -428,9 +430,9 @@ void rts2bb::reportObservation (int observatory_id, int obs_id, int obs_tar_id, 
 	else
 	{
 		EXEC SQL INSERT INTO observatory_observations
-			(observatory_id, obs_id, tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images)
+			(observatory_id, schedule_id, obs_id, tar_id, obs_ra, obs_dec, obs_slew, obs_start, obs_end, onsky, good_images, bad_images)
 		VALUES
-			(:db_observatory_id, :db_obs_id, :db_tar_id, :db_obs_ra :db_obs_ra_ind, :db_obs_dec :db_obs_dec_ind,
+			(:db_observatory_id, :db_schedule_id, :db_obs_id, :db_tar_id, :db_obs_ra :db_obs_ra_ind, :db_obs_dec :db_obs_dec_ind,
 			to_timestamp (:db_obs_slew :db_obs_slew_ind),
 			to_timestamp (:db_obs_start :db_obs_start_ind),
 			to_timestamp (:db_obs_end :db_obs_end_ind),
