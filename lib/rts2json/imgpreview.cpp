@@ -430,7 +430,7 @@ void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 {
 
 #ifndef RTS2_HAVE_LIBARCHIVE
-	throw XmlRpcException ("missing libArchive - cannot download data");
+	throw XmlRpc::XmlRpcException ("missing libArchive - cannot download data");
 }
 
 #else
