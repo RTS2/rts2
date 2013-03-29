@@ -67,31 +67,22 @@ rts2_sensor_hygrowin_SOURCES = hygrowin.cpp
 rts2_sensor_fram_SOURCES = fram.cpp
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
-rts2_sensor_cryocon_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_keithley_scpi_SOURCES = keithley-scpi.cpp
-rts2_sensor_keithley_scpi_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
-rts2_sensor_keithley_487_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
-rts2_sensor_lakeshore_325_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_lakeshore_330_SOURCES = lakeshore-330.cpp
-rts2_sensor_lakeshore_330_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_lakeshore_340_SOURCES = lakeshore-340.cpp
-rts2_sensor_lakeshore_340_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_triax_SOURCES = triax.cpp
-rts2_sensor_triax_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_mm2500_SOURCES = mm2500.cpp
-rts2_sensor_mm2500_LDADD = ${LDADD} -lrts2gpib
 
 rts2_sensor_agilent_e3631a_SOURCES = agilent-e3631a.cpp
-rts2_sensor_agilent_e3631a_LDADD = ${LDADD} -lrts2gpib
 
 if SUNCYG
 EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp

@@ -7,7 +7,7 @@ AM_CFLAGS=@NOVA_CFLAGS@ -I../../include
 
 EXTRA_DIST =
 
-lib_LTLIBRARIES = librts2.la librts2users.la librts2gpib.la
+lib_LTLIBRARIES = librts2.la librts2users.la
 
 librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp multidev.cpp option.cpp \
 	networkaddress.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
@@ -21,12 +21,10 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
 	camd.cpp sensord.cpp sensorgpib.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c connthorlabs.cpp \
-	dirsupport.cpp
-
-librts2gpib_la_SOURCES = conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp
+	dirsupport.cpp conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp
 
 if GPIBLIB
-librts2gpib_la_SOURCES += conngpiblinux.cpp
+librts2_la_SOURCES += conngpiblinux.cpp
 else
 EXTRA_DIST += conngpiblinux.cpp
 endif

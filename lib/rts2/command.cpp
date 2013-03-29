@@ -663,10 +663,3 @@ CommandDeviceStatus::CommandDeviceStatus (Block * master, Connection * _control_
 {
 	setCommand ("device_status");
 }
-
-CommandObservation::CommandObservation (Block * master, int tar_id, int obs_id):Command (master)
-{
-	std::ostringstream _os;
-	_os << "observation " << tar_id << " " << obs_id;
-	setCommand (_os);
-}

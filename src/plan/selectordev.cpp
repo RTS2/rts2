@@ -357,7 +357,7 @@ int SelectorDev::init ()
 
 	int i = 0;
 
-	setMessageMask (INFO_OBSERVATION_INTERRUPTED);
+	setMessageMask (INFO_OBSERVATION_SLEW | INFO_OBSERVATION_INTERRUPTED);
 	
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++, i++)
 	{
@@ -718,6 +718,9 @@ void SelectorDev::message (Message & msg)
 {
 	switch (msg.getID ())
 	{
+		case INFO_OBSERVATION_SLEW:
+			updateNext (true, msg.getMessageArgInt (1), msg.getMessageArgInt (0));
+			break;
 		case INFO_OBSERVATION_INTERRUPTED:
 			if (current_queue->getValueInteger () > 0 && current_target->getValueInteger () == msg.getMessageArgInt (1))
 			{
@@ -744,15 +747,6 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return -2;
 		return updateNext () == 0 ? 0 : -2;
-	}
-	// when observation starts
-	else if (conn->isCommand ("observation"))
-	{
-	  	int tar_id;
-		int obs_id;
-		if (conn->paramNextInteger (&tar_id) || conn->paramNextInteger (&obs_id) || !conn->paramEnd ())
-			return -2;
-		return updateNext (true, tar_id, obs_id) == 0 ? 0 : -2;
 	}
 	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan") || conn->isCommand ("queue_plan_id") || conn->isCommand ("insert"))
 	{

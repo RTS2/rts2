@@ -914,15 +914,6 @@ void Executor::doSwitch ()
 		queAll (new rts2core::CommandScriptEnds (this));
 		postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
 		postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET, (void *) current_plan_id));
-		// send note to selector..
-		connections_t::iterator c = getConnections ()->begin ();
-		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
-		while (c != getConnections ()->end ())
-		{
-			(*c)->queCommand (new rts2core::CommandObservation (this, currentTarget->getTargetID (), currentTarget->getObsId ()));
-			c++;
-			getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
-		}
 	}
 }
 

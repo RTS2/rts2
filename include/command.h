@@ -738,14 +738,5 @@ class CommandDeviceStatus:public CommandStatusInfo
 		CommandDeviceStatus (Block * master, Connection * _control_conn);
 };
 
-/**
- * Sends information to selector at the end of observation.
- */
-class CommandObservation:public Command
-{
-	public:
-		CommandObservation (Block * master, int tar_id, int obs_id);
-};
-
 }
 #endif							 /* !__RTS2_COMMAND__ */
