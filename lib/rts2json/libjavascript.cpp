@@ -22,7 +22,7 @@
 #include "utilsfunc.h"
 #include "error.h"
 
-#include "XmlRpcException.h"
+#include "xmlrpc++/XmlRpcException.h"
 
 using namespace rts2json;
 

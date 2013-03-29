@@ -34,7 +34,7 @@
 
 #include "rts2script/script.h"
 
-#include "XmlRpcException.h"
+#include "xmlrpc++/XmlRpcException.h"
 
 using namespace rts2json;
 
