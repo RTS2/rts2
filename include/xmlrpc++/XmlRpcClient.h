@@ -21,7 +21,7 @@ namespace XmlRpc
 	// Arguments and results are represented by XmlRpcValues
 	class XmlRpcValue;
 
-	typedef enum {NOEXEC, XML_RPC, HTTP_GET, HTTP_POST} ExecutingType;
+	typedef enum {NOEXEC, XML_RPC, HTTP_GET, HTTP_POST, HTTP_POST_ASYNC} ExecutingType;
 
 	//! A class to send XML RPC requests to a server and return the results.
 	class XmlRpcClient : public XmlRpcSource
@@ -90,6 +90,8 @@ namespace XmlRpc
 			bool executePost(const char* path, char* &reply, int &reply_length);
 
 			bool executePostRequest(const char* path, const char *body, char* &reply, int &reply_length);
+
+			bool executePostRequestAsync(const char* path, const char *body = NULL);
 
 			//! Returns true if the result of the last execute() was a fault response.
 			bool isFault() const { return _isFault; }

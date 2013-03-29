@@ -5,7 +5,7 @@ noinst_HEADERS = xmlstream.h xmlrpcd.h r2x.h session.h stateevents.h valueevents
 	bbapi.h messageevents.h switchstatereq.h xmlapi.h asyncapi.h
 
 AM_LDADD = @LIB_M@ @LIB_NOVA@ @JSONGLIB_LIBS@
-AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ @JSONGLIB_CFLAGS@ -I../../lib/ -I../../include
+AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ @JSONGLIB_CFLAGS@ -I../../include
 
 if PGSQL
 
@@ -46,7 +46,7 @@ bin_PROGRAMS += rts2-jsonclient
 
 rts2_jsonclient_SOURCES = jsonclient.cpp
 rts2_jsonclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
-rts2_jsonclient_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@ $(AM_LDADD)
+rts2_jsonclient_LDADD = -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIB_NOVA@ $(AM_LDADD)
 
 else
 

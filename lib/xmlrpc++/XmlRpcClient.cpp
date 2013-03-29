@@ -222,6 +222,28 @@ bool XmlRpcClient::executePostRequest(const char* path, const char *body, char* 
 	return true;
 }
 
+bool XmlRpcClient::executePostRequestAsync(const char* path, const char *body)
+{
+	XmlRpcUtil::log(1, "XmlRpcClient::executePostRequestAsync: POST %s (_connectionState %d).", path, _connectionState);
+
+	if (_executing != NOEXEC)
+		return false;
+
+	_executing = HTTP_POST_ASYNC;
+	ClearFlagOnExit cf(_executing);
+
+	_sendAttempts = 0;
+	_isFault = false;
+
+	if ( ! setupConnection())
+		return false;
+
+	if ( ! generatePostRequest(path, body))
+		return false;
+
+	return true;
+}
+
 // XmlRpcSource interface implementation
 // Handle server responses. Called by the event dispatcher during execute.
 unsigned XmlRpcClient::handleEvent(unsigned eventType)

@@ -1,3 +1,6 @@
+2013-03-29
+ * moved XMLRPC++ headers to include directory
+
 2013-03-26
  * moved target and observation request to JSON library
 

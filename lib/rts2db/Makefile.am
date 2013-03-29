@@ -2,9 +2,7 @@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @LIBPG_CFLAGS@ @LIBXML_CFLAGS@ @JPEG_CFLAGS@ -I../../include -I../
 
-noinst_HEADERS = rts2prop.h \
-	rts2targetplanet.h \
-	augerset.h labellist.h
+noinst_HEADERS = rts2prop.h rts2targetplanet.h augerset.h
 
 EXTRA_DIST = sqlerror.ec devicedb.ec target.ec sub_targets.ec appdb.ec sqlcolumn.ec observation.ec \
 	observationset.ec taruser.ec rts2count.ec imageset.ec targetset.ec plan.ec planset.ec rts2prop.ec \
