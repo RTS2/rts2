@@ -273,6 +273,12 @@ unsigned XmlRpcClient::handleEvent(unsigned eventType)
 		? XmlRpcDispatch::WritableEvent : XmlRpcDispatch::ReadableEvent;
 }
 
+void XmlRpcClient::resetChunk()
+{
+	_chunkReceivedLength = 0;
+	_chunkLength = 0;
+}
+
 // Create the socket connection to the server if necessary
 bool XmlRpcClient::setupConnection()
 {
@@ -687,7 +693,7 @@ bool XmlRpcClient::readResponse()
 				*_chunkEnd = '\0';
 				char *baseEnd;
 				_chunkLength = strtol (_chunkStart, &baseEnd, 16);
-				if (baseEnd == NULL || !(*baseEnd == '\0' || *baseEnd == '\r'))
+				if (baseEnd == NULL || !(*baseEnd == '\0' || *baseEnd == '\r' || *baseEnd == ';'))
 				{
 					XmlRpcUtil::error ("Cannot decode chunk length: %s", _chunkStart);
 					return false;

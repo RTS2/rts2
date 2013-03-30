@@ -22,6 +22,9 @@
 #include "iniparser.h"
 #include "libnova_cpp.h"
 
+#include "xmlrpc++/XmlRpc.h"
+#include "xmlrpc++/XmlRpcClient.h"
+
 #include <map>
 #include <iomanip>
 
@@ -36,16 +39,7 @@
 #define OPT_MASTER_STATE             OPT_LOCAL + 5
 #define OPT_TARGET_LIST              OPT_LOCAL + 6
 #define OPT_QUIET                    OPT_LOCAL + 7
-
-std::string username;
-std::string password;
-
-static void auth (SoupSession *session, SoupMessage *msg, SoupAuth *auth, gboolean retrying, gpointer data)
-{
-	if (retrying)
-		return;
-	soup_auth_authenticate (auth, username.c_str (), password.c_str ());
-}
+#define OPT_PUSH                     OPT_LOCAL + 8
 
 namespace rts2json
 {
@@ -75,17 +69,19 @@ class Client: public rts2core::CliApp
 		char *configFile;
 		int verbosity;
 
-		SoupSession *session;
-		SoupLogger *logger;
+		std::string username;
+		std::string password;
 
 		int schedTicket;
-		enum {SET_VARIABLE, GET_STATE, GET_MASTER_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES_PRETTY, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TARGET_LIST, HTTP_GET, TEST, NOOP} xmlOp;
+		enum {SET_VARIABLE, GET_STATE, GET_MASTER_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES_PRETTY, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TARGET_LIST, HTTP_GET, PUSH, TEST, NOOP} xmlOp;
 
 		const char *masterStateQuery;
 
                 bool getVariablesPrintNames;
 
 		std::vector <const char *> args;
+
+		std::vector <const char *> pushValues;
 
 		/**
                  * Split variable name to 
@@ -117,6 +113,8 @@ class Client: public rts2core::CliApp
 		int doTests ();
 
 		int doHttpGet ();
+
+		int doPush ();
 
 		/**
 		 * Test that XML-RPC daemon is running.
@@ -179,6 +177,10 @@ class Client: public rts2core::CliApp
 		 * Resolve target(s) by name(s) and return them to user.
 		 */
 		int getTargets ();
+
+		XmlRpc::XmlRpcClient *createClient ();
+
+		const char *_uri;
 };
 
 }
@@ -198,69 +200,55 @@ int Client::splitDeviceVariable (const char *device, std::string &deviceName, st
 
 int Client::runJsonMethod (const std::string url, JsonParser *&result, bool printRes)
 {
-	SoupMessage *msg;
 	GError *error = NULL;
 
-	std::ostringstream os;
-	os << host << url;
+	XmlRpc::XmlRpcClient *client = createClient ();
 
-	msg = soup_message_new (SOUP_METHOD_GET, os.str ().c_str ());
+	char *reply;
+	int reply_length;
 
-	soup_session_send_message (session, msg);
-
-	if (SOUP_STATUS_IS_TRANSPORT_ERROR (msg->status_code))
+	int ret = client->executePostRequest (url.c_str (), NULL, reply, reply_length);
+	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "error calling '" << url << "': " << msg->status_code << " : " << msg->reason_phrase << sendLog;
-		return -1;
-	}
-
-	if (!SOUP_STATUS_IS_SUCCESSFUL (msg->status_code))
-	{
-		logStream (MESSAGE_ERROR) << "error calling '" << url << "': " << msg->status_code << " : " << msg->reason_phrase << sendLog;
+		logStream (MESSAGE_ERROR) << "error calling '" << url << "':" << ret << sendLog;
 		return -1;
 	}
 
 	result = json_parser_new ();
 
-	json_parser_load_from_data (result, msg->response_body->data, strlen (msg->response_body->data), &error);
+	json_parser_load_from_data (result, reply, reply_length, &error);
 	if (error)
 	{
 		logStream (MESSAGE_ERROR) << "unable to parse " << url << sendLog;
 		g_error_free (error);
-		g_object_unref (msg);
+		delete[] reply;
 		return -1;
 	}
 
-	g_object_unref (msg);
-
+	delete[] reply;
 	return 0;
 }
 
 int Client::runHttpGet (char* url, bool printRes)
 {
-	SoupMessage *msg;
+	XmlRpc::XmlRpcClient *client = createClient ();
 
-	msg = soup_message_new (SOUP_METHOD_GET, url);
+	char *reply;
+	int reply_length;
 
-	soup_session_send_message (session, msg);
-
-	if (SOUP_STATUS_IS_TRANSPORT_ERROR (msg->status_code))
+	int ret = client->executePostRequest (url, NULL, reply, reply_length);
+	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "error calling '" << url << "': " << msg->status_code << " : " << msg->reason_phrase << sendLog;
+		logStream (MESSAGE_ERROR) << "error calling '" << url << "':" << ret << sendLog;
 		return -1;
 	}
 
-	if (!SOUP_STATUS_IS_SUCCESSFUL (msg->status_code))
-	{
-		logStream (MESSAGE_ERROR) << "error calling '" << url << "': " << msg->status_code << " : " << msg->reason_phrase << sendLog;
-		return -1;
-	}
 	if (printRes)
 	{
-		std::cout << msg->response_body->data << std::endl;
+		std::cout << reply << std::endl;
 	}
 
-	g_object_unref (msg);
+	delete[] reply;
 
 	return 0;
 }
@@ -455,6 +443,60 @@ int Client::doHttpGet ()
 	return 0;
 }
 
+int Client::doPush ()
+{
+	XmlRpc::XmlRpcClient *client = createClient ();
+
+	std::ostringstream os;
+
+	if (_uri)
+		os << _uri;
+	os << "/api/push?";
+
+	for (std::vector <const char *>::iterator iter = pushValues.begin (); iter != pushValues.end (); iter++)
+	{
+		if (iter != pushValues.begin ())
+			os << '&';
+		bool ndot = true;
+		for (const char *b = *iter; *b; b++)
+		{
+			if (ndot && *b == '.')
+			{
+				os << '=';
+				ndot = false;
+			}
+			else
+			{
+				os << *b;
+			}
+		}
+	}
+
+	client->executePostRequestAsync (os.str ().c_str (), NULL);
+
+	while (true)
+	{
+		client->readChunk ();
+
+		char *chunk;
+		size_t chunkLen;
+		client->lastChunk (chunk, chunkLen);
+		if (chunkLen == 0)
+			break;
+
+		char ch[chunkLen + 1];
+		memcpy (ch, chunk, chunkLen);
+		ch[chunkLen] = '\0';
+
+		if (verbosity > 0)
+			std::cout << "chunk " << chunk << std::endl;
+
+		client->resetChunk ();
+	}
+
+	return 0;
+}
+
 int Client::testConnect ()
 {
 	JsonParser *res;
@@ -555,7 +597,7 @@ int Client::getMasterState ()
 		if (!strcasecmp (masterStateQuery, "on"))
 			res = !(state & SERVERD_ONOFF_MASK);
 		else if (!strcasecmp (masterStateQuery, "standby"))
-			res = (state & SERVERD_ONOFF_MASK == SERVERD_STANDBY);
+			res = (state & SERVERD_ONOFF_MASK) == SERVERD_STANDBY;
 		else if (!strcasecmp (masterStateQuery, "off"))
 			res = (state & SERVERD_ONOFF_MASK) == SERVERD_HARD_OFF || (state & SERVERD_ONOFF_MASK) == SERVERD_SOFT_OFF;
 		else if (!strcasecmp (masterStateQuery, "rnight"))
@@ -783,6 +825,10 @@ int Client::processOption (int opt)
 		case 'c':
 			xmlOp = COMMANDS;
 			break;
+		case OPT_PUSH:
+			xmlOp = PUSH;
+			pushValues.push_back (optarg);
+			break;
 		case 's':
 			xmlOp = SET_VARIABLE;
 			break;
@@ -848,7 +894,7 @@ int Client::processArgs (const char *arg)
 		masterStateQuery = arg;
 		return 0;
 	}
-	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == GET_VARIABLES_PRETTY || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET || xmlOp == TARGET_LIST))
+	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == GET_VARIABLES_PRETTY || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET || xmlOp == TARGET_LIST || xmlOp == PUSH))
 		return -1;
 	args.push_back (arg);
 	return 0;
@@ -902,6 +948,8 @@ int Client::doProcessing ()
 			return doTests ();
 		case HTTP_GET:
 			return doHttpGet ();
+		case PUSH:
+			return doPush ();
 		case NOOP:
 			return testConnect ();
 	}
@@ -944,22 +992,10 @@ int Client::init ()
 			return -1;
 	}
 
+	if (verbosity >= 0)
+		XmlRpc::setVerbosity (verbosity);
+
 	g_type_init ();
-
-	session = soup_session_sync_new_with_options (
-		SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_CONTENT_DECODER,
-		SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_COOKIE_JAR,
-		SOUP_SESSION_USER_AGENT, "rts2 ",
-		NULL);
-
-	if (verbosity > 1)
-	{
-		logger = soup_logger_new (SOUP_LOGGER_LOG_BODY, -1);
-		soup_logger_attach (logger, session);
-	}
-
-	if (username.length () > 0)
-		g_signal_connect (session, "authenticate", G_CALLBACK (auth), NULL);
 
 	std::cout << std::fixed;
 
@@ -973,14 +1009,13 @@ Client::Client (int in_argc, char **in_argv): rts2core::CliApp (in_argc, in_argv
 	configFile = NULL;
 	verbosity = 0;
 
-	session = NULL;
-	logger = NULL;
-
 	xmlOp = NOOP;
 
         getVariablesPrintNames = true;
 
 	masterStateQuery = NULL;
+
+	_uri = NULL;
 
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
 	addOption (OPT_QUIET, "quiet", 0, "don't report errors on stderr");
@@ -995,6 +1030,7 @@ Client::Client (int in_argc, char **in_argv): rts2core::CliApp (in_argc, in_argv
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 	addOption (OPT_TARGET_LIST, "targets", 0, "list all targets (or those whose names matches the arguments)");
 	addOption ('c', NULL, 0, "execute given command(s)");
+	addOption (OPT_PUSH, "push", 1, "call PUSH api for specified values");
 	addOption ('S', NULL, 0, "get state of device(s) specified as argument(s)");
 	addOption ('i', NULL, 0, "increment variable(s) specified as argument(s)");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
@@ -1007,7 +1043,19 @@ Client::Client (int in_argc, char **in_argv): rts2core::CliApp (in_argc, in_argv
 Client::~Client (void)
 {
 	delete[] configFile;
-	g_object_unref (session);
+}
+
+XmlRpc::XmlRpcClient *Client::createClient ()
+{
+	XmlRpc::XmlRpcClient *ret = new XmlRpc::XmlRpcClient (host, &_uri);
+
+	if (username.length () > 0 && password.length () > 0)
+	{
+		std::ostringstream auth;
+		auth << username << ":" << password;
+		ret->setAuthorization (auth.str ().c_str ());
+	}
+	return ret;
 }
 
 int main(int argc, char** argv)

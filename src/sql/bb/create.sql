@@ -3,7 +3,7 @@ CREATE TABLE observatories (
 	longitude	float8 NOT NULL, -- geographical informations
 	latitude	float8 NOT NULL,
 	altitude	float8 NOT NULL,
-	apiurl		VARCHAR(100) NOT NULL
+	apiurl		VARCHAR(100)
 );
 
 CREATE TABLE targets_observatories (

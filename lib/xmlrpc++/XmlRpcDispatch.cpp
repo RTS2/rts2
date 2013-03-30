@@ -1,4 +1,5 @@
 
+#include "XmlRpcClient.h"
 #include "XmlRpcDispatch.h"
 #include "XmlRpcSource.h"
 #include "XmlRpcUtil.h"
@@ -72,7 +73,7 @@ XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 
 // Watch current set of sources and process events
 void
-XmlRpcDispatch::work(double timeout)
+XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 {
 	// Compute end time
 	_endTime = (timeout < 0.0) ? -1.0 : (getTime() + timeout);
@@ -128,6 +129,10 @@ XmlRpcDispatch::work(double timeout)
 
 		// Check whether end time has passed
 		if (0 <= _endTime && getTime() > _endTime)
+			break;
+
+		// if chunkWait and the connection received chunk..
+		if (chunkWait && chunkWait->gotChunk ())
 			break;
 	}
 

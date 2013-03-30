@@ -107,6 +107,15 @@ namespace XmlRpc
 
 			virtual void goAsync () {}
 
+			//! Return true if the connection received some data.
+			bool gotChunk () { return _chunkLength > 0; }
+
+			void resetChunk ();
+
+			void lastChunk (char *&chunkStart, size_t &chunkLenght) { chunkStart = _response_buf; chunkLenght = _chunkReceivedLength; }
+
+			void readChunk () { _disp.work(-1.0, this); }
+
 		protected:
 			// Execution processing helpers
 			virtual bool doConnect();

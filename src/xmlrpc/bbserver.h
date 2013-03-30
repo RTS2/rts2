@@ -51,6 +51,8 @@ class BBServer:public rts2core::Object
 
 		virtual void postEvent (rts2core::Event *event);
 
+		XmlRpc::XmlRpcClient *createClient ();
+
 		/**
 		 * Sends update message to BB server. Data part is specified in data parameter.
 		 *
@@ -89,6 +91,7 @@ class BBServer:public rts2core::Object
 		XmlRpcd *server;
 
 		pthread_t send_thread;
+		pthread_t push_thread;
 
 		int cadency;
 };

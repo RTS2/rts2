@@ -207,6 +207,9 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (observatory_id < 0)
 				throw XmlRpc::JSONException ("unknown observatory ID");
 
+			Observatory obs (observatory_id);
+			obs.load ();
+
 			JsonParser *newJson = json_parser_new ();
 			GError *error = NULL;
 
@@ -221,7 +224,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			else
 			{
 				observatoriesJsons[observatory_id] = std::pair <double, JsonParser *> (getNow (), newJson);
-				os << "\"localtime\":" << std::fixed << getNow ();
+				os << "\"localtime\":" << std::fixed << getNow () << ",\"push\":" << ((obs.getURL ()[0] == '\0') ? "true" : "false");
 			}
 		}
 		else

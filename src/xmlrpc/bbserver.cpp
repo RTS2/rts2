@@ -58,12 +58,29 @@ void *updateBB (void *arg)
 	return NULL;
 }
 
+void *pushListener (void *arg)
+{
+	BBServer *bbserver = (BBServer *) arg;
+
+	XmlRpc::XmlRpcClient *client = bbserver->createClient ();
+
+	while (true)
+	{
+		//client->executePostRequestAsync ("/api/obspush?observatory_id=10");
+	}
+
+	return NULL;
+
+//	bbserver->sendAsync 
+}
+
 BBServer::BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency):serverApi (_serverApi), observatoryId (_observatoryId), password (_password), cadency (_cadency)
 {
 	server = _server;
 	client = NULL;
 	_uri = NULL;
 	send_thread = 0;
+	push_thread = 0;
 
 	g_type_init ();
 }
@@ -71,6 +88,7 @@ BBServer::BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char
 BBServer::~BBServer ()
 {
 	pthread_cancel (send_thread);
+	pthread_cancel (push_thread);
 	delete client;
 }
 
@@ -86,18 +104,22 @@ void BBServer::postEvent (rts2core::Event *event)
 	rts2core::Object::postEvent (event);
 }
 
+XmlRpc::XmlRpcClient *BBServer::createClient ()
+{
+	XmlRpcClient *ret = new XmlRpcClient (serverApi.c_str (), &_uri);
+	if (password.length ())
+	{
+		std::ostringstream auth;
+		auth << observatoryId << ":" << password;
+		ret->setAuthorization (auth.str ().c_str ());
+	}
+	return ret;
+}
+
 void BBServer::sendUpdate ()
 {
 	if (client == NULL)
-	{
-		client = new XmlRpcClient (serverApi.c_str (), &_uri);
-		if (password.length ())
-		{
-			std::ostringstream auth;
-			auth << observatoryId << ":" << password;
-			client->setAuthorization (auth.str ().c_str ());
-		}
-	}
+		client = createClient ();
 
 	std::ostringstream body;
 
@@ -151,6 +173,20 @@ void BBServer::sendUpdate ()
 	}
 
 	server->bbSend (json_object_get_double_member (json_node_get_object (json_parser_get_root (result)), "localtime"));
+
+	if (push_thread)
+	{
+		if (pthread_tryjoin_np (push_thread, NULL) == 0)
+		{
+			push_thread = 0;
+		}
+	}
+
+	// if client need to register for push..
+	if (json_object_get_boolean_member (json_node_get_object (json_parser_get_root (result)), "push") && push_thread == 0)
+	{
+		pthread_create (&push_thread, NULL, pushListener, (void *) this);
+	}
 
 	g_error_free (error);
 	g_object_unref (result);

@@ -12,6 +12,7 @@
 # include <list>
 #endif
 
+#include <malloc.h>
 #include <sys/select.h>
 
 namespace XmlRpc
@@ -19,6 +20,8 @@ namespace XmlRpc
 
 	// An RPC source represents a file descriptor to monitor
 	class XmlRpcSource;
+
+	class XmlRpcClient;
 
 	//! Thrown when execute should not return response - mark asynchronous connection,
 	//  where response is received later.
@@ -62,7 +65,8 @@ namespace XmlRpc
 
 			//! Watch current set of sources and process events for the specified
 			//! duration (in ms, -1 implies wait forever, or until exit is called)
-			void work(double msTime);
+			//!  @param chunkWait if not null, work until a chunk is available on the given connection
+			void work(double msTime, XmlRpcClient *chunkWait = NULL);
 
 			//! Add sockets to file descriptor set
 			void addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd);
