@@ -80,6 +80,11 @@ XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 	_doClear = false;
 	_inWork = true;
 
+	if (chunkWait)
+	{
+		setSourceEvents(chunkWait, ReadableEvent | WritableEvent | Exception);
+	}
+
 	// Only work while there is something to monitor
 	while (_sources.size() > 0)
 	{
