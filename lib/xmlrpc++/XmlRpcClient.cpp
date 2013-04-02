@@ -312,14 +312,15 @@ unsigned XmlRpcClient::handleChunkEvent(unsigned eventType)
 			XmlRpcUtil::log(4, "End of chunked response");
 			return 0;
 		}
+		if (_chunkReceivedLength == 0)
+			return XmlRpcDispatch::ReadableEvent;
 		// see if there is ;
 		char *baseEnd;
 		_chunkLength = strtol (_response_buf, &baseEnd, 16);
 		if (*baseEnd != ';')
 		{
-			XmlRpcUtil::error("Invalid buffer length, closing connection");
-			close();
-			return 0;
+			XmlRpcUtil::error("Invalid buffer length");
+			return XmlRpcDispatch::ReadableEvent;
 		}
 		if (_chunkLength == 0)
 		{
