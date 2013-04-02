@@ -116,7 +116,7 @@ namespace XmlRpc
 
 			void resetChunk ();
 
-			void lastChunk (char *&chunkStart, size_t &chunkLenght) { chunkStart = _chunkStart; chunkLenght = _chunkLength - 2; }
+			void lastChunk (char *&chunkStart, size_t &chunkLenght) { chunkStart = _response_buf; chunkLenght = _chunkLength - 2; }
 
 			void readChunk () { _disp.work(-1.0, this); }
 

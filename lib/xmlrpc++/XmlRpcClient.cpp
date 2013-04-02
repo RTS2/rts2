@@ -329,7 +329,7 @@ unsigned XmlRpcClient::handleChunkEvent(unsigned eventType)
 			return 0;
 		}
 		_chunkLength += 2;
-		if (baseEnd - _chunkStart + 2 > _chunkReceivedLength)
+		if (baseEnd - _response_buf + 2 > _chunkReceivedLength)
 		{
 			return XmlRpcDispatch::ReadableEvent;
 		}
