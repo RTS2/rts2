@@ -66,12 +66,10 @@ void *pushListener (void *arg)
 
 	while (true)
 	{
-		//client->executePostRequestAsync ("/api/obspush?observatory_id=10");
+		client->executePostRequestAsync ("/api/obspush?observatory_id=10");
 	}
 
 	return NULL;
-
-//	bbserver->sendAsync 
 }
 
 BBServer::BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency):serverApi (_serverApi), observatoryId (_observatoryId), password (_password), cadency (_cadency)

@@ -472,7 +472,7 @@ int Client::doPush ()
 		}
 	}
 
-	client->executePostRequestAsync (os.str ().c_str (), NULL);
+	client->executeGetRequestAsync (os.str ().c_str (), NULL);
 
 	while (true)
 	{

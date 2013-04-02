@@ -87,6 +87,8 @@ namespace XmlRpc
 
 			bool executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length);
 
+			bool executeGetRequestAsync(const char* path, const char *body = NULL);
+
 			bool executePost(const char* path, char* &reply, int &reply_length);
 
 			bool executePostRequest(const char* path, const char *body, char* &reply, int &reply_length);
@@ -105,14 +107,16 @@ namespace XmlRpc
 			//!  @see XmlRpcDispatch::EventType
 			virtual unsigned handleEvent(unsigned eventType);
 
+			virtual unsigned handleChunkEvent(unsigned eventType);
+
 			virtual void goAsync () {}
 
-			//! Return true if the connection received some data.
-			bool gotChunk () { return _chunkLength > 0; }
+			//! Return true if the connection received at least one full chunk
+			bool gotChunk () { return _chunkLength > 0 && _chunkLength <= _chunkReceivedLength; }
 
 			void resetChunk ();
 
-			void lastChunk (char *&chunkStart, size_t &chunkLenght) { chunkStart = _response_buf; chunkLenght = _chunkReceivedLength; }
+			void lastChunk (char *&chunkStart, size_t &chunkLenght) { chunkStart = _chunkStart; chunkLenght = _chunkLength - 2; }
 
 			void readChunk () { _disp.work(-1.0, this); }
 

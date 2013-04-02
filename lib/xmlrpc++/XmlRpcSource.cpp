@@ -1,4 +1,5 @@
 
+#include "XmlRpcDispatch.h"
 #include "XmlRpcSource.h"
 #include "XmlRpcSocket.h"
 #include "XmlRpcUtil.h"
@@ -33,4 +34,9 @@ namespace XmlRpc
 		}
 	}
 
+	unsigned
+		XmlRpcSource::handleChunkEvent(unsigned eventType)
+	{
+		return handleEvent(eventType);
+	}
 }								 // namespace XmlRpc

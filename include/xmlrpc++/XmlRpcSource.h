@@ -41,6 +41,8 @@ namespace XmlRpc
 			//! Return true to continue monitoring this source
 			virtual unsigned handleEvent(unsigned eventType) = 0;
 
+			virtual unsigned handleChunkEvent(unsigned eventType);
+
 			virtual void goAsync () = 0;
 
 			std::string getRequest () { return _request; }

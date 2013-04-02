@@ -184,6 +184,28 @@ bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &
 	return true;
 }
 
+bool XmlRpcClient::executeGetRequestAsync(const char* path, const char *body)
+{
+	XmlRpcUtil::log(1, "XmlRpcClient::executeGetRequest: GET %s (_connectionState %d):", path, _connectionState);
+
+	if (_executing != NOEXEC)
+		return false;
+	
+	_executing = HTTP_GET;
+	ClearFlagOnExit cf(_executing);
+
+	_sendAttempts = 0;
+	_isFault = false;
+
+	if ( ! setupConnection())
+		return false;
+
+	if ( ! generateGetRequest(path, body))
+		return false;
+
+	return true;
+}
+
 bool XmlRpcClient::executePost(const char* path, char* &reply, int &reply_length)
 {
 	return executePostRequest(path, NULL, reply, reply_length);
@@ -273,10 +295,78 @@ unsigned XmlRpcClient::handleEvent(unsigned eventType)
 		? XmlRpcDispatch::WritableEvent : XmlRpcDispatch::ReadableEvent;
 }
 
+unsigned XmlRpcClient::handleChunkEvent(unsigned eventType)
+{
+	if (_connectionState == WRITE_REQUEST)
+		if ( ! writeRequest()) return 0;
+	if (_connectionState == READ_HEADER)
+	{
+		if ( ! readHeader()) return XmlRpcDispatch::ReadableEvent;
+		_connectionState = READ_RESPONSE;
+	}
+	if (_chunkLength == -1)
+	{
+		XmlRpcSocket::nbRead(getfd(), _response_buf, _chunkReceivedLength, &_eof);
+		if (_eof)
+		{
+			XmlRpcUtil::log(4, "End of chunked response");
+			return 0;
+		}
+		// see if there is ;
+		char *baseEnd;
+		_chunkLength = strtol (_response_buf, &baseEnd, 16);
+		if (*baseEnd != ';')
+		{
+			XmlRpcUtil::error("Invalid buffer length, closing connection");
+			close();
+			return 0;
+		}
+		if (_chunkLength == 0)
+		{
+			XmlRpcUtil::log(4, "Zero chunk length, closing connection");
+			close ();
+			return 0;
+		}
+		_chunkLength += 2;
+		if (baseEnd - _chunkStart + 2 > _chunkReceivedLength)
+		{
+			return XmlRpcDispatch::ReadableEvent;
+		}
+		if (baseEnd[1] != '\r' || baseEnd[2] != '\n')
+		{
+			XmlRpcUtil::error("Chunk length is not followed by \\r\\n, closing the connection");
+			close ();
+			return 0;
+		}
+		memmove (_response_buf, baseEnd + 3, _chunkReceivedLength - 2 - (baseEnd - _response_buf));
+		_chunkReceivedLength -= (baseEnd - _response_buf) + 3;
+	}
+	if (_chunkReceivedLength < _chunkLength)
+	{
+		XmlRpcSocket::nbRead(getfd(), _response_buf, _chunkReceivedLength, &_eof);
+		if (_eof)
+		{
+			XmlRpcUtil::log(4, "End of chunked response");
+			return 0;
+		}
+	}
+	// received full chunk buffer, let's see when the connection will be able to process it..
+	return XmlRpcDispatch::ReadableEvent;
+}
+
 void XmlRpcClient::resetChunk()
 {
-	_chunkReceivedLength = 0;
-	_chunkLength = 0;
+	if (_chunkReceivedLength > _chunkLength)
+	{
+		memmove (_response_buf, _response_buf + _chunkLength, _chunkReceivedLength - _chunkLength);
+		_chunkReceivedLength = _chunkReceivedLength - _chunkLength;
+	}
+	else
+	{
+		_chunkReceivedLength = 0;
+	}
+	_chunkLength = -1;
+	_chunkStart = _response_buf;
 }
 
 // Create the socket connection to the server if necessary
@@ -592,7 +682,7 @@ bool XmlRpcClient::readHeader()
 			return false;		 // Close the connection
 		}
 
-		return true;			 // Keep reading
+		return false;			 // Keep reading
 	}
 
 	// Decode content length
@@ -623,6 +713,20 @@ bool XmlRpcClient::readHeader()
 			_contentLength = -1;
 			_chunkLength = -1;
 			_chunkReceivedLength = 0;
+
+			_response_length = 4096;
+			if (_response_buf)
+				free (_response_buf);
+
+			_response_buf = (char*) malloc (_response_length);
+			_chunkStart = _response_buf;
+			if (ep > bp)
+			{
+				memcpy (_response_buf, bp, ep - bp);
+				_chunkReceivedLength = ep - bp;
+				_chunkEnd = _response_buf + _chunkReceivedLength;
+			}
+			return true;
 		}
 	}
 	else
@@ -748,7 +852,8 @@ bool XmlRpcClient::readResponse()
 	XmlRpcUtil::log(3, "XmlRpcClient::readResponse (read %d bytes)", _response_length);
 	XmlRpcUtil::log(5, "response:\n%s", _response_buf);
 
-	_connectionState = IDLE;
+	if (_contentLength != -1)
+		_connectionState = IDLE;
 
 	return false;				 // Stop monitoring this source (causes return from work)
 }

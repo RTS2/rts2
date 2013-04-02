@@ -116,7 +116,7 @@ XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 			return;
 		}
 
-		checkFd (&inFd, &outFd, &excFd);
+		checkFd (&inFd, &outFd, &excFd, chunkWait);
 
 		// Check whether to clear all sources
 		if (_doClear)
@@ -160,7 +160,7 @@ XmlRpcDispatch::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 
 
 void
-XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSource *chunkWait)
 {
 	SourceList::iterator it;
 	// Process events
@@ -174,7 +174,7 @@ XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 		try
 		{
 			if (FD_ISSET(fd, inFd))
-				newMask &= src->handleEvent(ReadableEvent);
+				newMask &= (src == chunkWait) ? src->handleChunkEvent(ReadableEvent) : src->handleEvent(ReadableEvent);
 		}
 		catch (const XmlRpcAsynchronous &async)
 		{
@@ -185,9 +185,9 @@ XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 		}
 
 		if (FD_ISSET(fd, outFd))
-			newMask &= src->handleEvent(WritableEvent);
+			newMask &= (src == chunkWait) ? src->handleChunkEvent(WritableEvent) : src->handleEvent(WritableEvent);
 		if (FD_ISSET(fd, excFd))
-			newMask &= src->handleEvent(Exception);
+			newMask &= (src == chunkWait) ? src->handleChunkEvent(Exception) : src->handleEvent(Exception);
 
 		if ( ! newMask)
 		{
