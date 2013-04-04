@@ -1,5 +1,6 @@
 /* 
  * Abstract class for server implementation.
+ * Copyright (C) 2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -31,13 +32,19 @@
 namespace rts2json
 {
 
+class AsyncAPI;
+
 /**
  * Interface for HTTP server. Declares methods needed by user authorization.
  */
 class HTTPServer
 {
 	public:
-		HTTPServer () {}
+		HTTPServer ()
+		{
+			sumAsync = NULL;
+			numberAsyncAPIs = NULL;
+		}
 		/**
 		 * Returns true, if given path is marked as being public - accessible to all.
 		 */
@@ -61,6 +68,8 @@ class HTTPServer
 
 		virtual bool getDebug () = 0;
 
+		virtual void sendValueAll (rts2core::Value * value) = 0;
+
 		virtual rts2db::CamList *getCameras () = 0;
 
 		virtual rts2core::connections_t *getConnections () = 0;
@@ -81,6 +90,16 @@ class HTTPServer
 		 * Verify user credentials.
 		 */
 		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission) = 0;
+
+		/**
+		 * Register asynchronous API call.
+		 */
+		void registerAPI (AsyncAPI *a);
+
+	protected:
+		rts2core::ValueInteger *numberAsyncAPIs;
+		rts2core::ValueInteger *sumAsync;
+		std::list <rts2json::AsyncAPI *> asyncAPIs;
 };
 
 }

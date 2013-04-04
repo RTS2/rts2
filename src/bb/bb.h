@@ -64,6 +64,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		virtual bool getDebug () { return rts2db::DeviceDb::getDebug (); }
 
+		virtual void sendValueAll (rts2core::Value * value) { rts2db::DeviceDb::sendValueAll (value); }
+
 		virtual rts2db::CamList *getCameras () { return &(rts2db::DeviceDb::cameras); }
 
 		virtual rts2core::connections_t *getConnections () { return rts2db::DeviceDb::getConnections (); }

@@ -230,6 +230,9 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		else if (vals[0] == "obspush")
 		{
 			AsyncObsAPI *aa = new AsyncObsAPI (this, NULL, connection, false);
+			getServer ()->registerAPI (aa);
+
+			throw XmlRpc::XmlRpcAsynchronous ();
 		}
 		else
 		{

@@ -429,6 +429,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		virtual bool getDebug ();
 
+		virtual void sendValueAll (rts2core::Value * value);
+
 		virtual rts2db::CamList *getCameras ();
 
 		virtual rts2core::connections_t *getConnections ();
@@ -471,12 +473,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		 * @throw rts2core::Error
 		 */
 		void doOpValue (const char *v_name, char oper, const char *operand);
-
-		/**
-		 * Register asynchronous API call.
-		 */
-		void registerAPI (rts2json::AsyncAPI *a) { asyncAPIs.push_back (a); sumAsync->inc (); sendValueAll (sumAsync); numberAsyncAPIs->setValueInteger (asyncAPIs.size ()); sendValueAll (numberAsyncAPIs); }
-
 
 		void clientNewDataConn (Connection *conn, int data_conn);
 		void clientDataReceived (Connection *conn, DataAbstractRead *data);
@@ -522,13 +518,10 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		std::list <XmlDevCameraClient *> camClis;
 
 		std::vector <rts2json::Directory *> directories;
-		std::list <rts2json::AsyncAPI *> asyncAPIs;
 
 		Events events;
 
 		rts2core::ValueInteger *numRequests;
-		rts2core::ValueInteger *numberAsyncAPIs;
-		rts2core::ValueInteger *sumAsync;
 		rts2core::ValueBool *send_emails;
 		rts2core::ValueInteger *bbCadency;
 		rts2core::ValueInteger *bbQueueSize;

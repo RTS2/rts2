@@ -1012,6 +1012,15 @@ bool XmlRpcd::getDebug ()
 #endif
 }
 
+void XmlRpcd::sendValueAll (rts2core::Value * value)
+{
+#ifdef RTS2_HAVE_PGSQL
+	return rts2db::DeviceDb::sendValueAll (value);
+#else
+	return rts2core::Device::sendValueAll (value);
+#endif
+}
+
 rts2db::CamList *XmlRpcd::getCameras ()
 {
 #ifdef RTS2_HAVE_PGSQL

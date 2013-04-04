@@ -21,15 +21,13 @@
 #ifndef __RTS2_ASYNCAPI__
 #define __RTS2_ASYNCAPI__
 
-#include "rts2json/httpreq.h"
+#include "httpreq.h"
 #include "rts2fits/image.h"
 #include "xmlrpc++/XmlRpc.h"
 #include "device.h"
 
 namespace rts2json
 {
-
-class API;
 
 /**
  * Contain code exacuted when async command returns.
