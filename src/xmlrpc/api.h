@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "asyncapi.h"
 #include "block.h"
+#include "rts2json/asyncapi.h"
 #include "rts2json/httpreq.h"
 
 #ifdef RTS2_HAVE_PGSQL

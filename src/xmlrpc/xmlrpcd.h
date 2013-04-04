@@ -475,7 +475,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		/**
 		 * Register asynchronous API call.
 		 */
-		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); sumAsync->inc (); sendValueAll (sumAsync); numberAsyncAPIs->setValueInteger (asyncAPIs.size ()); sendValueAll (numberAsyncAPIs); }
+		void registerAPI (rts2json::AsyncAPI *a) { asyncAPIs.push_back (a); sumAsync->inc (); sendValueAll (sumAsync); numberAsyncAPIs->setValueInteger (asyncAPIs.size ()); sendValueAll (numberAsyncAPIs); }
 
 
 		void clientNewDataConn (Connection *conn, int data_conn);
@@ -522,7 +522,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		std::list <XmlDevCameraClient *> camClis;
 
 		std::vector <rts2json::Directory *> directories;
-		std::list <AsyncAPI *> asyncAPIs;
+		std::list <rts2json::AsyncAPI *> asyncAPIs;
 
 		Events events;
 

@@ -18,13 +18,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "asyncapi.h"
-#include "api.h"
+#include "rts2json/asyncapi.h"
 #include "rts2json/jsonvalue.h"
+#include "rts2json/httpreq.h"
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
-AsyncAPI::AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext):Object ()
+AsyncAPI::AsyncAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext):Object ()
 {
 	// that's legal - requests are statically allocated and will cease exists with the end of application
 	req = _req;
@@ -65,7 +65,7 @@ void AsyncAPI::postEvent (rts2core::Event *event)
 	Object::postEvent (event);
 }
 
-AsyncValueAPI::AsyncValueAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params): AsyncAPI (_req, NULL, _source, false) 
+AsyncValueAPI::AsyncValueAPI (JSONRequest *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params): AsyncAPI (_req, NULL, _source, false) 
 {
 	// chunked response
 	req->sendAsyncDataHeader (0, _source, "application/json");
@@ -197,11 +197,11 @@ void AsyncValueAPI::sendValue (const std::string &device, rts2core::Value *_valu
 		asyncFinished ();
 }
 
-AsyncSimulateAPI::AsyncSimulateAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params): AsyncValueAPI (_req, _source, params)
+AsyncSimulateAPI::AsyncSimulateAPI (JSONRequest *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params): AsyncValueAPI (_req, _source, params)
 {
 }
 
-AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
+AsyncDataAPI::AsyncDataAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
 {
 	data = _data;
 	channel = _chan;
@@ -353,7 +353,7 @@ void AsyncDataAPI::sendData ()
 	doSendData (data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
 }
 
-AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax, _scaling, _newType)
+AsyncCurrentAPI::AsyncCurrentAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax, _scaling, _newType)
 {
 	// try to send data
 	sendData ();
@@ -381,7 +381,7 @@ void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
 	}
 }
 
-AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax, _scaling, _newType)
+AsyncExposeAPI::AsyncExposeAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax, _scaling, _newType)
 {
 	callState = waitForExpReturn;
 }

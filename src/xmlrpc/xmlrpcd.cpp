@@ -213,25 +213,25 @@ void XmlRpcd::doOpValue (const char *v_name, char oper, const char *operand)
 
 void XmlRpcd::clientNewDataConn (rts2core::Connection *conn, int data_conn)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->newDataConn (conn, data_conn);
 }
 
 void XmlRpcd::clientDataReceived (rts2core::Connection *conn, rts2core::DataAbstractRead *data)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->dataReceived (conn, data);
 }
 
 void XmlRpcd::clientFullDataReceived (rts2core::Connection *conn, rts2core::DataChannels *data)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->fullDataReceived (conn, data);
 }
 
 void XmlRpcd::clientExposureFailed (Connection *conn, int status)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->exposureFailed (conn, status);
 }
 
@@ -460,7 +460,7 @@ int XmlRpcd::info ()
 int XmlRpcd::idle ()
 {
 	// delete freed async, check for shared memory data
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
 		if ((*iter)->idle ())
 		{
@@ -643,7 +643,7 @@ void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 		else
 			iter++;
 	}
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
 		if ((*iter)->isForConnection (conn))
 		{
@@ -665,7 +665,7 @@ void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 
 void XmlRpcd::asyncFinished (XmlRpcServerConnection *source)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 	{
 		if ((*iter)->isForSource (source))
 			(*iter)->nullSource ();
@@ -675,7 +675,7 @@ void XmlRpcd::asyncFinished (XmlRpcServerConnection *source)
 
 void XmlRpcd::removeConnection (XmlRpcServerConnection *source)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 	{
 		if ((*iter)->isForSource (source))
 			(*iter)->nullSource ();
@@ -887,7 +887,7 @@ void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerSt
 			sc->run (this, conn, now);
 		}
 	}
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->stateChanged (conn);
 }
 
@@ -916,7 +916,7 @@ void XmlRpcd::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * 
 			}
 		}
 	}
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->valueChanged (conn, new_value);
 }
 

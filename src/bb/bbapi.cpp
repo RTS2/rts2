@@ -227,6 +227,10 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 				os << "\"localtime\":" << std::fixed << getNow () << ",\"push\":" << ((obs.getURL ()[0] == '\0') ? "true" : "false");
 			}
 		}
+		else if (vals[0] == "obspush")
+		{
+			AsyncObsAPI *aa = new AsyncObsAPI (this, NULL, connection, false);
+		}
 		else
 		{
 			dbJSON (vals, source, path, params, os);

@@ -20,6 +20,7 @@
 #ifndef __RTS2_BBAPI__
 #define __RTS2_BBAPI__
 
+#include "rts2json/asyncapi.h"
 #include "rts2json/jsondb.h"
 #include "bbtasks.h"
 
@@ -44,6 +45,18 @@ class BBAPI:public rts2json::JSONDBRequest
 		std::map <int, std::pair <double, JsonParser *> > observatoriesJsons;
 
 		BBTasks *queue;
+};
+
+class AsyncObsAPI:public rts2json::AsyncAPI
+{
+	public:
+		AsyncObsAPI (rts2json::JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext):rts2json::AsyncAPI (_req, _conn, _source, _ext)
+		{
+			
+		}
+
+		virtual ~AsyncObsAPI () {};
+
 };
 
 }

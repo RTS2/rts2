@@ -18,8 +18,8 @@
  */
 
 #include "rts2db/target.h"
+#include "rts2json/asyncapi.h"
 #include "rts2json/httpreq.h"
-#include "asyncapi.h"
 
 /** @file bbapi.h
  *

@@ -66,7 +66,24 @@ void *pushListener (void *arg)
 
 	while (true)
 	{
-		client->executePostRequestAsync ("/api/obspush?observatory_id=10");
+		std::ostringstream os;
+		os << "/api/obspush?observatory_id=" << bbserver->getObservatoryId ();
+		client->executeGetRequestAsync (os.str ().c_str ());
+		
+		while (true)
+		{
+			client->readChunk ();
+
+			char *chunk;
+			size_t chunkLen;
+			client->lastChunk (chunk, chunkLen);
+			if (chunkLen == 0)
+				break;
+
+			std::cout << "chunk " << chunk << std::endl;
+
+			client->resetChunk ();
+		}
 	}
 
 	return NULL;

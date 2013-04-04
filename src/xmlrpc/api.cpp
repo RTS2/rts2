@@ -163,7 +163,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				// first try if there is data connection opened, so image data should be streamed in
 				if (DataAbstractRead * lastData = conn->lastDataChannel (chan))
 				{
-					AsyncCurrentAPI *aa = new AsyncCurrentAPI (this, conn, connection, lastData, chan, smin, smax, scaling, newType);
+					rts2json::AsyncCurrentAPI *aa = new rts2json::AsyncCurrentAPI (this, conn, connection, lastData, chan, smin, smax, scaling, newType);
 					((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 					throw XmlRpc::XmlRpcAsynchronous ();
@@ -394,7 +394,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 					}
 					else
 					{
-						AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
+						rts2json::AsyncAPI *aa = new rts2json::AsyncAPI (this, conn, connection, ext);
 						((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 						conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
@@ -446,7 +446,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				int vcc = 0;
 				int own_calls = 0;
 
-				AsyncAPIMSet *aa = NULL;
+				rts2json::AsyncAPIMSet *aa = NULL;
 
 				for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 				{
@@ -477,7 +477,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 							{
 								if (aa == NULL)
 								{
-									aa = new AsyncAPIMSet (this, conn, connection, ext);
+									aa = new rts2json::AsyncAPIMSet (this, conn, connection, ext);
 									((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 								}
 								aa->incCalls ();
@@ -554,7 +554,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			}
 			else if (vals[0] == "push")
 			{
-				AsyncValueAPI *aa = new AsyncValueAPI (this, connection, params);
+				rts2json::AsyncValueAPI *aa = new rts2json::AsyncValueAPI (this, connection, params);
 				aa->sendAll ((rts2core::Device *) getMasterApp ());
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
@@ -562,7 +562,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			}
 			else if (vals[0] == "simulate")
 			{
-				AsyncSimulateAPI *aa = new AsyncSimulateAPI (this, connection, params);
+				rts2json::AsyncSimulateAPI *aa = new rts2json::AsyncSimulateAPI (this, connection, params);
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 				throw XmlRpc::XmlRpcAsynchronous ();
@@ -591,7 +591,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 					}
 					else
 					{
-						AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
+						rts2json::AsyncAPI *aa = new rts2json::AsyncAPI (this, conn, connection, ext);
 						((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 		
 						conn->queCommand (new rts2core::Command (master, cmd), 0, aa);
@@ -625,15 +625,15 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 
 				camdev->setExpandPath (params->getString ("fe", camdev->getDefaultFilename ()));
 
-				AsyncAPI *aa;
+				rts2json::AsyncAPI *aa;
 				if (vals[0] == "expose")
 				{
-					aa = new AsyncAPI (this, conn, connection, ext);
+					aa = new rts2json::AsyncAPI (this, conn, connection, ext);
 				}
 				else
 				{
 					int chan = params->getInteger ("chan", 0);
-					aa = new AsyncExposeAPI (this, conn, connection, chan, smin, smax, scaling, newType);
+					aa = new rts2json::AsyncExposeAPI (this, conn, connection, chan, smin, smax, scaling, newType);
 				}
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
