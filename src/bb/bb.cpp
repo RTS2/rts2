@@ -40,6 +40,10 @@ BB::BB (int argc, char ** argv):
 	createValue (debugConn, "debug_conn", "debug connections calls", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	debugConn->setValueBool (false);
 
+	createValue (numberAsyncAPIs, "async_APIs", "number of active async APIs", false);
+	createValue (sumAsync, "async_sum", "total number of async APIs", false);
+	sumAsync->setValueInteger (0);
+
 	addOption ('p', NULL, 1, "RPC listening port");
 	addOption (OPT_WWW_DIR, "www-directory", 1, "default directory for BB requests");
 }
@@ -100,6 +104,12 @@ int BB::info ()
 {
 	queueSize->setValueInteger (task_queue.size ());
 	return rts2db::DeviceDb::info ();
+}
+
+int BB::idle ()
+{
+	HTTPServer::asyncIdle ();
+	return rts2db::DeviceDb::idle ();
 }
 
 void BB::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)

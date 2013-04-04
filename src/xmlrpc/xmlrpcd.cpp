@@ -459,22 +459,7 @@ int XmlRpcd::info ()
 
 int XmlRpcd::idle ()
 {
-	// delete freed async, check for shared memory data
-	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
-	{
-		if ((*iter)->idle ())
-		{
-			delete *iter;
-			iter = asyncAPIs.erase (iter);
-			numberAsyncAPIs->setValueInteger (asyncAPIs.size ());
-			sendValueAll (numberAsyncAPIs);
-		}
-		else
-		{
-			iter++;
-		}
-	}
-	// 
+	rts2json::HTTPServer::asyncIdle ();
 #ifdef RTS2_HAVE_PGSQL
 	return DeviceDb::idle ();
 #else

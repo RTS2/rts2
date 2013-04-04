@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "rts2json/asyncapi.h"
 #include "rts2json/httpserver.h"
 
 using namespace rts2json;
@@ -34,5 +35,24 @@ void HTTPServer::registerAPI (AsyncAPI *a)
 	{
 		numberAsyncAPIs->setValueInteger (asyncAPIs.size ());
 		sendValueAll (numberAsyncAPIs);
+	}
+}
+
+void HTTPServer::asyncIdle ()
+{
+	// delete freed async, check for shared memory data
+	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	{
+		if ((*iter)->idle ())
+		{
+			delete *iter;
+			iter = asyncAPIs.erase (iter);
+			numberAsyncAPIs->setValueInteger (asyncAPIs.size ());
+			sendValueAll (numberAsyncAPIs);
+		}
+		else
+		{
+			iter++;
+		}
 	}
 }

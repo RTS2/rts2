@@ -96,6 +96,8 @@ class HTTPServer
 		 */
 		void registerAPI (AsyncAPI *a);
 
+		void asyncIdle ();
+
 	protected:
 		rts2core::ValueInteger *numberAsyncAPIs;
 		rts2core::ValueInteger *sumAsync;
