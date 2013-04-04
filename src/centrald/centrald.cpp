@@ -490,8 +490,7 @@ int Centrald::reloadConfig ()
 	requiredDevices->setValueArray (config->observatoryRequiredDevices ());
 
 	double t_h;
-	config->getDouble ("observatory", "night_horizon", t_h, -10);
-	nightHorizon->setValueDouble (t_h);
+	nightHorizon->setValueDouble (config->getDouble ("observatory", "night_horizon", t_h, -10));
 
 	config->getDouble ("observatory", "day_horizon", t_h, 0);
 	if (t_h < nightHorizon->getValueDouble ())
@@ -770,30 +769,12 @@ int Centrald::idle ()
 
 		maskCentralState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 
-		time_t nt = curr_time;
+		time_t nstart, nstop;
 
-		bool nsta = true;
-		bool nsto = true;
+		getNight (curr_time, observer, nightHorizon->getValueDouble (), nstart, nstop);
 
-		while (nt < (curr_time + 86400) && (nsta || nsto))
-		{
-			time_t t_start_t = nt + 1;
-			rts2_status_t net;
-			next_event (observer, &t_start_t, &call_state, &net,
-				&nt, nightHorizon->getValueDouble (),
-				dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
-				morningTime->getValueInteger ());
-			if (call_state == SERVERD_DUSK)
-			{
-				nightStart->setValueTime (nt);
-				nsta = false;
-			}
-			if (call_state == SERVERD_NIGHT)
-			{
-				nightStop->setValueTime (nt);
-				nsto = false;
-			}
-		}
+		nightStart->setValueTime (nstart);
+		nightStop->setValueTime (nstop);
 
 		// send update about next state transits..
 		infoAll ();

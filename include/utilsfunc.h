@@ -347,4 +347,9 @@ int db_nan_indicator (double value);
  * Return NAN if indicator signaled NULL value.
  */
 double db_nan_double (double value, int ind);
+
+/**
+ * Return next night start/stop times.
+ */
+void getNight (time_t curr_time, struct ln_lnlat_posn *observer, double nightHorizon, time_t &nstart, time_t &nstop);
 #endif							 /* !__RTS_UTILSFUNC__ */

@@ -18,6 +18,8 @@
  */
 
 #include "utilsfunc.h"
+#include "status.h"
+#include "riseset.h"
 
 #include <errno.h>
 #include <ftw.h>
@@ -425,4 +427,38 @@ int db_nan_indicator (double value)
 double db_nan_double (double value, int ind)
 {
 	return ind ? NAN : value;
+}
+
+void getNight (time_t curr_time, struct ln_lnlat_posn *observer, double nightHorizon, time_t &nstart, time_t &nstop)
+{
+	time_t nt = curr_time;
+
+	nstart = nt;
+	nstop = nt;
+
+	rts2_status_t call_state;
+	rts2_status_t net;
+
+	time_t t_start_t = nt + 1;
+
+	next_event (observer, &t_start_t, &call_state, &net, &nt, nightHorizon, nightHorizon + 5, 1000, 1000);
+
+	bool nsta = true;
+	bool nsto = true;
+
+	while (nt < (curr_time + 86400) && (nsta || nsto))
+	{
+		t_start_t = nt + 1;
+		if (call_state == SERVERD_DUSK)
+		{
+			nstart = nt;
+			nsta = false;
+		}
+		if (call_state == SERVERD_NIGHT)
+		{
+			nstop = nt;
+			nsto = false;
+		}
+		next_event (observer, &t_start_t, &call_state, &net, &nt, nightHorizon, nightHorizon + 5, 1000, 1000);
+	}
 }

@@ -149,6 +149,8 @@ class SelectorDev:public rts2db::DeviceDb
 
 		double last_p;
 
+		double nightHorizon;
+
 		rts2plan::Queues queues;
 
 		rts2core::ValueTime *simulTime;
@@ -316,6 +318,8 @@ int SelectorDev::reloadConfig ()
 	config = Configuration::instance ();
 	observer = config->getObserver ();
 
+	nightHorizon = config->getDoubleDefault ("observatory", "night_horizon", -10);
+
 	delete sel;
 
 	sel = new rts2plan::Selector (&cameras);
@@ -378,6 +382,17 @@ int SelectorDev::init ()
 	lastQueue->addSelVal ("simul");
 	current_queue->addSelVal ("simul");
 	selQueNames->addValue ("simul");
+
+	time_t nstart, nstop;
+	time_t curr_time;
+
+	time (&curr_time);
+
+	getNight (curr_time, observer, nightHorizon, nstart, nstop);
+
+	// fill from, to
+	free_start->addValue (nstart);
+	free_end->addValue (nstop);
 
 	return 0;
 }
