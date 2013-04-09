@@ -26,9 +26,11 @@
 #include "hoststring.h"
 #include "daemon.h"
 
+#ifdef RTS2_JSONSOUP
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
 #include <libsoup/soup.h>
+#endif // RTS2_JSONSOUP
 
 using namespace rts2xmlrpc;
 
@@ -174,6 +176,7 @@ void BBServer::sendUpdate ()
 		return;
 	}
 
+#ifdef RTS2_JSONSOUP
 	JsonParser *result = json_parser_new ();
 
 	GError *error = NULL;
@@ -205,6 +208,7 @@ void BBServer::sendUpdate ()
 
 	g_error_free (error);
 	g_object_unref (result);
+#endif // RTS2_JSONSOUP
 	delete[] reply;
 }
 
