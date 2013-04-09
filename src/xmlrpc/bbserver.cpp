@@ -99,7 +99,9 @@ BBServer::BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char
 	send_thread = 0;
 	push_thread = 0;
 
+#ifdef RTS2_JSONSOUP
 	g_type_init ();
+#endif // RTS2_JSONSOUP
 }
 
 BBServer::~BBServer ()
