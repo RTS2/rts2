@@ -29,7 +29,7 @@ namespace rts2core
  * Base RTS2 class.
  *
  * Its only important method is Object::postEvent, which works as
- * event hook for descenadands.
+ * event hook for descendands.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
