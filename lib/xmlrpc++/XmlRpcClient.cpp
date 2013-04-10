@@ -301,8 +301,8 @@ unsigned XmlRpcClient::handleChunkEvent(unsigned eventType)
 		if ( ! writeRequest()) return 0;
 	if (_connectionState == READ_HEADER)
 	{
-		if ( ! readHeader()) return XmlRpcDispatch::ReadableEvent;
-		_connectionState = READ_RESPONSE;
+		if ( ! readHeader()) return 0;
+		return XmlRpcDispatch::ReadableEvent;
 	}
 	if (_chunkLength == -1)
 	{
@@ -683,7 +683,7 @@ bool XmlRpcClient::readHeader()
 			return false;		 // Close the connection
 		}
 
-		return false;			 // Keep reading
+		return true;			 // Keep reading
 	}
 
 	// Decode content length
@@ -727,6 +727,7 @@ bool XmlRpcClient::readHeader()
 				_chunkReceivedLength = ep - bp;
 				_chunkEnd = _response_buf + _chunkReceivedLength;
 			}
+			_connectionState = READ_RESPONSE;
 			return true;
 		}
 	}
