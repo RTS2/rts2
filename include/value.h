@@ -446,6 +446,8 @@ class Value
 
 		void setWritable () { rts2Type |= RTS2_VALUE_WRITABLE; }
 
+		void setReadOnly () { rts2Type &= ~RTS2_VALUE_WRITABLE; }
+
 		void setRandevous () { rts2Type |= RTS2_VALUE_RANDEVOUS_WAIT; }
 
 		int32_t getFlags () { return rts2Type; }

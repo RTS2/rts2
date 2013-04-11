@@ -83,6 +83,8 @@ class Dummy:public SensorWeather
 
 			createValue (generateCriticalMessages, "generate_critical", "generate critical messages with timer", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 			generateCriticalMessages->setValueBool (false);
+
+			createValue (constValue, "const_value", "test constant read-only autosave value", false, RTS2_VALUE_AUTOSAVE);
 		}
 
 		/**
@@ -177,6 +179,8 @@ class Dummy:public SensorWeather
 				timeserieTest6->calculate ();
 				timeArray->addValue (now);
 
+				constValue->setValueInteger (aval);
+
 				infoAll ();
 				return 0;
 			}
@@ -213,6 +217,8 @@ class Dummy:public SensorWeather
 		rts2core::ValueLong *timerCount;
 		
 		rts2core::ValueBool *generateCriticalMessages;
+
+		rts2core::ValueInteger *constValue;
 
 		void sendCriticalMessage ()
 		{
