@@ -391,6 +391,8 @@ int SelectorDev::init ()
 	getNight (curr_time, observer, nightHorizon, nstart, nstop);
 
 	// fill from, to
+	if (nstart > nstop)
+		nstart = curr_time;
 	free_start->addValue (nstart);
 	free_end->addValue (nstop);
 
