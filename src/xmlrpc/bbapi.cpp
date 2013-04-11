@@ -152,13 +152,13 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 						fend_JD = ln_get_julian_from_timet (&f);
 					}
 				}
-				if (tar->getViolatedConstraints (t).size () == 0)
+				if (tar->isGood (t))
 				{
 					double t2;
 					// check full duration interval
 					for (t2 = t; t2 < t + dur; t2 += 60 / 86400.0)
 					{
-						if (tar->getViolatedConstraints (t2).size () > 0)
+						if (!(tar->isGood (t2)))
 						{
 							t = t2;
 							continue;

@@ -528,6 +528,11 @@ class Target:public Rts2Target
 		bool isAboveHorizon (struct ln_hrz_posn *hrz);
 
 		/**
+		 * Returns true if the target is above horizon and do not violate any constrains.
+		 */
+		bool isGood (double JD);
+
+		/**
 		 *   Return -1 if target is not suitable for observing,
 		 *   otherwise return 0.
 		 */

@@ -1144,32 +1144,31 @@ double Target::getLunarRaDistance (double JD)
 int Target::selectedAsGood ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		bool d_tar_enabled;
-		int d_tar_id = getTargetID ();
-		float d_tar_priority;
-		int d_tar_priority_ind;
-		float d_tar_bonus;
-		int d_tar_bonus_ind;
-		long d_tar_next_observable;
-		int d_tar_next_observable_ind;
+	bool d_tar_enabled;
+	int d_tar_id = getTargetID ();
+	float d_tar_priority;
+	int d_tar_priority_ind;
+	float d_tar_bonus;
+	int d_tar_bonus_ind;
+	long d_tar_next_observable;
+	int d_tar_next_observable_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	// check if we are still enabled..
-	EXEC SQL
-		SELECT
-			tar_enabled,
-			tar_priority,
-			tar_bonus,
-			EXTRACT (EPOCH FROM tar_next_observable)
-		INTO
-			:d_tar_enabled,
-			:d_tar_priority :d_tar_priority_ind,
-			:d_tar_bonus :d_tar_bonus_ind,
-			:d_tar_next_observable :d_tar_next_observable_ind
-		FROM
-			targets
-		WHERE
-			tar_id = :d_tar_id;
+	EXEC SQL SELECT
+		tar_enabled,
+		tar_priority,
+		tar_bonus,
+		EXTRACT (EPOCH FROM tar_next_observable)
+	INTO
+		:d_tar_enabled,
+		:d_tar_priority :d_tar_priority_ind,
+		:d_tar_bonus :d_tar_bonus_ind,
+		:d_tar_next_observable :d_tar_next_observable_ind
+	FROM
+		targets
+	WHERE
+		tar_id = :d_tar_id;
 	if (sqlca.sqlcode)
 	{
 		logMsgDb ("Target::selectedAsGood", MESSAGE_ERROR);
@@ -1214,6 +1213,12 @@ bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 	if (hrz->alt < getMinObsAlt ())
 		return false;
 	return rts2core::Configuration::instance ()->getObjectChecker ()->is_good (hrz);
+}
+
+bool Target::isGood (double JD)
+{
+	rts2db::ConstraintsList violated;
+	return isAboveHorizon (JD) && (getViolatedConstraints (JD, violated) == 0);
 }
 
 int Target::considerForObserving (double JD)
