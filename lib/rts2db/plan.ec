@@ -363,7 +363,7 @@ void Plan::print (std::ostream & _os)
 	else
 	{
 		tar_name = getTarget()->getTargetName();
-		good = getTarget()->isGood (JD);
+		good = getTarget()->isAboveHorizon (JD);
 	}
 	getTarget ()->getAltAz (&hrz, JD);
 	LibnovaHrz lHrz (&hrz);

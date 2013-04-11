@@ -504,7 +504,27 @@ class Target:public Rts2Target
 		// called when we can move to next observation - good to generate next target in mosaic observation etc..
 		virtual int beforeMove ();
 		int postprocess ();
-		virtual bool isGood (double JD);
+
+		/**
+		 * Returns true if the target is above horizon.
+		 *
+		 * @param JD Julian day with time to test.
+		 *
+		 * @return True if the target is above minimal observation altitude.
+		 *
+		 * @see getMinObsAlt
+		 */
+		bool isAboveHorizon (double JD);
+
+		/**
+		 * Return true if the target is above horizon.
+		 *
+		 * @param hrz Horizonal position of the target.
+		 *
+		 * @return True if the target is above minimal observation altitude.
+		 *
+		 * @see getMinObsAlt
+		 */
 		bool isAboveHorizon (struct ln_hrz_posn *hrz);
 
 		/**
@@ -994,6 +1014,10 @@ class ModelTarget:public ConstTarget
 		virtual moveType afterSlewProcessed ();
 		virtual int endObservation (int in_next_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
+
+		/**
+	         * Returns minimal target altitude.
+		 */
 		virtual double getMinObsAlt ()
 		{
 			return -1;

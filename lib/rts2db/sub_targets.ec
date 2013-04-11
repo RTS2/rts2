@@ -1152,7 +1152,7 @@ int TargetSwiftFOV::considerForObserving (double JD)
 		return -1;
 	}
 
-	ret = isGood (JD);
+	ret = isAboveHorizon (JD);
 
 	if (!ret)
 	{
@@ -1404,7 +1404,7 @@ int TargetIntegralFOV::considerForObserving (double JD)
 		return -1;
 	}
 
-	ret = isGood (JD);
+	ret = isAboveHorizon (JD);
 
 	if (!ret)
 	{

@@ -764,7 +764,7 @@ int Executor::setGrb (int grbId)
 			return -2;
 		}
 
-		if (grbTarget->isGood (JD) == false)
+		if (grbTarget->isAboveHorizon (JD) == false)
 		{
 			logStream (MESSAGE_INFO) << "GRB " << grbTarget->getTargetName () << " (" << grbTarget->getTargetID () << ") is not visible, ignoring GRB request" << sendLog;
 			delete grbTarget;
