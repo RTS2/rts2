@@ -325,9 +325,9 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			}
 			os << "]";
 		}
+#endif // RTS2_HAVE_PGSQL
 		else
 		{
-#endif // RTS2_HAVE_PGSQL
 		// returning JSON data
 			os << "{";
 			if (vals[0] == "executor")
