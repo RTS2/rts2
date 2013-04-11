@@ -208,7 +208,6 @@ void BBServer::sendUpdate ()
 		pthread_create (&push_thread, NULL, pushListener, (void *) this);
 	}
 
-	g_error_free (error);
 	g_object_unref (result);
 #endif // RTS2_JSONSOUP
 	delete[] reply;
