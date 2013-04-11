@@ -26,6 +26,9 @@
 #define OPT_DATA_SIZE    OPT_LOCAL + 3
 #define OPT_CHANNELS     OPT_LOCAL + 4
 #define OPT_REMOVE_TEMP  OPT_LOCAL + 5
+#define OPT_INFOSLEEP    OPT_LOCAL + 6
+#define OPT_READSLEEP    OPT_LOCAL + 7
+#define OPT_FRAMETRANS   OPT_LOCAL + 8
 
 namespace rts2camd
 {
@@ -103,9 +106,9 @@ class Dummy:public Camera
 			dataSize = -1;
 			written = NULL;
 
-			addOption ('f', NULL, 0, "when set, dummy CCD will act as frame transfer device");
-			addOption ('i', NULL, 1, "device will sleep <param> seconds before each info and baseInfo return");
-			addOption ('r', NULL, 1, "device will sleep <parame> seconds before each readout");
+			addOption (OPT_FRAMETRANS, "frame-transfer", 0, "when set, dummy CCD will act as frame transfer device");
+			addOption (OPT_INFOSLEEP, "info-sleep", 1, "device will sleep <param> seconds before each info and baseInfo return");
+			addOption (OPT_READSLEEP, "read-sleep", 1, "device will sleep <parame> seconds before each readout");
 			addOption (OPT_WIDTH, "width", 1, "width of simulated CCD");
 			addOption (OPT_HEIGHT, "height", 1, "height of simulated CCD");
 			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
@@ -126,10 +129,10 @@ class Dummy:public Camera
 				case 'f':
 					supportFrameT = true;
 					break;
-				case 'I':
+				case OPT_INFOSLEEP:
 					infoSleep = atoi (optarg);
 					break;
-				case 'r':
+				case OPT_READSLEEP:
 					readoutSleep->setValueDouble (atoi (optarg));
 					break;
 				case OPT_WIDTH:
