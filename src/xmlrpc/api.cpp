@@ -729,7 +729,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 		}
 	}
 
-	returnJSON (os.str ().c_str (), response_type, response, response_length);
+	returnJSON (os, response_type, response, response_length);
 }
 
 void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended)

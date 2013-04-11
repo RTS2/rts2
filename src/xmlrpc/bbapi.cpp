@@ -199,7 +199,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 		}
 
 	}
-	returnJSON (os.str ().c_str (), response_type, response, response_length);
+	returnJSON (os, response_type, response, response_length);
 }
 
 void BBAPI::confirmSchedule (rts2db::Target *tar, double f, int observatory_id, int schedule_id)
