@@ -1141,7 +1141,6 @@ int TargetSwiftFOV::considerForObserving (double JD)
 {
 	// find pointing
 	int ret;
-	struct ln_equ_posn curr_position;
 
 	load ();
 
@@ -1153,9 +1152,7 @@ int TargetSwiftFOV::considerForObserving (double JD)
 		return -1;
 	}
 
-	getPosition (&curr_position, JD);
-
-	ret = isGood (JD, &curr_position);
+	ret = isGood (JD);
 
 	if (!ret)
 	{
@@ -1396,7 +1393,6 @@ int TargetIntegralFOV::considerForObserving (double JD)
 {
 	// find pointing
 	int ret;
-	struct ln_equ_posn curr_position;
 
 	load ();
 
@@ -1408,9 +1404,7 @@ int TargetIntegralFOV::considerForObserving (double JD)
 		return -1;
 	}
 
-	getPosition (&curr_position, JD);
-
-	ret = isGood (JD, &curr_position);
+	ret = isGood (JD);
 
 	if (!ret)
 	{

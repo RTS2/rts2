@@ -504,7 +504,6 @@ class Target:public Rts2Target
 		// called when we can move to next observation - good to generate next target in mosaic observation etc..
 		virtual int beforeMove ();
 		int postprocess ();
-		virtual bool isGood (double JD, struct ln_equ_posn *pos);
 		virtual bool isGood (double JD);
 		bool isAboveHorizon (struct ln_hrz_posn *hrz);
 

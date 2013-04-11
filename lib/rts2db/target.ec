@@ -1202,18 +1202,11 @@ int Target::selectedAsGood ()
 /**
  * return 0 if we cannot observe that target, 1 if it's above horizon.
  */
-bool Target::isGood (double JD, struct ln_equ_posn * pos)
+bool Target::isGood (double JD)
 {
 	struct ln_hrz_posn hrz;
 	getAltAz (&hrz, JD);
 	return isAboveHorizon (&hrz);
-}
-
-bool Target::isGood (double JD)
-{
-	struct ln_equ_posn pos;
-	getPosition (&pos, JD);
-	return isGood (JD, &pos);
 }
 
 bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
@@ -1229,11 +1222,9 @@ bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 int Target::considerForObserving (double JD)
 {
 	// horizon constrain..
-	struct ln_equ_posn curr_position;
 	int ret;
-	getPosition (&curr_position, JD);
 
-	ret = isGood (JD, &curr_position);
+	ret = isGood (JD);
 	if (!ret)
 	{
 		struct ln_rst_time rst;
@@ -1981,7 +1972,7 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD, int extended)
 		<< InfoVal<int> ("7 DAYS OBS", getNumObs (&last, &now))
 		<< InfoVal<double> ("BONUS", getBonus (JD));
 
-	_os << (isGood (JD, &pos) ? "Target is above local horizon." : "Target is below local horizon, it's not possible to observe it.") << std::endl;
+	_os << (isGood (JD) ? "Target is above local horizon." : "Target is below local horizon, it's not possible to observe it.") << std::endl;
 	printExtra (_os, JD);
 }
 
