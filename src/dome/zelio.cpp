@@ -326,30 +326,47 @@ bool Zelio::isGoodWeather ()
 	// now check for rain..
 	if (haveRainSignal && !(reg & ZS_RAIN) && weather->getValueBool () == false)
 	{
+	  	valueError (rain);
 		setWeatherTimeout (3600, "raining");
 		return false;
+	}
+	else if (rain)
+	{
+		valueGood (rain);
 	}
 	// battery too weak
 	if (haveBatteryLevel && battery->getValueFloat () < batteryMin->getValueFloat ())
 	{
+		valueError (battery);
 		setWeatherTimeout (300, "battery level too low");
 		return false;
 	}
-	// not in auto mode..
-	if (!(reg & ZS_SW_AUTO))
+	else if (battery)
 	{
+		valueGood (battery);
+	}
+	// not in auto mode..
+	automode->setValueBool (reg & ZS_SW_AUTO);
+	if (automode->getValueBool () == false)
+	{
+	  	valueError (automode);
 		if (ignoreAutomode->getValueBool () == false)
 		{
 	  		setWeatherTimeout (30, "not in auto mode");
 			return false;
 		}
-		// not in automode, and not opened - switch to bad weather
 		else if (isOpened () != -2)
 		{
 			setWeatherTimeout (30, "automode ignored, but dome is not opened");
 			return false;
 		}
 	}
+	else
+	{
+		valueGood (automode);
+	}
+	sendValueAll (automode);
+
 	return Dome::isGoodWeather ();
 }
 
