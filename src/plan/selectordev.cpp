@@ -488,6 +488,7 @@ void SelectorDev::postEvent (rts2core::Event * event)
 				{
 					interrupt->setValueBool (true);
 					sendValueAll (interrupt);
+					logStream (MESSAGE_INFO) << "set interrupt to true during observation start" << sendLog;
 				}
 			}
 			break;
@@ -537,6 +538,9 @@ int SelectorDev::selectNext ()
 					next_qid->setValueInteger (n_qid);
 					next_plan_id->setValueInteger (n_pid);
 					interrupt->setValueBool (hard);
+					sendValueAll (interrupt);
+					if (hard)
+						logStream (MESSAGE_INFO) << "set interrupt to true (next target has hard time start)" << sendLog;
 					sendValueAll (queueSelectUntil);
 					return id;
 				}
@@ -647,6 +651,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 				logStream (MESSAGE_INFO) << "interrupt is set to true, executing next target with now" << sendLog;
 				(*iexec)->queCommand (new rts2core::CommandExecNow (this, next_id->getValueInteger ()));
 				interrupt->setValueBool (false);
+				sendValueAll (interrupt);
 			}
 			else
 			{
@@ -764,6 +769,15 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return -2;
 		return updateNext () == 0 ? 0 : -2;
+	}
+	// when observation starts
+	else if (conn->isCommand ("observation"))
+	{
+	  	int tar_id;
+		int obs_id;
+		if (conn->paramNextInteger (&tar_id) || conn->paramNextInteger (&obs_id) || !conn->paramEnd ())
+			return -2;
+		return updateNext (true, tar_id, obs_id) == 0 ? 0 : -2;
 	}
 	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan") || conn->isCommand ("queue_plan_id") || conn->isCommand ("insert"))
 	{
