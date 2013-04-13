@@ -1298,6 +1298,10 @@ int Daemon::setSectionValues (IniSection *sect, int new_mode)
 			ret = setCondValue (cond_val, '=', new_value);
 			cond_val->getValue ()->setReadOnly ();
 		}
+		else
+		{
+			ret = setCondValue (cond_val, '=', new_value);
+		}
 		if (ret == -2)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName () << " mode " << new_mode << " value '" << iter->getValue () << "'." << sendLog;
