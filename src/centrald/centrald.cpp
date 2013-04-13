@@ -489,10 +489,9 @@ int Centrald::reloadConfig ()
 
 	requiredDevices->setValueArray (config->observatoryRequiredDevices ());
 
-	double t_h;
-	nightHorizon->setValueDouble (config->getDouble ("observatory", "night_horizon", t_h, -10));
+	nightHorizon->setValueDouble (config->getDoubleDefault ("observatory", "night_horizon", -10));
 
-	config->getDouble ("observatory", "day_horizon", t_h, 0);
+	double t_h = config->getDoubleDefault ("observatory", "day_horizon", 0);
 	if (t_h < nightHorizon->getValueDouble ())
 	{
 		t_h = 0;
