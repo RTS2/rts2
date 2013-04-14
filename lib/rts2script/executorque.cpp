@@ -560,6 +560,9 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 
 	master->createValue (queueWindow, (sn + "_window").c_str (), "queue selection window", false, read_only_fl | RTS2_DT_TIMEINTERVAL);
 
+	master->createValue (sumWest, (sn + "_sum_west").c_str (), "duration of queue targets on west from meridian", false, RTS2_DT_TIMEINTERVAL);
+	master->createValue (sumEast, (sn + "_sum_east").c_str (), "duration of queue targets on east from meridian", false, RTS2_DT_TIMEINTERVAL);
+
 	queueType->addSelVal ("FIFO");
 	queueType->addSelVal ("CIRCULAR");
 	queueType->addSelVal ("HIGHEST");
@@ -960,6 +963,9 @@ void ExecutorQueue::updateVals ()
 
 	int order = 0;
 
+	sumWest->setValueFloat (0);
+	sumEast->setValueFloat (0);
+
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++, order++)
 	{
 		_id_arr.push_back (iter->target->getTargetID ());
@@ -973,6 +979,11 @@ void ExecutorQueue::updateVals ()
 		iter->queue_order = order;
 
 		iter->update ();
+
+		if (iter->target->getHourAngle () > 0)
+			sumWest->setValueFloat (sumWest->getValueFloat () + getMaximalDuration (iter->target));
+		else
+			sumEast->setValueFloat (sumEast->getValueFloat () + getMaximalDuration (iter->target));
 	}
 
 	if (queue_id >= 0)
@@ -1003,6 +1014,9 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextPlanIds);
 	master->sendValueAll (nextHard);
 	master->sendValueAll (queueEntry);
+
+	master->sendValueAll (sumWest);
+	master->sendValueAll (sumEast);
 }
 
 ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const int reason)

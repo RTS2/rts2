@@ -379,6 +379,9 @@ class ExecutorQueue:public TargetQueue
 		rts2core::ValueBool *queueEnabled;
 		rts2core::ValueFloat *queueWindow;
 
+		rts2core::ValueFloat *sumWest;
+		rts2core::ValueFloat *sumEast;
+
 		double timerAdded;
 		int queue_id;
 
