@@ -74,6 +74,12 @@ RTS2_VALUE_MMAX       = 0x00000020
 
 RTS2_VALUE_STAT       = 0x10
 
+# Python < 2.7 does not provide _MAXLINE
+try:
+	httplib._MAXLINE
+except AttributeError:
+	httplib._MAXLINE = 2000
+
 class ChunkResponse(httplib.HTTPResponse):
 
 	read_by_chunks = False
