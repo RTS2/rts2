@@ -59,6 +59,10 @@ class LX200:public TelLX200
 		int tel_check_coords (double ra, double dec);
 
 		void set_move_timeout (time_t plus_time);
+
+		rts2core::ValueString *productName;
+
+		bool hasAstroPhysicsExtensions;
 };
 
 };
@@ -68,6 +72,9 @@ using namespace rts2teld;
 LX200::LX200 (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 {
 	motors = 0;
+	hasAstroPhysicsExtensions = false;
+
+	createValue (productName, "product_name", "reported product name", false);
 }
 
 
@@ -80,7 +87,8 @@ int LX200::init ()
 	int ret = TelLX200::init ();
 	if (ret)
 		return ret;
-	char rbuf[10];
+
+	char rbuf[100];
 	// we get 12:34:4# while we're in short mode
 	// and 12:34:45 while we're in long mode
 	if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
@@ -95,6 +103,21 @@ int LX200::init ()
 			return -1;
 		return 0;
 	}
+
+	// get product name
+	ret = serConn->writeRead (":GVP#", 5, rbuf, 99, '#');
+	if (ret < 0)
+		return -1;
+	if (ret > 0)
+		rbuf[ret - 1] = '\0';
+	else
+		rbuf[0] = '\0';
+
+	productName->setValueCharArr (rbuf);
+
+	if (strncmp (productName->getValue (), "10micron", 8) == 0)
+		hasAstroPhysicsExtensions = true;
+
 	return 0;
 }
 
@@ -251,7 +274,7 @@ void LX200::set_move_timeout (time_t plus_time)
 
 int LX200::startResync ()
 {
-	if ((getState () & TEL_PARKED) || (getState () & TEL_PARKING))
+	if (hasAstroPhysicsExtensions)
 		serConn->writePort (":PO#", 4);
 
 	tel_slew_to (getTelTargetRa (), getTelTargetDec ());
