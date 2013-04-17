@@ -86,6 +86,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 
 	autosaveFile = NULL;
 	optAutosaveFile = NULL;
+	optDefaultsFile = NULL;
 
 	state = _init_state;
 
@@ -105,6 +106,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 	addOption (OPT_VALUEFILE, "valuefile", 1, "file with values which should be created on the device");
 	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
 	addOption (OPT_AUTOSAVE, "autosave", 1, "autosave file");
+	addOption (OPT_DEFAULTS, "defaults", 1, "file with default values");
 }
 
 Daemon::~Daemon (void)
@@ -142,6 +144,9 @@ int Daemon::processOption (int in_opt)
 			break;
 		case OPT_AUTOSAVE:
 			optAutosaveFile = optarg;
+			break;
+		case OPT_DEFAULTS:
+			optDefaultsFile = optarg;
 			break;
 		case OPT_VALUEFILE:
 			valueFile = optarg;
@@ -349,8 +354,14 @@ int Daemon::initValues ()
 	ret = loadModefile ();
 	if (ret)
 		return ret;
+	ret = loadValuesFile (optDefaultsFile);
+	if (ret)
+		return ret;
+	ret = loadValuesFile (optAutosaveFile);
+	if (ret)
+		return ret;
 	autosaveFile = optAutosaveFile;
-	return loadAutosave ();
+	return 0;
 }
 
 void Daemon::initDaemon ()
@@ -1170,16 +1181,16 @@ int Daemon::loadCreateFile ()
 	return ret;
 }
 
-int Daemon::loadAutosave ()
+int Daemon::loadValuesFile (const char *valuefile)
 {
-	if (autosaveFile == NULL)
+	if (valueFile == NULL)
 		return 0;
 	
 	IniParser *autosave = new IniParser (true);
-	int ret = autosave->loadFile (autosaveFile);
+	int ret = autosave->loadFile (valueFile);
 	if (ret)
 	{
-		logStream (MESSAGE_WARNING) << "cannot open autosave file " << autosaveFile << ", ignoring the error" << sendLog;
+		logStream (MESSAGE_WARNING) << "cannot open autosave file " << valueFile << ", ignoring the error" << sendLog;
 		return 0;
 	}
 

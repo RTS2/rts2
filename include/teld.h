@@ -323,7 +323,6 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *telLongitude;
 		rts2core::ValueDouble *telLatitude;
 		rts2core::ValueDouble *telAltitude;
-		rts2core::ValueString *telescope;
 
 		/**
 		 * Check if telescope is moving to fixed position. Called during telescope

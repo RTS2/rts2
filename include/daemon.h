@@ -637,6 +637,7 @@ class Daemon:public rts2core::Block
 		 */
 		const char *autosaveFile;
 		const char *optAutosaveFile;
+		const char *optDefaultsFile;
 
 		/**
 		 * Switch running user to new user (and group, if provided with .)
@@ -646,7 +647,7 @@ class Daemon:public rts2core::Block
 		void switchUser (const char *usrgrp);
 
 		int loadCreateFile ();
-		int loadAutosave ();
+		int loadValuesFile (const char *valuefile);
 		int loadModefile ();
 
 		int setSectionValues (IniSection *sect, int new_mode);

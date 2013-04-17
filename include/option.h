@@ -56,6 +56,8 @@
 
 #define OPT_VALUEFILE       1014
 
+#define OPT_DEFAULTS        1015
+
 /**
  * Start of local option number playground.
  */
