@@ -61,6 +61,7 @@ class LX200:public TelLX200
 		void set_move_timeout (time_t plus_time);
 
 		rts2core::ValueString *productName;
+		rts2core::ValueString *mntflip;
 
 		bool hasAstroPhysicsExtensions;
 };
@@ -75,6 +76,7 @@ LX200::LX200 (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 	hasAstroPhysicsExtensions = false;
 
 	createValue (productName, "product_name", "reported product name", false);
+	createValue (mntflip, "flip", "telescope flip");
 }
 
 
@@ -84,6 +86,7 @@ LX200::~LX200 (void)
 
 int LX200::init ()
 {
+	//cosa vuol dire questa definizione???
 	int ret = TelLX200::init ();
 	if (ret)
 		return ret;
@@ -101,7 +104,6 @@ int LX200::init ()
 		// we are in short mode, set the long on
 		if (serConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
 			return -1;
-		return 0;
 	}
 
 	// get product name
@@ -153,6 +155,19 @@ int LX200::info ()
 {
 	if (tel_read_ra () || tel_read_dec ())
 		return -1;
+	
+	char rbuff[100];	
+	int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
+	if (ret < 0)
+		return -1;
+	if (ret > 0)
+		rbuff[ret] = '\0';
+	else
+		rbuff[0] = '\0';
+        
+        mntflip->setValueCharArr (rbuff);
+
+	telFlip->setValueInteger (strcmp (rbuff, "East#") == 0);
 
 	return Telescope::info ();
 }
