@@ -386,6 +386,10 @@ void Telescope::getTelTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 {
 	struct ln_equ_posn tar;
 	getTelTargetRaDec (&tar);
+	if (tar.ra < -90)
+		tar.ra = 180 + tar.ra;
+	else if (tar.ra > 90)
+		tar.ra = 180 - tar.ra;
 	struct ln_lnlat_posn observer;
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
