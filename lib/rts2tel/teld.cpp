@@ -910,6 +910,11 @@ void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
 	telpos.ra = telRaDec->getRa ();
 	telpos.dec = telRaDec->getDec ();
 
+	if (telpos.dec < -90)
+		telpos.dec = 180 + telpos.dec;
+	else if (telpos.dec > 90)
+		telpos.dec = 180 - telpos.dec;
+
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
 
