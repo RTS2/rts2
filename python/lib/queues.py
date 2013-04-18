@@ -21,14 +21,15 @@ import json
 import xml.dom.minidom
 
 class Queues:
-	def __init__(self):
+	def __init__(self, jsonProxy):
+		self.jsonProxy = jsonProxy
 		self.queues = {}
 	
 	def load(self):
-		for d in json.getProxy().getDevicesByType(json.DEVICE_TYPE_SELECTOR):
-			for q in json.getProxy().getValue(d, 'queue_names', refresh_not_found=True)[:-1]:
+		for d in self.jsonProxy.getDevicesByType(json.DEVICE_TYPE_SELECTOR):
+			for q in self.jsonProxy.getValue(d, 'queue_names', refresh_not_found=True)[:-1]:
 				if q not in self.queues.keys():
-					self.queues[q] = queue.Queue(q, service=d)
+					self.queues[q] = queue.Queue(self.jsonProxy, q, service=d)
 				self.queues[q].load()
 	
 	def load_xml(self, fn, queues=None):
@@ -43,7 +44,7 @@ class Queues:
 		  	qname = qu.getAttribute('name')
 			if queues is not None and not(qname in queues):
 				continue
-			q = queue.Queue(qname)
+			q = queue.Queue(self.jsonProxy, qname)
 			q.from_xml(qu)
 			self.queues[qname] = q
 

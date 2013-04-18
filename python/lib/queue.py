@@ -39,7 +39,8 @@ def _getXmlBoolAttribute(node,name):
 
 class QueueEntry:
 	"""Single queue entry. Provides methods to work on entry (observation request) level."""
-	def __init__(self, id, start, end, qid):
+	def __init__(self, jsonProxy, id, start, end, qid):
+		self.jsonProxy = jsonProxy
 		self.id = id
 		self.__start = self.__end = None
 		self.qid = qid
@@ -99,10 +100,11 @@ class QueueEntry:
 
 class Queue:
 	"""Queue abstraction. Provides methods for operation on the queue."""
-	def __init__(self,name,service=None,queueType=QueueEntry):
+	def __init__(self,jsonProxy,name,service=None,queueType=QueueEntry):
 		"""Create new queue. Service parameters specify RTS2 service name. Optional queueType allow
 		user to overwrite QueueEntry elements created for queue entries."""
 		self.name = name
+		self.jsonProxy = jsonProxy
 		self.service = service
 		self.entries = []
 		self.queueing = None
@@ -113,39 +115,39 @@ class Queue:
 		self.queueType = queueType
 
 		if service is None:
-			self.service = json.getProxy().getDevicesByType(json.DEVICE_TYPE_SELECTOR)[0]
+			self.service = self.jsonProxy.getDevicesByType(json.DEVICE_TYPE_SELECTOR)[0]
 
 	def clear(self):
 		"""Clear the queue."""
-		json.getProxy().executeCommand(self.service,'clear {0}'.format(self.name))
+		self.jsonProxy.executeCommand(self.service,'clear {0}'.format(self.name))
 
 	def load(self):
 		"""Refresh queue from server."""
-		json.getProxy().refresh(self.service)
+		self.jsonProxy.refresh(self.service)
 
-		self.window = json.getProxy().getValue(self.service, self.name + '_window')
+		self.window = self.jsonProxy.getValue(self.service, self.name + '_window')
 
-		self.queueing = json.getProxy().getValue(self.service, self.name + '_queing')
-		self.skip_below = json.getProxy().getValue(self.service, self.name + '_skip_below')
-		self.test_constr = json.getProxy().getValue(self.service, self.name + '_test_constr')
-		self.remove_executed = json.getProxy().getValue(self.service, self.name + '_remove_executed')
+		self.queueing = self.jsonProxy.getValue(self.service, self.name + '_queing')
+		self.skip_below = self.jsonProxy.getValue(self.service, self.name + '_skip_below')
+		self.test_constr = self.jsonProxy.getValue(self.service, self.name + '_test_constr')
+		self.remove_executed = self.jsonProxy.getValue(self.service, self.name + '_remove_executed')
 
-		ids = json.getProxy().getValue(self.service,self.name + '_ids')
-		start = json.getProxy().getValue(self.service,self.name + '_start')
-		end = json.getProxy().getValue(self.service,self.name + '_end')
-		qid = json.getProxy().getValue(self.service,self.name + '_qid')
+		ids = self.jsonProxy.getValue(self.service,self.name + '_ids')
+		start = self.jsonProxy.getValue(self.service,self.name + '_start')
+		end = self.jsonProxy.getValue(self.service,self.name + '_end')
+		qid = self.jsonProxy.getValue(self.service,self.name + '_qid')
 
 		self.entries = []
 
 		for i in range(0,len(ids)):
-			self.entries.append(self.queueType(ids[i], start[i], end[i], qid[i]))
+			self.entries.append(self.queueType(self.jsonProxy, ids[i], start[i], end[i], qid[i]))
 
 	def save(self, clear=False, remove_new=False):
 		"""Save queue settings to the server."""
 		if clear:
 			self.clear()
 
-		json.getProxy().setValues({
+		self.jsonProxy.setValues({
 		  	'{0}_window'.format(self.name):_nanNone(self.window),
 			'{0}_skip_below'.format(self.name):self.skip_below,
 			'{0}_test_constr'.format(self.name):self.test_constr,
@@ -156,7 +158,7 @@ class Queue:
 		if clear:
 			for x in self.entries:
 				queue_cmd += ' {0} {1} {2}'.format(x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
-			json.getProxy().executeCommand(self.service,'queue_at {0}{1}'.format(self.name, queue_cmd))
+			self.jsonProxy.executeCommand(self.service,'queue_at {0}{1}'.format(self.name, queue_cmd))
 		else:
 			for x in self.entries:
 				queue_cmd += ' {0} {1} {2} {3}'.format(-1 if x.qid is None else x.qid, x.id, _nanNone(x.get_start()), _nanNone(x.get_end()))
@@ -164,11 +166,11 @@ class Queue:
 			if remove_new:
 				self.entries = filter(lambda x: x.qid > 0, self.entries)
 
-			json.getProxy().executeCommand(self.service,'queue_qids {0}{1}'.format(self.name, queue_cmd))
+			self.jsonProxy.executeCommand(self.service,'queue_qids {0}{1}'.format(self.name, queue_cmd))
 	
 	def add_target(self,id,start=None,end=None):
 		"""Add target to queue."""
-		json.getProxy().executeCommand(self.service,'queue_at {0} {1} {2} {3}'.format(self.name, id, _nanNone(start), _nanNone(end)))
+		self.jsonProxy.executeCommand(self.service,'queue_at {0} {1} {2} {3}'.format(self.name, id, _nanNone(start), _nanNone(end)))
 
 	def get_XMLdoc(self):
 		"""Serialize queue to XML document."""
@@ -203,7 +205,7 @@ class Queue:
 		self.queueing = int(node.getAttribute('queueing'))
 
 		for el in node.getElementsByTagName('queueEntry'):
-			q = self.queueType(el.getAttribute('id'), None, None, None)
+			q = self.queueType(self.jsonProxy, el.getAttribute('id'), None, None, None)
 			q.from_xml(el)
 			self.entries.append(q)
 	
