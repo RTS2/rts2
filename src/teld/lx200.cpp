@@ -1,6 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 /*!
  * @file Driver for generic LX200 protocol based telescope.
  *
@@ -47,6 +44,9 @@ class LX200:public TelLX200
 
 		virtual int startDir (char *dir);
 		virtual int stopDir (char *dir);
+
+	protected:
+		virtual void usage ();
 
 	private:
 		int motors;
@@ -170,6 +170,12 @@ int LX200::info ()
 	telFlip->setValueInteger (strcmp (rbuff, "East#") == 0);
 
 	return Telescope::info ();
+}
+
+void LX200::usage ()
+{
+	std::cout << "   LX200 compatible telescope driver. You probaly should provide -f options to specify serial port:" << std::endl
+		<< "\t" << getAppName () << " -f /dev/ttyS3" << std::endl;
 }
 
 /*!
