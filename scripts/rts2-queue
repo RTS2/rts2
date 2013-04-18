@@ -15,6 +15,7 @@ import string
 import rts2
 import rts2.target
 import rts2.radec
+import rts2.json
 import re
 import time
 import calendar
@@ -135,8 +136,8 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 	parser.add_option('--save', help='save queues to XML file', action='store', dest='save_xml')
 	parser.add_option("--with-times",help="specify observation time",action="store_true",dest="with_times",default=False)
 	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
-	parser.add_option("--user",help="user name",action="store",dest='username',default='rts2obs')
-	parser.add_option("--password",help="user password",action="store",dest='password',default='&#Karel')
+	parser.add_option("--user",help="user name",action="store",dest='username',default=None)
+	parser.add_option("--password",help="user password",action="store",dest='password',default=None)
 	parser.add_option('--quiet',help="don't print messages",action='store_true',dest='quiet',default=False)
 	parser.add_option('--debug',help='debug JSON communication',action='store_true',dest='debug',default=False)
 	parser.add_option('--create',help='name of the target to create',action='store',dest='create',default=None)
@@ -157,7 +158,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 		
 	q = None
 	if options.queue:
-		q = rts2.Queue(options.queue)
+		q = rts2.Queue(rts2.json.getProxy(), options.queue)
 
 	def test_q():
 		if q is None:
@@ -226,7 +227,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 		q.load()
 
 	if options.save_xml:
-	  	qs = rts2.Queues()
+	  	qs = rts2.Queues(rts2.json.getProxy())
 		qs.load()
 		qs.save_xml(options.save_xml)
 			
