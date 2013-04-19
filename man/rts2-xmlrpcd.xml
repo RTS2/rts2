@@ -68,14 +68,18 @@
     <title>DESCRIPTION</title>
 
     <para>
-      <command>&dhpackage;</command> provides XML-RPC access to RTS2 functions.
+      <command>&dhpackage;</command> provides XML-RPC and JSON access to RTS2 functions.
       Commands are described on the web, on <ulink
       url="http://rts2.org/wiki/code:xmlrpc">http://rts2.org/wiki/code:xmlrpc</ulink>.
     </para>
 
     <para>
-      Besides this, XML-RPC provides flexible triggering mechanism for reacting
+      <command>&dhpackage;</command> also provides flexible triggering mechanism for reacting
       on device states and values changes.
+    </para>
+
+    <para>
+      
     </para>
   </refsect1>
   <refsect1>
@@ -117,36 +121,58 @@
     </para>
     <para>
       Configuration file is an XML file, which format is specified in schema.
-      It has two major sections - <emphasis>http</emphasis> and
-      <emphasis>events</emphasis>.
+      It has three major sections - <emphasis>http</emphasis>,
+      <emphasis>events</emphasis> and <emphasis>bb</emphasis>.
     </para>
   </refsect1>
   <refsect1>
     <title>Http section</title>
     <para>
       <emphasis>Http</emphasis> section configures embbeded HTTP server. It
-      includes entries to configure document root, and so on.
+      includes entries to configure document root, public directories and other relevant options.
     </para>
     <refsect2>
       <title>docroot</title>
       <para>
 	Document root of the embedded HTTP server. Requests which do not match
-	<emphasis>API</emphasis> entries, nor any links, are directed to this
-	directory.
+	<emphasis>API</emphasis> entries, nor any pages provided in
+	<emphasis>rts2-xmlrpcd</emphasis> source file, are directed to this directory.
       </para>
-    </refsect2>  
+    </refsect2>
+    <refsect2>
+      <title>public</title>
+      <para>
+	Public path. The paths listed as public will be accessible without
+	password. Please use * as wildcard, ** for recursive wildcard.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>dir</title>
+      <para>
+	Maps system directory to access. Must containt "path" and "to" arguments, providing web server path
+	and local path.
+      </para>
+    </refsect2>
     <refsect2>
       <title>default-channel</title>
       <para>
         Specify default channel for image display. -1 is used to display all
-	channels in multiple FITS file, 0-.. is for channel/extension.
+	channels in multiple FITS file, 0-.. sets the channel (extension number).
       </para>
       <para>
-	This option has sense only for multiple FITS files. It does not need to
-	be specified on setups where only single extenstion FITS files are
-	produced.
+	This option is used only when displaying multiple FITS files. It does not need to
+	be specified on setups where only single extenstion FITS files are produced.
       </para>
-    </refsect2>  
+    </refsect2>
+    <refsect2>
+      <title>defaultImageLabel</title>
+      <para>
+        Default RTS2 expansion character for image label. Image label is printed in lower
+	part of the image, and can contains data from FITS header. Please see
+	<citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+	for details.
+      </para>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>Events section</title>
@@ -230,13 +256,37 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 ]]>
         </programlisting>
       </refsect3>
+      <refsect3>
+	<title>email</title>
+	<para>
+	  Provides way to send emails with predefined content to an address.
+	  Should contain "to", "cc", "bcc", "subject" and "body" tags, with meaning hopefully clear enough.
+	</para>
+	<para>
+	  Subject and body can contain "value" and "device" tags for a value or device expansion. Please consult
+	  the following example for details:
+	</para>
+        <programlisting>
+<![CDATA[
+<email>
+  <to>example@example.com</to>
+  <cc>name.surname@example.com</cc>
+  <bcc>name_surname@sub_domain.example.com</bcc>
+  <subject>Hey, you are exposing!</subject>
+  <body>It's my pleasure to inform <device>D1</device> you, <device>D2</device> that the camera
+    is exposing! Juhuu! Exposure is <value device="D1">V1</value> <value>device_value</value>
+  </body>
+</email>
+]]>
+        </programlisting>
+      </refsect3>
     </refsect2>  
   </refsect1>
   <refsect1>
     <title>BB section</title>
     <para>
       This section provides details about BB (Big Brother) connections. Please
-      see <citerefentry><refentrytitle>rts2-bb</refentrytitle></citerefentry>
+      see <citerefentry><refentrytitle>rts2-bb</refentrytitle><manvolnum>7</manvolnum></citerefentry>
       for details.
     </para>
     <refsect2>
@@ -358,7 +408,7 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
     <para>
       Please consult
       <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
-      page for details about XML-RPC options available in configuration file.
+      page for details about XML-RPC options available in the configuration file.
     </para>
   </refsect1>
   <refsect1>
