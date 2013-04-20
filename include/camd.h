@@ -971,6 +971,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::Connection *exposureConn;
 
 		rts2core::ValueDoubleMinMax *exposure;
+		rts2core::ValueString *lastImagePath;
 
 		// shared memory identifier
 		int sharedMemNum;

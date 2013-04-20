@@ -501,6 +501,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (exposure, "exposure", "current exposure time", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	exposure->setValueDouble (1);
 
+	createValue (lastImagePath, "last_image", "path to the last image", false, RTS2_VALUE_WRITABLE);
+
 	sendOkInExposure = false;
 
 	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false, RTS2_DT_KMG);

@@ -552,6 +552,11 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 		if (image == NULL)
 			return;
 		cameraMetadata (image);
+
+		const char *last_filename = image->getAbsoluteFileName ();
+		if (last_filename)
+			queCommand (new rts2core::CommandChangeValue (this, "last_image", '=', std::string (last_filename)));
+
 		// delete old image
 		delete actualImage;
 		// create image
