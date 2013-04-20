@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# convert images from PNG to image_t structure
+#
+# Copyright (C) 2013 Petr Kubanek <petr@kubanek.net>
+
+for x in $*; do
+	fullname=`echo $x | sed 's#.*/##'`
+	filename=`echo $fullname | sed 's/\..*//'`
+	fs=`ls -l $x | cut -f5 -d' '`
+	echo "
+// file $fullname, size $fs
+const image_t $filename = {"
+	echo -n "	\""
+	hexdump -v -e '"\\\x" /1 "%02x"' $x
+	echo "\",
+	$fs
+};"
+
+done

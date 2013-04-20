@@ -4,6 +4,8 @@ librts2json_la_SOURCES = httpreq.cpp jsonvalue.cpp directory.cpp expandstrings.c
 	images.cpp targetreq.cpp altaz.cpp plot.cpp imgpreview.cpp nightdur.cpp asyncapi.cpp httpserver.cpp
 librts2json_la_CXXFLAGS = -I../../include @LIBXML_CFLAGS@ -I../ @JPEG_CFLAGS@
 
+noinst_SCRIPTS = images_convert
+
 if PGSQL
 
 librts2json_la_SOURCES += jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp addtargetreq.cpp
