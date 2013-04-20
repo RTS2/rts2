@@ -149,53 +149,68 @@ void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path,
 void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	printHeader (_os, "List of targets", NULL, "/css/table.css", "table.refresh();");
+	printHeader (_os, "List of targets", NULL, "/css/datatables.css");
 
-	includeJavaScript (_os, "equ.js");
-	includeJavaScriptWithPrefix (_os, "table.js");
+	//includeJavaScript (_os, "equ.js");
+	includeJavaScript (_os, "jquery.js");
+	includeJavaScript (_os, "datatables.js");
 
-	_os << "<script type='text/javascript'>\n"
-		"displaySeconds=" << displaySeconds << ";\n"
-                "table = new Table('api/','targets','table');\n"
+	_os <<
+		"<script type='text/javascript' charset='utf-8'>\n"
+			"$(document).ready(function() {\n"
+				"$('#targets').dataTable( {\n"
+					"'bProcessing': true,\n"
+					"'bServerSide': true,\n"
+					"'sAjaxSource': 'api'\n"
+				"} );\n"
+			"} );\n"
+		"</script>\n"
 
-		"table.updateTable = function(settimer) {\n"
-			"var jd = ln_get_julian_from_sys();\n"
-			"var st = ln_get_mean_sidereal_time(jd);\n"
-			"hAz = new DMS();\n"
-			"hAlt = new DMS();\n"
-			"observer = new LngLat(" << rts2core::Configuration::instance ()->getObserver ()->lng << "," << rts2core::Configuration::instance ()->getObserver ()->lat << ")\n;"
-			"for (var i in this.data) {\n"
-				"var t = this.data[i];\n"
-				"var radec = new RaDec(table.data[i][2],table.data[i][3], observer);\n"
-				"var altaz = radec.altaz();\n"
-				"t[4] = altaz.alt;\n"
-				"t[5] = altaz.az;\n"
-				"ln_deg_to_dms(altaz.alt,hAlt);\n"
-				"ln_deg_to_dms(altaz.az,hAz);\n"
-				"if (displaySeconds) {\n"
-					"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
-					"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
-				"} else {\n"
-					"document.getElementById('alt_' + i).innerHTML = hAlt.toStringDeg ();\n"
-					"document.getElementById('az_' + i).innerHTML = hAz.toStringSignedDeg (false);\n"
-				"}\n"
-	 		"}\n"
-			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',";
-	if (displaySeconds)
-		_os << "20000";
-	else
-		_os << "200000";
-	_os << ");\n"
-		"}\n"
-
-		"</script>\n";
-
-	_os << "<form action='form' method='GET'><div id='targets'>Loading...</div>\n";
+		"<table cellpadding='0' cellspacing='0' border='0' class='display' id='targets'>\n"
+			"<thead>\n"
+				"<tr>\n"
+					"<th>ID</th>\n"
+					"<th>Target name</th>\n"
+					"<th>NOBS</th>\n"
+					"<th>Priority</th>\n"
+					"<th>Bonus</th>\n"
+					"<th>Enabled</th>\n"
+					"<th>RA</th>\n"
+					"<th>DEC</th>\n"
+					"<th>Alt</th>\n"
+					"<th>Az</th>\n"
+					"<th>Violated</th>\n"
+					"<th>Satisfied</th>\n"
+				"</tr>\n"
+			"</thead>\n"
+			"<tbody>\n"
+				"<tr>\n"
+					"<td colspan='5' class='dataTables_empty'>Loading data from server</td>\n"
+				"</tr>\n"
+			"</tbody>\n"
+			"<tfoot>\n"
+				"<tr>\n"
+					"<th>ID</th>\n"
+					"<th>Target name</th>\n"
+					"<th>NOBS</th>\n"
+					"<th>Priority</th>\n"
+					"<th>Bonus</th>\n"
+					"<th>Enabled</th>\n"
+					"<th>RA</th>\n"
+					"<th>DEC</th>\n"
+					"<th>Alt</th>\n"
+					"<th>Az</th>\n"
+					"<th>Violated</th>\n"
+					"<th>Satisfied</th>\n"
+				"</tr>\n"
+			"</tfoot>\n"
+		"</table>\n";
 
 #ifdef RTS2_HAVE_LIBJPEG
-	_os << "<input type='submit' value='Plot target altitude' name='plot'/> (please select at least one target to plot something interesting)";
+	_os << "<form action='form' method='GET'>\n"
+	"<input type='submit' value='Plot target altitude' name='plot'/> (please select at least one target to plot something interesting)\n"
+	"</form>\n";
 #endif // RTS2_HAVE_LIBJPEG
-	_os << "</form>";
 	
 	printFooter (_os);
 
@@ -273,21 +288,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		ts = rts2db::TargetSet ();
 	ts.load ();
 
-	_os << "{\"h\":["
-		"{\"n\":\"Select\",\"t\":\"sel\",\"c\":0,\"spn\":\"tid\"},"
-		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
-		"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"suffix\":\"/main\",\"c\":1},"
-		"{\"n\":\"NOBS\",\"t\":\"s\",\"c\":11},"
-		"{\"n\":\"Priority\",\"t\":\"n\",\"c\":6},"
-		"{\"n\":\"Bonus\",\"t\":\"n\",\"c\":7},"
-		"{\"n\":\"Enabled\",\"t\":\"b\",\"c\":8},"
-		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
-		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
-		"{\"n\":\"Alt\",\"t\":\"Alt\",\"c\":4,\"sc\":[2,3]},"
-		"{\"n\":\"Az\",\"t\":\"Az\",\"c\":5,\"sc\":[2,3]},"
-		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":9},"
-		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":10}],"
-		"\"d\" : [";
+	_os << "{\"aaData\" : [";
 
 	_os << std::fixed;
 
