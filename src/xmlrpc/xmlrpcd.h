@@ -41,6 +41,7 @@
 #include "events.h"
 #include "rts2json/httpreq.h"
 #include "rts2json/images.h"
+#include "rts2json/libcss.h"
 #include "rts2json/libjavascript.h"
 #include "rts2json/jsonvalue.h"
 #include "rts2json/targetreq.h"
@@ -56,7 +57,6 @@
 #include "devicesreq.h"
 #include "planreq.h"
 #include "switchstatereq.h"
-#include "libcss.h"
 #include "api.h"
 
 #include "connnotify.h"

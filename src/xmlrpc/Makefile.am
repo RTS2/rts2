@@ -1,7 +1,7 @@
 bin_PROGRAMS = rts2-xmlrpcd rts2-xmlrpcclient
 
 noinst_HEADERS = xmlstream.h xmlrpcd.h r2x.h session.h stateevents.h valueevents.h events.h \
-	valueplot.h emailaction.h augerreq.h devicesreq.h planreq.h graphreq.h libcss.h bbserver.h api.h \
+	valueplot.h emailaction.h augerreq.h devicesreq.h planreq.h graphreq.h bbserver.h api.h \
 	bbapi.h messageevents.h switchstatereq.h xmlapi.h
 
 AM_LDADD = @LIB_M@ @LIB_NOVA@ @JSONGLIB_LIBS@
@@ -11,7 +11,7 @@ if PGSQL
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp stateeventsdb.cpp valueevents.cpp \
 	valueeventsdb.cpp emailaction.cpp valueplot.cpp augerreq.cpp devicesreq.cpp planreq.cpp graphreq.cpp \
-	libcss.cpp bbserver.cpp api.cpp bbapi.cpp messageevents.cpp switchstatereq.cpp \
+	bbserver.cpp api.cpp bbapi.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_xmlrpcd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -lrts2scheduler -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db \
@@ -26,7 +26,7 @@ CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
 else
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
-	devicesreq.cpp graphreq.cpp libcss.cpp bbserver.cpp api.cpp messageevents.cpp switchstatereq.cpp \
+	devicesreq.cpp graphreq.cpp bbserver.cpp api.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_xmlrpcd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \

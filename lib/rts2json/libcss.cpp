@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "libcss.h"
+#include "rts2json/libcss.h"
 #include "utilsfunc.h"
 #include "error.h"
 
