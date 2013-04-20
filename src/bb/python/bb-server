@@ -79,7 +79,7 @@ class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 			# TODO fromt must containt time the target can be scheduled
 			# fromt must containt from time
-			print 'schedule target', tar_id, targets[tar_id]
+			print 'confirm target', tar_id, targets[tar_id]
 
 			try:
 				observatory_schedules[int(args['observatory_id'])][int(args['schedule_id'])] = tar_id
@@ -94,6 +94,8 @@ class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 		elif self.path == '/bbapi/cancel':
 
 			# TODO cancel request (if possible)
+			print 'cancel schedule', args
+
 			observatory_schedules[int(args['observatory_id'])].pop(int(args['schedule_id']))
 
 			self.send_OK_response(0)
