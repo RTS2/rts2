@@ -22,8 +22,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import BaseHTTPServer
 from urlparse import parse_qs
+from optparse import OptionParser
 
-PORT=8880
+parser = OptionParser(usage="""bb-server [--port <number>]""")
+
+parser.add_option('--port', help='listening port, defaults to 8880', action='store', dest='port', default=8880)
+
+(options,args) = parser.parse_args()
 
 class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	def do_GET(self):
@@ -34,7 +39,7 @@ class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 			self.path = self.path[:qi]
 		print "get request", self.path, args
 
-httpd = BaseHTTPServer.HTTPServer(("", PORT), BBHandler)
+httpd = BaseHTTPServer.HTTPServer(("", int(options.port)), BBHandler)
 
-print "serving at port", PORT
+print "serving at port", options.port
 httpd.serve_forever()
