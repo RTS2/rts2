@@ -160,7 +160,6 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 			"$(document).ready(function() {\n"
 				"$('#targets').dataTable( {\n"
 					"'bProcessing': true,\n"
-					"'bServerSide': true,\n"
 					"'sAjaxSource': 'api'\n"
 				"} );\n"
 			"} );\n"
@@ -288,7 +287,8 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		ts = rts2db::TargetSet ();
 	ts.load ();
 
-	_os << "{\"aaData\" : [";
+	_os << "{\"sEcho\":" << params->getInteger ("sEcho", 0) << ",\"iTotalRecords\":\"" << ts.size () << "\",\"iTotalDisplayRecords\":\"" << ts.size () << "\","
+"\"aaData\" : [";
 
 	_os << std::fixed;
 
