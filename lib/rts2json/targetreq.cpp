@@ -160,7 +160,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 			"$(document).ready(function() {\n"
 				"$('#targets').dataTable( {\n"
 					"'bProcessing': true,\n"
-					"'sAjaxSource': 'api',\n"
+					"'sAjaxSource': 'api?jqapi=1',\n"
 					"'bPaginate': false,\n"
 					"'aoColumnDefs': [{\n"
 						"'aTargets' : [1],\n"
@@ -314,8 +314,25 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		ts = rts2db::TargetSet ();
 	ts.load ();
 
-	_os << "{\"sEcho\":" << params->getInteger ("sEcho", 0) << ",\"iTotalRecords\":\"" << ts.size () << "\",\"iTotalDisplayRecords\":\"" << ts.size () << "\","
-"\"aaData\" : [";
+	if (params->getInteger ("jqapi", 0))
+		_os << "{\"sEcho\":" << params->getInteger ("sEcho", 0) << ",\"iTotalRecords\":\"" << ts.size () << "\",\"iTotalDisplayRecords\":\"" << ts.size () << "\","
+	"\"aaData\" : [";
+	else
+		_os << "{\"h\":["
+			"{\"n\":\"Select\",\"t\":\"sel\",\"c\":0,\"spn\":\"tid\"},"
+			"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
+			"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"suffix\":\"/main\",\"c\":1},"
+			"{\"n\":\"NOBS\",\"t\":\"s\",\"c\":11},"
+			"{\"n\":\"Priority\",\"t\":\"n\",\"c\":6},"
+			"{\"n\":\"Bonus\",\"t\":\"n\",\"c\":7},"
+			"{\"n\":\"Enabled\",\"t\":\"b\",\"c\":8},"
+			"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
+			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
+			"{\"n\":\"Alt\",\"t\":\"Alt\",\"c\":4,\"sc\":[2,3]},"
+			"{\"n\":\"Az\",\"t\":\"Az\",\"c\":5,\"sc\":[2,3]},"
+			"{\"n\":\"Violated\",\"t\":\"s\",\"c\":9},"
+			"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":10}],"
+			"\"d\" : [";
 
 	_os << std::fixed;
 
