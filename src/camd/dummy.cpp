@@ -126,7 +126,7 @@ class Dummy:public Camera
 		{
 			switch (in_opt)
 			{
-				case 'f':
+				case OPT_FRAMETRANS:
 					supportFrameT = true;
 					break;
 				case OPT_INFOSLEEP:
