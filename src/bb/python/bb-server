@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """
 
 import BaseHTTPServer
+import sys
+import time
+
 from urlparse import parse_qs
 from optparse import OptionParser
 
@@ -30,14 +33,72 @@ parser.add_option('--port', help='listening port, defaults to 8880', action='sto
 
 (options,args) = parser.parse_args()
 
+# global variables
+# hash holding pre-defined targets
+targets=[]
+# hash of hashes; key - observatory_id, second key schedule ID, content - target ID
+observatory_schedules={}
+
 class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+	def send_OK_response(self, response):
+		self.send_response(200)
+		self.end_header()
+
+		self.wfile.write(response)
+
 	def do_GET(self):
+		global targets
+		global observatory_schedules
+
 		args = {}
 		qi = self.path.find('?')
 		if qi >= 0:
 			args = parse_qs(self.path[qi+1:])
 			self.path = self.path[:qi]
-		print "get request", self.path, args
+
+		if self.path == '/api/create_target':
+			targets.append([args['tn'],float(args['ra']),float(args['dec'])])
+			print 'created target', args['tn'], args['tn'], args['dec']
+			
+			# target ID starts from 1
+			self.send_OK_response('{"id":{0}}'.format(len(targets)))
+
+		elif self.path == '/bbapi/schedule':
+			tar_id = int(args['id']) - 1
+
+			# TODO fromt must containt time the target can be scheduled
+			# fromt must containt from time
+			print 'schedule target', tar_id, targets[tar_id]
+
+			fromt = time.time () + 86400		
+	
+			self.send_OK_response(fromt)
+
+		elif self.path == '/bbapi/confirm':
+			tar_id = int(args['id']) - 1
+
+			# TODO fromt must containt time the target can be scheduled
+			# fromt must containt from time
+			print 'schedule target', tar_id, targets[tar_id]
+
+			try:
+				observatory_schedules[int(args['observatory_id'])][int(args['schedule_id'])] = tar_id
+			except KeyError:
+				observatory_schedules[int(args['observatory_id'])] = {}
+				observatory_schedules[int(args['observatory_id'])][int(args['schedule_id'])] = tar_id
+
+			fromt = time.time () + 8400
+
+			self.send_OK_response(fromt)
+
+		elif self.path == '/bbapi/cancel':
+
+			# TODO cancel request (if possible)
+			observatory_schedules[int(args['observatory_id'])].pop(int(args['schedule_id']))
+
+			self.send_OK_response(0)
+
+		print >> sys.stderr, "get request", self.path, args
 
 httpd = BaseHTTPServer.HTTPServer(("", int(options.port)), BBHandler)
 
