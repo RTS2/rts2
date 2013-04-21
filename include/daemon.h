@@ -650,7 +650,14 @@ class Daemon:public rts2core::Block
 		int loadValuesFile (const char *valuefile);
 		int loadModefile ();
 
-		int setSectionValues (IniSection *sect, int new_mode);
+		/**
+		 * Load values from ini file section.
+		 *
+		 * @param sect IniSection containting values to load
+		 * @param new_mode New mode. 0 for default/no mode
+		 * @param use_extensions If true, will look for .min and .max extensions (and will fail if others are provided)
+		 */
+		int setSectionValues (IniSection *sect, int new_mode, bool use_extensions);
 
 		/**
 		 * Create section values.
