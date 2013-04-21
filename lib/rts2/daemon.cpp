@@ -1200,7 +1200,7 @@ int Daemon::loadValuesFile (const char *valuefile)
 		return 0;
 	}
 
-	ret = setSectionValues ((*autosave)[0], 0);
+	ret = setSectionValues ((*autosave)[0], 0, false);
 
 	delete autosave;
 	return ret;
@@ -1246,7 +1246,7 @@ int Daemon::setMode (int new_mode)
 	}
 	IniSection *sect = (*modeconf)[new_mode];
 
-	return setSectionValues (sect, new_mode);
+	return setSectionValues (sect, new_mode, true);
 }
 
 void Daemon::addGroup (const char *groupname)
@@ -1256,7 +1256,7 @@ void Daemon::addGroup (const char *groupname)
 	groups->addValue (std::string (groupname));
 }
 
-int Daemon::setSectionValues (IniSection *sect, int new_mode)
+int Daemon::setSectionValues (IniSection *sect, int new_mode, bool use_extenstions)
 {
 	// setup values
 	for (IniSection::iterator iter = sect->begin (); iter != sect->end (); iter++)
@@ -1269,7 +1269,7 @@ int Daemon::setSectionValues (IniSection *sect, int new_mode)
 		}
 		// test for suffix
 		std::string suffix = iter->getSuffix ();
-		if (suffix.length () > 0)
+		if (suffix.length () > 0 && use_extenstions)
 		{
 			if (val->getValueExtType () == RTS2_VALUE_MMAX)
 			{
