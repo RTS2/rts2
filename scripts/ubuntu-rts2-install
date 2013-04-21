@@ -70,11 +70,14 @@ echo "Adding extra repositories"
 if [ $with_db == 1 ]; then
 	extra_p="postgresql libecpg-dev"
 	case $DISTRIB_CODENAME in
+		lucid)
+			extra_p="$extra_p libatlas-cpp-0.6-dev libatlas-base-dev postgresql-server-dev-8.4"
+			;;
 		natty)
-			extra_p="$extra_p postgresql-server-dev-8.4"
+			extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-8.4"
 			;;
 		oneiric|precise|debian)
-			extra_p="$extra_p postgresql-server-dev-9.1"
+			extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-9.1"
 			;;
 		*)
 	esac		
@@ -85,7 +88,7 @@ sudo apt-get -y update
 
 echo "Installing required debian packages"
 
-sudo apt-get -y install subversion $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev liblapack-dev libatlas-dev libatlas-base-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config
+sudo apt-get -y install subversion $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev liblapack-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config
 
 echo "Downloading DS9"
 
