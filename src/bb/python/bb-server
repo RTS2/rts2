@@ -35,7 +35,8 @@ parser.add_option('--port', help='listening port, defaults to 8880', action='sto
 
 # global variables
 # hash holding pre-defined targets
-targets=[]
+targets={}
+last_target=1
 # hash of hashes; key - observatory_id, second key schedule ID, content - target ID
 observatory_schedules={}
 
@@ -53,6 +54,7 @@ class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 	def serve_GET(self):
 		global targets
+		global last_target
 		global observatory_schedules
 
 		args = {}
@@ -65,17 +67,18 @@ class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 			if len(args['tn']) != 1 or len(args['ra']) != 1 or len(args['dec']) != 1:
 				self.send_ERROR_reponse(400)
 
-			targets.append([args['tn'][0],float(args['ra'][0]),float(args['dec'][0])])
+			targets[last_target] = [args['tn'][0],float(args['ra'][0]),float(args['dec'][0])]
 			print 'created target', args['tn'][0], args['ra'][0], args['dec'][0]
+			last_target += 1
 			
 			# target ID starts from 1
-			self.send_OK_response('{{"id":{0}}}'.format(len(targets)))
+			self.send_OK_response('{{"id":{0}}}'.format(last_target))
 
 		elif self.path == '/bbapi/schedule':
 			if len(args['id']) != 1:
 				self.send_ERROR_reponse(400)
 
-			tar_id = int(args['id'][0]) - 1
+			tar_id = int(args['id'][0])
 
 			# TODO fromt must containt time the target can be scheduled
 			# fromt must containt from time
