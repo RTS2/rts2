@@ -42,11 +42,16 @@ observatory_schedules={}
 class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	def send_OK_response(self, response):
 		self.send_response(200)
-		self.end_header()
+		self.end_headers()
 
 		self.wfile.write(response)
 
-	def do_GET(self):
+	def send_ERROR_reponse(self, code):
+		self.send_response(code)
+		self.end_header()
+		raise Exception('wrong request')
+
+	def serve_GET(self):
 		global targets
 		global observatory_schedules
 
@@ -57,14 +62,20 @@ class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 			self.path = self.path[:qi]
 
 		if self.path == '/api/create_target':
-			targets.append([args['tn'],float(args['ra']),float(args['dec'])])
-			print 'created target', args['tn'], args['tn'], args['dec']
+			if len(args['tn']) != 1 or len(args['ra']) != 1 or len(args['dec']) != 1:
+				self.send_ERROR_reponse(400)
+
+			targets.append([args['tn'][0],float(args['ra'][0]),float(args['dec'][0])])
+			print 'created target', args['tn'][0], args['ra'][0], args['dec'][0]
 			
 			# target ID starts from 1
-			self.send_OK_response('{"id":{0}}'.format(len(targets)))
+			self.send_OK_response('{{"id":{0}}}'.format(len(targets)))
 
 		elif self.path == '/bbapi/schedule':
-			tar_id = int(args['id']) - 1
+			if len(args['id']) != 1:
+				self.send_ERROR_reponse(400)
+
+			tar_id = int(args['id'][0]) - 1
 
 			# TODO fromt must containt time the target can be scheduled
 			# fromt must containt from time
@@ -75,32 +86,43 @@ class BBHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 			self.send_OK_response(fromt)
 
 		elif self.path == '/bbapi/confirm':
-			tar_id = int(args['id']) - 1
+			if len(args['id']) != 1 or len(args['observatory_id']) != 1 or len(args['schedule_id']) != 1:
+				self.send_ERROR_reponse(400)
+
+			tar_id = int(args['id'][0]) - 1
 
 			# TODO fromt must containt time the target can be scheduled
 			# fromt must containt from time
 			print 'confirm target', tar_id, targets[tar_id]
 
 			try:
-				observatory_schedules[int(args['observatory_id'])][int(args['schedule_id'])] = tar_id
+				observatory_schedules[int(args['observatory_id'][0])][int(args['schedule_id'][0])] = tar_id
 			except KeyError:
-				observatory_schedules[int(args['observatory_id'])] = {}
-				observatory_schedules[int(args['observatory_id'])][int(args['schedule_id'])] = tar_id
+				observatory_schedules[int(args['observatory_id'][0])] = {}
+				observatory_schedules[int(args['observatory_id'][0])][int(args['schedule_id'][0])] = tar_id
 
 			fromt = time.time () + 8400
 
 			self.send_OK_response(fromt)
 
 		elif self.path == '/bbapi/cancel':
+			if len(args['observatory_id']) != 1 or len(args['schedule_id']) != 1:
+				self.send_ERROR_reponse(400)
 
 			# TODO cancel request (if possible)
 			print 'cancel schedule', args
 
-			observatory_schedules[int(args['observatory_id'])].pop(int(args['schedule_id']))
+			observatory_schedules[int(args['observatory_id'][0])].pop(int(args['schedule_id'][0]))
 
 			self.send_OK_response(0)
 
 		print >> sys.stderr, "get request", self.path, args
+
+	def do_GET(self):
+		try:
+			self.serve_GET()
+		except Exception, ex:
+			print >> sys.stderr, 'exception for path', self.path, ex
 
 httpd = BaseHTTPServer.HTTPServer(("", int(options.port)), BBHandler)
 
