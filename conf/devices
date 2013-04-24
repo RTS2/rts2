@@ -1,7 +1,7 @@
 #RTS2 devices configuration
 #device	type	device_name	options
 #example:
-camd	dummy	C0	--wheeldev W0 --focdev F0 --width 400 --height 500 -f --localhost localhost
+camd	dummy	C0	--wheeldev W0 --focdev F0 --width 400 --height 500 --frame-transfer --localhost localhost
 teld	dummy	T0	--localhost localhost
 filterd	dummy	W0	-F "AA:B:C:D:E" -s 10 --localhost localhost
 focusd	dummy	F0	

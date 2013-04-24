@@ -31,6 +31,7 @@ BB::BB (int argc, char ** argv):
 	sched ("/schedules", this, this),
   	imageReq ("/images", this),
 	javaScriptRequests ("/js", this, this),
+	cssRequests ("/css", this, this),
 	task_queue (this)
 {
 	rpcPort = 8889;

@@ -20,9 +20,9 @@
 #ifndef __RTS2_LIBCSS__
 #define __RTS2_LIBCSS__
 
-#include "rts2json/httpreq.h"
+#include "httpreq.h"
 
-namespace rts2xmlrpc
+namespace rts2json
 {
 
 /**

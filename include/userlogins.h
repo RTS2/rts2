@@ -17,8 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <string>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace rts2core
 {
@@ -46,7 +47,8 @@ class UserLogins
 		void deleteUser (std::string username);
 	
 	private:
-		std::map <std::string, std::string> logins;
+		// pair is holding password and allowed devices
+		std::map <std::string, std::pair <std::string, std::vector <std::string> > > logins;
 };
 
 }

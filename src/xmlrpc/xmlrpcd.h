@@ -596,7 +596,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 #endif /* RTS2_HAVE_LIBJPEG */
 		rts2json::FitsImageRequest fitsRequest;
 		rts2json::LibJavaScript javaScriptRequests;
-		LibCSS cssRequests;
+		rts2json::LibCSS cssRequests;
 		API api;
 #ifdef RTS2_HAVE_PGSQL
 		BBAPI bbapi;

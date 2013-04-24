@@ -29,6 +29,7 @@
 
 #include "rts2json/images.h"
 #include "rts2json/libjavascript.h"
+#include "rts2json/libcss.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -94,6 +95,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		rts2json::ImageReq imageReq;
 		rts2json::LibJavaScript javaScriptRequests;
+		rts2json::LibCSS cssRequests;
 
 		rts2core::ValueBool *debugConn;
 		rts2core::ValueInteger *queueSize;

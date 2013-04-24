@@ -68,3 +68,5 @@ ALTER TABLE observations ADD COLUMN plan_id integer REFERENCES plan(plan_id);
 ALTER TABLE plan DROP COLUMN obs_id;
 
 ALTER TABLE targets ADD COLUMN tar_telescope_mode integer default NULL;
+
+ALTER TABLE users ADD COLUMN allowed_devices varchar(2000);

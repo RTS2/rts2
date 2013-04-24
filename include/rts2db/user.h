@@ -37,9 +37,6 @@ namespace rts2db
  */
 class TypeUser
 {
-	private:
-		char type;
-		int eventMask;
 	public:
 		TypeUser (char type, int event_mask);
 		~TypeUser (void);
@@ -82,6 +79,9 @@ class TypeUser
 			_os << std::endl;
 			return _os;
 		}
+	private:
+		char type;
+		int eventMask;
 };
 
 class TypeUserSet: public std::list <TypeUser>
@@ -138,13 +138,6 @@ class TypeUserSet: public std::list <TypeUser>
  */
 class User
 {
-	private:
-		int id;
-		std::string login;
-		std::string email;
-
-		TypeUserSet *types;
-
 	public:
 		/**
 		 * Construct empty user object.
@@ -259,6 +252,15 @@ class User
 			_os << (*(user.types));
 			return _os;
 		}
+
+	private:
+		int id;
+		std::string login;
+		std::string email;
+		// devices user can write on
+		std::vector <std::string> allowedDevices;
+
+		TypeUserSet *types;
 };
 
 }

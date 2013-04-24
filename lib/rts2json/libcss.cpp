@@ -21,7 +21,7 @@
 #include "utilsfunc.h"
 #include "error.h"
 
-using namespace rts2xmlrpc;
+using namespace rts2json;
 
 static const char *calendarCss = 
 "#CalendarControlIFrame {\n"

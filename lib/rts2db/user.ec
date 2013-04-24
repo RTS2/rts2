@@ -209,6 +209,7 @@ int User::load (const char * in_login)
 	int db_id;
 	VARCHAR db_login[25];
 	VARCHAR db_email[200];
+	VARCHAR db_allowed_devices[2000];
 	EXEC SQL END DECLARE SECTION;
 
 	if (strlen (in_login) > 25)
@@ -222,10 +223,12 @@ int User::load (const char * in_login)
 
 	EXEC SQL SELECT
 		usr_id,
-		usr_email
+		usr_email,
+		allowed_devices
 	INTO
 		:db_id,
-		:db_email
+		:db_email,
+		:db_allowed_devices
 	FROM
 		users
 	WHERE
@@ -240,6 +243,7 @@ int User::load (const char * in_login)
 	id = db_id;
 	login = std::string (in_login);
 	email = std::string (db_email.arr);
+	allowedDevices = SplitStr (std::string (db_allowed_devices.arr), " ");
 
 	return loadTypes ();
 }

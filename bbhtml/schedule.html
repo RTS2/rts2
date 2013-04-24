@@ -7,7 +7,24 @@
 </head>
 
 <script language="JavaScript" src="js/setgetapi.js" type="text/javascript"></script>
+<script language="JavaScript" src="js/jquery.js" type="text/javascript"></script>
+<script language="JavaScript" src="js/jquery-ui.js" type="text/javascript"></script>
 <script language='JavaScript'>
+$("#create-form").dialog({
+	autoOpen: false,
+	height: 300,
+	width: 350,
+	modal: true,
+	buttons: {
+		"Create a target": function() {
+			$(this).dialog("close");
+		}
+	},
+	close: function() {
+		allFields.val("").removeClass("ui-state-error");
+	}
+});
+
 // find target of given name(s)
 function searchTarget(text, opt, schedb)
 {
@@ -55,12 +72,23 @@ function schedule(tid)
 
 function new_target(name)
 {
-
+	$("#create-form").dialog("open");
 }
-
 </script>
 
 <body>
+  <div id="create-form" title="Create new target">
+    <p class="validateTips">All form fields are required.</p>
+    <form>
+      <fieldset>
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name" class="text ui-widget-content ui-corner-all" />
+        <label for="radec">RA DEC</label>
+        <input type="text" name="radec" id="radec" value="" class="text ui-widget-content ui-corner-all" />
+      </fieldset>
+    </form>
+  </div>
+
   <form name='target'>
     <input type='text' name='target'/>
     <select name='available'></select>
