@@ -63,9 +63,9 @@ void BB::postEvent (rts2core::Event *event)
 	rts2db::DeviceDb::postEvent (event);
 }
 
-bool BB::verifyDBUser (std::string username, std::string pass, bool &executePermission)
+bool BB::verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
 {
-	return verifyUser (username, pass, executePermission);
+	return verifyUser (username, pass, executePermission, allowedDevices);
 }
 
 int BB::processOption (int opt)

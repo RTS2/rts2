@@ -127,6 +127,15 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		bool canExecute () { return executePermission; }
 
 		/**
+		 * Returns true if current user can write to the device.
+		 *
+		 * @param deviceName device to check.
+		 *
+		 * @return true if user can write to the device
+		 */
+		bool canWriteDevice (const std::string &deviceName);
+
+		/**
 		 * Return JSON page.
 		 *
 		 * @param msg             null terminated char array which will be returned
@@ -156,6 +165,7 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		bool executePermission;
 
 		HTTPServer *http_server;
+		std::vector <std::string> allowedDevices;
 };
 
 class JSONRequest:public GetRequestAuthorized

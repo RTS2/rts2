@@ -42,7 +42,7 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 		}
 	}
 
-	if (getServer ()->verifyDBUser (getUsername (), getPassword (), executePermission) == false)
+	if (getServer ()->verifyDBUser (getUsername (), getPassword (), executePermission, &allowedDevices) == false)
 	{
 		authorizePage (http_code, response_type, response, response_length);
 		return;
@@ -110,6 +110,31 @@ void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const 
 {
 	os << "<script type='text/javascript'>pagePrefix = '" << getServer ()->getPagePrefix () << "';</script>\n";
 	includeJavaScript (os, name);
+}
+
+bool GetRequestAuthorized::canWriteDevice (const std::string &deviceName)
+{
+//	if (getServer ()->authorizeLocalhost () == false && ntohl (saddr->sin_addr.s_addr) == INADDR_LOOPBACK)
+//		return true;
+	for (std::vector <std::string>::iterator iter = allowedDevices.begin (); iter != allowedDevices.end(); iter++)
+	{
+		// find * for wildcard..
+		size_t star = iter->find('*');
+		if (star == 0)
+		{
+			return true;
+		}
+		else if (star > 0)
+		{
+			if (iter->substr (0, star - 1) == deviceName.substr (0, star - 1))
+				return true;
+		}
+		else if (*iter == deviceName)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 JSONRequest::JSONRequest (const char *prefix, HTTPServer *_http_server, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _http_server, NULL, s)

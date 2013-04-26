@@ -40,7 +40,7 @@ class UserLogins
 
 		void listUser (std::ostream &os);
 
-		bool verifyUser (std::string username, std::string pass, bool &executePermission);
+		bool verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = NULL);
 
 		void setUserPassword (std::string username, std::string newpass);
 

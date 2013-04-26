@@ -442,11 +442,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		 */
 		int defchan; 
 
-		/**
-		 * If requests from localhost should be authorized.
-		 */
-		bool authorizeLocalhost () { return auth_localhost; }
-
 		virtual bool isPublic (struct sockaddr_in *saddr, const std::string &path);
 
 		virtual bool existsSession (std::string sessionId);
@@ -462,7 +457,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		void scriptProgress (double start, double end);
 
-		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission);
+		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = 0);
 
 		/**
 		 *
@@ -537,8 +532,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		// user - login fields
 		rts2core::UserLogins userLogins;
 #endif
-
-		bool auth_localhost;
 
 		std::string page_prefix;
 
@@ -618,7 +611,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 
 #ifndef RTS2_HAVE_PGSQL
-bool verifyUser (std::string username, std::string pass, bool &executePermission);
+bool verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = 0);
 #endif
 
 };

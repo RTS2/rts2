@@ -271,9 +271,10 @@ class User
  * @param username            user login name
  * @param pass                user password
  * @param executePermission   return value - true if user has execute permission
+ * @param allowedDevices      returns list of devices user is allowed to write/execute
  *
  * @return True if login and password is correct, false otherwise.
  */
-bool verifyUser (std::string username, std::string pass, bool &executePermission);
+bool verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = NULL);
 
 #endif							 /* !__RTS2_USER__ */

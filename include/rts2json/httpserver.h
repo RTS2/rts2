@@ -45,6 +45,12 @@ class HTTPServer
 			sumAsync = NULL;
 			numberAsyncAPIs = NULL;
 		}
+
+		/**
+		 * If requests from localhost should be authorized.
+		 */
+		bool authorizeLocalhost () { return auth_localhost; }
+
 		/**
 		 * Returns true, if given path is marked as being public - accessible to all.
 		 */
@@ -89,7 +95,7 @@ class HTTPServer
 		/**
 		 * Verify user credentials.
 		 */
-		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission) = 0;
+		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = 0) = 0;
 
 		/**
 		 * Register asynchronous API call.
@@ -102,6 +108,8 @@ class HTTPServer
 		rts2core::ValueInteger *numberAsyncAPIs;
 		rts2core::ValueInteger *sumAsync;
 		std::list <rts2json::AsyncAPI *> asyncAPIs;
+
+		bool auth_localhost;
 };
 
 }

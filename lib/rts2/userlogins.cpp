@@ -102,11 +102,13 @@ void UserLogins::listUser (std::ostream &os)
 		os << iter->first << std::endl;
 }
 
-bool UserLogins::verifyUser (std::string username, std::string pass, bool &executePermission)
+bool UserLogins::verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
 {
 	if (logins.find (username) == logins.end ())
 		return false;
 	// crypt password using salt..
+	if (allowedDevices)
+		*allowedDevices = logins[username].second;
 #ifdef RTS2_HAVE_CRYPT
 	char *crp = crypt (pass.c_str (), logins[username].first.c_str ());
 	return logins[username].first == std::string(crp);

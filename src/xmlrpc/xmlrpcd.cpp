@@ -1078,19 +1078,19 @@ void XmlRpcd::reloadEventsFile ()
 }
 
 #ifdef RTS2_HAVE_PGSQL
-bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission)
+bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
 {
-	return verifyUser (username, pass, executePermission);
+	return verifyUser (username, pass, executePermission, allowedDevices);
 }
 #else
-bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission)
+bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
 {
-	return userLogins.verifyUser (username, pass, executePermission);
+	return userLogins.verifyUser (username, pass, executePermission, allowedDevices);
 }
 
-bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission)
+bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
 {
-	return ((XmlRpcd *) getMasterApp ())->verifyDBUser (username, pass, executePermission);
+	return ((XmlRpcd *) getMasterApp ())->verifyDBUser (username, pass, executePermission, allowedDevices);
 }
 #endif /* RTS2_HAVE_PGSQL */
 

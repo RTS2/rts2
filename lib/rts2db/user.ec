@@ -210,6 +210,7 @@ int User::load (const char * in_login)
 	VARCHAR db_login[25];
 	VARCHAR db_email[200];
 	VARCHAR db_allowed_devices[2000];
+	int db_allowed_devices_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	if (strlen (in_login) > 25)
@@ -228,7 +229,7 @@ int User::load (const char * in_login)
 	INTO
 		:db_id,
 		:db_email,
-		:db_allowed_devices
+		:db_allowed_devices :db_allowed_devices_ind
 	FROM
 		users
 	WHERE
@@ -243,7 +244,15 @@ int User::load (const char * in_login)
 	id = db_id;
 	login = std::string (in_login);
 	email = std::string (db_email.arr);
-	allowedDevices = SplitStr (std::string (db_allowed_devices.arr), " ");
+	if (db_allowed_devices_ind == 0)
+	{
+		db_allowed_devices.arr[db_allowed_devices.len] = '\0';
+		allowedDevices = SplitStr (std::string (db_allowed_devices.arr), " ");
+	}
+	else
+	{
+		allowedDevices = std::vector <std::string> ();
+	}
 
 	return loadTypes ();
 }
@@ -340,13 +349,15 @@ int User::setEmail (std::string newEmail)
 	return 0;
 }
 
-bool verifyUser (std::string username, std::string pass, bool &executePermission)
+bool verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_username[25];
 	VARCHAR d_passwd[100];
 	int d_pass_ind;
 	bool d_executePermission;
+	VARCHAR d_allowed_devices[2000];
+	int d_allowed_devices_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	db_username.len = username.length ();
@@ -356,17 +367,18 @@ bool verifyUser (std::string username, std::string pass, bool &executePermission
 	EXEC SQL BEGIN TRANSACTION;
 
 	EXEC SQL DECLARE verify_cur CURSOR FOR
-		SELECT
-			usr_passwd,
-			usr_execute_permission
-		FROM
-			users
-		WHERE
-			usr_login = :db_username;
+	SELECT
+		usr_passwd,
+		usr_execute_permission,
+		allowed_devices
+	FROM
+		users
+	WHERE
+		usr_login = :db_username;
 
 	EXEC SQL OPEN verify_cur;
 
-	EXEC SQL FETCH next FROM verify_cur INTO :d_passwd :d_pass_ind, :d_executePermission;
+	EXEC SQL FETCH next FROM verify_cur INTO :d_passwd :d_pass_ind, :d_executePermission, :d_allowed_devices :d_allowed_devices_ind;
 
 	if (sqlca.sqlcode == 0)
 	{
@@ -374,6 +386,11 @@ bool verifyUser (std::string username, std::string pass, bool &executePermission
 		// null password - user blocked
 		if (d_pass_ind)
 			return false;
+		if (allowedDevices and d_allowed_devices_ind == 0)
+		{
+			d_allowed_devices.arr[d_allowed_devices.len] = '\0';
+			*allowedDevices = SplitStr (d_allowed_devices.arr, " ");
+		}
 		d_passwd.arr[d_passwd.len] = '\0';
 		EXEC SQL ROLLBACK;
 #ifdef RTS2_HAVE_CRYPT

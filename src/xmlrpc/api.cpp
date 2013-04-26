@@ -571,6 +571,8 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			else if (vals[0] == "cmd")
 			{
 				const char *device = params->getString ("d", "");
+				if (!canWriteDevice (std::string (device)))
+					throw JSONException ("not authorized to write to the device");
 				const char *cmd = params->getString ("c", "");
 				int async = params->getInteger ("async", 0);
 				bool ext = params->getInteger ("e", 0);
