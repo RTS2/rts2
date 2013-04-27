@@ -43,6 +43,8 @@ class Dummy:public SensorWeather
 			createValue (testDouble, "TEST_DOUBLE", "test double value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (testDoubleLimit, "test_limit", "test value for double; if < TEST_DOUBLE, weather will be swicthed to bad", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (randomDouble, "random_double", "random double value", false);
+			createValue (randomInterval, "random_interval", "[s] time interval between generating two random doubles", false, RTS2_VALUE_WRITABLE);
+			randomInterval->setValueFloat (1.0);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (wrRain, "wr_rain", "weather reason rain", true, RTS2_VALUE_WRITABLE);
 			createValue (wrWind, "wr_wind", "weather reason wind", true, RTS2_VALUE_WRITABLE);
@@ -194,6 +196,7 @@ class Dummy:public SensorWeather
 		rts2core::ValueDouble *testDouble;
 		rts2core::ValueDouble *testDoubleLimit;
 		rts2core::ValueDouble *randomDouble;
+		rts2core::ValueFloat *randomInterval;
 		rts2core::ValueBool *goodWeather;
 		rts2core::ValueBool *wrRain;
 		rts2core::ValueBool *wrWind;
@@ -253,7 +256,7 @@ void Dummy::postEvent (rts2core::Event *event)
 		case EVENT_TIMER_RU:
 			randomDouble->setValueDouble ((double) random () / RAND_MAX);
 			sendValueAll (randomDouble);
-			addTimer (1, event);
+			addTimer (randomInterval->getValueFloat (), event);
 			return;
 	}
 	SensorWeather::postEvent (event);

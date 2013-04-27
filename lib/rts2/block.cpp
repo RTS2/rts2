@@ -399,13 +399,29 @@ void Block::oneRunLoop ()
 
 	if (timers.begin () != timers.end () && (USEC_SEC * (t_diff = (timers.begin ()->first - getNow ()))) < idle_timeout)
 	{
-		read_tout.tv_sec = t_diff;
-		read_tout.tv_usec = (t_diff - floor (t_diff)) * USEC_SEC;
+		if (t_diff <= 0)
+		{
+			read_tout.tv_sec = 0;
+			read_tout.tv_usec = 0;
+		}
+		else
+		{
+			read_tout.tv_sec = t_diff;
+			read_tout.tv_usec = (t_diff - floor (t_diff)) * USEC_SEC;
+		}
 	}
 	else
 	{
-		read_tout.tv_sec = idle_timeout / USEC_SEC;
-		read_tout.tv_usec = idle_timeout % USEC_SEC;
+		if (idle_timeout <= 0)
+		{
+			read_tout.tv_sec = 0;
+			read_tout.tv_usec = 0;
+		}
+		else
+		{
+			read_tout.tv_sec = idle_timeout / USEC_SEC;
+			read_tout.tv_usec = idle_timeout % USEC_SEC;
+		}
 	}
 
 	FD_ZERO (&read_set);

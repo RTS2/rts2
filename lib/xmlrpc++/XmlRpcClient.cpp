@@ -151,7 +151,7 @@ bool XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
 	return executeGetRequest(path, NULL, reply, reply_length);
 }
 
-bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length)
+bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length, double msTime)
 {
 	XmlRpcUtil::log(1, "XmlRpcClient::executeGetRequest: GET %s (_connectionState %d):", path, _connectionState);
 
@@ -170,7 +170,6 @@ bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &
 	if ( ! generateGetRequest(path, body))
 		return false;
 
-	double msTime = -1.0;
 	_disp.work(msTime);
 
 	if (_connectionState != IDLE)
@@ -211,7 +210,7 @@ bool XmlRpcClient::executePost(const char* path, char* &reply, int &reply_length
 	return executePostRequest(path, NULL, reply, reply_length);
 }
 
-bool XmlRpcClient::executePostRequest(const char* path, const char *body, char* &reply, int &reply_length)
+bool XmlRpcClient::executePostRequest(const char* path, const char *body, char* &reply, int &reply_length, double msTime)
 {
 	XmlRpcUtil::log(1, "XmlRpcClient::executePostRequest: POST %s (_connectionState %d).", path, _connectionState);
 
@@ -230,7 +229,6 @@ bool XmlRpcClient::executePostRequest(const char* path, const char *body, char* 
 	if ( ! generatePostRequest(path, body))
 		return false;
 
-	double msTime = -1.0;		 // Process until exit is called
 	_disp.work(msTime);
 
 	if (_connectionState != IDLE)

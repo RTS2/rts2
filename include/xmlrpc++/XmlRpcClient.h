@@ -85,13 +85,13 @@ namespace XmlRpc
 			//! This is synchronous version of the request.
 			bool executeGet(const char* path, char* &reply, int &reply_length);
 
-			bool executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length);
+			bool executeGetRequest(const char* path, const char *body, char* &reply, int &reply_length, double msTime = -1.0);
 
 			bool executeGetRequestAsync(const char* path, const char *body = NULL);
 
 			bool executePost(const char* path, char* &reply, int &reply_length);
 
-			bool executePostRequest(const char* path, const char *body, char* &reply, int &reply_length);
+			bool executePostRequest(const char* path, const char *body, char* &reply, int &reply_length, double msTime = -1.0);
 
 			bool executePostRequestAsync(const char* path, const char *body = NULL);
 
