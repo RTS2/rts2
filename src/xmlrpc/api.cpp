@@ -354,6 +354,8 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			else if (vals[0] == "set" || vals[0] == "inc" || vals[0] == "dec")
 			{
 				const char *device = params->getString ("d","");
+				if (!canWriteDevice (std::string (device)))
+					throw JSONException ("not authorized to write to the device");
 				const char *variable = params->getString ("n", "");
 				const char *value = params->getString ("v", "");
 				int async = params->getInteger ("async", 0);
@@ -457,6 +459,8 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 					{
 						std::string devn = dn.substr (0,dot);
 						std::string vn = dn.substr (dot + 1);
+						if (!canWriteDevice (devn))
+							throw JSONException ("not authorized to write to the device");
 						if (devn == ((XmlRpcd *) getMasterApp ())->getDeviceName ())
 						{
 							((XmlRpcd *) getMasterApp ())->doOpValue (vn.c_str (), '=', iter->getValue ());
