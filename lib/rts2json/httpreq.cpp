@@ -25,6 +25,7 @@ using namespace rts2json;
 
 void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
+	source_addr = saddr;
 	// if it is public page..
 	if (getServer ()->isPublic (saddr, getPrefix () + path))
 	{
@@ -114,8 +115,8 @@ void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const 
 
 bool GetRequestAuthorized::canWriteDevice (const std::string &deviceName)
 {
-//	if (getServer ()->authorizeLocalhost () == false && ntohl (saddr->sin_addr.s_addr) == INADDR_LOOPBACK)
-//		return true;
+	if (getServer ()->authorizeLocalhost () == false && ntohl (source_addr->sin_addr.s_addr) == INADDR_LOOPBACK)
+		return true;
 	for (std::vector <std::string>::iterator iter = allowedDevices.begin (); iter != allowedDevices.end(); iter++)
 	{
 		// find * for wildcard..

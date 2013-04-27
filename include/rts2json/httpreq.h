@@ -58,6 +58,7 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		{
 			http_server = _http_server;
 			executePermission = false;
+			source_addr = NULL;
 		}
 
 		virtual void execute (XmlRpc::XmlRpcSource *source, struct ::sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
@@ -166,6 +167,8 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 
 		HTTPServer *http_server;
 		std::vector <std::string> allowedDevices;
+
+		struct sockaddr_in *source_addr;
 };
 
 class JSONRequest:public GetRequestAuthorized

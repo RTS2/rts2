@@ -152,7 +152,7 @@ SessionMethod::SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServer
 
 void SessionMethod::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 {
-	if (((XmlRpcd *) getMasterApp ())->authorizeLocalhost () || ntohl (saddr->sin_addr.s_addr) != INADDR_LOOPBACK)
+	if (((rts2json::HTTPServer *) getMasterApp ())->authorizeLocalhost () || ntohl (saddr->sin_addr.s_addr) != INADDR_LOOPBACK)
 	{
 		if (getUsername () == std::string ("session_id"))
 		{

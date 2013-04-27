@@ -77,12 +77,12 @@ namespace XmlRpc
 	{
 		public:
 			//! Constructor
-			XmlRpcServerGetRequest(const char *prefix, const char *description = NULL, XmlRpcServer* server = 0);
+			XmlRpcServerGetRequest (const char *prefix, const char *description = NULL, XmlRpcServer* server = 0);
 			//! Destructor
-			virtual ~XmlRpcServerGetRequest();
+			virtual ~XmlRpcServerGetRequest ();
 
 			//! Returns the name of the method
-			std::string& getPrefix() { return _prefix; }
+			std::string& getPrefix () { return _prefix; }
 
 			const char* getDescription () { return _description; }
 
@@ -96,7 +96,7 @@ namespace XmlRpc
 			std::string getPassword() { return _password; }
 
 			//! Execute the method. Subclasses must provide a definition for this method.
-			virtual void execute(XmlRpcSource *source, sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &respose, size_t &response_length) = 0;
+			virtual void execute (XmlRpcSource *source, sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &respose, size_t &response_length) = 0;
 			//! Returns 401 page
 			virtual void authorizePage(int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
