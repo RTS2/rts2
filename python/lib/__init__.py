@@ -23,3 +23,4 @@ from flats import Flat,FlatScript
 from json import getProxy,createProxy
 from queue import Queue,QueueEntry
 from queues import Queues
+from sextractor import Sextractor
