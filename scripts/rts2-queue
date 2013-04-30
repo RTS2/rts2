@@ -232,7 +232,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 		qs.save_xml(options.save_xml)
 			
 	if options.load_xml:
-		qs = rts2.Queues()
+		qs = rts2.Queues(rts2.json.getProxy())
 		for xml in options.load_xml:
 			qs.load_xml(xml)
 		qs.save(True)
@@ -244,7 +244,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 			q.load()
 			print "Queue {0}: {1}".format(options.queue, q)
 		else:
-			qs = rts2.Queues()
+			qs = rts2.Queues(rts2.json.getProxy())
 			qs.load()
 			for q in qs.queues:
 				print "Queue {0}: {1}".format(qs.queues[q].name, qs.queues[q])
