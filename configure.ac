@@ -855,6 +855,7 @@ AC_OUTPUT([Makefile
 	   lib/libindi/Makefile 
 	   python/Makefile
 	   python/lib/Makefile
+	   python/lib/db/Makefile
 	   scripts/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
