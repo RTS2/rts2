@@ -37,8 +37,7 @@ else
 librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c
 endif
 
-
-librts2users_la_SOURCES = userlogins.cpp
+librts2users_la_SOURCES = userlogins.cpp userpermissions.cpp
 
 # CYGWIN workaround
 if NOT_GETADDRINFO

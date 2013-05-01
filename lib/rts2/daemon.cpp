@@ -1181,16 +1181,16 @@ int Daemon::loadCreateFile ()
 	return ret;
 }
 
-int Daemon::loadValuesFile (const char *valuefile)
+int Daemon::loadValuesFile (const char *filename)
 {
-	if (valueFile == NULL)
+	if (filename == NULL)
 		return 0;
 	
 	IniParser *autosave = new IniParser (true);
-	int ret = autosave->loadFile (valueFile);
+	int ret = autosave->loadFile (filename);
 	if (ret)
 	{
-		logStream (MESSAGE_WARNING) << "cannot open autosave file " << valueFile << ", ignoring the error" << sendLog;
+		logStream (MESSAGE_WARNING) << "cannot open autosave file " << filename << ", ignoring the error" << sendLog;
 		return 0;
 	}
 
