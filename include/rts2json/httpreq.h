@@ -57,8 +57,8 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		GetRequestAuthorized (const char* prefix, HTTPServer *_http_server, const char *description = NULL, XmlRpc::XmlRpcServer* s = NULL):XmlRpcServerGetRequest (prefix, description, s)
 		{
 			http_server = _http_server;
-			executePermission = false;
 			source_addr = NULL;
+			userPermissions = new rts2core::UserPermissions ();
 		}
 
 		virtual void execute (XmlRpc::XmlRpcSource *source, struct ::sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
@@ -121,20 +121,38 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		void includeJavaScriptWithPrefix (std::ostream &os, const char *name);
 
 		/**
-		 * Return true if user can execute commands (make changes, set next targets, ..).
-		 *
-		 * @return true if user has usr_execute_permission set
-		 */
-		bool canExecute () { return executePermission; }
-
-		/**
 		 * Returns true if current user can write to the device.
 		 *
-		 * @param deviceName device to check.
+		 * @param deviceName device to check
 		 *
 		 * @return true if user can write to the device
 		 */
 		bool canWriteDevice (const std::string &deviceName);
+
+		/**
+		 * Return true if current user can modify given variable.
+		 *
+		 * @param deviceName variable device name
+		 * @param variableName variable name
+		 *
+		 * @return true if user can change the variable
+		 */
+		bool canWriteVariable (const std::string &deviceName, const std::string &variableName);
+
+		/**
+		 * Check if the logged user has permissions to perform specified action.
+		 *
+		 * @param action Action which will be checked for permissions. See various PERMISSIONS_.. 
+		 *
+		 * @see PERMISSIONS_TARGET_ENABLE
+		 * @see PERMISSIONS_TARGET_SLEW
+		 * @see PERMISSIONS_TARGET_NEXT
+		 * @see PERMISSIONS_TARGET_NOW
+		 */
+		bool hasPermission (const char *action)
+		{
+			return canWriteDevice (std::string (action));
+		}
 
 		/**
 		 * Return JSON page.
@@ -163,10 +181,8 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		HTTPServer *getServer () { return http_server; }
 
 	private:
-		bool executePermission;
-
 		HTTPServer *http_server;
-		std::vector <std::string> allowedDevices;
+		rts2core::UserPermissions *userPermissions;
 
 		struct sockaddr_in *source_addr;
 };

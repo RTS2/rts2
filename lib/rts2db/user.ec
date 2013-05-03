@@ -187,6 +187,7 @@ User::User ()
 {
  	id = -1;
 	types = NULL;
+	userPermissions = NULL;
 }
 
 User::User (int in_id, std::string in_login, std::string in_email)
@@ -196,10 +197,12 @@ User::User (int in_id, std::string in_login, std::string in_email)
 	email = in_email;
 
 	types = NULL;
+	userPermissions = NULL;
 }
 
 User::~User (void)
 {
+	delete userPermissions;
 	delete types;
 }
 
@@ -244,14 +247,14 @@ int User::load (const char * in_login)
 	id = db_id;
 	login = std::string (in_login);
 	email = std::string (db_email.arr);
+
+	delete userPermissions;
+	userPermissions = new rts2core::UserPermissions ();
+
 	if (db_allowed_devices_ind == 0)
 	{
 		db_allowed_devices.arr[db_allowed_devices.len] = '\0';
-		allowedDevices = SplitStr (std::string (db_allowed_devices.arr), " ");
-	}
-	else
-	{
-		allowedDevices = std::vector <std::string> ();
+		userPermissions->parsePermissions (db_allowed_devices.arr);
 	}
 
 	return loadTypes ();
@@ -349,13 +352,12 @@ int User::setEmail (std::string newEmail)
 	return 0;
 }
 
-bool verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
+bool verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_username[25];
 	VARCHAR d_passwd[100];
 	int d_pass_ind;
-	bool d_executePermission;
 	VARCHAR d_allowed_devices[2000];
 	int d_allowed_devices_ind;
 	EXEC SQL END DECLARE SECTION;
@@ -369,7 +371,6 @@ bool verifyUser (std::string username, std::string pass, bool &executePermission
 	EXEC SQL DECLARE verify_cur CURSOR FOR
 	SELECT
 		usr_passwd,
-		usr_execute_permission,
 		allowed_devices
 	FROM
 		users
@@ -378,28 +379,34 @@ bool verifyUser (std::string username, std::string pass, bool &executePermission
 
 	EXEC SQL OPEN verify_cur;
 
-	EXEC SQL FETCH next FROM verify_cur INTO :d_passwd :d_pass_ind, :d_executePermission, :d_allowed_devices :d_allowed_devices_ind;
+	EXEC SQL FETCH next FROM
+		verify_cur
+	INTO
+		:d_passwd :d_pass_ind,
+		:d_allowed_devices :d_allowed_devices_ind;
 
 	if (sqlca.sqlcode == 0)
 	{
-		executePermission = d_executePermission;
 		// null password - user blocked
 		if (d_pass_ind)
 			return false;
-		if (allowedDevices and d_allowed_devices_ind == 0)
-		{
-			d_allowed_devices.arr[d_allowed_devices.len] = '\0';
-			*allowedDevices = SplitStr (d_allowed_devices.arr, " ");
-		}
-		d_passwd.arr[d_passwd.len] = '\0';
 		EXEC SQL ROLLBACK;
+		d_passwd.arr[d_passwd.len] = '\0';
 #ifdef RTS2_HAVE_CRYPT
-		return strcmp (crypt (pass.c_str (), d_passwd.arr), d_passwd.arr) == 0;
+		if (strcmp (crypt (pass.c_str (), d_passwd.arr), d_passwd.arr) == 0)
 #else
-		return pass == std::string (d_passwd.arr);
+		if (pass == std::string (d_passwd.arr))
 #endif
+		{
+			if (userPermissions and d_allowed_devices_ind == 0)
+			{
+				d_allowed_devices.arr[d_allowed_devices.len] = '\0';
+				userPermissions->parsePermissions (d_allowed_devices.arr);
+			}
+			return true;
+		}
+		return false;
 	}
-	executePermission = false;
 	EXEC SQL ROLLBACK;
 	return false;
 }

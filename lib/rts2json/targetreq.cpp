@@ -424,11 +424,11 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 		returnJSON (os, response_type, response, response_length);
 		return;
 	}	
-	if (!canExecute ())
-		throw XmlRpc::XmlRpcException ("you do not have permission to change anything");
 	e = params->getString ("e", NULL);
 	if (e != NULL)
 	{
+		if (!hasPermission (PERMISSIONS_TARGET_ENABLE))
+			throw XmlRpc::XmlRpcException ("you don't have permission to enable target");
 		tar->setTargetEnabled (!strcmp (e, "true"), true);
 		tar->save (true);
 		returnJSON ("1", response_type, response, response_length);
@@ -437,6 +437,8 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 	e = params->getString ("slew", NULL);
 	if (e != NULL)
 	{
+		if (!hasPermission (PERMISSIONS_TARGET_SLEW))
+			throw XmlRpc::XmlRpcException ("you don't have permission to slew the target");
 		rts2core::connections_t::iterator iter = getServer ()->getConnections ()->begin ();
 		getServer ()->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
 		if (iter == getServer ()->getConnections ()->end ())
@@ -462,6 +464,8 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 	e = params->getString ("next", NULL);
 	if (e != NULL)
 	{
+		if (!hasPermission (PERMISSIONS_TARGET_NEXT))
+			throw XmlRpc::XmlRpcException ("you don't have permission to set the target as next");
 		rts2core::connections_t::iterator iter = getServer ()->getConnections ()->begin ();
 		getServer ()->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
 		if (iter == getServer ()->getConnections ()->end ())
@@ -476,6 +480,8 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 	e = params->getString ("now", NULL);
 	if (e != NULL)
 	{
+		if (!hasPermission (PERMISSIONS_TARGET_NOW))
+			throw XmlRpc::XmlRpcException ("you don't have permission to now execute the target");
 		rts2core::connections_t::iterator iter = getServer ()->getConnections ()->begin ();
 		getServer ()->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
 		if (iter == getServer ()->getConnections ()->end ())
@@ -610,7 +616,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 		"setTimeout('altAzTimer()',100);\n"
 	"}\n";
 
-	if (canExecute ())
+	if (hasPermission (PERMISSIONS_TARGET_ENABLE))
 	{
 		//enable target
 		_os << "function tar_enable (enable) {\n"
@@ -724,23 +730,23 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 	{
 		_os << "<tr><td>" << getLabelName (iter->ltype) << "</td><td>" << iter->ltext << " </td></tr>";
 	}
-	if (canExecute ())
-	{
-		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_slew();'>slew to target</button><div id='slew' style='display:none'>not slewing</div></td></tr>"
-		"<tr><td cellspan='2'><button type='button' onclick='tar_next();'>next target</button><div id='next' style='display:none'>nothing</div></td></tr>"
-		"<tr><td cellspan='2'><button type='button' onclick='tar_now();'>now (immediate) target</button><div id='now' style='display:none'>nothing</div></td></tr>"
-		"<tr><td>Enabled</td><td><input type='checkbox' id='tar_enable' onclick='tar_enable (this.checked);' checked='"
-		<< (tar->getTargetEnabled () ? "yes" : "no")
-		<< "'/></td></tr>";
-	}
+	if (hasPermission (PERMISSIONS_TARGET_SLEW))
+		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_slew();'>slew to target</button><div id='slew' style='display:none'>not slewing</div></td></tr>";
+
+	if (hasPermission (PERMISSIONS_TARGET_NEXT))
+		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_next();'>next target</button><div id='next' style='display:none'>nothing</div></td></tr>";
+	
+	if (hasPermission (PERMISSIONS_TARGET_NOW))
+		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_now();'>now (immediate) target</button><div id='now' style='display:none'>nothing</div></td></tr>";
+	
+	if (hasPermission (PERMISSIONS_TARGET_ENABLE))
+		_os << "<tr><td>Enabled</td><td><input type='checkbox' id='tar_enable' onclick='tar_enable (this.checked);' checked='" << (tar->getTargetEnabled () ? "yes" : "no") << "'/></td></tr>";
 	else
-	{
 	  	_os << "<tr><td>Enabled</td><td>" << (tar->getTargetEnabled () ? "yes" : "no") << "</td></tr>";
-	}
 
 	_os << "</table></div>";
 	
-	if (canExecute ())
+	if (hasPermission (PERMISSIONS_TARGET_SCRIPTEDIT))
 	{
 		_os << "<div id='scripteditor'i class='b_right'>";
 		includeJavaScript (_os, "targetedit.js");

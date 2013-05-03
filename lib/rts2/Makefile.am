@@ -21,7 +21,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
 	camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c connthorlabs.cpp \
-	dirsupport.cpp 
+	dirsupport.cpp userpermissions.cpp
 
 librts2gpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp
 
@@ -37,7 +37,7 @@ else
 librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c
 endif
 
-librts2users_la_SOURCES = userlogins.cpp userpermissions.cpp
+librts2users_la_SOURCES = userlogins.cpp
 
 # CYGWIN workaround
 if NOT_GETADDRINFO

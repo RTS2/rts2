@@ -1078,19 +1078,19 @@ void XmlRpcd::reloadEventsFile ()
 }
 
 #ifdef RTS2_HAVE_PGSQL
-bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
+bool XmlRpcd::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
-	return verifyUser (username, pass, executePermission, allowedDevices);
+	return verifyUser (username, pass, userPermissions);
 }
 #else
-bool XmlRpcd::verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
+bool XmlRpcd::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
-	return userLogins.verifyUser (username, pass, executePermission, allowedDevices);
+	return userLogins.verifyUser (username, pass, userPermissions);
 }
 
-bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
+bool rts2xmlrpc::verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
-	return ((XmlRpcd *) getMasterApp ())->verifyDBUser (username, pass, executePermission, allowedDevices);
+	return ((XmlRpcd *) getMasterApp ())->verifyDBUser (username, pass, userPermissions);
 }
 #endif /* RTS2_HAVE_PGSQL */
 

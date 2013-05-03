@@ -43,7 +43,7 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 		}
 	}
 
-	if (getServer ()->verifyDBUser (getUsername (), getPassword (), executePermission, &allowedDevices) == false)
+	if (getServer ()->verifyDBUser (getUsername (), getPassword (), userPermissions) == false)
 	{
 		authorizePage (http_code, response_type, response, response_length);
 		return;
@@ -117,24 +117,13 @@ bool GetRequestAuthorized::canWriteDevice (const std::string &deviceName)
 {
 	if (getServer ()->authorizeLocalhost () == false && ntohl (source_addr->sin_addr.s_addr) == INADDR_LOOPBACK)
 		return true;
-	for (std::vector <std::string>::iterator iter = allowedDevices.begin (); iter != allowedDevices.end(); iter++)
-	{
-		// find * for wildcard..
-		size_t star = iter->find('*');
-		if (star == 0)
-		{
-			return true;
-		}
-		else if (star > 0)
-		{
-			if (iter->substr (0, star - 1) == deviceName.substr (0, star - 1))
-				return true;
-		}
-		else if (*iter == deviceName)
-		{
-			return true;
-		}
-	}
+	return userPermissions->canWriteDevice (deviceName);
+}
+
+bool GetRequestAuthorized::canWriteVariable (const std::string &deviceName, const std::string &variableName)
+{
+	if (canWriteDevice (deviceName))
+		return true;
 	return false;
 }
 

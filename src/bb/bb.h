@@ -73,7 +73,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		virtual void getOpenConnectionType (int deviceType, rts2core::connections_t::iterator &current) { return getOpenConnectionType (deviceType, current); }
 
-		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = 0);
+		virtual bool verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions = NULL);
 
 		bool getDebugConn () { return debugConn->getValueBool (); }
 

@@ -23,6 +23,22 @@
 #include <string>
 #include <vector>
 
+//* Permission to enable/disable target
+#define PERMISSIONS_TARGET_ENABLE      ":target:enabled"
+
+//* Permission to command slew to a target
+#define PERMISSIONS_TARGET_SLEW        ":target:slew"
+
+//* Permission to set a target as the next target
+#define PERMISSIONS_TARGET_NEXT        ":target:next"
+
+//* Permission to set a target as the current target
+#define PERMISSIONS_TARGET_NOW         ":target:now"
+
+//* Permission to edit target script.
+#define PERMISSIONS_TARGET_SCRIPTEDIT  ":target:scriptedit"
+
+
 namespace rts2core
 {
 

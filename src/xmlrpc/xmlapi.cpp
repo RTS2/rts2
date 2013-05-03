@@ -147,7 +147,6 @@ void connectionValuesToXmlRpc (rts2core::Connection *conn, XmlRpcValue& result, 
 
 SessionMethod::SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s)
 {
-	executePermission = false;
 }
 
 void SessionMethod::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
@@ -162,7 +161,7 @@ void SessionMethod::execute (struct sockaddr_in *saddr, XmlRpcValue& params, Xml
 			}
 		}
 
-		if (verifyUser (getUsername (), getPassword (), executePermission) == false)
+		if (verifyUser (getUsername (), getPassword ()) == false)
 		{
 			throw XmlRpcException ("Invalid login or password");
 		}
@@ -178,7 +177,7 @@ void Login::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue
 		throw XmlRpcException ("Invalid number of parameters");
 	}
 
-	if (verifyUser (params[0], params[1], executePermission) == false)
+	if (verifyUser (params[0], params[1]) == false)
 	{
 		throw XmlRpcException ("Invalid login or password");
 	}
@@ -1076,7 +1075,7 @@ void UserLogin::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcV
 	if (params.size() != 2)
 		throw XmlRpcException ("Invalid number of parameters");
 
-	result = verifyUser (params[0], params[1], executePermission);
+	result = verifyUser (params[0], params[1]);
 }
 
 #endif /* RTS2_HAVE_PGSQL */

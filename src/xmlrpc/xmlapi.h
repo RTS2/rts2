@@ -48,8 +48,6 @@ class SessionMethod: public XmlRpcServerMethod
 		void execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result);
 
 		virtual void sessionExecute (XmlRpcValue& params, XmlRpcValue& result) = 0;
-	private:
-		bool executePermission;
 };
 
 class Login: public XmlRpcServerMethod

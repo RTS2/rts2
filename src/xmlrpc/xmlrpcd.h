@@ -457,7 +457,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 		void scriptProgress (double start, double end);
 
-		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = 0);
+		virtual bool verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions = NULL);
 
 		/**
 		 *
@@ -611,7 +611,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 
 
 #ifndef RTS2_HAVE_PGSQL
-bool verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = 0);
+bool verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions = NULL);
 #endif
 
 };

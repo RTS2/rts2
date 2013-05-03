@@ -153,6 +153,7 @@ int Optec::getPos ()
 
 	if (optecConn->writeRead ("FPOSRO", 6, rbuf, 8, '\r') < 1)
 	{
+		optecConn->flushPortIO ();
 		return -1;
 	}
 	else

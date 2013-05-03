@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 
 #include "block.h"
+#include "userpermissions.h"
 #include "rts2db/camlist.h"
 
 namespace rts2json
@@ -95,7 +96,7 @@ class HTTPServer
 		/**
 		 * Verify user credentials.
 		 */
-		virtual bool verifyDBUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = 0) = 0;
+		virtual bool verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions = NULL) = 0;
 
 		/**
 		 * Register asynchronous API call.

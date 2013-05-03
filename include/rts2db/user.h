@@ -21,6 +21,7 @@
 #define __RTS2_USER__
 
 #include "rts2target.h"
+#include "userpermissions.h"
 
 #include <string>
 #include <ostream>
@@ -257,10 +258,9 @@ class User
 		int id;
 		std::string login;
 		std::string email;
-		// devices user can write on
-		std::vector <std::string> allowedDevices;
 
 		TypeUserSet *types;
+		rts2core::UserPermissions *userPermissions;
 };
 
 }
@@ -270,11 +270,10 @@ class User
  *
  * @param username            user login name
  * @param pass                user password
- * @param executePermission   return value - true if user has execute permission
- * @param allowedDevices      returns list of devices user is allowed to write/execute
+ * @param userPermissions     if not null, returns object with user permissions
  *
  * @return True if login and password is correct, false otherwise.
  */
-bool verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices = NULL);
+bool verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions = NULL);
 
 #endif							 /* !__RTS2_USER__ */
