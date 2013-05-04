@@ -29,10 +29,10 @@ namespace rts2json
 
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class AddTarget: public rts2json::GetRequestAuthorized
+class AddTarget: public GetRequestAuthorized
 {
 	public:
-		AddTarget (const char *prefix, rts2json::HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):rts2json::GetRequestAuthorized (prefix, _http_server, "add new target", s) {};
+		AddTarget (const char *prefix, HTTPServer *_http_server, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, _http_server, "add new target", s) {};
 
 		virtual void authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
