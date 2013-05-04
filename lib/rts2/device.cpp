@@ -829,7 +829,6 @@ int Device::scriptEnds ()
 int Device::statusInfo (Connection * conn)
 {
 	sendStatusMessageConn (getState (), conn);
-	resendProgress (conn);
 	return 0;
 }
 

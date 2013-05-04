@@ -779,6 +779,7 @@ class Connection:public Object
 		int connectionTimeout;
 		conn_state_t conn_state;
 
+		int statusProgress ();
 		int status ();
 		int bopStatus ();
 		int message ();

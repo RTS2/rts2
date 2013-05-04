@@ -358,7 +358,7 @@ class Configuration:public IniParser
 		const char *getMasterConstraintFile () { return masterConsFile.c_str (); }
 
 		/**
-		 * Show milliseconds in time prinouts.
+		 * Show milliseconds in time printouts.
 		 */
 		bool getShowMilliseconds () { return showMilliseconds; }
 

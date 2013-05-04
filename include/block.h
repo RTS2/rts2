@@ -61,6 +61,8 @@
 #define PROTO_STATUS           "S"
 /** Command reporting state progress. */
 #define PROTO_PROGRESS         "P"
+/** Command reporting device state and its progress **/
+#define PROTO_STATUS_PROGRESS  "R"
 /** The command set device BOP state. @ingroup RTS2Protocol */
 #define PROTO_BOP_STATE        "B"
 /** The command is technical command, used to check device responsiveness. @ingroup RTS2Protocol */
@@ -251,29 +253,6 @@ class Block: public App
 		 * @return    connection with the given ID, or NULL if such connection does not exists
 		 */
 		Connection *findCentralId (int in_id);
-
-		/**
-		 * Send status message to all connected clients.
-		 *
-		 * @param state State value which will be send.
-		 *
-		 * @callergraph
-		 *
-		 * @see PROTO_STATUS
-		 */
-		void sendStatusMessage (rts2_status_t state, const char * msg = NULL, Connection *commandedConn = NULL);
-
-		/**
-		 * Send status message to one connection.
-		 *
-		 * @param state State value which will be send.
-		 * @param conn Connection to which the state will be send.
-		 *
-		 * @callergraph
-		 *
-		 * @see PROTO_STATUS
-		 */
-		void sendStatusMessageConn (rts2_status_t state, Connection *conn);
 
 		/**
 		 * Send BOP state to all connections.

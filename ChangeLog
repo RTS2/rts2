@@ -1,3 +1,6 @@
+2013-05-04
+ * PROTO_STATUS_PROGRESS message (transmits both state change and expected duration)
+
 2013-04-29
  * user variable permissions
 

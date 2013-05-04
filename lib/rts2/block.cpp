@@ -235,30 +235,6 @@ void Block::sendMessageAll (Message & msg)
 		(*iter)->sendMessage (msg);
 }
 
-void Block::sendStatusMessage (rts2_status_t state, const char * msg, Connection *commandedConn)
-{
-	std::ostringstream _os;
-	_os << PROTO_STATUS << " " << state;
-	if (msg != NULL)
-		_os << " \"" << msg << "\"";
-	if (commandedConn)
-	{
-		sendStatusMessageConn (state | DEVICE_SC_CURR, commandedConn);
-		sendAllExcept (_os, commandedConn);
-	}
-	else
-	{
-		sendAll (_os);
-	}
-}
-
-void Block::sendStatusMessageConn (rts2_status_t state, Connection * conn)
-{
- 	std::ostringstream _os;
-	_os << PROTO_STATUS << " " << state;
-	conn->sendMsg (_os);
-}
-
 void Block::sendBopMessage (rts2_status_t state, rts2_status_t bopState)
 {
 	std::ostringstream _os;

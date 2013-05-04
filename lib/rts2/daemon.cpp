@@ -554,6 +554,46 @@ void Daemon::centraldConnBroken (Connection *conn)
 	}
 }
 
+void Daemon::sendStatusMessage (rts2_status_t new_state, const char * msg, Connection *commandedConn)
+{
+	std::ostringstream _os;
+	if (!(isnan (state_start) && isnan (state_expected_end)))
+	{
+		_os.precision (6);
+		_os << PROTO_STATUS_PROGRESS << " " << new_state << " " << std::fixed << state_start << " " << state_expected_end;
+	}
+	else
+	{
+		_os << PROTO_STATUS << " " << new_state;
+	}
+	if (msg != NULL)
+		_os << " \"" << msg << "\"";
+	if (commandedConn)
+	{
+		sendStatusMessageConn (new_state | DEVICE_SC_CURR, commandedConn);
+		sendAllExcept (_os, commandedConn);
+	}
+	else
+	{
+		sendAll (_os);
+	}
+}
+
+void Daemon::sendStatusMessageConn (rts2_status_t new_state, Connection * conn)
+{
+ 	std::ostringstream _os;
+	if (!(isnan (state_start) && isnan (state_expected_end)))
+	{
+		_os.precision (6);
+		_os << PROTO_STATUS_PROGRESS << " " << new_state << " " << std::fixed << state_start << " " << state_expected_end;
+	}
+	else
+	{
+		_os << PROTO_STATUS << " " << new_state;
+	}
+	conn->sendMsg (_os);
+}
+
 void Daemon::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	FD_SET (listen_sock, &read_set);
@@ -972,15 +1012,19 @@ void Daemon::sendValueAll (Value * value)
 	}
 }
 
-void Daemon::sendProgressAll (double start, double end)
+void Daemon::sendProgressAll (double start, double end, Connection *except)
 {
-	state_start = start;
-	state_expected_end = end;
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
-		(*iter)->sendProgress (start, end);
+	{
+		if (*iter != except)
+			(*iter)->sendProgress (start, end);
+	}
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-	  	(*iter)->sendProgress (start, end);
+	{
+		if (*iter != except)
+		  	(*iter)->sendProgress (start, end);
+	}
 }
 
 int Daemon::sendMetaInfo (Connection * conn)
@@ -1140,10 +1184,14 @@ void Daemon::maskState (rts2_status_t state_mask, rts2_status_t new_state, const
 	// null from state all errors..
 	masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
 	masked_state |= new_state;
+
+	state_start = start;
+	state_expected_end = end;
+
 	setState (masked_state, description, commandedConn);
 
 	if (!(isnan (start) && isnan(end)))
-		sendProgressAll (start, end);
+		sendProgressAll (start, end, commandedConn);
 }
 
 void Daemon::signaledHUP ()

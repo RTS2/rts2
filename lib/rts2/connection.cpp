@@ -655,8 +655,13 @@ void Connection::processLine ()
 		*command_buf_top = '\0';
 		command_buf_top++;
 	}
+	// status combined with progress
+	if (isCommand (PROTO_STATUS_PROGRESS))
+	{
+		ret = statusProgress ();
+	}
 	// status
-	if (isCommand (PROTO_STATUS))
+	else if (isCommand (PROTO_STATUS))
 	{
 		ret = status ();
 	}
@@ -1255,6 +1260,18 @@ int Connection::command ()
 	logStream (MESSAGE_DEBUG) << "Connection::command unknow command: getCommand " << getCommand () << " state: " << conn_state << " type: " << getType () << " name: " << getName () << sendLog;
 	sendCommandEnd (-4, ss.str ().c_str ());
 	return -4;
+}
+
+int Connection::statusProgress ()
+{
+	long long int value;
+	char *msg = NULL;
+
+	if (paramNextLongLong (&value) || paramNextDouble (&statusStart) || paramNextDouble (&statusExpectedEnd) || !(paramEnd() || (paramNextString (&msg) == 0 && paramEnd ())))
+		return -2;
+	setState (value, msg);
+	master->progress (this, statusStart, statusExpectedEnd);
+	return -1;
 }
 
 int Connection::status ()

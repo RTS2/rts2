@@ -92,6 +92,29 @@ class Daemon:public rts2core::Block
 		virtual void centraldConnRunning (Connection *conn);
 		virtual void centraldConnBroken (Connection *conn);
 
+		/**
+		 * Send status message to all connected clients.
+		 *
+		 * @param state State value which will be send.
+		 *
+		 * @callergraph
+		 *
+		 * @see PROTO_STATUS
+		 */
+		void sendStatusMessage (rts2_status_t state, const char * msg = NULL, Connection *commandedConn = NULL);
+
+		/**
+		 * Send status message to one connection.
+		 *
+		 * @param state State value which will be send.
+		 * @param conn Connection to which the state will be send.
+		 *
+		 * @callergraph
+		 *
+		 * @see PROTO_STATUS
+		 */
+		void sendStatusMessageConn (rts2_status_t state, Connection *conn);
+
 		virtual int baseInfo ();
 		int baseInfo (Connection * conn);
 		int sendBaseInfo (Connection * conn);
@@ -195,7 +218,7 @@ class Daemon:public rts2core::Block
 		 * @param start  operation start time
 		 * @param end    operation end time
 		 */
-		void sendProgressAll (double start, double end);
+		void sendProgressAll (double start, double end, Connection *except);
 
 		int checkLockFile (const char *_lock_fname);
 		void setNotDaemonize ()
