@@ -75,11 +75,11 @@ AsyncValueAPI::AsyncValueAPI (JSONRequest *_req, XmlRpc::XmlRpcServerConnection 
 	  	// handle special values - states,..
 		if (strcmp (iter->getValue (), "__S__") == 0)
 		{
-			states.push_back (iter->getName ());
+			states.push_back (AsyncState (iter->getName ()));
 		}
 		else if (strcmp (iter->getValue (), "*") == 0)
 		{
-			states.push_back (iter->getName ());
+			states.push_back (AsyncState (iter->getName ()));
 			devices.push_back (iter->getName ());
 		}
 		else
@@ -94,11 +94,11 @@ void AsyncValueAPI::stateChanged (rts2core::Connection *_conn)
 	if (source == NULL)
 		return;
 
-	for (std::vector <std::string>::iterator iter = states.begin (); iter != states.end (); iter++)
+	for (std::list <AsyncState>::iterator iter = states.begin (); iter != states.end (); iter++)
 	{
-		if (*iter == _conn->getName () || (_conn->getOtherType () == DEVICE_TYPE_SERVERD && *iter == "centrald"))
+		if (iter->name == _conn->getName () || (_conn->getOtherType () == DEVICE_TYPE_SERVERD && iter->name == "centrald"))
 		{
-			sendState (_conn);
+			sendState (iter, _conn);
 		}
 	}
 }
@@ -130,18 +130,18 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 {
 	rts2core::Value *val;
 	rts2core::Connection *_conn;
-	for (std::vector <std::string>::iterator iter = states.begin (); iter != states.end (); iter++)
+	for (std::list <AsyncState>::iterator iter = states.begin (); iter != states.end (); iter++)
 	{
-		if (*iter == "centrald")
+		if (iter->name == "centrald")
 		{
-			sendState (device->getSingleCentralConn ());
+			sendState (iter, device->getSingleCentralConn ());
 		}
 		else
 		{
-			_conn = device->getOpenConnection (iter->c_str ());
+			_conn = device->getOpenConnection (iter->name.c_str ());
 			if (_conn == NULL)
-				throw XmlRpc::JSONException ("cannot find device " + *iter);
-			sendState (_conn);
+				throw XmlRpc::JSONException ("cannot find device " + iter->name);
+			sendState (iter, _conn);
 		}
 	}
 	for (std::vector <std::string>::iterator iter = devices.begin (); iter != devices.end (); iter++)
@@ -175,8 +175,15 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 	}
 }
 
-void AsyncValueAPI::sendState (rts2core::Connection *_conn)
+void AsyncValueAPI::sendState (std::list <AsyncState>::iterator astate, rts2core::Connection *_conn)
 {
+	if (astate->value == _conn->getState () && astate->status_start == _conn->getProgressStart () && astate->status_expected_end == _conn->getProgressEnd ())
+		return;
+
+	astate->value = _conn->getState ();
+	astate->status_start = _conn->getProgressStart ();
+	astate->status_expected_end = _conn->getProgressEnd ();
+
 	std::ostringstream os;
 	os << std::fixed << "{\"d\":\"" << (_conn->getOtherType () == DEVICE_TYPE_SERVERD ? "centrald" : _conn->getName ()) << "\",\"s\":" << _conn->getState () << ",\"t\":" << getNow ();
 	if (!isnan (_conn->getProgressStart ()))

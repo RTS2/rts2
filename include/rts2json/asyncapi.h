@@ -86,6 +86,32 @@ class AsyncAPI:public rts2core::Object
 		bool ext;
 };
 
+/**
+ * Auxiliary struct for state information. It is used to store state,
+ * so state updates will be send on JSON just once.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
+class AsyncState
+{
+	public:
+		AsyncState (const char *connection_name):name (connection_name)
+		{
+			value = 0xffffffff;
+			status_start = status_expected_end = NAN;
+		}
+
+		std::string name;
+		rts2_status_t value;
+		double status_start;
+		double status_expected_end;
+};
+
+/**
+ * Asynchronous class for value and state changes. Used to handle the "push" method.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
 class AsyncValueAPI:public AsyncAPI
 {
 	public:
@@ -102,11 +128,11 @@ class AsyncValueAPI:public AsyncAPI
 
 	private:
 		// values registered for ASYNC API
-		std::vector <std::string> states;
+		std::list <AsyncState> states;
 		std::vector <std::string> devices;
 		std::vector <std::pair <std::string, std::string> > values;
 
-		void sendState (rts2core::Connection *_conn);
+		void sendState (std::list <AsyncState>::iterator astate, rts2core::Connection *_conn);
 		void sendValue (const std::string &device, rts2core::Value *_value);
 };
 

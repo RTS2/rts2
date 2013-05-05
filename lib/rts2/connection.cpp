@@ -1269,6 +1269,7 @@ int Connection::statusProgress ()
 
 	if (paramNextLongLong (&value) || paramNextDouble (&statusStart) || paramNextDouble (&statusExpectedEnd) || !(paramEnd() || (paramNextString (&msg) == 0 && paramEnd ())))
 		return -2;
+	//std::cerr << "Connection::statusProgress " << value << " " << statusStart << " " << statusExpectedEnd << std::endl;	
 	setState (value, msg);
 	master->progress (this, statusStart, statusExpectedEnd);
 	return -1;
@@ -1280,6 +1281,7 @@ int Connection::status ()
 	char *msg = NULL;
 	if (paramNextLongLong (&value) || !(paramEnd () || (paramNextString (&msg) == 0 && paramEnd ())))
 		return -2;
+	//std::cerr << "Connection::status " << value << std::endl;	
 	setState (value, msg);
 	return -1;
 }
@@ -1290,6 +1292,7 @@ int Connection::bopStatus ()
 	long long int masterBopState;
 	if (paramNextLongLong (&masterStatus) || paramNextLongLong (&masterBopState) || !paramEnd ())
 		return -2;
+	//std::cerr << "Connection::bopStatus " << masterStatus << " " << masterBopState << std::endl;	
 	setBopState (masterBopState);
 	setState (masterStatus, NULL);
 	return -1;
