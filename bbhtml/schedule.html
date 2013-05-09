@@ -42,7 +42,7 @@ $(function() {
 					});
 					pb.dialog("open");
 					// try only radec - name resolver
-					var target = $.getJSON('/api/tbystring?nearest=5&ts=' + tname.val(), function(data) {
+					var target = $.getJSON('/api/tbystring?jqapi=1&nearest=5&ts=' + tname.val(), function(data) {
 						pb.dialog("close");
 						$("#resolved-info-simbad").html('<p>Simbad name: ' + data.name
 							+ '</p><p>   RA: ' + (new HMS(data.ra)).toString()

@@ -678,58 +678,65 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 	bool withpm = params->getInteger ("propm", false);
 	time_t from = params->getInteger ("from", getNow ());
 	int c = 5;
-	if (chunked)
-		os << "\"rows\":" << tar_set.size () << ",";
-
-	os << "\"h\":["
-		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
-		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
-		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
-		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
-		"{\"n\":\"Description\",\"t\":\"s\",\"c\":4}";
-
-
-	struct ln_equ_posn oradec;
-
-	if (dfrom == NULL)
+	if (params->getInteger ("jqapi", 0))
 	{
-			oradec.ra = params->getDouble ("ra", NAN);
-			oradec.dec = params->getDouble ("dec", NAN);
-			if (!isnan (oradec.ra) && !isnan (oradec.dec))
-				dfrom = &oradec;
-	}
-	if (dfrom)
-	{
-		os << ",{\"n\":\"Distance\",\"t\":\"d\",\"c\":" << (c) << "}";
-		c++;
-	}
-	if (extended)
-	{
-		os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":" << (c) << "},"
-		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":" << (c + 1) << "},"
-		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":" << (c + 2) << "},"
-		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":" << (c + 3) << "},"
-		"{\"n\":\"Transit\",\"t\":\"t\",\"c\":" << (c + 4) << "},"
-		"{\"n\":\"Observable\",\"t\":\"t\",\"c\":" << (c + 5) << "}";
-		c += 6;
-	}
-	if (withpm)
-	{
-		os << ",{\"n\":\"Proper motion RA\",\"t\":\"d\",\"c\":" << (c) << "},"
-		"{\"n\":\"Proper motion DEC\",\"t\":\"d\",\"c\":" << (c + 1) << "}";
-		c += 2;
-	}
-
-	if (chunked)
-	{
-		os << "]}";
-		chunked->sendChunked (os.str ());
-		os.str ("");
-		os << std::fixed;
+		os << "\"sEcho\":" << params->getInteger ("sEcho", 0) << ",\"iTotalRecords\":\"" << tar_set.size () << "\",\"iTotalDisplayRecords\":\"" << tar_set.size () << "\","
+	"\"aaData\" : [";
 	}
 	else
 	{
-		os << "],\"d\":[" << std::fixed;
+		if (chunked)
+			os << "\"rows\":" << tar_set.size () << ",";
+
+		os << "\"h\":["
+			"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << getServer ()->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
+			"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
+			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
+			"{\"n\":\"Description\",\"t\":\"s\",\"c\":4}";
+
+		struct ln_equ_posn oradec;
+
+		if (dfrom == NULL)
+		{
+				oradec.ra = params->getDouble ("ra", NAN);
+				oradec.dec = params->getDouble ("dec", NAN);
+				if (!isnan (oradec.ra) && !isnan (oradec.dec))
+					dfrom = &oradec;
+		}
+		if (dfrom)
+		{
+			os << ",{\"n\":\"Distance\",\"t\":\"d\",\"c\":" << (c) << "}";
+			c++;
+		}
+		if (extended)
+		{
+			os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":" << (c) << "},"
+			"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":" << (c + 1) << "},"
+			"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":" << (c + 2) << "},"
+			"{\"n\":\"Violated\",\"t\":\"s\",\"c\":" << (c + 3) << "},"
+			"{\"n\":\"Transit\",\"t\":\"t\",\"c\":" << (c + 4) << "},"
+			"{\"n\":\"Observable\",\"t\":\"t\",\"c\":" << (c + 5) << "}";
+			c += 6;
+		}
+		if (withpm)
+		{
+			os << ",{\"n\":\"Proper motion RA\",\"t\":\"d\",\"c\":" << (c) << "},"
+			"{\"n\":\"Proper motion DEC\",\"t\":\"d\",\"c\":" << (c + 1) << "}";
+			c += 2;
+		}
+
+		if (chunked)
+		{
+			os << "]}";
+			chunked->sendChunked (os.str ());
+			os.str ("");
+			os << std::fixed;
+		}
+		else
+		{
+			os << "],\"d\":[" << std::fixed;
+		}
 	}
 
 	double JD = ln_get_julian_from_timet (&from);
