@@ -56,7 +56,21 @@ $(function() {
 							+ '</p><p>info: ' + data.info + '</p>');
 						if (data.nearest.aaData.length > 0)
 						{
-							var tarTable = $("#resolved-info-nearest-targets").dataTable( {'aaData': data.nearest.aaData, 'bDestroy': true } );
+							var tarTable = $("#resolved-info-nearest-targets").dataTable({
+								'aaData': data.nearest.aaData,
+								'bDestroy': true,
+								'aoColumnDefs': [{
+									'aTargets' : [2],
+									'mRender':function (data,type,full) {
+										return (new HMS(data)).toString();
+									}
+								},{
+									'aTargets' : [3],
+									'mRender':function (data,type,full) {
+										return (new DMS(data)).toString();
+									}
+								}]
+							});
 							$("#resolved-info-nearest-targets tbody").click  (function (event) {
 								$(tarTable.fnSettings().aoData).each(function () {
 									$(this.nTr).removeClass('row_selected');
@@ -104,13 +118,13 @@ $(function() {
 		}
 	});
 
-	$("#name").bind('change input keyup', function(event) {
+	targetChange = function(event) {
 		$('#ask-for-target').button('option', 'disabled', $('#name').val().length == 0 && $('#radec').val().length == 0);
-	} );
+	}
 
-	$("#radec").bind('change input keyup', function(event) {
-		$('#ask-for-target').button('option', 'disabled', $('#name').val().length == 0 && $('#radec').val().length == 0);
-	} );
+	$("#name").bind('change input keyup', targetChange);
+
+	$("#radec").bind('change input keyup', targetChange);
 })
 
 // find target of given name(s)
