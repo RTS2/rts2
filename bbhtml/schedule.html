@@ -26,10 +26,14 @@ $(function() {
 		height: 300,
 		width: 350,
 		modal: true,
-		buttons: {
-			"Create a target": function() {
+		buttons: [ {
+			text: "Ask for target",
+			id: 'ask-for-target',
+			disabled: true,
+			click: function() {
 				var bvalid = true;
 				var vtname = tname.val();
+
 				if (tname.val().length < 1) {
 					tname.addClass('ui-state-error');
 					bvalid = false;
@@ -52,7 +56,13 @@ $(function() {
 							+ '</p><p>info: ' + data.info + '</p>');
 						if (data.nearest.aaData.length > 0)
 						{
-							$("#resolved-info-nearest-targets").dataTable( {'aaData': data.nearest.aaData, 'bDestroy': true } );
+							var tarTable = $("#resolved-info-nearest-targets").dataTable( {'aaData': data.nearest.aaData, 'bDestroy': true } );
+							$("#resolved-info-nearest-targets tbody").click  (function (event) {
+								$(tarTable.fnSettings().aoData).each(function () {
+									$(this.nTr).removeClass('row_selected');
+								});
+								$(event.target.parentNode).addClass('row_selected');
+							} );
 							$("#resolved-info-nearest").css({'visibility':'visible'});
 						}
 						else
@@ -75,7 +85,7 @@ $(function() {
 				}
 				$(this).dialog("close");
 			}
-		},
+		} ],
 		close: function() {
 			allFields.val("").removeClass("ui-state-error");
 		}
@@ -93,6 +103,10 @@ $(function() {
 			}
 		}
 	});
+
+	$("#name").bind('change input keyup', function(event) {
+		$('#ask-for-target').button('option', 'disabled', $('#name').val().length == 0);
+	} );
 })
 
 // find target of given name(s)
