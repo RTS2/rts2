@@ -4,12 +4,14 @@
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta http-equiv="content-language" content="en">
   <meta name="author" content="Petr Kubanek (petr@kubanek.net)">
+  <link rel="stylesheet" href="/css/datatables.css"/>
   <link rel="stylesheet" href="/css/jquery-ui.css"/>
 </head>
 
 <script language="JavaScript" src="js/equ.js" type="text/javascript"></script>
 <script language="JavaScript" src="js/setgetapi.js" type="text/javascript"></script>
 <script language="JavaScript" src="js/jquery.js" type="text/javascript"></script>
+<script language="JavaScript" src="js/datatables.js" type="text/javascript"></script>
 <script language="JavaScript" src="js/jquery-ui.js" type="text/javascript"></script>
 <script language='JavaScript'>
 $(function() {
@@ -48,7 +50,15 @@ $(function() {
 							+ '</p><p>   RA: ' + (new HMS(data.ra)).toString()
 							+ '</p><p>   DEC: ' + (new DMS(data.dec)).toString()
 							+ '</p><p>info: ' + data.info + '</p>');
-						$("#resolved-info-nearest").html('Nearest' + data.nearest);
+						if (data.nearest.aaData.length > 0)
+						{
+							$("#resolved-info-nearest-targets").dataTable( {'aaData': data.nearest.aaData, 'bDestroy': true } );
+							$("#resolved-info-nearest").css({'visibility':'visible'});
+						}
+						else
+						{
+							$("#resolved-info-nearest").css({'visibility':'hidden'});
+						}
 						$("#resolved-info").dialog("open");
 					}).fail(function(jqXHR, textStatus, errorThrown) {
 						pb.dialog("close");
@@ -152,7 +162,23 @@ function new_target(name)
 
   <div id='resolved-info' title="Resovled target">
     <p><div id='resolved-info-simbad'></div></p>
-    <p><div id='resolved-info-nearest'></div></p>
+    <span id='resolved-info-nearest'><div>Nearest</div>
+      <table class='display' id='resolved-info-nearest-targets'>
+        <thead>
+	  <tr>
+	    <th>ID</th>
+	    <th>Target name</th>
+	    <th>RA</th>
+	    <th>DEC</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <tr>
+	    <td colspan='4' class='dataTables_empty'>Loading data from server</td>
+	  </tr>
+	</tbody>
+      </table>
+    </span>
   </div>
 
   <form name='target'>
