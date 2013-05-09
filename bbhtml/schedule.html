@@ -105,7 +105,11 @@ $(function() {
 	});
 
 	$("#name").bind('change input keyup', function(event) {
-		$('#ask-for-target').button('option', 'disabled', $('#name').val().length == 0);
+		$('#ask-for-target').button('option', 'disabled', $('#name').val().length == 0 && $('#radec').val().length == 0);
+	} );
+
+	$("#radec").bind('change input keyup', function(event) {
+		$('#ask-for-target').button('option', 'disabled', $('#name').val().length == 0 && $('#radec').val().length == 0);
 	} );
 })
 
