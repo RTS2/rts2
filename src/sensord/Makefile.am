@@ -3,7 +3,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-fram-weather rts2-sensor-bart-rain rts2-sensor-ms260 \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
 	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-aag rts2-sensor-pwc \
-	rts2-sensor-hygrowin rts2-sensor-fram rts2-sensor-flwo-weather rts2-sensor-thorlaser \
+	rts2-sensor-hygrowin rts2-sensor-fram rts2-sensor-flwo-weather rts2-sensor-thorlaser rts2-sensor-thorlabs-PM100D \
 	rts2-sensor-arduino rts2-sensor-mdm-bait rts2-sensor-colores rts2-sensor-micropirani-925 rts2-sensor-dws-t5 \
 	rts2-sensor-cryocon rts2-sensor-keithley-scpi \
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
@@ -99,6 +99,8 @@ endif
 rts2_sensor_flwo_weather_SOURCES = flwo-weather.cpp
 
 rts2_sensor_thorlaser_SOURCES = thorlaser.cpp
+
+rts2_sensor_thorlabs_PM100D_SOURCES = thorlabs-PM100D.cpp
 
 rts2_sensor_arduino_SOURCES = arduino.cpp
 
