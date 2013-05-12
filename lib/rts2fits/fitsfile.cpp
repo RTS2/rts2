@@ -83,6 +83,7 @@ ColumnData::ColumnData (std::string _name, std::vector <int> _data, bool isBoole
 FitsFile::FitsFile ():rts2core::Expander ()
 {
   	memFile = true;
+	memOverwrite = false;
 	memsize = NULL;
 	imgbuf = NULL;
 	ffile = NULL;
@@ -101,6 +102,7 @@ FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 	_fitsfile->setFitsFile (NULL);
 
 	memFile = _fitsfile->memFile;
+	memOverwrite = _fitsfile->memOverwrite;
 	memsize = _fitsfile->memsize;
 	imgbuf = _fitsfile->imgbuf;
 
@@ -116,6 +118,7 @@ FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 FitsFile::FitsFile (const char *_fileName, bool _overwrite):rts2core::Expander ()
 {
 	memFile = true;
+	memOverwrite = false;
 	memsize = NULL;
 	imgbuf = NULL;
 	fileName = NULL;
@@ -130,6 +133,7 @@ FitsFile::FitsFile (const char *_fileName, bool _overwrite):rts2core::Expander (
 FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	memFile = true;
+	memOverwrite = false;
 	memsize = NULL;
 	imgbuf = NULL;
 	ffile = NULL;
@@ -142,6 +146,7 @@ FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 FitsFile::FitsFile (const char *_expression, const struct timeval *_tv, bool _overwrite):rts2core::Expander (_tv)
 {
 	memFile = true;
+	memOverwrite = false;
 	memsize = NULL;
 	imgbuf = NULL;
 	fileName = NULL;
@@ -207,7 +212,7 @@ int FitsFile::closeFile ()
 			if (getFileName ())
 			{
 				fitsfile *ofptr = getFitsFile ();
-				if (createFile ())
+				if (createFile (memOverwrite))
 					return -1;
 				fits_copy_file (ofptr, getFitsFile (), 1, 1, 1, &fits_status);
 				if (fits_status)
@@ -317,6 +322,7 @@ int FitsFile::createFile (bool _overwrite)
 		*memsize = 2880;
 		imgbuf = new void*;
 		*imgbuf = malloc (*memsize);
+		memOverwrite = _overwrite;
 		fits_create_memfile (&ffile, imgbuf, memsize, 10 * (*memsize), realloc, &fits_status);
 		if (fits_status)
 		{
@@ -326,6 +332,7 @@ int FitsFile::createFile (bool _overwrite)
 
 		return 0;
 	}
+	memOverwrite = false;
 	int ret;
 	// make path for us..
 	ret = mkpath (getFileName (), 0777);

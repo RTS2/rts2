@@ -630,6 +630,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
 
 				camdev->setExpandPath (params->getString ("fe", camdev->getDefaultFilename ()));
+				camdev->setOverwrite (params->getBoolean ("overwrite", false));
 
 				rts2json::AsyncAPI *aa;
 				if (vals[0] == "expose")

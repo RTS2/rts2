@@ -343,6 +343,7 @@ class FitsFile: public rts2core::Expander
 		char *absoluteFileName;
 
 		bool memFile;
+		bool memOverwrite;
 
 		size_t *memsize;
 		void **imgbuf;
