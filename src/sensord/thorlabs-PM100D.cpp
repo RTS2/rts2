@@ -19,11 +19,7 @@
 
 #include "sensord.h"
 
-#include "connection/serial.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "connection/connscpi.h"
 
 namespace rts2sensord
 {
@@ -37,6 +33,7 @@ class ThorPM100D:public Sensor
 {
 	public:
 		ThorPM100D (int argc, char **argv);
+		virtual ~ThorPM100D ();
 
 	protected:
 		virtual int processOption (int opt);
@@ -44,9 +41,7 @@ class ThorPM100D:public Sensor
 
 	private:
 		char *device_file;
-		rts2core::ConnSerial *usbtmcConn;
-
-		int usbtmcFile;
+		rts2core::ConnSCPI *usbtmcConn;
 };
 
 }
@@ -56,9 +51,14 @@ using namespace rts2sensord;
 ThorPM100D::ThorPM100D (int argc, char **argv): Sensor (argc, argv)
 {
 	device_file = NULL;
-	usbtmcFile = -1;
+	usbtmcConn = NULL;
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for ThorLaser USB serial connection");
+}
+
+ThorPM100D::~ThorPM100D ()
+{
+	delete usbtmcConn;
 }
 
 int ThorPM100D::processOption (int opt)
@@ -82,25 +82,15 @@ int ThorPM100D::initHardware ()
 		return -1;
 	}
 
-	usbtmcFile = open (device_file, O_RDWR);
+	usbtmcConn = new rts2core::ConnSCPI (device_file);
 
-	if (usbtmcFile == -1)
-		return -1;
+	usbtmcConn->setDebug (getDebug ());
 
-	ssize_t wsize = write (usbtmcFile, "*IDN?\n", 6);
+	usbtmcConn->initGpib ();
 
-	char buf[51];
+	char buf[100];
 
-	ssize_t rsize = read (usbtmcFile, buf, 50);
-	if (rsize < 0)
-	{
-		logStream (MESSAGE_ERROR) << "cannot communicate with PM100D on " << device_file << sendLog;
-		return -1;
-	}
-
-	logStream (MESSAGE_DEBUG) << "Communication with PM100D yeld " << rsize << sendLog;
-	buf[rsize] = '\0';
-	logStream (MESSAGE_DEBUG) << "Communication with PM100D yeld " << rsize << " characters: " << buf << sendLog;
+	usbtmcConn->gpibWriteRead ("*IDN?\n", buf, 100);
 	
 	return 0;
 }

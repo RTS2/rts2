@@ -39,6 +39,14 @@ namespace rts2core
 class ConnGpib
 {
 	public:
+		ConnGpib ()
+		{
+		}
+
+		virtual ~ ConnGpib (void)
+		{
+		}
+
 		/**
 		 * Write command buffer to GPIB bus.
 		 *
@@ -91,7 +99,7 @@ class ConnGpib
 		void readDouble (const char *buf, double &val);
 
 		/**
-		 * Read value from GPIB bus.
+		 * Read SCPI value from GPIB bus.
 		 */
 		void readValue (const char *buf, rts2core::Value *val);
 
@@ -130,14 +138,6 @@ class ConnGpib
 		 * @param sec Number of seconds for timeout.
 		 */
 		virtual void settmo (float _sec) = 0;
-
-		ConnGpib ()
-		{
-		}
-
-		virtual ~ ConnGpib (void)
-		{
-		}
 
 		/**
 		 * Converts seconds timeouts to NI/GPIB timeout value.
