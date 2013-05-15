@@ -67,6 +67,12 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_m
 	_master->createValue (dCur, pbuf, "[A] desired current", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ACURRENT");
 	_master->createValue (aCur, pbuf, "[A] actual current", false);
+	strcpy (p, "SPEED_KP");
+	_master->createValue (speedKp, pbuf, "proporcional gain for the speed controller", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "SPEED_KI");
+	_master->createValue (speedKi, pbuf, "integration gain for the speed controller", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "SPEED_IMAX");
+	_master->createValue (speedImax, pbuf, "peak current for the speed controller", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "MODE");
 	_master->createValue (tgaMode, pbuf, "axis mode", false, RTS2_DT_HEX);
 	strcpy (p, "STATUS");
@@ -113,6 +119,9 @@ void TGDrive::info ()
 	emerDecel->setValueDouble (read4b (TGA_EMERDECEL) / TGA_ACCELFACTOR);
 	dCur->setValueFloat (read2b (TGA_DESCUR) / TGA_CURRENTFACTOR);
 	aCur->setValueFloat (read2b (TGA_ACTCUR) / TGA_CURRENTFACTOR);
+	speedKp->setValueFloat (read2b (TGA_SPEEDREG_KP) / TGA_GAINFACTOR);
+	speedKi->setValueFloat (read2b (TGA_SPEEDREG_KI) / TGA_GAINFACTOR);
+	speedImax->setValueFloat (read2b (TGA_SPEEDREG_IMAX) / TGA_CURRENTFACTOR);
 	tgaMode->setValueInteger (read4b (TGA_MODE));
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
@@ -162,6 +171,18 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		else if (old_value == maxSpeed)
 		{
 			write4b (TGA_VMAX, new_value->getValueDouble () * TGA_SPEEDFACTOR);
+		}
+		else if (old_value == speedKp)
+		{
+			write2b (TGA_SPEEDREG_KP, new_value->getValueFloat () * TGA_GAINFACTOR);
+		}
+		else if (old_value == speedKi)
+		{
+			write2b (TGA_SPEEDREG_KI, new_value->getValueFloat () * TGA_GAINFACTOR);
+		}
+		else if (old_value == speedImax)
+		{
+			write2b (TGA_SPEEDREG_IMAX, new_value->getValueFloat () * TGA_CURRENTFACTOR);
 		}
 		else
 		{

@@ -105,21 +105,30 @@
 
 /** Deceleration */
 #define TGA_DECEL                       0x01D6
- 
+
 #define TGA_EMERDECEL                   0x0204 
 
+/** Speed regulator parameters */
+#define TGA_SPEEDREG_KP                 0x01D8
+ 
+#define TGA_SPEEDREG_KI                 0x01D9 
+
+#define TGA_SPEEDREG_IMAX               0x01DC 
+ 
 /** Firmware version */
 #define TGA_FIRMWARE                    0x01B0
 
 // unit conversion factors
 
 // convert speed to inc/sec
-#define TGA_SPEEDFACTOR                 (262.144 * 65535.0)
+#define TGA_SPEEDFACTOR                 (262.144 * 65536.0)
 
 // convert current to amps
 #define TGA_CURRENTFACTOR               (1017.6 * 1.41)
 
-#define TGA_ACCELFACTOR                 178957
+#define TGA_ACCELFACTOR                 178957.0
+
+#define TGA_GAINFACTOR                  327.67
 
 namespace rts2teld
 {
@@ -262,6 +271,10 @@ class TGDrive: public rts2core::ConnSerial
 
 		rts2core::ValueFloat *dCur;
 		rts2core::ValueFloat *aCur;
+
+		rts2core::ValueFloat *speedKp;
+		rts2core::ValueFloat *speedKi;
+		rts2core::ValueFloat *speedImax;
 
 		rts2core::ValueInteger *tgaMode;
 		rts2core::ValueInteger *appStatus;
