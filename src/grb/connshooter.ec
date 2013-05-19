@@ -655,7 +655,12 @@ int ConnShooter::init_listen ()
 {
 	int ret;
 
-	connectionError (-1);
+	if (sock > 0)
+	{
+		close (sock);
+		sock = -1;
+	}
+	setConnState (CONN_BROKEN);
 
 	sock = socket (PF_INET, SOCK_DGRAM, 0);
 	if (sock == -1)
