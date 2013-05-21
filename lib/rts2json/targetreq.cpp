@@ -887,6 +887,7 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
 	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
+	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
 
 	Previewer preview = Previewer (getServer ());
 
@@ -894,11 +895,11 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 
 	printTargetHeader (tar->getTargetID (), "images", _os);
 	
-	preview.script (_os, label_encoded, quantiles, chan);
+	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
 		
 	_os << "<p>";
 
-	preview.form (_os, pageno, prevsize, pagesiz, chan, label);
+	preview.form (_os, pageno, prevsize, pagesiz, chan, label, quantiles, colourVariant);
 	
 	_os << "</p><p>";
 
@@ -916,7 +917,7 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 				continue;
 			if (in > ie)
 				break;
-			preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan);
+			preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan, colourVariant);
 		}
 
 		_os << "</p>";
@@ -930,9 +931,9 @@ void Targets::printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params
 	int i;
 	
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p>";
 	
 	printFooter (_os);

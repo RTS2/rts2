@@ -80,6 +80,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
 	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
+	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
 
 	std::ostringstream _os;
 	std::ostringstream _title;
@@ -89,11 +90,11 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 
 	printHeader (_os, _title.str ().c_str (), preview.style ());
 
-	preview.script (_os, label_encoded, quantiles, chan);
+	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
 
 	_os << "<p>";
 
-	preview.form (_os, pageno, prevsize, pagesiz, chan, label);
+	preview.form (_os, pageno, prevsize, pagesiz, chan, label, quantiles, colourVariant);
 
 	_os << "</p><p>";
 
@@ -104,15 +105,15 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 			continue;
 		if (in > ie)
 			break;
-		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan);
+		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan, colourVariant);
 	}
 
 	_os << "</p><p>Page ";
 	int i;
 	for (i = 1; i <= ((int) obs.getImageSet ()->size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p>";
 	
 	printFooter (_os);

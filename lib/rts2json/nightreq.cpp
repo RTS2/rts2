@@ -145,6 +145,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
 	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
+	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
 
 	time_t from;
 	int64_t duration;
@@ -154,11 +155,11 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	time_t end = from + duration;
 
 	Previewer preview = Previewer (getServer ());
-	preview.script (_os, label_encoded, quantiles, chan);
+	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
 
 	_os << "<p>";
 
-	preview.form (_os, pageno, prevsize, pagesiz, chan, label);
+	preview.form (_os, pageno, prevsize, pagesiz, chan, label, quantiles, colourVariant);
 
 	_os << "</p><p>";
 
@@ -172,15 +173,15 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 			continue;
 		if (in > ie)
 			break;
-		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan);
+		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan, colourVariant);
 	}
 
 	_os << "</p><p>Page ";
 	int i;
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p></body></html>";
 
 	response_length = _os.str ().length ();
