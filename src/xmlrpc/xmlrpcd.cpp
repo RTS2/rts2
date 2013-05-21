@@ -921,6 +921,7 @@ void XmlRpcd::message (Message & msg)
 		case INFO_OBSERVATION_STARTED:
 		case INFO_OBSERVATION_END:
 		case INFO_OBSERVATION_INTERRUPTED:
+		case INFO_OBSERVATION_LOOP:
 			updateObservation (msg.getMessageArgInt (0), msg.getMessageArgInt (2));
 			break;
 	}
