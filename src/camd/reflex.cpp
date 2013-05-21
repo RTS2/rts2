@@ -2911,7 +2911,7 @@ void Reflex::configBoard (int board)
 					throw rts2core::Error ("Error setting bias order");
 				if (config->getDouble (key, ("HV" + subkey).c_str (), dtemp))
 					throw rts2core::Error ("Error parsing bias voltage (" + skey + "/HV" + subkey + ")");
-				if ((dtemp < 0.0) || (dtemp > 28.0))
+				if ((dtemp < 0.0) || (dtemp > 31.0))
 					throw rts2core::Error ("Requested bias voltage out of range (" + skey + "/HV" + subkey + ")");
 				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (BIAS_SET_HV1 + i), int (dtemp * 1000.0)))
 					throw rts2core::Error ("Error setting bias voltages");
