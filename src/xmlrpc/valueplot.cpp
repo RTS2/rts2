@@ -136,8 +136,8 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 
 	rts2db::RecordsSet::iterator iter = rs.begin ();
 
-	double x = scaleX * (iter->getRecTime () - from) + shadow;
-	double y = size.height () - scaleY * (iter->getValue () - min) + shadow;
+	double x = y_axis_width + scaleX * (iter->getRecTime () - from) + shadow;
+	double y = size.height () - x_axis_height - scaleY * (iter->getValue () - min) + shadow;
 	while (iter != rs.end () && (isnan (x) || isnan (y)))
 	{
 		iter++;

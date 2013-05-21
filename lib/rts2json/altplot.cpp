@@ -105,8 +105,8 @@ void AltPlot::preparePlot (double _from, double _to, Magick::Image* _image, Plot
 	min = 0;
 	max = 90;
 
-	scaleY = size.height () / (max - min);
-	scaleX = size.width () / (to - from); 
+	scaleY = (size.height () - x_axis_height) / (max - min);
+	scaleX = (size.width () - y_axis_width) / (to - from); 
 
 	image->font("helvetica");
 	image->strokeAntiAlias (true);
@@ -116,9 +116,9 @@ void AltPlot::preparePlot (double _from, double _to, Magick::Image* _image, Plot
 
 	// draw 0 line
 	image->fontPointsize (15);
-	image->draw (Magick::DrawableText (0, size.height () - (scaleY * -min) - 4, "0"));
+	image->draw (Magick::DrawableText (0, size.height () - x_axis_height - (scaleY * -min) - 4, "0"));
 	image->strokeWidth (3);
-	plotYGrid (size.height () - (scaleY * -min));
+	plotYGrid (size.height () - x_axis_height - (scaleY * -min));
 			
 	if (plotType == PLOTTYPE_AUTO)
 		plotType = PLOTTYPE_LINE;
@@ -143,17 +143,17 @@ void AltPlot::plotTarget (rts2db::Target *tar, Magick::Color col, int linewidth,
 
 	tar->getAltAz (&hrz, JD);
 
-	double stepX = (to - from) / size.width () / 86400.0;
+	double stepX = (to - from) / (size.width () - y_axis_width) / 86400.0;
 
-	double x = shadow;
+	double x = shadow + y_axis_width;
 	double x_end = x + 1;
-	double y = size.height () - scaleY * (hrz.alt - min) + shadow;
+	double y = size.height () - x_axis_height - scaleY * (hrz.alt - min) + shadow;
 
-	while (x < size.width ())
+	while (x < (size.width ()))
 	{
 		JD += stepX;
 		tar->getAltAz (&hrz, JD);
-		double y_end = size.height () - scaleY * (hrz.alt - min) + shadow;
+		double y_end = size.height () - x_axis_height - scaleY * (hrz.alt - min) + shadow;
 		plotRange (x, y, x_end, y_end);
 		x = x_end;
 		x_end++;
