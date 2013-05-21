@@ -114,7 +114,7 @@ const char *Previewer::style ()
 	return ".normal { border: 5px solid white; } .hig { border: 5px solid navy; }";
 }
 
-void Previewer::script (std::ostringstream& _os, const char *label_encoded, float quantiles, int chan)
+void Previewer::script (std::ostringstream& _os, const char *label_encoded, float quantiles, int chan, int colourVariant)
 {
 	_os << "<script language='javascript'>\n"
 "function high_off(files,name) {"
@@ -148,7 +148,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
   "{ window.open('" << getServer ()->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
   "}\n"
   "else\n"
-  "{ w2 = window.open('" << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "', 'Preview');\n"
+  "{ w2 = window.open('" << getServer ()->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "&cv=" << colourVariant << "', 'Preview');\n"
     "w2.focus ();"
   "}\n"
 "}\n"
@@ -195,22 +195,22 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
         << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 
-void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label, float quantiles, int chan)
+void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label, float quantiles, int chan, int colourVariant)
 {
 	std::string fp (fpath);
 	XmlRpc::urlencode (fp, true);
 	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")";
 	if (prevsize > 0)
-		_os << "' width='" << prevsize << "' height='" << prevsize;
-	_os << "' src='" << getServer ()->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'/>" << std::endl;
+		_os << "' width='" << prevsize;
+	_os << "' src='" << getServer ()->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "'/>" << std::endl;
 }
 
-void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected, float quantiles, int chan)
+void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected, float quantiles, int chan, int colourVariant)
 {
 	if (selected)
 		_os << "  <b>" << i << "</b>" << std::endl;
 	else
-		_os << "  <a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'>" << i << "</a>" << std::endl;
+		_os << "  <a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "'>" << i << "</a>" << std::endl;
 }
 
 #ifdef RTS2_HAVE_LIBJPEG
@@ -229,8 +229,9 @@ void JpegImageRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::str
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
 	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
+	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
 
-	Magick::Image *mimage = image.getMagickImage (label, quantiles, chan);
+	Magick::Image *mimage = image.getMagickImage (label, quantiles, chan, colourVariant);
 
 	cacheMaxAge (CACHE_MAX_STATIC);
 
@@ -257,6 +258,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
 	int chan = params->getInteger ("chan", getServer ()->getDefaultChannel ());
+	int colourVariant = params->getInteger ("cv", DEFAULT_COLOURVARIANT);
 
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();
@@ -270,11 +272,11 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		image.openFile (absPath, true, false);
 		Blob blob;
 
-		Magick::Image *mimage = image.getMagickImage (NULL, quantiles, chan);
+		Magick::Image *mimage = image.getMagickImage (NULL, quantiles, chan, colourVariant);
 		if (prevsize > 0)
 		{
 			mimage->zoom (Magick::Geometry (prevsize, prevsize));
-			image.writeLabel (mimage, 1, prevsize - 2, 10, label);
+			image.writeLabel (mimage, 0, mimage->size ().height (), 10, label);
 		}
 		else
 		{
@@ -304,7 +306,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 
 	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style() );
 
-	preview.script (_os, label_encoded, quantiles, chan);
+	preview.script (_os, label_encoded, quantiles, chan, colourVariant);
 
 	_os << "<p>";
 
@@ -354,7 +356,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "&chan=" << chan << "&q=" << quantiles << "'>" << fname << "</a> ";
+			_os << "<a href='" << getServer ()->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "&chan=" << chan << "&q=" << quantiles << "&cv=" << colourVariant << "'>" << fname << "</a> ";
 		}
 	}
 
@@ -374,7 +376,7 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 		if (in <= is || in > ie)
 			continue;
 		std::string fpath = absPathStr + '/' + fname;
-		preview.imageHref (_os, i, fpath.c_str (), prevsize, label_encoded, quantiles, chan);
+		preview.imageHref (_os, i, fpath.c_str (), prevsize, label_encoded, quantiles, chan, colourVariant);
 	}
 
 	for (i = 0; i < n; i++)
@@ -387,9 +389,9 @@ void JpegPreview::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	// print pages..
 	_os << "</p><p>Page ";
 	for (i = 1; i <= in / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan, colourVariant);
 	_os << "</p>";
 	
 	printFooter (_os);

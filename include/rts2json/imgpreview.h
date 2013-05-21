@@ -22,6 +22,7 @@
 #include "httpserver.h"
 
 #define DEFAULT_QUANTILES    0.005
+#define DEFAULT_COLOURVARIANT    0
 // number of channels in image
 #define CHANNELS             4
 
@@ -47,7 +48,7 @@ class Previewer
 		 * Add script entry for image manipulation. This should be
 		 * included in head section.
 		 */
-		void script (std::ostringstream& _os, const char *label_encoded, float quantiles, int chan);
+		void script (std::ostringstream& _os, const char *label_encoded, float quantiles, int chan, int colourVariant = DEFAULT_COLOURVARIANT);
 
 		/**
 		 *
@@ -67,9 +68,9 @@ class Previewer
 		 * @param fpath path to preview image
 		 * @param prevsize size of preview in pixels
 		 */
-		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char * label, float quantiles, int chan);
+		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char * label, float quantiles, int chan, int colourVariant = DEFAULT_COLOURVARIANT);
 
-		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char * label, bool selected, float quantiles, int chan);
+		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char * label, bool selected, float quantiles, int chan, int colourVariant = DEFAULT_COLOURVARIANT);
 	
 	private:
 		HTTPServer *getServer () { return http_server; }
