@@ -55,6 +55,7 @@ typedef uint32_t messageType_t;
 #define INFO_OBSERVATION_STARTED        0x000600
 #define INFO_OBSERVATION_END            0x000700
 #define INFO_OBSERVATION_INTERRUPTED    0x000800
+#define INFO_OBSERVATION_LOOP           0x000900
 
 #define MESSAGE_MASK_ALL                0xFFFFFF
 

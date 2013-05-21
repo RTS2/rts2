@@ -361,7 +361,7 @@ int SelectorDev::init ()
 
 	int i = 0;
 
-	setMessageMask (INFO_OBSERVATION_SLEW | INFO_OBSERVATION_INTERRUPTED);
+	setMessageMask (INFO_OBSERVATION_SLEW | INFO_OBSERVATION_INTERRUPTED | INFO_OBSERVATION_LOOP);
 	
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++, i++)
 	{
@@ -741,6 +741,7 @@ void SelectorDev::message (Message & msg)
 	switch (msg.getID ())
 	{
 		case INFO_OBSERVATION_SLEW:
+		case INFO_OBSERVATION_LOOP:
 			updateNext (true, msg.getMessageArgInt (1), msg.getMessageArgInt (0));
 			break;
 		case INFO_OBSERVATION_INTERRUPTED:

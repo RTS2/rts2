@@ -670,7 +670,10 @@ moveType Target::afterSlewProcessed ()
 int Target::startObservation ()
 {
 	if (observationStarted ())
+	{
+		logStream (MESSAGE_INFO | INFO_OBSERVATION_LOOP) << getObsId () << " " << getTargetID () << " " << observation->getPlanId () << sendLog;
 		return 0;
+	}
 	time (&observationStart);
 	if (observation && getObsId () > 0)
 	{
