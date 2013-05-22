@@ -16,3 +16,5 @@ EXTRA_DIST = autogen.sh RUN rts2.initd.in \
 	INSTALL.comedi INSTALL.miccd INSTALL.sbig INSTALL.gpib rts2-init
 
 noinst_HEADERS = config.h
+
+ACLOCAL_AMFLAGS = -I m4
