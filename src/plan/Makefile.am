@@ -50,7 +50,7 @@ rts2_marchive_SOURCES = marchive.cpp
 rts2_marchive_CXXFLAGS = ${PLAN_STDLIBS} -I../../include
 rts2_marchive_LDADD = ${PG_LDADD}
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 else

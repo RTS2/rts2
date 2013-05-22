@@ -18,7 +18,7 @@ rts2_bb_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2db -lrts2db -L..
 
 CLEANFILES = bbdb.cpp
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 else

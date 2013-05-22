@@ -27,7 +27,7 @@ rts2_augershooter_SOURCES = augershooter.cpp
 rts2_augershooter_CXXFLAGS = ${PG_CXXFLAGS} -I../../include
 rts2_augershooter_LDADD = ${PG_LDADD}
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 endif

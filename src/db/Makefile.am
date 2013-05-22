@@ -56,7 +56,7 @@ rts2_plan_LDADD = ${PG_LDADD}
 nodist_rts2_airmasscale_SOURCES = airmasscale.cpp
 rts2_airmasscale_LDADD = ${PG_LDADD}
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 EXTRA_DIST += usernondb.cpp

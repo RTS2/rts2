@@ -20,7 +20,7 @@ rts2_xmlrpcd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -l
 
 CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 else

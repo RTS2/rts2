@@ -24,7 +24,7 @@ nodist_rts2_deleteimage_SOURCES = deleteimage.cpp
 rts2_deleteimage_CXXFLAGS = @LIBPG_CFLAGS@ @JPEG_CFLAGS@ @CFITSIO_CFLAGS@ @LIBXML_LIBS@ -I../../include
 rts2_deleteimage_LDADD = ${PG_LDADD}
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 endif

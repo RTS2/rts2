@@ -102,6 +102,9 @@ const std::string Message::getMessageString ()
 		case INFO_OBSERVATION_INTERRUPTED:
 			os << expandString ("observation #$0 of target #$1 interrupted");
 			break;
+		case INFO_OBSERVATION_LOOP:
+			os << expandString ("starting new loop of observation #$0 on target #$1");
+			break;
 		default:
 			return messageString;
 	}

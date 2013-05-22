@@ -17,7 +17,7 @@ nodist_librts2imagedb_la_SOURCES = imagedb.cpp
 librts2imagedb_la_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
 librts2imagedb_la_SOURCES = fitsfile.cpp channel.cpp image.cpp imageastrometry.cpp devcliimg.cpp cameraimage.cpp devclifoc.cpp dbfilters.cpp
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 endif

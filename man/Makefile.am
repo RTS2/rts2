@@ -113,13 +113,13 @@ XP=xsltproc --nonet
 
 DB2MAN=@DB2MAN@
 
-%.1: %.xml rts2.ent
+.xml.1:
 	$(XP) $(DB2MAN) $<
 
-%.5: %.xml rts2.ent
+.xml.5:
 	$(XP) $(DB2MAN) $<
 
-%.7: %.xml rts2.ent
+.xml.7:
 	$(XP) $(DB2MAN) $<
 
 endif

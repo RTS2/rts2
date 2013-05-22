@@ -28,7 +28,7 @@ nodist_librts2db_la_SOURCES = sqlerror.cpp devicedb.cpp target.cpp sub_targets.c
 
 librts2db_la_SOURCES = simbadtarget.cpp mpectarget.cpp imagesetstat.cpp constraints.cpp
 
-%.cpp: %.ec
+.ec.cpp:
 	@ECPG@ -o $@ $^
 
 else
