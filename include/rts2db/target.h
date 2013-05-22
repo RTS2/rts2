@@ -595,8 +595,9 @@ class Target:public Rts2Target
 		 * @param h_end     Print heigh to this hour.
 		 * @param h_step    Step in hours. Default to 1 hour step.
 		 * @param header    If this routine should print header
+		 * @param format_output    If this routine should output formatted text
 		 */
-		void printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step = 1.0, bool header = true);
+		void printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step = 1.0, bool header = true, bool format_output = true);
 
 		/**
 		 * Prints target altitude informations.
@@ -699,8 +700,6 @@ class Target:public Rts2Target
 		double getSatisfiedDuration (double from, double to, double length, double step);
 
 		void getViolatedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
-
-		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 
 		/**
 		 * Print observations at current target postion around given position.

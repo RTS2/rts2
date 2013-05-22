@@ -83,7 +83,7 @@ void Target::writeAirmass (std::ostream & _os, double jd)
 		_os << std::setw (3) << getAirmass (jd);
 }
 
-void Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step, bool header)
+void Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step, bool header, bool format_output)
 {
 	double i;
 	struct ln_hrz_posn hrz;
@@ -92,14 +92,18 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 
 	int old_precison = 0;
 	std::ios_base::fmtflags old_settings = std::ios_base::skipws;
+	char old_fill;
 
 	jd_start += h_start / 24.0;
 
 	if (header)
 	{
-		old_precison = _os.precision (0);
-		old_settings = _os.flags ();
-		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		if (format_output)
+		{
+			old_precison = _os.precision (0);
+			old_settings = _os.flags ();
+			_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		}
 		
 		_os << " H ALT  AZ  HA  AIR  LD  SD SAL SAZ LAL LAZ" << std::endl;
 	}
@@ -108,12 +112,15 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
 	{
 		getAltAz (&hrz, jd);
-		char old_fill = _os.fill ('0');
+		if (format_output)
+			old_fill = _os.fill ('0');
 		_os << std::setw (2) << i << " ";
-		_os.fill (old_fill);
+		if (format_output)
+			_os.fill (old_fill);
 		_os << std::setw (3) << hrz.alt << " " << std::setw (3) << hrz.az << " " << std::setw (3) << (getHourAngle (jd)  / 15.0) << " ";
 
-		_os.precision (2);
+		if (format_output)
+			_os.precision (2);
 		if (header)
 		{
 			writeAirmass (_os, jd);
@@ -122,7 +129,8 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 		{
 			_os << getBonus (jd);
 		}
-		_os.precision (0);
+		if (format_output)
+			_os.precision (0);
 
 		ln_get_solar_equ_coords (jd, &pos);
 		ln_get_hrz_from_equ (&pos, getObserver (), jd, &hrz);
@@ -140,7 +148,7 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 		_os << std::endl;
 	}
 
-	if (header)
+	if (header && format_output)
 	{
 		_os.setf (old_settings);
 		_os.precision (old_precison);
@@ -159,11 +167,6 @@ void Target::printAltTable (std::ostream & _os, double JD)
 		<< std::endl;
 
 	printAltTable (_os, jd_start, -1, 24);
-}
-
-void Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step)
-{
-	printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
 }
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()

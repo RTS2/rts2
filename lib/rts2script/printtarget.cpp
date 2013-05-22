@@ -482,12 +482,16 @@ void PrintTarget::printTarget (rts2db::Target *target)
 
 void PrintTarget::printTargetGNUplot (rts2db::Target *target)
 {
+	/*struct ln_hrz_posn hrz;
+
 	for (double i = gbeg; i <= gend; i += step)
 	{
 		std::cout << i << " ";
-		target->printAltTableSingleCol (std::cout, jd_start, i, step);
-		std::cout << std::endl;
-	}
+		target->getAltAz (&hrz, jd_start + i/24.0);
+		std::cout << hrz.alt << std::endl;
+	}*/
+	// extended table enables the use of user's individual advanced gnuplotting with output
+	target->printAltTable (std::cout, jd_start, gbeg, gend, step, true, false);
 }
 
 void PrintTarget::printTargetGNUBonus (rts2db::Target *target)
