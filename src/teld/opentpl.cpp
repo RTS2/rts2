@@ -373,7 +373,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 	// 2.7 arcsec
 	goodSep->setValueDouble (0.00075);
 
-	createValue (parkPos, "park_position", "mount park position", false);
+	createValue (parkPos, "park_position", "mount park position", false, RTS2_VALUE_WRITABLE);
 	parkPos->setValueAltAz (70, 0);
 
 	createValue (standbyPoweroff, "standby_poweroff", "power off at standby (power on at ready night, dusk or dawn)", false, RTS2_VALUE_WRITABLE);
