@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/rts2connserial.h"
+#include "connection/serial.h"
 
 namespace rts2sensord
 {
@@ -32,7 +32,7 @@ class MrakomerMove:public SensorWeather
 {
 	private:
 		const char cloud_dev;
-		Rts2ConnSerial *cloudConn;
+		rts2core::ConnSerial *cloudConn;
 
 		/**
 		 * Read reply from sensor. Check the reply, change parameters accordingly.
@@ -149,8 +149,6 @@ MrakomerMove::cloudMeasureAll ()
 	if (ret != 1)
 		return -1;
 	return readReply (false);
-	fflush (mrak2_log);
-	return 0;
 }
 
 
@@ -164,10 +162,6 @@ MrakomerMove::checkCloud ()
 
 	if (getRain ())
 	{
-		fprintf (mrak2_log,
-			"%li - G nan;S45 nan;S90 nan;S135 nan;Temp %.1f;Hum %.0f;Rain %i\n",
-			(long int) now, getTemperature (), getHumidity (), getRain ());
-		fflush (mrak2_log);
 		nextCloudMeas = now + 300;
 		return;
 	}

@@ -44,7 +44,7 @@ rts2_sensor_fram_weather_SOURCES = fram-weather.cpp framudp.cpp
 
 rts2_sensor_bart_rain_SOURCES = bart-rain.cpp
 
-rts2_sensor_mrakomer_move_SOURCES = mrakomer-move.cpp
+#rts2_sensor_mrakomer_move_SOURCES = mrakomer-move.cpp
 
 rts2_sensor_osn_SOURCES = osn.cpp
 
