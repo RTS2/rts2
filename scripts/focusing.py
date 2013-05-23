@@ -158,9 +158,11 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 		self.fwhm_MinimumX = None
 		keys = tries.keys()
 		keys.sort()
+		sextr = rts2.Sextractor(threshold=threshold,deblendmin=deblendmin)
 		for k in keys:
 			try:
-				fwhm,nstars = rts2.sextractor.getFWHM(tries[k],min_stars,ds9display,filterGalaxies,threshold=threshold,deblendmin=deblendmin)
+				sextr.runSExtractor(tries[k])
+				fwhm,nstars = sextr.calculate_FWHM(min_stars,filterGalaxies)
 			except Exception, ex:
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue
