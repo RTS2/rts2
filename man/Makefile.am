@@ -111,16 +111,16 @@ man_MANS = \
 
 XP=xsltproc --nonet
 
-DB2MAN=@DB2MAN@
+COMPILE_DB2MAN=@DB2MAN@
 
 .xml.1:
-	$(XP) $(DB2MAN) $<
+	$(XP) $(COMPILE_DB2MAN) $<
 
 .xml.5:
-	$(XP) $(DB2MAN) $<
+	$(XP) $(COMPILE_DB2MAN) $<
 
 .xml.7:
-	$(XP) $(DB2MAN) $<
+	$(XP) $(COMPILE_DB2MAN) $<
 
 endif
 
@@ -130,7 +130,7 @@ doc_FOP = \
     rts2-man.fop \
     rts2-book.fop
 
-DB2FOP=@DB2FOP@
+COMPILE_DB2FOP=@DB2FOP@
 FOP=fop
 
 doc_PDF = \
@@ -138,13 +138,13 @@ doc_PDF = \
     rts2-book.pdf
 
 rts2-man.fop: rts2-mon.xml
-	$(XP) $(DB2FOP) $< > $@
+	$(XP) $(COMPILE_DB2FOP) $< > $@
 
 rts2-man.pdf: rts2-man.fop
 	$(FOP) $< $@
 
 rts2-book.fop: rts2-book.xml
-	$(XP) $(DB2FOP) $< > $@
+	$(XP) $(COMPILE_DB2FOP) $< > $@
 
 rts2-book.pdf: rts2-book.fop
 	$(FOP) $< $@
