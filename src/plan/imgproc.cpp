@@ -216,7 +216,6 @@ ImageProc::ImageProc (int _argc, char **_argv)
 
 ImageProc::~ImageProc (void)
 {
-	delete runningImage;
 	if (imageGlob.gl_pathc)
 		globfree (&imageGlob);
 }
