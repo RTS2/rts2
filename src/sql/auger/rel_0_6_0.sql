@@ -10,7 +10,7 @@ CREATE TABLE auger (
 CREATE INDEX auger_date ON auger (auger_date);
 
 COPY types FROM stdin;
-A       Auger particle shower
+A	Auger particle shower
 \.
 
 COPY targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment, tar_enabled, tar_priority, tar_bonus, tar_bonus_time) FROM stdin;
