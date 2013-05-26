@@ -102,6 +102,7 @@ class ImageProc:public rts2core::Device
 		rts2core::ValueString *image_glob;
 
 		rts2core::ValueBool *applyCorrections;
+		rts2core::ValueInteger *astrometryTimeout;
 
 		rts2core::ValueInteger *goodImages;
 		rts2core::ValueInteger *trashImages;
@@ -157,6 +158,9 @@ ImageProc::ImageProc (int _argc, char **_argv)
 
 	createValue (applyCorrections, "apply_corrections", "apply corrections from astrometry", false, RTS2_VALUE_WRITABLE);
 	applyCorrections->setValueBool (true);
+
+	createValue (astrometryTimeout, "astrometry_timeout", "[s] timeout for astrometry processes", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
+	astrometryTimeout->setValueInteger (3600);
 
 	createValue (goodImages, "good_astrom", "number of images with astrometry", false);
 	goodImages->setValueInteger (0);
@@ -255,6 +259,9 @@ int ImageProc::reloadConfig ()
 	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL);
 	last_good_jpeg = config->getStringDefault ("imgproc", "last_good_jpeg", NULL);
 	last_trash_jpeg = config->getStringDefault ("imgproc", "last_trash_jpeg", NULL);
+
+	astrometryTimeout->setValueInteger (config->getAstrometryTimeout ());
+
 	return ret;
 }
 
@@ -541,14 +548,14 @@ int ImageProc::que (ConnProcess * newProc)
 int ImageProc::queImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Configuration::instance ()->getAstrometryTimeout ());
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, astrometryTimeout->getValueInteger ());
 	return que (newImageConn);
 }
 
 int ImageProc::doImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Configuration::instance ()->getAstrometryTimeout ());
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, astrometryTimeout->getValueInteger ());
 	changeRunning (newImageConn);
 	infoAll ();
 	return 0;
@@ -557,7 +564,7 @@ int ImageProc::doImage (const char *_path)
 int ImageProc::queObs (int obsId)
 {
 	ConnObsProcess *newObsConn;
-	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, Configuration::instance ()->getObsProcessTimeout ());
+	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, astrometryTimeout->getValueInteger ());
 	return que (newObsConn);
 }
 
@@ -596,7 +603,7 @@ int ImageProc::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextString (&in_imageName))
 			return -2;
 		ConnProcess *newConn;
-		newConn = new ConnImgOnlyProcess (this, defaultImgProcess.c_str (), in_imageName, Configuration::instance ()->getAstrometryTimeout ());
+		newConn = new ConnImgOnlyProcess (this, defaultImgProcess.c_str (), in_imageName, astrometryTimeout->getValueInteger ());
 
 		while (!conn->paramNextString (&in_imageName))
 			newConn->addArg (in_imageName);
