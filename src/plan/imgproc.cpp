@@ -110,6 +110,7 @@ class ImageProc:public rts2core::Device
 		rts2core::ValueInteger *darkImages;
 		rts2core::ValueInteger *flatImages;
 
+		rts2core::ValueString *processedImage;
 		rts2core::ValueInteger *queSize;
 
 		rts2core::ValueRaDec *lastRaDec;
@@ -170,6 +171,8 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	darkImages->setValueInteger (0);
 	createValue (flatImages, "flat_images", "number of flats", false);
 	flatImages->setValueInteger (0);
+
+	createValue (processedImage, "processed_image", "image being processed at the moment", false);
 
 	createValue (queSize, "queue_size", "number of images waiting for processing", false);
 	queSize->setValueInteger (0);
@@ -519,6 +522,7 @@ void ImageProc::changeRunning (ConnProcess * newImage)
 			runningImage->setLastTrashJpeg (last_trash_jpeg);
 #endif
 		addConnection (runningImage);
+		processedImage->setValueCharArr (runningImage->getProcessArguments ());
 	}
 	maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_RUN);
 	infoAll ();

@@ -41,6 +41,11 @@ class ConnProcess:public rts2script::ConnExe
 	
 		double getExposureEnd () { return expDate; };
 
+		/**
+		 * Return name of the image/thing to process.
+		 */
+		virtual const char* getProcessArguments () { return "none"; }
+
 #ifdef RTS2_HAVE_LIBJPEG
 		void setLastGoodJpeg (const char *_last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
 		void setLastTrashJpeg (const char *_last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
@@ -73,6 +78,8 @@ class ConnImgOnlyProcess:public ConnProcess
 		ConnImgOnlyProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout);
 
 		virtual int init ();
+
+		virtual const char* getProcessArguments () { return imgPath.c_str (); }
 
 		virtual void processLine ();
 
@@ -130,6 +137,14 @@ class ConnImgProcess:public ConnImgOnlyProcess
 
 class ConnObsProcess:public ConnProcess
 {
+	public:
+		ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout);
+
+		virtual const char* getProcessArguments () { return obs == NULL ? "unknown" : obs->getTargetName ().c_str (); }
+
+		virtual int newProcess ();
+		virtual void processLine ();
+
 	private:
 		int obsId;
 		rts2db::Observation *obs;
@@ -137,11 +152,6 @@ class ConnObsProcess:public ConnProcess
 		char *obsIdCh;
 		char *obsTarIdCh;
 		char *obsTarTypeCh;
-	public:
-		ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout);
-
-		virtual int newProcess ();
-		virtual void processLine ();
 };
 
 class ConnDarkProcess:public ConnProcess
