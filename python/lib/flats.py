@@ -253,6 +253,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 	def acquireImage(self):
 		"""Acquires images for flats. Return 0 if image was added to flats, 1 if it was too brigth, -1 if it was too dark."""
 		self.setValue('exposure',self.exptime)
+		self.setValue('SHUTTER','LIGHT')
 		img = self.exposure(self.beforeReadout)
 		avrg = self.getValueFloat('average') # Calculate average of image (can be just the central 100x100pix if you want to speed up)
 		ratio = (avrg - self.biasLevel) / self.optimalFlat
