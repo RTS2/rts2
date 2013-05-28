@@ -1,3 +1,6 @@
+2013-05-28
+ * Java JSON bindings (in java directory)
+
 2013-05-04
  * PROTO_STATUS_PROGRESS message (transmits both state change and expected duration)
 
