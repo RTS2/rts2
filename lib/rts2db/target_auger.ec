@@ -246,8 +246,8 @@ void TargetAuger::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	struct ln_hrz_posn hrz;
 
-	hrz.alt = 90 - SDPTheta;
-	hrz.az = SDPPhi;
+	hrz.alt = 90 - Theta;
+	hrz.az = Phi;
 
 	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
 }
@@ -614,8 +614,8 @@ void TargetAuger::updateShowerFields ()
 	cor.y = Northing - 6071873;
 	cor.z = Altitude - 1422;
 
-	hrz.alt = 90 - SDPTheta;
-	hrz.az = SDPPhi;
+	hrz.alt = 90 - Theta;
+	hrz.az = Phi;
 
 	ln_get_equ_from_hrz (&hrz, observer, JD, &pos);
 
