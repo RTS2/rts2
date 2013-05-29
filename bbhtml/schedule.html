@@ -64,7 +64,7 @@ $(function() {
 									'fnCreatedCell':function (nTd,sdata,odata,irow,icol) {
 									  	var b = $('<button>' + sdata + '</button>');
 										b.button();
-										b.on('click',function() { return confirmPick(sdata,odata); });
+										b.on('click',function() { return confirmPick(sdata,odata[1]); });
 										$(nTd).empty()
 										$(nTd).prepend(b);
 									}
@@ -118,7 +118,7 @@ $(function() {
 		autoOpen: false,
 		modal: true,
 		minHeight: 350,
-		minWidth: 400,
+		minWidth: 500,
 		buttons: {
 			"Create": function() {
 				$(this).dialog("close");
@@ -143,6 +143,8 @@ $(function() {
 	});
 
 	function confirmPick(id,name) {
+		$('#confirm-pick-target').html(name);
+		$('#confirm-pick-id').html(id);
 		$('#confirm-pick').dialog('open');
 	}
 
@@ -242,7 +244,7 @@ function new_target(name)
   </div>
 
   <div id='confirm-pick' title='Confirm target'>
-    <p>You selected the following target: <span id='confirm-pick-target'/>. Do you want to proceed?</p>
+    <p>You selected the target <span id='confirm-pick-target'></span> with id <span id='confirm-pick-id'></span>. Do you want to proceed?</p>
   </div>
 
   <form name='target'>
