@@ -8,18 +8,18 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 import java.net.URL;
-import java.net.MalformedURLException;
+import java.util.Date;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreProtocolPNames;
 
 import org.json.JSONObject;
-import org.json.JSONException;
 
 /**
  * Class to access RTS2 via JAVA objects. Provides method to extract data from
@@ -29,7 +29,7 @@ import org.json.JSONException;
  */
 class JSON
 {
-	public JSON(String url, String login, String password) throws MalformedURLException
+	public JSON(String url, String login, String password) throws Exception
 	{
 		client = new DefaultHttpClient();
 		client.getParams().setParameter(CoreProtocolPNames.USER_AGENT, "java-rts2");
@@ -57,9 +57,9 @@ class JSON
 	/**
 	 * Return value from the given device.
 	 */
-	public String getValue(String device, String value) throws JSONException,IOException
+	public String getValue(String device, String value) throws Exception
 	{
-		HttpGet request = new HttpGet(baseUrl + "/api/get");
+		HttpGet request = new HttpGet((new URIBuilder(baseUrl + "/api/get")).addParameter("d",device).build());
 	
 		BasicHttpParams httpParams = new BasicHttpParams();
 		httpParams.setParameter("device", device);
@@ -77,7 +77,20 @@ class JSON
 		}
 
 		JSONObject json = new JSONObject(sb.toString());
-		return json.get(value).toString();
+		return json.getJSONObject("d").get(value).toString();
+	}
+
+	/**
+	 * Returns double value from JSON.
+	 */
+	public double getValueDouble(String device, String value) throws Exception
+	{
+		return Double.parseDouble(getValue(device, value));
+	}
+
+	public Date getValueDate(String device, String value) throws Exception
+	{
+		return new Date((long)getValueDouble(device, value));
 	}
 
 	private DefaultHttpClient client;

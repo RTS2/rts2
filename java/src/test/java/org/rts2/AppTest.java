@@ -1,5 +1,7 @@
 package org.rts2;
 
+import java.util.Date;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -35,6 +37,6 @@ public class AppTest extends TestCase
 	public void testApp() throws Exception
 	{
 		JSON json = new JSON("http://localhost:8889", "petr", "test");
-		assertEquals("infotime value", "2012", json.getValue("C0", "infotime"));
+		assertTrue("infotime value <= now", json.getValueDate("centrald", "infotime").before(new Date()));
 	}
 }
