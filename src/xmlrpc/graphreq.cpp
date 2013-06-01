@@ -21,6 +21,8 @@
 #include "rts2json/altaz.h"
 #include "valueplot.h"
 
+#include "rts2json/bsc.h"
+
 #ifdef RTS2_HAVE_LIBJPEG
 
 using namespace rts2xmlrpc;
@@ -29,12 +31,52 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 {
 	int s = params->getInteger ("s", 250);
 	rts2json::AltAz altaz = rts2json::AltAz (s, s);
-	altaz.plotAltAzGrid ();
+	altaz.rotation = params->getInteger ("rot", 180);
+	altaz.mirror = params->getBoolean ("mirror", true);
+	bool showHorizon = params->getBoolean ("horizon", true);
+	bool showSunMoon = params->getBoolean ("sunmoon", true);
+	double bsc_limmag = params->getDouble ("starsmag", 3.9);
+	double bsc_maxsize = params->getDouble ("starssize", NULL);
+
+	if (!bsc_maxsize && s >= 250)
+		bsc_maxsize = 2.5;
+	else if (!bsc_maxsize)
+		bsc_maxsize = 0.0;
 
 	struct ln_equ_posn pos;
 	struct ln_hrz_posn hrz;
 
 	double JD = ln_get_julian_from_sys ();
+
+	if (bsc_maxsize > 0.0)
+	{
+		for (int i = 0; i < sizeof (bsc) / sizeof (bsc[0]); i++) 
+		{
+			if (!bsc[i].mag || bsc[i].mag > bsc_limmag)
+				continue;
+			pos.ra = bsc[i].ra;
+			pos.dec  = bsc[i].dec;
+			ln_get_hrz_from_equ (&pos, Configuration::instance ()->getObserver (), JD, &hrz);
+			if (hrz.alt <= 0.0)
+				continue;
+			altaz.plot (&hrz, NULL, "grey30", PLOT_TYPE_POINT, - (bsc[i].mag - bsc_limmag) / bsc_limmag * bsc_maxsize);
+		}
+	}
+
+	if (showHorizon)
+		altaz.plotAltAzHorizon ();
+	altaz.plotAltAzGrid ();
+
+	// position of sun & moon
+	if (showSunMoon)
+	{
+		ln_get_solar_equ_coords (JD, &pos);
+		ln_get_hrz_from_equ (&pos, Configuration::instance ()->getObserver (), JD, &hrz);
+		altaz.plot (&hrz, "☉", "OrangeRed", PLOT_TYPE_POINT, 4);
+		ln_get_lunar_equ_coords (JD, &pos);
+		ln_get_hrz_from_equ (&pos, Configuration::instance ()->getObserver (), JD, &hrz);
+		altaz.plot (&hrz, "☾", "grey10", PLOT_TYPE_POINT, 4);
+	}
 
 	// get current target position..
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
@@ -48,7 +90,7 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 			hrz.alt = ((rts2core::ValueAltAz *) val)->getAlt ();
 			hrz.az = ((rts2core::ValueAltAz *) val)->getAz ();
 
-			altaz.plotCross (&hrz, "Telescope", "green");
+			altaz.plot (&hrz, "TEL", "red", PLOT_TYPE_TELESCOPE, 12);
 		}
 
 		val = conn->getValue ("TAR");

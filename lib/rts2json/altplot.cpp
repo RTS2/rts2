@@ -54,6 +54,7 @@ Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::Target *targe
 	if (shadow)
 		plotTarget (target, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
 	plotTarget (target, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
+	plotTargetHorizon (target, Magick::Color (MaxRGB / 3, MaxRGB / 3, MaxRGB / 3, 3 * MaxRGB / 5), PLOTTYPE_FILL, 1);
 
 	return image;
 }
@@ -127,6 +128,46 @@ void AltPlot::preparePlot (double _from, double _to, Magick::Image* _image, Plot
 	plotXDate ();
 }
 
+void AltPlot::plotTargetHorizon (rts2db::Target *tar, Magick::Color col, PlotType _plotType, int linewidth)
+{
+	// reset stroke pattern
+	image->strokePattern (Magick::Image (Magick::Geometry (1,1), col));
+	image->strokeColor (col);
+	image->strokeWidth (linewidth);
+	image->fillColor (col);
+
+	PlotType oldPlotType = plotType;
+
+	plotType = _plotType;
+
+	struct ln_hrz_posn hrz;
+
+	time_t t_from = (time_t) from;
+
+	double JD = ln_get_julian_from_timet (&t_from);
+
+	tar->getAltAz (&hrz, JD);
+
+	double stepX = (to - from) / (size.width () - y_axis_width) / 86400.0;
+
+	double x = y_axis_width;
+	double x_end = x + 1;
+	double y = size.height () - x_axis_height - scaleY * rts2core::Configuration::instance ()->getObjectChecker ()->getHorizonHeight (&hrz, 0);
+
+	while (x < (size.width ()))
+	{
+		JD += stepX;
+		tar->getAltAz (&hrz, JD);
+		double y_end = size.height () - x_axis_height - scaleY * rts2core::Configuration::instance ()->getObjectChecker ()->getHorizonHeight (&hrz, 0);
+		plotRange (x, y, x_end, y_end);
+		x = x_end;
+		x_end++;
+		y = y_end;
+	}
+
+	plotType = oldPlotType;
+}
+
 void AltPlot::plotTarget (rts2db::Target *tar, Magick::Color col, int linewidth, int shadow)
 {
 	// reset stroke pattern
@@ -186,10 +227,10 @@ void AltPlot::plotRange (double x, double y, double x_end, double y_end)
 		case PLOTTYPE_FILL:
 		case PLOTTYPE_FILL_SHARP:
 			std::list <Magick::Coordinate> pol;
-			pol.push_back (Magick::Coordinate (x, size.height ()));
+			pol.push_back (Magick::Coordinate (x, size.height () - x_axis_height));
 			pol.push_back (Magick::Coordinate (x, y));
 			pol.push_back (Magick::Coordinate (x_end - 1, (plotType == PLOTTYPE_FILL_SHARP ? y : y_end)));
-			pol.push_back (Magick::Coordinate (x_end - 1, size.height ()));
+			pol.push_back (Magick::Coordinate (x_end - 1, size.height () - x_axis_height));
 			image->draw (Magick::DrawablePolygon (pol));
 	}
 }

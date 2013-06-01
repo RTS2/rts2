@@ -35,8 +35,8 @@ Plot::Plot (int w, int h)
 	size.width (w);
 	size.height (h);
 
-	x_axis_height = 70;
-	y_axis_width = 50;
+	x_axis_height = 55;
+	y_axis_width = 35;
 
 	image = NULL;
 }

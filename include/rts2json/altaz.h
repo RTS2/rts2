@@ -26,6 +26,11 @@
 #include <Magick++.h>
 #include <libnova/libnova.h>
 
+#define PLOT_TYPE_CROSS		1
+#define PLOT_TYPE_POINT		2
+#define PLOT_TYPE_CIRCLE	3
+#define PLOT_TYPE_TELESCOPE	4
+
 namespace rts2json
 {
 
@@ -37,23 +42,32 @@ namespace rts2json
 class AltAz
 {
 	public:
-		AltAz (int w = 600, int h = 600) : image (Magick::Geometry (w, h), "white") {rotation = 0; setCenter (); }
-		AltAz (Magick::Image &_image): image (_image) {rotation = 0; setCenter (); }
+		AltAz (int w = 600, int h = 600) : image (Magick::Geometry (w, h), "white") { rotation = 180.0; mirror = true; setCenter (); }
+		AltAz (Magick::Image &_image): image (_image) { rotation = 180.0; mirror = true; setCenter (); }
 
 		/**
 		 * Plot alt-az grid on associated image.
 		 */
-		void plotAltAzGrid ();
+		void plotAltAzGrid (Magick::Color col = Magick::Color ("grey40"));
 
-		void plotCross (struct ln_hrz_posn *hrz, const char* label = NULL, const char *color = "black");
+		/**
+		 * Plot horizon boundaries on associated image.
+		 */
+		void plotAltAzHorizon (Magick::Color col = Magick::Color ("grey80"));
+
+		void plotCross (struct ln_hrz_posn *hrz, const char* label = NULL, const char *color = "black") { plot (hrz, label, color, PLOT_TYPE_CROSS, 10.0); }
+
+		void plot (struct ln_hrz_posn *hrz, const char* label = NULL, const char *color = "black", int type = PLOT_TYPE_CROSS, double size = 10.0);
 
 		void write (Magick::Blob *blob, const char *type) { image.write (blob, type); }
 
+		// angle of true north, in degrees. North is on bottom, if rotation = 0
+		double rotation;
+		// mirror of EW axis
+		bool mirror;
+
 	private:
 		Magick::Image image;
-
-		// angle of true north, in radians. North is on top, if rotation = 0
-		double rotation;
 
 		int c; // center position
 		int l; // lenght

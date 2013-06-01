@@ -60,6 +60,7 @@ class AltPlot:public Plot
 
 	private:
 		void preparePlot (double _from, double _to, Magick::Image* _image, PlotType _plotType);	
+		void plotTargetHorizon (rts2db::Target *tar, Magick::Color col, PlotType _plotType, int linewidth=1);
 		void plotTarget (rts2db::Target *tar, Magick::Color col, int linewidth, int shadow);
 
 		void plotRange (double x, double y, double x_end, double y_end);
