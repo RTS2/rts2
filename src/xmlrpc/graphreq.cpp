@@ -36,12 +36,10 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 	bool showHorizon = params->getBoolean ("horizon", true);
 	bool showSunMoon = params->getBoolean ("sunmoon", true);
 	double bsc_limmag = params->getDouble ("starsmag", 3.9);
-	double bsc_maxsize = params->getDouble ("starssize", NULL);
+	double bsc_maxsize = params->getDouble ("starssize", 0);
 
 	if (!bsc_maxsize && s >= 250)
 		bsc_maxsize = 2.5;
-	else if (!bsc_maxsize)
-		bsc_maxsize = 0.0;
 
 	struct ln_equ_posn pos;
 	struct ln_hrz_posn hrz;
@@ -50,16 +48,16 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 
 	if (bsc_maxsize > 0.0)
 	{
-		for (int i = 0; i < sizeof (bsc) / sizeof (bsc[0]); i++) 
+		for (bsc_record *star = bsc; star->hrn >= 0; star++)
 		{
-			if (!bsc[i].mag || bsc[i].mag > bsc_limmag)
+			if (star->mag > bsc_limmag)
 				continue;
-			pos.ra = bsc[i].ra;
-			pos.dec  = bsc[i].dec;
+			pos.ra = star->ra;
+			pos.dec  = star->dec;
 			ln_get_hrz_from_equ (&pos, Configuration::instance ()->getObserver (), JD, &hrz);
 			if (hrz.alt <= 0.0)
 				continue;
-			altaz.plot (&hrz, NULL, "grey30", PLOT_TYPE_POINT, - (bsc[i].mag - bsc_limmag) / bsc_limmag * bsc_maxsize);
+			altaz.plot (&hrz, NULL, "grey30", PLOT_TYPE_POINT, - (star->mag - bsc_limmag) / bsc_limmag * bsc_maxsize);
 		}
 	}
 
