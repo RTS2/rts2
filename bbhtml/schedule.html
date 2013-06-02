@@ -19,7 +19,9 @@ $(function() {
 	radec = $("#radec"),
 	allFields = $([]).add(tname).add(radec);
 	error_function = function(request, desc, exc) {
-	}
+	};
+	
+	var last_data;
 
 	$("#create-form").dialog({
 		autoOpen: false,
@@ -50,49 +52,8 @@ $(function() {
 					// try only radec - name resolver
 					var target = $.getJSON('/api/tbystring?jqapi=1&nearest=5&ts=' + tname.val(), function(data) {
 						pb.dialog("close");
-						$("#resolved-info-simbad").html('<p>Simbad name: ' + data.name
-							+ '</p><p>   RA: ' + (new HMS(data.ra)).toString()
-							+ '</p><p>   DEC: ' + (new DMS(data.dec)).toString()
-							+ '</p><p>info: ' + data.info + '</p>');
-						if (data.nearest.aaData.length > 0)
-						{
-							var tarTable = $("#resolved-info-nearest-targets").dataTable({
-								'aaData': data.nearest.aaData,
-								'bDestroy': true,
-								'aoColumnDefs': [{
-								  	'aTargets' : [0],
-									'fnCreatedCell':function (nTd,sdata,odata,irow,icol) {
-									  	var b = $('<button>' + sdata + '</button>');
-										b.button();
-										b.on('click',function() { return confirmPick(sdata,odata[1]); });
-										$(nTd).empty()
-										$(nTd).prepend(b);
-									}
-								},{
-									'aTargets' : [2],
-									'mRender':function (data,type,full) {
-										return (new HMS(data)).toString();
-									}
-								},{
-									'aTargets' : [3],
-									'mRender':function (data,type,full) {
-										return (new DMS(data)).toString();
-									}
-								}]
-							});
-							$("#resolved-info-nearest-targets tbody").click  (function (event) {
-								$(tarTable.fnSettings().aoData).each(function () {
-									$(this.nTr).removeClass('row_selected');
-								});
-								$(event.target.parentNode).addClass('row_selected');
-							} );
-							$("#resolved-info-nearest").css({'visibility':'visible'});
-						}
-						else
-						{
-							$("#resolved-info-nearest").css({'visibility':'hidden'});
-						}
-						$("#resolved-info").dialog("open");
+						last_data = data;
+						showConfirmSelect(last_data);
 					}).fail(function(jqXHR, textStatus, errorThrown) {
 						pb.dialog("close");
 						var error = $('<div><p>Error asking for target ' + vtname + '</p></div>').dialog({
@@ -129,14 +90,59 @@ $(function() {
 		}
 	});
 
+	function showConfirmSelect(data) {
+		$("#resolved-info-simbad").html('<p>Simbad name: ' + data.name
+			+ '</p><p>   RA: ' + (new HMS(data.ra)).toString()
+			+ '</p><p>   DEC: ' + (new DMS(data.dec)).toString()
+			+ '</p><p>info: ' + data.info + '</p>');
+		if (data.nearest.aaData.length > 0) {
+			var tarTable = $("#resolved-info-nearest-targets").dataTable({
+				'aaData': data.nearest.aaData,
+				'bDestroy': true,
+				'aoColumnDefs': [{
+				  	'aTargets' : [0],
+					'fnCreatedCell':function (nTd,sdata,odata,irow,icol) {
+					  	var b = $('<button>' + sdata + '</button>');
+						b.button();
+						b.on('click',function() { $('#resolved-info').dialog("close"); return confirmPick(sdata,odata[1]); });
+						$(nTd).empty()
+						$(nTd).prepend(b);
+					}
+				},{
+					'aTargets' : [2],
+					'mRender':function (data,type,full) {
+						return (new HMS(data)).toString();
+					}
+				},{
+					'aTargets' : [3],
+					'mRender':function (data,type,full) {
+						return (new DMS(data)).toString();
+					}
+				}]
+			});
+			$("#resolved-info-nearest-targets tbody").click (function (event) {
+				$(tarTable.fnSettings().aoData).each(function () {
+					$(this.nTr).removeClass('row_selected');
+				});
+				$(event.target.parentNode).addClass('row_selected');
+			});
+			$("#resolved-info-nearest").css({'visibility':'visible'});
+		} else {
+			$("#resolved-info-nearest").css({'visibility':'hidden'});
+		}
+		$("#resolved-info").dialog("open");
+	}
+
 	$('#confirm-pick').dialog({
 		autoOpen: false,
 		modal: true,
+		minWidth: 350,
+		minHeight: 500,
 		buttons: {
 			'Yes': function() {
 				$(this).dialog('close');
 			},
-			'No': function() {
+			'Back': function() {
 				$(this).dialog('close');
 			}
 		}
