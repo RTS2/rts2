@@ -87,8 +87,8 @@ try:
 			if last_failed is not None and last_failed > last_night_on:
 				min_time = min(min_time, time.time() - last_failed)
 
-			if min_time >= image_timeout:
-				sendEmail('1.2m Robot: No images produced in expected time. ({0} seconds)'.format(image_timeout), 'Please check that the 1.2m RT system and robot are running and not hung')
+			#if min_time >= image_timeout:
+			#	sendEmail('1.2m Robot: No images produced in expected time. ({0} seconds)'.format(image_timeout), 'Please check that the 1.2m RT system and robot are running and not hung')
 			#elif min_good >= image_timeout:
 			#	sendEmail('1.2m Robot: There wasn\'t a good image in expected time. ({0} seconds)'.format(image_timeout), 'Please check the images 1.2m is producing, probably there will be some problem with TCS')
 			#else:

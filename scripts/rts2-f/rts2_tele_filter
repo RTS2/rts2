@@ -20,7 +20,7 @@ switch ($1)
 
 		set fname=$1
 		set fa=`grep "^$fname " $RTS2/etc/rts2/aliases | cut -f2 -d ' '`
-		if ($? == 0) then
+		if (x$fa != x) then
 			set fname=$fa
 		endif
 

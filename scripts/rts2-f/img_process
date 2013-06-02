@@ -7,7 +7,7 @@ imgid=$3
 tmpdir=/tmp/imgproc.$$
 
 echo "log D processing $filename files in $tmpdir"
-echo "tempentry " `echo $tmpdir | sed s#^/tmp/##`
+echo "tempentry" `echo $tmpdir | sed s#^/tmp/##`
 
 $RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $filename
 
@@ -22,7 +22,7 @@ fn=`echo $filename|sed 's#.*/##'`
 
 # calculate fwhm
 
-/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py --star-flux=2:520:510:A $fn $obs_id
+/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py --peak --star-flux=2:520:510:A $fn
 
 /home/mink/bin/fitssplit $fn opath=$tmpdir
 
@@ -57,10 +57,19 @@ else
 	amp=2
 fi
 
+bashrc=/tmp/img.$$
+
 for x in *IM${amp}.fits; do
-	/home/petr/rts2-sys/usr/share/rts2/scripts/astrometry.py $tmpdir $x $xoffs $yoffs $filename $obs_id $imgid
+	/home/petr/rts2-sys/bin/rts2-astrometry.net --bashrc $bashrc --timeout 240 --wcs-keys RA,DEC,CD1_1 --xoffset $xoffs --yoffset $yoffs --tmp-dir $tmpdir $x 
 done
 
-echo "log D removing $tmpdir"
+if [ $? == 0 ]; then
+	source $bashrc
 
-#rm -rf $tmpdir
+	echo 'integer img_num "last astrometry number"' $imgid
+	echo 'integer obs_id "last observatory id"' $obs_id
+	$RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid --ra-err $ra_err --dec-err $dec_err --err $err $filename
+fi
+
+echo "log D removing $tmpdir"
+rm -rf $tmpdir
