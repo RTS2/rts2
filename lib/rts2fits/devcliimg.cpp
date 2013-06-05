@@ -300,24 +300,21 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 			if (chan2_delta && chan < chan2_delta->size ())
 				mods[5] *= (*chan2_delta)[chan];
 
+			// not sure about this, mayby should be commented out, same as following rows
+			// please change if you use channels features and will encounter problems
 			if (mods[4] > 0)
 				mods[2] *= -1;
 			if (mods[5] > 0)
 				mods[3] *= -1;
 
-			mods[2] -= x;
-			mods[3] -= y;
-
 			if (bin1 != 0)
 			{
 				mods[2] /= bin1;
-				mods[4] /= bin1;
 			}
 
 			if (bin2 != 0)
 			{
 				mods[3] /= bin2;
-				mods[5] /= bin2;
 			}
 
 			ci->image->writeWCS (mods);

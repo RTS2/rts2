@@ -76,16 +76,16 @@ int Camera::setBinning (int in_vert, int in_hori)
 	// scale WCS parameters
 	if (wcs_crpix1)
 	{
-		wcs_crpix1->setValueDouble (default_crpix[0] / in_hori);
-		wcs_crpix2->setValueDouble (default_crpix[1] / in_vert);
+		wcs_crpix1->setValueDouble ((default_crpix[0] - getUsedX ()) / in_hori);
+		wcs_crpix2->setValueDouble ((default_crpix[1] - getUsedY ()) / in_vert);
 
 		sendValueAll (wcs_crpix1);
 		sendValueAll (wcs_crpix2);
 	}
 	if (wcs_cdelta1 && wcs_cdelta2)
 	{
-		wcs_cdelta1->setValueDouble (default_cd[0] / in_hori);
-		wcs_cdelta2->setValueDouble (default_cd[1] / in_vert);
+		wcs_cdelta1->setValueDouble (default_cd[0] * in_hori);
+		wcs_cdelta2->setValueDouble (default_cd[1] * in_vert);
 
 		sendValueAll (wcs_cdelta1);
 		sendValueAll (wcs_cdelta2);
@@ -111,9 +111,17 @@ int Camera::box (int _x, int _y, int _width, int _height, rts2core::ValueRectang
 	if (((_x - chipSize->getXInt ()) + _width) > chipSize->getWidthInt ()
 		|| ((_y - chipSize->getYInt ()) + _height) > chipSize->getHeightInt ())
 		return -1;
+	if (wcs_crpix1)
+	{
+		wcs_crpix1->setValueDouble ((default_crpix[0] - _x) / binningHorizontal ());
+		wcs_crpix2->setValueDouble ((default_crpix[1] - _y) / binningVertical ());
+		sendValueAll (wcs_crpix1);
+		sendValueAll (wcs_crpix2);
+	}
 	chipUsedReadout->setInts (_x, _y, _width, _height);
 	if (retv)
 		retv->setInts (_x, _y, _width, _height);
+	sendValueAll (chipUsedReadout);
 	return 0;
 }
 
@@ -894,8 +902,8 @@ void Camera::changeAxisDirections (bool x_orig, bool y_orig)
 	if (wcs_cdelta1 == NULL || wcs_cdelta2 == NULL)
 		return;
 
-	wcs_cdelta1->setValueDouble ((x_orig ? 1 : -1) * default_cd[0] / binningHorizontal ());
-	wcs_cdelta2->setValueDouble ((y_orig ? 1 : -1) * default_cd[1] / binningVertical ());
+	wcs_cdelta1->setValueDouble ((x_orig ? 1 : -1) * default_cd[0] * binningHorizontal ());
+	wcs_cdelta2->setValueDouble ((y_orig ? 1 : -1) * default_cd[1] * binningVertical ());
 
 	sendValueAll (wcs_cdelta1);
 	sendValueAll (wcs_cdelta2);
