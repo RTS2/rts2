@@ -28,37 +28,32 @@ XmlRpcDispatch::XmlRpcDispatch()
 	_inWork = false;
 }
 
-
 XmlRpcDispatch::~XmlRpcDispatch()
 {
 }
 
-
 // Monitor this source for the specified events and call its event handler
 // when the event occurs
-void
-XmlRpcDispatch::addSource(XmlRpcSource* source, unsigned mask)
+void XmlRpcDispatch::addSource(XmlRpcSource* source, unsigned mask)
 {
 	_sources.push_back(MonitoredSource(source, mask));
 }
 
 
 // Stop monitoring this source. Does not close the source.
-void
-XmlRpcDispatch::removeSource(XmlRpcSource* source)
+void XmlRpcDispatch::removeSource(XmlRpcSource* source)
 {
 	for (SourceList::iterator it=_sources.begin(); it!=_sources.end(); ++it)
 		if (it->getSource() == source)
-	{
-		_sources.erase(it);
-		break;
-	}
+		{
+			_sources.erase(it);
+			break;
+		}
 }
 
 
 // Modify the types of events to watch for on this source
-void
-XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
+void XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 {
 	for (SourceList::iterator it=_sources.begin(); it!=_sources.end(); ++it)
 		if (it->getSource() == source)
@@ -70,10 +65,8 @@ XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 	addSource(source, eventMask);	
 }
 
-
 // Watch current set of sources and process events
-void
-XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
+void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 {
 	// Compute end time
 	_endTime = (timeout < 0.0) ? -1.0 : (getTime() + timeout);
@@ -144,9 +137,7 @@ XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 	_inWork = false;
 }
 
-
-void
-XmlRpcDispatch::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+void XmlRpcDispatch::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 {
 	SourceList::iterator it;
 	for (it=_sources.begin(); it!=_sources.end(); ++it)
@@ -158,9 +149,7 @@ XmlRpcDispatch::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 	}
 }
 
-
-void
-XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSource *chunkWait)
+void XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSource *chunkWait)
 {
 	SourceList::iterator it;
 	// Process events
@@ -203,19 +192,15 @@ XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSourc
 	}
 }
 
-
 // Exit from work routine. Presumably this will be called from
 // one of the source event handlers.
-void
-XmlRpcDispatch::exitWork()
+void XmlRpcDispatch::exitWork()
 {
 	_endTime = 0.0;				 // Return from work asap
 }
 
-
 // Clear all sources from the monitored sources list
-void
-XmlRpcDispatch::clear()
+void XmlRpcDispatch::clear()
 {
 	if (_inWork)
 		_doClear = true;		 // Finish reporting current events before clearing
@@ -228,9 +213,7 @@ XmlRpcDispatch::clear()
 	}
 }
 
-
-double
-XmlRpcDispatch::getTime()
+double XmlRpcDispatch::getTime()
 {
 	#ifdef USE_FTIME
 	struct timeb  tbuff;

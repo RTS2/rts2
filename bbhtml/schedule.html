@@ -141,9 +141,11 @@ $(function() {
 		buttons: {
 			'Yes': function() {
 				$(this).dialog('close');
+				schedule(
 			},
 			'Back': function() {
 				$(this).dialog('close');
+				showConfirmSelect(last_data);
 			}
 		}
 	});

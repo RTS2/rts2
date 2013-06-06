@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2013 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2005-2007 Stanislav Vitek
  *
  * This program is free software; you can redistribute it and/or modify
@@ -68,6 +68,11 @@ class Focusd:public rts2core::Device
 		virtual int setTo (double num) = 0;
 		virtual double tcOffset () = 0;
 
+		/**
+		 * Reports state of the focuser. Called during position change to query for progress in focusing.
+		 *
+		 * @return >= 0 if still focusing, -1 on error, -2 when focusing finished.
+		 */
 		virtual int isFocusing ();
 		virtual int endFocusing ();
 
