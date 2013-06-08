@@ -1058,13 +1058,14 @@ void XmlRpcd::sendBB ()
 
 void XmlRpcd::updateObservation (int obs_id, int plan_id)
 {
+#ifdef RTS2_HAVE_PGSQL
 	rts2db::Plan p(plan_id);
 	if (p.load ())
 	{
 		return;
 	}
-	
 	events.bbServers.sendObservatoryUpdate (p.getBBObservatoryId (), obs_id);
+#endif // RTS2_HAVE_PGSQL
 }
 
 void XmlRpcd::reloadEventsFile ()
