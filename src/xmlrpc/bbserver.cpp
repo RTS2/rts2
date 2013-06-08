@@ -221,6 +221,7 @@ void addNonNan (std::ostringstream &os, double val, const char *vname)
 
 void BBServer::sendObservationUpdate (int observationId)
 {
+#ifdef RTS2_HAVE_PGSQL
 	rts2db::Observation obs(observationId);
 	if (obs.load ())
 		return;
@@ -253,6 +254,7 @@ void BBServer::sendObservationUpdate (int observationId)
 		return;
 	}
 	logStream (MESSAGE_DEBUG) << "Send " << serverApi.c_str () << url.str () << sendLog;
+#endif // RTS2_HAVE_PGSQL
 }
 
 void BBServer::queueUpdate (int reqId)
