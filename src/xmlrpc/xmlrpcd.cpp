@@ -1087,7 +1087,7 @@ bool XmlRpcd::verifyDBUser (std::string username, std::string pass, rts2core::Us
 #else
 bool XmlRpcd::verifyDBUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)
 {
-	return userLogins.verifyUser (username, pass, userPermissions);
+	return userLogins.verifyUser (username, pass);
 }
 
 bool rts2xmlrpc::verifyUser (std::string username, std::string pass, rts2core::UserPermissions *userPermissions)

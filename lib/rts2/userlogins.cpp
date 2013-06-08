@@ -102,7 +102,7 @@ void UserLogins::listUser (std::ostream &os)
 		os << iter->first << std::endl;
 }
 
-bool UserLogins::verifyUser (std::string username, std::string pass, bool &executePermission, std::vector <std::string> *allowedDevices)
+bool UserLogins::verifyUser (std::string username, std::string pass, std::vector <std::string> *allowedDevices)
 {
 	if (logins.find (username) == logins.end ())
 		return false;
