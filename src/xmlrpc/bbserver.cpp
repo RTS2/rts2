@@ -42,7 +42,9 @@ void *updateBB (void *arg)
 	char *conn_name;
 	asprintf (&conn_name, "connection_%d", bbserver->getObservatoryId ());
 
+#ifdef RTS2_HAVE_PGSQL
 	((rts2db::DeviceDb *) getMasterApp ())->initDB (conn_name);
+#endif // RTS2_HAVE_PGSQL
 
 	while (true)
 	{
