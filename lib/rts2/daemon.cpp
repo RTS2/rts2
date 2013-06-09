@@ -796,7 +796,7 @@ void Daemon::changeValue (Value * value, int nval)
 	CondValue *cv = getCondValue (value);
 	Value *nv = duplicateValue (value, false);
 	nv->setValueInteger (nval);
-	doSetValue (cv, '=', nv);
+	setCondValue (cv, '=', nv);
 }
 
 void Daemon::changeValue (Value * value, bool nval)
@@ -804,7 +804,7 @@ void Daemon::changeValue (Value * value, bool nval)
 	CondValue *cv = getCondValue (value);
 	Value *nv = duplicateValue (value, false);
 	((ValueBool *) nv)->setValueBool (nval);
-	doSetValue (cv, '=', nv);
+	setCondValue (cv, '=', nv);
 }
 
 void Daemon::changeValue (Value * value, double nval)
@@ -812,7 +812,7 @@ void Daemon::changeValue (Value * value, double nval)
 	CondValue *cv = getCondValue (value);
 	Value *nv = duplicateValue (value, false);
 	((ValueDoubleStat *) nv)->setValueDouble (nval);
-	doSetValue (cv, '=', nv);
+	setCondValue (cv, '=', nv);
 }
 
 int Daemon::setCondValue (CondValue * old_value_cond, char op, Value * new_value)
