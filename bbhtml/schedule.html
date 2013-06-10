@@ -23,6 +23,41 @@ $(function() {
 	
 	var last_data;
 
+	// create and display dialog with progress bar
+	createProgressbar = function(text) {
+	  	// create and display progress bar
+		var pbd = $('<div><p>' + text + "<br/><div id='resolving-progressbar'></div></p</div>").dialog({
+			modal: true
+		});
+		$('#resolving-progressbar').progressbar({
+			value: false
+		});
+		pbd.dialog('open');
+		return pbd;
+	}
+
+	createProgressbarQuery = function(text, url, data, funct, failmsg = '') {
+	  	// create and display progress bar
+		var pb = createProgressbar('Resolving ' + tname.val());
+		// try only radec - name resolver
+		var target = $.getJSON('/api/tbystring', {jqapi:1, nearest:5, ts:tname.val()}, function(data) {
+			pb.dialog("close");
+			last_data = data;
+			showConfirmSelect(last_data);
+		}).fail(function(jqXHR, textStatus, errorThrown) {
+			pb.dialog("close");
+			var error = $('<div><p>Error asking for target ' + vtname + '</p></div>').dialog({
+				modal: true,
+				buttons: {
+					"OK": function() {
+						$(this).dialog("close");
+					}
+				}
+			});
+			error.dialog("open");
+		});
+	}
+
 	$("#create-form").dialog({
 		autoOpen: false,
 		height: 300,
@@ -42,18 +77,12 @@ $(function() {
 				}
 				if (radec.val().length < 1) {
 				  	// create and display progress bar
-					var pb = $('<div><p>Resolving ' + tname.val() + "<br/><div id='resolving-progressbar'></div></p</div>").dialog({
-						modal: true
-					});
-					$('#resolving-progressbar').progressbar({
-						value: false
-					});
-					pb.dialog("open");
+					var pb = createProgressbar('Resolving ' + tname.val());
 					// try only radec - name resolver
-					var target = $.getJSON('/api/tbystring?jqapi=1&nearest=5&ts=' + tname.val(), function(data) {
-						pb.dialog("close");
-						last_data = data;
-						showConfirmSelect(last_data);
+					var target = $.getJSON('/api/tbystring', {jqapi:1, nearest:5, ts:tname.val()}, function(data) {
+							pb.dialog("close");
+							last_data = data;
+							showConfirmSelect(last_data);
 					}).fail(function(jqXHR, textStatus, errorThrown) {
 						pb.dialog("close");
 						var error = $('<div><p>Error asking for target ' + vtname + '</p></div>').dialog({
@@ -83,6 +112,14 @@ $(function() {
 		buttons: {
 			"Create": function() {
 				$(this).dialog("close");
+			  	var pb = createProgressbar('Creating ' + last_data.name + ' at RA ' + (new HMS(last_data.ra)).toString ()
+					+ ' DEC ' + (new DMS(last_data.dec)).toString ());
+				$.getJSON('/api/create_target', {tn:last_data.name, ra:last_data.ra, dec:last_data.dec}, function(data) {
+					pb.dialog('close');
+					schedule(data.id);
+				}).fail(function(jqXHR, textStatus, errorThrown) {
+					pb.dialog('close');
+				})
 			},
 			"Cancel": function() {
 				$(this).dialog("close");
@@ -141,7 +178,7 @@ $(function() {
 		buttons: {
 			'Yes': function() {
 				$(this).dialog('close');
-				schedule(
+				schedule($('#confirm-pick-id').html());
 			},
 			'Back': function() {
 				$(this).dialog('close');
@@ -194,20 +231,12 @@ function searchTarget(text, opt, schedb)
 // schedule target
 function schedule(tid)
 {
-	if (tid.options.length == 0)
-	{
-		alert('You have to search for targets');
-	}
-	if (tid.selectedIndex == undefined)
-	{
-		alert('You have to select target from available targets');
-	}
 	function scheduled(schedule)
 	{
 		alert('Scheduled with ID ' + schedule.schedule_id);
 		window.location='schedules/' + schedule.schedule_id;
 	}
-	jsonCall(encodeURI('api/schedule_all?tar_id=' + tid.options[tid.selectedIndex].value), scheduled);
+	jsonCall('api/schedule_all?tar_id=' + encodeURIComponent(tid), scheduled);
 }
 
 function new_target(name)
