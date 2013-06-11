@@ -1179,6 +1179,10 @@ int Paramount::startPark ()
 {
 	int ret;
 
+	// reload configuration file - axis speeds,..
+	if (modesel)
+		setMode (0);
+
 	// if parking is currently going on, do not park again
 	if (getState () & TEL_PARKING)
 		return 0;
