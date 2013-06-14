@@ -125,7 +125,7 @@ int NStep::init ()
 		return ret;
 
 	NSConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
-	NSConn->setDebug (true);
+	NSConn->setDebug (getDebug ());
 	ret = NSConn->init ();
 	if (ret)
 		return ret;
