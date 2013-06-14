@@ -195,6 +195,15 @@ class Paramount:public GEM
 		rts2core::ValueLong *accRa;
 		rts2core::ValueLong *accDec;
 
+		rts2core::ValueLong *homevelRaHi;
+		rts2core::ValueLong *homevelDecHi;
+
+		rts2core::ValueLong *homevelRaMed;
+		rts2core::ValueLong *homevelDecMed;
+
+		rts2core::ValueLong *homevelRaLow;
+		rts2core::ValueLong *homevelDecLow;
+
 		rts2core::ValueLong *hourRa;
 		rts2core::ValueLong *baseRa;
 		rts2core::ValueLong *baseDec;
@@ -520,6 +529,15 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	createValue (accRa, "ACC_RA", "[???] RA axis acceleration", false, RTS2_VALUE_WRITABLE);
 	createValue (accDec, "ACC_DEC", "[???] DEC axis acceleration", false, RTS2_VALUE_WRITABLE);
 
+	createValue (homevelRaHi, "HOMEVEL_RA_HI", "[???] RA high home velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (homevelDecHi, "HOMEVEL_DEC_HI", "[???] DEC high home velocity", false, RTS2_VALUE_WRITABLE);
+
+	createValue (homevelRaMed, "HOMEVEL_RA_MED", "[???] RA medium home velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (homevelDecMed, "HOMEVEL_DEC_MED", "[???] DEC medium home velocity", false, RTS2_VALUE_WRITABLE);
+
+	createValue (homevelRaLow, "HOMEVEL_RA_LOW", "[???] RA low home velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (homevelDecLow, "HOMEVEL_DEC_LOW", "[???] DEC low home velocity", false, RTS2_VALUE_WRITABLE);
+
 	createValue (hourRa, "HR_RA", "[???] RA axis tracking rate", true);
 	hourRa->setValueLong (-43067265);
 	createValue (baseRa, "BR_RA", "[???] RA axis base rate", true, RTS2_VALUE_WRITABLE);
@@ -762,6 +780,18 @@ int Paramount::initHardware ()
 		return ret;
 
 	ret = getParamountValue32 (CMD_VAL32_SQRT_ACCEL, accRa, accDec);
+	if (ret)
+		return ret;
+
+	ret = getParamountValue32 (CMD_VAL32_HOMEVEL_HI, homevelRaHi, homevelDecHi);
+	if (ret)
+		return ret;
+
+	ret = getParamountValue32 (CMD_VAL32_HOMEVEL_MED, homevelRaMed, homevelDecMed);
+	if (ret)
+		return ret;
+
+	ret = getParamountValue32 (CMD_VAL32_HOMEVEL_LO, homevelRaLow, homevelDecLow);
 	if (ret)
 		return ret;
 
@@ -1260,6 +1290,18 @@ int Paramount::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		return setParamountValue32 (CMD_VAL32_SQRT_ACCEL, newValue, accDec) ? -2 : 0;
 	if (oldValue == accDec)
 		return setParamountValue32 (CMD_VAL32_SQRT_ACCEL, accRa, newValue) ? -2 : 0;
+	if (oldValue == homevelRaHi)
+		return setParamountValue32 (CMD_VAL32_HOMEVEL_HI, newValue, homevelDecHi) ? -2 : 0;
+	if (oldValue == homevelDecHi)
+		return setParamountValue32 (CMD_VAL32_HOMEVEL_HI, homevelRaHi, newValue) ? -2 : 0;
+	if (oldValue == homevelRaMed)
+		return setParamountValue32 (CMD_VAL32_HOMEVEL_MED, newValue, homevelDecMed) ? -2 : 0;
+	if (oldValue == homevelDecMed)
+		return setParamountValue32 (CMD_VAL32_HOMEVEL_MED, homevelRaMed, newValue) ? -2 : 0;
+	if (oldValue == homevelRaLow)
+		return setParamountValue32 (CMD_VAL32_HOMEVEL_LO, newValue, homevelDecLow) ? -2 : 0;
+	if (oldValue == homevelDecLow)
+		return setParamountValue32 (CMD_VAL32_HOMEVEL_LO, homevelRaLow, newValue) ? -2 : 0;
 	if (oldValue == baseRa)
 		return setParamountValue32 (CMD_VAL32_BASERATE, newValue, baseDec) ? -2 : 0;
 	if (oldValue == baseDec)
