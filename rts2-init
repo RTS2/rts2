@@ -4,5 +4,6 @@ mkdir /etc/rts2
 cp -v conf/rts2.ini conf/services conf/devices conf/centrald /etc/rts2
 echo "Copying startup script"
 cp -v rts2.initd /etc/init.d/rts2
+chmod -v a+x /etc/init.d/rts2
 echo "Copying flats and guiding scripts"
 cp -v scripts/guide.py scripts/flat.py /etc/rts2
