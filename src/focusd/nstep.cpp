@@ -306,7 +306,7 @@ int NStep::setTo (double num)
 	double diff = num - position->getValueDouble ();
 	// ignore sub-step requests
 	if (fabs (diff) < 1)
-		return -1;
+		return 0;
 	
 	if (fabs (diff) > 999)
 	{
