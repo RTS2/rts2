@@ -194,7 +194,7 @@ int MS260::readRts2Value (const char *valueName, rts2core::Value * val)
 MS260::MS260 (int argc, char **argv):Sensor (argc, argv)
 {
 	ms260Dev = NULL;
-	dev = "/dev/ttyS0";
+	dev = "/dev/ttyUSB1";
 
 	createValue (model, "model", "monochromator model", false);
 
