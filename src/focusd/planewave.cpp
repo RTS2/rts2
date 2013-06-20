@@ -22,10 +22,26 @@
  */
 
 #include "focusd.h"
-#include "hedrick.h"
 #include "connection/serial.h"
 
 #define OPT_FOC_STEPS    OPT_LOCAL + 1001
+
+/* Use these for CDK125 */
+
+#define FOCUSSCALE       11.513442 
+#define FOCUSDIR            1  
+
+/* Use these for CDK20N */
+
+/* #define FOCUSSCALE       7447. */ 
+/* #define FOCUSDIR            1  */ 
+
+/* Use these for CDK20S */
+
+/* #define FOCUSSCALE       1179. */  
+/* #define FOCUSDIR           -1  */ 
+
+#define FOCUSERPORT "/dev/ttyS1" 
 
 namespace rts2focusd
 {
@@ -539,7 +555,6 @@ int Planewave::info ()
 	return Focusd::info ();
 	
 }
-
 
 int Planewave::getPos ()
 {
