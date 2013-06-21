@@ -1,6 +1,7 @@
 /* 
- * Driver for ThorLaser laser source.
- * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Driver for ThorLabs PM100D photodiode.
+ * Copyright (C) 2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2013 Martin Schafer, Institute of Physics
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
