@@ -4,7 +4,6 @@
  * Copyright (C) 2012 Shashikiran Ganesh <shashi@prl.res.in>
  * based on work by John Kielkopf (kielkopf@louisville.edu) (C) 2010
  * This file derived from planewave.cpp (part of rts2 : focusd)
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +22,6 @@
 
 #include "focusd.h"
 #include "connection/serial.h"
-
-#define OPT_FOC_STEPS    OPT_LOCAL + 1001
 
 /* Use these for CDK125 */
 
@@ -79,7 +76,7 @@ class Planewave:public Focusd
 		
 		int getPos ();
 		int getTemp ();
-		int SetFan (int fancmod);
+		int setFan (int fancmod);
 		int GetTemperature(double *teltemperature, int tempsensor);
 		int focusdir;  /*  use -1 if focuser moves in opposite direcion */
 		
@@ -87,15 +84,11 @@ class Planewave:public Focusd
 		
 		char buf[15];
 		const char *device_file;
-		rts2core::ValueFloat *focSteps;
-		rts2core::ValueDouble *focMin;
-		rts2core::ValueDouble *focMax;
 		rts2core::ValueFloat *primMirrorTemp;
 		rts2core::ValueFloat *ambientTemp;
 		rts2core::ValueBool *fanMode;
 		
-		rts2core::ConnSerial *PlanewaveConn; // communication port with Hedrick focuser unit
-		
+		rts2core::ConnSerial *planewaveConn; // communication port with Hedrick focuser unit
 };
 
 }
@@ -107,27 +100,20 @@ Planewave::Planewave (int argc, char **argv):Focusd (argc, argv)
 	focType = std::string ("Planewave");
 	createTemperature ();
 
-	//createValue (focMin, "foc_min", "minimal focuser value", false, RTS2_VALUE_WRITABLE);
-	//createValue (focMax, "foc_max", "maximal focuser value", false, RTS2_VALUE_WRITABLE);
 	createValue (primMirrorTemp, "Primary_temp", "[C] Primary mirror temperature", true);
 	createValue (ambientTemp, "Ambient_temp", "[C] Ambient temperature in scope", true);
 
-
 	createValue (fanMode, "FANMODE", "Fan ON? : TRUE/FALSE", false, RTS2_VALUE_WRITABLE);
 		
-	//createValue (focSteps, "focstep", "focuser steps (step size per second)", false, RTS2_VALUE_WRITABLE);
-	//focSteps->setValueFloat (1);
-	//focMin->setValueDouble (-1000);
-	//focMax->setValueDouble (30000);
+	setFocusExtend (-1000, 30000);
 	
-	//addOption (OPT_FOC_STEPS, "focstep", 1, "initial value of focuser steps");
-	addOption ('f', NULL, 1, "device file (usually /dev/ttySx");
+	addOption ('f', NULL, 1, "device file (usually /dev/ttySx)");
 	
 }
 
 Planewave::~Planewave ()
 {
-	delete PlanewaveConn;
+	delete planewaveConn;
 }
 
 int Planewave::processOption (int opt)
@@ -137,9 +123,6 @@ int Planewave::processOption (int opt)
 		case 'f':
 			device_file = optarg;
 			break;
-		case OPT_FOC_STEPS:
-			focSteps->setValueFloat (atof (optarg));
-			break;
 		default:
 			return Focusd::processOption (opt);
 	}
@@ -148,11 +131,6 @@ int Planewave::processOption (int opt)
 
 int Planewave::initValues ()
 {
-	//logStream (MESSAGE_DEBUG) << " in initValues " << sendLog ;
-
-	//position->setValueDouble (0);
-	//defaultPosition->setValueDouble (0);
-	//temperature->setValueFloat (100);
 	focusdir = 1; /* use -1 if focuser moves in opposite direction */
 
 	return Focusd::initValues ();
@@ -160,264 +138,230 @@ int Planewave::initValues ()
 
 int Planewave::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
-	//logStream (MESSAGE_DEBUG) << " in setValue "<< sendLog ; 
-
 	if (old_value == fanMode)
 	{
-		SetFan (new_value->getValueInteger());
+		setFan (new_value->getValueInteger());
 		return 0;
-		
-		}
+	}
+
   	return Focusd::setValue (old_value, new_value);
 }
 
-int Planewave::SetFan(int fancmd)
+int Planewave::setFan(int fancmd)
 {
-  /* Default fan string for off */
-  
-  char outputstr[] = { 0x50, 0x02, 0x13, 0x27, 0x00, 0x00, 0x00, 0x00 };
-  char returnstr[] = {0x00, 0x00, 0x00, 0x00 };
-  
-  
-  /* Request the fans on through the EFA on */
-  
-  if ( fancmd > 0 )
-  {
-    outputstr[4] = 0x01;
-  } 
+	/* Default fan string for off */
+	
+	char outputstr[] = { 0x50, 0x02, 0x13, 0x27, 0x00, 0x00, 0x00, 0x00 };
+	char returnstr[] = {0x00, 0x00, 0x00, 0x00 };
+	
+	
+	/* Request the fans on through the EFA on */
+	
+	if ( fancmd > 0 )
+	{
+		outputstr[4] = 0x01;
+	} 
 
-
-  logStream (MESSAGE_DEBUG) << " fan cmd is " << fancmd << sendLog;
-  
-  /* Send the command */
-  PlanewaveConn->writeRead(outputstr, 8, returnstr, 4);
-  if (returnstr[0] != '#') 
-      logStream (MESSAGE_ERROR) << " No acknowledgement from thermal control" << sendLog;
-      
-      
-  return 0;
+	logStream (MESSAGE_DEBUG) << " fan cmd is " << fancmd << sendLog;
+	
+	/* Send the command */
+	planewaveConn->writeRead(outputstr, 8, returnstr, 4);
+	if (returnstr[0] != '#') 
+	    logStream (MESSAGE_ERROR) << " No acknowledgement from thermal control" << sendLog;
+	    
+	return 0;
 }    
-
-
-
 
 int Planewave::GetTemperature(double *teltemperature, int tempsensor)
 {
-  char outputstr[] = { 0x50, 0x02, 0x12, 0x26, 0x00, 0x00, 0x00, 0x02 };
-  char returnstr[] = { 0x00, 0x00, 0x00, 0x00 };  
-  int b0,b1;
-  int count;
-  double value;
-  double tempsign;
-    
-  /* Select sensor primary = 0; ambient = 1; secondary = 2 */
-  /* outputstr[4] = 0x0; */
-  /* outputstr[4] = 0x1; */
-    
-  if (tempsensor == 0)
-  {
-    outputstr[4] = 0x0;
-  }  
-  else if (tempsensor == 1)
-  {
-    outputstr[4] = 0x1;
-  }
-  else if (tempsensor == 2)
-  {
-    outputstr[4] = 0x2;
-  }
-  else
-  {
-    outputstr[4] = 0x0;
-  }
-      
-  value = 0.;
-    
-  /* Send the command */
-  
-//  writen(thermalportfd,outputstr,8);    
-  
-  /* Read a response */
-//  readn(thermalportfd,returnstr,3,1);
-  PlanewaveConn->writeRead(outputstr, 8, returnstr, 3);
+	char outputstr[] = { 0x50, 0x02, 0x12, 0x26, 0x00, 0x00, 0x00, 0x02 };
+	char returnstr[] = { 0x00, 0x00, 0x00, 0x00 };	
+	int b0,b1;
+	int count;
+	double value;
+	double tempsign;
+		
+	/* Select sensor primary = 0; ambient = 1; secondary = 2 */
+	/* outputstr[4] = 0x0; */
+	/* outputstr[4] = 0x1; */
+		
+	if (tempsensor == 0)
+	{
+		outputstr[4] = 0x0;
+	}	
+	else if (tempsensor == 1)
+	{
+		outputstr[4] = 0x1;
+	}
+	else if (tempsensor == 2)
+	{
+		outputstr[4] = 0x2;
+	}
+	else
+	{
+		outputstr[4] = 0x0;
+	}
+			
+	value = 0.;
+		
+	/* Send the command */
+	
+//	writen(thermalportfd,outputstr,8);		
+	
+	/* Read a response */
+//	readn(thermalportfd,returnstr,3,1);
+	planewaveConn->writeRead(outputstr, 8, returnstr, 3);
 
-  b0 = (unsigned char) returnstr[0];
-  b1 = (unsigned char) returnstr[1];
-  
-  /* In our CDK125 b0 is the least signficant 8 bits of a 12 bit word.  */
-  /* High bit of b1 determines sign. */
-  /* Untested for temperatures that would use other bits of b1. */
-    
-  count = b0 + 256*b1;
-  
-  /* Use a scale which goes negative below zero and sets the sign bit */
+	b0 = (unsigned char) returnstr[0];
+	b1 = (unsigned char) returnstr[1];
+	
+	/* In our CDK125 b0 is the least signficant 8 bits of a 12 bit word.	*/
+	/* High bit of b1 determines sign. */
+	/* Untested for temperatures that would use other bits of b1. */
+		
+	count = b0 + 256*b1;
+	
+	/* Use a scale which goes negative below zero and sets the sign bit */
+	tempsign = 1.;
+	if (count > 32767)
+	{
+		/* Set the sign flag */
+		tempsign = -1.;
+		
+		/* Invert the count under 2^16 = 65536 such that 0xFFFFFFFE = 65535 => -1 */
+		count = 65536 - count;
+	}
 
-  
-  tempsign = 1.;
-  if (count > 32767)
-  {
-    /* Set the sign flag */
-    tempsign = -1.;
-    
-    /* Invert the count under 2^16 = 65536 such that 0xFFFFFFFE = 65535 => -1 */
-    count = 65536 - count;
-    }
-
-  /* Apply the calibration for the Maxim DS18B20 sensor in the EFA */
-  /* Right shift 4 bits to match the specification calibration */
-  
-  value = count;
-  value = 0.0625 * value * tempsign;
-  
-  /* Test for out of range as an indicator of sensor not present */
-  /* Set an out of range value that is not annoying in a display */
-  
-  if ((value < -50 ) || (value > 50) )
-  {
-    /* value = 0.; */
-  }
-    
-  *teltemperature = value;
-  return 0;
-
+	/* Apply the calibration for the Maxim DS18B20 sensor in the EFA */
+	/* Right shift 4 bits to match the specification calibration */
+	
+	value = count;
+	value = 0.0625 * value * tempsign;
+	
+	/* Test for out of range as an indicator of sensor not present */
+	/* Set an out of range value that is not annoying in a display */
+	/* if ((value < -50 ) || (value > 50) )
+	{
+		value = 0.;
+	}*/
+		
+	*teltemperature = value;
+	return 0;
 }
  
-
-/*
-
-
-int Planewave::movefocuser (int focspeed, int focdir)
-{
-//	logStream (MESSAGE_DEBUG) << " in moveFocuser " << sendLog ;  
-
-  	SetHedrickFocuser(focdir, focspeed);
-
-  return 0;
-
-}
-*/
-
 int Planewave::SetHedrickFocuser(int focuscmd, int focusspd)
 {
-//	logStream (MESSAGE_DEBUG) << " in setHedrickFocuser " << sendLog ;  
+	char sendstr[] = { 0x50, 0x02, 0x12, 0x24, 0x01, 0x00, 0x00, 0x00 };
+	char returnstr[2048];
+	
+	/* Set the speed */
 
+	sendstr[4] = 0x08;
 
-  char sendstr[] = { 0x50, 0x02, 0x12, 0x24, 0x01, 0x00, 0x00, 0x00 };
-  char returnstr[2048];
-  
-  /* Set the speed */
-
-  sendstr[4] = 0x08;
-
-  if ( focusspd >= 4 )
-  {
-    sendstr[4] = 0x08;
-  }
-  
-  if ( focusspd == 3 )
-  {
-    sendstr[4] = 0x06;
-  }
-  
-  if ( focusspd == 2 )
-  {
-    sendstr[4] = 0x04;
-  }
-  
-  if ( focusspd == 1 )
-  {
-    sendstr[4] = 0x02;
-  }
-    
-  if ( focuscmd == -1 )
-  {
-    
-    /* Run the focus motor in */
-    
-    /* Set the direction based on focusdir */
-    
-    if (focusdir > 0)
-    {
-      sendstr[3] = 0x25;
-    }
-    else
-    {
-      sendstr[3] = 0x24;
-    }
-            
-    /* Send the command */
-    /* Wait up to a second for an acknowledgement */
-    
-    for (;;) 
-    {
-      if ( PlanewaveConn->writeRead(sendstr,8,returnstr,1) ) 
-      {
-        if (returnstr[0] == '#') break;
-      }
-      else 
-      { 
-        fprintf(stderr,"No acknowledgement from focuser\n");
-      }
-    }      
-  }
-  
-  if ( focuscmd == 1 )
-  {  
-    
-    /* Run the focus motor out */
-
-    /* Set the direction based on focusdir */
-    
-    if (focusdir > 0)
-    {
-      sendstr[3] = 0x24;
-    }
-    else
-    {
-      sendstr[3] = 0x25;
-    }
-        
-    /* Send the command */
-    /* Wait up to a second for an acknowledgement */
-    
-    for (;;) 
-    {
-      if ( PlanewaveConn->writeRead(sendstr,8,returnstr,1))
-      {
-        if (returnstr[0] == '#') break;
-      }
-      else 
-      { 
-        fprintf(stderr,"No acknowledgement from focus control\n");
-      }
-    }      
-  }
-   
-  if ( focuscmd == 0 )
-  {
-
-    /* Set the speed to zero to stop the motion */
-    
-    sendstr[4] = 0x00;
-    
-    /* Send the command */
-
-    /* Wait up to a second for an acknowledgement */
-    
-    for (;;) 
-    {
-      if ( PlanewaveConn->writeRead(sendstr,8,returnstr,1))
-      {
-        if (returnstr[0] == '#') break;
-      }
-      else 
-      { 
-      fprintf(stderr,"No acknowledgement from focuser\n");
-      }
-    }            
-    
-  }  
-  return 0;
+	if (focusspd >= 4)
+	{
+		sendstr[4] = 0x08;
+	}
+	
+	if (focusspd == 3)
+	{
+		sendstr[4] = 0x06;
+	}
+	
+	if (focusspd == 2)
+	{
+		sendstr[4] = 0x04;
+	}
+	
+	if (focusspd == 1)
+	{
+		sendstr[4] = 0x02;
+	}
+	  
+	if ( focuscmd == -1 )
+	{
+		/* Run the focus motor in */
+		/* Set the direction based on focusdir */
+		
+		if (focusdir > 0)
+		{
+			sendstr[3] = 0x25;
+		}
+		else
+		{
+			sendstr[3] = 0x24;
+		}
+			      
+		/* Send the command */
+		/* Wait up to a second for an acknowledgement */
+		
+		for (;;) 
+		{
+			if ( planewaveConn->writeRead(sendstr,8,returnstr,1) ) 
+			{
+				if (returnstr[0] == '#')
+					break;
+			}
+			else 
+			{ 
+				fprintf(stderr,"No acknowledgement from focuser\n");
+			}
+		}	    
+	}
+	
+	if ( focuscmd == 1 )
+	{  
+		/* Run the focus motor out */
+		/* Set the direction based on focusdir */
+		if (focusdir > 0)
+		{
+			sendstr[3] = 0x24;
+		}
+		else
+		{
+			sendstr[3] = 0x25;
+		}
+	      
+		/* Send the command */
+		/* Wait up to a second for an acknowledgement */
+	  
+		for (;;) 
+		{
+			if (planewaveConn->writeRead(sendstr,8,returnstr,1))
+			{
+				if (returnstr[0] == '#')
+					break;
+			}
+			else 
+			{ 
+				fprintf(stderr,"No acknowledgement from focus control\n");
+			}
+		}      
+	}
+	 
+	if (focuscmd == 0)
+	{
+		/* Set the speed to zero to stop the motion */
+	  
+		sendstr[4] = 0x00;
+	  
+		/* Send the command */
+		/* Wait up to a second for an acknowledgement */
+	  
+		for (;;) 
+		{
+			if (planewaveConn->writeRead(sendstr,8,returnstr,1))
+			{
+				if (returnstr[0] == '#')
+					break;
+			}
+			else 
+			{ 
+				fprintf(stderr,"No acknowledgement from focuser\n");
+			}
+		}            
+	}  
+	return 0;
 }
 
 
@@ -434,68 +378,69 @@ int Planewave::setTo (double num)
 
 int Planewave::isFocusing ()
 {
-//	logStream (MESSAGE_DEBUG) << " in isFocusing " << sendLog ; 
-
 	float pos_diff =position->getValueDouble() - target->getValueDouble();
 	float abspos_diff = fabs(pos_diff);
 	int focspeed = 4;
 	int focdir = 0;
 
-  /* Focus speed values   */
-  /*                      */
-  /* Fast     4           */
-  /* Medium   3           */
-  /* Slow     2           */
-  /* Precise  1           */
+	/* Focus speed values   */
+	/*                      */
+	/* Fast     4           */
+	/* Medium   3           */
+	/* Slow     2           */
+	/* Precise  1           */
   
-  /* Focus command values */
-  /*                      */
-  /* Out     +1           */
-  /* In      -1           */
-  /* Off      0           */
-
+	/* Focus command values */
+	/*                      */
+	/* Out     +1           */
+	/* In      -1           */
+	/* Off      0           */
 
 	pos_diff = position->getValueDouble() - target->getValueDouble();
 	abspos_diff = fabs(pos_diff);
 
 	if (abspos_diff <= 1)
-	   {
-	   	SetHedrickFocuser(0,0);
+	{
+		SetHedrickFocuser(0,0);
 		return -2;
-	   }
+	}
 
-	 //  focuser is not at target - so move the focuser here
-
+	//  focuser is not at target - so move the focuser here
 	focspeed = 4;   // assume it is at large deviation and needs highest speed... 
 
-	if ( pos_diff >  0 ) focdir = -1;
-	if ( pos_diff <  0 ) focdir =  1;	
+	if (pos_diff > 0)
+		focdir = -1;
+	if (pos_diff < 0)
+		focdir = 1;
 
-	if ( abspos_diff < 1000 )	  	focspeed = 3;	
+	if (abspos_diff < 1000)
+		focspeed = 3;
 		
-	if ( abspos_diff < 50 ) 		focspeed = 2;	
+	if (abspos_diff < 50)
+		focspeed = 2;
 		
-	if ( abspos_diff < 10 ) 		focspeed = 1;
+	if (abspos_diff < 10)
+		focspeed = 1;
 		
-	if ( abspos_diff <= 1) 		{	focspeed = 0; focdir = 0; abspos_diff = 0; }
-			
-		
+	if (abspos_diff <= 1)
+	{
+		focspeed = 0;
+		focdir = 0;
+		abspos_diff = 0;
+	}
 				
 	//	logStream (MESSAGE_DEBUG) << "changing position from " << position->getValueDouble () << " to " << target->getValueDouble() << sendLog;
 	//	logStream (MESSAGE_DEBUG) << "focus speed " << focspeed << " and focus direction " << focdir << sendLog;
 	//	logStream (MESSAGE_DEBUG) << "abspos_diff " << abspos_diff << " pos_diff " << pos_diff << sendLog;
 		
-		
 	SetHedrickFocuser (focdir, focspeed);  // for a fixed duration 
 	getPos ();   // get new position 
 
-
 	if (fabs(target->getValueInteger () - position->getValueInteger ()) <= 1)
-	   {
-	   	SetHedrickFocuser(0,0);
+	{
+		SetHedrickFocuser(0,0);
 		return -2;
-	   }
-
+	}
 	return 0;
 }
 
@@ -507,23 +452,22 @@ int Planewave::isFocusing ()
     */
 void Planewave::openRem ()
 {
-	char sendStr[] = { 0x50, 0x02, 0x12, 0xfe, 0x00, 0x00, 0x00, 0x02 };
-	
+	unsigned char sendStr[] = { 0x50, 0x02, 0x12, 0xfe, 0x00, 0x00, 0x00, 0x02 };
 
-	int ret=PlanewaveConn->writeRead ( sendStr, 8, buf, 3 );
+	int ret = planewaveConn->writeRead ((char *) sendStr, 8, buf, 3);
 	if (ret != 3)
 		throw rts2core::Error ("focuser open command didn't respond with 3 chars ");
 	if (buf[2] != 0x23 )
 	        throw rts2core::Error (std::string ("invalid reply from planewave focuser getVersion command :")+ buf);
 	logStream (MESSAGE_DEBUG) << "focuser responded with " << buf <<  " EOL " << sendLog ;
-	
+
 /*      test diagnostic code to start motor moving - test only in free running mode - not on the scope with hardware 
         since it does not include a stop command */
 
 /*	sendStr[3] = 0x24; 
 	sendStr[4] = 0x08;
 	sendStr[7] = 0x00;
-	ret=PlanewaveConn->writeRead (sendStr, 8, buf, 3);
+	ret=planewaveConn->writeRead (sendStr, 8, buf, 3);
 	logStream (MESSAGE_DEBUG) << "focuser replied with " << buf << " for move command "<< sendLog ;  */
 	
 }
@@ -558,7 +502,6 @@ int Planewave::info ()
 
 int Planewave::getPos ()
 {
-//	logStream (MESSAGE_DEBUG) << " in getPos " << sendLog ; 
 	char sendStr[] = { 0x50, 0x01, 0x12, 0x01, 0x00, 0x00, 0x00, 0x03 };
 	char returnstr[] = { 0x00, 0x00, 0x00, 0x00 };  
  	int b0,b1,b2;
@@ -566,7 +509,7 @@ int Planewave::getPos ()
   	double focus, focusscale;
     
   	/* Send the command */
-	int ret=PlanewaveConn->writeRead ( sendStr, 8, returnstr, 4 );
+	int ret=planewaveConn->writeRead ( sendStr, 8, returnstr, 4 );
 	if (ret != 4) 	
 		throw rts2core::Error ("focuser open command didn't respond with 4 chars ");
 
@@ -576,8 +519,9 @@ int Planewave::getPos ()
   	count = 256*256*b0 + 256*b1 + b2;
 	  
 	focus = count;
-  /* Apply a conversion so that the focus scale comes out in decimal microns. */
-  /* The constant FOCUSSCALE is defined in header file.                       */
+
+	/* Apply a conversion so that the focus scale comes out in decimal microns. */
+	/* The constant FOCUSSCALE is defined in header file.                       */
   
   	focusscale = FOCUSSCALE; 
   	focus = focus/focusscale;     
@@ -596,13 +540,15 @@ int Planewave::init ()
 	if (ret) 
 		return ret;
 		
-	PlanewaveConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 100);
+	planewaveConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 100);
+
+	planewaveConn->setDebug (getDebug ());
 	
-	ret = PlanewaveConn->init ();
+	ret = planewaveConn->init ();
 	if (ret)
 		return ret;
 		
-	PlanewaveConn->flushPortIO ();
+	planewaveConn->flushPortIO ();
 	openRem ();
 	setIdleInfoInterval (10);
 	
