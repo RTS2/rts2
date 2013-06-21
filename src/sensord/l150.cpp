@@ -208,6 +208,8 @@ int L150::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	if (old_value == position)
 	{
 		ret = writeValue ("MOVETO", new_value->getValueDouble (), position);
+		if (ret)
+			return ret;
         
 	        if ((new_value->getValueDouble () > 350) && (new_value->getValueDouble () <= 440))
 		{
@@ -240,6 +242,7 @@ int L150::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 			ret = readPort (buf, 80);
 			logStream (MESSAGE_ERROR) << "No filter in filter wheel for wavelenght less than 350 [nm]--->filter wheel adjusted to empty position" << "\n" << sendLog;
 	        }
+		return ret;
 	}
     
 	if (old_value == speed)
@@ -275,13 +278,18 @@ int L150::initHardware ()
 	L150Dev = new rts2core::ConnSerial (dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 200);
 	L150Dev->setDebug (getDebug ());
 	ret = L150Dev->init ();
+	if (ret)
+		return ret;
+
 	char buf[80];
 		
 	writePort ("Hello");
-        ret = readPort (buf, 80);
+        readPort (buf, 80);
       	
 	writePort ("SYSTEMINFO?");
-	readPort (buf, 80);
+	ret = readPort (buf, 80);
+	if (ret)
+		return ret;
 	model->setValueCharArr (buf);
 	readPort (buf, 80);
     
