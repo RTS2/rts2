@@ -1,6 +1,6 @@
 /* 
  * Class for Zolix OmniLambda 150 monochromator.
- * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2013 Martin Schafer, Institute of Physics
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,9 +39,9 @@ class L150:public Sensor
 
 	private:
 		rts2core::ValueString *model;
-        rts2core::ValueDouble *position;
-        rts2core::ValueDouble *speed;
-        rts2core::ValueInteger *filter;
+		rts2core::ValueDouble *position;
+		rts2core::ValueDouble *speed;
+		rts2core::ValueInteger *filter;
 		rts2core::ConnSerial *L150Dev;
 
 		void resetDevice ();
@@ -117,7 +117,6 @@ int L150::readPort (double &ret)
 	r = readPort (buf, 20);
 	if (r)
 		return r;
-    logStream (MESSAGE_ERROR) << "value buffer :" << buf << sendLog;
 	ret = atof (buf);
 	return 0;
 }
@@ -138,7 +137,7 @@ template < typename T > int L150::writeValue (const char *valueName, T val, rts2
 		return ret;
 	}
 	ret = readPort (buf, 20);
-    ret = readPort (buf, 20);
+	ret = readPort (buf, 20);
 	if (value)
 		logStream (MESSAGE_INFO) << value->getName () << " changed from " << value->getDisplayValue () << " to " << val << "." << sendLog;
 	clearExposure ();
@@ -157,10 +156,9 @@ template < typename T > int L150::readValue (const char *valueName, T & val)
 		return ret;
 	char rbuf[strlen(valueName)+1];
 	ret = readPort (rbuf, strlen(valueName)+1);
-    logStream (MESSAGE_ERROR) << "rbuffer :" << rbuf << sendLog;
 	ret = readPort (val);
 
-    ret = readPort (rbuf, strlen(valueName)+1);
+	ret = readPort (rbuf, strlen(valueName)+1);
 	return ret;
 }
 
@@ -190,9 +188,9 @@ L150::L150 (int argc, char **argv):Sensor (argc, argv)
 	dev = "/dev/ttyUSB1";
 
 	createValue (model, "model", "monochromator model", false);
-    createValue (position, "POSITION", "actual wavelenght position", true, RTS2_VALUE_WRITABLE);
-    createValue (speed, "SPEED", "speed of wavelenght change [nm/s]", true, RTS2_VALUE_WRITABLE);
-    createValue (filter, "FILTER", "number of filter used in monochromator", true, RTS2_VALUE_WRITABLE);
+	createValue (position, "POSITION", "actual wavelenght position", true, RTS2_VALUE_WRITABLE);
+	createValue (speed, "SPEED", "speed of wavelenght change [nm/s]", true, RTS2_VALUE_WRITABLE);
+	createValue (filter, "FILTER", "number of filter used in monochromator", true, RTS2_VALUE_WRITABLE);
     
 	addOption ('f', NULL, 1, "/dev/ttyUSBx entry (defaults to /dev/ttyUSB1");
 }
@@ -204,54 +202,57 @@ L150::~L150 ()
 
 int L150::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
-    int ret;
-    char buf[80];
-    logStream (MESSAGE_ERROR) << "VALUE SETTING" << "\n" << sendLog;
+	int ret;
+	char buf[80];
     
 	if (old_value == position)
 	{
-		ret=writeValue ("MOVETO", new_value->getValueDouble (), position);
+		ret = writeValue ("MOVETO", new_value->getValueDouble (), position);
         
-        if ((new_value->getValueDouble ()>350)&&(new_value->getValueDouble () <=440)) {
-            writePort ("FILTER 2");
-            ret = readPort (buf, 80);
-        }
-        if ((new_value->getValueDouble ()>440)&&(new_value->getValueDouble () <=650)) {
-            writePort ("FILTER 3");
-            ret = readPort (buf, 80);
-        }
-        if ((new_value->getValueDouble ()>650)&&(new_value->getValueDouble () <=800)) {
-            writePort ("FILTER 4");
-            ret = readPort (buf, 80);
-        }
-        if ((new_value->getValueDouble ()>800)&&(new_value->getValueDouble () <=1100)) {
-            writePort ("FILTER 5");
-            ret = readPort (buf, 80);
-        }
-        if ((new_value->getValueDouble ()>1100)) {
-            writePort ("FILTER 6");
-            ret = readPort (buf, 80);
-            logStream (MESSAGE_ERROR) << "Filter for wavelenght greater than 1100 [nm]--->could not be convenient for wavelenght much more greater check manual" << "\n" << sendLog;
-        }
-        if ((new_value->getValueDouble ()<=350)) {
-            writePort ("FILTER 1");
-            ret = readPort (buf, 80);
-            logStream (MESSAGE_ERROR) << "No filter in filter wheel for wavelenght less than 350 [nm]--->filter wheel adjusted to empty position" << "\n" << sendLog;
-        }
-    }
+	        if ((new_value->getValueDouble () > 350) && (new_value->getValueDouble () <= 440))
+		{
+			writePort ("FILTER 2");
+			ret = readPort (buf, 80);
+	        }
+	        if ((new_value->getValueDouble () > 440) && (new_value->getValueDouble () <= 650))
+		{
+			writePort ("FILTER 3");
+			ret = readPort (buf, 80);
+	        }
+	        if ((new_value->getValueDouble () > 650) && (new_value->getValueDouble () <= 800))
+		{
+			writePort ("FILTER 4");
+			ret = readPort (buf, 80);
+	        }
+	        if ((new_value->getValueDouble () > 800) && (new_value->getValueDouble () <= 1100))
+		{
+			writePort ("FILTER 5");
+			ret = readPort (buf, 80);
+	        }
+	        if ((new_value->getValueDouble () > 1100))
+		{
+			writePort ("FILTER 6");
+			ret = readPort (buf, 80);
+	        }
+	        if ((new_value->getValueDouble () <= 350))
+		{
+			writePort ("FILTER 1");
+			ret = readPort (buf, 80);
+			logStream (MESSAGE_ERROR) << "No filter in filter wheel for wavelenght less than 350 [nm]--->filter wheel adjusted to empty position" << "\n" << sendLog;
+	        }
+	}
     
-    if (old_value == speed)
+	if (old_value == speed)
 	{
 		return writeValue ("SPEED", new_value->getValueDouble (), speed);
 	}
     
-    if (old_value == filter)
+	if (old_value == filter)
 	{
 		return writeValue ("FILTER", new_value->getValueInteger (), filter);
-    }
+	}
 
-	
-			return Sensor::setValue (old_value, new_value);
+	return Sensor::setValue (old_value, new_value);
 }
 
 int L150::processOption (int in_opt)
@@ -269,8 +270,7 @@ int L150::processOption (int in_opt)
 
 int L150::initHardware ()
 {
-	logStream (MESSAGE_ERROR) << "INITIALIZATION" << "\n" << sendLog;
-    int ret;
+	int ret;
 
 	L150Dev = new rts2core::ConnSerial (dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 200);
 	L150Dev->setDebug (getDebug ());
@@ -281,36 +281,29 @@ int L150::initHardware ()
         ret = readPort (buf, 80);
       	
 	writePort ("SYSTEMINFO?");
-	ret = readPort (buf, 80);
+	readPort (buf, 80);
 	model->setValueCharArr (buf);
-	ret = readPort (buf, 80);
+	readPort (buf, 80);
     
-    ret = readRts2Value ("POSITION", position);
-    logStream (MESSAGE_ERROR) << "position: " << position->getValue() << sendLog;
+	readRts2Value ("POSITION", position);
     
-    ret = readRts2Value ("SPEED", speed);
-    logStream (MESSAGE_ERROR) << "speed: " << speed->getValue() << sendLog;
-    return 0;
+	readRts2Value ("SPEED", speed);
+	return 0;
 }
 
 int L150::info ()
 {
-    logStream (MESSAGE_ERROR) << "INFO" << "\n" << sendLog;
 	int ret;
-    ret = readRts2Value ("POSITION", position);
+	ret = readRts2Value ("POSITION", position);
 	if (ret)
 		return ret;
-    logStream (MESSAGE_ERROR) << "position: " << position->getValue() << sendLog;
-    ret = readRts2Value ("SPEED", speed);
+	ret = readRts2Value ("SPEED", speed);
 	if (ret)
 		return ret;
-    logStream (MESSAGE_ERROR) << "speed: " << speed->getValue() << sendLog;
-    ret = readRts2Value ("FILTER", filter);
+	ret = readRts2Value ("FILTER", filter);
 	if (ret)
 		return ret;
-    logStream (MESSAGE_ERROR) << "filter: " << filter->getValue() << sendLog;
-    
-return Sensor::info ();
+	return Sensor::info ();
 }
 
 int main (int argc, char **argv)
