@@ -1,4 +1,3 @@
-
 #ifndef _XMLRPCSERVERGETREQUEST_H_
 #define _XMLRPCSERVERGETREQUEST_H_
 //
@@ -29,7 +28,8 @@ namespace XmlRpc
 	class XmlRpcServer;
 
 	/**
-	 * Parameter passed on GET request.
+	 * Parameter passed on GET request. Holds string representation of a
+	 * parameter and its name.
 	 */
 	class HttpParam
 	{
@@ -44,6 +44,10 @@ namespace XmlRpc
 			std::string val;
 	};
 
+	/**
+	 * Class representing all parameters passed to GET call. Provides
+	 * methods for access to parameter values.
+	 */
 	class HttpParams:public std::vector <HttpParam>
 	{
 		public:
@@ -54,6 +58,14 @@ namespace XmlRpc
 			const char *getString (const char *_name, const char *def_val);
 			int getInteger (const char *_name, int def_val);
 			long getLong (const char *_name, long def_val);
+
+			/**
+			 * Return parameter as boolean.
+			 * @param _name    argument name
+			 * @param def_val  default value
+			 *
+			 * @return Returns true if parameter is 1, T or t. Return false if parameter is 0, F or f. Otherwise returns default value.
+			 */
 			bool getBoolean (const char *_name, bool def_val);
 			double getDouble (const char *_name, double def_val);
 
