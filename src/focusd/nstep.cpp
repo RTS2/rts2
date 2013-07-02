@@ -310,9 +310,10 @@ int NStep::setTo (double num)
 	
 	if (fabs (diff) > 999)
 	{
-		diff = 999;
 		if (diff < 0)
-			diff *= -1;
+			diff = -999;
+		else
+			diff = 999;
 	}
 
 	// compare as well strings we will send..
