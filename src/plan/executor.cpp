@@ -1040,6 +1040,12 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return setNow (tar_id, -1);
 	}
+	else if (conn->isCommand ("now_single"))
+	{
+		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+			return -2;
+		return setNow (tar_id, -1);
+	}
 	else if (conn->isCommand ("queue"))
 	{
 		int failed = 0;
