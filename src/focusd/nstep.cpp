@@ -250,49 +250,40 @@ int NStep::info ()
 
 int NStep::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
-	int ret;
 	if (oldValue == coils)
 	{
 		sprintf (buf, ":CC%c#", ((rts2core::ValueBool *) newValue)->getValueBool () ? '0' : '1');
-		ret = NSConn->writePort (buf, 5);
-		return (ret == 5) ? 0 : -1;
+		return NSConn->writePort (buf, 5);
 	}
 	if (oldValue == step_speed)
 	{
 		sprintf (buf, ":CS%03d#", newValue->getValueInteger ());
-		ret = NSConn->writePort (buf, 7);
-		return (ret == 7) ? 0 : -1;
+		return NSConn->writePort (buf, 7);
 	}
 	if (oldValue == temp_change)
 	{
 		sprintf (buf, ":TT%+04d#", int (newValue->getValueFloat () * 10.0));
-		ret = NSConn->writePort (buf, 8);
-		return (ret == 8) ? 0 : -1;
+		return NSConn->writePort (buf, 8);
 	}
 	if (oldValue == temp_steps)
 	{
 		sprintf (buf, ":TS%+03d#", newValue->getValueInteger ());
-		ret = NSConn->writePort (buf, 7);
-		return (ret == 7) ? 0 : -1;
+		return NSConn->writePort (buf, 7);
 	}
 	if (oldValue == temp_mode)
 	{
 		sprintf (buf, ":TA%1d", newValue->getValueInteger ());
-		ret = NSConn->writePort (buf, 4);
-		return (ret == 4) ? 0 : -1;
-
+		return NSConn->writePort (buf, 4);
 	}
 	if (oldValue == temp_backlash)
 	{
 		sprintf (buf, ":TB%03d#", newValue->getValueInteger ());
-		ret = NSConn->writePort (buf, 7);
-		return (ret == 7) ? 0 : -1;
+		return NSConn->writePort (buf, 7);
 	}
 	if (oldValue == temp_timer)
 	{
 		sprintf (buf, ":TB%03d#", newValue->getValueInteger ());
-		ret = NSConn->writePort (buf, 7);
-		return (ret == 7) ? 0 : -1;
+		return NSConn->writePort (buf, 7);
 	}
 	return Focusd::setValue (oldValue, newValue);
 }
@@ -318,10 +309,7 @@ int NStep::setTo (double num)
 
 	// compare as well strings we will send..
 	snprintf (buf, 9, ":F%c%d%03d#", (diff > 0) ? '1' : '0', 0, (int) (fabs (diff)));
-
-	if (NSConn->writePort (buf, 8))
-		return -1;
-	return 0;
+	return NSConn->writePort (buf, 8);
 }
 
 int NStep::isFocusing ()
