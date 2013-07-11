@@ -37,16 +37,25 @@ __author__ = 'markus.wildi@one-arcsec.org'
 import sys
 # see http://stackoverflow.com/questions/2801882/generating-a-png-with-matplotlib-when-display-is-undefined
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize
 
+
+
 # FWHM
 fitfunc_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 3)
 errfunc_fwhm = lambda p, x, y, res, err: (y - fitfunc_fwhm(p, x)) / (res * err)
 fitfunc_r_fwhm = lambda x, p0, p1, p2, p3: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 3) 
+# Bootes-2
+#fitfunc_fwhm = lambda p, x: p[0] + p[2] * (x ** 2)+ p[3] * (x ** 4)
+#errfunc_fwhm = lambda p, x, y, res, err: (y - fitfunc_fwhm(p, x)) / (res * err)
+#fitfunc_r_fwhm = lambda x, p0, p1, p2, p3: p0 + p2 * (x ** 2) + p3 * (x ** 4) 
+fitfunc_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
+errfunc_fwhm = lambda p, x, y, res, err: (y - fitfunc_fwhm(p, x)) / (res * err)
+fitfunc_r_fwhm = lambda x, p0, p1, p2, p3, p4: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 4) 
 
 # FLUX
 fitfunc_flux = lambda p, x: p[0] * p[4] / ( p[4] + p[3] * (abs(x - p[1]) ** p[2]))
@@ -72,25 +81,39 @@ if __name__ == '__main__':
     file_fwhm= sys.argv[6]
     file_flux= sys.argv[7]
     file_plot=sys.argv[8]
+    comment=sys.argv[9]
 
     # FWHM
     pos_fwhm, fwhm, errx_fwhm, erry_fwhm = np.loadtxt(file_fwhm, unpack=True)
-
-    par_fwhm= np.array([180., -9.0e-02, 1.0e-05, 0.])
+# Bootes-2
+    #FWHM parameters: [ -2.24926856e+05   4.18400707e+02  -2.59317133e-01   5.35525410e-05]
+#    par_fwhm= np.array([180., -9.0e-02, 1.0e-05, 0.])
+    par_fwhm= np.array([1., 1., 1., 1., 1.])
     try:
         par_fwhm, flag_fwhm  = optimize.leastsq(errfunc_fwhm, par_fwhm, args=(pos_fwhm, fwhm, errx_fwhm, erry_fwhm))
     except:
+        print 'exiting on error fwhm'
         sys.exit(1)
     #print flag_fwhm
-    min_focpos_fwhm = optimize.fmin(fitfunc_r_fwhm,(max(pos_fwhm)-min(pos_fwhm))/2.+ min(pos_fwhm),args=(par_fwhm), disp=0)
+#    min_focpos_fwhm = optimize.fmin(fitfunc_r_fwhm,(max(pos_fwhm)-min(pos_fwhm))/2.+ min(pos_fwhm),args=(par_fwhm), disp=0)
+#    val_fwhm= fitfunc_fwhm( par_fwhm, min_focpos_fwhm) 
+# Bootes-2
+    step= pos_fwhm[1]-pos_fwhm[0]
+    min_focpos_fwhm = optimize.fminbound(fitfunc_r_fwhm,min(pos_fwhm)-2 * step, max(pos_fwhm)+2 * step,args=(par_fwhm), disp=0)
     val_fwhm= fitfunc_fwhm( par_fwhm, min_focpos_fwhm) 
 
+    if min(pos_fwhm) < min_focpos_fwhm  < max(pos_fwhm):
+        pass
+    else:
+        flag_fwhm= 0
+        print 'outside {}'.format(min_focpos_fwhm)
     # flux
     pos_flux, flux, errx_flux, erry_flux = np.loadtxt(file_flux, unpack=True)
     par_flux=[100., min_focpos_fwhm, 2., 0.072, 1000. * val_fwhm]
     try:
         par_flux, flag_flux  = optimize.leastsq(errfunc_flux, par_flux, args=(pos_flux, flux, errx_flux))
     except:
+        print 'exiting on error flux'
         sys.exit(1)
     #print flag_flux
 
@@ -103,7 +126,9 @@ if __name__ == '__main__':
     print '{0}: objects: {1}'.format(script,objects)
 
     if( flag_fwhm==1):
-        print '{0}: FWHM_FOCUS {1}, FWHM at Minimum {2}'.format(script, min_focpos_fwhm[0], val_fwhm[0])
+#        print '{0}: FWHM_FOCUS {1}, FWHM at Minimum {2}'.format(script, min_focpos_fwhm[0], val_fwhm[0])
+# Bootes-2
+        print '{0}: FWHM_FOCUS {1}, FWHM at Minimum {2}'.format(script, min_focpos_fwhm, val_fwhm)
     else:
         print 'FWHM_FOCUS {0}, {1}'.format('nan', 'nan')
 
@@ -131,7 +156,7 @@ if __name__ == '__main__':
         plt.plot(x_flux, fitfunc_flux(par_flux, x_flux), 'r-')
 
 
-    plt.title('rts2af, {0},{1},{2},obj:{3},fw:{4:.0f},fl:{5:.0f}'.format(date, filter_name, temperature, objects, float(min_focpos_fwhm), float(max_focpos_flux)), fontsize=12)
+    plt.title('rts2af, {0},{1},{2},obj:{3},fw:{4:.0f},fl:{5:.0f},{6}'.format(date, filter_name, temperature, objects, float(min_focpos_fwhm), float(max_focpos_flux), comment), fontsize=12)
 
     plt.xlabel('FOC_POS [tick]')
     plt.ylabel('FWHM (blue) [px], FLUX [a.u.]')

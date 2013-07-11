@@ -48,7 +48,7 @@ Assuming you did the the following RTS2 svn checkout
 
   psql --user YOUR_USERNAME YOUR_DB # (see /etc/rts2/rts2.ini)
   insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
-  insert into scripts values ('5', 'YOUR_CAMERA_NAME', '/YOUR/HOME/rts2/scripts/rts2af/rts2af_acquire.py'); #(see /etc/rts2/devices)
+  insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /YOUR/HOME/rts2/scripts/rts2af/rts2af_acquire.py'); #(see /etc/rts2/devices)
 
   SEL (selector) configuration
   ----------------------------

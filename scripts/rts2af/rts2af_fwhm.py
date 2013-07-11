@@ -95,8 +95,9 @@ class Fwhm(rts2af.AFScript):
             if( fwhm > threshFwhm):
                 ##r2c.setValue('next', 5, 'EXEC')
                 ## plain wrong were are not talking to rts2, use rts2-scriptexec
-
-                cmd= [ 'rts2af-queue',
+#Bootes-2, ToDo
+#                cmd= [ 'rts2af-queue',
+                cmd= [ '/home/wildi/rts2/scripts/rts2af/rts2af-queue',
                        '--user={0}'.format(self.env.rtc.value('USERNAME')),
                        '--password={0}'.format(self.env.rtc.value('PASSWORD')),
                        '--clear',

@@ -32,6 +32,7 @@ import os
 from operator import itemgetter
 import ConfigParser
 import string
+import re
 
 
 class AFScript:
@@ -182,6 +183,11 @@ class Configuration:
         self.dcf[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3
         self.dcf[('SExtractor', 'SEXSKY_LIST')]= 'sex-assoc-sky.list'
         self.dcf[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
+        self.dcf[('SExtractor', 'DETECT_THRESH')]=1.7 
+        self.dcf[('SExtractor', 'ANALYSIS_THRESH')]=1.7 
+        self.dcf[('SExtractor', 'DEBLEND_MINCONT')]= 0.1 
+        self.dcf[('SExtractor', 'SATUR_LEVEL')]= 65535
+        self.dcf[('SExtractor', 'STARNNW_NAME')]= '/home/wildi/downloads/sextractor-2.8.6/config/default.nnw'
         # ToDo so far that is good for FLI CCD
         # These factors are used for the fitting
         self.dcf[('ccd binning mapping', '1x1')] = 0
@@ -199,7 +205,8 @@ class Configuration:
         self.dcf[('mode', 'SET_INITIAL_FOC_DEF')]= False
 
         # mapping of fits header elements to canonical
-        self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_DAV.DOME_TMP'
+# BOO2        self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_DAV.DOME_TMP'
+        self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'
         self.dcf[('fits header mapping', 'DATETIME')]= 'JD'
         self.dcf[('fits header mapping', 'EXPOSURE')]= 'EXPOSURE'
         self.dcf[('fits header mapping', 'CCD_TEMP')]= 'CCD_TEMP'
@@ -541,14 +548,16 @@ class FitResults():
 #rts2af_fit.py: flux parameters: [  1.18584193e+01   3.41479252e+03   2.34838248e+00  -5.58647229e+01 -3.47256366e+07]
 
         fitResultFileName= self.env.expandToFitResultPath('rts2af-result-') 
+        tmpList= re.split('/', self.env.rtc.value('FITPRG'))
+        fitExe=tmpList[-1]
         with open( fitResultFileName, 'r') as frfn:
             for line in frfn:
                 line.strip()
-                fitPrgMatch= re.search( self.env.rtc.value('FITPRG') + ':', line)
+                fitPrgMatch= re.search( fitExe + ':', line)
                 if fitPrgMatch==None:
                     continue
-                
-                dateMatch= re.search( self.env.rtc.value('FITPRG') + ':' + ' date: (.+)', line)
+
+                dateMatch= re.search( fitExe + ':' + ' date: (.+)', line)
                 if not dateMatch==None:
                     self.date= dateMatch.group(1)
                     try:
@@ -566,21 +575,21 @@ class FitResults():
                     
                     continue
 
-                temperatureMatch= re.search( self.env.rtc.value('FITPRG') + ':' + ' temperature: (.+)', line)
+                temperatureMatch= re.search( fitExe + ':' + ' temperature: (.+)', line)
                 if not temperatureMatch==None:
                     self.temperature= temperatureMatch.group(1)
                     continue
 
-                objectsMatch= re.search( self.env.rtc.value('FITPRG') + ':' + ' objects: (.+)', line)
+                objectsMatch= re.search( fitExe + ':' + ' objects: (.+)', line)
                 if not objectsMatch==None:
                     self.objects= objectsMatch.group(1)
                     continue
 # ToDo: complete parameters
-#               parametersMatch= re.search( self.env.rtc.value('FITPRG') + ':' + ' result fwhm\w*: (.+)', line)
+#               parametersMatch= re.search( fitExe + ':' + ' result fwhm\w*: (.+)', line)
 #               if not parametersMatch==None:
 #                   print 'found something'
 
-                fwhmMatch= re.search( self.env.rtc.value('FITPRG') + ':' + ' FWHM_FOCUS ([\-\.0-9e+]+), FWHM at Minimum ([\-\.0-9e+]+)', line)
+                fwhmMatch= re.search( fitExe + ':' + ' FWHM_FOCUS ([\-\.0-9e+]+), FWHM at Minimum ([\-\.0-9e+]+)', line)
                 if not fwhmMatch==None:
                     self.fwhmMinimumFocPos= float(fwhmMatch.group(1))
                     self.fwhmMinimum= float(fwhmMatch.group(2))
@@ -591,14 +600,15 @@ class FitResults():
                         self.error= True
                     continue
 
-                fluxMatch= re.search( self.env.rtc.value('FITPRG') + ':' + ' FLUX_FOCUS ([\-\.0-9e+]+), FLUX at Maximum ([\-\.0-9e+]+)', line)
+                fluxMatch= re.search( fitExe + ':' + ' FLUX_FOCUS ([\-\.0-9e+]+), FLUX at Maximum ([\-\.0-9e+]+)', line)
                 if not fluxMatch==None:
                     self.fluxMaximumFocPos= float(fluxMatch.group(1))
                     self.fluxMaximumF= float(fluxMatch.group(2))
                     if self.focPosMin <= self.fluxMaximumFocPos  <= self.focPosMax:
                         self.fluxWithinBounds= True
                     else:
-                        self.error= True
+                        pass
+# Bootes-2 ToDo                        self.error= True
                     continue
 
             frfn.close()
@@ -690,7 +700,11 @@ class Catalogue():
             (prg, arg)= self.env.rtc.value('SEXPRG').split(' ')
         except:
             prg= self.env.rtc.value('SEXPRG')
-
+#
+# Bootes-2 ToDo, see REF B
+#
+# '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw,
+# starnnw='/home/wildi/downloads/sextractor-2.8.6/config/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535
         cmd= [  prg,
                 self.fitsHDU.fitsFileName, 
                 '-c ',
@@ -700,7 +714,16 @@ class Catalogue():
                 '-PARAMETERS_NAME',
                 self.env.rtc.value('SEXPARAM'),
                 '-ASSOC_NAME',
-                self.env.expandToSkyList(self.fitsHDU)
+                self.env.expandToSkyList(self.fitsHDU),
+                '-DETECT_THRESH',
+                str(self.env.rtc.value('DETECT_THRESH')),
+                '-DEBLEND_MINCONT', 
+                str(self.env.rtc.value('DEBLEND_MINCONT')), 
+                '-SATUR_LEVEL', 
+                str(self.env.rtc.value('SATUR_LEVEL')), 
+                '-FILTER', 'N', 
+                '-STARNNW_NAME',
+                self.env.rtc.value('STARNNW_NAME')
                 ]
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
@@ -807,6 +830,7 @@ class Catalogue():
     def ds9DisplayCatalogue(self, color="green", load=True):
         import ds9
         onscreenDisplay = ds9.ds9()
+        onscreenDisplay.set("scale zscale") 
         if load:
             onscreenDisplay.set('file {0}'.format(self.fitsHDU.fitsFileName))
             # does not work (yet)       onscreenDisplay.set('global color=yellow')
@@ -818,6 +842,8 @@ class Catalogue():
             logging.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9: writing header")
             
         for (sxObjectNumber,identifier), value in sorted( self.catalogue.iteritems()):
+            onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) # font=\"helvetica 10 normal\" color={{{3}}} select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {{{4}}}'.format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/2., color, sxObjectNumber))
+            
             try:
                 onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) # font=\"helvetica 10 normal\" color={{{3}}} select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {{{4}}}'.format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/2., color, sxObjectNumber))
             except:
@@ -942,7 +968,7 @@ class Catalogue():
             if (float(matched)/float(self.referenceCatalogue.numberReferenceObjects())) > self.env.rtc.value('MATCHED_RATIO'):
                 return True
             else:
-                logging.error('matching: too few sxObjects matched {0} of {1} required are {2} sxobjects at FOC_POS {3} file {4}'.format( matched, len(self.referenceCatalogue.sxObjects), self.env.rtc.value('MATCHED_RATIO') *  len(self.referenceCatalogue.sxObjects), self.fitsHDU.variableHeaderElements['FOC_POS'], self.fitsHDU.fitsFileName))
+                logging.error('matching: too few sxObjects matched {0} of {1} required are {2}(see MATCHED_RATIO) * {3}= {4} sxobjects at FOC_POS {5} file {6}'.format( matched, len(self.referenceCatalogue.sxObjects), self.env.rtc.value('MATCHED_RATIO'), len(self.referenceCatalogue.sxObjects), self.env.rtc.value('MATCHED_RATIO') *  len(self.referenceCatalogue.sxObjects), self.fitsHDU.variableHeaderElements['FOC_POS'], self.fitsHDU.fitsFileName))
 
 
                 return False
@@ -1049,6 +1075,8 @@ class ReferenceCatalogue(Catalogue):
             prg= self.env.rtc.value('SEXPRG')
 
         self.isReference = True 
+
+# Bootes-2 ToDo, REF B, see REF A
         cmd= [  prg,
                 self.fitsHDU.fitsFileName, 
                 '-c ',
@@ -1056,7 +1084,17 @@ class ReferenceCatalogue(Catalogue):
                 '-CATALOG_NAME',
                 self.skyList,
                 '-PARAMETERS_NAME',
-                self.env.rtc.value('SEXREFERENCE_PARAM'),]
+                self.env.rtc.value('SEXREFERENCE_PARAM'),
+                '-DETECT_THRESH',
+                str(self.env.rtc.value('DETECT_THRESH')),
+                '-DEBLEND_MINCONT', 
+                str(self.env.rtc.value('DEBLEND_MINCONT')), 
+                '-SATUR_LEVEL', 
+                str(self.env.rtc.value('SATUR_LEVEL')), 
+                '-FILTER', 'N', 
+                '-STARNNW_NAME',
+                self.env.rtc.value('STARNNW_NAME')
+                ]
 
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
@@ -1185,7 +1223,7 @@ class ReferenceCatalogue(Catalogue):
             return False
         elif self.catalogue[( sxObjectNumber, 'ELLIPTICITY')] > self.env.rtc.value('ELLIPTICITY_REFERENCE'): # ToDo, ATTENTION
             return False
-        # TRUE    
+        # TRUE  
         return True
 
     def checkSeparation( self, position1, position2):
@@ -1246,12 +1284,14 @@ class ReferenceCatalogue(Catalogue):
 
         discardedObjects= 0
         sxObjectNumbers= self.sxObjects.keys()
+        logging.info("ReferenceCatalogue.cleanUpReference: original number of objects %d " % (len(sxObjectNumbers))) 
         for sxObjectNumber in sxObjectNumbers:
             if ( not self.sxObjects[sxObjectNumber].separationOK) or ( not self.sxObjects[sxObjectNumber].propertiesOK) or ( not self.sxObjects[sxObjectNumber].acceptanceOK):
                 self.removeSXObject( sxObjectNumber)
                 discardedObjects += 1
 
-        logging.info("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d, %d, %d)" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
+        logging.info("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d (sep), %d (prop), %d (acc))" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
+        logging.info("ReferenceCatalogue.cleanUpReference: Number of objects remaining %d " % (len(sxObjectNumbers)-discardedObjects)) 
 
         return self.numberReferenceObjects() 
 
@@ -1462,7 +1502,7 @@ class Catalogues():
             logging.error('fitAllValues: no average values')
             return None
 
-        return self.__fit__(averageFwhm=self.averageFwhmAllFocPos, stdFwhm=self.stdFwhmAllFocPos, averageFlux=self.averageFluxAllFocPos, stdFlux=self.stdFluxAllFocPos, maxFwhm=self.maxFwhmAllFocPos, maxFlux=self.maxFluxAllFocPos)
+        return self.__fit__(averageFwhm=self.averageFwhmAllFocPos, stdFwhm=self.stdFwhmAllFocPos, averageFlux=self.averageFluxAllFocPos, stdFlux=self.stdFluxAllFocPos, maxFwhm=self.maxFwhmAllFocPos, maxFlux=self.maxFluxAllFocPos, comment='all positions')
 
     def fitValues(self):
         if not self.countObjectsFoundInAllFiles():
@@ -1474,7 +1514,7 @@ class Catalogues():
 
         return self.__fit__(averageFwhm=self.averageFwhm, stdFwhm=self.stdFwhm, averageFlux=self.averageFlux, stdFlux=self.stdFlux, maxFwhm=self.maxFwhm, maxFlux=self.maxFlux)
 
-    def __fit__(self, averageFwhm=None, stdFwhm=None, averageFlux=None, stdFlux=None, maxFwhm=None, maxFlux=None):
+    def __fit__(self, averageFwhm=None, stdFwhm=None, averageFlux=None, stdFlux=None, maxFwhm=None, maxFlux=None, comment='obj identified'):
 
         discardedPositions= self.writeFitInputValues( averageFwhm, stdFwhm, averageFlux, stdFlux, maxFwhm, maxFlux)
         
@@ -1496,7 +1536,8 @@ class Catalogues():
                    str(self.numberOfObjectsFoundInAllFiles),
                    self.dataFileNameFwhm,
                    self.dataFileNameFlux,
-                   self.imageFilename]
+                   self.imageFilename,
+                   comment]
         except:
             cmd= [ self.env.rtc.value('FITPRG'),
                    display,
@@ -1506,18 +1547,24 @@ class Catalogues():
                    str(self.numberOfObjectsFoundInAllFiles),
                    self.dataFileNameFwhm,
                    self.dataFileNameFlux,
-                   self.imageFilename]
+                   self.imageFilename,
+                   comment]
 
         output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
         fitResultFileName= self.env.expandToFitResultPath('rts2af-result-') 
-
+        # Bootes-2 ToDo, if the output can not be parsed, log it
+        # It might ba a traceback, unknown error message, ...!
         with open( fitResultFileName, 'a') as frfn:
             for item in output:
                 frfn.write(item)
+                logging.info('Catalogues.fitValues: from rts2af_fits.py: {}'.format(item))
 
             frfn.close()
 
+        # Bootes-2 ToDo Quick fix
+        if len(self.averageFwhm)==0:
+            return None
         # parse the fit results
         fitResults= FitResults(env=self.env, averageFwhm=self.averageFwhm)
         # ToDo: today only fwhm is used, combine it with flux in case they are closer than focuser resolution

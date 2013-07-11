@@ -87,12 +87,13 @@ class Acquire():
         self.windowWidth= self.env.rtc.ccd.windowWidth
         self.windowHeight= self.env.rtc.ccd.windowHeight
         self.pid= os.getpid()
-        self.base_exposure= 9. # ToDo !!!
+        self.base_exposure= 1. # ToDo !!!
         #ToDo must go away
         if sys.version_info<(2,7,0):
             prefix= '/home/wildi/rts2/scripts/rts2af/'
         else:
-            prefix=''
+            # Bootes-2 ToDo
+            prefix='/home/wildi/rts2/scripts/rts2af/'
         
         if self.env.rtc.value('TEST_ACQUIRE'):
             # daytime, no real data, called by EXEC
@@ -133,9 +134,12 @@ class Acquire():
         if( self.speed > 0):
             slt= 1. + abs(fcPos- curFocPos) / self.speed # ToDo, sleep a bit longer, ok?
             r2c.log('I','rts2af_acquire: sleeping for: {0} target={1} current={2}'.format(slt, fcPos, curFocPos))
+#            r2c.log('I','rts2af_acquire: Bootes-2 not sleeping for: {0} target={1} current={2}'.format(slt, fcPos, curFocPos))
             # Missouri
             #time.sleep( 25) # sleep 25 seconds
             # all others 
+            #time.sleep( slt)
+            # Bootes-2 no sleep
             time.sleep( slt)
         else:
             r2c.log('E','rts2af_acquire: focuser speed {0} <=0'.format(self.speed))
@@ -465,6 +469,9 @@ class Acquire():
                             r2c.log('E','rts2af_acquire: something went wrong within setFittedFocus')
                     else:
                         r2c.log('I','rts2af_acquire: not attempting to set focus (see configuration)')
+                        r2c.setValue('FOC_TOFF', 0., self.focuser)
+                        r2c.setValue('FOC_FOFF', 0., self.focuser)
+                        r2c.log('I','rts2af_acquire: set FOC_FOFF, FOC_FOFF to zero')
                 else:
                     r2c.log('I','rts2af_acquire: not setting fit results for filter: {0}, not clear path'.format(filter.name))
 

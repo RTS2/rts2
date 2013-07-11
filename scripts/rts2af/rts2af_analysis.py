@@ -159,11 +159,14 @@ class Analysis(rts2af.AFScript):
             self.logger.warn('rts2af_analysis.py: exiting due too few catalogues found')
             sys.exit(1)
 
+#Bootes-2, ToDo
+#        fitResult= cats.fitValues()
+#        if not fitResult:
+#            self.logger.error('rts2af_analysis.py: fit matching result failed, trying fit all objects')
+#            fitResult= cats.fitAllValues()
+# Bootes-2 ToDo, better fit without identifying objects on all images
+        fitResult= cats.fitAllValues()
 
-        fitResult= cats.fitValues()
-        if not fitResult:
-            self.logger.error('rts2af_analysis.py: fit matching result failed, trying fit all objects')
-            fitResult= cats.fitAllValues()
 
 # fall back first matched objects, then all objects then weighted mean or extreme max/min
         if fitResult and not fitResult.error:

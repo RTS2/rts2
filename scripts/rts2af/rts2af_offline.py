@@ -102,6 +102,7 @@ class Offline(rts2af.AFScript):
             cat.runSExtractor()
             cat.createCatalogue()
             cat.cleanUp()
+
 #            cat.ds9DisplayCatalogue()
 # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
             cats.CataloguesAllFocPosList.append(cat)
@@ -114,12 +115,24 @@ class Offline(rts2af.AFScript):
             self.logger.error("rts2af_offline.py: catalogues are invalid, exiting")
             sys.exit(1)
 
-        fitResult= cats.fitValues()
-        if not fitResult:
-            self.logger.error("rts2af_offline.py: fit matching result failed, trying fit all objects")
-            fitResult= cats.fitAllValues()
+        if cats.numberOfObjectsFoundInAllFiles <= 0: 
+            self.logger.error("rts2af_offline.py: no objects found on all images")
+            #sys.exit(1)
+        else:
+            self.logger.error("rts2af_offline.py: {}objects found on all images".format(cats.numberOfObjectsFoundInAllFiles))
 
-# fall back first matched objects, then all objects then weighted mean or extreme max/min
+
+#        fitResult= cats.fitValues()
+#        if not fitResult:
+#            self.logger.error("rts2af_offline.py: fit matching result failed, trying fit all objects")
+#            fitResult= cats.fitAllValues()
+#        else:
+#            self.logger.info("rts2af_offline.py: fit succesful, not fitting all objects")
+
+        print '--->Bootes-2 better fit with identifying objects on all images disabled'
+# Bootes-2 ToDo, better fit without identified objects!        
+        fitResult= cats.fitAllValues()
+
         if fitResult and not fitResult.error:
             # rts2af_offline is often called as a subprocess
             print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
@@ -136,7 +149,8 @@ class Offline(rts2af.AFScript):
                 print 'FOCUS: {0}'.format(-1)
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 
-        #cats.ds9WriteRegionFiles()
+        cats.ds9WriteRegionFiles()
+
 
 if __name__ == '__main__':
     Offline(sys.argv[0],parser=None,mode=None).run()
