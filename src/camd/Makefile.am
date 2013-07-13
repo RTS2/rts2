@@ -24,6 +24,13 @@ EXTRA_DIST =
 if SUNCYG
 EXTRA_DIST += urvc2.cpp apogee.cpp v4l.cpp
 else
+if ARMCPU
+EXTRA_DIST += urvc2.cpp apogee.cpp
+
+bin_PROGRAMS += rts2-camd-v4l
+
+rts2_camd_v4l_SOURCES = v4l.cpp
+else
 bin_PROGRAMS += rts2-camd-urvc2 rts2-camd-apogee rts2-camd-v4l
 
 rts2_camd_urvc2_SOURCES = urvc2.cpp
@@ -32,6 +39,7 @@ rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
 rts2_camd_apogee_SOURCES = apogee.cpp apogee/CameraIO_LinuxPCI.cpp
 
 rts2_camd_v4l_SOURCES = v4l.cpp
+endif
 endif
 
 if SBIG

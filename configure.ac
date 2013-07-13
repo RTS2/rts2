@@ -823,6 +823,7 @@ AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
 AM_CONDITIONAL(SUNOS, test x${target_os} = xsolaris2.8)
 AM_CONDITIONAL(CYGWIN, test x${target_os} = xcygwin)
 AM_CONDITIONAL(SUNCYG, test x${target_os} = xcygwin -o x${target_os} = xsolaris2.8)
+AM_CONDITIONAL(ARMCPU, test x${target_cpu} = xarm)
 
 AC_OUTPUT([Makefile
 	   rts2.initd
