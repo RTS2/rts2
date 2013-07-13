@@ -1,7 +1,7 @@
 /*
  * Script support.
  * Copyright (C) 2005-2007,2009 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2011-2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -354,6 +354,15 @@ Element *Script::parseBuf (Rts2Target * target)
 	if (commandStart == '\0')
 	{
 		return NULL;
+	}
+	else if (!strcmp (commandStart, COMMAND_SEQUENCE))
+	{
+		char *filter;
+		int repeats;
+		float exp_time;
+		if (getNextParamString (&filter) || getNextParamInteger (&repeats) || getNextParamFloat (&exp_time))
+			return NULL;
+		return new ElementSequence (this, filter, repeats, exp_time);
 	}
 	else if (!strcmp (commandStart, COMMAND_EXPOSURE))
 	{

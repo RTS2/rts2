@@ -26,6 +26,7 @@
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
+#define COMMAND_SEQUENCE        "SEQUENCE"
 #define COMMAND_EXPOSURE        "E"
 #define COMMAND_DARK            "D"
 #define COMMAND_CHANGE          "C"

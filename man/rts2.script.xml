@@ -41,6 +41,7 @@
       <year>2009</year>
       <year>2010</year>
       <year>2012</year>
+      <year>2013</year>
       <holder>&dhusername;</holder>
     </copyright>
     <copyright>
@@ -102,6 +103,18 @@
 	    standard input and outputs - both normal and error output. For documentation of the
 	    protocol, as well as available Python class for handling of this communication, please
 	    see bellow.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>SEQUENCE {filter} {repeat} {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Performs exposure sequence. First set a filter, described as
+	    parameter. Then repeat <emphasis>repeat</emphasis> times execution of exposures
+	    with duration <emphasis>exposure_time</emphasis> seconds.
 	  </para>
 	</listitem>
       </varlistentry>

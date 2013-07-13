@@ -113,6 +113,76 @@ int Element::idle ()
 	return NEXT_COMMAND_KEEP;
 }
 
+ElementSequence::ElementSequence (Script *_script, char *in_filter, int in_repeat, float in_expTime):Element (_script)
+{
+	filter = std::string (in_filter);
+	repeats = in_repeat;
+	expTime = in_expTime;
+	done_exposures = 0;
+
+	callProgress = first;
+}
+
+int ElementSequence::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	getDevice(new_device);
+	if (callProgress == first)
+	{
+		if (camera->getConnection ()->getValue ("que_exp_num") != NULL && camera->getConnection ()->getValueInteger ("que_exp_num") != 0)
+		{
+#ifdef DEBUG_EXTRA
+			std::cout << "do not set values, as que_exp_num is not 0" << std::endl;
+#endif
+			return NEXT_COMMAND_KEEP;
+		}
+		callProgress = SHUTTER;
+		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
+		{
+			*new_command = new rts2core::CommandChangeValue (camera, "SHUTTER", '=', 0);
+			(*new_command)->setBopMask (BOP_TEL_MOVE);
+			return NEXT_COMMAND_KEEP;
+		}
+	}
+	if (callProgress == SHUTTER)
+	{
+		callProgress = FILTER;
+		if (camera->getConnection ()->getValue ("filter") != NULL)
+		{
+			*new_command = new rts2core::CommandChangeValue (camera, "filter", '=', filter);
+			(*new_command)->setBopMask (BOP_TEL_MOVE);
+			return NEXT_COMMAND_KEEP;
+		}
+	}
+	// change values of the exposure
+	if (callProgress == FILTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
+	{
+		callProgress = EXPOSURE;
+		*new_command = new rts2core::CommandChangeValue (camera, "exposure", '=', expTime);
+		(*new_command)->setBopMask (BOP_TEL_MOVE);
+		return NEXT_COMMAND_KEEP;
+	}
+	*new_command = new rts2core::CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
+	done_exposures++;
+	if (done_exposures < repeats)
+	{
+		return NEXT_COMMAND_KEEP;
+	}
+	// prepare for next exposure in loop..
+	callProgress = first;
+	done_exposures = 0;
+	return 0;
+}
+
+double ElementSequence::getExpectedDuration (int runnum)
+{
+	return repeats * (expTime + script->getFullReadoutTime ());
+}
+
+double ElementSequence::getExpectedLightTime ()
+{
+	return repeats * expTime;
+}
+
 ElementExpose::ElementExpose (Script * _script, float in_expTime):Element (_script)
 {
 	expTime = in_expTime;

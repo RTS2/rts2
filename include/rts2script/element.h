@@ -1,6 +1,7 @@
 /*
  * Script element.
  * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -222,6 +223,31 @@ class ElementNone:public Element
 		virtual void printScript (std::ostream &os) {};
 };
 
+/**
+ * Performs a sequqnce of exposures. Set filter, then repeat exposures.
+ */
+class ElementSequence:public Element
+{
+	public:
+		ElementSequence (Script *_script, char *in_filter, int in_repeat, float in_expTime);
+		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "sequence " << filter << " " << repeats << " " << expTime; }
+		virtual void printXml (std::ostream &os) { os << "  <sequence filter='" << filter << "' repeats=" << repeats << " exposure=" << expTime << "/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_SEQUENCE " " << filter << " " << repeats << " " << expTime; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_SEQUENCE << "\",\"filter\":\"" << filter << "\",\"repeats\":" << repeats << ",\"exposure\":" << expTime; }
+
+		virtual double getExpectedDuration (int runnum);
+		virtual double getExpectedLightTime ();
+		virtual int getExpectedImages () { return repeats; }
+	private:
+		std::string filter;
+		int repeats;
+		int done_exposures;
+		float expTime;
+		enum {first, SHUTTER, FILTER, EXPOSURE } callProgress;
+};
+
 class ElementExpose:public Element
 {
 	public:
@@ -229,7 +255,7 @@ class ElementExpose:public Element
 		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "exposure " << expTime; }
-		virtual void printXml (std::ostream &os) { os << "  <exposure length='" << expTime << "'/>"; }
+		virtual void printXml (std::ostream &os) { os << "  <exposure length=" << expTime << "/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXPOSURE " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXPOSURE << "\",\"duration\":" << expTime; }
 
