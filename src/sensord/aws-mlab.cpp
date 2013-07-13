@@ -4,7 +4,7 @@
  * Based on Sensor4 driver for Mrakomer device by Martin Kakona.
  * All their devices can be found here: http://www.mlab.cz/ .
  *
- * Copyright (C) 2008-2009,20101 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2009 Martin Jelinek
  * Copyright (C) 2013 Jan Strobl
  *
@@ -49,7 +49,7 @@ class AWSmlab: public SensorWeather
 
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual int info ();
 
@@ -301,13 +301,8 @@ int AWSmlab::processOption (int in_opt)
 	return 0;
 }
 
-int AWSmlab::init ()
+int AWSmlab::initHardware ()
 {
-	int ret;
-	ret = SensorWeather::init ();
-	if (ret)
-		return ret;
-
 	if (sensorTempEnable->getValueBool())
 	{
 		createValue (tempInSimple, "TEMP_SIMPLE", "simple temperature sensor (located e.g. in rack)", false);
@@ -343,7 +338,7 @@ int AWSmlab::init ()
 
 	AWSConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 10);
 	AWSConn->setDebug ();
-	ret = AWSConn->init ();
+	int ret = AWSConn->init ();
 	if (ret)
 		return ret;
 	
