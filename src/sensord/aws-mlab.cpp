@@ -491,7 +491,7 @@ int AWSmlab::info ()
 
 int main (int argc, char **argv)
 {
-	AWSmlab device = AWSmlab (argc, argv);
+	AWSmlab device (argc, argv);
 	return device.run ();
 }
 
