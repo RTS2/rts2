@@ -330,7 +330,7 @@ int NStep::isFocusing ()
 	if (ret)
 		return -1;
 	
-	if (getTarget () == getPosition ())
+	if (fabs (getTarget () - getPosition ()) < 1)
 		return -2;
 
 	return setTo (getTarget ());
