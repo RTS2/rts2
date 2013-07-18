@@ -48,6 +48,10 @@ class ThorPM100D:public Sensor
 		rts2core::ValueString *model;
 		rts2core::ValueDouble *wavelength;
 		rts2core::ValueDouble *power;
+		rts2core::ValueString *power_unit;
+		rts2core::ValueString *date;
+		rts2core::ValueString *time;
+		rts2core::ValueString *measurement_configuration;
 		rts2core::ConnSCPI *usbtmcConn;
 
 		template < typename T > int writeValue (const char *valueName, T val, rts2core::Value *value = NULL);
@@ -105,7 +109,10 @@ ThorPM100D::ThorPM100D (int argc, char **argv): Sensor (argc, argv)
 	createValue (model, "model", "photodiode sensor model", false);
 	createValue (wavelength, "WAVELENGTH", "actual wavelenght position", true, RTS2_VALUE_WRITABLE);
 	createValue (power, "POWER", "actual power on photodiode sensor", true, RTS2_VALUE_WRITABLE);
-    
+	createValue (power_unit, "POWER_UNIT", "actual power unit on photodiode sensor", true, RTS2_VALUE_WRITABLE);
+	createValue (date, "DATE", "init date on photodiode sensor", true, RTS2_VALUE_WRITABLE);
+	createValue (time, "TIME", "init time on photodiode sensor", true, RTS2_VALUE_WRITABLE);
+	createValue (measurement_configuration, "POWER_CONFIGURATION", "actual measurement configuration on photodiode sensor", true, RTS2_VALUE_WRITABLE);
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for ThorLaser USB serial connection");
 }
 
@@ -152,26 +159,32 @@ int ThorPM100D::initHardware ()
 	usbtmcConn->initGpib ();
 
 	int ret;
+    
 	char buf[100];
+    
 	usbtmcConn->gpibWriteRead ("*IDN?\n", buf, 100);
-	logStream (MESSAGE_ERROR) <<"IDN : "<<buf << sendLog;
 	model->setValueCharArr (buf);
     
 	usbtmcConn->gpibWriteRead ("SYSTem:DATE?\n", buf, 100);
-	logStream (MESSAGE_ERROR) <<"DATE : "<< buf << sendLog;
+	date->setValueCharArr (buf);
     
 	usbtmcConn->gpibWriteRead ("SYSTEM:TIME?\n", buf, 100);
-	logStream (MESSAGE_ERROR) <<"TIME : "<<buf << sendLog;
+	time->setValueCharArr (buf);
     
 	ret = readRts2Value ("SENS:CORR:WAV?\n", wavelength);
 	if (ret)
 		return ret;
-	logStream (MESSAGE_DEBUG) << "wavelength: " << wavelength->getValue() << sendLog;
     
-	ret = readRts2Value ("SENS:CORR:POW?\n", power);
+	usbtmcConn->gpibWrite ("MEAS:POW\n");
+	ret = readRts2Value ("READ?\n", power);
 	if (ret)
 		return ret;
-	logStream (MESSAGE_DEBUG) << "power: " << power->getValue() << sendLog;
+    
+	usbtmcConn->gpibWriteRead ("CONF?\n", buf, 100);
+	measurement_configuration->setValueCharArr (buf);
+
+	usbtmcConn->gpibWriteRead ("SENS:POW:UNIT?\n", buf, 100);
+	power_unit->setValueCharArr (buf);
 
 	return 0;
 }
@@ -183,7 +196,8 @@ int ThorPM100D::info ()
 	if (ret)
 		return ret;
 
-	ret = readRts2Value ("SENS:CORR:POW?\n", power);
+	usbtmcConn->gpibWrite ("MEAS:POW\n");
+	ret = readRts2Value ("READ?\n", power);
 	if (ret)
 		return ret;
 
