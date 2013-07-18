@@ -58,7 +58,7 @@ noinst_HEADERS = connepics.h \
 if EPICS
 lib_LTLIBRARIES += librts2epics.la
 librts2epics_la_SOURCES = connepics.cpp
-librts2epics_la_CXXFLAGS = @INC_EPICS@ @NOVA_CFLAGS@
+librts2epics_la_CXXFLAGS = @INC_EPICS@ @NOVA_CFLAGS@ @AM_CXXFLAGS@
 else
 EXTRA_DIST += connepics.cpp
 endif
