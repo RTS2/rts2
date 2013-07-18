@@ -21,10 +21,13 @@
 #define __RTS2_MESSAGE__
 
 #include <status.h>
-#include <message.h>
 
 #include <sys/time.h>
+
+#ifdef RTS2_HAVE_STDINT_H
 #include <stdint.h>
+#endif
+
 #include <string>
 #include <fstream>
 
