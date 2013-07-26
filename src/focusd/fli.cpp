@@ -181,24 +181,27 @@ int Fli::initHardware ()
 			nam++;
 		}
 	}
-	else if (name == NULL)
+	else if (name != NULL)
+	{
+		ret = FLIOpen (&dev, name, deviceDomain);
+	}
+	else
 	{
 		nam_sep = strchr (names[0], ';');
 		if (nam_sep)
 			*nam_sep = '\0';
 
 		ret = FLIOpen (&dev, names[0], deviceDomain);
-		FLIFreeList (names);
 	}
-	else
-	{
-		ret = FLIOpen (&dev, name, deviceDomain);
-	}
+
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot open device " << (name == NULL ? names[0] : name) << ":" << strerror (errno) << sendLog;
+		FLIFreeList (names);
 		return -1;
 	}
+
+	FLIFreeList (names);
 
 	if (ret)
 		return -1;
@@ -305,29 +308,32 @@ int Fli::setTo (double num)
 
 	long s = num - position->getValueInteger ();
 
-	ret = FLIStepMotorAsync (dev, s);
+	//ret = FLIStepMotorAsync (dev, s);
+	ret = FLIStepMotor (dev, s);
 	if (ret)
 		return -1;
 	// wait while move starts..
-	double timeout = getNow () + 2;
-	do
-	{
-		ret = FLIGetStepsRemaining (dev, &s);
-		if (ret)
-			return -1;
-		if (s != 0)
-			return 0;
+	// Commenting this out - this is reasonable only for async move, which we do not use now
+	//double timeout = getNow () + 2;
+	//do
+	//{
+	//	ret = FLIGetStepsRemaining (dev, &s);
+	//	if (ret)
+	//		return -1;
+	//	if (s != 0)
+	//		return 0;
 
-		ret = FLIGetStepperPosition (dev, &s);
-		if (ret)
-			return -1;
-		if (s == num)
-			return 0;
-	} while (getNow () < timeout);
-	
-	logStream (MESSAGE_ERROR) << "timeout during moving focuser to " << num << ", actual position is " << s << sendLog;
-	
-	return -1;
+	//	ret = FLIGetStepperPosition (dev, &s);
+	//	if (ret)
+	//		return -1;
+	//	if (s == num)
+	//		return 0;
+	//} while (getNow () < timeout);
+	//
+	//logStream (MESSAGE_ERROR) << "timeout during moving focuser to " << num << ", actual position is " << s << sendLog;
+	//
+	//return -1;
+	return 0;
 }
 
 int Fli::isFocusing ()

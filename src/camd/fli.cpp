@@ -287,7 +287,7 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('B', NULL, 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 	addOption ('n', NULL, 1, "Camera number (in FLI list)");
 	addOption ('N', NULL, 1, "Camera serial number (string, device name)");
-	addOption ('b', NULL, 0, "use background flush, supported by firmware revisions greater 0x0100");
+	addOption ('b', NULL, 0, "use background flush, supported by several newer CCDs (do not confuse with normal flush, initiated by parameter -l)");
 	addOption ('l', NULL, 1, "Number of CCD flushes");
 	addOption ('f', NULL, 1, "FLI device path");
 }
@@ -359,7 +359,7 @@ int Fli::initHardware ()
 	char *nam_sep;
 	char **nam;					 // current name
 
-	char devnam[50];
+	const char *devnam;
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, fliDebug);
@@ -390,7 +390,7 @@ int Fli::initHardware ()
 				nam++;
 				continue;
 			}
-			ret = FLIGetSerialString (dev, devnam, 50);
+			ret = FLIGetDeviceName (dev, &devnam);
 			if (!ret && !strcmp (devnam, camName))
 			{
 				break;
@@ -468,7 +468,7 @@ int Fli::initHardware ()
 		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush->getValueInteger () <<	sendLog;
 	}
 
-	FLIGetSerialString (dev, devnam, 50);
+	FLIGetDeviceName (dev, &devnam);
 	serialNumber->setValueCharArr (devnam);
 
 	long hwrev;
@@ -486,19 +486,20 @@ int Fli::initHardware ()
 	sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
 	ccdRealType->setValueCharArr (ccdType);
 
+	long devid;
+	ret = FLIGetDeviceID (dev, &devid);
+	if (ret)
+	  	return -1;
 
-	if ( fwrev > 0x0101) 
+	if ((devid == FLIUSB_PROLINE_ID && fwrev > 0x0100) || bgFlush != -1)
 	{
-	   createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
-	   useBgFlush->setValueBool (bgFlush == 1);
-	   ret = FLIControlBackgroundFlush (dev, useBgFlush->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP);
-	   if (ret)
-	      return -1;
-	} 
-	else if ( fwrev <= 0x0100 && bgFlush == 1)
-	{
-	  logStream (MESSAGE_WARNING) << "fli init background flush not supported for firmware revision " << fwrev << sendLog;
+		createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
+		useBgFlush->setValueBool (bgFlush == 1);
+		ret = FLIControlBackgroundFlush (dev, useBgFlush->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP);
+		if (ret)
+			return -1;
 	}
+
 	double cp;
 	ret = FLIGetCoolerPower (dev, &cp);
 	if (!ret)

@@ -137,6 +137,7 @@ int Fli::initHardware ()
 		if (names[0] == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
+			FLIFreeList (names);
 			return -1;
 		}
 
@@ -145,7 +146,6 @@ int Fli::initHardware ()
 			*nam_sep = '\0';
 
 		ret = FLIOpen (&dev, names[0], deviceDomain);
-		FLIFreeList (names);
 	}
 	else
 	{
@@ -155,8 +155,11 @@ int Fli::initHardware ()
 	{
 		logStream (MESSAGE_ERROR) << "cannot open device " << (name == NULL ? names[0] : name) << ":" << strerror (errno) << sendLog;
 		dev = -1;
+		FLIFreeList (names);
 		return -1;
 	}
+
+	FLIFreeList (names);
 
 	ret = FLIGetFilterCount (dev, &filter_count);
 	if (ret)
