@@ -85,7 +85,6 @@ class LX200:public Telescope
 		int tel_read_latitude ();
 		int tel_read_longtitude ();
 		int tel_rep_write (char *command);
-		void tel_normalize (double *ra, double *dec);
 
 		int tel_write_ra (double ra);
 		int tel_write_dec (double dec);
@@ -378,29 +377,6 @@ int LX200::tel_rep_write (char *command)
 }
 
 /*!
- * Normalize ra and dec,
- *
- * @param ra		rigth ascenation to normalize in decimal hours
- * @param dec		rigth declination to normalize in decimal degrees
- *
- * @return 0
- */
-void LX200::tel_normalize (double *ra, double *dec)
-{
-	if (*ra < 0)
-								 //normalize ra
-		*ra = floor (*ra / 360) * -360 + *ra;
-	if (*ra > 360)
-		*ra = *ra - floor (*ra / 360) * 360;
-
-	if (*dec < -90)
-								 //normalize dec
-		*dec = floor (*dec / 90) * -90 + *dec;
-	if (*dec > 90)
-		*dec = *dec - floor (*dec / 90) * 90;
-}
-
-/*!
  * Set LX200 right ascenation.
  *
  * @param ra		right ascenation to set in decimal degrees
@@ -630,7 +606,7 @@ int LX200::tel_slew_to (double ra, double dec)
 {
 	char retstr;
 
-	tel_normalize (&ra, &dec);
+	normalizeRaDec (ra, dec);
 
 	if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
 		return -1;
@@ -801,14 +777,12 @@ LX200::stopMove ()
  *
  * @return -1 and set errno on error, otherwise 0
  */
-
-int
-LX200::setTo (double ra, double dec)
+int LX200::setTo (double ra, double dec)
 {
 	char readback[101];
 	int ret;
 
-	tel_normalize (&ra, &dec);
+	normalizeRaDec (ra, dec);
 
 	if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
 		return -1;
@@ -821,7 +795,6 @@ LX200::setTo (double ra, double dec)
 	return ret == 1;
 }
 
-
 /*!
  * Correct telescope coordinates.
  *
@@ -833,9 +806,7 @@ LX200::setTo (double ra, double dec)
  *
  * @return -1 and set errno on error, 0 otherwise.
  */
-int
-LX200::correct (double cor_ra, double cor_dec, double real_ra,
-double real_dec)
+int LX200::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
 {
 	if (setTo (real_ra, real_dec))
 		return -1;
@@ -848,29 +819,22 @@ double real_dec)
  *
  * @return -1 and errno on error, 0 otherwise
  */
-int
-LX200::startPark ()
+int LX200::startPark ()
 {
 	return tel_slew_to (0, 0);
 }
 
-
-int
-LX200::isParking ()
+int LX200::isParking ()
 {
 	return -2;
 }
 
-
-int
-LX200::endPark ()
+int LX200::endPark ()
 {
 	return 0;
 }
 
-
-int
-LX200::startDir (char *dir)
+int LX200::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -884,9 +848,7 @@ LX200::startDir (char *dir)
 	return -2;
 }
 
-
-int
-LX200::stopDir (char *dir)
+int LX200::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -899,10 +861,8 @@ LX200::stopDir (char *dir)
 	return -2;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	LX200 device = LX200 (argc, argv);
+	LX200 device (argc, argv);
 	return device.run ();
 }

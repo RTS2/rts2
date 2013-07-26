@@ -110,7 +110,6 @@ class MM2:public Telescope
 		int tel_read_latitude ();
 		int tel_read_longtitude ();
 		int tel_rep_write (char *command);
-		void tel_normalize (double *ra, double *dec);
 
 		int tel_write_ra (double ra);
 		int tel_write_dec (double dec);
@@ -217,8 +216,7 @@ MM2::tel_read (char *buf, int count)
  *
  * @see tel_read() for description
  */
-int
-MM2::tel_read_hash (char *buf, int count)
+int MM2::tel_read_hash (char *buf, int count)
 {
 	int readed;
 	buf[0] = 0;
@@ -248,9 +246,7 @@ MM2::tel_read_hash (char *buf, int count)
  *
  * @return -1 on failure, count otherwise
  */
-
-int
-MM2::tel_write (const char *buf, int count)
+int MM2::tel_write (const char *buf, int count)
 {
 	logStream (MESSAGE_DEBUG) << "MM2 tel_write: will write: " << buf <<
 		sendLog;
@@ -272,10 +268,7 @@ MM2::tel_write (const char *buf, int count)
  *
  * @return -1 and set errno on failure, rcount otherwise
  */
-
-int
-MM2::tel_write_read (const char *wbuf, int wcount, char *rbuf,
-int rcount)
+int MM2::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount;
 	char *buf;
@@ -304,15 +297,12 @@ int rcount)
 	return tmp_rcount;
 }
 
-
 /*!
  * Combine write && read_hash together.
  *
  * @see tel_write_read for definition
  */
-int
-MM2::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf,
-int rcount)
+int MM2::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount;
 
@@ -326,7 +316,6 @@ int rcount)
 	return tmp_rcount;
 }
 
-
 /*!
  * Reads some value from MM2 in hms format.
  *
@@ -336,8 +325,7 @@ int rcount)
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-MM2::tel_read_hms (double *hmsptr, const char *command)
+int MM2::tel_read_hms (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -348,14 +336,12 @@ MM2::tel_read_hms (double *hmsptr, const char *command)
 	return 0;
 }
 
-
 /*!
  * Reads MM2 right ascenation.
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-MM2::tel_read_ra ()
+int MM2::tel_read_ra ()
 {
 	double new_ra;
 	if (tel_read_hms (&new_ra, "#:GR#"))
@@ -364,14 +350,12 @@ MM2::tel_read_ra ()
 	return 0;
 }
 
-
 /*!
  * Reads MM2 declination.
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-MM2::tel_read_dec ()
+int MM2::tel_read_dec ()
 {
 	double t_telDec;
 	if (tel_read_hms (&t_telDec, "#:GD#"))
@@ -380,15 +364,13 @@ MM2::tel_read_dec ()
 	return 0;
 }
 
-
 /*!
  * Reads MM2 latitude.
  *
  * @return -1 on error, otherwise 0
  *
  */
-int
-MM2::tel_read_latitude ()
+int MM2::tel_read_latitude ()
 {
 	return 0;
 }
@@ -400,8 +382,7 @@ MM2::tel_read_latitude ()
  * @return -1 on error, otherwise 0
  *
  */
-int
-MM2::tel_read_longtitude ()
+int MM2::tel_read_longtitude ()
 {
 	return 0;
 }
@@ -415,8 +396,7 @@ MM2::tel_read_longtitude ()
  *
  * @param command	command to write on tel_desc
  */
-int
-MM2::tel_rep_write (char *command)
+int MM2::tel_rep_write (char *command)
 {
 	int count;
 	char retstr;
@@ -439,32 +419,6 @@ MM2::tel_rep_write (char *command)
 	return 0;
 }
 
-
-/*!
- * Normalize ra and dec,
- *
- * @param ra		rigth ascenation to normalize in decimal hours
- * @param dec		rigth declination to normalize in decimal degrees
- *
- * @return 0
- */
-void
-MM2::tel_normalize (double *ra, double *dec)
-{
-	if (*ra < 0)
-								 //normalize ra
-		*ra = floor (*ra / 360) * -360 + *ra;
-	if (*ra > 360)
-		*ra = *ra - floor (*ra / 360) * 360;
-
-	if (*dec < -90)
-								 //normalize dec
-		*dec = floor (*dec / 90) * -90 + *dec;
-	if (*dec > 90)
-		*dec = *dec - floor (*dec / 90) * 90;
-}
-
-
 /*!
  * Set MM2 right ascenation.
  *
@@ -472,8 +426,7 @@ MM2::tel_normalize (double *ra, double *dec)
  *
  * @return -1 and errno on error, otherwise 0
  */
-int
-MM2::tel_write_ra (double ra)
+int MM2::tel_write_ra (double ra)
 {
 	char command[14];
 	int h, m, s;
@@ -488,7 +441,6 @@ MM2::tel_write_ra (double ra)
 	return tel_rep_write (command);
 }
 
-
 /*!
  * Set MM2 declination.
  *
@@ -496,8 +448,7 @@ MM2::tel_write_ra (double ra)
  *
  * @return -1 and errno on error, otherwise 0
  */
-int
-MM2::tel_write_dec (double dec)
+int MM2::tel_write_dec (double dec)
 {
 	char command[15];
 	int h, m, s;
@@ -510,7 +461,6 @@ MM2::tel_write_dec (double dec)
 		return -1;
 	return tel_rep_write (command);
 }
-
 
 MM2::MM2 (int argc, char **argv):Telescope (argc, argv)
 {
@@ -527,7 +477,6 @@ MM2::MM2 (int argc, char **argv):Telescope (argc, argv)
 	worm_state = RUNNING;
 }
 
-
 MM2::~MM2 (void)
 {
 	int ret;
@@ -541,9 +490,7 @@ MM2::~MM2 (void)
 	close (tel_desc);
 }
 
-
-int
-MM2::processOption (int in_opt)
+int MM2::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -556,7 +503,6 @@ MM2::processOption (int in_opt)
 	return 0;
 }
 
-
 /*!
  * Init telescope, connect on given tel_desc.
  *
@@ -565,8 +511,7 @@ MM2::processOption (int in_opt)
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
-int
-MM2::init ()
+int MM2::init ()
 {
 	struct termios tel_termios;
 	char rbuf[10];
@@ -663,9 +608,7 @@ MM2::init ()
 	return 0;
 }
 
-
-int
-MM2::initValues ()
+int MM2::initValues ()
 {
 	telLongitude->setValueDouble (TEL_LONG);
 	telLatitude->setValueDouble (TEL_LAT);
@@ -681,9 +624,7 @@ MM2::initValues ()
 	return Telescope::initValues ();
 }
 
-
-int
-MM2::idle ()
+int MM2::idle ()
 {
 	time_t now;
 	// if we don't update pos for more then 5 seconds..
@@ -745,16 +686,13 @@ MM2::idle ()
 	return Telescope::idle ();
 }
 
-
-int
-MM2::info ()
+int MM2::info ()
 {
 	if (tel_read_ra () || tel_read_dec ())
 		return -1;
 
 	return Telescope::info ();
 }
-
 
 /*!
  * Set slew rate. For completness?
@@ -770,17 +708,14 @@ MM2::info ()
  *
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
-int
-MM2::tel_set_rate (char new_rate)
+int MM2::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
 	return tel_write (command, 5);
 }
 
-
-int
-MM2::telescope_start_move (char direction)
+int MM2::telescope_start_move (char direction)
 {
 	char command[6];
 	tel_set_rate (RATE_FIND);
@@ -788,15 +723,12 @@ MM2::telescope_start_move (char direction)
 	return tel_write (command, 5) == 1 ? -1 : 0;
 }
 
-
-int
-MM2::telescope_stop_move (char direction)
+int MM2::telescope_stop_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
 	return tel_write (command, 5) < 0 ? -1 : 0;
 }
-
 
 /*!
  * Slew (=set) MM2 to new coordinates.
@@ -806,12 +738,11 @@ MM2::telescope_stop_move (char direction)
  *
  * @return -1 on error, otherwise 0
  */
-int
-MM2::tel_slew_to (double ra, double dec)
+int MM2::tel_slew_to (double ra, double dec)
 {
 	char retstr;
 
-	tel_normalize (&ra, &dec);
+	normalizeRaDec (ra, dec);
 
 	worm_state = RUNNING;
 
@@ -835,8 +766,7 @@ MM2::tel_slew_to (double ra, double dec)
  *
  * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
  */
-int
-MM2::tel_check_coords ()
+int MM2::tel_check_coords ()
 {
 	// ADDED BY JF
 	double JD;
@@ -879,9 +809,7 @@ MM2::tel_check_coords ()
 	return 1;
 }
 
-
-void
-MM2::toggle_mode (int in_togle_count)
+void MM2::toggle_mode (int in_togle_count)
 {
 	int status;
 	for (int i = 0; i < in_togle_count; i++)
@@ -907,9 +835,7 @@ MM2::toggle_mode (int in_togle_count)
 	}
 }
 
-
-void
-MM2::set_move_timeout (time_t plus_time)
+void MM2::set_move_timeout (time_t plus_time)
 {
 	time_t now;
 	time (&now);
@@ -917,9 +843,7 @@ MM2::set_move_timeout (time_t plus_time)
 	move_timeout = now + plus_time;
 }
 
-
-int
-MM2::startResync ()
+int MM2::startResync ()
 {
 	int ret;
 	if (cw_pos == UNKNOW)
@@ -1015,9 +939,7 @@ MM2::startResync ()
 	return 0;
 }
 
-
-int
-MM2::isMoving ()
+int MM2::isMoving ()
 {
 	int ret;
 
@@ -1081,18 +1003,14 @@ MM2::isMoving ()
 	return -1;
 }
 
-
-int
-MM2::endMove ()
+int MM2::endMove ()
 {
 	// wait for mount to settle down after move
 	sleep (2);
 	return Telescope::endMove ();
 }
 
-
-int
-MM2::stopMove ()
+int MM2::stopMove ()
 {
 	char dirs[] = { 'e', 'w', 'n', 's' };
 	int i;
@@ -1117,14 +1035,12 @@ MM2::stopMove ()
  *
  * @return -1 and set errno on error, otherwise 0
  */
-
-int
-MM2::setTo (double ra, double dec)
+int MM2::setTo (double ra, double dec)
 {
 	char readback[101];
 	int ret;
 
-	tel_normalize (&ra, &dec);
+	normalizeRaDec (ra, dec);
 
 	if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
 		return -1;
@@ -1149,23 +1065,19 @@ MM2::setTo (double ra, double dec)
  *
  * @return -1 and set errno on error, 0 otherwise.
  */
-int
-MM2::correct (double cor_ra, double cor_dec, double real_ra,
-double real_dec)
+int MM2::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
 {
 	if (setTo (real_ra, real_dec))
 		return -1;
 	return 0;
 }
 
-
 /*!
  * Park telescope to neutral location.
  *
  * @return -1 and errno on error, 0 otherwise
  */
-int
-MM2::startPark ()
+int MM2::startPark ()
 {
 	int ret;
 	homeHA = getLocSidTime () * 15.0 + 90;
@@ -1175,9 +1087,7 @@ MM2::startPark ()
 	return ret;
 }
 
-
-int
-MM2::isParking ()
+int MM2::isParking ()
 {
 	int ret;
 
@@ -1198,26 +1108,20 @@ MM2::isParking ()
 	return -2;
 }
 
-
-int
-MM2::endPark ()
+int MM2::endPark ()
 {
 	stopWorm ();
 	return 0;
 }
 
-
-int
-MM2::stopWorm ()
+int MM2::stopWorm ()
 {
 	toggle_mode (2);
 	worm_state = STOPED;
 	return 0;
 }
 
-
-void
-MM2::goodPark ()
+void MM2::goodPark ()
 {
 	last_pos_ra = getTelRa ();
 	axRa->setValueDouble (ln_range_degrees
@@ -1236,9 +1140,7 @@ MM2::goodPark ()
 		getValueDouble () << sendLog;
 }
 
-
-int
-MM2::startDir (char *dir)
+int MM2::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -1252,9 +1154,7 @@ MM2::startDir (char *dir)
 	return -2;
 }
 
-
-int
-MM2::stopDir (char *dir)
+int MM2::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -1267,10 +1167,8 @@ MM2::stopDir (char *dir)
 	return -2;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	MM2 device = MM2 (argc, argv);
+	MM2 device (argc, argv);
 	return device.run ();
 }

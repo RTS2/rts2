@@ -462,3 +462,18 @@ void getNight (time_t curr_time, struct ln_lnlat_posn *observer, double nightHor
 		next_event (observer, &t_start_t, &call_state, &net, &nt, nightHorizon, nightHorizon + 5, 1000, 1000);
 	}
 }
+
+void normalizeRaDec (double &ra, double &dec)
+{
+	if (dec < -90)
+	{
+		dec = 180 + dec;
+		ra = ra - 180;
+	}
+	else if (dec > 90)
+	{
+		dec = 180 - dec;
+		ra = ra - 180;
+	}
+	ra = ln_range_degrees (ra);
+}

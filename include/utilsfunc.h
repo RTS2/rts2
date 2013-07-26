@@ -1,7 +1,7 @@
 /* 
  * Various utility functions.
  * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2011-2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -352,4 +352,12 @@ double db_nan_double (double value, int ind);
  * Return next night start/stop times.
  */
 void getNight (time_t curr_time, struct ln_lnlat_posn *observer, double nightHorizon, time_t &nstart, time_t &nstop);
+
+/**
+ * Normalize over-the-pole RaDec. On GEM and all other models mounts, which can cross the pole, the usuall
+ * notation which should be used for crossed pole is to keep counting dec. This leads to absolute dec values 
+ * > 90. This functions normalized such over-the-pole values.
+ */
+void normalizeRaDec (double &ra, double &dec);
+
 #endif							 /* !__RTS_UTILSFUNC__ */

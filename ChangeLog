@@ -1,3 +1,6 @@
+2013-07-26
+ * Added normalizeRaDec function to utilsfunc - normalizing RaDec with |dec| > 90
+
 2013-07-13
  * Added support for Automated Weather Station by mlab
 

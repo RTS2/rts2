@@ -375,6 +375,7 @@ double Telescope::getTargetDistance ()
 	struct ln_equ_posn tar,tel;
 	getTelTargetRaDec (&tar);
 	getTelRaDec (&tel);
+	normalizeRaDec (tel.ra, tel.dec);
 
 	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))
 		return -1;
@@ -386,10 +387,6 @@ void Telescope::getTelTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 {
 	struct ln_equ_posn tar;
 	getTelTargetRaDec (&tar);
-	if (tar.ra < -90)
-		tar.ra = 180 + tar.ra;
-	else if (tar.ra > 90)
-		tar.ra = 180 - tar.ra;
 	struct ln_lnlat_posn observer;
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
@@ -910,10 +907,7 @@ void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
 	telpos.ra = telRaDec->getRa ();
 	telpos.dec = telRaDec->getDec ();
 
-	if (telpos.dec < -90)
-		telpos.dec = 180 + telpos.dec;
-	else if (telpos.dec > 90)
-		telpos.dec = 180 - telpos.dec;
+	normalizeRaDec (telpos.ra, telpos.dec);
 
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();

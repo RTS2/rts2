@@ -257,16 +257,6 @@ class Gemini:public Telescope
 		int tel_rep_write (char *command);
 
 		/**
-		 * Normalize ra and dec,
-		 *
-		 * @param ra		rigth ascenation to normalize in decimal hours
-		 * @param dec		rigth declination to normalize in decimal degrees
-		 *
-		 * @return 0
-		 */
-		void tel_normalize (double *ra, double *dec);
-
-		/**
 		 * Set losmandy right ascenation.
 		 *
 		 * @param ra		right ascenation to set in decimal degrees
@@ -794,16 +784,6 @@ int Gemini::tel_rep_write (char *command)
 		return -1;
 	}
 	return 0;
-}
-
-void Gemini::tel_normalize (double *ra, double *dec)
-{
-	*ra = ln_range_degrees (*ra);
-	if (*dec < -90)
-								 //normalize dec
-		*dec = floor (*dec / 90) * -90 + *dec;
-	if (*dec > 90)
-		*dec = *dec - floor (*dec / 90) * 90;
 }
 
 int Gemini::tel_write_ra (double ra)
@@ -1428,7 +1408,7 @@ int Gemini::startResync ()
 
 	getTarget (&pos);
 
-	tel_normalize (&pos.ra, &pos.dec);
+	normalizeRaDec (pos.ra, pos.dec);
 
 	ra_diff = ln_range_degrees (getTelTargetRa () - pos.ra);
 	if (ra_diff > 180.0)
@@ -1683,7 +1663,7 @@ Gemini::startMoveFixedReal ()
 	// compute ra
 	lastMoveRa = getLocSidTime () * 15.0 - fixed_ha;
 
-	tel_normalize (&lastMoveRa, &lastMoveDec);
+	normalizeRaDec (lastMoveRa, lastMoveDec);
 
 	if (telMotorState != TEL_OK) // same as for startMove - after repark. we will get to correct location
 		return 0;
@@ -1862,7 +1842,7 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 {
 	char readback[101];
 
-	tel_normalize (&set_ra, &set_dec);
+	normalizeRaDec (set_ra, set_dec);
 
 	if ((tel_write_ra (set_ra) < 0) || (tel_write_dec (set_dec) < 0))
 		return -1;
@@ -1914,15 +1894,11 @@ int Gemini::correctOffsets (double cor_ra, double cor_dec, double real_ra, doubl
 #ifdef L4_GUIDE
 bool Gemini::isGuiding (struct timeval * now)
 {
-	int
-		ret;
-	char
-		guiding;
-	ret = tel_write_read (":Gv#", 4, &guiding, 1);
+	char guiding;
+	tel_write_read (":Gv#", 4, &guiding, 1);
 	if (guiding == 'G')
 		guideDetected = true;
-	if ((guideDetected && guiding != 'G')
-		|| (!guideDetected && timercmp (&changeTime, now, <)))
+	if ((guideDetected && guiding != 'G') || (!guideDetected && timercmp (&changeTime, now, <)))
 		return false;
 	return true;
 }
@@ -2021,8 +1997,8 @@ int Gemini::change_real (double chng_ra, double chng_dec)
 		}
 		return -1;
 	}
+	return 0;
 }
-
 
 #else
 

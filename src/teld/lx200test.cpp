@@ -87,7 +87,6 @@ class LX200TEST:public Telescope
 		int tel_read_latitude ();
 		int tel_read_longtitude ();
 		int tel_rep_write (char *command);
-		void tel_normalize (double *ra, double *dec);
 
 		int tel_write_ra (double ra);
 		int tel_write_dec (double dec);
@@ -404,32 +403,6 @@ LX200TEST::tel_rep_write (char *command)
 	return 0;
 }
 
-
-/*!
- * Normalize ra and dec,
- *
- * @param ra		rigth ascenation to normalize in decimal hours
- * @param dec		rigth declination to normalize in decimal degrees
- *
- * @return 0
- */
-void
-LX200TEST::tel_normalize (double *ra, double *dec)
-{
-	if (*ra < 0)
-								 //normalize ra
-		*ra = floor (*ra / 360) * -360 + *ra;
-	if (*ra > 360)
-		*ra = *ra - floor (*ra / 360) * 360;
-
-	if (*dec < -90)
-								 //normalize dec
-		*dec = floor (*dec / 90) * -90 + *dec;
-	if (*dec > 90)
-		*dec = *dec - floor (*dec / 90) * 90;
-}
-
-
 /*!
  * Set LX200 right ascenation.
  *
@@ -688,7 +661,7 @@ int LX200TEST::tel_slew_to (double ra, double dec)
   struct ln_lnlat_posn observer ;		  
   struct ln_equ_posn target_equ;
 
-  tel_normalize (&ra, &dec);
+  normalizeRaDec (ra, dec);
   target_equ.ra= ra;
   target_equ.dec= dec ;
 
@@ -867,7 +840,7 @@ int LX200TEST::setTo (double ra, double dec)
 	char readback[101];
 	int ret;
 
-	tel_normalize (&ra, &dec);
+	normalizeRaDec (ra, dec);
 
 	if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
 		return -1;

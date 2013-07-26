@@ -199,16 +199,6 @@ int LX200::tel_set_rate (char new_rate)
 	return serConn->writePort (command, 5);
 }
 
-void tel_normalize (double *ra, double *dec)
-{
-	*ra = ln_range_degrees (*ra);
-	if (*dec < -90)
-								 //normalize dec
-		*dec = floor (*dec / 90) * -90 + *dec;
-	if (*dec > 90)
-		*dec = *dec - floor (*dec / 90) * 90;
-}
-
 /*!
  * Slew (=set) LX200 to new coordinates.
  *
@@ -221,7 +211,7 @@ int LX200::tel_slew_to (double ra, double dec)
 {
 	char retstr;
 
-	tel_normalize (&ra, &dec);
+	normalizeRaDec (ra, dec);
 
 	if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
 		return -1;
@@ -346,7 +336,7 @@ int LX200::setTo (double ra, double dec)
 	char readback[101];
 	int ret;
 
-	tel_normalize (&ra, &dec);
+	normalizeRaDec (ra, dec);
 
 	if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
 		return -1;
