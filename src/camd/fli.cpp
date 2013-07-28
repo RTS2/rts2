@@ -553,7 +553,8 @@ int Fli::switchCooling (bool cooling)
 	}
 	else
 	{
-		return FLISetTemperature (dev, 100) ? -1:0;
+		// 40 C is safe value, some cameras will start to cool at max if this is set too high (some kind of overflow, not handled in libfli). Limit is different for different cameras, 40 C seems to be safe value (tested for maxcam and IMG).
+		return FLISetTemperature (dev, 40) ? -1:0;
 	}
 }
 
