@@ -6,10 +6,10 @@ insert into cameras values ('C0', 'dummy camera');
 
 -- filters
 
-COPY filters (filter_id, standart_name, description, medium_wl, width) FROM stdin;
-AA	Filter A	Filter A	800	10
-B	Filter B	Filter B	810	20
-C	Filter C	Filter C	830	5
-D	Filter D	Filter D	750	15
-E	Filter E	Filter E	720	25
+COPY filters (filter_id, standart_name, medium_wl, width) FROM stdin;
+0	AA	800	10
+1	B	810	20
+2	C	830	5
+3	D	750	15
+4	E	720	25
 \.
