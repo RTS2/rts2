@@ -36,6 +36,8 @@ if [ -f /etc/debian_version ]; then
 	system=debian
 elif [ -f /etc/redhat-release ]; then
 	system=redhat
+elif [ -f /etc/SuSE-release ]; then
+	system=suse
 elif [ -f /etc/slackware-version ]; then
 	system=slackware
 elif [ `uname -o` == 'Cygwin' ]; then
@@ -50,7 +52,7 @@ case $system in
 	debian)
 		. /lib/lsb/init-functions
 		;;
-	slackware|redhat|cygwin)
+	slackware|redhat|suse|cygwin)
 		# Source function library.
 		if [ -f /etc/init.d/functions ] ; then
 			. /etc/init.d/functions
@@ -132,7 +134,7 @@ function rts2-start
 				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- --local-port $centrald_port $centrald_options >>$RTS2_LOG 2>&1
 				rts2_log_end_msg $? "rts2-centrald $centrald_options"
 				;;
-			redhat|slackware|cygwin)
+			redhat|suse|slackware|cygwin)
 				rts2_log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port" "rts2-centrald"
 				daemon $RTS2_BIN_PREFIX/rts2-centrald $centrald_options >>$RTS2_LOG 2>&1
 				rts2_log_end_msg $? "rts2-centrald $centrald_options"
@@ -147,7 +149,7 @@ function rts2-start
 				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1 
 				rts2_log_end_msg $? $device_name
 				;;
-			redhat|slackware|cygwin)
+			redhat|suse|slackware|cygwin)
 				rts2_log_daemon_msg "Starting $device_name rts2-$device-$type"
 				daemon $RTS2_BIN_PREFIX/rts2-$device-$type $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1
 				wait_pid ${RTS2_PID_PREFIX}${device_name} $? $device_name
@@ -161,7 +163,7 @@ function rts2-start
 				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${service_name} --exec $RTS2_BIN_PREFIX/rts2-$service -- $options $CENTRALD_OPTIONS -d $service_name >>$RTS2_LOG 2>&1
 				rts2_log_end_msg $? $service_name
 				;;
-			redhat|slackware|cygwin)
+			redhat|suse|slackware|cygwin)
 				rts2_log_daemon_msg "Starting $service_name rts2-$service"
 				daemon $RTS2_BIN_PREFIX/rts2-$service $options $CENTRALD_OPTIONS -d $service_name >>$RTS2_LOG 2>&1
 				wait_pid ${RTS2_PID_PREFIX}${service_name} $? $service_name
@@ -181,7 +183,7 @@ function rts2-stop-devices
 					rts2_log_end_msg $? $device_name
 				fi
 				;;
-			redhat|slackware|cygwin)
+			redhat|suse|slackware|cygwin)
 				if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
 					rts2_log_daemon_msg "Stopping $device_name" "rts2-$device-$type"
 					killproc `head -n 1 ${RTS2_PID_PREFIX}${device_name}` >>$RTS2_LOG 2>&1
@@ -204,7 +206,7 @@ function rts2-stop-services
 					rts2_log_end_msg $? $service_name
 				fi
 				;;
-			redhat|slackware|cygwin)
+			redhat|suse|slackware|cygwin)
 				if [ -s ${RTS2_PID_PREFIX}$service_name ]; then
 					rts2_log_daemon_msg "Stopping $service_name" "$service_name"
 					killproc `head -n 1 ${RTS2_PID_PREFIX}$service_name` >>$RTS2_LOG 2>&1
@@ -228,7 +230,7 @@ function rts2-stop
 					start-stop-daemon --stop --pidfile $cf >>$RTS2_LOG 2>&1
 					rts2_log_end_msg $? rts2-centrald
 					;;
-				redhat|slackware|cygwin)
+				redhat|suse|slackware|cygwin)
 					if [ -s $cf ]; then
 						rts2_log_daemon_msg "Stopping centrald daemon" "rts2-centrald"
 						killproc `head -n 1 $cf` >>$RTS2_LOG 2>&1
@@ -247,7 +249,7 @@ function rts2-reload
 		for cf in ${RTS2_PID_PREFIX}centrald_*; do
 			pid=`cat $cf`
 			case $system in
-				debian|redhat|slackware|cygwin)
+				debian|redhat|suse|slackware|cygwin)
 					rts2_log_daemon_msg "Reloading centrald daemon (PID $cf)" "rts2-centrald"
 				  	kill -1 `cat $cf` >>$RTS2_LOG 2>&1
 					rts2_log_end_msg $? rts2-centrald
@@ -258,7 +260,7 @@ function rts2-reload
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
 		if [ -f ${RTS2_PID_PREFIX}${device_name} ]; then
 		  	case $system in
-				debian|redhat|slackware|cygwin)
+				debian|redhat|suse|slackware|cygwin)
 					rts2_log_daemon_msg "Reloading $device_name" "rts2-$device-$type"
 					kill -1 `cat ${RTS2_PID_PREFIX}${device_name}` >>$RTS2_LOG 2>&1
 					rts2_log_end_msg $? $device_name
@@ -269,7 +271,7 @@ function rts2-reload
 	cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read service service_name options; do
 		if [ -f ${RTS2_PID_PREFIX}${service_name} ]; then
 		  	case $system in
-				debian|redhat|slackware|cygwin)
+				debian|redhat|suse|slackware|cygwin)
 					rts2_log_daemon_msg "Reloading $service_name" "rts2-$service"
 					kill -1 `cat ${RTS2_PID_PREFIX}${service_name}` >>$RTS2_LOG 2>&1
 					rts2_log_end_msg $? $service_name
@@ -309,7 +311,7 @@ case $system in
 	debian)
 		exit 0
 		;;
-	redhat|slackware|cygwin)
+	redhat|suse|slackware|cygwin)
 		exit $failedc 
 		;;
 esac
