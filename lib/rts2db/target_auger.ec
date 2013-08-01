@@ -247,7 +247,7 @@ void TargetAuger::getPosition (struct ln_equ_posn *pos, double JD)
 	struct ln_hrz_posn hrz;
 
 	hrz.alt = 90 - Theta;
-	hrz.az = Phi;
+	hrz.az = 270 - Phi;
 
 	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
 }
@@ -615,7 +615,7 @@ void TargetAuger::updateShowerFields ()
 	cor.z = Altitude - 1422;
 
 	hrz.alt = 90 - Theta;
-	hrz.az = Phi;
+	hrz.az = 270 - Phi;
 
 	ln_get_equ_from_hrz (&hrz, observer, JD, &pos);
 
@@ -646,7 +646,7 @@ void TargetAuger::updateShowerFields ()
 	vec prev_dir = dir;
 	prev_equ = equ;
 
-	double angle = 160 * M_PI / (180 * 60);
+	double angle = 350 * M_PI / (180 * 60);
 
 	dir = rotateVector (&axis, &dir, angle);
 
@@ -692,12 +692,12 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 		{
 			if (iter->ra != 0 || iter->dec != 0)
 				_os << "PARA.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
-			_os << "E 10 ";
+			_os << "E 30 ";
 		}
 		buf = _os.str ();
 		return false;
 	}
-	buf = std::string ("E 5");
+	buf = std::string ("filter=B E 30");
 	return false;
 }
 
