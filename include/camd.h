@@ -326,9 +326,16 @@ class Camera:public rts2core::ScriptDevice
 		void addFilterOffsets ();
 
 		/**
-		 * Start/stop cooling.
+		 * Start/stop cooling. Descendants should call
+		 * Camera::switchCooling to make sure that the value is
+		 * updated.
 		 */
-		virtual int switchCooling (bool newval) { return 0; }
+		virtual int switchCooling (bool newval) 
+		{ 
+			coolingOnOff->setValueBool (newval);
+			sendValueAll (coolingOnOff);
+			return 0; 
+		}
 
 		rts2core::ValueSelection * camFilterVal;
 		rts2core::DoubleArray *camFilterOffsets;

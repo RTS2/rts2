@@ -52,7 +52,6 @@ class Fli:public Camera
 		virtual int initHardware ();
 
 		virtual int setCoolTemp (float new_temp);
-		virtual void afterNight ();
 	protected:
 		virtual int initChips ();
 
@@ -290,6 +289,10 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('b', NULL, 0, "use background flush, supported by several newer CCDs (do not confuse with normal flush, initiated by parameter -l)");
 	addOption ('l', NULL, 1, "Number of CCD flushes");
 	addOption ('f', NULL, 1, "FLI device path");
+
+	tempSet->setMin (-100);
+	tempSet->setMax (40);
+	updateMetaInformations (tempSet);
 }
 
 Fli::~Fli (void)
@@ -547,15 +550,27 @@ int Fli::info ()
 
 int Fli::switchCooling (bool cooling)
 {
+	int ret;
 	if (cooling)
 	{
-		return FLISetTemperature (dev, tempSet->getValueFloat ());
+		if (isnan (tempSet->getValueFloat ()))
+		{
+			if (!nightCoolTemp || isnan (nightCoolTemp->getValueFloat ()))
+				return -1;
+			ret = setCoolTemp (nightCoolTemp->getValueFloat ());
+			if (ret)
+				return -1;
+		}
+		ret = FLISetTemperature (dev, tempSet->getValueFloat ()) ? -1:0;
 	}
 	else
 	{
 		// 40 C is safe value, some cameras will start to cool at max if this is set too high (some kind of overflow, not handled in libfli). Limit is different for different cameras, 40 C seems to be safe value (tested for maxcam and IMG).
-		return FLISetTemperature (dev, 40) ? -1:0;
+		ret = FLISetTemperature (dev, 40.0) ? -1:0;
 	}
+	if (ret == 0)
+		Camera::switchCooling (cooling);
+	return ret;
 }
 
 void Fli::temperatureCheck ()
@@ -573,17 +588,14 @@ void Fli::temperatureCheck ()
 
 int Fli::setCoolTemp (float new_temp)
 {
-	LIBFLIAPI ret;
-	ret = FLISetTemperature (dev, new_temp);
-	if (ret)
-		return -1;
+	if (coolingOnOff->getValueBool ())
+	{
+		LIBFLIAPI ret;
+		ret = FLISetTemperature (dev, new_temp) ? -1:0;
+		if (ret)
+			return -1;
+	}
 	return Camera::setCoolTemp (new_temp);
-}
-
-void Fli::afterNight ()
-{
-	setCoolTemp (40);
-	Camera::afterNight ();
 }
 
 //int Fli::idle ()

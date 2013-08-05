@@ -390,6 +390,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	tempCCDHistorySize = NULL;
 	tempSet = NULL;
 	nightCoolTemp = NULL;
+	coolingOnOff = NULL;
 
 	detsize = NULL;
 	chan1offset = NULL;
@@ -1382,7 +1383,7 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	if (old_value == coolingOnOff)
 	{
-		return switchCooling (((rts2core::ValueBool *) new_value)->getValueBool ());
+		return switchCooling (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	if (old_value == exposure)
 	{
