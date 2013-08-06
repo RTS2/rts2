@@ -106,7 +106,7 @@ def parse_time(s, n=time.time(), hour_nextday=False):
 			return n + off
 	return None
 
-if __name__ == '__main__':
+def run():
 	server = 'localhost:8889'
 
   	parser = OptionParser(usage="""rts2-queue [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--quiet][--debug] <target1>..
@@ -248,3 +248,9 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 			qs.load()
 			for q in qs.queues:
 				print "Queue {0}: {1}".format(qs.queues[q].name, qs.queues[q])
+
+if __name__ == '__main__':
+	try:
+		run()
+	except Exception,ec:
+		print 'cannot run ', ' '.join(sys.argv), ':', str(ec) + ', did you specify login?'
