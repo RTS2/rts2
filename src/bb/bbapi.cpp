@@ -57,7 +57,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 	os.precision (8);
 
-	// calls returning binary data
+	// calls returning JSON data
 	if (vals.size () == 1)
 	{
 		os << "{";
@@ -153,15 +153,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			bb_schedules.load ();
 
 			os << "\"schedule_id\":" << schedule_id << ",\"tar_id\":" << bb_schedules.getTargetId ()
-			<< ",\"h\":["
-				"{\"n\":\"Observatory\",\"t\":\"n\",\"c\":0},"
-				"{\"n\":\"State\",\"t\":\"n\",\"c\":1},"
-				"{\"n\":\"From\",\"t\":\"t\",\"c\":2},"
-				"{\"n\":\"To\",\"t\":\"t\",\"c\":3},"
-				"{\"n\":\"Created\",\"t\":\"t\",\"c\":4},"
-				"{\"n\":\"Last update\",\"t\":\"t\",\"c\":5}"
-				"]"
-			",\"d\":";
+			<< ",\"sEcho\":" << params->getInteger ("sEcho", 0) << ",\"iTotalRecords\":" << bb_schedules.size () << ",\"iTotalDisplayRecords\":" << bb_schedules.size () << ",\"aaData\":";
 
 			bb_schedules.toJSON (os);
 		}

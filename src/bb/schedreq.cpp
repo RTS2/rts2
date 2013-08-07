@@ -55,16 +55,59 @@ void SchedReq::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path
 
 		title << "Scheduling status of " << sched_id << " for target #" << sched.getTargetId ();
 
-		printHeader (_os, title.str ().c_str (), NULL, "/css/table.css", "schedule.refresh ()");
+		printHeader (_os, title.str ().c_str (), NULL, "/css/datatables.css");
 
-		includeJavaScriptWithPrefix (_os, "table.js");
+		includeJavaScript (_os, "jquery.js");
+		includeJavaScript (_os, "datatables.js");
 
-		_os << "<p>Status of schedule " << sched_id << "</p>" << std::endl
-			<< "<script type='text/javascript'>" << std::endl
-			<< "schedule = new Table('../../api/get_schedule?id=" << sched_id << "', 'schedule', 'schedule');" << std::endl
-			<< "</script>" << std::endl
-			<< "<p><div id='schedule'>Loading..</div></p>" << std::endl
-			<< "</body></html>";
+		_os <<
+			"<script type='text/javascript' charset='utf-8'>\n"
+				"sched_states = new Object ();\n"
+				"sched_states[0] = 'created';\n"
+				"sched_states[10] = 'failed';\n"
+				"sched_states[11] = 'observable';\n"
+				"sched_states[12] = 'backup';\n"
+				"sched_states[13] = 'confirmed';\n"
+				"$(document).ready(function () {\n"
+					"$('#schedules').dataTable( {\n"
+						"'bProcessing': true,\n"
+						"'sAjaxSource': '../../api/get_schedule?id=" << sched_id << "',\n"
+						"'bPaginate': false,\n"
+						"'aoColumnDefs': [{\n"
+							"'aTargets' : [1],\n"
+							"'mRender': function(data,type,full) {\n"
+								"return sched_states[data];\n"
+							"}\n"
+						"},{\n"
+							"'aTargets' : [2,3,4,5],\n"
+							"'mRender': function(data,type,full) {\n"
+								"if (!data)\n"
+									"return '---';\n"
+								"var d = new Date(data * 1000);\n"
+								"return d.toLocaleString();\n"
+							"}\n"
+						"}]\n"
+					"} );\n"
+				"} );\n"
+			"</script>\n"
+
+			"<table cellpadding='0' cellspacing='0' border='0' class='display' id='schedules'>\n"
+				"<thead>\n"
+					"<tr>\n"
+						"<th>Observatory</th>\n"
+						"<th>State</th>\n"
+						"<th>From</th>\n"
+						"<th>To</th>\n"
+						"<th>Created</th>\n"
+						"<th>Last Update</th>\n"
+					"</tr>\n"
+				"</thead>\n"
+				"<tbody>\n"
+					"<tr>\n"
+						"<td colspan='5' class='dataTables_empty'>Loading data from server</td>\n"
+					"</tr>\n"
+				"</tbody>\n"
+			"</table>\n";
 	}
 	else
 	{
