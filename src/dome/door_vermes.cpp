@@ -57,7 +57,7 @@ namespace rts2dome {
   {
   private:
     rts2core::ValueString  *doorStateMessage;
-    rts2core::ValueBool *block_door;
+    rts2core::ValueBool *block_rts2_centrald;
     rts2core::ValueBool *open_door;
     rts2core::ValueBool *stop_door;
     rts2core::ValueBool *close_door;
@@ -244,7 +244,7 @@ DoorVermes::valueChanged (rts2core::Value * changed_value)
 	  }
 	}
       } else {
-	block_door->setValueBool(true) ;
+	block_rts2_centrald->setValueBool(true) ;
 	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak_digin_thread died" << sendLog ;
       }
     } else {
@@ -291,7 +291,7 @@ DoorVermes::valueChanged (rts2core::Value * changed_value)
 	  }
 	}
       } else {
-	block_door->setValueBool(true) ;
+	block_rts2_centrald->setValueBool(true) ;
 	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak_digin_thread died" << sendLog ;
       }
     } else {
@@ -423,12 +423,12 @@ DoorVermes::valueChanged (rts2core::Value * changed_value)
     return ;
   } else if (changed_value == manual) {
     if( manual->getValueBool()){
-	block_door->setValueBool(true) ;
+	block_rts2_centrald->setValueBool(true) ;
 	ignoreEndswitch=IGNORE_END_SWITCH;
 	logStream (MESSAGE_WARNING) << "DoorVermes::valueChanged to MANUAL mode, steer door using SSDsetpoint" << sendLog ;
     } else {
-	block_door->setValueBool(false) ;
 	ignoreEndswitch= NOT_IGNORE_END_SWITCH;
+	block_rts2_centrald->setValueBool(false) ;
 	logStream (MESSAGE_INFO) << "DoorVermes::valueChanged to automatic mode, ignoring SSDsetpoint" << sendLog ;
     }
     return ;
@@ -549,8 +549,8 @@ DoorVermes::startOpen ()
 
     return -1;
   }
-  if( block_door->getValueBool()) {
-    logStream (MESSAGE_ERROR) << "DoorVermes::startOpen blocked door opening (see BLOCK_DOOR)" << sendLog ;
+  if( block_rts2_centrald->getValueBool()) {
+    logStream (MESSAGE_ERROR) << "DoorVermes::startOpen blocked door opening (see BLOCK_RTS2_CENTRALD)" << sendLog ;
     return -1;
   }  
   stop_door->setValueBool(false) ;
@@ -609,7 +609,7 @@ DoorVermes::startOpen ()
 	}
       }
     } else {
-      block_door->setValueBool(true) ;
+      block_rts2_centrald->setValueBool(true) ;
       logStream (MESSAGE_ERROR) << "DoorVermes::startOpen oak_digin_thread died" << sendLog ;
       return -1 ;
     }
@@ -638,8 +638,8 @@ DoorVermes::isOpened ()
 {
   updateDoorStatusMessage() ;
 
-  if( block_door->getValueBool()) {
-    logStream (MESSAGE_ERROR) << "DoorVermes::isOpened blocked door opening (see BLOCK_DOOR)" << sendLog ;
+  if( block_rts2_centrald->getValueBool()) {
+    logStream (MESSAGE_ERROR) << "DoorVermes::isOpened blocked door opening (see BLOCK_RTS2_CENTRALD)" << sendLog ;
     return -1;
   }  
 
@@ -714,8 +714,8 @@ DoorVermes::startClose ()
   logStream (MESSAGE_INFO) << "DoorVermes::startClose, doorState: "<< doorState<< sendLog ;
   updateDoorStatusMessage() ;
   
-  if( block_door->getValueBool()) {
-    logStream (MESSAGE_ERROR) << "DoorVermes::startClosed blocked door closing (see BLOCK_DOOR)" << sendLog ;
+  if( block_rts2_centrald->getValueBool()) {
+    logStream (MESSAGE_ERROR) << "DoorVermes::startClosed blocked door closing (see BLOCK_RTS2_CENTRALD)" << sendLog ;
     return -1;
   }  
 
@@ -776,7 +776,7 @@ DoorVermes::startClose ()
 	}
       }
     } else {
-      block_door->setValueBool(true) ;
+      block_rts2_centrald->setValueBool(true) ;
       logStream (MESSAGE_ERROR) << "DoorVermes::startClose oak_digin_thread died" << sendLog ;
       return -1 ;
     }
@@ -826,8 +826,8 @@ DoorVermes::isClosed ()
 
   //logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed"<< sendLog ;
 
-  if( block_door->getValueBool()) {
-      //logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed blocked door closing (see BLOCK_DOOR), returning -2 (is closed)" << sendLog ;
+  if( block_rts2_centrald->getValueBool()) {
+      //logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed blocked door closing (see BLOCK_RTS2_CENTRALD), returning -2 (is closed)" << sendLog ;
     return -2;
   }  
 
@@ -919,8 +919,8 @@ DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
 {
   createValue( lastMotorStop,        "LASTSTOP", "date and time, when motor was last stopped by Oak sensors", false) ;
   createValue (doorStateMessage,     "DOORSTATE", "door state as clear text", false);
-  createValue (block_door,           "BLOCK_DOOR", "true inhibits rts2-centrald initiated door movements", false, RTS2_VALUE_WRITABLE);
-  block_door->setValueBool (false); 
+  createValue (block_rts2_centrald,           "BLOCK_RTS2_CENTRALD", "true inhibits rts2-centrald initiated door movements", false, RTS2_VALUE_WRITABLE);
+  block_rts2_centrald->setValueBool (false); 
   createValue (stop_door,            "STOP_DOOR",  "true stops door",  false, RTS2_VALUE_WRITABLE);
   stop_door->setValueBool  (false);
   createValue (open_door,            "OPEN_DOOR",  "true opens door",  false, RTS2_VALUE_WRITABLE);
