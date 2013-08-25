@@ -188,7 +188,33 @@ int close_undefined( float setpoint, int targetState, int testRun)
   }
   return -1 ;
 }
+int move_manual( float setpoint)
+{
+  fprintf(stderr, "move_door: going on-----------------------------------------------------\n") ;
+  off_zero();
 
+  if( setpoint ==0.){
+    return 0 ;
+  }
+  fprintf(stderr, "move_door: going on\n") ;
+ 
+  int    ret ;
+  // set setpoint
+  if(( ret= set_setpoint(setpoint)) != SSD650V_MS_OK) {
+    fprintf(stderr, "move_door: set_setpoint != SSD650V_MS_OK\n") ;
+    return -1 ;
+  } else {
+    // motor_on
+    if(( ret= motor_on()) != SSD650V_MS_RUNNING) {
+      fprintf(stderr, "move_door: motor_on != SSD650V_MS_RUNNING\n") ;
+      return -1 ;
+    } else {
+      fprintf(stderr, "move_door: moving, waiting for oak_digin_thread to switch off\n") ;
+    }
+    return 0 ;
+  }
+  return -1 ;
+}
 void *move_door( void *value)
 {
   int    ret ;

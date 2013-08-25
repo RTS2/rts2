@@ -47,6 +47,8 @@ time_t difftimeval(struct timeval *t1, struct timeval *t0) ;
 extern int doorState ; 
 extern int motorState ; 
 extern int debug;
+// Manual mode
+int ignoreEndswitch;
 
 #include <OakHidBase.h>
 #include <OakFeatureReports.h>
@@ -355,6 +357,8 @@ oak_digin_thread(void * args)
       }
     }
     // end test
+    // manual mode, in case an endswitch erroneously indicates contact
+    if(ignoreEndswitch==NOT_IGNORE_END_SWITCH){
     if( stop_motor== STOP_MOTOR) {
       
       fprintf( stderr, "oak_digin_thread: stopping motor now\n") ;
@@ -374,7 +378,7 @@ oak_digin_thread(void * args)
       sprintf( date_time, "%4d-%02d-%02dT%02d:%02d:%02d", utm.years, utm.months, utm.days, utm.hours, utm.minutes, (int) utm.seconds) ;
 
     }
-
+    }
     // door status
     if( motorState== SSD650V_MS_STOPPED) {
       // change status here

@@ -39,6 +39,8 @@ extern useconds_t sleep_max ;
 extern int oak_digin_thread_heart_beat ;
 extern char *lastMotorStop_str ;
 extern int motorState ;
+extern int ignoreEndswitch;
+
 
 int last_oak_digin_thread_heart_beat ;
 extern pthread_t  move_door_id;
@@ -61,6 +63,8 @@ namespace rts2dome {
     rts2core::ValueBool *close_door;
     rts2core::ValueBool *close_door_undefined;
     rts2core::ValueBool *simulate_door;
+    rts2core::ValueBool *manual;
+    rts2core::ValueDouble *ssd650v_setpoint ;
     time_t nextDeadCheck; // wildi ToDo: clarify what happens!
     rts2core::ValueString *lastMotorStop ;  
     rts2core::ValueDouble  *ssd650v_read_setpoint ;
@@ -176,7 +180,7 @@ DoorVermes::valueChanged (rts2core::Value * changed_value)
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged no heart beat from Oak thread" << sendLog ;
       oak_thread_state= THREAD_STATE_UNDEFINED ;
-      // do not exit here 
+      // do not exit here
     }
   }
   // stop motor
@@ -417,6 +421,29 @@ DoorVermes::valueChanged (rts2core::Value * changed_value)
       }
     }
     return ;
+  } else if (changed_value == manual) {
+    if( manual->getValueBool()){
+	block_door->setValueBool(true) ;
+	ignoreEndswitch=IGNORE_END_SWITCH;
+	logStream (MESSAGE_WARNING) << "DoorVermes::valueChanged to MANUAL mode, steer door using SSDsetpoint" << sendLog ;
+    } else {
+	block_door->setValueBool(false) ;
+	ignoreEndswitch= NOT_IGNORE_END_SWITCH;
+	logStream (MESSAGE_INFO) << "DoorVermes::valueChanged to automatic mode, ignoring SSDsetpoint" << sendLog ;
+    }
+    return ;
+  } else if (changed_value == ssd650v_setpoint) {
+    if( manual->getValueBool()) {
+      logStream (MESSAGE_INFO) << "DoorVermes::valueChanged SETPOINT" << send ;
+      int ret  ;
+      if(( ret= move_manual(ssd650v_setpoint->getValueDouble())) != 0) {
+	logStream (MESSAGE_WARNING) << "DoorVermes::valueChanged with move_manual something went wrong" << sendLog ;
+      }
+    } else {
+	logStream (MESSAGE_INFO) << "DoorVermes::valueChanged ignoring changed value for ssd650v_setpoint, beeing in automatic mode, switch to MANUAL mode first" << sendLog ;
+    } 
+    
+    return ;
   }
   Dome::valueChanged (changed_value);
 }
@@ -428,6 +455,8 @@ DoorVermes::init ()
   ret = Dome::init ();
   if (ret)
     return ret;
+  // start in automatic mode
+  ignoreEndswitch= NOT_IGNORE_END_SWITCH;
 
   // make sure it forks before creating threads                                                                                    
   ret = doDaemonize ();
@@ -902,6 +931,13 @@ DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
   close_door_undefined->setValueBool (false);
   createValue (simulate_door, "SIMULATION", "true simulation door movements", false, RTS2_VALUE_WRITABLE);
   simulate_door->setValueBool (false);
+
+  createValue (manual, "Manual", "true manual door operation ignoring endswitch", false, RTS2_VALUE_WRITABLE);
+  manual->setValueBool (false);
+
+  createValue (ssd650v_setpoint,     "SSDsetpoint",     "ssd650v setpoint [-100.,100], !=0 motor on", false, RTS2_VALUE_WRITABLE);
+  ssd650v_setpoint->setValueDouble( 0.) ;
+
   createValue (ssd650v_current,      "SSDcurrent",      "ssd650v current as percentage of maximum", false);
   createValue (ssd650v_read_setpoint,"SSDread_setpoint","ssd650v read setpoint [-100.,100]",  false);
 }

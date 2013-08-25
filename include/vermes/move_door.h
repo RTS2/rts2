@@ -25,6 +25,7 @@ extern "C"
 {
 #endif
 void *move_door( void *value);
+int move_manual( float setpoint);
 #ifdef __cplusplus
 }
 #endif
@@ -58,11 +59,17 @@ void *move_door( void *value);
 #define EVNT_DOOR_CMD_OPEN              30
 #define EVNT_DOOR_CMD_CLOSE             31
 #define EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE 32
-#define EVNT_DOOR_CMD_DO_NOTHING        33
+#define EVNT_DOOR_CMD_MOVE_MANUAL 33
+#define EVNT_DOOR_CMD_DO_NOTHING        34
 
 // comment to be defined
 #define ERR_DOOR_BAD_STATE            50
 #define ERR_DOOR_EMERGENCY_ENDSWITCH  51
 #define ERR_DOOR_UNEXP_EVENT          52
+
+// Manual mode
+#define IGNORE_END_SWITCH 1
+#define NOT_IGNORE_END_SWITCH 0
+
 
 #endif //  __RTS_MOVE_DOOR_VERMES__
