@@ -494,7 +494,7 @@ int Fli::initHardware ()
 	if (ret)
 	  	return -1;
 
-	if ((devid == FLIUSB_PROLINE_ID && fwrev > 0x0100) || bgFlush != -1)
+	if ((devid == FLIUSB_PROLINE_ID && fwrev > 0x0110) || bgFlush != -1)
 	{
 		createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
 		useBgFlush->setValueBool (bgFlush == 1);
