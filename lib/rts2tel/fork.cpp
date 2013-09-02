@@ -50,6 +50,11 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	int ret;
 	bool flip = false;
 
+	if (isnan(pos->ra) || isnan(pos->dec))
+	{
+		logStream (MESSAGE_ERROR) << "trying to make sky2counts with nan ra/dec" << sendLog;
+		return -1;
+	}
 	ls = getLstDeg (JD);
 
 	ln_get_hrz_from_equ (pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
@@ -194,9 +199,10 @@ int Fork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 	return 0;
 }
 
-Fork::Fork (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
+Fork::Fork (int in_argc, char **in_argv, bool diffTrack, bool hasTracking):Telescope (in_argc, in_argv, diffTrack, hasTracking)
 {
 	haZero = decZero = haCpd = decCpd = NAN;
+
 	ra_ticks = dec_ticks = 0;
 }
 

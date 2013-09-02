@@ -32,6 +32,10 @@ namespace rts2teld
  */
 class Fork: public Telescope
 {
+	public:
+		Fork (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false);
+		virtual ~Fork (void);
+
 	protected:
 		/**
 		 * Fork parameters, in degrees.
@@ -61,9 +65,6 @@ class Fork: public Telescope
 		int sky2counts (int32_t & ac, int32_t & dc);
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
 		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec);
-	public:
-		Fork (int in_argc, char **in_argv);
-		virtual ~Fork (void);
 };
 
 };
