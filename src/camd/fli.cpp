@@ -33,6 +33,8 @@
 #define FLIUSB_CAM_ID      0x02
 #define FLIUSB_PROLINE_ID  0x0a
 
+#define EVENT_TE_RAMP         RTS2_LOCAL_EVENT + 678
+
 namespace rts2camd
 {
 
@@ -47,11 +49,14 @@ class Fli:public Camera
 		Fli (int in_argc, char **in_argv);
 		virtual ~ Fli (void);
 
+		virtual void postEvent (rts2core::Event *event);
+
 		virtual int processOption (int in_opt);
 
 		virtual int initHardware ();
 
 		virtual int setCoolTemp (float new_temp);
+
 	protected:
 		virtual int initChips ();
 
@@ -87,6 +92,8 @@ class Fli:public Camera
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
+		rts2core::ValueFloat *tempRamp;
+		rts2core::ValueFloat *tempTarget;
 		rts2core::ValueFloat *coolPower;
 		rts2core::ValueSelection *fliShutter;
 		rts2core::ValueBool *useBgFlush;
@@ -256,6 +263,11 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempSet ();
+	
+	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE);
+	tempRamp->setValueFloat (1.0);
+	createValue (tempTarget, "TETAR", "[C] current target temperature", false);
+
 	createTempCCD ();
 	createTempCCDHistory ();
 	createExpType ();
@@ -298,6 +310,32 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 Fli::~Fli (void)
 {
 	FLIClose (dev);
+}
+
+void Fli::postEvent (rts2core::Event *event)
+{
+	float change = 0;
+	switch (event->getType ())
+	{
+		case EVENT_TE_RAMP:
+			if (tempTarget->getValueFloat () < tempSet->getValueFloat ())
+				change = tempRamp->getValueFloat ();
+			else if (tempTarget->getValueFloat () > tempSet->getValueFloat ())
+				change = -1 * tempRamp->getValueFloat ();
+			if (change != 0)
+			{
+				tempTarget->setValueFloat (tempTarget->getValueFloat () + change);
+				if (fabs (tempTarget->getValueFloat () - tempSet->getValueFloat ()) < fabs (change))
+					tempTarget->setValueFloat (tempSet->getValueFloat ());
+				sendValueAll (tempTarget);
+				if (FLISetTemperature (dev, tempTarget->getValueFloat ()))
+					logStream (MESSAGE_ERROR) << "cannot set target temperature" << sendLog;
+				addTimer (60, event);
+				return;
+			}
+			break;
+	}
+	Camera::postEvent (event);
 }
 
 int Fli::processOption (int in_opt)
@@ -551,25 +589,29 @@ int Fli::info ()
 int Fli::switchCooling (bool cooling)
 {
 	int ret;
+
+	Camera::switchCooling (cooling);
+
 	if (cooling)
 	{
 		if (isnan (tempSet->getValueFloat ()))
 		{
 			if (!nightCoolTemp || isnan (nightCoolTemp->getValueFloat ()))
-				return -1;
-			ret = setCoolTemp (nightCoolTemp->getValueFloat ());
-			if (ret)
-				return -1;
+			{
+				logStream (MESSAGE_ERROR) << "nightCoolTemp not defined" << sendLog;
+				ret = -1;
+			}
+			else
+				ret = setCoolTemp (nightCoolTemp->getValueFloat ());
 		}
-		ret = FLISetTemperature (dev, tempSet->getValueFloat ()) ? -1:0;
+		else
+			ret = setCoolTemp (tempSet->getValueFloat ());
 	}
 	else
 	{
-		// 40 C is safe value, some cameras will start to cool at max if this is set too high (some kind of overflow, not handled in libfli). Limit is different for different cameras, 40 C seems to be safe value (tested for maxcam and IMG).
-		ret = FLISetTemperature (dev, 40.0) ? -1:0;
+		// 40 C is safe value, some cameras will start to cool at max if this is set too high (some kind of overflow, not handled in libfli). Limit is different for different cameras, 40 C seems to be safe value (tested for maxcam and IMG). This value is also used in setCoolTemp ().
+		ret = setCoolTemp (40.0);
 	}
-	if (ret == 0)
-		Camera::switchCooling (cooling);
 	return ret;
 }
 
@@ -582,18 +624,28 @@ void Fli::temperatureCheck ()
 	double fliTemp;
 	ret = FLIGetTemperature (dev, &fliTemp);
 	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot retrieve chip temperature" << sendLog;
 		return;
+	}
 	addTempCCDHistory (fliTemp);
 }
 
 int Fli::setCoolTemp (float new_temp)
 {
-	if (coolingOnOff->getValueBool ())
+	if (coolingOnOff->getValueBool () || new_temp == 40.0)
 	{
 		LIBFLIAPI ret;
-		ret = FLISetTemperature (dev, new_temp) ? -1:0;
+		double fliTemp;
+		ret = FLIGetTemperature (dev, &fliTemp);
 		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "cannot retrieve chip temperature" << sendLog;
 			return -1;
+		}
+		deleteTimers (EVENT_TE_RAMP);
+		tempTarget->setValueFloat (fliTemp);
+		addTimer (1, new rts2core::Event (EVENT_TE_RAMP));
 	}
 	return Camera::setCoolTemp (new_temp);
 }
