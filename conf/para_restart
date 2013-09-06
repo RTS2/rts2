@@ -1,0 +1,38 @@
+#!/usr/bin/python
+
+# Script to restart failed Paramount
+#
+# Petr Kubanek <petr@kubanek.net>
+#
+# This script should be called by rts2-xmlrcd through entry in events configuration file:
+#
+# <device name="T0">
+#     <value name="status_ra">
+#       <command>/etc/rts2/para_restart</command>
+#     </value>
+#     <value name="status_dec">
+#       <command>/etc/rts2/para_restart</command>
+#     </value>
+# </device>
+
+import rts2comm
+import time
+
+c=rts2comm.Rts2Comm()
+
+ra=c.getValueInteger('status_ra','T0')
+dec=c.getValueInteger('status_dec','T0')
+
+def axis_failed(av):
+        return av & 0x02 or av == 0xd00 or av == 0xc00 or av == 0x500
+
+if (axis_failed(ra) or axis_failed(dec)):
+        c.log('E','restarting telescope status, axis values 0x{0:04x} 0x{1:04x}'.format(ra,dec))
+        c.setValue('switch_2',0,'F0')
+        time.sleep(30)
+        c.setValue('switch_2',1,'F0')
+        time.sleep(30)
+        import smtplib
+        s=smtplib.SMTP('localhost')
+        s.sendmail('watcher@rts2.org',['petr@kubanek.net'],'Subject: Watcher - restarting telescope\n\nTelescope on Watcher was restarted, new status values: {0:04x} {1:04x}'.format(c.getValueInteger('status_ra','T0'),c.getValueInteger('status_dec','T0')))
+
