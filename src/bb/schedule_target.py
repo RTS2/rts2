@@ -1,4 +1,16 @@
 #!/usr/bin/python
+#   Schedule targets to remote observatory.
+#
+#   This script should be run by rts2-bb. It creates target on remote observatory.
+#
+#   (C) 2012-2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2, or (at your option)
+#   any later version.
+#
+#   Please visit http://www.gnu.org/licenses/gpl.html for license informations.
 
 import sys
 import rts2.json
@@ -19,8 +31,10 @@ for obs_id in args:
 	print "obsapiurl", obs_id
 	sys.stdout.flush()
 	obs_url = sys.stdin.readline().rstrip('\n')
+	obs_user = sys.stdin.readline().rstrip('\n')
+	obs_password = sys.stdin.readline().rstrip('\n')
 
-	rts2.json.createProxy(obs_url, 'petr', 'test', False)
+	rts2.json.createProxy(obs_url, obs_user, obs_password, False)
 
 	if options.create:
 		print "targetinfo", options.create

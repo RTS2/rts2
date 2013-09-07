@@ -22,11 +22,11 @@
 
 using namespace rts2db;
 
-std::string LabelsVector::getString (const char *empty, const char *jstr)
+std::string LabelsVector::getString (const char *emp, const char *jstr)
 {
 	if (size () == 0)
 	{
-		return std::string (empty);
+		return std::string (emp);
 	}
 	std::string ret;
 	for (LabelsVector::iterator iter = begin (); iter != end (); iter++)
@@ -36,6 +36,17 @@ std::string LabelsVector::getString (const char *empty, const char *jstr)
 		ret += std::string (iter->ltext);
 	}
 	return ret;
+}
+
+const LabelsVector::iterator LabelsVector::findLabelId (int label_id)
+{
+	LabelsVector::iterator iter = begin ();
+	for (; iter != end (); iter++)
+	{
+		if (iter->lid == label_id)
+			return iter;
+	}
+	return iter;
 }
 		
 int Labels::getLabel (const char *label, int type)

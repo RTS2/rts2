@@ -41,18 +41,24 @@ void Observatory::load ()
 	double db_latitude;
 	double db_altitude;
 	VARCHAR db_apiurl[100];
+	VARCHAR db_apiuser[50];
+	VARCHAR db_apipassword[50];
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL SELECT
 		longitude,
 		latitude,
 		altitude,
-		apiurl
+		apiurl,
+		apiuser,
+		apipassword
 	INTO
 		:db_longitude,
 		:db_latitude,
 		:db_altitude,
-		:db_apiurl
+		:db_apiurl,
+		:db_apiuser,
+		:db_apipassword
 	FROM
 		observatories
 	WHERE
@@ -66,15 +72,20 @@ void Observatory::load ()
 	altitude = db_altitude;
 
 	db_apiurl.arr[db_apiurl.len] = '\0';
-
 	url = std::string (db_apiurl.arr);
+
+	db_apiuser.arr[db_apiuser.len] = '\0';
+	user = std::string (db_apiuser.arr);
+
+	db_apipassword.arr[db_apipassword.len] = '\0';
+	password = std::string (db_apipassword.arr);
 
 	EXEC SQL COMMIT;
 }
 
 void Observatory::auth (SoupAuth *_auth)
 {
-	soup_auth_authenticate (_auth, "petr", "test");
+	soup_auth_authenticate (_auth, user.c_str (), password.c_str ());
 }
 
 void Observatories::load ()

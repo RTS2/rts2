@@ -22,6 +22,7 @@
 #include "libnova_cpp.h"
 #include "rts2format.h"
 #include "rts2db/appdb.h"
+#include "rts2db/labellist.h"
 #include "rts2db/messagedb.h"
 #include "rts2db/observationset.h"
 
@@ -37,17 +38,18 @@
 
 #define OPT_NOMESSAGES       OPT_LOCAL + 600
 #define OPT_MESSAGEALL       OPT_LOCAL + 601
+#define OPT_LABELSTAT        OPT_LOCAL + 602
 
 /**
  * Produces night report output.
  *
  * @addgroup RTS2DbApps
  */
-class Rts2NightReport:public rts2db::AppDb
+class NightReport:public rts2db::AppDb
 {
 	public:
-		Rts2NightReport (int argc, char **argv);
-		virtual ~ Rts2NightReport (void);
+		NightReport (int argc, char **argv);
+		virtual ~ NightReport (void);
 	protected:
 		virtual void usage ();
 
@@ -71,6 +73,7 @@ class Rts2NightReport:public rts2db::AppDb
 
 		void printObsList (time_t *t_end);
 		void printStatistics ();
+		void printLabelStat (time_t *t_start, time_t *t_end);
 		void printFromTo (time_t *t_start, time_t *t_end, bool printEmpty);
 		rts2db::ObservationSet *obs_set;
 
@@ -78,9 +81,10 @@ class Rts2NightReport:public rts2db::AppDb
 
 		rts2db::MessageSet messages;
 		int messageMask;
+		bool labelStat;
 };
 
-Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
+NightReport::NightReport (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	t_from = 0;
 	t_to = 0;
@@ -98,7 +102,9 @@ Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):rts2db::AppDb (in
 	totalObs = 0;
 
 	messageMask = MESSAGE_REPORTIT;
+	labelStat = false;
 
+	addOption (OPT_LABELSTAT, "labelstat", 0, "print observations and skytime statistics by targets");
 	addOption ('f', NULL, 1, "period start; default to current date - 24 hours. Date is in YYYY-MM-DD format.");
 	addOption ('t', NULL, 1, "period end; default to from + 24 hours. Date is in YYYY-MM-DD format.");
 	addOption ('n', NULL, 1, "report for night. Night date format is YYYY-MM-DD.");
@@ -115,7 +121,7 @@ Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):rts2db::AppDb (in
 	addOption (OPT_MESSAGEALL, "allmsg", 0, "print all messages");
 }
 
-Rts2NightReport::~Rts2NightReport (void)
+NightReport::~NightReport (void)
 {
 	delete tm_night;
 	for (std::vector <rts2db::ObservationSet *>::iterator iter = allObs.begin (); iter != allObs.end (); iter++)
@@ -125,7 +131,7 @@ Rts2NightReport::~Rts2NightReport (void)
 	allObs.clear ();
 }
 
-void Rts2NightReport::usage ()
+void NightReport::usage ()
 {
 	std::cout << "\t" << getAppName () << " -n 2007-12-31" << std::endl
 		<< "To print observations from 15th December 2007 to 18th December 2007:" << std::endl
@@ -134,7 +140,7 @@ void Rts2NightReport::usage ()
 		<< "\t" << getAppName () << "-i" << std::endl;
 }
 
-int Rts2NightReport::processOption (int in_opt)
+int NightReport::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -189,13 +195,16 @@ int Rts2NightReport::processOption (int in_opt)
 		case OPT_MESSAGEALL:
 			messageMask = 0x0f;
 			break;
+		case OPT_LABELSTAT:
+			labelStat = true;
+			break;
 		default:
 			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }
 
-int Rts2NightReport::init ()
+int NightReport::init ()
 {
 	int ret;
 	ret = rts2db::AppDb::init ();
@@ -241,7 +250,7 @@ int Rts2NightReport::init ()
 	return 0;
 }
 
-void Rts2NightReport::printObsList (time_t *t_end)
+void NightReport::printObsList (time_t *t_end)
 {
 	if (printImages)
 		obs_set->printImages (printImages);
@@ -260,12 +269,12 @@ void Rts2NightReport::printObsList (time_t *t_end)
 			break;
 		if (isnan (o_next))
 		{
-		  	messages.printUntil (*t_end + 1, std::cout);
+			messages.printUntil (*t_end + 1, std::cout);
 			break;
 		}
 		if (isnan (m_next))
 		{
-		  	obs_set->printUntil (*t_end + 1, std::cout);
+			obs_set->printUntil (*t_end + 1, std::cout);
 			break;
 		}
 		if (m_next < o_next)
@@ -275,12 +284,31 @@ void Rts2NightReport::printObsList (time_t *t_end)
 	}
 }
 
-void Rts2NightReport::printStatistics ()
+void NightReport::printStatistics ()
 {
 	obs_set->printStatistics (std::cout);
 }
 
-void Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
+void NightReport::printLabelStat (time_t *t_start, time_t *t_end)
+{
+	rts2db::LabelList labels;
+	labels.load ();
+	for (rts2db::LabelList::iterator iter = labels.begin (); iter != labels.end (); iter++)
+	{
+		std::cout << "Label " << iter->tid << " " << iter->text << " (" << iter->labid << "):" << std::endl;
+		for (rts2db::ObservationSet::iterator oi = obs_set->begin (); oi != obs_set->end (); oi++)
+		{
+			if (oi->getTarget ()->hasLabel (iter->labid))
+				std::cout << (*oi);
+		}
+		rts2db::ImageSetLabel isl (iter->labid, *t_start, *t_end);
+		std::cout << "Observations: " << isl.getAllStat ().count << std::endl
+			<< "Skytime: " << isl.getAllStat ().exposure << std::endl
+			<< "--------------------------------------------" << std::endl;
+	}
+}
+
+void NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 {
 	obs_set = new rts2db::ObservationSet ();
 	obs_set->loadTime (t_start, t_end);
@@ -313,11 +341,13 @@ void Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEm
 
 		if (printStat)
 			printStatistics ();
+		if (labelStat)
+			printLabelStat (t_start, t_end);
 		delete obs_set;
 	}
 }
 
-int Rts2NightReport::doProcessing ()
+int NightReport::doProcessing ()
 {
 	rts2core::Configuration::instance ();
 
@@ -385,6 +415,6 @@ int Rts2NightReport::doProcessing ()
 
 int main (int argc, char **argv)
 {
-	Rts2NightReport app = Rts2NightReport (argc, argv);
+	NightReport app = NightReport (argc, argv);
 	return app.run ();
 }

@@ -79,11 +79,12 @@ void ConnBBQueue::processCommand (char *cmd)
 		if (paramNextInteger (&observatory_id))
 			return;
 
-
 		Observatory obs (observatory_id);
 		obs.load ();
 
 		writeToProcess (obs.getURL ());
+		writeToProcess (obs.getUser ());
+		writeToProcess (obs.getPassword ());
 	}
 	else if (!strcasecmp (cmd, "schedule_from"))
 	{

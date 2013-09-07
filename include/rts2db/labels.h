@@ -45,7 +45,7 @@ class Label
 };
 
 /**
- * Vector of labels.
+ * Vector of labels. Used for labels management.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -61,6 +61,15 @@ class LabelsVector:public std::vector <Label>
 		 * @param jstr    string joining entries in the list
 		 */
 		std::string getString (const char *empty = "", const char *jstr = " ");
+
+		/**
+		 * Return iterator to a label.
+		 *
+		 * @param label_id label ID.
+		 *
+		 * @return iterator to a label. end () if label with given ID does not exist in the list.
+		 */
+		const LabelsVector::iterator findLabelId (int label_id);
 };
 
 /**

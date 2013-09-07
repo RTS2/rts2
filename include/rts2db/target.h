@@ -794,6 +794,13 @@ class Target:public Rts2Target
 		 */
 		void addLabel (int label_id) { labels.addLabel (getTargetID (), label_id); }
 
+		/**
+		 * Test if a target is associated with a label.
+		 *
+		 * @param label_id   lable ID.
+		 */
+		bool hasLabel (int label_id) { LabelsVector tlabels = getLabels (); return tlabels.findLabelId (label_id) != tlabels.end (); }
+
 	protected:
 		char *target_comment;
 		struct ln_lnlat_posn *observer;

@@ -40,6 +40,8 @@ class Observatory
 		struct ln_lnlat_posn * getPosition () { return &position; }
 		double getAltitude () { return altitude; }
 		const char * getURL () { return url.c_str (); }
+		const char * getUser () { return user.c_str (); }
+		const char * getPassword () { return password.c_str (); }
 		int getId () { return observatory_id; }
 
 		/**
@@ -51,6 +53,8 @@ class Observatory
 		struct ln_lnlat_posn position;
 		double altitude;
 		std::string url;
+		std::string user;
+		std::string password;
 };
 
 class Observatories:public std::list <Observatory>
