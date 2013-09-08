@@ -108,6 +108,9 @@
 
 #define TGA_EMERDECEL                   0x0204 
 
+/** Position regulator parameters */
+#define TGA_POSITIONREG_KP              0x01E7
+ 
 /** Speed regulator parameters */
 #define TGA_SPEEDREG_KP                 0x01D8
  
@@ -115,6 +118,16 @@
 
 #define TGA_SPEEDREG_IMAX               0x01DC 
  
+/** Current q-component (momentum) regulator parameters */
+#define TGA_Q_CURRENTREG_KP             0x01DD
+ 
+#define TGA_Q_CURRENTREG_KI             0x01DE 
+
+/** Current d-component (excitation) regulator parameters */
+#define TGA_D_CURRENTREG_KP             0x01E2
+ 
+#define TGA_D_CURRENTREG_KI             0x01E3 
+
 /** Firmware version */
 #define TGA_FIRMWARE                    0x01B0
 
@@ -193,9 +206,13 @@ class TGDrive: public rts2core::ConnSerial
 
 		int32_t getPosition () { return aPos->getValueInteger (); }
 
+		bool isInSpeedMode () { return tgaMode->getValueInteger () == TGA_MODE_DS; }
+		bool isInPositionMode () { return tgaMode->getValueInteger () == TGA_MODE_PA; }
+		bool isInStepperMode () { return tgaMode->getValueInteger () == TGA_MODE_SM; }
+
 		bool isMoving () { return (appStatus->getValueInteger () & 0x02) == 0x00; }
-		bool isMovingSpeed () { return tgaMode->getValueInteger () == TGA_MODE_DS; }
-		bool isMovingPos () { return tgaMode->getValueInteger () == TGA_MODE_PA; }
+		bool isMovingSpeed () { return (appStatus->getValueInteger () & 0x08) == 0x00; }
+		bool isMovingPosition () { return (appStatus->getValueInteger () & 0x02) == 0x00; }
 
 		void stop ();
 
@@ -272,9 +289,14 @@ class TGDrive: public rts2core::ConnSerial
 		rts2core::ValueFloat *dCur;
 		rts2core::ValueFloat *aCur;
 
+		rts2core::ValueFloat *positionKp;
 		rts2core::ValueFloat *speedKp;
 		rts2core::ValueFloat *speedKi;
 		rts2core::ValueFloat *speedImax;
+		rts2core::ValueFloat *qCurrentKp;
+		rts2core::ValueFloat *qCurrentKi;
+		rts2core::ValueFloat *dCurrentKp;
+		rts2core::ValueFloat *dCurrentKi;
 
 		rts2core::ValueInteger *tgaMode;
 		rts2core::ValueInteger *appStatus;

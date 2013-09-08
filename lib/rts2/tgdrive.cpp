@@ -64,15 +64,25 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_m
 	strcpy (p, "EMERDECEL");
 	_master->createValue (emerDecel, pbuf, "[r/s**2] emergency deceleration", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "DCURRENT");
-	_master->createValue (dCur, pbuf, "[A] desired current", false, RTS2_VALUE_WRITABLE);
+	_master->createValue (dCur, pbuf, "[A] desired current Iq", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ACURRENT");
-	_master->createValue (aCur, pbuf, "[A] actual current", false);
+	_master->createValue (aCur, pbuf, "[A] actual current Iq", false);
+	strcpy (p, "POSITION_KP");
+	_master->createValue (positionKp, pbuf, "proporcional gain for the position controller, in cascade above speed controller", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "SPEED_KP");
-	_master->createValue (speedKp, pbuf, "proporcional gain for the speed controller", false, RTS2_VALUE_WRITABLE);
+	_master->createValue (speedKp, pbuf, "proporcional gain for the speed controller, in cascade above q-current controller", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "SPEED_KI");
-	_master->createValue (speedKi, pbuf, "integration gain for the speed controller", false, RTS2_VALUE_WRITABLE);
+	_master->createValue (speedKi, pbuf, "integration gain for the speed controller, in cascade above q-current controller", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "SPEED_IMAX");
-	_master->createValue (speedImax, pbuf, "peak current for the speed controller", false, RTS2_VALUE_WRITABLE);
+	_master->createValue (speedImax, pbuf, "peak current for the speed controller, in cascade above q-current controller", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "Q_CURRENT_KP");
+	_master->createValue (qCurrentKp, pbuf, "proporcional gain for the current q-component (torque) controller", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "Q_CURRENT_KI");
+	_master->createValue (qCurrentKi, pbuf, "integration gain for the current q-component (torque) controller", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "D_CURRENT_KP");
+	_master->createValue (dCurrentKp, pbuf, "proporcional gain for the current d-component (flux) controller", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "D_CURRENT_KI");
+	_master->createValue (dCurrentKi, pbuf, "integration gain for the current d-component (flux) controller", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "MODE");
 	_master->createValue (tgaMode, pbuf, "axis mode", false, RTS2_DT_HEX);
 	strcpy (p, "STATUS");
@@ -119,9 +129,14 @@ void TGDrive::info ()
 	emerDecel->setValueDouble (read4b (TGA_EMERDECEL) / TGA_ACCELFACTOR);
 	dCur->setValueFloat (read2b (TGA_DESCUR) / TGA_CURRENTFACTOR);
 	aCur->setValueFloat (read2b (TGA_ACTCUR) / TGA_CURRENTFACTOR);
+	positionKp->setValueFloat (read2b (TGA_POSITIONREG_KP) / TGA_GAINFACTOR);
 	speedKp->setValueFloat (read2b (TGA_SPEEDREG_KP) / TGA_GAINFACTOR);
 	speedKi->setValueFloat (read2b (TGA_SPEEDREG_KI) / TGA_GAINFACTOR);
 	speedImax->setValueFloat (read2b (TGA_SPEEDREG_IMAX) / TGA_CURRENTFACTOR);
+	qCurrentKp->setValueFloat (read2b (TGA_Q_CURRENTREG_KP) / TGA_GAINFACTOR);
+	qCurrentKi->setValueFloat (read2b (TGA_Q_CURRENTREG_KI) / TGA_GAINFACTOR);
+	dCurrentKp->setValueFloat (read2b (TGA_D_CURRENTREG_KP) / TGA_GAINFACTOR);
+	dCurrentKi->setValueFloat (read2b (TGA_D_CURRENTREG_KI) / TGA_GAINFACTOR);
 	tgaMode->setValueInteger (read4b (TGA_MODE));
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
@@ -172,6 +187,10 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		{
 			write4b (TGA_VMAX, new_value->getValueDouble () * TGA_SPEEDFACTOR);
 		}
+		else if (old_value == positionKp)
+		{
+			write2b (TGA_POSITIONREG_KP, new_value->getValueFloat () * TGA_GAINFACTOR);
+		}
 		else if (old_value == speedKp)
 		{
 			write2b (TGA_SPEEDREG_KP, new_value->getValueFloat () * TGA_GAINFACTOR);
@@ -183,6 +202,22 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		else if (old_value == speedImax)
 		{
 			write2b (TGA_SPEEDREG_IMAX, new_value->getValueFloat () * TGA_CURRENTFACTOR);
+		}
+		else if (old_value == qCurrentKp)
+		{
+			write2b (TGA_Q_CURRENTREG_KP, new_value->getValueFloat () * TGA_GAINFACTOR);
+		}
+		else if (old_value == qCurrentKi)
+		{
+			write2b (TGA_Q_CURRENTREG_KI, new_value->getValueFloat () * TGA_GAINFACTOR);
+		}
+		else if (old_value == dCurrentKp)
+		{
+			write2b (TGA_D_CURRENTREG_KP, new_value->getValueFloat () * TGA_GAINFACTOR);
+		}
+		else if (old_value == dCurrentKi)
+		{
+			write2b (TGA_D_CURRENTREG_KI, new_value->getValueFloat () * TGA_GAINFACTOR);
 		}
 		else
 		{
