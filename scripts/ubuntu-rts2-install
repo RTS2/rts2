@@ -94,10 +94,10 @@ echo "Downloading DS9"
 
 case $cpuarch in
 	'x86_64')
-		wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux64/ds9.linux64.6.2.tar.gz
+		wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/RD/ds9/download/linux64/ds9.linux64.7.2.tar.gz
 		;;
 	*)
-		wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux/ds9.linux.6.2.tar.gz
+		wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/RD/ds9/download/linux/ds9.linux.7.2.tar.gz
 		;;
 esac
 
@@ -107,9 +107,9 @@ tar xzf ${download_dir}/ds9.tar.gz
 sudo cp ${download_dir}/ds9 /usr/bin
 
 echo "Retrievening, configuring, compiling and installing pyds9"
-wget -O ${download_dir}/pyds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/python/pyds9-1.3.tar.gz
+wget -O ${download_dir}/pyds9.tar.gz http://hea-www.harvard.edu/RD/download/pyds9/pyds9-1.7.tar.gz
 tar xzf ${download_dir}/pyds9.tar.gz
-cd pyds9-1.3
+cd pyds9-1.7
 sudo python ./setup.py install
 
 echo "Installing XPA library"
