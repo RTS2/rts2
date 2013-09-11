@@ -1080,12 +1080,22 @@ void Image::getHistogram (long *histogram, long nbins)
 	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
-			bins = 65535 / nbins;
+			bins = 65536 / nbins;
 			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
 			{
 				for (uint16_t *d = (uint16_t *)((*iter)->getData ()); d < ((uint16_t *)((*iter)->getData ())) + ((*iter)->getNPixels ()); d++)
 				{
 					histogram[*d / bins]++;
+				}
+			}
+			break;
+		case RTS2_DATA_FLOAT:
+			bins = 65536 / nbins;
+			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
+			{
+				for (float *d = (float *)((*iter)->getData ()); d < ((float *)((*iter)->getData ())) + ((*iter)->getNPixels ()); d++)
+				{
+					histogram[((uint16_t)*d) / bins]++;
 				}
 			}
 			break;
@@ -1104,10 +1114,17 @@ void Image::getChannelHistogram (int chan, long *histogram, long nbins)
 	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
-			bins = 65535 / nbins;
+			bins = 65536 / nbins;
 			for (uint16_t *d = (uint16_t *)(channels[chan]->getData ()); d < ((uint16_t *)(channels[chan]->getData ()) + channels[chan]->getNPixels ()); d++)
 			{
 				histogram[*d / bins]++;
+			}
+			break;
+		case RTS2_DATA_FLOAT:
+			bins = 65536 / nbins;
+			for (float *d = (float *)(channels[chan]->getData ()); d < ((float *)(channels[chan]->getData ()) + channels[chan]->getNPixels ()); d++)
+			{
+				histogram[((uint16_t)*d) / bins]++;
 			}
 			break;
 		default:
@@ -1168,8 +1185,8 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (i
 
 template <typename bt, typename dt> void Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y)
 {
-	long hist[65535];
-	getChannelHistogram (chan, hist, 65535);
+	long hist[65536];
+	getChannelHistogram (chan, hist, 65536);
 
 	long psum = 0;
 	dt low = minval;
@@ -1232,7 +1249,7 @@ void Image::getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &
 			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (LONGLONG) LLONG_MIN, (LONGLONG) LLONG_MAX, quantiles, offset, true);
 			break;
 		case RTS2_DATA_FLOAT:
-			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (float) 0, (float) INT_MAX, quantiles, offset, true);
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (float) SHRT_MIN, (float) SHRT_MAX, quantiles, offset, true);
 			break;
 		case RTS2_DATA_DOUBLE:
 			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (double) INT_MIN, (double) INT_MAX, quantiles, offset, true);
@@ -1395,8 +1412,8 @@ template <typename bt, typename dt> void Image::getChannelPseudocolourByteBuffer
 
 template <typename bt, typename dt> void Image::getChannelPseudocolourBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y, int colourVariant)
 {
-	long hist[65535];
-	getChannelHistogram (chan, hist, 65535);
+	long hist[65536];
+	getChannelHistogram (chan, hist, 65536);
 
 	long psum = 0;
 	dt low = minval;
@@ -1460,7 +1477,7 @@ void Image::getChannelPseudocolourImage (int _dataType, int chan, unsigned char 
 			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (LONGLONG) LLONG_MIN, (LONGLONG) LLONG_MAX, quantiles, offset, true, colourVariant);
 			break;
 		case RTS2_DATA_FLOAT:
-			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (float) 0, (float) INT_MAX, quantiles, offset, true, colourVariant);
+			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (float) INT_MIN, (float) INT_MAX, quantiles, offset, true, colourVariant);
 			break;
 		case RTS2_DATA_DOUBLE:
 			getChannelPseudocolourBuffer (chan, buf, (unsigned char) 255, (double) INT_MIN, (double) INT_MAX, quantiles, offset, true, colourVariant);
