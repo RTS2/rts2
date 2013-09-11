@@ -126,12 +126,14 @@ function rts2-start
 {
 	grep '^centrald' $CENTRALD_FILE | while read centrald centrald_port centrald_options; do
 		if [ "x${centrald_port}" == "x" ]; then
-			centrald_port=617
+			centrald_port=@CENTRALD_PORT@
+		else
+			centrald_options="--local-port $centrald_port $centrald_options"
 		fi
 		case $system in
 			debian)
 				rts2_log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port" "rts2-centrald"
-				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- --local-port $centrald_port $centrald_options >>$RTS2_LOG 2>&1
+				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- $centrald_options >>$RTS2_LOG 2>&1
 				rts2_log_end_msg $? "rts2-centrald $centrald_options"
 				;;
 			redhat|suse|slackware|cygwin)

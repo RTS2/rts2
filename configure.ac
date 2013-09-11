@@ -497,6 +497,7 @@ CENTRALD_PORT="617")
 AH_TEMPLATE([CENTRALD_PORT],[Default centrald port])
 
 AC_DEFINE_UNQUOTED(CENTRALD_PORT, "$CENTRALD_PORT", [Default centrald port])
+AC_SUBST(CENTRALD_PORT)
 
 
 # Checks for libraries.
