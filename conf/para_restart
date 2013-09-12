@@ -15,10 +15,10 @@
 #     </value>
 # </device>
 
-import rts2comm
+import rts2.scriptcomm
 import time
 
-c=rts2comm.Rts2Comm()
+c=rts2.scriptcomm.Rts2Comm()
 
 ra=c.getValueInteger('status_ra','T0')
 dec=c.getValueInteger('status_dec','T0')
