@@ -124,7 +124,7 @@ void IniParser::clearSections ()
 	clear ();
 }
 
-int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
+int IniParser::parseConfigFile (std::ifstream *configStream, const char *filename, bool parseFullLine)
 {
 	int ln = 0;
 	IniSection *sect = NULL;
@@ -291,7 +291,6 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 IniParser::IniParser (bool defaultSection)
 {
 	verboseEntry = true;
-	configStream = NULL;
 	addDefaultSection = defaultSection;
 }
 
@@ -306,17 +305,16 @@ int IniParser::loadFile (const char *filename, bool parseFullLine)
 	if (!filename)
 		// default
 		filename = RTS2_PREFIX "/etc/rts2/rts2.ini";
-	configStream = new std::ifstream ();
+	std::ifstream *configStream = new std::ifstream ();
 	configStream->open (filename);
 	if (configStream->fail ())
 	{
-		logStream (MESSAGE_ERROR) << "cannot open configuration file '" << filename <<
-			"'." << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot open configuration file '" << filename << "'." << sendLog;
 		delete configStream;
 		return -1;
 	}
 	// fill sections
-	if (parseConfigFile (filename, parseFullLine))
+	if (parseConfigFile (configStream, filename, parseFullLine))
 	{
 		delete configStream;
 		return -1;

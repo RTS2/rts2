@@ -313,7 +313,6 @@ class IniParser: public std::vector < IniSection * >
 		const bool blockDevice (const char *device_name, const char *querying_device);
 
 	protected:
-		std::ifstream * configStream;
 		virtual int getSpecialValues () { return 0; }
 
 	private:
@@ -325,7 +324,7 @@ class IniParser: public std::vector < IniSection * >
 		void clearVerboseEntry () { verboseEntry = false; }
 
 		void clearSections ();
-		int parseConfigFile (const char *filename, bool parseFullLine = false);
+		int parseConfigFile (std::ifstream *configStream, const char *filename, bool parseFullLine = false);
 
 		// sections which are know to be missing
 		std::vector <std::string> missingSections;
