@@ -31,6 +31,8 @@ import lib.acquire as acq
 import lib.sextract as sx
 import lib.config as cfgd
 import lib.analyze as  an
+import lib.log as  lg
+import lib.environ as  env
 
 if __name__ == '__main__':
 
@@ -44,25 +46,15 @@ if __name__ == '__main__':
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf-acquire.cfg', help=': %(default)s, configuration file path')
 
     args=parser.parse_args()
-
-    logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
-    logging.basicConfig(filename=args.logfile, level=args.level.upper(), format= logformat)
-    logger = logging.getLogger()
-
-    if args.level in 'DEBUG' or args.level in 'INFO':
-        toconsole=True
-    else:
-        toconsole=args.toconsole
-
-    if toconsole:
-        # http://www.mglerner.com/blog/?p=8
-        soh = logging.StreamHandler(sys.stdout)
-        soh.setLevel(args.level)
-        logger.addHandler(soh)
-
+    # logger
+    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
+    logger= lgd.logger 
+    # read the run time configuration
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
-
+    # get the environment
+    ev=env.Environment(debug=args.debug, rt=rt,log=logger)
+    logger.info('rts2saf_focus: starting at: {0}'.format(ev.now))
 
     dryFitsFiles=None
     if args.dryfitsfiles:
@@ -107,14 +99,16 @@ if __name__ == '__main__':
         # 
         focDefClearPath=None
         for ft in ftw.filters:
-            if args.debug: logger.debug('rts2saf_focus: filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
+            if args.debug: logger.debug('rts2saf_focus: start filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
             # 
+            dFF=None
             if args.dryfitsfiles:
                 dFF=dryFitsFiles[:]
                 logger.info('rts2saf_focus: using FITS files from: {}'.format(args.dryfitsfiles))
+                
             # acquisition
             acqu_oq = Queue.Queue()
-            acqu= acq.Acquire(debug=args.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq, logger=logger)
+            acqu= acq.Acquire(debug=args.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq, ev=ev, logger=logger)
             # start acquisition thread
             if not acqu.startScan():
                 logger.error('rts2saf_focus: exiting')
@@ -139,7 +133,6 @@ if __name__ == '__main__':
                         logger.error('rts2saf_focus: sextractor faild on fits file:\n{0}'.format(fitsFn,e))
                         logger.error('rts2saf_focus: try to continue')
                         break
-
                     dataSex[cnt]=dsx
                     cnt +=1
                     break
@@ -149,14 +142,16 @@ if __name__ == '__main__':
             acqu.stopScan(timeout=1.)
             # might be in a thread too
             if dryFitsFiles:
-                anr= an.Analyze(dataSex=dataSex, displayDs9=True, displayFit=True, logger=logger)
+                anr= an.Analyze(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, ev=ev, logger=logger)
             else:
-                anr= an.Analyze(dataSex=dataSex, displayDs9=False, displayFit=False, logger=logger)
+                anr= an.Analyze(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, ev=ev, logger=logger)
 
             (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
 
-            logger.info('rts2saf_focus: {0:5.0f}: weightedMeanObjects'.format(weightedMeanObjects))
-            logger.info('rts2saf_focus: {0:5.0f}: weightedMeanFwhm'.format(weightedMeanFwhm))
+            if weightedMeanObjects:
+                logger.info('rts2saf_focus: {0:5.0f}: weightedMeanObjects'.format(weightedMeanObjects))
+            if weightedMeanFwhm:
+                logger.info('rts2saf_focus: {0:5.0f}: weightedMeanFwhm'.format(weightedMeanFwhm))
 
 
             if minFwhmPos:
@@ -176,12 +171,18 @@ if __name__ == '__main__':
                     else:
                         logger.debug('rts2saf_focus: clear path: {0}, fit failed: not setting FOC_DEF'.format(ft.name))
                 else:
-                    logger.info('rts2saf_focus: no clear path: {0}, not setting FOC_DEF: {0}'.format(ft.name, int(minFwhmPos)))
+                    if minFwhmPos:
+                        logger.info('rts2saf_focus: no clear path: {0}, not setting FOC_DEF: {0}'.format(ft.name, int(minFwhmPos)))
                     # ToDO store in string filter_offsets
                     # and write it to the CCD filter_offsets variable
 
             else:
-                logger.debug('rts2saf_focus: not setting FOC_DEF: {0}, see SET_FOCUS'.format(int(minFwhmPos)))
+                if minFwhmPos:
+                    logger.debug('rts2saf_focus: not setting FOC_DEF: {0}, see SET_FOCUS'.format(int(minFwhmPos)))
+
+            if args.debug: logger.debug('rts2saf_focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
+
+
 #
 # Write config with new filter offsets
 #

@@ -1,73 +1,56 @@
+#!/usr/bin/python
+# (C) 2013, Markus Wildi, markus.wildi@bluewin.ch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2, or (at your option)
+#   any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software Foundation,
+#   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+#   Or visit http://www.gnu.org/licenses/gpl.html.
+#
+
+__author__ = 'markus.wildi@bluewin.ch'
+
+
 import time
 import datetime
 import glob
 import os
 
+
 class Environment():
     """Class performing various task on files, e.g. expansion to (full) path"""
-    def __init__(self, rtc=None, log=None):
+    def __init__(self, debug=None, rt=None, log=None):
         self.now= datetime.datetime.now().isoformat()
-        self.rtc=rtc
+        self.debug=debug
+        self.rt=rt
         self.log=log
-        self.runTimePath= '{0}/{1}/'.format(self.rtc.cf['BASE_DIRECTORY'], self.now) 
+        self.runTimePath= '{0}/{1}/'.format(self.rt.cfg['BASE_DIRECTORY'], self.now) 
         self.runDateTime=None
 
     def prefix( self, fileName):
-        return 'rts2af-' +fileName
+        return 'rts2saf-' +fileName
 
     def notFits(self, fileName):
         items= fileName.split('/')[-1]
         return items.split('.fits')[0]
-
-    def fitsFilesInRunTimePath( self):
-        return glob.glob( self.runTimePath + '/' + self.rtc.value('FILE_GLOB'))
 
     def expandToTmp( self, fileName=None):
         if self.absolutePath(fileName):
             self.log.error('Environment.expandToTmp: absolute path given: {0}'.format(fileName))
             return fileName
 
-        fileName= self.rtc.value('TEMP_DIRECTORY') + '/'+ fileName
+        fileName= self.rt.cfg['TEMP_DIRECTORY'] + '/'+ fileName
         return fileName
-
-    def expandToSkyList( self, fitsHDU=None):
-        if fitsHDU==None:
-            self.log.error('Environment.expandToCat: no hdu given')
-        
-        items= self.rtc.value('SEXSKY_LIST').split('.')
-        try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' +   self.now + '.' + items[1])
-        except:
-            fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1])
-            
-        return  self.expandToTmp(fileName)
-
-    def expandToCat( self, fitsHDU=None):
-        if fitsHDU==None:
-            self.log.error('Environment.expandToCat: no hdu given')
-        try:
-            fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.now + '.cat')
-        except:
-            fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + self.now + '.cat')
-
-        return self.expandToTmp(fileName)
-
-    def expandToFitInput(self, fitsHDU=None, element=None):
-        items= self.rtc.value('FIT_RESULT_FILE').split('.')
-        if(fitsHDU==None) or ( element==None):
-            self.log.error('Environment.expandToFitInput: no hdu or elementgiven')
-
-        fileName= items[0] + "-" + fitsHDU.staticHeaderElements['FILTER'] + "-" + self.now +  "-" + element + "." + items[1]
-        return self.expandToTmp(self.prefix(fileName))
-
-    def expandToFitImage(self, fitsHDU=None):
-        if fitsHDU==None:
-            self.log.error('Environment.expandToFitImage: no hdu given')
-
-        items= self.rtc.value('FIT_RESULT_FILE').split('.') 
-# ToDo png
-        fileName= items[0] + "-" + fitsHDU.staticHeaderElements['FILTER'] + "-" + self.now + ".png"
-        return self.expandToTmp(self.prefix(fileName))
 
     def absolutePath(self, fileName=None):
         if fileName==None:
@@ -81,7 +64,7 @@ class Environment():
             return False
 
     def defineRunTimePath(self, fileName=None):
-        for root, dirs, names in os.walk(self.rtc.value('BASE_DIRECTORY')):
+        for root, dirs, names in os.walk(self.rt.value('BASE_DIRECTORY')):
             if fileName.rstrip() in names:
                 self.runTimePath= root
                 return True
@@ -92,7 +75,7 @@ class Environment():
 
     def expandToRunTimePath(self, pathName=None):
         if self.absolutePath(pathName):
-            self.runDateTime= pathName.split('/')[-3] # it is rts2af, which creates the directory tree
+            self.runDateTime= pathName.split('/')[-3] # it is rts2saf, which creates the directory tree
             return pathName
         else:
             fileName= pathName.split('/')[-1]
@@ -109,7 +92,7 @@ class Environment():
             self.log.error('Environment.expandToDs9RegionFileName: no hdu given')
         
         
-        items= self.rtc.value('DS9_REGION_FILE').split('.')
+        items= self.rt.cfg['DS9_REGION_FILE'].split('.')
         # not nice
         names= fitsHDU.fitsFileName.split('/')
         try:
@@ -123,7 +106,7 @@ class Environment():
         if fitsHDU==None:
             self.log.error('Environment.expandToDs9COmmandFileName: no hdu given')
         
-        items= self.rtc.value('DS9_REGION_FILE').split('.')
+        items= self.rt.cfg['DS9_REGION_FILE'].split('.')
         try:
             fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.now + '.' + items[1] + '.sh')
         except:
@@ -131,34 +114,67 @@ class Environment():
             
         return  self.expandToTmp(fileName)
         
-    def expandToAcquisitionBasePath(self, filter=None):
+    def expandToAcquisitionBasePath(self, ftwName=None, ftName=None):
+        if ftwName== None and ftName==None:
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/'  
 
-        if filter== None:
-            return self.rtc.value('BASE_DIRECTORY') + '/' + self.now + '/'  
+        elif ftwName== None:
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/'  + ftName + '/'
+
+        elif ftName== None:
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/'  + ftwName + '/'
         else: 
-            return self.rtc.value('BASE_DIRECTORY') + '/' + self.now + '/' + filter.name + '/'
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/' + ftwName + '/' + ftName + '/'
         
-    def expandToTmpConfigurationPath(self, fileName=None):
-        if fileName==None:
-            self.log.error('Environment.expandToTmpConfigurationPath: no filename given')
+    def createAcquisitionBasePath(self, ftwName=None, ftName=None):
+        pth= self.expandToAcquisitionBasePath( ftwName=ftwName, ftName=ftName)
+        if not os.path.exists(pth):
+            try:
+                os.makedirs( pth)
+            except:
+                self.log.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
+                return False
 
-        fileName= fileName + self.now + '.cfg'
-        return self.expandToTmp(fileName)
-
-    def expandToFitResultPath(self, fileName=None):
-        if fileName==None:
-            self.log.error('Environment.expandToFitResultPath: no filename given')
-
-        return self.expandToTmp(fileName + self.now + '.fit')
-
-    def createAcquisitionBasePath(self, filter=None):
-        pth= self.expandToAcquisitionBasePath( filter)
-        try:
-            os.makedirs( pth)
-        except:
-             self.log.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
-             return False
         return True
     def setModeExecutable(self, path):
         #mode = os.stat(path)
         os.chmod(path, 0744)
+
+
+if __name__ == '__main__':
+
+    import argparse
+    import sys
+    import logging
+    import os
+    import glob
+
+    try:
+        import lib.config as cfgd
+    except:
+        import config as cfgd
+    try:
+        import lib.sextract as sx
+    except:
+        import sextract as sx
+    try:
+        import lib.log as lg
+    except:
+        import log as lg
+
+
+
+    parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
+    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
+    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
+    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
+    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
+    parser.add_argument('--config', dest='config', action='store', default='./rts2saf-my.cfg', help=': %(default)s, configuration file path')
+
+    args=parser.parse_args()
+
+    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
+    logger= lgd.logger 
+
+    rt=cfgd.Configuration(logger=logger)
+    rt.readConfiguration(fileName=args.config)

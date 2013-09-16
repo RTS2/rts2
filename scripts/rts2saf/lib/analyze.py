@@ -41,11 +41,14 @@ except:
 
 class Analyze(object):
     """Analyze a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, logger=None):
+    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, ev=None, logger=None):
         self.debug=debug
         self.dataSex=dataSex
         self.displayDs9=displayDs9
         self.displayFit=displayFit
+        self.ftwName=ftwName
+        self.ftName=ftName
+        self.ev=ev
         self.logger=logger
 
     def analyze(self):
@@ -71,8 +74,14 @@ class Analyze(object):
             errx.append(20.)
             stdFwhm.append(self.dataSex[cnt].stdFwhm)
         # Weighted mean based on number of extracted objects (stars)
-        weightedMeanObjects= np.average(a=pos, axis=0, weights=nobjs) 
-        if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
+        weightedMeanObjects=None
+        try:
+            weightedMeanObjects= np.average(a=pos, axis=0, weights=nobjs) 
+        except Exception, e:
+            self.logger.warn('analyze: can not calculate weightedMeanObjects:\n{0}'.format(e))
+
+        if weightedMeanObjects:
+            if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
 
         # Weighted mean based on median FWHM
         posC= pos[:]
@@ -84,15 +93,30 @@ class Analyze(object):
                 break
             del posC[ind]
             del fwhmC[ind]
+        weightedMeanFwhm=None
+        try:
+            weightedMeanFwhm= np.average(a=posC, axis=0, weights=map( lambda x: 1./x, fwhmC)) 
+        except Exception, e:
+            self.logger.warn('analyze: can not calculate weightedMeanFwhm:\n{0}'.format(e))
 
-        weightedMeanFwhm= np.average(a=posC, axis=0, weights=map( lambda x: 1./x, fwhmC)) 
-        self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
+        if weightedMeanFwhm:
+            self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
 
         # Fit median FWHM data
         dataFwhm=dt.DataFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
 
-        fit=ft.FitFwhm(showPlot=True, filterName='U', objects=10, temperature=20., date='2013-09-08T09:30:09', comment='Test', pltFile='./test.png', dataFwhm=dataFwhm)
-        minFwhmPos, fwhm=fit.fitData()
+        fit=ft.FitFwhm(
+            showPlot=self.displayFit, 
+            filterName=self.ftName, 
+            objects=None, # ToDo, define a sensible value (???) 
+            temperature=None, # ToDo fetch it from FITS 
+            date=self.ev.now[0:10], 
+            comment=None,  # ToDo, define a sensible value
+            pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + 'plot.png', 
+            dataFwhm=dataFwhm, 
+            logger=self.logger)
+
+        minFwhmPos,fwhm=fit.fitData()
 
         # make other decissions on if the fit converged
         if minFwhmPos:
@@ -121,14 +145,19 @@ class Analyze(object):
                 dds9=ds9()
 
                 for cnt, dSx in self.dataSex.iteritems():
-                    if dSx.fitsFn:
-                        dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
-                        if not dr.displayWithRegion():
-                            break # something went wrong
-                        time.sleep(1.)
+                    if dSx:
+                        if dSx.fitsFn:
+                            dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
+                            if not dr.displayWithRegion():
+                                break # something went wrong
+                            time.sleep(1.)
+                        else:
+                            self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(cnt))
                     else:
-                        self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(cnt))
+                        self.logger.warn('analyze: OOOOOOOOPS, no dSx object for fits image number: {0:3d}'.format(cnt))
                     
+
+
         return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
 
 

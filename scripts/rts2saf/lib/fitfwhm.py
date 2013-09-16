@@ -48,6 +48,7 @@ class FitFwhm(object):
         self.temperature=temperature
         self.date=date
         self.dataFwhm=dataFwhm
+        self.logger=logger
         self.comment=comment
         self.pltFile=pltFile
         self.par=None
@@ -59,11 +60,10 @@ class FitFwhm(object):
 
     def fitData(self):
         self.par= np.array([1., 1., 1., 1., 1.])
-        self.par, self.flag  = optimize.leastsq(self.errfunc_fwhm, self.par, args=(self.dataFwhm.pos, self.dataFwhm.fwhm, self.dataFwhm.errx, self.dataFwhm.stdFwhm))
         try:
             self.par, self.flag  = optimize.leastsq(self.errfunc_fwhm, self.par, args=(self.dataFwhm.pos, self.dataFwhm.fwhm, self.dataFwhm.errx, self.dataFwhm.stdFwhm))
         except Exception, e:
-            logger.error ('fitfwhm: fitData: error while fitting FWHM:\n{}'.format(e))
+            self.logger.error('fitfwhm: fitData: failed fitting FWHM:\nnumpy error message:\n{0}'.format(e))                
             return None, None
 
         step= self.dataFwhm.pos[1]-self.dataFwhm.pos[0]
@@ -79,14 +79,14 @@ class FitFwhm(object):
         if self.flag:
             plt.plot(x_fwhm, self.fitfunc_fwhm(self.par, x_fwhm), 'r-', color='blue')
 
-        plt.title('rts2af, {0},{1},{2},obj:{3},fw:{4:.0f},{5}'.format(self.date, self.filterName, self.temperature, self.objects, float(self.min_focpos_fwhm), self.comment), fontsize=12)
+        plt.title('rts2saf, {0},{1},{2},obj:{3},fw:{4:.0f},{5}'.format(self.date, self.filterName, self.temperature, self.objects, float(self.min_focpos_fwhm), self.comment), fontsize=12)
         plt.xlabel('FOC_POS [tick]')
         plt.ylabel('FWHM [px]')
         plt.grid(True)
         plt.savefig(self.pltFile)
         if self.showPlot:
             if NODISPLAY:
-                print 'NO $DISPLAY no plot'
+                self.logger.warn('fitfwhm: NO $DISPLAY no plot')                
             else:
                 plt.show()
 
