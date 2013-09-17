@@ -24,7 +24,6 @@ import sys
 import os
 import glob
 import argparse
-import logging
 import Queue
 
 import lib.acquire as acq
@@ -32,7 +31,8 @@ import lib.sextract as sx
 import lib.config as cfgd
 import lib.analyze as  an
 import lib.log as  lg
-import lib.environ as  env
+import lib.environ as env
+import lib.devices as dev
 
 if __name__ == '__main__':
 
@@ -54,7 +54,18 @@ if __name__ == '__main__':
     rt.readConfiguration(fileName=args.config)
     # get the environment
     ev=env.Environment(debug=args.debug, rt=rt,log=logger)
-    logger.info('rts2saf_focus: starting at: {0}'.format(ev.now))
+    logger.info('rts2saf_focus: starting at: {0}'.format(ev.startTime))
+    # check the presence of the devices
+    cdv= dev.CheckDevices(debug=args.debug, rt=rt, logger=logger)
+    if not cdv.camera():
+        logger.error('rts2saf_focus: camera:{0} not present, exiting'.format())
+        sys.exit(1)
+    if not cdv.focuser():
+        logger.error('rts2saf_focus: focuser:{0} not present, exiting'.format())
+        sys.exit(1)
+    if not cdv.filterWheels():
+        logger.error('rts2saf_focus: filter wheel or filters not present, exiting')
+        sys.exit(1)
 
     dryFitsFiles=None
     if args.dryfitsfiles:
@@ -181,7 +192,6 @@ if __name__ == '__main__':
                     logger.debug('rts2saf_focus: not setting FOC_DEF: {0}, see SET_FOCUS'.format(int(minFwhmPos)))
 
             if args.debug: logger.debug('rts2saf_focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
-
 
 #
 # Write config with new filter offsets
