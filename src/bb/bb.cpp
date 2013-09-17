@@ -99,6 +99,10 @@ int BB::init ()
 	XmlRpcServer::bindAndListen (rpcPort);
 	XmlRpcServer::enableIntrospection (true);
 
+#ifdef RTS2_HAVE_LIBJPEG
+	Magick::InitializeMagick (".");
+#endif /* RTS2_HAVE_LIBJPEG */
+
 	return ret;
 }
 
