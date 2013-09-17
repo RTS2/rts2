@@ -70,7 +70,8 @@ class CCD():
         self.windowWidth=windowWidth
         self.pixelSize= pixelSize
         self.baseExposure= baseExposure
-
+        self.filterOffsets=list()
+        self.filterOffsetsPresent=False
 
 class CheckDevices(object):
     """Check the presende of the devices and filter slots"""    
@@ -104,6 +105,19 @@ class CheckDevices(object):
             self.logger.error('checkDevices: device: {0} not present'.format(self.ccd.name))        
             return False
         if self.debug: self.logger.debug('checkDevices: camera: {0} present'.format(self.rt.ccd.name))
+
+        ftos=self.proxy.getValue(self.rt.ccd.name, 'filter_offsets')
+        if len(self.rt.filterWheelsInUse):
+            if len(ftos)==0:
+                self.rt.ccd.filterOffsetsPresent=False
+                self.logger.warn('checkDevices: for camera: {0} no filter offsets are defined, but filter wheels/filters are present'.format(self.rt.ccd.name))        
+                # since it is a warning it might change to return True
+                # an then a full filter offset focus run is initiated
+                # oK, there might be a filter wheel with empt slots
+                return False
+            else:
+                self.rt.ccd.filterOffsetsPresent=True
+                self.filterOffsets=ftos
         return True
 
     def focuser(self):
@@ -134,7 +148,6 @@ class CheckDevices(object):
                     return False
         return True
             
-
 
 if __name__ == '__main__':
 
