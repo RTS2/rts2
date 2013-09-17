@@ -30,11 +30,11 @@ import os
 class Environment():
     """Class performing various task on files, e.g. expansion to (full) path"""
     def __init__(self, debug=None, rt=None, log=None):
-        self.now= datetime.datetime.now().isoformat()
+        self.startTime= datetime.datetime.now().isoformat()
         self.debug=debug
         self.rt=rt
         self.log=log
-        self.runTimePath= '{0}/{1}/'.format(self.rt.cfg['BASE_DIRECTORY'], self.now) 
+        self.runTimePath= '{0}/{1}/'.format(self.rt.cfg['BASE_DIRECTORY'], self.startTime) 
         self.runDateTime=None
 
     def prefix( self, fileName):
@@ -96,9 +96,9 @@ class Environment():
         # not nice
         names= fitsHDU.fitsFileName.split('/')
         try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.now + '-' + names[-1] + '-' + str(fitsHDU.variableHeaderElements['FOC_POS']) + '.' + items[1])
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.startTime + '-' + names[-1] + '-' + str(fitsHDU.variableHeaderElements['FOC_POS']) + '.' + items[1])
         except:
-            fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1])
+            fileName= self.prefix( items[0] + '-' +   self.startTime + '.' + items[1])
             
         return  self.expandToTmp(fileName)
 
@@ -108,23 +108,23 @@ class Environment():
         
         items= self.rt.cfg['DS9_REGION_FILE'].split('.')
         try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.now + '.' + items[1] + '.sh')
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.startTime + '.' + items[1] + '.sh')
         except:
-            fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1]+ '.sh')
+            fileName= self.prefix( items[0] + '-' +   self.startTime + '.' + items[1]+ '.sh')
             
         return  self.expandToTmp(fileName)
         
     def expandToAcquisitionBasePath(self, ftwName=None, ftName=None):
         if ftwName== None and ftName==None:
-            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/'  
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/'  
 
         elif ftwName== None:
-            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/'  + ftName + '/'
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/'  + ftName + '/'
 
         elif ftName== None:
-            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/'  + ftwName + '/'
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/'  + ftwName + '/'
         else: 
-            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.now + '/' + ftwName + '/' + ftName + '/'
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/' + ftwName + '/' + ftName + '/'
         
     def createAcquisitionBasePath(self, ftwName=None, ftName=None):
         pth= self.expandToAcquisitionBasePath( ftwName=ftwName, ftName=ftName)

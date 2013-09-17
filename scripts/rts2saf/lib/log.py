@@ -33,8 +33,17 @@ class Logger(object):
         self.logformat=logformat
         self.args=args
 
+        ok= True
+        try:
+            logging.basicConfig(filename=self.args.logfile, level=self.args.level.upper(), format=self.logformat)
+        except Exception, e:
+            ok=False
 
-        logging.basicConfig(filename=self.args.logfile, level=self.args.level.upper(), format=self.logformat)
+        if not ok:
+            #/rts2saf_focus.py.log
+            lgFn='/tmp/{0}'.format(self.args.logfile.split('/')[-1])
+            logging.basicConfig(filename=lgFn, level=self.args.level.upper(), format=self.logformat)
+            
         self.logger = logging.getLogger()
 
         if args.level in 'DEBUG' or args.level in 'INFO':
@@ -47,3 +56,6 @@ class Logger(object):
             soh = logging.StreamHandler(sys.stdout)
             soh.setLevel(args.level)
             self.logger.addHandler(soh)
+
+        if not ok:
+            self.logger.warn('logging to: {0} instead of {1}, error:\n{2}'.format(lgFn, self.args.logfile, e))

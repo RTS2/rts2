@@ -184,30 +184,8 @@ class Acquire(object):
             self.connected=True
         except Exception, e:
             self.errorMessage=e
-        
 
-    def requiredDevices(self):
-        try:
-            self.proxy.getDevice(self.foc.name)
-        except:
-            self.logger.error('acquire: device: {0} not present'.format(self.foc.name))        
-            return False
-        try:
-            self.proxy.getDevice(self.ccd.name)
-        except:
-            self.logger.error('acquire: device: {0} not present'.format(self.ccd.name))        
-            return False
-
-        for ftw in self.filterWheelsInUse:
-            try:
-                self.proxy.getDevice(ftw.name)
-            except:
-                self.logger.error('acquire: device {0} not present'.format(ftw.name))        
-                return False
-
-        return True
-
-    def initialState(self):
+    def __initialState(self):
         self.proxy.refresh()
         self.iFocType= self.proxy.getSingleValue(self.foc.name,'FOC_TYPE')    
         self.iFocPos = self.proxy.getSingleValue(self.foc.name,'FOC_POS')    
@@ -233,7 +211,7 @@ class Acquire(object):
         self.proxy.setValue(self.ftw.name, 'filter',  self.ft.name)
         if self.debug: self.logger.debug('acquire: setting on filter wheel: {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
 
-    def finalState(self):
+    def __finalState(self):
         self.proxy.setValue(self.foc.name,'FOC_DEF',  self.iFocDef)
         self.proxy.setValue(self.foc.name,'FOC_FOFF', self.iFocFoff)
         self.proxy.setValue(self.foc.name,'FOC_TOFF', self.iFocToff)
@@ -244,29 +222,24 @@ class Acquire(object):
             self.logger.error('acquire: no connection to rts2-centrald:\n{0}'.format(self.errorMessage))
             return False
             
-        if self.requiredDevices():            
-            self.initialState()
-            self.scanThread= ScanThread(
-                debug=self.debug, 
-                dryFitsFiles=self.dryFitsFiles,
-                ftw=self.ftw,
-                ft= self.ft,
-                foc=self.foc, 
-                ccd=self.ccd, 
-                offsets=self.ft.offsets, 
-                focDef=self.iFocDef, 
-                proxy=self.proxy, 
-                acqu_oq=self.acqu_oq, 
-                ev=self.ev,
-                logger=self.logger)
+        self.__initialState()
+        self.scanThread= ScanThread(
+            debug=self.debug, 
+            dryFitsFiles=self.dryFitsFiles,
+            ftw=self.ftw,
+            ft= self.ft,
+            foc=self.foc, 
+            ccd=self.ccd, 
+            offsets=self.ft.offsets, 
+            focDef=self.iFocDef, 
+            proxy=self.proxy, 
+            acqu_oq=self.acqu_oq, 
+            ev=self.ev,
+            logger=self.logger)
 
-            self.scanThread.start()
-            return True
-        else:
-            self.logger.error('acquire: not all required devices are present')
-            return False
+        self.scanThread.start()
             
             
     def stopScan(self, timeout=1.):
         self.scanThread.join(timeout)
-        self.finalState
+        self.__finalState

@@ -25,53 +25,14 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import ConfigParser
 import os
-import argparse
 import sys
-import logging
 import string
 import re
+try:
+    import lib.devices as dev
+except:
+    import devices as dev
 
-class Filter():
-    """Class for filter properties"""
-    def __init__(self, name=None, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, stepSize =None, exposureFactor=1.):
-        self.name= name
-        self.OffsetToClearPath= OffsetToClearPath# [tick]
-        self.relativeLowerLimit= lowerLimit# [tick]
-        self.relativeUpperLimit= upperLimit# [tick]
-        self.exposureFactor   = exposureFactor 
-        self.stepSize  = stepSize # [tick]
-        self.offsets= range (self.relativeLowerLimit, int(self.relativeUpperLimit + self.stepSize),  self.stepSize)
-
-class FilterWheel():
-    """Class for filter wheel properties"""
-    def __init__(self, name=None, filters=list()):
-        self.name= name
-        self.filters=filters
-        self.clearPaths=None
-class Focuser():
-    """Class for focuser properties"""
-    def __init__(self, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, speed=None, stepSize=None, temperatureCompensation=None):
-        self.name= name
-        self.resolution=resolution 
-        self.absLowerLimit=absLowerLimit
-        self.absUpperLimit=absUpperLimit
-        self.speed=speed
-        self.stepSize=stepSize
-        self.temperatureCompensation=temperatureCompensation
-        self.focDef=None # will be set by class Acquire()
-
-class CCD():
-    """Class for CCD properties"""
-    def __init__(self, name=None, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None, pixelSize=None, baseExposure=None):
-        
-        self.name= name
-        self.binning=binning
-        self.windowOffsetX=windowOffsetX
-        self.windowOffsetY=windowOffsetY
-        self.windowHeight=windowHeight
-        self.windowWidth=windowWidth
-        self.pixelSize= pixelSize
-        self.baseExposure= baseExposure
 
 class DefaultConfiguration(object):
     """Default configuration for rts2saf"""    
@@ -80,8 +41,8 @@ class DefaultConfiguration(object):
         self.debug=debug
         self.logger=logger
 
-        self.ccd=CCD() 
-        self.foc=Focuser() 
+        self.ccd=dev.CCD() 
+        self.foc=dev.Focuser() 
         self.filterWheelsDefs=dict()
         self.filterWheels=list()
         self.filterWheelsInUseDefs=list()
@@ -120,6 +81,7 @@ class DefaultConfiguration(object):
         self.dcf[('filter properties', 'flt2')]= '[ nof1,  0, -1200, 1300, 200, 1.]'
         self.dcf[('filter properties', 'flt3')]= '[ nof2,  0, -1200, 1300, 200, 1.]'
         self.dcf[('filter properties', 'flt4')]= '[ C, 1211, -1400, 1500, 300, 1.]'
+        self.dcf[('filter properties', 'flt5')]= '[ D, 1211, -1400, 1500, 300, 1.]'
 
         self.dcf[('focuser properties', 'FOCUSER_NAME')]= 'F0'
         self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
@@ -265,7 +227,7 @@ class Configuration(DefaultConfiguration):
 
             elif section in 'filter properties': 
                 items= value[1:-1].split(',')
-                ft=Filter( name=items[0],  
+                ft=dev.Filter( name=items[0],  
                            OffsetToClearPath=string.atoi(items[1]), 
                            lowerLimit=string.atoi(items[2]), 
                            upperLimit=string.atoi(items[3]), 
@@ -348,7 +310,7 @@ class Configuration(DefaultConfiguration):
         #  ftds: ['nof1', 'U', 'Y', 'O2']
         for ftwn,ftds in self.filterWheelsDefs.iteritems():
             # ToDo (Python) if filters=list() is not present, then all filters appear in all filter wheels
-            ftw=FilterWheel(name=ftwn,filters=list())
+            ftw=dev.FilterWheel(name=ftwn,filters=list())
             for ftd in ftds:
                 for ft in self.filters:
                     if ftd in ft.name: 
@@ -396,6 +358,12 @@ class Configuration(DefaultConfiguration):
 
 if __name__ == '__main__':
 
+    import argparse
+    try:
+        import lib.log as  lg
+    except:
+        import log as lg
+
     parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
@@ -405,20 +373,8 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-    logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
-    logging.basicConfig(filename=args.logfile, level=args.level.upper(), format= logformat)
-    logger = logging.getLogger()
-
-    if args.level in 'DEBUG' or args.level in 'INFO':
-        toconsole=True
-    else:
-        toconsole=args.toconsole
-
-    if toconsole:
-    #http://www.mglerner.com/blog/?p=8
-        soh = logging.StreamHandler(sys.stdout)
-        soh.setLevel(args.level)
-        logger.addHandler(soh)
+    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
+    logger= lgd.logger 
 
     rt=Configuration(logger=logger)
     rt.writeDefaultConfiguration()
