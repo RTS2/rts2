@@ -49,7 +49,6 @@ class Sextract(object):
         self.logger=logger
 
     def sextract(self, fitsFn):
-        # ToDo: flexible
         sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw)
         sex.runSExtractor(fitsFn)
 
@@ -61,14 +60,14 @@ class Sextract(object):
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: {0}: {1:5d}, no objects found:\n{2}'.format(fitsFn, focPos, e))
+            self.logger.warn( 'sextract: {0}: {1:5d}, raw objects: {2}, no objects found (after filtering), rts2.sextractor:\n{2}'.format(fitsFn, focPos, objectCount, e))
+            self.logger.warn( 'sextract: new version of rts2.sextractor installed???')
             return None
 
         dataSex=dt.DataSex(fitsFn=fitsFn, focPos=focPos, fwhm=fwhm, stdFwhm=stdFwhm,nstars=nstars, catalogue=sex.objects, fields=self.fields)
         if self.debug: self.logger.debug( 'sextract: {0} {1:5d} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
         return dataSex
-
 
 if __name__ == '__main__':
 

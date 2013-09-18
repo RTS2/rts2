@@ -245,13 +245,13 @@ class Acquire(object):
         self.__finalState
 
     def writeFocDef(self):
-        if self.rt.foc.focMn and self.rt.foc.focMx:
-            if self.rt.foc.focMn < self.rt.foc.focDef < self.rt.foc.focMx:
-                self.proxy.setValue(self.foc.name,'FOC_DEF', self.rt.foc.focDef)
+        if self.foc.focMn and self.foc.focMx:
+            if self.foc.focMn < self.foc.focDef < self.foc.focMx:
+                self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
             else:
-                self.logger.warn('acquire: focuser: {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.rt.foc.name, self.rt.foc.focDef, self.rt.foc.focMn, self.rt.foc.focMx))
+                self.logger.warn('acquire: focuser: {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
         else:
-            self.logger.warn('acquire: focuser: {0} not writing FOC_DEF, no minimum or maximum value present'.format(self.rt.foc.name))
+            self.logger.warn('acquire: focuser: {0} not writing FOC_DEF, no minimum or maximum value present'.format(self.foc.name))
 
     def writeOffsets(self, ftw=None):
         """Write only for camd::filter filters variable the offsets """

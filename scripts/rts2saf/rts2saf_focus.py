@@ -123,8 +123,7 @@ if __name__ == '__main__':
             if not acqu.startScan():
                 logger.error('rts2saf_focus: exiting')
                 sys.exit(1)
-    
-            # sextract objects
+            # acquire FITS
             dataSex=dict()
             cnt=0
             for st in ft.offsets:

@@ -110,7 +110,7 @@ class Analyze(object):
             filterName=self.ftName, 
             objects=None, # ToDo, define a sensible value (???) 
             temperature=None, # ToDo fetch it from FITS 
-            date=self.ev.now[0:10], 
+            date=self.ev.startTime[0:10], 
             comment=None,  # ToDo, define a sensible value
             pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + 'plot.png', 
             dataFwhm=dataFwhm, 

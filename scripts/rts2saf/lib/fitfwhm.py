@@ -73,7 +73,12 @@ class FitFwhm(object):
         return self.min_focpos_fwhm, val_fwhm
 
     def plotData(self):
-        x_fwhm = np.linspace(self.dataFwhm.pos.min(), self.dataFwhm.pos.max())
+        try:
+            x_fwhm = np.linspace(self.dataFwhm.pos.min(), self.dataFwhm.pos.max())
+        except Exception, e:
+            self.logger.error('fitfwhm: numpy error:\n{0}'.format(e))                
+            return
+
         plt.plot(self.dataFwhm.pos, self.dataFwhm.fwhm, 'ro', color='blue')
         plt.errorbar(self.dataFwhm.pos, self.dataFwhm.fwhm, xerr=self.dataFwhm.errx, yerr=self.dataFwhm.stdFwhm, ecolor='black', fmt=None)
         if self.flag:
