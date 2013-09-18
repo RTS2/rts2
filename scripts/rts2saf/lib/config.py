@@ -71,7 +71,7 @@ class DefaultConfiguration(object):
         #
         self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
 
-        #                                         offset to clear path
+        #                                         offset to empty slot
         #                                               relative lower acquisition limit [tick]
         #                                                      relative upper acquisition limit [tick]
         #                                                            stepsize [tick]
@@ -129,6 +129,7 @@ class DefaultConfiguration(object):
 
         self.dcf[('mode', 'SET_FOCUS')]= True
         self.dcf[('mode', 'SET_INITIAL_FOC_DEF')]= True
+        self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
 
         # mapping of fits header elements to canonical
 # BOO2        self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_DAV.DOME_TMP'
@@ -228,7 +229,7 @@ class Configuration(DefaultConfiguration):
             elif section in 'filter properties': 
                 items= value[1:-1].split(',')
                 ft=dev.Filter( name=items[0],  
-                           OffsetToClearPath=string.atoi(items[1]), 
+                           OffsetToEmptySlot=string.atoi(items[1]), 
                            lowerLimit=string.atoi(items[2]), 
                            upperLimit=string.atoi(items[3]), 
                            stepSize=string.atoi(items[4]), 

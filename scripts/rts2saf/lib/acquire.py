@@ -201,7 +201,7 @@ class Acquire(object):
         self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
         self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
         # ToDo filter
-        # set all but ftw to slot clear path
+        # set all but ftw to empty slot
         for ftw in self.filterWheelsInUse:
             if ftw.name not in self.ftw.name:
                 if self.debug: self.logger.debug('acquire: filter wheel: {0}, setting empty slot on filter wheel: {1}:{2}, '.format(self.ftw.name,ftw.name, ftw.filters[0].name))
@@ -238,8 +238,30 @@ class Acquire(object):
             logger=self.logger)
 
         self.scanThread.start()
-            
+        return True
             
     def stopScan(self, timeout=1.):
         self.scanThread.join(timeout)
         self.__finalState
+
+    def writeFocDef(self):
+        if self.rt.foc.focMn and self.rt.foc.focMx:
+            if self.rt.foc.focMn < self.rt.foc.focDef < self.rt.foc.focMx:
+                self.proxy.setValue(self.foc.name,'FOC_DEF', self.rt.foc.focDef)
+            else:
+                self.logger.warn('acquire: focuser: {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.rt.foc.name, self.rt.foc.focDef, self.rt.foc.focMn, self.rt.foc.focMx))
+        else:
+            self.logger.warn('acquire: focuser: {0} not writing FOC_DEF, no minimum or maximum value present'.format(self.rt.foc.name))
+
+    def writeOffsets(self, ftw=None):
+        """Write only for camd::filter filters variable the offsets """
+        self.proxy.refresh()
+        filterNames=  self.proxy.getSelection(self.ccd.name, 'filter')
+        # order matters :-))
+        ftwns= map( lambda x: x.name, ftw.filters)
+        offsets=str()
+        for ftn in filterNames:
+            ind= ftwns.index(ftn)
+            offsets += '{0} '.format(ftw.filters[ind].OffsetToEmptySlot)
+
+        self.proxy.setValue(self.ccd.name,'filter_offsets', offsets[:-1])

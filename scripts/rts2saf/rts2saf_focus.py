@@ -58,13 +58,13 @@ if __name__ == '__main__':
     # check the presence of the devices
     cdv= dev.CheckDevices(debug=args.debug, rt=rt, logger=logger)
     if not cdv.camera():
-        logger.error('rts2saf_focus: camera:{0} not present, exiting'.format())
+        logger.error('rts2saf_focus: exiting')
         sys.exit(1)
     if not cdv.focuser():
-        logger.error('rts2saf_focus: focuser:{0} not present, exiting'.format())
+        logger.error('rts2saf_focus:  exiting')
         sys.exit(1)
     if not cdv.filterWheels():
-        logger.error('rts2saf_focus: filter wheel or filters not present, exiting')
+        logger.error('rts2saf_focus:  exiting')
         sys.exit(1)
 
     dryFitsFiles=None
@@ -81,34 +81,33 @@ if __name__ == '__main__':
     for ftw in rt.filterWheelsInUse:
         # first find in ftw.filters a slot with no filter (clear path, offset=0)
         # use this slot first, followed by all others
-        ftw.filters.sort(key=lambda x: x.OffsetToClearPath)
+        ftw.filters.sort(key=lambda x: x.OffsetToEmptySlot)
         for ft in ftw.filters:
-            if ft.OffsetToClearPath==0:
-                # ft.clearPath=Null at instanciation
+            if args.debug: logger.debug('rts2saf_focus: filter wheel: {0:5s}, filter:{1:5s} in use'.format(ftw.name, ft.name))
+            if ft.OffsetToEmptySlot==0:
+                # ft.emptySlot=Null at instanciation
                 try:
-                    ftw.clearPaths.append(ft)
+                    ftw.emptySlots.append(ft)
                 except:
-                    ftw.clearPaths=list()
-                    ftw.clearPaths.append(ft)
+                    ftw.emptySlots=list()
+                    ftw.emptySlots.append(ft)
 
-                if args.debug: logger.debug('rts2saf_focus: filter wheel: {0:5s}, filter:{1:5s} is an empty slot (clearPath)'.format(ftw.name, ft.name))
+                if args.debug: logger.debug('rts2saf_focus: filter wheel: {0:5s}, filter:{1:5s} is an empty slot'.format(ftw.name, ft.name))
 
         # warn only if two or more ftws are used
-        if not ftw.clearPaths:
+        if not ftw.emptySlots:
             if len(rt.filterWheelsInUse) > 0:
-                logger.warn('rts2saf_focus: filter wheel: {0:5s}, no empty slot found (clearPath)'.format(ftw.name))
+                logger.warn('rts2saf_focus: filter wheel: {0:5s}, no empty slot found'.format(ftw.name))
 
     # loop over filter wheels, their filters and offsets (FOC_TOFF)
     for ftw in rt.filterWheelsInUse:
         if len(ftw.filters) ==1:
-            if ftw.filters[0].OffsetToClearPath >0:
-                logger.warn('rts2saf_focus: filter wheel: {0} has only one slot: {1}, but it is not  empty '.format(ftw.name,ftw.filters[0].name))
-
+            if ftw.filters[0].OffsetToEmptySlot >0:
+                logger.warn('rts2saf_focus: filter wheel: {0} has only one slot: {1}, but it is not  empty'.format(ftw.name,ftw.filters[0].name))
             else:
-                if args.debug: logger.debug('rts2saf_focus: filter wheel: {0} has only one slot: {1} and is empty '.format(ftw.name,ftw.filters[0].name))
+                if args.debug: logger.debug('rts2saf_focus: filter wheel: {0} has only one slot: {1} and is empty'.format(ftw.name,ftw.filters[0].name))
             continue
-        # 
-        focDefClearPath=None
+        
         for ft in ftw.filters:
             if args.debug: logger.debug('rts2saf_focus: start filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
             # 
@@ -164,34 +163,31 @@ if __name__ == '__main__':
             if weightedMeanFwhm:
                 logger.info('rts2saf_focus: {0:5.0f}: weightedMeanFwhm'.format(weightedMeanFwhm))
 
-
             if minFwhmPos:
                 logger.info('rts2saf_focus: {0:5.0f}: minFwhmPos'.format(minFwhmPos))
                 logger.info('rts2saf_focus: {0:5.0f}: fwhm'.format(fwhm))
 
-                if ft.OffsetToClearPath == 0.:
-                    focDefClearPath= minFwhmPos
-                else:
-                    logger.debug('rts2saf_focus: filter: {0} has an offset: {1}'.format(ft.name, int(minFwhmPos- focDefClearPath)))
-
-            if rt.cfg['SET_FOCUS']:
-                # FOC_DEF is only set for filter slots having no filter (filter offset==0)
-                if ft.OffsetToClearPath == 0.:
-                    if minFwhmPos:                    
+                if ft.OffsetToEmptySlot == 0.:
+                    # FOC_DEF (is set first)
+                    rt.foc.focDef= minFwhmPos
+                    if rt.cfg['SET_FOCUS']:
+                        acqu.writeFocDef()
                         logger.info('rts2saf_focus: clear path: {0}, set FOC_DEF: {1}'.format(ft.name, int(minFwhmPos)))
-                    else:
-                        logger.debug('rts2saf_focus: clear path: {0}, fit failed: not setting FOC_DEF'.format(ft.name))
                 else:
-                    if minFwhmPos:
-                        logger.info('rts2saf_focus: no clear path: {0}, not setting FOC_DEF: {0}'.format(ft.name, int(minFwhmPos)))
-                    # ToDO store in string filter_offsets
-                    # and write it to the CCD filter_offsets variable
-
+                    logger.debug('rts2saf_focus: filter: {0} has an offset: {1}'.format(ft.name, int(minFwhmPos- rt.foc.focDef)))
+                    ft.OffsetToEmptySlot=int(minFwhmPos- rt.foc.focDef)
             else:
-                if minFwhmPos:
-                    logger.debug('rts2saf_focus: not setting FOC_DEF: {0}, see SET_FOCUS'.format(int(minFwhmPos)))
+                logger.warn('rts2saf_focus: no fitted minimum found')
 
             if args.debug: logger.debug('rts2saf_focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
+        else:
+            # ToDo wait on Petr's answer
+            # write the offsets in the correct order
+            if rt.cfg['WRITE_FILTER_OFFSETS']:
+                acqu.writeOffsets(ftw=ftw)
+
+
+        if args.debug: logger.debug('rts2saf_focus: end filter wheel: {}'.format(ftw.name))
 
 #
 # Write config with new filter offsets

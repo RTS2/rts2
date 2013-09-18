@@ -30,9 +30,10 @@ from rts2.json import JSONProxy
 
 class Filter():
     """Class for filter properties"""
-    def __init__(self, name=None, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, stepSize =None, exposureFactor=1.):
+    def __init__(self, name=None, focDef=None, OffsetToEmptySlot=None, lowerLimit=None, upperLimit=None, stepSize =None, exposureFactor=1.):
         self.name= name
-        self.OffsetToClearPath= OffsetToClearPath# [tick]
+        self.focDef=focDef
+        self.OffsetToEmptySlot= OffsetToEmptySlot# [tick]
         self.relativeLowerLimit= lowerLimit# [tick]
         self.relativeUpperLimit= upperLimit# [tick]
         self.exposureFactor   = exposureFactor 
@@ -44,7 +45,7 @@ class FilterWheel():
     def __init__(self, name=None, filters=list()):
         self.name= name
         self.filters=filters
-        self.clearPaths=None
+        self.emptySlots=None # set at run time
 
 class Focuser():
     """Class for focuser properties"""
@@ -56,7 +57,9 @@ class Focuser():
         self.speed=speed
         self.stepSize=stepSize
         self.temperatureCompensation=temperatureCompensation
-        self.focDef=None # will be set by class Acquire()
+        self.focDef=None # will be set at run time
+        self.focMn=None
+        self.focMx=None
 
 class CCD():
     """Class for CCD properties"""
@@ -98,14 +101,19 @@ class CheckDevices(object):
             self.errorMessage=e
 
     def camera(self):
+        if not self.connected:
+            return False
+
         self.proxy.refresh()
         try:
             self.proxy.getDevice(self.rt.ccd.name)
         except:
-            self.logger.error('checkDevices: device: {0} not present'.format(self.ccd.name))        
+            self.logger.error('checkDevices: device: {0} not present'.format(self.rt.ccd.name))        
             return False
         if self.debug: self.logger.debug('checkDevices: camera: {0} present'.format(self.rt.ccd.name))
 
+        # ToDo do not forget 
+        # filter_offsets_A, etc. see Bootes-2 device andor3
         ftos=self.proxy.getValue(self.rt.ccd.name, 'filter_offsets')
         if len(self.rt.filterWheelsInUse):
             if len(ftos)==0:
@@ -121,16 +129,29 @@ class CheckDevices(object):
         return True
 
     def focuser(self):
+        if not self.connected:
+            return False
         self.proxy.refresh()
         try:
             self.proxy.getDevice(self.rt.foc.name)
         except:
-            self.logger.error('checkDevices: device: {0} not present'.format(self.foc.name))        
+            self.logger.error('checkDevices: device: {0} not present'.format(self.rt.foc.name))        
             return False
         if self.debug: self.logger.debug('checkDevices: focuser: {0} present'.format(self.rt.foc.name))
+
+        self.rt.foc.focMn=self.proxy.getDevice(self.rt.foc.name)['foc_min'][1]
+        self.rt.foc.focMx=self.proxy.getDevice(self.rt.foc.name)['foc_max'][1]
+
+        if self.rt.foc.focMn and self.rt.foc.focMx:
+            pass
+        else:
+            self.logger.warn('checkDevices: focuser: {0} no minimum or maximum value present'.format(self.rt.foc.name))
+
         return True
 
     def filterWheels(self):
+        if not self.connected:
+            return False
         self.proxy.refresh()
         for ftw in self.rt.filterWheelsInUse:
             try:
