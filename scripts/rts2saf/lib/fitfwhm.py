@@ -40,11 +40,10 @@ except:
 
 class FitFwhm(object):
     """ Fit FWHM data and find the minimum"""
-    def __init__(self, showPlot=False, filterName=None, objects=None, temperature=None, date=None,  comment=None, pltFile=None, dataFwhm=None, logger=None):
+    def __init__(self, showPlot=False, filterName=None, temperature=None, date=None,  comment=None, pltFile=None, dataFwhm=None, logger=None):
 
         self.showPlot=showPlot
         self.filterName=filterName
-        self.objects=objects
         self.temperature=temperature
         self.date=date
         self.dataFwhm=dataFwhm
@@ -84,11 +83,23 @@ class FitFwhm(object):
         if self.flag:
             plt.plot(x_fwhm, self.fitfunc_fwhm(self.par, x_fwhm), 'r-', color='blue')
 
-        plt.title('rts2saf, {0},{1},{2},obj:{3},fw:{4:.0f},{5}'.format(self.date, self.filterName, self.temperature, self.objects, float(self.min_focpos_fwhm), self.comment), fontsize=12)
+        if self.temperature and self.comment:
+            plt.title('rts2saf, {0},{1},{2},min:{3:.0f},{4}'.format(self.date, self.filterName, self.temperature, float(self.min_focpos_fwhm), self.comment), fontsize=12)
+        elif self.temperature:
+            plt.title('rts2saf, {0},{1},{2},min:{3:.0f}'.format(self.date, self.filterName, self.temperature, float(self.min_focpos_fwhm)), fontsize=12)
+        elif self.comment:
+            plt.title('rts2saf, {0},{1},min:{2:.0f},{3}'.format(self.date, self.filterName, float(self.min_focpos_fwhm), self.comment), fontsize=12)
+        else:
+            plt.title('rts2saf, {0},{1},min:{2:.0f}'.format(self.date, self.filterName, float(self.min_focpos_fwhm)), fontsize=12)
+
         plt.xlabel('FOC_POS [tick]')
         plt.ylabel('FWHM [px]')
         plt.grid(True)
-        plt.savefig(self.pltFile)
+        try:
+            plt.savefig(self.pltFile)
+        except:
+            self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.pltFile))                
+            
         if self.showPlot:
             if NODISPLAY:
                 self.logger.warn('fitfwhm: NO $DISPLAY no plot')                
@@ -105,6 +116,6 @@ if __name__ == '__main__':
         stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),)
  
 
-    fit=FitFwhm(showPlot=True, filterName='U', objects=10, temperature=20., date='2013-09-08T09:30:09', comment='Test', pltFile='./test.png', dataFwhm=dataFwhm)
+    fit=FitFwhm(showPlot=True, filterName='U', temperature=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFwhm=dataFwhm)
     fit.fitData()
     fit.plotData()

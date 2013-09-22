@@ -41,13 +41,14 @@ except:
 
 class Analyze(object):
     """Analyze a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, ev=None, logger=None):
+    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, ev=None, logger=None):
         self.debug=debug
         self.dataSex=dataSex
         self.displayDs9=displayDs9
         self.displayFit=displayFit
         self.ftwName=ftwName
         self.ftName=ftName
+        self.dryFits=dryFits
         self.ev=ev
         self.logger=logger
 
@@ -104,18 +105,20 @@ class Analyze(object):
 
         # Fit median FWHM data
         dataFwhm=dt.DataFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
+        comment=None
+        if self.dryFits:
+            comment='dryFits'
 
         fit=ft.FitFwhm(
             showPlot=self.displayFit, 
             filterName=self.ftName, 
-            objects=None, # ToDo, define a sensible value (???) 
             temperature=None, # ToDo fetch it from FITS 
-            date=self.ev.startTime[0:10], 
-            comment=None,  # ToDo, define a sensible value
-            pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + 'plot.png', 
+            date=self.ev.startTime[0:19], 
+            comment=comment,  # ToDo, define a sensible value
+            pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
             dataFwhm=dataFwhm, 
             logger=self.logger)
-
+        
         minFwhmPos,fwhm=fit.fitData()
 
         # make other decissions on if the fit converged
@@ -142,8 +145,19 @@ class Analyze(object):
                 fit.plotData()
             # plot them through ds9
             if self.displayDs9:
-                dds9=ds9()
+                for cnt, dSx in self.dataSex.iteritems():
+                    if dSx:
+                        break
+                else:
+                    self.logger.warn('analyze: OOOOOOOOPS, not a single fits image to display')
+                    return [ None, None, None, None ]
 
+                try:
+                    dds9=ds9()
+                except Exception, e:
+                    self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
+                    return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
+    
                 for cnt, dSx in self.dataSex.iteritems():
                     if dSx:
                         if dSx.fitsFn:
@@ -178,13 +192,18 @@ if __name__ == '__main__':
     except:
         import sextract as sx
 
+    try:
+        import lib.environ as env
+    except:
+        import environ as env
+
     parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--debugSex', dest='debugSex', action='store_true', default=False, help=': %(default)s,add more output on SExtract')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='./rts2saf-my.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--dryfitsfiles', dest='dryfitsfiles', action='store', default='./samples', help=': %(default)s, directory where a FITS files are stored from a earlier focus run')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
@@ -210,11 +229,15 @@ if __name__ == '__main__':
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
 
+    # get the environment
+    ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
+    ev.createAcquisitionBasePath(ftwName=None, ftName=None)
     if args.dryfitsfiles:
         dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryfitsfiles, rt.cfg['FILE_GLOB']))
 
         if len(dryFitsFiles)==0:
             logger.error('analyze: no FITS files found in:{}'.format(args.dryfitsfiles))
+            logger.info('analyze: set --dryfitsfiles or'.format(args.dryfitsfiles))
             logger.info('analyze: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
             logger.info('analyze: and store it in directory: {0}'.format(args.dryfitsfiles))
             sys.exit(1)
@@ -230,7 +253,7 @@ if __name__ == '__main__':
         dataSex[cnt]=rsx.sextract(fitsFn=fitsFn) 
         cnt +=1
 
-    an=Analyze(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, logger=logger)
+    an=Analyze(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, ev=ev, logger=logger)
     weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm= an.analyze()
 
     logger.info('analyze: result: {0}, {1}, {2}, {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))

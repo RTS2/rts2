@@ -59,8 +59,7 @@ class DefaultConfiguration(object):
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
         self.dcf[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
         self.dcf[('basic', 'DEFAULT_FOC_POS')]= 3500
-
-
+        self.dcf[('basic', 'EMPTY_SLOT_NAMES')]= [ 'empty', 'open' ]
         # this is really ugly
         # but ConfigParser does not allow something else
         # ToDo define more!
@@ -69,24 +68,28 @@ class DefaultConfiguration(object):
         self.dcf[('filter wheel', 'fltw3')]= '[ FILTC, nof ]'
         self.dcf[('filter wheel', 'fltw4')]= '[ FILTD, nof ]'
         #
+        # ToDo: really used?
         self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
-
-        #                                         offset to empty slot
-        #                                               relative lower acquisition limit [tick]
-        #                                                      relative upper acquisition limit [tick]
-        #                                                            stepsize [tick]
-        #                                                                 exposure factor
+        #                                                 relative lower acquisition limit [tick]
+        #                                                       relative upper acquisition limit [tick]
+        #                                                             stepsize [tick]
+        #                                                                  exposure factor
         # ToDo define more identifiers!
-        self.dcf[('filter properties', 'flt1')]= '[ U, 2074, -1000, 1100, 100, 11.1]'
-        self.dcf[('filter properties', 'flt2')]= '[ nof1,  0, -1200, 1300, 200, 1.]'
-        self.dcf[('filter properties', 'flt3')]= '[ nof2,  0, -1200, 1300, 200, 1.]'
-        self.dcf[('filter properties', 'flt4')]= '[ C, 1211, -1400, 1500, 300, 1.]'
-        self.dcf[('filter properties', 'flt5')]= '[ D, 1211, -1400, 1500, 300, 1.]'
+        self.dcf[('filter properties', 'flt1')]= '[ U,   -1000, 1100, 100, 11.1]'
+        self.dcf[('filter properties', 'flt2')]= '[ nof1,-1200, 1300, 200, 1.]'
+        self.dcf[('filter properties', 'flt3')]= '[ nof2,-1200, 1300, 200, 1.]'
+        self.dcf[('filter properties', 'flt4')]= '[ C,   -1400, 1500, 300, 1.]'
+        self.dcf[('filter properties', 'flt5')]= '[ D,   -1400, 1500, 300, 1.]'
+        self.dcf[('filter properties', 'flt6')]= '[ D,   -1400, 1500, 300, 1.]'
+        self.dcf[('filter properties', 'flt7')]= '[ D,   -1400, 1500, 300, 1.]'
+        self.dcf[('filter properties', 'flt8')]= '[ D,   -1400, 1500, 300, 1.]'
+        self.dcf[('filter properties', 'flt9')]= '[ D,   -1400, 1500, 300, 1.]'
 
         self.dcf[('focuser properties', 'FOCUSER_NAME')]= 'F0'
         self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
+        self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 11, 2]
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
         self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 1.1428e-6
         self.dcf[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
@@ -105,7 +108,7 @@ class DefaultConfiguration(object):
         self.dcf[('SExtractor', 'SEXPATH')]= 'sextractor'
         self.dcf[('SExtractor', 'SEXCFG')]= '/etc/rts2/rts2saf/sex/rts2saf-sex.cfg'
         self.dcf[('SExtractor', 'SEXPARAM')]= '/etc/rts2/rts2saf/sex/rts2saf-sex.param'
-        self.dcf[('SExtractor', 'FIELDS')]= '[EXT_NUMBER,X_IMAGE,Y_IMAGE,MAG_BEST,FLAGS,CLASS_STAR,FWHM_IMAGE,A_IMAGE,B_IMAGE]'
+        self.dcf[('SExtractor', 'FIELDS')]= ['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE']
         self.dcf[('SExtractor', 'OBJECT_SEPARATION')]= 10.
         self.dcf[('SExtractor', 'ELLIPTICITY')]= .1
         self.dcf[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3
@@ -132,7 +135,6 @@ class DefaultConfiguration(object):
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
 
         # mapping of fits header elements to canonical
-# BOO2        self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_DAV.DOME_TMP'
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'
         self.dcf[('fits header mapping', 'DATETIME')]= 'JD'
         self.dcf[('fits header mapping', 'EXPOSURE')]= 'EXPOSURE'
@@ -142,13 +144,10 @@ class DefaultConfiguration(object):
 
         self.dcf[('telescope', 'TEL_RADIUS')] = 0.09 # [meter]
         self.dcf[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
-        
 
-        self.dcf[('queuing', 'USERNAME')] = 'rts2' # username password for rts2saf-queue command, see postgres db
-        self.dcf[('queuing', 'PASSWORD')] = 'rts2'
-        self.dcf[('queuing', 'QUEUENAME')]= 'focusing'
-        self.dcf[('queuing', 'TARGETID')] = '5'
-        self.dcf[('queuing', 'THRESHOLD')] = 5.12
+        self.dcf[('connection', 'URL')] = 'http://127.0.0.1:8889' 
+        self.dcf[('connection', 'USERNAME')] = 'petr'
+        self.dcf[('connection', 'PASSWORD')] = 'test'
 
 
     def dumpDefaults(self):
@@ -177,14 +176,15 @@ class Configuration(DefaultConfiguration):
     def readConfiguration(self, fileName=None):
         # make the values accessible
         self.cfg=dict()
+        self.focFound=False
+
         config = ConfigParser.ConfigParser()
         config.optionxform = str
 
         if os.path.exists(fileName):
             try:
                 config.readfp(open(fileName))
-            except Exception, e:
-                
+            except Exception, e:                
                 self.logger.error('Configuration.readConfiguration: config file {0} has wrong syntax:\n{1},\nexiting'.format(fileName,e))
                 sys.exit(1)
             # ok, I misuse ConfigParser
@@ -204,7 +204,6 @@ class Configuration(DefaultConfiguration):
         # read the defaults
         for (section, identifier), value in self.dcf.iteritems():
             self.cfg[identifier]= value
-
         # over write the defaults
         for (section, identifier), value in self.dcf.iteritems():
             try:
@@ -219,24 +218,24 @@ class Configuration(DefaultConfiguration):
             if self.debug: print '{} {} {}'.format(section, identifier, value)
 
             self.cfg[identifier]= value
-            items=list() ;
+            items=list()
             if  section in 'SExtractor':
                 if identifier in 'FIELDS':
-                    self.sexFields=value[1:-1].split(',')
+                    value=value.replace("'", '')
+                    self.cfg['FIELDS']=value[1:-1].split(',')
                 else:
                     self.cfg[identifier]= value
 
             elif section in 'filter properties': 
                 items= value[1:-1].split(',')
                 ft=dev.Filter( name=items[0],  
-                           OffsetToEmptySlot=string.atoi(items[1]), 
-                           lowerLimit=string.atoi(items[2]), 
-                           upperLimit=string.atoi(items[3]), 
-                           stepSize=string.atoi(items[4]), 
-                           exposureFactor=string.atof(items[5]))
+                           lowerLimit=string.atoi(items[1]), 
+                           upperLimit=string.atoi(items[2]), 
+                           stepSize=string.atoi(items[3]), 
+                           exposureFactor=string.atof(items[4]))
 
                 self.filters.append(ft)
-            
+
             elif( section in 'filter wheel'):
                 items= value[1:-1].split(',')
                 self.filterWheelsDefs[items[0]]=items[1:]
@@ -244,7 +243,7 @@ class Configuration(DefaultConfiguration):
             elif( section in 'filter wheels'):
                 items= value[1:-1].split(',')
                 for item in items:
-                    item.replace(' ', '')
+                    item=item.replace(' ', '')
                     self.filterWheelsInUseDefs.append(item)
 
             elif( section in 'focuser properties'):
@@ -261,7 +260,11 @@ class Configuration(DefaultConfiguration):
                 elif(identifier=='FOCUSER_STEP_SIZE'):
                     self.foc.stepSize= float(value)
                 elif(identifier=='FOCUSER_TEMPERATURE_COMPENSATION'):
-                        self.foc.temperatureCompensation= bool(value)
+                    self.foc.temperatureCompensation= bool(value)
+                elif(identifier=='FOCUSER_RANGE'):
+                    value=value.replace("'", '')
+                    rng=map(lambda x: int(x), value[1:-1].split(','))
+                    self.foc.focToff=range(rng[0], rng[1]+rng[2],rng[2])
 
             elif( section in 'ccd'):
                 if identifier=='CCD_NAME':
@@ -337,8 +340,6 @@ class Configuration(DefaultConfiguration):
         self.cfg['AVAILABLE FILTERS']=self.filters
         self.cfg['AVAILABLE FILTER WHEELS']=self.filterWheels 
         self.cfg['FILTER WHEELS IN USE']=self.filterWheelsInUse 
-        self.cfg['SEX FIELDS']=self.sexFields 
-
 
     def writeConfiguration(self, cfn='./rts2saf-my-new.cfg'):
         for (section, identifier), value in sorted(self.dcf.iteritems()):
@@ -355,6 +356,24 @@ class Configuration(DefaultConfiguration):
             configfile.write('\n')
             self.config.write(configfile)
 
+
+    def checkConfiguration(self):
+        # rts2.sextractur excepts the file not found error and uses internal defaults, we check that here
+        if not os.path.exists(self.cfg['SEXPATH']):
+            self.logger.warn( 'sextract: sextractor path:{0} not valid, returning'.format(self.cfg['SEXPATH']))            
+            return False
+        if not os.path.exists(self.cfg['SEXCFG']):
+            self.logger.warn( 'sextract: config file:{0} not found, returning'.format(self.cfg['SEXCFG']))            
+            return False
+        if not os.path.exists(self.cfg['STARNNW_NAME']):
+            self.logger.warn( 'sextract: config file:{0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
+            return False
+        if not self.cfg['FIELDS']:
+            self.logger.warn( 'sextract: no sextractor fields defined')
+            return False
+
+        return True
+        # more to come
 
 
 if __name__ == '__main__':
@@ -382,6 +401,11 @@ if __name__ == '__main__':
 #    rt.dumpDefaults()
 
     rt.readConfiguration(fileName=args.config)
+
+    if not rt.checkConfiguration():
+        print 'Something wrong with configuration'
+        sys.exit(1)
+
 #    for c,v in rt.cfg.iteritems():
 #        print c,v
 
@@ -389,8 +413,8 @@ if __name__ == '__main__':
     for ftw in rt.cfg['AVAILABLE FILTER WHEELS']:
         print '---------------------------- {} {}'.format(ftw.name, len(ftw.filters))
         for ft in ftw.filters:
-            print ft.name
-            print ft.stepSize
+            print 'name {}'.format(ft.name)
+            print 'step {}'.format(ft.stepSize)
         print '----------------------------'
 
 #    rt.writeConfiguration(cfn='./rts2saf-my-new.cfg')

@@ -46,8 +46,8 @@ class ImgpAnalysis():
         self.scriptName= scriptName 
         self.fitsFileName= fitsFileName
         self.astrometryCmd= 'rts2-astrometry.net'
-        self.fwhmCmd= 'rts2af_fwhm.py'
-        self.fwhmConfigFile= '/etc/rts2/rts2af/rts2af-fwhm.cfg'
+        self.fwhmCmd= 'rts2saf_fwhm.py'
+        self.fwhmConfigFile= '/etc/rts2/rts2saf/rts2saf.cfg'
         self.fwhmLogFile= '/var/log/rts2-debug'
 
     def spawnProcess( self, cmd=None, wait=None):
@@ -60,7 +60,7 @@ class ImgpAnalysis():
                 subpr  = subprocess.Popen( cmd)
 
         except OSError as (errno, strerror):
-            logging.error('imgp_analysis.py: returning due to I/O error({0}): {1}'.format(errno, strerror))
+            logging.error('imgp_analysis.py: returning due to I/O error({0}): {1}\ncommand:{2}'.format(errno, strerror, cmd))
             return None
 
         except:
@@ -75,9 +75,9 @@ class ImgpAnalysis():
         cmd= [  self.fwhmCmd,
                 '--config',
                 self.fwhmConfigFile,
-                '--logTo',
+                '--logfile',
                 self.fwhmLogFile,
-                '--reference',
+                '--fitsFn',
                 self.fitsFileName,
                 ]
 # no time to waste, the decision if a focus run is triggered is done elsewhere
@@ -92,10 +92,13 @@ class ImgpAnalysis():
 # this process is hopefully started in parallel on the second core if any.
         try:
             astrometryLine= self.spawnProcess(cmd, True).communicate()
-            astrometryLine= astrometryLine[0].split('\n')
+            report= astrometryLine[0].split('\n')
             # tell the result IMGP
-            print '{0}'.format(astrometryLine[0])
-            logging.info( 'imgp_analysis.py: ending, result: {0}'.format(astrometryLine[0]))
+            # ToDO check what IMGP expects, now the result is wrongly printed
+            print '{0}'.format(report[0])
+            for tp in astrometryLine:
+                logging.info( 'imgp_analysis.py: ending, result: {0}'.format(tp))
+                #print 'imgp_analysis.py: ending, result: {0}'.format(tp)
         except:
             logging.error( 'imgp_analysis.py: ending, reading from astrometry pipe failed')
             

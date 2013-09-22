@@ -1,0 +1,9 @@
+#
+# 2013-09-22, Markus Wildi, wildi.markus@bluewin.ch 
+#
+
+Fetch with 
+
+wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
+
+and unpack them here or specify the location with --dryfitsfiles.

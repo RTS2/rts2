@@ -19,6 +19,7 @@
 #
 
 __author__ = 'markus.wildi@bluewin.ch'
+import os
 import pyfits
 
 import rts2.sextractor as rsx
@@ -45,10 +46,12 @@ class Sextract(object):
         self.sexpath=rt.cfg['SEXPATH']
         self.sexconfig=rt.cfg['SEXCFG']
         self.starnnw=rt.cfg['STARNNW_NAME']
-        self.fields=rt.cfg['SEX FIELDS']
+        self.fields=rt.cfg['FIELDS']
         self.logger=logger
 
+
     def sextract(self, fitsFn):
+
         sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw)
         sex.runSExtractor(fitsFn)
 
@@ -60,7 +63,7 @@ class Sextract(object):
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: {0}: {1:5d}, raw objects: {2}, no objects found (after filtering), rts2.sextractor:\n{2}'.format(fitsFn, focPos, objectCount, e))
+            self.logger.warn( 'sextract: {0}: {1:5d}, raw objects: {2}, no objects found (after filtering), \nmessage rts2.sextractor: {2}'.format(fitsFn, focPos, objectCount, e))
             self.logger.warn( 'sextract: new version of rts2.sextractor installed???')
             return None
 
@@ -169,7 +172,7 @@ if __name__ == '__main__':
     # Fit median FWHM data
     dataFwhm=dt.DataFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
 
-    fit=ft.FitFwhm(showPlot=True, filterName='U', objects=10, temperature=20., date='2013-09-08T09:30:09', comment='Test', pltFile='./test.png', dataFwhm=dataFwhm)
+    fit=ft.FitFwhm(showPlot=True, filterName='U', temperature=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFwhm=dataFwhm)
     fit.fitData()
     fit.plotData()
 

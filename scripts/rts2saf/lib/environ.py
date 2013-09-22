@@ -29,11 +29,11 @@ import os
 
 class Environment():
     """Class performing various task on files, e.g. expansion to (full) path"""
-    def __init__(self, debug=None, rt=None, log=None):
+    def __init__(self, debug=None, rt=None, logger=None):
         self.startTime= datetime.datetime.now().isoformat()
         self.debug=debug
         self.rt=rt
-        self.log=log
+        self.logger=logger
         self.runTimePath= '{0}/{1}/'.format(self.rt.cfg['BASE_DIRECTORY'], self.startTime) 
         self.runDateTime=None
 
@@ -46,7 +46,7 @@ class Environment():
 
     def expandToTmp( self, fileName=None):
         if self.absolutePath(fileName):
-            self.log.error('Environment.expandToTmp: absolute path given: {0}'.format(fileName))
+            self.logger.error('Environment.expandToTmp: absolute path given: {0}'.format(fileName))
             return fileName
 
         fileName= self.rt.cfg['TEMP_DIRECTORY'] + '/'+ fileName
@@ -54,7 +54,7 @@ class Environment():
 
     def absolutePath(self, fileName=None):
         if fileName==None:
-            self.log.error('Environment.absolutePath: no file name given')
+            self.logger.error('Environment.absolutePath: no file name given')
             
         pLeadingSlash = re.compile( r'\/.*')
         leadingSlash = pLeadingSlash.match(fileName)
@@ -69,7 +69,7 @@ class Environment():
                 self.runTimePath= root
                 return True
         else:
-            self.log.error('Environment.defineRunTimePath: file not found: {0}'.format(fileName))
+            self.logger.error('Environment.defineRunTimePath: file not found: {0}'.format(fileName))
 
         return False
 
@@ -89,7 +89,7 @@ class Environment():
 # ToDo: refactor with expandToSkyList
     def expandToDs9RegionFileName( self, fitsHDU=None):
         if fitsHDU==None:
-            self.log.error('Environment.expandToDs9RegionFileName: no hdu given')
+            self.logger.error('Environment.expandToDs9RegionFileName: no hdu given')
         
         
         items= self.rt.cfg['DS9_REGION_FILE'].split('.')
@@ -102,9 +102,10 @@ class Environment():
             
         return  self.expandToTmp(fileName)
 
+
     def expandToDs9CommandFileName( self, fitsHDU=None):
         if fitsHDU==None:
-            self.log.error('Environment.expandToDs9COmmandFileName: no hdu given')
+            self.logger.error('Environment.expandToDs9COmmandFileName: no hdu given')
         
         items= self.rt.cfg['DS9_REGION_FILE'].split('.')
         try:
@@ -132,7 +133,7 @@ class Environment():
             try:
                 os.makedirs( pth)
             except:
-                self.log.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
+                self.logger.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
                 return False
 
         return True
@@ -178,3 +179,6 @@ if __name__ == '__main__':
 
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
+
+    ev= Environment(debug=args.debug, rt=rt, logger=logger)
+    print ev.startTime
