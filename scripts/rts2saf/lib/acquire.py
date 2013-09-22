@@ -58,12 +58,17 @@ class ScanThread(threading.Thread):
                 if self.debug: self.logger.debug('acquire: set FOC_TAR:{0}'.format(pos))
             else:
                 self.proxy.setValue(self.foc.name,'FOC_FOFF', pos)
-            slt= 1. + float(self.foc.stepSize) / self.foc.speed # ToDo, sleep a bit longer, ok?
-            time.sleep( slt)
 
             focPosCalc= pos
             if not self.blind:
                 focPosCalc += int(self.focDef)
+
+            focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
+            stepSize = int(self.proxy.getSingleValue(self.foc.name,'focstep'))
+
+            slt= abs(float(focPosCalc-focPos)) / self.foc.speed / abs(float(stepSize)) 
+            if self.debug: self.logger.debug('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, stepSize: {3}, sleep: {4}'.format(focPosCalc, focPos, self.foc.speed, abs(float(stepSize)), slt))
+            time.sleep( slt)
 
             self.proxy.refresh()
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))

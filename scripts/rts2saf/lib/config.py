@@ -92,6 +92,7 @@ class DefaultConfiguration(object):
         self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 11, 2]
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
         self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 1.1428e-6
+        print type(self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')])
         self.dcf[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
 
         self.dcf[('acceptance circle', 'CENTER_OFFSET_X')]= 0.

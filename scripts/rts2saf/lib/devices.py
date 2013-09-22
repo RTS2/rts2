@@ -31,7 +31,7 @@ from rts2.json import JSONProxy
 
 class Filter():
     """Class for filter properties"""
-    def __init__(self, name=None, OffsetToEmptySlot=None, lowerLimit=None, upperLimit=None, stepSize =None, exposureFactor=1.):
+    def __init__(self, name=None, OffsetToEmptySlot=None, lowerLimit=None, upperLimit=None, stepSize=None, exposureFactor=1.):
         self.name= name
         self.OffsetToEmptySlot= OffsetToEmptySlot# [tick]
         self.relativeLowerLimit= lowerLimit# [tick]

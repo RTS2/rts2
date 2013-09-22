@@ -47,9 +47,14 @@ Repeat that for user root.
 
 Configuration file
 ------------------
-  
+
+Save  /etc/rts2/devices ans replace it with the dummy devices
+ 
   cd ~/rts-2/conf
   sudo cp -a rts2saf /etc/rts2/
+  cd /etc/rts2/
+  mv devices devices.save
+  ln -s rts2saf/devices-dummy-one-filter-wheel devices
 
 Edit in /etc/rts2/rts2af/rts2saf.cfg and check if sextractor
 binary is found.
@@ -70,8 +75,8 @@ rts2/scripts/ubuntu-rts2-install, in case not use:
   ./rts2-configdb stars -c C0
   ./rts2-configdb stars -f W0
 
-The filters are stored in the Postgres DB table filters, the entries are not strictly necesssary 
-but it is recomended.
+The filters are stored in the Postgres DB table filters, the entries are not strictly necessary 
+but it is recommended.
 
 
 Testing with dummy devices
@@ -126,7 +131,7 @@ and if no errors are reported
 
   ./rts2saf_focus.py --conf ./lib/configs/rts2saf-one-filter-wheel.cfg --toc --dry ./lib/samples/  --exp 1.
 
-After a while a matplotlib window appears containg the fit. After closing it 
+After a while a matplotlib window appears containing the fit. After closing it 
 a DS9 window appears showing which stars have been chosen.
 
 
