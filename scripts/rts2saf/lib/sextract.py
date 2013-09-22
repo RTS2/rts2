@@ -79,59 +79,54 @@ if __name__ == '__main__':
     import numpy as np
     import time
     import argparse
+    import glob
     import logging
     try:
         import lib.config as cfgd
     except:
         import config as cfgd
+    try:
+        import lib.log as lg
+    except:
+        import log as lg
+
 
     parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('fitsFiles', metavar='fits', nargs='*', type=str, default=None, help=': %(default)s, fits files to process')
+    parser.add_argument('--dryfitsfiles', dest='dryfitsfiles', action='store', default='./samples', help=': %(default)s, directory where a FITS files are stored from a earlier focus run')
     # ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--ds9display', dest='ds9display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
-    parser.add_argument('--config', dest='config', action='store', default='./rts2saf-my.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
 
     args=parser.parse_args()
 
-    logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
-    logging.basicConfig(filename=args.logfile, level=args.level.upper(), format= logformat)
-    logger = logging.getLogger()
-
-    if args.level in 'DEBUG' or args.level in 'INFO':
-        toconsole=True
-    else:
-        toconsole=args.toconsole
-
-    if toconsole:
-    #http://www.mglerner.com/blog/?p=8
-        soh = logging.StreamHandler(sys.stdout)
-        soh.setLevel(args.level)
-        logger.addHandler(soh)
+    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
+    logger= lgd.logger 
 
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
 
-    if len(args.fitsFiles)==0:
-        dirname='./samples'
-        fitsFiles=list()
-        for path, dirs, files in os.walk(dirname):
-            for file in files:
-                fitsFiles.append(os.path.join(path, file))
-    else:
-        fitsFiles= args.fitsFiles.split()
+    dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryfitsfiles, rt.cfg['FILE_GLOB']))
 
-    cnt=0
+    if len(dryFitsFiles)==0:
+        logger.error('analyze: no FITS files found in:{}'.format(args.dryfitsfiles))
+        logger.info('analyze: set --dryfitsfiles or'.format(args.dryfitsfiles))
+        logger.info('analyze: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
+        logger.info('analyze: and store it in directory: {0}'.format(args.dryfitsfiles))
+        sys.exit(1)
+
+    
     dataSex=dict()
-    for fitsFn in fitsFiles:
+    for k, fitsFn in enumerate(fitsFiles):
         print fitsFn
         sx= Sextract(debug=args.debug, rt=rt, logger=logger)
-        dataSex[cnt]=sx.sextract(fitsFn=fitsFn) 
-        cnt +=1
-
+        try:
+            dataSex[k]=sx.sextract(fitsFn=fitsFn) 
+        except Exception, e:
+            logger.error('sextract: error with sextract:\nrts2.sextractor: {0}'.format(e))
     # very ugly
     nobjs=list()
     pos=list()
@@ -139,16 +134,16 @@ if __name__ == '__main__':
     errx=list()
     stdFwhm=list()
 
-    for cnt in dataSex.keys():
+    for k  in dataSex.keys():
         # all sextracted objects
-        nObjs= len(dataSex[cnt].catalogue)
-        print dataSex[cnt].focPos, dataSex[cnt].fwhm
+        nObjs= len(dataSex[k].catalogue)
+        print dataSex[k].focPos, dataSex[k].fwhm
         # star like objects
-        nobjs.append(dataSex[cnt].nstars)
-        pos.append(dataSex[cnt].focPos)
-        fwhm.append(dataSex[cnt].fwhm)
+        nobjs.append(dataSex[k].nstars)
+        pos.append(dataSex[k].focPos)
+        fwhm.append(dataSex[k].fwhm)
         errx.append(20.)
-        stdFwhm.append(dataSex[cnt].stdFwhm)
+        stdFwhm.append(dataSex[k].stdFwhm)
     # Weighted mean based on number of extracted objects (stars)
     weightedMean= np.average(a=pos, axis=0, weights=nobjs) 
     print '--------'
@@ -180,7 +175,7 @@ if __name__ == '__main__':
     if args.ds9display:
         display=ds9()
 
-        for cnt in dataSex.keys():
-            dr=ds9r.Ds9Region( dataSex=dataSex[cnt], display=display)
+        for k in dataSex.keys():
+            dr=ds9r.Ds9Region( dataSex=dataSex[k], display=display)
             dr.displayWithRegion()
             time.sleep(1.)

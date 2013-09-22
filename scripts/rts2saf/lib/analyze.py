@@ -197,6 +197,11 @@ if __name__ == '__main__':
     except:
         import environ as env
 
+    try:
+        import lib.log as lg
+    except:
+        import log as lg
+
     parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--debugSex', dest='debugSex', action='store_true', default=False, help=': %(default)s,add more output on SExtract')
@@ -211,20 +216,9 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-    logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
-    logging.basicConfig(filename=args.logfile, level=args.level.upper(), format= logformat)
-    logger = logging.getLogger()
 
-    if args.level in 'DEBUG' or args.level in 'INFO':
-        toconsole=True
-    else:
-        toconsole=args.toconsole
-
-    if toconsole:
-    #http://www.mglerner.com/blog/?p=8
-        soh = logging.StreamHandler(sys.stdout)
-        soh.setLevel(args.level)
-        logger.addHandler(soh)
+    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
+    logger= lgd.logger 
 
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
@@ -232,26 +226,22 @@ if __name__ == '__main__':
     # get the environment
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
     ev.createAcquisitionBasePath(ftwName=None, ftName=None)
-    if args.dryfitsfiles:
-        dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryfitsfiles, rt.cfg['FILE_GLOB']))
+    
+    dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryfitsfiles, rt.cfg['FILE_GLOB']))
 
-        if len(dryFitsFiles)==0:
-            logger.error('analyze: no FITS files found in:{}'.format(args.dryfitsfiles))
-            logger.info('analyze: set --dryfitsfiles or'.format(args.dryfitsfiles))
-            logger.info('analyze: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
-            logger.info('analyze: and store it in directory: {0}'.format(args.dryfitsfiles))
-            sys.exit(1)
-    else:
-        fitsFiles= args.fitsFiles.split()
+    if len(dryFitsFiles)==0:
+        logger.error('analyze: no FITS files found in:{}'.format(args.dryfitsfiles))
+        logger.info('analyze: set --dryfitsfiles or'.format(args.dryfitsfiles))
+        logger.info('analyze: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
+        logger.info('analyze: and store it in directory: {0}'.format(args.dryfitsfiles))
+        sys.exit(1)
 
-    cnt=0
     dataSex=dict()
-    for fitsFn in dryFitsFiles:
+    for k, fitsFn in enumerate(dryFitsFiles):
         
         logger.info('analyze: processing fits file: {0}'.format(fitsFn))
         rsx= sx.Sextract(debug=args.debugSex, rt=rt, logger=logger)
-        dataSex[cnt]=rsx.sextract(fitsFn=fitsFn) 
-        cnt +=1
+        dataSex[k]=rsx.sextract(fitsFn=fitsFn) 
 
     an=Analyze(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, ev=ev, logger=logger)
     weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm= an.analyze()

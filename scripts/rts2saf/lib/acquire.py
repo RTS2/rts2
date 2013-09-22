@@ -344,7 +344,6 @@ if __name__ == '__main__':
     parser.add_argument('--config', dest='config', action='store', default='./configs/rts2saf-one-filter-wheel.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step), if --focStep is defined it is used to set the range')
 
-
     args=parser.parse_args()
 
     lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here

@@ -3,8 +3,138 @@
 #
 
 This is the description of the rts2saf auto focuser package.
-The latest version is available at the RTS2 svn repo.
+The latest version is available at the RTS2 svn repo:
+http://sourceforge.net/p/rts-2/code/HEAD/tree/trunk/rts-2/scripts/rts2saf/
+including this description.
+
+Status 2013-09-22:
+The documentation describes so far the installation and the
+test procedure RTS2 configured with the dummy devices and for 
+dry fits files. These are files already available from a former 
+focus run provided by the author (see below).
+
+Soon the installation and configuration of the whole
+system with real devices/services and images will follow.
 
 
+Installation and testing of rts2saf autofocuser
+===============================================
+
+Installation
+------------
+
+Update to Python 2.7.x (mandatory)
+Install DS9 from http://hea-www.harvard.edu/RD/ds9/site/Home.html
+
+Assuming you did the the following RTS2 svn checkout
+
+  cd ~
+  svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts-2
 
 
+Environment PATH and PYTHONPATH
+-------------------------------
+  vi ~/.bashrc
+
+insert:
+
+  export PATH=$HOME/rts2/scripts:$HOME/rts-2/scripts/rts2saf:$PATH
+  export PYTHONPATH=$HOME/rts-2/scripts:$HOME/rts-2/scripts/rts2saf:$PYTHONPATH
+
+  source ~/.bashrc
+
+Repeat that for user root.
+
+Configuration file
+------------------
+  
+  cd ~/rts-2/conf
+  sudo cp -a rts2saf /etc/rts2/
+
+Edit in /etc/rts2/rts2af/rts2saf.cfg and check if sextractor
+binary is found.
+
+Postgres DB tables target and scripts entries
+---------------------------------------------
+
+  psql --user YOUR_USERNAME YOUR_DB # (see /etc/rts2/rts2.ini)
+  insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+  insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /YOUR/HOME/rts2/scripts/rts2af/rts2af_acquire.py'); #(see /etc/rts2/devices)
+
+
+Adding the devices to the Postgres DB is usually done by script 
+rts2/scripts/ubuntu-rts2-install, in case not use:
+
+   cd src/sql/
+  ./rts2-configdb stars -t T0
+  ./rts2-configdb stars -c C0
+  ./rts2-configdb stars -f W0
+
+The filters are stored in the Postgres DB table filters, the entries are not strictly necesssary 
+but it is recomended.
+
+
+Testing with dummy devices
+==========================
+
+RTS2 configuration and log files
+--------------------------------
+
+In file /etc/rts2/devices add dummy devices (at least this entries)  	
+
+  #RTS2 dummy devices configuration for Bootes-2
+  # 
+  #device	type	device_name	options
+  #
+  camd	dummy	andor3	--wheeldev W0  --filter-offsets 1:2:3:4:5:6:7:8  --focdev F0 --width 400 --height 500 
+  teld	dummy	T0	--localhost localhost
+  filterd	dummy	W0	-F "open:R:g:r:i:z:Y:empty8" -s 10 --localhost localhost
+  focusd	dummy	F0      --modefile /etc/rts2/f0.modefile	
+
+This is an configuration with CCD, one filter wheel and bunch of filters. Further
+configurations with the associated device file can be found in ~/rts-2/scripts/rts2saf/lib/configs. 
+
+After that configure selector (SEL), Replace the default in /etc/rts2/services with
+
+  selector        SEL    --add-queue plan --add-queue focusing --add-queue manual
+
+
+Set permissions of the log file rts2-debug
+
+  sudo chgrp YOUR_GROUP /var/log/rts2-debug
+  sudo chmod g+w /var/log/rts2-debug
+
+Full day time testing rts2saf (dry fits)
+----------------------------------------
+
+Start RTS2 
+
+ /etc/init.d/rts2 start
+
+and check if all devices appeared. Fetch the sample focus run files with
+
+  cd ~/rts-2/scripts/rts2saf/lib
+  http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
+  tar zxvf rts2saf-test-focus-2013-09-14.tgz
+
+Check first if the configured devices are present
+
+  cd ~/rts-2/scripts/rts2saf/
+  ./rts2saf_focus.py --conf ./lib/configs/rts2saf-one-filter-wheel.cfg --toc --check
+
+and if no errors are reported
+
+  ./rts2saf_focus.py --conf ./lib/configs/rts2saf-one-filter-wheel.cfg --toc --dry ./lib/samples/  --exp 1.
+
+After a while a matplotlib window appears containg the fit. After closing it 
+a DS9 window appears showing which stars have been chosen.
+
+
+Integration of rts2saf into RTS2
+--------------------------------
+soon
+
+
+Testing individual components
+-----------------------------
+soon
