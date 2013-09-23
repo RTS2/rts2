@@ -153,7 +153,7 @@ class Sextractor:
 			i_fwhm = self.get_field('FWHM_IMAGE')
 			import numpy
 			fwhms = map(lambda x:x[i_fwhm],obj)
- 			return numpy.median(fwhms), len(fwhms)
+ 			return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
  		#	return numpy.average(obj), len(obj)
 		except ValueError,ve:
 			traceback.print_exc()

@@ -90,7 +90,7 @@ for fn in args:
 		print fn,len(segments),
 		for s in segments:
 			res = c.calculate_FWHM(options.max_stars,segments=[s])
-			print res[1],res[0],
+			print res[2],res[0],
 			
 		print
 
