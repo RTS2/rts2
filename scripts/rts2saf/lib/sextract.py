@@ -22,7 +22,11 @@ __author__ = 'markus.wildi@bluewin.ch'
 import os
 import pyfits
 
-import rts2.sextractor as rsx
+# ToDo sort that out with Petrimport rts2.sextractor as rsx
+try:
+    import lib.sextractor as sex
+except:
+    import sextractor  as sex
 try:
     import lib.data as dt
 except:
