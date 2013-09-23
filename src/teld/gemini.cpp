@@ -147,6 +147,15 @@ class Gemini:public Telescope
 		 */
 		unsigned char tel_gemini_checksum (const char *buf);
 
+		/**
+		 * Computes gemini checksum - this variant is because of buggy firmware in gemini, which responses with checksum, computed with wrong combination of operations in algorithm, but still expects the right algorithm on input.
+		 *
+		 * @param buf checksum to compute
+		 *
+		 * @return computed checksum
+		 */
+		unsigned char tel_gemini_checksum2 (const char *buf);
+
 		// higher level I/O functions
 		/**
 		 * Read gemini local parameters
@@ -392,6 +401,7 @@ int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 	usleep (USEC_SEC / 15);
 	if (ret < 0)
 	{
+		logStream (MESSAGE_ERROR) << "tel_write_read: writeRead error, making tel_gemini_reset" << sendLog;
 		// try rebooting
 		tel_gemini_reset ();
 		usleep (USEC_SEC / 5);
@@ -407,13 +417,14 @@ int Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int r
 	usleep (USEC_SEC / 15);
 	if (tmp_rcount < 0)
 	{
+		logStream (MESSAGE_ERROR) << "tel_write_read_hash: writeRead error, making tel_gemini_reset" << sendLog;
 		tel_gemini_reset ();
 		usleep (USEC_SEC / 5);
 		return -1;
 	}
 	// end hash..
 	rbuf[tmp_rcount - 1] = '\0';
-	return tmp_rcount;
+	return tmp_rcount - 1;
 }
 
 int Gemini::readDate (struct tm *_tm, const char *command)
@@ -421,12 +432,15 @@ int Gemini::readDate (struct tm *_tm, const char *command)
 	char wbuf[11];
 	int ret;
 	_tm->tm_hour = _tm->tm_min = _tm->tm_sec = _tm->tm_isdst = 0;
-	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 9)
+	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 8)
+	{
+		logStream (MESSAGE_ERROR) << "readDate: short read length" << sendLog;
 		return -1;
+	}
 	ret = sscanf (wbuf, "%u/%u/%u", &(_tm->tm_mon), &(_tm->tm_mday), &(_tm->tm_year));
 	if (ret != 3)
 	{
-		logStream (MESSAGE_ERROR) << "invalid date read " << wbuf << " " << ret << sendLog;
+		logStream (MESSAGE_ERROR) << "readDate: invalid date read " << wbuf << " " << ret << sendLog;
 		return -1;
 	}
 	// date will always be after 2000..
@@ -438,15 +452,31 @@ int Gemini::readDate (struct tm *_tm, const char *command)
 int Gemini::readHMS (double *hmsptr, const char *command)
 {
 	char wbuf[11];
-	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
+	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 5)
+	{
+		logStream (MESSAGE_ERROR) << "readHMS: short read length" << sendLog;
 		return -1;
+	}
 	*hmsptr = hmstod (wbuf);
 	if (isnan (*hmsptr))
+	{
+		logStream (MESSAGE_ERROR) << "readHMS: read nan value" << sendLog;
 		return -1;
+	}
 	return 0;
 }
 
 unsigned char Gemini::tel_gemini_checksum (const char *buf)
+{
+	unsigned char checksum = 0;
+	for (; *buf; buf++)
+		checksum ^= *buf;
+	checksum %= 128;			 // modulo 128
+	checksum += 64;
+	return checksum;
+}
+
+unsigned char Gemini::tel_gemini_checksum2 (const char *buf)
 {
 	unsigned char checksum = 0;
 	for (; *buf; buf++)
@@ -519,12 +549,18 @@ int Gemini::tel_gemini_getch (int id, char *buf)
 	len++;
 	buf[len] = '\0';
 	ret = tel_write_read_hash (buf, len, buf, 20);
+	#ifdef DEBUG_EXTRA_CHECKSUM
+	logStream (MESSAGE_DEBUG) << "+++++++ read response: " << buf << ", length " << ret << " +++++" << sendLog;
+	#endif
 	if (ret < 0)
 		return ret;
 	ptr = buf + ret - 1;
 	checksum = *ptr;
 	*ptr = '\0';
-	cal = tel_gemini_checksum (buf);
+	cal = tel_gemini_checksum2 (buf);
+	#ifdef DEBUG_EXTRA_CHECKSUM
+	logStream (MESSAGE_DEBUG) << "+++++++ after checksum cut: " << buf << ", checksum " << checksum << " +++++" << sendLog;
+	#endif
 	if (cal != checksum)
 	{
 		logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
@@ -556,10 +592,10 @@ int Gemini::tel_gemini_get (int id, int32_t & val)
 		ptr++);
 	checksum = *ptr;
 	*ptr = '\0';
-	if (tel_gemini_checksum (buf) != checksum)
+	if (tel_gemini_checksum2 (buf) != checksum)
 	{
 		logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
-			tel_gemini_checksum (buf) << " is " << checksum << sendLog;
+			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
 		if (*buf)
 			sleep (5);
 		tel_conn->flushPortIO ();
@@ -587,10 +623,10 @@ int Gemini::tel_gemini_get (int id, double &val)
 		ptr++);
 	checksum = *ptr;
 	*ptr = '\0';
-	if (tel_gemini_checksum (buf) != checksum)
+	if (tel_gemini_checksum2 (buf) != checksum)
 	{
 		logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
-			tel_gemini_checksum (buf) << " is " << checksum << sendLog;
+			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
 		if (*buf)
 			sleep (5);
 		tel_conn->flushPortIO ();
@@ -623,9 +659,14 @@ int Gemini::tel_gemini_reset ()
 {
 	char rbuf[50];
 
+	logStream (MESSAGE_INFO) << "making gemini reset (trying to make startup config)..." << sendLog;
+
 	// write_read_hash
 	if (tel_conn->flushPortIO () < 0)
+	{
+		logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
 		return -1;
+	}
 	usleep (USEC_SEC / 15);
 
 	if (tel_conn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
@@ -635,21 +676,21 @@ int Gemini::tel_gemini_reset ()
 		return -1;
 	}
 
-	if (*rbuf == 'b')			 // booting phase, select warm reboot
+	if (*rbuf == 'b')			 // booting phase, select restart/warm start/cold start
 	{
 		switch (resetState->getValueInteger ())
 		{
 			case 0:
 				tel_conn->writePort ("bR#", 3);
-				usleep (USEC_SEC / 15);
+				sleep (5);
 				break;
 			case 1:
 				tel_conn->writePort ("bW#", 3);
-				usleep (USEC_SEC / 15);
+				sleep (5);
 				break;
 			case 2:
 				tel_conn->writePort ("bC#", 3);
-				usleep (USEC_SEC / 15);
+				sleep (20);
 				break;
 		}
 		resetState->setValueInteger (0);
@@ -658,6 +699,7 @@ int Gemini::tel_gemini_reset ()
 	else if (*rbuf != 'G')
 	{
 		// something is wrong, reset all comm
+		logStream (MESSAGE_ERROR) << "system is not after reboot nor completed startup, making 10s sleep & flushPortIO" << sendLog;
 		sleep (10);
 		tel_conn->flushPortIO ();
 	}
@@ -692,6 +734,7 @@ Gemini::matchTime ()
 		return ret;
 	if (*buf != '1')
 	{
+		logStream (MESSAGE_ERROR) << "Gemini matchTime was not successful" << sendLog;
 		return -1;
 	}
 	// read spaces
@@ -771,16 +814,17 @@ int Gemini::tel_rep_write (char *command)
 		if (retstr == '1')
 			break;
 		sleep (1);
-		tel_conn->flushPortIO ();
+		if (tel_conn->flushPortIO () < 0)
+		{
+			logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
+			return -1;
+		}
 		usleep (USEC_SEC / 15);
-		logStream (MESSAGE_DEBUG) << "Losmandy tel_rep_write - for " << count <<
-			" time" << sendLog;
+		logStream (MESSAGE_DEBUG) << "Losmandy tel_rep_write - for " << count << " time" << sendLog;
 	}
 	if (count == 200)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"losmandy tel_rep_write unsucessful due to incorrect return." <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "losmandy tel_rep_write unsucessful due to incorrect return." << sendLog;
 		return -1;
 	}
 	return 0;
@@ -1184,7 +1228,7 @@ int Gemini::initValues ()
 	buf[4] = '\0';
 	strcat (telType, "_");
 	strcat (telType, buf);
-	telAltitude->setValueDouble (600);
+	telAltitude->setValueDouble (500);
 
 	return Telescope::initValues ();
 }
@@ -2234,6 +2278,7 @@ extern int Gemini::loadModel ()
 	FILE *config_file;
 	char *line;
 	size_t numchar;
+	int mount_type=0;
 	int id;
 	int ret;
 	config_file = fopen (geminiConfig, "r");
@@ -2252,20 +2297,40 @@ extern int Gemini::loadModel ()
 		ret = sscanf (line, "%i:%as", &id, &buf);
 		if (ret == 2)
 		{
-			ret = tel_gemini_setch (id, buf);
+			#ifdef DEBUG_EXTRA_CHECKSUM
+			logStream (MESSAGE_DEBUG) << "------- writing: id " << id << ", value " << buf << " -----" << sendLog;
+			#endif
+
+			if (id == 0)
+			{
+				mount_type = atoi (buf);
+				ret = tel_gemini_setch (mount_type, "0");
+				// TODO: here should be also somehow solved setting of parameters for different mounts, same as in init section. For now, I'll let it be, it is still only for emergency/problem purposes, the restart of teld daemon is easy and straightforward solution.
+			}
+			else if (id < 100 && mount_type == 0)	// custom mount type
+				ret = tel_gemini_setch (id, buf);
+			else if (id >= 100)
+				ret = tel_gemini_setch (id, buf);
+			else
+				ret = 0;
+
 			if (ret)
-				logStream (MESSAGE_ERROR) << "Gemini loadModel setch return " <<
-					ret << " on " << buf << sendLog;
+				logStream (MESSAGE_ERROR) << "Gemini loadModel setch return " << ret << " on " << buf << sendLog;
 
 			free (buf);
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "Gemini loadModel invalid line " <<
-				line << sendLog;
+			logStream (MESSAGE_ERROR) << "Gemini loadModel invalid line " << line << sendLog;
 		}
 	}
 	free (line);
+	usleep (USEC_SEC * 5);
+	if (tel_conn->flushPortIO () < 0)
+	{
+		logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
+		return -1;
+	}
 	return 0;
 }
 
@@ -2344,9 +2409,20 @@ int Gemini::resetMount ()
 		// park using optical things
 		parkBootesSensors ();
 	}
-	ret = tel_gemini_set (65535, 65535);
+	logStream (MESSAGE_INFO) << "Starting gemini reboot (resetMount)." << sendLog;
+	if (resetState->getValueInteger () == 2)
+	{
+		resetState->setValueInteger (0);
+		ret = tel_gemini_set (65533, 0);
+		// cold start needs really much more time to complete
+		sleep (20);
+	}
+	else
+		ret = tel_gemini_set (65535, 0);
 	if (ret)
 		return ret;
+	sleep (20);
+	tel_gemini_reset ();
 	return Telescope::resetMount ();
 }
 
