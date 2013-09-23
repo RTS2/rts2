@@ -24,9 +24,9 @@ import pyfits
 
 # ToDo sort that out with Petrimport rts2.sextractor as rsx
 try:
-    import lib.sextractor as sex
+    import lib.sextractor as rsx
 except:
-    import sextractor  as sex
+    import sextractor  as rsx
 try:
     import lib.data as dt
 except:
