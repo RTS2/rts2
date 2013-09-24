@@ -45,21 +45,22 @@ namespace rts2db
  */
 class SimbadInfo:public Rts2TargetApp
 {
-	private:
-		std::list <const char *> names;
-		bool prettyPrint;
-		bool visibilityPrint;
+	public:
+		SimbadInfo (int argc, char **argv);
+		virtual ~ SimbadInfo (void);
+
+		virtual int doProcessing ();
+
 	protected:
 		virtual void usage ();
 
 		virtual int processOption (int _opt);
 		virtual int processArgs (const char *_arg);
 
-	public:
-		SimbadInfo (int argc, char **argv);
-		virtual ~ SimbadInfo (void);
-
-		virtual int doProcessing ();
+	private:
+		std::list <const char *> names;
+		bool prettyPrint;
+		bool visibilityPrint;
 };
 
 };
@@ -87,8 +88,7 @@ void SimbadInfo::usage ()
 		<< getAppName () << " support communication through SIMBAD server using HTTP PROXY, specified in http_proxy environment variable." << std::endl;
 }
 
-int
-SimbadInfo::processOption (int in_opt)
+int SimbadInfo::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
