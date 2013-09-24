@@ -56,7 +56,14 @@ try:
 
 	sc = rts2.scriptcomm.Rts2Comm()
 
+	last_tele_lst = None
+
 	while True:
+		curr_tele_lst = sc.getValueFloat('LST', 'TELE')
+		if last_tele_lst is not None and last_tele_lst == curr_tele_lst:
+			sendEmail('1.2m Robot: Telescope in PANIC mode - LST is not updating')
+		last_tele_lst = curr_tele_lst
+
 		next_state = sc.getValueInteger('next_state', 'centrald')
 
 		ms = sc.getState('centrald')
