@@ -50,11 +50,11 @@ class FilterWheel():
 
 class Focuser():
     """Class for focuser properties"""
-    def __init__(self, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, speed=None, stepSize=None, temperatureCompensation=None, steps=list()):
+    def __init__(self, name=None, resolution=None, absLowerLimitFb=None, absUpperLimitFb=None, speed=None, stepSize=None, temperatureCompensation=None, steps=list()):
         self.name= name
         self.resolution=resolution 
-        self.absLowerLimit=absLowerLimit
-        self.absUpperLimit=absUpperLimit
+        self.absLowerLimitFb=absLowerLimitFb
+        self.absUpperLimitFb=absUpperLimitFb
         self.speed=speed
         self.stepSize=stepSize
         self.temperatureCompensation=temperatureCompensation
@@ -75,6 +75,7 @@ class CCD():
         self.windowWidth=windowWidth
         self.pixelSize= pixelSize
         self.baseExposure= baseExposure
+        self.setFocDef=False
 
 class CheckDevices(object):
     """Check the presence of the devices and filter slots"""    
@@ -183,6 +184,7 @@ class CheckDevices(object):
                     offsets=list()
                     if len(ftos[ftwn])==0:
                         self.logger.warn('checkDevices: for camera: {0} filter wheel: {1}, no filter offsets are defined, but filter wheels/filters are present'.format(self.rt.ccd.name, ftwn))        
+                        continue
                     else:
                         offsets= map(lambda x: x, ftos[ftwn]) 
                     # check filter wheel's filters in config and add offsets           
@@ -209,7 +211,7 @@ class CheckDevices(object):
                             return False
                     break
             else:
-                self.logger.error('checkDevices: filter wheel:{0}, filter: {1} not found in configuration'.format(ftw.name))        
+                self.logger.error('checkDevices: filter wheel:{0} not found in configuration'.format(ftw.name))        
         return True
 
     def __focuser(self):
@@ -235,9 +237,11 @@ class CheckDevices(object):
         if self.rt.foc.focMn and self.rt.foc.focMx and self.rt.foc.focSt:
             pass
         else:
-            self.rt.foc.focMn=None
-            self.rt.foc.focMx=None
-            self.rt.foc.focSt=None
+            self.rt.foc.focMn=self.rt.foc.absLowerLimitFb
+            self.rt.foc.focMx=self.rt.foc.absUpperLimitFb
+            self.rt.foc.focSt=self.rt.foc.resolution
+            self.logger.warn('FocusFilterWheels: focuser: {0} has no foc_min, foc_max or focstep properties'.format(self.rt.foc.name))
+            self.logger.warn('FocusFilterWheels: setting foc_min: {0}, foc_max: {1}, focstep: {2}'.format(self.rt.foc.absLowerLimitFb, self.rt.foc.absUpperLimitFb, self.rt.foc.resolution))
 
         if self.args.blind:
             if self.args.focStep:

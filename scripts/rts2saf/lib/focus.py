@@ -198,8 +198,12 @@ class FocusFilterWheels(object):
                         # FOC_DEF (is set first)
                         self.rt.foc.focDef= minFwhmPos
                         if self.rt.cfg['SET_FOCUS']:
-                            acqu.writeFocDef()
-                            self.logger.info('FocusFilterWheels: empty slot: {0}, set FOC_DEF: {1}'.format(ft.name, int(minFwhmPos)))
+                            if self.rt.fitFocDef:
+                                acqu.writeFocDef()
+                                self.logger.info('FocusFilterWheels: empty slot: {0}, set FOC_DEF: {1}'.format(ft.name, int(minFwhmPos)))
+                            else:
+                                self.logger.warn('FocusFilterWheels: filter: {0} not setting FOC_DEF, due to bad fit'.format(ft.name))
+
                     else:
                         self.logger.debug('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(minFwhmPos- self.rt.foc.focDef)))
                         ft.OffsetToEmptySlot=int(minFwhmPos- self.rt.foc.focDef)

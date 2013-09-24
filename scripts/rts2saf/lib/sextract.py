@@ -70,7 +70,7 @@ class Sextract(object):
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: {0}: {1:5.0f}, raw objects: {2}, no objects found (after filtering), \nmessage rts2.sextractor: {2}'.format(fitsFn, focPos, objectCount, e))
+            self.logger.warn( 'sextract: {0}: focPos: {1:5.0f}, raw objects: {2}, no objects found (after filtering), \nmessage rts2.sextractor: {2}'.format(fitsFn, focPos, objectCount, e))
             self.logger.warn( 'sextract: new version of rts2.sextractor installed???')
             return None
 

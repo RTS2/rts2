@@ -64,8 +64,11 @@ class ScanThread(threading.Thread):
                 focPosCalc += int(self.focDef)
 
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-            stepSize = int(self.proxy.getSingleValue(self.foc.name,'focstep'))
-
+            try:
+                stepSize = int(self.proxy.getSingleValue(self.foc.name,'focstep'))
+            except:
+                stepSize= 10. * self.foc.resolution# ToDo config!
+                self.logger.warn('acquire: property focstep from CCD: {0} not available, setting stepSize:{1}'.format(self.ccd.name, stepSize))
             slt= abs(float(focPosCalc-focPos)) / self.foc.speed / abs(float(stepSize)) 
             if self.debug: self.logger.debug('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, stepSize: {3}, sleep: {4}'.format(focPosCalc, focPos, self.foc.speed, abs(float(stepSize)), slt))
             time.sleep( slt)
@@ -80,7 +83,7 @@ class ScanThread(threading.Thread):
                 focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
                 time.sleep(.2) # leave it alone
             else:
-                self.logger.info('acquire: focuser position reached: abs({0:5d}- {1:5d})= {2:5d} <= {3:5d} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+                self.logger.info('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
             fn=self.expose()
             if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
@@ -171,6 +174,7 @@ class Acquire(object):
                  ccd=None,
                  filterWheelsInUse=None,
                  acqu_oq=None,
+                 writeToDevices=True,
                  rt=None,
                  ev=None,
                  logger=None):
@@ -183,6 +187,7 @@ class Acquire(object):
         self.ccd=ccd
         self.filterWheelsInUse=filterWheelsInUse
         self.acqu_oq=acqu_oq
+        self.writeToDevices=writeToDevices
         self.rt=rt
         self.ev=ev
         self.logger=logger
@@ -226,15 +231,25 @@ class Acquire(object):
         for ftw in self.filterWheelsInUse:
             if ftw.name not in self.ftw.name:
                 if self.debug: self.logger.debug('acquire: filter wheel: {0}, setting empty slot on filter wheel: {1} to {2}'.format(self.ftw.name,ftw.name, ftw.filters[0].name))
-                self.proxy.setValue(ftw.name, 'filter',  ftw.filters[0]) # has been sorted (lowest filter offset)
+                if self.writeToDevices:
+                    self.proxy.setValue(ftw.name, 'filter',  ftw.filters[0]) # has been sorted (lowest filter offset)
+                else:
+                    self.logger.warn('acquire: not setting filter: {0} onf filter wheel:{1}'.format(ftw.filters[0].name, self.ftw.name,ftw.name))
 
         if self.ft:
-            self.proxy.setValue(self.ftw.name, 'filter',  self.ft.name)
-            if self.debug: self.logger.debug('acquire: setting on filter wheel: {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
+
+            if self.writeToDevices:
+                self.proxy.setValue(self.ftw.name, 'filter',  self.ft.name)
+                if self.debug: self.logger.debug('acquire: setting on filter wheel: {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
+            else:
+                self.logger.warn('acquire: not setting filter: {0} onf filter wheel:{1}'.format(self.ft.name, self.ftw.name,ftw.name))
+
 
     def __finalState(self):
-        self.proxy.setValue(self.foc.name,'FOC_DEF',  self.iFocDef)
-        self.proxy.setValue(self.foc.name,'FOC_FOFF', self.iFocFoff)
+        if self.writeToDevices:
+            self.proxy.setValue(self.foc.name,'FOC_DEF',  self.iFocDef)
+        else:
+            self.logger.warn('acquire: not setting FOC_DEF: {0}',format(self.iFocDef))
         # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', self.iFocToff)
         # ToDo filter
 
@@ -276,7 +291,10 @@ class Acquire(object):
     def writeFocDef(self):
         if self.foc.focMn and self.foc.focMx:
             if self.foc.focMn < self.foc.focDef < self.foc.focMx:
-                self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
+                if self.writeToDevices:
+                    self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
+                else:
+                    self.logger.warn('acquire: not writing FOC_DEF: {0}'.format(self.foc.focDef))
             else:
                 self.logger.warn('acquire: focuser: {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
         else:
@@ -346,8 +364,9 @@ if __name__ == '__main__':
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='./configs/rts2saf-one-filter-wheel.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step), if --focStep is defined it is used to set the range')
+    parser.add_argument('--writetodevices', dest='writeToDevices', action='store_true', default=False, help=': %(default)s, write values to devices (enable not during night)')
 
     args=parser.parse_args()
 
@@ -376,7 +395,7 @@ if __name__ == '__main__':
     rt.foc.stepSize=stepSize
     rt.foc.focFoff=range(-5,5,stepSize)
 
-    acqu= Acquire(debug=args.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq, rt=rt, ev=ev, logger=logger)
+    acqu= Acquire(debug=args.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq,writeToDevices=args.writeToDevices, rt=rt, ev=ev, logger=logger)
     if not acqu.startScan(exposure=exposure, blind=blind):
         self.logger.error('acquire: exiting')
         sys.exit(1)

@@ -56,7 +56,10 @@ class FitFwhm(object):
         self.fitfunc_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
         self.errfunc_fwhm = lambda p, x, y, res, err: (y - self.fitfunc_fwhm(p, x)) / (res * err) # ToDo why err
         self.fitfunc_r_fwhm = lambda x, p0, p1, p2, p3, p4: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 4) 
-
+        # ToDO I want this:
+        #self.fitfunc_r_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4) 
+        # resp:
+        # self.fitfunc_r_fwhm==self.fitfunc_fwhm
     def fitData(self):
         self.par= np.array([1., 1., 1., 1., 1.])
         try:

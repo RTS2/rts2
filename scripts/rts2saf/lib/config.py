@@ -86,9 +86,9 @@ class DefaultConfiguration(object):
         self.dcf[('filter properties', 'flt9')]= '[ D,   -1400, 1500, 300, 1.]'
 
         self.dcf[('focuser properties', 'FOCUSER_NAME')]= 'F0'
-        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20.
-        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
-        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
+        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20. # fallback in case RTS2::focstep is not defined
+        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT_FB')]= 501 # fallback in case RTS2::foc_min is not defined
+        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT_FB')]= 2002 # fallback in case RTS2::foc_max is not defined
         self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 11, 2]
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
         self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 1.1428e-6
@@ -148,6 +148,10 @@ class DefaultConfiguration(object):
         self.dcf[('connection', 'URL')] = 'http://127.0.0.1:8889' 
         self.dcf[('connection', 'USERNAME')] = 'petr'
         self.dcf[('connection', 'PASSWORD')] = 'test'
+
+        self.dcf[('analysis', 'FWHM_MIN')] = 1.5 
+        self.dcf[('analysis', 'FWHM_MAX')] = 12. 
+        self.dcf[('analysis', '')] = '' 
 
 
     def dumpDefaults(self):
@@ -251,10 +255,10 @@ class Configuration(DefaultConfiguration):
                     self.foc.name= value
                 elif(identifier=='FOCUSER_RESOLUTION'):
                     self.foc.resolution= float(value)
-                elif(identifier=='FOCUSER_ABSOLUTE_LOWER_LIMIT'):
-                    self.foc.absLowerLimit= int(value)
-                elif(identifier=='FOCUSER_ABSOLUTE_UPPER_LIMIT'):
-                    self.foc.absUpperLimit= value
+                elif(identifier=='FOCUSER_ABSOLUTE_LOWER_LIMIT_FB'):
+                    self.foc.absLowerLimitFb= float(value)
+                elif(identifier=='FOCUSER_ABSOLUTE_UPPER_LIMIT_FB'):
+                    self.foc.absUpperLimitFb= float(value)
                 elif(identifier=='FOCUSER_SPEED'):
                     self.foc.speed= float(value)
                 elif(identifier=='FOCUSER_STEP_SIZE'):
@@ -388,7 +392,7 @@ if __name__ == '__main__':
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf-acquire.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
 
     args=parser.parse_args()
 
