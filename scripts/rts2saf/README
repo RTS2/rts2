@@ -1,20 +1,53 @@
 #
-# 2013-09-22, Markus Wildi, wildi.markus@bluewin.ch 
+# 2013-09-24, Markus Wildi, wildi.markus@bluewin.ch 
 #
+Introduction
+============
+Status 2013-09-22:
+------------------
 
+The documentation describes so far the installation and the test 
+procedure if RTS2 is configured with its dummy devices.  
+
+Soon the installation and configuration of the whole
+system with real devices/services will follow.
+
+rts2af will be phased out soon.
+
+Overview
+--------
 This is the description of the rts2saf auto focuser package.
 The latest version is available at the RTS2 svn repo:
 http://sourceforge.net/p/rts-2/code/HEAD/tree/trunk/rts-2/scripts/rts2saf/
 including this description.
 
-Status 2013-09-22:
-The documentation describes so far the installation and the
-test procedure RTS2 configured with the dummy devices and for 
-dry fits files. These are files already available from a former 
-focus run provided by the author (see below).
+In case of questions, or if you need support, contact the author.
 
-Soon the installation and configuration of the whole
-system with real devices/services and images will follow.
+rts2saf is almost a complete rewrite of rts2af.  The goals were
+0) a comprehensive user interface including sensible log messages,
+1) simpler installation and configuration, 
+2) assisted and faster commissioning,
+3) a general solution for all RTS2 driven observatories,
+4) the support of multiple filter wheels with an arbitrary number of slots,  
+5) a modular software design which eases debugging of its components
+
+rts2saf is capable to determine and set FOC_DEF and filter focus 
+offsets against an empty or a predefined slot and write them 
+directly to the RTS2-CCD device driver.
+
+If no real images can be taken, e.g. during day time,  "dry fits files" 
+are injected while all involved devices operate as if it were
+night. These files can be images from a former focus run or 
+if not available samples are provided by the author (see below).
+
+In order to facilitate a wider adoption all device or analysis 
+properties are kept in a configuration file.
+
+rts2saf makes use of RTS2's HTTP/JSON interface and hence
+testing directly on the command line is now possible. The
+execution with rts2-scriptexec -s ' exe script ' is not
+needed any more. This eases and speeds up the test considerably 
+specially in the early phase of debugging the configuration.
 
 
 Installation and testing of rts2saf autofocuser
@@ -23,7 +56,7 @@ Installation and testing of rts2saf autofocuser
 Installation
 ------------
 
-Update to Python 2.7.x (mandatory)
+Update to Python 2.7.x (mandatory) and various Python packages.
 Install DS9 from http://hea-www.harvard.edu/RD/ds9/site/Home.html
 
 Assuming you did the the following RTS2 svn checkout
@@ -134,6 +167,9 @@ and if no errors are reported
 After a while a matplotlib window appears containing the fit. After closing it 
 a DS9 window appears showing which stars have been chosen.
 
+Testing through rts2-scriptexec
+-------------------------------
+soon
 
 Integration of rts2saf into RTS2
 --------------------------------
@@ -143,3 +179,5 @@ soon
 Testing individual components
 -----------------------------
 soon
+
+
