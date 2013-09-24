@@ -28,11 +28,12 @@ class DataFwhm(object):
         self.stdFwhm=stdFwhm
 
 class DataSex(object):
-    def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, catalogue=None, fields=None):
+    def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalogue=None, fields=None):
         self.fitsFn=fitsFn
         self.focPos=focPos
         self.fwhm=fwhm
         self.stdFwhm=stdFwhm
         self.nstars=nstars
+        self.ambientTemp=ambientTemp
         self.catalogue=catalogue
         self.fields=fields

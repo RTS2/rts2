@@ -41,7 +41,7 @@ except:
 
 class Analyze(object):
     """Analyze a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, ev=None, logger=None):
+    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
         self.debug=debug
         self.dataSex=dataSex
         self.displayDs9=displayDs9
@@ -49,6 +49,7 @@ class Analyze(object):
         self.ftwName=ftwName
         self.ftName=ftName
         self.dryFits=dryFits
+        self.focRes=focRes
         self.ev=ev
         self.logger=logger
 
@@ -67,13 +68,14 @@ class Analyze(object):
             except:
                 continue
 
-            if self.debug: self.logger.debug('analyze: {0:5d}, sextracted objects: {1:5d}, filtered sextracted objects: {2:5d}'.format(self.dataSex[cnt].focPos, nObjs, self.dataSex[cnt].nstars))
+            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered sextracted objects: {2:5d}'.format(self.dataSex[cnt].focPos, nObjs, self.dataSex[cnt].nstars))
             # star like objects
             nobjs.append(self.dataSex[cnt].nstars)
             pos.append(self.dataSex[cnt].focPos)
             fwhm.append(self.dataSex[cnt].fwhm)
-            errx.append(20.)
+            errx.append(self.focRes)
             stdFwhm.append(self.dataSex[cnt].stdFwhm)
+
         # Weighted mean based on number of extracted objects (stars)
         weightedMeanObjects=None
         try:
@@ -82,7 +84,10 @@ class Analyze(object):
             self.logger.warn('analyze: can not calculate weightedMeanObjects:\n{0}'.format(e))
 
         if weightedMeanObjects:
-            if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
+            try:
+                if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
+            except Exception, e:
+                self.logger.warn('analyze: can not convert weightedMeanObjects:\n{0}'.format(e))
 
         # Weighted mean based on median FWHM
         posC= pos[:]
@@ -101,8 +106,10 @@ class Analyze(object):
             self.logger.warn('analyze: can not calculate weightedMeanFwhm:\n{0}'.format(e))
 
         if weightedMeanFwhm:
-            self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
-
+            try:
+                self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
+            except Exception, e:
+                self.logger.warn('analyze: can not convert weightedMeanFwhm:\n{0}'.format(e))
         # Fit median FWHM data
         dataFwhm=dt.DataFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
         comment=None
@@ -112,22 +119,28 @@ class Analyze(object):
         fit=ft.FitFwhm(
             showPlot=self.displayFit, 
             filterName=self.ftName, 
-            temperature=None, # ToDo fetch it from FITS 
+            ambientTemp=self.dataSex[0].ambientTemp,
             date=self.ev.startTime[0:19], 
             comment=comment,  # ToDo, define a sensible value
             pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
             dataFwhm=dataFwhm, 
             logger=self.logger)
-        
+
         minFwhmPos,fwhm=fit.fitData()
 
         # make other decissions on if the fit converged
         if minFwhmPos:
             if min(dataFwhm.pos) < minFwhmPos  < max(dataFwhm.pos):
-                self.logger.info('analyze: {0:5d}: fitted minimum position inside, FWHM: {1:4.1f}'.format(int(minFwhmPos), fwhm))
+                if self.dataSex[0].ambientTemp:
+                    self.logger.info('analyze: {0:5d}: fitted minimum position inside, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
+                else:
+                    self.logger.info('analyze: {0:5d}: fitted minimum position inside, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
+
             else:
-                self.logger.info('analyze: {0:5d}: fitted minimum position outside, FWHM: {1:4.1f}'.format(int(minFwhmPos), fwhm))
-                
+                if self.dataSex[0].ambientTemp:
+                    self.logger.info('analyze: {0:5d}: fitted minimum position outside, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
+                else:
+                    self.logger.info('analyze: {0:5d}: fitted minimum position outside, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
         else:
             self.logger.warn('analyze: fit failed'.format())
             
@@ -243,7 +256,7 @@ if __name__ == '__main__':
         rsx= sx.Sextract(debug=args.debugSex, rt=rt, logger=logger)
         dataSex[k]=rsx.sextract(fitsFn=fitsFn) 
 
-    an=Analyze(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, ev=ev, logger=logger)
+    an=Analyze(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=self.rt.foc.resolution, ev=ev, logger=logger)
     weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm= an.analyze()
 
     logger.info('analyze: result: {0}, {1}, {2}, {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))

@@ -40,11 +40,11 @@ except:
 
 class FitFwhm(object):
     """ Fit FWHM data and find the minimum"""
-    def __init__(self, showPlot=False, filterName=None, temperature=None, date=None,  comment=None, pltFile=None, dataFwhm=None, logger=None):
+    def __init__(self, showPlot=False, filterName=None, ambientTemp=None, date=None,  comment=None, pltFile=None, dataFwhm=None, logger=None):
 
         self.showPlot=showPlot
         self.filterName=filterName
-        self.temperature=temperature
+        self.ambientTemp=ambientTemp
         self.date=date
         self.dataFwhm=dataFwhm
         self.logger=logger
@@ -54,7 +54,7 @@ class FitFwhm(object):
         self.flag=None
         self.min_focpos_fwhm=None
         self.fitfunc_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
-        self.errfunc_fwhm = lambda p, x, y, res, err: (y - self.fitfunc_fwhm(p, x)) / (res * err)
+        self.errfunc_fwhm = lambda p, x, y, res, err: (y - self.fitfunc_fwhm(p, x)) / (res * err) # ToDo why err
         self.fitfunc_r_fwhm = lambda x, p0, p1, p2, p3, p4: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 4) 
 
     def fitData(self):
@@ -66,27 +66,33 @@ class FitFwhm(object):
             return None, None
 
         step= self.dataFwhm.pos[1]-self.dataFwhm.pos[0]
-        self.min_focpos_fwhm = optimize.fminbound(self.fitfunc_r_fwhm,min(self.dataFwhm.pos)-2 * step, max(self.dataFwhm.pos)+2 * step,args=(self.par), disp=0)
+        try:
+            self.min_focpos_fwhm = optimize.fminbound(self.fitfunc_r_fwhm,min(self.dataFwhm.pos)-2 * step, max(self.dataFwhm.pos)+2 * step,args=(self.par), disp=0)
+        except Exception, e:
+            self.logger.error('fitfwhm: fitData: failed finding minimum FWHM:\nnumpy error message:\n{0}'.format(e))                
+            return None, None
+
         val_fwhm= self.fitfunc_fwhm( self.par, self.min_focpos_fwhm) 
         # a decision is done in Analyze
         return self.min_focpos_fwhm, val_fwhm
 
     def plotData(self):
+
         try:
             x_fwhm = np.linspace(self.dataFwhm.pos.min(), self.dataFwhm.pos.max())
         except Exception, e:
             self.logger.error('fitfwhm: numpy error:\n{0}'.format(e))                
             return
-
         plt.plot(self.dataFwhm.pos, self.dataFwhm.fwhm, 'ro', color='blue')
         plt.errorbar(self.dataFwhm.pos, self.dataFwhm.fwhm, xerr=self.dataFwhm.errx, yerr=self.dataFwhm.stdFwhm, ecolor='black', fmt=None)
+
         if self.flag:
             plt.plot(x_fwhm, self.fitfunc_fwhm(self.par, x_fwhm), 'r-', color='blue')
-
-        if self.temperature and self.comment:
-            plt.title('rts2saf, {0},{1},{2},min:{3:.0f},{4}'.format(self.date, self.filterName, self.temperature, float(self.min_focpos_fwhm), self.comment), fontsize=12)
-        elif self.temperature:
-            plt.title('rts2saf, {0},{1},{2},min:{3:.0f}'.format(self.date, self.filterName, self.temperature, float(self.min_focpos_fwhm)), fontsize=12)
+            
+        if self.ambientTemp and self.comment:
+            plt.title('rts2saf, {0},{1},{2},min:{3:.0f},{4}'.format(self.date, self.filterName, self.ambientTemp, float(self.min_focpos_fwhm), self.comment), fontsize=12)
+        elif self.ambientTemp:
+            plt.title('rts2saf, {0},{1},{2},min:{3:.0f}'.format(self.date, self.filterName, self.ambientTemp, float(self.min_focpos_fwhm)), fontsize=12)
         elif self.comment:
             plt.title('rts2saf, {0},{1},min:{2:.0f},{3}'.format(self.date, self.filterName, float(self.min_focpos_fwhm), self.comment), fontsize=12)
         else:
@@ -95,6 +101,7 @@ class FitFwhm(object):
         plt.xlabel('FOC_POS [tick]')
         plt.ylabel('FWHM [px]')
         plt.grid(True)
+
         try:
             plt.savefig(self.pltFile)
         except:
@@ -103,6 +110,7 @@ class FitFwhm(object):
         if self.showPlot:
             if NODISPLAY:
                 self.logger.warn('fitfwhm: NO $DISPLAY no plot')                
+                return
             else:
                 plt.show()
 
@@ -116,6 +124,6 @@ if __name__ == '__main__':
         stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),)
  
 
-    fit=FitFwhm(showPlot=True, filterName='U', temperature=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFwhm=dataFwhm)
+    fit=FitFwhm(showPlot=True, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFwhm=dataFwhm)
     fit.fitData()
     fit.plotData()

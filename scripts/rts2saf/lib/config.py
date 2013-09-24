@@ -86,13 +86,12 @@ class DefaultConfiguration(object):
         self.dcf[('filter properties', 'flt9')]= '[ D,   -1400, 1500, 300, 1.]'
 
         self.dcf[('focuser properties', 'FOCUSER_NAME')]= 'F0'
-        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
+        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20.
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
         self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 11, 2]
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
         self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 1.1428e-6
-        print type(self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')])
         self.dcf[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
 
         self.dcf[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
@@ -251,7 +250,7 @@ class Configuration(DefaultConfiguration):
                 if identifier=='FOCUSER_NAME':
                     self.foc.name= value
                 elif(identifier=='FOCUSER_RESOLUTION'):
-                    self.foc.resolution= int(value)
+                    self.foc.resolution= float(value)
                 elif(identifier=='FOCUSER_ABSOLUTE_LOWER_LIMIT'):
                     self.foc.absLowerLimit= int(value)
                 elif(identifier=='FOCUSER_ABSOLUTE_UPPER_LIMIT'):
@@ -372,7 +371,6 @@ class Configuration(DefaultConfiguration):
         if not self.cfg['FIELDS']:
             self.logger.warn( 'sextract: no sextractor fields defined')
             return False
-
         return True
         # more to come
 

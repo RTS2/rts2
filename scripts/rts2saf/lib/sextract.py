@@ -61,17 +61,20 @@ class Sextract(object):
 
         # find the sextractor counts
         objectCount = len(sex.objects)
-        focPos = int(pyfits.getval(fitsFn,'FOC_POS'))
-       
+        focPos = float(pyfits.getval(fitsFn,'FOC_POS'))
+        try:
+            ambientTemp = float(pyfits.getval(fitsFn,self.rt.cfg['AMBIENTTEMPERATURE']))
+        except:
+            ambientTemp=None
         # store results
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: {0}: {1:5d}, raw objects: {2}, no objects found (after filtering), \nmessage rts2.sextractor: {2}'.format(fitsFn, focPos, objectCount, e))
+            self.logger.warn( 'sextract: {0}: {1:5.0f}, raw objects: {2}, no objects found (after filtering), \nmessage rts2.sextractor: {2}'.format(fitsFn, focPos, objectCount, e))
             self.logger.warn( 'sextract: new version of rts2.sextractor installed???')
             return None
 
-        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=focPos, fwhm=fwhm, stdFwhm=stdFwhm,nstars=nstars, catalogue=sex.objects, fields=self.fields)
+        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=float(focPos), fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalogue=sex.objects, fields=self.fields)
         if self.debug: self.logger.debug( 'sextract: {0} {1:5d} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
         return dataSex
@@ -124,13 +127,19 @@ if __name__ == '__main__':
 
     
     dataSex=dict()
-    for k, fitsFn in enumerate(fitsFiles):
+    for k, fitsFn in enumerate(dryFitsFiles):
         print fitsFn
         sx= Sextract(debug=args.debug, rt=rt, logger=logger)
         try:
-            dataSex[k]=sx.sextract(fitsFn=fitsFn) 
+            dSx=sx.sextract(fitsFn=fitsFn) 
         except Exception, e:
             logger.error('sextract: error with sextract:\nrts2.sextractor: {0}'.format(e))
+
+        if dSx and dSx.fwhm>0. and dSx.stdFwhm>0.:
+            dataSex[k]=dSx 
+        else:
+            print 'dropped: {}'.format(dSx.fitsFn)
+
     # very ugly
     nobjs=list()
     pos=list()
@@ -150,7 +159,7 @@ if __name__ == '__main__':
         stdFwhm.append(dataSex[k].stdFwhm)
     # Weighted mean based on number of extracted objects (stars)
     weightedMean= np.average(a=pos, axis=0, weights=nobjs) 
-    print '--------'
+    print '--------weightedMean'
     print weightedMean
 
     # Weighted mean based on median FWHM
@@ -165,16 +174,18 @@ if __name__ == '__main__':
         del fwhmC[ind]
 
     weightedMean= np.average(a=posC, axis=0, weights=map( lambda x: 1./x, fwhmC)) 
-    print '--------'
+    print '--------weightedMeanFwhm'
     print weightedMean
 
     # Fit median FWHM data
     dataFwhm=dt.DataFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
 
-    fit=ft.FitFwhm(showPlot=True, filterName='U', temperature=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFwhm=dataFwhm)
-    fit.fitData()
-    fit.plotData()
+    fit=ft.FitFwhm(showPlot=False, filterName='U', temperature=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFwhm=dataFwhm)
+    min_focpos_fwhm, fwhm= fit.fitData()
+    print '--------minFwhm fwhm'
+    print min_focpos_fwhm, fwhm
 
+    fit.plotData()
     # plot them through ds9
     if args.ds9display:
         display=ds9()

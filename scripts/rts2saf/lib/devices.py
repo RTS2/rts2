@@ -225,17 +225,19 @@ class CheckDevices(object):
             return False
         if self.debug: self.logger.debug('checkDevices: focuser: {0} present'.format(self.rt.foc.name))
 
-        self.rt.foc.focMn=self.proxy.getDevice(self.rt.foc.name)['foc_min'][1]
-        self.rt.foc.focMx=self.proxy.getDevice(self.rt.foc.name)['foc_max'][1]
-        self.rt.foc.focSt=self.proxy.getDevice(self.rt.foc.name)['focstep'][1]
-
+        try:
+            self.rt.foc.focMn=self.proxy.getDevice(self.rt.foc.name)['foc_min'][1]
+            self.rt.foc.focMx=self.proxy.getDevice(self.rt.foc.name)['foc_max'][1]
+            self.rt.foc.focSt=self.proxy.getDevice(self.rt.foc.name)['focstep'][1]
+        except Exception, e:
+            self.logger.info('FocusFilterWheels: focuser: {0} has no foc_min, foc_max or focstep properties '.format(self.rt.foc.name))
+            
         if self.rt.foc.focMn and self.rt.foc.focMx and self.rt.foc.focSt:
             pass
         else:
             self.rt.foc.focMn=None
             self.rt.foc.focMx=None
             self.rt.foc.focSt=None
-            self.logger.warn('checkDevices: focuser: {0} no minimum (foc_min) or maximum (foc_ma) or focstepvalue present'.format(self.rt.foc.name))
 
         if self.args.blind:
             if self.args.focStep:
