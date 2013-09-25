@@ -48,17 +48,6 @@ class Focus(object):
         acqu_oq = Queue.Queue()
         acqu= acq.Acquire(debug=self.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.rt.foc, ccd=self.rt.ccd, filterWheelsInUse=self.rt.filterWheelsInUse, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
 
-        if self.args.blind:
-            print int(self.rt.foc.focMn), int(self.rt.foc.focMx), self.args.focStep
-            print int(self.rt.foc.focMn), int(self.rt.foc.focMx), int(self.rt.foc.focSt)
-            if self.args.focStep:
-                self.rt.foc.focFoff= range(int(self.rt.foc.focMn+abs(self.args.focStep)), int(self.rt.foc.focMx-abs(self.args.focStep)), abs(self.args.focStep))
-            else:
-                self.rt.foc.focFoff= range(int(self.rt.foc.focMn+abs(int(self.rt.foc.focSt))), int(self.rt.foc.focMx-abs(int(self.rt.foc.focSt))), abs(int(self.rt.foc.focSt)))
-
-            if len(self.rt.foc.focFoff) > 10:
-                self.logger.info('FocusFilterWheels: focuser range has: {0} steps, you might consider to increase RTS2::focstep, or set a decent --step'.format(len(self.rt.foc.focFoff)))
-
         # start acquisition thread
         if not acqu.startScan(exposure=self.args.exposure, blind=self.args.blind):
             self.logger.error('Focus: exiting')

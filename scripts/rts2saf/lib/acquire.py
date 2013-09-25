@@ -20,7 +20,6 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-import argparse
 import sys
 import threading
 import time
@@ -32,7 +31,7 @@ from rts2.json import JSONProxy
 
 class ScanThread(threading.Thread):
     """Thread scan aqcuires a set of FITS image filenames"""
-    def __init__(self, debug=False, dryFitsFiles=None, ftw=None, ft=None, foc=None, ccd=None, focDef=None, exposure=None, blind=False, proxy=None, acqu_oq=None, ev=None, logger=None):
+    def __init__(self, debug=False, dryFitsFiles=None, ftw=None, ft=None, foc=None, ccd=None, focDef=None, exposure=None, blind=False, writeToDevices=True, proxy=None, acqu_oq=None, ev=None, logger=None):
         super(ScanThread, self).__init__()
         self.stoprequest = threading.Event()
         self.debug=debug
@@ -44,6 +43,7 @@ class ScanThread(threading.Thread):
         self.focDef=focDef
         self.exposure=exposure
         self.blind=blind
+        self.writeToDevices=writeToDevices
         self.proxy=proxy
         self.acqu_oq=acqu_oq
         self.ev=ev
@@ -51,24 +51,28 @@ class ScanThread(threading.Thread):
 
     def run(self):
         if self.debug: self.logger.debug('____ScantThread: running')
+        
+        if self.blind:
+            stepSize=self.foc.stepSize
+        else:
+            stepSize=self.ft.stepSize
 
         for i,pos in enumerate(self.foc.focFoff): 
-            if self.blind:
-                self.proxy.setValue(self.foc.name,'FOC_TAR', pos)
-                if self.debug: self.logger.debug('acquire: set FOC_TAR:{0}'.format(pos))
+
+            if self.writeToDevices:
+                if self.blind:
+                    self.proxy.setValue(self.foc.name,'FOC_TAR', pos)
+                    if self.debug: self.logger.debug('acquire: set FOC_TAR:{0}'.format(pos))
+                else:
+                    self.proxy.setValue(self.foc.name,'FOC_FOFF', pos)
             else:
-                self.proxy.setValue(self.foc.name,'FOC_FOFF', pos)
+                self.logger.warn('acquire: disabled setting FOC_TAR or FOC_FOFF: {0}'.format(pos))
 
             focPosCalc= pos
             if not self.blind:
                 focPosCalc += int(self.focDef)
 
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-            try:
-                stepSize = int(self.proxy.getSingleValue(self.foc.name,'focstep'))
-            except:
-                stepSize= 10. * self.foc.resolution# ToDo config!
-                self.logger.warn('acquire: property focstep from CCD: {0} not available, setting stepSize:{1}'.format(self.ccd.name, stepSize))
             slt= abs(float(focPosCalc-focPos)) / self.foc.speed / abs(float(stepSize)) 
             if self.debug: self.logger.debug('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, stepSize: {3}, sleep: {4}'.format(focPosCalc, focPos, self.foc.speed, abs(float(stepSize)), slt))
             time.sleep( slt)
@@ -76,14 +80,15 @@ class ScanThread(threading.Thread):
             self.proxy.refresh()
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
             if self.debug: self.logger.debug('acquire: focPosCalc:{0}'.format(focPosCalc))
-            while abs( focPosCalc- focPos) > self.foc.resolution:
-
-                if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
-                self.proxy.refresh()
-                focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-                time.sleep(.2) # leave it alone
-            else:
-                self.logger.info('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+            if self.writeToDevices:
+                while abs( focPosCalc- focPos) > self.foc.resolution:
+                
+                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+                    self.proxy.refresh()
+                    focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
+                    time.sleep(.2) # leave it alone
+                else:
+                    self.logger.info('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
             fn=self.expose()
             if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
@@ -96,10 +101,14 @@ class ScanThread(threading.Thread):
             exp= self.exposure # args.exposure
         else:
             exp= float(self.ccd.baseExposure)
+
         exp *= self.ft.exposureFactor
 
-        self.proxy.setValue(self.ccd.name,'exposure', str(exp))
-        self.proxy.executeCommand(self.ccd.name,'expose')
+        if self.writeToDevices:
+            self.proxy.setValue(self.ccd.name,'exposure', str(exp))
+            self.proxy.executeCommand(self.ccd.name,'expose')
+        else:
+            self.logger.warn('acquire: disabled exposure/expose: {0}'.format(exp))
 
         self.proxy.refresh()
         expEnd = self.proxy.getDevice(self.ccd.name)['exposure_end'][1]
@@ -110,8 +119,10 @@ class ScanThread(threading.Thread):
 
         # critical: RTS2 creates the file on start of exposure
         # see TAG WAIT
-        time.sleep(expEnd-time.time() + rdtt)
-
+        if self.writeToDevices:
+            # n sleep necessary
+            time.sleep(expEnd-time.time() + rdtt)
+            
         self.proxy.refresh()
         fn=self.proxy.getDevice('XMLRPC')['{0}_lastimage'.format(self.ccd.name)][1]
 
@@ -224,7 +235,10 @@ class Acquire(object):
         self.logger.debug('current focuser: {0}'.format(self.iFocType))        
         self.logger.debug('current FOC_DEF: {0}'.format(self.iFocDef))
 
-        self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
+        if self.writeToDevices:
+            self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
+        else:
+            self.logger.warn('acquire: disabled setting FOC_FOFF: {0}'.format(0))
         # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
         # ToDo filter
         # set all but ftw to empty slot
@@ -234,7 +248,7 @@ class Acquire(object):
                 if self.writeToDevices:
                     self.proxy.setValue(ftw.name, 'filter',  ftw.filters[0]) # has been sorted (lowest filter offset)
                 else:
-                    self.logger.warn('acquire: not setting filter: {0} onf filter wheel:{1}'.format(ftw.filters[0].name, self.ftw.name,ftw.name))
+                    self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(ftw.filters[0].name, self.ftw.name,ftw.name))
 
         if self.ft:
 
@@ -242,14 +256,14 @@ class Acquire(object):
                 self.proxy.setValue(self.ftw.name, 'filter',  self.ft.name)
                 if self.debug: self.logger.debug('acquire: setting on filter wheel: {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
             else:
-                self.logger.warn('acquire: not setting filter: {0} onf filter wheel:{1}'.format(self.ft.name, self.ftw.name,ftw.name))
+                self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(self.ft.name, self.ftw.name,ftw.name))
 
 
     def __finalState(self):
         if self.writeToDevices:
             self.proxy.setValue(self.foc.name,'FOC_DEF',  self.iFocDef)
         else:
-            self.logger.warn('acquire: not setting FOC_DEF: {0}',format(self.iFocDef))
+            self.logger.warn('acquire: disabled setting FOC_DEF: {0}',format(self.iFocDef))
         # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', self.iFocToff)
         # ToDo filter
 
@@ -274,6 +288,7 @@ class Acquire(object):
             focDef=self.iFocDef, 
             exposure=exposure,
             blind=blind,
+            writeToDevices=self.writeToDevices,
             proxy=self.proxy, 
             acqu_oq=self.acqu_oq, 
             ev=self.ev,
@@ -294,7 +309,7 @@ class Acquire(object):
                 if self.writeToDevices:
                     self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
                 else:
-                    self.logger.warn('acquire: not writing FOC_DEF: {0}'.format(self.foc.focDef))
+                    self.logger.warn('acquire: disabled writing FOC_DEF: {0}'.format(self.foc.focDef))
             else:
                 self.logger.warn('acquire: focuser: {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
         else:
@@ -319,15 +334,13 @@ class Acquire(object):
                 offsets += '{0} '.format(int(ftw.filters[ind].OffsetToEmptySlot))
                 if self.debug: self.logger.debug('acquire:ft.name: {0}, offset:{1}, offsets: {2}'.format(ftn, ftw.filters[ind].OffsetToEmptySlot, offsets))
             else:
-                self.proxy.setValue(self.ccd.name,'filter_offsets', offsets[:-1])
+                if self.writeToDevices:
+                    self.proxy.setValue(self.ccd.name,'filter_offsets', offsets[:-1])
+                else:
+                    self.logger.warn('acquire: disabled writing filter_offsets: {0} '.format(offsets[:-1]))
 
         else:
             if self.debug: self.logger.debug('acquire:ft.name: {0} is not the main wheel'.format(ftn, theWheel))
-
-
-
-
-
 
 if __name__ == '__main__':
 
@@ -366,12 +379,15 @@ if __name__ == '__main__':
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step), if --focStep is defined it is used to set the range')
-    parser.add_argument('--writetodevices', dest='writeToDevices', action='store_true', default=False, help=': %(default)s, write values to devices (enable not during night)')
+    parser.add_argument('--writetodevices', dest='writeToDevices', action='store_true', default=False, help=': %(default)s, if True enable write values to devices')
 
     args=parser.parse_args()
 
     lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
     logger= lgd.logger 
+
+    if not args.writeToDevices:
+        logger.warn('acquire: writing to devices is DISABLED, use --writetodevices to enable')
 
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)

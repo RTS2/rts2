@@ -59,7 +59,7 @@ class DefaultConfiguration(object):
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
         self.dcf[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
         self.dcf[('basic', 'DEFAULT_FOC_POS')]= 3500
-        self.dcf[('basic', 'EMPTY_SLOT_NAMES')]= [ 'empty', 'open' ]
+        self.dcf[('basic', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]
         # this is really ugly
         # but ConfigParser does not allow something else
         # ToDo define more!
@@ -89,9 +89,10 @@ class DefaultConfiguration(object):
         self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20. # fallback in case RTS2::focstep is not defined
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT_FB')]= 501 # fallback in case RTS2::foc_min is not defined
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT_FB')]= 2002 # fallback in case RTS2::foc_max is not defined
-        self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 11, 2]
+        # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
+        self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 2
+        self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 11, self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]]
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
-        self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 1.1428e-6
         self.dcf[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
 
         self.dcf[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
@@ -230,16 +231,29 @@ class Configuration(DefaultConfiguration):
                 else:
                     self.cfg[identifier]= value
 
+            elif section in 'basic': 
+
+                if identifier in 'EMPTY_SLOT_NAMES':
+                    self.cfg[identifier]=value[1:-1].split(',')
+                else:
+                    self.cfg[identifier]= value
             elif section in 'filter properties': 
                 items= value[1:-1].split(',')
+                lowerLimit=string.atoi(items[1])
+                upperLimit=string.atoi(items[2])
+                stepSize=string.atoi(items[3])
+                exposureFactor=string.atof(items[4])
+
+                focFoff=range (lowerLimit, upperLimit + stepSize, stepSize)
+
                 ft=dev.Filter( name=items[0],  
-                           lowerLimit=string.atoi(items[1]), 
-                           upperLimit=string.atoi(items[2]), 
-                           stepSize=string.atoi(items[3]), 
-                           exposureFactor=string.atof(items[4]))
+                           lowerLimit=lowerLimit, 
+                           upperLimit=upperLimit, 
+                           stepSize=stepSize, 
+                           exposureFactor=exposureFactor,
+                           focFoff= focFoff)
 
                 self.filters.append(ft)
-
             elif( section in 'filter wheel'):
                 items= value[1:-1].split(',')
                 self.filterWheelsDefs[items[0]]=items[1:]
