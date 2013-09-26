@@ -100,6 +100,7 @@ class CheckDevices(object):
         if not self.connected:
             self.logger.error('checkDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
             self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
+            self.logger.info('acquire: user name, password correct?')
             return False
 
         self.proxy.refresh()
@@ -231,6 +232,7 @@ class CheckDevices(object):
             self.logger.error('checkDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
             self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
             return False
+
         self.proxy.refresh()
         try:
             self.proxy.getDevice(self.rt.foc.name)
@@ -245,7 +247,7 @@ class CheckDevices(object):
             #self.rt.foc.focSt=self.proxy.getDevice(self.rt.foc.name)['focstep'][1]
         except Exception, e:
             self.logger.warn('FocusFilterWheels: focuser: {0} has no foc_min or foc_max properties '.format(self.rt.foc.name))
-            
+
         if self.rt.foc.focMn and self.rt.foc.focMx:
             self.rt.foc.focSt=self.rt.foc.stepSize
         else:
@@ -397,7 +399,52 @@ class CheckDevices(object):
         self.logger.debug('checkDevices:CCD: {} pixelSize'.format(self.rt.ccd.pixelSize))
         self.logger.debug('checkDevices:CCD: {} baseExposure'.format(self.rt.ccd.baseExposure))
         self.logger.debug('checkDevices:CCD: {} setFocDef'.format(self.rt.ccd.setFocDef))
+        #Filter
+        self.logger.debug('')
+        
+        self.logger.debug('checkDevices:FTWs: {} number'.format(len(self.rt.filterWheelsInUse)))
+        for ftw in self.rt.filterWheelsInUse:
 
+            for ft in ftw.filters:
+                self.logger.debug('checkDevices:{0}: {1} name'.format(ftw.name, ft.name))
+                self.logger.debug('checkDevices:{0}: focFoff, steps: {1}, between: {2} and {3}'.format(ft.name, len(ft.focFoff), min(ft.focFoff), max(ft.focFoff)))
+
+    def deviceWriteAccess(self):
+        self.logger.debug('checkDevices: ')
+
+        focDef=self.proxy.getDevice(self.rt.foc.name)['FOC_DEF'][1]
+        try:
+            self.proxy.setValue(self.rt.foc.name,'FOC_DEF', focDef+1)
+        except:
+            self.logger.error('checkDevices: focuser: {} is not writable'.format(self.rt.foc.name))
+            return False
+        self.logger.debug('checkDevices: focuser: {} is writable'.format(self.rt.foc.name))
+
+
+#        theWheel=  self.proxy.getSingleValue(self.rt.ftw.name, 'filter')
+        ftn=  self.proxy.getSingleValue('COLWFLT', 'filter')
+        print '>>>>>filter {}'.format(ftn)
+#        self.proxy.setValue(ftw.name, 'filter',  ftw.filters[0])
+        self.proxy.setValue('COLWFLT', 'filter',  str(ftn))
+
+
+
+
+
+
+        return True
+        #
+        nc=self.proxy.getDevice(self.rt.ccd.name)['nightcool'][1]
+        return True
+        try:
+            self .proxy.setValue(self.rt.ccd.name,'nightcool', str(nc))
+        except:
+            self.logger.error('checkDevices: CCD: {} is not writable'.format(self.rt.foc.name))
+            return False
+
+
+        return True
+        
 if __name__ == '__main__':
 
     import argparse
@@ -445,10 +492,16 @@ if __name__ == '__main__':
     rt.readConfiguration(fileName=args.config)
 
     cdv= CheckDevices(debug=args.debug, args=args, rt=rt, logger=logger)
-    cdv.statusDevices()
+    if not cdv.statusDevices():
+        logger.error('checkDevices:  exiting')
+        sys.exit(1)
+
     if args.verbose:
         cdv.printProperties()
 
-
+    if not cdv.deviceWriteAccess():
+        logger.error('checkDevices:  exiting')
+        sys.exit(1)
+        
     logger.info('checkDevices: DONE')        
     

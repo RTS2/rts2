@@ -62,6 +62,7 @@ class ScanThread(threading.Thread):
             if self.writeToDevices:
                 if self.blind:
                     self.proxy.setValue(self.foc.name,'FOC_TAR', pos)
+                        
                     if self.debug: self.logger.debug('acquire: set FOC_TAR:{0}'.format(pos))
                 else:
                     self.proxy.setValue(self.foc.name,'FOC_FOFF', pos)
