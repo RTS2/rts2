@@ -210,7 +210,7 @@ int Fli::initHardware ()
 	ret = FLIGetFocuserExtent (dev, &extent);
 	if (ret)
 		return -1;
-	setFocusExtend (0, extent);
+	setFocusExtent (0, extent);
 
 	if (!isnan (defaultPosition->getValueFloat ()))
 	{

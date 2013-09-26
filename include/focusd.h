@@ -60,6 +60,7 @@ class Focusd:public rts2core::Device
 		rts2core::ValueFloat *temperature;
 
 		rts2core::ValueDoubleMinMax *defaultPosition;
+		rts2core::ValueDoubleMinMax *filterOffset;
 		rts2core::ValueDoubleMinMax *focusingOffset;
 		rts2core::ValueDoubleMinMax *tempOffset;
 
@@ -79,7 +80,8 @@ class Focusd:public rts2core::Device
 		double getFocusMin () { return target->getMin (); }
 		double getFocusMax () { return target->getMax (); }
 
-		void setFocusExtend (double foc_min, double foc_max);
+		void setFocusExtent (double foc_min, double foc_max);
+		void updateOffsetsExtent ();
 
 		virtual bool isAtStartPosition () = 0;
 

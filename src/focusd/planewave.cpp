@@ -105,7 +105,7 @@ Planewave::Planewave (int argc, char **argv):Focusd (argc, argv)
 
 	createValue (fanMode, "FANMODE", "Fan ON? : TRUE/FALSE", false, RTS2_VALUE_WRITABLE);
 		
-	setFocusExtend (-1000, 30000);
+	setFocusExtent (-1000, 30000);
 	
 	addOption ('f', NULL, 1, "device file (usually /dev/ttySx)");
 	

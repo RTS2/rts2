@@ -99,12 +99,12 @@ int Dummy::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == focMin)
 	{
-		setFocusExtend (new_value->getValueDouble (), focMax->getValueDouble ());
+		setFocusExtent (new_value->getValueDouble (), focMax->getValueDouble ());
 		return 0;
 	}
 	else if (old_value == focMax)
 	{
-		setFocusExtend (focMin->getValueDouble (), new_value->getValueDouble ());
+		setFocusExtent (focMin->getValueDouble (), new_value->getValueDouble ());
 		return 0;
 	}
 	return Focusd::setValue (old_value, new_value);

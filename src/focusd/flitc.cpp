@@ -259,7 +259,7 @@ int Fli::initHardware ()
 	ret = FLIGetFocuserExtent (dev, &extent);
 	if (ret)
 		return -1;
-	setFocusExtend (0, extent);
+	setFocusExtent (0, extent);
 #define OFFSET_MIN -3000.
 	focusingOffset->setMin( OFFSET_MIN) ;
 	tempOffset->setMin(OFFSET_MIN) ;

@@ -31,9 +31,11 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 	createValue (target, "FOC_TAR", "focuser target position", true, RTS2_VALUE_WRITABLE);
 
 	createValue (defaultPosition, "FOC_DEF", "default target value", true, RTS2_VALUE_WRITABLE);
+	createValue (filterOffset, "FOC_FILTEROFF", "offset related to actual filter", true, RTS2_VALUE_WRITABLE);
 	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true, RTS2_VALUE_WRITABLE);
 	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true, RTS2_VALUE_WRITABLE);
 
+	filterOffset->setValueDouble (0);
 	focusingOffset->setValueDouble (0);
 	tempOffset->setValueDouble (0);
 
@@ -128,6 +130,7 @@ int Focusd::setPosition (float num)
 		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE | DEVICE_ERROR_HW, DEVICE_ERROR_HW, "focus change aborted");
 		return ret;
 	}
+	updateOffsetsExtent ();
 	return ret;
 }
 
@@ -151,7 +154,7 @@ int Focusd::endFocusing ()
 	return 0;
 }
 
-void Focusd::setFocusExtend (double foc_min, double foc_max)
+void Focusd::setFocusExtent (double foc_min, double foc_max)
 {
 	target->setMin (foc_min);
 	target->setMax (foc_max);
@@ -161,18 +164,29 @@ void Focusd::setFocusExtend (double foc_min, double foc_max)
 	defaultPosition->setMax (foc_max);
 	updateMetaInformations (defaultPosition);
 
-	focusingOffset->setMin (foc_min - defaultPosition->getValueFloat ());
-	focusingOffset->setMax (foc_max - defaultPosition->getValueFloat ());
+	updateOffsetsExtent ();
+}
+
+void Focusd::updateOffsetsExtent ()
+{
+	double targetDiffMin = target->getMin () - target->getValueFloat ();
+	double targetDiffMax = target->getMax () - target->getValueFloat ();
+	filterOffset->setMin (targetDiffMin + filterOffset->getValueFloat ());
+	filterOffset->setMax (targetDiffMax + filterOffset->getValueFloat ());
+	updateMetaInformations (filterOffset);
+
+	focusingOffset->setMin (targetDiffMin + focusingOffset->getValueFloat ());
+	focusingOffset->setMax (targetDiffMax + focusingOffset->getValueFloat ());
 	updateMetaInformations (focusingOffset);
 
-	tempOffset->setMin (foc_min - defaultPosition->getValueFloat ());
-	tempOffset->setMax (foc_max - defaultPosition->getValueFloat ());
+	tempOffset->setMin (targetDiffMin + tempOffset->getValueFloat ());
+	tempOffset->setMax (targetDiffMax + tempOffset->getValueFloat ());
 	updateMetaInformations (tempOffset);
 }
 
 int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
-        float tco= tcOffset();
+        float tco = tcOffset();
 
 	if (old_value == target)
 	{
@@ -180,24 +194,19 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	if (old_value == defaultPosition)
 	{
-		float newPosition = new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ()+tco;
-		int ret = setPosition (newPosition)? -2 : 0;
-		focusingOffset->setMin (defaultPosition->getMin () - newPosition);
-		focusingOffset->setMax (defaultPosition->getMax () - newPosition);
-		updateMetaInformations (focusingOffset);
-
-		tempOffset->setMin (defaultPosition->getMin () - newPosition);
-		tempOffset->setMax (defaultPosition->getMax () - newPosition);
-		updateMetaInformations (tempOffset);
-		return ret;
+		return setPosition (new_value->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tco)? -2 : 0;
+	}
+	if (old_value == filterOffset)
+	{
+		return setPosition (defaultPosition->getValueFloat () + new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tco )? -2 : 0;
 	}
 	if (old_value == focusingOffset)
 	{
-		return setPosition (defaultPosition->getValueFloat () + new_value->getValueFloat () + tempOffset->getValueFloat ()+tco )? -2 : 0;
+		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + new_value->getValueFloat () + tempOffset->getValueFloat () + tco )? -2 : 0;
 	}  
 	if (old_value == tempOffset)
 	{
-		return setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat ()+tco )? -2 : 0;
+		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat () + tco )? -2 : 0;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
@@ -205,8 +214,8 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 int Focusd::scriptEnds ()
 {
 	tempOffset->setValueDouble (0);
-	setPosition (defaultPosition->getValueDouble () + focusingOffset->getValueDouble () + tempOffset->getValueDouble () + tcOffset());
 	sendValueAll (tempOffset);
+	setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tcOffset());
 	return rts2core::Device::scriptEnds ();
 }
 

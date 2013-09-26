@@ -1773,7 +1773,7 @@ void Camera::offsetForFilter (int new_filter, std::list <FilterVal>::iterator fv
 	}
 	fm.focuserName = focuserDevice;
 	fm.conn = this;
-	postEvent (new rts2core::Event (EVENT_FOCUSER_OFFSET, (void *) &fm));
+	postEvent (new rts2core::Event (EVENT_FOCUSER_FILTEROFFSET, (void *) &fm));
 	if (fm.focuserName)
 		return;
 	if (focuserMoving)

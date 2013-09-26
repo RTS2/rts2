@@ -300,14 +300,14 @@ int Robofocus::init ()
 	// if robofocus has been calibrated
 	if(maxTravel->getValueInteger()>1){
 
-	  // setFocusExtend( 2.,(double)maxTravel->getValueInteger());
+	  // setFocusExtent( 2.,(double)maxTravel->getValueInteger());
 	  // minTicks->setValueInteger (2);
-	  setFocusExtend( 0.,(double)maxTravel->getValueInteger());
+	  setFocusExtent( 0.,(double)maxTravel->getValueInteger());
 	  minTicks->setValueInteger (0);
 	  maxTicks->setValueInteger( maxTravel->getValueInteger());
 	} else {
 
-	  setFocusExtend( (double)minTicks->getValueInteger(),(double)maxTicks->getValueInteger());
+	  setFocusExtent( (double)minTicks->getValueInteger(),(double)maxTicks->getValueInteger());
 	  maxTravel->setValueInteger( maxTicks->getValueInteger());
 	}
 	if( setMaxTravel ())
@@ -543,7 +543,7 @@ int Robofocus::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	  if( minTicks->getValueInteger() > 65000)
 	    minTicks->setValueInteger(65000); 
 
-	  setFocusExtend((double)minTicks->getValueInteger (),(double)maxTicks->getValueInteger ());
+	  setFocusExtent((double)minTicks->getValueInteger (),(double)maxTicks->getValueInteger ());
 	  // set maxTravel knowing limits are checked in the base class
 	  if( setMaxTravel ())
 	    return -1;
@@ -558,7 +558,7 @@ int Robofocus::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	  if( maxTicks->getValueInteger() > 65000)
 	    maxTicks->setValueInteger(65000); 
 
-	  setFocusExtend((double)minTicks->getValueInteger (),(double)maxTicks->getValueInteger ());
+	  setFocusExtent((double)minTicks->getValueInteger (),(double)maxTicks->getValueInteger ());
 	  if( setMaxTravel ())
 	    return -1;
 	  return 0;
@@ -572,7 +572,7 @@ int Robofocus::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	    }
 	    // minTicks is always 2 (see rebofocus manual)
 	    // maxTravel is the result of calibration
-	    setFocusExtend( 2.,(double)maxTravel->getValueInteger());
+	    setFocusExtent( 2.,(double)maxTravel->getValueInteger());
 	    minTicks->setValueInteger (2);
             maxTicks->setValueInteger( maxTravel->getValueInteger());
 	  }
