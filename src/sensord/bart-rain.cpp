@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+//#define DEBUG_EXTRA
+
 #include "sensord.h"
 
 #include <fcntl.h>
@@ -109,7 +111,9 @@ int BartRain::info ()
 	int flags;
 	int ret;
 	ret = ioctl (rain_port, TIOCMGET, &flags);
+	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Bart::isGoodWeather flags: " << flags << " rain: " << (flags & TIOCM_RI) << sendLog;
+	#endif
 		// ioctl failed or it's raining..
 	if (ret || !(flags & TIOCM_RI))
 	{
@@ -138,6 +142,8 @@ BartRain::BartRain (int argc, char **argv):SensorWeather (argc, argv)
 
 	addOption ('f', NULL, 1, "/dev/file for rain detector, default to /dev/ttyS0");
 	addOption ('r', NULL, 1, "rain timeout in seconds. Default to 3600 seconds (= 60 minutes = 1 hour)");
+
+	setIdleInfoInterval (1);
 }
 
 BartRain::~BartRain ()
