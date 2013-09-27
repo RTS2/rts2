@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--dryfitsfiles', dest='dryFitsFiles', action='store', default=None, help=': %(default)s, directory where a FITS files are stored from a previous focus run')
+    parser.add_argument('--dryfitsfiles', metavar='DIRECTORY', dest='dryFitsFiles', action='store', default=None, help=': %(default)s, directory where a set of FITS files are stored from a previous focus run')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--verbose', dest='verbose', action='store_true', default=False, help=': %(default)s, print device properties and add more messages')
     parser.add_argument('--exposure', dest='exposure', action='store', default=None, type=float, help=': %(default)s, exposure time for CCD')
@@ -61,8 +61,10 @@ if __name__ == '__main__':
     if not rt.checkConfiguration():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
+
     # get the environment
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
+
     # check the presence of the devices and if there is an empty slot on each wheel
     cdv= dev.CheckDevices(debug=args.debug, args=args, rt=rt, logger=logger)
     if not cdv.statusDevices():

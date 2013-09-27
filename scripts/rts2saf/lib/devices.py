@@ -282,7 +282,7 @@ class CheckDevices(object):
                     self.logger.info('FocusFilterWheels: focuser range has: {0} steps, you might consider to increase RTS2::focstep, or set decent value for --focrange'.format(len(self.rt.foc.focFoff)))
 
         return True
-    # ToDo moght go away
+    # ToDo might go away
     def __filterWheels(self):
         if not self.connected:
             self.logger.error('checkDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
@@ -411,12 +411,11 @@ class CheckDevices(object):
         self.logger.debug('checkDevices:FTWs: {} number'.format(len(self.rt.filterWheelsInUse)))
         for ftw in self.rt.filterWheelsInUse:
             for ft in ftw.filters:
-                self.logger.debug('checkDevices:{0}: {1} name'.format(ftw.name, ft.name))
+                self.logger.debug('checkDevices:{0}: {1}'.format(ftw.name, ft.name))
                 self.logger.debug('checkDevices:{0}: focFoff, steps: {1}, between: {2} and {3}'.format(ft.name, len(ft.focFoff), min(ft.focFoff), max(ft.focFoff)))
 
     @timeout(seconds=1, error_message=os.strerror(errno.ETIMEDOUT))
     def __deviceWriteAccessCCD(self):
-        
         ccdOk=False
         if self.args.verbose: self.logger.debug('checkDevices: asking   from CCD: {0}: calculate_stat'.format(self.rt.ccd.name))
         cs=self.proxy.getDevice(self.rt.ccd.name)['calculate_stat'][1]
@@ -435,7 +434,6 @@ class CheckDevices(object):
         return ccdOk
     @timeout(seconds=2, error_message=os.strerror(errno.ETIMEDOUT))
     def __deviceWriteAccessFoc(self):
-        #
         focOk=False
         focDef=self.proxy.getDevice(self.rt.foc.name)['FOC_DEF'][1]
         try:
@@ -449,24 +447,27 @@ class CheckDevices(object):
 
         return focOk
 
-    @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
+    @timeout(seconds=30, error_message=os.strerror(errno.ETIMEDOUT))
     def __deviceWriteAccessFtw(self):
-        # 
         ftwOk=False
-        ftn=  self.proxy.getSingleValue(self.rt.filterWheelsInUse[0].name, 'filter')
+        if self.args.verbose: self.logger.debug('checkDevices: asking   from Ftw: {0}: filter'.format(self.rt.filterWheelsInUse[0].name))
+        ftnr=  self.proxy.getSingleValue(self.rt.filterWheelsInUse[0].name, 'filter')
+        if self.args.verbose: self.logger.debug('checkDevices: response from Ftw: {0}: filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnr))
+        ftnrp1= str(ftnr +1)
         try:
-            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftn +1)
-            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftn)
+            if self.args.verbose: self.logger.debug('checkDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnrp1))
+            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftnrp1)
+            if self.args.verbose: self.logger.debug('checkDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnr))
+            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftnr)
             ftwOk= True
         except Exception, e:
             if e:
                 self.logger.error('checkDevices: filter wheel: {0} is not writable: {1}'.format(self.rt.filterWheelsInUse[0].name, repr(e)))
             else:
                 self.logger.error('checkDevices: filter wheel: {0} is not writable (not timed out)'.format(self.rt.filterWheelsInUse[0].name))
-
         if ftwOk:
             self.logger.debug('checkDevices: filter wheel: {} is writable'.format(self.rt.filterWheelsInUse[0].name))
-        #
+
         return ftwOk
 
     def deviceWriteAccess(self):
@@ -508,9 +509,11 @@ if __name__ == '__main__':
     parser.add_argument('--focrange', dest='focRange', action='store', default=None,type=int, nargs='+', help=': %(default)s, focuser range given as "ll ul st" used only during blind run')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
 
+    args=parser.parse_args()
 
     if args.verbose:
         args.level='DEBUG'
+        args.debug=True
         args.toconsole=True
 
     lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here

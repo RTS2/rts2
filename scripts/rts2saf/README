@@ -167,17 +167,17 @@ and if no errors are reported
 After a while a matplotlib window appears containing the fit. After closing it 
 a DS9 window appears showing which stars have been chosen.
 
+Testing individual components
+-----------------------------
+soon
+
+
 Testing through rts2-scriptexec
 -------------------------------
 soon
 
 Integration of rts2saf into RTS2
 --------------------------------
-soon
-
-
-Testing individual components
------------------------------
 soon
 
 
