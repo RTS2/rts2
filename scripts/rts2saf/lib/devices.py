@@ -410,8 +410,15 @@ class CheckDevices(object):
                 self.logger.debug('checkDevices:{0}: focFoff, steps: {1}, between: {2} and {3}'.format(ft.name, len(ft.focFoff), min(ft.focFoff), max(ft.focFoff)))
 
     def deviceWriteAccess(self):
-        self.logger.debug('checkDevices: ')
+        self.logger.info('checkDevices: this may take approx. a minute')
 
+        tm=self.proxy.getDevice(self.rt.ccd.name)['temp_max'][1]
+        try:
+            self .proxy.setValue(self.rt.ccd.name,'temp_max', str(tm -1.))
+        except:
+            self.logger.error('checkDevices: CCD: {} is not writable'.format(self.rt.ccd.name))
+            return False
+        self.logger.debug('checkDevices: CCD: {} is writable'.format(self.rt.ccd.name))
         focDef=self.proxy.getDevice(self.rt.foc.name)['FOC_DEF'][1]
         try:
             self.proxy.setValue(self.rt.foc.name,'FOC_DEF', focDef+1)
@@ -419,28 +426,11 @@ class CheckDevices(object):
             self.logger.error('checkDevices: focuser: {} is not writable'.format(self.rt.foc.name))
             return False
         self.logger.debug('checkDevices: focuser: {} is writable'.format(self.rt.foc.name))
-
-
-#        theWheel=  self.proxy.getSingleValue(self.rt.ftw.name, 'filter')
-        ftn=  self.proxy.getSingleValue('COLWFLT', 'filter')
-        print '>>>>>filter {}'.format(ftn)
-#        self.proxy.setValue(ftw.name, 'filter',  ftw.filters[0])
-        self.proxy.setValue('COLWFLT', 'filter',  str(ftn))
-
-
-
-
-
-
-        return True
+        # 
+        ftn=  self.proxy.getSingleValue(self.rt.filterWheelsInUse[0].name, 'filter')
+        self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftn +1)
+        self.logger.debug('checkDevices: filter wheel: {} is writable'.format(self.rt.filterWheelsInUse[0].name))
         #
-        nc=self.proxy.getDevice(self.rt.ccd.name)['nightcool'][1]
-        return True
-        try:
-            self .proxy.setValue(self.rt.ccd.name,'nightcool', str(nc))
-        except:
-            self.logger.error('checkDevices: CCD: {} is not writable'.format(self.rt.foc.name))
-            return False
 
 
         return True
