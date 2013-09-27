@@ -53,12 +53,9 @@ class DefaultConfiguration(object):
         self.config.optionxform = str
 
         self.dcf=dict()
-        self.dcf[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/rts2saf/rts2saf-acquire.cfg'
         self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2saf-focus'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
-        self.dcf[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
-        self.dcf[('basic', 'DEFAULT_FOC_POS')]= 3500
         self.dcf[('basic', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]
         # this is really ugly
         # but ConfigParser does not allow something else
@@ -104,7 +101,6 @@ class DefaultConfiguration(object):
         
         self.dcf[('analysis', 'MINIMUM_OBJECTS')]= 20
         self.dcf[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
-        self.dcf[('analysis', 'SET_FOC_DEF_FWHM_UPPER_THRESHOLD')]= 5.
         
         self.dcf[('SExtractor', 'SEXPATH')]= 'sextractor'
         self.dcf[('SExtractor', 'SEXCFG')]= '/etc/rts2/rts2saf/sex/rts2saf-sex.cfg'
@@ -128,8 +124,7 @@ class DefaultConfiguration(object):
         self.dcf[('ccd', 'BINNING')]= '1x1'
         self.dcf[('ccd', 'WINDOW')]= '[ -1, -1, -1, -1 ]'
         self.dcf[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
-        self.dcf[('ccd', 'BASE_EXPOSURE')]= 2.
-
+        self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
 
         self.dcf[('mode', 'SET_FOCUS')]= True
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
@@ -305,7 +300,7 @@ class Configuration(DefaultConfiguration):
                 elif(identifier=='PIXELSIZE'): # unit meter
                     self.ccd.pixelSize= value
                 elif(identifier=='BASE_EXPOSURE'): # unit meter
-                    self.ccd.baseExposure= value
+                    self.ccd.baseExposure= float(value)
             # first bool, then int !
             elif isinstance(self.cfg[identifier], bool):
                 # ToDO, looking for a direct way

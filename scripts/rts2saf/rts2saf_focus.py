@@ -40,11 +40,12 @@ if __name__ == '__main__':
     parser.add_argument('--dryfitsfiles', metavar='DIRECTORY', dest='dryFitsFiles', action='store', default=None, help=': %(default)s, directory where a set of FITS files are stored from a previous focus run')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--verbose', dest='verbose', action='store_true', default=False, help=': %(default)s, print device properties and add more messages')
+    parser.add_argument('--checkconfig', dest='checkConfig', action='store_true', default=False, help=': %(default)s, check connection to RTS2, the devices and their configuration, then EXIT')
+    parser.add_argument('--focrange', dest='focRange', action='store', default=None,type=int, nargs='+', help=': %(default)s, focuser range given as "ll ul st" used only during blind run')
     parser.add_argument('--exposure', dest='exposure', action='store', default=None, type=float, help=': %(default)s, exposure time for CCD')
     parser.add_argument('--focdef', dest='focDef', action='store', default=None, type=float, help=': %(default)s, set FOC_DEF to value')
-    parser.add_argument('--focStep', dest='focStep', action='store', default=None, type=int, help=': %(default)s, focuser step size during blind run, see --blind')
-    parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step), if --focStep is defined it is used to set the range')
-    parser.add_argument('--checkconfig', dest='checkConfig', action='store_true', default=False, help=': %(default)s, check connection to RTS2, the devices and their configuration, then EXIT')
+    parser.add_argument('--focstep', dest='focStep', action='store', default=None, type=int, help=': %(default)s, focuser step size during blind run, see --blind')
+    parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
 
     args=parser.parse_args()
     if args.verbose:
@@ -65,6 +66,15 @@ if __name__ == '__main__':
 
     # get the environment
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
+    if args.blind and not args.focRange:
+        logger.info('checkDevices: --blind is set, recommendation: set --focrange to decent value')        
+    elif not args.blind and args.focRange:
+        logger.error('checkDevices: --focrange has no effect without --blind'.format(args.focRange))
+
+    if args.focRange:
+        if (args.focRange[0] >= args.focRange[1]) or args.focRange[2] <= 0: 
+            logger.error('checkDevices: bad range values: {}, exiting'.format(args.focRange))
+            sys.exit(1)
 
     # check the presence of the devices and if there is an empty slot on each wheel
     cdv= dev.CheckDevices(debug=args.debug, args=args, rt=rt, logger=logger)

@@ -52,6 +52,11 @@ class Focus(object):
         if not acqu.startScan(exposure=self.args.exposure, blind=self.args.blind):
             self.logger.error('Focus: exiting')
             sys.exit(1)
+
+        if self.args.focDef: 
+            self.rt.foc.focDef=args.focDef
+            acqu.writeFocDef()
+
         # acquire FITS
         dataSex=dict()
 
@@ -76,7 +81,7 @@ class Focus(object):
             else:
                 if self.debug: self.logger.debug('Focus: got all images')
 
-        # might be in a thread too
+        # might go to thread too
         if self.dryFitsFiles:
             anr= an.Analyze(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, ev=self.ev, logger=self.logger)
         else:
@@ -89,16 +94,18 @@ class Focus(object):
             self.logger.info('Focus: {0:5.0f}: weightedMeanObjects'.format(weightedMeanObjects))
         if weightedMeanFwhm:
             self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm'.format(weightedMeanFwhm))
-
+        # currently write FOC_DEF only in case fit converged
         if minFwhmPos:
             self.logger.info('Focus: {0:5.0f}: minFwhmPos'.format(minFwhmPos))
             self.logger.info('Focus: {0:5.2f}: fwhm'.format(fwhm))
-
             # FOC_DEF (is set first)
             self.rt.foc.focDef= minFwhmPos
             if self.rt.cfg['SET_FOCUS']:
-                acqu.writeFocDef()
-                self.logger.info('Focus: set FOC_DEF: {0}'.format(int(minFwhmPos)))
+                if self.rt.cfg['FWHM_MIN'] < fwhm < self.rt.cfg['FWHM_MAX']:
+                    acqu.writeFocDef()
+                    self.logger.info('Focus: set FOC_DEF: {0}'.format(int(minFwhmPos)))
+                else:
+                    self.logger.warn('Focus: not writing FOC_DEF: {0}, fwhm: {1}, out of bounds: {2},{3}'.format(int(minFwhmPos), fwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
             else:
                 self.logger.warn('Focus: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
         else:
@@ -117,11 +124,10 @@ class FocusFilterWheels(object):
     def run(self):
         # loop over filter wheels, their filters and offsets (FOC_TOFF)
         for k, ftw in enumerate(self.rt.filterWheelsInUse):
+            # only interesting in case multiple filter wheels are present
             if len(ftw.filters) ==1 and k>0:
-                if ftw.filters[0].OffsetToEmptySlot >0:
-                    self.logger.warn('FocusFilterWheels: filter wheel: {0} has only one slot: {1}, but it is not  empty'.format(ftw.name,ftw.filters[0].name))
-                else:
-                    if self.debug: self.logger.debug('FocusFilterWheels: filter wheel: {0} has only one slot: {1} and is empty'.format(ftw.name,ftw.filters[0].name))
+                # these are filter wheels which have no real filters (defined in config) 
+                # they must appear in self.rt.filterWheelsInUse in order to set the empty slot
                 continue
         
             for ft in ftw.filters:
@@ -131,13 +137,12 @@ class FocusFilterWheels(object):
                 if self.dryFitsFiles:
                     dFF=self.dryFitsFiles[:]
                     self.logger.info('FocusFilterWheels: using FITS files from: {}'.format(self.dryFitsFiles))
-                
                 # acquisition
                 acqu_oq = Queue.Queue()
                 #
                 acqu= acq.Acquire(debug=self.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.rt.foc, ccd=self.rt.ccd, filterWheelsInUse=self.rt.filterWheelsInUse, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
                 # 
-                if self.args.focDef: #  ToDo thinkabout that, it is a bit misplaced
+                if self.args.focDef: #  ToDo think about that, it is a bit misplaced
                     self.rt.foc.focDef=args.focDef
                     acqu.writeFocDef()
                 # steps are defined per filter, if blind in focuser
@@ -173,7 +178,7 @@ class FocusFilterWheels(object):
                     if self.debug: self.logger.debug('FocusFilterWheels: got all images')
 
                 acqu.stopScan(timeout=1.)
-                # might be in a thread too
+                # might go to a thread too
                 if self.dryFitsFiles:
                     anr= an.Analyze(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, dryFits=True, ev=self.ev, logger=self.logger)
                 else:
@@ -194,12 +199,13 @@ class FocusFilterWheels(object):
                         # FOC_DEF (is set first)
                         self.rt.foc.focDef= minFwhmPos
                         if self.rt.cfg['SET_FOCUS']:
-                            if self.rt.fitFocDef:
+                            if self.rt.cfg['FWHM_MIN'] < fwhm < self.rt.cfg['FWHM_MAX']:
                                 acqu.writeFocDef()
-                                self.logger.info('FocusFilterWheels: empty slot: {0}, set FOC_DEF: {1}'.format(ft.name, int(minFwhmPos)))
+                                self.logger.info('Focus: set FOC_DEF: {0}'.format(int(minFwhmPos)))
                             else:
-                                self.logger.warn('FocusFilterWheels: filter: {0} not setting FOC_DEF, due to bad fit'.format(ft.name))
-
+                                self.logger.warn('Focus: not writing FOC_DEF: {0}, fwhm: {1}, out of bounds: {2},{3}'.format(int(minFwhmPos), fwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+                        else:
+                            self.logger.warn('Focus: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
                     else:
                         self.logger.debug('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(minFwhmPos- self.rt.foc.focDef)))
                         ft.OffsetToEmptySlot=int(minFwhmPos- self.rt.foc.focDef)
@@ -208,6 +214,7 @@ class FocusFilterWheels(object):
 
                 if self.debug: self.logger.debug('FocusFilterWheels: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
             else:
+                # no incomplete set of offsets are written
                 if self.rt.cfg['WRITE_FILTER_OFFSETS']:
                     acqu.writeOffsets(ftw=ftw)
 

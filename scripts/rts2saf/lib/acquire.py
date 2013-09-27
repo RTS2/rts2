@@ -101,7 +101,7 @@ class ScanThread(threading.Thread):
         if self.exposure:
             exp= self.exposure # args.exposure
         else:
-            exp= float(self.ccd.baseExposure)
+            exp= self.ccd.baseExposure
 
         exp *= self.ft.exposureFactor
 

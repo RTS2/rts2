@@ -249,6 +249,7 @@ class CheckDevices(object):
         try:
             self.rt.foc.focMn=self.proxy.getDevice(self.rt.foc.name)['foc_min'][1]
             self.rt.foc.focMx=self.proxy.getDevice(self.rt.foc.name)['foc_max'][1]
+            # this hardware
             #self.rt.foc.focSt=self.proxy.getDevice(self.rt.foc.name)['focstep'][1]
         except Exception, e:
             self.logger.warn('FocusFilterWheels: focuser: {0} has no foc_min or foc_max properties '.format(self.rt.foc.name))
@@ -259,27 +260,25 @@ class CheckDevices(object):
             self.rt.foc.focMn=self.rt.foc.absLowerLimitFb
             self.rt.foc.focMx=self.rt.foc.absUpperLimitFb
             self.rt.foc.focSt=self.rt.foc.stepSize
-            self.logger.warn('FocusFilterWheels: setting foc_min: {0}, foc_max: {1}, focstep: {2}'.format(self.rt.foc.absLowerLimitFb, self.rt.foc.absUpperLimitFb, self.rt.foc.resolution))
+            self.logger.info('FocusFilterWheels: setting internal focMn: {0}, focMx: {1}, focSt: {2}'.format(self.rt.foc.absLowerLimitFb, self.rt.foc.absUpperLimitFb, self.rt.foc.resolution))
 
-        if self.args.blind:
+        if self.args.blind and self.args.focRange:
             # ToDo: upper limit -abs(self.args.focStep) OK?
-            if self.args.focRange:
-                # ToDo check that
-                withinLlUl=False
-                if self.rt.foc.absLowerLimitFb < self.args.focRange[0] < self.rt.foc.absUpperLimitFb-(self.args.focRange[1]-self.args.focRange[0]):
-                    if self.rt.foc.absLowerLimitFb + (self.args.focRange[1]-self.args.focRange[0]) < self.args.focRange[1] <  self.rt.foc.absUpperLimitFb:
-                        withinLlUl=True
-                if withinLlUl:
-                    self.rt.foc.focFoff= range(self.args.focRange[0], self.args.focRange[1], abs(self.args.focRange[2]))
-                else:
-                    self.logger.error('FocusFilterWheels: out of bounds, exiting')
-                    sys.exit(1)
+            withinLlUl=False
+            # ToDo check that
+            if self.rt.foc.absLowerLimitFb < self.args.focRange[0] < self.rt.foc.absUpperLimitFb-(self.args.focRange[1]-self.args.focRange[0]):
+                if self.rt.foc.absLowerLimitFb + (self.args.focRange[1]-self.args.focRange[0]) < self.args.focRange[1] <  self.rt.foc.absUpperLimitFb:
+                    withinLlUl=True
+            if withinLlUl:
+                self.rt.foc.focFoff= range(self.args.focRange[0], self.args.focRange[1], abs(self.args.focRange[2]))
             else:
-                print self.rt.foc.focMn, self.rt.foc.focMx, self.rt.foc.focSt
-                self.rt.foc.focFoff= range(int(self.rt.foc.focMn), int(self.rt.foc.focMx-abs(int(self.rt.foc.focSt))), abs(int(self.rt.foc.focSt)))
+                self.logger.error('FocusFilterWheels: out of bounds, exiting')
+                sys.exit(1)
+        else:
+            self.rt.foc.focFoff= range(int(self.rt.foc.focMn), int(self.rt.foc.focMx-abs(int(self.rt.foc.focSt))), abs(int(self.rt.foc.focSt)))
 
-                if len(self.rt.foc.focFoff) > 10:
-                    self.logger.info('FocusFilterWheels: focuser range has: {0} steps, you might consider to increase RTS2::focstep, or set decent value for --focrange'.format(len(self.rt.foc.focFoff)))
+        if len(self.rt.foc.focFoff) > 10:
+            self.logger.info('FocusFilterWheels: focuser range has: {0} steps, you might consider to increase --focstep, or set decent value for --focrange'.format(len(self.rt.foc.focFoff)))
 
         return True
     # ToDo might go away
@@ -289,12 +288,26 @@ class CheckDevices(object):
             self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
             return False
         self.proxy.refresh()
+        eSs=0
         for ftw in self.rt.filterWheelsInUse:
             try:
                 self.proxy.getDevice(ftw.name)
             except:
                 self.logger.error('checkDevices: filter wheel device {0} not present'.format(ftw.name))        
                 return False
+            # check if there is at least one empty slot
+            for ft in ftw.filters:
+                if ft.OffsetToEmptySlot==0:
+                    if self.debug: self.logger.debug('FocusFilterWheels: filter wheel: {0} has at least one empty slot: {1}'.format(ftw.name,ftw.filters[0].name))
+                    eSs +=1
+                    break
+            else:
+                # ToDo this case ist not coded yet, might work but FOC_DEF will notbe set
+                self.logger.warn('FocusFilterWheels: filter wheel: {0} has no empty slot'.format(ftw.name))
+        if eSs == len(self.rt.filterWheelsInUse):
+            if self.debug: self.logger.debug('FocusFilterWheels: all filter wheels have an empty slot')
+        else:
+            self.logger.warn('FocusFilterWheels: not all filter wheels have an empty slot')
 
         return True
 
@@ -423,7 +436,7 @@ class CheckDevices(object):
         
         try:
             self.proxy.setValue(self.rt.ccd.name,'calculate_stat', 3) # no statisctics
-            self .proxy.setValue(self.rt.ccd.name,'temp_max', str(cs))
+            self .proxy.setValue(self.rt.ccd.name,'calculate_stat', str(cs))
             ccdOk= True
         except Exception, e:
             self.logger.error('checkDevices: CCD: {0} is not writable: {1}'.format(self.rt.ccd.name, repr(e)))
@@ -507,6 +520,9 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', dest='verbose', action='store_true', default=False, help=': %(default)s, print device properties and add more messages')
     parser.add_argument('--checkwrite', dest='checkWrite', action='store_true', default=False, help=': %(default)s, check if devices are writable')
     parser.add_argument('--focrange', dest='focRange', action='store', default=None,type=int, nargs='+', help=': %(default)s, focuser range given as "ll ul st" used only during blind run')
+    parser.add_argument('--exposure', dest='exposure', action='store', default=None, type=float, help=': %(default)s, exposure time for CCD')
+    parser.add_argument('--focdef', dest='focDef', action='store', default=None, type=float, help=': %(default)s, set FOC_DEF to value')
+    parser.add_argument('--focstep', dest='focStep', action='store', default=None, type=int, help=': %(default)s, focuser step size during blind run, see --blind')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
 
     args=parser.parse_args()
@@ -521,6 +537,8 @@ if __name__ == '__main__':
 
     if args.blind and not args.focRange:
         logger.info('checkDevices: --blind is set, recommendation: set --focrange to decent value')        
+    elif not args.blind and args.focRange:
+        logger.error('checkDevices: --focrange has no effect without --blind'.format(args.focRange))
 
     if args.focRange:
         if (args.focRange[0] >= args.focRange[1]) or args.focRange[2] <= 0: 
@@ -532,7 +550,7 @@ if __name__ == '__main__':
 
     cdv= CheckDevices(debug=args.debug, args=args, rt=rt, logger=logger)
     if not cdv.statusDevices():
-        logger.error('checkDevices:  exiting')
+        logger.error('checkDevices: check not finished, exiting')
         sys.exit(1)
 
     if args.verbose:
@@ -540,7 +558,7 @@ if __name__ == '__main__':
 
     if args.checkWrite:
         if not cdv.deviceWriteAccess():
-            logger.error('checkDevices:  exiting')
+            logger.error('checkDevices: check not finished, exiting')
             sys.exit(1)
     else:
         logger.info('checkDevices: skiped check if devices are writable, enable with --checkwrite')        
