@@ -414,7 +414,7 @@ class CheckDevices(object):
                 self.logger.debug('checkDevices:{0}: {1}'.format(ftw.name, ft.name))
                 self.logger.debug('checkDevices:{0}: focFoff, steps: {1}, between: {2} and {3}'.format(ft.name, len(ft.focFoff), min(ft.focFoff), max(ft.focFoff)))
 
-    @timeout(seconds=1, error_message=os.strerror(errno.ETIMEDOUT))
+    @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
     def __deviceWriteAccessCCD(self):
         ccdOk=False
         if self.args.verbose: self.logger.debug('checkDevices: asking   from CCD: {0}: calculate_stat'.format(self.rt.ccd.name))
@@ -458,7 +458,7 @@ class CheckDevices(object):
             if self.args.verbose: self.logger.debug('checkDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnrp1))
             self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftnrp1)
             if self.args.verbose: self.logger.debug('checkDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnr))
-            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftnr)
+            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  str(ftnr))
             ftwOk= True
         except Exception, e:
             if e:

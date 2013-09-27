@@ -36,7 +36,7 @@ class Focus(object):
         self.ev=ev
         self.rt=rt
         self.logger=logger
-
+        
     def run(self):
         ftw=None
         ft=None
@@ -99,8 +99,11 @@ class Focus(object):
             if self.rt.cfg['SET_FOCUS']:
                 acqu.writeFocDef()
                 self.logger.info('Focus: set FOC_DEF: {0}'.format(int(minFwhmPos)))
+            else:
+                self.logger.warn('Focus: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
         else:
             self.logger.warn('Focus: no fitted minimum found')
+
 
 class FocusFilterWheels(object):
     def __init__(self, debug=False, args=None, dryFitsFiles=None, rt=None, ev=None, logger=None):
@@ -133,6 +136,10 @@ class FocusFilterWheels(object):
                 acqu_oq = Queue.Queue()
                 #
                 acqu= acq.Acquire(debug=self.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.rt.foc, ccd=self.rt.ccd, filterWheelsInUse=self.rt.filterWheelsInUse, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
+                # 
+                if self.args.focDef: #  ToDo thinkabout that, it is a bit misplaced
+                    self.rt.foc.focDef=args.focDef
+                    acqu.writeFocDef()
                 # steps are defined per filter, if blind in focuser
                 if not self.args.blind:
                     self.rt.foc.focFoff=ft.focFoff

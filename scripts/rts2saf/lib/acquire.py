@@ -231,7 +231,7 @@ class Acquire(object):
         self.iFocDef = self.proxy.getSingleValue(self.foc.name,'FOC_DEF')    
         self.iFocFoff= self.proxy.getSingleValue(self.foc.name,'FOC_FOFF')    
         self.iFocToff= self.proxy.getSingleValue(self.foc.name,'FOC_TOFF')    
-        self.foc.focDef=self.iFocDef
+
         
         self.logger.debug('current focuser: {0}'.format(self.iFocType))        
         self.logger.debug('current FOC_DEF: {0}'.format(self.iFocDef))
@@ -252,57 +252,21 @@ class Acquire(object):
                     self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(ftw.filters[0].name, self.ftw.name,ftw.name))
 
         if self.ft:
-
             if self.writeToDevices:
                 self.proxy.setValue(self.ftw.name, 'filter',  self.ft.name)
                 if self.debug: self.logger.debug('acquire: setting on filter wheel: {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
             else:
                 self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(self.ft.name, self.ftw.name,ftw.name))
 
-
     def __finalState(self):
         if self.writeToDevices:
-            self.proxy.setValue(self.foc.name,'FOC_DEF',  self.iFocDef)
+            # ToDO do not do ? (see writeFocDef()
+            # self.proxy.setValue(self.foc.name,'FOC_DEF',  self.iFocDef)
+            self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
         else:
-            self.logger.warn('acquire: disabled setting FOC_DEF: {0}',format(self.iFocDef))
+            self.logger.warn('acquire: disabled setting FOC_DEF: {0}, FOC_FOFF: 0',format(self.iFocDef))
         # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', self.iFocToff)
         # ToDo filter
-
-    def startScan(self, exposure=None, blind=False):
-        if not self.connected:
-            self.logger.error('acquire: no connection to rts2-centrald:\n{0}'.format(self.errorMessage))
-            return False
-            
-        self.__initialState()
-        if self.ft:
-            ftt=self.ft
-        else:
-            ftt=None
-
-        self.scanThread= ScanThread(
-            debug=self.debug, 
-            dryFitsFiles=self.dryFitsFiles,
-            ftw=self.ftw,
-            ft= ftt,
-            foc=self.foc, 
-            ccd=self.ccd, 
-            focDef=self.iFocDef, 
-            exposure=exposure,
-            blind=blind,
-            writeToDevices=self.writeToDevices,
-            proxy=self.proxy, 
-            acqu_oq=self.acqu_oq, 
-            ev=self.ev,
-            logger=self.logger)
-
-
-            
-        self.scanThread.start()
-        return True
-            
-    def stopScan(self, timeout=1.):
-        self.scanThread.join(timeout)
-        self.__finalState
 
     def writeFocDef(self):
         if self.foc.focMn and self.foc.focMx:
@@ -342,6 +306,40 @@ class Acquire(object):
 
         else:
             if self.debug: self.logger.debug('acquire:ft.name: {0} is not the main wheel'.format(ftn, theWheel))
+
+    def startScan(self, exposure=None, blind=False):
+        if not self.connected:
+            self.logger.error('acquire: no connection to rts2-centrald:\n{0}'.format(self.errorMessage))
+            return False
+            
+        self.__initialState()
+        if self.ft:
+            ftt=self.ft
+        else:
+            ftt=None
+
+        self.scanThread= ScanThread(
+            debug=self.debug, 
+            dryFitsFiles=self.dryFitsFiles,
+            ftw=self.ftw,
+            ft= ftt,
+            foc=self.foc, 
+            ccd=self.ccd, 
+            focDef=self.iFocDef, 
+            exposure=exposure,
+            blind=blind,
+            writeToDevices=self.writeToDevices,
+            proxy=self.proxy, 
+            acqu_oq=self.acqu_oq, 
+            ev=self.ev,
+            logger=self.logger)
+
+        self.scanThread.start()
+        return True
+            
+    def stopScan(self, timeout=1.):
+        self.scanThread.join(timeout)
+        self.__finalState
 
 if __name__ == '__main__':
 

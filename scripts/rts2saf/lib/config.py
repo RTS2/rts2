@@ -132,7 +132,6 @@ class DefaultConfiguration(object):
 
 
         self.dcf[('mode', 'SET_FOCUS')]= True
-        self.dcf[('mode', 'SET_INITIAL_FOC_DEF')]= True
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
 
         # mapping of fits header elements to canonical
