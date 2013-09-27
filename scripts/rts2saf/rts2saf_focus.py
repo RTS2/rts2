@@ -21,8 +21,6 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
-import os
-import glob
 import argparse
 
 import lib.config as cfgd
@@ -41,17 +39,19 @@ if __name__ == '__main__':
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--dryfitsfiles', dest='dryFitsFiles', action='store', default=None, help=': %(default)s, directory where a FITS files are stored from a previous focus run')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--verbose', dest='verbose', action='store_true', default=False, help=': %(default)s, print device properties and add more messages')
     parser.add_argument('--exposure', dest='exposure', action='store', default=None, type=float, help=': %(default)s, exposure time for CCD')
     parser.add_argument('--focStep', dest='focStep', action='store', default=None, type=int, help=': %(default)s, focuser step size during blind run, see --blind')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step), if --focStep is defined it is used to set the range')
-    parser.add_argument('--checkconfig', dest='checkConfig', action='store_true', default=False, help=': %(default)s, check connection to RTS2, the devices and their configuration, the EXIT')
+    parser.add_argument('--checkconfig', dest='checkConfig', action='store_true', default=False, help=': %(default)s, check connection to RTS2, the devices and their configuration, then EXIT')
 
     args=parser.parse_args()
-
+    if args.verbose:
+        args.level='DEBUG'
+        args.toconsole=True
     #
     if args.checkConfig:
         args.debug=True
-
     # logger
     lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
     logger= lgd.logger 
@@ -68,6 +68,10 @@ if __name__ == '__main__':
     if not cdv.statusDevices():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
+    #
+    if not cdv.deviceWriteAccess():
+            logger.error('rts2saf_focus:  exiting')
+            sys.exit(1)
 
     # these files are injected in case no actual night sky images are available
     # neverthless ccd is exposing, filter wheels and focuser are moving
@@ -80,12 +84,12 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if args.checkConfig:
-        logger.info('rts2saf_focus: configuration check done for config file:{0}'.format(args.config))
+        logger.info('rts2saf_focus: configuration check done for config file:{0}, exiting'.format(args.config))
         sys.exit(1)
 
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
-
+    #
     if len(rt.filterWheelsInUse):
         fftw=fc.FocusFilterWheels(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt, ev=ev, logger=logger)
         fftw.run()

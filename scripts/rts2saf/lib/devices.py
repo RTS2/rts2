@@ -26,8 +26,13 @@ __author__ = 'wildi.markus@bluewin.ch'
 import sys
 import time
 import re
+import os
+import errno
 from rts2.json import JSONProxy
-
+try:
+    from lib.timeout import timeout
+except:
+    from timeout import timeout
 
 class Filter():
     """Class for filter properties"""
@@ -319,7 +324,7 @@ class CheckDevices(object):
                         ftw.emptySlots=list()
                         ftw.emptySlots.append(ft)
 
-                    if self.args.debug: self.logger.debug('checkDevices: filter wheel: {0:5s}, filter:{1:5s} is an candidate empty slot'.format(ftw.name, ft.name))
+                    if self.args.debug: self.logger.debug('checkDevices: filter wheel: {0:5s}, filter:{1:5s} is a candidate empty slot'.format(ftw.name, ft.name))
 
             if ftw.emptySlots:
                 # drop multiple empty slots
@@ -345,7 +350,7 @@ class CheckDevices(object):
                 if len(self.rt.filterWheelsInUse) > 0:
                     self.logger.warn('checkDevices: filter wheel: {0}, no empty slot found'.format(ftw.name))
 
-        # log INFO a summary, after dropping
+        # log INFO a summary, after dropping multiple empty slots
         self.logger.info('checkDevices: focus run summary, without multiple empty slots:')
         img=0
         ftwns= map( lambda x: x.name, self.rt.filterWheelsInUse) # need the first filter wheel
@@ -354,20 +359,21 @@ class CheckDevices(object):
             ftw= self.rt.filterWheelsInUse[ind]               
             # count only wheels with more than one filters (one slot must be empty)
             # the first filter wheel in the list 
+            info = '\n'
             if len(ftw.filters)>1 or k==0:
-                info = '{0}: '.format(ftw.name)
+                info = '{0:8s}:\n'.format(ftw.name)
                 for ft in ftw.filters:
-                    info += '{0}: '.format(ft.name)
+                    info += 'checkDevices: {0:8s}: '.format(ft.name)
                     if self.args.blind:
-                        info += '{0} steps; '.format(len(self.rt.foc.focFoff))
+                        info += '{0:2d} steps, bewteen: {1:5d} and {2:5d}\n'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff))
                         img += len(self.rt.foc.focFoff)
                     else:
-                        info += '{0} steps; '.format(len(ft.focFoff))
+                        info += '{0:2d} steps, bewteen: {1:5d} and {2:5d} (FOC_FOFF)\n'.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
                         img += len(ft.focFoff)
                 else:
                     self.logger.info('checkDevices: {0}'.format(info))
                 
-        self.logger.info('checkDevices: taking {0} images'.format(img))
+        self.logger.info('checkDevices: taking {0} images in total'.format(img))
         return True
 
     def printProperties(self):
@@ -404,36 +410,76 @@ class CheckDevices(object):
         
         self.logger.debug('checkDevices:FTWs: {} number'.format(len(self.rt.filterWheelsInUse)))
         for ftw in self.rt.filterWheelsInUse:
-
             for ft in ftw.filters:
                 self.logger.debug('checkDevices:{0}: {1} name'.format(ftw.name, ft.name))
                 self.logger.debug('checkDevices:{0}: focFoff, steps: {1}, between: {2} and {3}'.format(ft.name, len(ft.focFoff), min(ft.focFoff), max(ft.focFoff)))
 
-    def deviceWriteAccess(self):
-        self.logger.info('checkDevices: this may take approx. a minute')
-
-        tm=self.proxy.getDevice(self.rt.ccd.name)['temp_max'][1]
+    @timeout(seconds=1, error_message=os.strerror(errno.ETIMEDOUT))
+    def __deviceWriteAccessCCD(self):
+        
+        ccdOk=False
+        if self.args.verbose: self.logger.debug('checkDevices: asking   from CCD: {0}: calculate_stat'.format(self.rt.ccd.name))
+        cs=self.proxy.getDevice(self.rt.ccd.name)['calculate_stat'][1]
+        if self.args.verbose: self.logger.debug('checkDevices: response from CCD: {0}: calculate_stat: {1}'.format(self.rt.ccd.name, cs))
+        
         try:
-            self .proxy.setValue(self.rt.ccd.name,'temp_max', str(tm -1.))
-        except:
-            self.logger.error('checkDevices: CCD: {} is not writable'.format(self.rt.ccd.name))
-            return False
-        self.logger.debug('checkDevices: CCD: {} is writable'.format(self.rt.ccd.name))
+            self.proxy.setValue(self.rt.ccd.name,'calculate_stat', 3) # no statisctics
+            self .proxy.setValue(self.rt.ccd.name,'temp_max', str(cs))
+            ccdOk= True
+        except Exception, e:
+            self.logger.error('checkDevices: CCD: {0} is not writable: {1}'.format(self.rt.ccd.name, repr(e)))
+
+        if ccdOk:
+            self.logger.debug('checkDevices: CCD: {} is writable'.format(self.rt.ccd.name))
+            
+        return ccdOk
+    @timeout(seconds=2, error_message=os.strerror(errno.ETIMEDOUT))
+    def __deviceWriteAccessFoc(self):
+        #
+        focOk=False
         focDef=self.proxy.getDevice(self.rt.foc.name)['FOC_DEF'][1]
         try:
             self.proxy.setValue(self.rt.foc.name,'FOC_DEF', focDef+1)
-        except:
-            self.logger.error('checkDevices: focuser: {} is not writable'.format(self.rt.foc.name))
-            return False
-        self.logger.debug('checkDevices: focuser: {} is writable'.format(self.rt.foc.name))
+            self.proxy.setValue(self.rt.foc.name,'FOC_DEF', focDef)
+            focOk= True
+        except Exception, e:
+            self.logger.error('checkDevices: focuser: {0} is not writable: {1}'.format(self.rt.foc.name, repr(e)))
+        if focOk:
+            self.logger.debug('checkDevices: focuser: {} is writable'.format(self.rt.foc.name))
+
+        return focOk
+
+    @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
+    def __deviceWriteAccessFtw(self):
         # 
+        ftwOk=False
         ftn=  self.proxy.getSingleValue(self.rt.filterWheelsInUse[0].name, 'filter')
-        self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftn +1)
-        self.logger.debug('checkDevices: filter wheel: {} is writable'.format(self.rt.filterWheelsInUse[0].name))
+        try:
+            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftn +1)
+            self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftn)
+            ftwOk= True
+        except Exception, e:
+            if e:
+                self.logger.error('checkDevices: filter wheel: {0} is not writable: {1}'.format(self.rt.filterWheelsInUse[0].name, repr(e)))
+            else:
+                self.logger.error('checkDevices: filter wheel: {0} is not writable (not timed out)'.format(self.rt.filterWheelsInUse[0].name))
+
+        if ftwOk:
+            self.logger.debug('checkDevices: filter wheel: {} is writable'.format(self.rt.filterWheelsInUse[0].name))
         #
+        return ftwOk
 
+    def deviceWriteAccess(self):
+        self.logger.info('checkDevices:deviceWriteAccess: this may take approx. a minute')
 
-        return True
+        ccdOk=ftwOk=focOk=False
+
+        ccdOk=self.__deviceWriteAccessCCD()
+        focOk=self.__deviceWriteAccessFoc()
+        ftwOk=self.__deviceWriteAccessFtw()
+
+        return ccdOk and ftwOk and focOk
+
         
 if __name__ == '__main__':
 
@@ -457,11 +503,11 @@ if __name__ == '__main__':
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-    parser.add_argument('--verbose', dest='verbose', action='store_true', default=False, help=': %(default)s, print device properties')
+    parser.add_argument('--verbose', dest='verbose', action='store_true', default=False, help=': %(default)s, print device properties and add more messages')
+    parser.add_argument('--checkwrite', dest='checkWrite', action='store_true', default=False, help=': %(default)s, check if devices are writable')
     parser.add_argument('--focrange', dest='focRange', action='store', default=None,type=int, nargs='+', help=': %(default)s, focuser range given as "ll ul st" used only during blind run')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
 
-    args=parser.parse_args()
 
     if args.verbose:
         args.level='DEBUG'
@@ -489,9 +535,12 @@ if __name__ == '__main__':
     if args.verbose:
         cdv.printProperties()
 
-    if not cdv.deviceWriteAccess():
-        logger.error('checkDevices:  exiting')
-        sys.exit(1)
-        
+    if args.checkWrite:
+        if not cdv.deviceWriteAccess():
+            logger.error('checkDevices:  exiting')
+            sys.exit(1)
+    else:
+        logger.info('checkDevices: skiped check if devices are writable, enable with --checkwrite')        
+
     logger.info('checkDevices: DONE')        
     
