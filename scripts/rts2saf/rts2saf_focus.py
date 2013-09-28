@@ -22,6 +22,7 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
 import argparse
+import re
 
 import lib.config as cfgd
 import lib.log as  lg
@@ -32,10 +33,11 @@ import lib.devices as dev
 
 if __name__ == '__main__':
     # since rts2 can not pass options, any option needs a decent default value
-    parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
+    prg= re.split('/', sys.argv[0])[-1]
+    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
+    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--dryfitsfiles', metavar='DIRECTORY', dest='dryFitsFiles', action='store', default=None, help=': %(default)s, directory where a set of FITS files are stored from a previous focus run')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
@@ -62,6 +64,7 @@ if __name__ == '__main__':
     rt.readConfiguration(fileName=args.config)
     if not rt.checkConfiguration():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
+        logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
         sys.exit(1)
 
     # get the environment
@@ -70,6 +73,7 @@ if __name__ == '__main__':
         logger.info('checkDevices: --blind is set, recommendation: set --focrange to decent value')        
     elif not args.blind and args.focRange:
         logger.error('checkDevices: --focrange has no effect without --blind'.format(args.focRange))
+        sys.exit(1)
 
     if args.focRange:
         if (args.focRange[0] >= args.focRange[1]) or args.focRange[2] <= 0: 
@@ -80,10 +84,12 @@ if __name__ == '__main__':
     cdv= dev.CheckDevices(debug=args.debug, args=args, rt=rt, logger=logger)
     if not cdv.statusDevices():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
+        logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
         sys.exit(1)
     #
     if not cdv.deviceWriteAccess():
             logger.error('rts2saf_focus:  exiting')
+            logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
             sys.exit(1)
 
     # these files are injected in case no actual night sky images are available

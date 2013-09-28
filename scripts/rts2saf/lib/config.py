@@ -57,6 +57,7 @@ class DefaultConfiguration(object):
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
         self.dcf[('basic', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]
+        self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
         # this is really ugly
         # but ConfigParser does not allow something else
         # ToDo define more!
@@ -65,13 +66,10 @@ class DefaultConfiguration(object):
         self.dcf[('filter wheel', 'fltw3')]= '[ FILTC, nof ]'
         self.dcf[('filter wheel', 'fltw4')]= '[ FILTD, nof ]'
         #
-        # ToDo: really used?
-        self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
         #                                                 relative lower acquisition limit [tick]
         #                                                       relative upper acquisition limit [tick]
         #                                                             stepsize [tick]
         #                                                                  exposure factor
-        # ToDo define more identifiers!
         self.dcf[('filter properties', 'flt1')]= '[ U,   -1000, 1100, 100, 11.1]'
         self.dcf[('filter properties', 'flt2')]= '[ nof1,-1200, 1300, 200, 1.]'
         self.dcf[('filter properties', 'flt3')]= '[ nof2,-1200, 1300, 200, 1.]'
@@ -83,7 +81,7 @@ class DefaultConfiguration(object):
         self.dcf[('filter properties', 'flt9')]= '[ D,   -1400, 1500, 300, 1.]'
 
         self.dcf[('focuser properties', 'FOCUSER_NAME')]= 'F0'
-        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20. # fallback in case RTS2::focstep is not defined
+        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20. 
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT_FB')]= 501 # fallback in case RTS2::foc_min is not defined
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT_FB')]= 2002 # fallback in case RTS2::foc_max is not defined
         # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
@@ -95,10 +93,9 @@ class DefaultConfiguration(object):
         self.dcf[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
         self.dcf[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
         self.dcf[('acceptance circle', 'RADIUS')]= 2000.
-        
-        
+        #
         self.dcf[('DS9', 'DS9_REGION_FILE')]= 'ds9-rts2saf.reg'
-        
+        #
         self.dcf[('analysis', 'MINIMUM_OBJECTS')]= 20
         self.dcf[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
         

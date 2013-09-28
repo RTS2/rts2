@@ -81,7 +81,6 @@ class CCD():
         self.windowWidth=windowWidth
         self.pixelSize= pixelSize
         self.baseExposure= baseExposure
-        self.setFocDef=False
 
 class CheckDevices(object):
     """Check the presence of the devices and filter slots"""    
@@ -196,7 +195,7 @@ class CheckDevices(object):
 
                     for k, ftn in enumerate(fts[ftwn]): # names only
                         if not ftn in ftIUns:
-                            self.logger.info('checkDevices: filter wheel: {0}, filter: {1} not used ignoring'.format(ftwIU.name, ftn))        
+                            if self.debug: self.logger.debug('checkDevices: filter wheel: {0}, filter: {1} not used ignoring'.format(ftwIU.name, ftn))        
                             continue
 
                         for ft in self.rt.filters:
@@ -225,7 +224,7 @@ class CheckDevices(object):
                                         self.logger.warn('checkDevices: filter wheel: {0}, filter: {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftwIU.name, ft.name,self.rt.ccd.name))
                                 break
                         else:
-                            self.logger.warn('checkDevices: filter wheel: {0}, filter: {1} not found in configuration, ignoring it'.format(ftwn, ftn))        
+                            if self.debug: self.logger.debug('checkDevices: filter wheel: {0}, filter: {1} not found in configuration, ignoring it'.format(ftwn, ftn))        
                             return False
                     break
             else:
@@ -417,7 +416,6 @@ class CheckDevices(object):
         self.logger.debug('checkDevices:CCD: {} windowWidth'.format(self.rt.ccd.windowWidth))
         self.logger.debug('checkDevices:CCD: {} pixelSize'.format(self.rt.ccd.pixelSize))
         self.logger.debug('checkDevices:CCD: {} baseExposure'.format(self.rt.ccd.baseExposure))
-        self.logger.debug('checkDevices:CCD: {} setFocDef'.format(self.rt.ccd.setFocDef))
         #Filter
         self.logger.debug('')
         
@@ -492,6 +490,10 @@ class CheckDevices(object):
         focOk=self.__deviceWriteAccessFoc()
         ftwOk=self.__deviceWriteAccessFtw()
 
+        if  ccdOk and ftwOk and focOk:
+            self.logger.info('checkDevices:deviceWriteAccess: all devices are writable')
+
+
         return ccdOk and ftwOk and focOk
 
         
@@ -539,6 +541,7 @@ if __name__ == '__main__':
         logger.info('checkDevices: --blind is set, recommendation: set --focrange to decent value')        
     elif not args.blind and args.focRange:
         logger.error('checkDevices: --focrange has no effect without --blind'.format(args.focRange))
+        sys.exit(1)
 
     if args.focRange:
         if (args.focRange[0] >= args.focRange[1]) or args.focRange[2] <= 0: 

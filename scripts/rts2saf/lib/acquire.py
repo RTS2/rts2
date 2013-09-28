@@ -115,6 +115,7 @@ class ScanThread(threading.Thread):
         expEnd = self.proxy.getDevice(self.ccd.name)['exposure_end'][1]
         rdtt= self.proxy.getDevice(self.ccd.name)['readout_time'][1]
         # at a fresh start readout_time may be empty
+        # ToDo chack that at run time
         if not rdtt:
             rdtt= 5. # beeing on the save side, subsequent calls have the correct time, ToDo: might not be true!
 
@@ -122,8 +123,11 @@ class ScanThread(threading.Thread):
         # see TAG WAIT
         if self.writeToDevices:
             # n sleep necessary
-            time.sleep(expEnd-time.time() + rdtt)
-            
+            try:
+                time.sleep(expEnd-time.time() + rdtt)
+            except Exception, e:
+                self.logger.warn('acquire:time.sleep revceived: {0}'.format(expEnd-time.time() + rdtt))
+                
         self.proxy.refresh()
         fn=self.proxy.getDevice('XMLRPC')['{0}_lastimage'.format(self.ccd.name)][1]
 
@@ -339,7 +343,7 @@ class Acquire(object):
             
     def stopScan(self, timeout=1.):
         self.scanThread.join(timeout)
-        self.__finalState
+        self.__finalState()
 
 if __name__ == '__main__':
 

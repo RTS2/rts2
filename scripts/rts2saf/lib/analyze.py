@@ -127,28 +127,12 @@ class Analyze(object):
             logger=self.logger)
 
         minFwhmPos,fwhm=fit.fitData()
-
-        # make other decissions on if the fit converged
+        
         if minFwhmPos:
-            if min(dataFwhm.pos) < minFwhmPos  < max(dataFwhm.pos):
-                miN= 2.
-                maX=12.
-                if miN < fwhm < maX: #ToDo put that into configuration
-                    self.rt.foc.setFocDef=True
-                else:
-                    self.logger.warn('analyze: {0:5d}: FWHM: {1:4.1f} px outside limits: {1},{2}'.format(int(fwhm), miN, maX))
-                
-                if self.dataSex[0].ambientTemp:
-                    self.logger.info('analyze: {0:5d}: fitted minimum position inside, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
-                else:
-                    self.logger.info('analyze: {0:5d}: fitted minimum position inside, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
-
+            if self.dataSex[0].ambientTemp:
+                self.logger.info('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
             else:
-                self.rt.foc.setFocDef=False
-                if self.dataSex[0].ambientTemp:
-                    self.logger.warn('analyze: {0:5d}: fitted minimum position outside, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
-                else:
-                    self.logger.warn('analyze: {0:5d}: fitted minimum position outside, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
+                self.logger.info('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
         else:
             self.logger.warn('analyze: fit failed')
             
@@ -190,8 +174,6 @@ class Analyze(object):
                             self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(cnt))
                     else:
                         self.logger.warn('analyze: OOOOOOOOPS, no dSx object for fits image number: {0:3d}'.format(cnt))
-                    
-
 
         return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
 
