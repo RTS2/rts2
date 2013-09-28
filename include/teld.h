@@ -287,6 +287,7 @@ class Telescope:public rts2core::Device
 		 * Apply corrRaDec. Return -1if correction is above correctionLimit and was not applied.
 		 */
 		int applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa = false, bool invertDec = false);
+		void zeroCorrRaDec () {corrRaDec->setValueRaDec (0, 0); corrRaDec->resetValueChanged (); wcorrRaDec->setValueRaDec (0, 0); wcorrRaDec->resetValueChanged ();};
 
 		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
 
