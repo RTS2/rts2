@@ -33,7 +33,6 @@ class Ds9Region(object):
             self.logger.warn('analyze: plotting fits with regions failed, file:{0}:error\n{1}'.format(self.dataSex.fitsFn,e))
             return False
 
-
         try:
             self.display.set('zoom to fit')
             self.display.set('zscale')
@@ -49,10 +48,9 @@ class Ds9Region(object):
                 continue
 
             if x[i_f] == 0:
-                color='red'
-            else:
                 color='green'
-
+            else:
+                color='red'
             try:
                 self.display.set('regions', 'image; circle {0} {1} 10 # color={{{2}}}'.format(x[i_x],x[i_y], color))
             except Exception, e:

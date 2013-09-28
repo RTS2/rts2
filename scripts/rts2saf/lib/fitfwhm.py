@@ -40,13 +40,13 @@ except:
 
 class FitFwhm(object):
     """ Fit FWHM data and find the minimum"""
-    def __init__(self, showPlot=False, filterName=None, ambientTemp=None, date=None,  comment=None, pltFile=None, dataFwhm=None, logger=None):
+    def __init__(self, showPlot=False, filterName=None, ambientTemp=None, date=None,  comment=None, pltFile=None, dataFitFwhm=None, logger=None):
 
         self.showPlot=showPlot
         self.filterName=filterName
         self.ambientTemp=ambientTemp
         self.date=date
-        self.dataFwhm=dataFwhm
+        self.dataFitFwhm=dataFitFwhm
         self.logger=logger
         self.comment=comment
         self.pltFile=pltFile
@@ -63,14 +63,14 @@ class FitFwhm(object):
     def fitData(self):
         self.par= np.array([1., 1., 1., 1., 1.])
         try:
-            self.par, self.flag  = optimize.leastsq(self.errfunc_fwhm, self.par, args=(self.dataFwhm.pos, self.dataFwhm.fwhm, self.dataFwhm.errx, self.dataFwhm.stdFwhm))
+            self.par, self.flag  = optimize.leastsq(self.errfunc_fwhm, self.par, args=(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, self.dataFitFwhm.errx, self.dataFitFwhm.stdFwhm))
         except Exception, e:
             self.logger.error('fitfwhm: fitData: failed fitting FWHM:\nnumpy error message:\n{0}'.format(e))                
             return None, None
 
-        step= self.dataFwhm.pos[1]-self.dataFwhm.pos[0]
+        step= self.dataFitFwhm.pos[1]-self.dataFitFwhm.pos[0]
         try:
-            self.min_focpos_fwhm = optimize.fminbound(self.fitfunc_r_fwhm,min(self.dataFwhm.pos)-2 * step, max(self.dataFwhm.pos)+2 * step,args=(self.par), disp=0)
+            self.min_focpos_fwhm = optimize.fminbound(self.fitfunc_r_fwhm,min(self.dataFitFwhm.pos)-2 * step, max(self.dataFitFwhm.pos)+2 * step,args=(self.par), disp=0)
         except Exception, e:
             self.logger.error('fitfwhm: fitData: failed finding minimum FWHM:\nnumpy error message:\n{0}'.format(e))                
             return None, None
@@ -82,12 +82,12 @@ class FitFwhm(object):
     def plotData(self):
 
         try:
-            x_fwhm = np.linspace(self.dataFwhm.pos.min(), self.dataFwhm.pos.max())
+            x_fwhm = np.linspace(self.dataFitFwhm.pos.min(), self.dataFitFwhm.pos.max())
         except Exception, e:
             self.logger.error('fitfwhm: numpy error:\n{0}'.format(e))                
             return
-        plt.plot(self.dataFwhm.pos, self.dataFwhm.fwhm, 'ro', color='blue')
-        plt.errorbar(self.dataFwhm.pos, self.dataFwhm.fwhm, xerr=self.dataFwhm.errx, yerr=self.dataFwhm.stdFwhm, ecolor='black', fmt=None)
+        plt.plot(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, 'ro', color='blue')
+        plt.errorbar(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, xerr=self.dataFitFwhm.errx, yerr=self.dataFitFwhm.stdFwhm, ecolor='black', fmt=None)
 
         if self.flag:
             plt.plot(x_fwhm, self.fitfunc_fwhm(self.par, x_fwhm), 'r-', color='blue')
@@ -120,13 +120,13 @@ class FitFwhm(object):
 
 if __name__ == '__main__':
 
-    dataFwhm=dtf.DataFwhm(
+    dataFitFwhm=dtf.DataFitFwhm(
         pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
         fwhm= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
         errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
         stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),)
  
 
-    fit=FitFwhm(showPlot=True, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFwhm=dataFwhm)
+    fit=FitFwhm(showPlot=True, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFitFwhm=dataFitFwhm)
     fit.fitData()
     fit.plotData()

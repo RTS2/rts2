@@ -62,10 +62,49 @@ class Sextract(object):
         # find the sextractor counts
         objectCount = len(sex.objects)
         focPos = float(pyfits.getval(fitsFn,'FOC_POS'))
+        # these values are remaped in config.py
         try:
             ambientTemp = float(pyfits.getval(fitsFn,self.rt.cfg['AMBIENTTEMPERATURE']))
         except:
+            # that is not required
             ambientTemp=None
+
+        try:
+            binning = float(pyfits.getval(fitsFn,self.rt.cfg['BINNING']))
+        except:
+            # if CatalogAnalysis is done
+            binning=None
+
+        binningXY=None
+        if not binning:
+            binningXY=list()
+            try:
+                binningXY.append(float(pyfits.getval(fitsFn,self.rt.cfg['BINNING_X'])))
+            except:
+                # if CatalogAnalysis is done
+                self.logger.warn( 'sextract: {0}: no x-binning information found'.format(fitsFn, focPos, objectCount))
+
+            try:
+                binningXY.append(float(pyfits.getval(fitsFn,self.rt.cfg['BINNING_Y'])))
+            except:
+                # if CatalogAnalysis is done
+                self.logger.warn( 'sextract: {0}: no y-binning information found'.format(fitsFn, focPos, objectCount))
+
+            if len(binningXY) < 2:
+                self.logger.warn( 'sextract: {0}: no binning information found'.format(fitsFn, focPos, objectCount))
+
+
+        try:
+            naxis1 = float(pyfits.getval(fitsFn,'NAXIS1'))
+        except:
+            self.logger.warn( 'sextract: {0}: no NAXIS1 information found'.format(fitsFn, focPos, objectCount))
+            naxis1=None
+        try:
+            naxis2 = float(pyfits.getval(fitsFn,'NAXIS2'))
+        except:
+            self.logger.warn( 'sextract: {0}: no NAXIS2 information found'.format(fitsFn, focPos, objectCount))
+            naxis2=None
+
         # store results
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
@@ -74,7 +113,7 @@ class Sextract(object):
             self.logger.warn( 'sextract: new version of rts2.sextractor installed???')
             return None
 
-        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=float(focPos), fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalogue=sex.objects, fields=self.fields)
+        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=float(focPos), fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalogue=sex.objects, binning=binning, binningXY=binningXY, naxis1=naxis1, naxis2=naxis2,fields=self.fields)
         if self.debug: self.logger.debug( 'sextract: {0} {1:5d} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
         return dataSex
@@ -178,9 +217,9 @@ if __name__ == '__main__':
     print weightedMean
 
     # Fit median FWHM data
-    dataFwhm=dt.DataFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
+    dataFitFwhm=dt.DataFitFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
 
-    fit=ft.FitFwhm(showPlot=False, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFwhm=dataFwhm)
+    fit=ft.FitFwhm(showPlot=False, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFitFwhm=dataFitFwhm)
     min_focpos_fwhm, fwhm= fit.fitData()
     print '--------minFwhm fwhm'
     print min_focpos_fwhm, fwhm

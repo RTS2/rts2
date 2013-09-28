@@ -56,8 +56,8 @@ if __name__ == '__main__':
     try:
         dataSex=sex.sextract(fitsFn=args.fitsFn) 
     except Exception, e:
-            logger.info('rts2af_fwhm: sextractor failed on file: {0}\nerror: {1}\nexiting'.format(args.fitsFn, e))
-            sys.exit(1)
+        logger.info('rts2af_fwhm: sextractor failed on file: {0}\nerror: {1}\nexiting'.format(args.fitsFn, e))
+        sys.exit(1)
 
     if( dataSex.fwhm > args.fwhmThreshold):
         proxy= JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])

@@ -109,7 +109,7 @@ class ScanThread(threading.Thread):
             self.proxy.setValue(self.ccd.name,'exposure', str(exp))
             self.proxy.executeCommand(self.ccd.name,'expose')
         else:
-            self.logger.warn('acquire: disabled exposure/expose: {0}'.format(exp))
+            self.logger.warn('acquire: disabled setting exposure/expose: {0}'.format(exp))
 
         self.proxy.refresh()
         expEnd = self.proxy.getDevice(self.ccd.name)['exposure_end'][1]
@@ -398,7 +398,8 @@ if __name__ == '__main__':
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
     ev.createAcquisitionBasePath(ftwName=None, ftName=None)
 
-    cdv= dev.CheckDevices(debug=args.debug, args=args, rt=rt, logger=logger)
+    cdv= dev.CheckDevices(debug=args.debug, rangeFocToff=None, blind=args.blind, verbose=None, rt=rt, logger=logger)
+
     if not cdv.statusDevices():
         logger.error('acquire: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
@@ -409,13 +410,9 @@ if __name__ == '__main__':
     ftw = rt.filterWheelsInUse[0]
     ft = rt.filterWheelsInUse[0].filters[0]
     exposure= 1.
-    blind=args.blind
-    stepSize=2
-    rt.foc.stepSize=stepSize
-    rt.foc.focFoff=range(-5,5,stepSize)
 
     acqu= Acquire(debug=args.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq,writeToDevices=args.writeToDevices, rt=rt, ev=ev, logger=logger)
-    if not acqu.startScan(exposure=exposure, blind=blind):
+    if not acqu.startScan(exposure=exposure, blind=args.blind):
         self.logger.error('acquire: exiting')
         sys.exit(1)
 

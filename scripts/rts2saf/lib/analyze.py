@@ -22,6 +22,7 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import os
 import numpy as np
+import copy
 
 from ds9 import *
 
@@ -38,9 +39,8 @@ try:
 except:
     import fitfwhm as ft
 
-
-class Analyze(object):
-    """Analyze a set of FITS"""
+class SimpleAnalysis(object):
+    """SimpleAnalysis a set of FITS"""
     def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
         self.debug=debug
         self.dataSex=dataSex
@@ -53,45 +53,41 @@ class Analyze(object):
         self.ev=ev
         self.logger=logger
 
-    def analyze(self):
-        # very ugly
-        nobjs=list()
-        pos=list()
-        fwhm=list()
-        errx=list()
-        stdFwhm=list()
+    def __fit(self, dFwhm=None):
+        # ToDo make an option
+        comment=None
+        if self.dryFits:
+            comment='dryFits'
 
-        for cnt in self.dataSex.keys():
-            # all sextracted objects
-            try:
-                nObjs= len(self.dataSex[cnt].catalogue)
-            except:
-                continue
+        # Fit median FWHM data
+        fit=ft.FitFwhm(
+            showPlot=self.displayFit, 
+            filterName=self.ftName, 
+            ambientTemp=self.dataSex[0].ambientTemp,
+            date=self.ev.startTime[0:19], 
+            comment=comment,  # ToDo, define a sensible value
+            pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
+            dataFwhm=dFwhm, 
+            logger=self.logger)
 
-            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered sextracted objects: {2:5d}'.format(self.dataSex[cnt].focPos, nObjs, self.dataSex[cnt].nstars))
-            # star like objects
-            nobjs.append(self.dataSex[cnt].nstars)
-            pos.append(self.dataSex[cnt].focPos)
-            fwhm.append(self.dataSex[cnt].fwhm)
-            errx.append(self.focRes)
-            stdFwhm.append(self.dataSex[cnt].stdFwhm)
+        return fit.fitData()
 
+    def __analyze(self, dFwhm=None):
         # Weighted mean based on number of extracted objects (stars)
         weightedMeanObjects=None
         try:
-            weightedMeanObjects= np.average(a=pos, axis=0, weights=nobjs) 
+            weightedMeanObjects= np.average(a=dFwhm.pos, axis=0, weights=dFwhm.nObjs)
         except Exception, e:
             self.logger.warn('analyze: can not calculate weightedMeanObjects:\n{0}'.format(e))
 
-        if weightedMeanObjects:
-            try:
-                if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
-            except Exception, e:
-                self.logger.warn('analyze: can not convert weightedMeanObjects:\n{0}'.format(e))
+        try:
+            if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
+        except Exception, e:
+            self.logger.warn('analyze: can not convert weightedMeanObjects:\n{0}'.format(e))
 
         # Weighted mean based on median FWHM
-        posC= pos[:]
-        fwhmC= fwhm[:]
+        posC= dFwhm.pos[:]
+        fwhmC= dFwhm.fwhm[:]
         while True:
             try:
                 ind=fwhmC.index(0.)
@@ -105,29 +101,13 @@ class Analyze(object):
         except Exception, e:
             self.logger.warn('analyze: can not calculate weightedMeanFwhm:\n{0}'.format(e))
 
-        if weightedMeanFwhm:
-            try:
-                self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
-            except Exception, e:
-                self.logger.warn('analyze: can not convert weightedMeanFwhm:\n{0}'.format(e))
-        # Fit median FWHM data
-        dataFwhm=dt.DataFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
-        comment=None
-        if self.dryFits:
-            comment='dryFits'
-
-        fit=ft.FitFwhm(
-            showPlot=self.displayFit, 
-            filterName=self.ftName, 
-            ambientTemp=self.dataSex[0].ambientTemp,
-            date=self.ev.startTime[0:19], 
-            comment=comment,  # ToDo, define a sensible value
-            pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
-            dataFwhm=dataFwhm, 
-            logger=self.logger)
-
-        minFwhmPos,fwhm=fit.fitData()
+        try:
+            self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
+        except Exception, e:
+            self.logger.warn('analyze: can not convert weightedMeanFwhm:\n{0}'.format(e))
         
+        minFwhmPos, fwhm= self.__fit(dFwhm=dFwhm)
+
         if minFwhmPos:
             if self.dataSex[0].ambientTemp:
                 self.logger.info('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
@@ -135,7 +115,31 @@ class Analyze(object):
                 self.logger.info('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
         else:
             self.logger.warn('analyze: fit failed')
+
+        return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
+
+    def analyze(self):
+        # very ugly
+        pos=list()
+        fwhm=list()
+        errx=list()
+        stdFwhm=list()
+        nObjs=list()
+        for cnt in self.dataSex.keys():
+            # all sextracted objects
+            no= len(self.dataSex[cnt].catalogue)
+            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered sextracted objects: {2:5d}'.format(self.dataSex[cnt].focPos, no, self.dataSex[cnt].nstars))
+            #
+            pos.append(self.dataSex[cnt].focPos)
+            fwhm.append(self.dataSex[cnt].fwhm)
+            errx.append(self.focRes)
+            stdFwhm.append(self.dataSex[cnt].stdFwhm)
+            nObjs.append(len(self.dataSex[cnt].catalogue))
             
+        df=dt.DataFitFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
+        return self.__analyze(dFwhm=df)
+
+    def display(self):
         # ToDo ugly here
         DISPLAY=False
         if self.displayFit or self.displayDs9:
@@ -150,13 +154,6 @@ class Analyze(object):
                 fit.plotData()
             # plot them through ds9
             if self.displayDs9:
-                for cnt, dSx in self.dataSex.iteritems():
-                    if dSx:
-                        break
-                else:
-                    self.logger.warn('analyze: OOOOOOOOPS, not a single fits image to display')
-                    return [ None, None, None, None ]
-
                 try:
                     dds9=ds9()
                 except Exception, e:
@@ -164,18 +161,99 @@ class Analyze(object):
                     return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
     
                 for cnt, dSx in self.dataSex.iteritems():
-                    if dSx:
-                        if dSx.fitsFn:
-                            dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
-                            if not dr.displayWithRegion():
-                                break # something went wrong
-                            time.sleep(1.)
-                        else:
-                            self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(cnt))
+                    if dSx.fitsFn:
+                        dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
+                        if not dr.displayWithRegion():
+                            break # something went wrong
+                        time.sleep(1.)
                     else:
-                        self.logger.warn('analyze: OOOOOOOOPS, no dSx object for fits image number: {0:3d}'.format(cnt))
+                        self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(cnt))
 
-        return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
+import numpy
+import math
+from itertools import ifilterfalse
+from itertools import ifilter
+# ToDo at the moment this method is an demonstrator
+class CatalogAnalysis(object):
+    """CatalogAnalysis a set of FITS"""
+    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, rt=None, logger=None):
+        self.debug=debug
+        self.dataSex=dataSex
+        self.displayDs9=displayDs9
+        self.displayFit=displayFit
+        self.ftwName=ftwName
+        self.ftName=ftName
+        self.dryFits=dryFits
+        self.focRes=focRes
+        self.ev=ev
+        self.rt=rt
+        self.logger=logger
+        self.i_x = self.dataSex[0].fields.index('X_IMAGE')
+        self.i_y = self.dataSex[0].fields.index('Y_IMAGE')
+
+        self.center=[ self.dataSex[0].naxis1/2.,self.dataSex[0].naxis2/2. ] 
+        
+        rds= self.rt.cfg['RADIUS'] 
+        if self.dataSex[0].binning:
+            self.radius= rds/self.dataSex[0].binning 
+        elif self.dataSex[0].binningXY:
+            # ToDo (bigger): only x value is used
+            self.radius= rds/self.dataSex[0].binningXY[0] 
+        else:
+            # everything should come
+            self.radius=pow(self.dataSex[0].naxis1, 2) + pow(self.dataSex[0].naxis2, 2)
+
+    def __criteria(self, ce=None):
+
+        rd= math.sqrt(pow(ce[self.i_x]-self.center[0],2)+ pow(ce[self.i_y]-self.center[1],2))
+        if rd < self.radius:
+            return True
+        else:
+            return False
+
+    def selectAndAnalyze(self):
+        acceptedDataSex=dict()
+        rejectedDataSex=dict()
+        for cnt in dataSex.keys():
+            acceptedDataSex[cnt]=copy.deepcopy(self.dataSex[cnt])
+            acceptedDataSex[cnt].catalogue= list(ifilter(self.__criteria, self.dataSex[cnt].catalogue))
+
+            i_f = self.dataSex[0].fields.index('FWHM_IMAGE')
+            nsFwhm=np.asarray(map(lambda x: x[i_f], acceptedDataSex[cnt].catalogue))
+            acceptedDataSex[cnt].fwhm=numpy.median(nsFwhm)
+            acceptedDataSex[cnt].stdFwhm=numpy.std(nsFwhm)
+
+
+            rejectedDataSex[cnt]=copy.deepcopy(self.dataSex[cnt])
+            rejectedDataSex[cnt].catalogue=  list(ifilterfalse(self.__criteria, self.dataSex[cnt].catalogue))
+            nsFwhm=np.asarray(map(lambda x: x[i_f], rejectedDataSex[cnt].catalogue))
+
+            rejectedDataSex[cnt].fwhm=numpy.median(nsFwhm)
+            rejectedDataSex[cnt].stdFwhm=numpy.std(nsFwhm)
+        # 
+        an=SimpleAnalysis(debug=args.debug, dataSex=acceptedDataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
+        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+        print
+        print weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
+        if args.displayDs9 or args.displayFit:
+            an.display()
+        #
+        an=SimpleAnalysis(debug=args.debug, dataSex=rejectedDataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
+        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+        print
+        print weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
+        if args.displayDs9 or args.displayFit:
+            an.display()
+        # 
+        an=SimpleAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
+        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+
+        if args.displayDs9 or args.displayFit:
+            an.display()
+        print
+        print weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
+
+        return weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
 
 
 if __name__ == '__main__':
@@ -212,13 +290,13 @@ if __name__ == '__main__':
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-    parser.add_argument('--dryfitsfiles', dest='dryfitsfiles', action='store', default='./samples', help=': %(default)s, directory where a FITS files are stored from a earlier focus run')
+    parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
+    parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
 
     args=parser.parse_args()
-
 
     lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
     logger= lgd.logger 
@@ -230,23 +308,30 @@ if __name__ == '__main__':
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
     ev.createAcquisitionBasePath(ftwName=None, ftName=None)
     
-    dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryfitsfiles, rt.cfg['FILE_GLOB']))
+    fitsFns=glob.glob('{0}/{1}'.format(args.basePath, rt.cfg['FILE_GLOB']))
 
-    if len(dryFitsFiles)==0:
-        logger.error('analyze: no FITS files found in:{}'.format(args.dryfitsfiles))
-        logger.info('analyze: set --dryfitsfiles or'.format(args.dryfitsfiles))
+    if len(fitsFns)==0:
+        logger.error('analyze: no FITS files found in:{}'.format(args.basePath))
+        logger.info('analyze: set --basepath or'.format(args.basePath))
         logger.info('analyze: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
-        logger.info('analyze: and store it in directory: {0}'.format(args.dryfitsfiles))
+        logger.info('analyze: and store it in directory: {0}'.format(args.basePath))
         sys.exit(1)
 
     dataSex=dict()
-    for k, fitsFn in enumerate(dryFitsFiles):
+    for k, fitsFn in enumerate(fitsFns):
         
         logger.info('analyze: processing fits file: {0}'.format(fitsFn))
         rsx= sx.Sextract(debug=args.debugSex, rt=rt, logger=logger)
         dataSex[k]=rsx.sextract(fitsFn=fitsFn) 
 
-    an=Analyze(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=self.rt.foc.resolution, ev=ev, logger=logger)
-    weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm= an.analyze()
+    if args.catalogAnalysis:
+        an=CatalogAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, rt=rt, logger=logger)
+        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.selectAndAnalyze()
+    else:
+        an=SimpleAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
+        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+        if args.displayDs9 or args.displayFit:
+            an.display()
 
-    logger.info('analyze: result: {0}, {1}, {2}, {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
+    logger.info('analyze: result: weightedMeanObjects: {0}, weightedMeanFwhm: {1}, minFwhmPos: {2}, fwhm: {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
+

@@ -23,6 +23,7 @@ __author__ = 'markus.wildi@bluewin.ch'
 import sys
 import argparse
 import re
+import glob
 
 import lib.config as cfgd
 import lib.log as  lg
@@ -88,9 +89,9 @@ if __name__ == '__main__':
         sys.exit(1)
     #
     if not cdv.deviceWriteAccess():
-            logger.error('rts2saf_focus:  exiting')
-            logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
-            sys.exit(1)
+        logger.error('rts2saf_focus:  exiting')
+        logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
+        sys.exit(1)
 
     # these files are injected in case no actual night sky images are available
     # neverthless ccd is exposing, filter wheels and focuser are moving
@@ -114,7 +115,7 @@ if __name__ == '__main__':
         fftw.run()
     else:
         # without filter wheel
-        f=gtf.Focus(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt,ev=ev,logger=logger)
+        f=fc.Focus(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt,ev=ev,logger=logger)
         f.run()
 
     logger.info('rts2saf_focus: end scan at: {0}'.format(ev.startTime))

@@ -44,23 +44,25 @@ class Focus(object):
         if self.dryFitsFiles:
             dFF=self.dryFitsFiles[:]
             self.logger.info('Focus: using FITS files from: {}'.format(self.dryFitsFiles))
+
         # acquisition
         acqu_oq = Queue.Queue()
         acqu= acq.Acquire(debug=self.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.rt.foc, ccd=self.rt.ccd, filterWheelsInUse=self.rt.filterWheelsInUse, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
+
+        if self.args.focDef: 
+            self.rt.foc.focDef=args.focDef
+            acqu.writeFocDef()
 
         # start acquisition thread
         if not acqu.startScan(exposure=self.args.exposure, blind=self.args.blind):
             self.logger.error('Focus: exiting')
             sys.exit(1)
 
-        if self.args.focDef: 
-            self.rt.foc.focDef=args.focDef
-            acqu.writeFocDef()
-
         # acquire FITS
         dataSex=dict()
-
-        for i, st in enumerate(self.rt.foc.focFoff):
+        # do not store dsx==None
+        i=0
+        for st in self.rt.foc.focFoff:
             while True:
                 try:
                     fitsFn= acqu_oq.get(block=True, timeout=.2)
@@ -77,19 +79,26 @@ class Focus(object):
                     self.logger.error('Focus: try to continue')
                     break
                 dataSex[i]=dsx
+                i += 1
                 break
             else:
                 if self.debug: self.logger.debug('Focus: got all images')
 
-        # might go to thread too
-        if self.dryFitsFiles:
-            anr= an.Analyze(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, ev=self.ev, logger=self.logger)
-        else:
-            anr= an.Analyze(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, ev=self.ev, logger=self.logger)
-
         acqu.stopScan(timeout=1.)
 
+        weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
+        # might go to thread too
+        if self.dryFitsFiles:
+            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, ev=self.ev, logger=self.logger)
+        else:
+            if len(dataSex) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                self.logger.warn('Focus: to few focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(dataSex), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+                return
+
+            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, ev=self.ev, logger=self.logger)
+
         (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
+
         if weightedMeanObjects:
             self.logger.info('Focus: {0:5.0f}: weightedMeanObjects'.format(weightedMeanObjects))
         if weightedMeanFwhm:
@@ -178,11 +187,16 @@ class FocusFilterWheels(object):
                     if self.debug: self.logger.debug('FocusFilterWheels: got all images')
 
                 acqu.stopScan(timeout=1.)
+
+                weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
                 # might go to a thread too
                 if self.dryFitsFiles:
-                    anr= an.Analyze(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, dryFits=True, ev=self.ev, logger=self.logger)
+                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, dryFits=True, ev=self.ev, logger=self.logger)
                 else:
-                    anr= an.Analyze(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, dryFits=False, ev=self.ev, logger=self.logger)
+                    if len(dataSex) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                        self.logger.warn('Focus: to few focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(dataSex), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+                        return
+                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, dryFits=False, ev=self.ev, logger=self.logger)
 
                 (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
 

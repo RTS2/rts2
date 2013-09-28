@@ -48,7 +48,9 @@ class AutoVivification(dict):
             value = self[item] = type(self)()
             return value
 
-
+# attempt to group sub directories into focus runs
+# goal calculate filter offsets
+#
 #2013-09-04T22:18:35.077526/fliterwheel/filter
 filterWheelWithFilters= re.compile('.*?/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)/(.+?)')
 #2013-09-04T22:18:35.077526/(fliterwheel|filter)/
@@ -84,10 +86,13 @@ class Do(object):
             else:
                 logger.warn('__analyzeRun: no result file: {0}'.format(fitsFn))
                 continue
-        an=anr.Analyze(debug=args.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        an=anr.SimpleAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
         weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm= an.analyze()
 
-        logger.info('__analyzeRun: result: {0}, {1}, {2}, {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
+        if self.args.displayDs9 or self.args.displayFit:
+            an.display()
+
+        if self.debug: logger.debug('__analyzeRun: result: weightedMeanObjects: {0}, weightedMeanFwhm:{1}, minFwhmPos: {2}, fwhm: {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
 
     def analyzeRuns(self):
         length= 10
@@ -117,10 +122,7 @@ class Do(object):
                 # self.__analyzeRun(fitsFns=self.datePath[d])
 
         for p  in self.plainPath.keys():
-            print '>>>>>>>>>>>>>>>>>>>>>DONE, EXIT'
-            sys.exit(1)
             if len(self.plainPath[p])> length:
-                print self.plainPath[p]
                 self.__analyzeRun(fitsFns=self.plainPath[p])
 
     def aggregateRuns(self):
@@ -164,10 +166,6 @@ class Do(object):
 if __name__ == '__main__':
 
     import argparse
-    import sys
-    import logging
-    import os
-    import glob
 
     try:
         import lib.config as cfgd
@@ -193,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-    parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from many focus runs are stored')
+    parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
@@ -213,6 +211,7 @@ if __name__ == '__main__':
 
     if not args.basePath:
         parser.print_help()
+        logger.warn('rts2saf_analyze: no --basepath specified')
         sys.exit(1)
 
     do=Do(debug=args.debug, basePath=args.basePath, args=args, rt=rt, ev=ev, logger=logger)

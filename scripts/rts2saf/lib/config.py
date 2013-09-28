@@ -118,7 +118,7 @@ class DefaultConfiguration(object):
         self.dcf[('ccd binning mapping', '4x4')] = 2
 
         self.dcf[('ccd', 'CCD_NAME')]= 'CD'
-        self.dcf[('ccd', 'BINNING')]= '1x1'
+        self.dcf[('ccd', 'CCD_BINNING')]= '1x1'
         self.dcf[('ccd', 'WINDOW')]= '[ -1, -1, -1, -1 ]'
         self.dcf[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
         self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
@@ -133,6 +133,9 @@ class DefaultConfiguration(object):
         self.dcf[('fits header mapping', 'CCD_TEMP')]= 'CCD_TEMP'
         self.dcf[('fits header mapping', 'FOC_POS')] = 'FOC_POS'
         self.dcf[('fits header mapping', 'DATE-OBS')]= 'DATE-OBS'
+        self.dcf[('fits header mapping', 'BINNING')]= 'BINNING'
+        self.dcf[('fits header mapping', 'BINNING_X')]= 'BIN_V'
+        self.dcf[('fits header mapping', 'BINNING_Y')]= 'BIN_H'
 
         self.dcf[('telescope', 'TEL_RADIUS')] = 0.09 # [meter]
         self.dcf[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
@@ -174,7 +177,6 @@ class Configuration(DefaultConfiguration):
     def readConfiguration(self, fileName=None):
         # make the values accessible
         self.cfg=dict()
-        self.focFound=False
 
         config = ConfigParser.ConfigParser()
         config.optionxform = str
@@ -263,15 +265,16 @@ class Configuration(DefaultConfiguration):
                 elif(identifier=='FOCUSER_RESOLUTION'):
                     self.foc.resolution= float(value)
                 elif(identifier=='FOCUSER_ABSOLUTE_LOWER_LIMIT_FB'):
-                    self.foc.absLowerLimitFb= float(value)
+                    self.foc.absLowerLimitFb= int(value)
                 elif(identifier=='FOCUSER_ABSOLUTE_UPPER_LIMIT_FB'):
-                    self.foc.absUpperLimitFb= float(value)
+                    self.foc.absUpperLimitFb= int(value)
                 elif(identifier=='FOCUSER_SPEED'):
                     self.foc.speed= float(value)
                 elif(identifier=='FOCUSER_STEP_SIZE'):
-                    self.foc.stepSize= float(value)
+                    self.foc.stepSize= int(value)
                 elif(identifier=='FOCUSER_TEMPERATURE_COMPENSATION'):
                     self.foc.temperatureCompensation= bool(value)
+                # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
                 elif(identifier=='FOCUSER_RANGE'):
                     value=value.replace("'", '')
                     rng=map(lambda x: int(x), value[1:-1].split(','))
