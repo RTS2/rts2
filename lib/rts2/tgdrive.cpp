@@ -185,7 +185,7 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		}
 		else if (old_value == maxSpeed)
 		{
-			write4b (TGA_VMAX, new_value->getValueDouble () * TGA_SPEEDFACTOR);
+			setMaxSpeed (new_value->getValueDouble ());
 		}
 		else if (old_value == positionKp)
 		{
