@@ -172,7 +172,7 @@ bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &
 
 	_disp.work(msTime);
 
-	if (_connectionState != IDLE)
+	if ((_contentLength != -1 && _connectionState != IDLE) || _connectionState != READ_RESPONSE)
 		return false;
 
 	reply_length = _response_length;
@@ -713,19 +713,23 @@ bool XmlRpcClient::readHeader()
 			_chunkLength = -1;
 			_chunkReceivedLength = 0;
 
-			_response_length = 4096;
 			if (_response_buf)
 				free (_response_buf);
 
-			_response_buf = (char*) malloc (_response_length);
-			_chunkStart = _response_buf;
 			if (ep > bp)
 			{
-				memcpy (_response_buf, bp, ep - bp);
-				_chunkReceivedLength = ep - bp;
-				_chunkEnd = _response_buf + _chunkReceivedLength;
+				_response_length = ep - bp;
+				_response_buf = (char *) malloc (_response_length);
+				memcpy (_response_buf, bp, _response_length);
+				_chunkStart = _response_buf;
+			}
+			else
+			{
+				_response_buf = NULL;
+				_response_length = 0;
 			}
 			_connectionState = READ_RESPONSE;
+			XmlRpcUtil::log(5, "response header:\n%s", _header);
 			return true;
 		}
 	}
@@ -764,11 +768,19 @@ bool XmlRpcClient::readResponse()
 	if (_contentLength == -1 || _contentLength == -2)
 	{
 		// not full chunk..
+		int oldLength = _response_length;
 		XmlRpcSocket::nbRead(this->getfd(), _response_buf, _response_length, &_eof);
-		if (_response_length == 0 && _eof)
+		if (_response_length == oldLength)
 		{
-			XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: do not received any data");
-			return false;
+			if (_eof)
+			{
+				XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: do not received any data");
+				return false;
+			}
+			else
+			{
+				return true; // keep monitoring for new chunks..
+			}
 		}
 		// wait for close
 		if (_contentLength == -2)
