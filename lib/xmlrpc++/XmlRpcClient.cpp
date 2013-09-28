@@ -172,7 +172,7 @@ bool XmlRpcClient::executeGetRequest(const char* path, const char *body, char* &
 
 	_disp.work(msTime);
 
-	if ((_contentLength != -1 && _connectionState != IDLE) || _connectionState != READ_RESPONSE)
+	if ((_contentLength != -1 && _connectionState != IDLE) || (_contentLength == -1 && _connectionState != READ_RESPONSE))
 		return false;
 
 	reply_length = _response_length;
