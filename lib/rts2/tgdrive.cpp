@@ -264,6 +264,11 @@ void TGDrive::setTargetSpeed (int32_t dspeed, bool changeMode)
 	write4b (TGA_DSPEED, dspeed);
 }
 
+void TGDrive::setMaxSpeed (double speed)
+{
+	write4b (TGA_VMAX, speed * TGA_SPEEDFACTOR);
+}
+
 void TGDrive::stop ()
 {
 	// other way to stop..with backslahs

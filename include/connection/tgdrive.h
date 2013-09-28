@@ -203,6 +203,8 @@ class TGDrive: public rts2core::ConnSerial
 		void setCurrentPos (int32_t pos);
 
 		void setTargetSpeed (int32_t dspeed, bool changeMode = true);
+		void setMaxSpeed (double speed);
+
 
 		int32_t getPosition () { return aPos->getValueInteger (); }
 
