@@ -217,7 +217,7 @@ if __name__ == '__main__':
     # Fit median FWHM data
     dataFitFwhm=dt.DataFitFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
 
-    fit=ft.FitFwhm(showPlot=False, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFitFwhm=dataFitFwhm)
+    fit=ft.FitFwhm(showPlot=False, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFitFwhm=dataFitFwhm, logger=logger)
     min_focpos_fwhm, fwhm= fit.fitData()
     print '--------minFwhm fwhm'
     print min_focpos_fwhm, fwhm
