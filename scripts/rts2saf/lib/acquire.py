@@ -52,7 +52,7 @@ class ScanThread(threading.Thread):
     def run(self):
         if self.debug: self.logger.debug('____ScantThread: running')
         
-        if self.blind:
+        if self.blind or self.ftw==None: # CCD without filter wheel
             stepSize=self.foc.stepSize
         else:
             stepSize=self.ft.stepSize
@@ -89,7 +89,7 @@ class ScanThread(threading.Thread):
                     focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
                     time.sleep(.2) # leave it alone
                 else:
-                    self.logger.info('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+                    if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
             fn=self.expose()
             if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
@@ -103,7 +103,8 @@ class ScanThread(threading.Thread):
         else:
             exp= self.ccd.baseExposure
 
-        exp *= self.ft.exposureFactor
+        if self.ftw!=None: # CCD without filter wheel
+            exp *= self.ft.exposureFactor
 
         if self.writeToDevices:
             self.proxy.setValue(self.ccd.name,'exposure', str(exp))
@@ -273,7 +274,7 @@ class Acquire(object):
         # ToDo filter
 
     def writeFocDef(self):
-        if self.foc.focMn and self.foc.focMx:
+        if self.foc.focMn !=None and self.foc.focMx !=None:
             if self.foc.focMn < self.foc.focDef < self.foc.focMx:
                 if self.writeToDevices:
                     self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
@@ -398,7 +399,7 @@ if __name__ == '__main__':
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
     ev.createAcquisitionBasePath(ftwName=None, ftName=None)
 
-    cdv= dev.CheckDevices(debug=args.debug, rangeFocToff=None, blind=args.blind, verbose=None, rt=rt, logger=logger)
+    cdv= dev.SetCheckDevices(debug=args.debug, rangeFocToff=None, blind=args.blind, verbose=None, rt=rt, logger=logger)
 
     if not cdv.statusDevices():
         logger.error('acquire: exiting, check the configuration file: {0}'.format(args.config))

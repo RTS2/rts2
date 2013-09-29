@@ -52,6 +52,7 @@ class SimpleAnalysis(object):
         self.focRes=focRes
         self.ev=ev
         self.logger=logger
+        self.fit=None
 
     def __fit(self, dFwhm=None):
         # ToDo make an option
@@ -60,17 +61,17 @@ class SimpleAnalysis(object):
             comment='dryFits'
 
         # Fit median FWHM data
-        fit=ft.FitFwhm(
+        self.fit=ft.FitFwhm(
             showPlot=self.displayFit, 
             filterName=self.ftName, 
             ambientTemp=self.dataSex[0].ambientTemp,
             date=self.ev.startTime[0:19], 
             comment=comment,  # ToDo, define a sensible value
             pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
-            dataFwhm=dFwhm, 
+            dataFitFwhm=dFwhm, 
             logger=self.logger)
 
-        return fit.fitData()
+        return self.fit.fitData()
 
     def __analyze(self, dFwhm=None):
         # Weighted mean based on number of extracted objects (stars)
@@ -110,9 +111,9 @@ class SimpleAnalysis(object):
 
         if minFwhmPos:
             if self.dataSex[0].ambientTemp:
-                self.logger.info('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
+                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
             else:
-                self.logger.info('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
+                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
         else:
             self.logger.warn('analyze: fit failed')
 
@@ -127,14 +128,14 @@ class SimpleAnalysis(object):
         nObjs=list()
         for cnt in self.dataSex.keys():
             # all sextracted objects
-            no= len(self.dataSex[cnt].catalogue)
+            no= len(self.dataSex[cnt].catalog)
             if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered sextracted objects: {2:5d}'.format(self.dataSex[cnt].focPos, no, self.dataSex[cnt].nstars))
             #
             pos.append(self.dataSex[cnt].focPos)
             fwhm.append(self.dataSex[cnt].fwhm)
             errx.append(self.focRes)
             stdFwhm.append(self.dataSex[cnt].stdFwhm)
-            nObjs.append(len(self.dataSex[cnt].catalogue))
+            nObjs.append(len(self.dataSex[cnt].catalog))
             
         df=dt.DataFitFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
         return self.__analyze(dFwhm=df)
@@ -151,7 +152,7 @@ class SimpleAnalysis(object):
 
         if DISPLAY:
             if self.displayFit:
-                fit.plotData()
+                self.fit.plotData()
             # plot them through ds9
             if self.displayDs9:
                 try:
@@ -216,17 +217,17 @@ class CatalogAnalysis(object):
         rejectedDataSex=dict()
         for cnt in dataSex.keys():
             acceptedDataSex[cnt]=copy.deepcopy(self.dataSex[cnt])
-            acceptedDataSex[cnt].catalogue= list(ifilter(self.__criteria, self.dataSex[cnt].catalogue))
+            acceptedDataSex[cnt].catalog= list(ifilter(self.__criteria, self.dataSex[cnt].catalog))
 
             i_f = self.dataSex[0].fields.index('FWHM_IMAGE')
-            nsFwhm=np.asarray(map(lambda x: x[i_f], acceptedDataSex[cnt].catalogue))
+            nsFwhm=np.asarray(map(lambda x: x[i_f], acceptedDataSex[cnt].catalog))
             acceptedDataSex[cnt].fwhm=numpy.median(nsFwhm)
             acceptedDataSex[cnt].stdFwhm=numpy.std(nsFwhm)
 
 
             rejectedDataSex[cnt]=copy.deepcopy(self.dataSex[cnt])
-            rejectedDataSex[cnt].catalogue=  list(ifilterfalse(self.__criteria, self.dataSex[cnt].catalogue))
-            nsFwhm=np.asarray(map(lambda x: x[i_f], rejectedDataSex[cnt].catalogue))
+            rejectedDataSex[cnt].catalog=  list(ifilterfalse(self.__criteria, self.dataSex[cnt].catalog))
+            nsFwhm=np.asarray(map(lambda x: x[i_f], rejectedDataSex[cnt].catalog))
 
             rejectedDataSex[cnt].fwhm=numpy.median(nsFwhm)
             rejectedDataSex[cnt].stdFwhm=numpy.std(nsFwhm)

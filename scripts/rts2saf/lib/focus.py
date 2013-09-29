@@ -43,7 +43,8 @@ class Focus(object):
         dFF=None
         if self.dryFitsFiles:
             dFF=self.dryFitsFiles[:]
-            self.logger.info('Focus: using FITS files from: {}'.format(self.dryFitsFiles))
+            self.logger.info('Focus: using dry FITS files')
+            if self.debug: self.logger.debug('Focus: using dry FITS files from: {}'.format(self.dryFitsFiles))
 
         # acquisition
         acqu_oq = Queue.Queue()
@@ -60,7 +61,7 @@ class Focus(object):
 
         # acquire FITS
         dataSex=dict()
-        # do not store dsx==None
+        # do not store dSx==None
         i=0
         for st in self.rt.foc.focFoff:
             while True:
@@ -70,15 +71,15 @@ class Focus(object):
                     # if self.debug: self.logger.debug('Focus: continue')
                     continue
                     
-                self.logger.info('Focus: got FITS file name: {}'.format(fitsFn))
                 sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
-                try:
-                    dsx=sxtr.sextract(fitsFn=fitsFn)
-                except Exception, e:
-                    self.logger.error('Focus: sextractor failed on fits file:\n{0}'.format(fitsFn,e))
+                dSx=sxtr.sextract(fitsFn=fitsFn)
+                if dSx==None:
+                    self.logger.error('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
                     self.logger.error('Focus: try to continue')
                     break
-                dataSex[i]=dsx
+
+                self.logger.info('Focus: sextracted FITS file: {}, objects: {}'.format(fitsFn, len(dSx.catalog)))
+                dataSex[i]=dSx
                 i += 1
                 break
             else:
@@ -89,13 +90,13 @@ class Focus(object):
         weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
         # might go to thread too
         if self.dryFitsFiles:
-            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, ev=self.ev, logger=self.logger)
+            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
         else:
             if len(dataSex) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                 self.logger.warn('Focus: to few focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(dataSex), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
                 return
 
-            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, ev=self.ev, logger=self.logger)
+            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
 
         (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
 
@@ -135,6 +136,7 @@ class FocusFilterWheels(object):
         for k, ftw in enumerate(self.rt.filterWheelsInUse):
             # only interesting in case multiple filter wheels are present
             if len(ftw.filters) ==1 and k>0:
+                # self.rt.filterWheelsInUse is sorted
                 # these are filter wheels which have no real filters (defined in config) 
                 # they must appear in self.rt.filterWheelsInUse in order to set the empty slot
                 continue
@@ -145,7 +147,8 @@ class FocusFilterWheels(object):
                 dFF=None
                 if self.dryFitsFiles:
                     dFF=self.dryFitsFiles[:]
-                    self.logger.info('FocusFilterWheels: using FITS files from: {}'.format(self.dryFitsFiles))
+                    self.logger.info('FocusFilterWheels: using dry FITS files')
+                    if self.debug: self.logger.debug('FocusFilterWheels: using dry FITS files from: {}'.format(self.dryFitsFiles))
                 # acquisition
                 acqu_oq = Queue.Queue()
                 #
@@ -165,7 +168,8 @@ class FocusFilterWheels(object):
 
                 # acquire FITS
                 dataSex=dict()
-                for i,st in enumerate(self.rt.foc.focFoff):
+                i=0
+                for st in self.rt.foc.focFoff:
                     while True:
                         try:
                             fitsFn= acqu_oq.get(block=True, timeout=.2)
@@ -173,15 +177,16 @@ class FocusFilterWheels(object):
                             # if self.debug: self.logger.debug('FocusFilterWheels: continue')
                             continue
                     
-                        self.logger.info('FocusFilterWheels: got FITS file name: {}'.format(fitsFn))
                         sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
-                        try:
-                            dsx=sxtr.sextract(fitsFn=fitsFn)
-                        except Exception, e:
-                            self.logger.error('FocusFilterWheels: sextractor failed on fits file:\n{0}'.format(fitsFn,e))
+                        dSx=sxtr.sextract(fitsFn=fitsFn)
+                        if dSx==None:
+                            self.logger.error('FocusFilterWheels: sextractor failed on fits file: {0}'.format(fitsFn))
                             self.logger.error('FocusFilterWheels: try to continue')
                             break
-                        dataSex[i]=dsx
+
+                        self.logger.info('FocusFilterWheels: sextracted FITS file: {}, objects: {}'.format(fitsFn, len(dSx.catalog)))
+                        dataSex[i]=dSx
+                        i += 1
                         break
                 else:
                     if self.debug: self.logger.debug('FocusFilterWheels: got all images')
@@ -191,12 +196,12 @@ class FocusFilterWheels(object):
                 weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
                 # might go to a thread too
                 if self.dryFitsFiles:
-                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, dryFits=True, ev=self.ev, logger=self.logger)
+                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
                 else:
                     if len(dataSex) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-                        self.logger.warn('Focus: to few focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(dataSex), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
-                        return
-                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, dryFits=False, ev=self.ev, logger=self.logger)
+                        self.logger.warn('FocusFilterWheels: to few focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(dataSex), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+                        continue
+                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
 
                 (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
 
@@ -215,11 +220,11 @@ class FocusFilterWheels(object):
                         if self.rt.cfg['SET_FOCUS']:
                             if self.rt.cfg['FWHM_MIN'] < fwhm < self.rt.cfg['FWHM_MAX']:
                                 acqu.writeFocDef()
-                                self.logger.info('Focus: set FOC_DEF: {0}'.format(int(minFwhmPos)))
+                                self.logger.info('FocusFilterWheels: set FOC_DEF: {0}'.format(int(minFwhmPos)))
                             else:
-                                self.logger.warn('Focus: not writing FOC_DEF: {0}, fwhm: {1}, out of bounds: {2},{3}'.format(int(minFwhmPos), fwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+                                self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}, fwhm: {1}, out of bounds: {2},{3}'.format(int(minFwhmPos), fwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
                         else:
-                            self.logger.warn('Focus: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
+                            self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
                     else:
                         self.logger.debug('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(minFwhmPos- self.rt.foc.focDef)))
                         ft.OffsetToEmptySlot=int(minFwhmPos- self.rt.foc.focDef)

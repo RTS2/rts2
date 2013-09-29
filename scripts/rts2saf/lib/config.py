@@ -41,8 +41,8 @@ class DefaultConfiguration(object):
         self.debug=debug
         self.logger=logger
 
-        self.ccd=dev.CCD() 
-        self.foc=dev.Focuser() 
+        self.ccd=None 
+        self.foc=None
         self.filterWheelsDefs=dict()
         self.filterWheels=list()
         self.filterWheelsInUseDefs=list()
@@ -86,10 +86,10 @@ class DefaultConfiguration(object):
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT_FB')]= 2002 # fallback in case RTS2::foc_max is not defined
         # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
         self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 2
-        self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 11, self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]]
+        self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 14, self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]]
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
         self.dcf[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
-
+        # not yet in use:
         self.dcf[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
         self.dcf[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
         self.dcf[('acceptance circle', 'RADIUS')]= 2000.
@@ -119,7 +119,7 @@ class DefaultConfiguration(object):
 
         self.dcf[('ccd', 'CCD_NAME')]= 'CD'
         self.dcf[('ccd', 'CCD_BINNING')]= '1x1'
-        self.dcf[('ccd', 'WINDOW')]= '[ -1, -1, -1, -1 ]'
+        self.dcf[('ccd', 'WINDOW')]= '[ -3, -1, -1, -1 ]'
         self.dcf[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
         self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
 
@@ -204,7 +204,9 @@ class Configuration(DefaultConfiguration):
         # read the defaults
         for (section, identifier), value in self.dcf.iteritems():
             self.cfg[identifier]= value
+
         # over write the defaults
+        ftds=list()
         for (section, identifier), value in self.dcf.iteritems():
             try:
                 value = config.get( section, identifier)
@@ -217,8 +219,9 @@ class Configuration(DefaultConfiguration):
             value= string.replace( value, ' ', '')
             if self.debug: print '{} {} {}'.format(section, identifier, value)
 
-            self.cfg[identifier]= value
             items=list()
+            # decode the compound configuration expressions first, the rest is copied to  
+            # after completion
             if  section in 'SExtractor':
                 if identifier in 'FIELDS':
                     value=value.replace("'", '')
@@ -227,28 +230,15 @@ class Configuration(DefaultConfiguration):
                     self.cfg[identifier]= value
 
             elif section in 'basic': 
-
                 if identifier in 'EMPTY_SLOT_NAMES':
                     self.cfg[identifier]=value[1:-1].split(',')
                 else:
                     self.cfg[identifier]= value
+
             elif section in 'filter properties': 
-                items= value[1:-1].split(',')
-                lowerLimit=string.atoi(items[1])
-                upperLimit=string.atoi(items[2])
-                stepSize=string.atoi(items[3])
-                exposureFactor=string.atof(items[4])
+                self.cfg[identifier]= value
+                ftds.append(value)
 
-                focFoff=range (lowerLimit, upperLimit + stepSize, stepSize)
-
-                ft=dev.Filter( name=items[0],  
-                           lowerLimit=lowerLimit, 
-                           upperLimit=upperLimit, 
-                           stepSize=stepSize, 
-                           exposureFactor=exposureFactor,
-                           focFoff= focFoff)
-
-                self.filters.append(ft)
             elif( section in 'filter wheel'):
                 items= value[1:-1].split(',')
                 self.filterWheelsDefs[items[0]]=items[1:]
@@ -259,48 +249,6 @@ class Configuration(DefaultConfiguration):
                     item=item.replace(' ', '')
                     self.filterWheelsInUseDefs.append(item)
 
-            elif( section in 'focuser properties'):
-                if identifier=='FOCUSER_NAME':
-                    self.foc.name= value
-                elif(identifier=='FOCUSER_RESOLUTION'):
-                    self.foc.resolution= float(value)
-                elif(identifier=='FOCUSER_ABSOLUTE_LOWER_LIMIT_FB'):
-                    self.foc.absLowerLimitFb= int(value)
-                elif(identifier=='FOCUSER_ABSOLUTE_UPPER_LIMIT_FB'):
-                    self.foc.absUpperLimitFb= int(value)
-                elif(identifier=='FOCUSER_SPEED'):
-                    self.foc.speed= float(value)
-                elif(identifier=='FOCUSER_STEP_SIZE'):
-                    self.foc.stepSize= int(value)
-                elif(identifier=='FOCUSER_TEMPERATURE_COMPENSATION'):
-                    self.foc.temperatureCompensation= bool(value)
-                # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
-                elif(identifier=='FOCUSER_RANGE'):
-                    value=value.replace("'", '')
-                    rng=map(lambda x: int(x), value[1:-1].split(','))
-                    self.foc.focToff=range(rng[0], rng[1]+rng[2],rng[2])
-
-            elif( section in 'ccd'):
-                if identifier=='CCD_NAME':
-                    self.ccd.name= value
-
-                elif(identifier=='WINDOW'):
-                    items= re.split('[,]+', value[1:-1])
-                    if len(items) < 4:
-                        self.logger.warn( 'Configuration.readConfiguration: too few ccd window items {0} {1}, using the whole CCD area'.format(len(items), value))
-                        items= [ '-1', '-1', '-1', '-1']
-
-                    self.ccd.windowOffsetX=string.atoi(items[0])
-                    self.ccd.windowOffsetY=string.atoi(items[1]) 
-                    self.ccd.windowWidth  =string.atoi(items[2]) 
-                    self.ccd.windowHeight =string.atoi(items[3])
-
-                elif(identifier=='BINNING'):
-                    self.ccd.binning= value
-                elif(identifier=='PIXELSIZE'): # unit meter
-                    self.ccd.pixelSize= value
-                elif(identifier=='BASE_EXPOSURE'): # unit meter
-                    self.ccd.baseExposure= float(value)
             # first bool, then int !
             elif isinstance(self.cfg[identifier], bool):
                 # ToDO, looking for a direct way
@@ -323,6 +271,72 @@ class Configuration(DefaultConfiguration):
             else:
                 self.cfg[identifier]= value
 
+        # configuration has been read in, now create objects
+        # create object CCD
+
+        # ToDo, what does RTS2::ccd driver expect: int or str list?
+        # for now: int
+        wItems= re.split('[,]+', self.cfg['WINDOW'][1:-1])
+        if len(wItems) < 4:
+            self.logger.warn( 'Configuration.readConfiguration: too few ccd window items {0} {1}, using the whole CCD area'.format(len(items), value))
+            wItems= [ -1, -1, -1, -1]
+        else:
+            wItems[:]= map(lambda x: int(x), wItems)
+
+        self.ccd= dev.CCD( 
+            name         =self.cfg['CCD_NAME'],
+            binning      =self.cfg['CCD_BINNING'],
+            windowOffsetX=wItems[0],
+            windowOffsetY=wItems[1],
+            windowHeight =wItems[2],
+            windowWidth  =wItems[3],
+            pixelSize    =float(self.cfg['PIXELSIZE']),
+            baseExposure =float(self.cfg['BASE_EXPOSURE'])
+            )
+
+# create object focuser
+
+        if type(self.cfg['FOCUSER_RANGE'])==list:
+            rng=self.cfg['FOCUSER_RANGE']
+        else:
+            value=self.cfg['FOCUSER_RANGE'].replace("'", '')
+            rng=map(lambda x: int(x), value[1:-1].split(','))
+
+        self.foc= dev.Focuser(
+            name           =self.cfg['FOCUSER_NAME'],
+            resolution     =float(self.cfg['FOCUSER_RESOLUTION']),
+            absLowerLimitFb=int(self.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT_FB']),
+            absUpperLimitFb=int(self.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT_FB']),
+            speed          =float(self.cfg['FOCUSER_SPEED']),
+            # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
+            stepSize       =int(self.cfg['FOCUSER_STEP_SIZE']),
+            temperatureCompensation=bool(self.cfg['FOCUSER_TEMPERATURE_COMPENSATION']),
+            # may be or not set at run time:
+            focFoff=range(rng[0], rng[1]+rng[2],rng[2])
+            # set at run time:
+            #focDef=None,
+            #focMn=None,
+            #focMx=None,
+            #focSt=None
+            )
+        # create objects filter
+        for ftd in ftds:
+            ftItems= ftd[1:-1].split(',')
+            lowerLimit    = int(ftItems[1])
+            upperLimit    = int(ftItems[2])
+            stepSize      = int(ftItems[3])
+
+            ft=dev.Filter( 
+                name          = ftItems[0],
+                lowerLimit    =lowerLimit,
+                upperLimit    =upperLimit,
+                stepSize      =stepSize,
+                exposureFactor=string.atof(ftItems[4]),
+                focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
+                )
+
+            self.filters.append(ft)
+
         # create objects FilterWheel whith filter wheels names and with filter objects
         #  ftwn: W2
         #  ftds: ['nof1', 'U', 'Y', 'O2']
@@ -335,7 +349,7 @@ class Configuration(DefaultConfiguration):
                         ftw.filters.append(ft)
                         break
                 else:
-                    self.logger.error('Configuration.readConfiguration: no filter named: {0} found in config: {1}'.format(ftd, fileName)  )
+                    self.logger.error('Configuration.readConfiguration: no filter named: {0} found in config: {1}, exiting'.format(ftd, fileName)  )
                     sys.exit(1)
             self.filterWheels.append(ftw)
 

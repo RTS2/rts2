@@ -70,28 +70,29 @@ if __name__ == '__main__':
 
     # get the environment
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
-    if args.blind and not args.focRange:
-        logger.info('checkDevices: --blind is set, recommendation: set --focrange to decent value')        
-    elif not args.blind and args.focRange:
-        logger.error('checkDevices: --focrange has no effect without --blind'.format(args.focRange))
+
+    if not args.blind and args.focRange:
+        logger.error('rts2saf_focus: --focrange has no effect without --blind'.format(args.focRange))
         sys.exit(1)
 
     if args.focRange:
         if (args.focRange[0] >= args.focRange[1]) or args.focRange[2] <= 0: 
-            logger.error('checkDevices: bad range values: {}, exiting'.format(args.focRange))
+            logger.error('rts2saf_focus: bad range values: {}, exiting'.format(args.focRange))
             sys.exit(1)
 
     # check the presence of the devices and if there is an empty slot on each wheel
-    cdv= dev.CheckDevices(debug=args.debug, args=args, rt=rt, logger=logger)
+    cdv= dev.SetCheckDevices(debug=args.debug, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
     if not cdv.statusDevices():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
         sys.exit(1)
-    #
-    if not cdv.deviceWriteAccess():
-        logger.error('rts2saf_focus:  exiting')
-        logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
-        sys.exit(1)
+    # are devices writable
+    # do the only interactively
+    if args.checkConfig:
+        if not cdv.deviceWriteAccess():
+            logger.error('rts2saf_focus:  exiting')
+            logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
+            sys.exit(1)
 
     # these files are injected in case no actual night sky images are available
     # neverthless ccd is exposing, filter wheels and focuser are moving
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
     #
-    if len(rt.filterWheelsInUse):
+    if len(rt.filterWheelsInUse)>0:
         fftw=fc.FocusFilterWheels(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt, ev=ev, logger=logger)
         fftw.run()
     else:

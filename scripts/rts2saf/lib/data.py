@@ -29,14 +29,14 @@ class DataFitFwhm(object):
         self.nObjs=nObjs
 
 class DataSex(object):
-    def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalogue=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None):
+    def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None):
         self.fitsFn=fitsFn
         self.focPos=focPos
         self.fwhm=fwhm
         self.stdFwhm=stdFwhm
         self.nstars=nstars
         self.ambientTemp=ambientTemp
-        self.catalogue=catalogue
+        self.catalog=catalog
         self.fields=fields
         self.binning=binning 
         self.binningXY=binningXY 

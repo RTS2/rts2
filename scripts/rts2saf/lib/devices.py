@@ -55,7 +55,7 @@ class FilterWheel():
 
 class Focuser():
     """Class for focuser properties"""
-    def __init__(self, name=None, resolution=None, absLowerLimitFb=None, absUpperLimitFb=None, speed=None, stepSize=None, temperatureCompensation=None, steps=list()):
+    def __init__(self, name=None, resolution=None, absLowerLimitFb=None, absUpperLimitFb=None, speed=None, stepSize=None, temperatureCompensation=None, focFoff=None):
         self.name= name
         self.resolution=resolution 
         self.absLowerLimitFb=absLowerLimitFb
@@ -63,7 +63,7 @@ class Focuser():
         self.speed=speed
         self.stepSize=stepSize
         self.temperatureCompensation=temperatureCompensation
-        self.focFoff=None # will be set at run time
+        self.focFoff=focFoff # will be set at run time
         self.focDef=None # will be set at run time
         self.focMn=None # will be set at run time
         self.focMx=None # will be set at run time
@@ -82,7 +82,7 @@ class CCD():
         self.pixelSize= pixelSize
         self.baseExposure= baseExposure
 
-class CheckDevices(object):
+class SetCheckDevices(object):
     """Check the presence of the devices and filter slots"""    
     def __init__(self, debug=False, rangeFocToff=None, blind=None, verbose=None, rt=None, logger=None):
         self.debug=debug
@@ -104,7 +104,7 @@ class CheckDevices(object):
 
     def __camera(self):
         if not self.connected:
-            self.logger.error('checkDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
+            self.logger.error('setCheckDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
             self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
             self.logger.info('acquire: user name, password correct?')
             return False
@@ -113,12 +113,12 @@ class CheckDevices(object):
         try:
             self.proxy.getDevice(self.rt.ccd.name)
         except:
-            self.logger.error('checkDevices: camera device: {0} not present'.format(self.rt.ccd.name))        
+            self.logger.error('setCheckDevices: camera device: {0} not present'.format(self.rt.ccd.name))        
             return False
-        if self.debug: self.logger.debug('checkDevices: camera: {0} present'.format(self.rt.ccd.name))
+        if self.debug: self.logger.debug('setCheckDevices: camera: {0} present'.format(self.rt.ccd.name))
 
         if len(self.rt.filterWheelsInUse)==0:
-            self.logger.info('checkDevices: no filter wheel in use')        
+            self.logger.info('setCheckDevices: no filter wheel in use')        
             return True
 
         # ToDo
@@ -186,10 +186,10 @@ class CheckDevices(object):
         for ftwIU in self.rt.filterWheelsInUse: # ToDo this is/could be a glitch
             for ftwn in fts.keys():
                 if ftwn in ftwIU.name:
-                    if self.debug: self.logger.debug('checkDevices: found filter wheel: {0}'.format(ftwIU.name))
+                    if self.debug: self.logger.debug('setCheckDevices: found filter wheel: {0}'.format(ftwIU.name))
                     offsets=list()
                     if len(ftos[ftwn])==0:
-                        self.logger.warn('checkDevices: for camera: {0} filter wheel: {1}, no filter offsets are defined, but filter wheels/filters are present'.format(self.rt.ccd.name, ftwn))        
+                        self.logger.warn('setCheckDevices: for camera: {0} filter wheel: {1}, no filter offsets are defined, but filter wheels/filters are present'.format(self.rt.ccd.name, ftwn))        
                     else:
                         offsets= map(lambda x: x, ftos[ftwn]) 
                     # check filter wheel's filters in config and add offsets           
@@ -197,7 +197,7 @@ class CheckDevices(object):
 
                     for k, ftn in enumerate(fts[ftwn]): # names only
                         if not ftn in ftIUns:
-                            if self.debug: self.logger.debug('checkDevices: filter wheel: {0}, filter: {1} not used ignoring'.format(ftwIU.name, ftn))        
+                            if self.debug: self.logger.debug('setCheckDevices: filter wheel: {0}, filter: {1} not used ignoring'.format(ftwIU.name, ftn))        
                             continue
 
                         for ft in self.rt.filters:
@@ -216,26 +216,26 @@ class CheckDevices(object):
 
                                 if match:
                                     ft.OffsetToEmptySlot= 0.
-                                    if self.debug: self.logger.debug('checkDevices: filter wheel: {0}, filter: {1} offset set to ZERO'.format(ftwIU.name, ft.name))
+                                    if self.debug: self.logger.debug('setCheckDevices: filter wheel: {0}, filter: {1} offset set to ZERO'.format(ftwIU.name, ft.name))
                                 else:
                                     try:
                                         ft.OffsetToEmptySlot= offsets[k] 
-                                        if self.debug: self.logger.debug('checkDevices: filter wheel: {0}, filter: {1} offset {2} from ccd: {3}'.format(ftwIU.name, ft.name, ft.OffsetToEmptySlot,self.rt.ccd.name))
+                                        if self.debug: self.logger.debug('setCheckDevices: filter wheel: {0}, filter: {1} offset {2} from ccd: {3}'.format(ftwIU.name, ft.name, ft.OffsetToEmptySlot,self.rt.ccd.name))
                                     except:
                                         ft.OffsetToEmptySlot= 0.
-                                        self.logger.warn('checkDevices: filter wheel: {0}, filter: {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftwIU.name, ft.name,self.rt.ccd.name))
+                                        self.logger.warn('setCheckDevices: filter wheel: {0}, filter: {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftwIU.name, ft.name,self.rt.ccd.name))
                                 break
                         else:
-                            if self.debug: self.logger.debug('checkDevices: filter wheel: {0}, filter: {1} not found in configuration, ignoring it'.format(ftwn, ftn))        
+                            if self.debug: self.logger.debug('setCheckDevices: filter wheel: {0}, filter: {1} not found in configuration, ignoring it'.format(ftwn, ftn))        
                             return False
                     break
             else:
-                self.logger.error('checkDevices: filter wheel: {0} not found in configuration'.format(ftwIU.name))        
+                self.logger.error('setCheckDevices: filter wheel: {0} not found in configuration'.format(ftwIU.name))        
         return True
 
     def __focuser(self):
         if not self.connected:
-            self.logger.error('checkDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
+            self.logger.error('setCheckDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
             self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
             return False
 
@@ -243,9 +243,16 @@ class CheckDevices(object):
         try:
             self.proxy.getDevice(self.rt.foc.name)
         except:
-            self.logger.error('checkDevices: focuser device: {0} not present'.format(self.rt.foc.name))        
+            self.logger.error('setCheckDevices: focuser device: {0} not present'.format(self.rt.foc.name))        
             return False
-        if self.debug: self.logger.debug('checkDevices: focuser: {0} present'.format(self.rt.foc.name))
+        if self.debug: self.logger.debug('setCheckDevices: focuser: {0} present'.format(self.rt.foc.name))
+
+        focMin=focMax=None
+        try:
+            focMin= self.proxy.getDevice(self.rt.foc.name)['foc_min'][1]
+            focMax= self.proxy.getDevice(self.rt.foc.name)['foc_max'][1]
+        except Exception, e:
+            self.logger.warn('FocusFilterWheels: focuser: {0} has no foc_min or foc_max properties '.format(self.rt.foc.name))
 
         rMin=rMax=rStep=None
         # focRange (from args) has priority
@@ -265,19 +272,33 @@ class CheckDevices(object):
                 rMax=self.rt.foc.absUpperLimitFb
                 rStep=self.rt.foc.stepSize
                 self.logger.info('FocusFilterWheels: setting internal focMn: {0}, focMx: {1}, focSt: {2}'.format(rMin, rMax, rStep))
-                self.logger.info('FocusFilterWheels: focuser: {0} setting limits from configuration'.format(self.rt.foc.name))
-            # fall back hardware
+                self.logger.info('FocusFilterWheels: focuser: {0} setting limits from absulute limits (see configuration file)'.format(self.rt.foc.name))
+            # fall back hardware, if available
             else:
-                try:
-                    rMin= self.proxy.getDevice(self.rt.foc.name)['foc_min'][1]
-                    rMax= self.proxy.getDevice(self.rt.foc.name)['foc_max'][1]
+                if focMin and focMax:
+                    rMin=focMin
+                    rMax=focMax
                     rStep=self.rt.foc.stepSize
-                except Exception, e:
-                    self.logger.warn('FocusFilterWheels: focuser: {0} has no foc_min or foc_max properties '.format(self.rt.foc.name))
+                    self.logger.info('FocusFilterWheels: focuser: {0} setting limits from focuser'.format(self.rt.foc.name))
 
-                self.logger.info('FocusFilterWheels: focuser: {0} setting limits from focuser'.format(self.rt.foc.name))
 
-        if rMin !=None and rMax !=None and rStep!=None:
+        if self.rt.foc.focFoff:
+            # configuration has priority
+            if self.rt.foc.absLowerLimitFb and self.rt.foc.absUpperLimitFb:
+                self.rt.foc.focMn= self.rt.foc.absLowerLimitFb
+                self.rt.foc.focMx= self.rt.foc.absUpperLimitFb
+                self.logger.info('FocusFilterWheels: focuser: {0} setting absolute limits from configuration file'.format(self.rt.foc.name))
+            elif focMin and focMax:
+                self.rt.foc.focMn= focMin
+                self.rt.foc.focMx= focMax
+                self.logger.info('FocusFilterWheels: focuser: {0} setting absolute limits from focuser driver settings'.format(self.rt.foc.name))
+            else:
+                self.logger.error('FocusFilterWheels: focuser {0} could not define a range, exiting'.format(self.rt.foc.name))
+                # ToDO check with no filter wheel configuration
+                sys.exit(1)
+                self.logger.info('FocusFilterWheels: focuser: {0} setting limits from configuration file: steps: {1}, min: {2}, max: {3}'.format(self.rt.foc.name, len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff)))
+
+        elif rMin !=None and rMax !=None and rStep!=None:
             withinLlUl=False
             # ToDo check that abainst HW limits
             if self.rt.foc.absLowerLimitFb <= rMin <= self.rt.foc.absUpperLimitFb-(rMax-rMin):
@@ -296,9 +317,8 @@ class CheckDevices(object):
             # this hardware
             # self.rt.foc.focSt=self.proxy.getDevice(self.rt.foc.name)['focstep'][1]
 
-
         else:
-            self.logger.error('FocusFilterWheels: focuser {0} could not define a range, exiting'.format(len(self.rt.foc.name)))
+            self.logger.error('FocusFilterWheels: focuser {0} could not define a range, exiting'.format(self.rt.foc.name))
             # ToDO check with no filter wheel configuration
             sys.exit(1)
 
@@ -310,7 +330,7 @@ class CheckDevices(object):
     # ToDo might go away
     def __filterWheels(self):
         if not self.connected:
-            self.logger.error('checkDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
+            self.logger.error('setCheckDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
             self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
             return False
         self.proxy.refresh()
@@ -319,7 +339,7 @@ class CheckDevices(object):
             try:
                 self.proxy.getDevice(ftw.name)
             except:
-                self.logger.error('checkDevices: filter wheel device {0} not present'.format(ftw.name))        
+                self.logger.error('setCheckDevices: filter wheel device {0} not present'.format(ftw.name))        
                 return False
             # check if there is at least one empty slot
             for ft in ftw.filters:
@@ -354,7 +374,7 @@ class CheckDevices(object):
             # use this slot first, followed by all others
             ftw.filters.sort(key=lambda x: x.OffsetToEmptySlot)
             for ft in ftw.filters:
-                if self.debug: self.logger.debug('checkDevices: filter wheel: {0:5s}, filter:{1:5s} in use'.format(ftw.name, ft.name))
+                if self.debug: self.logger.debug('setCheckDevices: filter wheel: {0:5s}, filter:{1:5s} in use'.format(ftw.name, ft.name))
                 if ft.OffsetToEmptySlot==0:
                     # ft.emptySlot=Null at instanciation
                     try:
@@ -363,11 +383,11 @@ class CheckDevices(object):
                         ftw.emptySlots=list()
                         ftw.emptySlots.append(ft)
 
-                    if self.debug: self.logger.debug('checkDevices: filter wheel: {0:5s}, filter:{1:5s} is a candidate empty slot'.format(ftw.name, ft.name))
+                    if self.debug: self.logger.debug('setCheckDevices: filter wheel: {0:5s}, filter:{1:5s} is a candidate empty slot'.format(ftw.name, ft.name))
 
             if ftw.emptySlots:
                 # drop multiple empty slots
-                self.logger.info('checkDevices: filter wheel: {0}, empty slot:{1}'.format(ftw.name, ftw.emptySlots[0].name))
+                self.logger.info('setCheckDevices: filter wheel: {0}, empty slot:{1}'.format(ftw.name, ftw.emptySlots[0].name))
 
                 for ft in ftw.emptySlots[1:]:
                     match=False
@@ -379,95 +399,93 @@ class CheckDevices(object):
                             match= True
                             break
                     if m:
-                        self.logger.info('checkDevices: filter wheel: {0}, dropping empty slot:{1}'.format(ftw.name, ft.name))
+                        self.logger.info('setCheckDevices: filter wheel: {0}, dropping empty slot:{1}'.format(ftw.name, ft.name))
                         ftw.filters.remove(ft)
                     else:
-                        if self.debug: self.logger.debug('checkDevices: filter wheel: {0}, NOT dropping slot:{1} with no offset=0 to empty slot'.format(ftw.name, ft.name))
+                        if self.debug: self.logger.debug('setCheckDevices: filter wheel: {0}, NOT dropping slot:{1} with no offset=0 to empty slot'.format(ftw.name, ft.name))
                             
             else:
                 # warn only if two or more ftws are used
                 if len(self.rt.filterWheelsInUse) > 0:
-                    self.logger.warn('checkDevices: filter wheel: {0}, no empty slot found'.format(ftw.name))
+                    self.logger.warn('setCheckDevices: filter wheel: {0}, no empty slot found'.format(ftw.name))
 
         # log INFO a summary, after dropping multiple empty slots
-        self.logger.info('checkDevices: focus run summary, without multiple empty slots:')
         img=0
-        ftwns= map( lambda x: x.name, self.rt.filterWheelsInUse) # need the first filter wheel
-        for k, ftwn in enumerate(self.filterWheesFromCCD): # names
-            ind= ftwns.index(ftwn)
-            ftw= self.rt.filterWheelsInUse[ind]               
-            # count only wheels with more than one filters (one slot must be empty)
-            # the first filter wheel in the list 
-            info = '\n'
-            if len(ftw.filters)>1 or k==0:
-                info = '{0:8s}:\n'.format(ftw.name)
-                for ft in ftw.filters:
-                    info += 'checkDevices: {0:8s}: '.format(ft.name)
-                    if self.blind:
-                        info += '{0:2d} steps, bewteen: {1:5d} and {2:5d}\n'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff))
-                        img += len(self.rt.foc.focFoff)
+        if len(self.rt.filterWheelsInUse)==0:
+            self.logger.info('setCheckDevices: focus run summary, no filter wheel in use:')
+            self.logger.info('setCheckDevices: focuser: {0}, steps: {1}, min: {2}, max: {3}'.format(self.rt.foc.name, len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff)))
+            img=len(self.rt.foc.focFoff)
+        else:
+            
+            self.logger.info('setCheckDevices: focus run summary, without multiple empty slots:')
+            ftwns= map( lambda x: x.name, self.rt.filterWheelsInUse) # need the first filter wheel
+            for k, ftwn in enumerate(self.filterWheesFromCCD): # names
+                ind= ftwns.index(ftwn)
+                ftw= self.rt.filterWheelsInUse[ind]               
+                # count only wheels with more than one filters (one slot must be empty)
+                # the first filter wheel in the list 
+                if len(ftw.filters)>1 or k==0:
+                    info = str()
+                    for ft in ftw.filters:
+                        info += 'checkDevices: {0:8s}: {1:8s}'.format(ftw.name, ft.name)
+                        if self.blind:
+                            info += '{0:2d} steps, bewteen: {1:5d} and {2:5d}\n'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff))
+                            img += len(self.rt.foc.focFoff)
+                        else:
+                            info += '{0:2d} steps, bewteen: {1:5d} and {2:5d} (FOC_FOFF)\n'.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
+                            img += len(ft.focFoff)
                     else:
-                        info += '{0:2d} steps, bewteen: {1:5d} and {2:5d} (FOC_FOFF)\n'.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
-                        img += len(ft.focFoff)
-                else:
-                    self.logger.info('checkDevices: {0}'.format(info))
+                        self.logger.info('{0}'.format(info))
                 
-        self.logger.info('checkDevices: taking {0} images in total'.format(img))
+        self.logger.info('setCheckDevices: taking {0} images in total'.format(img))
         return True
 
     def printProperties(self):
         # Focuser
-        self.logger.debug('checkDevices:Focuser: {} name'.format(self.rt.foc.name))
-        self.logger.debug('checkDevices:Focuser: {} resolution'.format(self.rt.foc.resolution))
-        self.logger.debug('checkDevices:Focuser: {} absLowerLimitFb'.format(self.rt.foc.absLowerLimitFb))
-        self.logger.debug('checkDevices:Focuser: {} absUpperLimitFb'.format(self.rt.foc.absUpperLimitFb))
-        self.logger.debug('checkDevices:Focuser: {} speed'.format(self.rt.foc.speed))
-        self.logger.debug('checkDevices:Focuser: {} stepSize'.format(self.rt.foc.stepSize))
-        self.logger.debug('checkDevices:Focuser: {} temperatureCompensation'.format(self.rt.foc.temperatureCompensation))
+        self.logger.debug('setCheckDevices:Focuser: {} name'.format(self.rt.foc.name))
+        self.logger.debug('setCheckDevices:Focuser: {} resolution'.format(self.rt.foc.resolution))
+        self.logger.debug('setCheckDevices:Focuser: {} absLowerLimitFb'.format(self.rt.foc.absLowerLimitFb))
+        self.logger.debug('setCheckDevices:Focuser: {} absUpperLimitFb'.format(self.rt.foc.absUpperLimitFb))
+        self.logger.debug('setCheckDevices:Focuser: {} speed'.format(self.rt.foc.speed))
+        self.logger.debug('setCheckDevices:Focuser: {} stepSize'.format(self.rt.foc.stepSize))
+        self.logger.debug('setCheckDevices:Focuser: {} temperatureCompensation'.format(self.rt.foc.temperatureCompensation))
         if self.blind:
-            self.logger.debug('checkDevices:Focuser: focFoff, steps: {0}, between: {1} and {2}'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff)))
+            self.logger.debug('setCheckDevices:Focuser: focFoff, steps: {0}, between: {1} and {2}'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff)))
         else:
-            self.logger.debug('checkDevices:Focuser: focFoff, set by filters if --blind is specified')
+            self.logger.debug('setCheckDevices:Focuser: focFoff, set by filters if not --blind is specified')
             
-        self.logger.debug('checkDevices:Focuser: {} focDef'.format(self.rt.foc.focDef))
-        self.logger.debug('checkDevices:Focuser: {} focMn'.format(self.rt.foc.focMn))
-        self.logger.debug('checkDevices:Focuser: {} focMx'.format(self.rt.foc.focMx))
-        self.logger.debug('checkDevices:Focuser: {} focSt'.format(self.rt.foc.focSt))
+        self.logger.debug('setCheckDevices:Focuser: {} focDef'.format(self.rt.foc.focDef))
+        self.logger.debug('setCheckDevices:Focuser: {} focMn'.format(self.rt.foc.focMn))
+        self.logger.debug('setCheckDevices:Focuser: {} focMx'.format(self.rt.foc.focMx))
+        self.logger.debug('setCheckDevices:Focuser: {} focSt'.format(self.rt.foc.focSt))
         # CCD
         self.logger.debug('')
-        self.logger.debug('checkDevices:CCD: {} name'.format(self.rt.ccd.name))
-        self.logger.debug('checkDevices:CCD: {} binning'.format(self.rt.ccd.binning))
-        self.logger.debug('checkDevices:CCD: {} windowOffsetX'.format(self.rt.ccd.windowOffsetX))
-        self.logger.debug('checkDevices:CCD: {} windowOffsetY'.format(self.rt.ccd.windowOffsetY))
-        self.logger.debug('checkDevices:CCD: {} windowHeight'.format(self.rt.ccd.windowHeight))
-        self.logger.debug('checkDevices:CCD: {} windowWidth'.format(self.rt.ccd.windowWidth))
-        self.logger.debug('checkDevices:CCD: {} pixelSize'.format(self.rt.ccd.pixelSize))
-        self.logger.debug('checkDevices:CCD: {} baseExposure'.format(self.rt.ccd.baseExposure))
+        self.logger.debug('setCheckDevices:CCD: {} name'.format(self.rt.ccd.name))
+        self.logger.debug('setCheckDevices:CCD: {} binning'.format(self.rt.ccd.binning))
+        self.logger.debug('setCheckDevices:CCD: {} windowOffsetX'.format(self.rt.ccd.windowOffsetX))
+        self.logger.debug('setCheckDevices:CCD: {} windowOffsetY'.format(self.rt.ccd.windowOffsetY))
+        self.logger.debug('setCheckDevices:CCD: {} windowHeight'.format(self.rt.ccd.windowHeight))
+        self.logger.debug('setCheckDevices:CCD: {} windowWidth'.format(self.rt.ccd.windowWidth))
+        self.logger.debug('setCheckDevices:CCD: {} pixelSize'.format(self.rt.ccd.pixelSize))
+        self.logger.debug('setCheckDevices:CCD: {} baseExposure'.format(self.rt.ccd.baseExposure))
         #Filter
-        self.logger.debug('')
-        
-        self.logger.debug('checkDevices:FTWs: {} number'.format(len(self.rt.filterWheelsInUse)))
-        for ftw in self.rt.filterWheelsInUse:
-            for ft in ftw.filters:
-                self.logger.debug('checkDevices:{0}: {1}'.format(ftw.name, ft.name))
-                self.logger.debug('checkDevices:{0}: focFoff, steps: {1}, between: {2} and {3}'.format(ft.name, len(ft.focFoff), min(ft.focFoff), max(ft.focFoff)))
 
     @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
     def __deviceWriteAccessCCD(self):
         ccdOk=False
-        if self.verbose: self.logger.debug('checkDevices: asking   from CCD: {0}: calculate_stat'.format(self.rt.ccd.name))
+        if self.verbose: self.logger.debug('setCheckDevices: asking   from CCD: {0}: calculate_stat'.format(self.rt.ccd.name))
         cs=self.proxy.getDevice(self.rt.ccd.name)['calculate_stat'][1]
-        if self.verbose: self.logger.debug('checkDevices: response from CCD: {0}: calculate_stat: {1}'.format(self.rt.ccd.name, cs))
+        if self.verbose: self.logger.debug('setCheckDevices: response from CCD: {0}: calculate_stat: {1}'.format(self.rt.ccd.name, cs))
         
         try:
             self.proxy.setValue(self.rt.ccd.name,'calculate_stat', 3) # no statisctics
             self .proxy.setValue(self.rt.ccd.name,'calculate_stat', str(cs))
             ccdOk= True
         except Exception, e:
-            self.logger.error('checkDevices: CCD: {0} is not writable: {1}'.format(self.rt.ccd.name, repr(e)))
+            self.logger.error('setCheckDevices: CCD: {0} is not writable: {1}'.format(self.rt.ccd.name, repr(e)))
 
         if ccdOk:
-            self.logger.debug('checkDevices: CCD: {} is writable'.format(self.rt.ccd.name))
+            self.logger.debug('setCheckDevices: CCD: {} is writable'.format(self.rt.ccd.name))
             
         return ccdOk
     @timeout(seconds=2, error_message=os.strerror(errno.ETIMEDOUT))
@@ -479,37 +497,37 @@ class CheckDevices(object):
             self.proxy.setValue(self.rt.foc.name,'FOC_DEF', focDef)
             focOk= True
         except Exception, e:
-            self.logger.error('checkDevices: focuser: {0} is not writable: {1}'.format(self.rt.foc.name, repr(e)))
+            self.logger.error('setCheckDevices: focuser: {0} is not writable: {1}'.format(self.rt.foc.name, repr(e)))
         if focOk:
-            self.logger.debug('checkDevices: focuser: {} is writable'.format(self.rt.foc.name))
+            self.logger.debug('setCheckDevices: focuser: {} is writable'.format(self.rt.foc.name))
 
         return focOk
 
     @timeout(seconds=30, error_message=os.strerror(errno.ETIMEDOUT))
     def __deviceWriteAccessFtw(self):
         ftwOk=False
-        if self.verbose: self.logger.debug('checkDevices: asking   from Ftw: {0}: filter'.format(self.rt.filterWheelsInUse[0].name))
+        if self.verbose: self.logger.debug('setCheckDevices: asking   from Ftw: {0}: filter'.format(self.rt.filterWheelsInUse[0].name))
         ftnr=  self.proxy.getSingleValue(self.rt.filterWheelsInUse[0].name, 'filter')
-        if self.verbose: self.logger.debug('checkDevices: response from Ftw: {0}: filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnr))
+        if self.verbose: self.logger.debug('setCheckDevices: response from Ftw: {0}: filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnr))
         ftnrp1= str(ftnr +1)
         try:
-            if self.verbose: self.logger.debug('checkDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnrp1))
+            if self.verbose: self.logger.debug('setCheckDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnrp1))
             self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  ftnrp1)
-            if self.verbose: self.logger.debug('checkDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnr))
+            if self.verbose: self.logger.debug('setCheckDevices: setting  Ftw: {0}: to filter: {1}'.format(self.rt.filterWheelsInUse[0].name, ftnr))
             self.proxy.setValue(self.rt.filterWheelsInUse[0].name, 'filter',  str(ftnr))
             ftwOk= True
         except Exception, e:
             if e:
-                self.logger.error('checkDevices: filter wheel: {0} is not writable: {1}'.format(self.rt.filterWheelsInUse[0].name, repr(e)))
+                self.logger.error('setCheckDevices: filter wheel: {0} is not writable: {1}'.format(self.rt.filterWheelsInUse[0].name, repr(e)))
             else:
-                self.logger.error('checkDevices: filter wheel: {0} is not writable (not timed out)'.format(self.rt.filterWheelsInUse[0].name))
+                self.logger.error('setCheckDevices: filter wheel: {0} is not writable (not timed out)'.format(self.rt.filterWheelsInUse[0].name))
         if ftwOk:
-            self.logger.debug('checkDevices: filter wheel: {} is writable'.format(self.rt.filterWheelsInUse[0].name))
+            self.logger.debug('setCheckDevices: filter wheel: {} is writable'.format(self.rt.filterWheelsInUse[0].name))
 
         return ftwOk
 
     def deviceWriteAccess(self):
-        self.logger.info('checkDevices:deviceWriteAccess: this may take approx. a minute')
+        self.logger.info('setCheckDevices:deviceWriteAccess: this may take approx. a minute')
 
         ccdOk=ftwOk=focOk=False
 
@@ -518,7 +536,7 @@ class CheckDevices(object):
         ftwOk=self.__deviceWriteAccessFtw()
 
         if  ccdOk and ftwOk and focOk:
-            self.logger.info('checkDevices:deviceWriteAccess: all devices are writable')
+            self.logger.info('setCheckDevices:deviceWriteAccess: all devices are writable')
 
 
         return ccdOk and ftwOk and focOk
@@ -565,20 +583,22 @@ if __name__ == '__main__':
     logger= lgd.logger 
 
     if not args.blind and args.focRange:
-        logger.error('checkDevices: --focrange has no effect without --blind'.format(args.focRange))
+        logger.error('setCheckDevices: --focrange has no effect without --blind'.format(args.focRange))
         sys.exit(1)
 
     if args.focRange:
         if (args.focRange[0] >= args.focRange[1]) or args.focRange[2] <= 0: 
-            logger.error('checkDevices: bad range values: {}, exiting'.format(args.focRange))
+            logger.error('setCheckDevices: bad range values: {}, exiting'.format(args.focRange))
             sys.exit(1)
 
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
 
-    cdv= CheckDevices(debug=args.debug, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
+    cdv= SetCheckDevices(debug=args.debug, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
+
     if not cdv.statusDevices():
-        logger.error('checkDevices: check not finished, exiting')
+        print 'DONE'
+        logger.error('setCheckDevices: check not finished, exiting')
         sys.exit(1)
 
     if args.verbose:
@@ -586,10 +606,9 @@ if __name__ == '__main__':
 
     if args.checkWrite:
         if not cdv.deviceWriteAccess():
-            logger.error('checkDevices: check not finished, exiting')
+            logger.error('setCheckDevices: check not finished, exiting')
             sys.exit(1)
     else:
-        logger.info('checkDevices: skiped check if devices are writable, enable with --checkwrite')        
+        logger.info('setCheckDevices: skiped check if devices are writable, enable with --checkwrite')        
 
-    logger.info('checkDevices: DONE')        
-    
+    logger.info('setCheckDevices: DONE')        
