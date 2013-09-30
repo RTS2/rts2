@@ -1391,7 +1391,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		ret = setTo (conn, objRaDec->getRa (), objRaDec->getDec ());
+		ret = setTo (conn, tarRaDec->getRa (), tarRaDec->getDec ());
 		if (ret)
 			return -2;
 		corrRaDec->setValueRaDec (0, 0);
