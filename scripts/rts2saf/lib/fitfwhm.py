@@ -67,8 +67,9 @@ class FitFwhm(object):
         except Exception, e:
             self.logger.error('fitfwhm: fitData: failed fitting FWHM:\nnumpy error message:\n{0}'.format(e))                
             return None, None
-
-        step= self.dataFitFwhm.pos[1]-self.dataFitFwhm.pos[0]
+        # ToDo lazy
+        posS=sorted(self.dataFitFwhm.pos)
+        step= posS[1]-posS[0]
         try:
             self.min_focpos_fwhm = optimize.fminbound(self.fitfunc_r_fwhm,min(self.dataFitFwhm.pos)-2 * step, max(self.dataFitFwhm.pos)+2 * step,args=(self.par), disp=0)
         except Exception, e:
