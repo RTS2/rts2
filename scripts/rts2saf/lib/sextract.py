@@ -120,6 +120,7 @@ if __name__ == '__main__':
 
     import sys
     import os
+    import re
     import numpy as np
     import time
     import argparse
@@ -135,10 +136,12 @@ if __name__ == '__main__':
         import log as lg
 
 
-    parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
+    prg= re.split('/', sys.argv[0])[-1]
+    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
+    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
+    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--dryfitsfiles', dest='dryfitsfiles', action='store', default='./samples', help=': %(default)s, directory where a FITS files are stored from a earlier focus run')
     # ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')

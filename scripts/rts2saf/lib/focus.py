@@ -92,8 +92,17 @@ class Focus(object):
         if self.dryFitsFiles:
             anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
         else:
-            if len(dataSex) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-                self.logger.warn('Focus: to few focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(dataSex), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+            # check the number of different positions
+            pos=dict()
+            # ToDO might be not pythonic
+            for dSx in dataSex:
+                try:
+                    pos[dSx.focPos] += 1
+                except:
+                    pos[dSx.focPos] = 1
+
+            if len(pos) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                self.logger.warn('Focus: to few DIFFERENT focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS), returning'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
                 return
 
             anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)

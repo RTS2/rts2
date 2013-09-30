@@ -55,19 +55,20 @@ class FilterWheel():
 
 class Focuser():
     """Class for focuser properties"""
-    def __init__(self, name=None, resolution=None, absLowerLimitFb=None, absUpperLimitFb=None, speed=None, stepSize=None, temperatureCompensation=None, focFoff=None):
+    def __init__(self, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, lowerLimit=None, upperLimit=None, stepSize=None, speed=None, temperatureCompensation=None, focFoff=None):
         self.name= name
         self.resolution=resolution 
-        self.absLowerLimitFb=absLowerLimitFb
-        self.absUpperLimitFb=absUpperLimitFb
-        self.speed=speed
+        self.absLowerLimit=absLowerLimit
+        self.absUpperLimit=absUpperLimit
+        self.lowerLimit=lowerLimit
+        self.upperLimit=upperLimit
         self.stepSize=stepSize
+        self.speed=speed
         self.temperatureCompensation=temperatureCompensation
         self.focFoff=focFoff # will be set at run time
         self.focDef=None # will be set at run time
         self.focMn=None # will be set at run time
         self.focMx=None # will be set at run time
-        self.focSt=None # focstep, will be set at run time
 
 class CCD():
     """Class for CCD properties"""
@@ -257,74 +258,39 @@ class SetCheckDevices(object):
         rMin=rMax=rStep=None
         # focRange (from args) has priority
         if self.rangeFocToff:
-            # ToDo: upper limit -abs(self.args.focStep) OK?
-            # ToDo check that
             rMin= self.rangeFocToff[0]
             rMax= self.rangeFocToff[1]
             rStep= abs(self.rangeFocToff[2])
-            self.logger.info('FocusFilterWheels: focuser: {0} setting limits from arguments'.format(self.rt.foc.name))
-
-        # if not given in config file
-        elif not self.rt.foc.focFoff:
-            # priority has config
-            if self.rt.foc.absLowerLimitFb !=None and self.rt.foc.absUpperLimitFb !=None and self.rt.foc.absUpperLimitFb !=None: 
-                rMin=self.rt.foc.absLowerLimitFb
-                rMax=self.rt.foc.absUpperLimitFb
-                rStep=self.rt.foc.stepSize
-                self.logger.info('FocusFilterWheels: setting internal focMn: {0}, focMx: {1}, focSt: {2}'.format(rMin, rMax, rStep))
-                self.logger.info('FocusFilterWheels: focuser: {0} setting limits from absulute limits (see configuration file)'.format(self.rt.foc.name))
-            # fall back hardware, if available
-            else:
-                if focMin and focMax:
-                    rMin=focMin
-                    rMax=focMax
-                    rStep=self.rt.foc.stepSize
-                    self.logger.info('FocusFilterWheels: focuser: {0} setting limits from focuser'.format(self.rt.foc.name))
-
-
-        if self.rt.foc.focFoff:
-            # configuration has priority
-            if self.rt.foc.absLowerLimitFb and self.rt.foc.absUpperLimitFb:
-                self.rt.foc.focMn= self.rt.foc.absLowerLimitFb
-                self.rt.foc.focMx= self.rt.foc.absUpperLimitFb
-                self.logger.info('FocusFilterWheels: focuser: {0} setting absolute limits from configuration file'.format(self.rt.foc.name))
-            elif focMin and focMax:
-                self.rt.foc.focMn= focMin
-                self.rt.foc.focMx= focMax
-                self.logger.info('FocusFilterWheels: focuser: {0} setting absolute limits from focuser driver settings'.format(self.rt.foc.name))
-            else:
-                self.logger.error('FocusFilterWheels: focuser {0} could not define a range, exiting'.format(self.rt.foc.name))
-                # ToDO check with no filter wheel configuration
-                sys.exit(1)
-                self.logger.info('FocusFilterWheels: focuser: {0} setting limits from configuration file: steps: {1}, min: {2}, max: {3}'.format(self.rt.foc.name, len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff)))
-
-        elif rMin !=None and rMax !=None and rStep!=None:
-            withinLlUl=False
-            # ToDo check that abainst HW limits
-            if self.rt.foc.absLowerLimitFb <= rMin <= self.rt.foc.absUpperLimitFb-(rMax-rMin):
-                if self.rt.foc.absLowerLimitFb + (rMax-rMin) <= rMax <=  self.rt.foc.absUpperLimitFb:
-                    withinLlUl=True
-
-            if withinLlUl:
-                self.rt.foc.focFoff= range(rMin, rMax +rStep, rStep)
-            else:
-                self.logger.error('FocusFilterWheels: absLowerLimitFb: {}, absUpperLimitFb: {}; range rMin: {} rMax: {}'.format( self.rt.foc.absLowerLimitFb, self.rt.foc.absUpperLimitFb, rMin, rMax))
-                self.logger.error('FocusFilterWheels: out of bounds, exiting')
-                sys.exit(1)
-
-            self.rt.foc.focMn= rMin
-            self.rt.foc.focMx= rMax
-            # this hardware
-            # self.rt.foc.focSt=self.proxy.getDevice(self.rt.foc.name)['focstep'][1]
-
+            self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits from arguments'.format(self.rt.foc.name))
         else:
-            self.logger.error('FocusFilterWheels: focuser {0} could not define a range, exiting'.format(self.rt.foc.name))
-            # ToDO check with no filter wheel configuration
+            rMin=self.rt.foc.lowerLimit
+            rMax=self.rt.foc.upperLimit
+            rStep=self.rt.foc.stepSize
+            self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits from configuration file and ev. default values!'.format(self.rt.foc.name))
+
+        self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits to:[{1}, {2}], step size: {3}'.format(self.rt.foc.name, rMin, rMax, rStep))
+
+        withinLlUl=False
+        # ToDo check that against HW limits
+        if self.rt.foc.absLowerLimit <= rMin <= self.rt.foc.absUpperLimit-(rMax-rMin):
+            if self.rt.foc.absLowerLimit + (rMax-rMin) <= rMax <=  self.rt.foc.absUpperLimit:
+                withinLlUl=True
+
+        if withinLlUl:
+            self.rt.foc.focFoff= range(rMin, rMax +rStep, rStep)
+        else:
+            self.logger.error('FocusFilterWheels: abs. lowerLimit: {}, abs. upperLimit: {}; range rMin: {} rMax: {}'.format( self.rt.foc.absLowerLimit, self.rt.foc.absUpperLimit, rMin, rMax))
+            self.logger.error('FocusFilterWheels: out of bounds, exiting')
             sys.exit(1)
+
+        # set the internal limits
+        self.rt.foc.focMn= rMin
+        self.rt.foc.focMx= rMax
 
         # ToDO check with no filter wheel configuration
         if len(self.rt.foc.focFoff) > 10:
             self.logger.info('FocusFilterWheels: focuser range has: {0} steps, you might consider to increase --focstep, or set decent value for --focrange'.format(len(self.rt.foc.focFoff)))
+
             
         return True
     # ToDo might go away
@@ -444,8 +410,8 @@ class SetCheckDevices(object):
         # Focuser
         self.logger.debug('setCheckDevices:Focuser: {} name'.format(self.rt.foc.name))
         self.logger.debug('setCheckDevices:Focuser: {} resolution'.format(self.rt.foc.resolution))
-        self.logger.debug('setCheckDevices:Focuser: {} absLowerLimitFb'.format(self.rt.foc.absLowerLimitFb))
-        self.logger.debug('setCheckDevices:Focuser: {} absUpperLimitFb'.format(self.rt.foc.absUpperLimitFb))
+        self.logger.debug('setCheckDevices:Focuser: {} absLowerLimit'.format(self.rt.foc.absLowerLimit))
+        self.logger.debug('setCheckDevices:Focuser: {} absUpperLimit'.format(self.rt.foc.absUpperLimit))
         self.logger.debug('setCheckDevices:Focuser: {} speed'.format(self.rt.foc.speed))
         self.logger.debug('setCheckDevices:Focuser: {} stepSize'.format(self.rt.foc.stepSize))
         self.logger.debug('setCheckDevices:Focuser: {} temperatureCompensation'.format(self.rt.foc.temperatureCompensation))
@@ -558,10 +524,12 @@ if __name__ == '__main__':
     except:
         import config as cfgd
 
-    parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf check devices')
+    prg= re.split('/', sys.argv[0])[-1]
+    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf check devices')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
+    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
+    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--verbose', dest='verbose', action='store_true', default=False, help=': %(default)s, print device properties and add more messages')

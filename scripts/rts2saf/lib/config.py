@@ -82,11 +82,11 @@ class DefaultConfiguration(object):
 
         self.dcf[('focuser properties', 'FOCUSER_NAME')]= 'F0'
         self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20. 
-        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT_FB')]= 501 # fallback in case RTS2::foc_min is not defined
-        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT_FB')]= 2002 # fallback in case RTS2::foc_max is not defined
-        # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
+        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 0 
+        self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 20
+        self.dcf[('focuser properties', 'FOCUSER_LOWER_LIMIT')]= 0 
+        self.dcf[('focuser properties', 'FOCUSER_UPPER_LIMIT')]= 20
         self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 2
-        self.dcf[('focuser properties', 'FOCUSER_RANGE')]= [ -10, 14, self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]]
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
         self.dcf[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
         # not yet in use:
@@ -145,6 +145,8 @@ class DefaultConfiguration(object):
 #        self.dcf[('connection', 'PASSWORD')] = 'writeToDevice'
         self.dcf[('connection', 'USERNAME')] = 'petr'
         self.dcf[('connection', 'PASSWORD')] = 'test'
+
+        self.dcf[('queue focus run', 'FWHM_LOWER_THRESH')] = 35.
 
         self.dcf[('analysis', 'FWHM_MIN')] = 1.5 
         self.dcf[('analysis', 'FWHM_MAX')] = 12. 
@@ -246,9 +248,7 @@ class Configuration(DefaultConfiguration):
             elif( section in 'filter wheels'):
                 items= value[1:-1].split(',')
                 for item in items:
-                    item=item.replace(' ', '')
                     self.filterWheelsInUseDefs.append(item)
-
             # first bool, then int !
             elif isinstance(self.cfg[identifier], bool):
                 # ToDO, looking for a direct way
@@ -273,7 +273,6 @@ class Configuration(DefaultConfiguration):
 
         # configuration has been read in, now create objects
         # create object CCD
-
         # ToDo, what does RTS2::ccd driver expect: int or str list?
         # for now: int
         wItems= re.split('[,]+', self.cfg['WINDOW'][1:-1])
@@ -294,26 +293,19 @@ class Configuration(DefaultConfiguration):
             baseExposure =float(self.cfg['BASE_EXPOSURE'])
             )
 
-# create object focuser
-
-        if type(self.cfg['FOCUSER_RANGE'])==list:
-            rng=self.cfg['FOCUSER_RANGE']
-        else:
-            value=self.cfg['FOCUSER_RANGE'].replace("'", '')
-            rng=map(lambda x: int(x), value[1:-1].split(','))
-
+        # create object focuser
         self.foc= dev.Focuser(
-            name           =self.cfg['FOCUSER_NAME'],
-            resolution     =float(self.cfg['FOCUSER_RESOLUTION']),
-            absLowerLimitFb=int(self.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT_FB']),
-            absUpperLimitFb=int(self.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT_FB']),
-            speed          =float(self.cfg['FOCUSER_SPEED']),
-            # FOCUSER_STEP_SIZE, FOCUSER_RANGE are used in case no filter is present
-            stepSize       =int(self.cfg['FOCUSER_STEP_SIZE']),
+            name         =self.cfg['FOCUSER_NAME'],
+            resolution   =float(self.cfg['FOCUSER_RESOLUTION']),
+            absLowerLimit=int(self.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT']),
+            absUpperLimit=int(self.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT']),
+            lowerLimit   =int(self.cfg['FOCUSER_LOWER_LIMIT']),
+            upperLimit   =int(self.cfg['FOCUSER_UPPER_LIMIT']),
+            stepSize     =int(self.cfg['FOCUSER_STEP_SIZE']),
+            speed        =float(self.cfg['FOCUSER_SPEED']),
             temperatureCompensation=bool(self.cfg['FOCUSER_TEMPERATURE_COMPENSATION']),
-            # may be or not set at run time:
-            focFoff=range(rng[0], rng[1]+rng[2],rng[2])
             # set at run time:
+            #focFoff=None,
             #focDef=None,
             #focMn=None,
             #focMx=None,
@@ -411,10 +403,12 @@ if __name__ == '__main__':
     except:
         import log as lg
 
-    parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
+    prg= re.split('/', sys.argv[0])[-1]
+    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
+    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
+    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
 

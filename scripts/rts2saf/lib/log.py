@@ -35,7 +35,7 @@ class Logger(object):
 
         ok= True
         try:
-            logging.basicConfig(filename=self.args.logfile, level=self.args.level.upper(), format=self.logformat)
+            logging.basicConfig(filename='{0}/{1}'.format(self.args.toPath, self.args.logfile), level=self.args.level.upper(), format=self.logformat)
         except Exception, e:
             ok=False
 

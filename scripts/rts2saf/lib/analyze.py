@@ -264,6 +264,7 @@ if __name__ == '__main__':
     import logging
     import os
     import glob
+    import re
 
     try:
         import lib.config as cfgd
@@ -284,11 +285,13 @@ if __name__ == '__main__':
     except:
         import log as lg
 
-    parser= argparse.ArgumentParser(prog=sys.argv[0], description='rts2asaf analysis')
+    prg= re.split('/', sys.argv[0])[-1]
+    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--debugSex', dest='debugSex', action='store_true', default=False, help=': %(default)s,add more output on SExtract')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(sys.argv[0]), help=': %(default)s, logfile name')
+    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
+    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')

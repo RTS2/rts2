@@ -86,13 +86,19 @@ class Do(object):
             else:
                 logger.warn('__analyzeRun: no result file: {0}'.format(fitsFn))
                 continue
-        an=anr.SimpleAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
-        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm= an.analyze()
+
+        if args.catalogAnalysis:
+            an=anr.CatalogAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, rt=rt, logger=self.logger)
+            weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.selectAndAnalyze()
+        else:
+            an=anr.SimpleAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+            weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+
+        self.logger.info('__analyzeRun: result: weightedMeanObjects: {0}, weightedMeanFwhm:{1}, minFwhmPos: {2}, fwhm: {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
 
         if self.args.displayDs9 or self.args.displayFit:
             an.display()
 
-        if self.debug: logger.debug('__analyzeRun: result: weightedMeanObjects: {0}, weightedMeanFwhm:{1}, minFwhmPos: {2}, fwhm: {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
 
     def analyzeRuns(self):
         length= 10
@@ -188,13 +194,15 @@ if __name__ == '__main__':
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--sexdebug', dest='sexDebug', action='store_true', default=False, help=': %(default)s,add more output on SExtract')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--logfile',dest='logfile', default='/tmp/{0}.log'.format(prg), help=': %(default)s, logfile name')
+    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
+    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
+    parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
 
     args=parser.parse_args()
 
