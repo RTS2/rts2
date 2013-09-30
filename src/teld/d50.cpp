@@ -68,6 +68,7 @@ class D50:public Fork
 		D50 (int in_argc, char **in_argv);
 		virtual ~ D50 (void);
 		
+		virtual int scriptEnds ();
 		virtual void postEvent (rts2core::Event *event);
 		virtual int commandAuthorized (rts2core::Connection * conn);
 	protected:
@@ -189,13 +190,13 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	createDecGuide ();
 	
 	createValue (moveSpeedBacklash, "speed_backlash", "[deg/s] initial speed to cross backlash", false, RTS2_VALUE_WRITABLE);
-	moveSpeedBacklash->setValueDouble (0.2);
+	moveSpeedBacklash->setValueDouble (0.3);
 	
 	createValue (moveSpeedBacklashInterval, "speed_backlash_interval", "[s] interval of keeping initial speed to cross backlash", false, RTS2_VALUE_WRITABLE);
-	moveSpeedBacklashInterval->setValueDouble (1.0);
+	moveSpeedBacklashInterval->setValueDouble (1.5);
 
 	createValue (moveSpeedFull, "speed_full", "[deg/s] standard maximal slew speed", false, RTS2_VALUE_WRITABLE);
-	moveSpeedFull->setValueDouble (1.0);
+	moveSpeedFull->setValueDouble (1.5);
 
 	createValue (moveSpeedTurbo, "speed_turbo", "[deg/s] turbo maximal slew speed", false, RTS2_VALUE_WRITABLE);
 	moveSpeedTurbo->setValueDouble (5.0);
@@ -702,8 +703,6 @@ void D50::callAutosave ()
         autosaveValues ();
 }
 
-
-
 int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
         if (old_value == raGuide)
@@ -748,6 +747,15 @@ int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
                 return ret;
 
 	return Fork::setValue (old_value, new_value);
+}
+
+int D50::scriptEnds ()
+{
+	if (moveTurboSwitch->getValueBool ())
+	{
+		moveTurboSwitch->setValueBool (false);
+	}
+	return Telescope::scriptEnds ();
 }
 
 int main (int argc, char **argv)
