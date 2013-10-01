@@ -88,24 +88,30 @@ class Focus(object):
         acqu.stopScan(timeout=1.)
 
         weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
+
+        # check the number of different positions
+        pos=dict()
+        # ToDO might be not pythonic
+        for cnt in dataSex.keys():
+            try:
+                pos[dataSex[cnt].focPos] += 1
+            except:
+                pos[dataSex[cnt].focPos] = 1
+
+        if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+            self.logger.warn('Focus: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), returning'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+            if self.debug:
+                for p,v in pos.iteritems():
+                     self.logger.debug('Focus:{0:5.0f}: {1}'.format(p,v))
+            return
+
         # might go to thread too
         if self.dryFitsFiles:
             anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
         else:
-            # check the number of different positions
-            pos=dict()
-            # ToDO might be not pythonic
-            for dSx in dataSex:
-                try:
-                    pos[dSx.focPos] += 1
-                except:
-                    pos[dSx.focPos] = 1
-
-            if len(pos) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-                self.logger.warn('Focus: to few DIFFERENT focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS), returning'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
-                return
-
             anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+
+
 
         (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
 
@@ -152,7 +158,7 @@ class FocusFilterWheels(object):
         
             for ft in ftw.filters:
                 if self.debug: self.logger.debug('FocusFilterWheels: start filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
-                # 
+
                 dFF=None
                 if self.dryFitsFiles:
                     dFF=self.dryFitsFiles[:]
@@ -203,13 +209,26 @@ class FocusFilterWheels(object):
                 acqu.stopScan(timeout=1.)
 
                 weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
+
+                pos=dict()
+                # ToDO might be not pythonic
+                for cnt in dataSex.keys():
+                    try:
+                        pos[dataSex[cnt].focPos] += 1
+                    except:
+                        pos[dataSex[cnt].focPos] = 1
+
+                if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                    self.logger.warn('FocusFilterWheels: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+                    if self.debug:
+                        for p,v in pos.iteritems():
+                            self.logger.debug('FocusFilterWheels:{0:5.0f}: {1}'.format(p,v))
+                    continue
+
                 # might go to a thread too
                 if self.dryFitsFiles:
                     anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
                 else:
-                    if len(dataSex) < self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-                        self.logger.warn('FocusFilterWheels: to few focuser positions: {0}<{1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(dataSex), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
-                        continue
                     anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
 
                 (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
@@ -223,9 +242,9 @@ class FocusFilterWheels(object):
                     self.logger.info('FocusFilterWheels: {0:5.0f}: minFwhmPos'.format(minFwhmPos))
                     self.logger.info('FocusFilterWheels: {0:5.2f}: fwhm'.format(fwhm))
 
+                    self.rt.foc.focDef= minFwhmPos
                     if ft.OffsetToEmptySlot == 0.:
                         # FOC_DEF (is set first)
-                        self.rt.foc.focDef= minFwhmPos
                         if self.rt.cfg['SET_FOCUS']:
                             if self.rt.cfg['FWHM_MIN'] < fwhm < self.rt.cfg['FWHM_MAX']:
                                 acqu.writeFocDef()
@@ -235,7 +254,7 @@ class FocusFilterWheels(object):
                         else:
                             self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
                     else:
-                        self.logger.debug('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(minFwhmPos- self.rt.foc.focDef)))
+                        self.logger.info('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(minFwhmPos- self.rt.foc.focDef)))
                         ft.OffsetToEmptySlot=int(minFwhmPos- self.rt.foc.focDef)
                 else:
                     self.logger.warn('FocusFilterWheels: no fitted minimum found')

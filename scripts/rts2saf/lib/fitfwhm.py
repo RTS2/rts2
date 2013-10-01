@@ -60,6 +60,7 @@ class FitFwhm(object):
         #self.fitfunc_r_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4) 
         # resp:
         # self.fitfunc_r_fwhm==self.fitfunc_fwhm
+        self.val_fwhm=None
     def fitData(self):
         self.par= np.array([1., 1., 1., 1., 1.])
         try:
@@ -76,12 +77,13 @@ class FitFwhm(object):
             self.logger.error('fitfwhm: fitData: failed finding minimum FWHM:\nnumpy error message:\n{0}'.format(e))                
             return None, None
 
-        val_fwhm= self.fitfunc_fwhm( self.par, self.min_focpos_fwhm) 
+        self.val_fwhm= self.fitfunc_fwhm( self.par, self.min_focpos_fwhm) 
         # a decision is done in Analyze
-        return self.min_focpos_fwhm, val_fwhm
+        return self.min_focpos_fwhm, self.val_fwhm
 
     def plotData(self):
-
+        if not self.min_focpos_fwhm:
+            return
         try:
             x_fwhm = np.linspace(self.dataFitFwhm.pos.min(), self.dataFitFwhm.pos.max())
         except Exception, e:

@@ -46,7 +46,7 @@ class Logger(object):
             
         self.logger = logging.getLogger()
 
-        if args.level in 'DEBUG' or args.level in 'INFO':
+        if args.level in 'DEBUG':
             toconsole=True
         else:
             toconsole=args.toconsole

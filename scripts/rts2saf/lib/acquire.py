@@ -295,12 +295,13 @@ class Acquire(object):
             ftns= map( lambda x: x.name, ftw.filters)
             offsets=str()
             for ftn in filterNames:
+                # ToDo this is a glitch!!
                 try:
                     ind= ftns.index(ftn)
                 except:
                     self.logger.error('acquire: filter wheel: {0} incomplete list of filter offsets, do not write them to CCD: {1}'.format(ftw.name, self.ccd.name))
-                    
                     break
+
                 offsets += '{0} '.format(int(ftw.filters[ind].OffsetToEmptySlot))
                 if self.debug: self.logger.debug('acquire:ft.name: {0}, offset:{1}, offsets: {2}'.format(ftn, ftw.filters[ind].OffsetToEmptySlot, offsets))
             else:

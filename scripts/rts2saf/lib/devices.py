@@ -106,8 +106,8 @@ class SetCheckDevices(object):
     def __camera(self):
         if not self.connected:
             self.logger.error('setCheckDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
-            self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
-            self.logger.info('acquire: user name, password correct?')
+            self.logger.info('devices: check if XMLRPCd is running, if yes set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
+            self.logger.info('devices: user name, password correct?')
             return False
 
         self.proxy.refresh()
@@ -237,7 +237,7 @@ class SetCheckDevices(object):
     def __focuser(self):
         if not self.connected:
             self.logger.error('setCheckDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
-            self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
+            self.logger.info('setCheckDevices: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
             return False
 
         self.proxy.refresh()
@@ -248,6 +248,11 @@ class SetCheckDevices(object):
             return False
         if self.debug: self.logger.debug('setCheckDevices: focuser: {0} present'.format(self.rt.foc.name))
 
+        try:
+            self.rt.foc.focDef=int(self.proxy.getDevice(self.rt.foc.name)['FOC_DEF'][1])
+        except Exception, e:
+            self.logger.warn('FocusFilterWheels: focuser: {0} has no FOC_DEF set '.format(self.rt.foc.name))
+
         focMin=focMax=None
         try:
             focMin= self.proxy.getDevice(self.rt.foc.name)['foc_min'][1]
@@ -255,37 +260,40 @@ class SetCheckDevices(object):
         except Exception, e:
             self.logger.warn('FocusFilterWheels: focuser: {0} has no foc_min or foc_max properties '.format(self.rt.foc.name))
 
-        rMin=rMax=rStep=None
+        rangeMin=rangeMax=rangeStep=None
         # focRange (from args) has priority
         if self.rangeFocToff:
-            rMin= self.rangeFocToff[0]
-            rMax= self.rangeFocToff[1]
-            rStep= abs(self.rangeFocToff[2])
+            rangeMin= self.rangeFocToff[0]
+            rangeMax= self.rangeFocToff[1]
+            rangeStep= abs(self.rangeFocToff[2])
             self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits from arguments'.format(self.rt.foc.name))
         else:
-            rMin=self.rt.foc.lowerLimit
-            rMax=self.rt.foc.upperLimit
-            rStep=self.rt.foc.stepSize
+            rangeMin=self.rt.foc.lowerLimit
+            rangeMax=self.rt.foc.upperLimit
+            rangeStep=self.rt.foc.stepSize
             self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits from configuration file and ev. default values!'.format(self.rt.foc.name))
 
-        self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits to:[{1}, {2}], step size: {3}'.format(self.rt.foc.name, rMin, rMax, rStep))
+        self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits to:[{1}, {2}], step size: {3}'.format(self.rt.foc.name, rangeMin, rangeMax, rangeStep))
 
         withinLlUl=False
         # ToDo check that against HW limits
-        if self.rt.foc.absLowerLimit <= rMin <= self.rt.foc.absUpperLimit-(rMax-rMin):
-            if self.rt.foc.absLowerLimit + (rMax-rMin) <= rMax <=  self.rt.foc.absUpperLimit:
+        if self.rt.foc.absLowerLimit <= rangeMin <= self.rt.foc.absUpperLimit-(rangeMax-rangeMin):
+            if self.rt.foc.absLowerLimit + (rangeMax-rangeMin) <= rangeMax <=  self.rt.foc.absUpperLimit:
                 withinLlUl=True
 
         if withinLlUl:
-            self.rt.foc.focFoff= range(rMin, rMax +rStep, rStep)
+            self.rt.foc.focFoff= range(rangeMin, rangeMax +rangeStep, rangeStep)
+            if len(self.rt.foc.focFoff) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                self.logger.warn('FocusFilterWheels: to few focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(self.rt.foc.focFoff), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+
         else:
-            self.logger.error('FocusFilterWheels: abs. lowerLimit: {}, abs. upperLimit: {}; range rMin: {} rMax: {}'.format( self.rt.foc.absLowerLimit, self.rt.foc.absUpperLimit, rMin, rMax))
-            self.logger.error('FocusFilterWheels: out of bounds, exiting')
-            sys.exit(1)
+            self.logger.error('FocusFilterWheels: focuser: {} abs. lowerLimit: {}, abs. upperLimit: {}; range rangeMin: {} rangeMax: {}, configuartion: **step size**: {}, min: {}, max: {}'.format(self.rt.foc.name, self.rt.foc.absLowerLimit, self.rt.foc.absUpperLimit, rangeMin, rangeMax, self.rt.foc.stepSize, self.rt.foc.lowerLimit, self.rt.foc.upperLimit))
+            self.logger.error('FocusFilterWheels: out of bounds, returning')
+            return False
 
         # set the internal limits
-        self.rt.foc.focMn= rMin
-        self.rt.foc.focMx= rMax
+        self.rt.foc.focMn= rangeMin
+        self.rt.foc.focMx= rangeMax
 
         # ToDO check with no filter wheel configuration
         if len(self.rt.foc.focFoff) > 10:
@@ -297,7 +305,7 @@ class SetCheckDevices(object):
     def __filterWheels(self):
         if not self.connected:
             self.logger.error('setCheckDevices: no connection to XMLRPCd'.format(self.rt.ccd.name))        
-            self.logger.info('acquire: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
+            self.logger.info('setCheckDevices: set in rts2.ini, section [xmlrpcd]::auth_localhost = false')
             return False
         self.proxy.refresh()
         eSs=0
@@ -375,16 +383,59 @@ class SetCheckDevices(object):
                 if len(self.rt.filterWheelsInUse) > 0:
                     self.logger.warn('setCheckDevices: filter wheel: {0}, no empty slot found'.format(ftw.name))
 
+        # check bounds of filter lower and upper limit settings            
+        # check MINIMUM_FOCUSER_POSITIONS
+        anyBelow=False
+        anyOutOfLlUl=False
+        ftwns= map( lambda x: x.name, self.rt.filterWheelsInUse) # need the first filter wheel
+        for k, ftwn in enumerate(self.filterWheesFromCCD): # names
+            ind= ftwns.index(ftwn)
+            ftw= self.rt.filterWheelsInUse[ind]               
+            if len(ftw.filters)>1 or k==0:
+                below=False
+                if len(ft.focFoff) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                    self.logger.error( 'checkDevices: {0:8s}, filter: {1:8s} to few focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(ft.focFoff), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS'])) 
+                    anyBelow=True
+                    below=True
+
+                for ft in ftw.filters:
+                    if self.blind:
+                        # focuser limits are done in method __focuser()
+                        pass
+                    else:
+                        rangeMin=self.rt.foc.focDef + min(ft.focFoff)
+                        rangeMax=self.rt.foc.focDef + max(ft.focFoff)
+                        outOfLlUl=True 
+                        if self.rt.foc.absLowerLimit <= rangeMin <= self.rt.foc.absUpperLimit-(rangeMax-rangeMin):
+                            if self.rt.foc.absLowerLimit + (rangeMax-rangeMin) <= rangeMax <=  self.rt.foc.absUpperLimit:
+                                outOfLlUl=False
+
+                        if outOfLlUl:
+                            self.logger.error( 'checkDevices: {0:8s}, filter: {1:8s}, focuser: {2}, settings: abs. lowerLimit: {3}, abs. upperLimit: {4}; range rangeMin: {5} rangeMax: {6}, configuartion: **step size**: {7}, rel.min: {8}, rel.max: {9}'.format(ftw.name, ft.name, self.rt.foc.name, self.rt.foc.absLowerLimit, self.rt.foc.absUpperLimit, rangeMin, rangeMax, ft.stepSize, ft.relativeLowerLimit, ft.relativeUpperLimit))  
+                            anyOutOfLlUl=True 
+
+        if anyBelow and anyOutOfLlUl:
+            self.logger.error('FocusFilterWheels: filter settings out of bounds and too few focuser positions, returning')
+            self.logger.info('FocusFilterWheels: check setting of FOC_DEF, FOC_FOFF, FOC_TOFF and limits in configuration')
+        elif anyBelow:
+            self.logger.error('FocusFilterWheels: returning')            
+        elif anyOutOfLlUl:
+            self.logger.error('FocusFilterWheels: out of bounds, returning')
+            self.logger.info('FocusFilterWheels: check setting of FOC_DEF, FOC_FOFF, FOC_TOFF and limits in configuration')
+
+        if below or anyOutOfLlUl:
+            return False
+
         # log INFO a summary, after dropping multiple empty slots
         img=0
         if len(self.rt.filterWheelsInUse)==0:
             self.logger.info('setCheckDevices: focus run summary, no filter wheel in use:')
             self.logger.info('setCheckDevices: focuser: {0}, steps: {1}, min: {2}, max: {3}'.format(self.rt.foc.name, len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff)))
             img=len(self.rt.foc.focFoff)
+
         else:
             
             self.logger.info('setCheckDevices: focus run summary, without multiple empty slots:')
-            ftwns= map( lambda x: x.name, self.rt.filterWheelsInUse) # need the first filter wheel
             for k, ftwn in enumerate(self.filterWheesFromCCD): # names
                 ind= ftwns.index(ftwn)
                 ftw= self.rt.filterWheelsInUse[ind]               
@@ -398,11 +449,12 @@ class SetCheckDevices(object):
                             info += '{0:2d} steps, bewteen: {1:5d} and {2:5d}\n'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff))
                             img += len(self.rt.foc.focFoff)
                         else:
-                            info += '{0:2d} steps, bewteen: {1:5d} and {2:5d} (FOC_FOFF)\n'.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
+                            info += '{0:2d} steps, FOC_FOFF bewteen: {1:5d} and {2:5d}, '.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
+                            info += 'FOC_DEF bewteen: {1:5d} and {2:5d}\n'.format(len(ft.focFoff), self.rt.foc.focDef + min(ft.focFoff), self.rt.foc.focDef + max(ft.focFoff))
                             img += len(ft.focFoff)
                     else:
-                        self.logger.info('{0}'.format(info))
-                
+                        self.logger.info('\n{0}'.format(info))
+
         self.logger.info('setCheckDevices: taking {0} images in total'.format(img))
         return True
 

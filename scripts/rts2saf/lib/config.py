@@ -317,6 +317,7 @@ class Configuration(DefaultConfiguration):
             lowerLimit    = int(ftItems[1])
             upperLimit    = int(ftItems[2])
             stepSize      = int(ftItems[3])
+            focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
 
             ft=dev.Filter( 
                 name          = ftItems[0],
@@ -324,7 +325,7 @@ class Configuration(DefaultConfiguration):
                 upperLimit    =upperLimit,
                 stepSize      =stepSize,
                 exposureFactor=string.atof(ftItems[4]),
-                focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
+                focFoff=focFoff
                 )
 
             self.filters.append(ft)

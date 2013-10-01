@@ -66,7 +66,6 @@ if __name__ == '__main__':
     rt.readConfiguration(fileName=args.config)
     if not rt.checkConfiguration():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
-        logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
         sys.exit(1)
 
     # get the environment

@@ -61,7 +61,12 @@ class Sextract(object):
 
         # find the sextractor counts
         objectCount = len(sex.objects)
-        focPos = float(pyfits.getval(fitsFn,'FOC_POS'))
+        try:
+            focPos = float(pyfits.getval(fitsFn,'FOC_POS'))
+        except:
+            self.logger.error( 'sextract: in FITS {0} key word FOC_POS not found, exiting'.format(fitsFn))
+            sys.exit(1)
+
         # these values are remaped in config.py
         try:
             ambientTemp = float(pyfits.getval(fitsFn,self.rt.cfg['AMBIENTTEMPERATURE']))
@@ -111,8 +116,8 @@ class Sextract(object):
             self.logger.warn( 'sextract: {0}: focPos: {1:5.0f}, raw objects: {2}, no objects found (after filtering), \nmessage rts2.sextractor: {2}'.format(fitsFn, focPos, objectCount, e))
             return None
 
-        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=float(focPos), fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalog=sex.objects, binning=binning, binningXY=binningXY, naxis1=naxis1, naxis2=naxis2,fields=self.fields)
-        if self.debug: self.logger.debug( 'sextract: {0} {1:5d} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
+        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=focPos, fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalog=sex.objects, binning=binning, binningXY=binningXY, naxis1=naxis1, naxis2=naxis2,fields=self.fields)
+        if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
         return dataSex
 
