@@ -103,13 +103,11 @@ class Do(object):
     def analyzeRuns(self):
         length= 10
         for d  in self.ftwPath.keys():
-            print 'xxxxxxxxxxxxxxxxxxxxxxxDONE, EXIT'
-            sys.exit(1)
             for fwt in self.ftwPath[d].keys():
                 for ft in self.ftwPath[d][fwt].keys():
                     if len(self.ftwPath[d][fwt][ft])> length:
                         print self.ftwPath[d][fwt][ft]
-                        # self.__analyzeRun(fitsFns=self.ftwPath[d][fwt][ft])
+                        self.__analyzeRun(fitsFns=self.ftwPath[d][fwt][ft])
 
         for d  in self.ftPath.keys():
             logger.debug('{}================================'.format(d))

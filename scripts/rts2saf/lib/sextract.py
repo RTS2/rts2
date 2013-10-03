@@ -113,7 +113,7 @@ class Sextract(object):
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: {0}: focPos: {1:5.0f}, raw objects: {2}, no objects found (after filtering), \nmessage rts2.sextractor: {2}'.format(fitsFn, focPos, objectCount, e))
+            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found (after filtering), {2}, \nmessage rts2.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
             return None
 
         dataSex=dt.DataSex(fitsFn=fitsFn, focPos=focPos, fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalog=sex.objects, binning=binning, binningXY=binningXY, naxis1=naxis1, naxis2=naxis2,fields=self.fields)

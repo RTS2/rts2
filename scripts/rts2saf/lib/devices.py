@@ -475,7 +475,6 @@ class SetCheckDevices(object):
         self.logger.debug('setCheckDevices:Focuser: {} focDef'.format(self.rt.foc.focDef))
         self.logger.debug('setCheckDevices:Focuser: {} focMn'.format(self.rt.foc.focMn))
         self.logger.debug('setCheckDevices:Focuser: {} focMx'.format(self.rt.foc.focMx))
-        self.logger.debug('setCheckDevices:Focuser: {} focSt'.format(self.rt.foc.focSt))
         # CCD
         self.logger.debug('')
         self.logger.debug('setCheckDevices:CCD: {} name'.format(self.rt.ccd.name))

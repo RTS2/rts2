@@ -48,6 +48,10 @@ class ScanThread(threading.Thread):
         self.acqu_oq=acqu_oq
         self.ev=ev
         self.logger=logger
+# TAG QUICK
+# see below
+# counter to make the fist file name unique among one session
+        self.COUNTER=0
 
     def run(self):
         if self.debug: self.logger.debug('____ScantThread: running')
@@ -84,18 +88,81 @@ class ScanThread(threading.Thread):
             if self.writeToDevices:
                 while abs( focPosCalc- focPos) > self.foc.resolution:
                 
-                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+#                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
                     self.proxy.refresh()
                     focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
                     time.sleep(.2) # leave it alone
                 else:
                     if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
-            fn=self.expose()
+            if self.ccd.name in 'andor3':
+                fn=self.exposeAndor3()
+            else:
+                fn=self.expose()
+
             if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
+
             self.acqu_oq.put(fn)
         else:
             if self.debug: self.logger.debug('____ScanThread: ending after full scan')
+
+# TAG QUICK
+# it happens only at Bootes-2 at 2013-10-02) that the file name of the fits file remains the same.
+# it will not be over wirtten, hence we remove that here
+# this is a quick dirty fix
+# see below TAGs FEELGOOD, INCREMENT
+#
+# TAG FEELGOOD, see expose-andor3.py if you don't believe it!!
+    def exposeAndor3(self):
+        import os
+        import errno
+        import subprocess
+        fitsXmlrpcdFn='/tmp/xmlrpcd_{}.fits'.format(self.ccd.name)
+        if os.path.exists(fitsXmlrpcdFn) :
+            # that file is only needed on novaraketa
+            # add cmd rm to /etc/sudouers with NOPASSWORD
+            cmd = ['/home/wildi/rm-xmlrpcd-fits.sh']
+            try:
+                proc = subprocess.Popen(cmd)
+                proc.wait()
+            except OSError,err:
+                self.loggeer.error('expose: canot run command: "', ' '.join(cmd), '", error: {} '.format(err))
+                self.loggeer.error('expose: exiting')
+                sys.exit(1)
+            self.logger.info('expose: removed: {}'.format(fitsXmlrpcdFn))
+        # TAG FEELGOOD
+        # expose
+        if self.exposure:
+            exp= self.exposure # args.exposure
+        else:
+            exp= self.ccd.baseExposure
+
+        if self.ftw!=None: # CCD without filter wheel
+            exp *= self.ft.exposureFactor
+        cmd = [ '/bin/bash' ]
+        proc  = subprocess.Popen( cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc.stdin.write("cd /tmp ; rts2-scriptexec -d {0} -s ' D {1} ' ; exit\n".format(self.ccd.name, exp))
+        fn=proc.stdout.readline()
+
+        srcTmpFn='/tmp/{}'.format(fn[:-1])
+        
+        if self.ftw and self.ft:
+            if not self.ev.createAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name):
+                return None 
+        else:
+            if not self.ev.createAcquisitionBasePath(ftwName=None, ftName=None):
+                return None 
+        if self.ftw and self.ft:
+            storeFn=self.ev.expandToAcquisitionBasePath( ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]
+        else:
+            storeFn=self.ev.expandToAcquisitionBasePath( ftwName=None, ftName=None) + srcTmpFn.split('/')[-1]
+# TAG INCREMENT
+        parts=storeFn.split('.fits')
+        newStoreFn= '{0}-{1:03d}.fits'.format(parts[0], self.COUNTER)
+        self.COUNTER += 1
+
+        shutil.copy(src=srcTmpFn, dst=newStoreFn)
+        return newStoreFn
 
     def expose(self):
         if self.exposure:
@@ -107,8 +174,8 @@ class ScanThread(threading.Thread):
             exp *= self.ft.exposureFactor
 
         if self.writeToDevices:
-            self.proxy.setValue(self.ccd.name,'exposure', str(exp))
-            self.proxy.executeCommand(self.ccd.name,'expose')
+                self.proxy.setValue(self.ccd.name,'exposure', str(exp))
+                self.proxy.executeCommand(self.ccd.name,'expose')
         else:
             self.logger.warn('acquire: disabled setting exposure/expose: {0}'.format(exp))
 
@@ -156,18 +223,18 @@ class ScanThread(threading.Thread):
                     myfile = open(srcTmpFn, "r") 
                     myfile.close()
                     break
-                except Exception, e:                    
-                    if self.debug: self.logger.debug('____ScanThread: {0} not yet ready'.format(srcTmpFn))
+                except Exception, e:
+                    self.logger.warn('____ScanThread: {0} not yet ready'.format(srcTmpFn))
+                    #if self.debug: self.logger.debug('____ScanThread: do not forget to set --writetodevices'.format(fn, srcTmpFn))
                 time.sleep(.5) # ToDo if it persits: put it to cfg!
 
-                
         if self.ftw and self.ft:
             storeFn=self.ev.expandToAcquisitionBasePath( ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]
         else:
             storeFn=self.ev.expandToAcquisitionBasePath( ftwName=None, ftName=None) + srcTmpFn.split('/')[-1]
-
         try:
             # ToDo shutil.move(src=fn, dst=storeFn)
+            # the file belongs to root or user.group
             shutil.copy(src=srcTmpFn, dst=storeFn)
             return storeFn 
         except Exception, e:
@@ -254,7 +321,7 @@ class Acquire(object):
                 if self.writeToDevices:
                     self.proxy.setValue(ftw.name, 'filter',  ftw.filters[0]) # has been sorted (lowest filter offset)
                 else:
-                    self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(ftw.filters[0].name, self.ftw.name,ftw.name))
+                    self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(ftw.filters[0].name,ftw.name))
 
         if self.ft:
             if self.writeToDevices:
@@ -350,6 +417,7 @@ class Acquire(object):
 if __name__ == '__main__':
 
     import Queue
+    import re
     import argparse
     try:
         import lib.devices as dev

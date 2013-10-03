@@ -75,10 +75,11 @@ class Focus(object):
                 dSx=sxtr.sextract(fitsFn=fitsFn)
                 if dSx==None:
                     self.logger.error('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
+                    # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved
                     self.logger.error('Focus: try to continue')
                     break
 
-                self.logger.info('Focus: sextracted FITS file: {}, objects: {}'.format(fitsFn, len(dSx.catalog)))
+                self.logger.info('Focus: pos: {0:5d}, objects: {1} sextracted FITS file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
                 dataSex[i]=dSx
                 i += 1
                 break
@@ -196,10 +197,11 @@ class FocusFilterWheels(object):
                         dSx=sxtr.sextract(fitsFn=fitsFn)
                         if dSx==None:
                             self.logger.error('FocusFilterWheels: sextractor failed on fits file: {0}'.format(fitsFn))
+                            # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved
                             self.logger.error('FocusFilterWheels: try to continue')
                             break
 
-                        self.logger.info('FocusFilterWheels: sextracted FITS file: {}, objects: {}'.format(fitsFn, len(dSx.catalog)))
+                        self.logger.info('FocusFilterWheels: pos: {0:5d}, objects: {1}, sextracted FITS file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
                         dataSex[i]=dSx
                         i += 1
                         break
@@ -243,6 +245,7 @@ class FocusFilterWheels(object):
                     self.logger.info('FocusFilterWheels: {0:5.2f}: fwhm'.format(fwhm))
 
                     self.rt.foc.focDef= minFwhmPos
+                    # ToDo better criteria is EMPTY_SLOT_NAMES
                     if ft.OffsetToEmptySlot == 0.:
                         # FOC_DEF (is set first)
                         if self.rt.cfg['SET_FOCUS']:
