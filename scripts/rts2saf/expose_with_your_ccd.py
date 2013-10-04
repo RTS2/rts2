@@ -27,6 +27,7 @@ import argparse
 import re
 import sys
 import shutil
+import time
 # 
 # thanks to: http://stackoverflow.com/questions/2281850/timeout-function-if-it-takes-too-long-to-finish
 #
@@ -34,6 +35,9 @@ from functools import wraps
 import errno
 import os
 import signal
+
+from rts2.json import JSONProxy
+
 
 class TimeoutError(Exception):
     pass
@@ -83,6 +87,50 @@ def method3(debug=False, ccdName=None):
     return proc.stdout.readline()
 
 
+@timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
+def method4(debug=False, ccdName=None):
+    exp= 0.001
+    cmd = [ '/bin/bash' ]
+    proc  = subprocess.Popen( cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    proc.stdin.write("cd /tmp ;rts2-scriptexec -d {0} -s ' D {1} ' ; exit\n".format(ccdName, exp))
+    return proc.stdout.readline()
+
+
+@timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
+def method5(debug=False, ccdName=None):
+
+    #    proxy= JSONProxy(url='http://127.0.0.1:8889/',username='petr',password='test')
+    proxy= JSONProxy()
+    try:
+        proxy.refresh()
+    except Exception,e:
+        print 'no JSON connection to server, error: {}'.format(e)
+        sys.exit(1)
+    try:
+        cs=proxy.getDevice(args.ccdName)['calculate_stat'][1]
+    except Exception,e:
+        print 'no JSON connection to server, error: {}'.format(e)
+
+    exp= 1
+    proxy.setValue(args.ccdName,'exposure', str(exp))
+    proxy.executeCommand(args.ccdName,'expose')
+
+    proxy.refresh()
+    expEnd = proxy.getDevice(args.ccdName)['exposure_end'][1]
+    rdtt= 4.
+    try:
+        time.sleep(expEnd-time.time() + rdtt)
+    except Exception, e:
+        print 'acquire:time.sleep revceived: {0}'.format(expEnd-time.time() + rdtt)
+
+
+    proxy.refresh()
+    fn=proxy.getDevice('XMLRPC')['{0}_lastimage'.format(args.ccdName)][1]
+
+    return fn
+
+
 if __name__ == '__main__':
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf ccd exposure and RTS2 execution test')
@@ -91,43 +139,68 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-    print 'method1'
+
+    print 'subprocess method1'
     try:
         fn= method1(debug=args.debug, ccdName=args.ccdName)
         if fn:
-            print 'method2: Success!, {}'.format(fn)
+            print 'subprocess method1: Success!, {}'.format(fn)
         else:
-            print 'method2: no file retrieved!'
+            print 'subprocess method1: no file retrieved!'
     except Exception, e:
-        print 'method1 error: {}'.format(e)
-
-    print 'method2, the output you see is the stderr of rts2-scriptexec:'
-    try:
-        fn= method2(debug=args.debug, ccdName=args.ccdName)
-        if fn:
-            print 'method2: Success!, {}'.format(fn)
-        else:
-            print 'method2: no file retrieved!'
-    except Exception, e:
-        print 'method1 error: {}'.format(e)
+        print 'subprocess method1 error: {}'.format(e)
 
     print
-    print 'method3'
+    print 'subprocess method2, the first output you see is the stderr of rts2-scriptexec:'
     try:
-        srcFn=method3(debug=args.debug, ccdName=args.ccdName)
+        fn= method2(debug=args.debug, ccdName=args.ccdName)
+        print 'end stderr'
+        if fn:
+            print 'subprocess method2: Success!, {}'.format(fn)
+        else:
+            print 'subprocess method2: no file retrieved!'
+    except Exception, e:
+        print 'subprocess method1 error: {}'.format(e)
+
+    print
+    print 'subprocess method3'
+    try:
+        srcFn= method3(debug=args.debug, ccdName=args.ccdName)
         print 'CCD: {}, file: {}'.format(args.ccdName, srcFn)
-        print 'method3: Success!'
+        print 'subprocess method3: Success!'
     except Exception, e:
-        print 'method1 error: {}'.format(e)
+        print 'subprocess method3 error: {}'.format(e)
 
-    COUNTER=0
-    parts=srcFn.split('.fits')
-    newStoreFn= '{0}-{1:03d}.fits'.format(parts[0], COUNTER)
-    print 'moving from /tmp/{0} to /tmp/{1}'.format(srcFn[:-2], newStoreFn)
-    try:
-        shutil.move(src='/tmp/{0}'.format(srcFn), dst='/tmp/{0}'.format(newStoreFn))
-    except Exception, e:
-        print 'could not move file: {}, error:{}'.format(srcFn, e)
+#    COUNTER=0
+#    parts=srcFn.split('.fits')
+#    newStoreFn= '{0}-{1:03d}.fits'.format(parts[0], COUNTER)
+#    print 'moving from /tmp/{0} to /tmp/{1}'.format(srcFn[:-1], newStoreFn)
+#    try:
+#        shutil.move(src='/tmp/{0}'.format(srcFn[:-1]), dst='/tmp/{0}'.format(newStoreFn))
+#    except Exception, e:
+#        print 'could not move file: {}, error:{}'.format(srcFn[:-1], e)
 
+    print
+    print 'proxy method'
+    #
+    fn1=method5(debug=args.debug, ccdName=args.ccdName)
+
+    if fn1:
+        print 'proxy method: Success!, file: {}'.format(fn1)
+    else:
+        print 'proxy method: failure'
+
+    # check if filename changes
+    fn2=method5(debug=args.debug, ccdName=args.ccdName)
+
+    if fn2:
+        print 'proxy method: Success!, file: {}'.format(fn2)
+    else:
+        print 'proxy method: failure'
+
+    if fn1 in fn2:
+        print 'file names are identical, problem'
+    else:
+        print 'file names are NOT identical, good!'
 
     print 'DONE'
