@@ -67,7 +67,7 @@ class FitFwhm(object):
             self.par, self.flag  = optimize.leastsq(self.errfunc_fwhm, self.par, args=(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, self.dataFitFwhm.errx, self.dataFitFwhm.stdFwhm))
         except Exception, e:
             self.logger.error('fitfwhm: fitData: failed fitting FWHM:\nnumpy error message:\n{0}'.format(e))                
-            return None, None
+            return None, None, None
         # ToDo lazy
         posS=sorted(self.dataFitFwhm.pos)
         step= posS[1]-posS[0]
@@ -75,11 +75,11 @@ class FitFwhm(object):
             self.min_focpos_fwhm = optimize.fminbound(self.fitfunc_r_fwhm,min(self.dataFitFwhm.pos)-2 * step, max(self.dataFitFwhm.pos)+2 * step,args=(self.par), disp=0)
         except Exception, e:
             self.logger.error('fitfwhm: fitData: failed finding minimum FWHM:\nnumpy error message:\n{0}'.format(e))                
-            return None, None
+            return None, None, None
 
         self.val_fwhm= self.fitfunc_fwhm( self.par, self.min_focpos_fwhm) 
         # a decision is done in Analyze
-        return self.min_focpos_fwhm, self.val_fwhm
+        return self.min_focpos_fwhm, self.val_fwhm, self.par
 
     def plotData(self):
         if not self.min_focpos_fwhm:

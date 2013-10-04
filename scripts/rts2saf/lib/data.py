@@ -21,12 +21,24 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 class DataFitFwhm(object):
-    def __init__(self, pos=None, fwhm=None, errx=None, stdFwhm=None, nObjs=None):
+    def __init__(self, ambientTemp=None, pos=None, fwhm=None, errx=None, stdFwhm=None, nObjs=None):
+        self.ambientTemp=ambientTemp
         self.pos=pos
         self.fwhm=fwhm
         self.errx=errx
         self.stdFwhm=stdFwhm
         self.nObjs=nObjs
+
+class ResultFitFwhm(object):
+    def __init__(self, ambientTemp=None, minFitPos=None, minFitFwhm=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None, fitPar=None):
+        self.ambientTemp=ambientTemp
+        self.minFitPos=minFitPos
+        self.minFitFwhm=minFitFwhm
+        self.weightedMeanObjects=weightedMeanObjects
+        self.weightedMeanFwhm=weightedMeanFwhm
+        self.weightedMeanStdFwhm=weightedMeanStdFwhm
+        self.weightedMeanCombined=weightedMeanCombined
+        self.fitPar=fitPar
 
 class DataSex(object):
     def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None):

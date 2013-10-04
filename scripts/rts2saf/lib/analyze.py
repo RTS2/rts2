@@ -64,7 +64,7 @@ class SimpleAnalysis(object):
         self.fit=ft.FitFwhm(
             showPlot=self.displayFit, 
             filterName=self.ftName, 
-            ambientTemp=self.dataSex[0].ambientTemp,
+            ambientTemp=dFwhm.ambientTemp,
             date=self.ev.startTime[0:19], 
             comment=comment,  # ToDo, define a sensible value
             pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
@@ -74,10 +74,25 @@ class SimpleAnalysis(object):
         return self.fit.fitData()
 
     def __analyze(self, dFwhm=None):
+
+        nObjsC  = dFwhm.nObjs[:]
+        posC    = dFwhm.pos[:]
+        fwhmC   = dFwhm.fwhm[:]
+        stdFwhmC= dFwhm.stdFwhm[:]
+        while True:
+            try:
+                ind=fwhmC.index(0.)
+            except:
+                break
+            del nObjsC[ind] # not strictly necessary
+            del posC[ind]
+            del fwhmC[ind]
+            del stdFwhmC[ind]
+
         # Weighted mean based on number of extracted objects (stars)
         weightedMeanObjects=None
         try:
-            weightedMeanObjects= np.average(a=dFwhm.pos, axis=0, weights=dFwhm.nObjs)
+            weightedMeanObjects= np.average(a=dFwhm.pos, axis=0, weights=nObjsC)
         except Exception, e:
             self.logger.warn('analyze: can not calculate weightedMeanObjects:\n{0}'.format(e))
 
@@ -85,17 +100,7 @@ class SimpleAnalysis(object):
             if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanObjects:\n{0}'.format(e))
-
         # Weighted mean based on median FWHM
-        posC= dFwhm.pos[:]
-        fwhmC= dFwhm.fwhm[:]
-        while True:
-            try:
-                ind=fwhmC.index(0.)
-            except:
-                break
-            del posC[ind]
-            del fwhmC[ind]
         weightedMeanFwhm=None
         try:
             weightedMeanFwhm= np.average(a=posC, axis=0, weights=map( lambda x: 1./x, fwhmC)) 
@@ -106,18 +111,53 @@ class SimpleAnalysis(object):
             self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanFwhm:\n{0}'.format(e))
-        
-        minFwhmPos, fwhm= self.__fit(dFwhm=dFwhm)
+        # Weighted mean based on median std(FWHM)
+        weightedMeanStdFwhm=None
+        try:
+            weightedMeanStdFwhm= np.average(a=posC, axis=0, weights=map( lambda x: 1./x, stdFwhmC)) 
+        except Exception, e:
+            self.logger.warn('analyze: can not calculate weightedMeanStdFwhm:\n{0}'.format(e))
 
-        if minFwhmPos:
+        try:
+            self.logger.debug('analyze: {0:5d}: weighted mean derived from std(FWHM)'.format(int(weightedMeanStdFwhm)))
+        except Exception, e:
+            self.logger.warn('analyze: can not convert weightedMeanStdFwhm:\n{0}'.format(e))
+        # Weighted mean based on a combination of variables
+        weightedMeanCombined=None
+        combined=list()
+        for i, v in enumerate(nObjsC):
+            combined.append( nObjsC[i]/(stdFwhmC[i] * fwhmC[i]))
+
+        try:
+            weightedMeanCombined= np.average(a=posC, axis=0, weights=combined)
+        except Exception, e:
+            self.logger.warn('analyze: can not calculate weightedMeanCombined:\n{0}'.format(e))
+
+        try:
+            self.logger.debug('analyze: {0:5d}: weighted mean derived from Combined'.format(int(weightedMeanCombined)))
+        except Exception, e:
+            self.logger.warn('analyze: can not convert weightedMeanCombined:\n{0}'.format(e))
+        
+        minFitPos, minFitFwhm, fitPar= self.__fit(dFwhm=dFwhm)
+
+        if minFitPos:
             if self.dataSex[0].ambientTemp:
-                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFwhmPos), fwhm, self.dataSex[0].ambientTemp))
+                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFitPos), minFitFwhm, self.dataSex[0].ambientTemp))
             else:
-                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px'.format(int(minFwhmPos), fwhm))
+                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px'.format(int(minFitPos), minFitFwhm))
         else:
             self.logger.warn('analyze: fit failed')
 
-        return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
+        return dt.ResultFitFwhm(
+            ambientTemp=dFwhm.ambientTemp, 
+            minFitPos=minFitPos, 
+            minFitFwhm=minFitFwhm, 
+            weightedMeanObjects=weightedMeanObjects, 
+            weightedMeanFwhm=weightedMeanFwhm, 
+            weightedMeanStdFwhm=weightedMeanStdFwhm, 
+            weightedMeanCombined=weightedMeanCombined,
+            fitPar=fitPar
+            )
 
     def analyze(self):
         # very ugly
@@ -136,8 +176,9 @@ class SimpleAnalysis(object):
             errx.append(self.focRes)
             stdFwhm.append(self.dataSex[cnt].stdFwhm)
             nObjs.append(len(self.dataSex[cnt].catalog))
-            
-        df=dt.DataFitFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
+        # ToDo lazy                        !!!!!!!!!!
+        # create an average and std 
+        df=dt.DataFitFwhm(ambientTemp=self.dataSex[0].ambientTemp, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
         return self.__analyze(dFwhm=df)
 
     def display(self):
@@ -215,7 +256,7 @@ class CatalogAnalysis(object):
     def selectAndAnalyze(self):
         acceptedDataSex=dict()
         rejectedDataSex=dict()
-        for cnt in dataSex.keys():
+        for cnt in self.dataSex.keys():
             acceptedDataSex[cnt]=copy.deepcopy(self.dataSex[cnt])
             acceptedDataSex[cnt].catalog= list(ifilter(self.__criteria, self.dataSex[cnt].catalog))
 
@@ -232,29 +273,29 @@ class CatalogAnalysis(object):
             rejectedDataSex[cnt].fwhm=numpy.median(nsFwhm)
             rejectedDataSex[cnt].stdFwhm=numpy.std(nsFwhm)
         # 
-        an=SimpleAnalysis(debug=args.debug, dataSex=acceptedDataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
-        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+        an=SimpleAnalysis(debug=self.debug, dataSex=acceptedDataSex, displayDs9=self.displayDs9, displayFit=self.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        rFt=an.analyze()
         print
-        print weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
-        if args.displayDs9 or args.displayFit:
+        print rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm
+        if self.displayDs9 or self.displayFit:
             an.display()
         #
-        an=SimpleAnalysis(debug=args.debug, dataSex=rejectedDataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
-        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+        an=SimpleAnalysis(debug=self.debug, dataSex=rejectedDataSex, displayDs9=self.displayDs9, displayFit=self.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        rFt=an.analyze()
         print
-        print weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
-        if args.displayDs9 or args.displayFit:
+        print rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm
+        if self.displayDs9 or self.displayFit:
             an.display()
         # 
-        an=SimpleAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
-        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+        an=SimpleAnalysis(debug=self.debug, dataSex=self.dataSex, displayDs9=self.displayDs9, displayFit=self.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        rFt=an.analyze()
 
-        if args.displayDs9 or args.displayFit:
+        if self.displayDs9 or self.displayFit:
             an.display()
         print
-        print weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
+        print rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm
 
-        return weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm
+        return None
 
 
 if __name__ == '__main__':
@@ -330,12 +371,12 @@ if __name__ == '__main__':
 
     if args.catalogAnalysis:
         an=CatalogAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, rt=rt, logger=logger)
-        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.selectAndAnalyze()
+        resultFitFwhm=an.selectAndAnalyze()
     else:
         an=SimpleAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
-        weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
+        resultFitFwhm=an.analyze()
         if args.displayDs9 or args.displayFit:
             an.display()
 
-    logger.info('analyze: result: weightedMeanObjects: {0}, weightedMeanFwhm: {1}, minFwhmPos: {2}, fwhm: {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
+    logger.info('analyze: result: weightedMeanObjects: {0}, weightedMeanFwhm: {1}, minFitPos: {2}, fwhm: {3}'.format(resultFitFwhm.weightedMeanObjects, resultFitFwhm.weightedMeanFwhm, resultFitFwhm.minFitPos, resultFitFwhm.fitFwhm))
 

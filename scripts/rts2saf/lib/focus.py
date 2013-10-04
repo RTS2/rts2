@@ -88,8 +88,6 @@ class Focus(object):
 
         acqu.stopScan(timeout=1.)
 
-        weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
-
         # check the number of different positions
         pos=dict()
         # ToDO might be not pythonic
@@ -112,28 +110,26 @@ class Focus(object):
         else:
             anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
 
+        rFt= anr.analyze()
 
-
-        (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
-
-        if weightedMeanObjects:
-            self.logger.info('Focus: {0:5.0f}: weightedMeanObjects'.format(weightedMeanObjects))
-        if weightedMeanFwhm:
-            self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm'.format(weightedMeanFwhm))
+        if rFt.weightedMeanObjects:
+            self.logger.info('Focus: {0:5.0f}: weightedMeanObjects'.format(rFt.weightedMeanObjects))
+        if rFt.weightedMeanFwhm:
+            self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm'.format(rFt.weightedMeanFwhm))
         # currently write FOC_DEF only in case fit converged
-        if minFwhmPos:
-            self.logger.info('Focus: {0:5.0f}: minFwhmPos'.format(minFwhmPos))
-            self.logger.info('Focus: {0:5.2f}: fwhm'.format(fwhm))
+        if rFt.minFitPos:
+            self.logger.info('Focus: {0:5.0f}: minFitPos'.format(rFt.minFitPos))
+            self.logger.info('Focus: {0:5.2f}: minFitFwhm'.format(rFt.minFitFwhm))
             # FOC_DEF (is set first)
-            self.rt.foc.focDef= minFwhmPos
+            self.rt.foc.focDef= rFt.minFitPos
             if self.rt.cfg['SET_FOCUS']:
-                if self.rt.cfg['FWHM_MIN'] < fwhm < self.rt.cfg['FWHM_MAX']:
+                if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
                     acqu.writeFocDef()
-                    self.logger.info('Focus: set FOC_DEF: {0}'.format(int(minFwhmPos)))
+                    self.logger.info('Focus: set FOC_DEF: {0}'.format(int(rFt.minFitPos)))
                 else:
-                    self.logger.warn('Focus: not writing FOC_DEF: {0}, fwhm: {1}, out of bounds: {2},{3}'.format(int(minFwhmPos), fwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+                    self.logger.warn('Focus: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3}'.format(int(rFt.minFitPos), rFt.minFitFwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
             else:
-                self.logger.warn('Focus: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
+                self.logger.warn('Focus: not writing FOC_DEF: {0}'.format(int(rFt.minFitPos)))
         else:
             self.logger.warn('Focus: no fitted minimum found')
 
@@ -210,8 +206,6 @@ class FocusFilterWheels(object):
 
                 acqu.stopScan(timeout=1.)
 
-                weightedMeanObjects=weightedMeanFwhm=minFwhmPos=fwhm=0.
-
                 pos=dict()
                 # ToDO might be not pythonic
                 for cnt in dataSex.keys():
@@ -233,32 +227,32 @@ class FocusFilterWheels(object):
                 else:
                     anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
 
-                (weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm)= anr.analyze()
+                dFt= anr.analyze()
 
-                if weightedMeanObjects:
-                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanObjects'.format(weightedMeanObjects))
-                if weightedMeanFwhm:
-                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanFwhm'.format(weightedMeanFwhm))
+                if rFt.weightedMeanObjects:
+                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightmedMeanObjects'.format(rFt.weightedMeanObjects))
+                if rFt.weightedMeanFwhm:
+                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanFwhm'.format(rFt.weightedMeanFwhm))
 
-                if minFwhmPos:
-                    self.logger.info('FocusFilterWheels: {0:5.0f}: minFwhmPos'.format(minFwhmPos))
-                    self.logger.info('FocusFilterWheels: {0:5.2f}: fwhm'.format(fwhm))
+                if rFt.minFitPos:
+                    self.logger.info('FocusFilterWheels: {0:5.0f}: minFitPos'.format(rFt.minFitPos))
+                    self.logger.info('FocusFilterWheels: {0:5.2f}: minFitFwhm'.format(rFt.minFitFwhm))
 
-                    self.rt.foc.focDef= minFwhmPos
+                    self.rt.foc.focDef= rFt.minFitPos
                     # ToDo better criteria is EMPTY_SLOT_NAMES
                     if ft.OffsetToEmptySlot == 0.:
                         # FOC_DEF (is set first)
                         if self.rt.cfg['SET_FOCUS']:
-                            if self.rt.cfg['FWHM_MIN'] < fwhm < self.rt.cfg['FWHM_MAX']:
+                            if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
                                 acqu.writeFocDef()
-                                self.logger.info('FocusFilterWheels: set FOC_DEF: {0}'.format(int(minFwhmPos)))
+                                self.logger.info('FocusFilterWheels: set FOC_DEF: {0}'.format(int(rFt.minFitPos)))
                             else:
-                                self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}, fwhm: {1}, out of bounds: {2},{3}'.format(int(minFwhmPos), fwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+                                self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3}'.format(int(rFt.minFitPos), rFt.minFitFwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
                         else:
-                            self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}'.format(int(minFwhmPos)))
+                            self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}'.format(int(rFt.minFitPos)))
                     else:
-                        self.logger.info('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(minFwhmPos- self.rt.foc.focDef)))
-                        ft.OffsetToEmptySlot=int(minFwhmPos- self.rt.foc.focDef)
+                        self.logger.info('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(rFt.minFitPos- self.rt.foc.focDef)))
+                        ft.OffsetToEmptySlot=int(rFt.minFitPos- self.rt.foc.focDef)
                 else:
                     self.logger.warn('FocusFilterWheels: no fitted minimum found')
 

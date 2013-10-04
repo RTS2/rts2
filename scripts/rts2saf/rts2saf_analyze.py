@@ -78,26 +78,23 @@ class Do(object):
         dataSex=dict()
         for k, fitsFn in enumerate(fitsFns):
             
-            logger.info('analyze: processing fits file: {0}'.format(fitsFn))
             rsx= safsx.Sextract(debug=args.sexDebug, rt=rt, logger=logger)
             dSx=rsx.sextract(fitsFn=fitsFn)
             if dSx and dSx.fwhm>0. and dSx.stdFwhm>0.:
                 dataSex[k]=rsx.sextract(fitsFn=fitsFn) 
+                logger.info('analyze: processed  focPos: {0:5d}, fits file: {1}'.format(int(dataSex[k].focPos), dataSex[k].fitsFn))
             else:
-                logger.warn('__analyzeRun: no result file: {0}'.format(fitsFn))
+                logger.warn('__analyzeRun: no result: focPos: {05d}, file: {1}'.format(int(dataSex[k].focPos), dataSex[k].fitsFn))
                 continue
 
         if args.catalogAnalysis:
             an=anr.CatalogAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, rt=rt, logger=self.logger)
-            weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.selectAndAnalyze()
+            rFt=an.selectAndAnalyze()
         else:
             an=anr.SimpleAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
-            weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm=an.analyze()
-
-        self.logger.info('__analyzeRun: result: weightedMeanObjects: {0}, weightedMeanFwhm:{1}, minFwhmPos: {2}, fwhm: {3}'.format(weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm))
-
-        if self.args.displayDs9 or self.args.displayFit:
-            an.display()
+            rFt=an.analyze()
+        if not rFt!=None:
+            self.logger.info('__analyzeRun: result: wMObjects: {0:5.0f}, wMCombined:{1:5.0f}, wMStdFwhm:{1:5.0f}, minFitPos: {2:5.0f}, minFitFwhm: {3:5.0f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.weightedMeanStdFwhm, rFt.minFitPos, rFt.minFitFwhm))
 
 
     def analyzeRuns(self):

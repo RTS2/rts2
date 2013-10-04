@@ -72,7 +72,7 @@ class Sextract(object):
             ambientTemp = float(pyfits.getval(fitsFn,self.rt.cfg['AMBIENTTEMPERATURE']))
         except:
             # that is not required
-            ambientTemp=None
+            ambientTemp='NoTemp'
 
         try:
             binning = float(pyfits.getval(fitsFn,self.rt.cfg['BINNING']))
