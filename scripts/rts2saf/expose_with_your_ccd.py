@@ -57,24 +57,24 @@ def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
     return decorator
 
 @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
-def feelBad1(debug=False, ccdName=None):
+def method1(debug=False, ccdName=None):
     exp= 0.001
     cmd = [ '/usr/local/bin/rts2-scriptexec' , '-d', ccdName, '-s', "' D {0} '".format(exp)]
     proc  = subprocess.Popen( cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout_value, stderr_value = proc.communicate()
     print repr(stdout_value)
     print repr(stderr_value)
-
+    return stdout_value
 
 @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
-def feelBad2(debug=False, ccdName=None):
+def method2(debug=False, ccdName=None):
     exp= 0.001
     cmd = [ '/usr/local/bin/rts2-scriptexec' , '-d', ccdName, '-s', "' D {0} '".format(exp)]
     return subprocess.check_output( cmd)
 
 
 @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
-def feelGood(debug=False, ccdName=None):
+def method3(debug=False, ccdName=None):
     exp= 0.001
     cmd = [ '/bin/bash' ]
     proc  = subprocess.Popen( cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -91,36 +91,43 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-    print 'feelBad1'
+    print 'method1'
     try:
-        feelBad1(debug=args.debug, ccdName=args.ccdName)
-    except Exception, e:
-        print 'feelBad1 error: {}'.format(e)
-
-    print 'feelBad2, the output you see is the stderr of rts2-scriptexec:'
-    try:
-        fn= feelBad2(debug=args.debug, ccdName=args.ccdName)
+        fn= method1(debug=args.debug, ccdName=args.ccdName)
         if fn:
-            print 'feelBad2: Success!, {}'.format(fn)
+            print 'method2: Success!, {}'.format(fn)
         else:
-            print 'feelBad2: no file retrieved!'
+            print 'method2: no file retrieved!'
     except Exception, e:
-        print 'feelBad1 error: {}'.format(e)
+        print 'method1 error: {}'.format(e)
+
+    print 'method2, the output you see is the stderr of rts2-scriptexec:'
+    try:
+        fn= method2(debug=args.debug, ccdName=args.ccdName)
+        if fn:
+            print 'method2: Success!, {}'.format(fn)
+        else:
+            print 'method2: no file retrieved!'
+    except Exception, e:
+        print 'method1 error: {}'.format(e)
 
     print
-    print 'feelGood'
+    print 'method3'
     try:
-        srcFn=feelGood(debug=args.debug, ccdName=args.ccdName)
+        srcFn=method3(debug=args.debug, ccdName=args.ccdName)
         print 'CCD: {}, file: {}'.format(args.ccdName, srcFn)
-        print 'feelGood: Success!'
+        print 'method3: Success!'
     except Exception, e:
-        print 'feelBad1 error: {}'.format(e)
+        print 'method1 error: {}'.format(e)
 
     COUNTER=0
     parts=srcFn.split('.fits')
     newStoreFn= '{0}-{1:03d}.fits'.format(parts[0], COUNTER)
     print 'moving from /tmp/{0} to /tmp/{1}'.format(srcFn[:-2], newStoreFn)
-    shutil.move(src='/tmp/{0}'.format(srcFn), dst='/tmp/{0}'.format(newStoreFn))
+    try:
+        shutil.move(src='/tmp/{0}'.format(srcFn), dst='/tmp/{0}'.format(newStoreFn))
+    except Exception, e:
+        print 'could not move file: {}, error:{}'.format(srcFn, e)
 
 
     print 'DONE'

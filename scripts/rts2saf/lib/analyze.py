@@ -294,8 +294,8 @@ class CatalogAnalysis(object):
             an.display()
         print
         print rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm
-
-        return None
+        # ToDo here are three objects
+        return rFt
 
 
 if __name__ == '__main__':
