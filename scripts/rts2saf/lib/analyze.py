@@ -169,7 +169,7 @@ class SimpleAnalysis(object):
         for cnt in self.dataSex.keys():
             # all sextracted objects
             no= len(self.dataSex[cnt].catalog)
-            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered sextracted objects: {2:5d}'.format(self.dataSex[cnt].focPos, no, self.dataSex[cnt].nstars))
+            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered: {2:5d}'.format(self.dataSex[cnt].focPos, no, self.dataSex[cnt].nstars))
             #
             pos.append(self.dataSex[cnt].focPos)
             fwhm.append(self.dataSex[cnt].fwhm)
