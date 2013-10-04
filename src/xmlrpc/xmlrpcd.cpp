@@ -46,6 +46,7 @@ using namespace Magick;
 #define OPT_NO_EMAILS           OPT_LOCAL + 77
 #define OPT_TESTSCRIPT          OPT_LOCAL + 78
 #define OPT_DEBUG_TESTSCRIPT    OPT_LOCAL + 79
+#define OPT_BB_QUEUE            OPT_LOCAL + 80
 
 using namespace XmlRpc;
 
@@ -497,6 +498,9 @@ int XmlRpcd::processOption (int in_opt)
 		case OPT_DEBUG_TESTSCRIPT:
 			debugTestscript = true;
 			break;
+		case OPT_BB_QUEUE:
+			bbQueueName = optarg;
+			break;
 #ifdef RTS2_HAVE_PGSQL
 		default:
 			return DeviceDb::processOption (in_opt);
@@ -767,6 +771,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 
 	debugTestscript = false;
 
+	bbQueueName = NULL;
+
 #ifndef RTS2_HAVE_PGSQL
 	config_file = NULL;
 
@@ -777,6 +783,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	addOption (OPT_NO_EMAILS, "no-emails", 0, "do not send emails");
 	addOption (OPT_DEBUG_TESTSCRIPT, "debug-test-script", 0, "print test script debugging");
 	addOption (OPT_TESTSCRIPT, "test-script", 1, "test script to run on background");
+	addOption (OPT_BB_QUEUE, "bb-queue", 1, "name of queue used for BB scheduling");
 	XmlRpc::setVerbosity (0);
 }
 
@@ -828,6 +835,13 @@ void XmlRpcd::deviceReady (rts2core::Connection * conn)
 		if (qv && qv->getValueType () == RTS2_VALUE_SELECTION)
 		{
 			bbSelectorQueue->duplicateSelVals ((rts2core::ValueSelection *) qv, 1);
+			if (bbQueueName)
+			{
+				if (((rts2core::ValueSelection *) bbSelectorQueue)->setSelIndex (bbQueueName) < 0)
+				{
+					logStream (MESSAGE_ERROR) << "queue with name " << bbQueueName << " does not exists, BB targets will be added to the first queue" << sendLog;
+				}
+			}
 			updateMetaInformations (bbSelectorQueue);
 		}
 	}

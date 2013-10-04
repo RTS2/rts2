@@ -522,6 +522,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		rts2core::ValueInteger *bbQueueSize;
 		rts2core::ValueSelection *bbSelectorQueue;
 
+		const char *bbQueueName;
+
 		rts2core::ValueTime *bbLastSuccess;
 
 		rts2core::ValueInteger *messageBufferSize;

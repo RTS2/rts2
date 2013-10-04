@@ -820,7 +820,7 @@ class ValueSelection:public ValueInteger
 			return ValueInteger::setValueInteger (in_value);
 		}
 
-		int setSelIndex (char *selVal)
+		int setSelIndex (const char *selVal)
 		{
 			int i = getSelIndex (std::string (selVal));
 			if (i < 0)

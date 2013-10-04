@@ -57,6 +57,7 @@
       <command>&dhpackage;</command>
       <arg choice="opt"><option>-p <replaceable>port number</replaceable></option></arg>
       <arg choice="opt"><option>--event-file <replaceable>event file</replaceable></option></arg>
+      <arg choice="opt"><option>--bb-queue <replaceable>queue name</replaceable></option></arg>
       &deviceapp;
     </cmdsynopsis>
 
@@ -106,6 +107,14 @@
 	    <emphasis>rts2-xmlrcd</emphasis> will force reload of event file.
 	  </para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--bb-queue <replaceable class="parameter">queue name</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Specify name of BB queue. Targets from BB are queued to the given queue.
+	  </para>
+	</listitem>
       </varlistentry>
 
       &deviceapplist;
