@@ -63,8 +63,6 @@ class SimpleAnalysis(object):
         # Fit median FWHM data
         self.fit=ft.FitFwhm(
             showPlot=self.displayFit, 
-            filterName=self.ftName, 
-            ambientTemp=dFwhm.ambientTemp,
             date=self.ev.startTime[0:19], 
             comment=comment,  # ToDo, define a sensible value
             pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
@@ -141,15 +139,13 @@ class SimpleAnalysis(object):
         minFitPos, minFitFwhm, fitPar= self.__fit(dFwhm=dFwhm)
 
         if minFitPos:
-            if self.dataSex[0].ambientTemp:
-                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px, ambient temperature: {2:3.1f}'.format(int(minFitPos), minFitFwhm, self.dataSex[0].ambientTemp))
-            else:
-                if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, FWHM: {1:4.1f} px'.format(int(minFitPos), minFitFwhm))
+            if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, dFwhm.ambientTemp))
         else:
             self.logger.warn('analyze: fit failed')
 
         return dt.ResultFitFwhm(
             ambientTemp=dFwhm.ambientTemp, 
+            ftName=dFwhm.ftName,
             minFitPos=minFitPos, 
             minFitFwhm=minFitFwhm, 
             weightedMeanObjects=weightedMeanObjects, 
@@ -178,7 +174,9 @@ class SimpleAnalysis(object):
             nObjs.append(len(self.dataSex[cnt].catalog))
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
-        df=dt.DataFitFwhm(ambientTemp=self.dataSex[0].ambientTemp, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
+        # ToDo decide wich ftName from which ftw!!
+        print self.dataSex[0].ambientTemp
+        df=dt.DataFitFwhm(ambientTemp=self.dataSex[0].ambientTemp, ftName=self.dataSex[0].ftName, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
         return self.__analyze(dFwhm=df)
 
     def display(self):

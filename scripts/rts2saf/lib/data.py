@@ -21,8 +21,9 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 class DataFitFwhm(object):
-    def __init__(self, ambientTemp=None, pos=None, fwhm=None, errx=None, stdFwhm=None, nObjs=None):
+    def __init__(self, ambientTemp=None, ftName=None, pos=None, fwhm=None, errx=None, stdFwhm=None, nObjs=None):
         self.ambientTemp=ambientTemp
+        self.ftName=ftName
         self.pos=pos
         self.fwhm=fwhm
         self.errx=errx
@@ -30,8 +31,9 @@ class DataFitFwhm(object):
         self.nObjs=nObjs
 
 class ResultFitFwhm(object):
-    def __init__(self, ambientTemp=None, minFitPos=None, minFitFwhm=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None, fitPar=None):
+    def __init__(self, ambientTemp=None, ftName=None, minFitPos=None, minFitFwhm=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None, fitPar=None):
         self.ambientTemp=ambientTemp
+        self.ftName=ftName
         self.minFitPos=minFitPos
         self.minFitFwhm=minFitFwhm
         self.weightedMeanObjects=weightedMeanObjects
@@ -41,7 +43,7 @@ class ResultFitFwhm(object):
         self.fitPar=fitPar
 
 class DataSex(object):
-    def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None):
+    def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None):
         self.fitsFn=fitsFn
         self.focPos=focPos
         self.fwhm=fwhm
@@ -54,3 +56,7 @@ class DataSex(object):
         self.binningXY=binningXY 
         self.naxis1=naxis1
         self.naxis2=naxis2
+        self.ftName=ftName
+        self.ftAName=ftAName
+        self.ftBName=ftBName
+        self.ftCName=ftCName

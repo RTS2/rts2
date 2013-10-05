@@ -36,7 +36,6 @@ import fnmatch
 import os
 import re
 import sys
-images = ['*.fits']
 
 # thanks http://stackoverflow.com/questions/635483/what-is-the-best-way-to-implement-nested-dictionaries-in-python
 class AutoVivification(dict):
@@ -52,13 +51,11 @@ class AutoVivification(dict):
 # goal calculate filter offsets
 #
 #2013-09-04T22:18:35.077526/fliterwheel/filter
-filterWheelWithFilters= re.compile('.*?/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)/(.+?)')
-#2013-09-04T22:18:35.077526/(fliterwheel|filter)/
-filters= re.compile('.*?/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)')
+#                                                                                                         date    ftw  ft
+manyFilterWheels= re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)/(.+)')
+# no filter
 #2013-09-04T22:18:35.077526/
-date= re.compile('.*?/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)')
-#/
-plain= re.compile(('.*'))
+date= re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)')
 
 class Do(object):
     def __init__(self, debug=False, basePath=None, args=None, rt=None, ev=None, logger=None):
@@ -72,20 +69,37 @@ class Do(object):
         self.ftPath=AutoVivification()
         self.datePath=AutoVivification()
         self.plainPath=AutoVivification()
+        self.fS= AutoVivification()
 
 
     def __analyzeRun(self, fitsFns=None):
         dataSex=dict()
-        for k, fitsFn in enumerate(fitsFns):
+        i=0
+        for fitsFn in fitsFns:
             
             rsx= safsx.Sextract(debug=args.sexDebug, rt=rt, logger=logger)
             dSx=rsx.sextract(fitsFn=fitsFn)
-            if dSx and dSx.fwhm>0. and dSx.stdFwhm>0.:
-                dataSex[k]=rsx.sextract(fitsFn=fitsFn) 
-                logger.info('analyze: processed  focPos: {0:5d}, fits file: {1}'.format(int(dataSex[k].focPos), dataSex[k].fitsFn))
+
+            if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
+                dataSex[i]=dSx
+                i += 1
+                logger.info('analyze: processed  focPos: {0:5d}, fits file: {1}'.format(int(dSx.focPos), dSx.fitsFn))
             else:
-                logger.warn('__analyzeRun: no result: focPos: {05d}, file: {1}'.format(int(dataSex[k].focPos), dataSex[k].fitsFn))
-                continue
+                logger.warn('__analyzeRun: no result: file: {0}'.format(fitsFn))
+
+        pos=dict()
+        for cnt in dataSex.keys():
+            try:
+                pos[dataSex[cnt].focPos] += 1
+            except:
+                pos[dataSex[cnt].focPos] = 1
+
+        if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+            self.logger.warn('FocusFilterWheels: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+            if self.debug:
+                for p,v in pos.iteritems():
+                    self.logger.debug('FocusFilterWheels:{0:5.0f}: {1}'.format(p,v))
+            return 
 
         if args.catalogAnalysis:
             an=anr.CatalogAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, rt=rt, logger=self.logger)
@@ -97,74 +111,53 @@ class Do(object):
 
         if not rFt!=None:
             self.logger.info('__analyzeRun: result: wMObjects: {0:5.0f}, wMCombined:{1:5.0f}, wMStdFwhm:{1:5.0f}, minFitPos: {2:5.0f}, minFitFwhm: {3:5.0f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.weightedMeanStdFwhm, rFt.minFitPos, rFt.minFitFwhm))
-
+        return rFt
 
     def analyzeRuns(self):
-        length= 10
-        for d  in self.ftwPath.keys():
-            for fwt in self.ftwPath[d].keys():
-                for ft in self.ftwPath[d][fwt].keys():
-                    if len(self.ftwPath[d][fwt][ft])> length:
-                        print self.ftwPath[d][fwt][ft]
-                        self.__analyzeRun(fitsFns=self.ftwPath[d][fwt][ft])
+        rFts=list()
+        for dftw, ft  in self.fS.iteritems():
+            info='{}\n'.format(repr(dftw))
+            out=False
+            # ToDo dictionary comprehension
+            for k,fns in ft.iteritems():
+                info += '{} {}\n'.format(k,len(fns))
+                if len(fns) >4: 
+                    out=True
+                    rFt=self.__analyzeRun(fitsFns=fns)
+                    if rFt:
+                        rFts.append(rFt)
 
-        for d  in self.ftPath.keys():
-            logger.debug('{}================================'.format(d))
-            for ft in self.ftPath[d].keys():        
-                if len(self.ftPath[d][ft])> length:
-                    logger.debug('{}  {}==============='.format(d, ft))
-                    #for f in self.ftPath[d][ft]:
-                    #    logger.debug('{}'.format(f))
-                    self.__analyzeRun(fitsFns=self.ftPath[d][ft])
+            exit=False
+            openVal=None
+            for rFt in rFts:
+                if rFt.ftName in self.rt.cfg['EMPTY_SLOT_NAMES']:
+                    openVal=int(rFt.minFitPos)
+                    break
 
-        for d  in self.datePath.keys():
-            print '<<<<<<<<<<<<<<<<<<<<<<DONE, EXIT'
-            sys.exit(1)
-            if len(self.datePath[d])> length:
-                print self.datePath[d]
-                # self.__analyzeRun(fitsFns=self.datePath[d])
+            for rFt in rFts:
+                logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2:8s} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openVal, rFt.ftName))
+                exit=True
+            if exit:
+                sys.exit(1)
+            if out:
+                self.logger.info( 'analyzeRun: {}'.format(info))
 
-        for p  in self.plainPath.keys():
-            if len(self.plainPath[p])> length:
-                self.__analyzeRun(fitsFns=self.plainPath[p])
-
+    # 
     def aggregateRuns(self):
-        for root, dirnames, filenames in os.walk(self.basePath):
-            for extensions in images:
-                for filename in fnmatch.filter(filenames, extensions):
-                    ftwwft= filterWheelWithFilters.match(root)
-                    ft    = filters.match(root)
-                    d     = date.match(root)
-                    p     = plain.match(root)
-                    if ftwwft:
-                        try:
-                            self.ftwPath[ftwwft.group(1)][ftwwft.group(2)][ftwwft.group(3)].append(os.path.join(root, filename))
-                        except:
-                    
-                            self.ftwPath[ftwwft.group(1)][ftwwft.group(2)][ftwwft.group(3)]=list()
-                            self.ftwPath[ftwwft.group(1)][ftwwft.group(2)][ftwwft.group(3)].append(os.path.join(root, filename))
-                    elif ft:
-                        try:
-                            self.ftPath[ft.group(1)][ft.group(2)].append(os.path.join(root, filename))
-                        except:
-                    
-                            self.ftPath[ft.group(1)][ft.group(2)]=list()
-                            self.ftPath[ft.group(1)][ft.group(2)].append(os.path.join(root, filename))
-                    elif d:
-                        try:
-                            self.plainPath[d.group(1)].append(os.path.join(root, filename))
-                        except:
-                    
-                            self.plainPath[d.group(1)]=list()
-                            self.plainPath[d.group(1)].append(os.path.join(root, filename))
-                    elif p:
-                        try:
-                            self.plainPath['plain'].append(os.path.join(root, filename))
-                        except:
-                    
-                            self.plainPath['plain']=list()
-                            self.plainPath['plain'].append(os.path.join(root, filename))
+        for root, dirnames, filenames in os.walk(args.basePath):
+            fns=fnmatch.filter(filenames, '*.fits')
+            if len(fns)==0:
+                continue
 
+            mFtws= manyFilterWheels.match(root)
+            d    = date.match(root)
+            FpFns=[os.path.join(root, fn) for fn in fns]
+            if mFtws:
+                self.fS[(mFtws.group(1), mFtws.group(2))] [mFtws.group(3)]=FpFns
+            elif d:
+                self.fS[(d.group(1), 'NOFTW')] ['NOFT']=FpFns
+            else:
+                self.fS[('NODATE', 'NOFTW')] ['NOFT']=FpFns
 
 if __name__ == '__main__':
 

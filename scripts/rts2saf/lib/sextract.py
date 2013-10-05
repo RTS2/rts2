@@ -69,7 +69,7 @@ class Sextract(object):
 
         # these values are remaped in config.py
         try:
-            ambientTemp = float(pyfits.getval(fitsFn,self.rt.cfg['AMBIENTTEMPERATURE']))
+            ambientTemp = '{0:3.1f}'.format(float(pyfits.getval(fitsFn,self.rt.cfg['AMBIENTTEMPERATURE'])))
         except:
             # that is not required
             ambientTemp='NoTemp'
@@ -87,36 +87,56 @@ class Sextract(object):
                 binningXY.append(float(pyfits.getval(fitsFn,self.rt.cfg['BINNING_X'])))
             except:
                 # if CatalogAnalysis is done
-                if self.debug: self.logger.warn( 'sextract: {0}: no x-binning information found'.format(fitsFn, focPos, objectCount))
+                if self.debug: self.logger.warn( 'sextract: no x-binning information found, {0}'.format(fitsFn, focPos, objectCount))
 
             try:
                 binningXY.append(float(pyfits.getval(fitsFn,self.rt.cfg['BINNING_Y'])))
             except:
                 # if CatalogAnalysis is done
-                if self.debug: self.logger.warn( 'sextract: {0}: no y-binning information found'.format(fitsFn, focPos, objectCount))
+                if self.debug: self.logger.warn( 'sextract: no y-binning information found, {0}'.format(fitsFn, focPos, objectCount))
 
             if len(binningXY) < 2:
-                if self.debug: self.logger.warn( 'sextract: {0}: no binning information found'.format(fitsFn, focPos, objectCount))
+                if self.debug: self.logger.warn( 'sextract: no binning information found, {0}'.format(fitsFn, focPos, objectCount))
 
         try:
             naxis1 = float(pyfits.getval(fitsFn,'NAXIS1'))
         except:
-            self.logger.warn( 'sextract: {0}: no NAXIS1 information found'.format(fitsFn, focPos, objectCount))
+            self.logger.warn( 'sextract: no NAXIS1 information found, {0}'.format(fitsFn, focPos, objectCount))
             naxis1=None
         try:
             naxis2 = float(pyfits.getval(fitsFn,'NAXIS2'))
         except:
-            self.logger.warn( 'sextract: {0}: no NAXIS2 information found'.format(fitsFn, focPos, objectCount))
+            self.logger.warn( 'sextract: no NAXIS2 information found, {0}'.format(fitsFn, focPos, objectCount))
             naxis2=None
+        try:
+            ftName = pyfits.getval(fitsFn,'FILTER')
+        except:
+            self.logger.warn( 'sextract: no filter name information found, {0}'.format(fitsFn, focPos, objectCount))
+            ftName=None
+        try:
+            ftAName = pyfits.getval(fitsFn,'FILTA')
+        except:
+            self.logger.warn( 'sextract: no FILTA name information found, {0}'.format(fitsFn, focPos, objectCount))
+            ftAName=None
+        try:
+            ftBName = pyfits.getval(fitsFn,'FILTB')
+        except:
+            self.logger.warn( 'sextract: no FILTB name information found, {0}'.format(fitsFn, focPos, objectCount))
+            ftBName=None
+        try:
+            ftCName = pyfits.getval(fitsFn,'FILTC')
+        except:
+            self.logger.warn( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
+            ftCName=None
 
-        # store results
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found (after filtering), {2}, \nmessage rts2.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
+            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}, \nmessage rts2.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
             return None
 
-        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=focPos, fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalog=sex.objects, binning=binning, binningXY=binningXY, naxis1=naxis1, naxis2=naxis2,fields=self.fields)
+        # store results
+        dataSex=dt.DataSex(fitsFn=fitsFn, focPos=focPos, fwhm=float(fwhm), stdFwhm=float(stdFwhm),nstars=int(nstars), ambientTemp=ambientTemp, catalog=sex.objects, binning=binning, binningXY=binningXY, naxis1=naxis1, naxis2=naxis2,fields=self.fields, ftName=ftName, ftAName=ftAName, ftBName=ftBName, ftCName=ftCName)
         if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
         return dataSex
@@ -224,7 +244,7 @@ if __name__ == '__main__':
 
     # Fit median FWHM data
     dataFitFwhm=dt.DataFitFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
-
+    # ToDo mismatch!!
     fit=ft.FitFwhm(showPlot=False, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFitFwhm=dataFitFwhm, logger=logger)
     min_focpos_fwhm, fwhm= fit.fitData()
     print '--------minFwhm fwhm'

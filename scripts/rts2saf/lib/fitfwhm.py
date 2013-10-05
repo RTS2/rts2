@@ -40,11 +40,9 @@ except:
 
 class FitFwhm(object):
     """ Fit FWHM data and find the minimum"""
-    def __init__(self, showPlot=False, filterName=None, ambientTemp=None, date=None,  comment=None, pltFile=None, dataFitFwhm=None, logger=None):
+    def __init__(self, showPlot=False, date=None,  comment=None, pltFile=None, dataFitFwhm=None, logger=None):
 
         self.showPlot=showPlot
-        self.filterName=filterName
-        self.ambientTemp=ambientTemp
         self.date=date
         self.dataFitFwhm=dataFitFwhm
         self.logger=logger
@@ -95,14 +93,10 @@ class FitFwhm(object):
         if self.flag:
             plt.plot(x_fwhm, self.fitfunc_fwhm(self.par, x_fwhm), 'r-', color='blue')
             
-        if self.ambientTemp and self.comment:
-            plt.title('rts2saf, {0},{1},{2},min:{3:.0f},{4}'.format(self.date, self.filterName, self.ambientTemp, float(self.min_focpos_fwhm), self.comment), fontsize=12)
-        elif self.ambientTemp:
-            plt.title('rts2saf, {0},{1},{2},min:{3:.0f}'.format(self.date, self.filterName, self.ambientTemp, float(self.min_focpos_fwhm)), fontsize=12)
-        elif self.comment:
-            plt.title('rts2saf, {0},{1},min:{2:.0f},{3}'.format(self.date, self.filterName, float(self.min_focpos_fwhm), self.comment), fontsize=12)
+        if self.comment:
+            plt.title('rts2saf, {0},{1},{2}C,min:{3:.0f},{4}'.format(self.date, self.dataFitFwhm.ftName, self.dataFitFwhm.ambientTemp, float(self.min_focpos_fwhm), self.comment), fontsize=12)
         else:
-            plt.title('rts2saf, {0},{1},min:{2:.0f}'.format(self.date, self.filterName, float(self.min_focpos_fwhm)), fontsize=12)
+            plt.title('rts2saf, {0},{1},{2}C,min:{3:.0f}'.format(self.date, self.dataFitFwhm.ftName, self.dataFitFwhm.ambientTemp, float(self.min_focpos_fwhm)), fontsize=12)
 
         plt.xlabel('FOC_POS [tick]')
         plt.ylabel('FWHM [px]')
@@ -129,7 +123,7 @@ if __name__ == '__main__':
         errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
         stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),)
  
-
-    fit=FitFwhm(showPlot=True, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFitFwhm=dataFitFwhm)
+    # ToDo mismatch!
+    fit=FitFwhm(showPlot=True, ftName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFitFwhm=dataFitFwhm)
     fit.fitData()
     fit.plotData()
