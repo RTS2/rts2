@@ -175,7 +175,6 @@ class SimpleAnalysis(object):
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
         # ToDo decide wich ftName from which ftw!!
-        print self.dataSex[0].ambientTemp
         df=dt.DataFitFwhm(ambientTemp=self.dataSex[0].ambientTemp, ftName=self.dataSex[0].ftName, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
         return self.__analyze(dFwhm=df)
 
@@ -198,7 +197,7 @@ class SimpleAnalysis(object):
                     dds9=ds9()
                 except Exception, e:
                     self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
-                    return [weightedMeanObjects, weightedMeanFwhm, minFwhmPos, fwhm]
+                    return 
     
                 for cnt, dSx in self.dataSex.iteritems():
                     if dSx.fitsFn:

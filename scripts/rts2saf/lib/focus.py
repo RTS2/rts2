@@ -209,7 +209,7 @@ class FocusFilterWheels(object):
                             self.logger.error('FocusFilterWheels: try to continue')
                             break
 
-                        self.logger.info('FocusFilterWheels: pos: {0:5d}, objects: {1:4d}, sextracted FITS file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
+                        self.logger.info('FocusFilterWheels: pos: {0:5d}, objects: {1:4d}, file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
                         dataSex[i]=dSx
                         i += 1
                         break
@@ -244,23 +244,25 @@ class FocusFilterWheels(object):
                 if rFt.weightedMeanObjects:
                     self.logger.info('FocusFilterWheels: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanObjects, ftw.name, ft.name))
                 if rFt.weightedMeanFwhm:
-                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanFwhm, filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanFwhm, ftw.name, ft.name))
+                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanFwhm,     filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanFwhm, ftw.name, ft.name))
 
                 if rFt.weightedMeanStdFwhm:
-                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanStdFwhm, filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanStdFwhm, ftw.name, ft.name))
+                    self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanStdFwhm,  filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanStdFwhm, ftw.name, ft.name))
 
                 if rFt.weightedMeanCombined:
                     self.logger.info('FocusFilterWheels: {0:5.0f}: weightedMeanCombined, filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanCombined, ftw.name, ft.name))
 
                 if rFt.minFitPos:
-                    self.logger.info('FocusFilterWheels: {0:5.0f}: minFitPos, filter wheel:{1}, filter:{2}'.format(rFt.minFitPo, ftw.name, ft.names))
-                    self.logger.info('FocusFilterWheels: {0:5.2f}: minFitFwhm, filter wheel:{1}, filter:{2}'.format(rFt.minFitFwhm, ftw.name, ft.name))
+                    self.logger.info('FocusFilterWheels: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFt.minFitPos, ftw.name, ft.name))
+                    self.logger.info('FocusFilterWheels: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFt.minFitFwhm, ftw.name, ft.name))
 
                     self.rt.foc.focDef= rFt.minFitPos
                     # ToDo better criteria is EMPTY_SLOT_NAMES
+                    # in self.rt.cfg['EMPTY_SLOT_NAMES']
                     if ft.OffsetToEmptySlot == 0.:
                         # FOC_DEF (is set first)
                         if self.rt.cfg['SET_FOCUS']:
+                            # ToDo th correct values are stored in Focuser() object
                             if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
                                 acqu.writeFocDef()
                                 self.logger.info('FocusFilterWheels: set FOC_DEF: {0}'.format(int(rFt.minFitPos)))

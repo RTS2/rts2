@@ -133,9 +133,12 @@ class Do(object):
                 if rFt.ftName in self.rt.cfg['EMPTY_SLOT_NAMES']:
                     openVal=int(rFt.minFitPos)
                     break
+            else:
+                # ist not a filter wheel run 
+                return
 
             for rFt in rFts:
-                logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2:8s} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openVal, rFt.ftName))
+                logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openVal, rFt.ftName.rjust(8, ' ')))
                 exit=True
             if exit:
                 sys.exit(1)
