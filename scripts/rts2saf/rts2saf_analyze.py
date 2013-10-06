@@ -53,6 +53,8 @@ class AutoVivification(dict):
 #2013-09-04T22:18:35.077526/fliterwheel/filter
 #                                                                                                         date    ftw  ft
 manyFilterWheels= re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)/(.+)')
+#                                                                                                  date    ft
+oneFilter= re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)')
 # no filter
 #2013-09-04T22:18:35.077526/
 date= re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)')
@@ -128,22 +130,20 @@ class Do(object):
                         rFts.append(rFt)
 
             exit=False
-            openVal=None
-            for rFt in rFts:
-                if rFt.ftName in self.rt.cfg['EMPTY_SLOT_NAMES']:
-                    openVal=int(rFt.minFitPos)
-                    break
-            else:
-                # ist not a filter wheel run 
-                return
-
-            for rFt in rFts:
-                logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openVal, rFt.ftName.rjust(8, ' ')))
-                exit=True
-            if exit:
-                sys.exit(1)
             if out:
                 self.logger.info( 'analyzeRun: {}'.format(info))
+
+        openVal=None
+        for rFt in rFts:
+            if rFt.ftName in self.rt.cfg['EMPTY_SLOT_NAMES']:
+                openVal=int(rFt.minFitPos)
+                break
+        else:
+            # ist not a filter wheel run 
+            return
+
+        for rFt in rFts:
+            logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openVal, rFt.ftName.rjust(8, ' ')))
 
     # 
     def aggregateRuns(self):
@@ -151,12 +151,14 @@ class Do(object):
             fns=fnmatch.filter(filenames, '*.fits')
             if len(fns)==0:
                 continue
-
             mFtws= manyFilterWheels.match(root)
+            oFtw = oneFilter.match(root)
             d    = date.match(root)
             FpFns=[os.path.join(root, fn) for fn in fns]
             if mFtws:
                 self.fS[(mFtws.group(1), mFtws.group(2))] [mFtws.group(3)]=FpFns
+            elif oFtw:
+                self.fS[(oFtw.group(1), 'NOFTW')] [oFtw.group(2)]=FpFns
             elif d:
                 self.fS[(d.group(1), 'NOFTW')] ['NOFT']=FpFns
             else:
