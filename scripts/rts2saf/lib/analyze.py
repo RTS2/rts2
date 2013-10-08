@@ -162,16 +162,16 @@ class SimpleAnalysis(object):
         errx=list()
         stdFwhm=list()
         nObjs=list()
-        for cnt in self.dataSex.keys():
+        for dSx in self.dataSex:
             # all sextracted objects
-            no= len(self.dataSex[cnt].catalog)
-            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered: {2:5d}'.format(self.dataSex[cnt].focPos, no, self.dataSex[cnt].nstars))
+            no= len(dSx.catalog)
+            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered: {2:5d}'.format(dSx.focPos, no, dSx.nstars))
             #
-            pos.append(self.dataSex[cnt].focPos)
-            fwhm.append(self.dataSex[cnt].fwhm)
+            pos.append(dSx.focPos)
+            fwhm.append(dSx.fwhm)
             errx.append(self.focRes)
-            stdFwhm.append(self.dataSex[cnt].stdFwhm)
-            nObjs.append(len(self.dataSex[cnt].catalog))
+            stdFwhm.append(dSx.stdFwhm)
+            nObjs.append(len(dSx.catalog))
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
         # ToDo decide wich ftName from which ftw!!
@@ -198,15 +198,19 @@ class SimpleAnalysis(object):
                 except Exception, e:
                     self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
                     return 
-    
-                for cnt, dSx in self.dataSex.iteritems():
+
+                #ToDo cretae new list
+                self.dataSex.sort(key=lambda x: int(x.focPos))
+
+                for dSx in self.dataSex:
+                    print dSx.focPos
                     if dSx.fitsFn:
                         dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
                         if not dr.displayWithRegion():
                             break # something went wrong
                         time.sleep(1.)
                     else:
-                        self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(cnt))
+                        self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
 
 import numpy
 import math

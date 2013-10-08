@@ -75,26 +75,24 @@ class Do(object):
 
 
     def __analyzeRun(self, fitsFns=None):
-        dataSex=dict()
-        i=0
+        dataSex=list()
         for fitsFn in fitsFns:
             
             rsx= safsx.Sextract(debug=args.sexDebug, rt=rt, logger=logger)
             dSx=rsx.sextract(fitsFn=fitsFn)
 
             if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
-                dataSex[i]=dSx
-                i += 1
+                dataSex.append(dSx)
                 logger.info('analyze: processed  focPos: {0:5d}, fits file: {1}'.format(int(dSx.focPos), dSx.fitsFn))
             else:
                 logger.warn('__analyzeRun: no result: file: {0}'.format(fitsFn))
 
         pos=dict()
-        for cnt in dataSex.keys():
+        for dSx in dataSex:
             try:
-                pos[dataSex[cnt].focPos] += 1
+                pos[dSx.focPos] += 1
             except:
-                pos[dataSex[cnt].focPos] = 1
+                pos[dSx.focPos] = 1
 
         if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
             self.logger.warn('FocusFilterWheels: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
@@ -200,6 +198,9 @@ if __name__ == '__main__':
     parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
 
     args=parser.parse_args()
+    if args.debug:
+        args.level= 'DEBUG'
+        args.toconsole=True
 
     # logger
     lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here

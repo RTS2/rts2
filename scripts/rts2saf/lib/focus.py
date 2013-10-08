@@ -60,9 +60,8 @@ class Focus(object):
             sys.exit(1)
 
         # acquire FITS
-        dataSex=dict()
+        dataSex=list()
         # do not store dSx==None
-        i=0
         for st in self.rt.foc.focFoff:
             while True:
                 try:
@@ -80,8 +79,7 @@ class Focus(object):
                     break
 
                 self.logger.info('Focus: pos: {0:5d}, objects: {1:4d} sextracted FITS file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
-                dataSex[i]=dSx
-                i += 1
+                dataSex.append(dSx)
                 break
             else:
                 if self.debug: self.logger.debug('Focus: got all images')
@@ -91,11 +89,11 @@ class Focus(object):
         # check the number of different positions
         pos=dict()
         # ToDO might be not pythonic
-        for cnt in dataSex.keys():
+        for dSx in dataSex:
             try:
-                pos[dataSex[cnt].focPos] += 1
+                pos[dSx.focPos] += 1
             except:
-                pos[dataSex[cnt].focPos] = 1
+                pos[dSx.focPos] = 1
 
         if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
             self.logger.warn('Focus: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), returning'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
@@ -220,11 +218,11 @@ class FocusFilterWheels(object):
 
                 pos=dict()
                 # ToDO might be not pythonic
-                for cnt in dataSex.keys():
+                for dSx in dataSex:
                     try:
-                        pos[dataSex[cnt].focPos] += 1
+                        pos[dSx.focPos] += 1
                     except:
-                        pos[dataSex[cnt].focPos] = 1
+                        pos[dSx.focPos] = 1
 
                 if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                     self.logger.warn('FocusFilterWheels: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))

@@ -3,7 +3,7 @@
 #
 Introduction
 ============
-Status 2013-09-22:
+Status 2013-10-07:
 ------------------
 
 The documentation describes so far the installation and the test 
@@ -23,31 +23,54 @@ including this description.
 
 In case of questions, or if you need support, contact the author.
 
-rts2saf is almost a complete rewrite of rts2af.  The goals were
-0) a comprehensive user interface including sensible log messages,
+rts2saf is a complete rewrite of rts2af.  The goals were
+0) a comprehensive command line user interface including sensible log messages,
 1) simpler installation and configuration, 
 2) assisted and faster commissioning,
 3) a general solution for all RTS2 driven observatories,
 4) the support of multiple filter wheels with an arbitrary number of slots,  
-5) a modular software design which eases debugging of its components
+5) a modular software design which eases testing of its components
 
-rts2saf is capable to determine and set FOC_DEF and filter focus 
-offsets against an empty or a predefined slot and write them 
-directly to the RTS2-CCD device driver.
+rts2saf's main tasks are to determine the focus and set FOC_DEF
+during autonomous operation whenever the FWHM of an image exceeds 
+a threshold.
+Depending on the actual configuration it measures filter focus offsets 
+relative to an empty or a predefined slot and writes these values
+to the CCD driver.
+In addition it provides a tool to analyze previous focus runs offline 
+e.g. in order to create a temperature model.
 
-If no real images can be taken, e.g. during day time,  "dry fits files" 
-are injected while all involved devices operate as if it were
-night. These files can be images from a former focus run or 
-if not available samples are provided by the author (see below).
+rts2saf makes use of RTS2's HTTP/JSON interface and hence using the scripts  
+interactively on the command line is encouraged. The execution with 
+rts2-scriptexec -s ' exe script ' is not needed any more. This eases 
+and speeds up the test considerably specially in the early phase 
+of debugging the configuration.
 
-In order to facilitate a wider adoption all device or analysis 
-properties are kept in a configuration file.
+Test runs can be carried during day time either with RTS2
+dummy or real devices. If no real images can be taken, either 
+because a dummy CCD is in use or the real CCD is at the moment
+not capable, "dry fits files" are injected while optionally all involved 
+devices operate as if it were night. These files can be images from 
+a former focus run or if not available samples are provided by the 
+author (see below).
 
-rts2saf makes use of RTS2's HTTP/JSON interface and hence
-testing directly on the command line is now possible. The
-execution with rts2-scriptexec -s ' exe script ' is not
-needed any more. This eases and speeds up the test considerably 
-specially in the early phase of debugging the configuration.
+All device or analysis properties are kept in a single configuration file. 
+Parameters, like e.g. FOC_DEF stored in focuser device, are retrieved 
+from the running RTS2 instance as far they are needed. The number of the
+additional parameters stored in the configuration is intentionally
+kept small.
+
+Modes of operations, involved scripts
+-------------------------------------
+
+1) autonomous operation:
+   imgp_analysis.py, rts2saf_fwhm.py, rts2saf_focus.py
+
+2) interactive measurements at night, day time testing:
+   rts2saf_focus.py
+
+3) offline analyis:
+   rts2saf_analyis.py
 
 
 Installation and testing of rts2saf autofocuser
@@ -83,13 +106,13 @@ Configuration file
 
 Save  /etc/rts2/devices ans replace it with the dummy devices
  
-  cd ~/rts-2/conf
+  cd ~/rts-2b/conf/
   sudo cp -a rts2saf /etc/rts2/
   cd /etc/rts2/
   mv devices devices.save
   ln -s rts2saf/devices-dummy-one-filter-wheel devices
 
-Edit in /etc/rts2/rts2af/rts2saf.cfg and check if sextractor
+Edit in /etc/rts2/rts2af/rts2saf.cfg (see below) and check if sextractor
 binary is found.
 
 Postgres DB tables target and scripts entries
@@ -97,7 +120,7 @@ Postgres DB tables target and scripts entries
 
   psql --user YOUR_USERNAME YOUR_DB # (see /etc/rts2/rts2.ini)
   insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
-  insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /YOUR/HOME/rts2/scripts/rts2af/rts2af_acquire.py'); #(see /etc/rts2/devices)
+  insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /YOUR/HOME/rts-2/scripts/rts2saf/rts2saf_focus.py');
 
 
 Adding the devices to the Postgres DB is usually done by script 
@@ -109,8 +132,15 @@ rts2/scripts/ubuntu-rts2-install, in case not use:
   ./rts2-configdb stars -f W0
 
 The filters are stored in the Postgres DB table filters, the entries are not strictly necessary 
-but it is recommended.
+but it is recommended to add them.
 
+Output to terminal and log file
+===============================
+
+All scripts have their own log file which is written by default to /tmp. 
+The log file name is 'script_name.log', e.g. rts2saf_focus.log. While
+executing the scripts interactively enable logging to terminal with the 
+option --toconsole and if more detailed output is required enable --debug. 
 
 Testing with dummy devices
 ==========================
@@ -118,38 +148,33 @@ Testing with dummy devices
 RTS2 configuration and log files
 --------------------------------
 
-In file /etc/rts2/devices add dummy devices (at least this entries)  	
+In file /etc/rts2/devices add dummy devices (at least these entries)  	
 
   #RTS2 dummy devices configuration for Bootes-2
   # 
   #device	type	device_name	options
   #
   camd	dummy	andor3	--wheeldev W0  --filter-offsets 1:2:3:4:5:6:7:8  --focdev F0 --width 400 --height 500 
-  teld	dummy	T0	--localhost localhost
   filterd	dummy	W0	-F "open:R:g:r:i:z:Y:empty8" -s 10 --localhost localhost
   focusd	dummy	F0      --modefile /etc/rts2/f0.modefile	
 
-This is an configuration with CCD, one filter wheel and bunch of filters. Further
-configurations with the associated device file can be found in ~/rts-2/scripts/rts2saf/lib/configs. 
+This is a configuration with CCD, one filter wheel and bunch of filters. Further
+configurations with the associated device file can be found in ~/rts-2/scripts/rts2saf/lib/rts2saf. 
 
 After that configure selector (SEL), Replace the default in /etc/rts2/services with
 
   selector        SEL    --add-queue plan --add-queue focusing --add-queue manual
 
 
-Set permissions of the log file rts2-debug
-
-  sudo chgrp YOUR_GROUP /var/log/rts2-debug
-  sudo chmod g+w /var/log/rts2-debug
-
-Full day time testing rts2saf (dry fits)
-----------------------------------------
+Day time testing rts2saf with 'dry fits files'
+---------------------------------------------
 
 Start RTS2 
 
  /etc/init.d/rts2 start
 
-and check if all devices appeared. Fetch the sample focus run files with
+and check if all devices appeared. Fetch the sample focus run files, these
+are the dry fits files, with
 
   cd ~/rts-2/scripts/rts2saf/lib
   http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
@@ -158,11 +183,11 @@ and check if all devices appeared. Fetch the sample focus run files with
 Check first if the configured devices are present
 
   cd ~/rts-2/scripts/rts2saf/
-  ./rts2saf_focus.py --conf ./lib/configs/rts2saf-one-filter-wheel.cfg --toc --check
+  ./rts2saf_focus.py --toc --check
 
 and if no errors are reported
 
-  ./rts2saf_focus.py --conf ./lib/configs/rts2saf-one-filter-wheel.cfg --toc --dry ./lib/samples/  --exp 1.
+  ./rts2saf_focus.py --toc --dry ./lib/samples/  --exp 1. --displayfit --displayds9
 
 After a while a matplotlib window appears containing the fit. After closing it 
 a DS9 window appears showing which stars have been chosen.
@@ -178,6 +203,15 @@ soon
 
 Integration of rts2saf into RTS2
 --------------------------------
-soon
 
+In /etc/rts2/rts2.ini section
+ [imgproc]
+ astrometry = "/your/path/to/imgp_analysis.py"
 
+add the above line. imgp_analyis.py is available from RTS2 svn repo,
+rts-2/scripts, and if it is not installed on $PATH add its path to $PATH.
+
+imgp_analysis.py calls rts2saf_fwhm.py which measures the FWHM of
+each image after it has been stored on disk. If FWHM is above threshold it 
+writes tar_id 5 into selector's focusing queue. Next executed target will 
+be tar_id 5 that's 'OnTargetFocus'.
