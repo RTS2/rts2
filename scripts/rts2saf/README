@@ -196,7 +196,7 @@ Check first if the configured devices are present
 
 and if no errors are reported
 
-  ./rts2saf_focus.py --toc --dry ./lib/samples/  --exp 1. --displayfit --displayds9
+  ./rts2saf_focus.py --toc --dry ./samples/  --exp 1. --displayfit --displayds9
 
 After a while a matplotlib window appears containing the fit. After closing it 
 a DS9 window appears showing which stars have been chosen.
