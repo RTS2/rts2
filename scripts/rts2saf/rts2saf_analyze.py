@@ -30,6 +30,11 @@ try:
 except:
     import analyze as anr
 
+try:
+    import lib.temperaturemodel as tfm
+except:
+    import temperaturemodel as tfm
+
 
 
 import fnmatch
@@ -126,22 +131,22 @@ class Do(object):
                     rFt=self.__analyzeRun(fitsFns=fns)
                     if rFt:
                         rFts.append(rFt)
-
-            exit=False
             if out:
                 self.logger.info( 'analyzeRun: {}'.format(info))
 
-        openVal=None
+        openMinFitPos=None
         for rFt in rFts:
             if rFt.ftName in self.rt.cfg['EMPTY_SLOT_NAMES']:
-                openVal=int(rFt.minFitPos)
+                openMinFitPos=int(rFt.minFitPos)
                 break
         else:
             # ist not a filter wheel run 
-            return
+            return rFts
 
         for rFt in rFts:
-            logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openVal, rFt.ftName.rjust(8, ' ')))
+            logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
+
+        return rFts
 
     # 
     def aggregateRuns(self):
@@ -154,13 +159,26 @@ class Do(object):
             d    = date.match(root)
             FpFns=[os.path.join(root, fn) for fn in fns]
             if mFtws:
-                self.fS[(mFtws.group(1), mFtws.group(2))] [mFtws.group(3)]=FpFns
+
+                if self.args.filterNames:
+                    if mFtws.group(3) in self.args.filterNames: 
+                        self.fS[(mFtws.group(1), mFtws.group(2))] [mFtws.group(3)]=FpFns
+                else:
+                    # print 'wheels', root
+                    self.fS[(mFtws.group(1), mFtws.group(2))] [mFtws.group(3)]=FpFns
             elif oFtw:
+                #print 'one filter', root
                 self.fS[(oFtw.group(1), 'NOFTW')] [oFtw.group(2)]=FpFns
             elif d:
+                #print 'dateofits', root
                 self.fS[(d.group(1), 'NOFTW')] ['NOFT']=FpFns
             else:
+                #print 'else/fits', root
                 self.fS[('NODATE', 'NOFTW')] ['NOFT']=FpFns
+
+        if len(self.fS)==0:
+            logger.warn('rts2saf_analyze: no files found in basepath: {}'.format(args.basePath))
+
 
 if __name__ == '__main__':
 
@@ -192,12 +210,15 @@ if __name__ == '__main__':
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
+    parser.add_argument('--filternames', dest='filterNames', action='store', default=None, type=str, nargs='+', help=': %(default)s, list of filters to analyzed')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
     parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
 
     args=parser.parse_args()
+
+
     if args.debug:
         args.level= 'DEBUG'
         args.toconsole=True
@@ -217,7 +238,13 @@ if __name__ == '__main__':
         parser.print_help()
         logger.warn('rts2saf_analyze: no --basepath specified')
         sys.exit(1)
+    if not args.toconsole:
+        print 'you may wish to enable logging to console --toconsole'
 
     do=Do(debug=args.debug, basePath=args.basePath, args=args, rt=rt, ev=ev, logger=logger)
     do.aggregateRuns()
-    do.analyzeRuns()
+    rFF=do.analyzeRuns()
+    dom=tfm.TemperatureFocPosModel(showPlot=True, date=None,  comment=None, pltFile='test.png', resultFitFwhm=rFF, logger=logger)
+    dom.fitData()
+    dom.plotData()
+

@@ -72,6 +72,15 @@ Modes of operations, involved scripts
 3) offline analyis:
    rts2saf_analyis.py
 
+Open issuses
+============
+
+1) target selection for focus run: currently an 'on target' is in use
+2) finding the appropriate exposure 
+
+3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken
+   see e.g. Petr's script focusing.py
+
 
 Installation and testing of rts2saf autofocuser
 ===============================================

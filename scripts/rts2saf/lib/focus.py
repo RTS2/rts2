@@ -72,7 +72,7 @@ class Focus(object):
                     
                 sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
                 dSx=sxtr.sextract(fitsFn=fitsFn)
-                if dSx==None:
+                if dSx.fitsFn==None:
                     self.logger.error('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
                     # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved
                     self.logger.error('Focus: try to continue')
@@ -189,8 +189,7 @@ class FocusFilterWheels(object):
                     sys.exit(1)
 
                 # acquire FITS
-                dataSex=dict()
-                i=0
+                dataSex=list()
                 for st in self.rt.foc.focFoff:
                     while True:
                         try:
@@ -201,15 +200,14 @@ class FocusFilterWheels(object):
                     
                         sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
                         dSx=sxtr.sextract(fitsFn=fitsFn)
-                        if dSx==None:
+                        if dSx.fitsFn==None:
                             self.logger.error('FocusFilterWheels: sextractor failed on fits file: {0}'.format(fitsFn))
                             # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved
                             self.logger.error('FocusFilterWheels: try to continue')
                             break
 
                         self.logger.info('FocusFilterWheels: pos: {0:5d}, objects: {1:4d}, file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
-                        dataSex[i]=dSx
-                        i += 1
+                        dataSex.append(dSx)
                         break
                 else:
                     if self.debug: self.logger.debug('FocusFilterWheels: got all images')
