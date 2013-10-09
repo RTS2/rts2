@@ -57,6 +57,7 @@ class DefaultConfiguration(object):
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
         self.dcf[('basic', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]
+
         self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
         # this is really ugly
         # but ConfigParser does not allow something else
@@ -122,6 +123,7 @@ class DefaultConfiguration(object):
         self.dcf[('ccd', 'WINDOW')]= '[ -3, -1, -1, -1 ]'
         self.dcf[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
         self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
+        self.dcf[('ccd', 'ENABLE_JSON_WORKARAUND')]= False
 
         self.dcf[('mode', 'SET_FOCUS')]= True
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True

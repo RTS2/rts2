@@ -39,13 +39,13 @@ except:
 
 class TemperatureFocPosModel(object):
     """ Fit minimum focuser positions as function of temperature"""
-    def __init__(self, showPlot=False, date=None,  comment=None, pltFile=None, resultFitFwhm=None, logger=None):
+    def __init__(self, showPlot=False, date=None,  comment=None, plotFn=None, resultFitFwhm=None, logger=None):
 
         self.showPlot=showPlot
         self.date=date
         self.logger=logger
         self.comment=comment
-        self.pltFile=pltFile
+        self.plotFn=plotFn
         self.resultFitFwhm=resultFitFwhm
         self.fitfunc = lambda p, x: p[0] + p[1] * x 
         self.errfunc = lambda p, x, y, res, err: (y - self.fitfunc(p, x))/(res * err)
@@ -90,11 +90,11 @@ class TemperatureFocPosModel(object):
             plt.title('rts2saf {0}, temperature model'.format(self.date), fontsize=12)
 
         plt.xlabel('ambient temperature [degC]')
-        plt.ylabel('FOC_POS(min. FWHM)   [ticks]')
+        plt.ylabel('FOC_POS(min. FWHM) [ticks]')
         plt.grid(True)
 
         try:
-            plt.savefig(self.pltFile)
+            plt.savefig(self.plotFn)
         except:
             self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.pltFile))                
             
@@ -104,6 +104,7 @@ class TemperatureFocPosModel(object):
                 return
             else:
                 plt.show()
+
 if __name__ == '__main__':
     import argparse
 
@@ -148,9 +149,6 @@ if __name__ == '__main__':
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
     ev.createAcquisitionBasePath(ftwName=None, ftName=None)
 
-
-
-
     rFF=list()
     for i in range(0,10):
         rFF.append(dt.ResultFitFwhm(ambientTemp=float(i), minFitPos=float( 2 * i)))
@@ -158,5 +156,3 @@ if __name__ == '__main__':
     tm= TemperatureFocPosModel(showPlot=True,date=None, comment=None, pltFile='test.png', resultFitFwhm=rFF, logger=logger)
     tm.fitData()
     tm.plotData()
-
-

@@ -35,8 +35,6 @@ try:
 except:
     import temperaturemodel as tfm
 
-
-
 import fnmatch
 import os
 import re
@@ -210,7 +208,7 @@ if __name__ == '__main__':
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
-    parser.add_argument('--filternames', dest='filterNames', action='store', default=None, type=str, nargs='+', help=': %(default)s, list of filters to analyzed')
+    parser.add_argument('--filternames', dest='filterNames', action='store', default=None, type=str, nargs='+', help=': %(default)s, list of filters to analyzed, None: all')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
@@ -232,19 +230,21 @@ if __name__ == '__main__':
     rt.checkConfiguration()
     # environment
     ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
-    ev.createAcquisitionBasePath(ftwName=None, ftName=None)
 
     if not args.basePath:
         parser.print_help()
         logger.warn('rts2saf_analyze: no --basepath specified')
         sys.exit(1)
+
     if not args.toconsole:
         print 'you may wish to enable logging to console --toconsole'
 
     do=Do(debug=args.debug, basePath=args.basePath, args=args, rt=rt, ev=ev, logger=logger)
     do.aggregateRuns()
     rFF=do.analyzeRuns()
-    dom=tfm.TemperatureFocPosModel(showPlot=True, date=None,  comment=None, pltFile='test.png', resultFitFwhm=rFF, logger=logger)
+    plotFn=ev.expandToPlotFileName( plotFn='{}/temp-model.png'.format(args.basePath))
+    logger.info('rts2saf_analyze: storing plot at: {}'.format(plotFn))
+    dom=tfm.TemperatureFocPosModel(showPlot=True, date=ev.startTime[0:19],  comment='test run', plotFn=plotFn, resultFitFwhm=rFF, logger=logger)
     dom.fitData()
     dom.plotData()
 

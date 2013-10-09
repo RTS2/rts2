@@ -53,8 +53,10 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
     if args.verbose:
+        args.debug=True
         args.level='DEBUG'
         args.toconsole=True
+        
     #
     if args.checkConfig:
         args.debug=True

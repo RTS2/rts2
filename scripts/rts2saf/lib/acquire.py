@@ -26,12 +26,20 @@ import time
 import Queue
 import numpy as np
 import shutil
+import os
+import errno
+
 
 from rts2.json import JSONProxy
 
+try:
+    from timeout import timeout
+except:
+    from lib.timeoout import timeout
+
 class ScanThread(threading.Thread):
     """Thread scan aqcuires a set of FITS image filenames"""
-    def __init__(self, debug=False, dryFitsFiles=None, ftw=None, ft=None, foc=None, ccd=None, focDef=None, exposure=None, blind=False, writeToDevices=True, proxy=None, acqu_oq=None, ev=None, logger=None):
+    def __init__(self, debug=False, dryFitsFiles=None, ftw=None, ft=None, foc=None, ccd=None, focDef=None, exposure=None, blind=False, writeToDevices=True, proxy=None, acqu_oq=None, rt=None, ev=None, logger=None):
         super(ScanThread, self).__init__()
         self.stoprequest = threading.Event()
         self.debug=debug
@@ -46,6 +54,7 @@ class ScanThread(threading.Thread):
         self.writeToDevices=writeToDevices
         self.proxy=proxy
         self.acqu_oq=acqu_oq
+        self.rt=rt
         self.ev=ev
         self.logger=logger
 # TAG QUICK
@@ -79,23 +88,22 @@ class ScanThread(threading.Thread):
 
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
             slt= abs(float(focPosCalc-focPos)) / self.foc.speed / abs(float(stepSize)) 
-            if self.debug: self.logger.debug('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, stepSize: {3}, sleep: {4}'.format(focPosCalc, focPos, self.foc.speed, abs(float(stepSize)), slt))
+            self.logger.info('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, stepSize: {3}, sleep: {4:3.1f} sec'.format(focPosCalc, focPos, self.foc.speed, abs(float(stepSize)), slt))
             time.sleep( slt)
 
             self.proxy.refresh()
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-            if self.debug: self.logger.debug('acquire: focPosCalc:{0}'.format(focPosCalc))
             if self.writeToDevices:
                 while abs( focPosCalc- focPos) > self.foc.resolution:
                 
 #                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
                     self.proxy.refresh()
                     focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-                    time.sleep(.2) # leave it alone
+                    time.sleep(.1) # leave it alone
                 else:
-                    if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f}'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+                    if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
-            if self.ccd.name in 'andor3':
+            if self.rt.cfg['ENABLE_JSON_WORKARAUND']:
                 fn=self.exposeAndor3()
             else:
                 fn=self.expose()
@@ -163,7 +171,9 @@ class ScanThread(threading.Thread):
 
         shutil.copy(src=srcTmpFn, dst=newStoreFn)
         return newStoreFn
-
+    # ToDo find a solution for: ValueError: signal only works in main thread
+    # outside this class: not an option
+    #@timeout(seconds=1, error_message=os.strerror(errno.ETIMEDOUT))
     def expose(self):
         if self.exposure:
             exp= self.exposure # args.exposure
@@ -173,6 +183,7 @@ class ScanThread(threading.Thread):
         if self.ftw!=None: # CCD without filter wheel
             exp *= self.ft.exposureFactor
 
+        self.logger.info('acquire: exposing for: {0:7.3f} sec, filter factor: {1:3.1f}'.format(exp, self.ft.exposureFactor))
         if self.writeToDevices:
                 self.proxy.setValue(self.ccd.name,'exposure', str(exp))
                 self.proxy.executeCommand(self.ccd.name,'expose')
@@ -186,15 +197,18 @@ class ScanThread(threading.Thread):
         # ToDo chack that at run time
         if not rdtt:
             rdtt= 5. # beeing on the save side, subsequent calls have the correct time, ToDo: might not be true!
-
+            self.logger.warn('acquire: no read ot time received, that is ok if RTS2 CCD driver has just been (re-)started, sleeping:{}'.format(rdtt))
+                
         # critical: RTS2 creates the file on start of exposure
         # see TAG WAIT
         if self.writeToDevices:
-            # n sleep necessary
+            # sleep necessary
             try:
+                self.logger.info('acquire:time.sleep for: {0:3.1f} sec, waiting for exposure end'.format(expEnd-time.time() + rdtt))
                 time.sleep(expEnd-time.time() + rdtt)
             except Exception, e:
-                self.logger.warn('acquire:time.sleep revceived: {0}'.format(expEnd-time.time() + rdtt))
+                self.logger.warn('acquire:time.sleep received: read out time: {0:3.1f}, should sleep: {0:3.1f}'.format(rdtt, expEnd-time.time() + rdtt))
+                self.logger.warn('acquire: not sleeping, error from time.sleep(): {}'.format(e))
                 
         self.proxy.refresh()
         fn=self.proxy.getDevice('XMLRPC')['{0}_lastimage'.format(self.ccd.name)][1]
@@ -305,8 +319,8 @@ class Acquire(object):
         self.iFocToff= self.proxy.getSingleValue(self.foc.name,'FOC_TOFF')    
 
         
-        self.logger.debug('current focuser: {0}'.format(self.iFocType))        
-        self.logger.debug('current FOC_DEF: {0}'.format(self.iFocDef))
+        self.logger.debug('acquire: current focuser: {0}'.format(self.iFocType))        
+        self.logger.debug('acquire: current FOC_DEF: {0}'.format(self.iFocDef))
 
         if self.writeToDevices:
             self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
@@ -404,6 +418,7 @@ class Acquire(object):
             writeToDevices=self.writeToDevices,
             proxy=self.proxy, 
             acqu_oq=self.acqu_oq, 
+            rt=self.rt,
             ev=self.ev,
             logger=self.logger)
 

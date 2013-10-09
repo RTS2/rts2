@@ -65,7 +65,6 @@ class SimpleAnalysis(object):
             showPlot=self.displayFit, 
             date=self.ev.startTime[0:19], 
             comment=comment,  # ToDo, define a sensible value
-            pltFile=self.ev.expandToAcquisitionBasePath(ftwName=self.ftwName, ftName=self.ftName) + '{0}-plot.png'.format(self.ev.startTime[0:19]), 
             dataFitFwhm=dFwhm, 
             logger=self.logger)
 
@@ -175,7 +174,10 @@ class SimpleAnalysis(object):
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
         # ToDo decide wich ftName from which ftw!!
-        df=dt.DataFitFwhm(ambientTemp=self.dataSex[0].ambientTemp, ftName=self.dataSex[0].ftName, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
+        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
+        plotFn=self.ev.expandToPlotFileName(plotFn='{}/min-fwhm.png'.format(bPth))
+        self.logger.info('analyze: storing plot file at: {}'.format(plotFn))
+        df=dt.DataFitFwhm(plotFn=plotFn,ambientTemp=self.dataSex[0].ambientTemp, ftName=self.dataSex[0].ftName, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
         return self.__analyze(dFwhm=df)
 
     def display(self):

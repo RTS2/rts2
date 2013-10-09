@@ -34,59 +34,22 @@ class Environment():
         self.debug=debug
         self.rt=rt
         self.logger=logger
-        self.runTimePath= '{0}/{1}/'.format(self.rt.cfg['BASE_DIRECTORY'], self.startTime) 
-        self.runDateTime=None
 
     def prefix( self, fileName):
         return 'rts2saf-' +fileName
 
-    def notFits(self, fileName):
-        items= fileName.split('/')[-1]
-        return items.split('.fits')[0]
-
     def expandToTmp( self, fileName=None):
-        if self.absolutePath(fileName):
-            self.logger.error('Environment.expandToTmp: absolute path given: {0}'.format(fileName))
-            return fileName
-
         fileName= self.rt.cfg['TEMP_DIRECTORY'] + '/'+ fileName
         return fileName
 
-    def absolutePath(self, fileName=None):
-        if fileName==None:
-            self.logger.error('Environment.absolutePath: no file name given')
-            
-        pLeadingSlash = re.compile( r'\/.*')
-        leadingSlash = pLeadingSlash.match(fileName)
-        if leadingSlash:
-            return True
-        else:
-            return False
+    def expandToPlotFileName( self, plotFn=None):
+        if plotFn==None:
+            self.logger.error('Environment.expandToPlotFileName: no file name given')
+            plotFn='myPlot.png'
 
-    def defineRunTimePath(self, fileName=None):
-        for root, dirs, names in os.walk(self.rt.value('BASE_DIRECTORY')):
-            if fileName.rstrip() in names:
-                self.runTimePath= root
-                return True
-        else:
-            self.logger.error('Environment.defineRunTimePath: file not found: {0}'.format(fileName))
+        base, ext= os.path.splitext(plotFn)
+        return '{}-{}{}'.format(base,self.startTime[0:19],ext)
 
-        return False
-
-    def expandToRunTimePath(self, pathName=None):
-        if self.absolutePath(pathName):
-            self.runDateTime= pathName.split('/')[-3] # it is rts2saf, which creates the directory tree
-            return pathName
-        else:
-            fileName= pathName.split('/')[-1]
-            if self.defineRunTimePath( fileName):
-                self.runDateTime= self.runTimePath.split('/')[-2]
- 
-                return self.runTimePath + '/' + fileName
-            else:
-                return None
-
-# ToDo: refactor with expandToSkyList
     def expandToDs9RegionFileName( self, fitsHDU=None):
         if fitsHDU==None:
             self.logger.error('Environment.expandToDs9RegionFileName: no hdu given')
@@ -101,7 +64,6 @@ class Environment():
             fileName= self.prefix( items[0] + '-' +   self.startTime + '.' + items[1])
             
         return  self.expandToTmp(fileName)
-
 
     def expandToDs9CommandFileName( self, fitsHDU=None):
         if fitsHDU==None:
@@ -135,7 +97,6 @@ class Environment():
             except:
                 self.logger.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
                 return False
-
         return True
     def setModeExecutable(self, path):
         #mode = os.stat(path)
@@ -147,7 +108,6 @@ if __name__ == '__main__':
     import argparse
     import sys
     import logging
-    import os
     import glob
 
     try:

@@ -40,14 +40,13 @@ except:
 
 class FitFwhm(object):
     """ Fit FWHM data and find the minimum"""
-    def __init__(self, showPlot=False, date=None,  comment=None, pltFile=None, dataFitFwhm=None, logger=None):
+    def __init__(self, showPlot=False, date=None,  comment=None, dataFitFwhm=None, logger=None):
 
         self.showPlot=showPlot
         self.date=date
         self.dataFitFwhm=dataFitFwhm
         self.logger=logger
         self.comment=comment
-        self.pltFile=pltFile
         self.par=None
         self.flag=None
         self.min_focpos_fwhm=None
@@ -103,7 +102,7 @@ class FitFwhm(object):
         plt.grid(True)
 
         try:
-            plt.savefig(self.pltFile)
+            plt.savefig(self.dataFitFwhm.plotFn)
         except:
             self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.pltFile))                
             

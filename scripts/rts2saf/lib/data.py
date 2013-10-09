@@ -21,7 +21,8 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 class DataFitFwhm(object):
-    def __init__(self, ambientTemp=None, ftName=None, pos=None, fwhm=None, errx=None, stdFwhm=None, nObjs=None):
+    def __init__(self, plotFn=None, ambientTemp=None, ftName=None, pos=None, fwhm=None, errx=None, stdFwhm=None, nObjs=None):
+        self.plotFn=plotFn
         self.ambientTemp=ambientTemp
         self.ftName=ftName
         self.pos=pos
