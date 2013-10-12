@@ -31,11 +31,7 @@ import errno
 
 
 from rts2.json import JSONProxy
-
-try:
-    from timeout import timeout
-except:
-    from lib.timeoout import timeout
+from timeout import timeout
 
 class ScanThread(threading.Thread):
     """Thread scan aqcuires a set of FITS image filenames"""
@@ -103,8 +99,8 @@ class ScanThread(threading.Thread):
                 else:
                     if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
-            if self.rt.cfg['ENABLE_JSON_WORKARAUND']:
-                fn=self.exposeAndor3()
+            if self.rt.cfg['ENABLE_JSON_WORKAROUND']:
+                fn=self.scriptExecExpose()
             else:
                 fn=self.expose()
 
@@ -121,7 +117,7 @@ class ScanThread(threading.Thread):
 # see below TAGs FEELGOOD, INCREMENT
 #
 # TAG FEELGOOD, see expose-andor3.py if you don't believe it!!
-    def exposeAndor3(self):
+    def scriptExecExpose(self):
         import os
         import errno
         import subprocess
@@ -434,31 +430,13 @@ if __name__ == '__main__':
     import Queue
     import re
     import argparse
-    try:
-        import lib.devices as dev
-    except:
-        import devices as dev
-    try:
-        import lib.log as  lg
-    except:
-        import log as lg
-    try:
-        import lib.config as cfgd
-    except:
-        import config as cfgd
-    try:
-        import lib.devices as dev
-    except:
-        import devices as dev
-
-    try:
-        import lib.environ as env
-    except:
-        import environ as env
-    try:
-        import lib.sextract as sx
-    except:
-        import sextract as sx
+    import rts2saf.devices as dev
+    import rts2saf.log as  lg
+    import rts2saf.config as cfgd
+    import rts2saf.devices as dev
+    import rts2saf.environ as env
+    import environ as env
+    import rts2saf.sextract as sx
 
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf check devices')

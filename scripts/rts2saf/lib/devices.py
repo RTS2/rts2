@@ -29,10 +29,7 @@ import re
 import os
 import errno
 from rts2.json import JSONProxy
-try:
-    from lib.timeout import timeout
-except:
-    from timeout import timeout
+from rts2saf.timeout import timeout
 
 class Filter():
     """Class for filter properties"""
@@ -562,18 +559,9 @@ class SetCheckDevices(object):
 if __name__ == '__main__':
 
     import argparse
-    try:
-        import lib.devices as dev
-    except:
-        import devices as dev
-    try:
-        import lib.log as  lg
-    except:
-        import log as lg
-    try:
-        import lib.config as cfgd
-    except:
-        import config as cfgd
+    import rts2saf.devices as dev
+    import rts2saf.log as  lg
+    import rts2saf.config as cfgd
 
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf check devices')

@@ -57,7 +57,10 @@ class TemperatureFocPosModel(object):
     def __prepare(self):
 
         for rFF in self.resultFitFwhm:
-            self.temp.append(float(rFF.ambientTemp))
+            try:
+                self.temp.append(float(rFF.ambientTemp))
+            except:
+                self.temp.append(rFF.ambientTemp)
             self.tempErr.append(0.01)
             self.minFitPos.append(float(rFF.minFitPos))
             self.minFitPosErr.append(2.5) 
@@ -107,27 +110,11 @@ class TemperatureFocPosModel(object):
 
 if __name__ == '__main__':
     import argparse
-
-    try:
-        import lib.config as cfgd
-    except:
-        import config as cfgd
-
-    try:
-        import lib.environ as env
-    except:
-        import environ as env
-
-    try:
-        import lib.log as lg
-    except:
-        import log as lg
-    try:
-        import lib.data as dt
-    except:
-        import data as dt
-
     import re
+    import rts2saf.config as cfgd
+    import rts2saf.environ as env
+    import rts2saf.log as lg
+    import rts2saf.data as dt
     
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')

@@ -20,27 +20,14 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 import os
-import pyfits
-
-# ToDo sort that out with Petrimport rts2.sextractor as rsx
-try:
-    import lib.sextractor as rsx
-except:
-    import sextractor  as rsx
-try:
-    import lib.data as dt
-except:
-    import data as dt
-try:
-    import lib.fitfwhm as ft
-except:
-    import fitfwhm as ft
-
-try:
-    import lib.ds9region as ds9r
-except:
-    import ds9region as ds9r
-
+from astropy.io.fits import getheader
+import sys
+import time
+# ToDo sort that out with Petr import rts2.sextractor as rsx
+import rts2saf.sextractor as rsx
+import rts2saf.data as dt
+import rts2saf.fitfwhm as ft
+import rts2saf.ds9region as ds9r
 
 class Sextract(object):
     """Sextract a FITS image"""
@@ -57,25 +44,35 @@ class Sextract(object):
     def sextract(self, fitsFn):
 
         sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw)
-        sex.runSExtractor(fitsFn)
+        stde=sex.runSExtractor(fitsFn)
+        if stde:
+            self.logger.error( 'sextract: {0} not found, sextractor message:\n{1}\nexiting'.format(fitsFn,stde))
+            return dt.DataSex()
 
         # find the sextractor counts
         objectCount = len(sex.objects)
+
         try:
-            focPos = float(pyfits.getval(fitsFn,'FOC_POS'))
-        except:
-            self.logger.error( 'sextract: in FITS {0} key word FOC_POS not found, exiting'.format(fitsFn))
-            sys.exit(1)
+            hdr = getheader(fitsFn, 0)
+        except Exception, e:
+            self.logger.error( 'sextract: FITS {0} \nmessage: {1} returning'.format(fitsFn, e))
+            return dt.DataSex()
+
+        try:
+            focPos = float(hdr['FOC_POS'])
+        except Exception, e:
+            self.logger.error( 'sextract: in FITS {0} key word FOC_POS not found\nmessage: {1} returning'.format(fitsFn, e))
+            return dt.DataSex()
 
         # these values are remaped in config.py
         try:
-            ambientTemp = '{0:3.1f}'.format(float(pyfits.getval(fitsFn,self.rt.cfg['AMBIENTTEMPERATURE'])))
+            ambientTemp = '{0:3.1f}'.format(float(hdr[self.rt.cfg['AMBIENTTEMPERATURE']]))
         except:
             # that is not required
             ambientTemp='NoTemp'
 
         try:
-            binning = float(pyfits.getval(fitsFn,self.rt.cfg['BINNING']))
+            binning = float(hdr[self.rt.cfg['BINNING']])
         except:
             # if CatalogAnalysis is done
             binning=None
@@ -84,13 +81,13 @@ class Sextract(object):
         if not binning:
             binningXY=list()
             try:
-                binningXY.append(float(pyfits.getval(fitsFn,self.rt.cfg['BINNING_X'])))
+                binningXY.append(float(hdr[self.rt.cfg['BINNING_X']]))
             except:
                 # if CatalogAnalysis is done
                 if self.debug: self.logger.warn( 'sextract: no x-binning information found, {0}'.format(fitsFn, focPos, objectCount))
 
             try:
-                binningXY.append(float(pyfits.getval(fitsFn,self.rt.cfg['BINNING_Y'])))
+                binningXY.append(float(hdr[self.rt.cfg['BINNING_Y']]))
             except:
                 # if CatalogAnalysis is done
                 if self.debug: self.logger.warn( 'sextract: no y-binning information found, {0}'.format(fitsFn, focPos, objectCount))
@@ -99,32 +96,32 @@ class Sextract(object):
                 if self.debug: self.logger.warn( 'sextract: no binning information found, {0}'.format(fitsFn, focPos, objectCount))
 
         try:
-            naxis1 = float(pyfits.getval(fitsFn,'NAXIS1'))
+            naxis1 = float(hdr['NAXIS1'])
         except:
             self.logger.warn( 'sextract: no NAXIS1 information found, {0}'.format(fitsFn, focPos, objectCount))
             naxis1=None
         try:
-            naxis2 = float(pyfits.getval(fitsFn,'NAXIS2'))
+            naxis2 = float(hdr['NAXIS2'])
         except:
             self.logger.warn( 'sextract: no NAXIS2 information found, {0}'.format(fitsFn, focPos, objectCount))
             naxis2=None
         try:
-            ftName = pyfits.getval(fitsFn,'FILTER')
+            ftName = hdr['FILTER']
         except:
             self.logger.warn( 'sextract: no filter name information found, {0}'.format(fitsFn, focPos, objectCount))
             ftName=None
         try:
-            ftAName = pyfits.getval(fitsFn,'FILTA')
+            ftAName = hdr['FILTA']
         except:
             self.logger.warn( 'sextract: no FILTA name information found, {0}'.format(fitsFn, focPos, objectCount))
             ftAName=None
         try:
-            ftBName = pyfits.getval(fitsFn,'FILTB')
+            ftBName = hdr['FILTB']
         except:
             self.logger.warn( 'sextract: no FILTB name information found, {0}'.format(fitsFn, focPos, objectCount))
             ftBName=None
         try:
-            ftCName = pyfits.getval(fitsFn,'FILTC')
+            ftCName = hdr['FILTC']
         except:
             self.logger.warn( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
             ftCName=None
@@ -132,7 +129,7 @@ class Sextract(object):
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}, \nmessage rts2.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
+            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}, \nmessage rts2saf.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
             return dt.DataSex()
 
         # store results
@@ -151,14 +148,8 @@ if __name__ == '__main__':
     import argparse
     import glob
     import logging
-    try:
-        import lib.config as cfgd
-    except:
-        import config as cfgd
-    try:
-        import lib.log as lg
-    except:
-        import log as lg
+    import rts2saf.config as cfgd
+    import rts2saf.log as lg
 
 
     prg= re.split('/', sys.argv[0])[-1]
@@ -168,7 +159,7 @@ if __name__ == '__main__':
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
     parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--dryfitsfiles', dest='dryfitsfiles', action='store', default='./samples', help=': %(default)s, directory where a FITS files are stored from a earlier focus run')
+    parser.add_argument('--dryfitsfiles', dest='dryfitsfiles', action='store', default='../samples', help=': %(default)s, directory where a FITS files are stored from a earlier focus run')
     # ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--ds9display', dest='ds9display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
@@ -195,10 +186,12 @@ if __name__ == '__main__':
     for k, fitsFn in enumerate(dryFitsFiles):
         print fitsFn
         sx= Sextract(debug=args.debug, rt=rt, logger=logger)
+        
+        dSx=sx.sextract(fitsFn=fitsFn) 
         try:
             dSx=sx.sextract(fitsFn=fitsFn) 
         except Exception, e:
-            logger.error('sextract: error with sextract:\nrts2.sextractor: {0}'.format(e))
+            logger.error('sextract: error with sextract:\nrts2saf.sextractor: {0}'.format(e))
 
         if dSx and dSx.fwhm>0. and dSx.stdFwhm>0.:
             dataSex[k]=dSx 
@@ -243,12 +236,12 @@ if __name__ == '__main__':
     print weightedMean
 
     # Fit median FWHM data
-    dataFitFwhm=dt.DataFitFwhm(pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
+    dataFitFwhm=dt.DataFitFwhm(plotFn='./sextract-plot.png',ambientTemp='-271.3', ftName='SX', pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm))
     # ToDo mismatch!!
-    fit=ft.FitFwhm(showPlot=False, filterName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test sextract', pltFile='./test-sextract.png', dataFitFwhm=dataFitFwhm, logger=logger)
-    min_focpos_fwhm, fwhm= fit.fitData()
+    fit=ft.FitFwhm(showPlot=False, date='2013-09-08T09:30:09', comment='Test sextract', dataFitFwhm=dataFitFwhm, logger=logger)
+    minFitPos, minFitFwhm, fitPar= fit.fitData()
     print '--------minFwhm fwhm'
-    print min_focpos_fwhm, fwhm
+    print minFitPos, minFitFwhm
 
     fit.plotData()
     # plot them through ds9

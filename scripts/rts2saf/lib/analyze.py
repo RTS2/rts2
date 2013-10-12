@@ -26,18 +26,9 @@ import copy
 
 from ds9 import *
 
-try:
-    import lib.data as dt
-except:
-    import data as dt
-try:
-    import lib.ds9region as ds9r
-except:
-    import ds9region as ds9r
-try:
-    import lib.fitfwhm as ft
-except:
-    import fitfwhm as ft
+import rts2saf.data as dt
+import rts2saf.ds9region as ds9r
+import rts2saf.fitfwhm as ft
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
@@ -310,24 +301,10 @@ if __name__ == '__main__':
     import glob
     import re
 
-    try:
-        import lib.config as cfgd
-    except:
-        import config as cfgd
-    try:
-        import lib.sextract as sx
-    except:
-        import sextract as sx
-
-    try:
-        import lib.environ as env
-    except:
-        import environ as env
-
-    try:
-        import lib.log as lg
-    except:
-        import log as lg
+    import rts2saf.config as cfgd
+    import rts2saf.sextract as sx
+    import rts2saf.environ as env
+    import rts2saf.log as lg
 
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')

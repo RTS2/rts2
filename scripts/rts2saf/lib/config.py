@@ -28,10 +28,7 @@ import os
 import sys
 import string
 import re
-try:
-    import lib.devices as dev
-except:
-    import devices as dev
+import rts2saf.devices as dev
 
 
 class DefaultConfiguration(object):
@@ -122,8 +119,9 @@ class DefaultConfiguration(object):
         self.dcf[('ccd', 'CCD_BINNING')]= '1x1'
         self.dcf[('ccd', 'WINDOW')]= '[ -3, -1, -1, -1 ]'
         self.dcf[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
+        self.dcf[('ccd', 'PIXELSCALE')]= 1.1 # unit arcsec/pixel
         self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
-        self.dcf[('ccd', 'ENABLE_JSON_WORKARAUND')]= False
+        self.dcf[('ccd', 'ENABLE_JSON_WORKAROUND')]= False
 
         self.dcf[('mode', 'SET_FOCUS')]= True
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
@@ -401,10 +399,7 @@ class Configuration(DefaultConfiguration):
 if __name__ == '__main__':
 
     import argparse
-    try:
-        import lib.log as  lg
-    except:
-        import log as lg
+    import rts2saf.log as  lg
 
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')

@@ -63,11 +63,12 @@ class Sextractor:
 
 		cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
 		try:
-			proc = subprocess.Popen(cmd)
-			proc.wait()
+			stdo, stde = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 		except OSError,err:
 			print >> sys.stderr, 'canot run command: "', ' '.join(cmd), '", error ',err
 			raise err
+		if stde:
+			return stde
 
 		# parse output
 		self.objects = []

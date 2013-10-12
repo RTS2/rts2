@@ -110,20 +110,9 @@ if __name__ == '__main__':
     import logging
     import glob
 
-    try:
-        import lib.config as cfgd
-    except:
-        import config as cfgd
-    try:
-        import lib.sextract as sx
-    except:
-        import sextract as sx
-    try:
-        import lib.log as lg
-    except:
-        import log as lg
-
-
+    import rts2saf.config as cfgd
+    import rts2saf.sextract as sx
+    import rts2saf.log as lg
 
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')

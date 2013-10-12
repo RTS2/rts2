@@ -25,11 +25,11 @@ import argparse
 import re
 import glob
 
-import lib.config as cfgd
-import lib.log as  lg
-import lib.environ as env
-import lib.focus as fc
-import lib.devices as dev
+import rts2saf.config as cfgd
+import rts2saf.log as  lg
+import rts2saf.environ as env
+import rts2saf.focus as fc
+import rts2saf.devices as dev
 
 
 if __name__ == '__main__':
@@ -50,6 +50,8 @@ if __name__ == '__main__':
     parser.add_argument('--focdef', dest='focDef', action='store', default=None, type=float, help=': %(default)s, set FOC_DEF to value')
     parser.add_argument('--focstep', dest='focStep', action='store', default=None, type=int, help=': %(default)s, focuser step size during blind run, see --blind')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
+    parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
+    parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
 
     args=parser.parse_args()
     if args.verbose:

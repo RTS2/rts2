@@ -27,9 +27,9 @@ import re
 import rts2.queue
 from rts2.json import JSONProxy
 
-import lib.log as lg
-import lib.config as cfgd
-import lib.sextract as sx
+import rts2saf.log as lg
+import rts2saf.config as cfgd
+import rts2saf.sextract as sx
 
 if __name__ == '__main__':
 
@@ -47,8 +47,14 @@ if __name__ == '__main__':
     parser.add_argument('--fitsFn', dest='fitsFn', action='store', default=None, help=': %(default)s, fits file to process')
     args=parser.parse_args()
     # logger
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
+    if args.toconsole or args.debug:
+        lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
+        logger= lgd.logger 
+    else: 
+        # started by IMGP
+        import logging
+        logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+        logger = logging.getLogger()
     # read the run time configuration
     rt=cfgd.Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
@@ -64,7 +70,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     fwhmTreshold=rt.cfg['FWHM_LOWER_THRESH']
-    print rt.cfg['FWHM_LOWER_THRESH']
 
     if args.fwhmThreshold:
         fwhmTreshold=args.fwhmThreshold

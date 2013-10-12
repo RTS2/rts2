@@ -33,10 +33,7 @@ except:
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize
-try:
-    import lib.data as dtf
-except:
-    import data as dtf
+import rts2saf.data as dtf
 
 class FitFwhm(object):
     """ Fit FWHM data and find the minimum"""
@@ -104,7 +101,7 @@ class FitFwhm(object):
         try:
             plt.savefig(self.dataFitFwhm.plotFn)
         except:
-            self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.pltFile))                
+            self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.dataFitFwhm.plotFn))                
             
         if self.showPlot:
             if NODISPLAY:

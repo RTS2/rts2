@@ -22,9 +22,9 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import Queue
 
-import lib.acquire as acq
-import lib.sextract as sx
-import lib.analyze as  an
+import rts2saf.acquire as acq
+import rts2saf.sextract as sx
+import rts2saf.analyze as  an
 
 # ToDo this class is bad by design (cut/copy/paste)
 # create a method wich can be called by class FocusFilterWheels
@@ -103,10 +103,7 @@ class Focus(object):
             return
 
         # might go to thread too
-        if self.dryFitsFiles:
-            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=None, ftName=None, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
-        else:
-            anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, ftwName=None, ftName=None, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
 
         rFt= anr.analyze()
 
@@ -230,12 +227,11 @@ class FocusFilterWheels(object):
                     continue
 
                 # might go to a thread too
-                if self.dryFitsFiles:
-                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=True, displayFit=True, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
-                else:
-                    anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=False, displayFit=False, ftwName=ftw.name, ftName=ft.name, dryFits=False, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+                anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
 
                 rFt= anr.analyze()
+                # 
+                anr.display()
 
                 if rFt.weightedMeanObjects:
                     self.logger.info('FocusFilterWheels: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanObjects, ftw.name, ft.name))

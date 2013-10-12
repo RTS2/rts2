@@ -20,20 +20,9 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-try:
-    import lib.sextract as safsx
-except:
-    import sextract as safsx
-
-try:
-    import lib.analyze as anr
-except:
-    import analyze as anr
-
-try:
-    import lib.temperaturemodel as tfm
-except:
-    import temperaturemodel as tfm
+import rts2saf.sextract as safsx
+import rts2saf.analyze as anr
+import rts2saf.temperaturemodel as tfm
 
 import fnmatch
 import os
@@ -181,22 +170,9 @@ class Do(object):
 if __name__ == '__main__':
 
     import argparse
-
-    try:
-        import lib.config as cfgd
-    except:
-        import config as cfgd
-
-    try:
-        import lib.environ as env
-    except:
-        import environ as env
-
-    try:
-        import lib.log as lg
-    except:
-        import log as lg
-
+    import rts2saf.config as cfgd
+    import rts2saf.environ as env
+    import rts2saf.log as lg
 
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
