@@ -129,6 +129,31 @@ all scripts can be used directly on the command line either
 with or without 'dry fits files' or with previously acquired
 focus runs to perform offline analysis.
 
+Focus runs come in two flavors:
+
+1) 'regular'
+2) 'blind'
+
+Regular runs can be carried either in aunonomous mode or on the
+command line while blind runs are typically executed only on the
+command line.
+
+If you don't know where the focus edit rts2saf.cfg and then execute 
+
+  rts2saf_focus.py  --toconsole --blind
+
+Normaly the fit convergences but is often meaningless. Therefore
+an estimator based on the weighted mean is the best guess. These
+values appear as 
+
+analyze:   258: weighted mean derived from sextracted objects
+analyze:   286: weighted mean derived from FWHM
+analyze:   305: weighted mean derived from std(FWHM)
+analyze:   342: weighted mean derived from Combined
+
+on the console. Under normal circumstances the 'weighted mean derived from Combined'
+is the closest approximation of the true value.
+
 
 Installation and testing of rts2saf autofocuser
 ===============================================
@@ -196,7 +221,7 @@ but it is recommended to add them.
 Testing with dummy devices
 ==========================
 
-For the following desorption I assume you did
+For the following description I assume you did
 
   cd ~
   svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts-2
@@ -267,7 +292,7 @@ are the dry fits files, with
 Check first if the configured devices are present
 
   cd ~/rts-2/scripts/rts2saf/
-  ./rts2saf_focus.py --toc --check
+  ./rts2saf_focus.py --toconsole --check
 
 and if no errors are reported
 
@@ -306,6 +331,8 @@ Execute
 
   rts2saf_focus.py --toconsole --displayfit --displayds9
 
+and after a while the matplotlib window opens and after closing
+it the DS( window.
 
 RTS2 integration
 ================
