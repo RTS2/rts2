@@ -3,9 +3,9 @@
 #
 Introduction
 ============
-Status 2013-10-10:
+Status 2013-10-12:
 ------------------
-This description is not yet meant to complete.
+This description is not yet meant to be complete.
 
 The documentation describes so far the installation and the test 
 procedure if RTS2 is configured with its dummy devices.  
@@ -332,7 +332,7 @@ Execute
   rts2saf_focus.py --toconsole --displayfit --displayds9
 
 and after a while the matplotlib window opens and after closing
-it the DS( window.
+it the DS9 window.
 
 RTS2 integration
 ================
