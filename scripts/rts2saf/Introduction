@@ -1,6 +1,3 @@
-#
-# 2013-09-24, Markus Wildi, wildi.markus@bluewin.ch 
-#
 Introduction
 ============
 Status 2013-10-12:
@@ -163,10 +160,9 @@ Prerequisites
 
 Update to Python 2.7.x (mandatory) and various Python packages:
 
-
 1) DS9 from http://hea-www.harvard.edu/RD/ds9/site/Home.html
-2) pip install astropy
-3) numpy
+2) numpy, numpy-devel
+3) pip install astropy
 
 During RTS2 installation the rts2saf executable are installed to 
 
@@ -209,9 +205,9 @@ Adding the devices to the Postgres DB is usually done by script
 rts2/scripts/ubuntu-rts2-install, in case not execute as user postgres:
 
    cd src/sql/
-  ./rts2-configdb stars -t T0
-  ./rts2-configdb stars -c C0
-  ./rts2-configdb stars -f W0
+   ./rts2-configdb stars -t T0
+   ./rts2-configdb stars -c C0
+   ./rts2-configdb stars -f W0
 
 The filters are stored in the Postgres DB table filters. These entries are not strictly necessary 
 but it is recommended to add them.
@@ -235,21 +231,21 @@ or --verbose if available.
 
 In directory ~/rts-2/scripts/rts2saf/configs
 
-├── dummy-bootes-2
-│   ├── devices
-│   └── rts2saf.cfg
-├── dummy-bootes-2-autonomous
-│   ├── devices
-│   └── rts2saf.cfg
-├── no-filter-wheel
-│   ├── devices
-│   └── rts2saf.cfg
-├── one-filter-wheel
-│   ├── devices
-│   └── rts2saf.cfg
-└── one-filter-wheel-autonomous
-    ├── devices
-    └── rts2saf.cfg
+   | dummy-bootes-2
+   |   devices
+   |   rts2saf.cfg
+   | dummy-bootes-2-autonomous
+   |   devices
+   |   rts2saf.cfg
+   | no-filter-wheel
+   |   devices
+   |   rts2saf.cfg
+   | one-filter-wheel
+   |   devices
+   |   rts2saf.cfg
+   | one-filter-wheel-autonomous
+   |   devices
+   |   rts2saf.cfg
 
 you'll find four sets of rts2saf configuration files with their
 associated device files. The postfix '-autonomous' denotes configurations
