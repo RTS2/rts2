@@ -1,0 +1,37 @@
+usage: rts2saf_focus.py [-h] [--debug] [--level LEVEL] [--topath PATH]
+                        [--logfile LOGFILE] [--toconsole]
+                        [--dryfitsfiles DIRECTORY] [--config CONFIG]
+                        [--verbose] [--checkconfig]
+                        [--focrange FOCRANGE [FOCRANGE ...]]
+                        [--exposure EXPOSURE] [--focdef FOCDEF]
+                        [--focstep FOCSTEP] [--blind] [--displayds9]
+                        [--displayfit]
+
+rts2asaf analysis
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --debug               : False,add more output
+  --level LEVEL         : INFO, debug level
+  --topath PATH         : /tmp, write log file to path
+  --logfile LOGFILE     : rts2saf_focus.py.log, logfile name
+  --toconsole           : False, log to console
+  --dryfitsfiles DIRECTORY
+                        : None, directory where a set of FITS files are stored
+                        from a previous focus run
+  --config CONFIG       : /etc/rts2/rts2saf/rts2saf.cfg, configuration file
+                        path
+  --verbose             : False, print device properties and add more messages
+  --checkconfig         : False, check connection to RTS2, the devices and
+                        their configuration, then EXIT
+  --focrange FOCRANGE   : None, focuser range given as "ll ul st" used only during blind run
+
+  --exposure EXPOSURE   : None, exposure time for CCD
+  --focdef FOCDEF       : None, set FOC_DEF to value
+  --focstep FOCSTEP     : None, focuser step size during blind run, see
+                        --blind
+  --blind               : False, focus range and step size are defined in
+                        configuration, if --focrange is defined it is used to
+                        set the range
+  --displayds9          : False, display fits images and region files
+  --displayfit          : False, display fit

@@ -1,0 +1,21 @@
+usage: rts2saf_fwhm.py [-h] [--debug] [--level LEVEL] [--topath PATH]
+                       [--logfile LOGFILE] [--toconsole] [--config CONFIG]
+                       [--queue QUEUE] [--tarid TARID]
+                       [--fwhmthreshold FWHMTHRESHOLD] [--fitsFn FITSFN]
+
+rts2asaf fwhm
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --debug               : False,add more output
+  --level LEVEL         : INFO, debug level
+  --topath PATH         : /tmp, write log file to path
+  --logfile LOGFILE     : rts2saf_fwhm.py.log, logfile name
+  --toconsole           : False, log to console
+  --config CONFIG       : /etc/rts2/rts2saf/rts2saf.cfg, configuration file
+                        path
+  --queue QUEUE         : focusing, queue where to set a focus run
+  --tarid TARID         : 5, target id of OnTargetFocus
+  --fwhmthreshold FWHMTHRESHOLD
+                        : None, threshold to trigger a focus run
+  --fitsFn FITSFN       : None, fits file to process

@@ -1,0 +1,8 @@
+usage: expose_with_your_ccd.py [-h] [--debug] [--ccdname CCDNAME]
+
+rts2asaf ccd exposure and RTS2 execution test
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --debug            : False,add more output
+  --ccdname CCDNAME  : andor3, your ccd name, e.g. C0

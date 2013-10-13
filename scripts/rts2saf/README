@@ -1,0 +1,17 @@
+rts2saf package's documentation is generated with Sphinx. 
+To install Sphinx use:
+
+ easy_install -U sphinx
+
+
+Execute
+
+ cd ~/rts-2/scripts/rts2saf
+ make -f Makefile.sphinx  html
+ 
+and e.g.
+
+ firefox _build/html/index.html
+ 
+
+to view it.
