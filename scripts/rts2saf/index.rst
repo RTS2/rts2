@@ -13,33 +13,24 @@ Contents:
 
 .. include:: Introduction
 
-
-
 Executables
 ===========
 
 expose_with_your_ccd.py
 -----------------------
-
-.. include:: expose_with_your_ccd.txt
-
+.. program-output:: expose_with_your_ccd.py --help
 
 rts2saf_focus.py
 --------------------
-
-.. include:: rts2saf_focus.txt
-
+.. program-output:: rts2saf_focus.py --help
 
 rts2saf_fwhm.py
 ---------------
-
-.. include:: rts2saf_fwhm.txt
-
+.. program-output:: rts2saf_fwhm.py --help
 
 rts2saf_analyze.py
 ------------------
-
-.. include:: rts2saf_analyze.txt
+.. program-output:: rts2saf_analyze.py --help
 
 
 
