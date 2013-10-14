@@ -29,7 +29,24 @@ import org.json.JSONObject;
  */
 class JSON
 {
-	public JSON(String url, String login, String password) throws Exception
+	/**
+         * Construct connection to given URL.
+         *
+         * @param url Server URL
+	 */
+	public JSON(String url) throws Exception
+	{
+		this(url,null,null);
+	}
+
+	/**
+         * Construct connection to given URL, using given username and password.
+         *
+         * @param url Server URL
+         * @param login Server login
+	 * @param password User password 
+         */
+        public JSON(String url, String login, String password) throws Exception
 	{
 		client = new DefaultHttpClient();
 		client.getParams().setParameter(CoreProtocolPNames.USER_AGENT, "java-rts2");
@@ -41,7 +58,10 @@ class JSON
 			port = parsedUrl.getDefaultPort();
 		}
 
-		client.getCredentialsProvider().setCredentials(new AuthScope(parsedUrl.getHost(), port), new UsernamePasswordCredentials(login, password));
+		if (login != null && password != null)
+		{
+			client.getCredentialsProvider().setCredentials(new AuthScope(parsedUrl.getHost(), port), new UsernamePasswordCredentials(login, password));
+		}
 
 		connect (url);
 	}

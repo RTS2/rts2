@@ -3,6 +3,7 @@ package org.rts2;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 
 import org.rts2.JSON;
@@ -20,11 +21,30 @@ public class App
 
 	options.addOption("G", true, "get value from a device");
 	options.addOption("u", "url", true, "server URL (default to http://localhost:8889");
+	options.addOption("help", false, "print this help message");
+	options.addOption("user", true, "JSON login");
+	options.addOption("password", true, "JSON user password");
 
 	CommandLineParser parser = new BasicParser();
 	CommandLine cmd = parser.parse(options, args);
 
-	JSON json = new JSON(cmd.getOptionValue("url","http://localhost:8889"), "petr", "test");
+	if (cmd.hasOption ("help"))
+	{
+		HelpFormatter formatter = new HelpFormatter();
+		formatter.printHelp("rts2-jjson", options);
+		return;
+	}
+
+	JSON json;
+
+	try
+	{
+		json = new JSON(cmd.getOptionValue("url","http://localhost:8889"), cmd.getOptionValue("user"), cmd.getOptionValue("password"));
+	}
+	catch (IllegalArgumentException arg)
+	{
+		json = new JSON(cmd.getOptionValue("url","http://localhost:8889"));
+	}
 
 	if (cmd.hasOption("G"))
 	{

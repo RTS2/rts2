@@ -1,2 +1,2 @@
 #!/bin/bash
-java -cp ../target/rts2-java-0.1.jar org.rts2.App
+java -cp ../target org.rts2.App
