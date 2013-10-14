@@ -7,12 +7,12 @@ To install Sphinx use:
 
 Execute
 
- cd ~/rts-2/scripts/rts2saf
+ cd ~/rts-2/scripts/rts2saf/sphinx
  make -f Makefile.sphinx  html
  
 and e.g.
 
- firefox _build/html/index.html
+ firefox _build/html/modules.html
  
 
 to view it.
