@@ -98,8 +98,7 @@ class DefaultConfiguration(object):
         self.dcf[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
         
         self.dcf[('SExtractor', 'SEXPATH')]= 'sextractor'
-        self.dcf[('SExtractor', 'SEXCFG')]= '/etc/rts2/rts2saf/sex/rts2saf-sex.cfg'
-        self.dcf[('SExtractor', 'SEXPARAM')]= '/etc/rts2/rts2saf/sex/rts2saf-sex.param'
+        self.dcf[('SExtractor', 'SEXCFG')]= '/usr/local/etc/rts2/rts2saf/sex/rts2saf-sex.cfg'
         self.dcf[('SExtractor', 'FIELDS')]= ['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE']
         self.dcf[('SExtractor', 'OBJECT_SEPARATION')]= 10.
         self.dcf[('SExtractor', 'ELLIPTICITY')]= .1
@@ -408,7 +407,7 @@ if __name__ == '__main__':
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
     parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
 
     args=parser.parse_args()
 

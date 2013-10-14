@@ -162,7 +162,7 @@ if __name__ == '__main__':
     parser.add_argument('--dryfitsfiles', dest='dryfitsfiles', action='store', default='../samples', help=': %(default)s, directory where a FITS files are stored from a earlier focus run')
     # ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--ds9display', dest='ds9display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
-    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
 
     args=parser.parse_args()
 

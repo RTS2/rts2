@@ -85,7 +85,7 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanObjects:\n{0}'.format(e))
 
         try:
-            if self.debug: self.logger.debug('analyze: {0:5d}: weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
+            if self.debug: self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanObjects:\n{0}'.format(e))
         # Weighted mean based on median FWHM
@@ -96,7 +96,7 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanFwhm:\n{0}'.format(e))
 
         try:
-            self.logger.debug('analyze: {0:5d}: weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
+            self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanFwhm:\n{0}'.format(e))
         # Weighted mean based on median std(FWHM)
@@ -107,7 +107,7 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanStdFwhm:\n{0}'.format(e))
 
         try:
-            self.logger.debug('analyze: {0:5d}: weighted mean derived from std(FWHM)'.format(int(weightedMeanStdFwhm)))
+            self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from std(FWHM)'.format(int(weightedMeanStdFwhm)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanStdFwhm:\n{0}'.format(e))
         # Weighted mean based on a combination of variables
@@ -122,14 +122,14 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanCombined:\n{0}'.format(e))
 
         try:
-            self.logger.debug('analyze: {0:5d}: weighted mean derived from Combined'.format(int(weightedMeanCombined)))
+            self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from Combined'.format(int(weightedMeanCombined)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanCombined:\n{0}'.format(e))
         
         minFitPos, minFitFwhm, fitPar= self.__fit(dFwhm=dFwhm)
 
         if minFitPos:
-            if self.debug: self.logger.debug('analyze: {0:5d}: fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, dFwhm.ambientTemp))
+            if self.debug: self.logger.debug('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, dFwhm.ambientTemp))
         else:
             self.logger.warn('analyze: fit failed')
 
@@ -196,7 +196,6 @@ class SimpleAnalysis(object):
                 self.dataSex.sort(key=lambda x: int(x.focPos))
 
                 for dSx in self.dataSex:
-                    print dSx.focPos
                     if dSx.fitsFn:
                         dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
                         if not dr.displayWithRegion():
@@ -314,7 +313,7 @@ if __name__ == '__main__':
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
     parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')

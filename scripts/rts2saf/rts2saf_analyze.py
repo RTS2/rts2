@@ -108,18 +108,18 @@ class Do(object):
     def analyzeRuns(self):
         rFts=list()
         for dftw, ft  in self.fS.iteritems():
-            info='{}\n'.format(repr(dftw))
+            info='{} :: '.format(repr(dftw))
             out=False
             # ToDo dictionary comprehension
             for k,fns in ft.iteritems():
-                info += '{} {}\n'.format(k,len(fns))
-                if len(fns) >4: 
+                info += '{} {} '.format(k,len(fns))
+                if len(fns) >self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                     out=True
                     rFt=self.__analyzeRun(fitsFns=fns)
                     if rFt:
                         rFts.append(rFt)
             if out:
-                self.logger.info( 'analyzeRun: {}'.format(info))
+                self.logger.info( 'analyzeRuns: {}'.format(info))
 
         openMinFitPos=None
         for rFt in rFts:
@@ -131,7 +131,7 @@ class Do(object):
             return rFts
 
         for rFt in rFts:
-            logger.info('analyze:  {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
+            logger.info('analyzeRuns: {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
 
         return rFts
 
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
     parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
+    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
     parser.add_argument('--filternames', dest='filterNames', action='store', default=None, type=str, nargs='+', help=': %(default)s, list of filters to analyzed, None: all')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
@@ -218,9 +218,14 @@ if __name__ == '__main__':
     do=Do(debug=args.debug, basePath=args.basePath, args=args, rt=rt, ev=ev, logger=logger)
     do.aggregateRuns()
     rFF=do.analyzeRuns()
-    plotFn=ev.expandToPlotFileName( plotFn='{}/temp-model.png'.format(args.basePath))
-    logger.info('rts2saf_analyze: storing plot at: {}'.format(plotFn))
-    dom=tfm.TemperatureFocPosModel(showPlot=True, date=ev.startTime[0:19],  comment='test run', plotFn=plotFn, resultFitFwhm=rFF, logger=logger)
-    dom.fitData()
-    dom.plotData()
 
+    if rFF[0].ambientTemp in 'NoTemp':
+        logger.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
+    else:
+        # temperature model
+        plotFn=ev.expandToPlotFileName( plotFn='{}/temp-model.png'.format(args.basePath))
+        dom=tfm.TemperatureFocPosModel(showPlot=True, date=ev.startTime[0:19],  comment='test run', plotFn=plotFn, resultFitFwhm=rFF, logger=logger)
+        dom.fitData()
+        dom.plotData()
+        logger.info('rts2saf_analyze: storing plot at: {}'.format(plotFn))
+        

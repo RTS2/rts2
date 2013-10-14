@@ -1,7 +1,8 @@
 rts2saf package's documentation is generated with Sphinx. 
 To install Sphinx use:
 
- easy_install -U sphinx
+1) pip install -U sphinx
+2) pip install sphinxcontrib-programoutput
 
 
 Execute
