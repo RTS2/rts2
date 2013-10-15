@@ -27,7 +27,7 @@ import org.json.JSONObject;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class JSON
+public class JSON
 {
 	/**
          * Construct connection to given URL.
@@ -76,6 +76,11 @@ class JSON
 
 	/**
 	 * Return value from the given device.
+	 *
+	 * @param device RTS2 device name
+	 * @param value value name
+	 *
+	 * @return value &lt;value&gt; from device &lt;device&gt;
 	 */
 	public String getValue(String device, String value) throws Exception
 	{
@@ -101,13 +106,52 @@ class JSON
 	}
 
 	/**
-	 * Returns double value from JSON.
+	 * Returns double value from RTS2 device.
+	 *
+	 * @param device RTS2 device name
+	 * @param value value name
+	 *
+	 * @return value &lt;value&gt; from device &lt;device&gt;
 	 */
 	public double getValueDouble(String device, String value) throws Exception
 	{
 		return Double.parseDouble(getValue(device, value));
 	}
 
+	/**
+	 * Returns integer value from RTS2 device.
+	 *
+	 * @param device RTS2 device name
+	 * @param value value name
+	 *
+	 * @return value &lt;value&gt; from device &lt;device&gt;
+	 */
+	public int getValueInteger(String device, String value) throws Exception
+	{
+		return Integer.parseInt(getValue(device, value));
+	}
+
+	/**
+	 * Returns long value from RTS2 device.
+	 *
+	 * @param device RTS2 device name
+	 * @param value value name
+	 *
+	 * @return value &lt;value&gt; from device &lt;device&gt;
+	 */
+	public long getValueLong(String device, String value) throws Exception
+	{
+		return Long.parseLong(getValue(device, value));
+	}
+
+	/**
+	 * Returns date value from RTS2 device.
+	 *
+	 * @param device RTS2 device name
+	 * @param value value name
+	 *
+	 * @return value &lt;value&gt; from device &lt;device&gt;
+	 */
 	public Date getValueDate(String device, String value) throws Exception
 	{
 		return new Date((long)getValueDouble(device, value));

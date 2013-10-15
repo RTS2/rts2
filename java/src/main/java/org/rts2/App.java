@@ -13,7 +13,7 @@ import org.rts2.JSON;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-public class App 
+class App 
 {
     public static void main( String[] args ) throws Exception
     {

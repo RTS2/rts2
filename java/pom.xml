@@ -4,9 +4,12 @@
   <groupId>org.rts2</groupId>
   <artifactId>rts2-java</artifactId>
   <packaging>jar</packaging>
-  <version>0.1</version>
+  <version>0.2</version>
   <name>rts2-java</name>
   <url>http://rts2.org</url>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties> 
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -54,6 +57,19 @@
           </programs>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.7</version>
+      </plugin>
     </plugins>
   </build>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>
