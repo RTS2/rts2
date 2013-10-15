@@ -2,7 +2,7 @@
    sphinx-quickstart on Sun Oct 13 10:56:36 2013.
 
 Contents
-=======================
+========
 
 .. toctree::
    :maxdepth: 3
@@ -12,6 +12,7 @@ Contents
    dummytesting
    integration
    cmdline
+   real-configuration
    modules
    moduleindex
 

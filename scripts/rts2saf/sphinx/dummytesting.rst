@@ -29,7 +29,6 @@ or copy ~/rts-2/scripts/rts2saf/configs/one-filter-wheel/devices to /etc/rts2
 
 This is a configuration with a CCD, one filter wheel and bunch of filters. 
 
-
 Command line execution, day time testing with 'dry fits files'
 --------------------------------------------------------------
 

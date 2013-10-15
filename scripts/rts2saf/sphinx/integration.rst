@@ -24,8 +24,8 @@ Integration of rts2saf
 ----------------------
 
 In /etc/rts2/rts2.ini section
- [imgproc]
- astrometry = "/your/path/to/imgp_analysis.py"
+ | [imgproc]
+ |  astrometry = "/your/path/to/imgp_analysis.py"
 
 imgp_analysis.py calls rts2saf_fwhm.py which measures the FWHM of
 each image after it has been stored on disk. If FWHM is above threshold it 
@@ -34,7 +34,7 @@ be tar_id 5 that's 'OnTargetFocus'.
 
 rts2-centrlad configuration
 ---------------------------
-Restore the real /etc/rts2/devices file.
+Restore the real /etc/rts2/devices file in case you wish them be present
 
 
 rts2-selector configuration
@@ -42,6 +42,8 @@ rts2-selector configuration
 Configure selector (SEL), replace the default in /etc/rts2/services with
 
   selector        SEL    --add-queue plan --add-queue focusing --add-queue manual
+
+You might have additional queue names hence add them.
 
 Command line execution, night time
 ----------------------------------

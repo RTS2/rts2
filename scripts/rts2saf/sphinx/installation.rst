@@ -4,11 +4,21 @@ Installation
 Prerequisites
 -------------
 
+For the following description I assume you did
+
+  cd ~
+  svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts-2
+
+and you have setup the RTS2 dummy devices.
+
 Update to Python 2.7.x (mandatory) and various Python packages:
 
 1) DS9 from http://hea-www.harvard.edu/RD/ds9/site/Home.html
 2) numpy, numpy-devel
 3) pip install astropy
+
+and for the documentation install sphinx and
+
 4) pip install sphinxcontrib-programoutput
 
 During RTS2 installation the rts2saf executable are installed to 
@@ -24,10 +34,33 @@ In case you modify a rts2saf module issue
   | cd ~/rts-2/scripts
   | sudo make install
 
-For the following description I assume you did
 
-  cd ~
-  svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts-2
+Wired things
+------------
+Before you start with the installationn process execute
+
+ | cd ~/rt-2/scripts/rts2saf
+ | ./expose_with_your_ccd.py --ccd YOUR_CCD # e.g. C0
+
+and check the output. If the lines at the end look like:
+
+ | proxy method
+ | proxy method: Success!, file: /tmp/000001.fits
+ | proxy method: Success!, file: /tmp/000002.fits
+ | file names are NOT identical, good!
+
+there is nothig todo. If it looks like
+
+ | proxy method
+ | proxy method: Success!, file: /tmp/xmlrpcd_andor3.fits
+ | proxy method: Success!, file: /tmp/xmlrpcd_andor3.fits
+ | file names are identical, problem
+
+or it fails completely then add in section 
+
+ | [ccd]
+ | ENABLE_JSON_WORKAROUND = True
+
 
 RTS2 configuration file
 -----------------------
@@ -78,9 +111,9 @@ Postgres DB tables target and scripts entries
 ---------------------------------------------
 As user postgres:
 
-  | psql --user YOUR_USERNAME YOUR_DB # (see /etc/rts2/rts2.ini)
+  | psql stars  
   | insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
-  | insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /YOUR/HOME/rts-2/scripts/rts2saf/rts2saf_focus.py');
+  | insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
 
 
 Adding the devices to the Postgres DB is usually done by script 
