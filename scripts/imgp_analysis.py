@@ -1,13 +1,13 @@
 #!/usr/bin/python
-# (C) 2011, Markus Wildi, markus.wildi@one-arcsec.org
+# (C) 2011-2013, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage: imgp_analysis.py /absolute/path/to/fits 
 #   
 #   imgp_analysis.py is the script called by IMGP after expusre has been
 #   completed.
 #   It serves as a wrapper for several tasks to be performed, currently
-#   1) do astrometric calibration
-#   2) define the FWHM and write it to the log file (rts2-debug)
+#   1) define the FWHM and write it to the log file (rts2-debug)
+#   2) do astrometric calibration
 #
 #   planned:
 #   3) dark frame subtraction and flat fielding
@@ -45,9 +45,13 @@ class ImgpAnalysis():
         # RTS2 has no possibilities to pass arguments to a command, defining the defaults
         self.scriptName= scriptName 
         self.fitsFileName= fitsFileName
-        self.astrometryCmd= 'rts2-astrometry.net'
+        #self.astrometryCmd= 'rts2-astrometry-std-fits.net'
+        # uses header created by standard RTS2
+        self.astrometryCmd= 'rts2-astrometry-std-fits.net'
         self.fwhmCmd= 'rts2saf_fwhm.py'
-        self.fwhmConfigFile= '/etc/rts2/rts2saf/rts2saf.cfg'
+        # this is the default config.
+        # specify a different here if necessary
+        self.fwhmConfigFile= '/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
         self.fwhmLogFile= '/var/log/rts2-debug'
 
     def spawnProcess( self, cmd=None, wait=None):
@@ -60,17 +64,17 @@ class ImgpAnalysis():
                 subpr  = subprocess.Popen( cmd)
 
         except OSError as (errno, strerror):
-            logging.error('imgp_analysis.py: returning due to I/O error({0}): {1}\ncommand:{2}'.format(errno, strerror, cmd))
+            logging.error('{0}: returning due to I/O error({1}): {2}\ncommand:{3}'.format(self.scriptName, errno, strerror, cmd))
             return None
 
         except:
-            logging.error('imgp_analysis.py: returning due to: {0} died'.format( repr(cmd)))
+            logging.error('{0}: returning due to: {1} died'.format(self.scriptName, repr(cmd)))
             return None
 
         return subpr
 
     def run(self):
-        logging.info( 'imgp_analysis.py: starting')
+        logging.info( '{0}: starting'.format(self.scriptName))
 
         cmd= [  self.fwhmCmd,
                 '--config',
@@ -84,30 +88,39 @@ class ImgpAnalysis():
         try:
             fwhmLine= self.spawnProcess(cmd, False)
         except:
-            logging.error( 'imgp_analysis.py: starting suprocess: {0} failed, continuing with astrometrical calibration'.format(cmd))
+            logging.error( '{0}: starting suprocess: {1} failed, continuing with astrometrical calibration'.format(self.scriptName, cmd))
 
         cmd= [  self.astrometryCmd,
                 self.fitsFileName,
                 ]
 # this process is hopefully started in parallel on the second core if any.
         try:
-            astrometryLine= self.spawnProcess(cmd, True).communicate()
-            report= astrometryLine[0].split('\n')
-            # tell the result IMGP
-            # ToDO check what IMGP expects, now the result is wrongly printed
-            print '{0}'.format(report[0])
-            for tp in astrometryLine:
-                logging.info( 'imgp_analysis.py: ending, result: {0}'.format(tp))
-                #print 'imgp_analysis.py: ending, result: {0}'.format(tp)
+            stdo,stde= self.spawnProcess(cmd=cmd, wait=True).communicate()
         except:
-            logging.error( 'imgp_analysis.py: ending, reading from astrometry pipe failed')
+            logging.error( '{0}: ending, reading from astrometry.net pipe failed'.format(self.scriptName))
+            sys.exit(1)
+        if stde:
+            logging.error( '{0}: message on stderr:\n{1}\nexiting'.format(self.astrometryCmd, stde))
+            sys.exit(1)
+            
+        # ToDo
+        lnstdo= stdo.split('\n')
+        for ln in lnstdo:
+            logging.info( 'rts2-astrometry.net: {0}'.format(ln))
+            if re.search('corrwerr', ln):
+                print ln
+
+        logging.info( 'imgp_analysis.py: ending')
             
 
 if __name__ == "__main__":
+
+    import os
+    head, script=os.path.split(sys.argv[0])
     if( len(sys.argv)== 2):
-        imgp_analysis= ImgpAnalysis(scriptName=sys.argv[0], fitsFileName=sys.argv[1])
+        imgp_analysis= ImgpAnalysis(scriptName=script, fitsFileName=sys.argv[1])
     else:
-        print 'imgp_analysis.py: exiting, no fits file name given'
+        print '{0}: exiting, no fits file name given'.format(script)
         sys.exit(1)
 
     imgp_analysis.run()

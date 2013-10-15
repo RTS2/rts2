@@ -166,8 +166,11 @@ class SimpleAnalysis(object):
         # create an average and std 
         # ToDo decide wich ftName from which ftw!!
         bPth,fn=os.path.split(self.dataSex[0].fitsFn)
-        plotFn=self.ev.expandToPlotFileName(plotFn='{}/min-fwhm.png'.format(bPth))
-        self.logger.info('analyze: storing plot file at: {}'.format(plotFn))
+        ftName=self.dataSex[0].ftName
+        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
+        if self.displayFit:
+            self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
+
         df=dt.DataFitFwhm(plotFn=plotFn,ambientTemp=self.dataSex[0].ambientTemp, ftName=self.dataSex[0].ftName, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
         return self.__analyze(dFwhm=df)
 

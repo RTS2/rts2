@@ -895,7 +895,9 @@ AC_OUTPUT([Makefile
 	   src/logger/Makefile
 	   src/xmlrpc/Makefile
 	   src/scheduler/Makefile
-	   src/bb/Makefile]
+	   src/bb/Makefile
+	   scripts/rts2saf/Makefile
+	   scripts/rts2saf/rts2saf/Makefile]
 )
 
 echo "

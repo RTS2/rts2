@@ -380,16 +380,16 @@ class Configuration(DefaultConfiguration):
     def checkConfiguration(self):
         # rts2.sextractur excepts the file not found error and uses internal defaults, we check that here
         if not os.path.exists(self.cfg['SEXPATH']):
-            self.logger.warn( 'sextract: sextractor path:{0} not valid, returning'.format(self.cfg['SEXPATH']))            
+            self.logger.warn( 'Configuration.readConfiguration: sextractor path:{0} not valid, returning'.format(self.cfg['SEXPATH']))            
             return False
         if not os.path.exists(self.cfg['SEXCFG']):
-            self.logger.warn( 'sextract: config file:{0} not found, returning'.format(self.cfg['SEXCFG']))            
+            self.logger.warn( 'Configuration.readConfiguration: config file:{0} not found, returning'.format(self.cfg['SEXCFG']))            
             return False
         if not os.path.exists(self.cfg['STARNNW_NAME']):
-            self.logger.warn( 'sextract: config file:{0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
+            self.logger.warn( 'Configuration.readConfiguration: config file:{0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
             return False
         if not self.cfg['FIELDS']:
-            self.logger.warn( 'sextract: no sextractor fields defined')
+            self.logger.warn( 'Configuration.readConfiguration: no sextractor fields defined')
             return False
         return True
         # more to come
