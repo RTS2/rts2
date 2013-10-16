@@ -19,6 +19,7 @@
  */
 
 #include "camd.h"
+#include "dirsupport.h"
 #include "utilsfunc.h"
 #include "connection/tcp.h"
 
