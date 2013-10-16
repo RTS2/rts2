@@ -66,7 +66,9 @@ class Executor:public rts2db::DeviceDb
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 		virtual void fileModified (struct inotify_event *event);
+#endif
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -1166,12 +1168,14 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 }
 
 
+#ifdef RTS2_HAVE_SYS_INOTIFY_H
 void Executor::fileModified (struct inotify_event *event)
 {
 	currentTarget->revalidateConstraints (event->wd);
 	for (std::list <ExecutorQueue>::iterator iter = queues.begin (); iter != queues.end (); iter++)
 		iter->revalidateConstraints (event->wd);
 }
+#endif
 
 int main (int argc, char **argv)
 {
