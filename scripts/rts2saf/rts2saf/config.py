@@ -149,8 +149,11 @@ class DefaultConfiguration(object):
 
         self.dcf[('analysis', 'FWHM_MIN')] = 1.5 
         self.dcf[('analysis', 'FWHM_MAX')] = 12. 
-        self.dcf[('analysis', '')] = '' 
 
+        self.dcf[('IMGP analysis', 'FILTERS_TO_EXCLUDE')] = '[ FILTC:grism1]' 
+        self.dcf[('IMGP analysis', 'SCRIPT_FWHM')] = 'rts2saf_fwhm.py' 
+        self.dcf[('IMGP analysis', 'SCRIPT_ASTROMETRY')] = 'rts2-astrometry-std-fits.net' 
+        # or rts2-astrometry.net
 
     def dumpDefaults(self):
         for (identifier), value in self.dcf.iteritems():
@@ -248,6 +251,16 @@ class Configuration(DefaultConfiguration):
                 items= value[1:-1].split(',')
                 for item in items:
                     self.filterWheelsInUseDefs.append(item)
+            elif( section in 'IMGP analysis'):
+                items= value[1:-1].split(',')
+                if identifier in 'FILTERS_TO_EXCLUDE':
+                    tDict=dict()
+                    for e in value[1:-1].split(','):
+                        k,v=e.split(':')
+                        tDict[v]=k # that's ok !!
+                    self.cfg['FILTERS_TO_EXCLUDE']=tDict
+                else:
+                    self.cfg[identifier]= value
             # first bool, then int !
             elif isinstance(self.cfg[identifier], bool):
                 # ToDO, looking for a direct way

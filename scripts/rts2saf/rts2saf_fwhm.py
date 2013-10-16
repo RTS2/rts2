@@ -24,7 +24,8 @@ __author__ = 'markus.wildi@bluewin.ch'
 import argparse
 import sys
 import re
-import rts2.queue
+import os
+import rts2
 from rts2.json import JSONProxy
 
 import rts2saf.log as lg
@@ -63,6 +64,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     sex= sx.Sextract(debug=args.debug, rt=rt, logger=logger)
+    if not os.path.exists(args.fitsFn):
+        logger.error('rts2af_fwhm: file: {0}, does not exists, exiting'.format(args.fitsFn))
+        sys.exit(1)
+
     try:
         dataSex=sex.sextract(fitsFn=args.fitsFn) 
     except Exception, e:
@@ -75,22 +80,23 @@ if __name__ == '__main__':
         fwhmTreshold=args.fwhmThreshold
 
     if( dataSex.fwhm > fwhmTreshold):
-        proxy= JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
+	rts2.createProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'], verbose=args.debug)
         try:
-            q=rts2.queue.Queue(jsonProxy=proxy,name=args.queue)
+            q = rts2.Queue(rts2.json.getProxy(), args.queue)
         except Exception, e:
             logger.info('rts2af_fwhm: no queue named: {0}, exiting'.format(args.queue))
             sys.exit(1)
 
         q.load()
         for x in q.entries:
-            if 'OnTargetFocus' in x.get_target().name:
+            if x.get_target().name and 'OnTargetFocus' in x.get_target().name:
                 logger.info('rts2af_fwhm: focus run already queued')
                 break
         else:
             q.add_target(str(args.tarId))
-            logger.info('rts2af_fwhm: focus run  queued, fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSex.fwhm, fwhmTreshold))
+            logger.info('rts2af_fwhm: focus run  queued')
+        logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSex.fwhm, fwhmTreshold))
     else:
-        logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(dataSex.fwhm, fwhmTreshold))
+        logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSex.fwhm), float(fwhmTreshold)))
 
     logger.info('rts2af_fwhm: DONE')
