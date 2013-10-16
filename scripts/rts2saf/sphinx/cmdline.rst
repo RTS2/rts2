@@ -16,3 +16,7 @@ rts2saf_fwhm.py
 rts2saf_analyze.py
 ------------------
 .. program-output:: rts2saf_analyze.py --help
+
+rts2saf_imgp.py
+------------------
+.. program-output:: rts2saf_imgp.py --help

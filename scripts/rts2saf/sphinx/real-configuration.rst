@@ -91,3 +91,14 @@ In case your FITS header key words differ they are remapped (contact the author!
  | FWHM_LOWER_THRESH = 9.
 
 Do not trigger a focus run if FWHM is below thresh (rts2saf_fwhm.py uses that).
+
+ | [IMGP analysis]
+ | FILTERS_TO_EXCLUDE = [ FILTC:grism1, FILTB:closed, FILTB:slit1, FILTB:slit2, FILTB:hartmann, FILTB:pinhole ]
+
+Do not try to determine for these filter wheels and filters a FWHM or an astrometrical calibration .
+ | SCRIPT_ASTROMETRY = rts2-astrometry.net
+ | #SCRIPT_ASTROMETRY = rts2-astrometry-std-fits.net                                                                                                                                                      
+ | # this the old version in use at Bootes-2
+ | #SCRIPT_ASTROMETRY = /etc/rts2/img_process
+
+Choose the script that fulfills your purpose.
