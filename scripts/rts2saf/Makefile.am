@@ -1,3 +1,3 @@
-bin_SCRIPTS = rts2saf_analyze.py rts2saf_focus.py rts2saf_fwhm.py
+bin_SCRIPTS = rts2saf_analyze.py rts2saf_focus.py rts2saf_fwhm.py rts2saf_imgp.py
 
 SUBDIRS = rts2saf
