@@ -14,7 +14,7 @@ The integration of rts2saf into RTS2 is partly done.
 Items which needs further attention
 1) target selection for focus run: the focus run is carried out at the current telescope position
 2) finding the appropriate exposure 
-3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script focusing.py
+3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focusing.py``
 4) Many ToDos in the code
 5) more documentation (this file)
 6) man pages
@@ -37,7 +37,7 @@ rts2saf is a complete rewrite of rts2af.  The goals were
 3) the support of multiple filter wheels with an arbitrary number of slots,  
 4) a modular software design which eases testing of its components.
 
-rts2saf's main tasks are to determine the focus and set FOC_DEF
+rts2saf's main tasks are to determine the focus and set ``FOC_DEF``
 during autonomous operation whenever the FWHM of an image exceeds 
 a threshold.
 Depending on the actual configuration it measures filter focus offsets 
@@ -50,7 +50,7 @@ rts2saf makes use of RTS2's HTTP/JSON interface and hence using the scripts
 on the command line is encouraged before setting up autonomous operations. The JSON interface 
 eases and speeds up the test phase considerably specially in the early stage
 of debugging the configuration. The execution with 
-rts2-scriptexec -s ' exe script ' is not needed any more. 
+``rts2-scriptexec -s ' exe script '`` is not needed any more. 
 
 Test runs can be carried during day time either with RTS2
 dummy or real devices. If no real images can be taken, either 
@@ -60,7 +60,7 @@ devices operate as if it were night. These files can be images from
 a former focus run or if not available samples are provided by the 
 author (see below).
 
-Parameters, like e.g. FOC_DEF stored in focuser device, are retrieved 
+Parameters, like e.g. ``FOC_DEF`` stored in focuser device, are retrieved 
 from the running RTS2 instance as far as they are needed. All additional 
 device or analysis properties are kept in a single configuration file. 
 The number of
@@ -69,8 +69,8 @@ kept small.
 
 The output of the fit program is stored as a PNG file and optionally displayed on screen. 
 
-During analysis DS9 region of interest  data structures are created for each image. 
-Optionally the images and the region files are displayed on screen using DS9.
+During analysis ``DS9`` region of interest  data structures are created for each image. 
+Optionally the images and the region files are displayed on screen using ``DS9``.
 The circle is centered to SExtractor`s x,y positions. Red circles indicate objects
 which were rejected green ones which were accepted.
 
@@ -80,27 +80,27 @@ neither the fit nor images  are  displayed.
 Modes of operations, involved scripts
 +++++++++++++++++++++++++++++++++++++
 1) **autonomous operations**:
-   imgp_analysis.py, rts2saf_fwhm.py, rts2saf_focus.py
+   ``rts2saf_imgp.py``, ``rts2saf_fwhm.py``, ``rts2saf_focus.py``
 2) **command line execution**:
-   rts2saf_focus.py
+   ``rts2saf_focus.py``
 3) **offline analysis**:
-   rts2saf_analysis.py
+   ``rts2saf_analysis.py``
 
 Autonomous operations
 +++++++++++++++++++++
-Once an image has been stored on disk RTS2 calls imgp_analysis.py
+Once an image has been stored on disk RTS2 calls ``rts2saf_imgp.py``
 which carries out two tasks:
 
 1) measurement of FWHM using SExtractor
 2) astrometrical calibration using astrometry.net
 
-If the measured FWHM is above a configurable threshold rts2saf_fwhm.py
+If the measured FWHM is above a configurable threshold ``rts2saf_fwhm.py``
 triggers an on target focus run using selector's focus queue. This 
-target is soon executed and rts2saf_focus.py acquires a configurable set  
+target is soon executed and ``rts2saf_focus.py`` acquires a configurable set  
 of images at different focuser positions. To reduce elapsed time 
 SExtractor is executed in a thread  while images are
 acquired. rts2saf then fits these points and the minimum is derived 
-from the fitted function. If successful it sets focuser's FOC_DEF.
+from the fitted function. If successful it sets focuser's ``FOC_DEF``.
 
 Command line execution
 ++++++++++++++++++++++
@@ -116,8 +116,10 @@ The configuration file contains all observatory
 specific values which are not available from the running
 RTS2 instance. An example:
 
-| [filter properties]
-| flt1 = [ R, -10, 10, 2, 1.1]
+.. code-block:: bash
+
+ [filter properties]
+ flt1 = [ R, -10, 10, 2, 1.1]
  
 This line specifies a filter named 'R'. The numbers -10,10 define
 the range the focuser scans in steps of 2, that means ca. 10 images
@@ -135,13 +137,13 @@ command line while blind runs are typically executed only on the
 command line.
 
 Regular runs in aunonomous mode are optimized for minimum elapsed time
-and ty$pically are only carried out for the wheel's emmpty slot. That
+and typically are only carried out for the wheel's empty slot. That
 does imply the knowledge of the real focus position within narrow limits.
 
 The measurement of the filter offsets (see your CCD driver) is done on
-the command line and the results are written to file 'devices'.
+the command line and the results are manually written to file ``/etc/rts2/devices``.
 
-The focus travel range is defined by the values given in section [filter properties]
+The focus travel range is defined by the values given in section ``[filter properties]``
 as explained above.
 The range that the focuser should travel is highly dependent on the 
 optics. As rule of thumb: if the FWHM minimum is 6 pixel wide then choose
@@ -149,18 +151,24 @@ the limits of the range so that the FWHM does not exceed 18 pixel intra- and
 extra focal.
 
 Blind focus runs are used in case minimum FWHM position is unknown. 
-The values given in [filter properties] might be still meaningless hence the
+The values given in ``[filter properties]`` might be still meaningless hence the
 focus travel range is defined by the values
 
- | FOCUSER_LOWER_LIMIT = -12
- | FOCUSER_UPPER_LIMIT = 15
+.. code-block:: bash
 
-in rts2saf.cfg. In addition having set 
+ FOCUSER_LOWER_LIMIT = -12
+ FOCUSER_UPPER_LIMIT = 15
 
- | FOCUSER_ABSOLUTE_LOWER_LIMIT = -16
- | FOCUSER_ABSOLUTE_UPPER_LIMIT = 19
+in ``rts2saf.cfg``. In addition having set 
+
+.. code-block:: bash
+
+ FOCUSER_ABSOLUTE_LOWER_LIMIT = -16
+ FOCUSER_ABSOLUTE_UPPER_LIMIT = 19
 
 execute 
+
+.. code-block:: bash
 
   rts2saf_focus.py  --toconsole --blind
 
@@ -168,17 +176,21 @@ Normaly the fit convergences but it does often not represent the minimum. Theref
 an estimator based on the weighted mean is the best guess. These
 values appear as 
 
-| analyze: FOC_DEF:   258: weighted mean derived from sextracted objects
-| analyze: FOC_DEF:   286: weighted mean derived from FWHM
-| analyze: FOC_DEF:   305: weighted mean derived from std(FWHM)
-| analyze: FOC_DEF:   342: weighted mean derived from Combined
+.. code-block:: bash
 
-on the console. Under normal circumstances the 'weighted mean derived from Combined'
+ analyze: FOC_DEF:   258: weighted mean derived from sextracted objects
+ analyze: FOC_DEF:   286: weighted mean derived from FWHM
+ analyze: FOC_DEF:   305: weighted mean derived from std(FWHM)
+ analyze: FOC_DEF:   342: weighted mean derived from Combined
+
+on the console. Under normal circumstances the ``weighted mean derived from Combined``
 is the closest approximation of the true value.
 
 Offline analysis
 ++++++++++++++++
 soon
+
+.. code-block:: bash
 
  rts2saf_analyze.py --toconsole --displayfit --displayds9 --basepath ./samples
 

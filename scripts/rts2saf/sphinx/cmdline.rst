@@ -17,6 +17,11 @@ rts2saf_analyze.py
 ------------------
 .. program-output:: rts2saf_analyze.py --help
 
+.. .. program-output:: grep -A 3 -i todo ../rts2saf_analyze.py 
+
 rts2saf_imgp.py
 ------------------
 .. program-output:: rts2saf_imgp.py --help
+
+
+.. .. program-output:: grep -A 3 -i todo ../rts2saf_imgp.py 

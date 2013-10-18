@@ -9,10 +9,10 @@ Contents
    
    introduction
    installation
-   dummytesting
    integration
-   cmdline
    real-configuration
+   dummytesting
+   cmdline
    modules
    moduleindex
 
