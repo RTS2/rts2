@@ -61,11 +61,6 @@ class ScanThread(threading.Thread):
     def run(self):
         if self.debug: self.logger.debug('____ScantThread: running')
         
-        if self.blind or self.ftw==None: # CCD without filter wheel
-            stepSize=self.foc.stepSize
-        else:
-            stepSize=self.ft.stepSize
-
         for i,pos in enumerate(self.foc.focFoff): 
 
             if self.writeToDevices:
@@ -81,12 +76,11 @@ class ScanThread(threading.Thread):
             focPosCalc= pos
             if not self.blind:
                 focPosCalc += int(self.focDef)
-
+            
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-            slt= abs(float(focPosCalc-focPos)) / self.foc.speed / abs(float(stepSize)) 
-            self.logger.info('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, stepSize: {3}, sleep: {4:3.1f} sec'.format(focPosCalc, focPos, self.foc.speed, abs(float(stepSize)), slt))
+            slt= abs(float(focPosCalc-focPos)/ self.foc.speed) 
+            self.logger.info('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, sleep: {3:4.2f} sec'.format(focPosCalc, focPos, self.foc.speed, slt))
             time.sleep( slt)
-
             self.proxy.refresh()
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
             if self.writeToDevices:
@@ -95,9 +89,10 @@ class ScanThread(threading.Thread):
 #                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
                     self.proxy.refresh()
                     focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
+                    if self.debug: self.logger.debug('acquire: focuser position not yet reached, sleeping')
                     time.sleep(.1) # leave it alone
                 else:
-                    if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:3.1f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+                    if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
             if self.rt.cfg['ENABLE_JSON_WORKAROUND']:
                 fn=self.scriptExecExpose()
@@ -105,7 +100,7 @@ class ScanThread(threading.Thread):
                 fn=self.expose()
 
             if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
-
+            # 
             self.acqu_oq.put(fn)
         else:
             if self.debug: self.logger.debug('____ScanThread: ending after full scan')
@@ -121,19 +116,6 @@ class ScanThread(threading.Thread):
         import os
         import errno
         import subprocess
-        fitsXmlrpcdFn='/tmp/xmlrpcd_{}.fits'.format(self.ccd.name)
-        if os.path.exists(fitsXmlrpcdFn) :
-            # that file is only needed on novaraketa
-            # add cmd rm to /etc/sudouers with NOPASSWORD
-            cmd = ['/home/wildi/rm-xmlrpcd-fits.sh']
-            try:
-                proc = subprocess.Popen(cmd)
-                proc.wait()
-            except OSError,err:
-                self.loggeer.error('expose: canot run command: "', ' '.join(cmd), '", error: {} '.format(err))
-                self.loggeer.error('expose: exiting')
-                sys.exit(1)
-            self.logger.info('expose: removed: {}'.format(fitsXmlrpcdFn))
         # TAG FEELGOOD
         # expose
         if self.exposure:

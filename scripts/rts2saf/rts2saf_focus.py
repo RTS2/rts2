@@ -62,6 +62,8 @@ if __name__ == '__main__':
     #
     if args.checkConfig:
         args.debug=True
+        args.toconsole=True
+
     # logger
     lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
     logger= lgd.logger 

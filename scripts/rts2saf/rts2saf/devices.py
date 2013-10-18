@@ -52,7 +52,7 @@ class FilterWheel():
 
 class Focuser():
     """Class for focuser properties"""
-    def __init__(self, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, lowerLimit=None, upperLimit=None, stepSize=None, speed=None, temperatureCompensation=None, focFoff=None):
+    def __init__(self, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, lowerLimit=None, upperLimit=None, stepSize=None, speed=None, focNoFtwrRange=None, temperatureCompensation=None, focFoff=None):
         self.name= name
         self.resolution=resolution 
         self.absLowerLimit=absLowerLimit
@@ -61,6 +61,7 @@ class Focuser():
         self.upperLimit=upperLimit
         self.stepSize=stepSize
         self.speed=speed
+        self.focNoFtwrRange=focNoFtwrRange
         self.temperatureCompensation=temperatureCompensation
         self.focFoff=focFoff # will be set at run time
         self.focDef=None # will be set at run time
@@ -202,7 +203,6 @@ class SetCheckDevices(object):
                             if ftn in ft.name:
                                 
                                 # ToDO that's not what I want
-                                # e.g. filter name empty8 and in list: empty
                                 match=False
                                 for nm in self.rt.cfg['EMPTY_SLOT_NAMES']:
                                     # e.g. filter name R must exactly match!
@@ -264,6 +264,7 @@ class SetCheckDevices(object):
             rangeMax= self.rangeFocToff[1]
             rangeStep= abs(self.rangeFocToff[2])
             self.logger.info('FocusFilterWheels: focuser: {0} setting internal limits from arguments'.format(self.rt.foc.name))
+
         else:
             rangeMin=self.rt.foc.lowerLimit
             rangeMax=self.rt.foc.upperLimit
@@ -293,11 +294,11 @@ class SetCheckDevices(object):
         self.rt.foc.focMx= rangeMax
 
         # ToDO check with no filter wheel configuration
-        if len(self.rt.foc.focFoff) > 10:
+        if len(self.rt.foc.focFoff) > 10 and  self.blind:
             self.logger.info('FocusFilterWheels: focuser range has: {0} steps, you might consider to increase --focstep, or set decent value for --focrange'.format(len(self.rt.foc.focFoff)))
 
-            
         return True
+
     # ToDo might go away
     def __filterWheels(self):
         if not self.connected:
@@ -420,7 +421,7 @@ class SetCheckDevices(object):
             self.logger.error('FocusFilterWheels: out of bounds, returning')
             self.logger.info('FocusFilterWheels: check setting of FOC_DEF, FOC_FOFF, FOC_TOFF and limits in configuration')
 
-        if below or anyOutOfLlUl:
+        if anyBelow or anyOutOfLlUl:
             return False
 
         # log INFO a summary, after dropping multiple empty slots
@@ -443,11 +444,11 @@ class SetCheckDevices(object):
                     for ft in ftw.filters:
                         info += 'checkDevices: {0:8s}: {1:8s}'.format(ftw.name, ft.name)
                         if self.blind:
-                            info += '{0:2d} steps, bewteen: {1:5d} and {2:5d}\n'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff))
+                            info += '{0:2d} steps, between: {1:5d} and {2:5d}\n'.format(len(self.rt.foc.focFoff), min(self.rt.foc.focFoff), max(self.rt.foc.focFoff))
                             img += len(self.rt.foc.focFoff)
                         else:
-                            info += '{0:2d} steps, FOC_FOFF bewteen: {1:5d} and {2:5d}, '.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
-                            info += 'FOC_DEF bewteen: {1:5d} and {2:5d}\n'.format(len(ft.focFoff), self.rt.foc.focDef + min(ft.focFoff), self.rt.foc.focDef + max(ft.focFoff))
+                            info += '{0:2d} steps, FOC_FOFF between: {1:5d} and {2:5d}, '.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
+                            info += 'FOC_POS between: {1:5d} and {2:5d}\n'.format(len(ft.focFoff), self.rt.foc.focDef + min(ft.focFoff), self.rt.foc.focDef + max(ft.focFoff))
                             img += len(ft.focFoff)
                     else:
                         self.logger.info('\n{0}'.format(info))
@@ -541,7 +542,7 @@ class SetCheckDevices(object):
         return ftwOk
 
     def deviceWriteAccess(self):
-        self.logger.info('setCheckDevices:deviceWriteAccess: this may take approx. a minute')
+        self.logger.info('setCheckDevices: deviceWriteAccess: this may take approx. a minute')
 
         ccdOk=ftwOk=focOk=False
 
@@ -550,7 +551,7 @@ class SetCheckDevices(object):
         ftwOk=self.__deviceWriteAccessFtw()
 
         if  ccdOk and ftwOk and focOk:
-            self.logger.info('setCheckDevices:deviceWriteAccess: all devices are writable')
+            self.logger.info('setCheckDevices: deviceWriteAccess: all devices are writable')
 
 
         return ccdOk and ftwOk and focOk

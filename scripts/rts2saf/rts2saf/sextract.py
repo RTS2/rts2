@@ -38,6 +38,7 @@ class Sextract(object):
         self.sexconfig=rt.cfg['SEXCFG']
         self.starnnw=rt.cfg['STARNNW_NAME']
         self.fields=rt.cfg['FIELDS']
+        self.nbrsFtwsInuse=len(rt.cfg['FILTER WHEELS IN USE'])
         self.logger=logger
 
 
@@ -110,21 +111,29 @@ class Sextract(object):
         except:
             self.logger.warn( 'sextract: no filter name information found, {0}'.format(fitsFn, focPos, objectCount))
             ftName=None
-        try:
-            ftAName = hdr['FILTA']
-        except:
-            self.logger.warn( 'sextract: no FILTA name information found, {0}'.format(fitsFn, focPos, objectCount))
-            ftAName=None
-        try:
-            ftBName = hdr['FILTB']
-        except:
-            self.logger.warn( 'sextract: no FILTB name information found, {0}'.format(fitsFn, focPos, objectCount))
-            ftBName=None
-        try:
-            ftCName = hdr['FILTC']
-        except:
-            self.logger.warn( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
-            ftCName=None
+        # ToDo clumsy
+        ftAName=None
+        if self.nbrsFtwsInuse > 0:
+            try:
+                ftAName = hdr['FILTA']
+            except:
+                self.logger.warn( 'sextract: no FILTA name information found, {0}'.format(fitsFn, focPos, objectCount))
+
+        # ToDo clumsy
+        ftBName=None
+        if self.nbrsFtwsInuse > 1:
+            try:
+                ftBName = hdr['FILTB']
+            except:
+                self.logger.warn( 'sextract: no FILTB name information found, {0}'.format(fitsFn, focPos, objectCount))
+
+        # ToDo clumsy
+        ftCName=None
+        if self.nbrsFtwsInuse > 2:
+            try:
+                ftCName = hdr['FILTC']
+            except:
+                self.logger.warn( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
 
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)

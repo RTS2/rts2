@@ -21,6 +21,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import Queue
+import sys
 
 import rts2saf.acquire as acq
 import rts2saf.sextract as sx
@@ -30,7 +31,7 @@ import rts2saf.analyze as  an
 # create a method wich can be called by class FocusFilterWheels
 class Focus(object):
     """ 
-    some text here
+    
     """
 
     def __init__(self, debug=False, args=None, dryFitsFiles=None, rt=None, ev=None, logger=None):
@@ -67,9 +68,13 @@ class Focus(object):
             self.logger.error('Focus: exiting')
             sys.exit(1)
 
+        # ToDo erratic
+        if not self.args.blind:
+            self.rt.foc.focFoff= range(int(self.rt.foc.focNoFtwrRange[0]), int(self.rt.foc.focNoFtwrRange[1]), int(self.rt.foc.focNoFtwrRange[2]))
         # acquire FITS
         dataSex=list()
         # do not store dSx==None
+
         for st in self.rt.foc.focFoff:
             while True:
                 try:
@@ -137,7 +142,7 @@ class Focus(object):
             self.logger.info('Focus: {0:5.2f}: minFitFwhm'.format(rFt.minFitFwhm))
             # FOC_DEF (is set first)
             self.rt.foc.focDef= rFt.minFitPos
-            if self.rt.cfg['SET_FOCUS']:
+            if self.rt.cfg['SET_FOC_DEF']:
                 if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
                     acqu.writeFocDef()
                     self.logger.info('Focus: set FOC_DEF: {0}'.format(int(rFt.minFitPos)))
@@ -262,24 +267,29 @@ class FocusFilterWheels(object):
                 # if in self.rt.cfg['EMPTY_SLOT_NAMES']
                 # or
                 # blind
-                if self.args.blind:
-                    self.rt.foc.focDef= rFt.weightedMeanCombined
-                else:
-                    self.rt.foc.focDef= rFt.minFitPos
+                if ft.name in self.rt.cfg['EMPTY_SLOT_NAMES']:
 
-                # FOC_DEF (is set first)
-                if self.rt.cfg['SET_FOCUS']:
-                    # ToDo th correct values are stored in Focuser() object
-                    if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
-                        acqu.writeFocDef()
-                        self.logger.info('FocusFilterWheels: set FOC_DEF: {0}'.format(int(rFt.minFitPos)))
+                    if self.args.blind:
+                        self.rt.foc.focDef= rFt.weightedMeanCombined
                     else:
-                        self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3}'.format(int(rFt.minFitPos), rFt.minFitFwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
-                else:
-                    # ToDo subtract filter offset and set FOC_DEF
-                    self.logger.info('FocusFilterWheels: filter: {0} has an offset: {1}, not setting FOC_DEF'.format(ft.name, int(rFt.minFitPos- self.rt.foc.focDef)))
-                    ft.OffsetToEmptySlot=int(rFt.minFitPos- self.rt.foc.focDef)
+                        self.rt.foc.focDef= rFt.minFitPos
+                    if self.debug: self.logger.debug('FocusFilterWheels: set self.rt.foc.focDef: {0}'.format(int(self.rt.foc.focDef)))
 
+                    # FOC_DEF (is set first)
+                    if self.rt.cfg['SET_FOC_DEF']:
+                        # ToDo th correct values are stored in Focuser() object
+                        if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
+                            acqu.writeFocDef()
+                            self.logger.info('FocusFilterWheels: set FOC_DEF: {0}'.format(int(rFt.minFitPos)))
+                        else:
+                            self.logger.warn('FocusFilterWheels: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3} (FWHM_MIN,FWHM_MAX)'.format(int(rFt.minFitPos), rFt.minFitFwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+                    else:
+                        # ToDo subtract filter offset and set FOC_DEF
+                        self.logger.info('FocusFilterWheels: filter: {0} not setting FOC_DEF (see configuration)'.format(ft.name))
+
+                else:
+                    ft.OffsetToEmptySlot=int(rFt.minFitPos- self.rt.foc.focDef)
+                    if self.debug: self.logger.debug('FocusFilterWheels: set ft.OffsetToEmptySlot: {0}'.format(int(ft.OffsetToEmptySlot)))
 
                 if self.debug: self.logger.debug('FocusFilterWheels: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
             else:

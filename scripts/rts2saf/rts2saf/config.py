@@ -53,9 +53,9 @@ class DefaultConfiguration(object):
         self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2saf-focus'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
-        self.dcf[('basic', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]
 
         self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
+        self.dcf[('filter wheels', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]
         # this is really ugly
         # but ConfigParser does not allow something else
         # ToDo define more!
@@ -86,6 +86,7 @@ class DefaultConfiguration(object):
         self.dcf[('focuser properties', 'FOCUSER_UPPER_LIMIT')]= 20
         self.dcf[('focuser properties', 'FOCUSER_STEP_SIZE')]= 2
         self.dcf[('focuser properties', 'FOCUSER_SPEED')]= 100.
+        self.dcf[('focuser properties', 'FOCUSER_NO_FTW_RANGE')]= '[ -100, 100, 20 ]'
         self.dcf[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
         # not yet in use:
         self.dcf[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
@@ -122,7 +123,7 @@ class DefaultConfiguration(object):
         self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
         self.dcf[('ccd', 'ENABLE_JSON_WORKAROUND')]= False
 
-        self.dcf[('mode', 'SET_FOCUS')]= True
+        self.dcf[('mode', 'SET_FOC_DEF')]= False
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
 
         # mapping of fits header elements to canonical
@@ -234,23 +235,28 @@ class Configuration(DefaultConfiguration):
                     self.cfg[identifier]= value
 
             elif section in 'basic': 
-                if identifier in 'EMPTY_SLOT_NAMES':
-                    self.cfg[identifier]=value[1:-1].split(',')
-                else:
-                    self.cfg[identifier]= value
+                self.cfg[identifier]= value
 
             elif section in 'filter properties': 
                 self.cfg[identifier]= value
                 ftds.append(value)
 
-            elif( section in 'filter wheel'):
+            elif section in 'focuser properties':
+                if identifier in 'FOCUSER_NO_FTW_RANGE':
+                    self.cfg[identifier]=value[1:-1].split(',')
+                else:
+                    self.cfg[identifier]= value
+
+            elif section in 'filter wheel':
                 items= value[1:-1].split(',')
                 self.filterWheelsDefs[items[0]]=items[1:]
 
             elif( section in 'filter wheels'):
-                items= value[1:-1].split(',')
-                for item in items:
-                    self.filterWheelsInUseDefs.append(item)
+                if identifier in 'inuse':
+                    self.filterWheelsInUseDefs=value[1:-1].split(',')
+                elif identifier in 'EMPTY_SLOT_NAMES':
+                    self.cfg[identifier]=value[1:-1].split(',')
+
             elif( section in 'IMGP analysis'):
                 items= value[1:-1].split(',')
                 if identifier in 'FILTERS_TO_EXCLUDE':
@@ -307,14 +313,15 @@ class Configuration(DefaultConfiguration):
 
         # create object focuser
         self.foc= dev.Focuser(
-            name         =self.cfg['FOCUSER_NAME'],
-            resolution   =float(self.cfg['FOCUSER_RESOLUTION']),
-            absLowerLimit=int(self.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT']),
-            absUpperLimit=int(self.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT']),
-            lowerLimit   =int(self.cfg['FOCUSER_LOWER_LIMIT']),
-            upperLimit   =int(self.cfg['FOCUSER_UPPER_LIMIT']),
-            stepSize     =int(self.cfg['FOCUSER_STEP_SIZE']),
-            speed        =float(self.cfg['FOCUSER_SPEED']),
+            name          =self.cfg['FOCUSER_NAME'],
+            resolution    =float(self.cfg['FOCUSER_RESOLUTION']),
+            absLowerLimit =int(self.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT']),
+            absUpperLimit =int(self.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT']),
+            lowerLimit    =int(self.cfg['FOCUSER_LOWER_LIMIT']),
+            upperLimit    =int(self.cfg['FOCUSER_UPPER_LIMIT']),
+            stepSize      =int(self.cfg['FOCUSER_STEP_SIZE']),
+            speed         =float(self.cfg['FOCUSER_SPEED']),
+            focNoFtwrRange=self.cfg['FOCUSER_NO_FTW_RANGE'],
             temperatureCompensation=bool(self.cfg['FOCUSER_TEMPERATURE_COMPENSATION']),
             # set at run time:
             #focFoff=None,
