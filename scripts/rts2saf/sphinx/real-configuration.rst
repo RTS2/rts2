@@ -106,7 +106,7 @@ Only driver ``flitc.cpp`` has that.
  FOCUSER_ABSOLUTE_LOWER_LIMIT = 100
  FOCUSER_ABSOLUTE_UPPER_LIMIT = 2000
 
-The focuser can travel between e.g. between -500 to 5000 tick. The above entries limit it to 100, 2000.
+If he focuser can travel between e.g. between -500 to 5000 tick the above entries limit it to 100, 2000.
 
 .. code-block:: bash
 
@@ -119,7 +119,7 @@ These limits are used in case a ``--blind`` focus run is carried out.
 
  FOCUSER_STEP_SIZE = 100
 
-In case a ``--blind`` focus run is carried out the interval is stepped in ``FOCUSER_STEP_SIZE`` [tick].  
+In case a ``--blind`` focus run is carried out the interval (``FOCUSER_LOWER_LIMIT``, ``FOCUSER_UPPER_LIMIT``) is stepped in ``FOCUSER_STEP_SIZE`` [tick].  
 
 .. code-block:: bash
 
