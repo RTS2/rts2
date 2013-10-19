@@ -186,6 +186,7 @@ class Configuration(DefaultConfiguration):
         config = ConfigParser.ConfigParser()
         config.optionxform = str
 
+
         if os.path.exists(fileName):
             try:
                 config.readfp(open(fileName))
@@ -212,6 +213,8 @@ class Configuration(DefaultConfiguration):
 
         # over write the defaults
         ftds=list()
+        # if there is no filter wheel defined, a FAKE wheel with one FAKE filter is created
+        fakeFtw=True
         for (section, identifier), value in self.dcf.iteritems():
             try:
                 value = config.get( section, identifier)
@@ -227,37 +230,38 @@ class Configuration(DefaultConfiguration):
             items=list()
             # decode the compound configuration expressions first, the rest is copied to  
             # after completion
-            if  section in 'SExtractor':
+            if section=='SExtractor':
                 if identifier in 'FIELDS':
                     value=value.replace("'", '')
                     self.cfg['FIELDS']=value[1:-1].split(',')
                 else:
                     self.cfg[identifier]= value
 
-            elif section in 'basic': 
+            elif section=='basic': 
                 self.cfg[identifier]= value
 
-            elif section in 'filter properties': 
+            elif section=='filter properties': 
                 self.cfg[identifier]= value
                 ftds.append(value)
 
-            elif section in 'focuser properties':
+            elif section=='focuser properties':
                 if identifier in 'FOCUSER_NO_FTW_RANGE':
                     self.cfg[identifier]=value[1:-1].split(',')
                 else:
                     self.cfg[identifier]= value
 
-            elif section in 'filter wheel':
+            elif section=='filter wheel':
                 items= value[1:-1].split(',')
                 self.filterWheelsDefs[items[0]]=items[1:]
 
-            elif( section in 'filter wheels'):
+            elif( section=='filter wheels'):
+                fakeFtw=False
                 if identifier in 'inuse':
                     self.filterWheelsInUseDefs=value[1:-1].split(',')
                 elif identifier in 'EMPTY_SLOT_NAMES':
                     self.cfg[identifier]=value[1:-1].split(',')
 
-            elif( section in 'IMGP analysis'):
+            elif( section=='IMGP analysis'):
                 items= value[1:-1].split(',')
                 if identifier in 'FILTERS_TO_EXCLUDE':
                     tDict=dict()
@@ -330,24 +334,50 @@ class Configuration(DefaultConfiguration):
             #focMx=None,
             #focSt=None
             )
-        # create objects filter
-        for ftd in ftds:
-            ftItems= ftd[1:-1].split(',')
-            lowerLimit    = int(ftItems[1])
-            upperLimit    = int(ftItems[2])
-            stepSize      = int(ftItems[3])
+
+        if fakeFtw:
+            # create one FAKE_FT filter
+            lowerLimit    = int(self.cfg['FOCUSER_NO_FTW_RANGE'][0])
+            upperLimit    = int(self.cfg['FOCUSER_NO_FTW_RANGE'][1])
+            stepSize      = int(self.cfg['FOCUSER_NO_FTW_RANGE'][2])
             focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
 
             ft=dev.Filter( 
-                name          = ftItems[0],
+                name          = 'FAKE_FT',
+                OffsetToEmptySlot= 0,
                 lowerLimit    =lowerLimit,
                 upperLimit    =upperLimit,
                 stepSize      =stepSize,
-                exposureFactor=string.atof(ftItems[4]),
+                exposureFactor= 1.,
                 focFoff=focFoff
                 )
-
+                
             self.filters.append(ft)
+        else:
+            # create objects filter
+            for ftd in ftds:
+                ftItems= ftd[1:-1].split(',')
+                lowerLimit    = int(ftItems[1])
+                upperLimit    = int(ftItems[2])
+                stepSize      = int(ftItems[3])
+                focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
+
+                ft=dev.Filter( 
+                    name          = ftItems[0],
+                    lowerLimit    =lowerLimit,
+                    upperLimit    =upperLimit,
+                    stepSize      =stepSize,
+                    exposureFactor=string.atof(ftItems[4]),
+                    focFoff=focFoff
+                    )
+                
+                self.filters.append(ft)
+
+        if fakeFtw:
+            # create one FAKE_FTW filter wheel with one fake filter named FAKE_FT
+            self.filterWheelsDefs['FAKE_FTW']=['FAKE_FT']
+            self.filterWheelsInUseDefs=['FAKE_FTW']
+            self.cfg['EMPTY_SLOT_NAMES']=['FAKE_FT']
 
         # create objects FilterWheel whith filter wheels names and with filter objects
         #  ftwn: W2
@@ -400,13 +430,13 @@ class Configuration(DefaultConfiguration):
     def checkConfiguration(self):
         # rts2.sextractur excepts the file not found error and uses internal defaults, we check that here
         if not os.path.exists(self.cfg['SEXPATH']):
-            self.logger.warn( 'Configuration.readConfiguration: sextractor path:{0} not valid, returning'.format(self.cfg['SEXPATH']))            
+            self.logger.warn( 'Configuration.readConfiguration: sextractor path: {0} not valid, returning'.format(self.cfg['SEXPATH']))            
             return False
         if not os.path.exists(self.cfg['SEXCFG']):
-            self.logger.warn( 'Configuration.readConfiguration: config file:{0} not found, returning'.format(self.cfg['SEXCFG']))            
+            self.logger.warn( 'Configuration.readConfiguration: SExtractor config file: {0} not found, returning'.format(self.cfg['SEXCFG']))            
             return False
         if not os.path.exists(self.cfg['STARNNW_NAME']):
-            self.logger.warn( 'Configuration.readConfiguration: config file:{0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
+            self.logger.warn( 'Configuration.readConfiguration: SExtractor NNW config file: {0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
             return False
         if not self.cfg['FIELDS']:
             self.logger.warn( 'Configuration.readConfiguration: no sextractor fields defined')
@@ -435,24 +465,27 @@ if __name__ == '__main__':
     logger= lgd.logger 
 
     rt=Configuration(logger=logger)
-    rt.writeDefaultConfiguration()
+#    rt.writeDefaultConfiguration()
 #    rt.dumpDefaults()
 
     rt.readConfiguration(fileName=args.config)
+    
 
     if not rt.checkConfiguration():
         print 'Something wrong with configuration'
         sys.exit(1)
 
-#    for c,v in rt.cfg.iteritems():
-#        print c,v
+
+#    for ftw in rt.cfg['AVAILABLE FILTER WHEELS']:
+#        print '---------------------------- {} {}'.format(ftw.name, len(ftw.filters))
+#        for ft in ftw.filters:
+#            print 'name {}'.format(ft.name)
+#            print 'step {}'.format(ft.stepSize)
+#        print '----------------------------'
 
 
-    for ftw in rt.cfg['AVAILABLE FILTER WHEELS']:
-        print '---------------------------- {} {}'.format(ftw.name, len(ftw.filters))
-        for ft in ftw.filters:
-            print 'name {}'.format(ft.name)
-            print 'step {}'.format(ft.stepSize)
-        print '----------------------------'
+    for c,v in rt.cfg.iteritems():
+        print c,v
+    print 'DONE'
 
 #    rt.writeConfiguration(cfn='./rts2saf-my-new.cfg')

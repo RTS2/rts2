@@ -87,10 +87,10 @@ class Do(object):
                 pos[dSx.focPos] = 1
 
         if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-            self.logger.warn('FocusFilterWheels: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+            self.logger.warn('__analyzeRun: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
             if self.debug:
                 for p,v in pos.iteritems():
-                    self.logger.debug('FocusFilterWheels:{0:5.0f}: {1}'.format(p,v))
+                    self.logger.debug('__analyzeRun:{0:5.0f}: {1}'.format(p,v))
             return 
 
         if args.catalogAnalysis:

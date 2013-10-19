@@ -48,7 +48,6 @@ if __name__ == '__main__':
     parser.add_argument('--focrange', dest='focRange', action='store', default=None,type=int, nargs='+', help=': %(default)s, focuser range given as "ll ul st" used only during blind run')
     parser.add_argument('--exposure', dest='exposure', action='store', default=None, type=float, help=': %(default)s, exposure time for CCD')
     parser.add_argument('--focdef', dest='focDef', action='store', default=None, type=float, help=': %(default)s, set FOC_DEF to value')
-    parser.add_argument('--focstep', dest='focStep', action='store', default=None, type=int, help=': %(default)s, focuser step size during blind run, see --blind')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
     parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
@@ -92,6 +91,9 @@ if __name__ == '__main__':
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
         sys.exit(1)
+
+    cdv.summaryDevices()
+
     # are devices writable
     # do the only interactively
     if args.checkConfig:
@@ -117,13 +119,8 @@ if __name__ == '__main__':
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
     #
-    if len(rt.filterWheelsInUse)>0:
-        fftw=fc.FocusFilterWheels(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt, ev=ev, logger=logger)
-        fftw.run()
-    else:
-        # without filter wheel
-        f=fc.Focus(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt,ev=ev,logger=logger)
-        f.run()
+    fs=fc.Focus(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt, ev=ev, logger=logger)
+    fs.run()
 
     logger.info('rts2saf_focus: end scan at: {0}'.format(ev.startTime))
 

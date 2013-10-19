@@ -78,7 +78,11 @@ class Environment():
         return  self.expandToTmp(fileName)
         
     def expandToAcquisitionBasePath(self, ftwName=None, ftName=None):
-        if ftwName== None and ftName==None:
+
+        if ftwName== 'FAKE_FTW' and ftName=='FAKE_FT':
+
+            return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/'  
+        elif ftwName== None and ftName==None:
             return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/'  
 
         elif ftwName== None:

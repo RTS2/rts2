@@ -89,7 +89,7 @@ class ScanThread(threading.Thread):
 #                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
                     self.proxy.refresh()
                     focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-                    if self.debug: self.logger.debug('acquire: focuser position not yet reached, sleeping')
+                    if self.debug: self.logger.debug('acquire: focuser position: {0}  not yet reached, now:{1}, sleeping'.format(focPosCalc, focPos))
                     time.sleep(.1) # leave it alone
                 else:
                     if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
@@ -175,7 +175,7 @@ class ScanThread(threading.Thread):
         # ToDo chack that at run time
         if not rdtt:
             rdtt= 5. # beeing on the save side, subsequent calls have the correct time, ToDo: might not be true!
-            self.logger.warn('acquire: no read ot time received, that is ok if RTS2 CCD driver has just been (re-)started, sleeping:{}'.format(rdtt))
+            self.logger.warn('acquire: no read out time received, that is ok if RTS2 CCD driver has just been (re-)started, sleeping:{}'.format(rdtt))
                 
         # critical: RTS2 creates the file on start of exposure
         # see TAG WAIT
@@ -308,6 +308,10 @@ class Acquire(object):
         # ToDo filter
         # set all but ftw to empty slot
         for ftw in self.filterWheelsInUse:
+            # no real filter wheel, used for CCDs without filter wheels
+            if ftw.name in 'FAKE_FTW':
+                continue
+
             if ftw.name not in self.ftw.name:
                 if self.debug: self.logger.debug('acquire: filter wheel: {0}, setting empty slot on filter wheel: {1} to {2}'.format(self.ftw.name,ftw.name, ftw.filters[0].name))
                 if self.writeToDevices:
@@ -315,7 +319,8 @@ class Acquire(object):
                 else:
                     self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(ftw.filters[0].name,ftw.name))
 
-        if self.ft:
+        # no real filter, used for CCDs without filter wheels
+        if self.ft and not self.ft.name in 'FAKE_FT':
             if self.writeToDevices:
                 self.proxy.setValue(self.ftw.name, 'filter',  self.ft.name)
                 if self.debug: self.logger.debug('acquire: setting on filter wheel: {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
@@ -358,6 +363,7 @@ class Acquire(object):
                 try:
                     ind= ftns.index(ftn)
                 except:
+                    self.logger.error('acquire: filter wheel: {0} filter: {1} not found in configuration (dropped?)'.format(ftw.name, ftn))
                     self.logger.error('acquire: filter wheel: {0} incomplete list of filter offsets, do not write them to CCD: {1}'.format(ftw.name, self.ccd.name))
                     break
 
@@ -428,7 +434,7 @@ if __name__ == '__main__':
     parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-    parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step), if --focStep is defined it is used to set the range')
+    parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step)')
     parser.add_argument('--writetodevices', dest='writeToDevices', action='store_true', default=False, help=': %(default)s, if True enable write values to devices')
 
     args=parser.parse_args()

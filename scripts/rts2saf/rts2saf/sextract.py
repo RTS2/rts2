@@ -47,7 +47,7 @@ class Sextract(object):
         sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw)
         stde=sex.runSExtractor(fitsFn)
         if stde:
-            self.logger.error( 'sextract: {0} not found, sextractor message:\n{1}\nexiting'.format(fitsFn,stde))
+            self.logger.error( 'sextract: {0} not found, sextractor message:\n{1}\nreturning'.format(fitsFn,stde))
             return dt.DataSex()
 
         # find the sextractor counts
