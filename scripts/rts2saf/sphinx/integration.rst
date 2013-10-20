@@ -13,7 +13,7 @@ In ``/etc/rts2/rts2.ini`` section
 
 ``rts2saf_imgp.py`` calls ``rts2saf_fwhm.py`` which measures the FWHM of
 each image after it has been stored on disk. If FWHM is above threshold it 
-writes tar_id 5 into selector's focusing queue. Next executed target will 
+writes ``tar_id 5`` into selector's ``focusing`` queue. Next executed target will 
 be ``tar_id 5`` that's ``OnTargetFocus``.
 
 rts2-centrlad configuration
@@ -24,6 +24,8 @@ Restore the real ``/etc/rts2/devices`` file in case you wish them to be present
 rts2-selector configuration
 ---------------------------
 Configure ``selector`` (SEL), replace the default in ``/etc/rts2/services`` with
+
+.. code-block:: bash
 
   selector        SEL    --add-queue plan --add-queue focusing --add-queue manual
 
@@ -91,6 +93,7 @@ To queue a focus run through ``rts2-selector`` (SEL) use
 
  rts2-queue --queue focusing OnTargetFocus
 
+(Re-)enable SEL and EXEC. 
 
 Command line execution, night time
 ----------------------------------
@@ -100,5 +103,5 @@ Execute
 
   rts2saf_focus.py --toconsole --displayfit --displayds9
 
-and after a while the ``matplotlib`` window opens and after closing
-it the ``DS9`` window.
+and after a while a ``matplotlib`` window appears with data and the fit and after closing
+it the ``DS9`` window appears.

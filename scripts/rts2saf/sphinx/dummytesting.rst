@@ -2,15 +2,13 @@ Testing with dummy devices
 ==========================
 
 
-All scripts have their own log file which is written by default to . or /tmp. 
-The log file name is 'script_name.py.log', e.g. rts2saf_focus.py.log. While
-executing the scripts directly on the command line enable logging to terminal with the 
-option ``--toconsole`` and if more detailed output is required enable --debug
+All scripts have their own log file which is written by default to ``.`` or ``/tmp``. 
+The log file name is 'script_name.py.log', e.g. ``rts2saf_focus.py.log``. While
+executing the scripts directly on the command line enable logging to terminal with
+option ``--toconsole`` and if more detailed output is required enable ``--debug``
 or ``--verbose`` if available. 
 
-
-
-In the following section the unchanged ``rts2saf.cfg`` example 'one-filter-wheel' 
+In the following description ``rts2saf.cfg`` from example ``configs/one-filter-wheel`` 
 is used.
 
 
@@ -73,11 +71,11 @@ or
 
 .. code-block:: bash
 
-   rts2saf_analyze.py --toconsole --basepath ./samples/ --displayfit --displayds9
+   ./rts2saf_analyze.py --toconsole --basepath ./samples/ --displayfit --displayds9
 
 After a while a matplotlib window appears containing the fit. After closing it 
 a DS9 window appears showing which stars have been selected for a given image.
-The latter example does only carry out the analysis ommiting acquistion and is
+The latter example does only carry out the analysis omitting acquisition and is
 therefore faster.
 
 Command line execution, day time testing

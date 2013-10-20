@@ -344,11 +344,12 @@ class SetCheckDevices(object):
                     # ft.emptySlot=Null at instanciation
                     try:
                         ftw.emptySlots.append(ft)
-                        eSs += 1
                     except:
                         ftw.emptySlots=list()
                         ftw.emptySlots.append(ft)
 
+                    eSs += 1
+                                            
                     if self.debug: self.logger.debug('__filterWheels: filter wheel: {0:5s}, filter:{1:5s} is a candidate empty slot'.format(ftw.name, ft.name))
 
             if ftw.emptySlots:
@@ -375,10 +376,10 @@ class SetCheckDevices(object):
                 if len(self.rt.filterWheelsInUse) > 0:
                     self.logger.warn('__filterWheels: filter wheel: {0}, no empty slot found'.format(ftw.name))
 
-        if eSs == len(self.rt.filterWheelsInUse):
+        if eSs >= len(self.rt.filterWheelsInUse):
             if self.debug: self.logger.debug('__filterWheels: all filter wheels have an empty slot')
         else:
-            self.logger.warn('__filterWheels: not all filter wheels have an empty slot')
+            self.logger.warn('__filterWheels: not all filter wheels have an empty slot, {}, {}'.format(eSs,  len(self.rt.filterWheelsInUse)))
 
         return True
 

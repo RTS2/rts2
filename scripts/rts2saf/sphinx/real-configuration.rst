@@ -38,7 +38,7 @@ Expose empty slots for 5 seconds, JSON interface creates files with identical na
  SET_FOC_DEF = True
  WRITE_FILTER_OFFSETS = False
 
-After a successful fit on an empty slot FOC_DEF will be set but not filter offsets
+After a successful fit on an empty slot ``FOC_DEF`` will be set but not filter offsets.
 
 .. code-block:: bash
 
@@ -57,7 +57,6 @@ in steps of 15 tick. The last number defines the exposure factor and in case of 
 exposure is 30 seconds (``BASE_EXPOSURE`` * 6.)
 
 .. code-block:: bash
-
 
  [filter wheel]
  fltw1 = [ COLWFLT, open, R, g, r, i, z, Y, empty8 ]
@@ -91,9 +90,9 @@ The focuser resolution is defined as focuser tick difference to make a differenc
 
 .. code-block:: bash
 
- FOCUSER_SPEED = 100.0
+ FOCUSER_SPEED = 100.0 # tick/second
 
-The acquistion routine has to wait for a period of time until the focuser reaches target position.  
+The acquisition routine has to wait for a period of time until the focuser reaches target position.  
 
 .. code-block:: bash
 
@@ -112,11 +111,6 @@ If he focuser can travel between e.g. between -500 to 5000 tick the above entrie
 
  FOCUSER_LOWER_LIMIT = 100
  FOCUSER_UPPER_LIMIT = 700
-
-These limits are used in case a ``--blind`` focus run is carried out.
-
-.. code-block:: bash
-
  FOCUSER_STEP_SIZE = 100
 
 In case a ``--blind`` focus run is carried out the interval (``FOCUSER_LOWER_LIMIT``, ``FOCUSER_UPPER_LIMIT``) is stepped in ``FOCUSER_STEP_SIZE`` [tick].  
@@ -135,23 +129,24 @@ In case your FITS header key words differ they are remapped (contact the author!
 
 .. code-block:: bash
 
- [queue focus run]
- FWHM_LOWER_THRESH = 9.
-
-Do not trigger a focus run if FWHM is below thresh (rts2saf_fwhm.py uses that).
-
-.. code-block:: bash
-
  [IMGP analysis]
  FILTERS_TO_EXCLUDE = [ FILTC:grism1, FILTB:closed, FILTB:slit1, FILTB:slit2, FILTB:hartmann, FILTB:pinhole ]
 
-Do not try to determine for these filter wheels and filters a FWHM or an astrometrical calibration .
+Section ``[IMGP analysis]`` is used by ``rts2saf_imgp.py``. For filters ``FILTERS_TO_EXCLUDE`` neither a
+FWHM nor an astrometric calibration is attempted.
 
 .. code-block:: bash
 
  SCRIPT_ASTROMETRY = rts2-astrometry.net
- #SCRIPT_ASTROMETRY = rts2-astrometry-std-fits.net                                                                                                                                                      
- # this is the old version in use at Bootes-2
- #SCRIPT_ASTROMETRY = /etc/rts2/img_process
+ #SCRIPT_ASTROMETRY = rts2-astrometry-std-fits.net
 
-Choose the script that fulfills your purpose.
+``rts2saf_imgp.py`` executes ``SCRIPT_ASTROMETRY`` to do the astrometric calibration. STDOUT is read back and written to STDOUT (catched by IMGP).
+
+.. code-block:: bash
+
+ [queue focus run]
+ # do not disturb gloria on 2013-10-16, no focus run is triggered
+ FWHM_LOWER_THRESH = 29. # [pixel]
+
+Section ``[queue focus run]`` is used by ``rts2saf_fwhm.py`` to decide if a focus run should be 
+queued.

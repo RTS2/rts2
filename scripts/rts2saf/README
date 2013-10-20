@@ -18,3 +18,16 @@ and e.g.
 to view it or view it at 
 
 http://azug.minpet.unibas.ch/~wildi/_build/html/index.html
+
+
+or read the latest documents in ./sphinx:
+
+   introduction.rst
+   installation.rst
+   integration.rst
+   real-configuration.rst
+   dummytesting.rst
+   cmdline.rst
+   modules.rst
+   moduleindex.rst
+
