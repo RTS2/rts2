@@ -139,7 +139,6 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-
     print 'subprocess method1'
     try:
         fn= method1(debug=args.debug, ccdName=args.ccdName)
@@ -170,15 +169,6 @@ if __name__ == '__main__':
         print 'subprocess method3: Success!'
     except Exception, e:
         print 'subprocess method3 error: {}'.format(e)
-
-#    COUNTER=0
-#    parts=srcFn.split('.fits')
-#    newStoreFn= '{0}-{1:03d}.fits'.format(parts[0], COUNTER)
-#    print 'moving from /tmp/{0} to /tmp/{1}'.format(srcFn[:-1], newStoreFn)
-#    try:
-#        shutil.move(src='/tmp/{0}'.format(srcFn[:-1]), dst='/tmp/{0}'.format(newStoreFn))
-#    except Exception, e:
-#        print 'could not move file: {}, error:{}'.format(srcFn[:-1], e)
 
     print
     print 'proxy method'

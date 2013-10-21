@@ -59,9 +59,6 @@ class Focus(object):
                 #
                 acqu= acq.Acquire(debug=self.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.rt.foc, ccd=self.rt.ccd, filterWheelsInUse=self.rt.filterWheelsInUse, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
                 # 
-                if self.args.focDef: #  ToDo think about that, it is a bit misplaced
-                    self.rt.foc.focDef=args.focDef
-                    acqu.writeFocDef()
                 # steps are defined per filter, if blind in focuser
                 if not self.args.blind:
                     self.rt.foc.focFoff=ft.focFoff

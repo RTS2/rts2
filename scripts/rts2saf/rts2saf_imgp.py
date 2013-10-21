@@ -77,7 +77,7 @@ class ImgpAnalysis():
                 '--fitsFn',
                 self.fitsFileName,
                 ]
-# no time to waste, the decision if a focus run is triggered is done elsewhere
+        # no time to waste, the decision toqueue a focus run is done in rts2saf_fwhm.py
         try:
             fwhmLine= self.spawnProcess(cmd, False)
         except:
@@ -86,7 +86,7 @@ class ImgpAnalysis():
         cmd= [  self.astrometryCmd,
                 self.fitsFileName,
                 ]
-# this process is hopefully started in parallel on the second core if any.
+        # this process is hopefully started in parallel on the second core if any.
         try:
             stdo,stde= self.spawnProcess(cmd=cmd, wait=True).communicate()
         except:
@@ -110,9 +110,11 @@ if __name__ == "__main__":
 
     import os
     import argparse
-    import rts2saf.log as lg
-    import rts2saf.config as cfgd
     from astropy.io.fits import getheader
+    from rts2saf.config import Configuration
+    from rts2saf.log import Logger
+
+
 
     head, script=os.path.split(sys.argv[0])
     parser= argparse.ArgumentParser(prog=script, description='rts2asaf online image processing')
@@ -127,8 +129,7 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     if args.toconsole or args.debug:
-        lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-        logger= lgd.logger 
+        logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
     else: 
         # started by IMGP
         import logging
@@ -136,7 +137,7 @@ if __name__ == "__main__":
         logger = logging.getLogger()
 
     # read the run time configuration
-    rt=cfgd.Configuration(logger=logger)
+    rt=Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
     if not rt.checkConfiguration():
         logger.error('[0]: exiting, check the configuration file: {1}'.format(script, args.config))

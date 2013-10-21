@@ -25,11 +25,11 @@ import argparse
 import re
 import glob
 
-import rts2saf.config as cfgd
-import rts2saf.log as  lg
-import rts2saf.environ as env
-import rts2saf.focus as fc
-import rts2saf.devices as dev
+from rts2saf.config import Configuration
+from rts2saf.environ import Environment
+from rts2saf.log import Logger
+from rts2saf.focus import Focus
+from rts2saf.devices import SetCheckDevices
 
 
 if __name__ == '__main__':
@@ -58,23 +58,21 @@ if __name__ == '__main__':
         args.level='DEBUG'
         args.toconsole=True
         
-    #
     if args.checkConfig:
         args.debug=True
         args.toconsole=True
 
     # logger
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
+    logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
     # read the run time configuration
-    rt=cfgd.Configuration(logger=logger)
+    rt=Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
     if not rt.checkConfiguration():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
 
     # get the environment
-    ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
+    ev=Environment(debug=args.debug, rt=rt,logger=logger)
 
     if not args.blind and args.focRange:
         logger.error('rts2saf_focus: --focrange has no effect without --blind'.format(args.focRange))
@@ -85,42 +83,49 @@ if __name__ == '__main__':
             logger.error('rts2saf_focus: bad range values: {}, exiting'.format(args.focRange))
             sys.exit(1)
 
-    # check the presence of the devices and if there is an empty slot on each wheel
-    cdv= dev.SetCheckDevices(debug=args.debug, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
-    if not cdv.statusDevices():
-        logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
-        logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
-        sys.exit(1)
+    if args.toconsole:
+        # check the presence of the devices and if there is an empty slot on each wheel
+        cdv= SetCheckDevices(debug=args.debug, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
+        if not cdv.statusDevices():
+            logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
+            logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
+            sys.exit(1)
 
-    cdv.summaryDevices()
+        cdv.summaryDevices()
 
-    # are devices writable
-    # do the only interactively
     if args.checkConfig:
+        # are devices writable
         if not cdv.deviceWriteAccess():
             logger.error('rts2saf_focus:  exiting')
             logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
             sys.exit(1)
 
-    # these files are injected in case no actual night sky images are available
-    # neverthless ccd is exposing, filter wheels and focuser are moving
     dryFitsFiles=None
-    if args.dryFitsFiles:
-        dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryFitsFiles, rt.cfg['FILE_GLOB']))
-        if len(dryFitsFiles)==0:
-            logger.error('rts2saf_focus: no FITS files found in:{}'.format(args.dryFitsFiles))
-            logger.info('rts2saf_focus: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
-            sys.exit(1)
+    if args.toconsole:
+        # these files are injected in case no actual night sky images are available
+        # neverthless ccd is exposing, filter wheels and focuser are moving
+        if args.dryFitsFiles:
+            dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryFitsFiles, rt.cfg['FILE_GLOB']))
+            if len(dryFitsFiles)==0:
+                logger.error('rts2saf_focus: no FITS files found in:{}'.format(args.dryFitsFiles))
+                logger.info('rts2saf_focus: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
+                sys.exit(1)
 
     if args.checkConfig:
         logger.info('rts2saf_focus: configuration check done for config file:{0}, exiting'.format(args.config))
         sys.exit(1)
 
+    
+    if args.focDef:
+        logger.warn('rts2saf_focus: --focdef not yet implemented')
+        # ToDo
+        # self.rt.foc.focDef=args.focDef
+        #            acqu.writeFocDef()
+
+
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
-    #
-    fs=fc.Focus(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt, ev=ev, logger=logger)
+    fs=Focus(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt, ev=ev, logger=logger)
     fs.run()
-
     logger.info('rts2saf_focus: end scan at: {0}'.format(ev.startTime))
 

@@ -26,11 +26,10 @@ import sys
 import re
 import os
 import rts2
-from rts2.json import JSONProxy
 
-import rts2saf.log as lg
-import rts2saf.config as cfgd
-import rts2saf.sextract as sx
+from rts2saf.sextract import Sextract
+from rts2saf.config import Configuration
+from rts2saf.log import Logger
 
 if __name__ == '__main__':
 
@@ -49,22 +48,25 @@ if __name__ == '__main__':
     args=parser.parse_args()
     # logger
     if args.toconsole or args.debug:
-        lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-        logger= lgd.logger 
+        logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
     else: 
         # started by IMGP
         import logging
         logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
         logger = logging.getLogger()
     # read the run time configuration
-    rt=cfgd.Configuration(logger=logger)
+    rt=Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
     if not rt.checkConfiguration():
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
 
-    sex= sx.Sextract(debug=args.debug, rt=rt, logger=logger)
-    if not os.path.exists(args.fitsFn):
+    sex= Sextract(debug=args.debug, rt=rt, logger=logger)
+    if args.fitsFn==None:
+        logger.error('rts2af_fwhm: no --fitsFn specified, exiting'.format(args.fitsFn))
+        sys.exit(1)
+
+    elif not os.path.exists(args.fitsFn):
         logger.error('rts2af_fwhm: file: {0}, does not exists, exiting'.format(args.fitsFn))
         sys.exit(1)
 

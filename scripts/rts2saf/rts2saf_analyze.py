@@ -20,14 +20,14 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-import rts2saf.sextract as safsx
-import rts2saf.analyze as anr
-import rts2saf.temperaturemodel as tfm
-
 import fnmatch
 import os
 import re
 import sys
+
+from rts2saf.sextract import Sextract
+from rts2saf.analyze import SimpleAnalysis,CatalogAnalysis
+from rts2saf.temperaturemodel import TemperatureFocPosModel
 
 # thanks http://stackoverflow.com/questions/635483/what-is-the-best-way-to-implement-nested-dictionaries-in-python
 class AutoVivification(dict):
@@ -70,7 +70,7 @@ class Do(object):
         dataSex=list()
         for fitsFn in fitsFns:
             
-            rsx= safsx.Sextract(debug=args.sexDebug, rt=rt, logger=logger)
+            rsx= Sextract(debug=args.sexDebug, rt=rt, logger=logger)
             dSx=rsx.sextract(fitsFn=fitsFn)
 
             if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
@@ -94,10 +94,10 @@ class Do(object):
             return 
 
         if args.catalogAnalysis:
-            an=anr.CatalogAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, rt=rt, logger=self.logger)
+            an=CatalogAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, rt=rt, logger=self.logger)
             rFt=an.selectAndAnalyze()
         else:
-            an=anr.SimpleAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+            an=SimpleAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
             rFt=an.analyze()
             an.display()
 
@@ -127,7 +127,7 @@ class Do(object):
                 openMinFitPos=int(rFt.minFitPos)
                 break
         else:
-            # ist not a filter wheel run 
+            # is not a filter wheel run 
             return rFts
 
         for rFt in rFts:
@@ -135,7 +135,6 @@ class Do(object):
 
         return rFts
 
-    # 
     def aggregateRuns(self):
         for root, dirnames, filenames in os.walk(args.basePath):
             fns=fnmatch.filter(filenames, '*.fits')
@@ -170,9 +169,9 @@ class Do(object):
 if __name__ == '__main__':
 
     import argparse
-    import rts2saf.config as cfgd
-    import rts2saf.environ as env
-    import rts2saf.log as lg
+    from rts2saf.config import Configuration
+    from rts2saf.environ import Environment
+    from rts2saf.log import Logger
 
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
@@ -192,20 +191,18 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-
     if args.debug:
         args.level= 'DEBUG'
         args.toconsole=True
 
     # logger
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
+    logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
     # config
-    rt=cfgd.Configuration(logger=logger)
+    rt=Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
     rt.checkConfiguration()
     # environment
-    ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
+    ev=Environment(debug=args.debug, rt=rt,logger=logger)
 
     if not args.basePath:
         parser.print_help()
@@ -224,7 +221,7 @@ if __name__ == '__main__':
     else:
         # temperature model
         plotFn=ev.expandToPlotFileName( plotFn='{}/temp-model.png'.format(args.basePath))
-        dom=tfm.TemperatureFocPosModel(showPlot=True, date=ev.startTime[0:19],  comment='test run', plotFn=plotFn, resultFitFwhm=rFF, logger=logger)
+        dom=TemperatureFocPosModel(showPlot=True, date=ev.startTime[0:19],  comment='test run', plotFn=plotFn, resultFitFwhm=rFF, logger=logger)
         dom.fitData()
         dom.plotData()
         logger.info('rts2saf_analyze: storing plot at: {}'.format(plotFn))
