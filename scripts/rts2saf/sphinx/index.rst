@@ -13,6 +13,7 @@ Contents
    real-configuration
    dummytesting
    cmdline
+   unittest
    modules
    moduleindex
 

@@ -61,7 +61,7 @@ and if no errors are reported
 
 A lot of messages appear on the terminal...
 
-If you want to see the fitted minimum and the selected objects:
+If you want to see the fitted minimum and then selected objects:
 
 .. code-block:: bash
 

@@ -52,7 +52,7 @@ After a successful fit on an empty slot ``FOC_DEF`` will be set but not filter o
  flt7 = [ empty8, -60, 60, 15, 1.]
  flt8 = [ open,   -60, 60, 15, 1.]
 
-The star images degrade quickly and we do not want too many pictures. ``FOC_TOFF`` is varied by p/m 60
+The star images degrade quickly and we do not want too many pictures. ``FOC_FOFF`` is varied by p/m 60
 in steps of 15 tick. The last number defines the exposure factor and in case of filter flt5 the
 exposure is 30 seconds (``BASE_EXPOSURE`` * 6.)
 
@@ -60,6 +60,8 @@ exposure is 30 seconds (``BASE_EXPOSURE`` * 6.)
 
  [filter wheel]
  fltw1 = [ COLWFLT, open, R, g, r, i, z, Y, empty8 ]
+ fltw2 = [ COLWGRS, open]
+ fltw3 = [ COLWSLT, open]
  
 
 The filter wheel named COLWFLT contains filters with the names ``open``, ``R``, ``g``, ``r``, ``i``, ``z``, ``Y``, ``empty8``. Slots ``open`` and ``empty8`` have no glass (no focus offset). This example is best used on the command line to define the filter offsets.
@@ -105,7 +107,7 @@ Only driver ``flitc.cpp`` has that.
  FOCUSER_ABSOLUTE_LOWER_LIMIT = 100
  FOCUSER_ABSOLUTE_UPPER_LIMIT = 2000
 
-If he focuser can travel between e.g. between -500 to 5000 tick the above entries limit it to 100, 2000.
+If the focuser can travel between e.g. between -500 to 5000 tick the above entries limit it to 100, 2000.
 
 .. code-block:: bash
 
@@ -132,7 +134,7 @@ In case your FITS header key words differ they are remapped (contact the author!
  [IMGP analysis]
  FILTERS_TO_EXCLUDE = [ FILTC:grism1, FILTB:closed, FILTB:slit1, FILTB:slit2, FILTB:hartmann, FILTB:pinhole ]
 
-Section ``[IMGP analysis]`` is used by ``rts2saf_imgp.py``. For filters ``FILTERS_TO_EXCLUDE`` neither a
+Section ``[IMGP analysis]`` is used by ``rts2saf_imgp.py``. For filters in ``FILTERS_TO_EXCLUDE`` neither a
 FWHM nor an astrometric calibration is attempted.
 
 .. code-block:: bash

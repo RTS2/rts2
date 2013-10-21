@@ -16,7 +16,7 @@ each image after it has been stored on disk. If FWHM is above threshold it
 writes ``tar_id 5`` into selector's ``focusing`` queue. Next executed target will 
 be ``tar_id 5`` that's ``OnTargetFocus``.
 
-rts2-centrlad configuration
+rts2-centrald configuration
 ---------------------------
 Restore the real ``/etc/rts2/devices`` file in case you wish them to be present
 

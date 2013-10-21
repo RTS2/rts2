@@ -208,9 +208,3 @@ soon
 .. code-block:: bash
 
  rts2saf_analyze.py --toconsole --displayfit --displayds9 --basepath ./samples
-
-
-Testing individual components
------------------------------
-soon
-
