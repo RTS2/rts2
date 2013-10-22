@@ -462,7 +462,10 @@ if ( $last_acq_obs_id != $obs_id ) then
 		endif
 	end
 	if ( $attemps &lt;= 0 ) then
-		rts2-logcom "maximal number of attemps exceeded"
+		rts2-logcom "maximal number of attempts exceeded"
+		echo "1.2m pointing cannot be verified with astrometry. There is something wrong with the telescope (e.g. on a limit), or it  is very cloudy. Please check the telescope, clear the error (e.g. PANIC on mount PC) and restart the robot on flwo48" &gt; /pool/weather/robot.error
+		set continue=0
+		exit
 	endif
 	object $name
  <!-- 	tele ampcen $lastamp  -->
