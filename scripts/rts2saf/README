@@ -1,7 +1,28 @@
-rts2saf package's documentation is generated with Sphinx. 
-To install Sphinx use:
+Getting started with the documentation
+======================================
 
-1) pip install -U sphinx
+rts2saf package's documentation is generated with Sphinx (see http://sphinx-doc.org)
+
+For the impatient:
+------------------
+
+View a slightly behind documentation at:
+
+http://azug.minpet.unibas.ch/~wildi/_build/html/index.html
+
+
+Installation of Sphinx
+----------------------
+
+1) To install Sphinx use:
+
+ Ubuntu     apt-get install python-sphinx
+ openSuSE   zypper in python-sphinx
+
+or
+
+ pip install -U sphinx
+
 2) pip install sphinxcontrib-programoutput
 
 
@@ -15,12 +36,7 @@ and e.g.
  firefox _build/html/modules.html
  
 
-to view it or view it at 
-
-http://azug.minpet.unibas.ch/~wildi/_build/html/index.html
-
-
-or read the latest documents in ./sphinx:
+to view it or read the latest documents in ./sphinx:
 
    introduction.rst
    installation.rst

@@ -20,7 +20,7 @@
 import unittest
 
 from rts2saf.config import Configuration 
-from rts2saf.devices import CCD, Focuser, FilterWheel, Filter
+from rts2saf.devices import Filter, FilterWheel, Focuser, CCD, SetCheckDevices
 
 import logging
 logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -29,13 +29,12 @@ logger = logging.getLogger()
 # sequence matters
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestConfiguration('test_readConfiguration'))
-    suite.addTest(TestConfiguration('test_checkConfiguration'))
+    suite.addTest(TestDevices('test_'))
 
     return suite
 
 #@unittest.skip('class not yet implemented')
-class TestConfiguration(unittest.TestCase):
+class TestDevices(unittest.TestCase):
 
     def tearDown(self):
         pass
@@ -46,22 +45,18 @@ class TestConfiguration(unittest.TestCase):
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
     #@unittest.skip('feature not yet implemented')
-    def test_readConfiguration(self):
-        self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
+    def test_deviceClasses(self):
+        ft= Filter()
+        self.assertIs(type(ft), Filter, 'no object of type: '.format(type(Filter)))
+        ftw = FilterWheel()
+        self.assertIs(type(ftw), FilterWheel, 'no object of type: '.format(type(FilterWheel)))
+        foc = Focuser()
+        self.assertIs(type(foc), Focuser, 'no object of type: '.format(type(Focuser)))
+        ccd= CCD()
+        self.assertIs(type(ccd), CCD, 'no object of type: '.format(type(CCD)))
 
-        self.assertIs(type(self.rt), Configuration)
-        self.assertIs(type(self.rt.ccd), CCD)
-        self.assertIs(type(self.rt.foc), Focuser)
-        self.assertIs(type(self.rt.filterWheels[0]), FilterWheel)
-        self.assertIs(type(self.rt.filterWheels[0].filters[0]), Filter)
 
-
-    def test_checkConfiguration(self):
-        self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
-        result = self.rt.checkConfiguration()
-        self.assertTrue(result)
 
 if __name__ == '__main__':
     
-#    suite = unittest.TestLoader().loadTestsFromTestCase(TestFitFwhm)
     unittest.TextTestRunner(verbosity=0).run(suite())

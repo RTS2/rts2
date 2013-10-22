@@ -34,7 +34,7 @@ from rts2saf.log import Logger
 if __name__ == '__main__':
 
     prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf fwhm')
+    parser= argparse.ArgumentParser(prog=prg, description='rts2saf calculate fwhm')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='/tmp', help=': %(default)s, write log file to path') # needs always to write somwhere

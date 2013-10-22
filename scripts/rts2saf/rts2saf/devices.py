@@ -31,7 +31,7 @@ import errno
 from rts2.json import JSONProxy
 from rts2saf.timeout import timeout
 
-class Filter():
+class Filter(object):
     """Class for filter properties"""
     def __init__(self, name=None, OffsetToEmptySlot=None, lowerLimit=None, upperLimit=None, stepSize=None, exposureFactor=1., focFoff=None):
         self.name= name
@@ -42,7 +42,7 @@ class Filter():
         self.stepSize  = stepSize # [tick]
         self.focFoff=focFoff # range
 
-class FilterWheel():
+class FilterWheel(object):
     """Class for filter wheel properties"""
     def __init__(self, name=None, filterOffsets=list(), filters=list()):
         self.name= name
@@ -50,7 +50,7 @@ class FilterWheel():
         self.filters=filters # list of Filter
         self.emptySlots=None # set at run time ToDo go away??
 
-class Focuser():
+class Focuser(object):
     """Class for focuser properties"""
     def __init__(self, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, lowerLimit=None, upperLimit=None, stepSize=None, speed=None, focNoFtwrRange=None, temperatureCompensation=None, focFoff=None):
         self.name= name
@@ -68,7 +68,7 @@ class Focuser():
         self.focMn=None # will be set at run time
         self.focMx=None # will be set at run time
 
-class CCD():
+class CCD(object):
     """Class for CCD properties"""
     def __init__(self, name=None, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None, pixelSize=None, baseExposure=None):
         

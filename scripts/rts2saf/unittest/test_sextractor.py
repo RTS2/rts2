@@ -20,7 +20,8 @@
 import unittest
 
 from rts2saf.config import Configuration 
-from rts2saf.devices import CCD, Focuser, FilterWheel, Filter
+from rts2saf.data import DataSex
+from rts2saf.sextract import Sextract
 
 import logging
 logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -29,13 +30,12 @@ logger = logging.getLogger()
 # sequence matters
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestConfiguration('test_readConfiguration'))
-    suite.addTest(TestConfiguration('test_checkConfiguration'))
+    suite.addTest(TestSextract('test_'))
 
     return suite
 
 #@unittest.skip('class not yet implemented')
-class TestConfiguration(unittest.TestCase):
+class TestSextract(unittest.TestCase):
 
     def tearDown(self):
         pass
@@ -45,23 +45,15 @@ class TestConfiguration(unittest.TestCase):
         self.fileName='/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
+        self.sx = Sextract(debug=False, rt=self.rt, logger=logger)
     #@unittest.skip('feature not yet implemented')
-    def test_readConfiguration(self):
-        self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
+    def test_sextract(self):
+        fitsFn='../samples/20071205025911-725-RA.fits'
+        dSx=self.sx.sextract(fitsFn=fitsFn)
+        self.assertIs(type(dSx), DataSex, 'no object of type: '.format(type(DataSex)))
+        self.assertEqual(fitsFn, dSx.fitsFn, 'install sample FITS from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
 
-        self.assertIs(type(self.rt), Configuration)
-        self.assertIs(type(self.rt.ccd), CCD)
-        self.assertIs(type(self.rt.foc), Focuser)
-        self.assertIs(type(self.rt.filterWheels[0]), FilterWheel)
-        self.assertIs(type(self.rt.filterWheels[0].filters[0]), Filter)
-
-
-    def test_checkConfiguration(self):
-        self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
-        result = self.rt.checkConfiguration()
-        self.assertTrue(result)
 
 if __name__ == '__main__':
     
-#    suite = unittest.TestLoader().loadTestsFromTestCase(TestFitFwhm)
     unittest.TextTestRunner(verbosity=0).run(suite())
