@@ -1,9 +1,16 @@
 Testing individual components ``unittest``
 ==========================================
+.. |date| date::
+.. |time| date:: %H:%M:%S
+Python ``unittest`` were executed on |date| at |time| on
+
+.. program-output:: uname -a
+
+
+through
 
 .. code-block:: bash
 
- python ../unittest/unittest_fitfwhm.py
+  rts2saf_unittest.sh
 
-.. program-output::  python ../unittest/unittest_fitfwhm.py
-
+.. program-output:: ../rts2saf_unittest.sh ../unittest

@@ -191,8 +191,8 @@ class Configuration(DefaultConfiguration):
             try:
                 config.readfp(open(fileName))
             except Exception, e:                
-                self.logger.error('Configuration.readConfiguration: config file {0} has wrong syntax:\n{1},\nexiting'.format(fileName,e))
-                sys.exit(1)
+                self.logger.error('Configuration.readConfiguration: config file {0} has wrong syntax:\n{1}'.format(fileName,e))
+                return False
             # ok, I misuse ConfigParser
             # check additional elements or typo
             for sct in config.sections():
@@ -200,12 +200,12 @@ class Configuration(DefaultConfiguration):
                     try:
                         val=self.dcf[(sct, k)]
                     except Exception, e:
-                        self.logger.error('Configuration.readConfiguration: config file {0} has wrong syntax:\n{1},\nexiting'.format(fileName,e))
-                        sys.exit(1)
+                        self.logger.error('Configuration.readConfiguration: config file {0} has wrong syntax:\n{1}'.format(fileName,e))
+                        return False
 
         else:
-            self.logger.error('Configuration.readConfiguration: config file {0} not found, exiting'.format(fileName))
-            sys.exit(1)
+            self.logger.error('Configuration.readConfiguration: config file {0} not found'.format(fileName))
+            return False
 
         # read the defaults
         for (section, identifier), value in self.dcf.iteritems():
@@ -221,7 +221,6 @@ class Configuration(DefaultConfiguration):
             except Exception, e:
                 # exception if section, identifier value are not present in config file
                 #self.logger.error('Configuration.readConfiguration: config file {0} has an error at section:{1}, identifier:{2}, value:{3}'.format(fileName, section, identifier, value))
-                #sys.exit(1)
                 continue
 
             value= string.replace( value, ' ', '')
@@ -391,8 +390,8 @@ class Configuration(DefaultConfiguration):
                         ftw.filters.append(ft)
                         break
                 else:
-                    self.logger.error('Configuration.readConfiguration: no filter named: {0} found in config: {1}, exiting'.format(ftd, fileName)  )
-                    sys.exit(1)
+                    self.logger.error('Configuration.readConfiguration: no filter named: {0} found in config: {1}'.format(ftd, fileName)  )
+                    return False
             self.filterWheels.append(ftw)
 
         # create from
@@ -403,13 +402,15 @@ class Configuration(DefaultConfiguration):
                     break
             else:
                 self.logger.error('Configuration.readConfiguration: no filter wheel named: {0} found in config: {1}'.format(ftwd, fileName))
-                sys.exit(1)
+                return False
                 
             self.filterWheelsInUse.append(ftw)
         # for convenience
         self.cfg['AVAILABLE FILTERS']=self.filters
         self.cfg['AVAILABLE FILTER WHEELS']=self.filterWheels 
         self.cfg['FILTER WHEELS IN USE']=self.filterWheelsInUse 
+
+        return True
 
     def writeConfiguration(self, cfn='./rts2saf-my-new.cfg'):
         for (section, identifier), value in sorted(self.dcf.iteritems()):

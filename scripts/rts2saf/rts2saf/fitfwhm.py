@@ -29,7 +29,7 @@ try:
 except:
     matplotlib.use('Agg')    
     NODISPLAY=True
-
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize
@@ -46,7 +46,7 @@ class FitFwhm(object):
         self.comment=comment
         self.par=None
         self.flag=None
-        self.min_focpos_fwhm=None
+        self.min_focpos_fwhm=float('nan')
         self.fitfunc_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
         self.errfunc_fwhm = lambda p, x, y, res, err: (y - self.fitfunc_fwhm(p, x)) / (res * err) # ToDo why err
         self.fitfunc_r_fwhm = lambda x, p0, p1, p2, p3, p4: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 4) 
@@ -76,8 +76,8 @@ class FitFwhm(object):
         return self.min_focpos_fwhm, self.val_fwhm, self.par
 
     def plotData(self):
-        if not self.min_focpos_fwhm:
-            return
+        #if not self.min_focpos_fwhm:
+        #    return
         try:
             x_fwhm = np.linspace(self.dataFitFwhm.pos.min(), self.dataFitFwhm.pos.max())
         except Exception, e:
@@ -98,10 +98,6 @@ class FitFwhm(object):
         plt.ylabel('FWHM [px]')
         plt.grid(True)
 
-        try:
-            plt.savefig(self.dataFitFwhm.plotFn)
-        except:
-            self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.dataFitFwhm.plotFn))                
             
         if self.showPlot:
             if NODISPLAY:
@@ -110,16 +106,40 @@ class FitFwhm(object):
             else:
                 plt.show()
 
+        try:
+            plt.savefig(self.dataFitFwhm.plotFn)
+            return self.dataFitFwhm.plotFn
+        except Exception, e:
+            self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.dataFitFwhm.plotFn))
+            return e
 
 if __name__ == '__main__':
+
+    from rts2saf.log import Logger
+    import argparse
+    import re
+    prg= re.split('/', sys.argv[0])[-1]
+    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
+    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
+    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
+    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='/tmp', help=': %(default)s, write log file to path') # needs a path where it can always write
+    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
+    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
+
+    args=parser.parse_args()
 
     dataFitFwhm=dtf.DataFitFwhm(
         pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
         fwhm= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
         errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
-        stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),)
- 
+        stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
+        ambientTemp='21.3',
+        plotFn= '/test-plot.png')
+
+    # logger
+    logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
+
     # ToDo mismatch!
-    fit=FitFwhm(showPlot=True, ftName='U', ambientTemp=20., date='2013-09-08T09:30:09', comment='Test fitfwhm', pltFile='./test-fit.png', dataFitFwhm=dataFitFwhm)
+    fit=FitFwhm(showPlot=True,  date='2013-09-08T09:30:09', comment='Test fitfwhm', dataFitFwhm=dataFitFwhm, logger=logger)
     fit.fitData()
     fit.plotData()

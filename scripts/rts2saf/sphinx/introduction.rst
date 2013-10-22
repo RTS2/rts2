@@ -72,7 +72,7 @@ The output of the fit program is stored as a PNG file and optionally displayed o
 
 During analysis ``DS9`` region of interest  data structures are created for each image. 
 Optionally the images and the region files are displayed on screen using ``DS9``.
-The circle is centered to ``SExtractor`` `s x,y positions. Red circles indicate objects
+The circle is centered to ``SExtractor``'s x,y positions. Red circles indicate objects
 which were rejected green ones which were accepted.
 
 If rts2saf is executed remotely the X-Window DISPLAY variable has to be set otherwise 

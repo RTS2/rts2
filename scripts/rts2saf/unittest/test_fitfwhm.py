@@ -17,38 +17,52 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
-
-from rts2saf.fitfwhm import FitFwhm
 import unittest
+import os
+from rts2saf.fitfwhm import FitFwhm
 
+# sequence matters
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(TestFitFwhm('test_fitData'))
+    suite.addTest(TestFitFwhm('test_plotData'))
+    return suite
 
+#@unittest.skip('class not yet implemented')
 class TestFitFwhm(unittest.TestCase):
+
+    def tearDown(self):
+        try:
+            os.unlink(self.plotFnIn)
+        except:
+            pass
 
     def setUp(self):
         from rts2saf.data import DataFitFwhm
         import numpy as np
-
+        # ugly
+        self.plotFnIn='./test-plot.png'
+        date = '2013-09-08T09:30:09'
         dataFitFwhm=DataFitFwhm(
             pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
             fwhm= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
             errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
-            stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),)
+            stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
+            ambientTemp='21.3',
+            plotFn= self.plotFnIn)
 
-        self.ft= FitFwhm(showPlot=True, date='2013-09-08T09:30:09',  comment='unittest', dataFitFwhm=dataFitFwhm, logger=None)
-
-    def tearDown(self):
-        pass
-
+        self.ft = FitFwhm(showPlot=False, date=date,  comment='unittest', dataFitFwhm=dataFitFwhm, logger=None)
 
     def test_fitData(self):
-        self.min_focpos_fwhm, self.val_fwhm, self.par= self.ft.fitData()
-        self.assertEqual(self.min_focpos_fwhm, 2499.4659033048924)
+        min_focpos_fwhm, val_fwhm, par= self.ft.fitData()
+        self.assertEqual(min_focpos_fwhm, 2499.4659033048924)
                                                
-
+    #@unittest.skip('feature not yet implemented')
     def test_plotData(self):
-        self.ft.plotData()
+        plotFnOut=self.ft.plotData()
+        self.assertEqual(self.plotFnIn, plotFnOut)
 
 if __name__ == '__main__':
     
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestFitFwhm)
-    unittest.TextTestRunner(verbosity=0).run(suite)
+#    suite = unittest.TestLoader().loadTestsFromTestCase(TestFitFwhm)
+    unittest.TextTestRunner(verbosity=0).run(suite())
