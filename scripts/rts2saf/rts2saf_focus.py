@@ -25,11 +25,15 @@ import argparse
 import re
 import glob
 
+from rts2.json import JSONProxy
+
 from rts2saf.config import Configuration
 from rts2saf.environ import Environment
 from rts2saf.log import Logger
 from rts2saf.focus import Focus
-from rts2saf.devices import SetCheckDevices
+from rts2saf.devices import CheckDevices
+from rts2saf.devices import CreateCCD,CreateFocuser,CreateFilters,CreateFilterWheels
+from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 
 
 if __name__ == '__main__':
@@ -83,14 +87,43 @@ if __name__ == '__main__':
             logger.error('rts2saf_focus: bad range values: {}, exiting'.format(args.focRange))
             sys.exit(1)
 
+    # establish a connection
+    proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
+    try:
+        proxy.refresh()
+    except Exception, e:
+        logger.error('rts2saf_focus: no JSON connection for: {0}, {1}, {2}'.format(rt.cfg['URL'],rt.cfg['USERNAME'],rt.cfg['PASSWORD']))
+        sys.exit(1)
+    # create all devices
+    # attention: .create() at the end
+    ccd= CreateCCD(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    if ccd==None or not isinstance(ccd, CCD):
+        logger.error('rts2saf_focus: cound not create object for CCD: {}, exiting'.format(rt.cfg['CCD_NAME']))
+        sys.exit(1)
+    ccd.check(proxy=proxy)
+
+    focuser= CreateFocuser(debug=args.debug, proxy=proxy, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    if focuser==None or not isinstance(focuser, Focuser):
+        logger.error('rts2saf_focus: cound not create object for focuser: {}, exiting'.format(rt.cfg['FOCUSER_NAME']))
+        sys.exit(1)
+
+    focuser.check(proxy=proxy)
+    # filters are not devices
+    filters     = CreateFilters(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    filterWheels= CreateFilterWheels(filters=filters, focuser=focuser, debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+
+    # at least on even if it is FAKE_FTW
+    if filterWheels==None or not isinstance(filterWheels[0], FilterWheel):
+        logger.error('rts2saf_focus: cound not create object for filter wheel: {}, exiting'.format('FIX ME'))
+        sys.exit(1)
+
+    for ftw in filterWheels:
+        ftw.check(proxy=proxy)
+
+    # while called from IMGP hopefully every device is there
     if args.toconsole:
         # check the presence of the devices and if there is an empty slot on each wheel
-        cdv= SetCheckDevices(debug=args.debug, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
-        if not cdv.statusDevices():
-            logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
-            logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
-            sys.exit(1)
-
+        cdv= CheckDevices(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, filterWheels=filterWheels, focuser=focuser, rt=rt, logger=logger)
         cdv.summaryDevices()
 
     if args.checkConfig:
@@ -125,7 +158,7 @@ if __name__ == '__main__':
 
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
-    fs=Focus(debug=args.debug, args=args, dryFitsFiles=dryFitsFiles, rt=rt, ev=ev, logger=logger)
+    fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=focuser, ftws=filterWheels, rt=rt, ev=ev, logger=logger)
     fs.run()
     logger.info('rts2saf_focus: end scan at: {0}'.format(ev.startTime))
 

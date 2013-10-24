@@ -38,7 +38,7 @@ class Sextract(object):
         self.sexconfig=rt.cfg['SEXCFG']
         self.starnnw=rt.cfg['STARNNW_NAME']
         self.fields=rt.cfg['FIELDS']
-        self.nbrsFtwsInuse=len(rt.cfg['FILTER WHEELS IN USE'])
+        self.nbrsFtwsInuse=len(rt.cfg['FILTER WHEELS INUSE'])
         self.logger=logger
 
 

@@ -28,22 +28,26 @@ import rts2saf.sextract as sx
 import rts2saf.analyze as  an
 
 class Focus(object):
-    def __init__(self, debug=False, args=None, dryFitsFiles=None, rt=None, ev=None, logger=None):
+    def __init__(self, debug=False, proxy=None, args=None, dryFitsFiles=None, ccd=None, foc=None, ftws=None, rt=None, ev=None, logger=None):
         self.debug=debug
+        self.proxy=proxy
         self.args=args
         self.dryFitsFiles=dryFitsFiles
+        self.ccd=ccd
+        self.foc=foc
+        self.ftws=ftws
         self.ev=ev
         self.rt=rt
         self.logger=logger
 
     def run(self):
         # loop over filter wheels, their filters and offsets (FOC_TOFF)
-        for k, ftw in enumerate(self.rt.filterWheelsInUse):
+        for k, ftw in enumerate(self.ftws):
             # only interesting in case multiple filter wheels are present
             if len(ftw.filters) ==1 and k>0:
-                # self.rt.filterWheelsInUse is sorted
+                # self.ftws is sorted
                 # these are filter wheels which have no real filters (defined in config) 
-                # they must appear in self.rt.filterWheelsInUse in order to set the empty slot
+                # they must appear in self.ftws in order to set the empty slot
                 continue
         
             for ft in ftw.filters:
@@ -57,11 +61,11 @@ class Focus(object):
                 # acquisition
                 acqu_oq = Queue.Queue()
                 #
-                acqu= acq.Acquire(debug=self.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.rt.foc, ccd=self.rt.ccd, filterWheelsInUse=self.rt.filterWheelsInUse, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
+                acqu= acq.Acquire(debug=self.debug, proxy=self.proxy, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.foc, ccd=self.ccd, filterWheelsInUse=self.ftws, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
                 # 
                 # steps are defined per filter, if blind in focuser
                 if not self.args.blind:
-                    self.rt.foc.focFoff=ft.focFoff
+                    self.foc.focFoff=ft.focFoff
 
                 # start acquisition thread
                 if not acqu.startScan(exposure=self.args.exposure, blind=self.args.blind):
@@ -70,7 +74,7 @@ class Focus(object):
 
                 # acquire FITS from thread
                 dataSex=list()
-                for st in self.rt.foc.focFoff:
+                for st in self.foc.focFoff:
                     while True:
                         try:
                             fitsFn= acqu_oq.get(block=True, timeout=.2)
@@ -110,7 +114,7 @@ class Focus(object):
                     continue
 
                 # might go to a thread too
-                anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+                anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
 
                 rFt= anr.analyze()
                 # 
@@ -139,10 +143,10 @@ class Focus(object):
                 if ft.name in self.rt.cfg['EMPTY_SLOT_NAMES']:
 
                     if self.args.blind:
-                        self.rt.foc.focDef= rFt.weightedMeanCombined
+                        self.foc.focDef= rFt.weightedMeanCombined
                     else:
-                        self.rt.foc.focDef= rFt.minFitPos
-                    if self.debug: self.logger.debug('Focus: set self.rt.foc.focDef: {0}'.format(int(self.rt.foc.focDef)))
+                        self.foc.focDef= rFt.minFitPos
+                    if self.debug: self.logger.debug('Focus: set self.foc.focDef: {0}'.format(int(self.foc.focDef)))
 
                     # FOC_DEF (is set first)
                     if self.rt.cfg['SET_FOC_DEF']:
@@ -157,7 +161,7 @@ class Focus(object):
                         self.logger.info('Focus: filter: {0} not setting FOC_DEF (see configuration)'.format(ft.name))
 
                 else:
-                    ft.OffsetToEmptySlot=int(rFt.minFitPos- self.rt.foc.focDef)
+                    ft.OffsetToEmptySlot=int(rFt.minFitPos- self.foc.focDef)
                     if self.debug: self.logger.debug('Focus: set ft.OffsetToEmptySlot: {0}'.format(int(ft.OffsetToEmptySlot)))
 
                 if self.debug: self.logger.debug('Focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))

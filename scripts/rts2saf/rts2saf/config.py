@@ -26,6 +26,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 import ConfigParser
 import os
 import sys
+# ToDo drop that
 import string
 import re
 import rts2saf.devices as dev
@@ -40,11 +41,6 @@ class DefaultConfiguration(object):
 
         self.ccd=None 
         self.foc=None
-        self.filterWheelsDefs=dict()
-        self.filterWheels=list()
-        self.filterWheelsInUseDefs=list()
-        self.filterWheelsInUse=list()
-        self.filters=list()
         self.sexFields=list()
         self.config = ConfigParser.RawConfigParser()
         self.config.optionxform = str
@@ -182,7 +178,9 @@ class Configuration(DefaultConfiguration):
     def readConfiguration(self, fileName=None):
         # make the values accessible
         self.cfg=dict()
-
+        # TODO
+        filterWheelsInuse=list()
+        filterWheelsDefs=dict()
         config = ConfigParser.ConfigParser()
         config.optionxform = str
 
@@ -206,7 +204,7 @@ class Configuration(DefaultConfiguration):
         else:
             self.logger.error('Configuration.readConfiguration: config file {0} not found'.format(fileName))
             return False
-
+        self.cfg['CFGFN'] = fileName
         # read the defaults
         for (section, identifier), value in self.dcf.iteritems():
             self.cfg[identifier]= value
@@ -239,27 +237,27 @@ class Configuration(DefaultConfiguration):
             elif section=='basic': 
                 self.cfg[identifier]= value
 
-            elif section=='filter properties': 
-                self.cfg[identifier]= value
-                ftds.append(value)
-
             elif section=='focuser properties':
                 if identifier in 'FOCUSER_NO_FTW_RANGE':
                     self.cfg[identifier]=value[1:-1].split(',')
                 else:
                     self.cfg[identifier]= value
-
+            #
+            elif section=='filter properties': 
+                self.cfg[identifier]= value
+                ftds.append(value)
+            #
             elif section=='filter wheel':
                 items= value[1:-1].split(',')
-                self.filterWheelsDefs[items[0]]=items[1:]
-
+                filterWheelsDefs[items[0]]=items[1:]
+            #
             elif( section=='filter wheels'):
                 fakeFtw=False
                 if identifier in 'inuse':
-                    self.filterWheelsInUseDefs=value[1:-1].split(',')
+                    filterWheelsInuse=value[1:-1].split(',')
                 elif identifier in 'EMPTY_SLOT_NAMES':
                     self.cfg[identifier]=value[1:-1].split(',')
-
+            #
             elif( section=='IMGP analysis'):
                 items= value[1:-1].split(',')
                 if identifier in 'FILTERS_TO_EXCLUDE':
@@ -292,123 +290,18 @@ class Configuration(DefaultConfiguration):
             else:
                 self.cfg[identifier]= value
 
-        # configuration has been read in, now create objects
-        # create object CCD
-        # ToDo, what does RTS2::ccd driver expect: int or str list?
-        # for now: int
-        wItems= re.split('[,]+', self.cfg['WINDOW'][1:-1])
-        if len(wItems) < 4:
-            self.logger.warn( 'Configuration.readConfiguration: too few ccd window items {0} {1}, using the whole CCD area'.format(len(items), value))
-            wItems= [ -1, -1, -1, -1]
-        else:
-            wItems[:]= map(lambda x: int(x), wItems)
-
-        self.ccd= dev.CCD( 
-            name         =self.cfg['CCD_NAME'],
-            binning      =self.cfg['CCD_BINNING'],
-            windowOffsetX=wItems[0],
-            windowOffsetY=wItems[1],
-            windowHeight =wItems[2],
-            windowWidth  =wItems[3],
-            pixelSize    =float(self.cfg['PIXELSIZE']),
-            baseExposure =float(self.cfg['BASE_EXPOSURE'])
-            )
-
-        # create object focuser
-        self.foc= dev.Focuser(
-            name          =self.cfg['FOCUSER_NAME'],
-            resolution    =float(self.cfg['FOCUSER_RESOLUTION']),
-            absLowerLimit =int(self.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT']),
-            absUpperLimit =int(self.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT']),
-            lowerLimit    =int(self.cfg['FOCUSER_LOWER_LIMIT']),
-            upperLimit    =int(self.cfg['FOCUSER_UPPER_LIMIT']),
-            stepSize      =int(self.cfg['FOCUSER_STEP_SIZE']),
-            speed         =float(self.cfg['FOCUSER_SPEED']),
-            focNoFtwrRange=self.cfg['FOCUSER_NO_FTW_RANGE'],
-            temperatureCompensation=bool(self.cfg['FOCUSER_TEMPERATURE_COMPENSATION']),
-            # set at run time:
-            #focFoff=None,
-            #focDef=None,
-            #focMn=None,
-            #focMx=None,
-            #focSt=None
-            )
-
-        if fakeFtw:
-            # create one FAKE_FT filter
-            lowerLimit    = int(self.cfg['FOCUSER_NO_FTW_RANGE'][0])
-            upperLimit    = int(self.cfg['FOCUSER_NO_FTW_RANGE'][1])
-            stepSize      = int(self.cfg['FOCUSER_NO_FTW_RANGE'][2])
-            focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
-
-            ft=dev.Filter( 
-                name          = 'FAKE_FT',
-                OffsetToEmptySlot= 0,
-                lowerLimit    =lowerLimit,
-                upperLimit    =upperLimit,
-                stepSize      =stepSize,
-                exposureFactor= 1.,
-                focFoff=focFoff
-                )
-                
-            self.filters.append(ft)
-        else:
-            # create objects filter
-            for ftd in ftds:
-                ftItems= ftd[1:-1].split(',')
-                lowerLimit    = int(ftItems[1])
-                upperLimit    = int(ftItems[2])
-                stepSize      = int(ftItems[3])
-                focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
-
-                ft=dev.Filter( 
-                    name          = ftItems[0],
-                    lowerLimit    =lowerLimit,
-                    upperLimit    =upperLimit,
-                    stepSize      =stepSize,
-                    exposureFactor=string.atof(ftItems[4]),
-                    focFoff=focFoff
-                    )
-                
-                self.filters.append(ft)
-
-        if fakeFtw:
-            # create one FAKE_FTW filter wheel with one fake filter named FAKE_FT
-            self.filterWheelsDefs['FAKE_FTW']=['FAKE_FT']
-            self.filterWheelsInUseDefs=['FAKE_FTW']
-            self.cfg['EMPTY_SLOT_NAMES']=['FAKE_FT']
-
-        # create objects FilterWheel whith filter wheels names and with filter objects
-        #  ftwn: W2
-        #  ftds: ['nof1', 'U', 'Y', 'O2']
-        for ftwn,ftds in self.filterWheelsDefs.iteritems():
-            # ToDo (Python) if filters=list() is not present, then all filters appear in all filter wheels
-            ftw=dev.FilterWheel(name=ftwn,filters=list())
-            for ftd in ftds:
-                for ft in self.filters:
-                    if ftd in ft.name: 
-                        ftw.filters.append(ft)
-                        break
-                else:
-                    self.logger.error('Configuration.readConfiguration: no filter named: {0} found in config: {1}'.format(ftd, fileName)  )
-                    return False
-            self.filterWheels.append(ftw)
-
-        # create from
-        # ftwd: W0
-        for ftwd in self.filterWheelsInUseDefs:
-            for ftw in self.filterWheels:
-                if ftwd in ftw.name:
-                    break
-            else:
-                self.logger.error('Configuration.readConfiguration: no filter wheel named: {0} found in config: {1}'.format(ftwd, fileName))
-                return False
-                
-            self.filterWheelsInUse.append(ftw)
         # for convenience
-        self.cfg['AVAILABLE FILTERS']=self.filters
-        self.cfg['AVAILABLE FILTER WHEELS']=self.filterWheels 
-        self.cfg['FILTER WHEELS IN USE']=self.filterWheelsInUse 
+        # ToDo look!
+        self.cfg['FAKE'] = fakeFtw                
+
+        if self.cfg['FAKE']:
+            self.cfg['FILTER DEFINITIONS'] = ['FAKE_FT']
+            self.cfg['FILTER WHEEL DEFINITIONS'] = {'FAKE_FTW':'FAKE_FT' }
+            self.cfg['FILTER WHEELS INUSE'] = [ 'FAKE_FTW' ]
+        else:
+            self.cfg['FILTER DEFINITIONS'] = ftds
+            self.cfg['FILTER WHEEL DEFINITIONS'] = filterWheelsDefs
+            self.cfg['FILTER WHEELS INUSE'] = filterWheelsInuse
 
         return True
 
@@ -475,14 +368,6 @@ if __name__ == '__main__':
     if not rt.checkConfiguration():
         print 'Something wrong with configuration'
         sys.exit(1)
-
-
-#    for ftw in rt.cfg['AVAILABLE FILTER WHEELS']:
-#        print '---------------------------- {} {}'.format(ftw.name, len(ftw.filters))
-#        for ft in ftw.filters:
-#            print 'name {}'.format(ft.name)
-#            print 'step {}'.format(ft.stepSize)
-#        print '----------------------------'
 
 
     for c,v in rt.cfg.iteritems():

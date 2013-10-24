@@ -30,7 +30,6 @@ import os
 import errno
 
 
-from rts2.json import JSONProxy
 from timeout import timeout
 
 class ScanThread(threading.Thread):
@@ -243,6 +242,7 @@ class Acquire(object):
     """Acquire FITS images for analysis"""
     def __init__(self, 
                  debug=False,
+                 proxy=None,
                  dryFitsFiles=None,
                  ftw=None,
                  ft=None,
@@ -256,6 +256,7 @@ class Acquire(object):
                  logger=None):
 
         self.debug=debug
+        self.proxy=proxy
         self.dryFitsFiles=dryFitsFiles
         self.ftw=ftw
         self.ft=ft
@@ -277,7 +278,7 @@ class Acquire(object):
         self.iFocDef=None
         self.iFocFoff=None
         self.iFocToff=None
-        self.proxy= JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
+        self.proxy= proxy
         self.connected=False
         self.errorMessage=None
         # no return value here
@@ -464,7 +465,15 @@ if __name__ == '__main__':
     ft = rt.filterWheelsInUse[0].filters[0]
     exposure= 1.
 
-    acqu= Acquire(debug=args.debug, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq,writeToDevices=args.writeToDevices, rt=rt, ev=ev, logger=logger)
+    # establish a connection
+    proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
+    try:
+        proxy.refresh()
+    except Exception, e:
+        logger.error('acquire: no JSON connection for: {0}, {1}, {2}'.format(rt.cfg['URL'],rt.cfg['USERNAME'],rt.cfg['PASSWORD']))
+        sys.exit(1)
+
+    acqu= Acquire(debug=args.debug, proxy=proxy, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq,writeToDevices=args.writeToDevices, rt=rt, ev=ev, logger=logger)
     if not acqu.startScan(exposure=exposure, blind=args.blind):
         self.logger.error('acquire: exiting')
         sys.exit(1)
