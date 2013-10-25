@@ -248,7 +248,7 @@ class Acquire(object):
                  ft=None,
                  foc=None,
                  ccd=None,
-                 filterWheelsInUse=None,
+                 ftws=None,
                  acqu_oq=None,
                  writeToDevices=True,
                  rt=None,
@@ -262,7 +262,7 @@ class Acquire(object):
         self.ft=ft
         self.foc=foc
         self.ccd=ccd
-        self.filterWheelsInUse=filterWheelsInUse
+        self.ftws=ftws
         self.acqu_oq=acqu_oq
         self.writeToDevices=writeToDevices
         self.rt=rt
@@ -301,32 +301,33 @@ class Acquire(object):
         self.logger.debug('acquire: current focuser: {0}'.format(self.iFocType))        
         self.logger.debug('acquire: current FOC_DEF: {0}'.format(self.iFocDef))
 
+        # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
         if self.writeToDevices:
             self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
         else:
             self.logger.warn('acquire: disabled setting FOC_FOFF: {0}'.format(0))
-        # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
+
         # ToDo filter
         # set all but ftw to empty slot
-        for ftw in self.filterWheelsInUse:
-            # no real filter wheel, used for CCDs without filter wheels
+        for ftw in self.ftws:
+            # no real filter wheel, used for setups without filter wheels
             if ftw.name in 'FAKE_FTW':
-                continue
+                return
 
             if ftw.name not in self.ftw.name:
-                if self.debug: self.logger.debug('acquire: filter wheel: {0}, setting empty slot on filter wheel: {1} to {2}'.format(self.ftw.name,ftw.name, ftw.filters[0].name))
+                if self.debug: self.logger.debug('acquire:  {0}, setting empty slot on  {1} to {2}'.format(self.ftw.name,ftw.name, ftw.filters[0].name))
                 if self.writeToDevices:
                     self.proxy.setValue(ftw.name, 'filter',  ftw.filters[0]) # has been sorted (lowest filter offset)
                 else:
-                    self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(ftw.filters[0].name,ftw.name))
+                    self.logger.warn('acquire: disabled setting filter: {0} on {1}'.format(ftw.filters[0].name,ftw.name))
 
         # no real filter, used for CCDs without filter wheels
         if self.ft and not self.ft.name in 'FAKE_FT':
             if self.writeToDevices:
                 self.proxy.setValue(self.ftw.name, 'filter',  self.ft.name)
-                if self.debug: self.logger.debug('acquire: setting on filter wheel: {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
+                if self.debug: self.logger.debug('acquire: setting on  {0}, filter: {1}'.format(self.ftw.name, self.ft.name))
             else:
-                self.logger.warn('acquire: disabled setting filter: {0} on filter wheel:{1}'.format(self.ft.name, self.ftw.name,ftw.name))
+                self.logger.warn('acquire: disabled setting filter: {0} on {1}'.format(self.ft.name, self.ftw.name,ftw.name))
 
     def __finalState(self):
         if self.writeToDevices:
@@ -346,9 +347,9 @@ class Acquire(object):
                 else:
                     self.logger.warn('acquire: disabled writing FOC_DEF: {0}'.format(self.foc.focDef))
             else:
-                self.logger.warn('acquire: focuser: {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
+                self.logger.warn('acquire:  {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
         else:
-            self.logger.warn('acquire: focuser: {0} not writing FOC_DEF, no minimum or maximum value present'.format(self.foc.name))
+            self.logger.warn('acquire:  {0} not writing FOC_DEF, no minimum or maximum value present'.format(self.foc.name))
 
     def writeOffsets(self, ftw=None):
         """Write only for camd::filter filters variable the offsets """
@@ -364,8 +365,8 @@ class Acquire(object):
                 try:
                     ind= ftns.index(ftn)
                 except:
-                    self.logger.error('acquire: filter wheel: {0} filter: {1} not found in configuration (dropped?)'.format(ftw.name, ftn))
-                    self.logger.error('acquire: filter wheel: {0} incomplete list of filter offsets, do not write them to CCD: {1}'.format(ftw.name, self.ccd.name))
+                    self.logger.error('acquire:  {0} filter: {1} not found in configuration (dropped?)'.format(ftw.name, ftn))
+                    self.logger.error('acquire:  {0} incomplete list of filter offsets, do not write them to CCD: {1}'.format(ftw.name, self.ccd.name))
                     break
 
                 offsets += '{0} '.format(int(ftw.filters[ind].OffsetToEmptySlot))

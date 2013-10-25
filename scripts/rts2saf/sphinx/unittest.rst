@@ -2,6 +2,7 @@ Testing individual components ``unittest``
 ==========================================
 .. |date| date::
 .. |time| date:: %H:%M:%S
+
 Python ``unittest`` were executed on |date| at |time| on
 
 .. program-output:: uname -a

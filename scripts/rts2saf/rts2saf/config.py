@@ -296,7 +296,7 @@ class Configuration(DefaultConfiguration):
 
         if self.cfg['FAKE']:
             self.cfg['FILTER DEFINITIONS'] = ['FAKE_FT']
-            self.cfg['FILTER WHEEL DEFINITIONS'] = {'FAKE_FTW':'FAKE_FT' }
+            self.cfg['FILTER WHEEL DEFINITIONS'] = {'FAKE_FTW': [ 'FAKE_FT'] }
             self.cfg['FILTER WHEELS INUSE'] = [ 'FAKE_FTW' ]
         else:
             self.cfg['FILTER DEFINITIONS'] = ftds

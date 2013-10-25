@@ -96,34 +96,32 @@ if __name__ == '__main__':
         sys.exit(1)
     # create all devices
     # attention: .create() at the end
-    ccd= CreateCCD(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
-    if ccd==None or not isinstance(ccd, CCD):
-        logger.error('rts2saf_focus: cound not create object for CCD: {}, exiting'.format(rt.cfg['CCD_NAME']))
-        sys.exit(1)
-    ccd.check(proxy=proxy)
 
-    focuser= CreateFocuser(debug=args.debug, proxy=proxy, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
-    if focuser==None or not isinstance(focuser, Focuser):
-        logger.error('rts2saf_focus: cound not create object for focuser: {}, exiting'.format(rt.cfg['FOCUSER_NAME']))
+    # filters are not yet devices
+    foc= CreateFocuser(debug=args.debug, proxy=proxy, check=args.checkConfig, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    if foc==None or not isinstance(foc, Focuser):
+        logger.error('rts2saf_focus: could not create object for focuser: {}, exiting'.format(rt.cfg['FOCUSER_NAME']))
         sys.exit(1)
 
-    focuser.check(proxy=proxy)
-    # filters are not devices
-    filters     = CreateFilters(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
-    filterWheels= CreateFilterWheels(filters=filters, focuser=focuser, debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    filters     = CreateFilters(debug=args.debug, proxy=proxy, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    ftws= CreateFilterWheels(filters=filters, foc=foc, debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
 
     # at least on even if it is FAKE_FTW
-    if filterWheels==None or not isinstance(filterWheels[0], FilterWheel):
-        logger.error('rts2saf_focus: cound not create object for filter wheel: {}, exiting'.format('FIX ME'))
+    if ftws==None or not isinstance(ftws[0], FilterWheel):
+        logger.error('rts2saf_focus: could not create object for filter wheel: {}, exiting'.format('FIX ME'))
         sys.exit(1)
 
-    for ftw in filterWheels:
-        ftw.check(proxy=proxy)
+
+    ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    if ccd==None or not isinstance(ccd, CCD):
+        logger.error('rts2saf_focus: could not create object for CCD: {}, exiting'.format(rt.cfg['CCD_NAME']))
+        sys.exit(1)
+
 
     # while called from IMGP hopefully every device is there
     if args.toconsole:
         # check the presence of the devices and if there is an empty slot on each wheel
-        cdv= CheckDevices(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, filterWheels=filterWheels, focuser=focuser, rt=rt, logger=logger)
+        cdv= CheckDevices(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, ccd=ccd, ftws=ftws, foc=foc, logger=logger)
         cdv.summaryDevices()
 
     if args.checkConfig:
@@ -158,7 +156,7 @@ if __name__ == '__main__':
 
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
-    fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=focuser, ftws=filterWheels, rt=rt, ev=ev, logger=logger)
+    fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=foc, ftws=ftws, rt=rt, ev=ev, logger=logger)
     fs.run()
     logger.info('rts2saf_focus: end scan at: {0}'.format(ev.startTime))
 
