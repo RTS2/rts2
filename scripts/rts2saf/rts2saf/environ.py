@@ -27,7 +27,7 @@ import glob
 import os
 
 
-class Environment():
+class Environment(object):
     """Class performing various task on files, e.g. expansion to (full) path"""
     def __init__(self, debug=None, rt=None, logger=None):
         self.startTime= datetime.datetime.now().isoformat()

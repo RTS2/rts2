@@ -1,0 +1,8 @@
+Fetch this FITS with
+
+ cd imgp
+ wget http://azug.minpet.unibas.ch/~wildi/20131011054939-621-RA.fits
+
+To test rts2saf_imgp.py
+ 
+ rts2saf_imgp.py ./imgp/20131011054939-621-RA.fits

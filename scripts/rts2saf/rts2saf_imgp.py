@@ -155,26 +155,27 @@ if __name__ == "__main__":
 
     # check if there is a header element on the list
     # which excludes fitsFn from being processed, e.g. hartmann
-    ftNameS=rt.cfg['FILTERS_TO_EXCLUDE'].keys()
-    # fitsHeaderName are in reality names of filter wheels
-    # in the notation of CCD driver (FILTA, FILTB, ...)
-    hdr = getheader(fitsFn, 0)
-    for fitsHeaderName in set(rt.cfg['FILTERS_TO_EXCLUDE'].values()):
-        try:
-            hdrv = hdr[fitsHeaderName]
-        except Exception, e:
-            continue
+    imgp_analysis= ImgpAnalysis(
+        scriptName=script, 
+        fwhmCmd=rt.cfg['SCRIPT_FWHM'], 
+        astrometryCmd=rt.cfg['SCRIPT_ASTROMETRY'], 
+        fitsFileName=fitsFn, 
+        logger=logger)
+    # if in config file is nothing specified it is a str
+    if isinstance(rt.cfg['FILTERS_TO_EXCLUDE'], dict):
+        ftNameS=rt.cfg['FILTERS_TO_EXCLUDE'].keys()
 
-        if hdrv in ftNameS:
-            logger.info('{0}: skipping FITS file: {1} due to filter wheel:{2}, contains filter:{3} (see config file)'.format(script, fitsFn, fitsHeaderName, hdrv))
-            break
-    else:
-        print rt.cfg['SCRIPT_ASTROMETRY']
-        imgp_analysis= ImgpAnalysis(
-            scriptName=script, 
-            fwhmCmd=rt.cfg['SCRIPT_FWHM'], 
-            astrometryCmd=rt.cfg['SCRIPT_ASTROMETRY'], 
-            fitsFileName=fitsFn, 
-            logger=logger)
+        # fitsHeaderName are in reality names of filter wheels
+        # in the notation of CCD driver (FILTA, FILTB, ...)
+        hdr = getheader(fitsFn, 0)
+        for fitsHeaderName in set(rt.cfg['FILTERS_TO_EXCLUDE'].values()):
+            try:
+                hdrv = hdr[fitsHeaderName]
+            except Exception, e:
+                continue
 
-        imgp_analysis.run()
+            if hdrv in ftNameS:
+                logger.info('{0}: skipping FITS file: {1} due to filter wheel:{2}, contains filter:{3} (see config file)'.format(script, fitsFn, fitsHeaderName, hdrv))
+                sys.exit(1)
+
+    imgp_analysis.run()
