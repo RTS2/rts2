@@ -53,8 +53,8 @@ if __name__ == '__main__':
     parser.add_argument('--exposure', dest='exposure', action='store', default=None, type=float, help=': %(default)s, exposure time for CCD')
     parser.add_argument('--focdef', dest='focDef', action='store', default=None, type=float, help=': %(default)s, set FOC_DEF to value')
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
-    parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
-    parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
+    parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
+    parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
 
     args=parser.parse_args()
     if args.verbose:
@@ -96,7 +96,8 @@ if __name__ == '__main__':
     # create all devices
     # attention: .create() at the end
     # filters are not yet devices
-    foc= CreateFocuser(debug=args.debug, proxy=proxy, check=args.checkConfig, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    # check always True, we need to set limits either from device or from configuration
+    foc= CreateFocuser(debug=args.debug, proxy=proxy, check=True, rangeFocToff=args.focRange, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
     if foc==None or not isinstance(foc, Focuser):
         logger.error('rts2saf_focus: could not create object for focuser: {}, exiting'.format(rt.cfg['FOCUSER_NAME']))
         sys.exit(1)
@@ -119,7 +120,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # while called from IMGP hopefully every device is there
-    dryFitsFiles=None
     if args.checkConfig:
         # check the presence of the devices and if there is an empty slot on each wheel
         cdv= CheckDevices(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, ccd=ccd, ftws=ftws, foc=foc, logger=logger)
@@ -131,17 +131,19 @@ if __name__ == '__main__':
             logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
             sys.exit(1)
 
-        # these files are injected in case no actual night sky images are available
-        # neverthless ccd is exposing, filter wheels and focuser are moving
-        if args.dryFitsFiles:
+        logger.info('rts2saf_focus: configuration check done for config file:{0}, exiting'.format(args.config))
+        sys.exit(1)
+
+    # these files are injected in case no actual night sky images are available
+    # neverthless ccd is exposing, filter wheels and focuser are moving
+    dryFitsFiles=None
+    if args.dryFitsFiles:
             dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryFitsFiles, rt.cfg['FILE_GLOB']))
             if len(dryFitsFiles)==0:
                 logger.error('rts2saf_focus: no FITS files found in:{}'.format(args.dryFitsFiles))
                 logger.info('rts2saf_focus: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
                 sys.exit(1)
 
-        logger.info('rts2saf_focus: configuration check done for config file:{0}, exiting'.format(args.config))
-        sys.exit(1)
 
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))

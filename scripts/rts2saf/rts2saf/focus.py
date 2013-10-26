@@ -113,7 +113,7 @@ class Focus(object):
                     continue
 
                 # might go to a thread too
-                anr= an.SimpleAnalysis(dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
+                anr= an.SimpleAnalysis(dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
 
                 rFt= anr.analyze()
                 # 

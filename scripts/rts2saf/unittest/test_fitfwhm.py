@@ -21,6 +21,10 @@ import unittest
 import os
 from rts2saf.fitfwhm import FitFwhm
 
+import logging
+logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger()
+
 # sequence matters
 def suite():
     suite = unittest.TestSuite()
@@ -51,7 +55,7 @@ class TestFitFwhm(unittest.TestCase):
             ambientTemp='21.3',
             plotFn= self.plotFnIn)
 
-        self.ft = FitFwhm(showPlot=False, date=date,  comment='unittest', dataFitFwhm=dataFitFwhm, logger=None)
+        self.ft = FitFwhm(showPlot=False, date=date,  comment='unittest', dataFitFwhm=dataFitFwhm, logger=logger)
 
     def test_fitData(self):
         min_focpos_fwhm, val_fwhm, par= self.ft.fitData()
@@ -59,6 +63,7 @@ class TestFitFwhm(unittest.TestCase):
                                                
     #@unittest.skip('feature not yet implemented')
     def test_plotData(self):
+        min_focpos_fwhm, val_fwhm, par= self.ft.fitData()
         plotFnOut=self.ft.plotData()
         self.assertEqual(self.plotFnIn, plotFnOut)
 

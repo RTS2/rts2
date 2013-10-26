@@ -42,7 +42,7 @@ class TestConfiguration(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.fileName='/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
+        self.fileName='../configs/no-filter-wheel/rts2saf.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
     #@unittest.skip('feature not yet implemented')

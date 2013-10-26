@@ -328,25 +328,19 @@ class Acquire(object):
 
     def __finalState(self):
         if self.writeToDevices:
-            # ToDO do not do ? (see writeFocDef()
-            # self.proxy.setValue(self.foc.name,'FOC_DEF',  self.iFocDef)
             self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
         else:
             self.logger.warn('acquire: disabled setting FOC_DEF: {0}, FOC_FOFF: 0',format(self.iFocDef))
-        # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', self.iFocToff)
-        # ToDo filter
 
     def writeFocDef(self):
-        if self.foc.focMn !=None and self.foc.focMx !=None:
-            if self.foc.focMn < self.foc.focDef < self.foc.focMx:
-                if self.writeToDevices:
-                    self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
-                else:
-                    self.logger.warn('acquire: disabled writing FOC_DEF: {0}'.format(self.foc.focDef))
+        # either from device or from configuration
+        if self.foc.focMn < self.foc.focDef < self.foc.focMx:
+            if self.writeToDevices:
+                self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
             else:
-                self.logger.warn('acquire:  {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
+                self.logger.warn('acquire: disabled writing FOC_DEF: {0}'.format(self.foc.focDef))
         else:
-            self.logger.warn('acquire:  {0} not writing FOC_DEF, no minimum or maximum value present'.format(self.foc.name))
+            self.logger.warn('acquire:  {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
 
     def writeOffsets(self, ftw=None):
         """Write only for camd::filter filters variable the offsets """

@@ -55,6 +55,7 @@ class FitFwhm(object):
         # resp:
         # self.fitfunc_r_fwhm==self.fitfunc_fwhm
         self.val_fwhm=None
+
     def fitData(self):
         self.par= np.array([1., 1., 1., 1., 1.])
         try:
@@ -134,7 +135,7 @@ if __name__ == '__main__':
         errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
         stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
         ambientTemp='21.3',
-        plotFn= '/test-plot.png')
+        plotFn= './test-plot.png')
 
     # logger
     logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here

@@ -93,11 +93,12 @@ class Focuser(object):
 
         focMin=focMax=None
         try:
-            focMin= proxy.getDevice(self.name)['foc_min'][1]
-            focMax= proxy.getDevice(self.name)['foc_max'][1]
+            self.focMn= proxy.getDevice(self.name)['foc_min'][1]
+            self.focMx= proxy.getDevice(self.name)['foc_max'][1]
         except Exception, e:
-            self.logger.warn('check:  {0} has no foc_min or foc_max properties'.format(self.name))
-
+            self.logger.warn('check:  {0} has no foc_min or foc_max properties, using absulute limits'.format(self.name))
+            self.focMn=self.absLowerLimit
+            self.focMx=self.absUpperLimit
         return True
 
     def writeFocDef(self, proxy=None, focDef=None):

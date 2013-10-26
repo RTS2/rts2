@@ -372,6 +372,7 @@ if __name__ == '__main__':
 
     for c,v in rt.cfg.iteritems():
         print c,v
+
     print 'DONE'
 
 #    rt.writeConfiguration(cfn='./rts2saf-my-new.cfg')

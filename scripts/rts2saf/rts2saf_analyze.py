@@ -94,10 +94,10 @@ class Do(object):
             return 
 
         if args.catalogAnalysis:
-            an=CatalogAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, rt=rt, logger=self.logger)
+            an=CatalogAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, rt=rt, logger=self.logger)
             rFt=an.selectAndAnalyze()
         else:
-            an=SimpleAnalysis(debug=self.debug, dataSex=dataSex, displayDs9=self.args.displayDs9, displayFit=self.args.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+            an=SimpleAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=self.logger)
             rFt=an.analyze()
             an.display()
 
@@ -185,8 +185,8 @@ if __name__ == '__main__':
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
     parser.add_argument('--filternames', dest='filterNames', action='store', default=None, type=str, nargs='+', help=': %(default)s, list of filters to analyzed, None: all')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
-    parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
-    parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
+    parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
+    parser.add_argument('--fitDisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
     parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
 
     args=parser.parse_args()

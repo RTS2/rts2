@@ -32,11 +32,11 @@ import rts2saf.fitfwhm as ft
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
+    def __init__(self, debug=False, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
         self.debug=debug
         self.dataSex=dataSex
-        self.displayDs9=displayDs9
-        self.displayFit=displayFit
+        self.Ds9Display=Ds9Display
+        self.FitDisplay=FitDisplay
         self.ftwName=ftwName
         self.ftName=ftName
         self.dryFits=dryFits
@@ -53,7 +53,7 @@ class SimpleAnalysis(object):
 
         # Fit median FWHM data
         self.fit=ft.FitFwhm(
-            showPlot=self.displayFit, 
+            showPlot=self.FitDisplay, 
             date=self.ev.startTime[0:19], 
             comment=comment,  # ToDo, define a sensible value
             dataFitFwhm=dFwhm, 
@@ -168,7 +168,7 @@ class SimpleAnalysis(object):
         bPth,fn=os.path.split(self.dataSex[0].fitsFn)
         ftName=self.dataSex[0].ftName
         plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
-        if self.displayFit:
+        if self.FitDisplay:
             self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
 
         df=dt.DataFitFwhm(plotFn=plotFn,ambientTemp=self.dataSex[0].ambientTemp, ftName=self.dataSex[0].ftName, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
@@ -177,7 +177,7 @@ class SimpleAnalysis(object):
     def display(self):
         # ToDo ugly here
         DISPLAY=False
-        if self.displayFit or self.displayDs9:
+        if self.FitDisplay or self.Ds9Display:
             try:
                 os.environ['DISPLAY']
                 DISPLAY=True
@@ -185,10 +185,10 @@ class SimpleAnalysis(object):
                 self.logger.warn('analyze: no X-Window DISPLAY, do not plot with mathplotlib and/or ds9')
 
         if DISPLAY:
-            if self.displayFit:
+            if self.FitDisplay:
                 self.fit.plotData()
             # plot them through ds9
-            if self.displayDs9:
+            if self.Ds9Display:
                 try:
                     dds9=ds9()
                 except Exception, e:
@@ -214,11 +214,11 @@ from itertools import ifilter
 # ToDo at the moment this method is an demonstrator
 class CatalogAnalysis(object):
     """CatalogAnalysis a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, displayDs9=False, displayFit=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, rt=None, logger=None):
+    def __init__(self, debug=False, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, rt=None, logger=None):
         self.debug=debug
         self.dataSex=dataSex
-        self.displayDs9=displayDs9
-        self.displayFit=displayFit
+        self.Ds9Display=Ds9Display
+        self.FitDisplay=FitDisplay
         self.ftwName=ftwName
         self.ftName=ftName
         self.dryFits=dryFits
@@ -250,46 +250,50 @@ class CatalogAnalysis(object):
             return False
 
     def selectAndAnalyze(self):
-        acceptedDataSex=dict()
-        rejectedDataSex=dict()
-        for cnt in self.dataSex.keys():
-            acceptedDataSex[cnt]=copy.deepcopy(self.dataSex[cnt])
-            acceptedDataSex[cnt].catalog= list(ifilter(self.__criteria, self.dataSex[cnt].catalog))
+        acceptedDataSex=list()
+        rejectedDataSex=list()
+        for cnt, dSx in enumerate(self.dataSex):
+            adSx=copy.deepcopy(dSx)
+            acceptedDataSex.append(adSx)
+            adSx.catalog= list(ifilter(self.__criteria, dSx.catalog))
 
-            i_f = self.dataSex[0].fields.index('FWHM_IMAGE')
-            nsFwhm=np.asarray(map(lambda x: x[i_f], acceptedDataSex[cnt].catalog))
-            acceptedDataSex[cnt].fwhm=numpy.median(nsFwhm)
-            acceptedDataSex[cnt].stdFwhm=numpy.std(nsFwhm)
+            i_f = dSx.fields.index('FWHM_IMAGE')
 
+            nsFwhm=np.asarray(map(lambda x: x[i_f], dSx.catalog))
+            adSx.fwhm=numpy.median(nsFwhm)
+            adSx.stdFwhm=numpy.std(nsFwhm)
 
-            rejectedDataSex[cnt]=copy.deepcopy(self.dataSex[cnt])
-            rejectedDataSex[cnt].catalog=  list(ifilterfalse(self.__criteria, self.dataSex[cnt].catalog))
-            nsFwhm=np.asarray(map(lambda x: x[i_f], rejectedDataSex[cnt].catalog))
+            rdSx=copy.deepcopy(dSx)
+            rejectedDataSex.append(adSx)
 
-            rejectedDataSex[cnt].fwhm=numpy.median(nsFwhm)
-            rejectedDataSex[cnt].stdFwhm=numpy.std(nsFwhm)
+            rdSx.catalog=  list(ifilterfalse(self.__criteria, dSx.catalog))
+            nsFwhm=np.asarray(map(lambda x: x[i_f], rdSx.catalog))
+
+            rdSx.fwhm=numpy.median(nsFwhm)
+            rdSx.stdFwhm=numpy.std(nsFwhm)
+
         # 
-        an=SimpleAnalysis(debug=self.debug, dataSex=acceptedDataSex, displayDs9=self.displayDs9, displayFit=self.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, dataSex=acceptedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rFt=an.analyze()
-        print
-        print rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm
-        if self.displayDs9 or self.displayFit:
+        self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {0:5.1f}, minFitPos: {0:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+
+        if self.Ds9Display or self.FitDisplay:
             an.display()
         #
-        an=SimpleAnalysis(debug=self.debug, dataSex=rejectedDataSex, displayDs9=self.displayDs9, displayFit=self.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rFt=an.analyze()
-        print
-        print rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm
-        if self.displayDs9 or self.displayFit:
+        self.logger.debug( 'REJECTED weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {0:5.1f}, minFitPos: {0:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+        if self.Ds9Display or self.FitDisplay:
             an.display()
         # 
-        an=SimpleAnalysis(debug=self.debug, dataSex=self.dataSex, displayDs9=self.displayDs9, displayFit=self.displayFit, focRes=self.rt.foc.resolution, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rFt=an.analyze()
+        self.logger.debug( 'ALL     weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {0:5.1f}, minFitPos: {0:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
 
-        if self.displayDs9 or self.displayFit:
+
+        if self.Ds9Display or self.FitDisplay:
             an.display()
-        print
-        print rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm
+        self.logger.debug( ''.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
         # ToDo here are three objects
         return rFt
 
@@ -319,8 +323,8 @@ if __name__ == '__main__':
     parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
-    parser.add_argument('--displayds9', dest='displayDs9', action='store_true', default=False, help=': %(default)s, display fits images and region files')
-    parser.add_argument('--displayfit', dest='displayFit', action='store_true', default=False, help=': %(default)s, display fit')
+    parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
+    parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
     parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
 
     args=parser.parse_args()
@@ -352,12 +356,12 @@ if __name__ == '__main__':
         dataSex[k]=rsx.sextract(fitsFn=fitsFn) 
 
     if args.catalogAnalysis:
-        an=CatalogAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, rt=rt, logger=logger)
+        an=CatalogAnalysis(debug=args.debug, dataSex=dataSex, Ds9Display=args.Ds9Display, FitDisplay=args.FitDisplay, focRes=float(rt.cfg['FOCUSER_RESOLUTION']), ev=ev, rt=rt, logger=logger)
         resultFitFwhm=an.selectAndAnalyze()
     else:
-        an=SimpleAnalysis(debug=args.debug, dataSex=dataSex, displayDs9=args.displayDs9, displayFit=args.displayFit, focRes=rt.foc.resolution, ev=ev, logger=logger)
+        an=SimpleAnalysis(debug=args.debug, dataSex=dataSex, Ds9Display=args.Ds9Display, FitDisplay=args.FitDisplay, focRes=float(rt.cfg['FOCUSER_RESOLUTION']), ev=ev, logger=logger)
         resultFitFwhm=an.analyze()
-        if args.displayDs9 or args.displayFit:
+        if args.Ds9Display or args.FitDisplay:
             an.display()
 
     logger.info('analyze: result: weightedMeanObjects: {0}, weightedMeanFwhm: {1}, minFitPos: {2}, fwhm: {3}'.format(resultFitFwhm.weightedMeanObjects, resultFitFwhm.weightedMeanFwhm, resultFitFwhm.minFitPos, resultFitFwhm.fitFwhm))
