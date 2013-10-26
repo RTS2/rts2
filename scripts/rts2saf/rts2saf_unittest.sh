@@ -22,7 +22,8 @@ if [ $1 ]
 then
  dir=$1
 else
- dir='./unittest'
+ dir='.'
+ cd ./unittest
 fi
 echo $dir
 python -m unittest discover -s $dir

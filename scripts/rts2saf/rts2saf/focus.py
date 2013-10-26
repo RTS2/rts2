@@ -61,7 +61,7 @@ class Focus(object):
                 # acquisition
                 acqu_oq = Queue.Queue()
                 #
-                acqu= acq.Acquire(debug=self.debug, proxy=self.proxy, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.foc, ccd=self.ccd, filterWheelsInUse=self.ftws, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
+                acqu= acq.Acquire(debug=self.debug, proxy=self.proxy, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.foc, ccd=self.ccd, ftws=self.ftws, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
                 # 
                 # steps are defined per filter, if blind in focuser
                 if not self.args.blind:
@@ -86,8 +86,7 @@ class Focus(object):
                         dSx=sxtr.sextract(fitsFn=fitsFn)
                         if dSx.fitsFn==None:
                             self.logger.error('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
-                            # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved
-                            self.logger.error('Focus: try to continue')
+                            # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved any more
                             break
 
                         self.logger.info('Focus: pos: {0:5d}, objects: {1:4d}, file: {2}'.format(int(st), len(dSx.catalog), fitsFn))

@@ -30,17 +30,22 @@ logger = logging.getLogger()
 def suite_devices():
     suite = unittest.TestSuite()
     suite.addTest(TestDevices('test_deviceClasses'))
-
     return suite
 
-
-
-def suite_set_check_devices():
+def suite_create_devices():
     suite = unittest.TestSuite()
-    suite.addTest(TestDevices('test_SetCheckDevices'))
-
+    suite.addTest(TestCreateDevices('test_createFTs'))
+    suite.addTest(TestCreateDevices('test_createFOC'))
+    suite.addTest(TestCreateDevices('test_createFTWs'))
+    suite.addTest(TestCreateDevices('test_createCCD'))
     return suite
 
+def suite_check_devices():
+    suite = unittest.TestSuite()
+    suite.addTest(TestCheckDevices('test_checkDevices'))
+    return suite
+
+from rts2saf.createdevices import CreateFilters, CreateFilterWheels, CreateFocuser, CreateCCD
 #@unittest.skip('class not yet implemented')
 class TestDevices(unittest.TestCase):
 
@@ -48,14 +53,11 @@ class TestDevices(unittest.TestCase):
         pass
 
     def setUp(self):
-        self.rt = Configuration(logger=logger)
-        self.fileName='/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
-        self.success=self.rt.readConfiguration(fileName=self.fileName)
-
+        pass
     #@unittest.skip('feature not yet implemented')
     def test_deviceClasses(self):
         # they are harmless
-        # ToDo: move write from SetCheckDevices to these classes
+        # ToDo: move write from CheckDevices to these classes
         ft= Filter()
         self.assertIs(type(ft), Filter, 'no object of type: '.format(type(Filter)))
         ftw = FilterWheel()
@@ -65,11 +67,51 @@ class TestDevices(unittest.TestCase):
         ccd= CCD()
         self.assertIs(type(ccd), CCD, 'no object of type: '.format(type(CCD)))
 
+#@unittest.skip('class not yet implemented')
+class TestCreateDevices(unittest.TestCase):
+
+    def tearDown(self):
+        pass
+
+    def setUp(self):
+        self.rt = Configuration(logger=logger)
+        self.fileName='../configs/no-filter-wheel/rts2saf.cfg'
+        self.success=self.rt.readConfiguration(fileName=self.fileName)
+
+    def test_createFTs(self):
+        fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
+        self.assertIsNotNone(fts)
+        self.assertEqual(fts[0].name, 'FAKE_FT')
+
+    def test_createFOC(self):
+        cfoc= CreateFocuser(debug=False, rt=self.rt, logger=logger)
+        foc=cfoc.create()
+        self.assertEqual(foc.name, 'F0')
+
+    def test_createFTWs(self):
+        fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
+        foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create()
+        # no connection to real device
+        foc.focDef=0
+        cftw= CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
+        ftw=cftw.create()
+        self.assertEqual(ftw[0].name, 'FAKE_FTW')
+
+    #@unittest.skip('feature not yet implemented')
+    def test_createCCD(self):
+        fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
+        foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create()
+        cftw= CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
+        cccd= CreateCCD(debug=False, rt=self.rt, logger=logger, ftws=fts)
+        ccd=cccd.create()
+        self.assertEqual(ccd.name, 'C0')
+        
+
 import mock
-from rts2saf.devices import SetCheckDevices
+from rts2saf.checkdevices import CheckDevices
 from rts2.json import JSONProxy
 
-class TestSetCheckDevices(unittest.TestCase):
+class TestCheckDevices(unittest.TestCase):
 
     def tearDown(self):
         pass
@@ -79,24 +121,16 @@ class TestSetCheckDevices(unittest.TestCase):
         self.fileName='/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
-        self.scd= SetCheckDevices(debug=False, proxy=self.proxy, rangeFocToff=None, blind=None, verbose=None, rt=self.rt, logger=logger)
+        self.scd= CheckDevices(debug=False, proxy=self.proxy, blind=None, verbose=None, ccd=None, ftws=None, foc=None, logger=logger)
 
     #@unittest.skip('feature not yet implemented')
-    def test_SetCheckDevices(self):
-
-        with mock.patch('rts2saf.devices.SetCheckDevices.xxfocuser') as focuser:
-            focuser.return_value = True
-            with mock.patch('rts2saf.devices.SetCheckDevices.xxcamera') as camera:
-                camera.return_value = True
-                with mock.patch('rts2saf.devices.SetCheckDevices.xxfilterWheels') as filterWheels:
-                    filterWheels.return_value = True
-
-
-                    self.assertTrue(self.scd.statusDevices())
+    def test_checkDevices(self):
+        pass
 
 if __name__ == '__main__':
 
     suiteDevices=suite_devices()
-    suiteSetCheckDevices= suite_set_check_devices()
-
-    unittest.TextTestRunner(verbosity=0).run([suiteDevices, suiteSetCheckDevices])
+    suiteCreateDevices= suite_create_devices()
+    suiteCheckDevices= suite_check_devices()
+    alltests = unittest.TestSuite([suiteDevices, suiteCreateDevices, suiteCheckDevices])
+    unittest.TextTestRunner(verbosity=0).run(alltests)

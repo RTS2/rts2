@@ -23,11 +23,8 @@ __author__ = 'markus.wildi@bluewin.ch'
 import sys
 import threading
 import time
-import Queue
-import numpy as np
 import shutil
 import os
-import errno
 
 
 from timeout import timeout
@@ -88,7 +85,7 @@ class ScanThread(threading.Thread):
 #                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
                     self.proxy.refresh()
                     focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-                    if self.debug: self.logger.debug('acquire: focuser position: {0}  not yet reached, now:{1}, sleeping'.format(focPosCalc, focPos))
+                    if self.debug: self.logger.debug('acquire: not yet reached focuser position: {0}, now:{1}, sleeping'.format(focPosCalc, focPos))
                     time.sleep(.1) # leave it alone
                 else:
                     if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
@@ -215,14 +212,14 @@ class ScanThread(threading.Thread):
                     myfile.close()
                     break
                 except Exception, e:
-                    self.logger.warn('____ScanThread: {0} not yet ready'.format(srcTmpFn))
+                    self.logger.warn('____ScanThread: not yet ready {0}'.format(srcTmpFn))
                     #if self.debug: self.logger.debug('____ScanThread: do not forget to set --writetodevices'.format(fn, srcTmpFn))
                 time.sleep(.5) # ToDo if it persits: put it to cfg!
 
         if self.ftw and self.ft:
-            storeFn=self.ev.expandToAcquisitionBasePath( ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]
+            storeFn=self.ev.expandToAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]
         else:
-            storeFn=self.ev.expandToAcquisitionBasePath( ftwName=None, ftName=None) + srcTmpFn.split('/')[-1]
+            storeFn=self.ev.expandToAcquisitionBasePath(ftwName=None, ftName=None) + srcTmpFn.split('/')[-1]
         try:
             # ToDo shutil.move(src=fn, dst=storeFn)
             # the file belongs to root or user.group
@@ -415,85 +412,3 @@ class Acquire(object):
         self.scanThread.join(timeout)
         self.__finalState()
 
-if __name__ == '__main__':
-
-    import Queue
-    import re
-    import argparse
-    import rts2saf.devices as dev
-    import rts2saf.log as  lg
-    import rts2saf.config as cfgd
-    import rts2saf.devices as dev
-    import rts2saf.environ as env
-    import environ as env
-    import rts2saf.sextract as sx
-
-    prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf check devices')
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
-    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
-    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-    parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus run within range(RTS2::foc_min,RTS2::foc_max, RTS2::foc_step)')
-    parser.add_argument('--writetodevices', dest='writeToDevices', action='store_true', default=False, help=': %(default)s, if True enable write values to devices')
-
-    args=parser.parse_args()
-
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
-
-    if not args.writeToDevices:
-        logger.warn('acquire: writing to devices is DISABLED, use --writetodevices to enable')
-
-    rt=cfgd.Configuration(logger=logger)
-    rt.readConfiguration(fileName=args.config)
-
-    ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
-    ev.createAcquisitionBasePath(ftwName=None, ftName=None)
-
-    cdv= dev.SetCheckDevices(debug=args.debug, rangeFocToff=None, blind=args.blind, verbose=None, rt=rt, logger=logger)
-
-    if not cdv.statusDevices():
-        logger.error('acquire: exiting, check the configuration file: {0}'.format(args.config))
-        sys.exit(1)
-
-    acqu_oq = Queue.Queue()
-
-    dFF=None
-    ftw = rt.filterWheelsInUse[0]
-    ft = rt.filterWheelsInUse[0].filters[0]
-    exposure= 1.
-
-    # establish a connection
-    proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
-    try:
-        proxy.refresh()
-    except Exception, e:
-        logger.error('acquire: no JSON connection for: {0}, {1}, {2}'.format(rt.cfg['URL'],rt.cfg['USERNAME'],rt.cfg['PASSWORD']))
-        sys.exit(1)
-
-    acqu= Acquire(debug=args.debug, proxy=proxy, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=rt.foc, ccd=rt.ccd, filterWheelsInUse=rt.filterWheelsInUse, acqu_oq=acqu_oq,writeToDevices=args.writeToDevices, rt=rt, ev=ev, logger=logger)
-    if not acqu.startScan(exposure=exposure, blind=args.blind):
-        self.logger.error('acquire: exiting')
-        sys.exit(1)
-
-    for i,st in enumerate(rt.foc.focFoff):
-        while True:
-            try:
-                fitsFn= acqu_oq.get(block=True, timeout=.2)
-            except Queue.Empty:
-                # if args.debug: self.logger.debug('acquire: continue')
-                continue
-                    
-            logger.info('acquire: got FITS file name: {}'.format(fitsFn))
-            break
-        else:
-            if args.debug: logger.debug('acquire: got all images')
-            acqu.stopScan(timeout=1.)
-    else:
-        logger.info('acquire: DONE')        
-        sys.exit(1)
-
-    logger.info('acquire: something went wrong')        

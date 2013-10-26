@@ -50,10 +50,6 @@ class TestConfiguration(unittest.TestCase):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
 
         self.assertIs(type(self.rt), Configuration)
-        self.assertIs(type(self.rt.ccd), CCD)
-        self.assertIs(type(self.rt.foc), Focuser)
-        self.assertIs(type(self.rt.filterWheels[0]), FilterWheel)
-        self.assertIs(type(self.rt.filterWheels[0].filters[0]), Filter)
 
 
     def test_checkConfiguration(self):

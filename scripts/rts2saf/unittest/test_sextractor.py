@@ -30,7 +30,7 @@ logger = logging.getLogger()
 # sequence matters
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestSextract('test_'))
+    suite.addTest(TestSextract('test_sextract'))
 
     return suite
 
