@@ -12,6 +12,7 @@ Contents
    integration
    real-configuration
    dummytesting
+   offline
    cmdline
    unittest
    modules

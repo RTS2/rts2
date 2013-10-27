@@ -26,4 +26,4 @@ else
  cd ./unittest
 fi
 echo $dir
-python -m unittest discover -s $dir
+python -m unittest discover -v -s $dir

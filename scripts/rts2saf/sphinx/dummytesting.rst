@@ -65,13 +65,13 @@ If you want to see the fitted minimum and then selected objects:
 
 .. code-block:: bash
 
-  ./rts2saf_focus.py --toconsole --dryfitsfiles  ./samples/ --exp 1. --displayfit --displayds9
+  ./rts2saf_focus.py --toconsole --dryfitsfiles  ./samples/ --exp 1. --fitdisplay --ds9display
 
 or
 
 .. code-block:: bash
 
-   ./rts2saf_analyze.py --toconsole --basepath ./samples/ --displayfit --displayds9
+   ./rts2saf_analyze.py --toconsole --basepath ./samples/ --fitdisplay --ds9display
 
 After a while a matplotlib window appears containing the fit. After closing it 
 a DS9 window appears showing which stars have been selected for a given image.

@@ -101,7 +101,7 @@ Execute
 
 .. code-block:: bash
 
-  rts2saf_focus.py --toconsole --displayfit --displayds9
+  rts2saf_focus.py --toconsole --fitdisplay --ds9display
 
 and after a while a ``matplotlib`` window appears with data and the fit and after closing
 it the ``DS9`` window appears.

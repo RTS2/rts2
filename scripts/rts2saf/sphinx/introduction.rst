@@ -1,15 +1,15 @@
 Introduction
 ============
 
-Status and open issues (2013-10-19)
+Status and open issues (2013-10-27)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
 The documentation describes 
 
-1) the rts2saf installation and its integration into RTS2
+1) the rts2saf installation and its integration into ``RTS2``
 2) usage and testing with dummy devices
-
+3) offline analysis of previously acquired data
 
 Items which need further attention:
 
@@ -18,7 +18,7 @@ Items which need further attention:
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focusing.py``
 4) many ToDos in the code
 5) more documentation (this file)
-6) man pages
+6) more unittests
 
 
 Overview
@@ -201,10 +201,3 @@ values appear as
 on the console. Under normal circumstances the ``weighted mean derived from Combined``
 is the closest approximation of the true value.
 
-Offline analysis
-++++++++++++++++
-soon
-
-.. code-block:: bash
-
- rts2saf_analyze.py --toconsole --displayfit --displayds9 --basepath ./samples

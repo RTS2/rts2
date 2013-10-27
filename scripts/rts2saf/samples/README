@@ -6,4 +6,4 @@ Fetch with
 
 wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
 
-and unpack them in rts-2/scripts/rts2saf  or specify the location with --dryfitsfiles.
+and unpack them in rts-2/scripts/rts2saf.

@@ -211,6 +211,8 @@ if __name__ == '__main__':
 
     if not args.toconsole:
         print 'you may wish to enable logging to console --toconsole'
+        print 'log file is writte to: {}'.format(args.logfile)
+
 
     do=Do(debug=args.debug, basePath=args.basePath, args=args, rt=rt, ev=ev, logger=logger)
     do.aggregateRuns()
