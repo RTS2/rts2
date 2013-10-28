@@ -93,15 +93,14 @@ class ImgpAnalysis():
             self.logger.error( '{0}: ending, reading from {1} pipe failed'.format(self.scriptName, self.astrometryCmd))
             sys.exit(1)
         if stde:
-            self.logger.error( '{0}: message from {1} on stderr:\n{2}\nexiting'.format(self.scriptName, self.astrometryCmd, stde))
-            sys.exit(1)
-            
-        # ToDo
+            self.logger.error( '{0}: message from {1} on stderr:\n{2}'.format(self.scriptName, self.astrometryCmd, stde))
+            sys.stderr.write(stde)
+
         lnstdo= stdo.split('\n')
         for ln in lnstdo:
             self.logger.info( '{0}, {1}: {2}'.format(self.scriptName, self.astrometryCmd, ln))
-            if re.search('corrwerr', ln):
-                print ln
+            #if re.search('corrwerr', ln):
+            print ln
 
         self.logger.info( '{0}: ending'.format(self.scriptName))
             

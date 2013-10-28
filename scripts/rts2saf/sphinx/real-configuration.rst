@@ -62,9 +62,8 @@ exposure is 30 seconds (``BASE_EXPOSURE`` * 6.)
  fltw1 = [ COLWFLT, open, R, g, r, i, z, Y, empty8 ]
  fltw2 = [ COLWGRS, open]
  fltw3 = [ COLWSLT, open]
- 
 
-The filter wheel named COLWFLT contains filters with the names ``open``, ``R``, ``g``, ``r``, ``i``, ``z``, ``Y``, ``empty8``. Slots ``open`` and ``empty8`` have no glass (no focus offset). This example is best used on the command line to define the filter offsets.
+There are three filter wheels ``COLWFLT``, ``COLWGRS`` and ``COLWSLT`` defined. ``COLWGRS`` and ``COLWSLT`` have no 'real' filters, that means no filter offsets have to be measured. The filter wheel named COLWFLT contains filters with the names ``open``, ``R``, ``g``, ``r``, ``i``, ``z``, ``Y``, ``empty8``. Slots ``open`` and ``empty8`` are empty (no focus offset). This example is best used on the command line to define the filter offsets.
 
 .. code-block:: bash
 
@@ -72,7 +71,7 @@ The filter wheel named COLWFLT contains filters with the names ``open``, ``R``, 
  fltw2 = [ COLWGRS, open]
  fltw3 = [ COLWSLT, open]
 
-There are three filter wheels ``COLWFLT``, ``COLWGRS`` and ``COLWSLT``. ``COLWGRS`` and ``COLWSLT`` have no 'real' filters, that means no filter offsets have to be measured. This is an example for the autonomous operations: to get the focus faster only ``open`` slots are measured assuming filter offsets have been defined earlier. 
+This is an example for the autonomous operations: to get the focus fast only ``open`` slots are measured assuming filter offsets have been defined earlier. 
 
 .. code-block:: bash
 
@@ -107,7 +106,7 @@ Only driver ``flitc.cpp`` has that.
  FOCUSER_ABSOLUTE_LOWER_LIMIT = 100
  FOCUSER_ABSOLUTE_UPPER_LIMIT = 2000
 
-If the focuser can travel between e.g. between -500 to 5000 tick the above entries limit it to 100, 2000.
+If the focuser can travel in reality between e.g. between -500 to 5000 tick the above entries limit it to 100, 2000.
 
 .. code-block:: bash
 
@@ -142,7 +141,7 @@ FWHM nor an astrometric calibration is attempted.
  SCRIPT_ASTROMETRY = rts2-astrometry.net
  #SCRIPT_ASTROMETRY = rts2-astrometry-std-fits.net
 
-``rts2saf_imgp.py`` executes ``SCRIPT_ASTROMETRY`` to do the astrometric calibration. STDOUT is read back and written to STDOUT (catched by IMGP).
+``rts2saf_imgp.py`` executes ``SCRIPT_ASTROMETRY`` to do the astrometric calibration. Child's ``stdout`` and ``stderr`` are copied to ``stdout`` and ``stderr``  (catched by IMGP).
 
 .. code-block:: bash
 

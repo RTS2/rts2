@@ -49,7 +49,7 @@ To see script ``rts2saf_imgp.py`` working use:
 .. code-block:: bash
 
   cd ~/rts-2/scripts/rts2saf/
-  ./rts2saf_imgp.py  samples/20071205025911-725-RA.fits
+  ./rts2saf_imgp.py  imgp/20131011054939-621-RA.fits --toc
 
 The output goes to ``/var/log/rts2-debug``.
 
