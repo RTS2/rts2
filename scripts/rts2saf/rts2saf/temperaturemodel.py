@@ -71,7 +71,7 @@ class TemperatureFocPosModel(object):
         try:
             self.par, self.flag  = optimize.leastsq(self.errfunc, self.par, args=(np.asarray(self.temp), np.asarray(self.minFitPos),np.asarray(self.tempErr),np.asarray(self.minFitPosErr)))
         except Exception, e:
-            self.logger.error('fitfwhm: fitData: failed fitting FWHM:\nnumpy error message:\n{0}'.format(e))                
+            self.logger.error('temperaturemodel: fitData: failed fitting model:\nnumpy error message:\n{0}'.format(e))                
             return None, None
 
     def plotData(self):
@@ -99,7 +99,7 @@ class TemperatureFocPosModel(object):
         try:
             plt.savefig(self.plotFn)
         except:
-            self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.pltFile))                
+            self.logger.error('temperaturemodel: can not save plot to: {0}'.format(self.pltFile))                
             
         if self.showPlot:
             if NODISPLAY:
@@ -140,6 +140,6 @@ if __name__ == '__main__':
     for i in range(0,10):
         rFF.append(dt.ResultFitFwhm(ambientTemp=float(i), minFitPos=float( 2 * i)))
 
-    tm= TemperatureFocPosModel(showPlot=True,date=None, comment=None, pltFile='test.png', resultFitFwhm=rFF, logger=logger)
+    tm= TemperatureFocPosModel(showPlot=True,date=None, comment=None, plotFn='test.png', resultFitFwhm=rFF, logger=logger)
     tm.fitData()
     tm.plotData()
