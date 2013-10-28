@@ -83,7 +83,7 @@ class FitFwhm(object):
             x_fwhm = np.linspace(self.dataFitFwhm.pos.min(), self.dataFitFwhm.pos.max())
         except Exception, e:
             self.logger.error('fitfwhm: numpy error:\n{0}'.format(e))                
-            return
+            return e
         plt.plot(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, 'ro', color='blue')
         plt.errorbar(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, xerr=self.dataFitFwhm.errx, yerr=self.dataFitFwhm.stdFwhm, ecolor='black', fmt=None)
 

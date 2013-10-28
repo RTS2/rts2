@@ -74,12 +74,14 @@ class TemperatureFocPosModel(object):
             self.logger.error('temperaturemodel: fitData: failed fitting model:\nnumpy error message:\n{0}'.format(e))                
             return None, None
 
+        return self.par, self.flag
+
     def plotData(self):
         try:
             x_temp = np.linspace(min(self.temp), max(self.temp))
         except Exception, e:
             self.logger.error('temperaturemodel: numpy error:\n{0}'.format(e))                
-            return
+            return e
 
         plt.plot(self.temp,self.minFitPos, 'ro', color='blue')
         plt.errorbar(self.temp,self.minFitPos, xerr=self.tempErr, yerr=self.minFitPosErr, ecolor='blue', fmt=None)
@@ -96,11 +98,6 @@ class TemperatureFocPosModel(object):
         plt.ylabel('FOC_POS(min. FWHM) [ticks]')
         plt.grid(True)
 
-        try:
-            plt.savefig(self.plotFn)
-        except:
-            self.logger.error('temperaturemodel: can not save plot to: {0}'.format(self.pltFile))                
-            
         if self.showPlot:
             if NODISPLAY:
                 self.logger.warn('temperaturemodel: NO $DISPLAY no plot')                
@@ -108,38 +105,10 @@ class TemperatureFocPosModel(object):
             else:
                 plt.show()
 
-if __name__ == '__main__':
-    import argparse
-    import re
-    import rts2saf.config as cfgd
-    import rts2saf.environ as env
-    import rts2saf.log as lg
-    import rts2saf.data as dt
-    
-    prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
-    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
-    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-    args=parser.parse_args()
+        try:
+            plt.savefig(self.plotFn)
+            return self.plotFn
+        except Exception, e:
+            self.logger.error('temperaturemodel: can not save plot to: {0}'.format(self.plotFn))                
+            return e
 
-    # logger
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
-    # config
-    rt=cfgd.Configuration(logger=logger)
-    rt.readConfiguration(fileName=args.config)
-    rt.checkConfiguration()
-    # environment
-    ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
-    ev.createAcquisitionBasePath(ftwName=None, ftName=None)
-
-    rFF=list()
-    for i in range(0,10):
-        rFF.append(dt.ResultFitFwhm(ambientTemp=float(i), minFitPos=float( 2 * i)))
-
-    tm= TemperatureFocPosModel(showPlot=True,date=None, comment=None, plotFn='test.png', resultFitFwhm=rFF, logger=logger)
-    tm.fitData()
-    tm.plotData()
