@@ -35,12 +35,9 @@ class Environment(object):
         self.rt=rt
         self.logger=logger
 
-    def prefix( self, fileName):
-        return 'rts2saf-' +fileName
-
-    def expandToTmp( self, fileName=None):
-        fileName= self.rt.cfg['TEMP_DIRECTORY'] + '/'+ fileName
-        return fileName
+    def expandToTmp( self, fn=None):
+        fn= self.rt.cfg['TEMP_DIRECTORY'] + '/'+ fn
+        return fn
 
     def expandToPlotFileName( self, plotFn=None):
         if plotFn==None:
@@ -50,38 +47,11 @@ class Environment(object):
         base, ext= os.path.splitext(plotFn)
         return '{}-{}{}'.format(base,self.startTime[0:19],ext)
 
-    def expandToDs9RegionFileName( self, fitsHDU=None):
-        if fitsHDU==None:
-            self.logger.error('Environment.expandToDs9RegionFileName: no hdu given')
-        
-        
-        items= self.rt.cfg['DS9_REGION_FILE'].split('.')
-        # not nice
-        names= fitsHDU.fitsFileName.split('/')
-        try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.startTime + '-' + names[-1] + '-' + str(fitsHDU.variableHeaderElements['FOC_POS']) + '.' + items[1])
-        except:
-            fileName= self.prefix( items[0] + '-' +   self.startTime + '.' + items[1])
-            
-        return  self.expandToTmp(fileName)
-
-    def expandToDs9CommandFileName( self, fitsHDU=None):
-        if fitsHDU==None:
-            self.logger.error('Environment.expandToDs9COmmandFileName: no hdu given')
-        
-        items= self.rt.cfg['DS9_REGION_FILE'].split('.')
-        try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.startTime + '.' + items[1] + '.sh')
-        except:
-            fileName= self.prefix( items[0] + '-' +   self.startTime + '.' + items[1]+ '.sh')
-            
-        return  self.expandToTmp(fileName)
-        
     def expandToAcquisitionBasePath(self, ftwName=None, ftName=None):
 
         if ftwName== 'FAKE_FTW' and ftName=='FAKE_FT':
-
             return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/'  
+
         elif ftwName== None and ftName==None:
             return self.rt.cfg['BASE_DIRECTORY'] + '/' + self.startTime + '/'  
 
@@ -102,38 +72,3 @@ class Environment(object):
                 self.logger.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
                 return False
         return True
-    def setModeExecutable(self, path):
-        #mode = os.stat(path)
-        os.chmod(path, 0744)
-
-
-if __name__ == '__main__':
-
-    import argparse
-    import sys
-    import logging
-    import glob
-
-    import rts2saf.config as cfgd
-    import rts2saf.sextract as sx
-    import rts2saf.log as lg
-
-    prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
-    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
-    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='./rts2saf-my.cfg', help=': %(default)s, configuration file path')
-
-    args=parser.parse_args()
-
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
-
-    rt=cfgd.Configuration(logger=logger)
-    rt.readConfiguration(fileName=args.config)
-
-    ev= Environment(debug=args.debug, rt=rt, logger=logger)
-    print ev.startTime

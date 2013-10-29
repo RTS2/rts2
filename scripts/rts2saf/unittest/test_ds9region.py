@@ -18,40 +18,45 @@
 #
 
 import unittest
-
+from ds9 import *
 from rts2saf.config import Configuration 
 from rts2saf.data import DataSex
 from rts2saf.sextract import Sextract
+from rts2saf.ds9region import Ds9Region
+
 
 import logging
 logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
 
+
+
 # sequence matters
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestSextract('test_sextract'))
+    suite.addTest(TestDs9Region('test_displayWithRegion'))
 
     return suite
 
 #@unittest.skip('class not yet implemented')
-class TestSextract(unittest.TestCase):
+class TestDs9Region(unittest.TestCase):
 
     def tearDown(self):
         pass
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.success=self.rt.readConfiguration(fileName='../configs/no-filter-wheel/rts2saf.cfg')
+        self.rt.readConfiguration(fileName='../configs/no-filter-wheel/rts2saf.cfg')
+        self.dSx=Sextract(debug=False, rt=self.rt, logger=logger).sextract(fitsFn='../samples/20071205025911-725-RA.fits'x)
+        self.dds9=ds9()
 
-        self.sx = Sextract(debug=False, rt=self.rt, logger=logger)
+
     #@unittest.skip('feature not yet implemented')
-    def test_sextract(self):
-        fitsFn='../samples/20071205025911-725-RA.fits'
-        dSx=self.sx.sextract(fitsFn=fitsFn)
-        self.assertIs(type(dSx), DataSex, 'no object of type: '.format(type(DataSex)))
-        self.assertEqual(fitsFn, dSx.fitsFn, 'install sample FITS from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
+    def test_displayWithRegion(self):
+        
+        ds9r=Ds9Region(dataSex=self.dSx, display=self.dds9, logger=logger)
 
+        self.assertTrue( ds9r, 'return value: '.format(type(DataSex)))
 
 if __name__ == '__main__':
     

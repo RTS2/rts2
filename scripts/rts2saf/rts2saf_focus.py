@@ -55,6 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
     parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
+    parser.add_argument('--fetchoffsets', dest='fetchOffsets', action='store_true', default=False, help=': %(default)s, fetch filter offsets from CCD')
 
     args=parser.parse_args()
     if args.verbose:
@@ -114,7 +115,7 @@ if __name__ == '__main__':
         logger.error('rts2saf_focus: could not create object for filter wheel: {}, exiting'.format(rt.cfg['FILTER WHEELS INUSE']))
         sys.exit(1)
 
-    ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, fetchOffsets=args.fetchOffsets, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
     if ccd==None or not isinstance(ccd, CCD):
         logger.error('rts2saf_focus: could not create object for CCD: {}, exiting'.format(rt.cfg['CCD_NAME']))
         sys.exit(1)

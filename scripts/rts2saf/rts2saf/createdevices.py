@@ -45,9 +45,11 @@ class CreateDevice(object):
 
 class CreateCCD(CreateDevice):
     """Create the device CCD"""    
-    def __init__( self, ftws=None, *args, **kw ):
+    def __init__( self, ftws=None, fetchOffsets=False, *args, **kw ):
         super( CreateCCD, self ).__init__( *args, **kw )
         self.ftws=ftws
+        self.fetchOffsets=fetchOffsets
+        self.ccd=None
 
     def create(self):
         # configuration has been read in, now create objects
@@ -61,7 +63,7 @@ class CreateCCD(CreateDevice):
         else:
             wItems[:]= map(lambda x: int(x), wItems)
 
-            ccd= CCD( 
+            self.ccd= CCD( 
                 debug        =self.debug,
                 name         =self.rt.cfg['CCD_NAME'],
                 ftws         =self.ftws,
@@ -76,9 +78,131 @@ class CreateCCD(CreateDevice):
                 )
             
         if self.check:
-            if not ccd.check(proxy=self.proxy):
+            if not self.ccd.check(proxy=self.proxy):
                 return None
-        return ccd
+        if self.fetchOffsets:
+            # fetch th filter offsets
+            self.filterOffsets()
+
+        return self.ccd
+
+    # ToDo
+    # interestingly on can set filter offsets for
+    # filter_offsets_B
+    # filter_offsets_C
+    # but there is no way to specify it via cmd line
+    # or --offsets-file
+    #
+    # filter_offsets_A, etc. see Bootes-2 device andor3
+    # ftos=self.proxy.getValue(self.ccd.name, 'filter_offsets_B')
+    # print ftos
+    # self.proxy.setValue(self.ccd.name,'filter_offsets_B', '6 7 8')
+    # self.proxy.refresh()
+    # ftos=self.proxy.getValue(self.ccd.name, 'filter_offsets_B')
+    # print ftos
+    # ftos=self.proxy.getValue(self.ccd.name, 'filter_offsets_C')
+    # print ftos
+    # self.proxy.setValue(self.ccd.name,'filter_offsets_C', '16 17 18')
+    # self.proxy.refresh()
+    # ftos=self.proxy.getValue(self.ccd.name, 'filter_offsets_C')
+    # print ftos
+    # sys.exit(1)
+        
+
+    # Workaround for the above
+    # Device camd provides the following variables
+    # in case multiple filter wheels are present.
+    # This example shows the configuration of Bootes-2:
+    #
+    # CCD andor3
+    # FLI FTWs: COLWFLT, COLWSLT, COLWGRS
+    # Variables appearing in tab andor3
+    #  variable   ftw name   filters (read out from device, e.g. COLWGRS)
+    #  wheel      COLWFLT  
+    #  wheelA     COLWFLT    open, R, g, r, i, z, Y, empty8
+    #  wheelB     COLWSLT    closed, slit1, slit2, slit3, slit4, h.., p.., open
+    #  wheelC     COLWGRS    open, grism1, empty3, empty4, empty5, empty6, empty7, empty8 
+    # 
+    # Filters on wheels  wheelB, wheelC etc. which are 
+    # named open or empty are treated as empty slots.
+    # Only the filter wheel appearing in camd::wheel 
+    # is used.
+    # During a focus run filter wheels wheelB, wheelC etc. are
+    # set to a slot named open or empty*
+
+
+    # first the wheel with the "real" filters
+    def filterOffsets(self, proxy=None):
+        fts=dict()  # filters
+        ftos=dict() # filter offsets
+        for i in range( 0, len(self.ftws)):
+            if i:
+                ext= chr( 65 + i) # 'A' + i, as it is done in camd.cpp
+                ftwn=self.proxy.getValue(self.ccd.name, 'wheel{0}'.format(ext))
+                # FILTA, FILTB, ...
+                fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'FILT{0}'.format(ext))
+                ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets_{0}'.format(ext))
+            else:
+                ftwn=self.proxy.getValue(self.ccd.name, 'wheel')
+                fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'filter')
+                ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets')
+
+
+        for ftw in self.ftws: # defined in configuration
+            for ftwn in fts.keys(): # these are filter wheels names read back from CCD
+                if ftwn in ftw.name:
+                    if self.debug: self.logger.debug('filterOffsets: found filter wheel: {0}'.format(ftw.name))
+                    offsets=list()
+                    if len(ftos[ftwn])==0:
+                        self.logger.warn('filterOffsets: for {0}, {1} no filter offsets could be read from CCD, but filter wheels/filters are present'.format(self.ccd.name, ftwn))
+                        break
+
+                    offsets= map(lambda x: x, ftos[ftwn]) 
+                    # filters and configure offsets           
+                    ftIUns= map( lambda x: x.name, ftw.filters) # filters from configuration
+                    for k, ftn in enumerate(fts[ftwn]): # filter names only, read back from CCD
+                        if not ftn in ftIUns:
+                            if ftn not in self.rt.cfg['EMPTY_SLOT_NAMES']:
+                                self.logger.warn('filterOffsets: {0}, {1} not found in configuration ignoring'.format(ftw.name, ftn))        
+                            continue
+
+                        for ft in ftw.filters: # filter objects from configuration 
+                            if ftn in ft.name:
+                                
+                                # ToDO that's not what I want
+                                match=False
+                                for nm in self.rt.cfg['EMPTY_SLOT_NAMES']:
+                                    # e.g. filter name R must exactly match!
+                                    p = re.compile(nm)
+                                    m = p.match(ft.name)
+                                    if m:
+                                        match=True
+                                        break
+
+                                if match:
+                                    ft.OffsetToEmptySlot= 0.
+                                    if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset set to ZERO'.format(ftw.name, ft.name))
+                                else:
+                                    try:
+                                        ft.OffsetToEmptySlot= offsets[k] 
+                                        if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset {2} from ccd: {3}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot,self.ccd.name))
+                                    except:
+                                        ft.OffsetToEmptySlot= 0.
+                                        self.logger.warn('filterOffsets: {0}, {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftw.name, ft.name,self.ccd.name))
+                                break
+                        else:
+                            if self.debug: self.logger.debug('filterOffsets: {0}, {1} not found in configuration, ignoring it'.format(ftwn, ftn))        
+                            return False
+                    # break if found
+                    break
+                else:
+                    pass # it will be found later on the list
+            else:
+                self.logger.error('filterOffsets: {0}, read back from CCD not found in configuration'.format(ftw.name))        
+        return True
+
+
+
 
 class CreateFocuser(CreateDevice):
     """Create the device Focuser"""    
@@ -219,6 +343,7 @@ class CreateFilterWheels(CreateDevice):
 
         self.filters=filters
         self.foc=foc
+        self.filterWheelsInUse=list()
 
     def create(self):
 
@@ -255,19 +380,18 @@ class CreateFilterWheels(CreateDevice):
         # ToDo fetch the offsets from CCD driver
         # and override the values from configuration
         # Think only FILTA will have that
-        filterWheelsInUse=list()
         for ftw in filterWheels:
             if ftw.name in self.rt.cfg['FILTER WHEELS INUSE']:
                 # ToDo ftw.ft.OffsetToEmptySlot==0
-                filterWheelsInUse.append(ftw)
+                self.filterWheelsInUse.append(ftw)
                 
         # empty slots first
-        filterWheelsInUse.sort(key = lambda x: len(x.filters), reverse=True)
+        self.filterWheelsInUse.sort(key = lambda x: len(x.filters), reverse=True)
 
         # find empty slots on all filter wheels
         # assumption: no combination of filters of the different filter wheels
         eSs=0
-        for ftw in filterWheelsInUse:
+        for ftw in self.filterWheelsInUse:
             # first find in ftw.filters an empty slot 
             # use this slot first, followed by all others
             for ft in ftw.filters:
@@ -304,13 +428,15 @@ class CreateFilterWheels(CreateDevice):
                             
             else:
                 # warn only if two or more ftws are used
-                if len(filterWheelsInUse) > 0:
+                if len(self.filterWheelsInUse) > 0:
                     self.logger.warn('create:  {0}, no empty slot found'.format(ftw.name))
 
-        if eSs >= len(filterWheelsInUse):
+
+
+        if eSs >= len(self.filterWheelsInUse):
             if self.debug: self.logger.debug('create: all filter wheels have an empty slot')
         else:
-            self.logger.warn('create: not all filter wheels have an empty slot, {}, {}'.format(eSs,  len(filterWheelsInUse)))
+            self.logger.warn('create: not all filter wheels have an empty slot, {}, {}'.format(eSs,  len(self.filterWheelsInUse)))
             return None
 
         # check bounds of filter lower and upper limit settings            
@@ -320,7 +446,7 @@ class CreateFilterWheels(CreateDevice):
         absLowerLimit = self.foc.absLowerLimit
         absUpperLimit = self.foc.absUpperLimit
 
-        for k, ftw in enumerate(filterWheelsInUse):
+        for k, ftw in enumerate(self.filterWheelsInUse):
             if len(ftw.filters)>1 or k==0:
                 for ft in ftw.filters:
                     if self.blind:
@@ -346,7 +472,7 @@ class CreateFilterWheels(CreateDevice):
 
         anyBelow=False
         # check MINIMUM_FOCUSER_POSITIONS
-        for ftw in filterWheelsInUse:
+        for ftw in self.filterWheelsInUse:
             for ft in ftw.filters:
                 if len(ft.focFoff) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                     self.logger.error( 'create: {0:8s}, filter: {1:8s} to few focuser positions: {2}<={3} (see MINIMUM_FOCUSER_POSITIONS)'.format(ftw.name, ft.name, len(ft.focFoff), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS'])) 
@@ -356,11 +482,9 @@ class CreateFilterWheels(CreateDevice):
             self.logger.error('create: too few focuser positions, returning')
             return None
 
-        
         if self.check:
-            for ftw in filterWheelsInUse:
+            for ftw in self.filterWheelsInUse:
                 if not ftw.check(proxy=self.proxy):
                     return None
-        return filterWheelsInUse
+        return self.filterWheelsInUse
 
-        

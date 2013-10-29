@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2013-10-27)
+Status and open issues (2013-10-29)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -13,12 +13,10 @@ The documentation describes
 
 Items which need further attention:
 
-1) target selection for focus run: the focus run is carried out at the current telescope position
+1) target selection for focus run: the focus run is carried out at the current telescope position, e.g. nearest Landolt target
 2) finding the appropriate exposure 
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focusing.py``
 4) many ToDos in the code
-5) more documentation (this file)
-6) more unittests
 
 
 Overview

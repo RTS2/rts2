@@ -131,6 +131,7 @@ class CCD(object):
         self.pixelSize= pixelSize
         self.baseExposure= baseExposure
         self.logger=logger
+        self.ftOffsets=None
 
     def check(self, proxy=None):
         proxy.refresh()
