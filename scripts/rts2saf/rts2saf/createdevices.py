@@ -178,16 +178,15 @@ class CreateCCD(CreateDevice):
                                     if m:
                                         match=True
                                         break
-
                                 if match:
-                                    ft.OffsetToEmptySlot= 0.
+                                    ft.OffsetToEmptySlot= 0
                                     if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset set to ZERO'.format(ftw.name, ft.name))
                                 else:
                                     try:
                                         ft.OffsetToEmptySlot= offsets[k] 
                                         if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset {2} from ccd: {3}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot,self.ccd.name))
                                     except:
-                                        ft.OffsetToEmptySlot= 0.
+                                        ft.OffsetToEmptySlot= 0
                                         self.logger.warn('filterOffsets: {0}, {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftw.name, ft.name,self.ccd.name))
                                 break
                         else:
@@ -200,9 +199,6 @@ class CreateCCD(CreateDevice):
             else:
                 self.logger.error('filterOffsets: {0}, read back from CCD not found in configuration'.format(ftw.name))        
         return True
-
-
-
 
 class CreateFocuser(CreateDevice):
     """Create the device Focuser"""    
@@ -228,16 +224,13 @@ class CreateFocuser(CreateDevice):
         self.logger.info('create:  {0} setting internal limits for --blind :[{1}, {2}], step size: {3}'.format(self.rt.cfg['FOCUSER_NAME'], rangeMin, rangeMax, rangeStep))
 
         withinLlUl=False
-        # ToDo check that against HW limits
+
         if int(self.rt.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT']) <= rangeMin <= int(self.rt.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT'])-(rangeMax-rangeMin):
             if int(self.rt.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT']) + (rangeMax-rangeMin) <= rangeMax <=  int(self.rt.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT']):
                 withinLlUl=True
 
         if withinLlUl:
             self.focFoff= range(rangeMin, rangeMax +rangeStep, rangeStep)
-            # ToDo must goelswhere
-            #if len(self.focFoff) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-            #    self.logger.warn('create: to few focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS)'.format(len(self.focFoff), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
 
         else:
             self.logger.error('create:  {0:8s} abs. lowerLimit: {1}, abs. upperLimit: {2}'.format(self.rt.cfg['FOCUSER_NAME'], self.rt.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT'], self.rt.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT'])) 
@@ -439,6 +432,13 @@ class CreateFilterWheels(CreateDevice):
             self.logger.warn('create: not all filter wheels have an empty slot, {}, {}'.format(eSs,  len(self.filterWheelsInUse)))
             return None
 
+        if self.check:
+            for ftw in self.filterWheelsInUse:
+                if not ftw.check(proxy=self.proxy):
+                    return None
+        return self.filterWheelsInUse
+
+    def checkBounds(self):
         # check bounds of filter lower and upper limit settings            
         anyOutOfLlUl=False
         name = self.foc.name
@@ -453,8 +453,14 @@ class CreateFilterWheels(CreateDevice):
                         # focuser limits are done in method create()
                         pass
                     else:
-                        rangeMin=focDef + min(ft.focFoff)
-                        rangeMax=focDef + max(ft.focFoff)
+                        try: 
+                            fto= ft.OffsetToEmptySlot #  it may be still None
+                        except:
+                            fto= 0
+                            self.logger.warn('checkBounds: {} has no defined filter offset'.format(ft.name))
+
+                        rangeMin=focDef + min(ft.focFoff) + fto
+                        rangeMax=focDef + max(ft.focFoff) + fto
                         outOfLlUl=True 
                         if absLowerLimit <= rangeMin <= absUpperLimit-(rangeMax-rangeMin):
                             if absLowerLimit + (rangeMax-rangeMin) <= rangeMax <=  absUpperLimit:
@@ -468,7 +474,7 @@ class CreateFilterWheels(CreateDevice):
             self.logger.error('create: out of bounds, returning')
             self.logger.info('create:  {0} FOC_DEF: {1}'.format(name, focDef))
             self.logger.info('create: check setting of FOC_DEF, FOC_FOFF, FOC_TOFF and limits in configuration')
-            return None
+            return False
 
         anyBelow=False
         # check MINIMUM_FOCUSER_POSITIONS
@@ -480,11 +486,7 @@ class CreateFilterWheels(CreateDevice):
 
         if anyBelow:
             self.logger.error('create: too few focuser positions, returning')
-            return None
+            return False
 
-        if self.check:
-            for ftw in self.filterWheelsInUse:
-                if not ftw.check(proxy=self.proxy):
-                    return None
-        return self.filterWheelsInUse
 
+        return True

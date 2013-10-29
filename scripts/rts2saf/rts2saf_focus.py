@@ -108,8 +108,8 @@ if __name__ == '__main__':
         logger.info('rts2saf_focus: {0} FOC_DEF: {1} set'.format(foc.name,args.focDef))
 
     filters= CreateFilters(debug=args.debug, proxy=proxy, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
-    ftws   = CreateFilterWheels(filters=filters, foc=foc, debug=args.debug, proxy=proxy, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
-
+    ftwc = CreateFilterWheels(filters=filters, foc=foc, debug=args.debug, proxy=proxy, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
+    ftws = ftwc.create()
     # at least one even if it is FAKE_FTW
     if ftws==None or not isinstance(ftws[0], FilterWheel):
         logger.error('rts2saf_focus: could not create object for filter wheel: {}, exiting'.format(rt.cfg['FILTER WHEELS INUSE']))
@@ -118,6 +118,11 @@ if __name__ == '__main__':
     ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, fetchOffsets=args.fetchOffsets, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
     if ccd==None or not isinstance(ccd, CCD):
         logger.error('rts2saf_focus: could not create object for CCD: {}, exiting'.format(rt.cfg['CCD_NAME']))
+        sys.exit(1)
+
+    # filter wheel offsets are at this point read back from CCD
+    if not ftwc.checkBounds():
+        logger.error('rts2saf_focus: filter focus ranges out of bounds, exiting')
         sys.exit(1)
 
     # while called from IMGP hopefully every device is there
@@ -134,6 +139,8 @@ if __name__ == '__main__':
 
         logger.info('rts2saf_focus: configuration check done for config file:{0}, exiting'.format(args.config))
         sys.exit(1)
+    else:
+        cdv.summaryDevices()
 
     # these files are injected in case no actual night sky images are available
     # neverthless ccd is exposing, filter wheels and focuser are moving

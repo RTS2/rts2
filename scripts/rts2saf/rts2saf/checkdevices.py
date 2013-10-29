@@ -56,7 +56,8 @@ class CheckDevices(object):
                         img += len(self.foc.focFoff)
                     else:
                         info += '{0:2d} steps, FOC_FOFF: [{1:5d}, {2:5d}], '.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
-                        info += 'FOC_POS: [{1:5d},{2:5d}], FOC_DEF: {3:5d}\n'.format(len(ft.focFoff), self.foc.focDef + min(ft.focFoff), self.foc.focDef + max(ft.focFoff), self.foc.focDef)
+                        info += 'FOC_POS: [{1:5d},{2:5d}], FOC_DEF: {3:5d}, '.format(len(ft.focFoff), self.foc.focDef + min(ft.focFoff), self.foc.focDef + max(ft.focFoff), self.foc.focDef)
+                        info += 'Filter Offset: {0:5.0f}\n'.format(ft.OffsetToEmptySlot)
                         img += len(ft.focFoff)
                 else:
                     self.logger.info('\n{0}'.format(info))

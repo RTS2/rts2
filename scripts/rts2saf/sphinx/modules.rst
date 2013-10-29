@@ -13,6 +13,14 @@ Developer's documentation
    :members:
    :undoc-members:
    :show-inheritance:
+.. automodule:: rts2saf.checkdevices
+   :members:
+   :undoc-members:
+   :show-inheritance:
+.. automodule:: rts2saf.createdevices
+   :members:
+   :undoc-members:
+   :show-inheritance:
 .. automodule:: rts2saf.data
    :members:
    :undoc-members:
@@ -42,6 +50,10 @@ Developer's documentation
    :undoc-members:
    :show-inheritance:
 .. automodule:: rts2saf.sextract
+   :members:
+   :undoc-members:
+   :show-inheritance:
+.. automodule:: rts2saf.sextractor
    :members:
    :undoc-members:
    :show-inheritance:

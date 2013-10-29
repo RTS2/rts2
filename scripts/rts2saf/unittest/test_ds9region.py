@@ -47,9 +47,10 @@ class TestDs9Region(unittest.TestCase):
     def setUp(self):
         self.rt = Configuration(logger=logger)
         self.rt.readConfiguration(fileName='../configs/no-filter-wheel/rts2saf.cfg')
-        self.dSx=Sextract(debug=False, rt=self.rt, logger=logger).sextract(fitsFn='../samples/20071205025911-725-RA.fits'x)
-        self.dds9=ds9()
-
+        self.dSx=Sextract(debug=False, rt=self.rt, logger=logger).sextract(fitsFn='../samples/20071205025911-725-RA.fits')
+        # to see DS9 use
+        #  self.dds9=ds9()
+        self.dds9=None
 
     #@unittest.skip('feature not yet implemented')
     def test_displayWithRegion(self):
