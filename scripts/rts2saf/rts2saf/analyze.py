@@ -208,13 +208,12 @@ class SimpleAnalysis(object):
                         self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
 
 import numpy
-import math
 from itertools import ifilterfalse
 from itertools import ifilter
 # ToDo at the moment this method is an demonstrator
 class CatalogAnalysis(object):
     """CatalogAnalysis a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, rt=None, logger=None):
+    def __init__(self, debug=False, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, moduleName=None, ev=None, rt=None, logger=None):
         self.debug=debug
         self.dataSex=dataSex
         self.Ds9Display=Ds9Display
@@ -223,72 +222,60 @@ class CatalogAnalysis(object):
         self.ftName=ftName
         self.dryFits=dryFits
         self.focRes=focRes
+        self.moduleName=moduleName
         self.ev=ev
         self.rt=rt
         self.logger=logger
-        self.i_x = self.dataSex[0].fields.index('X_IMAGE')
-        self.i_y = self.dataSex[0].fields.index('Y_IMAGE')
+        self.criteriaModule=None
+        self.cr=None
 
-        self.center=[ self.dataSex[0].naxis1/2.,self.dataSex[0].naxis2/2. ] 
-        
-        rds= self.rt.cfg['RADIUS'] 
-        if self.dataSex[0].binning:
-            self.radius= rds/self.dataSex[0].binning 
-        elif self.dataSex[0].binningXY:
-            # ToDo (bigger): only x value is used
-            self.radius= rds/self.dataSex[0].binningXY[0] 
-        else:
-            # everything should come
-            self.radius=pow(self.dataSex[0].naxis1, 2) + pow(self.dataSex[0].naxis2, 2)
 
-    def __criteria(self, ce=None):
-
-        rd= math.sqrt(pow(ce[self.i_x]-self.center[0],2)+ pow(ce[self.i_y]-self.center[1],2))
-        if rd < self.radius:
-            return True
-        else:
-            return False
+    def __loadCriteria(self):
+        # http://stackoverflow.com/questions/951124/dynamic-loading-of-python-modules
+        # Giorgio Gelardi ["*"]!
+        self.criteriaModule=__import__(self.moduleName, fromlist=["*"])
+        self.cr=self.criteriaModule.Criteria(dataSex=self.dataSex, rt=self.rt)
 
     def selectAndAnalyze(self):
+
+        self.__loadCriteria()
+        # ToDo glitch
+        i_f = self.dataSex[0].fields.index('FWHM_IMAGE')
         acceptedDataSex=list()
         rejectedDataSex=list()
-        for cnt, dSx in enumerate(self.dataSex):
+        for dSx in self.dataSex:
             adSx=copy.deepcopy(dSx)
             acceptedDataSex.append(adSx)
-            adSx.catalog= list(ifilter(self.__criteria, dSx.catalog))
-
-            i_f = dSx.fields.index('FWHM_IMAGE')
-
-            nsFwhm=np.asarray(map(lambda x: x[i_f], dSx.catalog))
+            adSx.catalog= list(ifilter(self.cr.decide, dSx.catalog))
+            nsFwhm=np.asarray(map(lambda x: x[i_f], adSx.catalog))
             adSx.fwhm=numpy.median(nsFwhm)
             adSx.stdFwhm=numpy.std(nsFwhm)
 
             rdSx=copy.deepcopy(dSx)
-            rejectedDataSex.append(adSx)
+            rejectedDataSex.append(rdSx)
+            rdSx.catalog=  list(ifilterfalse(self.cr.decide, dSx.catalog))
 
-            rdSx.catalog=  list(ifilterfalse(self.__criteria, dSx.catalog))
             nsFwhm=np.asarray(map(lambda x: x[i_f], rdSx.catalog))
-
             rdSx.fwhm=numpy.median(nsFwhm)
             rdSx.stdFwhm=numpy.std(nsFwhm)
 
         # 
         an=SimpleAnalysis(debug=self.debug, dataSex=acceptedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rFt=an.analyze()
-        self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {0:5.1f}, minFitPos: {0:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+        self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
 
         if self.Ds9Display or self.FitDisplay:
             an.display()
         #
         an=SimpleAnalysis(debug=self.debug, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rFt=an.analyze()
-        self.logger.debug( 'REJECTED weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {0:5.1f}, minFitPos: {0:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+        self.logger.debug( 'REJECTED weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
         if self.Ds9Display or self.FitDisplay:
             an.display()
         # 
         an=SimpleAnalysis(debug=self.debug, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rFt=an.analyze()
-        self.logger.debug( 'ALL     weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {0:5.1f}, minFitPos: {0:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+        self.logger.debug( 'ALL     weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
 
 
         if self.Ds9Display or self.FitDisplay:
@@ -296,73 +283,3 @@ class CatalogAnalysis(object):
         self.logger.debug( ''.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
         # ToDo here are three objects
         return rFt
-
-
-if __name__ == '__main__':
-
-    import argparse
-    import sys
-    import logging
-    import os
-    import glob
-    import re
-
-    import rts2saf.config as cfgd
-    import rts2saf.sextract as sx
-    import rts2saf.environ as env
-    import rts2saf.log as lg
-
-    prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
-    parser.add_argument('--debugSex', dest='debugSex', action='store_true', default=False, help=': %(default)s,add more output on SExtract')
-    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
-    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-    parser.add_argument('--basepath', dest='basePath', action='store', default=None, help=': %(default)s, directory where FITS images from possibly many focus runs are stored')
-#ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
-    parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
-    parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
-    parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
-
-    args=parser.parse_args()
-
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
-
-    rt=cfgd.Configuration(logger=logger)
-    rt.readConfiguration(fileName=args.config)
-
-    # get the environment
-    ev=env.Environment(debug=args.debug, rt=rt,logger=logger)
-    ev.createAcquisitionBasePath(ftwName=None, ftName=None)
-    
-    fitsFns=glob.glob('{0}/{1}'.format(args.basePath, rt.cfg['FILE_GLOB']))
-
-    if len(fitsFns)==0:
-        logger.error('analyze: no FITS files found in:{}'.format(args.basePath))
-        logger.info('analyze: set --basepath or'.format(args.basePath))
-        logger.info('analyze: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
-        logger.info('analyze: and store it in directory: {0}'.format(args.basePath))
-        sys.exit(1)
-
-    dataSex=dict()
-    for k, fitsFn in enumerate(fitsFns):
-        
-        logger.info('analyze: processing fits file: {0}'.format(fitsFn))
-        rsx= sx.Sextract(debug=args.debugSex, rt=rt, logger=logger)
-        dataSex[k]=rsx.sextract(fitsFn=fitsFn) 
-
-    if args.catalogAnalysis:
-        an=CatalogAnalysis(debug=args.debug, dataSex=dataSex, Ds9Display=args.Ds9Display, FitDisplay=args.FitDisplay, focRes=float(rt.cfg['FOCUSER_RESOLUTION']), ev=ev, rt=rt, logger=logger)
-        resultFitFwhm=an.selectAndAnalyze()
-    else:
-        an=SimpleAnalysis(debug=args.debug, dataSex=dataSex, Ds9Display=args.Ds9Display, FitDisplay=args.FitDisplay, focRes=float(rt.cfg['FOCUSER_RESOLUTION']), ev=ev, logger=logger)
-        resultFitFwhm=an.analyze()
-        if args.Ds9Display or args.FitDisplay:
-            an.display()
-
-    logger.info('analyze: result: weightedMeanObjects: {0}, weightedMeanFwhm: {1}, minFitPos: {2}, fwhm: {3}'.format(resultFitFwhm.weightedMeanObjects, resultFitFwhm.weightedMeanFwhm, resultFitFwhm.minFitPos, resultFitFwhm.fitFwhm))
-
