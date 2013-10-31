@@ -43,7 +43,7 @@ class TestConfiguration(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.fileName='../configs/one-filter-wheel/rts2saf.cfg'
+        self.fileName='./rts2saf-bootes-2.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
     #@unittest.skip('feature not yet implemented')
@@ -57,7 +57,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertTrue(result)
 
     def test_filterWheelInUse(self):
-        self.assertEqual(self.rt.cfg['inuse'][0], 'W0', 'return value: {}'.format(self.rt.cfg['inuse'][0]))
+        self.assertEqual(self.rt.cfg['inuse'][0], 'COLWFLT', 'return value: {}'.format(self.rt.cfg['inuse'][0]))
 
 if __name__ == '__main__':
     

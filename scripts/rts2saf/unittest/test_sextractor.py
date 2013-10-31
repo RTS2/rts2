@@ -42,9 +42,10 @@ class TestSextract(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.success=self.rt.readConfiguration(fileName='../configs/no-filter-wheel/rts2saf.cfg')
+        self.success=self.rt.readConfiguration(fileName='./rts2saf-no-filter-wheel.cfg')
 
         self.sx = Sextract(debug=False, rt=self.rt, logger=logger)
+
     #@unittest.skip('feature not yet implemented')
     def test_sextract(self):
         fitsFn='../samples/20071205025911-725-RA.fits'

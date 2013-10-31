@@ -57,7 +57,7 @@ class TestSimpleAnalysis(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.fileName='../configs/no-filter-wheel/rts2saf.cfg'
+        self.fileName='./rts2saf-no-filter-wheel.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         self.ev=Environment(debug=False, rt=self.rt,logger=logger)
 
@@ -95,7 +95,7 @@ class TestCatalogAnalysis(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.fileName='../configs/no-filter-wheel/rts2saf.cfg'
+        self.fileName='./rts2saf-no-filter-wheel.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         self.ev=Environment(debug=False, rt=self.rt,logger=logger)
 

@@ -1,5 +1,5 @@
-Getting started with the documentation
-======================================
+Getting started with the documentation and installation
+=======================================================
 
 rts2saf package's documentation is generated with Sphinx (see http://sphinx-doc.org)
 
@@ -47,3 +47,11 @@ to view it or read the latest documents in ./sphinx:
    modules.rst
    moduleindex.rst
 
+Pytyhon unittest
+----------------
+
+Execute in this directory
+
+ ./rts2saf_unittest.sh
+
+to see what is missing, mostly it ths the path to the SExtractor.

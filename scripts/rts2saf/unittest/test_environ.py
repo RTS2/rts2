@@ -46,7 +46,7 @@ class TestEnvironment(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.rt.readConfiguration(fileName='../configs/no-filter-wheel/rts2saf.cfg')
+        self.rt.readConfiguration(fileName='./rts2saf-bootes-2.cfg')
 
     def test_expandToTmp(self):
         ev=Environment(debug=False, rt=self.rt, logger=logger)

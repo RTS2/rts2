@@ -78,7 +78,7 @@ class TestFocus(unittest.TestCase):
         # read configuration
         self.rt = Configuration(logger=logger)
         self.ev=Environment(debug=False, rt=self.rt,logger=logger)
-        self.fileName='../configs/dummy-bootes-2/rts2saf.cfg'
+        self.fileName='./rts2saf-bootes-2.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         # set up RTS2
         # rts2-centrald

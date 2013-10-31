@@ -75,7 +75,7 @@ class TestCreateDevices(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.fileName='../configs/no-filter-wheel/rts2saf.cfg'
+        self.fileName='./rts2saf-no-filter-wheel.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
     def test_createFTs(self):
@@ -117,7 +117,7 @@ class TestCheckDevices(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.fileName='/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
+        self.fileName='./rts2saf-bootes-2.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         self.scd= CheckDevices(debug=False, proxy=self.proxy, blind=None, verbose=None, ccd=None, ftws=None, foc=None, logger=logger)
