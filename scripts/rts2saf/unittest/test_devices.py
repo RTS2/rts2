@@ -107,7 +107,6 @@ class TestCreateDevices(unittest.TestCase):
         self.assertEqual(ccd.name, 'C0')
         
 
-import mock
 from rts2saf.checkdevices import CheckDevices
 from rts2.json import JSONProxy
 

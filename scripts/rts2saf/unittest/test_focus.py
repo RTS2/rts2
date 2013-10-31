@@ -120,9 +120,11 @@ class TestFocus(unittest.TestCase):
             if nm in self.rt.cfg['inuse'][0]:
                 cmd.append('--filter-offsets')
                 cmd.append('1:2:3:4:5:6:7:8')
+
+        self.p_camd_dummy= subprocess.Popen(cmd)
                 
 
-        time.sleep(2)
+        time.sleep(5)
         # setup rts2saf
         # fake arguments
         self.args=Args()
@@ -135,7 +137,6 @@ class TestFocus(unittest.TestCase):
         self.args.Ds9Display=False
         self.args.FitDisplay=False
         # JSON
-        self.p_camd_dummy= subprocess.Popen(cmd)
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         # create Focuser 
         self.foc= CreateFocuser(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger).create()
