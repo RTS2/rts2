@@ -25,5 +25,4 @@ else
  dir='.'
  cd ./unittest
 fi
-echo $dir
 python -m unittest discover -v -s $dir

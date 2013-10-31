@@ -11,27 +11,61 @@ The script ``rts2saf_analyze.py`` provides a very basic analysis, namely
 as long as the images are grouped properly (see below).
 
 The fit result is stored as ``PNG`` in the directory where the FITS files reside.
-Trough option ``--filternames`` the analysis can be restricted to a list of filter names.
+Through option ``--filternames`` the analysis can be restricted to a list of filter names.
 
 Option ``--cataloganalysis`` performs the analysis based on the properties available through
-``SExtractor's`` ``parameters``. This feature is still experimental and will be implemented
-later. Currently a decission is made based on the distance from the plate center:
+``SExtractor's`` ``parameters``. The default configuration provides these parameters:
+
+.. code-block:: bash
+
+   [SExtractor]
+   FIELDS = EXT_NUMBER,X_IMAGE,Y_IMAGE,MAG_BEST,FLAGS,CLASS_STAR,FWHM_IMAGE,A_IMAGE,B_IMAGE
+
+and others can be added at will. Specify the module filename without postfix ``.py`` as argument 
+of option ``--criteria``. To use a criteria you have to implement at least a class ``Criteria``
+with a method named ``decide()``:
 
 .. code-block:: python
 
-    def __criteria(self, ce=None):
+   class Criteria(object):
+   
+      def decide(self, catalogEntry=None):
+         return True
 
-        rd= math.sqrt(pow(ce[self.i_x]-self.center[0],2)+ pow(ce[self.i_y]-self.center[1],2))
-        if rd < self.radius:
-            return True
-        else:
-            return False
+This is a simplified version of ``criteria_radius``:
+
+.. code-block:: python
+
+   class Criteria(object):
+      def __init__(self, dataSex=None, rt=None):
+         self.dataSex=dataSex
+         self.rt=rt
+
+	 # .fields contains the list of available SExtractor parameters
+         self.i_x = self.dataSex[0].fields.index('X_IMAGE')
+         self.i_y = self.dataSex[0].fields.index('Y_IMAGE')
+	 # naxis1, naxis2 from FITS header
+         self.center=[ self.dataSex[0].naxis1/2.,self.dataSex[0].naxis2/2. ] 
+	 # radius from configuration file
+         self.radius= self.rt.cfg['RADIUS'] 
+
+
+      def decide(self, catalogEntry=None):
+         rd= math.sqrt(pow(catalogEntry[self.i_x]-self.center[0],2)+ pow(catalogEntry[self.i_y]-self.center[1],2))
+         if rd < self.radius:
+             return True
+         else:
+             return False
+
+``decide()`` returns ``True`` if a given object is within radius ``self.rt.cfg['RADIUS']``. 
+
+
 
 Image directory lay out
 -----------------------
 
 ``rts2saf_focus.py`` copies the files from RTS2 images directory to BASE_DIRECTORY.
-In cas a filter wheel is used to:
+In case a filter wheel is used to:
 
 .. code-block:: bash
 
@@ -95,7 +129,7 @@ while
  rts2saf_analyze.py --basepath BASE
 
 does it all quietly writing only to the log file and to the fit result image files. The parameter
-values for the temperature model can be retrievd from the log file.
+values for the temperature model can be retrieved from the log file.
 
 Monitoring
 ----------

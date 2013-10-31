@@ -120,8 +120,8 @@ class TestCatalogAnalysis(unittest.TestCase):
 
         self.assertEqual(len(dataSex), 14, 'return value: {}'.format(len(dataSex)))
         an=CatalogAnalysis(debug=False, dataSex=dataSex, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName='rts2saf.criteria_radius', ev=self.ev, rt=self.rt, logger=logger)
-        resultFitFwhm=an.selectAndAnalyze()
-        self.assertEqual('{0:5.4f}'.format(resultFitFwhm.minFitFwhm), '{0:5.4f}'.format(2.24000979001), 'return value: {}'.format(resultFitFwhm.minFitFwhm))
+        accRFt, rejRFt, allrFt=an.selectAndAnalyze()
+        self.assertEqual('{0:5.4f}'.format(allrFt.minFitFwhm), '{0:5.4f}'.format(2.24000979001), 'return value: {}'.format(allrFt.minFitFwhm))
 
 
 if __name__ == '__main__':

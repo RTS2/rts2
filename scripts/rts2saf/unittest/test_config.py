@@ -31,6 +31,7 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestConfiguration('test_readConfiguration'))
     suite.addTest(TestConfiguration('test_checkConfiguration'))
+    suite.addTest(TestConfiguration('test_filterWheelInUse'))
 
     return suite
 
@@ -42,20 +43,21 @@ class TestConfiguration(unittest.TestCase):
 
     def setUp(self):
         self.rt = Configuration(logger=logger)
-        self.fileName='../configs/no-filter-wheel/rts2saf.cfg'
+        self.fileName='../configs/one-filter-wheel/rts2saf.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
     #@unittest.skip('feature not yet implemented')
     def test_readConfiguration(self):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
-
         self.assertIs(type(self.rt), Configuration)
-
 
     def test_checkConfiguration(self):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
         result = self.rt.checkConfiguration()
         self.assertTrue(result)
+
+    def test_filterWheelInUse(self):
+        self.assertEqual(self.rt.cfg['inuse'][0], 'W0', 'return value: {}'.format(self.rt.cfg['inuse'][0]))
 
 if __name__ == '__main__':
     

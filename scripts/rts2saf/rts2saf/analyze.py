@@ -261,25 +261,35 @@ class CatalogAnalysis(object):
 
         # 
         an=SimpleAnalysis(debug=self.debug, dataSex=acceptedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
-        rFt=an.analyze()
-        self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
-
+        accRFt=an.analyze()
+        try:
+            self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
+        except:
+            self.logger.debug('ACCEPTED: fit and calculation failed')
+            
         if self.Ds9Display or self.FitDisplay:
             an.display()
         #
         an=SimpleAnalysis(debug=self.debug, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
-        rFt=an.analyze()
-        self.logger.debug( 'REJECTED weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+        rejRFt=an.analyze()
+        try:
+            self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFt.weightedMeanObjects, rejRFt.weightedMeanCombined, rejRFt.minFitPos, rejRFt.minFitFwhm))
+        except:
+            self.logger.debug('REJECTED: fit and calculation failed')
+
         if self.Ds9Display or self.FitDisplay:
             an.display()
         # 
         an=SimpleAnalysis(debug=self.debug, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
-        rFt=an.analyze()
-        self.logger.debug( 'ALL     weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+        allrFt=an.analyze()
+        try:
+            self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFt.weightedMeanObjects, allRFt.weightedMeanCombined, allRFt.minFitPos, allRFt.minFitFwhm))
+        except:
+            self.logger.debug('ALL     : fit and calculation failed')
 
 
         if self.Ds9Display or self.FitDisplay:
             an.display()
-        self.logger.debug( ''.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.minFitPos, rFt.minFitFwhm))
+        self.logger.debug( 'returning accepted'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
         # ToDo here are three objects
-        return rFt
+        return accRFt, rejRFt, allrFt

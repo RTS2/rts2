@@ -39,7 +39,7 @@ from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 if __name__ == '__main__':
     # since rts2 can not pass options, any option needs a decent default value
     prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
+    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf auto focus')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path') # needs a path where it can always write
@@ -56,6 +56,8 @@ if __name__ == '__main__':
     parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
     parser.add_argument('--fetchoffsets', dest='fetchOffsets', action='store_true', default=False, help=': %(default)s, fetch filter offsets from CCD')
+    parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
+    parser.add_argument('--criteria', dest='criteria', action='store', default='rts2saf.criteria_radius', help=': %(default)s, CatalogAnalysis criteria Python module to load at run time')
 
     args=parser.parse_args()
     if args.verbose:

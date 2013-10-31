@@ -113,9 +113,12 @@ class Focus(object):
                     continue
 
                 # might go to a thread too
-                anr= an.SimpleAnalysis(dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
-
-                rFt= anr.analyze()
+                if self.args.catalogAnalysis:
+                    anr=CatalogAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=self.foc.resolution, moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
+                    rFt=anr.selectAndAnalyze()
+                else:
+                    anr= an.SimpleAnalysis(dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
+                    rFt= anr.analyze()
                 # 
                 anr.display()
 

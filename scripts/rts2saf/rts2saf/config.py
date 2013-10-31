@@ -255,6 +255,7 @@ class Configuration(DefaultConfiguration):
                 fakeFtw=False
                 if identifier in 'inuse':
                     filterWheelsInuse=value[1:-1].split(',')
+                    self.cfg[identifier]=filterWheelsInuse
                 elif identifier in 'EMPTY_SLOT_NAMES':
                     self.cfg[identifier]=value[1:-1].split(',')
             #
@@ -265,7 +266,7 @@ class Configuration(DefaultConfiguration):
                     for e in value[1:-1].split(','):
                         k,v=e.split(':')
                         tDict[v]=k # that's ok !!
-                    self.cfg['FILTERS_TO_EXCLUDE']=tDict
+                    self.cfg[identifier]=tDict
                 else:
                     self.cfg[identifier]= value
             # first bool, then int !

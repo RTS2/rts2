@@ -155,7 +155,11 @@ class CreateCCD(CreateDevice):
                     offsets=list()
                     if len(ftos[ftwn])==0:
                         self.logger.warn('filterOffsets: for {0}, {1} no filter offsets could be read from CCD, but filter wheels/filters are present'.format(self.ccd.name, ftwn))
-                        break
+                        # do not break here!!
+                    if len(fts[ftwn])==0:
+                        self.logger.warn('filterOffsets: for {0}, {1} no filters could be read from CCD, but filter wheels/filters are present'.format(self.ccd.name, ftwn))
+                    else:
+                        self.logger.warn('filterOffsets: for {0}, {1} {2}'.format(self.ccd.name, ftwn, len(fts[ftwn])))
 
                     offsets= map(lambda x: x, ftos[ftwn]) 
                     # filters and configure offsets           
@@ -243,6 +247,7 @@ class CreateFocuser(CreateDevice):
             self.logger.info('create: focuser range has: {0} steps, you might consider set decent value for --focrange'.format(len(self.focFoff)))
 
         try:
+            self.proxy.refresh()
             focDef=int(self.proxy.getDevice(self.rt.cfg['FOCUSER_NAME'])['FOC_DEF'][1])
         except Exception, e:
             self.logger.warn('create:  {0} has no FOC_DEF set '.format(self.rt.cfg['FOCUSER_NAME']))
@@ -361,7 +366,7 @@ class CreateFilterWheels(CreateDevice):
                     filters.append(filterDict[ftd])
             # empty slots first
             filters.sort(key=lambda x: x.OffsetToEmptySlot, reverse=True)
-            ftw=FilterWheel(debug=self.debug, name=ftwn,filters=filters)
+            ftw=FilterWheel(debug=self.debug, name=ftwn,filters=filters, logger=self.logger)
             filterWheels.append(ftw)
 
         # for ftw in filterWheels:

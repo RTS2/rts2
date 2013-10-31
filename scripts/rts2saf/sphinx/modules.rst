@@ -21,6 +21,10 @@ Developer's documentation
    :members:
    :undoc-members:
    :show-inheritance:
+.. automodule:: rts2saf.criteria_radius
+   :members:
+   :undoc-members:
+   :show-inheritance:
 .. automodule:: rts2saf.data
    :members:
    :undoc-members:
