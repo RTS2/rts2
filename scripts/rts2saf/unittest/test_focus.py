@@ -86,7 +86,7 @@ class TestFocus(unittest.TestCase):
         self.p_centrald= subprocess.Popen(cmd)
 
         # rts2-xmlrpcd
-        cmd=['/usr/local/bin/rts2-xmlrpcd', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', '/tmp/', '--server', '127.0.0.1:1617']
+        cmd=['/usr/local/bin/rts2-xmlrpcd', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', '/tmp/', '--server', '127.0.0.1:1617', '-p', '9999']
         self.p_xmlrpcd= subprocess.Popen(cmd)
 
         # rts2-focusd-dummy
@@ -137,6 +137,7 @@ class TestFocus(unittest.TestCase):
         self.args.Ds9Display=False
         self.args.FitDisplay=False
         # JSON
+#        self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         # create Focuser 
         self.foc= CreateFocuser(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger).create()
@@ -159,7 +160,7 @@ class TestFocus(unittest.TestCase):
         focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
         self.assertEqual( focPos, 0, 'return value:{}'.format(focPos))
 
-    @unittest.skip('this unittest performs a complete focus run, by defult it isdisabled')
+    @unittest.skip('this unittest performs a complete focus run, by default it is disabled')
     def test_focus(self):
         self.scd.run()
 
