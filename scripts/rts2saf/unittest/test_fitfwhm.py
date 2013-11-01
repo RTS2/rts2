@@ -59,7 +59,7 @@ class TestFitFwhm(unittest.TestCase):
 
     def test_fitData(self):
         min_focpos_fwhm, val_fwhm, par= self.ft.fitData()
-        self.assertAlmostEqual('{0:6.2f}'.format(min_focpos_fwhm), '{0:6.2f}'.format(2499.46590330489240))
+        self.assertAlmostEqual(min_focpos_fwhm, 2499.46590330489240, places=3, msg='return value: {}'.format(min_focpos_fwhm))
                                                
     #@unittest.skip('feature not yet implemented')
     def test_plotData(self):

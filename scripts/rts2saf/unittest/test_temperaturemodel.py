@@ -57,7 +57,7 @@ class TestTemperatureFocPosModel(unittest.TestCase):
     def test_fitData(self):
         par, flag= self.ft.fitData()
         # ToDo might not what I want
-        self.assertAlmostEqual('{0:12.9}'.format(par[0]), '{0:12.9}'.format(8.881784197e-16), 'return value: {}'.format(par[0]))
+        self.assertAlmostEqual(par[0], 8.881784197e-16, places=6, msg='return value: '.format(par[0]))
                                                
     #@unittest.skip('feature not yet implemented')
     def test_plotData(self):
