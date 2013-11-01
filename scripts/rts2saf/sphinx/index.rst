@@ -10,10 +10,10 @@ Contents
    introduction
    installation
    integration
-   real-configuration
    dummytesting
    offline
    cmdline
+   configuration
    unittest
    modules
    moduleindex

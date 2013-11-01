@@ -113,34 +113,3 @@ class FitFwhm(object):
         except Exception, e:
             self.logger.error('fitfwhm: can not save plot to: {0}'.format(self.dataFitFwhm.plotFn))
             return e
-
-if __name__ == '__main__':
-
-    from rts2saf.log import Logger
-    import argparse
-    import re
-    prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
-    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='/tmp', help=': %(default)s, write log file to path') # needs a path where it can always write
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
-    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-
-    args=parser.parse_args()
-
-    dataFitFwhm=dtf.DataFitFwhm(
-        pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
-        fwhm= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
-        errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
-        stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
-        ambientTemp='21.3',
-        plotFn= './test-plot.png')
-
-    # logger
-    logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
-
-    # ToDo mismatch!
-    fit=FitFwhm(showPlot=True,  date='2013-09-08T09:30:09', comment='Test fitfwhm', dataFitFwhm=dataFitFwhm, logger=logger)
-    fit.fitData()
-    fit.plotData()

@@ -43,6 +43,28 @@ In case you modify a rts2saf module issue
  cd ~/rts-2/scripts
  sudo make install
 
+``rts2saf unittest`` 
+--------------------
+
+Not yet complete but ``unitttest`` may discover the most common installation problems. Before
+executing them edit in both files ``unittest/rts2saf-bootes-2.cfg`` and ``unittest/rts2saf-no-filter-wheel.cfg``
+the lines
+
+.. code-block:: bash
+
+ [SExtractor]
+ SEXPATH = /usr/local/bin/sex
+ SEXCFG = /usr/local/etc/rts2/rts2saf/rts2saf-sex.cfg
+
+according to your ``SExtractor`` installation. Then execute
+
+.. code-block:: bash
+
+ cd ~/rts-2/scripts/rts2saf
+ ./rts2saf_unittest.sh
+ 
+If not  all tests are ``ok`` please send the output to the author.
+
 
 Wired things
 ------------

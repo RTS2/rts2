@@ -56,7 +56,7 @@ class TestFocus(unittest.TestCase):
 
     def tearDown(self):
         processes=['rts2-centrald','rts2-xmlrpcd','rts2-focusd-dummy','rts2-filterd-dummy', 'rts2-camd-dummy']
-        p = subprocess.Popen(['ps', '-aux'], stdout=subprocess.PIPE)
+        p = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE)
         out, err = p.communicate()
 
         for line in out.splitlines():

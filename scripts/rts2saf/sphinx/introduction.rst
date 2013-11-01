@@ -15,7 +15,7 @@ Items which need further attention:
 
 1) target selection for focus run: the focus run is carried out at the current telescope position, e.g. nearest Landolt target
 2) finding the appropriate exposure 
-3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focusing.py``
+3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focsing.py``
 4) many ToDos in the code
 
 
@@ -99,7 +99,8 @@ target is soon executed and ``rts2saf_focus.py`` acquires a configurable set
 of images at different focuser positions. To reduce elapsed time 
 ``SExtractor`` is executed in a thread  while images are
 acquired. rts2saf then fits these points and the minimum is derived 
-from the fitted function. If successful it sets focuser's ``FOC_DEF``.
+from the fitted function. If successful it sets focuser's ``FOC_DEF`` if
+variable ``SET_FOC_DEF`` is set to ``True`` in the configuration file.
 
 Command line execution
 ++++++++++++++++++++++
@@ -107,13 +108,12 @@ In order to simplify the debugging of one's own configuration
 all scripts can be used directly on the command line either
 with or without previously acquired images.
 
-All scripts have on line help and all arguments have a decent
-default value which enables them to run in autonomous mode
-where appropriate.
+All scripts have a :ref:`on line help <sec_scripts-label>` and all arguments 
+have a decent default value which enables them to run in autonomous mode where 
+appropriate.
 
-The configuration file contains all observatory
-specific values which are not available from the running
-RTS2 instance. An example:
+The configuration file contains all observatory specific values which are not 
+available from the running RTS2 instance. An example:
 
 .. code-block:: bash
 

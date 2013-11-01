@@ -18,11 +18,14 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
+
 if [ $1 ] 
 then
  dir=$1
 else
- dir='.'
- cd ./unittest
+ dir=./unittest
 fi
-python -m unittest discover -v -s $dir
+ cd $dir
+
+
+python -m unittest discover -v -s .

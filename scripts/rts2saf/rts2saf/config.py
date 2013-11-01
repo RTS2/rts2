@@ -152,26 +152,23 @@ class DefaultConfiguration(object):
         self.dcf[('IMGP analysis', 'SCRIPT_ASTROMETRY')] = 'rts2-astrometry-std-fits.net' 
         # or rts2-astrometry.net
 
-    def dumpDefaults(self):
-        for (identifier), value in self.dcf.iteritems():
-            print "dump defaults :", ', ', identifier, '=>', value
-
 
     def writeDefaultConfiguration(self, cfn='./rts2saf-default.cfg'):
         for (section, identifier), value in sorted(self.dcf.iteritems()):
-            print section, '=>', identifier, '=>', value
             if self.config.has_section(section)== False:
                 self.config.add_section(section)
 
             self.config.set(section, identifier, value)
-
-        with open( cfn, 'w') as configfile:
-            configfile.write('# 2013-09-10, Markus Wildi\n')
-            configfile.write('# default configuration for rts2saf\n')
-            configfile.write('#\n')
-            configfile.write('#\n')
-            self.config.write(configfile)
-
+        try:
+            with open( cfn, 'w') as configfile:
+                configfile.write('# 2013-09-10, Markus Wildi\n')
+                configfile.write('# default configuration for rts2saf\n')
+                configfile.write('#\n')
+                configfile.write('#\n')
+                self.config.write(configfile)
+        except:
+            return None
+        return cfn
 
 class Configuration(DefaultConfiguration):
     # init from base class
@@ -222,7 +219,6 @@ class Configuration(DefaultConfiguration):
                 continue
 
             value= string.replace( value, ' ', '')
-            if self.debug: print '{} {} {}'.format(section, identifier, value)
 
             items=list()
             # decode the compound configuration expressions first, the rest is copied to  
@@ -338,42 +334,3 @@ class Configuration(DefaultConfiguration):
             return False
         return True
         # more to come
-
-
-if __name__ == '__main__':
-
-    import argparse
-    import rts2saf.log as  lg
-
-    prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf analysis')
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
-    parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path')
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
-    parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
-    parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
-
-    args=parser.parse_args()
-
-    lgd= lg.Logger(debug=args.debug, args=args) # if you need to chage the log format do it here
-    logger= lgd.logger 
-
-    rt=Configuration(logger=logger)
-#    rt.writeDefaultConfiguration()
-#    rt.dumpDefaults()
-
-    rt.readConfiguration(fileName=args.config)
-    
-
-    if not rt.checkConfiguration():
-        print 'Something wrong with configuration'
-        sys.exit(1)
-
-
-    for c,v in rt.cfg.iteritems():
-        print c,v
-
-    print 'DONE'
-
-#    rt.writeConfiguration(cfn='./rts2saf-my-new.cfg')

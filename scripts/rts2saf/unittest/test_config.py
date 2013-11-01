@@ -32,6 +32,7 @@ def suite():
     suite.addTest(TestConfiguration('test_readConfiguration'))
     suite.addTest(TestConfiguration('test_checkConfiguration'))
     suite.addTest(TestConfiguration('test_filterWheelInUse'))
+    suite.addTest(TestConfiguration('test_writeDefaultConfiguration'))
 
     return suite
 
@@ -50,7 +51,6 @@ class TestConfiguration(unittest.TestCase):
     def test_readConfiguration(self):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
         self.assertIs(type(self.rt), Configuration)
-
     def test_checkConfiguration(self):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
         result = self.rt.checkConfiguration()
@@ -58,6 +58,12 @@ class TestConfiguration(unittest.TestCase):
 
     def test_filterWheelInUse(self):
         self.assertEqual(self.rt.cfg['inuse'][0], 'COLWFLT', 'return value: {}'.format(self.rt.cfg['inuse'][0]))
+
+    def test_writeDefaultConfiguration(self):
+        cfn='./rts2saf-default.cfg'
+        cfn='-'
+        result=self.rt.writeDefaultConfiguration(cfn=cfn)
+        self.assertEqual(cfn, result, 'return value: {}'.format(result))
 
 if __name__ == '__main__':
     

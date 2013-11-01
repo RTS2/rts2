@@ -84,7 +84,7 @@ class TestSimpleAnalysis(unittest.TestCase):
         self.assertEqual(len(dataSex), 14, 'return value: {}'.format(len(dataSex)))
         an=SimpleAnalysis(debug=False, dataSex=dataSex, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=logger)
         resultFitFwhm=an.analyze()
-        self.assertEqual('{0:5.4f}'.format(resultFitFwhm.minFitFwhm), '{0:5.4f}'.format(2.24000979001), 'return value: {}'.format(resultFitFwhm.minFitFwhm))
+        self.assertAlmostEqual(resultFitFwhm.minFitFwhm, 2.24000979001, places=3, msg='return value: {}'.format(resultFitFwhm.minFitFwhm))
 
 
 #@unittest.skip('class not yet implemented')
@@ -122,7 +122,7 @@ class TestCatalogAnalysis(unittest.TestCase):
         an=CatalogAnalysis(debug=False, dataSex=dataSex, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName='rts2saf.criteria_radius', ev=self.ev, rt=self.rt, logger=logger)
         accRFt, rejRFt, allrFt=an.selectAndAnalyze()
         self.assertEqual('{0:5.4f}'.format(allrFt.minFitFwhm), '{0:5.4f}'.format(2.24000979001), 'return value: {}'.format(allrFt.minFitFwhm))
-
+        self.assertAlmostEqual(accRFt.minFitFwhm, 2.24000979001, delta=0.05, msg='return value: {}'.format(allrFt.minFitFwhm))
 
 if __name__ == '__main__':
     

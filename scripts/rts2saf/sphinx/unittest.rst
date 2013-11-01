@@ -1,5 +1,5 @@
-Testing individual components ``unittest``
-==========================================
+Testing individual components ``unittest``, ``coverage``
+========================================================
 The ``unittest`` rely on the presence of the files in directories ``samples`` and ``imgp``. Download the archives
 
 .. code-block:: bash
@@ -17,7 +17,7 @@ If you execute
  cd ~/rts-2/scripts/rts2saf/sphinx
  make -f Makefile.sphinx  html
  
-to create this documatation the command ``rts2saf_unittest.sh`` within ``unittest.rst`` produces the below presented output.
+to create this documatation the command ``rts2saf_unittest.sh`` and ``rts2saf_coverage.sh`` within ``unittest.rst`` (source of this page) produces the below presented output.
 
 .. |date| date::
 .. |time| date:: %H:%M:%S
@@ -34,3 +34,12 @@ through
   rts2saf_unittest.sh
 
 .. program-output:: ../rts2saf_unittest.sh ../unittest
+
+Output of 
+
+.. code-block:: bash
+
+  rts2saf_coverage.sh
+
+.. program-output:: ../rts2saf_coverage.sh ../unittest
+

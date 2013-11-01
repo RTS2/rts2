@@ -1,4 +1,3 @@
-
 rts2saf Bootes-2 configuration with comments
 ============================================
 

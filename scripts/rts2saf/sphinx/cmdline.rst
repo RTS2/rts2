@@ -1,3 +1,6 @@
+.. _sec_scripts-label:
+
+
 Scripts
 =======
 
