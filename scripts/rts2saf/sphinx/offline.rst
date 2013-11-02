@@ -21,8 +21,7 @@ Option ``--cataloganalysis`` performs the analysis based on the properties avail
    [SExtractor]
    FIELDS = EXT_NUMBER,X_IMAGE,Y_IMAGE,MAG_BEST,FLAGS,CLASS_STAR,FWHM_IMAGE,A_IMAGE,B_IMAGE
 
-and others can be added at will. Specify the module filename without postfix ``.py`` as argument 
-of option ``--criteria``. To use a criteria you have to implement at least a class ``Criteria``
+and others can be added at will.  To use a criteria you have to implement at least a class ``Criteria``
 with a method named ``decide()``:
 
 .. code-block:: python
@@ -32,7 +31,8 @@ with a method named ``decide()``:
       def decide(self, catalogEntry=None):
          return True
 
-This is a simplified version of ``criteria_radius``:
+Specify the module filename without postfix ``.py`` as argument 
+of option ``--criteria``. This is a simplified version of ``criteria_radius``:
 
 .. code-block:: python
 
@@ -116,7 +116,16 @@ and so on.
 
 Focuser temperature model
 -------------------------
-Interactive usage is carried out through
+If the FITS header contains (ambient) temperature a tepmperature model is fitted at the end of the analysis.
+Specify the name of the header element in the configuration file if the default 
+
+.. code-block:: bash
+
+ [fits header mapping]
+ AMBIENTTEMPERATURE = HIERARCH DAVIS.DOME_TMP
+
+does not match. In the above case ``HIERARCH DAVIS.DOME_TMP`` is used as temperature.
+To carry out the analysis watching fitted curves and selected stars use
 
 .. code-block:: bash
 
@@ -134,7 +143,7 @@ values for the temperature model can be retrieved from the log file.
 Monitoring
 ----------
 
-During acquisition, ``rts2saf_analyze.py`` is being executed by EXEC in the background, 
+During acquisition, ``rts2saf_focus.py`` is being executed by EXEC in the background, 
 no plots or images are displayed. To get an idea how an ongoing focus run looks like use
 
 .. code-block:: bash

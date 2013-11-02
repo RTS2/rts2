@@ -41,7 +41,7 @@ To make sure that the ``rts2saf_focus.py`` is executable within RTS2 environment
       cd ~/rts-2/scripts/rts2saf/
       rts2-scriptexec -d C0 -s ' exe ./rts2saf_focus.py '
 
-and check the log file ``/tmp/rts2saf_focus.py.log`` in case the results are not
+and check the log file ``rts2saf_focus.py.log`` in case the results are not
 what you are expecting.
 
 To see script ``rts2saf_imgp.py`` working use:

@@ -24,6 +24,10 @@ and for the documentation install ``sphinx`` and
 
 5) ``pip install sphinxcontrib-programoutput``
 
+Recommended but not necessary install
+
+6) ``coverage`` from https://pypi.python.org/pypi/coverage
+
 During RTS2 installation the rts2saf executable are installed to 
 
 .. code-block:: bash
@@ -46,9 +50,16 @@ In case you modify a rts2saf module issue
 ``rts2saf unittest`` 
 --------------------
 
-Not yet complete but ``unitttest`` may discover the most common installation problems. Before
-executing them edit in both files ``unittest/rts2saf-bootes-2.cfg`` and ``unittest/rts2saf-no-filter-wheel.cfg``
-the lines
+Not yet complete but 
+
+.. code-block:: bash
+
+ cd ~/rts-2/scripts/rts2saf
+ ./rts2saf_unittest.sh
+
+
+may discover the most common installation problems. Before executing them edit in both files 
+``unittest/rts2saf-bootes-2.cfg`` and ``unittest/rts2saf-no-filter-wheel.cfg`` the lines
 
 .. code-block:: bash
 
@@ -56,14 +67,10 @@ the lines
  SEXPATH = /usr/local/bin/sex
  SEXCFG = /usr/local/etc/rts2/rts2saf/rts2saf-sex.cfg
 
-according to your ``SExtractor`` installation. Then execute
-
-.. code-block:: bash
-
- cd ~/rts-2/scripts/rts2saf
- ./rts2saf_unittest.sh
- 
-If not  all tests are ``ok`` please send the output to the author.
+according to your ``SExtractor`` installation. If not  all tests are ``ok`` please 
+send the output together with the log file ``/tmp/unittest.log`` to the author. The execution of a complete focus 
+run within a real RTS2 environment created and distroyed on the fly is explained in 
+:ref:`Testing individual components <sec_unittest-label>`.
 
 
 Wired things
@@ -104,19 +111,14 @@ or it fails completely then add in section
 RTS2 configuration file
 -----------------------
 
-Save  ``/etc/rts2/devices`` and replace it with the dummy devices
+At the beginning use RTS2 dummy devices. Save  ``/etc/rts2/devices`` and replace it with
  
 .. code-block:: bash
 
- cd ~/rts-2/conf/
- sudo mkdir -p /usr/local/etc/rts2/
- sudo cp -a rts2saf /usr/local/etc/rts2/
  cd /etc/rts2/
  mv devices devices.save
- ln -s ~/rts-2/scripts/rts2saf/configs/one-filter-wheel/devices .
+ ln -s ~/rts-2/scripts/rts2saf/configs/one-filter-wheel/devices  # you might specify full path
 
-Edit ``/usr/local/etc/rts2/rts2af/rts2saf.cfg``  and check if 
-``SExtractor`` binary is found.
 
 rts2saf configuration files
 ---------------------------
@@ -124,6 +126,15 @@ rts2saf needs two configuration files to be present in ``/usr/local/etc/rts2/rts
 
 1) ``rts2saf.cfg``
 2) ``rts2saf-sex.cfg``
+
+.. code-block:: bash
+
+ cd ~/rts-2/conf/
+ sudo mkdir -p /usr/local/etc/rts2/
+ sudo cp -a rts2saf /usr/local/etc/rts2/
+
+
+Edit ``/usr/local/etc/rts2/rts2af/rts2saf.cfg``  and check if  ``SExtractor`` binary is found.
 
 ``rts2saf.cfg`` is used by rts2saf and ``rts2saf-sex.cfg`` by ``SExtractor``. A usable example for the latter is stored in ``~/rts-2/conf/rts2saf``. In directory ``~/rts-2/scripts/rts2saf/configs``
 
@@ -171,5 +182,5 @@ The dummy devices are usually added  by the script
   ./rts2-configdb stars -c C0
   ./rts2-configdb stars -f W0
 
-The filters are stored in the Postgres DB table filters. These entries are not strictly necessary 
+The filters are stored in the Postgres DB table ``filters``. These entries are not strictly necessary 
 but it is recommended to add them.

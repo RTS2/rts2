@@ -85,7 +85,7 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanObjects:\n{0}'.format(e))
 
         try:
-            if self.debug: self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
+            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanObjects:\n{0}'.format(e))
         # Weighted mean based on median FWHM
@@ -96,7 +96,7 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanFwhm:\n{0}'.format(e))
 
         try:
-            self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
+            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanFwhm:\n{0}'.format(e))
         # Weighted mean based on median std(FWHM)
@@ -107,7 +107,7 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanStdFwhm:\n{0}'.format(e))
 
         try:
-            self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from std(FWHM)'.format(int(weightedMeanStdFwhm)))
+            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from std(FWHM)'.format(int(weightedMeanStdFwhm)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanStdFwhm:\n{0}'.format(e))
         # Weighted mean based on a combination of variables
@@ -122,14 +122,14 @@ class SimpleAnalysis(object):
             self.logger.warn('analyze: can not calculate weightedMeanCombined:\n{0}'.format(e))
 
         try:
-            self.logger.debug('analyze: FOC_DEF: {0:5d} : weighted mean derived from Combined'.format(int(weightedMeanCombined)))
+            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from Combined'.format(int(weightedMeanCombined)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanCombined:\n{0}'.format(e))
         
         minFitPos, minFitFwhm, fitPar= self.__fit(dFwhm=dFwhm)
 
         if minFitPos:
-            if self.debug: self.logger.debug('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, dFwhm.ambientTemp))
+            self.logger.info('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, dFwhm.ambientTemp))
         else:
             self.logger.warn('analyze: fit failed')
 
