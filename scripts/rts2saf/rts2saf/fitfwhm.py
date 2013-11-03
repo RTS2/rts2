@@ -47,34 +47,30 @@ class FitFwhm(object):
         self.par=None
         self.flag=None
         self.min_focpos_fwhm=float('nan')
-        self.fitfunc_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
-        self.errfunc_fwhm = lambda p, x, y, res, err: (y - self.fitfunc_fwhm(p, x)) / (res * err) # ToDo why err
-        self.fitfunc_r_fwhm = lambda x, p0, p1, p2, p3, p4: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 4) 
-        # ToDO I want this:
-        #self.fitfunc_r_fwhm = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4) 
-        # resp:
-        # self.fitfunc_r_fwhm==self.fitfunc_fwhm
+        self.f = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
+        self.e = lambda p, x, y, res, err: (y - self.f(x, p)) / (res * err) 
         self.val_fwhm=None
 
     def fitData(self):
-        self.par= np.array([1., 1., 1., 1., 1.])
+        self.par= np.array([1., 1., 1., 1.])
         try:
-            self.par, self.flag  = optimize.leastsq(self.errfunc_fwhm, self.par, args=(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, self.dataFitFwhm.errx, self.dataFitFwhm.stdFwhm))
+            self.par, self.flag  = optimize.leastsq(self.e, self.par, args=(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, self.dataFitFwhm.errx, self.dataFitFwhm.stdFwhm))
         except Exception, e:
             self.logger.error('fitfwhm: fitData: failed fitting FWHM:\nnumpy error message:\n{0}'.format(e))                
             return None, None, None
+
         # ToDo lazy
         posS=sorted(self.dataFitFwhm.pos)
         step= posS[1]-posS[0]
         try:
-            self.min_focpos_fwhm = optimize.fminbound(self.fitfunc_r_fwhm,min(self.dataFitFwhm.pos)-2 * step, max(self.dataFitFwhm.pos)+2 * step,args=(self.par), disp=0)
+            self.min_focpos_fwhm = optimize.fminbound(self.f,x1=min(self.dataFitFwhm.pos)-2 * step, x2=max(self.dataFitFwhm.pos)+2 * step, args=[self.par])
         except Exception, e:
             self.logger.error('fitfwhm: fitData: failed finding minimum FWHM:\nnumpy error message:\n{0}'.format(e))                
             return None, None, None
 
-        self.val_fwhm= self.fitfunc_fwhm( self.par, self.min_focpos_fwhm) 
+        self.val_fwhm= self.f(x=self.min_focpos_fwhm, p=[self.par[0], self.par[1],self.par[2],self.par[3]]) 
         # a decision is done in Analyze
-        return self.min_focpos_fwhm, self.val_fwhm, self.par
+        return self.min_focpos_fwhm, self.val_fwhm, self.par, self.flag
 
     def plotData(self):
         #if not self.min_focpos_fwhm:
@@ -84,11 +80,12 @@ class FitFwhm(object):
         except Exception, e:
             self.logger.error('fitfwhm: numpy error:\n{0}'.format(e))                
             return e
+
         plt.plot(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, 'ro', color='blue')
         plt.errorbar(self.dataFitFwhm.pos, self.dataFitFwhm.fwhm, xerr=self.dataFitFwhm.errx, yerr=self.dataFitFwhm.stdFwhm, ecolor='black', fmt=None)
 
         if self.flag:
-            plt.plot(x_fwhm, self.fitfunc_fwhm(self.par, x_fwhm), 'r-', color='blue')
+            plt.plot(x_fwhm, self.f(x_fwhm, p=[self.par[0], self.par[1],self.par[2],self.par[3]]), 'r-', color='blue')
             
         if self.comment:
             plt.title('rts2saf, {0},{1},{2}C,min:{3:.0f},{4}'.format(self.date, self.dataFitFwhm.ftName, self.dataFitFwhm.ambientTemp, float(self.min_focpos_fwhm), self.comment), fontsize=12)

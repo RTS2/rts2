@@ -55,15 +55,15 @@ class TestFitFwhm(unittest.TestCase):
             ambientTemp='21.3',
             plotFn= self.plotFnIn)
 
-        self.ft = FitFwhm(showPlot=False, date=date,  comment='unittest', dataFitFwhm=dataFitFwhm, logger=logger)
+        self.ft = FitFwhm(showPlot=True, date=date,  comment='unittest', dataFitFwhm=dataFitFwhm, logger=logger)
 
     def test_fitData(self):
-        min_focpos_fwhm, val_fwhm, par= self.ft.fitData()
+        min_focpos_fwhm, val_fwhm, par, flag= self.ft.fitData()
         self.assertAlmostEqual(min_focpos_fwhm, 2499.46590330489240, places=3, msg='return value: {}'.format(min_focpos_fwhm))
                                                
     #@unittest.skip('feature not yet implemented')
     def test_plotData(self):
-        min_focpos_fwhm, val_fwhm, par= self.ft.fitData()
+        min_focpos_fwhm, val_fwhm, par, flag= self.ft.fitData()
         plotFnOut=self.ft.plotData()
         self.assertEqual(self.plotFnIn, plotFnOut)
 

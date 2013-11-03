@@ -126,7 +126,7 @@ class SimpleAnalysis(object):
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanCombined:\n{0}'.format(e))
         
-        minFitPos, minFitFwhm, fitPar= self.__fit(dFwhm=dFwhm)
+        minFitPos, minFitFwhm, fitPar, fitFlag= self.__fit(dFwhm=dFwhm)
 
         if minFitPos:
             self.logger.info('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, dFwhm.ambientTemp))
@@ -142,7 +142,8 @@ class SimpleAnalysis(object):
             weightedMeanFwhm=weightedMeanFwhm, 
             weightedMeanStdFwhm=weightedMeanStdFwhm, 
             weightedMeanCombined=weightedMeanCombined,
-            fitPar=fitPar
+            fitPar=fitPar,
+            fitFlag=fitFlag
             )
 
     def analyze(self):

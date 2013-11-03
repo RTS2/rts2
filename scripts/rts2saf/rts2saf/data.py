@@ -32,7 +32,7 @@ class DataFitFwhm(object):
         self.nObjs=nObjs
 
 class ResultFitFwhm(object):
-    def __init__(self, ambientTemp=None, ftName=None, minFitPos=None, minFitFwhm=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None, fitPar=None):
+    def __init__(self, ambientTemp=None, ftName=None, minFitPos=None, minFitFwhm=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None, fitPar=None, fitFlag=None):
         self.ambientTemp=ambientTemp
         self.ftName=ftName
         self.minFitPos=minFitPos
@@ -42,6 +42,7 @@ class ResultFitFwhm(object):
         self.weightedMeanStdFwhm=weightedMeanStdFwhm
         self.weightedMeanCombined=weightedMeanCombined
         self.fitPar=fitPar
+        self.fitFlag=fitFlag
 
 class DataSex(object):
     def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None):

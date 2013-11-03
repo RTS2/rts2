@@ -45,6 +45,10 @@ to the CCD driver.
 In addition it provides a tool to analyze previous focus runs offline 
 e.g. in order to create a temperature model.
 
+The method to find the focus is straight forward. Acquire a set of images and 
+determine FWHM using ``SExtractor``. The position of the minimum FWHM, derived
+from the itted function, is the focus.
+
 rts2saf makes use of RTS2's HTTP/JSON interface and hence using the scripts  
 on the command line is encouraged before setting up autonomous operations. The JSON interface 
 eases and speeds up the test phase considerably specially in the early stage
