@@ -40,9 +40,9 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 		_os << _ts.ts;
 		return _os;
 	}
-	if (isnan (_ts.ts))
+	if (!isfinite (_ts.ts))
 	{
-		_os << std::right << std::setw (22) << "---- ";
+		_os << std::right << std::setw (22) << (isinf (_ts.ts) ? "infinite " : "---- ");
 		if (formatLocalTime (_os))
 			_os << *tzname;
 		else
@@ -90,9 +90,9 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 		_os << _td.time_2 - _td.time_1;
 		return _os;
 	}
-	if (isnan (_td.time_1) || isnan (_td.time_2))
+	if (!isfinite (_td.time_1) || !isfinite (_td.time_2))
 	{
-		_os << "na (nan)";
+		_os << ((isinf (_td.time_1) || isinf (_td.time_2)) ? "infinite" : "na (nan)");
 	}
 	else
 	{
@@ -164,9 +164,9 @@ std::ostream & operator << (std::ostream & _os, TimeJDDiff _tjd)
 
 std::ostream & operator << (std::ostream & _os, Percentage _per)
 {
-	if (isnan (_per.per) || isnan (_per.total) || _per.total == 0)
+	if (!isfinite (_per.per) || !isfinite (_per.total) || _per.total == 0)
 	{
-		_os << std::setw (6) << std::right  << "nan";
+		_os << std::setw (6) << std::right  << ((isinf (_per.per) || isinf (_per.total)) ? "infinite" : "nan");
 	}
 	else
 	{
