@@ -20,29 +20,37 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-class DataFitFwhm(object):
-    def __init__(self, plotFn=None, ambientTemp=None, ftName=None, pos=None, fwhm=None, errx=None, stdFwhm=None, nObjs=None):
+class DataFit(object):
+    def __init__(self, plotFn=None, ambientTemp=None, ftName=None, pos=None, val=None, errx=None, erry=None, nObjs=None):
         self.plotFn=plotFn
         self.ambientTemp=ambientTemp
         self.ftName=ftName
         self.pos=pos
-        self.fwhm=fwhm
+        self.val=val
         self.errx=errx
-        self.stdFwhm=stdFwhm
+        self.erry=erry
         self.nObjs=nObjs
 
-class ResultFitFwhm(object):
-    def __init__(self, ambientTemp=None, ftName=None, minFitPos=None, minFitFwhm=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None, fitPar=None, fitFlag=None):
+class ResultMeans(object):
+    def __init__(self, ambientTemp=None, ftName=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None):
+
         self.ambientTemp=ambientTemp
         self.ftName=ftName
-        self.minFitPos=minFitPos
-        self.minFitFwhm=minFitFwhm
         self.weightedMeanObjects=weightedMeanObjects
         self.weightedMeanFwhm=weightedMeanFwhm
         self.weightedMeanStdFwhm=weightedMeanStdFwhm
         self.weightedMeanCombined=weightedMeanCombined
+
+
+class ResultFit(object):
+    def __init__(self, ambientTemp=None, ftName=None, minFitPos=None, minFitVal=None, fitPar=None, fitFlag=None):
+        self.ambientTemp=ambientTemp
+        self.ftName=ftName
+        self.minFitPos=minFitPos
+        self.minFitVal=minFitVal
         self.fitPar=fitPar
         self.fitFlag=fitFlag
+
 
 class DataSex(object):
     def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None):

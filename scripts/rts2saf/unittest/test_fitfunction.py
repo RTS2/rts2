@@ -19,7 +19,7 @@
 
 import unittest
 import os
-from rts2saf.fitfwhm import FitFwhm
+from rts2saf.fitfunction import FitFunction
 
 import logging
 logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -28,12 +28,11 @@ logger = logging.getLogger()
 # sequence matters
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestFitFwhm('test_fitData'))
-    suite.addTest(TestFitFwhm('test_plotData'))
+    suite.addTest(TestFitFunction('test_fitData'))
     return suite
 
 #@unittest.skip('class not yet implemented')
-class TestFitFwhm(unittest.TestCase):
+class TestFitFunction(unittest.TestCase):
 
     def tearDown(self):
         try:
@@ -42,32 +41,29 @@ class TestFitFwhm(unittest.TestCase):
             pass
 
     def setUp(self):
-        from rts2saf.data import DataFitFwhm
+        from rts2saf.data import DataFit
         import numpy as np
         # ugly
         self.plotFnIn='./test-plot.png'
         date = '2013-09-08T09:30:09'
-        dataFitFwhm=DataFitFwhm(
+        dataFitFwhm=DataFit(
             pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
-            fwhm= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
+            val= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
             errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
-            stdFwhm= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
+            erry= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
             ambientTemp='21.3',
             plotFn= self.plotFnIn)
 
-        self.ft = FitFwhm(showPlot=True, date=date,  comment='unittest', dataFitFwhm=dataFitFwhm, logger=logger)
+        self.f = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
+        self.e = lambda p, x, y, res, err: (y - self.f(x, p)) / (res * err) 
+
+        self.ft = FitFunction(dataFit=dataFitFwhm, fitFunc=self.f, errorFunc=self.e, logger=logger)
 
     def test_fitData(self):
         min_focpos_fwhm, val_fwhm, par, flag= self.ft.fitData()
         self.assertAlmostEqual(min_focpos_fwhm, 2499.46590330489240, places=3, msg='return value: {}'.format(min_focpos_fwhm))
                                                
-    #@unittest.skip('feature not yet implemented')
-    def test_plotData(self):
-        min_focpos_fwhm, val_fwhm, par, flag= self.ft.fitData()
-        plotFnOut=self.ft.plotData()
-        self.assertEqual(self.plotFnIn, plotFnOut)
 
 if __name__ == '__main__':
     
-#    suite = unittest.TestLoader().loadTestsFromTestCase(TestFitFwhm)
     unittest.TextTestRunner(verbosity=0).run(suite())
