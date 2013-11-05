@@ -40,9 +40,10 @@ class  FitDisplay(object):
         self.date=date
         self.logger=logger
         self.comment=comment
+        self.fig=None
+        self.ax1=None
 
-
-    def fitDisplay(self, dataFit=None, resultFit=None, fitFunc=None):
+    def fitDisplay(self, dataFit=None, resultFit=None, fitFunc=None, display=False):
 
         try:
             x_pos = np.linspace(dataFit.pos.min(), dataFit.pos.max())
@@ -50,33 +51,33 @@ class  FitDisplay(object):
             self.logger.error('fitDisplay: numpy error:\n{0}'.format(e))                
             return e
 
-        fig = plt.figure()
-        ax1 = fig.add_subplot(111)
+        if self.fig==None:
+            self.fig = plt.figure()
+            self.ax1 = self.fig.add_subplot(111)
 
-        ax1.plot(dataFit.pos, dataFit.val, 'ro', color='blue')
-        ax1.errorbar(dataFit.pos, dataFit.val, xerr=dataFit.errx, yerr=dataFit.erry, ecolor='black', fmt=None)
+        self.ax1.plot(dataFit.pos, dataFit.val, 'ro', color=resultFit.color)
+        self.ax1.errorbar(dataFit.pos, dataFit.val, xerr=dataFit.errx, yerr=dataFit.erry, ecolor='black', fmt=None)
 
         if resultFit.fitFlag:
-            line, = ax1.plot(x_pos, fitFunc(x_pos, p=[ x for x in resultFit.fitPar]), 'r-', color='blue')
+            line, = self.ax1.plot(x_pos, fitFunc(x_pos, p=[ x for x in resultFit.fitPar]), 'r-', color=resultFit.color)
             
-        if type(resultFit.minFitPos)==float:
             if self.comment:
-                ax1.set_title('rts2saf, {0},{1},{2}C,min:{3:.0f},{4}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, float(resultFit.minFitPos), self.comment), fontsize=12)
+                self.ax1.set_title('rts2saf, {0},{1},{2}C,min:{3:.0f},{4}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, float(resultFit.extrFitPos), self.comment), fontsize=12)
             else:
-                ax1.set_title('rts2saf, {0},{1},{2}C,min:{3:.0f}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, float(resultFit.minFitPos)), fontsize=12)
+                self.ax1.set_title('rts2saf, {0},{1},{2}C,min:{3:.0f}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, float(resultFit.extrFitPos)), fontsize=12)
 
-        ax1.set_xlabel('FOC_POS [tick]')
-        ax1.set_ylabel('FWHM [px]')
-        ax1.grid(True)
+        self.ax1.set_xlabel('FOC_POS [tick]')
+        self.ax1.set_ylabel(resultFit.ylabel)
+        self.ax1.grid(True)
 
-            
-        if NODISPLAY:
-            self.logger.warn('fitDisplay: NO $DISPLAY no plot')                
-            return
-        else:
-            fig.show()
-            import time
-            time.sleep(10)
+
+        if display:
+            if NODISPLAY:
+                self.logger.warn('fitDisplay: NO $DISPLAY no plot')                
+                return
+            else:
+                #NO: self.fig.show()
+                plt.show()
         try:
             fig.savefig(dataFit.plotFn)
             return dataFit.plotFn
@@ -84,4 +85,5 @@ class  FitDisplay(object):
             self.logger.error('fitDisplay: can not save plot to: {0}'.format(dataFit.plotFn))
             return e
 
-        return fig, ax1
+        return self.fig
+            

@@ -28,15 +28,17 @@ from scipy import optimize
 
 class FitFunction(object):
     """ Fit function to data and find extrema"""
-    def __init__(self, dataFit=None, fitFunc=None, errorFunc=None, par=None, logger=None):
+    def __init__(self, dataFit=None, fitFunc=None, par=None, recpFunc=None, logger=None):
 
         self.dataFit=dataFit
         self.fitFunc = fitFunc 
-        self.errorFunc = errorFunc 
+        self.errorFunc = lambda p, x, y, res, err: (y - self.fitFunc(x, p))
         self.par= par
+        self.recpFunc=recpFunc
         self.logger=logger
-
+        
     def fitData(self):
+
         try:
             par, flag  = optimize.leastsq(self.errorFunc, self.par, args=(self.dataFit.pos, self.dataFit.val, self.dataFit.errx, self.dataFit.erry))
         except Exception, e:
@@ -48,7 +50,13 @@ class FitFunction(object):
         step= posS[1]-posS[0]
         extr_focpos=float('nan')
         try:
-            extr_focpos = optimize.fminbound(self.fitFunc,x1=min(self.dataFit.pos)-2 * step, x2=max(self.dataFit.pos)+2 * step, args=[par])
+            if self.recpFunc==None:
+                fitFunc=self.fitFunc
+            else:
+                fitFunc=self.recpFunc
+
+            extr_focpos = optimize.fminbound(fitFunc,x1=min(self.dataFit.pos)-2 * step, x2=max(self.dataFit.pos)+2 * step, args=[par])
+
         except Exception, e:
             self.logger.error('fitdata: failed finding extrema:\nnumpy error message:\n{0}'.format(e))                
             return None, None, None, None

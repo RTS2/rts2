@@ -31,6 +31,7 @@ logger = logging.getLogger()
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestSextract('test_sextract'))
+    suite.addTest(TestSextract('test_sextractFlux'))
 
     return suite
 
@@ -41,19 +42,25 @@ class TestSextract(unittest.TestCase):
         pass
 
     def setUp(self):
-        self.rt = Configuration(logger=logger)
-        self.success=self.rt.readConfiguration(fileName='./rts2saf-no-filter-wheel.cfg')
-
-        self.sx = Sextract(debug=False, rt=self.rt, logger=logger)
+        pass
 
     #@unittest.skip('feature not yet implemented')
     def test_sextract(self):
+        rt = Configuration(logger=logger)
+        success=rt.readConfiguration(fileName='./rts2saf-no-filter-wheel.cfg')
+        sx = Sextract(debug=False, rt=rt, logger=logger)
         fitsFn='../samples/20071205025911-725-RA.fits'
-        dSx=self.sx.sextract(fitsFn=fitsFn)
+        dSx=sx.sextract(fitsFn=fitsFn)
         self.assertIs(type(dSx), DataSex, 'no object of type: '.format(type(DataSex)))
         self.assertEqual(fitsFn, dSx.fitsFn, 'install sample FITS from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
 
-
+    def test_sextractFlux(self):
+        rt = Configuration(logger=logger)
+        success=rt.readConfiguration(fileName='./rts2saf-flux.cfg')
+        sx = Sextract(debug=False, rt=rt, logger=logger)
+        fitsFn='../samples/20071205025911-725-RA.fits'
+        dSx=sx.sextract(fitsFn=fitsFn)
+        self.assertEqual(dSx.fields[11], 'FLUXERR_APER', 'return value: {}'.format(dSx.fields[9]))
 if __name__ == '__main__':
     
     unittest.TextTestRunner(verbosity=0).run(suite())

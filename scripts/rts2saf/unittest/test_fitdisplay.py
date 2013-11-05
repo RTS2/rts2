@@ -67,24 +67,25 @@ class TestFitDisplay(unittest.TestCase):
             ambientTemp='21.3',
             plotFn= self.plotFnIn)
 
-
         self.ffwhm = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)  # due to optimize.fminbound
-        self.efwhm = lambda p, x, y, res, err: (y - self.ffwhm(x, p)) / (res * err)   
+        # ToDO, try old function
+        # self.fflux = lambda x, p: p[0] * p[4] / ( p[4] + p[3] * (abs(x - p[1]) ** p[2]))
+        # gaussian
+        self.fflux = lambda x, p: p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2))
+        # find minimum
+        self.recpFlux = lambda x, p: 1./(p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2)))
 
-        self.fflux = lambda x, p: p[0] * p[4] / ( p[4] + p[3] * (abs(x - p[1]) ** p[2]))
-        self.eflux = lambda p, x, y, res: (y - self.fflux(x, p)) / res
-
-
+        
     @unittest.skip('feature not yet implemented')
     def test_FwhmfitDisplay(self):
-        ft = FitFunction(dataFit=self.dataFitFwhm, fitFunc=self.ffwhm, errorFunc=self.efwhm, logger=logger, par=self.parFwhm)
+        ft = FitFunction(dataFit=self.dataFitFwhm, fitFunc=self.ffwhm, logger=logger, par=self.parFwhm)
         min_focpos_fwhm, val_fwhm, par, flag= ft.fitData()
 
         resultFitFwhm=ResultFit(
             ambientTemp='20.1', 
             ftName='UNK',
-            minFitPos=min_focpos_fwhm, 
-            minFitVal=val_fwhm, 
+            extrFitPos=min_focpos_fwhm, 
+            extrFitVal=val_fwhm, 
             fitPar=par,
             fitFlag=flag
             )
@@ -94,35 +95,51 @@ class TestFitDisplay(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_FluxfitDisplay(self):
-        ft = FitFunction(dataFit=self.dataFitFwhm, fitFunc=self.ffwhm, errorFunc=self.efwhm, par=self.parFwhm, logger=logger)
+        ft = FitFunction(dataFit=self.dataFitFwhm, fitFunc=self.ffwhm, par=self.parFwhm, logger=logger)
         min_focpos_fwhm, val_fwhm, par, flag= ft.fitData()
 
-        self.parFlux= np.array([10., min_focpos_fwhm, 1., 0.072, 1. * val_fwhm])
-        ft = FitFunction(dataFit=self.dataFitFlux, fitFunc=self.fflux, errorFunc=self.eflux, par=self.parFlux, logger=logger)
+        if flag!=None:
+            resultFitFwhm=ResultFit(
+                ambientTemp='20.1', 
+                ftName='UNK',
+                extrFitPos=min_focpos_fwhm, 
+                extrFitVal=val_fwhm, 
+                fitPar=par,
+                fitFlag=flag,
+                color='blue',
+                ylabel='FWHM [px]: blue'
+                )
+
+            fd = FitDisplay(date=self.date, comment='unittest', logger=logger)
+            fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=resultFitFwhm, fitFunc=self.ffwhm)
+
+        x=np.array([p for p in self.dataFitFlux.pos])
+        y=np.array([v for v in self.dataFitFlux.val])
+        wmean= np.average(a=x, weights=y) 
+        xy= zip(x,y)
+        wstd = np.std(a=xy) 
+        # scale the values [a.u.]
+        sv = [max(self.dataFitFwhm.val) / max(self.dataFitFlux.val) * x for x in self.dataFitFlux.val]
+        self.dataFitFlux.val=sv
+
+        # gaussian
+        self.parFlux= np.array([ 10., wmean, wstd/4., 2.])
+        ft = FitFunction(dataFit=self.dataFitFlux, fitFunc=self.fflux, par=self.parFlux, recpFunc=self.recpFlux, logger=logger)
         max_focpos_flux, val_flux, par, flag= ft.fitData()
+        print max_focpos_flux, val_flux, par, flag
+        if flag!=None:
+            resultFitFlux=ResultFit(
+                ambientTemp='20.1', 
+                ftName='UNK',
+                extrFitPos=max_focpos_flux, 
+                extrFitVal=val_flux, 
+                fitPar=par,
+                fitFlag=flag,
+                color='red',
+                ylabel='FWHM [px]: blue, Flux [a.u.]:red'
+                )
 
-        resultFitFlux=ResultFit(
-            ambientTemp='20.1', 
-            ftName='UNK',
-            minFitPos=max_focpos_flux, 
-            minFitVal=val_flux, 
-            fitPar=self.parFlux,
-            fitFlag=True
-            )
-        self.fd = FitDisplay(date=self.date, comment='unittest', logger=logger)
-        self.fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=resultFitFlux, fitFunc=self.fflux)
-
-        resultFitFlux=ResultFit(
-            ambientTemp='20.1', 
-            ftName='UNK',
-            minFitPos=max_focpos_flux, 
-            minFitVal=val_flux, 
-            fitPar=par,
-            fitFlag=flag
-            )
-
-        self.fd = FitDisplay(date=self.date, comment='unittest', logger=logger)
-        self.fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=resultFitFlux, fitFunc=self.fflux)
+            fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=resultFitFlux, fitFunc=self.fflux, display=True)
 
 if __name__ == '__main__':
     

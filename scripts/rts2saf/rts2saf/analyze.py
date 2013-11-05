@@ -26,9 +26,14 @@ import copy
 
 from ds9 import *
 
-import rts2saf.data as dt
-import rts2saf.ds9region as ds9r
-import rts2saf.fitfwhm as ft
+#import rts2saf.data as dt
+#import rts2saf.ds9region as ds9r
+#import rts2saf.fitfwhm as ft
+
+from rts2saf.fitfunction import  FitFunction
+from rts2saf.fitdisplay import FitDisplay
+from rts2saf.data import DataFit,ResultFit
+
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
@@ -43,30 +48,25 @@ class SimpleAnalysis(object):
         self.focRes=focRes
         self.ev=ev
         self.logger=logger
-        self.fit=None
+        self.dataFitFwhm=None
+        self.resultFitFwhm=None
+        # ToDo must reside outside
+        self.parFwhm= np.array([1., 1., 1., 1.])
+        self.ffwhm = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)  # due to optimize.fminbound
+        #
+        self.dataFitFlux=None
+        self.resultFitFlux=None
+        # ToDo must reside outside
+        self.parFlux= np.array([1., 1., 1., 1.])
+        self.fflux = lambda x, p: p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2))
+        self.recpFlux = lambda x, p: 1./(p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2)))
+        self.fd=None
 
-    def __fit(self, dFwhm=None):
-        # ToDo make an option
-        comment=None
-        if self.dryFits:
-            comment='dryFits'
-
-        # Fit median FWHM data
-        self.fit=ft.FitFwhm(
-            showPlot=self.FitDisplay, 
-            date=self.ev.startTime[0:19], 
-            comment=comment,  # ToDo, define a sensible value
-            dataFitFwhm=dFwhm, 
-            logger=self.logger)
-
-        return self.fit.fitData()
-
-    def __analyze(self, dFwhm=None):
-
-        nObjsC  = dFwhm.nObjs[:]
-        posC    = dFwhm.pos[:]
-        fwhmC   = dFwhm.fwhm[:]
-        stdFwhmC= dFwhm.stdFwhm[:]
+    def __weightedMeansFwhm(self):
+        nObjsC  = self.dataFitFwhm.nObjs[:]
+        posC    = self.dataFitFwhm.pos[:]
+        fwhmC   = self.dataFitFwhm.val[:]
+        stdFwhmC= self.dataFitFwhm.erry[:]
         while True:
             try:
                 ind=fwhmC.index(0.)
@@ -125,28 +125,121 @@ class SimpleAnalysis(object):
             self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from Combined'.format(int(weightedMeanCombined)))
         except Exception, e:
             self.logger.warn('analyze: can not convert weightedMeanCombined:\n{0}'.format(e))
+
+
+    def __fitFwhm(self):
+        # ToDo make an option
+        comment=None
+        if self.dryFits:
+            comment='dryFits'
         
-        minFitPos, minFitFwhm, fitPar, fitFlag= self.__fit(dFwhm=dFwhm)
+        minFitPos, minFitFwhm, fitPar, fitFlag= FitFunction(
+            dataFit=self.dataFitFwhm, 
+            fitFunc=self.ffwhm, 
+            logger=self.logger, 
+            par=self.parFwhm).fitData()
 
         if minFitPos:
-            self.logger.info('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, dFwhm.ambientTemp))
+            self.logger.info('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, self.dataFitFwhm.ambientTemp))
         else:
             self.logger.warn('analyze: fit failed')
 
-        return dt.ResultFitFwhm(
-            ambientTemp=dFwhm.ambientTemp, 
-            ftName=dFwhm.ftName,
-            minFitPos=minFitPos, 
-            minFitFwhm=minFitFwhm, 
-            weightedMeanObjects=weightedMeanObjects, 
-            weightedMeanFwhm=weightedMeanFwhm, 
-            weightedMeanStdFwhm=weightedMeanStdFwhm, 
-            weightedMeanCombined=weightedMeanCombined,
+        self.resultFitFwhm=ResultFit(
+            ambientTemp=self.dataFitFwhm.ambientTemp, 
+            ftName=self.dataFitFwhm.ftName,
+            extrFitPos=minFitPos, 
+            extrFitVal=minFitFwhm, 
             fitPar=fitPar,
-            fitFlag=fitFlag
+            fitFlag=fitFlag,
+            color='blue',
+            ylabel='FWHM [px]: blue'
             )
 
+        self.date='2013'
+        self.fd = FitDisplay(date=self.date, comment='unittest', logger=self.logger)
+        self.fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, fitFunc=self.ffwhm)
+
+
+    def __fitFlux(self):
+        i_flux = self.dataSex[0].fields.index('FLUX_MAX')
+        # very ugly
+        pos=list()
+        flux=list()
+        errx=list()
+        stdFlux=list()
+        nObjs=list()
+        for dSx in self.dataSex:
+            fluxv = map(lambda x:x[i_flux], dSx.catalog)
+            dSx.flux=numpy.median(fluxv)
+            dSx.stdFlux= numpy.std(flux)
+            pos.append(dSx.focPos)
+            flux.append(dSx.flux)
+            errx.append(self.focRes)
+            stdFlux.append(dSx.stdFlux/10.) #ToDO
+
+
+        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
+        ftName=self.dataSex[0].ftName
+        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
+        self.dataFitFlux= DataFit(
+            plotFn=plotFn,
+            ambientTemp=self.dataSex[0].ambientTemp, 
+            ftName=self.dataSex[0].ftName, 
+            pos=np.asarray(pos),
+            val=np.asarray(flux),
+            errx=np.asarray(errx),
+            erry=np.asarray(stdFlux), 
+            nObjs=np.asarray(nObjs))
+        x=np.array([p for p in self.dataFitFlux.pos])
+        y=np.array([v for v in self.dataFitFlux.val])
+
+        wmean= np.average(a=x, weights=y) 
+        xy= zip(x,y)
+        wstd = np.std(a=xy) 
+        # scale the values [a.u.]
+        sv = [max(self.dataFitFwhm.val) / max(self.dataFitFlux.val) * x for x in self.dataFitFlux.val]
+        sstd = [max(self.dataFitFwhm.val) / max(self.dataFitFlux.val) * x for x in self.dataFitFlux.erry]
+        self.dataFitFlux.val=sv
+        self.dataFitFlux.erry=sstd
+        # gaussian
+        self.parFlux= np.array([ 10., wmean, wstd/40., 2.])
+        maxFitPos, maxFitFlux, fitPar, fitFlag= FitFunction(
+            dataFit=self.dataFitFlux, 
+            fitFunc=self.fflux, 
+            recpFunc=self.recpFlux,
+            logger=self.logger, 
+            par=self.parFlux).fitData()
+
+        if fitFlag:
+            self.logger.info('analyze: FOC_DEF: {0:5d} : fitted maximum position, {1:4.1f}px Flux, {2} ambient temperature'.format(int(maxFitPos), maxFitFlux, self.dataFitFlux.ambientTemp))
+        else:
+            self.logger.warn('analyze: fit flux failed')
+
+        self.resultFitFlux=ResultFit(
+            ambientTemp=self.dataFitFlux.ambientTemp, 
+            ftName=self.dataFitFlux.ftName,
+            extrFitPos=maxFitPos, 
+            extrFitVal=maxFitFlux, 
+            fitPar=fitPar,
+            fitFlag=fitFlag,
+            color='red',
+            ylabel='FWHM [px]: blue Flux [a.u.]: red'
+            )
+
+        self.date='2013'
+        #fd = FitDisplay(date=self.date, comment='unittest', logger=self.logger)
+        self.fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=self.resultFitFlux, fitFunc=self.fflux, display=True)
+
     def analyze(self):
+        # ToDo lazy                        !!!!!!!!!!
+        # create an average and std 
+        # ToDo decide wich ftName from which ftw!!
+        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
+        ftName=self.dataSex[0].ftName
+        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
+        if self.FitDisplay:
+            self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
+
         # very ugly
         pos=list()
         fwhm=list()
@@ -163,17 +256,23 @@ class SimpleAnalysis(object):
             errx.append(self.focRes)
             stdFwhm.append(dSx.stdFwhm)
             nObjs.append(len(dSx.catalog))
-        # ToDo lazy                        !!!!!!!!!!
-        # create an average and std 
-        # ToDo decide wich ftName from which ftw!!
-        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
-        ftName=self.dataSex[0].ftName
-        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
-        if self.FitDisplay:
-            self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
 
-        df=dt.DataFitFwhm(plotFn=plotFn,ambientTemp=self.dataSex[0].ambientTemp, ftName=self.dataSex[0].ftName, pos=np.asarray(pos),fwhm=np.asarray(fwhm),errx=np.asarray(errx),stdFwhm=np.asarray(stdFwhm), nObjs=np.asarray(nObjs))
-        return self.__analyze(dFwhm=df)
+        self.dataFitFwhm= DataFit(
+            plotFn=plotFn,
+            ambientTemp=self.dataSex[0].ambientTemp, 
+            ftName=self.dataSex[0].ftName, 
+            pos=np.asarray(pos),
+            val=np.asarray(fwhm),
+            errx=np.asarray(errx),
+            erry=np.asarray(stdFwhm), 
+            nObjs=np.asarray(nObjs))
+
+        self.__weightedMeansFwhm()
+        self.__fitFwhm()
+        self.__fitFlux()
+
+        return self.resultFitFwhm
+
 
     def display(self):
         # ToDo ugly here
@@ -185,28 +284,29 @@ class SimpleAnalysis(object):
             except:
                 self.logger.warn('analyze: no X-Window DISPLAY, do not plot with mathplotlib and/or ds9')
 
-        if DISPLAY:
-            if self.FitDisplay:
-                self.fit.plotData()
+        if self.FitDisplay:
+            ft=FitDisplay(date=None, logger=self.logger)
+            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, fitFunc=self.ffwhm, display=DISPLAY)
+
             # plot them through ds9
-            if self.Ds9Display:
-                try:
-                    dds9=ds9()
-                except Exception, e:
-                    self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
-                    return 
+        if self.Ds9Display:
+            try:
+                dds9=ds9()
+            except Exception, e:
+                self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
+                return 
 
-                #ToDo cretae new list
-                self.dataSex.sort(key=lambda x: int(x.focPos))
+            # ToDo cretae new list
+            self.dataSex.sort(key=lambda x: int(x.focPos))
 
-                for dSx in self.dataSex:
-                    if dSx.fitsFn:
-                        dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
-                        if not dr.displayWithRegion():
-                            break # something went wrong
-                        time.sleep(1.)
-                    else:
-                        self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
+            for dSx in self.dataSex:
+                if dSx.fitsFn:
+                    dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
+                    if not dr.displayWithRegion():
+                        break # something went wrong
+                    time.sleep(1.)
+                else:
+                    self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
 
 import numpy
 from itertools import ifilterfalse
@@ -291,6 +391,5 @@ class CatalogAnalysis(object):
 
         if self.Ds9Display or self.FitDisplay:
             an.display()
-        self.logger.debug( 'returning accepted'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
         # ToDo here are three objects
         return accRFt, rejRFt, allrFt

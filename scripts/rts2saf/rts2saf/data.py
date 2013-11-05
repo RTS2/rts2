@@ -43,14 +43,15 @@ class ResultMeans(object):
 
 
 class ResultFit(object):
-    def __init__(self, ambientTemp=None, ftName=None, minFitPos=None, minFitVal=None, fitPar=None, fitFlag=None):
+    def __init__(self, ambientTemp=None, ftName=None, extrFitPos=None, extrFitVal=None, fitPar=None, fitFlag=None, color=None, ylabel=None):
         self.ambientTemp=ambientTemp
         self.ftName=ftName
-        self.minFitPos=minFitPos
-        self.minFitVal=minFitVal
+        self.extrFitPos=extrFitPos
+        self.extrFitVal=extrFitVal
         self.fitPar=fitPar
         self.fitFlag=fitFlag
-
+        self.color=color
+        self.ylabel=ylabel
 
 class DataSex(object):
     def __init__(self, fitsFn=None, focPos=None, fwhm=None, stdFwhm=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None):
@@ -70,3 +71,7 @@ class DataSex(object):
         self.ftAName=ftAName
         self.ftBName=ftBName
         self.ftCName=ftCName
+        # ToDo: make a theod for fwhm and flux, source self.catalog
+        # filled in analyze 
+        self.flux=None
+        self.stdFlux=None
