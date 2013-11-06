@@ -47,11 +47,11 @@ to view it or read the latest documents in ./sphinx:
    modules.rst
    moduleindex.rst
 
-Pytyhon unittest
-----------------
+Python unittest
+---------------
 
 Execute in this directory
 
  ./rts2saf_unittest.sh
 
-to see what is missing, mostly it ths the path to the SExtractor.
+to see what is missing, mostly it this the path to the SExtractor.
