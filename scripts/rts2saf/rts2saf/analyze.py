@@ -32,7 +32,7 @@ from ds9 import *
 
 from rts2saf.fitfunction import  FitFunction
 from rts2saf.fitdisplay import FitDisplay
-from rts2saf.data import DataFit,ResultFit
+from rts2saf.data import DataFitFwhm,DataFitFlux,ResultFit
 
 
 class SimpleAnalysis(object):
@@ -50,17 +50,12 @@ class SimpleAnalysis(object):
         self.logger=logger
         self.dataFitFwhm=None
         self.resultFitFwhm=None
-        # ToDo must reside outside
-        self.parFwhm= np.array([1., 1., 1., 1.])
-        self.ffwhm = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)  # due to optimize.fminbound
         #
         self.dataFitFlux=None
         self.resultFitFlux=None
         # ToDo must reside outside
-        self.parFlux= np.array([1., 1., 1., 1.])
-        self.fflux = lambda x, p: p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2))
-        self.recpFlux = lambda x, p: 1./(p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2)))
         self.fd=None
+        self.i_flux=None
 
     def __weightedMeansFwhm(self):
         nObjsC  = self.dataFitFwhm.nObjs[:]
@@ -128,16 +123,11 @@ class SimpleAnalysis(object):
 
 
     def __fitFwhm(self):
-        # ToDo make an option
-        comment=None
-        if self.dryFits:
-            comment='dryFits'
-        
+
         minFitPos, minFitFwhm, fitPar, fitFlag= FitFunction(
             dataFit=self.dataFitFwhm, 
-            fitFunc=self.ffwhm, 
             logger=self.logger, 
-            par=self.parFwhm).fitData()
+            ).fitData()
 
         if minFitPos:
             self.logger.info('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, self.dataFitFwhm.ambientTemp))
@@ -152,63 +142,16 @@ class SimpleAnalysis(object):
             fitPar=fitPar,
             fitFlag=fitFlag,
             color='blue',
-            ylabel='FWHM [px]: blue'
+            ylabel='FWHM [px]: blue',
+            titleResult='fwhm:{0:5d}'.format(int(minFitPos))
             )
 
-        self.date='2013'
-        self.fd = FitDisplay(date=self.date, comment='unittest', logger=self.logger)
-        self.fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, fitFunc=self.ffwhm)
-
-
     def __fitFlux(self):
-        i_flux = self.dataSex[0].fields.index('FLUX_MAX')
-        # very ugly
-        pos=list()
-        flux=list()
-        errx=list()
-        stdFlux=list()
-        nObjs=list()
-        for dSx in self.dataSex:
-            fluxv = map(lambda x:x[i_flux], dSx.catalog)
-            dSx.flux=numpy.median(fluxv)
-            dSx.stdFlux= numpy.std(flux)
-            pos.append(dSx.focPos)
-            flux.append(dSx.flux)
-            errx.append(self.focRes)
-            stdFlux.append(dSx.stdFlux/10.) #ToDO
 
-
-        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
-        ftName=self.dataSex[0].ftName
-        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
-        self.dataFitFlux= DataFit(
-            plotFn=plotFn,
-            ambientTemp=self.dataSex[0].ambientTemp, 
-            ftName=self.dataSex[0].ftName, 
-            pos=np.asarray(pos),
-            val=np.asarray(flux),
-            errx=np.asarray(errx),
-            erry=np.asarray(stdFlux), 
-            nObjs=np.asarray(nObjs))
-        x=np.array([p for p in self.dataFitFlux.pos])
-        y=np.array([v for v in self.dataFitFlux.val])
-
-        wmean= np.average(a=x, weights=y) 
-        xy= zip(x,y)
-        wstd = np.std(a=xy) 
-        # scale the values [a.u.]
-        sv = [max(self.dataFitFwhm.val) / max(self.dataFitFlux.val) * x for x in self.dataFitFlux.val]
-        sstd = [max(self.dataFitFwhm.val) / max(self.dataFitFlux.val) * x for x in self.dataFitFlux.erry]
-        self.dataFitFlux.val=sv
-        self.dataFitFlux.erry=sstd
-        # gaussian
-        self.parFlux= np.array([ 10., wmean, wstd/40., 2.])
         maxFitPos, maxFitFlux, fitPar, fitFlag= FitFunction(
             dataFit=self.dataFitFlux, 
-            fitFunc=self.fflux, 
-            recpFunc=self.recpFlux,
             logger=self.logger, 
-            par=self.parFlux).fitData()
+            ).fitData()
 
         if fitFlag:
             self.logger.info('analyze: FOC_DEF: {0:5d} : fitted maximum position, {1:4.1f}px Flux, {2} ambient temperature'.format(int(maxFitPos), maxFitFlux, self.dataFitFlux.ambientTemp))
@@ -223,12 +166,9 @@ class SimpleAnalysis(object):
             fitPar=fitPar,
             fitFlag=fitFlag,
             color='red',
-            ylabel='FWHM [px]: blue Flux [a.u.]: red'
+            ylabel='FWHM [px]: blue Flux [a.u.]: red',
+            titleResult='fwhm:{0:5d}, flux: {1:5d}'.format(int(self.resultFitFwhm.extrFitPos), int(maxFitPos))
             )
-
-        self.date='2013'
-        #fd = FitDisplay(date=self.date, comment='unittest', logger=self.logger)
-        self.fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=self.resultFitFlux, fitFunc=self.fflux, display=True)
 
     def analyze(self):
         # ToDo lazy                        !!!!!!!!!!
@@ -237,40 +177,37 @@ class SimpleAnalysis(object):
         bPth,fn=os.path.split(self.dataSex[0].fitsFn)
         ftName=self.dataSex[0].ftName
         plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
-        if self.FitDisplay:
-            self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
 
-        # very ugly
-        pos=list()
-        fwhm=list()
-        errx=list()
-        stdFwhm=list()
-        nObjs=list()
-        for dSx in self.dataSex:
-            # all sextracted objects
-            no= len(dSx.catalog)
-            if self.debug: self.logger.debug('analyze: {0:5.0f}, sextracted objects: {1:5d}, filtered: {2:5d}'.format(dSx.focPos, no, dSx.nstars))
-            #
-            pos.append(dSx.focPos)
-            fwhm.append(dSx.fwhm)
-            errx.append(self.focRes)
-            stdFwhm.append(dSx.stdFwhm)
-            nObjs.append(len(dSx.catalog))
+        self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
 
-        self.dataFitFwhm= DataFit(
+        # fwhm
+        self.dataFitFwhm= DataFitFwhm(
+            dataSex=self.dataSex,
             plotFn=plotFn,
             ambientTemp=self.dataSex[0].ambientTemp, 
-            ftName=self.dataSex[0].ftName, 
-            pos=np.asarray(pos),
-            val=np.asarray(fwhm),
-            errx=np.asarray(errx),
-            erry=np.asarray(stdFwhm), 
-            nObjs=np.asarray(nObjs))
-
-        self.__weightedMeansFwhm()
+            ftName=self.dataSex[0].ftName,
+            )
         self.__fitFwhm()
-        self.__fitFlux()
 
+        try:
+            self.i_flux = self.dataSex[0].fields.index('FLUX_MAX')
+        except:
+            pass
+
+        if self.i_flux!=None:
+            self.dataFitFlux= DataFitFlux(
+                dataSex=self.dataSex,
+                dataFitFwhm=self.dataFitFwhm,
+                plotFn=plotFn,
+                ambientTemp=self.dataSex[0].ambientTemp, 
+                ftName=self.dataSex[0].ftName 
+                )
+
+            self.__fitFlux()
+
+        # 
+        self.__weightedMeansFwhm()
+        # ToDo
         return self.resultFitFwhm
 
 
@@ -284,11 +221,17 @@ class SimpleAnalysis(object):
             except:
                 self.logger.warn('analyze: no X-Window DISPLAY, do not plot with mathplotlib and/or ds9')
 
-        if self.FitDisplay:
-            ft=FitDisplay(date=None, logger=self.logger)
-            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, fitFunc=self.ffwhm, display=DISPLAY)
+        
+        ft=FitDisplay(date=None, logger=self.logger)
 
-            # plot them through ds9
+        if self.i_flux==None:
+            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=self.FitDisplay)
+        else:
+            # plot but don't show
+            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=False)
+            ft.fitDisplay(dataFit=self.dataFitFlux, resultFit=self.resultFitFlux, display=self.FitDisplay)
+
+        # plot them through ds9
         if self.Ds9Display:
             try:
                 dds9=ds9()

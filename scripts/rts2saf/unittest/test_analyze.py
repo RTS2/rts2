@@ -88,7 +88,7 @@ class TestSimpleAnalysis(unittest.TestCase):
 
         an.display()
 
-@unittest.skip('class not yet implemented')
+#@unittest.skip('class not yet implemented')
 class TestCatalogAnalysis(unittest.TestCase):
 
     def tearDown(self):

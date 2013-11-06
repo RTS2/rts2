@@ -20,7 +20,6 @@
 import unittest
 import os
 from rts2saf.temperaturemodel import TemperatureFocPosModel
-from rts2saf.data import ResultFitFwhm
 
 import logging
 logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -43,22 +42,24 @@ class TestTemperatureFocPosModel(unittest.TestCase):
             pass
 
     def setUp(self):
-        from rts2saf.data import DataFitFwhm
+        from rts2saf.data import ResultFit
         import numpy as np
-        # ugly
         self.plotFnIn='./test-temperaturemodel-plot.png'
         date = '2013-09-08T09:30:09'
         resultFitFwhm=list()
         for i in range(0,10):
-            resultFitFwhm.append(ResultFitFwhm(ambientTemp=float(i), minFitPos=float( 2 * i)))
+            resultFitFwhm.append(ResultFit(ambientTemp=float(i), extrFitPos=float( 2 * i)))
 
         self.ft = TemperatureFocPosModel(showPlot=False, date=date,  comment='unittest', plotFn=self.plotFnIn, resultFitFwhm=resultFitFwhm, logger=logger)
 
     def test_fitData(self):
         par, flag= self.ft.fitData()
-        # ToDo might not what I want
-        self.assertAlmostEqual(par[0], 8.881784197e-16, places=6, msg='return value: '.format(par[0]))
-                                               
+        if flag:
+            # ToDo might not what I want
+            self.assertAlmostEqual(par[0], 8.881784197e-16, places=6, msg='return value: '.format(par[0]))
+        else:
+            self.assertEqual(0, 1, 'fit failed')
+                            
     #@unittest.skip('feature not yet implemented')
     def test_plotData(self):
         par, flag= self.ft.fitData()

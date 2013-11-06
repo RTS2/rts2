@@ -45,40 +45,46 @@ class TestFitDisplay(unittest.TestCase):
             pass
 
     def setUp(self):
-        from rts2saf.data import DataFit
-        # ugly
+        from rts2saf.data import DataFitFwhm, DataFitFlux, DataSex
+
+        pos       = np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.])
+        fwhm      = np.asarray([   40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.])
+        stdFocPos = np.asarray([   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.])
+        stdFwhm   = np.asarray([    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.])
+        flux      = np.asarray([   2.2,   3.1,   4.8,   7.9,   10.1, 11.2,  11.1,   8.2,  5.4,   3.2,    2.2])
+        stdFlux   = np.asarray([  0.5,    0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5])
+
+        dataSex=list()
+        for i in range( 0, len(pos)-1):
+            dataSex.append(
+                DataSex(
+                    focPos=pos[i],
+                    stdFocPos=stdFocPos[i],
+                    fwhm=fwhm[i],
+                    stdFwhm=stdFwhm[i],
+                    flux=flux[i],
+                    stdFlux=stdFlux[i],
+                    catalog=[1, 2, 3]
+                    )
+                )
         self.plotFnIn='./test-plot.png'
         self.date = '2013-09-08T09:30:09'
-        self.dataFitFwhm=DataFit(
-            pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
-            val= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
-            errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
-            erry= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
+
+        self.dataFitFwhm=DataFitFwhm(
+            dataSex=dataSex,
             ambientTemp='21.3',
             plotFn= self.plotFnIn)
 
-        self.parFwhm= np.array([1., 1., 1., 1.])
 
-        self.dataFitFlux=DataFit(
-            pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
-            val= np.asarray([   2.2, 3.1,   4.8,   7.9,   10.1, 11.2,  11.1,   8.2,  5.4,   3.2,    2.2]),
-            errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
-            erry= np.asarray([  0.5,    0.5,    0.5,    0.5,    0.5,    0.5,    0.5,    0.5,    0.5,    0.5,    0.5]),
+        self.dataFitFlux=DataFitFlux(
+            dataSex=dataSex,
+            dataFitFwhm=self.dataFitFwhm,
             ambientTemp='21.3',
             plotFn= self.plotFnIn)
-
-        self.ffwhm = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)  # due to optimize.fminbound
-        # ToDO, try old function
-        # self.fflux = lambda x, p: p[0] * p[4] / ( p[4] + p[3] * (abs(x - p[1]) ** p[2]))
-        # gaussian
-        self.fflux = lambda x, p: p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2))
-        # find minimum
-        self.recpFlux = lambda x, p: 1./(p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2)))
-
         
-    @unittest.skip('feature not yet implemented')
+    #@unittest.skip('feature not yet implemented')
     def test_FwhmfitDisplay(self):
-        ft = FitFunction(dataFit=self.dataFitFwhm, fitFunc=self.ffwhm, logger=logger, par=self.parFwhm)
+        ft = FitFunction(dataFit=self.dataFitFwhm, logger=logger)
         min_focpos_fwhm, val_fwhm, par, flag= ft.fitData()
 
         resultFitFwhm=ResultFit(
@@ -87,17 +93,19 @@ class TestFitDisplay(unittest.TestCase):
             extrFitPos=min_focpos_fwhm, 
             extrFitVal=val_fwhm, 
             fitPar=par,
-            fitFlag=flag
+            fitFlag=flag,
+            color='blue',
+            ylabel='FWHM [px]: blue',
+            titleResult='fwhm:{0:5d}'.format(int(min_focpos_fwhm))
             )
 
         self.fd = FitDisplay(date=self.date, comment='unittest', logger=logger)
-        self.fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=resultFitFwhm, fitFunc=self.ffwhm)
+        self.fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=resultFitFwhm, display=True)
 
     #@unittest.skip('feature not yet implemented')
     def test_FluxfitDisplay(self):
-        ft = FitFunction(dataFit=self.dataFitFwhm, fitFunc=self.ffwhm, par=self.parFwhm, logger=logger)
+        ft = FitFunction(dataFit=self.dataFitFwhm, logger=logger)
         min_focpos_fwhm, val_fwhm, par, flag= ft.fitData()
-
         if flag!=None:
             resultFitFwhm=ResultFit(
                 ambientTemp='20.1', 
@@ -107,11 +115,12 @@ class TestFitDisplay(unittest.TestCase):
                 fitPar=par,
                 fitFlag=flag,
                 color='blue',
-                ylabel='FWHM [px]: blue'
+                ylabel='FWHM [px]: blue',
+                titleResult='fwhm:{0:5d}'.format(int(min_focpos_fwhm))
                 )
 
             fd = FitDisplay(date=self.date, comment='unittest', logger=logger)
-            fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=resultFitFwhm, fitFunc=self.ffwhm)
+            fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=resultFitFwhm)
 
         x=np.array([p for p in self.dataFitFlux.pos])
         y=np.array([v for v in self.dataFitFlux.val])
@@ -124,9 +133,8 @@ class TestFitDisplay(unittest.TestCase):
 
         # gaussian
         self.parFlux= np.array([ 10., wmean, wstd/4., 2.])
-        ft = FitFunction(dataFit=self.dataFitFlux, fitFunc=self.fflux, par=self.parFlux, recpFunc=self.recpFlux, logger=logger)
+        ft = FitFunction(dataFit=self.dataFitFlux, logger=logger)
         max_focpos_flux, val_flux, par, flag= ft.fitData()
-        print max_focpos_flux, val_flux, par, flag
         if flag!=None:
             resultFitFlux=ResultFit(
                 ambientTemp='20.1', 
@@ -136,10 +144,11 @@ class TestFitDisplay(unittest.TestCase):
                 fitPar=par,
                 fitFlag=flag,
                 color='red',
-                ylabel='FWHM [px]: blue, Flux [a.u.]:red'
+                ylabel='FWHM [px]: blue, Flux [a.u.]:red',
+                titleResult='fwhm:{0:5d}, flux: {1:5d}'.format(int(resultFitFwhm.extrFitPos), int(max_focpos_flux))
                 )
 
-            fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=resultFitFlux, fitFunc=self.fflux, display=True)
+            fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=resultFitFlux, display=True)
 
 if __name__ == '__main__':
     

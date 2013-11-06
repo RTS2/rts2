@@ -28,13 +28,13 @@ from scipy import optimize
 
 class FitFunction(object):
     """ Fit function to data and find extrema"""
-    def __init__(self, dataFit=None, fitFunc=None, par=None, recpFunc=None, logger=None):
+    def __init__(self, dataFit=None, logger=None):
 
         self.dataFit=dataFit
-        self.fitFunc = fitFunc 
+        self.fitFunc=self.dataFit.fitFunc
         self.errorFunc = lambda p, x, y, res, err: (y - self.fitFunc(x, p))
-        self.par= par
-        self.recpFunc=recpFunc
+        self.par= self.dataFit.par
+        self.recpFunc=self.dataFit.recpFunc
         self.logger=logger
         
     def fitData(self):

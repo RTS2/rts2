@@ -41,27 +41,42 @@ class TestFitFunction(unittest.TestCase):
             pass
 
     def setUp(self):
-        from rts2saf.data import DataFit
+        from rts2saf.data import DataFitFwhm, DataFitFlux, DataSex
         import numpy as np
-        # ugly
+        pos       = np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.])
+        fwhm      = np.asarray([   40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.])
+        stdFocPos = np.asarray([   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.])
+        stdFwhm   = np.asarray([    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.])
+        flux      = np.asarray([   2.2,   3.1,   4.8,   7.9,   10.1, 11.2,  11.1,   8.2,  5.4,   3.2,    2.2])
+        stdFlux   = np.asarray([  0.5,    0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5])
+
+        dataSex=list()
+        for i in range( 0, len(pos)-1):
+            dataSex.append(
+                DataSex(
+                    focPos=pos[i],
+                    stdFocPos=stdFocPos[i],
+                    fwhm=fwhm[i],
+                    stdFwhm=stdFwhm[i],
+                    flux=flux[i],
+                    stdFlux=stdFlux[i],
+                    catalog=[1, 2, 3]
+                    )
+                )
+
         self.plotFnIn='./test-plot.png'
-        date = '2013-09-08T09:30:09'
-        dataFitFwhm=DataFit(
-            pos= np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.]),
-            val= np.asarray([ 40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.]),
-            errx= np.asarray([ 20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.,   20.]),
-            erry= np.asarray([  2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.,    2.]),
+        self.date = '2013-09-08T09:30:09'
+
+        self.dataFitFwhm=DataFitFwhm(
+            dataSex=dataSex,
             ambientTemp='21.3',
             plotFn= self.plotFnIn)
 
-        self.f = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)
-        self.e = lambda p, x, y, res, err: (y - self.f(x, p)) / (res * err) 
-
-        self.ft = FitFunction(dataFit=dataFitFwhm, fitFunc=self.f, errorFunc=self.e, logger=logger)
+        self.ft = FitFunction(dataFit=self.dataFitFwhm, logger=logger)
 
     def test_fitData(self):
         min_focpos_fwhm, val_fwhm, par, flag= self.ft.fitData()
-        self.assertAlmostEqual(min_focpos_fwhm, 2499.46590330489240, places=3, msg='return value: {}'.format(min_focpos_fwhm))
+        self.assertAlmostEqual(min_focpos_fwhm, 2507.66745331, places=3, msg='return value: {}'.format(min_focpos_fwhm))
                                                
 
 if __name__ == '__main__':

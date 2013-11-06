@@ -42,8 +42,10 @@ class  FitDisplay(object):
         self.comment=comment
         self.fig=None
         self.ax1=None
+        self.fig = plt.figure()
+        self.ax1 = self.fig.add_subplot(111)
 
-    def fitDisplay(self, dataFit=None, resultFit=None, fitFunc=None, display=False):
+    def fitDisplay(self, dataFit=None, resultFit=None, display=False):
 
         try:
             x_pos = np.linspace(dataFit.pos.min(), dataFit.pos.max())
@@ -51,20 +53,16 @@ class  FitDisplay(object):
             self.logger.error('fitDisplay: numpy error:\n{0}'.format(e))                
             return e
 
-        if self.fig==None:
-            self.fig = plt.figure()
-            self.ax1 = self.fig.add_subplot(111)
-
         self.ax1.plot(dataFit.pos, dataFit.val, 'ro', color=resultFit.color)
         self.ax1.errorbar(dataFit.pos, dataFit.val, xerr=dataFit.errx, yerr=dataFit.erry, ecolor='black', fmt=None)
 
         if resultFit.fitFlag:
-            line, = self.ax1.plot(x_pos, fitFunc(x_pos, p=[ x for x in resultFit.fitPar]), 'r-', color=resultFit.color)
+            line, = self.ax1.plot(x_pos, dataFit.fitFunc(x_pos, p=[ x for x in resultFit.fitPar]), 'r-', color=resultFit.color)
             
             if self.comment:
-                self.ax1.set_title('rts2saf, {0},{1},{2}C,min:{3:.0f},{4}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, float(resultFit.extrFitPos), self.comment), fontsize=12)
+                self.ax1.set_title('rts2saf, {0},{1},{2}C,{3},{4}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, resultFit.titleResult, self.comment), fontsize=12)
             else:
-                self.ax1.set_title('rts2saf, {0},{1},{2}C,min:{3:.0f}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, float(resultFit.extrFitPos)), fontsize=12)
+                self.ax1.set_title('rts2saf, {0},{1},{2}C,{3}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, resultFit.titleResult), fontsize=12)
 
         self.ax1.set_xlabel('FOC_POS [tick]')
         self.ax1.set_ylabel(resultFit.ylabel)

@@ -32,10 +32,7 @@ except:
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize
-try:
-    import lib.data as dtf
-except:
-    import data as dtf
+
 
 class TemperatureFocPosModel(object):
     """ Fit minimum focuser positions as function of temperature"""
@@ -48,31 +45,29 @@ class TemperatureFocPosModel(object):
         self.plotFn=plotFn
         self.resultFitFwhm=resultFitFwhm
         self.fitfunc = lambda p, x: p[0] + p[1] * x 
-        self.errfunc = lambda p, x, y, res, err: (y - self.fitfunc(p, x))/(res * err)
+        self.errfunc = lambda p, x, y, res, err: (y - self.fitfunc(p, x))
         self.temp=list() 
         self.tempErr=list()
         self.minFitPos=list()
         self.minFitPosErr=list()
 
-    def __prepare(self):
-
+    def fitData(self):
         for rFF in self.resultFitFwhm:
             try:
                 self.temp.append(float(rFF.ambientTemp))
             except:
                 self.temp.append(rFF.ambientTemp)
             self.tempErr.append(0.01)
-            self.minFitPos.append(float(rFF.minFitPos))
+            self.minFitPos.append(float(rFF.extrFitPos))
             self.minFitPosErr.append(2.5) 
 
-    def fitData(self):
-        self.__prepare()
-        self.par= np.array([1., 1.])
+        par= np.array([1., 1.])
+        self.flag=None
         try:
-            self.par, self.flag  = optimize.leastsq(self.errfunc, self.par, args=(np.asarray(self.temp), np.asarray(self.minFitPos),np.asarray(self.tempErr),np.asarray(self.minFitPosErr)))
+            self.par, self.flag  = optimize.leastsq(self.errfunc, par, args=(np.asarray(self.temp), np.asarray(self.minFitPos),np.asarray(self.tempErr),np.asarray(self.minFitPosErr)))
         except Exception, e:
-            self.logger.error('temperaturemodel: fitData: failed fitting model:\nnumpy error message:\n{0}'.format(e))                
             return None, None
+
 
         return self.par, self.flag
 

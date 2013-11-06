@@ -37,6 +37,7 @@ class Sextract(object):
         self.starnnw=rt.cfg['STARNNW_NAME']
         self.fields=rt.cfg['FIELDS']
         self.nbrsFtwsInuse=len(rt.cfg['FILTER WHEELS INUSE'])
+        self.stdFocPos=rt.cfg['FOCUSER_RESOLUTION']
         self.logger=logger
 
 
@@ -143,6 +144,7 @@ class Sextract(object):
         dataSex=DataSex(
             fitsFn=fitsFn, 
             focPos=focPos, 
+            stdFocPos=float(self.stdFocPos), # nothing real...
             fwhm=float(fwhm), 
             stdFwhm=float(stdFwhm),
             nstars=int(nstars), 
@@ -158,7 +160,12 @@ class Sextract(object):
             ftBName=ftBName, 
             ftCName=ftCName)
 
+        try:
+            i_flux = dataSex.fields.index('FLUX_MAX')
+            dataSex.fillFlux(i_flux=i_flux)
+        except:
+            if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFno))
+
         if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
         return dataSex
-
