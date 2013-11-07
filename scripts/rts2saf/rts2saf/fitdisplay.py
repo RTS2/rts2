@@ -77,7 +77,7 @@ class  FitDisplay(object):
                 #NO: self.fig.show()
                 plt.show()
         try:
-            fig.savefig(dataFit.plotFn)
+            self.fig.savefig(dataFit.plotFn)
             return dataFit.plotFn
         except Exception, e:
             self.logger.error('fitDisplay: can not save plot to: {0}'.format(dataFit.plotFn))

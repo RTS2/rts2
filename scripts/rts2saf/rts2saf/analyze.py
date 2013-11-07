@@ -26,14 +26,9 @@ import copy
 
 from ds9 import *
 
-#import rts2saf.data as dt
-#import rts2saf.ds9region as ds9r
-#import rts2saf.fitfwhm as ft
-
 from rts2saf.fitfunction import  FitFunction
 from rts2saf.fitdisplay import FitDisplay
-from rts2saf.data import DataFitFwhm,DataFitFlux,ResultFit
-
+from rts2saf.data import DataFitFwhm,DataFitFlux,ResultFit, ResultMeans
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
@@ -57,71 +52,6 @@ class SimpleAnalysis(object):
         self.fd=None
         self.i_flux=None
 
-    def __weightedMeansFwhm(self):
-        nObjsC  = self.dataFitFwhm.nObjs[:]
-        posC    = self.dataFitFwhm.pos[:]
-        fwhmC   = self.dataFitFwhm.val[:]
-        stdFwhmC= self.dataFitFwhm.erry[:]
-        while True:
-            try:
-                ind=fwhmC.index(0.)
-            except:
-                break
-            del nObjsC[ind] # not strictly necessary
-            del posC[ind]
-            del fwhmC[ind]
-            del stdFwhmC[ind]
-
-        # Weighted mean based on number of extracted objects (stars)
-        weightedMeanObjects=None
-        try:
-            weightedMeanObjects= np.average(a=dFwhm.pos, axis=0, weights=nObjsC)
-        except Exception, e:
-            self.logger.warn('analyze: can not calculate weightedMeanObjects:\n{0}'.format(e))
-
-        try:
-            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from sextracted objects'.format(int(weightedMeanObjects)))
-        except Exception, e:
-            self.logger.warn('analyze: can not convert weightedMeanObjects:\n{0}'.format(e))
-        # Weighted mean based on median FWHM
-        weightedMeanFwhm=None
-        try:
-            weightedMeanFwhm= np.average(a=posC, axis=0, weights=map( lambda x: 1./x, fwhmC)) 
-        except Exception, e:
-            self.logger.warn('analyze: can not calculate weightedMeanFwhm:\n{0}'.format(e))
-
-        try:
-            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from FWHM'.format(int(weightedMeanFwhm)))
-        except Exception, e:
-            self.logger.warn('analyze: can not convert weightedMeanFwhm:\n{0}'.format(e))
-        # Weighted mean based on median std(FWHM)
-        weightedMeanStdFwhm=None
-        try:
-            weightedMeanStdFwhm= np.average(a=posC, axis=0, weights=map( lambda x: 1./x, stdFwhmC)) 
-        except Exception, e:
-            self.logger.warn('analyze: can not calculate weightedMeanStdFwhm:\n{0}'.format(e))
-
-        try:
-            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from std(FWHM)'.format(int(weightedMeanStdFwhm)))
-        except Exception, e:
-            self.logger.warn('analyze: can not convert weightedMeanStdFwhm:\n{0}'.format(e))
-        # Weighted mean based on a combination of variables
-        weightedMeanCombined=None
-        combined=list()
-        for i, v in enumerate(nObjsC):
-            combined.append( nObjsC[i]/(stdFwhmC[i] * fwhmC[i]))
-
-        try:
-            weightedMeanCombined= np.average(a=posC, axis=0, weights=combined)
-        except Exception, e:
-            self.logger.warn('analyze: can not calculate weightedMeanCombined:\n{0}'.format(e))
-
-        try:
-            self.logger.info('analyze: FOC_DEF: {0:5d} : weighted mean derived from Combined'.format(int(weightedMeanCombined)))
-        except Exception, e:
-            self.logger.warn('analyze: can not convert weightedMeanCombined:\n{0}'.format(e))
-
-
     def __fitFwhm(self):
 
         minFitPos, minFitFwhm, fitPar, fitFlag= FitFunction(
@@ -130,7 +60,7 @@ class SimpleAnalysis(object):
             ).fitData()
 
         if minFitPos:
-            self.logger.info('analyze: FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, self.dataFitFwhm.ambientTemp))
+            self.logger.info('analyze: FWHM FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, self.dataFitFwhm.ambientTemp))
         else:
             self.logger.warn('analyze: fit failed')
 
@@ -154,7 +84,7 @@ class SimpleAnalysis(object):
             ).fitData()
 
         if fitFlag:
-            self.logger.info('analyze: FOC_DEF: {0:5d} : fitted maximum position, {1:4.1f}px Flux, {2} ambient temperature'.format(int(maxFitPos), maxFitFlux, self.dataFitFlux.ambientTemp))
+            self.logger.info('analyze: Flux FOC_DEF: {0:5d} : fitted maximum position, {1:4.1f}[a.u.] Flux, {2} ambient temperature'.format(int(maxFitPos), maxFitFlux, self.dataFitFlux.ambientTemp))
         else:
             self.logger.warn('analyze: fit flux failed')
 
@@ -176,7 +106,7 @@ class SimpleAnalysis(object):
         # ToDo decide wich ftName from which ftw!!
         bPth,fn=os.path.split(self.dataSex[0].fitsFn)
         ftName=self.dataSex[0].ftName
-        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/min-fwhm-{1}.png'.format(bPth,ftName))
+        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/{1}.png'.format(bPth,ftName))
 
         self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
 
@@ -188,7 +118,9 @@ class SimpleAnalysis(object):
             ftName=self.dataSex[0].ftName,
             )
         self.__fitFwhm()
-
+        # weighted means
+        self.resultMeansFwhm=ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
+        self.resultMeansFwhm.calculate(var='FWHM')
         try:
             self.i_flux = self.dataSex[0].fields.index('FLUX_MAX')
         except:
@@ -204,10 +136,11 @@ class SimpleAnalysis(object):
                 )
 
             self.__fitFlux()
+            # weighted means
+            self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
+            self.resultMeansFlux.calculate(var='Flux')
 
-        # 
-        self.__weightedMeansFwhm()
-        # ToDo
+        # ToDo make a sensible decission
         return self.resultFitFwhm
 
 

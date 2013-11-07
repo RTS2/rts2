@@ -81,16 +81,80 @@ class DataFitFlux(DataFit):
         # fit gaussian
         self.par= np.array([ 10., wmean, wstd/40., 2.]) # ToDo !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
 class ResultMeans(object):
-    def __init__(self, ambientTemp=None, ftName=None, weightedMeanObjects=None, weightedMeanFwhm=None, weightedMeanStdFwhm=None, weightedMeanCombined=None):
+    def __init__(self, dataFit=None, logger=None):
+        self.dataFit=dataFit
+        self.logger=logger
+        self.objects=None
+        self.val=None
+        self.stdVal=None
+        self.combined=None
 
-        self.ambientTemp=ambientTemp
-        self.ftName=ftName
-        self.weightedMeanObjects=weightedMeanObjects
-        self.weightedMeanFwhm=weightedMeanFwhm
-        self.weightedMeanStdFwhm=weightedMeanStdFwhm
-        self.weightedMeanCombined=weightedMeanCombined
+        self.nObjsC = self.dataFit.nObjs[:]
+        self.posC   = self.dataFit.pos[:]
+        self.valC   = self.dataFit.val[:]
+        self.stdValC= self.dataFit.erry[:]
+        # remove elements with val=0
+        while True:
+            try:
+                ind=valC.index(0.)
+            except:
+                break # ToDo what happens here really
+            del self.nObjsC[ind] # not strictly necessary
+            del self.posC[ind]
+            del self.valC[ind]
+            del self.stdValC[ind]
+
+    def calculate(self, var=None):
+        # Weighted mean based on number of extracted objects (stars)
+        try:
+            self.objects= np.average(a=self.posC, axis=0, weights=self.nObjsC)
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not calculate weightedMeanObjects:\n{0}'.format(e))
+
+        try:
+            self.logger.info('ResultMeans: FOC_DEF: {0:5d} : weighted mean derived from sextracted objects'.format(int(self.objects)))
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not convert weightedMeanObjects:\n{0}'.format(e))
+        # Weighted mean based on median FWHM, Flux
+        if var in 'FWHM':
+            wght= [ 1./x for x in  self.valC ]
+        else:
+            wght= [ x for x in  self.valC ]
+
+        try:
+            self.val= np.average(a=self.posC, axis=0, weights=wght) 
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not calculate weightedMean{0}:\n{0}'.format(var,e))
+
+        try:
+            self.logger.info('ResultMeans: FOC_DEF: {0:5d} : weighted mean derived from {1}'.format(int(self.val), var))
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not convert weightedMean{0}:\n{1}'.format(var,e))
+        # Weighted mean based on median std(FWHM, Flux)
+        try:
+            self.stdVal= np.average(a=self.posC, axis=0, weights=[ 1./x for x in  self.stdValC]) 
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not calculate weightedMeanStd{0}:\n{1}'.format(var,e))
+
+        try:
+            self.logger.info('ResultMeans: FOC_DEF: {0:5d} : weighted mean derived from std({1})'.format(int(self.stdVal), var))
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not convert weightedMeanStd{0}:\n{1}'.format(var,e))
+        # Weighted mean based on a combination of variables
+        combined=list()
+        for i, v in enumerate(self.nObjsC):
+            combined.append( self.nObjsC[i]/(self.stdValC[i] * self.valC[i]))
+
+        try:
+            self.combined= np.average(a=self.posC, axis=0, weights=combined)
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not calculate weightedMeanCombined{0}:\n{1}'.format(var,e))
+
+        try:
+            self.logger.info('ResultMeans: FOC_DEF: {0:5d} : weighted mean derived from Combined{1}'.format(int(self.combined),var))
+        except Exception, e:
+            self.logger.warn('ResultMeans: can not convert weightedMeanCombined{0}:\n{1}'.format(var, e))
 
 
 class ResultFit(object):

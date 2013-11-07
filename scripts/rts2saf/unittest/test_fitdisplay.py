@@ -100,7 +100,7 @@ class TestFitDisplay(unittest.TestCase):
             )
 
         self.fd = FitDisplay(date=self.date, comment='unittest', logger=logger)
-        self.fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=resultFitFwhm, display=True)
+        self.fd.fitDisplay(dataFit=self.dataFitFwhm, resultFit=resultFitFwhm, display=False)
 
     #@unittest.skip('feature not yet implemented')
     def test_FluxfitDisplay(self):
@@ -148,7 +148,7 @@ class TestFitDisplay(unittest.TestCase):
                 titleResult='fwhm:{0:5d}, flux: {1:5d}'.format(int(resultFitFwhm.extrFitPos), int(max_focpos_flux))
                 )
 
-            fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=resultFitFlux, display=True)
+            fd.fitDisplay(dataFit=self.dataFitFlux, resultFit=resultFitFlux, display=False)
 
 if __name__ == '__main__':
     

@@ -82,7 +82,8 @@ class TestSimpleAnalysis(unittest.TestCase):
                 dataSex.append(dSx)
 
         self.assertEqual(len(dataSex), 14, 'return value: {}'.format(len(dataSex)))
-        an=SimpleAnalysis(debug=False, dataSex=dataSex, Ds9Display=False, FitDisplay=True, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=logger)
+
+        an=SimpleAnalysis(debug=False, dataSex=dataSex, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=logger)
         resultFitFwhm=an.analyze()
         self.assertAlmostEqual(resultFitFwhm.extrFitVal, 2.2175214358, places=3, msg='return value: {}'.format(resultFitFwhm.extrFitVal))
 
