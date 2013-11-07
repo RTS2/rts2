@@ -55,7 +55,6 @@ if __name__ == '__main__':
     parser.add_argument('--blind', dest='blind', action='store_true', default=False, help=': %(default)s, focus range and step size are defined in configuration, if --focrange is defined it is used to set the range')
     parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
-    parser.add_argument('--fetchoffsets', dest='fetchOffsets', action='store_true', default=False, help=': %(default)s, fetch filter offsets from CCD')
     parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
     parser.add_argument('--criteria', dest='criteria', action='store', default='rts2saf.criteria_radius', help=': %(default)s, CatalogAnalysis criteria Python module to load at run time')
 
@@ -116,8 +115,8 @@ if __name__ == '__main__':
     if ftws==None or not isinstance(ftws[0], FilterWheel):
         logger.error('rts2saf_focus: could not create object for filter wheel: {}, exiting'.format(rt.cfg['FILTER WHEELS INUSE']))
         sys.exit(1)
-
-    ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, fetchOffsets=args.fetchOffsets, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    # offsets must be fetched at this point, but not in unittest
+    ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, fetchOffsets=True, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
     if ccd==None or not isinstance(ccd, CCD):
         logger.error('rts2saf_focus: could not create object for CCD: {}, exiting'.format(rt.cfg['CCD_NAME']))
         sys.exit(1)
@@ -127,11 +126,11 @@ if __name__ == '__main__':
         logger.error('rts2saf_focus: filter focus ranges out of bounds, exiting')
         sys.exit(1)
 
+    # check the presence of the devices and if there is an empty slot on each wheel
+    cdv= CheckDevices(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, ccd=ccd, ftws=ftws, foc=foc, logger=logger)
+    cdv.summaryDevices()
     # while called from IMGP hopefully every device is there
     if args.checkConfig:
-        # check the presence of the devices and if there is an empty slot on each wheel
-        cdv= CheckDevices(debug=args.debug, proxy=proxy, blind=args.blind, verbose=args.verbose, ccd=ccd, ftws=ftws, foc=foc, logger=logger)
-        cdv.summaryDevices()
 
         # are devices writable
         if not cdv.deviceWriteAccess():
@@ -141,8 +140,6 @@ if __name__ == '__main__':
 
         logger.info('rts2saf_focus: configuration check done for config file:{0}, exiting'.format(args.config))
         sys.exit(1)
-    else:
-        cdv.summaryDevices()
 
     # these files are injected in case no actual night sky images are available
     # neverthless ccd is exposing, filter wheels and focuser are moving

@@ -141,7 +141,7 @@ class SimpleAnalysis(object):
             self.resultMeansFlux.calculate(var='Flux')
 
         # ToDo make a sensible decission
-        return self.resultFitFwhm
+        return self.resultFitFwhm, self.resultMeansFwhm
 
 
     def display(self):
@@ -238,7 +238,7 @@ class CatalogAnalysis(object):
 
         # 
         an=SimpleAnalysis(debug=self.debug, dataSex=acceptedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
-        accRFt=an.analyze()
+        accRFt, accRMns=an.analyze()
         try:
             self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
         except:
@@ -248,7 +248,7 @@ class CatalogAnalysis(object):
             an.display()
         #
         an=SimpleAnalysis(debug=self.debug, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
-        rejRFt=an.analyze()
+        rejRFt, recRMns=an.analyze()
         try:
             self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFt.weightedMeanObjects, rejRFt.weightedMeanCombined, rejRFt.minFitPos, rejRFt.minFitFwhm))
         except:
@@ -258,7 +258,7 @@ class CatalogAnalysis(object):
             an.display()
         # 
         an=SimpleAnalysis(debug=self.debug, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
-        allrFt=an.analyze()
+        allrFt, allRMns=an.analyze()
         try:
             self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFt.weightedMeanObjects, allRFt.weightedMeanCombined, allRFt.minFitPos, allRFt.minFitFwhm))
         except:
@@ -268,4 +268,4 @@ class CatalogAnalysis(object):
         if self.Ds9Display or self.FitDisplay:
             an.display()
         # ToDo here are three objects
-        return accRFt, rejRFt, allrFt
+        return accRFt, rejRFt, allrFt, accRMns, recRMns, allRMns

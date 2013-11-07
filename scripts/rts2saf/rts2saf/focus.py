@@ -22,7 +22,7 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import Queue
 import sys
-
+import collections
 import rts2saf.acquire as acq
 import rts2saf.sextract as sx
 import rts2saf.analyze as  an
@@ -96,14 +96,10 @@ class Focus(object):
                     if self.debug: self.logger.debug('Focus: got all images')
 
                 acqu.stopScan(timeout=1.)
-
-                pos=dict()
-                # ToDO might be not pythonic
+                
+                pos=collections.defaultdict(int)
                 for dSx in dataSex:
-                    try:
-                        pos[dSx.focPos] += 1
-                    except:
-                        pos[dSx.focPos] = 1
+                    pos[dSx.focPos] += 1
 
                 if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                     self.logger.warn('Focus: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
@@ -115,27 +111,27 @@ class Focus(object):
                 # might go to a thread too
                 if self.args.catalogAnalysis:
                     anr=CatalogAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=self.foc.resolution, moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
-                    rFt=anr.selectAndAnalyze()
+                    rFt, rMns=anr.selectAndAnalyze()
                 else:
                     anr= an.SimpleAnalysis(dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
-                    rFt= anr.analyze()
+                    rFt, rMns= anr.analyze()
                 # 
                 anr.display()
 
-                if rFt.weightedMeanObjects:
-                    self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanObjects, ftw.name, ft.name))
-                if rFt.weightedMeanFwhm:
-                    self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm,     filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanFwhm, ftw.name, ft.name))
+                if rMns.objects:
+                    self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(rMns.objects, ftw.name, ft.name))
+                if rMns.val:
+                    self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm,     filter wheel:{1}, filter:{2}'.format(rMns.val, ftw.name, ft.name))
 
-                if rFt.weightedMeanStdFwhm:
-                    self.logger.info('Focus: {0:5.0f}: weightedMeanStdFwhm,  filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanStdFwhm, ftw.name, ft.name))
+                if rMns.stdVal:
+                    self.logger.info('Focus: {0:5.0f}: weightedMeanStdFwhm,  filter wheel:{1}, filter:{2}'.format(rMns.stdVal, ftw.name, ft.name))
 
-                if rFt.weightedMeanCombined:
-                    self.logger.info('Focus: {0:5.0f}: weightedMeanCombined, filter wheel:{1}, filter:{2}'.format(rFt.weightedMeanCombined, ftw.name, ft.name))
+                if rMns.combined:
+                    self.logger.info('Focus: {0:5.0f}: weightedMeanCombined, filter wheel:{1}, filter:{2}'.format(rMns.combined, ftw.name, ft.name))
 
-                if rFt.minFitPos:
-                    self.logger.info('Focus: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFt.minFitPos, ftw.name, ft.name))
-                    self.logger.info('Focus: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFt.minFitFwhm, ftw.name, ft.name))
+                if rFt.extrFitPos:
+                    self.logger.info('Focus: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFt.extrFitPos, ftw.name, ft.name))
+                    self.logger.info('Focus: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFt.extrFitVal, ftw.name, ft.name))
                 else:
                     self.logger.warn('Focus: no fitted minimum found')
 
@@ -147,7 +143,7 @@ class Focus(object):
                     if self.args.blind:
                         self.foc.focDef= rFt.weightedMeanCombined
                     else:
-                        self.foc.focDef= rFt.minFitPos
+                        self.foc.focDef= rFt.extrFitPos
                     if self.debug: self.logger.debug('Focus: set self.foc.focDef: {0}'.format(int(self.foc.focDef)))
 
                     # FOC_DEF (is set first)
@@ -155,15 +151,15 @@ class Focus(object):
                         # ToDo th correct values are stored in Focuser() object
                         if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
                             acqu.writeFocDef()
-                            self.logger.info('Focus: set FOC_DEF: {0}'.format(int(rFt.minFitPos)))
+                            self.logger.info('Focus: set FOC_DEF: {0}'.format(int(rFt.extrFitPos)))
                         else:
-                            self.logger.warn('Focus: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3} (FWHM_MIN,FWHM_MAX)'.format(int(rFt.minFitPos), rFt.minFitFwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+                            self.logger.warn('Focus: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3} (FWHM_MIN,FWHM_MAX)'.format(int(rFt.extrFitPos), rFt.minFitFwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
                     else:
                         # ToDo subtract filter offset and set FOC_DEF
                         self.logger.info('Focus: filter: {0} not setting FOC_DEF (see configuration)'.format(ft.name))
 
                 else:
-                    ft.OffsetToEmptySlot=int(rFt.minFitPos- self.foc.focDef)
+                    ft.OffsetToEmptySlot=int(rFt.extrFitPos- self.foc.focDef)
                     if self.debug: self.logger.debug('Focus: set ft.OffsetToEmptySlot: {0}'.format(int(ft.OffsetToEmptySlot)))
 
                 if self.debug: self.logger.debug('Focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))

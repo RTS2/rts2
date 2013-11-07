@@ -330,7 +330,24 @@ class Configuration(DefaultConfiguration):
             self.logger.warn( 'Configuration.readConfiguration: SExtractor NNW config file: {0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
             return False
         if not self.cfg['FIELDS']:
-            self.logger.warn( 'Configuration.readConfiguration: no sextractor fields defined')
+            self.logger.warn( 'Configuration.readConfiguration: no sextractor fields defined, returning')
             return False
+
+        ftws = self.cfg['FILTER WHEEL DEFINITIONS'].keys()
+        fts=list()
+        for x in self.cfg['FILTER DEFINITIONS']:
+            ele= x.strip('[]').split(',')
+            fts.append(ele[0])
+
+        for ftw in self.cfg['FILTER WHEELS INUSE']:
+            if ftw  not in ftws:
+                self.logger.warn( 'Configuration.readConfiguration: filter wheel {} not defined in {}'.format(ftw, ftws))
+                return False
+            for ftName in self.cfg['FILTER WHEEL DEFINITIONS'][ftw]:
+                if ftName not in fts:
+                    self.logger.warn( 'Configuration.readConfiguration: filter {} not defined in {}'.format(ftw, self.cfg['FILTER DEFINITIONS']))
+                    return False
+                    
         return True
+
         # more to come

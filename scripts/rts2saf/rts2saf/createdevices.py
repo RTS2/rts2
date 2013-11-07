@@ -81,7 +81,7 @@ class CreateCCD(CreateDevice):
             if not self.ccd.check(proxy=self.proxy):
                 return None
         if self.fetchOffsets:
-            # fetch th filter offsets
+            # fetch the filter offsets
             self.filterOffsets()
 
         return self.ccd
@@ -147,7 +147,6 @@ class CreateCCD(CreateDevice):
                 fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'filter')
                 ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets')
 
-
         for ftw in self.ftws: # defined in configuration
             for ftwn in fts.keys(): # these are filter wheels names read back from CCD
                 if ftwn in ftw.name:
@@ -161,7 +160,8 @@ class CreateCCD(CreateDevice):
                     else:
                         self.logger.warn('filterOffsets: for {0}, {1} {2}'.format(self.ccd.name, ftwn, len(fts[ftwn])))
 
-                    offsets= map(lambda x: x, ftos[ftwn]) 
+                    offsets= [ x for x in ftos[ftwn]] 
+                    
                     # filters and configure offsets           
                     ftIUns= map( lambda x: x.name, ftw.filters) # filters from configuration
                     for k, ftn in enumerate(fts[ftwn]): # filter names only, read back from CCD
@@ -458,12 +458,14 @@ class CreateFilterWheels(CreateDevice):
                         # focuser limits are done in method create()
                         pass
                     else:
-                        try: 
+                        if ft.OffsetToEmptySlot:
                             fto= ft.OffsetToEmptySlot #  it may be still None
-                        except:
+                        else:
                             fto= 0
-                            self.logger.warn('checkBounds: {} has no defined filter offset'.format(ft.name))
+                            ft.OffsetToEmptySlot=0
+                            self.logger.warn('checkBounds: {} has no defined filter offset, setting it to ZERO'.format(ft.name))
 
+                        self.logger.warn('checkBounds: {} {} {}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot))
                         rangeMin=focDef + min(ft.focFoff) + fto
                         rangeMax=focDef + max(ft.focFoff) + fto
                         outOfLlUl=True 
