@@ -36,24 +36,26 @@ import subprocess
 import os
 import tempfile
 import traceback
+import shutil
 
 class Sextractor:
 	"""Class for a catalogue (SExtractor result)"""
-	def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE','EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
+	def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE','EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535, createAssoc=False):
 		self.sexpath = sexpath
 		self.sexconfig = sexconfig
 		self.starnnw = starnnw
-
+		
 		self.fields = fields
 		self.objects = []
 		self.threshold = threshold
 		self.deblendmin = deblendmin
 		self.saturlevel = saturlevel
+		self.createAssoc=createAssoc
 
 	def get_field(self,fieldname):
 		return self.fields.index(fieldname)
 
-	def runSExtractor(self,filename):
+	def runSExtractor(self,filename, assocFn=None):
 	    	pf,pfn = tempfile.mkstemp()
 		ofd,output = tempfile.mkstemp()
 		pfi = os.fdopen(pf,'w')
@@ -62,6 +64,13 @@ class Sextractor:
 		pfi.flush()
 
 		cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
+
+		# this creates the associations
+		if assocFn:
+			cmd.append('-ASSOC_NAME')
+			cmd.append(assocFn)
+			
+		stdo, stde = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 		try:
 			stdo, stde = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 		except OSError,err:
@@ -86,7 +95,11 @@ class Sextractor:
 		of.close()
 
 		os.unlink(pfn)
-		os.unlink(output)
+		# this is the sky list
+		if self.createAssoc:
+			shutil.move(src=output, dst=assocFn)
+		else:
+			os.unlink(output)
 
 	def sortObjects(self,col):
 	        """Sort objects by given collumn."""

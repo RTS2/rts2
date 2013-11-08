@@ -170,7 +170,7 @@ class ResultFit(object):
         self.titleResult=titleResult
 
 class DataSex(object):
-    def __init__(self, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None):
+    def __init__(self, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
         self.fitsFn=fitsFn
         self.focPos=focPos
         self.stdFocPos=stdFocPos
@@ -179,6 +179,11 @@ class DataSex(object):
         self.nstars=nstars
         self.ambientTemp=ambientTemp
         self.catalog=catalog
+        # ToDo ugly
+        try:
+            self.nObjs=len(self.catalog)
+        except:
+            pass
         self.fields=fields
         self.binning=binning 
         self.binningXY=binningXY 
@@ -192,7 +197,7 @@ class DataSex(object):
         # filled in analyze 
         self.flux=flux # unittest!
         self.stdFlux=stdFlux
-
+        self.assocFn=assocFn
 
     def fillFlux(self, i_flux=None):
         fluxv = [x[i_flux] for x in  self.catalog]

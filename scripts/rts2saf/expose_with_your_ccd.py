@@ -26,7 +26,6 @@ import errno
 import argparse
 import re
 import sys
-import shutil
 import time
 # 
 # thanks to: http://stackoverflow.com/questions/2281850/timeout-function-if-it-takes-too-long-to-finish

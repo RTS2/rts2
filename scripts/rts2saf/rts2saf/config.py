@@ -96,7 +96,12 @@ class DefaultConfiguration(object):
         
         self.dcf[('SExtractor', 'SEXPATH')]= 'sextractor'
         self.dcf[('SExtractor', 'SEXCFG')]= '/usr/local/etc/rts2/rts2saf/sex/rts2saf-sex.cfg'
-        self.dcf[('SExtractor', 'FIELDS')]= ['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE']
+        self.dcf[('SExtractor', 'FIELDS')]= ['NUMBER', 'EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE']
+        # ToDo, currently put into default sex.fg
+        # from sextractor config file
+        # ASSOC_PARAMS     3,4          # columns of xpos,ypos[,mag] # rts2af do not use mag
+        # ASSOC_RADIUS     10.0         # cross-matching radius (pixels)
+        # ASSOC_TYPE       NEAREST        # ASSOCiation method: FIRST, NEAREST, MEAN,
         self.dcf[('SExtractor', 'OBJECT_SEPARATION')]= 10.
         self.dcf[('SExtractor', 'ELLIPTICITY')]= .1
         self.dcf[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3

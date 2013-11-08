@@ -29,6 +29,7 @@ from ds9 import *
 from rts2saf.fitfunction import  FitFunction
 from rts2saf.fitdisplay import FitDisplay
 from rts2saf.data import DataFitFwhm,DataFitFlux,ResultFit, ResultMeans
+from rts2saf.ds9region import Ds9Region
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
@@ -121,6 +122,53 @@ class SimpleAnalysis(object):
         # weighted means
         self.resultMeansFwhm=ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
         self.resultMeansFwhm.calculate(var='FWHM')
+
+        try:
+            self.i_flux = self.dataSex[0].fields.index('FLUX_MAX')
+        except:
+            pass
+
+        if self.i_flux!=None:
+            self.dataFitFlux= DataFitFlux(
+                dataSex=self.dataSex,
+                dataFitFwhm=self.dataFitFwhm,
+                plotFn=plotFn,
+                ambientTemp=self.dataSex[0].ambientTemp, 
+                ftName=self.dataSex[0].ftName 
+                )
+
+            self.__fitFlux()
+            # weighted means
+            self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
+            self.resultMeansFlux.calculate(var='Flux')
+
+        # ToDo make a sensible decission
+        return self.resultFitFwhm, self.resultMeansFwhm
+
+
+
+
+    def analyzeASSOC(self):
+        # ToDo lazy                        !!!!!!!!!!
+        # create an average and std 
+        # ToDo decide wich ftName from which ftw!!
+        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
+        ftName=self.dataSex[0].ftName
+        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/{1}-assoc.png'.format(bPth,ftName))
+
+        self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
+
+        # fwhm
+        self.dataFitFwhm= DataFitFwhm(
+            dataSex=self.dataSex,
+            plotFn=plotFn,
+            ambientTemp=self.dataSex[0].ambientTemp, 
+            ftName=self.dataSex[0].ftName,
+            )
+        self.__fitFwhm()
+        # weighted means
+        self.resultMeansFwhm=ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
+        self.resultMeansFwhm.calculate(var='FWHM')
         try:
             self.i_flux = self.dataSex[0].fields.index('FLUX_MAX')
         except:
@@ -177,7 +225,7 @@ class SimpleAnalysis(object):
 
             for dSx in self.dataSex:
                 if dSx.fitsFn:
-                    dr=ds9r.Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
+                    dr=Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
                     if not dr.displayWithRegion():
                         break # something went wrong
                     time.sleep(1.)

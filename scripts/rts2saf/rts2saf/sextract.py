@@ -29,22 +29,32 @@ from rts2saf.data import DataSex
 
 class Sextract(object):
     """Sextract a FITS image"""
-    def __init__(self, debug=False, rt=None, logger=None):
+    def __init__(self, debug=False, createAssoc=False, rt=None, logger=None):
         self.debug=debug
+        self.createAssoc=createAssoc
         self.rt= rt
         self.sexpath=rt.cfg['SEXPATH']
         self.sexconfig=rt.cfg['SEXCFG']
         self.starnnw=rt.cfg['STARNNW_NAME']
-        self.fields=rt.cfg['FIELDS']
+        self.fields=rt.cfg['FIELDS'][:] # it is a reference, gell :-))
         self.nbrsFtwsInuse=len(rt.cfg['FILTER WHEELS INUSE'])
         self.stdFocPos=rt.cfg['FOCUSER_RESOLUTION']
         self.logger=logger
+        
+    def appendFluxFields(self):
+        self.fields.append('FLUX_MAX')
+        self.fields.append('FLUX_APER')
+        self.fields.append('FLUXERR_APER')
 
+    def appendAssocFields(self):
+        self.fields.append('VECTOR_ASSOC({0:d})'.format(len(self.fields)))
+        self.fields.append('NUMBER_ASSOC')
 
-    def sextract(self, fitsFn):
+    def sextract(self, fitsFn, assocFn=None):
+        sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw, createAssoc=self.createAssoc)
+        # create the skyList
+        stde= sex.runSExtractor(fitsFn, assocFn=assocFn)
 
-        sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw)
-        stde=sex.runSExtractor(fitsFn)
         if stde:
             self.logger.error( 'sextract: {0} not found, sextractor message:\n{1}\nreturning'.format(fitsFn,stde))
             return DataSex()
@@ -158,7 +168,8 @@ class Sextract(object):
             ftName=ftName, 
             ftAName=ftAName, 
             ftBName=ftBName, 
-            ftCName=ftCName)
+            ftCName=ftCName,
+            assocFn=assocFn)
 
         try:
             i_flux = dataSex.fields.index('FLUX_MAX')
