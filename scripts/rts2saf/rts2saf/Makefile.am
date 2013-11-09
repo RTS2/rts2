@@ -12,7 +12,7 @@ pkgpython_rts2saf_PYTHON = __init__.py \
 	environ.py \
 	fitdisplay.py \
 	fitfunction.py \
-	focus.py log.py \
+	focus.py \
 	log.py \
 	sextract.py \
 	sextractor.py \
