@@ -109,7 +109,7 @@ class TemperatureFocPosModel(object):
                 plt.show()
 
         try:
-            self.fig.save(self.plotFn)
+            self.fig.savefig(self.plotFn)
             return self.plotFn
         except Exception, e:
             self.logger.error('temperaturemodel: can not save plot to: {0}'.format(self.plotFn))                
