@@ -4,7 +4,7 @@ Testing individual components
 =============================
 
 ``unittest``
------------
+------------
 The ``unittest`` rely on the presence of the files in directories ``samples`` and ``imgp``. Download the archives
 
 .. code-block:: bash

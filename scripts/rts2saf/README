@@ -1,10 +1,10 @@
-Getting started with the documentation and installation
-=======================================================
+Getting started 
+===============
 
 rts2saf package's documentation is generated with Sphinx (see http://sphinx-doc.org)
 
-For the impatient:
-------------------
+Quick hands on documentation
+----------------------------
 
 View a slightly behind documentation at:
 
@@ -25,6 +25,9 @@ or
 
 2) pip install sphinxcontrib-programoutput
 
+
+Generation and view of the documentation
+----------------------------------------
 
 Execute
 
@@ -54,4 +57,34 @@ Execute in this directory
 
  ./rts2saf_unittest.sh
 
-to see what is missing, mostly it this the path to the SExtractor.
+to see what is missing, mostly it this the path to the SExtractor. If JSON related tests fail,
+just repeat the above command. If failure persists contact the author.
+
+
+Quick hands on analysis
+=======================
+
+After installing all Python packages execute in this directory (where this README is)
+
+either
+
+
+ ./rts2saf_hands_on_examples.sh
+
+or 
+
+ wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
+ tar zxvf rts2saf-test-focus-2013-09-14.tgz
+ wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-11-10.tgz
+ tar zxvf rts2saf-test-focus-2013-11-10.tgz 
+
+ wget http://azug.minpet.unibas.ch/~wildi/20131011054939-621-RA.fits
+
+ ./rts2saf_analyze.py --base ./samples/ --toc  --fit --ds9
+ ./rts2saf_analyze.py --base ./samples/ --toc  --flux --fit --ds9
+ ./rts2saf_analyze.py --base ./samples/ --toc  --flux --fit --ds9 --assoc
+
+ ./rts2saf_analyze.py --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.2 --assoc
+ ./rts2saf_analyze.py --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.5 --assoc
+ ./rts2saf_analyze.py --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.9 --assoc
+

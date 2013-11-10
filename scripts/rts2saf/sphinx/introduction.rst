@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2013-11-02)
+Status and open issues (2013-11-10)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -17,6 +17,31 @@ Items which need further attention:
 2) finding the appropriate exposure 
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focsing.py``
 4) many ToDos in the code
+
+
+Quick hands on analysis
+-----------------------
+
+After installing all Python packages  and the data files:
+
+.. code-block:: bash
+
+ wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
+ tar zxvf rts2saf-test-focus-2013-09-14.tgz
+ wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-11-10.tgz
+ tar zxvf rts2saf-test-focus-2013-11-10.tgz
+
+ wget http://azug.minpet.unibas.ch/~wildi/20131011054939-621-RA.fits
+
+execute in the main rts2saf directory either
+
+.. code-block:: bash
+
+ ./rts2saf_hands_on_examples.sh
+
+or some of these commands
+
+.. program-output:: grep -vE "(\#|DONE|tail)"  ../rts2saf_hands_on_examples.sh 
 
 
 Overview
@@ -47,7 +72,18 @@ e.g. in order to create a temperature model.
 
 The method to find the focus is straight forward. Acquire a set of images and 
 determine FWHM using ``SExtractor``. The position of the minimum FWHM, derived
-from the itted function, is the focus.
+from the fitted function, is the focus.
+The output of the fit program is stored as a PNG file and optionally displayed on screen. 
+In addition various weighted means are calculated which are currently only logged.
+
+Already available during offline analysis is an independent fit to the sum of the flux 
+of sextracted objects. Comparing fluxes among the images makes only sense in
+case the sextracted objects are identified on all images. This association is
+optionally carried out by ``SExtractor`` itself.
+
+To increase the chance that the fits converge errors for FWHM and flux are introduced.
+In case of FWHM it is what ``SExtractor`` thinks the error is, while for flux it is
+calculated as the average of the square roots of the flux values.
 
 rts2saf makes use of RTS2's HTTP/JSON interface and hence using the scripts  
 on the command line is encouraged before setting up autonomous operations. The JSON interface 
@@ -70,7 +106,6 @@ The number of
 additional parameters stored in the configuration is intentionally
 kept small.
 
-The output of the fit program is stored as a PNG file and optionally displayed on screen. 
 
 During analysis ``DS9`` region of interest  data structures are created for each image. 
 Optionally the images and the region files are displayed on screen using ``DS9``.

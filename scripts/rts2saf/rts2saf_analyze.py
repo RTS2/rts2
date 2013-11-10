@@ -24,6 +24,7 @@ import fnmatch
 import os
 import re
 import sys
+import collections
 
 from rts2saf.sextract import Sextract
 from rts2saf.analyze import SimpleAnalysis,CatalogAnalysis
@@ -59,19 +60,107 @@ class Do(object):
         self.rt=rt
         self.ev=ev
         self.logger=logger
-        self.ftwPath=AutoVivification()
-        self.ftPath=AutoVivification()
-        self.datePath=AutoVivification()
-        self.plainPath=AutoVivification()
         self.fS= AutoVivification()
 
+    def buildCats(self, i_nmbrAssc=None, dataSex=None, dSxReference=None):
+        i_nmbr=dSxReference.fields.index('NUMBER')
+        cats=collections.defaultdict(int)
+        # count the occurence of each object
+        focPosS=collections.defaultdict(int)
+        for nmbr in sorted([ int(x[i_nmbr]) for x in dSxReference.catalog ]):
+            for dSx in dataSex:
+                for nmbrAssc in [ int(x[i_nmbrAssc]) for x in dSx.catalog ]:
+                    if nmbr == nmbrAssc:
+                        cats[nmbr] +=1
+                        focPosS[dSx.focPos] +=1
+                        break
 
-    def sextractLoop(self, fitsFns=None, assocFn=None, flux=None):
+        return cats,focPosS
+
+    def dropDSx(self, focPosS=None, dataSex=None, dSxReference=None):
+        # drop those catalogs which have to few objects
+        # this is a glitch in case two dSx are present with the same focPos
+        for focPos, val in focPosS.iteritems():
+            if val < self.args.fractObjs * len(dSxReference.catalog):
+                # remove dSx
+                dSxdrp=None
+                for dSx in dataSex:
+                    if focPos == dSx.focPos:
+                        dSxdrp=dSx
+                        break
+                else:
+                    continue
+                dataSex.remove(dSxdrp)
+                self.logger.warn('dropDSx: focuser position: {0:5d} dropped dSx, {1:5d}, {2:6.2f} {3:5d}'.format(int(focPos), val, self.args.fractObjs * len(dSxReference.catalog), len(dSxReference.catalog)))
+
+        return dataSex
+
+    def onAlmostImagesAssoc(self, dataSex=None, dSxReference=None):
+        # ToDO clarify that -1
+        i_nmbrAssc= -1 + dataSex[0].fields.index('NUMBER_ASSOC') 
+        # build cats
+        cats,focPosS=self.buildCats( i_nmbrAssc=i_nmbrAssc, dataSex=dataSex, dSxReference=dSxReference)
+        # drop
+        dataSex= self.dropDSx(focPosS=focPosS, dataSex=dataSex, dSxReference=dSxReference)
+        # rebuild the cats
+        cats, focPosS=self.buildCats(i_nmbrAssc=i_nmbrAssc, dataSex=dataSex, dSxReference=dSxReference)
+
+        foundOnAll=len(dataSex)
+        assocObjNmbrs=list()
+        # identify those objects which are on all images
+        for k  in  cats.keys():
+            if cats[k] == foundOnAll:
+                assocObjNmbrs.append(k) 
+
+        # save the raw values for later analysis
+        # initialize data.catalog
+        for dSx in dataSex:
+            dSx.toRawCatalog()
+        # copy those catalog entries which are found on all
+        for k  in  assocObjNmbrs:
+            for dSx in dataSex:
+                for sx in dSx.rawCatalog:
+                    if k == sx[i_nmbrAssc]:
+                        dSx.catalog.append(sx)
+                        break
+                else:
+                    self.logger.debug('onAllImages: no break for object: {0}'.format(k))
+
+        # recalculate FWHM, Flux etc.
+        i_fwhm= dataSex[0].fields.index('FWHM_IMAGE') 
+
+        i_flux=None
+        if self.args.flux:
+            i_flux= dataSex[0].fields.index('FLUX_MAX') 
+
+        for dSx in dataSex:
+            dSx.fillData(i_fwhm=i_fwhm, i_flux=i_flux)
+
+            if self.args.flux:
+                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f} {2:8.3f} {3:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.flux, len(dSx.catalog)))
+            else:
+                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f} {2:5d}'.format(int(dSx.focPos), dSx.fwhm, len(dSx.catalog)))
+
+        self.logger.info('onAlmostImages: objects: {0}'.format(len(assocObjNmbrs)))
+
+        return dataSex
+
+    def onAlmostImages(self, dataSex=None, dSxReference=None):
+
+        focPosS=collections.defaultdict(int)
+        for dSx in dataSex:
+            focPosS[dSx.focPos]=dSx.nObjs
+
+        dataSex= self.dropDSx(focPosS=focPosS, dataSex=dataSex, dSxReference=dSxReference)
+
+        return dataSex
+
+    def sextractLoop(self, fitsFns=None, assocFn=None):
 
         dataSex=list()
         for fitsFn in fitsFns:
-            rsx= Sextract(debug=args.sexDebug, rt=rt, logger=logger)
-            if flux:
+            rsx= Sextract(debug=args.sexDebug, rt=rt, logger=self.logger)
+            if self.args.flux:
                 rsx.appendFluxFields()
                 
             if assocFn:
@@ -82,40 +171,48 @@ class Do(object):
             if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
                 dataSex.append(dSx)
             else:
-                logger.warn('__analyzeRun: no result: file: {0}'.format(fitsFn))
+                self.logger.warn('sextractLoop: no result: file: {0}'.format(fitsFn))
+
         return dataSex
 
-    def __analyzeRun(self, fitsFns=None, createAssoc=False, flux=False):
+    def analyzeRun(self, fitsFns=None):
+
+        # define the reference FITS as the one with the most sextracted objects
+        # ToDo may be weighted means
+        dataSex=self.sextractLoop(fitsFns=fitsFns)
+
+        dataSex.sort(key = lambda x: x.nObjs, reverse=True)
+        fitsFn=dataSex[0].fitsFn
+        self.logger.info('analyzeRun: reference at FOC_POS: {0}, {1}'.format(dataSex[0].focPos, fitsFn))
+        
+        rsxR= Sextract(debug=args.sexDebug, createAssoc=self.args.associate, rt=rt, logger=self.logger)
+        if args.flux:
+            rsxR.appendFluxFields()
 
         assocFn=None
-        if createAssoc:
-            # define the reference FITS as the one with the most sextracted objects
-            # ToDo may be weighted means
-            dataSex=self.sextractLoop(fitsFns=fitsFns, assocFn=assocFn, flux=flux)
-
-            dataSex.sort(key = lambda x: x.nObjs, reverse=True)
-            fitsFn=dataSex[0].fitsFn
-            logger.info('__analyzeRun: reference at FOC_POS: {0}, {1}'.format(dataSex[0].focPos, fitsFn))
-
-            rsxR= Sextract(debug=args.sexDebug, createAssoc=createAssoc, rt=rt, logger=logger)
-            if flux:
-                rsxR.appendFluxFields()
+        if self.args.associate:
             assocFn='/tmp/assoc.lst'
-            dSxReference=rsxR.sextract(fitsFn=fitsFn, assocFn=assocFn)
 
-        dataSex=self.sextractLoop(fitsFns=fitsFns, assocFn=assocFn, flux=flux)
+        dSxReference=rsxR.sextract(fitsFn=fitsFn, assocFn=assocFn)
 
-        import collections
+        dataSex=self.sextractLoop(fitsFns=fitsFns, assocFn=assocFn)
+
         pos=collections.defaultdict(int)
         for dSx in dataSex:
             pos[dSx.focPos] += 1 
 
         if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-            self.logger.warn('__analyzeRun: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+            self.logger.warn('analyzeRun: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
             if self.debug:
                 for p,v in pos.iteritems():
-                    self.logger.debug('__analyzeRun:{0:5.0f}: {1}'.format(p,v))
+                    self.logger.debug('analyzeRun:{0:5.0f}: {1}'.format(p,v))
             return 
+
+        if self.args.associate:
+            dataSex=self.onAlmostImagesAssoc(dataSex=dataSex, dSxReference=dSxReference)
+        else:
+            dataSex=self.onAlmostImages(dataSex=dataSex, dSxReference=dSxReference)
+
 
         if args.catalogAnalysis:
             an=CatalogAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
@@ -125,10 +222,10 @@ class Do(object):
             rFt=an.analyze()
             an.display()
         if not rFt!=None:
-            self.logger.info('__analyzeRun: result: wMObjects: {0:5.0f}, wMCombined:{1:5.0f}, wMStdFwhm:{1:5.0f}, minFitPos: {2:5.0f}, minFitFwhm: {3:5.0f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.weightedMeanStdFwhm, rFt.minFitPos, rFt.minFitFwhm))
+            self.logger.info('analyzeRun: result: wMObjects: {0:5.0f}, wMCombined:{1:5.0f}, wMStdFwhm:{1:5.0f}, minFitPos: {2:5.0f}, minFitFwhm: {3:5.0f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.weightedMeanStdFwhm, rFt.minFitPos, rFt.minFitFwhm))
         return rFt
 
-    def analyzeRuns(self, createAssoc=False, flux=False):
+    def analyzeRuns(self):
         rFts=list()
         for dftw, ft  in self.fS.iteritems():
             info='{} :: '.format(repr(dftw))
@@ -138,7 +235,7 @@ class Do(object):
                 info += '{} {} '.format(k,len(fns))
                 if len(fns) >self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                     out=True
-                    rFt, rMns=self.__analyzeRun(fitsFns=fns, createAssoc=createAssoc, flux=flux)
+                    rFt, rMns=self.analyzeRun(fitsFns=fns)
                     if rFt:
                         rFts.append(rFt)
             if out:
@@ -159,7 +256,7 @@ class Do(object):
         return rFts
 
     def aggregateRuns(self):
-        for root, dirnames, filenames in os.walk(args.basePath):
+        for root, dirnames, filenames in os.walk(self.args.basePath):
             fns=fnmatch.filter(filenames, '*.fits')
             if len(fns)==0:
                 continue
@@ -184,10 +281,7 @@ class Do(object):
             else:
                 #print 'else/fits', root
                 self.fS[('NODATE', 'NOFTW')] ['NOFT']=FpFns
-
-        if len(self.fS)==0:
-            logger.warn('rts2saf_analyze: no files found in basepath: {}'.format(args.basePath))
-
+            
 
 if __name__ == '__main__':
 
@@ -209,11 +303,13 @@ if __name__ == '__main__':
     parser.add_argument('--filternames', dest='filterNames', action='store', default=None, type=str, nargs='+', help=': %(default)s, list of filters to analyzed, None: all')
 #ToDo    parser.add_argument('--ds9region', dest='ds9region', action='store_true', default=False, help=': %(default)s, create ds9 region files')
     parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
-    parser.add_argument('--fitDisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
+    parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
     parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
     parser.add_argument('--criteria', dest='criteria', action='store', default='rts2saf.criteria_radius', help=': %(default)s, CatalogAnalysis criteria Python module to load at run time')
     parser.add_argument('--associate', dest='associate', action='store_true', default=False, help=': %(default)s, let sextractor associate the objects among images')
     parser.add_argument('--flux', dest='flux', action='store_true', default=False, help=': %(default)s, do flux analysis')
+    parser.add_argument('--model', dest='model', action='store_true', default=False, help=': %(default)s, fit temperature model')
+    parser.add_argument('--fraction', dest='fractObjs', action='store', default=0.5, type=float, help=': %(default)s, fraction of objects which must be present on each image, base: object number on reference image, this option is used only together with --associate')
 
     args=parser.parse_args()
 
@@ -242,15 +338,19 @@ if __name__ == '__main__':
 
     do=Do(debug=args.debug, basePath=args.basePath, args=args, rt=rt, ev=ev, logger=logger)
     do.aggregateRuns()
-    rFF=do.analyzeRuns(createAssoc=args.associate, flux=args.flux)
+    if len(do.fS)==0:
+        logger.warn('rts2saf_analyze: exiting, no files found in basepath: {}'.format(args.basePath))
+        sys.exit(1)
 
+    rFF=do.analyzeRuns()
     if rFF[0].ambientTemp in 'NoTemp':
         logger.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
     else:
-        # temperature model
-        plotFn=ev.expandToPlotFileName( plotFn='{}/temp-model.png'.format(args.basePath))
-        dom=TemperatureFocPosModel(showPlot=True, date=ev.startTime[0:19],  comment='test run', plotFn=plotFn, resultFitFwhm=rFF, logger=logger)
-        dom.fitData()
-        dom.plotData()
-        logger.info('rts2saf_analyze: storing plot at: {}'.format(plotFn))
+        if args.model:
+            # temperature model
+            plotFn=ev.expandToPlotFileName( plotFn='{}/temp-model.png'.format(args.basePath))
+            dom=TemperatureFocPosModel(showPlot=True, date=ev.startTime[0:19],  comment='test run', plotFn=plotFn, resultFitFwhm=rFF, logger=logger)
+            dom.fitData()
+            dom.plotData()
+            logger.info('rts2saf_analyze: storing plot at: {}'.format(plotFn))
         

@@ -21,6 +21,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import numpy as np
+import math
 
 class DataFit(object):
     def __init__(self, plotFn=None, ambientTemp=None, ftName=None, pos=list(), val=list(), errx=list(), erry=list(), nObjs=None, par=None):
@@ -198,8 +199,25 @@ class DataSex(object):
         self.flux=flux # unittest!
         self.stdFlux=stdFlux
         self.assocFn=assocFn
+        self.assocCount=0
+        self.rawCatalog=list()
 
     def fillFlux(self, i_flux=None):
         fluxv = [x[i_flux] for x in  self.catalog]
         self.flux=np.median(fluxv)
-        self.stdFlux= np.std(fluxv)/10. # ToDo !!!!!!!!!!!!!!!!!!!!!
+        self.stdFlux= np.average([ math.sqrt(x) for x in fluxv])
+
+    def fillData(self, i_fwhm=None, i_flux=None):
+        fwhmv = [x[i_fwhm] for x in  self.catalog]
+        self.fwhm=np.median(fwhmv)
+        self.stdFwhm= np.std(fwhmv)
+
+        if i_flux !=None:
+            fluxv = [x[i_flux] for x in  self.catalog]
+            self.flux=np.median(fluxv)
+            self.stdFlux= np.average([ math.sqrt(x) for x in fluxv]) 
+
+
+    def toRawCatalog(self):
+        self.rawCatalog=self.catalog[:]
+        self.catalog=list()

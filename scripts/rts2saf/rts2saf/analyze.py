@@ -108,9 +108,7 @@ class SimpleAnalysis(object):
         bPth,fn=os.path.split(self.dataSex[0].fitsFn)
         ftName=self.dataSex[0].ftName
         plotFn=self.ev.expandToPlotFileName(plotFn='{0}/{1}.png'.format(bPth,ftName))
-
         self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
-
         # fwhm
         self.dataFitFwhm= DataFitFwhm(
             dataSex=self.dataSex,
@@ -144,53 +142,6 @@ class SimpleAnalysis(object):
 
         # ToDo make a sensible decission
         return self.resultFitFwhm, self.resultMeansFwhm
-
-
-
-
-    def analyzeASSOC(self):
-        # ToDo lazy                        !!!!!!!!!!
-        # create an average and std 
-        # ToDo decide wich ftName from which ftw!!
-        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
-        ftName=self.dataSex[0].ftName
-        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/{1}-assoc.png'.format(bPth,ftName))
-
-        self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
-
-        # fwhm
-        self.dataFitFwhm= DataFitFwhm(
-            dataSex=self.dataSex,
-            plotFn=plotFn,
-            ambientTemp=self.dataSex[0].ambientTemp, 
-            ftName=self.dataSex[0].ftName,
-            )
-        self.__fitFwhm()
-        # weighted means
-        self.resultMeansFwhm=ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
-        self.resultMeansFwhm.calculate(var='FWHM')
-        try:
-            self.i_flux = self.dataSex[0].fields.index('FLUX_MAX')
-        except:
-            pass
-
-        if self.i_flux!=None:
-            self.dataFitFlux= DataFitFlux(
-                dataSex=self.dataSex,
-                dataFitFwhm=self.dataFitFwhm,
-                plotFn=plotFn,
-                ambientTemp=self.dataSex[0].ambientTemp, 
-                ftName=self.dataSex[0].ftName 
-                )
-
-            self.__fitFlux()
-            # weighted means
-            self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
-            self.resultMeansFlux.calculate(var='Flux')
-
-        # ToDo make a sensible decission
-        return self.resultFitFwhm, self.resultMeansFwhm
-
 
     def display(self):
         # ToDo ugly here

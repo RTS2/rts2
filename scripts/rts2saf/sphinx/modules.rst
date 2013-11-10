@@ -41,7 +41,11 @@ Developer's documentation
    :members:
    :undoc-members:
    :show-inheritance:
-.. automodule:: rts2saf.fitfwhm
+.. automodule:: rts2saf.fitdisplay
+   :members:
+   :undoc-members:
+   :show-inheritance:
+.. automodule:: rts2saf.fitfunction
    :members:
    :undoc-members:
    :show-inheritance:
