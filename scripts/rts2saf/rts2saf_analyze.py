@@ -165,7 +165,6 @@ class Do(object):
                 
             if assocFn:
                 rsx.appendAssocFields()
-
             dSx=rsx.sextract(fitsFn=fitsFn, assocFn=assocFn)
 
             if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
