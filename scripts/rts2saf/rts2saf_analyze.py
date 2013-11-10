@@ -180,6 +180,9 @@ class Do(object):
         # define the reference FITS as the one with the most sextracted objects
         # ToDo may be weighted means
         dataSex=self.sextractLoop(fitsFns=fitsFns)
+        if len(dataSex)==0:
+            self.logger.warn('analyzeRun: no results for files: {}'.format(fitsFns))
+            return None, None
 
         dataSex.sort(key = lambda x: x.nObjs, reverse=True)
         fitsFn=dataSex[0].fitsFn
@@ -206,7 +209,7 @@ class Do(object):
             if self.debug:
                 for p,v in pos.iteritems():
                     self.logger.debug('analyzeRun:{0:5.0f}: {1}'.format(p,v))
-            return 
+            return None, None 
 
         if self.args.associate:
             dataSex=self.onAlmostImagesAssoc(dataSex=dataSex, dSxReference=dSxReference)
@@ -216,14 +219,14 @@ class Do(object):
 
         if args.catalogAnalysis:
             an=CatalogAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
-            rFt=an.selectAndAnalyze()
+            rFt, rMns=an.selectAndAnalyze()
         else:
             an=SimpleAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=self.logger)
-            rFt=an.analyze()
+            rFt, rMns=an.analyze()
             an.display()
         if not rFt!=None:
             self.logger.info('analyzeRun: result: wMObjects: {0:5.0f}, wMCombined:{1:5.0f}, wMStdFwhm:{1:5.0f}, minFitPos: {2:5.0f}, minFitFwhm: {3:5.0f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.weightedMeanStdFwhm, rFt.minFitPos, rFt.minFitFwhm))
-        return rFt
+        return rFt, rMns
 
     def analyzeRuns(self):
         rFts=list()
@@ -343,6 +346,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     rFF=do.analyzeRuns()
+    
+    if len(rFF)==0:
+        logger.error('rts2saf_analyze: no results, exiting')
+        sys.exit(1)
+
     if rFF[0].ambientTemp in 'NoTemp':
         logger.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
     else:
