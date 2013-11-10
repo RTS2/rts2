@@ -247,14 +247,15 @@ class Do(object):
         openMinFitPos=None
         for rFt in rFts:
             if rFt.ftName in self.rt.cfg['EMPTY_SLOT_NAMES']:
-                openMinFitPos=int(rFt.minFitPos)
+                openMinFitPos=int(rFt.extrFitPos)
                 break
         else:
             # is not a filter wheel run 
             return rFts
 
         for rFt in rFts:
-            logger.info('analyzeRuns: {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.minFitPos), int(rFt.minFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
+            if rFt.extrFitPos!=None:
+                logger.info('analyzeRuns: {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.extrFitPos), int(rFt.extrFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
 
         return rFts
 

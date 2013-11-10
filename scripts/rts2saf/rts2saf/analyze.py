@@ -64,6 +64,8 @@ class SimpleAnalysis(object):
             self.logger.info('analyze: FWHM FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, self.dataFitFwhm.ambientTemp))
         else:
             self.logger.warn('analyze: fit failed')
+            self.resultFitFwhm=ResultFit()
+            return 
 
         self.resultFitFwhm=ResultFit(
             ambientTemp=self.dataFitFwhm.ambientTemp, 
@@ -88,6 +90,8 @@ class SimpleAnalysis(object):
             self.logger.info('analyze: Flux FOC_DEF: {0:5d} : fitted maximum position, {1:4.1f}[a.u.] Flux, {2} ambient temperature'.format(int(maxFitPos), maxFitFlux, self.dataFitFlux.ambientTemp))
         else:
             self.logger.warn('analyze: fit flux failed')
+            self.resultFitFlux=ResultFit()
+            return 
 
         self.resultFitFlux=ResultFit(
             ambientTemp=self.dataFitFlux.ambientTemp, 

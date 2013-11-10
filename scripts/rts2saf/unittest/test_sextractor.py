@@ -60,7 +60,7 @@ class TestSextract(unittest.TestCase):
         sx = Sextract(debug=False, rt=rt, logger=logger)
         fitsFn='../samples/20071205025911-725-RA.fits'
         dSx=sx.sextract(fitsFn=fitsFn)
-        self.assertEqual(dSx.fields[11], 'FLUXERR_APER', 'return value: {}'.format(dSx.fields[9]))
+        self.assertEqual(dSx.fields[11], 'FLUXERR_APER', 'return value: {}'.format(dSx.fields[11]))
 if __name__ == '__main__':
     
     unittest.TextTestRunner(verbosity=0).run(suite())
