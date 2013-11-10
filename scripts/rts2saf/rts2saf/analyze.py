@@ -166,7 +166,12 @@ class SimpleAnalysis(object):
             # plot but don't show
             ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=False)
             ft.fitDisplay(dataFit=self.dataFitFlux, resultFit=self.resultFitFlux, display=self.FitDisplay)
-
+        # very important (otherwise all plots show up in next show())
+        ft.ax1=None
+        # http://stackoverflow.com/questions/741877/how-do-i-tell-matplotlib-that-i-am-done-with-a-plot
+        ft.fig.clf()
+        ft.fig=None
+        ft=None
         # plot them through ds9
         if self.Ds9Display:
             try:

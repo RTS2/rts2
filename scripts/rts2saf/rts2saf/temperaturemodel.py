@@ -50,6 +50,10 @@ class TemperatureFocPosModel(object):
         self.tempErr=list()
         self.minFitPos=list()
         self.minFitPosErr=list()
+        self.fig = None
+        self.ax1 = None
+        self.fig = plt.figure()
+        self.ax1 = self.fig.add_subplot(111)
 
     def fitData(self):
         for rFF in self.resultFitFwhm:
@@ -58,7 +62,11 @@ class TemperatureFocPosModel(object):
             except:
                 self.temp.append(rFF.ambientTemp)
             self.tempErr.append(0.01)
-            self.minFitPos.append(float(rFF.extrFitPos))
+            try:
+                self.minFitPos.append(float(rFF.extrFitPos))
+            except:
+                self.logger.error('temperaturemodel: serious error: coud not append type{}'.format(type(rFF.extrFitPos)))                
+                
             self.minFitPosErr.append(2.5) 
 
         par= np.array([1., 1.])
@@ -78,20 +86,20 @@ class TemperatureFocPosModel(object):
             self.logger.error('temperaturemodel: numpy error:\n{0}'.format(e))                
             return e
 
-        plt.plot(self.temp,self.minFitPos, 'ro', color='blue')
-        plt.errorbar(self.temp,self.minFitPos, xerr=self.tempErr, yerr=self.minFitPosErr, ecolor='blue', fmt=None)
+        self.ax1.plot(self.temp,self.minFitPos, 'ro', color='blue')
+        self.ax1.errorbar(self.temp,self.minFitPos, xerr=self.tempErr, yerr=self.minFitPosErr, ecolor='blue', fmt=None)
 
         if self.flag:
-            plt.plot(x_temp, self.fitfunc(self.par, x_temp), 'r-', color='red')
+            self.ax1.plot(x_temp, self.fitfunc(self.par, x_temp), 'r-', color='red')
             
         if self.comment:
-            plt.title('rts2saf {0}, temperature model, {1}'.format(self.date, self.comment), fontsize=12)
+            self.ax1.set_title('rts2saf {0}, temperature model, {1}'.format(self.date, self.comment), fontsize=12)
         else:
-            plt.title('rts2saf {0}, temperature model'.format(self.date), fontsize=12)
+            self.ax1.set_title('rts2saf {0}, temperature model'.format(self.date), fontsize=12)
 
-        plt.xlabel('ambient temperature [degC]')
-        plt.ylabel('FOC_POS(min. FWHM) [ticks]')
-        plt.grid(True)
+        self.ax1.set_xlabel('ambient temperature [degC]')
+        self.ax1.set_ylabel('FOC_POS(min. FWHM) [ticks]')
+        self.ax1.grid(True)
 
         if self.showPlot:
             if NODISPLAY:
@@ -101,7 +109,7 @@ class TemperatureFocPosModel(object):
                 plt.show()
 
         try:
-            plt.savefig(self.plotFn)
+            self.fig.save(self.plotFn)
             return self.plotFn
         except Exception, e:
             self.logger.error('temperaturemodel: can not save plot to: {0}'.format(self.plotFn))                

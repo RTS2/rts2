@@ -222,7 +222,9 @@ class Do(object):
         else:
             an=SimpleAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=self.logger)
             rFt, rMns=an.analyze()
-            an.display()
+            #ToDo matplotlib issue
+            if not self.args.model:
+                an.display()
         if not rFt!=None:
             self.logger.info('analyzeRun: result: wMObjects: {0:5.0f}, wMCombined:{1:5.0f}, wMStdFwhm:{1:5.0f}, minFitPos: {2:5.0f}, minFitFwhm: {3:5.0f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.weightedMeanStdFwhm, rFt.minFitPos, rFt.minFitFwhm))
         return rFt, rMns
@@ -238,7 +240,7 @@ class Do(object):
                 if len(fns) >self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                     out=True
                     rFt, rMns=self.analyzeRun(fitsFns=fns)
-                    if rFt:
+                    if rFt !=None and rFt.extrFitPos !=None:
                         rFts.append(rFt)
             if out:
                 self.logger.info( 'analyzeRuns: {}'.format(info))

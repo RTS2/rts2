@@ -18,19 +18,19 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
-./rts2saf_analyze.py --base ./samples/ --toc  --fit --ds9
-./rts2saf_analyze.py --base ./samples/ --toc  --flux --fit --ds9
-./rts2saf_analyze.py --base ./samples/ --toc  --flux --fit --ds9 --assoc
+./rts2saf_analyze.py --conf ./configs/hands_on/rts2saf.cfg  --base ./samples/ --toc  --fit --ds9
+./rts2saf_analyze.py --conf ./configs/hands_on/rts2saf.cfg  --base ./samples/ --toc  --flux --fit --ds9
+./rts2saf_analyze.py --conf ./configs/hands_on/rts2saf.cfg  --base ./samples/ --toc  --flux --fit --ds9 --assoc
 
-./rts2saf_analyze.py --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.2 --assoc
-./rts2saf_analyze.py --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.5 --assoc
-./rts2saf_analyze.py --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.9 --assoc
+./rts2saf_analyze.py --conf ./configs/hands_on/rts2saf.cfg  --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.2 --assoc
+./rts2saf_analyze.py --conf ./configs/hands_on/rts2saf.cfg  --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.5 --assoc
+./rts2saf_analyze.py --conf ./configs/hands_on/rts2saf.cfg  --base ./samples_bootes2/  --toc --flux --fit --ds9 --frac 0.9 --assoc
 
 
-./rts2saf_imgp.py ./imgp/20131011054939-621-RA.fits --toc
+./rts2saf_imgp.py --conf ./configs/hands_on/rts2saf.cfg  ./imgp/20131011054939-621-RA.fits --toc
 
 echo "Watch output in /var/log/rts2-debug MUST be writeable for current user"
-./rts2saf_fwhm.py --config unittest/rts2saf-no-filter-wheel.cfg --fitsFn ./imgp/20131011054939-621-RA.fits
-tail -200 /var/log/rts2-debug
+./rts2saf_fwhm.py --conf ./configs/hands_on/rts2saf.cfg  --config unittest/rts2saf-no-filter-wheel.cfg --fitsFn ./imgp/20131011054939-621-RA.fits
+tail -20 /var/log/rts2-debug
 echo "DONE"
 

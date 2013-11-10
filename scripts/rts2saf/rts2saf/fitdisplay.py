@@ -68,7 +68,6 @@ class  FitDisplay(object):
         self.ax1.set_ylabel(resultFit.ylabel)
         self.ax1.grid(True)
 
-
         if display:
             if NODISPLAY:
                 self.logger.warn('fitDisplay: NO $DISPLAY no plot')                
@@ -76,12 +75,11 @@ class  FitDisplay(object):
             else:
                 #NO: self.fig.show()
                 plt.show()
+        
         try:
             self.fig.savefig(dataFit.plotFn)
             return dataFit.plotFn
         except Exception, e:
-            self.logger.error('fitDisplay: can not save plot to: {0}'.format(dataFit.plotFn))
+            self.logger.error('fitDisplay: can not save plot to: {0}, matplotlib error:\n{1}'.format(dataFit.plotFn,e))
             return e
 
-        return self.fig
-            
