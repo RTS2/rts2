@@ -37,30 +37,30 @@ class DataFit(object):
 
 
 class DataFitFwhm(DataFit):
-    def __init__( self, dataSex=None, *args, **kw ):
+    def __init__( self, dataSxtr=None, *args, **kw ):
         super(  DataFitFwhm, self ).__init__( *args, **kw )
-        self.dataSex=dataSex
-        self.pos =np.asarray([x.focPos for x in dataSex])
-        self.val =np.asarray([x.fwhm for x in dataSex])
-        self.errx=np.asarray([x.stdFocPos for x in dataSex])
-        self.erry=np.asarray([x.stdFwhm for x in dataSex])  
-        self.nObjs=[len(x.catalog) for x in dataSex]
+        self.dataSxtr=dataSxtr
+        self.pos =np.asarray([x.focPos for x in dataSxtr])
+        self.val =np.asarray([x.fwhm for x in dataSxtr])
+        self.errx=np.asarray([x.stdFocPos for x in dataSxtr])
+        self.erry=np.asarray([x.stdFwhm for x in dataSxtr])  
+        self.nObjs=[len(x.catalog) for x in dataSxtr]
         # ToDo must reside outside
         self.par= np.array([1., 1., 1., 1.])
         self.fitFunc = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)  # due to optimize.fminbound
         self.recpFunc = None
 
 class DataFitFlux(DataFit):
-    def __init__( self, dataSex=None, dataFitFwhm=None, i_flux=None, *args, **kw ):
+    def __init__( self, dataSxtr=None, dataFitFwhm=None, i_flux=None, *args, **kw ):
         super(  DataFitFlux, self ).__init__( *args, **kw )
-        self.dataSex=dataSex
+        self.dataSxtr=dataSxtr
         self.i_flux=i_flux
         self.dataFitFwhm=dataFitFwhm
-        self.pos =np.asarray([x.focPos for x in dataSex])
-        self.val =np.asarray([x.flux for x in dataSex])
-        self.errx=np.asarray([x.stdFocPos for x in dataSex])
-        self.erry=np.asarray([x.stdFlux for x in dataSex])  
-        self.nObjs=[len(x.catalog) for x in dataSex]
+        self.pos =np.asarray([x.focPos for x in dataSxtr])
+        self.val =np.asarray([x.flux for x in dataSxtr])
+        self.errx=np.asarray([x.stdFocPos for x in dataSxtr])
+        self.erry=np.asarray([x.stdFlux for x in dataSxtr])  
+        self.nObjs=[len(x.catalog) for x in dataSxtr]
         self.par= None # see below
         self.fitFunc = lambda x, p: p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2))
         self.recpFunc = lambda x, p: 1./(p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2)))
@@ -170,7 +170,7 @@ class ResultFit(object):
         self.ylabel=ylabel
         self.titleResult=titleResult
 
-class DataSex(object):
+class DataSxtr(object):
     def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
         self.date=date
         self.fitsFn=fitsFn

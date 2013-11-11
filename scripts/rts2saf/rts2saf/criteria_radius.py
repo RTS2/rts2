@@ -24,22 +24,22 @@ import math
 
 
 class Criteria(object):
-    def __init__(self, dataSex=None, rt=None):
-        self.dataSex=dataSex
+    def __init__(self, dataSxtr=None, rt=None):
+        self.dataSxtr=dataSxtr
         self.rt=rt
 
-        self.i_x = self.dataSex[0].fields.index('X_IMAGE')
-        self.i_y = self.dataSex[0].fields.index('Y_IMAGE')
-        self.center=[ self.dataSex[0].naxis1/2.,self.dataSex[0].naxis2/2. ] 
+        self.i_x = self.dataSxtr[0].fields.index('X_IMAGE')
+        self.i_y = self.dataSxtr[0].fields.index('Y_IMAGE')
+        self.center=[ self.dataSxtr[0].naxis1/2.,self.dataSxtr[0].naxis2/2. ] 
         rds= self.rt.cfg['RADIUS'] 
-        if self.dataSex[0].binning:
-            self.radius= rds/self.dataSex[0].binning 
-        elif self.dataSex[0].binningXY:
+        if self.dataSxtr[0].binning:
+            self.radius= rds/self.dataSxtr[0].binning 
+        elif self.dataSxtr[0].binningXY:
             # ToDo (bigger): only x value is used
-            self.radius= rds/self.dataSex[0].binningXY[0] 
+            self.radius= rds/self.dataSxtr[0].binningXY[0] 
         else:
             # everything should come
-            self.radius=pow(self.dataSex[0].naxis1, 2) + pow(self.dataSex[0].naxis2, 2)
+            self.radius=pow(self.dataSxtr[0].naxis1, 2) + pow(self.dataSxtr[0].naxis2, 2)
         
 
     def decide(self, catalogEntry=None):

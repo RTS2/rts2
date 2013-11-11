@@ -73,7 +73,7 @@ class Focus(object):
                     sys.exit(1)
 
                 # acquire FITS from thread
-                dataSex=list()
+                dataSxtr=list()
                 for st in self.foc.focFoff:
                     while True:
                         try:
@@ -90,7 +90,7 @@ class Focus(object):
                             break
 
                         self.logger.info('Focus: pos: {0:5d}, objects: {1:4d}, file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
-                        dataSex.append(dSx)
+                        dataSxtr.append(dSx)
                         break
                 else:
                     if self.debug: self.logger.debug('Focus: got all images')
@@ -98,7 +98,7 @@ class Focus(object):
                 acqu.stopScan(timeout=1.)
                 
                 pos=collections.defaultdict(int)
-                for dSx in dataSex:
+                for dSx in dataSxtr:
                     pos[dSx.focPos] += 1
 
                 if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
@@ -108,14 +108,14 @@ class Focus(object):
                             self.logger.debug('Focus:{0:5.0f}: {1}'.format(p,v))
                     continue
                 # appears on plot
-                date=dataSex[0].date.split('.')[0]
+                date=dataSxtr[0].date.split('.')[0]
 
                 # might go to a thread too
                 if self.args.catalogAnalysis:
-                    anr=CatalogAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=self.foc.resolution, moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
+                    anr=CatalogAnalysis(debug=self.debug, dataSxtr=dataSxtr, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=self.foc.resolution, moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
                     rFt, rMns=anr.selectAndAnalyze()
                 else:
-                    anr= an.SimpleAnalysis(dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
+                    anr= an.SimpleAnalysis(dataSxtr=dataSxtr, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
                     rFt, rMns= anr.analyze()
                 # 
                 if rFt.fitFlag:

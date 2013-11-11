@@ -20,7 +20,7 @@
 import unittest
 
 from rts2saf.config import Configuration 
-from rts2saf.data import DataSex
+from rts2saf.data import DataSxtr
 from rts2saf.sextract import Sextract
 
 import logging
@@ -51,7 +51,7 @@ class TestSextract(unittest.TestCase):
         sx = Sextract(debug=False, rt=rt, logger=logger)
         fitsFn='../samples/20071205025911-725-RA.fits'
         dSx=sx.sextract(fitsFn=fitsFn)
-        self.assertIs(type(dSx), DataSex, 'no object of type: '.format(type(DataSex)))
+        self.assertIs(type(dSx), DataSxtr, 'no object of type: '.format(type(DataSxtr)))
         self.assertEqual(fitsFn, dSx.fitsFn, 'install sample FITS from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
 
     def test_sextractFlux(self):

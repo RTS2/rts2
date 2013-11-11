@@ -71,7 +71,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        dataSex=sex.sextract(fitsFn=args.fitsFn) 
+        dataSxtr=sex.sextract(fitsFn=args.fitsFn) 
     except Exception, e:
         logger.info('rts2af_fwhm: sextractor failed on file: {0}\nerror: {1}\nexiting'.format(args.fitsFn, e))
         sys.exit(1)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     if args.fwhmThreshold:
         fwhmTreshold=args.fwhmThreshold
 
-    if( dataSex.fwhm > fwhmTreshold):
+    if( dataSxtr.fwhm > fwhmTreshold):
 	rts2.createProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'], verbose=args.debug)
         try:
             q = rts2.Queue(rts2.json.getProxy(), args.queue)
@@ -97,8 +97,8 @@ if __name__ == '__main__':
         else:
             q.add_target(str(args.tarId))
             logger.info('rts2af_fwhm: focus run  queued')
-        logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSex.fwhm, fwhmTreshold))
+        logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSxtr.fwhm, fwhmTreshold))
     else:
-        logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSex.fwhm), float(fwhmTreshold)))
+        logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
 
     logger.info('rts2af_fwhm: DONE')

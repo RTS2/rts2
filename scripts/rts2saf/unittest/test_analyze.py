@@ -22,7 +22,7 @@ import glob
 import sys # ugly
 from rts2saf.config import Configuration 
 from rts2saf.analyze import SimpleAnalysis, CatalogAnalysis 
-from rts2saf.data import DataSex
+from rts2saf.data import DataSxtr
 from rts2saf.sextract import Sextract
 from rts2saf.environ import Environment
 
@@ -71,7 +71,7 @@ class TestSimpleAnalysis(unittest.TestCase):
 
     def test_analyze(self):
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
-        dataSex=list()
+        dataSxtr=list()
         for k, fitsFn in enumerate(fitsFns):
         
             logger.info('analyze: processing fits file: {0}'.format(fitsFn))
@@ -79,11 +79,11 @@ class TestSimpleAnalysis(unittest.TestCase):
             dSx=sxtr.sextract(fitsFn=fitsFn)
 
             if dSx !=None:
-                dataSex.append(dSx)
+                dataSxtr.append(dSx)
 
-        self.assertEqual(len(dataSex), 14, 'return value: {}'.format(len(dataSex)))
+        self.assertEqual(len(dataSxtr), 14, 'return value: {}'.format(len(dataSxtr)))
 
-        an=SimpleAnalysis(debug=False, dataSex=dataSex, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=logger)
+        an=SimpleAnalysis(debug=False, dataSxtr=dataSxtr, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=logger)
         resultFitFwhm, resultMeansFwhm=an.analyze()
         self.assertAlmostEqual(resultFitFwhm.extrFitVal, 2.2175214358, places=3, msg='return value: {}'.format(resultFitFwhm.extrFitVal))
 
@@ -110,7 +110,7 @@ class TestCatalogAnalysis(unittest.TestCase):
 
     def test_selectAndAnalyze(self):
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
-        dataSex=list()
+        dataSxtr=list()
         for k, fitsFn in enumerate(fitsFns):
         
             logger.info('analyze: processing fits file: {0}'.format(fitsFn))
@@ -118,10 +118,10 @@ class TestCatalogAnalysis(unittest.TestCase):
             dSx=sxtr.sextract(fitsFn=fitsFn)
 
             if dSx !=None:
-                dataSex.append(dSx)
+                dataSxtr.append(dSx)
 
-        self.assertEqual(len(dataSex), 14, 'return value: {}'.format(len(dataSex)))
-        an=CatalogAnalysis(debug=False, dataSex=dataSex, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName='rts2saf.criteria_radius', ev=self.ev, rt=self.rt, logger=logger)
+        self.assertEqual(len(dataSxtr), 14, 'return value: {}'.format(len(dataSxtr)))
+        an=CatalogAnalysis(debug=False, dataSxtr=dataSxtr, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName='rts2saf.criteria_radius', ev=self.ev, rt=self.rt, logger=logger)
         accRFt, rejRFt, allrFt, accRMns, recRMns, allRMns=an.selectAndAnalyze()
         self.assertEqual('{0:5.4f}'.format(allrFt.extrFitVal), '{0:5.4f}'.format(2.2175214358), 'return value: {}'.format(allrFt.extrFitVal))
         self.assertAlmostEqual(accRFt.extrFitVal, 2.24000979001, delta=0.05, msg='return value: {}'.format(allrFt.extrFitVal))

@@ -62,13 +62,13 @@ class Do(object):
         self.logger=logger
         self.fS= AutoVivification()
 
-    def buildCats(self, i_nmbrAssc=None, dataSex=None, dSxReference=None):
+    def buildCats(self, i_nmbrAssc=None, dataSxtr=None, dSxReference=None):
         i_nmbr=dSxReference.fields.index('NUMBER')
         cats=collections.defaultdict(int)
         # count the occurence of each object
         focPosS=collections.defaultdict(int)
         for nmbr in sorted([ int(x[i_nmbr]) for x in dSxReference.catalog ]):
-            for dSx in dataSex:
+            for dSx in dataSxtr:
                 for nmbrAssc in [ int(x[i_nmbrAssc]) for x in dSx.catalog ]:
                     if nmbr == nmbrAssc:
                         cats[nmbr] +=1
@@ -77,35 +77,35 @@ class Do(object):
 
         return cats,focPosS
 
-    def dropDSx(self, focPosS=None, dataSex=None, dSxReference=None):
+    def dropDSx(self, focPosS=None, dataSxtr=None, dSxReference=None):
         # drop those catalogs which have to few objects
         # this is a glitch in case two dSx are present with the same focPos
         for focPos, val in focPosS.iteritems():
             if val < self.args.fractObjs * len(dSxReference.catalog):
                 # remove dSx
                 dSxdrp=None
-                for dSx in dataSex:
+                for dSx in dataSxtr:
                     if focPos == dSx.focPos:
                         dSxdrp=dSx
                         break
                 else:
                     continue
-                dataSex.remove(dSxdrp)
+                dataSxtr.remove(dSxdrp)
                 self.logger.warn('dropDSx: focuser position: {0:5d} dropped dSx, {1:5d}, {2:6.2f} {3:5d}'.format(int(focPos), val, self.args.fractObjs * len(dSxReference.catalog), len(dSxReference.catalog)))
 
-        return dataSex
+        return dataSxtr
 
-    def onAlmostImagesAssoc(self, dataSex=None, dSxReference=None):
+    def onAlmostImagesAssoc(self, dataSxtr=None, dSxReference=None):
         # ToDO clarify that -1
-        i_nmbrAssc= -1 + dataSex[0].fields.index('NUMBER_ASSOC') 
+        i_nmbrAssc= -1 + dataSxtr[0].fields.index('NUMBER_ASSOC') 
         # build cats
-        cats,focPosS=self.buildCats( i_nmbrAssc=i_nmbrAssc, dataSex=dataSex, dSxReference=dSxReference)
+        cats,focPosS=self.buildCats( i_nmbrAssc=i_nmbrAssc, dataSxtr=dataSxtr, dSxReference=dSxReference)
         # drop
-        dataSex= self.dropDSx(focPosS=focPosS, dataSex=dataSex, dSxReference=dSxReference)
+        dataSxtr= self.dropDSx(focPosS=focPosS, dataSxtr=dataSxtr, dSxReference=dSxReference)
         # rebuild the cats
-        cats, focPosS=self.buildCats(i_nmbrAssc=i_nmbrAssc, dataSex=dataSex, dSxReference=dSxReference)
+        cats, focPosS=self.buildCats(i_nmbrAssc=i_nmbrAssc, dataSxtr=dataSxtr, dSxReference=dSxReference)
 
-        foundOnAll=len(dataSex)
+        foundOnAll=len(dataSxtr)
         assocObjNmbrs=list()
         # identify those objects which are on all images
         for k  in  cats.keys():
@@ -114,11 +114,11 @@ class Do(object):
 
         # save the raw values for later analysis
         # initialize data.catalog
-        for dSx in dataSex:
+        for dSx in dataSxtr:
             dSx.toRawCatalog()
         # copy those catalog entries which are found on all
         for k  in  assocObjNmbrs:
-            for dSx in dataSex:
+            for dSx in dataSxtr:
                 for sx in dSx.rawCatalog:
                     if k == sx[i_nmbrAssc]:
                         dSx.catalog.append(sx)
@@ -127,13 +127,13 @@ class Do(object):
                     self.logger.debug('onAllImages: no break for object: {0}'.format(k))
 
         # recalculate FWHM, Flux etc.
-        i_fwhm= dataSex[0].fields.index('FWHM_IMAGE') 
+        i_fwhm= dataSxtr[0].fields.index('FWHM_IMAGE') 
 
         i_flux=None
         if self.args.flux:
-            i_flux= dataSex[0].fields.index('FLUX_MAX') 
+            i_flux= dataSxtr[0].fields.index('FLUX_MAX') 
 
-        for dSx in dataSex:
+        for dSx in dataSxtr:
             dSx.fillData(i_fwhm=i_fwhm, i_flux=i_flux)
 
             if self.args.flux:
@@ -143,21 +143,21 @@ class Do(object):
 
         self.logger.info('onAlmostImages: objects: {0}'.format(len(assocObjNmbrs)))
 
-        return dataSex
+        return dataSxtr
 
-    def onAlmostImages(self, dataSex=None, dSxReference=None):
+    def onAlmostImages(self, dataSxtr=None, dSxReference=None):
 
         focPosS=collections.defaultdict(int)
-        for dSx in dataSex:
+        for dSx in dataSxtr:
             focPosS[dSx.focPos]=dSx.nObjs
 
-        dataSex= self.dropDSx(focPosS=focPosS, dataSex=dataSex, dSxReference=dSxReference)
+        dataSxtr= self.dropDSx(focPosS=focPosS, dataSxtr=dataSxtr, dSxReference=dSxReference)
 
-        return dataSex
+        return dataSxtr
 
     def sextractLoop(self, fitsFns=None, assocFn=None):
 
-        dataSex=list()
+        dataSxtr=list()
         for fitsFn in fitsFns:
             rsx= Sextract(debug=args.sexDebug, rt=rt, logger=self.logger)
             if self.args.flux:
@@ -168,24 +168,24 @@ class Do(object):
             dSx=rsx.sextract(fitsFn=fitsFn, assocFn=assocFn)
 
             if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
-                dataSex.append(dSx)
+                dataSxtr.append(dSx)
             else:
                 self.logger.warn('sextractLoop: no result: file: {0}'.format(fitsFn))
 
-        return dataSex
+        return dataSxtr
 
     def analyzeRun(self, fitsFns=None):
 
         # define the reference FITS as the one with the most sextracted objects
         # ToDo may be weighted means
-        dataSex=self.sextractLoop(fitsFns=fitsFns)
-        if len(dataSex)==0:
+        dataSxtr=self.sextractLoop(fitsFns=fitsFns)
+        if len(dataSxtr)==0:
             self.logger.warn('analyzeRun: no results for files: {}'.format(fitsFns))
             return None, None
 
-        dataSex.sort(key = lambda x: x.nObjs, reverse=True)
-        fitsFn=dataSex[0].fitsFn
-        self.logger.info('analyzeRun: reference at FOC_POS: {0}, {1}'.format(dataSex[0].focPos, fitsFn))
+        dataSxtr.sort(key = lambda x: x.nObjs, reverse=True)
+        fitsFn=dataSxtr[0].fitsFn
+        self.logger.info('analyzeRun: reference at FOC_POS: {0}, {1}'.format(dataSxtr[0].focPos, fitsFn))
         
         rsxR= Sextract(debug=args.sexDebug, createAssoc=self.args.associate, rt=rt, logger=self.logger)
         if args.flux:
@@ -197,10 +197,10 @@ class Do(object):
 
         dSxReference=rsxR.sextract(fitsFn=fitsFn, assocFn=assocFn)
 
-        dataSex=self.sextractLoop(fitsFns=fitsFns, assocFn=assocFn)
+        dataSxtr=self.sextractLoop(fitsFns=fitsFns, assocFn=assocFn)
 
         pos=collections.defaultdict(int)
-        for dSx in dataSex:
+        for dSx in dataSxtr:
             pos[dSx.focPos] += 1 
 
         if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
@@ -211,18 +211,18 @@ class Do(object):
             return None, None 
 
         if self.args.associate:
-            dataSex=self.onAlmostImagesAssoc(dataSex=dataSex, dSxReference=dSxReference)
+            dataSxtr=self.onAlmostImagesAssoc(dataSxtr=dataSxtr, dSxReference=dSxReference)
         else:
-            dataSex=self.onAlmostImages(dataSex=dataSex, dSxReference=dSxReference)
+            dataSxtr=self.onAlmostImages(dataSxtr=dataSxtr, dSxReference=dSxReference)
 
         # appears on plot
-        date=dataSex[0].date.split('.')[0]
+        date=dataSxtr[0].date.split('.')[0]
 
         if args.catalogAnalysis:
-            an=CatalogAnalysis(debug=self.debug, date=date, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
+            an=CatalogAnalysis(debug=self.debug, date=date, dataSxtr=dataSxtr, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
             rFt, rMns=an.selectAndAnalyze()
         else:
-            an=SimpleAnalysis(debug=self.debug, date=date, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=self.logger)
+            an=SimpleAnalysis(debug=self.debug, date=date, dataSxtr=dataSxtr, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=self.logger)
             rFt, rMns=an.analyze()
             #ToDo matplotlib issue
             if not self.args.model:

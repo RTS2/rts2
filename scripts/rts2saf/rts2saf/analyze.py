@@ -33,10 +33,10 @@ from rts2saf.ds9region import Ds9Region
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
-    def __init__(self, debug=False, date=None, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
+    def __init__(self, debug=False, date=None, dataSxtr=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
         self.debug=debug
         self.date=date
-        self.dataSex=dataSex
+        self.dataSxtr=dataSxtr
         self.Ds9Display=Ds9Display
         self.FitDisplay=FitDisplay
         self.ftwName=ftwName
@@ -110,16 +110,16 @@ class SimpleAnalysis(object):
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
         # ToDo decide wich ftName from which ftw!!
-        bPth,fn=os.path.split(self.dataSex[0].fitsFn)
-        ftName=self.dataSex[0].ftName
+        bPth,fn=os.path.split(self.dataSxtr[0].fitsFn)
+        ftName=self.dataSxtr[0].ftName
         plotFn=self.ev.expandToPlotFileName(plotFn='{0}/{1}.png'.format(bPth,ftName))
         self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
         # fwhm
         self.dataFitFwhm= DataFitFwhm(
-            dataSex=self.dataSex,
+            dataSxtr=self.dataSxtr,
             plotFn=plotFn,
-            ambientTemp=self.dataSex[0].ambientTemp, 
-            ftName=self.dataSex[0].ftName,
+            ambientTemp=self.dataSxtr[0].ambientTemp, 
+            ftName=self.dataSxtr[0].ftName,
             )
         self.__fitFwhm()
         # weighted means
@@ -127,17 +127,17 @@ class SimpleAnalysis(object):
         self.resultMeansFwhm.calculate(var='FWHM')
 
         try:
-            self.i_flux = self.dataSex[0].fields.index('FLUX_MAX')
+            self.i_flux = self.dataSxtr[0].fields.index('FLUX_MAX')
         except:
             pass
 
         if self.i_flux!=None:
             self.dataFitFlux= DataFitFlux(
-                dataSex=self.dataSex,
+                dataSxtr=self.dataSxtr,
                 dataFitFwhm=self.dataFitFwhm,
                 plotFn=plotFn,
-                ambientTemp=self.dataSex[0].ambientTemp, 
-                ftName=self.dataSex[0].ftName 
+                ambientTemp=self.dataSxtr[0].ambientTemp, 
+                ftName=self.dataSxtr[0].ftName 
                 )
 
             self.__fitFlux()
@@ -182,11 +182,11 @@ class SimpleAnalysis(object):
                 return 
 
             # ToDo cretae new list
-            self.dataSex.sort(key=lambda x: int(x.focPos))
+            self.dataSxtr.sort(key=lambda x: int(x.focPos))
 
-            for dSx in self.dataSex:
+            for dSx in self.dataSxtr:
                 if dSx.fitsFn:
-                    dr=Ds9Region( dataSex=dSx, display=dds9, logger=self.logger)
+                    dr=Ds9Region( dataSxtr=dSx, display=dds9, logger=self.logger)
                     if not dr.displayWithRegion():
                         break # something went wrong
                     time.sleep(1.)
@@ -199,10 +199,10 @@ from itertools import ifilter
 # ToDo at the moment this method is an demonstrator
 class CatalogAnalysis(object):
     """CatalogAnalysis a set of FITS"""
-    def __init__(self, debug=False, date=None, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, moduleName=None, ev=None, rt=None, logger=None):
+    def __init__(self, debug=False, date=None, dataSxtr=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, moduleName=None, ev=None, rt=None, logger=None):
         self.debug=debug
         self.date=date
-        self.dataSex=dataSex
+        self.dataSxtr=dataSxtr
         self.Ds9Display=Ds9Display
         self.FitDisplay=FitDisplay
         self.ftwName=ftwName
@@ -221,25 +221,25 @@ class CatalogAnalysis(object):
         # http://stackoverflow.com/questions/951124/dynamic-loading-of-python-modules
         # Giorgio Gelardi ["*"]!
         self.criteriaModule=__import__(self.moduleName, fromlist=["*"])
-        self.cr=self.criteriaModule.Criteria(dataSex=self.dataSex, rt=self.rt)
+        self.cr=self.criteriaModule.Criteria(dataSxtr=self.dataSxtr, rt=self.rt)
 
     def selectAndAnalyze(self):
 
         self.__loadCriteria()
         # ToDo glitch
-        i_f = self.dataSex[0].fields.index('FWHM_IMAGE')
-        acceptedDataSex=list()
-        rejectedDataSex=list()
-        for dSx in self.dataSex:
+        i_f = self.dataSxtr[0].fields.index('FWHM_IMAGE')
+        acceptedDataSxtr=list()
+        rejectedDataSxtr=list()
+        for dSx in self.dataSxtr:
             adSx=copy.deepcopy(dSx)
-            acceptedDataSex.append(adSx)
+            acceptedDataSxtr.append(adSx)
             adSx.catalog= list(ifilter(self.cr.decide, dSx.catalog))
             nsFwhm=np.asarray(map(lambda x: x[i_f], adSx.catalog))
             adSx.fwhm=numpy.median(nsFwhm)
             adSx.stdFwhm=numpy.std(nsFwhm)
 
             rdSx=copy.deepcopy(dSx)
-            rejectedDataSex.append(rdSx)
+            rejectedDataSxtr.append(rdSx)
             rdSx.catalog=  list(ifilterfalse(self.cr.decide, dSx.catalog))
 
             nsFwhm=np.asarray(map(lambda x: x[i_f], rdSx.catalog))
@@ -247,7 +247,7 @@ class CatalogAnalysis(object):
             rdSx.stdFwhm=numpy.std(nsFwhm)
 
         # 
-        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=acceptedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSxtr=acceptedDataSxtr, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         accRFt, accRMns=an.analyze()
         try:
             self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
@@ -258,7 +258,7 @@ class CatalogAnalysis(object):
             if accRFt.fitFlag:
                 an.display()
         #
-        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSxtr=rejectedDataSxtr, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rejRFt, recRMns=an.analyze()
         try:
             self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFt.weightedMeanObjects, rejRFt.weightedMeanCombined, rejRFt.minFitPos, rejRFt.minFitFwhm))
@@ -269,7 +269,7 @@ class CatalogAnalysis(object):
             if accRFt.fitFlag:
                 an.display()
         # 
-        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSxtr=self.dataSxtr, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         allrFt, allRMns=an.analyze()
         try:
             self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFt.weightedMeanObjects, allRFt.weightedMeanCombined, allRFt.minFitPos, allRFt.minFitFwhm))

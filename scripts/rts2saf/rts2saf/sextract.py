@@ -25,7 +25,7 @@ import sys
 import time
 # ToDo sort that out with Petr import rts2.sextractor as rsx
 import rts2saf.sextractor as rsx
-from rts2saf.data import DataSex
+from rts2saf.data import DataSxtr
 
 class Sextract(object):
     """Sextract a FITS image"""
@@ -57,7 +57,7 @@ class Sextract(object):
 
         if stde:
             self.logger.error( 'sextract: {0} not found, sextractor message:\n{1}\nreturning'.format(fitsFn,stde))
-            return DataSex()
+            return DataSxtr()
 
         # find the sextractor counts
         objectCount = len(sex.objects)
@@ -66,13 +66,13 @@ class Sextract(object):
             hdr = getheader(fitsFn, 0)
         except Exception, e:
             self.logger.error( 'sextract: FITS {0} \nmessage: {1} returning'.format(fitsFn, e))
-            return DataSex()
+            return DataSxtr()
 
         try:
             focPos = float(hdr['FOC_POS'])
         except Exception, e:
             self.logger.error( 'sextract: in FITS {0} key word FOC_POS not found\nmessage: {1} returning'.format(fitsFn, e))
-            return DataSex()
+            return DataSxtr()
 
         # these values are remaped in config.py
         try:
@@ -156,10 +156,10 @@ class Sextract(object):
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
             self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}, \nmessage rts2saf.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
-            return DataSex()
+            return DataSxtr()
 
         # store results
-        dataSex=DataSex(
+        dataSxtr=DataSxtr(
             date=date,
             fitsFn=fitsFn, 
             focPos=focPos, 
@@ -181,11 +181,11 @@ class Sextract(object):
             assocFn=assocFn)
 
         try:
-            i_flux = dataSex.fields.index('FLUX_MAX')
-            dataSex.fillFlux(i_flux=i_flux)
+            i_flux = dataSxtr.fields.index('FLUX_MAX')
+            dataSxtr.fillFlux(i_flux=i_flux)
         except:
             if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFno))
 
         if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
-        return dataSex
+        return dataSxtr
