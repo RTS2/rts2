@@ -255,7 +255,8 @@ class CatalogAnalysis(object):
             self.logger.debug('ACCEPTED: fit and calculation failed')
             
         if self.Ds9Display or self.FitDisplay:
-            an.display()
+            if accRFt.fitFlag:
+                an.display()
         #
         an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rejRFt, recRMns=an.analyze()
@@ -265,7 +266,8 @@ class CatalogAnalysis(object):
             self.logger.debug('REJECTED: fit and calculation failed')
 
         if self.Ds9Display or self.FitDisplay:
-            an.display()
+            if accRFt.fitFlag:
+                an.display()
         # 
         an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         allrFt, allRMns=an.analyze()
@@ -276,6 +278,7 @@ class CatalogAnalysis(object):
 
 
         if self.Ds9Display or self.FitDisplay:
-            an.display()
+            if accRFt.fitFlag:
+                an.display()
         # ToDo here are three objects
         return accRFt, rejRFt, allrFt, accRMns, recRMns, allRMns

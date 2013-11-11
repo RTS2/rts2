@@ -226,7 +226,9 @@ class Do(object):
             rFt, rMns=an.analyze()
             #ToDo matplotlib issue
             if not self.args.model:
-                an.display()
+                if rFt.fitFlag:
+                    an.display()
+
         if not rFt!=None:
             self.logger.info('analyzeRun: result: wMObjects: {0:5.0f}, wMCombined:{1:5.0f}, wMStdFwhm:{1:5.0f}, minFitPos: {2:5.0f}, minFitFwhm: {3:5.0f}'.format(rFt.weightedMeanObjects, rFt.weightedMeanCombined, rFt.weightedMeanStdFwhm, rFt.minFitPos, rFt.minFitFwhm))
         return rFt, rMns

@@ -118,7 +118,8 @@ class Focus(object):
                     anr= an.SimpleAnalysis(dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
                     rFt, rMns= anr.analyze()
                 # 
-                anr.display()
+                if rFt.fitFlag:
+                    anr.display()
 
                 if rMns.objects:
                     self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(rMns.objects, ftw.name, ft.name))
