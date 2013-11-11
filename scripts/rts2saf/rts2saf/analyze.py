@@ -33,8 +33,9 @@ from rts2saf.ds9region import Ds9Region
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
+    def __init__(self, debug=False, date=None, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
         self.debug=debug
+        self.date=date
         self.dataSex=dataSex
         self.Ds9Display=Ds9Display
         self.FitDisplay=FitDisplay
@@ -158,7 +159,7 @@ class SimpleAnalysis(object):
                 self.logger.warn('analyze: no X-Window DISPLAY, do not plot with mathplotlib and/or ds9')
 
         
-        ft=FitDisplay(date=None, logger=self.logger)
+        ft=FitDisplay(date=self.date, logger=self.logger)
 
         if self.i_flux==None:
             ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=self.FitDisplay)
@@ -198,8 +199,9 @@ from itertools import ifilter
 # ToDo at the moment this method is an demonstrator
 class CatalogAnalysis(object):
     """CatalogAnalysis a set of FITS"""
-    def __init__(self, debug=False, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, moduleName=None, ev=None, rt=None, logger=None):
+    def __init__(self, debug=False, date=None, dataSex=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, moduleName=None, ev=None, rt=None, logger=None):
         self.debug=debug
+        self.date=date
         self.dataSex=dataSex
         self.Ds9Display=Ds9Display
         self.FitDisplay=FitDisplay
@@ -245,7 +247,7 @@ class CatalogAnalysis(object):
             rdSx.stdFwhm=numpy.std(nsFwhm)
 
         # 
-        an=SimpleAnalysis(debug=self.debug, dataSex=acceptedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=acceptedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         accRFt, accRMns=an.analyze()
         try:
             self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
@@ -255,7 +257,7 @@ class CatalogAnalysis(object):
         if self.Ds9Display or self.FitDisplay:
             an.display()
         #
-        an=SimpleAnalysis(debug=self.debug, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=rejectedDataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         rejRFt, recRMns=an.analyze()
         try:
             self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFt.weightedMeanObjects, rejRFt.weightedMeanCombined, rejRFt.minFitPos, rejRFt.minFitFwhm))
@@ -265,7 +267,7 @@ class CatalogAnalysis(object):
         if self.Ds9Display or self.FitDisplay:
             an.display()
         # 
-        an=SimpleAnalysis(debug=self.debug, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSex=self.dataSex, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
         allrFt, allRMns=an.analyze()
         try:
             self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFt.weightedMeanObjects, allRFt.weightedMeanCombined, allRFt.minFitPos, allRFt.minFitFwhm))

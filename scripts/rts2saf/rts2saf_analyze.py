@@ -215,12 +215,14 @@ class Do(object):
         else:
             dataSex=self.onAlmostImages(dataSex=dataSex, dSxReference=dSxReference)
 
+        # appears on plot
+        date=dataSex[0].date.split('.')[0]
 
         if args.catalogAnalysis:
-            an=CatalogAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
+            an=CatalogAnalysis(debug=self.debug, date=date, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
             rFt, rMns=an.selectAndAnalyze()
         else:
-            an=SimpleAnalysis(debug=self.debug, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=self.logger)
+            an=SimpleAnalysis(debug=self.debug, date=date, dataSex=dataSex, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=self.logger)
             rFt, rMns=an.analyze()
             #ToDo matplotlib issue
             if not self.args.model:

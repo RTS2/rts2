@@ -171,7 +171,8 @@ class ResultFit(object):
         self.titleResult=titleResult
 
 class DataSex(object):
-    def __init__(self, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
+    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
+        self.date=date
         self.fitsFn=fitsFn
         self.focPos=focPos
         self.stdFocPos=stdFocPos

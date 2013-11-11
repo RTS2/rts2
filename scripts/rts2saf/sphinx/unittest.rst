@@ -54,7 +54,13 @@ and make a
 
  tail -f /tmp/unittest.log
 
-to watch the output. RTS2 devices (CCD, focuser, filter wheels) are created as specified in ``./rts2saf-bootes-2.cfg`` in the same directory.
+to watch the output or watch progress with
+
+.. code-block:: bash
+
+ rts2-mon --port 1617
+
+RTS2 devices (CCD, focuser, filter wheels) are created as specified in ``./rts2saf-bootes-2.cfg`` in the same directory.
 
 If you create this documentation
 

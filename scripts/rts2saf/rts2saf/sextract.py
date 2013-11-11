@@ -120,6 +120,14 @@ class Sextract(object):
         except:
             self.logger.warn( 'sextract: no filter name information found, {0}'.format(fitsFn, focPos, objectCount))
             ftName=None
+
+        try:
+            date = hdr['DATE'] # DATE-OBS
+        except:
+            self.logger.warn( 'sextract: no date information found, {0}'.format(fitsFn, focPos, objectCount))
+            date=None
+
+
         # ToDo clumsy
         ftAName=None
         if self.nbrsFtwsInuse > 0:
@@ -152,6 +160,7 @@ class Sextract(object):
 
         # store results
         dataSex=DataSex(
+            date=date,
             fitsFn=fitsFn, 
             focPos=focPos, 
             stdFocPos=float(self.stdFocPos), # nothing real...

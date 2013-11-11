@@ -107,6 +107,8 @@ class Focus(object):
                         for p,v in pos.iteritems():
                             self.logger.debug('Focus:{0:5.0f}: {1}'.format(p,v))
                     continue
+                # appears on plot
+                date=dataSex[0].date.split('.')[0]
 
                 # might go to a thread too
                 if self.args.catalogAnalysis:
