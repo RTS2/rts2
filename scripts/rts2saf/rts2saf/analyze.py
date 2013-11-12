@@ -33,7 +33,18 @@ from rts2saf.ds9region import Ds9Region
 
 class SimpleAnalysis(object):
     """SimpleAnalysis a set of FITS"""
-    def __init__(self, debug=False, date=None, dataSxtr=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, ev=None, logger=None):
+    def __init__(self, 
+                 debug=False, 
+                 date=None, 
+                 dataSxtr=None, 
+                 Ds9Display=False, 
+                 FitDisplay=False, 
+                 ftwName=None, 
+                 ftName=None, 
+                 dryFits=False, 
+                 focRes=None, 
+                 ev=None, 
+                 logger=None):
         self.debug=debug
         self.date=date
         self.dataSxtr=dataSxtr
@@ -69,22 +80,22 @@ class SimpleAnalysis(object):
             return 
 
         self.resultFitFwhm=ResultFit(
-            ambientTemp=self.dataFitFwhm.ambientTemp, 
-            ftName=self.dataFitFwhm.ftName,
-            extrFitPos=minFitPos, 
-            extrFitVal=minFitFwhm, 
-            fitPar=fitPar,
-            fitFlag=fitFlag,
-            color='blue',
-            ylabel='FWHM [px]: blue',
-            titleResult='fwhm:{0:5d}'.format(int(minFitPos))
+            ambientTemp = self.dataFitFwhm.ambientTemp, 
+            ftName = self.dataFitFwhm.ftName,
+            extrFitPos = minFitPos, 
+            extrFitVal = minFitFwhm, 
+            fitPar = fitPar,
+            fitFlag = fitFlag,
+            color = 'blue',
+            ylabel = 'FWHM [px]: blue',
+            titleResult = 'fwhm:{0:5d}'.format(int(minFitPos))
             )
 
     def __fitFlux(self):
 
-        maxFitPos, maxFitFlux, fitPar, fitFlag= FitFunction(
-            dataFit=self.dataFitFlux, 
-            logger=self.logger, 
+        maxFitPos, maxFitFlux, fitPar, fitFlag = FitFunction(
+            dataFit = self.dataFitFlux, 
+            logger = self.logger, 
             ).fitData()
 
         if fitFlag:
@@ -95,35 +106,51 @@ class SimpleAnalysis(object):
             return 
 
         self.resultFitFlux=ResultFit(
-            ambientTemp=self.dataFitFlux.ambientTemp, 
-            ftName=self.dataFitFlux.ftName,
-            extrFitPos=maxFitPos, 
-            extrFitVal=maxFitFlux, 
-            fitPar=fitPar,
-            fitFlag=fitFlag,
-            color='red',
-            ylabel='FWHM [px]: blue Flux [a.u.]: red',
-            titleResult='fwhm:{0:5d}, flux: {1:5d}'.format(int(self.resultFitFwhm.extrFitPos), int(maxFitPos))
+            ambientTemp = self.dataFitFlux.ambientTemp, 
+            ftName = self.dataFitFlux.ftName,
+            extrFitPos = maxFitPos, 
+            extrFitVal=  maxFitFlux, 
+            fitPar = fitPar,
+            fitFlag = fitFlag,
+            color = 'red',
+            ylabel = 'FWHM [px]: blue Flux [a.u.]: red',
+            titleResult = 'fwhm:{0:5d}, flux: {1:5d}'
+            .format(int(self.resultFitFwhm.extrFitPos), int(maxFitPos))
             )
 
     def analyze(self):
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
         # ToDo decide wich ftName from which ftw!!
-        bPth,fn=os.path.split(self.dataSxtr[0].fitsFn)
-        ftName=self.dataSxtr[0].ftName
-        plotFn=self.ev.expandToPlotFileName(plotFn='{0}/{1}.png'.format(bPth,ftName))
+        if len(self.dataSxtr)>0:
+            bPth,fn=os.path.split(self.dataSxtr[0].fitsFn)
+            ftName=self.dataSxtr[0].ftName
+        else:
+            bPth='/tmp'
+            ftName='noFtName'
+
+        if len(self.dataSxtr)>0:
+            ambientTemp = self.dataSxtr[0].ambientTemp
+        else:
+            ambientTemp='noAmbientTemp'
+
+        plotFn = self.ev.expandToPlotFileName(plotFn='{0}/{1}.png'.format(bPth,ftName))
         self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
         # fwhm
-        self.dataFitFwhm= DataFitFwhm(
-            dataSxtr=self.dataSxtr,
-            plotFn=plotFn,
-            ambientTemp=self.dataSxtr[0].ambientTemp, 
-            ftName=self.dataSxtr[0].ftName,
+        if len(self.dataSxtr)>0:
+            ftName = self.dataSxtr[0].ftName
+        else:
+            ftName = 'NoFtname'
+
+        self.dataFitFwhm = DataFitFwhm(
+            dataSxtr = self.dataSxtr,
+            plotFn = plotFn,
+            ambientTemp = ambientTemp, 
+            ftName = ftName,
             )
         self.__fitFwhm()
         # weighted means
-        self.resultMeansFwhm=ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
+        self.resultMeansFwhm = ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
         self.resultMeansFwhm.calculate(var='FWHM')
 
         try:
@@ -159,7 +186,7 @@ class SimpleAnalysis(object):
                 self.logger.warn('analyze: no X-Window DISPLAY, do not plot with mathplotlib and/or ds9')
 
         
-        ft=FitDisplay(date=self.date, logger=self.logger)
+        ft=FitDisplay(date = self.date, logger=self.logger)
 
         if self.i_flux==None:
             ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=self.FitDisplay)
@@ -199,9 +226,23 @@ from itertools import ifilter
 # ToDo at the moment this method is an demonstrator
 class CatalogAnalysis(object):
     """CatalogAnalysis a set of FITS"""
-    def __init__(self, debug=False, date=None, dataSxtr=None, Ds9Display=False, FitDisplay=False, ftwName=None, ftName=None, dryFits=False, focRes=None, moduleName=None, ev=None, rt=None, logger=None):
+    def __init__(self, 
+                 debug=False, 
+                 date = None, 
+                 dataSxtr=None, 
+                 Ds9Display=False, 
+                 FitDisplay=False, 
+                 ftwName=None, 
+                 ftName=None, 
+                 dryFits=False, 
+                 focRes=None, 
+                 moduleName=None, 
+                 ev=None, 
+                 rt=None, 
+                 logger=None):
+
         self.debug=debug
-        self.date=date
+        self.date = date
         self.dataSxtr=dataSxtr
         self.Ds9Display=Ds9Display
         self.FitDisplay=FitDisplay
@@ -247,7 +288,16 @@ class CatalogAnalysis(object):
             rdSx.stdFwhm=numpy.std(nsFwhm)
 
         # 
-        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSxtr=acceptedDataSxtr, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(
+            debug=self.debug, 
+            date=self.date, 
+            dataSxtr=acceptedDataSxtr, 
+            Ds9Display=self.Ds9Display, 
+            FitDisplay=self.FitDisplay, 
+            focRes=self.focRes, 
+            ev=self.ev, 
+            logger=self.logger)
+
         accRFt, accRMns=an.analyze()
         try:
             self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
@@ -258,7 +308,16 @@ class CatalogAnalysis(object):
             if accRFt.fitFlag:
                 an.display()
         #
-        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSxtr=rejectedDataSxtr, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(
+            debug=self.debug, 
+            date=self.date, 
+            dataSxtr=rejectedDataSxtr, 
+            Ds9Display=self.Ds9Display, 
+            FitDisplay=self.FitDisplay, 
+            focRes=self.focRes, 
+            ev=self.ev, 
+            logger=self.logger)
+
         rejRFt, recRMns=an.analyze()
         try:
             self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFt.weightedMeanObjects, rejRFt.weightedMeanCombined, rejRFt.minFitPos, rejRFt.minFitFwhm))
@@ -269,7 +328,16 @@ class CatalogAnalysis(object):
             if accRFt.fitFlag:
                 an.display()
         # 
-        an=SimpleAnalysis(debug=self.debug, date=self.date, dataSxtr=self.dataSxtr, Ds9Display=self.Ds9Display, FitDisplay=self.FitDisplay, focRes=self.focRes, ev=self.ev, logger=self.logger)
+        an=SimpleAnalysis(
+            debug=self.debug, 
+            date=self.date, 
+            dataSxtr=self.dataSxtr, 
+            Ds9Display=self.Ds9Display, 
+            FitDisplay=self.FitDisplay, 
+            focRes=self.focRes, 
+            ev=self.ev, 
+            logger=self.logger)
+
         allrFt, allRMns=an.analyze()
         try:
             self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFt.weightedMeanObjects, allRFt.weightedMeanCombined, allRFt.minFitPos, allRFt.minFitFwhm))

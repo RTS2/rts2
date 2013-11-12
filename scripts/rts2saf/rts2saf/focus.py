@@ -60,9 +60,20 @@ class Focus(object):
                     if self.debug: self.logger.debug('Focus: using dry FITS files from: {}'.format(self.dryFitsFiles))
                 # acquisition
                 acqu_oq = Queue.Queue()
-                #
-                acqu= acq.Acquire(debug=self.debug, proxy=self.proxy, dryFitsFiles=dFF, ftw=ftw, ft=ft, foc=self.foc, ccd=self.ccd, ftws=self.ftws, acqu_oq=acqu_oq, rt=self.rt, ev=self.ev, logger=self.logger)
-                # 
+
+                acqu= acq.Acquire(
+                    debug=self.debug, 
+                    proxy=self.proxy, 
+                    dryFitsFiles=dFF, 
+                    ftw=ftw, ft=ft, 
+                    foc=self.foc, 
+                    ccd=self.ccd, 
+                    ftws=self.ftws, 
+                    acqu_oq=acqu_oq, 
+                    rt=self.rt, 
+                    ev=self.ev, 
+                    logger=self.logger)
+
                 # steps are defined per filter, if blind in focuser
                 if not self.args.blind:
                     self.foc.focFoff=ft.focFoff
@@ -107,36 +118,49 @@ class Focus(object):
                         for p,v in pos.iteritems():
                             self.logger.debug('Focus:{0:5.0f}: {1}'.format(p,v))
                     continue
+
                 # appears on plot
                 date=dataSxtr[0].date.split('.')[0]
 
-                # might go to a thread too
+                # no need to wait, might go to a thread too
                 if self.args.catalogAnalysis:
-                    anr=CatalogAnalysis(debug=self.debug, dataSxtr=dataSxtr, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, focRes=self.foc.resolution, moduleName=args.criteria, ev=self.ev, rt=rt, logger=self.logger)
+                    anr=CatalogAnalysis(
+                        debug=self.debug, 
+                        dataSxtr=dataSxtr, 
+                        Ds9Display=self.args.Ds9Display, 
+                        FitDisplay=self.args.FitDisplay, 
+                        focRes=self.foc.resolution, 
+                        moduleName=args.criteria, 
+                        ev=self.ev, 
+                        rt=rt, 
+                        logger=self.logger)
+
                     rFt, rMns=anr.selectAndAnalyze()
                 else:
-                    anr= an.SimpleAnalysis(dataSxtr=dataSxtr, Ds9Display=self.args.Ds9Display, FitDisplay=self.args.FitDisplay, ftwName=ftw.name, ftName=ft.name, dryFits=True, focRes=self.foc.resolution, ev=self.ev, logger=self.logger)
+                    anr= an.SimpleAnalysis(
+                        dataSxtr=dataSxtr, 
+                        Ds9Display=self.args.Ds9Display, 
+                        FitDisplay=self.args.FitDisplay, 
+                        ftwName=ftw.name, 
+                        ftName=ft.name, 
+                        dryFits=True, 
+                        focRes=self.foc.resolution, 
+                        ev=self.ev, 
+                        logger=self.logger)
+
                     rFt, rMns= anr.analyze()
-                # 
+
                 if rFt.fitFlag:
                     anr.display()
-
-                if rMns.objects:
-                    self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(rMns.objects, ftw.name, ft.name))
-                if rMns.val:
-                    self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm,     filter wheel:{1}, filter:{2}'.format(rMns.val, ftw.name, ft.name))
-
-                if rMns.stdVal:
-                    self.logger.info('Focus: {0:5.0f}: weightedMeanStdFwhm,  filter wheel:{1}, filter:{2}'.format(rMns.stdVal, ftw.name, ft.name))
-
-                if rMns.combined:
-                    self.logger.info('Focus: {0:5.0f}: weightedMeanCombined, filter wheel:{1}, filter:{2}'.format(rMns.combined, ftw.name, ft.name))
 
                 if rFt.extrFitPos:
                     self.logger.info('Focus: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFt.extrFitPos, ftw.name, ft.name))
                     self.logger.info('Focus: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFt.extrFitVal, ftw.name, ft.name))
                 else:
                     self.logger.warn('Focus: no fitted minimum found')
+
+                # say something
+                rMns.logWeightedMeans(ftw=ftw, ft=ft)
 
                 # if in self.rt.cfg['EMPTY_SLOT_NAMES']
                 # or

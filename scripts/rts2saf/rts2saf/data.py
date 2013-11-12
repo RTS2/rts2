@@ -158,6 +158,19 @@ class ResultMeans(object):
             self.logger.warn('ResultMeans: can not convert weightedMeanCombined{0}:\n{1}'.format(var, e))
 
 
+    def logWeightedMeans(self, ftw=None, ft=None):
+        if self.objects:
+            self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(self.objects, ftw.name, ft.name))
+            if self.val:
+                self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm,     filter wheel:{1}, filter:{2}'.format(self.val, ftw.name, ft.name))
+
+            if self.stdVal:
+                self.logger.info('Focus: {0:5.0f}: weightedMeanStdFwhm,  filter wheel:{1}, filter:{2}'.format(self.stdVal, ftw.name, ft.name))
+
+            if self.combined:
+                self.logger.info('Focus: {0:5.0f}: weightedMeanCombined, filter wheel:{1}, filter:{2}'.format(rMns.combined, ftw.name, ft.name))
+
+
 class ResultFit(object):
     def __init__(self, ambientTemp=None, ftName=None, extrFitPos=None, extrFitVal=None, fitPar=None, fitFlag=None, color=None, ylabel=None, titleResult=None):
         self.ambientTemp=ambientTemp
