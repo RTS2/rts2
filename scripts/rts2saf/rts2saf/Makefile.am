@@ -7,6 +7,7 @@ pkgpython_rts2saf_PYTHON = __init__.py \
 	createdevices.py \
 	criteria_radius.py \
 	data.py \
+	datarun.py \
 	devices.py \
 	ds9region.py \
 	environ.py \
