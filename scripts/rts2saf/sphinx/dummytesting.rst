@@ -58,7 +58,28 @@ and if no errors are reported
 
   ./rts2saf_focus.py --toconsole --dryfitsfiles  ./samples/  --exp 1.
 
-A lot of messages appear on the terminal...
+A lot of messages appear on the terminal... 
+
+Execute 
+
+.. code-block:: bash
+
+  rts2saf_focus.py  --toconsole --dryfitsfiles  ./samples/ --exp 1. --blind
+
+Normally the fit convergences but it does often not represent the minimum in ``--blind`` mode. Therefore
+an estimator based on the weighted mean is the best guess. These
+values appear as 
+
+.. code-block:: bash
+
+ analyze: FOC_DEF:   258: weighted mean derived from sextracted objects
+ analyze: FOC_DEF:   286: weighted mean derived from FWHM
+ analyze: FOC_DEF:   305: weighted mean derived from std(FWHM)
+ analyze: FOC_DEF:   342: weighted mean derived from Combined
+
+on the console. Under normal circumstances the ``weighted mean derived from Combined``
+is the closest approximation of the true value.
+
 
 If you want to see the fitted minimum and then selected objects:
 

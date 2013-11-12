@@ -3,8 +3,8 @@ Offline analysis
 
 The script ``rts2saf_analyze.py`` provides a very basic analysis, namely
 
- 1) the minimum of the fitted function
- 2) a linear fit of the minima as a function of ambient temperature if available in FITS header
+ 1) the extremes of the fitted function for FWHM and optionally for flux
+ 2) a linear fit of the FWHM minima as a function of ambient temperature if available in FITS header
  3) FITS image display through ``DS9`` together with their region files.
 
 ``rts2saf_analyze.py`` is not restricted to ``RST2/rts2saf_focus.py`` created FITS files
@@ -116,7 +116,7 @@ and so on.
 
 Focuser temperature model
 -------------------------
-If the FITS header contains (ambient) temperature a tepmperature model is fitted at the end of the analysis.
+If option ``--model`` is specified and if the FITS header contains (ambient) temperature a linear tepmperature model is fitted at the end of the analysis.
 Specify the name of the header element in the configuration file if the default 
 
 .. code-block:: bash
@@ -125,30 +125,12 @@ Specify the name of the header element in the configuration file if the default
  AMBIENTTEMPERATURE = HIERARCH DAVIS.DOME_TMP
 
 does not match. In the above case ``HIERARCH DAVIS.DOME_TMP`` is used as temperature.
-To carry out the analysis watching fitted curves and selected stars use
+To carry out the analysis use
 
 .. code-block:: bash
 
- rts2saf_analyze.py --toconsole --fitdisplay --ds9display --basepath BASE
+ rts2saf_analyze.py --toconsole --model --basepath BASE
 
-while 
 
-.. code-block:: bash
+The parameter values for the temperature model can be retrieved from the log file.
 
- rts2saf_analyze.py --basepath BASE
-
-does it all quietly writing only to the log file and to the fit result image files. The parameter
-values for the temperature model can be retrieved from the log file.
-
-Monitoring
-----------
-
-During acquisition, ``rts2saf_focus.py`` is being executed by EXEC in the background, 
-no plots or images are displayed. To get an idea how an ongoing focus run looks like use
-
-.. code-block:: bash
-
- rts2saf_analyze.py --toconsole --fitdisplay --ds9display --basepath  BASE_DIRECTORY/DATE 
-
-where ``BASE_DIRECTORY`` refers to the configuration file and ``DATE`` to the start time.
-The processes do not interfere at all.

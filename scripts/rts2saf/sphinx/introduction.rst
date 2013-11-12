@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2013-11-10)
+Status and open issues (2013-11-12)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -16,7 +16,8 @@ Items which need further attention:
 1) target selection for focus run: the focus run is carried out at the current telescope position, e.g. nearest Landolt target
 2) finding the appropriate exposure 
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focsing.py``
-4) many ToDos in the code
+4) strategies if a focus run fails, e.g. widen the interval in regular mode, fall back to blind mode
+5) many ToDos in the code
 
 
 Quick hands on analysis
@@ -106,7 +107,6 @@ The number of
 additional parameters stored in the configuration is intentionally
 kept small.
 
-
 During analysis ``DS9`` region of interest  data structures are created for each image. 
 Optionally the images and the region files are displayed on screen using ``DS9``.
 The circle is centered to ``SExtractor``'s x,y positions. Red circles indicate objects
@@ -115,14 +115,28 @@ which were rejected green ones which were accepted.
 If rts2saf is executed remotely the X-Window DISPLAY variable has to be set otherwise 
 neither the fit nor images are displayed. 
 
-Modes of operations, involved scripts
-+++++++++++++++++++++++++++++++++++++
+Modes of operations
++++++++++++++++++++
 1) **autonomous operations**:
    ``rts2saf_imgp.py``, ``rts2saf_fwhm.py``, ``rts2saf_focus.py``
 2) **command line execution**:
    ``rts2saf_focus.py``
 3) **offline analysis**:
    ``rts2saf_analysis.py``
+
+Focus runs come in two flavors:
+
+1) 'regular'
+2) 'blind'
+
+Regular runs can be carried either in autonomous mode or on the
+command line while blind runs are typically executed only on the
+command line.
+
+Regular runs in autonomous mode are optimized for minimum elapsed time
+and typically are only carried out for the wheel's empty slot. That
+does imply the knowledge of the real focus position within narrow limits.
+
 
 Autonomous operations
 +++++++++++++++++++++
@@ -147,7 +161,7 @@ In order to simplify the debugging of one's own configuration
 all scripts can be used directly on the command line either
 with or without previously acquired images.
 
-All scripts have a :ref:`on line help <sec_scripts-label>` and all arguments 
+All scripts have an :ref:`on line help <sec_scripts-label>` and all arguments 
 have a decent default value which enables them to run in autonomous mode where 
 appropriate.
 
@@ -164,18 +178,6 @@ the range the focuser scans in steps of 2, that means ca. 10 images
 are taken. The last number is the factor by which the base exposure
 time is multiplied.
 
-Focus runs come in two flavors:
-
-1) 'regular'
-2) 'blind'
-
-Regular runs can be carried either in autonomous mode or on the
-command line while blind runs are typically executed only on the
-command line.
-
-Regular runs in autonomous mode are optimized for minimum elapsed time
-and typically are only carried out for the wheel's empty slot. That
-does imply the knowledge of the real focus position within narrow limits.
 
 The measurement of the filter offsets (see your CCD driver) is done on
 the command line and the results are manually written to file ``/etc/rts2/devices``:
@@ -218,23 +220,5 @@ and 10 images are exposed. Set the absolute limits
  FOCUSER_ABSOLUTE_LOWER_LIMIT = -16
  FOCUSER_ABSOLUTE_UPPER_LIMIT = 19
 
-so that the sum of ``FOC_DEF`` and eventual filter offsets does not exceed either lower or upper limits of the real focuser. If unsure set them to the hardware limits. Execute 
-
-.. code-block:: bash
-
-  rts2saf_focus.py  --toconsole --blind
-
-Normally the fit convergences but it does often not represent the minimum in ``--blind`` mode. Therefore
-an estimator based on the weighted mean is the best guess. These
-values appear as 
-
-.. code-block:: bash
-
- analyze: FOC_DEF:   258: weighted mean derived from sextracted objects
- analyze: FOC_DEF:   286: weighted mean derived from FWHM
- analyze: FOC_DEF:   305: weighted mean derived from std(FWHM)
- analyze: FOC_DEF:   342: weighted mean derived from Combined
-
-on the console. Under normal circumstances the ``weighted mean derived from Combined``
-is the closest approximation of the true value.
+so that the sum of ``FOC_DEF`` and eventual filter offsets does not exceed either lower or upper limits of the real focuser. If unsure set them to the hardware limits. 
 

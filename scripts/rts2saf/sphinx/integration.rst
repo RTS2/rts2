@@ -1,8 +1,6 @@
 RTS2 integration
 ================
 
-Integration of rts2saf
-----------------------
 
 In ``/etc/rts2/rts2.ini`` section
 
@@ -53,6 +51,30 @@ To see script ``rts2saf_imgp.py`` working use:
 
 The output goes to ``/var/log/rts2-debug``.
 
+Monitoring
+----------
+
+During acquisition, ``rts2saf_focus.py`` is being executed by EXEC in the background, 
+no plots or images are displayed. To get an idea how an ongoing focus run looks like use
+
+.. code-block:: bash
+
+ rts2saf_analyze.py --toconsole --fitdisplay --ds9display --basepath  BASE_DIRECTORY/DATE 
+
+where ``BASE_DIRECTORY`` refers to the configuration file and ``DATE`` to the start time.
+The processes do not interfere at all.
+
+Command line execution, night time
+----------------------------------
+Execute 
+
+.. code-block:: bash
+
+  rts2saf_focus.py --toconsole --fitdisplay --ds9display
+
+and after a while a ``matplotlib`` window appears with data and the fit and after closing
+it the ``DS9`` window appears.
+
 RTS2 EXEC manual start
 ----------------------
 
@@ -82,7 +104,7 @@ and watch the log files
 
 .. code-block:: bash
 
-  tail -f /var/log/rts2-debug /tmp/rts2saf_focus.py.log
+  tail -f /var/log/rts2-debug ./rts2saf_focus.py.log
 
 RTS2 SEL manual queuing
 -----------------------
@@ -95,13 +117,3 @@ To queue a focus run through ``rts2-selector`` (SEL) use
 
 (Re-)enable SEL and EXEC. 
 
-Command line execution, night time
-----------------------------------
-Execute 
-
-.. code-block:: bash
-
-  rts2saf_focus.py --toconsole --fitdisplay --ds9display
-
-and after a while a ``matplotlib`` window appears with data and the fit and after closing
-it the ``DS9`` window appears.
