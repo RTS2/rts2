@@ -61,28 +61,24 @@ class Do(object):
         self.logger=logger
         self.fS= AutoVivification()
 
-
     def analyzeRun(self, fitsFns=None):
         # define the reference FITS as the one with the most sextracted objects
         # ToDo may be weighted means
 
-        if self.args.associate:
-            dataRnR = DataRun(debug=self.debug, args=self.args, rt=self.rt, logger=self.logger)
-            dataRnR.sextractLoop(fitsFns=fitsFns)
+        dataRnR = DataRun(debug=self.debug, args=self.args, rt=self.rt, logger=self.logger)
+        dataRnR.sextractLoop(fitsFns=fitsFns)
 
-            if len(dataRnR.dataSxtrs)==0:
-                self.logger.warn('analyzeRun: no results for files: {}'.format(fitsFns))
-                return None, None
+        if len(dataRnR.dataSxtrs)==0:
+            self.logger.warn('analyzeRun: no results for files: {}'.format(fitsFns))
+            return None, None
 
-            dataRnR.dataSxtrs.sort(key = lambda x: x.nObjs, reverse=True)
-            fitsFnR=dataRnR.dataSxtrs[0].fitsFn
-            self.logger.info('analyzeRun: reference at FOC_POS: {0}, {1}'.format(dataRnR.dataSxtrs[0].focPos, fitsFnR))
+        dataRnR.dataSxtrs.sort(key = lambda x: x.nObjs, reverse=True)
+        fitsFnR=dataRnR.dataSxtrs[0].fitsFn
+        self.logger.info('analyzeRun: reference at FOC_POS: {0}, {1}'.format(dataRnR.dataSxtrs[0].focPos, fitsFnR))
         
-            dSxR=dataRnR.createAssocList(fitsFn=fitsFnR)
-            dataRn = DataRun(debug=self.debug, dSxReference=dSxR, args=self.args, rt=self.rt, logger=self.logger)
-        else:
-            dataRn = DataRun(debug=self.debug, args=self.args, rt=self.rt, logger=self.logger)
+        dSxR=dataRnR.createAssocList(fitsFn=fitsFnR)
 
+        dataRn = DataRun(debug=self.debug, dSxReference=dSxR, args=self.args, rt=self.rt, logger=self.logger)
         dataRn.sextractLoop(fitsFns=fitsFns)
 
         if not dataRn.numberOfFocPos():
