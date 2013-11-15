@@ -64,7 +64,6 @@ class Do(object):
     def analyzeRun(self, fitsFns = None):
         # define the reference FITS as the one with the most sextracted objects
         # ToDo may be weighted means
-
         dataRnR = DataRun(debug = self.debug, args = self.args, rt = self.rt, logger = self.logger)
         dataRnR.sextractLoop(fitsFns = fitsFns)
 
@@ -172,13 +171,13 @@ if __name__ == '__main__':
     from rts2saf.environ import Environment
     from rts2saf.log import Logger
 
-    PRG =  re.split('/', sys.argv[0])[-1]
-    parser =  argparse.ArgumentParser(prog = PRG, description = 'rts2asaf analysis')
+    prg =  re.split('/', sys.argv[0])[-1]
+    parser =  argparse.ArgumentParser(prog = prg, description = 'rts2asaf analysis')
     parser.add_argument('--debug', dest = 'debug', action = 'store_true', default = False, help = ': %(default)s,add more output')
     parser.add_argument('--sxdebug', dest = 'sxDebug', action = 'store_true', default = False, help = ': %(default)s,add more output on SExtract')
     parser.add_argument('--level', dest = 'level', default = 'INFO', help = ': %(default)s, debug level')
     parser.add_argument('--topath', dest = 'toPath', metavar = 'PATH', action = 'store', default = '.', help = ': %(default)s, write log file to path')
-    parser.add_argument('--logfile', dest = 'logfile', default = '{0}.log'.format(PRG), help = ': %(default)s, logfile name')
+    parser.add_argument('--logfile', dest = 'logfile', default = '{0}.log'.format(prg), help = ': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest = 'toconsole', action = 'store_true', default = False, help = ': %(default)s, log to console')
     parser.add_argument('--config', dest = 'config', action = 'store', default = '/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help = ': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest = 'basePath', action = 'store', default = None, help = ': %(default)s, directory where FITS images from possibly many focus runs are stored')
@@ -193,51 +192,51 @@ if __name__ == '__main__':
     parser.add_argument('--model', dest = 'model', action = 'store_true', default = False, help = ': %(default)s, fit temperature model')
     parser.add_argument('--fraction', dest = 'fractObjs', action = 'store', default = 0.5, type = float, help = ': %(default)s, fraction of objects which must be present on each image, base: object number on reference image, this option is used only together with --associate')
 
-    ARGS = parser.parse_args()
+    args = parser.parse_args()
 
-    if ARGS.debug:
-        ARGS.level =  'DEBUG'
-        ARGS.toconsole = True
+    if args.debug:
+        args.level =  'DEBUG'
+        args.toconsole = True
 
     # logger
-    LOGGER =  Logger(debug = ARGS.debug, args = ARGS).logger # if you need to chage the log format do it here
+    logger =  Logger(debug = args.debug, args = args).logger # if you need to chage the log format do it here
     # config
-    RTC = Configuration(logger = LOGGER)
-    RTC.readConfiguration(fileName = ARGS.config)
-    RTC.checkConfiguration()
+    rtc = Configuration(logger = logger)
+    rtc.readConfiguration(fileName = args.config)
+    rtc.checkConfiguration()
     # environment
-    ENVRMMNT = Environment(debug = ARGS.debug, rt = RTC, logger = LOGGER)
+    ev = Environment(debug = args.debug, rt = rtc, logger = logger)
 
-    if not ARGS.basePath:
+    if not args.basePath:
         parser.print_help()
-        LOGGER.warn('rts2saf_analyze: no --basepath specified')
+        logger.warn('rts2saf_analyze: no --basepath specified')
         sys.exit(1)
 
-    if not ARGS.toconsole:
+    if not args.toconsole:
         print 'you may wish to enable logging to console --toconsole'
-        print 'log file is writte to: {}'.format(ARGS.logfile)
+        print 'log file is writte to: {}'.format(args.logfile)
 
 
-    DO = Do(debug = ARGS.debug, basePath = ARGS.basePath, args = ARGS, rt = RTC, ev = ENVRMMNT, logger = LOGGER)
-    DO.aggregateRuns()
-    if len(DO.fS) == 0:
-        LOGGER.warn('rts2saf_analyze: exiting, no files found in basepath: {}'.format(ARGS.basePath))
+    do = Do(debug = args.debug, basePath = args.basePath, args = args, rt = rtc, ev = ev, logger = logger)
+    do.aggregateRuns()
+    if len(do.fS) == 0:
+        logger.warn('rts2saf_analyze: exiting, no files found in basepath: {}'.format(args.basePath))
         sys.exit(1)
 
-    RFF = DO.analyzeRuns()
+    rFf = do.analyzeRuns()
     
-    if len(RFF)==0:
-        LOGGER.error('rts2saf_analyze: no results, exiting')
+    if len(rFf)==0:
+        logger.error('rts2saf_analyze: no results, exiting')
         sys.exit(1)
 
-    if RFF[0].ambientTemp in 'NoTemp':
-        LOGGER.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
+    if rFf[0].ambientTemp in 'NoTemp':
+        logger.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
     else:
-        if ARGS.model:
+        if args.model:
             # temperature model
-            PLOTFN = ENVRMMNT.expandToPlotFileName( plotFn = '{}/temp-model.png'.format(ARGS.basePath))
-            DOM = TemperatureFocPosModel(showPlot = True, date = ENVRMMNT.startTime[0:19],  comment = 'test run', plotFn = PLOTFN, resultFitFwhm = RFF, LOGGER = LOGGER)
-            DOM.fitData()
-            DOM.plotData()
-            LOGGER.info('rts2saf_analyze: storing plot at: {}'.format(PLOTFN))
+            PLOTFN = ev.expandToPlotFileName( plotFn = '{}/temp-model.png'.format(args.basePath))
+            dom = TemperatureFocPosModel(showPlot = True, date = ev.startTime[0:19],  comment = 'test run', plotFn = PLOTFN, resultFitFwhm = rFf, logger = logger)
+            dom.fitData()
+            dom.plotData()
+            logger.info('rts2saf_analyze: storing plot at: {}'.format(PLOTFN))
         

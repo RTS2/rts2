@@ -180,11 +180,12 @@ class SimpleAnalysis(object):
         DISPLAY=False
         if self.FitDisplay or self.Ds9Display:
             try:
-                os.environ['DISPLAY']
-                DISPLAY=True
+                dsp=os.environ['DISPLAY']
+                if dsp:
+                    DISPLAY=True
             except:
                 self.logger.warn('analyze: no X-Window DISPLAY, do not plot with mathplotlib and/or ds9')
-
+                return
         
         ft=FitDisplay(date = self.date, logger=self.logger)
 
@@ -205,7 +206,7 @@ class SimpleAnalysis(object):
             try:
                 dds9=ds9()
             except Exception, e:
-                self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
+                self.logger.error('analyze: OOOOOOOOPS, no ds9 display available, error:\n{}'.format(e))
                 return 
 
             # ToDo cretae new list
@@ -275,7 +276,7 @@ class CatalogAnalysis(object):
             adSx=copy.deepcopy(dSx)
             acceptedDataSxtr.append(adSx)
             adSx.catalog= list(ifilter(self.cr.decide, dSx.catalog))
-            nsFwhm=np.asarray(map(lambda x: x[i_f], adSx.catalog))
+            nsFwhm=np.asarray([x[i_f] for x in adSx.catalog])
             adSx.fwhm=numpy.median(nsFwhm)
             adSx.stdFwhm=numpy.std(nsFwhm)
 
@@ -283,7 +284,7 @@ class CatalogAnalysis(object):
             rejectedDataSxtr.append(rdSx)
             rdSx.catalog=  list(ifilterfalse(self.cr.decide, dSx.catalog))
 
-            nsFwhm=np.asarray(map(lambda x: x[i_f], rdSx.catalog))
+            nsFwhm=np.asarray([ x[i_f] for x in  rdSx.catalog])
             rdSx.fwhm=numpy.median(nsFwhm)
             rdSx.stdFwhm=numpy.std(nsFwhm)
 
@@ -338,7 +339,7 @@ class CatalogAnalysis(object):
             ev=self.ev, 
             logger=self.logger)
 
-        allrFt, allRMns=an.analyze()
+        allRFt, allRMns=an.analyze()
         try:
             self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFt.weightedMeanObjects, allRFt.weightedMeanCombined, allRFt.minFitPos, allRFt.minFitFwhm))
         except:
@@ -349,4 +350,4 @@ class CatalogAnalysis(object):
             if accRFt.fitFlag:
                 an.display()
         # ToDo here are three objects
-        return accRFt, rejRFt, allrFt, accRMns, recRMns, allRMns
+        return accRFt, rejRFt, allRFt, accRMns, recRMns, allRMns

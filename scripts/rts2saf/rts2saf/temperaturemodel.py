@@ -74,6 +74,7 @@ class TemperatureFocPosModel(object):
         try:
             self.par, self.flag  = optimize.leastsq(self.errfunc, par, args=(np.asarray(self.temp), np.asarray(self.minFitPos),np.asarray(self.tempErr),np.asarray(self.minFitPosErr)))
         except Exception, e:
+            self.logger.error('temperaturemodel: fit failed:\n{0}'.format(e))                
             return None, None
 
 
@@ -112,6 +113,6 @@ class TemperatureFocPosModel(object):
             self.fig.savefig(self.plotFn)
             return self.plotFn
         except Exception, e:
-            self.logger.error('temperaturemodel: can not save plot to: {0}'.format(self.plotFn))                
+            self.logger.error('temperaturemodel: can not save plot to: {0}, matplotlib msg: {1}'.format(self.plotFn, e))                
             return e
 
