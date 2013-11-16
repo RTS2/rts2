@@ -17,6 +17,10 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""rts2saf_focus.py performs the online data acquisition and analysis according 
+to what is defined in the configuration file. 
+
+"""
 
 __author__ = 'markus.wildi@bluewin.ch'
 
@@ -24,6 +28,7 @@ import sys
 import argparse
 import re
 import glob
+import os
 
 from rts2.json import JSONProxy
 
@@ -37,13 +42,14 @@ from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 
 
 if __name__ == '__main__':
+
     # since rts2 can not pass options, any option needs a decent default value
-    prg= re.split('/', sys.argv[0])[-1]
-    parser= argparse.ArgumentParser(prog=prg, description='rts2asaf auto focus')
+    script=os.path.basename(__file__)
+    parser= argparse.ArgumentParser(prog=script, description='rts2asaf auto focus')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path') # needs a path where it can always write
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(prg), help=': %(default)s, logfile name')
+    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(script), help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--dryfitsfiles', metavar='DIRECTORY', dest='dryFitsFiles', action='store', default=None, help=': %(default)s, directory where a set of FITS files are stored from a previous focus run')
     parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
@@ -135,7 +141,7 @@ if __name__ == '__main__':
         # are devices writable
         if not cdv.deviceWriteAccess():
             logger.error('rts2saf_focus: exiting')
-            logger.info('rts2saf_focus: run {0} --verbose'.format(prg))
+            logger.info('rts2saf_focus: run {0} --verbose'.format(script))
             sys.exit(1)
 
         logger.info('rts2saf_focus: configuration check done for config file:{0}, exiting'.format(args.config))

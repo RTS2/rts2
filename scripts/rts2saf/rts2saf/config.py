@@ -20,6 +20,8 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""Config provides all required conststants with default values.
+"""
 
 __author__ = 'wildi.markus@bluewin.ch'
 
@@ -159,6 +161,13 @@ class DefaultConfiguration(object):
 
 
     def writeDefaultConfiguration(self, cfn='./rts2saf-default.cfg'):
+        """Write the default configuration to file, serves as a starting point.
+
+        :param cfn: file name
+        :type string:
+        :return cfn: file name if success else None
+        """
+
         for (section, identifier), value in sorted(self.dcf.iteritems()):
             if self.config.has_section(section)== False:
                 self.config.add_section(section)
@@ -176,8 +185,15 @@ class DefaultConfiguration(object):
         return cfn
 
 class Configuration(DefaultConfiguration):
+    """Helper class containing the runtime configuration.
+    """
     # init from base class
     def readConfiguration(self, fileName=None):
+        """Copy the default configuration and overwrite the values with those from configuration file.
+
+        :return: True if success else False
+
+        """
         # make the values accessible
         self.cfg=dict()
         # TODO
@@ -324,6 +340,10 @@ class Configuration(DefaultConfiguration):
 
 
     def checkConfiguration(self):
+        """Check the runtime configuration e.g. if SExtractor is present or if the filter wheel definitions and filters are consistent.
+
+        :return: True if success else False
+        """
         # rts2.sextractur excepts the file not found error and uses internal defaults, we check that here
         if not os.path.exists(self.cfg['SEXPATH']):
             self.logger.warn( 'Configuration.readConfiguration: sextractor path: {0} not valid, returning'.format(self.cfg['SEXPATH']))            
@@ -354,5 +374,4 @@ class Configuration(DefaultConfiguration):
                     return False
                     
         return True
-
         # more to come

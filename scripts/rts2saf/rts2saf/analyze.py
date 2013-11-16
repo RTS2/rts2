@@ -18,6 +18,9 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
+"""Analysis defines the extremes of FWHM and optionally flux. 
+"""
+
 __author__ = 'markus.wildi@bluewin.ch'
 
 import os
@@ -32,7 +35,22 @@ from rts2saf.data import DataFitFwhm,DataFitFlux,ResultFit, ResultMeans
 from rts2saf.ds9region import Ds9Region
 
 class SimpleAnalysis(object):
-    """SimpleAnalysis a set of FITS"""
+    """Analysis of extremes of FWHM and optionally of flux.
+
+    :var debug: enable more debug output with --debug and --level
+    :var date: date string as it appears on plot 
+    :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
+    :var Ds9Display: start ``DS9`` and display FITS files with regions 
+    :var FitDisplay: display fit result
+    :var ftwName: filter wheel name
+    :var ftName: filter name
+    :var focRes:  focuser resolution as given in FOCUSER_RESOLUTION  
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var ev: helper module for house keeping, :py:mod:`rts2saf.environ.Environment`
+    :var logger:  :py:mod:`rts2saf.log`
+
+"""
+
     def __init__(self, 
                  debug=False, 
                  date=None, 
@@ -41,7 +59,6 @@ class SimpleAnalysis(object):
                  FitDisplay=False, 
                  ftwName=None, 
                  ftName=None, 
-                 dryFits=False, 
                  focRes=None, 
                  ev=None, 
                  logger=None):
@@ -52,7 +69,6 @@ class SimpleAnalysis(object):
         self.FitDisplay=FitDisplay
         self.ftwName=ftwName
         self.ftName=ftName
-        self.dryFits=dryFits
         self.focRes=focRes
         self.ev=ev
         self.logger=logger
@@ -65,7 +81,7 @@ class SimpleAnalysis(object):
         self.fd=None
         self.i_flux=None
 
-    def __fitFwhm(self):
+    def _fitFwhm(self):
 
         minFitPos, minFitFwhm, fitPar, fitFlag= FitFunction(
             dataFit=self.dataFitFwhm, 
@@ -91,7 +107,7 @@ class SimpleAnalysis(object):
             titleResult = 'fwhm:{0:5d}'.format(int(minFitPos))
             )
 
-    def __fitFlux(self):
+    def _fitFlux(self):
 
         maxFitPos, maxFitFlux, fitPar, fitFlag = FitFunction(
             dataFit = self.dataFitFlux, 
@@ -119,6 +135,11 @@ class SimpleAnalysis(object):
             )
 
     def analyze(self):
+        """Fit function to data and calculate weighted means.
+
+        :return:  :py:mod:`rts2saf.data.ResultFit`, :py:mod:`rts2saf.data.ResultMeans`
+
+        """
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
         # ToDo decide wich ftName from which ftw!!
@@ -148,7 +169,7 @@ class SimpleAnalysis(object):
             ambientTemp = ambientTemp, 
             ftName = ftName,
             )
-        self.__fitFwhm()
+        self._fitFwhm()
         # weighted means
         self.resultMeansFwhm = ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
         self.resultMeansFwhm.calculate(var='FWHM')
@@ -167,7 +188,7 @@ class SimpleAnalysis(object):
                 ftName=self.dataSxtr[0].ftName 
                 )
 
-            self.__fitFlux()
+            self._fitFlux()
             # weighted means
             self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
             self.resultMeansFlux.calculate(var='Flux')
@@ -176,6 +197,9 @@ class SimpleAnalysis(object):
         return self.resultFitFwhm, self.resultMeansFwhm
 
     def display(self):
+        """Plot data, fitted function for FWHM and optionally flux.
+
+        """
         # ToDo ugly here
         DISPLAY=False
         if self.FitDisplay or self.Ds9Display:
@@ -224,9 +248,25 @@ class SimpleAnalysis(object):
 import numpy
 from itertools import ifilterfalse
 from itertools import ifilter
+
 # ToDo at the moment this method is an demonstrator
 class CatalogAnalysis(object):
-    """CatalogAnalysis a set of FITS"""
+    """Analysis of extremes of FWHM and optionally of flux restricted to additional criteria based on SExtractor parameters.
+
+    :var debug: enable more debug output with --debug and --level
+    :var date: date string as it appears on plot 
+    :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
+    :var Ds9Display: start ``DS9`` and display FITS files with regions 
+    :var FitDisplay: display fit result
+    :var ftwName: filter wheel name
+    :var ftName: filter name
+    :var moduleName: name of the module of type :py:mod:`rts2saf.criteria_radius.Criteria` or similar
+    :var focRes:  focuser resolution as given in FOCUSER_RESOLUTION  
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var ev: helper module for house keeping, :py:mod:`rts2saf.environ.Environment`
+    :var logger:  :py:mod:`rts2saf.log`
+
+"""
     def __init__(self, 
                  debug=False, 
                  date = None, 
@@ -235,7 +275,6 @@ class CatalogAnalysis(object):
                  FitDisplay=False, 
                  ftwName=None, 
                  ftName=None, 
-                 dryFits=False, 
                  focRes=None, 
                  moduleName=None, 
                  ev=None, 
@@ -249,7 +288,6 @@ class CatalogAnalysis(object):
         self.FitDisplay=FitDisplay
         self.ftwName=ftwName
         self.ftName=ftName
-        self.dryFits=dryFits
         self.focRes=focRes
         self.moduleName=moduleName
         self.ev=ev
@@ -259,15 +297,20 @@ class CatalogAnalysis(object):
         self.cr=None
 
 
-    def __loadCriteria(self):
+    def _loadCriteria(self):
         # http://stackoverflow.com/questions/951124/dynamic-loading-of-python-modules
         # Giorgio Gelardi ["*"]!
         self.criteriaModule=__import__(self.moduleName, fromlist=["*"])
         self.cr=self.criteriaModule.Criteria(dataSxtr=self.dataSxtr, rt=self.rt)
 
     def selectAndAnalyze(self):
+        """Fit function for accepted, rejected and all data  and calculate resp. weighted means .
 
-        self.__loadCriteria()
+        :return:  :py:mod:`rts2saf.data.ResultFit` for accepted, rejected and all data, resp. :py:mod:`rts2saf.data.ResultMeans` 
+
+        """
+
+        self._loadCriteria()
         # ToDo glitch
         i_f = self.dataSxtr[0].fields.index('FWHM_IMAGE')
         acceptedDataSxtr=list()

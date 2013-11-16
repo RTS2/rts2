@@ -143,7 +143,6 @@ class Focus(object):
                         FitDisplay=self.args.FitDisplay, 
                         ftwName=ftw.name, 
                         ftName=ft.name, 
-                        dryFits=True, 
                         focRes=self.foc.resolution, 
                         ev=self.ev, 
                         logger=self.logger)

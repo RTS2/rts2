@@ -37,15 +37,15 @@ of option ``--criteria``. This is a simplified version of ``criteria_radius``:
 .. code-block:: python
 
    class Criteria(object):
-      def __init__(self, dataSex=None, rt=None):
-         self.dataSex=dataSex
+      def __init__(self, dataSxtrs=None, rt=None):
+         self.dataSxtrs=dataSxtrs
          self.rt=rt
 
 	 # .fields contains the list of available SExtractor parameters
-         self.i_x = self.dataSex[0].fields.index('X_IMAGE')
-         self.i_y = self.dataSex[0].fields.index('Y_IMAGE')
+         self.i_x = self.dataSxtrs[0].fields.index('X_IMAGE')
+         self.i_y = self.dataSxtrs[0].fields.index('Y_IMAGE')
 	 # naxis1, naxis2 from FITS header
-         self.center=[ self.dataSex[0].naxis1/2.,self.dataSex[0].naxis2/2. ] 
+         self.center=[ self.dataSxtrs[0].naxis1/2.,self.dataSxtrs[0].naxis2/2. ] 
 	 # radius from configuration file
          self.radius= self.rt.cfg['RADIUS'] 
 

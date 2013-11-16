@@ -17,7 +17,10 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""Acquire steers CCD, filter wheels and focuser, acquires the FITS 
+file names and copies the files to BASE_DIRECTORY.
 
+"""
 __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
@@ -30,7 +33,26 @@ import os
 from timeout import timeout
 
 class ScanThread(threading.Thread):
-    """Thread scan aqcuires a set of FITS image filenames"""
+    """Thread scan aqcuires a set of FITS image filenames and writes the to :py:mod:`Queue` acqu_oq.
+
+    :var debug: enable more debug output with --debug and --level
+    :var dryFitsFiles: FITS files injected if the CCD can not provide them
+    :var ftw: :py:mod:`rts2saf.devices.FilterWheel`
+    :var ft: :py:mod:`rts2saf.devices.Filter`
+    :var foc: :py:mod:`rts2saf.devices.Focuser`
+    :var ccd: :py:mod:`rts2saf.devices.CCD`
+    :var focDef: default focuser position (FOC_DEF)
+    :var exposure: exposure 
+    :var blind: flavor of the focus run
+    :var writeToDevices: True, write to the devices 
+    :var proxy: :py:mod:`rts2.json.JSONProxy`
+    :var acqu_oq: :py:mod:`Queue`
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var ev: helper module for house keeping, :py:mod:`rts2saf.environ.Environment`
+    :var logger:  :py:mod:`rts2saf.log`
+
+"""
+
     def __init__(self, debug=False, dryFitsFiles=None, ftw=None, ft=None, foc=None, ccd=None, focDef=None, exposure=None, blind=False, writeToDevices=True, proxy=None, acqu_oq=None, rt=None, ev=None, logger=None):
         super(ScanThread, self).__init__()
         self.stoprequest = threading.Event()
@@ -55,6 +77,8 @@ class ScanThread(threading.Thread):
         self.COUNTER=0
 
     def run(self):
+        """Move focuser to FOC_FOFF + FOC_DEF (regular mode) or FOC_TAR (blind mode), expose CCD and write FITS file name to :py:mod:`Queue`.  
+        """
         if self.debug: self.logger.debug('____ScantThread: running')
         
         for i,pos in enumerate(self.foc.focFoff): 
@@ -109,6 +133,12 @@ class ScanThread(threading.Thread):
 #
 # TAG FEELGOOD, see expose-andor3.py if you don't believe it!!
     def scriptExecExpose(self):
+        """Expose CCD with shell command ``rts2-scriptexec``. This is a workaround.
+
+        :return storeFn: FITS file name
+        :rtype: str
+
+        """
         import os
         import errno
         import subprocess
@@ -149,6 +179,12 @@ class ScanThread(threading.Thread):
     # outside this class: not an option
     #@timeout(seconds=1, error_message=os.strerror(errno.ETIMEDOUT))
     def expose(self):
+        """Expose CCD 
+
+        :return storeFn: FITS file name
+        :rtype: str
+
+        """
         if self.exposure:
             exp= self.exposure # args.exposure
         else:
@@ -230,13 +266,30 @@ class ScanThread(threading.Thread):
             return None 
 
     def join(self, timeout=None):
+        """Stop thread on request.
+        """
         if self.debug: self.logger.debug('____ScanThread: join, timeout {0}, stopping thread on request'.format(timeout))
         self.stoprequest.set()
         super(ScanThread, self).join(timeout)
 
 
 class Acquire(object):
-    """Acquire FITS images for analysis"""
+    """Prepare acquisition of FITS images for analysis.
+
+    :var debug: enable more debug output with --debug and --level
+    :var proxy: :py:mod:`rts2.json.JSONProxy`
+    :var dryFitsFiles: FITS files injected if the CCD can not provide them
+    :var ft: :py:mod:`rts2saf.devices.Filter`
+    :var foc: :py:mod:`rts2saf.devices.Focuser`
+    :var ccd: :py:mod:`rts2saf.devices.CCD`
+    :var ftws: list of :py:mod:`rts2saf.devices.FilterWheel`
+    :var acqu_oq: :py:mod:`Queue`
+    :var writeToDevices: True, write to the devices 
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var ev: helper module for house keeping, :py:mod:`rts2saf.environ.Environment`
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, 
                  debug=False,
                  proxy=None,
@@ -372,6 +425,12 @@ class Acquire(object):
             if self.debug: self.logger.debug('acquire:ft.name: {0} is not the main wheel'.format(ftn, theWheel))
 
     def startScan(self, exposure=None, blind=False):
+        """Save RTS2 devices initial state. Start acquisition thread :py:mod:`rts2saf.acquire.ScanThread`.
+
+        :param blind: flavor of the focus run
+        :type blind: bool
+        """
+
         if not self.connected:
             self.logger.error('acquire: no connection to rts2-centrald:\n{0}'.format(self.errorMessage))
             return False
@@ -403,6 +462,7 @@ class Acquire(object):
         return True
             
     def stopScan(self, timeout=1.):
+        """Stop acquisition thread :py:mod:`rts2saf.acquire.ScanThread`. Restore RTS2 devices initial state."""
         self.scanThread.join(timeout)
         self.__finalState()
 

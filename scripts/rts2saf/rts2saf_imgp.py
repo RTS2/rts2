@@ -26,6 +26,10 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""rts2saf_imgp.py is usually called by RTS2 IMGP to perform FWHM analysis 
+and the astrometric calibration. 
+
+"""
 
 __author__ = 'markus.wildi@one-arcsec.org'
 
@@ -35,7 +39,7 @@ import re
 
 
 class ImgpAnalysis():
-    """called by IMGP to to astrometric calibration, and fwhm determination"""
+    """Called by IMGP to do astrometric calibration and FWHM analysis"""
 
     def __init__(self, scriptName=None, fwhmCmd=None, astrometryCmd=None, fitsFileName=None, logger=None):
         # RTS2 has no possibilities to pass arguments to a command, defining the defaults
@@ -50,7 +54,7 @@ class ImgpAnalysis():
         self.fwhmConfigFile= '/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
 
     def spawnProcess( self, cmd=None, wait=None):
-        """Spawn a process and Wait or do not wait for completion"""
+        """Spawn a process and wait or do not wait for completion"""
         subpr=None
         try:
             if(wait):
@@ -69,6 +73,7 @@ class ImgpAnalysis():
         return subpr
 
     def run(self):
+        """ Execute rts2saf_fwhm.py and what is defined as astrometric calibration script in configuration (see SCRIPT_ASTROMETRY). Child's stdout and stderr are copied to stdout and stderr which is read by RTS2 IMGP."""
         self.logger.info( '{0}: starting'.format(self.scriptName))
 
         cmd= [  self.fwhmCmd,
@@ -113,9 +118,7 @@ if __name__ == "__main__":
     from rts2saf.config import Configuration
     from rts2saf.log import Logger
 
-
-
-    head, script=os.path.split(sys.argv[0])
+    script=os.path.basename(__file__)
     parser= argparse.ArgumentParser(prog=script, description='rts2asaf online image processing')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')

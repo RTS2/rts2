@@ -18,6 +18,11 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
+"""rts2saf_fwhm.py performs the FWHM analysis  and queues a focus 
+run if FWHM is above threshold (see configuration). 
+
+"""
+
 __author__ = 'markus.wildi@bluewin.ch'
 
 
