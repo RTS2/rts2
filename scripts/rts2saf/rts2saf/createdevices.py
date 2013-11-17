@@ -153,9 +153,6 @@ class CreateCCD(CreateDevice):
                 fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'filter')
                 ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets')
 
-        print 'FIL',fts
-        print 'OFF', ftos
-
         for ftw in self.ftws: # defined in configuration
             ftIUns= [x.name for x in  ftw.filters] # filters from configuration
             try:

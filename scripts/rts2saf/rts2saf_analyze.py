@@ -32,7 +32,6 @@ import re
 import sys
 
 from rts2saf.analyze import SimpleAnalysis, CatalogAnalysis
-from rts2saf.temperaturemodel import TemperatureFocPosModel
 from rts2saf.datarun import DataRun
 
 # thanks http://stackoverflow.com/questions/635483/what-is-the-best-way-to-implement-nested-dictionaries-in-python
@@ -276,6 +275,18 @@ if __name__ == '__main__':
         logger.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
     else:
         if args.model:
+            from rts2saf.temperaturemodel import TemperatureFocPosModel
+            # imported here because otherwise I get a
+            #
+            ## This call to matplotlib.use() has no effect
+            ## because the the backend has already been chosen;
+            ## matplotlib.use() must be called *before* pylab, matplotlib.pyplot,
+            ## or matplotlib.backends is imported for the first time.
+            #
+            # and indeed it was already called in fitsdisplay
+            # matplotlib is a source of headache 
+            
+
             # temperature model
             PLOTFN = ev.expandToPlotFileName( plotFn = '{}/temp-model.png'.format(args.basePath))
             dom = TemperatureFocPosModel(showPlot = True, date = ev.startTime[0:19],  comment = 'test run', plotFn = PLOTFN, resultFitFwhm = rFf, logger = logger)

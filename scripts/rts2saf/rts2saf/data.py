@@ -168,7 +168,7 @@ class ResultMeans(object):
                 self.logger.info('Focus: {0:5.0f}: weightedMeanStdFwhm,  filter wheel:{1}, filter:{2}'.format(self.stdVal, ftw.name, ft.name))
 
             if self.combined:
-                self.logger.info('Focus: {0:5.0f}: weightedMeanCombined, filter wheel:{1}, filter:{2}'.format(rMns.combined, ftw.name, ft.name))
+                self.logger.info('Focus: {0:5.0f}: weightedMeanCombined, filter wheel:{1}, filter:{2}'.format(self.combined, ftw.name, ft.name))
 
 
 class ResultFit(object):

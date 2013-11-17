@@ -175,11 +175,11 @@ class Focus(object):
                     # FOC_DEF (is set first)
                     if self.rt.cfg['SET_FOC_DEF']:
                         # ToDo th correct values are stored in Focuser() object
-                        if self.rt.cfg['FWHM_MIN'] < rFt.minFitFwhm < self.rt.cfg['FWHM_MAX']:
+                        if self.rt.cfg['FWHM_MIN'] < rFt.extrFitVal < self.rt.cfg['FWHM_MAX']:
+                            self.foc.focDef=rFt.extrFitPos
                             acqu.writeFocDef()
-                            self.logger.info('Focus: set FOC_DEF: {0}'.format(int(rFt.extrFitPos)))
                         else:
-                            self.logger.warn('Focus: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3} (FWHM_MIN,FWHM_MAX)'.format(int(rFt.extrFitPos), rFt.minFitFwhm, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+                            self.logger.warn('Focus: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3} (FWHM_MIN,FWHM_MAX)'.format(int(rFt.extrFitPos), rFt.extrFitVal, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
                     else:
                         # ToDo subtract filter offset and set FOC_DEF
                         self.logger.info('Focus: filter: {0} not setting FOC_DEF (see configuration)'.format(ft.name))
