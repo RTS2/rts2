@@ -370,7 +370,7 @@ class Configuration(DefaultConfiguration):
                 return False
             for ftName in self.cfg['FILTER WHEEL DEFINITIONS'][ftw]:
                 if ftName not in fts:
-                    self.logger.warn( 'Configuration.readConfiguration: filter {} not defined in {}'.format(ftw, self.cfg['FILTER DEFINITIONS']))
+                    self.logger.warn( 'Configuration.readConfiguration: filter {} not defined in {}'.format(ftName, self.cfg['FILTER DEFINITIONS']))
                     return False
                     
         return True

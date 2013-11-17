@@ -27,6 +27,7 @@ import sys
 import re
 import os
 import string
+import collections
 
 from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 #
@@ -131,77 +132,72 @@ class CreateCCD(CreateDevice):
     # set to a slot named open or empty*
 
 
-    # first the wheel with the "real" filters
     def filterOffsets(self, proxy=None):
         fts=dict()  # filters
         ftos=dict() # filter offsets
-        for i in range( 0, len(self.ftws)):
+        ccdFtwn=collections.defaultdict(str)
+        # as of 2013-11017 CCD::filter_offsets_X are not filled
+        for i, ftw in enumerate(self.ftws):
             if i:
+                # FILTB, FILTC, ...
                 ext= chr( 65 + i) # 'A' + i, as it is done in camd.cpp
-                ftwn=self.proxy.getValue(self.ccd.name, 'wheel{0}'.format(ext))
-                # FILTA, FILTB, ...
+                ccdN ='wheel{0}'.format(ext)
+                ftwn=self.proxy.getValue(self.ccd.name, ccdN)
+                ccdFtwn[ftwn] = ccdN 
                 fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'FILT{0}'.format(ext))
                 ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets_{0}'.format(ext))
             else:
-                ftwn=self.proxy.getValue(self.ccd.name, 'wheel')
+                ccdN ='wheel'
+                ftwn=self.proxy.getValue(self.ccd.name, ccdN)
+                ccdFtwn[ftwn] =  ccdN
                 fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'filter')
                 ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets')
 
+        print 'FIL',fts
+        print 'OFF', ftos
+
         for ftw in self.ftws: # defined in configuration
-            for ftwn in fts.keys(): # these are filter wheels names read back from CCD
-                if ftwn in ftw.name:
-                    if self.debug: self.logger.debug('filterOffsets: found filter wheel: {0}'.format(ftw.name))
-                    offsets=list()
-                    if len(ftos[ftwn])==0:
-                        self.logger.warn('filterOffsets: for {0}, {1} no filter offsets could be read from CCD, but filter wheels/filters are present'.format(self.ccd.name, ftwn))
-                        # do not break here!!
-                    if len(fts[ftwn])==0:
-                        self.logger.warn('filterOffsets: for {0}, {1} no filters could be read from CCD, but filter wheels/filters are present'.format(self.ccd.name, ftwn))
-                    else:
-                        self.logger.warn('filterOffsets: for {0}, {1} {2}'.format(self.ccd.name, ftwn, len(fts[ftwn])))
+            ftIUns= [x.name for x in  ftw.filters] # filters from configuration
+            try:
+                ftw.ccdName=ccdFtwn[ftw.name] # these filter wheels names  are read back from CCD
+                if self.debug: self.logger.debug('filterOffsets: found filter wheel: {0}, named on CCD: {1}'.format(ftw.name, ftw.ccdName))
+            except:
+                self.logger.error('filterOffsets: {0} {1} configured filter wheel not found'.format(self.ccd.name,ftw.name))
+                return False
 
-                    offsets= [ x for x in ftos[ftwn]] 
-                    
-                    # filters and configure offsets           
-                    ftIUns= map( lambda x: x.name, ftw.filters) # filters from configuration
-                    for k, ftn in enumerate(fts[ftwn]): # filter names only, read back from CCD
-                        if not ftn in ftIUns:
-                            if ftn not in self.rt.cfg['EMPTY_SLOT_NAMES']:
-                                self.logger.warn('filterOffsets: {0}, {1} not found in configuration ignoring'.format(ftw.name, ftn))        
-                            continue
+            if len(ftos[ftw.name])==0:
+                self.logger.warn('filterOffsets: {0}, {1} no filter offsets could be read from CCD, but filter wheel/filters are present'.format(self.ccd.name, ftw.name))
 
-                        for ft in ftw.filters: # filter objects from configuration 
-                            if ftn in ft.name:
-                                
-                                # ToDO that's not what I want
-                                match=False
-                                for nm in self.rt.cfg['EMPTY_SLOT_NAMES']:
-                                    # e.g. filter name R must exactly match!
-                                    p = re.compile(nm)
-                                    m = p.match(ft.name)
-                                    if m:
-                                        match=True
-                                        break
-                                if match:
-                                    ft.OffsetToEmptySlot= 0
-                                    if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset set to ZERO'.format(ftw.name, ft.name))
-                                else:
-                                    try:
-                                        ft.OffsetToEmptySlot= offsets[k] 
-                                        if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset {2} from ccd: {3}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot,self.ccd.name))
-                                    except:
-                                        ft.OffsetToEmptySlot= 0
-                                        self.logger.warn('filterOffsets: {0}, {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftw.name, ft.name,self.ccd.name))
-                                break
-                        else:
-                            if self.debug: self.logger.debug('filterOffsets: {0}, {1} not found in configuration, ignoring it'.format(ftwn, ftn))        
-                            return False
-                    # break if found
-                    break
-                else:
-                    pass # it will be found later on the list
+            if len(fts[ftw.name])==0:
+                self.logger.warn('filterOffsets: {0}, {1} no filters could be read from CCD, but filter wheel/filters are present'.format(self.ccd.name, ftw.name))
             else:
-                self.logger.error('filterOffsets: {0}, read back from CCD not found in configuration'.format(ftw.name))        
+                self.logger.info('filterOffsets: {0}, filter wheel {1} defined filters {2}'.format(self.ccd.name, ftw.name, [x for x in fts[ftw.name]]))
+                self.logger.info('filterOffsets: {0}, filter wheel {1} used    filters {2}'.format(self.ccd.name, ftw.name, ftIUns))
+
+            ccdOffsets = [ x for x in ftos[ftw.name]] # offsets from CCD
+            ccdFilters = [ x for x in fts[ftw.name]]  # filter names from CCD
+
+            for k, ft in enumerate(ftw.filters): # defined in configuration 
+                if ft.name in ccdFilters:            
+                    for nm in self.rt.cfg['EMPTY_SLOT_NAMES']:
+                        # e.g. filter name R must exactly match!
+                        p = re.compile(nm)
+                        m = p.match(ft.name)
+                        if m:
+                            ft.OffsetToEmptySlot= 0
+                            if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset set to ZERO'.format(ftw.name, ft.name))
+                            break
+                    else:
+                        try:
+                            ft.OffsetToEmptySlot= ccdOffsets[k]
+                            if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset {2} from ccd: {3}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot,self.ccd.name))
+                        except:
+                            ft.OffsetToEmptySlot= 0
+                            self.logger.warn('filterOffsets: {0}, {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftw.name, ft.name,self.ccd.name))
+                else:
+                    if self.debug: self.logger.debug('filterOffsets: {0} filter {1} not found on CCD {2}, ignoring it'.format( ftw.name, ftn, self.ccd.name))        
+                    return False
+                    
         return True
 
 class CreateFocuser(CreateDevice):
@@ -369,21 +365,13 @@ class CreateFilterWheels(CreateDevice):
             ftw=FilterWheel(debug=self.debug, name=ftwn,filters=filters, logger=self.logger)
             filterWheels.append(ftw)
 
-        # for ftw in filterWheels:
-        #    for ft in ftw.filters:
-        #        print ftw.name, ft.name
-
-        # sys.exit(1)
         # only used filter wheel are returned
-        # ToDo fetch the offsets from CCD driver
-        # and override the values from configuration
-        # Think only FILTA will have that
         for ftw in filterWheels:
             if ftw.name in self.rt.cfg['FILTER WHEELS INUSE']:
                 # ToDo ftw.ft.OffsetToEmptySlot==0
                 self.filterWheelsInUse.append(ftw)
                 
-        # empty slots first
+        # filter wheel with the highest filter count first
         self.filterWheelsInUse.sort(key = lambda x: len(x.filters), reverse=True)
 
         # find empty slots on all filter wheels
@@ -452,30 +440,29 @@ class CreateFilterWheels(CreateDevice):
         absUpperLimit = self.foc.absUpperLimit
 
         for k, ftw in enumerate(self.filterWheelsInUse):
-            if len(ftw.filters)>1 or k==0:
-                for ft in ftw.filters:
-                    if self.blind:
-                        # focuser limits are done in method create()
-                        pass
+            for ft in ftw.filters:
+                if self.blind:
+                    # focuser limits are done in method create()
+                    pass
+                else:
+                    if ft.OffsetToEmptySlot:
+                        fto= ft.OffsetToEmptySlot #  it may be still None
                     else:
-                        if ft.OffsetToEmptySlot:
-                            fto= ft.OffsetToEmptySlot #  it may be still None
-                        else:
-                            fto= 0
-                            ft.OffsetToEmptySlot=0
-                            self.logger.warn('checkBounds: {} has no defined filter offset, setting it to ZERO'.format(ft.name))
+                        fto= 0
+                        ft.OffsetToEmptySlot=0
+                        self.logger.warn('checkBounds: {} has no defined filter offset, setting it to ZERO'.format(ft.name))
 
-                        self.logger.warn('checkBounds: {} {} {}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot))
-                        rangeMin=focDef + min(ft.focFoff) + fto
-                        rangeMax=focDef + max(ft.focFoff) + fto
-                        outOfLlUl=True 
-                        if absLowerLimit <= rangeMin <= absUpperLimit-(rangeMax-rangeMin):
-                            if absLowerLimit + (rangeMax-rangeMin) <= rangeMax <=  absUpperLimit:
-                                outOfLlUl=False
+                    self.logger.warn('checkBounds: {} {} {}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot))
+                    rangeMin=focDef + min(ft.focFoff) + fto
+                    rangeMax=focDef + max(ft.focFoff) + fto
+                    outOfLlUl=True 
+                    if absLowerLimit <= rangeMin <= absUpperLimit-(rangeMax-rangeMin):
+                        if absLowerLimit + (rangeMax-rangeMin) <= rangeMax <=  absUpperLimit:
+                            outOfLlUl=False
 
-                        if outOfLlUl:
-                            self.logger.error( 'create:  {0:8s}, filter: {1:8s},  {2}: abs.limit: [{3},  {4}]; range: [{5}  {6}], step size: {7}, offset: [{8} {9}]'.format(ftw.name, ft.name, name, absLowerLimit, absUpperLimit, rangeMin, rangeMax, ft.stepSize, ft.relativeLowerLimit, ft.relativeUpperLimit))  
-                            anyOutOfLlUl=True 
+                    if outOfLlUl:
+                        self.logger.error( 'create:  {0:8s}, filter: {1:8s},  {2}: abs.limit: [{3},  {4}]; range: [{5}  {6}], step size: {7}, offset: [{8} {9}]'.format(ftw.name, ft.name, name, absLowerLimit, absUpperLimit, rangeMin, rangeMax, ft.stepSize, ft.relativeLowerLimit, ft.relativeUpperLimit))  
+                        anyOutOfLlUl=True 
 
         if anyOutOfLlUl:
             self.logger.error('create: out of bounds, returning')

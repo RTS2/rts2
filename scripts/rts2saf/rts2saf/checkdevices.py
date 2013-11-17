@@ -47,7 +47,7 @@ class CheckDevices(object):
         for k, ftw in enumerate(self.ftws):
             # count only wheels with more than one filters (one slot must be empty)
             # the first filter wheel in the list 
-            if ftw.name in 'FAKE_FTW' or len(ftw.filters)>1:
+            if ftw.name in 'FAKE_FTW' or len(ftw.filters)>1 or k==0: # at least an empty slot must be present 
                 info = str()
                 for ft in ftw.filters:
                     info += 'summaryDevices: {0:8s}: {1:8s}'.format(ftw.name, ft.name)
@@ -60,7 +60,10 @@ class CheckDevices(object):
                         info += 'Filter Offset: {0:5.0f}\n'.format(ft.OffsetToEmptySlot)
                         img += len(ft.focFoff)
                 else:
-                    self.logger.info('\n{0}'.format(info))
+                    self.logger.info('{0}'.format(info))
+            else:
+                self.logger.info('summaryDevices: {0:8s}: {1} has only empty slots'.format(ftw.name, [x.name for x in ftw.filters]))
+                
 
         self.logger.info('summaryDevices: taking {0} images in total'.format(img))
         
@@ -97,19 +100,19 @@ class CheckDevices(object):
     @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
     def __deviceWriteAccessCCD(self):
         ccdOk=False
-        if self.verbose: self.logger.debug('__deviceWriteAccessCCD: asking   from CCD: {0}: calculate_stat'.format(self.ccd.name))
+        if self.verbose: self.logger.debug('__deviceWriteAccessCCD: asking   from {0}: calculate_stat'.format(self.ccd.name))
         cs=self.proxy.getDevice(self.ccd.name)['calculate_stat'][1]
-        if self.verbose: self.logger.debug('__deviceWriteAccessCCD: response from CCD: {0}: calculate_stat: {1}'.format(self.ccd.name, cs))
+        if self.verbose: self.logger.debug('__deviceWriteAccessCCD: response from {0}: calculate_stat: {1}'.format(self.ccd.name, cs))
         
         try:
             self.proxy.setValue(self.ccd.name,'calculate_stat', 3) # no statisctics
             self .proxy.setValue(self.ccd.name,'calculate_stat', str(cs))
             ccdOk= True
         except Exception, e:
-            self.logger.error('__deviceWriteAccessCCD: CCD: {0} is not writable: {1}'.format(self.ccd.name, repr(e)))
+            self.logger.error('__deviceWriteAccessCCD: CCD {0} is not writable: {1}'.format(self.ccd.name, repr(e)))
 
         if ccdOk:
-            self.logger.debug('__deviceWriteAccessCCD: CCD: {} is writable'.format(self.ccd.name))
+            self.logger.debug('__deviceWriteAccessCCD: CCD {} is writable'.format(self.ccd.name))
             
         return ccdOk
     @timeout(seconds=2, error_message=os.strerror(errno.ETIMEDOUT))

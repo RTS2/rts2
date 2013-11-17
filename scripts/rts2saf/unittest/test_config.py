@@ -51,6 +51,7 @@ class TestConfiguration(unittest.TestCase):
     def test_readConfiguration(self):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
         self.assertIs(type(self.rt), Configuration)
+
     def test_checkConfiguration(self):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
         result = self.rt.checkConfiguration()

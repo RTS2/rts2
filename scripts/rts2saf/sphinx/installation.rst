@@ -163,15 +163,6 @@ which are used while rts2saf is integrated in RTS2.
 
 Postgres DB tables targets and scripts entries
 ----------------------------------------------
-As user postgres:
-
-.. code-block:: bash
-
- psql stars  
- insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
- insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
-
-
 The dummy devices are usually added  by the script 
 ``rts-2/scripts/ubuntu-rts2-install`` to the Postgres DB, in case not execute as user postgres:
 
@@ -184,3 +175,13 @@ The dummy devices are usually added  by the script
 
 The filters are stored in the Postgres DB table ``filters``. These entries are not strictly necessary 
 but it is recommended to add them.
+
+As user postgres:
+
+.. code-block:: bash
+
+ psql stars  
+ insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+ insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
+
+

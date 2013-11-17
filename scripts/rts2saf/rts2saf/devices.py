@@ -44,13 +44,13 @@ class Filter(object):
 # ToDo read, write to real devices
 class FilterWheel(object):
     """Class for filter wheel properties"""
-    def __init__(self, debug=None, name=None, ccdFilterOffsets=list(), filters=list(), logger=None):
+    def __init__(self, debug=None, name=None, filters=list(), logger=None):
         self.debug=debug
         self.name= name
-        self.ccdFilterOffsets=ccdFilterOffsets # from CCD
         self.filters=filters # list of Filter
         self.logger=logger
         self.emptySlots=None # set at run time ToDo go away??
+        self.ccdName=None # FLITA, FILTB, ...
 
     def check(self, proxy=None):
         proxy.refresh()
