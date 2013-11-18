@@ -17,13 +17,27 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-
+"""This modules defines various data objects. 
+"""
 __author__ = 'markus.wildi@bluewin.ch'
 
 import numpy as np
 import math
 
 class DataFit(object):
+    """Base object
+
+        :var plotFn: plot file name
+        :var ambient: ambient temperature
+        :var ftName: name of the filter
+        :var pos: list of focuser positions
+        :var val: list of values at position
+        :var errx: list of errors, focuser position
+        :var erry: list of errors, value
+        :var nObjs: number of SExtractor objects
+        :var par: start parameters for the fitted function
+
+    """
     def __init__(self, plotFn=None, ambientTemp=None, ftName=None, pos=list(), val=list(), errx=list(), erry=list(), nObjs=None, par=None):
         self.plotFn=plotFn
         self.ambientTemp=ambientTemp
@@ -37,6 +51,21 @@ class DataFit(object):
 
 
 class DataFitFwhm(DataFit):
+    """Data passed to :py:mod:`rts2saf.fitfunction.FitFunction`
+
+        :var plotFn: plot file name
+        :var ambient: ambient temperature
+        :var ftName: name of the filter
+        :var pos: list of focuser positions
+        :var val: list of values at position
+        :var errx: list of errors, focuser position
+        :var erry: list of errors, value
+        :var nObjs: number of SExtractor objects
+        :var par: start parameters for the fitted function
+        :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
+
+    """
+
     def __init__( self, dataSxtr=None, *args, **kw ):
         super(  DataFitFwhm, self ).__init__( *args, **kw )
         self.dataSxtr=dataSxtr
@@ -51,6 +80,22 @@ class DataFitFwhm(DataFit):
         self.recpFunc = None
 
 class DataFitFlux(DataFit):
+    """Data passed to :py:mod:`rts2saf.fitfunction.FitFunction`
+
+        :var plotFn: plot file name
+        :var ambient: ambient temperature
+        :var ftName: name of the filter
+        :var pos: list of focuser positions
+        :var val: list of values at position
+        :var errx: list of errors, focuser position
+        :var erry: list of errors, value
+        :var nObjs: number of SExtractor objects
+        :var par: start parameters for the fitted function
+        :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
+        :var dataFitFwhm: :py:mod:`rts2saf.data.DataFitFwhm`
+        :var i_flux: index to field flux in :py:mod:`rts2saf.data.DataSxtr`.catalog
+
+    """
     def __init__( self, dataSxtr=None, dataFitFwhm=None, i_flux=None, *args, **kw ):
         super(  DataFitFlux, self ).__init__( *args, **kw )
         self.dataSxtr=dataSxtr
@@ -83,6 +128,14 @@ class DataFitFlux(DataFit):
         self.par= np.array([ 10., wmean, wstd/40., 2.]) # ToDo !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 class ResultMeans(object):
+    """Store and calculate various weighted means.
+
+    :var dataFit:  :py:mod:`rts2saf.data.DataFit`
+    :var logger:  :py:mod:`rts2saf.log`
+
+
+    """
+
     def __init__(self, dataFit=None, logger=None):
         self.dataFit=dataFit
         self.logger=logger
@@ -107,7 +160,15 @@ class ResultMeans(object):
             del self.stdValC[ind]
 
     def calculate(self, var=None):
-        # Weighted mean based on number of extracted objects (stars)
+        """Calculate  weighted means based on 
+
+        1) number of sextracted objects
+        2) median FWHM, flux
+        3) average standard deviation of FWHM, Flux
+        4) a combination of above variables
+
+        """
+        #Weighted means based on number of extracted objects (stars)
         try:
             self.objects= np.average(a=self.posC, axis=0, weights=self.nObjsC)
         except Exception, e:
@@ -159,6 +220,8 @@ class ResultMeans(object):
 
 
     def logWeightedMeans(self, ftw=None, ft=None):
+        """Log  weighted means to file. 
+        """
         if self.objects:
             self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(self.objects, ftw.name, ft.name))
             if self.val:
@@ -172,6 +235,20 @@ class ResultMeans(object):
 
 
 class ResultFit(object):
+    """Results calculated in :py:mod:`rts2saf.fitfunction.FitFunction` passed to :py:mod:`rts2saf.fitdisplay.FitDisplay`
+
+        :var ambient: ambient temperature
+        :var ftName: name of the filter
+        :var extrFitPos: focuser position of the extreme
+        :var extrFitVal: value of the extreme
+        :var fitPar: fit parameters frum numpy
+        :var fitFlag: fit flag from numpy
+        :var color: color of the points
+        :var ylabel: label text of th y-axis
+        :var titleResult: title of the plot
+
+    """
+
     def __init__(self, ambientTemp=None, ftName=None, extrFitPos=None, extrFitVal=None, fitPar=None, fitFlag=None, color=None, ylabel=None, titleResult=None):
         self.ambientTemp=ambientTemp
         self.ftName=ftName
@@ -184,6 +261,30 @@ class ResultFit(object):
         self.titleResult=titleResult
 
 class DataSxtr(object):
+    """Main data object holding data of single focus run.
+
+        :var date: date from FITS header
+        :var fitsFn: FITS file name
+        :var focPos: FOC_DEF from FITS header
+        :var stdFocPos: error of focus position
+        :var fwhm: FWHM from :py:mod:`rts2saf.sextractor.Sextractor`
+        :var stdFwhm: standard deviation from :py:mod:`rts2saf.sextractor.Sextractor`
+        :var nstars: number of objects :py:mod:`rts2saf.sextractor.Sextractor`
+        :var ambient: ambient temperature from FITS header
+        :var catalog: catalog of sectracted objects from :py:mod:`rts2saf.sextractor.Sextractor`
+        :var fields: SExtractor parameter fields passed to :py:mod:`rts2saf.sextractor.Sextractor`
+        :var binning: binning from FITS header
+        :var binningXY: binningXY from FITS header
+        :var naxis1: from FITS header
+        :var naxis2: from FITS header
+        :var ftName: name of the filter
+        :var ftAName:
+        :var ftBName:
+        :var ftCName:
+        :var assocFn: name of the ASSOC file used by Sextractor
+
+    """
+
     def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
         self.date=date
         self.fitsFn=fitsFn
@@ -208,7 +309,6 @@ class DataSxtr(object):
         self.ftAName=ftAName
         self.ftBName=ftBName
         self.ftCName=ftCName
-        # ToDo: make a theod for fwhm and flux, source self.catalog
         # filled in analyze 
         self.flux=flux # unittest!
         self.stdFlux=stdFlux
@@ -217,11 +317,14 @@ class DataSxtr(object):
         self.rawCatalog=list()
 
     def fillFlux(self, i_flux=None):
+        """Calculate median of flux as well as its standard deviation (this is not provided by :py:mod:`rts2saf.sextractor.Sextractor`), used by :py:mod:`rts2saf.sextract.Sextract`.sextract.
+        """
         fluxv = [x[i_flux] for x in  self.catalog]
         self.flux=np.median(fluxv)
         self.stdFlux= np.average([ math.sqrt(x) for x in fluxv])
 
     def fillData(self, i_fwhm=None, i_flux=None):
+        """helper method used by :py:mod:`rts2saf.datarun.DataRun`.onAlmostImagesAssoc"""
         fwhmv = [x[i_fwhm] for x in  self.catalog]
         self.fwhm=np.median(fwhmv)
         self.stdFwhm= np.std(fwhmv)
@@ -233,5 +336,7 @@ class DataSxtr(object):
 
 
     def toRawCatalog(self):
+        """Helper method to copy data for later analysis."""
+
         self.rawCatalog=self.catalog[:]
         self.catalog=list()

@@ -17,13 +17,19 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-
+"""Criteria for decision made by :py:mod:`rts2saf.analyze.CatalogAnalysis`
+"""
 __author__ = 'markus.wildi@bluewin.ch'
 
 import math
 
 
 class Criteria(object):
+    """
+    :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
+    :var rt:  run time configuration, :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+
+    """
     def __init__(self, dataSxtr=None, rt=None):
         self.dataSxtr=dataSxtr
         self.rt=rt
@@ -43,6 +49,13 @@ class Criteria(object):
         
 
     def decide(self, catalogEntry=None):
+        """Decide if criteria is met.
+
+        :var catalogEntry: one entry of a given SExtractor catalog
+
+        :return: True if criteria met else False
+
+        """
         rd= math.sqrt(pow(catalogEntry[self.i_x]-self.center[0],2)+ pow(catalogEntry[self.i_y]-self.center[1],2))
         if rd < self.radius:
             return True

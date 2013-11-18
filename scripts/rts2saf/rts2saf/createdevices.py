@@ -20,6 +20,8 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""Create CCD, filter wheel and focuser objects
+"""
 
 __author__ = 'wildi.markus@bluewin.ch'
 
@@ -32,12 +34,20 @@ import collections
 from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 #
 class CreateDevice(object):
-    """Create the device """    
-    def __init__(self, debug=False, proxy=None, check=None, blind=None, verbose=None, rt=None, logger=None):
+    """Base class for devices
+
+    :var debug: enable more debug output with --debug and --level
+    :var check: if True check presence of device
+    :var proxy: :py:mod:`rts2.proxy`
+    :var verbose: True, more debug output
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """    
+    def __init__(self, debug=False, proxy=None, check=None, verbose=None, rt=None, logger=None):
         self.debug=debug
         self.proxy=proxy
         self.check=check
-        self.blind=blind
         self.verbose=verbose
         self.rt=rt
         self.logger=logger
@@ -45,7 +55,17 @@ class CreateDevice(object):
         self.filterWheelsDefs=dict()
 
 class CreateCCD(CreateDevice):
-    """Create the device CCD"""    
+    """Create device :py:mod:`rts2saf.devices.CCD`
+
+    :var debug: enable more debug output with --debug and --level
+    :var check: if True check presence of device
+    :var proxy: :py:mod:`rts2.proxy`
+    :var verbose: True, more debug output
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var logger:  :py:mod:`rts2saf.log`
+    :var ftws: list of  :py:mod:`rts2saf.devices.FilterWheel`
+    :var fetchOffsets: if True call `filterOffsets`
+    """    
     def __init__( self, ftws=None, fetchOffsets=False, *args, **kw ):
         super( CreateCCD, self ).__init__( *args, **kw )
         self.ftws=ftws
@@ -53,6 +73,11 @@ class CreateCCD(CreateDevice):
         self.ccd=None
 
     def create(self):
+        """Create :py:mod:`rts2saf.devices.CCD` based on properties stored in configuration. Optionally fetch filter offsets from CCD and/or  check if device is present. 
+
+        :return:  :py:mod:`rts2saf.devices.CCD` if success else None
+
+        """
         # configuration has been read in, now create objects
         # create object CCD
         # ToDo, what does RTS2::ccd driver expect: int or str list?
@@ -83,7 +108,8 @@ class CreateCCD(CreateDevice):
                 return None
         if self.fetchOffsets:
             # fetch the filter offsets
-            self.filterOffsets()
+            if not self.filterOffsets():
+                return None
 
         return self.ccd
 
@@ -133,6 +159,11 @@ class CreateCCD(CreateDevice):
 
 
     def filterOffsets(self, proxy=None):
+        """Fetch for all filter wheels their filter offsets and check if all configured items are present in RTS2 run time environment.
+
+        :return: True if success else False
+
+        """
         fts=dict()  # filters
         ftos=dict() # filter offsets
         ccdFtwn=collections.defaultdict(str)
@@ -198,12 +229,31 @@ class CreateCCD(CreateDevice):
         return True
 
 class CreateFocuser(CreateDevice):
-    """Create the device Focuser"""    
-    def __init__( self, rangeFocToff=None, *args, **kw ):
+    """Create  device :py:mod:`rts2saf.devices.Focuser`
+
+    :var debug: enable more debug output with --debug and --level
+    :var check: if True check presence of device
+    :var proxy: :py:mod:`rts2.proxy`
+    :var blind: blind - flavor of focus run
+    :var verbose: True, more debug output
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var logger:  :py:mod:`rts2saf.log`
+    :var rangeFocToff: list containg minimum, maximum and step size 
+
+    """    
+    def __init__( self, rangeFocToff=None, blind=False, *args, **kw ):
         super( CreateFocuser, self ).__init__( *args, **kw )
         self.rangeFocToff=rangeFocToff
+        self.blind=blind
 
     def create(self):
+        """Create :py:mod:`rts2saf.devices.Focuser` based on properties stored in configuration. 
+        Optionally check if device is present. Focuser range is set if values  
+        are within limits [ FOCUSER_ABSOLUTE_LOWER_LIMIT,FOCUSER_ABSOLUTE_UPPER_LIMI ]
+
+        :return:  :py:mod:`rts2saf.devices.Focuser` if success else None
+
+        """
         rangeMin=rangeMax=rangeStep=None
         # focRange (from args) has priority
         if self.rangeFocToff:
@@ -228,7 +278,6 @@ class CreateFocuser(CreateDevice):
 
         if withinLlUl:
             self.focFoff= range(rangeMin, rangeMax +rangeStep, rangeStep)
-
         else:
             self.logger.error('create:  {0:8s} abs. lowerLimit: {1}, abs. upperLimit: {2}'.format(self.rt.cfg['FOCUSER_NAME'], self.rt.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT'], self.rt.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT'])) 
             self.logger.error('create:                  rangeMin: {}         rangeMax: {}, '.format( rangeMin, rangeMax))
@@ -275,12 +324,28 @@ class CreateFocuser(CreateDevice):
         return foc
 
 class CreateFilters(CreateDevice):
-    """Create the filters"""    
-    def __init__( self, myStuff=None, *args, **kw ):
+    """Create list of :py:mod:`rts2saf.devices.Filter`
+
+    :var debug: enable more debug output with --debug and --level
+    :var check: if True check presence of device
+    :var proxy: :py:mod:`rts2.proxy`
+    :var verbose: True, more debug output
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """    
+    def __init__( self, *args, **kw ):
         super( CreateFilters, self ).__init__( *args, **kw )
 
     
     def create(self):
+        """Create a list :py:mod:`rts2saf.devices.Filters` based on properties stored in configuration. 
+        Optionally check if device is present. 
+
+        :return: list of :py:mod:`rts2saf.devices.Filter` if success else None
+
+        """
+
         if self.rt.cfg['FAKE']:
             # create one FAKE_FT filter
             lowerLimit    = int(self.rt.cfg['FOCUSER_NO_FTW_RANGE'][0])
@@ -328,15 +393,36 @@ class CreateFilters(CreateDevice):
         return self.filters
 
 class CreateFilterWheels(CreateDevice):
-    """Create the devices filter wheel"""    
-    def __init__( self, filters=None, foc=None, *args, **kw ):
+    """Create list of :py:mod:`rts2saf.devices.FilterWheel`
+
+    :var debug: enable more debug output with --debug and --level
+    :var check: if True check presence of device
+    :var proxy: :py:mod:`rts2.proxy`
+    :var blind: blind - flavor of focus run
+    :var verbose: True, more debug output
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var logger:  :py:mod:`rts2saf.log`
+    :var filters:  list of :py:mod:`rts2saf.devices.Filter`
+    :var  foc: :py:mod:`rts2saf.devices.Focuser`
+    :var blind: blind - flavor of focus run
+
+    """ 
+   
+    def __init__( self, filters=None, foc=None, blind=False, *args, **kw ):
         super( CreateFilterWheels, self ).__init__( *args, **kw )
 
         self.filters=filters
         self.foc=foc
+        self.blind=blind
         self.filterWheelsInUse=list()
 
     def create(self):
+        """Create a list :py:mod:`rts2saf.devices.FilterWheel` based on properties stored in configuration. 
+        Optionally check if device is present. 
+
+        :return:  list of  :py:mod:`rts2saf.devices.FilterWheel` if success else None
+
+        """
 
         # all in config defined filters have no relation to a filter wheel
         filterDict= { x.name: x for x in self.filters }
@@ -429,6 +515,12 @@ class CreateFilterWheels(CreateDevice):
         return self.filterWheelsInUse
 
     def checkBounds(self):
+        """Chek if FOC_DEF + max/min(FOC_FOFF) are within focuser range and if the number of steps is above MINIMUM_FOCUSER_POSITIONS.
+
+        :return: True if both conditions are met else False
+
+        """
+
         # check bounds of filter lower and upper limit settings            
         anyOutOfLlUl=False
         name = self.foc.name

@@ -20,7 +20,8 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-
+"""Check if RTS2 devices are writable, print a summary of the focus run."
+"""
 __author__ = 'wildi.markus@bluewin.ch'
 
 import sys
@@ -29,7 +30,19 @@ import errno
 from rts2saf.timeout import timeout
 
 class CheckDevices(object):
-    """Check the presence of the devices and filter slots"""    
+    """Check the presence of the devices and filter slots.
+
+    :var debug: enable more debug output with --debug and --level
+    :var proxy: :py:mod:`rts2.proxy`
+    :var blind: blind - flavor of focus run
+    :var verbose: True, more debug output
+    :var ccd: :py:mod:`rts2saf.devices.CCD`
+    :var ftws: list of  :py:mod:`rts2saf.devices.FilterWheel`
+    :var foc: :py:mod:`rts2saf.devices.Focuser`
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
+  
     def __init__(self, debug=False, proxy=None, blind=None, verbose=None, ccd=None, ftws=None, foc=None, logger=None):
         self.debug=debug
         self.blind=blind
@@ -41,6 +54,8 @@ class CheckDevices(object):
         self.proxy= proxy 
 
     def summaryDevices(self):
+        """Log a summary of the upcoming focus run.
+        """
         # log INFO a summary, after dropping multiple empty slots
         img=0
         self.logger.info('summaryDevices: focus run without multiple empty slots:')
@@ -69,6 +84,8 @@ class CheckDevices(object):
         
 
     def printProperties(self):
+        """Log rts2saf device properties.
+        """
         # Focuser
         self.logger.debug('printProperties: {} name'.format(self.foc.name))
         self.logger.debug('printProperties: {} resolution'.format(self.foc.resolution))
@@ -154,6 +171,9 @@ class CheckDevices(object):
         return ftwOk
 
     def deviceWriteAccess(self):
+        """Check if RTS2 devices are writable through RTS2 JSON.
+        """
+
         self.logger.info('deviceWriteAccess: this may take approx. a minute')
 
         ccdOk=ftwOk=focOk=False
