@@ -28,7 +28,14 @@ import os
 
 
 class Environment(object):
-    """Class performing various task on files, e.g. expansion to (full) path"""
+    """Class performing various task on files, e.g. expansion to (full) path. Provides the start time.
+
+    :var debug: enable more debug output with --debug and --level
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var logger:  :py:mod:`rts2saf.log`
+    :var startTime: self.startTime= datetime.datetime.now().isoformat()
+
+    """
     def __init__(self, debug=None, rt=None, logger=None):
         self.startTime= datetime.datetime.now().isoformat()
         self.debug=debug

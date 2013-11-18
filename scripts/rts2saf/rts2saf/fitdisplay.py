@@ -34,7 +34,14 @@ import numpy as np
 import rts2saf.data as dtf
 
 class  FitDisplay(object):
-    """Display a fit"""
+    """Display a fit with matplotlib
+
+    :var date: date when focus run started
+    :var comment: optional comment
+    :var logger: :py:mod:`rts2saf.log`
+
+    """
+
     def __init__(self, date=None,  comment=None, logger=None):
 
         self.date=date
@@ -46,7 +53,14 @@ class  FitDisplay(object):
         self.ax1 = self.fig.add_subplot(111)
 
     def fitDisplay(self, dataFit=None, resultFit=None, display=False):
+        """
+        :param dataFit: :py:mod:`rts2saf.data.DataFit`
+        :param resultFit: :py:mod:`rts2saf.data.ResultFit`
+        :param display: if True display and save plot to file, False save only
 
+        :return:  :py:mod:`rts2saf.data.DataFit`.plotFn
+
+        """
         try:
             x_pos = np.linspace(dataFit.pos.min(), dataFit.pos.max())
         except Exception, e:

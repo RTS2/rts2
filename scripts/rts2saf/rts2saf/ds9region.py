@@ -21,12 +21,26 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 class Ds9Region(object):
+    """Display FITS and region files through DS9
+
+    :var logger:  :py:mod:`rts2saf.log`
+
+    :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
+    :var display: DS9 display object
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, dataSxtr=None, display=None, logger=None):
         self.dataSxtr=dataSxtr
         self.display=display
         self.logger=logger
 
     def displayWithRegion(self): 
+        """
+
+        :return: True if success else False
+
+        """
         try:
             self.display.set('file {0}'.format(self.dataSxtr.fitsFn))
         except Exception, e:

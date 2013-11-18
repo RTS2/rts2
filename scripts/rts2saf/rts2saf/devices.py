@@ -20,6 +20,8 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""This modules defines the device counter parts.
+"""
 
 __author__ = 'wildi.markus@bluewin.ch'
 
@@ -29,7 +31,19 @@ import os
 
 # ToDo read, write to real devices
 class Filter(object):
-    """Class for filter properties"""
+    """Filter properties. Filter object are not a device counter part.
+
+    :var debug: enable more debug output with --debug and --level
+    :var name: name of the filter
+    :var OffsetToEmptySlot:  offset to empty slot, unit focuser [tick]
+    :var relativeLowerLimit: FOC_FOFF lower limit of a regular focus run, unit focuser  [tick]
+    :var relativeUpperLimit: FOC_FOFF upper limit of a regular focus run, unit focuser  [tick]
+    :var exposureFactor: this factor is multiplied with BASE_EXPOSURE   
+    :var stepSize: step size unit focuser  [tick]
+    :var focFoff: step range
+
+        
+    """
     def __init__(self, debug=None, name=None, OffsetToEmptySlot=None, lowerLimit=None, upperLimit=None, stepSize=None, exposureFactor=1., focFoff=None):
         self.debug=debug
         self.name= name
@@ -38,21 +52,33 @@ class Filter(object):
         self.relativeUpperLimit= upperLimit# [tick]
         self.exposureFactor   = exposureFactor 
         self.stepSize  = stepSize # [tick]
-        self.focFoff=focFoff # range
+        self.focFoff=focFoff 
 
 
 # ToDo read, write to real devices
 class FilterWheel(object):
-    """Class for filter wheel properties"""
+    """Filter wheel properties.
+
+    :var debug: enable more debug output with --debug and --level
+    :var name: name of the filter wheel
+    :var filters: list of :py:mod:`rts2saf.devices.Filter`
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, debug=None, name=None, filters=list(), logger=None):
         self.debug=debug
         self.name= name
         self.filters=filters # list of Filter
         self.logger=logger
-        self.emptySlots=None # set at run time ToDo go away??
+        self.emptySlots=None # set at run time 
         self.ccdName=None # FLITA, FILTB, ...
 
     def check(self, proxy=None):
+        """Check the presence of RTS2 filter wheel
+        
+        :return: True if present else False
+
+        """
         proxy.refresh()
         if not self.name in 'FAKE_FTW':
             try:
@@ -65,7 +91,21 @@ class FilterWheel(object):
 
 # ToDo read, write to real devices
 class Focuser(object):
-    """Class for focuser properties"""
+    """Focuser properties
+
+    :var debug: enable more debug output with --debug and --level
+    :var name: name of the filter wheel
+    :var resolution: focuser resolution defined as [tick] per 1px increase of FWHM
+    :var absLowerLimit: rts2saf does not go below this lower limit 
+    :var absUpperLimit: rts2saf does not exceed this upper limit
+    :var lowerLimit: lower limit for focus mode blind
+    :var upperLimit: upper limit for focus mode blind
+    :var stepSize: step size for focus mode blind  
+    :var speed: focuser speed in units [tick]/second
+    :var temperatureCompensation: True if RTS2 focuser driver has temperature compensation, e.g. flitc.cpp
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, debug=None, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, lowerLimit=None, upperLimit=None, stepSize=None, speed=None, temperatureCompensation=None, focFoff=None, focDef=None, logger=None):
         self.debug=debug
         self.name= name
@@ -84,6 +124,11 @@ class Focuser(object):
         self.logger=logger
 
     def check(self, proxy=None):
+        """Check the presence of RTS2 focuser
+        
+        :return: True if present else False
+
+        """
 
         proxy.refresh()
         try:
@@ -118,7 +163,21 @@ class Focuser(object):
 
 # ToDo read, write to real devices
 class CCD(object):
-    """Class for CCD properties"""
+    """CCD properties
+
+    :var debug: enable more debug output with --debug and --level
+    :var name: name of the filter wheel
+    :var ftws: list of :py:mod:`rts2saf.devices.FilterWheel`
+    :var binning: binning (not yet implemented)
+    :var windowOffsetX: windowOffsetX (not yet implemented)
+    :var windowOffsetY: windowOffsetY (not yet implemented)
+    :var windowHeight: windowHeight (not yet implemented)
+    :var windowWidth: windowWidth (not yet implemented)
+    :var pixelSize: pixelSize (not yet implemented)
+    :var baseExposure: base exposure
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, debug=None, name=None, ftws=None, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None, pixelSize=None, baseExposure=None, logger=None):
         
         self.debug=debug
@@ -135,6 +194,11 @@ class CCD(object):
         self.ftOffsets=None
 
     def check(self, proxy=None):
+        """Check the presence of RTS2 CCD
+        
+        :return: True if present else False
+
+        """
         proxy.refresh()
         try:
             proxy.getDevice(self.name)
