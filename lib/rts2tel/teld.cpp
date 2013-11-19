@@ -936,7 +936,7 @@ int Telescope::info ()
 	// fill in airmass, ha and lst
 	airmass->setValueDouble (ln_get_airmass (telAltAz->getAlt (), 750));
 	lst->setValueDouble (getLstDeg (ln_get_julian_from_sys ()));
-	hourAngle->setValueDouble (lst->getValueDouble () - telRaDec->getRa ());
+	hourAngle->setValueDouble (ln_range_degrees (lst->getValueDouble () - telRaDec->getRa ()));
 	targetDistance->setValueDouble (getTargetDistance ());
 
 	// check if we aren't bellow hard horizon - if yes, stop worm..
