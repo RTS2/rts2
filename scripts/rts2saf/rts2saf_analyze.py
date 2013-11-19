@@ -61,7 +61,7 @@ class Do(object):
 
     :var debug: enable more debug output with --debug and --level
     :var basePath: where the FITS files are stored 
-    :var args: commandline arguments or their defaults
+    :var args: command line arguments or their defaults
     :var rt: run time configuration usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
     :var ev: helper module for house keeping
     :var logger:  logger object
@@ -256,7 +256,7 @@ if __name__ == '__main__':
 
     if not args.toconsole:
         print 'you may wish to enable logging to console --toconsole'
-        print 'log file is writte to: {}'.format(args.logfile)
+        print 'log file is write to: {}'.format(args.logfile)
 
 
     do = Do(debug = args.debug, basePath = args.basePath, args = args, rt = rtc, ev = ev, logger = logger)

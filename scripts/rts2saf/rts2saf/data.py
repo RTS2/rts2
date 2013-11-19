@@ -124,7 +124,7 @@ class DataFitFlux(DataFit):
         wmean= np.average(a=x, weights=y) 
         xy= zip(x,y)
         wstd = np.std(a=xy) 
-        # fit gaussian
+        # fit Gaussian
         self.par= np.array([ 10., wmean, wstd/40., 2.]) # ToDo !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 class ResultMeans(object):
@@ -241,10 +241,10 @@ class ResultFit(object):
         :var ftName: name of the filter
         :var extrFitPos: focuser position of the extreme
         :var extrFitVal: value of the extreme
-        :var fitPar: fit parameters frum numpy
+        :var fitPar: fit parameters forum numpy
         :var fitFlag: fit flag from numpy
         :var color: color of the points
-        :var ylabel: label text of th y-axis
+        :var ylabel: label text of the y-axis
         :var titleResult: title of the plot
 
     """
@@ -271,7 +271,7 @@ class DataSxtr(object):
         :var stdFwhm: standard deviation from :py:mod:`rts2saf.sextractor.Sextractor`
         :var nstars: number of objects :py:mod:`rts2saf.sextractor.Sextractor`
         :var ambient: ambient temperature from FITS header
-        :var catalog: catalog of sectracted objects from :py:mod:`rts2saf.sextractor.Sextractor`
+        :var catalog: catalog of sextracted objects from :py:mod:`rts2saf.sextractor.Sextractor`
         :var fields: SExtractor parameter fields passed to :py:mod:`rts2saf.sextractor.Sextractor`
         :var binning: binning from FITS header
         :var binningXY: binningXY from FITS header

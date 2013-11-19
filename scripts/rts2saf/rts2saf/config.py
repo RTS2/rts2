@@ -20,7 +20,7 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-"""Config provides all required conststants with default values.
+"""Config provides all required contestants with default values.
 """
 
 __author__ = 'wildi.markus@bluewin.ch'
@@ -288,7 +288,7 @@ class Configuration(DefaultConfiguration):
                     self.cfg[identifier]= value
             # first bool, then int !
             elif isinstance(self.cfg[identifier], bool):
-                # ToDO, looking for a direct way
+                # ToDo, looking for a direct way
                 if value in 'True':
                     self.cfg[identifier]= True
                 else:
@@ -344,7 +344,7 @@ class Configuration(DefaultConfiguration):
 
         :return: True if success else False
         """
-        # rts2.sextractur excepts the file not found error and uses internal defaults, we check that here
+        # rts2.sextractor excepts the file not found error and uses internal defaults, we check that here
         if not os.path.exists(self.cfg['SEXPATH']):
             self.logger.warn( 'Configuration.readConfiguration: sextractor path: {0} not valid, returning'.format(self.cfg['SEXPATH']))            
             return False

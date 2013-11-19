@@ -142,7 +142,7 @@ class Focuser(object):
             self.focMn= proxy.getDevice(self.name)['foc_min'][1]
             self.focMx= proxy.getDevice(self.name)['foc_max'][1]
         except Exception, e:
-            self.logger.warn('check:  {0} has no foc_min or foc_max properties, using absulute limits'.format(self.name))
+            self.logger.warn('check:  {0} has no foc_min or foc_max properties, using absolute limits'.format(self.name))
             self.focMn=self.absLowerLimit
             self.focMx=self.absUpperLimit
         return True
@@ -213,7 +213,7 @@ class CCD(object):
                 if self.debug: self.logger.debug('CCD: using FAKE_FTW')        
                 #  OffsetToEmptySlot set in config.py
                 return True
-        # ToDo check al of them
+        # ToDo check all of them
         # check presence of a filter wheel
         try:
             ftwn=proxy.getValue(self.name, 'wheel')

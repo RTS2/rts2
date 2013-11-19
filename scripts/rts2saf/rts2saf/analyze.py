@@ -142,7 +142,7 @@ class SimpleAnalysis(object):
         """
         # ToDo lazy                        !!!!!!!!!!
         # create an average and std 
-        # ToDo decide wich ftName from which ftw!!
+        # ToDo decide which ftName from which ftw!!
         if len(self.dataSxtr)>0:
             bPth,fn=os.path.split(self.dataSxtr[0].fitsFn)
             ftName=self.dataSxtr[0].ftName
@@ -193,7 +193,7 @@ class SimpleAnalysis(object):
             self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
             self.resultMeansFlux.calculate(var='Flux')
 
-        # ToDo make a sensible decission
+        # ToDo make a sensible decision
         return self.resultFitFwhm, self.resultMeansFwhm
 
     def display(self):
@@ -208,7 +208,7 @@ class SimpleAnalysis(object):
                 if dsp:
                     DISPLAY=True
             except:
-                self.logger.warn('analyze: no X-Window DISPLAY, do not plot with mathplotlib and/or ds9')
+                self.logger.warn('analyze: no X-Window DISPLAY, do not plot with matplotlib and/or ds9')
                 return
         
         ft=FitDisplay(date = self.date, logger=self.logger)
@@ -233,7 +233,7 @@ class SimpleAnalysis(object):
                 self.logger.error('analyze: OOOOOOOOPS, no ds9 display available, error:\n{}'.format(e))
                 return 
 
-            # ToDo cretae new list
+            # ToDo create new list
             self.dataSxtr.sort(key=lambda x: int(x.focPos))
 
             for dSx in self.dataSxtr:
@@ -266,7 +266,7 @@ class CatalogAnalysis(object):
     :var ev: helper module for house keeping, :py:mod:`rts2saf.environ.Environment`
     :var logger:  :py:mod:`rts2saf.log`
 
-"""
+    """
     def __init__(self, 
                  debug=False, 
                  date = None, 

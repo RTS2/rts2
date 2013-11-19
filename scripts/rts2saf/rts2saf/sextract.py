@@ -17,8 +17,11 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""
+"""
 
 __author__ = 'markus.wildi@bluewin.ch'
+
 import os
 from astropy.io.fits import getheader
 import sys
@@ -28,7 +31,14 @@ import rts2saf.sextractor as rsx
 from rts2saf.data import DataSxtr
 
 class Sextract(object):
-    """Sextract a FITS image"""
+    """Sextract a FITS image using :py:mod:`rts2.sextractor`.
+
+    :var debug: enable more debug output with --debug and --level
+    :var createAssoc: if True create a SExtractor catalog for association (ASSOC)
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, debug=False, createAssoc=False, rt=None, logger=None):
         self.debug=debug
         self.createAssoc=createAssoc
@@ -42,15 +52,26 @@ class Sextract(object):
         self.logger=logger
         
     def appendFluxFields(self):
+        """Append SExtractor's parameters to enable flux analysis. 
+        """
         self.fields.append('FLUX_MAX')
         self.fields.append('FLUX_APER')
         self.fields.append('FLUXERR_APER')
 
     def appendAssocFields(self):
+        """Append SExtractor's parameters to enable association.
+        """
         self.fields.append('VECTOR_ASSOC({0:d})'.format(len(self.fields)))
         self.fields.append('NUMBER_ASSOC')
 
-    def sextract(self, fitsFn, assocFn=None):
+    def sextract(self, fitsFn=None, assocFn=None):
+        """Call :py:mod:`rts2.sextractor`, retrieve FITS header information and create :py:mod:`rts2saf.data.DataSxtr`
+        :param fitsFn: FITS file name
+        :param assocFn: File name of the association catalog
+
+        :return:  :py:mod:`rts2saf.data.DataSxtr`
+
+        """
         sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw, createAssoc=self.createAssoc)
         # create the skyList
         stde= sex.runSExtractor(fitsFn, assocFn=assocFn)
@@ -74,7 +95,7 @@ class Sextract(object):
             self.logger.error( 'sextract: in FITS {0} key word FOC_POS not found\nmessage: {1} returning'.format(fitsFn, e))
             return DataSxtr()
 
-        # these values are remaped in config.py
+        # these values are remapped in config.py
         try:
             ambientTemp = '{0:3.1f}'.format(float(hdr[self.rt.cfg['AMBIENTTEMPERATURE']]))
         except:

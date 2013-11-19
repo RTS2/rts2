@@ -33,7 +33,7 @@ import os
 from timeout import timeout
 
 class ScanThread(threading.Thread):
-    """Thread scan aqcuires a set of FITS image filenames and writes the to :py:mod:`Queue` acqu_oq.
+    """Thread scan acquires a set of FITS image filenames and writes the to :py:mod:`Queue` acqu_oq.
 
     :var debug: enable more debug output with --debug and --level
     :var dryFitsFiles: FITS files injected if the CCD can not provide them
@@ -127,7 +127,7 @@ class ScanThread(threading.Thread):
 
 # TAG QUICK
 # it happens only at Bootes-2 at 2013-10-02) that the file name of the fits file remains the same.
-# it will not be over wirtten, hence we remove that here
+# it will not be over written, hence we remove that here
 # this is a quick dirty fix
 # see below TAGs FEELGOOD, INCREMENT
 #
@@ -204,9 +204,9 @@ class ScanThread(threading.Thread):
         expEnd = self.proxy.getDevice(self.ccd.name)['exposure_end'][1]
         rdtt= self.proxy.getDevice(self.ccd.name)['readout_time'][1]
         # at a fresh start readout_time may be empty
-        # ToDo chack that at run time
+        # ToDo check that at run time
         if not rdtt:
-            rdtt= 5. # beeing on the save side, subsequent calls have the correct time, ToDo: might not be true!
+            rdtt= 5. # being on the save side, subsequent calls have the correct time, ToDo: might not be true!
             self.logger.warn('acquire: no read out time received, that is ok if RTS2 CCD driver has just been (re-)started, sleeping:{}'.format(rdtt))
                 
         # critical: RTS2 creates the file on start of exposure
@@ -236,7 +236,7 @@ class ScanThread(threading.Thread):
         else:
             srcTmpFn=fn
             if self.debug: self.logger.debug('____ScanThread: file from ccd: {0}, reason no more dry FITS files (add more if necessary)'.format(srcTmpFn))
-            # ToDo fn ist not moved by RTS2 means (as it was in rts2af)
+            # ToDo fn is not moved by RTS2 means (as it was in rts2af)
             # might be not a good idea
             # ask Petr to expand JSON interface
             # ?copy instead of moving?
@@ -250,7 +250,7 @@ class ScanThread(threading.Thread):
                 except Exception, e:
                     self.logger.warn('____ScanThread: not yet ready {0}'.format(srcTmpFn))
                     #if self.debug: self.logger.debug('____ScanThread: do not forget to set --writetodevices'.format(fn, srcTmpFn))
-                time.sleep(.5) # ToDo if it persits: put it to cfg!
+                time.sleep(.5) # ToDo if it persists: put it to cfg!
 
         if self.ftw and self.ft:
             storeFn=self.ev.expandToAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]

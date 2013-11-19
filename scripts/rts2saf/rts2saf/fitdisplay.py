@@ -53,7 +53,8 @@ class  FitDisplay(object):
         self.ax1 = self.fig.add_subplot(111)
 
     def fitDisplay(self, dataFit=None, resultFit=None, display=False):
-        """
+        """Display fit using matplotlib
+
         :param dataFit: :py:mod:`rts2saf.data.DataFit`
         :param resultFit: :py:mod:`rts2saf.data.ResultFit`
         :param display: if True display and save plot to file, False save only

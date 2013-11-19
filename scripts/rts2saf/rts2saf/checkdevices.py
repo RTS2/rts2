@@ -122,7 +122,7 @@ class CheckDevices(object):
         if self.verbose: self.logger.debug('__deviceWriteAccessCCD: response from {0}: calculate_stat: {1}'.format(self.ccd.name, cs))
         
         try:
-            self.proxy.setValue(self.ccd.name,'calculate_stat', 3) # no statisctics
+            self.proxy.setValue(self.ccd.name,'calculate_stat', 3) # no statistics
             self .proxy.setValue(self.ccd.name,'calculate_stat', str(cs))
             ccdOk= True
         except Exception, e:

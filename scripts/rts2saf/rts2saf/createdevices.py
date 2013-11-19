@@ -238,7 +238,7 @@ class CreateFocuser(CreateDevice):
     :var verbose: True, more debug output
     :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
     :var logger:  :py:mod:`rts2saf.log`
-    :var rangeFocToff: list containg minimum, maximum and step size 
+    :var rangeFocToff: list containing minimum, maximum and step size 
 
     """    
     def __init__( self, rangeFocToff=None, blind=False, *args, **kw ):
@@ -249,7 +249,7 @@ class CreateFocuser(CreateDevice):
     def create(self):
         """Create :py:mod:`rts2saf.devices.Focuser` based on properties stored in configuration. 
         Optionally check if device is present. Focuser range is set if values  
-        are within limits [ FOCUSER_ABSOLUTE_LOWER_LIMIT,FOCUSER_ABSOLUTE_UPPER_LIMI ]
+        are within limits [ FOCUSER_ABSOLUTE_LOWER_LIMIT,FOCUSER_ABSOLUTE_UPPER_LIMIT ]
 
         :return:  :py:mod:`rts2saf.devices.Focuser` if success else None
 
@@ -284,7 +284,7 @@ class CreateFocuser(CreateDevice):
             self.logger.error('create: out of bounds, returning')
             return None
 
-        # ToDO check with no filter wheel configuration
+        # ToDo check with no filter wheel configuration
         if len(self.focFoff) > 10 and  self.blind:
             self.logger.info('create: focuser range has: {0} steps, you might consider set decent value for --focrange'.format(len(self.focFoff)))
 
@@ -427,7 +427,7 @@ class CreateFilterWheels(CreateDevice):
         # all in config defined filters have no relation to a filter wheel
         filterDict= { x.name: x for x in self.filters }
         filterWheels=list()
-        # create objects FilterWheel whith filter wheels names and with filter objects
+        # create objects FilterWheel with filter wheels names and with filter objects
         #  ftwn: W2
         #  ftds: ['nof1', 'U', 'Y', 'O2']
         for ftwn,ftds in self.rt.cfg['FILTER WHEEL DEFINITIONS'].iteritems():
@@ -466,7 +466,7 @@ class CreateFilterWheels(CreateDevice):
             for ft in ftw.filters:
                 if self.debug: self.logger.debug('create:  {0:5s}, filter:{1:5s} in use'.format(ftw.name, ft.name))
                 if ft.OffsetToEmptySlot==0:
-                    # ft.emptySlot=Null at instanciation
+                    # ft.emptySlot=Null at instantiation
                     try:
                         ftw.emptySlots.append(ft)
                     except:
@@ -515,7 +515,7 @@ class CreateFilterWheels(CreateDevice):
         return self.filterWheelsInUse
 
     def checkBounds(self):
-        """Chek if FOC_DEF + max/min(FOC_FOFF) are within focuser range and if the number of steps is above MINIMUM_FOCUSER_POSITIONS.
+        """Check if FOC_DEF + max/min(FOC_FOFF) are within focuser range and if the number of steps is above MINIMUM_FOCUSER_POSITIONS.
 
         :return: True if both conditions are met else False
 

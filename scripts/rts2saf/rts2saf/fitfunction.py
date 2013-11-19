@@ -27,7 +27,12 @@ import numpy as np
 from scipy import optimize
 
 class FitFunction(object):
-    """ Fit function to data and find extrema"""
+    """ Fit function to data and find extreme
+
+    :var dataFit: :py:mod:`rts2saf.data.DataFit`
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, dataFit=None, logger=None):
 
         self.dataFit=dataFit
@@ -38,6 +43,11 @@ class FitFunction(object):
         self.logger=logger
         
     def fitData(self):
+        """Fit function using  optimize.leastsq().
+
+        :return extr_focpos, val_func, par, flag:  focuser position, value at position, fit parameters, non zero if successful
+
+        """
 
         try:
             par, flag  = optimize.leastsq(self.errorFunc, self.par, args=(self.dataFit.pos, self.dataFit.val, self.dataFit.errx, self.dataFit.erry))
@@ -58,7 +68,7 @@ class FitFunction(object):
             extr_focpos = optimize.fminbound(fitFunc,x1=min(self.dataFit.pos)-2 * step, x2=max(self.dataFit.pos)+2 * step, args=[par])
 
         except Exception, e:
-            self.logger.error('fitdata: failed finding extrema:\nnumpy error message:\n{0}'.format(e))                
+            self.logger.error('fitdata: failed finding extreme:\nnumpy error message:\n{0}'.format(e))                
             return None, None, None, None
 
         val_func= self.fitFunc(x=extr_focpos, p=[x for x in par]) 

@@ -95,7 +95,7 @@ Output:
 
 .. code-block:: bash
 
- rts2af_fwhm: no focus run  queued, fwhm: 10.84 < 35.00 (thershold)
+ rts2af_fwhm: no focus run  queued, fwhm: 10.84 < 35.00 (threshold)
  rts2af_fwhm: DONE
 
 The FWHM is  10.84 and well below threshold (see FWHM_LOWER_THRESH).

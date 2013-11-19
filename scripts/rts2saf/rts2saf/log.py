@@ -24,11 +24,19 @@ import logging
 import sys
 
 class Logger(object):
-    """Define the logger for rts2saf"""
+    """Define the logger for rts2saf
+
+    :var debug: enable more debug output with --debug and --level
+    :var logformat: format string
+    :var args: command line arguments or their defaults
+
+
+    """
     def __init__(self, 
                  debug=False, 
                  logformat='%(asctime)s:%(name)s:%(levelname)s:%(message)s', 
                  args=None):
+
         self.debug=debug
         self.logformat=logformat
         self.args=args
@@ -59,3 +67,4 @@ class Logger(object):
 
         if not ok:
             self.logger.warn('logging to: {0} instead of {1}, error:\n{2}'.format(lgFn, self.args.logfile, e))
+

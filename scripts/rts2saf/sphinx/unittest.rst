@@ -15,7 +15,7 @@ The ``unittest`` rely on the presence of the files in directories ``samples`` an
  cd imgp
  wget http://azug.minpet.unibas.ch/~wildi/20131011054939-621-RA.fits
 
-To verify the inistallation use
+To verify the installation use
 
 .. code-block:: bash
 

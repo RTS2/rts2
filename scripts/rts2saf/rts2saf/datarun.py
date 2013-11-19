@@ -39,7 +39,7 @@ class DataRun(object):
     def buildCats(self, i_nmbrAssc=None):
         i_nmbr=self.dSxReference.fields.index('NUMBER')
         cats=collections.defaultdict(int)
-        # count the occurence of each object
+        # count the occurrence of each object
         focPosS=collections.defaultdict(int)
         nmbrs=sorted([ int(x[i_nmbr]) for x in self.dSxReference.catalog ])
         for dSx in self.dataSxtrs:
@@ -70,7 +70,7 @@ class DataRun(object):
                 self.logger.warn('dropDSx: focuser position: {0:5d} dropped dSx, {1:5d}, {2:6.2f} {3:5d}'.format(int(focPos), val, self.args.fractObjs * len(self.dSxReference.catalog), len(self.dSxReference.catalog)))
 
     def onAlmostImagesAssoc(self):
-        # ToDO clarify that -1
+        # ToDo clarify that -1
         i_nmbrAssc= -1 + self.dataSxtrs[0].fields.index('NUMBER_ASSOC') 
         # build cats
         cats,focPosS=self.buildCats( i_nmbrAssc=i_nmbrAssc)

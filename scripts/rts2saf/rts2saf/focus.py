@@ -17,6 +17,9 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""
+
+"""
 
 __author__ = 'markus.wildi@bluewin.ch'
 
@@ -28,6 +31,21 @@ import rts2saf.sextract as sx
 import rts2saf.analyze as  an
 
 class Focus(object):
+    """Main control class for online data acquisition.
+
+    :var debug: enable more debug output with --debug and --level
+    :var proxy: :py:mod:`rts2.json.JSONProxy`
+    :var args: command line arguments or their defaults
+    :var dryFitsFiles: FITS files injected if the CCD can not provide them
+    :var ccd: :py:mod:`rts2saf.devices.CCD`
+    :var foc: :py:mod:`rts2saf.devices.Focuser`
+    :var ftws: :py:mod:`rts2saf.devices.FilterWheel`
+    :var ft: :py:mod:`rts2saf.devices.Filter`
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
+    :var ev: helper module for house keeping, :py:mod:`rts2saf.environ.Environment`
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, debug=False, proxy=None, args=None, dryFitsFiles=None, ccd=None, foc=None, ftws=None, rt=None, ev=None, logger=None):
         self.debug=debug
         self.proxy=proxy
@@ -41,7 +59,8 @@ class Focus(object):
         self.logger=logger
 
     def run(self):
-        # loop over filter wheels, their filters and offsets (FOC_TOFF)
+        """Loop over filter wheels, their filters and offsets (FOC_FOFF)
+        """
         for k, ftw in enumerate(self.ftws):
             # only interesting in case multiple filter wheels are present
             if len(ftw.filters) ==1 and k>0:
@@ -174,7 +193,7 @@ class Focus(object):
 
                     # FOC_DEF (is set first)
                     if self.rt.cfg['SET_FOC_DEF']:
-                        # ToDo th correct values are stored in Focuser() object
+                        # ToDo the correct values are stored in Focuser() object
                         if self.rt.cfg['FWHM_MIN'] < rFt.extrFitVal < self.rt.cfg['FWHM_MAX']:
                             self.foc.focDef=rFt.extrFitPos
                             acqu.writeFocDef()

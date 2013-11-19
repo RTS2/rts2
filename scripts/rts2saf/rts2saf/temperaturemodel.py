@@ -17,8 +17,11 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+"""
+"""
 
 __author__ = 'markus.wildi@bluewin.ch'
+
 import os
 import sys
 import matplotlib
@@ -35,7 +38,16 @@ from scipy import optimize
 
 
 class TemperatureFocPosModel(object):
-    """ Fit minimum focuser positions as function of temperature"""
+    """ Fit minimum focuser positions as function of temperature
+
+        :var showPlot: if True show plot
+        :var date: date when fit has been carried out 
+        :var comment: optional comment
+        :var plotFn: file name where the plot is stored as PNG
+        :var resultFitFwhm: :py:mod:`rts2saf.data.ResultFwhm`
+        :var logger:  :py:mod:`rts2saf.log`
+
+    """
     def __init__(self, showPlot=False, date=None,  comment=None, plotFn=None, resultFitFwhm=None, logger=None):
 
         self.showPlot=showPlot
@@ -56,6 +68,11 @@ class TemperatureFocPosModel(object):
         self.ax1 = self.fig.add_subplot(111)
 
     def fitData(self):
+        """Fit function using  optimize.leastsq().
+
+        :return par, flag:  fit parameters, non zero if successful
+
+        """
         for rFF in self.resultFitFwhm:
             try:
                 self.temp.append(float(rFF.ambientTemp))
@@ -65,7 +82,7 @@ class TemperatureFocPosModel(object):
             try:
                 self.minFitPos.append(float(rFF.extrFitPos))
             except:
-                self.logger.error('temperaturemodel: serious error: coud not append type{}'.format(type(rFF.extrFitPos)))                
+                self.logger.error('temperaturemodel: serious error: could not append type{}'.format(type(rFF.extrFitPos)))                
                 
             self.minFitPosErr.append(2.5) 
 
@@ -81,6 +98,12 @@ class TemperatureFocPosModel(object):
         return self.par, self.flag
 
     def plotData(self):
+        """Display fit using matplotlib
+
+        :return:  :py:mod:`rts2saf.data.DataFit`.plotFn
+
+        """
+
         try:
             x_temp = np.linspace(min(self.temp), max(self.temp))
         except Exception, e:
