@@ -2,6 +2,7 @@ pkgpython_rts2safdir = ${pythondir}/rts2saf
 pkgpython_rts2saf_PYTHON = __init__.py \
 	acquire.py \
 	analyze.py \
+	analyzeruns.py \
 	checkdevices.py \
 	config.py \
 	createdevices.py \
