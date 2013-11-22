@@ -17,6 +17,14 @@ analyze
    :undoc-members:
    :show-inheritance:
 
+analyzeruns
++++++++++++
+
+.. automodule:: rts2saf.analyzeruns
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 config
 ++++++
 

@@ -120,7 +120,7 @@ if __name__ == '__main__':
         foc.writeFocDef(proxy=proxy, focDef=args.focDef)
         logger.info('rts2saf_focus: {0} FOC_DEF: {1} set'.format(foc.name,args.focDef))
 
-    filters= CreateFilters(debug=args.debug, proxy=proxy, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    filters= CreateFilters(debug=args.debug, proxy=proxy, check=args.checkConfig, verbose=args.verbose, rt=rt, logger=logger).create()
     ftwc = CreateFilterWheels(filters=filters, foc=foc, debug=args.debug, proxy=proxy, check=args.checkConfig, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger)
     ftws = ftwc.create()
     # at least one even if it is FAKE_FTW
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         logger.error('rts2saf_focus: could not create object for filter wheel: {}, exiting'.format(rt.cfg['FILTER WHEELS INUSE']))
         sys.exit(1)
     # offsets must be fetched at this point, but not in unittest
-    ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, fetchOffsets=True, blind=args.blind, verbose=args.verbose, rt=rt, logger=logger).create()
+    ccd= CreateCCD(debug=args.debug, proxy=proxy, ftws=ftws, check=args.checkConfig, fetchOffsets=True, verbose=args.verbose, rt=rt, logger=logger).create()
     if ccd==None or not isinstance(ccd, CCD):
         logger.error('rts2saf_focus: could not create object for CCD: {}, exiting'.format(rt.cfg['CCD_NAME']))
         sys.exit(1)

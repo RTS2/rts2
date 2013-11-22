@@ -130,7 +130,7 @@ class AnalyzeRuns(object):
             arFt, rrFt, allrFt, arMns, rrMns, allrMns= an.selectAndAnalyze()
         else:
             an = SimpleAnalysis(debug = self.debug, date = date, dataSxtr = dataRn.dataSxtrs, Ds9Display = self.args.Ds9Display, FitDisplay = self.args.FitDisplay, focRes = float(self.rt.cfg['FOCUSER_RESOLUTION']), ev = self.ev, logger = self.logger)
-            arFt, rrFt, allrFt, arMns, rrMns, allrMns= an.analyze()
+            arFt, arMns= an.analyze()
             #ToDo matplotlib issue
             if not self.args.model:
                 if arFt.fitFlag:

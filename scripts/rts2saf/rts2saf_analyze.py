@@ -26,6 +26,7 @@ optionally creates a linear temperature model. class ``Do`` provides the environ
 __author__ = 'markus.wildi@bluewin.ch'
 
 import os
+import sys
 
 from rts2saf.analyzeruns import AnalyzeRuns
 
