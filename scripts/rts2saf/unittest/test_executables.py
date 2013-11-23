@@ -45,6 +45,7 @@ class TestExecutables(unittest.TestCase):
     def setUp(self):
         pass
 
+    #@unittest.skip('feature not yet implemented')
     def test_rts2saf_fwhm(self):
         # ../rts2saf_fwhm.py  --fitsFn ../samples/20071205025911-725-RA.fits --toc
         # sextract: no FILTA name information found, ../samples/20071205025911-725-RA.fits
@@ -74,7 +75,7 @@ class TestExecutables(unittest.TestCase):
         # rts2saf_imgp.py, rts2-astrometry-std-fits.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # ...
-        m = re.compile('.*?(corrwerr) 1 (0.3624045465)')
+        m = re.compile('.*?(corrwerr).+? ([0-9.]+)')
         cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--toc' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
@@ -86,10 +87,10 @@ class TestExecutables(unittest.TestCase):
                 val = float(v.group(2))
                 break
 
-        self.assertEqual(val, 0.3624045465, 'return value: {}'.format(repr(stdout_value)))
+        self.assertAlmostEqual(val, 0.3624045465, places=1, msg='return value: {}'.format(val))
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
         
-
+    #@unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze(self):
         # ...
         # analyze: storing plot file: ../samples/UNK-2013-11-23T09:24:58.png
