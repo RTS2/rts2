@@ -161,7 +161,7 @@ class TestFocus(unittest.TestCase):
         focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
         self.assertEqual( focPos, 0, 'return value:{}'.format(focPos))
 
-    #@unittest.skip('this unittest performs a complete focus run, by default it is disabled')
+    @unittest.skip('this unittest performs a complete focus run, by default it is disabled')
     def test_focus(self):
         self.scd.run()
 
