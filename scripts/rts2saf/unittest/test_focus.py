@@ -126,6 +126,8 @@ class TestFocus(unittest.TestCase):
                 
 
         time.sleep(5)
+
+    def setupDevices(self):
         # setup rts2saf
         # fake arguments
         self.args=Args()
@@ -138,7 +140,6 @@ class TestFocus(unittest.TestCase):
         self.args.Ds9Display=False
         self.args.FitDisplay=False
         # JSON
-#        self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         # create Focuser 
         self.foc= CreateFocuser(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger).create()
@@ -155,14 +156,17 @@ class TestFocus(unittest.TestCase):
         self.scd= Focus(debug=False, proxy=self.proxy, args=self.args, dryFitsFiles=None, ccd=ccd, foc=self.foc, ftws=ftws, rt=self.rt, ev=self.ev, logger=logger)
 
 
+
     #@unittest.skip('feature not yet implemented')
     def test_proxyConnection(self):
+        self.setupDevices()
         self.proxy.refresh()
         focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
         self.assertEqual( focPos, 0, 'return value:{}'.format(focPos))
 
     @unittest.skip('this unittest performs a complete focus run, by default it is disabled')
     def test_focus(self):
+        self.setupDevices()
         self.scd.run()
 
 if __name__ == '__main__':

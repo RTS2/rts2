@@ -27,14 +27,23 @@ logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(
 logger = logging.getLogger()
 
 
+from test_focus import TestFocus
+
 # sequence matters
-def suite():
+def suite_no_connection():
     suite = unittest.TestSuite()
     suite.addTest(TestExecutables('test_rts2saf_fwhm'))
     suite.addTest(TestExecutables('test_rts2saf_imgp'))
     suite.addTest(TestExecutables('test_rts2saf_analyze'))
 
     return suite
+
+def suite_with_connection():
+    suite = unittest.TestSuite()
+    suite.addTest(TestRts2safFocus('test_rts2saf_focus'))
+
+    return suite
+
 
 #@unittest.skip('class not yet implemented')
 class TestExecutables(unittest.TestCase):
@@ -45,7 +54,7 @@ class TestExecutables(unittest.TestCase):
     def setUp(self):
         pass
 
-    #@unittest.skip('feature not yet implemented')
+    @unittest.skip('feature not yet implemented')
     def test_rts2saf_fwhm(self):
         # ../rts2saf_fwhm.py  --fitsFn ../samples/20071205025911-725-RA.fits --toc
         # sextract: no FILTA name information found, ../samples/20071205025911-725-RA.fits
@@ -70,6 +79,7 @@ class TestExecutables(unittest.TestCase):
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 
+    @unittest.skip('feature not yet implemented')
     def test_rts2saf_imgp(self):
         # rts2saf_imgp.py: starting
         # rts2saf_imgp.py, rts2-astrometry-std-fits.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
@@ -90,7 +100,7 @@ class TestExecutables(unittest.TestCase):
         self.assertAlmostEqual(val, 0.3624045465, places=1, msg='return value: {}'.format(val))
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
         
-    #@unittest.skip('feature not yet implemented')
+    @unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze(self):
         # ...
         # analyze: storing plot file: ../samples/UNK-2013-11-23T09:24:58.png
@@ -119,15 +129,36 @@ class TestExecutables(unittest.TestCase):
         self.assertEqual(pos, 5437, 'return value: {}'.format(repr(stdout_value)))
         self.assertEqual(val, 2.2, 'return value: {}'.format(repr(stdout_value)))
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
-        
 
 
 
 
+class TestRts2safFocus(TestFocus):
 
+    def test_rts2saf_focus(self):
+        m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
+        cmd=[ '../rts2saf_focus.py',   '--dryfitsfiles', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
+ 
+        proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_value, stderr_value = proc.communicate()
+        lines = stdout_value.split('\n')
+        pos=0
+        val=0.
+        for ln  in lines:
+            v = m.match(ln)
+            if v:
+                
+                pos = int(v.group(2))
+                val = float(v.group(3))
+                break
 
-
+        self.assertEqual(pos, 5426, 'return value: {}'.format(pos))
+        self.assertEqual(val, 2.2, 'return value: {}'.format(val))
+        self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 if __name__ == '__main__':
     
-    unittest.TextTestRunner(verbosity=0).run(suite())
+    suiteNoConnection = suite_no_connection()
+    suiteWithConnection = suite_with_connection()
+    alltests = unittest.TestSuite([suiteNoConnection, suiteWithConnection])
+    unittest.TextTestRunner(verbosity=0).run(alltests)
