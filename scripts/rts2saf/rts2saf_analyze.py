@@ -69,7 +69,7 @@ if __name__ == '__main__':
     # config
     rtc = Configuration(logger = logger)
     rtc.readConfiguration(fileName = args.config)
-    rtc.checkConfiguration()
+    rtc.checkConfiguration(args=args)
     # environment
     ev = Environment(debug = args.debug, rt = rtc, logger = logger)
 

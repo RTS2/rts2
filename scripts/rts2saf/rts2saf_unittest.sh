@@ -19,6 +19,14 @@
 #
 
 
+if ! [ -e '/usr/local/bin/sex' ]
+then
+    echo 'SExtractor as /usr/local/bin/sex not found'
+    echo 'Either create a link or change SEXPATH in all ./unittest/rts2saf-*cfg'
+    exit
+fi
+
+
 if [ $1 ] 
 then
  dir=$1

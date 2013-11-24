@@ -62,7 +62,7 @@ if __name__ == '__main__':
     # read the run time configuration
     rt=Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
-    if not rt.checkConfiguration():
+    if not rt.checkConfiguration(args=args):
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
 

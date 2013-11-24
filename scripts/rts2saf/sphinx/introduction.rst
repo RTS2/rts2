@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2013-11-23)
+Status and open issues (2013-11-24)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -17,7 +17,17 @@ Items which need further attention:
 2) finding the appropriate exposure 
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focsing.py``
 4) strategies if a focus run fails, e.g. widen the interval in regular mode, fall back to blind mode
-5) many ToDos in the code
+5) ``SExtractor``'s filter  option
+6) many ToDos in the code
+
+In case of questions, or if you need support, contact the author and
+in case of failures execute
+
+.. code-block:: bash
+
+ ./rts2saf_unittest.sh
+
+and send its output together with ``/tmp/unittest.log`.
 
 
 Quick hands on analysis
@@ -52,7 +62,6 @@ The latest version is available at the RTS2 svn repo:
 http://sourceforge.net/p/rts-2/code/HEAD/tree/trunk/rts-2/scripts/rts2saf/
 including this description.
 
-In case of questions, or if you need support, contact the author.
 
 rts2saf is a complete rewrite of rts2af.  The goals were
 

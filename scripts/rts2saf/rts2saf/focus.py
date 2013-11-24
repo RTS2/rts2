@@ -186,7 +186,7 @@ class Focus(object):
                 if ft.name in self.rt.cfg['EMPTY_SLOT_NAMES']:
 
                     if self.args.blind:
-                        self.foc.focDef= rFt.weightedMeanCombined
+                        self.foc.focDef= rMns.combined
                     else:
                         self.foc.focDef= rFt.extrFitPos
                     if self.debug: self.logger.debug('Focus: set self.foc.focDef: {0}'.format(int(self.foc.focDef)))

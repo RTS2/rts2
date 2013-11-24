@@ -35,6 +35,7 @@ def suite_no_connection():
     suite.addTest(TestExecutables('test_rts2saf_fwhm'))
     suite.addTest(TestExecutables('test_rts2saf_imgp'))
     suite.addTest(TestExecutables('test_rts2saf_analyze'))
+    suite.addTest(TestExecutables('test_rts2saf_analyze_assoc'))
 
     return suite
 
@@ -64,7 +65,7 @@ class TestExecutables(unittest.TestCase):
         # rts2af_fwhm: DONE
 
         m = re.compile('.*?(no focus run  queued, fwhm:)  (2.77)')
-        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--toc' ]
+        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
@@ -111,8 +112,8 @@ class TestExecutables(unittest.TestCase):
         # ResultMeans: FOC_DEF:  5382 : weighted mean derived from CombinedFWHM
         # analyzeRuns: ('NODATE', 'NOFTW') :: NOFT 14 
         # rts2saf_analyze: no ambient temperature available in FITS files, no model fitted
-        m = re.compile('.*?(FOC_DEF:)  (5437).+?(2.2)px')
-        cmd=[ '../rts2saf_analyze.py',   '--basepath', '../samples', '--toc' ]
+        m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
+        cmd=[ '../rts2saf_analyze.py',   '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
@@ -126,11 +127,31 @@ class TestExecutables(unittest.TestCase):
                 val = float(v.group(3))
                 break
 
-        self.assertEqual(pos, 5437, 'return value: {}'.format(repr(stdout_value)))
-        self.assertEqual(val, 2.2, 'return value: {}'.format(repr(stdout_value)))
+        self.assertEqual(pos, 5437, 'return value: {}'.format(pos))
+        self.assertEqual(val, 2.2, 'return value: {}'.format(val))
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 
+    #@unittest.skip('feature not yet implemented')
+    def test_rts2saf_analyze_assoc(self):
+        m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
+        cmd=[ '../rts2saf_analyze.py',   '--associate', '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
+        proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_value, stderr_value = proc.communicate()
+        lines = stdout_value.split('\n')
+        pos=0
+        val=0.
+        for ln  in lines:
+            v = m.match(ln)
+            if v:
+                
+                pos = int(v.group(2))
+                val = float(v.group(3))
+                break
+
+        self.assertEqual(pos, 5435, 'return value: {}'.format(pos))
+        self.assertEqual(val, 2.1, 'return value: {}'.format(val))
+        self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 
 class TestRts2safFocus(TestFocus):
@@ -143,7 +164,7 @@ class TestRts2safFocus(TestFocus):
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
         pos=0
-        val=0.
+        val=float('nan')
         for ln  in lines:
             v = m.match(ln)
             if v:

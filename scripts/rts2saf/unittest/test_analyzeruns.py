@@ -35,6 +35,7 @@ logger = logging.getLogger()
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestAnalyzeRuns('test_analyze_runs'))
+    suite.addTest(TestAnalyzeRuns('test_analyze_runs_assoc'))
 
     return suite
 
@@ -55,7 +56,6 @@ class TestAnalyzeRuns(unittest.TestCase):
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         self.ev=Environment(debug=False, rt=self.rt,logger=logger)
         self.args=Args()
-        self.args.associate = False
         self.args.catalogAnalysis = True
         self.args.Ds9Display = False
         self.args.FitDisplay = False
@@ -68,9 +68,19 @@ class TestAnalyzeRuns(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_analyze_runs(self):
+        self.args.associate = False
         aRs = AnalyzeRuns(basePath = self.args.basePath, args = self.args, rt = self.rt, ev = self.ev, logger = logger)
         aRs.aggregateRuns()
         rFf = aRs.analyzeRuns()
+        self.assertEqual(type(rFf[0]), ResultFit, 'return value: {}'.format(type(rFf[0])))
+
+    #@unittest.skip('feature not yet implemented')
+    def test_analyze_runs_assoc(self):
+        self.args.associate = True
+        aRs = AnalyzeRuns(basePath = self.args.basePath, args = self.args, rt = self.rt, ev = self.ev, logger = logger)
+        aRs.aggregateRuns()
+        rFf = aRs.analyzeRuns()
+        
         self.assertEqual(type(rFf[0]), ResultFit, 'return value: {}'.format(type(rFf[0])))
 
 

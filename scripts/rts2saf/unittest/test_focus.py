@@ -36,6 +36,7 @@ import grp
 import signal
 import logging
 import time
+import glob
 
 logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
@@ -45,6 +46,7 @@ def suite_focus():
     suite = unittest.TestSuite()
     suite.addTest(TestFocus('test_proxyConnection'))
     suite.addTest(TestFocus('test_focus'))
+    suite.addTest(TestFocus('test_focus_blind'))
     return suite
 
 class Args(object):
@@ -127,11 +129,11 @@ class TestFocus(unittest.TestCase):
 
         time.sleep(5)
 
-    def setupDevices(self):
+    def setupDevices(self, blind=False):
         # setup rts2saf
         # fake arguments
         self.args=Args()
-        self.args.blind=False
+        self.args.blind=blind
         self.args.verbose=False
         self.args.check=True
         self.args.fetchOffsets=True
@@ -139,6 +141,7 @@ class TestFocus(unittest.TestCase):
         self.args.catalogAnalysis=False
         self.args.Ds9Display=False
         self.args.FitDisplay=False
+        self.args.dryFitsFiles='../samples_bootes2'
         # JSON
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         # create Focuser 
@@ -146,14 +149,29 @@ class TestFocus(unittest.TestCase):
         # create filters
         fts=CreateFilters(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger).create()
         # create filter wheels
-        ftws= CreateFilterWheels(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger, filters=fts, foc=self.foc).create()
+        ftwc= CreateFilterWheels(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger, filters=fts, foc=self.foc)
+        ftws=ftwc.create()
+        if not ftwc.checkBounds():
+            logger.error('setupDevice: filter focus ranges out of bounds, exiting')
+            sys.exit(1)
+
         # create ccd
         ccd= CreateCCD(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger, ftws=ftws, fetchOffsets=self.args.fetchOffsets).create()
         
         cdv= CheckDevices(debug=False, proxy=self.proxy, blind=self.args.blind, verbose=self.args.verbose, ccd=ccd, ftws=ftws, foc=self.foc, logger=logger)
         cdv.summaryDevices()
+        cdv.printProperties()
+        cdv.deviceWriteAccess()
+        dryFitsFiles=None
+        if self.args.dryFitsFiles:
+            dryFitsFiles=glob.glob('{0}/{1}'.format(self.args.dryFitsFiles, self.rt.cfg['FILE_GLOB']))
+            if len(dryFitsFiles)==0:
+                logger.error('setupDevice: no FITS files found in:{}'.format(self.args.dryFitsFiles))
+                logger.info('setupDevice: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
+                sys.exit(1)
+
         # ok evrything is there
-        self.scd= Focus(debug=False, proxy=self.proxy, args=self.args, dryFitsFiles=None, ccd=ccd, foc=self.foc, ftws=ftws, rt=self.rt, ev=self.ev, logger=logger)
+        self.scd= Focus(debug=False, proxy=self.proxy, args=self.args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=self.foc, ftws=ftws, rt=self.rt, ev=self.ev, logger=logger)
 
 
 
@@ -164,10 +182,20 @@ class TestFocus(unittest.TestCase):
         focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
         self.assertEqual( focPos, 0, 'return value:{}'.format(focPos))
 
-    @unittest.skip('this unittest performs a complete focus run, by default it is disabled')
+    #@unittest.skip('this unittest performs a complete focus run, by default it is disabled')
     def test_focus(self):
         self.setupDevices()
         self.scd.run()
+
+    #@unittest.skip('this unittest performs a complete focus run, by default it is disabled')
+    def test_focus_blind(self):
+        self.setupDevices(blind=True)
+        self.scd.run()
+
+
+
+
+        self.args.blind=False
 
 if __name__ == '__main__':
 

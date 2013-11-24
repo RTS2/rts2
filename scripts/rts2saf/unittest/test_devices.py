@@ -110,6 +110,7 @@ class TestCreateDevices(unittest.TestCase):
 from rts2saf.checkdevices import CheckDevices
 from rts2.json import JSONProxy
 
+@unittest.skip('these tests are done in test_focus')
 class TestCheckDevices(unittest.TestCase):
 
     def tearDown(self):
@@ -122,7 +123,9 @@ class TestCheckDevices(unittest.TestCase):
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
         self.scd= CheckDevices(debug=False, proxy=self.proxy, blind=None, verbose=None, ccd=None, ftws=None, foc=None, logger=logger)
 
-    #@unittest.skip('feature not yet implemented')
+
+
+    @unittest.skip('feature not yet implemented')
     def test_checkDevices(self):
         pass
 

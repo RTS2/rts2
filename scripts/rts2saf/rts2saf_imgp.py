@@ -41,17 +41,15 @@ import re
 class ImgpAnalysis():
     """Called by IMGP to do astrometric calibration and FWHM analysis"""
 
-    def __init__(self, scriptName=None, fwhmCmd=None, astrometryCmd=None, fitsFileName=None, logger=None):
+    def __init__(self, scriptName=None, fwhmCmd=None, astrometryCmd=None, fitsFileName=None, config=None, logger=None):
         # RTS2 has no possibilities to pass arguments to a command, defining the defaults
         self.scriptName= scriptName 
         self.fitsFileName= fitsFileName
+        self.config=config
         self.logger=logger
         self.fwhmCmd= fwhmCmd
         # uses header created by standard RTS2
         self.astrometryCmd=astrometryCmd
-        # this is the default config.
-        # specify a different here if necessary
-        self.fwhmConfigFile= '/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
 
     def spawnProcess( self, cmd=None, wait=None):
         """Spawn a process and wait or do not wait for completion"""
@@ -78,7 +76,7 @@ class ImgpAnalysis():
 
         cmd= [  self.fwhmCmd,
                 '--config',
-                self.fwhmConfigFile,
+                self.config,
                 '--fitsFn',
                 self.fitsFileName,
                 ]
@@ -141,7 +139,7 @@ if __name__ == "__main__":
     # read the run time configuration
     rt=Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
-    if not rt.checkConfiguration():
+    if not rt.checkConfiguration(args=args):
         logger.error('[0]: exiting, check the configuration file: {1}'.format(script, args.config))
         sys.exit(1)
 
@@ -162,6 +160,7 @@ if __name__ == "__main__":
         fwhmCmd=rt.cfg['SCRIPT_FWHM'], 
         astrometryCmd=rt.cfg['SCRIPT_ASTROMETRY'], 
         fitsFileName=fitsFn, 
+        config=args.config,
         logger=logger)
     # if in config file is nothing specified it is a str
     if isinstance(rt.cfg['FILTERS_TO_EXCLUDE'], dict):

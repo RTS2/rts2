@@ -35,6 +35,7 @@ def suite():
 
     return suite
 
+
 #@unittest.skip('class not yet implemented')
 class TestSextract(unittest.TestCase):
 
@@ -51,7 +52,7 @@ class TestSextract(unittest.TestCase):
         sx = Sextract(debug=False, rt=rt, logger=logger)
         fitsFn='../samples/20071205025911-725-RA.fits'
         dSx=sx.sextract(fitsFn=fitsFn)
-        self.assertIs(type(dSx), DataSxtr, 'no object of type: '.format(type(DataSxtr)))
+        self.assertIs(type(dSx), DataSxtr, 'return object of type: '.format(type(dSx)))
         self.assertEqual(fitsFn, dSx.fitsFn, 'install sample FITS from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
 
     def test_sextractFlux(self):
@@ -59,8 +60,11 @@ class TestSextract(unittest.TestCase):
         success=rt.readConfiguration(fileName='./rts2saf-flux.cfg')
         sx = Sextract(debug=False, rt=rt, logger=logger)
         fitsFn='../samples/20071205025911-725-RA.fits'
+        sx.appendFluxFields()
         dSx=sx.sextract(fitsFn=fitsFn)
-        self.assertEqual(dSx.fields[11], 'FLUXERR_APER', 'return value: {}'.format(dSx.fields[11]))
+        self.assertEqual(dSx.fields[12], 'FLUXERR_APER', 'return value: {}'.format(dSx.fields[12]))
+
+
 if __name__ == '__main__':
     
     unittest.TextTestRunner(verbosity=0).run(suite())

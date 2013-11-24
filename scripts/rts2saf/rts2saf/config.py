@@ -111,7 +111,7 @@ class DefaultConfiguration(object):
         self.dcf[('SExtractor', 'ANALYSIS_THRESH')]=1.7 
         self.dcf[('SExtractor', 'DEBLEND_MINCONT')]= 0.1 
         self.dcf[('SExtractor', 'SATUR_LEVEL')]= 65535
-        self.dcf[('SExtractor', 'STARNNW_NAME')]= '/home/wildi/svn-vermes/experiment/python/nordlys/sextractor/default.nnw'
+        self.dcf[('SExtractor', 'STARNNW_NAME')]= '/usr/local/etc/rts2/rts2saf/rts2saf-sex.nnw'
         # ToDo so far that is good for FLI CCD
         # These factors are used for the fitting
         self.dcf[('ccd binning mapping', '1x1')] = 0
@@ -339,23 +339,23 @@ class Configuration(DefaultConfiguration):
             self.config.write(configfile)
 
 
-    def checkConfiguration(self):
+    def checkConfiguration(self, args=None):
         """Check the runtime configuration e.g. if SExtractor is present or if the filter wheel definitions and filters are consistent.
 
         :return: True if success else False
         """
         # rts2.sextractor excepts the file not found error and uses internal defaults, we check that here
         if not os.path.exists(self.cfg['SEXPATH']):
-            self.logger.warn( 'Configuration.readConfiguration: sextractor path: {0} not valid, returning'.format(self.cfg['SEXPATH']))            
+            self.logger.warn( 'Configuration.checkConfiguration: sextractor path: {0} not valid, returning'.format(self.cfg['SEXPATH']))            
             return False
         if not os.path.exists(self.cfg['SEXCFG']):
-            self.logger.warn( 'Configuration.readConfiguration: SExtractor config file: {0} not found, returning'.format(self.cfg['SEXCFG']))            
+            self.logger.warn( 'Configuration.checkConfiguration: SExtractor config file: {0} not found, returning'.format(self.cfg['SEXCFG']))            
             return False
         if not os.path.exists(self.cfg['STARNNW_NAME']):
-            self.logger.warn( 'Configuration.readConfiguration: SExtractor NNW config file: {0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
+            self.logger.warn( 'Configuration.checkConfiguration: SExtractor NNW config file: {0} not found, returning'.format(self.cfg['STARNNW_NAME']))            
             return False
         if not self.cfg['FIELDS']:
-            self.logger.warn( 'Configuration.readConfiguration: no sextractor fields defined, returning')
+            self.logger.warn( 'Configuration.checkConfiguration: no sextractor fields defined, returning')
             return False
 
         ftws = self.cfg['FILTER WHEEL DEFINITIONS'].keys()
@@ -366,12 +366,31 @@ class Configuration(DefaultConfiguration):
 
         for ftw in self.cfg['FILTER WHEELS INUSE']:
             if ftw  not in ftws:
-                self.logger.warn( 'Configuration.readConfiguration: filter wheel {} not defined in {}'.format(ftw, ftws))
+                self.logger.warn( 'Configuration.checkConfiguration: filter wheel {} not defined in {}'.format(ftw, ftws))
                 return False
             for ftName in self.cfg['FILTER WHEEL DEFINITIONS'][ftw]:
                 if ftName not in fts:
-                    self.logger.warn( 'Configuration.readConfiguration: filter {} not defined in {}'.format(ftName, self.cfg['FILTER DEFINITIONS']))
+                    self.logger.warn( 'Configuration.checkConfiguration: filter {} not defined in {}'.format(ftName, self.cfg['FILTER DEFINITIONS']))
                     return False
+
+
+        try:
+            vars(args)['associate']
+            if not 'NUMBER' in self.cfg['FIELDS']:
+                self.logger.error( 'Configuration.checkConfiguration: with --associate specify SExtractor parameter NUMBER in FIELDS: {}'.format( self.cfg['FIELDS']))
+                return False
+        except:
+            pass
+
+        try:
+            vars(args)['flux']
+            for fld in ['FLUX_MAX' , 'FLUX_APER', 'FLUXERR_APER']:
+                if  fld in self.cfg['FIELDS']:
+                    self.logger.error( 'Configuration.checkConfiguration: with --flux do not specify SExtractor parameter {}  in FIELDS: {}'.format( fld, self.cfg['FIELDS']))
+                    return False
+        except:
+            pass
                     
+
         return True
         # more to come

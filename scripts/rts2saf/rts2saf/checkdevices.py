@@ -67,7 +67,7 @@ class CheckDevices(object):
                 for ft in ftw.filters:
                     info += 'summaryDevices: {0:8s}: {1:8s}'.format(ftw.name, ft.name)
                     if self.blind:
-                        info += '{0:2d} steps, between: [{1:5d},{2:5d}]\n'.format(len(focuser.focFoff), min(focuser.focFoff), max(focuser.focFoff))
+                        info += '{0:2d} steps, between: [{1:5d},{2:5d}]\n'.format(len(self.foc.focFoff), min(self.foc.focFoff), max(self.foc.focFoff))
                         img += len(self.foc.focFoff)
                     else:
                         info += '{0:2d} steps, FOC_FOFF: [{1:5d}, {2:5d}], '.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))

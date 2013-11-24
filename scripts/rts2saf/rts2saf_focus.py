@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # read the run time configuration
     rt=Configuration(logger=logger)
     rt.readConfiguration(fileName=args.config)
-    if not rt.checkConfiguration():
+    if not rt.checkConfiguration(args=args):
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
 
@@ -157,11 +157,11 @@ if __name__ == '__main__':
     # neverthless ccd is exposing, filter wheels and focuser are moving
     dryFitsFiles=None
     if args.dryFitsFiles:
-            dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryFitsFiles, rt.cfg['FILE_GLOB']))
-            if len(dryFitsFiles)==0:
-                logger.error('rts2saf_focus: no FITS files found in:{}'.format(args.dryFitsFiles))
-                logger.info('rts2saf_focus: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
-                sys.exit(1)
+        dryFitsFiles=glob.glob('{0}/{1}'.format(args.dryFitsFiles, rt.cfg['FILE_GLOB']))
+        if len(dryFitsFiles)==0:
+            logger.error('rts2saf_focus: no FITS files found in:{}'.format(args.dryFitsFiles))
+            logger.info('rts2saf_focus: download a sample from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
+            sys.exit(1)
 
 
     # start acquistion and analysis

@@ -266,9 +266,11 @@ class CreateFocuser(CreateDevice):
             rangeMin=int(self.rt.cfg['FOCUSER_LOWER_LIMIT'])
             rangeMax=int(self.rt.cfg['FOCUSER_UPPER_LIMIT'])
             rangeStep=int(self.rt.cfg['FOCUSER_STEP_SIZE'])
-            self.logger.info('create:  {0} setting internal limits from configuration file and ev. default values!'.format(self.rt.cfg['FOCUSER_NAME']))
+            if self.blind:
+                self.logger.info('create:  {0} setting internal limits for --blind :[{1}, {2}], step size: {3}'.format(self.rt.cfg['FOCUSER_NAME'], rangeMin, rangeMax, rangeStep))
+            else:
+                self.logger.info('create:  {0} setting internal limits from configuration file and ev. default values!'.format(self.rt.cfg['FOCUSER_NAME']))
 
-        self.logger.info('create:  {0} setting internal limits for --blind :[{1}, {2}], step size: {3}'.format(self.rt.cfg['FOCUSER_NAME'], rangeMin, rangeMax, rangeStep))
 
         withinLlUl=False
 
@@ -278,6 +280,7 @@ class CreateFocuser(CreateDevice):
 
         if withinLlUl:
             self.focFoff= range(rangeMin, rangeMax +rangeStep, rangeStep)
+            
         else:
             self.logger.error('create:  {0:8s} abs. lowerLimit: {1}, abs. upperLimit: {2}'.format(self.rt.cfg['FOCUSER_NAME'], self.rt.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT'], self.rt.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT'])) 
             self.logger.error('create:                  rangeMin: {}         rangeMax: {}, '.format( rangeMin, rangeMax))
@@ -311,8 +314,9 @@ class CreateFocuser(CreateDevice):
             temperatureCompensation=bool(self.rt.cfg['FOCUSER_TEMPERATURE_COMPENSATION']),
             logger = self.logger,
             focDef=focDef,
+            # will be overridden in FilterWheels.create:
+            focFoff=self.focFoff,
             # set at run time:
-            # focFoff=None,
             # focMn=None,
             # focMx=None,
             # focSt=None

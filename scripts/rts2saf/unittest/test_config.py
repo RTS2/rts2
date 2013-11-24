@@ -36,6 +36,11 @@ def suite():
 
     return suite
 
+class Args(object):
+    def __init__(self):
+        pass
+
+
 #@unittest.skip('class not yet implemented')
 class TestConfiguration(unittest.TestCase):
 
@@ -46,6 +51,9 @@ class TestConfiguration(unittest.TestCase):
         self.rt = Configuration(logger=logger)
         self.fileName='./rts2saf-bootes-2.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
+        self.args=Args()
+        self.args.associate = True
+        self.args.flux=True
 
     #@unittest.skip('feature not yet implemented')
     def test_readConfiguration(self):
@@ -54,7 +62,7 @@ class TestConfiguration(unittest.TestCase):
 
     def test_checkConfiguration(self):
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
-        result = self.rt.checkConfiguration()
+        result = self.rt.checkConfiguration(args=self.args)
         self.assertTrue(result)
 
     def test_filterWheelInUse(self):
@@ -62,7 +70,6 @@ class TestConfiguration(unittest.TestCase):
 
     def test_writeDefaultConfiguration(self):
         cfn='./rts2saf-default.cfg'
-        cfn='-'
         result=self.rt.writeDefaultConfiguration(cfn=cfn)
         self.assertEqual(cfn, result, 'return value: {}'.format(result))
 
