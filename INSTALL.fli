@@ -7,7 +7,7 @@ in official FLI SDK and provides FLIGetSerialNum function.
 
 To get SVN version, run:
 
-user@host:~$ svn co https://rts-2.svn.sf.net/svnroot/rts-2/fliusb
+user@host:~$ svn co https://svn.code.sf.net/p/rts-2/code/fliusb
 
 After that, run:
 
