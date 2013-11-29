@@ -223,6 +223,7 @@ DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in
 {
 	currPos.ra = NAN;
 	currPos.dec = NAN;
+	moveFailed ();
 }
 
 DarkTarget::~DarkTarget ()
