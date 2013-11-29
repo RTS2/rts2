@@ -131,7 +131,7 @@ class Rts2Target
 		Rts2Target ()
 		{
 			obs_id = -1;
-			moveCount = 0;
+			moveState = TARGET_NOT_MOVED;
 			img_id = 0;
 			tar_enabled = true;
 			target_id = -1;
@@ -178,15 +178,15 @@ class Rts2Target
 
 		// move functions
 
-		void moveStarted () { moveCount = 1; }
+		void moveStarted () { moveState = TARGET_MOVE_STARTED; }
 
-		void moveEnded () { moveCount = 2; }
+		void moveEnded () { moveState = TARGET_MOVE_ENDED; }
 
-		void moveFailed () { moveCount = 3; }
+		void moveFailed () { moveState = TARGET_MOVE_FAILED; }
 
-		bool moveWasStarted () { return (moveCount != 0); }
+		bool moveWasStarted () { return (moveState != TARGET_NOT_MOVED); }
 
-		bool wasMoved () { return (moveCount == 2 || moveCount == 3); }
+		bool wasMoved () { return (moveState == TARGET_MOVE_ENDED || moveState == TARGET_MOVE_FAILED); }
 
 		int getCurrImgId () { return img_id; }
 
@@ -304,7 +304,7 @@ class Rts2Target
 		char *target_name;
 	private:
 		int obs_id;
-		int moveCount;
+		enum { TARGET_NOT_MOVED, TARGET_MOVE_STARTED, TARGET_MOVE_ENDED, TARGET_MOVE_FAILED } moveState;
 		int img_id;				 // count for images
 		bool tar_enabled;
 		// mask with 0xf0 - 0x00 - nominal end 0x10 - interupted 0x20 - acqusition don't converge
