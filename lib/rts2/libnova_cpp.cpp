@@ -661,15 +661,10 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
 		return _os;
 	}
 
-	if (l_radec.ra && !isnan(l_radec.getRa()))
-		_os << *(l_radec.ra) << " ";
+	if (l_radec.ra && l_radec.dec)
+		_os << *(l_radec.ra) << " " << *(l_radec.dec);
 	else
-		_os << "nan ";
-
-	if (l_radec.dec && !isnan(l_radec.getDec ()))
-		_os << *(l_radec.dec);
-	else
-		_os << "nan";
+		_os << "nan nan";
 	return _os;
 }
 
