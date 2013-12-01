@@ -46,7 +46,7 @@ class SI3097:public Camera
 
 		virtual int info ();
 		
-		virtual int setCoolTemp (float new_temp);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual int startExposure ();
 		virtual int endExposure (int ret);
@@ -59,6 +59,18 @@ class SI3097:public Camera
 		const char *devicePath;
 
 		int camera_fd;
+
+		int clearBuffer ();
+
+		// write command to camera
+		//
+		// @param c command to send to the camera
+		// @return -1 on error, 0 on success
+		int writeCommand (const char c);
+
+		struct SI_DMA_CONFIG dma_config;
+
+		rts2core::ValueBool *fan;
 };
 
 }
@@ -67,14 +79,14 @@ using namespace rts2camd;
 
 SI3097::SI3097 (int argc, char **argv):Camera (argc, argv)
 {
+	memset (&dma_config, 0, sizeof (SI_DMA_CONFIG));
+
 	createExpType ();
-	createFilter ();
-	createTempAir ();
-	createTempCCD ();
-	createTempSet ();
+
+	createValue (fan, "FAN", "camera fan", true, RTS2_VALUE_WRITABLE);
 
 	devicePath = "/dev/si3097";
-	camera_fd = -1;
+	camera_fd = 0;
 
 	addOption ('f', NULL, 1, "device path - default to /dev/si3097");
 }
@@ -107,6 +119,8 @@ int SI3097::initHardware ()
 		return -1;
 	}
 
+
+	// initialize camera serial port
 	struct SI_SERIAL_PARAM si_param;
 	si_param.flags = SI_SERIAL_FLAGS_BLOCK;
 	si_param.baud = 19200;
@@ -123,6 +137,19 @@ int SI3097::initHardware ()
 		return -1;
 	}
 
+	// initialize DMA
+	dma_config.maxever = 32 * 1024 * 1024;
+	dma_config.total = getWidth () * getHeight () * 2;
+	dma_config.buflen = 1024 * 1024;
+	dma_config.timeout = 1000; // 10 secs
+	dma_config.config = SI_DMA_CONFIG_WAKEUP_ONEND;
+
+	if (ioctl (camera_fd, SI_IOCTL_DMA_INIT, &dma_config))
+	{
+		logStream (MESSAGE_ERROR) << "cannot setup camera DMA:" << strerror (errno) << sendLog;
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -131,29 +158,59 @@ int SI3097::info ()
 	return Camera::info ();
 }
 
-int SI3097::setCoolTemp (float new_temp)
+int SI3097::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
-	return Camera::setCoolTemp (new_temp);
+	if (oldValue == fan)
+	{
+		return writeCommand (fan->getValueBool () ? 'S' : 'T') == 0 ? 0 : -2;
+	}
+	return Camera::setValue (oldValue, newValue);
 }
 
 int SI3097::startExposure ()
 {
+	// open shutter
+	if (writeCommand ('A'))
+		return -1;
 	return 0;
 }
 
 int SI3097::endExposure (int ret)
 {
+	// close shutter
+	if (writeCommand ('B'))
+		return -1;
 	return Camera::endExposure (ret);
 }
 
 int SI3097::stopExposure ()
 {
+	int ret = writeCommand ('0');
+	if (ret)
+		return ret;
 	return Camera::stopExposure ();
 }
 
 int SI3097::doReadout ()
 {
 	return -2;
+}
+
+int SI3097::clearBuffer ()
+{
+	if (ioctl (camera_fd, SI_IOCTL_SERIAL_CLEAR, 0))
+		return -1;
+	return 0;
+}
+
+int SI3097::writeCommand (const char c)
+{
+	if (write (camera_fd, &c, 1) != 1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot send command " << c << " to camera." << sendLog;
+		return -1;
+	}
+	return 0;	
 }
 
 int main (int argc, char **argv)

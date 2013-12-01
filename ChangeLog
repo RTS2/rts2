@@ -1,3 +1,6 @@
+2013-12-1
+ * Added SI3097 support
+
 2013-07-26
  * Added normalizeRaDec function to utilsfunc - normalizing RaDec with |dec| > 90
 
