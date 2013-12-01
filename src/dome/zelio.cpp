@@ -135,6 +135,9 @@ class Zelio:public Dome
 		// if model have humidity level indicator
 		bool haveHumidityOutput;
 
+		// if true, error during closing was already reported
+		bool closeErrorReported;
+
 		rts2core::ValueString *zelioModelString;
 
 		rts2core::ValueInteger *deadTimeout;
@@ -236,6 +239,9 @@ int Zelio::startOpen ()
 	// check auto state..
 	uint16_t reg;
 	uint16_t reg_J1;
+
+	closeErrorReported = false;
+
 	try
 	{
 		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
@@ -432,7 +438,11 @@ int Zelio::startClose ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
+		if (closeErrorReported == false)
+		{
+			logStream (MESSAGE_ERROR) << err << sendLog;
+			closeErrorReported = true;
+		}
 	 	return -1;
 	}
 	// 20 minutes timeout..
@@ -477,6 +487,7 @@ long Zelio::isClosed ()
 
 int Zelio::endClose ()
 {
+	closeErrorReported = false;
 	return 0;
 }
 
@@ -537,6 +548,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	haveRainSignal = true;
 	haveBatteryLevel = false;
 	haveHumidityOutput = false;
+	closeErrorReported = false;
 
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
