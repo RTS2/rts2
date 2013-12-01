@@ -9,7 +9,15 @@
   <url>http://rts2.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties> 
+  </properties>
+
+  <distributionManagement>
+    <repository>
+      <id>ssh-repository</id>
+      <url>scpexe://lascaux.asu.cas.cz/home/petr/public_html/rts2-java</url>
+    </repository>
+  </distributionManagement>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -62,6 +70,14 @@
         <version>2.7</version>
       </plugin>
     </plugins>
+    <extensions>
+      <!-- Enabling the use of FTP -->
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+         <artifactId>wagon-ssh-external</artifactId>
+         <version>1.0-beta-6</version>
+      </extension>
+    </extensions>
   </build>
   <reporting>
     <plugins>
