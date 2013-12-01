@@ -350,6 +350,17 @@ AM_CONDITIONAL(K8055, test x$K8055 != xno)
 AC_SUBST(K8055)
 AC_SUBST(LIB_K8055)
 
+# check for SI3097
+AC_ARG_WITH(si3097,
+[  --with-si307           path to Spectral Instruments SI3097 PCI card driver, build SI CCD support],
+SI3097="${withval}";
+INC_SI3097="-I${SI3097}",
+[SI3097=no])
+
+AM_CONDITIONAL(SI3097, test x$SI3097 != xno)
+AC_SUBST(SI3097)
+AC_SUBST(INC_SI3097)
+
 # check for COMEDI
 AC_ARG_WITH(comedi,
 [  --with-comedi	path to COMEDI library, build comedi dependent binaries],
