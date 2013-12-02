@@ -87,7 +87,7 @@ class TestExecutables(unittest.TestCase):
         # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # ...
         m = re.compile('.*?(corrwerr).+? ([0-9.]+)')
-        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--toc' ]
+        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
@@ -97,7 +97,7 @@ class TestExecutables(unittest.TestCase):
             if v:
                 val = float(v.group(2))
                 break
-
+        # if this test fails due to no match, it is likely that astrometry could not solve field.
         self.assertAlmostEqual(val, 0.3624045465, places=1, msg='return value: {}'.format(val))
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
         
@@ -154,6 +154,7 @@ class TestExecutables(unittest.TestCase):
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 
+#@unittest.skip('class not yet implemented')
 class TestRts2safFocus(TestFocus):
 
     def test_rts2saf_focus(self):
