@@ -687,6 +687,7 @@ int Paramount::initHardware ()
 
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
+	telAltitude->setValueDouble (config->getObservatoryAltitude ());
 								 // south hemispehere
 	if (telLatitude->getValueDouble () < 0)
 	{
