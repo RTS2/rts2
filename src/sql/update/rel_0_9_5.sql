@@ -70,3 +70,17 @@ ALTER TABLE plan DROP COLUMN obs_id;
 ALTER TABLE targets ADD COLUMN tar_telescope_mode integer default NULL;
 
 ALTER TABLE users ADD COLUMN allowed_devices varchar(2000);
+
+CREATE OR REPLACE FUNCTION delete_target (integer) RETURNS integer AS
+'
+DELETE FROM images WHERE EXISTS (SELECT * FROM observations WHERE observations.obs_id = images.obs_Id AND observations.tar_id = $1);
+DELETE FROM plan WHERE tar_id = $1;
+DELETE FROM observations WHERE tar_id = $1;
+DELETE FROM scripts WHERE tar_id = $1;
+DELETE FROM target_labels WHERE tar_id = $1;
+DELETE FROM grb WHERE tar_id = $1;
+DELETE FROM queues_targets WHERE tar_id = $1;
+DELETE FROM targets WHERE tar_id = $1;
+SELECT 1;
+' LANGUAGE 'SQL';
+
