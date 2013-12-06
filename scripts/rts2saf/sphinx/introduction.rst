@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2013-11-24)
+Status and open issues (2013-13-06)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -13,7 +13,8 @@ The documentation describes
 
 Items which need further attention:
 
-1) target selection for focus run: the focus run is carried out at the current telescope position, e.g. nearest Landolt target
+1) target selection for focus run: the focus run is carried out at the current
+   telescope position, e.g. goto nearest Landolt target
 2) finding the appropriate exposure 
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focsing.py``
 4) strategies if a focus run fails, e.g. widen the interval in regular mode, fall back to blind mode
@@ -33,7 +34,7 @@ and send its output together with ``/tmp/unittest.log`.
 Quick hands on analysis
 -----------------------
 
-After installing all Python packages  and the data files:
+After  :ref:`installing all helper programs, Python packages <sec_installation-label>`  and the data files:
 
 .. code-block:: bash
 

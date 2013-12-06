@@ -108,6 +108,7 @@ class TestCatalogAnalysis(unittest.TestCase):
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
         self.assertEqual(len(fitsFns), 14, 'return value: {}'.format(len(fitsFns)))
 
+    #@unittest.skip('feature not yet implemented')
     def test_selectAndAnalyze(self):
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
         dataSxtr=list()
@@ -124,7 +125,7 @@ class TestCatalogAnalysis(unittest.TestCase):
         an=CatalogAnalysis(debug=False, dataSxtr=dataSxtr, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName='rts2saf.criteria_radius', ev=self.ev, rt=self.rt, logger=logger)
         accRFt, rejRFt, allrFt, accRMns, recRMns, allRMns=an.selectAndAnalyze()
         self.assertEqual('{0:5.4f}'.format(allrFt.extrFitVal), '{0:5.4f}'.format(2.2175214358), 'return value: {}'.format(allrFt.extrFitVal))
-        self.assertAlmostEqual(accRFt.extrFitVal, 2.24000979001, delta=0.05, msg='return value: {}'.format(allrFt.extrFitVal))
+        self.assertAlmostEqual(accRFt.extrFitVal, 2.24000979001, delta=0.1, msg='return value: {}'.format(allrFt.extrFitVal))
 
 
 

@@ -1,3 +1,5 @@
+.. _sec_installation-label:
+
 Installation
 ============
 
@@ -11,22 +13,32 @@ For the following description I assume you did
   cd ~
   svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts-2
 
-and you have setup the RTS2 dummy devices.
+followed by a full RTS2 installation including ``Postgres`` and setup of the RTS2 dummy devices. 
+
+
+1) ``DS9`` from http://hea-www.harvard.edu/RD/ds9/site/Home.html
+2) `SExtractor`` (if installation from source is required, include cblas, cblas-devel, libatlas3, libatlas3-devel,
+   libatlas3-sse3m, libatlas3-sse3-devel, libatlas3-sse-common-devel) 
+
 
 Update to Python 2.7.x (mandatory) and various Python packages:
 
-1) ``DS9`` from http://hea-www.harvard.edu/RD/ds9/site/Home.html
-2) ``numpy``, ``numpy-devel``
-3) ``pip install astropy``
-4) ``astrometry.net``
+3) ``SciPy``
+4) ``matplotlib``
+5) ``pyds9`` from the same site
+6) ``numpy``, ``numpy-devel``
+7) ``astropy``
+8) ``astrometry.net``
+9) ``python-pytest`` 
 
 and for the documentation install ``sphinx`` and
 
-5) ``pip install sphinxcontrib-programoutput``
+10) ``sphinxcontrib-programoutput``
 
 Recommended but not necessary install
 
-6) ``coverage`` from https://pypi.python.org/pypi/coverage
+7) ``coverage`` from https://pypi.python.org/pypi/coverage
+8) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
 
 During RTS2 installation the rts2saf executable are installed to 
 
@@ -108,8 +120,8 @@ or it fails completely then add in section
   ENABLE_JSON_WORKAROUND = True
 
 
-RTS2 configuration file
------------------------
+RTS2 configuration and log file
+-------------------------------
 
 At the beginning use RTS2 dummy devices. Save  ``/etc/rts2/devices`` and replace it with
  
@@ -119,13 +131,26 @@ At the beginning use RTS2 dummy devices. Save  ``/etc/rts2/devices`` and replace
  mv devices devices.save
  ln -s ~/rts-2/scripts/rts2saf/configs/one-filter-wheel/devices  # you might specify full path
 
+.. code-block:: bash
+ 
+ sudo cp ~/rts-2/conf/rts2.ini  /etc/rts2
+ sudo chown UID.GID /etc/rts2/rts2.ini  # insert your UID and GID for convenience
+ sudo touch /var/log/rts2-debug
+ sudo chown GID /var/log/rts2-debug # insert your GID
+ sudo chmod g+w  /var/log/rts2-debug
+
+If you want to run unit tests setting GID on file /var/log/rts2-debug
+is mandatory.
+ 
+Edit in ``/etc/rts2/rts2.ini`` section ``[observatory]`` ``altitude``, ``longitude`` and ``latitude``.
 
 rts2saf configuration files
 ---------------------------
-rts2saf needs two configuration files to be present in ``/usr/local/etc/rts2/rts2saf``:
+rts2saf needs three configuration files to be present in ``/usr/local/etc/rts2/rts2saf``:
 
 1) ``rts2saf.cfg``
 2) ``rts2saf-sex.cfg``
+3) ``rts2saf-sex.nnw``
 
 .. code-block:: bash
 
@@ -134,7 +159,7 @@ rts2saf needs two configuration files to be present in ``/usr/local/etc/rts2/rts
  sudo cp -a rts2saf /usr/local/etc/rts2/
 
 
-Edit ``/usr/local/etc/rts2/rts2af/rts2saf.cfg``  and check if  ``SExtractor`` binary is found.
+Edit ``/usr/local/etc/rts2/rts2saf/rts2saf.cfg``  and check if  ``SExtractor`` binary is found.
 
 ``rts2saf.cfg`` is used by rts2saf and ``rts2saf-sex.cfg`` by ``SExtractor``. A usable example for the latter is stored in ``~/rts-2/conf/rts2saf``. In directory ``~/rts-2/scripts/rts2saf/configs``
 
@@ -185,3 +210,14 @@ As user postgres:
  insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
 
 
+Pitfalls: cfitsio
+-----------------
+
+Use the following commands to install cfitsio
+
+.. code-block:: bash
+
+ cd ~/cfitsio
+ ./configure --prefix=/usr/local
+ sudo make install
+ sudo ldconfig 
