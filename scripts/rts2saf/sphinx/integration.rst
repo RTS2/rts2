@@ -106,8 +106,8 @@ and watch the log files
 
   tail -f /var/log/rts2-debug ./rts2saf_focus.py.log
 
-RTS2 SEL manual queuing
------------------------
+RTS2 manual queuing
+-------------------
 
 To queue a focus run through ``rts2-selector`` (SEL) use
 
@@ -115,5 +115,11 @@ To queue a focus run through ``rts2-selector`` (SEL) use
 
  rts2-queue --queue focusing OnTargetFocus
 
-(Re-)enable SEL and EXEC. 
+(Re-)enable SEL and EXEC, or use 
 
+
+.. code-block:: bash
+
+ rts2saf_fwhm.py --fitsFn FITS_FILE --toc
+
+on a recently acquired fits file (FITS_FILE).  

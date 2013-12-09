@@ -227,6 +227,19 @@ class SimpleAnalysis(object):
         ft=None
         # plot them through ds9
         if self.Ds9Display:
+            # ToDo Ad hoc:
+            # if executed through RTS2 it has as DISPLAY localhost:10
+            #
+            # http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python                                                                                    
+            from subprocess import Popen, PIPE
+            p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+            p.communicate()
+
+            if p.returncode != 0:
+                self.logger.error('analyze: OOOOOOOOPS, no X11 display available')
+                return 
+                
+
             try:
                 dds9=ds9()
             except Exception, e:
