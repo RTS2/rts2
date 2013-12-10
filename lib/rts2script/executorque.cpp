@@ -750,7 +750,9 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 			// add timers..
 			if (!isnan (t_start) && (isnan (timerAdded) || t_start != timerAdded) && t_start > t)
 			{
-				master->addTimer (t_start - t, new rts2core::Event (EVENT_NEXT_START));
+				// if queue has window, add timer event to the end of the window
+				// before window expires, right target should be selected on its own on observation end
+				master->addTimer (t_start - t + (isnan (queueWindow->getValueFloat ()) ? 0 : queueWindow->getValueFloat ()), new rts2core::Event (EVENT_NEXT_START));
 				timerAdded = t_start;
 			}
 			else
