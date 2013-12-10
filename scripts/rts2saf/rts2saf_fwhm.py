@@ -104,6 +104,9 @@ if __name__ == '__main__':
             logger.info('rts2af_fwhm: focus run  queued')
         logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSxtr.fwhm, fwhmTreshold))
     else:
-        logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
-
+        try:
+            logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
+        except:
+            logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated')
+            
     logger.info('rts2af_fwhm: DONE')

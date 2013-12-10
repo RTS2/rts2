@@ -102,8 +102,8 @@ class ImgpAnalysis():
         lnstdo= stdo.split('\n')
         for ln in lnstdo:
             self.logger.info( '{0}, {1}: {2}'.format(self.scriptName, self.astrometryCmd, ln))
-            #if re.search('corrwerr', ln):
-            print ln
+            if re.search('corrwerr', ln):
+                print ln
 
         self.logger.info( '{0}: ending'.format(self.scriptName))
             

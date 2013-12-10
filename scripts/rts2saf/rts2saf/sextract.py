@@ -205,7 +205,7 @@ class Sextract(object):
             i_flux = dataSxtr.fields.index('FLUX_MAX')
             dataSxtr.fillFlux(i_flux=i_flux)
         except:
-            if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFno))
+            if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFn))
 
         if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 

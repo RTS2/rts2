@@ -156,7 +156,11 @@ class ScanThread(threading.Thread):
         proc.stdin.write("cd /tmp ; rts2-scriptexec -d {0} -s ' D {1} ' ; exit\n".format(self.ccd.name, exp))
         fn=proc.stdout.readline()
 
-        srcTmpFn='/tmp/{}'.format(fn[:-1])
+        if self.dryFitsFiles:
+            srcTmpFn= self.dryFitsFiles.pop()
+            self.logger.info('____ScanThread, scriptExecExpose: dryFits: file from ccd: {0}, returning dry FITS file: {1}'.format(fn, srcTmpFn))
+        else:
+            srcTmpFn='/tmp/{}'.format(fn[:-1])
         
         if self.ftw and self.ft:
             if not self.ev.createAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name):
@@ -175,6 +179,7 @@ class ScanThread(threading.Thread):
 
         shutil.copy(src=srcTmpFn, dst=newStoreFn)
         return newStoreFn
+
     # ToDo find a solution for: ValueError: signal only works in main thread
     # outside this class: not an option
     #@timeout(seconds=1, error_message=os.strerror(errno.ETIMEDOUT))
@@ -232,7 +237,7 @@ class ScanThread(threading.Thread):
 
         if self.dryFitsFiles:
             srcTmpFn= self.dryFitsFiles.pop()
-            if self.debug: self.logger.debug('____ScanThread: dryFits: file from ccd: {0}, returning dry FITS file: {1}'.format(fn, srcTmpFn))
+            self.logger.info('____ScanThread, expose: dryFits: file from ccd: {0}, returning dry FITS file: {1}'.format(fn, srcTmpFn))
         else:
             srcTmpFn=fn
             if self.debug: self.logger.debug('____ScanThread: file from ccd: {0}, reason no more dry FITS files (add more if necessary)'.format(srcTmpFn))
