@@ -399,7 +399,7 @@ class Acquire(object):
         # either from device or from configuration
         if self.foc.focMn < self.foc.focDef < self.foc.focMx:
             if self.writeToDevices:
-                self.proxy.setValue(self.foc.name,'FOC_DEF', self.foc.focDef)
+                self.proxy.setValue(self.foc.name,'FOC_DEF', int(self.foc.focDef))
                 self.logger.info('writeFocDef: set FOC_DEF: {0}, {1}, {2}'.format(int(self.foc.focDef), self.foc.focMn,  self.foc.focMx))
             else:
                 self.logger.warn('acquire: disabled writing FOC_DEF: {0}'.format(self.foc.focDef))
