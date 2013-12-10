@@ -113,7 +113,7 @@ class ScanThread(threading.Thread):
                     if self.debug: self.logger.debug('acquire: not yet reached focuser position: {0}, now:{1}, sleeping'.format(focPosCalc, focPos))
                     time.sleep(.1) # leave it alone
                     commitSucide -= 1
-                    if commitSucide==0:
+                    if commitSucide < 0:
                         self.logger.error('acquire: can not reach FOC_TAR: {} after {} seconds, exiting'.format(focPosCalc, commitSucide * .1))
                         sys.exit(1)
                 else:
