@@ -26,6 +26,7 @@ import os
 from astropy.io.fits import getheader
 import sys
 import time
+import math
 # ToDo sort that out with Petr import rts2.sextractor as rsx
 import rts2saf.sextractor as rsx
 from rts2saf.data import DataSxtr
@@ -179,6 +180,10 @@ class Sextract(object):
             self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}, \nmessage rts2saf.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
             return DataSxtr()
 
+        if math.isnan(fwhm):
+            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, fwhm is NaN, rts2saf.sextractor/numpy failed on {2}'.format(focPos, objectCount, fitsFn))
+            return DataSxtr()
+
         # store results
         dataSxtr=DataSxtr(
             date=date,
@@ -199,14 +204,18 @@ class Sextract(object):
             ftAName=ftAName, 
             ftBName=ftBName, 
             ftCName=ftCName,
-            assocFn=assocFn)
+            assocFn=assocFn,
+            logger=self.logger
+            )
 
+        i_flux = dataSxtr.fields.index('FLUX_MAX')
+        dataSxtr.fillFlux(i_flux=i_flux)
         try:
             i_flux = dataSxtr.fields.index('FLUX_MAX')
             dataSxtr.fillFlux(i_flux=i_flux)
         except:
             if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFn))
 
-        if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} {3:5.1f} {4:5.1f} {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
+        if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} FWHM{3:5.1f} stdFwhm {4:5.1f} nstars {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
 
         return dataSxtr

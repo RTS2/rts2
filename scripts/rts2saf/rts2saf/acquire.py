@@ -104,6 +104,7 @@ class ScanThread(threading.Thread):
             self.proxy.refresh()
             focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
             if self.writeToDevices:
+                commitSucide=1000
                 while abs( focPosCalc- focPos) > self.foc.resolution:
                 
 #                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
@@ -111,6 +112,10 @@ class ScanThread(threading.Thread):
                     focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
                     if self.debug: self.logger.debug('acquire: not yet reached focuser position: {0}, now:{1}, sleeping'.format(focPosCalc, focPos))
                     time.sleep(.1) # leave it alone
+                    commitSucide -= 1
+                    if commitSucide==0:
+                        self.logger.error('acquire: can not reach FOC_TAR: {} after {} seconds, exiting'.format(focPosCalc, commitSucide * .1))
+                        sys.exit(1)
                 else:
                     if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 

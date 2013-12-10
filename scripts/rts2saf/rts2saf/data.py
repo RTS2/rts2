@@ -282,10 +282,11 @@ class DataSxtr(object):
         :var ftBName:
         :var ftCName:
         :var assocFn: name of the ASSOC file used by Sextractor
+        :var logger:  :py:mod:`rts2saf.log`
 
     """
 
-    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
+    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None, logger=None):
         self.date=date
         self.fitsFn=fitsFn
         self.focPos=focPos
@@ -313,6 +314,7 @@ class DataSxtr(object):
         self.flux=flux # unittest!
         self.stdFlux=stdFlux
         self.assocFn=assocFn
+        self.logger=logger
         self.assocCount=0
         self.rawCatalog=list()
 
@@ -320,8 +322,13 @@ class DataSxtr(object):
         """Calculate median of flux as well as its standard deviation (this is not provided by :py:mod:`rts2saf.sextractor.Sextractor`), used by :py:mod:`rts2saf.sextract.Sextract`.sextract.
         """
         fluxv = [x[i_flux] for x in  self.catalog]
-        self.flux=np.median(fluxv)
-        self.stdFlux= np.average([ math.sqrt(x) for x in fluxv])
+        fluxm=np.median(fluxv)
+
+        if np.isnan(fluxm):
+            self.logger.warn( 'data: focPos: {0:5.0f}, raw objects: {1}, fwhm is NaN, numpy failed on {2}'.format(self.focPos, self.nstars, self.fitsFn))
+        else:
+            self.flux=fluxm
+            self.stdFlux= np.average([ math.sqrt(x) for x in fluxv]) # ToDo hope that is ok
 
     def fillData(self, i_fwhm=None, i_flux=None):
         """helper method used by :py:mod:`rts2saf.datarun.DataRun`.onAlmostImagesAssoc"""

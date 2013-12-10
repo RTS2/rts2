@@ -130,7 +130,7 @@ class DataRun(object):
     def sextractLoop(self, fitsFns=None):
 
         for fitsFn in fitsFns:
-            rsx= Sextract(debug=self.args.sxDebug, rt=self.rt, logger=self.logger)
+            rsx= Sextract(debug=self.args.debug, rt=self.rt, logger=self.logger)
             if self.args.flux:
                 rsx.appendFluxFields()
                 

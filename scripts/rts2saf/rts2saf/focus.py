@@ -119,7 +119,7 @@ class Focus(object):
                             # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved any more
                             break
 
-                        self.logger.info('Focus: pos: {0:5d}, objects: {1:4d}, file: {2}'.format(int(st), len(dSx.catalog), fitsFn))
+                        self.logger.info('Focus: pos: {0:5d}, fwhm: {1:5.2f}, stdFwhm {2:5.2f}, objects: {3:4d}, file: {4}'.format(int(st), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog), fitsFn))
                         dataSxtr.append(dSx)
                         break
                 else:
