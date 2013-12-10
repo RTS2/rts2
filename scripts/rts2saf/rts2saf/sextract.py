@@ -208,8 +208,6 @@ class Sextract(object):
             logger=self.logger
             )
 
-        i_flux = dataSxtr.fields.index('FLUX_MAX')
-        dataSxtr.fillFlux(i_flux=i_flux)
         try:
             i_flux = dataSxtr.fields.index('FLUX_MAX')
             dataSxtr.fillFlux(i_flux=i_flux)
