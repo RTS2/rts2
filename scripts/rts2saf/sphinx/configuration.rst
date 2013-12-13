@@ -27,9 +27,8 @@ Do not clutter system directories.
  [ccd]
  CCD_NAME = andor3
  BASE_EXPOSURE= 5.
- ENABLE_JSON_WORKAROUND = True
 
-Expose empty slots for 5 seconds, JSON interface creates files with identical names, we skip that.
+Expose empty slots for 5 seconds.
 
 .. code-block:: bash
 

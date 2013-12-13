@@ -71,10 +71,6 @@ class ScanThread(threading.Thread):
         self.rt=rt
         self.ev=ev
         self.logger=logger
-# TAG QUICK
-# see below
-# counter to make the fist file name unique among one session
-        self.COUNTER=0
 
     def run(self):
         """Move focuser to FOC_FOFF + FOC_DEF (regular mode) or FOC_TAR (blind mode), expose CCD and write FITS file name to :py:mod:`Queue`.  
@@ -119,9 +115,6 @@ class ScanThread(threading.Thread):
                 else:
                     if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
-            if self.rt.cfg['ENABLE_JSON_WORKAROUND']:
-                fn=self.scriptExecExpose()
-            else:
                 fn=self.expose()
 
             if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
@@ -130,60 +123,6 @@ class ScanThread(threading.Thread):
         else:
             if self.debug: self.logger.debug('____ScanThread: ending after full scan')
 
-# TAG QUICK
-# it happens only at Bootes-2 at 2013-10-02) that the file name of the fits file remains the same.
-# it will not be over written, hence we remove that here
-# this is a quick dirty fix
-# see below TAGs FEELGOOD, INCREMENT
-#
-# TAG FEELGOOD, see expose-andor3.py if you don't believe it!!
-    def scriptExecExpose(self):
-        """Expose CCD with shell command ``rts2-scriptexec``. This is a workaround.
-
-        :return storeFn: FITS file name
-        :rtype: str
-
-        """
-        import os
-        import errno
-        import subprocess
-        # TAG FEELGOOD
-        # expose
-        if self.exposure:
-            exp= self.exposure # args.exposure
-        else:
-            exp= self.ccd.baseExposure
-
-        if self.ftw!=None: # CCD without filter wheel
-            exp *= self.ft.exposureFactor
-        cmd = [ '/bin/bash' ]
-        proc  = subprocess.Popen( cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        proc.stdin.write("cd /tmp ; rts2-scriptexec -d {0} -s ' D {1} ' ; exit\n".format(self.ccd.name, exp))
-        fn=proc.stdout.readline()
-
-        if self.dryFitsFiles:
-            srcTmpFn= self.dryFitsFiles.pop()
-            self.logger.info('____ScanThread, scriptExecExpose: dryFits: file from ccd: {0}, returning dry FITS file: {1}'.format(fn, srcTmpFn))
-        else:
-            srcTmpFn='/tmp/{}'.format(fn[:-1])
-        
-        if self.ftw and self.ft:
-            if not self.ev.createAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name):
-                return None 
-        else:
-            if not self.ev.createAcquisitionBasePath(ftwName=None, ftName=None):
-                return None 
-        if self.ftw and self.ft:
-            storeFn=self.ev.expandToAcquisitionBasePath( ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]
-        else:
-            storeFn=self.ev.expandToAcquisitionBasePath( ftwName=None, ftName=None) + srcTmpFn.split('/')[-1]
-# TAG INCREMENT
-        parts=storeFn.split('.fits')
-        newStoreFn= '{0}-{1:03d}.fits'.format(parts[0], self.COUNTER)
-        self.COUNTER += 1
-
-        shutil.copy(src=srcTmpFn, dst=newStoreFn)
-        return newStoreFn
 
     # ToDo find a solution for: ValueError: signal only works in main thread
     # outside this class: not an option

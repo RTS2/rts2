@@ -204,13 +204,12 @@ class Sextract(object):
             ftAName=ftAName, 
             ftBName=ftBName, 
             ftCName=ftCName,
-            assocFn=assocFn,
-            logger=self.logger
+            assocFn=assocFn
             )
 
         try:
             i_flux = dataSxtr.fields.index('FLUX_MAX')
-            dataSxtr.fillFlux(i_flux=i_flux)
+            dataSxtr.fillFlux(i_flux=i_flux, logger=self.logger) #
         except:
             if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFn))
 

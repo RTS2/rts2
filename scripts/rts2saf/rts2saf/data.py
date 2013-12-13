@@ -286,7 +286,7 @@ class DataSxtr(object):
 
     """
 
-    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None, logger=None):
+    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
         self.date=date
         self.fitsFn=fitsFn
         self.focPos=focPos
@@ -314,18 +314,21 @@ class DataSxtr(object):
         self.flux=flux # unittest!
         self.stdFlux=stdFlux
         self.assocFn=assocFn
-        self.logger=logger
         self.assocCount=0
         self.rawCatalog=list()
 
-    def fillFlux(self, i_flux=None):
+    def fillFlux(self, i_flux=None, logger=None): 
+        # ToDo create a deepcopy() method, 
+        # if logger is a member variable then error message: 
+        # TypeError: object.__new__(thread.lock) is not safe, use thread.lock.__new__()
+        # appears.
         """Calculate median of flux as well as its standard deviation (this is not provided by :py:mod:`rts2saf.sextractor.Sextractor`), used by :py:mod:`rts2saf.sextract.Sextract`.sextract.
         """
         fluxv = [x[i_flux] for x in  self.catalog]
         fluxm=np.median(fluxv)
 
         if np.isnan(fluxm):
-            self.logger.warn( 'data: focPos: {0:5.0f}, raw objects: {1}, fwhm is NaN, numpy failed on {2}'.format(self.focPos, self.nstars, self.fitsFn))
+            logger.warn( 'data: focPos: {0:5.0f}, raw objects: {1}, fwhm is NaN, numpy failed on {2}'.format(self.focPos, self.nstars, self.fitsFn))
         else:
             self.flux=fluxm
             self.stdFlux= np.average([ math.sqrt(x) for x in fluxv]) # ToDo hope that is ok

@@ -4,40 +4,6 @@
 Scripts
 =======
 
-expose_with_your_ccd.py
------------------------
-.. program-output:: expose_with_your_ccd.py --help
-
-Execute:
-
-.. code-block:: bash
-
- cd ~/rts-2/scripts/rts2saf
- ./expose_with_your_ccd.py --ccdname C0
-
-Output:
-
-.. code-block:: bash
-
- subprocess method1
- subprocess method1 error: Connection timed out
-
- subprocess method2, the first output you see is the stderr of rts2-scriptexec:
- 2013-10-27T19:06:16.796 CET /usr/local/bin/rts2-scriptexec 1 cannot find section 'andor3'.
- 2013-10-27T19:06:16.842 CET /usr/local/bin/rts2-scriptexec 1 execution of script for virtual target failed
- subprocess method1 error: Connection timed out
-
- subprocess method3
- CCD: C0, file: 20131027180627-458-RA.fits
-
- subprocess method3: Success!
-
- proxy method
- proxy method: Success!, file: /tmp/000593.fits
- proxy method: Success!, file: /tmp/000594.fits
- file names are NOT identical, good!
-
-If you do not see the above last line set ``ENABLE_JSON_WORKAROUND=True`` in your configuration file.
 
 rts2saf_focus.py
 --------------------

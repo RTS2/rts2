@@ -124,7 +124,6 @@ class DefaultConfiguration(object):
         self.dcf[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
         self.dcf[('ccd', 'PIXELSCALE')]= 1.1 # unit arcsec/pixel
         self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
-        self.dcf[('ccd', 'ENABLE_JSON_WORKAROUND')]= False
 
         self.dcf[('mode', 'SET_FOC_DEF')]= False
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True

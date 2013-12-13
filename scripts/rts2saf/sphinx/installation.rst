@@ -85,45 +85,24 @@ run within a real RTS2 environment created and distroyed on the fly is explained
 :ref:`Testing individual components <sec_unittest-label>`.
 
 
-Wired things
-------------
-Before you start with the installation execute
-
-.. code-block:: bash
-
-  cd ~/rt-2/scripts/rts2saf
-  ./expose_with_your_ccd.py --ccd YOUR_CCD # e.g. C0
-
-and check the output. If the lines at the end look like:
-
-.. code-block:: bash
-
-  proxy method
-  proxy method: Success!, file: /tmp/000001.fits
-  proxy method: Success!, file: /tmp/000002.fits
-  file names are NOT identical, good!
-
-there is nothing to do. If it looks like
-
-.. code-block:: bash
-
-  proxy method
-  proxy method: Success!, file: /tmp/xmlrpcd_andor3.fits
-  proxy method: Success!, file: /tmp/xmlrpcd_andor3.fits
-  file names are identical, problem
-
-or it fails completely then add in section 
-
-.. code-block:: bash
-
-  [ccd]
-  ENABLE_JSON_WORKAROUND = True
-
-
 RTS2 configuration and log file
 -------------------------------
 
-At the beginning use RTS2 dummy devices. Save  ``/etc/rts2/devices`` and replace it with
+In section ``[xmlrpcd]`` you must add at least
+
+.. code-block:: bash
+
+  [xmlrpcd]
+  images_name = "%f"
+
+to get a unique FITS file name. If the files should have a different path add, e.g.
+
+.. code-block:: bash
+
+  images_path = "/images/b2/xmlrpcd/%N"
+
+Further edit in section ``[observatory]`` ``altitude``, ``longitude`` and ``latitude``. 
+To acquaint oneself with rts2saf use RTS2 dummy devices. Save  ``/etc/rts2/devices`` and replace it with
  
 .. code-block:: bash
 
@@ -141,8 +120,7 @@ At the beginning use RTS2 dummy devices. Save  ``/etc/rts2/devices`` and replace
 
 If you want to run unit tests setting GID on file /var/log/rts2-debug
 is mandatory.
- 
-Edit in ``/etc/rts2/rts2.ini`` section ``[observatory]`` ``altitude``, ``longitude`` and ``latitude``.
+
 
 rts2saf configuration files
 ---------------------------
