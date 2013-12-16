@@ -39,7 +39,7 @@ import traceback
 
 class Sextractor:
 	"""Class for a catalogue (SExtractor result)"""
-	def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE','EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
+	def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE','EXT_NUMBER'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535, verbose=False):
 		self.sexpath = sexpath
 		self.sexconfig = sexconfig
 		self.starnnw = starnnw
@@ -49,6 +49,8 @@ class Sextractor:
 		self.threshold = threshold
 		self.deblendmin = deblendmin
 		self.saturlevel = saturlevel
+
+		self.verbose = verbose
 
 	def get_field(self,fieldname):
 		return self.fields.index(fieldname)
@@ -61,7 +63,10 @@ class Sextractor:
 			pfi.write(f + '\n')
 		pfi.flush()
 
-		cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
+		cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output]
+		if not(self.verbose):
+			cmd.append('-VERBOSE_TYPE')
+			cmd.append('QUIET')
 		try:
 			proc = subprocess.Popen(cmd)
 			proc.wait()
@@ -74,6 +79,8 @@ class Sextractor:
 		of = os.fdopen(ofd,'r')
 		while (True):
 		 	x=of.readline()
+			if self.verbose:
+				print x,
 			if x == '':
 				break
 			if x[0] == '#':
