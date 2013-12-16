@@ -52,7 +52,7 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 
 	if (isnan(pos->ra) || isnan(pos->dec))
 	{
-		logStream (MESSAGE_ERROR) << "trying to make sky2counts with nan ra/dec" << sendLog;
+		logStream (MESSAGE_ERROR) << "sky2counts called with nan ra/dec" << sendLog;
 		return -1;
 	}
 	ls = getLstDeg (JD);
@@ -60,8 +60,8 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	ln_get_hrz_from_equ (pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < -1)
 	{
-		logStream (MESSAGE_ERROR) << "object is bellow horizont, azimuth is "
-			<< hrz.az  << " and altitude " << hrz.alt 
+		logStream (MESSAGE_ERROR) << "object is below horizon, azimuth is "
+			<< hrz.az  << " and altitude " << hrz.alt  << " RA/DEC targets was " << LibnovaRaDec (pos)
 			<< ", check observatory time and location (long & latitude)"
 			<< sendLog;
 		return -1;
