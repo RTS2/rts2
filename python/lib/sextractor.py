@@ -147,6 +147,9 @@ class Sextractor:
 					fwhmlist.append(x)
 					if starsn and len(fwhmlist) >= starsn:
 						break
+				else:
+					if self.verbose:
+						print 'rejected - FLAGS:', x[i_flags], ', CLASS_STAR:', x[i_class], 'line ', x
 
 			return fwhmlist
 		except ValueError,ve:
