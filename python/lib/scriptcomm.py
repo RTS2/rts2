@@ -118,7 +118,15 @@ class Rts2Comm:
 		return float(self.getValue(value,device).split(" ")[0])
 
 	def getValueInteger(self,value,device = None):
-		return int(self.getValue(value,device).split(" ")[0])
+		val = self.getValue(value,device)
+		if val[0:2] == "0x":
+			vals = val.split()[0:2]
+			if len(vals[0]) > 2:
+				return int(vals[0], base=16)
+			else:
+				return int(vals[1], base=16)
+		else:
+			return int(val.split(" ")[0])
 
 	def incrementValue(self,name,new_value,device = None):
 		if (device is None):
