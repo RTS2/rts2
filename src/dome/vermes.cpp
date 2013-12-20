@@ -113,6 +113,7 @@ int Vermes::moveStop ()
   rep_slv.tv_sec= 0 ;
   rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
   int ret ;
+  int count= 0;
 
   while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
     logStream (MESSAGE_WARNING) << "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED" << sendLog ;
@@ -120,6 +121,11 @@ int Vermes::moveStop ()
     ret= nanosleep( &rep_slv, &rep_rsl) ;
     if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
       logStream (MESSAGE_ERROR) << "move_to_target_az: signal, or error in nanosleep: " <<ret<< sendLog ;
+    }
+    count++;
+    if (count > 1){
+      logStream (MESSAGE_ERROR) << "move_to_target_az: breaking after some trials " << sendLog ;
+	break;
     }
   }
   return Cupola::moveStop ();
@@ -316,6 +322,7 @@ int Vermes::initValues ()
   if((ret= connectSSD650vDevice(SSD650V_CMD_CONNECT)) != SSD650V_MS_CONNECTION_OK) {
     logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
   }
+
   if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
     logStream (MESSAGE_WARNING) << "Vermes::initValues motor_off != SSD650V_MS_STOPPED" << sendLog ;
     ssd650v_state->setValueString("motor undefined") ;

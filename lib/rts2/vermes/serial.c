@@ -105,7 +105,7 @@ serial_timeout(int sd, int timeout_ms)
   tv.tv_usec = 1000 * timeout_ms;
 
   /* Wait till we have a change in the fd status */
-  retval = select(sd+1, &readout, NULL, NULL, &tv);
+  retval = select(FD_SETSIZE, &readout, NULL, NULL, &tv);
 
   /* Return 0 on character ready to be read */
   if (retval > 0)
@@ -176,51 +176,30 @@ serial_shutdown(int sd)
  *   file descriptor  of successfully opened serial device
  *   or -1 in case of error.
  *****************************************************************************/
+struct termios orig_tty_setting;    /* old serial port setting to restore on close */
+struct termios tty_setting;         /* new serial port setting */
+
 int
 serial_init(char *device_name, int bit_rate, int word_size,
-            int parity, int stop_bits)
+             int parity, int stop_bits) 
 {
   int fd;
   char *msg;
 
-  /* init the elements of the array of opened serial port's descriptions */
-  int i;
-  if (serial_devices_cnt == 0) {
-    for (i = 0; i < SER_DEVICES_MAX; i++) {
-      serial_devices[i] = NULL;
-    }
-  }
-
-  if (serial_devices_cnt >= SER_DEVICES_MAX) {
-    fprintf(stderr, "FATAL: already used %d serial devices which is the "
-                    "maximum possible!\n", serial_devices_cnt);
-    exit(1);
-  }
-
   /* open serial device */
   fd = open(device_name, O_RDWR | O_NOCTTY);
   if (fd < 0) {
-    if (asprintf(&msg, "serial_init: open %s failed", device_name) < 0)
+    if (asprintf(&msg, "init_serial: open %s failed", device_name) < 0)
       perror(NULL);
-    else {
+    else
       perror(msg);
-      free(msg);
-    }
-    return -1;
-  }
-  if (!isatty(fd)) {
-    fprintf(stderr,
-            "serial_init: %s is not a terminal device.\n", device_name);
+
     return -1;
   }
 
   /* save current tty settings */
-  tser_dev *ser_d = realloc(NULL, sizeof(tser_dev));
-  serial_devices[serial_devices_cnt] = ser_d;
-  serial_devices[serial_devices_cnt]->file_descriptor = fd;
-  serial_devices_cnt++;
-  if (tcgetattr(fd, &ser_d->orig_tty_setting) < 0) {
-    perror("serial_init: can't get terminal parameters.");
+  if (tcgetattr(fd, &orig_tty_setting) < 0) {
+    perror("init_serial: can't get terminal parameters.");
     return -1;
   }
 
@@ -286,13 +265,16 @@ serial_init(char *device_name, int bit_rate, int word_size,
       bps = B230400;
       break;
     default:
-      fprintf(stderr, "serial_init: %d is not a valid bit rate.\n", bit_rate);
+      if (asprintf(&msg, "init_serial: %d is not a valid bit rate.", bit_rate) < 0)
+        perror(NULL);
+      else
+        perror(msg);
       return -1;
   }
-  if ((cfsetispeed(&ser_d->tty_setting, bps) < 0) ||
-      (cfsetospeed(&ser_d->tty_setting, bps) < 0))
+  if ((cfsetispeed(&tty_setting, bps) < 0) ||
+      (cfsetospeed(&tty_setting, bps) < 0))
   {
-    perror("serial_init: failed setting bit rate.");
+    perror("init_serial: failed setting bit rate.");
     return -1;
   }
 
@@ -300,48 +282,58 @@ serial_init(char *device_name, int bit_rate, int word_size,
   // set no flow control word size, parity and stop bits.
   // Also don't hangup automatically and ignore modem status.
   // Finally enable receiving characters.
-  ser_d->tty_setting.c_cflag &=
-          ~(CSIZE | CSTOPB | PARENB | PARODD | HUPCL | CRTSCTS);
+  tty_setting.c_cflag &= ~(CSIZE | CSTOPB | PARENB | PARODD | HUPCL | CRTSCTS);
   #ifdef CBAUDEX
-  ser_d->tty_setting.c_cflag &= ~(CBAUDEX);
+  tty_setting.c_cflag &= ~(CBAUDEX);
   #endif
   #ifdef CBAUDEXT
-  ser_d->tty_setting.c_cflag &= ~(CBAUDEXT);
+  tty_setting.c_cflag &= ~(CBAUDEXT);
   #endif
-  ser_d->tty_setting.c_cflag |= (CLOCAL | CREAD);
+  tty_setting.c_cflag |= (CLOCAL | CREAD);
 
   // word size
   switch (word_size) {
     case 5:
-      ser_d->tty_setting.c_cflag |= CS5;
+      tty_setting.c_cflag |= CS5;
       break;
     case 6:
-      ser_d->tty_setting.c_cflag |= CS6;
+      tty_setting.c_cflag |= CS6;
       break;
     case 7:
-      ser_d->tty_setting.c_cflag |= CS7;
+      tty_setting.c_cflag |= CS7;
       break;
     case 8:
-      ser_d->tty_setting.c_cflag |= CS8;
+      tty_setting.c_cflag |= CS8;
       break;
     default:
-      fprintf(stderr,
-              "serial_init: %d is not a valid data bit count.\n", word_size);
+      if (asprintf(&msg,
+                   "init_serial: %d is not a valid data bit count.",
+                    word_size) < 0)
+        perror(NULL);
+      else
+        perror(msg);
+
       return -1;
   }
+
   // parity
   switch (parity) {
     case PARITY_NONE:
       break;
     case PARITY_EVEN:
-      ser_d->tty_setting.c_cflag |= PARENB;
+      tty_setting.c_cflag |= PARENB;
       break;
     case PARITY_ODD:
-      ser_d->tty_setting.c_cflag |= PARENB | PARODD;
+      tty_setting.c_cflag |= PARENB | PARODD;
       break;
     default:
-      fprintf(stderr, "serial_init: %d is not a valid parity selection "
-                      "value.\n", parity);
+      if (asprintf(&msg,
+                   "init_serial: %d is not a valid parity selection value.",
+                    parity) < 0)
+        perror(NULL);
+      else
+        perror(msg);
+
       return -1;
   }
 
@@ -350,53 +342,63 @@ serial_init(char *device_name, int bit_rate, int word_size,
     case 1:
       break;
     case 2:
-      ser_d->tty_setting.c_cflag |= CSTOPB;
+      tty_setting.c_cflag |= CSTOPB;
       break;
     default:
-      fprintf(stderr,
-              "serial_init: %d is not a valid stop bit count.", stop_bits);
+      if (asprintf(&msg,
+                   "init_serial: %d is not a valid stop bit count.",
+                    stop_bits) < 0)
+        perror(NULL);
+      else
+        perror(msg);
+
       return -1;
   }
   // Control Modes complete
 
   // Ignore bytes with parity errors and make terminal raw and dumb.
-  ser_d->tty_setting.c_iflag &=
-          ~(PARMRK | ISTRIP | IGNCR | ICRNL | INLCR | IXOFF | IXON | IXANY);
-  ser_d->tty_setting.c_iflag |= INPCK | IGNPAR | IGNBRK;
+  tty_setting.c_iflag &= ~(PARMRK | ISTRIP | IGNCR | ICRNL | INLCR | IXOFF | IXON | IXANY);
+  tty_setting.c_iflag |= INPCK | IGNPAR | IGNBRK;
 
   // Raw output.
-  ser_d->tty_setting.c_oflag &= ~(OPOST | ONLCR);
+  tty_setting.c_oflag &= ~(OPOST | ONLCR);
 
   // Local Modes
   // Don't echo characters. Don't generate signals.
   // Don't process any characters.
-  ser_d->tty_setting.c_lflag &=
-          ~(ICANON | ECHO | ECHOE | ISIG | IEXTEN | NOFLSH | TOSTOP);
-  ser_d->tty_setting.c_lflag |=  NOFLSH;
+  tty_setting.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG | IEXTEN | NOFLSH | TOSTOP);
+  tty_setting.c_lflag |=  NOFLSH;
 
-  // non blocking read 
-  ser_d->tty_setting.c_cc[VMIN]  = 0;
-  ser_d->tty_setting.c_cc[VTIME] = 0;
+  // blocking read until 1 char arrives
+  tty_setting.c_cc[VMIN]  = 1;
+  tty_setting.c_cc[VTIME] = 0;
 
   // now clear input and output buffers and activate the new terminal settings
-  if (tcflush(fd, TCIOFLUSH)) {
-    perror("serial_init: could not flush buffers");
-    return -1;
-  }
-  if (tcsetattr(fd, TCSANOW, &ser_d->tty_setting)) {
-    perror("serial_init: failed setting attributes on serial port.");
-    serial_shutdown(fd);
+  tcflush(fd, TCIOFLUSH);
+  if (tcsetattr(fd, TCSANOW, &tty_setting)) {
+    perror("init_serial: failed setting attributes on serial port.");
+    shutdown_serial(fd);
     return -1;
   }
 
-  int ctl;
-  ioctl(fd, TIOCMGET, &ctl);
-  ser_d->modem_ctrl_bits = ctl;
-  ctl &= ~TIOCM_DTR & ~TIOCM_RTS;
-  ioctl(fd, TIOCMSET, &ctl);
-  tcflush(fd, TCIOFLUSH); /* clear all buffers */
   return fd;
 
 }
 
-
+/******************************************************************************
+ * shutdown_serial(..)
+ ******************************************************************************
+ * Restores terminal settings of open serial port device and close the file.
+ * Arguments:
+ *   fd: file descriptor of open serial port device.
+ *****************************************************************************/
+void
+shutdown_serial(int fd)
+{
+  if (fd > 0) {
+    if (tcsetattr(fd, TCSANOW, &orig_tty_setting) < 0) {
+      perror("shutdown_serial: can't restore serial device's terminal settings.");
+    }
+    close(fd);
+  }
+}
