@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2013-13-06)
+Status and open issues (2013-13-13)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 

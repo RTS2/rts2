@@ -83,7 +83,10 @@ if __name__ == '__main__':
     logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
     # read the run time configuration
     rt=Configuration(logger=logger)
-    rt.readConfiguration(fileName=args.config)
+    if not rt.readConfiguration(fileName=args.config):
+        logger.error('rts2saf_focus: exiting, wrong syntax, check the configuration file: {0}'.format(args.config))
+        sys.exit(1)
+        
     if not rt.checkConfiguration(args=args):
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
