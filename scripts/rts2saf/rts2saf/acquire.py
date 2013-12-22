@@ -78,6 +78,8 @@ class ScanThread(threading.Thread):
         if self.debug: self.logger.debug('____ScantThread: running')
         
         for i,pos in enumerate(self.foc.focFoff): 
+            if self.stoprequest.is_set():
+                break
 
             if self.writeToDevices:
                 if self.blind:

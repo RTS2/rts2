@@ -23,12 +23,27 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-import Queue
+import signal
 import sys
+import time
+import Queue
 import collections
 import rts2saf.acquire as acq
 import rts2saf.sextract as sx
 import rts2saf.analyze as  an
+
+TERM=False
+def receive_signal(signum, stack):
+    global TERM
+    TERM=True
+
+
+signal.signal(signal.SIGUSR1, receive_signal)
+signal.signal(signal.SIGUSR2, receive_signal)
+signal.signal(signal.SIGTERM, receive_signal)
+signal.signal(signal.SIGHUP,  receive_signal)
+signal.signal(signal.SIGQUIT, receive_signal)
+
 
 class Focus(object):
     """Main control class for online data acquisition.
@@ -104,24 +119,36 @@ class Focus(object):
 
                 # acquire FITS from thread
                 dataSxtr=list()
+                global TERM
                 for st in self.foc.focFoff:
                     while True:
+                        # if some external source wants to stop me
+                        if TERM:
+                            acqu.stopScan(timeout=1.)
+                            time.sleep(2.)
+                            self.logger.info('Focus: received signal, reset FOC_FOFF, stopped thread, exiting')
+                            # threads are zombies
+                            while acqu.scanThread.isAlive():
+                                acqu.scanThread._Thread__stop()
+                                time.sleep(1)
+                            sys.exit(1)
                         try:
                             fitsFn= acqu_oq.get(block=True, timeout=.2)
+                            break
                         except Queue.Empty:
                             # if self.debug: self.logger.debug('Focus: continue')
                             continue
                     
-                        sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
-                        dSx=sxtr.sextract(fitsFn=fitsFn)
-                        if dSx.fitsFn==None:
-                            self.logger.error('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
-                            # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved any more
-                            break
+                    sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
+                    dSx=sxtr.sextract(fitsFn=fitsFn)
+                    if dSx.fitsFn==None:
+                        self.logger.error('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
+                        # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved any more
+                        continue
 
-                        self.logger.info('Focus: pos: {0:5d}, fwhm: {1:5.2f}, stdFwhm {2:5.2f}, objects: {3:4d}, file: {4}'.format(int(st), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog), fitsFn))
-                        dataSxtr.append(dSx)
-                        break
+                    self.logger.info('Focus: pos: {0:5d}, fwhm: {1:5.2f}, stdFwhm {2:5.2f}, objects: {3:4d}, file: {4}'.format(int(st), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog), fitsFn))
+                    dataSxtr.append(dSx)
+
                 else:
                     if self.debug: self.logger.debug('Focus: got all images')
 
