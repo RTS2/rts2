@@ -57,7 +57,7 @@ void ConnExecute::postEvent (rts2core::Event *event)
 			if (waitTargetMove)
 				writeToProcess ("0");
 			if (masterElement && masterElement->getConnection ())
-				logStream (MESSAGE_DEBUG) << masterElement->getConnection ()->getName () << " elementexe get EVENT_MOVE_FAILED" << sendLog;
+				logStream (MESSAGE_DEBUG) << masterElement->getConnection ()->getName () << " elementexe get EVENT_MOVE_OK" << sendLog;
 			break;
 		case EVENT_MOVE_FAILED:
 			if (waitTargetMove)
