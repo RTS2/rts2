@@ -346,7 +346,7 @@ int NUT::info ()
 	  	|| upsstatus->getValue () == std::string ("OL") || upsstatus->getValue () == std::string ("ALARM OL")	
 		|| upsstatus->getValue () == std::string ("ALARM OL CHRG") || upsstatus->getValue () == std::string ("OB")
 		|| upsstatus->getValue () == std::string ("LB OB") || upsstatus->getValue () == std::string ("LB OL")
-		|| upsstatus->getValue () == std::string ("OL BOOST")))
+		|| upsstatus->getValue () == std::string ("OL BOOST") || upsstatus->getValue () == std::string ("OL LB")))
 	{
 		logStream (MESSAGE_WARNING) <<  "unknow status " << upsstatus->getValue () << sendLog;
 		setWeatherTimeout (1200, "unknow status");
@@ -358,7 +358,7 @@ int NUT::info ()
 	}
 
 	// we are online - increase onbatterytimeout
-	if (upsstatus->getValue () == std::string ("OL CHRG") || upsstatus->getValue () == std::string ("ALARM OL CHRG") || upsstatus->getValue () == std::string ("OL") || upsstatus->getValue () == std::string ("ALARM OL") || upsstatus->getValue () == std::string ("OL BOOST"))
+	if (upsstatus->getValue () == std::string ("OL CHRG") || upsstatus->getValue () == std::string ("ALARM OL CHRG") || upsstatus->getValue () == std::string ("OL") || upsstatus->getValue () == std::string ("ALARM OL") || upsstatus->getValue () == std::string ("OL BOOST") || upsstatus->getValue () == std::string ("OL LB"))
 	{
 		onbatterytimeout->setValueInteger ((int) getNow () + maxonbattery->getValueInteger ());
 	}
