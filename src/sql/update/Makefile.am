@@ -12,4 +12,5 @@ dist_sqldata_DATA =   rel_0_5_1.sql	\
 	rel_0_8_0.sql \
 	rel_0_8_1.sql \
 	rel_0_9_3.sql \
-	rel_0_9_5.sql
+	rel_0_9_5.sql \
+	rel_0_9_6.sql
