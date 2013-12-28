@@ -60,8 +60,10 @@ class Rts2NotActive(Exception):
 
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
-	def __init__(self):
+	def __init__(self, log_device = True):
 		self.exception_re = re.compile('([!&]) (\S.*)')
+		self.__run_device = None
+		self.__log_device = log_device
 
 	def sendCommand(self,command,device = None):
 		"""Send command to device."""
@@ -109,9 +111,11 @@ class Rts2Comm:
 		return int(self.readline())
 
 	def getRunDevice(self):
-		print 'run_device'
-		sys.stdout.flush()
-		return self.readline()
+		if self.__run_device is None:
+			print 'run_device'
+			sys.stdout.flush()
+			self.__run_device = self.readline()
+		return self.__run_device
 
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
@@ -355,6 +359,8 @@ class Rts2Comm:
 		sys.stdout.flush()
 
 	def log(self,level, text):
+		if self.__log_device:
+			text = self.getRunDevice() + ' ' + text
 		print "log",level,text
 		sys.stdout.flush()
 	
