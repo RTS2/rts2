@@ -126,6 +126,7 @@ class Queue
 		bool test_constraints;
 		bool remove_after_execution;
 		bool block_until_visible;
+		bool check_target_length;
 		bool queue_enabled;
 		float queue_window;
 };

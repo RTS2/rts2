@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.9.4, petr@kubanek.net)
+AC_INIT(rts2, 0.9.5, petr@kubanek.net)
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
@@ -47,7 +47,7 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
 
 AC_FUNC_CHOWN 
 AC_FUNC_MEMCMP

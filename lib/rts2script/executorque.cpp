@@ -555,6 +555,9 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 	master->createValue (blockUntilVisible, (sn + "_block_until_visible").c_str (), "block queue if the top target is not visible", false, read_only_fl);
 	blockUntilVisible->setValueBool (false);
 
+	master->createValue (checkTargetLength, (sn + "_check_target_length").c_str (), "check if target can be observed in remaining time", false, read_only_fl);
+	checkTargetLength->setValueBool (true);
+
 	master->createValue (queueEnabled, (sn + "_enabled").c_str (), "enable queue for selection", false, read_only_fl);
 	queueEnabled->setValueBool (true);
 
@@ -581,6 +584,7 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 			testConstraints->setValueBool (queue.test_constraints);
 			removeAfterExecution->setValueBool (queue.remove_after_execution);
 			blockUntilVisible->setValueBool (queue.block_until_visible);
+			checkTargetLength->setValueBool (queue.check_target_length);
 			queueEnabled->setValueBool (queue.queue_enabled);
 			queueWindow->setValueFloat (queue.queue_window);
 		}
@@ -591,6 +595,7 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 			queue.test_constraints = getTestConstraints ();
 			queue.remove_after_execution = getRemoveAfterExecution ();
 			queue.block_until_visible = getBlockUntilVisible ();
+			queue.check_target_length = getCheckTargetLength ();
 			queue.queue_enabled = queueEnabled->getValueBool ();
 			queue.queue_window = queueWindow->getValueFloat ();
 			queue.create ();
@@ -726,7 +731,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 				// the code will go there even if top long targets were not removed, making sure 
 				// it will still ignore too long targets
 				double tl = rts2script::getMaximalScriptDuration (front ().target, master->cameras, NULL, front().target->observationStarted () ? 1 : 0);
-				if (tl < next_length)
+				if (tl < next_length || checkTargetLength->getValueBool () == false)
 				{
 					pid = front ().plan_id;
 					qid = front ().qid;
@@ -1000,6 +1005,7 @@ void ExecutorQueue::updateVals ()
 		queue.test_constraints = getTestConstraints ();
 		queue.remove_after_execution = getRemoveAfterExecution ();
 		queue.block_until_visible = getBlockUntilVisible ();
+		queue.check_target_length = getCheckTargetLength ();
 		queue.queue_enabled = queueEnabled->getValueBool ();
 		queue.queue_window = queueWindow->getValueFloat ();
 

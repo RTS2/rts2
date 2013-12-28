@@ -321,7 +321,7 @@ class ExecutorQueue:public TargetQueue
 		// prints queue configuration into stream
 		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
 		{
-			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " block until visible " << eq->blockUntilVisible->getValueBool () << " enabled " << eq->queueEnabled->getValueBool ();
+			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " block until visible " << eq->blockUntilVisible->getValueBool () << " check target lenght " << eq->checkTargetLength->getValueBool () << " enabled " << eq->queueEnabled->getValueBool ();
 			if (!isnan (eq->queueWindow->getValueFloat ()))
 				os << " with window " << eq->queueWindow->getValueFloat () << "s";
 			os << " contains";
@@ -350,6 +350,7 @@ class ExecutorQueue:public TargetQueue
 		virtual const bool getTestConstraints () { return testConstraints->getValueBool (); }
 		virtual const bool getRemoveAfterExecution () { return removeAfterExecution->getValueBool (); }
 		virtual const bool getBlockUntilVisible () { return blockUntilVisible->getValueBool (); }
+		virtual const bool getCheckTargetLength () { return checkTargetLength->getValueBool (); }
 
 	private:
 		rts2core::IntegerArray *nextIds;
@@ -376,6 +377,7 @@ class ExecutorQueue:public TargetQueue
 		rts2core::ValueBool *testConstraints;
 		rts2core::ValueBool *removeAfterExecution;
 		rts2core::ValueBool *blockUntilVisible;
+		rts2core::ValueBool *checkTargetLength;
 		rts2core::ValueBool *queueEnabled;
 		rts2core::ValueFloat *queueWindow;
 

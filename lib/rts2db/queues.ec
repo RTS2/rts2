@@ -256,6 +256,7 @@ void Queue::load ()
 	bool db_test_constraints;
 	bool db_remove_after_execution;
 	bool db_block_until_visible;
+	bool db_check_target_length;
 	bool db_queue_enabled;
 	float db_queue_window;
 	EXEC SQL END DECLARE SECTION;
@@ -266,6 +267,7 @@ void Queue::load ()
 		test_constraints,
 		remove_after_execution,
 		block_until_visible,
+		check_target_length,
 		queue_enabled,
 		queue_window
 	INTO
@@ -274,6 +276,7 @@ void Queue::load ()
 		:db_test_constraints,
 		:db_remove_after_execution,
 		:db_block_until_visible,
+		:db_check_target_length,
 		:db_queue_enabled,
 		:db_queue_window
 	FROM
@@ -289,6 +292,7 @@ void Queue::load ()
 	test_constraints = db_test_constraints;
 	remove_after_execution = db_remove_after_execution;
 	block_until_visible = db_block_until_visible;
+	check_target_length = db_check_target_length;
 	queue_enabled = db_queue_enabled;
 	queue_window = db_queue_window;
 	
@@ -325,6 +329,7 @@ void Queue::create ()
 	bool db_test_constraints = test_constraints;
 	bool db_remove_after_execution = remove_after_execution;
 	bool db_block_until_visible = block_until_visible;
+	bool db_check_target_length = check_target_length;
 	bool db_queue_enabled = queue_enabled;
 	float db_queue_window = queue_window;
 	EXEC SQL END DECLARE SECTION;
@@ -336,6 +341,7 @@ void Queue::create ()
 		test_constraints,
 		remove_after_execution,
 		block_until_visible,
+		check_target_length,
 		queue_enabled,
 		queue_window)
 	VALUES (
@@ -345,6 +351,7 @@ void Queue::create ()
 		:db_test_constraints,
 		:db_remove_after_execution,
 		:db_block_until_visible,
+		:db_check_target_length,
 		:db_queue_enabled,
 		:db_queue_window
 	);
@@ -365,6 +372,7 @@ void Queue::update ()
 	bool db_test_constraints = test_constraints;
 	bool db_remove_after_execution = remove_after_execution;
 	bool db_block_until_visible = block_until_visible;
+	bool db_check_target_length = check_target_length;
 	bool db_queue_enabled = queue_enabled;
 	float db_queue_window = queue_window;
 	EXEC SQL END DECLARE SECTION;
@@ -377,6 +385,7 @@ void Queue::update ()
 		test_constraints = :db_test_constraints,
 		remove_after_execution = :db_remove_after_execution,
 		block_until_visible = :db_block_until_visible,
+		check_target_length = :db_check_target_length,
 		queue_enabled = :db_queue_enabled,
 		queue_window = :db_queue_window
 	WHERE
