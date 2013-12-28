@@ -13,7 +13,7 @@
 # test this script by calling it and verifiing that it prints something what
 # does not look like error message on standard output.
 #
-# (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+# (C) 2011-2013 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 # (C) 2009,2010 Antonio de Ugarte & Petr Kubanek <petr@kubanek.net>
 #
 # This library is free software; you can redistribute it and/or
@@ -55,7 +55,7 @@ class FlatAttempt:
 		self.res = res
 
 	def toString(self):
-		return "%s %.2f: %f ratio %f result %s" % (self.date, self.exptime, self.average, self.ratio, self.res)
+		return "{0} {1:0.2f}: {2} ratio {3} result {4}".format(self.date, self.exptime, self.average, self.ratio, self.res)
 
 class Flat:
 	"""Flat class. It holds system configuration for skyflats."""
@@ -80,7 +80,7 @@ class Flat:
 		"""Return signature string of given flat image configuration."""
 		if (self.binning == None and self.window == None):
 			return self.filter
-		return '%s_%s_%s' % (self.filter,self.binning,self.window)
+		return '{0}_{1}_{2}'.format(self.filter,self.binning,self.window)
 
 class FlatScript (scriptcomm.Rts2Comm):
 	"""Class for taking and processing skyflats.
@@ -143,6 +143,8 @@ class FlatScript (scriptcomm.Rts2Comm):
 		self.goodFlats = []
 		self.badFlats = []
 		self.is_evening = self.isEvening()
+
+		self.camera_name = self.getRunDevice()
 
 	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600.0,shiftDec=10/3600.0):
 		"""Set flat levels. Adjust diferent parameters of the algorithm.
@@ -267,7 +269,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 				expMulti = self.morningMultiply
 
 		if (ratio <= 0): # special case, ratio is bellow bias
-			self.log('W','average is bellow bias: average %f bias %f. Please adjust biasLevel in flats script.' % (avrg, self.biasLevel))
+			self.log('W','average is bellow bias: average {0} bias {1}. Please adjust biasLevel in flats script.'.format(avrg, self.biasLevel))
 			self.unusableImage(img)
 			ratio = 0.000000001
 			ret = -1
@@ -324,7 +326,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 		elif (ret > 0):
 			brightness = 'bright'
 
-		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %s" % (ratio,avrg,len(self.flatImages[self.flatNum]),self.flat.filter,self.exptime,brightness))
+		self.log('I',"run ratio {0} avrg {1} ngood {2} filter {3} next exptime {4} ret {5}".format(ratio,avrg,len(self.flatImages[self.flatNum]),self.flat.filter,self.exptime,brightness))
 		self.flat.attempt(self.exptime,ratio,avrg,brightness)
 		return ret
 
@@ -429,7 +431,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 		  	f = pyfits.open(files[x])
 			d[x] = f[0].data / numpy.mean(f[0].data)
 		if (os.path.exists(of)):
-	  		self.log('I',"removing %s" % (of))
+	  		self.log('I',"removing {0}".format(of))
 			os.unlink(of)
 		f = pyfits.open(of,mode='append')
 		m = numpy.median(d,axis=0)
@@ -437,7 +439,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 		m = m / numpy.max(m)
 		i = pyfits.PrimaryHDU(data=m)
 		f.append(i)
-		self.log('I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),numpy.max(m),numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
+		self.log('I','writing {0} of min: {1} max: {2} mean: {3} std: {4} median: {5}'.format(of,numpy.min(m),numpy.max(m),numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
 		f.close()
 
 	def getData(self, domeDevice='DOME', tmpDirectory='/tmp/'):
@@ -481,8 +483,8 @@ class FlatScript (scriptcomm.Rts2Comm):
 		for i in range(0,len(self.flatImages)):
 		  	sig = self.usedFlats[i].signature()
 		  	if len(self.flatImages[i]) >= 3:
-			  	self.log('I',"creating master flat for %s" % (sig))
-				self.createMasterFits(tmpDirectory + '/master_%s.fits' % (sig), self.flatImages[i])
+			  	self.log('I',"creating master flat for {0}".format(sig))
+				self.createMasterFits(tmpDirectory + '/master_{0}.fits'.format(sig), self.flatImages[i])
 				self.goodFlats.append(self.usedFlats[i])
 			else:
 			  	self.badFlats.append(self.usedFlats[i])
@@ -505,14 +507,14 @@ class FlatScript (scriptcomm.Rts2Comm):
 	def sendEmail(self,email,observatoryName):
 		msg = ''
 		try:
-			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,self.goodFlats),';'),string.join(map(Flat.signature,self.badFlats),';'))
+			msg = 'Flats finished at {0}.\n\nGood flats: {1}\nBad flats: {2}\n\n'.format(datetime.today(),string.join(map(Flat.signature,self.goodFlats),';'),string.join(map(Flat.signature,self.badFlats),';'))
 			for flat in self.usedFlats:
 				msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
 		except TypeError,te:
-			msg = 'Cannot get flats - good: %s, bad: %s' % (self.goodFlats,self.badFlats)
+			msg = 'Cannot get flats - good: {0}, bad: {1}'.format(self.goodFlats,self.badFlats)
 
 		mimsg = MIMEText(msg)
-		mimsg['Subject'] = 'Flats report from %s' % (observatoryName)
+		mimsg['Subject'] = 'Flats report from {0}'.format(observatoryName)
 		mimsg['To'] = email
 
 		s = smtplib.SMTP('localhost')
