@@ -225,7 +225,7 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	queueSelectUntil->setValueDouble (NAN);
 
 	createValue (nextTime, "next_time", "time when selection method was run", false);
-	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
+	createValue (interrupt, "interrupt", "if next target from queue hard interrupt current observations", false, RTS2_VALUE_WRITABLE);
 	interrupt->setValueBool (false);
 
 	createValue (current_target, "current_target", "current target ID", false);
@@ -563,6 +563,12 @@ int SelectorDev::selectNext ()
 			{
 				logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
 				last_auto_id = id;
+				if (interrupt->getValueBool ())
+				{
+					interrupt->setValueBool (false);
+					sendValueAll (interrupt);
+					logStream (MESSAGE_INFO) << "set interrupt to false, as next target was selected from automatic selector" << sendLog;
+				}
 			}
 			next_qid->setValueInteger (-1);
 			next_plan_id->setValueInteger (-1);
