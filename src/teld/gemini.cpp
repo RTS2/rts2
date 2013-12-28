@@ -175,7 +175,7 @@ class Gemini:public Telescope
 		 *
 		 * @return -1 on error, otherwise 0
 		 */
-		int tel_gemini_setch (int id, char *in_buf);
+		int tel_gemini_setch (int id, const char *in_buf);
 
 		/**
 		 * Write command to set gemini local parameters
@@ -486,7 +486,7 @@ unsigned char Gemini::tel_gemini_checksum2 (const char *buf)
 	return checksum;
 }
 
-int Gemini::tel_gemini_setch (int id, char *in_buf)
+int Gemini::tel_gemini_setch (int id, const char *in_buf)
 {
 	int len;
 	char *buf;
