@@ -477,6 +477,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 			self.log('I','taking calibration darks')
 			self.takeDarks(usedConfigs)
 
+	def produceMasterFlats(self, tmpDirectory='/tmp/'):
 		self.log('I','producing master flats')
 
 		# basic processing of taken flats..
@@ -492,10 +493,14 @@ class FlatScript (scriptcomm.Rts2Comm):
 	def run(self, domeDevice='DOME', tmpDirectory='/tmp/', receivers=None, subject='Skyflats report'):
 		try:
 			self.getData(domeDevice, tmpDirectory)
+			self.produceMasterFlats(tmpDirectory)
 		except scriptcomm.Rts2NotActive,noa:
 			self.log('W','flat script interruped')
 
 			if receivers:
+				if len(self.goodFlats) + len(self.badFlats) != len(self.flatImages):
+					self.log('D','(re)runing master flats production')
+					self.produceMasterFlats(tmpDirectory)
 				self.sendEmail(receivers,subject)
 			return
 
