@@ -1491,6 +1491,9 @@ void Camera::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 					case SERVERD_STANDBY:
 						beforeNight ();
 						break;
+					// otherwise, don't forgot to un-cool CCDs
+					default:
+						afterNight ();
 				}
 				break;
 			}
