@@ -383,7 +383,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
-	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
+	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az in degrees (<0..360> for az, <0..90> for alt) separated by :)");
 	addOption (OPT_POWEOFF_STANDBY, "standby-poweroff", 0, "poweroff at standby");
 	addOption (OPT_GOOD_SEP, "good-sep", 1, "minimal good separation (in degrees)");
 
