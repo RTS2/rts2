@@ -40,6 +40,9 @@ int Dome::domeOpenStart ()
 	  	logStream (MESSAGE_ERROR) << "opening of the dome failed" << sendLog;
 		return -1;
 	}
+
+	closeFailReported = false;
+
 	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENING | BOP_EXPOSURE, "opening dome");
 	logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to open the dome" << sendLog;
 	return 0;
@@ -54,10 +57,12 @@ int Dome::domeCloseStart ()
 
 	if (ret < 0)
 	{
-		logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
+		if (closeFailReported == false)
+			logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
+		closeFailReported = true;
 		return -1;
 	}
-	if (ret > 0)
+	else if (ret > 0)
 	{
 		if ((getState () & DOME_DOME_MASK) != DOME_WAIT_CLOSING)
 		{
@@ -66,6 +71,9 @@ int Dome::domeCloseStart ()
 		maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_WAIT_CLOSING, "wait for equipment to stow");
 		return 0;
 	}
+
+	closeFailReported = false;
+
 	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
 	{
 		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
@@ -77,6 +85,8 @@ int Dome::domeCloseStart ()
 Dome::Dome (int in_argc, char **in_argv, int in_device_type):Device (in_argc, in_argv, in_device_type, "DOME")
 {
 	stateMaster = NULL;
+
+	closeFailReported = false;
 
 	createValue (weatherOpensDome, "weather_open", "if true, good weather can open dome", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	weatherOpensDome->setValueBool (false);

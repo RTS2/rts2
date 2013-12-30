@@ -161,6 +161,8 @@ class Dome:public rts2core::Device
 		int closeDomeWeather ();
 
 		rts2core::ValueString *stateMaster;
+
+		bool closeFailReported;
 };
 
 }
