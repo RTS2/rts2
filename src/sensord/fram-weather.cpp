@@ -126,7 +126,7 @@ void FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status,
 		valueError (watch);
 	}
 	// change from date to tm
-	bzero (&_tm, sizeof(struct tm));
+	memset (&_tm, 0, sizeof(struct tm));
 	_tm.tm_year = _date->years - 1900;
 	_tm.tm_mon = _date->months - 1;
 	_tm.tm_mday = _date->days;

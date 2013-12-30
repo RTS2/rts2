@@ -568,6 +568,8 @@ class Camera:public rts2core::ScriptDevice
 		// number of data channels
 		rts2core::ValueInteger *dataChannels;
 
+		// image type - IRAF keyword. FLAT, DARK or OBJECT
+		rts2core::ValueSelection *imageType;
 		// current object
 		rts2core::ValueString *objectName;
 		// which channels are off (and which are on)
@@ -1064,7 +1066,7 @@ class Camera:public rts2core::ScriptDevice
 				delete[] modeCount;
 				modeCountSize = ((long long unsigned int) 1) << (sizeof (t) * 8);
 				modeCount = new uint32_t[modeCountSize];
-				bzero (modeCount, modeCountSize * sizeof (uint32_t));
+				memset (modeCount, 0, modeCountSize * sizeof (uint32_t));
 			}
 			while (((char *) tData) < ((char *) data) + dataSize)
 			{

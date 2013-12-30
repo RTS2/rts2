@@ -175,7 +175,7 @@ struct SharedDataHeader *DataSharedWrite::create (int numseg, size_t segsize)
 	struct SharedDataSegment *seg = getSegment (0);
 	for (int i = 0; i < numseg; i++, seg++)
 	{
-		bzero (seg->client_ids, sizeof (int) * MAX_SHARED_CLIENTS);
+		memset (seg->client_ids, 0, sizeof (int) * MAX_SHARED_CLIENTS);
 		seg->size = segsize;
 		seg->bytesSoFar = 0;
 		seg->offset = sizeof (struct SharedDataHeader) + sizeof (struct SharedDataSegment) * numseg + i * segsize;

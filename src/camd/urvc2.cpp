@@ -133,7 +133,7 @@ void Urvc2::get_eeprom ()
 		eePtr.trackingGain = 304;
 		eePtr.imagingOffset = 0;
 		eePtr.imagingGain = 560;
-		bzero (eePtr.columns, 4);
+		memset (eePtr.columns, 0, 4);
 		strcpy ((char *) eePtr.serialNumber, "EEEE");
 	}
 	else

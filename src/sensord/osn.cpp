@@ -73,7 +73,7 @@ Osn::info ()
 		return -1;
 	}
 
-	bzero (&dest, sizeof (dest));
+	memset (&dest, 0, sizeof (dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = inet_addr ("193.146.151.70");
 	dest.sin_port = htons (6341);

@@ -119,7 +119,7 @@ get_eeprom ()
 	  eePtr.trackingGain = 304.0;
 	  eePtr.imagingOffset = 0;
 	  eePtr.imagingGain = 560.0;
-	  bzero (eePtr.columns, 4);
+	  memset (eePtr.columns, 0, 4);
 	  strcpy (eePtr.serialNumber, "EEEE");
 	}
       else

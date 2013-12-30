@@ -165,7 +165,7 @@ long Camera::isExposing ()
 int Camera::endExposure (int ret)
 {
 	if (modeCount)
-		bzero (modeCount, modeCountSize * sizeof (uint32_t));
+		memset (modeCount, 0, modeCountSize * sizeof (uint32_t));
 	if (exposureConn)
 	{
 		logStream (MESSAGE_INFO) << "end exposure for " << exposureConn->getName () << sendLog;
@@ -434,7 +434,12 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (ccdRealType, "CCD_TYPE", "camera type", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (serialNumber, "CCD_SER", "camera serial number", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-	createValue (objectName, "OBJECT", "target object name", false, RTS2_VALUE_WRITABLE);
+	createValue (imageType, "IMAGETYP", "IRAF based image type", true, RTS2_VALUE_WRITABLE);
+	imageType->addSelVal ("dark");
+	imageType->addSelVal ("flat");
+	imageType->addSelVal ("object");
+
+	createValue (objectName, "OBJECT", "target object name", true, RTS2_VALUE_WRITABLE);
 
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
@@ -1219,10 +1224,10 @@ int Camera::initValues ()
 	}
 
 	dataBuffers = new char*[getNumChannels ()];
-	bzero (dataBuffers, getNumChannels () * sizeof (char*));
+	memset (dataBuffers, 0, getNumChannels () * sizeof (char*));
 
 	dataWritten = new size_t[getNumChannels ()];
-	bzero (dataWritten, getNumChannels () * sizeof (size_t));
+	memset (dataWritten, 0, getNumChannels () * sizeof (size_t));
 
 	return rts2core::ScriptDevice::initValues ();
 }
@@ -1715,7 +1720,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize = chipByteSize ();
 
-	bzero (dataWritten, getNumChannels () * sizeof (size_t));
+	memset (dataWritten, 0, getNumChannels () * sizeof (size_t));
 
 	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{

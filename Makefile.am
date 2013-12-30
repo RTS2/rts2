@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS =	include \
 		lib     \
 		src	\
@@ -9,7 +7,6 @@ SUBDIRS =	include \
 		python  \
 		scripts \
 		conf   
-
 
 EXTRA_DIST = autogen.sh RUN rts2.initd.in \
 	INSTALL INSTALL.alta INSTALL.fli INSTALL.paramount INSTALL.andor \

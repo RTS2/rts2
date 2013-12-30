@@ -135,7 +135,7 @@ wcs_in (PG_FUNCTION_ARGS)
   imhead = PG_GETARG_CSTRING (0);
 
   res = (struct kwcs *) palloc (sizeof (struct kwcs));
-  bzero (res, sizeof (struct kwcs));
+  memset (res, 0, sizeof (struct kwcs));
 
   // parse input string
   while ((cmd = get_next_token (imhead, &next_start)) != NULL)
