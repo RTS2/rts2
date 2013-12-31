@@ -331,10 +331,8 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose, double length)
 	}
 
 	if (tar_best == possibleTargets.end () || (*tar_best)->bonus < in_bonusLimit)
-	{
-		logStream (MESSAGE_INFO) << "no target selected, letting system to decide what to do" << sendLog;
 		return -1;
-	}
+
 	return (*tar_best)->target->getTargetID ();
 }
 

@@ -183,6 +183,8 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::ValueDouble *simulExpected;
 
 		double from;
+
+		bool selFailureReported;
 };
 
 }
@@ -197,6 +199,8 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	simulQueue = NULL;
 
 	last_auto_id = -2;
+
+	selFailureReported = false;
 
 	notifyConn = new rts2core::ConnNotify (this);
 	addConnection (notifyConn);
@@ -637,7 +641,20 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		sendValueAll (current_queue);
 		sendValueAll (current_obs);
 	}
-	next_id->setValueInteger (selectNext ());
+	int nid = selectNext ();
+	if (nid < 0)
+	{
+		if (selFailureReported == false)
+		{
+			logStream (MESSAGE_ERROR) << "selector was unable to select next target. Observation might continue only with human intervention." << sendLog;
+			selFailureReported = true;
+		}
+	}
+	else
+	{
+		selFailureReported = false;
+	}
+	next_id->setValueInteger (nid);
 	sendValueAll (next_id);
 	sendValueAll (next_qid);
 	sendValueAll (next_plan_id);
