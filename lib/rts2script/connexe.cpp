@@ -21,6 +21,10 @@
 #include "command.h"
 #include "daemon.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 using namespace rts2script;
 
 ConnExe::ConnExe (rts2core::Block *_master, const char *_exec, bool fillConnEnv, int timeout):rts2core::ConnFork (_master, _exec, fillConnEnv, true, timeout)
