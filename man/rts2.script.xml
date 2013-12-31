@@ -879,7 +879,9 @@ G W0 filter
 	<listitem><para>
 	  Add entry to list of files/directories, which will be deleted when
 	  script terminates. As security precaution, only files from /tmp directory
-	  can be specified in the path.
+	  can be specified in the path. File or directory must exists and must be writable
+	  at the time the command is issued. If the entry is removed by the script
+	  before it finish, no error is reported.
 	</para></listitem>
       </varlistentry>
       <varlistentry>

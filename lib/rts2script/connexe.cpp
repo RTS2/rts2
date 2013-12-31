@@ -34,8 +34,8 @@ ConnExe::~ConnExe ()
 	for (std::vector <std::string>::iterator iter = tempentries.begin (); iter != tempentries.end (); iter++)
 	{
 		int ret = rmdir_r (("/tmp/" + (*iter)).c_str ());
-		if (ret)
-			logStream (MESSAGE_ERROR) << "cannot remove /tmp/" << (*iter) << sendLog;
+		if (ret && errno != ENOENT)
+			logStream (MESSAGE_ERROR) << "cannot remove /tmp/" << (*iter) << ", error " << strerror (errno) << sendLog;
 		else
 			logStream (MESSAGE_DEBUG) << "removed /tmp/" << (*iter) << sendLog;
 	}
@@ -254,9 +254,18 @@ void ConnExe::processCommand (char *cmd)
 			return;
 		// refuse tempentry containing /../
 		if (strstr (value, "/../"))
+		{
 			logStream (MESSAGE_ERROR) << "ignore tempentry with /../, as this might escape from /tmp directory" << sendLog;
+		}
 		else
-			tempentries.push_back (std::string (value));
+		{
+			// check that the file exist and is writable
+			int fd = open ((std::string("/tmp/") + value).c_str (), O_RDRW);
+			if (fd < 0)
+				logStream (MESSAGE_ERROR) << "entry /tmp/" << value << " does not exists: " << strerror (errno) << sendLog;
+			else
+				tempentries.push_back (std::string (value));
+		}
 	}
 	else if (isValueCommand (cmd, "double", vflags))
 	{
