@@ -14,7 +14,7 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, wcs
 	c = rts2.Rts2Comm()
 
 	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir)
-	c.tempentry(a.odir)
+	c.tempentry(a.odir[4:])
 
 	ff=pyfits.fitsopen(fn,'readonly')
 

@@ -171,7 +171,7 @@ void BBServer::sendUpdate ()
 		url << _uri;
 	url << "/api/observatory?observatory_id=" << observatoryId;
 
-	int ret = client->executePostRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length, 10000);
+	int ret = client->executePostRequest (url.str ().c_str (), body.str ().c_str (), reply, reply_length, 300);
 	if (!ret)
 	{
 		logStream (MESSAGE_ERROR) << "Error requesting " << serverApi.c_str () << url.str () << sendLog;

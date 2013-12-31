@@ -30,10 +30,14 @@ ConnExe::ConnExe (rts2core::Block *_master, const char *_exec, bool fillConnEnv,
 
 ConnExe::~ConnExe ()
 {
+	// as safety 
 	for (std::vector <std::string>::iterator iter = tempentries.begin (); iter != tempentries.end (); iter++)
 	{
-		logStream (MESSAGE_DEBUG) << "removing /tmp/" << (*iter) << sendLog;
-		rmdir_r (("/tmp/" + (*iter)).c_str ());
+		int ret = rmdir_r (("/tmp/" + (*iter)).c_str ());
+		if (ret)
+			logStream (MESSAGE_ERROR) << "cannot remove /tmp/" << (*iter) << sendLog;
+		else
+			logStream (MESSAGE_DEBUG) << "removed /tmp/" << (*iter) << sendLog;
 	}
 }
 
@@ -243,11 +247,16 @@ void ConnExe::processCommand (char *cmd)
 		}
 		logStream (logLevel) << value << sendLog;
 	}
+	// register temporar entry directory. Path without /tmp should be specified.
 	else if (!strcasecmp (cmd, "tempentry"))
 	{
 	 	if (paramNextString (&value))
 			return;
-		tempentries.push_back (std::string (value));
+		// refuse tempentry containing /../
+		if (strstr (value, "/../"))
+			logStream (MESSAGE_ERROR) << "ignore tempentry with /../, as this might escape from /tmp directory" << sendLog;
+		else
+			tempentries.push_back (std::string (value));
 	}
 	else if (isValueCommand (cmd, "double", vflags))
 	{

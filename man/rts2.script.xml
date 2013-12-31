@@ -878,7 +878,8 @@ G W0 filter
         <term><option>tempentry {file/directory}</option></term>
 	<listitem><para>
 	  Add entry to list of files/directories, which will be deleted when
-	  script terminates.
+	  script terminates. As security precaution, only files from /tmp directory
+	  can be specified in the path.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
