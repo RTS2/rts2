@@ -265,7 +265,7 @@ void ConnExe::processCommand (char *cmd)
 		{
 			// check that the file exist and is writable
 			int fd = open ((std::string("/tmp/") + value).c_str (), O_RDWR);
-			if (fd < 0)
+			if (fd < 0 && errno != EISDIR)
 				logStream (MESSAGE_ERROR) << "entry /tmp/" << value << " does not exists: " << strerror (errno) << sendLog;
 			else
 				tempentries.push_back (std::string (value));
