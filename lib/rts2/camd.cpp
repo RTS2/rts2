@@ -435,9 +435,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (serialNumber, "CCD_SER", "camera serial number", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
 	createValue (imageType, "IMAGETYP", "IRAF based image type", true, RTS2_VALUE_WRITABLE);
+	imageType->addSelVal ("object");
 	imageType->addSelVal ("dark");
 	imageType->addSelVal ("flat");
-	imageType->addSelVal ("object");
 
 	createValue (objectName, "OBJECT", "target object name", true, RTS2_VALUE_WRITABLE);
 
@@ -1571,6 +1571,12 @@ int Camera::camStartExposureWithoutCheck ()
 
 	binningX->setValueInteger (((Binning2D *)(binning->getData ()))->horizontal);
 	binningY->setValueInteger (((Binning2D *)(binning->getData ()))->vertical);
+
+	if (expType)
+	{
+		imageType->setValueInteger (expType->getValueInteger () == 0 ? 0 : 1);
+		sendValueAll (imageType);
+	}
 
 	if (getNeedReload ())
 	{
