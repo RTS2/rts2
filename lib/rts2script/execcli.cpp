@@ -98,6 +98,10 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 	// set target name on EVENT_OBSERVE
 	switch (type)
 	{
+		case EVENT_SET_TARGET:
+		case EVENT_SET_TARGET_NOT_CLEAR:
+		case EVENT_SET_TARGET_KILL:
+		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
 		case EVENT_OBSERVE:
 			if (currentTarget)
 				queCommand (new rts2core::CommandChangeValue (this, "OBJECT", '=', currentTarget->getTargetName ()));
