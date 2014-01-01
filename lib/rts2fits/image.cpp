@@ -112,8 +112,6 @@ void Image::initData ()
 
 	writeConnection = true;
 	writeRTS2Values = true;
-
-	objectNameWritten = false;
 }
 
 
@@ -499,18 +497,6 @@ void Image::writeTargetHeaders (Rts2Target *target, bool set_values)
 	setValue ("OBSID", obsId, "observation id");
 	setValue ("IMGID", imgId, "image id");
 	setValue ("PROC", 0, "image processing status");
-
-	if (target->getTargetName ())
-	{
-		targetName = new char[strlen (target->getTargetName ()) + 1];
-		strcpy (targetName, target->getTargetName ());
-		setValue ("OBJECT", target->getTargetName (), "target name");
-		objectNameWritten = true;
-	}
-	else
-	{
-		setValue ("OBJECT", "(null)", "target name was null");
-	}
 }
 
 void Image::openFile (const char *_filename, bool readOnly, bool _verbose)
@@ -1720,15 +1706,6 @@ int Image::deleteImage ()
 	flags &= ~IMAGE_SAVE;
 	ret = unlink (getFileName ());
 	return ret;
-}
-
-void Image::setObjectName (rts2core::Connection *camera_conn)
-{
-	if (objectNameWritten)
-		return;
-	rts2core::Value *objectName = camera_conn->getValue ("OBJECT");
-	if (objectName && strlen (objectName->getValue ()) > 0)
-		setValue ("OBJECT", objectName->getValue (), "object name");
 }
 
 void Image::setMountName (const char *in_mountName)

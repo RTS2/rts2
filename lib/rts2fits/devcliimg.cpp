@@ -182,8 +182,6 @@ void DevClientCameraImage::cameraMetadata (Image *image)
 	double exposureTime = getConnection ()->getValueDouble ("exposure");
 	image->setTemplate (fitsTemplate);
 
-	image->setObjectName (getConnection ());
-
 	image->setExposureLength (exposureTime);
 	
 	image->setCameraName (getName ());

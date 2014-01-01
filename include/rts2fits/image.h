@@ -368,8 +368,6 @@ class Image:public FitsFile
 		virtual int deleteFromDB () { return 0; }
 		virtual int deleteImage ();
 
-		void setObjectName (rts2core::Connection *camera_conn);
-
 		void setMountName (const char *in_mountName);
 
 		void setCameraName (const char *new_name);
@@ -722,9 +720,6 @@ class Image:public FitsFile
 		// if write RTS2 extended values
 		bool writeRTS2Values;
 	
-		// if OBJECT keyword was written
-		bool objectNameWritten;
-
 		int targetId;
 		int targetIdSel;
 		char targetType;
