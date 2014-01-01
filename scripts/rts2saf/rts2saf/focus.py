@@ -43,6 +43,7 @@ signal.signal(signal.SIGUSR2, receive_signal)
 signal.signal(signal.SIGTERM, receive_signal)
 signal.signal(signal.SIGHUP,  receive_signal)
 signal.signal(signal.SIGQUIT, receive_signal)
+signal.signal(signal.SIGINT,  receive_signal)
 
 
 class Focus(object):
@@ -131,6 +132,8 @@ class Focus(object):
                             while acqu.scanThread.isAlive():
                                 acqu.scanThread._Thread__stop()
                                 time.sleep(1)
+
+                            self.logger.info('Focus: exit now')
                             sys.exit(1)
                         try:
                             fitsFn= acqu_oq.get(block=True, timeout=.2)
@@ -145,7 +148,7 @@ class Focus(object):
                     sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
                     dSx=sxtr.sextract(fitsFn=fitsFn)
                     if dSx.fitsFn==None:
-                        self.logger.error('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
+                        self.logger.warn('Focus: sextractor failed on fits file: {0}'.format(fitsFn))
                         # ToDo get out of the loop if MINIMUM_FOCUSER_POSITIONS can not be achieved any more
                         continue
 

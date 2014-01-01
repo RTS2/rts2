@@ -19,7 +19,7 @@ args.level='DEBUG'
 debug=False
 logger= Logger(debug=debug, args=args ).logger 
 
-time.sleep(5)
+time.sleep(2.)
 
 proxy=JSONProxy()
 ex= Rts2Exec(debug=debug, proxy=proxy, logger=logger)

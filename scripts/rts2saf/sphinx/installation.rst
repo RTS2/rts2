@@ -27,11 +27,12 @@ Update to Python 2.7.x (mandatory) and various Python packages:
 4) ``matplotlib``
 5) ``pyds9`` from the same site
 6) ``numpy``, ``numpy-devel``
-7) ``astropy``
-8) ``astrometry.net``
-9) ``python-pytest`` 
+7) ``psutil``
+8) ``astropy``
+9) ``astrometry.net``
+10) ``python-pytest`` 
 
-and for the documentation install ``sphinx`` and
+For the documentation install ``sphinx`` and
 
 10) ``sphinxcontrib-programoutput``
 

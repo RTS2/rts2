@@ -25,6 +25,7 @@ __author__ = 'markus.wildi@bluewin.ch'
 import sys
 import os
 import matplotlib
+import psutil
 
 # ToDo Ad hoc:
 # if executed through RTS2 it has as DISPLAY localhost:10

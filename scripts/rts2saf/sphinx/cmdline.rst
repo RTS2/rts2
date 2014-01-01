@@ -98,7 +98,7 @@ Output:
 The fit converged and the minimum FWHM is at  5436.
 
 rts2saf_imgp.py
-------------------
+---------------
 .. program-output:: rts2saf_imgp.py --help
 
 Fetch this FITS with
@@ -131,4 +131,14 @@ Output:
 
 
 
+rts2saf_reenable_exec.py
+------------------------
 
+``rts2saf_reenable_exec.py`` is executed by ``rts2saf_focus.py`` if the variable ``REENABLE_EXEC`` is set to
+
+.. code-block:: bash
+
+ [basic]
+ REENABLE_EXEC=True
+
+As of 2014-01-01 EXEC does not return to normal operations after a script, executed as ``' exe some_script '`` has finished. To reenable EXEC this script dis- and enables EXEC. This is the current default.
