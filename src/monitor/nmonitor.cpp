@@ -130,7 +130,7 @@ int NMonitor::processOption (int in_opt)
 				char *ch = strchr (optarg, '.');
 				if (ch == NULL)
 				{
-					std::cerr << "cannot find . separating device and command" << std::cerr;
+					std::cerr << "cannot find . separating device and command" << std::endl;
 					return -1;
 				}
 				*ch = '\0';

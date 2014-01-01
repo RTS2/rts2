@@ -352,7 +352,7 @@ Rts2ScheduleApp::init ()
 		  std::cerr << "Scheduling interval end date is behind scheduling start date, start is "
 		  	<< LibnovaDate (startDate) << ", end is "
 			<< LibnovaDate (endDate)
-			<< std::cerr;
+			<< std::endl;
 	}
 
 	// create list of schedules..

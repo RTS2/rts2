@@ -189,7 +189,7 @@ int Rts2NewTarget::saveTarget ()
 		if (tarset.size () == 0)
 		{
 			std::cout << "No targets were found within " << LibnovaDegDist (radius)
-				<< " from entered target." << std::cout;
+				<< " from entered target." << std::endl;
 		}
 		else
 		{
