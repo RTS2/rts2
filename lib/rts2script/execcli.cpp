@@ -95,6 +95,14 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 	}
 	DevScript::postEvent (event);
 	rts2image::DevClientCameraImage::postEvent (event);
+	// set target name on EVENT_OBSERVE
+	switch (type)
+	{
+		case EVENT_OBSERVE:
+			if (currentTarget)
+				queCommand (new rts2core::CommandChangeValue (this, "OBJECT", '=', currentTarget->getTargetName ()));
+			break;
+	}
 	// must be done after processing trigger in parent
 	if (type == EVENT_TRIGGERED && !waitForExposure)
 		nextCommand ();
