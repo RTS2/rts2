@@ -101,7 +101,7 @@ last two levels are dropped:
  |   |       `-- 20131006004929-777-RA-006.fits
 
 
-``rts2saf_focus.py`` copes with directory structures like
+``rts2saf_analyze.py`` copes too with directory structures like
 
 .. code-block:: bash
 

@@ -24,10 +24,24 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import os
+import psutil
 import numpy as np
 import copy
 
 from ds9 import *
+
+pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
+if 'init' in pnm:
+    DISPLAY=False
+else:
+    from subprocess import Popen, PIPE
+    p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+    p.communicate()
+    if p.returncode == 0:
+        DISPLAY=True
+    else:
+        DISPLAY=False
+
 
 from rts2saf.fitfunction import  FitFunction
 from rts2saf.fitdisplay import FitDisplay
@@ -200,17 +214,6 @@ class SimpleAnalysis(object):
         """Plot data, fitted function for FWHM and optionally flux.
 
         """
-        # ToDo ugly here
-        DISPLAY=False
-        if self.FitDisplay or self.Ds9Display:
-            try:
-                dsp=os.environ['DISPLAY']
-                if dsp:
-                    DISPLAY=True
-            except:
-                self.logger.warn('analyze: no X-Window DISPLAY, do not plot with matplotlib and/or ds9')
-                return
-        
         ft=FitDisplay(date = self.date, logger=self.logger)
 
         if self.i_flux==None:
@@ -226,25 +229,8 @@ class SimpleAnalysis(object):
         ft.fig=None
         ft=None
         # plot them through ds9
-        if self.Ds9Display:
-            # ToDo Ad hoc:
-            # if executed through RTS2 it has as DISPLAY localhost:10
-            #
-            # http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python                                                                                    
-            from subprocess import Popen, PIPE
-            p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
-            p.communicate()
-
-            if p.returncode != 0:
-                self.logger.error('analyze: OOOOOOOOPS, no X11 display available')
-                return 
-                
-
-            try:
-                dds9=ds9()
-            except Exception, e:
-                self.logger.error('analyze: OOOOOOOOPS, no ds9 display available, error:\n{}'.format(e))
-                return 
+        if self.Ds9Display and DISPLAY:
+            dds9=ds9()
 
             # ToDo create new list
             self.dataSxtr.sort(key=lambda x: int(x.focPos))
@@ -257,6 +243,9 @@ class SimpleAnalysis(object):
                     time.sleep(1.)
                 else:
                     self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
+        else:
+            self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
+
 
 import numpy
 from itertools import ifilterfalse

@@ -23,6 +23,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
+import os
 import matplotlib
 
 # ToDo Ad hoc:
@@ -31,15 +32,28 @@ import matplotlib
 #
 # http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python                                                                                    
 
-from subprocess import Popen, PIPE
-p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
-p.communicate()
+#from subprocess import Popen, PIPE
+#p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+#p.communicate()
 
-if p.returncode == 0:
-    NODISPLAY=False
-else:
+#if p.returncode == 0:
+#    NODISPLAY=False
+#else:
+#    matplotlib.use('Agg')    
+#    NODISPLAY=True
+pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
+if 'init' in pnm:
     matplotlib.use('Agg')    
-    NODISPLAY=True
+    DISPLAY=False
+else:
+    from subprocess import Popen, PIPE
+    p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+    p.communicate()
+    if p.returncode == 0:
+        DISPLAY=True
+    else:
+        matplotlib.use('Agg')    
+        DISPLAY=False
 
 
 import matplotlib.pyplot as plt
@@ -136,11 +150,11 @@ class TemperatureFocPosModel(object):
         self.ax1.grid(True)
 
         if self.showPlot:
-            if NODISPLAY:
+            if DISPLAY:
+                plt.show()
+            else:
                 self.logger.warn('temperaturemodel: NO $DISPLAY no plot')                
                 return
-            else:
-                plt.show()
 
         try:
             self.fig.savefig(self.plotFn)

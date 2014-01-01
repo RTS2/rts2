@@ -138,7 +138,10 @@ class Focus(object):
                         except Queue.Empty:
                             # if self.debug: self.logger.debug('Focus: continue')
                             continue
-                    
+                    # if expose () did not return a file name (e.g. destination not writeable), continue
+                    if 'continue' in fitsFn:
+                        if self.debug: self.logger.debug('Focus: continue on request from thread queue')
+                        continue
                     sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
                     dSx=sxtr.sextract(fitsFn=fitsFn)
                     if dSx.fitsFn==None:

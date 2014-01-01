@@ -16,6 +16,7 @@ pkgpython_rts2saf_PYTHON = __init__.py \
 	fitfunction.py \
 	focus.py \
 	log.py \
+	rts2exec.py \
 	sextract.py \
 	sextractor.py \
 	temperaturemodel.py \

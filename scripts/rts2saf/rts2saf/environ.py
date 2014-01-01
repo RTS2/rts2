@@ -75,7 +75,7 @@ class Environment(object):
         if not os.path.exists(pth):
             try:
                 os.makedirs( pth)
-            except:
-                self.logger.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
+            except Exception, e:
+                self.logger.error('Environment.createAcquisitionBasePath failed for {0}, {1}'.format(pth, e))
                 return False
         return True

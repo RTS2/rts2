@@ -51,6 +51,7 @@ class DefaultConfiguration(object):
         self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2saf-focus'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
+        self.dcf[('basic', 'REENABLE_EXEC')]= True
 
         self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
         self.dcf[('filter wheels', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]

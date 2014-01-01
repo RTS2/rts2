@@ -29,6 +29,8 @@ import argparse
 import re
 import glob
 import os
+import subprocess
+
 
 from rts2.json import JSONProxy
 
@@ -39,6 +41,7 @@ from rts2saf.focus import Focus
 from rts2saf.checkdevices import CheckDevices
 from rts2saf.createdevices import CreateCCD,CreateFocuser,CreateFilters,CreateFilterWheels
 from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
+from rts2saf.rts2exec import Rts2Exec
 
 
 if __name__ == '__main__':
@@ -110,6 +113,7 @@ if __name__ == '__main__':
     except Exception, e:
         logger.error('rts2saf_focus: no JSON connection for: {0}, {1}, {2}'.format(rt.cfg['URL'],rt.cfg['USERNAME'],rt.cfg['PASSWORD']))
         sys.exit(1)
+
     # create all devices
     # attention: .create() at the end
     # filters are not yet devices
@@ -171,5 +175,10 @@ if __name__ == '__main__':
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
     fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=foc, ftws=ftws, rt=rt, ev=ev, logger=logger)
     fs.run()
+
+    if rt.cfg['REENABLE_EXEC']:
+        sp=subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py')
+        logger.info('rts2saf_focus: started rts2saf_reenable_exec.py in a subprocess'.format(ev.startTime))
+
     logger.info('rts2saf_focus: end scan at: {0}'.format(ev.startTime))
 

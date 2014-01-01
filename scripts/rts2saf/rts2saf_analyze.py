@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     if not args.toconsole:
         print 'you may wish to enable logging to console --toconsole'
-        print 'log file is write to: {}'.format(args.logfile)
+        print 'log file is written to: {}'.format(args.logfile)
 
 
     aRs = AnalyzeRuns(debug = args.debug, basePath = args.basePath, args = args, rt = rtc, ev = ev, logger = logger)

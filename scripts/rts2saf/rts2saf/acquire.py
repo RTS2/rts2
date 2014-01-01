@@ -118,10 +118,14 @@ class ScanThread(threading.Thread):
                     if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
 
                 fn=self.expose()
-
-            if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
-            # 
-            self.acqu_oq.put(fn)
+            if fn:
+                if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
+                # 
+                self.acqu_oq.put(fn)
+                if self.debug: self.logger.debug('acquire: received fits filename {0}'.format(fn))
+            else:
+                self.acqu_oq.put('continue')
+                self.logger.warn('acquire: no fits file received')
         else:
             if self.debug: self.logger.debug('____ScanThread: ending after full scan')
 
