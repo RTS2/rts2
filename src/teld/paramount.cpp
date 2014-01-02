@@ -251,6 +251,9 @@ class Paramount:public GEM
 		MKS3ObjTrackInfo *track0;
 		MKS3ObjTrackInfo *track1;
 
+		// timeout for move command
+		double move_timeout;
+
 		int getHomeOffsetAxis (MKS3Id axis, int32_t & off);
 
 		// return RA and DEC value pair
@@ -570,6 +573,8 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	park_axis[1] = PARK_AXIS1;
 
 	moveState = TEL_SLEW;
+
+	move_timeout = 0;
 
 	ra_ticks = RA_TICKS;
 	dec_ticks = DEC_TICKS;
@@ -1007,6 +1012,8 @@ int Paramount::startResync ()
 	CWORD32 ac = 0;
 	CWORD32 dc = 0;
 
+	move_timeout = getNow () + 600;
+
 	delete track0;
 	delete track1;
 
@@ -1150,6 +1157,12 @@ int Paramount::isMoving ()
 		moveState |= TEL_FORCED_HOMING1;
 		setParkTimeNow ();
 		return USEC_SEC / 10;
+	}
+	// check for timeout..
+	if (getNow () > move_timeout)
+	{
+		logStream (MESSAGE_ERROR) << "timeout while moving to the destination" << sendLog;
+		return -1;
 	}
 	if ((statusRa->getValueInteger () & MOTOR_SLEWING) || (statusDec->getValueInteger () & MOTOR_SLEWING))
 		return USEC_SEC / 10;
