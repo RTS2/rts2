@@ -891,6 +891,7 @@ void Connection::processLine ()
 		{
 			if (otherDevice)
 				otherDevice->fitsData (fn);
+			ret = 0;
 		}
 	}
 	else if (isCommandReturn ())

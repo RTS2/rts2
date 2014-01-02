@@ -69,6 +69,7 @@ int ConnNotify::receive (fd_set * readset)
 			if (ret != len)
 			{
 				logStream (MESSAGE_ERROR) << "invalid return while reading from notify stream: " << ret << " " << strerror (errno) << sendLog;
+				free (event);
 				return 0;
 			}
 			// handle multiple events

@@ -381,13 +381,16 @@ void ImageProc::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 int ImageProc::deleteConnection (rts2core::Connection * conn)
 {
 	std::list < ConnProcess * >::iterator img_iter;
-	for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();
-		img_iter++)
+	for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();)
 	{
 		(*img_iter)->deleteConnection (conn);
 		if (*img_iter == conn)
 		{
-			imagesQue.erase (img_iter);
+			img_iter = imagesQue.erase (img_iter);
+		}
+		else
+		{
+			img_iter++;
 		}
 	}
 	queSize->setValueInteger (imagesQue.size ());

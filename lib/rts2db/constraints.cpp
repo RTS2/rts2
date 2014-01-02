@@ -122,7 +122,10 @@ void ConstraintInterval::parse (const char *arg)
 
 	char *cp = strchr (sint, ':');
 	if (cp == NULL)
+	{
+		delete[] sint;
 		throw rts2core::Error ((std::string ("the interval must contain a single : - cannot find : in interval ") + arg).c_str ());
+	}
 
 	char *endp;
 	*cp = '\0';
@@ -135,7 +138,10 @@ void ConstraintInterval::parse (const char *arg)
 		lower = strtod (sint, &endp);
 #endif
 		if (*endp != 0)
+		{
+			delete[] sint;
 			throw rts2core::Error ((std::string ("cannot parse lower intrval - ") + arg).c_str ());
+		}
 	}
 	
 	if (*(cp + 1) != '\0')
@@ -146,7 +152,10 @@ void ConstraintInterval::parse (const char *arg)
 		upper = strtod (cp + 1, &endp);
 #endif		
 		if (*endp != 0)
+		{
+			delete[] sint;
 			throw rts2core::Error ((std::string ("cannot find : in interval ") + (cp + 1)).c_str ());
+		}
 	}
 
 	addInterval (lower, upper);

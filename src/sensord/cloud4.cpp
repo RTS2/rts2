@@ -143,6 +143,7 @@ int Cloud4::readSensor (bool update)
 	else
 	{
 		logStream (MESSAGE_ERROR) << "invalid mrakomer version - supported are only M4.0 and M4.1: " << buf << sendLog;
+		return -1;
 	}
 
 	// compute checksum
