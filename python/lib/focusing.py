@@ -18,7 +18,7 @@
 # (C) 2002-2008 Stanislav Vitek
 # (C) 2002-2010 Martin Jelinek
 # (C) 2009-2010 Markus Wildi
-# (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+# (C) 2010-2014 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 # (C) 2010      Francisco Forster Buron, Universidad de Chile
 #
 # This program is free software; you can redistribute it and/or
@@ -35,8 +35,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-import rts2.scriptcomm
-import rts2.sextractor
+import scriptcomm
+import sextractor
 
 from pylab import *
 from scipy import *
@@ -54,11 +54,11 @@ H3 = 3
 H2 = 4
 """Fit using Hyperbola with fixed slope at infinity (two free parameters)"""
 
-class Focusing (rts2.scriptcomm.Rts2Comm):
+class Focusing (scriptcomm.Rts2Comm):
 	"""Take and process focussing data."""
 
-	def __init__(self):
-		rts2.scriptcomm.Rts2Comm.__init__(self)
+	def __init__(self,exptime = 2, filterGalaxies=False):
+		scriptcomm.Rts2Comm.__init__(self)
 		self.exptime = 2 # 60 # 10
 		self.step = 1 # 0.2
 		self.attempts = 20 #30 # 20
@@ -67,6 +67,7 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 		self.linear_fit = self.step * self.attempts / 2.0
 		# target FWHM for linear fit
 		self.linear_fit_fwhm = 3.5
+		self.filterGalaxies = filterGalaxies
 
 	def doFit(self,fit):
 		b = None
@@ -150,7 +151,7 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 				min_fwhm = fwhm[x]
 		return self.tryFit(defaultFit)
 
-	def findBestFWHM(self,tries,defaultFit=H3,min_stars=15,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
+	def findBestFWHM(self,tries,defaultFit=H3,min_stars=15,ds9display=False,threshold=2.7,deblendmin=0.03):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
@@ -158,11 +159,11 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 		self.fwhm_MinimumX = None
 		keys = tries.keys()
 		keys.sort()
-		sextr = rts2.Sextractor(threshold=threshold,deblendmin=deblendmin)
+		sextr = sextractor.Sextractor(threshold=threshold,deblendmin=deblendmin)
 		for k in keys:
 			try:
 				sextr.runSExtractor(tries[k])
-				fwhm,fwhms,nstars = sextr.calculate_FWHM(min_stars,filterGalaxies)
+				fwhm,fwhms,nstars = sextr.calculate_FWHM(min_stars,self.filterGalaxies)
 			except Exception, ex:
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue
@@ -237,7 +238,3 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 		plot (self.focpos, self.fwhm, "ro", x, fitfunc(self.fwhm_poly, x), "r-")
 
 		show()
-
-if __name__ == "__main__":
-	a = Focusing()
-	a.run()

@@ -24,3 +24,4 @@ from json import getProxy,createProxy
 from queue import Queue,QueueEntry
 from queues import Queues
 from sextractor import Sextractor
+from focusing import Focusing

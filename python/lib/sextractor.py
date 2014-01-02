@@ -118,14 +118,16 @@ class Sextractor:
 	
 	def get_FWHM_stars(self,starsn=None,filterGalaxies=True,segments=None):
 		"""Returns candidate stars for FWHM calculations. """
+		if len(self.objects) == 0:
+			raise Exception('Cannot find FWHM on empty source list')
+
 		obj = None
 		if filterGalaxies:
 			obj = self.filter_galaxies()
+			if len(obj) == 0:
+				raise Exception('Cannot find FWHM - all detected sources were filtered out as galaxies')
 		else:
 			obj = self.objects
-
-		if len(obj) == 0:
-			raise Exception('Cannot find FWHM on empty source list')
 
 		try:
 			# sort by magnitude
