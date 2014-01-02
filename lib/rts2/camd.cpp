@@ -437,6 +437,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (imageType, "IMAGETYP", "IRAF based image type", true, RTS2_VALUE_WRITABLE);
 	imageType->addSelVal ("object");
 	imageType->addSelVal ("dark");
+	imageType->addSelVal ("zero");
 	imageType->addSelVal ("flat");
 
 	createValue (objectName, "OBJECT", "target object name", true, RTS2_VALUE_WRITABLE);
@@ -1574,7 +1575,7 @@ int Camera::camStartExposureWithoutCheck ()
 
 	if (expType)
 	{
-		imageType->setValueInteger (expType->getValueInteger () == 0 ? 0 : 1);
+		imageType->setValueInteger (expType->getValueInteger () == 0 ? 0 : (exposure->getValueFloat () > 0 ? 1 : 2));
 		sendValueAll (imageType);
 	}
 
