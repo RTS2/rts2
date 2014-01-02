@@ -507,7 +507,7 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 Device::~Device (void)
 {
 	delete[] last_weathermsg;
-	delete device_host;
+	delete[] device_host;
 }
 
 DevConnection * Device::createConnection (int in_sock)
@@ -596,7 +596,8 @@ int Device::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case OPT_LOCALHOST:
-			device_host = optarg;
+			device_host = new char[strlen (optarg) + 1];
+			strcpy (device_host, optarg);
 			break;
 		case OPT_SERVER:
 			centraldHosts.push_back (HostString (optarg));
