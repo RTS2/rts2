@@ -41,7 +41,7 @@
 namespace rts2plan
 {
 
-typedef enum { REMOVED_NEXT_NEEDED, REMOVED_TIMES_EXPIRED, REMOVED_STARTED } removed_t;
+typedef enum { REMOVED_TIMES_EXPIRED = -1, REMOVED_STARTED = 1, REMOVED_NEXT_NEEDED = 2} removed_t;
 
 /**
  * Target queue information.
