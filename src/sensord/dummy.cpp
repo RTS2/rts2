@@ -45,6 +45,7 @@ class Dummy:public SensorWeather
 			createValue (randomDouble, "random_double", "random double value", false);
 			createValue (randomInterval, "random_interval", "[s] time interval between generating two random doubles", false, RTS2_VALUE_WRITABLE);
 			randomInterval->setValueFloat (1.0);
+			createValue (testTime, "TEST_TIME", "test time value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (wrRain, "wr_rain", "weather reason rain", true, RTS2_VALUE_WRITABLE);
 			createValue (wrWind, "wr_wind", "weather reason wind", true, RTS2_VALUE_WRITABLE);
@@ -160,34 +161,8 @@ class Dummy:public SensorWeather
 			return SensorWeather::setValue (old_value, newValue);
 		}
 
-		virtual int commandAuthorized (rts2core::Connection * conn)
-		{
-			if (conn->isCommand ("add"))
-			{
-				double aval;
-				double now = getNow ();
-				if (conn->paramNextDouble (&aval) || !conn->paramEnd ())
-					return -2;
-				statTest->addValue (aval);
-				statTest->calculate ();
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
-				statContent1->addValue (aval);
-				statContent2->addValue (aval / 2.0);
-				statContent3->addValue ((int) aval * 2);
-
-				statTest5->addValue (aval, 5);
-				statTest5->calculate ();
-				timeserieTest6->addValue (aval, now);
-				timeserieTest6->calculate ();
-				timeArray->addValue (now);
-
-				constValue->setValueInteger (aval);
-
-				infoAll ();
-				return 0;
-			}
-			return SensorWeather::commandAuthorized (conn);
-		}
 	protected:
 		virtual int initHardware ();
 		virtual bool isGoodWeather ();
@@ -197,6 +172,7 @@ class Dummy:public SensorWeather
 		rts2core::ValueDouble *testDoubleLimit;
 		rts2core::ValueDouble *randomDouble;
 		rts2core::ValueFloat *randomInterval;
+		rts2core::ValueTime *testTime;
 		rts2core::ValueBool *goodWeather;
 		rts2core::ValueBool *wrRain;
 		rts2core::ValueBool *wrWind;
@@ -276,6 +252,40 @@ void Dummy::setFullBopState (rts2_status_t new_state)
  	SensorWeather::setFullBopState (new_state);
 }
 
+int Dummy::commandAuthorized (rts2core::Connection * conn)
+{
+	if (conn->isCommand ("add"))
+	{
+		double aval;
+		double now = getNow ();
+		if (conn->paramNextDouble (&aval) || !conn->paramEnd ())
+			return -2;
+		statTest->addValue (aval);
+		statTest->calculate ();
+
+		statContent1->addValue (aval);
+		statContent2->addValue (aval / 2.0);
+		statContent3->addValue ((int) aval * 2);
+
+		statTest5->addValue (aval, 5);
+		statTest5->calculate ();
+		timeserieTest6->addValue (aval, now);
+		timeserieTest6->calculate ();
+		timeArray->addValue (now);
+
+		constValue->setValueInteger (aval);
+
+		infoAll ();
+		return 0;
+	}
+	else if (conn->isCommand ("now"))
+	{
+		testTime->setValueDouble (getNow ());
+		sendValueAll (testTime);
+		return 0;
+	}
+	return SensorWeather::commandAuthorized (conn);
+}
 
 int Dummy::initHardware ()
 {
