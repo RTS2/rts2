@@ -1447,7 +1447,7 @@ int Daemon::autosaveValues ()
 	{
 		if ((*iter)->getValue ()->isAutosave ())
 		{
-			of << (*iter)->getValue ()->getName () << " = \"" << (*iter)->getValue ()->getDisplayValue () << "\"" << std::endl;
+			of << (*iter)->getValue ()->getName () << " = \"" << (*iter)->getValue ()->getValue () << "\"" << std::endl;
 		}
 	}
 
