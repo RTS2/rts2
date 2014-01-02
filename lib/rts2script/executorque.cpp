@@ -1032,9 +1032,23 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (sumEast);
 }
 
-ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const int reason)
+const char* getTextReason (const removed_t reason)
 {
-	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ", start " << LibnovaDateDouble (iter->t_start) << ", end " << LibnovaDateDouble (iter->t_end) << ") because " << reason << sendLog;
+	switch (reason)
+	{
+		case REMOVED_NEXT_NEEDED:
+			return "next target must be observed";
+		case REMOVED_TIMES_EXPIRED:
+			return "target times expired";
+		case REMOVED_STARTED:
+			return "target was observed";
+	}
+	return "unknow reason";
+}
+
+ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const removed_t reason)
+{
+	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ", start " << LibnovaDateDouble (iter->t_start) << ", end " << LibnovaDateDouble (iter->t_end) << ") because " << getTextReason (reason) << sendLog;
 
 	// add why,..
 	if (reason < 0)

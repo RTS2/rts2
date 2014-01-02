@@ -38,13 +38,10 @@
 #define EVENT_NEXT_START      RTS2_LOCAL_EVENT + 1400
 #define EVENT_NEXT_END        RTS2_LOCAL_EVENT + 1401
 
-// why target was removed from queueu
-#define REMOVED_TIMES_EXPIRED     -1
-#define REMOVED_STARTED            1
-#define REMOVED_NEXT_NEEDED        2
-
 namespace rts2plan
 {
+
+typedef enum { REMOVED_NEXT_NEEDED, REMOVED_TIMES_EXPIRED, REMOVED_STARTED } removed_t;
 
 /**
  * Target queue information.
@@ -210,7 +207,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		/**
 		 * Remove target from queue.
 		 */
-		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const int reason) = 0;
+		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const removed_t reason) = 0;
 
 		bool isAboveHorizon (QueuedTarget &tar, double &JD);
 
@@ -388,7 +385,7 @@ class ExecutorQueue:public TargetQueue
 		int queue_id;
 
 		// remove target with debug entry why it was removed from the queue
-		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const int reason);
+		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const removed_t reason);
 
 		// find target with given index
 		ExecutorQueue::iterator findIndex (int index);

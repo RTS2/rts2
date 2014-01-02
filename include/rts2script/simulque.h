@@ -44,7 +44,7 @@ class SimulQueueTargets:public TargetQueue
 		virtual const bool getBlockUntilVisible () { return blockUntilVisible; }
 		virtual const bool getCheckTargetLength () { return checkTargetLength; }
 
-		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const int reason);
+		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const removed_t reason);
 	private:
 		int queueType;
 		bool removeAfterExecution;
