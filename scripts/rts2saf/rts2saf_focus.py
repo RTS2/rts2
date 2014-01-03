@@ -43,6 +43,18 @@ from rts2saf.createdevices import CreateCCD,CreateFocuser,CreateFilters,CreateFi
 from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 from rts2saf.rts2exec import Rts2Exec
 
+import psutil
+pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
+if 'init' in pnm or 'rts2-executor' in pnm:
+    DISPLAY=False
+else:
+    from subprocess import Popen, PIPE
+    p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+    p.communicate()
+    if p.returncode == 0:
+        DISPLAY=True
+    else:
+        DISPLAY=False
 
 if __name__ == '__main__':
 
@@ -176,9 +188,12 @@ if __name__ == '__main__':
     fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=foc, ftws=ftws, rt=rt, ev=ev, logger=logger)
     fs.run()
 
+    logger.error('rts2saf_focus: state: {}'.format(rt.cfg['REENABLE_EXEC']))
     if rt.cfg['REENABLE_EXEC']:
         sp=subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py')
-        logger.info('rts2saf_focus: started rts2saf_reenable_exec.py in a subprocess'.format(ev.startTime))
+        logger.info('rts2saf_focus: started rts2saf_reenable_exec.py in a subprocess')
+    else:
+        logger.info('rts2saf_focus: do not reeanble EXEC')
 
-    logger.info('rts2saf_focus: end scan at: {0}'.format(ev.startTime))
+    logger.info('rts2saf_focus: end scan, started at: {0}'.format(ev.startTime))
 

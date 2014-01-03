@@ -43,7 +43,7 @@ import psutil
 #    matplotlib.use('Agg')    
 #    NODISPLAY=True
 pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
-if 'init' in pnm:
+if 'init' in pnm or 'rts2-executor' in pnm:
     matplotlib.use('Agg')    
     DISPLAY=False
 else:

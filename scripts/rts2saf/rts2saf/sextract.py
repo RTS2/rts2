@@ -78,7 +78,8 @@ class Sextract(object):
         stde= sex.runSExtractor(fitsFn, assocFn=assocFn)
 
         if stde:
-            self.logger.error( 'sextract: {0} not found, sextractor message:\n{1}\nreturning'.format(fitsFn,stde))
+            self.logger.error( 'sextract: {0} not found, returning'.format(fitsFn,))
+            self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(stde))
             return DataSxtr()
 
         # find the sextractor counts
@@ -87,13 +88,15 @@ class Sextract(object):
         try:
             hdr = getheader(fitsFn, 0)
         except Exception, e:
-            self.logger.error( 'sextract: FITS {0} \nmessage: {1} returning'.format(fitsFn, e))
+            self.logger.error( 'sextract: returning, FITS {0}'.format(fitsFn))
+            self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(e))
             return DataSxtr()
 
         try:
             focPos = float(hdr['FOC_POS'])
         except Exception, e:
-            self.logger.error( 'sextract: in FITS {0} key word FOC_POS not found\nmessage: {1} returning'.format(fitsFn, e))
+            self.logger.error( 'sextract: in FITS {0}, returning key word FOC_POS not found'.format(fitsFn))
+            self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(e))
             return DataSxtr()
 
         # these values are remapped in config.py
@@ -177,7 +180,8 @@ class Sextract(object):
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
-            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}, \nmessage rts2saf.sextractor: {3}'.format(focPos, objectCount, fitsFn, e))
+            self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}'.format(focPos, objectCount, fitsFn, ))
+            self.logger.warn( 'sextract: message rts2saf.sextractor: {0}'.format(e))
             return DataSxtr()
 
         if math.isnan(fwhm):

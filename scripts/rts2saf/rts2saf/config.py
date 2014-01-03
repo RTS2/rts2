@@ -252,7 +252,14 @@ class Configuration(DefaultConfiguration):
                     self.cfg[identifier]= value
 
             elif section=='basic': 
-                self.cfg[identifier]= value
+                if isinstance(self.cfg[identifier], bool):
+                    # ToDo, looking for a direct way
+                    if value in 'True':
+                        self.cfg[identifier]= True
+                    else:
+                        self.cfg[identifier]= False
+                else:
+                    self.cfg[identifier]= value
 
             elif section=='focuser properties':
                 if identifier in 'FOCUSER_NO_FTW_RANGE':
