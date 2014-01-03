@@ -1,6 +1,6 @@
 /* 
  * Dummy filter driver.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2014 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,26 +24,8 @@ namespace rts2filterd
 
 class Dummy:public Filterd
 {
-	private:
-		int filterNum;
-		int filterSleep;
-	protected:
-		virtual int getFilterNum (void)
-		{
-			return filterNum;
-		}
-
-		virtual int setFilterNum (int new_filter)
-		{
-			filterNum = new_filter;
-
-			sleep (filterSleep);
-			return Filterd::setFilterNum (new_filter);
-		}
-
 	public:
-		Dummy (int in_argc, char **in_argv):Filterd (in_argc,
-			in_argv)
+		Dummy (int argc, char **argv):Filterd (argc, argv)
 		{
 			filterNum = 0;
 			filterSleep = 3;
@@ -62,6 +44,24 @@ class Dummy:public Filterd
 			}
 			return 0;
 		}
+
+	protected:
+		virtual int getFilterNum (void)
+		{
+			return filterNum;
+		}
+
+		virtual int setFilterNum (int new_filter)
+		{
+			filterNum = new_filter;
+
+			sleep (filterSleep);
+			return Filterd::setFilterNum (new_filter);
+		}
+
+	private:
+		int filterNum;
+		int filterSleep;
 };
 
 };

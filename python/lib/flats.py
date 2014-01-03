@@ -497,10 +497,11 @@ class FlatScript (scriptcomm.Rts2Comm):
 		except scriptcomm.Rts2NotActive,noa:
 			self.log('W','flat script interruped')
 
+			if len(self.goodFlats) + len(self.badFlats) != len(self.flatImages):
+				self.log('D','(re)runing master flats production')
+				self.produceMasterFlats(tmpDirectory)
+
 			if receivers:
-				if len(self.goodFlats) + len(self.badFlats) != len(self.flatImages):
-					self.log('D','(re)runing master flats production')
-					self.produceMasterFlats(tmpDirectory)
 				self.sendEmail(receivers,subject)
 			return
 

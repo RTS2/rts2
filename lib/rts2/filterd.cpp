@@ -1,6 +1,7 @@
 /* 
  * Filter base class.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2014 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -55,16 +56,16 @@ int Filterd::info ()
 	return rts2core::Device::info ();
 }
 
-int Filterd::getFilterNum ()
-{
-	return -1;
-}
-
 int Filterd::setFilterNum (int new_filter)
 {
 	filter->setValueInteger (new_filter);
   	sendValueAll (filter);
 	return 0;
+}
+
+int Filterd::getFilterNum ()
+{
+	return filter->getValueInteger ();
 }
 
 int Filterd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)

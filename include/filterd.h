@@ -1,6 +1,7 @@
 /* 
  * Filter base class.
  * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2014 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,7 +55,7 @@ class Filterd:public rts2core::Device
 
 		virtual int initValues ();
 		
-		virtual int getFilterNum (void) = 0;
+		virtual int getFilterNum ();
 
 		/**
 		 * Must be called by subclasses, so filter number is updated.

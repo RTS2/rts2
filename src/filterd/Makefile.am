@@ -20,6 +20,15 @@ else
 EXTRA_DIST += fli.cpp
 endif
 
+if MICCD
+bin_PROGRAMS += rts2-filterd-miccd
+rts2_filterd_miccd_SOURCES = miccd.cpp
+rts2_filterd_miccd_LDFLAGS = @LIB_MICCD@
+rts2_filterd_miccd_CXXFLAGS = @INC_MICCD@ -I../../include
+else
+EXTRA_DIST += miccd.cpp
+endif
+
 if ALTA
 bin_PROGRAMS += rts2-filterd-alta
 rts2_filterd_alta_SOURCES = alta.cpp
