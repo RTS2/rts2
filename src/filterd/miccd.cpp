@@ -99,6 +99,7 @@ int MICCD::initHardware ()
 		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueInteger () << sendLog;
 		return -1;
 	}
+	setFilterNum (0);
 	return 0;
 }
 
