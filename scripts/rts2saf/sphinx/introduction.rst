@@ -20,6 +20,9 @@ Items which need further attention:
 4) strategies if a focus run fails, e.g. widen the interval in regular mode, fall back to blind mode
 5) ``SExtractor``'s filter  option
 6) many ToDos in the code
+
+.. _sec_introduction-label:
+
 7) RTS2 EXEC does not continue to select targets after an external script, like ``rts2saf_focus.py``, has finished. To reenable RTS2 EXEC a workaround has been created (``rts2saf_reenable_exec.py``) which is executed as a detached subprocess of ``rts2saf_focus.py``.
 
 

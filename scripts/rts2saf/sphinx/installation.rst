@@ -6,6 +6,8 @@ Installation
 Prerequisites
 -------------
 
+The :ref:`workaround for EXEC requires RTS2 at revision <sec_introduction-label>` ``r11758`` or later.
+
 For the following description I assume you did
 
 .. code-block:: bash

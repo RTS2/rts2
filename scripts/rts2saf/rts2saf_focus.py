@@ -32,6 +32,31 @@ import os
 import subprocess
 
 
+# ToDo Ad hoc:
+# if executed through RTS2 it has as DISPLAY localhost:10
+# plt.figure() fails
+#
+# http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python                                                                                    
+
+import psutil
+import matplotlib
+
+pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
+if 'init' in pnm or 'rts2-executor' in pnm:
+    matplotlib.use('Agg')    
+    DISPLAY=False
+else:
+    from subprocess import Popen, PIPE
+    p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+    p.communicate()
+    if p.returncode == 0:
+        DISPLAY=True
+    else:
+        matplotlib.use('Agg')    
+        DISPLAY=False
+
+
+
 from rts2.json import JSONProxy
 
 from rts2saf.config import Configuration
@@ -43,18 +68,6 @@ from rts2saf.createdevices import CreateCCD,CreateFocuser,CreateFilters,CreateFi
 from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 from rts2saf.rts2exec import Rts2Exec
 
-import psutil
-pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
-if 'init' in pnm or 'rts2-executor' in pnm:
-    DISPLAY=False
-else:
-    from subprocess import Popen, PIPE
-    p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
-    p.communicate()
-    if p.returncode == 0:
-        DISPLAY=True
-    else:
-        DISPLAY=False
 
 if __name__ == '__main__':
 
@@ -80,6 +93,11 @@ if __name__ == '__main__':
     parser.add_argument('--criteria', dest='criteria', action='store', default='rts2saf.criteria_radius', help=': %(default)s, CatalogAnalysis criteria Python module to load at run time')
 
     args=parser.parse_args()
+
+    if not DISPLAY:
+        args.FitDisplay=False
+        args.Ds9Display=False
+        
 
     # used for test the whole process
     # there is no environment, specify your absolute path

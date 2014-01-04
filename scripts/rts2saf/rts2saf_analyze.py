@@ -28,7 +28,31 @@ __author__ = 'markus.wildi@bluewin.ch'
 import os
 import sys
 
+
+# if executed in background or without X Window plt.figure() fails
+#
+# http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python                                                                                    
+
+import psutil
+import matplotlib
+
+pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
+if 'init' in pnm or 'rts2-executor' in pnm:
+    matplotlib.use('Agg')    
+    DISPLAY=False
+else:
+    from subprocess import Popen, PIPE
+    p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+    p.communicate()
+    if p.returncode == 0:
+        DISPLAY=True
+    else:
+        matplotlib.use('Agg')    
+        DISPLAY=False
+
+
 from rts2saf.analyzeruns import AnalyzeRuns
+from rts2saf.temperaturemodel import TemperatureFocPosModel
 
 if __name__ == '__main__':
 
@@ -59,6 +83,11 @@ if __name__ == '__main__':
     parser.add_argument('--fraction', dest = 'fractObjs', action = 'store', default = 0.5, type = float, help = ': %(default)s, fraction of objects which must be present on each image, base: object number on reference image, this option is used only together with --associate')
 
     args = parser.parse_args()
+
+    if not DISPLAY:
+        args.FitDisplay=False
+        args.Ds9Display=False
+        
 
     if args.debug:
         args.level =  'DEBUG'
@@ -98,22 +127,10 @@ if __name__ == '__main__':
         logger.error('rts2saf_analyze: no results, exiting')
         sys.exit(1)
 
-    if rFf[0].ambientTemp in 'NoTemp':
-        logger.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
-    else:
-        if args.model:
-            from rts2saf.temperaturemodel import TemperatureFocPosModel
-            # imported here because otherwise I get a
-            #
-            ## This call to matplotlib.use() has no effect
-            ## because the the backend has already been chosen;
-            ## matplotlib.use() must be called *before* pylab, matplotlib.pyplot,
-            ## or matplotlib.backends is imported for the first time.
-            #
-            # and indeed it was already called in fitsdisplay
-            # matplotlib is a source of headache 
-            
-
+    if args.model:            
+        if rFf[0].ambientTemp in 'NoTemp':
+            logger.warn('rts2saf_analyze: no ambient temperature available in FITS files, no model fitted')
+        else:
             # temperature model
             PLOTFN = ev.expandToPlotFileName( plotFn = '{}/temp-model.png'.format(args.basePath))
             dom = TemperatureFocPosModel(showPlot = True, date = ev.startTime[0:19],  comment = 'test run', plotFn = PLOTFN, resultFitFwhm = rFf, logger = logger)
