@@ -21,12 +21,12 @@ EXTRA_DIST += fli.cpp
 endif
 
 if MICCD
-bin_PROGRAMS += rts2-filterd-miccd
-rts2_filterd_miccd_SOURCES = miccd.cpp
-rts2_filterd_miccd_LDFLAGS = @LIB_MICCD@
-rts2_filterd_miccd_CXXFLAGS = @INC_MICCD@ -I../../include
+bin_PROGRAMS += rts2-filterd-mi
+rts2_filterd_mi_SOURCES = mi.cpp
+rts2_filterd_mi_LDFLAGS = @LIB_MICCD@
+rts2_filterd_mi_CXXFLAGS = @INC_MICCD@ -I../../include
 else
-EXTRA_DIST += miccd.cpp
+EXTRA_DIST += mi.cpp
 endif
 
 if ALTA
