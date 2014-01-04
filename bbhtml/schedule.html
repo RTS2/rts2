@@ -13,6 +13,7 @@
 <script language="JavaScript" src="js/jquery.js" type="text/javascript"></script>
 <script language="JavaScript" src="js/datatables.js" type="text/javascript"></script>
 <script language="JavaScript" src="js/jquery-ui.js" type="text/javascript"></script>
+<script language="JavaScript" src="script.js" type="text/javascript"></script>
 <script language='JavaScript'>
 $(function() {
   	var tname = $("#name"),
@@ -36,7 +37,7 @@ $(function() {
 		return pbd;
 	}
 
-	createProgressbarQuery = function(text, url, data, funct, failmsg = '') {
+	createProgressbarQuery = function(text, url, data, funct, failmsg) {
 	  	// create and display progress bar
 		var pb = createProgressbar('Resolving ' + tname.val());
 		// try only radec - name resolver
@@ -126,6 +127,8 @@ $(function() {
 			}
 		}
 	});
+
+	$("#radio").buttonset();
 
 	function showConfirmSelect(data) {
 		$("#resolved-info-simbad").html('<p>Simbad name: ' + data.name
@@ -243,6 +246,11 @@ function new_target(name)
 {
 	$("#create-form").dialog("open");
 }
+
+function new_script()
+{
+	$("#script-form").dialog("open");
+}
 </script>
 
 <body>
@@ -284,11 +292,31 @@ function new_target(name)
     <p>You selected the target <span id='confirm-pick-target'></span> with id <span id='confirm-pick-id'></span>. Do you want to proceed?</p>
   </div>
 
+  <div id='script-form' title='Script form'>
+    <form name='entry'>
+	    <p>Exposure: <input type='text' id='script.add.exposure'/> seconds, in filter
+		<div id='radio' class='ui-buttonset'>
+		        <input type='radio' class='ui-helper-hidden-accessible' name='filter' id='script.add.filter1' value='R' checked>
+				<label class="ui-button ui-widget ui-state-default ui-button-text-only ui-corner-left" for='script.add.filter1' role='button' area-disabled='false' area-pressed='false'>
+					<span class='ui-button-text'>R</span>
+				</label>
+			</input>
+			<input type='radio' class='ui-helper-hidden-accessible' name='filter' id='script.add.filter2' value='B'>
+				<label class="ui-button ui-widget ui-state-default ui-button-text-only ui-corner-left" for='script.add.filter2' role='button' area-disabled='false' area-pressed='false'>
+					<span class='ui-button-text'>B</span>
+				</label>
+			</input>
+		</div>
+        repeat <input type='text' id='script.add.repeats'/><button type='button' id='script_add_add'>Add</button></p>
+    </form>
+  </div>
+
   <form name='target'>
     <input type='text' name='target'/>
     <select name='available'></select>
     <button type='button' onClick='searchTarget(this.form.target.value, this.form.available, this.form.schedb);'>Search</button>
     <button name='schedb' type='button' onClick='schedule(this.form.available);' disabled>Schedule</button>
     <button type='button' onClick='new_target(this.form.target.value)'>Create new target</button>
+    <button type='button' onClick='new_script()'>New script</button>
   </form>
 </body>
