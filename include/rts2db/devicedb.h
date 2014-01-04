@@ -67,6 +67,8 @@ class DeviceDb:public rts2core::Device
 	private:
 		char *connectString;
 		char *configFile;
+
+		rts2core::Configuration *config;
 };
 
 }

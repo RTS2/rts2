@@ -37,8 +37,9 @@ int DeviceDb::willConnect (rts2core::NetworkAddress * in_addr)
 
 DeviceDb::DeviceDb (int argc, char **argv, int in_device_type, const char *default_name):rts2core::Device (argc, argv, in_device_type, default_name)
 {
-	connectString = NULL;		 // defualt DB
+	connectString = NULL;		 // default DB
 	configFile = NULL;
+	config = NULL;
 
 	addOption (OPT_DATABASE, "database", 1, "connect string to PSQL database (default to stars)");
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
@@ -90,11 +91,7 @@ int DeviceDb::processOption (int in_opt)
 
 int DeviceDb::reloadConfig ()
 {
-	rts2core::Configuration *config;
-
 	// load config..
-
-	config = rts2core::Configuration::instance ();
 	return config->loadFile (configFile);
 }
 
@@ -110,14 +107,14 @@ int DeviceDb::initDB (const char *conn_name)
 	EXEC SQL END DECLARE SECTION;
 	// try to connect to DB
 
-	rts2core::Configuration *config;
+	if (config == NULL)
+	{
+		config = rts2core::Configuration::instance ();
+		ret = config->loadFile (configFile);
 
-	ret = reloadConfig();
-
-	config = rts2core::Configuration::instance ();
-
-	if (ret)
-		return ret;
+		if (ret)
+			return ret;
+	}
 
 	if (connectString)
 	{
