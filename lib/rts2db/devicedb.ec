@@ -110,7 +110,7 @@ int DeviceDb::initDB (const char *conn_name)
 	if (config == NULL)
 	{
 		config = rts2core::Configuration::instance ();
-		ret = config->loadFile (configFile);
+		ret = reloadConfig ();
 
 		if (ret)
 			return ret;
