@@ -233,7 +233,7 @@ class ElementSequence:public Element
 		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "sequence " << filter << " " << repeats << " " << expTime; }
-		virtual void printXml (std::ostream &os) { os << "  <sequence filter='" << filter << "' repeats=" << repeats << " exposure=" << expTime << "/>"; }
+		virtual void printXml (std::ostream &os) { os << "  <sequence filter='" << filter << "' repeats='" << repeats << "' exposure='" << expTime << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_SEQUENCE " " << filter << " " << repeats << " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_SEQUENCE << "\",\"filter\":\"" << filter << "\",\"repeats\":" << repeats << ",\"exposure\":" << expTime; }
 
@@ -255,7 +255,7 @@ class ElementExpose:public Element
 		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "exposure " << expTime; }
-		virtual void printXml (std::ostream &os) { os << "  <exposure length=" << expTime << "/>"; }
+		virtual void printXml (std::ostream &os) { os << "  <exposure length='" << expTime << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXPOSURE " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXPOSURE << "\",\"duration\":" << expTime; }
 
