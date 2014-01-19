@@ -406,7 +406,10 @@ int Paramount::updateStatus ()
 
 	// motor status..
 	ret0 = MKS3MotorStatusGet (axis0, &new_status);
-	logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
+
+
+	if (getDebug ())
+		logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
 
 	if (motorStatusRa->getValueInteger () != new_status)
 	{
