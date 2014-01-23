@@ -191,39 +191,39 @@ class ScanThread(threading.Thread):
         else:
             srcTmpFn=fn
             if self.debug: self.logger.debug('____ScanThread: file from ccd: {0}, reason no more dry FITS files (add more if necessary)'.format(srcTmpFn))
-            # ToDo fn is not moved by RTS2 means (as it was in rts2af)
-            # might be not a good idea
-            # ask Petr to expand JSON interface
-            # ?copy instead of moving?
-            # TAG WAIT
-            # with dummy camera it takes time until the images in available
-            while True:
-                try:
-                    myfile = open(srcTmpFn, "r") 
-                    myfile.close()
-                    break
-                except Exception, e:
-                    self.logger.warn('____ScanThread: not yet ready {0}'.format(srcTmpFn))
-                    #if self.debug: self.logger.debug('____ScanThread: do not forget to set --writetodevices'.format(fn, srcTmpFn))
-                time.sleep(.5) # ToDo if it persists: put it to cfg!
 
         if self.ftw and self.ft:
             storeFn=self.ev.expandToAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]
         else:
             storeFn=self.ev.expandToAcquisitionBasePath(ftwName=None, ftName=None) + srcTmpFn.split('/')[-1]
-        try:
-            # ToDo shutil.move(src=fn, dst=storeFn)
-            # the file belongs to root or user.group
-            shutil.copy(src=srcTmpFn, dst=storeFn)
-            return storeFn 
-        except Exception, e:
-            self.logger.error('____ScanThread: something wrong with file from ccd: {0} or destination {1}:\n{2}'.format(fn, storeFn,e))
-            return None 
+        # ToDo fn is not moved by RTS2 means (as it was in rts2af)
+        # might be not a good idea
+        # ask Petr to expand JSON interface
+        # ?copy instead of moving?
+        # TAG WAIT
+        # with dummy camera it takes time until the images are available
+        cnt=0
+        ready=True
+        while True:
+            try:
+                # ToDo shutil.move(src=fn, dst=storeFn)
+                # the file belongs to root or user.group
+                shutil.copy(src=srcTmpFn, dst=storeFn)
+                if not ready:
+                    self.logger.info('____ScanThread: received {0}'.format(srcTmpFn))
+                return storeFn 
+            except:
+                self.logger.warn('____ScanThread: not yet ready {0}'.format(srcTmpFn))
+                time.sleep(.2) # ToDo
+                cnt +=1
+                if cnt > 40:
+                    self.logger.error('____ScanThread: not received file {0}, returning'.format(srcTmpFn))
+                    return None
 
     def join(self, timeout=None):
         """Stop thread on request.
         """
-        if self.debug: self.logger.debug('____ScanThread: join, timeout {0}, stopping thread on request'.format(timeout))
+        self.logger.info('____ScanThread: join, timeout {0}, stopping thread on request'.format(timeout))
         self.stoprequest.set()
         super(ScanThread, self).join(timeout)
 
