@@ -84,7 +84,8 @@ through
 
   rts2saf_unittest.sh
 
-.. program-output:: ../rts2saf_unittest.sh ../unittest
+Enable the line in file ``unittest.rst` (remove leading ``.. ``):
+.. .. program-output:: ../rts2saf_unittest.sh ../unittest
 
 
 ``coverage``
@@ -96,5 +97,6 @@ You need to install ``coverage`` to see how the tests cover the code.
 
   rts2saf_coverage.sh
 
-.. program-output:: ../rts2saf_coverage.sh ../unittest
+Enable the line in file ``unittest.rst` (remove leading ``.. ``):
+.. .. program-output:: ../rts2saf_coverage.sh ../unittest
 

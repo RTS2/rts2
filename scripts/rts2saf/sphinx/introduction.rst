@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2014-01-01)
+Status and open issues (2014-01-23)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -19,7 +19,8 @@ Items which need further attention:
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focsing.py``
 4) strategies if a focus run fails, e.g. widen the interval in regular mode, fall back to blind mode
 5) ``SExtractor``'s filter  option
-6) many ToDos in the code
+6) replacemenmt of ``matplotlib`` as plotting engine (it does'nt work well in the background and within threads)
+7) many ToDos in the code
 
 .. _sec_introduction-label:
 

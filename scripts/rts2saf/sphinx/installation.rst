@@ -18,25 +18,26 @@ For the following description I assume you did
 followed by a full RTS2 installation including ``Postgres`` and setup of the RTS2 dummy devices. 
 
 
-1) ``DS9`` from http://hea-www.harvard.edu/RD/ds9/site/Home.html
+1) ``DS9`` from http://ds9.si.edu/site/Download.html
 2) `SExtractor`` (if installation from source is required, include cblas, cblas-devel, libatlas3, libatlas3-devel,
    libatlas3-sse3m, libatlas3-sse3-devel, libatlas3-sse-common-devel) 
 
 
-Update to Python 2.7.x (mandatory) and various Python packages:
+Update to Python 2.7.x (mandatory) and various Python packages (use ``pip`` or ``easy_install`` from your distro, or follow the installation package instructions):
 
-3) ``SciPy``
-4) ``matplotlib``
-5) ``pyds9`` from the same site
-6) ``numpy``, ``numpy-devel``
-7) ``psutil``
-8) ``astropy``
-9) ``astrometry.net``
-10) ``python-pytest`` 
+3) ``SciPy`` from your distro
+4) ``matplotlib`` from your distro
+5) ``pyds9`` form http://ds9.si.edu/download/pyds9/pyds9-1.7.tar.gz, for latest version check http://ds9.si.edu/site/Download.html
+6) ``numpy``, ``numpy-devel`` from your distro
+7) ``psutil`` from your distro or https://pypi.python.org/pypi?:action=display&name=psutil#downloads
+8) ``astropy`` see http://docs.astropy.org/en/stable/install.html
+9) ``astrometry.net`` http://astrometry.net/use.html
+10) ``python-pytest`` from your distro
 
 For the documentation install ``sphinx`` and
 
-10) ``sphinxcontrib-programoutput``
+10) ``sphinxcontrib-programoutput`` with ``pip install sphinxcontrib-programoutput``
+
 
 Recommended but not necessary install
 
