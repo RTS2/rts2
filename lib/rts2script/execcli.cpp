@@ -103,7 +103,7 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 		case EVENT_SET_TARGET_KILL:
 		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
 		case EVENT_OBSERVE:
-			if (currentTarget)
+			if (currentTarget && currentTarget->getTargetName ())
 				queCommand (new rts2core::CommandChangeValue (this, "OBJECT", '=', std::string (currentTarget->getTargetName ())));
 			break;
 	}
