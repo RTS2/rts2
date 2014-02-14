@@ -215,8 +215,13 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			}
 			else
 			{
+				std::map <int, std::pair <double, JsonParser*> >::iterator obs_iter = observatoriesJsons.find (observatory_id);
+				if (obs_iter != observatoriesJsons.end ())
+					g_object_unref (obs_iter->second.second);
+
 				observatoriesJsons[observatory_id] = std::pair <double, JsonParser *> (getNow (), newJson);
 				os << "\"localtime\":" << std::fixed << getNow () << ",\"push\":" << ((obs.getURL ()[0] == '\0') ? "true" : "false");
+				g_object_unref (error);
 			}
 		}
 		else if (vals[0] == "obspush")
