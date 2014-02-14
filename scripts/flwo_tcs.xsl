@@ -265,6 +265,10 @@ if ( $continue == 1 ) then
 
 	rts2-logcom "Starting $actual_filter exposure $imgid ($exposure sec) at `date`"
 	<xsl:copy-of select='$abort'/>
+#	if ( $tar_id != 3 &amp;&amp; $defoc_current == 0 ) then
+	if ( $tar_id != 3 ) then
+	      source $rts2dir/rts2.tempfocus
+	endif
 	ccd gowait $exposure
 	<xsl:copy-of select='$abort'/>
 	dstore

@@ -137,11 +137,6 @@ if ( $tar_id > 0 ) then
 #		rts2-logcom "repeating script for target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
 	endif
 
-	# run tempfocus only if last target was not focusing..
-	if ( $last_tar_id != 3 && $defoc_current == 0 ) then
-	      source $rts2dir/rts2.tempfocus
-	endif
-
 	# translate observation to observation file..
 	rm -f /tmp/$obs_id
 	$RTS2/bin/rts2-targetinfo --parse KCAM $tar_id | xsltproc $RTS2/usr/share/rts2/flwo_tcs.xsl - > /tmp/$obs_id

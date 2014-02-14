@@ -98,7 +98,7 @@ class FLWOCAT:
 				if a[10] == '1':
 				  	autoguide = 'ON'
 
-				if len(a) > 16 and int(a[16]) >= 0:
+				if len(a) > 16 and float(a[16]) != 0:
 					script = 'ampcen={0} A 0.001 {1} autoguide={2} {3}'.format(ampcen,self.acqexp,autoguide,script)
 				else:
 					script = 'ampcen={0} autoguide={1} {2}'.format(ampcen,autoguide,script)
@@ -107,9 +107,9 @@ class FLWOCAT:
 					script = 'FOC.FOC_TOFF+={0} {1}'.format(float(a[15]),script)
 
 				if int(a[7]) > 1:
-				  	script = 'for ' + int(a[7]) + ' { ' + script + ' }'
+				  	script = 'for ' + a[7] + ' { ' + script + ' }'
 		
-				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), "-c", "KCAM", "-s", script]
+				cmd = ["rts2-target", "-b", "0", "-d", "-p", str(prior), "-c", "KCAM", "-s", script]
 	
 				if float(a[13]) > 0:
 					cmd.append ("--airmass")
