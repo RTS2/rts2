@@ -93,7 +93,7 @@ int L150::readPort (char *buf, int blen)
 {
 	int ret;
 
-	ret = L150Dev->readPort (buf, blen, "\r");
+	ret = L150Dev->readPort (buf, blen, '\r');
 	if (ret == -1)
 		return ret;
 	return 0;
@@ -155,7 +155,7 @@ template < typename T > int L150::readValue (const char *valueName, T & val)
 	if (ret)
 		return ret;
 	char rbuf[strlen(valueName)+1];
-	ret = readPort (rbuf, strlen(valueName)+1);
+	ret = L150Dev->readPort (rbuf, strlen(valueName)+1);
 	ret = readPort (val);
 
 	ret = readPort (rbuf, strlen(valueName)+1);
