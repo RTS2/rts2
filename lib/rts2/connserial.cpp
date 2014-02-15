@@ -404,8 +404,12 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		rlen += ret;
 	}
 	LogStream ls = logStream (MESSAGE_ERROR);
-	ls << "did not find end char '" << endChar
-		<< "', readed '";
+	ls << "did not find end char '";
+	if (isalpha (endChar))
+		ls << endChar;
+	else
+		ls << "0x" << std::setfill ('0') << std::hex << std::setw (2) << ((int) endChar);
+	ls << "', readed '";
 	logBuffer (ls, rbuf, rlen);
 	ls << "'" << sendLog;
 	flushError ();
@@ -417,7 +421,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, const char *endChar)
 	int tl = 0;
 	while (true)
 	{
-		if ((b_len - tl) < strlen (endChar))
+		if ((b_len - tl) < (int) strlen (endChar))
 		{
 			rbuf[tl] = '\0';
 			logStream (MESSAGE_ERROR) << "too few space in read buffer, so far readed " << rbuf << sendLog;
