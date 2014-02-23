@@ -85,7 +85,7 @@ class TestSimpleAnalysis(unittest.TestCase):
 
         an=SimpleAnalysis(debug=False, dataSxtr=dataSxtr, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=logger)
         resultFitFwhm, resultMeansFwhm=an.analyze()
-        self.assertAlmostEqual(resultFitFwhm.extrFitVal, 2.2175214358, places=3, msg='return value: {}'.format(resultFitFwhm.extrFitVal))
+        self.assertAlmostEqual(resultFitFwhm.extrFitVal, 2.2175214358, places=2, msg='return value: {}'.format(resultFitFwhm.extrFitVal))
 
         an.display()
 
@@ -124,7 +124,7 @@ class TestCatalogAnalysis(unittest.TestCase):
         self.assertEqual(len(dataSxtr), 14, 'return value: {}'.format(len(dataSxtr)))
         an=CatalogAnalysis(debug=False, dataSxtr=dataSxtr, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName='rts2saf.criteria_radius', ev=self.ev, rt=self.rt, logger=logger)
         accRFt, rejRFt, allrFt, accRMns, recRMns, allRMns=an.selectAndAnalyze()
-        self.assertEqual('{0:5.4f}'.format(allrFt.extrFitVal), '{0:5.4f}'.format(2.2175214358), 'return value: {}'.format(allrFt.extrFitVal))
+        self.assertAlmostEqual(allrFt.extrFitVal, 2.2175214358, delta=0.1, msg='return value: {}'.format(allrFt.extrFitVal))
         self.assertAlmostEqual(accRFt.extrFitVal, 2.24000979001, delta=0.1, msg='return value: {}'.format(allrFt.extrFitVal))
 
 
