@@ -30,7 +30,7 @@ import re
 import glob
 import os
 import subprocess
-
+import time
 
 # ToDo Ad hoc:
 # if executed through RTS2 it has as DISPLAY localhost:10
@@ -66,7 +66,7 @@ from rts2saf.focus import Focus
 from rts2saf.checkdevices import CheckDevices
 from rts2saf.createdevices import CreateCCD,CreateFocuser,CreateFilters,CreateFilterWheels
 from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
-from rts2saf.rts2exec import Rts2Exec
+#from rts2saf.rts2exec import Rts2Exec
 
 
 if __name__ == '__main__':
@@ -207,8 +207,12 @@ if __name__ == '__main__':
     fs.run()
 
     if rt.cfg['REENABLE_EXEC']:
-        sp=subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py')
-        logger.info('rts2saf_focus: started rts2saf_reenable_exec.py in a subprocess')
+        try:
+            logger.info('rts2saf_focus: starting rts2saf_reenable_exec.py in a subprocess')
+            stdo, stde=subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py')
+        except Exception as e:
+            logger.info('rts2saf_focus: failed rts2saf_reenable_exec.py in a subprocess: {} {}'.format(e.message, e.args))
+            
     else:
         logger.info('rts2saf_focus: do not reeanble EXEC')
 

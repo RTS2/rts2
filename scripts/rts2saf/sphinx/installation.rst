@@ -13,7 +13,7 @@ For the following description I assume you did
 .. code-block:: bash
 
   cd ~
-  svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts-2
+  svn co https://svn.code.sf.net/p/rts-2/code/trunk/rts-2  rts-2
 
 followed by a full RTS2 installation including ``Postgres`` and setup of the RTS2 dummy devices. 
 
@@ -32,17 +32,18 @@ Update to Python 2.7.x (mandatory) and various Python packages (use ``pip`` or `
 7) ``psutil`` from your distro or https://pypi.python.org/pypi?:action=display&name=psutil#downloads
 8) ``astropy`` see http://docs.astropy.org/en/stable/install.html
 9) ``astrometry.net`` http://astrometry.net/use.html
-10) ``python-pytest`` from your distro
+10) ``pyfits`` see http://www.stsci.edu/institute/software_hardware/pyfits/Download
+11) ``python-pytest`` from your distro
 
 For the documentation install ``sphinx`` and
 
-10) ``sphinxcontrib-programoutput`` with ``pip install sphinxcontrib-programoutput``
+12) ``sphinxcontrib-programoutput`` with ``pip install sphinxcontrib-programoutput``
 
 
 Recommended but not necessary install
 
-7) ``coverage`` from https://pypi.python.org/pypi/coverage
-8) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
+13) ``coverage`` from https://pypi.python.org/pypi/coverage
+14) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
 
 During RTS2 installation the rts2saf executable are installed to 
 
@@ -184,6 +185,12 @@ The filters are stored in the Postgres DB table ``filters``. These entries are n
 but it is recommended to add them.
 
 As user postgres:
+
+.. code-block:: bash
+
+ createuser  uid  # the uid which executes the unittest
+ psql stars  
+ GRANT ALL PRIVILEGES ON cameras TO  uid # the above uid
 
 .. code-block:: bash
 

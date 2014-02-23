@@ -11,7 +11,7 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 
 	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error)
 
-	ff=pyfits.fitsopen(fn,'readonly')
+	ff=pyfits.open(fn,'readonly')
 
 	ra = dec = None
 
@@ -48,7 +48,7 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, rad
 	if ret and print_results:
 		# script needs to reopen file 
 		
-		ff=pyfits.fitsopen(fn,'readonly')
+		ff=pyfits.open(fn,'readonly')
 		fh=ff[0].header
 		ff.close()
 

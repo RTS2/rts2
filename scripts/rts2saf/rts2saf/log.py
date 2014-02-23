@@ -48,7 +48,6 @@ class Logger(object):
             ok=False
 
         if not ok:
-            #/rts2saf_focus.py.log
             lgFn='/tmp/{0}'.format(self.args.logfile.split('/')[-1])
             logging.basicConfig(filename=lgFn, level=self.args.level.upper(), format=self.logformat)
             

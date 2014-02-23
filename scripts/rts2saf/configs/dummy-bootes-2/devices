@@ -8,4 +8,4 @@ filterd	dummy	COLWFLT	-F "open:R:g:r:i:z:Y:empty8" -s 10 --localhost localhost
 filterd	dummy	COLWGRS	-F "open" -s 11 --localhost localhost
 filterd	dummy	COLWSLT	-F "open" -s 11 --localhost localhost
 focusd	dummy	F0      --modefile /etc/rts2/f0.modefile	
-cupola	dummy	CUP     --weather-can-open 
+cupola	dummy	CUP     --weather-can-open --modefile /usr/local/etc/rts2/rts2saf/cup.modefile

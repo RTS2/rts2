@@ -94,7 +94,7 @@ class TestFocus(unittest.TestCase):
 
         # rts2-focusd-dummy
         focName=self.rt.cfg['FOCUSER_NAME']
-        cmd=['/usr/local/bin/rts2-focusd-dummy', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', '/tmp/', '--server', '127.0.0.1:1617', '-d', focName]
+        cmd=['/usr/local/bin/rts2-focusd-dummy', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', '/tmp/', '--server', '127.0.0.1:1617', '-d', focName, '--modefile', '/usr/local/etc/rts2/rts2saf/f0.modefile']
         self.p_focusd_dummy= subprocess.Popen(cmd)
 
         # rts2-filterd-dummy

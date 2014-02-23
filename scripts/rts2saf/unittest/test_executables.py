@@ -55,7 +55,7 @@ class TestExecutables(unittest.TestCase):
     def setUp(self):
         pass
 
-    #@unittest.skip('feature not yet implemented')
+    @unittest.skip('feature not yet implemented')
     def test_rts2saf_fwhm(self):
         # ../rts2saf_fwhm.py  --fitsFn ../samples/20071205025911-725-RA.fits --toc
         # sextract: no FILTA name information found, ../samples/20071205025911-725-RA.fits
@@ -65,7 +65,7 @@ class TestExecutables(unittest.TestCase):
         # rts2af_fwhm: DONE
 
         m = re.compile('.*?(no focus run  queued, fwhm:)  (2.77)')
-        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
+        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
@@ -87,7 +87,7 @@ class TestExecutables(unittest.TestCase):
         # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # ...
         m = re.compile('.*?(corrwerr).+? ([0-9.]+)')
-        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
+        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
@@ -101,7 +101,7 @@ class TestExecutables(unittest.TestCase):
         self.assertAlmostEqual(val, 0.3624045465, places=1, msg='return value: {}'.format(val))
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
         
-    #@unittest.skip('feature not yet implemented')
+    @unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze(self):
         # ...
         # analyze: storing plot file: ../samples/UNK-2013-11-23T09:24:58.png
@@ -113,7 +113,7 @@ class TestExecutables(unittest.TestCase):
         # analyzeRuns: ('NODATE', 'NOFTW') :: NOFT 14 
         # rts2saf_analyze: no ambient temperature available in FITS files, no model fitted
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
-        cmd=[ '../rts2saf_analyze.py',   '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
+        cmd=[ '../rts2saf_analyze.py',   '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
@@ -132,10 +132,10 @@ class TestExecutables(unittest.TestCase):
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 
-    #@unittest.skip('feature not yet implemented')
+    @unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze_assoc(self):
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
-        cmd=[ '../rts2saf_analyze.py',   '--associate', '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
+        cmd=[ '../rts2saf_analyze.py',   '--associate', '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
         lines = stdout_value.split('\n')
@@ -154,13 +154,13 @@ class TestExecutables(unittest.TestCase):
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 
-#@unittest.skip('class not yet implemented')
+@unittest.skip('class not yet implemented')
 class TestRts2safFocus(TestFocus):
 
     def test_rts2saf_focus(self):
         # analyze: FWHM FOC_DEF:  5426 : fitted minimum position,  2.2px FWHM, NoTemp ambient temperature
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+? ([0-9\.]{3,3})px')
-        cmd=[ '../rts2saf_focus.py',   '--dryfitsfiles', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc' ]
+        cmd=[ '../rts2saf_focus.py',   '--dryfitsfiles', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
  
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_value, stderr_value = proc.communicate()
@@ -176,8 +176,8 @@ class TestRts2safFocus(TestFocus):
                 val = float(v.group(3))
                 break
 
-        self.assertEqual(pos, 5426, 'return value: {}'.format(pos))
-        self.assertEqual(val, 2.2, 'return value: {}'.format(val))
+        self.assertEqual(pos, 5436, 'return value: {}'.format(pos))
+        self.assertEqual(val, 2.3, 'return value: {}'.format(val))
         self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
 
 if __name__ == '__main__':
