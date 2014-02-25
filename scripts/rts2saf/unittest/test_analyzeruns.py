@@ -20,7 +20,7 @@
 import unittest
 import glob
 import sys 
-
+import os
 
 from rts2saf.config import Configuration 
 from rts2saf.environ import Environment
@@ -28,7 +28,11 @@ from rts2saf.analyzeruns import AnalyzeRuns
 from rts2saf.data import ResultFit
 
 import logging
-logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+if not os.path.isdir('/tmp/rts2saf_log'):
+    os.mkdir('/tmp/rts2saf_log')
+
+
+logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
 
 # sequence matters

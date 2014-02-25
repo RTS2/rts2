@@ -41,13 +41,14 @@ import re
 class ImgpAnalysis():
     """Called by IMGP to do astrometric calibration and FWHM analysis"""
 
-    def __init__(self, scriptName=None, fwhmCmd=None, astrometryCmd=None, fitsFileName=None, config=None, logger=None):
+    def __init__(self, scriptName=None, fwhmCmd=None, astrometryCmd=None, fitsFileName=None, config=None, logger=None, toconsole=None):
         # RTS2 has no possibilities to pass arguments to a command, defining the defaults
         self.scriptName= scriptName 
         self.fitsFileName= fitsFileName
         self.config=config
         self.logger=logger
         self.fwhmCmd= fwhmCmd
+        self.toconsole=toconsole
         # uses header created by standard RTS2
         self.astrometryCmd=astrometryCmd
 
@@ -80,6 +81,10 @@ class ImgpAnalysis():
                 '--fitsFn',
                 self.fitsFileName,
                 ]
+        # used for unittest
+        if args.toconsole:
+            cmd.append('--toconsole')
+            cmd.append('--toconsole')
         # no time to waste, the decision toqueue a focus run is done in rts2saf_fwhm.py
         try:
             fwhmLine= self.spawnProcess(cmd, False)
@@ -89,6 +94,7 @@ class ImgpAnalysis():
         cmd= [  self.astrometryCmd,
                 self.fitsFileName,
                 ]
+        # the default astrometry command does not log to file
         # this process is hopefully started in parallel on the second core if any.
         try:
             stdo,stde= self.spawnProcess(cmd=cmd, wait=True).communicate()
@@ -120,21 +126,15 @@ if __name__ == "__main__":
     parser= argparse.ArgumentParser(prog=script, description='rts2asaf online image processing')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
-    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='.', help=': %(default)s, write log file to path') # needs a path where it can always write
-    parser.add_argument('--logfile',dest='logfile', default='{0}.log'.format(script), help=': %(default)s, logfile name')
+    parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='/var/log', help=': %(default)s, write log file to path') # needs a path where it can always write
+    parser.add_argument('--logfile',dest='logfile', default='rts2-debug', help=': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
     parser.add_argument('--config', dest='config', action='store', default='/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help=': %(default)s, configuration file path')
     parser.add_argument( metavar='FITS FN', dest='fitsFn', nargs=1, default=None, help=': %(default)s, FITS file name')
 
     args=parser.parse_args()
 
-    if args.toconsole or args.debug:
-        logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
-    else: 
-        # started by IMGP
-        import logging
-        logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-        logger = logging.getLogger()
+    logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
 
     # read the run time configuration
     rt=Configuration(logger=logger)
@@ -163,7 +163,9 @@ if __name__ == "__main__":
         astrometryCmd=rt.cfg['SCRIPT_ASTROMETRY'], 
         fitsFileName=fitsFn, 
         config=args.config,
-        logger=logger)
+        logger=logger,
+        toconsole=args.toconsole
+    )
     # if in config file is nothing specified it is a str
     if isinstance(rt.cfg['FILTERS_TO_EXCLUDE'], dict):
         ftNameS=rt.cfg['FILTERS_TO_EXCLUDE'].keys()

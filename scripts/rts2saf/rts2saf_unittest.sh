@@ -18,7 +18,7 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
-
+# most frequent error
 if ! [ -e '/usr/local/bin/sex' ]
 then
     echo 'SExtractor as /usr/local/bin/sex not found'
@@ -27,13 +27,24 @@ then
 fi
 
 
-if [ $1 ] 
-then
- dir=$1
+
+UNITTEST='./unittest'
+if [ -d "$UNITTEST" ]; then
+ cd  $UNITTEST
 else
- dir=./unittest
+ echo 'sub directory' $UNITTEST 'not found, change to ~/rts-2/scripts/rts2saf, exiting'
+ exit 1
 fi
- cd $dir
+
+# clean log and data directory
+echo 'deleting /tmp/rts2saf_log'
+rm -fr /tmp/rts2saf_log
 
 
+
+# execute the tests
 python -m unittest discover -v -s .
+
+# prepare an ev. report
+ls -lR /tmp/rts2saf_focus 2>&1 > /tmp/rts2saf_log/rts2saf_focus.ls
+find /tmp/rts2saf_focus -name "*png" -exec cp {} /tmp/rts2saf_log/ \;

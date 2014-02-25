@@ -85,7 +85,7 @@ may discover the most common installation problems. Before executing them edit i
  SEXCFG = /usr/local/etc/rts2/rts2saf/rts2saf-sex.cfg
 
 according to your ``SExtractor`` installation. If not  all tests are ``ok`` please 
-send the output together with the log file ``/tmp/unittest.log`` to the author. The execution of a complete focus 
+send the output together with the log file ``/tmp/rts2saf_log/unittest.log`` to the author. The execution of a complete focus 
 run within a real RTS2 environment created and distroyed on the fly is explained in 
 :ref:`Testing individual components <sec_unittest-label>`.
 

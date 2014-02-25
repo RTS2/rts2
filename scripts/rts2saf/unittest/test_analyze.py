@@ -19,7 +19,9 @@
 
 import unittest
 import glob
-import sys # ugly
+import sys 
+import os
+
 from rts2saf.config import Configuration 
 from rts2saf.analyze import SimpleAnalysis, CatalogAnalysis 
 from rts2saf.data import DataSxtr
@@ -29,8 +31,13 @@ from rts2saf.environ import Environment
 from rts2saf.devices import CCD, Focuser, FilterWheel, Filter
 
 import logging
-logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+if not os.path.isdir('/tmp/rts2saf_log'):
+    os.mkdir('/tmp/rts2saf_log')
+
+
+logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
+
 
 # sequence matters
 def suite_simple():

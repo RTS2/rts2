@@ -159,7 +159,7 @@ class Sextract(object):
             try:
                 ftAName = hdr['FILTA']
             except:
-                self.logger.warn( 'sextract: no FILTA name information found, {0}'.format(fitsFn, focPos, objectCount))
+                self.logger.debug( 'sextract: no FILTA name information found, {0}'.format(fitsFn, focPos, objectCount))
 
         # ToDo clumsy
         ftBName=None
@@ -167,7 +167,7 @@ class Sextract(object):
             try:
                 ftBName = hdr['FILTB']
             except:
-                self.logger.warn( 'sextract: no FILTB name information found, {0}'.format(fitsFn, focPos, objectCount))
+                self.logger.debug( 'sextract: no FILTB name information found, {0}'.format(fitsFn, focPos, objectCount))
 
         # ToDo clumsy
         ftCName=None
@@ -175,7 +175,7 @@ class Sextract(object):
             try:
                 ftCName = hdr['FILTC']
             except:
-                self.logger.warn( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
+                self.logger.debug( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
 
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)

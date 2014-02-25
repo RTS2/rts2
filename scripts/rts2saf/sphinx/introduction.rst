@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2014-02-23)
+Status and open issues (2014-02-25)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -35,7 +35,7 @@ in case of failures execute
 
  ./rts2saf_unittest.sh
 
-and send its output together with ``/tmp/unittest.log`` and ``/tmp/rts2-debug``.
+and send its output together with the contents ``/tmp/rts2saf_log`` (best as ``tar.gz`` archive).
 
 
 

@@ -22,9 +22,10 @@ import datetime
 import subprocess
 import re
 
-import logging
-logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-logger = logging.getLogger()
+# logging is done in executables
+#import logging
+#logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+#logger = logging.getLogger()
 
 
 from test_focus import TestFocus
@@ -36,6 +37,7 @@ def suite_no_connection():
     suite.addTest(TestExecutables('test_rts2saf_imgp'))
     suite.addTest(TestExecutables('test_rts2saf_analyze'))
     suite.addTest(TestExecutables('test_rts2saf_analyze_assoc'))
+
 
     return suite
 
@@ -55,7 +57,7 @@ class TestExecutables(unittest.TestCase):
     def setUp(self):
         pass
 
-    @unittest.skip('feature not yet implemented')
+    #@unittest.skip('feature not yet implemented')
     def test_rts2saf_fwhm(self):
         # ../rts2saf_fwhm.py  --fitsFn ../samples/20071205025911-725-RA.fits --toc
         # sextract: no FILTA name information found, ../samples/20071205025911-725-RA.fits
@@ -65,10 +67,10 @@ class TestExecutables(unittest.TestCase):
         # rts2af_fwhm: DONE
 
         m = re.compile('.*?(no focus run  queued, fwhm:)  (2.77)')
-        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
+        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_value, stderr_value = proc.communicate()
-        lines = stdout_value.split('\n')
+        stdo, stde = proc.communicate()
+        lines = stdo.split('\n')
         val=0.
         for ln  in lines:
             v = m.match(ln)
@@ -76,8 +78,8 @@ class TestExecutables(unittest.TestCase):
                 val = float(v.group(2))
                 break
 
-        self.assertEqual(val, 2.77, 'return value: {}'.format(repr(stdout_value)))
-        self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
+        self.assertEqual(val, 2.77, 'return value: {}'.format(repr(stdo)))
+        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 
     #@unittest.skip('feature not yet implemented')
@@ -87,10 +89,10 @@ class TestExecutables(unittest.TestCase):
         # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # ...
         m = re.compile('.*?(corrwerr).+? ([0-9.]+)')
-        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
+        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_value, stderr_value = proc.communicate()
-        lines = stdout_value.split('\n')
+        stdo, stde = proc.communicate()
+        lines = stdo.split('\n')
         val=0.
         for ln  in lines:
             v = m.match(ln)
@@ -99,9 +101,9 @@ class TestExecutables(unittest.TestCase):
                 break
         # if this test fails due to no match, it is likely that astrometry could not solve field.
         self.assertAlmostEqual(val, 0.3624045465, places=1, msg='return value: {}'.format(val))
-        self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
+        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
         
-    @unittest.skip('feature not yet implemented')
+    #@unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze(self):
         # ...
         # analyze: storing plot file: ../samples/UNK-2013-11-23T09:24:58.png
@@ -113,10 +115,10 @@ class TestExecutables(unittest.TestCase):
         # analyzeRuns: ('NODATE', 'NOFTW') :: NOFT 14 
         # rts2saf_analyze: no ambient temperature available in FITS files, no model fitted
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
-        cmd=[ '../rts2saf_analyze.py',   '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
+        cmd=[ '../rts2saf_analyze.py',   '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_value, stderr_value = proc.communicate()
-        lines = stdout_value.split('\n')
+        stdo, stde = proc.communicate()
+        lines = stdo.split('\n')
         pos=0
         val=0.
         for ln  in lines:
@@ -129,16 +131,16 @@ class TestExecutables(unittest.TestCase):
 
         self.assertEqual(pos, 5437, 'return value: {}'.format(pos))
         self.assertEqual(val, 2.2, 'return value: {}'.format(val))
-        self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
+        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 
-    @unittest.skip('feature not yet implemented')
+    #@unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze_assoc(self):
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
-        cmd=[ '../rts2saf_analyze.py',   '--associate', '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
+        cmd=[ '../rts2saf_analyze.py',   '--associate', '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_value, stderr_value = proc.communicate()
-        lines = stdout_value.split('\n')
+        stdo, stde = proc.communicate()
+        lines = stdo.split('\n')
         pos=0
         val=0.
         for ln  in lines:
@@ -151,20 +153,21 @@ class TestExecutables(unittest.TestCase):
 
         self.assertEqual(pos, 5435, 'return value: {}'.format(pos))
         self.assertEqual(val, 2.1, 'return value: {}'.format(val))
-        self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
+        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 
-@unittest.skip('class not yet implemented')
+#@unittest.skip('class not yet implemented')
 class TestRts2safFocus(TestFocus):
 
+    #@unittest.skip('feature not yet implemented')
     def test_rts2saf_focus(self):
         # analyze: FWHM FOC_DEF:  5426 : fitted minimum position,  2.2px FWHM, NoTemp ambient temperature
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+? ([0-9\.]{3,3})px')
-        cmd=[ '../rts2saf_focus.py',   '--dryfitsfiles', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toc', '--topath', '/tmp' ]
+        cmd=[ '../rts2saf_focus.py',   '--dryfitsfiles', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
  
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_value, stderr_value = proc.communicate()
-        lines = stdout_value.split('\n')
+        stdo, stde = proc.communicate()
+        lines = stdo.split('\n')
         pos=0
         val=float('nan')
         for ln  in lines:
@@ -178,7 +181,7 @@ class TestRts2safFocus(TestFocus):
 
         self.assertEqual(pos, 5436, 'return value: {}'.format(pos))
         self.assertEqual(val, 2.3, 'return value: {}'.format(val))
-        self.assertEqual(stderr_value, '', 'return value: {}'.format(repr(stderr_value)))
+        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 if __name__ == '__main__':
     

@@ -18,12 +18,17 @@
 #
 
 import unittest
+import os
 
 from rts2saf.config import Configuration 
 from rts2saf.devices import CCD, Focuser, FilterWheel, Filter
 
 import logging
-logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+if not os.path.isdir('/tmp/rts2saf_log'):
+    os.mkdir('/tmp/rts2saf_log')
+
+
+logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
 
 # sequence matters

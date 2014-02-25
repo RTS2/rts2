@@ -48,7 +48,7 @@ class DefaultConfiguration(object):
         self.config.optionxform = str
 
         self.dcf=dict()
-        self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2saf-focus'
+        self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2saf_focus'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
         self.dcf[('basic', 'REENABLE_EXEC')]= True

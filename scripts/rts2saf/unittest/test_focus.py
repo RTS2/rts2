@@ -38,7 +38,12 @@ import logging
 import time
 import glob
 
-logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+import logging
+if not os.path.isdir('/tmp/rts2saf_log'):
+    os.mkdir('/tmp/rts2saf_log')
+
+
+logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
 
 # sequence matters
@@ -85,7 +90,7 @@ class TestFocus(unittest.TestCase):
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         # set up RTS2
         # rts2-centrald
-        cmd=['/usr/local/bin/rts2-centrald', '--run-as', '{}.{}'.format(self.uid,self.gid), '--local-port', '1617', '--logfile', '/tmp/rts2-debug', '--lock-prefix', '/tmp/']
+        cmd=['/usr/local/bin/rts2-centrald', '--run-as', '{}.{}'.format(self.uid,self.gid), '--local-port', '1617', '--logfile', '/tmp/rts2saf_log/rts2-debug', '--lock-prefix', '/tmp/']
         self.p_centrald= subprocess.Popen(cmd)
 
         # rts2-xmlrpcd
@@ -178,23 +183,20 @@ class TestFocus(unittest.TestCase):
     #@unittest.skip('feature not yet implemented')
     def test_proxyConnection(self):
         self.setupDevices()
+        time.sleep(5)
         self.proxy.refresh()
         focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
         self.assertEqual( focPos, 0, 'return value:{}'.format(focPos))
 
-    @unittest.skip('this unittest performs a complete focus run, by default it is disabled')
+    #@unittest.skip('feature not yet implemented')
     def test_focus(self):
         self.setupDevices()
         self.scd.run()
 
-    @unittest.skip('this unittest performs a complete focus run, by default it is disabled')
+    #@unittest.skip('feature not yet implemented')
     def test_focus_blind(self):
         self.setupDevices(blind=True)
         self.scd.run()
-
-
-
-
         self.args.blind=False
 
 if __name__ == '__main__':

@@ -52,7 +52,7 @@ and make a
 
 .. code-block:: bash
 
- tail -f /tmp/unittest.log
+ tail -f /tmp/rts2saf_log/unittest.log
 
 to watch the output or watch progress with
 
@@ -69,7 +69,7 @@ If you create this documentation
  cd ~/rts-2/scripts/rts2saf/sphinx
  make -f Makefile.sphinx  html
  
-the commands ``rts2saf_unittest.sh`` and ``rts2saf_coverage.sh`` within ``unittest.rst`` (source of this page) produce the below presented outputs. The output of the tests go to file  ``/tmp/unittest.log``.
+the commands ``rts2saf_unittest.sh`` and ``rts2saf_coverage.sh`` within ``unittest.rst`` (source of this page) produce the below presented outputs. The output of the tests go to file  ``/tmp/rts2saf_log/unittest.log``.
 
 .. |date| date::
 .. |time| date:: %H:%M:%S

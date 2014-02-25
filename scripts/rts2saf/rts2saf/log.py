@@ -22,6 +22,7 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import logging
 import sys
+import os
 
 class Logger(object):
     """Define the logger for rts2saf
@@ -41,18 +42,40 @@ class Logger(object):
         self.logformat=logformat
         self.args=args
 
+        logFile = os.path.join(self.args.toPath, self.args.logfile)
         ok= True
-        try:
-            logging.basicConfig(filename='{0}/{1}'.format(self.args.toPath, self.args.logfile), level=self.args.level.upper(), format=self.logformat)
-        except Exception, e:
-            ok=False
+        if  os.access(logFile, os.W_OK):
+        
+            logging.basicConfig(filename=logFile, level=self.args.level.upper(), format=self.logformat)
+        else:
+            if not os.path.isdir(self.args.toPath):
+                os.mkdir(self.args.toPath)
 
-        if not ok:
-            lgFn='/tmp/{0}'.format(self.args.logfile.split('/')[-1])
-            logging.basicConfig(filename=lgFn, level=self.args.level.upper(), format=self.logformat)
-            
+            if os.access(self.args.toPath, os.W_OK):
+                try:
+                    logging.basicConfig(filename=logFile, level=self.args.level.upper(), format=self.logformat)
+                except Exception, e:
+                    print 'Logger: can not log to file: {}, trying to log to console, error: {}'.format(logFile, e)
+                    # ugly
+                    args.level= 'DEBUG'
+            else:
+                ok = False
+                logPath='/tmp/rts2saf_log'
+                logFile=os.path.join(logPath, self.args.logfile)
+
+                if not os.path.isdir(logPath):
+                    os.mkdir(logPath)
+
+                try:
+                    logging.basicConfig(filename=logFile, level=self.args.level.upper(), format=self.logformat)
+                except Exception, e:
+                    print 'Logger: can not log to file: {}, trying to log to console, error: {}'.format(logFile, e)
+                    # ugly
+                    args.level= 'DEBUG'
+
         self.logger = logging.getLogger()
 
+        # ToDo: simplify that
         if args.level in 'DEBUG':
             toconsole=True
         else:
@@ -64,6 +87,7 @@ class Logger(object):
             soh.setLevel(args.level)
             self.logger.addHandler(soh)
 
-        if not ok:
-            self.logger.warn('logging to: {0} instead of {1}, error:\n{2}'.format(lgFn, self.args.logfile, e))
-
+        if ok:
+            self.logger.info('logging to: {0} '.format(logFile, self.args.logfile))
+        else:
+            self.logger.warn('logging to: {0} instead of {1}'.format(logFile, os.path.join(self.args.toPath, self.args.logfile)))

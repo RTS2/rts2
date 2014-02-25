@@ -22,7 +22,11 @@ import os
 from rts2saf.temperaturemodel import TemperatureFocPosModel
 
 import logging
-logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+if not os.path.isdir('/tmp/rts2saf_log'):
+    os.mkdir('/tmp/rts2saf_log')
+
+
+logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
 
 # sequence matters
