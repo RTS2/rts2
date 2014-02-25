@@ -66,7 +66,7 @@ class TestExecutables(unittest.TestCase):
         # rts2af_fwhm: no focus run  queued, fwhm:  2.77 < 35.00 (thershold)
         # rts2af_fwhm: DONE
 
-        m = re.compile('.*?(no focus run  queued, fwhm:)  (2.77)')
+        m = re.compile('.*?(no focus run  queued, fwhm:)  (2.7)')
         cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdo, stde = proc.communicate()
@@ -77,8 +77,7 @@ class TestExecutables(unittest.TestCase):
             if v:
                 val = float(v.group(2))
                 break
-
-        self.assertEqual(val, 2.77, 'return value: {}'.format(repr(stdo)))
+        self.assertAlmostEqual(val, 2.7, places=1, msg='return value: {}'.format(val))
         self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 
@@ -129,8 +128,9 @@ class TestExecutables(unittest.TestCase):
                 val = float(v.group(3))
                 break
 
-        self.assertEqual(pos, 5437, 'return value: {}'.format(pos))
-        self.assertEqual(val, 2.2, 'return value: {}'.format(val))
+        frac= abs((float(pos) - 5437.)/5437.)
+        self.assertAlmostEqual(frac, 0.01, places=1, msg='return value: {}, instead of {}'.format(pos, 5435))
+        self.assertAlmostEqual(val, 2.2, 'places=1, return value: {}'.format(val))
         self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 
@@ -151,8 +151,9 @@ class TestExecutables(unittest.TestCase):
                 val = float(v.group(3))
                 break
 
-        self.assertEqual(pos, 5435, 'return value: {}'.format(pos))
-        self.assertEqual(val, 2.1, 'return value: {}'.format(val))
+        frac= abs((float(pos) - 5435.)/5435.)
+        self.assertAlmostEqual(frac, 0.01, places=1, msg='return value: {}, instead of {}'.format(pos, 5435))
+        self.assertAlmostEqual(val, 2.1, 'places=1, return value: {}'.format(val))
         self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 
@@ -171,7 +172,6 @@ class TestRts2safFocus(TestFocus):
         pos=0
         val=float('nan')
         for ln  in lines:
-            print ln
             v = m.match(ln)
             if v:
                 
@@ -179,8 +179,10 @@ class TestRts2safFocus(TestFocus):
                 val = float(v.group(3))
                 break
 
-        self.assertEqual(pos, 5436, 'return value: {}'.format(pos))
-        self.assertEqual(val, 2.3, 'return value: {}'.format(val))
+        frac= abs((float(pos) - 5436.)/5436.)
+        print '{0:5.4f}'.format(frac)
+        self.assertAlmostEqual(frac, 0.01, places=1, msg='return value: {}, instead of {}'.format(pos, 5435))
+        self.assertAlmostEqual(val, 2.3, 'places=1, return value: {}'.format(val))
         self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
 if __name__ == '__main__':
