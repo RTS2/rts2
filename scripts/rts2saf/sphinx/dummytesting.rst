@@ -2,11 +2,10 @@ Testing with dummy devices
 ==========================
 
 
-All scripts have their own log file which is written by default to ``.``. If a script is called by ``IMGP`` directly or indirectly by ``rts2saf_imgp.py`` the log messages go to ``/var/log/rts2-debug``, as it is the case for ``rts2saf_fwhm.py``.
-The log file name is 'script_name.py.log', e.g. ``rts2saf_focus.py.log``. While
-executing the scripts directly on the command line enable logging to terminal with
-option ``--toconsole`` and if more detailed output is required enable option ``--level DEBUG`` together with ``--debug``
-or ``--verbose``  if available. 
+All scripts try to log to ``/var/log/rts2-debug`` and if they fail to ``/tmp/rts2saf_log/rts2-debug if no option 
+(``--topath`` or ``--logfile``) is specified. While executing the scripts directly on the command line enable logging 
+to terminal with option ``--toconsole`` and if more detailed output is required enable option ``--level DEBUG`` together 
+with ``--debug`` or ``--verbose``  if available. 
 
 In the following description ``rts2saf.cfg`` from example ``configs/one-filter-wheel`` 
 is used.
