@@ -20,6 +20,7 @@
 import unittest
 import os
 import re
+import pwd
 
 import psycopg2
 
@@ -88,13 +89,13 @@ class TestDatabase(unittest.TestCase):
         except Exception, e:
             print 'error: {}'.format(e)
 
-        # last resort: restore the defaults
+        # last resort
         if not self.dbName:
-            self.dbName='stars'
+            self.dbName ='stars'
         if not self.dbUser:
-            self.dbUser='petr'
+            self.dbUser = pwd.getpwuid(os.getuid()).pw_name
         if not self.dbPasswd:
-            self.dbPasswd='test'
+            self.dbPasswd =''
 
     def test_readRts2Configuration(self):
         self.assertTrue(self.openedRts2Ini,'return value: {},  coud not read rts2.ini'.format(self.openedRts2Ini))

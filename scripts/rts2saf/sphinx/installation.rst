@@ -196,7 +196,7 @@ where ``YOUR_CAMERA_NAME`` is either ``C0`` or any other chosen name.
 
 .. code-block:: bash
 
- createuser  uid  # the uid which executes the unittest
+ createuser  uid  # where  uid is the user name which executes the unittest
  psql stars  
  GRANT ALL PRIVILEGES ON cameras TO  uid # the above uid
 
