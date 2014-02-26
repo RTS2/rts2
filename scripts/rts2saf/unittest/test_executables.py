@@ -121,6 +121,7 @@ class TestExecutables(unittest.TestCase):
         pos=0
         val=0.
         for ln  in lines:
+            #print 'ln: ', ln
             v = m.match(ln)
             if v:
                 
@@ -180,7 +181,6 @@ class TestRts2safFocus(TestFocus):
                 break
 
         frac= abs((float(pos) - 5436.)/5436.)
-        print '{0:5.4f}'.format(frac)
         self.assertAlmostEqual(frac, 0.01, places=1, msg='return value: {}, instead of {}'.format(pos, 5435))
         self.assertAlmostEqual(val, 2.3, 'places=1, return value: {}'.format(val))
         self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))

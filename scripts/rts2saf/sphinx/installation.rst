@@ -169,8 +169,8 @@ associated device files. The postfix ``-autonomous`` denotes configurations
 which are used while rts2saf is integrated in RTS2.
 
 
-Postgres DB tables targets and scripts entries
-----------------------------------------------
+Postgres DB
+-----------
 The dummy devices are usually added  by the script 
 ``rts-2/scripts/ubuntu-rts2-install`` to the Postgres DB, in case not execute as user postgres:
 
@@ -188,15 +188,24 @@ As user postgres:
 
 .. code-block:: bash
 
+ psql stars  
+ insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+ insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
+
+where ``YOUR_CAMERA_NAME`` is either ``C0`` or any other chosen name. 
+
+.. code-block:: bash
+
  createuser  uid  # the uid which executes the unittest
  psql stars  
  GRANT ALL PRIVILEGES ON cameras TO  uid # the above uid
 
+and very likely
+
 .. code-block:: bash
 
- psql stars  
- insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
- insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
+ GRANT ALL ON TABLE targets to uid ;
+ GRANT ALL ON TABLE scripts to uid ;
 
 
 Pitfalls: cfitsio
