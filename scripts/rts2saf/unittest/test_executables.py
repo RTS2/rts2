@@ -22,11 +22,9 @@ import datetime
 import subprocess
 import re
 
-# logging is done in executables
-#import logging
-#logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-#logger = logging.getLogger()
-
+import logging
+logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger()
 
 from test_focus import TestFocus
 
@@ -59,6 +57,7 @@ class TestExecutables(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_rts2saf_fwhm(self):
+        logger.info('== {} =='.format(self._testMethodName))
         # ../rts2saf_fwhm.py  --fitsFn ../samples/20071205025911-725-RA.fits --toc
         # sextract: no FILTA name information found, ../samples/20071205025911-725-RA.fits
         # sextract: no FILTB name information found, ../samples/20071205025911-725-RA.fits
@@ -83,6 +82,7 @@ class TestExecutables(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_rts2saf_imgp(self):
+        logger.info('== {} =='.format(self._testMethodName))
         # rts2saf_imgp.py: starting
         # rts2saf_imgp.py, rts2-astrometry-std-fits.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
@@ -104,6 +104,7 @@ class TestExecutables(unittest.TestCase):
         
     #@unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze(self):
+        logger.info('== {} =='.format(self._testMethodName))
         # ...
         # analyze: storing plot file: ../samples/UNK-2013-11-23T09:24:58.png
         # analyze: FWHM FOC_DEF:  5437 : fitted minimum position,  2.2px FWHM, NoTemp ambient temperature
@@ -137,6 +138,7 @@ class TestExecutables(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze_assoc(self):
+        logger.info('== {} =='.format(self._testMethodName))
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+?([0-9\.]{3,3})px')
         cmd=[ '../rts2saf_analyze.py',   '--associate', '--basepath', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
         proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -159,10 +161,11 @@ class TestExecutables(unittest.TestCase):
 
 
 #@unittest.skip('class not yet implemented')
-class TestRts2safFocus(TestFocus):
+class TestExecutableFocus(TestFocus):
 
     #@unittest.skip('feature not yet implemented')
     def test_rts2saf_focus(self):
+        logger.info('== {} =='.format(self._testMethodName))
         # analyze: FWHM FOC_DEF:  5426 : fitted minimum position,  2.2px FWHM, NoTemp ambient temperature
         m = re.compile('.*?(FOC_DEF:)  ([0-9]{4,4}).+? ([0-9\.]{3,3})px')
         cmd=[ '../rts2saf_focus.py',   '--dryfitsfiles', '../samples', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
@@ -173,6 +176,7 @@ class TestRts2safFocus(TestFocus):
         pos=0
         val=float('nan')
         for ln  in lines:
+            #print 'ln: ', ln
             v = m.match(ln)
             if v:
                 

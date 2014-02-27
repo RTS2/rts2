@@ -62,18 +62,22 @@ class TestConfiguration(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_readConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
         self.assertIs(type(self.rt), Configuration)
 
     def test_checkConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
         result = self.rt.checkConfiguration(args=self.args)
         self.assertTrue(result)
 
     def test_filterWheelInUse(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.assertEqual(self.rt.cfg['inuse'][0], 'COLWFLT', 'return value: {}'.format(self.rt.cfg['inuse'][0]))
 
     def test_writeDefaultConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))
         cfn='./rts2saf-default.cfg'
         result=self.rt.writeDefaultConfiguration(cfn=cfn)
         self.assertEqual(cfn, result, 'return value: {}'.format(result))

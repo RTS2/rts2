@@ -98,9 +98,11 @@ class TestDatabase(unittest.TestCase):
             self.dbPasswd =''
 
     def test_readRts2Configuration(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.assertTrue(self.openedRts2Ini,'return value: {},  coud not read rts2.ini'.format(self.openedRts2Ini))
 
     def test_dbReadAccessTarget(self):
+        logger.info('== {} =='.format(self._testMethodName))
         entry=(5, 'o', 'OnTargetFocus', None, None, 'this target does not change the RA/DEC values', True, 1, None, None, None, None, True, None, None, None)
         conn = psycopg2.connect('dbname={} user={}'.format(self.dbName, self.dbUser))
         crsr = conn.cursor()
@@ -112,6 +114,7 @@ class TestDatabase(unittest.TestCase):
 
 
     def test_dbReadAccessCCDScript(self):
+        logger.info('== {} =='.format(self._testMethodName))
         entry=(5, 'andor3', ' exe /usr/local/bin/rts2saf_focus.py ')
 
         conn = psycopg2.connect('dbname={} user={}'.format(self.dbName, self.dbUser))

@@ -28,6 +28,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 import sys
 import re
 import os
+import time
 
 # ToDo read, write to real devices
 class Filter(object):
@@ -79,14 +80,17 @@ class FilterWheel(object):
         :return: True if present else False
 
         """
-        proxy.refresh()
-        if not self.name in 'FAKE_FTW':
-            try:
-                name=proxy.getDevice(self.name)
-            except:
-                self.logger.error('FilterWheel: filter wheel device: {0} not present'.format(self.name))        
-                return False
-
+        while True:
+            proxy.refresh()
+            if not self.name in 'FAKE_FTW':
+                try:
+                    name=proxy.getDevice(self.name)
+                    self.logger.error('FilterWheel: filter wheel device: {0} present, breaking'.format(self.name))        
+                    break
+                except:
+                    self.logger.error('FilterWheel: filter wheel device: {0} not yet present'.format(self.name))        
+                    #return False
+                    time.sleep(1)
         return True
 
 # ToDo read, write to real devices
@@ -130,12 +134,16 @@ class Focuser(object):
 
         """
 
-        proxy.refresh()
-        try:
-            name=proxy.getDevice(self.name)
-        except:
-            self.logger.error('check : focuser device: {0} not present'.format(self.name))        
-            return False
+        while True:
+            proxy.refresh()
+            try:
+                name=proxy.getDevice(self.name)
+                self.logger.info('check : focuser device: {0} present, breaking'.format(self.name))        
+                break
+            except:
+                self.logger.error('check : focuser device: {0} not yet present'.format(self.name))        
+                time.sleep(1)
+                #return False
 
         focMin=focMax=None
         try:
@@ -199,12 +207,16 @@ class CCD(object):
         :return: True if present else False
 
         """
-        proxy.refresh()
-        try:
-            proxy.getDevice(self.name)
-        except:
-            self.logger.error('CCD: camera device: {0} not present'.format(self.name))        
-            return False
+        while True:
+            proxy.refresh()
+            try:
+                proxy.getDevice(self.name)
+                self.logger.error('CCD: camera device: {0} present, breaking'.format(self.name))
+                break
+            except:
+                self.logger.error('CCD: camera device: {0} not yet present'.format(self.name))        
+                #return False
+                time.sleep(1)
 
         # There is no real filter wheel
         # TODO

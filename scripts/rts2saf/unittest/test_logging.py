@@ -20,10 +20,9 @@
 import unittest
 from rts2saf.log import Logger
 
-# no logging here, since loggers are created wuthin tests
-#import logging
-#logging.basicConfig(filename='/tmp/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-#logger = logging.getLogger()
+import logging
+logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger()
 
 class Args(object):
     def __init__(self):
@@ -43,6 +42,7 @@ class TestLogging(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_accessVar(self):
+        logger.info('== {} =='.format(self._testMethodName))
         args=Args()
         args.toPath='/var/log'
         args.logfile= 'rts2-debug'
@@ -54,6 +54,7 @@ class TestLogging(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_accessTmp(self):
+        logger.info('== {} =='.format(self._testMethodName))
         args=Args()
         args.toPath='/tmp/rts2saf_log'
         args.logfile= 'rts2-debug'
@@ -66,6 +67,7 @@ class TestLogging(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_accessRoot(self):
+        logger.info('== {} =='.format(self._testMethodName))
         args=Args()
         args.toPath='/'
         args.logfile= 'rts2-debug'

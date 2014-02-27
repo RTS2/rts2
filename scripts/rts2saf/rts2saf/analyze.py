@@ -244,7 +244,7 @@ class SimpleAnalysis(object):
                 else:
                     self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
         else:
-            self.logger.error('analyze: OOOOOOOOPS, no ds9 display available')
+            self.logger.warn('analyze: OOOOOOOOPS, no ds9 display available')
 
 
 import numpy

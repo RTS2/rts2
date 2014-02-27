@@ -79,6 +79,7 @@ class TestFitFunction(unittest.TestCase):
         self.ft = FitFunction(dataFit=self.dataFitFwhm, logger=logger)
 
     def test_fitData(self):
+        logger.info('== {} =='.format(self._testMethodName))
         min_focpos_fwhm, val_fwhm, par, flag= self.ft.fitData()
         self.assertAlmostEqual(min_focpos_fwhm, 2507.66745331, places=3, msg='return value: {}'.format(min_focpos_fwhm))
                                                

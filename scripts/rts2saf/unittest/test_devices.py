@@ -61,6 +61,7 @@ class TestDevices(unittest.TestCase):
         pass
     #@unittest.skip('feature not yet implemented')
     def test_deviceClasses(self):
+        logger.info('== {} =='.format(self._testMethodName))
         # they are harmless
         # ToDo: move write from CheckDevices to these classes
         ft= Filter()
@@ -84,16 +85,19 @@ class TestCreateDevices(unittest.TestCase):
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
     def test_createFTs(self):
+        logger.info('== {} =='.format(self._testMethodName))
         fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
         self.assertIsNotNone(fts)
         self.assertEqual(fts[0].name, 'FAKE_FT')
 
     def test_createFOC(self):
+        logger.info('== {} =='.format(self._testMethodName))
         cfoc= CreateFocuser(debug=False, rt=self.rt, logger=logger)
         foc=cfoc.create()
         self.assertEqual(foc.name, 'F0')
 
     def test_createFTWs(self):
+        logger.info('== {} =='.format(self._testMethodName))
         fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
         foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create()
         # no connection to real device
@@ -104,6 +108,7 @@ class TestCreateDevices(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_createCCD(self):
+        logger.info('== {} =='.format(self._testMethodName))
         fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
         foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create()
         cftw= CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
@@ -132,7 +137,8 @@ class TestCheckDevices(unittest.TestCase):
 
     @unittest.skip('feature not yet implemented')
     def test_checkDevices(self):
-        pass
+        logger.info('== {} =='.format(self._testMethodName))
+
 
 if __name__ == '__main__':
 

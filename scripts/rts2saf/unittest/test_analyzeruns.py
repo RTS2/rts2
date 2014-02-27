@@ -72,6 +72,7 @@ class TestAnalyzeRuns(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_analyze_runs(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.args.associate = False
         aRs = AnalyzeRuns(basePath = self.args.basePath, args = self.args, rt = self.rt, ev = self.ev, logger = logger)
         aRs.aggregateRuns()
@@ -80,6 +81,7 @@ class TestAnalyzeRuns(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_analyze_runs_assoc(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.args.associate = True
         aRs = AnalyzeRuns(basePath = self.args.basePath, args = self.args, rt = self.rt, ev = self.ev, logger = logger)
         aRs.aggregateRuns()

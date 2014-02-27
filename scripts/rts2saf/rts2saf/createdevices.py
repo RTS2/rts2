@@ -30,6 +30,7 @@ import re
 import os
 import string
 import collections
+import time
 
 from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 #
@@ -291,15 +292,26 @@ class CreateFocuser(CreateDevice):
         if len(self.focFoff) > 10 and  self.blind:
             self.logger.info('create: focuser range has: {0} steps, you might consider set decent value for --focrange'.format(len(self.focFoff)))
 
-        try:
-            self.proxy.refresh()
-            focDef=int(self.proxy.getDevice(self.rt.cfg['FOCUSER_NAME'])['FOC_DEF'][1])
-        except Exception, e:
-            self.logger.warn('create:  {0} has no FOC_DEF set '.format(self.rt.cfg['FOCUSER_NAME']))
-            focDef=None
+        focDef=None
+
+        while True:
+            try:
+                self.proxy.refresh()
+            except Exception as e:
+                self.logger.error('create:  can not refresh for device: {0} : {1}'.format(self.rt.cfg['FOCUSER_NAME'], e))
+                time.sleep(1)
+                
+
+            try:
+                focDef=int(self.proxy.getDevice(self.rt.cfg['FOCUSER_NAME'])['FOC_DEF'][1])
+                self.logger.info('create:  {0} has    FOC_DEF set, breaking'.format(self.rt.cfg['FOCUSER_NAME']))
+                break
+            except Exception, e:
+                self.logger.error('create:  {0} has no FOC_DEF set, error: {1}'.format(self.rt.cfg['FOCUSER_NAME'], e))
+                #focDef=None
+                time.sleep(1)
 
         if self.debug: self.logger.debug('create:  {0} FOC_DEF: {1}'.format(self.rt.cfg['FOCUSER_NAME'], focDef))
-
         # create object focuser
         foc= Focuser(
             debug         =self.debug,

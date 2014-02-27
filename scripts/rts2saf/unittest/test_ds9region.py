@@ -58,7 +58,7 @@ class TestDs9Region(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_displayWithRegion(self):
-        
+        logger.info('== {} =='.format(self._testMethodName))
         ds9r=Ds9Region(dataSxtr=self.dSx, display=self.dds9, logger=logger)
 
         self.assertTrue( ds9r, 'return value: '.format(type(DataSxtr)))

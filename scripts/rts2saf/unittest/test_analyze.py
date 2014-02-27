@@ -70,13 +70,16 @@ class TestSimpleAnalysis(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_readConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.assertTrue(self.success, 'config file: {} faulty or not found, return value: {}'.format(self.fileName, self.success))
 
     def test_fitsInBasepath(self):
+        logger.info('== {} =='.format(self._testMethodName))
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
         self.assertEqual(len(fitsFns), 14, 'return value: {}'.format(len(fitsFns)))
 
     def test_analyze(self):
+        logger.info('== {} =='.format(self._testMethodName))
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
         dataSxtr=list()
         for k, fitsFn in enumerate(fitsFns):
@@ -109,14 +112,17 @@ class TestCatalogAnalysis(unittest.TestCase):
         self.ev=Environment(debug=False, rt=self.rt,logger=logger)
 
     def test_readConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.assertTrue(self.success, 'config file: {} faulty or not found, return value: {}'.format(self.fileName, self.success))
 
     def test_fitsInBasepath(self):
+        logger.info('== {} =='.format(self._testMethodName))
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
         self.assertEqual(len(fitsFns), 14, 'return value: {}'.format(len(fitsFns)))
 
     #@unittest.skip('feature not yet implemented')
     def test_selectAndAnalyze(self):
+        logger.info('== {} =='.format(self._testMethodName))
         fitsFns=glob.glob('{0}/{1}'.format('../samples', self.rt.cfg['FILE_GLOB']))
         dataSxtr=list()
         for k, fitsFn in enumerate(fitsFns):

@@ -52,6 +52,7 @@ class TestSextract(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_sextract(self):
+        logger.info('== {} =='.format(self._testMethodName))
         rt = Configuration(logger=logger)
         success=rt.readConfiguration(fileName='./rts2saf-no-filter-wheel.cfg')
         sx = Sextract(debug=False, rt=rt, logger=logger)
@@ -61,6 +62,7 @@ class TestSextract(unittest.TestCase):
         self.assertEqual(fitsFn, dSx.fitsFn, 'install sample FITS from wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz')
 
     def test_sextractFlux(self):
+        logger.info('== {} =='.format(self._testMethodName))
         rt = Configuration(logger=logger)
         success=rt.readConfiguration(fileName='./rts2saf-flux.cfg')
         sx = Sextract(debug=False, rt=rt, logger=logger)

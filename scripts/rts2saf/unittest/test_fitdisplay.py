@@ -89,6 +89,7 @@ class TestFitDisplay(unittest.TestCase):
         
     #@unittest.skip('feature not yet implemented')
     def test_FwhmfitDisplay(self):
+        logger.info('== {} =='.format(self._testMethodName))
         ft = FitFunction(dataFit=self.dataFitFwhm, logger=logger)
         min_focpos_fwhm, val_fwhm, par, flag= ft.fitData()
 
@@ -109,6 +110,7 @@ class TestFitDisplay(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_FluxfitDisplay(self):
+        logger.info('== {} =='.format(self._testMethodName))
         ft = FitFunction(dataFit=self.dataFitFwhm, logger=logger)
         min_focpos_fwhm, val_fwhm, par, flag= ft.fitData()
         if flag!=None:

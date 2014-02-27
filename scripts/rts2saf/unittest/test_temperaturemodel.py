@@ -57,6 +57,7 @@ class TestTemperatureFocPosModel(unittest.TestCase):
         self.ft = TemperatureFocPosModel(showPlot=False, date=date,  comment='unittest', plotFn=self.plotFnIn, resultFitFwhm=resultFitFwhm, logger=logger)
 
     def test_fitData(self):
+        logger.info('== {} =='.format(self._testMethodName))
         par, flag= self.ft.fitData()
         if flag:
             # ToDo might not what I want
@@ -66,6 +67,7 @@ class TestTemperatureFocPosModel(unittest.TestCase):
                             
     #@unittest.skip('feature not yet implemented')
     def test_plotData(self):
+        logger.info('== {} =='.format(self._testMethodName))
         par, flag= self.ft.fitData()
         plotFnOut=self.ft.plotData()
         self.assertEqual(self.plotFnIn, plotFnOut, 'return value: {}'.format(plotFnOut))

@@ -53,16 +53,19 @@ class TestEnvironment(unittest.TestCase):
         self.rt.readConfiguration(fileName='./rts2saf-bootes-2.cfg')
 
     def test_expandToTmp(self):
+        logger.info('== {} =='.format(self._testMethodName))
         ev=Environment(debug=False, rt=self.rt, logger=logger)
         res=ev.expandToTmp(fn='fn')
         self.assertEqual(res,'{}/fn'.format(self.rt.cfg['TEMP_DIRECTORY']),'return value:{}'.format(res))
 
     def test_expandToPlotFileName(self):
+        logger.info('== {} =='.format(self._testMethodName))
         ev=Environment(debug=False, rt=self.rt, logger=logger)
         res=ev.expandToPlotFileName()
         self.assertEqual(res, 'myPlot-{}.png'.format(ev.startTime[0:19]),'return value:{}'.format(res))
 
     def test_expandToAcquisitionBasePath(self):
+        logger.info('== {} =='.format(self._testMethodName))
         ev=Environment(debug=False, rt=self.rt, logger=logger)
         res=ev.expandToAcquisitionBasePath()
         tst='{}/{}'.format(self.rt.cfg['BASE_DIRECTORY'], ev.startTime)
@@ -70,6 +73,7 @@ class TestEnvironment(unittest.TestCase):
 
     #@unittest.skip('feature not yet implemented')
     def test_createAcquisitionBasePath(self):
+        logger.info('== {} =='.format(self._testMethodName))
         ev=Environment(debug=False, rt=self.rt, logger=logger)
         res=ev.createAcquisitionBasePath()
         self.assertTrue(res,'return value:{}'.format(res))

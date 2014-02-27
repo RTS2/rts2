@@ -49,9 +49,9 @@ logger = logging.getLogger()
 # sequence matters
 def suite_focus():
     suite = unittest.TestSuite()
-    suite.addTest(TestFocus('test_proxyConnection'))
-    suite.addTest(TestFocus('test_focus'))
-    suite.addTest(TestFocus('test_focus_blind'))
+    suite.addTest(TestFocusRuns('test_proxyConnection'))
+    suite.addTest(TestFocusRuns('test_focus'))
+    suite.addTest(TestFocusRuns('test_focus_blind'))
     return suite
 
 class Args(object):
@@ -130,9 +130,8 @@ class TestFocus(unittest.TestCase):
                 cmd.append('1:2:3:4:5:6:7:8')
 
         self.p_camd_dummy= subprocess.Popen(cmd)
-                
-
-        time.sleep(5)
+        # 
+        time.sleep(10)
 
     def setupDevices(self, blind=False):
         # setup rts2saf
@@ -180,21 +179,26 @@ class TestFocus(unittest.TestCase):
 
 
 
+#@unittest.skip('class not yet implemented')
+class TestFocusRuns(TestFocus):
+
     #@unittest.skip('feature not yet implemented')
     def test_proxyConnection(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.setupDevices()
-        time.sleep(5)
         self.proxy.refresh()
         focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
         self.assertEqual( focPos, 0, 'return value:{}'.format(focPos))
 
     #@unittest.skip('feature not yet implemented')
     def test_focus(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.setupDevices()
         self.scd.run()
 
     #@unittest.skip('feature not yet implemented')
     def test_focus_blind(self):
+        logger.info('== {} =='.format(self._testMethodName))
         self.setupDevices(blind=True)
         self.scd.run()
         self.args.blind=False
@@ -202,4 +206,5 @@ class TestFocus(unittest.TestCase):
 if __name__ == '__main__':
 
     suiteFocus=suite_focus()
+
     unittest.TextTestRunner(verbosity=0).run(suiteFocus)
