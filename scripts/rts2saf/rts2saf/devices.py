@@ -210,7 +210,7 @@ class CCD(object):
         cnt=0
         while True:
             cnt += 1
-            if cnt > 10
+            if cnt > 10:
                 self.logger.error('CCD: camera device breaking hard'.format(self.name))
                 break
             proxy.refresh()
