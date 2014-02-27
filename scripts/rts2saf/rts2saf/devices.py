@@ -207,7 +207,12 @@ class CCD(object):
         :return: True if present else False
 
         """
+        cnt=0
         while True:
+            cnt += 1
+            if cnt > 10
+                self.logger.error('CCD: camera device breaking hard'.format(self.name))
+                break
             proxy.refresh()
             try:
                 proxy.getDevice(self.name)
