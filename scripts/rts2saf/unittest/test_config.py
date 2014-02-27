@@ -32,13 +32,28 @@ logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO
 logger = logging.getLogger()
 
 # sequence matters
-def suite():
+def suiteBootes2():
     suite = unittest.TestSuite()
-    suite.addTest(TestConfiguration('test_readConfiguration'))
-    suite.addTest(TestConfiguration('test_checkConfiguration'))
-    suite.addTest(TestConfiguration('test_filterWheelInUse'))
-    suite.addTest(TestConfiguration('test_writeDefaultConfiguration'))
+    suite.addTest(TestConfigurationBootes2('test_readConfiguration'))
+    suite.addTest(TestConfigurationBootes2('test_checkConfiguration'))
+    suite.addTest(TestConfigurationBootes2('test_filterWheelInUse'))
+    suite.addTest(TestConfigurationBootes2('test_writeDefaultConfiguration'))
 
+    return suite
+
+def suiteBootes2Autonomous():
+    suite = unittest.TestSuite()
+    suite.addTest(TestConfigurationBootes2Autonomous('test_readConfiguration'))
+    return suite
+
+def suiteNoFilterWheel():
+    suite = unittest.TestSuite()
+    suite.addTest(TestConfigurationNoFilterWheel('test_readConfiguration'))
+    return suite
+
+def suiteFlux():
+    suite = unittest.TestSuite()
+    suite.addTest(TestConfigurationFlux('test_readConfiguration'))
     return suite
 
 class Args(object):
@@ -47,7 +62,7 @@ class Args(object):
 
 
 #@unittest.skip('class not yet implemented')
-class TestConfiguration(unittest.TestCase):
+class TestConfigurationBootes2(unittest.TestCase):
 
     def tearDown(self):
         pass
@@ -82,7 +97,72 @@ class TestConfiguration(unittest.TestCase):
         result=self.rt.writeDefaultConfiguration(cfn=cfn)
         self.assertEqual(cfn, result, 'return value: {}'.format(result))
 
+
+
+#@unittest.skip('class not yet implemented')
+class TestConfigurationBootes2Autonomous(unittest.TestCase):
+
+    def tearDown(self):
+        pass
+
+    def setUp(self):
+        self.rt = Configuration(logger=logger)
+        self.fileName='./rts2saf-bootes-2-autonomous.cfg'
+        self.success=self.rt.readConfiguration(fileName=self.fileName)
+
+    #@unittest.skip('feature not yet implemented')
+    def test_readConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))
+        self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
+        self.assertIs(type(self.rt), Configuration)
+
+
+#@unittest.skip('class not yet implemented')
+class TestConfigurationNoFilterWheel(unittest.TestCase):
+
+    def tearDown(self):
+        pass
+
+    def setUp(self):
+        self.rt = Configuration(logger=logger)
+        self.fileName='./rts2saf-no-filter-wheel.cfg'
+        self.success=self.rt.readConfiguration(fileName=self.fileName)
+
+    #@unittest.skip('feature not yet implemented')
+    def test_readConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))
+        self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
+        self.assertIs(type(self.rt), Configuration)
+
+
+#@unittest.skip('class not yet implemented')
+class TestConfigurationFlux(unittest.TestCase):
+
+    def tearDown(self):
+        pass
+
+    def setUp(self):
+        self.rt = Configuration(logger=logger)
+        self.fileName='./rts2saf-flux.cfg'
+        self.success=self.rt.readConfiguration(fileName=self.fileName)
+
+    #@unittest.skip('feature not yet implemented')
+    def test_readConfiguration(self):
+        logger.info('== {} =='.format(self._testMethodName))        
+        self.assertEqual(self.rt.cfg[ 'MINIMUM_FOCUSER_POSITIONS'], 5, 'return value: {}, config file: {} faulty or not found'.format(self.rt.cfg[ 'MINIMUM_FOCUSER_POSITIONS'], self.fileName))
+        self.assertTrue(self.success, 'config file: {} faulty or not found'.format(self.fileName))
+        self.assertIs(type(self.rt), Configuration)
+
+
+
+
 if __name__ == '__main__':
     
-#    suite = unittest.TestLoader().loadTestsFromTestCase(TestFitFwhm)
-    unittest.TextTestRunner(verbosity=0).run(suite())
+
+    suiteB2    = suiteBootes2()
+    suiteB2Aut = suiteBootes2Autonomous()
+    suiteNoFtw = suiteNoFilterWheel()
+    suiteFlux  = suiteFlux()
+    alltests   = unittest.TestSuite([suiteB2, suiteB2Aut, suiteNoFtw, suiteFlux])
+
+    unittest.TextTestRunner(verbosity=0).run(alltests)
