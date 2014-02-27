@@ -294,7 +294,13 @@ class CreateFocuser(CreateDevice):
 
         focDef=None
 
+        cnt=0
         while True:
+            cnt +=1
+            if cnt > 10:
+                self.logger.error('create: breaking hard')
+                break
+
             try:
                 self.proxy.refresh()
             except Exception as e:
