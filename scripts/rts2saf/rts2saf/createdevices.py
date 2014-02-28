@@ -247,7 +247,7 @@ class CreateFocuser(CreateDevice):
         self.rangeFocToff=rangeFocToff
         self.blind=blind
 
-    def create(self):
+    def create(self, focDef=None): # in production mode focDef must be None, unittest sets it, because there are no real devices there to query
         """Create :py:mod:`rts2saf.devices.Focuser` based on properties stored in configuration. 
         Optionally check if device is present. Focuser range is set if values  
         are within limits [ FOCUSER_ABSOLUTE_LOWER_LIMIT,FOCUSER_ABSOLUTE_UPPER_LIMIT ]
@@ -292,30 +292,30 @@ class CreateFocuser(CreateDevice):
         if len(self.focFoff) > 10 and  self.blind:
             self.logger.info('create: focuser range has: {0} steps, you might consider set decent value for --focrange'.format(len(self.focFoff)))
 
-        focDef=None
+        if focDef is None: # this part used during production mode
+            cnt=0
+            while True:
+                # ToDo the break hard part goes away
+                cnt +=1
+                if cnt > 10:
+                    self.logger.error('create: breaking hard')
+                    break
 
-        cnt=0
-        while True:
-            cnt +=1
-            if cnt > 10:
-                self.logger.error('create: breaking hard')
-                break
+                try:
+                    self.proxy.refresh()
+                except Exception as e:
+                    self.logger.error('create:  can not refresh for device: {0} : {1}'.format(self.rt.cfg['FOCUSER_NAME'], e))
+                    time.sleep(1)
+                    continue
 
-            try:
-                self.proxy.refresh()
-            except Exception as e:
-                self.logger.error('create:  can not refresh for device: {0} : {1}'.format(self.rt.cfg['FOCUSER_NAME'], e))
-                time.sleep(1)
-                
-
-            try:
-                focDef=int(self.proxy.getDevice(self.rt.cfg['FOCUSER_NAME'])['FOC_DEF'][1])
-                self.logger.info('create:  {0} has    FOC_DEF set, breaking'.format(self.rt.cfg['FOCUSER_NAME']))
-                break
-            except Exception, e:
-                self.logger.error('create:  {0} has no FOC_DEF set, error: {1}'.format(self.rt.cfg['FOCUSER_NAME'], e))
-                #focDef=None
-                time.sleep(1)
+                try:
+                    focDef=int(self.proxy.getDevice(self.rt.cfg['FOCUSER_NAME'])['FOC_DEF'][1])
+                    self.logger.info('create:  {0} has    FOC_DEF set, breaking'.format(self.rt.cfg['FOCUSER_NAME']))
+                    break
+                except Exception, e:
+                    self.logger.error('create:  {0} has no FOC_DEF set, error: {1}'.format(self.rt.cfg['FOCUSER_NAME'], e))
+                    #focDef=None
+                    time.sleep(1)
 
         if self.debug: self.logger.debug('create:  {0} FOC_DEF: {1}'.format(self.rt.cfg['FOCUSER_NAME'], focDef))
         # create object focuser

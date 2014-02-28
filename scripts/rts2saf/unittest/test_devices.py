@@ -59,7 +59,7 @@ class TestDevices(unittest.TestCase):
 
     def setUp(self):
         pass
-    #@unittest.skip('feature not yet implemented')
+    @unittest.skip('feature not yet implemented')
     def test_deviceClasses(self):
         logger.info('== {} =='.format(self._testMethodName))
         # they are harmless
@@ -84,22 +84,25 @@ class TestCreateDevices(unittest.TestCase):
         self.fileName='./rts2saf-no-filter-wheel.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
 
+    #@unittest.skip('feature not yet implemented')
     def test_createFTs(self):
         logger.info('== {} =='.format(self._testMethodName))
         fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
         self.assertIsNotNone(fts)
         self.assertEqual(fts[0].name, 'FAKE_FT')
 
+    #@unittest.skip('feature not yet implemented')
     def test_createFOC(self):
         logger.info('== {} =='.format(self._testMethodName))
         cfoc= CreateFocuser(debug=False, rt=self.rt, logger=logger)
-        foc=cfoc.create()
+        foc=cfoc.create(focDef=0)
         self.assertEqual(foc.name, 'F0')
 
+    #@unittest.skip('feature not yet implemented')
     def test_createFTWs(self):
         logger.info('== {} =='.format(self._testMethodName))
         fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
-        foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create()
+        foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create(focDef=0)
         # no connection to real device
         foc.focDef=0
         cftw= CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
@@ -110,7 +113,7 @@ class TestCreateDevices(unittest.TestCase):
     def test_createCCD(self):
         logger.info('== {} =='.format(self._testMethodName))
         fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
-        foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create()
+        foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create(focDef=0)
         cftw= CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
         cccd= CreateCCD(debug=False, rt=self.rt, logger=logger, ftws=fts)
         ccd=cccd.create()
@@ -135,7 +138,7 @@ class TestCheckDevices(unittest.TestCase):
 
 
 
-    @unittest.skip('feature not yet implemented')
+    @unittest.skip('these tests are done in test_focus')
     def test_checkDevices(self):
         logger.info('== {} =='.format(self._testMethodName))
 
