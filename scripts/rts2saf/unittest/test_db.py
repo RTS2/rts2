@@ -104,7 +104,7 @@ class TestDatabase(unittest.TestCase):
     def test_dbReadAccessTarget(self):
         logger.info('== {} =='.format(self._testMethodName))
         entry=(5, 'o', 'OnTargetFocus', None, None, 'this target does not change the RA/DEC values', True, 1, None, None, None, None, True, None, None, None)
-        conn = psycopg2.connect('dbname={} user={}'.format(self.dbName, self.dbUser))
+        conn = psycopg2.connect('dbname={} user={} password={}'.format(self.dbName, self.dbUser, self.dbPasswd))
         crsr = conn.cursor()
         crsr.execute('SELECT *  FROM targets WHERE tar_id=5 ;')
         result=crsr.fetchone()
@@ -117,7 +117,7 @@ class TestDatabase(unittest.TestCase):
         logger.info('== {} =='.format(self._testMethodName))
         entry=(5, 'andor3', ' exe /usr/local/bin/rts2saf_focus.py ')
 
-        conn = psycopg2.connect('dbname={} user={}'.format(self.dbName, self.dbUser))
+        conn = psycopg2.connect('dbname={} user={} password={}'.format(self.dbName, self.dbUser, self.dbPasswd))
         crsr = conn.cursor()
         crsr.execute('SELECT *  FROM scripts WHERE tar_id=5 ;')
         result=crsr.fetchone()
