@@ -19,7 +19,7 @@ followed by a full RTS2 installation including ``Postgres`` and setup of the RTS
 
 
 1) ``DS9`` from http://ds9.si.edu/site/Download.html
-2) `SExtractor`` (if installation from source is required, include cblas, cblas-devel, libatlas3, libatlas3-devel,
+2) ``SExtractor`` (if installation from source is required, include cblas, cblas-devel, libatlas3, libatlas3-devel,
    libatlas3-sse3m, libatlas3-sse3-devel, libatlas3-sse-common-devel) 
 
 
