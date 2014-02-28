@@ -41,7 +41,7 @@ def suite_no_connection():
 
 def suite_with_connection():
     suite = unittest.TestSuite()
-    suite.addTest(TestRts2safFocus('test_rts2saf_focus'))
+    suite.addTest(TestExecutableFocus('test_rts2saf_focus'))
 
     return suite
 

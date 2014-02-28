@@ -90,14 +90,15 @@ run within a real RTS2 environment created and distroyed on the fly is explained
 :ref:`Testing individual components <sec_unittest-label>`.
 
 
-RTS2 configuration and log file
--------------------------------
+RTS2 configuration
+------------------
 
 In section ``[xmlrpcd]`` you must add at least
 
 .. code-block:: bash
 
   [xmlrpcd]
+  auth_localhost = false
   images_name = "%f"
 
 to get a unique FITS file name. If the files should have a different path add, e.g.
@@ -119,12 +120,6 @@ To acquaint oneself with rts2saf use RTS2 dummy devices. Save  ``/etc/rts2/devic
  
  sudo cp ~/rts-2/conf/rts2.ini  /etc/rts2
  sudo chown UID.GID /etc/rts2/rts2.ini  # insert your UID and GID for convenience
- sudo touch /var/log/rts2-debug
- sudo chown GID /var/log/rts2-debug # insert your GID
- sudo chmod g+w  /var/log/rts2-debug
-
-If you want to run unit tests setting GID on file /var/log/rts2-debug
-is mandatory.
 
 
 rts2saf configuration files

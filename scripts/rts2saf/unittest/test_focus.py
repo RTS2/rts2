@@ -131,7 +131,7 @@ class TestFocus(unittest.TestCase):
 
         self.p_camd_dummy= subprocess.Popen(cmd)
         # 
-        time.sleep(10)
+        time.sleep(20)
 
     def setupDevices(self, blind=False):
         # setup rts2saf
