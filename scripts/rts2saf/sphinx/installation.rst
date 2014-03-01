@@ -13,9 +13,14 @@ For the following description I assume you did
 .. code-block:: bash
 
   cd ~
-  svn co https://svn.code.sf.net/p/rts-2/code/trunk/rts-2  rts-2
+  svn co https://svn.code.sf.net/p/rts-2/code/trunk/  rts-2
+  cd rts-2
+  ./autogen.sh
+  ./configure ...
+  make && sudo make install
 
-followed by a full RTS2 installation including ``Postgres`` and setup of the RTS2 dummy devices. 
+
+followed by installation and configuration of the ``Postgres`` DB including the setup of the RTS2 dummy devices (see  ``~/rts-2/scripts/ubuntu-rts2-install``). 
 
 
 1) ``DS9`` from http://ds9.si.edu/site/Download.html
@@ -32,7 +37,7 @@ Update to Python 2.7.x (mandatory) and various Python packages (use ``pip`` or `
 7) ``psutil`` from your distro or https://pypi.python.org/pypi?:action=display&name=psutil#downloads
 8) ``astropy`` see http://docs.astropy.org/en/stable/install.html
 9) ``astrometry.net`` http://astrometry.net/use.html
-10) ``pyfits`` see http://www.stsci.edu/institute/software_hardware/pyfits/Download
+10) ``pyfits`` version >= 3.2,  see http://www.stsci.edu/institute/software_hardware/pyfits/Download
 11) ``python-pytest`` from your distro
 
 For the documentation install ``sphinx`` and
@@ -45,24 +50,6 @@ Recommended but not necessary install
 13) ``coverage`` from https://pypi.python.org/pypi/coverage
 14) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
 
-During RTS2 installation the rts2saf executable are installed to 
-
-.. code-block:: bash
-
-  /usr/local/bin 
-
-and the modules to
-
-.. code-block:: bash
-
-  /usr/local/lib/python2.7/dist-packages/rts2saf/
-
-In case you modify a rts2saf module issue
-
-.. code-block:: bash
-
- cd ~/rts-2/scripts
- sudo make install
 
 ``rts2saf unittest`` 
 --------------------
@@ -74,18 +61,15 @@ Not yet complete but
  cd ~/rts-2/scripts/rts2saf
  ./rts2saf_unittest.sh
 
-
-may discover the most common installation problems. Before executing them edit in both files 
-``unittest/rts2saf-bootes-2.cfg`` and ``unittest/rts2saf-no-filter-wheel.cfg`` the lines
+may discover the most common installation problems. Before executing, install configure ``rts2saf`` and then check if
+``SExtractor`` version >= 2.8.6 is available as
 
 .. code-block:: bash
 
- [SExtractor]
- SEXPATH = /usr/local/bin/sex
- SEXCFG = /usr/local/etc/rts2/rts2saf/rts2saf-sex.cfg
+ /usr/local/bin/sex
 
-according to your ``SExtractor`` installation. If not  all tests are ``ok`` please 
-send the output together with the contents of ``/tmp/rts2saf_log/`` to the author. The execution of a complete focus 
+If not  all tests are ``ok`` please  send the output together with the contents of 
+``/tmp/rts2saf_log/`` to the author. The execution of a complete focus 
 run within a real RTS2 environment created and distroyed on the fly is explained in 
 :ref:`Testing individual components <sec_unittest-label>`.
 
@@ -93,7 +77,19 @@ run within a real RTS2 environment created and distroyed on the fly is explained
 RTS2 configuration
 ------------------
 
-In section ``[xmlrpcd]`` you must add at least
+Changing in ``/etc/rts2/rts2.ini`` section 
+
+.. code-block:: bash
+
+ [imgproc]
+ astrometry = "/usr/local/bin/rts2saf_imgp.py"
+
+will activate ``rts2saf`` during autonomous operations.
+``rts2saf_imgp.py`` calls ``rts2saf_fwhm.py`` which measures the FWHM of
+each image after it has been stored on disk. If FWHM is above threshold it 
+writes ``tar_id 5`` into selector's ``focusing`` queue. Next executed target will 
+be ``tar_id 5`` that's ``OnTargetFocus``.
+Add at least in section 
 
 .. code-block:: bash
 
@@ -107,19 +103,15 @@ to get a unique FITS file name. If the files should have a different path add, e
 
   images_path = "/images/b2/xmlrpcd/%N"
 
-Further edit in section ``[observatory]`` ``altitude``, ``longitude`` and ``latitude``. 
-To acquaint oneself with rts2saf use RTS2 dummy devices. Save  ``/etc/rts2/devices`` and replace it with
- 
-.. code-block:: bash
 
- cd /etc/rts2/
- mv devices devices.save
- ln -s ~/rts-2/scripts/rts2saf/configs/one-filter-wheel/devices  # you might specify full path
+Configure ``selector`` (SEL), replace the default in ``/etc/rts2/services`` with
 
 .. code-block:: bash
- 
- sudo cp ~/rts-2/conf/rts2.ini  /etc/rts2
- sudo chown UID.GID /etc/rts2/rts2.ini  # insert your UID and GID for convenience
+
+  selector        SEL    --add-queue plan --add-queue focusing --add-queue manual
+
+You might have additional queue names hence add them.
+
 
 
 rts2saf configuration files
@@ -138,8 +130,7 @@ rts2saf needs three configuration files to be present in ``/usr/local/etc/rts2/r
 
 
 Edit ``/usr/local/etc/rts2/rts2saf/rts2saf.cfg``  and check if  ``SExtractor`` binary is found.
-
-``rts2saf.cfg`` is used by rts2saf and ``rts2saf-sex.cfg`` by ``SExtractor``. A usable example for the latter is stored in ``~/rts-2/conf/rts2saf``. In directory ``~/rts-2/scripts/rts2saf/configs``
+In directory ``~/rts-2/scripts/rts2saf/configs``
 
 .. code-block:: bash
 
@@ -159,9 +150,9 @@ Edit ``/usr/local/etc/rts2/rts2saf/rts2saf.cfg``  and check if  ``SExtractor`` b
     devices
     rts2saf.cfg
 
-are four sets of rts2saf example configuration files with their
-associated device files. The postfix ``-autonomous`` denotes configurations
-which are used while rts2saf is integrated in RTS2.
+are four sets of example configuration files with their associated device files. 
+The postfix ``-autonomous`` denotes configurations which are used while rts2saf 
+is integrated in RTS2.
 
 
 Postgres DB
@@ -201,16 +192,3 @@ and very likely
 
  GRANT ALL ON TABLE targets to uid ;
  GRANT ALL ON TABLE scripts to uid ;
-
-
-Pitfalls: cfitsio
------------------
-
-Use the following commands to install cfitsio
-
-.. code-block:: bash
-
- cd ~/cfitsio
- ./configure --prefix=/usr/local
- sudo make install
- sudo ldconfig 

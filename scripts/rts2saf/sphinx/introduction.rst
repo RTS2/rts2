@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2014-02-28)
+Status and open issues (2014-03-01)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -179,65 +179,4 @@ Command line execution
 In order to simplify the debugging of one's own configuration 
 all scripts can be used directly on the command line either
 with or without previously acquired images.
-
-All scripts have an :ref:`on line help <sec_scripts-label>` and all arguments 
-have a decent default value which enables them to run in autonomous mode where 
-appropriate.
-
-The configuration file contains all observatory specific values which are not 
-available from the running RTS2 instance. An example:
-
-.. code-block:: bash
-
- [filter properties]
- flt1 = [ R, -10, 10, 2, 1.1]
- 
-This line specifies a filter named 'R'. The numbers -10,10 define
-the range the focuser scans in steps of 2, that means ca. 10 images
-are taken. The last number is the factor by which the base exposure
-time is multiplied.
-
-
-The measurement of the filter offsets (see your CCD driver) is done on
-the command line and the results are manually written to file ``/etc/rts2/devices``:
-
-.. code-block:: bash
-
- camd     fli    CCD_FLI     --focdev FOC_FLI --wheeldev FTW_FLI --filter-offsets 1644:1472:1346:1349:1267:0:701
- filterd  fli    FTW_FLI     -F "U:B:V:R:I:X:H"
-
-The focus travel range is defined by the values given in section ``[filter properties]``
-as explained above.
-The range that the focuser should travel is highly dependent on the 
-optics. As rule of thumb: if the FWHM minimum is 6 pixel wide then choose
-the limits of the range so that the FWHM does not exceed 18 pixel intra- and
-extra focal.
-
-Blind focus runs are used in case minimum FWHM position is unknown. 
-The values given in ``[filter properties]`` might be still meaningless hence the
-focus travel range is defined by the values
-
-.. code-block:: bash
-
- FOCUSER_LOWER_LIMIT = -12
- FOCUSER_UPPER_LIMIT = 15
-
-The above values apply to RTS2's dummy focuser. If a focuser can travel within [0,7000] as e.g. the FLI PDF, appropriate values
-might be
-
-.. code-block:: bash
-
- FOCUSER_LOWER_LIMIT = 1000
- FOCUSER_UPPER_LIMIT = 5500
- FOCUSER_STEP_SIZE   = 500
-
-
-and 10 images are exposed. Set the absolute limits
-
-.. code-block:: bash
-
- FOCUSER_ABSOLUTE_LOWER_LIMIT = -16
- FOCUSER_ABSOLUTE_UPPER_LIMIT = 19
-
-so that the sum of ``FOC_DEF`` and eventual filter offsets does not exceed either lower or upper limits of the real focuser. If unsure set them to the hardware limits. 
 

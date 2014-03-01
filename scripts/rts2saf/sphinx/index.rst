@@ -9,8 +9,8 @@ Contents
    
    introduction
    installation
-   integration
    dummytesting
+   execution
    offline
    cmdline
    configuration
