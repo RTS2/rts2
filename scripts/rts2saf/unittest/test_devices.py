@@ -50,6 +50,12 @@ def suite_check_devices():
     suite.addTest(TestCheckDevices('test_checkDevices'))
     return suite
 
+def suite_create_an_non_empty_slot_filter_wheel():
+    suite = unittest.TestSuite()
+    suite.addTest(TestCreateOneFilterWheel('test_createFTW'))
+    return suite
+
+
 from rts2saf.createdevices import CreateFilters, CreateFilterWheels, CreateFocuser, CreateCCD
 #@unittest.skip('class not yet implemented')
 class TestDevices(unittest.TestCase):
@@ -118,6 +124,33 @@ class TestCreateDevices(unittest.TestCase):
         cccd= CreateCCD(debug=False, rt=self.rt, logger=logger, ftws=fts)
         ccd=cccd.create()
         self.assertEqual(ccd.name, 'C0')
+
+
+#@unittest.skip('class not yet implemented')
+class TestCreateOneFilterWheel(unittest.TestCase):
+    """
+    This test creates a filter wheel with no empty slots.
+    """
+
+    def tearDown(self):
+        pass
+
+    def setUp(self):
+        self.rt = Configuration(logger=logger)
+        self.fileName='./rts2saf-one-filter-wheel.cfg'
+        self.success=self.rt.readConfiguration(fileName=self.fileName)
+
+    #@unittest.skip('feature not yet implemented')
+    def test_createFTW(self):
+        logger.info('== {} =='.format(self._testMethodName))
+        fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
+        foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create(focDef=0)
+        # no connection to real device
+        foc.focDef=0
+        cftw= CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
+        ftw=cftw.create()
+        self.assertEqual(ftw[0].name, 'W0')
+        self.assertEqual(ftw[0].filters[0].name, 'R')
         
 
 from rts2saf.checkdevices import CheckDevices
@@ -148,5 +181,6 @@ if __name__ == '__main__':
     suiteDevices=suite_devices()
     suiteCreateDevices= suite_create_devices()
     suiteCheckDevices= suite_check_devices()
-    alltests = unittest.TestSuite([suiteDevices, suiteCreateDevices, suiteCheckDevices])
+    suiteCreateOneFilterWheel = suite_create_an_non_empty_slot_filter_wheel()
+    alltests = unittest.TestSuite([suiteDevices, suiteCreateDevices, suiteCheckDevices, suiteCreateOneFilterWheel])
     unittest.TextTestRunner(verbosity=0).run(alltests)

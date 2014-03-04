@@ -190,7 +190,7 @@ class ScanThread(threading.Thread):
             self.logger.info('____ScanThread, expose: dryFits: file from ccd: {0}, returning dry FITS file: {1}'.format(fn, srcTmpFn))
         else:
             srcTmpFn=fn
-            if self.debug: self.logger.debug('____ScanThread: file from ccd: {0}, reason no more dry FITS files (add more if necessary)'.format(srcTmpFn))
+            if self.debug: self.logger.debug('____ScanThread: file from ccd: {0}, in case this run took place with --dryfitsfile: no more dry FITS files (add more if necessary)'.format(srcTmpFn))
 
         if self.ftw and self.ft:
             storeFn=self.ev.expandToAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name) + srcTmpFn.split('/')[-1]

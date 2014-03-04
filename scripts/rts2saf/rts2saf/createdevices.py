@@ -527,8 +527,12 @@ class CreateFilterWheels(CreateDevice):
         if eSs >= len(self.filterWheelsInUse):
             if self.debug: self.logger.debug('create: all filter wheels have an empty slot')
         else:
-            self.logger.warn('create: not all filter wheels have an empty slot, {}, {}'.format(eSs,  len(self.filterWheelsInUse)))
-            return None
+            if len(self.filterWheelsInUse) > 1:
+                self.logger.warn('create: not all filter wheels have an empty slot, {}, {}'.format(eSs,  len(self.filterWheelsInUse)))
+                return None
+            else:
+                self.logger.debug('create: no empty slot found on filter wheel: {}, assuming it is ok'.format(self.filterWheelsInUse[0].name))
+
 
         if self.check:
             for ftw in self.filterWheelsInUse:

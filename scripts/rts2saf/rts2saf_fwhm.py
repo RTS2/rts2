@@ -52,13 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('--fitsFn', dest='fitsFn', action='store', default=None, help=': %(default)s, fits file to process')
     args=parser.parse_args()
     # logger
-    if args.toconsole or args.debug:
-        logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
-    else: 
-        # started by IMGP
-        import logging
-        logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-        logger = logging.getLogger()
+    logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
+
     # read the run time configuration
     rt=Configuration(logger=logger)
     if not rt.readConfiguration(fileName=args.config):
