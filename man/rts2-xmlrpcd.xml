@@ -93,8 +93,8 @@
         <term><option>-p <replaceable class="parameter">port number</replaceable></option></term>
         <listitem>
           <para>
-	    Specify XML-RPC port. Daemon will listen on this port for incoming
-	    XML-RPC connections.
+	    Specify HTTP and XML-RPC port. Daemon will listen on this port for incoming
+	    HTTP (Web, JSON and XML-RPC interfaces) connections.
 	  </para>
         </listitem>
       </varlistentry>
