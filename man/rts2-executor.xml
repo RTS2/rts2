@@ -1,0 +1,204 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2014-03-04</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-executor">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote this manual page.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2014</year>
+      <holder>&fzu;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>
+      Component responsible for executing the observations. At any given
+      instance, executor is observing a single target. Target must exists in
+      the database. Target's observing scripts are picked either from the
+      database, or, if they are not provided, from
+      <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      configuration entries. Observations are recorded to the database.
+    </refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice='opt'><option>--no-auto</option></arg>
+      <arg choice='opt'><option>--no-darks</option></arg>
+      <arg choice='opt'><option>--ignore-day</option></arg>
+      &deviceappdb;
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &help;
+    </cmdsynopsis>  
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+      <command>&dhpackage;</command> is a RTS2 component responsible for target
+      executions. The targets are selected either manualy by the observer,
+      autonomously by
+      <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
+      or target of opportunity RTS2 clients, such as
+      <citerefentry><refentrytitle>rts2-grbd</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+    </para>
+    <para>
+      Executor is performing part of the synchronization, needed for the
+      observations to be performed in correct order. It is the component which
+      ensures telescope is commanded to move to the target position before
+      commands are issued to the cameras, and telescope is not commanded to
+      move to the next target before last exposure is being executed on the
+      cameras. This, with help of the RTS2 synchronization states, allows for
+      correct execution of the observing sequence.
+    </para>
+    <para>
+      If a device fails observing a target, executor handles all the associated
+      problems with the device lost.
+    </para>
+    <para>
+      Targets can be either queued for execution, or immeditely executed, by the following commands:
+    </para>
+    <refsect2>
+      <title>next</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>next_plan</title>
+      <para>
+
+      </para>
+    </refsect2>
+  </refsect1>
+  <refsect1>
+    <title>Operation</title>
+    <para>
+
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Variables</title>
+    <para>
+      <command>&dhpackage;</command> exposes to system following variables.
+    </para>  
+    <variablelist>
+      &infotime;
+      <varlistentry>
+        <term>script_count</term>
+	<listitem>
+	  <para>
+	    Number of active, running scripts. Must be between 0 and number of
+	    scriptable devices present in the system.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>enabled</term>
+	<listitem>
+	  <para>
+	    True, if executor is enabled and allowed to perform observations.
+	    False, if executor cannot perform observations. This switch should
+	    be set to false when system is operated manually, and thus executor
+	    intervention is not allowed.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>current</term>
+	<listitem>
+	  <para>
+	    ID of the current target, being observed. -1 means that no target is being observed.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>current_sel</term>
+	<listitem>
+	  <para>
+	    Real ID of the current target. This is being used for example for flat field observations, when
+	    <emphasis>current</emphasis> is ID of a generic flat field target (ussualy 3), and current_sel
+	    shows the actual flat field being observed (ussually with IDs between 20 and 100).
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>  
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    &optiongnu;
+
+    <variablelist>
+      <varlistentry>
+        <term><option>--no-auto</option></term>
+        <listitem>
+          <para>
+	    Disable autolooping. Targets will then be executed only once, and
+	    if the next target is not present in the next queue, executor will
+	    stop observing and the observatory will be left in idle state.
+	  </para>
+        </listitem>
+      </varlistentry>
+      &deviceappdblist;
+    </variablelist>
+  </refsect1> 
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-plan</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-selector</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

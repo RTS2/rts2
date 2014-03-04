@@ -43,6 +43,7 @@ EXTRA_DIST = \
     rts2-newtarget.xml \
     rts2-plan.xml \
     rts2-selector.xml \
+    rts2-executor.xml \
     rts2-queue.xml \
     rts2.queue.xml \
     rts2-imgproc.xml \
@@ -98,6 +99,7 @@ man_MANS = \
     rts2-newtarget.1 \
     rts2-plan.1 \
     rts2-selector.7 \
+    rts2-executor.7 \
     rts2-queue.1 \
     rts2.queue.5 \
     rts2-imgproc.7 \

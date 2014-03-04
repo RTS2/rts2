@@ -120,6 +120,9 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Operation</title>
+  </refsect1>
+  <refsect1>
     <title>Variables</title>
     <para>
       <command>&dhpackage;</command> exposes to system following variables.
@@ -178,6 +181,8 @@
         <term>selector_enabled</term>
 	<listitem>
 	  <para>
+	    Enables selection of the next targets. If false, selector will not
+	    send next target IDs to executor.
 	  </para>
 	</listitem>
       </varlistentry>
