@@ -20,7 +20,7 @@ To verify the installation use
 .. code-block:: bash
 
  cd ~/rts-2/scripts/rts2saf
- ./rts2saf_unittest.sh
+ ./rts2saf_unittest.py
 
 Every test should be ``ok``. From time to time tests using JSON/proxy may fail. Please repeat the test once more. If the failure persists contact the author. 
 

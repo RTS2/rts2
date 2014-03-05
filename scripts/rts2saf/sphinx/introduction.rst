@@ -33,7 +33,7 @@ in case of failures execute
 
 .. code-block:: bash
 
- ./rts2saf_unittest.sh
+ ./rts2saf_unittest.py
 
 and send its output together with the contents ``/tmp/rts2saf_log`` (best as ``tar.gz`` archive).
 

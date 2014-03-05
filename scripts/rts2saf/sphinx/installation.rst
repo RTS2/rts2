@@ -59,7 +59,7 @@ Not yet complete but
 .. code-block:: bash
 
  cd ~/rts-2/scripts/rts2saf
- ./rts2saf_unittest.sh
+ ./rts2saf_unittest.py
 
 may discover the most common installation problems. Before executing, install configure ``rts2saf`` and then check if
 ``SExtractor`` version >= 2.8.6 is available as
