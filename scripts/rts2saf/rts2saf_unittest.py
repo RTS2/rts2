@@ -19,16 +19,15 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
-# most frequent error
-
 
 import os
 import sys
 import subprocess
 import shutil
 
-sex='/usr/local/bin/sex'
-unittestDir= './unittest'
+sex = '/usr/local/bin/sex'
+unittestDir = './unittest'
+
 unittestDirectories = [
     '/tmp/rts2saf_focus', 
     '/tmp/rts2saf_log', 
@@ -49,7 +48,7 @@ def sextractor_version():
         versionStr= subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
         version = versionStr[0].split(' ')[2].split('.')
 
-        if int(version[0]) >= 2 and int(version[1]) >= 8 and int(version[0]) >= 6:
+        if int(version[0]) >= 2 and int(version[1]) >= 8 and int(version[2]) >= 6:
             return True 
         else:
             print 'rts2saf_unittest.py: SExtractor: {}, has version {}.{}.{}, required is 2.8.6, exiting'.format(sex, version[0], version[1], version[2])
@@ -94,26 +93,34 @@ def deleteUnittestOutput():
 
 
 def executeUnittest():
-    cmd = ['python', '-m', 'unittest', 'discover', '-v', '-s', '.']
-    cmd= [ 'ls', '-l' ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    os.chdir(unittestDir)
+    cmdL = ['python', '-m', 'unittest', 'discover', '-v', '-s', '.']
+    cmd = ' '.join(cmdL)
+    print cmd
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     while True:
         ln = proc.stdout.readline()
+        print '>>{}<<'.format(ln)
         if ln != '':
-            print "test:", ln.rstrip()
+            pass # ln.rstrip()
         else:
             break
 
+    os.chdir('../')
+
+
 def prepareTgz():
-    cmd = [ 'ls', '-lR', '/tmp/rts2saf_focus', '2>&1', '>',  '/tmp/rts2saf_log/rts2saf_focus.ls' ]
-    proc = subprocess.Popen(cmd).wait()
-    cmd = [ 'find',  '/tmp/rts2saf_focus', '-name', '"*png"', '-exec', 'cp', '{}',  '/tmp/rts2saf_log/', '\;' ]
-    proc = subprocess.Popen(cmd).wait()
+    cmdL = [ 'ls', '-lR', '/tmp/rts2saf_focus', '2>&1', '>',  '/tmp/rts2saf_log/rts2saf_focus.ls' ]
+    cmd = ' '.join(cmdL)
+    proc = subprocess.Popen(cmd, shell=True).wait()
+    cmdL = [ 'find',  '/tmp/rts2saf_focus', '-name', '"*png"', '-exec', 'cp', '{}',  '/tmp/rts2saf_log/', '\;' ]
+    cmd = ' '.join(cmdL)
+    proc = subprocess.Popen(cmd, shell=True).wait()
 
 
 if __name__ == '__main__':
 
-#    sextractor_version()
+    sextractor_version()
     unittestDirectory()
     deleteUnittestOutput()
     executeUnittest()
