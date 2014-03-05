@@ -55,7 +55,7 @@ Python unittest
 
 Execute in this directory
 
- ./rts2saf_unittest.sh
+ ./rts2saf_unittest.py
 
 to see what is missing, mostly it this the path to the SExtractor. If JSON related tests fail,
 just repeat the above command. If failure persists contact the author.
