@@ -39,16 +39,17 @@ Update to Python 2.7.x (mandatory) and various Python packages (use ``pip`` or `
 9) ``astrometry.net`` http://astrometry.net/use.html
 10) ``pyfits`` version >= 3.2,  see http://www.stsci.edu/institute/software_hardware/pyfits/Download
 11) ``python-pytest`` from your distro
+12) ``python-psycopg2`` from your distro
 
 For the documentation install ``sphinx`` and
 
-12) ``sphinxcontrib-programoutput`` with ``pip install sphinxcontrib-programoutput``
+13) ``sphinxcontrib-programoutput`` with ``pip install sphinxcontrib-programoutput``
 
 
 Recommended but not necessary install
 
-13) ``coverage`` from https://pypi.python.org/pypi/coverage
-14) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
+14) ``coverage`` from https://pypi.python.org/pypi/coverage
+15) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
 
 
 ``rts2saf unittest`` 

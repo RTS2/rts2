@@ -21,7 +21,13 @@ import unittest
 from rts2saf.log import Logger
 
 import logging
-logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+import os
+logDr= '/tmp/rts2saf_log/'
+logFn= '/tmp/rts2saf_log/unittest.log'
+if not os.path.isdir(logDr):
+    os.mkdir(logDr)
+
+logging.basicConfig(filename=logFn, level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
 
 class Args(object):
