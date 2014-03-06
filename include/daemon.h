@@ -446,6 +446,8 @@ class Daemon:public rts2core::Block
 		}
 
 		virtual int processOption (int in_opt);
+		virtual int processArgs (const char *arg);
+
 		virtual int init ();
 		virtual int initValues ();
 		virtual int idle ();
@@ -688,6 +690,16 @@ class Daemon:public rts2core::Block
 		 * @param sect      section which holds new values
 		 */
 		int createSectionValues (IniSection *sect);
+
+		/**
+		 * Set value, regardless if it is write-enabled or not.
+		 *
+		 * @param val pointer to value to set
+		 * @param new_value pointer to new value (shall be created from val with duplicateValue function)
+		 *
+		 * @return -2 on error
+		 */
+		int setInitValue (rts2core::Value *val, rts2core::Value *new_value);
 
 		double state_start;
 		double state_expected_end;

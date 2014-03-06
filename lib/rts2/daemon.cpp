@@ -157,6 +157,42 @@ int Daemon::processOption (int in_opt)
 	return 0;
 }
 
+int Daemon::processArgs (const char *arg)
+{
+	char *eq = strchr ((char*) arg, '=');
+	if (eq == NULL)
+	{
+		std::cerr << "cannot understand '" << arg << "' argument, exiting";
+		return -1;
+	}
+	// everything after = is value
+	int vlen = eq - arg;
+	char vname[eq - arg + 1];
+	strncpy (vname, arg, vlen);
+	vname[vlen] = '\0';
+
+	rts2core::Value *val = getOwnValue (vname);
+	if (val == NULL)
+	{
+		std::cerr << "cannot find value with name " << vname << ", exiting";
+		return -1;
+	}
+
+	rts2core::Value *new_value = duplicateValue (val);
+	int ret = new_value->setValueCharArr (eq + 1);
+	if (ret)
+	{
+		std::cerr << "cannot set value with name " << vname << " to '" << (eq + 1) << "', exiting";
+		return -1;
+	}
+	if (setInitValue (val, new_value) == -2)
+	{
+		std::cerr << "cannot set value with name " << vname << " to '" << (eq + 1) << "', exiting";
+		return -1;
+	}
+	return 0;
+}
+
 int Daemon::checkLockFile (const char *_lock_fname)
 {
 	int ret;
@@ -1350,18 +1386,7 @@ int Daemon::setSectionValues (IniSection *sect, int new_mode, bool use_extenstio
 			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName () << " for mode " << new_mode << " with value '" << iter->getValue () << "'." << sendLog;
 			return -1;
 		}
-		CondValue *cond_val = getCondValue (val->getName ().c_str ());
-		if (cond_val->getValue ()->isWritable () == false)
-		{
-			cond_val->getValue ()->setWritable ();
-			ret = setCondValue (cond_val, '=', new_value);
-			cond_val->getValue ()->setReadOnly ();
-		}
-		else
-		{
-			ret = setCondValue (cond_val, '=', new_value);
-		}
-		if (ret == -2)
+		if (setInitValue (val, new_value) == -2)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName () << " mode " << new_mode << " value '" << iter->getValue () << "'." << sendLog;
 			return -1;
@@ -1431,6 +1456,22 @@ int Daemon::createSectionValues (IniSection *sect)
 		}
 	}
 	return 0;
+}
+
+int Daemon::setInitValue (rts2core::Value *val, rts2core::Value *new_value)
+{
+	CondValue *cond_val = getCondValue (val->getName ().c_str ());
+	if (cond_val->getValue ()->isWritable () == false)
+	{
+		cond_val->getValue ()->setWritable ();
+		int ret = setCondValue (cond_val, '=', new_value);
+		cond_val->getValue ()->setReadOnly ();
+		return ret;
+	}
+	else
+	{
+		return setCondValue (cond_val, '=', new_value);
+	}
 }
 
 int Daemon::autosaveValues ()
