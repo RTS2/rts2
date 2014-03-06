@@ -182,6 +182,10 @@ void ConnExecute::processCommand (char *cmd)
 			deleteImage (*iter);
 			images.erase (iter);
 		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot move " << imagename << " to dark path, image was probably already handled (renamed,..)" << sendLog;
+		}
 	}
 	else if (!strcmp (cmd, "flat"))
 	{
@@ -197,6 +201,11 @@ void ConnExecute::processCommand (char *cmd)
 			deleteImage (*iter);
 			images.erase (iter);
 		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot move " << imagename << " to flat path, image was probably already handled (renamed,..)" << sendLog;
+		}
+
 	}
 	else if (!strcmp (cmd, "archive"))
 	{
@@ -210,6 +219,11 @@ void ConnExecute::processCommand (char *cmd)
 			deleteImage (*iter);
 			images.erase (iter);
 		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot move " << imagename << " to archive path, image was probably already handled (renamed,..)" << sendLog;
+		}
+
 	}
 	else if (!strcmp (cmd, "trash"))
 	{
@@ -223,6 +237,11 @@ void ConnExecute::processCommand (char *cmd)
 			deleteImage (*iter);
 			images.erase (iter);
 		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot move " << imagename << " to trash path, image was probably already handled (renamed,..)" << sendLog;
+		}
+
 	}
 	else if (!strcmp (cmd, "rename"))
 	{
@@ -237,6 +256,10 @@ void ConnExecute::processCommand (char *cmd)
 				writeToProcess ((*iter)->getAbsoluteFileName ());
 				deleteImage (*iter);
 				images.erase (iter);
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "cannot rename " << imagename << ", image was probably already handled (renamed,..)" << sendLog;
 			}
 		}
 		catch (rts2core::Error &er)
@@ -257,6 +280,10 @@ void ConnExecute::processCommand (char *cmd)
 			deleteImage (*iter);
 			images.erase (iter);
 		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot move " << imagename << ", image was probably already handled (renamed,..)" << sendLog;
+		}
 	}
 	else if (!strcmp (cmd, "copy"))
 	{
@@ -267,6 +294,10 @@ void ConnExecute::processCommand (char *cmd)
 		{
 			(*iter)->copyImageExpand (expandPath);
 			writeToProcess ((*iter)->getAbsoluteFileName ());
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot copy " << imagename << ", image was probably already handled (renamed,..)" << sendLog;
 		}
 	}
 	else if (!strcmp (cmd, "delete"))
@@ -291,6 +322,10 @@ void ConnExecute::processCommand (char *cmd)
 			((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
 			deleteImage (*iter);
 			images.erase (iter);
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot process " << imagename << ", image was probably already handled (renamed,..)" << sendLog;
 		}
 	}
 	else if (!strcmp (cmd, "?"))
