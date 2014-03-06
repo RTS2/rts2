@@ -127,6 +127,9 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::ValueDouble *flatSunMin;
 		rts2core::ValueDouble *flatSunMax;
 
+		rts2core::ValueTime *flatBeginning;
+		rts2core::ValueTime *flatEnding;
+
 		rts2core::ValueString *nightDisabledTypes;
 
 		struct ln_lnlat_posn *observer;
@@ -185,6 +188,8 @@ class SelectorDev:public rts2db::DeviceDb
 		double from;
 
 		bool selFailureReported;
+
+		void updateFlats ();
 };
 
 }
@@ -265,6 +270,9 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (flatSunMin, "flat_sun_min", "minimal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (flatSunMax, "flat_sun_max", "maximal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
+	createValue (flatBeginning, "flat_beginning", "beginning of the next skyflats period", false);
+	createValue (flatEnding, "flat_ending", "ending of the current or next skyflats period", false);
+
 	createValue (nightDisabledTypes, "night_disabled_types", "list of target types which will not be selected during night", false, RTS2_VALUE_WRITABLE);
 
 	createValue (simulExpected, "simul_expected", "[s] expected simulation duration", RTS2_DT_TIMEINTERVAL);
@@ -318,11 +326,11 @@ int SelectorDev::reloadConfig ()
 	if (ret)
 		return ret;
 
-	Configuration *config;
-	config = Configuration::instance ();
-	observer = config->getObserver ();
+	Configuration *devConfig;
+	devConfig = Configuration::instance ();
+	observer = devConfig->getObserver ();
 
-	nightHorizon = config->getDoubleDefault ("observatory", "night_horizon", -10);
+	nightHorizon = devConfig->getDoubleDefault ("observatory", "night_horizon", -10);
 
 	delete sel;
 
@@ -399,6 +407,8 @@ int SelectorDev::init ()
 		nstart = curr_time;
 	free_start->addValue (nstart);
 	free_end->addValue (nstop);
+
+	updateFlats ();
 
 	return 0;
 }
@@ -694,11 +704,13 @@ int SelectorDev::setValue (rts2core::Value * old_value, rts2core::Value * new_va
 	if (old_value == flatSunMin)
 	{
 		sel->setFlatSunMin (new_value->getValueDouble ());
+		updateFlats ();
 		return 0;
 	}
 	if (old_value == flatSunMax)
 	{
 		sel->setFlatSunMax (new_value->getValueDouble ());
+		updateFlats ();
 		return 0;
 	}
 	if (old_value == nightDisabledTypes)
@@ -747,10 +759,10 @@ void SelectorDev::updateSelectLength ()
 	rts2core::Connection *centralConn = getSingleCentralConn ();
 	if (centralConn != NULL)
 	{
-		rts2core::Value *night_stop = centralConn->getValue ("night_stop");
-		if (night_stop)
+		rts2core::Value *night_beginning = centralConn->getValue ("night_beginning");
+		if (night_beginning)
 		{
-			selectUntil->setValueDouble (night_stop->getValueDouble ());
+			selectUntil->setValueDouble (night_beginning->getValueDouble ());
 			logStream (MESSAGE_INFO) << "selector assumes night will end at " << Timestamp (selectUntil->getValueDouble ()) << sendLog;
 			return;
 		}
@@ -995,6 +1007,7 @@ void SelectorDev::changeMasterState (rts2_status_t old_state, rts2_status_t new_
 		case SERVERD_NIGHT:
 			idle_select->setValueInteger (night_idle_select->getValueInteger ());
 			sendValueAll (idle_select);
+			updateFlats ();
 			break;
 		default:
 			rts2db::DeviceDb::changeMasterState (old_state, new_state);
@@ -1056,15 +1069,31 @@ void SelectorDev::afterQueueChange (rts2plan::ExecutorQueue *q)
 		}
 		else
 		{
-			rts2core::Value *night_start = centralConn->getValue ("night_start");
-			if (night_start != NULL)
-				now = night_start->getValueDouble ();
+			rts2core::Value *night_beginning = centralConn->getValue ("night_beginning");
+			if (night_beginning != NULL)
+				now = night_beginning->getValueDouble ();
 			else
 				time (&now);
 		}
 		q->sortQueue (now);
 		q->updateVals ();
 	}
+}
+
+void SelectorDev::updateFlats ()
+{
+	time_t fstart, fend;
+	time_t curr_time;
+
+	time (&curr_time);
+
+	getNight (curr_time, observer, (flatSunMax->getValueDouble () > flatSunMin->getValueDouble ()) ? flatSunMax->getValueDouble () : flatSunMin->getValueDouble (), fstart, fend);
+
+	flatBeginning->setValueTime (fstart);
+	flatEnding->setValueTime (fend);
+
+	sendValueAll (flatBeginning);
+	sendValueAll (flatEnding);
 }
 
 int main (int argc, char **argv)

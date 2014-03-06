@@ -411,8 +411,11 @@ Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF 
 	createValue (eveningTime, "evening_time", "time needed to cool down cameras", false, RTS2_VALUE_WRITABLE);
 	createValue (morningTime, "morning_time", "time needed to heat up cameras", false, RTS2_VALUE_WRITABLE);
 
-	createValue (nightStart, "night_start", "beginning of current or next night", false);
-	createValue (nightStop, "night_stop", "end of current or next night", false);
+	createValue (nightBeginning, "night_beginning", "beginning of the next night", false);
+	createValue (nightEnding, "night_ending", "ending of the current or next night", false);
+
+	createValue (darkBeginning, "dark_beginning", "beginning of the next dark period", false);
+	createValue (darkEnding, "dark_ending", "ending of the current or next dark period", false);
 
 	createValue (switchedStandby, "switched_standby", "times when the system was switched to standby", false);
 
@@ -772,8 +775,13 @@ int Centrald::idle ()
 
 		getNight (curr_time, observer, nightHorizon->getValueDouble (), nstart, nstop);
 
-		nightStart->setValueTime (nstart);
-		nightStop->setValueTime (nstop);
+		nightBeginning->setValueTime (nstart);
+		nightEnding->setValueTime (nstop);
+
+		getNight (curr_time, observer, 0, nstart, nstop);
+
+		darkBeginning->setValueTime (nstart);
+		darkEnding->setValueTime (nstop);
 
 		// send update about next state transits..
 		infoAll ();

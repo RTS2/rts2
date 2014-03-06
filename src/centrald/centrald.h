@@ -274,8 +274,11 @@ class Centrald:public Daemon
 		rts2core::ValueInteger *eveningTime;
 		rts2core::ValueInteger *morningTime;
 
-		rts2core::ValueTime *nightStart;
-		rts2core::ValueTime *nightStop;
+		rts2core::ValueTime *nightBeginning;
+		rts2core::ValueTime *nightEnding;
+
+		rts2core::ValueTime *darkBeginning;
+		rts2core::ValueTime *darkEnding;
 
 		rts2core::TimeArray *switchedStandby;
 
