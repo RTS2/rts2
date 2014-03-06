@@ -211,7 +211,7 @@ if __name__ == '__main__':
             logger.info('rts2saf_focus: starting rts2saf_reenable_exec.py in a subprocess')
             stdo, stde=subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py')
         except Exception as e:
-            logger.info('rts2saf_focus: failed rts2saf_reenable_exec.py in a subprocess: {} {}'.format(e.message, e.args))
+            logger.error('rts2saf_focus: failed rts2saf_reenable_exec.py in a subprocess: {} {}'.format(e.message, e.args))
             
     else:
         logger.info('rts2saf_focus: do not reeanble EXEC')

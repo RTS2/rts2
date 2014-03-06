@@ -100,9 +100,8 @@ def executeUnittest():
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     while True:
         ln = proc.stdout.readline()
-        print '>>{}<<'.format(ln)
         if ln != '':
-            pass # ln.rstrip()
+            ln.rstrip()
         else:
             break
 
