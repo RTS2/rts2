@@ -251,6 +251,10 @@ void ConnExe::processCommand (char *cmd)
 		}
 		logStream (logLevel) << value << sendLog;
 	}
+	else if (!strcmp (cmd, "run_device"))
+	{
+		writeToProcess ("processing");
+	}
 	// register temporar entry directory. Path without /tmp should be specified.
 	else if (!strcasecmp (cmd, "tempentry"))
 	{
