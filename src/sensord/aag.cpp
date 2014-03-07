@@ -47,9 +47,11 @@ class AAG: public SensorWeather
 		rts2core::ValueDouble *triggerRain;
 		rts2core::ValueDouble *triggerSky;
 		rts2core::ValueDouble *triggerNoSnow;
-                rts2core::ValueInteger *numberOfMeasurements;
+		rts2core::ValueInteger *numberOfMeasurements;
+		rts2core::ValueDoubleStat *WindSpeed;
+  
 		/*
-		 * Read sensor values and caculate.
+		 * Read sensor values and calculate.
 		 */
 		int AAGGetSkyIRTemperature ();
 		int AAGGetIRSensorTemperature ();
@@ -60,6 +62,8 @@ class AAG: public SensorWeather
                 int AAGSetPWMValue( double value) ;
                 int AAGRainState( double rain, double ambient, double rain_frequency, double polling_time) ;
                 double AAGduty_on_frequency( double rain_frequency, int heat_state, double polling_time) ;
+                int AAGGetWindSpeed ();
+  
                 time_t real_rain_timeout ;
      	protected:
 		virtual int processOption (int in_opt);
@@ -141,20 +145,17 @@ int
 AAG::AAGRainState( double rain, double ambient, double rain_frequency, double polling_time)
 {
     static double last_rain_frequency= 0. ;
-    static int rain_state= IS_UNDEFINED ;
     int ret ;
     double duty=0. ;   // PWM Duty cycle
 /* define the heating strategy here */
 /* If the sun is shining on the box the behaviour rather different, */
 /* don't test under theses circumstances*/
-/* rain_state IS_MAX is the normal target */
 /* rain_state transition IS_DRY to IS_WET is used e.g. to close the dome door */
 /* check first if rain_frequency, ambient (sensor temperature) are above thresholds, stop heating */
 /* define the rain_state and the amount of heat according to the rain frequency value*/
 
     if(( rain_frequency > THRESHOLD_MAX) || (ambient > MAX_OPERATING_TEMPERATURE) ||( rain > MAX_RAIN_SENSOR_TEMPERATURE)) /* to be on the safe side */
     {
-        rain_state= IS_MAX ;
         duty=  AAGduty_on_frequency( rain_frequency, HEAT_NOT, polling_time);
 //	logStream (MESSAGE_DEBUG) << "AAGRainState Rain_State is EXTRA DRY due to  rain_frequency > THRESHOLD_MAX, ambient > MAX_OPERATING_TEMPERATURE, rain > MAX_RAIN_SENSOR_TEMPERATURE " 
 //				  << sendLog;
@@ -163,7 +164,6 @@ AAG::AAGRainState( double rain, double ambient, double rain_frequency, double po
     {
         if( rain_frequency > THRESHOLD_DRY)
         {
-            rain_state= IS_DRY ;
             if(( rain_frequency- last_rain_frequency) < THRESHOLD_DROP_WHILE_DRY)
             {
 		duty=  AAGduty_on_frequency( rain_frequency, HEAT_DROP_WHILE_DRY, polling_time);
@@ -203,7 +203,6 @@ AAG::AAGRainState( double rain, double ambient, double rain_frequency, double po
 // 					  << rain_frequency << ">" 
 // 					  << THRESHOLD_WET << sendLog;
 	    }
-            rain_state= IS_WET ;
 	    duty=  AAGduty_on_frequency( rain_frequency, HEAT_REGULAR, polling_time);
         }
         else /* everything else is rain */
@@ -211,7 +210,6 @@ AAG::AAGRainState( double rain, double ambient, double rain_frequency, double po
 // 		logStream (MESSAGE_DEBUG) << "Rain_State is RAIN, from DRY or WET " 
 // 					  << rain_frequency << "<" 
 // 					  << THRESHOLD_WET << sendLog;
-            rain_state= IS_RAIN ;
 	    duty=  AAGduty_on_frequency( rain_frequency, HEAT_REGULAR, polling_time);
         }
 // 	logStream (MESSAGE_DEBUG) << "Normal Duty " 
@@ -222,14 +220,14 @@ AAG::AAGRainState( double rain, double ambient, double rain_frequency, double po
     if(( ret= AAGSetPWMValue( duty * 100.))== 0)
     {
 // ToDo: can used to display the stat        return rain_state ;
-         return 0 ;
-     }
-     else
-     {
-	logStream (MESSAGE_ERROR) << "Failed setting duty " << duty *100. << sendLog; 
-         return -1 ;
-     }
-    return 0 ;
+		return 0 ;
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "Failed setting duty " << duty *100. << sendLog; 
+		return -1 ;
+	}
+	return 0 ;
 }
 int
 AAG::AAGGetSkyIRTemperature ()
@@ -249,10 +247,9 @@ AAG::AAGGetSkyIRTemperature ()
 
 	if(( x= sscanf( buf, "!1        %d!", &value)) != 1) 
 	{
-	    buf[ret]= '\0' ;
-	    logStream (MESSAGE_ERROR) << "cannot parse SkyIRTemperature reply from AAG cloud sensor, reply was: '"
-				      << buf << "', sscanf " << x << sendLog;
-	    return -1 ;
+		buf[ret]= '\0' ;
+		logStream (MESSAGE_ERROR) << "cannot parse SkyIRTemperature reply from AAG cloud sensor, reply was: '" << buf << "', sscanf " << x << sendLog;
+		return -1 ;
 	}
 	/*tempSky->setValueDouble ((double) value/100.);*/
 	tempSky->addValue ((double) value/100., numberOfMeasurements->getValueInteger());
@@ -276,10 +273,9 @@ AAG::AAGGetIRSensorTemperature ()
 
 	if(( x= sscanf( buf, "!2        %d!", &value)) != 1) 
 	{
-	    buf[ret]= '\0' ;
-	    logStream (MESSAGE_ERROR) << "cannot parse IRSensorTemperature reply from AAG cloud sensor, reply was: '"
-				      << buf << "', sscanf " << x << sendLog;
-	    return -1 ;
+		buf[ret]= '\0' ;
+		logStream (MESSAGE_ERROR) << "cannot parse IRSensorTemperature reply from AAG cloud sensor, reply was: '" << buf << "', sscanf " << x << sendLog;
+		return -1 ;
 	}
 	/*tempIRSensor->setValueDouble ((double) value/100.);*/
 	tempIRSensor->addValue((double) value/100., numberOfMeasurements->getValueInteger());
@@ -287,6 +283,36 @@ AAG::AAGGetIRSensorTemperature ()
 
 	return 0;
 }
+
+
+int
+AAG::AAGGetWindSpeed ()    
+{
+	int ret;
+	char buf[51];
+        const char wbuf[]= "V!" ;
+	int value ;
+        int x ;
+ 
+	ret = aagConn->writeRead (wbuf, 2, buf, 2 * BLOCK_LENGTH);
+	if (ret < 0)
+		return ret;
+// Format to read !w          -93!
+
+	if(( x= sscanf( buf, "!w        %d!", &value)) != 1) 
+	{
+		buf[ret]= '\0' ;
+		logStream (MESSAGE_ERROR) << "cannot parse Anemometer reply from AAG cloud sensor, reply was: '" << buf << "', sscanf " << x << sendLog;
+		return -1 ;
+	}
+	/*tempIRSensor->setValueDouble ((double) value/100.);*/
+	WindSpeed->addValue((double) value, numberOfMeasurements->getValueInteger());
+	/*WindSpeed->calculate ();*/
+
+	return 0;
+}
+
+
 int
 AAG::AAGGetValues ()
 {
@@ -527,6 +553,14 @@ AAG::info ()
 
 	return -1 ;
     }
+    ret = AAGGetWindSpeed ();
+    if (ret)
+    {
+	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT, "cannot read from device");
+	return -1 ;
+    }
+    
     static int count_bad_weather ;
     if (rainFrequency->getValueDouble () < triggerRain->getValueDouble ()) {
 	count_bad_weather++ ;
@@ -606,6 +640,7 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (pwmValue,         "PWM",          "pwm value", false);
 	createValue (ldrResistance,    "LDR_RES",      "pullup resistancetrue", false);
 	createValue (intVoltage,       "INT_VOLT",     "internal voltage", false);
+	createValue (WindSpeed,        "WIND_SPEED",   "Wind Speed", true);
 	createValue (triggerRain,      "RAIN_TRIGGER", "if rain frequency gets above this value, weather is not bad [a.u.]", false, RTS2_VALUE_WRITABLE);
 	createValue (triggerSky,       "SKY_TRIGGER",  "if sky temperature gets below this value, weather is not bad [deg C]", false, RTS2_VALUE_WRITABLE);
 	createValue (triggerNoSnow,    "NO_SNOW",      "difference (TEMP_SKY- TEMP_IRS), if larger, assume that there is no snow on sensor [abs deg C]", false, RTS2_VALUE_WRITABLE);
