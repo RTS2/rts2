@@ -759,10 +759,10 @@ void SelectorDev::updateSelectLength ()
 	rts2core::Connection *centralConn = getSingleCentralConn ();
 	if (centralConn != NULL)
 	{
-		rts2core::Value *night_beginning = centralConn->getValue ("night_beginning");
-		if (night_beginning)
+		rts2core::Value *night_ending = centralConn->getValue ("night_ending");
+		if (night_ending)
 		{
-			selectUntil->setValueDouble (night_beginning->getValueDouble ());
+			selectUntil->setValueDouble (night_ending->getValueDouble ());
 			logStream (MESSAGE_INFO) << "selector assumes night will end at " << Timestamp (selectUntil->getValueDouble ()) << sendLog;
 			return;
 		}
