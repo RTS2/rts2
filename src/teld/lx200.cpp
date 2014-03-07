@@ -86,10 +86,12 @@ LX200::~LX200 (void)
 
 int LX200::init ()
 {
-	//cosa vuol dire questa definizione???
+	// call parent, create serConn
 	int ret = TelLX200::init ();
 	if (ret)
 		return ret;
+
+	serConn->setVTime (100);
 
 	char rbuf[100];
 	// we get 12:34:4# while we're in short mode
@@ -104,6 +106,14 @@ int LX200::init ()
 		// we are in short mode, set the long on
 		if (serConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
 			return -1;
+		
+		if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+			return -1;
+		if (rbuf[7] == '\0' || rbuf[7] == '#')
+		{
+			std::cerr << "cannot switch LX200 communication to long format" << std::endl;
+			return -1;
+		}
 	}
 
 	// get product name
@@ -119,6 +129,8 @@ int LX200::init ()
 
 	if (strncmp (productName->getValue (), "10micron", 8) == 0)
 		hasAstroPhysicsExtensions = true;
+
+	serConn->setVTime (5);
 
 	return 0;
 }
