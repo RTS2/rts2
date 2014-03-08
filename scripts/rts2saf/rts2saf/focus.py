@@ -77,7 +77,7 @@ class Focus(object):
         self.foc.focDef = None
 
     def run(self):
-        """Loop over filter wheels, their filters and offsets (FOC_FOFF)
+        """Loop over filter wheels, their filters and offsets (FOC_TOFF)
         """
         for k, ftw in enumerate(self.ftws):
             # only interesting in case multiple filter wheels are present
@@ -116,7 +116,7 @@ class Focus(object):
 
                 # steps are defined per filter, if blind in focuser
                 if not self.args.blind:
-                    self.foc.focFoff=ft.focFoff
+                    self.foc.focToff=ft.focToff
 
                 # start acquisition thread
                 if not acqu.startScan(exposure=self.args.exposure, blind=self.args.blind):
@@ -126,13 +126,13 @@ class Focus(object):
                 # acquire FITS from thread
                 dataSxtr=list()
                 global TERM
-                for st in self.foc.focFoff:
+                for st in self.foc.focToff:
                     while True:
                         # if some external source wants to stop me
                         if TERM:
                             acqu.stopScan(timeout=1.)
                             time.sleep(2.)
-                            self.logger.info('Focus: received signal, reset FOC_FOFF, stopped thread, exiting')
+                            self.logger.info('Focus: received signal, reset FOC_TOFF, stopped thread, exiting')
                             # threads are zombies
                             while acqu.scanThread.isAlive():
                                 acqu.scanThread._Thread__stop()

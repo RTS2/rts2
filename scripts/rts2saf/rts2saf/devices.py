@@ -37,15 +37,15 @@ class Filter(object):
     :var debug: enable more debug output with --debug and --level
     :var name: name of the filter
     :var OffsetToEmptySlot:  offset to empty slot, unit focuser [tick]
-    :var relativeLowerLimit: FOC_FOFF lower limit of a regular focus run, unit focuser  [tick]
-    :var relativeUpperLimit: FOC_FOFF upper limit of a regular focus run, unit focuser  [tick]
+    :var relativeLowerLimit: FOC_TOFF lower limit of a regular focus run, unit focuser  [tick]
+    :var relativeUpperLimit: FOC_TOFF upper limit of a regular focus run, unit focuser  [tick]
     :var exposureFactor: this factor is multiplied with BASE_EXPOSURE   
     :var stepSize: step size unit focuser  [tick]
-    :var focFoff: step range
+    :var focToff: step range
 
         
     """
-    def __init__(self, debug=None, name=None, OffsetToEmptySlot=None, lowerLimit=None, upperLimit=None, stepSize=None, exposureFactor=1., focFoff=None):
+    def __init__(self, debug=None, name=None, OffsetToEmptySlot=None, lowerLimit=None, upperLimit=None, stepSize=None, exposureFactor=1., focToff=None):
         self.debug=debug
         self.name= name
         self.OffsetToEmptySlot= OffsetToEmptySlot# [tick]
@@ -53,7 +53,7 @@ class Filter(object):
         self.relativeUpperLimit= upperLimit# [tick]
         self.exposureFactor   = exposureFactor 
         self.stepSize  = stepSize # [tick]
-        self.focFoff=focFoff 
+        self.focToff=focToff 
 
 
 # ToDo read, write to real devices
@@ -110,7 +110,7 @@ class Focuser(object):
     :var logger:  :py:mod:`rts2saf.log`
 
     """
-    def __init__(self, debug=None, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, lowerLimit=None, upperLimit=None, stepSize=None, speed=None, temperatureCompensation=None, focFoff=None, focDef=None, logger=None):
+    def __init__(self, debug=None, name=None, resolution=None, absLowerLimit=None, absUpperLimit=None, lowerLimit=None, upperLimit=None, stepSize=None, speed=None, temperatureCompensation=None, focToff=None, focDef=None, logger=None):
         self.debug=debug
         self.name= name
         self.resolution=resolution 
@@ -121,7 +121,7 @@ class Focuser(object):
         self.stepSize=stepSize
         self.speed=speed
         self.temperatureCompensation=temperatureCompensation
-        self.focFoff=focFoff # will be set at run time
+        self.focToff=focToff # will be set at run time
         self.focDef=focDef # will be set at run time
         self.focMn=None # will be set at run time
         self.focMx=None # will be set at run time

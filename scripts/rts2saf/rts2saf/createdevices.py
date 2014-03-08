@@ -280,7 +280,7 @@ class CreateFocuser(CreateDevice):
                 withinLlUl=True
 
         if withinLlUl:
-            self.focFoff= range(rangeMin, rangeMax +rangeStep, rangeStep)
+            self.focToff= range(rangeMin, rangeMax +rangeStep, rangeStep)
             
         else:
             self.logger.error('create:  {0:8s} abs. lowerLimit: {1}, abs. upperLimit: {2}'.format(self.rt.cfg['FOCUSER_NAME'], self.rt.cfg['FOCUSER_ABSOLUTE_LOWER_LIMIT'], self.rt.cfg['FOCUSER_ABSOLUTE_UPPER_LIMIT'])) 
@@ -289,8 +289,8 @@ class CreateFocuser(CreateDevice):
             return None
 
         # ToDo check with no filter wheel configuration
-        if len(self.focFoff) > 10 and  self.blind:
-            self.logger.info('create: focuser range has: {0} steps, you might consider set decent value for --focrange'.format(len(self.focFoff)))
+        if len(self.focToff) > 10 and  self.blind:
+            self.logger.info('create: focuser range has: {0} steps, you might consider set decent value for --focrange'.format(len(self.focToff)))
 
         if focDef is None: # this part used during production mode
             cnt=0
@@ -333,7 +333,7 @@ class CreateFocuser(CreateDevice):
             logger = self.logger,
             focDef=focDef,
             # will be overridden in FilterWheels.create:
-            focFoff=self.focFoff,
+            focToff=self.focToff,
             # set at run time:
             # focMn=None,
             # focMx=None,
@@ -373,7 +373,7 @@ class CreateFilters(CreateDevice):
             lowerLimit    = int(self.rt.cfg['FOCUSER_NO_FTW_RANGE'][0])
             upperLimit    = int(self.rt.cfg['FOCUSER_NO_FTW_RANGE'][1])
             stepSize      = int(self.rt.cfg['FOCUSER_NO_FTW_RANGE'][2])
-            focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
+            focToff=range(lowerLimit, (upperLimit + stepSize), stepSize)
 
             ft=Filter( 
                 debug        =self.debug,
@@ -383,7 +383,7 @@ class CreateFilters(CreateDevice):
                 upperLimit    =upperLimit,
                 stepSize      =stepSize,
                 exposureFactor= 1.,
-                focFoff=focFoff
+                focToff=focToff
                 )
                 
             self.filters.append(ft)
@@ -394,7 +394,7 @@ class CreateFilters(CreateDevice):
                 lowerLimit    = int(ftItems[1])
                 upperLimit    = int(ftItems[2])
                 stepSize      = int(ftItems[3])
-                focFoff=range(lowerLimit, (upperLimit + stepSize), stepSize)
+                focToff=range(lowerLimit, (upperLimit + stepSize), stepSize)
                 name   = ftItems[0]
                 if name in self.rt.cfg['EMPTY_SLOT_NAMES'] :
                     OffsetToEmptySlot= 0
@@ -408,7 +408,7 @@ class CreateFilters(CreateDevice):
                     upperLimit    = upperLimit,
                     stepSize      = stepSize,
                     exposureFactor= string.atof(ftItems[4]),
-                    focFoff       = focFoff
+                    focToff       = focToff
                     )
                 self.filters.append(ft)
 
@@ -541,7 +541,7 @@ class CreateFilterWheels(CreateDevice):
         return self.filterWheelsInUse
 
     def checkBounds(self):
-        """Check if FOC_DEF + max/min(FOC_FOFF) are within focuser range and if the number of steps is above MINIMUM_FOCUSER_POSITIONS.
+        """Check if FOC_DEF + max/min(FOC_TOFF) are within focuser range and if the number of steps is above MINIMUM_FOCUSER_POSITIONS.
 
         :return: True if both conditions are met else False
 
@@ -568,8 +568,8 @@ class CreateFilterWheels(CreateDevice):
                         self.logger.warn('checkBounds: {} has no defined filter offset, setting it to ZERO'.format(ft.name))
 
                     self.logger.warn('checkBounds: {} {} {}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot))
-                    rangeMin=focDef + min(ft.focFoff) + fto
-                    rangeMax=focDef + max(ft.focFoff) + fto
+                    rangeMin=focDef + min(ft.focToff) + fto
+                    rangeMax=focDef + max(ft.focToff) + fto
                     outOfLlUl=True 
                     if absLowerLimit <= rangeMin <= absUpperLimit-(rangeMax-rangeMin):
                         if absLowerLimit + (rangeMax-rangeMin) <= rangeMax <=  absUpperLimit:
@@ -589,8 +589,8 @@ class CreateFilterWheels(CreateDevice):
         # check MINIMUM_FOCUSER_POSITIONS
         for ftw in self.filterWheelsInUse:
             for ft in ftw.filters:
-                if len(ft.focFoff) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-                    self.logger.error( 'create: {0:8s}, filter: {1:8s} to few focuser positions: {2}<={3} (see MINIMUM_FOCUSER_POSITIONS)'.format(ftw.name, ft.name, len(ft.focFoff), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS'])) 
+                if len(ft.focToff) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                    self.logger.error( 'create: {0:8s}, filter: {1:8s} to few focuser positions: {2}<={3} (see MINIMUM_FOCUSER_POSITIONS)'.format(ftw.name, ft.name, len(ft.focToff), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS'])) 
                     anyBelow=True
 
         if anyBelow:

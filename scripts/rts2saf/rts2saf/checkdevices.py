@@ -67,13 +67,13 @@ class CheckDevices(object):
                 for ft in ftw.filters:
                     info += 'summaryDevices: {0:8s}: {1:8s}'.format(ftw.name, ft.name)
                     if self.blind:
-                        info += '{0:2d} steps, between: [{1:5d},{2:5d}]\n'.format(len(self.foc.focFoff), min(self.foc.focFoff), max(self.foc.focFoff))
-                        img += len(self.foc.focFoff)
+                        info += '{0:2d} steps, between: [{1:5d},{2:5d}]\n'.format(len(self.foc.focToff), min(self.foc.focToff), max(self.foc.focToff))
+                        img += len(self.foc.focToff)
                     else:
-                        info += '{0:2d} steps, FOC_FOFF: [{1:5d}, {2:5d}], '.format(len(ft.focFoff), min(ft.focFoff), max(ft.focFoff))
-                        info += 'FOC_POS: [{1:5d},{2:5d}], FOC_DEF: {3:5d}, '.format(len(ft.focFoff), self.foc.focDef + min(ft.focFoff), self.foc.focDef + max(ft.focFoff), self.foc.focDef)
+                        info += '{0:2d} steps, FOC_TOFF: [{1:5d}, {2:5d}], '.format(len(ft.focToff), min(ft.focToff), max(ft.focToff))
+                        info += 'FOC_POS: [{1:5d},{2:5d}], FOC_DEF: {3:5d}, '.format(len(ft.focToff), self.foc.focDef + min(ft.focToff), self.foc.focDef + max(ft.focToff), self.foc.focDef)
                         info += 'Filter Offset: {0:5.0f}\n'.format(ft.OffsetToEmptySlot)
-                        img += len(ft.focFoff)
+                        img += len(ft.focToff)
                 else:
                     self.logger.info('{0}'.format(info))
             else:
@@ -95,9 +95,9 @@ class CheckDevices(object):
         self.logger.debug('printProperties: {} stepSize'.format(self.foc.stepSize))
         self.logger.debug('printProperties: {} temperatureCompensation'.format(self.foc.temperatureCompensation))
         if self.blind:
-            self.logger.debug('printProperties: focFoff, steps: {0}, between: {1} and {2}'.format(len(self.foc.focFoff), min(self.foc.focFoff), max(self.foc.focFoff)))
+            self.logger.debug('printProperties: focToff, steps: {0}, between: {1} and {2}'.format(len(self.foc.focToff), min(self.foc.focToff), max(self.foc.focToff)))
         else:
-            self.logger.debug('printProperties: focFoff, set by filters if not --blind is specified')
+            self.logger.debug('printProperties: focToff, set by filters if not --blind is specified')
             
         self.logger.debug('printProperties: {} focDef'.format(self.foc.focDef))
         self.logger.debug('printProperties: {} focMn'.format(self.foc.focMn))

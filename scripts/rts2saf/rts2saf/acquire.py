@@ -73,11 +73,11 @@ class ScanThread(threading.Thread):
         self.logger=logger
 
     def run(self):
-        """Move focuser to FOC_FOFF + FOC_DEF (regular mode) or FOC_TAR (blind mode), expose CCD and write FITS file name to :py:mod:`Queue`.  
+        """Move focuser to FOC_TOFF + FOC_DEF (regular mode) or FOC_TAR (blind mode), expose CCD and write FITS file name to :py:mod:`Queue`.  
         """
         if self.debug: self.logger.debug('____ScantThread: running')
         
-        for i,pos in enumerate(self.foc.focFoff): 
+        for i,pos in enumerate(self.foc.focToff): 
             if self.stoprequest.is_set():
                 break
 
@@ -87,9 +87,9 @@ class ScanThread(threading.Thread):
                         
                     if self.debug: self.logger.debug('acquire: set FOC_TAR:{0}'.format(pos))
                 else:
-                    self.proxy.setValue(self.foc.name,'FOC_FOFF', pos)
+                    self.proxy.setValue(self.foc.name,'FOC_TOFF', pos)
             else:
-                self.logger.warn('acquire: disabled setting FOC_TAR or FOC_FOFF: {0}'.format(pos))
+                self.logger.warn('acquire: disabled setting FOC_TAR or FOC_TOFF: {0}'.format(pos))
 
             focPosCalc= pos
             if not self.blind:
@@ -306,11 +306,10 @@ class Acquire(object):
         self.logger.debug('acquire: current focuser: {0}'.format(self.iFocType))        
         self.logger.debug('acquire: current FOC_DEF: {0}'.format(self.iFocDef))
 
-        # NO, please NOT self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
         if self.writeToDevices:
-            self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
+            self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
         else:
-            self.logger.warn('acquire: disabled setting FOC_FOFF: {0}'.format(0))
+            self.logger.warn('acquire: disabled setting FOC_TOFF: {0}'.format(0))
 
         # ToDo filter
         # set all but ftw to empty slot
@@ -336,9 +335,9 @@ class Acquire(object):
 
     def __finalState(self):
         if self.writeToDevices:
-            self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
+            self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
         else:
-            self.logger.warn('acquire: disabled setting FOC_DEF: {0}, FOC_FOFF: 0',format(self.iFocDef))
+            self.logger.warn('acquire: disabled setting FOC_DEF: {0}, FOC_TOFF: 0',format(self.iFocDef))
 
     def writeFocDef(self):
         # either from device or from configuration
