@@ -45,11 +45,29 @@ unittestFiles = [
     '/tmp/andor3', 
     ]
 
-if ':' in os.environ['DISPLAY']:
-    pass
-else:
-    # dirty but working (reason matplotlib unittest without X Window connection, matplotlib again'
-    os.environ['DISPLAY'] = ':0'
+import psutil
+import matplotlib
+
+XDISPLAY=None
+try:
+    disp= os.environ['DISPLAY']
+except:
+    print 'rts2saf_unittest.py: need a X Window DISPLAY'
+
+    pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
+    if 'init' in pnm or 'rts2-executor' in pnm:
+        matplotlib.use('Agg')    
+        XDISPLAY=False
+    else:
+        from subprocess import Popen, PIPE
+        p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+        p.communicate()
+        if p.returncode == 0:
+            XDISPLAY=True
+        else:
+            matplotlib.use('Agg')    
+            XDISPLAY=False
+
 
 def sextractor_version():
     if os.path.isfile(sex) and os.access(sex, os.X_OK):
