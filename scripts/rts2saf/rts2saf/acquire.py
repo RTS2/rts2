@@ -352,7 +352,10 @@ class Acquire(object):
             self.logger.warn('acquire:  {0} not writing FOC_DEF value: {1} out of bounds ({2}, {3})'.format(self.foc.name, self.foc.focDef, self.foc.focMn, self.foc.focMx))
 
     def writeOffsets(self, ftw=None):
-        """Write only for camd::filter filters variable the offsets """
+        """ 
+        Write only for camd::filter filters variable the offsets 
+        This method has never been really used and therefore assume it does not work.
+        """
         self.proxy.refresh()
         theWheel=  self.proxy.getSingleValue(self.ccd.name, 'wheel')
         if ftw.name in theWheel:
@@ -362,6 +365,7 @@ class Acquire(object):
             offsets=str()
             for ftn in filterNames:
                 # ToDo this is a glitch!!
+                # yes, it is really (2014-03-06
                 try:
                     ind= ftns.index(ftn)
                 except:

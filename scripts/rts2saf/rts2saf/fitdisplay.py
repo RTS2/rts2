@@ -47,7 +47,7 @@ class  FitDisplay(object):
         self.fig = plt.figure()
         self.ax1 = self.fig.add_subplot(111)
 
-    def fitDisplay(self, dataFit=None, resultFit=None, display=False):
+    def fitDisplay(self, dataFit=None, resultFit=None, show=True, display=False, xdisplay = None):
         """Display fit using matplotlib
 
         :param dataFit: :py:mod:`rts2saf.data.DataFit`
@@ -78,13 +78,13 @@ class  FitDisplay(object):
         self.ax1.set_ylabel(resultFit.ylabel)
         self.ax1.grid(True)
 
-        if display:
+        if show and display and xdisplay: 
             # NO: self.fig.show()
             plt.show()
-        else:
+        elif display and not xdisplay:
             self.logger.warn('fitDisplay: NO $DISPLAY no plot')                
-            # no return here
-        
+            # no return here, save plot
+            
         try:
             self.fig.savefig(dataFit.plotFn)
             return dataFit.plotFn

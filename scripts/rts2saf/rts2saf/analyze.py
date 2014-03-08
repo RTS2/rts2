@@ -30,18 +30,6 @@ import copy
 
 from ds9 import *
 
-pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
-if 'init' in pnm:
-    DISPLAY=False
-else:
-    from subprocess import Popen, PIPE
-    p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
-    p.communicate()
-    if p.returncode == 0:
-        DISPLAY=True
-    else:
-        DISPLAY=False
-
 
 from rts2saf.fitfunction import  FitFunction
 from rts2saf.fitdisplay import FitDisplay
@@ -71,6 +59,7 @@ class SimpleAnalysis(object):
                  dataSxtr=None, 
                  Ds9Display=False, 
                  FitDisplay=False, 
+                 xdisplay = None,
                  ftwName=None, 
                  ftName=None, 
                  focRes=None, 
@@ -81,6 +70,7 @@ class SimpleAnalysis(object):
         self.dataSxtr=dataSxtr
         self.Ds9Display=Ds9Display
         self.FitDisplay=FitDisplay
+        self.xdisplay = xdisplay
         self.ftwName=ftwName
         self.ftName=ftName
         self.focRes=focRes
@@ -216,12 +206,12 @@ class SimpleAnalysis(object):
         """
         ft=FitDisplay(date = self.date, logger=self.logger)
 
-        if self.i_flux==None:
-            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=self.FitDisplay)
+        if self.i_flux is None:
+            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=self.FitDisplay, xdisplay = self.xdisplay)
         else:
-            # plot but don't show
-            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=False)
-            ft.fitDisplay(dataFit=self.dataFitFlux, resultFit=self.resultFitFlux, display=self.FitDisplay)
+            # plot FWHM but don't show
+            ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, show=False, display=self.FitDisplay, xdisplay = self.xdisplay)
+            ft.fitDisplay(dataFit=self.dataFitFlux, resultFit=self.resultFitFlux, display=self.FitDisplay, xdisplay = self.xdisplay)
         # very important (otherwise all plots show up in next show())
         ft.ax1=None
         # http://stackoverflow.com/questions/741877/how-do-i-tell-matplotlib-that-i-am-done-with-a-plot
@@ -229,7 +219,7 @@ class SimpleAnalysis(object):
         ft.fig=None
         ft=None
         # plot them through ds9
-        if self.Ds9Display and DISPLAY:
+        if self.Ds9Display and self.xdisplay:
             dds9=ds9()
 
             # ToDo create new list
@@ -243,7 +233,7 @@ class SimpleAnalysis(object):
                     time.sleep(1.)
                 else:
                     self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
-        else:
+        elif self.Ds9Display and not self.xdisplay:
             self.logger.warn('analyze: OOOOOOOOPS, no ds9 display available')
 
 
@@ -275,6 +265,7 @@ class CatalogAnalysis(object):
                  dataSxtr=None, 
                  Ds9Display=False, 
                  FitDisplay=False, 
+                 xdisplay = None,
                  ftwName=None, 
                  ftName=None, 
                  focRes=None, 
@@ -288,6 +279,7 @@ class CatalogAnalysis(object):
         self.dataSxtr=dataSxtr
         self.Ds9Display=Ds9Display
         self.FitDisplay=FitDisplay
+        self.xdisplay = xdisplay
         self.ftwName=ftwName
         self.ftName=ftName
         self.focRes=focRes
@@ -340,6 +332,7 @@ class CatalogAnalysis(object):
             dataSxtr=acceptedDataSxtr, 
             Ds9Display=self.Ds9Display, 
             FitDisplay=self.FitDisplay, 
+            xdisplay = self.xdisplay,
             focRes=self.focRes, 
             ev=self.ev, 
             logger=self.logger)

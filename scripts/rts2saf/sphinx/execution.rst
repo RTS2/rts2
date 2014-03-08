@@ -12,7 +12,7 @@ then  move to tab EXEC and check or change to
 
 .. code-block:: bash
 
- ignore_day        true
+ ignore_day        true # if RTS2 is not in state ON or in state night
  enabled           true
  selector_next     false
  auto_loop         false

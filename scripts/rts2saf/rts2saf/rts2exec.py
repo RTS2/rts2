@@ -14,11 +14,16 @@ class Rts2Exec(object):
 
 
     def reeanableEXEC(self):
-        self.proxy.setValue('EXEC','enabled', 0)
-        self.proxy.setValue('EXEC','selector_next', 0)
-        self.proxy.setValue('EXEC','selector_next', 1)
-        self.proxy.setValue('EXEC','enabled', 1)
+        try:
+            self.proxy.setValue('EXEC','enabled', 0)
+            self.proxy.setValue('EXEC','selector_next', 0)
+            self.proxy.setValue('EXEC','selector_next', 1)
+            self.proxy.setValue('EXEC','enabled', 1)
 
+        except Exception as e:
+            self.logger.error('{}'.format(e))
+            self.logger.error('rts2exec: failed to reenable EXEC')
+            return
 
         self.proxy.refresh()
         selector_next= self.proxy.getSingleValue('EXEC','selector_next')    

@@ -67,7 +67,7 @@ class AnalyzeRuns(object):
 
     """
 
-    def __init__(self, debug=False, basePath=None, args=None, rt=None, ev=None, logger=None):
+    def __init__(self, debug=False, basePath=None, args=None, rt=None, ev=None, logger=None, xdisplay = None):
 
         self.debug = debug
         self.basePath = basePath
@@ -75,6 +75,7 @@ class AnalyzeRuns(object):
         self.rt = rt
         self.ev = ev
         self.logger = logger
+        self.xdisplay = xdisplay
         self.fS = AutoVivification()
 
     def analyzeRun(self, fitsFns = None):
@@ -119,17 +120,37 @@ class AnalyzeRuns(object):
             dataRn.dSxReference=dSxR
             dataRn.onAlmostImages()
 
-
         if len(dataRn.dataSxtrs) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
             self.logger.warn('analyzeRuns: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(dataRn.dataSxtrs), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
             return None, None
 
         date = dataRn.dataSxtrs[0].date.split('.')[0]
         if self.args.catalogAnalysis:
-            an = CatalogAnalysis(debug = self.debug, date = date, dataSxtr = dataRn.dataSxtrs, Ds9Display = self.args.Ds9Display, FitDisplay = self.args.FitDisplay, focRes = float(self.rt.cfg['FOCUSER_RESOLUTION']), moduleName = self.args.criteria, ev=self.ev, rt = self.rt, logger = self.logger)
+            an = CatalogAnalysis(
+                debug = self.debug, 
+                date = date, 
+                dataSxtr = dataRn.dataSxtrs, 
+                Ds9Display = self.args.Ds9Display, 
+                FitDisplay = self.args.FitDisplay, 
+                xdisplay = self.xdisplay,
+                focRes = float(self.rt.cfg['FOCUSER_RESOLUTION']), 
+                moduleName = self.args.criteria, 
+                ev=self.ev, 
+                rt = self.rt, 
+                logger = self.logger)
             arFt, rrFt, allrFt, arMns, rrMns, allrMns= an.selectAndAnalyze()
         else:
-            an = SimpleAnalysis(debug = self.debug, date = date, dataSxtr = dataRn.dataSxtrs, Ds9Display = self.args.Ds9Display, FitDisplay = self.args.FitDisplay, focRes = float(self.rt.cfg['FOCUSER_RESOLUTION']), ev = self.ev, logger = self.logger)
+            an = SimpleAnalysis(
+                debug = self.debug, 
+                date = date, 
+                dataSxtr = dataRn.dataSxtrs, 
+                Ds9Display = self.args.Ds9Display, 
+                FitDisplay = self.args.FitDisplay, 
+                xdisplay = self.xdisplay,
+                focRes = float(self.rt.cfg['FOCUSER_RESOLUTION']), 
+                ev = self.ev, 
+                logger = self.logger)
+
             arFt, arMns= an.analyze()
             #ToDo matplotlib issue
             if not self.args.model:

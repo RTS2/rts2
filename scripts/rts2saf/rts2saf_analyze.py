@@ -36,19 +36,21 @@ import sys
 import psutil
 import matplotlib
 
+XDISPLAY=None
+
 pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
 if 'init' in pnm or 'rts2-executor' in pnm:
     matplotlib.use('Agg')    
-    DISPLAY=False
+    XDISPLAY=False
 else:
     from subprocess import Popen, PIPE
     p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
     p.communicate()
     if p.returncode == 0:
-        DISPLAY=True
+        XDISPLAY=True
     else:
         matplotlib.use('Agg')    
-        DISPLAY=False
+        XDISPLAY=False
 
 
 from rts2saf.analyzeruns import AnalyzeRuns
@@ -84,11 +86,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not DISPLAY:
-        args.FitDisplay=False
-        args.Ds9Display=False
-        
-
     if args.debug:
         args.level =  'DEBUG'
         args.toconsole = True
@@ -115,7 +112,7 @@ if __name__ == '__main__':
         print 'log file is written to: {}'.format(args.logfile)
 
 
-    aRs = AnalyzeRuns(debug = args.debug, basePath = args.basePath, args = args, rt = rtc, ev = ev, logger = logger)
+    aRs = AnalyzeRuns(debug = args.debug, basePath = args.basePath, args = args, rt = rtc, ev = ev, logger = logger, xdisplay = XDISPLAY)
     aRs.aggregateRuns()
     if len(aRs.fS) == 0:
         logger.warn('rts2saf_analyze: exiting, no files found in basepath: {}'.format(args.basePath))

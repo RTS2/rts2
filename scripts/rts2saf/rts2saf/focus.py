@@ -62,7 +62,7 @@ class Focus(object):
     :var logger:  :py:mod:`rts2saf.log`
 
     """
-    def __init__(self, debug=False, proxy=None, args=None, dryFitsFiles=None, ccd=None, foc=None, ftws=None, rt=None, ev=None, logger=None):
+    def __init__(self, debug=False, proxy=None, args=None, dryFitsFiles=None, ccd=None, foc=None, ftws=None, rt=None, ev=None, logger=None, xdisplay = None):
         self.debug=debug
         self.proxy=proxy
         self.args=args
@@ -73,6 +73,7 @@ class Focus(object):
         self.ev=ev
         self.rt=rt
         self.logger=logger
+        self.xdisplay = xdisplay
 
     def run(self):
         """Loop over filter wheels, their filters and offsets (FOC_FOFF)
@@ -181,6 +182,7 @@ class Focus(object):
                         dataSxtr=dataSxtr, 
                         Ds9Display=self.args.Ds9Display, 
                         FitDisplay=self.args.FitDisplay, 
+                        xdisplay = self.xdisplay,
                         focRes=self.foc.resolution, 
                         moduleName=args.criteria, 
                         ev=self.ev, 
@@ -193,6 +195,7 @@ class Focus(object):
                         dataSxtr=dataSxtr, 
                         Ds9Display=self.args.Ds9Display, 
                         FitDisplay=self.args.FitDisplay, 
+                        xdisplay = self.xdisplay,
                         ftwName=ftw.name, 
                         ftName=ft.name, 
                         focRes=self.foc.resolution, 
@@ -242,9 +245,13 @@ class Focus(object):
 
                 if self.debug: self.logger.debug('Focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
             else:
+                # for a given filter wheel, all filters processed
                 # no incomplete set of offsets are written
                 if self.rt.cfg['WRITE_FILTER_OFFSETS']:
                     acqu.writeOffsets(ftw=ftw)
+
+                # calculate the filter offsets and log them
+
 
             if self.debug: self.logger.debug('Focus: end filter wheel: {}'.format(ftw.name))
         else:

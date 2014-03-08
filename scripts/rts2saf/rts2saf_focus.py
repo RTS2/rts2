@@ -41,19 +41,21 @@ import time
 import psutil
 import matplotlib
 
+XDISPLAY=None
+
 pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
 if 'init' in pnm or 'rts2-executor' in pnm:
     matplotlib.use('Agg')    
-    DISPLAY=False
+    XDISPLAY=False
 else:
     from subprocess import Popen, PIPE
     p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
     p.communicate()
     if p.returncode == 0:
-        DISPLAY=True
+        XDISPLAY=True
     else:
         matplotlib.use('Agg')    
-        DISPLAY=False
+        XDISPLAY=False
 
 
 
@@ -94,10 +96,6 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-    if not DISPLAY:
-        args.FitDisplay=False
-        args.Ds9Display=False
-        
 
     # used for test the whole process
     # there is no environment, specify your absolute path
@@ -203,13 +201,15 @@ if __name__ == '__main__':
 
     # start acquistion and analysis
     logger.info('rts2saf_focus: starting scan at: {0}'.format(ev.startTime))
-    fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=foc, ftws=ftws, rt=rt, ev=ev, logger=logger)
+    fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=foc, ftws=ftws, rt=rt, ev=ev, logger=logger, xdisplay = XDISPLAY)
     fs.run()
 
     if rt.cfg['REENABLE_EXEC']:
         try:
             logger.info('rts2saf_focus: starting rts2saf_reenable_exec.py in a subprocess')
-            stdo, stde=subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py')
+            subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py').wait()
+            logger.info('rts2saf_focus: ending rts2saf_reenable_exec.py')
+
         except Exception as e:
             logger.error('rts2saf_focus: failed rts2saf_reenable_exec.py in a subprocess: {} {}'.format(e.message, e.args))
             
