@@ -525,7 +525,7 @@ int AAG::initHardware ()
 		return -1;
 
 	int vsup = 0;
-	ret = sscanf (buf, "v! %d!", &vsup);
+	ret = sscanf (buf, "!v %d!", &vsup);
 	if (ret == 1 && vsup == 1)
 		createValue (windSpeed, "WIND_SPEED", "Wind Speed", true);
 
