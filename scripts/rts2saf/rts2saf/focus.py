@@ -74,6 +74,7 @@ class Focus(object):
         self.rt=rt
         self.logger=logger
         self.xdisplay = xdisplay
+        self.foc.focDef = None
 
     def run(self):
         """Loop over filter wheels, their filters and offsets (FOC_FOFF)
@@ -82,10 +83,13 @@ class Focus(object):
             # only interesting in case multiple filter wheels are present
             if len(ftw.filters) ==1 and k>0:
                 # self.ftws is sorted
-                # these are filter wheels which have no real filters (defined in config) 
+                # these are filter wheels which have atleast one empty slot and no real filters 
                 # they must appear in self.ftws in order to set the empty slot
                 continue
         
+            
+            self.foc.focDef = None
+            rFts= list()
             for ft in ftw.filters:
                 if self.debug: self.logger.debug('Focus: start filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
 
@@ -204,6 +208,9 @@ class Focus(object):
 
                     rFt, rMns= anr.analyze()
 
+                # save them for filter offset calucaltion
+                rFts.append(rFt)
+
                 if rFt.fitFlag:
                     anr.display()
 
@@ -239,9 +246,6 @@ class Focus(object):
                         # ToDo subtract filter offset and set FOC_DEF
                         self.logger.info('Focus: filter: {0} not setting FOC_DEF (see configuration)'.format(ft.name))
 
-                else:
-                    ft.OffsetToEmptySlot=int(rFt.extrFitPos- self.foc.focDef)
-                    if self.debug: self.logger.debug('Focus: set ft.OffsetToEmptySlot: {0}'.format(int(ft.OffsetToEmptySlot)))
 
                 if self.debug: self.logger.debug('Focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
             else:
@@ -249,9 +253,24 @@ class Focus(object):
                 # no incomplete set of offsets are written
                 if self.rt.cfg['WRITE_FILTER_OFFSETS']:
                     acqu.writeOffsets(ftw=ftw)
+            #
+            # log filter offsets
+            if self.foc.focDef is not None:
+                for ft in ftw.filters:
+                    for rFt in rFts:
+                        if ft.name == rFt.ftName:
+                            ft.OffsetToEmptySlot=int(rFt.extrFitPos- self.foc.focDef)
+                            self.logger.info('Focus: ft: {0}, set ft.OffsetToEmptySlot: {1}'.format(ft.name, int(ft.OffsetToEmptySlot)))
+                            break
+                    else:
+                        self.logger.warn('Focus: ft: {0}, not found in result, rFt.ftName: {1}, that is ok if this is a unittest run)'.format(ft.name, rFt.ftName))
 
-                # calculate the filter offsets and log them
-
+            elif len(ftw.filters) > 1:
+                self.logger.warn('Focus: found ft: {0} but no empty slot'.format(ft.name))
+            elif len(ftw.filters) == 1:
+                if self.debug: self.logger.debug('Focus: found ft: {0}'.format(fr.name))
+            else:
+                self.logger.warn('Focus: neither self.foc.focDef (empty slot), nor non empty slots found'.format(ft.name))
 
             if self.debug: self.logger.debug('Focus: end filter wheel: {}'.format(ftw.name))
         else:

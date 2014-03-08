@@ -174,7 +174,7 @@ class AnalyzeRuns(object):
             out = False
             # ToDo dictionary comprehension
             for k, fns in ft.iteritems():
-                info += '{} {} '.format(k, len(fns))
+                info += 'Ftname: {}, images: {}; '.format(k, len(fns))
                 if len(fns) > self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
                     out = True
                     rFt, rMns = self.analyzeRun(fitsFns = fns)
@@ -191,7 +191,9 @@ class AnalyzeRuns(object):
                 openMinFitPos = int(rFt.extrFitPos)
                 break
         else:
-            # is not a filter wheel run 
+            # no empty slot found
+            if len(rFts) > 1:
+                self.logger.warn('analyzeRuns: found {} fitted data sets, but no empty slot, do not calculate filter offsets'.format(len(rFts)))
             return rFts
 
         for rFt in rFts:
