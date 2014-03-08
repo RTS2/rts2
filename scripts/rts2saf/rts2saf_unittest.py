@@ -25,6 +25,9 @@ import sys
 import subprocess
 import shutil
 
+
+
+
 sex = '/usr/local/bin/sex'
 unittestDir = './unittest'
 
@@ -41,6 +44,12 @@ unittestFiles = [
     '/tmp/XMLRPC', 
     '/tmp/andor3', 
     ]
+
+if ':' in os.environ['DISPLAY']:
+    pass
+else:
+    # dirty but working (reason matplotlib unittest without X Window connection, matplotlib again'
+    os.environ['DISPLAY'] = ':0'
 
 def sextractor_version():
     if os.path.isfile(sex) and os.access(sex, os.X_OK):
