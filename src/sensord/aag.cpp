@@ -521,13 +521,13 @@ int AAG::initHardware ()
 	// query if windspeed sensor is present
 	char buf[2 * BLOCK_LENGTH + 1];
 	ret = aagConn->writeRead ("v!", 2, buf, 2 * BLOCK_LENGTH);
-	if (ret < 0)
-		return -1;
-
-	int vsup = 0;
-	ret = sscanf (buf, "!v %d!", &vsup);
-	if (ret == 1 && vsup == 1)
-		createValue (windSpeed, "WIND_SPEED", "Wind Speed", true);
+	if (ret > 0)
+	{
+		int vsup = 0;
+		ret = sscanf (buf, "!v %d!", &vsup);
+		if (ret == 1 && vsup == 1)
+			createValue (windSpeed, "WIND_SPEED", "Wind Speed", true);
+	}
 
 	if (!isnan (triggerRain->getValueDouble ()))
 		setWeatherState (false, "rain trigger unspecified");
