@@ -65,7 +65,7 @@ class TestDevices(unittest.TestCase):
 
     def setUp(self):
         pass
-    @unittest.skip('feature not yet implemented')
+    #@unittest.skip('feature not yet implemented')
     def test_deviceClasses(self):
         logger.info('== {} =='.format(self._testMethodName))
         # they are harmless

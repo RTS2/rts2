@@ -24,7 +24,11 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
 import os
-import matplotlib
+
+if 'matplotlib' not in sys.modules: 
+    import matplotlib
+    matplotlib.use('Agg')    
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize
