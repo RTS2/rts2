@@ -97,17 +97,12 @@ def deleteUnittestOutput():
 def executeUnittest():
     os.chdir(unittestDir)
 #    cmdL = ['python', '-m', 'unittest', 'discover', '-v', '-s', '.', '-p', 'test_fitdisplay.py']
+#    cmdL = ['python', '-m', 'unittest', 'discover', '-v', '-s', '.', '-p', 'test_executables.py']
     cmdL = ['python', '-m', 'unittest', 'discover', '-v', '-s', '.']
     cmd = ' '.join(cmdL)
-    print cmd
-    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    while True:
-        ln = proc.stdout.readline()
-        if ln != '':
-            ln.rstrip()
-        else:
-            break
-
+    #
+    # hm, where to does this process write?
+    subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).wait()
     os.chdir('../')
 
 
@@ -127,3 +122,4 @@ if __name__ == '__main__':
     deleteUnittestOutput()
     executeUnittest()
     prepareTgz()
+    print 'DONE'
