@@ -34,6 +34,18 @@
  */
 class Rts2ScheduleApp: public rts2db::AppDb
 {
+	public:
+		Rts2ScheduleApp (int argc, char ** argv);
+		virtual ~Rts2ScheduleApp (void);
+
+		virtual int doProcessing ();
+
+	protected:
+		virtual void usage ();
+		virtual void help ();
+		virtual int processOption (int _opt);
+		virtual int init ();
+
 	private:
 		Rts2SchedBag *schedBag;
 
@@ -99,286 +111,7 @@ class Rts2ScheduleApp: public rts2db::AppDb
 		 * Prints statistics of merits of the best population.
 		 */
 		void printMeritsStatistics ();
-
-	protected:
-		virtual void usage ();
-		virtual void help ();
-		virtual int processOption (int _opt);
-		virtual int init ();
-
-	public:
-		Rts2ScheduleApp (int argc, char ** argv);
-		virtual ~Rts2ScheduleApp (void);
-
-		virtual int doProcessing ();
 };
-
-
-void
-Rts2ScheduleApp::printMerits (objFunc _type, const char *name)
-{
-	Rts2SchedBag::iterator iter;
-	std::cout << name << ": ";
-
-	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
-	{
-		std::cout << std::left << std::setw (8) << (*iter)->getObjectiveFunction (_type) << " ";
-	}
-
-	double min, avg, max;
-	schedBag->getStatistics (min, avg, max, _type);
-
-	std::cout << std::endl << name << " statistics: "
-		<< min << SEP
-		<< avg << SEP
-		<< max << std::endl;
-}
-
-
-void
-Rts2ScheduleApp::printSchedule (Rts2Schedule *sched)
-{
-	int i = 1;
-	for (Rts2Schedule::iterator iter_s = sched->begin (); iter_s != sched->end (); iter_s++)
-	{
-		std::cout << "S  " << std::setw (3) << std::right << i++ << " "
-			<< *(*iter_s) << " "
-			<< (*iter_s)->altitudeMerit (sched->getJDStart (), sched->getJDEnd ()) << std::endl;
-	}
-}
-
-void
-Rts2ScheduleApp::printSGAMerits ()
-{
-	Rts2SchedBag::iterator iter;
-	schedBag->calculateNSGARanks ();
-	// print header
-	std::cout << std::left
-		<< std::setw (11) << "ALTITUDE" SEP
-		<< std::setw (11) << "ACCOUNT" SEP
-		<< std::setw (11) << "DISTANCE" SEP
-		<< std::setw (11) << "VISIBILITY" SEP
-		<< std::setw (4) << "DIVT" SEP
-		<< std::setw (4) << "DIVO" SEP
-		<< std::setw (4) << "SCH" SEP
-		<< std::setw (4) << "UNT" SEP
-		<< std::setw (4) << "OBN" SEP
-		<< std::setw (11) << "SINGLE"
-		<< std::endl;
-	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
-	{
-		std::cout << std::left 
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE) << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT) << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE) << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) << SEP
-			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_TARGET)) << SEP
-			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_OBSERVATIONS)) << SEP
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME) << SEP
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS) << SEP
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM) << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
-			<< std::endl;
-		if (printSchedules)
-			printSchedule (*iter);
-	}
-}
-
-void
-Rts2ScheduleApp::printNSGAMerits ()
-{
-	Rts2SchedBag::iterator iter;
-	schedBag->calculateNSGARanks ();
-	// print header
-	std::cout << std::left << "RNK " SEP
-		<< std::setw (11) << "ALTITUDE" SEP
-		<< std::setw (11) << "ACCOUNT" SEP
-		<< std::setw (11) << "DISTANCE" SEP
-		<< std::setw (11) << "VISIBILITY" SEP
-		<< std::setw (4) << "DIVT" SEP
-		<< std::setw (4) << "DIVO" SEP
-		<< std::setw (4) << "SCH" SEP
-		<< std::setw (4) << "UNT" SEP
-		<< std::setw (4) << "OBN"
-		<< std::endl;
-	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
-	{
-		std::cout << std::left << std::setw (4) << (*iter)->getNSGARank () << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE) << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT) << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE) << SEP
-			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) << SEP
-			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_TARGET)) << SEP
-			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_OBSERVATIONS)) << SEP
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME) << SEP
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS) << SEP
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
-			<< std::endl; 
-		if (printSchedules)
-			printSchedule (*iter);
-	}
-}
-
-
-void
-Rts2ScheduleApp::printMerits ()
-{
-	switch (algorithm)
-	{
-		case SGA:
-			printSGAMerits ();
-			break;
-		case NSGAII:
-			printNSGAMerits ();
-			break;
-	}
-}
-
-
-void
-Rts2ScheduleApp::printMeritsStatistics ()
-{
-	double _min, _avg, _max;
-	switch (algorithm)
-	{
-	  	case SGA:
-			schedBag->getStatistics (_min, _avg, _max);
-			std::cout << "SINGLE " << _min << SEP << _avg << SEP << _max << std::endl;	
-			break;
-		case NSGAII:
-			std::list <objFunc> obj = schedBag->getObjectives ();
-			for (std::list <objFunc>::iterator objIter = obj.begin (); objIter != obj.end (); objIter++)
-			{
-				schedBag->getNSGAIIBestStatistics (_min, _avg, _max, *objIter);
-				std::cout << getObjectiveName (*objIter) << SEP << _min << SEP << _avg << SEP << _max << std::endl;
-			}
-			schedBag->getNSGAIIAverageDistance (_min, _avg, _max);
-			std::cout << "AVERAGE_DISTANCE" SEP << _min << SEP << _avg << SEP << _max << std::endl;
-			break;
-	}
-}
-
-
-void
-Rts2ScheduleApp::usage ()
-{
-	std::cout << "\t" << getAppName () << std::endl
-		<< " To get schedule from 17th January 2006 01:17:18 UT to 18th January 2006 01:17:18 UT" << std::endl
-		<< "\t" << getAppName () << " --start 2006-01-17T01:17:18 --end 2006-01-18T02:03:04" << std::endl;
-}
-
-
-void
-Rts2ScheduleApp::help ()
-{
-	std::cout << "Create schedule for given night. The programme uses genetic algorithm scheduling, described at \
-http://rts2.org/scheduling.pdf." << std::endl
-		<< "You are free to experiment with various settings to create optimal observing schedule" << std::endl;
-	rts2db::AppDb::help ();
-}
-
-
-int
-Rts2ScheduleApp::processOption (int _opt)
-{
-	switch (_opt)
-	{
-		case 'v':
-			verbose++;
-			break;
-		case 'g':
-			generations = atoi (optarg);
-			break;
-		case 'p':
-			popSize = atoi (optarg);
-			if (popSize <= 0)
-			{
-				logStream (MESSAGE_ERROR) << "Population size must be positive number " << optarg << sendLog;
-				return -1;
-			}
-			break;		
-		case 'a':
-			if (!strcasecmp (optarg, "SGA"))
-			{
-				algorithm = SGA;
-			}
-			else if (!strcasecmp (optarg, "NSGAII"))
-			{
-			  	algorithm = NSGAII;
-			}
-			else
-			{
-				logStream (MESSAGE_ERROR) << "Unknow algorithm: " << optarg << sendLog;
-			  	return -1;
-			}
-			break;
-		case 's':
-			printSchedules = true;
-			break;
-		case 'm':
-			printMeritsStat = true;
-			break;
-		case 'o':
-			obsNight = new struct ln_date;
-			return parseDate (optarg, obsNight);
-		case OPT_START_DATE:
-			return parseDate (optarg, startDate);
-		case OPT_END_DATE:
-			return parseDate (optarg, endDate);
-		default:
-			return rts2db::AppDb::processOption (_opt);
-	}
-	return 0;
-}
-
-
-int
-Rts2ScheduleApp::init ()
-{
-	int ret;
-	ret = rts2db::AppDb::init ();
-	if (ret)
-		return ret;
-
-	srandom (time (NULL));
-
-	// initialize schedules..
-	if (isnan (startDate))
-		startDate = ln_get_julian_from_sys ();
-	if (isnan (endDate))
-	  	endDate = startDate + 0.5;
-	if (startDate >= endDate)
-	{
-		  std::cerr << "Scheduling interval end date is behind scheduling start date, start is "
-		  	<< LibnovaDate (startDate) << ", end is "
-			<< LibnovaDate (endDate)
-			<< std::endl;
-	}
-
-	// create list of schedules..
-	if (obsNight)
-	{
-		std::cout << "Generating schedule for night " << LibnovaDate (obsNight) << std::endl;
-
-		schedBag = new Rts2SchedBag (NAN, NAN);
-		ret = schedBag->constructSchedulesFromObsSet (popSize, obsNight);
-		if (ret)
-			return ret;
-	}
-	else
-	{
-		std::cout << "Generating schedule from " << LibnovaDate (startDate) << " to " << LibnovaDate (endDate) << std::endl;
-
-		schedBag = new Rts2SchedBag (startDate, endDate);
-
-		ret = schedBag->constructSchedules (popSize);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
-}
-
 
 Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): rts2db::AppDb (argc, argv)
 {
@@ -409,16 +142,13 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): rts2db::AppDb (argc, 
 	addOption (OPT_END_DATE, "end", 1, "produce schedule till this date");
 }
 
-
 Rts2ScheduleApp::~Rts2ScheduleApp (void)
 {
 	delete obsNight;
 	delete schedBag;
 }
 
-
-int
-Rts2ScheduleApp::doProcessing ()
+int Rts2ScheduleApp::doProcessing ()
 {
 	if (verbose)
 	  	printMerits ();
@@ -488,13 +218,259 @@ Rts2ScheduleApp::doProcessing ()
 	return 0;
 }
 
+void Rts2ScheduleApp::usage ()
+{
+	std::cout << "\t" << getAppName () << std::endl
+		<< " To get schedule from 17th January 2006 01:17:18 UT to 18th January 2006 01:17:18 UT" << std::endl
+		<< "\t" << getAppName () << " --start 2006-01-17T01:17:18 --end 2006-01-18T02:03:04" << std::endl;
+}
 
-int
-main (int argc, char ** argv)
+void Rts2ScheduleApp::help ()
+{
+	std::cout << "Create schedule for given night. The programme uses genetic algorithm scheduling, described at \
+http://rts2.org/scheduling.pdf." << std::endl
+		<< "You are free to experiment with various settings to create optimal observing schedule" << std::endl;
+	rts2db::AppDb::help ();
+}
+
+int Rts2ScheduleApp::processOption (int _opt)
+{
+	switch (_opt)
+	{
+		case 'v':
+			verbose++;
+			break;
+		case 'g':
+			generations = atoi (optarg);
+			break;
+		case 'p':
+			popSize = atoi (optarg);
+			if (popSize <= 0)
+			{
+				logStream (MESSAGE_ERROR) << "Population size must be positive number " << optarg << sendLog;
+				return -1;
+			}
+			break;		
+		case 'a':
+			if (!strcasecmp (optarg, "SGA"))
+			{
+				algorithm = SGA;
+			}
+			else if (!strcasecmp (optarg, "NSGAII"))
+			{
+			  	algorithm = NSGAII;
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "Unknow algorithm: " << optarg << sendLog;
+			  	return -1;
+			}
+			break;
+		case 's':
+			printSchedules = true;
+			break;
+		case 'm':
+			printMeritsStat = true;
+			break;
+		case 'o':
+			obsNight = new struct ln_date;
+			return parseDate (optarg, obsNight);
+		case OPT_START_DATE:
+			return parseDate (optarg, startDate);
+		case OPT_END_DATE:
+			return parseDate (optarg, endDate);
+		default:
+			return rts2db::AppDb::processOption (_opt);
+	}
+	return 0;
+}
+
+int Rts2ScheduleApp::init ()
+{
+	int ret;
+	ret = rts2db::AppDb::init ();
+	if (ret)
+		return ret;
+
+	srandom (time (NULL));
+
+	// initialize schedules..
+	if (isnan (startDate))
+		startDate = ln_get_julian_from_sys ();
+	if (isnan (endDate))
+	  	endDate = startDate + 0.5;
+	if (startDate >= endDate)
+	{
+		  std::cerr << "Scheduling interval end date is behind scheduling start date, start is "
+		  	<< LibnovaDate (startDate) << ", end is "
+			<< LibnovaDate (endDate)
+			<< std::endl;
+	}
+
+	// create list of schedules..
+	if (obsNight)
+	{
+		std::cout << "Generating schedule for night " << LibnovaDate (obsNight) << std::endl;
+
+		schedBag = new Rts2SchedBag (NAN, NAN);
+		ret = schedBag->constructSchedulesFromObsSet (popSize, obsNight);
+		if (ret)
+			return ret;
+	}
+	else
+	{
+		std::cout << "Generating schedule from " << LibnovaDate (startDate) << " to " << LibnovaDate (endDate) << std::endl;
+
+		schedBag = new Rts2SchedBag (startDate, endDate);
+
+		ret = schedBag->constructSchedules (popSize);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+void Rts2ScheduleApp::printMerits (objFunc _type, const char *name)
+{
+	Rts2SchedBag::iterator iter;
+	std::cout << name << ": ";
+
+	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
+	{
+		std::cout << std::left << std::setw (8) << (*iter)->getObjectiveFunction (_type) << " ";
+	}
+
+	double min, avg, max;
+	schedBag->getStatistics (min, avg, max, _type);
+
+	std::cout << std::endl << name << " statistics: "
+		<< min << SEP
+		<< avg << SEP
+		<< max << std::endl;
+}
+
+void Rts2ScheduleApp::printSchedule (Rts2Schedule *sched)
+{
+	int i = 1;
+	for (Rts2Schedule::iterator iter_s = sched->begin (); iter_s != sched->end (); iter_s++)
+	{
+		std::cout << "S  " << std::setw (3) << std::right << i++ << " "
+			<< *(*iter_s) << " "
+			<< (*iter_s)->altitudeMerit (sched->getJDStart (), sched->getJDEnd ()) << std::endl;
+	}
+}
+
+void Rts2ScheduleApp::printSGAMerits ()
+{
+	Rts2SchedBag::iterator iter;
+	schedBag->calculateNSGARanks ();
+	// print header
+	std::cout << std::left
+		<< std::setw (11) << "ALTITUDE" SEP
+		<< std::setw (11) << "ACCOUNT" SEP
+		<< std::setw (11) << "DISTANCE" SEP
+		<< std::setw (11) << "VISIBILITY" SEP
+		<< std::setw (4) << "DIVT" SEP
+		<< std::setw (4) << "DIVO" SEP
+		<< std::setw (4) << "SCH" SEP
+		<< std::setw (4) << "UNT" SEP
+		<< std::setw (4) << "OBN" SEP
+		<< std::setw (11) << "SINGLE"
+		<< std::endl;
+	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
+	{
+		std::cout << std::left 
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_TARGET)) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_OBSERVATIONS)) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
+			<< std::endl;
+		if (printSchedules)
+			printSchedule (*iter);
+	}
+}
+
+void Rts2ScheduleApp::printNSGAMerits ()
+{
+	Rts2SchedBag::iterator iter;
+	schedBag->calculateNSGARanks ();
+	// print header
+	std::cout << std::left << "RNK " SEP
+		<< std::setw (11) << "ALTITUDE" SEP
+		<< std::setw (11) << "ACCOUNT" SEP
+		<< std::setw (11) << "DISTANCE" SEP
+		<< std::setw (11) << "VISIBILITY" SEP
+		<< std::setw (4) << "DIVT" SEP
+		<< std::setw (4) << "DIVO" SEP
+		<< std::setw (4) << "SCH" SEP
+		<< std::setw (4) << "UNT" SEP
+		<< std::setw (4) << "OBN"
+		<< std::endl;
+	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
+	{
+		std::cout << std::left << std::setw (4) << (*iter)->getNSGARank () << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_TARGET)) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_OBSERVATIONS)) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
+			<< std::endl; 
+		if (printSchedules)
+			printSchedule (*iter);
+	}
+}
+
+void Rts2ScheduleApp::printMerits ()
+{
+	switch (algorithm)
+	{
+		case SGA:
+			printSGAMerits ();
+			break;
+		case NSGAII:
+			printNSGAMerits ();
+			break;
+	}
+}
+
+void Rts2ScheduleApp::printMeritsStatistics ()
+{
+	double _min, _avg, _max;
+	switch (algorithm)
+	{
+	  	case SGA:
+			schedBag->getStatistics (_min, _avg, _max);
+			std::cout << "SINGLE " << _min << SEP << _avg << SEP << _max << std::endl;	
+			break;
+		case NSGAII:
+			std::list <objFunc> obj = schedBag->getObjectives ();
+			for (std::list <objFunc>::iterator objIter = obj.begin (); objIter != obj.end (); objIter++)
+			{
+				schedBag->getNSGAIIBestStatistics (_min, _avg, _max, *objIter);
+				std::cout << getObjectiveName (*objIter) << SEP << _min << SEP << _avg << SEP << _max << std::endl;
+			}
+			schedBag->getNSGAIIAverageDistance (_min, _avg, _max);
+			std::cout << "AVERAGE_DISTANCE" SEP << _min << SEP << _avg << SEP << _max << std::endl;
+			break;
+	}
+}
+
+int main (int argc, char ** argv)
 {
 	try
 	{
-		Rts2ScheduleApp app = Rts2ScheduleApp (argc, argv);
+		Rts2ScheduleApp app (argc, argv);
 		return app.run ();
 	}
 	catch (rts2db::SqlError err)
