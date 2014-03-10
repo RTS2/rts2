@@ -37,7 +37,7 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, wcs
 	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir)
 	c.tempentry(a.odir[4:])
 
-	ff=pyfits.fitsopen(fn,'readonly')
+	ff=pyfits.open(fn,'readonly')
 
 	ra = dec = scale = None
 
@@ -88,9 +88,9 @@ def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, wcs
 	if ret and print_results:
 		# script needs to reopen file 
 		if odir is None:
-			ff=pyfits.fitsopen(fn, 'readonly')
+			ff=pyfits.open(fn,'readonly')
 		else:
-			ff=pyfits.fitsopen(odir + '/' + fn, 'readonly')
+			ff=pyfits.open(odir + '/' + fn,'readonly')
 		fh=ff[0].header
 		ff.close()
 

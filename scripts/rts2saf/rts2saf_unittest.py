@@ -101,7 +101,7 @@ def executeUnittest():
     cmdL = ['python', '-m', 'unittest', 'discover', '-v', '-s', '.']
     cmd = ' '.join(cmdL)
     #
-    # hm, where to does this process write?
+    # hm, where to does this process write to?
     subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).wait()
     os.chdir('../')
 

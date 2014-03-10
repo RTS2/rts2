@@ -45,9 +45,7 @@ class ImgpAnalysis():
         # RTS2 has no possibilities to pass arguments to a command, defining the defaults
         self.scriptName= scriptName 
         self.fitsFileName= fitsFileName
-        #self.astrometryCmd= 'rts2-astrometry-std-fits.net'
-        # uses header created by standard RTS2
-        self.astrometryCmd= 'rts2-astrometry-std-fits.net'
+        self.astrometryCmd= 'rts2-astrometry.net'
         self.fwhmCmd= 'rts2saf_fwhm.py'
         # this is the default config.
         # specify a different here if necessary

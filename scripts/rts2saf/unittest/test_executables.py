@@ -84,7 +84,7 @@ class TestExecutables(unittest.TestCase):
     def test_rts2saf_imgp(self):
         logger.info('== {} =='.format(self._testMethodName))
         # rts2saf_imgp.py: starting
-        # rts2saf_imgp.py, rts2-astrometry-std-fits.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
+        # rts2saf_imgp.py, rts2-astrometry.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
         # ...
         m = re.compile('.*?(corrwerr).+? ([0-9.]+)')
