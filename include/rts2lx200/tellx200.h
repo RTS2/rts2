@@ -160,11 +160,13 @@ class TelLX200:public Telescope
 		 * @param new_rate	new slew speed to set.
 		 *
 		 * @return -1 on failure & set errno, 5 (>=0) otherwise
+		 *
+		 * @see tel_set_rate() for speed.
 		 */
 		int tel_set_slew_rate (char new_rate);
 
-		int tel_start_move (char direction);
-		int tel_stop_move (char direction);
+		int tel_start_slew_move (char direction);
+		int tel_stop_slew_move (char direction);
 
 		int matchTime ();
 

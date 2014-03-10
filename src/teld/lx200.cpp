@@ -326,7 +326,7 @@ int LX200::stopMove ()
 	int i;
 	for (i = 0; i < 4; i++)
 	{
-		if (tel_stop_move (dirs[i]) < 0)
+		if (tel_stop_slew_move (dirs[i]) < 0)
 			return -1;
 	}
 	return 0;
@@ -426,7 +426,7 @@ int LX200::startDir (char *dir)
 		case DIR_NORTH:
 		case DIR_SOUTH:
 			tel_set_rate (RATE_FIND);
-			return tel_start_move (*dir);
+			return tel_start_slew_move (*dir);
 	}
 	return -2;
 }
@@ -439,7 +439,7 @@ int LX200::stopDir (char *dir)
 		case DIR_WEST:
 		case DIR_NORTH:
 		case DIR_SOUTH:
-			return tel_stop_move (*dir);
+			return tel_stop_slew_move (*dir);
 	}
 	return -2;
 }

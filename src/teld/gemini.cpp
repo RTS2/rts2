@@ -191,35 +191,6 @@ class Gemini:public TelLX200
 		 */
 		int tel_gemini_reset ();
 
-		/**
-		 * Set slew rate.
-		 *
-		 * @param new_rate	new rate to set. Uses RATE_<SPEED> constant.
-		 *
-		 * @return -1 on failure & set errno, 5 (>=0) otherwise
-		 */
-		int tel_set_rate (char new_rate);
-
-		/**
-		 * Start slew.
-		 *
-		 * @see tel_set_rate() for speed.
-		 *
-		 * @param direction 	direction
-		 *
-		 * @return -1 on failure, 0 on sucess.
-		 */
-		int telescope_start_move (char direction);
-
-		/**
-		 * Stop sleew.
-		 *
-		 * @see tel_start_slew for direction.
-		 */
-		int telescope_stop_move (char direction);
-
-		void telescope_stop_goto ();
-
 		int32_t raRatio;
 		int32_t decRatio;
 
@@ -248,6 +219,7 @@ class Gemini:public TelLX200
 		double lastMoveRa;
 		double lastMoveDec;
 
+		void tel_stop_goto ();
 		int tel_start_move ();
 
 		enum
@@ -1085,57 +1057,7 @@ int Gemini::info ()
 	return TelLX200::info ();
 }
 
-int Gemini::tel_set_rate (char new_rate)
-{
-	char command[6];
-	int ret;
-	sprintf (command, ":R%c#", new_rate);
-	ret = serConn->writePort (command, 5);
-	usleep (USEC_SEC / 15);
-	return ret;
-}
-
-int Gemini::telescope_start_move (char direction)
-{
-	char command[6];
-	// start worm if moving in RA DEC..
-	/*  if (worm == 135 && (direction == DIR_EAST || direction == DIR_WEST))
-		{
-		  // G11 (version 3.x) have some problems with starting worm..give it some time
-		  // to react
-		  startWorm ();
-		  usleep (USEC_SEC / 10);
-		  startWorm ();
-		  usleep (USEC_SEC / 10);
-		  worm_move_needed = 1;
-		}
-	  else
-		{
-		  worm_move_needed = 0;
-		} */
-	sprintf (command, ":M%c#", direction);
-	return serConn->writePort (command, 5);
-	// workaround suggested by Rene Goerlich
-	//if (worm_move_needed == 1)
-	//  stopWorm ();
-}
-
-int Gemini::telescope_stop_move (char direction)
-{
-	char command[6];
-	int ret;
-	sprintf (command, ":Q%c#", direction);
-	if (worm_move_needed && (direction == DIR_EAST || direction == DIR_WEST))
-	{
-		worm_move_needed = 0;
-		stopWorm ();
-	}
-	ret = serConn->writePort (command, 5);
-	usleep (USEC_SEC / 15);
-	return ret;
-}
-
-void Gemini::telescope_stop_goto ()
+void Gemini::tel_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
 	serConn->writePort (":Q#", 3);
@@ -1153,7 +1075,7 @@ int Gemini::tel_start_move ()
 	char retstr;
 	char buf[55];
 
-	telescope_stop_goto ();
+	tel_stop_goto ();
 
 	if ((tel_write_ra (lastMoveRa) < 0) || (serConn->writePort (":ONtest#", 8) < 0)
 		|| (tel_write_dec (lastMoveDec) < 0))
@@ -1307,12 +1229,12 @@ int Gemini::startResync ()
 	#endif
 	if (sep > 1)
 	{
-		tel_set_rate (RATE_SLEW);
+		tel_set_slew_rate (RATE_SLEW);
 		tel_gemini_set (GEMINI_CMD_RATE_CENTER, 8);
 	}
 	else
 	{
-		tel_set_rate (RATE_CENTER);
+		tel_set_slew_rate (RATE_CENTER);
 		tel_gemini_set (GEMINI_CMD_RATE_CENTER,	centeringSpeed->getValueInteger ());
 	}
 	worm_move_needed = 0;
@@ -1357,10 +1279,10 @@ int Gemini::isMoving ()
 		{
 			if (timercmp (&changeTimeRa, &now, <))
 			{
-				ret = telescope_stop_move (DIR_EAST);
+				ret = tel_stop_slew_move (DIR_EAST);
 				if (ret == -1)
 					return ret;
-				ret = telescope_stop_move (DIR_WEST);
+				ret = tel_stop_slew_move (DIR_WEST);
 				if (ret == -1)
 					return ret;
 				timerclear (&changeTimeRa);
@@ -1377,10 +1299,10 @@ int Gemini::isMoving ()
 			if (timercmp (&changeTimeDec, &now, <))
 			{
 				nextChangeDec = 0;
-				ret = telescope_stop_move (DIR_NORTH);
+				ret = tel_stop_slew_move (DIR_NORTH);
 				if (ret == -1)
 					return ret;
-				ret = telescope_stop_move (DIR_SOUTH);
+				ret = tel_stop_slew_move (DIR_SOUTH);
 				if (ret == -1)
 					return ret;
 				timerclear (&changeTimeDec);
@@ -1424,7 +1346,7 @@ int Gemini::endMove ()
 
 int Gemini::stopMove ()
 {
-	telescope_stop_goto ();
+	tel_stop_goto ();
 	#ifdef L4_GUIDE
 	timerclear (&changeTime);
 	#else
@@ -1815,7 +1737,7 @@ int Gemini::change_ra (double chng_ra)
 	{
 		if (direction == DIR_EAST)
 		{
-			ret = tel_set_rate (RATE_CENTER);
+			ret = tel_set_slew_rate (RATE_CENTER);
 			if (ret)
 				return ret;
 			ret =
@@ -1829,7 +1751,7 @@ int Gemini::change_ra (double chng_ra)
 		// west..only turn worm on
 		else
 		{
-			ret = tel_set_rate (RATE_CENTER);
+			ret = tel_set_slew_rate (RATE_CENTER);
 			if (ret)
 				return ret;
 			ret =
@@ -1843,7 +1765,7 @@ int Gemini::change_ra (double chng_ra)
 	}
 	else
 	{
-		ret = tel_set_rate (RATE_GUIDE);
+		ret = tel_set_slew_rate (RATE_GUIDE);
 		if (ret)
 			return ret;
 		ret =
@@ -1869,7 +1791,7 @@ int Gemini::change_dec (double chng_dec)
 	if (fabs (chng_dec) > guideLimit->getValueDouble ())
 	{
 		centeringSpeed->setValueInteger (20);
-		ret = tel_set_rate (RATE_CENTER);
+		ret = tel_set_slew_rate (RATE_CENTER);
 		if (ret == -1)
 			return ret;
 		ret =
@@ -1884,7 +1806,7 @@ int Gemini::change_dec (double chng_dec)
 	}
 	else
 	{
-		ret = tel_set_rate (RATE_GUIDE);
+		ret = tel_set_slew_rate (RATE_GUIDE);
 		if (ret == -1)
 			return ret;
 		ret =
@@ -2098,13 +2020,13 @@ int Gemini::parkBootesSensors ()
 	time (&timeout);
 	now = timeout;
 	timeout += 20;
-	ret = tel_set_rate (RATE_SLEW);
+	ret = tel_set_slew_rate (RATE_SLEW);
 	if (ret)
 		return ret;
-	ret = telescope_start_move (direction);
+	ret = tel_start_slew_move (direction);
 	if (ret)
 	{
-		telescope_stop_move (direction);
+		tel_stop_slew_move (direction);
 		return ret;
 	}
 	while ((featurePort->getValueInteger () & 1) == old_tel_axis && now < timeout)
@@ -2112,7 +2034,7 @@ int Gemini::parkBootesSensors ()
 		getAxis ();
 		time (&now);
 	}
-	telescope_stop_move (direction);
+	tel_stop_slew_move (direction);
 	// then in dec
 	//
 	old_tel_axis = featurePort->getValueInteger () & 2;
@@ -2120,10 +2042,10 @@ int Gemini::parkBootesSensors ()
 	time (&timeout);
 	now = timeout;
 	timeout += 20;
-	ret = telescope_start_move (direction);
+	ret = tel_start_slew_move (direction);
 	if (ret)
 	{
-		telescope_stop_move (direction);
+		tel_stop_slew_move (direction);
 		return ret;
 	}
 	while ((featurePort->getValueInteger () & 2) == old_tel_axis && now < timeout)
@@ -2131,7 +2053,7 @@ int Gemini::parkBootesSensors ()
 		getAxis ();
 		time (&now);
 	}
-	telescope_stop_move (direction);
+	tel_stop_slew_move (direction);
 	tel_gemini_set (205, 0);
 	tel_gemini_set (206, 0);
 	return 0;

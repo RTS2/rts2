@@ -305,14 +305,14 @@ int TelLX200::tel_set_slew_rate (char new_rate)
 	return serConn->writePort (command, 5);
 }
 
-int TelLX200::tel_start_move (char direction)
+int TelLX200::tel_start_slew_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:M%c#", direction);
 	return serConn->writePort (command, 5) == 0 ? 0 : -1;
 }
 
-int TelLX200::tel_stop_move (char direction)
+int TelLX200::tel_stop_slew_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
