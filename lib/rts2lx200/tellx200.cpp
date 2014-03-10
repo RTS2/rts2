@@ -379,7 +379,7 @@ int TelLX200::matchTimeZone ()
 	tzset ();
 
 	float offset = timezone / 3600.0 + daylight;
-	return setTimeZone (offset);
+	return setTimeZone (-offset);
 }
 
 int TelLX200::setTimeZone (float offset)
