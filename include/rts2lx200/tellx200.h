@@ -50,9 +50,10 @@ class TelLX200:public Telescope
 		 */
 		virtual int initHardware ();
 
-		rts2core::ConnSerial *serConn;
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+		virtual int commandAuthorized (rts2core::Connection *conn);
 
-		rts2core::ValueDouble *localTime;
+		rts2core::ConnSerial *serConn;
 
 		/**
 		 * Reads some value from LX200 in hms format.
@@ -123,7 +124,7 @@ class TelLX200:public Telescope
 		 */
 		int tel_read_longitude ();
 
-		/**
+ 		/**
 		 * Repeats write command, until 1 is retrieved.
 		 *
 		 * Handy for setting ra and dec.
@@ -165,9 +166,23 @@ class TelLX200:public Telescope
 		int tel_start_move (char direction);
 		int tel_stop_move (char direction);
 
+		int matchTime ();
+
 	private:
 		const char *device_file;
 		bool connDebug;
+
+		rts2core::ValueTime *timeZone;
+		rts2core::ValueDouble *localTime;
+
+		bool autoMatchTime;
+		bool autoMatchTimeZone;
+		float defaultTimeZone;
+
+		int matchTimeZone ();
+
+		int setTimeZone (float offset);
+		int getTimeZone ();
 };
 
 }

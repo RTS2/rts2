@@ -28,8 +28,7 @@
 
 #include <libnova/libnova.h>
 
-#include "teld.h"
-#include "rts2lx200/hms.h"
+#include "rts2lx200/tellx200.h"
 #include "configuration.h"
 #include "utilsfunc.h"
 
@@ -61,7 +60,7 @@
 namespace rts2teld
 {
 
-class Gemini:public Telescope
+class Gemini:public TelLX200
 {
 	public:
 		Gemini (int argc, char **argv);
@@ -97,7 +96,6 @@ class Gemini:public Telescope
 	private:
 		const char *device_file;
 
-		rts2core::ValueTime *telLocalTime;
 		rts2core::ValueFloat *telGuidingSpeed;
 
 		rts2core::ValueSelection *resetState;
@@ -108,7 +106,6 @@ class Gemini:public Telescope
 
 		const char *geminiConfig;
 
-		rts2core::ConnSerial *tel_conn;
 		int tel_write_read (const char *buf, int wcount, char *rbuf, int rcount);
 
 		/**
@@ -126,17 +123,6 @@ class Gemini:public Telescope
 		 * @return -1 on error, 0 on success.
 		 */
 		 int readDate (struct tm *_tm, const char *command);
-
-		/**
-		 * Reads some value from lx200 in HMS format.
-		 *
-		 * Utility function for all those read_ra and other.
-		 *
-		 * @param hmsptr	where hms will be stored
-		 *
-		 * @return -1 and set errno on error, otherwise 0
-		 */
-		int readHMS (double *hmsptr, const char *command);
 
 		/**
 		 * Computes gemini checksum
@@ -204,84 +190,6 @@ class Gemini:public Telescope
 		 * Reset and home losmandy telescope
 		 */
 		int tel_gemini_reset ();
-
-		/**
-		 * Match gemini time with system time
-		 */
-		int matchTime ();
-
-		/**
-		 * Reads lx200 right ascenation.
-		 *
-		 * @param raptr		where ra will be stored
-		 *
-		 * @return -1 and set errno on error, otherwise 0
-		 */
-		int tel_read_ra ();
-
-		/**
-		 * Reads losmandy declination.
-		 *
-		 * @param decptr	where dec will be stored
-		 *
-		 * @return -1 and set errno on error, otherwise 0
-		 */
-		int tel_read_dec ();
-
-		/**
-		 * Returns losmandy local time.
-		 *
-		 * @param tptr		where time will be stored
-		 *
-		 * @return -1 and errno on error, otherwise 0
-		 */
-		int getLocaltime ();
-
-		/**
-		 * Reads losmandy longtitude.
-		 *
-		 * @param latptr	where longtitude will be stored
-		 *
-		 * @return -1 and errno on error, otherwise 0
-		 */
-		int tel_read_longtitude ();
-
-		/**
-		 * Reads losmandy latitude.
-		 *
-		 * @param latptr	here latitude will be stored
-		 *
-		 * @return -1 and errno on error, otherwise 0
-		 */
-		int tel_read_latitude ();
-
-		/**
-		 * Repeat losmandy write.
-		 *
-		 * Handy for setting ra and dec.
-		 * Meade tends to have problems with that.
-		 *
-		 * @param command	command to write on port
-		 */
-		int tel_rep_write (char *command);
-
-		/**
-		 * Set losmandy right ascenation.
-		 *
-		 * @param ra		right ascenation to set in decimal degrees
-		 *
-		 * @return -1 and errno on error, otherwise 0
-		 */
-		int tel_write_ra (double ra);
-
-		/**
-		 * Set losmandy declination.
-		 *
-		 * @param dec		declination to set in decimal degrees
-		 *
-		 * @return -1 and errno on error, otherwise 0
-		 */
-		int tel_write_dec (double dec);
 
 		/**
 		 * Set slew rate.
@@ -397,7 +305,7 @@ using namespace rts2teld;
 int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 {
 	int ret;
-	ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
+	ret = serConn->writeRead (buf, wcount, rbuf, rcount);
 	usleep (USEC_SEC / 15);
 	if (ret < 0)
 	{
@@ -405,7 +313,7 @@ int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 		// try rebooting
 		tel_gemini_reset ();
 		usleep (USEC_SEC / 5);
-		ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
+		ret = serConn->writeRead (buf, wcount, rbuf, rcount);
 		usleep (USEC_SEC / 15);
 	}
 	return ret;
@@ -413,7 +321,7 @@ int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 
 int Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
-	int tmp_rcount = tel_conn->writeRead (wbuf, wcount, rbuf, rcount, '#');
+	int tmp_rcount = serConn->writeRead (wbuf, wcount, rbuf, rcount, '#');
 	usleep (USEC_SEC / 15);
 	if (tmp_rcount < 0)
 	{
@@ -446,23 +354,6 @@ int Gemini::readDate (struct tm *_tm, const char *command)
 	// date will always be after 2000..
 	_tm->tm_year += 100;
 	_tm->tm_mon --;
-	return 0;
-}
-
-int Gemini::readHMS (double *hmsptr, const char *command)
-{
-	char wbuf[11];
-	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 5)
-	{
-		logStream (MESSAGE_ERROR) << "readHMS: short read length" << sendLog;
-		return -1;
-	}
-	*hmsptr = hmstod (wbuf);
-	if (isnan (*hmsptr))
-	{
-		logStream (MESSAGE_ERROR) << "readHMS: read nan value" << sendLog;
-		return -1;
-	}
 	return 0;
 }
 
@@ -499,7 +390,7 @@ int Gemini::tel_gemini_setch (int id, const char *in_buf)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	ret = tel_conn->writePort (buf, len);
+	ret = serConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	free (buf);
 	return ret;
@@ -516,7 +407,7 @@ int Gemini::tel_gemini_set (int id, int32_t val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	ret = tel_conn->writePort (buf, len);
+	ret = serConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -532,7 +423,7 @@ int Gemini::tel_gemini_set (int id, double val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	ret = tel_conn->writePort (buf, len);
+	ret = serConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -598,7 +489,7 @@ int Gemini::tel_gemini_get (int id, int32_t & val)
 			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
 		if (*buf)
 			sleep (5);
-		tel_conn->flushPortIO ();
+		serConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
 	}
@@ -629,7 +520,7 @@ int Gemini::tel_gemini_get (int id, double &val)
 			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
 		if (*buf)
 			sleep (5);
-		tel_conn->flushPortIO ();
+		serConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
 	}
@@ -662,16 +553,16 @@ int Gemini::tel_gemini_reset ()
 	logStream (MESSAGE_INFO) << "making gemini reset (trying to make startup config)..." << sendLog;
 
 	// write_read_hash
-	if (tel_conn->flushPortIO () < 0)
+	if (serConn->flushPortIO () < 0)
 	{
 		logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
 		return -1;
 	}
 	usleep (USEC_SEC / 15);
 
-	if (tel_conn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
+	if (serConn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
 	{
-		tel_conn->flushPortIO ();
+		serConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
 	}
@@ -681,15 +572,15 @@ int Gemini::tel_gemini_reset ()
 		switch (resetState->getValueInteger ())
 		{
 			case 0:
-				tel_conn->writePort ("bR#", 3);
+				serConn->writePort ("bR#", 3);
 				sleep (5);
 				break;
 			case 1:
-				tel_conn->writePort ("bW#", 3);
+				serConn->writePort ("bW#", 3);
 				sleep (5);
 				break;
 			case 2:
-				tel_conn->writePort ("bC#", 3);
+				serConn->writePort ("bC#", 3);
 				sleep (20);
 				break;
 		}
@@ -701,167 +592,13 @@ int Gemini::tel_gemini_reset ()
 		// something is wrong, reset all comm
 		logStream (MESSAGE_ERROR) << "system is not after reboot nor completed startup, making 10s sleep & flushPortIO" << sendLog;
 		sleep (10);
-		tel_conn->flushPortIO ();
+		serConn->flushPortIO ();
 	}
 	return -1;
 }
 
-
-int
-Gemini::matchTime ()
+Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 {
-	struct tm ts;
-	time_t t;
-	char buf[55];
-	int ret;
-	char rep;
-	if (matchCount)
-		return 0;
-	t = time (NULL);
-	gmtime_r (&t, &ts);
-	// set time
-	ret = tel_write_read (":SG+00#", 7, &rep, 1);
-	if (ret < 0)
-		return ret;
-	snprintf (buf, 14, ":SL%02d:%02d:%02d#", ts.tm_hour, ts.tm_min, ts.tm_sec);
-	ret = tel_write_read (buf, strlen (buf), &rep, 1);
-	if (ret < 0)
-		return ret;
-	snprintf (buf, 14, ":SC%02d/%02d/%02d#", ts.tm_mon + 1, ts.tm_mday,
-		ts.tm_year - 100);
-	ret = tel_write_read_hash (buf, strlen (buf), buf, 55);
-	if (ret < 0)
-		return ret;
-	if (*buf != '1')
-	{
-		logStream (MESSAGE_ERROR) << "Gemini matchTime was not successful" << sendLog;
-		return -1;
-	}
-	// read spaces
-	ret = tel_conn->readPort (buf, 26, '#');
-	usleep (USEC_SEC / 15);
-	if (ret)
-	{
-		matchCount = 1;
-		return ret;
-	}
-	logStream (MESSAGE_INFO) << "GEMINI: time match" << sendLog;
-	return 0;
-}
-
-int Gemini::tel_read_ra ()
-{
-	double t_telRa;
-	if (readHMS (&t_telRa, ":GR#"))
-		return -1;
-	t_telRa *= 15.0;
-	setTelRa (t_telRa);
-	return 0;
-}
-
-int Gemini::tel_read_dec ()
-{
-	double t_telDec;
-	if (readHMS (&t_telDec, ":GD#"))
-		return -1;
-	setTelDec (t_telDec);
-	return 0;
-}
-
-int Gemini::getLocaltime ()
-{
-	double t_telLocalTime;
-	struct tm _tm;
-	if (readDate (&_tm, ":GC#"))
-		return -1;
-	if (readHMS (&t_telLocalTime, ":GL#"))
-		return -1;
-	// change hours to seconds..
-	t_telLocalTime *= 3600;
-	t_telLocalTime += mktime (&_tm);
-	telLocalTime->setValueDouble (t_telLocalTime);
-	return 0;
-}
-
-int Gemini::tel_read_longtitude ()
-{
-	int ret;
-	double t_telLongitude;
-	ret = readHMS (&t_telLongitude, ":Gg#");
-	if (ret)
-		return ret;
-	telLongitude->setValueDouble (-1 * t_telLongitude);
-	return ret;
-}
-
-int Gemini::tel_read_latitude ()
-{
-	double t_telLatitude;
-	if (readHMS (&t_telLatitude, ":Gt#"))
-		return -1;
-	telLatitude->setValueDouble (t_telLatitude);
-	return 0;
-}
-
-int Gemini::tel_rep_write (char *command)
-{
-	int count;
-	char retstr;
-	for (count = 0; count < 3; count++)
-	{
-		if (tel_write_read (command, strlen (command), &retstr, 1) < 0)
-			return -1;
-		if (retstr == '1')
-			break;
-		sleep (1);
-		if (tel_conn->flushPortIO () < 0)
-		{
-			logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
-			return -1;
-		}
-		usleep (USEC_SEC / 15);
-		logStream (MESSAGE_DEBUG) << "Losmandy tel_rep_write - for " << count << " time" << sendLog;
-	}
-	if (count == 200)
-	{
-		logStream (MESSAGE_ERROR) << "losmandy tel_rep_write unsucessful due to incorrect return." << sendLog;
-		return -1;
-	}
-	return 0;
-}
-
-int Gemini::tel_write_ra (double ra)
-{
-	char command[14];
-	int h, m, s;
-	ra = ra / 15.0;
-	dtoints (ra, &h, &m, &s);
-	if (snprintf (command, 14, ":Sr%02d:%02d:%02d#", h, m, s) < 0)
-		return -1;
-	return tel_rep_write (command);
-}
-
-int Gemini::tel_write_dec (double dec)
-{
-	char command[15];
-	struct ln_dms dh;
-	char sign = '+';
-	if (dec < 0)
-	{
-		sign = '-';
-		dec = -1 * dec;
-	}
-	ln_deg_to_dms (dec, &dh);
-	if (snprintf
-		(command, 15, ":Sd%c%02d*%02d:%02.0f#", sign, dh.degrees, dh.minutes,
-		dh.seconds) < 0)
-		return -1;
-	return tel_rep_write (command);
-}
-
-Gemini::Gemini (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
-{
-	createValue (telLocalTime, "localtime", "telescope local time", false);
 	createValue (telGuidingSpeed, "guiding_speed", "telescope guiding speed", false);
 
 	createValue (resetState, "next_reset", "next reset state", false, RTS2_VALUE_WRITABLE);
@@ -898,7 +635,7 @@ Gemini::Gemini (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 	infoCount = 0;
 	matchCount = 0;
 
-	tel_conn = NULL;
+	serConn = NULL;
 
 	worm = 0;
 	worm_move_needed = 0;
@@ -977,7 +714,7 @@ int Gemini::processOption (int in_opt)
 			forceLatLon = true;
 			break;
 		default:
-			return Telescope::processOption (in_opt);
+			return TelLX200::processOption (in_opt);
 	}
 	return 0;
 }
@@ -1081,13 +818,13 @@ int Gemini::setCorrection ()
 		return 0;
 	
 	if (calculateAberation () && calculatePrecession () && calculateRefraction ())
-		return tel_conn->writePort (":p0#", 4);
+		return serConn->writePort (":p0#", 4);
 	if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())	
-		return tel_conn->writePort (":p1#", 4);
+		return serConn->writePort (":p1#", 4);
 	if (calculateAberation () && calculatePrecession () && !calculateRefraction ())
-		return tel_conn->writePort (":p2#", 4);
+		return serConn->writePort (":p2#", 4);
 	if (!calculateAberation () && !calculatePrecession () && !calculateRefraction ())
-		return tel_conn->writePort (":p3#", 4);
+		return serConn->writePort (":p3#", 4);
 	usleep (USEC_SEC / 15);
 	return -1;
 }
@@ -1096,20 +833,20 @@ int Gemini::init ()
 {
 	int ret;
 
-	ret = Telescope::init ();
+	ret = TelLX200::init ();
 	if (ret)
 		return ret;
 
-	tel_conn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
-	tel_conn->setDebug ();
+	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
+	serConn->setDebug ();
 
-	ret = tel_conn->init ();
+	ret = serConn->init ();
 	if (ret)
 		return ret;
 
 	while (1)
 	{
-		tel_conn->flushPortIO ();
+		serConn->flushPortIO ();
 
 		ret = geminiInit ();
 		if (!ret)
@@ -1122,7 +859,7 @@ int Gemini::init ()
 				return ret;
 			setCorrection ();
 
-			tel_conn->writePort (":hW#", 4);
+			serConn->writePort (":hW#", 4);
 			usleep (USEC_SEC / 15);
 
 			return ret;
@@ -1159,7 +896,7 @@ int Gemini::initValues ()
 	char buf[5];
 	int ret;
 
-	if (tel_read_longtitude () || tel_read_latitude ())
+	if (tel_read_longitude () || tel_read_latitude ())
 		return -1;
 	if (forceType > 0)
 	{
@@ -1230,7 +967,7 @@ int Gemini::initValues ()
 	strcat (telType, buf);
 	telAltitude->setValueDouble (500);
 
-	return Telescope::initValues ();
+	return TelLX200::initValues ();
 }
 
 int Gemini::idle ()
@@ -1313,13 +1050,13 @@ int Gemini::idle ()
 		}
 	}
 	//sleep (5);
-	return Telescope::idle ();
+	return TelLX200::idle ();
 }
 
 void Gemini::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	matchCount = 0;
-	return Telescope::changeMasterState (old_state, new_state);
+	return TelLX200::changeMasterState (old_state, new_state);
 }
 
 void Gemini::getAxis ()
@@ -1334,7 +1071,7 @@ int Gemini::info ()
 {
 	telFlip->setValueInteger (0);
 
-	if (tel_read_ra () || tel_read_dec () || getLocaltime ())
+	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
 		return -1;
 	if (bootesSensors)
 	{
@@ -1345,7 +1082,7 @@ int Gemini::info ()
 		telFlip->setValueInteger (getFlip ());
 	}
 
-	return Telescope::info ();
+	return TelLX200::info ();
 }
 
 int Gemini::tel_set_rate (char new_rate)
@@ -1353,7 +1090,7 @@ int Gemini::tel_set_rate (char new_rate)
 	char command[6];
 	int ret;
 	sprintf (command, ":R%c#", new_rate);
-	ret = tel_conn->writePort (command, 5);
+	ret = serConn->writePort (command, 5);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -1377,7 +1114,7 @@ int Gemini::telescope_start_move (char direction)
 		  worm_move_needed = 0;
 		} */
 	sprintf (command, ":M%c#", direction);
-	return tel_conn->writePort (command, 5);
+	return serConn->writePort (command, 5);
 	// workaround suggested by Rene Goerlich
 	//if (worm_move_needed == 1)
 	//  stopWorm ();
@@ -1393,7 +1130,7 @@ int Gemini::telescope_stop_move (char direction)
 		worm_move_needed = 0;
 		stopWorm ();
 	}
-	ret = tel_conn->writePort (command, 5);
+	ret = serConn->writePort (command, 5);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -1401,7 +1138,7 @@ int Gemini::telescope_stop_move (char direction)
 void Gemini::telescope_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
-	tel_conn->writePort (":Q#", 3);
+	serConn->writePort (":Q#", 3);
 	usleep (USEC_SEC / 15);
 	if (lastMotorState & 8)
 	{
@@ -1418,7 +1155,7 @@ int Gemini::tel_start_move ()
 
 	telescope_stop_goto ();
 
-	if ((tel_write_ra (lastMoveRa) < 0) || (tel_conn->writePort (":ONtest#", 8) < 0)
+	if ((tel_write_ra (lastMoveRa) < 0) || (serConn->writePort (":ONtest#", 8) < 0)
 		|| (tel_write_dec (lastMoveDec) < 0))
 		return -1;
 	if (tel_write_read (":MS#", 4, &retstr, 1) < 0)
@@ -1430,7 +1167,7 @@ int Gemini::tel_start_move ()
 		return 0;
 	}
 	// otherwise read reply..
-	tel_conn->readPort (buf, 53, '#');
+	serConn->readPort (buf, 53, '#');
 	usleep (USEC_SEC / 15);
 	if (retstr == '3')			 // manual control..
 		return 0;
@@ -1677,12 +1414,12 @@ int Gemini::endMove ()
 			startWorm ();
 		decChanged = false;
 		timerclear (&changeTime);
-		return Telescope::endMove ();
+		return TelLX200::endMove ();
 	}
 	#endif
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	return Telescope::endMove ();
+	return TelLX200::endMove ();
 }
 
 int Gemini::stopMove ()
@@ -1786,7 +1523,7 @@ int Gemini::startMoveFixed (double tar_ha, double tar_dec)
 	ret = startMoveFixedReal ();
 	// move OK
 	if (!ret)
-		return Telescope::startMoveFixed (tar_ha, tar_dec);
+		return TelLX200::startMoveFixed (tar_ha, tar_dec);
 	// try to do small change..
 	#ifndef L4_GUIDE
 	if (!isnan (fixed_ha) && fabs (ha_diff) < 5 && fabs (dec_diff) < 5)
@@ -1798,7 +1535,7 @@ int Gemini::startMoveFixed (double tar_ha, double tar_dec)
 			lastMoveDec += dec_diff;
 			// move_fixed = 0;    // we are performing change, not moveFixed
 			maskState (TEL_MASK_MOVING, TEL_MOVING, "change started");
-			return Telescope::startMoveFixed (tar_ha, tar_dec);
+			return TelLX200::startMoveFixed (tar_ha, tar_dec);
 		}
 	}
 	#endif
@@ -1845,8 +1582,8 @@ int Gemini::endMoveFixed ()
 	stopWorm ();
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	if (tel_conn->writePort (":ONfixed#", 9) == 0)
-		return Telescope::endMoveFixed ();
+	if (serConn->writePort (":ONfixed#", 9) == 0)
+		return TelLX200::endMoveFixed ();
 	return -1;
 }
 */
@@ -1954,7 +1691,7 @@ int Gemini::guide (char direction, unsigned int val)
 	int len;
 	int ret;
 	len = sprintf (buf, ":Mi%c%i#", direction, val);
-	ret = tel_conn->writePort (buf, len);
+	ret = serConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -2200,7 +1937,7 @@ int Gemini::startPark ()
 	if (telMotorState != TEL_OK)
 		return -1;
 	stopMove ();
-	ret = tel_conn->writePort (":hP#", 4);
+	ret = serConn->writePort (":hP#", 4);
 	usleep (USEC_SEC / 15);
 	if (ret < 0)
 		return -1;
@@ -2326,7 +2063,7 @@ extern int Gemini::loadModel ()
 	}
 	free (line);
 	usleep (USEC_SEC * 5);
-	if (tel_conn->flushPortIO () < 0)
+	if (serConn->flushPortIO () < 0)
 	{
 		logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
 		return -1;
@@ -2423,7 +2160,7 @@ int Gemini::resetMount ()
 		return ret;
 	sleep (20);
 	tel_gemini_reset ();
-	return Telescope::resetMount ();
+	return TelLX200::resetMount ();
 }
 
 int Gemini::getFlip ()
