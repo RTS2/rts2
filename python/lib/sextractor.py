@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Sextractor-Python wrapper.
 #
 # You will need: scipy matplotlib sextractor

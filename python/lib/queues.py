@@ -1,4 +1,3 @@
-
 # Queues JSON interface.
 # (C) 2012 Petr Kubanek, Institute of Physics
 #

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Library for RTS2 JSON calls.
 # (C) 2012 Petr Kubanek, Institute of Physics
 #

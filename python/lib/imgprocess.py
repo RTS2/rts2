@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Python interface for call to imgprocess. Parses output, look for RA DEC and offsets
 # Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
 #
