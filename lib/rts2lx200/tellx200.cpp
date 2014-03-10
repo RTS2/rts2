@@ -57,18 +57,12 @@ int TelLX200::processOption (int in_opt)
 	return 0;
 }
 
-int TelLX200::init ()
+int TelLX200::initHardware ()
 {
-	int ret;
-	ret = Telescope::init ();
-  
-	if (ret)
-		return ret;
-
 	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5, 5);
 	if (connDebug == true)
 		serConn->setDebug (true);
-	ret = serConn->init ();
+	int ret = serConn->init ();
 	if (ret)
 		return -1;
 	serConn->flushPortIO ();

@@ -61,7 +61,7 @@ class APGTO:public TelLX200 {
 		virtual void postEvent (rts2core::Event *event);
 
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initHardware ();
 
 		/**
 		 * Reads mount initial values.
@@ -2060,12 +2060,12 @@ int APGTO::setBasicData()
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
-int APGTO::init ()
+int APGTO::initHardware ()
 {
 	int status;
 	on_set_HA= 0.;
 	time(&slew_start_time) ;
-	status = TelLX200::init ();
+	status = TelLX200::initHardware ();
 
 	if (status)
 		return status;

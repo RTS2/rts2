@@ -37,7 +37,7 @@ class LX200:public TelLX200
 		LX200 (int argc, char **argv);
 		virtual ~ LX200 (void);
 
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int initValues ();
 		virtual int info ();
 
@@ -82,9 +82,9 @@ LX200::~LX200 (void)
 {
 }
 
-int LX200::init ()
+int LX200::initHardware ()
 {
-	int ret = TelLX200::init ();
+	int ret = TelLX200::initHardware ();
 	if (ret)
 		return ret;
 	char rbuf[10];

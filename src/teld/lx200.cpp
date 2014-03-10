@@ -18,6 +18,10 @@
 #define DIR_SOUTH 's'
 #define DIR_WEST  'w'
 
+#define OPT_MATCHTIME      OPT_LOCAL + 201
+#define OPT_MATCHTIMEZONE  OPT_LOCAL + 202
+#define OPT_SETTIMEZONE    OPT_LOCAL + 203
+
 namespace rts2teld
 {
 
@@ -27,7 +31,7 @@ class LX200:public TelLX200
 		LX200 (int argc, char **argv);
 		virtual ~ LX200 (void);
 
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int initValues ();
 		virtual int info ();
 
@@ -48,6 +52,12 @@ class LX200:public TelLX200
 	protected:
 		virtual void usage ();
 
+		virtual int processOption (int in_opt);
+
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 	private:
 		int motors;
 
@@ -60,10 +70,22 @@ class LX200:public TelLX200
 
 		void set_move_timeout (time_t plus_time);
 
+		rts2core::ValueTime *timeZone;
+
 		rts2core::ValueString *productName;
 		rts2core::ValueString *mntflip;
 
+		bool autoMatchTime;
+		bool autoMatchTimeZone;
+		float defaultTimeZone;
 		bool hasAstroPhysicsExtensions;
+
+		int matchTime ();
+
+		int matchTimeZone ();
+
+		int setTimeZone (float offset);
+		int getTimeZone ();
 };
 
 };
@@ -73,10 +95,18 @@ using namespace rts2teld;
 LX200::LX200 (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 {
 	motors = 0;
+	autoMatchTime = false;
+	autoMatchTimeZone = false;
+	defaultTimeZone = NAN;
 	hasAstroPhysicsExtensions = false;
 
 	createValue (productName, "product_name", "reported product name", false);
 	createValue (mntflip, "flip", "telescope flip");
+	createValue (timeZone, "timezone", "telescope local time offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
+
+	addOption (OPT_MATCHTIME, "match-time", 0, "match telescope clocks to local time");
+	addOption (OPT_MATCHTIMEZONE, "match-timezone", 0, "match telescope timezone with local timezone");
+	addOption (OPT_SETTIMEZONE, "set-timezone", 1, "set telescope timezone to the provided value");
 }
 
 
@@ -84,12 +114,13 @@ LX200::~LX200 (void)
 {
 }
 
-int LX200::init ()
+int LX200::initHardware ()
 {
-	// call parent, create serConn
-	int ret = TelLX200::init ();
+	int ret = TelLX200::initHardware ();
 	if (ret)
 		return ret;
+
+	int ovtime = serConn->getVTime ();
 
 	serConn->setVTime (100);
 
@@ -130,7 +161,29 @@ int LX200::init ()
 	if (strncmp (productName->getValue (), "10micron", 8) == 0)
 		hasAstroPhysicsExtensions = true;
 
-	serConn->setVTime (5);
+	serConn->setVTime (ovtime);
+
+	if (autoMatchTime)
+	{
+		ret = matchTime ();
+		if (ret)
+			return ret;
+	}
+
+	if (!isnan (defaultTimeZone))
+	{
+		ret = setTimeZone (defaultTimeZone);
+		if (ret)
+			return ret;
+	}
+	else if (autoMatchTimeZone)
+	{
+		ret = matchTimeZone ();
+		if (ret)
+			return ret;
+	}
+
+	getTimeZone ();
 
 	return 0;
 }
@@ -165,7 +218,7 @@ int LX200::initValues ()
 
 int LX200::info ()
 {
-	if (tel_read_ra () || tel_read_dec ())
+	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
 		return -1;
 	
 	char rbuff[100];	
@@ -188,6 +241,43 @@ void LX200::usage ()
 {
 	std::cout << "   LX200 compatible telescope driver. You probaly should provide -f options to specify serial port:" << std::endl
 		<< "\t" << getAppName () << " -f /dev/ttyS3" << std::endl;
+}
+
+int LX200::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case OPT_MATCHTIME:
+			autoMatchTime = true;
+			return 0;
+		case OPT_MATCHTIMEZONE:
+			autoMatchTimeZone = true;
+			return 0;
+		case OPT_SETTIMEZONE:
+			defaultTimeZone = strtof (optarg, NULL);
+			return 0;
+		default:
+			return TelLX200::processOption (in_opt);
+	}
+	return 0;
+}
+
+int LX200::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == timeZone)
+	{
+		return setTimeZone (newValue->getValueFloat () / 3600.0) ? -2 : 0;
+	}
+	return TelLX200::setValue (oldValue, newValue);
+}
+
+int LX200::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("matchtime"))
+	{
+		return matchTime () ? -2 : 0;
+	}
+	return TelLX200::commandAuthorized (conn);
 }
 
 /*!
@@ -416,9 +506,7 @@ int LX200::endPark ()
 	return 0;
 }
 
-
-int
-LX200::startDir (char *dir)
+int LX200::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -432,9 +520,7 @@ LX200::startDir (char *dir)
 	return -2;
 }
 
-
-int
-LX200::stopDir (char *dir)
+int LX200::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -447,9 +533,107 @@ LX200::stopDir (char *dir)
 	return -2;
 }
 
+int LX200::matchTime ()
+{
+	struct tm ts;
+	time_t t;
+	char buf[55];
+	int ret;
+	char rep;
 
-int
-main (int argc, char **argv)
+	int ovtime = serConn->getVTime ();
+	serConn->setVTime (10);
+
+	t = time (NULL);
+	gmtime_r (&t, &ts);
+
+	// set local zone to 0
+	ret = serConn->writeRead (":SG+00.0#", 9, &rep, 1);
+	if (ret < 0)
+		return ret;
+	if (rep != '1')
+	{
+		logStream (MESSAGE_ERROR) << "cannot set hour offset to 0. Reply was " << rep << sendLog;
+		return -1;
+	}
+	snprintf (buf, 14, ":SL%02d:%02d:%02d#", ts.tm_hour, ts.tm_min, ts.tm_sec);
+	ret = serConn->writeRead (buf, strlen (buf), &rep, 1);
+	if (ret < 0)
+		return ret;
+	if (rep != '1')
+	{
+		logStream (MESSAGE_ERROR) << "cannot set time. Reply was " << rep << sendLog;
+		return -1;
+	}
+	snprintf (buf, 14, ":SC%02d/%02d/%02d#", ts.tm_mon + 1, ts.tm_mday, ts.tm_year - 100);
+	ret = serConn->writeRead (buf, strlen (buf), buf, 55, '#');
+	if (ret < 0)
+		return ret;
+	if (*buf != '1')
+	{
+		logStream (MESSAGE_ERROR) << "cannot set date. Reply was " << *buf << sendLog;
+		return -1;
+	}
+	usleep (USEC_SEC / 15);
+	// read spaces
+	ret = serConn->readPort (buf, 40, '#');
+	if (ret <= 0)
+	{
+		return ret;
+	}
+	logStream (MESSAGE_INFO) << "matched telescope time to UT time" << sendLog;
+
+	serConn->setVTime (ovtime);
+
+	return 0;
+}
+
+int LX200::matchTimeZone ()
+{
+	tzset ();
+
+	float offset = timezone / 3600.0 + daylight;
+	return setTimeZone (offset);
+}
+
+int LX200::setTimeZone (float offset)
+{
+	char buf[11];
+	char rep;
+
+	snprintf (buf, 10, ":SG%+05.1f#", offset);
+	int ret = serConn->writeRead (buf, 9, &rep, 1);
+	if (ret < 0)
+		return ret;
+	if (rep != '1')
+	{
+		logStream (MESSAGE_ERROR) << "cannot set hour offset to 0. Reply was " << rep << sendLog;
+		return -1;
+	}
+
+	// after setting timezone, we need to wait till the setting propagates through TCS
+	sleep (1);
+
+	return getTimeZone ();
+}
+
+int LX200::getTimeZone ()
+{
+	char buf[10];
+	float offset;
+
+	int ret = serConn->writeRead (":GG#", 4, buf, 9, '#');
+	if (ret < 0)
+		return ret;
+
+	offset = strtof (buf, NULL);
+	timeZone->setValueDouble (offset * 3600);
+	sendValueAll (timeZone);
+
+	return 0;
+}
+
+int main (int argc, char **argv)
 {
 	LX200 device = LX200 (argc, argv);
 	return device.run ();

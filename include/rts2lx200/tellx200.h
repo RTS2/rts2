@@ -39,7 +39,16 @@ class TelLX200:public Telescope
 
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int init ();
+
+		/**
+		 * Method to initialize telescope hardware. Subclasses overwriting initHardware
+		 * must call this method.
+		 *
+		 * @return -1 on error, 0 otherwise
+		 *
+		 * @see rts2core::Device::initHardware()
+		 */
+		virtual int initHardware ();
 
 		rts2core::ConnSerial *serConn;
 
