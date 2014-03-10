@@ -10,6 +10,8 @@
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-selector">
 
+  <!ENTITY prompt      "<prompt>user@host:~$</prompt>">
+
   <!ENTITY % rts2 SYSTEM "rts2.ent">
   %rts2;
 ]>
@@ -120,7 +122,135 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Tutorial</title>
+    <para>
+      In this section is described a tutorial how to configure and use
+      <command>&dhpackage;</command>. It assumes three distinct
+      <emphasis>queues</emphasis> will be created, and user wants to observer
+      targets created with
+      <citerefentry><refentrytitle>rts2-newtarget</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+      The tutorial is indended for new
+      <citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      users. Advanced users will find more valuable to read various scheduling
+      related papers produced by RTS2 authors.
+    </para>
+    <para>
+      To start with, a standard installation is assumed. In particular,
+      <emphasis>RTS2</emphasis> must be build with database support, and the
+      database must be up, running and configured for <emphasis>RTS2</emphasis>
+      devices.
+    </para>
+    <refsect2>
+      <title>Target creation</title>
+      <para>
+	New targets can be best created with
+	<citerefentry><refentrytitle>rts2-newtarget</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	Other methods, such as direct creation in the <emphasis>RTS2</emphasis>
+	database, will not be discussed in this tutorial.
+      </para>
+      <para>
+        Lets assume we would like to add all Messier objects, from M1 to M104. This can be either done manually:
+	<screen>
+	  &prompt; <userinput><command>rts2-newtarget</command> -f -a M1</userinput>
+	  <computeroutput>Created target #1000 named M1 on J2000.0 coordinates 05:34:31.971 +22:00:52.06 horizontal -04 30 55.25 232 21 28.67</computeroutput>
+	  &prompt; <userinput><command>rts2-newtarget</command> -f -a M2</userinput>
+	  <computeroutput>Created target #1001 named M2 on J2000.0 coordinates 21:33:27.012 -00:49:23.94 horizontal +44 10 33.20 359 34 36.08</computeroutput>
+	  ...
+	  &prompt; <userinput><command>rts2-newtarget</command> -f -a M104</userinput>
+	  <computeroutput>Created target #1103 named M104 on J2000.0 coordinates 12:40:00.000 -11:37:23.00 horizontal -38 12 00.40 115 06 36.48</computeroutput>
+	</screen>
+	or in a bash script:
+	<screen>
+	  &prompt; <userinput><command>for</command> ((x=1;$x &lt; 105; x=$x + 1)); <command>do</command> <command>rts2-newtarget</command> -f -a M$x; <command>done</command></userinput>
+	  <computeroutput>Created target #1000 named M1 on J2000.0 coordinates 05:34:31.971 +22:00:52.06 horizontal -04 30 55.25 232 21 28.67</computeroutput>
+	  <computeroutput>Created target #1001 named M2 on J2000.0 coordinates 21:33:27.012 -00:49:23.94 horizontal +44 10 33.20 359 34 36.08</computeroutput>
+	  ....
+	  <computeroutput>Created target #1103 named M104 on J2000.0 coordinates 12:40:00.000 -11:37:23.00 horizontal -38 12 00.40 115 06 36.48</computeroutput>
+	  &prompt;
+	</screen>
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Manipulationg target bonus function parameters</title>
+      <para>
+	You can skip this section, if you want to rely on the queue scheduling.
+	Please read on, if you want to do queue scheduling with merit function
+	scheduling as backup.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Adding target to the queue</title>
+      <para>
+	One or multiple targets can be added to the queue with either
+	<command>queue</command>, or through
+	<citerefentry><refentrytitle>rts2-xmlrpcd</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+	JSON interface, probably with help of the
+	<citerefentry><refentrytitle>rts2-queue</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	In this tutorial, we will consider adding target only directly, through
+	<command>queue</command> executed in
+	<citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Night time operation</title>
+      <para>
+        
+      </para>
+    </refsect2>
+  </refsect1>
+  <refsect1>
     <title>Operation</title>
+    <para>
+      In order to allow selector correct operation, the following conditions must be fullfilled:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>system state must be on</term>
+	<listitem>
+	  <para>
+	    Selector will not select 
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><emphasis>SELECTOR</emphasis>.selector_enabled</term>
+	<listitem>
+	  <para>
+	    Must be turned to true. Otherwise, the selector will select
+	    targets, but will not send them to the executor.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><emphasis>EXECUTOR</emphasis>.selector_next</term>
+	<listitem>
+	  <para>
+	    Must be turned to true. If turned to false,
+	    <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+	    will not accept targets provided by <command>&dhpackage;</command>.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+    <refsect2>
+      <title>Callibration observations</title>
+      <para>
+	In order to prepare callibration frames for a scientific data
+	reduction, <command>&dhpackage;</command> allows two basic callibration
+	observations to be scheduled during dusk and dawn. <emphasis>DARK
+	FRAMES</emphasis> and/or <emphasis>SKYFLATS</emphasis> are acquired as needed.
+      </para>
+      <refsect3>
+        <title>DARK FRAMES</title>
+	<para>
+	</para>
+      </refsect3>
+      <refsect3>
+        <title>SKYFLATS</title>
+	<para>
+	</para>
+      </refsect3>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>Variables</title>
@@ -190,6 +320,12 @@
         <term>flat_sun_min</term>
 	<listitem>
 	  <para>
+	    Minimal sun altitute for scheduling flats observation. Flat
+	    observations will be ended at evening when Sun altitude drops
+	    bellow this value, and will start at morning once Sun altitude is
+	    above this value. Default value is taken from
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	    <emphasis>observatory</emphasis> section.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -197,6 +333,12 @@
         <term>flat_sun_max</term>
 	<listitem>
 	  <para>
+	    Maximal sun altitute for scheduling flats observation. Flat
+	    observations will start at evening when Sun altitude drops
+	    bellow this value, and will end at morning once Sun altitude is
+	    above this value. Default value is taken from
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	    <emphasis>observatory</emphasis> section.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -261,6 +403,10 @@
       <citerefentry>
         <refentrytitle>rts2.queues</refentrytitle>
 	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-queue</refentrytitle>
+	<manvolnum>1</manvolnum>
       </citerefentry>
     </para>
 
