@@ -66,6 +66,8 @@ void Image::initData ()
 {
 	exposureLength = NAN;
 
+	oldImageName = std::string ("");
+
 	loadHeader = false;
 	verbose = true;
 
@@ -326,6 +328,8 @@ std::string Image::expandVariable (char expression, size_t beg, bool &replaceNon
 			return getTargetIDString ();
 		case 'n':
 			return getExposureNumberString ();
+		case '_':
+			return (oldImageName.length() > 0) ? oldImageName : getOnlyFileName ();
 		default:
 			return rts2core::Expander::expandVariable (expression, beg, replaceNonAlpha);
 	}
@@ -642,8 +646,18 @@ int Image::renameImageExpand (std::string new_ex)
 		return -1;
 	std::string new_filename;
 
-	if (!getFileName ())
+	const char *fn = getFileName ();
+
+	if (!fn)
 		return -1;
+
+	size_t fl = strlen (fn);
+	char* pb = new char[fl + 1];
+	memcpy (pb, fn, fl + 1);
+
+	oldImageName = std::string (basename (pb));
+
+	delete[] pb;
 
 	new_filename = expandPath (new_ex);
 	return renameImage (new_filename.c_str ());
@@ -721,8 +735,18 @@ int Image::copyImageExpand (std::string copy_ex)
 {
 	std::string copy_filename;
 
-	if (!getFileName ())
+	const char *fn = getFileName ();
+
+	if (!fn)
 		return -1;
+
+	size_t fl = strlen (fn);
+	char* pb = new char[fl + 1];
+	memcpy (pb, fn, fl + 1);
+
+	oldImageName = std::string (basename (pb));
+
+	delete[] pb;
 
 	copy_filename = expandPath (copy_ex);
 	return copyImage (copy_filename.c_str ());

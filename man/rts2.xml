@@ -413,6 +413,14 @@
     <variablelist>
       <varlistentry>
         <term>
+	  <option>_</option>
+	</term>
+	<listitem>
+	  <para>Original name of the image. Available only by renaming the image. Otherwise equals to %f.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>A</option>
 	</term>
 	<listitem>
