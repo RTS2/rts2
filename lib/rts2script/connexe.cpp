@@ -580,7 +580,7 @@ rts2core::Connection *ConnExe::getConnectionForScript (const char *_name)
 
 int ConnExe::getDeviceType (const char *_name)
 {
-	#define NUMTYPES   12
+	#define NUMTYPES   13
 	struct { const char *dev; int type; } types[NUMTYPES] = 
 	{	
 		{"TELESCOPE", DEVICE_TYPE_MOUNT},
@@ -594,7 +594,8 @@ int ConnExe::getDeviceType (const char *_name)
 		{"FW",        DEVICE_TYPE_FW},
 		{"SENSOR",    DEVICE_TYPE_SENSOR},
 		{"EXEC",      DEVICE_TYPE_EXECUTOR},
-		{"SELECTOR",  DEVICE_TYPE_SELECTOR}
+		{"SELECTOR",  DEVICE_TYPE_SELECTOR},
+		{"IMGP",      DEVICE_TYPE_IMGPROC}
 	};
 
 	for (int i = 0; i < NUMTYPES; i++)

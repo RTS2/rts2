@@ -34,6 +34,7 @@ DEVICE_FW          = "FW"
 DEVICE_SENSOR      = "SENSOR"
 DEVICE_EXECUTOR    = "EXEC"
 DEVICE_SELECTOR    = "SELECTOR"
+DEVICE_IMGP        = "IMGP"
 
 # constants for dataypes
 
