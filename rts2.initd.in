@@ -137,7 +137,7 @@ rts2_log_daemon_msg()
 rts2_start_log_end_msg()
 {
 	if [ $1 -eq 0 ]; then
-		log_success_msg "Started RTS2 $2 '$failed'"
+		log_success_msg "Started RTS2 $2"
 		echo `date +'%Y-%m-%dT%H:%M:%S %Z'` '===>>> ok' $2 >>$RTS2_LOG
 	elif [ $1 -eq 1 ]; then
 		log_warning_msg "RTS2 $2 already running"
