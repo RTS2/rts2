@@ -731,6 +731,8 @@ class Image:public FitsFile
 		int filter_i;
 		char *filter;
 		float exposureLength;
+
+		std::string oldImageName;
 		
 		int createImage (char *in_filename, bool _overwrite = false);
 		int createImage (std::string in_filename, bool _overwrite = false);
