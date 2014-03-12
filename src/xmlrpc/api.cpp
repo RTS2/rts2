@@ -521,8 +521,12 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				bool ext = params->getInteger ("e", 0);
 				double from = params->getDouble ("from", 0);
 
+				// send centrald values
+				os << "\"centrald\":{";
+				rts2json::sendConnectionValues (os, master->getSingleCentralConn (), params, from, ext);
+
 				// send own values first
-				os << '"' << ((XmlRpcd *) getMasterApp ())->getDeviceName () << "\":{";
+				os << "},\"" << ((XmlRpcd *) getMasterApp ())->getDeviceName () << "\":{";
 				sendOwnValues (os, params, from, ext);
 				os << '}';
 
