@@ -60,6 +60,7 @@ class AAG: public SensorWeather
 		rts2core::ValueDouble *triggerNoSnow;
 		rts2core::ValueInteger *numberOfMeasurements;
 		rts2core::ValueDoubleStat *windSpeed;
+		rts2core::ValueFloat *windSpeedLimit;
   
 		/*
 		 * Read sensor values and calculate.
@@ -87,6 +88,7 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	aagConn = NULL;
 
 	windSpeed = NULL;
+	windSpeedLimit = NULL;
 
 	createValue (tempSky,          "TEMP_SKY",     "temperature sky", true); // go to FITS
 	createValue (tempSkyCorrected, "TEMP_SKY_CORR","temperature sky corrected", true);
@@ -333,36 +335,34 @@ int AAG::AAGGetWindSpeed ()
 		return ret;
 // Format to read !w          -93!
 
-	if ( (x = sscanf (buf, "!w %d!", &value)) != 1)
+	if ((x = sscanf (buf, "!w %d!", &value)) != 1)
 	{
 		buf[ret]= '\0' ;
 		logStream (MESSAGE_ERROR) << "cannot parse Anemometer reply from AAG cloud sensor, reply was: '" << buf << "', sscanf " << x << sendLog;
 		return -1;
 	}
-	windSpeed->addValue((double) value, numberOfMeasurements->getValueInteger());
+	windSpeed->addValue((double) (value / 3.6), numberOfMeasurements->getValueInteger());
 	return 0;
 }
 
-
-int
-AAG::AAGGetValues ()
+int AAG::AAGGetValues ()
 {
 	int ret;
 	char buf[4 * BLOCK_LENGTH + 1];
-        const char wbuf[]= "C!" ;
-	int value[3] ;
-        int x ;
-        double tmp_resistance, resistance ;
-	double intVoltage_val ;
-	double ldrResistance_val ;
-	double tempRain_val ;
+        const char wbuf[] = "C!";
+	int value[3];
+        int x;
+        double tmp_resistance, resistance;
+	double intVoltage_val;
+	double ldrResistance_val;
+	double tempRain_val;
 
 	ret = aagConn->writeRead (wbuf, 2, buf, 4 * BLOCK_LENGTH);
 
 	if (ret < 0)
 		return ret;
         // Format to read !6          536!4            6!5          757!            0
- 	if(( x= sscanf( buf, "!6 %d!4 %d!5 %d!", &value[0], &value[1], &value[2])) != 3) 
+ 	if ((x = sscanf( buf, "!6 %d!4 %d!5 %d!", &value[0], &value[1], &value[2])) != 3) 
 	{
 	    buf[ret] = '\0';
 	    logStream (MESSAGE_ERROR) << "cannot parse GetValues reply from AAG cloud sensor, reply was: '"
@@ -370,120 +370,113 @@ AAG::AAGGetValues ()
 	    return -1 ;
 	}
         /* Internal power supply, unit: Volt */
-        intVoltage_val= (double) 1023. * ZENER_CONSTANT / (double) value[0] ;
+        intVoltage_val = (double) 1023. * ZENER_CONSTANT / (double) value[0];
 	intVoltage->setValueDouble (intVoltage_val);
 
-       /* LDR value, unit k Ohm */
-      if( value[1] > 1022)
-          value[1]= 1022 ;
+	/* LDR value, unit k Ohm */
+	if (value[1] > 1022)
+		value[1] = 1022;
 
-      if( value[1] < 1)
-          value[1]= 1 ;
+	if (value[1] < 1)
+		value[1] = 1;
 
-      ldrResistance_val= (double) LDRPULLUP_RESISTANCE / (( 1023./ (double) value[1]) -1.) ;
-      ldrResistance->setValueDouble( ldrResistance_val) ;
+	ldrResistance_val = (double) LDRPULLUP_RESISTANCE / (( 1023./ (double) value[1]) -1.);
+	ldrResistance->setValueDouble( ldrResistance_val);
 
-      tmp_resistance=  RAINPULLUP_RESISTANCE / (( 1023. / value[2])-1) ;
-      resistance= log( tmp_resistance / RAIN_RES_AT_25) ; /* log basis e */
+	tmp_resistance = RAINPULLUP_RESISTANCE / (( 1023. / value[2])-1);
+	resistance = log( tmp_resistance / RAIN_RES_AT_25); /* log basis e */
 
-      tempRain_val= (double) (1. / ( resistance / RAIN_BETA + 1. / (ABSZERO + 25.)) - ABSZERO) ;
-      tempRain->setValueDouble (tempRain_val);
-      return 0;
+	tempRain_val = (double) (1. / ( resistance / RAIN_BETA + 1. / (ABSZERO + 25.)) - ABSZERO);
+	tempRain->setValueDouble (tempRain_val);
+	return 0;
 }
-int 
-AAG::AAGGetRainFrequency()
+
+int AAG::AAGGetRainFrequency ()
 {
-    int ret ;
-    char buf[4 * BLOCK_LENGTH + 1];
-    const char wbuf[]= "E!" ;
-    int value ;
-    int x ;
+	int ret;
+	char buf[4 * BLOCK_LENGTH + 1];
+	const char wbuf[]= "E!";
+	int value;
+	int x;
 
-    ret = aagConn->writeRead (wbuf, 2, buf, 2 * BLOCK_LENGTH);
-    if (ret < 0)
-	return ret;
+	ret = aagConn->writeRead (wbuf, 2, buf, 2 * BLOCK_LENGTH);
+	if (ret < 0)
+		return ret;
 
-    /* Format to read !R          -93! */
+	/* Format to read !R          -93! */
 
-    if(( x= sscanf( buf, "!R %d!", &value)) != 1)
-    {
-	buf[ret] = '\0';
-        logStream (MESSAGE_ERROR) << "cannot parse RainFrequency reply from AAG cloud sensor, reply was: '"
-				  << buf << "', sscanf " << x << sendLog;
-
-        return -1 ;
-    }
-    rainFrequency->setValueDouble ((double) value );
-    return 0 ;
+	if ((x = sscanf (buf, "!R %d!", &value)) != 1)
+	{
+		buf[ret] = '\0';
+		logStream (MESSAGE_ERROR) << "cannot parse RainFrequency reply from AAG cloud sensor, reply was: '"  << buf << "', sscanf " << x << sendLog;
+		return -1;
+	}
+	rainFrequency->setValueDouble ((double) value );
+	return 0;
 }
-int 
-AAG::AAGGetPWMValue()
+
+int AAG::AAGGetPWMValue ()
 {
-    int ret ;
-    char buf[2 * BLOCK_LENGTH + 1];
-    const char wbuf[]= "Q!" ;
-    int value ;
-    int x ;
+	int ret;
+	char buf[2 * BLOCK_LENGTH + 1];
+	const char wbuf[]= "Q!";
+	int value;
+	int x;
 
-    ret = aagConn->writeRead (wbuf, 2, buf, 2 * BLOCK_LENGTH);
-    if (ret < 0)
-    {
-	return ret;
-    }
-    /* Format to read !Q            8! */
+	ret = aagConn->writeRead (wbuf, 2, buf, 2 * BLOCK_LENGTH);
+	if (ret < 0)
+	{
+		return ret;
+	}
+	/* Format to read !Q            8! */
 
-    if(( x= sscanf( buf, "!Q %d!", &value)) != 1)
-    {
-	buf[ret] = '\0';
-        logStream (MESSAGE_ERROR) << "cannot parse GetPWMValue reply from AAG cloud sensor, reply was: '"
-				  << buf << "', sscanf " << x << sendLog;
-        return -1 ;
-    }
-    pwmValue->setValueDouble ((double) (100. * value/1023.));
-    return 0 ;
+	if ((x = sscanf (buf, "!Q %d!", &value)) != 1)
+	{
+		buf[ret] = '\0';
+		logStream (MESSAGE_ERROR) << "cannot parse GetPWMValue reply from AAG cloud sensor, reply was: '" << buf << "', sscanf " << x << sendLog;
+		return -1;
+	}
+	pwmValue->setValueDouble ((double) (100. * value/1023.));
+	return 0;
 }
-int 
-AAG::AAGSetPWMValue( double value)
+
+int AAG::AAGSetPWMValue (double value)
 {
-    int ret ;
-    char buf[2 * BLOCK_LENGTH + 1];
-    char wbuf[2 * BLOCK_LENGTH + 1] ;
-    int wvalue ;
-    int rvalue ;
-    int x ;
+	int ret;
+	char buf[2 * BLOCK_LENGTH + 1];
+	char wbuf[2 * BLOCK_LENGTH + 1];
+	int wvalue;
+	int rvalue;
+	int x;
 
-    wvalue= (int) (1023. / 100. * value) ;
-    if(( x=sprintf( wbuf, "P%04d!", wvalue)) !=6 )
-    {
-	wbuf[x] = '\0';
-        logStream (MESSAGE_ERROR) << "cannot sprintf SetPWMValue AAG cloud sensor, tried to send: '"
-				  << wbuf << "', sprintf " << x << sendLog;
-        return -1 ;
-    }
-    ret = aagConn->writeRead (wbuf, 6, buf, 2 * BLOCK_LENGTH); 
-    if (ret < 0)
-    {
-        wbuf[x] = '\0';
-	buf[ret] = '\0';
-	logStream (MESSAGE_ERROR) << "cannot sprintf or sscanf SetPWMValue AAG cloud sensor, tried to send: '"
-                                  << wbuf << "', received " << buf << sendLog;	
-	return ret;
-    }
-    /* Format to read !Q            8! */
+	wvalue = (int) (1023. / 100. * value);
+	if ((x = sprintf( wbuf, "P%04d!", wvalue)) != 6)
+	{
+		wbuf[x] = '\0';
+		logStream (MESSAGE_ERROR) << "cannot sprintf SetPWMValue AAG cloud sensor, tried to send: '" << wbuf << "', sprintf " << x << sendLog;
+		return -1;
+	}
+	ret = aagConn->writeRead (wbuf, 6, buf, 2 * BLOCK_LENGTH); 
+	if (ret < 0)
+	{
+		wbuf[x] = '\0';
+		buf[ret] = '\0';
+		logStream (MESSAGE_ERROR) << "cannot sprintf or sscanf SetPWMValue AAG cloud sensor, tried to send: '" << wbuf << "', received " << buf << sendLog;
+		return ret;
+	}
+	/* Format to read !Q            8! */
 
-    if(( x= sscanf( buf, "!Q %d!", &rvalue)) != 1)
-    {
-	buf[ret] = '\0';
-        logStream (MESSAGE_ERROR) << "cannot parse GetPWMValue reply from AAG cloud sensor, reply was: '"
-				  << buf << "', sscanf " << x << sendLog;
-        return -1 ;
-    }
-    pwmValue->setValueDouble ((double) (100. * rvalue/1023.));
-
-    return 0 ;
+	if ((x = sscanf( buf, "!Q %d!", &rvalue)) != 1)
+	{
+		buf[ret] = '\0';
+		logStream (MESSAGE_ERROR) << "cannot parse GetPWMValue reply from AAG cloud sensor, reply was: '" << buf << "', sscanf " << x << sendLog;
+		return -1;
+	}
+	pwmValue->setValueDouble ((double) (100. * rvalue/1023.));
+	return 0;
 }
-int
-AAG::processOption (int in_opt)
+
+int AAG::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -526,7 +519,11 @@ int AAG::initHardware ()
 		int vsup = 0;
 		ret = sscanf (buf, "!v %d!", &vsup);
 		if (ret == 1 && vsup == 1)
-			createValue (windSpeed, "WIND_SPEED", "Wind Speed", true);
+		{
+			createValue (windSpeed, "WIND_SPEED", "[m/s] wind speed", true);
+			createValue (windSpeedLimit, "WIND_SPEED_LIMIT", "[m/s] limit on wind speed", false, RTS2_VALUE_WRITABLE);
+			windSpeedLimit->setValueDouble (16);
+		}
 	}
 
 	if (!isnan (triggerRain->getValueDouble ()))
@@ -609,7 +606,15 @@ int AAG::info ()
 			}
 			return -1;
 		}
-		valueGood (windSpeed);
+		if (windSpeed->getValueDouble () >= windSpeedLimit->getValueDouble ())
+		{
+			setWeatherTimeout (600, "wind speed is above save limit");
+			valueError (windSpeed);
+		}
+		else
+		{
+			valueGood (windSpeed);
+		}
 	}
     
 	static int count_bad_weather;
@@ -634,6 +639,7 @@ int AAG::info ()
 		{
 			logStream (MESSAGE_DEBUG) << "setting weather to bad, no snow : " << abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble()) << " trigger: " << triggerNoSnow->getValueDouble () << sendLog;
 		}
+		valueError (tempSky);
 		setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "snow on sensor"); // set to bad now
 	}
 	else if (rainFrequency->getValueDouble () < triggerRain->getValueDouble ()) 
@@ -651,6 +657,11 @@ int AAG::info ()
 		if (set_to_bad)
 		{
 			setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining");
+			valueError(rainFrequency);
+		}
+		else
+		{
+			valueGood (rainFrequency); 
 		}
 	}
 	// check the state of the cloud sensor
@@ -661,6 +672,13 @@ int AAG::info ()
 			logStream (MESSAGE_DEBUG) << "setting weather to bad, sky temperature: " << tempSky->getValueDouble () << " trigger: " << triggerSky->getValueDouble () << sendLog;
 		}
 		setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "sky temperature");
+		valueError (tempSkyCorrected);
+	}
+	else
+	{
+		valueGood (tempSky);
+		valueGood (tempSkyCorrected);
+		valueGood (rainFrequency);
 	}
 	return SensorWeather::info ();
 }
