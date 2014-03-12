@@ -114,17 +114,17 @@ Output:
 .. code-block:: bash
 
  rts2saf_imgp.py: starting
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
+ rts2saf_imgp.py, rts2-astrometry.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
  corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: double real_ra "[hours] image ra as calculated from astrometry" 0.362404546535 
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: double real_dec "[deg] image dec as calculated from astrometry" 39.3839441225 
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: double tra "[hours] telescope ra" 0.347497377906 
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: double tdec "[deg] telescope dec" 39.3829586689 
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: double ora "[arcdeg] offsets ra ac calculated from astrometry" -0.0149071686287 
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: double odec "[arcdeg] offsets dec as calculated from astrometry" -0.000985453568909 
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: string object "astrometry object" kelt-1b
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: integer img_num "last astrometry number" 1470
- rts2saf_imgp.py, rts2-astrometry-std-fits.net: 
+ rts2saf_imgp.py, rts2-astrometry.net: double real_ra "[hours] image ra as calculated from astrometry" 0.362404546535 
+ rts2saf_imgp.py, rts2-astrometry.net: double real_dec "[deg] image dec as calculated from astrometry" 39.3839441225 
+ rts2saf_imgp.py, rts2-astrometry.net: double tra "[hours] telescope ra" 0.347497377906 
+ rts2saf_imgp.py, rts2-astrometry.net: double tdec "[deg] telescope dec" 39.3829586689 
+ rts2saf_imgp.py, rts2-astrometry.net: double ora "[arcdeg] offsets ra ac calculated from astrometry" -0.0149071686287 
+ rts2saf_imgp.py, rts2-astrometry.net: double odec "[arcdeg] offsets dec as calculated from astrometry" -0.000985453568909 
+ rts2saf_imgp.py, rts2-astrometry.net: string object "astrometry object" kelt-1b
+ rts2saf_imgp.py, rts2-astrometry.net: integer img_num "last astrometry number" 1470
+ rts2saf_imgp.py, rts2-astrometry.net: 
  rts2saf_imgp.py: ending
 
 ``rts2saf_imgp.py`` is executed by ``IMGP`` and the line ``corrwerr...`` was written on ``stdout`` and is read back by it. The script doing astrometry is configurable (see ``SCRIPT_ASTROMETRY``).

@@ -151,6 +151,10 @@ class Focus(object):
                         if self.debug: self.logger.debug('Focus: continue on request from thread queue')
                         continue
                     sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
+
+                    if self.rt.cfg['ANALYZE_FLUX']:
+                        sxtr.appendFluxFields()
+
                     dSx=sxtr.sextract(fitsFn=fitsFn)
                     if dSx.fitsFn==None:
                         self.logger.warn('Focus: sextractor failed on fits file: {0}'.format(fitsFn))

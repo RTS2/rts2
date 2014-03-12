@@ -194,11 +194,15 @@ class AnalyzeRuns(object):
             # no empty slot found
             if len(rFts) > 1:
                 self.logger.warn('analyzeRuns: found {} fitted data sets, but no empty slot, do not calculate filter offsets'.format(len(rFts)))
-            return rFts
 
         for rFt in rFts:
-            if rFt.extrFitPos != None:
-                self.logger.info('analyzeRuns: {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.extrFitPos), int(rFt.extrFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
+            if rFt.extrFitPos is not None:
+                if openMinFitPos is not None:
+                    self.logger.info('analyzeRuns: {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.extrFitPos), int(rFt.extrFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
+                else:
+                    self.logger.info('analyzeRuns: {0:5d} minPos, {1} ftName'.format( int(rFt.extrFitPos),  rFt.ftName.rjust(8, ' ')))
+
+                self.logger.info('analyzeRuns: fitPar {} '.format(rFt.fitPar ))
 
         return rFts
 

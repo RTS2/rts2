@@ -128,6 +128,9 @@ class DefaultConfiguration(object):
 
         self.dcf[('mode', 'SET_FOC_DEF')]= False
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
+        # ToDo, make a real alternative
+        # self.dcf[('mode', 'ANALYZE_FWHM')]= True
+        self.dcf[('mode', 'ANALYZE_FLUX')]= True
 
         # mapping of fits header elements to canonical
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'
