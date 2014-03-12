@@ -1,0 +1,139 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2014-03-12</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-targetlist">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2007,2010</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Prints informations about target.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>rts2-targetlist</command>
+      &dbapp;
+      <arg choice="opt">
+        <arg choice="plain"><option>-N</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-t</option> <replaceable class="parameter">target type</replaceable></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-s</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-g</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    <para>
+      <command>rts2-targetlist</command> list targets available for <emphasis>RTS2</emphasis>.
+    </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    &optiongnu;
+
+    <variablelist>
+      &dbapplist;
+      <varlistentry>
+        <term><option>-N</option></term>
+        <listitem>
+          <para>
+	    Do not pretty print the output. Format output in plain numbers.
+	    Usedfull for processing of the output by other scripts running in a
+	    pipe.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-t</option> <replaceable class="parameter">target type</replaceable></term>
+        <listitem>
+          <para>
+	    Filter output to include only targets of the given type.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-s</option></term>
+	<listitem>
+	  <para>
+	    Prints only selectable targets, the one from which <citerefentry><refentrytitle>rts2-targetinfo</refentrytitle><manvolnum>1</manvolnum></citerefentry> returns "above horizon".
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>TARGETLIST OUTPUT</title>
+    <para>
+      A bit tricky to understand can be HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE,
+      SUN POSITION table. It list various target parameters, spaced by 1 hour.
+      First row in table is UT hour, -1 is 1 hour before start interval which can be read from table header.
+      Following abrevations are used inside table:
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLES</title>
+    <screen>
+      &prompt; <userinput><command>&dhpackage;</command> <option>-s</option></userinput>
+    </screen>
+    <screen>
+      &prompt; <userinput><command>&dhpackage;</command> <option>-t</option> <replaceable>l</replaceable></userinput>
+    </screen>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-horizon</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

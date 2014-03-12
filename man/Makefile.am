@@ -8,6 +8,7 @@ EXTRA_DIST = \
     rts2-mon.xml \
     rts2-target.xml \
     rts2-targetinfo.xml \
+    rts2-targetlist.xml \
     rts2-focusc.xml \
     rts2-xfocusc.xml \
     rts2-seltest.xml \
@@ -64,6 +65,7 @@ man_MANS = \
     rts2-mon.1 \
     rts2-target.1 \
     rts2-targetinfo.1 \
+    rts2-targetlist.1 \
     rts2-focusc.1 \
     rts2-xfocusc.1 \
     rts2-seltest.1 \

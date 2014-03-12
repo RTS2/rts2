@@ -10,8 +10,6 @@
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-selector">
 
-  <!ENTITY prompt      "<prompt>user@host:~$</prompt>">
-
   <!ENTITY % rts2 SYSTEM "rts2.ent">
   %rts2;
 ]>
@@ -128,7 +126,7 @@
       <command>&dhpackage;</command>. It assumes three distinct
       <emphasis>queues</emphasis> will be created, and user wants to observer
       targets created with
-      <citerefentry><refentrytitle>rts2-newtarget</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+      <citerefentry><refentrytitle>rts2-newtarget</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
       The tutorial is indended for new
       <citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>1</manvolnum></citerefentry>
       users. Advanced users will find more valuable to read various scheduling
@@ -171,11 +169,57 @@
       </para>
     </refsect2>
     <refsect2>
-      <title>Manipulationg target bonus function parameters</title>
+      <title>Manipulating target - bonus function parameters, scripting</title>
       <para>
 	You can skip this section, if you want to rely on the queue scheduling.
 	Please read on, if you want to do queue scheduling with merit function
 	scheduling as backup.
+      </para>
+      <para>
+	In order to assign targets priorities, and enabled them for merit
+	function scheduling,
+	<citerefentry><refentrytitle>rts2-target</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	should be used. <emphasis>-b</emphasis> option specify target bonus,
+	<emphasis>-e</emphasis> option enables target for merit function
+	selection. Multiple targets names can be specified on with a single command call. Either target
+	names or target IDs can be used. 
+	<screen>
+	  &prompt; <userinput><command>rts2-target</command> -b 100 -e M1 M2 M31</userinput>
+	  <computeroutput>2014-03-11T18:10:18.652 CET rts2-target 4 Enable target ID 1000 (M1)</computeroutput>
+	  <computeroutput>2014-03-11T18:10:18.652 CET rts2-target 4 Enable target ID 1001 (M1)</computeroutput>
+	  <computeroutput>2014-03-11T18:10:18.652 CET rts2-target 4 Enable target ID 1030 (M31)</computeroutput>
+	</screen>
+	Please be aware, that the command will not print lines for already enabled targets.
+      </para>
+      <para>
+	Each target can have associated an observing script.
+	<emphasis>RTS2</emphasis> supports various scripts, from a simple on to
+	complex one involving autofocusing and more. Please consult
+	<citerefentry><refentrytitle>rts2.script</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	for details. Scripts runs on cameras. In the following example, we will
+	assign script to take 5, 10 and 20 second exposure to target 1000:
+	<screen>
+	  &prompt; <userinput><command>rts2-target</command> -c C0 -s 'E 5 E 10 E 20' 100</userinput>
+	</screen>
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Verifying target settings</title>
+      <para>
+	After targets are prepared for observation, it is good to check that
+	the setting match what one expect. This can be achieved with
+	<citerefentry><refentrytitle>rts2-targetinfo</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	command. As is the case with
+	<citerefentry><refentrytitle>rts2-target</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	command, the arguments can be either target names, or target IDs. In
+	case target names and IDs are not know, list of all targets present in the database can be obtained with
+	<citerefentry><refentrytitle>rts2-targetlist</refentrytitle><manvolnum>1</manvolnum></citerefentry> command.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Verifying target selection algorithm</title>
+      <para>
+
       </para>
     </refsect2>
     <refsect2>

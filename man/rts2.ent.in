@@ -2,6 +2,8 @@
 <!ENTITY gnu         "<acronym>GNU</acronym>">
 <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
 
+<!ENTITY prompt      "<prompt>user@host:~$</prompt>">
+
 <!ENTITY optiongnu    "
 <para>
   RTS2 follows the usual &gnu; command line syntax, with long options
