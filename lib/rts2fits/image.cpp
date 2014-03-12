@@ -595,7 +595,7 @@ img_type_t Image::getImageType ()
 	}
 	if (!strcmp (t_type, "flat"))
 		return IMGTYPE_FLAT;
-	if (!strcmp (t_type, "dark"))
+	if (!strcmp (t_type, "dark") || !(strcmp (t_type, "zero")))
 	  	return IMGTYPE_DARK;
 	return IMGTYPE_OBJECT;
 }
