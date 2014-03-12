@@ -215,6 +215,29 @@
 	case target names and IDs are not know, list of all targets present in the database can be obtained with
 	<citerefentry><refentrytitle>rts2-targetlist</refentrytitle><manvolnum>1</manvolnum></citerefentry> command.
       </para>
+      <para>
+        To obtain information about target M31, use the following command:
+        <screen>
+	  &prompt; <userinput><command>rts2-targetinfo</command> <option>-e</option> <replaceable>M31</replaceable></userinput>
+	  <computeroutput>ID                  1000</computeroutput>
+	  <computeroutput>SEL_ID              1000</computeroutput>
+	  <computeroutput>NAME                M31</computeroutput>
+	  <computeroutput>TYPE                O</computeroutput>
+	  ....
+	  <computeroutput>24 HOURS OBS        0</computeroutput>
+	  <computeroutput>7 DAYS OBS          0</computeroutput>
+	  <computeroutput>BONUS               192.165909</computeroutput>
+	  <computeroutput>Target is above local horizon.</computeroutput>
+	  <computeroutput>Target is enabled</computeroutput>
+
+	  <computeroutput>IS VISIBLE TONIGHT  yes</computeroutput>
+
+	  <computeroutput>TARGET PRIORITY     0.000000</computeroutput>
+	  <computeroutput>TARGET BONUS        100.000000</computeroutput>
+	  <computeroutput>TARGET BONUS TIME   1970-01-01T01:00:00.000 CET</computeroutput>
+	  <computeroutput>TARGET NEXT OBS.    1970-01-01T01:00:00.000 CET</computeroutput>
+	</screen>
+      </para>
     </refsect2>
     <refsect2>
       <title>Verifying target selection algorithm</title>
