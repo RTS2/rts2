@@ -169,7 +169,7 @@
       </para>
     </refsect2>
     <refsect2>
-      <title>Manipulating target - bonus function parameters, scripting</title>
+      <title>Manipulating target - priority, scripting</title>
       <para>
 	You can skip this section, if you want to rely on the queue scheduling.
 	Please read on, if you want to do queue scheduling with merit function
@@ -179,12 +179,12 @@
 	In order to assign targets priorities, and enabled them for merit
 	function scheduling,
 	<citerefentry><refentrytitle>rts2-target</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-	should be used. <emphasis>-b</emphasis> option specify target bonus,
+	should be used. <emphasis>-p</emphasis> option specify target priority,
 	<emphasis>-e</emphasis> option enables target for merit function
 	selection. Multiple targets names can be specified on with a single command call. Either target
 	names or target IDs can be used. 
 	<screen>
-	  &prompt; <userinput><command>rts2-target</command> -b 100 -e M1 M2 M31</userinput>
+	  &prompt; <userinput><command>rts2-target</command> -p 100 -e M1 M2 M31</userinput>
 	  <computeroutput>2014-03-11T18:10:18.652 CET rts2-target 4 Enable target ID 1000 (M1)</computeroutput>
 	  <computeroutput>2014-03-11T18:10:18.652 CET rts2-target 4 Enable target ID 1001 (M1)</computeroutput>
 	  <computeroutput>2014-03-11T18:10:18.652 CET rts2-target 4 Enable target ID 1030 (M31)</computeroutput>
@@ -232,36 +232,99 @@
 
 	  <computeroutput>IS VISIBLE TONIGHT  yes</computeroutput>
 
-	  <computeroutput>TARGET PRIORITY     0.000000</computeroutput>
-	  <computeroutput>TARGET BONUS        100.000000</computeroutput>
+	  <computeroutput>TARGET PRIORITY     100.000000</computeroutput>
+	  <computeroutput>TARGET BONUS        0.000000</computeroutput>
 	  <computeroutput>TARGET BONUS TIME   1970-01-01T01:00:00.000 CET</computeroutput>
 	  <computeroutput>TARGET NEXT OBS.    1970-01-01T01:00:00.000 CET</computeroutput>
 	</screen>
+	The important lines are:
+	<variablelist>
+	  <varlistentry>
+	    <term>BONUS 192.165909</term>
+	    <listitem>
+	      <para>
+		Current value of the target merit function. The value will
+		change over time, as the formula includes various
+		time-dependent values.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term>IS VISIBLE TONIGHT yes</term>
+	    <listitem>
+	      <para>
+		Target is visible during night. Targets which are not visible
+		shall not be, for a obvious reason, observed.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term>TARGET PRIORITY 100.000000</term>
+	    <listitem>
+	      <para>
+	        Priority of the target.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term>TARGET BONUS 100.000000</term>
+	    <listitem>
+	      <para>
+		Target bonus. Target merit function is calculated as a sum of
+		target priority, target bonus and time-dependant part. 
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>  
       </para>
     </refsect2>
     <refsect2>
       <title>Verifying target selection algorithm</title>
       <para>
-
+	After preparing database with targets for night observation, it is
+	handy to verify which targets will be selected with merit function.
+	This can be achived through
+	<citerefentry><refentrytitle>rts2-seltest</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	command. Best is to run it with --print-possible parameter, as is described bellow:
+	<screen>
+          &prompt; <userinput><command>rts2-seltest</command> <option>--print-possible</option></userinput>
+<computeroutput>List of targets selected for observations. Sort from the one with the highest priority to lowest priorities</computeroutput>
+<computeroutput></computeroutput>
+<computeroutput>   1   329.45   100.00  1000 O 00:42:44.350 +41:16:08.63 -02:25 1.12 +63 23 22.34 265 02 19.56 rising     M31</computeroutput>
+<computeroutput>   2   188.75     0.00  1002 O 21:33:27.012 -00:49:23.94 +00:43 1.46 +43 09 57.42 015 01 35.72 transiting M2</computeroutput>
+        </screen>
       </para>
     </refsect2>
     <refsect2>
       <title>Adding target to the queue</title>
       <para>
 	One or multiple targets can be added to the queue with either
-	<command>queue</command>, or through
+	<command><link linked="cmd:queue">queue</link></command> command, or through
 	<citerefentry><refentrytitle>rts2-xmlrpcd</refentrytitle><manvolnum>7</manvolnum></citerefentry>
 	JSON interface, probably with help of the
 	<citerefentry><refentrytitle>rts2-queue</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
 	In this tutorial, we will consider adding target only directly, through
-	<command>queue</command> executed in
+	<command><link linked="cmd:queue">queue</link></command> executed in
 	<citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+      </para>
+      <para>
+	Let's assume we would like to queue in targets 1000, 1001 and 1030 to
+	the manual queue. For this, the following RTS2 command shall be entered
+	in
+	<citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	<screen>
+  	  <userinput><command>queue</command> <option>manual</option> <replaceable>1000</replaceable> <replaceable>1001</replaceable> <replaceable>1031</replaceable></userinput>
+	</screen>
+      </para>
+      <para>
+	Please consult
+	<citerefentry><refentrytitle>rts2-queue</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	for details.
       </para>
     </refsect2>
     <refsect2>
       <title>Night time operation</title>
       <para>
-        
       </para>
     </refsect2>
   </refsect1>
@@ -431,6 +494,30 @@
 	</listitem>
       </varlistentry>
     </variablelist>  
+  </refsect1>
+  <refsect1>
+    <title>RTS2 commands</title>
+    <para>
+      This sections describes extra commands available for &dhpackage;. Commands can be best
+      executed from
+      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+    </para>
+    <refsect2>
+      <title id="cmd:queue">queue &lt;queue name&gt; &lt;targets...&gt;</title>
+      <para>
+	Queue target to the given queue. Queue name must be name of an existing
+	queue. Targets are entered with their target ID. After adding all targets 
+	to the end of the queue, the queue is reordered according to its type -
+	it is therefor possible, that the added targets will not end at the end
+	of the queue.
+      </para>
+      <refsect3>
+        <title>Example</title>
+	<para>
+	  <command>queue</command> <option>manual</option> <replaceable>1000</replaceable> <replaceable>1001</replaceable>
+	</para>
+      </refsect3>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>OPTIONS</title>
