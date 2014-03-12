@@ -64,11 +64,11 @@ class DeviceDb:public rts2core::Device
 
 		virtual void signaledHUP ();
 
+		rts2core::Configuration *config;
+
 	private:
 		char *connectString;
 		char *configFile;
-
-		rts2core::Configuration *config;
 };
 
 }

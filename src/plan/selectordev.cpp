@@ -832,6 +832,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 			if (!conn->paramEnd ())
 				return -2;
 			q->clearNext ();
+			logStream (MESSAGE_DEBUG) << "cleared queue " << name << sendLog;
 			return 0;
 		}
 		else if (conn->isCommand ("queue_plan"))

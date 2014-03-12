@@ -91,8 +91,19 @@
       problems with the device lost.
     </para>
     <para>
-      Targets can be either queued for execution, or immeditely executed, by the following commands:
+      Targets can be either queued for execution, or immeditely executed, by
+      the <command><link linked="cmd:next">next</link></command> or
+      <command><link linked="cmd:next_plan">next_plan</link></command> commands.
     </para>
+  </refsect1>
+  <refsect1>
+    <title>Operation</title>
+    <para>
+
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>RTS2 commands</title>
     <refsect2>
       <title>next</title>
       <para>
@@ -105,12 +116,13 @@
 
       </para>
     </refsect2>
-  </refsect1>
-  <refsect1>
-    <title>Operation</title>
-    <para>
-
-    </para>
+    <refsect2>
+      <title>skip</title>
+      <para>
+	Skip currently observed target. If there is a next target in the
+        next_id, start it immediately. Do nothing if the next_id is not defined.
+      </para>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>Variables</title>

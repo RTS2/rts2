@@ -92,6 +92,11 @@ class Executor:public rts2db::DeviceDb
 		int setGrb (int grbId);
 		int setShower ();
 
+		/**
+		 * Skips current target, schedule now the next target.
+		 */
+		int skip ();
+
 		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
 		rts2core::ValueInteger *scriptCount;
 		int waitState;
@@ -275,11 +280,9 @@ int Executor::reloadConfig ()
 {
 	int ret;
 	double f;
-	Configuration *config;
 	ret = rts2db::DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
-	config = Configuration::instance ();
 	observer = config->getObserver ();
 	f = 0;
 	config->getDouble ("grbd", "seplimit", f);
@@ -843,6 +846,14 @@ int Executor::setShower ()
 	return setNow (TARGET_SHOWER, -1);
 }
 
+int Executor::skip ()
+{
+	info ();
+	if (next_id->getValueInteger () < 0)
+		return -2;
+	return setNow (next_id->getValueInteger (), next_plan_id->getValueInteger ());
+}
+
 int Executor::stop ()
 {
 	flatsDone->setValueBool (false);
@@ -1129,6 +1140,12 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		selector_next_reported = false;
 		sendValueAll (selectorNext);
 		return setNextPlan (tar_id);
+	}
+	else if (conn->isCommand ("skip"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return skip ();
 	}
 	else if (conn->isCommand ("end"))
 	{

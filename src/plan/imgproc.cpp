@@ -224,13 +224,11 @@ int ImageProc::reloadConfig ()
 {
 	int ret;
 	
-	Configuration *config;
 	std::string imgglob;
 #ifdef RTS2_HAVE_PGSQL
 	ret = rts2db::DeviceDb::reloadConfig ();
-	config = Configuration::instance ();
 #else
-	config = Configuration::instance ();
+	Configuration *config = Configuration::instance ();
 	ret = config->loadFile (configFile);
 #endif
 	if (ret)

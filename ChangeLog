@@ -1,3 +1,6 @@
+2014-03-12
+ * added skip command
+
 2014-03-06
  * flat_beginning, flat_ending and friends
  * set deamon values from command line
