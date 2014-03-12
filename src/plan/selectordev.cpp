@@ -791,6 +791,7 @@ void SelectorDev::message (Message & msg)
 				rts2db::Target *tar = createTarget (current_target->getValueInteger (), observer);
 				if (tar == NULL)
 					return;
+				logStream (MESSAGE_INFO) << "adding " << tar->getTargetName () << " (#" << tar->getTargetID () << ") to the top of the queue " << queueNames[current_queue->getValueInteger () - 1] << ", as a result of the interruption" << sendLog;
 				eq->addFront (tar, current_start->getValueDouble (), current_end->getValueDouble ());
 			}
 			break;
@@ -941,6 +942,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		rts2db::Target *tar = createTarget (tar_id, observer);
 		if (tar == NULL)
 			return -2;
+		logStream (MESSAGE_INFO) << "adding " << tar->getTargetName () << " (#" << tar->getTargetID () << ") on top of the queue " << name << " as the result of " << conn->getCommand () << " command." << sendLog;
 		qi->addFront (tar);
 		qi->filter (getNow ());
 		if (qi->front ().target == tar)

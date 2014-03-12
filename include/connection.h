@@ -199,6 +199,18 @@ class Connection:public Object
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();
 
+		/**
+		 * Return current command.
+		 */
+		inline char *getCommand () { return command_start; }
+
+		/**
+		 * Check if the command match given string.
+		 *
+		 * @param cmd  command to check
+		 *
+		 * @return 1 if the input string match the current command, 0 otherwise.
+		 */
 		inline int isCommand (const char *cmd) { return !strcmp (cmd, getCommand ()); }
 
 		/**
@@ -735,7 +747,6 @@ class Connection:public Object
 		int sendNextCommand ();
 
 		int commandReturn ();
-		inline char *getCommand () { return command_start; }
 		inline int isCommandReturn () { return (*(getCommand ()) == '+' || *(getCommand ()) == '-'); }
 
 	private:
