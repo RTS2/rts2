@@ -27,6 +27,7 @@ librts2gpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpibenet.cpp conngpibpr
 
 if GPIBLIB
 librts2gpib_la_SOURCES += conngpiblinux.cpp
+librts2gpib_la_LIBADD = @LIB_GPIB@
 else
 EXTRA_DIST += conngpiblinux.cpp
 endif
