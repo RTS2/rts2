@@ -58,6 +58,7 @@ class Dummy:public Telescope
 		virtual int info ()
 		{
 			setTelRaDec (dummyPos.ra, dummyPos.dec);
+			julian_day->setValueDouble (ln_get_julian_from_sys ());
 			return Telescope::info ();
 		}
 
@@ -111,6 +112,8 @@ class Dummy:public Telescope
 
 		rts2core::ValueDouble *crpix_aux1;
 		rts2core::ValueDouble *crpix_aux2;
+
+		rts2core::ValueDouble *julian_day;
 };
 
 }
@@ -124,6 +127,8 @@ Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
 
 	createValue (crpix_aux1, "CRPIX1AG", "autoguider offset", false, RTS2_DT_AUXWCS_CRPIX1 | RTS2_VALUE_WRITABLE);
 	createValue (crpix_aux2, "CRPIX2AG", "autoguider offset", false, RTS2_DT_AUXWCS_CRPIX2 | RTS2_VALUE_WRITABLE);
+
+	createValue (julian_day, "JULIAN_DAY", "Julian date", false);
 
 	crpix_aux1->setValueDouble (10);
 	crpix_aux2->setValueDouble (20);
