@@ -135,6 +135,7 @@ class Executor:public rts2db::DeviceDb
 		rts2core::ValueString *current_type;
 		rts2core::ValueDouble *current_errorbox;
 		rts2core::ValueInteger *current_obsid;
+		rts2core::ValueTime *current_obsstart;
 
 		rts2core::ValueString *pi;
 		rts2core::ValueString *program;
@@ -193,6 +194,7 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 	createValue (current_type, "current_type", "type of current target", false);
 	createValue (current_errorbox, "current_errorbox", "current target error box (if any)", false);
 	createValue (current_obsid, "obsid", "ID of observation", false);
+	createValue (current_obsstart, "observation_start", "time when the current observation started", false);
 
 	createValue (pi, "PI", "project investigator of the target", true, RTS2_VALUE_WRITABLE);
 	createValue (program, "PROGRAM", "target program name", true, RTS2_VALUE_WRITABLE);
@@ -507,7 +509,11 @@ int Executor::info ()
 		current_errorbox->setValueDouble (currentTarget->getErrorBox ());
 		current_name->setValueCharArr (currentTarget->getTargetName ());
 		img_id->setValueInteger (currentTarget->getCurrImgId ());
-		current_obsid->setValueInteger (currentTarget->getObsId ());
+		if (current_obsid->getValueInteger () != currentTarget->getObsId ())
+		{
+			current_obsid->setValueInteger (currentTarget->getObsId ());
+			current_obsstart->setNow ();
+		}
 	}
 	else
 	{
