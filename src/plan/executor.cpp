@@ -889,6 +889,13 @@ void Executor::doSwitch ()
 		// create again our target..since conditions changed, we will get different target id
 		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer));
 	}
+	// log loop if the next target will be the same
+	if (currentTarget && ((getActiveQueue ()->size () > 0 && getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ())
+		|| (autoLoop->getValueBool () == true && getActiveQueue ()->size () == 0)))
+	{
+		logStream (MESSAGE_INFO | INFO_OBSERVATION_LOOP) << currentTarget->getObsId () << " " << currentTarget->getTargetID () << sendLog;
+	}
+
 	if (autoLoop->getValueBool () == false && currentTarget && currentTarget->observationStarted ())
 	{
 		// don't execute already started observation, if auto loop is off
