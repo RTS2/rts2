@@ -628,7 +628,12 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 			}
 			else
 			{
-				logStream (MESSAGE_ERROR) << "cannot find target with ID " << tar_id << " in queue " << lastQueue->getValueInteger () << sendLog;
+				if (eq && eq->size () > 0)
+					logStream (MESSAGE_ERROR) << "cannot find target with ID " << tar_id << " in queue " << lastQueue->getValueInteger () << ", " << eq << sendLog;
+				else if (eq)
+					logStream (MESSAGE_ERROR) << "cannot find target with ID " << tar_id << " in queue " << lastQueue->getValueInteger () << ", queue size is 0" << sendLog;
+				else
+					logStream (MESSAGE_ERROR) << "cannot find target with ID " << tar_id << " in queue " << lastQueue->getValueInteger () << sendLog;
 			}
 		}
 		current_target->setValueInteger (tar_id);
