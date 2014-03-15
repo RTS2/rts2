@@ -93,11 +93,11 @@ if EDTPDV
 bin_PROGRAMS += rts2-camd-edtsao rts2-camd-reflex
 
 rts2_camd_edtsao_SOURCES = edtsao.cpp
-rts2_camd_edtsao_LDFLAGS = edtsao/libedtsao.a @LIB_PTHREAD@ @LIB_EDTPDV@
+rts2_camd_edtsao_LDFLAGS = edtsao/libedtsao.a @LIB_EDTPDV@ @LIB_PTHREAD@
 rts2_camd_edtsao_CXXFLAGS = @INC_EDTPDV@ -I../../include
 
 rts2_camd_reflex_SOURCES = reflex.cpp
-rts2_camd_reflex_LDFLAGS = @LIB_PTHREAD@ @LIB_EDTPDV@ 
+rts2_camd_reflex_LDFLAGS = @LIB_EDTPDV@ @LIB_PTHREAD@
 rts2_camd_reflex_CXXFLAGS = @INC_EDTPDV@ -I../../include
 
 else
