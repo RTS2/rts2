@@ -130,7 +130,7 @@ class DataRun(object):
     def sextractLoop(self, fitsFns=None):
 
         for fitsFn in fitsFns:
-            rsx= Sextract(debug=self.debug, rt=self.rt, logger=self.logger)
+            rsx= Sextract(debug=self.args.sxDebug, rt=self.rt, logger=self.logger)
             if self.args.flux:
                 rsx.appendFluxFields()
                 
@@ -146,7 +146,7 @@ class DataRun(object):
                 self.logger.warn('sextractLoop: no result: file: {0}'.format(fitsFn))
 
     def createAssocList(self, fitsFn=None):
-        rsx= Sextract(debug=self.debug, createAssoc=self.args.associate, rt=self.rt, logger=self.logger)
+        rsx= Sextract(debug=self.args.sxDebug, createAssoc=self.args.associate, rt=self.rt, logger=self.logger)
         if self.args.flux:
             rsx.appendFluxFields()
 

@@ -31,6 +31,9 @@ import collections
 import rts2saf.acquire as acq
 import rts2saf.sextract as sx
 import rts2saf.analyze as  an
+from rts2saf.analyzeruns import AnalyzeRuns
+from rts2saf.datarun import DataRun
+from rts2saf.data import DataSxtr
 
 TERM=False
 def receive_signal(signum, stack):
@@ -75,6 +78,95 @@ class Focus(object):
         self.logger=logger
         self.xdisplay = xdisplay
         self.foc.focDef = None
+
+    def writeFocDef(self, ft=None, rFt = None, rMns = None, acqu = None):
+        """ write FOC_DEF to the focuser  
+        """
+        # write FOC_DEF early
+        if ft.name in self.rt.cfg['EMPTY_SLOT_NAMES']:
+
+            if self.args.blind:
+                self.foc.focDef= rMns.combined
+            else:
+                self.foc.focDef= rFt.extrFitPos
+
+            if self.rt.cfg['SET_FOC_DEF']:
+                if self.debug: self.logger.debug('Focus: set self.foc.focDef: {0}'.format(int(self.foc.focDef)))
+                # ToDo the correct values are stored in Focuser() object
+                if self.rt.cfg['FWHM_MIN'] < rFt.extrFitVal < self.rt.cfg['FWHM_MAX']:
+                    self.foc.focDef=rFt.extrFitPos
+                    acqu.writeFocDef()
+                else:
+                    self.logger.warn('Focus: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3} (FWHM_MIN,FWHM_MAX)'.format(int(rFt.extrFitPos), rFt.extrFitVal, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
+            else:
+                # ToDo subtract filter offset and set FOC_DEF
+                self.logger.info('Focus: filter: {0} not setting FOC_DEF (see configuration)'.format(ft.name))
+
+    def fitFocDef(self, dataSxtr = None, ftw = None, ft = None):
+        """ fit FOC_DEF  
+        """
+
+        rFtFwhm = rMnsFwhm = rFtFlux= rMnsFlux = None
+        # analysis here
+        # ToDo ugly 
+        self.args.flux=False
+        self.args.associate = False
+        self.args.fractObjs = 0.5
+        self.args.model = False
+        aRs = AnalyzeRuns(debug = self.debug, basePath = None, args = self.args, rt = self.rt, ev = self.ev, logger = self.logger, xdisplay = self.xdisplay)
+        dataRn = DataRun(debug = self.debug, args = self.args, rt = self.rt, logger = self.logger)
+        for dSx in  dataSxtr:
+            if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
+                dataRn.dataSxtrs.append(dSx)
+
+        rFtFwhm, rMnsFwhm, rFtFlux, rMnsFlux = aRs.analyzeRun(dataRn = dataRn)
+
+        if rFtFwhm is not None and rFtFwhm.extrFitPos:
+            self.logger.info('fwhm fitFocDef: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFtFwhm.extrFitPos, ftw.name, ft.name))
+            self.logger.info('fwhm fitFocDef: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFtFwhm.extrFitVal, ftw.name, ft.name))
+        else:
+            self.logger.warn('fwhm fitFocDef: no fitted minimum found')
+
+        if rFtFlux is not None and rFtFlux.extrFitPos:
+            self.logger.info('flux fitFocDef: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFtFlux.extrFitPos, ftw.name, ft.name))
+            self.logger.info('flux fitFocDef: {0:5.2f}: minFitFlux,           filter wheel:{1}, filter:{2}'.format(rFtFlux.extrFitVal, ftw.name, ft.name))
+        else:
+            self.logger.warn('fwhm fitFocDef: no fitted minimum found')
+
+        arFtFwhm = arMnsFwhm = arFtFlux = arMnsFlux = None
+        if self.rt.cfg['ANALYZE_FLUX_ASSOC']:
+            # ToDo ugly 
+            self.args.flux=True
+            self.args.associate = True
+            self.args.fractObjs = 0.5
+            self.args.model = False
+
+            fitsFns = [ x.fitsFn for x in dataSxtr]
+            # assoc analysis here
+            aRs = AnalyzeRuns(debug = self.debug, basePath = None, args = self.args, rt = self.rt, ev = self.ev, logger = self.logger, xdisplay = self.xdisplay)
+            dataRn = aRs.sextractRun(fitsFns = fitsFns)
+            arFtFwhm, arMnsFwhm, arFtFlux, arMnsFlux = aRs.analyzeRun(dataRn = dataRn)
+
+            if rFtFwhm is not None and rFtFwhm.extrFitPos:
+                self.logger.info('assoc fwhm fitFocDef: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFtFwhm.extrFitPos, ftw.name, ft.name))
+                self.logger.info('assoc fwhm fitFocDef: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFtFwhm.extrFitVal, ftw.name, ft.name))
+            else:
+                self.logger.warn('assoc fwhm fitFocDef: no fitted minimum found')
+
+            if rFtFlux is not None and rFtFlux.extrFitPos:
+                self.logger.info('assoc flux fitFocDef: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFtFlux.extrFitPos, ftw.name, ft.name))
+                self.logger.info('assoc flux fitFocDef: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFtFlux.extrFitVal, ftw.name, ft.name))
+            else:
+                self.logger.warn('assoc flux fitFocDef: no fitted minimum found')
+
+        # choose among the available results
+        rFt = aRs.bestResult(
+            rFtFwhm = rFtFwhm, arFtFwhm = arFtFwhm,
+            rFtFlux = rFtFlux, arFtFlux = arFtFlux
+        )
+        # ToDo: think about that       return rFtFwhm, rMnsFwhm, arFtFwhm, arMnsFwhm, rFtFlux, rMnsFlux, arFtFlux, arMnsFlux
+        # ToDo: expand to bestResult calculated means
+        return rFt, rMnsFwhm
 
     def run(self):
         """Loop over filter wheels, their filters and offsets (FOC_TOFF)
@@ -150,7 +242,7 @@ class Focus(object):
                     if 'continue' in fitsFn:
                         if self.debug: self.logger.debug('Focus: continue on request from thread queue')
                         continue
-                    sxtr= sx.Sextract(debug=self.debug,rt=self.rt,logger=self.logger)
+                    sxtr= sx.Sextract(debug=self.args.sxDebug,rt=self.rt,logger=self.logger)
 
                     if self.rt.cfg['ANALYZE_FLUX']:
                         sxtr.appendFluxFields()
@@ -164,95 +256,25 @@ class Focus(object):
                     self.logger.info('Focus: pos: {0:5d}, fwhm: {1:5.2f}, stdFwhm {2:5.2f}, objects: {3:4d}, file: {4}'.format(int(st), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog), fitsFn))
                     dataSxtr.append(dSx)
 
+                    dSx = DataSxtr()
+                    dSx.fitsFn= fitsFn
+                    dataSxtr.append(dSx)
+
                 else:
                     if self.debug: self.logger.debug('Focus: got all images')
 
                 acqu.stopScan(timeout=1.)
-                
-                pos=collections.defaultdict(int)
-                for dSx in dataSxtr:
-                    pos[dSx.focPos] += 1
 
-                if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-                    self.logger.warn('Focus: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
-                    if self.debug:
-                        for p,v in pos.iteritems():
-                            self.logger.debug('Focus:{0:5.0f}: {1}'.format(p,v))
-                    continue
+                rFt, rMnsFwhm = self.fitFocDef(dataSxtr = dataSxtr, ftw = ftw, ft = ft)
 
-                # appears on plot
-                date=dataSxtr[0].date.split('.')[0]
+                if rFt is not None:
+                    # save them for filter offset calucaltion
+                    rFts.append(rFt)
+                    # ToDo is a glitch: rMnsFwhm
+                    self.writeFocDef(ft = ft, rFt = rFt, rMns = rMnsFwhm, acqu = acqu)
 
-                # no need to wait, might go to a thread too
-                if self.args.catalogAnalysis:
-                    anr=CatalogAnalysis(
-                        debug=self.debug, 
-                        dataSxtr=dataSxtr, 
-                        Ds9Display=self.args.Ds9Display, 
-                        FitDisplay=self.args.FitDisplay, 
-                        xdisplay = self.xdisplay,
-                        focRes=self.foc.resolution, 
-                        moduleName=args.criteria, 
-                        ev=self.ev, 
-                        rt=rt, 
-                        logger=self.logger)
-
-                    rFt, rMns=anr.selectAndAnalyze()
-                else:
-                    anr= an.SimpleAnalysis(
-                        dataSxtr=dataSxtr, 
-                        Ds9Display=self.args.Ds9Display, 
-                        FitDisplay=self.args.FitDisplay, 
-                        xdisplay = self.xdisplay,
-                        ftwName=ftw.name, 
-                        ftName=ft.name, 
-                        focRes=self.foc.resolution, 
-                        ev=self.ev, 
-                        logger=self.logger)
-
-                    rFt, rMns= anr.analyze()
-
-                # save them for filter offset calucaltion
-                rFts.append(rFt)
-
-                if rFt.fitFlag:
-                    anr.display()
-
-                if rFt.extrFitPos:
-                    self.logger.info('Focus: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFt.extrFitPos, ftw.name, ft.name))
-                    self.logger.info('Focus: {0:5.2f}: minFitFwhm,           filter wheel:{1}, filter:{2}'.format(rFt.extrFitVal, ftw.name, ft.name))
-                else:
-                    self.logger.warn('Focus: no fitted minimum found')
-
-                # say something
-                rMns.logWeightedMeans(ftw=ftw, ft=ft)
-
-                # if in self.rt.cfg['EMPTY_SLOT_NAMES']
-                # or
-                # blind
-                if ft.name in self.rt.cfg['EMPTY_SLOT_NAMES']:
-
-                    if self.args.blind:
-                        self.foc.focDef= rMns.combined
-                    else:
-                        self.foc.focDef= rFt.extrFitPos
-                    if self.debug: self.logger.debug('Focus: set self.foc.focDef: {0}'.format(int(self.foc.focDef)))
-
-                    # FOC_DEF (is set first)
-                    if self.rt.cfg['SET_FOC_DEF']:
-                        # ToDo the correct values are stored in Focuser() object
-                        if self.rt.cfg['FWHM_MIN'] < rFt.extrFitVal < self.rt.cfg['FWHM_MAX']:
-                            self.foc.focDef=rFt.extrFitPos
-                            acqu.writeFocDef()
-                        else:
-                            self.logger.warn('Focus: not writing FOC_DEF: {0}, minFitFwhm: {1}, out of bounds: {2},{3} (FWHM_MIN,FWHM_MAX)'.format(int(rFt.extrFitPos), rFt.extrFitVal, self.rt.cfg['FWHM_MIN'], self.rt.cfg['FWHM_MAX']))
-                    else:
-                        # ToDo subtract filter offset and set FOC_DEF
-                        self.logger.info('Focus: filter: {0} not setting FOC_DEF (see configuration)'.format(ft.name))
-
-
-                if self.debug: self.logger.debug('Focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
             else:
+                if self.debug: self.logger.debug('Focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))
                 # for a given filter wheel, all filters processed
                 # no incomplete set of offsets are written
                 if self.rt.cfg['WRITE_FILTER_OFFSETS']:

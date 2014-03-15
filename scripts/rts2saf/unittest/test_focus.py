@@ -137,6 +137,7 @@ class TestFocus(unittest.TestCase):
         # setup rts2saf
         # fake arguments
         self.args=Args()
+        self.args.sxDebug=False
         self.args.blind=blind
         self.args.verbose=False
         self.args.check=True

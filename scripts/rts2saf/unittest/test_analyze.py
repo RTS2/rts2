@@ -94,7 +94,7 @@ class TestSimpleAnalysis(unittest.TestCase):
         self.assertEqual(len(dataSxtr), 14, 'return value: {}'.format(len(dataSxtr)))
 
         an=SimpleAnalysis(debug=False, dataSxtr=dataSxtr, Ds9Display=False, FitDisplay=False, focRes=float(self.rt.cfg['FOCUSER_RESOLUTION']), ev=self.ev, logger=logger)
-        resultFitFwhm, resultMeansFwhm=an.analyze()
+        resultFitFwhm, resultMeansFwhm, resultFitFlux, resultMeansFlux=an.analyze()
         self.assertAlmostEqual(resultFitFwhm.extrFitVal, 2.2175214358, places=2, msg='return value: {}'.format(resultFitFwhm.extrFitVal))
 
         an.display()

@@ -78,7 +78,7 @@ class DefaultConfiguration(object):
         self.dcf[('filter properties', 'flt9')]= '[ D,   -1400, 1500, 300, 1.]'
 
         self.dcf[('focuser properties', 'FOCUSER_NAME')]= 'F0'
-        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20. 
+        self.dcf[('focuser properties', 'FOCUSER_RESOLUTION')]= 20 
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 0 
         self.dcf[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 20
         self.dcf[('focuser properties', 'FOCUSER_LOWER_LIMIT')]= 0 
@@ -130,7 +130,8 @@ class DefaultConfiguration(object):
         self.dcf[('mode', 'WRITE_FILTER_OFFSETS')]= True
         # ToDo, make a real alternative
         # self.dcf[('mode', 'ANALYZE_FWHM')]= True
-        self.dcf[('mode', 'ANALYZE_FLUX')]= True
+        self.dcf[('mode', 'ANALYZE_FLUX')]= False
+        self.dcf[('mode', 'ANALYZE_FLUX_ASSOC')]= False
 
         # mapping of fits header elements to canonical
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'

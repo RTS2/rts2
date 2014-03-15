@@ -76,8 +76,9 @@ class TestAnalyzeRuns(unittest.TestCase):
         self.args.associate = False
         aRs = AnalyzeRuns(basePath = self.args.basePath, args = self.args, rt = self.rt, ev = self.ev, logger = logger)
         aRs.aggregateRuns()
-        rFf = aRs.analyzeRuns()
-        self.assertEqual(type(rFf[0]), ResultFit, 'return value: {}'.format(type(rFf[0])))
+        rFfFwhm, rFfFlux = aRs.analyzeRuns()
+        # ToDo expand to Flux
+        self.assertEqual(type(rFfFwhm[0]), ResultFit, 'return value: {}'.format(type(rFfFwhm[0])))
 
     #@unittest.skip('feature not yet implemented')
     def test_analyze_runs_assoc(self):
@@ -85,9 +86,9 @@ class TestAnalyzeRuns(unittest.TestCase):
         self.args.associate = True
         aRs = AnalyzeRuns(basePath = self.args.basePath, args = self.args, rt = self.rt, ev = self.ev, logger = logger)
         aRs.aggregateRuns()
-        rFf = aRs.analyzeRuns()
-        
-        self.assertEqual(type(rFf[0]), ResultFit, 'return value: {}'.format(type(rFf[0])))
+        rFfFwhm, rFfFlux = aRs.analyzeRuns()
+        # ToDo expand to Flux
+        self.assertEqual(type(rFfFwhm[0]), ResultFit, 'return value: {}'.format(type(rFfFwhm[0])))
 
 
 if __name__ == '__main__':

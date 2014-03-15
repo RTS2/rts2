@@ -81,6 +81,7 @@ class SimpleAnalysis(object):
         #
         self.dataFitFlux=None
         self.resultFitFlux=None
+        self.resultMeansFlux = None
         # ToDo must reside outside
         self.fd=None
         self.i_flux=None
@@ -197,8 +198,7 @@ class SimpleAnalysis(object):
             self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
             self.resultMeansFlux.calculate(var='Flux')
 
-        # ToDo make a sensible decision
-        return self.resultFitFwhm, self.resultMeansFwhm
+        return self.resultFitFwhm, self.resultMeansFwhm, self.resultFitFlux, self.resultMeansFlux
 
     def display(self):
         """Plot data, fitted function for FWHM and optionally flux.
@@ -337,14 +337,14 @@ class CatalogAnalysis(object):
             ev=self.ev, 
             logger=self.logger)
 
-        accRFt, accRMns=an.analyze()
+        accRFtFwhm, accRMnsFwhm, accRFtFlux, accRMnsFlux=an.analyze()
         try:
-            self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFt.weightedMeanObjects, accRFt.weightedMeanCombined, accRFt.minFitPos, accRFt.minFitFwhm))
+            self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFtFwhm.weightedMeanObjects, accRFtFwhm.weightedMeanCombined, accRFtFwhm.minFitPos, accRFtFwhm.minFitFwhm))
         except:
             self.logger.debug('ACCEPTED: fit and calculation failed')
             
         if self.Ds9Display or self.FitDisplay:
-            if accRFt.fitFlag:
+            if accRFtFwhm.fitFlag:
                 an.display()
         #
         an=SimpleAnalysis(
@@ -357,14 +357,14 @@ class CatalogAnalysis(object):
             ev=self.ev, 
             logger=self.logger)
 
-        rejRFt, recRMns=an.analyze()
+        rejRFtFwhm, recRMnsFwhm, rejRFtFlux, recRMnsFlux=an.analyze()
         try:
-            self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFt.weightedMeanObjects, rejRFt.weightedMeanCombined, rejRFt.minFitPos, rejRFt.minFitFwhm))
+            self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFtFwhm.weightedMeanObjects, rejRFtFwhm.weightedMeanCombined, rejRFtFwhm.minFitPos, rejRFtFwhm.minFitFwhm))
         except:
             self.logger.debug('REJECTED: fit and calculation failed')
 
         if self.Ds9Display or self.FitDisplay:
-            if accRFt.fitFlag:
+            if accRFtFwhm.fitFlag:
                 an.display()
         # 
         an=SimpleAnalysis(
@@ -377,15 +377,16 @@ class CatalogAnalysis(object):
             ev=self.ev, 
             logger=self.logger)
 
-        allRFt, allRMns=an.analyze()
+        allRFtFwhm, allRMnsFwhm, allRFtFlux, allRMnsFlux=an.analyze()
         try:
-            self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFt.weightedMeanObjects, allRFt.weightedMeanCombined, allRFt.minFitPos, allRFt.minFitFwhm))
+            self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFtFwhm.weightedMeanObjects, allRFtFwhm.weightedMeanCombined, allRFtFwhm.minFitPos, allRFtFwhm.minFitFwhm))
         except:
             self.logger.debug('ALL     : fit and calculation failed')
 
 
         if self.Ds9Display or self.FitDisplay:
-            if accRFt.fitFlag:
+            if accRFtFwhm.fitFlag:
                 an.display()
         # ToDo here are three objects
-        return accRFt, rejRFt, allRFt, accRMns, recRMns, allRMns
+        # ToDo expand to Flux
+        return accRFtFwhm, rejRFtFwhm, allRFtFwhm, accRMnsFwhm, recRMnsFwhm, allRMnsFwhm

@@ -41,6 +41,7 @@ if __name__ == '__main__':
     prg= re.split('/', sys.argv[0])[-1]
     parser= argparse.ArgumentParser(prog=prg, description='rts2saf calculate fwhm')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
+    parser.add_argument('--sxdebug', dest = 'sxDebug', action = 'store_true', default = False, help = ': %(default)s,add more output on SExtract')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='/var/log/', help=': %(default)s, write log file to path') # needs always to write somwhere
     parser.add_argument('--logfile',dest='logfile', default='rts2-debug'.format(prg), help=': %(default)s, logfile name')

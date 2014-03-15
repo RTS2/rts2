@@ -77,6 +77,7 @@ if __name__ == '__main__':
     script=os.path.basename(__file__)
     parser= argparse.ArgumentParser(prog=script, description='rts2asaf auto focus')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s, add more output')
+    parser.add_argument('--sxdebug', dest = 'sxDebug', action = 'store_true', default = False, help = ': %(default)s,add more output on SExtract')
     parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
     parser.add_argument('--topath', dest='toPath', metavar='PATH', action='store', default='/var/log/', help=': %(default)s, write log file to path') # needs a path where it can always write
     parser.add_argument('--logfile',dest='logfile', default='rts2-debug'.format(script), help=': %(default)s, logfile name')
