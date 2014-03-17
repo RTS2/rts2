@@ -98,6 +98,11 @@ if __name__ == '__main__':
         logger.error('rts2saf_focus: exiting, wrong syntax, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
 
+    # overwrite config defaults
+    rtc.cfg['ANALYZE_FLUX'] = args.flux  
+    rtc.cfg['ANALYZE_ASSOC'] = args.associate
+    rtc.cfg['ANALYZE_ASSOC_FRACTION'] = args.fractObjs
+
     rtc.checkConfiguration(args=args)
     # environment
     ev = Environment(debug = args.debug, rt = rtc, logger = logger)

@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2014-03-01)
+Status and open issues (2014-03-17)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -90,18 +90,20 @@ to the CCD driver.
 In addition it provides a tool to analyze previous focus runs offline 
 e.g. in order to create a temperature model.
 
-The method to find the focus is straight forward. Acquire a set of images and 
-determine FWHM using ``SExtractor``. The position of the minimum FWHM, derived
-from the fitted function, is the focus.
+The method to find the focus is straight forward. Acquire a set of images 
+at different focuser positions  and  determine FWHM and optionally source's 
+maximum flux using ``SExtractor``. In the simplest case the position of 
+the minimum FWHM, derived from the fitted function, is the focus.
+
+Optionally an independent fit to the sum of the flux of sextracted objects
+is available. Comparing fluxes among images makes more sense in
+case the sextracted objects are identified on all images. This association is
+carried out by ``SExtractor`` itself.
+
 The output of the fit program is stored as a PNG file and optionally displayed on screen. 
 In addition various weighted means are calculated which are currently only logged.
 
-Already available during offline analysis is an independent fit to the sum of the flux 
-of sextracted objects. Comparing fluxes among the images makes only sense in
-case the sextracted objects are identified on all images. This association is
-optionally carried out by ``SExtractor`` itself.
-
-To increase the chance that the fits converge errors for FWHM and flux are introduced.
+To increase the chance that the fit converges errors for FWHM and flux are introduced.
 In case of FWHM it is what ``SExtractor`` thinks the error is, while for flux it is
 calculated as the average of the square roots of the flux values.
 
@@ -112,8 +114,7 @@ of debugging the configuration. The execution with
 ``rts2-scriptexec -s ' exe script '`` is not needed any more. 
 
 Test runs can be carried out during day time either with RTS2
-dummy or real devices. If no real images can be taken, either 
-because a dummy CCD or a real CCD is used during daytime, 
+dummy or real devices. If no real images can be acquired,  
 "dry fits files" are injected while optionally all involved 
 devices operate as if it were night. These files can be images from 
 a former focus run or if not available samples are provided by the 
@@ -122,9 +123,6 @@ author (see below).
 Parameters, like e.g. ``FOC_DEF`` stored in focuser device, are retrieved 
 from the running RTS2 instance as far as they are needed. All additional 
 device or analysis properties are kept in a single configuration file. 
-The number of
-additional parameters stored in the configuration is intentionally
-kept small.
 
 During analysis ``DS9`` region of interest  data structures are created for each image. 
 Optionally the images and the region files are displayed on screen using ``DS9``.

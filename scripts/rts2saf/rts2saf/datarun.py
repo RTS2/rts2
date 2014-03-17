@@ -57,7 +57,7 @@ class DataRun(object):
         # drop those catalogs which have to few objects
         # this is a glitch in case two dSx are present with the same focPos
         for focPos, val in focPosS.iteritems():
-            if val < self.args.fractObjs * len(self.dSxReference.catalog):
+            if val < self.rt.cfg['ANALYZE_ASSOC_FRACTION'] * len(self.dSxReference.catalog):
                 # remove dSx
                 dSxdrp=None
                 for dSx in self.dataSxtrs:
@@ -67,7 +67,7 @@ class DataRun(object):
                 else:
                     continue
                 self.dataSxtrs.remove(dSxdrp)
-                self.logger.warn('dropDSx: focuser position: {0:5d} dropped dSx, {1:5d}, {2:6.2f} {3:5d}'.format(int(focPos), val, self.args.fractObjs * len(self.dSxReference.catalog), len(self.dSxReference.catalog)))
+                self.logger.warn('dropDSx: focuser position: {0:5d} dropped dSx, {1:5d}, {2:6.2f} {3:5d}'.format(int(focPos), val, self.rt.cfg['ANALYZE_ASSOC_FRACTION'] * len(self.dSxReference.catalog), len(self.dSxReference.catalog)))
 
     def onAlmostImagesAssoc(self):
         # ToDo clarify that -1
@@ -104,13 +104,14 @@ class DataRun(object):
         i_fwhm= self.dataSxtrs[0].fields.index('FWHM_IMAGE') 
 
         i_flux=None
-        if self.args.flux:
+        if self.rt.cfg['ANALYZE_FLUX']:
+
             i_flux= self.dataSxtrs[0].fields.index('FLUX_MAX') 
 
         for dSx in self.dataSxtrs:
             dSx.fillData(i_fwhm=i_fwhm, i_flux=i_flux)
 
-            if self.args.flux:
+            if self.rt.cfg['ANALYZE_FLUX']:
                 if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f} {2:8.3f} {3:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.flux, len(dSx.catalog)))
             else:
                 if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f} {2:5d}'.format(int(dSx.focPos), dSx.fwhm, len(dSx.catalog)))
@@ -131,7 +132,7 @@ class DataRun(object):
 
         for fitsFn in fitsFns:
             rsx= Sextract(debug=self.args.sxDebug, rt=self.rt, logger=self.logger)
-            if self.args.flux:
+            if self.rt.cfg['ANALYZE_FLUX']:
                 rsx.appendFluxFields()
                 
             if self.dSxReference !=None:
@@ -146,8 +147,8 @@ class DataRun(object):
                 self.logger.warn('sextractLoop: no result: file: {0}'.format(fitsFn))
 
     def createAssocList(self, fitsFn=None):
-        rsx= Sextract(debug=self.args.sxDebug, createAssoc=self.args.associate, rt=self.rt, logger=self.logger)
-        if self.args.flux:
+        rsx= Sextract(debug=self.args.sxDebug, createAssoc=self.rt.cfg['ANALYZE_ASSOC'], rt=self.rt, logger=self.logger)
+        if self.rt.cfg['ANALYZE_FLUX']:
             rsx.appendFluxFields()
 
         return rsx.sextract(fitsFn=fitsFn, assocFn=self.assocFn)

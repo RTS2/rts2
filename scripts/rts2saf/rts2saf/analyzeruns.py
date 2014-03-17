@@ -129,7 +129,10 @@ class AnalyzeRuns(object):
 
         """
 
-        if not dataRn.numberOfFocPos():
+        if dataRn is None:
+            return None, None, None, None 
+
+        elif not dataRn.numberOfFocPos():
             return None, None, None, None 
 
         date = dataRn.dataSxtrs[0].date.split('.')[0]
@@ -150,6 +153,7 @@ class AnalyzeRuns(object):
                 logger = self.logger)
             # ToDo, expand to Flux!
             arFtFwhm, rrFt, allrFt, arMnsFwhm, rrMns, allrMns= an.selectAndAnalyze()
+            # plotting is done within CatalogAnalysis
         else:
             an = SimpleAnalysis(
                 debug = self.debug, 
@@ -163,11 +167,8 @@ class AnalyzeRuns(object):
                 logger = self.logger)
 
             arFtFwhm, arMnsFwhm, arFtFlux, arMnsFlux = an.analyze()
-            # ToDo matplotlib issue
-            # ToDo expand to Flux?
-            if not self.args.model:
-                if arFtFwhm.fitFlag:
-                    an.display()
+            if arFtFwhm.fitFlag:
+                an.display()
 
         # ToDo expand to Flux?
         if not arMnsFwhm != None:
@@ -201,7 +202,7 @@ class AnalyzeRuns(object):
         self.logger.info('sextractRun: reference at FOC_POS: {0}, {1}'.format(dataRnR.dataSxtrs[0].focPos, fitsFnR))
 
         dSxR = None
-        if self.args.associate:
+        if self.rt.cfg['ANALYZE_ASSOC']:
             dSxR = dataRnR.createAssocList(fitsFn = fitsFnR)
             dataRn = DataRun(debug = self.debug, dSxReference = dSxR, args = self.args, rt = self.rt, logger = self.logger)
         else:
@@ -210,7 +211,7 @@ class AnalyzeRuns(object):
         dataRn.sextractLoop(fitsFns = fitsFns)
 
         # removal of images with too few objects
-        if self.args.associate:
+        if self.rt.cfg['ANALYZE_ASSOC']:
             dataRn.onAlmostImagesAssoc()
         elif dSxR is not None:
             # the reference is needed for option --fraction

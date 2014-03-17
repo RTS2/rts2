@@ -131,7 +131,8 @@ class DefaultConfiguration(object):
         # ToDo, make a real alternative
         # self.dcf[('mode', 'ANALYZE_FWHM')]= True
         self.dcf[('mode', 'ANALYZE_FLUX')]= False
-        self.dcf[('mode', 'ANALYZE_FLUX_ASSOC')]= False
+        self.dcf[('mode', 'ANALYZE_ASSOC')]= False
+        self.dcf[('mode', 'ANALYZE_ASSOC_FRACTION')]= 0.65
 
         # mapping of fits header elements to canonical
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'

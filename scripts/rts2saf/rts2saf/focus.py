@@ -108,11 +108,6 @@ class Focus(object):
 
         rFtFwhm = rMnsFwhm = rFtFlux= rMnsFlux = None
         # analysis here
-        # ToDo ugly 
-        self.args.flux=False
-        self.args.associate = False
-        self.args.fractObjs = 0.5
-        self.args.model = False
         aRs = AnalyzeRuns(debug = self.debug, basePath = None, args = self.args, rt = self.rt, ev = self.ev, logger = self.logger, xdisplay = self.xdisplay)
         dataRn = DataRun(debug = self.debug, args = self.args, rt = self.rt, logger = self.logger)
         for dSx in  dataSxtr:
@@ -134,12 +129,7 @@ class Focus(object):
             self.logger.warn('fwhm fitFocDef: no fitted minimum found')
 
         arFtFwhm = arMnsFwhm = arFtFlux = arMnsFlux = None
-        if self.rt.cfg['ANALYZE_FLUX_ASSOC']:
-            # ToDo ugly 
-            self.args.flux=True
-            self.args.associate = True
-            self.args.fractObjs = 0.5
-            self.args.model = False
+        if self.rt.cfg['ANALYZE_ASSOC']:
 
             fitsFns = [ x.fitsFn for x in dataSxtr]
             # assoc analysis here

@@ -29,8 +29,6 @@
 
 ./rts2saf_imgp.py --conf ./configs/hands_on/rts2saf.cfg  ./imgp/20131011054939-621-RA.fits --toc
 
-echo "Watch output in /var/log/rts2-debug MUST be writeable for current user"
-./rts2saf_fwhm.py --conf ./configs/hands_on/rts2saf.cfg  --config unittest/rts2saf-no-filter-wheel.cfg --fitsFn ./imgp/20131011054939-621-RA.fits
-tail -20 /var/log/rts2-debug
+./rts2saf_fwhm.py --config ./configs/hands_on/rts2saf.cfg --fitsFn ./imgp/20131011054939-621-RA.fits
 echo "DONE"
 
