@@ -313,7 +313,7 @@
 	in
 	<citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
 	<screen>
-  	  <userinput><command>queue</command> <option>manual</option> <replaceable>1000</replaceable> <replaceable>1001</replaceable> <replaceable>1031</replaceable></userinput>
+  	  <userinput><command>queue</command> <option>manual</option> <replaceable>1000</replaceable> <replaceable>1001</replaceable> <replaceable>1030</replaceable></userinput>
 	</screen>
       </para>
       <para>
@@ -325,6 +325,27 @@
     <refsect2>
       <title>Night time operation</title>
       <para>
+        During night, selector select targets for observation. <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry> then only executes observations selected by Selector.
+      </para>
+      <para>
+	Selector selects observational targets when the system is in
+	<emphasis>night</emphasis> state. That state is active when Sun
+	altitude is bellow <emphasis>night-horizon</emphasis> value specified
+	in
+	<citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+      </para>
+      <para>
+	When the system is either in <emphasis>dawn</emphasis> or
+	<emphasis>dusk</emphasis> states, Selector select calibration
+	observations. If Sun altitude is between
+	<emphasis>flat_sun_min</emphasis> and <emphasis>flat_sun_max</emphasis>
+	values, as specified in <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	Otherwise, system will select <emphasis>dark</emphasis> target.
+      </para>
+      <para>
+	<emphasis>Sky-flat</emphasis> target default to target number
+	<emphasis>2</emphasis>, <emphasis>dark</emphasis> target default to
+	target number <emphasis>1</emphasis>.
       </para>
     </refsect2>
   </refsect1>
