@@ -837,7 +837,7 @@ int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &designation, con
 int LibnovaEllFromMPCComet (struct ln_ell_orbit *orbit, std::string &description, const char *mpc)
 {
 	std::string cnum;
-	std::string cal;
+	char cal[12];
 
 	struct ln_date epoch;
 	float d;
@@ -849,8 +849,16 @@ int LibnovaEllFromMPCComet (struct ln_ell_orbit *orbit, std::string &description
 	epoch.days = epoch.hours = epoch.minutes = epoch.seconds;
 
 	is >> cnum >> epoch.years >> epoch.months >> d >> orbit->a >> orbit->e >>
-		orbit->w >> orbit->omega >> orbit->i >> cal >> mag >> slope >> description;
+		orbit->w >> orbit->omega >> orbit->i;
 
+	if (is.fail ())
+		return -1;
+
+	is.read (cal, 11);
+	if (is.fail ())
+		return -1;
+
+	is >> mag >> slope >> description;
 	if (is.fail ())
 		return -1;
 
