@@ -27,10 +27,12 @@
 #include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
 
+#include "rts2json/httpreq.h"
 #include "rts2json/images.h"
 #include "rts2json/libjavascript.h"
 #include "rts2json/libcss.h"
 #include "rts2json/targetreq.h"
+#include "rts2json/imgpreview.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -94,7 +96,11 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		BBAPI bbApi;
 		SchedReq sched;
 
+		rts2json::JpegImageRequest jpegRequest;
+		rts2json::JpegPreview jpegPreview;
+		rts2json::DownloadRequest downloadRequest;
 		rts2json::ImageReq imageReq;
+		rts2json::FitsImageRequest fitsRequest;
 		rts2json::LibJavaScript javaScriptRequests;
 		rts2json::LibCSS cssRequests;
 		rts2json::Targets tarRequests;
