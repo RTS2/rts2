@@ -1462,7 +1462,7 @@ int Connection::sendMsg (const char *msg)
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_ERROR)
 			<< "Connection::send [" << getCentraldId () << ":" << conn_state << "] error "
-			<< sock << " state: " << ret << " sending " << msg << ":" strerror (errno)
+			<< sock << " state: " << ret << " sending " << msg << ":" << strerror (errno)
 			<< sendLog;
 		#endif
 		connectionError (ret);
