@@ -85,7 +85,7 @@ class FilterWheel(object):
             if not self.name in 'FAKE_FTW':
                 try:
                     name=proxy.getDevice(self.name)
-                    self.logger.error('FilterWheel: filter wheel device: {0} present, breaking'.format(self.name))        
+                    self.logger.info('FilterWheel: filter wheel device: {0} present, breaking'.format(self.name))        
                     break
                 except:
                     self.logger.error('FilterWheel: filter wheel device: {0} not yet present'.format(self.name))        

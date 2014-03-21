@@ -80,13 +80,11 @@ class TestFocus(unittest.TestCase):
         self.gid= grp.getgrgid(os.getgid())[0]
         # sometimes they are present
         self.tearDown()
-
         # set up rts2saf
         # read configuration
         self.rt = Configuration(logger=logger)
         self.ev=Environment(debug=False, rt=self.rt,logger=logger)
         self.fileName='./rts2saf-bootes-2-autonomous.cfg'
-        self.fileName='./rts2saf-bootes-2.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         # set up RTS2
         # rts2-centrald
@@ -94,7 +92,7 @@ class TestFocus(unittest.TestCase):
         self.p_centrald= subprocess.Popen(cmd)
 
         # rts2-xmlrpcd
-        cmd=['/usr/local/bin/rts2-xmlrpcd', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', '/tmp/', '--server', '127.0.0.1:1617', '-p', '9999']
+        cmd=['/usr/local/bin/rts2-xmlrpcd', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', '/tmp/', '--server', '127.0.0.1:1617', '-p', '9999', '--noauth']
         self.p_xmlrpcd= subprocess.Popen(cmd)
 
         # rts2-focusd-dummy

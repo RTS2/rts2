@@ -42,8 +42,8 @@ import psutil
 import matplotlib
 
 XDISPLAY=None
+pnm=psutil.Process(psutil.Process(os.getpid()).ppid()).name()
 
-pnm=psutil.Process(psutil.Process(os.getpid()).parent.pid).name
 if 'init' in pnm or 'rts2-executor' in pnm:
     matplotlib.use('Agg')    
     XDISPLAY=False
@@ -56,7 +56,6 @@ else:
     else:
         matplotlib.use('Agg')    
         XDISPLAY=False
-
 
 
 from rts2.json import JSONProxy

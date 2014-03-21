@@ -42,6 +42,27 @@ unittestFiles = [
     '/tmp/andor3', 
     ]
 
+def userInConfigFile():
+    exit = False
+    with open('./unittest/rts2saf-bootes-2-autonomous.cfg', 'r') as cfg:
+        lines = cfg.readlines()
+        for ln in lines:
+            if '=' not in ln:
+                continue
+            k, v = ln.strip().split('=')
+            if 'USERNAME' in k and 'YOUR_UID' in v:
+                exit = True
+                print 'USERNAME needs a real user as argument'
+                
+            if 'PASSWORD' in k and 'YOUR_PASSWD' in v:
+                exit = True
+                print 'PASSWORD needs a real password as argument'
+    cfg.close()
+
+    if exit:
+        print 'edit ./unittest/rts2saf-bootes-2-autonomous.cfg add your RTS2 username/password, see documentation section installation, rts2saf unittest'
+        sys.exit(1)
+
 def sextractor_version():
     if os.path.isfile(sex) and os.access(sex, os.X_OK):
         cmd= [sex, '--version']
@@ -117,6 +138,7 @@ def prepareTgz():
 
 if __name__ == '__main__':
 
+    userInConfigFile()
     sextractor_version()
     unittestDirectory()
     deleteUnittestOutput()
