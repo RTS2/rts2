@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2014-03-17)
+Status and open issues (2014-03-21)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -36,8 +36,6 @@ in case of failures execute
  ./rts2saf_unittest.py
 
 and send its output together with the contents ``/tmp/rts2saf_log`` (best as ``tar.gz`` archive).
-
-
 
 
 Quick hands on analysis

@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'rts2saf'
-copyright = u'2013, Markus Wildi'
+copyright = u'2013 - 2014, Markus Wildi'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

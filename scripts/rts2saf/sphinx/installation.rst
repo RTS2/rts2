@@ -52,29 +52,6 @@ Recommended but not necessary install
 15) ``python-pytest-cov`` from https://pypi.python.org/pypi/pytest-cov
 
 
-``rts2saf unittest`` 
---------------------
-
-Not yet complete but 
-
-.. code-block:: bash
-
- cd ~/rts-2/scripts/rts2saf
- ./rts2saf_unittest.py
-
-may discover the most common installation problems. Before executing, install configure ``rts2saf`` and then check if
-``SExtractor`` version >= 2.8.6 is available as
-
-.. code-block:: bash
-
- /usr/local/bin/sex
-
-If not  all tests are ``ok`` please  send the output together with the contents of 
-``/tmp/rts2saf_log/`` to the author. The execution of a complete focus 
-run within a real RTS2 environment created and distroyed on the fly is explained in 
-:ref:`Testing individual components <sec_unittest-label>`.
-
-
 RTS2 configuration
 ------------------
 
@@ -95,7 +72,6 @@ Add at least in section
 .. code-block:: bash
 
   [xmlrpcd]
-  auth_localhost = false
   images_name = "%f"
 
 to get a unique FITS file name. If the files should have a different path add, e.g.
@@ -175,21 +151,85 @@ As user postgres:
 
 .. code-block:: bash
 
- psql stars  
- insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
- insert into scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
+ postgres@localhost:~$ psql stars  
+ INSERT INTO targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+ INSERT INTO scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
 
-where ``YOUR_CAMERA_NAME`` is either ``C0`` or any other chosen name. 
+where ``YOUR_CAMERA_NAME`` is either ``C0`` or is the name configured in ``/etc/rts2/devices``. 
+
+In order to write to devices through an authorized JSONProxy connection create the RTS2 user and grant device write access via XMLRPC
 
 .. code-block:: bash
 
- createuser  uid  # where  uid is the user name which executes the unittest
- psql stars  
- GRANT ALL PRIVILEGES ON cameras TO  uid ; # the above uid
+ postgres@localhost:~$ rts2-user -a YOUR_UID
+ User password: YOUR_PASSWD
+ User email (can be left empty): YOUR_UID@atsome.host
+
+Specify an email address despite the dialog suggests that it can be left empty.
+
+.. code-block:: bash
+
+ postgres@localhost:~$ psql stars
+ UPDATE users SET usr_execute_permission='t', allowed_devices = 'andor3 F0 COLWFLT COLWGRS COLWSLT' WHERE usr_login='YOUR_UID' ;
+
+The devices ``andor3``, ``F0``, ``COLWFLT``, ``COLWGRS`` and ``COLWSLT``  are required by ``unittest``. A production version for
+the above ``UPDATE`` looks like
+
+.. code-block:: bash
+
+ UPDATE users SET usr_execute_permission='t', allowed_devices = 'C0 F0 W0' WHERE usr_login='YOUR_UID' ;
+
+if default device names are configured in ``/etc/rts2/devices`` and in case further ``unittest`` are carried out use
+
+.. code-block:: bash
+
+ UPDATE users SET usr_execute_permission='t', allowed_devices = 'C0 F0 W0 andor3 COLWFLT COLWGRS COLWSLT' WHERE usr_login='YOUR_UID' ;
+
+Create the Postgres database user 
+
+.. code-block:: bash
+
+ postgres@localhost:~$ createuser  YOUR_UID  # where  YOUR_UID is the user name which executes the unittest
 
 and very likely
 
 .. code-block:: bash
 
- GRANT ALL ON TABLE targets to uid ;
- GRANT ALL ON TABLE scripts to uid ;
+ postgres@localhost:~$ psql stars  
+ GRANT ALL PRIVILEGES ON cameras TO  YOUR_UID ; # the above YOUR_UID
+ GRANT ALL ON TABLE targets to YOUR_UID ;
+ GRANT ALL ON TABLE scripts to YOUR_UID ;
+
+``rts2saf unittest`` 
+--------------------
+
+Not yet complete but 
+
+.. code-block:: bash
+
+ cd ~/rts-2/scripts/rts2saf
+ ./rts2saf_unittest.py
+
+may discover the most common installation problems. Before execution, edit the configuration
+file ``~/rts-2/scripts/rts2saf/unittest/rts2saf-bootes-2-autonomous.cfg``
+
+.. code-block:: bash
+
+ [connection]
+ USERNAME = YOUR_UID
+ PASSWORD = YOUR_PASSWD
+
+according to your choice of the previous section. Check if ``SExtractor`` version >= 2.8.6 is available as
+
+.. code-block:: bash
+
+ /usr/local/bin/sex
+
+E.g.,  create a link ``sudo ln -s /usr/bin/sextractor /usr/local/bin/sex``.
+
+If not  all tests are ``ok`` please  send the output together with the contents of 
+``/tmp/rts2saf_log/`` to the author. The execution of a complete focus 
+run within a real RTS2 environment created and destroyed on the fly is explained in 
+:ref:`Testing individual components <sec_unittest-label>`.
+
+
