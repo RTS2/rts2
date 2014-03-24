@@ -284,7 +284,7 @@ class Focus(object):
             elif len(ftw.filters) > 1:
                 self.logger.warn('Focus: found ft: {0} but no empty slot'.format(ft.name))
             elif len(ftw.filters) == 1:
-                if self.debug: self.logger.debug('Focus: found ft: {0}'.format(fr.name))
+                if self.debug: self.logger.debug('Focus: found ft: {0}'.format(ft.name))
             else:
                 self.logger.warn('Focus: neither self.foc.focDef (empty slot), nor non empty slots found'.format(ft.name))
 

@@ -38,7 +38,7 @@ import matplotlib
 
 XDISPLAY=None
 
-pnm=psutil.Process(psutil.Process(os.getpid()).ppid()).name()
+pnm=psutil.Process(psutil.Process(os.getpid()).ppid).name
 
 if 'init' in pnm or 'rts2-executor' in pnm:
     matplotlib.use('Agg')    
