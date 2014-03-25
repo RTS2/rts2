@@ -286,7 +286,7 @@ class DataSxtr(object):
 
     """
 
-    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
+    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None, tarId=False):
         self.date=date
         self.fitsFn=fitsFn
         self.focPos=focPos
@@ -316,6 +316,7 @@ class DataSxtr(object):
         self.assocFn=assocFn
         self.assocCount=0
         self.rawCatalog=list()
+        self.tarId=tarId
 
     def fillFlux(self, i_flux=None, logger=None): 
         # ToDo create a deepcopy() method, 

@@ -85,27 +85,30 @@ if __name__ == '__main__':
     if args.fwhmThreshold:
         fwhmTreshold=args.fwhmThreshold
 
-    if( dataSxtr.fwhm > fwhmTreshold):
-	rts2.createProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'], verbose=args.debug)
-        try:
-            q = rts2.Queue(rts2.json.getProxy(), args.queue)
-        except Exception, e:
-            logger.info('rts2af_fwhm: no queue named: {0}, exiting'.format(args.queue))
-            sys.exit(1)
-
-        q.load()
-        for x in q.entries:
-            if x.get_target().name and 'OnTargetFocus' in x.get_target().name:
-                logger.info('rts2af_fwhm: focus run already queued')
-                break
-        else:
-            q.add_target(str(args.tarId))
-            logger.info('rts2af_fwhm: focus run  queued')
-        logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSxtr.fwhm, fwhmTreshold))
+    if dataSxtr.tarId is not None and dataSxtr.tarId >= rt.cfg['GRB_TARGET_ID']:
+        logger.info('rts2af_fwhm: {} was a GRB target, no focus run queued for: {}'.format(dataSxtr.tarId, args.fitsFn))
     else:
-        try:
-            logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
-        except:
-            logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated')
+        if( dataSxtr.fwhm > fwhmTreshold):
+            rts2.createProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'], verbose=args.debug)
+            try:
+                q = rts2.Queue(rts2.json.getProxy(), args.queue)
+            except Exception, e:
+                logger.info('rts2af_fwhm: no queue named: {0}, exiting'.format(args.queue))
+                sys.exit(1)
+
+            q.load()
+            for x in q.entries:
+                if x.get_target().name and 'OnTargetFocus' in x.get_target().name:
+                    logger.info('rts2af_fwhm: focus run already queued')
+                    break
+            else:
+                q.add_target(str(args.tarId))
+                logger.info('rts2af_fwhm: focus run  queued')
+            logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSxtr.fwhm, fwhmTreshold))
+        else:
+            try:
+                logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
+            except:
+                logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated')
             
     logger.info('rts2af_fwhm: DONE')

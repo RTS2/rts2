@@ -50,6 +50,7 @@ class Sextract(object):
         self.fields=rt.cfg['FIELDS'][:] # it is a reference, gell :-))
         self.nbrsFtwsInuse=len(rt.cfg['FILTER WHEELS INUSE'])
         self.stdFocPos=rt.cfg['FOCUSER_RESOLUTION']
+        self.tarIdGrb=rt.cfg['GRB_TARGET_ID']
         self.logger=logger
         
     def appendFluxFields(self):
@@ -177,6 +178,12 @@ class Sextract(object):
             except:
                 if self.debug: self.logger.debug( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
 
+        tarId=None
+        try:
+            tarId= int(hdr['TARGET'])
+        except:
+            if self.debug: self.logger.debug( 'sextract: no TARGET id information found, {0}'.format(fitsFn, focPos, objectCount))
+
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
         except Exception, e:
@@ -208,7 +215,8 @@ class Sextract(object):
             ftAName=ftAName, 
             ftBName=ftBName, 
             ftCName=ftCName,
-            assocFn=assocFn
+            assocFn=assocFn,
+            tarId=tarId
             )
 
         try:
