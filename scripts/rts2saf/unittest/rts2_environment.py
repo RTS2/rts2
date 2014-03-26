@@ -83,27 +83,57 @@ class RTS2Environment(unittest.TestCase):
         self.success=self.rt.readConfiguration(fileName=self.fileName)
         # set up RTS2
         # rts2-centrald
-        cmd=['/usr/local/bin/rts2-centrald', '--run-as', '{}.{}'.format(self.uid,self.gid), '--local-port', '1617', '--logfile', '/tmp/rts2saf_log/rts2-debug', '--lock-prefix', self.lockPrefix]
+        cmd=[ '/usr/local/bin/rts2-centrald', 
+              '--run-as', '{}.{}'.format(self.uid,self.gid), 
+              '--local-port', '1617', 
+              '--logfile', '/tmp/rts2saf_log/rts2-debug', 
+              '--lock-prefix', self.lockPrefix, 
+              '--config', './rts2-unittest.ini'
+        ]
         self.p_centrald= subprocess.Popen(cmd)
 
         # rts2-executor
-        cmd=['/usr/local/bin/rts2-executor', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', self.lockPrefix, '--server', '127.0.0.1:1617', '--noauth']
+        cmd=[ '/usr/local/bin/rts2-executor', 
+              '--run-as', '{}.{}'.format(self.uid,self.gid), 
+              '--lock-prefix', self.lockPrefix, 
+              '--config', './rts2-unittest.ini',
+              '--server', '127.0.0.1:1617', 
+              '--noauth'
+        ]
         self.p_exec= subprocess.Popen(cmd)
 
         # rts2-xmlrpcd
-        cmd=['/usr/local/bin/rts2-xmlrpcd', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', self.lockPrefix, '--server', '127.0.0.1:1617', '-p', '9999', '--noauth']
+        cmd=[ '/usr/local/bin/rts2-xmlrpcd', 
+              '--run-as', '{}.{}'.format(self.uid,self.gid), 
+              '--lock-prefix', self.lockPrefix, 
+              '--config', './rts2-unittest.ini',
+              '--server', '127.0.0.1:1617', 
+              '-p', '9999', 
+              '--noauth'
+        ]
         self.p_xmlrpcd= subprocess.Popen(cmd)
 
         # rts2-focusd-dummy
         focName=self.rt.cfg['FOCUSER_NAME']
-        cmd=['/usr/local/bin/rts2-focusd-dummy', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', self.lockPrefix, '--server', '127.0.0.1:1617', '-d', focName, '--modefile', '/usr/local/etc/rts2/rts2saf/f0.modefile']
+        cmd=[ '/usr/local/bin/rts2-focusd-dummy', 
+              '--run-as', '{}.{}'.format(self.uid,self.gid), 
+              '--lock-prefix', self.lockPrefix, 
+              '--server', '127.0.0.1:1617', 
+              '-d', focName, 
+              '--modefile', '/usr/local/etc/rts2/rts2saf/f0.modefile'
+        ]
         self.p_focusd_dummy= subprocess.Popen(cmd)
 
         # rts2-filterd-dummy
         ftwns=list()
         for ftwn in self.rt.cfg['inuse']:
             ftwns.append(ftwn)
-            cmd=['/usr/local/bin/rts2-filterd-dummy', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', self.lockPrefix, '--server', '127.0.0.1:1617', '-d', ftwn ]
+            cmd=[ '/usr/local/bin/rts2-filterd-dummy', 
+                  '--run-as', '{}.{}'.format(self.uid,self.gid), 
+                  '--lock-prefix', self.lockPrefix, 
+                  '--server', '127.0.0.1:1617', 
+                  '-d', ftwn 
+            ]
             ftnames=str()
 
             for ftn in self.rt.cfg['FILTER WHEEL DEFINITIONS'][ftwn]:
@@ -118,7 +148,13 @@ class RTS2Environment(unittest.TestCase):
         # rts2-camd-dummy
         name=self.rt.cfg['CCD_NAME']
         # '--wheeldev', 'COLWSLT',  '--filter-offsets', '1:2:3:4:5:6:7:8'
-        cmd=['/usr/local/bin/rts2-camd-dummy', '--run-as', '{}.{}'.format(self.uid,self.gid), '--lock-prefix', self.lockPrefix, '--server', '127.0.0.1:1617', '-d', name,  '--focdev', focName]
+        cmd=[ '/usr/local/bin/rts2-camd-dummy', 
+              '--run-as', '{}.{}'.format(self.uid,self.gid), 
+              '--lock-prefix', self.lockPrefix, 
+              '--server', '127.0.0.1:1617', 
+              '-d', name,  
+              '--focdev', focName
+        ]
         for nm in ftwns:
             cmd.append('--wheeldev')
             cmd.append(nm)
