@@ -101,7 +101,7 @@ void NSelWindow::winrefresh ()
 		if (selrow >= 0)
 		{
 			if (isActive ())
-				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE | A_BLINK, CLR_PRIORITY, NULL);
+				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, CLR_PRIORITY, NULL); // no O_BLINK
 			else
 				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
 		}
