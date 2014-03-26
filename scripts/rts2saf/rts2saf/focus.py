@@ -126,7 +126,7 @@ class Focus(object):
             self.logger.info('flux fitFocDef: {0:5.0f}: minFitPos,            filter wheel:{1}, filter:{2}'.format(rFtFlux.extrFitPos, ftw.name, ft.name))
             self.logger.info('flux fitFocDef: {0:5.2f}: minFitFlux,           filter wheel:{1}, filter:{2}'.format(rFtFlux.extrFitVal, ftw.name, ft.name))
         else:
-            self.logger.warn('fwhm fitFocDef: no fitted minimum found')
+            self.logger.warn('flux fitFocDef: no fitted minimum found')
 
         arFtFwhm = arMnsFwhm = arFtFlux = arMnsFlux = None
         if self.rt.cfg['ANALYZE_ASSOC']:

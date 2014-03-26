@@ -133,7 +133,6 @@ class DefaultConfiguration(object):
         self.dcf[('mode', 'ANALYZE_FLUX')]= False
         self.dcf[('mode', 'ANALYZE_ASSOC')]= False
         self.dcf[('mode', 'ANALYZE_ASSOC_FRACTION')]= 0.65
-        self.dcf[('mode', 'GRB_TARGET_ID')]= 50000
 
         # mapping of fits header elements to canonical
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'

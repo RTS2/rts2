@@ -26,81 +26,34 @@ import logging
 logging.basicConfig(filename='/tmp/rts2saf_log/unittest.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
 
-from test_focus import TestFocus
+from rts2_environment import RTS2Environment
 
 # sequence matters
 def suite_no_connection():
     suite = unittest.TestSuite()
-    suite.addTest(TestExecutables('test_rts2saf_fwhm'))
-    suite.addTest(TestExecutables('test_rts2saf_imgp'))
-    suite.addTest(TestExecutables('test_rts2saf_analyze'))
-    suite.addTest(TestExecutables('test_rts2saf_analyze_assoc'))
+    suite.addTest(TestAnalysis('test_rts2saf_analyze'))
+    suite.addTest(TestAnalysis('test_rts2saf_analyze_assoc'))
 
 
     return suite
 
 def suite_with_connection():
     suite = unittest.TestSuite()
-    suite.addTest(TestExecutableFocus('test_rts2saf_focus'))
+    suite.addTest(TestRTS2Environment('test_rts2saf_fwhm'))
+    suite.addTest(TestRTS2Environment('test_rts2saf_imgp'))
+    suite.addTest(TestRTS2Environment('test_rts2saf_focus'))
 
     return suite
 
 
 #@unittest.skip('class not yet implemented')
-class TestExecutables(unittest.TestCase):
+class TestAnalysis(unittest.TestCase):
 
     def tearDown(self):
         pass
 
     def setUp(self):
         pass
-
-    #@unittest.skip('feature not yet implemented')
-    def test_rts2saf_fwhm(self):
-        logger.info('== {} =='.format(self._testMethodName))
-        # ../rts2saf_fwhm.py  --fitsFn ../samples/20071205025911-725-RA.fits --toc
-        # sextract: no FILTA name information found, ../samples/20071205025911-725-RA.fits
-        # sextract: no FILTB name information found, ../samples/20071205025911-725-RA.fits
-        # sextract: no FILTC name information found, ../samples/20071205025911-725-RA.fits
-        # rts2af_fwhm: no focus run  queued, fwhm:  2.77 < 35.00 (thershold)
-        # rts2af_fwhm: DONE
-
-        m = re.compile('.*?(no focus run  queued, fwhm:)  (2.7)')
-        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
-        proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdo, stde = proc.communicate()
-        lines = stdo.split('\n')
-        val=0.
-        for ln  in lines:
-            v = m.match(ln)
-            if v:
-                val = float(v.group(2))
-                break
-        self.assertAlmostEqual(val, 2.7, places=1, msg='return value: {}'.format(val))
-        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
-
-
-    #@unittest.skip('feature not yet implemented')
-    def test_rts2saf_imgp(self):
-        logger.info('== {} =='.format(self._testMethodName))
-        # rts2saf_imgp.py: starting
-        # rts2saf_imgp.py, rts2-astrometry.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
-        # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
-        # ...
-        m = re.compile('.*?(corrwerr).+? ([0-9.]+)')
-        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
-        proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdo, stde = proc.communicate()
-        lines = stdo.split('\n')
-        val=0.
-        for ln  in lines:
-            v = m.match(ln)
-            if v:
-                val = float(v.group(2))
-                break
-        # if this test fails due to no match, it is likely that astrometry could not solve field.
-        self.assertAlmostEqual(val, 0.3624045465, places=1, msg='return value: {}'.format(val))
-        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
         
     #@unittest.skip('feature not yet implemented')
     def test_rts2saf_analyze(self):
@@ -161,7 +114,54 @@ class TestExecutables(unittest.TestCase):
 
 
 #@unittest.skip('class not yet implemented')
-class TestExecutableFocus(TestFocus):
+class TestRTS2Environment(RTS2Environment):
+
+    #@unittest.skip('feature not yet implemented')
+    def test_rts2saf_fwhm(self):
+        logger.info('== {} =='.format(self._testMethodName))
+        # ../rts2saf_fwhm.py  --fitsFn ../samples/20071205025911-725-RA.fits --toc
+        # sextract: no FILTA name information found, ../samples/20071205025911-725-RA.fits
+        # sextract: no FILTB name information found, ../samples/20071205025911-725-RA.fits
+        # sextract: no FILTC name information found, ../samples/20071205025911-725-RA.fits
+        # rts2af_fwhm: no focus run  queued, fwhm:  2.77 < 35.00 (thershold)
+        # rts2af_fwhm: DONE
+
+        m = re.compile('.*?(no focus run  queued, fwhm:)  (2.7)')
+        cmd=[ '../rts2saf_fwhm.py',  '--fitsFn', '../samples/20071205025911-725-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
+        proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdo, stde = proc.communicate()
+        lines = stdo.split('\n')
+        val=0.
+        for ln  in lines:
+            v = m.match(ln)
+            if v:
+                val = float(v.group(2))
+                break
+        self.assertAlmostEqual(val, 2.7, places=1, msg='return value: {}'.format(val))
+        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
+
+
+    #@unittest.skip('feature not yet implemented')
+    def test_rts2saf_imgp(self):
+        logger.info('== {} =='.format(self._testMethodName))
+        # rts2saf_imgp.py: starting
+        # rts2saf_imgp.py, rts2-astrometry.net: corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
+        # corrwerr 1 0.3624045465 39.3839441225 -0.0149071686 -0.0009854536 0.0115640672
+        # ...
+        m = re.compile('.*?(corrwerr).+? ([0-9.]+)')
+        cmd=[ '../rts2saf_imgp.py',   '../imgp/20131011054939-621-RA.fits', '--conf', './rts2saf-bootes-2-autonomous.cfg', '--toconsole', '--logfile', 'unittest.log', '--topath', '/tmp/rts2saf_log' ]
+        proc  = subprocess.Popen( cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdo, stde = proc.communicate()
+        lines = stdo.split('\n')
+        val=0.
+        for ln  in lines:
+            v = m.match(ln)
+            if v:
+                val = float(v.group(2))
+                break
+        # if this test fails due to no match, it is likely that astrometry could not solve field.
+        self.assertAlmostEqual(val, 0.3624045465, places=1, msg='return value: {}'.format(val))
+        self.assertEqual(stde, '', 'return value: {}'.format(repr(stde)))
 
     #@unittest.skip('feature not yet implemented')
     def test_rts2saf_focus(self):
