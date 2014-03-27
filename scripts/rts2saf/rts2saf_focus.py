@@ -42,7 +42,14 @@ import psutil
 import matplotlib
 
 XDISPLAY=None
-pnm=psutil.Process(psutil.Process(os.getpid()).ppid).name
+import pkg_resources
+p1, p2, p3= pkg_resources.get_distribution("psutil").version.split('.')
+
+if int(p1) >= 2:
+    pnm=psutil.Process(psutil.Process(os.getpid()).ppid()).name()
+elif int(p1) >= 1:
+    pnm=psutil.Process(psutil.Process(os.getpid()).ppid).name
+# ok if it dies here
 
 if 'init' in pnm or 'rts2-executor' in pnm:
     matplotlib.use('Agg')    
