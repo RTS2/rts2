@@ -212,7 +212,7 @@ class TGDrive: public rts2core::ConnSerial
 		bool isInPositionMode () { return tgaMode->getValueInteger () == TGA_MODE_PA; }
 		bool isInStepperMode () { return tgaMode->getValueInteger () == TGA_MODE_SM; }
 
-		bool isMoving () { return (appStatus->getValueInteger () & 0x02) == 0x00; }
+		bool isMoving () { return (appStatus->getValueInteger () & 0x0a) == 0x00; }
 		bool isMovingSpeed () { return (appStatus->getValueInteger () & 0x08) == 0x00; }
 		bool isMovingPosition () { return (appStatus->getValueInteger () & 0x02) == 0x00; }
 
