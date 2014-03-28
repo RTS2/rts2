@@ -105,6 +105,11 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 		}
 		long usec_diff = (long) ((fabs (_td.time_2 - _td.time_1) - diff) * USEC_SEC);
 
+		int msec = usec_diff / (USEC_SEC / 1000);
+
+		// microseconds will show as zero
+		// int usec = usec_diff / (USEC_SEC / 1000000);
+
 		bool print_all = false;
 		bool mprinted = false;
 		if (diff / 86400 >= 1)
@@ -142,14 +147,38 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 				_oss << " ";
 			_oss << std::setw (2) << diff;
 			if (_td.print_milisec)
-			{
-				int msec = usec_diff / (USEC_SEC / 1000);
 				if (msec > 0 || print_all)
-					 _oss << "." << std::setw (3) << msec;
-			}
+					 _oss << "." << std::setfill('0') << std::setw (3) << msec;
 			if (!print_all)
 				_oss << "s";
+			mprinted = true;
 		}
+
+		if ( diff == 0 && msec>0 )
+			if( msec > 99 )
+			{
+				if ( msec > 0 && _td.print_milisec )
+					_oss << "0." << msec;
+						
+				_oss << "s";
+				mprinted = true;
+			}
+			else
+			{	
+				int msec = usec_diff / (USEC_SEC / 1000);
+			
+				if ( msec > 0 && _td.print_milisec )
+					_oss  << msec;
+						
+				_oss << "ms";
+				mprinted = true;
+			}	
+
+
+		if (!mprinted)
+			_oss << "0";
+
+
 		_os << _oss.str ();
 	}
 	return _os;
