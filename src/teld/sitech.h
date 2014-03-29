@@ -177,13 +177,6 @@
 #define EOD      1      /* Epoch of date with pm if available  (default) */
 
 
-/* Mounts                                                                    */
-
-#define ALTAZ  0        /* Alt-azimuth mount with at least 2-axis tracking */ 
-#define EQFORK 1        /* Equatorial fork */
-#define GEM    2        /* German equatorial */
-
-
 /* Slew tolerances in arcseconds */
 
 #define SLEWTOLRA  60.      /* 60 arcseconds */
