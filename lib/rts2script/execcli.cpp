@@ -576,7 +576,13 @@ int DevClientTelescopeExec::syncTarget (bool now, int plan_id)
 	// startSlew fills coordinates, if needed..
 	ret = currentTarget->startSlew (&coord, true, plan_id);
 	if (isnan (coord.ra) || isnan (coord.dec))
-		return 0;
+	  {
+#ifdef DEBUG_EXTRA
+	    logStream (MESSAGE_DEBUG)<< "DevClientTelescopeExec::syncTarget: ra, dec were NaN " << sendLog;
+#endif
+	    currentTarget->moveEnded ();
+	    return 0;
+	  }
 	int bopTel = now ? 0 : BOP_TEL_MOVE;
 	switch (ret)
 	{
