@@ -152,8 +152,12 @@ As user postgres:
 .. code-block:: bash
 
  postgres@localhost:~$ psql stars  
- INSERT INTO targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
- INSERT INTO scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
+
+ INSERT INTO targets values ('999', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+ INSERT INTO scripts values ('999', 'C0', ' exe /usr/local/bin/rts2saf_focus.py E 1 ');
+
+ # not now (2014-03-26): INSERT INTO targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+ # not now (2014-03-26): INSERT INTO scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
 
 where ``YOUR_CAMERA_NAME`` is either ``C0`` or is the name configured in ``/etc/rts2/devices``. 
 
