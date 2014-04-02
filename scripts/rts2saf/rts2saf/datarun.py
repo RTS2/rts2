@@ -67,38 +67,43 @@ class DataRun(object):
                 else:
                     continue
                 self.dataSxtrs.remove(dSxdrp)
-                self.logger.warn('dropDSx: focuser position: {0:5d} dropped dSx, {1:5d}, {2:6.2f} {3:5d}'.format(int(focPos), val, self.rt.cfg['ANALYZE_ASSOC_FRACTION'] * len(self.dSxReference.catalog), len(self.dSxReference.catalog)))
+                self.logger.warn('dropDSx: focuser position: {0:5d} dropped dSx, sextracted objects: {1:5d}, required objects: {2:6.2f}, total objects reference: {3:5d}'.format(int(focPos), val, self.rt.cfg['ANALYZE_ASSOC_FRACTION'] * len(self.dSxReference.catalog), len(self.dSxReference.catalog)))
 
     def onAlmostImagesAssoc(self):
         # ToDo clarify that -1
+        # ['NUMBER', 'EXT_NUMBER', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 
+        #  'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE', 
+        # 'FLUX_MAX', 'FLUX_APER', 'FLUXERR_APER', 'VECTOR_ASSOC(13)', 
+        # 'NUMBER_ASSOC']
+        # data from VECTOR_ASSOC appears behind NUMBER_ASSOC
+        # ToDo interchange them
+        #
+
         i_nmbrAssc= -1 + self.dataSxtrs[0].fields.index('NUMBER_ASSOC') 
         # build cats
         cats,focPosS=self.buildCats( i_nmbrAssc=i_nmbrAssc)
-        # drop
+        # drop those which have not enough sextracted objects
         self.dropDSx(focPosS=focPosS)
         # rebuild the cats
         cats, focPosS=self.buildCats(i_nmbrAssc=i_nmbrAssc)
 
-        foundOnAll=len(self.dataSxtrs)
+        remainingCats=len(self.dataSxtrs)
         assocObjNmbrs=list()
         # identify those objects which are on all images
         for k  in  cats.keys():
-            if cats[k] == foundOnAll:
+            if cats[k] == remainingCats:
                 assocObjNmbrs.append(k) 
 
-        # save the raw values for later analysis
-        # initialize data.catalog
+        # copy those catalog entries (sextracted objects) which are found on all images
         for dSx in self.dataSxtrs:
+            # save the raw values for later analysis
+            # initialize data.catalog
             dSx.toRawCatalog()
-        # copy those catalog entries which are found on all
-        for k  in  assocObjNmbrs:
-            for dSx in self.dataSxtrs:
-                for sx in dSx.rawCatalog:
-                    if k == sx[i_nmbrAssc]:
-                        dSx.catalog.append(sx)
-                        break
-                else:
-                    self.logger.debug('onAllImages: no break for object: {0}'.format(k))
+            for sx in dSx.rawCatalog:
+                if sx[i_nmbrAssc] in assocObjNmbrs:
+                    dSx.catalog.append(sx)
+            else:
+                self.logger.debug('onAllImages: no break for object: {0}'.format(k))
 
         # recalculate FWHM, Flux etc.
         i_fwhm= self.dataSxtrs[0].fields.index('FWHM_IMAGE') 
@@ -112,9 +117,9 @@ class DataRun(object):
             dSx.fillData(i_fwhm=i_fwhm, i_flux=i_flux)
 
             if self.rt.cfg['ANALYZE_FLUX']:
-                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f} {2:8.3f} {3:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.flux, len(dSx.catalog)))
+                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f}/{2:5.3f} {3:8.3f}/{4:5.3f} {5:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.stdFwhm, dSx.flux, dSx.stdFlux, len(dSx.catalog)))
             else:
-                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f} {2:5d}'.format(int(dSx.focPos), dSx.fwhm, len(dSx.catalog)))
+                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f}/{2:5.3f}  {3:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog)))
 
         self.logger.info('onAlmostImages: objects: {0}'.format(len(assocObjNmbrs)))
 

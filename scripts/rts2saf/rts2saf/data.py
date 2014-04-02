@@ -336,6 +336,7 @@ class DataSxtr(object):
     def fillData(self, i_fwhm=None, i_flux=None):
         """helper method used by :py:mod:`rts2saf.datarun.DataRun`.onAlmostImagesAssoc"""
         fwhmv = [x[i_fwhm] for x in  self.catalog]
+        
         self.fwhm=np.median(fwhmv)
         self.stdFwhm= np.std(fwhmv)
 
@@ -347,6 +348,8 @@ class DataSxtr(object):
 
     def toRawCatalog(self):
         """Helper method to copy data for later analysis."""
+        # http://stackoverflow.com/questions/2612802/how-to-clone-or-copy-a-list-in-python
+        # self.rawCatalog=list() self.catalog[:]
 
-        self.rawCatalog=self.catalog[:]
+        self.rawCatalog=[list(x) for x in self.catalog]
         self.catalog=list()

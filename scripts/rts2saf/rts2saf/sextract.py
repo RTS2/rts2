@@ -83,7 +83,7 @@ class Sextract(object):
             return DataSxtr()
 
         # find the sextractor counts
-        objectCount = len(sex.objects)
+        objectCount = len(sex.cleanedObjects)
 
         try:
             hdr = getheader(fitsFn, 0)
@@ -179,6 +179,8 @@ class Sextract(object):
 
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
+#            self.logger.warn( '++++++++++++++++++++ {0} {1:5.2f}, {2:5.2f}, {3} {4}'.format(focPos, fwhm, stdFwhm, len(sex.cleanedObjects), len(sex.cleanedObjects[0])))
+#            self.logger.warn( '++++++++++++++++++++ {0} {1}, '.format(focPos, sex.cleanedObjects))
         except Exception, e:
             self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}'.format(focPos, objectCount, fitsFn, ))
             self.logger.warn( 'sextract: message rts2saf.sextractor: {0}'.format(e))
@@ -198,7 +200,7 @@ class Sextract(object):
             stdFwhm=float(stdFwhm),
             nstars=int(nstars), 
             ambientTemp=ambientTemp, 
-            catalog=sex.objects, 
+            catalog=sex.cleanedObjects, 
             binning=binning, 
             binningXY=binningXY, 
             naxis1=naxis1, 
@@ -217,6 +219,6 @@ class Sextract(object):
         except:
             if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFn))
 
-        if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} FWHM{3:5.1f} stdFwhm {4:5.1f} nstars {5:4d}'.format(fitsFn, focPos, len(sex.objects), fwhm, stdFwhm, nstars))
+        if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} FWHM{3:5.1f} stdFwhm {4:5.1f} nstars {5:4d}'.format(fitsFn, focPos, len(sex.cleanedObjects), fwhm, stdFwhm, nstars))
 
         return dataSxtr

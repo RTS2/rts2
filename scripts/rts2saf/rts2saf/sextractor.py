@@ -47,6 +47,7 @@ class Sextractor:
 		
 		self.fields = fields
 		self.objects = []
+		self.cleanedObjects = []
 		self.threshold = threshold
 		self.deblendmin = deblendmin
 		self.saturlevel = saturlevel
@@ -99,7 +100,7 @@ class Sextractor:
 		if self.createAssoc:
 			shutil.move(src=output, dst=assocFn)
 		else:
-			os.unlink(output)
+                        os.unlink(output)
 
 	def sortObjects(self,col):
 	        """Sort objects by given collumn."""
@@ -152,8 +153,6 @@ class Sextractor:
 					continue
 				if x[i_flags] == 0 and (filterGalaxies == False or x[i_class] != 0):
 					fwhmlist.append(x)
-					if starsn and len(fwhmlist) >= starsn:
-						break
 
 			return fwhmlist
 		except ValueError,ve:
@@ -162,11 +161,11 @@ class Sextractor:
 
 
 	def calculate_FWHM(self,starsn=None,filterGalaxies=True,segments=None):
-		obj = self.get_FWHM_stars(starsn,filterGalaxies,segments)
+		self.cleanedObjects = self.get_FWHM_stars(starsn,filterGalaxies,segments)
 		try:
 			i_fwhm = self.get_field('FWHM_IMAGE')
 			import numpy
-			fwhms = map(lambda x:x[i_fwhm],obj)
+			fwhms = map(lambda x:x[i_fwhm],self.cleanedObjects)
  			return numpy.median(fwhms), numpy.std(fwhms), len(fwhms)
  		#	return numpy.average(obj), len(obj)
 		except ValueError,ve:

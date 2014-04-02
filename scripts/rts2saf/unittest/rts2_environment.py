@@ -120,7 +120,7 @@ class RTS2Environment(unittest.TestCase):
               '--lock-prefix', self.lockPrefix, 
               '--server', '127.0.0.1:1617', 
               '-d', focName, 
-              '--modefile', '/usr/local/etc/rts2/rts2saf/f0.modefile'
+              '--modefile', './f0.modefile'
         ]
         self.p_focusd_dummy= subprocess.Popen(cmd)
 
