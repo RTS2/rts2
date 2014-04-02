@@ -332,8 +332,11 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual int switchCooling (bool newval) 
 		{ 
-			coolingOnOff->setValueBool (newval);
-			sendValueAll (coolingOnOff);
+			if (coolingOnOff)
+			{
+				coolingOnOff->setValueBool (newval);
+				sendValueAll (coolingOnOff);
+			}
 			return 0; 
 		}
 
