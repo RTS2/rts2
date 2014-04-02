@@ -162,7 +162,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
 	def test_q():
 		if q is None:
-			print >>sys.stderr, "you must specify queue with --queue argument"
+			print >>sys.stderr, "you must specify queue with the --queue argument"
 			sys.exit(6)
 
 	if options.clear:
@@ -201,7 +201,11 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
 		if options.with_times:
 			start = parse_time(args[1], n, True)
-			end = parse_time(args[2], n, True)
+			end = None
+			try:
+				end = parse_time(args[2], n, True)
+			except IndexError, ie:
+				pass
 			args = args[3:]
 		else:
 			args = args[1:]
@@ -253,4 +257,4 @@ if __name__ == '__main__':
 	try:
 		run()
 	except Exception,ec:
-		print 'cannot run ', ' '.join(sys.argv), ':', str(ec) + ', did you specify login?'
+		print 'cannot run ', ' '.join(sys.argv), ':', str(ec)
