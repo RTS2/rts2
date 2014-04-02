@@ -275,7 +275,7 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 
 	createValue (nightDisabledTypes, "night_disabled_types", "list of target types which will not be selected during night", false, RTS2_VALUE_WRITABLE);
 
-	createValue (simulExpected, "simul_expected", "[s] expected simulation duration", RTS2_DT_TIMEINTERVAL);
+	createValue (simulExpected, "simul_expected", "[s] expected simulation duration", false, RTS2_DT_TIMEINTERVAL);
 	simulExpected->setValueDouble (60);
 
 	addOption (OPT_IDLE_SELECT, "idle-select", 1, "selection timeout (reselect every I seconds)");
@@ -965,12 +965,25 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		}
 		return 0;
 	}
-	else if (conn->isCommand ("simulate"))
+	else if (conn->isCommand ("simulate") || conn->isCommand ("simulate_night"))
 	{
 		double to;
-		if (conn->paramNextDouble (&from) || conn->paramNextDouble (&to) || !conn->paramEnd ())
-			return -2;
+
 		simulStart = getNow ();
+
+		if (conn->isCommand ("simulate"))
+		{
+			if (conn->paramNextDouble (&from) || conn->paramNextDouble (&to) || !conn->paramEnd ())
+				return -2;
+		}
+		else
+		{
+			// if simulate_night is used, uses full night..
+			from = getSingleCentralConn ()->getValueDouble ("night_beginning");
+			to = getSingleCentralConn ()->getValueDouble ("night_ending");
+			if (from < simulStart)
+				from = simulStart;
+		}
 
 		last_p = 0;
 		free_start->clear ();
