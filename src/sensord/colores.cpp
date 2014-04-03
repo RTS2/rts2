@@ -76,11 +76,11 @@ Colores::Colores (int argc, char **argv): Sensor (argc, argv)
 	createValue (filtB, "B", "B filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	createValue (filtC, "C", "C filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
-	createValue (temp1, "T1", "T1 value", false);
-	createValue (temp2, "T2", "T2 value", false);
+	createValue (temp1, "T-lamp", "Lamp temp. (C)", false);
+	createValue (temp2, "T-chassis", "Chassis temp. (C)", false);
 
-	createValue (light1, "L1", "light 1", false);
-	createValue (light2, "L2", "light 2", false);
+	createValue (light1, "L1", "Barrel light level", false);
+	createValue (light2, "L2", "Lamp light level", false);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB)");
 
@@ -128,6 +128,9 @@ int Colores::initHardware ()
 	sleep (10);
 	coloresConn->flushPortIO ();
 
+	filtA->setValueBool (true);
+	filtB->setValueBool (true);
+	filtC->setValueBool (true);
 	mirror->setValueBool (true);
 
 	return 0;
