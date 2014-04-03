@@ -468,9 +468,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	centerBox->setInts (-1, -1, -1, -1);
 
 	createValue (slitPosX, "slitposx", "[pixels] slit position along dithering axis", true, RTS2_VALUE_WRITABLE);
-	slitPos->setValueDouble (-1);
+	slitPosX->setValueDouble (-1);
 	createValue (slitPosY, "slitposy", "[pixels] slit position along dithering axis", true, RTS2_VALUE_WRITABLE);
-	slitPos->setValueDouble (-1);
+	slitPosY->setValueDouble (-1);
 
 	createValue (centerCutLevel, "center_cut_level", "[ADU] lower limit for ADU value to be considered for pixels", false, RTS2_VALUE_WRITABLE);
 	centerCutLevel->setValueDouble (0);
