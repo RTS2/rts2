@@ -1035,6 +1035,8 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueRectangle *centerBox;
 
 		rts2core::ValueDouble *centerCutLevel;
+		rts2core::ValueDouble *slitPosX;
+		rts2core::ValueDouble *slitPosY;
 
 		rts2core::DoubleArray *sumsX;
 		rts2core::DoubleArray *sumsY;
