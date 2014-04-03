@@ -325,7 +325,9 @@
     <refsect2>
       <title>Night time operation</title>
       <para>
-        During night, selector select targets for observation. <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry> then only executes observations selected by Selector.
+	During night, selector select targets for observation.
+	<citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+	then only executes observations selected by Selector.
       </para>
       <para>
 	Selector selects observational targets when the system is in
@@ -345,21 +347,21 @@
       <para>
 	<emphasis>Sky-flat</emphasis> target default to target number
 	<emphasis>2</emphasis>, <emphasis>dark</emphasis> target default to
-	target number <emphasis>1</emphasis>.
+	target number <emphasis>1</emphasis>. Those targets are selected by <emphasis>&dhpackage;</emphasis>
       </para>
     </refsect2>
   </refsect1>
   <refsect1>
     <title>Operation</title>
     <para>
-      In order to allow selector correct operation, the following conditions must be fullfilled:
+      In order to allow selector operating correctly, the following conditions must be fullfilled:
     </para>
     <variablelist>
       <varlistentry>
-        <term>system state must be on</term>
+        <term>system state</term>
 	<listitem>
 	  <para>
-	    Selector will not select 
+	    must be on. Selector will not select next targets, if the system is in off or standby states.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -367,7 +369,7 @@
         <term><emphasis>SELECTOR</emphasis>.selector_enabled</term>
 	<listitem>
 	  <para>
-	    Must be turned to true. Otherwise, the selector will select
+	    shall be turned to true. Otherwise, the selector will select
 	    targets, but will not send them to the executor.
 	  </para>
 	</listitem>
@@ -376,7 +378,7 @@
         <term><emphasis>EXECUTOR</emphasis>.selector_next</term>
 	<listitem>
 	  <para>
-	    Must be turned to true. If turned to false,
+	    shall be turned to true. If turned to false,
 	    <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>
 	    will not accept targets provided by <command>&dhpackage;</command>.
 	  </para>

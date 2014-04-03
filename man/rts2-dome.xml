@@ -109,7 +109,7 @@
 	    (day,evening,dusk,night,dawn,morning) are accepted only from a
 	    single master server. if you specify multiple servers with
 	    <option>--server</option> option, you <emphasis>must</emphasis>
-	    specify on as the master server.
+	    specify one as the master server.
 	  </para>
         </listitem>
       </varlistentry>
@@ -188,6 +188,50 @@
    	    <manvolnum>1</manvolnum>
           </citerefentry>
 	  OpenTPL controlled domes.
+	</para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Operations of dome over multiple telescopes</title>
+    <para>
+      Dome, as well as most of the <emphasis>RTS2</emphasis> components, can be
+      operated under multiple central servers. So if your observatory setup
+      includes two or more experiments under common roof, you should connect
+      your dome to multiple
+      <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      instances. This setup is usuall for observatories with telescope and all
+      sky camera.
+    </para>
+    <para>
+      Following should be taken into account when running <emphasis>dome</emphasis> on multiple observatories:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>--state-master must be set</term>
+	<listitem><para>
+	  Otherwise, <emphasis>dome</emphasis> driver will be unable to decide
+	  which
+	  <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	  (specified as the argument) states to follow.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>centrald states (on, standby, off)</term>
+	<listitem><para>
+	  In order for the dome to open, all connected observatories must be in
+	  at least standby state, and <emphasis>bad weather</emphasis> state
+	  bit shall not be set. Please note that dome will not switch to
+	  on (if the --weather-can-open was specified) and dome will not open
+	  (will refuse <emphasis>open</emphasis> command) if at least one of the
+	  centrald has bad weather raised.
+	</para><para>
+	  There isn't currently any other way to check for the centrald than to
+	  run
+	  <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	  on all
+	  <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	  (or use json or similar external access to RTS2).
 	</para></listitem>
       </varlistentry>
     </variablelist>
