@@ -288,6 +288,7 @@ class AnalyzeRuns(object):
             FpFns = [os.path.join(root, fn) for fn in fns]
             if mFtws:
 
+                # if filters are defined on the cmd line use these
                 if self.args.filterNames:
                     if mFtws.group(3) in self.args.filterNames: 
                         self.fS[(mFtws.group(1), mFtws.group(2))] [mFtws.group(3)] = FpFns

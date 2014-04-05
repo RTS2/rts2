@@ -52,21 +52,23 @@ class Ds9Region(object):
             self.display.set('zscale')
             i_x = self.dataSxtr.fields.index('X_IMAGE')
             i_y = self.dataSxtr.fields.index('Y_IMAGE')
-            i_f = self.dataSxtr.fields.index('FLAGS')
+            i_flg = self.dataSxtr.fields.index('FLAGS')
+            i_fwhm = self.dataSxtr.fields.index('FWHM_IMAGE')
+
         except Exception, e:
             self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
             return False
-
+        self.display.set('regions command {{text {0} {1} #text="FOC_POS {2}" color=magenta font="helvetica 15 normal"}}'.format(80,10, int(self.dataSxtr.focPos)))
         for x in self.dataSxtr.rawCatalog:
             if not x:
                 continue
 
-            if x[i_f] == 0:
+            if x[i_flg] == 0:
                 color='green'
             else:
                 color='red'
             try:
-                self.display.set('regions', 'image; circle {0} {1} 10 # color={{{2}}}'.format(x[i_x],x[i_y], color))
+                self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}}'.format(x[i_x],x[i_y], x[i_fwhm] * 2, color))
             except Exception, e:
                 self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
                 return False
