@@ -57,7 +57,7 @@ class Ds9Region(object):
             self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
             return False
 
-        for x in self.dataSxtr.catalog:
+        for x in self.dataSxtr.rawCatalog:
             if not x:
                 continue
 

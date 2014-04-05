@@ -194,7 +194,7 @@ class AnalyzeRuns(object):
         dataRnR.sextractLoop(fitsFns = fitsFns)
 
         if len(dataRnR.dataSxtrs)==0:
-            self.logger.warn('sextractRun: no results for files: {}'.format(fitsFns))
+            self.logger.warn('sextractRun: no results, returning')
             return None
 
         dataRnR.dataSxtrs.sort(key = lambda x: x.nObjs, reverse = True)

@@ -200,6 +200,7 @@ class Sextract(object):
             stdFwhm=float(stdFwhm),
             nstars=int(nstars), 
             ambientTemp=ambientTemp, 
+            rawCatalog=sex.objects, 
             catalog=sex.cleanedObjects, 
             binning=binning, 
             binningXY=binningXY, 

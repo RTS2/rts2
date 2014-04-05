@@ -271,7 +271,8 @@ class DataSxtr(object):
         :var stdFwhm: standard deviation from :py:mod:`rts2saf.sextractor.Sextractor`
         :var nstars: number of objects :py:mod:`rts2saf.sextractor.Sextractor`
         :var ambient: ambient temperature from FITS header
-        :var catalog: catalog of sextracted objects from :py:mod:`rts2saf.sextractor.Sextractor`
+        :var catalog: rawCatalog of all sextracted objects from :py:mod:`rts2saf.sextractor.Sextractor`
+        :var catalog: catalog of sextracted and cleaned objects from :py:mod:`rts2saf.sextractor.Sextractor`
         :var fields: SExtractor parameter fields passed to :py:mod:`rts2saf.sextractor.Sextractor`
         :var binning: binning from FITS header
         :var binningXY: binningXY from FITS header
@@ -286,7 +287,7 @@ class DataSxtr(object):
 
     """
 
-    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
+    def __init__(self, date=None, fitsFn=None, focPos=None, stdFocPos=None, fwhm=None, stdFwhm=None, flux=None, stdFlux=None, nstars=None, ambientTemp=None, rawCatalog=None, catalog=None, binning=None, binningXY=None, naxis1=None, naxis2=None, fields=None, ftName=None, ftAName=None, ftBName=None, ftCName=None, assocFn=None):
         self.date=date
         self.fitsFn=fitsFn
         self.focPos=focPos
@@ -295,6 +296,7 @@ class DataSxtr(object):
         self.stdFwhm=stdFwhm
         self.nstars=nstars
         self.ambientTemp=ambientTemp
+        self.rawCatalog=rawCatalog
         self.catalog=catalog
         # ToDo ugly
         try:
@@ -315,7 +317,7 @@ class DataSxtr(object):
         self.stdFlux=stdFlux
         self.assocFn=assocFn
         self.assocCount=0
-        self.rawCatalog=list()
+        self.reducedCatalog=list()
 
     def fillFlux(self, i_flux=None, logger=None): 
         # ToDo create a deepcopy() method, 
@@ -346,10 +348,10 @@ class DataSxtr(object):
             self.stdFlux= np.average([ math.sqrt(x) for x in fluxv]) 
 
 
-    def toRawCatalog(self):
+    def toReducedCatalog(self):
         """Helper method to copy data for later analysis."""
         # http://stackoverflow.com/questions/2612802/how-to-clone-or-copy-a-list-in-python
         # self.rawCatalog=list() self.catalog[:]
 
-        self.rawCatalog=[list(x) for x in self.catalog]
+        self.reducedCatalog=[list(x) for x in self.catalog]
         self.catalog=list()

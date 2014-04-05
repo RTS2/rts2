@@ -96,14 +96,12 @@ class DataRun(object):
 
         # copy those catalog entries (sextracted objects) which are found on all images
         for dSx in self.dataSxtrs:
-            # save the raw values for later analysis
+            # save the original cleaned values for later analysis
             # initialize data.catalog
-            dSx.toRawCatalog()
-            for sx in dSx.rawCatalog:
+            dSx.toReducedCatalog()
+            for sx in dSx.reducedCatalog:
                 if sx[i_nmbrAssc] in assocObjNmbrs:
                     dSx.catalog.append(sx)
-            else:
-                self.logger.debug('onAllImages: no break for object: {0}'.format(k))
 
         # recalculate FWHM, Flux etc.
         i_fwhm= self.dataSxtrs[0].fields.index('FWHM_IMAGE') 
