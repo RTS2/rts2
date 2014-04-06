@@ -23,7 +23,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import os
-from astropy.io.fits import getheader
+import pyfits
 import sys
 import time
 import math
@@ -85,8 +85,9 @@ class Sextract(object):
         # find the sextractor counts
         objectCount = len(sex.cleanedObjects)
 
+        hdr = pyfits.open(fitsFn,'readonly')[0].header
         try:
-            hdr = getheader(fitsFn, 0)
+            hdr = pyfits.open(fitsFn,'readonly')[0].header
         except Exception, e:
             self.logger.error( 'sextract: returning, FITS {0}'.format(fitsFn))
             self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(e))

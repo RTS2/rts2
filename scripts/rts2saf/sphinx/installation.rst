@@ -6,7 +6,7 @@ Installation
 Prerequisites
 -------------
 
-The :ref:`workaround for EXEC requires RTS2 at revision <sec_introduction-label>` ``r11758`` or later.
+The :ref:`workaround for EXEC requires RTS2 at revision <sec_introduction-label>` ``r11893`` or later.
 
 For the following description I assume you did
 
@@ -153,11 +153,8 @@ As user postgres:
 
  postgres@localhost:~$ psql stars  
 
- INSERT INTO targets values ('999', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
- INSERT INTO scripts values ('999', 'C0', ' exe /usr/local/bin/rts2saf_focus.py E 1 ');
-
- # not now (2014-03-26): INSERT INTO targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
- # not now (2014-03-26): INSERT INTO scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py ');
+ INSERT INTO targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+ INSERT INTO scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py E 1');
 
 where ``YOUR_CAMERA_NAME`` is either ``C0`` or is the name configured in ``/etc/rts2/devices``. 
 

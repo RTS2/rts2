@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2014-03-21)
+Status and open issues (2014-04-06)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -19,12 +19,12 @@ Items which need further attention:
 3) further, e.g. faster methods to determine the FWHM minimum: currently about 6...8 images are taken see e.g. Petr's script ``focsing.py``
 4) strategies if a focus run fails, e.g. widen the interval in regular mode, fall back to blind mode
 5) ``SExtractor``'s filter  option
-6) replacemenmt of ``matplotlib`` as plotting engine (it does'nt work well in the background and within threads)
+6) replacemenmt of ``matplotlib`` as plotting engine (it doesn't work well in the background and within threads)
 7) many ToDos in the code
 
 .. _sec_introduction-label:
 
-7) RTS2 EXEC does not continue to select targets after an external script, like ``rts2saf_focus.py``, has finished. To reenable RTS2 EXEC a workaround has been created (``rts2saf_reenable_exec.py``) which is executed as a detached subprocess of ``rts2saf_focus.py``.
+7) RTS2 EXEC does not continue to select targets after an external script, like ``rts2saf_focus.py``, has finished. EXEC continues if a script ``exe /path/script E 1`` contains an additional exposure command at the end.
 
 
 
@@ -122,9 +122,8 @@ Parameters, like e.g. ``FOC_DEF`` stored in focuser device, are retrieved
 from the running RTS2 instance as far as they are needed. All additional 
 device or analysis properties are kept in a single configuration file. 
 
-During analysis ``DS9`` region of interest  data structures are created for each image. 
-Optionally the images and the region files are displayed on screen using ``DS9``.
-The circle is centered to ``SExtractor``'s x,y positions. Red circles indicate objects
+Optionally ``DS9`` displays images and their region files on screen. The circle is 
+centered to ``SExtractor``'s x,y positions. Red circles indicate objects
 which were rejected green ones which were accepted.
 
 If rts2saf is executed remotely the X-Window DISPLAY variable has to be set otherwise 

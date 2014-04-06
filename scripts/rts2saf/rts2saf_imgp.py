@@ -168,25 +168,26 @@ if __name__ == "__main__":
 
     # check if env var HOME is defined - if not define astorpy path in config before importing
     # if not in config throw error
-    if 'HOME' not in os.environ:
-	# if I can get the freaking modified cfg file to stop saying the syntax is wrong I can do this
-	# TODO double check to make sure astropy dir exists inside ASTROPY_XDG_CONFIG_HOME
-        # if rt.cfg['ASTROPY_XDG_CONFIG_HOME'] == None or rt.cfg['ASTROPY_XDG_CACHE_HOME'] == None:
-        #    logger.error('Astropy problem: HOME env var does not exist and ASTROPY_XDG_CONFIG_HOME or ASTROPY_XDG_CACHE_Home not defined in config')
-        #    sys.exit(1)
-        # else:
-        logger.error('Setting Astropy XDG paths')
-        os.environ['XDG_CONFIG_HOME'] = '/root/' 
-        os.environ['XDG_CACHE_HOME'] =  '/root/'
-
-    from astropy.io.fits import getheader
+#    if 'HOME' not in os.environ:
+#	# if I can get the freaking modified cfg file to stop saying the syntax is wrong I can do this
+#	# TODO double check to make sure astropy dir exists inside ASTROPY_XDG_CONFIG_HOME
+#        # if rt.cfg['ASTROPY_XDG_CONFIG_HOME'] == None or rt.cfg['ASTROPY_XDG_CACHE_HOME'] == None:
+#        #    logger.error('Astropy problem: HOME env var does not exist and ASTROPY_XDG_CONFIG_HOME or ASTROPY_XDG_CACHE_Home not defined in config')
+#        #    sys.exit(1)
+#        # else:
+#        logger.error('Setting Astropy XDG paths')
+#        os.environ['XDG_CONFIG_HOME'] = '/root/' 
+#        os.environ['XDG_CACHE_HOME'] =  '/root/'
+#
+#    from astropy.io.fits import getheader
     # if in config file is nothing specified it is a str
     if isinstance(rt.cfg['FILTERS_TO_EXCLUDE'], dict):
         ftNameS=rt.cfg['FILTERS_TO_EXCLUDE'].keys()
 
         # fitsHeaderName are in reality names of filter wheels
         # in the notation of CCD driver (FILTA, FILTB, ...)
-        hdr = getheader(fitsFn, 0)
+        hdr = pyfits.open(fitsFn,'readonly')[0].header
+
         for fitsHeaderName in set(rt.cfg['FILTERS_TO_EXCLUDE'].values()):
             try:
                 hdrv = hdr[fitsHeaderName]

@@ -81,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--toconsole', dest = 'toconsole', action = 'store_true', default = False, help = ': %(default)s, log to console')
     parser.add_argument('--config', dest = 'config', action = 'store', default = '/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help = ': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest = 'basePath', action = 'store', default = None, help = ': %(default)s, directory where FITS images from possibly many focus runs are stored')
-    parser.add_argument('--filternames', dest = 'filterNames', action = 'store', default = None, type = str, nargs = '+', help = ': %(default)s, list of filters to analyzed, None: all')
+    parser.add_argument('--filternames', dest = 'filterNames', action = 'store', default = None, type = str, nargs = '+', help = ': %(default)s, list of SPACE separated filters to analyzed, None: all')
 #ToDo    parser.add_argument('--ds9region', dest = 'ds9region', action = 'store_true', default = False, help = ': %(default)s, create ds9 region files')
     parser.add_argument('--ds9display', dest = 'Ds9Display', action = 'store_true', default = False, help = ': %(default)s, display fits images and region files')
     parser.add_argument('--fitdisplay', dest = 'FitDisplay', action = 'store_true', default = False, help = ': %(default)s, display fit')
@@ -91,6 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--flux', dest = 'flux', action = 'store_true', default = False, help = ': %(default)s, do flux analysis')
     parser.add_argument('--model', dest = 'model', action = 'store_true', default = False, help = ': %(default)s, fit temperature model')
     parser.add_argument('--fraction', dest = 'fractObjs', action = 'store', default = 0.5, type = float, help = ': %(default)s, fraction of objects which must be present on each image, base: object number on reference image, this option is used only together with --associate')
+    parser.add_argument('--emptySlots', dest = 'emptySlots', action = 'store', default = None, type = str, nargs = '+', help = ': %(default)s, list of SPACE separated names of the empty slots')
 
     args = parser.parse_args()
 
@@ -110,6 +111,14 @@ if __name__ == '__main__':
     rtc.cfg['ANALYZE_FLUX'] = args.flux  
     rtc.cfg['ANALYZE_ASSOC'] = args.associate
     rtc.cfg['ANALYZE_ASSOC_FRACTION'] = args.fractObjs
+
+    if args.emptySlots is not None:
+        rtc.cfg['EMPTY_SLOT_NAMES'] = [ x.strip() for x in  args.emptySlots ]
+
+    # ToDo ugly
+    if args.filterNames is not None:
+        fts = [ x.strip() for x in  args.filterNames ]
+        args.filterNames = fts
 
     rtc.checkConfiguration(args=args)
     # environment
