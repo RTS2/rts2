@@ -21,7 +21,30 @@
 
 #include "camd.h"
 
-#ifdef RTS2_ARC_API_1_7
+#ifdef RTS2_ARC_API_3
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+
+#include <future>
+
+#include "CArcDevice.h"
+#include "CArcPCIe.h"
+#include "CArcPCI.h"
+#include "CArcDeinterlace.h"
+
+using namespace arc;
+using namespace arc::device;
+using namespace arc::deinterlace;
+
+#elif defined(RTS2_ARC_API_2)
+
+#include "CController/CController.h"
+#include "CDeinterlace/CDeinterlace.h"
+
+#elif defined(RTS2_ARC_API_1_7)
+
 #include "Driver.h"
 #include "DSPCommand.h"
 #include "LoadDspFile.h"
@@ -33,8 +56,9 @@
 #define HARDWARE_DATA_MAX	1000000
 
 #else
-#include "CController/CController.h"
-#include "CDeinterlace/CDeinterlace.h"
+
+#error "ARC API 1,2 or 3 not set"
+
 #endif
 
 #define OPT_TIM     OPT_LOCAL + 42
@@ -42,6 +66,10 @@
 
 #define OPT_WIDTH   OPT_LOCAL + 44
 #define OPT_HEIGHT  OPT_LOCAL + 45
+
+#ifdef RTS2_ARC_API_3
+#define OPT_SDEV    OPT_LOCAL + 46
+#endif
 
 namespace rts2camd
 {
@@ -58,22 +86,26 @@ class Arc:public Camera
 		virtual ~Arc ();
 
 		virtual int info ();
+
+#ifdef RTS2_ARC_API_2
 		virtual int scriptEnds ();
+#endif
+
 		virtual int killAll (bool callScriptEnds);
 
 	protected:
-		int processOption (int opt);
-		int init ();
+		virtual int processOption (int opt);
+		virtual int initHardware ();
 
 		virtual void initBinnings ();
 		virtual int setBinning (int in_vert, int in_hor);
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
-#ifdef RTS2_ARC_API_1_7
-
-#else
+#if defined(RTS2_ARC_API_2) || defined(RTS2_ARC_API_2)
 		virtual int setCoolTemp (float new_temp);
+#elif defined(RTS2_ARC_API_1_7)
+
 #endif
 
 		virtual int startExposure ();
@@ -92,7 +124,22 @@ class Arc:public Camera
 		rts2core::ValueString *timFile;
                 rts2core::ValueString *utilFile;
 
-#ifdef RTS2_ARC_API_1_7
+#ifdef RTS2_ARC_API_3
+		const char *sDev;
+
+		std::auto_ptr<CArcDevice> pArcDev;
+#elif defined(RTS2_ARC_API_2)
+
+		arc::CController controller;
+		long lDeviceNumber;
+		rts2core::ValueBool *synthetic;
+		
+		// if chip should be clear during exposure..
+		rts2core::ValueInteger *partial;
+		rts2core::ValueBool *firstPartial;
+
+#elif defined(RTS2_ARC_API_1_7)
+
 		HANDLE pci_fd;
 		unsigned short *mem_fd;
 
@@ -108,14 +155,6 @@ class Arc:public Camera
 
 		int do_controller_setup ();
 		int shutter_position ();
-#else
-		arc::CController controller;
-		long lDeviceNumber;
-		rts2core::ValueBool *synthetic;
-		
-		// if chip should be clear during exposure..
-		rts2core::ValueInteger *partial;
-		rts2core::ValueBool *firstPartial;
 #endif
 };
 
@@ -123,16 +162,19 @@ class Arc:public Camera
 
 using namespace rts2camd;
 
-Arc::Arc (int argc, char **argv):Camera (argc, argv)
+Arc::Arc (int argc, char **argv):Camera (argc, argv), pArcDev (new CArcPCIe)
 {
-#ifdef RTS2_ARC_API_1_7
-	num_pci_tests = 1055;
-	num_tim_tests = 1055;
-	num_util_tests = 10;
-#else
+#ifdef RTS2_ARC_API_3
+	sDev = "PCIe";
+#elif defined(RTS2_ARC_API_2)
 	lDeviceNumber = 0;
 
 	createTempSet ();
+
+#elif defined(RTS2_ARC_API_1_7)
+	num_pci_tests = 1055;
+	num_tim_tests = 1055;
+	num_util_tests = 10;
 #endif
 
 	createExpType ();
@@ -145,9 +187,7 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	createValue (biasPosition, "bias_position", "Position of bias", true, RTS2_VALUE_WRITABLE);
 	biasPosition->setValueInteger (0);
 
-#ifdef RTS2_ARC_API_1_7
-
-#else
+#if defined(RTS2_ARC_API_2)
 	createValue (partial, "PARTIAL", "partial exposures (handy for focusing)", false, RTS2_VALUE_WRITABLE);
 	partial->setValueInteger (-1);
 
@@ -160,9 +200,9 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	createValue (timFile, "time-file", "DSP timing file", false);
         createValue (utilFile, "util-file", "utility file", false);
 
-#ifdef RTS2_ARC_API_1_7
-
-#else
+#if defined(RTS2_ARC_API_3)
+	addOption (OPT_SDEV, "s-dev", 1, "PCIe or PCI device");
+#elif defined(RTS2_ARC_API_2)
 	addOption ('n', NULL, 1, "Device number (default 0)");
 #endif
 	addOption (OPT_WIDTH, "width", 1, "chip width - number of collumns");
@@ -176,19 +216,19 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 
 Arc::~Arc ()
 {
-#ifdef RTS2_ARC_API_1_7
+#if defined(RTS2_ARC_API_3)
+	pArcDev->Close ();
+#elif defined(RTS2_ARC_API_2)
+	controller.CloseDriver ();
+#elif defined(RTS2_ARC_API_1_7)
 	closeDriver (pci_fd);
 	free_memory (pci_fd, mem_fd);
-#else
-	controller.CloseDriver ();
 #endif
 }
 
 int Arc::info ()
 {
-#ifdef RTS2_ARC_API_1_7
-
-#else
+#ifdef RTS2_ARC_API_2
 	try
 	{
 		if (getState () & CAM_WORKING)
@@ -204,18 +244,18 @@ int Arc::info ()
 	return Camera::info ();
 }
 
+#ifdef RTS2_ARC_API_2
 int Arc::scriptEnds ()
 {
 	partial->setValueInteger (-1);
 	firstPartial->setValueBool (false);
 	return Camera::scriptEnds ();
 }
+#endif
 
 int Arc::killAll (bool callScriptEnds)
 {
-#ifdef RTS2_ARC_API_1_7
-
-#else
+#ifdef RTS2_ARC_API_2
 	if (getState () & CAM_READING)
 	{
 		try
@@ -231,7 +271,6 @@ int Arc::killAll (bool callScriptEnds)
 		}
 	}
 	// reset controller
-#endif
 	// readout must end..
 	while (controller.IsReadout ())
 	{
@@ -239,6 +278,7 @@ int Arc::killAll (bool callScriptEnds)
                 //long lReply = controller.Command (arc::TIM_ID, 0x0202);
                 //controller.CheckReply (lReply);
 	}
+#endif
 	return Camera::killAll (callScriptEnds);
 }
 
@@ -246,9 +286,16 @@ int Arc::processOption (int opt)
 {
 	switch (opt)
 	{
-#ifdef RTS2_ARC_API_1_7
-
-#else
+#if defined(RTS2_ARC_API_3)
+		case OPT_SDEV:
+			if (strcmp (optarg, "PCIe") && strcmp (optarg, "PCI"))
+			{
+				std::cerr << "expected PCIe or PCI s-dev option, received " << optarg << std::endl;
+				return -1;
+			}
+			sDev = optarg;
+			break;
+#elif defined(RTS2_ARC_API_2)
 		case 'n':
 			lDeviceNumber = atoi (optarg);
 			break;
@@ -271,25 +318,13 @@ int Arc::processOption (int opt)
 	return 0;
 }
 
-int Arc::init ()
+int Arc::initHardware ()
 {
-	int ret = Camera::init ();
-	if (ret)
-		return ret;
-#ifdef RTS2_ARC_API_1_7
-	/* Open the device driver */
-	pci_fd = openDriver("/dev/astropci0");
-
-	int bufferSize = (w + 20) * (h + 20) * 2;
-	if ((mem_fd = create_memory(pci_fd, w, h, bufferSize)) == NULL) {
-		logStream (MESSAGE_ERROR) << "Unable to create image buffer: 0x" << mem_fd << " (0x" << std::hex << mem_fd << ")%" << sendLog;
-		return -1;
-	}
-
-	setSize (w, h, 0, 0);
-
-	return do_controller_setup ();
-#else
+#if defined(RTS2_ARC_API_3)
+	if (strcmp (sDev, "PCI") == 0)
+		pArcDev.reset (new CArcPCI);
+	return 0;
+#elif defined(RTS2_ARC_API_2)
 	try
 	{
 		controller.GetDeviceBindings ();
@@ -322,6 +357,19 @@ int Arc::init ()
 		return -1;
 	}
 	return 0;
+#elif defined(RTS2_ARC_API_1_7)
+	/* Open the device driver */
+	pci_fd = openDriver("/dev/astropci0");
+
+	int bufferSize = (w + 20) * (h + 20) * 2;
+	if ((mem_fd = create_memory(pci_fd, w, h, bufferSize)) == NULL) {
+		logStream (MESSAGE_ERROR) << "Unable to create image buffer: 0x" << mem_fd << " (0x" << std::hex << mem_fd << ")%" << sendLog;
+		return -1;
+	}
+
+	setSize (w, h, 0, 0);
+
+	return do_controller_setup ();
 #endif
 }
 
@@ -339,6 +387,9 @@ void Arc::initBinnings ()
 
 int Arc::setBinning (int in_vert, int in_hori)
 {
+#if defined(RTS2_ARC_API_3)
+	return Camera::setBinning (in_vert, in_hori);
+#elif defined(RTS2_ARC_API_2)
 	try
 	{
 		int o_v, o_h;
@@ -350,17 +401,12 @@ int Arc::setBinning (int in_vert, int in_hori)
 	{
 		return -1;
 	}
+#endif
 }
 
 int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
-#ifdef RTS2_ARC_API_1_7
-	if (old_value == power)
-	{
-		doCommand (pci_f, TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF, DON);
-		return 0;
-	}
-#else
+#ifdef RTS2_ARC_API_2
 	if (old_value == partial)
 	{
 		if (partial->getValueInteger () != -1)
@@ -379,13 +425,17 @@ int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		controller.Command (arc::TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF);
 		return 0;
 	}
+#elif defined(RTS2_ARC_API_1_7)
+	if (old_value == power)
+	{
+		doCommand (pci_f, TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF, DON);
+		return 0;
+	}
 #endif
 	return Camera::setValue (old_value, new_value);
 }
 
-#ifdef RTS2_ARC_API_1_7
-
-#else
+#ifdef RTS2_ARC_API_2
 int Arc::setCoolTemp (float new_temp)
 {
 	controller.SetArrayTemperature (new_temp);
@@ -395,7 +445,51 @@ int Arc::setCoolTemp (float new_temp)
 
 int Arc::startExposure ()
 {
-#ifdef RTS2_ARC_API_1_7
+#ifdef RTS2_ARC_API_2
+	try
+	{
+		long lReply;
+		if (chipUsedReadout->wasChanged ())
+		{
+			int bw = chipUsedReadout->getWidthInt () / binningHorizontal ();
+			int bh = chipUsedReadout->getHeightInt () / binningVertical ();
+			int x = chipUsedReadout->getXInt () + bw / 2;
+			int y = chipUsedReadout->getYInt () + bh / 2;
+			int oRows, oCols;
+			controller.SetSubArray (oRows, oCols, y, x, bh, bw, getWidth (), 0);
+		}
+		if (partial->getValueInteger () > 0)
+		{
+			if (firstPartial->getValueBool ())
+			{
+				lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000 * partial->getValueInteger ()));
+				firstPartial->setValueBool (false);
+				sendValueAll (firstPartial);
+			}
+			else
+			{
+				lReply = controller.Command (arc::TIM_ID, REX);
+				controller.CheckReply (lReply);
+				return 0;
+			}
+		}
+		else
+		{
+			lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
+		}
+		controller.CheckReply (lReply);
+		controller.SetOpenShutter (getExpType () == 0);
+		// start exposure..
+		lReply = controller.Command (arc::TIM_ID, SEX);
+		controller.CheckReply (lReply);
+			
+		return 0;
+	}
+	catch (std::runtime_error &er)
+	{
+		return -1;
+	}
+#elif defined(RTS2_ARC_API_1_7)
   	// set readout area..
 	if (chipUsedReadout->wasChanged ())
 	{
@@ -474,63 +568,12 @@ int Arc::startExposure ()
 	lastPixelCount = 0;
 
 	return 0;
-#else
-	try
-	{
-		long lReply;
-		if (chipUsedReadout->wasChanged ())
-		{
-			int bw = chipUsedReadout->getWidthInt () / binningHorizontal ();
-			int bh = chipUsedReadout->getHeightInt () / binningVertical ();
-			int x = chipUsedReadout->getXInt () + bw / 2;
-			int y = chipUsedReadout->getYInt () + bh / 2;
-			int oRows, oCols;
-			controller.SetSubArray (oRows, oCols, y, x, bh, bw, getWidth (), 0);
-		}
-		if (partial->getValueInteger () > 0)
-		{
-			if (firstPartial->getValueBool ())
-			{
-				lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000 * partial->getValueInteger ()));
-				firstPartial->setValueBool (false);
-				sendValueAll (firstPartial);
-			}
-			else
-			{
-				lReply = controller.Command (arc::TIM_ID, REX);
-				controller.CheckReply (lReply);
-				return 0;
-			}
-		}
-		else
-		{
-			lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
-		}
-		controller.CheckReply (lReply);
-		controller.SetOpenShutter (getExpType () == 0);
-		// start exposure..
-		lReply = controller.Command (arc::TIM_ID, SEX);
-		controller.CheckReply (lReply);
-			
-		return 0;
-	}
-	catch (std::runtime_error &er)
-	{
-		return -1;
-	}
 #endif
 }
 
 long Arc::isExposing ()
 {
-#ifdef RTS2_ARC_API_1_7
-	int status = (getHstr (pci_fd) & HTF_BITS) >> 3;
-
-	if (status != READOUT)
-		return Camera::isExposing ();
-
-	return -2;
-#else
+#ifdef RTS2_ARC_API_2
 	if (partial->getValueInteger () > 1)
 	{
 		int ret = Camera::isExposing ();
@@ -558,15 +601,19 @@ long Arc::isExposing ()
 		return -1;
 	}
 	return -2;
+#elif defined(RTS2_ARC_API_1_7)
+	int status = (getHstr (pci_fd) & HTF_BITS) >> 3;
+
+	if (status != READOUT)
+		return Camera::isExposing ();
+
+	return -2;
 #endif
 }
 
 int Arc::stopExposure ()
 {
-#ifdef RTS2_ARC_API_1_7
-	if (doCommand (pci_fd, TIM_ID, PEX, DON) == _ERROR)
-		logStream (MESSAGE_ERROR) << "cannot stop exposure" << sendLog;
-#else
+#ifdef RTS2_ARC_API_2
 	try
 	{
 		controller.Command (arc::TIM_ID, PEX);
@@ -577,25 +624,16 @@ int Arc::stopExposure ()
 		logStream (MESSAGE_ERROR) << "error in stopExposure " << er.what () << sendLog;
 		return -1;	
 	}
+#elif defined(RTS2_ARC_API_1_7)
+	if (doCommand (pci_fd, TIM_ID, PEX, DON) == _ERROR)
+		logStream (MESSAGE_ERROR) << "cannot stop exposure" << sendLog;
 #endif
 	return Camera::stopExposure ();
 }
 
 int Arc::doReadout ()
 {
-#ifdef RTS2_ARC_API_1_7
-	int currentPixelCount;
-	ioctl (pci_fd, ASTROPCI_GET_PROGRESS, &currentPixelCount);
-
-	if (currentPixelCount > lastPixelCount)
-	{
-		sendReadoutData ((char *) (mem_fd + lastPixelCount), (currentPixelCount - lastPixelCount) * 2);
-		if (currentPixelCount == chipUsedSize ())
-			return -2;
-		lastPixelCount = currentPixelCount;
-	}
-	return USEC_SEC / 8.0;
-#else
+#ifdef RTS2_ARC_API_2
 	if (partial->getValueInteger () == 1)
 	{
 		partial->setValueInteger (0);
@@ -620,6 +658,18 @@ int Arc::doReadout ()
 		logStream (MESSAGE_ERROR) << "error in doReadout " << er.what () << sendLog;
 		return -1;	
 	}
+#elif defined(RTS2_ARC_API_1_7)
+	int currentPixelCount;
+	ioctl (pci_fd, ASTROPCI_GET_PROGRESS, &currentPixelCount);
+
+	if (currentPixelCount > lastPixelCount)
+	{
+		sendReadoutData ((char *) (mem_fd + lastPixelCount), (currentPixelCount - lastPixelCount) * 2);
+		if (currentPixelCount == chipUsedSize ())
+			return -2;
+		lastPixelCount = currentPixelCount;
+	}
+	return USEC_SEC / 8.0;
 #endif
 }
 

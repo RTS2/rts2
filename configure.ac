@@ -254,31 +254,59 @@ AC_SUBST(LIB_EDTPDV)
 AC_SUBST(INC_EDTPDV)
 
 # Test for ARC/Leech controller headers
-AC_ARG_WITH(arc,
-[  --with-arc              path to Astronomical Research Cameras headers, version 2.0. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
+
+ARC=no
+
+AH_TEMPLATE([ARC_API_3],[If ARC API version 3 is used])
+AC_ARG_WITH(arc-3,
+[  --with-arc-3              path to Astronomical Research Cameras headers, version 3.x. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
+ARC_3="${withval}";
 ARC="${withval}";
 if test x${target_os} == xcygwin; then
 	LIB_ARC="${ARC}/CController/CController.a ${ARC}/CDeinterlace/CDeinterlace.o /lib/w32api/libsetupapi.a";
-	INC_ARC="-I${ARC}"
+	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src"
+else
+	LIB_ARC="-L${ARC}/Release/x64 -lCArcDevice -lCArcDeinterlace";
+	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src -std=gnu++11"
+fi,
+[ARC_3=no])
+
+if test x$ARC_3 != xno; then
+	AC_DEFINE_UNQUOTED([ARC_API_3],1,[If ARC API version 3 is used])
+fi
+
+AH_TEMPLATE([ARC_API_2],[If ARC API version 2 is used])
+AC_ARG_WITH(arc-2,
+[  --with-arc-2              path to Astronomical Research Cameras headers, version 2.0. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
+ARC_2="${withval}";
+ARC="${withval}";
+if test x${target_os} == xcygwin; then
+	LIB_ARC="${ARC}/CController/CController.a ${ARC}/CDeinterlace/CDeinterlace.o /lib/w32api/libsetupapi.a";
+	INC_ARC="-DARC_API_2 -I${ARC}"
 else
 	LIB_ARC="-L${ARC}/Release -lCController";
-	INC_ARC="-I${ARC}"
+	INC_ARC="-DARC_API_2 -I${ARC}"
 fi,
-[ARC=no])
+[ARC_2=no])
 
-AH_TEMPLATE([ARC_API_1_7],[If ARC version 1.7 is used])
+if test x$ARC_2 != xno; then
+	AC_DEFINE_UNQUOTED([ARC_API_2],1,[If ARC API version 2 is used])
+fi
+
+AH_TEMPLATE([ARC_API_1_7],[If ARC API version 1.7 is used])
 AC_ARG_WITH(arc-1-7,
 [  --with-arc-1-7          path to Astronomical Research Cameras headers, version 1.7. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
 ARC_1_7="${withval}";
+ARC="${withval}"
 LIB_ARC="-lastropciAPI";
 INC_ARC="-DARC_API_1_7 -I${ARC_1_7}/src",
 [ARC_1_7=no])
 
 if test x$ARC_1_7 != xno; then
-	AC_DEFINE_UNQUOTED([ARC_API_1_7],1,[If ARC version 1.7 is used])
+	AC_DEFINE_UNQUOTED([ARC_API_1_7],1,[If ARC API version 1.7 is used])
 fi
 
-AM_CONDITIONAL(ARC, test x$ARC != xno -o x$ARC_1_7 != xno)
+AM_CONDITIONAL(ARC, test x$ARC != xno)
 AC_SUBST(ARC)
 AC_SUBST(LIB_ARC)
 AC_SUBST(INC_ARC)
