@@ -124,7 +124,9 @@ device or analysis properties are kept in a single configuration file.
 
 Optionally ``DS9`` displays images and their region files on screen. The circle is 
 centered to ``SExtractor``'s x,y positions. Red circles indicate objects
-which were rejected green ones which were accepted.
+which were rejected, green ones which were accepted as star like and in case 
+``SExtractor`` associates the objects among images yellow indicates star
+like objects which are not on all images and therfore rejected.
 
 If rts2saf is executed remotely the X-Window DISPLAY variable has to be set otherwise 
 neither the fit nor images are displayed. 

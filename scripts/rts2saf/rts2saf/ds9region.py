@@ -59,12 +59,14 @@ class Ds9Region(object):
             self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
             return False
         self.display.set('regions command {{text {0} {1} #text="FOC_POS {2}" color=magenta font="helvetica 15 normal"}}'.format(80,10, int(self.dataSxtr.focPos)))
+
         for x in self.dataSxtr.rawCatalog:
             if not x:
                 continue
-
-            if x[i_flg] == 0:
+            if x in self.dataSxtr.catalog:
                 color='green'
+            elif x[i_flg] == 0:
+                color='yellow'
             else:
                 color='red'
             try:

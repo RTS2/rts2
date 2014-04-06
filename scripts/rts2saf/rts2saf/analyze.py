@@ -27,6 +27,7 @@ import os
 import psutil
 import numpy as np
 import copy
+import threading
 
 from ds9 import *
 
@@ -35,6 +36,50 @@ from rts2saf.fitfunction import  FitFunction
 from rts2saf.fitdisplay import FitDisplay
 from rts2saf.data import DataFitFwhm,DataFitFlux,ResultFit, ResultMeans
 from rts2saf.ds9region import Ds9Region
+
+
+class Ds9DisplayThread(threading.Thread):
+    """Thread displays a set of FITS images .
+
+    :var debug: enable more debug output with --debug and --level
+    :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
+    :var logger:  :py:mod:`rts2saf.log`
+
+    """
+
+
+    def __init__(self, debug=False,  dataSxtr=None, logger=None):
+        super(Ds9DisplayThread, self).__init__()
+        self.debug = debug
+        self.dataSxtr = dataSxtr
+        self.logger = logger
+        self.stoprequest = threading.Event()
+
+    def run(self):
+        """ Display via DS9.  
+        """
+        dds9=ds9()
+
+        # ToDo create new list
+        self.dataSxtr.sort(key=lambda x: int(x.focPos))
+
+        for dSx in self.dataSxtr:
+            if dSx.fitsFn:
+                dr=Ds9Region( dataSxtr=dSx, display=dds9, logger=self.logger)
+                if not dr.displayWithRegion():
+                    break # something went wrong
+                time.sleep(1.)
+            else:
+                self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
+
+
+    def join(self, timeout=None):
+        """Stop thread on request.
+        """
+        self.logger.info('____DisplayThread: join, timeout {0}, stopping thread on request'.format(timeout))
+        self.stoprequest.set()
+        super(Ds9DisplayThread, self).join(timeout)
+
 
 class SimpleAnalysis(object):
     """Analysis of extremes of FWHM and optionally of flux.
@@ -204,6 +249,18 @@ class SimpleAnalysis(object):
         """Plot data, fitted function for FWHM and optionally flux.
 
         """
+
+        # plot them through ds9 ev. in parallel to the fit
+        ds9DisplayThread = None
+        if self.Ds9Display and self.xdisplay:
+            # start thread 
+            ds9DisplayThread = Ds9DisplayThread(debug=self.debug, dataSxtr=self.dataSxtr, logger= self.logger)
+            ds9DisplayThread.start()
+
+        elif self.Ds9Display and not self.xdisplay:
+            self.logger.warn('analyze: OOOOOOOOPS, no ds9 display available')
+
+
         ft=FitDisplay(date = self.date, logger=self.logger)
 
         if self.i_flux is None:
@@ -218,23 +275,9 @@ class SimpleAnalysis(object):
         ft.fig.clf()
         ft.fig=None
         ft=None
-        # plot them through ds9
+        # stop ds9 display thread
         if self.Ds9Display and self.xdisplay:
-            dds9=ds9()
-
-            # ToDo create new list
-            self.dataSxtr.sort(key=lambda x: int(x.focPos))
-
-            for dSx in self.dataSxtr:
-                if dSx.fitsFn:
-                    dr=Ds9Region( dataSxtr=dSx, display=dds9, logger=self.logger)
-                    if not dr.displayWithRegion():
-                        break # something went wrong
-                    time.sleep(1.)
-                else:
-                    self.logger.warn('analyze: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
-        elif self.Ds9Display and not self.xdisplay:
-            self.logger.warn('analyze: OOOOOOOOPS, no ds9 display available')
+            ds9DisplayThread.join(timeout=1.)
 
 
 import numpy

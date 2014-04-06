@@ -95,6 +95,7 @@ class DataRun(object):
                 assocObjNmbrs.append(k) 
 
         # copy those catalog entries (sextracted objects) which are found on all images
+        count = dict()
         for dSx in self.dataSxtrs:
             # save the original cleaned values for later analysis
             # initialize data.catalog
@@ -102,6 +103,7 @@ class DataRun(object):
             for sx in dSx.reducedCatalog:
                 if sx[i_nmbrAssc] in assocObjNmbrs:
                     dSx.catalog.append(sx)
+
 
         # recalculate FWHM, Flux etc.
         i_fwhm= self.dataSxtrs[0].fields.index('FWHM_IMAGE') 
