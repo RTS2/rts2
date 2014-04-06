@@ -46,7 +46,11 @@ def userInConfigFile():
     exit = False
     with open('./unittest/rts2saf-bootes-2-autonomous.cfg', 'r') as cfg:
         lines = cfg.readlines()
+
         for ln in lines:
+            if '#' in ln:
+                continue
+
             if '=' not in ln:
                 continue
             k, v = ln.strip().split('=')
