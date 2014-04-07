@@ -26,7 +26,7 @@
 #include <iomanip>
 #include <string>
 
-#define OPT_DEBUGDB    OPT_LOCAL + 201
+#define OPT_DEBUGDB    OPT_LOCAL + 300
 
 using namespace rts2db;
 
