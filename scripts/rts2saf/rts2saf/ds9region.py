@@ -20,50 +20,62 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-class Ds9Region(object):
-    """Display FITS and region files through DS9
+import threading
+from ds9 import *
 
-    :var logger:  :py:mod:`rts2saf.log`
 
+class Ds9DisplayThread(threading.Thread):
+    """Thread displays a set of FITS images .
+
+    :var debug: enable more debug output with --debug and --level
     :var dataSxtr: list of :py:mod:`rts2saf.data.DataSxtr`
-    :var display: DS9 display object
     :var logger:  :py:mod:`rts2saf.log`
 
     """
-    def __init__(self, dataSxtr=None, display=None, logger=None):
-        self.dataSxtr=dataSxtr
-        self.display=display
-        self.logger=logger
 
-    def displayWithRegion(self): 
+
+    def __init__(self, debug=False,  dataSxtr=None, logger=None):
+        super(Ds9DisplayThread, self).__init__()
+        self.debug = debug
+        self.dataSxtr = dataSxtr
+        self.logger = logger
+        self.stoprequest = threading.Event()
+        self.display = dds9=ds9()
+
+    def displayWithRegion(self, dSx = None): 
         """
 
+        :var dSx: :py:mod:`rts2saf.data.DataSxtr`
+
+        
         :return: True if success else False
 
         """
         try:
-            self.display.set('file {0}'.format(self.dataSxtr.fitsFn))
-        except Exception, e:
-            self.logger.warn('analyze: plotting fits with regions failed, file:{0}:error\n{1}'.format(self.dataSxtr.fitsFn,e))
-            return False
-
-        try:
+            self.display.set('frame new')
+            self.display.set('file {0}'.format(dSx.fitsFn))
             self.display.set('zoom to fit')
-            self.display.set('zscale')
-            i_x = self.dataSxtr.fields.index('X_IMAGE')
-            i_y = self.dataSxtr.fields.index('Y_IMAGE')
-            i_flg = self.dataSxtr.fields.index('FLAGS')
-            i_fwhm = self.dataSxtr.fields.index('FWHM_IMAGE')
+            self.display.set('scale zscale')
+            self.display.set('regions command {{text {0} {1} #text="FOC_POS {2}" color=magenta font="helvetica 15 normal"}}'.format(80,10, int(dSx.focPos)))
 
         except Exception, e:
             self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
             return False
-        self.display.set('regions command {{text {0} {1} #text="FOC_POS {2}" color=magenta font="helvetica 15 normal"}}'.format(80,10, int(self.dataSxtr.focPos)))
 
-        for x in self.dataSxtr.rawCatalog:
+        try:
+            i_x = dSx.fields.index('X_IMAGE')
+            i_y = dSx.fields.index('Y_IMAGE')
+            i_flg = dSx.fields.index('FLAGS')
+            i_fwhm = dSx.fields.index('FWHM_IMAGE')
+
+        except Exception, e:
+            self.logger.warn('____DisplayThread: retrieving data failed:\n{0}'.format(e))
+            return False
+
+        for x in dSx.rawCatalog:
             if not x:
                 continue
-            if x in self.dataSxtr.catalog:
+            if x in dSx.catalog:
                 color='green'
             elif x[i_flg] == 0:
                 color='yellow'
@@ -72,10 +84,40 @@ class Ds9Region(object):
             try:
                 self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}}'.format(x[i_x],x[i_y], x[i_fwhm] * 2, color))
             except Exception, e:
-                self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
+                self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
                 return False
-
         else:
             return True
 
         return False
+
+    def run(self):
+        """ Display via DS9.  
+        """
+
+        # ToDo create new list
+        self.dataSxtr.sort(key=lambda x: int(x.focPos))
+
+        for dSx in self.dataSxtr:
+            if dSx.fitsFn:
+                if not self.displayWithRegion(dSx=dSx):
+                    break # something went wrong
+            else:
+                self.logger.warn('____DisplayThread: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
+            time.sleep(1.)
+            self.display.set('zoom to fit')
+
+        self.display.set('blink')
+
+    def join(self, timeout=None):
+        """Stop thread on request.
+        """
+        self.display.set('blink no')
+        self.display.set('frame delete all')
+        self.logger.info('____DisplayThread: join, timeout {0}, stopping thread on request'.format(timeout))
+        self.stoprequest.set()
+        super(Ds9DisplayThread, self).join(timeout)
+
+
+
+
