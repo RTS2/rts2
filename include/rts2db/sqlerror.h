@@ -35,6 +35,14 @@ class SqlError: public rts2core::Error
 	public:
 		SqlError ();
 		SqlError (const char *sqlmsg);
+
+		/**
+		 * Returns SQL error code.
+		 */
+		int getSqlCode () { return sqlcode; }
+
+	private:
+		int sqlcode;
 };
 
 }

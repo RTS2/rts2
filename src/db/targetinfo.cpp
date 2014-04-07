@@ -22,6 +22,8 @@
 #include "rts2db/targetset.h"
 #include "rts2db/target_auger.h"
 
+#include <postgresql/ecpgerrno.h>
+
 #define OPT_AUGER_ID              OPT_LOCAL + 501
 #define OPT_ID_ONLY               OPT_LOCAL + 502
 #define OPT_NAME_ONLY             OPT_LOCAL + 503
@@ -164,7 +166,14 @@ int TargetInfo::doProcessing ()
 			catch (rts2db::SqlError err)
 			{
 				delete ta;
-				throw err;
+				if (err.getSqlCode () == ECPG_NOT_FOUND)
+				{
+					std::cerr << "target with given ID not found" << std::endl;
+				}
+				else
+				{
+					throw err;
+				}
 			}
 		}
 	}
