@@ -168,7 +168,7 @@ int TelLX200::tel_read_dec ()
 	if (tel_read_hms (&t_telDec, "#:GD#"))
 		return -1;
 	
-	setTelDec (fmod( t_telDec,  90.));
+	setTelDec (t_telDec);
 	return 0;
 }
 
