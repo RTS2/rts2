@@ -70,6 +70,7 @@ class Apogee:public Camera
 
 	protected:
 		virtual int initChips ();
+		virtual void initBinnings ();
 		virtual int setBinning (int in_vert, int in_hori);
 		virtual int startExposure ();
 		virtual long isExposing ();
@@ -99,11 +100,16 @@ using namespace rts2camd;
 int Apogee::initChips ()
 {
 	setSize (camera->m_ImgColumns, camera->m_ImgRows, 0, 0);
-	setBinning (1, 1);
 	pixelX = camera->m_PixelXSize;
 	pixelY = camera->m_PixelYSize;
 
 	return Camera::initChips ();
+}
+
+void Apogee::initBinnings ()
+{
+	Camera::initBinnings ();
+	setBinning (1, 1);
 }
 
 int Apogee::setBinning (int in_vert, int in_hori)
