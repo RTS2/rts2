@@ -130,7 +130,7 @@ int ConnGrb::pr_hete ()
 
 	grb_errorbox = (lbuf[H_WXM_DIM_NSIG] >> 16) / 3600.0;
 
-	if (!do_hete_test
+	if (!do_hete_test->getValueBool ()
 		&& (grb_type == TYPE_HETE_TEST
 		|| (lbuf[H_TRIG_FLAGS] & H_ART_TRIG)
 		)
@@ -172,7 +172,7 @@ int ConnGrb::pr_integral ()
 	long grb_date_usec;
 	float grb_errorbox;
 
-	if (!do_hete_test
+	if (!do_hete_test->getValueBool ()
 		&& ((lbuf[12] & (1 << 31))
 		)
 		)
@@ -378,7 +378,7 @@ int ConnGrb::pr_agile ()
 	grb_ra = lbuf[BURST_RA] / 10000.0;
 	grb_dec = lbuf[BURST_DEC] / 10000.0;
 
-	if (!do_hete_test
+	if (!do_hete_test->getValueBool ()
 		&& (grb_type == TYPE_AGILE_GRB_POS_TEST))
 	{
 		logStream (MESSAGE_DEBUG) << "ConnGrb::pr_agile test packet" << sendLog;
@@ -1240,7 +1240,7 @@ int ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 	}
 }
 
-ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd *in_master):rts2core::ConnNoSend (in_master)
+ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::ValueBool *in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd *in_master):rts2core::ConnNoSend (in_master)
 {
 	master = in_master;
 	gcn_hostname = new char[strlen (in_gcn_hostname) + 1];

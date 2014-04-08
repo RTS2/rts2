@@ -37,7 +37,6 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 	gcncnn = NULL;
 	gcn_host = NULL;
 	gcn_port = -1;
-	do_hete_test = 0;
 	forwardPort = -1;
 	addExe = NULL;
 	execFollowups = 0;
@@ -49,6 +48,9 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 
 	createValue (createDisabled, "create_disabled", "if true, all GRBs will be created disabled, and will not be autoobserved", false, RTS2_VALUE_WRITABLE);
 	createDisabled->setValueBool (false);
+
+	createValue (doHeteTests, "do_hete_tests", "when true, HETE tests notices will be processed", RTS2_VALUE_WRITABLE);
+	doHeteTests->setValueBool (false);
 
 	createValue (last_packet, "last_packet", "time from last packet", false);
 
@@ -78,7 +80,7 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 	addOption (OPT_GRB_CREATE_DISABLE, "create-disabled", 0, "create GRB targets disabled for automatic follow-up by merit function");
 	addOption (OPT_GCN_HOST, "gcn-host", 1, "GCN host name");
 	addOption (OPT_GCN_PORT, "gcn-port", 1, "GCN port");
-	addOption (OPT_GCN_TEST, "test", 0, "process test notices (default to off - don't process them)");
+	addOption (OPT_GCN_TEST, "do-hete-test", 0, "process HETE test notices (default to off - don't process them)");
 	addOption (OPT_GCN_FORWARD, "forward", 1, "forward incoming notices to that port");
 	addOption (OPT_GCN_EXE, "add-exec", 1, "execute that command when new GCN packet arrives");
 	addOption (OPT_GCN_FOLLOUPS, "exec-followups", 0, "execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
@@ -108,7 +110,7 @@ int Grbd::processOption (int in_opt)
 			gcn_port = atoi (optarg);
 			break;
 		case OPT_GCN_TEST:
-			do_hete_test = 1;
+			doHeteTests->setValueBool (true);
 			break;
 		case OPT_GCN_FORWARD:
 			forwardPort = atoi (optarg);
@@ -179,7 +181,7 @@ int Grbd::reloadConfig ()
 		delete gcncnn;
 	}
 	// add connection..
-	gcncnn = new ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups, this);
+	gcncnn = new ConnGrb (gcn_host, gcn_port, doHeteTests, addExe, execFollowups, this);
 	gcncnn->setGbmError (config->getDoubleDefault ("grbd", "gbm_error_limit", 0.25));
 	gcncnn->setGbmRecordAboveError (config->getBoolean ("grbd", "gbm_record_above_error", true));
 	gcncnn->setGbmEnabledAboveError (config->getBoolean ("grbd", "gbm_enabled_above_error", false));

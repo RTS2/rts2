@@ -95,6 +95,7 @@ class Grbd:public rts2db::DeviceDb
 
 		rts2core::ValueBool *grb_enabled;
 		rts2core::ValueBool *createDisabled;
+		rts2core::ValueBool *doHeteTests;
 
 		rts2core::ValueTime *last_packet;
 		rts2core::ValueDouble *delta;

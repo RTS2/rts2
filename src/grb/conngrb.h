@@ -38,7 +38,7 @@ class Grbd;
 class ConnGrb:public rts2core::ConnNoSend
 {
 	public:
-		ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd * in_master);
+		ConnGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::ValueBool *in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd * in_master);
 		virtual ~ ConnGrb (void);
 		virtual int idle ();
 		virtual int init ();
@@ -130,7 +130,7 @@ class ConnGrb:public rts2core::ConnNoSend
 
 		int gcn_port;
 		char *gcn_hostname;
-		int do_hete_test;
+		rts2core::ValueBool *do_hete_test;
 
 		int gcn_listen_sock;
 
