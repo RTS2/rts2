@@ -34,6 +34,7 @@ class DataRun(object):
         self.dataSxtrs=list()
         self.dSxReference=dSxReference
         self.assocFn='/tmp/assoc.lst'
+        self.assocObjNmbrs=list()
 
 
     def buildCats(self, i_nmbrAssc=None):
@@ -88,11 +89,10 @@ class DataRun(object):
         cats, focPosS=self.buildCats(i_nmbrAssc=i_nmbrAssc)
 
         remainingCats=len(self.dataSxtrs)
-        assocObjNmbrs=list()
         # identify those objects which are on all images
         for k  in  cats.keys():
             if cats[k] == remainingCats:
-                assocObjNmbrs.append(k) 
+                self.assocObjNmbrs.append(k) 
 
         # copy those catalog entries (sextracted objects) which are found on all images
         count = dict()
@@ -101,7 +101,7 @@ class DataRun(object):
             # initialize data.catalog
             dSx.toReducedCatalog()
             for sx in dSx.reducedCatalog:
-                if sx[i_nmbrAssc] in assocObjNmbrs:
+                if sx[i_nmbrAssc] in self.assocObjNmbrs:
                     dSx.catalog.append(sx)
 
 
@@ -121,7 +121,7 @@ class DataRun(object):
             else:
                 if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f}/{2:5.3f}  {3:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog)))
 
-        self.logger.info('onAlmostImages: objects: {0}'.format(len(assocObjNmbrs)))
+        self.logger.info('onAlmostImages: objects: {0}'.format(len(self.assocObjNmbrs)))
 
 
     def onAlmostImages(self):
@@ -166,10 +166,6 @@ class DataRun(object):
 
         ok=True
         if len(pos) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-            self.logger.warn('analyzeRun: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
-            if self.debug:
-                for p,v in pos.iteritems():
-                    self.logger.debug('analyzeRun:{0:5.0f}: {1}'.format(p,v))
-
+            self.logger.warn('numberOfFocPos: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(pos), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
             ok=False
         return ok

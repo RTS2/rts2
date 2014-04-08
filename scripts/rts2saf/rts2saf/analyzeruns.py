@@ -239,17 +239,35 @@ class AnalyzeRuns(object):
             # ToDo dictionary comprehension
             for k, fns in ft.iteritems():
                 info += 'Ftname: {}, images: {}; '.format(k, len(fns))
-                if len(fns) > self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
-                    out = True
-                    dataRn = self.sextractRun(fitsFns = fns)
+                if len(fns) <= self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']:
+                    self.logger.warn('analyzeRuns: to few DIFFERENT focuser positions: {0}<={1} (MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(fns), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+                    continue
 
-                    rFtFwhm, rMnsFwhm,rFtFlux, rMnsFlux = self.analyzeRun(dataRn = dataRn)
-                    if rFtFwhm != None and rFtFwhm.extrFitPos != None:
-                        rFtsFwhm.append(rFtFwhm)
-                    if rFtFlux != None and rFtFlux.extrFitPos != None:
-                        rFtsFlux.append(rFtFlux)
-                else:
-                    self.logger.warn('analyzeRuns: to few DIFFERENT focuser positions: {0}<={1} (see MINIMUM_FOCUSER_POSITIONS), continuing'.format(len(fns), self.rt.cfg['MINIMUM_FOCUSER_POSITIONS']))
+
+                out = True
+                dataRn = self.sextractRun(fitsFns = fns)
+                if dataRn is None:
+                    break
+                        
+                if  self.rt.cfg['ANALYZE_ASSOC'] and (len(dataRn.assocObjNmbrs) < self.rt.cfg['MINIMUM_OBJECTS']):
+                    self.logger.warn('analyzeRuns: to few objects found: {0}, required: {1} (MINIMUM_OBJECTS)'.format(len(dataRn.assocObjNmbrs), self.rt.cfg['MINIMUM_OBJECTS']))
+                    break
+
+                elif not self.rt.cfg['ANALYZE_ASSOC']:
+                    doBreak = False
+                    for dSx in dataRn.dataSxtrs:
+                        if len(dSx.catalog) < self.rt.cfg['MINIMUM_OBJECTS']:
+                            self.logger.warn('analyzeRuns: to few objects found: {0}, required: {1} (MINIMUM_OBJECTS)'.format(len(dataRn.assocObjNmbrs), self.rt.cfg['MINIMUM_OBJECTS']))
+                            doBreak = True
+                            break
+                    if doBreak:
+                        break
+
+                rFtFwhm, rMnsFwhm,rFtFlux, rMnsFlux = self.analyzeRun(dataRn = dataRn)
+                if rFtFwhm != None and rFtFwhm.extrFitPos != None:
+                    rFtsFwhm.append(rFtFwhm)
+                if rFtFlux != None and rFtFlux.extrFitPos != None:
+                    rFtsFlux.append(rFtFlux)
             if out:
                 self.logger.info( 'analyzeRuns: {}'.format(info))
 

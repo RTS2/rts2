@@ -94,7 +94,7 @@ class DefaultConfiguration(object):
         #
         self.dcf[('DS9', 'DS9_REGION_FILE')]= 'ds9-rts2saf.reg'
         #
-        self.dcf[('analysis', 'MINIMUM_OBJECTS')]= 20
+        self.dcf[('analysis', 'MINIMUM_OBJECTS')]= 5
         self.dcf[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
         
         self.dcf[('SExtractor', 'SEXPATH')]= 'sextractor'

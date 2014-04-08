@@ -23,6 +23,8 @@ __author__ = 'markus.wildi@bluewin.ch'
 import threading
 from ds9 import *
 
+# on first call of DS9 a frame is already open
+first = True
 
 class Ds9DisplayThread(threading.Thread):
     """Thread displays a set of FITS images .
@@ -51,11 +53,16 @@ class Ds9DisplayThread(threading.Thread):
         :return: True if success else False
 
         """
+        global first 
         try:
-            self.display.set('frame new')
-            self.display.set('file {0}'.format(dSx.fitsFn))
-            self.display.set('zoom to fit')
+            if not first:
+                self.display.set('frame new')
+            else:
+                first = False
+
+            #self.display.set('zoom to fit')
             self.display.set('scale zscale')
+            self.display.set('file {0}'.format(dSx.fitsFn))
             self.display.set('regions command {{text {0} {1} #text="FOC_POS {2}" color=magenta font="helvetica 15 normal"}}'.format(80,10, int(dSx.focPos)))
 
         except Exception, e:
@@ -75,14 +82,21 @@ class Ds9DisplayThread(threading.Thread):
         for x in dSx.rawCatalog:
             if not x:
                 continue
+
             if x in dSx.catalog:
                 color='green'
+                try:
+                    self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}} text={{{4}}}'.format(x[i_x],x[i_y], x[i_fwhm], color, x[i_fwhm]))
+                except Exception, e:
+                    self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
+                    return False
+
             elif x[i_flg] == 0:
                 color='yellow'
             else:
                 color='red'
             try:
-                self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}}'.format(x[i_x],x[i_y], x[i_fwhm] * 2, color))
+                self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}}'.format(x[i_x],x[i_y], x[i_fwhm], color))
             except Exception, e:
                 self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
                 return False
@@ -104,9 +118,9 @@ class Ds9DisplayThread(threading.Thread):
                     break # something went wrong
             else:
                 self.logger.warn('____DisplayThread: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
-            time.sleep(1.)
+            
             self.display.set('zoom to fit')
-
+        # do not remove me: enough is not enough
         self.display.set('blink')
 
     def join(self, timeout=None):
