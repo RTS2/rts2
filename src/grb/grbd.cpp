@@ -54,8 +54,6 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 
 	createValue (last_packet, "last_packet", "time from last packet", false);
 
-	createValue (delta, "delta", "delta time from last packet", false);
-
 	createValue (last_target, "last_target", "id of last GRB target", false);
 
 	createValue (last_target_time, "last_target_time", "time of last target", false);
@@ -242,7 +240,6 @@ void Grbd::help ()
 int Grbd::info ()
 {
 	last_packet->setValueDouble (gcncnn->lastPacket ());
-	delta->setValueDouble (gcncnn->delta ());
 	last_target->setValueCharArr (gcncnn->lastTarget ());
 	last_target_time->setValueDouble (gcncnn->lastTargetTime ());
 	last_target_radec->setValueRaDec (gcncnn->lastRa (), gcncnn->lastDec ());

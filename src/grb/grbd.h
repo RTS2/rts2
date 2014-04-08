@@ -98,7 +98,6 @@ class Grbd:public rts2db::DeviceDb
 		rts2core::ValueBool *doHeteTests;
 
 		rts2core::ValueTime *last_packet;
-		rts2core::ValueDouble *delta;
 		rts2core::ValueString *last_target;
 		rts2core::ValueTime *last_target_time;
 		rts2core::ValueRaDec *last_target_radec;
