@@ -32,6 +32,7 @@
     </authorgroup>
     <copyright>
       <year>2008</year>
+      <year>2014</year>
       <holder>&dhusername;</holder>
     </copyright>
     &legal;
@@ -57,7 +58,7 @@
       <arg choice="opt"><option>--create-disabled</option></arg>
       <arg choice="opt"><option>--gcn-host</option></arg>
       <arg choice="opt"><option>--gcn-port</option></arg>
-      <arg choice="opt"><option>--test</option></arg>
+      <arg choice="opt"><option>--do-hete-test</option></arg>
       <arg choice="opt"><option>--forward <replaceable>port</replaceable></option></arg>
       <arg choice="opt"><option>--add-exec <replaceable>command</replaceable></option></arg>
       <arg choice="opt"><option>--exec-followups</option></arg>
@@ -74,6 +75,47 @@
       when new GCN message arrive. It can also retransmit GCN packets to behind-firewall hosts.
     </para>
 
+  </refsect1>
+  <refsect1>
+    <title>Theory of operation</title>
+    <para>
+      Gamma ray burst Coordinate Network (GCN) is a NASA developed
+      infrastructur for transmissing information about Gamma-Ray Bursts (GRBs)
+      occuring in the distant universe. After detected on the satellite, the
+      GRB coordinates are transmitted through Internet by the GCN service.
+    </para>
+    <para>
+      The &dhpackage; has the following tasks:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <para>manage connection to GCN</para>
+      </varlistentry>
+      <varlistentry>
+        <para>once the new GCN event is received, parses the data and pushes them through processing</para>
+      </varlistentry>
+      <varlistentry>
+        <para>create or update GRB entry in the RTS2 target database</para>
+      </varlistentry>
+      <varlistentry>
+	<para>if
+	<citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	is running, passes GRB ID to it, with <emphasis>grb</emphasis> command.</para>
+      </varlistentry>
+      <varlistentry>
+        <para>if the <emphasis>--add-exec</emphasis> parameter was specified, executes the given script with arguments describing the GRB target.</para>
+      </varlistentry>
+      <varlistentry>
+        <para>if the <emphasis>--queue-to</emphasis> parameter was specified, adds the GRB to the given <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>5</manvolnum></citerefentry> queue.</para>
+      </varlistentry>
+    </variablelist>
+    <para>
+      Various satellites can feed GCN with the GRB data. GRBs occurs at a rate
+      about one per day in the Universe, but due to non-uniform coverage, only
+      about one third are detected. It is reasonable to expect one GRB per
+      week, and about one GRB per month which will be visible during night from
+      your observing site.
+    </para>
   </refsect1>
   <refsect1 id="options">
     <title>OPTIONS</title>
@@ -222,6 +264,135 @@
 	    </variablelist>
 	  </para>
         </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Variables</title>
+    <variablelist>
+      <varlistentry>
+        <term>enabled</term>
+	<listitem>
+	  <para>
+	    When set to true, &dhpackage; is allowed to send GRBs occuring
+	    during night time to executor. Those are send using
+	    <emphasis>grb</emphasis> command, 
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>create_disabled</term>
+	<listitem>
+	  <para>
+	    When set to true, GRB will be craeated as disabled targets. So the
+	    GRB targets will not be picked by
+	    <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>do_hete_tests</term>
+	<listitem>
+	  <para>
+	    When set to true, <emphasis>HETE</emphasis> test messages will be
+	    processed and threated as normal GRBs. Use with caution, as when enabled,
+	    plenty of new entries with test GRB will be created in target database.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_packet</term>
+	<listitem>
+	  <para>
+	    Receiving time of the last GCN packet. Values below 1 minute in
+	    past indicates the GCN connection is up and running, as GCN
+	    exchanges <emphasis>keep-alive</emphasis> packets every 60 seconds.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_target</term>
+	<listitem>
+	  <para>
+	    Name of the last target. This is the name created in the database,
+	    which combines GRB name and type (ID) of GCN message.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_target_time</term>
+	<listitem>
+	  <para>
+	    Time when the last GRB occured. Delta of this and the current clock
+	    time is the "age" of the GRB, that means how long ago the GRB was detected on the satellite.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_target_radec</term>
+	<listitem>
+	  <para>
+	    RA and declination of the last GRB.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_swift</term>
+	<listitem>
+	  <para>
+	    Time when the last <emphasis>Swift</emphasis> position information was received.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_swift_position</term>
+	<listitem>
+	  <para>
+	    RA and declination of the last <emphasis>Swift</emphasis> target.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_integral</term>
+	<listitem>
+	  <para>
+	    Time when the last <emphasis>INTEGRAL</emphasis> position information was received.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_integral_position</term>
+	<listitem>
+	  <para>
+	    RA and declination of the last <emphasis>INTEGRAL</emphasis> target.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>not_visible</term>
+	<listitem>
+	  <para>
+	    When true, create target entries even for currently not visible
+	    GRBs. This variable should be set to false, unless you really need
+	    to follow only the GRB which was visible when it was first reported
+	    by GCN.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>only_visible_tonight</term>
+	<listitem>
+	  <para>
+	    When true, only GRBs visible during 
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>min_grb_altitude</term>
+	<listitem>
+	  <para>
+	  </para>
+	</listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
