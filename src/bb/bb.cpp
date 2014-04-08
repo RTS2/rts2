@@ -29,10 +29,12 @@ BB::BB (int argc, char ** argv):
 	rts2db::DeviceDb (argc, argv, DEVICE_TYPE_BB, "BB"),
 	bbApi ("/api", this, this, &task_queue),
 	sched ("/schedules", this, this),
+#ifdef RTS2_HAVE_LIBJPEG
 	jpegRequest ("/jpeg", this, this),
 	jpegPreview ("/preview", this, "/", this),
 	downloadRequest ("/download", this, this),
   	imageReq ("/images", this),
+#endif // RTS2_HAVE_LIBJPEG
 	fitsRequest ("/fits", this, this),
 	javaScriptRequests ("/js", this, this),
 	cssRequests ("/css", this, this),

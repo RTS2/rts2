@@ -96,10 +96,12 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		BBAPI bbApi;
 		SchedReq sched;
 
+#ifdef RTS2_HAVE_LIBJPEG
 		rts2json::JpegImageRequest jpegRequest;
 		rts2json::JpegPreview jpegPreview;
 		rts2json::DownloadRequest downloadRequest;
 		rts2json::ImageReq imageReq;
+#endif // RTS2_HAVE_LIBJPEG
 		rts2json::FitsImageRequest fitsRequest;
 		rts2json::LibJavaScript javaScriptRequests;
 		rts2json::LibCSS cssRequests;
