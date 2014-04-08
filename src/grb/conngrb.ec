@@ -1103,9 +1103,12 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	last_target = new char[d_tar_name.len + 1];
 	strcpy (last_target, d_tar_name.arr);
 	last_target_time = d_grb_update;
+	last_target_type = d_grb_type;
 
 	last_ra = d_grb_ra;
 	last_dec = d_grb_dec;
+
+	last_target_errorbox = grb_errorbox;
 
 	return ret;
 }
@@ -1254,10 +1257,13 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::ValueBool *i
 
 	deltaValue = 0;
 	last_target = NULL;
+	last_target_type = -1;
 	last_target_time = -1;
 
 	last_ra = NAN;
 	last_dec = NAN;
+
+	last_target_errorbox = NAN;
 
 	do_hete_test = in_do_hete_test;
 

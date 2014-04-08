@@ -100,7 +100,9 @@ class Grbd:public rts2db::DeviceDb
 		rts2core::ValueTime *last_packet;
 		rts2core::ValueString *last_target;
 		rts2core::ValueTime *last_target_time;
+		rts2core::ValueInteger *last_target_type;
 		rts2core::ValueRaDec *last_target_radec;
+		rts2core::ValueDouble *last_target_errorbox;
 
 		rts2core::ValueTime *lastSwift;
 		rts2core::ValueRaDec *lastSwiftRaDec;

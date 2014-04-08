@@ -49,7 +49,7 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 	createValue (createDisabled, "create_disabled", "if true, all GRBs will be created disabled, and will not be autoobserved", false, RTS2_VALUE_WRITABLE);
 	createDisabled->setValueBool (false);
 
-	createValue (doHeteTests, "do_hete_tests", "when true, HETE tests notices will be processed", RTS2_VALUE_WRITABLE);
+	createValue (doHeteTests, "do_hete_tests", "when true, HETE tests notices will be processed", false, RTS2_VALUE_WRITABLE);
 	doHeteTests->setValueBool (false);
 
 	createValue (last_packet, "last_packet", "time from last packet", false);
@@ -57,7 +57,9 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 	createValue (last_target, "last_target", "id of last GRB target", false);
 
 	createValue (last_target_time, "last_target_time", "time of last target", false);
+	createValue (last_target_type, "last_target_type", "type of last target", false);
 	createValue (last_target_radec, "last_target_radec", "coordinates (J2000) of last GRB", false);
+	createValue (last_target_errorbox, "last_target_errorbox", "errorbox of the last target", false, RTS2_DT_DEG_DIST);
 
 	createValue (lastSwift, "last_swift", "time of last Swift position", false);
 	createValue (lastSwiftRaDec, "last_swift_position", "Swift current position", false);
@@ -242,7 +244,9 @@ int Grbd::info ()
 	last_packet->setValueDouble (gcncnn->lastPacket ());
 	last_target->setValueCharArr (gcncnn->lastTarget ());
 	last_target_time->setValueDouble (gcncnn->lastTargetTime ());
+	last_target_type->setValueInteger (gcncnn->lastTargetType ());
 	last_target_radec->setValueRaDec (gcncnn->lastRa (), gcncnn->lastDec ());
+	last_target_errorbox->setValueDouble (gcncnn->lastTargetErrobox ());
 	return DeviceDb::info ();
 }
 

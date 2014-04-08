@@ -52,8 +52,10 @@ class ConnGrb:public rts2core::ConnNoSend
 		double delta ();
 		char *lastTarget ();
 		double lastTargetTime () { return last_target_time; }
+		int lastTargetType () { return last_target_type; }
 		double lastRa () { return last_ra; }
 		double lastDec () { return last_dec; }
+		double lastTargetErrobox () { return last_target_errorbox; }
 
 		void setGbmError (double _error) { gbm_error = _error; }
 		void setGbmRecordAboveError (bool _record) { gbm_record_above = _record; }
@@ -77,8 +79,10 @@ class ConnGrb:public rts2core::ConnNoSend
 		double deltaValue;
 		char *last_target;
 		double last_target_time;
+		int last_target_type;
 		double last_ra;
 		double last_dec;
+		double last_target_errorbox;
 
 		// init listen (listening on given port) and call (try to connect to given
 		// port; there must be GCN packet receiving running on oppoiste side) GCN
