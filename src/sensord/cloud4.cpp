@@ -29,7 +29,7 @@
 #define OPT_HEAT_ON             OPT_LOCAL + 343
 #define OPT_HEAT_DUR            OPT_LOCAL + 344
 #define OPT_TEMP_IN_COEFF       OPT_LOCAL + 345
-#define OPT_USE_AMB             OPT_LOCAL + 346
+#define OPT_TEMP_AMB_COEFF      OPT_LOCAL + 346
 
 namespace rts2sensord
 {
@@ -57,17 +57,22 @@ class Cloud4: public SensorWeather
 
 		virtual void valueChanged (rts2core::Value *value);
 
+		virtual void usage ();
+
 	private:
 		char *device_file;
 		rts2core::ConnSerial *mrakConn;
 
 		rts2core::ValueDoubleStat *tempDiff;
 		rts2core::ValueDoubleStat *tempIn;
-		rts2core::ValueDoubleStat *tempOut;
-		rts2core::ValueDoubleStat *tempOut2;
+		rts2core::ValueDoubleStat *tempSky;
+		rts2core::ValueDoubleStat *tempSky1;
+		rts2core::ValueDoubleStat *tempSky2;
 		rts2core::ValueDoubleStat *tempAmb;
 
 		rts2core::ValueDouble *tempInCoeff;
+		rts2core::ValueDouble *tempAmbCoeff;
+		bool tempInCoeffSet;
 
 		// use this value only for logging to detect if we reported trips
 		double lastTempDiff;
@@ -85,8 +90,6 @@ class Cloud4: public SensorWeather
 		rts2core::ValueTime *heatStateChangeTime;
 		rts2core::ValueInteger *heatInterval;
 		rts2core::ValueInteger *heatDuration;
-
-		rts2core::ValueSelection *baseTemp;
 
 		/**
 		 * Read sensor values.
@@ -113,8 +116,8 @@ int Cloud4::readSensor (bool update)
 		buf_start++;
 
 	// parse response
-	float temp0, temp1, temp2, tempamb;
-	temp2 = tempamb = NAN;
+	float temp0, temp1, temp2, temp_amb, temp_sky;
+	temp2 = temp_amb = NAN;
 	int tno, tstat=1;
 	char checksum;
 	if (strncmp (buf_start, "$M4.0", 5) == 0)
@@ -125,20 +128,19 @@ int Cloud4::readSensor (bool update)
 			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
 			return -1;
 		}
-		if (baseTemp->getValueInteger () == 1)
-		{
-			logStream (MESSAGE_ERROR) << "version 4.0 doesn't have ambient sensor, switched back to TEMP_IN" << sendLog;
-			baseTemp->setValueInteger (0);
-		}
 	}
 	else if (strncmp (buf_start, "$M4.1", 5) == 0)
 	{
-		int x = sscanf (buf_start + 6, "%d %f %f %f %f %*d %*d *%2hhx", &tno, &temp0, &temp1, &temp2, &tempamb, &checksum);
+		int x = sscanf (buf_start + 6, "%d %f %f %f %f %*d %*d *%2hhx", &tno, &temp0, &temp1, &temp2, &temp_amb, &checksum);
 		if (x != 6) 
 		{
 			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
 			return -1;
 		}
+		if (temp2 == -27315) 
+			temp2 = NAN;
+		if (temp_amb == -27315) 
+			temp_amb = NAN;
 	}
 	else
 	{
@@ -158,46 +160,57 @@ int Cloud4::readSensor (bool update)
 
 	temp0 /= 100.0;
 	temp1 /= 100.0;
-	if (!isnan (tempamb))
-		tempamb /= 100.0;
+	if (!isnan (temp2))
+		temp2 /= 100.0;
+	if (!isnan (temp_amb))
+		temp_amb /= 100.0;
 
-	if (baseTemp->getValueInteger () == 1)
-	{
-		if (!isnan (tempamb) && !isnan (temp1))
-			tempDiff->addValue (tempInCoeff->getValueDouble () * tempamb - temp1, 20);
-	}
+	if (!isnan (temp2))
+		temp_sky = (temp1 + temp2) / 2.0;
+	else
+		temp_sky = temp1;
+
+	if (!isnan (temp_amb))
+		tempDiff->addValue (temp_amb * tempAmbCoeff->getValueDouble () + temp0 * tempInCoeff->getValueDouble () - temp_sky, numVal->getValueInteger ());
 	else
 	{
-		if (!isnan (temp0) && !isnan (temp1))
-			tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
+		if (tempInCoeffSet == false)
+		{
+			tempInCoeff->setValueDouble (tempAmbCoeff->getValueDouble ());
+			tempInCoeffSet = true;
+		}
+		tempDiff->addValue (temp0 * tempInCoeff->getValueDouble () - temp_sky, numVal->getValueInteger ());
 	}
-	tempIn->addValue (temp0, 20);
-	tempOut->addValue (temp1, 20);
+
+	tempIn->addValue (temp0, numVal->getValueInteger ());
+	tempSky->addValue (temp_sky, numVal->getValueInteger ());
+	tempSky1->addValue (temp1, numVal->getValueInteger ());
 	if (!isnan (temp2))
 	{
-		if (tempOut2 == NULL)
+		if (tempSky2 == NULL)
 		{
-		 	createValue (tempOut2, "TEMP_OUT2", "temperature outside (second sensor)", true);
-			updateMetaInformations (tempOut2);
+		 	createValue (tempSky2, "TEMP_SKY2", "sky temperature (sensor 2)", false);
+			updateMetaInformations (tempSky2);
 		}
-		tempOut2->addValue (temp2 / 100.0, 20);
+		tempSky2->addValue (temp2, numVal->getValueInteger ());
 	}
-	if (!isnan (tempamb))
+	if (!isnan (temp_amb))
 	{
 		if (tempAmb == NULL)
 		{
 		 	createValue (tempAmb, "TEMP_AMB", "ambient temperature (outside sensor)", true);
 			updateMetaInformations (tempAmb);
 		}
-		tempAmb->addValue (tempamb, 20);
+		tempAmb->addValue (temp_amb, numVal->getValueInteger ());
 	}
 
 
 	tempDiff->calculate ();
 	tempIn->calculate ();
-	tempOut->calculate ();
-	if (tempOut2)
-		tempOut2->calculate ();
+	tempSky->calculate ();
+	tempSky1->calculate ();
+	if (tempSky2)
+		tempSky2->calculate ();
 	if (tempAmb)
 		tempAmb->calculate ();
 
@@ -212,16 +225,22 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	mrakConn = NULL;
 
 	createValue (tempDiff, "TEMP_DIFF", "temperature difference", true);
-	createValue (tempIn, "TEMP_IN", "temperature inside", true);
-	createValue (tempOut, "TEMP_OUT", "temperature outside", true);
+	createValue (tempIn, "TEMP_IN", "temperature inside of the detector", true);
+	createValue (tempSky, "TEMP_SKY", "sky temperature computed from all available sensors", true);
+	createValue (tempSky1, "TEMP_SKY1", "sky temperature (sensor 1)", false);
 
-	tempOut2 = tempAmb = NULL;
+	tempSky2 = tempAmb = NULL;
 
-	createValue (numVal, "num_stat", "number of measurements for weather statistic", false, RTS2_VALUE_WRITABLE);
-	numVal->setValueInteger (20);
+	createValue (numVal, "num_stat", "number of measurements for weather statistics", false, RTS2_VALUE_WRITABLE);
+	numVal->setValueInteger (6);
 
-	createValue (tempInCoeff, "temp_in_coeff", "temperature in coefficient (multiplicator) - TEMP_DIFF = temp_in_coeff * TEMP_IN - TEMP_OUT", false, RTS2_VALUE_WRITABLE);
-	tempInCoeff->setValueDouble (1.0);
+	createValue (tempInCoeff, "temp_in_coeff", "temperature IN coefficient: TEMP_DIFF = temp_in_coeff * TEMP_IN + temp_amb_coeff * TEMP_AMB - TEMP_SKY", false, RTS2_VALUE_WRITABLE);
+	tempInCoeff->setValueDouble (0.0);
+
+	createValue (tempAmbCoeff, "temp_amb_coeff", "temperature AMB coefficient: TEMP_DIFF = temp_in_coeff * TEMP_IN + temp_amb_coeff * TEMP_AMB - TEMP_SKY", false, RTS2_VALUE_WRITABLE);
+	tempAmbCoeff->setValueDouble (1.0);
+
+	tempInCoeffSet = false;
 
 	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true, RTS2_VALUE_WRITABLE);
 	triggerBad->setValueDouble (NAN);
@@ -231,7 +250,7 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 
 	createValue (heater, "HEATER", "heater state", true, RTS2_VALUE_WRITABLE);
 
-	createValue (numberMes, "number_mes", "number of measurements", false);
+	createValue (numberMes, "number_mes", "number of last measurement (internal from cloud device)", false);
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
 
 	createValue (heatStateChangeTime, "heat_state_change_time", "turn heater on until this time", false);
@@ -243,18 +262,14 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false, RTS2_VALUE_WRITABLE);
 	heatDuration->setValueInteger (-1);
 
-	createValue (baseTemp, "outside_temp", "outside temperature selection", false, RTS2_VALUE_WRITABLE);
-	baseTemp->addSelVal ("OUT");
-	baseTemp->addSelVal ("AMB");
-
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
 
-	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turing of the heater");
+	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turning of the heater");
 	addOption (OPT_HEAT_DUR, "heat-duration", 1, "heat duration in seconds");
-	addOption (OPT_TEMP_IN_COEFF, "temp-in-coeff", 1, "temperature coefficient");
-	addOption (OPT_USE_AMB, "use-ambient", 0, "use ambient temperature instead of outside temperature");
+	addOption (OPT_TEMP_IN_COEFF, "temp-in-coeff", 1, "temperature IN coefficient (see definition above), defaults to 0.0");
+	addOption (OPT_TEMP_AMB_COEFF, "temp-amb-coeff", 1, "temperature AMB coefficient (see definition above), defaults to 1.0");
 
 	setIdleInfoInterval (20);
 }
@@ -342,9 +357,10 @@ int Cloud4::processOption (int in_opt)
 			break;
 		case OPT_TEMP_IN_COEFF:
 			tempInCoeff->setValueCharArr (optarg);
+			tempInCoeffSet = true;
 			break;
-		case OPT_USE_AMB:
-			baseTemp->setValueInteger (1);
+		case OPT_TEMP_AMB_COEFF:
+			tempAmbCoeff->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (in_opt);
@@ -387,13 +403,13 @@ int Cloud4::info ()
 		// trips..
 		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
 		{
-			setWeatherTimeout (300, "crossed TRIGBAD");
 			if (getWeatherState () == true)
 			{
 				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
 					<< " trigger: " << triggerBad->getValueDouble ()
 					<< sendLog;
 			}
+			setWeatherTimeout (300, "crossed TRIGBAD");
 			valueError (tempDiff);
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
@@ -409,7 +425,7 @@ int Cloud4::info ()
 		// gray zone - if it's bad weather, keep it bad
 		else if (getWeatherState () == false)
 		{
-			setWeatherTimeout (300, "do not rised above TRIGGOOD");
+			setWeatherTimeout (300, "did not rise above TRIGGOOD");
 			valueWarning (tempDiff);
 		}
 		else
@@ -441,8 +457,19 @@ void Cloud4::valueChanged (rts2core::Value *value)
 			readSensor (false);
 		}
 	}
+	if (value == tempInCoeff)
+		tempInCoeffSet = true;
 	SensorWeather::valueChanged (value);
 }
+
+void Cloud4::usage ()
+{
+	std::cout << "  " << getAppName () << " -f /dev/ttyUSB0 --heat-interval 300 --heat-duration 30 -g 9.0 -b 7.0 --server localhost -d CLOUD" << std::endl;
+			
+	std::cout << "Definition:" << std::endl
+	<< "  TEMP_DIFF = (temp_in_coeff * TEMP_IN) + (temp_amb_coeff * TEMP_AMB) - TEMP_SKY" << std::endl;
+}
+
 
 int main (int argc, char **argv)
 {
