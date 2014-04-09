@@ -28,15 +28,10 @@ import psutil
 import numpy as np
 import copy
 
-
-
 from rts2saf.fitfunction import  FitFunction
 from rts2saf.fitdisplay import FitDisplay
 from rts2saf.data import DataFitFwhm,DataFitFlux,ResultFit, ResultMeans
 from rts2saf.ds9region import Ds9DisplayThread
-
-
-
 
 class SimpleAnalysis(object):
     """Analysis of extremes of FWHM and optionally of flux.
@@ -217,7 +212,6 @@ class SimpleAnalysis(object):
         elif self.Ds9Display and not self.xdisplay:
             self.logger.warn('analyze: OOOOOOOOPS, no ds9 display available')
 
-
         ft=FitDisplay(date = self.date, logger=self.logger)
 
         if self.i_flux is None:
@@ -289,6 +283,7 @@ class CatalogAnalysis(object):
         self.logger=logger
         self.criteriaModule=None
         self.cr=None
+        self.i_flux=None
 
 
     def _loadCriteria(self):
@@ -312,18 +307,28 @@ class CatalogAnalysis(object):
         for dSx in self.dataSxtr:
             adSx=copy.deepcopy(dSx)
             acceptedDataSxtr.append(adSx)
-            adSx.catalog= list(ifilter(self.cr.decide, dSx.catalog))
+            adSx.catalog= list(ifilter(self.cr.decide, adSx.catalog))
             nsFwhm=np.asarray([x[i_f] for x in adSx.catalog])
             adSx.fwhm=numpy.median(nsFwhm)
             adSx.stdFwhm=numpy.std(nsFwhm)
+            try:
+                i_flux = adSx.fields.index('FLUX_MAX')
+            except:
+                pass
+
+            if self.i_flux!=None:
+                adSx.fillFlux(i_flux=i_flux, logger=self.logger) #
 
             rdSx=copy.deepcopy(dSx)
             rejectedDataSxtr.append(rdSx)
-            rdSx.catalog=  list(ifilterfalse(self.cr.decide, dSx.catalog))
+            rdSx.catalog=  list(ifilterfalse(self.cr.decide, rdSx.catalog))
 
             nsFwhm=np.asarray([ x[i_f] for x in  rdSx.catalog])
             rdSx.fwhm=numpy.median(nsFwhm)
             rdSx.stdFwhm=numpy.std(nsFwhm)
+
+            if self.i_flux!=None:
+                rdSx.fillFlux(i_flux=i_flux, logger=self.logger) #
 
         # 
         an=SimpleAnalysis(
@@ -338,11 +343,7 @@ class CatalogAnalysis(object):
             logger=self.logger)
 
         accRFtFwhm, accRMnsFwhm, accRFtFlux, accRMnsFlux=an.analyze()
-        try:
-            self.logger.debug( 'ACCEPTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {0:5.1f}'.format(accRFtFwhm.weightedMeanObjects, accRFtFwhm.weightedMeanCombined, accRFtFwhm.minFitPos, accRFtFwhm.minFitFwhm))
-        except:
-            self.logger.debug('ACCEPTED: fit and calculation failed')
-            
+
         if self.Ds9Display or self.FitDisplay:
             if accRFtFwhm.fitFlag:
                 an.display()
@@ -358,14 +359,11 @@ class CatalogAnalysis(object):
             logger=self.logger)
 
         rejRFtFwhm, recRMnsFwhm, rejRFtFlux, recRMnsFlux=an.analyze()
-        try:
-            self.logger.debug( 'REJECTED: weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(rejRFtFwhm.weightedMeanObjects, rejRFtFwhm.weightedMeanCombined, rejRFtFwhm.minFitPos, rejRFtFwhm.minFitFwhm))
-        except:
-            self.logger.debug('REJECTED: fit and calculation failed')
 
-        if self.Ds9Display or self.FitDisplay:
-            if accRFtFwhm.fitFlag:
-                an.display()
+#        if self.Ds9Display or self.FitDisplay:
+#            if accRFtFwhm.fitFlag:
+#                an.display()
+                
         # 
         an=SimpleAnalysis(
             debug=self.debug, 
@@ -374,19 +372,14 @@ class CatalogAnalysis(object):
             Ds9Display=self.Ds9Display, 
             FitDisplay=self.FitDisplay, 
             focRes=self.focRes, 
-            ev=self.ev, 
+           ev=self.ev, 
             logger=self.logger)
 
         allRFtFwhm, allRMnsFwhm, allRFtFlux, allRMnsFlux=an.analyze()
-        try:
-            self.logger.debug( 'ALL    : weightedMeanObjects: {0:5.1f}, weightedMeanCombined: {1:5.1f}, minFitPos: {2:5.1f}, minFitFwhm: {3:5.1f}'.format(allRFtFwhm.weightedMeanObjects, allRFtFwhm.weightedMeanCombined, allRFtFwhm.minFitPos, allRFtFwhm.minFitFwhm))
-        except:
-            self.logger.debug('ALL     : fit and calculation failed')
-
-
-        if self.Ds9Display or self.FitDisplay:
-            if accRFtFwhm.fitFlag:
-                an.display()
+#
+#        if self.Ds9Display or self.FitDisplay:
+#            if accRFtFwhm.fitFlag:
+#                an.display()
         # ToDo here are three objects
         # ToDo expand to Flux
         return accRFtFwhm, rejRFtFwhm, allRFtFwhm, accRMnsFwhm, recRMnsFwhm, allRMnsFwhm

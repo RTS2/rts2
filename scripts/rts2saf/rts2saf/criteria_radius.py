@@ -45,8 +45,7 @@ class Criteria(object):
             self.radius= rds/self.dataSxtr[0].binningXY[0] 
         else:
             # everything should come
-            self.radius=pow(self.dataSxtr[0].naxis1, 2) + pow(self.dataSxtr[0].naxis2, 2)
-        
+            self.radius = math.sqrt(pow(self.dataSxtr[0].naxis1, 2) + pow(self.dataSxtr[0].naxis2, 2))
 
     def decide(self, catalogEntry=None):
         """Decide if criteria is met.

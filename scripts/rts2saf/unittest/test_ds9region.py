@@ -22,7 +22,7 @@ from ds9 import *
 from rts2saf.config import Configuration 
 from rts2saf.data import DataSxtr
 from rts2saf.sextract import Sextract
-from rts2saf.ds9region import Ds9Region
+from rts2saf.ds9region import Ds9DisplayThread
 
 
 import logging
@@ -59,7 +59,7 @@ class TestDs9Region(unittest.TestCase):
     #@unittest.skip('feature not yet implemented')
     def test_displayWithRegion(self):
         logger.info('== {} =='.format(self._testMethodName))
-        ds9r=Ds9Region(dataSxtr=self.dSx, display=self.dds9, logger=logger)
+        ds9r=Ds9DisplayThread(dataSxtr=self.dSx, logger=logger)
 
         self.assertTrue( ds9r, 'return value: '.format(type(DataSxtr)))
 

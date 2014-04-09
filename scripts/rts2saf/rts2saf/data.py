@@ -139,7 +139,7 @@ class ResultMeans(object):
     def __init__(self, dataFit=None, logger=None):
         self.dataFit=dataFit
         self.logger=logger
-        self.objects=None
+        self.nmbrObjects=None
         self.val=None
         self.stdVal=None
         self.combined=None
@@ -170,12 +170,12 @@ class ResultMeans(object):
         """
         #Weighted means based on number of extracted objects (stars)
         try:
-            self.objects= np.average(a=self.posC, axis=0, weights=self.nObjsC)
+            self.nmbrObjects= np.average(a=self.posC, axis=0, weights=self.nObjsC)
         except Exception, e:
             self.logger.warn('ResultMeans: can not calculate weightedMeanObjects:\n{0}'.format(e))
 
         try:
-            self.logger.info('ResultMeans: FOC_DEF: {0:5d} : weighted mean derived from sextracted objects'.format(int(self.objects)))
+            self.logger.info('ResultMeans: FOC_DEF: {0:5d} : weighted mean derived from sextracted objects'.format(int(self.nmbrObjects)))
         except Exception, e:
             self.logger.warn('ResultMeans: can not convert weightedMeanObjects:\n{0}'.format(e))
         # Weighted mean based on median FWHM, Flux
@@ -222,8 +222,8 @@ class ResultMeans(object):
     def logWeightedMeans(self, ftw=None, ft=None):
         """Log  weighted means to file. 
         """
-        if self.objects:
-            self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(self.objects, ftw.name, ft.name))
+        if self.nmbrObjects:
+            self.logger.info('Focus: {0:5.0f}: weightmedMeanObjects, filter wheel:{1}, filter:{2}'.format(self.nmbrObjects, ftw.name, ft.name))
             if self.val:
                 self.logger.info('Focus: {0:5.0f}: weightedMeanFwhm,     filter wheel:{1}, filter:{2}'.format(self.val, ftw.name, ft.name))
 

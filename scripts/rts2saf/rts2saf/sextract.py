@@ -108,7 +108,8 @@ class Sextract(object):
             ambientTemp='NoTemp'
 
         try:
-            binning = float(hdr[self.rt.cfg['BINNING']])
+            binning = float(self.rt.cfg[hdr[self.rt.cfg['BINNING']]])
+            if self.debug: self.logger.debug( 'sextract: binning: {0}'.format(binning))
         except:
             # if CatalogAnalysis is done
             binning=None
@@ -118,6 +119,7 @@ class Sextract(object):
             binningXY=list()
             try:
                 binningXY.append(float(hdr[self.rt.cfg['BINNING_X']]))
+                if self.debug: self.logger.debug( 'sextract: binningXY: {0}'.format(float(hdr[self.rt.cfg['BINNING_X']])))
             except:
                 # if CatalogAnalysis is done
                 if self.debug: self.logger.warn( 'sextract: no x-binning information found, {0}'.format(fitsFn, focPos, objectCount))

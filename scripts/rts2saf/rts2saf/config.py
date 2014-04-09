@@ -115,9 +115,9 @@ class DefaultConfiguration(object):
         self.dcf[('SExtractor', 'STARNNW_NAME')]= '/usr/local/etc/rts2/rts2saf/rts2saf-sex.nnw'
         # ToDo so far that is good for FLI CCD
         # These factors are used for the fitting
-        self.dcf[('ccd binning mapping', '1x1')] = 0
-        self.dcf[('ccd binning mapping', '2x2')] = 1
-        self.dcf[('ccd binning mapping', '4x4')] = 2
+        self.dcf[('ccd binning mapping', '1x1')] = 1
+        self.dcf[('ccd binning mapping', '2x2')] = 2
+        self.dcf[('ccd binning mapping', '4x4')] = 4
 
         self.dcf[('ccd', 'CCD_NAME')]= 'CD'
         self.dcf[('ccd', 'CCD_BINNING')]= '1x1'
