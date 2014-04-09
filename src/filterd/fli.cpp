@@ -20,6 +20,8 @@
 #include "libfli.h"
 #include "libfli-filter-focuser.h"
 
+#define OPT_FLI_DEFAULT_FILTER             OPT_LOCAL + 270
+
 namespace rts2filterd
 {
 
@@ -47,6 +49,7 @@ class Fli:public Filterd
 		long filter_count;
 
 		int fliDebug;
+		rts2core::ValueInteger *defaultFilterPosition;
 };
 
 }
@@ -60,9 +63,13 @@ Fli::Fli (int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 	name = NULL;
 	dev = -1;
 
+	defaultFilterPosition = NULL;
+
 	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 	addOption ('f', NULL, 1, "FLI device path");
+
+	addOption (OPT_FLI_DEFAULT_FILTER, "default-filter", 1, "default filter position (number), is set after init and during day");
 }
 
 Fli::~Fli (void)
@@ -105,6 +112,11 @@ int Fli::processOption (int in_opt)
 			break;
 		case 'f':
 			name = optarg;
+			break;
+		case OPT_FLI_DEFAULT_FILTER:
+			createValue (defaultFilterPosition, "default_filter", "default filter position after init and during day", false);
+			defaultFilterPosition->setValueCharArr (optarg);
+
 			break;
 		default:
 			return Filterd::processOption (in_opt);
@@ -167,6 +179,8 @@ int Fli::initHardware ()
 
 	std::cerr << "filter count" << filter_count << std::endl;
 
+	homeFilter ();
+
 	return 0;
 }
 
@@ -223,7 +237,7 @@ int Fli::setFilterNum (int new_filter)
 
 int Fli::homeFilter ()
 {
-	return setFilterNum (FLI_FILTERPOSITION_HOME);
+	return setFilterNum (defaultFilterPosition != NULL? defaultFilterPosition->getValueInteger () : FLI_FILTERPOSITION_HOME);
 }
 
 int main (int argc, char **argv)
