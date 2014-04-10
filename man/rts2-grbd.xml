@@ -352,6 +352,14 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
+        <term>last_target_id</term>
+	<listitem>
+	  <para>
+	    Id of the last target. This can be used to query target details in the database.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term>last_target_time</term>
 	<listitem>
 	  <para>
