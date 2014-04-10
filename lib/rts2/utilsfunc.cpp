@@ -429,6 +429,11 @@ double db_nan_double (double value, int ind)
 	return ind ? NAN : value;
 }
 
+float db_nan_float (float value, int ind)
+{
+	return ind ? NAN : value;
+}
+
 void getNight (time_t curr_time, struct ln_lnlat_posn *observer, double nightHorizon, time_t &nstart, time_t &nstop)
 {
 	time_t nt = curr_time;

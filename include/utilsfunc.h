@@ -348,6 +348,8 @@ int db_nan_indicator (double value);
  */
 double db_nan_double (double value, int ind);
 
+float db_nan_float (float value, int ind);
+
 /**
  * Return next night start/stop times.
  */
