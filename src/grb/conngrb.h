@@ -51,6 +51,7 @@ class ConnGrb:public rts2core::ConnNoSend
 		double lastPacket ();
 		double delta ();
 		char *lastTarget ();
+		int lastTargetId () { return last_target_id; }
 		double lastTargetTime () { return last_target_time; }
 		int lastTargetType () { return last_target_type; }
 		double lastRa () { return last_ra; }
@@ -78,6 +79,7 @@ class ConnGrb:public rts2core::ConnNoSend
 
 		double deltaValue;
 		char *last_target;
+		int last_target_id;
 		double last_target_time;
 		int last_target_type;
 		double last_ra;

@@ -1102,6 +1102,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	delete[] last_target;
 	last_target = new char[d_tar_name.len + 1];
 	strcpy (last_target, d_tar_name.arr);
+	last_target_id = d_tar_id;
 	last_target_time = d_grb_update;
 	last_target_type = d_grb_type;
 
@@ -1257,6 +1258,7 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::ValueBool *i
 
 	deltaValue = 0;
 	last_target = NULL;
+	last_target_id = -1;
 	last_target_type = -1;
 	last_target_time = NAN;
 

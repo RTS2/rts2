@@ -54,7 +54,8 @@ Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE
 
 	createValue (last_packet, "last_packet", "time from last packet", false);
 
-	createValue (last_target, "last_target", "id of last GRB target", false);
+	createValue (last_target, "last_target", "name of the last GRB target", false);
+	createValue (last_target_id, "last_target_id", "ID of the last GRB target", false);
 
 	createValue (last_target_time, "last_target_time", "time of last target", false);
 	createValue (last_target_type, "last_target_type", "type of last target", false);
@@ -133,7 +134,6 @@ int Grbd::processOption (int in_opt)
 int Grbd::reloadConfig ()
 {
 	int ret;
-	rts2core::Configuration *config;
 	ret = DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
@@ -242,11 +242,17 @@ void Grbd::help ()
 int Grbd::info ()
 {
 	last_packet->setValueDouble (gcncnn->lastPacket ());
+	
 	last_target->setValueCharArr (gcncnn->lastTarget ());
-	last_target_time->setValueDouble (gcncnn->lastTargetTime ());
-	last_target_type->setValueInteger (gcncnn->lastTargetType ());
-	last_target_radec->setValueRaDec (gcncnn->lastRa (), gcncnn->lastDec ());
-	last_target_errorbox->setValueDouble (gcncnn->lastTargetErrobox ());
+	if (last_target_id->getValueInteger () != gcncnn->lastTargetId () || last_target_errorbox->getValueDouble () > gcncnn->lastTargetErrobox ())
+	{
+		last_target_id->setValueInteger (gcncnn->lastTargetId ());
+		last_target_time->setValueDouble (gcncnn->lastTargetTime ());
+		last_target_type->setValueInteger (gcncnn->lastTargetType ());
+		last_target_radec->setValueRaDec (gcncnn->lastRa (), gcncnn->lastDec ());
+		last_target_errorbox->setValueDouble (gcncnn->lastTargetErrobox ());
+	}
+
 	return DeviceDb::info ();
 }
 
