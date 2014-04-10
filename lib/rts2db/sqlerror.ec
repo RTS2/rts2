@@ -27,6 +27,8 @@ using namespace rts2db;
 
 SqlError::SqlError ()
 {
+	sqlcode = sqlca.sqlcode;
+
 	std::ostringstream _os;
 	_os << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
@@ -37,6 +39,8 @@ SqlError::SqlError ()
 
 SqlError::SqlError (const char *sqlmsg)
 {
+	sqlcode = sqlca.sqlcode;
+
 	std::ostringstream _os;
 	_os << sqlmsg << ":" << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());

@@ -27,7 +27,7 @@ using namespace rts2plan;
 
 int qid_seq = 0;
 
-QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, double _t_start, double _t_end, int _plan_id, bool _hard, bool _persistent):QueueEntry (0, _queue_id)
+QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, double _t_start, double _t_end, int _rep_n, float _rep_separation, int _plan_id, bool _hard, bool _persistent):QueueEntry (0, _queue_id)
 {
 	target = _target;
 
@@ -37,6 +37,9 @@ QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, do
 	plan_id = _plan_id;
 	tar_id = target->getTargetID ();
 	hard = _hard;
+	rep_n = _rep_n;
+	rep_separation = _rep_separation;
+
 	unobservable_reported = false;
 
 	create ();
@@ -529,7 +532,9 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false);
 	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false);
 	master->createValue (nextHard, (sn + "_hard").c_str (), "hard/soft interruption", false, read_only_fl | RTS2_DT_ONOFF);
-	master->createValue (queueEntry, (sn + "_qid").c_str (), "private queue entry", false);
+	master->createValue (queueEntry, (sn + "_qid").c_str (), "private queue ID", false);
+	master->createValue (repN, (sn + "_rep_n").c_str (), "number of repeats", false);
+	master->createValue (repSeparation, (sn + "_rep_separation").c_str (), "[s] seperation of queue entry repeats", false, RTS2_DT_TIMEINTERVAL);
 
 	master->createValue (removedIds, (sn + "_removed_ids").c_str (), "removed observation IDS", false);
 	master->createValue (removedNames, (sn + "_removed_names").c_str (), "names of removed IDS", false);
@@ -620,9 +625,9 @@ int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 	return qt.qid;
 }
 
-int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int index, int plan_id, bool hard, bool persistent)
+int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int index, int rep_n, float rep_separation, int plan_id, bool hard, bool persistent)
 {
-  	QueuedTarget qt (queue_id, nt, t_start, t_end, plan_id, hard, persistent);
+  	QueuedTarget qt (queue_id, nt, t_start, t_end, rep_n, rep_separation, plan_id, hard, persistent);
 	insert (findIndex (index), qt);
 	updateVals ();
 	return qt.qid;
@@ -644,7 +649,7 @@ int ExecutorQueue::removeIndex (int index)
 	return 0;
 }
 
-int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start, double t_end, int plan_id, bool hard)
+int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start, double t_end, int rep_n, float rep_separation, int plan_id, bool hard)
 {
 	// find entry in queue to put target
 	double now = n_start;
@@ -688,7 +693,7 @@ int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_s
 		now = to;
 	}
 	// if everything fails, add target to the end
-	addTarget (nt, t_start, t_end, -1, plan_id, hard);
+	addTarget (nt, t_start, t_end, rep_n, rep_separation, plan_id, hard);
 	updateVals ();
 	return 0;
 }
@@ -972,6 +977,8 @@ void ExecutorQueue::updateVals ()
 	std::vector <double> _end_arr;
 	std::vector <int> _plan_arr;
 	std::vector <bool> _hard_arr;
+	std::vector <int> _rep_n;
+	std::vector <double> _rep_separation;
 
 	int order = 0;
 
@@ -987,6 +994,8 @@ void ExecutorQueue::updateVals ()
 		_end_arr.push_back (iter->t_end);
 		_plan_arr.push_back (iter->plan_id);
 		_hard_arr.push_back (iter->hard);
+		_rep_n.push_back (iter->rep_n);
+		_rep_separation.push_back (iter->rep_separation);
 
 		iter->queue_order = order;
 
@@ -1019,6 +1028,8 @@ void ExecutorQueue::updateVals ()
 	nextPlanIds->setValueArray (_plan_arr);
 	nextHard->setValueArray (_hard_arr);
 	queueEntry->setValueArray (_qid_arr);
+	repN->setValueArray (_rep_n);
+	repSeparation->setValueArray (_rep_separation);
 
 	master->sendValueAll (nextIds);
 	master->sendValueAll (nextNames);
@@ -1027,6 +1038,8 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextPlanIds);
 	master->sendValueAll (nextHard);
 	master->sendValueAll (queueEntry);
+	master->sendValueAll (repN);
+	master->sendValueAll (repSeparation);
 
 	master->sendValueAll (sumWest);
 	master->sendValueAll (sumEast);

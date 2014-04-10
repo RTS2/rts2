@@ -51,7 +51,7 @@ typedef enum { REMOVED_TIMES_EXPIRED = -1, REMOVED_STARTED = 1, REMOVED_NEXT_NEE
 class QueuedTarget:public rts2db::QueueEntry
 {
 	public:
-		QueuedTarget (unsigned int queue_id, rts2db::Target * _target, double _t_start = NAN, double _t_end = NAN, int _plan_id = -1, bool _hard = false, bool persistent = true);
+		QueuedTarget (unsigned int queue_id, rts2db::Target * _target, double _t_start = NAN, double _t_end = NAN, int _rep_n = -1, float _rep_separation = NAN, int _plan_id = -1, bool _hard = false, bool persistent = true);
 
 		QueuedTarget (unsigned int queue_id, unsigned int qid, struct ln_lnlat_posn *observer);
 
@@ -259,7 +259,7 @@ class ExecutorQueue:public TargetQueue
 		 *
 		 * @return Inserted queue ID.
 		 */
-		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int index = -1, int plan_id = -1, bool hard = false, bool persistent = true);
+		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int index = -1, int rep_n = -1, float rep_separation = NAN, int plan_id = -1, bool hard = false, bool persistent = true);
 
 		/**
 		 * Remove entry with given index from the queue.
@@ -269,7 +269,7 @@ class ExecutorQueue:public TargetQueue
 		/**
 		 * Add target to the first possible position.
 		 */
-		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = NAN, double t_end = NAN, int plan_id = -1, bool hard = false);
+		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = NAN, double t_end = NAN, int rep_n = -1, float rep_separation = NAN, int plan_id = -1, bool hard = false);
 
 		/**
 		 * Do not delete pointer to this target, as it is used somewhere else.
@@ -357,6 +357,8 @@ class ExecutorQueue:public TargetQueue
 		rts2core::IntegerArray *nextPlanIds;
 		rts2core::BoolArray *nextHard;
 		rts2core::IntegerArray *queueEntry;
+		rts2core::IntegerArray *repN;
+		rts2core::DoubleArray *repSeparation;
 
 		rts2core::IntegerArray *removedIds;
 		rts2core::StringArray *removedNames;

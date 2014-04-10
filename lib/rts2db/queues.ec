@@ -32,6 +32,9 @@ QueueEntry::QueueEntry (unsigned int _qid, int _queue_id)
 	t_start = NAN;
 	t_end = NAN;
 
+	rep_n = -1;
+	rep_separation = NAN;
+
 	queue_order = -1;
 }
 
@@ -48,6 +51,9 @@ void QueueEntry::load ()
 	int db_time_start_ind;
 	int db_time_end_ind;
 	int db_queue_order;
+	int db_rep_n;
+	float db_rep_separation;
+	int db_rep_separation_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	if (queue_id < 0)
@@ -59,14 +65,18 @@ void QueueEntry::load ()
 		plan_id,
 		EXTRACT (EPOCH FROM time_start),
 		EXTRACT (EPOCH FROM time_end),
-		queue_order
+		queue_order,
+		repeat_n,
+		repeat_separation
 	INTO
 		:db_queue_id,
 		:db_tar_id,
 		:db_plan_id :db_plan_id_ind,
 		:db_time_start :db_time_start_ind,
 		:db_time_end :db_time_end_ind,
-		:db_queue_order
+		:db_queue_order,
+		:db_rep_n,
+		:db_rep_separation :db_rep_separation_ind
 	FROM
 		queues_targets
 	WHERE
@@ -82,6 +92,9 @@ void QueueEntry::load ()
 
 	t_start = db_nan_double (db_time_start, db_time_start_ind);
 	t_end = db_nan_double (db_time_end, db_time_end_ind);
+
+	rep_n = db_rep_n;
+	rep_separation = db_nan_float (db_rep_separation, db_rep_separation_ind);
 
 	queue_order = db_queue_order;
 }
@@ -121,6 +134,9 @@ void QueueEntry::create ()
 	int db_time_start_ind = db_nan_indicator (t_start);
 	int db_time_end_ind = db_nan_indicator (t_end);
 	int db_queue_order = queue_order;
+	int db_rep_n = rep_n;
+	float db_rep_separation = rep_separation;
+	int db_rep_separation_ind = db_nan_indicator (rep_separation);
 	EXEC SQL END DECLARE SECTION;
 
 	if (queue_id < 0)
@@ -133,7 +149,9 @@ void QueueEntry::create ()
 		plan_id,
 		time_start,
 		time_end,
-		queue_order)
+		queue_order,
+		repeat_n,
+		repeat_separation)
 	VALUES (
 		:db_qid,
 		:db_queue_id,
@@ -141,7 +159,9 @@ void QueueEntry::create ()
 		:db_plan_id :db_plan_id_ind,
 		to_timestamp (:db_time_start :db_time_start_ind),
 		to_timestamp (:db_time_end :db_time_end_ind),
-		:db_queue_order
+		:db_queue_order,
+		:db_rep_n,
+		:db_rep_separation :db_rep_separation_ind
 	);
 	if (sqlca.sqlcode)
 		throw SqlError ();
@@ -162,6 +182,9 @@ void QueueEntry::update ()
 	int db_time_start_ind = db_nan_indicator (t_start);
 	int db_time_end_ind = db_nan_indicator (t_end);
 	int db_queue_order = queue_order;
+	int db_rep_n = rep_n;
+	float db_rep_separation = rep_separation;
+	int db_rep_separation_ind = db_nan_indicator (rep_separation);
 	EXEC SQL END DECLARE SECTION;
 
 	if (queue_id < 0)
@@ -175,7 +198,9 @@ void QueueEntry::update ()
 		plan_id = :db_plan_id :db_plan_id_ind,
 		time_start = to_timestamp (:db_time_start :db_time_start_ind),
 		time_end = to_timestamp (:db_time_end :db_time_end_ind),
-		queue_order = :db_queue_order
+		queue_order = :db_queue_order,
+		repeat_n = :db_rep_n,
+		repeat_separation = :db_rep_separation :db_rep_separation_ind
 	WHERE
 		qid = :db_qid;
 	if (sqlca.sqlcode)

@@ -50,6 +50,8 @@ class QueueEntry
 			plan_id = qt.plan_id;
 			t_start = qt.t_start;
 			t_end = qt.t_end;
+			rep_n = qt.rep_n;
+			rep_separation = qt.rep_separation;
 
 			queue_order = qt.queue_order;
 		}
@@ -98,6 +100,9 @@ class QueueEntry
 		int plan_id;		//* Can reference to entry in plan table
 		double t_start;		//* Start time for queue entry, can be NAN
 		double t_end;		//* End time for queue entry, can be NAN
+
+		int rep_n;		//* Number of allowed target repetitions. -1 for no repeating. The number gets decreased once the target is observed
+		float rep_separation;	//* Interval of the allowed target repetitions. NAN is for unspecified, >= 0 is in seconds. This is used to set t_start accordingly
 
 		int queue_order;	//* Number inside queue. Used for correct order of queue entries
 };
