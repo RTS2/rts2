@@ -1258,7 +1258,7 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::ValueBool *i
 	deltaValue = 0;
 	last_target = NULL;
 	last_target_type = -1;
-	last_target_time = -1;
+	last_target_time = NAN;
 
 	last_ra = NAN;
 	last_dec = NAN;
