@@ -486,7 +486,7 @@ void Executor::postEvent (rts2core::Event * event)
 				(currentTarget) ? currentTarget->getAcquired () : -2;
 			break;
 	}
-	rts2core::Device::postEvent (event);
+	rts2db::DeviceDb::postEvent (event);
 }
 
 void Executor::deviceReady (rts2core::Connection * conn)
