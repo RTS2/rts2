@@ -14,7 +14,7 @@
   %rts2;
 ]>
 
-<refentry>
+<refentry xmlns:xlink="http://www.w3.org/1999/xlink">
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
@@ -99,14 +99,14 @@
       </varlistentry>
       <varlistentry>
 	<para>if
-	<citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	<citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>
 	is running, passes GRB ID to it, with <emphasis>grb</emphasis> command.</para>
       </varlistentry>
       <varlistentry>
         <para>if the <emphasis>--add-exec</emphasis> parameter was specified, executes the given script with arguments describing the GRB target.</para>
       </varlistentry>
       <varlistentry>
-        <para>if the <emphasis>--queue-to</emphasis> parameter was specified, adds the GRB to the given <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>5</manvolnum></citerefentry> queue.</para>
+        <para>if the <emphasis>--queue-to</emphasis> parameter was specified, adds the GRB to the given <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>7</manvolnum></citerefentry> queue.</para>
       </varlistentry>
     </variablelist>
     <para>
@@ -115,6 +115,38 @@
       about one third are detected. It is reasonable to expect one GRB per
       week, and about one GRB per month which will be visible during night from
       your observing site.
+    </para>
+    <para>
+      &dhpackage; creates targets in the RTS2 database before sending them to
+      the
+      <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+      Therefore, the database shall be operational when &dhpackage; is running.
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Troubleshooting</title>
+    <para>
+      If you cannot receive any GRB alerts, make sure the following is fullfilled:
+      <variablelist>
+        <varlistentry>
+          <para>
+	    Connection to GCN is setup and running. Bear in mind you need to
+	    contact NASA/GSFC to setup such connection, and also make sure the
+            connection made it through your observatory firewalls.
+          </para>
+        </varlistentry>
+        <varlistentry>
+          <para>
+            The <emphasis>last_packet</emphasis> is updated every 60 seconds. If it is not updated, GCN connection is not running. Check
+            firewall settings and NASA's GCN settings, available at <link xlink:href="http://gcn.gsfc.nasa.gov/sites_cfg.html">GCN</link>.
+          </para>
+        </varlistentry>
+        <varlistentry>
+          <para>
+            RTS2 database is correctly setup. Please see database logs if in doubts.
+          </para>
+        </varlistentry>
+      </variablelist>
     </para>
   </refsect1>
   <refsect1 id="options">
@@ -152,7 +184,7 @@
         <listitem>
           <para>
 	    Queue GRB target to queue. If
-	    <citerefentry><citerefentry>rts2-executor</citerefentry><manvolnum>1</manvolnum></citerefentry>
+	    <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>
 	    is running, it will still be notified about GRB via its
 	    <emphasis>grb</emphasis> command. Then queue specified as argument
 	    will be notified through <emphasis>now</emphasis> command.
@@ -173,7 +205,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--test</option></term>
+        <term><option>--do-hete-test</option></term>
         <listitem>
           <para>If set, GCN test routines will be processed, writen to database and executed.</para>
         </listitem>
@@ -286,7 +318,7 @@
 	  <para>
 	    When set to true, GRB will be craeated as disabled targets. So the
 	    GRB targets will not be picked by
-	    <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	    <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -391,6 +423,11 @@
         <term>min_grb_altitude</term>
 	<listitem>
 	  <para>
+	    If the current GRB altitude is greater then this value, it will be
+            send immediately to
+            <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+            using the <emphasis>grb</emphasis> command. Otherwise, the GRB mights still be
+            queued, if the <emphasis>--queue-to</emphasis> option is provided.
 	  </para>
 	</listitem>
       </varlistentry>
