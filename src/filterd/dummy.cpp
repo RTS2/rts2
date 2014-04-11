@@ -30,6 +30,8 @@ class Dummy:public Filterd
 			filterNum = 0;
 			filterSleep = 3;
 			addOption ('s', "filter_sleep", 1, "how long wait for filter change");
+
+			createValue (filterNames, "filter_names", "filter names (will be parsed)", false, RTS2_VALUE_WRITABLE);
 		}
 
 		virtual int processOption (int in_opt)
@@ -46,6 +48,18 @@ class Dummy:public Filterd
 		}
 
 	protected:
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+		{
+			if (old_value == filterNames)
+			{
+				if (setFilters ((char *) (new_value->getValue ())))
+					return -2;
+				updateMetaInformations (old_value);
+				return 0;
+			}
+			return Filterd::setValue (old_value, new_value);
+		}
+
 		virtual int getFilterNum (void)
 		{
 			return filterNum;
@@ -62,14 +76,15 @@ class Dummy:public Filterd
 	private:
 		int filterNum;
 		int filterSleep;
+
+		rts2core::ValueString *filterNames;
 };
 
 };
 
 using namespace rts2filterd;
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Dummy device = Dummy (argc, argv);
 	return device.run ();

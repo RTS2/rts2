@@ -38,7 +38,18 @@ class ConnSitech: public rts2core::ConnSerial
 		 */
 		ConnSitech (const char *devName, rts2core::Block *master);
 
+		virtual int init ();
+
 		void siTechCommand (const char axis, const char *cmd);
+
+		int32_t siTechGetCommand (const char axis, const char *cmd);
+
+		void siTechSetCommand (const char axis, const char *cmd, int value);
+
+	private:
+		void writePortChecksumed (const char *cmd, size_t len);
+
+		uint8_t calculateChecksum (const char *buf, size_t len);
 };
 
 }
