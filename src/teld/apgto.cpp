@@ -1380,7 +1380,7 @@ int APGTO::startDir (char *dir)
 {
   int ret= -1;
  
-  if((ret= tel_start_move (*dir))==0 ) {
+  if((ret= tel_start_slew_move (*dir))==0 ) {
     slew_state->setValueBool(true) ;
   }
 
@@ -1390,7 +1390,7 @@ int APGTO::startDir (char *dir)
 int APGTO::stopDir (char *dir)
 {
   int ret = -1 ;
-  if((ret= tel_stop_move (*dir))==0) {
+  if((ret= tel_stop_slew_move (*dir))==0) {
     slew_state->setValueBool(false) ;
   }
   return ret;
