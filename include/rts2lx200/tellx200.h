@@ -1,7 +1,8 @@
 /* 
- * LX200 protocol abstract class.
+ * Telescope based on LX200 protocol abstract class.
  * Copyright (C) 2009-2010 Markus Wildi
  * Copyright (C) 2010 Petr Kubanek, Institute of Physics
+ * Copyright (C) 2014 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,6 +19,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_TELLX200__
+#define __RTS2_TELLX200__
+
 #include "teld.h"
 #include "connection/serial.h"
 
@@ -29,13 +33,16 @@ namespace rts2teld
  * If command is passed as parameter, it must be a full LX200 command,
  * including end #.
  *
- * @author Markus Wildi @author Petr Kubanek
+ * @author Markus Wildi
+ * @author Petr Kubanek
  */
 class TelLX200:public Telescope
 {
 	public:
 		TelLX200 (int argc, char **argv);
 		virtual ~TelLX200 (void);
+
+		rts2core::ConnSerial *getSerialConn () { return serConn; }
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -188,3 +195,5 @@ class TelLX200:public Telescope
 };
 
 }
+
+#endif // __RTS2_TELLX200__

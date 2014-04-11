@@ -41,6 +41,18 @@ class Focusd:public rts2core::Device
 	public:
 		Focusd (int argc, char **argv);
 
+		/**
+		 * Provides estimate for the offseting duration, based on
+		 * offseting speed.
+		 *
+		 * @return Number of seconds to move for the required steps number.
+		 */
+		float estimateOffsetDuration (float offset)
+		{
+			if (speed->getValueDouble () > 0)
+				return offset / speed->getValueDouble ();
+			return 0;
+		}
 		int setPosition (float num);
 
 		float getPosition ()
@@ -63,6 +75,8 @@ class Focusd:public rts2core::Device
 		rts2core::ValueDoubleMinMax *filterOffset;
 		rts2core::ValueDoubleMinMax *focusingOffset;
 		rts2core::ValueDoubleMinMax *tempOffset;
+
+		rts2core::ValueDouble *speed;
 
 		virtual int processOption (int in_opt);
 
@@ -105,6 +119,11 @@ class Focusd:public rts2core::Device
 		// callback functions from focuser connection
 		virtual int initValues ();
 		virtual int idle ();
+
+		/**
+		 * Set focuser movement speed. Speed is specified in number of steps per second.
+		 */
+		void setSpeed (double _speed) { speed->setValueDouble (_speed); }
 	private:
 		time_t focusTimeout;
 };

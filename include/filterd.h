@@ -68,15 +68,16 @@ class Filterd:public rts2core::Device
 
 		void addFilter (const char *new_filter) { filter->addSelVal (new_filter); }
 
-	private:
-		rts2core::ValueSelection *filter;
-
 		/**
 		 * Set filter names from space separated argument list.
 		 *
 		 * @return -1 on error, otherwise 0.
 		 */
 		int setFilters (char *filters);
+
+	private:
+		rts2core::ValueSelection *filter;
+
 		int setFilterNumMask (int new_filter);
 };
 

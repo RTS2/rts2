@@ -38,7 +38,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 */
 		ConnSitech (const char *devName, rts2core::Block *master);
 
-		void sendCommand (const char axis, const char *cmd);
+		void siTechCommand (const char axis, const char *cmd);
 };
 
 }

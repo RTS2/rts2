@@ -35,6 +35,9 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true, RTS2_VALUE_WRITABLE);
 	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true, RTS2_VALUE_WRITABLE);
 
+	createValue (speed, "foc_speed", "[steps/sec] speed of focuser movement", false);
+	speed->setValueDouble (0);
+
 	filterOffset->setValueDouble (0);
 	focusingOffset->setValueDouble (0);
 	tempOffset->setValueDouble (0);
@@ -115,7 +118,7 @@ int Focusd::setPosition (float num)
 	int ret;
 	target->setValueDouble (num);
 	sendValueAll (target);
-	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started");
+	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started", estimateOffsetDuration (num));
 	logStream (MESSAGE_INFO) << "changing focuser position to " << num << sendLog;
 	if ((!isnan (getFocusMin ()) && num < getFocusMin ()) || (!isnan (getFocusMax ()) && num > getFocusMax ()))
 	{

@@ -130,7 +130,7 @@ class Sitech:public GEM
 		}
 
 	private:
-		rts2core::ConnSerial *serConn;
+		ConnSitech *serConn;
 
 		double SiteLatitude;         /* Latitude in degrees + north */  
 		double SiteLongitude;        /* Longitude in degrees + west */ 
@@ -213,17 +213,17 @@ using namespace rts2teld;
 
 /* Full stop */
 void Sitech:: FullStop(void)
-{  
-	char slewcmd[32] = "";
-	
-	sprintf (slewcmd,"XN\r");
-	serConn->flushPortIO ();
-	serConn->writePort (slewcmd,3);
-	usleep (100000);
-	sprintf (slewcmd,"YN\r");
-	serConn->flushPortIO ();
-	serConn->writePort (slewcmd,3);
-	return;
+{ 
+	try
+	{
+		serConn->siTechCommand ('X', "N");
+		usleep (100000);
+		serConn->siTechCommand ('Y', "N");
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot send full stop " << er << sendLog;
+	}
 }
 
 /* Correct ha and dec for atmospheric refraction                       */
@@ -1453,10 +1453,8 @@ int Sitech::init ()
 	/*   there is an FTDI USB to serial converter that appears as             */
 	/*   /dev/ttyUSB0 on Linux systems without other USB serial converters.   */
 	/*   The serial device is known to the program that calls this procedure. */
-	/* TelPortFD = open\("/dev/ttyUSB0",O_RDWR); */
-
 	
-	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 5, 5);
+	serConn = new ConnSitech (device_file, this);
 	ret = serConn->init ();
 
 	if (ret)

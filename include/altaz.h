@@ -1,6 +1,6 @@
 /* 
- * Abstract class for fork mounts.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Abstract class for Alt-AZ mounts.
+ * Copyright (C) 2014 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,28 +23,27 @@ namespace rts2teld
 {
 
 /**
- * Abstract fork mount.
+ * Abstract AltAz fork mount.
  *
- * This class solves various problems related to equatorial fork type pointing and telescope 
- * modelling.
+ * Class for computing coordinates on fork alt-az mount.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Fork: public Telescope
+class AltAz: public Telescope
 {
 	public:
-		Fork (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false);
-		virtual ~Fork (void);
+		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false);
+		virtual ~AltAz (void);
 
 	protected:
 		/**
 		 * Fork parameters, in degrees.
 		 */
-		double haZero;
-		double decZero;
+		double azZero;
+		double altZero;
 
-		double haCpd;
-		double decCpd;
+		double azCpd;
+		double altCpd;
 
 		int32_t acMin;
 		int32_t acMax;
@@ -52,8 +51,8 @@ class Fork: public Telescope
 		int acMargin;
 
 		// ticks per revolution
-		int32_t ra_ticks;
-		int32_t dec_ticks;
+		int32_t alt_ticks;
+		int32_t az_ticks;
 
 		virtual int updateLimits () = 0;
 
