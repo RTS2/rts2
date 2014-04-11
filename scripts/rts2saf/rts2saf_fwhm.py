@@ -52,6 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('--tarid', dest='tarId', action='store', default=5, help=': %(default)s, target id of OnTargetFocus')
     parser.add_argument('--fwhmthreshold', dest='fwhmThreshold', action='store', type=float, default=None, help=': %(default)s, threshold to trigger a focus run')
     parser.add_argument('--fitsFn', dest='fitsFn', action='store', default=None, help=': %(default)s, fits file to process')
+    parser.add_argument('--ds9display', dest='Ds9Display', action='store_true', default=False, help=': %(default)s, display fits images and region files')
     args=parser.parse_args()
     # logger
     logger= Logger(debug=args.debug, args=args).logger # if you need to chage the log format do it here
@@ -86,27 +87,33 @@ if __name__ == '__main__':
     if args.fwhmThreshold:
         fwhmTreshold=args.fwhmThreshold
 
-    proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
-    
-    try:
-        proxy.refresh()
-    except Exception, e:
-        logger.warn('rts2af_fwhm: JSON proxy connection failed: {}, exiting'.format(e))
-        sys.exit(1)
+    if( dataSxtr.fwhm <= fwhmTreshold):
+        try:
+            logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
+        except:
+            logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated')
 
-    tarType = proxy.getSingleValue('EXEC','current_type')
-    if 'G' in tarType: # it is a GRB
-        logger.info('rts2af_fwhm: there is now a GRB target selected, no focus run queued')
-    
     else:
-        if( dataSxtr.fwhm > fwhmTreshold):
+        proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
+
+        try:
+            proxy.refresh()
+        except Exception, e:
+            logger.warn('rts2af_fwhm: JSON proxy connection failed: {}, exiting'.format(e))
+            sys.exit(1)
+
+        tarType = proxy.getSingleValue('EXEC','current_type')
+        if 'G' in tarType: # it is a GRB
+            logger.info('rts2af_fwhm: there is now a GRB target selected, no focus run queued')
+
+        else:
             queue=False
             try:
                 q = rts2.Queue(proxy, args.queue)
                 queue=True
             except Exception, e:
                 logger.error('rts2af_fwhm: no queue named: {0}, doing nothing'.format(args.queue))
-                
+
             if queue:
                 q.load()
                 for x in q.entries:
@@ -117,10 +124,20 @@ if __name__ == '__main__':
                     q.add_target(str(args.tarId))
                     logger.info('rts2af_fwhm: focus run  queued')
                 logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSxtr.fwhm, fwhmTreshold))
-        else:
-            try:
-                logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
-            except:
-                logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated')
             
-    logger.info('rts2af_fwhm: DONE')
+    # display fits and regions if necessary
+    if args.Ds9Display:
+        from rts2saf.ds9region import Ds9DisplayThread
+        from subprocess import Popen, PIPE
+        p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
+        p.communicate()
+        if p.returncode == 0:
+            XDISPLAY=True
+        else:
+            XDISPLAY=False
+
+        # start thread 
+        ds9DisplayThread = Ds9DisplayThread(debug=args.debug, dataSxtr=[dataSxtr], logger= logger)
+        ds9DisplayThread.start()
+        var = raw_input("enter any key to stop")
+        ds9DisplayThread.join(timeout=1.)

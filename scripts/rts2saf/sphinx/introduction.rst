@@ -24,7 +24,7 @@ Items which need further attention:
 
 .. _sec_introduction-label:
 
-7) RTS2 EXEC does not continue to select targets after an external script, like ``rts2saf_focus.py``, has finished. EXEC continues if a script ``exe /path/script E 1`` contains an additional exposure command at the end.
+8) RTS2 EXEC does not continue to select targets after an external script, like ``rts2saf_focus.py``, has finished. EXEC continues if a script ``exe /path/script E 1`` contains an additional exposure command at the end.
 
 
 
@@ -93,23 +93,14 @@ at different focuser positions  and  determine FWHM and optionally source's
 maximum flux using ``SExtractor``. In the simplest case the position of 
 the minimum FWHM, derived from the fitted function, is the focus.
 
-Optionally an independent fit to the sum of the flux of sextracted objects
-is available. Comparing fluxes among images makes more sense in
-case the sextracted objects are identified on all images. This association is
-carried out by ``SExtractor`` itself.
-
 The output of the fit program is stored as a PNG file and optionally displayed on screen. 
 In addition various weighted means are calculated which are currently only logged.
 
-To increase the chance that the fit converges errors for FWHM and flux are introduced.
-In case of FWHM it is what ``SExtractor`` thinks the error is, while for flux it is
-calculated as the average of the square roots of the flux values.
 
 rts2saf makes use of RTS2's HTTP/JSON interface and hence using the scripts  
 on the command line is encouraged before setting up autonomous operations. The JSON interface 
 eases and speeds up the test phase considerably specially in the early stage
-of debugging the configuration. The execution with 
-``rts2-scriptexec -s ' exe script '`` is not needed any more. 
+of debugging the configuration. 
 
 Test runs can be carried out during day time either with RTS2
 dummy or real devices. If no real images can be acquired,  
@@ -122,17 +113,8 @@ Parameters, like e.g. ``FOC_DEF`` stored in focuser device, are retrieved
 from the running RTS2 instance as far as they are needed. All additional 
 device or analysis properties are kept in a single configuration file. 
 
-Optionally ``DS9`` displays images and their region files on screen. The circle is 
-centered to ``SExtractor``'s x,y positions. Red circles indicate objects
-which were rejected, green ones which were accepted as star like and in case 
-``SExtractor`` associates the objects among images yellow indicates star
-like objects which are not on all images and therfore rejected.
-
-If rts2saf is executed remotely the X-Window DISPLAY variable has to be set otherwise 
-neither the fit nor images are displayed. 
-
-Modes of operations
-+++++++++++++++++++
+Operations modes
+++++++++++++++++
 1) **autonomous operations**:
    ``rts2saf_imgp.py``, ``rts2saf_fwhm.py``, ``rts2saf_focus.py``
 2) **command line execution**:
@@ -145,19 +127,18 @@ Focus runs come in two flavors:
 1) 'regular'
 2) 'blind'
 
-Regular runs can be carried either in autonomous mode or on the
+Regular runs can be carried out either in autonomous mode or on the
 command line while blind runs are typically executed only on the
 command line.
 
 Regular runs in autonomous mode are optimized for minimum elapsed time
-and typically are only carried out for the wheel's empty slot. That
-does imply the knowledge of the real focus position within narrow limits.
+and typically involve only the wheel's empty slot.
 
 
 Autonomous operations
-+++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~
 Once an image has been stored on disk RTS2 calls ``rts2saf_imgp.py``
-which carries out two tasks:
+which covers two tasks:
 
 1) measurement of FWHM using ``SExtractor``
 2) astrometric calibration using ``astrometry.net``
@@ -165,15 +146,36 @@ which carries out two tasks:
 If the measured FWHM is above a configurable threshold ``rts2saf_fwhm.py``
 triggers an on target focus run using selector's focus queue. This 
 target is soon executed and ``rts2saf_focus.py`` acquires a configurable set  
-of images at different focuser positions. To reduce elapsed time 
-``SExtractor`` is executed in a thread  while images are
-acquired. rts2saf then fits these points and the minimum is derived 
-from the fitted function. If successful it sets focuser's ``FOC_DEF`` if
-variable ``SET_FOC_DEF`` is set to ``True`` in the configuration file.
+of images at different focuser positions. rts2saf then fits these points and 
+the extremes are derived  from the fitted functions. If successful it sets 
+focuser's ``FOC_DEF`` if variable ``SET_FOC_DEF`` is set to ``True`` in the 
+configuration file.
 
 Command line execution
-++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~
 In order to simplify the debugging of one's own configuration 
 all scripts can be used directly on the command line either
 with or without previously acquired images.
 
+Analysis modes
+++++++++++++++
+
+``SExtractor`` provides FWHM and maximum flux per analyzed object. Using
+defaults only FWHM is fitted.
+Optionally an independent fit to the sum of the flux is available. Comparing 
+fluxes among images makes only sense in case the sextracted objects are 
+identified on all images. The association is carried out by ``SExtractor``.
+
+To increase the chance that the fit converges errors for FWHM and flux are introduced.
+In case of FWHM the error is the standard deviation of the FWHM distribution, while for 
+flux the average of the square roots of the values is used.
+
+Optionally ``DS9`` displays images and their region files on screen. 
+The circle is 
+centered to ``SExtractor``'s x,y positions. Red circles indicate objects
+which were rejected, green ones which were accepted as star like and in case 
+``SExtractor`` associates the objects among images yellow indicates star
+like objects which are not on all images and therfore rejected.
+
+If rts2saf is executed interactively on a remote host the X-Window DISPLAY 
+variable has to be set otherwise neither the fit nor images are displayed. 

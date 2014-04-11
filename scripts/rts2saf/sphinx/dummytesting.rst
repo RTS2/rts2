@@ -82,8 +82,9 @@ the following commands
   cd ~/rts-2/scripts/rts2saf
   rts2saf_focus.py --toconsole --dryfitsfiles  ./samples/  --exp 1.  --fitdisplay --ds9display
 
-After a while a matplotlib window appears containing the fit. After closing it 
-a ``DS9`` window appears showing which stars have been selected (green) for a given image.
+After a while a matplotlib window appears containing the fit. In parallel a ``DS9`` window appears 
+showing which stars have been selected (green) for a given image.
+
 The above command honors limits defined in ``rts2saf.cfg`` section ``[filter properties]``
 
 .. code-block:: bash

@@ -49,7 +49,10 @@ if int(p1) >= 2:
     pnm=psutil.Process(psutil.Process(os.getpid()).ppid()).name()
 elif int(p1) >= 1:
     pnm=psutil.Process(psutil.Process(os.getpid()).ppid).name
-# ok if it dies here
+else:
+    # ok if it dies here
+    print 'your psutil version too old, please do pip install psutil'
+    sys.exit(1)
 
 if 'init' in pnm or 'rts2-executor' in pnm:
     matplotlib.use('Agg')    

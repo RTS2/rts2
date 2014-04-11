@@ -128,7 +128,7 @@ class Ds9DisplayThread(threading.Thread):
         """
         self.display.set('blink no')
         self.display.set('frame delete all')
-        self.logger.info('____DisplayThread: join, timeout {0}, stopping thread on request'.format(timeout))
+        if self.debug: self.logger.debug('____DisplayThread: join, timeout {0}, stopping thread on request'.format(timeout))
         self.stoprequest.set()
         super(Ds9DisplayThread, self).join(timeout)
 
