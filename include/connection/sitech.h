@@ -23,6 +23,32 @@ namespace rts2teld
 {
 
 /**
+ * Class represening response to XXS and similar commands.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class SitechAxisStatus
+{
+	public:
+		int address;           //* Module address
+		int32_t x_pos;         //* X (Alt/Dec) motor position
+		int32_t y_pos;         //* Y (Az/RA) motor position
+		int32_t x_enc;         //* X (Alt/Dec) encoder readout
+		int32_t y_enc;         //* Y (Ax/RA) encoder readout
+		char keypad;           //* Keypad status
+		char x_bit;            //* XBits
+		char y_bit;            //* YBits
+		char extra_bit;        //* Extra bits
+		int16_t ain_1;         //* Analog input 1
+		int16_t ain_2;         //* Analog input 2
+		uint32_t mclock;       //* Millisecond clock
+		int8_t temperature;    //* Temperature (probably CPU)
+		int8_t y_worm_phase;   //* Az/RA worm phase
+		int32_t x_last;        //* Alt/Dec motor location at last Alt/Dec scope encoder location change
+		int32_t y_last;        //* Az/RA motor location at last Az/RA scope encoder location change
+};
+
+/**
  * Sitech protocol connections. Used to control Sitech mounts.
  * 
  * Protocol details should be available at:
@@ -72,26 +98,10 @@ class ConnSitech: public rts2core::ConnSerial
 		 * Executes .XS request and return response.
 		 *
 		 * @param axis          Axis for which status will be retrieved.
-		 * @param address       Returned module address
-		 * @param x_pos         X (Alt/Dec) motor position
-		 * @param y_pos         Y (Az/RA) motor position
-		 * @param x_enc         X (Alt/Dec) encoder readout
-		 * @param y_enc         Y (Ax/RA) encoder readout
-		 * @param keypad        Keypad status
-		 * @param x_bit         XBits
-		 * @param y_bit         YBits
-		 * @param extra_bit     Extra bits
-		 * @param ain_1         Analog input 1
-		 * @param ain_2         Analog input 2
-		 * @param mclock        Millisecond clock
-		 * @param temperature   Temperature (probably CPU)
-		 * @param y_worm_phase  Az/RA worm phase
-		 * @param x_last        Alt/Dec motor location at last Alt/Dec scope encoder location change
-		 * @param y_last        Az/RA motor location at last Az/RA scope encoder location change
 		 *
 		 * @throw rts2core::Error on communication error
 		 */
-		void getAxisStatus (char axis, int &address, int32_t &x_pos, int32_t &y_pos, int32_t &x_enc, int32_t &y_enc, char &keypad, char &x_bit, char &y_bit, char &extra_bit, int16_t &ain_1, int16_t &ain_2, uint32_t &mclock, int8_t &temperature, int8_t &y_worm_phase, int32_t &x_last, int32_t &y_last);
+		void getAxisStatus (char axis, SitechAxisStatus &ax_status);
 
 		void setSiTechValue (const char axis, const char *val, int value);
 

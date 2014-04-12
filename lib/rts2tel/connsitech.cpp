@@ -64,7 +64,7 @@ int32_t ConnSitech::getSiTechValue (const char axis, const char *val)
 	return atol (ret + 1);
 }
 
-void ConnSitech::getAxisStatus (char axis, int &address, int32_t &x_pos, int32_t &y_pos, int32_t &x_enc, int32_t &y_enc, char &keypad, char &x_bit, char &y_bit, char &extra_bit, int16_t &ain_1, int16_t &ain_2, uint32_t &mclock, int8_t &temperature, int8_t &y_worm_phase, int32_t &x_last, int32_t &y_last)
+void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 {
 	siTechCommand (axis, "XS");
 
@@ -86,23 +86,23 @@ void ConnSitech::getAxisStatus (char axis, int &address, int32_t &x_pos, int32_t
 		throw rts2core::Error ("invalid checksum!");
 
 	// fill in proper return values..
-	address = ret[0];
-	x_pos = ntohl (*(ret + 1));
-	y_pos = ntohl (*(ret + 5));
-	x_enc = ntohl (*(ret + 9));
-	y_enc = ntohl (*(ret + 13));
+	ax_status.address = ret[0];
+	ax_status.x_pos = ntohl (*(ret + 1));
+	ax_status.y_pos = ntohl (*(ret + 5));
+	ax_status.x_enc = ntohl (*(ret + 9));
+	ax_status.y_enc = ntohl (*(ret + 13));
 
-	keypad = ret[17];
-	x_bit = ret[18];
-	y_bit = ret[19];
-	extra_bit = ret[20];
-	ain_1 = ntohs (*(ret + 21));
-	ain_2 = ntohs (*(ret + 23));
-	mclock = ntohl (*(ret + 25));
-	temperature = ret[29];
-	y_worm_phase = ret[30];
-	x_last = ntohl (*(ret + 31));
-	y_last = ntohl (*(ret + 35));
+	ax_status.keypad = ret[17];
+	ax_status.x_bit = ret[18];
+	ax_status.y_bit = ret[19];
+	ax_status.extra_bit = ret[20];
+	ax_status.ain_1 = ntohs (*(ret + 21));
+	ax_status.ain_2 = ntohs (*(ret + 23));
+	ax_status.mclock = ntohl (*(ret + 25));
+	ax_status.temperature = ret[29];
+	ax_status.y_worm_phase = ret[30];
+	ax_status.x_last = ntohl (*(ret + 31));
+	ax_status.y_last = ntohl (*(ret + 35));
 }
 
 void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
