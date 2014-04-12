@@ -22,7 +22,7 @@
 #include "rts2db/targetset.h"
 #include "rts2db/target_auger.h"
 
-#include <postgresql/ecpgerrno.h>
+#include <ecpgerrno.h>
 
 #define OPT_AUGER_ID              OPT_LOCAL + 501
 #define OPT_ID_ONLY               OPT_LOCAL + 502
