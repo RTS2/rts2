@@ -51,27 +51,68 @@ void ConnSitech::siTechCommand (const char axis, const char *cmd)
 	writePortChecksumed (ccmd, len + 1);
 }
 
-int32_t ConnSitech::siTechGetCommand (const char axis, const char *cmd)
+int32_t ConnSitech::getSiTechValue (const char axis, const char *val)
 {
-	siTechCommand (axis, cmd);
+	siTechCommand (axis, val);
 
 	char ret[100];
 
 	size_t len = readPort (ret, 100, "\n");
 	if (len < 0)
-		throw rts2core::Error (std::string ("cannot read response to command ") + cmd);
+		throw rts2core::Error (std::string ("cannot read response get value command ") + val);
 
 	return atol (ret + 1);
 }
 
-void ConnSitech::siTechSetCommand (const char axis, const char *cmd, int value)
+void ConnSitech::getAxisStatus (char axis, int &address, int32_t &x_pos, int32_t &y_pos, int32_t &x_enc, int32_t &y_enc, char &keypad, char &x_bit, char &y_bit, char &extra_bit, int16_t &ain_1, int16_t &ain_2, uint32_t &mclock, int8_t &temperature, int8_t &y_worm_phase, int32_t &x_last, int32_t &y_last)
+{
+	siTechCommand (axis, "XS");
+
+	char ret[42];
+
+	size_t len = readPort (ret, 41);
+	if (len != 41)
+	{
+		flushPortIO ();
+		throw rts2core::Error ("cannot read all 41 bits from status response!");
+	}
+
+	// checksum checks
+	uint16_t checksum = 0;
+	for (int i = 0; i < 39; i++)
+		checksum += ret[i];
+	
+	if (ret[39] != (checksum & 0x00FF) || ret[40] != (~(checksum >> 16) & 0xFF))
+		throw rts2core::Error ("invalid checksum!");
+
+	// fill in proper return values..
+	address = ret[0];
+	x_pos = ntohl (*(ret + 1));
+	y_pos = ntohl (*(ret + 5));
+	x_enc = ntohl (*(ret + 9));
+	y_enc = ntohl (*(ret + 13));
+
+	keypad = ret[17];
+	x_bit = ret[18];
+	y_bit = ret[19];
+	extra_bit = ret[20];
+	ain_1 = ntohs (*(ret + 21));
+	ain_2 = ntohs (*(ret + 23));
+	mclock = ntohl (*(ret + 25));
+	temperature = ret[29];
+	y_worm_phase = ret[30];
+	x_last = ntohl (*(ret + 31));
+	y_last = ntohl (*(ret + 35));
+}
+
+void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
 {
 	char *ccmd = NULL;
-	size_t len = asprintf (&ccmd, "%c%s%d\r", axis, cmd, value);
+	size_t len = asprintf (&ccmd, "%c%s%d\r", axis, val, value);
 
 	try
 	{
-		writePortChecksumed (cmd, len);
+		writePortChecksumed (ccmd, len);
 	}
 	catch (rts2core::Error &er)
 	{
