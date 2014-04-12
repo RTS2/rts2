@@ -79,8 +79,8 @@ class FlwoWeather:public SensorWeather
 		rts2core::ValueFloat *humidity;
 		rts2core::ValueFloat *humidity_limit;
 		rts2core::ValueFloat *rain;
+		rts2core::ValueFloat *totalRain;
 		rts2core::ValueFloat *dewpoint;
-		rts2core::ValueBool *hatRain;
 		rts2core::ValueTime *lastPool;
 
 		// ME values
@@ -238,9 +238,9 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (humidity, "humidity", "[%] outside humidity", false);
 	createValue (humidity_limit, "humidity_limit", "[%] humidity limit for bad weather", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	humidity_limit->setValueFloat (90);
-	createValue (rain, "rain", "[inch] total accumulated rain", false);
+	createValue (rain, "rain", "[inch] Vaisala's idea of current rainfall", false);
+	createValue (totalRain, "total_rain", "[inch] total accumulated rain", false);
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", false);
-	createValue (hatRain, "HAT_rain", "hat rain status", false);
 	createValue (lastPool, "last_pool", "last file pool", false);
 	lastPool->setValueDouble (NAN);
 
@@ -324,12 +324,14 @@ int FlwoWeather::info ()
 		char line[500];
 		ifile.getline (line, 500);
 		// date..
-		if (line[0] == '(')
+		if (et == 0)
 		{
 		  	struct tm tm;
+			bzero (&tm, sizeof (tm));
 			char sep;
+			et = 1; // as we read the first line..
 			std::istringstream is (line);
-			is >> sep >> tm.tm_year >> sep >> tm.tm_mon >> sep >> tm.tm_mday >> sep >> tm.tm_hour >> sep >> tm.tm_min >> sep >> tm.tm_sec;
+			is >> tm.tm_year >> sep >> tm.tm_mon >> sep >> tm.tm_mday >> sep >> tm.tm_hour >> sep >> tm.tm_min >> sep >> tm.tm_sec;
 			if (is.good ())
 			{
 			  	tm.tm_year -= 1900;
@@ -338,11 +340,11 @@ int FlwoWeather::info ()
 				char p_tz[100];
 				if (getenv("TZ"))
 					old_tz = std::string (getenv ("TZ"));
-
+ 
 				putenv ((char*) "TZ=UTC");
 
-			  	et = mktime (&tm);
-
+ 			  	et = mktime (&tm);
+				
 				strcpy (p_tz, "TZ=");
 
 				if (old_tz.length () > 0)
@@ -352,25 +354,20 @@ int FlwoWeather::info ()
 				putenv (p_tz);
 			}
 		}
-		else if (strstr (line, "self.states['") == line)
+		else
 		{
-			// parse fields..
-			char *ch = strchr (line + 13, '\'');
+			char *ch = strchr (line, '=');
 			if (ch == NULL)
 			  	continue;
 			*ch = '\0';
 			ch++;
-			if (*ch != ']')
-			  	continue;
-			ch++;
 			// find value
-			char *name = line + 13;
-			if (strstr (name, "outside_temp") == name)
+			if (strstr (line, "outsideTemp") == line)
 			{
 			  	outsideTemp->setValueCharArr (ch);
 				processed |= 1;
 			}
-			else if (strstr (name, "wind_speed") == name)
+			else if (strstr (line, "windSpeed") == line)
 			{
 				char *endptr;
 				double v = strtod (ch, &endptr);
@@ -381,62 +378,46 @@ int FlwoWeather::info ()
 					processed |= 1 << 1;
 				}
 			}
-			else if (strstr (name, "wind_gust_speed") == name)
+			else if (strstr (line, "windGustSpeed") == line)
 			{
 			  	windGustSpeed->setValueCharArr (ch);
 				processed |= 1 << 2;
 			}
-			else if (strstr (name, "wind_direction") == name)
+			else if (strstr (line, "windDirection") == line)
 			{
 			  	windDir->setValueCharArr (ch);
 				processed |= 1 << 3;
 			}
-			else if (strstr (name, "barometer") == name)
+			else if (strstr (line, "barometer") == line)
 			{
 			  	pressure->setValueCharArr (ch);
 			  	processed |= 1 << 4;
 			}
-			else if (strstr (name, "outside_humidity") == name)
+			else if (strstr (line, "outsideHumidity") == line)
 			{
 			  	humidity->setValueCharArr (ch);
 				processed |= 1 << 5;
 			}
-			else if (strstr (name, "total_rain") == name)
+			else if (strstr (line, "wxt510Rain") == line)
 			{
-			  	rain->setValueCharArr (ch);
+				rain->setValueCharArr (ch);
 				processed |= 1 << 6;
 			}
-			else if (strstr (name, "dewpoint") == name)
+			else if (strstr (line, "totalRain") == line)
 			{
-			  	dewpoint->setValueCharArr (ch);
+			  	totalRain->setValueCharArr (ch);
 				processed |= 1 << 7;
 			}
-			else if (strstr (name, "hat6_rain") == name)
+			else if (strstr (line, "outsideDewPt") == line)
 			{
-				if (strstr (ch, "clear") == ch)
-				  	hatRain->setValueBool (false);
-				else
-				{
-				  	hatRain->setValueBool (true);	
-					setWeatherTimeout (600, "hat6 is reporting rain");
-				}
-				processed |= 1 << 8;	
-			}
-			else if (strstr (name, "sample_date") == name)
-			{
-				if (*ch == '?')
-					et = 0;
+			  	dewpoint->setValueCharArr (ch);
+				processed |= 1 << 8;
 			}
 			else
 			{
 			  	logStream (MESSAGE_ERROR) << "invalid line from " << weatherFile << ": " << line << sendLog;
 			  	et = 0;
 			}
-		}
-		else if (line[0] != '\0')
-		{
-		  	logStream (MESSAGE_ERROR) << "invalid line from " << weatherFile << ": " << line << sendLog;
-			et = 0;
 		}
 	}
 
@@ -505,9 +486,6 @@ bool FlwoWeather::isGoodWeather ()
 
 			dewpoint->setValueFloat (NAN);
 			sendValueAll (dewpoint);
-
-			hatRain->setValueInteger (0);
-			sendValueAll (hatRain);
 
 			valueError (lastPool);
 		}
