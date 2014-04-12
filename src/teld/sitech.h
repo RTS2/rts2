@@ -5,15 +5,6 @@
 */
 /* Telescope status files */
 
-
-/* ---------------doubt------------------- 
-#define FOCUSFILE "/usr/local/observatory/status/telfocus"
-#define TEMPERATUREFILE "/usr/local/observatory/status/teltemperature"
-#define ROTATEFILE "/usr/local/observatory/status/rotate"
-#define MAXPATHLEN 100
-
-----------------------------------------*/
-
 /* Motor encoder counts per degree                */
 
 /* Motor: Pittman GM9236S021                      */
@@ -86,10 +77,6 @@
 
 #define MOUNTALTCOUNTPERDEG  -39866.800
 
-/* Sidereal rates                                 */
-
-#define SIDEREALDAY 86164.0989
-
 /* For Sitech controller and the A200HR           */
 /*   rate = 33.5565796176 * counts/second         */
 /*   where the sidereal counts/second is          */
@@ -98,70 +85,6 @@
 #define AZMSIDEREALRATE   11024
 #define ALTSIDEREALRATE   0  
 
-/* UTC time correction */
-
-#define LEAPSECONDS    35.0
-
-/* Important constant                                                        */
-
-#define PI             3.14159265358
-
-/* The following parameters are used internally to set speed and direction.  */
-/* Do not change these values.                                               */
-
-/* Slew motion speeds                                                        */
-
-#define	GUIDE		1
-#define	CENTER		2
-#define	FIND		4
-#define	SLEW		8
- 
-/* Slew directions                                                           */
-
-#define	NORTH		1
-#define	SOUTH		2
-#define	EAST		4
-#define	WEST		8
-
-/* Focus commands                                                            */
-/* Distance from the CCD to the focal plane                                  */
-/* Direction is + from the CCD toward the sky                                */
-/* Used by Focus(focuscmd, focusspd)                                         */
-
-#define FOCUSSPD4       8   /* Fast    */
-#define FOCUSSPD3       4   /* Medium  */
-#define FOCUSSPD2       2   /* Slow    */
-#define FOCUSSPD1       1   /* Precise */
-
-#define FOCUSCMDOUT     1   /* CCD moves away from sky */
-#define FOCUSCMDOFF     0   /* CCD does not move */
-#define FOCUSCMDIN     -1   /* CCD moves toward the  sky */
-
-
-/* Rotator commands                                                          */
-
-#define ROTATESPDFAST       3   /* Fast set */
-#define ROTATESPDSLOW       2   /* Slow set */
-#define ROTATESPDSIDEREAL   1   /* Sidereal rate */
-#define ROTATECMDCW         1   /* Camera rotates CW looking toward the sky */
-#define ROTATECMDOFF        0   /* Camera does not rotate */
-#define ROTATECMDCCW       -1   /* Camera rotates CCW looking toward the sky */
-
-
-/* Fan commands                                                              */
-
-#define FANCMDHIGH      2   /* Cooling fan on high speed */
-#define FANCMDLOW       1   /* Cooling fan on low speed */
-#define FANCMDOFF       0   /* Cooling fan off */
-
-
-/* Dew heater commands                                                       */
-
-#define HEATERCMDHIGH      2   /* dew heater on high */
-#define HEATERCMDLOW       1   /* dew heater on low */
-#define HEATERCMDOFF       0   /* dew heater off */
-
-
 /* Pointing models (bit mapped and additive)                                 */
 
 #define RAW       0      /* Unnmodified but assumed zero corrected */
@@ -169,13 +92,6 @@
 #define REFRACT   2      /* Correct for atmospheric refraction */
 #define POLAR     4      /* Correct for polar axis misalignment */ 
 #define DYNAMIC   8      /* Correct for errors in real time */
-
-
-/* Display epochs (selected with GUI button)                                 */
-
-#define J2000    0      /* Epoch 2000.0 as entered or precessed without pm */
-#define EOD      1      /* Epoch of date with pm if available  (default) */
-
 
 /* Slew tolerances in arcseconds */
 
@@ -191,9 +107,6 @@
 
 /* Defaults for site may be modified by prefs file */
 
-#define LONGITUDE      85.5300
-#define LATITUDE       38.3334
-#define ALTITUDE      230.0000
 #define TEMPERATURE    20.0
 #define PRESSURE      760.0
 #define PARKRA          0
