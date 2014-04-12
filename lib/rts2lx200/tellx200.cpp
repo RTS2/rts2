@@ -405,14 +405,38 @@ int TelLX200::setTimeZone (float offset)
 
 int TelLX200::getTimeZone ()
 {
-	char buf[10];
+	char buf[13];
 	float offset;
 
-	int ret = serConn->writeRead (":GG#", 4, buf, 9, '#');
+	int ret = serConn->writeRead (":GG#", 4, buf, 12, '#');
 	if (ret < 0)
 		return ret;
 
-	offset = strtof (buf, NULL);
+	// fix for non-standard APT-GO responses
+	if (buf[0] == ':')
+	{
+		if (buf[1] == 'A')
+		{
+			offset = (buf[2] - '0') - 6;
+		}
+		else if (buf[1] == '0')
+		{
+			offset = -6;
+		}
+		else if (buf[1] == '@')
+		{
+			offset = (buf[2] - '0') - 16;
+		}
+		else
+		{
+			std::cerr << "invalid response from :GG command: " << buf << std::endl;
+			exit (1);
+		}
+	}
+	else
+	{
+		offset = strtof (buf, NULL);
+	}
 	timeZone->setValueDouble (offset * 3600);
 	sendValueAll (timeZone);
 
