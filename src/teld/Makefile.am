@@ -3,7 +3,7 @@ EXTRA_DIST =
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors \
-	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar \
+	rts2-teld-trencin rts2-teld-apgto rts2-teld-apgto-pk rts2-teld-lx200test rts2-teld-nexstar \
 	rts2-teld-lx200gps rts2-teld-lx200focgps rts2-teld-meade rts2-teld-indi rts2-teld-sitech-gem
 
 noinst_HEADERS = sitech.h
@@ -41,11 +41,11 @@ rts2_teld_lx200test_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-coll
 
 # comment this and uncomment next for alternative APT-GOTO driver
 
-#rts2_teld_apgto_SOURCES = apgto.cpp
-#rts2_teld_apgto_LDADD = -lrts2tellx200 -lrts2pier-collision ${LDADD}
-
-rts2_teld_apgto_SOURCES = apgto_pk.cpp
+rts2_teld_apgto_SOURCES = apgto.cpp
 rts2_teld_apgto_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
+
+rts2_teld_apgto_pk_SOURCES = apgto_pk.cpp
+rts2_teld_apgto_pk_LDADD = -L../../lib/rts2lx200 -lrts2tellx200 -lrts2pier-collision ${LDADD}
 
 rts2_teld_d50_SOURCES = d50.cpp
 

@@ -193,6 +193,8 @@ class APGTO:public TelLX200 {
                 int getAPLatitude ();
                 int getAPlocalSiderealTime ();
 
+		const char *device_file;
+
 };
 }
 
@@ -668,7 +670,7 @@ int APGTO::tel_slew_to (double ra, double dec)
  
   if( block_move_apgto->getValueBool()) {
 
-    logStream (MESSAGE_INFO) << "APGTO::setTo move is blocked, see BLOCK_MOVE_APGTO, doing nothing" << sendLog;
+    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to move is blocked, see BLOCK_MOVE_APGTO, doing nothing" << sendLog;
     return -1 ;
   } 
 
@@ -1237,6 +1239,7 @@ int APGTO::isMoving ()
 int APGTO::endMove ()
 {
 	slew_state->setValueBool(false) ;
+	logStream (MESSAGE_DEBUG) << "APGTO::endMove: end of slew" << sendLog;
 
 	return Telescope::endMove ();
 }
@@ -1252,6 +1255,7 @@ int APGTO::stopMove ()
 	sleep (1);
 	maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move stopped");
 	slew_state->setValueBool(false) ;
+	logStream (MESSAGE_DEBUG) << "APGTO::stopMove: end of slew" << sendLog;
 
 	// wswitch
 	// check for limit switch states..
@@ -1575,9 +1579,9 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
     // do not sync while slewing
     // this can occur if a script tries to sync after e.g. an astrometric calibration
     //
-    while( slew_state->getValueBool()) {
-      logStream (MESSAGE_INFO) << "APGTO::valueChanged astrometryOffsetRaDec, sleeping while slewing" << sendLog;
-      sleep( 1) ;
+    if( slew_state->getValueBool()) {
+      logStream (MESSAGE_INFO) << "APGTO::valueChanged sync, do not sync while slewing" << sendLog;
+      return -1 ;
     }
     if(( ret= setTo(sync_ra, sync_dec)) !=0) {
       logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized setTo (sync) failed" << sendLog;
@@ -1669,7 +1673,7 @@ int APGTO::info ()
     // Do that if a new successful slew occured 
   }
 
-  // while the telecope is tracking Astro-Physics controller does not
+  // while the telescope is tracking Astro-Physics controller does not
   // carry out any checks, meaning that it turns for ever
   // 
   // 0 <= HA <=180.: check if the mount approaches horizon
@@ -1680,12 +1684,12 @@ int APGTO::info ()
   // West:   HA < 15.
   // East:  Alt > 10.
 
-
-
   //check only while not slewing
   //ToDo:  was if ((getState () & TEL_MOVING) || (getState () & TEL_PARKING))
   // check that if it works, otherwise use slew_state->getValueBool()==false
-  if( ! (((getState () & TEL_MASK_MOVING) == TEL_MOVING) || ((getState () & TEL_MASK_MOVING) == TEL_PARKING)))
+  //if( ! (((getState () & TEL_MASK_MOVING) == TEL_MOVING) || ((getState () & TEL_MASK_MOVING) == TEL_PARKING)))
+  // 2014-04-14, it did not work
+  if(slew_state->getValueBool()==false)
     {
       int stop= 0 ;
       if (!(strcmp("West", DECaxis_HAcoordinate->getValue())))
@@ -1766,6 +1770,7 @@ int APGTO::info ()
     {
       diff_loc_time += 360. ;
     }
+  // TAG TIME UPDATE
   if (fabs( diff_loc_time) > (1./8.) )
     { // 30 time seconds
       logStream (MESSAGE_WARNING) << "APGTO::info  local sidereal time, calculated time " 
@@ -1999,7 +2004,7 @@ int APGTO::setBasicData()
 		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
 		return -1;
 	}
-
+	// TAG TIME UTC OFFSET
         // CET APUTC offset:     22:56:06  -1:03:54, -1.065 (valid for Obs Vermes CET)
         // This value has been determied in the following way
         // longitude from google earth
@@ -2062,13 +2067,20 @@ int APGTO::setBasicData()
  */
 int APGTO::initHardware ()
 {
-	int status;
 	on_set_HA= 0.;
 	time(&slew_start_time) ;
-	status = TelLX200::initHardware ();
+	// Controller Revision D is incompatible with an ordinary LX200 controller
+	// see "TAG TIME UTC OFFSET" and "TAG TIME UPDATE"
+	// status = TelLX200::initHardware ();
+	
+	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5, 5);
+	if (connDebug == true)
+		serConn->setDebug (true);
+	int ret = serConn->init ();
+	if (ret)
+		return -1;
+	serConn->flushPortIO ();
 
-	if (status)
-		return status;
 	tzset ();
 	logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete" << sendLog;
 	return 0;
@@ -2228,6 +2240,10 @@ int APGTO::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case 'f':
+			device_file = optarg;
+			break;
+
 		case OPT_APGTO_ASSUME_PARKED:
 			assume_parked->setValueBool(true);
 			break;
@@ -2304,7 +2320,7 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
         createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",           true,  RTS2_DT_DEGREES);
 	createValue (APutc_offset, "APUTCOFFSET", "AP mount UTC offset", true,  RTS2_DT_RA);
 	createValue (APfirmware, "APVERSION", "AP mount firmware revision", true);
-	createValue (assume_parked, "ASSUME_PARKED", "true check initial position",    false);
+	createValue (assume_parked, "ASSUME_PARKED", "true check initial mount position",    false);
 	assume_parked->setValueBool (false);
         createValue (APTime,                   "APTIME",      "AP mount time see LOCATIME!", true,  RTS2_DT_RA);
 }

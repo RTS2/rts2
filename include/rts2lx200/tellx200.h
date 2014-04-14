@@ -177,9 +177,9 @@ class TelLX200:public Telescope
 
 		int matchTime ();
 
-	private:
 		const char *device_file;
 		bool connDebug;
+	private:
 
 		rts2core::ValueTime *timeZone;
 		rts2core::ValueDouble *localTime;
