@@ -319,6 +319,10 @@ class JSONProxy(Rts2JSON):
 	def getDevicesByType(self,device_type):
 		return self.loadJson('/api/devbytype',{'t':device_type})
 
+	def lastImage(self, device):
+		"""Returns image from the last exposure."""
+		return self.getResponse('/api/lastimage',{'ccd':device}).read()
+
 def getProxy():
 	global __jsonProxy
 	return __jsonProxy
