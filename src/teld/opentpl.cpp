@@ -28,7 +28,6 @@
 
 #define BLIND_SIZE            1.0
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
-#define OPT_PARK_POS          OPT_LOCAL + 4
 #define OPT_POWEOFF_STANDBY   OPT_LOCAL + 5
 #define OPT_GOOD_SEP          OPT_LOCAL + 6
 
@@ -132,8 +131,6 @@ class OpenTPL:public Telescope
 		rts2core::ValueDouble *cover;
 
 		rts2core::ValueInteger *mountTrack;
-
-		rts2core::ValueAltAz *parkPos;
 
 		// model values
 		rts2core::ValueString *model_dumpFile;
@@ -373,9 +370,6 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 	// 2.7 arcsec
 	goodSep->setValueDouble (0.00075);
 
-	createValue (parkPos, "park_position", "mount park position", false, RTS2_VALUE_WRITABLE);
-	parkPos->setValueAltAz (70, 0);
-
 	createValue (standbyPoweroff, "standby_poweroff", "power off at standby (power on at ready night, dusk or dawn)", false, RTS2_VALUE_WRITABLE);
 	standbyPoweroff->setValueBool (false);
 
@@ -383,7 +377,10 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
-	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az in degrees (<0..360> for az, <0..90> for alt) separated by :)");
+
+	addParkPosOption ();
+	createParkPos (70, 0);
+
 	addOption (OPT_POWEOFF_STANDBY, "standby-poweroff", 0, "poweroff at standby");
 	addOption (OPT_GOOD_SEP, "good-sep", 1, "minimal good separation (in degrees)");
 
@@ -407,23 +404,6 @@ int OpenTPL::processOption (int in_opt)
 			break;
 		case 't':
 			irTracking = atoi (optarg);
-			break;
-		case OPT_PARK_POS:
-			{
-				std::istringstream *is;
-				is = new std::istringstream (std::string(optarg));
-				double palt,paz;
-				char c;
-				*is >> palt >> c >> paz;
-				if (is->fail () || c != ':')
-				{
-					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
-					delete is;
-					return -1;
-				}
-				delete is;
-				parkPos->setValueAltAz (palt, paz);
-			}
 			break;
 		case OPT_POWEOFF_STANDBY:
 			standbyPoweroff->setValueBool (true);

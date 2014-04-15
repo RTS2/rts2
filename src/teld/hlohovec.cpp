@@ -25,9 +25,6 @@
 #define OPT_RA                OPT_LOCAL + 2201
 #define OPT_DEC               OPT_LOCAL + 2202
 
-
-#define OPT_PARK_POS          OPT_LOCAL + 2203
-
 #define RTS2_HLOHOVEC_TIMERRG    RTS2_LOCAL_EVENT + 1210
 #define RTS2_HLOHOVEC_TIMERDG    RTS2_LOCAL_EVENT + 1211
 #define RTS2_HLOHOVEC_TSTOPRG    RTS2_LOCAL_EVENT + 1212
@@ -99,7 +96,6 @@ class Hlohovec:public GEM
 		const char *devRA;
 		const char *devDEC;
 
-		rts2core::ValueAltAz *parkPos;
 		rts2core::ValueDouble *moveTolerance;
 
 		void matchGuideRa (int rag);
@@ -119,8 +115,6 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 
 	devRA = NULL;
 	devDEC = NULL;
-
-	parkPos = NULL;
 
 	ra_ticks = RA_TICKS;
 	dec_ticks = DEC_TICKS;
@@ -142,7 +136,8 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
-	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
+
+	addParkPosOption ();
 }
 
 Hlohovec::~Hlohovec ()
@@ -212,25 +207,6 @@ int Hlohovec::processOption (int opt)
 			break;
 		case OPT_DEC:
 			devDEC = optarg;
-			break;
-		case OPT_PARK_POS:
-			{
-				std::istringstream *is;
-				is = new std::istringstream (std::string(optarg));
-				double palt,paz;
-				char c;
-				*is >> palt >> c >> paz;
-				if (is->fail () || c != ':')
-				{
-					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
-					delete is;
-					return -1;
-				}
-				delete is;
-				if (parkPos == NULL)
-					createValue (parkPos, "park_position", "mount park position", false);
-				parkPos->setValueAltAz (palt, paz);
-			}
 			break;
 		default:
 			return GEM::processOption (opt);

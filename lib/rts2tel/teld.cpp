@@ -36,6 +36,7 @@
 #define OPT_HORIZON           OPT_LOCAL + 118
 #define OPT_CORRECTION        OPT_LOCAL + 119
 #define OPT_WCS_MULTI         OPT_LOCAL + 120
+#define OPT_PARK_POS          OPT_LOCAL + 121
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
 
@@ -49,6 +50,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	}
 
 	raGuide = decGuide = NULL;
+	parkPos = NULL;
 
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
@@ -311,6 +313,25 @@ int Telescope::processOption (int in_opt)
 			else
 				wcs_multi = optarg[0];
 			break;
+                case OPT_PARK_POS:
+                        {
+                                std::istringstream *is;
+                                is = new std::istringstream (std::string(optarg));
+                                double palt,paz;
+                                char c;
+                                *is >> palt >> c >> paz;
+                                if (is->fail () || c != ':')
+                                {
+                                        logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
+                                        delete is;
+                                        return -1;
+                                }
+                                delete is;
+                                if (parkPos == NULL)
+					createParkPos (NAN, NAN);
+                                parkPos->setValueAltAz (palt, paz);
+                        }
+                        break;
 		default:
 			return rts2core::Device::processOption (in_opt);
 	}
@@ -919,6 +940,17 @@ double Telescope::estimateTargetTime ()
 {
 	// most of mounts move at 2 degrees per second.
 	return getTargetDistance () / 2.0;
+}
+
+void Telescope::addParkPosOption ()
+{
+	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
+}
+
+void Telescope::createParkPos (double alt, double az)
+{
+	createValue (parkPos, "park_position", "mount park position", false);
+	parkPos->setValueAltAz (alt, az);
 }
 
 int Telescope::info ()

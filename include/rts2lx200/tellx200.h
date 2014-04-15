@@ -191,6 +191,10 @@ class TelLX200:public Telescope
 		int matchTimeZone ();
 
 		int setTimeZone (float offset);
+
+		/**
+		 * Reads UT offset, fill it in timeZone variable.
+		 */
 		int getTimeZone ();
 };
 

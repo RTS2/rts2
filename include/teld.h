@@ -716,6 +716,24 @@ class Telescope:public rts2core::Device
 		virtual void setDiffTrack (double dra, double ddec) {}
 
 		/**
+		 * Telescope parking position.
+		 */
+		rts2core::ValueAltAz *parkPos;
+
+		/**
+		 * Add option for parking position.
+		 *
+		 * @warning parkPos is created only if this option was passed to the programe. If you
+		 * need parkPos to exists (and fill some default value), call createParkPos first.
+		 */
+		void addParkPosOption ();
+
+		/**
+		 * Create parkPos variable.
+		 */
+		void createParkPos (double alt, double az);
+
+		/**
 		 * Local sidereal time.
 		 */
 		rts2core::ValueDouble *lst;

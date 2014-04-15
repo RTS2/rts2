@@ -28,8 +28,6 @@
 #define OPT_RA                OPT_LOCAL + 2201
 #define OPT_DEC               OPT_LOCAL + 2202
 
-#define OPT_PARK_POS          OPT_LOCAL + 2203
-
 #define RTS2_D50_TIMERRG    RTS2_LOCAL_EVENT + 1210
 #define RTS2_D50_TIMERDG    RTS2_LOCAL_EVENT + 1211
 #define RTS2_D50_TSTOPRG    RTS2_LOCAL_EVENT + 1212
@@ -104,7 +102,6 @@ class D50:public Fork
 		const char *devRA;
 		const char *devDEC;
 
-		rts2core::ValueAltAz *parkPos;
 		rts2core::ValueDouble *moveTolerance;
 
 		rts2core::ValueDouble *moveSpeedBacklash;
@@ -172,8 +169,6 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	devRA = NULL;
 	devDEC = NULL;
 	
-	parkPos = NULL;
-	
 	ra_ticks = labs ((int32_t) (RA_TICKS));
 	dec_ticks = labs ((int32_t) (DEC_TICKS));
 	
@@ -209,7 +204,6 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
-	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
 
 	createValue (remotesMotorsPower, "remotes_motors_power", "el. power to both motors", false, RTS2_VALUE_WRITABLE);
 	remotesMotorsPower->setValueBool (false);
@@ -314,25 +308,6 @@ int D50::processOption (int opt)
                         break;
                 case OPT_DEC:
                         devDEC = optarg;
-                        break;
-                case OPT_PARK_POS:
-                        {
-                                std::istringstream *is;
-                                is = new std::istringstream (std::string(optarg));
-                                double palt,paz;
-                                char c;
-                                *is >> palt >> c >> paz;
-                                if (is->fail () || c != ':')
-                                {
-                                        logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
-                                        delete is;
-                                        return -1;
-                                }
-                                delete is;
-                                if (parkPos == NULL)
-                                        createValue (parkPos, "park_position", "mount park position", false);
-                                parkPos->setValueAltAz (palt, paz);
-                        }
                         break;
                 default:
                         return Fork::processOption (opt);

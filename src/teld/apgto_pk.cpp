@@ -25,8 +25,6 @@
 #include "clicupola.h"
 #include "rts2lx200/pier-collision.h"
 
-#define OPT_PARK_POS             OPT_LOCAL + 60
-
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
 #define OPT_APGTO_KEEP_HORIZON   OPT_LOCAL + 58
@@ -139,8 +137,6 @@ class APGTO:public TelLX200 {
 		int isInPosition(double coord1, double coord2, double err1, double err2, char coord); // Alonso: coord e {'a', 'c'} a = coordenadas en altaz y c lo otro
 
 		int tel_check_coords (double ra, double dec);
-
-		rts2core::ValueAltAz *parkPos;
 
 		// fixed offsets
 		rts2core::ValueRaDec *fixedOffsets;
@@ -1658,23 +1654,6 @@ int APGTO::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case OPT_PARK_POS:
-			{
-				std::istringstream *is;
-				is = new std::istringstream (std::string(optarg));
-				double palt,paz;
-				char c;
-				*is >> palt >> c >> paz;
-				if (is->fail () || c != ':')
-				{
-					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
-					delete is;
-					return -1;
-				}
-				delete is;
-				parkPos->setValueAltAz (palt, paz);
-			}
-			break;
 		case OPT_APGTO_ASSUME_PARKED:
 			assume_parked->setValueBool(true);
 			break;
@@ -1745,7 +1724,8 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	addOption (OPT_APGTO_KEEP_HORIZON, "avoid-horizon", 0, "avoid movements bellow horizon");
 	addOption (OPT_APGTO_LIMIT_SWITCH, "limit-switch", 1, "use limit switch with given name");
 
-	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
+	addParkPosOption ();
+	createParkPos (70, 0);
 }
 
 int main (int argc, char **argv)
