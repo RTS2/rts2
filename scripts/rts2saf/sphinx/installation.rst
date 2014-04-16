@@ -142,7 +142,6 @@ The dummy devices are usually added  by the script
   cd ~/rts-2/src/sql
   ./rts2-configdb stars -t T0
   ./rts2-configdb stars -c C0
-  ./rts2-configdb stars -f W0
 
 The filters are stored in the Postgres DB table ``filters``. These entries are not strictly necessary 
 but it is recommended to add them.
@@ -154,52 +153,83 @@ As user postgres:
  postgres@localhost:~$ psql stars  
 
  INSERT INTO targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
- INSERT INTO scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py E 1');
+ INSERT INTO scripts values ('5', 'YOUR_CAMERA_NAME', ' exe /usr/local/bin/rts2saf_focus.py E 1 ');
 
 where ``YOUR_CAMERA_NAME`` is either ``C0`` or is the name configured in ``/etc/rts2/devices``. 
+
+
+Create the Postgres database user 
+
+.. code-block:: bash
+
+ postgres@localhost:~$ createuser  YOUR_DB_USER  # rts2saf, recommended as it is the default in rts2saf configuration 
+ postgres@localhost:~$ createuser  YOUR_UID      # the user who executes rts2saf unittest
+
+In case you intend to execute the unittests, grant access to database stars for YOUR_UID
+
+.. code-block:: bash
+
+   ALTER GROUP observers ADD USER YOUR_UID ;
+
+
+Configure pg_haba.conf (Ubuntu: /etc/postgresql/9.1/main/pg_hba.conf) to
+
+.. code-block:: bash
+
+   # TYPE  DATABASE        USER          ADDRESS    METHOD
+   # "local" is for Unix domain socket connections only                                                                                                                                                                               
+   local   all             postgres                 peer
+   local   stars           YOUR_DB_USER             md5   # recommended: rts2saf, login needs a password, restricted to DB stars
+   # used for rts2saf unittest only
+   local   stars           YOUR_UID                 trust # YOUR_UID is the user who executes rts2saf's unittest
+               
+since YOUR_DB_USER is not a system user.
 
 In order to write to devices through an authorized JSONProxy connection create the RTS2 user and grant device write access via XMLRPC
 
 .. code-block:: bash
 
- postgres@localhost:~$ rts2-user -a YOUR_UID
+ postgres@localhost:~$ rts2-user -a YOUR_RTS2_USER # recommendation use default user: rts2saf
  User password: YOUR_PASSWD
- User email (can be left empty): YOUR_UID@atsome.host
+ User email (can be left empty): YOUR_REAL_UID@some.host # in case RTS2 send emails
 
 Specify an email address despite the dialog suggests that it can be left empty.
+
 
 .. code-block:: bash
 
  postgres@localhost:~$ psql stars
- UPDATE users SET usr_execute_permission='t', allowed_devices = 'andor3 F0 COLWFLT COLWGRS COLWSLT' WHERE usr_login='YOUR_UID' ;
+ UPDATE users SET usr_execute_permission='t', allowed_devices = 'andor3 F0 COLWFLT COLWGRS COLWSLT' WHERE usr_login='YOUR_DB_USER' ; #default: rts2saf
 
 The devices ``andor3``, ``F0``, ``COLWFLT``, ``COLWGRS`` and ``COLWSLT``  are required by ``unittest``. A production version for
 the above ``UPDATE`` looks like
 
 .. code-block:: bash
 
- UPDATE users SET usr_execute_permission='t', allowed_devices = 'C0 F0 W0' WHERE usr_login='YOUR_UID' ;
+ UPDATE users SET usr_execute_permission='t', allowed_devices = 'C0 F0 W0' WHERE usr_login='YOUR_DB_USER' ;
 
 if default device names are configured in ``/etc/rts2/devices`` and in case further ``unittest`` are carried out use
 
 .. code-block:: bash
 
- UPDATE users SET usr_execute_permission='t', allowed_devices = 'C0 F0 W0 andor3 COLWFLT COLWGRS COLWSLT' WHERE usr_login='YOUR_UID' ;
+ UPDATE users SET usr_execute_permission='t', allowed_devices = 'C0 F0 W0 andor3 COLWFLT COLWGRS COLWSLT' WHERE usr_login='YOUR_DB_USER' ;
 
-Create the Postgres database user 
 
-.. code-block:: bash
-
- postgres@localhost:~$ createuser  YOUR_UID  # where  YOUR_UID is the user name which executes the unittest
-
-and very likely
+and 
 
 .. code-block:: bash
 
  postgres@localhost:~$ psql stars  
- GRANT ALL PRIVILEGES ON cameras TO  YOUR_UID ; # the above YOUR_UID
- GRANT ALL ON TABLE targets to YOUR_UID ;
- GRANT ALL ON TABLE scripts to YOUR_UID ;
+ GRANT ALL ON TABLE scripts to root ; # or UID of process rts2-executor (EXEC)
+
+and perhaps
+
+.. code-block:: bash
+
+ postgres@localhost:~$ psql stars  
+ GRANT ALL PRIVILEGES ON cameras TO  YOUR_DB_USER ; # the above YOUR_DB_USER
+ GRANT ALL ON TABLE targets to YOUR_DB_USER ;
+ GRANT ALL ON TABLE scripts to YOUR_DB_USER ;
 
 ``rts2saf unittest`` 
 --------------------
@@ -217,7 +247,7 @@ file ``~/rts-2/scripts/rts2saf/unittest/rts2saf-bootes-2-autonomous.cfg``
 .. code-block:: bash
 
  [connection]
- USERNAME = YOUR_UID
+ USERNAME = YOUR_DB_USER
  PASSWORD = YOUR_PASSWD
 
 according to your choice of the previous section. Check if ``SExtractor`` version >= 2.8.6 is available as

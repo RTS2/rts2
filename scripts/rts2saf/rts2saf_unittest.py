@@ -54,7 +54,7 @@ def userInConfigFile():
             if '=' not in ln:
                 continue
             k, v = ln.strip().split('=')
-            if 'USERNAME' in k and 'YOUR_UID' in v:
+            if 'USERNAME' in k and 'YOUR_RTS2_USER' in v:
                 exit = True
                 print 'USERNAME needs a real user as argument'
                 
@@ -64,7 +64,7 @@ def userInConfigFile():
     cfg.close()
 
     if exit:
-        print 'edit ./unittest/rts2saf-bootes-2-autonomous.cfg add your RTS2 username/password, see documentation section installation, rts2saf unittest'
+        print 'edit ./unittest/rts2saf-bootes-2-autonomous.cfg add your YOUR_RTS2_USER username/password, see documentation section installation, rts2saf unittest'
         sys.exit(1)
 
 def sextractor_version():

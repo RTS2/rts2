@@ -70,7 +70,7 @@ if __name__ == '__main__':
     from rts2saf.config import Configuration
     from rts2saf.environ import Environment
     from rts2saf.log import Logger
-
+    defaultCfg = '/usr/local/etc/rts2/rts2saf/rts2saf.cfg'
     script=os.path.basename(__file__)
     parser =  argparse.ArgumentParser(prog = script, description = 'rts2asaf analysis')
     parser.add_argument('--debug', dest = 'debug', action = 'store_true', default = False, help = ': %(default)s,add more output')
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('--topath', dest = 'toPath', metavar = 'PATH', action = 'store', default = '.', help = ': %(default)s, write log file to path')
     parser.add_argument('--logfile', dest = 'logfile', default = '{0}.log'.format(script), help = ': %(default)s, logfile name')
     parser.add_argument('--toconsole', dest = 'toconsole', action = 'store_true', default = False, help = ': %(default)s, log to console')
-    parser.add_argument('--config', dest = 'config', action = 'store', default = '/usr/local/etc/rts2/rts2saf/rts2saf.cfg', help = ': %(default)s, configuration file path')
+    parser.add_argument('--config', dest = 'config', action = 'store', default = defaultCfg, help = ': %(default)s, configuration file path')
     parser.add_argument('--basepath', dest = 'basePath', action = 'store', default = None, help = ': %(default)s, directory where FITS images from possibly many focus runs are stored')
     parser.add_argument('--filternames', dest = 'filterNames', action = 'store', default = None, type = str, nargs = '+', help = ': %(default)s, list of SPACE separated filters to analyzed, None: all')
 #ToDo    parser.add_argument('--ds9region', dest = 'ds9region', action = 'store_true', default = False, help = ': %(default)s, create ds9 region files')
@@ -101,6 +101,10 @@ if __name__ == '__main__':
 
     # logger
     logger =  Logger(debug = args.debug, args = args).logger # if you need to chage the log format do it here
+    # hint to the user
+    if defaultCfg in args.config:
+        logger.info('rts2saf_focus: using default configuration file: {0}'.format(args.config))
+
     # config
     rtc = Configuration(logger = logger)
     if not rtc.readConfiguration(fileName=args.config):

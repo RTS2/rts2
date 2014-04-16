@@ -115,7 +115,7 @@ class TestDatabase(unittest.TestCase):
 
     def test_dbReadAccessCCDScript(self):
         logger.info('== {} =='.format(self._testMethodName))
-        entry=(5, 'andor3', ' exe /usr/local/bin/rts2saf_focus.py ')
+        entry=(' exe /usr/local/bin/rts2saf_focus.py E 1 ')
 
         conn = psycopg2.connect('dbname={} user={} password={}'.format(self.dbName, self.dbUser, self.dbPasswd))
         crsr = conn.cursor()
@@ -123,7 +123,7 @@ class TestDatabase(unittest.TestCase):
         result=crsr.fetchone()
         crsr.close()
         conn.close()
-        self.assertEqual(' exe /usr/local/bin/rts2saf_focus.py ', result[2], 'return value:{}'.format(result[2]))
+        self.assertEqual(entry, result[2], 'return value:>>{}<<'.format(result[2]))
 
 
 
