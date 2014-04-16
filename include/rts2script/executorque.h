@@ -341,6 +341,12 @@ class ExecutorQueue:public TargetQueue
 		 */
 		virtual void updateVals ();
 
+		/**
+		 * Propagates change of an array value (hard, rep_n or rep_separation) to underlying
+		 * QueueEntry.
+		 */
+		void valueChanged (rts2core::Value *value);
+
 	protected:
 		virtual int getQueueType () { return queueType->getValueInteger (); }
 		virtual const bool getSkipBelowHorizon () { return skipBelowHorizon->getValueBool (); }

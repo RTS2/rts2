@@ -740,6 +740,7 @@ void SelectorDev::valueChanged (rts2core::Value *value)
 				updateNext ();
 				break;
 			}
+			qi->valueChanged (value);
 		}
 	}
 	rts2db::DeviceDb::valueChanged (value);

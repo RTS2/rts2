@@ -1,3 +1,6 @@
+2014-04-16
+ * rep_n and rep_separation are saved to the database
+
 2014-04-15
  * addParkPosOption, createParkPos Telescope class methods
 

@@ -161,21 +161,38 @@ void TargetQueue::beforeChange (double now)
 	sortQueue (now);
 	switch (getQueueType ())
 	{
-		case QUEUE_FIFO:
-			break;
 		case QUEUE_CIRCULAR:
-			// shift only if queue is not empty 
+			// shift only if queue is not empty
 			if (!empty ())
 			{
+				if (front ().rep_n > 0)
+				{
+					front ().rep_n--;
+					if (!isnan (front ().rep_separation))
+					{
+						front ().t_start = now + front ().rep_separation;
+					}
+				}
 				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer)));
 				delete front ().target;
 				pop_front ();
 			}
 			break;
+		case QUEUE_FIFO:
 		case QUEUE_HIGHEST:
 		case QUEUE_WESTEAST:
 		case QUEUE_WESTEAST_MERIDIAN:
 		case QUEUE_OUT_OF_LIMITS:
+			// if number of repetitions is set, requeue
+			if (!empty () && front ().rep_n > 0)
+			{
+				front ().rep_n--;
+				if (!isnan (front ().rep_separation))
+				{
+					front ().t_start = now + front ().rep_separation;
+				}
+				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer)));
+			}
 			break;
 	}
 	filter (now);
@@ -533,8 +550,16 @@ ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struc
 	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false);
 	master->createValue (nextHard, (sn + "_hard").c_str (), "hard/soft interruption", false, read_only_fl | RTS2_DT_ONOFF);
 	master->createValue (queueEntry, (sn + "_qid").c_str (), "private queue ID", false);
-	master->createValue (repN, (sn + "_rep_n").c_str (), "number of repeats", false);
-	master->createValue (repSeparation, (sn + "_rep_separation").c_str (), "[s] seperation of queue entry repeats", false, RTS2_DT_TIMEINTERVAL);
+	if (!read_only)
+	{
+		master->createValue (repN, (sn + "_rep_n").c_str (), "number of repeats", false, RTS2_VALUE_WRITABLE);
+		master->createValue (repSeparation, (sn + "_rep_separation").c_str (), "[s] seperation of queue entry repeats", false, RTS2_VALUE_WRITABLE);
+	}
+	else
+	{
+		repN = NULL;
+		repSeparation = NULL;
+	}
 
 	master->createValue (removedIds, (sn + "_removed_ids").c_str (), "removed observation IDS", false);
 	master->createValue (removedNames, (sn + "_removed_names").c_str (), "names of removed IDS", false);
@@ -994,8 +1019,11 @@ void ExecutorQueue::updateVals ()
 		_end_arr.push_back (iter->t_end);
 		_plan_arr.push_back (iter->plan_id);
 		_hard_arr.push_back (iter->hard);
-		_rep_n.push_back (iter->rep_n);
-		_rep_separation.push_back (iter->rep_separation);
+		if (repN)
+		{
+			_rep_n.push_back (iter->rep_n);
+			_rep_separation.push_back (iter->rep_separation);
+		}
 
 		iter->queue_order = order;
 
@@ -1028,8 +1056,12 @@ void ExecutorQueue::updateVals ()
 	nextPlanIds->setValueArray (_plan_arr);
 	nextHard->setValueArray (_hard_arr);
 	queueEntry->setValueArray (_qid_arr);
-	repN->setValueArray (_rep_n);
-	repSeparation->setValueArray (_rep_separation);
+	// if repN is defined, all others are defined
+	if (repN)
+	{
+		repN->setValueArray (_rep_n);
+		repSeparation->setValueArray (_rep_separation);
+	}
 
 	master->sendValueAll (nextIds);
 	master->sendValueAll (nextNames);
@@ -1038,11 +1070,45 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextPlanIds);
 	master->sendValueAll (nextHard);
 	master->sendValueAll (queueEntry);
-	master->sendValueAll (repN);
-	master->sendValueAll (repSeparation);
+
+	if (repN)
+	{
+		master->sendValueAll (repN);
+		master->sendValueAll (repSeparation);
+	}
 
 	master->sendValueAll (sumWest);
 	master->sendValueAll (sumEast);
+}
+
+void ExecutorQueue::valueChanged (rts2core::Value *value)
+{
+	if (value == repN)
+	{
+		ExecutorQueue::iterator qe_iter = begin ();
+		std::vector <int>::iterator v_iter = repN->valueBegin ();
+		for (; qe_iter != end () && v_iter != repN->valueEnd (); qe_iter++, v_iter++)
+		{
+			if (qe_iter->rep_separation != *v_iter)
+			{
+				qe_iter->rep_n = *v_iter;
+				qe_iter->update ();
+			}
+		}
+	}
+	else if (value == repSeparation)
+	{
+		ExecutorQueue::iterator qe_iter = begin ();
+		std::vector <double>::iterator v_iter = repSeparation->valueBegin ();
+		for (; qe_iter != end () && v_iter != repSeparation->valueEnd (); qe_iter++, v_iter++)
+		{
+			if (qe_iter->rep_separation != *v_iter)
+			{
+				qe_iter->rep_separation = *v_iter;
+				qe_iter->update ();
+			}
+		}
+	}
 }
 
 const char* getTextReason (const removed_t reason)
