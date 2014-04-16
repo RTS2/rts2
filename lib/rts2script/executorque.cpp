@@ -184,7 +184,7 @@ void TargetQueue::beforeChange (double now)
 		case QUEUE_WESTEAST_MERIDIAN:
 		case QUEUE_OUT_OF_LIMITS:
 			// if number of repetitions is set, requeue
-			if (!empty () && front ().rep_n > 0)
+			if (!empty () && front ().rep_n > 1)
 			{
 				front ().rep_n--;
 				if (!isnan (front ().rep_separation))
@@ -192,6 +192,8 @@ void TargetQueue::beforeChange (double now)
 					front ().t_start = now + front ().rep_separation;
 				}
 				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer)));
+				delete front ().target;
+				pop_front ();
 			}
 			break;
 	}

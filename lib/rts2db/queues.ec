@@ -120,7 +120,6 @@ int QueueEntry::nextQid ()
 	return db_qid;
 }
 
-
 void QueueEntry::create ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
