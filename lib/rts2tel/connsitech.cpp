@@ -48,7 +48,7 @@ void ConnSitech::siTechCommand (const char axis, const char *cmd)
 	ccmd[len + 2] = '\r';
 	ccmd[len + 3] = '\0';
 
-	writePortChecksumed (ccmd, len + 1);
+	writePortChecksumed (ccmd, len + 2);
 }
 
 int32_t ConnSitech::getSiTechValue (const char axis, const char *val)
@@ -78,11 +78,9 @@ void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 	}
 
 	// checksum checks
-	uint16_t checksum = 0;
-	for (int i = 0; i < 39; i++)
-		checksum += ret[i];
-	
-	if (ret[39] != (checksum & 0x00FF) || ret[40] != (~(checksum >> 16) & 0xFF))
+	uint16_t checksum = binaryChecksum (ret, 39);
+
+	if (*((uint16_t *) (ret + 39)) != checksum)
 		throw rts2core::Error ("invalid checksum!");
 
 	// fill in proper return values..
@@ -103,6 +101,29 @@ void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 	ax_status.y_worm_phase = ret[30];
 	ax_status.x_last = ntohl (*(ret + 31));
 	ax_status.y_last = ntohl (*(ret + 35));
+}
+
+void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request)
+{
+	siTechCommand (axis, "XR");
+
+	char data[34];
+
+	*((uint32_t *) (data)) = htonl (ax_request.x_dest);
+	*((uint32_t *) (data + 4)) = htonl (ax_request.x_speed);
+	*((uint32_t *) (data + 8)) = htonl (ax_request.y_dest);
+	*((uint32_t *) (data + 12)) = htonl (ax_request.y_speed);
+
+	*((uint32_t *) (data + 16)) = htonl (ax_request.x_rate_adder);
+	*((uint32_t *) (data + 20)) = htonl (ax_request.y_rate_adder);
+
+	*((uint32_t *) (data + 24)) = htonl (ax_request.x_rate_adder_t);
+	*((uint32_t *) (data + 28)) = htonl (ax_request.y_rate_adder_t);
+
+	*((uint16_t *) (data + 32)) = ntohs (binaryChecksum (data, 32));
+
+	// sends the data..
+	writePort (data, 34);
 }
 
 void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
@@ -141,4 +162,14 @@ uint8_t ConnSitech::calculateChecksum (const char *cbuf, size_t len)
 		ret += cbuf[i];
 	
 	return ~ret;
+}
+
+uint16_t ConnSitech::binaryChecksum (const char *dbuf, size_t blen)
+{
+	uint16_t checksum = 0;
+
+	for (size_t i = 0; i < blen; i++)
+		checksum += dbuf[i];
+
+	return checksum ^ 0xFF00;
 }

@@ -72,8 +72,8 @@ class GEM: public Telescope
 		 * @param ac      Alpha counts
 		 * @param dc      Delta counts
 		 * @param ra      Telescope RA
-		 * @param dec     Telescope dec
-		 * @param un_dec  unflipped counts
+		 * @param dec     Telescope declination
+		 * @param un_dec  unflipped declination
 		 */
 		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec, double &un_dec);
 };

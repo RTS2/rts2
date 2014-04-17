@@ -121,12 +121,22 @@ class ConnSitech: public rts2core::ConnSerial
 		 */
 		void getAxisStatus (char axis, SitechAxisStatus &ax_status);
 
+		/**
+		 * Sends binary more request to the axis.
+		 *
+		 * @param axis          commanded axis
+		 * @param ax_request    request to send on axis
+		 */
+		void sendAxisRequest (char axis, SitechAxisRequest &ax_request);
+
 		void setSiTechValue (const char axis, const char *val, int value);
 
 	private:
 		void writePortChecksumed (const char *cmd, size_t len);
 
 		uint8_t calculateChecksum (const char *buf, size_t len);
+
+		uint16_t binaryChecksum (const char *dbuf, size_t blen);
 };
 
 }
