@@ -8,18 +8,18 @@
 # do dithering along the slit if more exposures requested
 # must switch off the lamps if killed (exec sometimes does that)
 
-import imgprocess
-import scriptcomm
+import rts2.imgprocess
+import rts2.scriptcomm
 import pyfits
 import numpy
 import math
 import time
 
-class coloresAcquire (scriptcomm.Rts2Comm):
+class coloresAcquire (rts2.scriptcomm.Rts2Comm):
 	def __init__(self):
-                scriptcomm.Rts2Comm.__init__(self)
-                self.telname = self.getDeviceByType(scriptcomm.DEVICE_TELESCOPE)
-                self.imgproc = imgprocess.ImgProcess()
+                rts2.scriptcomm.Rts2Comm.__init__(self)
+                self.telname = self.getDeviceByType(rts2.scriptcomm.DEVICE_TELESCOPE)
+                self.imgproc = rts2.imgprocess.ImgProcess()
 		
 		# EXPOSURE TIME
 		self.expTime = 300 # [s] one spectrum exposure time (should be somehow changable from outside)
