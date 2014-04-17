@@ -109,5 +109,3 @@
 
 #define TEMPERATURE    20.0
 #define PRESSURE      760.0
-#define PARKRA          0
-#define PARKDEC         89.999

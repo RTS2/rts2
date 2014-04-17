@@ -22,19 +22,6 @@
 
 #include "gem.h"
 #include "configuration.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <math.h>
 
 #include "sitech.h"
 #include "connection/sitech.h"
@@ -71,7 +58,7 @@ class Sitech:public GEM
 
 		virtual int stopMove ()
 		{
-			FullStop();
+			fullStop();
 			return 0;
 		}
 
@@ -135,8 +122,6 @@ class Sitech:public GEM
 
 		double homera;                    /* Startup RA reset based on HA       */
 		double homedec;                   /* Startup Dec                        */
-		double parkra;                /* Park telescope at this HA          */
-		double parkdec;              /* Park telescope at this Dec         */ 
 		double offsetha;
 		double offsetdec;
                  
@@ -169,27 +154,20 @@ class Sitech:public GEM
 		int alttrackrate;
 		
 		/* Communications variables and routines for internal use */
-		int TelPortFD;
 		const char *device_file;
 
-		void Polar(double *ha, double *dec, int dirflag);
-		void Model(double *ha, double *dec, int dirflag);
-		void Refraction(double *ha, double *dec, int dirflag);
-		void FullStop();
+		void fullStop ();
 		
-		int SyncTelEncoders(void);
+		int SyncTelEncoders (void);
 
 		/**
 		 * Retrieve telescope counts, convert them to RA and Declination.
 		 */
-		void getTel(double &telra, double &teldec);
+		void getTel (double &telra, double &teldec);
 
-		int GoToCoords(double newra, double newdec);
-		void GetGuideTargets(int *ntarget, int *starget, int *etarget, int *wtarget);
-		int CheckGoTo(double newra, double newdec);
-		void StartTrack(void);
-		double CalcLST(int year, int month, int day, double ut, double glong);
-		double CalcJD(int ny, int nm, int nd, double ut);
+		int GoToCoords (double newra, double newdec);
+		void GetGuideTargets (int *ntarget, int *starget, int *etarget, int *wtarget);
+		int CheckGoTo (double newra, double newdec);
 };
 
 }
@@ -200,8 +178,6 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status ()
 {
 	homera = 0.;                    /* Startup RA reset based on HA       */
 	homedec = 0.;                   /* Startup Dec                        */
-	parkra = PARKRA;                /* Park telescope        */
-	parkdec = PARKDEC;
 	offsetha=0.;
 	offsetdec=0.;
 
@@ -247,7 +223,11 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status ()
 	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
 
+	createParkPos (0, 89.999);
+
 	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+
+	addParkPosOption ();
 }
 
 Sitech::~Sitech(void)
@@ -257,7 +237,7 @@ Sitech::~Sitech(void)
 }
 
 /* Full stop */
-void Sitech:: FullStop(void)
+void Sitech::fullStop (void)
 { 
 	try
 	{
@@ -459,8 +439,6 @@ int Sitech::CheckGoTo(double newra, double newdec)
 		return(0);
 	}
 	
-	StartTrack();
-	
 	/* Get the telescope coordinates now */
 	
 	getTel(telra, teldec);
@@ -509,40 +487,6 @@ int Sitech::GoToCoords (double newra, double newdec)
 	return -1;
 }
  
-void Sitech::StartTrack (void)
-{
-	char slewcmd[32] = ""; 
-	int nsend;
-	int ntarget, starget, etarget, wtarget;
-	
-	//GetGuideTargets(&ntarget, &starget, &etarget, &wtarget);
-	
-	/* Default rates and targets should be set elsewhere to reasonable values */
-	/* CenterGuide will update rates based on mount encoder readings					*/
-	/* A call to StartTrack will restore default rates												*/
-	/* For an equatorial mount it sets																				*/
-	/* RA at the sidereal rate and Dec off																		*/
-		
-	/* Start azimuth (RA) axis tracking at sidereal rate										*/
-	/* Use the ASCII set velocity command for the azimuth (Y) axis					*/
-				
-	sprintf(slewcmd,"Y%dS%d\r",wtarget,azmtrackrate0);	
-	nsend = strlen(slewcmd);
-	serConn->flushPortIO ();
-	serConn->writePort(slewcmd,nsend);
-		
-	usleep (100000);
-		
-	/* Turn off any altitude (Dec) axis tracking */
-		
-	sprintf(slewcmd,"XS0\r");	
-	nsend = strlen(slewcmd);
-	serConn->flushPortIO (); 
-	serConn->writePort(slewcmd,nsend);	
- 
-	return;
-} 
-
 int Sitech::isMoving ()
 {
 	return -1;
@@ -550,7 +494,7 @@ int Sitech::isMoving ()
 
 int Sitech::startPark ()
 {
-	GoToCoords (parkra,parkdec);
+	GoToCoords (parkPos->getAlt (), parkPos->getAz ());
 	return 0;
 }
 
