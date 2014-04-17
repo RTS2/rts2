@@ -105,6 +105,7 @@ class Sitech:public GEM
 		ConnSitech *serConn;
 
 		SitechAxisStatus radec_status;
+		SitechAxisRequest radec_request;
 
 		rts2core::ValueLong *ra_pos;
 		rts2core::ValueLong *dec_pos;
@@ -119,6 +120,16 @@ class Sitech:public GEM
 
 		rts2core::ValueLong *ra_last;
 		rts2core::ValueLong *dec_last;
+
+		// request values - speed,..
+		rts2core::ValueLong *ra_speed;
+		rts2core::ValueLong *dec_speed;
+
+		rts2core::ValueLong *ra_rate_adder;
+		rts2core::ValueLong *dec_rate_adder;
+
+		rts2core::ValueLong *ra_rate_adder_t;
+		rts2core::ValueLong *dec_rate_adder_t;
 
 		double homera;                    /* Startup RA reset based on HA       */
 		double homedec;                   /* Startup Dec                        */
@@ -167,14 +178,13 @@ class Sitech:public GEM
 
 		int GoToCoords (double newra, double newdec);
 		void GetGuideTargets (int *ntarget, int *starget, int *etarget, int *wtarget);
-		int CheckGoTo (double newra, double newdec);
 };
 
 }
 
 using namespace rts2teld;
 
-Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status ()
+Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_request ()
 {
 	homera = 0.;                    /* Startup RA reset based on HA       */
 	homedec = 0.;                   /* Startup Dec                        */
@@ -222,6 +232,24 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status ()
 	createValue (ra_worm_phase, "y_worm_phase", "RA worm phase", false);
 	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
+
+	createValue (ra_speed, "ra_speed", "RA speed (base rate), in counst per servo loop", false);
+	createValue (dec_speed, "dec_speed", "DEC speed (base rate), in counst per servo loop", false);
+
+	createValue (ra_rate_adder, "ra_rate_adder", "RA rate adder", false);
+	createValue (dec_rate_adder, "dec_rate_adder", "DEC rate adder", false);
+
+	createValue (ra_rate_adder_t, "ra_rate_adder_t", "RA rate adder time (in servo loops; 1953 would be 1 second)", false);
+	createValue (dec_rate_adder_t, "dec_rate_adder_t", "DEC rate adder time (in servo loops; 1953 would be 1 second)", false);
+
+	ra_speed->setValueLong (1000);
+	dec_speed->setValueLong (1000);
+
+	ra_rate_adder->setValueLong (1000);
+	dec_rate_adder->setValueLong (1000);
+
+	ra_rate_adder_t->setValueLong (1953);
+	dec_rate_adder_t->setValueLong (1953);
 
 	createParkPos (0, 89.999);
 
@@ -415,62 +443,27 @@ int Sitech::initValues ()
 
 int Sitech::startResync ()
 {
-	CheckGoTo (getTelTargetRa (), getTelTargetDec ()); 
+	int32_t ac, dc;
+	int ret = sky2counts (ac, dc);
+	if (ret)
+		return -1;
+	
+	radec_request.y_dest = ac;
+	radec_request.x_dest = dc;
+
+	radec_request.y_speed = ra_speed->getValueLong ();
+	radec_request.x_speed = dec_speed->getValueLong ();
+
+	radec_request.y_rate_adder = ra_rate_adder->getValueLong ();
+	radec_request.x_rate_adder = dec_rate_adder->getValueLong ();
+
+	radec_request.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
+	radec_request.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
+
+	serConn->sendAxisRequest ('Y', radec_request);
+
 	return 0;
 }
-
-/* Test whether the destination was reached                  */
-/* Return 0 if underway                                      */
-/* Return 1 if done                                          */
-/* Return 2 if outside tolerance                             */
-
-int Sitech::CheckGoTo(double newra, double newdec)
-{
-	int status;
-	double telra, teldec;
-	double tolra, toldec;
-	double raerr, decerr;
-
-	status = GoToCoords(newra, newdec);
-
-	if (status == 1)
-	{
-		/* Slew is in progress */
-		return(0);
-	}
-	
-	/* Get the telescope coordinates now */
-	
-	getTel(telra, teldec);
-	
-	/* Find pointing errors in seconds of arc for both axes	 */
-
-	/* Allow for 24 hour ra wrap and trap dec at the celestial poles */
-	
-/*	raerr = 3600. * 15. * ln_range (telra - newra);
-	if (fabs(teldec) < 89. )
-	{
-		decerr = 3600. * (teldec - newdec);
-	}
-	else
-	{
-		decerr = 0.;
-	}
-	
-	tolra = SLEWTOLRA;
-	toldec = SLEWTOLDEC; */
-
-	if ((fabs(raerr) < tolra) && (fabs(decerr) < toldec))
-	{
-		logStream (MESSAGE_INFO) << "Goto completed within tolerance" << sendLog;
-		return(1);
-	}
-	else
-	{		
-		logStream (MESSAGE_INFO) << "Goto completed outside tolerance" << sendLog;
-		return(2);
-	}	
-}  
 
 /* Go to new celestial coordinates                                            */
 /* Based on CenterGuide algorithm rather than controller goto function        */
