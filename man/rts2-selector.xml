@@ -499,6 +499,10 @@
         <term>night_disable_type</term>
 	<listitem>
 	  <para>
+	    List types which should be disabled during the night. This is
+	    primarly intendet to disable flats during night. The value is taken from
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+	    and default to "f F" to disable any targets of the flat type.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -517,6 +521,54 @@
 	</listitem>
       </varlistentry>
     </variablelist>  
+  </refsect1>
+  <refsect1>
+    <title>Queue variables</title>
+    <para>
+      Each selector queue provides a list of variables, visible in the
+      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+      Names of those variables start with name of the queue, followed with _
+      and the variable name. So for example, in the system with
+      <emphasis>plan</emphasis> and <emphasis>manual</emphasis> queues, you will be able to find
+      <emphasis>plan_ids</emphasis> and <emphasis>manual_ids</emphasis> variables.
+    </para>
+    <para>
+      Moreover, most of those queue variables are arrays. Entries of the array
+      with the same index correspond to one queue entry.
+    </para>
+    <variablelist>
+      <varlistentry>
+	<term>ids</term>
+	<listitem>
+	  <para>
+            Array of the targets IDs of the queue entries.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>rep_n</term>
+	<listitem>
+	  <para>
+	    Number of repeats. Any value greater than 0 marks queue entry,
+	    which shall be repeated. Once the entry is observed, its
+	    <emphasis>rep_n</emphasis> is decreased by 1. If the
+	    <emphasis>rep_n</emphasis> value is greater than 0, the observation
+	    is placed at the end of the queue.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>rep_separation</term>
+	<listitem>
+	  <para>
+	    Interval between repeated observations. If the observations is
+	    repeated (its <emphasis>rep_n</emphasis> value is greater than 0),
+	    and <emphasis>rep_separation</emphasis> is set, its start time will
+	    be set to <emphasis>rep_separation</emphasis> seconds into future.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
   </refsect1>
   <refsect1>
     <title>RTS2 commands</title>
