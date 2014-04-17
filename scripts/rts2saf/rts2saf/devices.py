@@ -80,17 +80,21 @@ class FilterWheel(object):
         :return: True if present else False
 
         """
+        retry = 10
         while True:
             proxy.refresh()
             if not self.name in 'FAKE_FTW':
                 try:
                     name=proxy.getDevice(self.name)
-                    self.logger.info('FilterWheel: filter wheel device: {0} present, breaking'.format(self.name))        
+                    self.logger.info('check: filter wheel device: {0} present, breaking'.format(self.name))        
                     break
                 except:
-                    self.logger.error('FilterWheel: filter wheel device: {0} not yet present'.format(self.name))        
-                    #return False
+                    self.logger.error('check: filter wheel device: {0} not yet present'.format(self.name))        
                     time.sleep(1)
+                    retry -= 1
+                    if retry == 0:
+                        self.logger.error('check : filter wheel device: {0} not present'.format(self.name))        
+                        return False
         return True
 
 # ToDo read, write to real devices
@@ -133,7 +137,7 @@ class Focuser(object):
         :return: True if present else False
 
         """
-
+        retry= 10
         while True:
             proxy.refresh()
             try:
@@ -141,9 +145,12 @@ class Focuser(object):
                 self.logger.info('check : focuser device: {0} present, breaking'.format(self.name))        
                 break
             except:
-                self.logger.error('check : focuser device: {0} not yet present'.format(self.name))        
+                self.logger.warn('check : focuser device: {0} not yet present'.format(self.name))        
                 time.sleep(1)
-                #return False
+                retry -= 1
+                if retry == 0:
+                    self.logger.error('check : focuser device: {0} not present'.format(self.name))        
+                    return False
 
         focMin=focMax=None
         try:
@@ -207,21 +214,21 @@ class CCD(object):
         :return: True if present else False
 
         """
-        cnt=0
+        retry=0
         while True:
-            cnt += 1
-            if cnt > 10:
-                self.logger.error('CCD: camera device breaking hard'.format(self.name))
-                break
             proxy.refresh()
             try:
                 proxy.getDevice(self.name)
-                self.logger.error('CCD: camera device: {0} present, breaking'.format(self.name))
+                self.logger.error('check: camera device: {0} present, breaking'.format(self.name))
                 break
             except:
-                self.logger.error('CCD: camera device: {0} not yet present'.format(self.name))        
+                self.logger.error('check: camera device: {0} not yet present'.format(self.name))        
                 #return False
                 time.sleep(1)
+                retry -= 1
+                if retry == 0:
+                    self.logger.error('check : camera device: {0} not present'.format(self.name))        
+                    return False
 
         # There is no real filter wheel
         # TODO
@@ -230,6 +237,7 @@ class CCD(object):
                 if self.debug: self.logger.debug('CCD: using FAKE_FTW')        
                 #  OffsetToEmptySlot set in config.py
                 return True
+
         # ToDo check all of them
         # check presence of a filter wheel
         try:
