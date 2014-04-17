@@ -119,6 +119,20 @@ class Sitech:public GEM
 
 		SitechAxisStatus radec_status;
 
+		rts2core::ValueLong *ra_pos;
+		rts2core::ValueLong *dec_pos;
+
+		rts2core::ValueLong *ra_enc;
+		rts2core::ValueLong *dec_enc;
+
+		rts2core::ValueLong *mclock;
+		rts2core::ValueInteger *temperature;
+
+		rts2core::ValueInteger *ra_worm_phase;
+
+		rts2core::ValueLong *ra_last;
+		rts2core::ValueLong *dec_last;
+
 		double homera;                    /* Startup RA reset based on HA       */
 		double homedec;                   /* Startup Dec                        */
 		double parkra;                /* Park telescope at this HA          */
@@ -164,7 +178,12 @@ class Sitech:public GEM
 		void FullStop();
 		
 		int SyncTelEncoders(void);
-		void GetTel(double *telra, double *teldec);
+
+		/**
+		 * Retrieve telescope counts, convert them to RA and Declination.
+		 */
+		void getTel(double &telra, double &teldec);
+
 		int GoToCoords(double newra, double newdec);
 		void GetGuideTargets(int *ntarget, int *starget, int *etarget, int *wtarget);
 		int CheckGoTo(double newra, double newdec);
@@ -216,6 +235,18 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status ()
 	
 	device_file = "/dev/ttyUSB0";
 
+	createValue (ra_pos, "AXRA", "RA motor axis count", true);
+	createValue (dec_pos, "AXDEC", "DEC motor axis count", true);
+
+	createValue (ra_enc, "ENCRA", "RA encoder readout", true);
+	createValue (dec_enc, "ENCDEC", "DEC encoder readout", true);
+
+	createValue (mclock, "mclock", "millisecond board clocks", false);
+	createValue (temperature, "temperature", "[C] board temperature (CPU)", false);
+	createValue (ra_worm_phase, "y_worm_phase", "RA worm phase", false);
+	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
+	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
+
 	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
 }
 
@@ -240,11 +271,29 @@ void Sitech:: FullStop(void)
 	}
 }
 
-void Sitech::GetTel (double *telra, double *teldec)
+void Sitech::getTel (double &telra, double &teldec)
 {
 	serConn->getAxisStatus ('X', radec_status);
 
-	return;
+	ra_pos->setValueLong (radec_status.y_pos);
+	dec_pos->setValueLong (radec_status.x_pos);
+
+	ra_enc->setValueLong (radec_status.y_enc);
+	dec_enc->setValueLong (radec_status.x_enc);
+
+	mclock->setValueLong (radec_status.mclock);
+	temperature->setValueInteger (radec_status.temperature);
+
+	ra_worm_phase->setValueInteger (radec_status.y_worm_phase);
+
+	ra_last->setValueLong (radec_status.y_last);
+	dec_last->setValueLong (radec_status.x_last);
+
+	double t_dec;
+
+	int ret = counts2sky (radec_status.y_enc, radec_status.x_enc, telra, t_dec, teldec);
+	if (ret)
+		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
 }
 
 /*!
@@ -340,7 +389,7 @@ int Sitech::initHardware ()
   
 	/* Read encoders and confirm pointing */
   
-	GetTel (&homera, &homedec);
+	getTel (homera, homedec);
   
 	fprintf (stderr, "Mount motor encoder RA: %lf\n", homera);
 	fprintf (stderr, "Mount motor encoder Dec: %lf\n", homedec);
@@ -356,6 +405,12 @@ int Sitech::initHardware ()
 
 int Sitech::info ()
 {
+	double t_telRa, t_telDec;
+
+	getTel (t_telRa, t_telDec);
+	
+	setTelRa (t_telRa);
+	setTelDec (t_telDec);
 	return rts2teld::GEM::info ();
 }
 
@@ -408,7 +463,7 @@ int Sitech::CheckGoTo(double newra, double newdec)
 	
 	/* Get the telescope coordinates now */
 	
-	GetTel(&telra, &teldec);
+	getTel(telra, teldec);
 	
 	/* Find pointing errors in seconds of arc for both axes	 */
 
