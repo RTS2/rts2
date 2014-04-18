@@ -39,7 +39,7 @@ class FWHM:
 def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=[],printpeak=False):
 	"""Process image, print its FWHM. Works with multi extension images.
 	"""
-	ff = pyfits.fitsopen(fn)
+	ff = pyfits.open(fn)
 
 	if d:
 		d.set('file ' + fn)
@@ -122,10 +122,11 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 			except KeyError,er:
 				pass
 			try:
-				zd = 90 - ff[0].header['TEL_ALT']
-				fz = seg_fwhms[x].fwhm * (math.cos(math.radians(zd)) ** 0.6)
-				sc.doubleValue('fwhm_zd{0}'.format(suffix),"[deg] zenith distance of the FWHM measurement",zd)
-				sc.doubleValue('fwhm_zenith{0}'.format(suffix),"estimated zenith FWHM",fz)
+				zd = 90.0 - ff[0].header['TEL_ALT']
+				if 90 > zd > 0:
+					fz = seg_fwhms[x].fwhm * (math.cos(math.radians(zd)) ** 0.6)
+					sc.doubleValue('fwhm_zd{0}'.format(suffix),"[deg] zenith distance of the FWHM measurement",zd)
+					sc.doubleValue('fwhm_zenith{0}'.format(suffix),"estimated zenith FWHM",fz)
 			except KeyError,er:
 				pass
 			try:
