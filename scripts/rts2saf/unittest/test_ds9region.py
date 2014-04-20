@@ -18,7 +18,7 @@
 #
 
 import unittest
-from ds9 import *
+import os
 from rts2saf.config import Configuration 
 from rts2saf.data import DataSxtr
 from rts2saf.sextract import Sextract
@@ -52,11 +52,9 @@ class TestDs9Region(unittest.TestCase):
         self.rt = Configuration(logger=logger)
         self.rt.readConfiguration(fileName='./rts2saf-no-filter-wheel.cfg')
         self.dSx=Sextract(debug=False, rt=self.rt, logger=logger).sextract(fitsFn='../samples/20071205025911-725-RA.fits')
-        # to see DS9 use
-        #  self.dds9=ds9()
-        self.dds9=None
+        print self.dSx.fitsFn
 
-    #@unittest.skip('feature not yet implemented')
+    @unittest.skip('test not yet meaningful')
     def test_displayWithRegion(self):
         logger.info('== {} =='.format(self._testMethodName))
         ds9r=Ds9DisplayThread(dataSxtr=self.dSx, logger=logger)

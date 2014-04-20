@@ -149,10 +149,8 @@ class DefaultConfiguration(object):
         self.dcf[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
 
         self.dcf[('connection', 'URL')] = 'http://127.0.0.1:8889' 
-#        self.dcf[('connection', 'USERNAME')] = 'rts2saf'
-#        self.dcf[('connection', 'PASSWORD')] = 'writeToDevice'
-        self.dcf[('connection', 'USERNAME')] = 'petr'
-        self.dcf[('connection', 'PASSWORD')] = 'test'
+        self.dcf[('connection', 'USERNAME')] = 'rts2saf'
+        self.dcf[('connection', 'PASSWORD')] = 'set password in your config file'
 
         self.dcf[('queue focus run', 'FWHM_LOWER_THRESH')] = 35.
 

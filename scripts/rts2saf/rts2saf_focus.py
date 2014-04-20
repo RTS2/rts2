@@ -103,6 +103,9 @@ if __name__ == '__main__':
     parser.add_argument('--fitdisplay', dest='FitDisplay', action='store_true', default=False, help=': %(default)s, display fit')
     parser.add_argument('--cataloganalysis', dest='catalogAnalysis', action='store_true', default=False, help=': %(default)s, ananlys is done with CatalogAnalysis')
     parser.add_argument('--criteria', dest='criteria', action='store', default='rts2saf.criteria_radius', help=': %(default)s, CatalogAnalysis criteria Python module to load at run time')
+    parser.add_argument('--associate', dest = 'associate', action = 'store_true', default = False, help = ': %(default)s, let sextractor associate the objects among images')
+    parser.add_argument('--flux', dest = 'flux', action = 'store_true', default = False, help = ': %(default)s, do flux analysis')
+    parser.add_argument('--fraction', dest = 'fractObjs', action = 'store', default = 0.5, type = float, help = ': %(default)s, fraction of objects which must be present on each image, base: object number on reference image, this option is used only together with --associate')
 
     args=parser.parse_args()
 
@@ -131,6 +134,11 @@ if __name__ == '__main__':
     if not rt.checkConfiguration(args=args):
         logger.error('rts2saf_focus: exiting, check the configuration file: {0}'.format(args.config))
         sys.exit(1)
+
+    # overwrite config defaults
+    rt.cfg['ANALYZE_FLUX'] = args.flux  
+    rt.cfg['ANALYZE_ASSOC'] = args.associate
+    rt.cfg['ANALYZE_ASSOC_FRACTION'] = args.fractObjs
 
     # get the environment
     ev=Environment(debug=args.debug, rt=rt,logger=logger)

@@ -279,7 +279,7 @@ class Focus(object):
                             self.logger.info('Focus: ft: {0}, set ft.OffsetToEmptySlot: {1}'.format(ft.name, int(ft.OffsetToEmptySlot)))
                             break
                     else:
-                        self.logger.warn('Focus: ft: {0}, not found in result, rFt.ftName: {1}, that is ok if this is a unittest run)'.format(ft.name, rFt.ftName))
+                        self.logger.warn('Focus: ft: {0}, not found in result, rFt.ftName: {1}, that is ok if this is a unittest run'.format(ft.name, rFt.ftName))
 
             elif len(ftw.filters) > 1:
                 self.logger.warn('Focus: found ft: {0} but no empty slot'.format(ft.name))

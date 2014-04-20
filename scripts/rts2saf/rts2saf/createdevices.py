@@ -224,8 +224,7 @@ class CreateCCD(CreateDevice):
                             ft.OffsetToEmptySlot= 0
                             self.logger.warn('filterOffsets: {0}, {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftw.name, ft.name,self.ccd.name))
                 else:
-                    if self.debug: self.logger.debug('filterOffsets: {0} filter {1} not found on CCD {2}, ignoring it'.format( ftw.name, ft.name, self.ccd.name))        
-                    return False
+                    self.logger.warn('filterOffsets: {0} filter {1} not found on CCD {2}, ignoring it'.format( ftw.name, ft.name, self.ccd.name))        
                     
         return True
 

@@ -80,7 +80,7 @@ class FilterWheel(object):
         :return: True if present else False
 
         """
-        retry = 10
+        retry = 5
         while True:
             proxy.refresh()
             if not self.name in 'FAKE_FTW':
@@ -137,7 +137,7 @@ class Focuser(object):
         :return: True if present else False
 
         """
-        retry= 10
+        retry= 5
         while True:
             proxy.refresh()
             try:
@@ -214,7 +214,7 @@ class CCD(object):
         :return: True if present else False
 
         """
-        retry=0
+        retry=5
         while True:
             proxy.refresh()
             try:

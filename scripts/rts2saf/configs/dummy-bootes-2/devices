@@ -2,7 +2,7 @@
 #
 #device	type	device_name	options
 #
-camd	dummy	andor3	--wheeldev COLWFLT  --wheeldev COLWGRS  --wheeldev COLWSLT  --filter-offsets 1:2:3:4:5:6:7:8  --focdev F0 --width 400 --height 500 
+camd	dummy	andor	--wheeldev COLWFLT  --wheeldev COLWGRS  --wheeldev COLWSLT  --filter-offsets 1:2:3:4:5:6:7:8  --focdev F0 --width 400 --height 500 
 teld	dummy	B2	--move fast --localhost localhost
 filterd	dummy	COLWFLT	-F "open:R:g:r:i:z:Y:empty8" -s 10 --localhost localhost
 filterd	dummy	COLWGRS	-F "open" -s 11 --localhost localhost

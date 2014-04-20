@@ -44,8 +44,8 @@ class SimpleAnalysis(object):
     :var ftwName: filter wheel name
     :var ftName: filter name
     :var focRes:  focuser resolution as given in FOCUSER_RESOLUTION  
-    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
     :var ev: helper module for house keeping, :py:mod:`rts2saf.environ.Environment`
+    :var rt: run time configuration,  :py:mod:`rts2saf.config.Configuration`, usually read from /usr/local/etc/rts2/rts2saf/rts2saf.cfg
     :var logger:  :py:mod:`rts2saf.log`
 
 """
@@ -60,7 +60,8 @@ class SimpleAnalysis(object):
                  ftwName=None, 
                  ftName=None, 
                  focRes=None, 
-                 ev=None, 
+                 ev=None,
+                 rt=None,
                  logger=None):
         self.debug=debug
         self.date=date
@@ -72,6 +73,7 @@ class SimpleAnalysis(object):
         self.ftName=ftName
         self.focRes=focRes
         self.ev=ev
+        self.rt= rt
         self.logger=logger
         self.dataFitFwhm=None
         self.resultFitFwhm=None
@@ -202,7 +204,7 @@ class SimpleAnalysis(object):
 
         """
 
-        # plot them through ds9 ev. in parallel to the fit
+        # plot them through ds9 in parallel to the fit
         ds9DisplayThread = None
         if self.Ds9Display and self.xdisplay:
             # start thread 
@@ -212,7 +214,11 @@ class SimpleAnalysis(object):
         elif self.Ds9Display and not self.xdisplay:
             self.logger.warn('analyze: OOOOOOOOPS, no ds9 display available')
 
-        ft=FitDisplay(date = self.date, logger=self.logger)
+        
+        if self.dataSxtr[0].assocFn is not None:
+            ft=FitDisplay(date = self.date, comment='ASSOC', logger=self.logger)
+        else:
+            ft=FitDisplay(date = self.date, logger=self.logger)
 
         if self.i_flux is None:
             ft.fitDisplay(dataFit=self.dataFitFwhm, resultFit=self.resultFitFwhm, display=self.FitDisplay, xdisplay = self.xdisplay)
@@ -340,6 +346,7 @@ class CatalogAnalysis(object):
             xdisplay = self.xdisplay,
             focRes=self.focRes, 
             ev=self.ev, 
+            rt=self.rt,
             logger=self.logger)
 
         accRFtFwhm, accRMnsFwhm, accRFtFlux, accRMnsFlux=an.analyze()
@@ -356,6 +363,7 @@ class CatalogAnalysis(object):
             FitDisplay=self.FitDisplay, 
             focRes=self.focRes, 
             ev=self.ev, 
+            rt=self.rt,
             logger=self.logger)
 
         rejRFtFwhm, recRMnsFwhm, rejRFtFlux, recRMnsFlux=an.analyze()
@@ -372,7 +380,8 @@ class CatalogAnalysis(object):
             Ds9Display=self.Ds9Display, 
             FitDisplay=self.FitDisplay, 
             focRes=self.focRes, 
-           ev=self.ev, 
+            ev=self.ev, 
+            rt=self.rt,
             logger=self.logger)
 
         allRFtFwhm, allRMnsFwhm, allRFtFlux, allRMnsFlux=an.analyze()

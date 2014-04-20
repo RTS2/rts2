@@ -135,12 +135,12 @@ is integrated in RTS2.
 Postgres DB
 -----------
 The dummy devices are usually added  by the script 
-``rts-2/scripts/ubuntu-rts2-install`` to the Postgres DB, in case not execute as user postgres:
+``rts-2/scripts/ubuntu-rts2-install`` to the Postgres DB. In case not or your device names ``T0`` and ``C0`` differ, execute as user postgres:
 
 .. code-block:: bash
 
   cd ~/rts-2/src/sql
-  ./rts2-configdb stars -t T0
+  ./rts2-configdb stars -t T0 
   ./rts2-configdb stars -c C0
   ./rts2-configdb stars -c andor # used only for unittest, see below
 
@@ -163,7 +163,7 @@ connection to XMLRPC, this is the default in ``rts2.ini``, is mandatory create a
 
  postgres@localhost:~$ rts2-user -a YOUR_RTS2_USER # recommendation use default user: rts2saf
  User password: YOUR_PASSWD
- User email (can be left empty): YOUR_REAL_UID@some.host # in case RTS2 sends emails
+ User email (can be left empty): YOUR_REAL_EMAIL@some.host # in case RTS2 sends emails
 
 Specify an email address despite the dialog suggests that it can be left empty. The permission
 to write to focuser, CCD, and filter wheel are granted with
@@ -172,10 +172,79 @@ to write to focuser, CCD, and filter wheel are granted with
 
  UPDATE users SET usr_execute_permission='t', allowed_devices = 'F0 C0 W0' WHERE usr_login='YOUR_RTS2_USER' ;
 
-if default device names are configured in ``/etc/rts2/devices``.
+if default device names are configured in ``/etc/rts2/devices``. At this point an authorized
+connection to XMLRPC with
+
+.. code-block:: bash
+
+ /etc/init.d/rts2 start
+ your_browser http://127.0.0.1:8889/devices/F0
+
+can be established, after entering YOUR_RTS2_USER, YOUR_PASSWD. If you receive ``Bad request Cannot find specified device``
+the authorization took place but the device in question is not present. Check your ``/etc/rts2/devices`` file. To check if
+all necessary devices are present and writable use
+ 
+.. code-block:: bash
+
+ rts2saf_focus.py --toc --check
+
+which creates an output like
+
+.. code-block:: bash
+
+ wildi@nausikaa:~/rts-2/scripts/rts2saf/sphinx> rts2saf_focus.py --toc --check
+ logging to: /tmp/rts2saf_log/rts2-debug instead of /var/log/rts2-debug
+ create:  F0 setting internal limits from configuration file and ev. default values!
+ create:  F0 has    FOC_DEF set, breaking
+ check : focuser device: F0 present, breaking
+ create:  COLWGRS, empty slot:open
+ create:  COLWSLT, empty slot:open
+ create:  COLWFLT, empty slot:open
+ check: filter wheel device: COLWGRS present, breaking
+ check: filter wheel device: COLWSLT present, breaking
+ check: filter wheel device: COLWFLT present, breaking
+ check: camera device: andor present, breaking
+ filterOffsets: andor, COLWGRS no filter offsets could be read from CCD, but filter wheel/filters are present
+ filterOffsets: andor, filter wheel COLWGRS defined filters [u'open']
+ filterOffsets: andor, filter wheel COLWGRS used    filters ['open']
+ filterOffsets: andor, COLWSLT no filter offsets could be read from CCD, but filter wheel/filters are present
+ filterOffsets: andor, filter wheel COLWSLT defined filters [u'open']
+ filterOffsets: andor, filter wheel COLWSLT used    filters ['open']
+ filterOffsets: andor, filter wheel COLWFLT defined filters [u'open', u'R', u'g', u'r', u'i', u'z', u'Y', u'empty8']
+ filterOffsets: andor, filter wheel COLWFLT used    filters ['open']
+ checkBounds: open has no defined filter offset, setting it to ZERO
+ checkBounds: COLWGRS open 0
+ checkBounds: open has no defined filter offset, setting it to ZERO
+ checkBounds: COLWSLT open 0
+ checkBounds: open has no defined filter offset, setting it to ZERO
+ checkBounds: COLWFLT open 0
+ summaryDevices: focus run without multiple empty slots:
+ summaryDevices: COLWGRS : open     6 steps, FOC_TOFF: [   -6,     9], FOC_POS: [   -6,    9], FOC_DEF:     0, Filter Offset:     0
+
+ summaryDevices: COLWSLT : ['open'] has only empty slots
+ summaryDevices: COLWFLT : ['open'] has only empty slots
+ summaryDevices: taking 6 images in total
+ deviceWriteAccess: this may take approx. a minute
+ deviceWriteAccess: all devices are writable
+ rts2saf_focus: configuration check done for config file:/usr/local/etc/rts2/rts2saf/rts2saf.cfg, exiting
+
+and in case a device is not writeable
+
+.. code-block:: bash
+
+ wildi@nausikaa:~/rts-2/scripts/rts2saf/sphinx> rts2saf_focus.py --toc  --check
+ logging to: /tmp/rts2saf_log/rts2-debug instead of /var/log/rts2-debug
+ 
+ ...
+ 
+ check: camera device: andor4 not yet present
+ check : camera device: andor4 not present
+ rts2saf_focus: could not create object for CCD: andor4, exiting
+
+
 
 The following part until the end of the section is only necessary if you want to execute
-the ``unittest`` or the scripts on the command line, what is recommended.
+the ``unittest``, which is recommended.
 
 Create the Postgres database user 
 

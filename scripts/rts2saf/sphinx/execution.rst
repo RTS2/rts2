@@ -44,8 +44,9 @@ While the observatory is operational (night time) and target selection is disabl
 
   rts2saf_focus.py --toconsole --fitdisplay --ds9display --debug --level DEBUG
 
-and after a while a ``matplotlib`` window appears with fitted data and after closing it the 
-``DS9`` window appears displaying the accepted (green) and rejected (red) sources.
+and after a while a ``matplotlib`` window appears with fitted data together with
+``DS9`` window displaying the accepted (green) and rejected (red) sources. If the analysis 
+is carried out with  discarded star like objects (yellow)
 
 
 During acquisition in autonomous operations, ``rts2saf_focus.py`` is being executed by EXEC 
@@ -61,13 +62,9 @@ the start time (normally it is sufficient to do a ``ls -lrt`` within ``BASE_DIRE
 and change to the last listed directory). Acquisition and analysis processes do not interfere 
 at all.
 
-
 The measurement of the filter offsets  is done on the command line and the results are manually written to file ``/etc/rts2/devices``:
 
 .. code-block:: bash
 
  camd     fli    CCD_FLI     --focdev FOC_FLI --wheeldev FTW_FLI --filter-offsets 1644:1472:1346:1349:1267:0:701
  filterd  fli    FTW_FLI     -F "U:B:V:R:I:X:H"
-
-The focus travel range is defined by the values given in section ``[filter properties]``
-as explained in next section.

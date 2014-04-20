@@ -6,7 +6,7 @@ applies to real devices as well. Keep on reading.
 
 RTS2 provides dummy (software only) devices which can be used to together with
 the services, like ``rts2-centrald``, to learn almost anything about operations
-without the need to wait for a specific state change (e.g. E.g., if
+without the need to wait for a specific state change (e.g., if
 one wants to start the observation right before state ``evening`` adjust the
 parameter ``longitude`` to a decent value or if you really need a long  night
 set ``latitude = +/- 80.0`` depending if it is winter/summer on the northern
@@ -23,18 +23,17 @@ bunch of filters.  In file ``/etc/rts2/devices`` add dummy devices (at least the
  #
  camd	        dummy	C0	--wheeldev W0  --filter-offsets 1:2:3:4:5:6:7:8  --focdev F0 --width 400 --height 500 
  filterd	dummy	W0	-F "open:R:g:r:i:z:Y:empty8" -s 10 --localhost localhost
- focusd	        dummy	F0      --modefile /etc/rts2/f0.modefile 
+ focusd	        dummy	F0      --modefile /usr/local/etc/rts2/rts2saf/f0.modefile 
 
 or copy ``~/rts-2/scripts/rts2saf/configs/one-filter-wheel/devices`` to ``/etc/rts2``.
 The ``rts2saf`` configuration needs to be copied:
 
 .. code-block:: bash
 
-   
-
    sudo cp ~/rts-2/scripts/rts2saf/configs/one-filter-wheel/rts2saf.cfg /usr/local/etc/rts2/rts2saf
    cd ~/rts-2/conf/rts2saf/
-   sudo cp rts2saf.cfg rts2saf-sex.cfg rts2saf-sex.nnw rts2saf/f0.modefile /usr/local/etc/rts2/rts2saf
+   sudo cp rts2saf-sex.cfg rts2saf-sex.nnw  /usr/local/etc/rts2/rts2saf
+   sudo cp ~/rts-2/scripts/rts2saf/unittest/f0.modefile  /usr/local/etc/rts2/rts2saf/f0.modefile
 
 The focuser configuration file ``f0.modefile`` sets ``focstep`` of the dummy focuser to
 a reasonable value which shortens execution time.

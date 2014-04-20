@@ -164,6 +164,7 @@ class AnalyzeRuns(object):
                 xdisplay = self.xdisplay,
                 focRes = float(self.rt.cfg['FOCUSER_RESOLUTION']), 
                 ev = self.ev, 
+                rt = self.rt,
                 logger = self.logger)
 
             arFtFwhm, arMnsFwhm, arFtFlux, arMnsFlux = an.analyze()
