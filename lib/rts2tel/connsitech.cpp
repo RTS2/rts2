@@ -41,12 +41,12 @@ int ConnSitech::init ()
 void ConnSitech::siTechCommand (const char axis, const char *cmd)
 {
 	size_t len = strlen (cmd);
-	char ccmd[strlen(cmd) + 3];
+	char ccmd[len + 3];
 
 	ccmd[0] = axis;
 	memcpy (ccmd + 1, cmd, len);
-	ccmd[len + 2] = '\r';
-	ccmd[len + 3] = '\0';
+	ccmd[len + 1] = '\r';
+	ccmd[len + 2] = '\0';
 
 	writePortChecksumed (ccmd, len + 2);
 }
@@ -160,7 +160,7 @@ uint8_t ConnSitech::calculateChecksum (const char *cbuf, size_t len)
 	uint8_t ret = 0;
 	for (size_t i = 0; i < len; i++)
 		ret += cbuf[i];
-	
+
 	return ~ret;
 }
 

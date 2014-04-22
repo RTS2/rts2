@@ -342,25 +342,20 @@ int Sitech::initHardware ()
 	/*   The serial device is known to the program that calls this procedure. */
 	
 	serConn = new ConnSitech (device_file, this);
+	serConn->setDebug (getDebug ());
+
 	ret = serConn->init ();
 
 	if (ret)
 		return -1;
 	serConn->flushPortIO ();
 	
-	
-	/* Test connection by asking for firmware version    */
-  	if (serConn->writePort ("XV\r", 3) == -1)
-	    return -1;
-
-	serConn->getSiTechValue ('X', "V");
+	numread = serConn->getSiTechValue ('X', "V");
      
-	numread=serConn->readPort (returnstr,4);
-	if (numread !=0 ) 
+	if (numread != 0) 
 	{
 		returnstr[numread] = '\0';
-		fprintf (stderr, "Planewave A200HR\n");
-		fprintf (stderr, "Sidereal Technology %s\n", returnstr);
+		fprintf (stderr, "Sidereal Technology Controller version %d\n", numread);
 		fprintf (stderr, "Telescope connected \n");  
 	}
 	else
@@ -369,13 +364,6 @@ int Sitech::initHardware ()
 		return -1;
 	}  
 
-	/* Flush the input buffer */
-	serConn->flushPortIO ();
-  
-	/* Set global tracking parameters */
-          
-	/* Set rates for defaults */
-    
 	azmtrackrate0 = AZMSIDEREALRATE;
 	alttrackrate0 = ALTSIDEREALRATE;
 	azmtrackrate = 0;
