@@ -210,7 +210,7 @@ class Configuration(DefaultConfiguration):
             try:
                 config.readfp(open(fileName))
             except Exception, e:                
-                self.logger.error('Configuration.readConfiguration: config file {0} has wrong syntax:\n{1}'.format(fileName,e))
+                self.logger.error('Configuration.readConfiguration: config file: {0} has wrong syntax:\n{1}'.format(fileName,e))
                 return False
             # ok, I misuse ConfigParser
             # check additional elements or typo
@@ -219,11 +219,11 @@ class Configuration(DefaultConfiguration):
                     try:
                         val=self.dcf[(sct, k)]
                     except Exception, e:
-                        self.logger.error('Configuration.readConfiguration: config file {0} has wrong syntax:\n{1}'.format(fileName,e))
+                        self.logger.error('Configuration.readConfiguration: config file: {0} has wrong syntax:\n{1}'.format(fileName,e))
                         return False
 
         else:
-            self.logger.error('Configuration.readConfiguration: config file {0} not found'.format(fileName))
+            self.logger.error('Configuration.readConfiguration: config file: {0} not found'.format(fileName))
             return False
         self.cfg['CFGFN'] = fileName
         # read the defaults
@@ -239,7 +239,7 @@ class Configuration(DefaultConfiguration):
                 value = config.get( section, identifier)
             except Exception, e:
                 # exception if section, identifier value are not present in config file
-                #self.logger.error('Configuration.readConfiguration: config file {0} has an error at section:{1}, identifier:{2}, value:{3}'.format(fileName, section, identifier, value))
+                #self.logger.error('Configuration.readConfiguration: config file: {0} has an error at section:{1}, identifier:{2}, value:{3}'.format(fileName, section, identifier, value))
                 continue
 
             value= string.replace( value, ' ', '')
@@ -276,7 +276,8 @@ class Configuration(DefaultConfiguration):
             #
             elif section=='filter wheel':
                 items= value[1:-1].split(',')
-                filterWheelsDefs[items[0]]=items[1:]
+                filterWheelsDefs[items[0]]=[ x for x in items[1:] if x is not '']
+                print '>>>', filterWheelsDefs[items[0]]
             #
             elif( section=='filter wheels'):
                 fakeFtw=False
@@ -376,11 +377,11 @@ class Configuration(DefaultConfiguration):
 
         for ftw in self.cfg['FILTER WHEELS INUSE']:
             if ftw  not in ftws:
-                self.logger.warn( 'Configuration.checkConfiguration: filter wheel {} not defined in {}'.format(ftw, ftws))
+                self.logger.warn( 'Configuration.checkConfiguration: filter wheel: {} not defined in: {}'.format(ftw, ftws))
                 return False
             for ftName in self.cfg['FILTER WHEEL DEFINITIONS'][ftw]:
                 if ftName not in fts:
-                    self.logger.warn( 'Configuration.checkConfiguration: filter {} not defined in {}'.format(ftName, self.cfg['FILTER DEFINITIONS']))
+                    self.logger.warn( 'Configuration.checkConfiguration: filter: {} not defined in: {}'.format(ftName, self.cfg['FILTER DEFINITIONS']))
                     return False
 
 
@@ -396,7 +397,7 @@ class Configuration(DefaultConfiguration):
             vars(args)['flux']
             for fld in ['FLUX_MAX' , 'FLUX_APER', 'FLUXERR_APER']:
                 if  fld in self.cfg['FIELDS']:
-                    self.logger.error( 'Configuration.checkConfiguration: with --flux do not specify SExtractor parameter {}  in FIELDS: {}'.format( fld, self.cfg['FIELDS']))
+                    self.logger.error( 'Configuration.checkConfiguration: with --flux do not specify SExtractor parameter: {}  in FIELDS: {}'.format( fld, self.cfg['FIELDS']))
                     return False
         except:
             pass
