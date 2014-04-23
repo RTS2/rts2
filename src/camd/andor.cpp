@@ -64,6 +64,9 @@ namespace rts2camd
  * respond reasonably well to the absence of iXon features
  *
  * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * 2014 March : Added support for binning (tested on iXon 1K x 1K emccd) - Shashikiran Ganesh <shashi@prl.res.in>
+ *
  */
 class Andor:public Camera
 {
@@ -82,10 +85,25 @@ class Andor:public Camera
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
 
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual void help ();
 		virtual void usage ();
+
+		virtual void initBinning()
+                {
+                        Camera::initBinnings ();
+                        addBinning2D (2, 2);
+ 			addBinning2D (4, 4);
+			addBinning2D (8, 8);
+                }
+
+                virtual int setBinning (int in_vert, int in_hori)
+                {
+                         return Camera::setBinning (in_vert, in_hori);
+                }
+
 
 		virtual void initDataTypes ();
 
@@ -1167,12 +1185,16 @@ int Andor::initHardware ()
 		logStream (MESSAGE_ERROR) << "Cannot set default AD Channel to 1" << sendLog;
 		return -1;
 	}
+	// added below code to get quick updates in rts2-mon.. (SG)
+	// setIdleInfoInterval (2); 
 
 	return initChips ();
 }
 
 void Andor::initAndorValues ()
 {
+
+	initBinning();
 	if (cap.ulSetFunctions & AC_SETFUNCTION_VSAMPLITUDE)
 	{
 		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
