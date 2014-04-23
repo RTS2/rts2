@@ -277,7 +277,6 @@ class Configuration(DefaultConfiguration):
             elif section=='filter wheel':
                 items= value[1:-1].split(',')
                 filterWheelsDefs[items[0]]=[ x for x in items[1:] if x is not '']
-                print '>>>', filterWheelsDefs[items[0]]
             #
             elif( section=='filter wheels'):
                 fakeFtw=False
