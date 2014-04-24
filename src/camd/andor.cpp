@@ -65,7 +65,6 @@ namespace rts2camd
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * 2014 March : Added support for binning (tested on iXon 1K x 1K emccd) - Shashikiran Ganesh <shashi@prl.res.in>
  *
  */
 class Andor:public Camera
@@ -91,19 +90,13 @@ class Andor:public Camera
 		virtual void help ();
 		virtual void usage ();
 
-		virtual void initBinning()
+		virtual void initBinnings ()
                 {
-                        Camera::initBinnings ();
+			Camera::initBinnings ();
                         addBinning2D (2, 2);
  			addBinning2D (4, 4);
 			addBinning2D (8, 8);
                 }
-
-                virtual int setBinning (int in_vert, int in_hori)
-                {
-                         return Camera::setBinning (in_vert, in_hori);
-                }
-
 
 		virtual void initDataTypes ();
 
@@ -1193,8 +1186,6 @@ int Andor::initHardware ()
 
 void Andor::initAndorValues ()
 {
-
-	initBinning();
 	if (cap.ulSetFunctions & AC_SETFUNCTION_VSAMPLITUDE)
 	{
 		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
