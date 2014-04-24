@@ -189,6 +189,14 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	ra_ticks = 120000;
 	dec_ticks = 120000;
 
+	haZero = 0;
+	decZero = 0;
+
+	haCpd = ra_ticks / 360.0;
+	decCpd = dec_ticks / 360.0;
+
+	setCorrections (true, true, true);
+
 	homera = 0.;                    /* Startup RA reset based on HA       */
 	homedec = 0.;                   /* Startup Dec                        */
 	offsetha=0.;
