@@ -80,8 +80,11 @@ void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 	// checksum checks
 	uint16_t checksum = binaryChecksum (ret, 39);
 
-	if (*((uint16_t *) (ret + 39)) != checksum)
+	if ((*((uint16_t *) (ret + 39))) != checksum)
+	{
+		std::cerr << "checksum expected " << checksum << " received " << (*((uint16_t *) (ret + 39))) << std::endl;
 		throw rts2core::Error ("invalid checksum!");
+	}
 
 	// fill in proper return values..
 	ax_status.address = ret[0];
@@ -120,7 +123,7 @@ void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request
 	*((uint32_t *) (data + 24)) = htonl (ax_request.x_rate_adder_t);
 	*((uint32_t *) (data + 28)) = htonl (ax_request.y_rate_adder_t);
 
-	*((uint16_t *) (data + 32)) = ntohs (binaryChecksum (data, 32));
+	*((uint16_t *) (data + 32)) = htons (binaryChecksum (data, 32));
 
 	// sends the data..
 	writePort (data, 34);
@@ -169,7 +172,7 @@ uint16_t ConnSitech::binaryChecksum (const char *dbuf, size_t blen)
 	uint16_t checksum = 0;
 
 	for (size_t i = 0; i < blen; i++)
-		checksum += dbuf[i];
+		checksum += (uint8_t) dbuf[i];
 
-	return checksum ^ 0xFF00;
+	return (checksum ^ 0xFF00);
 }

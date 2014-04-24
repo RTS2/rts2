@@ -186,6 +186,9 @@ using namespace rts2teld;
 
 Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_request ()
 {
+	ra_ticks = 120000;
+	dec_ticks = 120000;
+
 	homera = 0.;                    /* Startup RA reset based on HA       */
 	homedec = 0.;                   /* Startup Dec                        */
 	offsetha=0.;
