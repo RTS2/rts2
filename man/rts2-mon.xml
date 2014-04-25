@@ -71,6 +71,10 @@
       commands. To take images autonomously, use either
       <command>rts2-executor</command> or <command>rts2-scriptor</command>.
     </para>
+    <para>
+      Please read at least the <link linkend="variables">variables format</link>
+      section, to understand how the arrays are displayed.
+    </para>
   </refsect1>
   <refsect1 id="basic_operation">
     <title>BASIC OPERATION</title>
@@ -340,6 +344,28 @@
       </variablelist>
     </refsect2>
 
+  </refsect1>
+  <refsect1 id="variables">
+    <title>Variables display</title>
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>Arrays</option>
+	</term>
+	<listitem>
+	  <para>
+	    For arrays variables, the monitor window shows the following
+	    values: mean, size (number of elements), minimum, maximum, median
+	    and standard deviation.
+	  </para>
+	  <para>
+	    The full content of the array will be displayed when
+	    <emphasis>Enter</emphasis> key is pressed while the variable is
+	    selected.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
   </refsect1>
   <refsect1 id="options">
     <title>OPTIONS</title>
