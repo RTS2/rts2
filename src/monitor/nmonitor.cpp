@@ -212,7 +212,9 @@ void NMonitor::showHelp ()
 "F10,ctrl+c .. exit\n"
 "arrow keys .. move between items\n"
 "tab        .. move between windows\n"
-"enter,F6   .. edit value");
+"enter,F6   .. edit value\n"
+"==================================================================\n"
+"For arrays, mean, size, minimum, maximum, median and standard deviation are displayed.");
 }
 
 void NMonitor::messageBox (const char *text)
