@@ -31,10 +31,14 @@ int ConnSitech::init ()
 	if (ret)
 		return ret;
 
-	// switch to checksum mode
-	ret = writePort ("YXY1\r", 5);
-	if (ret < 0)
-		return -1;
+	// check if checksum mode is on
+	if (getSiTechValue ('Y', "XY") == 0)
+	{
+		// switch to checksum mode
+		ret = writePort ("YXY1\r", 5);
+		if (ret < 0)
+			return -1;
+	}
 	return 0;
 }
 
