@@ -156,7 +156,7 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):DeviceDb (in_argc
 	minNPix4->setValueDouble (10.);
 
 	createValue (maxDGHChi2Improv4, "max_dghchi2_improv4", "maximal DGHChi2 Improv, cut4", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	maxDGHChi2Improv4->setValueDouble (-10.);
+	maxDGHChi2Improv4->setValueDouble (-0.2);
 
  /*       fourth set of cuts - end   */
 

@@ -364,7 +364,7 @@ int ConnShooter::processAuger ()
 	/*       fourth set of cuts         */
 	if (compare (db_NPix, CMP_GT, master->minNPix4->getValueInteger (), "NPix")
 		&& compare (db_Eye, CMP_EQ, master->EyeId4->getValueInteger (), "Eye")
-		&& compare (db_DGHChi2Improv, CMP_LT, master->maxDGHChi2Improv4->getValueDouble (), "DGHChi2Improv")
+		&& compare ((db_DGHChi2Improv / db_GHNdf), CMP_LT, master->maxDGHChi2Improv4->getValueDouble (), "DGHChi2Improv to GHNdf ratio")
 	)
 		db_cut |= 8;
 	/*       fourth set of cuts - end   */
