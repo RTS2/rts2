@@ -130,6 +130,7 @@ rts2-queue --load circular.q
 rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
 	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
+	parser.add_option('--simulate',help="run simulation. If no parameters are specified, night_beginning or current time and night_ending will be used",action='store_true',dest='simulate',default=False)
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
 	parser.add_option("--queue", help='specify queue name on which to act', action='store', dest='queue', default=None)
 	parser.add_option('--load', help='add targets from XML file', action='append', dest='load_xml')
@@ -146,6 +147,12 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 	(options,args)=parser.parse_args()
 
 	rts2.createProxy(url=options.server, username=options.username, password=options.password, verbose=options.debug)
+
+	if options.simulate:
+		night_beginning = rts2.json.getProxy().getValue('centrald', 'night_beginning')
+		night_ending = rts2.json.getProxy().getValue('centrald', 'night_ending')
+		rts2.json.getProxy().executeCommand('SEL', 'simulate {0} {1}'.format(night_beginning, night_ending))
+		sys.exit(0)
 
 	if options.save_xml and options.load_xml:
 		print >>sys.stderr, "cannot perform both load and save operations"

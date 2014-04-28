@@ -1,3 +1,6 @@
+2014-04-27
+ * -s option for rts2-json, rts2-bb-json script
+
 2014-04-24
  * Added support for binning (tested on iXon 1K x 1K emccd) - Shashikiran Ganesh <shashi@prl.res.in>
 

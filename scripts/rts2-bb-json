@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+#
+# Minimalistics JSON client for Big Brother.
+# Demonstrates how to use RTS2 Big Brother to schedule observations
+#
+# (C) 2014 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+import sys
+import urllib
+import rts2.json
+
+from optparse import OptionParser
+
+parser = OptionParser(usage="""rts2-json [--server <url>] [--user <username>] [--password <password>] [--verbose] [--url <url>]
+
+Return:
+   0 on success, 1 on failure. Errors are not reported - you must enable their reporting with --verbose.
+
+Example use:
+
+rts2-json --create M31
+rts2-json --server http://example.rts2.org:8889 --create "10:20:30 +50:40:30"
+""" )
+parser.add_option('--server', help='URL to RTS2 XML-RPC server', action='store', dest='server', default='http://localhost:8889')
+parser.add_option('--user', help='RTS2 web server username', action='store', dest='user', default=None)
+parser.add_option('--password', help='password for web user', action='store', dest='password', default=None)
+parser.add_option('--verbose', help='print in/out communication', action='store_true', dest='verbose', default=False)
+parser.add_option('--url', help='load and parse given URL. String after first ? is regarded as parameter and is escaped', action='append', dest='urls')
+parser.add_option('--create', help='Create target, given either by anything RTS2 can parse', action='append', dest='create')
+
+(options,args)=parser.parse_args()
+
+j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+
+def create_target(t):
+	"""Creates target from the given string, returns its ID"""
+	r=j.loadJson('/api/create_target',{'tn':'t'})
+	print 'From string {0} target with ID {1} was created'.format(t,r['id'])
+	return int(r['id'])
+
+try:
+	if options.urls:
+		for u in options.urls:
+			us = u.split('?')
+			if len(us) > 1:
+			 	prms = ''
+				for p in us[1:]:
+					if len(prms) > 0:
+						prms += '?'
+					prms += urllib.quote(p,'=&')
+				url = '{0}?{1}'.format(us[0],prms)
+				if options.verbose:
+					print 'url',url
+				print j.loadJson(url)
+			else:
+				print j.loadJson(us[0])
+
+	if options.create:
+		for t in options.create:
+			create_target(t)
+	sys.exit(0)
+
+except Exception,ex:
+	if options.verbose:
+		import traceback
+		traceback.print_exc()
+	else:
+		print >>sys.stderr, "error:", ex
+
+	sys.exit(1)

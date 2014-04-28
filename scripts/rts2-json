@@ -1,7 +1,22 @@
 #!/usr/bin/env python
 #
 # Minimalistics JSON client
-# (C) Petr Kubanek <petr@kubanek.net>
+#
+# (C) 2014 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import sys
 import urllib
@@ -9,7 +24,7 @@ import rts2.json
 
 from optparse import OptionParser
 
-parser = OptionParser(usage="""rts2-json [--server <url>] [--user <username>] [--password <password>] [--verbose] [--good-weather-and-on] [--G <variable> ...] [--get-int <variable> ...] [--cmd <command>] [--run-script <script>] [--kill-script] [--list-minmax] [--device <device name>] [--url <url>] [--push]
+parser = OptionParser(usage="""rts2-json [--server <url>] [--user <username>] [--password <password>] [--verbose] [--good-weather-and-on] [--G <variable> ...] [--get-int <variable> ...] [-s <variable>=<value>] [--cmd <command>] [--run-script <script>] [--kill-script] [--list-minmax] [--device <device name>] [--url <url>] [--push]
 
 Return:
    0 on success, 1 on failure. Errors are not reported - you must enable their reporting with --verbose.
@@ -18,6 +33,7 @@ Example use:
 
 rts2-json -G C0.infotime -G C0.exposure
 rts2-json --server http://example.rts2.org:8889 -G C0.infotime
+rts2-json -s C0.exposure=10
 """ )
 parser.add_option('--server', help='URL to RTS2 XML-RPC server', action='store', dest='server', default='http://localhost:8889')
 parser.add_option('--user', help='RTS2 web server username', action='store', dest='user', default=None)
@@ -26,11 +42,13 @@ parser.add_option('--verbose', help='print in/out communication', action='store_
 parser.add_option('--good-weather-and-on', help='return 1 if system is in good weather and on, ready to observe', action='store_true', dest='gw_on', default=False)
 parser.add_option('-G', help='get value from JSON server', action='append', dest='get_array')
 parser.add_option('--get-int', help='get value from JSON server as integer value', action='append', dest='get_int_array')
+parser.add_option('-s', help='set value on the RTS2', action='append', dest='set_array')
 parser.add_option('--cmd', help='run command. Device must be specified with --device option', action='append', dest='cmd_array')
 parser.add_option('--run-script', help='run script on device. Device must be specified with --device option', action='store', dest='runscript')
 parser.add_option('--kill-script', help='attempt to kill currently running script', action='store_true', dest='kill_script', default=False)
 parser.add_option('--list-minmax', help='list miminal/maximal values', action='store_true', dest='list_minmax', default=False)
 parser.add_option('--device', help='device for cmd and run-script options', action='store', dest='device')
+parser.add_option('--expose', help='start exposure on device')
 parser.add_option('--url', help='load and parse given URL. String after first ? is regarded as parameter and is escaped', action='append', dest='urls')
 
 parser.add_option('--push', help='print value on its updates', action='store_true', dest='push', default=False)
@@ -52,6 +70,11 @@ try:
 		for g in options.get_int_array:
 			device,value = g.split('.')
 			print int(j.getValue(device, value, refresh_not_found=True))
+	if options.set_array:
+		for s in options.set_array:
+			variable,value = s.split('=')
+			device,name = variable.split('.')
+			j.setValue(device, name, value)
 	if options.cmd_array:
 		if not (options.device):
 			print >>sys.stderr,'--device argument must be specified with --cmd option'
@@ -115,5 +138,7 @@ except Exception,ex:
 	if options.verbose:
 		import traceback
 		traceback.print_exc()
+	else:
+		print >>sys.stderr, 'error', ex
 
 	sys.exit(1)
