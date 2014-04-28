@@ -25,7 +25,7 @@ import rts2.json
 
 from optparse import OptionParser
 
-parser = OptionParser(usage="""rts2-json [--server <url>] [--user <username>] [--password <password>] [--verbose] [--url <url>]
+parser = OptionParser(usage="""rts2-json [--server <url>] [--user <username>] [--password <password>] [--verbose] [--url <url>] [--create <target>] [--schedule <target_id>] [--create-and-schedule <target>]
 
 Return:
    0 on success, 1 on failure. Errors are not reported - you must enable their reporting with --verbose.
@@ -40,7 +40,8 @@ parser.add_option('--user', help='RTS2 web server username', action='store', des
 parser.add_option('--password', help='password for web user', action='store', dest='password', default=None)
 parser.add_option('--verbose', help='print in/out communication', action='store_true', dest='verbose', default=False)
 parser.add_option('--url', help='load and parse given URL. String after first ? is regarded as parameter and is escaped', action='append', dest='urls')
-parser.add_option('--create', help='Create target, given either by anything RTS2 can parse', action='append', dest='create')
+parser.add_option('--create', help='Create target, given by anything RTS2 can parse', action='append', dest='create')
+parser.add_option('--schedule', help='Schedule target with the give ID', action='append', dest='schedule')
 
 (options,args)=parser.parse_args()
 
@@ -51,6 +52,12 @@ def create_target(t):
 	r=j.loadJson('/api/create_target',{'tn':'t'})
 	print 'From string {0} target with ID {1} was created'.format(t,r['id'])
 	return int(r['id'])
+
+def schedule_target(tid):
+	"""Schedules created target with the give target id."""
+	r=j.loadJson('/api/schedule_all',{'tar_id':tid})
+	print 'Target with id {0} scheduled with schedule id {1}'.format(tid,r['schedule_id'])
+	return r['schedule_id']
 
 try:
 	if options.urls:
@@ -72,6 +79,11 @@ try:
 	if options.create:
 		for t in options.create:
 			create_target(t)
+	
+	if options.schedule:
+		for tid in options.schedule:
+			schedule_target(tid)
+
 	sys.exit(0)
 
 except Exception,ex:
