@@ -118,6 +118,7 @@ class DefaultConfiguration(object):
         self.dcf[('ccd binning mapping', '1x1')] = 1
         self.dcf[('ccd binning mapping', '2x2')] = 2
         self.dcf[('ccd binning mapping', '4x4')] = 4
+        self.dcf[('ccd binning mapping', '8x8')] = 8
 
         self.dcf[('ccd', 'CCD_NAME')]= 'CD'
         self.dcf[('ccd', 'CCD_BINNING')]= '1x1'

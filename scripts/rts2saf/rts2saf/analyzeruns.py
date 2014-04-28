@@ -50,6 +50,9 @@ class AutoVivification(dict):
 MANYFILTERWHEELS = re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)/(.+)')
 #                                                                                                  date    ft
 ONEFILTER = re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)/(.+?)')
+
+ONLYFILTERS = re.compile('.*/(.+?)')
+
 # no filter
 #2013-09-04T22:18:35.077526/
 DATE = re.compile('.*/([0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}T[0-9]{2,2}\:[0-9]{2,2}\:[0-9]{2,2}\.[0-9]+)')
@@ -132,7 +135,19 @@ class AnalyzeRuns(object):
         if dataRn is None:
             return None, None, None, None 
 
-        elif not dataRn.numberOfFocPos():
+        if not dataRn.numberOfFocPos():
+            self.logger.error('analyzeRun: too few different focuser positions')
+            return None, None, None, None 
+
+
+        binning=dict()
+        for dSx in dataRn.dataSxtrs:
+            try:
+                binning[dSx.binning] += 1
+            except:
+                binning[dSx.binning] = 1
+        if len(binning) != 1:
+            self.logger.error('analyzeRun: inconsistent binning found: {}'.format(repr(binning)))
             return None, None, None, None 
 
         date = dataRn.dataSxtrs[0].date.split('.')[0]
@@ -224,7 +239,7 @@ class AnalyzeRuns(object):
 
         return dataRn
 
-
+    # used in off line analysis only
     def analyzeRuns(self):
         """Loop over self.fs and call analyzeRun(). Calculate and log the filter offsets.
 
@@ -295,6 +310,7 @@ class AnalyzeRuns(object):
 
         return rFtsFwhm, rFtsFlux
 
+    # used in off line analysis only
     def aggregateRuns(self):
         """Find FITS files which form a focus run and store them in self.fs."""
         for root, dirnames, filenames in os.walk(self.args.basePath):
@@ -303,10 +319,12 @@ class AnalyzeRuns(object):
                 continue
             mFtws =  MANYFILTERWHEELS.match(root)
             oFtw  =  ONEFILTER.match(root)
+            oFlt  =  ONLYFILTERS.match(root)
             d     =  DATE.match(root)
             FpFns = [os.path.join(root, fn) for fn in fns]
+            
             if mFtws:
-
+                print mFtws
                 # if filters are defined on the cmd line use these
                 if self.args.filterNames:
                     if mFtws.group(3) in self.args.filterNames: 
@@ -315,7 +333,8 @@ class AnalyzeRuns(object):
                     self.fS[(mFtws.group(1), mFtws.group(2))] [mFtws.group(3)] = FpFns
             elif oFtw:
                 self.fS[(oFtw.group(1), 'NOFTW')] [oFtw.group(2)] = FpFns
+            elif oFlt:
+                self.fS[('NODATE', 'NOFTW')] [oFlt.group(1)] = FpFns
             elif d:
-                self.fS[(d.group(1), 'NOFTW')] ['NOFT'] = FpFns
-            else:
                 self.fS[('NODATE', 'NOFTW')] ['NOFT'] = FpFns
+            

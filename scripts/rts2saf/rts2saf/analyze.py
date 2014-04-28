@@ -93,7 +93,7 @@ class SimpleAnalysis(object):
             ).fitData()
 
         if minFitPos:
-            self.logger.info('analyze: FWHM FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, self.dataFitFwhm.ambientTemp))
+            self.logger.info('_fitFwhm: FWHM FOC_DEF: {0:5d} : fitted minimum position, {1:4.1f}px FWHM, {2} ambient temperature'.format(int(minFitPos), minFitFwhm, self.dataFitFwhm.ambientTemp))
         else:
             self.logger.warn('analyze: fit failed')
             self.resultFitFwhm=ResultFit()

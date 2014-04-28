@@ -102,12 +102,14 @@ class Sextract(object):
 
         # these values are remapped in config.py
         try:
+            # real header key word is mapped in rts2saf.config
             ambientTemp = '{0:3.1f}'.format(float(hdr[self.rt.cfg['AMBIENTTEMPERATURE']]))
         except:
             # that is not required
             ambientTemp='NoTemp'
 
         try:
+            # real header key word is mapped in rts2saf.config, this one is mapped twice!
             binning = float(self.rt.cfg[hdr[self.rt.cfg['BINNING']]])
             if self.debug: self.logger.debug( 'sextract: binning: {0}'.format(binning))
         except:
@@ -115,23 +117,30 @@ class Sextract(object):
             binning=None
 
         binningXY=None
-        if not binning:
+        if binning is None:
             binningXY=list()
             try:
+                # real header key word is mapped in rts2saf.config
                 binningXY.append(float(hdr[self.rt.cfg['BINNING_X']]))
-                if self.debug: self.logger.debug( 'sextract: binningXY: {0}'.format(float(hdr[self.rt.cfg['BINNING_X']])))
+                if self.debug: self.logger.debug( 'sextract: binningX: {0}'.format(float(hdr[self.rt.cfg['BINNING_X']])))
             except:
                 # if CatalogAnalysis is done
-                if self.debug: self.logger.warn( 'sextract: no x-binning information found, {0}'.format(fitsFn, focPos, objectCount))
+                self.logger.warn( 'sextract: no x-binning information found, {0}'.format(fitsFn))
 
             try:
+                # real header key word is mapped in rts2saf.config
                 binningXY.append(float(hdr[self.rt.cfg['BINNING_Y']]))
+                if self.debug: self.logger.debug( 'sextract: binningY: {0}'.format(float(hdr[self.rt.cfg['BINNING_Y']])))
             except:
                 # if CatalogAnalysis is done
-                if self.debug: self.logger.warn( 'sextract: no y-binning information found, {0}'.format(fitsFn, focPos, objectCount))
+                self.logger.warn( 'sextract: no y-binning information found, {0}'.format(fitsFn))
 
-            if len(binningXY) < 2:
-                if self.debug: self.logger.warn( 'sextract: no binning information found, {0}'.format(fitsFn, focPos, objectCount))
+            if len(binningXY) == 2 and  binningXY[0] ==  binningXY[1]:
+                binning =  binningXY[0]                    
+            else:
+                self.logger.warn( 'sextract: no valid binning information found: {0}, {1}'.format(repr(binningXY), fitsFn))
+                binning = 1 
+                self.logger.info( 'sextract: setting binning to: {0}'.format(1))
 
         try:
             naxis1 = float(hdr['NAXIS1'])
@@ -193,14 +202,23 @@ class Sextract(object):
             self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, fwhm is NaN, rts2saf.sextractor/numpy failed on {2}'.format(focPos, objectCount, fitsFn))
             return DataSxtr()
 
+        # take care of binning
+        fwhm = float(fwhm) *  binning
+        stdFwhm = float(stdFwhm) *  binning
+        
+        i_fwhm = self.fields.index('FWHM_IMAGE')
+        for sxo in sex.objects:
+            sxo[i_fwhm] *= binning
+        
+
         # store results
         dataSxtr=DataSxtr(
             date=date,
             fitsFn=fitsFn, 
             focPos=focPos, 
             stdFocPos=float(self.stdFocPos), # nothing real...
-            fwhm=float(fwhm), 
-            stdFwhm=float(stdFwhm),
+            fwhm=fwhm, 
+            stdFwhm=stdFwhm,
             nstars=int(nstars), 
             ambientTemp=ambientTemp, 
             rawCatalog=sex.objects, 
