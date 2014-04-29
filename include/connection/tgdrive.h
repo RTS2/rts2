@@ -219,6 +219,7 @@ class TGDrive: public rts2core::ConnSerial
 		void stop ();
 
 		bool checkStop ();
+		bool checkStopPlain ();
 
 		void reset ();
 

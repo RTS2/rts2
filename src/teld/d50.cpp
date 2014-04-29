@@ -74,6 +74,7 @@ class D50:public Fork
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int info ();
+		virtual int idle ();
 
 		virtual int resetMount ();
 
@@ -87,6 +88,9 @@ class D50:public Fork
 		virtual int isParking () { return isMoving (); };
 		virtual int endPark ();
 
+		virtual int stopWorm ();
+		virtual int startWorm ();
+
 		virtual void setDiffTrack (double dra, double ddec);
 
 		virtual int updateLimits ();
@@ -94,6 +98,7 @@ class D50:public Fork
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
+		int runD50 ();
 		TGDrive *raDrive;
 		TGDrive *decDrive;
 
@@ -110,7 +115,7 @@ class D50:public Fork
 		rts2core::ValueDouble *moveSpeedTurbo;
 		rts2core::ValueBool *moveTurboSwitch;
 
-		void matchGuideRa (int rag);
+		//void matchGuideRa (int rag);
 		//void matchGuideDec (int decg);
 
 		void callAutosave ();
@@ -205,6 +210,8 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
 
+	addParkPosOption ();
+
 	createValue (remotesMotorsPower, "remotes_motors_power", "el. power to both motors", false, RTS2_VALUE_WRITABLE);
 	remotesMotorsPower->setValueBool (false);
 	createValue (remotesMotorsExternalEnable, "remotes_motors_external_enable", "external enable switch to both motors", false, RTS2_VALUE_WRITABLE);
@@ -237,7 +244,7 @@ void D50::postEvent (rts2core::Event *event)
         switch (event->getType ())
         {
                 case RTS2_D50_TIMERRG:
-                        matchGuideRa (raGuide->getValueInteger ());
+                        //matchGuideRa (raGuide->getValueInteger ());
                         break;
                 /*case RTS2_D50_TIMERDG:
                         matchGuideDec (decGuide->getValueInteger ());
@@ -245,14 +252,14 @@ void D50::postEvent (rts2core::Event *event)
                 case RTS2_D50_TSTOPRG:
                         if (raDrive->checkStop ())
                         {
-                                addTimer (0.1, event);
+                                //addTimer (0.1, event);
                                 return;
                         }
                         break;
                 case RTS2_D50_TSTOPDG:
                         if (decDrive->checkStop ())
                         {
-                                addTimer (0.1, event);
+                                //addTimer (0.1, event);
                                 return;
                         }
                         break;
@@ -260,12 +267,14 @@ void D50::postEvent (rts2core::Event *event)
                         callAutosave ();
                         if ((getState () & TEL_MASK_MOVING) == TEL_OBSERVING)
                         {
-                        	// increase speed after backlash overcome, depends on actual state
+				addTimer (5, event);
+				return;
                         }
                         break;
                 case RTS2_D50_BOOSTSPEED:
                         if (getState () & TEL_MOVING || getState () & TEL_PARKING)
                         {
+                        	// increase speed after backlash overcome, depends on actual state
 				if (moveTurboSwitch->getValueBool ())
 				{
 					raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedTurbo->getValueDouble ());
@@ -280,7 +289,6 @@ void D50::postEvent (rts2core::Event *event)
                         break;
         }
         Fork::postEvent (event);
-
 }
 
 int D50::commandAuthorized (rts2core::Connection * conn)
@@ -386,7 +394,7 @@ int D50::init ()
 
 	// TODO: mozna zastaveni (plynule) motoru, vypnuti hodinace, vypnuti limiteru pritlaku, uplne vypnuti serv, nastaveni rychlosti hodinace?
 	
-	addTimer (1, new rts2core::Event (RTS2_D50_AUTOSAVE));
+	//addTimer (1, new rts2core::Event (RTS2_D50_AUTOSAVE));
 
 	return 0;
 }
@@ -407,6 +415,40 @@ int D50::info ()
 	return Fork::info ();
 }
 
+int D50::idle ()
+{
+	runD50 ();
+
+	return Fork::idle ();
+}
+
+int D50::runD50 ()
+{
+	if (!(getState () & TEL_MOVING))
+	{
+		if ((!tracking->getValueBool ()) && raDrive->isInStepperMode ())
+		{
+                        raDrive->setTargetSpeed ( 0, true );
+                        raDrive->setMode (TGA_MODE_DS);
+                        raDrive->info ();
+		} else if (tracking->getValueBool () && !raDrive->isInStepperMode ()) 
+		{
+			if (!raDrive->isMoving ())
+			{
+				raDrive->setMode (TGA_MODE_SM);
+                        	raDrive->info ();
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "not switching to stepper mode, raDrive seems to be moving?!?" << sendLog;
+                        	raDrive->info ();
+			}
+		}
+	}
+
+	return 0;
+}
+
 int D50::resetMount ()
 {
         try
@@ -425,11 +467,10 @@ int D50::resetMount ()
 
 int D50::startResync ()
 {
-        deleteTimers (RTS2_D50_AUTOSAVE);
-        if ((getState () & TEL_MOVING) && !tracking->getValueBool () && !parking)
+        //deleteTimers (RTS2_D50_AUTOSAVE);
+        if (!tracking->getValueBool () && !parking)
 	{
-		logStream (MESSAGE_INFO) << "------ zapinam tracking0! tracking=" << tracking->getValueBool () << ", parking=" << parking << sendLog;
-                tracking->setValueBool (true);
+                startWorm ();
 	}
         int32_t dc;
         int ret = sky2counts (tAc, dc);
@@ -453,18 +494,14 @@ int D50::startResync ()
 int D50::isMoving ()
 {
         callAutosave ();
-	logStream (MESSAGE_INFO) << "------ isMoving: getState=" << getState () << ", tracking=" << tracking->getValueBool () << ", parking=" << parking << ", raDrive->isMoving=" << raDrive->isMoving () << ", raDrive->isInPositionMode=" << raDrive->isInPositionMode () << ", decDrive->isMoving=" << decDrive->isMoving () << sendLog;
-        if ((getState () & TEL_MOVING) && !tracking->getValueBool () && !parking)
+        /*if ((getState () & TEL_MOVING) && !tracking->getValueBool () && !parking)
 	{
-		//logStream (MESSAGE_INFO) << "------ zapinam tracking!" << sendLog;
-		logStream (MESSAGE_INFO) << "------ zapinam tracking1! tracking=" << tracking->getValueBool () << ", parking=" << parking << sendLog;
-                tracking->setValueBool (true);
-	}
+                startWorm ();
+	}*/
         if (tracking->getValueBool () && raDrive->isInPositionMode ())
         {
-                if (raDrive->isMoving ())
+                if (raDrive->isMovingPosition ())
                 {
-			logStream (MESSAGE_INFO) << "------ updating ac position!" << sendLog;
                         int32_t diffAc;
                         int32_t ac;
                         int32_t dc;
@@ -493,23 +530,30 @@ int D50::isMoving ()
 
 int D50::endMove ()
 {
-	addTimer (5, new rts2core::Event (RTS2_D50_AUTOSAVE));
+	//addTimer (5, new rts2core::Event (RTS2_D50_AUTOSAVE));
 	// TODO: tady bude vypnuti snizovani pritlaku sneku
 	// snizeni rychlosti presunu obou motoru
 	deleteTimers (RTS2_D50_BOOSTSPEED);
 	raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
+	setTimeout (USEC_SEC);
 	return Fork::endMove ();
 }
 
 int D50::stopMove ()
 {
-        addTimer (5, new rts2core::Event (RTS2_D50_AUTOSAVE));
-        parking = false;
-        raDrive->stop ();
-        decDrive->stop ();
-	tracking->setValueBool (false);
-	sendValueAll (tracking);
+        //addTimer (5, new rts2core::Event (RTS2_D50_AUTOSAVE));
+	stopWorm ();
+	if (raDrive->isMoving () || decDrive->isMoving ())	// otherwise it's only about cleaning the TEL_MOVING state, we don't want to clean parking flag and other things then
+	{
+        	parking = false;
+        	raDrive->stop ();
+        	decDrive->stop ();
+		while (raDrive->checkStopPlain () || decDrive->checkStopPlain ())
+		{
+			usleep (USEC_SEC / 5);
+		}
+	}
         return 0;
 }
 
@@ -521,7 +565,6 @@ int D50::setTo (double set_ra, double set_dec)
         int32_t ac;
         int32_t dc;
         int32_t off;
-	logStream (MESSAGE_INFO) << "------ setting coordinates to RA: " << set_ra << ", DEC: " << set_dec << sendLog;
         getHomeOffset (off);
 	zeroCorrRaDec ();
         int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off);
@@ -532,7 +575,6 @@ int D50::setTo (double set_ra, double set_dec)
 	//	raDrive->setMode (TGA_MODE_DS);
 	//	raDrive->setTargetSpeed ( 0, true );
 	//}
-	logStream (MESSAGE_INFO) << "------ setting coordinates to ac: " << ac << ", dc: " << dc << sendLog;
         raDrive->setCurrentPos (ac);
         decDrive->setCurrentPos (dc);
         callAutosave ();
@@ -563,8 +605,7 @@ int D50::setToPark ()
 
 int D50::startPark ()
 {
-        tracking->setValueBool (false);
-	sendValueAll (tracking);
+        stopWorm ();
         if (parkPos)
         {
                 parking = true;
@@ -580,6 +621,27 @@ int D50::endPark ()
 {
         callAutosave ();
         parking = false;
+	setTimeout (USEC_SEC * 10);
+        return 0;
+}
+
+int D50::stopWorm ()
+{
+	if (tracking->getValueBool ())
+	{
+		tracking->setValueBool (false);
+		sendValueAll (tracking);
+	}
+        return 0;
+}
+
+int D50::startWorm ()
+{
+	if (!tracking->getValueBool ())
+	{
+		tracking->setValueBool (true);
+		sendValueAll (tracking);
+	}
         return 0;
 }
 
@@ -589,7 +651,7 @@ void D50::setDiffTrack (double dra, double ddec)
                 return;
         if (info ())
                 throw rts2core::Error ("cannot call info in setDiffTrack");
-        if (!raDrive->isInPositionMode () || !raDrive->isMoving ())
+        if (!raDrive->isInPositionMode () || !raDrive->isMovingPosition ())
         {
                 if (tracking->getValueBool ())
 		{
@@ -602,7 +664,7 @@ void D50::setDiffTrack (double dra, double ddec)
 			//TODO: tady se musi dodelat trackovani pres REMOTES
 		}
         }
-        /*if (!decDrive->isInPositionMode () || !decDrive->isMoving ())
+        /*if (!decDrive->isInPositionMode () || !decDrive->isMovingPosition ())
         {
                 //decDrive->setTargetSpeed (ddec * SPEED_ARCDEGSEC);
 		//TODO: tady se musi dodelat trackovani pres REMOTES
@@ -641,7 +703,7 @@ int D50::getHomeOffset (int32_t & off)
 	return 0;
 }
 
-void D50::matchGuideRa (int rag)
+/*void D50::matchGuideRa (int rag)
 {
         raDrive->info ();
         if (rag == 0)
@@ -654,7 +716,7 @@ void D50::matchGuideRa (int rag)
                 raDrive->setTargetPos (raDrive->getPosition () + ((rag == 1 ? -1 : 1) * RAGSTEP));
                 addTimer (1, new rts2core::Event (RTS2_D50_TIMERRG));
         }
-}
+}*/
 
 /*void D50::matchGuideDec (int deg)
 {
@@ -682,7 +744,7 @@ int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
         if (old_value == raGuide)
         {
-                matchGuideRa (new_value->getValueInteger ());
+                //matchGuideRa (new_value->getValueInteger ());
                 return 0;
         }
         /*else if (old_value == decGuide)
@@ -695,12 +757,11 @@ int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
                 //raDrive->setTargetSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? TRACK_SPEED : 0, false);
                 if (((rts2core::ValueBool *) new_value)->getValueBool ())
                 {
-                        raDrive->setMode (TGA_MODE_SM);
+                        startWorm ();
                 }
                 else
                 {
-                        raDrive->setMode (TGA_MODE_DS);
-                        raDrive->setTargetSpeed ( 0, true );
+			stopWorm ();
                 }
 		return 0;
         }

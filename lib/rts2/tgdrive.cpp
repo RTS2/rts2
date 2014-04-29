@@ -296,6 +296,20 @@ bool TGDrive::checkStop ()
 	return true;
 }
 
+bool TGDrive::checkStopPlain ()
+{
+	if (stopped == false)
+		return false;
+	appStatus->setValueInteger (read2b (TGA_STATUS));
+	if ((appStatus->getValueInteger () & 0x08) == 0x08)
+	{
+		stopped = false;
+		return false;
+	}
+	return true;
+}
+
+
 void TGDrive::reset ()
 {
 	write2b (TGA_MASTER_CMD, 5);
