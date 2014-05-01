@@ -20,7 +20,8 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-"""Config provides all required contestants with default values.
+"""Config provides all required contestants with default values. ToDo: This module must be rewritten in future.
+
 """
 
 __author__ = 'wildi.markus@bluewin.ch'
@@ -33,6 +34,15 @@ import string
 import re
 import rts2saf.devices as dev
 
+# thanks http://stackoverflow.com/questions/635483/what-is-the-best-way-to-implement-nested-dictionaries-in-python
+class AutoVivification(dict):
+    """Implementation of perl's autovivification feature."""
+    def __getitem__(self, item):
+        try:
+            return dict.__getitem__(self, item)
+        except KeyError:
+            value = self[item] = type(self)()
+            return value
 
 class DefaultConfiguration(object):
     """Default configuration for rts2saf"""    
@@ -113,16 +123,15 @@ class DefaultConfiguration(object):
         self.dcf[('SExtractor', 'DEBLEND_MINCONT')]= 0.1 
         self.dcf[('SExtractor', 'SATUR_LEVEL')]= 65535
         self.dcf[('SExtractor', 'STARNNW_NAME')]= '/usr/local/etc/rts2/rts2saf/rts2saf-sex.nnw'
-        # ToDo so far that is good for FLI CCD
-        # These factors are used for the fitting
-        self.dcf[('ccd binning mapping', '1x1')] = 1
-        self.dcf[('ccd binning mapping', '2x2')] = 2
-        self.dcf[('ccd binning mapping', '4x4')] = 4
-        self.dcf[('ccd binning mapping', '8x8')] = 8
+        # mapping as found in dummy CCD, used for set 
+        self.dcf[('ccd binning mapping', '1x1')] = 0
+        self.dcf[('ccd binning mapping', '2x2')] = 1
+        self.dcf[('ccd binning mapping', '3x3')] = 2
+        self.dcf[('ccd binning mapping', '4x4')] = 3
 
         self.dcf[('ccd', 'CCD_NAME')]= 'CD'
         self.dcf[('ccd', 'CCD_BINNING')]= '1x1'
-        self.dcf[('ccd', 'WINDOW')]= '[ -3, -1, -1, -1 ]'
+        self.dcf[('ccd', 'WINDOW')]= '[ -1, -1, -1, -1 ]'
         self.dcf[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
         self.dcf[('ccd', 'PIXELSCALE')]= 1.1 # unit arcsec/pixel
         self.dcf[('ccd', 'BASE_EXPOSURE')]= .01
@@ -134,7 +143,6 @@ class DefaultConfiguration(object):
         self.dcf[('mode', 'ANALYZE_FLUX')]= False
         self.dcf[('mode', 'ANALYZE_ASSOC')]= False
         self.dcf[('mode', 'ANALYZE_ASSOC_FRACTION')]= 0.65
-
         # mapping of fits header elements to canonical
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'
         self.dcf[('fits header mapping', 'DATETIME')]= 'JD'
@@ -142,9 +150,14 @@ class DefaultConfiguration(object):
         self.dcf[('fits header mapping', 'CCD_TEMP')]= 'CCD_TEMP'
         self.dcf[('fits header mapping', 'FOC_POS')] = 'FOC_POS'
         self.dcf[('fits header mapping', 'DATE-OBS')]= 'DATE-OBS'
-        self.dcf[('fits header mapping', 'BINNING')]= 'BINNING'
-        self.dcf[('fits header mapping', 'BINNING_X')]= 'BIN_V'
-        self.dcf[('fits header mapping', 'BINNING_Y')]= 'BIN_H'
+        self.dcf[('fits header mapping', 'BINNING')]= 'BINNING' 
+        self.dcf[('fits header mapping', 'BINNING_X')]= 'BIN_V' # seen BIN_X
+        self.dcf[('fits header mapping', 'BINNING_Y')]= 'BIN_H' # seen BIN_Y
+        # These factors are used for fitting
+        self.dcf[('fits binning mapping', '1x1')]= 1
+        self.dcf[('fits binning mapping', '2x2')]= 2
+        self.dcf[('fits binning mapping', '4x4')]= 4
+        self.dcf[('fits binning mapping', '8x8')]= 8
 
         self.dcf[('telescope', 'TEL_RADIUS')] = 0.09 # [meter]
         self.dcf[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
@@ -199,7 +212,7 @@ class Configuration(DefaultConfiguration):
 
         """
         # make the values accessible
-        self.cfg=dict()
+        self.cfg=AutoVivification()
         # TODO
         filterWheelsInuse=list()
         filterWheelsDefs=dict()
@@ -226,10 +239,20 @@ class Configuration(DefaultConfiguration):
         else:
             self.logger.error('Configuration.readConfiguration: config file: {0} not found'.format(fileName))
             return False
+
         self.cfg['CFGFN'] = fileName
         # read the defaults
         for (section, identifier), value in self.dcf.iteritems():
-            self.cfg[identifier]= value
+            #
+            # ToDO ugly
+            if section == 'ccd' :
+                self.cfg[identifier]= value
+                
+            elif section in 'fits binning mapping' or section in 'ccd binning mapping':
+                self.cfg[section][identifier]= value
+
+            else:
+                self.cfg[identifier]= value
 
         # over write the defaults
         ftds=list()
@@ -287,6 +310,13 @@ class Configuration(DefaultConfiguration):
                 elif identifier in 'EMPTY_SLOT_NAMES':
                     self.cfg[identifier]=value[1:-1].split(',')
             #
+            elif( section == 'ccd' and identifier == 'WINDOW'):
+                items= value[1:-1].split(',')
+                self.cfg[identifier] = [ int(x) for x in items ]
+                if len(self.cfg[identifier]) != 4:
+                    self.logger.warn( 'Configuration.readConfiguration: wrong ccd window specification {0} {1}, using the whole CCD area'.format(len(self.cfg[identifier]), self.cfg[identifier]))
+                    self.cfg[identifier] = [ -1, -1, -1, -1]
+
             elif( section=='IMGP analysis'):
                 items= value[1:-1].split(',')
                 if identifier in 'FILTERS_TO_EXCLUDE':
@@ -297,6 +327,13 @@ class Configuration(DefaultConfiguration):
                     self.cfg[identifier]=tDict
                 else:
                     self.cfg[identifier]= value
+
+            elif( section=='fits binning mapping'):
+                # exception
+                self.cfg[section][identifier]= value
+            elif( section=='ccd binning mapping'):
+                # exception
+                self.cfg[section][identifier]= value
             # first bool, then int !
             elif isinstance(self.cfg[identifier], bool):
                 # ToDo, looking for a direct way
@@ -332,6 +369,9 @@ class Configuration(DefaultConfiguration):
             self.cfg['FILTER WHEEL DEFINITIONS'] = filterWheelsDefs
             self.cfg['FILTER WHEELS INUSE'] = filterWheelsInuse
 
+
+        self.cfg['FITS_BINNING_MAPPING'] = self.cfg['fits binning mapping'] 
+        self.cfg['CCD_BINNING_MAPPING'] = self.cfg['ccd binning mapping'] 
         return True
 
     def writeConfiguration(self, cfn='./rts2saf-my-new.cfg'):

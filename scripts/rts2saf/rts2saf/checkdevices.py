@@ -106,10 +106,7 @@ class CheckDevices(object):
         self.logger.debug('')
         self.logger.debug('printProperties:CCD: {} name'.format(self.ccd.name))
         self.logger.debug('printProperties:CCD: {} binning'.format(self.ccd.binning))
-        self.logger.debug('printProperties:CCD: {} windowOffsetX'.format(self.ccd.windowOffsetX))
-        self.logger.debug('printProperties:CCD: {} windowOffsetY'.format(self.ccd.windowOffsetY))
-        self.logger.debug('printProperties:CCD: {} windowHeight'.format(self.ccd.windowHeight))
-        self.logger.debug('printProperties:CCD: {} windowWidth'.format(self.ccd.windowWidth))
+        self.logger.debug('printProperties:CCD: {} window'.format(self.ccd.window))
         self.logger.debug('printProperties:CCD: {} pixelSize'.format(self.ccd.pixelSize))
         self.logger.debug('printProperties:CCD: {} baseExposure'.format(self.ccd.baseExposure))
         #Filter

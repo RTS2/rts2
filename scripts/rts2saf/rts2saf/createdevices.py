@@ -81,28 +81,17 @@ class CreateCCD(CreateDevice):
         """
         # configuration has been read in, now create objects
         # create object CCD
-        # ToDo, what does RTS2::ccd driver expect: int or str list?
-        # for now: int
-        wItems= re.split('[,]+', self.rt.cfg['WINDOW'][1:-1])
-        if len(wItems) < 4:
-            self.logger.warn( 'createDevices: too few ccd window items {0} {1}, using the whole CCD area'.format(len(items), value))
-            wItems= [ -1, -1, -1, -1]
-        else:
-            wItems[:]= map(lambda x: int(x), wItems)
 
-            self.ccd= CCD( 
-                debug        =self.debug,
-                name         =self.rt.cfg['CCD_NAME'],
-                ftws         =self.ftws,
-                binning      =self.rt.cfg['CCD_BINNING'],
-                windowOffsetX=wItems[0],
-                windowOffsetY=wItems[1],
-                windowHeight =wItems[2],
-                windowWidth  =wItems[3],
-                pixelSize    =float(self.rt.cfg['PIXELSIZE']),
-                baseExposure =float(self.rt.cfg['BASE_EXPOSURE']),
-                logger=self.logger
-                )
+        self.ccd= CCD( 
+            debug        =self.debug,
+            name         =self.rt.cfg['CCD_NAME'],
+            ftws         =self.ftws,
+            binning      =self.rt.cfg['CCD_BINNING'],
+            window       =self.rt.cfg['WINDOW'],
+            pixelSize    =float(self.rt.cfg['PIXELSIZE']),
+            baseExposure =float(self.rt.cfg['BASE_EXPOSURE']),
+            logger=self.logger
+            )
             
         if self.check:
             if not self.ccd.check(proxy=self.proxy):

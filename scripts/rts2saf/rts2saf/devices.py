@@ -184,25 +184,19 @@ class CCD(object):
     :var name: name of the filter wheel
     :var ftws: list of :py:mod:`rts2saf.devices.FilterWheel`
     :var binning: binning (not yet implemented)
-    :var windowOffsetX: windowOffsetX (not yet implemented)
-    :var windowOffsetY: windowOffsetY (not yet implemented)
-    :var windowHeight: windowHeight (not yet implemented)
-    :var windowWidth: windowWidth (not yet implemented)
+    :var window: list window, offset x,y width,heigt
     :var pixelSize: pixelSize (not yet implemented)
     :var baseExposure: base exposure
     :var logger:  :py:mod:`rts2saf.log`
 
     """
-    def __init__(self, debug=None, name=None, ftws=None, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None, pixelSize=None, baseExposure=None, logger=None):
+    def __init__(self, debug=None, name=None, ftws=None, binning=None, window = None, pixelSize=None, baseExposure=None, logger=None):
         
         self.debug=debug
         self.name= name
         self.ftws=ftws
         self.binning=binning
-        self.windowOffsetX=windowOffsetX
-        self.windowOffsetY=windowOffsetY
-        self.windowHeight=windowHeight
-        self.windowWidth=windowWidth
+        self.window = window
         self.pixelSize= pixelSize
         self.baseExposure= baseExposure
         self.logger=logger

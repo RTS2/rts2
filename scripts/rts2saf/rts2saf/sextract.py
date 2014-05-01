@@ -110,7 +110,8 @@ class Sextract(object):
 
         try:
             # real header key word is mapped in rts2saf.config, this one is mapped twice!
-            binning = float(self.rt.cfg[hdr[self.rt.cfg['BINNING']]])
+            # here, this is a 2 dim dict
+            binning = float(self.rt.cfg['FITS_BINNING_MAPPING'][hdr[self.rt.cfg['BINNING']]])
             if self.debug: self.logger.debug( 'sextract: binning: {0}'.format(binning))
         except:
             # if CatalogAnalysis is done

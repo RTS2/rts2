@@ -283,6 +283,8 @@ class Acquire(object):
         self.iFocDef=None
         self.iFocFoff=None
         self.iFocToff=None
+        self.iBinning=None
+        self.iWindow=None
         self.proxy= proxy
         self.connected=False
         self.errorMessage=None
@@ -301,15 +303,18 @@ class Acquire(object):
         self.iFocDef = self.proxy.getSingleValue(self.foc.name,'FOC_DEF')    
         self.iFocFoff= self.proxy.getSingleValue(self.foc.name,'FOC_FOFF')    
         self.iFocToff= self.proxy.getSingleValue(self.foc.name,'FOC_TOFF')    
+        self.iBinning= self.proxy.getSingleValue(self.ccd.name,'binning')    
+        self.iWindow = self.proxy.getValue(self.ccd.name,'WINDOW')    
 
-        
         self.logger.debug('acquire: current focuser: {0}'.format(self.iFocType))        
         self.logger.debug('acquire: current FOC_DEF: {0}'.format(self.iFocDef))
 
         if self.writeToDevices:
             self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
+            self.proxy.setValue(self.ccd.name,'binning', self.ccd.binning)
+            self.proxy.setValue(self.ccd.name,'WINDOW', ' '.join(str(x) for x in self.ccd.window))
         else:
-            self.logger.warn('acquire: disabled setting FOC_TOFF: {0}'.format(0))
+            self.logger.warn('acquire: disabled setting FOC_TOFF, CCD binning, WINDOW')
 
         # ToDo filter
         # set all but ftw to empty slot
@@ -336,6 +341,8 @@ class Acquire(object):
     def __finalState(self):
         if self.writeToDevices:
             self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
+            self.proxy.setValue(self.ccd.name,'binning', self.iBinning)
+            self.proxy.setValue(self.ccd.name,'WINDOW', ' '.join(str(x) for x in self.iWindow))
         else:
             self.logger.warn('acquire: disabled setting FOC_DEF: {0}, FOC_TOFF: 0',format(self.iFocDef))
 
