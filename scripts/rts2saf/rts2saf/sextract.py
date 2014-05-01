@@ -50,6 +50,7 @@ class Sextract(object):
         self.fields=rt.cfg['FIELDS'][:] # it is a reference, gell :-))
         self.nbrsFtwsInuse=len(rt.cfg['FILTER WHEELS INUSE'])
         self.stdFocPos=rt.cfg['FOCUSER_RESOLUTION']
+        self.focPosInterval = rt.cfg['FOCUSER_INTERVAL'] 
         self.logger=logger
         
     def appendFluxFields(self):
@@ -73,17 +74,6 @@ class Sextract(object):
         :return:  :py:mod:`rts2saf.data.DataSxtr`
 
         """
-        sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw, createAssoc=self.createAssoc)
-        # create the skyList
-        stde= sex.runSExtractor(fitsFn, assocFn=assocFn)
-
-        if stde:
-            self.logger.error( 'sextract: {0} not found, returning'.format(fitsFn,))
-            self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(stde))
-            return DataSxtr()
-
-        # find the sextractor counts
-        objectCount = len(sex.cleanedObjects)
 
         hdr = pyfits.open(fitsFn,'readonly')[0].header
         try:
@@ -99,6 +89,15 @@ class Sextract(object):
             self.logger.error( 'sextract: in FITS {0}, returning key word FOC_POS not found'.format(fitsFn))
             self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(e))
             return DataSxtr()
+
+
+        if len(self.focPosInterval):
+            if focPos > min(self.focPosInterval) and focPos < max(self.focPosInterval):
+                pass
+            else:
+                self.logger.info( 'sextract: exclude FOC_POS: {0:5d}, {1}'.format(int(focPos), fitsFn))
+                return DataSxtr()
+                
 
         # these values are remapped in config.py
         try:
@@ -190,6 +189,20 @@ class Sextract(object):
             except:
                 if self.debug: self.logger.debug( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
 
+
+        sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw, createAssoc=self.createAssoc)
+        # create the skyList
+        stde= sex.runSExtractor(fitsFn, assocFn=assocFn)
+
+        if stde:
+            self.logger.error( 'sextract: {0} not found, returning'.format(fitsFn,))
+            self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(stde))
+            return DataSxtr()
+
+        # find the sextractor counts
+        objectCount = len(sex.cleanedObjects)
+
+
         try:
             fwhm,stdFwhm,nstars=sex.calculate_FWHM(filterGalaxies=False)
 #            self.logger.warn( '++++++++++++++++++++ {0} {1:5.2f}, {2:5.2f}, {3} {4}'.format(focPos, fwhm, stdFwhm, len(sex.cleanedObjects), len(sex.cleanedObjects[0])))
@@ -242,6 +255,6 @@ class Sextract(object):
         except:
             if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFn))
 
-        if self.debug: self.logger.debug( 'sextract: {0} {1:5.0f} {2:4d} FWHM{3:5.1f} stdFwhm {4:5.1f} nstars {5:4d}'.format(fitsFn, focPos, len(sex.cleanedObjects), fwhm, stdFwhm, nstars))
+        if self.debug: self.logger.debug( 'sextract:  {0}, FOC_POS: {1:5.0f}, SX cleaned objects: {2:4d}, nstars {3:4d}, FWHM: {4:5.1f}, stdFwhm: {5:5.1f}'.format(fitsFn, focPos, len(sex.cleanedObjects), nstars, fwhm, stdFwhm))
 
         return dataSxtr

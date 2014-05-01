@@ -106,6 +106,8 @@ class DefaultConfiguration(object):
         #
         self.dcf[('analysis', 'MINIMUM_OBJECTS')]= 5
         self.dcf[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
+        # if non empty only FOC_POS within this interval will be analyzed
+        self.dcf[('analysis', 'FOCUSER_INTERVAL')]= list()
         
         self.dcf[('SExtractor', 'SEXPATH')]= 'sextractor'
         self.dcf[('SExtractor', 'SEXCFG')]= '/usr/local/etc/rts2/rts2saf/sex/rts2saf-sex.cfg'
@@ -316,6 +318,13 @@ class Configuration(DefaultConfiguration):
                 if len(self.cfg[identifier]) != 4:
                     self.logger.warn( 'Configuration.readConfiguration: wrong ccd window specification {0} {1}, using the whole CCD area'.format(len(self.cfg[identifier]), self.cfg[identifier]))
                     self.cfg[identifier] = [ -1, -1, -1, -1]
+
+            elif( section=='analysis') and identifier == 'FOCUSER_INTERVAL':
+                items= value[1:-1].split(',')
+                self.cfg[identifier] = [ int(x) for x in items ]
+                if len(self.cfg[identifier]) != 2:
+                    self.logger.warn( 'Configuration.readConfiguration: wrong focuser interval specification {0} {1}, using all images'.format(len(self.cfg[identifier]), self.cfg[identifier]))
+                    self.cfg[identifier] = list()
 
             elif( section=='IMGP analysis'):
                 items= value[1:-1].split(',')
