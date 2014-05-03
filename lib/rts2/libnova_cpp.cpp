@@ -846,7 +846,8 @@ int LibnovaEllFromMPCComet (struct ln_ell_orbit *orbit, std::string &description
 
 	std::istringstream is (mpc);
 
-	epoch.days = epoch.hours = epoch.minutes = epoch.seconds = 0;
+	epoch.days = 1;
+	epoch.hours = epoch.minutes = epoch.seconds = 0;
 
 	is >> cnum >> epoch.years >> epoch.months >> d >> orbit->a >> orbit->e >>
 		orbit->w >> orbit->omega >> orbit->i;
