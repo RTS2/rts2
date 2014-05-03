@@ -154,7 +154,7 @@ void EllTarget::writeToImage (rts2image::Image * image, double JD)
 	getPosition (&pos, JD, &parallax);
 
 	image->setValue ("PARALLAX_RA", parallax.ra, "RA parallax");
-	image->setValue ("PARALLAX_RA", parallax.dec, "DEC parallax");
+	image->setValue ("PARALLAX_DEC", parallax.dec, "DEC parallax");
 }
 
 double EllTarget::getEarthDistance (double JD)
