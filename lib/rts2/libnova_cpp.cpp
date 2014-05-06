@@ -870,7 +870,7 @@ int LibnovaEllFromMPCComet (struct ln_ell_orbit *orbit, std::string &description
 	if (orbit->e < 1)
 		orbit->a = true_a; 
 
-	orbit->JD = ln_get_julian_day (&epoch) + d;
+	orbit->JD = ln_get_julian_day (&epoch) + d - 1;
 
 	return 0;
 }
