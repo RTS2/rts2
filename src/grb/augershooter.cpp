@@ -153,7 +153,7 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):DeviceDb (in_argc
 	EyeId4->setValueInteger (1);
 
 	createValue (minNPix4, "min_npix_cut4", "minimal number of pixels, cut4", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	minNPix4->setValueDouble (10.);
+	minNPix4->setValueInteger (10);
 
 	createValue (maxDGHChi2Improv4, "max_dghchi2_improv4", "maximal DGHChi2 Improv, cut4", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	maxDGHChi2Improv4->setValueDouble (-0.2);

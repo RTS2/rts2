@@ -133,6 +133,45 @@ int ConnShooter::processAuger ()
 	double db_TTrackObs;      /// Observed track length time (100 ns)
 	VARCHAR db_ShowerParams[2000];
 
+	// augershooter parameters settable from rts2-mon,
+	// saved in /etc/rts2/augershooter
+	int db_EyeId1;
+	double db_minEnergy;
+	double db_maxXmaxErr;
+	double db_maxEnergyDiv;
+	double db_maxGHChiDiv;
+	double db_minLineFitDiff;
+	double db_maxAxisDist;
+	double db_minRp;
+	double db_minChi0;
+	double db_maxSPDDiv;
+	double db_maxTimeDiv;
+	double db_maxTheta;
+	int db_maxTime;
+	int db_EyeId2;
+	double db_minEnergy2;
+	int db_minPix2;
+	double db_maxAxisDist2;
+	double db_maxTimeDiff2;
+	double db_maxGHChiDiv2;
+	double db_maxLineFitDiv2;
+	double db_minViewAngle2;
+	int db_EyeId3;
+	double db_minEnergy3;
+	double db_maxXmaxErr3;
+	double db_maxEnergyDiv3;
+	double db_maxGHChiDiv3;
+	double db_maxLineFitDiv3;
+	int db_minPix3;
+	double db_maxAxisDist3;
+	double db_minRp3;
+	double db_minChi03;
+	double db_maxSPDDiv3;
+	double db_maxTimeDiv3;
+	int db_EyeId4;
+	int db_minNPix4;
+	double db_maxDGHChi2Improv4;
+
 	int db_cut = 0;
 
 	EXEC SQL END DECLARE SECTION;
@@ -295,22 +334,59 @@ int ConnShooter::processAuger ()
 
 	cutindex = 0;
 
-	if (compare (db_Energy, CMP_GT, master->minEnergy->getValueDouble (), "Energy")
-		&& compare (db_Eye, CMP_EQ, master->EyeId1->getValueInteger (), "Eye")
-		&& compare ((int) (now - db_auger_date), CMP_LT, master->maxTime->getValueInteger (), "Time from last event")
+	db_EyeId1 = master->EyeId1->getValueInteger ();
+	db_minEnergy = master->minEnergy->getValueDouble ();
+	db_maxXmaxErr = master->maxXmaxErr->getValueDouble ();
+	db_maxEnergyDiv = master->maxEnergyDiv->getValueDouble ();
+	db_maxGHChiDiv = master->maxGHChiDiv->getValueDouble ();
+	db_minLineFitDiff = master->minLineFitDiff->getValueDouble ();
+	db_maxAxisDist = master->maxAxisDist->getValueDouble ();
+	db_minRp = master->minRp->getValueDouble ();
+	db_minChi0 = master->minChi0->getValueDouble ();
+	db_maxSPDDiv = master->maxSPDDiv->getValueDouble ();
+	db_maxTimeDiv = master->maxTimeDiv->getValueDouble ();
+	db_maxTheta = master->maxTheta->getValueDouble ();
+	db_maxTime = master->maxTime->getValueInteger ();
+	db_EyeId2 = master->EyeId2->getValueInteger ();
+	db_minEnergy2 = master->minEnergy2->getValueDouble ();
+	db_minPix2 = master->minPix2->getValueInteger ();
+	db_maxAxisDist2 = master->maxAxisDist2->getValueDouble ();
+	db_maxTimeDiff2 = master->maxTimeDiff2->getValueDouble ();
+	db_maxGHChiDiv2 = master->maxGHChiDiv2->getValueDouble ();
+	db_maxLineFitDiv2 = master->maxLineFitDiv2->getValueDouble ();
+	db_minViewAngle2 = master->minViewAngle2->getValueDouble ();
+	db_EyeId3 = master->EyeId3->getValueInteger ();
+	db_minEnergy3 = master->minEnergy3->getValueDouble ();
+	db_maxXmaxErr3 = master->maxXmaxErr3->getValueDouble ();
+	db_maxEnergyDiv3 = master->maxEnergyDiv3->getValueDouble ();
+	db_maxGHChiDiv3 = master->maxGHChiDiv3->getValueDouble ();
+	db_maxLineFitDiv3 = master->maxLineFitDiv3->getValueDouble ();
+	db_minPix3 = master->minPix3->getValueInteger ();
+	db_maxAxisDist3 = master->maxAxisDist3->getValueDouble ();
+	db_minRp3 = master->minRp3->getValueDouble ();
+	db_minChi03 = master->minChi03->getValueDouble ();
+	db_maxSPDDiv3 = master->maxSPDDiv3->getValueDouble ();
+	db_maxTimeDiv3 = master->maxTimeDiv3->getValueDouble ();
+	db_EyeId4 = master->EyeId4->getValueInteger ();
+	db_minNPix4 = master->minNPix4->getValueInteger ();
+	db_maxDGHChi2Improv4 = master->maxDGHChi2Improv4->getValueDouble ();
+
+	if (compare (db_Energy, CMP_GT, db_minEnergy, "Energy")
+		&& compare (db_Eye, CMP_EQ, db_EyeId1, "Eye")
+		&& compare ((int) (now - db_auger_date), CMP_LT, db_maxTime, "Time from last event")
 		&& compare (!((DevAugerShooter *)master)->wasSeen (db_auger_date, db_ra, db_dec), CMP_EQ, true, "was not seen recently")
 		&& compare (db_Xmax, CMP_GT, db_XFOVMin, "XFOVMin")
 		&& compare (db_Xmax, CMP_LT, db_XFOVMax, "XFOVMax")
-		&& compare (db_XmaxErr, CMP_LT, master->maxXmaxErr->getValueDouble (), "XmaxErr")
-		&& compare (db_EnergyErr / db_Energy, CMP_LT, master->maxEnergyDiv->getValueDouble (), "EnergyErr to Energy ratio")
-		&& compare (db_GHChi2 / db_GHNdf, CMP_LT, master->maxGHChiDiv->getValueDouble (), "GHChi2 to GHNdf ratio")
-		&& compare ((db_LineFitChi2 - db_GHChi2), CMP_GT, master->minLineFitDiff->getValueDouble (), "LineFitDiff")
-		&& compare (db_AxisDist, CMP_LT, master->maxAxisDist->getValueDouble (), "AxisDist")
-		&& compare (db_Rp, CMP_GT, master->minRp->getValueDouble (), "Rp")
-		&& compare (db_Chi0, CMP_GT, master->minChi0->getValueDouble (), "Chi0")
-		&& compare ((db_SDPChi2 / db_SDPNdf), CMP_LT, master->maxSPDDiv->getValueDouble (), "SDPChi2 to SDPNdf ratio")
-		&& compare ((db_TimeChi2 / db_TimeNdf), CMP_LT, master->maxTimeDiv->getValueDouble (), "TimeChi2 to TimeNDf ratio")
-		&& compare (db_Theta, CMP_LT, master->maxTheta->getValueDouble (), "Theta")
+		&& compare (db_XmaxErr, CMP_LT, db_maxXmaxErr, "XmaxErr")
+		&& compare (db_EnergyErr / db_Energy, CMP_LT, db_maxEnergyDiv, "EnergyErr to Energy ratio")
+		&& compare (db_GHChi2 / db_GHNdf, CMP_LT, db_maxGHChiDiv, "GHChi2 to GHNdf ratio")
+		&& compare ((db_LineFitChi2 - db_GHChi2), CMP_GT, db_minLineFitDiff, "LineFitDiff")
+		&& compare (db_AxisDist, CMP_LT, db_maxAxisDist, "AxisDist")
+		&& compare (db_Rp, CMP_GT, db_minRp, "Rp")
+		&& compare (db_Chi0, CMP_GT, db_minChi0, "Chi0")
+		&& compare ((db_SDPChi2 / db_SDPNdf), CMP_LT, db_maxSPDDiv, "SDPChi2 to SDPNdf ratio")
+		&& compare ((db_TimeChi2 / db_TimeNdf), CMP_LT, db_maxTimeDiv, "TimeChi2 to TimeNDf ratio")
+		&& compare (db_Theta, CMP_LT, db_maxTheta, "Theta")
 	)
 		db_cut |= 1;
 
@@ -320,16 +396,16 @@ int ConnShooter::processAuger ()
 
 	double CoreDist = 0.001 * db_Rp / sin (db_Chi0 / 57.295779513);
 
-	if (compare (db_Energy, CMP_GT, master->minEnergy2->getValueDouble (), "Energy")
-	        && compare (db_Eye, CMP_EQ, master->EyeId2->getValueInteger (), "Eye")
-		&& compare (db_NPix, CMP_GT, master->minPix2->getValueInteger (), "NPix")
-		&& compare (db_AxisDist, CMP_LT, master->maxAxisDist2->getValueDouble (), "AxisDist")
-		&& compare (fabs(db_SDFDdT), CMP_LT, master->maxTimeDiff2->getValueDouble (), "SDFDdT")
-		&& compare (db_GHChi2 / db_GHNdf, CMP_LT, master->maxGHChiDiv2->getValueDouble (), "GHChi2 to GHNdf ratio")
-		&& compare ((db_GHChi2 / db_LineFitChi2), CMP_LT, master->maxLineFitDiv2->getValueDouble (), "GHChi2 to LineFitChi2 ratio")
+	if (compare (db_Energy, CMP_GT, db_minEnergy2, "Energy")
+	        && compare (db_Eye, CMP_EQ, db_EyeId2, "Eye")
+		&& compare (db_NPix, CMP_GT, db_minPix2, "NPix")
+		&& compare (db_AxisDist, CMP_LT, db_maxAxisDist2, "AxisDist")
+		&& compare (fabs(db_SDFDdT), CMP_LT, db_maxTimeDiff2, "SDFDdT")
+		&& compare (db_GHChi2 / db_GHNdf, CMP_LT, db_maxGHChiDiv2, "GHChi2 to GHNdf ratio")
+		&& compare ((db_GHChi2 / db_LineFitChi2), CMP_LT, db_maxLineFitDiv2, "GHChi2 to LineFitChi2 ratio")
 		&& compare (db_Xmax, CMP_GT, db_XFOVMin, "XFovMin")
 		&& compare (db_Xmax, CMP_LT, db_XFOVMax, "XFovMax")
-		&& compare (db_MinAngle, CMP_GT, master->minViewAngle2->getValueDouble (), "MinAngle")
+		&& compare (db_MinAngle, CMP_GT, db_minViewAngle2, "MinAngle")
 		&& compare ((((db_Theta >= 35. + 10.*(log10(db_Energy)-1.)) || (log10(db_Energy) > 1.7)) &&
 			((db_Theta <= 42.) || (log10(db_Energy) <= 1.7))), CMP_EQ, true, "Theta and Energy cuts")
 		&& compare ((((CoreDist >= 24. + 12.*(log10(db_Energy)-1.)) || (log10(db_Energy) < 1.)) &&
@@ -342,18 +418,18 @@ int ConnShooter::processAuger ()
 
 	 /*       third set of cuts          */
 
-	if (compare (db_Energy, CMP_GT, master->minEnergy3->getValueDouble (), "Energy")
-		&& compare (db_Eye, CMP_EQ, master->EyeId3->getValueInteger (), "Eye")
-		&& compare (db_XmaxErr, CMP_LT, master->maxXmaxErr3->getValueDouble (), "XmaxErr")
-		&& compare (db_EnergyErr / db_Energy, CMP_LT, master->maxEnergyDiv3->getValueDouble (), "EnergyErr to Energy ratio")
-		&& compare (db_GHChi2 / db_GHNdf, CMP_LT, master->maxGHChiDiv3->getValueDouble (), "GHChi2 to GHNdf ratio")
-		&& compare ((db_GHChi2 / db_LineFitChi2), CMP_LT, master->maxLineFitDiv3->getValueDouble (), "GHChi2 to LineFitChi2 ratio")
-		&& compare (db_NPix, CMP_GT, master->minPix3->getValueInteger (), "NPix")
-		&& compare (db_AxisDist, CMP_LT, master->maxAxisDist3->getValueDouble (), "AxisDist")
-		&& compare (db_Rp, CMP_GT, master->minRp3->getValueDouble (), "Rp")
-		&& compare (db_Chi0, CMP_GT, master->minChi03->getValueDouble (), "Chi0")
-		&& compare ((db_SDPChi2 / db_SDPNdf), CMP_LT, master->maxSPDDiv3->getValueDouble (), "SDPChi2 to SDPNdf ratio")
-		&& compare ((db_TimeChi2 / db_TimeNdf), CMP_LT, master->maxTimeDiv3->getValueDouble (), "TimeChi2 to TimeNdf ratio")
+	if (compare (db_Energy, CMP_GT, db_minEnergy3, "Energy")
+		&& compare (db_Eye, CMP_EQ, db_EyeId3, "Eye")
+		&& compare (db_XmaxErr, CMP_LT, db_maxXmaxErr3, "XmaxErr")
+		&& compare (db_EnergyErr / db_Energy, CMP_LT, db_maxEnergyDiv3, "EnergyErr to Energy ratio")
+		&& compare (db_GHChi2 / db_GHNdf, CMP_LT, db_maxGHChiDiv3, "GHChi2 to GHNdf ratio")
+		&& compare ((db_GHChi2 / db_LineFitChi2), CMP_LT, db_maxLineFitDiv3, "GHChi2 to LineFitChi2 ratio")
+		&& compare (db_NPix, CMP_GT, db_minPix3, "NPix")
+		&& compare (db_AxisDist, CMP_LT, db_maxAxisDist3, "AxisDist")
+		&& compare (db_Rp, CMP_GT, db_minRp3, "Rp")
+		&& compare (db_Chi0, CMP_GT, db_minChi03, "Chi0")
+		&& compare ((db_SDPChi2 / db_SDPNdf), CMP_LT, db_maxSPDDiv3, "SDPChi2 to SDPNdf ratio")
+		&& compare ((db_TimeChi2 / db_TimeNdf), CMP_LT, db_maxTimeDiv3, "TimeChi2 to TimeNdf ratio")
 	)
 		db_cut |= 4;
  	/*       third set of cuts - end    */
@@ -362,9 +438,9 @@ int ConnShooter::processAuger ()
 	cutindex = 3;
 
 	/*       fourth set of cuts         */
-	if (compare (db_NPix, CMP_GT, master->minNPix4->getValueInteger (), "NPix")
-		&& compare (db_Eye, CMP_EQ, master->EyeId4->getValueInteger (), "Eye")
-		&& compare ((db_DGHChi2Improv / db_GHNdf), CMP_LT, master->maxDGHChi2Improv4->getValueDouble (), "DGHChi2Improv to GHNdf ratio")
+	if (compare (db_NPix, CMP_GT, db_minNPix4, "NPix")
+		&& compare (db_Eye, CMP_EQ, db_EyeId4, "Eye")
+		&& compare ((db_DGHChi2Improv / db_GHNdf), CMP_LT, db_maxDGHChi2Improv4, "DGHChi2Improv to GHNdf ratio")
 	)
 		db_cut |= 8;
 	/*       fourth set of cuts - end   */
@@ -374,36 +450,36 @@ int ConnShooter::processAuger ()
 		logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (date " << LibnovaDateDouble (db_auger_date)
 			<< " Energy " << db_Energy
 			<< " Eye " << db_Eye
-			<< " minEnergy " << master->minEnergy->getValueDouble ()
+			<< " minEnergy " << db_minEnergy
 			<< " Xmax " << db_Xmax
 			<< " XFOVMin " << db_XFOVMin
 			<< " XFOVMax " << db_XFOVMax
 			<< " XmaxErr " << db_XmaxErr
-			<< " maxXmaxErr " << master->maxXmaxErr->getValueDouble ()
+			<< " maxXmaxErr " << db_maxXmaxErr
 			<< " EnergyErr " << db_EnergyErr
-			<< " maxEnergyDiv " << master->maxEnergyDiv->getValueDouble ()
+			<< " maxEnergyDiv " << db_maxEnergyDiv
 			<< " GHChi2 " << db_GHChi2
 			<< " GHNdf " << db_GHNdf
 			<< " DGHXmax1 " << db_DGHXmax1
 			<< " DGHXmax2 " << db_DGHXmax2
 			<< " DGHChi2Improv " << db_DGHChi2Improv
-			<< " maxGHChiDiv " << master->maxGHChiDiv->getValueDouble ()
+			<< " maxGHChiDiv " << db_maxGHChiDiv
 			<< " (LineFitChi2 " << db_LineFitChi2 << " - GHChi2 " << db_GHChi2 << ")"
-			<< " minLineFitDiff " << master->minLineFitDiff->getValueDouble ()
+			<< " minLineFitDiff " << db_minLineFitDiff
 			<< " AxisDist " << db_AxisDist
-			<< " maxAxisDist " << master->maxAxisDist->getValueDouble ()
+			<< " maxAxisDist " << db_maxAxisDist
 			<< " Rp " << db_Rp
-			<< " minRp " << master->minRp->getValueDouble ()
+			<< " minRp " << db_minRp
 			<< " Chi0 " << db_Chi0
-			<< " minChi0 " << master->minChi0->getValueDouble ()
+			<< " minChi0 " << db_minChi0
 			<< " SDPChi2 " << db_SDPChi2
 			<< " SDPNdf " << db_SDPNdf
-			<< " maxSPDDiv " << master->maxSPDDiv->getValueDouble ()
+			<< " maxSPDDiv " << db_maxSPDDiv
 			<< " TimeChi2 " << db_TimeChi2
 			<< " TimeNdf " << db_TimeNdf
-			<< " maxTimeDiv " << master->maxTimeDiv->getValueDouble ()
+			<< " maxTimeDiv " << db_maxTimeDiv
 			<< " Theta " << db_Theta
-			<< " maxTheta " << master->maxTheta->getValueDouble ()
+			<< " maxTheta " << db_maxTheta
 			<< " ra " << db_ra
 			<< " dec " << db_dec
 			<< " params " << rest
@@ -490,7 +566,43 @@ int ConnShooter::processAuger ()
 		XTrackObs,
 		DegTrackObs,
 		TTrackObs,
-		ShowerParams
+		ShowerParams,
+		EyeId1,
+		minEnergy,
+		maxXmaxErr,
+		maxEnergyDiv,
+		maxGHChiDiv,
+		minLineFitDiff,
+		maxAxisDist,
+		minRp,
+		minChi0,
+		maxSPDDiv,
+		maxTimeDiv,
+		maxTheta,
+		maxTime,
+		EyeId2,
+		minEnergy2,
+		minPix2,
+		maxAxisDist2,
+		maxTimeDiff2,
+		maxGHChiDiv2,
+		maxLineFitDiv2,
+		minViewAngle2,
+		EyeId3,
+		minEnergy3,
+		maxXmaxErr3,
+		maxEnergyDiv3,
+		maxGHChiDiv3,
+		maxLineFitDiv3,
+		minPix3,
+		maxAxisDist3,
+		minRp3,
+		minChi03,
+		maxSPDDiv3,
+		maxTimeDiv3,
+		EyeId4,
+		minNPix4,
+		maxDGHChi2Improv4
 	)	
 	VALUES
 	(
@@ -565,7 +677,43 @@ int ConnShooter::processAuger ()
 		:db_XTrackObs,
 		:db_DegTrackObs,
 		:db_TTrackObs,
-		:db_ShowerParams
+		:db_ShowerParams,
+		:db_EyeId1,
+		:db_minEnergy,
+		:db_maxXmaxErr,
+		:db_maxEnergyDiv,
+		:db_maxGHChiDiv,
+		:db_minLineFitDiff,
+		:db_maxAxisDist,
+		:db_minRp,
+		:db_minChi0,
+		:db_maxSPDDiv,
+		:db_maxTimeDiv,
+		:db_maxTheta,
+		:db_maxTime,
+		:db_EyeId2,
+		:db_minEnergy2,
+		:db_minPix2,
+		:db_maxAxisDist2,
+		:db_maxTimeDiff2,
+		:db_maxGHChiDiv2,
+		:db_maxLineFitDiv2,
+		:db_minViewAngle2,
+		:db_EyeId3,
+		:db_minEnergy3,
+		:db_maxXmaxErr3,
+		:db_maxEnergyDiv3,
+		:db_maxGHChiDiv3,
+		:db_maxLineFitDiv3,
+		:db_minPix3,
+		:db_maxAxisDist3,
+		:db_minRp3,
+		:db_minChi03,
+		:db_maxSPDDiv3,
+		:db_maxTimeDiv3,
+		:db_EyeId4,
+		:db_minNPix4,
+		:db_maxDGHChi2Improv4
 	);
 	if (sqlca.sqlcode)
 	{
