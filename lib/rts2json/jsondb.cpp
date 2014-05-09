@@ -18,6 +18,7 @@
  */
 
 #include "configuration.h"
+#include "radecparser.h"
 
 #include "rts2db/camlist.h"
 #include "rts2db/constraints.h"
@@ -292,6 +293,53 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			os << "]";
 		}
 		os << "}";
+	}
+	// resolve string to target name and coordinates
+	// parameters:
+	//    tn - string to resolve
+	// returns:
+	//    JSON array with target names, IDs (for existing targets), RA DEC of the possible target
+	else if (vals[0] == "resolve")
+	{
+		const char *tn = params->getString ("tn", "");
+		if (strlen (tn) == 0)
+			throw XmlRpc::JSONException ("empty target name");
+
+		os << "[";
+	
+		bool first = true;
+		struct ln_equ_posn pos;
+
+		// check if target with given name already exists in the database
+		rts2db::TargetSetByName ts_n = rts2db::TargetSetByName (tn);
+		ts_n.load ();
+		if (ts_n.size () > 0)
+		{
+			for (rts2db::TargetSetByName::iterator iter = ts_n.begin (); iter != ts_n.end (); iter++)
+			{
+				iter->second->getPosition (&pos);
+				if (first)
+					first = false;
+				else
+					os << ",";
+
+				os << "[\"" << iter->second->getTargetName () << "\"," << iter->second->getTargetID () << "," << rts2json::JsonDouble (pos.ra) << "," << rts2json::JsonDouble (pos.dec) << "]";
+			}
+			os << "]";
+		}
+		else if (parseRaDec (tn, pos.ra, pos.dec) == 0)
+		{
+				os << "[\"Created " << tn << "\",0," << pos.ra << "," << pos.dec << "]]";
+		}
+		else
+		{
+			rts2db::Target *target = new rts2db::SimbadTarget (tn);
+			target->load ();
+			target->getPosition (&pos);
+
+			os << "[\"" << tn << "\",0," << pos.ra << "," << pos.dec << "]]";
+		}
+
 	}
 	else if (vals[0] == "create_target")
 	{
