@@ -305,7 +305,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		if (strlen (tn) == 0)
 			throw XmlRpc::JSONException ("empty target name");
 
-		os << "[";
+		os << "\"data\":[";
 	
 		bool first = true;
 		struct ln_equ_posn pos;
@@ -329,7 +329,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		}
 		else if (parseRaDec (tn, pos.ra, pos.dec) == 0)
 		{
-				os << "[\"Created " << tn << "\",0," << pos.ra << "," << pos.dec << "]]";
+				os << "[\"Created " << tn << "\",-1," << pos.ra << "," << pos.dec << "]]";
 		}
 		else
 		{
@@ -337,7 +337,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			target->load ();
 			target->getPosition (&pos);
 
-			os << "[\"" << tn << "\",0," << pos.ra << "," << pos.dec << "]]";
+			os << "[\"" << tn << "\",-2," << pos.ra << "," << pos.dec << "]]";
 		}
 
 	}
