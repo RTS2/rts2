@@ -301,8 +301,8 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 	//    JSON array with target names, IDs (for existing targets), RA DEC of the possible target
 	else if (vals[0] == "resolve")
 	{
-		const char *tn = params->getString ("tn", "");
-		if (strlen (tn) == 0)
+		const char *ts = params->getString ("s", "");
+		if (strlen (ts) == 0)
 			throw XmlRpc::JSONException ("empty target name");
 
 		os << "\"data\":[";
@@ -311,7 +311,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		struct ln_equ_posn pos;
 
 		// check if target with given name already exists in the database
-		rts2db::TargetSetByName ts_n = rts2db::TargetSetByName (tn);
+		rts2db::TargetSetByName ts_n = rts2db::TargetSetByName (ts);
 		ts_n.load ();
 		if (ts_n.size () > 0)
 		{
@@ -327,17 +327,17 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 			}
 			os << "]";
 		}
-		else if (parseRaDec (tn, pos.ra, pos.dec) == 0)
+		else if (parseRaDec (ts, pos.ra, pos.dec) == 0)
 		{
-				os << "[\"Created " << tn << "\",-1," << pos.ra << "," << pos.dec << "]]";
+				os << "[\"Created " << ts << "\",-1," << pos.ra << "," << pos.dec << "]]";
 		}
 		else
 		{
-			rts2db::Target *target = new rts2db::SimbadTarget (tn);
+			rts2db::Target *target = new rts2db::SimbadTarget (ts);
 			target->load ();
 			target->getPosition (&pos);
 
-			os << "[\"" << tn << "\",-2," << pos.ra << "," << pos.dec << "]]";
+			os << "[\"" << ts << "\",-2," << pos.ra << "," << pos.dec << "]]";
 		}
 
 	}
