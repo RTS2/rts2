@@ -50,9 +50,9 @@ parser.add_option('--progress', help='Reports progress of the give schedule ID',
 
 j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
 
-def resolve(tn):
+def resolve(s):
 	"""Resolve target from string. Either list existing RTS2 targets, or return Simbad/MPEC options"""
-	r=j.loadJson('/api/resolve', {'tn':tn})
+	r=j.loadJson('/api/resolve', {'s':s})
 	for t in r['data']:
 		print 'Target name {0[0]}, ID {0[1]}, RA {0[2]}, Dec {0[3]}'.format(t)
 	if len(r) == 0:
