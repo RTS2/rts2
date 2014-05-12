@@ -222,17 +222,6 @@ if __name__ == '__main__':
     fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=foc, ftws=ftws, rt=rt, ev=ev, logger=logger, xdisplay = XDISPLAY)
     fs.run()
 
-    if rt.cfg['REENABLE_EXEC']:
-        try:
-            logger.info('rts2saf_focus: starting rts2saf_reenable_exec.py in a subprocess')
-            subprocess.Popen('/usr/local/bin/rts2saf_reenable_exec.py').wait()
-            logger.info('rts2saf_focus: ending rts2saf_reenable_exec.py')
-
-        except Exception as e:
-            logger.error('rts2saf_focus: failed rts2saf_reenable_exec.py in a subprocess: {} {}'.format(e.message, e.args))
-            
-    else:
-        logger.info('rts2saf_focus: do not reeanble EXEC')
 
     logger.info('rts2saf_focus: end scan, started at: {0}'.format(ev.startTime))
 

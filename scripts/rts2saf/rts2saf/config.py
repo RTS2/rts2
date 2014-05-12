@@ -61,7 +61,6 @@ class DefaultConfiguration(object):
         self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2saf_focus'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
-        self.dcf[('basic', 'REENABLE_EXEC')]= False
 
         self.dcf[('filter wheels', 'inuse')]= '[ FILTA ]'
         self.dcf[('filter wheels', 'EMPTY_SLOT_NAMES')]= [ 'empty8', 'open' ]
@@ -102,7 +101,6 @@ class DefaultConfiguration(object):
         self.dcf[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
         self.dcf[('acceptance circle', 'RADIUS')]= 2000.
         #
-        self.dcf[('DS9', 'DS9_REGION_FILE')]= 'ds9-rts2saf.reg'
         #
         self.dcf[('analysis', 'MINIMUM_OBJECTS')]= 5
         self.dcf[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5

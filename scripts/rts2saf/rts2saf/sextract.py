@@ -75,7 +75,6 @@ class Sextract(object):
 
         """
 
-        hdr = pyfits.open(fitsFn,'readonly')[0].header
         try:
             hdr = pyfits.open(fitsFn,'readonly')[0].header
         except Exception, e:
