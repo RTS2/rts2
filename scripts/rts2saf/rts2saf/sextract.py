@@ -144,23 +144,23 @@ class Sextract(object):
         try:
             naxis1 = float(hdr['NAXIS1'])
         except:
-            self.logger.warn( 'sextract: no NAXIS1 information found, {0}'.format(fitsFn, focPos, objectCount))
+            self.logger.warn( 'sextract: no NAXIS1 information found'.format(fitsFn, focPos))
             naxis1=None
         try:
             naxis2 = float(hdr['NAXIS2'])
         except:
-            self.logger.warn( 'sextract: no NAXIS2 information found, {0}'.format(fitsFn, focPos, objectCount))
+            self.logger.warn( 'sextract: no NAXIS2 information found'.format(fitsFn, focPos))
             naxis2=None
         try:
             ftName = hdr['FILTER']
         except:
-            self.logger.warn( 'sextract: no filter name information found, {0}'.format(fitsFn, focPos, objectCount))
+            self.logger.warn( 'sextract: no filter name information found'.format(fitsFn, focPos))
             ftName=None
 
         try:
             date = hdr['DATE'] # DATE-OBS
         except:
-            self.logger.warn( 'sextract: no date information found, {0}'.format(fitsFn, focPos, objectCount))
+            self.logger.warn( 'sextract: no date information found'.format(fitsFn, focPos))
             date=None
 
 
@@ -170,7 +170,7 @@ class Sextract(object):
             try:
                 ftAName = hdr['FILTA']
             except:
-                if self.debug: self.logger.debug( 'sextract: no FILTA name information found, {0}'.format(fitsFn, focPos, objectCount))
+                if self.debug: self.logger.debug( 'sextract: no FILTA name information found'.format(fitsFn, focPos))
 
         # ToDo clumsy
         ftBName=None
@@ -178,7 +178,7 @@ class Sextract(object):
             try:
                 ftBName = hdr['FILTB']
             except:
-                if self.debug: self.logger.debug( 'sextract: no FILTB name information found, {0}'.format(fitsFn, focPos, objectCount))
+                if self.debug: self.logger.debug( 'sextract: no FILTB name information found'.format(fitsFn, focPos))
 
         # ToDo clumsy
         ftCName=None
@@ -186,7 +186,7 @@ class Sextract(object):
             try:
                 ftCName = hdr['FILTC']
             except:
-                if self.debug: self.logger.debug( 'sextract: no FILTC name information found, {0}'.format(fitsFn, focPos, objectCount))
+                if self.debug: self.logger.debug( 'sextract: no FILTC name information found'.format(fitsFn, focPos))
 
 
         sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw, createAssoc=self.createAssoc)

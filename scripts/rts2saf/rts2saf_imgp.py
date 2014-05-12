@@ -82,6 +82,7 @@ class ImgpAnalysis():
                 self.fitsFileName,
                 ]
         # used for unittest
+        # ToDo: clarify that:
         if args.toconsole:
             cmd.append('--toconsole')
             cmd.append('--toconsole')
@@ -101,6 +102,7 @@ class ImgpAnalysis():
         except:
             self.logger.error( '{0}: ending, reading from {1} pipe failed'.format(self.scriptName, self.astrometryCmd))
             sys.exit(1)
+
         if stde:
             self.logger.error( '{0}: message from {1} on stderr:\n{2}'.format(self.scriptName, self.astrometryCmd, stde))
             sys.stderr.write(stde)

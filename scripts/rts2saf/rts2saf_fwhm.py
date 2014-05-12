@@ -79,7 +79,7 @@ if __name__ == '__main__':
     try:
         dataSxtr=sex.sextract(fitsFn=args.fitsFn) 
     except Exception, e:
-        logger.error('rts2af_fwhm: sextractor failed on file: {0}\nerror: {1}\nexiting'.format(args.fitsFn, e))
+        logger.error('rts2af_fwhm: sextractor failed on file: {0}\nerror from sex.sextract: {1}\nexiting'.format(args.fitsFn, e))
         sys.exit(1)
 
     fwhmTreshold=rt.cfg['FWHM_LOWER_THRESH'] 
