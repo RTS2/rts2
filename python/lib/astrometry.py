@@ -165,7 +165,7 @@ class AstrometryScript:
 		if replace and ret is not None:
 			shutil.move(self.odir+'/input.new',self.fits_file)
 	       
-	
+                os.removedirs(self.odir)
 		return ret
 
 	# return offset from 
