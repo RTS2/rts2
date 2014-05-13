@@ -172,8 +172,8 @@ class DefaultConfiguration(object):
         self.dcf[('analysis', 'FWHM_MAX')] = 12. 
 
         self.dcf[('IMGP analysis', 'FILTERS_TO_EXCLUDE')] = '[ FILTC:grism1]' 
-        self.dcf[('IMGP analysis', 'SCRIPT_FWHM')] = 'rts2saf_fwhm.py' 
-        self.dcf[('IMGP analysis', 'SCRIPT_ASTROMETRY')] = 'rts2-astrometry.net' 
+        self.dcf[('IMGP analysis', 'SCRIPT_FWHM')] = '/usr/local/bin/rts2saf_fwhm.py' 
+        self.dcf[('IMGP analysis', 'SCRIPT_ASTROMETRY')] = '/usr/local/bin/rts2-astrometry.net' 
         # or rts2-astrometry.net
 
 

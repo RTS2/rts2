@@ -108,11 +108,17 @@ class ImgpAnalysis():
             sys.stderr.write(stde)
 
         lnstdo= stdo.split('\n')
+            
+        result = False
         for ln in lnstdo:
             self.logger.info( '{0}, {1}: {2}'.format(self.scriptName, self.astrometryCmd, ln))
             if re.search('corrwerr', ln):
                 print ln
-
+                result = True
+                
+        if not result:
+            self.logger.info( '{0}, no result received from: {1}'.format(self.scriptName, self.astrometryCmd))
+            
         self.logger.info( '{0}: ending'.format(self.scriptName))
             
 
