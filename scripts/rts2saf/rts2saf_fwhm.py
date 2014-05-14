@@ -73,7 +73,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     elif not os.path.exists(args.fitsFn):
-        logger.error('rts2af_fwhm: file: {0}, does not exists, exiting'.format(args.fitsFn))
+        logger.error('rts2af_fwhm: file: {0}, does not exist, exiting'.format(args.fitsFn))
         sys.exit(1)
 
     try:
@@ -107,14 +107,14 @@ if __name__ == '__main__':
             logger.info('rts2af_fwhm: there is now a GRB target selected, no focus run queued')
 
         else:
-            queue=False
+            q = None
+            rts2.createProxy(url=rt.cfg['URL'], username=rt.cfg['USERNAME'], password=rt.cfg['PASSWORD'])
             try:
-                q = rts2.Queue(proxy, args.queue)
-                queue=True
+                q = rts2.Queue(rts2.json.getProxy(), args.queue)
             except Exception, e:
                 logger.error('rts2af_fwhm: no queue named: {0}, doing nothing'.format(args.queue))
 
-            if queue:
+            if q is not None:
                 q.load()
                 for x in q.entries:
                     if x.get_target().name and 'OnTargetFocus' in x.get_target().name:
@@ -123,7 +123,7 @@ if __name__ == '__main__':
                 else:
                     q.add_target(str(args.tarId))
                     logger.info('rts2af_fwhm: focus run  queued')
-                logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold)'.format(dataSxtr.fwhm, fwhmTreshold))
+                logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold), focus run queued'.format(dataSxtr.fwhm, fwhmTreshold))
             
     # display fits and regions if necessary
     if args.Ds9Display:

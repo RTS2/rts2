@@ -74,7 +74,6 @@ class ImgpAnalysis():
     def run(self):
         """ Execute rts2saf_fwhm.py and what is defined as astrometric calibration script in configuration (see SCRIPT_ASTROMETRY). Child's stdout and stderr are copied to stdout and stderr which is read by RTS2 IMGP."""
         self.logger.info( '{0}: starting'.format(self.scriptName))
-
         cmd= [  self.fwhmCmd,
                 '--config',
                 self.config,
@@ -83,9 +82,8 @@ class ImgpAnalysis():
                 ]
         # used for unittest
         # ToDo: clarify that:
-        if args.toconsole:
-            cmd.append('--toconsole')
-            cmd.append('--toconsole')
+#        if args.toconsole:
+#            cmd.append('--toconsole')
         # no time to waste, the decision toqueue a focus run is done in rts2saf_fwhm.py
         try:
             fwhmLine= self.spawnProcess(cmd, False)
@@ -113,7 +111,7 @@ class ImgpAnalysis():
         for ln in lnstdo:
             self.logger.info( '{0}, {1}: {2}'.format(self.scriptName, self.astrometryCmd, ln))
             if re.search('corrwerr', ln):
-                print ln
+                print ln # this is read by IMGP
                 result = True
                 
         if not result:
@@ -159,7 +157,7 @@ if __name__ == "__main__":
 
     fitsFn=args.fitsFn[0]
     if not os.path.exists(fitsFn):
-        logger.error('{0}: file: {1}, does not exists, exiting'.format(script, fitsFn))
+        logger.error('{0}: file: {1}, does not exist, exiting'.format(script, fitsFn))
         sys.exit(1)
 
     # check if there is a header element on the list
