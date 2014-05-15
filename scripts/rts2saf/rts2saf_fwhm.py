@@ -93,6 +93,20 @@ if __name__ == '__main__':
         except:
             logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated')
 
+        q = None
+        rts2.createProxy(url=rt.cfg['URL'], username=rt.cfg['USERNAME'], password=rt.cfg['PASSWORD'])
+        try:
+            q = rts2.Queue(rts2.json.getProxy(), args.queue)
+        except Exception, e:
+            logger.error('rts2af_fwhm: no queue named: {0}, doing nothing'.format(args.queue))
+
+        if q is not None:
+            q.load()
+            for x in q.entries:
+                if x.get_target().name and 'OnTargetFocus' in x.get_target().name:
+                    q.clear()
+                    logger.info('rts2af_fwhm: cleared queue: {}'.format(args.queue))
+                    break
     else:
         proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
 
