@@ -36,7 +36,7 @@ __author__ = 'markus.wildi@one-arcsec.org'
 import sys
 import subprocess
 import re
-
+import pyfits
 
 class ImgpAnalysis():
     """Called by IMGP to do astrometric calibration and FWHM analysis"""
@@ -79,6 +79,10 @@ class ImgpAnalysis():
                 self.config,
                 '--fitsFn',
                 self.fitsFileName,
+# to see the debug output
+#                '--deb', 
+#                '--level',
+#                'DEBUG',
                 ]
         # used for unittest
         # ToDo: clarify that:
@@ -90,6 +94,8 @@ class ImgpAnalysis():
         except:
             self.logger.error( '{0}: starting suprocess: {1} failed, continuing with astrometrical calibration'.format(self.scriptName, cmd))
 
+        self.logger.info( '{0}: TEMP ending, command {1}'.format(self.scriptName, cmd))
+        return 
         cmd= [  self.astrometryCmd,
                 self.fitsFileName,
                 ]
