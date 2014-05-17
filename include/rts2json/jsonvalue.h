@@ -38,6 +38,7 @@ class JsonDouble
 {
 	public:
 		JsonDouble (double _v) { v = _v; }
+
 		friend std::ostream & operator << (std::ostream &os, JsonDouble d)
 		{
 			if (isnan (d.v) || isinf (d.v))
@@ -51,10 +52,33 @@ class JsonDouble
 		double v;
 };
 
+/**
+ * JSON String representation. Escapes string ", \n etc so the string will be
+ * safe to transport in JSON as value.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
 class JsonString
 {
 	public:
+		JsonString (std::string s)
+		{
+			setChar (s.c_str ());
+		}
+
 		JsonString (const char *s)
+		{
+			setChar (s);
+		}
+
+		friend std::ostream & operator << (std::ostream &os, JsonString s)
+		{
+			os << s.sv;
+			return os;
+		}
+
+	private:
+		void setChar (const char *s)
 		{
 			for (const char *ic = s; *ic; ic++)
 			{
@@ -91,13 +115,7 @@ class JsonString
 				}
 			}
 		}
-		friend std::ostream & operator << (std::ostream &os, JsonString s)
-		{
-			os << s.sv;
-			return os;
-		}
 
-	private:
 		std::string sv;
 };
 

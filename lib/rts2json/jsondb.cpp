@@ -608,7 +608,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		{
 			if (iter != ms.begin ())
 				os << ",";
-			os << "[" << iter->getMessageTime () << ",\"" << iter->getMessageOName () << "\"," << iter->getType () << ",\"" << iter->getMessageString () << "\"]";
+			os << "[" << iter->getMessageTime () << ",\"" << JsonString (iter->getMessageOName ()) << "\"," << iter->getType () << ",\"" << JsonString (iter->getMessageString ()) << "\"]";
 		}
 		os << "]";
 	}
