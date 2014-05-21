@@ -65,10 +65,10 @@
         <arg choice="plain"><option>-b <replaceable>bonus</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-t <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
+        <arg choice="plain"><option>-t <replaceable class="parameter">YYYY-MM-DD[UT]HH:MM:SS</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-n <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
+        <arg choice="plain"><option>-n <replaceable class="parameter">YYYY-MM-DD[UT]HH:MM:SS</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-o</option></arg>
@@ -176,7 +176,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-t <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <term><option>-t <replaceable class="parameter">YYYY-MM-DD[UT]HH:MM:SS</replaceable></option></term>
         <listitem>
           <para>
 	    Change target bonus time. When time specified on command line
@@ -186,12 +186,15 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-n <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <term><option>-n <replaceable class="parameter">YYYY-MM-DD[UT]HH:MM:SS</replaceable></option></term>
         <listitem>
           <para>
 	    Set next observable date. Target will not be considered by
 	    <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-	    before that time pass.
+	    before that time pass. Time can be specified as either local or UT
+	    - see
+	    <citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+	    for details.
 	  </para>
         </listitem>
       </varlistentry>
@@ -362,15 +365,24 @@
     <para>
       Following example enable target 1000 for selector. It will set next
       observing date to 13th March 2013, at 13 hours, 53 minutes and 43.133
-      seconds. Target will not be observed before this date.
+      seconds, either local (T) or UT (U) time. Target will not be observed before this date.
     </para>
 
     <screen>
       <command>&dhpackage;</command> <option>-e</option> <option>-n</option> <replaceable>2013-03-13T13:53:43.133</replaceable> <replaceable>1000</replaceable>
     </screen>
 
+    <screen>
+      <command>&dhpackage;</command> <option>-e</option> <option>-n</option> <replaceable>2013-03-13U13:53:43.133</replaceable> <replaceable>1000</replaceable>
+    </screen>
+
     <para>
-      The above example will disable target for selection until 2013-03-13 and change target script for camera C5.
+      The above example will disable target for selection until 2013-03-13 and
+      change target script for camera C5. Note that as stated in the
+      <citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+      page, you can change the time you're specifying from what your computer
+      thinks is local time to Universal Time by using U instead of T to
+      separate the date from time.
     </para>
 
     <screen>
