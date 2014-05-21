@@ -88,7 +88,7 @@ class TestSimpleAnalysis(unittest.TestCase):
             sxtr= Sextract(debug=False, rt=self.rt, logger=logger)
             dSx=sxtr.sextract(fitsFn=fitsFn)
 
-            if dSx !=None:
+            if dSx:
                 dataSxtr.append(dSx)
 
         self.assertEqual(len(dataSxtr), 14, 'return value: {}'.format(len(dataSxtr)))
@@ -131,7 +131,7 @@ class TestCatalogAnalysis(unittest.TestCase):
             sxtr= Sextract(debug=False, rt=self.rt, logger=logger)
             dSx=sxtr.sextract(fitsFn=fitsFn)
 
-            if dSx !=None:
+            if dSx:
                 dataSxtr.append(dSx)
 
         self.assertEqual(len(dataSxtr), 14, 'return value: {}'.format(len(dataSxtr)))

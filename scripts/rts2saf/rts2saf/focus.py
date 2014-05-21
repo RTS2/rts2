@@ -244,11 +244,13 @@ class Focus(object):
                         continue
 
                     self.logger.info('Focus: pos: {0:5d}, fwhm: {1:5.2f}, stdFwhm {2:5.2f}, objects: {3:4d}, file: {4}'.format(int(st), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog), fitsFn))
-                    dataSxtr.append(dSx)
+                    if dSx:
+                        dataSxtr.append(dSx)
 
                     dSx = DataSxtr()
                     dSx.fitsFn= fitsFn
-                    dataSxtr.append(dSx)
+                    if dSx:
+                        dataSxtr.append(dSx)
 
                 else:
                     if self.debug: self.logger.debug('Focus: got all images')

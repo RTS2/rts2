@@ -42,7 +42,10 @@ class Ds9DisplayThread(threading.Thread):
         self.dataSxtr = dataSxtr
         self.logger = logger
         self.stoprequest = threading.Event()
-        self.display = dds9=ds9()
+        try:
+            self.display = dds9=ds9()
+        except Exception, e:
+            self.logger.warn('__init__: forking ds9 failed:\n{0}'.format(e))
 
     def displayWithRegion(self, dSx = None): 
         """

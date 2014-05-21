@@ -80,14 +80,14 @@ class Sextract(object):
         except Exception, e:
             self.logger.error( 'sextract: returning, FITS {0}'.format(fitsFn))
             self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(e))
-            return DataSxtr()
+            return None
 
         try:
             focPos = float(hdr['FOC_POS'])
         except Exception, e:
             self.logger.error( 'sextract: in FITS {0}, returning key word FOC_POS not found'.format(fitsFn))
             self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(e))
-            return DataSxtr()
+            return None
 
 
         if len(self.focPosInterval):
@@ -95,7 +95,7 @@ class Sextract(object):
                 pass
             else:
                 self.logger.info( 'sextract: exclude FOC_POS: {0:5d}, {1}'.format(int(focPos), fitsFn))
-                return DataSxtr()
+                return None
                 
 
         # these values are remapped in config.py
@@ -196,7 +196,7 @@ class Sextract(object):
         if stde:
             self.logger.error( 'sextract: {0} not found, returning'.format(fitsFn,))
             self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(stde))
-            return DataSxtr()
+            return None
 
         # find the sextractor counts
         objectCount = len(sex.cleanedObjects)
@@ -209,11 +209,11 @@ class Sextract(object):
         except Exception, e:
             self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, no objects found, {0} (after filtering), {2}'.format(focPos, objectCount, fitsFn, ))
             self.logger.warn( 'sextract: message rts2saf.sextractor: {0}'.format(e))
-            return DataSxtr()
+            return None
 
         if math.isnan(fwhm):
             self.logger.warn( 'sextract: focPos: {0:5.0f}, raw objects: {1}, fwhm is NaN, rts2saf.sextractor/numpy failed on {2}'.format(focPos, objectCount, fitsFn))
-            return DataSxtr()
+            return None
 
         # take care of binning
         fwhm = float(fwhm) *  binning

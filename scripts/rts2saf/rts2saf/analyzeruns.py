@@ -302,9 +302,9 @@ class AnalyzeRuns(object):
         for rFt in rFtsFwhm:
             if rFt.extrFitPos is not None:
                 if openMinFitPos is not None:
-                    self.logger.info('analyzeRuns: {0:5d} minPos, {1:5d}  offset, {2} ftName'.format( int(rFt.extrFitPos), int(rFt.extrFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' ')))
+                    self.logger.info('analyzeRuns: {0:5d} minPos, {1:5d}  offset, {2} ftName, {3:3.1f} degC ambient temperature'.format( int(rFt.extrFitPos), int(rFt.extrFitPos)-openMinFitPos, rFt.ftName.rjust(8, ' '), float(rFt.ambientTemp)))
                 else:
-                    self.logger.info('analyzeRuns: {0:5d} minPos, {1} ftName'.format( int(rFt.extrFitPos),  rFt.ftName.rjust(8, ' ')))
+                    self.logger.info('analyzeRuns: {0:5d} minPos, {1} ftName,  {2:3.1f} degC ambient temperature'.format( int(rFt.extrFitPos),  rFt.ftName.rjust(8, ' '), float(rFt.ambientTemp)))
 
                 self.logger.info('analyzeRuns: fitPar {} '.format(rFt.fitPar ))
 

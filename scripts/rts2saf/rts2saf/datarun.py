@@ -112,15 +112,15 @@ class DataRun(object):
         if self.rt.cfg['ANALYZE_FLUX']:
 
             i_flux= self.dataSxtrs[0].fields.index('FLUX_MAX') 
+        if len(self.dataSxtrs):
+            for dSx in sorted(self.dataSxtrs, key=lambda x: int(x.focPos), reverse=False):
+                dSx.fillData(i_fwhm=i_fwhm, i_flux=i_flux)
 
-        for dSx in self.dataSxtrs:
-            dSx.fillData(i_fwhm=i_fwhm, i_flux=i_flux)
-
-            if self.rt.cfg['ANALYZE_FLUX']:
-                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f}/{2:5.3f} {3:8.3f}/{4:5.3f} {5:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.stdFwhm, dSx.flux, dSx.stdFlux, len(dSx.catalog)))
-            else:
-                if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f}/{2:5.3f}  {3:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog)))
-
+                if self.rt.cfg['ANALYZE_FLUX']:
+                    if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f}/{2:5.3f} {3:8.3f}/{4:5.3f} {5:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.stdFwhm, dSx.flux, dSx.stdFlux, len(dSx.catalog)))
+                else:
+                    if self.debug: self.logger.debug('onAllImages: {0:5d} {1:8.3f}/{2:5.3f}  {3:5d}'.format(int(dSx.focPos), dSx.fwhm, dSx.stdFwhm, len(dSx.catalog)))
+        
         self.logger.info('onAlmostImages: objects: {0}'.format(len(self.assocObjNmbrs)))
 
 
@@ -146,7 +146,7 @@ class DataRun(object):
             else:
                 dSx=rsx.sextract(fitsFn=fitsFn, assocFn=None)
 
-            if dSx!=None and dSx.fwhm>0. and dSx.stdFwhm>0.:
+            if dSx is not None and dSx.fwhm>0. and dSx.stdFwhm>0.:
                 self.dataSxtrs.append(dSx)
             else:
                 self.logger.warn('sextractLoop: no result: file: {0}'.format(fitsFn))
