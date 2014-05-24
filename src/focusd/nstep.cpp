@@ -39,6 +39,7 @@ class NStep:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (double num);
+		virtual int writePosition (double new_position);
   		virtual double tcOffset () {return 0.;};
 
 	protected:
@@ -75,6 +76,8 @@ NStep::NStep (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 	NSConn = NULL;
+
+	positionWritable ();
 
 	createValue (coils, "coils", "coil on after move", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (step_speed, "step_speed", "max step speed", false, RTS2_VALUE_WRITABLE);
@@ -310,6 +313,12 @@ int NStep::setTo (double num)
 	// compare as well strings we will send..
 	snprintf (buf, 9, ":F%c%d%03d#", (diff > 0) ? '1' : '0', 0, (int) (fabs (diff)));
 	return NSConn->writePort (buf, 8);
+}
+
+int NStep::writePosition (double new_position)
+{
+	sprintf (buf, "#:CP%+06d#", (int) new_position);
+	return NSConn->writePort (buf, 11);
 }
 
 int NStep::isFocusing ()

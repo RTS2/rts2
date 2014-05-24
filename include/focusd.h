@@ -84,6 +84,19 @@ class Focusd:public rts2core::Device
 		virtual double tcOffset () = 0;
 
 		/**
+		 * Set FOC_POS writable.
+		 */
+		void positionWritable ();
+
+		/**
+		 * Write position to focuser device. Called on change of FOC_POS (position) variable.
+		 */
+		virtual int writePosition (double new_position)
+		{
+			return -1;
+		}
+
+		/**
 		 * Reports state of the focuser. Called during position change to query for progress in focusing.
 		 *
 		 * @return >= 0 if still focusing, -1 on error, -2 when focusing finished.

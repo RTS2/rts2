@@ -58,6 +58,12 @@ int Focusd::processOption (int in_opt)
 	return 0;
 }
 
+void Focusd::positionWritable ()
+{
+	position->setWritable ();
+	updateMetaInformations (position);
+}
+
 int Focusd::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
@@ -193,21 +199,25 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 
 	if (old_value == target)
 	{
-		return setPosition (new_value->getValueFloat ())? -2 : 0;
+		return setPosition (new_value->getValueFloat ()) ? -2 : 0;
 	}
-	if (old_value == defaultPosition)
+	else if (old_value == defaultPosition)
 	{
-		return setPosition (new_value->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tco)? -2 : 0;
+		return setPosition (new_value->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tco) ? -2 : 0;
 	}
-	if (old_value == filterOffset)
+	else if (old_value == position)
 	{
-		return setPosition (defaultPosition->getValueFloat () + new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tco )? -2 : 0;
+		return writePosition (new_value->getValueDouble ()) ? -2 : 0;
 	}
-	if (old_value == focusingOffset)
+	else if (old_value == filterOffset)
+	{
+		return setPosition (defaultPosition->getValueFloat () + new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tco ) ? -2 : 0;
+	}
+	else if (old_value == focusingOffset)
 	{
 		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + new_value->getValueFloat () + tempOffset->getValueFloat () + tco )? -2 : 0;
 	}  
-	if (old_value == tempOffset)
+	else if (old_value == tempOffset)
 	{
 		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat () + tco )? -2 : 0;
 	}
