@@ -207,7 +207,16 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	else if (old_value == position)
 	{
-		return writePosition (new_value->getValueDouble ()) ? -2 : 0;
+		if (writePosition (new_value->getValueDouble ()))
+			return -2;
+
+		// set target and default target to preset position
+		target->setValueDouble (new_value->getValueDouble ());
+		defaultPosition->setValueDouble (new_value->getValueDouble ());
+		
+		sendValueAll (target);
+		sendValueAll (defaultPosition);
+		return 0;
 	}
 	else if (old_value == filterOffset)
 	{
