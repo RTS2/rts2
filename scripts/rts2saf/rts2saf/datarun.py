@@ -22,7 +22,6 @@ __author__ = 'markus.wildi@bluewin.ch'
 import collections
 
 
-from rts2saf.sextract import Sextract
 from rts2saf.data import DataSxtr
 
 class DataRun(object):
@@ -33,7 +32,6 @@ class DataRun(object):
         self.logger=logger
         self.dataSxtrs=list()
         self.dSxReference=dSxReference
-        self.assocFn='/tmp/assoc.lst'
         self.assocObjNmbrs=list()
 
 
@@ -79,7 +77,6 @@ class DataRun(object):
         # data from VECTOR_ASSOC appears behind NUMBER_ASSOC
         # ToDo interchange them
         #
-
         i_nmbrAssc= -1 + self.dataSxtrs[0].fields.index('NUMBER_ASSOC') 
         # build cats
         cats,focPosS=self.buildCats( i_nmbrAssc=i_nmbrAssc)
@@ -123,41 +120,12 @@ class DataRun(object):
         
         self.logger.info('onAlmostImages: objects: {0}'.format(len(self.assocObjNmbrs)))
 
-
     def onAlmostImages(self):
-
         focPosS=collections.defaultdict(int)
         for dSx in self.dataSxtrs:
             focPosS[dSx.focPos]=dSx.nObjs
 
         self.dropDSx(focPosS=focPosS)
-
-
-    def sextractLoop(self, fitsFns=None):
-
-        for fitsFn in fitsFns:
-            rsx= Sextract(debug=self.args.sxDebug, rt=self.rt, logger=self.logger)
-            if self.rt.cfg['ANALYZE_FLUX']:
-                rsx.appendFluxFields()
-                
-            if self.dSxReference !=None:
-                rsx.appendAssocFields()
-                dSx=rsx.sextract(fitsFn=fitsFn, assocFn=self.assocFn)
-            else:
-                dSx=rsx.sextract(fitsFn=fitsFn, assocFn=None)
-
-            if dSx is not None and dSx.fwhm>0. and dSx.stdFwhm>0.:
-                self.dataSxtrs.append(dSx)
-            else:
-                self.logger.warn('sextractLoop: no result: file: {0}'.format(fitsFn))
-
-    def createAssocList(self, fitsFn=None):
-        rsx= Sextract(debug=self.args.sxDebug, createAssoc=self.rt.cfg['ANALYZE_ASSOC'], rt=self.rt, logger=self.logger)
-        if self.rt.cfg['ANALYZE_FLUX']:
-            rsx.appendFluxFields()
-
-        return rsx.sextract(fitsFn=fitsFn, assocFn=self.assocFn)
-
 
     def numberOfFocPos(self):
         pos=collections.defaultdict(int)

@@ -49,6 +49,14 @@ class DataFit(object):
         self.nObjs=nObjs
         self.par=par
 
+class FitFunctionFwhm(object):
+    def __init__(self):
+        # not nice, but understandable
+        # this one is for SymPy
+        self.fitFuncSS = 'p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)'
+        self.fitFunc = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)  # due to optimize.fminbound
+        self.recpFunc = None
+        
 
 class DataFitFwhm(DataFit):
     """Data passed to :py:mod:`rts2saf.fitfunction.FitFunction`
@@ -76,8 +84,19 @@ class DataFitFwhm(DataFit):
         self.nObjs=[len(x.catalog) for x in dataSxtr]
         # ToDo must reside outside
         self.par= np.array([1., 1., 1., 1.])
-        self.fitFunc = lambda x, p: p[0] + p[1] * x + p[2] * (x ** 2)+ p[3] * (x ** 4)  # due to optimize.fminbound
-        self.recpFunc = None
+        fFFWHM = FitFunctionFwhm()
+        self.fitFunc =  fFFWHM.fitFunc
+        self.recpFunc =  fFFWHM.recpFunc
+
+
+class FitFunctionFlux(object):
+    def __init__(self):
+        # not nice, but understandable
+        # this one is for SymPy
+        self.fitFuncSS = 'p[3] + p[0]* exp(-(x-p[1])**2/(2*p[2]**2))'
+        self.fitFunc = lambda x, p: p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2))
+        self.recpFunc = lambda x, p: 1./(p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2)))
+
 
 class DataFitFlux(DataFit):
     """Data passed to :py:mod:`rts2saf.fitfunction.FitFunction`
@@ -107,8 +126,10 @@ class DataFitFlux(DataFit):
         self.erry=np.asarray([x.stdFlux for x in dataSxtr])  
         self.nObjs=[len(x.catalog) for x in dataSxtr]
         self.par= None # see below
-        self.fitFunc = lambda x, p: p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2))
-        self.recpFunc = lambda x, p: 1./(p[3] + p[0]*np.exp(-(x-p[1])**2/(2*p[2]**2)))
+        fFFlux = FitFunctionFlux()
+
+        self.fitFunc = fFFlux.fitFunc
+        self.recpFunc = fFFlux.recpFunc
 
         # scale the values [a.u.]
         mfw=max(self.dataFitFwhm.val)
@@ -259,6 +280,7 @@ class ResultFit(object):
         self.color=color
         self.ylabel=ylabel
         self.titleResult=titleResult
+        self.accepted = False
 
 class DataSxtr(object):
     """Main data object holding data of single focus run.

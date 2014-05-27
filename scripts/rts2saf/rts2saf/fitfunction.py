@@ -65,7 +65,8 @@ class FitFunction(object):
             else:
                 fitFunc=self.recpFunc
 
-            extr_focpos = optimize.fminbound(fitFunc,x1=min(self.dataFit.pos)-2 * step, x2=max(self.dataFit.pos)+2 * step, args=[par])
+            # extr_focpos = optimize.fminbound(fitFunc,x1=min(self.dataFit.pos)-2 * step, x2=max(self.dataFit.pos)+2 * step, args=[par])
+            extr_focpos = optimize.fminbound(fitFunc,x1=min(self.dataFit.pos), x2=max(self.dataFit.pos), args=[par])
 
         except Exception, e:
             self.logger.error('fitdata: failed finding extreme:\nnumpy error message:\n{0}'.format(e))                

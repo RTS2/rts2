@@ -71,7 +71,7 @@ class  FitDisplay(object):
         self.ax1.errorbar(dataFit.pos, dataFit.val, xerr=dataFit.errx, yerr=dataFit.erry, ecolor='black', fmt=None)
 
         if resultFit.fitFlag:
-            line, = self.ax1.plot(x_pos, dataFit.fitFunc(x_pos, p=[ x for x in resultFit.fitPar]), 'r-', color=resultFit.color)
+            line, = self.ax1.plot(x_pos, dataFit.fitFunc(x_pos, p=resultFit.fitPar), 'r-', color=resultFit.color)
             
             if self.comment:
                 self.ax1.set_title('rts2saf, {0},{1},{2}C,{3},{4}'.format(self.date, dataFit.ftName, dataFit.ambientTemp, resultFit.titleResult, self.comment), fontsize=12)

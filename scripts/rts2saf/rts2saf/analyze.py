@@ -290,7 +290,9 @@ class CatalogAnalysis(object):
         self.criteriaModule=None
         self.cr=None
         self.i_flux=None
-
+        self.anAcc = None
+        self.anRej = None
+        self.anAll = None
 
     def _loadCriteria(self):
         # http://stackoverflow.com/questions/951124/dynamic-loading-of-python-modules
@@ -337,7 +339,7 @@ class CatalogAnalysis(object):
                 rdSx.fillFlux(i_flux=i_flux, logger=self.logger) #
 
         # 
-        an=SimpleAnalysis(
+        self.anAcc=SimpleAnalysis(
             debug=self.debug, 
             date=self.date, 
             dataSxtr=acceptedDataSxtr, 
@@ -349,13 +351,13 @@ class CatalogAnalysis(object):
             rt=self.rt,
             logger=self.logger)
 
-        accRFtFwhm, accRMnsFwhm, accRFtFlux, accRMnsFlux=an.analyze()
+        accRFtFwhm, accRMnsFwhm, accRFtFlux, accRMnsFlux=self.anAcc.analyze()
 
         if self.Ds9Display or self.FitDisplay:
             if accRFtFwhm.fitFlag:
                 an.display()
         #
-        an=SimpleAnalysis(
+        self.anRej=SimpleAnalysis(
             debug=self.debug, 
             date=self.date, 
             dataSxtr=rejectedDataSxtr, 
@@ -366,14 +368,14 @@ class CatalogAnalysis(object):
             rt=self.rt,
             logger=self.logger)
 
-        rejRFtFwhm, recRMnsFwhm, rejRFtFlux, recRMnsFlux=an.analyze()
+        rejRFtFwhm, recRMnsFwhm, rejRFtFlux, recRMnsFlux=self.anRej.analyze()
 
 #        if self.Ds9Display or self.FitDisplay:
 #            if accRFtFwhm.fitFlag:
 #                an.display()
                 
         # 
-        an=SimpleAnalysis(
+        self.anAll=SimpleAnalysis(
             debug=self.debug, 
             date=self.date, 
             dataSxtr=self.dataSxtr, 
@@ -384,7 +386,7 @@ class CatalogAnalysis(object):
             rt=self.rt,
             logger=self.logger)
 
-        allRFtFwhm, allRMnsFwhm, allRFtFlux, allRMnsFlux=an.analyze()
+        allRFtFwhm, allRMnsFwhm, allRFtFlux, allRMnsFlux=self.anAll.analyze()
 #
 #        if self.Ds9Display or self.FitDisplay:
 #            if accRFtFwhm.fitFlag:

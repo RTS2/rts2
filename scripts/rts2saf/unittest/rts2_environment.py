@@ -179,6 +179,7 @@ class RTS2Environment(unittest.TestCase):
         self.args.catalogAnalysis=False
         self.args.Ds9Display=False
         self.args.FitDisplay=False
+        self.args.flux=True
         self.args.dryFitsFiles='../samples_bootes2'
         # JSON
         self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])

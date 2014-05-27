@@ -93,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('--fraction', dest = 'fractObjs', action = 'store', default = 0.5, type = float, help = ': %(default)s, fraction of objects which must be present on each image, base: object number on reference image, this option is used only together with --associate')
     parser.add_argument('--emptySlots', dest = 'emptySlots', action = 'store', default = None, type = str, nargs = '+', help = ': %(default)s, list of SPACE separated names of the empty slots')
     parser.add_argument('--focuser-interval', dest = 'focuserInterval', action = 'store', default = list(), type = int, nargs = '+', help = ': %(default)s, focuser position interval, positions out side this interval will be ignored')
+    parser.add_argument('--display-failures', dest = 'display_failures', action = 'store_true', default = False, help = ': %(default)s, display focus run where the fit failed')
 
     args = parser.parse_args()
 
