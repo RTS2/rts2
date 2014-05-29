@@ -91,7 +91,7 @@ class Sextract(object):
 
 
         if len(self.focPosInterval):
-            if focPos > min(self.focPosInterval) and focPos < max(self.focPosInterval):
+            if min(self.focPosInterval) < focPos < max(self.focPosInterval):
                 pass
             else:
                 self.logger.info( 'sextract: exclude FOC_POS: {0:5d}, {1}'.format(int(focPos), fitsFn))
@@ -112,6 +112,7 @@ class Sextract(object):
             binning = float(self.rt.cfg['FITS_BINNING_MAPPING'][hdr[self.rt.cfg['BINNING']]])
             if self.debug: self.logger.debug( 'sextract: binning: {0}'.format(binning))
         except:
+            self.logger.warn( 'sextract: in FITS {0},  no binning information found'.format(fitsFn))
             # if CatalogAnalysis is done
             binning=None
 
@@ -194,10 +195,10 @@ class Sextract(object):
         stde= sex.runSExtractor(fitsFn, assocFn=assocFn)
 
         if stde:
-            self.logger.error( 'sextract: {0} not found, returning'.format(fitsFn,))
+            self.logger.error( 'sextract: {0} not found, returning, {1}'.format(fitsFn,stde))
             self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(stde))
             return None
-
+        
         # find the sextractor counts
         objectCount = len(sex.cleanedObjects)
 

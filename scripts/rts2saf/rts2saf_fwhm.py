@@ -87,6 +87,10 @@ if __name__ == '__main__':
     if args.fwhmThreshold:
         fwhmTreshold=args.fwhmThreshold
 
+    if dataSxtr is None:
+        logger.error('rts2af_fwhm: failed on file: {0}, exiting'.format(args.fitsFn))
+        sys.exit(1)
+
     if( dataSxtr.fwhm <= fwhmTreshold):
         try:
             logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
