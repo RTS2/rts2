@@ -113,7 +113,6 @@ if __name__ == '__main__':
                     break
     else:
         proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
-
         try:
             proxy.refresh()
         except Exception, e:
@@ -121,7 +120,10 @@ if __name__ == '__main__':
             sys.exit(1)
 
         tarType = proxy.getSingleValue('EXEC','current_type')
-        if 'G' in tarType: # it is a GRB
+        tarName = proxy.getSingleValue('EXEC','current_name')
+        if 'GLORIA teleoperation' in tarName: # reserved observing time
+            logger.info('rts2af_fwhm: there is a ongoing GLORIA teleoperation, no focus run queued')
+        elif 'G' in tarType: # it is a GRB
             logger.info('rts2af_fwhm: there is now a GRB target selected, no focus run queued')
 
         else:
@@ -139,9 +141,12 @@ if __name__ == '__main__':
                         logger.info('rts2af_fwhm: focus run already queued')
                         break
                 else:
-                    q.add_target(str(args.tarId))
-                    logger.info('rts2af_fwhm: focus run  queued')
-                logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold), focus run queued'.format(dataSxtr.fwhm, fwhmTreshold))
+                    try:
+                        q.add_target(str(args.tarId))
+                        logger.info('rts2af_fwhm: fwhm: {0:5.2f} > {1:5.2f} (thershold), focus run queued'.format(dataSxtr.fwhm, fwhmTreshold))
+                    except Exception, e:
+                        logger.error('rts2af_fwhm: queing failed: {0}'.format(e))
+
             
     # display fits and regions if necessary
     if args.Ds9Display:
