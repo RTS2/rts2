@@ -31,6 +31,7 @@ import glob
 import os
 import subprocess
 import time
+import datetime
 
 # ToDo Ad hoc:
 # if executed through RTS2 it has as DISPLAY localhost:10
@@ -82,6 +83,7 @@ from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
 
 if __name__ == '__main__':
 
+    startTime= datetime.datetime.now()
     # since rts2 can not pass options, any option needs a decent default value
     script=os.path.basename(__file__)
     parser= argparse.ArgumentParser(prog=script, description='rts2asaf auto focus')
@@ -222,6 +224,7 @@ if __name__ == '__main__':
     fs=Focus(debug=args.debug, proxy=proxy, args=args, dryFitsFiles=dryFitsFiles, ccd=ccd, foc=foc, ftws=ftws, rt=rt, ev=ev, logger=logger, xdisplay = XDISPLAY)
     fs.run()
 
+    endTime= datetime.datetime.now()
 
-    logger.info('rts2saf_focus: end scan, started at: {0}'.format(ev.startTime))
+    logger.info('rts2saf_focus: end scan, started at: {0}, duration: {1}'.format(ev.startTime, endTime-startTime))
 
