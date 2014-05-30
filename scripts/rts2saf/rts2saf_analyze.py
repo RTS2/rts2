@@ -119,6 +119,10 @@ if __name__ == '__main__':
     rtc.cfg['ANALYZE_ASSOC_FRACTION'] = args.fractObjs
     rtc.cfg['FOCUSER_INTERVAL'] = args.focuserInterval
 
+
+    if args.FitDisplay:
+        rt.cfg['WITH_MATHPLOTLIB'] = True
+
     if args.emptySlots is not None:
         rtc.cfg['EMPTY_SLOT_NAMES'] = [ x.strip() for x in  args.emptySlots ]
 

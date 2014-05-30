@@ -111,7 +111,6 @@ if __name__ == '__main__':
 
     args=parser.parse_args()
 
-
     # used for test the whole process
     # there is no environment, specify your absolute path
     # if you need it
@@ -141,6 +140,9 @@ if __name__ == '__main__':
     rt.cfg['ANALYZE_FLUX'] = args.flux  
     rt.cfg['ANALYZE_ASSOC'] = args.associate
     rt.cfg['ANALYZE_ASSOC_FRACTION'] = args.fractObjs
+
+    if args.FitDisplay:
+        rt.cfg['WITH_MATHPLOTLIB'] = True
 
     # get the environment
     ev=Environment(debug=args.debug, rt=rt,logger=logger)

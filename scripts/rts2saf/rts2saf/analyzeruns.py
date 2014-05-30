@@ -319,7 +319,7 @@ class AnalyzeRuns(object):
 
             rFtFwhm, rMnsFwhm, rFtFlux, rMnsFlux = an.analyze()
 
-        if rFtFwhm != None and rFtFwhm.extrFitPos != None:
+        if rFtFwhm is not  None and rFtFwhm.extrFitPos is not  None:
             # reject fit if curvature change sign, indicator for more than one minimum
             fitfuncSS = FitFunctionFwhm().fitFuncSS
             if not self.inflectionPoints(fitPar = rFtFwhm.fitPar, dataRn = dataRn, extrFitPos = rFtFwhm.extrFitPos, name = 'FWHM', fitfuncSS = fitfuncSS):
@@ -334,7 +334,7 @@ class AnalyzeRuns(object):
                 else:
                     self.logger.warn('analyzeRun: FWHM fit rejected due to bad FWHM value')
 
-        if rFtFlux != None and rFtFlux.extrFitPos != None:
+        if rFtFlux is not  None and rFtFlux.extrFitPos is not  None:
 
             fitfuncSS = FitFunctionFlux().fitFuncSS
             if not self.inflectionPoints(fitPar = rFtFlux.fitPar, dataRn = dataRn, extrFitPos = rFtFlux.extrFitPos, name = 'flux', fitfuncSS = fitfuncSS):
@@ -377,15 +377,17 @@ class AnalyzeRuns(object):
             else:
                 if self.args.flux: self.logger.warn('flux fitFocDef: no fitted minimum found')
 
-        if self.args.catalogAnalysis:
-            if rFtFwhm.fitFlag:
-                an.anAcc.display()
-        else:
-            if rFtFwhm.fitFlag:
-                an.display()
+        # on e.g. Bootes-2 creating a plot and write takes 30 seconds, too long
+        if self.rt.cfg['WITH_MATHPLOTLIB']:
+            if self.args.catalogAnalysis:
+                if rFtFwhm.fitFlag:
+                    an.anAcc.display()
+            else:
+                if rFtFwhm.fitFlag:
+                    an.display()
 
         # ToDo expand to Flux?
-        if not rMnsFwhm != None:
+        if not rMnsFwhm is not  None:
             rMns.logWeightedMeans()
 
         return rFtFwhm, rMnsFwhm, rFtFlux, rMnsFlux

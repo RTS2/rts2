@@ -143,6 +143,7 @@ class DefaultConfiguration(object):
         self.dcf[('mode', 'ANALYZE_FLUX')]= False
         self.dcf[('mode', 'ANALYZE_ASSOC')]= False
         self.dcf[('mode', 'ANALYZE_ASSOC_FRACTION')]= 0.65
+        self.dcf[('mode', 'WITH_MATHPLOTLIB')]= False 
         # mapping of fits header elements to canonical
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'
         self.dcf[('fits header mapping', 'DATETIME')]= 'JD'
