@@ -9,14 +9,12 @@
 
 #include <time.h>
 
-class Rts2DevPhotDummy:public Rts2DevPhot
+using namespace rts2phot;
+
+class Dummy:public Photometer
 {
-	private:
-		int filterCount;
-	protected:
-		virtual int startIntegrate ();
 	public:
-		Rts2DevPhotDummy (int argc, char **argv);
+		Dummy (int argc, char **argv);
 
 		virtual int scriptEnds ();
 
@@ -25,7 +23,7 @@ class Rts2DevPhotDummy:public Rts2DevPhot
 		virtual int init ()
 		{
 			photType = "Dummy";
-			return Rts2DevPhot::init ();
+			return Photometer::init ();
 		}
 
 		virtual int homeFilter ();
@@ -33,55 +31,46 @@ class Rts2DevPhotDummy:public Rts2DevPhot
 		virtual long isFilterMoving ();
 		virtual int enableMove ();
 		virtual int disableMove ();
+	protected:
+		virtual int startIntegrate ();
+	private:
+		int filterCount;
 };
 
-Rts2DevPhotDummy::Rts2DevPhotDummy (int in_argc, char **in_argv):
-Rts2DevPhot (in_argc, in_argv)
+Dummy::Dummy (int in_argc, char **in_argv):Photometer (in_argc, in_argv)
 {
 }
 
-
-int
-Rts2DevPhotDummy::scriptEnds ()
+int Dummy::scriptEnds ()
 {
 	startFilterMove (0);
-	return Rts2DevPhot::scriptEnds ();
+	return Photometer::scriptEnds ();
 }
 
-
-long
-Rts2DevPhotDummy::getCount ()
+long Dummy::getCount ()
 {
 	sendCount (random (), req_time, false);
 	return (long (req_time * USEC_SEC));
 }
 
-
-int
-Rts2DevPhotDummy::homeFilter ()
+int Dummy::homeFilter ()
 {
 	return 0;
 }
 
-
-int
-Rts2DevPhotDummy::startIntegrate ()
+int Dummy::startIntegrate ()
 {
 	return 0;
 }
 
-
-int
-Rts2DevPhotDummy::startFilterMove (int new_filter)
+int Dummy::startFilterMove (int new_filter)
 {
 	filter->setValueInteger (new_filter);
 	filterCount = 10;
-	return Rts2DevPhot::startFilterMove (new_filter);
+	return Photometer::startFilterMove (new_filter);
 }
 
-
-long
-Rts2DevPhotDummy::isFilterMoving ()
+long Dummy::isFilterMoving ()
 {
 	if (filterCount <= 0)
 		return -2;
@@ -89,24 +78,18 @@ Rts2DevPhotDummy::isFilterMoving ()
 	return USEC_SEC / 10;
 }
 
-
-int
-Rts2DevPhotDummy::enableMove ()
+int Dummy::enableMove ()
 {
 	return 0;
 }
 
-
-int
-Rts2DevPhotDummy::disableMove ()
+int Dummy::disableMove ()
 {
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2DevPhotDummy device = Rts2DevPhotDummy (argc, argv);
+	Dummy device (argc, argv);
 	return device.run ();
 }

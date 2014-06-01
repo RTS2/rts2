@@ -16,22 +16,13 @@
 #include <syslog.h>
 #include <time.h>
 
-class Rts2DevPhotOptec:public Rts2DevPhot
+using namespace rts2phot;
+
+class Optec:public Photometer
 {
-	private:
-		const char *phot_dev;
-		int fd;
-		time_t filter_move_timeout;
-
-		int phot_command (char command, short arg);
-
-	protected:
-		virtual int startIntegrate ();
-
-		virtual int endIntegrate ();
 	public:
-		Rts2DevPhotOptec (int argc, char **argv);
-		virtual ~ Rts2DevPhotOptec (void);
+		Optec (int argc, char **argv);
+		virtual ~Optec (void);
 
 		virtual int scriptEnds ();
 		virtual int processOption (int in_opt);
@@ -50,9 +41,19 @@ class Rts2DevPhotOptec:public Rts2DevPhot
 		virtual int stopIntegrate ();
 		virtual int enableMove ();
 		virtual int disableMove ();
+	protected:
+		virtual int startIntegrate ();
+
+		virtual int endIntegrate ();
+	private:
+		const char *phot_dev;
+		int fd;
+		time_t filter_move_timeout;
+
+		int phot_command (char command, short arg);
 };
 
-int Rts2DevPhotOptec::phot_command (char command, short arg)
+int Optec::phot_command (char command, short arg)
 {
 	char cmd_buf[3];
 	int ret;
@@ -64,27 +65,26 @@ int Rts2DevPhotOptec::phot_command (char command, short arg)
 	return -1;
 }
 
-Rts2DevPhotOptec::Rts2DevPhotOptec (int in_argc, char **in_argv):Rts2DevPhot (in_argc, in_argv)
+Optec::Optec (int in_argc, char **in_argv):Photometer (in_argc, in_argv)
 {
 	addOption ('f', "phot_file", 1, "photometer file (default to /dev/phot0)");
 	phot_dev = "/dev/phot0";
 	fd = -1;
 }
 
-
-Rts2DevPhotOptec::~Rts2DevPhotOptec (void)
+Optec::~Optec (void)
 {
 	close (fd);
 }
 
-int Rts2DevPhotOptec::scriptEnds ()
+int Optec::scriptEnds ()
 {
 	// set filter to black
 	startFilterMove (0);
-	return Rts2DevPhot::scriptEnds ();
+	return Photometer::scriptEnds ();
 }
 
-int Rts2DevPhotOptec::processOption (int in_opt)
+int Optec::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -92,15 +92,15 @@ int Rts2DevPhotOptec::processOption (int in_opt)
 			phot_dev = optarg;
 			break;
 		default:
-			return Rts2DevPhot::processOption (in_opt);
+			return Photometer::processOption (in_opt);
 	}
 	return 0;
 }
 
-int Rts2DevPhotOptec::init ()
+int Optec::init ()
 {
 	int ret;
-	ret = Rts2DevPhot::init ();
+	ret = Photometer::init ();
 	if (ret)
 		return ret;
 
@@ -115,7 +115,7 @@ int Rts2DevPhotOptec::init ()
 	return 0;
 }
 
-long Rts2DevPhotOptec::getCount ()
+long Optec::getCount ()
 {
 	int ret;
 	unsigned short result[2];
@@ -154,27 +154,27 @@ long Rts2DevPhotOptec::getCount ()
 	return 1000;
 }
 
-int Rts2DevPhotOptec::homeFilter ()
+int Optec::homeFilter ()
 {
 	return phot_command (PHOT_CMD_RESET, 0);
 }
 
-int Rts2DevPhotOptec::startIntegrate ()
+int Optec::startIntegrate ()
 {
 	return phot_command (PHOT_CMD_INTEGRATE, (short) (req_time * 1000));
 }
 
-int Rts2DevPhotOptec::endIntegrate ()
+int Optec::endIntegrate ()
 {
-	return Rts2DevPhot::endIntegrate ();
+	return Photometer::endIntegrate ();
 }
 
-int Rts2DevPhotOptec::stopIntegrate ()
+int Optec::stopIntegrate ()
 {
-	return Rts2DevPhot::stopIntegrate ();
+	return Photometer::stopIntegrate ();
 }
 
-int Rts2DevPhotOptec::startFilterMove (int new_filter)
+int Optec::startFilterMove (int new_filter)
 {
 	int ret;
 	ret = phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
@@ -183,10 +183,10 @@ int Rts2DevPhotOptec::startFilterMove (int new_filter)
 	time (&filter_move_timeout);
 	// 20 sec timeout for move
 	filter_move_timeout += 20;
-	return Rts2DevPhot::startFilterMove (new_filter);
+	return Photometer::startFilterMove (new_filter);
 }
 
-long Rts2DevPhotOptec::isFilterMoving ()
+long Optec::isFilterMoving ()
 {
 	time_t now;
 	time (&now);
@@ -196,12 +196,12 @@ long Rts2DevPhotOptec::isFilterMoving ()
 	return USEC_SEC;
 }
 
-int Rts2DevPhotOptec::enableMove ()
+int Optec::enableMove ()
 {
 	return phot_command (PHOT_CMD_INTEGR_ENABLED, 1);
 }
 
-int Rts2DevPhotOptec::disableMove ()
+int Optec::disableMove ()
 {
 	int ret;
 	ret = phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
@@ -212,6 +212,6 @@ int Rts2DevPhotOptec::disableMove ()
 
 int main (int argc, char **argv)
 {
-	Rts2DevPhotOptec device = Rts2DevPhotOptec (argc, argv);
+	Optec device (argc, argv);
 	return device.run ();
 }

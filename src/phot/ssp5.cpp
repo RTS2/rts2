@@ -23,21 +23,17 @@
 
 #include <time.h>
 
-namespace rts2phot
-{
+using namespace rts2phot;
 
 /**
  * Driver for Optec SSP5 photometer, connected over serial port.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class SSP5:public Rts2DevPhot
+class SSP5:public Photometer
 {
-	private:
-		const char *photFile;
-		rts2core::ConnSerial *photConn;
-
-		rts2core::ValueSelection *gain;
+	public:
+		SSP5 (int argc, char **argv);
 
 	protected:
 		virtual int processOption (int _opt);
@@ -56,13 +52,12 @@ class SSP5:public Rts2DevPhot
 		virtual int startFilterMove (int new_filter);
 		virtual long isFilterMoving ();
 
-	public:
-		SSP5 (int argc, char **argv);
+	private:
+		const char *photFile;
+		rts2core::ConnSerial *photConn;
+
+		rts2core::ValueSelection *gain;
 };
-
-}
-
-using namespace rts2phot;
 
 int SSP5::processOption (int _opt)
 {
@@ -72,7 +67,7 @@ int SSP5::processOption (int _opt)
 			photFile = optarg;
 			break;
 		default:
-			return Rts2DevPhot::processOption (_opt);
+			return Photometer::processOption (_opt);
 	}
 	return 0;
 }
@@ -81,7 +76,7 @@ int SSP5::init ()
 {
 	char rbuf[10];
 	int ret;
-	ret = Rts2DevPhot::init ();
+	ret = Photometer::init ();
 	if (ret)
 		return ret;
 
@@ -118,7 +113,7 @@ int SSP5::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	{
 		return startFilterMove (newValue->getValueInteger ()) == 0 ? 0 : -2;
 	}
-	return Rts2DevPhot::setValue (oldValue, newValue);
+	return Photometer::setValue (oldValue, newValue);
 }
 
 int SSP5::setExposure (float _exp)
@@ -129,10 +124,10 @@ int SSP5::setExposure (float _exp)
 		return -1;
 	if (buf[0] != '!')
 		return -1;
-	return Rts2DevPhot::setExposure (_exp);
+	return Photometer::setExposure (_exp);
 }
 
-SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
+SSP5::SSP5 (int argc, char **argv):Photometer (argc, argv)
 {
 	photType = "SSP5";
 	photFile = "/dev/ttyS0";
@@ -155,7 +150,7 @@ SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 int SSP5::scriptEnds ()
 {
 	startFilterMove (0);
-	return Rts2DevPhot::scriptEnds ();
+	return Photometer::scriptEnds ();
 }
 
 long SSP5::getCount ()
@@ -225,7 +220,7 @@ int SSP5::startFilterMove (int new_filter)
 		return -1;
 	if (buf[0] != '!')
 		return -1;
-	return Rts2DevPhot::startFilterMove (new_filter);
+	return Photometer::startFilterMove (new_filter);
 }
 
 long SSP5::isFilterMoving ()
@@ -235,6 +230,6 @@ long SSP5::isFilterMoving ()
 
 int main (int argc, char **argv)
 {
-	SSP5 device = SSP5 (argc, argv);
+	SSP5 device (argc, argv);
 	return device.run ();
 }

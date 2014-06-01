@@ -29,7 +29,9 @@
 #include <syslog.h>
 #include <time.h>
 
-Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
+using namespace rts2phot;
+
+Photometer::Photometer (int in_argc, char **in_argv):ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
 	integrateConn = NULL;
 
@@ -45,7 +47,7 @@ Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):ScriptDevice (in_argc, in
 	setReqTime (1);
 }
 
-void Rts2DevPhot::checkFilterMove ()
+void Photometer::checkFilterMove ()
 {
 	long ret;
 	if ((getState () & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
@@ -61,55 +63,55 @@ void Rts2DevPhot::checkFilterMove ()
 	}
 }
 
-int Rts2DevPhot::initValues ()
+int Photometer::initValues ()
 {
 	addConstValue ("type", photType);
 
 	return ScriptDevice::initValues ();
 }
 
-int Rts2DevPhot::idle ()
+int Photometer::idle ()
 {
 	// check filter moving..
 	checkFilterMove ();
 	return ScriptDevice::idle ();
 }
 
-int Rts2DevPhot::homeFilter ()
+int Photometer::homeFilter ()
 {
 	return -1;
 }
 
-int Rts2DevPhot::setExposure (float _exp)
+int Photometer::setExposure (float _exp)
 {
 	setReqTime (_exp);
 	return 0;
 }
 
-int Rts2DevPhot::startFilterMove (int new_filter)
+int Photometer::startFilterMove (int new_filter)
 {
 	maskState (PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
 	return 0;
 }
 
-long Rts2DevPhot::isFilterMoving ()
+long Photometer::isFilterMoving ()
 {
 	return -2;
 }
 
-int Rts2DevPhot::endFilterMove ()
+int Photometer::endFilterMove ()
 {
 	infoAll ();
 	maskState (PHOT_MASK_FILTER, PHOT_FILTER_IDLE);
 	return 0;
 }
 
-int Rts2DevPhot::startIntegrate ()
+int Photometer::startIntegrate ()
 {
 	return -1;
 }
 
-int Rts2DevPhot::startIntegrate (rts2core::Connection * conn, float _req_time, int _req_count)
+int Photometer::startIntegrate (rts2core::Connection * conn, float _req_time, int _req_count)
 {
 	int ret;
 	req_count->setValueInteger (_req_count);
@@ -125,21 +127,21 @@ int Rts2DevPhot::startIntegrate (rts2core::Connection * conn, float _req_time, i
 	return 0;
 }
 
-int Rts2DevPhot::endIntegrate ()
+int Photometer::endIntegrate ()
 {
 	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "integration finished");
 	req_count->setValueInteger (-1);
 	return 0;
 }
 
-int Rts2DevPhot::stopIntegrate ()
+int Photometer::stopIntegrate ()
 {
 	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "Integration interrupted");
 	startIntegrate ();
 	return 0;
 }
 
-int Rts2DevPhot::homeFilter (rts2core::Connection * conn)
+int Photometer::homeFilter (rts2core::Connection * conn)
 {
 	int ret;
 	ret = homeFilter ();
@@ -150,17 +152,17 @@ int Rts2DevPhot::homeFilter (rts2core::Connection * conn)
 	return ret;
 }
 
-int Rts2DevPhot::enableMove ()
+int Photometer::enableMove ()
 {
 	return -1;
 }
 
-int Rts2DevPhot::disableMove ()
+int Photometer::disableMove ()
 {
 	return -1;
 }
 
-int Rts2DevPhot::moveFilter (int new_filter)
+int Photometer::moveFilter (int new_filter)
 {
 	int ret;
 	ret = startFilterMove (new_filter);
@@ -169,7 +171,7 @@ int Rts2DevPhot::moveFilter (int new_filter)
 	return 0;
 }
 
-int Rts2DevPhot::enableFilter (rts2core::Connection * conn)
+int Photometer::enableFilter (rts2core::Connection * conn)
 {
 	int ret;
 	ret = enableMove ();
@@ -179,13 +181,13 @@ int Rts2DevPhot::enableFilter (rts2core::Connection * conn)
 	return 0;
 }
 
-int Rts2DevPhot::scriptEnds ()
+int Photometer::scriptEnds ()
 {
 	stopIntegrate ();
 	return ScriptDevice::scriptEnds ();
 }
 
-void Rts2DevPhot::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+void Photometer::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
@@ -199,14 +201,14 @@ void Rts2DevPhot::changeMasterState (rts2_status_t old_state, rts2_status_t new_
 	ScriptDevice::changeMasterState (old_state, new_state);
 }
 
-void Rts2DevPhot::setReqTime (float in_req_time)
+void Photometer::setReqTime (float in_req_time)
 {
 	req_time = in_req_time;
 	exp->setValueFloat (req_time);
 	addTimer (in_req_time, new rts2core::Event (PHOT_EVENT_CHECK, this));
 }
 
-void Rts2DevPhot::postEvent (rts2core::Event *event)
+void Photometer::postEvent (rts2core::Event *event)
 {
 	int ret;
 	switch (event->getType ())
@@ -222,7 +224,7 @@ void Rts2DevPhot::postEvent (rts2core::Event *event)
 	ScriptDevice::postEvent (event);
 }
 
-int Rts2DevPhot::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
+int Photometer::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == filter)
 		return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
@@ -231,7 +233,7 @@ int Rts2DevPhot::setValue (rts2core::Value * old_value, rts2core::Value * new_va
 	return ScriptDevice::setValue (old_value, new_value);
 }
 
-void Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
+void Photometer::sendCount (int in_count, float in_exp, bool in_is_ov)
 {
 	count->setValueInteger (in_count);
 	exp->setValueFloat (in_exp);
@@ -249,7 +251,7 @@ void Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
 		endIntegrate ();
 }
 
-int Rts2DevPhot::commandAuthorized (rts2core::Connection * conn)
+int Photometer::commandAuthorized (rts2core::Connection * conn)
 {
 	int ret;
 	if (conn->isCommand ("home"))

@@ -33,21 +33,33 @@
 
 #define PHOT_EVENT_CHECK    RTS2_LOCAL_EVENT + 1250
 
-using namespace rts2core;
+namespace rts2phot
+{
 
 /**
  * Abstract photometer class.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevPhot:public ScriptDevice
+class Photometer:public rts2core::ScriptDevice
 {
-	private:
-		struct timeval nextCountDue;
-		rts2core::ValueInteger *count;
-		rts2core::ValueFloat *exp;
-		rts2core::ValueBool *is_ov;
-		rts2core::Connection * integrateConn;
+	public:
+		Photometer (int argc, char **argv);
+		// return time till next getCount call in usec, or -1 when failed
+		virtual long getCount ()
+		{
+			return -1;
+		}
+		virtual int initValues ();
+
+		virtual int idle ();
+
+		virtual int deleteConnection (rts2core::Connection * conn)
+		{
+			if (integrateConn == conn)
+				integrateConn = NULL;
+			return ScriptDevice::deleteConnection (conn);
+		}
 
 	protected:
 		rts2core::ValueInteger *req_count;
@@ -94,22 +106,13 @@ class Rts2DevPhot:public ScriptDevice
 
 		float getExposure () { return exp->getValueFloat (); }
 
-	public:
-		Rts2DevPhot (int argc, char **argv);
-		// return time till next getCount call in usec, or -1 when failed
-		virtual long getCount ()
-		{
-			return -1;
-		}
-		virtual int initValues ();
-
-		virtual int idle ();
-
-		virtual int deleteConnection (rts2core::Connection * conn)
-		{
-			if (integrateConn == conn)
-				integrateConn = NULL;
-			return ScriptDevice::deleteConnection (conn);
-		}
+	private:
+		struct timeval nextCountDue;
+		rts2core::ValueInteger *count;
+		rts2core::ValueFloat *exp;
+		rts2core::ValueBool *is_ov;
+		rts2core::Connection * integrateConn;
 };
+
+}
 #endif							 /* !__RTS2_PHOT__ */

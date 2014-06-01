@@ -61,7 +61,7 @@ class SitechAxisRequest
 		int32_t y_dest;          //* Y (Az/RA) motor destination, in motor counts
 		int32_t y_speed;         //* Y (Az/RA) speed (base rate), in counts per servo loop
 		int32_t x_rate_adder;    //* X (Alt/Dec) rate adder
-		int32_t y_rate_adder;    //* Y (Az/RA) rate adder time
+		int32_t y_rate_adder;    //* Y (Az/RA) rate adder
 		int32_t x_rate_adder_t;  //* X (Alt/Dec) rate adder time (in servo loops; 1953 would be 1 second)
 		int32_t y_rate_adder_t;  //* Y (Az/RA) rate adder time (in servo loops; 1953 would be 1 second)
 };
