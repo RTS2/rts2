@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
 
     if args.FitDisplay:
-        rt.cfg['WITH_MATHPLOTLIB'] = True
+        rtc.cfg['WITH_MATHPLOTLIB'] = True
 
     if args.emptySlots is not None:
         rtc.cfg['EMPTY_SLOT_NAMES'] = [ x.strip() for x in  args.emptySlots ]

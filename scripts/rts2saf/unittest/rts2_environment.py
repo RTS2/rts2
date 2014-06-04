@@ -35,7 +35,6 @@ from rts2saf.checkdevices import CheckDevices
 from rts2saf.focus import Focus
 
 ## ToDo ugly
-import logging
 if not os.path.isdir('/tmp/rts2saf_log'):
     os.mkdir('/tmp/rts2saf_log')
 

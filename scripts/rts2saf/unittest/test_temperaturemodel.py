@@ -47,7 +47,6 @@ class TestTemperatureFocPosModel(unittest.TestCase):
 
     def setUp(self):
         from rts2saf.data import ResultFit
-        import numpy as np
         self.plotFnIn='./test-temperaturemodel-plot.png'
         date = '2013-09-08T09:30:09'
         resultFitFwhm=list()

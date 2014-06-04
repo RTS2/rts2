@@ -19,16 +19,12 @@
 
 import unittest
 import glob
-import sys 
 import os
 
 from rts2saf.config import Configuration 
 from rts2saf.analyze import SimpleAnalysis, CatalogAnalysis 
-from rts2saf.data import DataSxtr
 from rts2saf.sextract import Sextract
 from rts2saf.environ import Environment
-
-from rts2saf.devices import CCD, Focuser, FilterWheel, Filter
 
 import logging
 if not os.path.isdir('/tmp/rts2saf_log'):

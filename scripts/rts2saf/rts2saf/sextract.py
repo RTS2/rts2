@@ -22,10 +22,7 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-import os
 import pyfits
-import sys
-import time
 import math
 # ToDo sort that out with Petr import rts2.sextractor as rsx
 import rts2saf.sextractor as rsx
@@ -102,17 +99,18 @@ class Sextract(object):
         try:
             # real header key word is mapped in rts2saf.config
             ambientTemp = '{0:3.1f}'.format(float(hdr[self.rt.cfg['AMBIENTTEMPERATURE']]))
-        except:
+        except Exception, e:
             # that is not required
             ambientTemp='NoTemp'
+            if self.debug: self.logger.debug( 'sextract: temperature information found: {0}, error: {1}'.format(fitsFn, e))
 
         try:
             # real header key word is mapped in rts2saf.config, this one is mapped twice!
             # here, this is a 2 dim dict
             binning = float(self.rt.cfg['FITS_BINNING_MAPPING'][hdr[self.rt.cfg['BINNING']]])
             if self.debug: self.logger.debug( 'sextract: binning: {0}'.format(binning))
-        except:
-            self.logger.warn( 'sextract: in FITS {0},  no binning information found'.format(fitsFn))
+        except Exception, e:
+            self.logger.warn( 'sextract: in FITS {0},  no binning information found: {0}'.format(fitsFn, e))
             # if CatalogAnalysis is done
             binning=None
 
@@ -123,17 +121,17 @@ class Sextract(object):
                 # real header key word is mapped in rts2saf.config
                 binningXY.append(float(hdr[self.rt.cfg['BINNING_X']]))
                 if self.debug: self.logger.debug( 'sextract: binningX: {0}'.format(float(hdr[self.rt.cfg['BINNING_X']])))
-            except:
+            except Exception, e:
                 # if CatalogAnalysis is done
-                self.logger.warn( 'sextract: no x-binning information found, {0}'.format(fitsFn))
+                self.logger.warn( 'sextract: no x-binning information found:{0}, error: {1}'.format(fitsFn, e))
 
             try:
                 # real header key word is mapped in rts2saf.config
                 binningXY.append(float(hdr[self.rt.cfg['BINNING_Y']]))
                 if self.debug: self.logger.debug( 'sextract: binningY: {0}'.format(float(hdr[self.rt.cfg['BINNING_Y']])))
-            except:
+            except Exception, e:
                 # if CatalogAnalysis is done
-                self.logger.warn( 'sextract: no y-binning information found, {0}'.format(fitsFn))
+                self.logger.warn( 'sextract: no y-binning information found: {0}, error: {1}'.format(fitsFn, e))
 
             if len(binningXY) == 2 and  binningXY[0] ==  binningXY[1]:
                 binning =  binningXY[0]                    
@@ -144,24 +142,24 @@ class Sextract(object):
 
         try:
             naxis1 = float(hdr['NAXIS1'])
-        except:
-            self.logger.warn( 'sextract: no NAXIS1 information found'.format(fitsFn, focPos))
+        except Exception, e:
+            self.logger.warn( 'sextract: no NAXIS1 information found: {0{, error: {1}'.format(fitsFn, focPos, e))
             naxis1=None
         try:
             naxis2 = float(hdr['NAXIS2'])
-        except:
-            self.logger.warn( 'sextract: no NAXIS2 information found'.format(fitsFn, focPos))
+        except Exception, e:
+            self.logger.warn( 'sextract: no NAXIS2 information found: {0}, errot: {1}'.format(fitsFn, focPos, e))
             naxis2=None
         try:
             ftName = hdr['FILTER']
-        except:
-            self.logger.warn( 'sextract: no filter name information found'.format(fitsFn, focPos))
+        except Exception, e:
+            self.logger.warn( 'sextract: no filter name information found: {0}, error:{1}'.format(fitsFn, focPos, e))
             ftName=None
 
         try:
             date = hdr['DATE'] # DATE-OBS
-        except:
-            self.logger.warn( 'sextract: no date information found'.format(fitsFn, focPos))
+        except Exception, e:
+            self.logger.warn( 'sextract: no date information found: {0}, error: {1}'.format(fitsFn, focPos, e))
             date=None
 
 
@@ -170,24 +168,24 @@ class Sextract(object):
         if self.nbrsFtwsInuse > 0:
             try:
                 ftAName = hdr['FILTA']
-            except:
-                if self.debug: self.logger.debug( 'sextract: no FILTA name information found'.format(fitsFn, focPos))
+            except Exception, e:
+                if self.debug: self.logger.debug( 'sextract: no FILTA name information found: {0}, error: {1}'.format(fitsFn, focPos, e))
 
         # ToDo clumsy
         ftBName=None
         if self.nbrsFtwsInuse > 1:
             try:
                 ftBName = hdr['FILTB']
-            except:
-                if self.debug: self.logger.debug( 'sextract: no FILTB name information found'.format(fitsFn, focPos))
+            except Exception, e:
+                if self.debug: self.logger.debug( 'sextract: no FILTB name information found: {0}, error: {1}'.format(fitsFn, focPos, e))
 
         # ToDo clumsy
         ftCName=None
         if self.nbrsFtwsInuse > 2:
             try:
                 ftCName = hdr['FILTC']
-            except:
-                if self.debug: self.logger.debug( 'sextract: no FILTC name information found'.format(fitsFn, focPos))
+            except Exception, e:
+                if self.debug: self.logger.debug( 'sextract: no FILTC name information found: {0}, error: {1}'.format(fitsFn, focPos, e))
 
 
         sex = rsx.Sextractor(fields=self.fields,sexpath=self.sexpath,sexconfig=self.sexconfig,starnnw=self.starnnw, createAssoc=self.createAssoc)
@@ -252,8 +250,8 @@ class Sextract(object):
         try:
             i_flux = dataSxtr.fields.index('FLUX_MAX')
             dataSxtr.fillFlux(i_flux=i_flux, logger=self.logger) #
-        except:
-            if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}'.format(fitsFn))
+        except Exception, e:
+            if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}, error: {1]'.format(fitsFn, e))
 
         if self.debug: self.logger.debug( 'sextract:  {0}, FOC_POS: {1:5.0f}, SX cleaned objects: {2:4d}, nstars {3:4d}, FWHM: {4:5.1f}, stdFwhm: {5:5.1f}'.format(fitsFn, focPos, len(sex.cleanedObjects), nstars, fwhm, stdFwhm))
 

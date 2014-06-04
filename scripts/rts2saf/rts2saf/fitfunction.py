@@ -20,10 +20,6 @@
 
 __author__ = 'markus.wildi@bluewin.ch'
 
-import os
-import sys
-import math
-import numpy as np
 from scipy import optimize
 
 class FitFunction(object):
@@ -56,8 +52,8 @@ class FitFunction(object):
             return None, None, None, None
 
         # ToDo lazy
-        posS=sorted(self.dataFit.pos)
-        step= posS[1]-posS[0]
+        # posS=sorted(self.dataFit.pos)
+        # step= posS[1]-posS[0]
         extr_focpos=float('nan')
         try:
             if self.recpFunc==None:

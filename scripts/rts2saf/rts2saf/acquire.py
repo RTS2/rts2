@@ -27,10 +27,8 @@ import sys
 import threading
 import time
 import shutil
-import os
 
 
-from timeout import timeout
 
 class ScanThread(threading.Thread):
     """Thread scan acquires a set of FITS image filenames and writes the to :py:mod:`Queue` acqu_oq.
@@ -212,8 +210,8 @@ class ScanThread(threading.Thread):
                 if not ready:
                     self.logger.info('____ScanThread: received {0}'.format(srcTmpFn))
                 return storeFn 
-            except:
-                self.logger.warn('____ScanThread: not yet ready {0}'.format(srcTmpFn))
+            except Exception, e:
+                self.logger.warn('____ScanThread: not yet ready {0}, error: {1}'.format(srcTmpFn, e))
                 time.sleep(.2) # ToDo
                 cnt +=1
                 if cnt > 40:
@@ -374,8 +372,8 @@ class Acquire(object):
                 # yes, it is really (2014-03-06
                 try:
                     ind= ftns.index(ftn)
-                except:
-                    self.logger.error('acquire:  {0} filter: {1} not found in configuration (dropped?)'.format(ftw.name, ftn))
+                except Exception, e:
+                    self.logger.error('acquire:  {0} filter: {1} not found in configuration (dropped? error: {2})'.format(ftw.name, ftn, e))
                     self.logger.error('acquire:  {0} incomplete list of filter offsets, do not write them to CCD: {1}'.format(ftw.name, self.ccd.name))
                     break
 

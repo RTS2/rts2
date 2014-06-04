@@ -170,15 +170,17 @@ class ResultMeans(object):
         self.valC   = self.dataFit.val[:]
         self.stdValC= self.dataFit.erry[:]
         # remove elements with val=0
-        while True:
-            try:
-                ind=valC.index(0.)
-            except:
-                break # ToDo what happens here really
-            del self.nObjsC[ind] # not strictly necessary
-            del self.posC[ind]
-            del self.valC[ind]
-            del self.stdValC[ind]
+        # while True:
+        #    try:
+        #        valC.index(0.)
+        #    except Exception, e:
+        #        self.logger.warn('ResultMeans: valC.index, error:{0}'.format(e))
+        #        break # ToDo what happens here really
+        #
+        #    del self.nObjsC[ind] # not strictly necessary
+        #    del self.posC[ind]
+        #    del self.valC[ind]
+        #    del self.stdValC[ind]
 
     def calculate(self, var=None):
         """Calculate  weighted means based on 
@@ -323,8 +325,9 @@ class DataSxtr(object):
         # ToDo ugly
         try:
             self.nObjs=len(self.catalog)
-        except:
+        except Exception, e:
             pass
+
         self.fields=fields
         self.binning=binning 
         self.binningXY=binningXY 

@@ -25,9 +25,7 @@
 
 __author__ = 'wildi.markus@bluewin.ch'
 
-import sys
 import re
-import os
 import string
 import collections
 import time
@@ -179,8 +177,8 @@ class CreateCCD(CreateDevice):
             try:
                 ftw.ccdName=ccdFtwn[ftw.name] # these filter wheels names  are read back from CCD
                 if self.debug: self.logger.debug('filterOffsets: found filter wheel: {0}, named on CCD: {1}'.format(ftw.name, ftw.ccdName))
-            except:
-                self.logger.error('filterOffsets: {0} {1} configured filter wheel not found'.format(self.ccd.name,ftw.name))
+            except Exception, e:
+                self.logger.error('filterOffsets: {0} {1} configured filter wheel not found, error: {2}'.format(self.ccd.name,ftw.name, e))
                 return False
 
             if len(ftos[ftw.name])==0:
@@ -209,9 +207,9 @@ class CreateCCD(CreateDevice):
                         try:
                             ft.OffsetToEmptySlot= ccdOffsets[k]
                             if self.debug: self.logger.debug('filterOffsets: {0}, {1} offset {2} from ccd: {3}'.format(ftw.name, ft.name, ft.OffsetToEmptySlot,self.ccd.name))
-                        except:
+                        except Exception, e:
                             ft.OffsetToEmptySlot= 0
-                            self.logger.warn('filterOffsets: {0}, {1} NO offset from ccd: {2}, setting it to ZERO'.format(ftw.name, ft.name,self.ccd.name))
+                            self.logger.warn('filterOffsets: {0}, {1} NO offset from ccd: {2}, setting it to ZERO, error: {3}'.format(ftw.name, ft.name,self.ccd.name, e))
                 else:
                     self.logger.warn('filterOffsets: {0} filter {1} not found on CCD {2}, ignoring it'.format( ftw.name, ft.name, self.ccd.name))        
                     
@@ -447,8 +445,8 @@ class CreateFilterWheels(CreateDevice):
                 ft=None
                 try:
                     ft=filterDict[ftd]
-                except:
-                    self.logger.error('createDevices: no filter named: {0} found in config: {1}'.format(ftd, self.rt.cfg['CFGFN']))
+                except Exception, e:
+                    self.logger.error('createDevices: no filter named: {0} found in config: {1}, error: {2}'.format(ftd, self.rt.cfg['CFGFN'], e))
                     return None
 
                 if ft:
@@ -479,9 +477,10 @@ class CreateFilterWheels(CreateDevice):
                     # ft.emptySlot=Null at instantiation
                     try:
                         ftw.emptySlots.append(ft)
-                    except:
+                    except Exception, e:
                         ftw.emptySlots=list()
                         ftw.emptySlots.append(ft)
+                        if self.debug: self.logger.debug('create: new list created, error {1}'.format(ftw.name, ft.name, e))
 
                     eSs += 1
                     if self.debug: self.logger.debug('create:  {0:5s}, filter:{1:5s} is a candidate empty slot'.format(ftw.name, ft.name))
@@ -491,13 +490,11 @@ class CreateFilterWheels(CreateDevice):
                 self.logger.info('create:  {0}, empty slot:{1}'.format(ftw.name, ftw.emptySlots[0].name))
 
                 for ft in ftw.emptySlots[1:]:
-                    match=False
                     for nm in self.rt.cfg['EMPTY_SLOT_NAMES']:
                         # e.g. filter name R must exactly match!
                         p = re.compile(nm)
                         m = p.match(ft.name)
                         if m:
-                            match= True
                             break
                     if m:
                         self.logger.info('create:  {0}, dropping empty slot:{1}'.format(ftw.name, ft.name))

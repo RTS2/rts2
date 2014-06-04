@@ -21,16 +21,13 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
-import os
 
 if 'matplotlib' not in sys.modules: 
     import matplotlib
     matplotlib.use('Agg')    
 
 import matplotlib.pyplot as plt
-
 import numpy as np
-import rts2saf.data as dtf
 
 class  FitDisplay(object):
     """Display a fit with matplotlib

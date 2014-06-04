@@ -65,8 +65,8 @@ class ImgpAnalysis():
             self.logger.error('{0}: returning due to I/O error({1}): {2}\ncommand:{3}'.format(self.scriptName, errno, strerror, cmd))
             return None
 
-        except:
-            self.logger.error('{0}: returning due to: {1} died'.format(self.scriptName, repr(cmd)))
+        except Exception, e:
+            self.logger.error('{0}: returning due to: {1} died, error: {2}'.format(self.scriptName, repr(cmd), e))
             return None
 
         return subpr
@@ -91,8 +91,8 @@ class ImgpAnalysis():
         # no time to waste, the decision toqueue a focus run is done in rts2saf_fwhm.py
         try:
             fwhmLine= self.spawnProcess(cmd, False)
-        except:
-            self.logger.error( '{0}: starting suprocess: {1} failed, continuing with astrometrical calibration'.format(self.scriptName, cmd))
+        except Exception, e:
+            self.logger.error( '{0}: starting suprocess: {1} failed, continuing with astrometrical calibration, error:{2}'.format(self.scriptName, cmd, e))
 
         self.logger.info( '{0}: TEMP ending, command {1}'.format(self.scriptName, cmd))
         return 
@@ -103,8 +103,8 @@ class ImgpAnalysis():
         # this process is hopefully started in parallel on the second core if any.
         try:
             stdo,stde= self.spawnProcess(cmd=cmd, wait=True).communicate()
-        except:
-            self.logger.error( '{0}: ending, reading from {1} pipe failed'.format(self.scriptName, self.astrometryCmd))
+        except Exception, e:
+            self.logger.error( '{0}: ending, reading from {1} pipe failed, error:{2}'.format(self.scriptName, self.astrometryCmd, e))
             sys.exit(1)
 
         if stde:

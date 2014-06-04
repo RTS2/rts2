@@ -21,7 +21,6 @@ import unittest
 import os
 
 from rts2saf.config import Configuration 
-from rts2saf.devices import CCD, Focuser, FilterWheel, Filter
 
 import logging
 if not os.path.isdir('/tmp/rts2saf_log'):

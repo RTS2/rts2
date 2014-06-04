@@ -21,9 +21,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 
-import time
 import datetime
-import glob
 import os
 
 

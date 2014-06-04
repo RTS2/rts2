@@ -19,10 +19,8 @@
 #
 
 __author__ = 'markus.wildi@bluewin.ch'
+
 import collections
-
-
-from rts2saf.data import DataSxtr
 
 class DataRun(object):
     def __init__(self, debug=False, dSxReference=None, args=None, rt=None, logger=None):
@@ -92,7 +90,6 @@ class DataRun(object):
                 self.assocObjNmbrs.append(k) 
 
         # copy those catalog entries (sextracted objects) which are found on all images
-        count = dict()
         for dSx in self.dataSxtrs:
             # save the original cleaned values for later analysis
             # initialize data.catalog

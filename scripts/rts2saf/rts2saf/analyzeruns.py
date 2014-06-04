@@ -27,10 +27,8 @@ __author__ = 'markus.wildi@bluewin.ch'
 import fnmatch
 import os
 import re
-import sys
-import numpy as np
-import math
-from sympy import Symbol,diff,exp
+# frosted:                     this is used
+from sympy import Symbol,diff, exp
 
 from rts2saf.sextract import Sextract
 from rts2saf.analyze import SimpleAnalysis, CatalogAnalysis
@@ -132,7 +130,7 @@ class AnalyzeRuns(object):
                 if self.debug: self.logger.debug('{} compareFunctionValues, extremumValue: {} > {} edgeValue), accepted'.format(name, extremumValue, edgeValue))
                 return True
             else:
-                if self.debug: self.logger.debug('{} compareFunctionValues, edgeValue: {} > {} mnValue, rejected'.format(name, edgeValue, mnValue))
+                if self.debug: self.logger.debug('{} compareFunctionValues, edgeValue: {} > {} extremumValue, rejected'.format(name, edgeValue, extremumValue))
                 return False
                         
 
@@ -147,6 +145,7 @@ class AnalyzeRuns(object):
         :rtype: Boolean.
 
         """
+        # frosted: this is used
         p = fitPar
         x = Symbol('x')
 
@@ -279,8 +278,9 @@ class AnalyzeRuns(object):
         for dSx in dataRn.dataSxtrs:
             try:
                 binning[dSx.binning] += 1
-            except:
+            except Exception, e:
                 binning[dSx.binning] = 1
+                
         if len(binning) != 1:
             self.logger.error('analyzeRun: inconsistent binning found: {}'.format(repr(binning)))
             return None, None, None, None 
@@ -388,7 +388,7 @@ class AnalyzeRuns(object):
 
         # ToDo expand to Flux?
         if not rMnsFwhm is not  None:
-            rMns.logWeightedMeans()
+            rMnsFwhm.logWeightedMeans()
 
         return rFtFwhm, rMnsFwhm, rFtFlux, rMnsFlux
 

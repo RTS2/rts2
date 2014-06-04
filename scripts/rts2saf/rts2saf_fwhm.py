@@ -94,8 +94,8 @@ if __name__ == '__main__':
     if( dataSxtr.fwhm <= fwhmTreshold):
         try:
             logger.info('rts2af_fwhm: no focus run  queued, fwhm: {0:5.2f} < {1:5.2f} (thershold)'.format(float(dataSxtr.fwhm), float(fwhmTreshold)))
-        except:
-            logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated')
+        except Exception, e:
+            logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated, error: {}'.format(e))
 
         q = None
         rts2.createProxy(url=rt.cfg['URL'], username=rt.cfg['USERNAME'], password=rt.cfg['PASSWORD'])

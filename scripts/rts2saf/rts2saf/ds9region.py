@@ -21,7 +21,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import threading
-from ds9 import *
+from ds9 import ds9
 
 # on first call of DS9 a frame is already open
 first = True
@@ -43,7 +43,7 @@ class Ds9DisplayThread(threading.Thread):
         self.logger = logger
         self.stoprequest = threading.Event()
         try:
-            self.display = dds9=ds9()
+            self.display = ds9()
         except Exception, e:
             self.logger.warn('__init__: forking ds9 failed:\n{0}'.format(e))
 

@@ -27,13 +27,10 @@ import signal
 import sys
 import time
 import Queue
-import collections
 import rts2saf.acquire as acq
 import rts2saf.sextract as sx
-import rts2saf.analyze as  an
 from rts2saf.analyzeruns import AnalyzeRuns
 from rts2saf.datarun import DataRun
-from rts2saf.data import DataSxtr
 
 TERM=False
 def receive_signal(signum, stack):

@@ -135,7 +135,7 @@ class TestFitDisplay(unittest.TestCase):
         xy= zip(x,y)
         wstd = np.std(a=xy) 
         # scale the values [a.u.]
-        sv = [max(self.dataFitFwhm.val) / max(self.dataFitFlux.val) * x for x in self.dataFitFlux.val]
+        sv = [max(self.dataFitFwhm.val) / max(self.dataFitFlux.val) * z for z in self.dataFitFlux.val]
         self.dataFitFlux.val=sv
 
         # gaussian

@@ -45,7 +45,7 @@ class TestFitFunction(unittest.TestCase):
             pass
 
     def setUp(self):
-        from rts2saf.data import DataFitFwhm, DataFitFlux, DataSxtr
+        from rts2saf.data import DataFitFwhm, DataSxtr
         import numpy as np
         pos       = np.asarray([ 2000., 2100., 2200., 2300., 2400., 2500., 2600., 2700., 2800., 2900., 3000.])
         fwhm      = np.asarray([   40.,   30.,   20.,   15.,   10.,    5.,   10.,   15.,   20.,   30.,   40.])

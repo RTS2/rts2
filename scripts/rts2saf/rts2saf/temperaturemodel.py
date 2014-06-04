@@ -23,7 +23,6 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
-import os
 
 if 'matplotlib' not in sys.modules: 
     import matplotlib
@@ -73,13 +72,15 @@ class TemperatureFocPosModel(object):
         for rFF in self.resultFitFwhm:
             try:
                 self.temp.append(float(rFF.ambientTemp))
-            except:
+            except Exception, e:
                 self.temp.append(rFF.ambientTemp)
+                if self.debug: self.logger.debug('temperaturemodel: new list created, error: {}'.format(e))                
+
             self.tempErr.append(0.01)
             try:
                 self.minFitPos.append(float(rFF.extrFitPos))
-            except:
-                self.logger.error('temperaturemodel: serious error: could not append type{}'.format(type(rFF.extrFitPos)))                
+            except Exception, e:
+                self.logger.error('temperaturemodel: serious error: could not append type: {}, error: {}'.format(type(rFF.extrFitPos), e))
                 
             self.minFitPosErr.append(2.5) 
 

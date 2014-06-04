@@ -1,4 +1,3 @@
-import time 
 class Rts2Exec(object):
     """Reenable EXEC after rts2saf_focus.py or any script started with ' exe ...' has terminated
     """

@@ -24,7 +24,6 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import os
-import psutil
 import numpy as np
 import copy
 
@@ -183,7 +182,7 @@ class SimpleAnalysis(object):
         except:
             pass
 
-        if self.i_flux!=None:
+        if self.i_flux is not None:
             self.dataFitFlux= DataFitFlux(
                 dataSxtr=self.dataSxtr,
                 dataFitFwhm=self.dataFitFwhm,
@@ -320,12 +319,12 @@ class CatalogAnalysis(object):
             adSx.fwhm=numpy.median(nsFwhm)
             adSx.stdFwhm=numpy.std(nsFwhm)
             try:
-                i_flux = adSx.fields.index('FLUX_MAX')
+                self.i_flux = adSx.fields.index('FLUX_MAX')
             except:
                 pass
 
-            if self.i_flux!=None:
-                adSx.fillFlux(i_flux=i_flux, logger=self.logger) #
+            if self.i_flux is not None:
+                adSx.fillFlux(i_flux= self.i_flux, logger=self.logger)
 
             rdSx=copy.deepcopy(dSx)
             rejectedDataSxtr.append(rdSx)
@@ -335,10 +334,9 @@ class CatalogAnalysis(object):
             rdSx.fwhm=numpy.median(nsFwhm)
             rdSx.stdFwhm=numpy.std(nsFwhm)
 
-            if self.i_flux!=None:
-                rdSx.fillFlux(i_flux=i_flux, logger=self.logger) #
+            if self.i_flux is not None:
+                rdSx.fillFlux(i_flux= self.i_flux, logger=self.logger)
 
-        # 
         self.anAcc=SimpleAnalysis(
             debug=self.debug, 
             date=self.date, 
@@ -355,8 +353,8 @@ class CatalogAnalysis(object):
 
         if self.Ds9Display or self.FitDisplay:
             if accRFtFwhm.fitFlag:
-                an.display()
-        #
+                self.anAcc.display()
+
         self.anRej=SimpleAnalysis(
             debug=self.debug, 
             date=self.date, 

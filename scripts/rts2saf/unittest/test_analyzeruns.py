@@ -18,8 +18,6 @@
 #
 
 import unittest
-import glob
-import sys 
 import os
 
 from rts2saf.config import Configuration 

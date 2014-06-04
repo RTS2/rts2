@@ -26,11 +26,8 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import sys
 import argparse
-import re
 import glob
 import os
-import subprocess
-import time
 import datetime
 
 # ToDo Ad hoc:
@@ -77,7 +74,7 @@ from rts2saf.log import Logger
 from rts2saf.focus import Focus
 from rts2saf.checkdevices import CheckDevices
 from rts2saf.createdevices import CreateCCD,CreateFocuser,CreateFilters,CreateFilterWheels
-from rts2saf.devices import CCD,Focuser,Filter,FilterWheel
+from rts2saf.devices import CCD,Focuser,FilterWheel
 #from rts2saf.rts2exec import Rts2Exec
 
 

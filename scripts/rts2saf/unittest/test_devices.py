@@ -120,7 +120,7 @@ class TestCreateDevices(unittest.TestCase):
         logger.info('== {} =='.format(self._testMethodName))
         fts=CreateFilters(debug=False, rt=self.rt, logger=logger).create()
         foc=CreateFocuser(debug=False, rt=self.rt, logger=logger).create(focDef=0)
-        cftw= CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
+        CreateFilterWheels(debug=False, rt=self.rt, logger=logger, filters=fts, foc=foc)
         cccd= CreateCCD(debug=False, rt=self.rt, logger=logger, ftws=fts)
         ccd=cccd.create()
         self.assertEqual(ccd.name, 'C0')

@@ -24,7 +24,6 @@
 """
 __author__ = 'wildi.markus@bluewin.ch'
 
-import sys
 import os
 import errno
 from rts2saf.timeout import timeout

@@ -21,10 +21,7 @@ import unittest
 import os
 import re
 import pwd
-
 import psycopg2
-
-from rts2saf.config import Configuration 
 
 import logging
 if not os.path.isdir('/tmp/rts2saf_log'):

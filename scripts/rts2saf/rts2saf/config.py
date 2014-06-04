@@ -28,11 +28,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import ConfigParser
 import os
-import sys
-# ToDo drop that
 import string
-import re
-import rts2saf.devices as dev
 
 # thanks http://stackoverflow.com/questions/635483/what-is-the-best-way-to-implement-nested-dictionaries-in-python
 class AutoVivification(dict):
@@ -198,7 +194,8 @@ class DefaultConfiguration(object):
                 configfile.write('#\n')
                 configfile.write('#\n')
                 self.config.write(configfile)
-        except:
+        except Exception, e:
+            self.logger.error('Configuration.writeDefaultConfiguration: config file: {0} could not be written, error: {1}'.format(cfn,e))
             return None
         return cfn
 
@@ -225,16 +222,16 @@ class Configuration(DefaultConfiguration):
             try:
                 config.readfp(open(fileName))
             except Exception, e:                
-                self.logger.error('Configuration.readConfiguration: config file: {0} has wrong syntax:\n{1}'.format(fileName,e))
+                self.logger.error('Configuration.readConfiguration: config file: {0} has wrong syntax, error: {1}'.format(fileName,e))
                 return False
             # ok, I misuse ConfigParser
             # check additional elements or typo
             for sct in config.sections():
                 for k,v in config.items(sct): 
                     try:
-                        val=self.dcf[(sct, k)]
+                        self.dcf[(sct, k)]
                     except Exception, e:
-                        self.logger.error('Configuration.readConfiguration: config file: {0} has wrong syntax:\n{1}'.format(fileName,e))
+                        self.logger.error('Configuration.readConfiguration: config file: {0} has wrong syntax, error: {1}'.format(fileName,e))
                         return False
 
         else:
@@ -352,14 +349,14 @@ class Configuration(DefaultConfiguration):
             elif( isinstance(self.cfg[identifier], int)):
                 try:
                     self.cfg[identifier]= int(value)
-                except:
-                    self.logger.error('Configuration.readConfiguration: no int '+ value+ ' in section ' +  section + ', identifier ' +  identifier + ' in file ' + fileName)
+                except Exception, e:
+                    self.logger.error('Configuration.readConfiguration: no int '+ value+ ' in section ' +  section + ', identifier ' +  identifier + ' in file ' + fileName+ ', error: {0}'.format(e))
                     
             elif(isinstance(self.cfg[identifier], float)):
                 try:
                     self.cfg[identifier]= float(value)
-                except:
-                    self.logger.error('Configuration.readConfiguration: no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + fileName)
+                except Exception, e:
+                    self.logger.error('Configuration.readConfiguration: no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + fileName + ', error: {0}'.format(e))
 
             else:
                 self.cfg[identifier]= value

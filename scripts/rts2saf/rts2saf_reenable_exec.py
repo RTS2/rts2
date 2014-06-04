@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import os
 from rts2saf.log import Logger
 from rts2saf.rts2exec import Rts2Exec
 from rts2.json import JSONProxy

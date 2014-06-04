@@ -25,9 +25,6 @@
 
 __author__ = 'wildi.markus@bluewin.ch'
 
-import sys
-import re
-import os
 import time
 
 # ToDo read, write to real devices
@@ -85,11 +82,11 @@ class FilterWheel(object):
             proxy.refresh()
             if not self.name in 'FAKE_FTW':
                 try:
-                    name=proxy.getDevice(self.name)
+                    proxy.getDevice(self.name)
                     self.logger.info('check: filter wheel device: {0} present, breaking'.format(self.name))        
                     break
-                except:
-                    self.logger.error('check: filter wheel device: {0} not yet present'.format(self.name))        
+                except Exception, e:
+                    self.logger.error('check: filter wheel device: {0} not yet present, error: {1}'.format(self.name, e))        
                     time.sleep(1)
                     retry -= 1
                     if retry == 0:
@@ -141,23 +138,22 @@ class Focuser(object):
         while True:
             proxy.refresh()
             try:
-                name=proxy.getDevice(self.name)
+                proxy.getDevice(self.name)
                 self.logger.info('check : focuser device: {0} present, breaking'.format(self.name))        
                 break
-            except:
-                self.logger.warn('check : focuser device: {0} not yet present'.format(self.name))        
+            except Exception, e:
+                self.logger.warn('check : focuser device: {0} not yet present, error: {1}'.format(self.name, e))        
                 time.sleep(1)
                 retry -= 1
                 if retry == 0:
                     self.logger.error('check : focuser device: {0} not present'.format(self.name))        
                     return False
 
-        focMin=focMax=None
         try:
             self.focMn= proxy.getDevice(self.name)['foc_min'][1]
             self.focMx= proxy.getDevice(self.name)['foc_max'][1]
         except Exception, e:
-            self.logger.warn('check:  {0} has no foc_min or foc_max properties, using absolute limits'.format(self.name))
+            self.logger.warn('check:  {0} has no foc_min or foc_max properties, using absolute limits, error: {1}'.format(self.name, e))
             self.focMn=self.absLowerLimit
             self.focMx=self.absUpperLimit
         return True
@@ -215,8 +211,8 @@ class CCD(object):
                 proxy.getDevice(self.name)
                 self.logger.error('check: camera device: {0} present, breaking'.format(self.name))
                 break
-            except:
-                self.logger.error('check: camera device: {0} not yet present'.format(self.name))        
+            except Exception, e:
+                self.logger.error('check: camera device: {0} not yet present, error: {1}'.format(self.name, e))        
                 #return False
                 time.sleep(1)
                 retry -= 1
@@ -235,9 +231,9 @@ class CCD(object):
         # ToDo check all of them
         # check presence of a filter wheel
         try:
-            ftwn=proxy.getValue(self.name, 'wheel')
+            proxy.getValue(self.name, 'wheel')
         except Exception, e:
-            self.logger.error('CCD: no filter wheel present')
+            self.logger.error('CCD: no filter wheel present, error: {0}'.format(e))
             return False
 
         return True

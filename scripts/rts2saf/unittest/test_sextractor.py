@@ -54,7 +54,7 @@ class TestSextract(unittest.TestCase):
     def test_sextract(self):
         logger.info('== {} =='.format(self._testMethodName))
         rt = Configuration(logger=logger)
-        success=rt.readConfiguration(fileName='./rts2saf-no-filter-wheel.cfg')
+        rt.readConfiguration(fileName='./rts2saf-no-filter-wheel.cfg')
         sx = Sextract(debug=False, rt=rt, logger=logger)
         fitsFn='../samples/20071205025911-725-RA.fits'
         dSx=sx.sextract(fitsFn=fitsFn)
@@ -64,7 +64,7 @@ class TestSextract(unittest.TestCase):
     def test_sextractFlux(self):
         logger.info('== {} =='.format(self._testMethodName))
         rt = Configuration(logger=logger)
-        success=rt.readConfiguration(fileName='./rts2saf-flux.cfg')
+        rt.readConfiguration(fileName='./rts2saf-flux.cfg')
         sx = Sextract(debug=False, rt=rt, logger=logger)
         fitsFn='../samples/20071205025911-725-RA.fits'
         sx.appendFluxFields()

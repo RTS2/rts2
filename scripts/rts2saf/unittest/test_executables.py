@@ -18,7 +18,6 @@
 #
 
 import unittest
-import datetime
 import subprocess
 import re
 
