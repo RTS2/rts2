@@ -73,7 +73,7 @@ Optec::Optec (int argc, char **argv):Focusd (argc, argv)
 	device_file = FOCUSER_PORT;
 	damagedTempSens = false;
 
-	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+	addOption ('f', "device_file", 1, "device file (usually /dev/ttySx");
 	addOption ('D', "damaged_temp_sensor", 0,
 		"if focuser have damaged temp sensor");
 }
@@ -108,7 +108,7 @@ int Optec::processOption (int in_opt)
 int Optec::initHardware ()
 {
 	char rbuf[10];
-	int ret;
+	int ret, conn_timeout=20; // optec normally takes 1 minute to boot, every cycle is 10s, and make it triple+
 
 	if (!damagedTempSens)
 	{
@@ -121,15 +121,32 @@ int Optec::initHardware ()
 	if (ret)
 		return ret;
 
-	optecConn->flushPortIO ();
+	while (conn_timeout > 0)
+		{
+		conn_timeout--;
 
-	// set manual
-	if (optecConn->writeRead ("FMMODE", 6, rbuf, 10, '\r') < 0)
-		return -1;
-	if (rbuf[0] != '!')
-		return -1;
+		optecConn->flushPortIO ();
 
-	return ret;
+		// set manual, also make sure this is an Optec
+		if (optecConn->writeRead ("FMMODE", 6, rbuf, 10, '\r') < 0)
+			{
+			logStream (MESSAGE_WARNING) << "Connecting to Optec failed, tries to go: " << conn_timeout << sendLog;
+			sleep(6); // +4s of the writeRead takes to return if nothing comes = 10s
+			continue;
+			}
+		
+		if (rbuf[0] != '!') 
+			{
+			logStream (MESSAGE_WARNING) << "Connecting to Optec, returns junk, to go: " << conn_timeout << sendLog;
+			continue;
+			}
+
+		// This is a success, which jumps out of the timeout loop and returns
+		return ret;
+		}
+
+	// This is a failure	
+	return -1;
 }
 
 int Optec::commandAuthorized (rts2core::Connection * conn)
