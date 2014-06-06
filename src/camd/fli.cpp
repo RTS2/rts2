@@ -208,7 +208,10 @@ int Fli::doReadout ()
 	{
 		ret = FLIGrabRow (dev, bufferTop, getUsedWidthBinned ());
 		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "doReadout () - FLIGrabRow returns error, line: " << line << ", getUsedWidthBinned: " << getUsedWidthBinned () << ", getUsedHeightBinned: " << getUsedHeightBinned () << ", usedPixelByteSize: " << usedPixelByteSize () << "." << sendLog;
 			return -1;
+		}
 	}
 	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
@@ -318,6 +321,16 @@ void Fli::postEvent (rts2core::Event *event)
 	switch (event->getType ())
 	{
 		case EVENT_TE_RAMP:
+			if (isnan (tempTarget->getValueFloat ()))
+			{
+				if (isnan (tempCCD->getValueFloat ()))
+				{
+					addTimer (10, event);	// give info () time to get tempCCD
+					return;
+				}
+				else
+					tempTarget->setValueFloat ( tempCCD->getValueFloat () );
+			}
 			if (tempTarget->getValueFloat () < tempSet->getValueFloat ())
 				change = tempRamp->getValueFloat ();
 			else if (tempTarget->getValueFloat () > tempSet->getValueFloat ())
@@ -635,16 +648,8 @@ int Fli::setCoolTemp (float new_temp)
 {
 	if (coolingOnOff->getValueBool () || new_temp == 40.0)
 	{
-		LIBFLIAPI ret;
-		double fliTemp;
-		ret = FLIGetTemperature (dev, &fliTemp);
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "cannot retrieve chip temperature" << sendLog;
-			return -1;
-		}
 		deleteTimers (EVENT_TE_RAMP);
-		tempTarget->setValueFloat (fliTemp);
+		tempTarget->setValueFloat ( tempCCD->getValueFloat () );
 		addTimer (1, new rts2core::Event (EVENT_TE_RAMP));
 	}
 	return Camera::setCoolTemp (new_temp);
