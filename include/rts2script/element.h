@@ -248,41 +248,55 @@ class ElementSequence:public Element
 		enum {first, SHUTTER, FILTER, EXPOSURE } callProgress;
 };
 
-class ElementExpose:public Element
+class ElementImage:public Element
+{
+	public:
+		ElementImage (Script * _script, float in_expTime);
+		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "image " << expTime; }
+		virtual void printXml (std::ostream &os) { os << "  <image length='" << expTime << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_IMAGE " " << expTime; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_IMAGE << "\",\"duration\":" << expTime; }
+
+		virtual double getExpectedDuration (int runnum);
+		virtual double getExpectedLightTime ();
+		virtual int getExpectedImages () { return 1; }
+
+	protected:
+		/**
+		 * Requested shutter position.
+		 *   * -1 don't change
+		 *   * 0 light image
+		 *   * 1 dark image
+		 */
+		int targetShutter;
+
+		float expTime;
+		enum {first, SHUTTER, EXPOSURE } callProgress;
+
+};
+
+class ElementExpose:public ElementImage
 {
 	public:
 		ElementExpose (Script * _script, float in_expTime);
-		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "exposure " << expTime; }
 		virtual void printXml (std::ostream &os) { os << "  <exposure length='" << expTime << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXPOSURE " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXPOSURE << "\",\"duration\":" << expTime; }
-
-		virtual double getExpectedDuration (int runnum);
-		virtual double getExpectedLightTime ();
-		virtual int getExpectedImages () { return 1; }
-	private:
-		float expTime;
-		enum {first, SHUTTER, EXPOSURE } callProgress;
 };
 
-class ElementDark:public Element
+class ElementDark:public ElementImage
 {
 	public:
 		ElementDark (Script * _script, float in_expTime);
-		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "dark " << expTime; }
 		virtual void printXml (std::ostream &os) { os << "  <dark length='" << expTime << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_DARK " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_DARK "\",\"duration\":" << expTime; }
-
-		virtual double getExpectedDuration (int runnum);
-		virtual int getExpectedImages () { return 1; }
-	private:
-		float expTime;
-		enum {first, SHUTTER, EXPOSURE } callProgress;
 };
 
 class ElementBox:public Element

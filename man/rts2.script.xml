@@ -36,12 +36,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2006</year>
-      <year>2007</year>
-      <year>2009</year>
-      <year>2010</year>
-      <year>2012</year>
-      <year>2013</year>
+      <year>2006-2014</year>
       <holder>&dhusername;</holder>
     </copyright>
     <copyright>
@@ -151,7 +146,18 @@
 	  </para>
 	</listitem>
       </varlistentry>
-
+      <varlistentry>
+        <term>
+	  <option>I {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Takes an image, without changing shutter position. If the observer
+	    wish to have certain shutter position, SHUTTER= command must be
+	    used before I command. Exposure time is specified in seconds.
+	  </para>
+	</listitem>
+      </varlistentry>
       <varlistentry>
         <term>
 	  <replaceable>{value name}</replaceable><replaceable>operation</replaceable><replaceable>{new value}</replaceable>
@@ -1135,6 +1141,12 @@ for x in 1 2; do
 	sleep 5
 done
     </literallayout>
+
+    <para>
+      The following script will take 10 5 seconds randomly ditthered observations (in range of 8 arcseconds):
+    </para>
+
+    <para>for 10 { TX.OFFS=(rand(-8s,8s),rand(-8s,8s)) E 5 }</para>
 
     <para>
       The following script will run <emphasis>exe .. E 10</emphasis> part only

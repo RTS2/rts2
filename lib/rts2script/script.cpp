@@ -364,6 +364,14 @@ Element *Script::parseBuf (Rts2Target * target)
 			return NULL;
 		return new ElementSequence (this, filter, repeats, exp_time);
 	}
+	else if (!strcmp (commandStart, COMMAND_IMAGE))
+	{
+		float exp_time;
+		ret = getNextParamFloat (&exp_time);
+		if (ret)
+			return NULL;
+		return new ElementImage (this, exp_time);
+	}
 	else if (!strcmp (commandStart, COMMAND_EXPOSURE))
 	{
 		float exp_time;
