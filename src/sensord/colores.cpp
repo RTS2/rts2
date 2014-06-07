@@ -70,11 +70,10 @@ Colores::Colores (int argc, char **argv): Sensor (argc, argv)
 	device_file = NULL;
 	coloresConn = NULL;
 
-	createValue (mirror, "mirror", "mirror position", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-
-	createValue (filtA, "A", "A filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-	createValue (filtB, "B", "B filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-	createValue (filtC, "C", "C filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (mirror, "mirror", "Calibration lamp mirror position (on=sky, off=calib)", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (filtA, "slits", "Slit wheel power (a)", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (filtB, "grisms", "Grism wheel power (b)", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (filtC, "filters", "Filter wheel power (c)", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
 	createValue (temp1, "T-lamp", "Lamp temp. (C)", false);
 	createValue (temp2, "T-chassis", "Chassis temp. (C)", false);
@@ -82,7 +81,7 @@ Colores::Colores (int argc, char **argv): Sensor (argc, argv)
 	createValue (light1, "L1", "Barrel light level", false);
 	createValue (light2, "L2", "Lamp light level", false);
 
-	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB)");
+	addOption ('f', NULL, 1, "serial port with the module (usually /dev/ttyUSB)");
 
 	setIdleInfoInterval (10);
 }
@@ -128,10 +127,15 @@ int Colores::initHardware ()
 	sleep (10);
 	coloresConn->flushPortIO ();
 
-	filtA->setValueBool (true);
-	filtB->setValueBool (true);
-	filtC->setValueBool (true);
-	mirror->setValueBool (true);
+	// activate filter wheels
+	// remove the mirror, which also gets the telemetry 
+	// (mirror is the only which is not included and has to be a priori requested)
+	coloresCommand ('A');
+	coloresCommand ('B');
+	coloresCommand ('C');
+	coloresCommand ('M'); // this takes a while, so it is after the wheels -
+			      // - it gives them time to come up (drivers will be invoked after)
+	mirror->setValueBool (true); 
 
 	return 0;
 }
@@ -181,7 +185,7 @@ void Colores::coloresCommand (char c)
 	int ret = sscanf (buf, "FW1=%c,FW2=%c,FW3=%c,T1=%f,T2=%f,L1=%d,L2=%d", &fA, &fB, &fC, &t1, &t2, &l1, &l2);
 	if (ret != 7)
 	{
-		logStream (MESSAGE_ERROR) << "cannot parse colores reply '" << buf << "', ret:" << ret << sendLog;
+		logStream (MESSAGE_WARNING) << "cannot parse colores reply '" << buf << "', ret:" << ret << sendLog;
 		return;
 	}
 
