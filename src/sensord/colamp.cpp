@@ -19,6 +19,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/* i
+Lamps Controller $Revision: 3654 $
+Commands: abcdefghABCDEFGHitRS
+t1=a t2=b ... t8=h
+a = OFF t1 / A = ON t1
+i = info
+t = telemetry
+R = reset
+S = store to EEPROM
+*/
+
 #include "sensord.h"
 
 #include "connection/serial.h"
@@ -29,7 +40,7 @@ namespace rts2sensord
 /**
  * Colamp board control various I/O.
  *
- * @author Petr Kubanek <petr@kubanek.net>
+ * @author Petr Kubanek <petr@kubanek.net>, Martin Jelinek <mates@iaa.es>
  */
 class Colamp:public Sensor
 {
@@ -50,6 +61,14 @@ class Colamp:public Sensor
 
 		rts2core::ValueBool *lampHg;
 		rts2core::ValueBool *lampKr;
+		rts2core::ValueBool *halogenPower;
+		rts2core::ValueBool *focuserPower;
+		rts2core::ValueBool *coloresPower;
+		rts2core::ValueBool *switch6;
+		rts2core::ValueBool *switch7;
+		rts2core::ValueBool *switch8;
+
+		rts2core::ValueFloat *domeTemp;
 
 		void colampCommand (char c);
 };
@@ -60,13 +79,21 @@ using namespace rts2sensord;
 
 Colamp::Colamp (int argc, char **argv): Sensor (argc, argv)
 {
-	device_file = NULL;
+	device_file = "/dev/collamp"; // default value 
 	colampConn = NULL;
+
+	createValue (domeTemp, "dometemp", "Dome temperature", false);
 
 	createValue (lampHg, "H", "Mercury-Argon Lamp", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	createValue (lampKr, "K", "Krypton Lamp", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (halogenPower, "halogen", "halogen lamp power switch", false, RTS2_VALUE_WRITABLE |  RTS2_DT_ONOFF);
+	createValue (focuserPower, "focuser", "Optec 12V power switch", false, RTS2_VALUE_WRITABLE |  RTS2_DT_ONOFF);
+	createValue (coloresPower, "colores", "Colores 12V power switch", false, RTS2_VALUE_WRITABLE |  RTS2_DT_ONOFF);
+	createValue (switch6, "switch6", "Unassigned switch 6", false, RTS2_VALUE_WRITABLE |  RTS2_DT_ONOFF);
+	createValue (switch7, "switch7", "Unassigned switch 7", false, RTS2_VALUE_WRITABLE |  RTS2_DT_ONOFF);
+	createValue (switch8, "switch8", "Unassigned switch 8", false, RTS2_VALUE_WRITABLE |  RTS2_DT_ONOFF);
 
-	addOption ('f', NULL, 1, "serial port with the module (usually /dev/ttyUSBn)");
+	addOption ('f', NULL, 1, "serial port with the module (may be /dev/ttyUSBn, defaults to /dev/collamp)");
 
 	setIdleInfoInterval (10);
 }
@@ -105,18 +132,14 @@ int Colamp::initHardware ()
 	colampConn->flushPortIO ();
 	colampConn->setDebug (true);
 
-	// init connection
-	ret = colampConn->writePort ("p", 1);
-	if (ret < 0)
-		return -1;
-	colampConn->flushPortIO ();
+	colampCommand ('t');
 
 	return 0;
 }
 
 int Colamp::info ()
 {
-//	colampCommand ('\n');
+	colampCommand ('t');
 	return Sensor::info ();
 }
 
@@ -124,12 +147,43 @@ int Colamp::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == lampHg)
 	{
-		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'a':'p');
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'A':'a');
 		return 0;
 	}
 	else if (old_value == lampKr)
 	{
-		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'x':'p');
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'B':'b');
+		return 0;
+	}
+	else if (old_value == halogenPower)
+	{
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'C':'c');
+		return 0;
+	}
+	else if (old_value == focuserPower)
+	{
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'D':'d');
+		return 0;
+	}
+
+	else if (old_value == coloresPower)
+	{
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'E':'e');
+		return 0;
+	}
+	else if (old_value == switch6)
+	{
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'F':'f');
+		return 0;
+	}
+	else if (old_value == switch7)
+	{
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'G':'g');
+		return 0;
+	}
+	else if (old_value == switch8)
+	{
+		colampCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'H':'h');
 		return 0;
 	}
 
@@ -138,13 +192,33 @@ int Colamp::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 void Colamp::colampCommand (char c)
 {
+	double dt;
 	char buf[200];
-	colampConn->writeRead (&c, 1, buf, 1);
+	char buf2[32],buf3[32];
 
-// arduino here returns what we sent him. if it is x or a, the respective lamp is on, otherwise, none is on. 
+	colampConn->writeRead (&c, 1, buf, 199, '\n');
 
-	lampHg->setValueBool (buf[0] == 'a');
-	lampKr->setValueBool (buf[0] == 'x');
+	// typical reply is: 25.6 abcDEfgh abcDEfgh\n
+	// which means: temperature on the sensor, lowercase=off, uppercase=on,
+	//  fisrt set of letters is current, second the default state	
+
+	int ret = sscanf (buf, "%lf %s %s", &dt, buf2, buf3);
+	if (ret != 3)
+	{
+		logStream (MESSAGE_WARNING) << "cannot parse collamp reply '" << buf << "', ret:" << ret << sendLog;
+		return;
+	}
+
+	domeTemp->setValueFloat (dt);
+
+	lampHg->setValueBool (buf2[0] == 'A');
+	lampHg->setValueBool (buf2[1] == 'B');
+	halogenPower->setValueBool (buf2[2] == 'C');
+	focuserPower->setValueBool (buf2[3] == 'D');
+	coloresPower->setValueBool (buf2[4] == 'E');
+	switch6->setValueBool (buf2[5] == 'F');
+	switch7->setValueBool (buf2[6] == 'G');
+	switch8->setValueBool (buf2[7] == 'H');
 }
 
 int main (int argc, char **argv)
