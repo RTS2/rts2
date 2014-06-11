@@ -1495,6 +1495,7 @@ void Camera::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 		case SERVERD_DUSK:
 		case SERVERD_NIGHT:
 		case SERVERD_DAWN:
+		case SERVERD_MORNING:
 			{
 				switch (new_state & SERVERD_ONOFF_MASK)
 				{
