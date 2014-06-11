@@ -117,14 +117,22 @@ int BartRain::info ()
 		// ioctl failed or it's raining..
 	if (ret || !(flags & TIOCM_RI))
 	{
-		rain->setValueBool (true);
 		setWeatherTimeout (timeoutRain->getValueInteger (), "raining");
-		maskState (WR_RAIN, WR_RAIN, "rain detected from rain sensor");
+		if (!rain->getValueBool ())
+		{
+			rain->setValueBool (true);
+			maskState (WR_RAIN, WR_RAIN, "rain detected from rain sensor");
+			setIdleInfoInterval (60);
+		}
 	}
 	else
 	{
-		rain->setValueBool (false);
-		maskState (WR_RAIN, 0, "no rain");
+		if (rain->getValueBool ())
+		{
+			rain->setValueBool (false);
+			maskState (WR_RAIN, 0, "no rain");
+			setIdleInfoInterval (1);
+		}
 	}
 	return SensorWeather::info ();
 }
@@ -135,7 +143,7 @@ BartRain::BartRain (int argc, char **argv):SensorWeather (argc, argv)
 	rain_port = -1;
 
 	createValue (rain, "rain", "true if sensor detects rain", false);
-	rain->setValueBool (true);
+	rain->setValueBool (false);
 
 	createValue (timeoutRain, "timeout_rain", "rain timeout in seconds", false, RTS2_VALUE_WRITABLE);
 	timeoutRain->setValueInteger (3600);
