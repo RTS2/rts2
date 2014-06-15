@@ -1131,7 +1131,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		return -1;
 	}
 
-	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
+	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING || (getState () & TEL_MASK_MOVING) == TEL_PARKING)
 	{
 		ret = stopMove ();
 		if (ret)
