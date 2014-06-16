@@ -151,6 +151,11 @@ void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
 	free (ccmd);
 }
 
+void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)
+{
+
+}
+
 void ConnSitech::writePortChecksumed (const char *cmd, size_t len)
 {
 	size_t ret = writePort (cmd, len);

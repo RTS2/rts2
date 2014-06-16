@@ -27,26 +27,40 @@ namespace rts2teld
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class SitechAxisStatus
+typedef struct
 {
-	public:
-		int address;             //* Module address
-		int32_t x_pos;           //* X (Alt/Dec) motor position
-		int32_t y_pos;           //* Y (Az/RA) motor position
-		int32_t x_enc;           //* X (Alt/Dec) encoder readout
-		int32_t y_enc;           //* Y (Ax/RA) encoder readout
-		char keypad;             //* Keypad status
-		char x_bit;              //* XBits
-		char y_bit;              //* YBits
-		char extra_bit;          //* Extra bits
-		int16_t ain_1;           //* Analog input 1
-		int16_t ain_2;           //* Analog input 2
-		uint32_t mclock;         //* Millisecond clock
-		int8_t temperature;      //* Temperature (probably CPU)
-		int8_t y_worm_phase;     //* Az/RA worm phase
-		int32_t x_last;          //* Alt/Dec motor location at last Alt/Dec scope encoder location change
-		int32_t y_last;          //* Az/RA motor location at last Az/RA scope encoder location change
-};
+	int address;             //* Module address
+	int32_t x_pos;           //* X (Alt/Dec) motor position
+	int32_t y_pos;           //* Y (Az/RA) motor position
+	int32_t x_enc;           //* X (Alt/Dec) encoder readout
+	int32_t y_enc;           //* Y (Ax/RA) encoder readout
+	char keypad;             //* Keypad status
+	char x_bit;              //* XBits
+	char y_bit;              //* YBits
+	char extra_bit;          //* Extra bits
+	int16_t ain_1;           //* Analog input 1
+	int16_t ain_2;           //* Analog input 2
+	uint32_t mclock;         //* Millisecond clock
+	int8_t temperature;      //* Temperature (probably CPU)
+	int8_t y_worm_phase;     //* Az/RA worm phase
+	int32_t x_last;          //* Alt/Dec motor location at last Alt/Dec scope encoder location change
+	int32_t y_last;          //* Az/RA motor location at last Az/RA scope encoder location change
+} SitechAxisStatus;
+
+typedef struct
+{
+	int32_t x;              //* Alt/Dec motor encoder position
+	int32_t y;		//* Az/RA motor encoder position
+	int32_t xz;		//* Alt/Dec scope axis encoder position
+	int32_t yz;		//* Az/RA scope axis encoder position
+	int32_t xc;		//* Alt/Dec motor current * 100.0
+	int32_t yc;		//* Az/RA motor current * 100.0
+	int32_t v;		//* Controller power supply voltage * 10.0
+	int32_t t;		//* Controller CPU temperature (Degs F)
+	bool x_auto;		//* Alt/Dec motor mode (auto or manual)
+	bool y_auto;		//* Az/RA motor mode (auto or manual)
+	int32_t k;		//* Handpaddle status bits
+} SitechControllerStatus;
 
 /**
  * Parameters of the request (XXR) command.
@@ -130,6 +144,11 @@ class ConnSitech: public rts2core::ConnSerial
 		void sendAxisRequest (char axis, SitechAxisRequest &ax_request);
 
 		void setSiTechValue (const char axis, const char *val, int value);
+
+		/**
+		 * Returns SiTech controller status, including motor current.
+		 */
+		void getControllerStatus (SitechControllerStatus &controller_status);
 
 	private:
 		void writePortChecksumed (const char *cmd, size_t len);
