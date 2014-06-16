@@ -534,10 +534,12 @@ int Gemini::tel_gemini_reset ()
 
 	if (serConn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
 	{
+		usleep (USEC_SEC / 15);
 		serConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
 	}
+	usleep (USEC_SEC / 15);
 
 	if (*rbuf == 'b')			 // booting phase, select restart/warm start/cold start
 	{
@@ -565,6 +567,7 @@ int Gemini::tel_gemini_reset ()
 		logStream (MESSAGE_ERROR) << "system is not after reboot nor completed startup, making 10s sleep & flushPortIO" << sendLog;
 		sleep (10);
 		serConn->flushPortIO ();
+		usleep (USEC_SEC / 15);
 	}
 	return -1;
 }
@@ -789,16 +792,17 @@ int Gemini::setCorrection ()
 	if (gem_version < 4)
 		return 0;
 	
+	int ret = -1;
 	if (calculateAberation () && calculatePrecession () && calculateRefraction ())
-		return serConn->writePort (":p0#", 4);
-	if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())	
-		return serConn->writePort (":p1#", 4);
-	if (calculateAberation () && calculatePrecession () && !calculateRefraction ())
-		return serConn->writePort (":p2#", 4);
-	if (!calculateAberation () && !calculatePrecession () && !calculateRefraction ())
-		return serConn->writePort (":p3#", 4);
+		ret = serConn->writePort (":p0#", 4);
+	else if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())	
+		ret = serConn->writePort (":p1#", 4);
+	else if (calculateAberation () && calculatePrecession () && !calculateRefraction ())
+		ret = serConn->writePort (":p2#", 4);
+	else if (!calculateAberation () && !calculatePrecession () && !calculateRefraction ())
+		ret = serConn->writePort (":p3#", 4);
 	usleep (USEC_SEC / 15);
-	return -1;
+	return ret;
 }
 
 int Gemini::init ()
@@ -819,6 +823,7 @@ int Gemini::init ()
 	while (1)
 	{
 		serConn->flushPortIO ();
+		usleep (USEC_SEC / 15);
 
 		ret = geminiInit ();
 		if (!ret)
@@ -868,7 +873,7 @@ int Gemini::initValues ()
 	char buf[5];
 	int ret;
 
-	if (tel_read_longitude () || tel_read_latitude ())
+	if (tel_read_longitude () || usleep (USEC_SEC / 15) || tel_read_latitude () || usleep (USEC_SEC / 15))
 		return -1;
 	if (forceType > 0)
 	{
@@ -1043,7 +1048,7 @@ int Gemini::info ()
 {
 	telFlip->setValueInteger (0);
 
-	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
+	if (tel_read_ra () || usleep (USEC_SEC / 15) || tel_read_dec () || usleep (USEC_SEC / 15) || tel_read_local_time () || usleep (USEC_SEC / 15))
 		return -1;
 	if (bootesSensors)
 	{
@@ -1077,8 +1082,9 @@ int Gemini::tel_start_move ()
 
 	tel_stop_goto ();
 
-	if ((tel_write_ra (lastMoveRa) < 0) || (serConn->writePort (":ONtest#", 8) < 0)
-		|| (tel_write_dec (lastMoveDec) < 0))
+	if ((tel_write_ra (lastMoveRa) < 0) || usleep (USEC_SEC / 15)
+		|| (serConn->writePort (":ONtest#", 8) < 0) || usleep (USEC_SEC / 15)
+		|| (tel_write_dec (lastMoveDec) < 0) || usleep (USEC_SEC / 15))
 		return -1;
 	if (tel_write_read (":MS#", 4, &retstr, 1) < 0)
 		return -1;
@@ -1230,11 +1236,13 @@ int Gemini::startResync ()
 	if (sep > 1)
 	{
 		tel_set_slew_rate (RATE_SLEW);
+		usleep (USEC_SEC / 15);
 		tel_gemini_set (GEMINI_CMD_RATE_CENTER, 8);
 	}
 	else
 	{
 		tel_set_slew_rate (RATE_CENTER);
+		usleep (USEC_SEC / 15);
 		tel_gemini_set (GEMINI_CMD_RATE_CENTER,	centeringSpeed->getValueInteger ());
 	}
 	worm_move_needed = 0;
@@ -1280,9 +1288,11 @@ int Gemini::isMoving ()
 			if (timercmp (&changeTimeRa, &now, <))
 			{
 				ret = tel_stop_slew_move (DIR_EAST);
+				usleep (USEC_SEC / 15);
 				if (ret == -1)
 					return ret;
 				ret = tel_stop_slew_move (DIR_WEST);
+				usleep (USEC_SEC / 15);
 				if (ret == -1)
 					return ret;
 				timerclear (&changeTimeRa);
@@ -1300,9 +1310,11 @@ int Gemini::isMoving ()
 			{
 				nextChangeDec = 0;
 				ret = tel_stop_slew_move (DIR_NORTH);
+				usleep (USEC_SEC / 15);
 				if (ret == -1)
 					return ret;
 				ret = tel_stop_slew_move (DIR_SOUTH);
+				usleep (USEC_SEC / 15);
 				if (ret == -1)
 					return ret;
 				timerclear (&changeTimeDec);
@@ -1536,7 +1548,10 @@ int Gemini::isParking ()
 int Gemini::endPark ()
 {
 	if (getMasterState () != SERVERD_NIGHT)
+	{
 		matchTime ();
+		usleep (USEC_SEC / 15);
+	}
 	setTimeout (USEC_SEC * 10);
 	return stopWorm ();
 }
@@ -1547,7 +1562,7 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 
 	normalizeRaDec (set_ra, set_dec);
 
-	if ((tel_write_ra (set_ra) < 0) || (tel_write_dec (set_dec) < 0))
+	if ((tel_write_ra (set_ra) < 0) || usleep (USEC_SEC / 15) || (tel_write_dec (set_dec) < 0) || usleep (USEC_SEC / 15))
 		return -1;
 
 	if (appendModel)
@@ -1738,6 +1753,7 @@ int Gemini::change_ra (double chng_ra)
 		if (direction == DIR_EAST)
 		{
 			ret = tel_set_slew_rate (RATE_CENTER);
+			usleep (USEC_SEC / 15);
 			if (ret)
 				return ret;
 			ret =
@@ -1752,6 +1768,7 @@ int Gemini::change_ra (double chng_ra)
 		else
 		{
 			ret = tel_set_slew_rate (RATE_CENTER);
+			usleep (USEC_SEC / 15);
 			if (ret)
 				return ret;
 			ret =
@@ -1766,6 +1783,7 @@ int Gemini::change_ra (double chng_ra)
 	else
 	{
 		ret = tel_set_slew_rate (RATE_GUIDE);
+		usleep (USEC_SEC / 15);
 		if (ret)
 			return ret;
 		ret =
@@ -1792,6 +1810,7 @@ int Gemini::change_dec (double chng_dec)
 	{
 		centeringSpeed->setValueInteger (20);
 		ret = tel_set_slew_rate (RATE_CENTER);
+		usleep (USEC_SEC / 15);
 		if (ret == -1)
 			return ret;
 		ret =
@@ -1807,6 +1826,7 @@ int Gemini::change_dec (double chng_dec)
 	else
 	{
 		ret = tel_set_slew_rate (RATE_GUIDE);
+		usleep (USEC_SEC / 15);
 		if (ret == -1)
 			return ret;
 		ret =
@@ -2021,12 +2041,15 @@ int Gemini::parkBootesSensors ()
 	now = timeout;
 	timeout += 20;
 	ret = tel_set_slew_rate (RATE_SLEW);
+	usleep (USEC_SEC / 15);
 	if (ret)
 		return ret;
 	ret = tel_start_slew_move (direction);
+	usleep (USEC_SEC / 15);
 	if (ret)
 	{
 		tel_stop_slew_move (direction);
+		usleep (USEC_SEC / 15);
 		return ret;
 	}
 	while ((featurePort->getValueInteger () & 1) == old_tel_axis && now < timeout)
@@ -2035,6 +2058,7 @@ int Gemini::parkBootesSensors ()
 		time (&now);
 	}
 	tel_stop_slew_move (direction);
+	usleep (USEC_SEC / 15);
 	// then in dec
 	//
 	old_tel_axis = featurePort->getValueInteger () & 2;
@@ -2043,9 +2067,11 @@ int Gemini::parkBootesSensors ()
 	now = timeout;
 	timeout += 20;
 	ret = tel_start_slew_move (direction);
+	usleep (USEC_SEC / 15);
 	if (ret)
 	{
 		tel_stop_slew_move (direction);
+		usleep (USEC_SEC / 15);
 		return ret;
 	}
 	while ((featurePort->getValueInteger () & 2) == old_tel_axis && now < timeout)
@@ -2054,6 +2080,7 @@ int Gemini::parkBootesSensors ()
 		time (&now);
 	}
 	tel_stop_slew_move (direction);
+	usleep (USEC_SEC / 15);
 	tel_gemini_set (205, 0);
 	tel_gemini_set (206, 0);
 	return 0;
