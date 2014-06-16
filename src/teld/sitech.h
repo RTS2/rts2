@@ -23,7 +23,6 @@
 
 #define MOTORALTCOUNTPERDEG -78632.47778      
 
-
 /* Mount encoder counts per degree                */
 /* Exact values will vary from mount to mount     */
 

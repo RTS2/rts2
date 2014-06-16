@@ -32,13 +32,6 @@ namespace rts2teld
 /**
  * Sidereal Technology GEM telescope driver.
  *
- * Changes to the original driver (simplifications):
- * <ul>
- *  <li>removed temperature and barrometric pressure from refraction calculation, as those should be minor</li>
- *  <li>removed horizon/other checks, as those are handled by RTS2 core</li>
- *  <li>removed modelling (handled in RTS2 core)</li>
- * </ul>
- *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 class Sitech:public GEM
@@ -138,45 +131,16 @@ class Sitech:public GEM
                  
 		int pmodel;                    /* pointing model default to raw data */
 	
-		/* Contants */
-		double mtrazmcal; 
-		double mtraltcal;
-		double mntazmcal;
-		double mntaltcal;
-	
-		/* Global encoder counts */
-		int mtrazm ;
-		int mtralt ;
-		int mntazm ;
-		int mntalt ;
-
-		/* Global pointing angles derived from the encoder counts */
-		double mtrazmdeg;
-		double mtraltdeg;
-		double mntazmdeg;
-		double mntaltdeg;
- 
-		/* Global tracking parameters */
-		int azmtrackrate0;
-		int alttrackrate0;
-		int azmtracktarget;
-		int azmtrackrate;
-		int alttracktarget;
-		int alttrackrate;
-		
 		/* Communications variables and routines for internal use */
 		const char *device_file;
 
 		void fullStop ();
 		
-		int SyncTelEncoders (void);
-
 		/**
 		 * Retrieve telescope counts, convert them to RA and Declination.
 		 */
 		void getTel (double &telra, double &teldec);
 
-		int GoToCoords (double newra, double newdec);
 		void GetGuideTargets (int *ntarget, int *starget, int *etarget, int *wtarget);
 };
 
@@ -203,33 +167,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	offsetdec=0.;
 
 	pmodel=RAW;
-	mtrazmcal = MOTORAZMCOUNTPERDEG; 
-	mtraltcal = MOTORALTCOUNTPERDEG;
-	mntazmcal = MOUNTAZMCOUNTPERDEG;
-	mntaltcal = MOUNTALTCOUNTPERDEG;
 
-
-	/* Global encoder counts */
-	mtrazm = 0;
-	mtralt = 0;
-	mntazm = 0;
-	mntalt = 0;
-
-	/* Global pointing angles derived from the encoder counts */
-
-	mtrazmdeg = 0.;
-	mtraltdeg = 0.;
-	mntazmdeg = 0.;
-	mntaltdeg = 0.;
- 
-	/* Global tracking parameters */
-	azmtrackrate0   = 0;
-	alttrackrate0   = 0;
-	azmtracktarget  = 0;
-	azmtrackrate    = 0;
-	alttracktarget  = 0;
-	alttrackrate    = 0;
-	
 	device_file = "/dev/ttyUSB0";
 
 	createValue (ra_pos, "AXRA", "RA motor axis count", true);
@@ -323,7 +261,6 @@ void Sitech::getTel (double &telra, double &teldec)
 int Sitech::initHardware ()
 {
 	int ret;
-	char returnstr[256] = "";
 	int numread;
 
 	rts2core::Configuration *config;
@@ -365,7 +302,6 @@ int Sitech::initHardware ()
      
 	if (numread != 0) 
 	{
-		returnstr[numread] = '\0';
 		fprintf (stderr, "Sidereal Technology Controller version %d\n", numread);
 		fprintf (stderr, "Telescope connected \n");  
 	}
@@ -375,21 +311,6 @@ int Sitech::initHardware ()
 		return -1;
 	}  
 
-	azmtrackrate0 = AZMSIDEREALRATE;
-	alttrackrate0 = ALTSIDEREALRATE;
-	azmtrackrate = 0;
-	alttrackrate = 0;
-       
-	/* Perform startup tests for slew limits if any */
-
-	/*flag = SyncTelEncoders();
-	if (flag != true)
-	{
-		logStream (MESSAGE_ERROR) << "Initial telescope pointing request was out of range ..." << sendLog;
-		logStream (MESSAGE_ERROR) << "Cycle power, set telescope to home position, restart." << sendLog;
-		return -1;
-	} */
-  
 	/* Pause for telescope controller to initialize */
    
 	usleep (500000);
@@ -464,21 +385,6 @@ int Sitech::startResync ()
 	return 0;
 }
 
-/* Go to new celestial coordinates                                            */
-/* Based on CenterGuide algorithm rather than controller goto function        */
-/* Evaluate if target coordinates are valid                                   */
-/* Test slew limits in altitude, polar, and hour angles                       */
-/* Query if target is above the horizon                                       */
-/* Return without action for invalid requests                                 */
-/* Interrupt any slew sequence in progress                                    */
-/* Check current pointing                                                     */
-/* Find encoder readings required to point at target                          */
-/* Repeated calls are required when more than one segment is needed           */
-int Sitech::GoToCoords (double newra, double newdec)
-{
-	return -1;
-}
- 
 int Sitech::isMoving ()
 {
 	return -1;
@@ -486,7 +392,6 @@ int Sitech::isMoving ()
 
 int Sitech::startPark ()
 {
-	GoToCoords (parkPos->getAlt (), parkPos->getAz ());
 	return 0;
 }
 
