@@ -849,6 +849,12 @@ int Executor::setShower ()
 		return -2;
 	}
 
+	if (currentTarget
+	    && currentTarget->getTargetType() == TYPE_AUGER)
+	{
+		logStream (MESSAGE_DEBUG) << "another shower is being observed, ignoring" << sendLog;
+		return -2;
+	}
 	return setNow (TARGET_SHOWER, -1);
 }
 
