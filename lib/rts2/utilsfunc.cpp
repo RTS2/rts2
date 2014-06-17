@@ -472,7 +472,7 @@ void normalizeRaDec (double &ra, double &dec)
 {
 	if (dec < -90)
 	{
-		dec = 180 + dec;
+		dec = -180 - dec;
 		ra = ra - 180;
 	}
 	else if (dec > 90)
