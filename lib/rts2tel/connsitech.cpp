@@ -72,6 +72,61 @@ void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 {
 	siTechCommand (axis, "XS");
 
+	readAxisStatus (ax_status);
+}
+
+void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request)
+{
+	siTechCommand (axis, "XR");
+
+	char data[34];
+
+	*((uint32_t *) (data)) = htonl (ax_request.x_dest);
+	*((uint32_t *) (data + 4)) = htonl (ax_request.x_speed);
+	*((uint32_t *) (data + 8)) = htonl (ax_request.y_dest);
+	*((uint32_t *) (data + 12)) = htonl (ax_request.y_speed);
+
+	*((uint32_t *) (data + 16)) = htonl (ax_request.x_rate_adder);
+	*((uint32_t *) (data + 20)) = htonl (ax_request.y_rate_adder);
+
+	*((uint32_t *) (data + 24)) = htonl (ax_request.x_rate_adder_t);
+	*((uint32_t *) (data + 28)) = htonl (ax_request.y_rate_adder_t);
+
+	*((uint16_t *) (data + 32)) = htons (binaryChecksum (data, 32));
+
+	// sends the data..
+	writePort (data, 34);
+
+	// read back reply
+	SitechAxisStatus ax_status;
+	readAxisStatus (ax_status);
+}
+
+void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
+{
+	char *ccmd = NULL;
+	size_t len = asprintf (&ccmd, "%c%s%d\r", axis, val, value);
+
+	try
+	{
+		writePortChecksumed (ccmd, len);
+	}
+	catch (rts2core::Error &er)
+	{
+		free (ccmd);
+		throw er;
+	}
+
+	free (ccmd);
+}
+
+void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)
+{
+
+}
+
+void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
+{
 	char ret[42];
 
 	size_t len = readPort (ret, 41);
@@ -108,52 +163,6 @@ void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 	ax_status.y_worm_phase = ret[30];
 	ax_status.x_last = ntohl (*(ret + 31));
 	ax_status.y_last = ntohl (*(ret + 35));
-}
-
-void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request)
-{
-	siTechCommand (axis, "XR");
-
-	char data[34];
-
-	*((uint32_t *) (data)) = htonl (ax_request.x_dest);
-	*((uint32_t *) (data + 4)) = htonl (ax_request.x_speed);
-	*((uint32_t *) (data + 8)) = htonl (ax_request.y_dest);
-	*((uint32_t *) (data + 12)) = htonl (ax_request.y_speed);
-
-	*((uint32_t *) (data + 16)) = htonl (ax_request.x_rate_adder);
-	*((uint32_t *) (data + 20)) = htonl (ax_request.y_rate_adder);
-
-	*((uint32_t *) (data + 24)) = htonl (ax_request.x_rate_adder_t);
-	*((uint32_t *) (data + 28)) = htonl (ax_request.y_rate_adder_t);
-
-	*((uint16_t *) (data + 32)) = htons (binaryChecksum (data, 32));
-
-	// sends the data..
-	writePort (data, 34);
-}
-
-void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
-{
-	char *ccmd = NULL;
-	size_t len = asprintf (&ccmd, "%c%s%d\r", axis, val, value);
-
-	try
-	{
-		writePortChecksumed (ccmd, len);
-	}
-	catch (rts2core::Error &er)
-	{
-		free (ccmd);
-		throw er;
-	}
-
-	free (ccmd);
-}
-
-void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)
-{
-
 }
 
 void ConnSitech::writePortChecksumed (const char *cmd, size_t len)

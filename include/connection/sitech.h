@@ -151,6 +151,11 @@ class ConnSitech: public rts2core::ConnSerial
 		void getControllerStatus (SitechControllerStatus &controller_status);
 
 	private:
+		/**
+		 * Reads XXS, XXR and YXR status replies.
+		 */
+		void readAxisStatus (SitechAxisStatus &ax_status);
+
 		void writePortChecksumed (const char *cmd, size_t len);
 
 		uint8_t calculateChecksum (const char *buf, size_t len);
