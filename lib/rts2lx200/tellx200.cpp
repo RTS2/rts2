@@ -301,7 +301,7 @@ int TelLX200::tel_write_azimuth (double az)
 int TelLX200::tel_set_slew_rate (char new_rate)
 {
 	char command[6];
-	sprintf (command, ":R%c#", new_rate); // slew
+	sprintf (command, "#:R%c#", new_rate); // slew
 	return serConn->writePort (command, 5);
 }
 
