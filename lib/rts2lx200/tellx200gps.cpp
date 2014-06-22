@@ -47,7 +47,8 @@ using namespace rts2teld;
 
 TelLX200GPS::TelLX200GPS (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 {
-	motors = 0;
+    createValue(trackingSpeed, "trac_spd", "RA Tracking Speed", true, RTS2_VALUE_WRITABLE);
+    trackingSpeed->setValueDouble(0);
 }
 
 
@@ -84,18 +85,18 @@ int TelLX200GPS::initHardware ()
  */
 int TelLX200GPS::initValues ()
 {
-	int ret = -1 ;
+    int ret = -1 ;
 
-        rts2core::Configuration *config = rts2core::Configuration::instance ();
-        ret = config->loadFile ();
-        if (ret)
-	  return -1;
+    rts2core::Configuration *config = rts2core::Configuration::instance ();
+    ret = config->loadFile ();
+    if (ret)
+        return -1;
 
-        telLongitude->setValueDouble (config->getObserver ()->lng);
-        telLatitude->setValueDouble (config->getObserver ()->lat);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+    telLongitude->setValueDouble (config->getObserver ()->lng);
+    telLatitude->setValueDouble (config->getObserver ()->lat);
+    telAltitude->setValueDouble (config->getObservatoryAltitude ());
 
-	if (tel_read_longitude () || tel_read_latitude ())
+    if (tel_read_longitude () || tel_read_latitude ())
 		return -1;
 
 	strcpy (telType, "TelLX200GPS");
@@ -113,6 +114,18 @@ int TelLX200GPS::info ()
 
 	return Telescope::info ();
 }
+
+int TelLX200GPS::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
+{
+    if (old_value == trackingSpeed)
+    {
+        setTrackingSpeed(trackingSpeed->getValueDouble());
+        return 0;
+    }
+
+    return Telescope::setValue(old_value, new_value);
+}
+
 
 /*!
  * Set slew rate. For completness?
@@ -231,9 +244,12 @@ void TelLX200GPS::set_move_timeout (time_t plus_time)
 
 int TelLX200GPS::startResync ()
 {
-	if ((getState () & TEL_PARKED) || (getState () & TEL_PARKING))
-		serConn->writePort (":PO#", 4);
 
+	if ((getState () & TEL_PARKED) || (getState () & TEL_PARKING))
+        sleepTelescope();
+
+    logStream (MESSAGE_DEBUG) << "Telescope STATE: traking, set to 60.0" << sendLog;
+    trackingSpeed->setValueDouble (60.0);
 	tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 
 	set_move_timeout (100);
@@ -321,36 +337,76 @@ int TelLX200GPS::correct (double cor_ra, double cor_dec, double real_ra, double 
  */
 int TelLX200GPS::startPark ()
 {
-	int ret = serConn->writePort (":hF#", 4);
-	if (ret < 0)
-		return -1;
+    //need to find horizontal position and move to it
 	sleep (1);
 	return 0;
 }
 
 int TelLX200GPS::isParking ()
 {
-	char buf[1];
-	serConn->writeRead (":h?#", 4, buf, 1);
-	switch (*buf)
-	{
-		case '1':
-			return -2;
-        case '0':
-            return -1;
-		default:
-			return USEC_SEC;
-	}
+    return 0;
 }
 
+/*!
+ * Actually do the sleeping of the telescope
+ *
+ * @return -1 on error, 0 otherwise
+ */
 int TelLX200GPS::endPark ()
 {
-    //possibly sleep telescope
-	//int ret = serConn->writePort (":AL#", 4);
-	//if (ret < 0)
-	//	return -1;
-	sleep (1);
+    sleepTelescope();
 	return 0;
+}
+
+/*!
+ * Set the tracking speed of the telescope (RA only) 
+ *
+ * 60.0 means the telescope makes a full RA rotation once every 24 hours.
+ *
+ * @return -1 on error, 0 otherwise
+ */
+int TelLX200GPS::setTrackingSpeed(double trac_speed)
+{
+   char command[17]; 
+   if (snprintf (command, 17, ":ST%4.7lf#", trac_speed) < 0)
+       return -1;
+
+   char rbuf[1];
+   int ret = serConn->writeRead (command, 17, rbuf, 1);
+   if(ret != 1)
+       return -1;
+
+   return 0;
+}
+
+/*!
+ * Sleep telescope
+ *
+ * @return -1 on error, 0 otherwise
+ */
+int TelLX200GPS::sleepTelescope()
+{
+    int ret = serConn->writePort (":hN#",4);
+	if (ret > 0)
+		return -1;
+    
+    sleep(1);
+    return 0;
+}
+
+/*!
+ * Wake telescope from sleeping 
+ *
+ * @return -1 on error, 0 otherwise
+ */
+int TelLX200GPS::wakeTelescope()
+{
+    int ret = serConn->writePort (":hW#",4);
+	if (ret > 0)
+		return -1;
+    
+    sleep(3);
+    return 0;
 }
 
 int TelLX200GPS::startDir (char *dir)
@@ -378,4 +434,29 @@ int TelLX200GPS::stopDir (char *dir)
 			return tel_stop_slew_move (*dir);
 	}
 	return -2;
+}
+
+void TelLX200GPS::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+{
+	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_ONOFF_MASK))
+    {
+        case SERVERD_DUSK:
+        case SERVERD_NIGHT:
+        case SERVERD_DAWN:
+	        logStream (MESSAGE_DEBUG) << "Telescope STATE: dusk or night or dawn, waking and set tracking=0" << sendLog;
+            wakeTelescope();
+            trackingSpeed->setValueDouble(0);
+            break;
+        case SERVERD_STANDBY:
+	        logStream (MESSAGE_DEBUG) << "Telescope STATE: in standby, tracking=0" << sendLog;
+            trackingSpeed->setValueDouble(0);
+            break;
+        default:
+            //park to horizontal positions
+	        logStream (MESSAGE_DEBUG) << "Telescope STATE: default, sleeping" << sendLog;
+            sleepTelescope();
+            break;
+    }
+
+    Telescope::changeMasterState (old_state, new_state);
 }

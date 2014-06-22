@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_TELLX200GPS__
+#define __RTS2_TELLX200GPS__
+
 #include "rts2lx200/tellx200.h"
 
 namespace rts2teld
@@ -31,6 +34,7 @@ class TelLX200GPS:public TelLX200
 		virtual int initHardware ();
 		virtual int initValues ();
 		virtual int info ();
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual int setTo (double set_ra, double set_dec);
 		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
@@ -46,6 +50,9 @@ class TelLX200GPS:public TelLX200
 		virtual int startDir (char *dir);
 		virtual int stopDir (char *dir);
 
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
+
+
 	private:
 		int motors;
 
@@ -57,6 +64,16 @@ class TelLX200GPS:public TelLX200
 		int tel_check_coords (double ra, double dec);
 
 		void set_move_timeout (time_t plus_time);
+
+        int sleepTelescope();
+        int wakeTelescope();
+
+        int setTrackingSpeed(double trac_speed);
+        rts2core::ValueDouble *trackingSpeed;
+
+
 };
 
 };
+
+#endif // __RTS2_TELLX200GPS__
