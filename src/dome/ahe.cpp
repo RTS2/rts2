@@ -75,7 +75,6 @@ int AHE::readSerial(const char send, char reply, const char exitState)
     while(sconn->readPortNoBlock(&reply, 1) != 0)
     {
         //tiny bust loop :(
-        logStream(MESSAGE_DEBUG) << "Busy loopin'" << sendLog;
     }
 
     while(reply != exitState && cmdSent < MAX_COMMANDS)
@@ -83,7 +82,6 @@ int AHE::readSerial(const char send, char reply, const char exitState)
         sconn->writePort(send);
         usleep(SERIAL_SLEEP); 
         sconn->readPort(reply);
-        logStream(MESSAGE_DEBUG) << "Just read port " << reply << sendLog;
         cmdSent ++;
     }
 
