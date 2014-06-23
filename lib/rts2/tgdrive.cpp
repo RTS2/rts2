@@ -235,6 +235,7 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 void TGDrive::setMode (int32_t mode)
 {
 	write4b (TGA_MODE, mode);
+	tgaMode->setValueInteger (mode);
 }
 
 void TGDrive::setTargetPos (int32_t pos)
