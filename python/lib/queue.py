@@ -168,9 +168,9 @@ class Queue:
 
 			self.jsonProxy.executeCommand(self.service,'queue_qids {0}{1}'.format(self.name, queue_cmd))
 	
-	def add_target(self,id,start=None,end=None):
+	def add_target(self,id,start=None,end=None,nrep=None,separation=None):
 		"""Add target to queue."""
-		self.jsonProxy.executeCommand(self.service,'queue_at {0} {1} {2} {3}'.format(self.name, id, _nanNone(start), _nanNone(end)))
+		self.jsonProxy.executeCommand(self.service,'queue_at_nrep {0} {1} {2} {3} {4} {5}'.format(self.name, id, _nanNone(start), _nanNone(end), -1 if nrep is None else nrep,_nanNone(separation)))
 
 	def get_XMLdoc(self):
 		"""Serialize queue to XML document."""

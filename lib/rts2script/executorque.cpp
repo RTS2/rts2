@@ -857,10 +857,12 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 	return -1;
 }
 
-int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start)
+int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start, bool withNRep)
 {
 	double t_start = NAN;
 	double t_end = NAN;
+	int nrep = -1;
+	double separation = NAN;
 	int tar_id;
 	int failed = 0;
 	first_ordering_t fo = ORDER_NONE;
@@ -896,6 +898,14 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 				continue;
 			}
 		}
+		if (withNRep)
+		{
+			if (conn->paramNextInteger (&nrep) || conn->paramNextDouble (&separation))
+			{
+				failed++;
+				continue;
+			}
+		}
 		rts2db::Target *nt = createTarget (tar_id, *observer);
 		if (nt == NULL)
 		{
@@ -903,9 +913,9 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 			continue;
 		}
 		if (tryFirstPossible)
-			addFirst (nt, fo, n_start, t_start, t_end);
+			addFirst (nt, fo, n_start, t_start, t_end, nrep, separation);
 		else
-			addTarget (nt, t_start, t_end, index);
+			addTarget (nt, t_start, t_end, index, nrep, separation);
 	}
 	return failed;
 }

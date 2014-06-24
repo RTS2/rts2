@@ -126,6 +126,8 @@ Example use:
 
 rts2-queue --queue manual SN2012A
 rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h
+rts2-queue --queue manual --with-nrep 1000 10 500
+rts2-queue --queue manual --with-nrep --with-times 1000 20 500 2012-10-8T20 +10D3h
 rts2-queue --load circular.q
 rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 
@@ -136,6 +138,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 	parser.add_option('--load', help='add targets from XML file', action='append', dest='load_xml')
 	parser.add_option('--save', help='save queues to XML file', action='store', dest='save_xml')
 	parser.add_option("--with-times",help="specify observation time",action="store_true",dest="with_times",default=False)
+	parser.add_option("--with-nrep",help="specify repeations and separations",action="store_true",dest="with_nrep",default=False)
 	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
 	parser.add_option("--user",help="user name",action="store",dest='username',default=None)
 	parser.add_option("--password",help="user password",action="store",dest='password',default=None)
@@ -206,20 +209,28 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 		start = None
 		end = None
 
+		args = args[1:]
+
 		if options.with_times:
-			start = parse_time(args[1], n, True)
+			start = parse_time(args[0], n, True)
 			end = None
 			try:
-				end = parse_time(args[2], n, True)
+				end = parse_time(args[1], n, True)
 			except IndexError, ie:
 				pass
-			args = args[3:]
-		else:
-			args = args[1:]
+			args = args[2:]
+
+		nrep = None
+		separation = None
+
+		if options.with_nrep:
+			nrep = int(args[0])
+			separation = float(args[1])
+			args = args[2:]
 
 		tids = []
 		for t in tars:
-			resp = q.add_target(t[0], start, end)
+			resp = q.add_target(t[0], start, end, nrep, separation)
 			startend = ""
 			if start is not None or end is not None:
 				startend = '('

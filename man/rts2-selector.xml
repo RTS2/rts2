@@ -593,6 +593,42 @@
 	</para>
       </refsect3>
     </refsect2>
+    <refsect2>
+      <title id="cmd:queue_at">queue_at &lt;queue name&gt; &lt;target start end...&gt;</title>
+      <para>
+        Queue target with start and end times. Those must be specified in ctime (seconds from 1-1-1070).
+      </para>
+      <refsect3>
+        <title>Example</title>
+	<para>
+	  <command>queue_at</command> <option> manual </option> <replaceable>1000</replaceable> 1403538741 14035389741 <replaceable>1001 nan 1403539741</replaceable>
+	</para>
+      </refsect3>
+    </refsect2>
+    <refsect2>
+      <title id="cmd:queue_nrep">queue_nrep &lt;queue name&gt; &lt;target nrep separation...&gt;</title>
+      <para>
+        Queue target with number of repeation and separation between repeats.
+      </para>
+      <refsect3>
+        <title>Example</title>
+	<para>
+	  <command>queue_nrep</command> <option> manual </option> <replaceable>1000 10 nan </replaceable> <replaceable>1001 -1 500</replaceable>
+	</para>
+      </refsect3>
+    </refsect2>
+    <refsect2>
+      <title id="cmd:queue_at_nrep">queue_at_nrep &lt;queue name&gt; &lt;target start end nrep separation...&gt;</title>
+      <para>
+        Queue target with start and end times, numer of repeations and separations between repeations.
+      </para>
+      <refsect3>
+        <title>Example</title>
+	<para>
+	  <command>queue_at_nrep</command> <option> manual </option> <replaceable>1000 1403538741 14035389741 -1 200 </replaceable> <replaceable>1001 nan 1403539741 5 300</replaceable>
+	</para>
+      </refsect3>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>OPTIONS</title>

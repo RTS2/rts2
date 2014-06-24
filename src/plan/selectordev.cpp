@@ -822,9 +822,10 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return updateNext (true, tar_id, obs_id) == 0 ? 0 : -2;
 	}
-	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan") || conn->isCommand ("queue_plan_id") || conn->isCommand ("insert"))
+	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan") || conn->isCommand ("queue_plan_id") || conn->isCommand ("insert") || conn->isCommand ("queue_nrep") || conn->isCommand ("queue_at_nrep"))
 	{
-		bool withTimes = conn->isCommand ("queue_at");
+		bool withTimes = conn->isCommand ("queue_at") || conn->isCommand ("queue_at_nrep");
+		bool withNrep = conn->isCommand ("queue_nrep") || conn->isCommand ("queue_at_nrep");
 		int index = -1;
 		if (conn->paramNextString (&name))
 			return -2;
@@ -874,7 +875,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		}
 		try
 		{
-			if (q->queueFromConn (conn, index, withTimes, false, NAN))
+			if (q->queueFromConn (conn, index, withTimes, false, NAN, withNrep))
 				return -2;
 			afterQueueChange (q);
 		}

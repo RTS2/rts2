@@ -1,3 +1,6 @@
+2014-06-24
+ * queue_nrep, queue_at_nrep selector commands and their documentation
+
 2014-06-06
  * I command (take image, leave shutter as it is)
 

@@ -298,8 +298,9 @@ class ExecutorQueue:public TargetQueue
 		 *
 		 * @param tryFirstPossible     try to set observation on the first possible place
 		 * @param n_start              start of the night
+		 * @param withNRep             accept number of repetitions and separations as extra arguments
 		 */
-		int queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start);
+		int queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start, bool withNRep);
 
 		/**
 		 * Updates queue. Each queue entry record consists of four parameters:
