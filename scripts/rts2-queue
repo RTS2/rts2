@@ -86,7 +86,9 @@ def parse_time(s, n=time.time(), hour_nextday=False):
 		else:
 			ret = time.mktime((Y, M, D, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
 		if hour_nextday and ret < n:
-				ret += 86400.0
+				print "{0} is in past, changed to future.".format(time.strftime('%c %Z', time.localtime(ret)))
+				while ret < n:
+					ret += 86400.0
 		return ret
 
 	if s[0] == '+' or s[0] == '-':
@@ -240,7 +242,7 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 					if start is not None:
 						startend += ' '
 					startend += 'ends {0}'.format(time.strftime('%c %Z', time.localtime(end)))
-				startend += ')'
+				startend += ') '
 		  	tids.append(t[0])
 			if not options.quiet:
 				print 'Queued to queue {0} target {1} {2}with ID {3} on RA {4} DEC {5}'.format(options.queue, startend, t[1], t[0], t[2], t[3])
