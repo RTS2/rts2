@@ -196,7 +196,7 @@ int ConnSerial::writePort (char ch)
 	int wlen = 0;
 	if (debugPortComm)
 	{
-		logStream (MESSAGE_DEBUG) << "write char " << std::hex << std::setfill ('0') << std::setw (2)<< (ch) << sendLog;
+		logStream (MESSAGE_DEBUG) << "write char 0x" << std::hex << std::setfill ('0') << std::setw (2) << int (ch) << sendLog;
 	}
 	while (wlen < 1)
 	{
