@@ -19,6 +19,8 @@
 
 #include "connection/sitech.h"
 
+#include <endian.h>
+
 using namespace rts2teld;
 
 ConnSitech::ConnSitech (const char *devName, rts2core::Block *_master):rts2core::ConnSerial (devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 5,5)
@@ -81,18 +83,18 @@ void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request
 
 	char data[34];
 
-	*((uint32_t *) (data)) = htonl (ax_request.x_dest);
-	*((uint32_t *) (data + 4)) = htonl (ax_request.x_speed);
-	*((uint32_t *) (data + 8)) = htonl (ax_request.y_dest);
-	*((uint32_t *) (data + 12)) = htonl (ax_request.y_speed);
+	*((uint32_t *) (data)) = htole32 (ax_request.x_dest);
+	*((uint32_t *) (data + 4)) = htole32 (ax_request.x_speed);
+	*((uint32_t *) (data + 8)) = htole32 (ax_request.y_dest);
+	*((uint32_t *) (data + 12)) = htole32 (ax_request.y_speed);
 
-	*((uint32_t *) (data + 16)) = htonl (ax_request.x_rate_adder);
-	*((uint32_t *) (data + 20)) = htonl (ax_request.y_rate_adder);
+	*((uint32_t *) (data + 16)) = htole32 (ax_request.x_rate_adder);
+	*((uint32_t *) (data + 20)) = htole32 (ax_request.y_rate_adder);
 
-	*((uint32_t *) (data + 24)) = htonl (ax_request.x_rate_adder_t);
-	*((uint32_t *) (data + 28)) = htonl (ax_request.y_rate_adder_t);
+	*((uint32_t *) (data + 24)) = htole32 (ax_request.x_rate_adder_t);
+	*((uint32_t *) (data + 28)) = htole32 (ax_request.y_rate_adder_t);
 
-	*((uint16_t *) (data + 32)) = htons (binaryChecksum (data, 32));
+	*((uint16_t *) (data + 32)) = htole16 (binaryChecksum (data, 32));
 
 	// sends the data..
 	writePort (data, 34);
