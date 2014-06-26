@@ -117,7 +117,7 @@ int V4L::processOption (int opt)
 int V4L::initHardware ()
 {
 	// try to open video file..
-	fd = open (videodev, O_RDONLY);
+	fd = open (videodev, O_RDWR);
 	if (fd < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot open " << videodev << ":" << strerror (errno) << sendLog;
@@ -200,7 +200,7 @@ int V4L::initHardware ()
 			return -1;
 		}
 		buffers[bufsize].length = buffer.length;
-		buffers[bufsize].start = mmap (NULL, buffer.length, PROT_READ, MAP_SHARED, fd, buffer.m.offset);
+		buffers[bufsize].start = mmap (NULL, buffer.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buffer.m.offset);
 
 		if (buffers[bufsize].start == MAP_FAILED)
 		{
