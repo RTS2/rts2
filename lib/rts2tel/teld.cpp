@@ -1109,6 +1109,41 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	moveInfoCount = 0;
 
+	// The following sequence is:
+	// - check block_move (don't touch anything if block_move set)
+	// - check TEL_PARKING (when true, return with error, we don't interrupt parking process)
+	// - check TEL_MOVING and stop when needed
+	// - check hardHorizon (when not fulfiled, stop with error, change state to observing)
+	// - maskState TEL_MOVING | BOP_EXPOSURE
+	// - startResync ()
+	// This way the exposure blocking state is set ASAP and all resulting states are corresponging with real mount states (mount stopped, when needed etc).
+
+	if (blockMove->getValueBool () == true)
+	{
+		logStream (MESSAGE_ERROR) << "telescope move blocked" << sendLog;
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "telescope move blocked");
+		return -1;
+	}
+
+	if ((getState () & TEL_MASK_MOVING) == TEL_PARKING)
+	{
+		logStream (MESSAGE_ERROR) << "telescope cannot move during parking" << sendLog;
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "telescope move blocked");
+		return -1;
+	}
+
+	if (((getState () & TEL_MASK_MOVING) == TEL_MOVING) || ((getState () & TEL_MASK_CORRECTING) == TEL_CORRECTING))
+	{
+		ret = stopMove ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "failure calling stopMove before starting actual movement" << sendLog;
+			return ret;
+		}
+	}
+	
 	if (hardHorizon)
 	{
 		struct ln_hrz_posn hrpos;
@@ -1121,58 +1156,6 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 				conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
 			return -1;
 		}
-	}
-
-	if (blockMove->getValueBool () == true)
-	{
-		logStream (MESSAGE_ERROR) << "telescope move blocked" << sendLog;
-		if (conn)
-			conn->sendCommandEnd (DEVDEM_E_HW, "telescope move blocked");
-		return -1;
-	}
-
-	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING || (getState () & TEL_MASK_MOVING) == TEL_PARKING)
-	{
-		ret = stopMove ();
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "failure calling stopMove before starting actual movement" << sendLog;
-			return ret;
-		}
-	}
-
-	ret = startResync ();
-	if (ret)
-	{
-		maskState (BOP_EXPOSURE, 0, "correction failed");
-		if (conn)
-			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
-		return ret;
-	}
-
-	// synchronize cupola
-	startCupolaSync ();
-
-	targetStarted->setNow ();
-	targetReached->setValueDouble (targetStarted->getValueDouble () + estimateTargetTime ());
-
-	infoAll ();
-
-	tarRaDec->resetValueChanged ();
-	telTargetRaDec->resetValueChanged ();
-	oriRaDec->resetValueChanged ();
-	offsRaDec->resetValueChanged ();
-	corrRaDec->resetValueChanged ();
-
-	if (woffsRaDec->wasChanged ())
-	{
-		woffsRaDec->resetValueChanged ();
-	}
-
-	if (wcorrRaDec->wasChanged ())
-	{
-		wcorrRaDec->setValueRaDec (0, 0);
-		wcorrRaDec->resetValueChanged ();
 	}
 
 	if (correction)
@@ -1205,6 +1188,41 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 	}
+
+	ret = startResync ();
+	if (ret)
+	{
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
+		return ret;
+	}
+
+	// synchronize cupola
+	startCupolaSync ();
+
+	targetStarted->setNow ();
+	targetReached->setValueDouble (targetStarted->getValueDouble () + estimateTargetTime ());
+
+	infoAll ();
+
+	tarRaDec->resetValueChanged ();
+	telTargetRaDec->resetValueChanged ();
+	oriRaDec->resetValueChanged ();
+	offsRaDec->resetValueChanged ();
+	corrRaDec->resetValueChanged ();
+
+	if (woffsRaDec->wasChanged ())
+	{
+		woffsRaDec->resetValueChanged ();
+	}
+
+	if (wcorrRaDec->wasChanged ())
+	{
+		wcorrRaDec->setValueRaDec (0, 0);
+		wcorrRaDec->resetValueChanged ();
+	}
+
 	move_connection = conn;
 
 	setIdleInfoInterval (0.5);
