@@ -85,7 +85,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			if (observatory_id < 0)
 				throw XmlRpc::JSONException ("unknown observatory ID");
 			int schedule_id = params->getInteger ("schedule_id", -1);
-			if (observatory_id < 0)
+			if (schedule_id < 0)
 				throw XmlRpc::JSONException ("unknown schedule ID");
 			int obs_id = params->getInteger ("obs_id", -1);
 			if (obs_id < 0)
