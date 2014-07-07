@@ -167,14 +167,14 @@ int Fork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 	ra = ls - ra;
 
 	// flipped
-	if (fabs (dec) > 90)
+	if (fabs (dec) > 90.0)
 	{
 		telFlip->setValueInteger (1);
 		if (dec > 0)
-			dec = 180 - dec;
+			dec = 180.0 - dec;
 		else
-			dec = -180 - dec;
-		ra += 180;
+			dec = -180.0 - dec;
+		ra += 180.0;
 		ac += (int32_t) (ra_ticks / 2.0);
 	}
 	else
