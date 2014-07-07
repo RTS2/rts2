@@ -976,6 +976,8 @@ class Telescope:public rts2core::Device
 		void recalculateMpecDIffs ();
 
 		char wcs_multi;
+
+		rts2core::ValueFloat *decUpperLimit;
 };
 
 };
