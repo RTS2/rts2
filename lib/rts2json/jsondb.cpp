@@ -431,6 +431,15 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		const char *s = params->getString ("s", "");
 		if (strlen (s) == 0)
 			throw XmlRpc::JSONException ("empty script");
+
+		rts2script::Script script (s);
+		script.parseScript (tar);
+		int failedCount = script.getFaultLocation ();
+		if (failedCount != -1)
+		{
+			throw XmlRpc::JSONException (std::string ("canno parse script ") + s);
+		}
+
 		tar->setScript (cam, s);
 		os << "\"id\":" << tar->getTargetID () << ",\"camera\":\"" << cam << "\",\"script\":\"" << s << "\"";
 		delete tar;
