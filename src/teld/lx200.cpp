@@ -11,6 +11,9 @@
 
 #include "rts2lx200/tellx200.h"
 #include "configuration.h"
+#include "iostream"
+
+using namespace std;
 
 #define RATE_FIND 'M'
 #define DIR_NORTH 'n'
@@ -170,17 +173,19 @@ int LX200::info ()
 		return -1;
 	
 	char rbuff[100];	
-	int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
-	if (ret < 0)
-		return -1;
-	if (ret > 0)
-		rbuff[ret] = '\0';
-	else
-		rbuff[0] = '\0';
-        
-        mntflip->setValueCharArr (rbuff);
+	int ret = serConn->writeRead (":hS#", 4, rbuff, 99, '#');
+	//int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
+	cout << "ret " << ret << endl;
+	//	if (ret < 0)
+	//	return -1;
+	//if (ret > 0)
+	//	rbuff[ret] = '\0';
+	//else
+	//	rbuff[0] = '\0';
+	
+        //mntflip->setValueCharArr (rbuff);
 
-	telFlip->setValueInteger (strcmp (rbuff, "East#") == 0);
+	//telFlip->setValueInteger (strcmp (rbuff, "East#") == 0);
 
 	return Telescope::info ();
 }
@@ -388,23 +393,29 @@ int LX200::correct (double cor_ra, double cor_dec, double real_ra, double real_d
  */
 int LX200::startPark ()
 {
-	int ret = serConn->writePort (":KA#", 4);
-	if (ret < 0)
-		return -1;
-	sleep (1);
-	return 0;
+  //int ret = serConn->writePort (":KA#", 4);
+  int ret = serConn->writePort (":hP#", 4);
+  if (ret < 0)
+    return -1;
+  sleep (1);
+  return 0;
 }
 
 int LX200::isParking ()
 {
 	char buf[2];
-	serConn->writeRead (":D#", 3, buf, 2, '#');
+	//serConn->writeRead (":D#", 3, buf, 2, '#');
+	//serConn->writeRead (":h?#", 3, buf, 2, '#');
+	serConn->writeRead (":h?#", 4, buf, 1);
+
 	switch (*buf)
 	{
-		case '#':
-			return -2;
-		default:
-			return USEC_SEC;
+	case '1':
+	  return -2;
+        case '0':
+	  return -1;
+	default:
+	  return USEC_SEC;
 	}
 }
 

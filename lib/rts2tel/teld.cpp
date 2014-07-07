@@ -37,6 +37,7 @@
 #define OPT_CORRECTION        OPT_LOCAL + 119
 #define OPT_WCS_MULTI         OPT_LOCAL + 120
 #define OPT_PARK_POS          OPT_LOCAL + 121
+#define OPT_DEC_UPPER_LIMIT   OPT_LOCAL + 122
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
 
@@ -51,6 +52,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	raGuide = decGuide = NULL;
 	parkPos = NULL;
+	
+	decUpperLimit = NULL;
 
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
@@ -232,6 +235,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	addOption (OPT_HORIZON, "horizon", 1, "telescope hard horizon");
 	addOption (OPT_CORRECTION, "max-correction", 1, "correction limit (in arcsec)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z,-)");
+	addOption (OPT_DEC_UPPER_LIMIT, "dec-upper-limit", 1, "maximal declination the telescope is able to point to");
 
 	// send telescope position every 60 seconds
 	setIdleInfoInterval (60);
@@ -313,6 +317,11 @@ int Telescope::processOption (int in_opt)
 			else
 				wcs_multi = optarg[0];
 			break;
+		case OPT_DEC_UPPER_LIMIT:
+			createValue (decUpperLimit, "dec_upper_limit", "upper limit on telescope declination", false, RTS2_VALUE_WRITABLE);
+			decUpperLimit->setValueCharArr (optarg);
+			break;
+
                 case OPT_PARK_POS:
                         {
                                 std::istringstream *is;
@@ -982,7 +991,7 @@ int Telescope::info ()
 			stopWorm ();
 		}
 	}
-
+	
 	return rts2core::Device::info ();
 }
 
@@ -1157,6 +1166,22 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			return -1;
 		}
 	}
+
+	//check if decupperlimit option exists -if yes, apply declination constraints
+	if (decUpperLimit && !isnan (decUpperLimit->getValueFloat ()))
+	{
+		if ((telLatitude->getValueDouble () > 0 && pos.dec > decUpperLimit->getValueFloat ())
+				|| (telLatitude->getValueDouble () < 0 && pos.dec < decUpperLimit->getValueFloat ()))
+		{
+			logStream (MESSAGE_ERROR) << "target declination is outside of allowed values, is " << pos.dec << " limit is " << decUpperLimit->getValueFloat () << sendLog;
+			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
+			if (conn)
+				conn->sendCommandEnd (DEVDEM_E_HW, "declination limit violated");
+			return -1;
+		}
+	}
+
+
 
 	if (correction)
 	{
