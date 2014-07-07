@@ -45,8 +45,8 @@ endif
 if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
 rts2_camd_sbigusb_SOURCES = sbigusb.cpp
-rts2_camd_sbigusb_LDFLAGS = @LIB_SBIG@ ${LDADD}
-rts2_camd_sbigusb_CXXFLAGS = @INC_SBIG@ -I../../include
+rts2_camd_sbigusb_LDFLAGS = @LIB_SBIG@ ${LDADD} @LIB_CFITSIO@
+rts2_camd_sbigusb_CXXFLAGS = @INC_SBIG@ -I../../include @CFITSIO_CFLAGS@
 else
 EXTRA_DIST += sbigusb.cpp
 endif
