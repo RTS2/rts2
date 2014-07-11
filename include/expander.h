@@ -51,7 +51,7 @@ class Expander
 		 *
 		 * @return expanded string
 		 */
-		std::string expand (std::string expression, bool onlyAlphaNum = false);
+		virtual std::string expand (std::string expression, bool onlyAlphaNum = false);
 
 		/**
 		 * Sets expanding date to current sysdate.

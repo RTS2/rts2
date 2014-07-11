@@ -2194,7 +2194,9 @@ void Image::print (std::ostream & _os, int in_flags, const char *imageFormat)
 	{
 		printFileName (_os);
 		if (imageFormat)
+		{
 			_os << SEP << expand (std::string (imageFormat));
+		}
 		_os << std::endl;
 		return;
 	}

@@ -151,6 +151,11 @@ class FitsFile: public rts2core::Expander
 		fitsfile *getFitsFile () { return ffile; }
 
 		/**
+		 * Overwrite expand, so if expand is forced to open the file, it will close fits file afterwards.
+		 */
+		virtual std::string expand (std::string expression, bool onlyAlphaNum = false);
+
+		/**
 		 * Load given template file. Template file specifies values
 		 * which should be written to the FITS headers, and general
 		 * FITS file conventions.

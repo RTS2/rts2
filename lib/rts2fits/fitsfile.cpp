@@ -382,6 +382,22 @@ std::string FitsFile::replaceHeader (const char *name)
 	return ret;
 }
 
+std::string FitsFile::expand (std::string expression, bool onlyAlphaNum)
+{
+	// if we are forced to open the file, close it so it will not remain opened
+	if (getFitsFile () == NULL)
+	{
+		openFile (NULL, true, true);
+		std::string ret = rts2core::Expander::expand (expression, onlyAlphaNum);
+		closeFile ();
+		return ret;
+	}
+	else
+	{
+		return rts2core::Expander::expand (expression, onlyAlphaNum);
+	}
+}
+
 void FitsFile::setValue (const char *name, bool value, const char *comment)
 {
 	if (!getFitsFile ())
@@ -585,7 +601,7 @@ void FitsFile::getValue (const char *name, char *value, int valLen, const char* 
 	{
 		static char val[FLEN_VALUE];
 		if (!getFitsFile ())
-			openFile (NULL, false, true);
+			openFile (NULL, true, true);
 	
                 fits_status = 0;
 		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment, &fits_status);
