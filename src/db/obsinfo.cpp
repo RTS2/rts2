@@ -128,7 +128,7 @@ void ObservationInfo::printObsImages (rts2db::Observation & obs)
 {
 	if (!imageFlag || obs.loadImages ())
 		return;
-	obs.getImageSet ()->print (std::cout, imageFlag);
+	obs.getImageSet ()->print (std::cout, imageFlag, NULL);
 }
 
 int ObservationInfo::doProcessing ()

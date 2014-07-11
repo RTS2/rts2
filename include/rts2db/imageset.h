@@ -47,7 +47,7 @@ class ImageSet:public std::vector <rts2image::Image * >
 		// abstract. subclasses needs to define that
 		virtual int load () = 0;
 		virtual ~ImageSet (void);
-		void print (std::ostream & _os, int printImages);
+		void print (std::ostream & _os, int printImages, const char *imageFormat);
 		int getAverageErrors (double &eRa, double &eDec, double &eRad);
 
 		const ImageSetStat getAllStat ();

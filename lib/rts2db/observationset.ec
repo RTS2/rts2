@@ -39,6 +39,8 @@ ObservationSet::ObservationSet (void)
 	successNum = 0;
 	failedNum = 0;
 
+	imageFormat = NULL;
+
 	allNum = 0;
 	goodNum = 0;
 
@@ -450,14 +452,14 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 				{
 					if ((*obs_iter2).getTargetId () == tar_id)
 					{
-						if (getPrintImages () == 0 && getPrintCounts () == 0)
+						if (getPrintImages () == 0 && getPrintCounts () == 0 && imageFormat == NULL)
 						{
 							// print time of observation
 							_os << Timestamp ((*obs_iter2).getObsStart ()) << SEP;
 						}
 						else
 						{
-							(*obs_iter2).setPrintImages (getPrintImages ());
+							(*obs_iter2).setPrintImages (getPrintImages (), imageFormat);
 							(*obs_iter2).setPrintCounts (getPrintCounts ());
 							(*obs_iter2).setPrintHeader (false);
 							_os << (*obs_iter2);
@@ -472,7 +474,7 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 		}
 		else
 		{
-			obs_iter->setPrintImages (getPrintImages ());
+			obs_iter->setPrintImages (getPrintImages (), imageFormat);
 			obs_iter->setPrintCounts (getPrintCounts ());
 			_os << (*obs_iter);
 		}
@@ -491,7 +493,7 @@ void ObservationSet::printUntil (double time, std::ostream &os)
 {
 	while (timeLogIter != end () && timeLogIter->getObsSlew () <= time)
 	{
-		timeLogIter->setPrintImages (getPrintImages ());
+		timeLogIter->setPrintImages (getPrintImages (), imageFormat);
 		timeLogIter->setPrintCounts (getPrintCounts ());
 		os << (*timeLogIter);
 	

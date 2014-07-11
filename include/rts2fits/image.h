@@ -606,7 +606,7 @@ class Image:public FitsFile
 
 		void printFileName (std::ostream & _os);
 
-		virtual void print (std::ostream & _os, int in_flags = 0);
+		virtual void print (std::ostream & _os, int in_flags = 0, const char *imageFormat = NULL);
 
 		void setInstrument (const char *instr)
 		{

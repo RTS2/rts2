@@ -473,7 +473,7 @@ void PrintTarget::printTarget (rts2db::Target *target)
 			{
 				rts2db::ImageSetTarget imgset = rts2db::ImageSetTarget (target->getTargetID ());
 				imgset.load ();
-				imgset.print (std::cout, printImages);
+				imgset.print (std::cout, printImages, NULL);
 				imgset.clear ();
 			}
 		}

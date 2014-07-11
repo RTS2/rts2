@@ -2183,7 +2183,7 @@ void Image::printFileName (std::ostream & _os)
 	_os << getFileName ();
 }
 
-void Image::print (std::ostream & _os, int in_flags)
+void Image::print (std::ostream & _os, int in_flags, const char *imageFormat)
 {
 	if (in_flags & DISPLAY_FILENAME)
 	{
@@ -2193,27 +2193,39 @@ void Image::print (std::ostream & _os, int in_flags)
 	if (in_flags & DISPLAY_SHORT)
 	{
 		printFileName (_os);
+		if (imageFormat)
+			_os << SEP << expand (std::string (imageFormat));
 		_os << std::endl;
 		return;
 	}
 
 	if (in_flags & DISPLAY_OBS)
-		_os << std::setw (5) << getObsId () << SEP;
+		_os << std::setw (5) << getObsId ();
 
 	if (!(in_flags & DISPLAY_ALL))
+	{
+		if (imageFormat)
+			_os << SEP << expand (std::string (imageFormat));
 		return;
+	}
 
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	int old_precision = _os.precision (2);
 
 	_os
+		<< SEP
 		<< std::setw (5) << getCameraName () << SEP
 		<< std::setw (4) << getImgId () << SEP
 		<< Timestamp (getExposureSec () + (double) getExposureUsec () /	USEC_SEC) << SEP
 		<< std::setw (10) << getFilter () << SEP
 		<< std::setw (8) << std::fixed << TimeDiff (getExposureLength ()) << SEP
 		<< LibnovaDegArcMin (ra_err) << SEP << LibnovaDegArcMin (dec_err) << SEP
-		<< LibnovaDegArcMin (img_err) << std::endl;
+		<< LibnovaDegArcMin (img_err);
+
+	if (imageFormat)
+		_os << SEP << expand (std::string (imageFormat));
+
+	_os << std::endl;
 
 	_os.flags (old_settings);
 	_os.precision (old_precision);

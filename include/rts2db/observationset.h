@@ -56,7 +56,7 @@ class ObservationSet:public std::vector <Observation>, public TimeLog
 		 */
 		void loadLabel (int label_id);
 
-		void  printImages (int _images) { images = _images; }
+		void  printImages (int _images, const char *_imageFormat = NULL) { images = _images; imageFormat = _imageFormat; }
 		int getPrintImages () { return images; }
 
 		int getPrintCounts () { return counts; }
@@ -142,6 +142,8 @@ class ObservationSet:public std::vector <Observation>, public TimeLog
 		bool collocated;
 		int successNum;
 		int failedNum;
+
+		const char *imageFormat;
 
 		void load (std::string in_where);
 

@@ -77,7 +77,7 @@ class Observation
 		void printCounts (std::ostream & _os);
 		void printCountsSummary (std::ostream & _os);
 
-		void setPrintImages (int in_printImages) { displayImages = in_printImages; }
+		void setPrintImages (int in_printImages, const char *in_imageFormat) { displayImages = in_printImages; imageFormat = in_imageFormat; }
 
 		void setPrintCounts (int in_printCounts)
 		{
@@ -281,11 +281,11 @@ class Observation
 		friend std::ostream & operator << (std::ostream & _os, Observation & obs)
 		{
 			obs.printObsHeader (_os);
-			if (obs.displayImages)
+			if (obs.displayImages || obs.imageFormat)
 			{
 				obs.loadImages ();
 				_os << std::endl;
-				obs.imgset->print (_os, obs.displayImages);
+				obs.imgset->print (_os, obs.displayImages, obs.imageFormat);
 			}
 			if (obs.displayCounts)
 			{
@@ -308,6 +308,7 @@ class Observation
 		std::vector < Rts2Count > counts;
 
 		int displayImages;
+		const char *imageFormat;
 		int displayCounts;
 
 		bool printHeader;

@@ -65,6 +65,8 @@ class NightReport:public rts2db::AppDb
 		bool printStat;
 		int statType;
 
+		const char *imageFormat;
+
 		long totalImages;
 		long totalGoodImages;
 		long totalObs;
@@ -95,6 +97,8 @@ NightReport::NightReport (int in_argc, char **in_argv):rts2db::AppDb (in_argc, i
 	printStat = false;
 	statType = STAT_NONE;
 
+	imageFormat = NULL;
+
 	observationsNights = 0;
 
 	totalImages = 0;
@@ -112,11 +116,12 @@ NightReport::NightReport (int in_argc, char **in_argv):rts2db::AppDb (in_argc, i
 	addOption ('l', NULL, 0, "print full image names");
 	addOption ('i', NULL, 0, "print image listing");
 	addOption ('I', NULL, 0, "print image summary row");
-	addOption ('p', NULL, 2, "print counts listing; can be followed by format, txt for plain");
-	addOption ('P', NULL, 0, "print counts summary row");
+	addOption ('m', NULL, 2, "print counts listing; can be followed by format, txt for plain");
+	addOption ('M', NULL, 0, "print counts summary row");
 	addOption ('s', NULL, 0, "print night statistics");
 	addOption ('S', NULL, 0, "print night statistics - % of time used for observation");
 	addOption ('c', NULL, 0, "collocate statistics by nights, targets, ..");
+	addOption ('P', NULL, 1, "print expression formed from image header");
 	addOption (OPT_NOMESSAGES, "nomsg", 0, "do not print messages");
 	addOption (OPT_MESSAGEALL, "allmsg", 0, "print all messages");
 }
@@ -164,7 +169,7 @@ int NightReport::processOption (int in_opt)
 		case 'I':
 			printImages |= DISPLAY_SUMMARY;
 			break;
-		case 'p':
+		case 'm':
 			if (optarg)
 			{
 				if (!strcmp (optarg, "txt"))
@@ -177,7 +182,7 @@ int NightReport::processOption (int in_opt)
 				printCounts |= DISPLAY_ALL;
 			}
 			break;
-		case 'P':
+		case 'M':
 			printCounts |= DISPLAY_SUMMARY;
 			break;
 		case 's':
@@ -188,6 +193,9 @@ int NightReport::processOption (int in_opt)
 			break;
 		case 'c':
 			statType = STAT_COLLOCATE;
+			break;
+		case 'P':
+			imageFormat = optarg;
 			break;
 		case OPT_NOMESSAGES:
 			messageMask = 0;
@@ -252,8 +260,8 @@ int NightReport::init ()
 
 void NightReport::printObsList (time_t *t_end)
 {
-	if (printImages)
-		obs_set->printImages (printImages);
+	if (printImages || imageFormat)
+		obs_set->printImages (printImages, imageFormat);
 	if (printCounts)
 		obs_set->printCounts (printCounts);
 	if (statType == STAT_COLLOCATE)

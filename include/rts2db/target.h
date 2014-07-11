@@ -715,9 +715,16 @@ class Target:public Rts2Target
 
 		int printTargets (double radius, double JD, std::ostream & _os);
 
-		int printImages (std::ostream & _os, int flags = DISPLAY_ALL) { return printImages (ln_get_julian_from_sys (), _os, flags); }
+		/**
+		 * Print images from the observation.
+		 *
+		 * @param _os               output stream to print the images
+		 * @param flags             output flags
+		 * @param imageFormat       expression for printing extra image header data
+		 */
+		int printImages (std::ostream & _os, int flags = DISPLAY_ALL, const char *imageFormat = NULL) { return printImages (ln_get_julian_from_sys (), _os, flags, imageFormat); }
 
-		int printImages (double JD, std::ostream & _os, int flags = DISPLAY_ALL);
+		int printImages (double JD, std::ostream & _os, int flags = DISPLAY_ALL, const char *imageFormat = NULL);
 
 		/**
 		 * Return calibration targets for given target

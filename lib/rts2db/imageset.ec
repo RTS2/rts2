@@ -220,7 +220,7 @@ void ImageSet::stat ()
 	}
 }
 
-void ImageSet::print (std::ostream &_os, int printImages)
+void ImageSet::print (std::ostream &_os, int printImages, const char *imageFormat)
 {
 	if ((printImages & DISPLAY_ALL) || (printImages & DISPLAY_FILENAME))
 	{
@@ -239,7 +239,7 @@ void ImageSet::print (std::ostream &_os, int printImages)
 				continue;
 			if ((printImages & DISPLAY_ASTR_QUE) && image->isProcessed ())
 				continue;
-			image->print (_os, printImages);
+			image->print (_os, printImages, imageFormat);
 		}
 	}
 	if (printImages & DISPLAY_SUMMARY)

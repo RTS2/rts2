@@ -42,6 +42,7 @@ Observation::Observation (int in_obs_id)
 	tar_type = 0;
 	imgset = NULL;
 	displayImages = 0;
+	imageFormat = NULL;
 	displayCounts = 0;
 	printHeader = true;
 	plan_id = -1;
@@ -64,6 +65,7 @@ Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_ty
 	plan_id = in_plan_id;
 	imgset = NULL;
 	displayImages = 0;
+	imageFormat = NULL;
 	displayCounts = 0;
 	printHeader = true;
 }

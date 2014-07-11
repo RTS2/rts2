@@ -1,3 +1,6 @@
+2014-07-11
+ * added option to print expansion from obtained image FITS header to rts2-nightreport
+
 2014-06-24
  * queue_nrep, queue_at_nrep selector commands and their documentation
 

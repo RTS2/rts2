@@ -154,9 +154,9 @@ int V4L::initHardware ()
 	}
 
 	// formats in order of preference..
-	__u32 formats[3] = {V4L2_PIX_FMT_Y16, V4L2_PIX_FMT_GREY, V4L2_PIX_FMT_YUYV};
+	__u32 formats[4] = {V4L2_PIX_FMT_Y16, V4L2_PIX_FMT_GREY, V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_MJPEG};
 	int i;
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 4; i++)
 	{
 		fmt.fmt.pix.pixelformat = formats[i];
 		if (ioctl (fd, VIDIOC_S_FMT, &fmt) == 0)
@@ -240,6 +240,7 @@ void V4L::initDataTypes ()
 		case V4L2_PIX_FMT_YUYV:
 			addDataType (RTS2_DATA_USHORT);
 			greyMode->addSelVal ("yuyv");
+			break;
 		case V4L2_PIX_FMT_GREY:
 			addDataType (RTS2_DATA_BYTE);
 			greyMode->addSelVal ("grey_8bit");
@@ -247,6 +248,10 @@ void V4L::initDataTypes ()
 		case V4L2_PIX_FMT_Y16:
 			addDataType (RTS2_DATA_USHORT);
 			greyMode->addSelVal ("grey_16bit");
+			break;
+		case V4L2_PIX_FMT_MJPEG:
+			addDataType (RTS2_DATA_BYTE);
+			greyMode->addSelVal ("mjpeg");
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "data type " << format << " is not supported" << sendLog;
@@ -346,6 +351,8 @@ int V4L::doReadout ()
 		case V4L2_PIX_FMT_GREY:
 		case V4L2_PIX_FMT_Y16:
 			sendReadoutData ((char *) buffers[0].start, chipByteSize ());
+			break;
+		case V4L2_PIX_FMT_MJPEG:
 			break;
 	}
 	if (ioctl (fd, VIDIOC_STREAMOFF, &(reqbuf.type)) == -1)

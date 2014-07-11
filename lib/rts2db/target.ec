@@ -1683,7 +1683,7 @@ int Target::printTargets (double radius, double JD, std::ostream &_os)
 	return tarset.size ();
 }
 
-int Target::printImages (double JD, std::ostream &_os, int flags)
+int Target::printImages (double JD, std::ostream &_os, int flags, const char *imageFormat)
 {
 	struct ln_equ_posn tar_pos;
 	int ret;
@@ -1695,7 +1695,7 @@ int Target::printImages (double JD, std::ostream &_os, int flags)
 	if (ret)
 		return ret;
 
-	img_set.print (std::cout, flags);
+	img_set.print (std::cout, flags, imageFormat);
 
 	return img_set.size ();
 }
