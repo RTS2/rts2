@@ -181,7 +181,7 @@ void FitsFile::openFile (const char *_fileName, bool readOnly, bool _verbose)
 		setFileName (_fileName);
 
 	if (getFileName () == NULL)
-	 	throw ErrorOpeningFitsFile ("");
+	 	throw ErrorOpeningFitsFile ("null filename");
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Opening " << getFileName () << " ffile " << getFitsFile () << sendLog;
@@ -385,7 +385,8 @@ std::string FitsFile::replaceHeader (const char *name)
 std::string FitsFile::expand (std::string expression, bool onlyAlphaNum)
 {
 	// if we are forced to open the file, close it so it will not remain opened
-	if (getFitsFile () == NULL)
+	// only do so if we already knows file path - as we might not know it, don't try it..
+	if (getFitsFile () == NULL && getFileName () != NULL)
 	{
 		openFile (NULL, true, true);
 		std::string ret = rts2core::Expander::expand (expression, onlyAlphaNum);
