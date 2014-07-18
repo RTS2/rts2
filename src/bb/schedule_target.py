@@ -34,7 +34,7 @@ for obs_id in args:
 	obs_user = sys.stdin.readline().rstrip('\n')
 	obs_password = sys.stdin.readline().rstrip('\n')
 
-	rts2.json.createProxy(obs_url, obs_user, obs_password, False)
+	rts2.json.createProxy(obs_url, obs_user, obs_password, options.verbose)
 
 	if options.create:
 		print "targetinfo", options.create
@@ -55,7 +55,7 @@ for obs_id in args:
 	ret = rts2.json.getProxy().loadJson('/bbapi/schedule', {'id':obs_tar_id})
 
 	if int(ret) == 0:
-		print 'log I cannot schedule'
+		print 'log I cannot schedule', str(ret)
 		print 'unscheduled'
 	else:
 		print 'log I schedule returns {0}'.format(time.ctime(int(ret)))	
