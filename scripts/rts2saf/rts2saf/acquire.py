@@ -31,7 +31,7 @@ import shutil
 
 
 class ScanThread(threading.Thread):
-    """Thread scan acquires a set of FITS image filenames and writes the to :py:mod:`Queue` acqu_oq.
+    """Thread ScanThread acquires a set of FITS image filenames and writes them to :py:mod:`Queue` acqu_oq.
 
     :var debug: enable more debug output with --debug and --level
     :var dryFitsFiles: FITS files injected if the CCD can not provide them

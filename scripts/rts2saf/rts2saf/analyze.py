@@ -76,6 +76,7 @@ class SimpleAnalysis(object):
         self.logger=logger
         self.dataFitFwhm=None
         self.resultFitFwhm=None
+        self.resultMeansFwhm = None
         #
         self.dataFitFlux=None
         self.resultFitFlux=None
@@ -174,8 +175,9 @@ class SimpleAnalysis(object):
             )
         self._fitFwhm()
         # weighted means
-        self.resultMeansFwhm = ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
-        self.resultMeansFwhm.calculate(var='FWHM')
+        if self.rt.cfg['WEIGHTED_MEANS']:
+            self.resultMeansFwhm = ResultMeans(dataFit=self.dataFitFwhm, logger=self.logger)
+            self.resultMeansFwhm.calculate(var='FWHM')
 
         try:
             self.i_flux = self.dataSxtr[0].fields.index('FLUX_MAX')
@@ -193,8 +195,9 @@ class SimpleAnalysis(object):
 
             self._fitFlux()
             # weighted means
-            self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
-            self.resultMeansFlux.calculate(var='Flux')
+            if self.rt.cfg['WEIGHTED_MEANS']:
+                self.resultMeansFlux=ResultMeans(dataFit=self.dataFitFlux, logger=self.logger)
+                self.resultMeansFlux.calculate(var='Flux')
 
         return self.resultFitFwhm, self.resultMeansFwhm, self.resultFitFlux, self.resultMeansFlux
 

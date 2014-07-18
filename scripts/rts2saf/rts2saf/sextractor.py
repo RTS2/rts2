@@ -123,14 +123,29 @@ class Sextractor:
 		except ValueError,ve:
 			print 'result does not contain CLASS_STAR'
 			traceback.print_exc()
+	def filter_flux_max(self):
+		"""Filter to bright objects"""
+		try:
+			i_class = self.get_field('FLUX_MAX')
+			ret = []
+			for x in self.objects:
+				if x[i_class] < 30000:
+					ret.append(x)
+			return ret
+		except ValueError,ve:
+			print 'result does not contain CLASS_STAR'
+			traceback.print_exc()
 	
 	def get_FWHM_stars(self,starsn=None,filterGalaxies=True,segments=None):
 		"""Returns candidate stars for FWHM calculations. """
 		obj = None
+                
+
 		if filterGalaxies:
 			obj = self.filter_galaxies()
 		else:
-			obj = self.objects
+#			obj = self.objects
+			obj = self.filter_flux_max()
 
 		if len(obj) == 0:
 			raise Exception('Cannot find FWHM on empty source list')

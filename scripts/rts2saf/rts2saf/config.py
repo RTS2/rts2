@@ -20,7 +20,7 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-"""Config provides all required contestants with default values. ToDo: This module must be rewritten in future.
+"""Config provides all required constants with default values. ToDo: This module must be rewritten in future.
 
 """
 
@@ -95,6 +95,7 @@ class DefaultConfiguration(object):
         # not yet in use:
         self.dcf[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
         self.dcf[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
+        #
         self.dcf[('acceptance circle', 'RADIUS')]= 2000.
         #
         #
@@ -140,6 +141,7 @@ class DefaultConfiguration(object):
         self.dcf[('mode', 'ANALYZE_ASSOC')]= False
         self.dcf[('mode', 'ANALYZE_ASSOC_FRACTION')]= 0.65
         self.dcf[('mode', 'WITH_MATHPLOTLIB')]= False 
+        self.dcf[('mode', 'WEIGHTED_MEANS')]= False 
         # mapping of fits header elements to canonical
         self.dcf[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH DAVIS.DOME_TMP'
         self.dcf[('fits header mapping', 'DATETIME')]= 'JD'

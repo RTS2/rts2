@@ -202,7 +202,6 @@ class AnalyzeRuns(object):
                     return True
                 else:
                     if self.debug: self.logger.debug('{} inflectionPoints: sign changes at: {}  lower: {}, upper limit: {}:, extrFitPos at: {}, rejected'.format(name, signChange[0], mn, mx, extrFitPos))
-
                     return False
         else:
             if self.debug: self.logger.debug('{} inflectionPoints: no sign changes found'.format(name))
@@ -387,8 +386,10 @@ class AnalyzeRuns(object):
                     an.display()
 
         # ToDo expand to Flux?
-        if not rMnsFwhm is not  None:
-            rMnsFwhm.logWeightedMeans()
+        if self.rt.cfg['WEIGHTED_MEANS']:
+            # ToDo what is that:
+            if not rMnsFwhm is not  None:
+                rMnsFwhm.logWeightedMeans()
 
         return rFtFwhm, rMnsFwhm, rFtFlux, rMnsFlux
 
