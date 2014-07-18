@@ -21,6 +21,8 @@
 #include "rts2json/asyncapi.h"
 #include "rts2json/httpreq.h"
 
+#include <vector>
+
 /** @file bbapi.h
  *
  * This header file declares classes for support of various JSON API calls. It
@@ -43,6 +45,11 @@ class BBAPI:public rts2json::JSONRequest
 		virtual void executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
 	private:
+		/**
+		 * Schedule observation.
+		 */
+		int scheduleTarget (time_t &ret_from, XmlRpc::HttpParams *params, bool only_confirm, std::vector <std::pair <double, double> > &free_time);
+
 		/**
 		 * Confirm observation schedule.
 		 */
