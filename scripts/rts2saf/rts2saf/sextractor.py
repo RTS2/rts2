@@ -144,8 +144,8 @@ class Sextractor:
 		if filterGalaxies:
 			obj = self.filter_galaxies()
 		else:
-#			obj = self.objects
-			obj = self.filter_flux_max()
+			obj = self.objects
+#			obj = self.filter_flux_max()
 
 		if len(obj) == 0:
 			raise Exception('Cannot find FWHM on empty source list')
