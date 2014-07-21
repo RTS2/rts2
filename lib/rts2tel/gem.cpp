@@ -44,9 +44,10 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
 {
-	double ls, ra, dec;
+	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
 	struct ln_equ_posn model_change;
+	struct ln_equ_posn u_pos;
 	int ret;
 	bool flip = false;
 
@@ -68,20 +69,18 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 
 	// get hour angle
-	ra = ln_range_degrees (ls - pos->ra);
-	if (ra > 180.0)
-		ra -= 360.0;
+	ha = ln_range_degrees (ls - pos->ra);
+	if (ha > 180.0)
+		ha -= 360.0;
 
 	// pretend we are at north hemispehere.. at least for dec
 	dec = pos->dec;
 	if (telLatitude->getValueDouble () < 0)
 		dec *= -1;
 
-	dec = dec - decZero;
-
-	// convert to ac; ra now holds HA
-	ac = (int32_t) ((ra + haZero) * haCpd);
-	dc = (int32_t) (dec * decCpd);
+	// convert to count values
+	ac = (int32_t) ((ha - haZero) * haCpd);
+	dc = (int32_t) ((dec - decZero) * decCpd);
 
 	// gets the limits
 	ret = updateLimits ();
@@ -126,12 +125,22 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	while (dc > dcMax)
 		dc -= dec_ticks;
 
-	// apply model
-	applyModel (pos, &model_change, flip, JD);
+	if ( (dc < dcMin) || (dc > dcMax) || (ac < acMin) || (ac > acMax))
+	{
+		logStream (MESSAGE_ERROR) << "didn't find mount position within limits, RA/DEC target "
+			<< LibnovaRaDec (pos) << sendLog;
+		return -1;
+	}
 
-	// when fliped, change sign - most probably work diferently on N and S; tested only on S
-	if ((flip && telLatitude->getValueDouble () < 0)
-		|| (!flip && telLatitude->getValueDouble () > 0))
+	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
+	u_pos.ra = ls - ((double) (ac / haCpd) + haZero);
+	u_pos.dec = (double) (dc / decCpd) + decZero;
+	if (telLatitude->getValueDouble () < 0)
+		u_pos.dec *= -1;
+	applyModel (&u_pos, &model_change, 0, JD);	// we give raw (unflipped) position => flip=0 for model computation
+
+	// when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
+	if (telLatitude->getValueDouble () < 0)
 		model_change.dec *= -1;
 
 	#ifdef DEBUG_EXTRA
@@ -140,8 +149,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
-	ac += (int32_t) (model_change.ra * haCpd);
-	dc += (int32_t) (model_change.dec * decCpd);
+	ac -= -1.0 * (int32_t) (model_change.ra * haCpd);	// -1* is because ac is in HA, not in RA
+	dc -= (int32_t) (model_change.dec * decCpd);
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
@@ -152,9 +161,9 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec, double &un_dec)
+int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec)
 {
-	double JD, ls;
+	double JD, ls, ha;
 	int32_t homeOff;
 	int ret;
 
@@ -167,33 +176,28 @@ int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec, double &
 
 	ac += homeOff;
 
-	ra = (double) (ac / haCpd) - haZero;
+	ha = (double) (ac / haCpd) + haZero;
 	dec = (double) (dc / decCpd) + decZero;
 
-	ra = ls - ra;
+	ra = ls - ha;
 
+	un_ra = ra;
 	un_dec = dec;
 
 	// flipped
 	if (fabs (dec) > 90.0)
 	{
-		telFlip->setValueInteger (1);
+		flip = 1;
 		if (dec > 0)
 			dec = 180.0 - dec;
 		else
 			dec = -180.0 - dec;
 		ra += 180.0;
-		ac += (int32_t) (ra_ticks / 2.0);
 	}
 	else
 	{
-		telFlip->setValueInteger (0);
+		flip = 0;
 	}
-
-	while (ac < acMin)
-		ac += ra_ticks;
-	while (ac > acMax)
-		ac -= ra_ticks;
 
 	dec = ln_range_degrees (dec);
 	if (dec > 180.0)
@@ -210,7 +214,7 @@ int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec, double &
 	return 0;
 }
 
-GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking):Telescope (in_argc, in_argv, diffTrack, hasTracking)
+GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
 {
 	haZero = decZero = haCpd = decCpd = NAN;
 

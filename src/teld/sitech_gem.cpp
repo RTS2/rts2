@@ -139,7 +139,7 @@ class Sitech:public GEM
 		/**
 		 * Retrieve telescope counts, convert them to RA and Declination.
 		 */
-		void getTel (double &telra, double &teldec);
+		void getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec);
 
 		void GetGuideTargets (int *ntarget, int *starget, int *etarget, int *wtarget);
 };
@@ -228,7 +228,7 @@ void Sitech::fullStop (void)
 	}
 }
 
-void Sitech::getTel (double &telra, double &teldec)
+void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec)
 {
 	serConn->getAxisStatus ('X', radec_status);
 
@@ -246,9 +246,7 @@ void Sitech::getTel (double &telra, double &teldec)
 	ra_last->setValueLong (radec_status.y_last);
 	dec_last->setValueLong (radec_status.x_last);
 
-	double t_dec;
-
-	int ret = counts2sky (radec_status.y_enc, radec_status.x_enc, telra, t_dec, teldec);
+	int ret = counts2sky (radec_status.y_enc, radec_status.x_enc, telra, teldec, telflip, un_telra, un_teldec);
 	if (ret)
 		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
 }
@@ -317,7 +315,9 @@ int Sitech::initHardware ()
   
 	/* Read encoders and confirm pointing */
   
-	getTel (homera, homedec);
+	double t_telRa, t_telDec;
+	int t_telFlip;
+	getTel (t_telRa, t_telDec, t_telFlip, homera, homedec);
   
 	fprintf (stderr, "Mount motor encoder RA: %lf\n", homera);
 	fprintf (stderr, "Mount motor encoder Dec: %lf\n", homedec);
@@ -333,12 +333,15 @@ int Sitech::initHardware ()
 
 int Sitech::info ()
 {
-	double t_telRa, t_telDec;
+	double t_telRa, t_telDec, ut_telRa, ut_telDec;
+	int t_telFlip;
 
-	getTel (t_telRa, t_telDec);
+	getTel (t_telRa, t_telDec, t_telFlip, ut_telRa, ut_telDec);
 	
-	setTelRa (t_telRa);
-	setTelDec (t_telDec);
+	setTelRaDec (t_telRa, t_telDec);
+	telFlip->setValueInteger (t_telFlip);
+	setTelUnRaDec (ut_telRa, ut_telDec);
+
 	return rts2teld::GEM::info ();
 }
 

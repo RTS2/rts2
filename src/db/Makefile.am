@@ -12,7 +12,7 @@ CLEANFILES = airmasscale.cpp
 
 if PGSQL
 
-bin_PROGRAMS += rts2-targetinfo rts2-nightreport rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-newtarget rts2-simbadinfo rts2-plan rts2-airmasscale
+bin_PROGRAMS += rts2-targetinfo rts2-nightreport rts2-targetlist rts2-target rts2-obsinfo rts2-newtarget rts2-simbadinfo rts2-plan rts2-airmasscale
 PG_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db -L../../lib/rts2fits -lrts2imagedb @LIB_CRYPT@ ${LDADD} 
 
 noinst_HEADERS = rts2targetapp.h
@@ -32,8 +32,11 @@ rts2_targetlist_LDADD = ${PG_LDADD}
 rts2_target_SOURCES = target.cpp
 rts2_target_LDADD = ${PG_LDADD}
 
+if LIBWCS
+bin_PROGRAMS += rts2-tpm
 rts2_tpm_SOURCES = tpm.cpp
-rts2_tpm_LDADD = ${PG_LDADD}
+rts2_tpm_LDADD = ${PG_LDADD} @LIBWCS_LDFLAGS@
+endif
 
 rts2_obsinfo_SOURCES = obsinfo.cpp
 rts2_obsinfo_LDADD = ${PG_LDADD}

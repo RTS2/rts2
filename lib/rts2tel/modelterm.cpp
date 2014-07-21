@@ -71,7 +71,7 @@ void TermMA::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 // status: OK
 void TermIH::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
-	pos->ra = ln_range_degrees (pos->ra + getValueDouble ());
+	pos->ra = pos->ra + getValueDouble ();
 }
 
 // status: OK
@@ -97,22 +97,22 @@ void TermNP::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 // status: ok
 void TermPHH::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
-	pos->ra = pos->ra + ln_rad_to_deg (ln_deg_to_rad (getValueDouble ()) * ln_deg_to_rad (pos->ra));
+	pos->ra += getValueDouble () * ln_deg_to_rad (pos->ra);
 }
 
 // status: ok
 void TermPDD::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
-	pos->dec = pos->dec - ln_rad_to_deg (ln_deg_to_rad (getValueDouble ()) * ln_deg_to_rad (pos->dec));
+	pos->dec += getValueDouble () * ln_deg_to_rad (pos->dec);
 }
 
-// status: testing
+// status: testing (nonstandard!)
 void TermA1H::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
 	pos->ra = pos->ra - ln_rad_to_deg (ln_deg_to_rad (getValueDouble ()) * obs_conditions->getFlip ());
 }
 
-// status: testing
+// status: testing (nonstandard!)
 void TermA1D::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
 	pos->dec = pos->dec - ln_rad_to_deg (ln_deg_to_rad (getValueDouble ()) * obs_conditions->getFlip ());
@@ -136,8 +136,8 @@ void TermTX::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 	h = ln_deg_to_rad (pos->ra);
 	f = ln_deg_to_rad (obs_conditions->getLatitude ());
 
-	pos->ra += (getValueDouble () * cos (f) * sin (h) / cos (d)) / (sin (d) * sin (f) + cos (d) * cos (h) * cos (f));
-	pos->dec += (getValueDouble ()) * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d)) / (sin (d) * sin (f) + cos (d) * cos (h) * cos (f));
+	pos->ra += getValueDouble () * cos (f) * sin (h) / ((sin (d) * sin (f) + cos (d) * cos (h) * cos (f)) * cos (d));
+	pos->dec += getValueDouble () * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d)) / ((sin (d) * sin (f) + cos (d) * cos (h) * cos (f)) * cos (d));
 }
 
 void TermHCEC::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)

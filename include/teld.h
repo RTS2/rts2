@@ -80,7 +80,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = false);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (rts2core::Event * event);
@@ -234,6 +234,56 @@ class Telescope:public rts2core::Device
 			tel->dec = getTelDec ();
 		}
 
+
+		/**
+		 * Set telescope untouched (i.e. physical) RA.
+		 *
+		 * @param ra Telescope right ascenation in degrees.
+		 */
+		void setTelUnRa (double new_ra) { telUnRaDec->setRa (new_ra); }
+
+		/**
+		 * Set telescope untouched (i.e. physical) DEC.
+		 *
+		 * @param new_dec Telescope declination in degrees.
+		 */
+		void setTelUnDec (double new_dec) { telUnRaDec->setDec (new_dec); }
+
+		/**
+		 * Set telescope untouched (i.e. physical) RA and DEC.
+		 */
+		void setTelUnRaDec (double new_ra, double new_dec) 
+		{
+			setTelUnRa (new_ra);
+			setTelUnDec (new_dec);
+		}
+
+		/**
+		 * Returns current telescope untouched (i.e. physical) RA.
+		 *
+		 * @return Current telescope untouched (i.e. physical) RA.
+		 */
+		double getTelUnRa () { return telUnRaDec->getRa (); }
+
+		/**
+		 * Returns current telescope untouched (i.e. physical) DEC.
+		 *
+		 * @return Current telescope untouched (i.e. physical) DEC.
+		 */
+		double getTelUnDec () { return telUnRaDec->getDec (); }
+
+		/**
+		 * Returns telescope untouched (i.e. physical) RA and DEC.
+		 *
+		 * @param tel ln_equ_posn which will be filled with telescope RA and DEC.
+		 */
+		void getTelUnRaDec (struct ln_equ_posn *tel)
+		{
+			tel->ra = getTelUnRa ();
+			tel->dec = getTelUnDec ();
+		}
+
+
 		/**
 		 * Set ignore correction - size bellow which correction commands will
 		 * be ignored.
@@ -289,7 +339,32 @@ class Telescope:public rts2core::Device
 		int applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa = false, bool invertDec = false);
 		void zeroCorrRaDec () {corrRaDec->setValueRaDec (0, 0); corrRaDec->resetValueChanged (); wcorrRaDec->setValueRaDec (0, 0); wcorrRaDec->resetValueChanged ();};
 
+		/**
+		 * Apply model for RA/DEC position pos, for specified flip and JD.
+		 * All resulting coordinates also includes corrRaDec corection. 
+		 * Also changes tel_target (telTargetRA) variable, including model computation and corrRaDec.
+		 * Also sets MO_RTS2 (modelRaDec) variable, mirroring (only) computed model difference.
+		 * Can be used to compute non-cyclic model, with flip=0 and pos in raw mount coordinates.
+		 *
+		 * @param pos ln_equ_posn RA/DEC position (typically TAR, i.e. precessed coordinates), will be corrected by computed model and correction corrRaDec.
+		 * @param model_change ln_equ_posn difference against original pos position, includes coputed model's difference together with correction corrRaDec.
+		 */
 		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
+
+		/**
+		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.
+		 * Sets MO_RTS2 (modelRaDec) and tel_target (telTargetRA) variables, also includes applyCorrRaDec if applyCorr parameter set to true.
+		 */
+		void applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr);
+
+		/**
+		 * Compute model for RA/DEC position pos, for specified flip and JD.
+		 * Can be used to compute non-cyclic model, with flip=0 and pos in raw mount coordinates.
+		 *
+		 * @param pos ln_equ_posn RA/DEC position (typically TAR, i.e. precessed coordinates), will be corrected by computed model.
+		 * @param model_change ln_equ_posn coputed model's difference.
+		 */
+		void computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
 
 		/**
 		 * Apply corrections (at system time).
@@ -794,7 +869,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *telFov;
 
 		/**
-		 * Object we are observing original positions.
+		 * Object we are observing original positions (in J2000).
 		 */
 		rts2core::ValueRaDec *oriRaDec;
 
@@ -811,14 +886,14 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *diffTrackRaDec;
 
 		/**
-		 * Real coordinates of the object, after offsets are applied.
+		 * Coordinates of the object, after offsets are applied (in J2000).
 		 * OBJ[RA|DEC] = ORI[|RA|DEC] + OFFS[|RA|DEC]
 		 */
 		rts2core::ValueRaDec *objRaDec;
 
 		/**
-		 * Target we are pointing to. Coordinates feeded to telescope.
-		 * TAR[RA|DEC] = OBJ[RA|DEC] + modelling, precession, etc.
+		 * Real sky coordinates of target, with computed corrections (precession, aberation, refraction). Still without corrRaDec (astrometry feedback) and tpoint model.
+		 * TAR[RA|DEC] = OBJ[RA|DEC] + precession, etc.
 		 */
 		rts2core::ValueRaDec *tarRaDec;
 
@@ -874,10 +949,16 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *wcs_crval2;
 
 		/**
-		 * Telescope RA and DEC. In perfect world readed from sensors.
+		 * Telescope RA and DEC. In perfect world read from sensors, transformed to sky coordinates (i.e. within standard limits)
 		 * target + model + corrRaDec = requested position -> telRaDec
 		 */
 		rts2core::ValueRaDec *telRaDec;
+
+		/**
+		 * Telescope untouched physical RA and DEC, read from sensors, without flip-transformation.
+		 * Equivalent to telRaDec, but reflects real physical mount position.
+		 */
+		rts2core::ValueRaDec *telUnRaDec;
 
 		/**
 		 * Current airmass.

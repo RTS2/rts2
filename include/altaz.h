@@ -32,12 +32,12 @@ namespace rts2teld
 class AltAz: public Telescope
 {
 	public:
-		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false);
+		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
 		virtual ~AltAz (void);
 
 	protected:
 		/**
-		 * Fork parameters, in degrees.
+		 * Fork parameters, in degrees (Alt/Az coordinates of hw-zero positions).
 		 */
 		double azZero;
 		double altZero;
@@ -47,6 +47,8 @@ class AltAz: public Telescope
 
 		int32_t acMin;
 		int32_t acMax;
+		int32_t dcMin;
+		int32_t dcMax;
 
 		int acMargin;
 
@@ -63,7 +65,7 @@ class AltAz: public Telescope
 
 		int sky2counts (int32_t & ac, int32_t & dc);
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
-		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec);
+		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec);
 };
 
 };

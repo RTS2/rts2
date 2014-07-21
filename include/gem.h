@@ -32,12 +32,12 @@ namespace rts2teld
 class GEM: public Telescope
 {
 	public:
-		GEM (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false);
+		GEM (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
 		virtual ~GEM (void);
 
 	protected:
 		/**
-		 * GEM parameters, in degrees.
+		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
 		 */
 		double haZero;
 		double decZero;
@@ -73,9 +73,11 @@ class GEM: public Telescope
 		 * @param dc      Delta counts
 		 * @param ra      Telescope RA
 		 * @param dec     Telescope declination
-		 * @param un_dec  unflipped declination
+		 * @param flip    flip status
+		 * @param un_ra   unflipped (raw hardware) RA
+		 * @param un_dec  unflipped (raw hardware) declination
 		 */
-		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec, double &un_dec);
+		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec);
 };
 
 };

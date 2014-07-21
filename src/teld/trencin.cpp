@@ -855,12 +855,11 @@ int Trencin::init ()
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 
 	// zero dec is on local meridian, 90 - telLatitude bellow (to nadir)
-	decZero = 90 - fabs (telLatitude->getValueDouble ());
-	if (telLatitude->getValueDouble () > 0)
-		decZero *= -1;
-								 // south hemispehere
+	decZero = -(90 - fabs (telLatitude->getValueDouble ()));
+
 	if (telLatitude->getValueDouble () < 0)
 	{
+		decZero *= -1;
 		// swap values which are opposite for south hemispehere
 	}
 
@@ -1065,6 +1064,9 @@ int Trencin::info ()
 {
 	double t_telRa;
 	double t_telDec;
+	int t_telFlip;
+	double ut_telRa;
+	double ut_telDec;
 
 	int32_t u_ra, u_dec;
 
@@ -1187,8 +1189,10 @@ int Trencin::info ()
 	if (decMoving->getValueInteger () == 0 && raMoving->getValueInteger () == 0 && isnan (raWormStart->getValueDouble ()))
 		setIdleInfoInterval (60);
 
-	counts2sky (u_ra, u_dec, t_telRa, t_telDec);
+	counts2sky (u_ra, u_dec, t_telRa, t_telDec, t_telFlip, ut_telRa, ut_telDec);
 	setTelRaDec (t_telRa, t_telDec);
+	telFlip->setValueInteger (t_telFlip);
+	setTelUnRaDec (ut_telRa, ut_telDec);
 
 	return Fork::info ();
 }

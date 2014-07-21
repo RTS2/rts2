@@ -114,3 +114,40 @@ void Image::getCoordBest (LibnovaRaDec & radec)
 		getCoordTarget (radec);
 	}
 }
+
+void Image::getCoordMountRawUn (LibnovaRaDec & radec)
+{
+	getCoord (radec, "U_TELRA", "U_TELDEC");
+}
+
+void Image::getCoordMountRawComputed (LibnovaRaDec & radec)
+{
+	int flip = 0;
+	double lat = 50.0;
+
+	getValue ("MNT_FLIP", flip);
+	getValue ("LATITUDE", lat);
+	getCoord (radec, "TELRA", "TELDEC");
+
+	if (flip)
+	{
+		radec.setRa (radec.getRa () + 180.0);
+		if (lat > 0)
+			radec.setDec (180.0 - radec.getDec ());
+		else
+			radec.setDec (-180.0 - radec.getDec ());
+	}
+}
+
+void Image::getCoordMountRawBest (LibnovaRaDec & radec)
+{
+	try
+	{
+		getCoordMountRawUn (radec);
+	}
+	catch (rts2core::Error &er)
+	{
+		getCoordMountRawComputed (radec);
+	}
+}
+

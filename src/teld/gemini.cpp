@@ -29,6 +29,7 @@
 #include <libnova/libnova.h>
 
 #include "rts2lx200/tellx200.h"
+#include "rts2lx200/hms.h"
 #include "configuration.h"
 #include "utilsfunc.h"
 
@@ -55,6 +56,7 @@
 #define OPT_EXPTYPE              OPT_LOCAL + 12
 #define OPT_FORCETYPE            OPT_LOCAL + 13
 #define OPT_FORCELATLON          OPT_LOCAL + 14
+#define OPT_EVENINGRESET         OPT_LOCAL + 15
 
 
 namespace rts2teld
@@ -65,7 +67,7 @@ class Gemini:public TelLX200
 	public:
 		Gemini (int argc, char **argv);
 		virtual ~ Gemini (void);
-		virtual int init ();
+		virtual int initHardware ();
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 		virtual int info ();
 		virtual int startResync ();
@@ -103,6 +105,10 @@ class Gemini:public TelLX200
 
 		rts2core::ValueDouble *axRa;
 		rts2core::ValueDouble *axDec;
+
+		rts2core::ValueDouble *haLimitE;
+		rts2core::ValueDouble *haLimitW;
+		rts2core::ValueDouble *haLimitW2;
 
 		const char *geminiConfig;
 
@@ -187,6 +193,16 @@ class Gemini:public TelLX200
 		int tel_gemini_get (int id, int &val1, int &val2);
 
 		/**
+		 * Read gemini local parameter, transform degrees to double
+		 *
+		 * @param id	id to get
+		 * @param val	pointer where to store result
+		 *
+		 * @return -1 and set errno on error, otherwise 0
+		 */
+		int tel_gemini_get_deg (int id, double &val);
+
+		/**
 		 * Reset and home losmandy telescope
 		 */
 		int tel_gemini_reset ();
@@ -256,18 +272,20 @@ class Gemini:public TelLX200
 
 		int decFlipLimit;
 
-		double haMinusLimit;
-		double haPlusLimit;
-
 		rts2core::ValueInteger *centeringSpeed;
 		rts2core::ValueFloat *guidingSpeed;
 		rts2core::ValueDouble *guideLimit;
+		rts2core::ValueBool *syncAppendModel;
 
 		int expectedType;
 		int forceType;
 		bool forceLatLon;
 
 		const char *getGemType (int gem_type);
+		bool willFlip;
+
+		bool eveningReset;
+		bool parkAndReset;
 };
 
 }
@@ -451,16 +469,14 @@ int Gemini::tel_gemini_get (int id, int32_t & val)
 	ret = tel_write_read_hash (buf, len, buf, 8);
 	if (ret < 0)
 		return ret;
-	for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');
-		ptr++);
+	for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-'); ptr++);
 	checksum = *ptr;
 	*ptr = '\0';
 	if (tel_gemini_checksum2 (buf) != checksum)
 	{
 		logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
 			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
-		if (*buf)
-			sleep (5);
+		sleep (5);
 		serConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
@@ -482,16 +498,14 @@ int Gemini::tel_gemini_get (int id, double &val)
 	ret = tel_write_read_hash (buf, len, buf, 8);
 	if (ret < 0)
 		return ret;
-	for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');
-		ptr++);
+	for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');	ptr++);
 	checksum = *ptr;
 	*ptr = '\0';
 	if (tel_gemini_checksum2 (buf) != checksum)
 	{
 		logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
 			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
-		if (*buf)
-			sleep (5);
+		sleep (5);
 		serConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
@@ -518,11 +532,29 @@ int Gemini::tel_gemini_get (int id, int &val1, int &val2)
 	return 0;
 }
 
+int Gemini::tel_gemini_get_deg (int id, double &val)
+{
+	char buf[20];
+	double val2;
+	int ret;
+	ret = tel_gemini_getch (id, buf);
+	if (ret)
+		return ret;
+	// parse returned string
+	val2 = hmstod (buf);
+	if (isnan (val))
+		return -1;
+	val = val2;
+	return 0;
+}
+
 int Gemini::tel_gemini_reset ()
 {
 	char rbuf[50];
 
 	logStream (MESSAGE_INFO) << "making gemini reset (trying to make startup config)..." << sendLog;
+
+	sleep (5);
 
 	// write_read_hash
 	if (serConn->flushPortIO () < 0)
@@ -534,7 +566,7 @@ int Gemini::tel_gemini_reset ()
 
 	if (serConn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
 	{
-		usleep (USEC_SEC / 15);
+		sleep (5);
 		serConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
@@ -586,6 +618,13 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 	createValue (axRa, "CNT_RA", "RA axis ticks", true);
 	createValue (axDec, "CNT_DEC", "DEC axis ticks", true);
 
+	createValue (haLimitE, "HA_LIMIT_E", "eastern HA safety limit, distance from CWD position", false, RTS2_DT_DEG_DIST_180);
+	createValue (haLimitW, "HA_LIMIT_W", "western HA safety limit, distance from CWD position", false, RTS2_DT_DEG_DIST_180);
+	createValue (haLimitW2, "HA_LIMIT_W2", "western HA goto limit, distance from CWD position", false, RTS2_DT_DEG_DIST_180);
+	haLimitE->setValueDouble (94.0);
+	haLimitW->setValueDouble (97.0);
+	haLimitW2->setValueDouble (2.5);
+
 	device_file = "/dev/ttyS0";
 	geminiConfig = "/etc/rts2/gemini.ini";
 	bootesSensors = 0;
@@ -604,6 +643,7 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 	addOption (OPT_FORCETYPE, "force-type", 1,
 		"force Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
 	addOption (OPT_FORCELATLON, "force-latlon", 0, "set observing longitude and latitude from configuration file");
+	addOption (OPT_EVENINGRESET, "evening-reset", 0, "park and reset mount at the beginning of every evening");
 
 	lastMotorState = 0;
 	telMotorState = TEL_OK;
@@ -633,7 +673,7 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 
 	decFlipLimit = 4000;
 
-	createValue (centeringSpeed, "centeringSpeed", "speed used for centering mount on target", false);
+	createValue (centeringSpeed, "centeringSpeed", "speed used for centering mount on target", false, RTS2_VALUE_WRITABLE);
 	centeringSpeed->setValueInteger (2);
 
 	createValue (guidingSpeed, "guidingSpeed", "speed used for guiding mount on target", false);
@@ -641,6 +681,11 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 
 	createValue (guideLimit, "guideLimit", "limit to to change between ", false);
 	guideLimit->setValueDouble (5.0 / 60.0);
+
+	createValue (syncAppendModel, "appendModel", "sync appends model", false, RTS2_VALUE_WRITABLE);
+	syncAppendModel->setValueBool (false);
+
+	connDebug = true;
 }
 
 Gemini::~Gemini ()
@@ -687,6 +732,9 @@ int Gemini::processOption (int in_opt)
 			break;
 		case OPT_FORCELATLON:
 			forceLatLon = true;
+			break;
+		case OPT_EVENINGRESET:
+			eveningReset = true;
 			break;
 		default:
 			return TelLX200::processOption (in_opt);
@@ -781,9 +829,29 @@ int Gemini::readRatios ()
 
 int Gemini::readLimits ()
 {
-	// TODO read from 221 and 222
-	haMinusLimit = -94;
-	haPlusLimit = 97;
+	int ret;
+	double val;
+
+	ret = tel_gemini_get_deg (221, val);
+	if (ret)
+		return -1;
+	haLimitE->setValueDouble (val);
+
+	ret = tel_gemini_get_deg (222, val);
+	if (ret)
+		return -1;
+	haLimitW->setValueDouble (val);
+
+	ret = tel_gemini_get_deg (223, val);
+	if (ret)
+		return -1;
+	if (val == 0.0)
+		haLimitW2->setValueDouble (2.5);
+	else
+		haLimitW2->setValueDouble (val);
+
+	//TODO: we don't take care of "swapping" (as written in gemini manual) of these values on south hemisphere. This should be solved when needed, but it will also need tests etc.
+
 	return 0;
 }
 
@@ -805,13 +873,9 @@ int Gemini::setCorrection ()
 	return ret;
 }
 
-int Gemini::init ()
+int Gemini::initHardware ()
 {
 	int ret;
-
-	ret = TelLX200::init ();
-	if (ret)
-		return ret;
 
 	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
 	serConn->setDebug ();
@@ -944,6 +1008,8 @@ int Gemini::initValues ()
 	strcat (telType, buf);
 	telAltitude->setValueDouble (500);
 
+	telFlip->setValueInteger (0);
+
 	return TelLX200::initValues ();
 }
 
@@ -994,6 +1060,7 @@ int Gemini::idle ()
 						forcedReparking = 0;
 						if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 						{
+							tel_stop_goto ();
 							// not ideal; lastMoveRa contains (possibly corrected) move values
 							// but we don't care much about that as we have reparked..
 							setTarget (lastMoveRa, lastMoveDec);
@@ -1026,6 +1093,13 @@ int Gemini::idle ()
 			ret = -1;
 		}
 	}
+
+	if (parkAndReset == true && (getState () & TEL_MASK_MOVING) == TEL_PARKED)
+	{
+		parkAndReset = false;
+		resetMount ();
+	}
+
 	//sleep (5);
 	return TelLX200::idle ();
 }
@@ -1033,6 +1107,19 @@ int Gemini::idle ()
 void Gemini::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	matchCount = 0;
+
+	if (eveningReset == true)
+	{
+		int ms = new_state & SERVERD_STATUS_MASK;
+		switch (ms)
+		{
+			case SERVERD_EVENING:
+				parkAndReset = true;
+				startPark ();
+				break;
+		}
+	}
+
 	return TelLX200::changeMasterState (old_state, new_state);
 }
 
@@ -1046,8 +1133,6 @@ void Gemini::getAxis ()
 
 int Gemini::info ()
 {
-	telFlip->setValueInteger (0);
-
 	if (tel_read_ra () || usleep (USEC_SEC / 15) || tel_read_dec () || usleep (USEC_SEC / 15) || tel_read_local_time () || usleep (USEC_SEC / 15))
 		return -1;
 	if (bootesSensors)
@@ -1066,12 +1151,13 @@ void Gemini::tel_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
 	serConn->writePort (":Q#", 3);
-	usleep (USEC_SEC / 15);
-	if (lastMotorState & 8)
-	{
-		lastMotorState &= ~8;
-		tel_gemini_set (99, lastMotorState);
-	}
+	usleep (USEC_SEC * 2.5);	// give time to stop mount... (#99 seems not to reflect real state of motors, checking it is meaningless)
+	tel_gemini_get (99, lastMotorState);
+	//if (lastMotorState & 8)
+	//{
+	//	lastMotorState &= ~8;
+	//	tel_gemini_set (99, lastMotorState);
+	//}
 	worm_move_needed = 0;
 }
 
@@ -1080,18 +1166,25 @@ int Gemini::tel_start_move ()
 	char retstr;
 	char buf[55];
 
-	tel_stop_goto ();
-
 	if ((tel_write_ra (lastMoveRa) < 0) || usleep (USEC_SEC / 15)
 		|| (serConn->writePort (":ONtest#", 8) < 0) || usleep (USEC_SEC / 15)
 		|| (tel_write_dec (lastMoveDec) < 0) || usleep (USEC_SEC / 15))
 		return -1;
-	if (tel_write_read (":MS#", 4, &retstr, 1) < 0)
-		return -1;
+	if (willFlip)
+	{
+		willFlip = false;
+		if (tel_write_read (":MM#", 4, &retstr, 1) < 0)
+			return -1;
+	}
+	else
+	{
+		if (tel_write_read (":MS#", 4, &retstr, 1) < 0)
+			return -1;
+	}
 
 	if (retstr == '0')
 	{
-		sleep (5);
+		sleep (1);
 		return 0;
 	}
 	// otherwise read reply..
@@ -1105,108 +1198,116 @@ int Gemini::tel_start_move ()
 int Gemini::startResync ()
 {
 	int newFlip = telFlip->getValueInteger ();
-	bool willFlip = false;
+	willFlip = false;
 	double ra_diff, ra_diff_flip;
 	double dec_diff, dec_diff_flip;
-	double ha;
-
-	double max_not_flip, max_flip;
+	double ha, haActual;
+	double JD;
+	double locSidTimeDeg;
 
 	struct ln_equ_posn pos;
-	struct ln_equ_posn model_change;
+	struct ln_equ_posn pos_flip[2];
+	struct ln_equ_posn model_change_flip[2];
+
+	bool flip_possible[2];
+	double travel_distance = 360.0;
+	int i;
 
 	getTarget (&pos);
 
 	normalizeRaDec (pos.ra, pos.dec);
 
-	ra_diff = ln_range_degrees (getTelTargetRa () - pos.ra);
-	if (ra_diff > 180.0)
-		ra_diff -= 360.0;
+	pos_flip[0] = pos;
+	pos_flip[1] = pos;
 
-	dec_diff = getTelTargetDec () - pos.dec;
+	JD = ln_get_julian_from_sys ();
+	locSidTimeDeg = getLocSidTime () * 15.0;
 
-	// get diff when we flip..
-	ra_diff_flip =
-		ln_range_degrees (180 + getTelTargetRa () - pos.ra);
-	if (ra_diff_flip > 180.0)
-		ra_diff_flip -= 360.0;
+	haActual = ln_range_degrees (locSidTimeDeg - getTelRa ());
+	if (haActual > 180.0)
+		haActual -= 360.0;
 
-	if (telLatitude->getValueDouble () > 0)
-		dec_diff_flip = (90 - getTelTargetDec () + 90 - pos.dec);
-	else
-		dec_diff_flip = (getTelTargetDec () - 90 + pos.dec - 90);
-
-	// decide which path is closer
-
-	max_not_flip = MAX (fabs (ra_diff), fabs (dec_diff));
-	max_flip = MAX (fabs (ra_diff_flip), fabs (dec_diff_flip));
-
-	if (max_flip < max_not_flip)
-		willFlip = true;
-
-	logStream (MESSAGE_DEBUG) << "Losmandy start move ra_diff " << ra_diff <<
-		" dec_diff " << dec_diff << " ra_diff_flip " << ra_diff_flip <<
-		" dec_diff_flip  " << dec_diff_flip << " max_not_flip " << max_not_flip <<
-		" max_flip " << max_flip << " willFlip " << willFlip << sendLog;
-
-	// "do" flip
-	if (willFlip)
-		newFlip = !newFlip;
-
-	// calculate current HA
-	ha = getLocSidTime () - lastMoveRa;
-
-	// normalize HA to meridian angle
-	if (newFlip)
-		ha = 90.0 - ha;
-	else
-		ha = ha + 90.0;
-
-	ha = ln_range_degrees (ha);
-
-	if (ha > 180.0)
-		ha = 360.0 - ha;
-
-	if (ha > 90.0)
-		ha = ha - 180.0;
-
-	logStream (MESSAGE_DEBUG) << "Losmandy start move newFlip " << newFlip <<
-		" ha " << ha << sendLog;
-
-	if (willFlip)
-		ha += ra_diff_flip;
-	else
-		ha += ra_diff;
-
-	logStream (MESSAGE_DEBUG) << "Losmandy start move newFlip " << newFlip <<
-		" ha " << ha << sendLog;
-
-	if (ha < haMinusLimit || ha > haPlusLimit)
+	// for both flips....
+	for (i = 0; i <= 1; i++)
 	{
-		willFlip = !willFlip;
-		newFlip = !newFlip;
+		computeModel (&pos_flip[i], &model_change_flip[i], i, JD);
+		applyCorrRaDec (&pos_flip[i]);
+		// We don't take care of dec 90deg overflow, as it is not necessary here, we only want to measure distances and feasibility.
+		// Also, we don't want to solve funny things like flip change because of model or corrections... But gemini can handle these values, hopefully, so we don't care :-).
+
+		ha = ln_range_degrees (locSidTimeDeg - pos_flip[i].ra);
+		if (ha > 180.0)
+			ha -= 360.0;
+		// check if current position is reachable with particular mount flip, testing HA limits...
+		// TODO: this is now solved only for northern hemispere.
+		if ( ((i == 0) && (ha > 90.0 - haLimitE->getValueDouble ()) && (ha < 90.0 + haLimitW->getValueDouble ())) \
+		|| ((i == 1) && (ha > -90.0 - haLimitE->getValueDouble ()) && (ha < -90.0 + haLimitW->getValueDouble () - haLimitW2->getValueDouble ())) )
+			flip_possible[i] = true;
+		else
+			flip_possible[i] = false;
+
+		if (flip_possible[i] == true)
+		{
+			if (telFlip->getValueInteger () == i)	// the same flip
+			{
+				//ra_diff = pos.ra - getTelRa ();
+				ra_diff = - ha + haActual;
+				dec_diff = pos.dec - getTelDec ();
+				if (MAX (fabs (ra_diff), fabs (dec_diff)) < travel_distance)
+				{
+					travel_distance = MAX (fabs (ra_diff), fabs (dec_diff));
+					willFlip = false;
+					newFlip = i;
+				}
+			}
+			else	// oposite flip (flip the mount during slew)
+			{
+				if (i == 1)
+				{
+					//ra_diff_flip = pos.ra - getTelRa () - 180.0;
+					ra_diff_flip = - ha + haActual - 180.0;
+				}
+				else
+				{
+					//ra_diff_flip = pos.ra - getTelRa () + 180.0;
+					ra_diff_flip = - ha + haActual + 180.0;
+				}
+					
+				if (telLatitude->getValueDouble () > 0)
+					dec_diff_flip = (90.0 - getTelDec () + 90.0 - pos.dec);
+				else
+					dec_diff_flip = (-90.0 - getTelDec () - 90.0 - pos.dec);
+
+				if (MAX (fabs (ra_diff_flip), fabs (dec_diff_flip)) < travel_distance)
+				{
+					travel_distance = MAX (fabs (ra_diff_flip), fabs (dec_diff_flip));
+					willFlip = true;
+					newFlip = i;
+				}
+			}
+		}
 	}
 
-	logStream (MESSAGE_DEBUG) << "Losmandy start move ha " << ha
-		<< " ra_diff " << ra_diff
-		<< " lastMoveRa " << lastMoveRa
-		<< " telRa " << getTelTargetRa ()
-		<< " newFlip  " << newFlip
-		<< " willFlip " << willFlip
-		<< sendLog;
+	logStream (MESSAGE_DEBUG) << "Losmandy start move: oldflip " << telFlip->getValueInteger () <<
+		", flip_possible[0] " << flip_possible[0] << ", flip_possible[1] " << flip_possible[1] <<
+		", ra_diff " << ra_diff << ", dec_diff " << dec_diff << ", ra_diff_flip " << ra_diff_flip <<
+		", dec_diff_flip " << dec_diff_flip << ", travel_distance " << travel_distance <<
+		", newFlip" << newFlip << ", willFlip " << willFlip << sendLog;
 
-	// we fit to limit, aply model
+	// OK, we have just taken decision which flip to choose, now really do it...
+	// hard way:
+	//applyModel (&pos, &model_change, newFlip, ln_get_julian_from_sys ());
+	// smart way:
+	applyModelPrecomputed (&pos_flip[newFlip], &model_change_flip[newFlip], false);	// false - we have already made corrections
 
-	applyModel (&pos, &model_change, newFlip, ln_get_julian_from_sys ());
-
-	ra_diff = ln_range_degrees (lastMoveRa - pos.ra);
+	ra_diff = ln_range_degrees (lastMoveRa - pos_flip[newFlip].ra);
 	if (ra_diff > 180.0)
 		ra_diff -= 360.0;
 
-	dec_diff = lastMoveDec - pos.dec;
+	dec_diff = lastMoveDec - pos_flip[newFlip].dec;
 
-	lastMoveRa = pos.ra;
-	lastMoveDec = pos.dec;
+	lastMoveRa = pos_flip[newFlip].ra;
+	lastMoveDec = pos_flip[newFlip].dec;
 
 	// check for small movements and perform them using change command..
 	#ifdef L4_GUIDE
@@ -1227,7 +1328,7 @@ int Gemini::startResync ()
 	startWorm ();
 
 	struct ln_equ_posn telPos;
-	getTelTargetRaDec (&telPos);
+	getTelRaDec (&telPos);
 
 	double sep = ln_get_angular_separation (&pos, &telPos);
 	#ifdef DEBUG_EXTRA
@@ -1274,7 +1375,7 @@ int Gemini::isMoving ()
 			// initiate dec change
 			if (changeDec ())
 				return -1;
-			return USEC_SEC / 10;
+			return USEC_SEC / 5;
 		}
 		return -2;
 	}
@@ -1323,7 +1424,7 @@ int Gemini::isMoving ()
 		if (changeTimeRa.tv_sec == 0 && changeTimeRa.tv_usec == 0
 			&& changeTimeDec.tv_sec == 0 && changeTimeDec.tv_usec == 0)
 			return -2;
-		return USEC_SEC / 10;
+		return USEC_SEC / 5;
 	}
 	#endif
 	if (now.tv_sec > moveTimeout)
@@ -1332,7 +1433,7 @@ int Gemini::isMoving ()
 		return -2;
 	}
 	if (lastMotorState & 8)
-		return USEC_SEC / 10;
+		return USEC_SEC / 5;
 	return -2;
 }
 
@@ -1552,30 +1653,37 @@ int Gemini::endPark ()
 		matchTime ();
 		usleep (USEC_SEC / 15);
 	}
-	setTimeout (USEC_SEC * 10);
+	setTimeout (USEC_SEC);
 	return stopWorm ();
 }
 
 int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 {
 	char readback[101];
+	int32_t v205, v206, v205_new, v206_new;
+	struct ln_equ_posn pos, model_change;
+	double JD;
 
 	normalizeRaDec (set_ra, set_dec);
 
-	if ((tel_write_ra (set_ra) < 0) || usleep (USEC_SEC / 15) || (tel_write_dec (set_dec) < 0) || usleep (USEC_SEC / 15))
+	pos.ra = set_ra;
+	pos.dec = set_dec;
+	JD = ln_get_julian_from_sys ();
+
+	zeroCorrRaDec ();
+	applyModel (&pos, &model_change, telFlip->getValueInteger (), JD);
+
+	if ((tel_write_ra (pos.ra) < 0) || usleep (USEC_SEC / 15) || (tel_write_dec (pos.dec) < 0) || usleep (USEC_SEC / 15))
 		return -1;
 
 	if (appendModel)
 	{
+		logStream (MESSAGE_INFO) << "appending to model..." << sendLog;
 		if (tel_write_read_hash (":Cm#", 4, readback, 100) < 0)
 			return -1;
 	}
 	else
 	{
-		int32_t v205;
-		int32_t v206;
-		int32_t v205_new;
-		int32_t v206_new;
 		tel_gemini_get (205, v205);
 		tel_gemini_get (206, v206);
 		if (tel_write_read_hash (":CM#", 4, readback, 100) < 0)
@@ -1583,12 +1691,13 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 		tel_gemini_get (205, v205_new);
 		tel_gemini_get (206, v206_new);
 	}
+	logStream (MESSAGE_INFO) << "Gemini synchronized, (" << v205 << "," << v206 << ") -> (" << v205_new << "," << v206_new << ")..." << sendLog;
 	return 0;
 }
 
 int Gemini::setTo (double set_ra, double set_dec)
 {
-	return setTo (set_ra, set_dec, 0);
+	return setTo (set_ra, set_dec, syncAppendModel->getValueBool ());
 }
 
 int Gemini::correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec)

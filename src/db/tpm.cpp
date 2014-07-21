@@ -23,6 +23,8 @@
 #include <math.h>
 #include <time.h>
 #include <libnova/libnova.h>
+#include <libwcs/wcs.h>
+#include <libwcs/fitsfile.h>
 
 #include <ostream>
 #include <iostream>
@@ -32,7 +34,6 @@
 #include "rts2format.h"
 #include "rts2fits/image.h"
 
-#define OPT_MNT_FLIP        OPT_LOCAL + 1789
 
 class TPM:public rts2core::CliApp
 {
@@ -53,7 +54,7 @@ class TPM:public rts2core::CliApp
 	private:
 		std::vector < std::string > filenames;
 		int headline (rts2image::Image * image, std::ostream & _os);
-		int printImage (rts2image::Image * image, std::ostream & _os);
+		int printImage (rts2image::Image * image, WorldCoor * wcs, std::ostream & _os);
 
 		struct ln_lnlat_posn obs;
 
@@ -61,10 +62,13 @@ class TPM:public rts2core::CliApp
 		double ra_offset;
 		double dec_step;
 		double dec_offset;
+		double x_ref;
+		double y_ref;
 
 		enum { TARGET, BEST, MOUNT } tarCorType;
 
-		bool useMountFlip;
+		bool forceRawComputation;
+		bool rawUseJ2k;
 };
 
 TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
@@ -74,15 +78,19 @@ TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 	ra_offset = 0;
 	dec_step = NAN;
 	dec_offset = 0;
+	x_ref = NAN;
+	y_ref = NAN;
 
-	useMountFlip = false;
+	forceRawComputation = false;
+	rawUseJ2k = false;
 
-	addOption ('t', NULL, 1, "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL, m for MNT_RA and MNT_DEC)");
+	addOption ('p', NULL, 1, "specify reference pixel on image (by default taken from CRPIX), possible values are \"center\" or X:Y");
+	addOption ('c', NULL, 1, "force using computation method to get raw mount RA/DEC coordinates from TEL and MNT_FLIP");
+	addOption ('j', NULL, 1, "raw mount RA/DEC values (U_TEL and/or TEL) are stored in J2000");
 	addOption ('r', NULL, 1, "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
 	addOption ('R', NULL, 1, "ra offset in raw counts");
 	addOption ('d', NULL, 1, "step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
 	addOption ('D', NULL, 1, "dec offset in raw counts");
-	addOption (OPT_MNT_FLIP, "mnt-flip", 0, "uses mount flip (MNT_FLIP keyword) to adjust target and actual DEC");
 }
 
 TPM::~TPM (void)
@@ -92,24 +100,33 @@ TPM::~TPM (void)
 
 int TPM::processOption (int in_opt)
 {
+	std::vector <std::string> params;
+
 	switch (in_opt)
 	{
-		case 't':
-			switch (*optarg)
+		case 'p':
+			if (strcmp(optarg, "center") == 0)
 			{
-				case 't':
-					tarCorType = TARGET;
-					break;
-				case 'b':
-					tarCorType = BEST;
-					break;
-				case 'm':
-					tarCorType = MOUNT;
-					break;
-				default:
-					std::cerr << "Invalit coordinates type (" << *optarg << "), expected t, b or m" << std::endl;
+				x_ref = -1.0;
+				y_ref = -1.0;
+			} 
+			else
+			{
+				params = SplitStr (optarg, ":");
+				if (params.size () != 2)
+				{
+					std::cerr << "cannot parse -p parameter " << optarg << std::endl;
 					return -1;
+				}
+				x_ref = atof (params[0].c_str ());
+				y_ref = atof (params[1].c_str ());
 			}
+			break;
+		case 'c':
+			forceRawComputation = true;
+			break;
+		case 'j':
+			rawUseJ2k = true;
 			break;
 		case 'r':
 			ra_step = atof (optarg);
@@ -122,9 +139,6 @@ int TPM::processOption (int in_opt)
 			break;
 		case 'D':
 			dec_offset = atof (optarg);
-			break;
-		case OPT_MNT_FLIP:
-			useMountFlip = true;
 			break;
 		default:
 			return rts2core::CliApp::processOption (in_opt);
@@ -156,17 +170,43 @@ int TPM::init ()
 int TPM::doProcessing ()
 {
 	bool firstLine = false;
+	char filename[100];
+	char *header;
+	int lhead, nbfits;
+	struct WorldCoor *wcs;
+
 	for (std::vector < std::string >::iterator iter = filenames.begin (); iter != filenames.end (); iter++)
 	{
-		rts2image::Image *image = new rts2image::Image ();
-		image->openFile (iter->c_str (), true, true);
-		if (!firstLine)
+		strcpy (filename, const_cast<char*>(iter->c_str ()));
+		if (isfits(filename))
 		{
-			headline (image, std::cout);
-			firstLine = true;
+			header = fitsrhead (filename, &lhead, &nbfits);
+			if (header == NULL)
+				wcs = NULL;
+			else
+			{
+				wcs = wcsinit (header);
+				free (header);
+			}
+
+			if (!nowcs (wcs))
+			{
+				rts2image::Image *image = new rts2image::Image ();
+				image->openFile (filename, true, true);
+				if (!firstLine)
+				{
+					headline (image, std::cout);
+					firstLine = true;
+				}
+				printImage (image, wcs, std::cout);
+				delete image;
+				wcsfree (wcs);
+			}
+			else
+				std::cerr << filename << ": no wcs found..." << std::endl;
 		}
-		printImage (image, std::cout);
-		delete image;
+		else
+			std::cerr << filename << ": is not fits format..." << std::endl;
 	}
 	std::cout << "END" << std::endl;
 	return 0;
@@ -196,35 +236,19 @@ int TPM::headline (rts2image::Image * image, std::ostream & _os)
 	// standart header
 								 // we are observing on equatorial mount
 	_os << "RTS2 model from astrometry" << std::endl << ":EQUAT" << std::endl;
-	switch (tarCorType)
+	if (rawUseJ2k)
 	{
-		case TARGET:
-		case BEST:
-			_os << ":J2000" << std::endl;
-			break;
-		case MOUNT:
-			// mount is geocentric
-			break;
+		_os << ":J2000" << std::endl;
 	}
 	_os << ":NODA" << std::endl; // don't know
-	switch (tarCorType)
-	{
-		case TARGET:
-		case BEST:
-			// we have J2000, not refracted coordinates from mount
-			_os << " " << LibnovaDeg90 (obs.lat) << " 2000 1 01" << std::endl;
-			break;
-		case MOUNT:
-			_os << " " << LibnovaDeg90 (obs.lat)
-				<< " " << image->getYearString ()
-				<< " " << image->getMonthString ()
-				<< " " << image->getDayString () << " 20 1000 60" << std::endl;
-			break;
-	}
+	_os << " " << LibnovaDeg90 (obs.lat)
+		<< " " << image->getYearString ()
+		<< " " << image->getMonthString ()
+		<< " " << image->getDayString () << " 20 1000 60" << std::endl;
 	return 0;
 }
 
-int TPM::printImage (rts2image::Image * image, std::ostream & _os)
+int TPM::printImage (rts2image::Image * image, WorldCoor * wcs, std::ostream & _os)
 {
 	LibnovaRaDec actual;
 	LibnovaRaDec target;
@@ -234,23 +258,36 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 	float expo;
 	double aux0 = NAN;
 	double aux1 = NAN;
+	int num_pixels;
+	double x_pos, y_pos;
 
-	image->getCoordAstrometry (actual);
-	switch (tarCorType)
+	if (isnan (x_ref) || isnan (y_ref))
+		image->getCoordAstrometry (actual);
+	else
 	{
-		case TARGET:
-			image->getCoordTarget (target);
-			break;
-		case BEST:
-			image->getCoordBest (target);
-			break;
-		case MOUNT:
-			image->getCoordMount (target);
-			break;
+		if (x_ref < 0.0 || y_ref < 0.0)	// use center of image
+		{
+			image->getValue ("NAXIS1", num_pixels, true);
+			x_ref = num_pixels / 2.0;
+			image->getValue ("NAXIS2", num_pixels, true);
+			y_ref = num_pixels / 2.0;
+		}
+		pix2wcs (wcs, x_ref, y_ref, &x_pos, &y_pos);
+		//actual = LibnovaRaDec (x_pos, y_pos);
+		actual.setRa (x_pos);
+		actual.setDec (y_pos);
 	}
+
+	if (forceRawComputation)
+		image->getCoordMountRawComputed (target);
+	else
+		image->getCoordMountRawBest (target);
 
 	image->getValue ("CTIME", ct);
 	image->getValue ("EXPOSURE", expo);
+
+	aux0 = -2;
+	image->getValue ("MNT_AX0", aux1, false);
 
 	aux1 = -2;
 	image->getValue ("MNT_AX1", aux1, false);
@@ -263,37 +300,17 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 	if (!isnan (ra_step))
 	{
 		image->getValue ("MNT_AX0", aux0, true);
-		actual.setRa (ln_range_degrees (mean_sidereal - ((aux0 - ra_offset) / ra_step)));
+		target.setRa (ln_range_degrees (mean_sidereal - ((aux0 - ra_offset) / ra_step)));
 	}
 	if (!isnan (dec_step))
 	{
 		image->getValue ("MNT_AX1", aux1, true);
-		actual.setDec ((aux1 - dec_offset) / dec_step);
-	}
-
-	if (useMountFlip)
-	{
-		int mntFlip;
-		image->getValue ("MNT_FLIP", mntFlip, true);
-		if (mntFlip)
-		{
-                        actual.flip (&obs);
-                        target.flip (&obs);
-		}
+		target.setDec ((aux1 - dec_offset) / dec_step);
 	}
 
 	LibnovaHaM lst (mean_sidereal);
 
-	_os << spaceDegSep << actual;
-	switch (tarCorType)
-	{
-		case TARGET:
-		case BEST:
-		case MOUNT:
-			_os << " 0 0 2000.0 ";
-			break;
-	}
-
+	_os << spaceDegSep << actual << " 0 0 2000.0 ";
 	_os << spaceDegSep << target << " " << lst << " " << aux0 << " " << aux1 << std::endl;
 	return 0;
 }

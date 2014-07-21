@@ -372,12 +372,12 @@ int Paramount::updateStatus ()
 
 	if (statusRa->getValueInteger () != new_status)
 	{
-		logStream (MESSAGE_DEBUG) << "changed axis 0 state from " << std::hex << statusRa->getValueInteger () << " to " << new_status << sendLog;
+		//logStream (MESSAGE_DEBUG) << "changed axis 0 state from " << std::hex << statusRa->getValueInteger () << " to " << new_status << sendLog;
 		statusRa->setValueInteger (new_status);
 	}
 
 	ret1 = MKS3StatusGet (axis1, &new_status);
-	logStream (MESSAGE_DEBUG) << "MKS3StatusGet axis1: ret1=" << ret1 << "(" << (ret1?"err.":"-OK-") << ") status=" << new_status << " (" << statusStr(new_status, strstat) << ")" << sendLog;
+	//logStream (MESSAGE_DEBUG) << "MKS3StatusGet axis1: ret1=" << ret1 << "(" << (ret1?"err.":"-OK-") << ") status=" << new_status << " (" << statusStr(new_status, strstat) << ")" << sendLog;
 
 	if (statusDec->getValueInteger () != new_status)
 	{
@@ -408,8 +408,8 @@ int Paramount::updateStatus ()
 	ret0 = MKS3MotorStatusGet (axis0, &new_status);
 
 
-	if (getDebug ())
-		logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
+	//if (getDebug ())
+	//	logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
 
 	if (motorStatusRa->getValueInteger () != new_status)
 	{
@@ -418,7 +418,7 @@ int Paramount::updateStatus ()
 	}
 
 	ret1 = MKS3MotorStatusGet (axis1, &new_status);
-	logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis1: ret1=" << ret1 << " status=" << new_status << sendLog;
+	//logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis1: ret1=" << ret1 << " status=" << new_status << sendLog;
 
 	if (motorStatusDec->getValueInteger () != new_status)
 	{
@@ -593,13 +593,13 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	// haZero and haCpd S swap are handled in ::init, after we get latitude from config file
 
 // this is bootes-1a weirdness
-//	haZero = -31.82333;
-	//decZero = -10.31777;
-	//haZero = -28.17667;
-//	decZero = +10.31777;
+//	haZero = +31.82333;
+	//decZero = +10.31777;
+	//haZero = +28.17667;
+//	decZero = -10.31777;
 
 // this is normal
-	haZero = -30.0;
+	haZero = +30.0;
 	decZero = 0.0;
 
 	// how many counts per degree
@@ -786,7 +786,7 @@ int Paramount::basicInfo()
 
 int Paramount::commandAuthorized (rts2core::Connection *conn)
 {
-	logStream (MESSAGE_DEBUG) << "Paramount::commandAuthorized" << sendLog;
+	//logStream (MESSAGE_DEBUG) << "Paramount::commandAuthorized" << sendLog;
 	if (conn->isCommand ("sleep"))
 	{
 		if (!conn->paramEnd ())
@@ -963,10 +963,10 @@ int Paramount::doPara()
 	// if the motors are homing we should wait for them to finish and do nothing
 	if (stat0 & MOTOR_HOMING || stat1 & MOTOR_HOMING)
 		{
-		logStream (MESSAGE_DEBUG) 
+		/*logStream (MESSAGE_DEBUG) 
 			<< ((stat0 & MOTOR_HOMING) ? "Axis0 is still homing":"Axis0 is homed" )
 			<< ((stat0 & MOTOR_HOMING) ? "Axis1 is still homing":"Axis1 is homed" )
-			<< sendLog;
+			<< sendLog;*/
 		return 0;
 		}
 
@@ -1137,7 +1137,7 @@ int Paramount::doInfo ()
 	
 	// motor status..
 	ret0 = MKS3MotorStatusGet (axis0, &new_status);
-	logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
+	//logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis0: ret0=" << ret0 << " status=" << new_status << sendLog;
 
 	if (motorStatusRa->getValueInteger () != new_status)
 	{
@@ -1146,7 +1146,7 @@ int Paramount::doInfo ()
 	}
 
 	ret1 = MKS3MotorStatusGet (axis1, &new_status);
-	logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis1: ret1=" << ret1 << " status=" << new_status << sendLog;
+	//logStream (MESSAGE_DEBUG) << "MKS3MotorStatusGet axis1: ret1=" << ret1 << " status=" << new_status << sendLog;
 
 	if (motorStatusDec->getValueInteger () != new_status)
 	{
@@ -1161,12 +1161,15 @@ int Paramount::doInfo ()
 
 	double t_telRa;
 	double t_telDec;
+	int t_telFlip;
+	double ut_telRa;
 	double ut_telDec;
 
-	ret = counts2sky (ac, dc, t_telRa, t_telDec, ut_telDec);
+	ret = counts2sky (ac, dc, t_telRa, t_telDec, t_telFlip, ut_telRa, ut_telDec);
 
-	setTelRa (t_telRa);
-	setTelDec (ut_telDec);
+	setTelRaDec (t_telRa, t_telDec);
+	telFlip->setValueInteger (t_telFlip);
+	setTelUnRaDec (ut_telRa, ut_telDec);
 	axRa->setValueLong (ac);
 	axDec->setValueLong (dc);
 

@@ -269,12 +269,15 @@ int Hlohovec::info ()
 
 	double t_telRa;
 	double t_telDec;
+	int t_telFlip;
+	double ut_telRa;
 	double ut_telDec;
 	int32_t raPos = raDrive->getPosition ();
 	int32_t decPos = decDrive->getPosition ();
-	counts2sky (raPos, decPos, t_telRa, t_telDec, ut_telDec);
-	setTelRa (t_telRa);
-	setTelDec (ut_telDec);
+	counts2sky (raPos, decPos, t_telRa, t_telDec, t_telFlip, ut_telRa, ut_telDec);
+	setTelRaDec (t_telRa, t_telDec);
+	telFlip->setValueInteger (t_telFlip);
+	setTelUnRaDec (ut_telRa, ut_telDec);
 
 	return GEM::info ();
 }

@@ -86,7 +86,7 @@
     
     <para>
       This program produces from astrometrically processed input FITS images
-      file, which can be feeded to TPoint for model fitting.
+      file, which can be fed to TPoint for model fitting.
     </para>
 
   </refsect1>
@@ -98,28 +98,36 @@
     <variablelist>
       &basicapplist;
       <varlistentry>
-        <term><option>--mnt-flip</option></term>
+        <term><option>-j</option></term>
 	<listitem>
 	  <para>
-	    Use MNT_FLIP argument to offset DEC. Offsets DEC by 180 degrees.
+	    Specify into output the information, that raw (physical) mount coordinates 
+	    are stored in J2000 (unusual and unwanted situation, but some mounts can
+	    potentially report it only this way).
 	  </para>
 	</listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-t</option></term>
+        <term><option>-c</option></term>
 	<listitem>
 	  <para>
-	    Allow selection of the source informations provided for model.
+	    Force using computation method for obtaining raw mount RA/DEC coordinates from 
+	    TEL and MNT_FLIP values; by default we first try to use the direct values 
+	    U_TEL and fall down to computation when they are not available. 
+	    The computation method cannot distinguish between geometrically same but physically 
+	    different positions, so the non-cyclic TP terms (i.e. polynomial) cannot be used.
 	  </para>
 	</listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-f</option></term>
+        <term><option>-p</option></term>
 	<listitem>
 	  <para>
-	    Allow selection of images only with given flip. If flip selection
-	    is not provided, the program creates TPoint entry file which is
-	    suitable for modelling of both sides of GEM.
+	    Specify the reference pixel on image. Should be set to value, defined 
+	    originally to camera as CRPIX1:CRPIX2. This is recorded in fits header and 
+	    will be used by default, but processing procedure could potentially change
+	    it, so this option allows to define it manually. Available parameter is:
+	    "center" or X:Y for particular coordinates on CCD.
 	  </para>
 	</listitem>
       </varlistentry>

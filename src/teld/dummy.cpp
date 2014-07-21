@@ -164,8 +164,6 @@ int Dummy::startResync ()
 
 	getTarget (&tar);
 	applyModel (&tar, &model_change, telFlip->getValueInteger (), JD);
-	tar.ra = ln_range_degrees (tar.ra + model_change.ra);
-	tar.dec += model_change.dec;
 
 	setTarget (tar.ra, tar.dec);
 

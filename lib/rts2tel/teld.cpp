@@ -43,7 +43,7 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -85,9 +85,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	}
 
 
-	createValue (objRaDec, "OBJ", "telescope FOV center position (J200) - with offsets applied", true);
+	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
-	createValue (tarRaDec, "TAR", "target position (J2000)", true);
+	createValue (tarRaDec, "TAR", "target position with computed corrections (precession, refraction, aberation) applied", true);
 
 	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	corrRaDec->setValueRaDec (0, 0);
@@ -111,7 +111,17 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	wcs_crval1 = wcs_crval2 = NULL;
 
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
-	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
+	createValue (telRaDec, "TEL", "mount position (from sensors, sky coordinates)", true);
+
+	// like TEL, but raw values, no normalization (i.e. no flip transformation):
+	if (hasUnTelCoordinates)
+	{
+		createValue (telUnRaDec, "U_TEL", "mount position (from sensors, raw coordinates, no flip transformation)", true);
+	}
+	else
+	{
+		telUnRaDec = NULL;
+	}
 
 	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true, RTS2_VALUE_WRITABLE);
 
@@ -580,15 +590,21 @@ void Telescope::recalculateMpecDIffs ()
 int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool invertDec)
 {
   	struct ln_equ_posn pos2;
+	int decCoeff = 1;
+
+	// to take care of situation when *pos holds raw mount coordinates
+	if (fabs (pos->dec) > 90.0)
+		decCoeff = -1;
+
 	if (invertRa)
 		pos2.ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
 	else
 		pos2.ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
 
 	if (invertDec)
-		pos2.dec = pos->dec - corrRaDec->getDec ();
+		pos2.dec = pos->dec - decCoeff * corrRaDec->getDec ();
 	else
-		pos2.dec = pos->dec + corrRaDec->getDec ();
+		pos2.dec = pos->dec + decCoeff * corrRaDec->getDec ();
 	if (ln_get_angular_separation (&pos2, pos) > correctionLimit->getValueDouble ())
 	{
 		logStream (MESSAGE_WARNING) << "correction " << LibnovaDegDist (corrRaDec->getRa ()) << " " << LibnovaDegDist (corrRaDec->getDec ()) << " is above limit, ignoring it" << sendLog;
@@ -601,28 +617,66 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 
 void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
 {
+	ln_equ_posn pos_n;
+
+	Telescope::computeModel (pos, model_change, flip, JD);
+
+	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
+
+	// also include corrRaDec correction to get resulting values...
+	if (applyCorrRaDec (pos) == 0)
+	{
+		model_change->ra -= corrRaDec->getRa();
+		if (fabs (pos->dec) > 90.0)
+			model_change->dec += corrRaDec->getDec();
+		else
+			model_change->dec -= corrRaDec->getDec();
+	}
+	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
+	pos_n = *pos;
+	normalizeRaDec (pos_n.ra, pos_n.dec);
+	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
+}
+
+void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr)
+{
+	ln_equ_posn pos_n;
+
+	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
+
+	// also include corrRaDec correction to get resulting values when applyCorr set to true...
+	if (applyCorr == true && applyCorrRaDec (pos) == 0)
+	{
+		model_change->ra -= corrRaDec->getRa();
+		if (fabs (pos->dec) > 90.0)
+			model_change->dec += corrRaDec->getDec();
+		else
+			model_change->dec -= corrRaDec->getDec();
+	}
+	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
+	pos_n = *pos;
+	normalizeRaDec (pos_n.ra, pos_n.dec);
+	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
+}
+
+void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
+{
 	struct ln_equ_posn hadec;
 	double ra;
 	double ls;
-	double un_dec;
-	// normalize correction to prevent runaway
+
 	if (!model || calModel->getValueBool () == false)
 	{
-		if (applyCorrRaDec (pos) == 0)
-		{
-			model_change->ra = -1 * corrRaDec->getRa();
-			model_change->dec = -1 * corrRaDec->getDec();
-		}
-
-		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
+		model_change->ra = 0;
+		model_change->dec = 0;
 		return;
 	}
 	ls = getLstDeg (JD);
-	hadec.ra = ln_range_degrees (ls - pos->ra);
+	hadec.ra = ls - pos->ra;	// intentionally without ln_range_degrees, for proper model computations when flip=0
 	hadec.dec = pos->dec;
 
-	// change RA and DEC when modeling oposite side and we have only one model
-	if (flip && model)
+	// change RA and DEC when modeling flipped position
+	if (flip)
 	{
 		LibnovaRaDec fhadec (&hadec);
 
@@ -635,7 +689,6 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		hadec.ra = fhadec.getRa ();
 		hadec.dec = fhadec.getDec ();
 
-		un_dec = hadec.dec;
 		model->reverse (&hadec);
 
 		// now flip back
@@ -646,31 +699,20 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 
 		hadec.ra = fhadec.getRa ();
 		hadec.dec = fhadec.getDec ();
-
-		double t_dec = tarRaDec->getDec ();
-
-		if (observer.lat > 0 && un_dec > 90.0)
-			t_dec = 180.0 - t_dec;
-		else if (observer.lat < 0 && un_dec < -90.0)
-			t_dec = -180.0 - t_dec;
-
-		tarRaDec->setDec (t_dec);
 	}
 	else
 	{
-		un_dec = hadec.dec;
 		model->reverse (&hadec);
 	}
 
 	// get back from model - from HA
-	ra = ln_range_degrees (ls - hadec.ra);
+	ra = ls - hadec.ra;
 
 	// calculate change
-	model_change->ra = ln_range_degrees (pos->ra - ra);
-	model_change->dec = pos->dec - hadec.dec;
-
-	if (model_change->ra > 180)
+	model_change->ra = ln_range_degrees (pos->ra - ra);	// here must be ln_range_degrees, flip computation above might have destroyed the continuity
+	if (model_change->ra > 180.0)
 		model_change->ra -= 360.0;
+	model_change->dec = pos->dec - hadec.dec;
 
 	hadec.ra = ra;
 
@@ -680,31 +722,21 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	if (sep > modelLimit->getValueDouble ())
 	{
 		logStream (MESSAGE_WARNING)
-			<< "telescope applyModel big change - rejecting "
+			<< "telescope computeModel big change - rejecting "
 			<< model_change->ra << " "
 			<< model_change->dec << " sep " << sep << sendLog;
 		model_change->ra = 0;
 		model_change->dec = 0;
-		modelRaDec->setValueRaDec (0, 0);
-		applyCorrRaDec (pos);
-		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
 
 	logStream (MESSAGE_DEBUG)
-		<< "Telescope::applyModel offsets ra: "
+		<< "Telescope::computeModel offsets ra: "
 		<< model_change->ra << " dec: " << model_change->dec
 		<< sendLog;
 
-	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
-
-	if (applyCorrRaDec (pos) == 0)
-	{
-		model_change->ra -= corrRaDec->getRa();
-		model_change->dec -= corrRaDec->getDec();
-	}
-
-	telTargetRaDec->setValueRaDec (pos->ra, un_dec);
+	pos->ra -= model_change->ra;
+	pos->dec -= model_change->dec;
 }
 
 int Telescope::init ()
@@ -1100,7 +1132,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	setCRVAL (pos.ra, pos.dec);
 
-	// apply corrections
+	// apply computed corrections (precession, aberation, refraction)
 	double JD = ln_get_julian_from_sys ();
 
 	applyCorrections (&pos, JD);
@@ -1110,8 +1142,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	// now we have target position, which can be feeded to telescope
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
-	// calculate target after corrections
-	applyCorrRaDec (&pos, true, true);
+	// calculate target after corrections from astrometry
+	applyCorrRaDec (&pos, false, false);
 
 	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);
@@ -1181,8 +1213,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 	}
 
-
-
+	// all checks done, give proper info and set TEL_ state and BOP
 	if (correction)
 	{
 		LibnovaDegDist c_ra (corrRaDec->getRa ());
@@ -1214,6 +1245,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 	}
 
+	// everything is OK and prepared, let's move!
 	ret = startResync ();
 	if (ret)
 	{

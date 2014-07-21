@@ -598,6 +598,20 @@ class Image:public FitsFile
 		 */
 		void getCoordBest (LibnovaRaDec & radec);
 
+		void getCoordMountRawUn (LibnovaRaDec & radec);
+		void getCoordMountRawComputed (LibnovaRaDec & radec);
+
+		/**
+		 * Retrieves from FITS headers best raw mount coordinates.
+		 *
+		 * Those are taken from U_TELRA and U_TELDEC keywords, or computed from 
+		 * TELRA, TELDEC and MNT_FLIP values, which will not give real HW position 
+		 * (we cannot distinguish between 360deg multiples), still it should be 
+		 * acceptable for most cases.
+		 * Needed for TP model computations.
+		 */
+		void getCoordMountRawBest (LibnovaRaDec & radec);
+
 		std::string getOnlyFileName ();
 
 		virtual bool haveOKAstrometry () { return false; }

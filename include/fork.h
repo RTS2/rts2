@@ -33,12 +33,12 @@ namespace rts2teld
 class Fork: public Telescope
 {
 	public:
-		Fork (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false);
+		Fork (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
 		virtual ~Fork (void);
 
 	protected:
 		/**
-		 * Fork parameters, in degrees.
+		 * Fork parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
 		 */
 		double haZero;
 		double decZero;
@@ -48,6 +48,8 @@ class Fork: public Telescope
 
 		int32_t acMin;
 		int32_t acMax;
+		int32_t dcMin;
+		int32_t dcMax;
 
 		int acMargin;
 
@@ -64,7 +66,19 @@ class Fork: public Telescope
 
 		int sky2counts (int32_t & ac, int32_t & dc);
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
-		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec);
+
+		/**
+		 * Convert counts to RA&Dec coordinates.
+		 *
+		 * @param ac      Alpha counts
+		 * @param dc      Delta counts
+		 * @param ra      Telescope RA
+		 * @param dec     Telescope declination
+		 * @param flip    flip status
+		 * @param un_ra   unflipped (raw hardware) RA
+		 * @param un_dec  unflipped (raw hardware) declination
+		 */
+		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec);
 };
 
 };
