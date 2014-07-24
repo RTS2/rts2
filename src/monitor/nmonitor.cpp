@@ -302,6 +302,9 @@ void NMonitor::menuPerform (int code)
 			break;
 		case MENU_SORT_ALPHA:
 		case MENU_SORT_RTS2:
+			if (getActiveWindow () != deviceList)
+				changeActive (deviceList);
+
 			switch (code)
 			{
 				case MENU_SORT_ALPHA:
@@ -655,7 +658,7 @@ void NMonitor::processKey (int key)
 					activeWindow = NULL;
 				}
 			}
-			else if (activeWindow == msgwindow)
+			else // activeWindow == msgwindow, or unknow activeWindow
 			{
 				changeActive (deviceList);
 				activeWindow = NULL;
@@ -679,7 +682,7 @@ void NMonitor::processKey (int key)
 					activeWindow = NULL;
 				}
 			}
-			else if (activeWindow == msgwindow)
+			else // activeWindow == msgwindow or unknow
 			{
 				changeActive (daemonWindow);
 				activeWindow = NULL;
