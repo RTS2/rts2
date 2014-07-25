@@ -24,10 +24,12 @@
 #include "rts2fits/imagedb.h"
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <stdlib.h>
 
 using namespace rts2telmodel;
 
@@ -48,6 +50,12 @@ class ModelTest:public Telescope
 		}
 
 		void setObserverLat (double in_lat) { telLatitude->setValueDouble (in_lat); }
+		double getLST (double JD) { return getLocSidTime (JD);}
+		void getObs (ln_lnlat_posn *obs)
+		{
+			obs->lng = telLongitude->getValueDouble ();
+			obs->lat = telLatitude->getValueDouble ();
+		}
 
 	protected:
 		int startResync () { return 0; }
@@ -69,6 +77,9 @@ class TelModelTest:public rts2core::CliApp
 		// if input are images
 		bool image;
 		bool rpoint;
+		bool printAltAz;
+		bool printJD;
+		bool includeRefraction;
 
 		void test (double ra, double dec);
 		void runOnFile (std::string filename, std::ostream & os);
@@ -103,8 +114,14 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	image = false;
 	rpoint = false;
 	verbose = false;
+	printAltAz = false;
+	printJD = false;
+	includeRefraction = false;
 	addOption ('m', NULL, 1, "Model file to use");
-	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC.");
+	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC. All values in arcminutes.");
+	addOption ('R', NULL, 0, "Include atmospheric refraction into corrections.");
+	addOption ('a', NULL, 0, "Print also alt-az coordinates together with errors.");
+	addOption ('j', NULL, 0, "Print also computed JD together with errors.");
 	addOption ('N', NULL, 0, "Print numbers, do not pretty print.");
 	addOption ('v', NULL, 0, "Report model progress");
 	addOption ('i', NULL, 0, "Print model for given images");
@@ -120,7 +137,9 @@ TelModelTest::~TelModelTest (void)
 void TelModelTest::usage ()
 {
 	std::cout << "To run on TPOINT input named model_test.dat, with model file in /etc/rts2/model:" << std::endl 
-		<< "\t" << getAppName () << " -m /etc/rts2/model -e -v model_test.dat" << std::endl
+		<< "\t" << getAppName () << " -m /etc/rts2/model -ee -j -a -R model_test.dat" << std::endl
+	<< "To compare results of actual model with data from observed images (simple logic):" << std::endl
+		<< "\t" << getAppName () << " -m /etc/rts2/model -i *.fits" << std::endl
 	<< "To generate random pointings" << std::endl
 		<< "\t" << getAppName () << " -r" << std::endl;
 } 
@@ -134,6 +153,15 @@ int TelModelTest::processOption (int in_opt)
 			break;
 		case 'e':
 			errors++;
+			break;
+		case 'R':
+			includeRefraction = true;
+			break;
+		case 'a':
+			printAltAz = true;
+			break;
+		case 'j':
+			printJD = true;
 			break;
 		case 'N':
 			std::cout << pureNumbers;
@@ -208,42 +236,61 @@ void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 	img.openFile (filename.c_str (), true, true);
 	struct ln_equ_posn posObj;
 	struct ln_equ_posn posTar;
+	struct ln_equ_posn posTarUn;
 	struct ln_equ_posn posImg;
 	LibnovaRaDec posMount;
+	LibnovaRaDec posMountRaw;
 
 	img.getCoordObject (posObj);
 	img.getCoordTarget (posTar);
 	img.getCoordAstrometry (posImg);
 	img.getCoordMount (posMount);
+	img.getCoordMountRawBest (posMountRaw);
+
+	// we need to get "TAR" value, but in physical coordinates, to compute model right
+	// we will get it from U_TEL, adding difference TAR-TEL (according to flip)
+	posTarUn.ra = posMountRaw.getRa () + (posTar.ra - posMount.getRa ());
+	if (fabs (posMountRaw.getDec ()) > 90.0)
+		posTarUn.dec = posMountRaw.getDec () - (posTar.dec - posMount.getDec ());
+	else
+		posTarUn.dec = posMountRaw.getDec () + (posTar.dec - posMount.getDec ());
+
 
 	LibnovaRaDec pObj (&posObj);
 	LibnovaRaDec pTar (&posTar);
-	os << "Object: " << pObj << std::endl
-	  << "Target: " << pTar << std::endl;
-
-	double lst = img.getExposureLST ();
-	posTar.ra = ln_range_degrees (lst - posTar.ra);
-	if (verbose)
-		model->reverseVerbose (&posTar);
-	else
-		model->reverse (&posTar);
-	posTar.ra = ln_range_degrees (lst - posTar.ra);
-	LibnovaRaDec pTar2 (&posTar);
+	LibnovaRaDec pTarUn (&posTarUn);
 	LibnovaRaDec pImg (&posImg);
 
-	LibnovaDegDist modTarRa (posTar.ra - pTar.getRa ());
-	LibnovaDegDist modTarDec (posTar.dec - pTar.getDec ());
+	double lst = 15.0 * img.getExposureLST ();
+	posTarUn.ra = lst - posTarUn.ra;
+	if (verbose)
+		model->reverseVerbose (&posTarUn);
+	else
+		model->reverse (&posTarUn);
+	posTarUn.ra = lst - posTarUn.ra;
+	LibnovaRaDec pTarUn2 (&posTarUn);
 
-	LibnovaDegDist objImgRa (pImg.getRa () - pObj.getRa ());
-	LibnovaDegDist objImgDec (pImg.getDec () - pObj.getDec ());
+	int degCoeff;
+	if (fabs (pTarUn.getDec ()) > 90.0)
+		degCoeff = -1;
+	else
+		degCoeff = 1;
 
-	LibnovaDegDist tarImgRa (pImg.getRa () - pTar.getRa ());
-	LibnovaDegDist tarImgDec (pImg.getDec () - pTar.getDec ());
+	LibnovaDeg modTarRa (posTarUn.ra - pTarUn.getRa ());
+	LibnovaDeg modTarDec (degCoeff * (posTarUn.dec - pTarUn.getDec ()));
 
-	os << "Model:  " << pTar2 << " " << modTarRa << " " << modTarDec << std::endl
-		<< "Mount:  " << posMount << std::endl
-		<< "Image:  " << pImg << " " << objImgRa << " " << objImgDec 
-		<< " " << tarImgRa << " " << tarImgDec << std::endl;
+	LibnovaDeg astTelRa (pImg.getRa () + (pTar.getRa () - pObj.getRa ()) - posMount.getRa ());
+	LibnovaDeg astTelDec (pImg.getDec () + (pTar.getDec () - pObj.getDec ()) - posMount.getDec ());
+
+	LibnovaDeg diffRa (astTelRa.getDeg () + modTarRa.getDeg ());
+	LibnovaDeg diffDec (astTelDec.getDeg () + modTarDec.getDeg ());
+
+	//os << "OBJ: " << pObj << " U_TAR: " << pTarUn 
+	os << " U_TAR: " << pTarUn
+		<< " Ast+(TAR-OBJ)-TEL: " << astTelRa << " " << astTelDec
+		<< " Model: " << modTarRa << " " << modTarDec
+		<< " Diff[arcmin]: " << 60.0 * diffRa.getDeg () << " " << 60.0 * diffDec.getDeg () << std::endl;
+
 }
 
 void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
@@ -263,6 +310,7 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 
 	// julian date (of observations start; as precession will not change a much in few hours spanning data acqusition time,
 	// we don't need exact date
+	double JD0 = NAN;
 	double JD = NAN;
 
 	is.getline (caption, 80);
@@ -322,17 +370,20 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			}
 			else
 			{
-				JD = ln_get_julian_day (&date);
+				JD0 = ln_get_julian_day (&date);
 				iss >> temp >> press;
 				if (iss.fail ())
 				{
 					temp = NAN;
 					press = NAN;
-					telescope->setCorrections (true, true, true);
+					telescope->setCorrections (true, true, false);
 				}
 				else
 				{
-					telescope->setCorrections (true, true, false);
+					if ( includeRefraction )
+						telescope->setCorrections (true, true, true);
+					else
+						telescope->setCorrections (true, true, false);
 				}
 			}
 			if (firstChar == '-')
@@ -377,13 +428,13 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			struct ln_equ_posn pos;
 			_out.getPos (&pos);
 
-			pos.ra = ln_range_degrees (lst.getRa () - pos.ra);
+			pos.ra = lst.getRa () - pos.ra;
 			if (verbose)
 				model->applyVerbose (&pos);
 			else
 				model->apply (&pos);
 			// print it out
-			pos.ra = ln_range_degrees (lst.getRa () - pos.ra);
+			pos.ra = lst.getRa () - pos.ra;
 			std::cout.precision (1);
 			LibnovaRaDec _out_in (&pos);
 
@@ -400,8 +451,15 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 					pos_out.dec = (pos_out.dec > 0 ? 180 : -180) - pos_out.dec;
 				}
 
-				if (!isnan (JD))
+				if (!isnan (JD0))
+				{
+					if ( includeRefraction )
+						JD = JD0 + ln_range_degrees (lst.getRa () - (15. * telescope->getLST (JD0)))/15.0/24.06570949;
+					else
+						JD = JD0;
+
 					telescope->applyCorrections (&pos_in, JD);
+				}
 
 				double err = ln_get_angular_separation (&pos_in, &pos_out);
 
@@ -409,7 +467,8 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				rms += err * err;
 				rms_n++;
 
-				std::cout << LibnovaDegDist (err) << " ";
+				//std::cout << LibnovaDegDist (err) << " ";
+				std::cout << std::setprecision (4) << err * 60.0 << "  ";
 
 				if (errors > 1)
 				{
@@ -417,7 +476,24 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 					rd = pos_in.ra - pos_out.ra;
 					dd = pos_in.dec - pos_out.dec;
 
-					std::cout << LibnovaDegArcMin (rd) << " " << LibnovaDegArcMin (dd);
+					//std::cout << LibnovaDegArcMin (rd) << " " << LibnovaDegArcMin (dd);
+					std::cout << std::showpos << std::setprecision (4) << rd * 60.0 << "  " << dd * 60.0 << "  " << std::noshowpos;
+				}
+
+				if ( printJD )
+					std::cout << std::setprecision (4) << JD << "  ";
+
+				if (printAltAz)
+				{
+					struct ln_hrz_posn hrz;
+					struct ln_lnlat_posn obs;
+
+					telescope->getObs (&obs);
+
+					ln_get_hrz_from_equ (&pos_in, &obs, JD, &hrz);
+
+					std::cout << std::setprecision (1) << hrz.alt << "  " << hrz.az << "  ";
+
 				}
 			}
 

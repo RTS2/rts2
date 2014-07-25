@@ -273,7 +273,6 @@ int TPM::printImage (rts2image::Image * image, WorldCoor * wcs, std::ostream & _
 			y_ref = num_pixels / 2.0;
 		}
 		pix2wcs (wcs, x_ref, y_ref, &x_pos, &y_pos);
-		//actual = LibnovaRaDec (x_pos, y_pos);
 		actual.setRa (x_pos);
 		actual.setDec (y_pos);
 	}
