@@ -1,8 +1,8 @@
 CREATE FUNCTION wcs_in (opaque) -- OR REPLACE
-  RETURNS wcs AS 'pg_wcs.so','wcs_in' LANGUAGE 'C';
+  RETURNS wcs AS 'pg_wcs.so','wcs_in' LANGUAGE 'c';
 
 CREATE FUNCTION wcs_out (opaque) -- OR REPLACE
-  RETURNS opaque AS 'pg_wcs.so', 'wcs_out' LANGUAGE 'C';
+  RETURNS opaque AS 'pg_wcs.so', 'wcs_out' LANGUAGE 'c';
 
 -- poprve se vypise varovani, ze typ neni
 

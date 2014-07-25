@@ -188,7 +188,7 @@ CREATE UNIQUE INDEX plan_tar_id_start ON plan (tar_id, plan_start);
 
 -- second parameter is site longitude
 CREATE OR REPLACE FUNCTION to_night(timestamp with time zone, numeric) RETURNS timestamp without time zone AS
-	'SELECT (to_timestamp (EXTRACT(EPOCH FROM $1) + 86400 * $2 / 360 - 43200) AT TIME ZONE ''UTC'' )' LANGUAGE 'SQL';
+	'SELECT (to_timestamp (EXTRACT(EPOCH FROM $1) + 86400 * $2 / 360 - 43200) AT TIME ZONE ''UTC'' )' LANGUAGE 'sql';
 
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records_state TO GROUP observers;
