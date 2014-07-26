@@ -300,7 +300,7 @@
       <para>
 	One or multiple targets can be added to the queue with either
 	<command><link linked="cmd:queue">queue</link></command> command, or through
-	<citerefentry><refentrytitle>rts2-xmlrpcd</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+	<citerefentry><refentrytitle>rts2-httpd</refentrytitle><manvolnum>7</manvolnum></citerefentry>
 	JSON interface, probably with help of the
 	<citerefentry><refentrytitle>rts2-queue</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
 	In this tutorial, we will consider adding target only directly, through

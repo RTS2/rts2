@@ -847,7 +847,7 @@
 
     <para>
       <citerefentry>
-        <refentrytitle>rts2-xmlrpcd</refentrytitle>
+        <refentrytitle>rts2-httpd</refentrytitle>
 	<manvolnum>7</manvolnum>
       </citerefentry>
       <citerefentry>
@@ -867,7 +867,7 @@
 	<manvolnum>1</manvolnum>
       </citerefentry>
       <citerefentry>
-        <refentrytitle>rts2-xmlrpcd</refentrytitle>
+        <refentrytitle>rts2-httpd</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
       <citerefentry>

@@ -91,8 +91,8 @@
     <para>
       &dhpackage; is a test implementation of XMl-RPC protocol used by
       RTS2. It shares libraries with
-      <citerefentry><refentrytitle>rts2-xmlrpcd</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
-      so it should work when <command>rts2-xmlrpcd</command> works.
+      <citerefentry><refentrytitle>rts2-httpd</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
+      so it should work when <command>rts2-httpd</command> works.
     </para>
     <para>
       Apart from being the test implementation, rts2-xmlrpcclient also provides a
@@ -105,9 +105,9 @@
     <title>Configuration</title>
 
     <para>
-      Access to rts2-xmlrpcd server is ussually password protected, using
+      Access to rts2-httpd server is ussually password protected, using
       either standard HTTP authorization, or custom authorization inside
-      rts2-xmlrpcd. There are two options how to provide username and password
+      rts2-httpd. There are two options how to provide username and password
       for HTTP connections. They can be listed on command line, or specified in
       a configuration file. If you specify username using --user option,
       rts2-xmlrpcclient will ask for password. 
@@ -312,7 +312,7 @@ user@machine:~$ rts2-xmlrcclient --master-state on
 	<manvolnum>5</manvolnum>
       </citerefentry>
       <citerefentry>
-        <refentrytitle>rts2-xmlrpcd</refentrytitle>
+        <refentrytitle>rts2-httpd</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
     </para>
