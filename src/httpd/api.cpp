@@ -29,16 +29,16 @@
 digraph "JSON API calls handling" {
   "Client" [shape=box];
   "HTTP/JSON library" [shape=polygon];
-  "rts2-xmlrpcd" [shape=box];
+  "rts2-httpd" [shape=box];
   "RTS2 device" [shape=box];
   "SQL database" [shape=box];
 
   "Client" -> "HTTP/JSON library" [label="function call"];
-  "HTTP/JSON library" -> "rts2-xmlrpcd" [label="HTTP GET request"];
-  "rts2-xmlrpcd" -> "RTS2 device" [label="RTS2 protocol request call"];
-  "rts2-xmlrpcd" -> "SQL database" [label="SQL call"];
+  "HTTP/JSON library" -> "rts2-httpd" [label="HTTP GET request"];
+  "rts2-httpd" -> "RTS2 device" [label="RTS2 protocol request call"];
+  "rts2-httpd" -> "SQL database" [label="SQL call"];
 
-  "rts2-xmlrpcd" -> "HTTP/JSON library" [label="JSON document with returned data"];
+  "rts2-httpd" -> "HTTP/JSON library" [label="JSON document with returned data"];
   "HTTP/JSON library" -> "Client" [label="function return"];
 }
  * @enddot
@@ -61,7 +61,7 @@ digraph "JSON API calls handling" {
  *  - @ref JSON_sql
  */
 
-#include "xmlrpcd.h"
+#include "httpd.h"
 #include "rts2json/jsonvalue.h"
 
 #include "rts2db/constraints.h"

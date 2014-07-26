@@ -20,7 +20,7 @@
 
 #include "rts2db/constraints.h"
 #include "rts2script/connexe.h"
-#include "xmlrpcd.h"
+#include "httpd.h"
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/user.h"

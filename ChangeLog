@@ -1,3 +1,6 @@
+2014-07-26
+ * renamed XMLRPCD to HTTPD
+
 2014-07-21
  * extensive update of teld and all related classes and drivers, fixing behaviour and correctness
  * separating telescope physical and sky coordinates, enabling TP model to be computed correctly in all cases

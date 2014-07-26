@@ -8,7 +8,7 @@
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhpackage   "rts2-xmlrpcd">
+  <!ENTITY dhpackage   "rts2-httpd">
 
   <!ENTITY % rts2 SYSTEM "rts2.ent">
   %rts2;
@@ -47,7 +47,7 @@
   <refnamediv>
     <refname>&dhpackage;</refname>
     <refpurpose>
-      Provides XML-RPC and JSON access to RTS2. It also triggers execution of
+      Provides Web, JSON and XML-RPC access to RTS2. It also triggers execution of
       state and events based scripts, and includes HTTP server serving database
       access pages.
     </refpurpose>
@@ -145,7 +145,7 @@
       <para>
 	Document root of the embedded HTTP server. Requests which do not match
 	<emphasis>API</emphasis> entries, nor any pages provided in
-	<emphasis>rts2-xmlrpcd</emphasis> source file, are directed to this directory.
+	<emphasis>&dhpackage;</emphasis> source file, are directed to this directory.
       </para>
     </refsect2>
     <refsect2>
@@ -368,7 +368,7 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 ]]>
       </programlisting>
       <para>
-        This event file, when passed to rts2-xmlrpcd with --event-file option, will:
+        This event file, when passed to &dhpackage; with --event-file option, will:
         <itemizedlist>
           <listitem>
   	    <para>

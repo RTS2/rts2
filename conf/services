@@ -5,4 +5,4 @@ executor	EXEC
 selector	SEL --add-queue manual --add-queue plan
 #specify XMLRPC user, if you wish so
 #xmlrpcd		XMLRPC		--run-as user
-xmlrpcd		XMLRPC
+httpd		XMLRPC

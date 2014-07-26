@@ -36,7 +36,7 @@ EXTRA_DIST = \
     rts2-focusd.xml \
     rts2-teld.xml \
     rts2-simbadinfo.xml \
-    rts2-xmlrpcd.xml \
+    rts2-httpd.xml \
     rts2-xmlrpcclient.xml \
     rts2-sensor-aag.xml \
     rts2-talker.xml \
@@ -93,7 +93,7 @@ man_MANS = \
     rts2-focusd.7 \
     rts2-teld.7 \
     rts2-simbadinfo.1 \
-    rts2-xmlrpcd.7 \
+    rts2-httpd.7 \
     rts2-xmlrpcclient.1 \
     rts2-sensor-aag.1 \
     rts2-talker.1 \

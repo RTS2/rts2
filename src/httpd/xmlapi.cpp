@@ -18,7 +18,7 @@
  */
 
 #include "xmlapi.h"
-#include "xmlrpcd.h"
+#include "httpd.h"
 
 #include "xmlstream.h"
 

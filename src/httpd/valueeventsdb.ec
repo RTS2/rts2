@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "xmlrpcd.h"
+#include "httpd.h"
 
 #include "rts2db/recvals.h"
 #include "rts2db/sqlerror.h"

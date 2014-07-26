@@ -932,7 +932,7 @@ AC_OUTPUT([Makefile
 	   src/sensord/Makefile
 	   src/rotad/Makefile
 	   src/logger/Makefile
-	   src/xmlrpc/Makefile
+	   src/httpd/Makefile
 	   src/scheduler/Makefile
 	   src/bb/Makefile
 	   scripts/rts2saf/Makefile

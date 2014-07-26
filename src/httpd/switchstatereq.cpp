@@ -18,7 +18,7 @@
  */
 
 #include "rts2json/httpreq.h"
-#include "xmlrpcd.h"
+#include "httpd.h"
 
 using namespace rts2xmlrpc;
 

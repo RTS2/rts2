@@ -19,7 +19,7 @@
 
 #include "bbserver.h"
 #include "xmlrpc++/urlencoding.h"
-#include "xmlrpcd.h"
+#include "httpd.h"
 
 #include "rts2db/observation.h"
 

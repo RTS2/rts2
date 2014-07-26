@@ -1,6 +1,6 @@
-bin_PROGRAMS = rts2-xmlrpcd rts2-xmlrpcclient
+bin_PROGRAMS = rts2-httpd rts2-xmlrpcclient
 
-noinst_HEADERS = xmlstream.h xmlrpcd.h r2x.h session.h stateevents.h valueevents.h events.h \
+noinst_HEADERS = xmlstream.h httpd.h r2x.h session.h stateevents.h valueevents.h events.h \
 	valueplot.h emailaction.h augerreq.h devicesreq.h planreq.h graphreq.h bbserver.h api.h \
 	bbapi.h messageevents.h switchstatereq.h xmlapi.h
 
@@ -9,12 +9,12 @@ AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ @J
 
 if PGSQL
 
-rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp stateeventsdb.cpp valueevents.cpp \
+rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp stateeventsdb.cpp valueevents.cpp \
 	valueeventsdb.cpp emailaction.cpp valueplot.cpp augerreq.cpp devicesreq.cpp planreq.cpp graphreq.cpp \
 	bbserver.cpp api.cpp bbapi.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp
-rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -lrts2scheduler -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db \
+rts2_httpd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
+rts2_httpd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -lrts2scheduler -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db \
 	-L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIBPG_LIBS@ \
 	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIB_CRYPT@ @LIBARCHIVE_LIBS@ $(AM_LDADD)
 
@@ -25,11 +25,11 @@ CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
 
 else
 
-rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
+rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
 	devicesreq.cpp graphreq.cpp bbserver.cpp api.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp
-rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \
+rts2_httpd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
+rts2_httpd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \
 	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ @LIB_CRYPT@ ${AM_LDADD}
 
 endif
