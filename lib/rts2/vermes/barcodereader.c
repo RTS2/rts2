@@ -101,9 +101,9 @@ POS_CHG_CBF *callback_function ; // wildi 1= NULL;
 
 pthread_mutex_t pos_data_mutex;
 
-char * log_string;
+extern char * log_string;
 int syslog_opened ; //wildi = 0;
-int sys_log_mask ; // wildi 1= 0;
+extern int sys_log_mask ; // wildi 1= 0;
 
 /******************************************************************************
  * sys_setlogmask(...)
