@@ -179,7 +179,7 @@ if options.x_offset is not None:
 if options.y_offset is not None:
 	options.y_offset = float(options.y_offset)
 
-wcs_scale = 1
+wcs_scale = 3600.0
 if options.wcsscale is not None:
 	if options.wcsscale == 'arcdeg':
 		wcs_scale = 3600.0
