@@ -88,7 +88,7 @@ rts2_sensor_agilent_e3631a_SOURCES = agilent-e3631a.cpp
 
 rts2_sensor_aws_mlab_SOURCES = aws-mlab.cpp
 
-if SUNCYG
+if SUNCYGMAC
 EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp
 else
 bin_PROGRAMS += rts2-sensor-tps534 rts2-sensor-niratir

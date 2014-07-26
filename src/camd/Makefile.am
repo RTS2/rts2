@@ -21,7 +21,7 @@ rts2_camd_sidecar_SOURCES = sidecar.cpp
 
 EXTRA_DIST = 
 
-if SUNCYG
+if SUNCYGMAC
 EXTRA_DIST += urvc2.cpp apogee.cpp v4l.cpp
 else
 if ARMCPU

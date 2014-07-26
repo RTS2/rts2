@@ -197,7 +197,7 @@ class FitsFile: public rts2core::Expander
 		void setValue (const char *name, double value, const char *comment);
 		void setValue (const char *name, char value, const char *comment);
 		void setValue (const char *name, const char *value, const char *comment);
-		void setValue (const char *name, time_t * sec, long usec, const char *comment);
+		void setValue (const char *name, time_t * sec, suseconds_t usec, const char *comment);
 
 		// write rectangle in IRAF notation - e.g. as [x:y,w:h]
 		void setValueRectange (const char *name, double x, double y, double w, double h, const char *comment);

@@ -35,7 +35,7 @@ rts2_dome_ahe_SOURCES = ahe.cpp
 
 rts2_cupola_maxdomeii_SOURCES = maxdomeii.cpp
 
-if SUNCYG
+if SUNCYGMAC
 EXTRA_DIST +=  watcher.cpp serial_ahe.c
 else
 bin_PROGRAMS += rts2-cupola-vermes rts2-dome-door-vermes rts2-dome-watcher rts2-dome-ahe

@@ -104,6 +104,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 #endif
+#include <libgen.h>
 
 #include "xmlrpc++/urlencoding.h"
 

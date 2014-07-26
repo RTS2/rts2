@@ -862,7 +862,8 @@ AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
 AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
 AM_CONDITIONAL(SUNOS, test x${target_os} = xsolaris2.8)
 AM_CONDITIONAL(CYGWIN, test x${target_os} = xcygwin)
-AM_CONDITIONAL(SUNCYG, test x${target_os} = xcygwin -o x${target_os} = xsolaris2.8)
+AM_CONDITIONAL(MACOSX, test x${target_os/darwin} != x${target_os})
+AM_CONDITIONAL(SUNCYGMAC, test x${target_os} = xcygwin -o x${target_os} = xsolaris2.8 -o x${target_os/darwin} != x${target_os})
 AM_CONDITIONAL(ARMCPU, test x${target_cpu} = xarm)
 
 AC_OUTPUT([Makefile

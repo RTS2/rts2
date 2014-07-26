@@ -14,6 +14,7 @@
 
 #include <malloc.h>
 #include <sys/select.h>
+#include <stdlib.h>
 
 namespace XmlRpc
 {

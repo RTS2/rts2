@@ -32,7 +32,7 @@ else
 EXTRA_DIST += conngpiblinux.cpp
 endif
 	
-if SUNCYG
+if SUNCYGMAC
 EXTRA_DIST += OakFeatureReports.c OakHidBase.c
 else
 librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c
