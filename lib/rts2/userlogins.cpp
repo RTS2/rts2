@@ -115,7 +115,7 @@ bool UserLogins::verifyUser (std::string username, std::string pass, std::vector
 	char *crp = crypt (pass.c_str (), logins[username].first.c_str ());
 	return logins[username].first == std::string(crp);
 #else
-	return logins[username] == pass;
+	return logins[username].first == pass;
 #endif
 }
 
@@ -128,7 +128,7 @@ void UserLogins::setUserPassword (std::string username, std::string newpass)
 	strcpy (salt + 11, "$");
 	logins[username].first = std::string (crypt (newpass.c_str (), salt));
 #else
-	logins[username] = newpass;
+	logins[username].first = newpass;
 #endif
 }
 
