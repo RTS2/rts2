@@ -21,7 +21,9 @@
 #include "rts2db/sqlerror.h"
 #include "rts2db/userset.h"
 
+#ifdef RTS2_HAVE_CRYPT
 #include <crypt.h>
+#endif
 
 using namespace rts2db;
 

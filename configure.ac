@@ -758,7 +758,7 @@ AC_DEFINE_UNQUOTED([HAVE_CRYPT],1,[If crypt library is installed])],
 **** You don't have crypt library.
 **** All passwords will be stored in plaintext
 EOF
-LIB_CRYPT="no"
+LIB_CRYPT=""
 ])
 
 AC_MSG_CHECKING(for build date)

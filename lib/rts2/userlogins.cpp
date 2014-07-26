@@ -24,7 +24,9 @@
 
 #include <unistd.h>
 #include <errno.h>
+#ifdef RTS2_HAVE_CRYPT
 #include <crypt.h>
+#endif
 
 using namespace rts2core;
 

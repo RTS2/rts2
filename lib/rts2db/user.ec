@@ -21,7 +21,9 @@
 #include "app.h"
 
 #include <unistd.h>
+#ifdef RTS2_HAVE_CRYPT
 #include <crypt.h>
+#endif
 
 using namespace rts2db;
 
