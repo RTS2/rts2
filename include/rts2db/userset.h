@@ -65,7 +65,7 @@ class UserSet: public std::list <User>
  * @param email     User email.
  * @return -1 on error, 0 on sucess.
  */
-int createUser (std::string login, std::string password, std::string email);
+int createUser (std::string login, std::string password, std::string email, std::string allowed_devices = "");
 
 /**
  * Delete user from database.

@@ -88,7 +88,7 @@ UserSet::~UserSet (void)
 {
 }
 
-int createUser (std::string login, std::string password, std::string email)
+int createUser (std::string login, std::string password, std::string email, std::string allowed_devices)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
@@ -126,6 +126,11 @@ int createUser (std::string login, std::string password, std::string email)
 		logStream (MESSAGE_ERROR) << "email is too long" << sendLog;
 		return -1;
 	}
+	if (allowed_devices.length () > 1999)
+	{
+		logStream (MESSAGE_ERROR) << "allowed devices is too long" << sendLog;
+		return -1;
+	}
 
 	strncpy (db_login.arr, login.c_str (), 25);
 	db_login.len = login.length ();
@@ -133,8 +138,8 @@ int createUser (std::string login, std::string password, std::string email)
 	strncpy (db_email.arr, email.c_str (), 200);
 	db_email.len = email.length ();
 
-	strcpy (db_allowed_devices.arr, "*");
-	db_allowed_devices.len = 1;
+	strncpy (db_allowed_devices.arr, allowed_devices.c_str(), 2000);
+	db_allowed_devices.len = allowed_devices.length ();
 
 	EXEC SQL INSERT INTO users
 	(

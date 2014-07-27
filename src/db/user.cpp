@@ -166,6 +166,7 @@ int Rts2UserApp::newUser ()
 {
 	std::string passwd;
 	std::string email;
+	std::string allowed_devices;
 
 	if (password)
 	{
@@ -180,8 +181,11 @@ int Rts2UserApp::newUser ()
 		ret = askForString ("User email (can be left empty)", email);
 		if (ret)
 			return ret;
+		ret = askForString ("Allowed Devices (can be left empty)", allowed_devices);
+		if (ret)
+			return ret;
 	}
-	return createUser (std::string (user), passwd, email);
+	return createUser (std::string (user), passwd, email, allowed_devices);
 }
 
 int Rts2UserApp::deleteUser ()
