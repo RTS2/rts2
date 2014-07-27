@@ -309,15 +309,16 @@ sudo cp ${download_dir}/rts2.ini /etc/rts2/rts2.ini
 if [ $with_db == 1 ]; then
 
 	echo "Creating postgresql database"
-
 	sudo createdb stars
-	sudo psql stars <<EOF
-alter group observers add user $USER;
-EOF
 
 	echo "Building postgresql database"
 	cd src/sql/
 	sudo ./rts2-builddb stars
+
+	echo "Add user $USER into group observers"
+	sudo psql stars <<EOF
+alter group observers add user $USER;
+EOF
 
 	echo "Adding rts2test user"
 	rts2-user -a rts2test --password 1234
