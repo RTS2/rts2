@@ -94,6 +94,7 @@ int createUser (std::string login, std::string password, std::string email)
 	VARCHAR db_login[25];
 	VARCHAR db_password[101];
 	VARCHAR db_email[200];
+	VARCHAR db_allowed_devices[2000];
 	EXEC SQL END DECLARE SECTION;
 
 	if (login.length () > 25)
@@ -132,18 +133,23 @@ int createUser (std::string login, std::string password, std::string email)
 	strncpy (db_email.arr, email.c_str (), 200);
 	db_email.len = email.length ();
 
+	strcpy (db_allowed_devices.arr, "*");
+	db_allowed_devices.len = 1;
+
 	EXEC SQL INSERT INTO users
 	(
 		usr_id,
 		usr_login,
 		usr_passwd,
-		usr_email
+		usr_email,
+		allowed_devices
 	)
 	VALUES (
 		nextval ('user_id'),
 		:db_login,
 		:db_password,
-		:db_email
+		:db_email,
+		:db_allowed_devices
 	);
 
 	if (sqlca.sqlcode)
