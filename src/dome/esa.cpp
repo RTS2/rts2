@@ -35,6 +35,7 @@ class EsaDome:public Dome
 
 		int dome_state;
 		int udpPort;
+		char * udpAddr;
 		int sock;
                 struct sockaddr_in servaddr;
 
@@ -66,6 +67,7 @@ class EsaDome:public Dome
 EsaDome::EsaDome (int argc, char **argv):Dome (argc, argv)
 {
 	addOption ('p', "dome_port", 1, "port of dome");
+	addOption ('n', "dome_address", 1, "ip address of dome");
 }
 
 int EsaDome::processOption (int in_opt)
@@ -75,6 +77,9 @@ int EsaDome::processOption (int in_opt)
                 case 'p':
                         udpPort = atoi (optarg);
                         break;
+		case 'n':
+			udpAddr = optarg;
+			break;
                 default:
                         return Dome::processOption (in_opt);
         }
@@ -94,7 +99,7 @@ int EsaDome::init ()
 
         bzero (&servaddr, sizeof(servaddr));
         servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = inet_addr ("127.0.0.1");
+        servaddr.sin_addr.s_addr = inet_addr (udpAddr);
         servaddr.sin_port = htons (udpPort);
 
 	if (!isMoving ())
