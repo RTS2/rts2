@@ -1,0 +1,469 @@
+#!/bin/bash
+
+with_db=1
+steps=sys,svn,configure,compile,db,gtk
+download_dir=/tmp
+
+display_help()
+{
+	cat <<EOF
+This script will build and configure any system to run RTS2. The following options can be added to modify script behaviour:
+	--help,-h       print this help
+	--without-db    do not configure database, compile without PostgreSQL database bindings
+	--steps         performs the following, comma separated steps: sys,svn,compile,configure,db,start,gtk
+	--download-dir  download packages to the given directory
+
+The possible steps (defaults is to do all) are:
+	sys             configure system (install C/C++, autotools,..)
+	svn             download RTS2 from subversion
+	compile         configure and compile RTS2 source code, install RTS2
+	configure       configure installed RTS2, prepare for startup
+	db              configure database
+	start		start RTS2
+	gtk             download and run Python GTK web interface
+
+EOF
+}
+
+# process arguments
+while [ "x$1" != "x" ]; do
+	arg=$1
+	shift
+	case $arg in
+		--help)
+			display_help
+			exit
+			;;
+		--without-db)
+			with_db=0
+			;;
+		--steps)
+			steps=$1
+			shift
+			;;
+		--download-dir)
+			download_dir=$1
+			if [ "x$download_dir" == "x" ]; then
+				echo "Empty download dir argument, exiting"
+				exit
+			fi
+			shift
+			;;
+		*)
+			display_help
+			echo "Unknown argument $arg, exiting"
+			exit 8
+			;;
+esac
+
+done
+
+cat <<EOF
+This script will buidl and configure any system to run RTS2.
+
+It is intended to demonstrate steps needed for setting up RTS2 from source
+code. It does not only build RTS2, but it also configures database for dummy
+devices, runs rts2-mon and GTK, setup XMLRPCd server etc.
+
+Please provide password for sudo if you will be asked for it. You
+can review the script before running it from its source code, to make
+sure sudo do only secure operations.
+
+(C) 2011 Petr Kubanek, Institute of Physics, Prague <kubanek@fzu.cz>
+(C) 2012-2014 Petr Kubanek, <petr@kubanek.net>
+
+EOF
+
+cpuarch=`uname -m`
+
+case $cpuarch in
+	x86_64)
+		echo '64 bit Linux detected'
+		;;
+	i?86)
+		echo '32 bit Linux detected'
+		;;
+	*)
+		echo "Unknow hardware: $cpuarch. Please check the script for details"
+		exit 1
+		;;
+esac
+
+# try to find distribution
+eval `cat /etc/lsb-release`
+
+# prepares Ubuntu for installation
+step_sys_ubuntu()
+{
+	echo "Adding extra repositories"
+
+	if [ $with_db == 1 ]; then
+		extra_p="postgresql libecpg-dev"
+		case $DISTRIB_CODENAME in
+			lucid)
+				extra_p="$extra_p libatlas-cpp-0.6-dev libatlas-base-dev postgresql-server-dev-8.4"
+				;;
+			natty)
+				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-8.4"
+				;;
+			oneiric|precise|debian)
+				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-9.1"
+				;;
+			*)
+		esac		
+	fi
+
+	sudo apt-add-repository "deb http://archive.ubuntu.com/ubuntu $DISTRIB_CODENAME restricted multiverse universe"
+	sudo apt-get -y update
+
+	echo "Installing required Ubuntu packages"
+
+	sudo apt-get -y install subversion $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev liblapack-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config
+}
+
+step_sys_ds9()
+{
+	echo "Downloading DS9"
+
+	case $cpuarch in
+		'x86_64')
+			wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/RD/ds9/download/linux64/ds9.linux64.7.2.tar.gz
+			;;
+		*)
+			wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/RD/ds9/download/linux/ds9.linux.7.2.tar.gz
+			;;
+	esac
+
+	echo "Installing DS9"
+	cd $download_dir
+	tar xzf ${download_dir}/ds9.tar.gz
+	sudo cp ${download_dir}/ds9 /usr/bin
+}
+
+step_sys_pyds9()
+{
+	echo "Retrievening, configuring, compiling and installing pyds9"
+	wget -O ${download_dir}/pyds9.tar.gz http://hea-www.harvard.edu/RD/download/pyds9/pyds9-1.7.tar.gz
+	tar xzf ${download_dir}/pyds9.tar.gz
+	cd pyds9-1.7
+	sudo python ./setup.py install
+
+	echo "Installing XPA library"
+	cd xpa-*
+	sudo make install
+}
+
+step_sys_sextractor()
+{
+	cd ${download_dir}
+	echo "Retrieving, configuring, compiling and installing sextractor"
+	wget -O ${download_dir}/sextractor.tar.gz http://www.astromatic.net/download/sextractor/sextractor-2.8.6.tar.gz
+	tar xzf ${download_dir}/sextractor.tar.gz
+	cd sextractor-*
+
+
+	echo -n "Patching acx_atlas detection.. "
+	patch <<'EOF'
+*** acx_atlas.m4	2009-01-29 14:52:02.000000000 +0100
+--- acx_atlas.m4	2012-01-14 11:07:23.169345901 +0100
+*************** dnl --------------------
+*** 22,59 ****
+  acx_atlas_ok=no
+  if test x$2 = x; then
+    if test x$1 = x; then
+!     AC_CHECK_HEADERS([cblas.h clapack.h],[acx_atlas_ok=yes])
+!     if test x$acx_atlas_ok = xyes; then
+        AC_DEFINE(ATLAS_BLAS_H, "cblas.h", [BLAS header filename.])
+-       AC_DEFINE(ATLAS_LAPACK_H, "clapack.h", [CLAPACK header filename.])
+      else
+!       AC_CHECK_HEADERS([atlas/cblas.h atlas/clapack.h],[acx_atlas_ok=yes])
+!       if test x$acx_atlas_ok = xyes; then
+          AC_DEFINE(ATLAS_BLAS_H, "atlas/cblas.h", [BLAS header filename.])
+          AC_DEFINE(ATLAS_LAPACK_H, "atlas/clapack.h", [CLAPACK header filename.])
+        else
+!         atlas_def=/usr/local/atlas
+          AC_CHECK_HEADERS(
+! 		[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
+! 		[acx_atlas_ok=yes])
+          if test x$acx_atlas_ok = xyes; then
+            AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
+! 		[BLAS header filename.])
+            AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
+! 		[CLAPACK header filename.])
+          else
+!           atlas_def=/usr/atlas
+!           AC_CHECK_HEADERS(
+! 		[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
+! 		[acx_atlas_ok=yes])
+!           if test x$acx_atlas_ok = xyes; then
+!             AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
+! 		[BLAS header filename.])
+!             AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
+! 		[CLAPACK header filename.])
+!           else
+!             ATLAS_ERROR="CBLAS/LAPack include files not found!"
+!           fi
+          fi
+        fi
+      fi
+--- 22,74 ----
+  acx_atlas_ok=no
+  if test x$2 = x; then
+    if test x$1 = x; then
+!     acx_cblas_ok=no
+!     AC_CHECK_HEADERS([cblas.h],[acx_cblas_ok=yes])
+!     if test x$acx_cblas_ok = xyes; then
+        AC_DEFINE(ATLAS_BLAS_H, "cblas.h", [BLAS header filename.])
+      else
+!       AC_CHECK_HEADERS([atlas/cblas.h],[acx_cblas_ok=yes])
+!       if test x$acx_cblas_ok = xyes; then
+          AC_DEFINE(ATLAS_BLAS_H, "atlas/cblas.h", [BLAS header filename.])
++       fi
++     fi
++ 
++     acx_clapack_ok=no
++     AC_CHECK_HEADERS([clapack.h],[acx_clapack_ok=yes])
++     if test x$acx_clapack_ok = xyes; then
++       AC_DEFINE(ATLAS_LAPACK_H, "clapack.h", [CLAPACK header filename.])
++     else
++       AC_CHECK_HEADERS([atlas/clapack.h],[acx_clapack_ok=yes])
++       if test x$acx_clapack_ok = xyes; then
+          AC_DEFINE(ATLAS_LAPACK_H, "atlas/clapack.h", [CLAPACK header filename.])
++       fi
++     fi
++ 
++     if test x$acx_cblas_ok = xyes -a x$acx_clapack_ok = xyes; then
++       AC_MSG_NOTICE(Found both clapack and cblas in standard directories.)
++       acx_atlas_ok=yes
++     else  
++       atlas_def=/usr/local/atlas
++       AC_CHECK_HEADERS(
++       	[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
++       	[acx_atlas_ok=yes])
++       if test x$acx_atlas_ok = xyes; then
++         AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
++       	[BLAS header filename.])
++         AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
++       	[CLAPACK header filename.])
+        else
+!         atlas_def=/usr/atlas
+          AC_CHECK_HEADERS(
+!       	[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
+!       	[acx_atlas_ok=yes])
+          if test x$acx_atlas_ok = xyes; then
+            AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
+!       	[BLAS header filename.])
+            AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
+!       	[CLAPACK header filename.])
+          else
+!           ATLAS_ERROR="CBLAS/LAPack include files not found!"
+          fi
+        fi
+      fi
+EOF
+
+	if [ $? == 0 ]; then
+		echo 'ok'
+	else
+		echo 'failed'
+		exit 1
+	fi
+
+	./configure --disable-threads --prefix=/usr
+	make -j`nproc`
+	sudo make install
+
+	sudo mv /usr/bin/sex /usr/bin/sextractor
+}
+
+# prepares system - configure packages,..
+step_sys()
+{
+	if [ $DISTRIB_ID == 'Ubuntu' ]; then
+		step_sys_ubuntu
+		step_sys_ds9
+		step_sys_pyds9
+	else
+		echo >2 "Cannot install RTS2 on platform '$DISTRIB_ID', exiting. Please consider skipping step sys (see --steps option)"	
+	fi
+}
+
+step_svn()
+{
+	echo "Source files will be downloaded and configured in `pwd`."
+
+	if [ -d rts2 ]; then
+		echo "Updating RTS2 source code"
+		cd rts2
+		svn up
+		cd ..
+	else
+		if [ -f rts2 ]; then
+			echo "Please remove rts2 file and rerun!"
+			exit 4
+		else
+			echo "Retrieving RTS2 source code"
+			svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts-2 rts2
+		fi
+	fi
+
+	if [ -d rts2-gtk ]; then
+		echo "Updating rts2-gtk source code"
+		cd rts2-gtk
+		svn up
+		cd ..
+	else
+		if [ -f rts2-gtk ]; then
+			echo "Please remove rts2-gtk file and rerun!"
+			exit 5
+		else
+			echo "Retrieving rts2-gtk source code"
+			svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts2-gtk rts2-gtk
+		fi
+	fi
+}
+
+step_compile()
+{
+	echo "Compiling RTS2"
+
+	cd rts2
+
+	./autogen.sh
+	if [ $with_db == 1 ]; then
+		./configure --without-wcs
+	else
+		./configure --without-wcs --without-pgsql
+	fi
+	make -j`nproc`
+	sudo make install
+}
+
+step_configure()
+{
+	echo "Configuring RTS2"
+
+	if grep "/usr/local/lib" /etc/ld.so.conf >/dev/null; then
+		echo "/usr/local/lib is present in /etc/ld.so.conf"
+	else
+		echo "Adding /usr/local/lib to ld.so.conf"
+		sudo echo -e "\n/usr/local/lib" >> /etc/ld.so.conf
+		sudo ldconfig
+	fi
+
+	sudo ./rts2-init
+	sudo cp rts2.logrotate /etc/logrotate.d/rts2
+
+	echo "Creating proper rts2.ini configuration file"
+
+	cat conf/rts2.ini | sed -e "s/altitude = xxxx/altitude = 600/" -e "s/longitude = xxxx/longitude = 15/" -e "s/latitude = xxxx/latitude = 50/" > ${download_dir}/rts2.ini
+
+	sudo cp ${download_dir}/rts2.ini /etc/rts2/rts2.ini
+}
+
+step_db()
+{
+	cd ~
+
+	echo "Granting root access to postgresql database"
+	sudo sudo -u postgres createuser -s root
+
+	echo "Creating local user"
+	sudo sudo -u postgres createuser -SDR $USER
+
+	echo "Creating postgresql database"
+
+	sudo createdb stars
+
+	echo "Building PostgreSQL 'stars' database"
+	cd src/sql/
+	sudo ./rts2-builddb stars
+
+	echo "Add user $USER into group observers"
+	sudo psql stars <<EOF
+alter group observers add user $USER;
+EOF
+
+	echo "Adding rts2test user"
+	rts2-user -a rts2test --password 1234
+
+	echo "Adding T0 telescope"
+	./rts2-configdb stars -t T0
+
+	echo "Adding C0 camera"
+	./rts2-configdb stars -c C0
+
+	echo "Adding W0 filter wheel"
+	./rts2-configdb stars -f W0
+}
+
+step_start()
+{
+	cd ~
+
+	echo "Starting RTS2"
+
+	sudo /etc/init.d/rts2 start
+
+	if [ $with_db == 1 ]; then
+		echo "Running queues API. Use localhost:8889 as URI, rts2test as user and 1234 as password."
+		./rts2-gtk/widgets/queues.py
+	fi
+
+	echo "Running rts2-mon. Please exit it with ctrl+c"
+	rts2-mon
+}
+
+
+# parse steps
+step_file=/tmp/$$_steps
+echo $steps | sed -s 's/,/\n/g' > $step_file
+
+while read s; do
+	case $s in
+		sys)
+			step_sys=1
+			;;
+		svn)
+			step_svn=1
+			;;
+		compile)
+			step_compile=1
+			;;
+		configure)
+			step_configure=1
+			;;
+		db)
+			if [ $with_db == 1 ]; then
+				step_db=1
+			else
+				echo "db step is not allowed when RTS2 is compiled without database support"
+				rm $step_file
+				exit 5
+			fi
+			;;
+		start)
+			step_start=1
+			;;
+		gtk)
+			step_gtk=1
+			;;
+		*)
+			echo "Unknown step $s, exiting"
+			rm $step_file
+			exit 6
+			;;
+	esac
+done < $step_file
+
+echo "step_svn" $step_svn
+
+rm $step_file
+
+if [ -n "$step_sys" ]       ; then step_sys; fi
+if [ -n "$step_svn" ]       ; then step_svn; fi
+if [ -n "$step_compile" ]   ; then step_compile; fi
+if [ -n "$step_configure" ] ; then step_configure; fi
+if [ -n "$step_db" ]        ; then step_db; fi
+if [ -n "$step_start" ]     ; then step_start; fi
+if [ -n "$step_gtk" ]       ; then step_gtk; fi
