@@ -59,7 +59,7 @@ esac
 done
 
 cat <<EOF
-This script will buidl and configure any system to run RTS2.
+This script will build and configure any system to run RTS2.
 
 It is intended to demonstrate steps needed for setting up RTS2 from source
 code. It does not only build RTS2, but it also configures database for dummy
@@ -106,23 +106,24 @@ step_sys_ubuntu()
 			natty)
 				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-8.4"
 				;;
-			oneiric|precise|debian)
-				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-9.1"
+			oneiric|precise|quantal|raring|saucy|trusty|wheezy|sid)
+				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-all"
 				;;
 			*)
+				extra_p="$extra_p libatlas-dev libatlas-base-dev postgresql-server-dev-all"
+				;;
+
 		esac		
 	fi
 
-	sudo apt-add-repository "deb http://archive.ubuntu.com/ubuntu $DISTRIB_CODENAME restricted multiverse universe"
-	sudo apt-get -y update
-
 	echo "Installing required Ubuntu packages"
 
-	sudo apt-get -y install subversion $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev liblapack-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config
+	sudo apt-get -y install subversion $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config
 }
 
 step_sys_ds9()
 {
+	pushd .
 	echo "Downloading DS9"
 
 	case $cpuarch in
@@ -138,23 +139,29 @@ step_sys_ds9()
 	cd $download_dir
 	tar xzf ${download_dir}/ds9.tar.gz
 	sudo cp ${download_dir}/ds9 /usr/bin
+
+	popd
 }
 
 step_sys_pyds9()
 {
+	pushd .
 	echo "Retrievening, configuring, compiling and installing pyds9"
 	wget -O ${download_dir}/pyds9.tar.gz http://hea-www.harvard.edu/RD/download/pyds9/pyds9-1.7.tar.gz
+	cd $download_dir
 	tar xzf ${download_dir}/pyds9.tar.gz
-	cd pyds9-1.7
+	cd ${download_dir}/pyds9-1.7
 	sudo python ./setup.py install
 
 	echo "Installing XPA library"
 	cd xpa-*
 	sudo make install
+	popd
 }
 
 step_sys_sextractor()
 {
+	pushd .
 	cd ${download_dir}
 	echo "Retrieving, configuring, compiling and installing sextractor"
 	wget -O ${download_dir}/sextractor.tar.gz http://www.astromatic.net/download/sextractor/sextractor-2.8.6.tar.gz
@@ -274,6 +281,7 @@ EOF
 	sudo make install
 
 	sudo mv /usr/bin/sex /usr/bin/sextractor
+	popd
 }
 
 # prepares system - configure packages,..
@@ -283,8 +291,9 @@ step_sys()
 		step_sys_ubuntu
 		step_sys_ds9
 		step_sys_pyds9
+		step_sys_sextractor
 	else
-		echo >2 "Cannot install RTS2 on platform '$DISTRIB_ID', exiting. Please consider skipping step sys (see --steps option)"	
+		echo >&2 "Cannot install RTS2 on platform '$DISTRIB_ID', exiting. Please consider skipping step sys (see --steps option)"	
 	fi
 }
 
@@ -318,7 +327,7 @@ step_svn()
 			exit 5
 		else
 			echo "Retrieving rts2-gtk source code"
-			svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts2-gtk rts2-gtk
+			svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts-2-gtk rts2-gtk
 		fi
 	fi
 }
@@ -337,34 +346,39 @@ step_compile()
 	fi
 	make -j`nproc`
 	sudo make install
+	sudo ldconfig
+
+	cd ..
 }
 
 step_configure()
 {
 	echo "Configuring RTS2"
 
-	if grep "/usr/local/lib" /etc/ld.so.conf >/dev/null; then
-		echo "/usr/local/lib is present in /etc/ld.so.conf"
+	if ldconfig -v 2> /dev/null | grep -v ^$'\t' | grep '/usr/local/lib' &> /dev/null; then
+		echo "/usr/local/lib is present in ld library path"
 	else
 		echo "Adding /usr/local/lib to ld.so.conf"
 		sudo echo -e "\n/usr/local/lib" >> /etc/ld.so.conf
 		sudo ldconfig
 	fi
 
+	cd rts2
 	sudo ./rts2-init
-	sudo cp rts2.logrotate /etc/logrotate.d/rts2
+	sudo cp conf/logrotate/logrotate-rts2.conf /etc/logrotate.d/rts2
 
 	echo "Creating proper rts2.ini configuration file"
 
 	cat conf/rts2.ini | sed -e "s/altitude = xxxx/altitude = 600/" -e "s/longitude = xxxx/longitude = 15/" -e "s/latitude = xxxx/latitude = 50/" > ${download_dir}/rts2.ini
 
 	sudo cp ${download_dir}/rts2.ini /etc/rts2/rts2.ini
+
+	cd ..
 }
 
 step_db()
 {
-	cd ~
-
+	pushd .
 	echo "Granting root access to postgresql database"
 	sudo sudo -u postgres createuser -s root
 
@@ -376,7 +390,7 @@ step_db()
 	sudo createdb stars
 
 	echo "Building PostgreSQL 'stars' database"
-	cd src/sql/
+	cd rts2/src/sql/
 	sudo ./rts2-builddb stars
 
 	echo "Add user $USER into group observers"
@@ -395,12 +409,12 @@ EOF
 
 	echo "Adding W0 filter wheel"
 	./rts2-configdb stars -f W0
+
+	popd
 }
 
 step_start()
 {
-	cd ~
-
 	echo "Starting RTS2"
 
 	sudo /etc/init.d/rts2 start
@@ -411,6 +425,8 @@ step_start()
 	fi
 
 	echo "Running rts2-mon. Please exit it with ctrl+c"
+	echo "Press ENTER to continue..."
+	read a
 	rts2-mon
 }
 
