@@ -126,17 +126,6 @@
       </varlistentry>
       <varlistentry>
         <term>
-	  <option>seq {filter} {exposure} {repeat}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Sequence of observations in given filter. Set filter to value specified with <emphasis>{filter}</emphasis>,
-	    and do <emphasis>{repeat}</emphasis> <emphasis>{exposure}</emphasis> second exposures.
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
 	  <option>D {exposure_time}</option>
 	</term>
 	<listitem>
@@ -1199,7 +1188,7 @@ done
 
     <para>filter=i E 20 E 20 E 20 E 20 E 20</para>
 
-    <para>seq i 20 5</para>
+    <para>SEQUENCE i 5 20</para>
 
     <para>
       Set full boolean array to false.
