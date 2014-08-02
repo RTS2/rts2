@@ -876,7 +876,7 @@ int Gemini::initHardware ()
 	int ret;
 
 	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
-	//serConn->setDebug ();
+	serConn->setDebug (getDebug ());
 
 	ret = serConn->init ();
 	if (ret)
@@ -1107,7 +1107,7 @@ void Gemini::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
 		case SERVERD_EVENING:
-			if ((eveningReset == true) && (old_state & SERVERD_STATUS_MASK == SERVERD_DAY))
+			if ((eveningReset == true) && ((old_state & SERVERD_STATUS_MASK) == SERVERD_DAY))
 			{
 				parkAndReset = true;
 				startPark ();
