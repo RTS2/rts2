@@ -245,7 +245,6 @@ class Gemini:public TelLX200
 		time_t moveTimeout;
 
 		int infoCount;
-		int matchCount;
 		int bootesSensors;
 	#ifdef L4_GUIDE
 		struct timeval changeTime;
@@ -648,7 +647,6 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 	lastMotorState = 0;
 	telMotorState = TEL_OK;
 	infoCount = 0;
-	matchCount = 0;
 
 	serConn = NULL;
 
@@ -685,7 +683,7 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 	createValue (syncAppendModel, "appendModel", "sync appends model", false, RTS2_VALUE_WRITABLE);
 	syncAppendModel->setValueBool (false);
 
-	connDebug = true;
+	connDebug = false;
 }
 
 Gemini::~Gemini ()
@@ -878,7 +876,7 @@ int Gemini::initHardware ()
 	int ret;
 
 	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
-	serConn->setDebug ();
+	//serConn->setDebug ();
 
 	ret = serConn->init ();
 	if (ret)
@@ -1106,18 +1104,15 @@ int Gemini::idle ()
 
 void Gemini::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
-	matchCount = 0;
-
-	if (eveningReset == true)
+	switch (new_state & SERVERD_STATUS_MASK)
 	{
-		int ms = new_state & SERVERD_STATUS_MASK;
-		switch (ms)
-		{
-			case SERVERD_EVENING:
+		case SERVERD_EVENING:
+			if ((eveningReset == true) && (old_state & SERVERD_STATUS_MASK == SERVERD_DAY))
+			{
 				parkAndReset = true;
 				startPark ();
-				break;
-		}
+			}
+			break;
 	}
 
 	return TelLX200::changeMasterState (old_state, new_state);
