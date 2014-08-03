@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_CONNECTION_TCP__
+#define __RTS2_CONNECTION_TCP__
+
 #include "connnosend.h"
 #include "error.h"
 
@@ -188,3 +191,5 @@ class ConnTCP:public ConnNoSend
 };
 
 };
+
+#endif // !__RTS2_CONNECTION_TCP__
