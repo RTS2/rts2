@@ -28,28 +28,9 @@ namespace rts2dome
  */
 class EsaDome:public Dome
 {
-	private:
-		rts2core::ValueInteger *sw_state;
-		rts2core::ValueString * domeStatus;
-		rts2core::ValueSelection * closeDome;
-
-		int dome_state;
-		int udpPort;
-		char * udpAddr;
-		int sock;
-                struct sockaddr_in servaddr;
-
-		bool isMoving ();
-		int getUDPStatus ();
-		void sendUDPMessage (char * in_message);
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
-
 	public:
 		EsaDome (int argc, char **argv);
-		virtual int init ();
+		virtual int initHardware ();
 
                 virtual int info ();
 
@@ -60,47 +41,65 @@ class EsaDome:public Dome
                 virtual long isClosed ();
                 virtual int endClose ();
 
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+
+	private:
+		rts2core::ValueInteger *sw_state;
+		rts2core::ValueString * domeStatus;
+		rts2core::ValueSelection * closeDome;
+
+		int dome_state;
+
+		HostString *host;
+
+		int sock;
+                struct sockaddr_in servaddr;
+
+		bool isMoving ();
+		int getUDPStatus ();
+		void sendUDPMessage (const char * in_message);
 };
 
 }
 
 EsaDome::EsaDome (int argc, char **argv):Dome (argc, argv)
 {
-	addOption ('p', "dome_port", 1, "port of dome");
-	addOption ('n', "dome_address", 1, "ip address of dome");
+	host = NULL;
+
+	addOption ('e', NULL, 1, "ESA dome IP and port (separated by :)");
 }
 
 int EsaDome::processOption (int in_opt)
 {
 	switch (in_opt)
         {
-                case 'p':
-                        udpPort = atoi (optarg);
+                case 'e':
+			host = new HostString (optarg, "1000");
                         break;
-		case 'n':
-			udpAddr = optarg;
-			break;
                 default:
                         return Dome::processOption (in_opt);
         }
         return 0;
 }
 
-int EsaDome::init ()
+int EsaDome::initHardware ()
 {
-	int ret;
-        ret = Dome::init ();
-        if (ret)
-                return ret;
+	if (host == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "You must specify dome hostname (with -e option)." << sendLog;
+		return -1;
+	}
 
 	dome_state = ESATBT_DOME_UNKNOWN;
 
 	sock = socket (AF_INET, SOCK_DGRAM, 0);
 
-        bzero (&servaddr, sizeof(servaddr));
+        bzero (&servaddr, sizeof (servaddr));
         servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = inet_addr (udpAddr);
-        servaddr.sin_port = htons (udpPort);
+        servaddr.sin_addr.s_addr = inet_addr (host->getHostname ());
+        servaddr.sin_port = htons (host->getPort ());
 
 	if (!isMoving ())
         {
@@ -110,14 +109,13 @@ int EsaDome::init ()
                 maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome after init");
         }
 
-
 	return 0;
 }
 
 int EsaDome::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
 {
     
-	if(old_value == closeDome)
+	if (old_value == closeDome)
 	{
 		if(new_value->getValueInteger() == 1)
 		{
@@ -209,10 +207,11 @@ int EsaDome::getUDPStatus ()
 	char * status_message = (char *)malloc (5*sizeof (char));
 	sendUDPMessage ("D999");
 	int n = recvfrom (sock, status_message, 10000, 0, NULL, NULL);
+	if (n
         return (int)status_message[3];
 }
 
-void EsaDome::sendUDPMessage (char * in_message)
+void EsaDome::sendUDPMessage (const char * in_message)
 {
 	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr,sizeof(servaddr));
 }
