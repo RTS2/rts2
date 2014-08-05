@@ -207,7 +207,7 @@ int EsaDome::getUDPStatus ()
 	char * status_message = (char *)malloc (5*sizeof (char));
 	sendUDPMessage ("D999");
 	int n = recvfrom (sock, status_message, 10000, 0, NULL, NULL);
-	if (n
+	if (n >= 4)
         return (int)status_message[3];
 }
 
