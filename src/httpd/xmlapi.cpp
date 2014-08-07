@@ -817,7 +817,15 @@ void TargetInfo::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		targets.push_back (params[i]);
 
 	rts2db::TargetSet *tar_set = new rts2db::TargetSet ();
-	tar_set->load (targets);
+	try
+	{
+		tar_set->load (targets);
+	}
+	catch (...)
+	{
+		logStream (MESSAGE_ERROR) << "Sql Error" << sendLog;
+		return;
+	}
 
 	i = 0;
 

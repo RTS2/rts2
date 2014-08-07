@@ -1232,6 +1232,8 @@ void TargetSwiftFOV::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
 	double now = timetFromJD (JD);
+	if (swiftName == NULL)
+		swiftName = "NULL";
 	_os
 		<< InfoVal<const char *> ("NAME", swiftName)
 		<< InfoVal<int> ("SwiftFOW ID", swiftId)
