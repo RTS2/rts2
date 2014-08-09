@@ -1232,10 +1232,11 @@ void TargetSwiftFOV::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
 	double now = timetFromJD (JD);
-	if (swiftName == NULL)
-		swiftName = "NULL";
+	std::string displayName("NULL");
+	if (swiftName != NULL)
+		displayName = std::string(swiftName);
 	_os
-		<< InfoVal<const char *> ("NAME", swiftName)
+		<< InfoVal<const char *> ("NAME", displayName.c_str())
 		<< InfoVal<int> ("SwiftFOW ID", swiftId)
 		<< InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
 		<< InfoVal<TimeDiff> ("FROM DIFF", TimeDiff (now, swiftTimeStart))
