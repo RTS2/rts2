@@ -3,6 +3,6 @@ imgproc		IMGP
 grbd		GRBD
 executor	EXEC
 selector	SEL --add-queue manual --add-queue plan
-#specify XMLRPC user, if you wish so
-#httpd		XMLRPC		--run-as user
-httpd		XMLRPC
+#specify HTTPD user, if you wish so
+#httpd		HTTPD		--run-as user
+httpd		HTTPD
