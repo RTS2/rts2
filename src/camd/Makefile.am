@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-xyz
 
 noinst_HEADERS = ccd_msg.h reflex.h
 
@@ -18,6 +18,8 @@ rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../..
 rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @LIB_CFITSIO@ @LIB_JPEG@
 
 rts2_camd_sidecar_SOURCES = sidecar.cpp
+
+rts2_camd_xyz_SOURCES = xyz.cpp
 
 EXTRA_DIST = 
 
@@ -36,7 +38,8 @@ bin_PROGRAMS += rts2-camd-urvc2 rts2-camd-apogee rts2-camd-v4l
 rts2_camd_urvc2_SOURCES = urvc2.cpp
 rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
 
-rts2_camd_apogee_SOURCES = apogee.cpp apogee/CameraIO_LinuxPCI.cpp
+rts2_camd_apogee_SOURCES = apogee.cpp
+rts2_camd_apogee_LDFLAGS = apogee/libapogee.a
 
 rts2_camd_v4l_SOURCES = v4l.cpp
 endif
