@@ -512,6 +512,15 @@ DevClientAugerShooter::DevClientAugerShooter (Connection * _connection):DevClien
 {
 }
 
+DevClientRotator::DevClientRotator (Connection * _connection):DevClient (_connection)
+{
+}
+
+DevClientRotator::~DevClientRotator ()
+{
+}
+
+
 DevClientFocus::DevClientFocus (Connection * _connection):DevClient (_connection)
 {
 }

@@ -1,5 +1,5 @@
 /* 
- * Abstract class for Alt-AZ mounts.
+ * Connection for rotator.
  * Copyright (C) 2014 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,28 +17,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "teld.h"
+#ifndef __RTS2_CLI_ROTATOR__
+#define __RTS2_CLI_ROTATOR__
+
+#include "devclient.h"
+
+#define EVENT_CUP_START_SYNC    RTS2_LOCAL_EVENT + 550
+#define EVENT_CUP_SYNCED        RTS2_LOCAL_EVENT + 551
+#define EVENT_CUP_ENDED         RTS2_LOCAL_EVENT + 552
+#define EVENT_CUP_NOT_MOVE      RTS2_LOCAL_EVENT + 553
 
 namespace rts2teld
 {
 
-/**
- * Abstract AltAz fork mount.
- *
- * Class for computing coordinates on Alt-Az mount.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class AltAz: public Telescope
+class ClientRotator:public rts2core::DevClientRotator
 {
 	public:
-		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
-		virtual ~AltAz (void);
-
-	protected:
-		//int sky2counts (int32_t & ac, int32_t & dc);
-		//int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
-		//int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec);
+		ClientRotator (rts2core::Connection * conn);
+		virtual ~ ClientRotator ();
+		virtual void postEvent (rts2core::Event * event);
 };
 
-};
+}
+
+#endif							 /* !__RTS2_CLI_ROTATOR__ */

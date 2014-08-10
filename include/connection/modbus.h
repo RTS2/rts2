@@ -176,4 +176,9 @@ class ConnModbus: public ConnTCP
 		void writeHoldingRegisterMask (int16_t reg, int16_t mask, int16_t val);
 };
 
+//class ConnModbusTCP
+
+
+//class ConnModbusSerial
+
 }

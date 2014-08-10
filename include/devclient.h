@@ -235,6 +235,13 @@ class DevClientMirror:public DevClient
 		virtual void mirrorB ();
 };
 
+class DevClientRotator:public DevClient
+{
+	public:
+		DevClientRotator (Connection * in_connection);
+		virtual ~ DevClientRotator (void);
+};
+
 class DevClientFocus:public DevClient
 {
 	public:

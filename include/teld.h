@@ -935,6 +935,8 @@ class Telescope:public rts2core::Device
 
 		rts2core::StringArray *cupolas;
 
+		rts2core::StringArray *rotators;
+
 		/**
 		 * Target HRZ coordinates.
 		 */

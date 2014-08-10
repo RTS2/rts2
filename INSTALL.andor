@@ -9,16 +9,23 @@ After installing Andor SDK (please refer to attached manual) and its kernel
 driver, verifying that kernel driver is running (lsmod | grep andord). If you
 are using xIon, please make sure that you properly set mem=xxxxM to command
 line. Also bear in mind that if your system has more then 3 GB of RAM, you need
-to set mem=3000M.
+to set mem=3000M *.
 
-Sometimes install script in Andor install 32 bit libraries on 64 bit machine. Either help yourself by overwriting libandor-xx with correct _x86 variant, or ask Petr (<petr@kubanek.net>) for details.
+Sometimes install script in Andor install 32 bit libraries on 64 bit machine.
+Either help yourself by overwriting libandor-xx with correct _x86 variant, or
+ask Petr (<petr@kubanek.net>) for details.
 
 Then you will need to run ./configure from rts2 with --with-andor option:
 
-user@host:~/fliusb/libfli$ cd ~/rts2
+user@host:~$ cd ~/rts2
 user@host:~/rts2$ ./configure --with-andor=$HOME/andor
 
-if Andor SDK unpacks to ~/andor. Please change directory in --with-andor to actual location of Andor SDK directory).
+if Andor SDK unpacks to ~/andor. Please change directory in --with-andor to
+actual location of Andor SDK directory).
 
-Then run make and (as root) make install. After installing, start rts2-camd-andor. Please see RUN file for details on
-that.
+Then run make and (as root) make install. After installing, start
+rts2-camd-andor. Please see RUN file for details on that.
+
+*) for GRUB on most modern systems, that is best achieved by modifiing (as
+root) /etc/default/grub, adding "mem=XXXXM" to GRUB_CMDLINE_LINUX, and running
+update-grub.

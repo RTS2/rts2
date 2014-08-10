@@ -29,6 +29,7 @@
 
 #include "teld.h"
 #include "clicupola.h"
+#include "clirotator.h"
 
 #include "telmodel.h"
 
@@ -216,6 +217,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	calModel->setValueBool (false);
 
 	createValue (cupolas, "cupolas", "Cupola(s) connected to telescope. They should sync as telescope moves.", false);
+
+	createValue (rotators, "rotators", "Rotator(s) connected to telescope.", false);
 
 	modelFile = NULL;
 	model = NULL;
@@ -915,6 +918,9 @@ rts2core::DevClient *Telescope::createOtherType (rts2core::Connection * conn, in
 			logStream (MESSAGE_INFO) << "connecting to cupula " << conn->getName () << sendLog;
 			cupolas->addValue (std::string (conn->getName ()));
 			return new ClientCupola (conn);
+		case DEVICE_TYPE_ROTATOR:
+			rotators->addValue (std::string (conn->getName ()));
+			return new ClientRotator (conn);
 	}
 	return rts2core::Device::createOtherType (conn, other_device_type);
 }

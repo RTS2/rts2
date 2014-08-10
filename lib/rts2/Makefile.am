@@ -20,7 +20,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
 	camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
-	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c connthorlabs.cpp \
+	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp clirotator.cpp slitazimuth.c connthorlabs.cpp \
 	dirsupport.cpp userpermissions.cpp
 
 librts2gpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp connscpi.cpp

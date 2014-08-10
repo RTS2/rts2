@@ -1,6 +1,6 @@
-/*
- * Abstract class for Alt-Az mounts.
- * Copyright (C) 2014 Petr Kubanek <petr@kubanek.net>
+/* 
+ * Rotator communication library to keep it synchronized with telescope.
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,18 +17,21 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "altaz.h"
-#include "configuration.h"
-
-#include "libnova_cpp.h"
+#include "clirotator.h"
+#include "command.h"
 
 using namespace rts2teld;
 
-AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
+ClientRotator::ClientRotator (rts2core::Connection * conn):rts2core::DevClientRotator (conn)
 {
 }
 
-AltAz::~AltAz (void)
+ClientRotator::~ClientRotator (void)
 {
+	// getMaster ()->postEvent (new rts2core::Event (EVENT_CUP_ENDED, this));
+}
 
+void ClientRotator::postEvent (rts2core::Event * event)
+{
+	rts2core::DevClientRotator::postEvent (event);
 }

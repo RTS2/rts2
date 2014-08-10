@@ -54,7 +54,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			os << "\"ret\":" << ret;
 			if (ret == 0)
 			{
-				os << ",\"from\":" << ret;
+				os << ",\"from\":" << t << ret;
 			}
 			else
 			{
@@ -69,6 +69,14 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 
 				}
 			}
+			os << ",\"free_time\":[";
+			for (std::vector <std::pair <double, double> >::iterator iter = free_time.begin (); iter != free_time.end (); iter++)
+			{
+				if (iter != free_time.begin ())
+					os << ",";
+				os << "[" << iter->first << "," << iter->second << "]";
+			}
+			os << "]";
 
 		}
 		else if (vals[0] == "cancel")

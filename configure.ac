@@ -929,6 +929,7 @@ AC_OUTPUT([Makefile
 	   src/phot/Makefile
 	   src/centrald/Makefile
 	   src/teld/Makefile
+	   src/teld/irait/Makefile
 	   src/db/Makefile
 	   src/sensord/Makefile
 	   src/rotad/Makefile
