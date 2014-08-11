@@ -117,7 +117,7 @@ void NWindowEdit::winrefresh ()
 			if (pnoutrefresh (getWriteWindow (), 0, 0, y + ey, x + ex, MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth)) != ERR)
 				return;
 		}
-		errorMove ("pnoutrefresh comwin", y + ey, x + ey,
+		errorMove ("pnoutrefresh comwin", y + ey, x + ex,
 			MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth));
 	}
 }

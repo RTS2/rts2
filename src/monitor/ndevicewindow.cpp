@@ -252,7 +252,9 @@ void NDeviceWindow::createValueBox ()
 					valueBox = new ValueBoxRectangle (this, (rts2core::ValueRectangle *) val, 21, s - 1);
 					break;
 				case RTS2_VALUE_ARRAY:
-					valueBox = new ValueBoxArray (this, (rts2core::ValueArray *) val, 21, s);
+					// TODO: show a message box when value array is empty.
+					if (((rts2core::ValueArray *) val)->size() != 0)
+						valueBox = new ValueBoxArray (this, (rts2core::ValueArray *) val, 21, s);
 					break;
 				default:
 					logStream (MESSAGE_WARNING) << "cannot find box for value '" <<  val->getName () << " type " << val->getValueType () << sendLog;
