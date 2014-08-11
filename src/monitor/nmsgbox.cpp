@@ -84,11 +84,11 @@ void NMsgBox::printMessage ()
 	mvwprintw (window, 1, 2, "%s", query);
 }
 
-NMsgBoxWin::NMsgBoxWin (const char *in_query, const char *in_buttons[], int in_butnum):NMsgBox (in_query, in_buttons, in_butnum, COLS / 2 - 15, LINES / 2 - 15, 80, 30)
+NMsgBoxWin::NMsgBoxWin (const char *in_query, const char *in_buttons[], int in_butnum):NMsgBox (in_query, in_buttons, in_butnum, COLS / 2 - 25, LINES / 2 - 15, 50, 30)
 {
 	but_lo = 25;
 
-	msgw = newwin (28, 48, LINES / 2 - 14, COLS / 2 - 14);
+	msgw = newwin (28, 48, LINES / 2 - 14, COLS / 2 - 24);
 	if (!msgw)
 		errorMove ("newwin msg", COLS / 2 - 24, LINES / 2 - 14, 48, 3);
 }
