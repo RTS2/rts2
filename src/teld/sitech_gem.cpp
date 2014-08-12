@@ -80,10 +80,7 @@ class Sitech:public GEM
 			return getTargetDistance () * 2.0;
 		}
 
-		virtual int updateLimits ()
-		{
-			return 0;
-		}
+		virtual int updateLimits ();
 
 		/**
 		 * Gets home offset.
@@ -182,8 +179,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
 
-	createValue (ra_speed, "ra_speed", "RA speed (base rate), in counst per servo loop", false);
-	createValue (dec_speed, "dec_speed", "DEC speed (base rate), in counst per servo loop", false);
+	createValue (ra_speed, "ra_speed", "RA speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
+	createValue (dec_speed, "dec_speed", "DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 
 	createValue (ra_rate_adder, "ra_rate_adder", "RA rate adder", false);
 	createValue (dec_rate_adder, "dec_rate_adder", "DEC rate adder", false);
@@ -391,6 +388,15 @@ int Sitech::startResync ()
 int Sitech::isMoving ()
 {
 	return -1;
+}
+
+int Sitech::updateLimits ()
+{
+	acMin = -10000000;
+	acMax = 10000000;
+	dcMin = -10000000;
+	dcMax = 10000000;
+	return 0;
 }
 
 int Sitech::startPark ()
