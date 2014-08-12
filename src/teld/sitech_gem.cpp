@@ -182,20 +182,20 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	createValue (ra_speed, "ra_speed", "RA speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 	createValue (dec_speed, "dec_speed", "DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 
-	createValue (ra_rate_adder, "ra_rate_adder", "RA rate adder", false);
-	createValue (dec_rate_adder, "dec_rate_adder", "DEC rate adder", false);
+	createValue (ra_rate_adder, "ra_rate_adder", "RA rate adder", false, RTS2_VALUE_WRITABLE);
+	createValue (dec_rate_adder, "dec_rate_adder", "DEC rate adder", false, RTS2_VALUE_WRITABLE);
 
-	createValue (ra_rate_adder_t, "ra_rate_adder_t", "RA rate adder time (in servo loops; 1953 would be 1 second)", false);
-	createValue (dec_rate_adder_t, "dec_rate_adder_t", "DEC rate adder time (in servo loops; 1953 would be 1 second)", false);
+	createValue (ra_rate_adder_t, "ra_rate_adder_t", "RA rate adder time (in servo loops; 1953 would be 1 second)", false, RTS2_VALUE_WRITABLE);
+	createValue (dec_rate_adder_t, "dec_rate_adder_t", "DEC rate adder time (in servo loops; 1953 would be 1 second)", false, RTS2_VALUE_WRITABLE);
 
-	ra_speed->setValueLong (1000);
-	dec_speed->setValueLong (1000);
+	ra_speed->setValueLong (1000000);
+	dec_speed->setValueLong (1000000);
 
-	ra_rate_adder->setValueLong (1000);
-	dec_rate_adder->setValueLong (1000);
+	ra_rate_adder->setValueLong (0);
+	dec_rate_adder->setValueLong (0);
 
-	ra_rate_adder_t->setValueLong (1953);
-	dec_rate_adder_t->setValueLong (1953);
+	ra_rate_adder_t->setValueLong (0);
+	dec_rate_adder_t->setValueLong (0);
 
 	createParkPos (0, 89.999);
 
