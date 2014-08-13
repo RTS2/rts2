@@ -8,6 +8,8 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <fcntl.h>
+#include <netdb.h>
+#include <unistd.h>
 
 #include "dome.h"
 
@@ -55,11 +57,11 @@ class EsaDome:public Dome
 		HostString *host;
 
 		int sock;
-                struct sockaddr_in servaddr;
+                struct sockaddr_in servaddr, clientaddr;
 
 		bool isMoving ();
 		int getUDPStatus ();
-		void sendUDPMessage (const char * in_message);
+		int sendUDPMessage (const char * in_message);
 };
 
 }
@@ -100,11 +102,23 @@ int EsaDome::initHardware ()
         servaddr.sin_family = AF_INET;
         servaddr.sin_addr.s_addr = inet_addr (host->getHostname ());
         servaddr.sin_port = htons (host->getPort ());
+ 
+	bzero (&clientaddr, sizeof (clientaddr));
+	clientaddr.sin_family = AF_INET; 
+	clientaddr.sin_port = htons (host->getPort());
+    	clientaddr.sin_addr.s_addr = htonl (INADDR_ANY);
+
+	if (bind (sock , (struct sockaddr*)&clientaddr, sizeof(clientaddr) ) == -1)
+    	{
+        	logStream (MESSAGE_ERROR) << "Unable to bind socket to port" << sendLog;
+        	return 1;
+    	}
 
 	if (!isMoving ())
         {
                 // close roof - security measurement
-                startClose ();
+                // startClose ();
+		sendUDPMessage ("D777");
 
                 maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome after init");
         }
@@ -204,16 +218,68 @@ bool EsaDome::isMoving ()
 
 int EsaDome::getUDPStatus ()
 {
-	char * status_message = (char *)malloc (5*sizeof (char));
-	sendUDPMessage ("D999");
-	int n = recvfrom (sock, status_message, 10000, 0, NULL, NULL);
-	if (n >= 4)
-        return (int)status_message[3];
+	return sendUDPMessage ("D999");
 }
 
-void EsaDome::sendUDPMessage (const char * in_message)
+int EsaDome::sendUDPMessage (const char * in_message)
 {
+	unsigned int slen = sizeof (clientaddr);
+	char * status_message = (char *)malloc (20*sizeof (char));
+	char sA, sB, sideA[4], sideB[4];
+	
+
+	logStream (MESSAGE_DEBUG) << "command to controller: " << in_message << sendLog;
+	
 	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr,sizeof(servaddr));
+
+	int n = recvfrom (sock, status_message, 20, 0, (struct sockaddr *) &clientaddr, &slen);
+
+        logStream (MESSAGE_DEBUG) << "reponse from controller: " << status_message << sendLog;
+
+	if (n > 4)
+	{
+		if (status_message[0] == 'E') 
+		{
+			// echo from controller "Echo: [cmd]"
+			return 10;
+		}
+		else
+		{
+			sA = status_message[2];
+			sB = status_message[6];
+
+			// side A position
+			strncpy (sideA, status_message+3, 3);
+			sideA[3] = '\0';
+
+			strncpy (sideB, status_message+7, 3);
+                        sideB[3] = '\0';
+
+			logStream (MESSAGE_DEBUG) << "side A: " << sideA << " side B: " << sideB << sendLog;
+
+			if (sA == '1' || sA == '2' || sB == '1' || sB == '2')
+			{
+				// moving
+				return ESATBT_DOME_MOVING;
+			} 
+
+			if ((strcmp (sideA, "100") == 0) && (strcmp (sideB, "100") == 0))
+			{
+				// dome fully opened
+				return ESATBT_DOME_OPEN;				
+			}
+
+			if ((strcmp (sideA, "000") == 0) && (strcmp (sideB, "000") == 0))
+                        {
+                                // dome fully closed
+                                return ESATBT_DOME_CLOSED;
+                        }
+
+			return 0;
+		}
+	}
+
+	return -1;
 }
 
 int main (int argc, char **argv)
