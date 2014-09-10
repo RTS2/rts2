@@ -1048,6 +1048,8 @@ class OportunityTarget:public ConstTarget
 		OportunityTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
 		virtual float getBonus (double JD);
 		virtual int isContinues () { return 1; }
+
+		virtual bool hasConstantPosition () { return true; }
 };
 
 class LunarTarget:public Target
