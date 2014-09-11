@@ -505,8 +505,10 @@ void ConstraintLunarDistance::getSatisfiedIntervals (Target *tar, time_t from, t
 	{
 		ConstraintInterval::getSatisfiedIntervals (tar, from, to, 3600, ret);
 	}
-
-	ConstraintInterval::getSatisfiedIntervals (tar, from, to, step, ret);
+	else
+	{
+		ConstraintInterval::getSatisfiedIntervals (tar, from, to, step, ret);
+	}
 }
 
 bool ConstraintLunarAltitude::satisfy (Target *tar, double JD, double *nextJD)
