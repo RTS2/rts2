@@ -51,7 +51,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			time_t t;
 			std::vector < std::pair <double, double> > free_time;
 			int ret = scheduleTarget (t, params, vals[0] == "confirm", free_time);
-			os << "\"ret\":" << ret;
+			os << "{\"ret\":" << ret;
 			if (ret == 0)
 			{
 				os << ",\"from\":" << t << ret;
@@ -76,7 +76,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 					os << ",";
 				os << "[" << iter->first << "," << iter->second << "]";
 			}
-			os << "]";
+			os << "]}";
 
 		}
 		else if (vals[0] == "cancel")
