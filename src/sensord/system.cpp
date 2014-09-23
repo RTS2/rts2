@@ -21,12 +21,14 @@
 
 #include <sys/types.h>
 #include <sys/statvfs.h>
+#include <stdlib.h>
 #include <iostream>
 #include "configuration.h"
 
 #define OPT_STORAGE         OPT_LOCAL + 601
 
 #define EVENT_STORE_PATHS   RTS2_LOCAL_EVENT + 1320
+#define EVENT_REFRESH_LOAD  RTS2_LOCAL_EVENT + 1321
 
 namespace rts2sensord
 {
@@ -49,7 +51,7 @@ class System:public Sensor
 		virtual int info ();
 	private:
 		rts2core::ValueTime *lastWrite;
-
+		rts2core::DoubleArray *loadavg;
 		rts2core::ValueString *path;
 		rts2core::ValueDouble *freeSize;
 		rts2core::ValueDoubleStat *history;
@@ -62,6 +64,7 @@ class System:public Sensor
 		void storePaths ();
 		void loadPaths ();
 		void scheduleStore ();
+		void refreshLoad ();
 };
 
 };
@@ -100,6 +103,7 @@ int System::init ()
 		// calculate next local midday
 		scheduleStore ();
 	}
+	refreshLoad ();
 	return 0;
 }
 
@@ -211,6 +215,14 @@ void System::scheduleStore ()
 	addTimer (t, new rts2core::Event (EVENT_STORE_PATHS));
 }
 
+void System::refreshLoad ()
+{
+	double loads[3];
+	int count = getloadavg(loads, 3);
+	loadavg->setValueArray (std::vector<double>(loads, loads + count));
+	addTimer(20, new rts2core::Event (EVENT_REFRESH_LOAD));
+}
+
 System::System (int argc, char **argv):Sensor (argc, argv)
 {
 	storageFile = NULL;
@@ -222,11 +234,11 @@ System::System (int argc, char **argv):Sensor (argc, argv)
 	createValue (bytesNight, "expected", "expected number of bytes per night (maximum from night diferences from last 10 nights)", false, RTS2_DT_BYTESIZE);
 
 	createValue (lastWrite, "last_write", "time of last write of system usage statistics", false);
-
+	createValue (loadavg, "load_avg", "system load average for 1, 5 and 15 minutes", false);
 	addOption ('p', NULL, 1, "specifyed path being monitored");
 	addOption (OPT_STORAGE, "save", 1, "save data to given file");
 
-	setIdleInfoInterval (300);
+	setIdleInfoInterval(20);
 }
 
 void System::postEvent (rts2core::Event *event)
@@ -237,7 +249,11 @@ void System::postEvent (rts2core::Event *event)
 			storePaths ();
 			scheduleStore ();
 			break;
+		case EVENT_REFRESH_LOAD:
+			refreshLoad ();
+			break;
 	}
+	Sensor::postEvent (event);
 }
 
 int main (int argc, char **argv)
