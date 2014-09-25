@@ -16,7 +16,7 @@ rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp stateevent
 rts2_httpd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_httpd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -lrts2scheduler -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db \
 	-L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIBPG_LIBS@ \
-	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIB_CRYPT@ @LIBARCHIVE_LIBS@ $(AM_LDADD)
+	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIB_CRYPT@ @LIBARCHIVE_LIBS@ @LIB_PTHREAD@ $(AM_LDADD)
 
 CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
 
@@ -30,7 +30,7 @@ rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp valueevent
 	xmlapi.cpp
 rts2_httpd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_httpd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \
-	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ @LIB_CRYPT@ ${AM_LDADD}
+	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ @LIB_CRYPT@ @LIB_PTHREAD@ ${AM_LDADD}
 
 endif
 
