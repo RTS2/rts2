@@ -277,6 +277,12 @@ class Rts2Target
 
 		char getTargetType () { return target_type; }
 		void setTargetType (char in_target_type) { target_type = in_target_type; }
+
+		/**
+		 * Returns true if target position (RA, DEC) does not change with time.
+		 */
+		virtual bool hasConstantPosition () { return false; }
+
 		const char *getTargetName () { return target_name; }
 
 		/**

@@ -498,6 +498,19 @@ bool ConstraintLunarDistance::satisfy (Target *tar, double JD, double *nextJD)
 	return isBetween (ld);
 }
 
+void ConstraintLunarDistance::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+{
+	// for fixed target coordinates, we assume  calculating constraint once an hour is enough
+	if (tar->hasConstantPosition ())
+	{
+		ConstraintInterval::getSatisfiedIntervals (tar, from, to, 3600, ret);
+	}
+	else
+	{
+		ConstraintInterval::getSatisfiedIntervals (tar, from, to, step, ret);
+	}
+}
+
 bool ConstraintLunarAltitude::satisfy (Target *tar, double JD, double *nextJD)
 {
 	struct ln_equ_posn eq_lun;

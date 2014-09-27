@@ -249,6 +249,8 @@ class ConstraintLunarDistance:public ConstraintInterval
 		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_LDISTANCE; }
+
+		virtual void getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
 };
 
 class ConstraintLunarAltitude:public ConstraintInterval
