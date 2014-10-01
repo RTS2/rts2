@@ -65,12 +65,13 @@
 #define OPT_LABEL               OPT_LOCAL + 11
 #define OPT_ZOOM                OPT_LOCAL + 12
 #define OPT_COLOURVARIANT	OPT_LOCAL + 13
-#define OPT_ERR_RA              OPT_LOCAL + 14
-#define OPT_ERR_DEC             OPT_LOCAL + 15
-#define OPT_ERR                 OPT_LOCAL + 16
-#define OPT_RTS2OPERA_WCS       OPT_LOCAL + 17
-#define OPT_ADD_TEMPLATE        OPT_LOCAL + 18
-#define OPT_APPEND_EXTENSIONS   OPT_LOCAL + 19
+#define OPT_QUANTILES		OPT_LOCAL + 14
+#define OPT_ERR_RA              OPT_LOCAL + 15
+#define OPT_ERR_DEC             OPT_LOCAL + 16
+#define OPT_ERR                 OPT_LOCAL + 17
+#define OPT_RTS2OPERA_WCS       OPT_LOCAL + 18
+#define OPT_ADD_TEMPLATE        OPT_LOCAL + 19
+#define OPT_APPEND_EXTENSIONS   OPT_LOCAL + 20
 
 namespace rts2image
 {
@@ -128,6 +129,7 @@ class AppImage:public rts2image::AppImageCore
 		const char* label;
 		double zoom;
 		int colourvariant;
+		float quantiles;
 #endif
 
 		int obsid;
@@ -360,6 +362,9 @@ int AppImage::processOption (int in_opt)
 		case OPT_COLOURVARIANT:
 			colourvariant = atoi (optarg);
 			break;
+		case OPT_QUANTILES:
+			quantiles = atof (optarg);
+			break;
 		#endif /* RTS2_HAVE_LIBJPEG */
 		case OPT_RTS2OPERA_WCS:
 			operation |= IMAGEOP_RTS2OPERA_WCS;
@@ -467,7 +472,7 @@ int AppImage::processImage (Image * image)
 	}
 #ifdef RTS2_HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
-	  	image->writeAsJPEG (jpeg_expr, zoom, label, 0.005, -1, colourvariant);
+	  	image->writeAsJPEG (jpeg_expr, zoom, label, quantiles, -1, colourvariant);
 #endif /* RTS2_HAVE_LIBJPEG */
 	if (operation & IMAGEOP_APPEND_EXT)
 		appendOutput->appendFITS (image->getFitsFile ());
@@ -503,6 +508,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	label = NULL;
 	zoom = 1;
 	colourvariant = 0;
+	quantiles = 0.005;
 #endif
 
 	obsid = -1;
@@ -542,6 +548,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption (OPT_ZOOM, "zoom", 1, "zoom the image before writing its label");
 	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
 	addOption (OPT_COLOURVARIANT, "colourvariant", 1, "colour variant of jpeg; 0=grey (default)");
+	addOption (OPT_QUANTILES, "dark-quantile", 1, "quantile for limiting darkest displayed value on jpeg, default 0.005");
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
 #endif /* RTS2_HAVE_LIBJPEG */
 }
