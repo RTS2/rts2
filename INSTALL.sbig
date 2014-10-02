@@ -2,9 +2,9 @@ Instructions to install SBIG CCDs
 =================================
 
 You will need SBIG Linux driver. You can currenly download driver only from the
-old SBIG web pages:
+SBIG ftp site:
 
-http://sbig.impulse.net/sbwhtmls/devswframe.htm
+ftp://ftp.sbig.com/pub/devsw/LinuxDevKit.tar.gz 
 
 Follow instructions in distribution file to setup udev to firmware loading. You can install fxload with
 
