@@ -80,6 +80,8 @@ class Sitech:public GEM
 			return getTargetDistance () * 2.0;
 		}
 
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 		virtual int updateLimits ();
 
 		/**
@@ -92,6 +94,11 @@ class Sitech:public GEM
 		}
 
 	private:
+		/**
+		 * Sends SiTech XYS command with requested coordinates.
+		 */
+		void sitechMove (int32_t ac, int32_t dc);
+
 		ConnSitech *serConn;
 
 		SitechAxisStatus radec_status;
@@ -167,8 +174,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 
 	device_file = "/dev/ttyUSB0";
 
-	createValue (ra_pos, "AXRA", "RA motor axis count", true);
-	createValue (dec_pos, "AXDEC", "DEC motor axis count", true);
+	createValue (ra_pos, "AXRA", "RA motor axis count", true, RTS2_VALUE_WRITABLE);
+	createValue (dec_pos, "AXDEC", "DEC motor axis count", true, RTS2_VALUE_WRITABLE);
 
 	createValue (ra_enc, "ENCRA", "RA encoder readout", true);
 	createValue (dec_enc, "ENCDEC", "DEC encoder readout", true);
@@ -367,27 +374,31 @@ int Sitech::startResync ()
 	int ret = sky2counts (ac, dc);
 	if (ret)
 		return -1;
+
+	sitechMove (ac, dc);
 	
-	radec_request.y_dest = ac;
-	radec_request.x_dest = dc;
-
-	radec_request.y_speed = ra_speed->getValueLong ();
-	radec_request.x_speed = dec_speed->getValueLong ();
-
-	radec_request.y_rate_adder = ra_rate_adder->getValueLong ();
-	radec_request.x_rate_adder = dec_rate_adder->getValueLong ();
-
-	radec_request.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
-	radec_request.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
-
-	serConn->sendAxisRequest ('Y', radec_request);
-
 	return 0;
 }
 
 int Sitech::isMoving ()
 {
 	return -1;
+}
+
+int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == ra_pos)
+	{
+		sitechMove (newValue->getValueLong (), dec_pos->getValueLong ());
+		return 0;
+	}
+	if (oldValue == dec_pos)
+	{
+		sitechMove (ra_pos->getValueLong (), newValue->getValueLong ());
+		return 0;
+	}
+
+	return GEM::setValue (oldValue, newValue);
 }
 
 int Sitech::updateLimits ()
@@ -402,6 +413,23 @@ int Sitech::updateLimits ()
 int Sitech::startPark ()
 {
 	return 0;
+}
+
+void Sitech::sitechMove (int32_t ac, int32_t dc)
+{
+	radec_request.y_dest = ac;
+	radec_request.x_dest = dc;
+
+	radec_request.y_speed = ra_speed->getValueLong ();
+	radec_request.x_speed = dec_speed->getValueLong ();
+
+	radec_request.y_rate_adder = ra_rate_adder->getValueLong ();
+	radec_request.x_rate_adder = dec_rate_adder->getValueLong ();
+
+	radec_request.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
+	radec_request.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
+
+	serConn->sendAxisRequest ('Y', radec_request);
 }
 
 int main (int argc, char **argv)
