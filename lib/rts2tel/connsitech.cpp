@@ -149,22 +149,22 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 
 	// fill in proper return values..
 	ax_status.address = ret[0];
-	ax_status.x_pos = ntohl (*(ret + 1));
-	ax_status.y_pos = ntohl (*(ret + 5));
-	ax_status.x_enc = ntohl (*(ret + 9));
-	ax_status.y_enc = ntohl (*(ret + 13));
+	ax_status.x_pos = le32toh (*((uint32_t *) (ret + 1)));
+	ax_status.y_pos = le32toh (*((uint32_t *) (ret + 5)));
+	ax_status.x_enc = le32toh (*((uint32_t *) (ret + 9)));
+	ax_status.y_enc = le32toh (*((uint32_t *) (ret + 13)));
 
 	ax_status.keypad = ret[17];
 	ax_status.x_bit = ret[18];
 	ax_status.y_bit = ret[19];
 	ax_status.extra_bit = ret[20];
-	ax_status.ain_1 = ntohs (*(ret + 21));
-	ax_status.ain_2 = ntohs (*(ret + 23));
-	ax_status.mclock = ntohl (*(ret + 25));
+	ax_status.ain_1 = le16toh (*((uint16_t *) (ret + 21)));
+	ax_status.ain_2 = le16toh (*((uint16_t *) (ret + 23)));
+	ax_status.mclock = le32toh (*((uint32_t *) (ret + 25)));
 	ax_status.temperature = ret[29];
 	ax_status.y_worm_phase = ret[30];
-	ax_status.x_last = ntohl (*(ret + 31));
-	ax_status.y_last = ntohl (*(ret + 35));
+	ax_status.x_last = le32toh (*((uint32_t *) (ret + 31)));
+	ax_status.y_last = le32toh (*((uint32_t *) (ret + 35)));
 }
 
 void ConnSitech::writePortChecksumed (const char *cmd, size_t len)
