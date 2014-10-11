@@ -39,22 +39,22 @@ class GEM: public Telescope
 		/**
 		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
 		 */
-		double haZero;
-		double decZero;
+		rts2core::ValueDouble *haZero;
+		rts2core::ValueDouble *decZero;
 
-		double haCpd;
-		double decCpd;
+		rts2core::ValueDouble *haCpd;
+		rts2core::ValueDouble *decCpd;
 
-		int32_t acMin;
-		int32_t acMax;
-		int32_t dcMin;
-		int32_t dcMax;
+		rts2core::ValueLong *acMin;
+		rts2core::ValueLong *acMax;
+		rts2core::ValueLong *dcMin;
+		rts2core::ValueLong *dcMax;
 
 		int acMargin;
 
 		// ticks per revolution
-		int32_t ra_ticks;
-		int32_t dec_ticks;
+		rts2core::ValueLong *ra_ticks;
+		rts2core::ValueLong *dec_ticks;
 
 		virtual int updateLimits () = 0;
 

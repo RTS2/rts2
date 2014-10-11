@@ -128,8 +128,6 @@ class Sitech:public GEM
 		rts2core::ValueLong *ra_rate_adder_t;
 		rts2core::ValueLong *dec_rate_adder_t;
 
-		double homera;                    /* Startup RA reset based on HA       */
-		double homedec;                   /* Startup Dec                        */
 		double offsetha;
 		double offsetdec;
                  
@@ -154,23 +152,12 @@ using namespace rts2teld;
 
 Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_request ()
 {
-	ra_ticks = 120000;
-	dec_ticks = 120000;
-
-	haZero = 0;
-	decZero = 0;
-
-	haCpd = ra_ticks / 360.0;
-	decCpd = dec_ticks / 360.0;
-
 	setCorrections (true, true, true);
 
-	homera = 0.;                    /* Startup RA reset based on HA       */
-	homedec = 0.;                   /* Startup Dec                        */
-	offsetha=0.;
-	offsetdec=0.;
+	offsetha = 0.;
+	offsetdec = 0.;
 
-	pmodel=RAW;
+	pmodel = RAW;
 
 	device_file = "/dev/ttyUSB0";
 
@@ -275,15 +262,6 @@ int Sitech::initHardware ()
 	
 	strcpy (telType, "Sitech");
 
-	/* Software allows for different mount types but the A200HR requires "GEM" */
-	/* GEM:    over the pier pointing at the pole                              */
-	/* EQFORK: pointing at the equator on the meridian                         */
-	/* ALTAZ:  level and pointing north                                        */
-
-	fprintf (stderr, "On a cold start A200HR must be over the pier\n");
-	fprintf (stderr, "  pointing at the pole.\n\n");
-	fprintf (stderr, "We always read the precision encoder and \n"); 
-	fprintf (stderr, "  set the motor encoders to match.\n");
 	/* Make the connection */
 	
 	/* On the Sidereal Technologies controller                                */
@@ -304,8 +282,7 @@ int Sitech::initHardware ()
      
 	if (numread != 0) 
 	{
-		fprintf (stderr, "Sidereal Technology Controller version %d\n", numread);
-		fprintf (stderr, "Telescope connected \n");  
+		logStream (MESSAGE_DEBUG) << "Sidereal Technology Controller version" << numread << sendLog;
 	}
 	else
 	{
@@ -317,17 +294,6 @@ int Sitech::initHardware ()
    
 	usleep (500000);
   
-	/* Read encoders and confirm pointing */
-  
-	double t_telRa, t_telDec;
-	int t_telFlip;
-	getTel (t_telRa, t_telDec, t_telFlip, homera, homedec);
-  
-	fprintf (stderr, "Mount motor encoder RA: %lf\n", homera);
-	fprintf (stderr, "Mount motor encoder Dec: %lf\n", homedec);
-
-	logStream (MESSAGE_INFO) << "The telescope is on line .." << sendLog;
-    
 	/* Flush the input buffer in case there is something left from startup */
 
 	serConn->flushPortIO();
@@ -403,10 +369,10 @@ int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 int Sitech::updateLimits ()
 {
-	acMin = -10000000;
-	acMax = 10000000;
-	dcMin = -10000000;
-	dcMax = 10000000;
+	acMin->setValueLong (-10000000);
+	acMax->setValueLong (10000000);
+	dcMin->setValueLong (-10000000);
+	dcMax->setValueLong (10000000);
 	return 0;
 }
 

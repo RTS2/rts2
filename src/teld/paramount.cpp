@@ -482,24 +482,29 @@ int Paramount::getHomeOffset (int32_t & off)
 int Paramount::updateLimits ()
 {
 	int ret;
+	int32_t t;
 	logStream (MESSAGE_DEBUG) << "Paramount::UpdateLimits" << sendLog;
 	logStream (MESSAGE_DEBUG) << "MKS3ConstsLimMinGet axis0" << sendLog;
-	ret = MKS3ConstsLimMinGet (axis0, &acMin);
+	ret = MKS3ConstsLimMinGet (axis0, &t);
 	if (ret)
 		return -1;
+	acMin->setValueLong (t);
 	logStream (MESSAGE_DEBUG) << "MKS3ConstsLimMinGet axis0" << sendLog;
-	ret = MKS3ConstsLimMaxGet (axis0, &acMax);
+	ret = MKS3ConstsLimMaxGet (axis0, &t);
 	if (ret)
 		return -1;
+	acMax->setValueLong (t);
 
 	logStream (MESSAGE_DEBUG) << "MKS3ConstsLimMinGet axis1" << sendLog;
-	ret = MKS3ConstsLimMinGet (axis1, &dcMin);
+	ret = MKS3ConstsLimMinGet (axis1, &t);
 	if (ret)
 		return -1;
+	dcMin->setValueLong (t);
 	logStream (MESSAGE_DEBUG) << "MKS3ConstsLimMaxGet axis1" << sendLog;
-	ret = MKS3ConstsLimMaxGet (axis1, &dcMax);
+	ret = MKS3ConstsLimMaxGet (axis1, &t);
 	if (ret)
 		return -1;
+	dcMax->setValueLong (t);
 	return 0;
 }
 
@@ -573,8 +578,8 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 
 	move_timeout = 0;
 
-	ra_ticks = RA_TICKS;
-	dec_ticks = DEC_TICKS;
+	ra_ticks->setValueLong (RA_TICKS);
+	dec_ticks->setValueLong (DEC_TICKS);
 
 	setIndices = false;
 
@@ -599,12 +604,12 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 //	decZero = -10.31777;
 
 // this is normal
-	haZero = +30.0;
-	decZero = 0.0;
+	haZero->setValueDouble (+30.0);
+	decZero->setValueDouble (0.0);
 
 	// how many counts per degree
-	haCpd = -32000.0;	 // - for N hemisphere, + for S hemisphere; S swap is done later
-	decCpd = -20883.33333333333;
+	haCpd->setValueDouble (-32000.0);	 // - for N hemisphere, + for S hemisphere; S swap is done later
+	decCpd->setValueDouble (-20883.33333333333);
 
 	acMargin = 10000;
 
@@ -710,8 +715,8 @@ int Paramount::initHardware ()
 	if (telLatitude->getValueDouble () < 0)
 	{
 		// swap values which are opposite for south hemispehere
-		haZero *= -1.0;
-		haCpd *= -1.0;
+		haZero->setValueDouble (haZero->getValueDouble () * -1.0);
+		haCpd->setValueDouble (haCpd->getValueDouble () * -1.0);
 		hourRa->setValueLong (-1 * hourRa->getValueLong ());
 	}
 
@@ -1456,8 +1461,8 @@ void Paramount::setDiffTrack (double dra, double ddec)
 {
 	// calculate diff track..
 	logStream (MESSAGE_DEBUG) << "Paramount::setDiffTrack" << sendLog;
-	dra = (-dra * haCpd);
-	ddec = (ddec * decCpd);
+	dra = (-dra * haCpd->getValueDouble ());
+	ddec = (ddec * decCpd->getValueDouble ());
 	if (getFlip ())
 		ddec *= -1;
 	baseRa->setValueLong (dra + hourRa->getValueLong ());

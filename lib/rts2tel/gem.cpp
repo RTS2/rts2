@@ -79,8 +79,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		dec *= -1;
 
 	// convert to count values
-	ac = (int32_t) ((ha - haZero) * haCpd);
-	dc = (int32_t) ((dec - decZero) * decCpd);
+	ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());
+	dc = (int32_t) ((dec - decZero->getValueDouble ()) * decCpd->getValueDouble ());
 
 	// gets the limits
 	ret = updateLimits ();
@@ -93,46 +93,46 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// on S, we prefer negative values
 	if (telLatitude->getValueDouble () < 0)
 	{
-		while ((ac - acMargin) < acMin)
+		while ((ac - acMargin) < acMin->getValueLong ())
 			// ticks per revolution - don't have idea where to get that
 		{
-			ac += (int32_t) (ra_ticks / 2.0);
+			ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
 			flip = !flip;
 		}
 	}
-	while ((ac + acMargin) > acMax)
+	while ((ac + acMargin) > acMax->getValueLong ())
 	{
-		ac -= (int32_t) (ra_ticks / 2.0);
+		ac -= (int32_t) (ra_ticks->getValueLong () / 2.0);
 		flip = !flip;
 	}
 	// while on N we would like to see positive values
 	if (telLatitude->getValueDouble () > 0)
 	{
-		while ((ac - acMargin) < acMin)
+		while ((ac - acMargin) < acMin->getValueLong ())
 			// ticks per revolution - don't have idea where to get that
 		{
-			ac += (int32_t) (ra_ticks / 2.0);
+			ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
 			flip = !flip;
 		}
 	}
 
 	if (flip)
-		dc += (int32_t) ((90 - dec) * 2 * decCpd);
+		dc += (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
 
 	// put dc to correct numbers
-	while (dc < dcMin)
-		dc += dec_ticks;
-	while (dc > dcMax)
-		dc -= dec_ticks;
+	while (dc < dcMin->getValueLong ())
+		dc += dec_ticks->getValueLong ();
+	while (dc > dcMax->getValueLong ())
+		dc -= dec_ticks->getValueLong ();
 
-	if ((dc < dcMin) || (dc > dcMax))
+	if ((dc < dcMin->getValueLong ()) || (dc > dcMax->getValueLong ()))
 	{
 		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
 			<< LibnovaRaDec (pos) << " dc:" << dc << " dcMin:" << dcMin << " dcMax:" << dcMax << sendLog;
 		return -1;
 	}
 
-	if ((ac < acMin) || (ac > acMax))
+	if ((ac < acMin->getValueLong ()) || (ac > acMax->getValueLong ()))
 	{
 		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
 			<< LibnovaRaDec (pos) << " ac:" << ac << " acMin:" << acMin << " acMax:" << acMax << sendLog;
@@ -140,8 +140,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 
 	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-	u_pos.ra = ls - ((double) (ac / haCpd) + haZero);
-	u_pos.dec = (double) (dc / decCpd) + decZero;
+	u_pos.ra = ls - ((double) (ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
+	u_pos.dec = (double) (dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 	if (telLatitude->getValueDouble () < 0)
 		u_pos.dec *= -1;
 	applyModel (&u_pos, &model_change, 0, JD);	// we give raw (unflipped) position => flip=0 for model computation
@@ -156,8 +156,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
-	ac -= -1.0 * (int32_t) (model_change.ra * haCpd);	// -1* is because ac is in HA, not in RA
-	dc -= (int32_t) (model_change.dec * decCpd);
+	ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
+	dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
@@ -183,8 +183,8 @@ int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip,
 
 	ac += homeOff;
 
-	ha = (double) (ac / haCpd) + haZero;
-	dec = (double) (dc / decCpd) + decZero;
+	ha = (double) (ac / haCpd->getValueDouble ()) + haZero->getValueDouble ();
+	dec = (double) (dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 
 	ra = ls - ha;
 
@@ -223,9 +223,19 @@ int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip,
 
 GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
 {
-	haZero = decZero = haCpd = decCpd = NAN;
+	createValue (haZero, "_ha_zero", "HA zero offset", false);
+	createValue (decZero, "_dec_zero", "DEC zero offset", false);
 
-	ra_ticks = dec_ticks = 0;
+	createValue (haCpd, "_ha_cpd", "HA counts per degree", false);
+	createValue (decCpd, "_dec_cpd", "DEC counts per degree", false);
+
+	createValue (acMin, "_ac_min", "HA minimal count value", false);
+	createValue (acMax, "_ac_max", "HA maximal count value", false);
+	createValue (dcMin, "_dc_min", "DEC minimal count value", false);
+	createValue (dcMax, "_dc_max", "DEC maximal count value", false);
+
+	createValue (ra_ticks, "_ra_ticks", "RA ticks per full loop", false);
+	createValue (dec_ticks, "_dec_ticks", "DEC ticks per full loop", false);
 }
 
 GEM::~GEM (void)

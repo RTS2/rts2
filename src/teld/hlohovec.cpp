@@ -116,15 +116,16 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 	devRA = NULL;
 	devDEC = NULL;
 
-	ra_ticks = RA_TICKS;
-	dec_ticks = DEC_TICKS;
+	ra_ticks->setValueLong (RA_TICKS);
+	dec_ticks->setValueLong (DEC_TICKS);
 
-	haCpd = RA_TICKS / 360.0;
-	decCpd = DEC_TICKS / 360.0;
+	haCpd->setValueDouble (RA_TICKS / 360.0);
+	decCpd->setValueDouble (DEC_TICKS / 360.0);
 
-	acMargin = haCpd;
+	acMargin = haCpd->getValueDouble ();
 	
-	haZero = decZero = 0;
+	haZero->setValueDouble (0);
+	decZero->setValueDouble (0);
 
 	parking = false;
 
@@ -329,7 +330,7 @@ int Hlohovec::isMoving ()
 				return -1;
 			diffAc = ac - tAc;
 			// if difference in H is greater then 1 arcmin..
-			if (fabs (diffAc) > haCpd * moveTolerance->getValueDouble ())
+			if (fabs (diffAc) > haCpd->getValueDouble () * moveTolerance->getValueDouble ())
 			{
 				raDrive->setTargetPos (ac);
 				tAc = ac;
@@ -442,10 +443,10 @@ void Hlohovec::setDiffTrack (double dra, double ddec)
 
 int Hlohovec::updateLimits ()
 {
-	acMin = -1 * labs (RA_TICKS);
-	acMax = labs (RA_TICKS);
-	dcMin = -1 * labs (DEC_TICKS);
-	dcMax = labs (DEC_TICKS);
+	acMin->setValueLong (-1 * labs (RA_TICKS));
+	acMax->setValueLong (labs (RA_TICKS));
+	dcMin->setValueLong (-1 * labs (DEC_TICKS));
+	dcMax->setValueLong (labs (DEC_TICKS));
 	return 0;
 }
 
