@@ -8,7 +8,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-cryocon rts2-sensor-keithley-scpi rts2-sensor-colamp \
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
 	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
-	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab
+	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity
 
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
@@ -87,6 +87,8 @@ rts2_sensor_mm2500_SOURCES = mm2500.cpp
 rts2_sensor_agilent_e3631a_SOURCES = agilent-e3631a.cpp
 
 rts2_sensor_aws_mlab_SOURCES = aws-mlab.cpp
+
+rts2_sensor_clarity_SOURCES = clarity.cpp
 
 if SUNCYGMAC
 EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp
