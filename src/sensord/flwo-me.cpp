@@ -34,7 +34,7 @@ class MEarthWeather:public rts2core::ConnUDP
 	protected:
 		virtual int process (size_t len, struct sockaddr_in &from);
 	private:
-		void paramNextTimeME (rts2core::ValueTime *val);
+		time_t paramNextTimeME ();
 
 		double paramNextDouble ();
 
@@ -65,7 +65,6 @@ class FlwoMe:public SensorWeather
 		rts2core::ValueFloat *ignore_nodata;
 
 		// ME values
-		rts2core::ValueTime *me_mjd;
 		rts2core::ValueFloat *me_winddir;
 		rts2core::ValueFloat *me_windspeed;
 		rts2core::ValueFloat *me_temp;
@@ -90,27 +89,24 @@ MEarthWeather::MEarthWeather (int _port, FlwoMe *_master):ConnUDP (_port, _maste
 {
 };
 
-void MEarthWeather::paramNextTimeME (rts2core::ValueTime *val)
+time_t MEarthWeather::paramNextTimeME ()
 {
 	char *str_num;
 	char *endptr;
 	if (paramNextString (&str_num, ","))
 	{
 		throw rts2core::Error ("cannot get value");
-		return;
 	}
 	double mjd = strtod (str_num, &endptr);
 	if (*endptr == '\0')
 	{
 		time_t t;
 		ln_get_timet_from_julian (mjd + JD_TO_MJD_OFFSET, &t);
-		val->setValueDouble (t);
-		return;
+		return t;
 	}
 	if (strcmp (str_num, "---") == 0)
 	{
-		val->setValueDouble (NAN);
-		return;
+		return -1;
 	}
 	throw rts2core::Error ("cannot parse " + std::string (str_num));
 }
@@ -161,7 +157,7 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 {
 	try
 	{
-		paramNextTimeME (((FlwoMe *) master)->me_mjd);
+		((FlwoMe *) master)->setInfoTime (paramNextTimeME ());
 		paramNextFloatME (((FlwoMe *) master)->me_winddir);
 		paramNextFloatME (((FlwoMe *) master)->me_windspeed);
 		paramNextFloatME (((FlwoMe *) master)->me_temp);
@@ -179,7 +175,6 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 	catch (rts2core::Error er)
 	{
 		logStream (MESSAGE_DEBUG) << "cannot parse MEarth UDP packet, rest contet is " << buf << ", erorr is " << er << sendLog;
-		((FlwoMe *) master)->me_mjd->setValueDouble (NAN);
 		return -1;
 	}
 	return 0;
@@ -198,9 +193,6 @@ FlwoMe::FlwoMe (int argc, char **argv):SensorWeather (argc, argv)
 	wait_me_rain->setValueFloat (900);
 
 	ignore_nodata->setValueInteger (300);
-
-	createValue (me_mjd, "me_mjd", "MEarth MJD", false);
-	me_mjd->setValueDouble (NAN);
 
 	createValue (me_winddir, "me_winddir", "MEarth wind direction", false);
 	createValue (me_windspeed, "me_windspeed", "MEarth wind speed", false);
@@ -267,76 +259,58 @@ int FlwoMe::initHardware ()
 
 int FlwoMe::info ()
 {
-	setInfoTime (me_mjd->getValueInteger ());
-
 	return 0;
 }
 
 bool FlwoMe::isGoodWeather ()
 {
 	bool ret = true;
-	double lastNow = getNow () - ignore_nodata->getValueFloat ();
 	if (getLastInfoTime () > ignore_nodata->getValueFloat ())
   	{
-	  	std::ostringstream os;
-		os << "ME data not received ME: " << Timestamp (me_mjd->getValueDouble ());
 		setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not received");
 
-		if (isnan (me_mjd->getValueDouble ()) || me_mjd->getValueDouble () < lastNow)
-		{
-			me_winddir->setValueFloat (NAN);
-			sendValueAll (me_winddir);
+		me_winddir->setValueFloat (NAN);
+		sendValueAll (me_winddir);
 
-			me_windspeed->setValueFloat (NAN);
-			sendValueAll (me_windspeed);
+		me_windspeed->setValueFloat (NAN);
+		sendValueAll (me_windspeed);
 
-			me_temp->setValueFloat (NAN);
-			sendValueAll (me_temp);
+		me_temp->setValueFloat (NAN);
+		sendValueAll (me_temp);
 
-			me_dewpoint->setValueFloat (NAN);
-			sendValueAll (me_dewpoint);
+		me_dewpoint->setValueFloat (NAN);
+		sendValueAll (me_dewpoint);
 
-			me_pressure->setValueFloat (NAN);
-			sendValueAll (me_pressure);
+		me_pressure->setValueFloat (NAN);
+		sendValueAll (me_pressure);
 
-			me_rain_accumulation->setValueFloat (NAN);
-			sendValueAll (me_rain_accumulation);
+		me_rain_accumulation->setValueFloat (NAN);
+		sendValueAll (me_rain_accumulation);
 
-			me_rain_duration->setValueFloat (NAN);
-			sendValueAll (me_rain_duration);
+		me_rain_duration->setValueFloat (NAN);
+		sendValueAll (me_rain_duration);
 
-			me_rain_intensity->setValueFloat (NAN);
-			sendValueAll (me_rain_intensity);
+		me_rain_intensity->setValueFloat (NAN);
+		sendValueAll (me_rain_intensity);
 
-			me_hail_accumulation->setValueFloat (NAN);
-			sendValueAll (me_hail_accumulation);
+		me_hail_accumulation->setValueFloat (NAN);
+		sendValueAll (me_hail_accumulation);
 
-			me_hail_duration->setValueFloat (NAN);
-			sendValueAll (me_hail_duration);
+		me_hail_duration->setValueFloat (NAN);
+		sendValueAll (me_hail_duration);
 
-			me_hail_intensity->setValueFloat (NAN);
-			sendValueAll (me_hail_intensity);
+		me_hail_intensity->setValueFloat (NAN);
+		sendValueAll (me_hail_intensity);
 
-			me_sky_temp->clearStat ();
-			valueError (me_sky_temp);
-			sendValueAll (me_sky_temp);
+		me_sky_temp->clearStat ();
+		valueError (me_sky_temp);
+		sendValueAll (me_sky_temp);
 
-			me_rain->setValueInteger (0);
-			valueError (me_rain);
-			sendValueAll (me_rain);
-
-			valueError (me_mjd);
-		}
-		else
-		{
-			valueGood (me_mjd);
-		}
+		me_rain->setValueInteger (0);
+		valueError (me_rain);
+		sendValueAll (me_rain);
 
 		ret = false;
-	}
-	else
-	{
-		valueGood (me_mjd);
 	}
 	if (me_sky_temp->getValueFloat () > me_sky_limit->getValueFloat ())
 	{
