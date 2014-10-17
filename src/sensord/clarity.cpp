@@ -42,6 +42,7 @@ class Clarity:public SensorWeather
 	protected:
 		virtual int processOption (int opt);
 		virtual int initHardware ();
+		virtual int info ();
 		virtual bool isGoodWeather ();
 
 	private:
@@ -50,6 +51,7 @@ class Clarity:public SensorWeather
 		rts2core::ValueFloat *tempOutside1;
 		rts2core::ValueFloat *tempOutside2;
 
+		void processClarityFile ();
 		// parse one line from the file
 		int parseLine (const char *line);
 
@@ -73,39 +75,17 @@ Clarity::Clarity (int argc, char **argv):SensorWeather (argc, argv)
 	clarityFile = NULL;
 
 	notifyConn = new rts2core::ConnNotify (this);
+	notifyConn->setDebug (true);
 	addConnection(notifyConn);
+
+	notifyConn->init ();
 }
 
 void Clarity::fileModified (struct inotify_event *event)
 {
 #define CLARITY_LOG_BUFFER_SIZE   140
-	if (event->len > 0 && strcmp (event->name, clarityFile) == 0)
-	{
-		int f = open (clarityFile, O_RDONLY);
-		struct stat fs;
-		int ret = fstat (f, &fs);
-		if (ret)
-			return;
-		char buf[CLARITY_LOG_BUFFER_SIZE];
-		if (fs.st_size > CLARITY_LOG_BUFFER_SIZE)
-		{
-			off_t off = lseek (f, -CLARITY_LOG_BUFFER_SIZE, SEEK_END);
-			if (off == -1)
-				return;
-		}
-		ret = read (f, buf, CLARITY_LOG_BUFFER_SIZE);
-		if (ret <= 0)
-			return;
-		// find end and before end '\n'
-		char *end_cl = rindex (buf, '\n');
-		if (end_cl == NULL)
-			return;
-		*end_cl = '\0';
-		end_cl = rindex (buf, '\n');
-		if (end_cl == NULL)
-			return;
-		parseLine (end_cl);
-	}
+	if (event->wd == 1)
+		processClarityFile ();
 }
 
 int Clarity::processOption (int opt)
@@ -130,8 +110,42 @@ int Clarity::initHardware ()
 	}
 
 	notifyConn->addWatch (clarityFile);
+	processClarityFile ();
 
 	return 0;
+}
+
+int Clarity::info ()
+{
+	return 0;
+}
+
+void Clarity::processClarityFile()
+{
+	int f = open (clarityFile, O_RDONLY);
+	struct stat fs;
+	int ret = fstat (f, &fs);
+	if (ret)
+		return;
+	char buf[CLARITY_LOG_BUFFER_SIZE];
+	if (fs.st_size > CLARITY_LOG_BUFFER_SIZE)
+	{
+		off_t off = lseek (f, -CLARITY_LOG_BUFFER_SIZE, SEEK_END);
+		if (off == -1)
+			return;
+	}
+	ret = read (f, buf, CLARITY_LOG_BUFFER_SIZE);
+	if (ret <= 0)
+		return;
+	// find end and before end '\n'
+	char *end_cl = rindex (buf, '\n');
+	if (end_cl == NULL)
+		return;
+	*end_cl = '\0';
+	end_cl = rindex (buf, '\n');
+	if (end_cl == NULL)
+		return;
+	parseLine (++end_cl);
 }
 
 int Clarity::parseLine (const char *line)
@@ -140,6 +154,7 @@ int Clarity::parseLine (const char *line)
 	wchar_t c;
 	float sky, out1, out2;
 	int i1, i2, i3, i4, i5, i6;
+
 	int ret = sscanf (line, "%d-%d-%d %d:%d:%d %C %f %f %f %d %d %d %d.%d %d", &lasttime.tm_year, &lasttime.tm_mon, &lasttime.tm_mday, &lasttime.tm_hour, &lasttime.tm_min, &lasttime.tm_sec, &c, &sky, &out1, &out2, &i1, &i2, &i3, &i4, &i5, &i6);
 	if (ret != 16)
 	{
@@ -151,7 +166,12 @@ int Clarity::parseLine (const char *line)
 	tempOutside1->setValueFloat (out1);
 	tempOutside2->setValueFloat (out2);
 
+	lasttime.tm_year -= 1900;
+	lasttime.tm_mon--;
+	lasttime.tm_isdst = -1;
+
 	setInfoTime (mktime (&lasttime));
+	infoAll ();
 
 	return 0;
 }
