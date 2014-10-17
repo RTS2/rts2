@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-12-16</date>">
+  <!ENTITY dhdate      "<date>2014-10-17</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007</year>
+      <year>2007 - 2014</year>
       <holder>&dhusername;</holder>
     </copyright>
     &legal;
@@ -42,18 +42,12 @@
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-    <refpurpose>Damon which executes script on devices.</refpurpose>
+    <refpurpose>Daemon which executes script on devices.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      &basicapp;
-      <arg choice="opt">
-	<arg choice="plain"><option>--server <replaceable>server-name</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--port <replaceable>port</replaceable></option></arg>
-      </arg>
+      &deviceapp;
       <arg choice="opt">
 	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
       </arg>
@@ -81,47 +75,92 @@
     &optiongnu;
 
     <variablelist>
-      &basicapplist;
+      &deviceapplist;
       <varlistentry>
-        <term><option>--server <replaceable class="parameter">server-name</replaceable></option></term>
+        <term><option>--expand-path <replaceable class="parameter">expand string</replaceable></option></term>
         <listitem>
           <para>
-	    Specify name of the host, which runs
-	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
-	    This option is needed only for setups that use multiple computers.
-	    Its default is localhost. Default will work for simple setups.
+            Specify path for files created by script executor. Path can contain expansion sequences, as described in <citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
 	  </para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--port <replaceable class="parameter">port</replaceable></option></term>
+        <term><option>--script-gen <replaceable class="parameter">path</replaceable></option></term>
         <listitem>
           <para>
-	    Specify port of the
-	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
-	    It defaults to RTS2 default port, specified during system
-	    configuration. This value is usually 617.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
-        <listitem>
-          <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--expand-path <replaceable class="parameter">device name</replaceable></option></term>
-        <listitem>
-          <para>
-	    Specify a device that will be used. The most common one is "C0", for
-	    the main camera. Check
-	    <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-	    for a list of the devices that are present in your setup.
-	  </para>
+	    Path to script generator. Script generator writes to standard
+            output commands which will be executed by scriptor. The command receives as the
+            first parameter current state of the RTS2 system.
+          </para>
         </listitem>
       </varlistentry>
     </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>THEORY OF OPERATION</title>
+    <para>
+       Scriptor read script to execute from script passed with the
+       <option>--script-get</option> option. It executes the file, and reads
+       its standard output for commands. The commands are described in
+       <citerefentry><refentrytitle>rts2.script</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+    </para>
+    <refsect2>
+       <title>SCRIPT ARGUMENT</title>
+       <para>
+         <variablelist>
+           <varlistentry>
+             <term>0</term>
+             <listitem><para>day</para></listitem>
+           </varlistentry>
+           <varlistentry>
+             <term>1</term>
+             <listitem><para>evening</para></listitem>
+           </varlistentry>
+           <varlistentry>
+             <term>2</term>
+             <listitem><para>dusk</para></listitem>
+           </varlistentry>
+           <varlistentry>
+             <term>3</term>
+             <listitem><para>night</para></listitem>
+           </varlistentry>
+           <varlistentry>
+             <term>4</term>
+             <listitem><para>dawn</para></listitem>
+           </varlistentry>
+           <varlistentry>
+             <term>5</term>
+             <listitem><para>morning</para></listitem>
+           </varlistentry>
+         </variablelist>
+       </para>
+    </refsect2>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLE SCRIPT</title>
+    <para>
+       This script reads the first argument, and depending on its value, either
+       took 36 second dark frame, sequence of 1 second flat frames, or 36 second
+       science frames.
+    </para>
+    <literallayout>
+#!/bin/bash
+ 
+case "$1" in
+        [1,5])
+                echo "D 36"
+                ;;
+        [2,4])
+                echo "E 1 E 1 E 1"
+                ;;
+        3)
+                echo "E 36"
+                ;;
+        *)
+                echo "sleep 30"
+                ;;
+esac
+    </literallayout>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
