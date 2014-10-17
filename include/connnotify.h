@@ -35,6 +35,8 @@ namespace rts2core
  * Class for inotify file descriptors.
  *
  * Read events from descriptor created by inotify, and send them to master.
+ * If ConnNotify is added to watched connections by calling addConnection,
+ * fileModified will be called every time modification to file is noticed.
  *
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
