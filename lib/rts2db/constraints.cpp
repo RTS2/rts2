@@ -236,7 +236,7 @@ void reverseInterval (time_t from, time_t to, interval_arr_t &intervals)
 // find first satisifing interval ending after first violation..
 void findFirst (interval_arr_t::const_iterator &si, const interval_arr_t::const_iterator &end, double t)
 {
-	while (si->second < t && si != end)
+	while (si != end && si->second < t)
 		si++;
 }
 
@@ -254,7 +254,7 @@ void mergeIntervals (const interval_arr_t master, const interval_arr_t &add, int
 	for (interval_arr_t::const_iterator mi = master.begin (); mi != master.end (); mi++)
 	{
 		interval_arr_t::const_iterator addi = add.begin ();
-		while (addi->first < mi->second)
+		while (addi != add.end () && addi->first < mi->second)
 		{
 			findFirst (addi, add.end (), mi->first);
 			if (addi == add.end ())

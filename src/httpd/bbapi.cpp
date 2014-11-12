@@ -54,7 +54,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			os << "{\"ret\":" << ret;
 			if (ret == 0)
 			{
-				os << ",\"from\":" << t << ret;
+				os << ",\"from\":" << t;
 			}
 			else
 			{
