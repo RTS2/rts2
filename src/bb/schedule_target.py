@@ -55,7 +55,7 @@ for obs_id in args:
 	sche = rts2.json.getProxy().loadJson('/bbapi/schedule', {'id':obs_tar_id})
 
 	if int(sche['ret']):
-		print 'log I cannot schedule {0}', str(sche)
+		print 'log I cannot schedule {0}'.format(str(sche))
 		print 'unscheduled'
 	else:
 		print 'log I schedule returns {0}'.format(time.ctime(int(sche['from'])))	
