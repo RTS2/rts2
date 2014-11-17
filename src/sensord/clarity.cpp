@@ -51,6 +51,8 @@ class Clarity:public SensorWeather
 		rts2core::ValueFloat *tempOutside1;
 		rts2core::ValueFloat *tempOutside2;
 
+		rts2core::ValueSelection *skyCond;
+
 		void processClarityFile ();
 		// parse one line from the file
 		int parseLine (const char *line);
@@ -67,8 +69,17 @@ using namespace rts2sensord;
 Clarity::Clarity (int argc, char **argv):SensorWeather (argc, argv)
 {
 	createValue (tempSky, "temp_sky", "sky temparature", false);
-	createValue (tempOutside1, "temp_outside_1", "outside temperature #1", false);
-	createValue (tempOutside2, "temp_outside_2", "outside temparature #2", false);
+	createValue (tempOutside1, "temp_ambient", "ambient temperature", false);
+	createValue (tempOutside2, "temp_sensor", "sensor temparature", false);
+
+	createValue (skyCond, "sky_condition", "sky condition", false);
+	skyCond->addSelVal("Unknown");
+	skyCond->addSelVal("Clear");
+	skyCond->addSelVal("Cloudy");
+	skyCond->addSelVal("VCloudy");
+	skyCond->addSelVal("Wet");
+
+	skyCond->setValueInteger (0);
 
 	addOption ('f', NULL, 1, "clarity 1 cloud sensor log file");
 
@@ -152,10 +163,10 @@ int Clarity::parseLine (const char *line)
 {
 	struct tm lasttime;
 	wchar_t c;
-	float sky, out1, out2;
-	int i1, i2, i3, i4, i5, i6;
+	float sky, out1, out2, f1;
+	int i1, i2, i3, skyC;
 
-	int ret = sscanf (line, "%d-%d-%d %d:%d:%d %C %f %f %f %d %d %d %d.%d %d", &lasttime.tm_year, &lasttime.tm_mon, &lasttime.tm_mday, &lasttime.tm_hour, &lasttime.tm_min, &lasttime.tm_sec, &c, &sky, &out1, &out2, &i1, &i2, &i3, &i4, &i5, &i6);
+	int ret = sscanf (line, "%d-%d-%d %d:%d:%d %C %f %f %f %d %d %d %f %d", &lasttime.tm_year, &lasttime.tm_mon, &lasttime.tm_mday, &lasttime.tm_hour, &lasttime.tm_min, &lasttime.tm_sec, &c, &sky, &out1, &out2, &i1, &i2, &i3, &f1, &skyC);
 	if (ret != 16)
 	{
 		logStream (MESSAGE_ERROR) << "cannot parse line " << line << sendLog;
@@ -165,6 +176,8 @@ int Clarity::parseLine (const char *line)
 	tempSky->setValueFloat (sky);
 	tempOutside1->setValueFloat (out1);
 	tempOutside2->setValueFloat (out2);
+
+	skyCond->setValueInteger (skyC);
 
 	lasttime.tm_year -= 1900;
 	lasttime.tm_mon--;
@@ -178,6 +191,8 @@ int Clarity::parseLine (const char *line)
 
 bool Clarity::isGoodWeather ()
 {
+	if (skyCond->getValueInteger () == 4)
+		return false;
 	return SensorWeather::isGoodWeather ();
 }
 
