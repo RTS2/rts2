@@ -19,7 +19,7 @@ CREATE TABLE targets (
 	-- local object visibility
 	tar_bonus       integer,
 	-- how long will bonus last
-	tar_bonus_time  timestamp
+	tar_bonus_time  timestamp with time zone;
 );
 
 CREATE TABLE phot (
@@ -52,8 +52,8 @@ CREATE TABLE grb (
 	grb_ra		float8,
 	grb_dec		float8,
 	grb_is_grb	boolean NOT NULL DEFAULT true,
-	grb_date	timestamp NOT NULL,
-	grb_last_update	timestamp NOT NULL,
+	grb_date	timestamp with time zone NOT NULL,
+	grb_last_update	timestamp with time zone NOT NULL,
 	grb_errorbox	float,
 CONSTRAINT grb_primary_key PRIMARY KEY (grb_id, grb_seqn, grb_type)
 );
@@ -65,7 +65,7 @@ CREATE TABLE grb_gcn (
 	grb_id		integer,
 	grb_seqn	integer,
 	grb_type	integer,
-	grb_update	timestamp,
+	grb_update	timestamp with time zone,
 	grb_update_usec	integer,
 	packet		int8[]
 );
@@ -79,8 +79,8 @@ CREATE TABLE swift (
 	swift_ra	float8 NOT NULL,
 	swift_dec	float8 NOT NULL,
 	swift_roll	float8,
-        swift_received	timestamp NOT NULL,
-	swift_time	timestamp,
+        swift_received	timestamp with time zone NOT NULL,
+	swift_time	timestamp with time zone,
         swift_name      varchar(70),
         swift_obstime   float,
 	swift_merit	float
@@ -90,8 +90,8 @@ CREATE TABLE integral (
 	integral_id	integer PRIMARY KEY,
 	integral_ra	float8 NOT NULL,
 	integral_dec	float8 NOT NULL,
-	integral_received	timestamp NOT NULL,
-	integral_time	timestamp
+	integral_received	timestamp with time zone NOT NULL,
+	integral_time	timestamp with time zone
 );
 
 CREATE TABLE ot (
@@ -169,7 +169,7 @@ CREATE TABLE images (
 	-- A - image used for acquistion
 	-- S - science image (not acqusition)
 	obs_subtype	char(1),
-	img_date	timestamp NOT NULL,
+	img_date	timestamp with time zone NOT NULL,
 	img_usec	integer NOT NULL,
 	img_exposure	float,
 	img_temperature	float,

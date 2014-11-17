@@ -23,11 +23,11 @@ CREATE TABLE observatory_schedules (
 	schedule_id	integer REFERENCES bb_schedules (schedule_id),
 	observatory_id	integer REFERENCES observatories (observatory_id),
 	state		integer NOT NULL,
-	created		timestamp NOT NULL,
-	last_update	timestamp,
+	created		timestamp with time zone NOT NULL,
+	last_update	timestamp with time zone,
 	-- first time the observation can be scheduled
-	sched_from      timestamp,
-	sched_to        timestamp
+	sched_from      timestamp with time zone,
+	sched_to        timestamp with time zone
 );
 
 CREATE TABLE observatory_observations (
@@ -37,9 +37,9 @@ CREATE TABLE observatory_observations (
 	tar_id		integer REFERENCES targets (tar_id),
 	obs_ra		float8,
 	obs_dec		float8,
-	obs_slew	timestamp,
-	obs_start	timestamp,
-	obs_end		timestamp,
+	obs_slew	timestamp with time zone,
+	obs_start	timestamp with time zone,
+	obs_end		timestamp with time zone,
 	onsky		float8, -- total second of on-sky images
 	good_images	integer,
 	bad_images	integer
