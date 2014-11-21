@@ -746,6 +746,8 @@ void XmlRpcServerConnection::asyncFinished ()
 	prepareForNext ();
 	setSourceEvents (XmlRpcDispatch::ReadableEvent);
 	_server->asyncFinished (this);
+	if (_keepAlive == false)
+		close ();
 }
 
 std::string XmlRpcServerConnection::getHttpDate ()
