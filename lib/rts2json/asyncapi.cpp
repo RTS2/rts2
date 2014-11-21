@@ -146,11 +146,18 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 	}
 	for (std::vector <std::string>::iterator iter = devices.begin (); iter != devices.end (); iter++)
 	{
-		rts2core::Connection *con = device->getOpenConnection (iter->c_str ());
-		if (con == NULL)
+		if (*iter == "centrald")
+		{
+			_conn = device->getSingleCentralConn ();
+		}
+		else
+		{
+			_conn = device->getOpenConnection (iter->c_str ());
+		}
+		if (_conn == NULL)
 			throw XmlRpc::JSONException ("cannot find opened connection with name " + *iter);
 
-		for (rts2core::ValueVector::iterator viter = con->valueBegin (); viter != con->valueEnd (); viter++)
+		for (rts2core::ValueVector::iterator viter = _conn->valueBegin (); viter != _conn->valueEnd (); viter++)
 		{
 			sendValue (*iter, *viter);
 		}
