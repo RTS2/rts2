@@ -7,12 +7,12 @@ EXTEND	b	FITS
 BZERO	l	FITS
 BSCALE	l	FITS
 CTIME	l	ctime (unix time) of exposure start
-USEC	l	nanosecond of exposure start (divide by 10^6 + ctime to get "double" ctime)
+USEC	l	microseconds of exposure start (divide by 10^6 + ctime to get "double" ctime)
 JD	d	JD, is equal (in date sense) to CTIME+USEC/10^6
 EPOCH_ID	l	RTS2 epoch of observation (1, 2, 3, - currently must be number..)
 TARGET	l	RTS2 target id, which selector suplied to executor
 TARSEL	l	RTS2 target id, which executor choosed (e.g. is 22xx on FRAM, when TARGET is 6; a bit misleading anyway, I think I have to swap that two values)
-TARTYPE	c	RTS2 target type; see src/utilsdb/target.h for list
+TARTYPE	c	RTS2 target type; see include/rts2db/target.h for list
 OBSID	l	RTS2 observation ID
 IMGID	l	RTS2 image ID; counts from 1 to infiniti for given OBSERVATION, for new observation, count is reseted
 PROCES	l	mistage, needs to be removed; should be called PROC
