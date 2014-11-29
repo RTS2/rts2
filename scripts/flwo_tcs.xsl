@@ -444,19 +444,21 @@ if ( $last_acq_obs_id != $obs_id ) then
 					set l=`echo $line`
 					set ora_l = `echo "$l[5] * 3600.0" | bc`
 					set odec_l = `echo "$l[6] * 3600.0" | bc`
+					set ora_lp = `printf '%+.2f' $ora_l`
+					set odec_lp = `printf '%+.2f' $odec_l`
 					set ora = `printf '%.0f' $ora_l`
 					set odec = `printf '%.0f' $odec_l`
 					set err = `echo "$l[7] * 3600.0" | bc`
 					set err = `printf '%.0f' $err`
 					if ( $err > $pre ) then
-						rts2-logcom "Acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err arcsecs"
+						rts2-logcom "Acquiring: offseting by $ora $odec ( $ora_lp $odec_lp ), error is $err arcsecs"
 						tele offset $ora $odec
                                                 sleep 3
                                                 rts2-logcom "FIX POINTING: set telescope position after offsets."
                                                 tele set
 						@ err = 0
 					else
-						rts2-logcom "Error is less than $pre arcsecs ( $ora_l $odec_l ), stop acquistion"
+						rts2-logcom "Error is less than $pre arcsecs ( $ora_lp $odec_lp ), stop acquistion"
 						@ err = 0
 					endif
 					@ last_acq_obs_id = $obs_id
