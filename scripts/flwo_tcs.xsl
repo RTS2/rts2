@@ -68,13 +68,24 @@ set in=`$xmlrpc -G SEL.interrupt`
 if ( $? == 0 &amp;&amp; $in == 1 ) then
 	rm -f $lasttarget
 	set continue=0
-	rts2-logcom "Interrupting target $name ($tar_id)"
+	rts2-logcom "Interrupt target $name ($tar_id)"
+        set weather_reason=`$xmlrpc -G .weather_reason`
+        if ( "$weather_reason" != "" ) then
+            rts2-logcom $weather_reason
+        else
+            rts2-logcom "No weather reason for interrupt."
+        endif
+        if ( "$new_guide" != "OFF" ) then
+            rts2-logcom "Switch guider from $new_guide to OFF"
+	    tele autog OFF
+            set new_guide="OFF"
+        endif
 endif
 </xsl:variable>
 
 <!-- grab guider image -->
 <xsl:variable name="grabguide">
-	rts2-logcom "Grabing autoguider image"
+	rts2-logcom "Grabbing autoguider image"
 	<!-- tele grab -->
 	set lllastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
 	set dir=/Realtime/guider/frames/ROBOT_`rts2-state -e %N`
@@ -90,7 +101,9 @@ endif
 	tele glev 100
 	tele autog ON
 	@ retr = 5
-	sleep 10
+#     Ted says 10 is too short to acquire guide star, go to 30
+#	sleep 10
+	sleep 30
 	while ( $retr &gt;= 0 )
 		set gs=`tele autog ?`
 		if ( $gs == 'ON' ) then
@@ -111,10 +124,10 @@ endif
 		rts2-logcom "Successfully switched autoguider to ON on segment $guide_seg"
 	else
 		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
-		rts2-logcom "Autoguider command failed, will try again on $textdate; segment $guide_seg"
+		rts2-logcom "Autoguider command failed, try again at $textdate; segment $guide_seg"
 	endif
 	<xsl:copy-of select="$grabguide"/>
-	rts2-logcom "Current guider image saved to $lastgrab"
+	rts2-logcom "Current guider image saved in $lastgrab"
 </xsl:variable>
 
 <xsl:template match="disable">
@@ -210,14 +223,18 @@ if ( $continue == 1 ) then
 	if ( $diff_l != 0 ) then
 		set diff=`printf '%+0f' $diff_l`
 		set diff_f=`printf '%+02f' $diff`
-	        set gdiff=`echo $diff_f | awk '{ printf "%+i",$1*(-4313); }'`
-		rts2-logcom "Offseting focus to $diff_f ( $defoc_toffs - $defoc_current ), guider $gdiff"
-		tele hfocus $diff_f
-		tele gfoc $gdiff
+	        tele hfocus $diff_f
+	        if ( $new_guide == "ON" ) then
+	           set gdiff=`echo $diff_f | awk '{ printf "%+i",$1*(-4313); }'`
+	           rts2-logcom "Offset tel focus $diff_f ( $defoc_toffs - $defoc_current ), guide focus $gdiff"
+		   tele gfoc $gdiff
+	        else
+	           rts2-logcom "Offset tel focus $diff_f ( $defoc_toffs - $defoc_current ), guide OFF, no guide focus offset"
+	        endif
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
 	<xsl:if test='$debug != 0'>
 	else
-		rts2-logcom "Keeping focusing offset ( $defoc_toffs - $defoc_current )"
+		rts2-logcom "Keeping tel focus offset ( $defoc_toffs - $defoc_current )"
 	</xsl:if>
 	endif
 
@@ -239,8 +256,10 @@ if ( $continue == 1 ) then
 				<xsl:copy-of select="$grabguide"/>
 				rts2-logcom "Autoguider image saved in $lastgrab; trying to guide again"
 				<xsl:copy-of select='$guidetest'/>
-				if ( $gdiff != 0 ) then
+				if ( $new_guide == "ON" ) then
+				   if ( $gdiff != 0 ) then
 					tele gfoc $gdiff
+				   endif
 				endif
 			endif
 		endif
@@ -268,6 +287,9 @@ if ( $continue == 1 ) then
 #	if ( $tar_id != 3 &amp;&amp; $defoc_current == 0 ) then
 	if ( $tar_id != 3 ) then
 	      source $rts2dir/rts2.tempfocus
+#       SWITCH to deltafocus for obs other than findfwhm obs EF 3/13/13
+#	      source $rts2dir/rts2.deltafocus
+#       Back to tempfocus EF 3/13/14
 	endif
 	ccd gowait $exposure
 	<xsl:copy-of select='$abort'/>
@@ -275,7 +297,7 @@ if ( $continue == 1 ) then
 	set json_ret=0
 	set fwhm2=`$RTS2/bin/rts2-json -G IMGP.fwhm_KCAM_2` &amp;&amp; set flux=`$RTS2/bin/rts2-json -G IMGP.flux_A` &amp;&amp; set peak=`$RTS2/bin/rts2-json -G IMGP.peak_A`
 	if ( $? != 0 ) then
-		rts2-logcom "Exposure done; last image data are not available, please check if IMGP module is running (or if fresh restarted, wait for next image)"
+		rts2-logcom "Exposure done; last image data are not available, please check if IMGP module is running (if just restarted, wait for next image)"
 	else
 		if ( $last_obs_id == $obs_id ) then
 			rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f MFL %.0f' $ora_l $odec_l $fwhm2 $flux $peak`
@@ -290,7 +312,7 @@ if ( $continue == 1 ) then
 	set avrg=`$xmlrpc --quiet -G IMGP.average`
 	if ( $? == 0 &amp;&amp; `echo $avrg '&lt;' 200 | bc` == 1 ) then
 		rts2-logcom "Average value of image $lastimage is too low - $avrg, expected at least 200"
-		echo "This is probably problem with KeplerCam controller. Please proceed to restart CCD driver, and then call again GOrobot. Current observation will be aborted."
+		echo "This is probably a problem with the KeplerCam controller. Restart the CCD driver, and then call again GOrobot. Current observation will be aborted."
 		set continue=0
 		exit
 	endif
@@ -410,7 +432,7 @@ end
 if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 
 if ( $last_acq_obs_id != $obs_id ) then
-	rts2-logcom "Starting acqusition/centering for observation with ID $obs_id"
+	rts2-logcom "Starting acquisition/centering for observation with ID $obs_id"
 	source $RTS2/bin/rts2_tele_filter i
 	object test
 <!--	tele ampcen 0 -->
@@ -427,11 +449,11 @@ if ( $last_acq_obs_id != $obs_id ) then
 	while ( $continue == 1 &amp;&amp; $err &gt; $pre &amp;&amp; $attemps &gt; 0 )
 		@ attemps --
 		<xsl:copy-of select='$abort'/>
-		rts2-logcom 'Starting i acqusition <xsl:value-of select='@length'/> sec exposure'
+		rts2-logcom 'Starting i acquisition <xsl:value-of select='@length'/> sec exposure'
 		ccd gowait <xsl:value-of select='@length'/>
 		<xsl:copy-of select='$abort'/>
 		dstore
-		rts2-logcom 'Acqusition exposure done'
+		rts2-logcom 'Acquisition exposure done'
 		<xsl:copy-of select='$abort'/>
 		if ( $continue == 1 ) then
 			if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
@@ -451,14 +473,14 @@ if ( $last_acq_obs_id != $obs_id ) then
 					set err = `echo "$l[7] * 3600.0" | bc`
 					set err = `printf '%.0f' $err`
 					if ( $err > $pre ) then
-						rts2-logcom "Acquiring: offseting by $ora $odec ( $ora_lp $odec_lp ), error is $err arcsecs"
+						rts2-logcom "Acquiring: offset by $ora $odec ( $ora_lp $odec_lp ), error is $err arcsec"
 						tele offset $ora $odec
                                                 sleep 3
                                                 rts2-logcom "FIX POINTING: set telescope position after offsets."
                                                 tele set
 						@ err = 0
 					else
-						rts2-logcom "Error is less than $pre arcsecs ( $ora_lp $odec_lp ), stop acquistion"
+						rts2-logcom "Error is less than $pre arcsec ( $ora_lp $odec_lp ), stop acquisition"
 						@ err = 0
 					endif
 					@ last_acq_obs_id = $obs_id
@@ -469,7 +491,7 @@ if ( $last_acq_obs_id != $obs_id ) then
 	end
 	if ( $attemps &lt;= 0 ) then
 		rts2-logcom "maximal number of attempts exceeded"
-		echo "1.2m pointing cannot be verified with astrometry. There is something wrong with the telescope (e.g. on a limit), or it  is very cloudy. Please check the telescope, clear the error (e.g. PANIC on mount PC) and restart the robot on flwo48" &gt; /pool/weather/robot.error
+<!--		echo "Pointing cannot be verified with astrometry. Something wrong with the telescope (e.g. on a limit), or it is very cloudy. Check the telescope, clear the error and restart Rob" &gt; /pool/weather/robot.error -->
 		set continue=0
 		exit
 	endif
