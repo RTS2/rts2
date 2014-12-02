@@ -318,10 +318,10 @@ int EsaDome::sendUDPMessage (const char * in_message)
 				dome_state = ESATBT_DOME_CLOSING; 
 			}
 		
-			if (sA == '3' || sb == '3')
+			if (sA == '3' || sB == '3')
 			{
 				// emergency stop
-				dome_state = ESATBT_DOME_STOPED;
+				dome_state = ESATBT_DOME_STOPPED;
 			}
 
 			if (sA == '4' || sB == '4')
