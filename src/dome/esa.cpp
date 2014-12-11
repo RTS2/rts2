@@ -1,5 +1,20 @@
-/* 
- * ESA Test Bed Telescope dome driver.
+/**
+ * APM dome driver (ESA TestBed telescope)
+ * Copyright (C) 2014 Standa Vitek <standa@vitkovi.net>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include <sys/types.h>
@@ -26,7 +41,7 @@ namespace rts2dome
 {
 
 /**
- * ESA Test Bed Telescope dome driver.
+ * Class for APM dome driver.
  *
  * @author Standa Vítek <standa@vitkovi.net>
  */
@@ -269,14 +284,15 @@ int EsaDome::sendUDPMessage (const char * in_message)
 	char * status_message = (char *)malloc (20*sizeof (char));
 	char sA, sB, sideA[4], sideB[4];
 	
-
-	// logStream (MESSAGE_DEBUG) << "command to controller: " << in_message << sendLog;
+	if (getDebug())
+		logStream (MESSAGE_DEBUG) << "command to controller: " << in_message << sendLog;
 	
 	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr,sizeof(servaddr));
 
 	int n = recvfrom (sock, status_message, 20, 0, (struct sockaddr *) &clientaddr, &slen);
 
-        // logStream (MESSAGE_DEBUG) << "reponse from controller: " << status_message << sendLog;
+        if (getDebug())
+		logStream (MESSAGE_DEBUG) << "reponse from controller: " << status_message << sendLog;
 
 	if (n > 4)
 	{
