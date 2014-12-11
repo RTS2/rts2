@@ -26,10 +26,12 @@ class ConnAPM:public ConnNoSend
 		virtual int init ();
 
 	private:
-		std::string hostname;
+		const char *hostname;
 		int port;
+		int sock;        
+		struct sockaddr_in servaddr, clientaddr;
 };
 
-};
+}
 
 #endif // !__RTS2_CONNECTION_APM__
