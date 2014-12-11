@@ -1,3 +1,22 @@
+/**
+ * Standalone version of APM filter wheel (ESA TestBed telescope)
+ * Copyright (C) 2014 Standa Vitek <standa@vitkovi.net>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -10,6 +29,13 @@
 #include "filterd.h"
 
 using namespace rts2filterd;
+
+/*
+ * Class for APM filter wheel
+ *
+ * @author Standa Vitek <standa@vitkovi.net>
+ *
+ */
 
 class EsaFilter : public Filterd
 {
@@ -38,7 +64,7 @@ EsaFilter::EsaFilter (int argc, char **argv):Filterd (argc, argv)
 	filterNum = 0;
 	filterSleep = 3;
 
-	addOption ('e', NULL, 1, "ESA filter IP and port (separated by :)");
+	addOption ('e', NULL, 1, "IP and port (separated by :)");
 	addOption ('s', "filter_sleep", 1, "how long wait for filter change");
 }
 
@@ -122,13 +148,28 @@ int EsaFilter::sendUDPMessage (const char * in_message)
 	unsigned int slen = sizeof (clientaddr);
         char * status_message = (char *)malloc (20*sizeof (char));
 
-	logStream (MESSAGE_DEBUG) << "command to controller: " << in_message << sendLog;
+	if (getDebug())
+		logStream (MESSAGE_DEBUG) << "command to controller: " << in_message << sendLog;
 
 	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr,sizeof(servaddr));
 
 	int n = recvfrom (sock, status_message, 20, 0, (struct sockaddr *) &clientaddr, &slen);
 
-	logStream (MESSAGE_DEBUG) << "reponse from controller: " << status_message << sendLog;
+	if (getDebug())
+		logStream (MESSAGE_DEBUG) << "reponse from controller: " << status_message << sendLog;
+
+	if (n > 4)
+	{
+		if (status_message[0] == 'E')
+		{
+			// echo from controller "Echo: [cmd]"
+			return 10;
+		}
+	}
+	else if (n == 4)
+	{	
+		filterNum = status_message[3];
+	}
 
 	return 0;
 }
