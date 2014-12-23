@@ -17,7 +17,15 @@ Then you need to put into single directory those files:
 csbigcam.h  csbigimg.h  libsbigudrv.a   sbigudrv.h
 csbigcam.o  csbigimg.o  libsbigudrv.so
 
-find them in sbig tree. *.o are result of compilation of the testapp.
+find them in sbig tree. *.o are result of compilation of the testapp. Check that the sbigudrv.h file contains:
+
+ #define TARGET                 ENV_LINUX                   /* Set for your target */
+
+if TARGET is defined to some other environment, please change it.
+
+Libusb development files need to be installed. On Ubuntu/Debian machine, that's:
+
+sudo apt-get install libusb-dev
 
 You then add to ./configure call:
 
