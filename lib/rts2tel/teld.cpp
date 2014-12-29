@@ -1106,11 +1106,18 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	if (isnan (oriRaDec->getRa ()) || isnan (oriRaDec->getDec ()))
 		return -1;
 
-	// object changed from last call to startResyncMove
-	if (oriRaDec->wasChanged ())
+        // MPEC objects changes coordinates regularly, so we will not bother incrementing 
+        if (mpec->getValueString ().length () > 0)
+	{
+		if (mpec->wasChanged ())
+			incMoveNum ();
+	}
+	// object changed from last call to startResyncMove and it is a stationary object
+	else if (oriRaDec->wasChanged ())
 	{
 		incMoveNum ();
 	}
+
 	// if some value is waiting to be applied..
 	else if (wcorrRaDec->wasChanged ())
 	{
@@ -1274,6 +1281,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	oriRaDec->resetValueChanged ();
 	offsRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
+	mpec->resetValueChanged ();
 
 	if (woffsRaDec->wasChanged ())
 	{
