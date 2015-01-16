@@ -152,7 +152,7 @@ int LX200::tel_read (char *buf, int count)
 		if (ret < 0)
 		{
 			logStream (MESSAGE_DEBUG) << "LX200 tel_read: tel_desc read error "
-				<< errno << sendLog;
+				<< errno << strerror(errno) << sendLog;
 			return -1;
 		}
 		#ifdef DEBUG_ALL_PORT_COMM
