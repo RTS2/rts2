@@ -19,7 +19,7 @@ CREATE TABLE targets (
 	-- local object visibility
 	tar_bonus       integer,
 	-- how long will bonus last
-	tar_bonus_time  timestamp with time zone;
+	tar_bonus_time  timestamp with time zone
 );
 
 CREATE TABLE phot (
