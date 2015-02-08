@@ -149,6 +149,7 @@ parser.add_option('--multi-wcs', help='Multiple WCS extension', action='store', 
 parser.add_option('--wcs-keys', help='WCS keys (RA [arcdeg], DEC [arcdeg], scale [arcdeg]) separated with ","', action='store', dest='wcs_keys', default=None)
 parser.add_option('--wcs-scale', help='Scale for WCS scale keyword (arcdeg, arcmin or arcsec; default to arcsec)', action='store', dest='wcsscale', default=None)
 parser.add_option('--blind', help='Blind solve', action='store_true', dest='blind', default=False)
+parser.add_option('--no-blind', help='Do not automatically blind resolve', action='store_true', dest='noblind', default=False)
 parser.add_option('--radius', help='Error radius', action='store', dest='radius', default=5)
 parser.add_option('--scale-error', help='scale error in %', action='store', dest='scale_error', default=5)
 parser.add_option('--tmp-dir', help='temporary directory', action='store', dest='temp_dir', default=None)
@@ -194,6 +195,6 @@ if options.wcsscale is not None:
 ret = 0	
 
 for x in args:
-	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc)
+	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, noblind=options.noblind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc)
 
 sys.exit(ret)

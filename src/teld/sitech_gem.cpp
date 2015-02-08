@@ -152,6 +152,8 @@ using namespace rts2teld;
 
 Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_request ()
 {
+	unlockPointing ();
+
 	setCorrections (true, true, true);
 
 	offsetha = 0.;
@@ -277,17 +279,17 @@ int Sitech::initHardware ()
 	if (ret)
 		return -1;
 	serConn->flushPortIO ();
-	
+
 	numread = serConn->getSiTechValue ('X', "V");
      
 	if (numread != 0) 
 	{
-		logStream (MESSAGE_DEBUG) << "Sidereal Technology Controller version" << numread << sendLog;
+		logStream (MESSAGE_DEBUG) << "Sidereal Technology Controller version " << numread / 10.0 << sendLog;
 	}
 	else
 	{
 		logStream (MESSAGE_ERROR) << "A200HR drive control did not respond." << sendLog;
-		return -1;
+		//return -1;
 	}  
 
 	/* Pause for telescope controller to initialize */

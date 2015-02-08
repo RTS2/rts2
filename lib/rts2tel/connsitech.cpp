@@ -25,6 +25,7 @@ using namespace rts2teld;
 
 ConnSitech::ConnSitech (const char *devName, rts2core::Block *_master):rts2core::ConnSerial (devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 5,5)
 {
+	binary = false;
 }
 
 int ConnSitech::init ()
@@ -33,15 +34,38 @@ int ConnSitech::init ()
 	if (ret)
 		return ret;
 
-	// check if checksum mode is on
-	if (getSiTechValue ('Y', "XY") == 0)
-	{
-		// switch to checksum mode
-		ret = writePort ("YXY1\r", 5);
-		if (ret < 0)
-			return -1;
-	}
+	// check if checksum mode is on; that needs to be send always with checksum
+	binary = true;
+	binary = getSiTechValue ('Y', "XY") == 0;
+
 	return 0;
+}
+
+void ConnSitech::switchToASCI ()
+{
+	if (binary == true)
+	{
+		int ret = writePort ("YXY0\r", 5);
+		if (ret < 0)
+			throw rts2core::Error ("Cannot switch to ASCII mode");
+	}
+	binary = false;
+}
+
+void ConnSitech::switchToBinary ()
+{
+	if (binary == false)
+	{
+		int ret = writePort ("YXY1\r", 5);
+		if (ret < 0)
+			throw rts2core::Error ("Cannot switch to ASCII mode");
+	}
+	binary = true;
+}
+
+void ConnSitech::resetController ()
+{
+	siTechCommand ('X', "Q");
 }
 
 void ConnSitech::siTechCommand (const char axis, const char *cmd)
@@ -54,17 +78,27 @@ void ConnSitech::siTechCommand (const char axis, const char *cmd)
 	ccmd[len + 1] = '\r';
 	ccmd[len + 2] = '\0';
 
-	writePortChecksumed (ccmd, len + 2);
+	if (binary)
+	{
+		writePortChecksumed (ccmd, len + 2);
+	}
+	else
+	{
+		int ret = writePort (ccmd, len + 2);
+		if (ret < 0)
+			throw rts2core::Error (std::string("cannot send command ") + cmd);
+	}
 }
 
 int32_t ConnSitech::getSiTechValue (const char axis, const char *val)
 {
+	//switchToASCI ();
 	siTechCommand (axis, val);
 
 	char ret[100];
 
 	size_t len = readPort (ret, 100, "\n");
-	if (len < 0)
+	if (len <= 0)
 		throw rts2core::Error (std::string ("cannot read response get value command ") + val);
 
 	return atol (ret + 1);
@@ -72,6 +106,7 @@ int32_t ConnSitech::getSiTechValue (const char axis, const char *val)
 
 void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 {
+	switchToBinary ();
 	siTechCommand (axis, "XS");
 
 	readAxisStatus (ax_status);
@@ -79,6 +114,7 @@ void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 
 void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request)
 {
+	switchToBinary ();
 	siTechCommand (axis, "XR");
 
 	char data[34];
@@ -109,17 +145,10 @@ void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
 	char *ccmd = NULL;
 	size_t len = asprintf (&ccmd, "%c%s%d\r", axis, val, value);
 
-	try
-	{
-		writePortChecksumed (ccmd, len);
-	}
-	catch (rts2core::Error &er)
-	{
-		free (ccmd);
-		throw er;
-	}
-
+	int ret = writePort (ccmd, len);
 	free (ccmd);
+	if (ret < 0)
+		throw rts2core::Error (std::string("cannot set value of ") + val);
 }
 
 void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)

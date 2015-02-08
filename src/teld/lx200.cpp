@@ -172,10 +172,10 @@ int LX200::info ()
 	if (tel_read_ra () || tel_read_dec () || tel_read_local_time ())
 		return -1;
 	
-	char rbuff[100];	
-	int ret = serConn->writeRead (":hS#", 4, rbuff, 99, '#');
+	//char rbuff[100];	
+	//int ret = serConn->writeRead (":hS#", 4, rbuff, 99, '#');
 	//int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
-	cout << "ret " << ret << endl;
+	//cout << "ret " << ret << endl;
 	//	if (ret < 0)
 	//	return -1;
 	//if (ret > 0)

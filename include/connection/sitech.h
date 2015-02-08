@@ -105,6 +105,21 @@ class ConnSitech: public rts2core::ConnSerial
 		virtual int init ();
 
 		/**
+		 * Switch communication to ASCI mode.
+		 */
+		void switchToASCI ();
+
+		/**
+		 * Switch communication to binary mode.
+		 */
+		void switchToBinary ();
+
+		/**
+		 * Reset SiTech controller.
+		 */
+		void resetController ();
+
+		/**
 		 * Execute command on the axis. Don't expect any return.
 		 *
 		 * @param axis Command axis (X, Y, T, U, V or W)
@@ -161,6 +176,8 @@ class ConnSitech: public rts2core::ConnSerial
 		uint8_t calculateChecksum (const char *buf, size_t len);
 
 		uint16_t binaryChecksum (const char *dbuf, size_t blen);
+
+		bool binary;
 };
 
 }
