@@ -45,7 +45,7 @@ void ConnSitech::switchToASCI ()
 {
 	if (binary == true)
 	{
-		int ret = writePort ("YXY0\r", 5);
+		int ret = writePort ("YXY0\r\xb8", 6);
 		if (ret < 0)
 			throw rts2core::Error ("Cannot switch to ASCII mode");
 	}
@@ -130,7 +130,7 @@ void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request
 	*((uint32_t *) (data + 24)) = htole32 (ax_request.x_rate_adder_t);
 	*((uint32_t *) (data + 28)) = htole32 (ax_request.y_rate_adder_t);
 
-	*((uint16_t *) (data + 32)) = htole16 (binaryChecksum (data, 32));
+	*((uint16_t *) (data + 32)) = htole16 (binaryChecksum (data, 32, true));
 
 	// sends the data..
 	writePort (data, 34);
@@ -143,17 +143,21 @@ void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request
 void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
 {
 	char *ccmd = NULL;
-	size_t len = asprintf (&ccmd, "%c%s%d\r", axis, val, value);
+	asprintf (&ccmd, "%s%d", val, value);
 
-	int ret = writePort (ccmd, len);
-	free (ccmd);
-	if (ret < 0)
-		throw rts2core::Error (std::string("cannot set value of ") + val);
+	siTechCommand (axis, ccmd);
 }
 
 void ConnSitech::getControllerStatus (SitechControllerStatus &controller_status)
 {
+}
 
+void ConnSitech::getConfiguration (SitechControllerConfiguration &config)
+{
+	switchToBinary ();
+	siTechCommand ('S', "C");
+
+	readConfiguration (config);
 }
 
 void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
@@ -168,12 +172,11 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 	}
 
 	// checksum checks
-	uint16_t checksum = binaryChecksum (ret, 39);
+	uint16_t checksum = binaryChecksum (ret, 39, true);
 
 	if ((*((uint16_t *) (ret + 39))) != checksum)
 	{
-		std::cerr << "checksum expected " << checksum << " received " << (*((uint16_t *) (ret + 39))) << std::endl;
-		throw rts2core::Error ("invalid checksum!");
+		throw rts2core::Error ("invalid checksum in readAxisStatus");
 	}
 
 	// fill in proper return values..
@@ -196,6 +199,103 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 	ax_status.y_last = le32toh (*((uint32_t *) (ret + 35)));
 }
 
+void ConnSitech::readConfiguration (SitechControllerConfiguration &config)
+{
+	char ret[400];
+	size_t len = readPort (ret, 400);
+
+	if (len != 130)
+	{
+		std::cout << "len " << len << std::endl;
+		flushPortIO ();
+		throw rts2core::Error ("cannot read Sitech configuration");
+	}
+
+	// checksum checks
+	uint16_t checksum = binaryChecksum (ret, 128, false);
+	if ((*((uint16_t *) (ret + 129))) != checksum)
+	{
+		std::cerr << *((uint16_t *) (ret + 129)) << " " << checksum << std::endl;
+		throw rts2core::Error ("invalid checksum in readConfiguration");
+	}
+
+	// fill in proper values
+
+	config.x_acc = le32toh (*((uint32_t *) (ret + 0)));
+	config.x_backlash = le32toh (*((uint32_t *) (ret + 4)));
+	config.x_error_limit = le16toh (*((uint16_t *) (ret + 8)));
+	config.x_p_gain = le16toh (*((uint16_t *) (ret + 10)));
+	config.x_i_gain = le16toh (*((uint16_t *) (ret + 12)));
+	config.x_d_gain = le16toh (*((uint16_t *) (ret + 14)));
+	config.x_o_limit = le16toh (*((uint16_t *) (ret + 16)));
+	config.x_c_limit = le16toh (*((uint16_t *) (ret + 18)));
+	config.x_i_limit = le16toh (*((uint16_t *) (ret + 20)));
+	config.x_bits = ret[21];
+
+	config.p_0 = ret[22];
+
+	config.y_acc = le32toh (*((uint32_t *) (ret + 23)));
+	config.y_backlash = le32toh (*((uint32_t *) (ret + 27)));
+	config.y_error_limit = le16toh (*((uint16_t *) (ret + 31)));
+	config.y_p_gain = le16toh (*((uint16_t *) (ret + 33)));
+	config.y_i_gain = le16toh (*((uint16_t *) (ret + 35)));
+	config.y_d_gain = le16toh (*((uint16_t *) (ret + 37)));
+	config.y_o_limit = le16toh (*((uint16_t *) (ret + 39)));
+	config.y_c_limit = le16toh (*((uint16_t *) (ret + 41)));
+	config.y_i_limit = le16toh (*((uint16_t *) (ret + 43)));
+	config.y_bits = ret[44];
+
+	config.p_1 = ret[45];
+
+	config.address = ret[46];
+
+	config.p_2 = ret[47];
+
+	config.eq_rate = le32toh (*((uint32_t *) (ret + 48)));
+	config.eq_updown = le32toh (*((uint32_t *) (ret + 52)));
+	
+	config.tracking_goal = le32toh (*((uint32_t *) (ret + 56)));
+
+	config.latitude = be16toh (*((uint16_t *) (ret + 60)));
+
+	config.y_enc_ticks = be32toh (*((uint32_t *) (ret + 62)));
+	config.x_enc_ticks = be32toh (*((uint32_t *) (ret + 66)));
+
+	config.y_mot_ticks = be32toh (*((uint32_t *) (ret + 70)));
+	config.x_mot_ticks = be32toh (*((uint32_t *) (ret + 74)));
+
+	config.x_slew_rate = le32toh (*((uint32_t *) (ret + 78)));
+	config.y_slew_rate = le32toh (*((uint32_t *) (ret + 82)));
+
+	config.x_pan_rate = le32toh (*((uint32_t *) (ret + 86)));
+	config.y_pan_rate = le32toh (*((uint32_t *) (ret + 90)));
+
+	config.x_guide_rate = le32toh (*((uint32_t *) (ret + 94)));
+	config.y_guide_rate = le32toh (*((uint32_t *) (ret + 98)));
+
+	config.pec_auto = ret[102];
+
+	config.p_3 = ret[103];
+	config.p_4 = ret[104];
+
+	config.p_5 = ret[105];
+
+	config.p_6 = ret[106];
+
+	config.p_7 = ret[107];
+
+	config.local_deg = le32toh (*((uint32_t *) (ret + 108)));
+	config.local_speed = le32toh (*((uint32_t *) (ret + 112)));
+
+	config.backhlash_speed = le32toh (*((uint32_t *) (ret + 116)));
+
+	config.y_pec_ticks = le32toh (*((uint32_t *) (ret + 120)));
+
+	config.p_8 = ret[121];
+	config.p_9 = ret[122];	 
+
+}
+
 void ConnSitech::writePortChecksumed (const char *cmd, size_t len)
 {
 	size_t ret = writePort (cmd, len);
@@ -216,12 +316,12 @@ uint8_t ConnSitech::calculateChecksum (const char *cbuf, size_t len)
 	return ~ret;
 }
 
-uint16_t ConnSitech::binaryChecksum (const char *dbuf, size_t blen)
+uint16_t ConnSitech::binaryChecksum (const char *dbuf, size_t blen, bool invertH)
 {
 	uint16_t checksum = 0;
 
 	for (size_t i = 0; i < blen; i++)
 		checksum += (uint8_t) dbuf[i];
 
-	return (checksum ^ 0xFF00);
+	return invertH ? (checksum ^ 0xFF00) : checksum;
 }

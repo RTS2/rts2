@@ -42,6 +42,9 @@ class Sitech:public GEM
 
 	protected:
 		virtual int processOption (int in_opt);
+
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 		virtual int initValues ();
 		virtual int initHardware ();
 
@@ -128,6 +131,12 @@ class Sitech:public GEM
 		rts2core::ValueLong *ra_rate_adder_t;
 		rts2core::ValueLong *dec_rate_adder_t;
 
+		rts2core::ValueLong *ra_scope_ticks;
+		rts2core::ValueLong *dec_scope_ticks;
+
+		rts2core::ValueLong *ra_mot_ticks;
+		rts2core::ValueLong *dec_mot_ticks;
+
 		double offsetha;
 		double offsetdec;
                  
@@ -184,6 +193,12 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	createValue (ra_rate_adder_t, "ra_rate_adder_t", "RA rate adder time (in servo loops; 1953 would be 1 second)", false, RTS2_VALUE_WRITABLE);
 	createValue (dec_rate_adder_t, "dec_rate_adder_t", "DEC rate adder time (in servo loops; 1953 would be 1 second)", false, RTS2_VALUE_WRITABLE);
 
+	createValue (ra_scope_ticks, "ra_scope_ticks", "RA scope encoder ticks per revolution");
+	createValue (dec_scope_ticks, "dec_scope_ticks", "DEC scope encoder ticks per revolution");
+
+	createValue (ra_mot_ticks, "ra_mot_ticks", "RA motor encoder ticks per revolution");
+	createValue (dec_mot_ticks, "dec_mot_ticks", "DEC motor encoder ticks per revolution");
+
 	ra_speed->setValueLong (1000000);
 	dec_speed->setValueLong (1000000);
 
@@ -239,7 +254,7 @@ void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_tel
 	ra_last->setValueLong (radec_status.y_last);
 	dec_last->setValueLong (radec_status.x_last);
 
-	int ret = counts2sky (radec_status.y_enc, radec_status.x_enc, telra, teldec, telflip, un_telra, un_teldec);
+	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec);
 	if (ret)
 		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
 }
@@ -261,7 +276,7 @@ int Sitech::initHardware ()
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
-	
+
 	strcpy (telType, "Sitech");
 
 	/* Make the connection */
@@ -292,10 +307,11 @@ int Sitech::initHardware ()
 		//return -1;
 	}  
 
-	/* Pause for telescope controller to initialize */
-   
-	usleep (500000);
-  
+	SitechControllerConfiguration sconfig;
+	//serConn->getConfiguration (sconfig);
+
+	//serConn->resetController ();
+	
 	/* Flush the input buffer in case there is something left from startup */
 
 	serConn->flushPortIO();
@@ -314,6 +330,18 @@ int Sitech::info ()
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
 
+	ra_scope_ticks->setValueLong (serConn->getSiTechValue ('X', "XZ"));
+	dec_scope_ticks->setValueLong (serConn->getSiTechValue ('X', "XT"));
+
+	ra_mot_ticks->setValueLong (serConn->getSiTechValue ('X', "XV"));
+	dec_mot_ticks->setValueLong (serConn->getSiTechValue ('X', "XU"));
+
+	serConn->getSiTechValue ('X', "Z");
+	serConn->getSiTechValue ('Y', "Z");
+
+	serConn->getSiTechValue ('X', "");
+	serConn->getSiTechValue ('Y', "");
+
 	return rts2teld::GEM::info ();
 }
 
@@ -329,6 +357,34 @@ int Sitech::processOption (int in_opt)
 			return Telescope::processOption (in_opt);
 	}
 	return 0;
+}
+
+int Sitech::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("zero_motor"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->setSiTechValue ('X', "F", 0);
+		serConn->setSiTechValue ('Y', "F", 0);
+		return 0;
+	}
+	else if (conn->isCommand ("reset_controller"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->resetController ();
+		return 0;
+	}
+	else if (conn->isCommand ("go_auto"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->siTechCommand ('X', "A");
+		serConn->siTechCommand ('Y', "A");
+		return 0;
+	}
+	return GEM::commandAuthorized (conn);
 }
 
 int Sitech::initValues ()
