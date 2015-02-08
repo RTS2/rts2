@@ -78,6 +78,9 @@ class GEM: public Telescope
 		 * @param un_dec  unflipped (raw hardware) declination
 		 */
 		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec);
+
+		// unlock basic pointing parameters
+		void unlockPointing ();
 };
 
 };

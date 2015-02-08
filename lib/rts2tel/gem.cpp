@@ -242,3 +242,32 @@ GEM::~GEM (void)
 {
 
 }
+
+void GEM::unlockPointing ()
+{
+	haZero->setWritable ();
+	decZero->setWritable ();
+	haCpd->setWritable ();
+	decCpd->setWritable ();
+
+	acMin->setWritable ();
+	acMax->setWritable ();
+	dcMin->setWritable ();
+	dcMax->setWritable ();
+
+	ra_ticks->setWritable ();
+	dec_ticks->setWritable ();
+	
+	updateMetaInformations (haZero);
+	updateMetaInformations (decZero);
+	updateMetaInformations (haCpd);	
+	updateMetaInformations (decCpd);
+
+	updateMetaInformations (acMin);	
+	updateMetaInformations (acMax);	
+	updateMetaInformations (dcMin);	
+	updateMetaInformations (dcMax);
+
+	updateMetaInformations (ra_ticks);
+	updateMetaInformations (dec_ticks);
+}
