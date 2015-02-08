@@ -206,6 +206,7 @@ int MICCD::initHardware ()
 	 	case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			createValue (fan, "FAN", "camera fan", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
@@ -217,6 +218,7 @@ int MICCD::initHardware ()
 			break;
 		case G2:
 		case G3:
+		case G3_H:
 			fan = NULL;
 			createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			mode->addSelVal ("NORMAL");
@@ -269,6 +271,7 @@ void MICCD::initDataTypes ()
 	 	case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			addDataType (RTS2_DATA_USHORT);
@@ -276,6 +279,7 @@ void MICCD::initDataTypes ()
 			break;
 		case G2:
 		case G3:
+		case G3_H:
 			addDataType (RTS2_DATA_USHORT);
 			break;
 	}
@@ -297,10 +301,12 @@ int MICCD::info ()
 			case G10300:
 			case G10400:
 			case G10800:
+			case G11200:
 			case G11400:
 			case G12000:
 			case G2:
 			case G3:
+			case G3_H:
 				ret = reinitCamera ();
 				if (ret)
 					return -1;
@@ -316,11 +322,13 @@ int MICCD::info ()
 		case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			break;
 		case G2:
 		case G3:
+		case G3_H:
 			ret = miccd_environment_temperature (&camera, &val);
 			if (ret)
 				return -1;
@@ -346,11 +354,13 @@ int MICCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		{
 			case G10300:
 			case G10800:
+			case G11200:
 			case G11400:
 			case G12000:
 				return miccd_g1_mode (&camera, getDataType () == RTS2_DATA_USHORT, newValue->getValueInteger ()) == 0 ? 0 : -2;
 			case G2:
 			case G3:
+			case G3_H:
 			default:
 				return miccd_mode (&camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
 		}
@@ -418,6 +428,7 @@ int MICCD::startExposure ()
 	 	case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			ret = miccd_g1_mode (&camera, getDataType () == RTS2_DATA_USHORT, mode->getValueInteger ());
@@ -451,7 +462,8 @@ int MICCD::startExposure ()
 			}
 			break;
 		case G2:
-		case G3:	
+		case G3:
+		case G3_H:
 			if (getExpType () != 1)
 			{
 				ret = miccd_open_shutter (&camera);
@@ -476,6 +488,7 @@ int MICCD::endExposure (int ret)
 		case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			if (internalTimer == false)
@@ -487,6 +500,7 @@ int MICCD::endExposure (int ret)
 			break;
 		case G2:
 		case G3:
+		case G3_H:
 			if (getExpType () != 1)
 			{
 				cret = miccd_close_shutter (&camera);
@@ -514,6 +528,7 @@ int MICCD::stopExposure ()
 		case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			if (internalTimer == false)
@@ -525,6 +540,7 @@ int MICCD::stopExposure ()
 			break;
 		case G2:
 		case G3:
+		case G3_H:
 			ret = miccd_close_shutter (&camera);
 			if (ret)
 				return -1;
@@ -547,12 +563,14 @@ int MICCD::doReadout ()
 		case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			ret = miccd_read_data (&camera, (getDataType () == RTS2_DATA_USHORT) ? 2 * getUsedWidth () * getUsedHeight () : getUsedWidth () * getUsedHeight (), getDataBuffer (0), getUsedWidth (), getUsedHeight ());
 			break;
 		case G2:
 		case G3:
+		case G3_H:
 			ret = miccd_read_frame (&camera, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getDataBuffer (0));
 			break;
 	}
@@ -601,6 +619,7 @@ int MICCD::reinitCamera ()
 		case G10300:
 		case G10400:
 		case G10800:
+		case G11200:
 		case G11400:
 		case G12000:
 			if (miccd_fan (&camera, fan->getValueInteger ()))
@@ -611,6 +630,7 @@ int MICCD::reinitCamera ()
 			break;
 		case G2:
 		case G3:
+		case G3_H:
 			if (miccd_mode (&camera, mode->getValueInteger ()))
 			{
 				logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set mode" << sendLog;
