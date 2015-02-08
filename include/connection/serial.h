@@ -101,7 +101,7 @@ class ConnSerial: public ConnNoSend
 		 * @param ch Character to write.
 		 * @return -1 on error, 0 on sucess.
 		 */
-		int writePort (char ch);
+		int writePort (unsigned char ch);
 
 		/**
 		 * Write data to serial port.
