@@ -35,4 +35,18 @@ int ConnAPM::init ()
                 logStream (MESSAGE_ERROR) << "Unable to bind socket to port" << sendLog;
                 return 1;
         }
+
+	return 0;
+}
+
+int ConnAPM::send (const char * in_message, char * ret_message, unsigned int length)
+{
+	int ret;
+	unsigned int slen = sizeof (clientaddr);
+
+	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+	ret = recvfrom (sock, ret_message, length, 0, (struct sockaddr *) &clientaddr, &slen);
+
+	return ret;
 }
