@@ -13,7 +13,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	networkaddress.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
 	devclient.cpp utilsfunc.cpp iniparser.cpp configuration.cpp connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp askchoice.cpp \
-	message.cpp conntcp.cpp connnotify.cpp connudp.cpp connection.cpp logstream.cpp centralstate.cpp \
+	message.cpp conntcp.cpp connnotify.cpp connudp.cpp connapm.cpp connection.cpp logstream.cpp centralstate.cpp \
 	rts2target.cpp displayvalue.cpp scriptdevice.cpp \
 	cliapp.cpp valueminmax.cpp expander.cpp \
 	riseset.cpp valuerectangle.cpp data.cpp radecparser.cpp \
