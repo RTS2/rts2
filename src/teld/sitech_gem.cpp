@@ -27,7 +27,10 @@
 #include "connection/sitech.h"
 
 // SITech counts/servero loop -> speed value
-#define SPEED_MULTI     65356
+#define SPEED_MULTI     65536
+
+// Crystal frequency
+#define CRYSTAL_FREQ    96000000
 
 namespace rts2teld
 {
@@ -160,6 +163,8 @@ class Sitech:public GEM
 		rts2core::ValueLong *ra_mot_ticks;
 		rts2core::ValueLong *dec_mot_ticks;
 
+		rts2core::ValueDouble *servoPIDSampleRate;
+
 		double offsetha;
 		double offsetdec;
                  
@@ -176,6 +181,9 @@ class Sitech:public GEM
 		void getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec);
 
 		void GetGuideTargets (int *ntarget, int *starget, int *etarget, int *wtarget);
+
+		// which controller is connected
+		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
 };
 
 }
@@ -347,8 +355,21 @@ int Sitech::initHardware ()
 	else
 	{
 		logStream (MESSAGE_ERROR) << "A200HR drive control did not respond." << sendLog;
-		//return -1;
-	}  
+		return -1;
+	}
+
+	if (numread < 112)
+	{
+		sitechType = SERVO_II;
+	}
+	else
+	{
+		sitechType = FORCE_ONE;
+		int32_t countUp = serConn->getSiTechValue ('Y', "XHC");
+
+		createValue (servoPIDSampleRate, "servo_pid_sample_rate", "number of CPU cycles per second", false);
+		servoPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp));
+	}
 
 	SitechControllerConfiguration sconfig;
 	//serConn->getConfiguration (sconfig);
@@ -441,7 +462,7 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (7.5 / 3600.0, ra_ticks->getValueLong ()));
+		ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
 		sendValueAll (ra_track_speed);
 		sitechStartTracking ();
 		return 0;
@@ -478,7 +499,7 @@ int Sitech::isMoving ()
 		return USEC_SEC / 10;
 	}
 		
-	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (7.5 / 3600.0, ra_ticks->getValueLong ()));
+	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
 	sendValueAll (ra_track_speed);
 
 	sitechStartTracking ();
@@ -555,7 +576,16 @@ void Sitech::sitechStartTracking ()
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks)
 {
-	return loop_ticks * dps / (1953 * 360);
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return ((loop_ticks / 360.0) * dps) / 1953;
+		case FORCE_ONE:
+			return ((loop_ticks / 360.0) * dps) / servoPIDSampleRate->getValueDouble ();
+		default:
+			return 0;
+	}
 }
 
 int32_t Sitech::motorSpeed2DegsPerSec(double speed, int32_t loop_ticks)
