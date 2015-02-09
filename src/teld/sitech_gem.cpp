@@ -128,6 +128,8 @@ class Sitech:public GEM
 		rts2core::ValueLong *t_ra_pos;
 		rts2core::ValueLong *t_dec_pos;
 
+		rts2core::ValueDouble *trackingDist;
+
 		rts2core::ValueLong *ra_enc;
 		rts2core::ValueLong *dec_enc;
 
@@ -203,6 +205,11 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 
 	createValue (t_ra_pos, "T_AXRA", "target RA motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (t_dec_pos, "T_AXDEC", "target DEC motor axis count", true, RTS2_VALUE_WRITABLE);
+
+	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+
+	// default to 3 arcsec
+	trackingDist->setValueDouble (3 / 60.0 / 60.0);
 
 	createValue (ra_enc, "ENCRA", "RA encoder readout", true);
 	createValue (dec_enc, "ENCDEC", "DEC encoder readout", true);
@@ -464,7 +471,18 @@ int Sitech::startResync ()
 
 int Sitech::isMoving ()
 {
-	return -1;
+	if (getTargetDistance () > trackingDist->getValueDouble ())
+	{
+		// if too far away, update target
+		startResync ();
+		return USEC_SEC / 10;
+	}
+		
+	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (7.5 / 3600.0, ra_ticks->getValueLong ()));
+	sendValueAll (ra_track_speed);
+
+	sitechStartTracking ();
+	return -2;
 }
 
 int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
