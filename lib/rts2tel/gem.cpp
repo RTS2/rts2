@@ -128,14 +128,14 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	if ((dc < dcMin->getValueLong ()) || (dc > dcMax->getValueLong ()))
 	{
 		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " dc:" << dc << " dcMin:" << dcMin << " dcMax:" << dcMax << sendLog;
+			<< LibnovaRaDec (pos) << " dc:" << dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
 		return -1;
 	}
 
 	if ((ac < acMin->getValueLong ()) || (ac > acMax->getValueLong ()))
 	{
 		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " ac:" << ac << " acMin:" << acMin << " acMax:" << acMax << sendLog;
+			<< LibnovaRaDec (pos) << " ac:" << ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
 		return -1;
 	}
 

@@ -110,6 +110,12 @@ class Sitech:public GEM
 		rts2core::ValueLong *ra_pos;
 		rts2core::ValueLong *dec_pos;
 
+		rts2core::ValueLong *r_ra_pos;
+		rts2core::ValueLong *r_dec_pos;
+
+		rts2core::ValueLong *t_ra_pos;
+		rts2core::ValueLong *t_dec_pos;
+
 		rts2core::ValueLong *ra_enc;
 		rts2core::ValueLong *dec_enc;
 
@@ -174,6 +180,12 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 
 	createValue (ra_pos, "AXRA", "RA motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (dec_pos, "AXDEC", "DEC motor axis count", true, RTS2_VALUE_WRITABLE);
+
+	createValue (r_ra_pos, "R_AXRA", "real RA motor axis count", true);
+	createValue (r_dec_pos, "R_AXDEC", "real DEC motor axis count", true);
+
+	createValue (t_ra_pos, "T_AXRA", "target RA motor axis count", true, RTS2_VALUE_WRITABLE);
+	createValue (t_dec_pos, "T_AXDEC", "target DEC motor axis count", true, RTS2_VALUE_WRITABLE);
 
 	createValue (ra_enc, "ENCRA", "RA encoder readout", true);
 	createValue (dec_enc, "ENCDEC", "DEC encoder readout", true);
@@ -240,8 +252,11 @@ void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_tel
 {
 	serConn->getAxisStatus ('X', radec_status);
 
-	ra_pos->setValueLong (radec_status.y_pos);
-	dec_pos->setValueLong (radec_status.x_pos);
+	r_ra_pos->setValueLong (radec_status.y_pos);
+	r_dec_pos->setValueLong (radec_status.x_pos);
+
+	ra_pos->setValueLong (radec_status.y_pos + haZero->getValueDouble () * haCpd->getValueDouble ());
+	dec_pos->setValueLong (radec_status.x_pos + decZero->getValueDouble () * decCpd->getValueDouble ());
 
 	ra_enc->setValueLong (radec_status.y_enc);
 	dec_enc->setValueLong (radec_status.x_enc);
@@ -330,6 +345,7 @@ int Sitech::info ()
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
 
+	/** only for debugging
 	ra_scope_ticks->setValueLong (serConn->getSiTechValue ('X', "XZ"));
 	dec_scope_ticks->setValueLong (serConn->getSiTechValue ('X', "XT"));
 
@@ -341,6 +357,7 @@ int Sitech::info ()
 
 	serConn->getSiTechValue ('X', "");
 	serConn->getSiTechValue ('Y', "");
+	**/
 
 	return rts2teld::GEM::info ();
 }
@@ -399,6 +416,9 @@ int Sitech::startResync ()
 	if (ret)
 		return -1;
 
+	t_ra_pos->setValueLong (ac);
+	t_dec_pos->setValueLong (dc);
+
 	sitechMove (ac, dc);
 	
 	return 0;
@@ -413,12 +433,12 @@ int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == ra_pos)
 	{
-		sitechMove (newValue->getValueLong (), dec_pos->getValueLong ());
+		sitechMove (newValue->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), dec_pos->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
 	if (oldValue == dec_pos)
 	{
-		sitechMove (ra_pos->getValueLong (), newValue->getValueLong ());
+		sitechMove (ra_pos->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), newValue->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
 
@@ -427,10 +447,10 @@ int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 int Sitech::updateLimits ()
 {
-	acMin->setValueLong (-10000000);
-	acMax->setValueLong (10000000);
-	dcMin->setValueLong (-10000000);
-	dcMax->setValueLong (10000000);
+//	acMin->setValueLong (-20000000);
+//	acMax->setValueLong (20000000);
+//	dcMin->setValueLong (-20000000);
+//	dcMax->setValueLong (20000000);
 	return 0;
 }
 
