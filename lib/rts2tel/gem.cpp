@@ -46,10 +46,10 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
-	struct ln_equ_posn model_change;
-	struct ln_equ_posn u_pos;
 	int ret;
 	bool flip = false;
+
+	int32_t t_ac, t_dc;
 
 	if (isnan(pos->ra) || isnan(pos->dec))
 	{
@@ -79,8 +79,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		dec *= -1;
 
 	// convert to count values
-	ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());
-	dc = (int32_t) ((dec - decZero->getValueDouble ()) * decCpd->getValueDouble ());
+	t_ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());
+	t_dc = (int32_t) ((dec - decZero->getValueDouble ()) * decCpd->getValueDouble ());
 
 	// gets the limits
 	ret = updateLimits ();
@@ -89,81 +89,23 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		return -1;
 	}
 
-	// purpose of following code is to get from west side of flip
-	// on S, we prefer negative values
-	if (telLatitude->getValueDouble () < 0)
-	{
-		while ((ac - acMargin) < acMin->getValueLong ())
-			// ticks per revolution - don't have idea where to get that
-		{
-			ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
-			flip = !flip;
-		}
-	}
-	while ((ac + acMargin) > acMax->getValueLong ())
-	{
-		ac -= (int32_t) (ra_ticks->getValueLong () / 2.0);
-		flip = !flip;
-	}
-	// while on N we would like to see positive values
-	if (telLatitude->getValueDouble () > 0)
-	{
-		while ((ac - acMargin) < acMin->getValueLong ())
-			// ticks per revolution - don't have idea where to get that
-		{
-			ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
-			flip = !flip;
-		}
-	}
+	// minimize movement from current position, don't rotate around axis more then once
+	int32_t diff_ac = (ac - t_ac) % ra_ticks->getValueLong ();
+	int32_t diff_dc = (dc - t_dc) % dec_ticks->getValueLong ();
 
-	if (flip)
-		dc += (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
+	t_ac = ac - diff_ac;
+	t_dc = dc - diff_dc;
 
-	// put dc to correct numbers
-	while (dc < dcMin->getValueLong ())
-		dc += dec_ticks->getValueLong ();
-	while (dc > dcMax->getValueLong ())
-		dc -= dec_ticks->getValueLong ();
+	// if we cannot move with those values, we cannot move with the any other more optiomal setting, so give up
+	bool t_flip = flip;
 
-	if ((dc < dcMin->getValueLong ()) || (dc > dcMax->getValueLong ()))
-	{
-		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " dc:" << dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
+	if (checkCountValues (pos, t_ac, t_dc, t_flip, JD, ls, dec))
 		return -1;
-	}
 
-	if ((ac < acMin->getValueLong ()) || (ac > acMax->getValueLong ()))
-	{
-		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " ac:" << ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
-		return -1;
-	}
+	t_ac -= homeOff;
 
-	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-	u_pos.ra = ls - ((double) (ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
-	u_pos.dec = (double) (dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
-	if (telLatitude->getValueDouble () < 0)
-		u_pos.dec *= -1;
-	applyModel (&u_pos, &model_change, 0, JD);	// we give raw (unflipped) position => flip=0 for model computation
-
-	// when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
-	if (telLatitude->getValueDouble () < 0)
-		model_change.dec *= -1;
-
-	#ifdef DEBUG_EXTRA
-	LibnovaRaDec lchange (&model_change);
-
-	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
-	dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	ac -= homeOff;
+	ac = t_ac;
+	dc = t_dc;
 
 	return 0;
 }
@@ -270,4 +212,86 @@ void GEM::unlockPointing ()
 
 	updateMetaInformations (ra_ticks);
 	updateMetaInformations (dec_ticks);
+}
+
+int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t &t_ac, int32_t &t_dc, bool &t_flip, double JD, double ls, double dec)
+{
+	struct ln_equ_posn model_change;
+	struct ln_equ_posn u_pos;
+
+	// purpose of following code is to get from west side of flip
+	// on S, we prefer negative values
+	if (telLatitude->getValueDouble () < 0)
+	{
+		while ((t_ac - acMargin) < acMin->getValueLong ())
+		// ticks per revolution - don't have idea where to get that
+		{
+			t_ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
+			t_flip = !t_flip;
+		}
+	}
+	while ((t_ac + acMargin) > acMax->getValueLong ())
+	{
+		t_ac -= (int32_t) (ra_ticks->getValueLong () / 2.0);
+		t_flip = !t_flip;
+	}
+	// while on N we would like to see positive values
+	if (telLatitude->getValueDouble () > 0)
+	{
+		while ((t_ac - acMargin) < acMin->getValueLong ())
+			// ticks per revolution - don't have idea where to get that
+		{
+			t_ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
+			t_flip = !t_flip;
+		}
+	}
+
+	if (t_flip)
+		t_dc += (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
+
+	// put dc to correct numbers
+	while (t_dc < dcMin->getValueLong ())
+		t_dc += dec_ticks->getValueLong ();
+	while (t_dc > dcMax->getValueLong ())
+		t_dc -= dec_ticks->getValueLong ();
+
+	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
+	{
+		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
+			<< LibnovaRaDec (pos) << " dc:" << t_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
+		return -1;
+	}
+
+	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))
+	{
+		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
+			<< LibnovaRaDec (pos) << " ac:" << t_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
+		return -1;
+	}
+
+	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
+	u_pos.ra = ls - ((double) (t_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
+	u_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
+	if (telLatitude->getValueDouble () < 0)
+		u_pos.dec *= -1;
+	applyModel (&u_pos, &model_change, 0, JD);	// we give raw (unflipped) position => flip=0 for model computation
+
+	// when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
+	if (telLatitude->getValueDouble () < 0)
+		model_change.dec *= -1;
+
+	#ifdef DEBUG_EXTRA
+	LibnovaRaDec lchange (&model_change);
+
+	logStream (MESSAGE_DEBUG) << "Before model " << t_ac << t_dc << lchange << sendLog;
+	#endif						 /* DEBUG_EXTRA */
+
+	t_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
+	t_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
+
+	#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "After model" << t_ac << t_dc << sendLog;
+	#endif						 /* DEBUG_EXTRA */
+
+	return 0;
 }

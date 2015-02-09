@@ -81,6 +81,9 @@ class GEM: public Telescope
 
 		// unlock basic pointing parameters
 		void unlockPointing ();
+
+	private:
+		int checkCountValues (struct ln_equ_posn *pos, int32_t &t_ac, int32_t &t_dc, bool &t_flip, double JD, double ls, double dec);
 };
 
 };
