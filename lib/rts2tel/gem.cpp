@@ -47,7 +47,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
 	int ret;
-	bool flip = false;
 
 	int32_t t_ac, t_dc;
 
@@ -89,18 +88,39 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		return -1;
 	}
 
-	// minimize movement from current position, don't rotate around axis more then once
-	int32_t diff_ac = (ac - t_ac) % ra_ticks->getValueLong ();
-	int32_t diff_dc = (dc - t_dc) % dec_ticks->getValueLong ();
-
-	t_ac = ac - diff_ac;
-	t_dc = dc - diff_dc;
-
 	// if we cannot move with those values, we cannot move with the any other more optiomal setting, so give up
-	bool t_flip = flip;
+	ret = checkCountValues (pos, ac, dc, t_ac, t_dc, JD, ls, dec);
 
-	if (checkCountValues (pos, t_ac, t_dc, t_flip, JD, ls, dec))
+	// let's see what will different flip do..
+	int32_t tf_ac = t_ac - ra_ticks->getValueLong () / 2.0;
+	int32_t tf_dc = t_dc + (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
+
+	int ret_f = checkCountValues (pos, ac, dc, tf_ac, tf_dc, JD, ls, dec);
+
+	// there isn't path, give up...
+	if (ret != 0 && ret_f != 0)
 		return -1;
+	// only flipped..
+	else if (ret != 0 && ret_f == 0)
+	{
+		t_ac = tf_ac;
+		t_dc = tf_dc;
+	}
+	// both ways are possible, compare which is shortest
+	else if (ret == 0 && ret_f == 0)
+	{
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define abs(a) ((a) < 0 ? -1 * (a) : (a))
+		int32_t diff_nf = max (abs (ac - t_ac), abs (dc - t_dc));
+		int32_t diff_f = max (abs (ac - tf_ac), abs (dc - tf_dc));
+
+		if (diff_f < diff_nf)
+		{
+			t_ac = tf_ac;
+			t_dc = tf_dc;
+		}
+	}
+	// otherwise, non-flipped is the only way, stay on it..
 
 	t_ac -= homeOff;
 
@@ -214,10 +234,17 @@ void GEM::unlockPointing ()
 	updateMetaInformations (dec_ticks);
 }
 
-int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t &t_ac, int32_t &t_dc, bool &t_flip, double JD, double ls, double dec)
+int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD, double ls, double dec)
 {
 	struct ln_equ_posn model_change;
 	struct ln_equ_posn u_pos;
+
+	// minimize movement from current position, don't rotate around axis more then once
+	int32_t diff_ac = (ac - t_ac) % ra_ticks->getValueLong ();
+	int32_t diff_dc = (dc - t_dc) % dec_ticks->getValueLong ();
+
+	t_ac = ac - diff_ac;
+	t_dc = dc - diff_dc;
 
 	// purpose of following code is to get from west side of flip
 	// on S, we prefer negative values
@@ -226,14 +253,12 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t &t_ac, int32_t &t_dc
 		while ((t_ac - acMargin) < acMin->getValueLong ())
 		// ticks per revolution - don't have idea where to get that
 		{
-			t_ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
-			t_flip = !t_flip;
+			t_ac += ra_ticks->getValueLong ();
 		}
 	}
 	while ((t_ac + acMargin) > acMax->getValueLong ())
 	{
-		t_ac -= (int32_t) (ra_ticks->getValueLong () / 2.0);
-		t_flip = !t_flip;
+		t_ac -= (int32_t) ra_ticks->getValueLong ();
 	}
 	// while on N we would like to see positive values
 	if (telLatitude->getValueDouble () > 0)
@@ -241,13 +266,9 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t &t_ac, int32_t &t_dc
 		while ((t_ac - acMargin) < acMin->getValueLong ())
 			// ticks per revolution - don't have idea where to get that
 		{
-			t_ac += (int32_t) (ra_ticks->getValueLong () / 2.0);
-			t_flip = !t_flip;
+			t_ac += (int32_t) ra_ticks->getValueLong ();
 		}
 	}
-
-	if (t_flip)
-		t_dc += (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
 
 	// put dc to correct numbers
 	while (t_dc < dcMin->getValueLong ())
