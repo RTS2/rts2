@@ -26,6 +26,9 @@
 #include "sitech.h"
 #include "connection/sitech.h"
 
+// SITech counts/servero loop -> speed value
+#define SPEED_MULTI     65356
+
 namespace rts2teld
 {
 
@@ -102,6 +105,15 @@ class Sitech:public GEM
 		 */
 		void sitechMove (int32_t ac, int32_t dc);
 
+		/**
+		 * Starts mount tracking - endless speed limited pointing.
+		 */
+		void sitechStartTracking ();
+
+		// speed conversion; see Dan manual for details
+		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks);
+		int32_t motorSpeed2DegsPerSec (double speed, int32_t loop_ticks);
+
 		ConnSitech *serConn;
 
 		SitechAxisStatus radec_status;
@@ -128,8 +140,11 @@ class Sitech:public GEM
 		rts2core::ValueLong *dec_last;
 
 		// request values - speed,..
-		rts2core::ValueLong *ra_speed;
-		rts2core::ValueLong *dec_speed;
+		rts2core::ValueDouble *ra_speed;
+		rts2core::ValueDouble *dec_speed;
+
+		// tracking speed in controller units
+		rts2core::ValueDouble *ra_track_speed;
 
 		rts2core::ValueLong *ra_rate_adder;
 		rts2core::ValueLong *dec_rate_adder;
@@ -199,6 +214,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	createValue (ra_speed, "ra_speed", "RA speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 	createValue (dec_speed, "dec_speed", "DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 
+	createValue (ra_track_speed, "ra_track_speed", "RA tracking speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
+
 	createValue (ra_rate_adder, "ra_rate_adder", "RA rate adder", false, RTS2_VALUE_WRITABLE);
 	createValue (dec_rate_adder, "dec_rate_adder", "DEC rate adder", false, RTS2_VALUE_WRITABLE);
 
@@ -211,8 +228,10 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	createValue (ra_mot_ticks, "ra_mot_ticks", "RA motor encoder ticks per revolution");
 	createValue (dec_mot_ticks, "dec_mot_ticks", "DEC motor encoder ticks per revolution");
 
-	ra_speed->setValueLong (1000000);
-	dec_speed->setValueLong (1000000);
+	ra_speed->setValueDouble (140);
+	dec_speed->setValueDouble (140);
+
+	ra_track_speed->setValueDouble (0);
 
 	ra_rate_adder->setValueLong (0);
 	dec_rate_adder->setValueLong (0);
@@ -330,6 +349,7 @@ int Sitech::initHardware ()
 	/* Flush the input buffer in case there is something left from startup */
 
 	serConn->flushPortIO();
+
 	return 0;
 
 }
@@ -401,6 +421,22 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 		serConn->siTechCommand ('Y', "A");
 		return 0;
 	}
+	else if (conn->isCommand ("si_track"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sitechStartTracking ();
+		return 0;
+	}
+	else if (conn->isCommand ("si_strack"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (7.5 / 3600.0, ra_ticks->getValueLong ()));
+		sendValueAll (ra_track_speed);
+		sitechStartTracking ();
+		return 0;
+	}
 	return GEM::commandAuthorized (conn);
 }
 
@@ -411,7 +447,7 @@ int Sitech::initValues ()
 
 int Sitech::startResync ()
 {
-	int32_t ac, dc;
+	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
 	int ret = sky2counts (ac, dc);
 	if (ret)
 		return -1;
@@ -464,8 +500,8 @@ void Sitech::sitechMove (int32_t ac, int32_t dc)
 	radec_request.y_dest = ac;
 	radec_request.x_dest = dc;
 
-	radec_request.y_speed = ra_speed->getValueLong ();
-	radec_request.x_speed = dec_speed->getValueLong ();
+	radec_request.y_speed = ra_speed->getValueDouble () * SPEED_MULTI;
+	radec_request.x_speed = dec_speed->getValueDouble () * SPEED_MULTI;
 
 	radec_request.y_rate_adder = ra_rate_adder->getValueLong ();
 	radec_request.x_rate_adder = dec_rate_adder->getValueLong ();
@@ -474,6 +510,37 @@ void Sitech::sitechMove (int32_t ac, int32_t dc)
 	radec_request.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
 
 	serConn->sendAxisRequest ('Y', radec_request);
+}
+
+void Sitech::sitechStartTracking ()
+{
+	radec_request.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
+	radec_request.x_speed = 0;
+
+	// 10 degress in ra; will be called periodically..
+	if (ra_track_speed->getValueDouble () > 0)
+		radec_request.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
+	else
+		radec_request.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
+	radec_request.x_dest = r_dec_pos->getValueLong ();
+
+	radec_request.y_rate_adder = ra_rate_adder->getValueLong ();
+	radec_request.x_rate_adder = dec_rate_adder->getValueLong ();
+
+	radec_request.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
+	radec_request.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
+
+	serConn->sendAxisRequest ('Y', radec_request);
+}
+
+double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks)
+{
+	return loop_ticks * dps / (1953 * 360);
+}
+
+int32_t Sitech::motorSpeed2DegsPerSec(double speed, int32_t loop_ticks)
+{
+        return round (speed / loop_ticks * 10.7281494140625);
 }
 
 int main (int argc, char **argv)
