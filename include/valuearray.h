@@ -238,6 +238,11 @@ class IntegerArray: public ValueArray
 
 		size_t size () { return value.size (); }
 
+		void clear () {
+			value.clear ();
+			changed ();
+		}
+
 		int getValueAt (int i) { return value[i]; }
 
 		int operator[] (int i) { return value[i]; }

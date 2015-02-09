@@ -120,7 +120,7 @@ class Sitech:public GEM
 		ConnSitech *serConn;
 
 		SitechAxisStatus radec_status;
-		SitechAxisRequest radec_request;
+		SitechYAxisRequest radec_Yrequest;
 
 		rts2core::ValueLong *ra_pos;
 		rts2core::ValueLong *dec_pos;
@@ -132,6 +132,8 @@ class Sitech:public GEM
 		rts2core::ValueLong *t_dec_pos;
 
 		rts2core::ValueDouble *trackingDist;
+
+		rts2core::IntegerArray *PIDs;
 
 		rts2core::ValueLong *ra_enc;
 		rts2core::ValueLong *dec_enc;
@@ -150,6 +152,9 @@ class Sitech:public GEM
 
 		// tracking speed in controller units
 		rts2core::ValueDouble *ra_track_speed;
+
+		// current PID values
+		rts2core::ValueBool *trackingPIDs;
 
 		rts2core::ValueLong *ra_rate_adder;
 		rts2core::ValueLong *dec_rate_adder;
@@ -180,7 +185,10 @@ class Sitech:public GEM
 		 */
 		void getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec);
 
-		void GetGuideTargets (int *ntarget, int *starget, int *etarget, int *wtarget);
+		/**
+		 * Retrieves current PID settings
+		 */
+		void getPIDs ();
 
 		// which controller is connected
 		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
@@ -190,7 +198,7 @@ class Sitech:public GEM
 
 using namespace rts2teld;
 
-Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_request ()
+Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Yrequest ()
 {
 	unlockPointing ();
 
@@ -216,6 +224,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 
 	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 
+	createValue (PIDs, "pids", "axis PID values", false);
+
 	// default to 3 arcsec
 	trackingDist->setValueDouble (3 / 60.0 / 60.0);
 
@@ -232,6 +242,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_r
 	createValue (dec_speed, "dec_speed", "DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 
 	createValue (ra_track_speed, "ra_track_speed", "RA tracking speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
+
+	createValue (trackingPIDs, "tracking_pids", "true if tracking PIDs are in action", false);
 
 	createValue (ra_rate_adder, "ra_rate_adder", "RA rate adder", false, RTS2_VALUE_WRITABLE);
 	createValue (dec_rate_adder, "dec_rate_adder", "DEC rate adder", false, RTS2_VALUE_WRITABLE);
@@ -310,6 +322,15 @@ void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_tel
 		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
 }
 
+void Sitech::getPIDs ()
+{
+	PIDs->clear ();
+	
+	PIDs->addValue (serConn->getSiTechValue ('X', "PPP"));
+	PIDs->addValue (serConn->getSiTechValue ('X', "III"));
+	PIDs->addValue (serConn->getSiTechValue ('X', "DDD"));
+}
+
 /*!
  * Init telescope, connect on given tel_desc.
  *
@@ -369,6 +390,8 @@ int Sitech::initHardware ()
 
 		createValue (servoPIDSampleRate, "servo_pid_sample_rate", "number of CPU cycles per second", false);
 		servoPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp));
+
+		getPIDs ();
 	}
 
 	SitechControllerConfiguration sconfig;
@@ -538,40 +561,40 @@ int Sitech::startPark ()
 
 void Sitech::sitechMove (int32_t ac, int32_t dc)
 {
-	radec_request.y_dest = ac;
-	radec_request.x_dest = dc;
+	radec_Yrequest.y_dest = ac;
+	radec_Yrequest.x_dest = dc;
 
-	radec_request.y_speed = ra_speed->getValueDouble () * SPEED_MULTI;
-	radec_request.x_speed = dec_speed->getValueDouble () * SPEED_MULTI;
+	radec_Yrequest.y_speed = ra_speed->getValueDouble () * SPEED_MULTI;
+	radec_Yrequest.x_speed = dec_speed->getValueDouble () * SPEED_MULTI;
 
-	radec_request.y_rate_adder = ra_rate_adder->getValueLong ();
-	radec_request.x_rate_adder = dec_rate_adder->getValueLong ();
+	radec_Yrequest.y_rate_adder = ra_rate_adder->getValueLong ();
+	radec_Yrequest.x_rate_adder = dec_rate_adder->getValueLong ();
 
-	radec_request.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
-	radec_request.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
+	radec_Yrequest.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
+	radec_Yrequest.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
 
-	serConn->sendAxisRequest ('Y', radec_request);
+	serConn->sendYAxisRequest (radec_Yrequest);
 }
 
 void Sitech::sitechStartTracking ()
 {
-	radec_request.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
-	radec_request.x_speed = 0;
+	radec_Yrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
+	radec_Yrequest.x_speed = 0;
 
 	// 10 degress in ra; will be called periodically..
 	if (ra_track_speed->getValueDouble () > 0)
-		radec_request.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
+		radec_Yrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
 	else
-		radec_request.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
-	radec_request.x_dest = r_dec_pos->getValueLong ();
+		radec_Yrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
+	radec_Yrequest.x_dest = r_dec_pos->getValueLong ();
 
-	radec_request.y_rate_adder = ra_rate_adder->getValueLong ();
-	radec_request.x_rate_adder = dec_rate_adder->getValueLong ();
+	radec_Yrequest.y_rate_adder = ra_rate_adder->getValueLong ();
+	radec_Yrequest.x_rate_adder = dec_rate_adder->getValueLong ();
 
-	radec_request.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
-	radec_request.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
+	radec_Yrequest.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
+	radec_Yrequest.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
 
-	serConn->sendAxisRequest ('Y', radec_request);
+	serConn->sendYAxisRequest (radec_Yrequest);
 }
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks)

@@ -112,10 +112,10 @@ void ConnSitech::getAxisStatus (char axis, SitechAxisStatus &ax_status)
 	readAxisStatus (ax_status);
 }
 
-void ConnSitech::sendAxisRequest (const char axis, SitechAxisRequest &ax_request)
+void ConnSitech::sendYAxisRequest (SitechYAxisRequest &ax_request)
 {
 	switchToBinary ();
-	siTechCommand (axis, "XR");
+	siTechCommand ('Y', "XR");
 
 	char data[34];
 

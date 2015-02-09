@@ -143,7 +143,7 @@ typedef struct
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class SitechAxisRequest
+class SitechYAxisRequest
 {
 	public:
 		int32_t x_dest;          //* X (Alt/Dec) motor destination, in motor counts
@@ -232,7 +232,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 * @param axis          commanded axis
 		 * @param ax_request    request to send on axis
 		 */
-		void sendAxisRequest (char axis, SitechAxisRequest &ax_request);
+		void sendYAxisRequest (SitechYAxisRequest &ax_request);
 
 		void setSiTechValue (const char axis, const char *val, int value);
 
