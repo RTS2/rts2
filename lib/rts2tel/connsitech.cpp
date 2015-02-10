@@ -140,6 +140,32 @@ void ConnSitech::sendYAxisRequest (SitechYAxisRequest &ax_request)
 	readAxisStatus (ax_status);
 }
 
+void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
+{
+	switchToBinary ();
+	siTechCommand ('X', "XR");
+
+	char data[21];
+
+	*((uint32_t *) (data)) = htole32 (ax_request.x_dest);
+	*((uint32_t *) (data + 4)) = htole32 (ax_request.x_speed);
+	*((uint32_t *) (data + 8)) = htole32 (ax_request.y_dest);
+	*((uint32_t *) (data + 12)) = htole32 (ax_request.y_speed);
+
+	// we would like to set Xbits and Ybits..
+	*((uint8_t *) (data + 16)) = 1;
+	*((uint8_t *) (data + 17)) = ax_request.x_bits;
+	*((uint8_t *) (data + 18)) = ax_request.y_bits;
+
+	*((uint16_t *) (data + 19)) = htole16 (binaryChecksum (data, 19, true));
+
+	writePort (data, 21);
+
+	SitechAxisStatus ax_status;
+	readAxisStatus (ax_status);
+}
+
+
 void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
 {
 	char *ccmd = NULL;

@@ -32,6 +32,9 @@
 #define POINTING_ALTAZ       1
 #define POINTING_ALTALT      2
 
+
+#define SIDEREAL_HOURS       23.9344696
+
 namespace rts2telmodel
 {
 	class Model;

@@ -156,6 +156,17 @@ class SitechYAxisRequest
 		int32_t y_rate_adder_t;  //* Y (Az/RA) rate adder time (in servo loops; 1953 would be 1 second)
 };
 
+class SitechXAxisRequest
+{
+	public:
+		int32_t x_dest;          //* X (Alt/Dec) motor destination, in motor counts
+		int32_t x_speed;         //* X (Alt/Dec) speed (base rate), in counts per servo loop
+		int32_t y_dest;          //* Y (Az/RA) motor destination, in motor counts
+		int32_t y_speed;         //* Y (Az/RA) speed (base rate), in counts per servo loop
+		int8_t x_bits;
+		int8_t y_bits;
+};
+
 /**
  * Sitech protocol connections. Used to control Sitech mounts.
  * 
@@ -233,6 +244,8 @@ class ConnSitech: public rts2core::ConnSerial
 		 * @param ax_request    request to send on axis
 		 */
 		void sendYAxisRequest (SitechYAxisRequest &ax_request);
+
+		void sendXAxisRequest (SitechXAxisRequest &ax_request);
 
 		void setSiTechValue (const char axis, const char *val, int value);
 

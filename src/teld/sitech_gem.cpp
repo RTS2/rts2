@@ -114,13 +114,14 @@ class Sitech:public GEM
 		void sitechStartTracking ();
 
 		// speed conversion; see Dan manual for details
-		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks);
+		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
 		int32_t motorSpeed2DegsPerSec (double speed, int32_t loop_ticks);
 
 		ConnSitech *serConn;
 
 		SitechAxisStatus radec_status;
 		SitechYAxisRequest radec_Yrequest;
+		SitechXAxisRequest radec_Xrequest;
 
 		rts2core::ValueLong *ra_pos;
 		rts2core::ValueLong *dec_pos;
@@ -156,12 +157,6 @@ class Sitech:public GEM
 		// current PID values
 		rts2core::ValueBool *trackingPIDs;
 
-		rts2core::ValueLong *ra_rate_adder;
-		rts2core::ValueLong *dec_rate_adder;
-
-		rts2core::ValueLong *ra_rate_adder_t;
-		rts2core::ValueLong *dec_rate_adder_t;
-
 		rts2core::ValueLong *ra_scope_ticks;
 		rts2core::ValueLong *dec_scope_ticks;
 
@@ -192,13 +187,16 @@ class Sitech:public GEM
 
 		// which controller is connected
 		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
+
+		uint8_t xbits;
+		uint8_t ybits;
 };
 
 }
 
 using namespace rts2teld;
 
-Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Yrequest ()
+Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Yrequest (), radec_Xrequest ()
 {
 	unlockPointing ();
 
@@ -245,12 +243,6 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 
 	createValue (trackingPIDs, "tracking_pids", "true if tracking PIDs are in action", false);
 
-	createValue (ra_rate_adder, "ra_rate_adder", "RA rate adder", false, RTS2_VALUE_WRITABLE);
-	createValue (dec_rate_adder, "dec_rate_adder", "DEC rate adder", false, RTS2_VALUE_WRITABLE);
-
-	createValue (ra_rate_adder_t, "ra_rate_adder_t", "RA rate adder time (in servo loops; 1953 would be 1 second)", false, RTS2_VALUE_WRITABLE);
-	createValue (dec_rate_adder_t, "dec_rate_adder_t", "DEC rate adder time (in servo loops; 1953 would be 1 second)", false, RTS2_VALUE_WRITABLE);
-
 	createValue (ra_scope_ticks, "ra_scope_ticks", "RA scope encoder ticks per revolution");
 	createValue (dec_scope_ticks, "dec_scope_ticks", "DEC scope encoder ticks per revolution");
 
@@ -261,12 +253,6 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 	dec_speed->setValueDouble (140);
 
 	ra_track_speed->setValueDouble (0);
-
-	ra_rate_adder->setValueLong (0);
-	dec_rate_adder->setValueLong (0);
-
-	ra_rate_adder_t->setValueLong (0);
-	dec_rate_adder_t->setValueLong (0);
 
 	createParkPos (0, 89.999);
 
@@ -317,6 +303,9 @@ void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_tel
 	ra_last->setValueLong (radec_status.y_last);
 	dec_last->setValueLong (radec_status.x_last);
 
+	xbits = radec_status.x_bit;
+	ybits = radec_status.y_bit;
+
 	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec);
 	if (ret)
 		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
@@ -366,6 +355,9 @@ int Sitech::initHardware ()
 	if (ret)
 		return -1;
 	serConn->flushPortIO ();
+
+	xbits = serConn->getSiTechValue ('X', "B");
+	ybits = serConn->getSiTechValue ('Y', "B");
 
 	numread = serConn->getSiTechValue ('X', "V");
      
@@ -519,6 +511,9 @@ int Sitech::isMoving ()
 	{
 		// if too far away, update target
 		startResync ();
+		// close to target, increase update frequvency..
+		if (getTargetDistance () < 0.5)
+			return 0;
 		return USEC_SEC / 10;
 	}
 		
@@ -561,51 +556,50 @@ int Sitech::startPark ()
 
 void Sitech::sitechMove (int32_t ac, int32_t dc)
 {
-	radec_Yrequest.y_dest = ac;
-	radec_Yrequest.x_dest = dc;
+	radec_Xrequest.y_dest = ac;
+	radec_Xrequest.x_dest = dc;
 
-	radec_Yrequest.y_speed = ra_speed->getValueDouble () * SPEED_MULTI;
-	radec_Yrequest.x_speed = dec_speed->getValueDouble () * SPEED_MULTI;
+	radec_Xrequest.y_speed = ra_speed->getValueDouble () * SPEED_MULTI;
+	radec_Xrequest.x_speed = dec_speed->getValueDouble () * SPEED_MULTI;
 
-	radec_Yrequest.y_rate_adder = ra_rate_adder->getValueLong ();
-	radec_Yrequest.x_rate_adder = dec_rate_adder->getValueLong ();
+	// clear bit 4, tracking
+	xbits &= ~(0x01 << 4);
 
-	radec_Yrequest.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
-	radec_Yrequest.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
+	radec_Xrequest.x_bits = xbits;
+	radec_Xrequest.y_bits = ybits;
 
-	serConn->sendYAxisRequest (radec_Yrequest);
+	serConn->sendXAxisRequest (radec_Xrequest);
 }
 
 void Sitech::sitechStartTracking ()
 {
-	radec_Yrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
-	radec_Yrequest.x_speed = 0;
+	radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
+	radec_Xrequest.x_speed = 0;
 
 	// 10 degress in ra; will be called periodically..
 	if (ra_track_speed->getValueDouble () > 0)
-		radec_Yrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
+		radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
 	else
-		radec_Yrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
-	radec_Yrequest.x_dest = r_dec_pos->getValueLong ();
+		radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
+	radec_Xrequest.x_dest = r_dec_pos->getValueLong ();
 
-	radec_Yrequest.y_rate_adder = ra_rate_adder->getValueLong ();
-	radec_Yrequest.x_rate_adder = dec_rate_adder->getValueLong ();
+	radec_Xrequest.x_bits = xbits;
+	radec_Xrequest.y_bits = ybits;
 
-	radec_Yrequest.y_rate_adder_t = ra_rate_adder_t->getValueLong ();
-	radec_Yrequest.x_rate_adder_t = dec_rate_adder_t->getValueLong ();
+	xbits |= (0x01 << 4);
 
-	serConn->sendYAxisRequest (radec_Yrequest);
+	serConn->sendXAxisRequest (radec_Xrequest);
 }
 
-double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks)
+double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
 {
 	switch (sitechType)
 	{
 		case SERVO_I:
 		case SERVO_II:
-			return ((loop_ticks / 360.0) * dps) / 1953;
+			return ((loop_ticks / full_circle) * dps) / 1953;
 		case FORCE_ONE:
-			return ((loop_ticks / 360.0) * dps) / servoPIDSampleRate->getValueDouble ();
+			return ((loop_ticks / full_circle) * dps) / servoPIDSampleRate->getValueDouble ();
 		default:
 			return 0;
 	}
