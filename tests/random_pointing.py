@@ -14,14 +14,13 @@ import sys
 # create Proxy object to work with RTS2 json
 # You need to change username and password!
 # See man rts2-user for details.
-
 j = rts2.json.JSONProxy("http://localhost:8889", "username", "password", verbose=False)
 
 # format output altitude and azimuth, so those will not be only numbers..
 def formatDeg(deg):
 	m, s = divmod(deg * 3600, 60)
 	h, m = divmod(m, 60)
-	return '{0:.0f}°{1:02.0f}\'{2:02.0f}"'.format(h, m, s)
+	return '{0:.0f}°{1:02.0f}\'{2:02.2f}"'.format(h, m, s)
 
 while True:
 	al = random.random() * 90
@@ -49,11 +48,15 @@ while True:
 		# sleep a bit..
 		time.sleep(0.1)
 
+	# prints end coordinates
+	j.refresh()
+	j.executeCommand("T0", "info")
 	print "moving to {0} {1}, actual {2} {3}, distance {4}".format(formatDeg(al), formatDeg(az), formatDeg(j.getValue("T0","TEL_")["alt"]), formatDeg(j.getValue("T0","TEL_")["az"]), formatDeg(j.getValue("T0","target_distance")))
 
 	# sleeps for 5 seconds with a count
-	for s in range(5, 0, -1):
-		print "Sleep .. {0}\r".format(s),
+	for s in range(50, 0, -1):
+		j.refresh()
+		j.executeCommand("T0", "info")
+		print "Sleep .. {0}, distance {1}      \r".format(s, formatDeg(j.getValue("T0", "target_distance"))),
 		sys.stdout.flush()
-		time.sleep(1)
-	print "next move.."
+	print "next move..                      "
