@@ -1,8 +1,8 @@
 /* 
  * Sidereal Technology Controller driver
  * Copyright (C) 2012-2013 Shashikiran Ganesh <shashikiran.ganesh@gmail.com>
- * Copyright (C) 2014 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2014 ISDEFE/ESA
+ * Copyright (C) 2014-2015 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2014-2015 ISDEFE/ESA
  * Based on John Kielkopf's xmtel linux software, Dan's SiTech driver and documentation, and dummy telescope driver.
  *
  * This program is free software; you can redistribute it and/or
@@ -224,8 +224,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 
 	createValue (PIDs, "pids", "axis PID values", false);
 
-	// default to 3 arcsec
-	trackingDist->setValueDouble (3 / 60.0 / 60.0);
+	// default to 1 arcsec
+	trackingDist->setValueDouble (1 / 60.0 / 60.0);
 
 	createValue (ra_enc, "ENCRA", "RA encoder readout", true);
 	createValue (dec_enc, "ENCDEC", "DEC encoder readout", true);
