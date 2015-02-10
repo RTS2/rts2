@@ -103,6 +103,8 @@ class Sitech:public GEM
 		}
 
 	private:
+		void getConfiguration ();
+
 		/**
 		 * Sends SiTech XYS command with requested coordinates.
 		 */
@@ -115,13 +117,16 @@ class Sitech:public GEM
 
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
-		int32_t motorSpeed2DegsPerSec (double speed, int32_t loop_ticks);
+		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
 
 		ConnSitech *serConn;
 
 		SitechAxisStatus radec_status;
 		SitechYAxisRequest radec_Yrequest;
 		SitechXAxisRequest radec_Xrequest;
+
+		rts2core::ValueDouble *sitechVersion;
+		rts2core::ValueInteger *sitechSerial;
 
 		rts2core::ValueLong *ra_pos;
 		rts2core::ValueLong *dec_pos;
@@ -157,11 +162,17 @@ class Sitech:public GEM
 		// current PID values
 		rts2core::ValueBool *trackingPIDs;
 
-		rts2core::ValueLong *ra_scope_ticks;
-		rts2core::ValueLong *dec_scope_ticks;
+		rts2core::ValueDouble *ra_acceleration;
+		rts2core::ValueDouble *dec_acceleration;
 
-		rts2core::ValueLong *ra_mot_ticks;
-		rts2core::ValueLong *dec_mot_ticks;
+		rts2core::ValueDouble *ra_max_velocity;
+		rts2core::ValueDouble *dec_max_velocity;
+
+		rts2core::ValueDouble *ra_current;
+		rts2core::ValueDouble *dec_current;
+
+		rts2core::ValueInteger *ra_pwm;
+		rts2core::ValueInteger *dec_pwm;
 
 		rts2core::ValueDouble *servoPIDSampleRate;
 
@@ -211,6 +222,9 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 
 	acMargin = 0;
 
+	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
+	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
+
 	createValue (ra_pos, "AXRA", "RA motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (dec_pos, "AXDEC", "DEC motor axis count", true, RTS2_VALUE_WRITABLE);
 
@@ -243,11 +257,17 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 
 	createValue (trackingPIDs, "tracking_pids", "true if tracking PIDs are in action", false);
 
-	createValue (ra_scope_ticks, "ra_scope_ticks", "RA scope encoder ticks per revolution");
-	createValue (dec_scope_ticks, "dec_scope_ticks", "DEC scope encoder ticks per revolution");
+	createValue (ra_acceleration, "ra_acceleration", "[deg/s^2] RA motor acceleration", false);
+	createValue (dec_acceleration, "dec_acceleration", "[deg/s^2] DEC motor acceleration", false);
 
-	createValue (ra_mot_ticks, "ra_mot_ticks", "RA motor encoder ticks per revolution");
-	createValue (dec_mot_ticks, "dec_mot_ticks", "DEC motor encoder ticks per revolution");
+	createValue (ra_max_velocity, "ra_max_v", "[deg/s] RA axis maximal speed", false, RTS2_DT_DEGREES);
+	createValue (dec_max_velocity, "dec_max_v", "[deg/s] RA axis maximal speed", false, RTS2_DT_DEGREES);
+
+	createValue (ra_current, "ra_current", "[A] RA motor current", false);
+	createValue (dec_current, "dec_current", "[A] DEC motor current", false);
+
+	createValue (ra_pwm, "ra_pwm", "[W?] RA motor PWM output", false);
+	createValue (dec_pwm, "dec_pwm", "[W?] DEC motor PWM output", false);
 
 	ra_speed->setValueDouble (1);
 	dec_speed->setValueDouble (1);
@@ -338,8 +358,6 @@ int Sitech::initHardware ()
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
 
-	strcpy (telType, "Sitech");
-
 	/* Make the connection */
 	
 	/* On the Sidereal Technologies controller                                */
@@ -371,6 +389,9 @@ int Sitech::initHardware ()
 		return -1;
 	}
 
+	sitechVersion->setValueDouble (numread / 100.0);
+	sitechSerial->setValueInteger (serConn->getSiTechValue ('Y', "V"));
+
 	if (numread < 112)
 	{
 		sitechType = SERVO_II;
@@ -386,7 +407,7 @@ int Sitech::initHardware ()
 		getPIDs ();
 	}
 
-	SitechControllerConfiguration sconfig;
+	//SitechControllerConfiguration sconfig;
 	//serConn->getConfiguration (sconfig);
 
 	//serConn->resetController ();
@@ -394,6 +415,8 @@ int Sitech::initHardware ()
 	/* Flush the input buffer in case there is something left from startup */
 
 	serConn->flushPortIO();
+
+	getConfiguration ();
 
 	return 0;
 
@@ -410,19 +433,14 @@ int Sitech::info ()
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
 
-	/** only for debugging
-	ra_scope_ticks->setValueLong (serConn->getSiTechValue ('X', "XZ"));
-	dec_scope_ticks->setValueLong (serConn->getSiTechValue ('X', "XT"));
+	ra_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('Y', "S"), ra_ticks->getValueLong ()));
+	dec_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('X', "S"), dec_ticks->getValueLong ()));
 
-	ra_mot_ticks->setValueLong (serConn->getSiTechValue ('X', "XV"));
-	dec_mot_ticks->setValueLong (serConn->getSiTechValue ('X', "XU"));
+	ra_current->setValueDouble (serConn->getSiTechValue ('Y', "C") / 100.0);
+	dec_current->setValueDouble (serConn->getSiTechValue ('X', "C") / 100.0);
 
-	serConn->getSiTechValue ('X', "Z");
-	serConn->getSiTechValue ('Y', "Z");
-
-	serConn->getSiTechValue ('X', "");
-	serConn->getSiTechValue ('Y', "");
-	**/
+	ra_pwm->setValueInteger (serConn->getSiTechValue ('Y', "O"));
+	dec_pwm->setValueInteger (serConn->getSiTechValue ('X', "O"));
 
 	return rts2teld::GEM::info ();
 }
@@ -514,6 +532,7 @@ int Sitech::isMoving ()
 		// close to target, increase update frequvency..
 		if (getTargetDistance () < 0.5)
 			return 0;
+
 		return USEC_SEC / 10;
 	}
 		
@@ -552,6 +571,12 @@ int Sitech::updateLimits ()
 int Sitech::startPark ()
 {
 	return 0;
+}
+
+void Sitech::getConfiguration ()
+{
+	ra_acceleration->setValueDouble (serConn->getSiTechValue ('Y', "R"));
+	dec_acceleration->setValueDouble (serConn->getSiTechValue ('X', "R"));
 }
 
 void Sitech::sitechMove (int32_t ac, int32_t dc)
@@ -605,9 +630,18 @@ double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double ful
 	}
 }
 
-int32_t Sitech::motorSpeed2DegsPerSec(double speed, int32_t loop_ticks)
+double Sitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
 {
-        return round (speed / loop_ticks * 10.7281494140625);
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
+		case FORCE_ONE:
+			return (double) speed / loop_ticks * (360.0 * servoPIDSampleRate->getValueDouble () / SPEED_MULTI);
+		default:
+			return 0;
+	}
 }
 
 int main (int argc, char **argv)
