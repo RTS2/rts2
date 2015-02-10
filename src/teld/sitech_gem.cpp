@@ -236,8 +236,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
 
-	createValue (ra_speed, "ra_speed", "RA speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
-	createValue (dec_speed, "dec_speed", "DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
+	createValue (ra_speed, "ra_speed", "[deg/s] RA speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	createValue (dec_speed, "dec_speed", "[deg/s] DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 
 	createValue (ra_track_speed, "ra_track_speed", "RA tracking speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 
@@ -249,8 +249,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 	createValue (ra_mot_ticks, "ra_mot_ticks", "RA motor encoder ticks per revolution");
 	createValue (dec_mot_ticks, "dec_mot_ticks", "DEC motor encoder ticks per revolution");
 
-	ra_speed->setValueDouble (140);
-	dec_speed->setValueDouble (140);
+	ra_speed->setValueDouble (1);
+	dec_speed->setValueDouble (1);
 
 	ra_track_speed->setValueDouble (0);
 
@@ -559,8 +559,8 @@ void Sitech::sitechMove (int32_t ac, int32_t dc)
 	radec_Xrequest.y_dest = ac;
 	radec_Xrequest.x_dest = dc;
 
-	radec_Xrequest.y_speed = ra_speed->getValueDouble () * SPEED_MULTI;
-	radec_Xrequest.x_speed = dec_speed->getValueDouble () * SPEED_MULTI;
+	radec_Xrequest.y_speed = degsPerSec2MotorSpeed (ra_speed->getValueDouble (), ra_ticks->getValueLong (), 360) * SPEED_MULTI;
+	radec_Xrequest.x_speed = degsPerSec2MotorSpeed (dec_speed->getValueDouble (), dec_ticks->getValueLong (), 360) * SPEED_MULTI;
 
 	// clear bit 4, tracking
 	xbits &= ~(0x01 << 4);
