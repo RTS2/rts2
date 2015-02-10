@@ -69,6 +69,14 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
+AC_ARG_ENABLE(ssl,
+[  --enable-ssl            enable openssl encryption in httpd],
+[case "${enableval}" in
+	yes) ssl=yes ;;
+	no)  ssl=no ;;
+	*) AC_MSG_ERROR(bad value ${enableval} for --enable-ssl) ;;
+esac],[ssl=no])
+
 AC_ARG_ENABLE(focusing,
 [  --disable-focusing      disables focusing in camd (=>camd doesn't need cfitsio to build)],
 [case "${enableval}" in
@@ -541,6 +549,16 @@ AC_SUBST(CENTRALD_PORT)
 
 # Checks for libraries.
 
+AH_TEMPLATE([SSL], [using openssl in httpd])
+if test "x${ssl}" != "xno"; then
+  PKG_CHECK_MODULES(SSL, [openssl >= 1.0.1],,AC_MSG_RESULT(not found))
+fi
+AM_CONDITIONAL(SSL, test "x$SSL_LIBS" != x)
+if test "x$SSL_LIBS" != x; then
+  AC_DEFINE_UNQUOTED(SSL, "1", [using openssl in httpd])
+fi
+
+
 if test "x${cfitsio}" != "xno"; then
   if test "x${cfitsio}" != "xyes"; then
     LDFLAGS="${LDFLAGS} -L${cfitsio}"
@@ -961,6 +979,7 @@ echo "
   libarchive    ${libarchive}
   crypt         ${LIB_CRYPT}
   libgjson	${JSONGLIB_CFLAGS} ${JSONGLIB_LIBS}
+  openssl       ${ssl}
 
 CCDs:
   alta          ${ALTA}
