@@ -28,18 +28,18 @@ void SwitchState::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string p
 	if (vals.size () == 1)
 	{
 		if (vals[0] == "off")
-			((XmlRpcd *) getMasterApp ())->queAllCentralds ("off");
+			((HttpD *) getMasterApp ())->queAllCentralds ("off");
 		else if (vals[0] == "standby")
-		  	((XmlRpcd *) getMasterApp ())->queAllCentralds ("standby");
+		  	((HttpD *) getMasterApp ())->queAllCentralds ("standby");
 		else if (vals[0] == "on")
-		  	((XmlRpcd *) getMasterApp ())->queAllCentralds ("on");
+		  	((HttpD *) getMasterApp ())->queAllCentralds ("on");
 		else
 		  	throw XmlRpcException ("Cannot process request");
 	}
 	std::ostringstream _os;
 	printHeader (_os, "State switching");
 
-	_os << "<p>Current state is: " << ((XmlRpcd *) getMasterApp ())->getMasterStateString () << "<p>";
+	_os << "<p>Current state is: " << ((HttpD *) getMasterApp ())->getMasterStateString () << "<p>";
 
 	_os << "<p>Set state to:"
 		"<p>"

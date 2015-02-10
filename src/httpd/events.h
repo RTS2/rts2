@@ -77,7 +77,7 @@ class Events
 		// directories mapping
 		std::vector <DirectoryMapping> dirs;
 
-		Events (XmlRpcd *_master);
+		Events (HttpD *_master);
 
 		/**
 		 * Load a list of StateChangeCommand from file.
@@ -96,7 +96,7 @@ class Events
 		const char *getDefaultImageLabel () { return defImageLabel; }
 
 	private:
-		XmlRpcd *master;
+		HttpD *master;
 
 		char *defImageLabel;
 

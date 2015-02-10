@@ -36,7 +36,7 @@ using namespace XmlRpc;
 namespace rts2xmlrpc
 {
 
-class XmlRpcd;
+class HttpD;
 
 /**
  * Big Brother server communication.
@@ -46,7 +46,7 @@ class XmlRpcd;
 class BBServer:public rts2core::Object
 {
 	public:
-		BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency);
+		BBServer (HttpD *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency);
 		~BBServer ();
 
 		virtual void postEvent (rts2core::Event *event);
@@ -88,7 +88,7 @@ class BBServer:public rts2core::Object
 		const char *_uri;
 
 		XmlRpcClient *client;
-		XmlRpcd *server;
+		HttpD *server;
 
 		pthread_t send_thread;
 		pthread_t push_thread;

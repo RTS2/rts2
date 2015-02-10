@@ -25,7 +25,7 @@ EXEC SQL include sqlca;
 
 using namespace rts2xmlrpc;
 
-void StateChangeRecord::run (XmlRpcd *_master, rts2core::Connection *_conn, double validTime)
+void StateChangeRecord::run (HttpD *_master, rts2core::Connection *_conn, double validTime)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id = dbValueId;

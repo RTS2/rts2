@@ -126,7 +126,7 @@ int BBAPI::scheduleTarget (time_t &ret_from, XmlRpc::HttpParams *params, bool on
 	}
 
 	// find free spots
-	XmlRpcd *master = (XmlRpcd*) getMasterApp ();
+	HttpD *master = (HttpD*) getMasterApp ();
 	connections_t::iterator iter = master->getConnections ()->begin ();
 
 	master->getOpenConnectionType (DEVICE_TYPE_SELECTOR, iter);
@@ -165,7 +165,7 @@ int BBAPI::scheduleTarget (time_t &ret_from, XmlRpc::HttpParams *params, bool on
 	double JD = ln_get_julian_from_timet (&f);
 	time_t tto = to;
 	double JD_end = ln_get_julian_from_timet (&tto);
-	double dur = rts2script::getMaximalScriptDuration (tar, ((XmlRpcd *) getMasterApp ())->cameras);
+	double dur = rts2script::getMaximalScriptDuration (tar, ((HttpD *) getMasterApp ())->cameras);
 	if (dur < 60)
 		dur = 60;
 	dur /= 86400.0;
@@ -256,5 +256,5 @@ void BBAPI::confirmSchedule (rts2db::Target *tar, double f, int observatory_id, 
 	if (p.save ())
 		throw JSONException ("cannot create plan schedule");
 
-	((XmlRpcd*) getMasterApp ())->confirmSchedule (p);
+	((HttpD*) getMasterApp ())->confirmSchedule (p);
 }

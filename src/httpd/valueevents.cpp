@@ -24,7 +24,7 @@
 
 using namespace rts2xmlrpc;
 
-ValueChange::ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):Object ()
+ValueChange::ValueChange (HttpD *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):Object ()
 {
 	master = _master;
 	deviceName = ci_string (_deviceName.c_str ());

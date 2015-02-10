@@ -40,7 +40,7 @@ namespace rts2xmlrpc
 class ValueChange:public rts2core::Object
 {
 	public:
-		ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *test);
+		ValueChange (HttpD *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *test);
 
 		/**
 		 * Catch EVENT_XMLRPC_VALUE_TIMER events.
@@ -74,7 +74,7 @@ class ValueChange:public rts2core::Object
 		}
 
 	protected:
-		XmlRpcd *master;
+		HttpD *master;
 
 		ci_string deviceName;
 		ci_string valueName;
@@ -94,7 +94,7 @@ class ValueChange:public rts2core::Object
 class ValueChangeRecord: public ValueChange
 {
 	public:
-		ValueChangeRecord (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test) {}
+		ValueChangeRecord (HttpD *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test) {}
 
 		virtual void run (rts2core::Value *val, double validTime);
 #ifdef RTS2_HAVE_PGSQL
@@ -116,7 +116,7 @@ class ValueChangeRecord: public ValueChange
 class ValueChangeCommand: public ValueChange
 {
 	public:
-		ValueChangeCommand (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test, std::string _commandName):ValueChange (_master, _deviceName, _valueName, _cadency, _test)
+		ValueChangeCommand (HttpD *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test, std::string _commandName):ValueChange (_master, _deviceName, _valueName, _cadency, _test)
 		{
 			commandName = _commandName;
 		}
@@ -134,7 +134,7 @@ class ValueChangeCommand: public ValueChange
 class ValueChangeEmail: public ValueChange, public EmailAction
 {
 	public:
-		ValueChangeEmail (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test), EmailAction () {}
+		ValueChangeEmail (HttpD *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test), EmailAction () {}
 
 		virtual void run (rts2core::Value *val, double validTime);
 };

@@ -130,7 +130,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
   	std::ostringstream os;
 	rts2core::Connection *conn = NULL;
 
-	XmlRpcd * master = (XmlRpcd*) getMasterApp ();
+	HttpD * master = (HttpD*) getMasterApp ();
 
 	// widgets - divs with informations
 	if (vals.size () >= 2 && vals[0] == "w")
@@ -159,7 +159,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 
 			if (vals[0] == "currentimage")
 			{
-				// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
+				// HttpD::createOtherType qurantee that the other connection is XmlDevCameraClient
 				// first try if there is data connection opened, so image data should be streamed in
 				if (DataAbstractRead * lastData = conn->lastDataChannel (chan))
 				{
@@ -170,7 +170,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				}
 			}
 
-			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
+			// HttpD::createOtherType qurantee that the other connection is XmlDevCameraClient
 			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getPreviousImage ();
 			if (image == NULL)
 				throw JSONException ("camera did not take a single image");
@@ -211,9 +211,9 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			int ext = params->getInteger ("e", 0);
 			os << "[";
 			if (ext)
-				os << "[\"" << ((XmlRpcd *) getMasterApp ())->getDeviceName () << "\"," << DEVICE_TYPE_XMLRPC << ']';
+				os << "[\"" << ((HttpD *) getMasterApp ())->getDeviceName () << "\"," << DEVICE_TYPE_XMLRPC << ']';
 			else
-				os << '"' << ((XmlRpcd *) getMasterApp ())->getDeviceName () << '"';
+				os << '"' << ((HttpD *) getMasterApp ())->getDeviceName () << '"';
 			for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
 			{
 				if ((*iter)->getName ()[0] == '\0')
@@ -373,9 +373,9 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				else
 					op = '=';
 				// own connection
-				if (!(strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ())))
+				if (!(strcmp (device, ((HttpD *) getMasterApp ())->getDeviceName ())))
 				{
-					((XmlRpcd *) getMasterApp ())->doOpValue (variable, op, value);
+					((HttpD *) getMasterApp ())->doOpValue (variable, op, value);
 					sendOwnValues (os, params, NAN, ext);
 				}
 				else
@@ -416,13 +416,13 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				double v = params->getDouble ("v", NAN);
 				if (isnan (v))
 					throw rts2core::Error ("missing or invalid v parameter");
-				rts2core::Value *val = ((XmlRpcd *) getMasterApp())->getOwnValue (vn);
+				rts2core::Value *val = ((HttpD *) getMasterApp())->getOwnValue (vn);
 				if (val == NULL)
 					throw rts2core::Error (std::string ("cannot find variable with name ") + vn);
 				if (!(val->getValueExtType () == RTS2_VALUE_STAT && val->getValueBaseType () == RTS2_VALUE_DOUBLE))
 					throw rts2core::Error ("value is not statistical double type");
 				((rts2core::ValueDoubleStat *) val)->addValue (v, num);
-				((XmlRpcd *)getMasterApp ())->sendValueAll (val);
+				((HttpD *)getMasterApp ())->sendValueAll (val);
 				sendOwnValues (os, params, NAN, false);
 			}
 			else if (vals[0] == "statclear")
@@ -430,13 +430,13 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				const char *vn = params->getString ("n","");
 				if (strlen (vn) == 0)
 					throw rts2core::Error ("empty n parameter");
-				rts2core::Value *val = ((XmlRpcd *) getMasterApp())->getOwnValue (vn);
+				rts2core::Value *val = ((HttpD *) getMasterApp())->getOwnValue (vn);
 				if (val == NULL)
 					throw rts2core::Error (std::string ("cannot find variable with name ") + vn);
 				if (!(val->getValueExtType () == RTS2_VALUE_STAT && val->getValueBaseType () == RTS2_VALUE_DOUBLE))
 					throw rts2core::Error ("value is not statistical double type");
 				((rts2core::ValueDoubleStat *) val)->clearStat ();
-				((XmlRpcd *)getMasterApp ())->sendValueAll (val);
+				((HttpD *)getMasterApp ())->sendValueAll (val);
 				sendOwnValues (os, params, NAN, false);
 			}
 			// set multiple values
@@ -461,9 +461,9 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 						std::string vn = dn.substr (dot + 1);
 						if (!canWriteDevice (devn))
 							throw JSONException ("not authorized to write to the device");
-						if (devn == ((XmlRpcd *) getMasterApp ())->getDeviceName ())
+						if (devn == ((HttpD *) getMasterApp ())->getDeviceName ())
 						{
-							((XmlRpcd *) getMasterApp ())->doOpValue (vn.c_str (), '=', iter->getValue ());
+							((HttpD *) getMasterApp ())->doOpValue (vn.c_str (), '=', iter->getValue ());
 							own_calls++;
 						}
 						else
@@ -526,7 +526,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				rts2json::sendConnectionValues (os, master->getSingleCentralConn (), params, from, ext);
 
 				// send own values first
-				os << "},\"" << ((XmlRpcd *) getMasterApp ())->getDeviceName () << "\":{";
+				os << "},\"" << ((HttpD *) getMasterApp ())->getDeviceName () << "\":{";
 				sendOwnValues (os, params, from, ext);
 				os << '}';
 
@@ -545,7 +545,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				const char *device = params->getString ("d","");
 				bool ext = params->getInteger ("e", 0);
 				double from = params->getDouble ("from", 0);
-				if (strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ()))
+				if (strcmp (device, ((HttpD *) getMasterApp ())->getDeviceName ()))
 				{
 					if (isCentraldName (device))
 						conn = master->getSingleCentralConn ();
@@ -586,7 +586,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				bool ext = params->getInteger ("e", 0);
 				if (cmd[0] == '\0')
 					throw JSONException ("empty command");
-				if (strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ()))
+				if (strcmp (device, ((HttpD *) getMasterApp ())->getDeviceName ()))
 				{
 					if (isCentraldName (device))
 						conn = master->getSingleCentralConn ();
@@ -611,7 +611,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				else
 				{
 					if (!strcmp (cmd, "autosave"))
-						((XmlRpcd *) getMasterApp ())->autosaveValues ();
+						((HttpD *) getMasterApp ())->autosaveValues ();
 					else
 						throw JSONException ("invalid command");
 					sendOwnValues (os, params, NAN, ext);
@@ -657,7 +657,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				conn = master->getOpenConnection (camera);
 				if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 					throw JSONException ("cannot find camera with given name");
-				// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
+				// HttpD::createOtherType qurantee that the other connection is XmlDevCameraClient
 				rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getPreviousImage ();
 				os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
 			}
@@ -720,9 +720,9 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 					"{\"n\":\"Text\",\"t\":\"s\",\"c\":3}],"
 					"\"d\":[";
 
-				for (std::deque <Message>::iterator iter = ((XmlRpcd *) getMasterApp ())->getMessages ().begin (); iter != ((XmlRpcd *) getMasterApp ())->getMessages ().end (); iter++)
+				for (std::deque <Message>::iterator iter = ((HttpD *) getMasterApp ())->getMessages ().begin (); iter != ((HttpD *) getMasterApp ())->getMessages ().end (); iter++)
 				{
-					if (iter != ((XmlRpcd *) getMasterApp ())->getMessages ().begin ())
+					if (iter != ((HttpD *) getMasterApp ())->getMessages ().begin ())
 						os << ",";
 					os << "[" << iter->getMessageTime () << ",\"" << iter->getMessageOName () << "\"," << iter->getType () << ",\"" << iter->getMessageString () << "\"]";
 				}
@@ -748,7 +748,7 @@ void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double fro
 	os << "\"d\":{" << std::fixed;
 	bool first = true;
 
-	XmlRpcd *master = (XmlRpcd *) getMasterApp ();
+	HttpD *master = (HttpD *) getMasterApp ();
 	rts2core::CondValueVector::iterator iter;
 
 	for (iter = master->getValuesBegin (); iter != master->getValuesEnd (); iter++)

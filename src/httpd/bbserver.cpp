@@ -93,7 +93,7 @@ void *pushListener (void *arg)
 	return NULL;
 }
 
-BBServer::BBServer (XmlRpcd *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency):serverApi (_serverApi), observatoryId (_observatoryId), password (_password), cadency (_cadency)
+BBServer::BBServer (HttpD *_server, char *_serverApi, int _observatoryId, char *_password, int _cadency):serverApi (_serverApi), observatoryId (_observatoryId), password (_password), cadency (_cadency)
 {
 	server = _server;
 	client = NULL;

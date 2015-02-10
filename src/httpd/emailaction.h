@@ -28,7 +28,7 @@
 namespace rts2xmlrpc
 {
 
-class XmlRpcd;
+class HttpD;
 
 class EmailAction
 {
@@ -37,7 +37,7 @@ class EmailAction
 
 		void parse (xmlNodePtr emailNode, const char *defaultDeviceName);
 
-		virtual void run (XmlRpcd *_master);
+		virtual void run (HttpD *_master);
 
 	private:
 		std::list <std::string> to;

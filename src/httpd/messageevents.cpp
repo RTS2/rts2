@@ -24,7 +24,7 @@
 
 using namespace rts2xmlrpc;
 
-MessageEvent::MessageEvent (XmlRpcd *_master, std::string _deviceName, int _type)
+MessageEvent::MessageEvent (HttpD *_master, std::string _deviceName, int _type)
 {
 	master = _master;
 	deviceName = ci_string (_deviceName.c_str ());

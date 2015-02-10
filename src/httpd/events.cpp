@@ -30,7 +30,7 @@
 
 using namespace rts2xmlrpc;
 
-Events::Events (XmlRpcd *_master)
+Events::Events (HttpD *_master)
 {
 	master = _master;
 	defImageLabel = NULL;

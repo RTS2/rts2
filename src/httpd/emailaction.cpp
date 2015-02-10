@@ -69,7 +69,7 @@ std::string joinStrings (std::list <std::string> l, char jc = ',')
 	return ret;
 }
 
-void EmailAction::run (XmlRpcd *_master)
+void EmailAction::run (HttpD *_master)
 {
 	if (_master->sendEmails ())
 	{

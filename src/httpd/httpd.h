@@ -95,7 +95,7 @@ class XmlDevInterface:public rts2json::DevInterface
 		void valueChanged (rts2core::Value * value);
 
 	protected:
-		virtual XmlRpcd *getMaster () = 0;
+		virtual HttpD *getMaster () = 0;
 		virtual rts2core::Connection *getConnection () = 0;
 
 	private:
@@ -129,9 +129,9 @@ class XmlDevClient:public rts2image::DevClientWriteImage, XmlDevInterface
 		}
 
 	protected:
-		virtual XmlRpcd *getMaster ()
+		virtual HttpD *getMaster ()
 		{
-			return (XmlRpcd *) rts2core::DevClient::getMaster ();
+			return (HttpD *) rts2core::DevClient::getMaster ();
 		}
 
 		virtual rts2core::Connection *getConnection () { return rts2core::DevClient::getConnection (); }
@@ -163,9 +163,9 @@ class XmlDevTelescopeClient:public rts2image::DevClientTelescopeImage, XmlDevInt
 		}
 
 	protected:
-		virtual XmlRpcd *getMaster ()
+		virtual HttpD *getMaster ()
 		{
-			return (XmlRpcd *) rts2image::DevClientTelescopeImage::getMaster ();
+			return (HttpD *) rts2image::DevClientTelescopeImage::getMaster ();
 		}
 
 		virtual rts2core::Connection *getConnection () { return rts2image::DevClientTelescopeImage::getConnection (); }
@@ -197,9 +197,9 @@ class XmlDevFocusClient:public rts2image::DevClientFocusImage, XmlDevInterface
 		}
 
 	protected:
-		virtual XmlRpcd *getMaster ()
+		virtual HttpD *getMaster ()
 		{
-			return (XmlRpcd *) rts2image::DevClientFocusImage::getMaster ();
+			return (HttpD *) rts2image::DevClientFocusImage::getMaster ();
 		}
 
 		virtual rts2core::Connection *getConnection () { return rts2image::DevClientFocusImage::getConnection (); }
@@ -300,9 +300,9 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 
-		virtual XmlRpcd *getMaster ()
+		virtual HttpD *getMaster ()
 		{
-			return (XmlRpcd *) rts2script::DevClientCameraExec::getMaster ();
+			return (HttpD *) rts2script::DevClientCameraExec::getMaster ();
 		}
 
 		virtual rts2core::Connection *getConnection () { return rts2script::DevClientCameraExec::getConnection (); }
@@ -377,14 +377,14 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
  * @addgroup XMLRPC
  */
 #ifdef RTS2_HAVE_PGSQL
-class XmlRpcd:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
+class HttpD:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 #else
-class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
+class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 #endif
 {
 	public:
-		XmlRpcd (int argc, char **argv);
-		virtual ~XmlRpcd ();
+		HttpD (int argc, char **argv);
+		virtual ~HttpD ();
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
@@ -416,7 +416,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServe
 		std::string addSession (std::string _username, time_t _timeout);
 
 		/**
-		 * If XmlRpcd is allowed to send emails.
+		 * If HttpD is allowed to send emails.
 		 */
 		bool sendEmails () { return send_emails->getValueBool (); }
 

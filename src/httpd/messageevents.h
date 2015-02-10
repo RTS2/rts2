@@ -33,7 +33,7 @@ namespace rts2xmlrpc
 class MessageEvent
 {
 	public:
-		MessageEvent (XmlRpcd *_master, std::string _deviceName, int _type);
+		MessageEvent (HttpD *_master, std::string _deviceName, int _type);
 		virtual ~MessageEvent () {}
 
 		bool isForMessage (rts2core::Message *message) { return deviceName == message->getMessageOName () && message->passMask (type); }
@@ -44,7 +44,7 @@ class MessageEvent
 		virtual void run (rts2core::Message *message) = 0;
 
 	protected:
-		XmlRpcd *master;
+		HttpD *master;
 		ci_string deviceName;
 
 	private:
@@ -59,7 +59,7 @@ class MessageEvent
 class MessageCommand: public MessageEvent
 {
 	public:
-		MessageCommand (XmlRpcd *_master, std::string _deviceName, int _type, std::string _commandName):MessageEvent (_master, _deviceName, _type)
+		MessageCommand (HttpD *_master, std::string _deviceName, int _type, std::string _commandName):MessageEvent (_master, _deviceName, _type)
 		{
 			commandName = _commandName;
 		}
@@ -77,7 +77,7 @@ class MessageCommand: public MessageEvent
 class MessageEmail: public MessageEvent, public EmailAction
 {
 	public:
-		MessageEmail (XmlRpcd *_master, std::string _deviceName, int _type):MessageEvent (_master, _deviceName, _type), EmailAction () {}
+		MessageEmail (HttpD *_master, std::string _deviceName, int _type):MessageEvent (_master, _deviceName, _type), EmailAction () {}
 
 		virtual void run (rts2core::Message *message);
 };

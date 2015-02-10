@@ -64,7 +64,7 @@ void Devices::printList (char* &response, size_t &response_length)
 	"<span id='masterState'></span>\n"
 	"<table>\n";
 
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	for (connections_t::iterator iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
 	{
 		_os << "<tr><td><a href='" << (*iter)->getName () << "/'>" << (*iter)->getName () << "</a></td></tr>\n";
@@ -84,7 +84,7 @@ void Devices::printDevice (const char *device, char* &response, size_t &response
 	printHeader (_os, (std::string ("Value list for ") + device).c_str ());
 	_os << "<table>\n";
 
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn = serv->getOpenConnection (device);
 	if (conn == NULL)
 		throw rts2core::Error ("Cannot find specified device");

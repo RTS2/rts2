@@ -155,7 +155,7 @@ void SessionMethod::execute (struct sockaddr_in *saddr, XmlRpcValue& params, Xml
 	{
 		if (getUsername () == std::string ("session_id"))
 		{
-			if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
+			if (((HttpD *) getMasterApp ())->existsSession (getPassword ()) == false)
 			{
 				throw XmlRpcException ("Invalid session ID");
 			}
@@ -182,17 +182,17 @@ void Login::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue
 		throw XmlRpcException ("Invalid login or password");
 	}
 
-	result = ((XmlRpcd *) getMasterApp ())->addSession (params[0], 3600);
+	result = ((HttpD *) getMasterApp ())->addSession (params[0], 3600);
 }
 
 void DeviceCount::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	result = ((XmlRpcd *) getMasterApp ())->connectionSize ();
+	result = ((HttpD *) getMasterApp ())->connectionSize ();
 }
 
 void ListDevices::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	connections_t::iterator iter;
 	int i = 0;
 	for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++, i++)
@@ -203,7 +203,7 @@ void ListDevices::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 
 void DeviceByType::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	connections_t::iterator iter = serv->getConnections ()->begin ();
 	int i = 0;
 	int type = params[0];
@@ -225,7 +225,7 @@ void DeviceType::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 {
 	if (params.size () != 1)
 		throw XmlRpcException ("Single device name expected");
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 	if (conn == NULL)
 		throw XmlRpcException ("Cannot get device with name " + (std::string)params[0]);
@@ -234,12 +234,12 @@ void DeviceType::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 
 void MasterState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	result = int (((XmlRpcd *) getMasterApp ())->getMasterStateFull ());
+	result = int (((HttpD *) getMasterApp ())->getMasterStateFull ());
 }
 
 void MasterStateIs::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	int ms = ((XmlRpcd *) getMasterApp ())->getMasterStateFull ();
+	int ms = ((HttpD *) getMasterApp ())->getMasterStateFull ();
 	if (params.size () == 1)
 	{
 		if (params[0] == "on")
@@ -274,7 +274,7 @@ void DeviceCommand::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 {
 	if (params.size () != 2)
 		throw XmlRpcException ("Device name and command (as single parameter) expected");
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 	if (conn == NULL)
 		throw XmlRpcException ("Device named " + (std::string)params[0] + " does not exists");
@@ -287,7 +287,7 @@ void DeviceState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	{
 		throw XmlRpcException ("Invalid number of parameters");
 	}
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	std::string p1 = std::string (params[0]);
 
 	rts2core::Connection *conn;
@@ -307,7 +307,7 @@ void DeviceState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 
 void ListValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn;
 	connections_t::iterator iter;
 	rts2core::ValueVector::iterator variter;
@@ -337,7 +337,7 @@ void ListValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 
 void ListValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn;
 	int i = 0;
 	// print results for a single device..
@@ -399,7 +399,7 @@ void ListValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 
 void ListPrettyValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn;
 	int i = 0;
 	// print results for a single device..
@@ -463,7 +463,7 @@ void GetValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	std::string devName = params[0];
 	std::string valueName = params[1];
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn;
 	if (devName.length () == 0)
 	{
@@ -513,7 +513,7 @@ void GetPrettyValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	std::string devName = params[0];
 	std::string valueName = params[1];
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn;
 	if (devName.length () == 0)
 	{
@@ -601,7 +601,7 @@ void SetValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	std::string devName = params[0];
 	std::string valueName = params[1];
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn = serv->getOpenConnection (devName.c_str ());
 	if (!conn)
 	{
@@ -614,7 +614,7 @@ void SetValueByType::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	int devType = params[0];
 	std::string valueName = params[1];
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	connections_t::iterator iter = serv->getConnections ()->begin ();
 	serv->getOpenConnectionType (devType, iter);
 	if (iter == serv->getConnections ()->end ())
@@ -631,7 +631,7 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	std::string devName = params[0];
 	std::string valueName = params[1];
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	HttpD *serv = (HttpD *) getMasterApp ();
 	rts2core::Connection *conn = serv->getOpenConnection (devName.c_str ());
 	if (!conn)
 	{
@@ -700,8 +700,8 @@ void GetMessages::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	int i = 0;
 	XmlRpcValue retVar;
-	for (std::deque <Message>::iterator iter = ((XmlRpcd *) getMasterApp ())->getMessages ().begin ();
-		iter != ((XmlRpcd *) getMasterApp ())->getMessages ().end (); iter++, i++)
+	for (std::deque <Message>::iterator iter = ((HttpD *) getMasterApp ())->getMessages ().begin ();
+		iter != ((HttpD *) getMasterApp ())->getMessages ().end (); iter++, i++)
 	{
 		XmlRpcValue val;
 		Message msg = *iter;
