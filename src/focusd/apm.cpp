@@ -112,16 +112,17 @@ int APMFocuser::sendUDPMessage (const char * _message)
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-        int n = connFocuser->send (_message, response, 20);
+        int n = connFocuser->send (_message, response, 20, !strcmp (_message, "FO99999"));
 
         logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
 
         if (n > 0)
         {
-                if (response[0] == 'F' && response[1] == '0')
+                if (response[0] == 'F' && response[1] == 'O')
 		{
 			std::string res (response);
 			steps = atol (res.substr(2, 6).c_str());
+			logStream (MESSAGE_DEBUG) << "foc. position: " << steps <<sendLog; 
 			position->setValueInteger ((int) steps);
 		}
 	}
