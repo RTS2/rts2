@@ -24,7 +24,7 @@ class ConnAPM:public ConnNoSend
 		ConnAPM (rts2core::Block *_master, const char *_hostname, int _port);
 
 		virtual int init ();
-		int send (const char * in_message, char * out_message, unsigned int length);
+		int send (const char * in_message, char * out_message, unsigned int length, int noreceive = 0);
 
 	private:
 		const char *hostname;
