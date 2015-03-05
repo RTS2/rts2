@@ -150,6 +150,8 @@ int APMRelay::processOption (int in_opt)
 	{
 		case 'e':
 			return 0;
+		case 'F':
+			return 0;
 		default:
 			return Sensor::processOption (in_opt);
 	}
@@ -213,6 +215,7 @@ int APMRelay::sendUDPMessage (const char * _message)
 APMRelay::APMRelay (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
 {
 	addOption ('e', NULL, 1, "IP and port (separated by :)");
+	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
 
 	createValue(relay1, "relay1", "Relay 1 state", true);
 	createValue(relay2, "relay2", "Relay 2 state", true);
@@ -269,6 +272,8 @@ int APMMirror::processOption (int in_opt)
 	{
 		case 'e':
 			return 0;
+		case 'F':
+			return 0;
 		default:
 			return Sensor::processOption (in_opt);
 	}
@@ -305,10 +310,10 @@ int APMMirror::sendUDPMessage (const char * _message)
                         switch (response[3])
                         {
                                 case '0':
-                                        mirror_state = MIRROR_OPENED;
+                                        mirror_state = MIRROR_CLOSED;
                                         break;
                                 case '1':
-                                        mirror_state = MIRROR_CLOSED;
+                                        mirror_state = MIRROR_OPENED;
                                         break;
                         }
                 }
@@ -320,6 +325,7 @@ int APMMirror::sendUDPMessage (const char * _message)
 APMMirror::APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
 {
 	addOption ('e', NULL, 1, "IP and port (separated by :)");
+	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
 
 	createValue (mirror, "mirror", "Mirror cover state", true);
 
@@ -331,7 +337,7 @@ int main (int argc, char **argv)
 	rts2core::MultiDev md;
 	rts2filterd::APMFilter *filter = new rts2filterd::APMFilter (argc, argv);
 	md.push_back (filter);
-	md.push_back (new APMRelay (argc, argv, "M1", filter));
-	md.push_back (new APMMirror (argc, argv, "R1", filter));
+	md.push_back (new APMRelay (argc, argv, "R1", filter));
+	md.push_back (new APMMirror (argc, argv, "M1", filter));
 	return md.run ();
 }
