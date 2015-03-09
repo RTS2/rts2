@@ -40,13 +40,16 @@ namespace rts2sensord
 class APMRelay : public Sensor
 {
 	public:
-		APMRelay (int argc, char **argv, rts2filterd::APMFilter *filter);
+		APMRelay (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter);
 		virtual int initHardware ();
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual int info ();
+	protected:
+		virtual int processOption (int in_opt);
 	private:
 		int relays_state;
 		rts2core::ConnAPM *connRelay;
+		rts2filterd::APMFilter *filter;
 		rts2core::ValueString *relay1, *relay2;
 		int relayOn (int n);
 		int relayOff (int n);
@@ -61,13 +64,16 @@ class APMRelay : public Sensor
 class APMMirror : public Sensor
 {
 	public:
-		APMMirror (int argc, char **argv, rts2filterd::APMFilter *filter);
+		APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter);
 		virtual int initHardware ();
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual int info ();
+	protected:
+		virtual int processOption (int in_opt);
 	private:
 		int mirror_state;
                 rts2core::ConnAPM *connMirror;
+		rts2filterd::APMFilter *filter;
                 rts2core::ValueString *mirror;
                 int open ();
                 int close ();
@@ -80,6 +86,8 @@ using namespace rts2sensord;
 
 int APMRelay::initHardware ()
 {
+	connRelay = filter->connFilter;
+
 	sendUDPMessage ("A999");
 
 	return 0;
@@ -134,6 +142,19 @@ int APMRelay::info ()
 	sendValueAll(relay2);
 
 	return Sensor::info();
+}
+
+int APMRelay::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'e':
+			return 0;
+		case 'F':
+			return 0;
+		default:
+			return Sensor::processOption (in_opt);
+	}
 }
 
 int APMRelay::relayOn (int n)
@@ -191,18 +212,23 @@ int APMRelay::sendUDPMessage (const char * _message)
 	return 0;
 }
 
-APMRelay::APMRelay (int argc, char **argv, rts2filterd::APMFilter *filter): Sensor (argc, argv)
+APMRelay::APMRelay (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
 {
-	connRelay = filter->connFilter;
+	addOption ('e', NULL, 1, "IP and port (separated by :)");
+	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
 
 	createValue(relay1, "relay1", "Relay 1 state", true);
 	createValue(relay2, "relay2", "Relay 2 state", true);
+
+	filter = in_filter;
 }
 
 /*------------------------------------------------------------------------------------------*/
 
 int APMMirror::initHardware ()
 {
+	connMirror = filter->connFilter;
+
 	return info();
 }
 
@@ -240,6 +266,19 @@ int APMMirror::info ()
 	return Sensor::info ();
 }
 
+int APMMirror::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'e':
+			return 0;
+		case 'F':
+			return 0;
+		default:
+			return Sensor::processOption (in_opt);
+	}
+}
+
 int APMMirror::open ()
 {
 	sendUDPMessage ("C001");
@@ -271,10 +310,10 @@ int APMMirror::sendUDPMessage (const char * _message)
                         switch (response[3])
                         {
                                 case '0':
-                                        mirror_state = MIRROR_OPENED;
+                                        mirror_state = MIRROR_CLOSED;
                                         break;
                                 case '1':
-                                        mirror_state = MIRROR_CLOSED;
+                                        mirror_state = MIRROR_OPENED;
                                         break;
                         }
                 }
@@ -283,11 +322,14 @@ int APMMirror::sendUDPMessage (const char * _message)
         return 0;
 }
 
-APMMirror::APMMirror (int argc, char **argv, rts2filterd::APMFilter *filter): Sensor (argc, argv)
+APMMirror::APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
 {
-	connMirror = filter->connFilter;
+	addOption ('e', NULL, 1, "IP and port (separated by :)");
+	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
 
 	createValue (mirror, "mirror", "Mirror cover state", true);
+
+	filter = in_filter;
 }
 
 int main (int argc, char **argv)
@@ -295,7 +337,7 @@ int main (int argc, char **argv)
 	rts2core::MultiDev md;
 	rts2filterd::APMFilter *filter = new rts2filterd::APMFilter (argc, argv);
 	md.push_back (filter);
-	md.push_back (new APMRelay (argc, argv, filter));
-	md.push_back (new APMMirror (argc, argv, filter));
+	md.push_back (new APMRelay (argc, argv, "R1", filter));
+	md.push_back (new APMMirror (argc, argv, "M1", filter));
 	return md.run ();
 }

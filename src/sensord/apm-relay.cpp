@@ -20,10 +20,12 @@
 
 #include "connection/apm.h"
 
-#define	RELAYS_OFF	1
+#define	RELAY1_OFF	1
 #define RELAY1_ON	2
-#define	RELAY2_ON	3
-#define RELAYS_ON	4
+#define	RELAY2_OFF	3
+#define RELAY2_ON	4
+#define RELAYS_OFF	5
+#define RELAYS_ON	6
 
 namespace rts2sensord
 {
@@ -119,17 +121,19 @@ int APMRelay::info ()
 			relay1->setValueString("off");
 			relay2->setValueString("off");
 			break;
-		case RELAY1_ON:
-			relay1->setValueString("on");
-			relay2->setValueString("off");
-			break;
-		case RELAY2_ON:
-			relay1->setValueString("off");
-			relay2->setValueString("on");
-			break;
 		case RELAYS_ON:
 			relay1->setValueString("on");
 			relay2->setValueString("on");
+		case RELAY1_ON:
+			relay1->setValueString("on");
+			break;
+		case RELAY1_OFF:
+			relay1->setValueString("off");
+		case RELAY2_ON:
+			relay2->setValueString("on");
+			break;
+		case RELAY2_OFF:
+			relay2->setValueString("off");
 			break;
 	}
 
@@ -143,20 +147,22 @@ int APMRelay::relayOn (int n)
 {
 	char *cmd = (char *)malloc(4*sizeof (char));
 
-	sprintf (cmd, "A00%d", n);
+	sprintf (cmd, "A0%d1", n);
 
 	sendUDPMessage (cmd);
-	sendUDPMessage ("A999");
 
-	return 0;
+	return info();
 }
 
 int APMRelay::relayOff (int n)
 {
-	// current version of firmware doens't allow separate switch off
-	sendUDPMessage ("A000");
-	sendUDPMessage ("A999");
-	return 0;
+	char *cmd = (char *)malloc(4*sizeof (char));
+
+	sprintf (cmd, "A0%d0", n);
+
+	sendUDPMessage (cmd);
+	
+	return info();
 }
 
 int APMRelay::sendUDPMessage (const char * _message)
@@ -173,20 +179,19 @@ int APMRelay::sendUDPMessage (const char * _message)
 	{
 		if (response[0] == 'A' && response[1] == '9')
 		{
-			switch (response[3])
+			if (response[2] == '3')
 			{
-				case '0':
-					relays_state = RELAYS_OFF;
-					break;
-				case '1':
-					relays_state = RELAY1_ON;
-					break;
-				case '2':
-					relays_state = RELAY2_ON;
-					break;
-				case '3':
-					relays_state = RELAYS_OFF;
-					break;
+				relays_state = (response[3] == '0') ? RELAYS_OFF : RELAYS_ON;
+			}
+		
+			if (response[2] == '2')
+			{
+				relays_state = (response[3] == '0') ? RELAY2_OFF : RELAY2_ON;
+			}
+
+			if (response[3] == '1')
+			{
+				relays_state = (response[3] == '0') ? RELAY1_OFF : RELAY1_ON;
 			}
 		}
 	}
