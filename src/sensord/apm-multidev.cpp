@@ -28,6 +28,8 @@
 
 #define MIRROR_OPENED	1
 #define MIRROR_CLOSED	2
+#define MIRROR_OPENING	3
+#define MIRROR_CLOSING	4
 
 namespace rts2sensord
 {
@@ -259,6 +261,9 @@ int APMMirror::info ()
                 case MIRROR_CLOSED:
                         mirror->setValueString("closed");
                         break;
+		case MIRROR_MOVING:
+			mirror->setValueString("moving");
+			break;
 	}
 
 	sendValueAll(mirror);
@@ -283,12 +288,18 @@ int APMMirror::open ()
 {
 	sendUDPMessage ("C001");
 
+	if (mirror_state == MIRROR_CLOSED)
+		mirror_state = MIRROR_OPENING;
+
 	return info ();
 }
 
 int APMMirror::close ()
 {
 	sendUDPMessage ("C000");
+
+	if (mirror_state == MIRROR_OPENED)
+		mirror_state == MIRROR_CLOSING;
 
 	return info ();
 }	
@@ -310,10 +321,12 @@ int APMMirror::sendUDPMessage (const char * _message)
                         switch (response[3])
                         {
                                 case '0':
-                                        mirror_state = MIRROR_CLOSED;
+					if (!mirror_state == MIRROR_OPENING)
+                                        	mirror_state = MIRROR_CLOSED;
                                         break;
                                 case '1':
-                                        mirror_state = MIRROR_OPENED;
+					if (!mirror_state == MIRROR_CLOSING)
+                                        	mirror_state = MIRROR_OPENED;
                                         break;
                         }
                 }
