@@ -57,6 +57,7 @@
 #define OPT_FORCETYPE            OPT_LOCAL + 13
 #define OPT_FORCELATLON          OPT_LOCAL + 14
 #define OPT_EVENINGRESET         OPT_LOCAL + 15
+#define OPT_GEMINIMODELFILE      OPT_LOCAL + 16
 
 
 namespace rts2teld
@@ -632,7 +633,7 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
 	forceLatLon = false;
 
 	addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
-	addOption ('c', NULL, 1, "config file (with model parameters)");
+	addOption (OPT_GEMINIMODELFILE, "gemini-model", 1, "gemini config file (with internal model parameters)");
 	addOption (OPT_BOOTES, "bootes", 0,
 		"BOOTES G-11 (with 1/0 pointing sensor)");
 	addOption (OPT_CORR, "corrections", 1,
@@ -697,7 +698,7 @@ int Gemini::processOption (int in_opt)
 		case 'f':
 			device_file = optarg;
 			break;
-		case 'c':
+		case OPT_GEMINIMODELFILE:
 			geminiConfig = optarg;
 			break;
 		case OPT_BOOTES:
