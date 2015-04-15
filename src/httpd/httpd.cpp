@@ -47,6 +47,8 @@ using namespace Magick;
 #define OPT_TESTSCRIPT          OPT_LOCAL + 78
 #define OPT_DEBUG_TESTSCRIPT    OPT_LOCAL + 79
 #define OPT_BB_QUEUE            OPT_LOCAL + 80
+#define OPT_SSL_CERT            OPT_LOCAL + 81
+#define OPT_SSL_KEY             OPT_LOCAL + 82
 
 using namespace XmlRpc;
 
@@ -486,6 +488,14 @@ int HttpD::processOption (int in_opt)
 		case 'p':
 			rpcPort = atoi (optarg);
 			break;
+#ifdef RTS2_SSL
+		case OPT_SSL_CERT:
+			sslCert = optarg;
+			break;
+		case OPT_SSL_KEY:
+			sslKey = optarg;
+			break;
+#endif
 		case OPT_STATE_CHANGE:
 			stateChangeFile = optarg;
 			break;
@@ -533,6 +543,16 @@ int HttpD::init ()
 
 	if (printDebug ())
 		XmlRpc::setVerbosity (5);
+
+#ifdef RTS2_SSL
+	if (sslKey == "" || sslCert == "") {
+		Configuration::instance ()->getString ("xmlrpcd", "ssl_cert", sslCert, "");
+		Configuration::instance ()->getString ("xmlrpcd", "ssl_key", sslKey, "");
+	}
+	if (sslKey == "" || sslCert == "")
+		abort();
+	initSSL(sslCert.c_str(), sslKey.c_str());
+#endif
 
 	XmlRpcServer::bindAndListen (rpcPort);
 	XmlRpcServer::enableIntrospection (true);
@@ -784,6 +804,10 @@ HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_
 	addOption (OPT_DEBUG_TESTSCRIPT, "debug-test-script", 0, "print test script debugging");
 	addOption (OPT_TESTSCRIPT, "test-script", 1, "test script to run on background");
 	addOption (OPT_BB_QUEUE, "bb-queue", 1, "name of queue used for BB scheduling");
+#ifdef RTS2_SSL
+	addOption (OPT_SSL_CERT, "ssl-cert", 1, "OpenSSL ca certification file");
+	addOption (OPT_SSL_KEY, "ssl-key", 1, "OpenSSL private key file");
+#endif
 	XmlRpc::setVerbosity (0);
 }
 

@@ -12,6 +12,13 @@ extern "C" {
 
 using namespace XmlRpc;
 
+#ifdef RTS2_SSL
+int XmlRpcServer::initSSL(const char *certFile, const char *keyFile)
+{
+	return XmlRpcSocket::initSSL(certFile, keyFile);
+}
+#endif
+
 XmlRpcServer::XmlRpcServer()
 {
 	_introspectionEnabled = false;

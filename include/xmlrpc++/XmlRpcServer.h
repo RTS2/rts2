@@ -14,9 +14,18 @@
 # include <string>
 #endif
 
+#include "rts2-config.h"
+
 #include "XmlRpcDispatch.h"
-#include "XmlRpcSocket.h"
+
+#ifdef RTS2_SSL
+# include "XmlRpcSocketSSL.h"
+#else
+# include "XmlRpcSocket.h"
+#endif
+
 #include "XmlRpcSource.h"
+
 
 namespace XmlRpc
 {
@@ -42,8 +51,13 @@ namespace XmlRpc
 		public:
 			//! Create a server object.
 			XmlRpcServer();
+
 			//! Destructor.
 			virtual ~XmlRpcServer();
+
+#ifdef RTS2_SSL
+		    int initSSL(const char *certFile, const char *keyFile);
+#endif
 
 			//! Specify whether introspection is enabled or not. Default is not enabled.
 			void enableIntrospection(bool enabled=true);

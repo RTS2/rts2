@@ -10,6 +10,7 @@ noinst_HEADERS = \
 	XmlRpcServerMethod.h \
 	XmlRpcServerGetRequest.h \
 	XmlRpcSocket.h \
+	XmlRpcSocketSSL.h \
 	XmlRpcSource.h \
 	XmlRpcUtil.h \
 	XmlRpcValue.h
