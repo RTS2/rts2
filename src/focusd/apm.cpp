@@ -2,6 +2,13 @@
 
 #include "connection/apm.h"
 
+#define	FOCUSER_WAIT	0
+#define	FOCUSER_UP	1
+#define FOCUSER_DOWN	2
+#define FOCUSER_STOP	3
+#define	FOCUSER_CALIB	4
+#define	FOCUSER_LIMIT	5
+
 namespace rts2focusd
 {
 
@@ -17,15 +24,20 @@ class APMFocuser: public Focusd
 
 		virtual int processOption (int in_opt);
                 virtual int initHardware ();
+		virtual int commandAuthorized (rts2core::Connection *conn);
                 virtual int info ();
                 virtual int setTo (double num);
 		virtual double tcOffset () { return 0.;};
 
 	private:
 		long steps;
+		int focuser_state;
 		HostString *host;
                 rts2core::ConnAPM *connFocuser;
+		rts2core::ValueString *focuser;
 		int sendUDPMessage (const char * _message);
+		void calibrate ();
+		void stop ();
 };
 
 };
@@ -37,6 +49,8 @@ APMFocuser::APMFocuser (int argc, char **argv):Focusd (argc, argv)
 	host = NULL;
 
 	addOption ('e', NULL, 1, "APM focuser IP and port (separated by :)");
+
+	createValue (focuser, "foc_state", "Focuser state", true);
 }
 
 APMFocuser::~APMFocuser (void)
@@ -77,9 +91,72 @@ int APMFocuser::initHardware ()
         return 0;
 }
 
+int APMFocuser::commandAuthorized (rts2core::Connection * conn)
+{
+        if (conn->isCommand ("calib"))
+        {
+		calibrate ();
+        }
+
+        if (conn->isCommand ("stop"))
+        {
+		stop ();
+        }
+
+        return 0;
+}
+
+void APMFocuser::calibrate ()
+{
+	sendUDPMessage ("FO99998");
+
+	info ();
+}
+
+void APMFocuser::stop ()
+{
+	sendUDPMessage ("FOSTOP");
+
+	info ();
+}
+
 int APMFocuser::info ()
 {
-	sendUDPMessage ("FO99999");
+	int ret = sendUDPMessage ("FO99999");
+
+	logStream (MESSAGE_DEBUG) << "state: " << (int)ret << sendLog;	
+
+	switch (ret)
+	{
+		case FOCUSER_WAIT:
+			setIdleInfoInterval (0);
+			focuser->setValueString ("waiting");
+			break; 
+		case FOCUSER_UP:
+			setIdleInfoInterval (1);
+			focuser->setValueString ("moving up");
+			break;
+		case FOCUSER_DOWN:
+			setIdleInfoInterval (1);
+			focuser->setValueString ("moving down");
+			break;
+		case FOCUSER_STOP:
+			setIdleInfoInterval (0);
+			focuser->setValueString ("stopped");
+			break;
+		case FOCUSER_CALIB:
+			setIdleInfoInterval (1);
+			focuser->setValueString ("calibration");
+			break;
+		case FOCUSER_LIMIT:
+			setIdleInfoInterval (0);
+			focuser->setValueString ("limit reached");
+			break;
+		default:
+			focuser->setValueString ("unknown");
+	}
+
+	sendValueAll (focuser);
 
         return Focusd::info ();
 }
@@ -88,9 +165,11 @@ int APMFocuser::setTo (double num)
 {
 	char * pos = (char *)malloc (5*sizeof(char));
 
-	sprintf (pos, "FO%.0f", num);
+	sprintf (pos, "FO%05d", (int)num);
 
 	sendUDPMessage (pos);
+
+	info ();
 
 	return 0;
 }
@@ -107,27 +186,37 @@ bool APMFocuser::isAtStartPosition ()
 
 int APMFocuser::sendUDPMessage (const char * _message)
 {
-
+	int ret = -1;
+	bool wait = false;
 	char *response = (char *)malloc(20*sizeof(char));
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-        int n = connFocuser->send (_message, response, 20, !strcmp (_message, "FO99999"));
+	if (!strcmp (_message, "FO99998") || !strcmp (_message, "FOSTOP"))
+		wait = true;
 
-        logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
+        // int n = connFocuser->send (_message, response, 20, strcmp (_message, "FO99999"));
+
+	int n = connFocuser->send (_message, response, 20, wait);
 
         if (n > 0)
         {
+		std::string res (response);
+
+		logStream (MESSAGE_DEBUG) << "response: " << res.substr(0,n) << sendLog;
+	
                 if (response[0] == 'F' && response[1] == 'O')
 		{
-			std::string res (response);
 			steps = atol (res.substr(2, 6).c_str());
-			logStream (MESSAGE_DEBUG) << "foc. position: " << steps <<sendLog; 
+			logStream (MESSAGE_DEBUG) << "foc. position: " << steps << sendLog; 
 			position->setValueInteger ((int) steps);
+
+			if (response[7] == '-') 
+				ret = atoi (res.substr(8,1).c_str());
 		}
 	}
 	
-	return 0;
+	return ret;
 }
 
 int main (int argc, char **argv)
