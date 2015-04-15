@@ -814,7 +814,7 @@ int ModelTarget::calPosition ()
 	switch (modelStepType)
 	{
 		case -2:
-			hrz_poz.az = (az_stop - az_start) * random_num ();
+			hrz_poz.az = az_start + (az_stop - az_start) * random_num ();
 			hrz_poz.alt = 0;
 			m_alt = rts2core::Configuration::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
 			if (m_alt < alt_start)
