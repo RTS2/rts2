@@ -201,6 +201,8 @@ class Sitech:public GEM
 
 		uint8_t xbits;
 		uint8_t ybits;
+
+		bool wasStopped;
 };
 
 }
@@ -221,6 +223,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Y
 	device_file = "/dev/ttyUSB0";
 
 	acMargin = 0;
+
+	wasStopped = false;
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -295,6 +299,8 @@ void Sitech::fullStop (void)
 		serConn->siTechCommand ('X', "N");
 		usleep (100000);
 		serConn->siTechCommand ('Y', "N");
+
+		wasStopped = true;
 	}
 	catch (rts2core::Error er)
 	{
@@ -515,6 +521,8 @@ int Sitech::startResync ()
 	if (ret)
 		return -1;
 
+	wasStopped = false;
+
 	t_ra_pos->setValueLong (ac);
 	t_dec_pos->setValueLong (dc);
 
@@ -525,6 +533,9 @@ int Sitech::startResync ()
 
 int Sitech::isMoving ()
 {
+	if (wasStopped)
+		return -1;
+
 	if (getTargetDistance () > trackingDist->getValueDouble ())
 	{
 		// if too far away, update target
