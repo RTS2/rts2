@@ -982,7 +982,7 @@ void Zelio::sendSwInfo (uint16_t regs[2])
 				logStream (MESSAGE_INFO) << "motor open right changed value to " << (bool) (regs[1] & ZO_MOT_OPEN) << sendLog;
 			motOpenRight->setValueBool (regs[1] & ZO_MOT_OPEN);
 
-			if (motOpenRight->getValueBool () != (bool) (regs[1] & ZO_MOT_CLOSE))
+			if (motCloseRight->getValueBool () != (bool) (regs[1] & ZO_MOT_CLOSE))
 				logStream (MESSAGE_INFO) << "motor close right changed value to " << (bool) (regs[1] & ZO_MOT_CLOSE) << sendLog;
 			motCloseRight->setValueBool (regs[1] & ZO_MOT_CLOSE);
 
@@ -1017,7 +1017,7 @@ void Zelio::sendSwInfo (uint16_t regs[2])
 				logStream (MESSAGE_INFO) << "motor open " << (zelioModel == ZELIO_SIMPLE ? "" : "left ") << "changed value to " << (bool) (regs[0] & ZO_MOT_OPEN) << sendLog;
 			motOpenLeft->setValueBool (regs[0] & ZO_MOT_OPEN);
 
-			if (motOpenLeft->getValueBool () != (bool) (regs[0] & ZO_MOT_CLOSE))
+			if (motCloseLeft->getValueBool () != (bool) (regs[0] & ZO_MOT_CLOSE))
 				logStream (MESSAGE_INFO) << "motor close " << (zelioModel == ZELIO_SIMPLE ? "" : "left ") << "changed value to " << (bool) (regs[0] & ZO_MOT_CLOSE) << sendLog;
 			motCloseLeft->setValueBool (regs[0] & ZO_MOT_CLOSE);
 
