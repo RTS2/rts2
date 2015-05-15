@@ -31,7 +31,7 @@ import math
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn, verbose=False, blind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None):
+def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None):
 	c = rts2.Rts2Comm()
 
 	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir)
