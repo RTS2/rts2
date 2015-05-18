@@ -36,6 +36,9 @@ class GEM: public Telescope
 		virtual ~GEM (void);
 
 	protected:
+
+		rts2core::ValueSelection *flipping; //* flipping strategy - shortest, preffer same, preffer opposite,..
+
 		/**
 		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
 		 */
