@@ -90,6 +90,8 @@ class Sitech:public GEM
 			return isMoving ();
 		}
 
+		virtual int setTracking (bool track);
+
 		virtual double estimateTargetTime ()
 		{
 			return getTargetDistance () * 2.0;
@@ -307,6 +309,7 @@ void Sitech::postEvent (rts2core::Event *event)
 				break;
 			sitechStartTracking (false);
 			addTimer (5, event);
+			return;
 			break;
 	}
 	GEM::postEvent (event);
@@ -538,6 +541,8 @@ int Sitech::initValues ()
 
 int Sitech::startResync ()
 {
+	deleteTimers (RTS2_SITECH_TIMER);
+
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
 	int ret = sky2counts (ac, dc);
 	if (ret)
@@ -579,6 +584,19 @@ int Sitech::endMove ()
 {
 	sitechStartTracking (true);
 	return GEM::endMove ();
+}
+
+int Sitech::setTracking (bool track)
+{
+	if (track)
+	{
+		sitechStartTracking (true);
+	}
+	else
+	{
+		fullStop ();
+	}
+	return GEM::setTracking (track);
 }
 
 int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)

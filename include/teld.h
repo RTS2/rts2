@@ -786,6 +786,14 @@ class Telescope:public rts2core::Device
 		double getTargetReached () { return targetReached->getValueDouble (); }
 
 		/**
+		 * Set telescope tracking.
+		 *
+		 * @param track   if true, tracking is set to on
+		 * @return 0 on success, -1 on error
+		 */
+		virtual int setTracking (bool track) { return 0; }
+
+		/**
 		 * Set differential tracking values. All inputs is in degrees / hour.
 		 *
 		 * @param dra  differential tracking in RA
