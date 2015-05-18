@@ -343,6 +343,9 @@
 /* share prefix */
 #undef SHARE_PREFIX
 
+/* using openssl in httpd */
+#undef SSL
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
