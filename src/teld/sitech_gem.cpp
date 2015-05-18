@@ -26,11 +26,13 @@
 #include "sitech.h"
 #include "connection/sitech.h"
 
+#define RTS2_SITECH_TIMER       RTS2_LOCAL_EVENT + 1220
+
 // SITech counts/servero loop -> speed value
-#define SPEED_MULTI     65536
+#define SPEED_MULTI             65536
 
 // Crystal frequency
-#define CRYSTAL_FREQ    96000000
+#define CRYSTAL_FREQ            96000000
 
 namespace rts2teld
 {
@@ -46,6 +48,8 @@ class Sitech:public GEM
 		Sitech (int argc, char **argv);
 		~Sitech (void);
 
+		virtual void postEvent (rts2core::Event *event);
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -57,6 +61,8 @@ class Sitech:public GEM
 		virtual int info ();
 
 		virtual int startResync ();
+
+		virtual int endMove ();
 
 		virtual int stopMove ()
 		{
@@ -112,8 +118,9 @@ class Sitech:public GEM
 
 		/**
 		 * Starts mount tracking - endless speed limited pointing.
+                 * Called periodically to make sure we stay on target.
 		 */
-		void sitechStartTracking ();
+		void sitechStartTracking (bool startTimer);
 
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
@@ -209,7 +216,7 @@ class Sitech:public GEM
 
 using namespace rts2teld;
 
-Sitech::Sitech (int argc, char **argv):GEM (argc,argv), radec_status (), radec_Yrequest (), radec_Xrequest ()
+Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_status (), radec_Yrequest (), radec_Xrequest ()
 {
 	unlockPointing ();
 
@@ -291,6 +298,20 @@ Sitech::~Sitech(void)
 	serConn = NULL;
 }
 
+void Sitech::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case RTS2_SITECH_TIMER:
+			if (wasStopped)
+				break;
+			sitechStartTracking (false);
+			addTimer (5, event);
+			break;
+	}
+	GEM::postEvent (event);
+}
+
 /* Full stop */
 void Sitech::fullStop (void)
 { 
@@ -301,6 +322,7 @@ void Sitech::fullStop (void)
 		serConn->siTechCommand ('Y', "N");
 
 		wasStopped = true;
+		deleteTimers (RTS2_SITECH_TIMER);
 	}
 	catch (rts2core::Error er)
 	{
@@ -494,7 +516,7 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		sitechStartTracking ();
+		sitechStartTracking (true);
 		return 0;
 	}
 	else if (conn->isCommand ("si_strack"))
@@ -503,7 +525,7 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 			return -2;
 		ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
 		sendValueAll (ra_track_speed);
-		sitechStartTracking ();
+		sitechStartTracking (true);
 		return 0;
 	}
 	return GEM::commandAuthorized (conn);
@@ -550,8 +572,13 @@ int Sitech::isMoving ()
 	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
 	sendValueAll (ra_track_speed);
 
-	sitechStartTracking ();
 	return -2;
+}
+
+int Sitech::endMove ()
+{
+	sitechStartTracking (true);
+	return GEM::endMove ();
 }
 
 int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -607,7 +634,7 @@ void Sitech::sitechMove (int32_t ac, int32_t dc)
 	serConn->sendXAxisRequest (radec_Xrequest);
 }
 
-void Sitech::sitechStartTracking ()
+void Sitech::sitechStartTracking (bool startTimer)
 {
 	radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
 	radec_Xrequest.x_speed = 0;
@@ -625,6 +652,13 @@ void Sitech::sitechStartTracking ()
 	xbits |= (0x01 << 4);
 
 	serConn->sendXAxisRequest (radec_Xrequest);
+
+	// make sure we will be called again
+	if (startTimer && (wasStopped == false))
+	{
+		deleteTimers (RTS2_SITECH_TIMER);
+		addTimer (5, new rts2core::Event (RTS2_SITECH_TIMER));
+	}
 }
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
