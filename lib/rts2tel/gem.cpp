@@ -128,7 +128,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				break;
 			// same
 			case 1:
-				if (telFlip->getValueInteger () == 1)
+				if (flip_move_start == 1)
 				{
 					t_ac = tf_ac;
 					t_dc = tf_dc;
@@ -136,7 +136,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				break;
 			// opposite
 			case 2:
-				if (telFlip->getValueInteger () == 0)
+				if (flip_move_start == 0)
 				{
 					t_ac = tf_ac;
 					t_dc = tf_dc;
@@ -144,11 +144,11 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				break;
 			// west
 			case 3:
+				t_ac = tf_ac;
+				t_dc = tf_dc;
 				break;
 			// east
 			case 4:
-				t_ac = tf_ac;
-				t_dc = tf_dc;
 				break;
 			// longer
 			case 5:

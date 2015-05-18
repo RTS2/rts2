@@ -203,6 +203,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
+	flip_move_start = 0;
+
 	// default is to aply model corrections
 	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calAberation->setValueBool (false);
@@ -1261,6 +1263,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 		logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
+		flip_move_start = telFlip->getValueInteger ();
 	}
 
 	// everything is OK and prepared, let's move!

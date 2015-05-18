@@ -394,6 +394,8 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueInteger *telFlip;
 
+		int flip_move_start;
+
 		double defaultRotang;
 
 		rts2core::ValueDouble *rotang;
