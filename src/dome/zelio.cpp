@@ -79,11 +79,12 @@
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN   0x8000
 
-#define OPT_BATTERY      OPT_LOCAL + 501
-#define OPT_Q8_NAME      OPT_LOCAL + 502
-#define OPT_Q9_NAME      OPT_LOCAL + 503
-#define OPT_QA_NAME      OPT_LOCAL + 504
-#define OPT_NO_POWER     OPT_LOCAL + 505
+#define OPT_BATTERY                OPT_LOCAL + 501
+#define OPT_Q8_NAME                OPT_LOCAL + 502
+#define OPT_Q9_NAME                OPT_LOCAL + 503
+#define OPT_QA_NAME                OPT_LOCAL + 504
+#define OPT_NO_POWER               OPT_LOCAL + 505
+#define OPT_DONT_RESTART_OPENING   OPT_LOCAL + 506
 
 namespace rts2dome
 {
@@ -123,6 +124,7 @@ class Zelio:public Dome
 	private:
 		HostString *host;
 		int16_t deadManNum;
+		bool restartDuringOpening;
 
 		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR_WOUTPLUGS, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
 
@@ -386,8 +388,29 @@ long Zelio::isOpened ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
-		return -1;
+		logStream (MESSAGE_ERROR) << "isOpened " << err << sendLog;
+
+		if (restartDuringOpening == false)
+			return -1;
+
+		// try to reinit connection
+
+		delete zelioConn;
+
+		sleep (2);
+
+		zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
+		try
+		{
+			zelioConn->init ();
+			zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+			sendSwInfo (regs);
+		}
+		catch (rts2core::ConnError er)
+		{
+			logStream (MESSAGE_ERROR) << er << sendLog;
+			return -1;
+		}
 	}
 	// check states of end switches..
 	switch (zelioModel)
@@ -513,6 +536,9 @@ int Zelio::processOption (int in_opt)
 		case OPT_QA_NAME:
 			QA_name = optarg;
 			break;
+		case OPT_DONT_RESTART_OPENING:
+			restartDuringOpening = false;
+			break;
 		default:
 			return Dome::processOption (in_opt);
 	}
@@ -544,6 +570,7 @@ void Zelio::postEvent (rts2core::Event *event)
 
 Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 {
+	restartDuringOpening = true;
 	zelioModel = ZELIO_UNKNOW;
 	haveRainSignal = true;
 	haveBatteryLevel = false;
@@ -592,6 +619,8 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	addOption (OPT_Q8_NAME, "Q8-name", 1, "name of the Q8 switch");
 	addOption (OPT_Q9_NAME, "Q9-name", 1, "name of the Q9 switch");
 	addOption (OPT_QA_NAME, "QA-name", 1, "name of the QA switch");
+
+	addOption (OPT_DONT_RESTART_OPENING, "dont-restart-opening", 0, "do not restart connection if it breaks during opening");
 }
 
 Zelio::~Zelio (void)
