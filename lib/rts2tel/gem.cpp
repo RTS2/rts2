@@ -113,7 +113,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 #define abs(a) ((a) < 0 ? -1 * (a) : (a))
 		switch (flipping->getValueInteger ())
 		{
-			// shorter
+			// shortest
 			case 0:
 				{
 					int32_t diff_nf = max (abs (ac - t_ac), abs (dc - t_dc));
@@ -144,22 +144,39 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				break;
 			// west
 			case 3:
-				t_ac = tf_ac;
-				t_dc = tf_dc;
 				break;
 			// east
 			case 4:
+				t_ac = tf_ac;
+				t_dc = tf_dc;
 				break;
-			// longer
+			// longest
 			case 5:
 				{
-					int32_t diff_nf = max (abs (ac - t_ac), abs (dc - t_dc));
-					int32_t diff_f = max (abs (ac - tf_ac), abs (dc - tf_dc));
-
-					if (diff_f > diff_nf)
+					switch (flip_longest_path)
 					{
-						t_ac = tf_ac;
-						t_dc = tf_dc;
+						case 0:
+							break;
+						case 1:
+							t_ac = tf_ac;
+							t_dc = tf_dc;
+							break;
+						default:
+							{
+								int32_t diff_nf = max (abs (ac - t_ac), abs (dc - t_dc));
+								int32_t diff_f = max (abs (ac - tf_ac), abs (dc - tf_dc));
+
+								if (diff_f > diff_nf)
+								{
+									t_ac = tf_ac;
+									t_dc = tf_dc;
+									flip_longest_path = 1;
+								}
+								else
+								{
+									flip_longest_path = 0;
+								}
+							}
 					}
 				}
 				break;
@@ -231,12 +248,12 @@ int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip,
 GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
 {
 	createValue (flipping, "FLIPPING", "mount flipping strategy", false, RTS2_VALUE_WRITABLE);
-	flipping->addSelVal ("shorter");
+	flipping->addSelVal ("shortest");
 	flipping->addSelVal ("same");
 	flipping->addSelVal ("opposite");
 	flipping->addSelVal ("west");
 	flipping->addSelVal ("east");
-	flipping->addSelVal ("longer");
+	flipping->addSelVal ("longest");
 
 	createValue (haZero, "_ha_zero", "HA zero offset", false);
 	createValue (decZero, "_dec_zero", "DEC zero offset", false);

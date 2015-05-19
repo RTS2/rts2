@@ -204,6 +204,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
 	flip_move_start = 0;
+	flip_longest_path = -1;
 
 	// default is to aply model corrections
 	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);

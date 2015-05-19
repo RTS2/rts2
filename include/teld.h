@@ -395,6 +395,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueInteger *telFlip;
 
 		int flip_move_start;
+		int flip_longest_path;
 
 		double defaultRotang;
 
