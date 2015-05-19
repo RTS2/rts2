@@ -110,14 +110,13 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	else if (ret == 0 && ret_f == 0)
 	{
 #define max(a,b) ((a) > (b) ? (a) : (b))
-#define abs(a) ((a) < 0 ? -1 * (a) : (a))
 		switch (flipping->getValueInteger ())
 		{
 			// shortest
 			case 0:
 				{
-					int32_t diff_nf = max (abs (ac - t_ac), abs (dc - t_dc));
-					int32_t diff_f = max (abs (ac - tf_ac), abs (dc - tf_dc));
+					int32_t diff_nf = max (fabs (ac - t_ac), fabs (dc - t_dc));
+					int32_t diff_f = max (fabs (ac - tf_ac), fabs (dc - tf_dc));
 
 					if (diff_f < diff_nf)
 					{
@@ -163,8 +162,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 							break;
 						default:
 							{
-								int32_t diff_nf = max (abs (ac - t_ac), abs (dc - t_dc));
-								int32_t diff_f = max (abs (ac - tf_ac), abs (dc - tf_dc));
+								int32_t diff_nf = max (fabs (ac - t_ac), fabs (dc - t_dc));
+								int32_t diff_f = max (fabs (ac - tf_ac), fabs (dc - tf_dc));
 
 								if (diff_f > diff_nf)
 								{
