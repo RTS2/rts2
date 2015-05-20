@@ -997,6 +997,13 @@ double Telescope::estimateTargetTime ()
 	return getTargetDistance () / 2.0;
 }
 
+int Telescope::setTracking (bool track)
+{
+	if (tracking != NULL)
+		tracking->setValueBool (track);
+	return 0;
+}
+
 void Telescope::addParkPosOption ()
 {
 	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
@@ -1447,7 +1454,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
-		tracking->setValueBool (true);
+		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_ha_sg"))
@@ -1479,7 +1486,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
-		tracking->setValueBool (true);
+		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_mpec"))
@@ -1489,7 +1496,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOn ();
 		mpec->setValueString (str);
-		tracking->setValueBool (true);
+		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("altaz"))
@@ -1497,7 +1504,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
-		tracking->setValueBool (false);
+		setTracking (false);
 		return moveAltAz ();
 	}
 	else if (conn->isCommand ("resync"))
@@ -1590,7 +1597,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return -2;
 		modelOn ();
-		tracking->setValueBool (false);
+		setTracking (false);
 		return startPark (conn);
 	}
 	else if (conn->isCommand ("stop"))

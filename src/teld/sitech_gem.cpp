@@ -420,7 +420,7 @@ int Sitech::initHardware ()
 		return -1;
 	}
 
-	sitechVersion->setValueDouble (numread / 100.0);
+	sitechVersion->setValueDouble (numread);
 	sitechSerial->setValueInteger (serConn->getSiTechValue ('Y', "V"));
 
 	if (numread < 112)

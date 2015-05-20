@@ -794,7 +794,7 @@ class Telescope:public rts2core::Device
 		 * @param track   if true, tracking is set to on
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (bool track) { return 0; }
+		virtual int setTracking (bool track);
 
 		/**
 		 * Set differential tracking values. All inputs is in degrees / hour.
