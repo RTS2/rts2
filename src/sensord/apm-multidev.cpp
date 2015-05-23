@@ -21,13 +21,15 @@
 #include "apm-filter.h"
 #include "connection/apm.h"
 
-#define	RELAYS_OFF	1
-#define RELAY1_ON	2
-#define	RELAY2_ON	3
-#define RELAYS_ON	4
+#define RELAY1_OFF      1
+#define RELAY1_ON       2
+#define RELAY2_OFF      3
+#define RELAY2_ON       4
 
-#define MIRROR_OPENED	1
-#define MIRROR_CLOSED	2
+#define MIRROR_OPENED	5
+#define MIRROR_CLOSED	6
+#define MIRROR_OPENING	7
+#define MIRROR_CLOSING	8
 
 namespace rts2sensord
 {
@@ -47,7 +49,7 @@ class APMRelay : public Sensor
 	protected:
 		virtual int processOption (int in_opt);
 	private:
-		int relays_state;
+		int relay1_state, relay2_state;
 		rts2core::ConnAPM *connRelay;
 		rts2filterd::APMFilter *filter;
 		rts2core::ValueString *relay1, *relay2;
@@ -118,24 +120,24 @@ int APMRelay::info ()
 {
 	sendUDPMessage ("A999");
 
-	switch (relays_state)
+	switch (relay1_state)
 	{
-		case RELAYS_OFF:
-			relay1->setValueString("off");
-			relay2->setValueString("off");
+                case RELAY1_ON:
+                        relay1->setValueString("on");
+                        break;
+                case RELAY1_OFF:
+                        relay1->setValueString("off");
 			break;
-		case RELAY1_ON:
-			relay1->setValueString("on");
-			relay2->setValueString("off");
-			break;
-		case RELAY2_ON:
-			relay1->setValueString("off");
-			relay2->setValueString("on");
-			break;
-		case RELAYS_ON:
-			relay1->setValueString("on");
-			relay2->setValueString("on");
-			break;
+	}
+	
+	switch (relay2_state)
+	{
+                case RELAY2_ON:
+                        relay2->setValueString("on");
+                        break;
+                case RELAY2_OFF:
+                        relay2->setValueString("off");
+                        break;
 	}
 
 	sendValueAll(relay1);
@@ -161,19 +163,25 @@ int APMRelay::relayOn (int n)
 {
 	char *cmd = (char *)malloc(4*sizeof (char));
 
-	sprintf (cmd, "A00%d", n);
+	sprintf (cmd, "A0%d1", n);
 
 	sendUDPMessage (cmd);
-	sendUDPMessage ("A999");
 
+	info ();
+	
 	return 0;
 }
 
 int APMRelay::relayOff (int n)
 {
-	// current version of firmware doens't allow separate switch off
-	sendUDPMessage ("A000");
-	sendUDPMessage ("A999");
+	char *cmd = (char *)malloc(4*sizeof (char));
+
+	sprintf (cmd, "A0%d0", n);
+
+	sendUDPMessage (cmd);
+	
+	info ();
+
 	return 0;
 }
 
@@ -191,20 +199,28 @@ int APMRelay::sendUDPMessage (const char * _message)
 	{
 		if (response[0] == 'A' && response[1] == '9')
 		{
-			switch (response[3])
+			if (response[3] == '3')
+                        {
+                                relay1_state = RELAY1_ON;
+				relay2_state = RELAY2_ON;
+                        }
+
+                        if (response[3] == '2')
+                        {
+                                relay1_state = RELAY1_OFF;
+                                relay2_state = RELAY2_ON;
+                        }
+
+                        if (response[3] == '1')
+                        {
+                                relay1_state = RELAY1_ON;
+                                relay2_state = RELAY2_OFF;
+                        }
+
+			if (response[3] == '0')
 			{
-				case '0':
-					relays_state = RELAYS_OFF;
-					break;
-				case '1':
-					relays_state = RELAY1_ON;
-					break;
-				case '2':
-					relays_state = RELAY2_ON;
-					break;
-				case '3':
-					relays_state = RELAYS_OFF;
-					break;
+				relay1_state = RELAY1_OFF;
+				relay2_state = RELAY2_OFF;
 			}
 		}
 	}
@@ -229,7 +245,9 @@ int APMMirror::initHardware ()
 {
 	connMirror = filter->connFilter;
 
-	return info();
+	sendUDPMessage ("C999");
+
+	return 0;
 }
 
 int APMMirror::commandAuthorized (rts2core::Connection * conn)
@@ -259,6 +277,12 @@ int APMMirror::info ()
                 case MIRROR_CLOSED:
                         mirror->setValueString("closed");
                         break;
+		case MIRROR_OPENING:
+			mirror->setValueString("opening");
+			break;
+		case MIRROR_CLOSING:
+			mirror->setValueString("closing");
+			break;
 	}
 
 	sendValueAll(mirror);
@@ -283,14 +307,24 @@ int APMMirror::open ()
 {
 	sendUDPMessage ("C001");
 
-	return info ();
+	if (mirror_state == MIRROR_CLOSED)
+		mirror_state = MIRROR_OPENING;
+
+	info ();
+
+	return 0;
 }
 
 int APMMirror::close ()
 {
 	sendUDPMessage ("C000");
 
-	return info ();
+	if (mirror_state == MIRROR_OPENED)
+		mirror_state = MIRROR_CLOSING;
+
+	info ();
+
+	return 0;
 }	
 
 int APMMirror::sendUDPMessage (const char * _message)
@@ -310,10 +344,12 @@ int APMMirror::sendUDPMessage (const char * _message)
                         switch (response[3])
                         {
                                 case '0':
-                                        mirror_state = MIRROR_CLOSED;
+					if (mirror_state != MIRROR_OPENING)
+                                        	mirror_state = MIRROR_CLOSED;
                                         break;
                                 case '1':
-                                        mirror_state = MIRROR_OPENED;
+					if (mirror_state != MIRROR_CLOSING)
+                                        	mirror_state = MIRROR_OPENED;
                                         break;
                         }
                 }

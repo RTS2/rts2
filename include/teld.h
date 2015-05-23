@@ -394,6 +394,9 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueInteger *telFlip;
 
+		int flip_move_start;
+		int flip_longest_path;
+
 		double defaultRotang;
 
 		rts2core::ValueDouble *rotang;
@@ -784,6 +787,14 @@ class Telescope:public rts2core::Device
 		virtual double estimateTargetTime ();
 
 		double getTargetReached () { return targetReached->getValueDouble (); }
+
+		/**
+		 * Set telescope tracking.
+		 *
+		 * @param track   if true, tracking is set to on
+		 * @return 0 on success, -1 on error
+		 */
+		virtual int setTracking (bool track);
 
 		/**
 		 * Set differential tracking values. All inputs is in degrees / hour.

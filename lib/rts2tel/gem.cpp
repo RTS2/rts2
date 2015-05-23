@@ -106,18 +106,79 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		t_ac = tf_ac;
 		t_dc = tf_dc;
 	}
-	// both ways are possible, compare which is shortest
+	// both ways are possible, decide base on flipping parameter
 	else if (ret == 0 && ret_f == 0)
 	{
 #define max(a,b) ((a) > (b) ? (a) : (b))
-#define abs(a) ((a) < 0 ? -1 * (a) : (a))
-		int32_t diff_nf = max (abs (ac - t_ac), abs (dc - t_dc));
-		int32_t diff_f = max (abs (ac - tf_ac), abs (dc - tf_dc));
-
-		if (diff_f < diff_nf)
+		switch (flipping->getValueInteger ())
 		{
-			t_ac = tf_ac;
-			t_dc = tf_dc;
+			// shortest
+			case 0:
+				{
+					int32_t diff_nf = max (fabs (ac - t_ac), fabs (dc - t_dc));
+					int32_t diff_f = max (fabs (ac - tf_ac), fabs (dc - tf_dc));
+
+					if (diff_f < diff_nf)
+					{
+						t_ac = tf_ac;
+						t_dc = tf_dc;
+					}
+				}
+				break;
+			// same
+			case 1:
+				if (flip_move_start == 1)
+				{
+					t_ac = tf_ac;
+					t_dc = tf_dc;
+				}
+				break;
+			// opposite
+			case 2:
+				if (flip_move_start == 0)
+				{
+					t_ac = tf_ac;
+					t_dc = tf_dc;
+				}
+				break;
+			// west
+			case 3:
+				break;
+			// east
+			case 4:
+				t_ac = tf_ac;
+				t_dc = tf_dc;
+				break;
+			// longest
+			case 5:
+				{
+					switch (flip_longest_path)
+					{
+						case 0:
+							break;
+						case 1:
+							t_ac = tf_ac;
+							t_dc = tf_dc;
+							break;
+						default:
+							{
+								int32_t diff_nf = max (fabs (ac - t_ac), fabs (dc - t_dc));
+								int32_t diff_f = max (fabs (ac - tf_ac), fabs (dc - tf_dc));
+
+								if (diff_f > diff_nf)
+								{
+									t_ac = tf_ac;
+									t_dc = tf_dc;
+									flip_longest_path = 1;
+								}
+								else
+								{
+									flip_longest_path = 0;
+								}
+							}
+					}
+				}
+				break;
 		}
 	}
 	// otherwise, non-flipped is the only way, stay on it..
@@ -185,6 +246,14 @@ int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip,
 
 GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
 {
+	createValue (flipping, "FLIPPING", "mount flipping strategy", false, RTS2_VALUE_WRITABLE);
+	flipping->addSelVal ("shortest");
+	flipping->addSelVal ("same");
+	flipping->addSelVal ("opposite");
+	flipping->addSelVal ("west");
+	flipping->addSelVal ("east");
+	flipping->addSelVal ("longest");
+
 	createValue (haZero, "_ha_zero", "HA zero offset", false);
 	createValue (decZero, "_dec_zero", "DEC zero offset", false);
 
@@ -246,7 +315,7 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	t_ac = ac - diff_ac;
 	t_dc = dc - diff_dc;
 
-	// purpose of following code is to get from west side of flip
+	// purpose of the following code is to get from west side of flip
 	// on S, we prefer negative values
 	if (telLatitude->getValueDouble () < 0)
 	{

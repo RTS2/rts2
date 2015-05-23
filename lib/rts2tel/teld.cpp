@@ -203,6 +203,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
+	flip_move_start = 0;
+	flip_longest_path = -1;
+
 	// default is to aply model corrections
 	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calAberation->setValueBool (false);
@@ -454,7 +457,12 @@ double Telescope::getLstDeg (double JD)
 
 int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
-	if (old_value == mpec)
+	if (old_value == tracking)
+	{
+		if (setTracking (((rts2core::ValueBool *) new_value)->getValueBool ()))
+			return -2;
+	}
+	else if (old_value == mpec)
 	{
 		std::string desc;
 		if (LibnovaEllFromMPC (&mpec_orbit, desc, new_value->getValue ()))
@@ -989,6 +997,13 @@ double Telescope::estimateTargetTime ()
 	return getTargetDistance () / 2.0;
 }
 
+int Telescope::setTracking (bool track)
+{
+	if (tracking != NULL)
+		tracking->setValueBool (track);
+	return 0;
+}
+
 void Telescope::addParkPosOption ()
 {
 	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
@@ -1256,6 +1271,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 		logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
+		flip_move_start = telFlip->getValueInteger ();
 	}
 
 	// everything is OK and prepared, let's move!
@@ -1438,6 +1454,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
+		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_ha_sg"))
@@ -1469,6 +1486,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
+		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_mpec"))
@@ -1478,6 +1496,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOn ();
 		mpec->setValueString (str);
+		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("altaz"))
@@ -1485,6 +1504,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
+		setTracking (false);
 		return moveAltAz ();
 	}
 	else if (conn->isCommand ("resync"))
@@ -1577,6 +1597,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return -2;
 		modelOn ();
+		setTracking (false);
 		return startPark (conn);
 	}
 	else if (conn->isCommand ("stop"))

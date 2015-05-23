@@ -94,6 +94,12 @@ void TermNP::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 	pos->ra += getValueDouble () * tan (ln_deg_to_rad (pos->dec));
 }
 
+// status: OK
+void TermFO::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+{
+	pos->dec += getValueDouble () * cos (ln_deg_to_rad (pos->ra));
+}
+
 // status: ok
 void TermPHH::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {

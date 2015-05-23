@@ -156,6 +156,20 @@ class TermNP:public ModelTerm
 };
 
 /**
+ * Fork flexure.
+ *
+ * @author Jan Strobl
+ *
+ * @ingroup RTS2TPointTerm
+ */
+class TermFO:public ModelTerm
+{
+	public:
+		TermFO (double in_corr, double in_sigma):ModelTerm ("FO", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+};
+
+/**
  * Step size in h (for Paramount, where it's unsure).
  *
  * @author Martin Jelinek <mates@iaa.es>

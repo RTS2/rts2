@@ -609,6 +609,11 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		std::list <const char *> testScripts;
 		bool debugTestscript;
+
+#ifdef RTS2_SSL
+		std::string sslCert;
+		std::string sslKey;
+#endif
 };
 
 
