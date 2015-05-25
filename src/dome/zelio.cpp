@@ -107,7 +107,7 @@ class Zelio:public Dome
 	protected:
 		virtual int processOption (int in_opt);
 
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
@@ -230,7 +230,7 @@ int Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
+		logStream (MESSAGE_ERROR) << "setBitsInput " << err << sendLog;
 		return -1;
 	}
 	return 0;
@@ -285,7 +285,7 @@ int Zelio::startOpen ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
+		logStream (MESSAGE_ERROR) << "startOpen " << err << sendLog;
 		return -1;
 	}
 	deadManNum = 0;
@@ -309,7 +309,11 @@ bool Zelio::isGoodWeather ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
+		logStream (MESSAGE_ERROR) << "isGoodWeather " << err << sendLog;
+		// problem occured during opening, and we can restart connection - wait until
+		// until it is restarted in isOpened call, don't check for values we cannot receive
+		if (restartDuringOpening == true && (getState () & DOME_DOME_MASK) == DOME_OPENING)
+			return Dome::isGoodWeather ();
 		return false;
 	}
 	if (haveRainSignal)
@@ -408,7 +412,7 @@ long Zelio::isOpened ()
 		}
 		catch (rts2core::ConnError er)
 		{
-			logStream (MESSAGE_ERROR) << er << sendLog;
+			logStream (MESSAGE_ERROR) << "isOpened restart " << er << sendLog;
 			return -1;
 		}
 	}
@@ -463,7 +467,7 @@ int Zelio::startClose ()
 	{
 		if (closeErrorReported == false)
 		{
-			logStream (MESSAGE_ERROR) << err << sendLog;
+			logStream (MESSAGE_ERROR) << "startClose " << err << sendLog;
 			closeErrorReported = true;
 		}
 	 	return -1;
@@ -483,7 +487,7 @@ long Zelio::isClosed ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
+		logStream (MESSAGE_ERROR) << "isClosed " << err << sendLog;
 		return -1;
 	}
 	// check states of end switches..
@@ -558,7 +562,7 @@ void Zelio::postEvent (rts2core::Event *event)
 				}
 				catch (rts2core::ConnError err)
 				{
-					logStream (MESSAGE_ERROR) << err << sendLog;
+					logStream (MESSAGE_ERROR) << "EVENT_DEADBUT " << err << sendLog;
 				}
 				deadManNum = (deadManNum + 1) % 2;
 				addTimer (deadTimeout->getValueInteger () / 5.0, event);
@@ -638,7 +642,7 @@ int Zelio::info ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
+		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
 		return -1;
 	}
 
@@ -721,12 +725,8 @@ int Zelio::info ()
 	return Dome::info ();
 }
 
-int Zelio::init ()
+int Zelio::initHardware ()
 {
-	int ret = Dome::init ();
-	if (ret)
-		return ret;
-
 	if (host == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
@@ -743,7 +743,7 @@ int Zelio::init ()
 	}
 	catch (rts2core::ConnError er)
 	{
-		logStream (MESSAGE_ERROR) << er << sendLog;
+		logStream (MESSAGE_ERROR) << "initHardware " << er << sendLog;
 		return -1;
 	}
 
@@ -788,7 +788,7 @@ int Zelio::init ()
 
 	createZelioValues ();
 
-	ret = info ();
+	int ret = info ();
 	if (ret)
 		return ret;
 
@@ -981,7 +981,7 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
+		logStream (MESSAGE_ERROR) << "setValue " << oldValue->getName () << " " << err << sendLog;
 		return -2;
 	}
 	return Dome::setValue (oldValue, newValue);
