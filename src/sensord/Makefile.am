@@ -150,8 +150,7 @@ LDADD += @LIB_GPIB@
 
 else
 
-EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp triax.cpp mm2500.cpp lakeshore-330.cpp lakeshore-340.cpp \
-	sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp
+EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp triax.cpp mm2500.cpp lakeshore-330.cpp lakeshore-340.cpp
 
 endif
 
