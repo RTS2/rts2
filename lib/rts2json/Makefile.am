@@ -7,12 +7,14 @@ librts2json_la_CXXFLAGS = -I../../include @LIBXML_CFLAGS@ -I../ @JPEG_CFLAGS@ @C
 
 noinst_SCRIPTS = images_convert
 
+EXTRA_DIST = images_convert
+
 if PGSQL
 
 librts2json_la_SOURCES += jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp addtargetreq.cpp
 
 else
 
-EXTRA_DIST = jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp addtargetreq.cpp
+EXTRA_DIST += jsondb.cpp altplot.cpp nightreq.cpp obsreq.cpp addtargetreq.cpp
 
 endif
