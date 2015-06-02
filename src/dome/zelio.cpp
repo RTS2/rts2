@@ -453,7 +453,7 @@ int Zelio::startClose ()
 		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 		automode->setValueBool (reg & ZS_SW_AUTO);
 		// reset ignore rain value
-		if (ignoreRain->getValueBool ())
+		if (ignoreRain && ignoreRain->getValueBool ())
 		{
 	  		setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, false);
 			ignoreRain->setValueBool (false);
@@ -921,6 +921,12 @@ void Zelio::createZelioValues ()
 		createValue (rain, "rain", "state of rain sensor", false);
 		createValue (openingIgnoreRain, "opening_ignore", "ignore rain during opening", false);
 		createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false, RTS2_VALUE_WRITABLE);
+	}
+	else
+	{
+		rain = NULL;
+		openingIgnoreRain = NULL;
+		ignoreRain = NULL;
 	}
 
 	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX | RTS2_VALUE_WRITABLE);
