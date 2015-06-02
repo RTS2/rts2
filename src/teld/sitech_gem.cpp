@@ -92,6 +92,8 @@ class Sitech:public GEM
 
 		virtual int setTracking (bool track);
 
+		virtual void setDiffTrack (double dra, double ddec);
+
 		virtual double estimateTargetTime ()
 		{
 			return getTargetDistance () * 2.0;
@@ -167,6 +169,7 @@ class Sitech:public GEM
 
 		// tracking speed in controller units
 		rts2core::ValueDouble *ra_track_speed;
+		rts2core::ValueDouble *dec_track_speed;
 
 		// current PID values
 		rts2core::ValueBool *trackingPIDs;
@@ -267,6 +270,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (dec_speed, "dec_speed", "[deg/s] DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 
 	createValue (ra_track_speed, "ra_track_speed", "RA tracking speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
+	createValue (dec_track_speed, "dec_track_speed", "DEC tracking speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 
 	createValue (trackingPIDs, "tracking_pids", "true if tracking PIDs are in action", false);
 
@@ -286,6 +290,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	dec_speed->setValueDouble (1);
 
 	ra_track_speed->setValueDouble (0);
+	dec_track_speed->setValueDouble (0);
 
 	createParkPos (0, 89.999);
 
@@ -485,7 +490,7 @@ int Sitech::processOption (int in_opt)
 			break;
 
 		default:
-			return Telescope::processOption (in_opt);
+			return GEM::processOption (in_opt);
 	}
 	return 0;
 }
@@ -527,7 +532,9 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 		if (!conn->paramEnd ())
 			return -2;
 		ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
+		dec_track_speed->setValueDouble (0);
 		sendValueAll (ra_track_speed);
+		sendValueAll (dec_track_speed);
 		sitechStartTracking (true);
 		return 0;
 	}
@@ -536,7 +543,7 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 
 int Sitech::initValues ()
 {
-	return Telescope::initValues ();
+	return GEM::initValues ();
 }
 
 int Sitech::startResync ()
@@ -590,6 +597,7 @@ int Sitech::setTracking (bool track)
 {
 	if (track)
 	{
+		wasStopped = false;
 		sitechStartTracking (true);
 	}
 	else
@@ -597,6 +605,11 @@ int Sitech::setTracking (bool track)
 		fullStop ();
 	}
 	return GEM::setTracking (track);
+}
+
+void Sitech::setDiffTrack (double dra, double ddec)
+{
+	// convert to counts / hour
 }
 
 int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -655,14 +668,18 @@ void Sitech::sitechMove (int32_t ac, int32_t dc)
 void Sitech::sitechStartTracking (bool startTimer)
 {
 	radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
-	radec_Xrequest.x_speed = 0;
+	radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;
 
 	// 10 degress in ra; will be called periodically..
 	if (ra_track_speed->getValueDouble () > 0)
 		radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
 	else
 		radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
-	radec_Xrequest.x_dest = r_dec_pos->getValueLong ();
+
+	if (dec_track_speed->getValueDouble () > 0)
+		radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
+	else
+		radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
 
 	radec_Xrequest.x_bits = xbits;
 	radec_Xrequest.y_bits = ybits;
