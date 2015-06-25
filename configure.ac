@@ -388,7 +388,7 @@ AC_SUBST(LIB_K8055)
 
 # check for SI3097
 AC_ARG_WITH(si3097,
-[  --with-si307           path to Spectral Instruments SI3097 PCI card driver, build SI CCD support],
+[  --with-si3097        path to Spectral Instruments SI3097 PCI card driver, build SI CCD support],
 SI3097="${withval}";
 INC_SI3097="-I${SI3097}",
 [SI3097=no])
@@ -396,6 +396,17 @@ INC_SI3097="-I${SI3097}",
 AM_CONDITIONAL(SI3097, test x$SI3097 != xno)
 AC_SUBST(SI3097)
 AC_SUBST(INC_SI3097)
+
+# check for SI8821
+AC_ARG_WITH(si8821,
+[  --with-si8821        path to Spectral Instruments SI8821 PCI card driver, build SI CCD support],
+SI8821="${withval}";
+INC_SI8821="-I${SI8821}",
+[SI8821=no])
+
+AM_CONDITIONAL(SI8821, test x$SI8821 != xno)
+AC_SUBST(SI8821)
+AC_SUBST(INC_SI8821)
 
 # check for COMEDI
 AC_ARG_WITH(comedi,
@@ -990,6 +1001,8 @@ CCDs:
   fli           ${FLI}
   miccd         ${MICCD}
   sbig          ${SBIG}
+  SI3097        ${SI3097}
+  SI8821        ${SI8821}
 
 MOUNTs:
   paralib       ${PARALIB}
