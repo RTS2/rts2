@@ -169,6 +169,56 @@
 	  </para>
 	</listitem>
       </varlistentry>
+      <varlistentry>
+        <term>current_name</term>
+	<listitem>
+	  <para>
+            Name of the current target.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>current_plan_id</term>
+	<listitem>
+	  <para>
+            Plan ID of the current target. Only set if the target is executed from a queue.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>current_type</term>
+	<listitem>
+	  <para>
+	    Type of the current target. One letter, types are defined in types
+            table of the database.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>current_errorbox</term>
+	<listitem>
+	  <para>
+	    Errorbox of the current target. Defined only for GRBs targets,
+            where it shows latest errorbox as received from GCN.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>obsid</term>
+	<listitem>
+	  <para>
+            ID of the currently executed observation. If set to -1, executor is not observing.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>observation_start</term>
+	<listitem>
+	  <para>
+            Start time of the current observation. Undefined if executor is not running any observation.
+	  </para>
+	</listitem>
+      </varlistentry>
     </variablelist>  
   </refsect1>
   <refsect1>
