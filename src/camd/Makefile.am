@@ -121,3 +121,11 @@ rts2_camd_si3097_CXXFLAGS = @INC_SI3097@ -I../../include
 else
 EXTRA_DIST += si3097.cpp
 endif
+
+if SI8821
+bin_PROGRAMS += rts2-camd-si8821
+rts2_camd_si8821_SOURCES = si8821.cpp
+rts2_camd_si8821_CXXFLAGS = @INC_SI8821@ -I../../include
+else
+EXTRA_DIST += si8821.cpp
+endif

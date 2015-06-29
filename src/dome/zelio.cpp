@@ -399,11 +399,8 @@ long Zelio::isOpened ()
 
 		// try to reinit connection
 
-		delete zelioConn;
-
 		sleep (2);
 
-		zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
 		try
 		{
 			zelioConn->init ();
