@@ -152,6 +152,12 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
 	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
 
+	createValue (refreshIdle, "refresh_idle", "idle and tracking refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	createValue (refreshSlew, "refresh_slew", "slew refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+
+	refreshIdle->setValueDouble (60);
+	refreshSlew->setValueDouble (0.5);
+
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
 	createValue (blockMove, "block_move", "if true, any software movement of the telescope is blocked", false, RTS2_VALUE_WRITABLE);
@@ -253,8 +259,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z,-)");
 	addOption (OPT_DEC_UPPER_LIMIT, "dec-upper-limit", 1, "maximal declination the telescope is able to point to");
 
-	// send telescope position every 60 seconds
-	setIdleInfoInterval (60);
+	setIdleInfoInterval (refreshIdle->getValueDouble ());
 
 	moveInfoCount = 0;
 	moveInfoMax = 100;
@@ -472,6 +477,26 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	{
 	  	setDiffTrack (((rts2core::ValueRaDec *)new_value)->getRa (), ((rts2core::ValueRaDec *)new_value)->getDec ());
 		return 0;
+	}
+	else if (old_value == refreshIdle)
+	{
+		switch (getState () & TEL_MASK_MOVING)
+		{
+			case TEL_OBSERVING:
+			case TEL_PARKED:
+				setIdleInfoInterval (((rts2core::ValueDouble *)new_value)->getValueDouble ());
+				break;
+		}
+	}
+	else if (old_value == refreshSlew)
+	{
+		switch (getState () & TEL_MASK_MOVING)
+		{
+			case TEL_MOVING:
+			case TEL_PARKING:
+				setIdleInfoInterval (((rts2core::ValueDouble *)new_value)->getValueDouble ());
+				break;
+		}
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
@@ -832,7 +857,7 @@ void Telescope::checkMoves ()
 				DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
 				"move finished with error");
 			move_connection = NULL;
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 		else if (ret == -2)
 		{
@@ -854,7 +879,7 @@ void Telescope::checkMoves ()
 				sendInfo (move_connection);
 			}
 			move_connection = NULL;
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 	}
 	else if ((getState () & TEL_MASK_MOVING) == TEL_PARKING)
@@ -870,7 +895,7 @@ void Telescope::checkMoves ()
 			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
 				DEVICE_ERROR_HW | TEL_PARKED,
 				"park command finished with error");
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 		else if (ret == -2)
 		{
@@ -885,7 +910,7 @@ void Telescope::checkMoves ()
 			{
 				sendInfo (move_connection);
 			}
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 	}
 }
@@ -1312,7 +1337,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	move_connection = conn;
 
-	setIdleInfoInterval (0.5);
+	setIdleInfoInterval (refreshSlew->getValueDouble ());
 
 	return ret;
 }
@@ -1381,7 +1406,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING, "parking started");
 	}
 
-	setIdleInfoInterval (0.5);
+	setIdleInfoInterval (refreshSlew->getValueDouble ());
 
 	return ret;
 }

@@ -1019,6 +1019,16 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueInteger *wCorrImgId;
 
+		/**
+		 * Tracking / idle refresh interval
+		 */
+		rts2core::ValueDouble *refreshIdle;
+
+		/**
+		 * Slewing refresh interval
+		 */
+		rts2core::ValueDouble *refreshSlew;
+
 		void checkMoves ();
 
 		struct timeval dir_timeouts[4];
