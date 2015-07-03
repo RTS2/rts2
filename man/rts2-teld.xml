@@ -123,26 +123,38 @@
           <varlistentry>
             <term>same</term>
             <para>
+	      If possible, flip stays same as is the current flip. This setting is
+	      indended for cases when the observations for callibration
+              purposes should be as long as possible on the same flip.
             </para>
           </varlistentry>
           <varlistentry>
             <term>opposite</term>
             <para>
+	      Opposite to the same setting, this forces every possible movement
+              to flip. Usefull mostly for telescope long slew sles.
             </para>
           </varlistentry>
           <varlistentry>
             <term>west</term>
             <para>
+	      Flip mount to west side. The definition is arbitrary and depends
+	      on mount parameters, particurarly zero offsets. BUt in most
+	      cases, west flip means the telescope is west from meridian,
+              counterweight on east.
             </para>
           </varlistentry>
           <varlistentry>
             <term>east</term>
             <para>
+	      Similar to west flip, prefers flip on east side.
             </para>
           </varlistentry>
           <varlistentry>
             <term>longest</term>
             <para>
+	      Opposite to shortest. Does not provides any benefits, but can be
+	      used to test mount performance.
             </para>
           </varlistentry>
         </variablelist>
