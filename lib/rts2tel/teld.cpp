@@ -348,6 +348,7 @@ int Telescope::processOption (int in_opt)
                                 std::istringstream *is;
                                 is = new std::istringstream (std::string(optarg));
                                 double palt,paz;
+				int flip;
                                 char c;
                                 *is >> palt >> c >> paz;
                                 if (is->fail () || c != ':')
@@ -356,10 +357,20 @@ int Telescope::processOption (int in_opt)
                                         delete is;
                                         return -1;
                                 }
+				*is >> c >> flip;
+				if (is->fail ())
+					flip = -1;
+
                                 delete is;
                                 if (parkPos == NULL)
-					createParkPos (NAN, NAN);
-                                parkPos->setValueAltAz (palt, paz);
+				{
+					createParkPos (palt, paz, flip);
+				}
+				else
+				{
+                                	parkPos->setValueAltAz (palt, paz);
+					parkFlip->setValueInteger (flip);
+				}
                         }
                         break;
 		default:
@@ -1031,13 +1042,15 @@ int Telescope::setTracking (bool track)
 
 void Telescope::addParkPosOption ()
 {
-	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
+	addOption (OPT_PARK_POS, "park-position", 1, "parking position (alt:az[:flip])");
 }
 
-void Telescope::createParkPos (double alt, double az)
+void Telescope::createParkPos (double alt, double az, int flip)
 {
 	createValue (parkPos, "park_position", "mount park position", false);
+	createValue (parkFlip, "park_flip", "mount parked flip strategy", false);
 	parkPos->setValueAltAz (alt, az);
+	parkFlip->setValueInteger (flip);
 }
 
 int Telescope::info ()

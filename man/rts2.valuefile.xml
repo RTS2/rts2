@@ -201,7 +201,7 @@ test7.B = false ; boolean value, will be written to FITS header and reset to def
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>

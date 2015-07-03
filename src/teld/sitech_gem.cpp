@@ -639,7 +639,12 @@ int Sitech::updateLimits ()
 
 int Sitech::startPark ()
 {
-	return 0;
+	if (parkPos == NULL)
+	{
+		return 0;
+	}
+	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
+	return moveAltAz ();
 }
 
 void Sitech::getConfiguration ()

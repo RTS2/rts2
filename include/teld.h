@@ -808,6 +808,11 @@ class Telescope:public rts2core::Device
 		 * Telescope parking position.
 		 */
 		rts2core::ValueAltAz *parkPos;
+		
+		/**
+		 * Desired flip when parking.
+		 */
+		rts2core::ValueInteger *parkFlip;
 
 		/**
 		 * Add option for parking position.
@@ -820,7 +825,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Create parkPos variable.
 		 */
-		void createParkPos (double alt, double az);
+		void createParkPos (double alt, double az, int flip);
 
 		/**
 		 * Local sidereal time.

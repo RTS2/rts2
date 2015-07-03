@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam
 
 noinst_HEADERS = ccd_msg.h reflex.h
 

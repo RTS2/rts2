@@ -96,14 +96,21 @@ class ConnTCP:public ConnNoSend
 {
 	public:
 		/**
-		 * Create new connection to APC UPS daemon.
+		 * Create new connection to TCP/IP server.
 		 *
 		 * @param _master   Reference to master holding this connection.
 		 *
-		 * @param _hostname APC UPSD IP address or hostname.
-		 * @param _port     Portnumber of APC UPSD daemon (default to 3551).
+		 * @param _hostname IP address or hostname of the server. If empty, server connection will be opened (listening socket).
+		 * @param _port     Portnumber.
 		 */
 		ConnTCP (rts2core::Block *_master, const char *_hostname, int _port);
+
+		/**
+		 * Create listening connection for listening to TCP/IP connection request.
+		 *
+		 * @param _port     Portnumber where to listen.
+		 */
+		ConnTCP (rts2core::Block *_master, int _port);
 
 		/**
 		 * Init TCP/IP connection to host given at constructor.
