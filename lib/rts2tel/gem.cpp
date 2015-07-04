@@ -183,6 +183,20 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 	// otherwise, non-flipped is the only way, stay on it..
 
+	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
+	{
+		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
+			<< LibnovaRaDec (pos) << " dc:" << t_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
+		return -1;
+	}
+
+	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))
+	{
+		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
+			<< LibnovaRaDec (pos) << " ac:" << t_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
+		return -1;
+	}
+
 	t_ac -= homeOff;
 
 	ac = t_ac;
@@ -217,12 +231,15 @@ int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip,
 	// flipped
 	if (fabs (dec) > 90.0)
 	{
-		flip = 1;
-		if (dec > 0)
-			dec = 180.0 - dec;
-		else
-			dec = -180.0 - dec;
-		ra += 180.0;
+		while (fabs (dec) > 90)
+		{
+			flip = flip ? 0 : 1;
+			if (dec > 0)
+				dec = 180.0 - dec;
+			else
+				dec = -180.0 - dec;
+			ra += 180.0;
+		}
 	}
 	else
 	{
@@ -347,15 +364,11 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 
 	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
 	{
-		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " dc:" << t_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
 		return -1;
 	}
 
 	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))
 	{
-		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " ac:" << t_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
 		return -1;
 	}
 

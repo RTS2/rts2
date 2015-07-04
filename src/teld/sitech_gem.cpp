@@ -186,6 +186,7 @@ class Sitech:public GEM
 		rts2core::ValueInteger *ra_pwm;
 		rts2core::ValueInteger *dec_pwm;
 
+		rts2core::ValueInteger *countUp;
 		rts2core::ValueDouble *servoPIDSampleRate;
 
 		double offsetha;
@@ -435,10 +436,12 @@ int Sitech::initHardware ()
 	else
 	{
 		sitechType = FORCE_ONE;
-		int32_t countUp = serConn->getSiTechValue ('Y', "XHC");
+
+		createValue (countUp, "count_up", "CPU count up", false);
+		countUp->setValueInteger (serConn->getSiTechValue ('Y', "XHC"));
 
 		createValue (servoPIDSampleRate, "servo_pid_sample_rate", "number of CPU cycles per second", false);
-		servoPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp));
+		servoPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp->getValueInteger ()));
 
 		getPIDs ();
 	}
@@ -589,7 +592,7 @@ int Sitech::isMoving ()
 
 int Sitech::endMove ()
 {
-	sitechStartTracking (true);
+	setTracking (true);
 	return GEM::endMove ();
 }
 
