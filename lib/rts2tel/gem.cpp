@@ -109,8 +109,9 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// both ways are possible, decide base on flipping parameter
 	else if (ret == 0 && ret_f == 0)
 	{
+		int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 #define max(a,b) ((a) > (b) ? (a) : (b))
-		switch (flipping->getValueInteger ())
+		switch (actual_flip)
 		{
 			// shortest
 			case 0:

@@ -379,7 +379,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
 
 	addParkPosOption ();
-	createParkPos (70, 0);
+	createParkPos (70, 0, 0);
 
 	addOption (OPT_POWEOFF_STANDBY, "standby-poweroff", 0, "poweroff at standby");
 	addOption (OPT_GOOD_SEP, "good-sep", 1, "minimal good separation (in degrees)");

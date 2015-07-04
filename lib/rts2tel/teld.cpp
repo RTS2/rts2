@@ -53,6 +53,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	raGuide = decGuide = NULL;
 	parkPos = NULL;
+	parkFlip = NULL;
+
+	useParkFlipping = false;
 	
 	decUpperLimit = NULL;
 
@@ -902,6 +905,7 @@ void Telescope::checkMoves ()
 		}
 		if (ret == -1)
 		{
+			useParkFlipping = false;
 			infoAll ();
 			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
 				DEVICE_ERROR_HW | TEL_PARKED,
@@ -910,6 +914,7 @@ void Telescope::checkMoves ()
 		}
 		else if (ret == -2)
 		{
+			useParkFlipping = false;
 			infoAll ();
 			logStream (MESSAGE_INFO) << "parking of telescope finished" << sendLog;
 			ret = endPark ();
@@ -1257,6 +1262,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		getTelTargetAltAz (&hrpos, JD);
 		if (!hardHorizon->is_good (&hrpos))
 		{
+			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az" << LibnovaHrz (&hrpos) << sendLog;
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1271,6 +1277,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		if ((telLatitude->getValueDouble () > 0 && pos.dec > decUpperLimit->getValueFloat ())
 				|| (telLatitude->getValueDouble () < 0 && pos.dec < decUpperLimit->getValueFloat ()))
 		{
+			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target declination is outside of allowed values, is " << pos.dec << " limit is " << decUpperLimit->getValueFloat () << sendLog;
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1316,6 +1323,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	ret = startResync ();
 	if (ret)
 	{
+		useParkFlipping = false;
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
@@ -1392,9 +1400,11 @@ int Telescope::startPark (rts2core::Connection * conn)
 			return ret;
 		}
 	}
+	useParkFlipping = true;
 	ret = startPark ();
 	if (ret < 0)
 	{
+		useParkFlipping = false;
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
 		logStream (MESSAGE_ERROR) << "parking failed" << sendLog;

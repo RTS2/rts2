@@ -827,6 +827,8 @@ class Telescope:public rts2core::Device
 		 */
 		void createParkPos (double alt, double az, int flip);
 
+		bool useParkFlipping;
+
 		/**
 		 * Local sidereal time.
 		 */
