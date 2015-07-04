@@ -145,6 +145,13 @@
       </citerefentry>
       Finger Lages Instruments RTS2 driver.
     </para>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-camd-reflex</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      STA Reflex controller RTS2 driver.
+    </para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
@@ -153,7 +160,7 @@
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-device</refentrytitle>
 	<manvolnum>7</manvolnum>

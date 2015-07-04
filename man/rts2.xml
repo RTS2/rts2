@@ -821,11 +821,15 @@
 	<para>
   	  <citerefentry>
             <refentrytitle>rts2-camd</refentrytitle>
-	    <manvolnum>7</manvolnum>
+	    <manvolnum>7</manvolnum>,
           </citerefentry>
           <citerefentry>
             <refentrytitle>rts2-camd-andor</refentrytitle>
 	    <manvolnum>7</manvolnum>
+          </citerefentry>,
+          <citerefentry>
+            <refentrytitle>rts2-camd-reflex</refentrytitle>
+            <manvolnum>7</manvolnum>
           </citerefentry>
 	</para>
       </refsect2>
@@ -838,6 +842,15 @@
           </citerefentry>
 	</para>
       </refsect2>
+      <refsect2>
+        <title>Mounts</title>
+        <para>
+          <citerefentry>
+            <refentrytitle>rts2-teld</refentrytitle>
+            <manvolnum>7</manvolnum>
+          </citerefentry>
+        </para>
+      </refsect2>
     </para>
 
   </refsect1>
@@ -849,31 +862,31 @@
       <citerefentry>
         <refentrytitle>rts2-httpd</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-executor</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-selector</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-imgproc</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-grbd</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-httpd</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-xmlrpcclient</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-augershooter</refentrytitle>
 	<manvolnum>1</manvolnum>
@@ -889,39 +902,39 @@
       <citerefentry>
         <refentrytitle>rts2-mon</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-target</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-targetinfo</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
          <refentrytitle>rts2-focusc</refentrytitle>
 	 <manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
          <refentrytitle>rts2-xfocusc</refentrytitle>
 	 <manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-seltest</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-tpm</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-logger</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-image</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-plan</refentrytitle>
 	<manvolnum>1</manvolnum>

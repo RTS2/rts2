@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam
 
 noinst_HEADERS = ccd_msg.h reflex.h
 
@@ -120,4 +120,12 @@ rts2_camd_si3097_SOURCES = si3097.cpp
 rts2_camd_si3097_CXXFLAGS = @INC_SI3097@ -I../../include
 else
 EXTRA_DIST += si3097.cpp
+endif
+
+if SI8821
+bin_PROGRAMS += rts2-camd-si8821
+rts2_camd_si8821_SOURCES = si8821.cpp
+rts2_camd_si8821_CXXFLAGS = @INC_SI8821@ -I../../include
+else
+EXTRA_DIST += si8821.cpp
 endif

@@ -36,9 +36,20 @@
 #define TEL_FORCED_HOMING0  0x01
 #define TEL_FORCED_HOMING1  0x02
 
-#define RA_TICKS        11520000
-#define DEC_TICKS       7500000
+// counts per revolution
+//#define RA_TICKS        11520000 // ME
+//#define RA_TICKS        (1.8*11520000) // MEII
+#define RA_TICKS        (11520000/2.25) // MYT
 
+//#define DEC_TICKS       7500000 // ME
+//#define DEC_TICKS       (2.279*7500000) // MEII
+#define DEC_TICKS       (5109455.55555555555553328) // MYX ?, needs research... 
+
+// counts per degree 
+#define HA_CPD        (-RA_TICKS/360.0)
+#define DEC_CPD       (-DEC_TICKS/360.0)
+
+// #define TERM_OUT
 // park positions
 #define PARK_AXIS0      0
 #define PARK_AXIS1      0
@@ -608,8 +619,8 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	decZero->setValueDouble (0.0);
 
 	// how many counts per degree
-	haCpd->setValueDouble (-32000.0);	 // - for N hemisphere, + for S hemisphere; S swap is done later
-	decCpd->setValueDouble (-20883.33333333333);
+	haCpd->setValueDouble (HA_CPD);	 // - for N hemisphere, + for S hemisphere; S swap is done later
+	decCpd->setValueDouble (DEC_CPD);
 
 	acMargin = 10000;
 
@@ -882,7 +893,7 @@ double Paramount::getUsec()
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	
-	return tv.tv_sec+tv.tv_usec/1000000.;
+	return (double)tv.tv_sec+(double)tv.tv_usec/(double)1000000.;
 } 
 	
 int Paramount::doPara()
@@ -956,7 +967,9 @@ int Paramount::doPara()
 		canTouch = getUsec()+10.0;
 		//basicInfo();
 
-		offNotMoving = 1;
+		// This was there and I think it should not be there, it spoils
+		// the observation in case of a minor communication error
+		//offNotMoving = 1;
 		wasTimeout = 0;
 		maskState (DEVICE_ERROR_HW, 0, "cleared error conditions");
 		return 0;

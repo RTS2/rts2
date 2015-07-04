@@ -293,7 +293,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	ra_track_speed->setValueDouble (0);
 	dec_track_speed->setValueDouble (0);
 
-	createParkPos (0, 89.999);
+	createParkPos (0, 89.999, 0);
 
 	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
 
@@ -642,7 +642,12 @@ int Sitech::updateLimits ()
 
 int Sitech::startPark ()
 {
-	return 0;
+	if (parkPos == NULL)
+	{
+		return 0;
+	}
+	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
+	return moveAltAz ();
 }
 
 void Sitech::getConfiguration ()

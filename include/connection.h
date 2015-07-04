@@ -61,7 +61,7 @@ typedef enum
 	CONN_UNKNOW,
 	/** Connection waits for address of device. */
 	CONN_RESOLVING_DEVICE,
-	/** Socket is opened, waiting for time to call accept call. */
+	/** Socket is opened in listening mode, waiting for connection from clients (accept call for socket). */
 	CONN_CONNECTING,
 	/** Socket to device is opened, connection waits for other side to reply to connect call. */
 	CONN_INPROGRESS,

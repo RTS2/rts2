@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2009-05-02</date>">
+  <!ENTITY dhdate      "<date>2015-07-02</date>">
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -33,6 +33,8 @@
     <copyright>
       <year>2009</year>
       <holder>&dhusername;</holder>
+      <year>2015</year>
+      <holder>&dhusername;</holder>
     </copyright>
     &legal;
   </refentryinfo>
@@ -49,7 +51,7 @@
       <command>&dhpackage;</command>
       &deviceapp;
       <arg choice="opt">
-	<arg choice="plain"><option>--start-position <replaceable>start position</replaceable></option></arg>
+	<arg choice="plain"><option>--park-position <replaceable>alt</replaceable>:<replaceable>az</replaceable>:<replaceable>flip</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
 
@@ -60,7 +62,7 @@
 
     <para>
        This manual page describes focuser drivers available for RTS2, and
-       common options for focuser drivers. For description of options common to
+       common options for mount (telescope) drivers. For description of options common to
        all devices, please consult
        <citerefentry><refentrytitle>rts2-device</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
      </para>
@@ -73,14 +75,14 @@
     <variablelist>
       &deviceapplist;
       <varlistentry>
-        <term><option>--start-position</option></term>
+        <term><option>--park-position</option></term>
         <listitem>
           <para>
-	    Specify focuser start position. This is the position to which
-	    focuser will move after startup. When it is possible to distinguish
-	    from the state of underlying hardware if focuser was reinitialized,
-	    the start-up position is used only if the focuser was
-	    reinitialized.
+	    Specify telescope parking position. At least altitude and azimuth must be provided.
+	  </para>
+	  <para>
+	    If flip is provided, the telescope will flip to the given flip.
+            Please see discussion below for possible flip values.
 	  </para>
         </listitem>
       </varlistentry>
@@ -89,88 +91,84 @@
   <refsect1>
     <title>Common variables</title>
     <para>
-      Focuser interface provides common variables, visible in
+      Mount interface provides common variables, visible in
       <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry> and <citerefentry><refentrytitle>rts2-xmlrpcclient</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
       They govern focuser behaviour and show its state. They are described
-      bellow. RTS2 focuser interface always use integer numbers to show focuser
-      position. If float numbers are used in original hardware, they are
-      multiplied before they are used in RTS2. For example,
-      <citerefentry><refentrytitle>rts2-focusd-optec</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-      uses milimeters as native display units. In RTS2 they are shown as
-      integers multiplied by 100, and when they are used, the RTS2 value is
-      divided by 100 before it is send to focuser.
+      below. 
     </para>
 
    <variablelist>
       <varlistentry>
-        <term>FOC_POS</term>
+        <term>FLIPPING</term>
 	<para>
-	  This variable show actual focuser position. If set, it will cause
-	  focuser to move to set position. If focuser is moved to position, it
-	  shows the actual focuser position.
+	  This variable specifies flipping strategy used by the mount. Flip is
+	  common problem on German Equatorial Mount (GEM), where a certain
+	  object (RA DEC position on sky) can be observed on two different DEC
+          and RA axis coordinates. Possible values are:
 	</para>
-      </varlistentry>
-      <varlistentry>
-        <term>FOC_TAR</term>
-	<para>
-	  Focuser target position. This shows desired focuser position. If set,
-	  it will cause to move focuser to set position.
-	</para>
-      </varlistentry>
-      <varlistentry>
-        <term>FOC_DEF</term>
-	<para>
-	  Default focuser position. This is used together with FOC_FOFF and FOC_TOFF for autofocusing. If it is changed, target position is set to sum of <emphasis>FOC_DEF</emphasis>, <emphasis>FOC_FOFF</emphasis> and <emphasis>FOC_TOFF</emphasis>.
-	</para>
-      </varlistentry>
-      <varlistentry>
-        <term>FOC_FOFF</term>
-	<para>
-	  Focuser offset found during focusing. This is used to temporary shift
-	  focus. If focuser driver is restarted, it is moved back to
-	  <emphasis>FOC_DEF</emphasis> position.
-	</para>
-      </varlistentry>
-      <varlistentry>
-        <term>FOC_TOFF</term>
-	<para>
-	  Focuser temporar offset used during focusing. You should use this
-	  variable during focusing script to probe focus at different offsets.
-	  If your focuser is named <emphasis>F0</emphasis>, and you would like
-	  to probe focusing range 100 steps bellow to 100 steps above default
-	  focuser position, the focusing script should look like:
-	</para>
-	<para>
-	  <emphasis>F0.FOC_TOFF=-100 for 20 { E 10 F0.FOC_TOFF+=10 }</emphasis>
-	</para>
-	<para>
-	  When script is finished, RTS2 will change
-	  <emphasis>FOC_TOFF</emphasis> to 0, which will cause focuser to move
-	  to default value. You can change either <emphasis>FOC_FOFF</emphasis>
-	  or <emphasis>FOC_DEF</emphasis> to set new focusing position.
-	</para>
+        <variablelist>
+          <varlistentry>
+            <term>shortest</term>
+            <para>
+	      If both flip are possible, the shortest will select one which will  
+	      travel lower distance at any axes. Specifically, the algorithm
+	      calculates maximum of differences between current and target
+              position in DEC and RA, and select flip which leads to lower value.
+            </para>
+            <para>
+	      This is the default value, as it leads to the best use of night
+              time.
+            </para>
+          </varlistentry>
+          <varlistentry>
+            <term>same</term>
+            <para>
+	      If possible, flip stays same as is the current flip. This setting is
+	      indended for cases when the observations for callibration
+              purposes should be as long as possible on the same flip.
+            </para>
+          </varlistentry>
+          <varlistentry>
+            <term>opposite</term>
+            <para>
+	      Opposite to the same setting, this forces every possible movement
+              to flip. Usefull mostly for telescope long slew sles.
+            </para>
+          </varlistentry>
+          <varlistentry>
+            <term>west</term>
+            <para>
+	      Flip mount to west side. The definition is arbitrary and depends
+	      on mount parameters, particurarly zero offsets. BUt in most
+	      cases, west flip means the telescope is west from meridian,
+              counterweight on east.
+            </para>
+          </varlistentry>
+          <varlistentry>
+            <term>east</term>
+            <para>
+	      Similar to west flip, prefers flip on east side.
+            </para>
+          </varlistentry>
+          <varlistentry>
+            <term>longest</term>
+            <para>
+	      Opposite to shortest. Does not provides any benefits, but can be
+	      used to test mount performance.
+            </para>
+          </varlistentry>
+        </variablelist>
       </varlistentry>
     </variablelist>
-
-    <para>
-      The following equation should be true when you change focus with
-      <emphasis>FOC_DEF</emphasis>, <emphasis>FOC_FOFF</emphasis> and
-      <emphasis>FOC_TOFF</emphasis>:
-    </para>
-    
-    <para>
-      <emphasis>FOC_TAR = FOC_DEF + FOC_FOFF + FOC_TOFF</emphasis>
-    </para>
-
   </refsect1>
   <refsect1>
-    <title>Focuser drivers</title>
+    <title>Telescope drivers</title>
     <para>
       <citerefentry>
-        <refentrytitle>rts2-focusd-fli</refentrytitle>
+        <refentrytitle>rts2-teld-sitech-gem</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
-      Finger Lages Instruments RTS2 driver.
+      Sidereal Technology GEM (German Equatorial Mount) driver.
     </para>
   </refsect1>
   <refsect1>
@@ -180,7 +178,7 @@
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-device</refentrytitle>
 	<manvolnum>7</manvolnum>

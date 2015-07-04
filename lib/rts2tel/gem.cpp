@@ -92,7 +92,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	ret = checkCountValues (pos, ac, dc, t_ac, t_dc, JD, ls, dec);
 
 	// let's see what will different flip do..
-	int32_t tf_ac = t_ac - ra_ticks->getValueLong () / 2.0;
+	int32_t tf_ac = t_ac - (int32_t) (fabs(haCpd->getValueDouble () * 360.0)/2.0);
 	int32_t tf_dc = t_dc + (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
 
 	int ret_f = checkCountValues (pos, ac, dc, tf_ac, tf_dc, JD, ls, dec);
@@ -109,8 +109,9 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// both ways are possible, decide base on flipping parameter
 	else if (ret == 0 && ret_f == 0)
 	{
+		int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 #define max(a,b) ((a) > (b) ? (a) : (b))
-		switch (flipping->getValueInteger ())
+		switch (actual_flip)
 		{
 			// shortest
 			case 0:
@@ -282,8 +283,8 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 	createValue (dcMin, "_dc_min", "DEC minimal count value", false);
 	createValue (dcMax, "_dc_max", "DEC maximal count value", false);
 
-	createValue (ra_ticks, "_ra_ticks", "RA ticks per full loop", false);
-	createValue (dec_ticks, "_dec_ticks", "DEC ticks per full loop", false);
+	createValue (ra_ticks, "_ra_ticks", "RA ticks per full loop (no effect)", false);
+	createValue (dec_ticks, "_dec_ticks", "DEC ticks per full loop (no effect)", false);
 }
 
 GEM::~GEM (void)
@@ -326,8 +327,8 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	struct ln_equ_posn u_pos;
 
 	// minimize movement from current position, don't rotate around axis more then once
-	int32_t diff_ac = (ac - t_ac) % ra_ticks->getValueLong ();
-	int32_t diff_dc = (dc - t_dc) % dec_ticks->getValueLong ();
+	int32_t diff_ac = (ac - t_ac) % (int32_t)fabs(haCpd->getValueDouble () * 360.0);
+	int32_t diff_dc = (dc - t_dc) % (int32_t)fabs(decCpd->getValueDouble () * 360.0);
 
 	t_ac = ac - diff_ac;
 	t_dc = dc - diff_dc;
@@ -339,12 +340,12 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 		while ((t_ac - acMargin) < acMin->getValueLong ())
 		// ticks per revolution - don't have idea where to get that
 		{
-			t_ac += ra_ticks->getValueLong ();
+			t_ac += (int32_t)fabs(haCpd->getValueDouble () * 360.0);
 		}
 	}
 	while ((t_ac + acMargin) > acMax->getValueLong ())
 	{
-		t_ac -= (int32_t) ra_ticks->getValueLong ();
+		t_ac -= (int32_t)fabs(haCpd->getValueDouble () * 360.0);
 	}
 	// while on N we would like to see positive values
 	if (telLatitude->getValueDouble () > 0)
@@ -352,15 +353,15 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 		while ((t_ac - acMargin) < acMin->getValueLong ())
 			// ticks per revolution - don't have idea where to get that
 		{
-			t_ac += (int32_t) ra_ticks->getValueLong ();
+			t_ac += (int32_t) fabs(haCpd->getValueDouble () * 360.0);
 		}
 	}
 
 	// put dc to correct numbers
 	while (t_dc < dcMin->getValueLong ())
-		t_dc += dec_ticks->getValueLong ();
+		t_dc += (int32_t) fabs(decCpd->getValueDouble () * 360.0);
 	while (t_dc > dcMax->getValueLong ())
-		t_dc -= dec_ticks->getValueLong ();
+		t_dc -= (int32_t) fabs(decCpd->getValueDouble () * 360.0);
 
 	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
 	{

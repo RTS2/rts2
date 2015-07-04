@@ -225,7 +225,7 @@ AZ-ALT ; that's now obligatory, as default is HA-DEC system
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>

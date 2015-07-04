@@ -53,6 +53,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	raGuide = decGuide = NULL;
 	parkPos = NULL;
+	parkFlip = NULL;
+
+	useParkFlipping = false;
 	
 	decUpperLimit = NULL;
 
@@ -151,6 +154,12 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
 	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
+
+	createValue (refreshIdle, "refresh_idle", "idle and tracking refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	createValue (refreshSlew, "refresh_slew", "slew refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+
+	refreshIdle->setValueDouble (60);
+	refreshSlew->setValueDouble (0.5);
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
@@ -253,8 +262,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z,-)");
 	addOption (OPT_DEC_UPPER_LIMIT, "dec-upper-limit", 1, "maximal declination the telescope is able to point to");
 
-	// send telescope position every 60 seconds
-	setIdleInfoInterval (60);
+	setIdleInfoInterval (refreshIdle->getValueDouble ());
 
 	moveInfoCount = 0;
 	moveInfoMax = 100;
@@ -343,6 +351,7 @@ int Telescope::processOption (int in_opt)
                                 std::istringstream *is;
                                 is = new std::istringstream (std::string(optarg));
                                 double palt,paz;
+				int flip;
                                 char c;
                                 *is >> palt >> c >> paz;
                                 if (is->fail () || c != ':')
@@ -351,10 +360,20 @@ int Telescope::processOption (int in_opt)
                                         delete is;
                                         return -1;
                                 }
+				*is >> c >> flip;
+				if (is->fail ())
+					flip = -1;
+
                                 delete is;
                                 if (parkPos == NULL)
-					createParkPos (NAN, NAN);
-                                parkPos->setValueAltAz (palt, paz);
+				{
+					createParkPos (palt, paz, flip);
+				}
+				else
+				{
+                                	parkPos->setValueAltAz (palt, paz);
+					parkFlip->setValueInteger (flip);
+				}
                         }
                         break;
 		default:
@@ -472,6 +491,26 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	{
 	  	setDiffTrack (((rts2core::ValueRaDec *)new_value)->getRa (), ((rts2core::ValueRaDec *)new_value)->getDec ());
 		return 0;
+	}
+	else if (old_value == refreshIdle)
+	{
+		switch (getState () & TEL_MASK_MOVING)
+		{
+			case TEL_OBSERVING:
+			case TEL_PARKED:
+				setIdleInfoInterval (((rts2core::ValueDouble *)new_value)->getValueDouble ());
+				break;
+		}
+	}
+	else if (old_value == refreshSlew)
+	{
+		switch (getState () & TEL_MASK_MOVING)
+		{
+			case TEL_MOVING:
+			case TEL_PARKING:
+				setIdleInfoInterval (((rts2core::ValueDouble *)new_value)->getValueDouble ());
+				break;
+		}
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
@@ -832,7 +871,7 @@ void Telescope::checkMoves ()
 				DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
 				"move finished with error");
 			move_connection = NULL;
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 		else if (ret == -2)
 		{
@@ -854,7 +893,7 @@ void Telescope::checkMoves ()
 				sendInfo (move_connection);
 			}
 			move_connection = NULL;
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 	}
 	else if ((getState () & TEL_MASK_MOVING) == TEL_PARKING)
@@ -866,14 +905,16 @@ void Telescope::checkMoves ()
 		}
 		if (ret == -1)
 		{
+			useParkFlipping = false;
 			infoAll ();
 			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
 				DEVICE_ERROR_HW | TEL_PARKED,
 				"park command finished with error");
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 		else if (ret == -2)
 		{
+			useParkFlipping = false;
 			infoAll ();
 			logStream (MESSAGE_INFO) << "parking of telescope finished" << sendLog;
 			ret = endPark ();
@@ -885,7 +926,7 @@ void Telescope::checkMoves ()
 			{
 				sendInfo (move_connection);
 			}
-			setIdleInfoInterval (60);
+			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 	}
 }
@@ -1006,13 +1047,15 @@ int Telescope::setTracking (bool track)
 
 void Telescope::addParkPosOption ()
 {
-	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
+	addOption (OPT_PARK_POS, "park-position", 1, "parking position (alt:az[:flip])");
 }
 
-void Telescope::createParkPos (double alt, double az)
+void Telescope::createParkPos (double alt, double az, int flip)
 {
 	createValue (parkPos, "park_position", "mount park position", false);
+	createValue (parkFlip, "park_flip", "mount parked flip strategy", false);
 	parkPos->setValueAltAz (alt, az);
+	parkFlip->setValueInteger (flip);
 }
 
 int Telescope::info ()
@@ -1219,6 +1262,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		getTelTargetAltAz (&hrpos, JD);
 		if (!hardHorizon->is_good (&hrpos))
 		{
+			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az" << LibnovaHrz (&hrpos) << sendLog;
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1233,6 +1277,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		if ((telLatitude->getValueDouble () > 0 && pos.dec > decUpperLimit->getValueFloat ())
 				|| (telLatitude->getValueDouble () < 0 && pos.dec < decUpperLimit->getValueFloat ()))
 		{
+			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target declination is outside of allowed values, is " << pos.dec << " limit is " << decUpperLimit->getValueFloat () << sendLog;
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1278,6 +1323,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	ret = startResync ();
 	if (ret)
 	{
+		useParkFlipping = false;
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
@@ -1312,7 +1358,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	move_connection = conn;
 
-	setIdleInfoInterval (0.5);
+	setIdleInfoInterval (refreshSlew->getValueDouble ());
 
 	return ret;
 }
@@ -1354,9 +1400,11 @@ int Telescope::startPark (rts2core::Connection * conn)
 			return ret;
 		}
 	}
+	useParkFlipping = true;
 	ret = startPark ();
 	if (ret < 0)
 	{
+		useParkFlipping = false;
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
 		logStream (MESSAGE_ERROR) << "parking failed" << sendLog;
@@ -1381,7 +1429,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING, "parking started");
 	}
 
-	setIdleInfoInterval (0.5);
+	setIdleInfoInterval (refreshSlew->getValueDouble ());
 
 	return ret;
 }

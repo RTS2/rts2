@@ -219,11 +219,11 @@ S1 1183230013.567643 -120.345 -100.7654 10.3435
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-logger</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>

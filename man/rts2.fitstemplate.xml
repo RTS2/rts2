@@ -138,7 +138,7 @@ TVDOUBLE.d = @TV.double / double value, written as double
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>

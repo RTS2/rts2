@@ -306,11 +306,11 @@ user@machine:~$ rts2-xmlrcclient --master-state on
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-httpd</refentrytitle>
 	<manvolnum>1</manvolnum>

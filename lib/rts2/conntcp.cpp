@@ -33,6 +33,12 @@ ConnTCP::ConnTCP (rts2core::Block *_master, const char *_hostname, int _port):Co
 	debug = false;
 }
 
+ConnTCP::ConnTCP (rts2core::Block *_master, int _port):ConnNoSend (_master), hostname ("")
+{
+	port = _port;
+	debug = false;
+}
+
 bool ConnTCP::checkBufferForChar (std::istringstream **_is, char end_char)
 {
 	// look for endchar in received data..
@@ -63,31 +69,49 @@ int ConnTCP::init ()
         if (sock == -1)
 		throw ConnCreateError (this, "cannot create socket for TCP/IP connection", errno);
 
-        apc_addr.sin_family = AF_INET;
-        hp = gethostbyname(hostname.c_str ());
-	if (hp == NULL)
-		throw ConnCreateError (this, (std::string ("unknow hostname ") + hostname).c_str (), errno);
-
-        bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
-        apc_addr.sin_port = htons(port);
-
-	for (int i = 0; i < 3; i++)
+	// empty hostname opens server connection (listening socket)
+	if (hostname.length () == 0)
 	{
-        	ret = connect (sock, (struct sockaddr *) &apc_addr, sizeof(apc_addr));
-		if (ret == 0)
-			break;
-	        if (ret == -1 && errno != ENETUNREACH)
-		 	throw ConnCreateError (this, "cannot connect socket", errno);
-		logStream (MESSAGE_WARNING) << "received network unreachable, waiting 1 second to try again" << sendLog;
-		sleep (1);
+		ret = listen (sock, 1);
+		if (ret)
+			throw ConnCreateError (this, "cannot listen on socket", errno);
+	}
+	else
+	{
+        	apc_addr.sin_family = AF_INET;
+	        hp = gethostbyname(hostname.c_str ());
+		if (hp == NULL)
+			throw ConnCreateError (this, (std::string ("unknow hostname ") + hostname).c_str (), errno);
+
+	        bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
+        	apc_addr.sin_port = htons(port);
+
+		for (int i = 0; i < 3; i++)
+		{
+        		ret = connect (sock, (struct sockaddr *) &apc_addr, sizeof(apc_addr));
+			if (ret == 0)
+				break;
+		        if (ret == -1 && errno != ENETUNREACH)
+			 	throw ConnCreateError (this, "cannot connect socket", errno);
+			logStream (MESSAGE_WARNING) << "received network unreachable, waiting 1 second to try again" << sendLog;
+			sleep (1);
+		}
 	}
 
         ret = fcntl (sock, F_SETFL, O_NONBLOCK);
         if (ret)
 		throw ConnCreateError (this, "cannot set socket non-blocking", errno);
-        
-	setConnState (CONN_CONNECTED);
-	logStream (MESSAGE_INFO) << "connected to " << hostname << ":" << port << sendLog;
+
+	if (hostname.length () == 0)
+	{
+		setConnState (CONN_CONNECTING);
+		logStream (MESSAGE_INFO) << "opened listening port " << port << sendLog;
+	}
+	else
+	{   
+		setConnState (CONN_CONNECTED);
+		logStream (MESSAGE_INFO) << "connected to " << hostname << ":" << port << sendLog;
+	}
         return 0;
 }
 

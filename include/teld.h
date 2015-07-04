@@ -808,6 +808,11 @@ class Telescope:public rts2core::Device
 		 * Telescope parking position.
 		 */
 		rts2core::ValueAltAz *parkPos;
+		
+		/**
+		 * Desired flip when parking.
+		 */
+		rts2core::ValueInteger *parkFlip;
 
 		/**
 		 * Add option for parking position.
@@ -820,7 +825,9 @@ class Telescope:public rts2core::Device
 		/**
 		 * Create parkPos variable.
 		 */
-		void createParkPos (double alt, double az);
+		void createParkPos (double alt, double az, int flip);
+
+		bool useParkFlipping;
 
 		/**
 		 * Local sidereal time.
@@ -1018,6 +1025,16 @@ class Telescope:public rts2core::Device
 		rts2core::ValueInteger *corrImgId;
 
 		rts2core::ValueInteger *wCorrImgId;
+
+		/**
+		 * Tracking / idle refresh interval
+		 */
+		rts2core::ValueDouble *refreshIdle;
+
+		/**
+		 * Slewing refresh interval
+		 */
+		rts2core::ValueDouble *refreshSlew;
 
 		void checkMoves ();
 
