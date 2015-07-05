@@ -206,9 +206,9 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec)
+int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
 {
-	double JD, ls, ha;
+	double ls, ha;
 	int32_t homeOff;
 	int ret;
 
@@ -216,7 +216,6 @@ int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip,
 	if (ret)
 		return -1;
 
-	JD = ln_get_julian_from_sys ();
 	ls = getLstDeg (JD);
 
 	ac += homeOff;
@@ -398,4 +397,133 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	#endif						 /* DEBUG_EXTRA */
 
 	return 0;
+}
+
+int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin)
+{
+	// nothing to check
+	if (hardHorizon == NULL)
+		return 0;
+
+	int32_t t_a = ac;
+	int32_t t_d = dc;
+
+	int32_t step_a = as;
+	int32_t step_d = ds;
+
+	int32_t soft_a;
+	int32_t soft_d;
+
+	if (ac > at)
+		step_a = -as;
+
+	if (dc > dt)
+		step_d = -ds;
+
+	double JD = ln_get_julian_from_sys ();  // fixed time; assuming slew does not take too long, this will work
+
+	// turned to true if we are in "soft" boundaries, e.g hit with margin applied
+	bool soft_hit = false;
+
+	for (; steps > 0; steps--)
+	{
+		// check if still visible
+		struct ln_equ_posn pos, un_pos;
+		struct ln_hrz_posn hrz;
+		int flip, ret;
+
+		int32_t n_a;
+		int32_t n_d;
+
+		// if we already reached destionation, e.g. currently computed position is within step to target, don't go further..
+		if (labs (t_a - at) < as)
+		{
+			n_a = at;
+			step_a = 0;
+		}
+		else
+		{
+			n_a = t_a + step_a;
+		}
+
+		if (labs (t_d - dt) < ds)
+		{
+			n_d = dt;
+			step_d = 0;
+		}
+		else
+		{
+			n_d = t_d + step_d;
+		}
+
+		ret = counts2sky (n_a, n_d, pos.ra, pos.dec, flip, un_pos.ra, un_pos.dec);
+		if (ret)
+			return -1;
+
+		ln_get_hrz_from_equ (&pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
+
+		if (soft_hit == true)
+		{
+			// if we really cannot go further
+			if (!hardHorizon->is_good (&hrz))
+			{
+				// then use last good position, and return we reached horizon..
+				at = soft_a;
+				dt = soft_d;
+				return 1;
+			}
+		}
+
+		// we don't need to move anymore, full trajectory is valid
+		if (step_a == 0 && step_d == 0)
+			return 0;
+
+		if (soft_hit == false)
+		{
+			// check soft margins..
+			hrz.alt += alt_margin;
+			if (hrz.alt > 90)
+				hrz.alt = 90;
+
+			hrz.az -= az_margin;
+
+			if (hrz.az < 0)
+				hrz.az += 360;
+
+			if (!hardHorizon->is_good (&hrz))
+			{
+				soft_hit = true;
+				soft_a = t_a;
+				soft_d = t_d;
+			}
+
+			hrz.az += 2 * az_margin;
+			if (hrz.az >= 360)
+				hrz.az -= 360;
+
+			if (!hardHorizon->is_good (&hrz))
+			{
+				soft_hit = true;
+				soft_a = t_a;
+				soft_d = t_d;
+			}
+		}
+
+		t_a = n_a;
+		t_d = n_d;
+	}
+
+	if (soft_hit == true)
+	{
+		at = soft_a;
+		dt = soft_d;
+	}
+	else
+	{
+		at = t_a;
+		dt = t_d;
+	}
+
+	// we are fine to move at least to the given coordinates
+	return 1;
 }

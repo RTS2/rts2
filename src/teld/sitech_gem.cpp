@@ -118,7 +118,7 @@ class Sitech:public GEM
 		/**
 		 * Sends SiTech XYS command with requested coordinates.
 		 */
-		void sitechMove (int32_t ac, int32_t dc);
+		int sitechMove (int32_t ac, int32_t dc);
 
 		/**
 		 * Starts mount tracking - endless speed limited pointing.
@@ -147,6 +147,9 @@ class Sitech:public GEM
 
 		rts2core::ValueLong *t_ra_pos;
 		rts2core::ValueLong *t_dec_pos;
+
+		rts2core::ValueBool *partialMove;
+		time_t moveTimeout;
 
 		rts2core::ValueDouble *trackingDist;
 
@@ -202,6 +205,7 @@ class Sitech:public GEM
 		/**
 		 * Retrieve telescope counts, convert them to RA and Declination.
 		 */
+		void getTel ();
 		void getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec);
 
 		/**
@@ -250,6 +254,9 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 
 	createValue (t_ra_pos, "T_AXRA", "target RA motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (t_dec_pos, "T_AXDEC", "target DEC motor axis count", true, RTS2_VALUE_WRITABLE);
+
+	createValue (partialMove, "partial_move", "if true, move just close to the horizon", false);
+	partialMove->setValueBool (false);
 
 	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 
@@ -339,7 +346,7 @@ void Sitech::fullStop (void)
 	}
 }
 
-void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec)
+void Sitech::getTel ()
 {
 	serConn->getAxisStatus ('X', radec_status);
 
@@ -362,6 +369,11 @@ void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_tel
 
 	xbits = radec_status.x_bit;
 	ybits = radec_status.y_bit;
+}
+
+void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec)
+{
+	getTel ();
 
 	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec);
 	if (ret)
@@ -563,8 +575,16 @@ int Sitech::startResync ()
 	t_ra_pos->setValueLong (ac);
 	t_dec_pos->setValueLong (dc);
 
-	sitechMove (ac, dc);
-	
+	ret = sitechMove (ac, dc);
+	if (ret < 0)
+		return ret;
+
+	partialMove->setValueBool (ret == 0 ? false : true);
+	sendValueAll (partialMove);
+
+	// 1 minute timeout for move
+	moveTimeout = time (NULL) + 60;
+
 	return 0;
 }
 
@@ -572,6 +592,25 @@ int Sitech::isMoving ()
 {
 	if (wasStopped)
 		return -1;
+
+	time_t now = time (NULL);
+	if (moveTimeout < now)
+	{
+		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
+		return -1;
+	}
+
+	// if resync was only partial..
+	if (partialMove->getValueBool ())
+	{
+		// check if we are close enough to partial target values
+		if ((labs (t_ra_pos->getValueLong () - r_ra_pos->getValueLong ()) < haCpd->getValueLong ()) && (labs (t_dec_pos->getValueLong () - r_dec_pos->getValueLong ()) < decCpd->getValueLong ()))
+		{
+			// try new move
+			startResync ();
+		}
+		return USEC_SEC / 10;
+	}
 
 	if (getTargetDistance () > trackingDist->getValueDouble ())
 	{
@@ -583,7 +622,8 @@ int Sitech::isMoving ()
 
 		return USEC_SEC / 10;
 	}
-		
+
+	// set ra speed to sidereal tracking
 	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
 	sendValueAll (ra_track_speed);
 
@@ -592,6 +632,7 @@ int Sitech::isMoving ()
 
 int Sitech::endMove ()
 {
+	partialMove->setValueBool (false);
 	setTracking (true);
 	return GEM::endMove ();
 }
@@ -619,11 +660,13 @@ int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == ra_pos)
 	{
+		partialMove->setValueBool (false);
 		sitechMove (newValue->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), dec_pos->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
 	if (oldValue == dec_pos)
 	{
+		partialMove->setValueBool (false);
 		sitechMove (ra_pos->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), newValue->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
@@ -656,8 +699,50 @@ void Sitech::getConfiguration ()
 	dec_acceleration->setValueDouble (serConn->getSiTechValue ('X', "R"));
 }
 
-void Sitech::sitechMove (int32_t ac, int32_t dc)
+int Sitech::sitechMove (int32_t ac, int32_t dc)
 {
+	// check if full path is above horizon..
+	getTel ();
+
+	int32_t t_ac = ac;
+	int32_t t_dc = dc;
+
+	// 5 deg margin in altitude and azimuth
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0);
+	// cannot check trajectory, log & return..
+	if (ret == -1)
+	{
+		logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+		return -1;
+	}
+	// possible hit, move just to where we can go..
+	if (ret == 1)
+	{
+		// if that was already partial move, check if moving only single axe would help
+		if (partialMove->getValueBool ())
+		{
+			// move only in dec axis
+			ac = r_ra_pos->getValueLong ();
+			dc = t_dc;
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0);
+			if (ret == -1)
+			{
+				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+				return -1;
+			}
+			// still hit, try to move only in RA axis
+			if (ret == 1)
+			{
+				ac = t_ac;
+				dc = r_dec_pos->getValueLong ();
+				ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0);
+			}
+		}
+		logStream (MESSAGE_WARNING) << "cannot move to full trajectory, moving only to " << ac << " " << dc << sendLog;
+		t_ra_pos->setValueLong (ac);
+		t_dec_pos->setValueLong (dc);
+	}
+
 	radec_Xrequest.y_dest = ac;
 	radec_Xrequest.x_dest = dc;
 
@@ -671,6 +756,8 @@ void Sitech::sitechMove (int32_t ac, int32_t dc)
 	radec_Xrequest.y_bits = ybits;
 
 	serConn->sendXAxisRequest (radec_Xrequest);
+
+	return ret;
 }
 
 void Sitech::sitechStartTracking (bool startTimer)

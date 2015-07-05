@@ -805,6 +805,11 @@ class Telescope:public rts2core::Device
 		virtual void setDiffTrack (double dra, double ddec) {}
 
 		/**
+		 * Hard horizon. Use it to check if telescope coordinates are within limits.
+		 */
+		ObjectCheck *hardHorizon;
+
+		/**
 		 * Telescope parking position.
 		 */
 		rts2core::ValueAltAz *parkPos;
@@ -1008,8 +1013,6 @@ class Telescope:public rts2core::Device
 		 */
 		rts2core::ValueTime *targetReached;
 
-		int startMove (rts2core::Connection * conn, double tar_ra, double tar_dec, bool onlyCorrect);
-
 		/**
 		 *
 		 * @param correction   correction type bitmask - 0 for no corerction, 1 for offsets, 2 for correction
@@ -1045,8 +1048,6 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueSelection *standbyPark;
 		const char *horizonFile;
-
-		ObjectCheck *hardHorizon;
 
 		/**
 		 * Apply aberation correction.

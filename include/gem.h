@@ -80,10 +80,33 @@ class GEM: public Telescope
 		 * @param un_ra   unflipped (raw hardware) RA
 		 * @param un_dec  unflipped (raw hardware) declination
 		 */
-		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec);
+		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec)
+		{
+			return counts2sky (ac, dc, ra, dec, flip, un_ra, un_dec, ln_get_julian_from_sys ());
+		}
 
-		// unlock basic pointing parameters
+		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD);
+
+		/**
+		 * Unlock basic pointing parameters. The parameters such as zero offsets etc. are made writable.
+		 */
 		void unlockPointing ();
+
+
+		/**
+		 * Check trajectory. If hardHorizon is present, make sure that the path between current and target coordinates does
+		 * not approach to horizon with given alt/az margin.
+		 *
+		 *
+		 * @param as     Step in counts on RA/HA axe. Must be positive number.
+		 * @param ds     Step in counts on DEC axe. Must be positive number.
+		 * @param steps  Total number of steps the trajectory will check.
+		 *
+		 * @return 0 if trajectory can be run without restriction, -1 if the trajectory goal is currently outside pointing limits,
+		 * 1 if the trajectory will hit horizon limit (at and dt contains maximum point where we can track safely).
+		 */
+		int checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin);
+
 
 	private:
 		int checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD, double ls, double dec);
