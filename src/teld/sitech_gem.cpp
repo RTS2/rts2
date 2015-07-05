@@ -27,6 +27,7 @@
 #include "connection/sitech.h"
 
 #define RTS2_SITECH_TIMER       RTS2_LOCAL_EVENT + 1220
+#define TRACK_TIME_DELTA        1.0
 
 // SITech counts/servero loop -> speed value
 #define SPEED_MULTI             65536
@@ -128,6 +129,7 @@ class Sitech:public GEM
 
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
+		double ticksPerSec2MotorSpeed (double tps);
 		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
 
 		ConnSitech *serConn;
@@ -174,6 +176,11 @@ class Sitech:public GEM
 		rts2core::ValueDouble *ra_track_speed;
 		rts2core::ValueDouble *dec_track_speed;
 
+		rts2core::ValueLong *ra_sitech_speed;
+		rts2core::ValueLong *dec_sitech_speed;
+
+		rts2core::ValueBool *use_constant_speed;
+
 		// current PID values
 		rts2core::ValueBool *trackingPIDs;
 
@@ -201,6 +208,9 @@ class Sitech:public GEM
 		const char *device_file;
 
 		void fullStop ();
+
+		// JD used in last getTel call
+		double getTelJD;
 		
 		/**
 		 * Retrieve telescope counts, convert them to RA and Declination.
@@ -280,6 +290,12 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (ra_track_speed, "ra_track_speed", "RA tracking speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 	createValue (dec_track_speed, "dec_track_speed", "DEC tracking speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE);
 
+	createValue (ra_sitech_speed, "ra_sitech_speed", "speed in controller units", false);
+	createValue (dec_sitech_speed, "dec_sitech_speed", "speed in controller units", false);
+
+	createValue (use_constant_speed, "use_constant_speed", "use precalculated speed for corrections", false, RTS2_VALUE_WRITABLE);
+	use_constant_speed->setValueBool (false);
+
 	createValue (trackingPIDs, "tracking_pids", "true if tracking PIDs are in action", false);
 
 	createValue (ra_acceleration, "ra_acceleration", "[deg/s^2] RA motor acceleration", false);
@@ -321,7 +337,7 @@ void Sitech::postEvent (rts2core::Event *event)
 			if (wasStopped)
 				break;
 			sitechStartTracking (false);
-			addTimer (5, event);
+			addTimer (TRACK_TIME_DELTA, event);
 			return;
 			break;
 	}
@@ -373,9 +389,11 @@ void Sitech::getTel ()
 
 void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec)
 {
+	getTelJD = ln_get_julian_from_sys ();
+
 	getTel ();
 
-	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec);
+	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec, getTelJD);
 	if (ret)
 		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
 }
@@ -701,14 +719,11 @@ void Sitech::getConfiguration ()
 
 int Sitech::sitechMove (int32_t ac, int32_t dc)
 {
-	// check if full path is above horizon..
-	getTel ();
-
-	int32_t t_ac = ac;
+/*	int32_t t_ac = ac;
 	int32_t t_dc = dc;
 
 	// 5 deg margin in altitude and azimuth
-	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0);
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, false);
 	// cannot check trajectory, log & return..
 	if (ret == -1)
 	{
@@ -716,32 +731,61 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 		return -1;
 	}
 	// possible hit, move just to where we can go..
-	if (ret == 1)
+	if (ret > 0)
 	{
+		int32_t dec_only_a;
+		int32_t dec_only_d;
+
+		int hit_dec = 0;
+		int hit_ra = 0;
+
 		// if that was already partial move, check if moving only single axe would help
 		if (partialMove->getValueBool ())
 		{
 			// move only in dec axis
 			ac = r_ra_pos->getValueLong ();
 			dc = t_dc;
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0);
-			if (ret == -1)
+			hit_dec = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
+			logStream (MESSAGE_INFO) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << hit_dec << sendLog;
+			if (hit_dec == -1)
 			{
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
 				return -1;
 			}
 			// still hit, try to move only in RA axis
-			if (ret == 1)
+			if (hit_dec > 0)
 			{
+				// save values for future use
+				dec_only_a = ac;
+				dec_only_d = dc;
+
 				ac = t_ac;
 				dc = r_dec_pos->getValueLong ();
-				ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0);
+				hit_ra = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
+				logStream (MESSAGE_INFO) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << hit_ra << sendLog;
+				if (hit_ra == -1)
+				{
+					logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+					return -1;
+				}
 			}
 		}
-		logStream (MESSAGE_WARNING) << "cannot move to full trajectory, moving only to " << ac << " " << dc << sendLog;
+
+		// select better trajectory
+		if (hit_ra != 0)
+		{
+			// if RA hits hard, and DEC soft, select DEC
+			if ((hit_dec == 1 && hit_ra == 2))
+			{
+				ac = dec_only_a;
+				dc = dec_only_d;
+			}
+			logStream (MESSAGE_WARNING) << "cannot move to full trajectory, moving only to " << ac << " " << dc << sendLog;
+		}
+
 		t_ra_pos->setValueLong (ac);
 		t_dec_pos->setValueLong (dc);
-	}
+	} */
 
 	radec_Xrequest.y_dest = ac;
 	radec_Xrequest.x_dest = dc;
@@ -757,24 +801,79 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 
 	serConn->sendXAxisRequest (radec_Xrequest);
 
-	return ret;
+	return 0;
 }
 
 void Sitech::sitechStartTracking (bool startTimer)
 {
-	radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
-	radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;
+	double sec_step = 2;
+	// calculate position sec_step from last position, base speed on this..
+	struct ln_equ_posn tarPos;
+	getTarget (&tarPos);
 
-	// 10 degress in ra; will be called periodically..
-	if (ra_track_speed->getValueDouble () > 0)
-		radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
-	else
-		radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
+	info ();
 
-	if (dec_track_speed->getValueDouble () > 0)
-		radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 10.0;
+	int32_t ac = r_ra_pos->getValueLong ();
+	int32_t dc = r_dec_pos->getValueLong ();
+
+	int32_t homeOff;
+
+	getHomeOffset (homeOff);
+
+	int ret = sky2counts (&tarPos, ac, dc, getTelJD + sec_step / 86400.0, homeOff, 0);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot calculate target position in 2 second from now, constant tracking" << sendLog;
+	}
+	
+	if (ret || use_constant_speed->getValueBool () == true)
+	{
+		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
+		radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;
+
+		// 10 degress in ra; will be called periodically..
+		if (ra_track_speed->getValueDouble () > 0)
+			radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+		else
+			radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+
+		if (dec_track_speed->getValueDouble () > 0)
+			radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+		else
+			radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+	}
 	else
-		radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 10.0;
+	{
+		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (labs (ac - r_ra_pos->getValueLong ()) / sec_step);
+		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (labs (dc - r_dec_pos->getValueLong ()) / sec_step);
+
+		if (radec_Xrequest.y_speed != 0)
+		{
+			if (ac > r_ra_pos->getValueLong ())
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+			else
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+		}
+		else
+		{
+			radec_Xrequest.y_dest = r_ra_pos->getValueLong ();
+		}
+
+		if (radec_Yrequest.x_speed != 0)
+		{
+			if (dc > r_dec_pos->getValueLong ())
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+			else
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+		}
+		else
+		{
+			radec_Yrequest.x_dest = r_dec_pos->getValueLong ();
+		}
+	}
+
+	ra_sitech_speed->setValueLong (radec_Xrequest.y_speed);
+	dec_sitech_speed->setValueLong (radec_Xrequest.x_speed);
 
 	radec_Xrequest.x_bits = xbits;
 	radec_Xrequest.y_bits = ybits;
@@ -787,7 +886,7 @@ void Sitech::sitechStartTracking (bool startTimer)
 	if (startTimer && (wasStopped == false))
 	{
 		deleteTimers (RTS2_SITECH_TIMER);
-		addTimer (5, new rts2core::Event (RTS2_SITECH_TIMER));
+		addTimer (TRACK_TIME_DELTA, new rts2core::Event (RTS2_SITECH_TIMER));
 	}
 }
 
@@ -800,6 +899,20 @@ double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double ful
 			return ((loop_ticks / full_circle) * dps) / 1953;
 		case FORCE_ONE:
 			return ((loop_ticks / full_circle) * dps) / servoPIDSampleRate->getValueDouble ();
+		default:
+			return 0;
+	}
+}
+
+double Sitech::ticksPerSec2MotorSpeed (double tps)
+{
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return tps * SPEED_MULTI / 1953;
+		case FORCE_ONE:
+			return tps * SPEED_MULTI / servoPIDSampleRate->getValueDouble ();
 		default:
 			return 0;
 	}

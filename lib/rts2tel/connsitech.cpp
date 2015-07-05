@@ -153,7 +153,7 @@ void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
 	*((uint32_t *) (data + 12)) = htole32 (ax_request.y_speed);
 
 	// we would like to set Xbits and Ybits..
-	*((uint8_t *) (data + 16)) = 1;
+	*((uint8_t *) (data + 16)) = 0;    // there isn't reason to use this anymore
 	*((uint8_t *) (data + 17)) = ax_request.x_bits;
 	*((uint8_t *) (data + 18)) = ax_request.y_bits;
 

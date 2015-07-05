@@ -39,10 +39,12 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	getTarget (&pos);
 
-	return sky2counts (&pos, ac, dc, JD, homeOff);
+	int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
+
+	return sky2counts (&pos, ac, dc, JD, homeOff, actual_flip);
 }
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
@@ -109,7 +111,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// both ways are possible, decide base on flipping parameter
 	else if (ret == 0 && ret_f == 0)
 	{
-		int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 #define max(a,b) ((a) > (b) ? (a) : (b))
 		switch (actual_flip)
 		{
@@ -399,7 +400,7 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	return 0;
 }
 
-int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin)
+int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
 {
 	// nothing to check
 	if (hardHorizon == NULL)
@@ -462,7 +463,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 
 		ln_get_hrz_from_equ (&pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 
-		if (soft_hit == true)
+		if (soft_hit == true || ignore_soft_beginning == true)
 		{
 			// if we really cannot go further
 			if (!hardHorizon->is_good (&hrz))
@@ -470,7 +471,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 				// then use last good position, and return we reached horizon..
 				at = soft_a;
 				dt = soft_d;
-				return 1;
+				return 2;
 			}
 		}
 
@@ -480,6 +481,8 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 
 		if (soft_hit == false)
 		{
+			int hits = 0;
+
 			// check soft margins..
 			hrz.alt += alt_margin;
 			if (hrz.alt > 90)
@@ -492,9 +495,13 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 
 			if (!hardHorizon->is_good (&hrz))
 			{
-				soft_hit = true;
-				soft_a = t_a;
-				soft_d = t_d;
+				if (ignore_soft_beginning == false)
+				{
+					soft_hit = true;
+					soft_a = t_a;
+					soft_d = t_d;
+				}
+				hits++;
 			}
 
 			hrz.az += 2 * az_margin;
@@ -503,10 +510,18 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 
 			if (!hardHorizon->is_good (&hrz))
 			{
-				soft_hit = true;
-				soft_a = t_a;
-				soft_d = t_d;
+				if (ignore_soft_beginning == false)
+				{
+					soft_hit = true;
+					soft_a = t_a;
+					soft_d = t_d;
+				}
+				hits++;
 			}
+
+			// we moved away from soft hit region
+			if (ignore_soft_beginning == true && hits == 0)
+				ignore_soft_beginning = false;
 		}
 
 		t_a = n_a;
