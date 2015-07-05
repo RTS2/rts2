@@ -719,8 +719,10 @@ void Sitech::getConfiguration ()
 
 int Sitech::sitechMove (int32_t ac, int32_t dc)
 {
-/*	int32_t t_ac = ac;
+	int32_t t_ac = ac;
 	int32_t t_dc = dc;
+
+	logStream (MESSAGE_DEBUG) << "sitechMove " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << sendLog;
 
 	// 5 deg margin in altitude and azimuth
 	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, false);
@@ -733,59 +735,51 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	// possible hit, move just to where we can go..
 	if (ret > 0)
 	{
-		int32_t dec_only_a;
-		int32_t dec_only_d;
+		int32_t move_a = t_ac - r_ra_pos->getValueLong ();
+		int32_t move_d = t_dc - r_dec_pos->getValueLong ();
 
-		int hit_dec = 0;
-		int hit_ra = 0;
+		int32_t move_diff = labs (move_a) - labs (move_d);
 
-		// if that was already partial move, check if moving only single axe would help
-		if (partialMove->getValueBool ())
+		// move for a time, move only one axe..the one which needs more time to move
+		if (move_diff > 0)
 		{
-			// move only in dec axis
-			ac = r_ra_pos->getValueLong ();
-			dc = t_dc;
-			hit_dec = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
-			logStream (MESSAGE_INFO) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << hit_dec << sendLog;
-			if (hit_dec == -1)
+			// move for a time only in RA; move_diff is positive, see check above
+			if (move_a > 0)
+				ac = r_ra_pos->getValueLong () + move_diff;
+			else
+				ac = r_ra_pos->getValueLong () - move_diff;
+			dc = r_dec_pos->getValueLong ();
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
+			logStream (MESSAGE_DEBUG) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
+			if (ret == -1)
 			{
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
 				return -1;
 			}
-			// still hit, try to move only in RA axis
-			if (hit_dec > 0)
-			{
-				// save values for future use
-				dec_only_a = ac;
-				dec_only_d = dc;
-
-				ac = t_ac;
-				dc = r_dec_pos->getValueLong ();
-				hit_ra = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
-				logStream (MESSAGE_INFO) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << hit_ra << sendLog;
-				if (hit_ra == -1)
-				{
-					logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
-					return -1;
-				}
-			}
 		}
-
-		// select better trajectory
-		if (hit_ra != 0)
+		else
 		{
-			// if RA hits hard, and DEC soft, select DEC
-			if ((hit_dec == 1 && hit_ra == 2))
+			// move for a time only in DEC; move_diff is negative, see check above
+			ac = r_ra_pos->getValueLong ();
+			if (move_d > 0)
+				dc = r_dec_pos->getValueLong () - move_diff;
+			else
+				dc = r_dec_pos->getValueLong () + move_diff;
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
+			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
+			if (ret == -1)
 			{
-				ac = dec_only_a;
-				dc = dec_only_d;
+				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+				return -1;
 			}
-			logStream (MESSAGE_WARNING) << "cannot move to full trajectory, moving only to " << ac << " " << dc << sendLog;
 		}
 
 		t_ra_pos->setValueLong (ac);
 		t_dec_pos->setValueLong (dc);
-	} */
+
+		// only partial move
+		ret = 1;
+	}
 
 	radec_Xrequest.y_dest = ac;
 	radec_Xrequest.x_dest = dc;
@@ -801,7 +795,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 
 	serConn->sendXAxisRequest (radec_Xrequest);
 
-	return 0;
+	return ret;
 }
 
 void Sitech::sitechStartTracking (bool startTimer)
@@ -831,7 +825,7 @@ void Sitech::sitechStartTracking (bool startTimer)
 		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
 		radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;
 
-		// 10 degress in ra; will be called periodically..
+		// 2 degrees in ra; will be called periodically..
 		if (ra_track_speed->getValueDouble () > 0)
 			radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
 		else
