@@ -168,6 +168,9 @@ class Sitech:public GEM
 		rts2core::ValueLong *ra_last;
 		rts2core::ValueLong *dec_last;
 
+		rts2core::ValueString *ra_errors;
+		rts2core::ValueString *dec_errors;
+
 		// request values - speed,..
 		rts2core::ValueDouble *ra_speed;
 		rts2core::ValueDouble *dec_speed;
@@ -230,6 +233,8 @@ class Sitech:public GEM
 		uint8_t ybits;
 
 		bool wasStopped;
+
+		std::string findErrors (int16_t e);
 };
 
 }
@@ -283,6 +288,9 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (ra_worm_phase, "y_worm_phase", "RA worm phase", false);
 	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
+
+	createValue (ra_errors, "ra_errors", "RA errors (only for FORCE ONE)", false);
+	createValue (dec_errors, "dec_erorrs", "DEC errors (only for FORCE_ONE)", false);
 
 	createValue (ra_speed, "ra_speed", "[deg/s] RA speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	createValue (dec_speed, "dec_speed", "[deg/s] DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
@@ -381,8 +389,35 @@ void Sitech::getTel ()
 
 	ra_worm_phase->setValueInteger (radec_status.y_worm_phase);
 
-	ra_last->setValueLong (radec_status.y_last);
-	dec_last->setValueLong (radec_status.x_last);
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			ra_last->setValueLong (le32toh (*(uint32_t*) &radec_status.y_last));
+			dec_last->setValueLong (le32toh (*(uint32_t*) &radec_status.x_last));
+			break;
+		case FORCE_ONE:
+			// find all possible errors
+			if ((radec_status.y_last[0] & 0x0F) == 0)
+			{
+				// upper nimble
+				int16_t ra_e = radec_status.y_last[0] << 4;
+				ra_e += radec_status.y_last[1];
+
+				// get first two bytes into re_e and dec_e
+				ra_errors->setValueString (findErrors (ra_e));
+			}
+			if ((radec_status.x_last[0] & 0x0F) == 0)
+			{
+				// upper nimble
+				int16_t dec_e = radec_status.x_last[0] << 4;
+				dec_e += radec_status.x_last[1];
+
+				// get first two bytes into re_e and dec_e
+				dec_errors->setValueString (findErrors (dec_e));
+			}
+			break;
+	}
 
 	xbits = radec_status.x_bit;
 	ybits = radec_status.y_bit;
@@ -406,6 +441,36 @@ void Sitech::getPIDs ()
 	PIDs->addValue (serConn->getSiTechValue ('X', "PPP"));
 	PIDs->addValue (serConn->getSiTechValue ('X', "III"));
 	PIDs->addValue (serConn->getSiTechValue ('X', "DDD"));
+}
+
+std::string Sitech::findErrors (int16_t e)
+{
+	std::string ret;
+	if (e & 0x001)
+		ret += "Gate Volts Low. ";
+	if (e & 0x002)
+		ret += "OverCurrent Hardware. ";
+	if (e & 0x004)
+		ret += "OverCurrent Firmware. ";
+	if (e & 0x008)
+		ret += "Motor Volts Low. ";
+	if (e & 0x010)
+		ret += "Power Board Over Temp. ";
+	if (e & 0x020)
+		ret += "Needs Reset (may not have any other errors). ";
+	if (e & 0x040)
+		ret += "Limit -. ";
+	if (e & 0x080)
+		ret += "Limit +. ";
+	if (e & 0x100)
+		ret += "Timed Over Current. ";
+	if (e & 0x200)
+		ret += "Position Error. ";
+	if (e & 0x400)
+		ret += "BiSS Encoder Error. ";
+	if (e & 0x800)
+		ret += "Checksum Error in return from Power Board. ";
+	return ret;
 }
 
 /*!

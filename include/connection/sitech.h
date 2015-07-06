@@ -29,22 +29,25 @@ namespace rts2teld
  */
 typedef struct
 {
-	int address;             //* Module address
+	int8_t address;          //* Module address
 	int32_t x_pos;           //* X (Alt/Dec) motor position
 	int32_t y_pos;           //* Y (Az/RA) motor position
 	int32_t x_enc;           //* X (Alt/Dec) encoder readout
 	int32_t y_enc;           //* Y (Ax/RA) encoder readout
-	char keypad;             //* Keypad status
-	char x_bit;              //* XBits
-	char y_bit;              //* YBits
-	char extra_bit;          //* Extra bits
+	// bit 17
+	int8_t keypad;           //* Keypad status
+	int8_t x_bit;            //* XBits
+	int8_t y_bit;            //* YBits
+	int8_t extra_bit;        //* Extra bits
 	int16_t ain_1;           //* Analog input 1
 	int16_t ain_2;           //* Analog input 2
+	// bit 25
 	uint32_t mclock;         //* Millisecond clock
 	int8_t temperature;      //* Temperature (probably CPU)
 	int8_t y_worm_phase;     //* Az/RA worm phase
-	int32_t x_last;          //* Alt/Dec motor location at last Alt/Dec scope encoder location change
-	int32_t y_last;          //* Az/RA motor location at last Az/RA scope encoder location change
+	// bit 31
+	int8_t x_last[4];        //* Alt/Dec motor location at last Alt/Dec scope encoder location change
+	int8_t y_last[4];        //* Az/RA motor location at last Az/RA scope encoder location change
 } SitechAxisStatus;
 
 typedef struct
