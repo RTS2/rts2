@@ -478,6 +478,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 			// if we really cannot go further
 			if (!hardHorizon->is_good (&hrz))
 			{
+				logStream (MESSAGE_DEBUG) << "hit hard limit at alt az " << hrz.alt << " " << hrz.az << " " << soft_a << " " << soft_d << " " << n_a << " " << n_d << sendLog;
 				if (soft_hit == true)
 				{
 					// then use last good position, and return we reached horizon..
@@ -488,8 +489,8 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 				else
 				{
 					// case when moving within soft will lead to hard hit..we don't want this path
-					at = n_a;
-					dt = n_d;
+					at = t_a;
+					dt = t_d;
 					return 3;
 				}
 			}
@@ -504,7 +505,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 			int hits = 0;
 
 			// check soft margins..
-			hrz.alt += alt_margin;
+			hrz.alt -= alt_margin;
 			if (hrz.alt > 90)
 				hrz.alt = 90;
 

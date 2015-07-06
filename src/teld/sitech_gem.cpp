@@ -822,10 +822,10 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 
 		// move for a time, move only one axe..the one which needs more time to move
 		// if we already tried DEC axis, we need to go with RA as second
-		if (move_diff > 0 || partialMove->getValueInteger () == 2)
+		if ((move_diff > 0 && partialMove->getValueInteger () == 0) || partialMove->getValueInteger () == 2)
 		{
 			if (partialMove->getValueInteger () == 2)
-				move_diff = labs (move_a) / 2.0;
+				move_diff = labs (move_a);
 			// move for a time only in RA; move_diff is positive, see check above
 			if (move_a > 0)
 				ac = r_ra_pos->getValueLong () + move_diff;
