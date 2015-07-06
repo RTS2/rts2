@@ -150,7 +150,7 @@ class Sitech:public GEM
 		rts2core::ValueLong *t_ra_pos;
 		rts2core::ValueLong *t_dec_pos;
 
-		rts2core::ValueBool *partialMove;
+		rts2core::ValueInteger *partialMove;
 		time_t moveTimeout;
 
 		rts2core::ValueDouble *trackingDist;
@@ -265,8 +265,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (t_ra_pos, "T_AXRA", "target RA motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (t_dec_pos, "T_AXDEC", "target DEC motor axis count", true, RTS2_VALUE_WRITABLE);
 
-	createValue (partialMove, "partial_move", "if true, move just close to the horizon", false);
-	partialMove->setValueBool (false);
+	createValue (partialMove, "partial_move", "1 - RA only, 2 - DEC only, move just close to the horizon", false);
+	partialMove->setValueInteger (0);
 
 	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 
@@ -346,7 +346,8 @@ void Sitech::postEvent (rts2core::Event *event)
 
 /* Full stop */
 void Sitech::fullStop (void)
-{ 
+{
+	partialMove->setValueInteger (0);
 	try
 	{
 		serConn->siTechCommand ('X', "N");
@@ -494,10 +495,10 @@ int Sitech::initHardware ()
 int Sitech::info ()
 {
 	double t_telRa, t_telDec, ut_telRa, ut_telDec;
-	int t_telFlip;
+	int t_telFlip = 0;
 
 	getTel (t_telRa, t_telDec, t_telFlip, ut_telRa, ut_telDec);
-	
+
 	setTelRaDec (t_telRa, t_telDec);
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
@@ -597,7 +598,7 @@ int Sitech::startResync ()
 	if (ret < 0)
 		return ret;
 
-	partialMove->setValueBool (ret == 0 ? false : true);
+	partialMove->setValueInteger (ret);
 	sendValueAll (partialMove);
 
 	// 1 minute timeout for move
@@ -619,7 +620,7 @@ int Sitech::isMoving ()
 	}
 
 	// if resync was only partial..
-	if (partialMove->getValueBool ())
+	if (partialMove->getValueInteger ())
 	{
 		// check if we are close enough to partial target values
 		if ((labs (t_ra_pos->getValueLong () - r_ra_pos->getValueLong ()) < haCpd->getValueLong ()) && (labs (t_dec_pos->getValueLong () - r_dec_pos->getValueLong ()) < decCpd->getValueLong ()))
@@ -650,7 +651,7 @@ int Sitech::isMoving ()
 
 int Sitech::endMove ()
 {
-	partialMove->setValueBool (false);
+	partialMove->setValueInteger (0);
 	setTracking (true);
 	return GEM::endMove ();
 }
@@ -678,13 +679,13 @@ int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == ra_pos)
 	{
-		partialMove->setValueBool (false);
+		partialMove->setValueInteger (0);
 		sitechMove (newValue->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), dec_pos->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
 	if (oldValue == dec_pos)
 	{
-		partialMove->setValueBool (false);
+		partialMove->setValueInteger (0);
 		sitechMove (ra_pos->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), newValue->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
@@ -722,10 +723,11 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	int32_t t_ac = ac;
 	int32_t t_dc = dc;
 
-	logStream (MESSAGE_DEBUG) << "sitechMove " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << sendLog;
+	logStream (MESSAGE_DEBUG) << "sitechMove " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << partialMove->getValueInteger () << sendLog;
 
 	// 5 deg margin in altitude and azimuth
-	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, false);
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, false, false);
+	logStream (MESSAGE_DEBUG) << "sitechMove checkTrajectory " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 	// cannot check trajectory, log & return..
 	if (ret == -1)
 	{
@@ -740,45 +742,54 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 
 		int32_t move_diff = labs (move_a) - labs (move_d);
 
+		logStream (MESSAGE_DEBUG) << "sitechMove a " << move_a << " d " << move_d << " diff " << move_diff << sendLog;
+
 		// move for a time, move only one axe..the one which needs more time to move
-		if (move_diff > 0)
+		// if we already tried DEC axis, we need to go with RA as second
+		if (move_diff > 0 || partialMove->getValueInteger () == 2)
 		{
+			if (partialMove->getValueInteger () == 2)
+				move_diff = labs (move_a) / 2.0;
 			// move for a time only in RA; move_diff is positive, see check above
 			if (move_a > 0)
 				ac = r_ra_pos->getValueLong () + move_diff;
 			else
 				ac = r_ra_pos->getValueLong () - move_diff;
 			dc = r_dec_pos->getValueLong ();
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)
 			{
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
 				return -1;
 			}
+			// move RA only
+			ret = 1;
 		}
 		else
 		{
+			if (partialMove->getValueInteger () == 1)
+				move_diff = -labs (move_d);
 			// move for a time only in DEC; move_diff is negative, see check above
 			ac = r_ra_pos->getValueLong ();
 			if (move_d > 0)
 				dc = r_dec_pos->getValueLong () - move_diff;
 			else
 				dc = r_dec_pos->getValueLong () + move_diff;
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true);
+			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)
 			{
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
 				return -1;
 			}
+			// move DEC only
+			ret = 2;
 		}
 
 		t_ra_pos->setValueLong (ac);
 		t_dec_pos->setValueLong (dc);
-
-		// only partial move
-		ret = 1;
 	}
 
 	radec_Xrequest.y_dest = ac;

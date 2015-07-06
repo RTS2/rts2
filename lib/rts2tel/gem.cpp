@@ -400,7 +400,7 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	return 0;
 }
 
-int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
+int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning, bool dont_flip)
 {
 	// nothing to check
 	if (hardHorizon == NULL)
@@ -421,6 +421,8 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 	if (dc > dt)
 		step_d = -ds;
 
+	int first_flip = telFlip->getValueInteger ();
+
 	double JD = ln_get_julian_from_sys ();  // fixed time; assuming slew does not take too long, this will work
 
 	// turned to true if we are in "soft" boundaries, e.g hit with margin applied
@@ -431,7 +433,8 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 		// check if still visible
 		struct ln_equ_posn pos, un_pos;
 		struct ln_hrz_posn hrz;
-		int flip, ret;
+		int flip = 0;
+		int ret;
 
 		int32_t n_a;
 		int32_t n_d;
@@ -461,6 +464,13 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 		if (ret)
 			return -1;
 
+		if (dont_flip == true && first_flip != flip)
+		{
+			at = n_a;
+			dt = n_d;
+			return 4;
+		}
+
 		ln_get_hrz_from_equ (&pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 
 		if (soft_hit == true || ignore_soft_beginning == true)
@@ -468,10 +478,20 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 			// if we really cannot go further
 			if (!hardHorizon->is_good (&hrz))
 			{
-				// then use last good position, and return we reached horizon..
-				at = soft_a;
-				dt = soft_d;
-				return 2;
+				if (soft_hit == true)
+				{
+					// then use last good position, and return we reached horizon..
+					at = soft_a;
+					dt = soft_d;
+					return 2;
+				}
+				else
+				{
+					// case when moving within soft will lead to hard hit..we don't want this path
+					at = n_a;
+					dt = n_d;
+					return 3;
+				}
 			}
 		}
 
@@ -521,7 +541,11 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 
 			// we moved away from soft hit region
 			if (ignore_soft_beginning == true && hits == 0)
+			{
 				ignore_soft_beginning = false;
+				soft_a = t_a;
+				soft_d = t_d;
+			}
 		}
 
 		t_a = n_a;

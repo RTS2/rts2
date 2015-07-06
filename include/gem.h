@@ -102,12 +102,13 @@ class GEM: public Telescope
 		 * @param ds			step in counts on DEC axe. Must be positive number
 		 * @param steps			total number of steps the trajectory will check
 		 * @param ignore_soft_beginning if true, algorithm will ignore fact that the mount is in soft limit at the beginning of the trajectory
+		 * @param max_alt               maximum altitude mouont should go to
 		 *
 		 * @return 0 if trajectory can be run without restriction, -1 if the trajectory goal is currently outside pointing limits,
 		 * 1 if the trajectory will hit horizon limit (at and dt contains maximum point where we can track safely)
 		 * 2 if the trajectory will hit hard horizon (at and dt contains maximum point where we can track safely)
 		 */
-		int checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning);
+		int checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning, bool dont_flip);
 
 
 	private:
