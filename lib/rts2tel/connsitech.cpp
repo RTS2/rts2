@@ -63,6 +63,11 @@ void ConnSitech::switchToBinary ()
 	binary = true;
 }
 
+void ConnSitech::resetErrors ()
+{
+	siTechCommand ('Y', "XS");
+}
+
 void ConnSitech::resetController ()
 {
 	siTechCommand ('X', "Q");

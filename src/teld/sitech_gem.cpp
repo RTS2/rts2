@@ -234,7 +234,7 @@ class Sitech:public GEM
 
 		bool wasStopped;
 
-		std::string findErrors (int16_t e);
+		std::string findErrors (uint16_t e);
 };
 
 }
@@ -401,8 +401,10 @@ void Sitech::getTel ()
 			if ((radec_status.y_last[0] & 0x0F) == 0)
 			{
 				// upper nimble
-				int16_t ra_e = radec_status.y_last[0] << 4;
+				uint16_t ra_e = radec_status.y_last[0] << 4;
 				ra_e += radec_status.y_last[1];
+
+				ra_last->setValueInteger (*(uint16_t*) &radec_status.y_last);
 
 				// get first two bytes into re_e and dec_e
 				ra_errors->setValueString (findErrors (ra_e));
@@ -410,8 +412,10 @@ void Sitech::getTel ()
 			if ((radec_status.x_last[0] & 0x0F) == 0)
 			{
 				// upper nimble
-				int16_t dec_e = radec_status.x_last[0] << 4;
+				uint16_t dec_e = radec_status.x_last[0] << 4;
 				dec_e += radec_status.x_last[1];
+
+				dec_last->setValueInteger (*(uint16_t*) &radec_status.x_last);
 
 				// get first two bytes into re_e and dec_e
 				dec_errors->setValueString (findErrors (dec_e));
@@ -443,7 +447,7 @@ void Sitech::getPIDs ()
 	PIDs->addValue (serConn->getSiTechValue ('X', "DDD"));
 }
 
-std::string Sitech::findErrors (int16_t e)
+std::string Sitech::findErrors (uint16_t e)
 {
 	std::string ret;
 	if (e & 0x001)
@@ -602,6 +606,13 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 			return -2;
 		serConn->setSiTechValue ('X', "F", 0);
 		serConn->setSiTechValue ('Y', "F", 0);
+		return 0;
+	}
+	else if (conn->isCommand ("reset_errors"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->resetErrors ();
 		return 0;
 	}
 	else if (conn->isCommand ("reset_controller"))

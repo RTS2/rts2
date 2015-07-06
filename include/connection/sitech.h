@@ -46,8 +46,8 @@ typedef struct
 	int8_t temperature;      //* Temperature (probably CPU)
 	int8_t y_worm_phase;     //* Az/RA worm phase
 	// bit 31
-	int8_t x_last[4];        //* Alt/Dec motor location at last Alt/Dec scope encoder location change
-	int8_t y_last[4];        //* Az/RA motor location at last Az/RA scope encoder location change
+	uint8_t x_last[4];       //* Alt/Dec motor location at last Alt/Dec scope encoder location change
+	uint8_t y_last[4];       //* Az/RA motor location at last Az/RA scope encoder location change
 } SitechAxisStatus;
 
 typedef struct
@@ -203,6 +203,11 @@ class ConnSitech: public rts2core::ConnSerial
 		 * Switch communication to binary mode.
 		 */
 		void switchToBinary ();
+
+		/**
+		 * Reset controller errors.
+		 */
+		void resetErrors ();
 
 		/**
 		 * Reset SiTech controller.
