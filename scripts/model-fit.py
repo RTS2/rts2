@@ -30,11 +30,11 @@ with open(sys.argv[1]) as f:
 	
 	par_init = np.array([0,0,0,0,0,0,0,0,0])
 	
-	aa_ra = np.array(a_data[:,0],np.float)
-	aa_dec = np.array(a_data[:,1],np.float)
-	ar_ra = np.array(a_data[:,2],np.float)
-	ar_dec = np.array(a_data[:,3],np.float)
+	aa_ra = np.radians(np.array(a_data[:,0],np.float))
+	aa_dec = np.radians(np.array(a_data[:,1],np.float))
+	ar_ra = np.radians(np.array(a_data[:,2],np.float))
+	ar_dec = np.radians(np.array(a_data[:,3],np.float))
 
 	best, cov, info, message, ier = leastsq(fit_dec, par_init, args=(aa_ra, ar_ra, aa_dec, ar_dec), full_output=True)
 
-	print "Best fit",best	
+	print "Best fit",np.degrees(best)	
