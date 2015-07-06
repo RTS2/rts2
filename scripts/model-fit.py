@@ -35,13 +35,6 @@ with open(sys.argv[1]) as f:
 	ar_ra = np.array(a_data[:,2],np.float)
 	ar_dec = np.array(a_data[:,3],np.float)
 
-	#aa_ra = np.array([0,1,2,3,4,5,6,7,9,10])
-	#ar_ra = np.array([0,1,2,3,4,5,6,7,9,10])
-	#aa_dec = np.array([0,1,2,3,4,5,6,7,9,10])
-	#ar_dec = np.array([0,1,2,3,4,5,6,7,9,10])
-	
-	print ar_dec
-
 	best, cov, info, message, ier = leastsq(fit_dec, par_init, args=(aa_ra, ar_ra, aa_dec, ar_dec), full_output=True)
 
 	print "Best fit",best	
