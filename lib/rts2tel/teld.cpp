@@ -1264,7 +1264,10 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		{
 			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az " << LibnovaHrz (&hrpos) << sendLog;
-			oriRaDec->setValueRaDec (telRaDec->getRa (), telRaDec->getDec ());
+			oriRaDec->setValueRaDec (NAN, NAN);
+			objRaDec->setValueRaDec (NAN, NAN);
+			telTargetRaDec->setValueRaDec (NAN, NAN);
+			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
 				conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
@@ -1280,7 +1283,10 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		{
 			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target declination is outside of allowed values, is " << pos.dec << " limit is " << decUpperLimit->getValueFloat () << sendLog;
-			oriRaDec->setValueRaDec (telRaDec->getRa (), telRaDec->getDec ());
+			oriRaDec->setValueRaDec (NAN, NAN);
+			objRaDec->setValueRaDec (NAN, NAN);
+			telTargetRaDec->setValueRaDec (NAN, NAN);
+			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
 				conn->sendCommandEnd (DEVDEM_E_HW, "declination limit violated");
