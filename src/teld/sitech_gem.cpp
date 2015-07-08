@@ -171,6 +171,21 @@ class Sitech:public GEM
 		rts2core::ValueString *ra_errors;
 		rts2core::ValueString *dec_errors;
 
+		rts2core::ValueInteger *ra_errors_val;
+		rts2core::ValueInteger *dec_errors_val;
+
+		rts2core::ValueInteger *ra_pos_error;
+		rts2core::ValueInteger *dec_pos_error;
+
+		rts2core::ValueInteger *ra_supply;
+		rts2core::ValueInteger *dec_supply;
+
+		rts2core::ValueInteger *ra_temp;
+		rts2core::ValueInteger *dec_temp;
+
+		rts2core::ValueInteger *ra_pid_out;
+		rts2core::ValueInteger *dec_pid_out;
+
 		// request values - speed,..
 		rts2core::ValueDouble *ra_speed;
 		rts2core::ValueDouble *dec_speed;
@@ -286,11 +301,27 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (mclock, "mclock", "millisecond board clocks", false);
 	createValue (temperature, "temperature", "[C] board temperature (CPU)", false);
 	createValue (ra_worm_phase, "y_worm_phase", "RA worm phase", false);
+
 	createValue (ra_last, "ra_last", "RA motor location at last RA scope encoder location change", false);
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
 
 	createValue (ra_errors, "ra_errors", "RA errors (only for FORCE ONE)", false);
 	createValue (dec_errors, "dec_erorrs", "DEC errors (only for FORCE_ONE)", false);
+
+	createValue (ra_errors_val, "ra_errors_val", "RA errors value", false);
+	createValue (dec_errors_val, "dec_erorrs_val", "DEC errors value", false);
+
+	createValue (ra_pos_error, "ra_pos_error", "RA positional error", false);
+	createValue (dec_pos_error, "dec_pos_error", "DEC positional error", false);
+
+	createValue (ra_supply, "ra_supply", "[V] RA supply", false);
+	createValue (dec_supply, "dec_supply", "[V] DEC supply", false);
+
+	createValue (ra_temp, "ra_temp", "[F] RA power board CPU temperature", false);
+	createValue (dec_temp, "dec_temp", "[F] DEC power board CPU temperature", false);
+
+	createValue (ra_pid_out, "ra_pid_out", "RA PID output", false);
+	createValue (dec_pid_out, "dec_pid_out", "DEC PID output", false);
 
 	createValue (ra_speed, "ra_speed", "[deg/s] RA speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	createValue (dec_speed, "dec_speed", "[deg/s] DEC speed (base rate), in counts per servo loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
@@ -397,30 +428,68 @@ void Sitech::getTel ()
 			dec_last->setValueLong (le32toh (*(uint32_t*) &radec_status.x_last));
 			break;
 		case FORCE_ONE:
+		{
+			// upper nimble
+			uint16_t ra_val = radec_status.y_last[0] << 4;
+			ra_val += radec_status.y_last[1];
+
+			uint16_t dec_val = radec_status.x_last[0] << 4;
+			dec_val += radec_status.x_last[1];
+
 			// find all possible errors
-			if ((radec_status.y_last[0] & 0x0F) == 0)
+			switch (radec_status.y_last[0] & 0x0F)
 			{
-				// upper nimble
-				uint16_t ra_e = radec_status.y_last[0] << 4;
-				ra_e += radec_status.y_last[1];
+				case 0:
+					ra_errors_val->setValueInteger (ra_val);
+					ra_errors->setValueString (findErrors (ra_val));
+					break;
 
-				ra_last->setValueInteger (*(uint16_t*) &radec_status.y_last);
+				case 1:
+					ra_current->setValueInteger (ra_val);
+					break;
 
-				// get first two bytes into re_e and dec_e
-				ra_errors->setValueString (findErrors (ra_e));
+				case 2:
+					ra_supply->setValueInteger (ra_val);
+					break;
+
+				case 3:
+					ra_temp->setValueInteger (ra_val);
+					break;
+
+				case 4:
+					ra_pid_out->setValueInteger (ra_val);
+					break;
 			}
-			if ((radec_status.x_last[0] & 0x0F) == 0)
+
+
+			switch (radec_status.x_last[0] & 0x0F)
 			{
-				// upper nimble
-				uint16_t dec_e = radec_status.x_last[0] << 4;
-				dec_e += radec_status.x_last[1];
+				case 0:
+					dec_errors_val->setValueInteger (dec_val);
+					dec_errors->setValueString (findErrors (dec_val));
+					break;
 
-				dec_last->setValueInteger (*(uint16_t*) &radec_status.x_last);
+				case 1:
+					dec_current->setValueInteger (dec_val);
+					break;
 
-				// get first two bytes into re_e and dec_e
-				dec_errors->setValueString (findErrors (dec_e));
+				case 2:
+					dec_supply->setValueInteger (dec_val);
+					break;
+
+				case 3:
+					dec_temp->setValueInteger (dec_val);
+					break;
+
+				case 4:
+					dec_pid_out->setValueInteger (dec_val);
+					break;
 			}
 			break;
+
+			ra_pos_error->setValueInteger (*(uint16_t*) &radec_status.y_last[2]);
+			dec_pos_error->setValueInteger (*(uint16_t*) &radec_status.x_last[2]);
+		}
 	}
 
 	xbits = radec_status.x_bit;
@@ -572,15 +641,6 @@ int Sitech::info ()
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
 
-	ra_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('Y', "S"), ra_ticks->getValueLong ()));
-	dec_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('X', "S"), dec_ticks->getValueLong ()));
-
-	ra_current->setValueDouble (serConn->getSiTechValue ('Y', "C") / 100.0);
-	dec_current->setValueDouble (serConn->getSiTechValue ('X', "C") / 100.0);
-
-	ra_pwm->setValueInteger (serConn->getSiTechValue ('Y', "O"));
-	dec_pwm->setValueInteger (serConn->getSiTechValue ('X', "O"));
-
 	return rts2teld::GEM::info ();
 }
 
@@ -620,6 +680,7 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 		if (!conn->paramEnd ())
 			return -2;
 		serConn->resetController ();
+		getConfiguration ();
 		return 0;
 	}
 	else if (conn->isCommand ("go_auto"))
@@ -628,6 +689,7 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 			return -2;
 		serConn->siTechCommand ('X', "A");
 		serConn->siTechCommand ('Y', "A");
+		getConfiguration ();
 		return 0;
 	}
 	else if (conn->isCommand ("si_track"))
@@ -659,6 +721,8 @@ int Sitech::initValues ()
 int Sitech::startResync ()
 {
 	deleteTimers (RTS2_SITECH_TIMER);
+
+	getConfiguration ();
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
 	int ret = sky2counts (ac, dc);
@@ -792,6 +856,15 @@ void Sitech::getConfiguration ()
 {
 	ra_acceleration->setValueDouble (serConn->getSiTechValue ('Y', "R"));
 	dec_acceleration->setValueDouble (serConn->getSiTechValue ('X', "R"));
+
+	ra_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('Y', "S"), ra_ticks->getValueLong ()));
+	dec_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('X', "S"), dec_ticks->getValueLong ()));
+
+	ra_current->setValueDouble (serConn->getSiTechValue ('Y', "C") / 100.0);
+	dec_current->setValueDouble (serConn->getSiTechValue ('X', "C") / 100.0);
+
+	ra_pwm->setValueInteger (serConn->getSiTechValue ('Y', "O"));
+	dec_pwm->setValueInteger (serConn->getSiTechValue ('X', "O"));
 }
 
 int Sitech::sitechMove (int32_t ac, int32_t dc)
