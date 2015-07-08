@@ -172,7 +172,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (airmass, "AIRMASS", "Airmass of target location");
 	createValue (hourAngle, "HA", "Location hour angle", true, RTS2_DT_RA);
 	createValue (lst, "LST", "Local Sidereal Time", true, RTS2_DT_RA);
-	createValue (jd, "JD", "Modified Julian Date", true);
+	createValue (jdVal, "JD", "Modified Julian Date", true);
 
 	createValue (targetDistance, "target_distance", "distance to the target in degrees", false, RTS2_DT_DEG_DIST);
 	createValue (targetStarted, "move_started", "time when movement was started", false);
@@ -1073,8 +1073,8 @@ int Telescope::info ()
 
 	// fill in airmass, ha and lst
 	airmass->setValueDouble (ln_get_airmass (telAltAz->getAlt (), 750));
-	jd->setValueDouble (ln_get_julian_from_sys ());
-	lst->setValueDouble (getLstDeg (jd->getValueDouble ()));
+	jdVal->setValueDouble (ln_get_julian_from_sys ());
+	lst->setValueDouble (getLstDeg (jdVal->getValueDouble ()));
 	hourAngle->setValueDouble (ln_range_degrees (lst->getValueDouble () - telRaDec->getRa ()));
 	targetDistance->setValueDouble (getTargetDistance ());
 

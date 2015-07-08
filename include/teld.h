@@ -842,7 +842,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Telescope idea of julian date.
 		 */
-		rts2core::ValueDouble *jd;
+		rts2core::ValueDouble *jdVal;
 
 		rts2core::ValueSelection *raGuide;
 		rts2core::ValueSelection *decGuide;
