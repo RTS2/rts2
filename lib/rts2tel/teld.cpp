@@ -71,7 +71,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	if (diffTrack)
 	{
-		createValue (diffTrackRaDec, "DSPEED", "[deg/hour] differential tracking speed", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+		createValue (diffTrackRaDec, "DRATE", "[deg/hour] differential tracking rate", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 		diffTrackRaDec->setValueRaDec (0, 0);
 	}
 	else
