@@ -476,7 +476,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 		if (soft_hit == true || ignore_soft_beginning == true)
 		{
 			// if we really cannot go further
-			if (!hardHorizon->is_good (&hrz))
+			if (hardHorizon->is_good (&hrz) == 0)
 			{
 				logStream (MESSAGE_DEBUG) << "hit hard limit at alt az " << hrz.alt << " " << hrz.az << " " << soft_a << " " << soft_d << " " << n_a << " " << n_d << sendLog;
 				if (soft_hit == true)
@@ -502,19 +502,8 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 
 		if (soft_hit == false)
 		{
-			int hits = 0;
-
 			// check soft margins..
-			hrz.alt -= alt_margin;
-			if (hrz.alt > 90)
-				hrz.alt = 90;
-
-			hrz.az -= az_margin;
-
-			if (hrz.az < 0)
-				hrz.az += 360;
-
-			if (!hardHorizon->is_good (&hrz))
+			if (hardHorizon->is_good_with_margin (&hrz, alt_margin, az_margin) == 0)
 			{
 				if (ignore_soft_beginning == false)
 				{
@@ -522,30 +511,16 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 					soft_a = t_a;
 					soft_d = t_d;
 				}
-				hits++;
 			}
-
-			hrz.az += 2 * az_margin;
-			if (hrz.az >= 360)
-				hrz.az -= 360;
-
-			if (!hardHorizon->is_good (&hrz))
+			else
 			{
-				if (ignore_soft_beginning == false)
+				// we moved away from soft hit region
+				if (ignore_soft_beginning == true)
 				{
-					soft_hit = true;
+					ignore_soft_beginning = false;
 					soft_a = t_a;
 					soft_d = t_d;
 				}
-				hits++;
-			}
-
-			// we moved away from soft hit region
-			if (ignore_soft_beginning == true && hits == 0)
-			{
-				ignore_soft_beginning = false;
-				soft_a = t_a;
-				soft_d = t_d;
 			}
 		}
 

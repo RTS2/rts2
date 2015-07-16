@@ -960,7 +960,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 
 void Sitech::sitechStartTracking (bool startTimer)
 {
-	double sec_step = 2;
+	double sec_step = 2.0;
 	// calculate position sec_step from last position, base speed on this..
 	struct ln_equ_posn tarPos;
 	getTarget (&tarPos);
@@ -974,13 +974,33 @@ void Sitech::sitechStartTracking (bool startTimer)
 
 	getHomeOffset (homeOff);
 
-	int ret = sky2counts (&tarPos, ac, dc, getTelJD + sec_step / 86400.0, homeOff, 0);
+	double futureJD = getTelJD + sec_step / 86400.0;
+
+	int ret = sky2counts (&tarPos, ac, dc, futureJD, homeOff, 0);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "cannot calculate target position in 2 second from now, constant tracking" << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot calculate target position in 2 second from now, stop tracking" << sendLog;
+		stopMove ();
+		return;
 	}
+
+	if (hardHorizon)
+	{
+
+		// check if not tracking below horizon within target RA DEC - maximum tracking is 2 degrees from current position
+		struct ln_hrz_posn hrz;
+		getTargetAltAz (&hrz);
+
+		if (hardHorizon->is_good_with_margin (&hrz, 2, 2) != 0)
+		{
+			logStream (MESSAGE_WARNING) << "tracking past hardware limits, stop tracking" << sendLog;
+			stopMove ();
+			return;
+		}
+	}
+
 	
-	if (ret || use_constant_speed->getValueBool () == true)
+	if (use_constant_speed->getValueBool () == true)
 	{
 		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
 		radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;

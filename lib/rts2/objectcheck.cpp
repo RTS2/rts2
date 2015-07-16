@@ -165,6 +165,24 @@ int ObjectCheck::is_good (const struct ln_hrz_posn *hrz, int hardness)
 	return hrz->alt > getHorizonHeight (hrz, hardness);
 }
 
+int ObjectCheck::is_good_with_margin (struct ln_hrz_posn *hrz, double alt_margin, double az_margin, int hardness)
+{
+	// check margin one..
+	hrz->alt = hrz->alt - alt_margin;
+	if (hrz->alt > 90)
+		hrz->alt = 90;
+
+	hrz->az = ln_range_degrees (hrz->az - az_margin);
+
+	int ret = is_good (hrz, hardness);
+	if (ret != 0)
+		return ret;
+
+	hrz->az = ln_range_degrees (hrz->az + 2 * az_margin);
+
+	return is_good (hrz, hardness);
+}
+
 double ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1, horizon_t::iterator iter2)
 {
 	double az1;
