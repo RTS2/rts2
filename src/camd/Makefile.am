@@ -19,6 +19,8 @@ rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @LIB_CFITSIO@ 
 
 rts2_camd_sidecar_SOURCES = sidecar.cpp
 
+rts2_camd_azcam_SOURCES = azcam.cpp
+
 EXTRA_DIST = 
 
 if SUNCYGMAC

@@ -1,12 +1,20 @@
 #include "camd.h"
 
+#include "connection/tcp.h"
+
+namespace rts2camd
+{
+
 class AzCam:public rts2camd::Camera
 {
 	public:
-		AzCam();
-		virtual ~AzCam();
+		AzCam (int argc, char **argv);
+		virtual ~AzCam ();
 
 	protected:
+		virtual int processOption (int opt);
+		virtual int initHardware ();
+
 		virtual int startExposure ();
 		virtual int doReadout ();
 
@@ -14,14 +22,26 @@ class AzCam:public rts2camd::Camera
 		rts2core::ConnTCP *commandConn;
 		rts2core::ConnTCP *dataConn;
 
+		int callCommand (const char *cmd);
+
 		const char *azcamHost;
+};
+
 }
 
-AzCam::AzCam ()
+using namespace rts2camd;
+
+AzCam::AzCam (int argc, char **argv): Camera (argc, argv)
 {
 	azcamHost = NULL;
 
 	addOption ('a', NULL, 1, "AZCAM hostname, hostname of the computer running AZCam");
+}
+
+AzCam::~AzCam ()
+{
+	delete dataConn;
+	delete commandConn;
 }
 
 int AzCam::processOption (int opt)
@@ -41,7 +61,7 @@ int AzCam::initHardware()
 {
 	if (azcamHost == NULL)
 	{
-		logStream (LOG_ERROR) << "you need to specify AZCAM host with -a argument" << sendLog;
+		logStream (MESSAGE_ERROR) << "you need to specify AZCAM host with -a argument" << sendLog;
 		return -1;
 	}
 
@@ -56,6 +76,7 @@ int AzCam::initHardware()
 		commandConn->setDebug ();
 		dataConn->setDebug ();
 	}
+	return 0;
 }
 
 int AzCam::callCommand (const char *cmd)
@@ -64,14 +85,24 @@ int AzCam::callCommand (const char *cmd)
 
 	// end character \r, 20 second wtime
 	commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20);
+
+	return 0;
 }
 
 int AzCam::startExposure()
 {
 	callCommand ("exposure");
+	return 0;
 }
 
 int AzCam::doReadout ()
 {
 	callCommand ("readout");
+	return 0;
+}
+
+int main (int argc, char **argv)
+{
+	AzCam device (argc, argv);
+	device.run ();
 }
