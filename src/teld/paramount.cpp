@@ -877,7 +877,7 @@ void Paramount::updateTrack ()
 	JD += track_next.tv_usec / USEC_SEC / 86400.0;
 	getTarget (&corr_pos);
 	// calculate position at track_next time
-	sky2counts (&corr_pos, ac, dc, JD, 0);
+	sky2counts (&corr_pos, ac, dc, JD, 0, flipping->getValueInteger ());
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " << track_delta << sendLog;
