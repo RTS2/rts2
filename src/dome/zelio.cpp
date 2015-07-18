@@ -446,17 +446,25 @@ int Zelio::startClose ()
 	{
 		uint16_t reg;
 		zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, 0);
-		// update automode status..
-		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
-		automode->setValueBool (reg & ZS_SW_AUTO);
-		// reset ignore rain value
-		if (ignoreRain && ignoreRain->getValueBool ())
+		try
 		{
-	  		setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, false);
-			ignoreRain->setValueBool (false);
+			// update automode status..
+			zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+			automode->setValueBool (reg & ZS_SW_AUTO);
+			// reset ignore rain value
+			if (ignoreRain && ignoreRain->getValueBool ())
+			{
+		  		setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, false);
+				ignoreRain->setValueBool (false);
+			}
+			if (automode->getValueBool () == false)
+			{
+				return 0;
+			}
 		}
-		if (automode->getValueBool () == false)
+		catch (rts2core::ConnError err)
 		{
+			logStream (MESSAGE_WARNING) << "cannot read dome status after issuing close command" << sendLog;
 			return 0;
 		}
 	}
