@@ -153,6 +153,21 @@ class Telescope:public rts2core::Device
 
 		virtual void setFullBopState (rts2_status_t new_state);
 
+		/**
+		 * Check if given hrz position is above horizon.
+		 *
+		 * @param hrz   horizontal position to check
+		 *
+		 * @return -1 if hard horizon was not specified, 0 if not above hard horizon, 1 if above hard horizon
+		 */
+		int isGood (struct ln_hrz_posn *hrz)
+		{
+			if (hardHorizon)
+				return hardHorizon->is_good (hrz);
+			else
+				return -1;
+		}
+		
 	protected:
 		void applyOffsets (struct ln_equ_posn *pos)
 		{
