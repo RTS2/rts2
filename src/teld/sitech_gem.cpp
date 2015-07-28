@@ -984,22 +984,6 @@ void Sitech::sitechStartTracking (bool startTimer)
 		return;
 	}
 
-	if (hardHorizon)
-	{
-
-		// check if not tracking below horizon within target RA DEC - maximum tracking is 2 degrees from current position
-		struct ln_hrz_posn hrz;
-		getTargetAltAz (&hrz);
-
-		if (hardHorizon->is_good_with_margin (&hrz, 2, 2) != 0)
-		{
-			logStream (MESSAGE_WARNING) << "tracking past hardware limits, stop tracking" << sendLog;
-			stopMove ();
-			return;
-		}
-	}
-
-	
 	if (use_constant_speed->getValueBool () == true)
 	{
 		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
@@ -1053,6 +1037,15 @@ void Sitech::sitechStartTracking (bool startTimer)
 	radec_Xrequest.y_bits = ybits;
 
 	xbits |= (0x01 << 4);
+
+	// check that the entered trajactory is valid
+	ret = checkTrajectory (ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 2.0, 2.0, false, false);
+	if (ret != 0)
+	{
+		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
+		stopMove ();
+		return;
+	}
 
 	serConn->sendXAxisRequest (radec_Xrequest);
 
