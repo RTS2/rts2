@@ -151,7 +151,6 @@ class Sitech:public GEM
 		rts2core::ValueLong *t_dec_pos;
 
 		rts2core::ValueInteger *partialMove;
-		time_t moveTimeout;
 
 		rts2core::ValueDouble *trackingDist;
 
@@ -741,9 +740,6 @@ int Sitech::startResync ()
 	partialMove->setValueInteger (ret);
 	sendValueAll (partialMove);
 
-	// 1 minute timeout for move
-	moveTimeout = time (NULL) + 60;
-
 	return 0;
 }
 
@@ -753,7 +749,7 @@ int Sitech::isMoving ()
 		return -1;
 
 	time_t now = time (NULL);
-	if (moveTimeout < now)
+	if ((getTargetStarted () + 60) > now)
 	{
 		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
 		return -1;
@@ -925,7 +921,6 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 				dc = r_dec_pos->getValueLong () - move_diff;
 			else
 				dc = r_dec_pos->getValueLong () + move_diff;
-			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)

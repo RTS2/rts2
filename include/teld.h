@@ -564,6 +564,14 @@ class Telescope:public rts2core::Device
 			hrz->az = telAltAz->getAz ();
 		}
 
+		/**
+		 * Returns time when move start was commanded (in ctime).
+		 */
+		double getTargetStarted ()
+		{
+			return targetStarted->getValueDouble ();
+		}
+
 		double getOffsetRa () { return offsRaDec->getRa (); }
 
 		double getOffsetDec () { return offsRaDec->getDec (); }
