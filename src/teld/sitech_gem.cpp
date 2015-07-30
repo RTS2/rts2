@@ -749,7 +749,7 @@ int Sitech::isMoving ()
 		return -1;
 
 	time_t now = time (NULL);
-	if ((getTargetStarted () + 60) > now)
+	if ((getTargetStarted () + 60) < now)
 	{
 		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
 		return -1;
