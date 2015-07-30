@@ -901,7 +901,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 			else
 				ac = r_ra_pos->getValueLong () - move_diff;
 			dc = r_dec_pos->getValueLong ();
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true, false);
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 3.0, 3.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)
 			{
@@ -921,7 +921,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 				dc = r_dec_pos->getValueLong () - move_diff;
 			else
 				dc = r_dec_pos->getValueLong () + move_diff;
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true, false);
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 3.0, 3.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)
 			{
