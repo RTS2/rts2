@@ -1038,7 +1038,7 @@ void Sitech::sitechStartTracking (bool startTimer)
 	if (ret != 0)
 	{
 		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
-		stopMove ();
+		setTracking (false);
 		return;
 	}
 
