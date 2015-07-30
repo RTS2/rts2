@@ -484,10 +484,10 @@ void Sitech::getTel ()
 					dec_pid_out->setValueInteger (dec_val);
 					break;
 			}
-			break;
 
 			ra_pos_error->setValueInteger (*(uint16_t*) &radec_status.y_last[2]);
 			dec_pos_error->setValueInteger (*(uint16_t*) &radec_status.x_last[2]);
+			break;
 		}
 	}
 
