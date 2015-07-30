@@ -908,6 +908,11 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
 				return -1;
 			}
+			if (ret == 3)
+			{
+				logStream (MESSAGE_WARNING) << "cannot move out of limits with RA only, trying DEC only move" << sendLog;
+				return 1;
+			}
 			// move RA only
 			ret = 1;
 		}
@@ -926,6 +931,11 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 			if (ret == -1)
 			{
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+				return -1;
+			}
+			if (ret == 3)
+			{
+				logStream (MESSAGE_WARNING) << "cannot move out of limits with DEC only, aborting move" << sendLog;
 				return -1;
 			}
 			// move DEC only
