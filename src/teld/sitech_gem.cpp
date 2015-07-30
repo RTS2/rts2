@@ -305,7 +305,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
 
 	createValue (ra_errors, "ra_errors", "RA errors (only for FORCE ONE)", false);
-	createValue (dec_errors, "dec_erorrs", "DEC errors (only for FORCE_ONE)", false);
+	createValue (dec_errors, "dec_errors", "DEC errors (only for FORCE_ONE)", false);
 
 	createValue (ra_errors_val, "ra_errors_val", "RA errors value", false);
 	createValue (dec_errors_val, "dec_erorrs_val", "DEC errors value", false);
