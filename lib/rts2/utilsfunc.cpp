@@ -482,3 +482,15 @@ void normalizeRaDec (double &ra, double &dec)
 	}
 	ra = ln_range_degrees (ra);
 }
+
+float celsiusToFahrenheit (float c)
+{
+	return c * 1.8 + 32;
+}
+
+float fahrenheitToCelsius (float f)
+{
+	return (f - 32) * 1.8;
+}
+
+#

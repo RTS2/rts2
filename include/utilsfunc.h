@@ -362,4 +362,14 @@ void getNight (time_t curr_time, struct ln_lnlat_posn *observer, double nightHor
  */
 void normalizeRaDec (double &ra, double &dec);
 
+/**
+ * Converts degrees Celsius to degrees Fahrenheit.
+ */
+float celsiusToFahrenheit (float c);
+
+/**
+ * Converts degrees Fahrenheit to Celsius.
+ */
+float fahrenheitToCelsius (float f);
+
 #endif							 /* !__RTS_UTILSFUNC__ */
