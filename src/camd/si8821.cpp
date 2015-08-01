@@ -888,6 +888,7 @@ void SI8821::setReadout (int idx, int v, const char *name)
 	{
 		throw rts2core::Error (std::string ("cannot set ") + name);
 	}
+	camera.readout[idx] = v;
 }
 
 int main (int argc, char **argv)
