@@ -18,6 +18,7 @@
  */
 
 #include "camd.h"
+#include "utilsfunc.h"
 
 #include <string.h>
 #include <sys/ioctl.h>
@@ -222,7 +223,7 @@ int SI8821::info ()
 		return -1;
 	}
 
-	tempCCD->setValueFloat (camera.status[STATUS_CCD_TEMP_IX]);
+	tempCCD->setValueFloat (kelvinToCelsius (camera.status[STATUS_CCD_TEMP_IX] / 10.0));
 	ccdPressure->setValueFloat (camera.status[STATUS_PRESSURE_IX]);
 
 	return Camera::info ();
