@@ -129,6 +129,9 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv)
 	createTempSet ();
 	createExpType ();
 
+	createDataChannels ();
+	setNumChannels (2);
+
 	createValue (backplateTemperature, "backplate_temp", "[C] backplate temperature", false);
 	createValue (ccdPressure, "pressure", "[mTor] pressure inside CCD chamber", false);
 
@@ -383,32 +386,53 @@ int SI8821::doReadout ()
 	if (camera.dma_status.transferred != camera.dma_config.total)
 		printf("NEXT wakeup xfer %d bytes\n", camera.dma_status.transferred );
 
-	if (camera.dma_status.status & SI_DMA_STATUS_DONE)
-		printf ("done\n");
-	else
-		printf ("timeout\n");
-
-#ifdef NOT
-	flip = (unsigned short *)malloc(4096*4096*2);
-	bzero (flip, 4096*4096*2 );
-
-	if (serlen < 2047)
+	if (!(camera.dma_status.status & SI_DMA_STATUS_DONE))
 	{
-		//camera_demux_gen( flip, c->ptr, 2048, serlen, parlen );
-		write_dma_data( flip, 2048*2048*2 );
+		logStream (MESSAGE_ERROR) << "timeout occured" << sendLog;
+		return -1;
 	}
-	else
-	{
-		//camera_demux_gen( flip, c->ptr, 4096, serlen, parlen );
-		write_dma_data( flip, 4096*4096*2 );
-	}
-	free(flip);
-#endif
 
-	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize ());
+	// split to half..1st and 2nd channel
+	short unsigned int channel[getUsedWidth () * getUsedHeight ()];
+
+	short unsigned int *p = channel;
+	short unsigned int *d = camera.ptr;
+
+	// get first channel
+	for (int r = 0; r < getUsedHeight (); r++)
+	{
+		for (int c = 0; c < getUsedWidth (); c++)
+		{
+			*p = *d;
+			p++;
+			d += 2;
+		}
+	}
+
+	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (), 0);
 
 	if (ret < 0)
 		return -1;
+
+	p = channel;
+	d = camera.ptr + 1;
+
+	// get first channel
+	for (int r = 0; r < getUsedHeight (); r++)
+	{
+		for (int c = 0; c < getUsedWidth (); c++)
+		{
+			*p = *d;
+			p++;
+			d += 2;
+		}
+	}
+
+	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (), 1);
+
+	if (ret < 0)
+		return -1;
+
 	if (getWriteBinaryDataSize () == 0)
 		return -2;
 
