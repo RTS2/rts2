@@ -99,6 +99,8 @@ class SI8821:public Camera
 
 		int swapl (int *d);
 
+		rts2core::ValueFloat *ccdPressure;
+
 		rts2core::ValueBool *testImage;
 		int total;   // DMA size
 
@@ -114,7 +116,11 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv)
 	cameraCfg = NULL;
 	cameraSet = NULL;
 
+	createTempCCD ();
+	createTempCCDHistory ();
 	createExpType ();
+
+	createValue (ccdPressure, "PRESSURE", "[mTor] pressure inside CCD chamber", false);
 
 	bzero (&camera, sizeof(struct SI_CAMERA));
 
@@ -195,7 +201,7 @@ int SI8821::initHardware ()
 	setfile_readout (cameraSet);
 	send_readout ();
 	send_command ('H');     // H    - load readout
-	receive_n_ints (32, (int *)&camera.readout);
+	receive_n_ints (32, (int *) &camera.readout);
 	if (expect_yn () != 1)
 	{
 		logStream (MESSAGE_ERROR) << "cannot read camera configuration" << sendLog;
@@ -208,6 +214,17 @@ int SI8821::initHardware ()
 
 int SI8821::info ()
 {
+	send_command ('I');
+	receive_n_ints (16, camera.status);
+	if (expect_yn () != 1)
+	{
+		logStream (MESSAGE_WARNING) << "cannot read camera status" << sendLog;
+		return -1;
+	}
+
+	tempCCD->setValueFloat (camera.status[STATUS_CCD_TEMP_IX]);
+	ccdPressure->setValueFloat (camera.status[STATUS_PRESSURE_IX]);
+
 	return Camera::info ();
 }
 
