@@ -100,6 +100,8 @@ class SI8821:public Camera
 
 		int swapl (int *d);
 
+		void setReadout (int idx, int v, const char *name);
+
 		rts2core::ValueFloat *backplateTemperature;
 		rts2core::ValueInteger *ccdPressure;
 
@@ -209,7 +211,7 @@ int SI8821::initHardware ()
 		return -1;
 	}
 
-	setSize (camera.readout[READOUT_SERLEN_IX], camera.readout[READOUT_PARLEN_IX], 0, 0);
+	setSize (camera.readout[READOUT_SERIAL_LENGTH_IX], camera.readout[READOUT_PARALLEL_LENGTH_IX], camera.readout[READOUT_SERIAL_ORIGIN_IX], camera.readout[READOUT_PARALLEL_ORIGIN_IX]);
 	return 0;
 }
 
@@ -243,8 +245,46 @@ int SI8821::startExposure ()
 	if (camera.ptr)
 		dma_unmap ();
 
-	serlen = camera.readout[READOUT_SERLEN_IX];
-	parlen = camera.readout[READOUT_PARLEN_IX];
+	try
+	{
+		// exposure time in ms
+		int exptime_ms = getExposure () * 1000;
+
+		if (camera.readout[READOUT_EXPOSURE_IX] != exptime_ms)
+		{
+			// set exposure time
+			setReadout (READOUT_EXPOSURE_IX, exptime_ms, "exposure time");
+		}
+
+		// setup window - ROI
+		if (camera.readout[READOUT_SERIAL_ORIGIN_IX] != chipTopX ())
+		{
+			setReadout (READOUT_SERIAL_ORIGIN_IX, chipTopX (), "serial origin");
+		}
+
+		if (camera.readout[READOUT_SERIAL_LENGTH_IX] != getUsedWidth ())
+		{
+			setReadout (READOUT_SERIAL_LENGTH_IX, getUsedWidth (), "serial length");
+		}
+
+		if (camera.readout[READOUT_PARALLEL_ORIGIN_IX] != chipTopY ())
+		{
+			setReadout (READOUT_PARALLEL_ORIGIN_IX, chipTopY (), "parallel origin");
+		}
+
+		if (camera.readout[READOUT_PARALLEL_LENGTH_IX] != getUsedHeight ())
+		{
+			setReadout (READOUT_PARALLEL_LENGTH_IX, getUsedHeight (), "parallel length");
+		}
+	}
+	catch (rts2core::Error &e)
+	{
+		logStream (MESSAGE_ERROR) << e.what () << sendLog;
+		return -1;
+	}
+
+	serlen = camera.readout[READOUT_SERIAL_LENGTH_IX];
+	parlen = camera.readout[READOUT_PARALLEL_LENGTH_IX];
 
 	total = serlen*parlen*2*2; /* 2 bytes per short, 2 readout?? */
 
@@ -278,25 +318,6 @@ int SI8821::startExposure ()
 	}
 
 	bzero (&camera.dma_status, sizeof(struct SI_DMA_STATUS));
-
-	// exposure time in ms
-	int exptime_ms = getExposure () * 1000;
-
-	if (camera.readout[READOUT_EXPOSURE_IX] != exptime_ms)
-	{
-		// set exposure time
-		send_command ('G');
-
-		int data[2];
-		data[0] = READOUT_EXPOSURE_IX;
-		data[1] = exptime_ms;
-		send_n_ints (2, data);
-		if (expect_yn () != 1)
-		{
-			logStream (MESSAGE_DEBUG) << "cannot set exposure time" << sendLog;
-			return -1;
-		}
-	}
 
 	char cmd = 'C';
 	if (testImage->getValueBool () == false)
@@ -769,7 +790,6 @@ int SI8821::clear_buffer ()
 		return 0;
 }
 
-
 int SI8821::send_command (int cmd)
 {
   	clear_buffer ();    
@@ -836,32 +856,42 @@ int SI8821::expect_yn ()
 //------------------------------------------------------------------------
 
 int SI8821::swapl( int *d )
-//int *d;
 {
-  union {
-    int i;
-    unsigned char c[4];
-  }u;
-  unsigned char tmp;
+	union {
+		int i;
+		unsigned char c[4];
+	} u;
+	unsigned char tmp;
 
-  u.i = *d;
-  tmp = u.c[0];
-  u.c[0] = u.c[3];
-  u.c[3] = tmp;
+	u.i = *d;
+	tmp = u.c[0];
+	u.c[0] = u.c[3];
+	u.c[3] = tmp;
 
-  tmp = u.c[1];
-  u.c[1] = u.c[2];
-  u.c[2] = tmp;
+	tmp = u.c[1];
+	u.c[1] = u.c[2];
+	u.c[2] = tmp;
 
-  *d = u.i;
-return 0; // APMOTERO: Added to solve compiling warnings
+	*d = u.i;
+	return 0;
 }
-//------------------------------------------------------------------------
+
+void SI8821::setReadout (int idx, int v, const char *name)
+{
+	send_command ('G');
+ 
+	int data[2];
+	data[0] = idx;
+	data[1] = v;
+	send_n_ints (2, data);
+	if (expect_yn () != 1)
+	{
+		throw rts2core::Error (std::string ("cannot set ") + name);
+	}
+}
 
 int main (int argc, char **argv)
 {
 	SI8821 device (argc, argv);
 	return device.run ();
 }
-//------------------------------------------------------------------------
-

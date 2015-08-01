@@ -27,26 +27,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   used by test_app,  and gui
 */
 
-#define SI_STATUS_MAX              16
-#define SI_CONFIG_MAX              32
-#define SI_READOUT_MAX             32
-#define SI_READSPEED_MAX            8
+#define SI_STATUS_MAX                 16
+#define SI_CONFIG_MAX                 32
+#define SI_READOUT_MAX                32
+#define SI_READSPEED_MAX               8
 
-#define CFG_TYPE_NOTUSED            0 
-#define CFG_TYPE_INPUTD             1 
-#define CFG_TYPE_DROPDI             8 
-#define CFG_TYPE_DROPDP             9 
-#define CFG_TYPE_BITF               3 
+#define CFG_TYPE_NOTUSED               0 
+#define CFG_TYPE_INPUTD                1 
+#define CFG_TYPE_DROPDI                8 
+#define CFG_TYPE_DROPDP                9 
+#define CFG_TYPE_BITF                  3 
 
-#define STATUS_CCD_TEMP_IX          0
-#define STATUS_BACKPLATE_TEMP_IX    1
-#define STATUS_PRESSURE_IX          2
-#define STATUS_SHUTTER_IX           8
-#define STATUS_COOLER_IX           10
+#define STATUS_CCD_TEMP_IX             0
+#define STATUS_BACKPLATE_TEMP_IX       1
+#define STATUS_PRESSURE_IX             2
+#define STATUS_SHUTTER_IX              8
+#define STATUS_COOLER_IX              10
 
-#define READOUT_SERLEN_IX     1
-#define READOUT_PARLEN_IX     5
-#define READOUT_EXPOSURE_IX   8
+#define READOUT_SERIAL_ORIGIN_IX       0
+#define READOUT_SERIAL_LENGTH_IX       1
+#define READOUT_SERIAL_BINNING_IX      2
+#define READOUT_SERIAL_POSTSCAN_IX     3
+#define READOUT_PARALLEL_ORIGIN_IX     4
+#define READOUT_PARALLEL_LENGTH_IX     5
+#define READOUT_PARALLEL_BINNING_IX    6
+#define READOUT_PARALLEL_POSTSCAN_IX   7
+#define READOUT_EXPOSURE_IX            8
 
 struct CFG_ENTRY {
   char *name;
