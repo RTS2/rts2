@@ -122,6 +122,11 @@ class Sitech:public GEM
 		int sitechMove (int32_t ac, int32_t dc);
 
 		/**
+		 * Check if movement only in DEC axis is a possibility.
+		 */
+		int checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d);
+
+		/**
 		 * Starts mount tracking - endless speed limited pointing.
                  * Called periodically to make sure we stay on target.
 		 */
@@ -893,8 +898,10 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 		// if we already tried DEC axis, we need to go with RA as second
 		if ((move_diff > 0 && partialMove->getValueInteger () == 0) || partialMove->getValueInteger () == 2)
 		{
+			// if we already move partialy, try to move maximum distance; otherwise, move only difference between axes, so we can decide once we hit point with the same axis distance what's next
 			if (partialMove->getValueInteger () == 2)
 				move_diff = labs (move_a);
+
 			// move for a time only in RA; move_diff is positive, see check above
 			if (move_a > 0)
 				ac = r_ra_pos->getValueLong () + move_diff;
@@ -908,36 +915,34 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
 				return -1;
 			}
+
 			if (ret == 3)
 			{
 				logStream (MESSAGE_WARNING) << "cannot move out of limits with RA only, trying DEC only move" << sendLog;
-				return 1;
+				ret = checkMoveDEC (ac, dc, move_d);
+				if (ret < 0)
+				{
+					logStream (MESSAGE_ERROR) << "cannot move RA and DEC only, aborting move" << sendLog;
+					return ret;
+				}
 			}
 			// move RA only
 			ret = 1;
 		}
 		else
 		{
-			if (partialMove->getValueInteger () == 1)
-				move_diff = -labs (move_d);
-			// move for a time only in DEC; move_diff is negative, see check above
-			ac = r_ra_pos->getValueLong ();
-			if (move_d > 0)
-				dc = r_dec_pos->getValueLong () - move_diff;
-			else
-				dc = r_dec_pos->getValueLong () + move_diff;
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 3.0, 3.0, true, false);
-			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
-			if (ret == -1)
+			// first move - move only move_diff, to reach point where both axis will have same distance to go
+			if (partialMove->getValueInteger () == 0)
 			{
-				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
-				return -1;
+				// move_diff is negative, see check above; fill to move_d move_diff with move_d sign
+				if (move_d < 0)
+					move_d = move_diff;
+				else
+					move_d = -move_diff;
 			}
-			if (ret == 3)
-			{
-				logStream (MESSAGE_WARNING) << "cannot move out of limits with DEC only, aborting move" << sendLog;
-				return -1;
-			}
+			ret = checkMoveDEC (ac, dc, move_d);
+			if (ret < 0)
+				return ret;
 			// move DEC only
 			ret = 2;
 		}
@@ -961,6 +966,26 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	serConn->sendXAxisRequest (radec_Xrequest);
 
 	return ret;
+}
+
+int Sitech::checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d)
+{
+	// move for a time only in DEC
+	ac = r_ra_pos->getValueLong ();
+	dc = r_dec_pos->getValueLong () + move_d;
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 3.0, 3.0, true, false);
+	logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
+	if (ret == -1)
+	{
+		logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+		return -1;
+	}
+	if (ret == 3)
+	{
+		logStream (MESSAGE_WARNING) << "cannot move out of limits with DEC only, aborting move" << sendLog;
+		return -1;
+	}
+	return 0;
 }
 
 void Sitech::sitechStartTracking (bool startTimer)
