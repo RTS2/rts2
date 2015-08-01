@@ -26,8 +26,8 @@
 #include <fcntl.h>
 #include <sys/mman.h> // APMONTERO: new
 
-#include "si8821.h"
-#include "si_app.h"
+#include "si8821/si8821.h"
+#include "si8821/si_app.h"
 
 namespace rts2camd
 {
@@ -64,48 +64,43 @@ class SI8821:public Camera
 		const char *cameraCfg;
 		const char *cameraSet;
 
-		//int camera_fd;
-		struct SI_CAMERA *camera; // APMONTERO: new
+		struct SI_CAMERA camera;
 
 		int verbose;
 
 		int init_com (int baud, int parity, int bits, int stopbits, int buffersize);
 
-		int load_cfg( struct CFG_ENTRY **e, const char *fname, const char *var ); // APMONTERO: new
-		int load_camera_cfg( struct SI_CAMERA *c, const char *fname); // APMONTERO: new
-		int parse_cfg_string( struct CFG_ENTRY *entry ); // APMONTERO: new
-		int setfile_readout( struct SI_CAMERA *c, const char *file ); // APMONTERO: new
-		int receive_n_ints( int fd, int n, int *data ); // APMONTERO: new
-		int send_n_ints( int fd, int n, int *data ); // APMONTERO: new
-		struct CFG_ENTRY *find_readout( struct SI_CAMERA *c, char *name ); // APMONTERO: new
-		void send_readout( struct SI_CAMERA *c ); // APMONTERO: new
+		int load_cfg (struct CFG_ENTRY **e, const char *fname, const char *var);
+		int load_camera_cfg (struct SI_CAMERA *c, const char *fname);
+		int parse_cfg_string (struct CFG_ENTRY *entry );
+		int setfile_readout (const char *file ); 
+		int receive_n_ints (int n, int *data);
+		int send_n_ints (int n, int *data); 
+		struct CFG_ENTRY *find_readout (char *name);
+		void send_readout (); 
 
-		void write_dma_data( unsigned char *ptr, int total ); // APMONTERO: new
-		void dma_unmap( struct SI_CAMERA *c ); // APMONTERO: new
-		void camera_image( struct SI_CAMERA *c, int cmd ); // APMONTERO: new
+		void write_dma_data (unsigned char *ptr);
+		void dma_unmap ();
 
 		int clear_buffer ();
-		int clear_buffer(int fd);
 
 		int send_command (int cmd);
-		int send_command( int fd, int cmd );// APMONTERO: new
 
 		/**
 		 * @return -1 error, 0 no, 1 yes
 		 */
 		int send_command_yn (int cmd);
-		int send_command_yn(int fd, int data );// APMONTERO: new
 
 		int send_char (int data);
-		int send_char(int fd, int data);
 		int receive_char ();
-		int receive_char(int fd);
 	
 		int expect_yn ();
-		int expect_yn( int fd );
-		void expect_y( int fd );
+		void expect_y ();
 
-		int swapl( int *d );
+		int swapl (int *d);
+
+		rts2core::ValueBool *testImage;
+		int total;   // DMA size
 
 };
 
@@ -116,27 +111,26 @@ using namespace rts2camd;
 SI8821::SI8821 (int argc, char **argv):Camera (argc, argv)
 {
 	devicePath = "/dev/SIPCI_0";
-	//cameraCfg = NULL; APMONTERO: line commented
-	cameraCfg = NULL; // APMONTERO: file .cfg setted
+	cameraCfg = NULL;
 	cameraSet = NULL;
 
-	//camera_fd = 0; APMONTERO: line commented
-	camera = ( struct SI_CAMERA *)malloc(sizeof(struct SI_CAMERA )); // APMONTERO: new
-	bzero(camera, sizeof(struct SI_CAMERA)); // APMONTERO: new
+	createExpType ();
+
+	bzero (&camera, sizeof(struct SI_CAMERA));
 
 	addOption ('f', NULL, 1, "SI device path; default to /dev/SIPCI_0");
 	addOption ('c', NULL, 1, "SI camera configuration file");
 	addOption ('s', NULL, 1, "SI camera configuration set (values) file");
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::SI8821" << sendLog;
+
+	createValue (testImage, "test_image", "if true, make a test image", true, RTS2_VALUE_WRITABLE);
+	testImage->setValueBool (false);
 }
-//------------------------------------------------------------------------
 
 SI8821::~SI8821 ()
 {
-	if (camera->fd)
-		close (camera->fd);
+	if (camera.fd)
+		close (camera.fd);
 }
-//------------------------------------------------------------------------
 
 int SI8821::processOption (int opt)
 {
@@ -156,7 +150,6 @@ int SI8821::processOption (int opt)
 	}
 	return 0;
 }
-//------------------------------------------------------------------------
 
 int SI8821::initHardware ()
 {
@@ -172,17 +165,15 @@ int SI8821::initHardware ()
 		return -1;
 	}
 
-	//camera_fd = open (devicePath, O_RDWR, 0);
-	camera->fd = open (devicePath, O_RDWR, 0);
-	//if (camera_fd < 0)
-	if (camera->fd < 0)
+	camera.fd = open (devicePath, O_RDWR, 0);
+	if (camera.fd < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot open " << devicePath << ":" << strerror (errno) << sendLog;
 		return -1;
 	}
 
 	verbose = 1;
-	if (ioctl (camera->fd, SI_IOCTL_VERBOSE, &verbose) < 0)
+	if (ioctl (camera.fd, SI_IOCTL_VERBOSE, &verbose) < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set camera to verbose mode" << sendLog;
 		return -1;
@@ -194,122 +185,196 @@ int SI8821::initHardware ()
 		return -1;
 	}
 
-	if (load_camera_cfg (camera, cameraCfg))
+	if (load_camera_cfg (&camera, cameraCfg))
 	{
 		logStream (MESSAGE_ERROR) << "cannot load camera configuration file " << cameraCfg << sendLog;
 		return -1;
 	}
 	logStream (MESSAGE_INFO) << "loaded configuration file " << cameraCfg << sendLog;
 
-	///////////////
-	setfile_readout( camera, cameraSet);
-	send_readout( camera );
-	send_command(camera->fd, 'H');     // H    - load readout
-	receive_n_ints( camera->fd, 32, (int *)&camera->readout );
-	expect_y( camera->fd );
-	//////////////
+	setfile_readout (cameraSet);
+	send_readout ();
+	send_command ('H');     // H    - load readout
+	receive_n_ints (32, (int *)&camera.readout);
+	if (expect_yn () != 1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read camera configuration" << sendLog;
+		return -1;
+	}
 
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::initHardware return 0" << sendLog;
-	setSize (camera->readout[READOUT_SERLEN_IX], camera->readout[READOUT_PARLEN_IX], 0, 0);
-	logStream (MESSAGE_DEBUG) << "READOUT_SERLEN_IX " << camera->readout[READOUT_SERLEN_IX] << " READOUT_PARLEN_IX " << camera->readout[READOUT_PARLEN_IX] << sendLog;
+	setSize (camera.readout[READOUT_SERLEN_IX], camera.readout[READOUT_PARLEN_IX], 0, 0);
 	return 0;
 }
-//------------------------------------------------------------------------
 
 int SI8821::info ()
 {
 	return Camera::info ();
 }
-//------------------------------------------------------------------------
 
 int SI8821::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	return Camera::setValue (oldValue, newValue);
 }
-//------------------------------------------------------------------------
 
 int SI8821::startExposure ()
 {
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::startExposure ENTRA" << sendLog;
-	// open shutter
-	if (send_command_yn ('A') != 1)
+	int nbufs;
+	int serlen, parlen;
+
+	if (camera.ptr)
+		dma_unmap ();
+
+	serlen = camera.readout[READOUT_SERLEN_IX];
+	parlen = camera.readout[READOUT_PARLEN_IX];
+
+	total = serlen*parlen*2*2; /* 2 bytes per short, 2 readout?? */
+
+	camera.dma_config.maxever = 16 * serlen * parlen;
+	camera.dma_config.total = total;
+	camera.dma_config.buflen = 1024*1024; /* power of 2 makes it easy to mmap */
+	camera.dma_config.timeout = 50000;
+	camera.dma_config.config = SI_DMA_CONFIG_WAKEUP_ONEND;
+
+	if (ioctl (camera.fd, SI_IOCTL_DMA_INIT, &camera.dma_config) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot init DMA " << errno << " " << strerror (errno) << sendLog;
+    		return -1;
+	}
+
+	nbufs = camera.dma_config.total / camera.dma_config.buflen ;
+	if (camera.dma_config.total % camera.dma_config.buflen)
+		nbufs += 1;
+	camera.ptr = (unsigned short *) mmap (0, camera.dma_config.maxever, PROT_READ, MAP_SHARED, camera.fd, 0);
+	if(!camera.ptr)
+	{
+        	logStream (MESSAGE_ERROR) << "mmap " << errno << " " << strerror (errno) << sendLog;
+	        return -1;
+	}
+	camera.dma_active = 1;
+
+	if (ioctl (camera.fd, SI_IOCTL_DMA_START, &camera.dma_status ) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "dma start " << errno << " " << strerror (errno) << sendLog;
 		return -1;
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::startExposure return 0" << sendLog;
+	}
+
+	bzero (&camera.dma_status, sizeof(struct SI_DMA_STATUS));
+
+	// exposure time in ms
+	int exptime_ms = getExposure () * 1000;
+
+	if (camera.readout[READOUT_EXPOSURE_IX] != exptime_ms)
+	{
+		// set exposure time
+		send_command ('G');
+
+		int data[2];
+		data[0] = READOUT_EXPOSURE_IX;
+		data[1] = exptime_ms;
+		send_n_ints (2, data);
+		if (expect_yn () != 1)
+		{
+			logStream (MESSAGE_DEBUG) << "cannot set exposure time" << sendLog;
+			return -1;
+		}
+	}
+
+	char cmd = 'C';
+	if (testImage->getValueBool () == false)
+		cmd = getExpType () == 0 ? 'D' : 'E';
+
+	send_command_yn (cmd);
+
 	return 0;
 }
-//------------------------------------------------------------------------
 
 int SI8821::endExposure (int ret)
 {
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::endExposure ENTRA" << sendLog;
-	// close shutter
-	if (send_command_yn ('B') != 1)
-		return -1;
 	return Camera::endExposure (ret);
 }
-//------------------------------------------------------------------------
 
-// TODO APMONTERO BEGIN: Temporary Function, to test closing the shutter
 int SI8821::closeShutter ()
 {
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::closeShutter ENTRA" << sendLog;
 	// close shutter
 	if (send_command_yn ('B') != 1)
 		return -1;
 	return 0;
 }
-//------------------------------------------------------------------------
-// TODO APMONTERO END: Temporary Function, to test closing the shutter independiently
 
 int SI8821::stopExposure ()
 {
 	return Camera::stopExposure ();
 }
-//------------------------------------------------------------------------
 
 int SI8821::doReadout ()
 {
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::doReadout" << sendLog;
-////////////
-//	// else if( strncmp( buf, "image", 5 )== 0 ) {
-//	int cmd;
-//	strtok( buf, delim );
-//	if( (s = strtok( NULL, delim ) ))
-//		cmd = *s;
-//	else
-//		cmd = 'D';
-	int cmd = 'D';
-	camera_image( camera, cmd );
-////////////
-	return -2;
+	int ret = ioctl (camera.fd, SI_IOCTL_DMA_NEXT, &camera.dma_status);
+
+	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "ioctl dma_next " << errno << " " << strerror (errno) << sendLog;
+	}
+
+	if (camera.dma_status.transferred != camera.dma_config.total)
+		printf("NEXT wakeup xfer %d bytes\n", camera.dma_status.transferred );
+
+	if (camera.dma_status.status & SI_DMA_STATUS_DONE)
+		printf ("done\n");
+	else
+		printf ("timeout\n");
+
+	write_dma_data ((unsigned char *) camera.ptr);
+
+#ifdef NOT
+	flip = (unsigned short *)malloc(4096*4096*2);
+	bzero (flip, 4096*4096*2 );
+
+	if (serlen < 2047)
+	{
+		//camera_demux_gen( flip, c->ptr, 2048, serlen, parlen );
+		write_dma_data( flip, 2048*2048*2 );
+	}
+	else
+	{
+		//camera_demux_gen( flip, c->ptr, 4096, serlen, parlen );
+		write_dma_data( flip, 4096*4096*2 );
+	}
+	free(flip);
+#endif
+
+	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize ());
+
+	if (ret < 0)
+		return -1;
+	if (getWriteBinaryDataSize () == 0)
+		return -2;
+
+	return 0;
 }
 //------------------------------------------------------------------------
 
 
 // APMONTERO: begin
 
-void SI8821::dma_unmap( struct SI_CAMERA *c )
-//struct SI_CAMERA *c;
+void SI8821::dma_unmap ()
 {
-  int nbufs;
+	int nbufs;
 
-  if( !c->dma_active )
-    return;
+	if (!camera.dma_active)
+		return;
 
-  nbufs = c->dma_config.total / c->dma_config.buflen ;
-  if( c->dma_config.total % c->dma_config.buflen )
-    nbufs += 1;
+	nbufs = camera.dma_config.total / camera.dma_config.buflen;
+	if (camera.dma_config.total % camera.dma_config.buflen)
+		nbufs += 1;
 
-  if(munmap( c->ptr, c->dma_config.buflen*nbufs ) )
-    perror("failed to unmap");
+	if (munmap (camera.ptr, camera.dma_config.buflen*nbufs))
+		logStream (MESSAGE_ERROR) << "failed to unmap:" << errno << " " << strerror(errno) << sendLog;
 
-  c->dma_active = 0;
+	camera.dma_active = 0;
 }
 //------------------------------------------------------------------------
 
-void SI8821::write_dma_data( unsigned char *ptr, int total )
-//unsigned char *ptr;
-//int total;
+void SI8821::write_dma_data (unsigned char *ptr)
 {
   FILE *fd;
   //int tmm;
@@ -329,165 +394,50 @@ void SI8821::write_dma_data( unsigned char *ptr, int total )
   fclose(fd);
   printf("wrote %d bytes to %s\n", total, buf );
 }
-//------------------------------------------------------------------------
 
-void SI8821::camera_image( struct SI_CAMERA *c, int cmd )
-//struct SI_CAMERA *c;
-//int cmd;
+void SI8821::expect_y ()
 {
-  int nbufs, ret; // i, last, 
-//  unsigned short *flip;
-//  fd_set wait;
-  int tot, serlen, parlen; // sel
-
-  if( cmd != 'C' && cmd != 'D' && cmd != 'E' && cmd != 'Z' ) {
-    printf("camera_image needs C, D, E, Z type ? for help\n");
-    return;
-  }
-  printf("starting camera_image %c\n", cmd );
-
-  if( c->ptr )
-    dma_unmap(c);
-
-  serlen = c->readout[READOUT_SERLEN_IX];
-  parlen = c->readout[READOUT_PARLEN_IX];
-  printf("SERLEN %i\n",serlen); 
-  printf("PARLEN %i\n",parlen); 
-
-  //tot = serlen*parlen*2*4; /* 2 bytes per short, 4 quadrants */
-  tot = serlen*parlen*2*2; /* 2 bytes per short, 2 readout?? */
-  printf("TOT %i\n",tot);
-
-  //c->dma_config.maxever = 16*2048*4111;
-  c->dma_config.maxever = 16*2048*4111;
-  c->dma_config.total = tot;
-  c->dma_config.buflen = 1024*1024; /* power of 2 makes it easy to mmap */
-  c->dma_config.timeout = 50000;
-//  c->dma_config.config = SI_DMA_CONFIG_WAKEUP_EACH;
-  c->dma_config.config = SI_DMA_CONFIG_WAKEUP_ONEND;
-
-  if( ioctl( c->fd, SI_IOCTL_DMA_INIT, &c->dma_config )<0 ){
-    perror("dma init");
-    return;
-  }
-  nbufs = c->dma_config.total / c->dma_config.buflen ;
-  if( c->dma_config.total % c->dma_config.buflen )
-    nbufs += 1;
-  c->ptr = (unsigned short *)mmap( 0, c->dma_config.maxever, PROT_READ, MAP_SHARED, c->fd, 0);
-  if(!c->ptr) {
-        perror("mmap");
-        return;
-  }
-//      print_mem_changes( c->ptr, c->dma_config.total/sizeof(short) );
-  printf("c->ptr: %p\n",c->ptr);
-  c->dma_active = 1;
-
-  if( ioctl( c->fd, SI_IOCTL_DMA_START, &c->dma_status )<0 ){
-    perror("dma start");
-    return;
-  }
-
-  bzero(&c->dma_status, sizeof(struct SI_DMA_STATUS));
-  send_command_yn(c->fd, cmd );
-
-/* wait for DMA done */
-
-  printf("sent command %c, waiting\n", cmd );
-  ret = ioctl( c->fd, SI_IOCTL_DMA_NEXT, &c->dma_status );
-
-  if( ret < 0 ) {
-    perror("ioctl dma_next");
-  }
-  if( c->dma_status.transferred != c->dma_config.total )
-   printf("NEXT wakeup xfer %d bytes\n", c->dma_status.transferred );
-
-  if( c->dma_status.status & SI_DMA_STATUS_DONE )
-    printf("done\n" );
-  else
-    printf("timeout\n" );
-
-  //write_dma_data(c->ptr, tot);
-  write_dma_data((unsigned char *)c->ptr, tot); // APMONTERO: Changed to solve compiling error
-#ifdef NOT
-  flip = (unsigned short *)malloc(4096*4096*2);
-  bzero( flip, 4096*4096*2 );
-
-  if( serlen < 2047 ) {
-    //camera_demux_gen( flip, c->ptr, 2048, serlen, parlen );
-    write_dma_data( flip, 2048*2048*2 );
-  } else {
-    //camera_demux_gen( flip, c->ptr, 4096, serlen, parlen );
-    write_dma_data( flip, 4096*4096*2 );
-  }
-  free(flip);
-#endif
+	if (expect_yn() != 1)
+		logStream (MESSAGE_ERROR) << "ERROR expected yes got no from uart\n" << sendLog;
 }
-//------------------------------------------------------------------------
-
-void SI8821::expect_y( int fd )
-//int fd;
-{
-  if( expect_yn(fd) != 1 )
-    printf("ERROR expected yes got no from uart\n");
-}
-//------------------------------------------------------------------------
-
-int SI8821::expect_yn( int fd )
-//int fd;
-{
-  int got;
-
-  if( (got = receive_char(fd)) < 0 )
-   return -1;
-
-  if( got != 'Y' && got != 'N')
-   return -1;
-
-  return (got == 'Y');
-}
-//------------------------------------------------------------------------
 
 /* read n bigendian integers and return it */
-int SI8821::receive_n_ints( int fd, int n, int *data )
-//int fd;
-//int n;
-//int *data;
+int SI8821::receive_n_ints (int n, int *data)
 {
-  int len, i;
-  int ret;
+	int len, i;
+	int ret;
 
-  len = n * sizeof(int);
+	len = n * sizeof(int);
 
-  if( fd < 0 ) {
-    bzero( data, len );
-    return 0;
-  }
+	if (camera.fd < 0)
+	{
+		bzero( data, len );
+		return 0;
+	}
 
-  if( (ret = read( fd, data, len )) != len )
-    return -1;
+	if ((ret = read (camera.fd, data, len )) != len )
+		return -1;
 
-  for( i=0; i<n; i++ )
-    swapl(&data[i]);
-  return 0;
+	for (i=0; i<n; i++)
+		swapl(&data[i]);
+
+	return 0;
 }
 //------------------------------------------------------------------------
 
-int SI8821::send_n_ints( int fd, int n, int *data )
-//int fd;
-//int n;
-//int *data;
+int SI8821::send_n_ints (int n, int *data)
 {
-  int len, i;
-  int *d;
+	int len, i;
+	int *d;
 
-  len = n * sizeof(int);
-  d = (int *)malloc( len );
-  memcpy( d, data, len );
-  for( i=0; i<n; i++ )
-    swapl(&d[i]);
+	len = n * sizeof(int);
+	d = (int *)malloc( len );
+	memcpy( d, data, len );
+	for (i=0; i<n; i++)
+		swapl(&d[i]);
 
-  if( (i = write( fd, d, len )) != len )
-    return -1;
+	if ((i = write (camera.fd, d, len )) != len)
+		return -1;
 
 //  memset( d, 0, len );
 //  if( receive_n_ints( fd, len, d ) < 0 )
@@ -495,13 +445,13 @@ int SI8821::send_n_ints( int fd, int n, int *data )
 
 //  if( memcmp( d, data, len ) != 0 )
 //    return -1;
-  free(d);
+	free(d);
 
-  return len;
+	return len;
 }
 //------------------------------------------------------------------------
 
-struct CFG_ENTRY *SI8821::find_readout( struct SI_CAMERA *c, char *name )
+struct CFG_ENTRY *SI8821::find_readout (char *name )
 //struct SI_CAMERA *c;
 //char *name;
 {
@@ -509,7 +459,7 @@ struct CFG_ENTRY *SI8821::find_readout( struct SI_CAMERA *c, char *name )
   int i;
 
   for( i=0; i<SI_READOUT_MAX; i++ ) {
-    cfg = c->e_readout[i];
+    cfg = camera.e_readout[i];
 
     if( cfg && cfg->name ) {
       if( strncasecmp( cfg->name, name, strlen(cfg->name))==0 )
@@ -523,16 +473,16 @@ struct CFG_ENTRY *SI8821::find_readout( struct SI_CAMERA *c, char *name )
 }
 //------------------------------------------------------------------------
 
-void SI8821::send_readout( struct SI_CAMERA *c )
+void SI8821::send_readout ()
 //struct SI_CAMERA *c;
 {
-  send_command(c->fd, 'F'); // F    - Send Readout Parameters
-  send_n_ints( c->fd, 32, (int *)&c->readout );
-  expect_yn( c->fd );
+  send_command ('F'); // F    - Send Readout Parameters
+  send_n_ints (32, (int *)&camera.readout );
+  expect_yn ();
 }
 //------------------------------------------------------------------------
 
-int SI8821::setfile_readout( struct SI_CAMERA *c, const char *file )
+int SI8821::setfile_readout (const char *file )
 //struct SI_CAMERA *c;
 //char *file;
 {
@@ -548,7 +498,7 @@ int SI8821::setfile_readout( struct SI_CAMERA *c, const char *file )
 
 	while( fgets( buf, 256, fd )) {
 		printf("BUF: %s",buf);
-		if( !(cfg = find_readout( c, buf )))
+		if( !(cfg = find_readout (buf)))
 			continue;
 	
 		strtok( buf, delim );
@@ -557,7 +507,7 @@ int SI8821::setfile_readout( struct SI_CAMERA *c, const char *file )
 		if( s )
 		{
 			printf("PARAM... %s\n",s);
-			c->readout[ cfg->index ] = atoi(s);
+			camera.readout [cfg->index] = atoi(s);
 		}
 	}
 	fclose(fd);
@@ -624,9 +574,9 @@ int SI8821::load_cfg( struct CFG_ENTRY **e, const char *fname, const char *var )
 	fclose(fd);
 	return -1; // APMONTERO: new
 }
-//------------------------------------------------------------------------
 
-int SI8821::parse_cfg_string( struct CFG_ENTRY *entry )
+
+int SI8821::parse_cfg_string (struct CFG_ENTRY *entry)
 //struct CFG_ENTRY *entry;
 {
 	const char *delim = "=\",\n\r";
@@ -789,107 +739,30 @@ int SI8821::init_com (int baud, int parity, int bits, int stopbits, int buffersi
 	serial.flags = SI_SERIAL_FLAGS_BLOCK;
 	serial.timeout = 1000;
   
-	return ioctl (camera->fd, SI_IOCTL_SET_SERIAL, &serial);
+	return ioctl (camera.fd, SI_IOCTL_SET_SERIAL, &serial);
 }
-//------------------------------------------------------------------------
 
 int SI8821::clear_buffer ()
 {
-	if (ioctl (camera->fd, SI_IOCTL_SERIAL_CLEAR, 0))
+	if (ioctl (camera.fd, SI_IOCTL_SERIAL_CLEAR, 0))
 		return -1;
 	else
 		return 0;
 }
-//------------------------------------------------------------------------
 
-int SI8821::send_char(int fd, int data) 
-//int fd;
-//int data;
-{
-  unsigned char wbyte, rbyte;
-  int n;
-
-  if( fd < 0 )
-    return 0;
-
-  wbyte = ( unsigned char) data;
-  if( write( fd,  &wbyte, 1 ) != 1 ) {
-    perror("write");
-    return -1;
-  }
-
-  if( (n = read( fd,  &rbyte, 1 )) != 1 ) {
-    if( n < 0 )
-      perror("read");
-    return -1;
-  }
-
-  if( wbyte != rbyte )
-    return -1;
-  else
-    return 0;
-}
-//------------------------------------------------------------------------
-
-int SI8821::send_command( int fd, int cmd )
-//int fd;
-//int cmd;
-{
-  int  ret;
-
-  if( fd < 0 )
-    return 0;
-
-  clear_buffer(fd);    
-  ret = send_char(fd, cmd);
-
-  return (ret);
-}
-//------------------------------------------------------------------------
-
-int SI8821::clear_buffer( int fd) 
-{
-  if( ioctl( fd, SI_IOCTL_SERIAL_CLEAR, 0 ))
-    return -1;
-  else
-    return 0;
-}
-//------------------------------------------------------------------------
 
 int SI8821::send_command (int cmd)
 {
   	clear_buffer ();    
 	return send_char (cmd);
 }
-//------------------------------------------------------------------------
 
 int SI8821::send_command_yn (int cmd)
 {
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::send_command_yn ENTRA" << sendLog;
 	send_command (cmd);
 
 	return expect_yn ();
 }
-//------------------------------------------------------------------------
-
-int SI8821::send_command_yn(int fd, int data )
-//int fd;
-//int data;
-{
-  int ex;
-
-send_command(fd, data);
-
-  ex = expect_yn( fd );
-  if( ex < 0  )
-    printf("error expected Y/N uart\n");
-  else if (ex)
-    printf("got yes from uart\n");
-  else
-    printf("got no from uart\n");
-return 0; // APMOTERO: Added to solve compiling warnings
-}
-//------------------------------------------------------------------------
 
 int SI8821::send_char (int data)
 {
@@ -897,13 +770,13 @@ int SI8821::send_char (int data)
 	int n;
 
 	wbyte = (unsigned char) data;
-	if (write (camera->fd,  &wbyte, 1) != 1)
+	if (write (camera.fd,  &wbyte, 1) != 1)
 	{
 		logStream (MESSAGE_ERROR) << "cannot send char " << data << ":" << strerror << sendLog;
 		return -1;
 	}
 
-	if ((n = read (camera->fd,  &rbyte, 1)) != 1)
+	if ((n = read (camera.fd,  &rbyte, 1)) != 1)
 	{
 		logStream (MESSAGE_ERROR) << "cannot read reply to command " << data << ":" << strerror << sendLog;
 		return -1;
@@ -911,14 +784,13 @@ int SI8821::send_char (int data)
 
 	return 0;
 }
-//------------------------------------------------------------------------
 
 int SI8821::receive_char ()
 {
 	unsigned char rbyte;
 	int n;
 
-	if ((n = read (camera->fd,  &rbyte, 1)) != 1)
+	if ((n = read (camera.fd,  &rbyte, 1)) != 1)
 	{
 		if (n<0)
 		      logStream (MESSAGE_ERROR) << "receive_char read:" << strerror << sendLog;
@@ -929,25 +801,6 @@ int SI8821::receive_char ()
 		return (int)rbyte;
 	}
 }
-//------------------------------------------------------------------------
-
-int SI8821::receive_char(int fd) 
-//int fd;
-{
-  unsigned char rbyte;
-  int n;
-
-  if( fd < 0 )
-    return 0;
-
-  if( (n = read( fd,  &rbyte, 1 )) != 1 ) {
-    if( n<0)
-      perror("read");
-    return -1;
-  } else
-    return (int)rbyte;
-}
-//------------------------------------------------------------------------
 
 int SI8821::expect_yn ()
 {

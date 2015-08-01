@@ -397,17 +397,6 @@ AM_CONDITIONAL(SI3097, test x$SI3097 != xno)
 AC_SUBST(SI3097)
 AC_SUBST(INC_SI3097)
 
-# check for SI8821
-AC_ARG_WITH(si8821,
-[  --with-si8821        path to Spectral Instruments SI8821 PCI card driver, build SI CCD support],
-SI8821="${withval}";
-INC_SI8821="-I${SI8821}",
-[SI8821=no])
-
-AM_CONDITIONAL(SI8821, test x$SI8821 != xno)
-AC_SUBST(SI8821)
-AC_SUBST(INC_SI8821)
-
 # check for COMEDI
 AC_ARG_WITH(comedi,
 [  --with-comedi	path to COMEDI library, build comedi dependent binaries],
@@ -936,6 +925,7 @@ AC_OUTPUT([Makefile
 	   src/camd/urvc2/Makefile
 	   src/camd/apogee/Makefile
 	   src/camd/edtsao/Makefile
+	   src/camd/si8821/Makefile
 	   src/dome/Makefile
 	   src/dome/zelio/Makefile
 	   src/filterd/Makefile
@@ -1002,7 +992,6 @@ CCDs:
   miccd         ${MICCD}
   sbig          ${SBIG}
   SI3097        ${SI3097}
-  SI8821        ${SI8821}
 
 MOUNTs:
   paralib       ${PARALIB}
