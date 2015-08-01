@@ -54,6 +54,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define READOUT_PARALLEL_POSTSCAN_IX   7
 #define READOUT_EXPOSURE_IX            8
 
+#define CONFIG_SET_TEMP_IX            14 
+
 struct CFG_ENTRY {
   char *name;
   int index;

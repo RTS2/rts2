@@ -60,6 +60,9 @@ class SI8821:public Camera
 
 		virtual int doReadout ();
 
+		virtual int setCoolTemp (float new_temp);
+		virtual int switchCooling (bool newval);
+
 	private:
 		const char *devicePath;
 		const char *cameraCfg;
@@ -101,9 +104,12 @@ class SI8821:public Camera
 		int swapl (int *d);
 
 		void setReadout (int idx, int v, const char *name);
+		void setConfig (int idx, int v, const char *name);
 
 		rts2core::ValueFloat *backplateTemperature;
 		rts2core::ValueInteger *ccdPressure;
+
+		rts2core::ValueSelection *shutterStatus;
 
 		rts2core::ValueBool *testImage;
 		int total;   // DMA size
@@ -120,10 +126,15 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv)
 	cameraSet = NULL;
 
 	createTempCCD ();
+	createTempSet ();
 	createExpType ();
 
 	createValue (backplateTemperature, "backplate_temp", "[C] backplate temperature", false);
 	createValue (ccdPressure, "pressure", "[mTor] pressure inside CCD chamber", false);
+
+	createValue (shutterStatus, "shutter_status", "shutter status (opened/closed)", false);
+	shutterStatus->addSelVal ("closed");
+	shutterStatus->addSelVal ("opened");
 
 	bzero (&camera, sizeof(struct SI_CAMERA));
 
@@ -228,6 +239,20 @@ int SI8821::info ()
 	tempCCD->setValueFloat (kelvinToCelsius (camera.status[STATUS_CCD_TEMP_IX] / 10.0));
 	backplateTemperature->setValueFloat (kelvinToCelsius (camera.status[STATUS_BACKPLATE_TEMP_IX] / 10.0));
 	ccdPressure->setValueInteger (camera.status[STATUS_PRESSURE_IX]);
+
+	shutterStatus->setValueInteger (camera.status[STATUS_SHUTTER_IX]);
+
+	coolingOnOff->setValueBool (camera.status[STATUS_COOLER_IX] == 1);
+
+	send_command ('L');
+	receive_n_ints (32, camera.config);
+	if (expect_yn () != 1)
+	{
+		logStream (MESSAGE_WARNING) << "cannot read camera config" << sendLog;
+		return -1;
+	}
+
+	tempSet->setValueDouble (kelvinToCelsius (camera.config[CONFIG_SET_TEMP_IX] / 10.0));
 
 	return Camera::info ();
 }
@@ -363,8 +388,6 @@ int SI8821::doReadout ()
 	else
 		printf ("timeout\n");
 
-	write_dma_data ((unsigned char *) camera.ptr);
-
 #ifdef NOT
 	flip = (unsigned short *)malloc(4096*4096*2);
 	bzero (flip, 4096*4096*2 );
@@ -391,10 +414,29 @@ int SI8821::doReadout ()
 
 	return 0;
 }
-//------------------------------------------------------------------------
 
+int SI8821::setCoolTemp (float new_temp)
+{
+	try
+	{
+		setConfig (CONFIG_SET_TEMP_IX, celsiusToKelvin (new_temp) * 10, "ccd setpoint");
+	}
+	catch (rts2core::Error &e)
+	{
+		logStream (MESSAGE_ERROR) << e.what () << sendLog;
+		return -1;
+	}
+	return Camera::setCoolTemp (new_temp);
+}
 
-// APMONTERO: begin
+int SI8821::switchCooling (bool newval)
+{
+	if (newval)
+		send_command ('S');
+	else
+		send_command ('T');
+	return Camera::switchCooling (newval);
+}
 
 void SI8821::dma_unmap ()
 {
@@ -412,27 +454,26 @@ void SI8821::dma_unmap ()
 
 	camera.dma_active = 0;
 }
-//------------------------------------------------------------------------
 
 void SI8821::write_dma_data (unsigned char *ptr)
 {
-  FILE *fd;
-  //int tmm;
-  long int tmm; // APMONTERO: Changed to solve compiling error
-  char buf[256];
+	FILE *fd;
+	//int tmm;
+	long int tmm; // APMONTERO: Changed to solve compiling error
+	char buf[256];
 
-  time(&tmm);
-  //sprintf( buf, "dma_%d.cam", tmm );
-  sprintf( buf, "dma_%d.cam", (int)tmm ); // APMONTERO: Changed to solve compiling error
+	time(&tmm);
+	//sprintf( buf, "dma_%d.cam", tmm );
+	sprintf( buf, "dma_%d.cam", (int)tmm ); // APMONTERO: Changed to solve compiling error
 
-  printf("WRITING DATA %s\n",buf);
-  if( !(fd = fopen( buf, "w+" ))) {
-    printf("cant write dma.cam\n");
-    return;
-  }
-  fwrite(ptr, total, 1, fd ); 
-  fclose(fd);
-  printf("wrote %d bytes to %s\n", total, buf );
+	printf("WRITING DATA %s\n",buf);
+	if( !(fd = fopen( buf, "w+" ))) {
+		printf("cant write dma.cam\n");
+		return;
+	}
+	fwrite(ptr, total, 1, fd ); 
+	fclose(fd);
+	printf("wrote %d bytes to %s\n", total, buf );
 }
 
 void SI8821::expect_y ()
@@ -889,6 +930,21 @@ void SI8821::setReadout (int idx, int v, const char *name)
 		throw rts2core::Error (std::string ("cannot set ") + name);
 	}
 	camera.readout[idx] = v;
+}
+
+void SI8821::setConfig (int idx, int v, const char *name)
+{
+	send_command ('K');
+ 
+	int data[2];
+	data[0] = idx;
+	data[1] = v;
+	send_n_ints (2, data);
+	if (expect_yn () != 1)
+	{
+		throw rts2core::Error (std::string ("cannot set ") + name);
+	}
+	camera.config[idx] = v;
 }
 
 int main (int argc, char **argv)
