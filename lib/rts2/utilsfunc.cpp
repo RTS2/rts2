@@ -490,7 +490,5 @@ float celsiusToFahrenheit (float c)
 
 float fahrenheitToCelsius (float f)
 {
-	return (f - 32) * 1.8;
+	return (f - 32) / 1.8;
 }
-
-#
