@@ -124,7 +124,7 @@ int ThermoCube::initHardware ()
 int ThermoCube::info ()
 {
 	char cmd = 0x80;
-	char buf[2];
+	unsigned char buf[2];
 	if (on->getValueBool ())
 		cmd |= TC_ON;
 
@@ -132,7 +132,7 @@ int ThermoCube::info ()
 	int ret = thermocubeConn->writePort (cmd | TC_TARGET_TEMP);
 	if (ret)
 		return ret;
-	ret = thermocubeConn->readPort (buf, 2);
+	ret = thermocubeConn->readPort ((char *) buf, 2);
 	if (ret != 2)
 		return -1;
 	int t = buf[0] + buf[1] * 256;
@@ -141,7 +141,7 @@ int ThermoCube::info ()
 	ret = thermocubeConn->writePort (cmd | TC_CURRENT_TEMP);
 	if (ret)
 		return ret;
-	ret = thermocubeConn->readPort (buf, 2);
+	ret = thermocubeConn->readPort ((char *) buf, 2);
 	if (ret != 2)
 		return -1;
 	t = buf[0] + buf[1] * 256;
@@ -150,7 +150,7 @@ int ThermoCube::info ()
 	ret = thermocubeConn->writePort (cmd | TC_FAULTS);
 	if (ret)
 		return ret;
-	ret = thermocubeConn->readPort (buf, 1);
+	ret = thermocubeConn->readPort ((char *) buf, 1);
 	if (ret != 1)
 		return -1;
 
