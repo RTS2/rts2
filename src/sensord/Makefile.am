@@ -9,7 +9,8 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
 	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
 	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity \
-	rts2-sensor-apm-relay rts2-sensor-apm-mirror rts2-sensor-apm-multidev
+	rts2-sensor-apm-relay rts2-sensor-apm-mirror rts2-sensor-apm-multidev \
+	rts2-sensor-thermocube
 
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h apm-filter.h
@@ -128,6 +129,8 @@ rts2_sensor_colamp_SOURCES = colamp.cpp
 rts2_sensor_micropirani_925_SOURCES = micropirani-925.cpp
 
 rts2_sensor_dws_t5_SOURCES = dws_t5.cpp
+
+rts2_sensor_thermocube_SOURCES = thermocube.cpp
 
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe

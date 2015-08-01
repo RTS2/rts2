@@ -135,7 +135,8 @@ int ThermoCube::info ()
 	ret = thermocubeConn->readPort (buf, 2);
 	if (ret != 2)
 		return -1;
-	targetTemperature->setValueDouble (fahrenheitToCelsius (*((int16_t *) buf) / 10.0));
+	int t = buf[0] + buf[1] * 256;
+	targetTemperature->setValueDouble (fahrenheitToCelsius (t / 10.0));
 
 	ret = thermocubeConn->writePort (cmd | TC_CURRENT_TEMP);
 	if (ret)
@@ -143,7 +144,8 @@ int ThermoCube::info ()
 	ret = thermocubeConn->readPort (buf, 2);
 	if (ret != 2)
 		return -1;
-	currentTemperature->setValueDouble (fahrenheitToCelsius (*((int16_t *) buf) / 10.0));
+	t = buf[0] + buf[1] * 256;
+	currentTemperature->setValueDouble (fahrenheitToCelsius (t / 10.0));
 
 	ret = thermocubeConn->writePort (cmd | TC_FAULTS);
 	if (ret)
@@ -166,21 +168,23 @@ int ThermoCube::setValue (rts2core::Value * old_value, rts2core::Value * newValu
 	if (old_value == targetTemperature)
 	{
 		char cmd[3]; 
-		cmd[0] = 0xA0;
+		cmd[0] = 0xA0 | TC_TARGET_TEMP;
 		if (on->getValueBool ())
 			cmd[0] |= TC_ON;
 		int16_t t = celsiusToFahrenheit (newValue->getValueFloat ()) * 10;
-		memcpy (cmd + 1, &t, 2);
+		cmd[1] = t % 256;
+		cmd[2] = t / 256;
 		return thermocubeConn->writePort (cmd, 3) ? -2 : 0;
 	}
 	else if (old_value == on)
 	{
 		char cmd[3]; 
-		cmd[0] = 0xA0;
+		cmd[0] = 0xA0 | TC_TARGET_TEMP;
 		if (((rts2core::ValueBool *) newValue)->getValueBool ())
 			cmd[0] |= TC_ON;
 		int16_t t = celsiusToFahrenheit (targetTemperature->getValueFloat ()) * 10;
-		memcpy (cmd + 1, &t, 2);
+		cmd[1] = t % 256;
+		cmd[2] = t / 256;
 		return thermocubeConn->writePort (cmd, 3) ? -2 : 0;
 	}
 	return Sensor::setValue (old_value, newValue);
