@@ -492,3 +492,13 @@ float fahrenheitToCelsius (float f)
 {
 	return (f - 32) / 1.8;
 }
+
+float kelvinToCelsius (float k)
+{
+	return k - 273.15;
+}
+
+float celsiusToKelvin (float c)
+{
+	return c + 273.15;
+}

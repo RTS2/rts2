@@ -372,4 +372,14 @@ float celsiusToFahrenheit (float c);
  */
 float fahrenheitToCelsius (float f);
 
+/**
+ * Converts Kelvins to Celsius.
+ */
+float kelvinToCelsius (float k);
+
+/**
+ * Converts Celisus to Kelvins.
+ */
+float celsiusToKelvin (float c);
+
 #endif							 /* !__RTS_UTILSFUNC__ */
