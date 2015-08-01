@@ -100,11 +100,11 @@ class SI8821:public Camera
 
 		int swapl (int *d);
 
-		rts2core::ValueFloat *ccdPressure;
+		rts2core::ValueFloat *backplateTemperature;
+		rts2core::ValueInteger *ccdPressure;
 
 		rts2core::ValueBool *testImage;
 		int total;   // DMA size
-
 };
 
 }
@@ -118,10 +118,10 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv)
 	cameraSet = NULL;
 
 	createTempCCD ();
-	createTempCCDHistory ();
 	createExpType ();
 
-	createValue (ccdPressure, "PRESSURE", "[mTor] pressure inside CCD chamber", false);
+	createValue (backplateTemperature, "backplate_temp", "[C] backplate temperature", false);
+	createValue (ccdPressure, "pressure", "[mTor] pressure inside CCD chamber", false);
 
 	bzero (&camera, sizeof(struct SI_CAMERA));
 
@@ -224,7 +224,8 @@ int SI8821::info ()
 	}
 
 	tempCCD->setValueFloat (kelvinToCelsius (camera.status[STATUS_CCD_TEMP_IX] / 10.0));
-	ccdPressure->setValueFloat (camera.status[STATUS_PRESSURE_IX]);
+	backplateTemperature->setValueFloat (kelvinToCelsius (camera.status[STATUS_BACKPLATE_TEMP_IX] / 10.0));
+	ccdPressure->setValueInteger (camera.status[STATUS_PRESSURE_IX]);
 
 	return Camera::info ();
 }
