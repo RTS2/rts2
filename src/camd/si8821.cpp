@@ -47,6 +47,16 @@ class SI8821:public Camera
 		virtual int processOption (int opt);
 		virtual int initHardware ();
 
+		virtual void initBinnings ()
+		{
+			Camera::initBinnings ();
+
+			addBinning2D (2, 2);
+			addBinning2D (3, 3);
+			addBinning2D (4, 4);
+			addBinning2D (8, 8);
+		}
+
 		virtual int info ();
 		
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
@@ -268,7 +278,6 @@ int SI8821::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 int SI8821::startExposure ()
 {
 	int nbufs;
-	int serlen, parlen;
 
 	if (camera.ptr)
 		dma_unmap ();
@@ -290,9 +299,14 @@ int SI8821::startExposure ()
 			setReadout (READOUT_SERIAL_ORIGIN_IX, chipTopX (), "serial origin");
 		}
 
-		if (camera.readout[READOUT_SERIAL_LENGTH_IX] != getUsedWidth ())
+		if (camera.readout[READOUT_SERIAL_LENGTH_IX] != getUsedWidthBinned ())
 		{
 			setReadout (READOUT_SERIAL_LENGTH_IX, getUsedWidth (), "serial length");
+		}
+
+		if (camera.readout[READOUT_SERIAL_BINNING_IX] != binningHorizontal ())
+		{
+			setReadout (READOUT_SERIAL_BINNING_IX, binningHorizontal (), "serial binning");
 		}
 
 		if (camera.readout[READOUT_PARALLEL_ORIGIN_IX] != chipTopY ())
@@ -300,9 +314,14 @@ int SI8821::startExposure ()
 			setReadout (READOUT_PARALLEL_ORIGIN_IX, chipTopY (), "parallel origin");
 		}
 
-		if (camera.readout[READOUT_PARALLEL_LENGTH_IX] != getUsedHeight ())
+		if (camera.readout[READOUT_PARALLEL_LENGTH_IX] != getUsedHeightBinned ())
 		{
 			setReadout (READOUT_PARALLEL_LENGTH_IX, getUsedHeight (), "parallel length");
+		}
+
+		if (camera.readout[READOUT_PARALLEL_BINNING_IX] != binningVertical ())
+		{
+			setReadout (READOUT_PARALLEL_BINNING_IX, binningVertical (), "parallel binning");
 		}
 	}
 	catch (rts2core::Error &e)
@@ -311,12 +330,9 @@ int SI8821::startExposure ()
 		return -1;
 	}
 
-	serlen = camera.readout[READOUT_SERIAL_LENGTH_IX];
-	parlen = camera.readout[READOUT_PARALLEL_LENGTH_IX];
+	total = getUsedHeightBinned () * getUsedWidthBinned () * 2 * 2; /* 2 bytes per short, 2 readout?? */
 
-	total = serlen*parlen*2*2; /* 2 bytes per short, 2 readout?? */
-
-	camera.dma_config.maxever = 16 * serlen * parlen;
+	camera.dma_config.maxever = 16 * getUsedHeightBinned () * getUsedWidthBinned ();
 	camera.dma_config.total = total;
 	camera.dma_config.buflen = 1024*1024; /* power of 2 makes it easy to mmap */
 	camera.dma_config.timeout = 50000;
@@ -393,15 +409,15 @@ int SI8821::doReadout ()
 	}
 
 	// split to half..1st and 2nd channel
-	short unsigned int channel[getUsedWidth () * getUsedHeight ()];
+	short unsigned int channel[getUsedWidthBinned () * getUsedHeightBinned ()];
 
 	short unsigned int *p = channel;
 	short unsigned int *d = camera.ptr;
 
 	// get first channel
-	for (int r = 0; r < getUsedHeight (); r++)
+	for (int r = 0; r < getUsedHeightBinned (); r++)
 	{
-		for (int c = 0; c < getUsedWidth (); c++)
+		for (int c = 0; c < getUsedWidthBinned (); c++)
 		{
 			*p = *d;
 			p++;
@@ -409,7 +425,7 @@ int SI8821::doReadout ()
 		}
 	}
 
-	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (), 0);
+	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (0), 0);
 
 	if (ret < 0)
 		return -1;
@@ -418,9 +434,9 @@ int SI8821::doReadout ()
 	d = camera.ptr + 1;
 
 	// get first channel
-	for (int r = 0; r < getUsedHeight (); r++)
+	for (int r = 0; r < getUsedHeightBinned (); r++)
 	{
-		for (int c = 0; c < getUsedWidth (); c++)
+		for (int c = 0; c < getUsedWidthBinned (); c++)
 		{
 			*p = *d;
 			p++;
@@ -428,7 +444,7 @@ int SI8821::doReadout ()
 		}
 	}
 
-	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (), 1);
+	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (1), 1);
 
 	if (ret < 0)
 		return -1;
