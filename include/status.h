@@ -294,6 +294,7 @@ typedef uint32_t rts2_status_t;
 
 #define SERVERD_ONOFF_MASK    0x030
 
+#define SERVERD_ON            0x000
 #define SERVERD_STANDBY       0x010
 
 #define SERVERD_SOFT_OFF      0x020

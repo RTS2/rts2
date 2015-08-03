@@ -41,6 +41,8 @@ class ThermoCube:public Sensor
 		ThermoCube (int argc, char **argv);
 		virtual ~ThermoCube ();
 
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
+
 	protected:
 		virtual int processOption (int opt);
 		virtual int initHardware ();
@@ -61,6 +63,8 @@ class ThermoCube:public Sensor
 		rts2core::ValueBool *pumpFail;
 		rts2core::ValueBool *RTDOpen;
 		rts2core::ValueBool *RTDShort;
+
+		int setPower (bool pwr);
 };
 
 }
@@ -88,6 +92,38 @@ ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 ThermoCube::~ThermoCube ()
 {
 	delete thermocubeConn;
+}
+
+void ThermoCube::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+{
+	switch (new_state & SERVERD_STATUS_MASK)
+	{
+		case SERVERD_EVENING:
+		case SERVERD_DUSK:
+		case SERVERD_NIGHT:
+		case SERVERD_DAWN:
+		case SERVERD_MORNING:
+			{
+				switch (new_state & SERVERD_ONOFF_MASK)
+				{
+					case SERVERD_ON:
+					case SERVERD_STANDBY:
+						if (on->getValueBool () == false)
+							setPower (true);
+						break;
+					default:
+						if (on->getValueBool () == true)
+							setPower (false);
+						break;
+				}
+			}
+			break;
+		default:
+			if (on->getValueBool () == true)
+				setPower (false);
+			break;
+	}
+	Sensor::changeMasterState (old_state, new_state);
 }
 
 int ThermoCube::processOption (int opt)
@@ -178,16 +214,28 @@ int ThermoCube::setValue (rts2core::Value * old_value, rts2core::Value * newValu
 	}
 	else if (old_value == on)
 	{
-		unsigned char cmd[3]; 
-		cmd[0] = 0xA0 | TC_TARGET_TEMP;
-		if (((rts2core::ValueBool *) newValue)->getValueBool ())
-			cmd[0] |= TC_ON;
-		int16_t t = celsiusToFahrenheit (targetTemperature->getValueFloat ()) * 10;
-		cmd[1] = t % 256;
-		cmd[2] = t / 256;
-		return thermocubeConn->writePort ((char *) cmd, 3) ? -2 : 0;
+		return setPower (((rts2core::ValueBool *) newValue)->getValueBool ()) ? -2 : 0;
 	}
 	return Sensor::setValue (old_value, newValue);
+}
+
+int ThermoCube::setPower (bool pwr)
+{
+	unsigned char cmd[3]; 
+	cmd[0] = 0xA0 | TC_TARGET_TEMP;
+	if (pwr)
+		cmd[0] |= TC_ON;
+	int16_t t = celsiusToFahrenheit (targetTemperature->getValueFloat ()) * 10;
+	cmd[1] = t % 256;
+	cmd[2] = t / 256;
+	int ret = thermocubeConn->writePort ((char *) cmd, 3);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot switch cooling to " << (pwr ? "on" : "off") << sendLog;
+		return ret;
+	}
+	logStream (MESSAGE_INFO) << "switched ThermoCube cooling to " << (pwr ? "on" : "off") << sendLog;
+	return 0;
 }
 
 int main (int argc, char **argv)
