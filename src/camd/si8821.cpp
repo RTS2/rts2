@@ -123,6 +123,9 @@ class SI8821:public Camera
 
 		rts2core::ValueBool *testImage;
 		int total;   // DMA size
+
+		// buffer for reconstructing image
+		uint16_t *chanBuffer;
 };
 
 }
@@ -134,6 +137,8 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv)
 	devicePath = "/dev/SIPCI_0";
 	cameraCfg = NULL;
 	cameraSet = NULL;
+
+	chanBuffer = NULL;
 
 	createTempCCD ();
 	createTempSet ();
@@ -163,6 +168,7 @@ SI8821::~SI8821 ()
 {
 	if (camera.fd)
 		close (camera.fd);
+	delete []chanBuffer;
 }
 
 int SI8821::processOption (int opt)
@@ -234,6 +240,8 @@ int SI8821::initHardware ()
 		logStream (MESSAGE_ERROR) << "cannot read camera configuration" << sendLog;
 		return -1;
 	}
+
+	chanBuffer = new uint16_t[(camera.readout[READOUT_SERIAL_ORIGIN_IX] + camera.readout[READOUT_SERIAL_LENGTH_IX]) * (camera.readout[READOUT_PARALLEL_ORIGIN_IX] + camera.readout[READOUT_PARALLEL_LENGTH_IX])];
 
 	setSize (camera.readout[READOUT_SERIAL_LENGTH_IX], camera.readout[READOUT_PARALLEL_LENGTH_IX], camera.readout[READOUT_SERIAL_ORIGIN_IX], camera.readout[READOUT_PARALLEL_ORIGIN_IX]);
 	return 0;
@@ -392,6 +400,7 @@ int SI8821::stopExposure ()
 
 int SI8821::doReadout ()
 {
+	// split to half..1st and 2nd channel
 	int ret = ioctl (camera.fd, SI_IOCTL_DMA_NEXT, &camera.dma_status);
 
 	if (ret < 0)
@@ -400,7 +409,10 @@ int SI8821::doReadout ()
 	}
 
 	if (camera.dma_status.transferred != camera.dma_config.total)
-		printf("NEXT wakeup xfer %d bytes\n", camera.dma_status.transferred );
+	{
+		logStream (MESSAGE_WARNING) << "NEXT wakeup xfer " << camera.dma_status.transferred << " %d bytes" << sendLog;
+		return 0;
+	}
 
 	if (!(camera.dma_status.status & SI_DMA_STATUS_DONE))
 	{
@@ -408,10 +420,7 @@ int SI8821::doReadout ()
 		return -1;
 	}
 
-	// split to half..1st and 2nd channel
-	short unsigned int channel[getUsedWidthBinned () * getUsedHeightBinned ()];
-
-	short unsigned int *p = channel;
+	short unsigned int *p = chanBuffer;
 	short unsigned int *d = camera.ptr;
 
 	// get first channel
@@ -425,12 +434,14 @@ int SI8821::doReadout ()
 		}
 	}
 
-	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (0), 0);
+	ret = sendReadoutData ((char*) chanBuffer, getWriteBinaryDataSize (0), 0);
 
 	if (ret < 0)
+	{
 		return -1;
+	}
 
-	p = channel;
+	p = chanBuffer;
 	d = camera.ptr + 1;
 
 	// get first channel
@@ -444,7 +455,7 @@ int SI8821::doReadout ()
 		}
 	}
 
-	ret = sendReadoutData ((char*) camera.ptr, getWriteBinaryDataSize (1), 1);
+	ret = sendReadoutData ((char*) chanBuffer, getWriteBinaryDataSize (1), 1);
 
 	if (ret < 0)
 		return -1;
