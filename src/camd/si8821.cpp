@@ -132,7 +132,7 @@ class SI8821:public Camera
 
 using namespace rts2camd;
 
-SI8821::SI8821 (int argc, char **argv):Camera (argc, argv)
+SI8821::SI8821 (int argc, char **argv):Camera (argc, argv, FLOOR)
 {
 	devicePath = "/dev/SIPCI_0";
 	cameraCfg = NULL;
@@ -591,7 +591,8 @@ struct CFG_ENTRY *SI8821::find_readout (char *name )
 
 		if (cfg && cfg->name)
 		{
-			if (strncasecmp (cfg->name, name, strlen(cfg->name))==0)
+			printf ("%s|%s", cfg->name, name);
+			if (strncasecmp (cfg->name, name, strlen(cfg->name)) == 0)
 			{
 				return cfg;
 			}
@@ -616,34 +617,36 @@ int SI8821::setfile_readout (const char *file )
 	char buf[256];
 	struct CFG_ENTRY *cfg;
 
-	if( !(fd = fopen( file, "r" ))) {
+	if (!(fd = fopen( file, "r" )))
+	{
 		return -1;
 	}
 
-	while( fgets( buf, 256, fd )) {
-		printf("BUF: %s",buf);
-		if( !(cfg = find_readout (buf)))
+	while (fgets (buf, 256, fd))
+	{
+		printf ("BUF: %s",buf);
+		if (!(cfg = find_readout (buf)))
 			continue;
 	
-		strtok( buf, delim );
+		strtok (buf, delim);
 		// if( s = strtok( NULL, delim ))
-		s = strtok( NULL, delim );
-		if( s )
+		s = strtok (NULL, delim);
+		if (s)
 		{
-			printf("PARAM... %s\n",s);
+			printf ("PARAM... %s\n",s);
 			camera.readout [cfg->index] = atoi(s);
 		}
 	}
-	fclose(fd);
+	fclose (fd);
 	return 0;
 }
 
 int SI8821::load_camera_cfg( struct SI_CAMERA *c, const char *fname)
 {
-	load_cfg( c->e_status, fname, "SP" );
-	load_cfg( c->e_readout, fname, "ESP" );
-	load_cfg( c->e_readout, fname, "RFP" );
-	load_cfg( c->e_config, fname, "CP" );
+	load_cfg (c->e_status, fname, "SP");
+	load_cfg (c->e_readout, fname, "ESP");
+	load_cfg (c->e_readout, fname, "RFP");
+	load_cfg (c->e_config, fname, "CP");
 
 	return 0;
 }
@@ -917,7 +920,6 @@ int SI8821::receive_char ()
 int SI8821::expect_yn ()
 {
 	int got;
-	logStream (MESSAGE_DEBUG) << "## APMONTERO_DEBUG ## ----> SI8821::expect_yn ENTRA" << sendLog;
 	if ((got = receive_char()) < 0)
 		return -1;
 
