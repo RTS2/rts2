@@ -234,6 +234,8 @@ int ThermoCube::setPower (bool pwr)
 		logStream (MESSAGE_ERROR) << "cannot switch cooling to " << (pwr ? "on" : "off") << sendLog;
 		return ret;
 	}
+	on->setValueBool (pwr);
+	sendValueAll (on);
 	logStream (MESSAGE_INFO) << "switched ThermoCube cooling to " << (pwr ? "on" : "off") << sendLog;
 	return 0;
 }
