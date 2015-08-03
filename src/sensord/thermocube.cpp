@@ -74,7 +74,7 @@ ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 	createValue (targetTemperature, "TARTEMP", "[C] target temperature", false, RTS2_VALUE_WRITABLE);
 	createValue (currentTemperature, "CURTEMP", "[C] current temperature");
 
-	createValue (on, "ON", "system is on", false, RTS2_VALUE_WRITABLE);
+	createValue (on, "ON", "system is on", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
 	createValue (tankLevelLow, "tank_level_low", "liquid tank level is low (fault)", false);
 	createValue (fanFail, "fan_fail", "fan failure", false);
