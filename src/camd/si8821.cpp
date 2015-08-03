@@ -514,7 +514,6 @@ void SI8821::write_dma_data (unsigned char *ptr)
 	char buf[256];
 
 	time(&tmm);
-	//sprintf( buf, "dma_%d.cam", tmm );
 	sprintf( buf, "dma_%d.cam", (int)tmm ); // APMONTERO: Changed to solve compiling error
 
 	printf("WRITING DATA %s\n",buf);
@@ -555,7 +554,6 @@ int SI8821::receive_n_ints (int n, int *data)
 
 	return 0;
 }
-//------------------------------------------------------------------------
 
 int SI8821::send_n_ints (int n, int *data)
 {
@@ -581,42 +579,36 @@ int SI8821::send_n_ints (int n, int *data)
 
 	return len;
 }
-//------------------------------------------------------------------------
 
 struct CFG_ENTRY *SI8821::find_readout (char *name )
-//struct SI_CAMERA *c;
-//char *name;
 {
-  struct CFG_ENTRY *cfg;
-  int i;
+	struct CFG_ENTRY *cfg;
+	int i;
 
-  for( i=0; i<SI_READOUT_MAX; i++ ) {
-    cfg = camera.e_readout[i];
-
-    if( cfg && cfg->name ) {
-      if( strncasecmp( cfg->name, name, strlen(cfg->name))==0 )
+	for (i=0; i<SI_READOUT_MAX; i++)
 	{
-	  printf("PARAMETER FOUND!!!! %s\n",name);
-	  return cfg;
+		cfg = camera.e_readout[i];
+
+		if (cfg && cfg->name)
+		{
+			if (strncasecmp (cfg->name, name, strlen(cfg->name))==0)
+			{
+				return cfg;
+			}
+		}
 	}
-    }
-  }
-  return NULL;
+	logStream (MESSAGE_ERROR) << "parameter " << name << " not found in configuration" << sendLog;
+	return NULL;
 }
-//------------------------------------------------------------------------
 
 void SI8821::send_readout ()
-//struct SI_CAMERA *c;
 {
-  send_command ('F'); // F    - Send Readout Parameters
-  send_n_ints (32, (int *)&camera.readout );
-  expect_yn ();
+	send_command ('F'); // F    - Send Readout Parameters
+	send_n_ints (32, (int *)&camera.readout );
+	expect_yn ();
 }
-//------------------------------------------------------------------------
 
 int SI8821::setfile_readout (const char *file )
-//struct SI_CAMERA *c;
-//char *file;
 {
 	FILE *fd;
 	const char *delim = "=\n";
@@ -645,12 +637,8 @@ int SI8821::setfile_readout (const char *file )
 	fclose(fd);
 	return 0;
 }
-//------------------------------------------------------------------------
 
 int SI8821::load_camera_cfg( struct SI_CAMERA *c, const char *fname)
-//int load_camera_cfg( c, fname )
-//struct SI_CAMERA *c;
-//char *fname;
 {
 	load_cfg( c->e_status, fname, "SP" );
 	load_cfg( c->e_readout, fname, "ESP" );
@@ -659,12 +647,8 @@ int SI8821::load_camera_cfg( struct SI_CAMERA *c, const char *fname)
 
 	return 0;
 }
-//------------------------------------------------------------------------
 
 int SI8821::load_cfg( struct CFG_ENTRY **e, const char *fname, const char *var )
-//struct CFG_ENTRY **e;
-//char *fname;
-//char *var;
 {
 	int len, varlen, index, pindex;
 	FILE *fd;
@@ -709,7 +693,6 @@ int SI8821::load_cfg( struct CFG_ENTRY **e, const char *fname, const char *var )
 
 
 int SI8821::parse_cfg_string (struct CFG_ENTRY *entry)
-//struct CFG_ENTRY *entry;
 {
 	const char *delim = "=\",\n\r";
 	char *s;
@@ -850,10 +833,8 @@ int SI8821::parse_cfg_string (struct CFG_ENTRY *entry)
 			}
 		break;
 	}
-	return -1; // APMONTERO: new
+	return -1;
 }
-//------------------------------------------------------------------------
-// APMONTERO: end
 
 int SI8821::init_com (int baud, int parity, int bits, int stopbits, int buffersize)
 {
