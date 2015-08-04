@@ -1147,6 +1147,8 @@ class Telescope:public rts2core::Device
 		char wcs_multi;
 
 		rts2core::ValueFloat *decUpperLimit;
+
+		void resetMpecTLE ();
 };
 
 };

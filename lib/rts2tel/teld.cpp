@@ -1464,6 +1464,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 		return -1;
 	}
 	int ret;
+	resetMpecTLE ();
 	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = stopMove ();
@@ -1568,7 +1569,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		mpec->setValueString ("");
+		resetMpecTLE ();
 		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
@@ -1580,7 +1581,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		obj_ra = getLocSidTime ( JD) * 15. - obj_ha ;
 
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		mpec->setValueString ("");
+		resetMpecTLE ();
 		tarRaDec->setValueRaDec (NAN, NAN);
 		return startResyncMove (conn, 0);
 	}
@@ -1590,7 +1591,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		mpec->setValueString ("");
+		resetMpecTLE ();
 		tarRaDec->setValueRaDec (NAN, NAN);
 		return startResyncMove (conn, 0);
 	}
@@ -1600,7 +1601,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		mpec->setValueString ("");
+		resetMpecTLE ();
 		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
@@ -1611,6 +1612,8 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOn ();
 		mpec->setValueString (str);
+		tle_l1->setValueString ("");
+		tle_l2->setValueString ("");
 		setTracking (true);
 		return startResyncMove (conn, 0);
 	}
@@ -1619,6 +1622,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
+		resetMpecTLE ();
 		setTracking (false);
 		return moveAltAz ();
 	}
@@ -1627,7 +1631,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		mpec->setValueString ("");
+		resetMpecTLE ();
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("setto"))
@@ -1714,6 +1718,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextString (&l1) || conn->paramNextString (&l2) || ! conn->paramEnd ())
 			return -2;
 
+		mpec->setValueString ("");
 		tle_l1->setValueString (l1);
 		tle_l2->setValueString (l2);
 
@@ -1813,4 +1818,11 @@ void Telescope::setFullBopState (rts2_status_t new_state)
 	rts2core::Device::setFullBopState (new_state);
 	if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()) && !(new_state & BOP_TEL_MOVE))
 		startResyncMove (NULL, (woffsRaDec->wasChanged () ? 1 : 0) | (wcorrRaDec->wasChanged () ? 2 : 0));
+}
+
+void Telescope::resetMpecTLE ()
+{
+	mpec->setValueString ("");
+	tle_l1->setValueString ("");
+	tle_l2->setValueString ("");
 }
