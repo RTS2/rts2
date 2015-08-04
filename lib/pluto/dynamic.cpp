@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "windows.h"
-#include "norad.h"
+#include "pluto/norad.h"
 
 typedef void (__stdcall *sxpx_init_fn)( double *params, const tle_t *tle);
 typedef int (__stdcall *sxpx_fn)( const double tsince, const tle_t *tle,

@@ -1,5 +1,5 @@
 #include <math.h>
-#include "observe.h"
+#include "pluto/observe.h"
 
 /*  Assorted functions useful in conjunction with the satellite code
    library for determining where the _observer_,  as well as the _target_,

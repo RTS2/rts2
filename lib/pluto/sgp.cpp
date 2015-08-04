@@ -1,6 +1,6 @@
 #include <math.h>
-#include "norad.h"
-#include "norad_in.h"
+#include "pluto/norad.h"
+#include "pluto/norad_in.h"
 
 #define ao       params[0]
 #define qo       params[1]

@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-#include "norad.h"
+#include "pluto/norad.h"
 
 typedef struct {int hh; int mm; float ss;} hours;
 typedef struct {int year; int month; int day;} date;

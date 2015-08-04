@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "norad.h"
+#include "pluto/norad.h"
 
       /* Useful constants to define,  in case the value of PI or the number
          of minutes in a day should change: */

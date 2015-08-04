@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
-#include "norad.h"
-#include "norad_in.h"
+#include "pluto/norad.h"
+#include "pluto/norad_in.h"
 
 /* Example code to add BSTAR data using Ted Molczan's method.  It just
    reads in TLEs,  computes BSTAR if possible,  then writes out the

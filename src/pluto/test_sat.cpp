@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "norad.h"
+#include "pluto/norad.h"
 
 static double test_data[5 * 6 * 5] = {
 

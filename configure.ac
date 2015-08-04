@@ -898,6 +898,7 @@ AC_OUTPUT([Makefile
 	   include/rts2json/Makefile
 	   include/vermes/Makefile
 	   include/xmlrpc++/Makefile
+	   include/pluto/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
 	   contrib/Makefile
@@ -957,6 +958,7 @@ AC_OUTPUT([Makefile
 	   src/httpd/Makefile
 	   src/scheduler/Makefile
 	   src/bb/Makefile
+	   src/pluto/Makefile
 	   scripts/rts2saf/Makefile
 	   scripts/rts2saf/rts2saf/Makefile]
 )

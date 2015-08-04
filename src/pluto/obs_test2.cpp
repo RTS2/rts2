@@ -33,8 +33,8 @@ arcminutes/second (or degrees/minute). */
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "norad.h"
-#include "observe.h"
+#include "pluto/norad.h"
+#include "pluto/observe.h"
 
 #define PI 3.141592653589793238462643383279
 #define TIME_EPSILON (1./86400.)

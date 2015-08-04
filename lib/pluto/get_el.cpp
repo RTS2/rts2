@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
-#include "norad.h"
+#include "pluto/norad.h"
 
 #define PI 3.141592653589793238462643383279502884197
 #define TWOPI (2. * PI)

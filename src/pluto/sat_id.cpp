@@ -51,8 +51,8 @@ the eccentricity,  orbital period,  and inclination. */
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "norad.h"
-#include "observe.h"
+#include "pluto/norad.h"
+#include "pluto/observe.h"
 
 #define PI 3.1415926535897932384626433832795028841971693993751058209749445923
 #define TIME_EPSILON (1./86400.)

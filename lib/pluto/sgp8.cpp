@@ -1,7 +1,7 @@
 #include <math.h>
 #include <string.h>
-#include "norad.h"
-#include "norad_in.h"
+#include "pluto/norad.h"
+#include "pluto/norad_in.h"
 
 #define tthmun              params[0]
 #define sini2               params[1]

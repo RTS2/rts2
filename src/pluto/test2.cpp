@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "norad.h"
+#include "pluto/norad.h"
 
 /* Main program */
 int main( int argc, char **argv)
