@@ -93,6 +93,8 @@ class Telescope:public rts2core::Device
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
 		double getLatitude () { return telLatitude->getValueDouble (); }
+		double getLongitude () { return telLongitude->getValueDouble (); }
+		double getAltitude () { return telAltitude->getValueDouble (); }
 
 		// callback functions from telescope connection
 		virtual int info ();
@@ -1113,10 +1115,23 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *mpec_refresh;
 		rts2core::ValueDouble *mpec_angle;
 
+		/**
+		 * Satellite (from Two Line Element, passed as string with lines separated by :)
+		 * tracking.
+		 */
+
+		rts2core::ValueString *tle;
+		rts2core::ValueString *tle_ephem;
+		rts2core::ValueDouble *tle_rho_sin_phi;
+		rts2core::ValueDouble *tle_rho_cos_phi;
+
+		rts2core::ValueDouble *tle_refresh;
+
 		// Value for RA DEC differential tracking
 		rts2core::ValueRaDec *diffRaDec;
 
 		void recalculateMpecDIffs ();
+		void recalculateTLEDiffs ();
 
 		char wcs_multi;
 

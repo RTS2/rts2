@@ -162,7 +162,7 @@ class Target:public Rts2Target
 		 *
 		 * @param  in_tar_id     target number
 		 * @param  in_obs        observer position (longitude, latitude)
-		 * @param  in_altitude   observer altitude (in km)
+		 * @param  in_altitude   observer altitude (in meters)
 		 */
 		Target (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 
