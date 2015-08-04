@@ -31,6 +31,9 @@
 #include "clicupola.h"
 #include "clirotator.h"
 
+#include "pluto/norad.h"
+#include "pluto/observe.h"
+
 #include "telmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
@@ -134,7 +137,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	pointingModel->addSelVal ("ALT-AZ");
 	pointingModel->addSelVal ("ALT-ALT");
 
-	createValue (mpec, "mpec_target", "MPEC string (used for target calculation, if set", false, RTS2_VALUE_WRITABLE);
+	createValue (mpec, "mpec_target", "MPEC string (used for target calculation, if set)", false, RTS2_VALUE_WRITABLE);
 	createValue (mpec_refresh, "mpec_refresh", "refresh MPEC ra_diff and dec_diff every mpec_refresh seconds", false, RTS2_VALUE_WRITABLE);
 	mpec_refresh->setValueDouble (3600);
 
@@ -150,6 +153,14 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		diffRaDec = NULL;
 	}
+
+	createValue (tle_l1, "tle_l1_target", "TLE target line 1", false);
+	createValue (tle_l2, "tle_l2_target", "TLE target line 2", false);
+	createValue (tle_ephem, "tle_ephem", "TLE emphemeris type", false);
+	createValue (tle_distance, "tle_distance", "[km] satellite distance", false);
+	createValue (tle_rho_sin_phi, "tle_rho_sin", "TLE rho_sin_phi (observatory position)", false);
+	createValue (tle_rho_cos_phi, "tle_rho_cos", "TLE rho_cos_phi (observatory position)", false);
+	createValue (tle_refresh, "tle_refresh", "refresh TLE ra_diff and dec_diff every tle_refresh seconds", false, RTS2_VALUE_WRITABLE);
 
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
@@ -839,6 +850,13 @@ int Telescope::initValues ()
 		wcs_crval2->setValueDouble (objRaDec->getDec ());
 	}
 
+	// calculate rho_sin_phi, ...
+	double r_s, r_c;
+	lat_alt_to_parallax (ln_deg_to_rad (getLatitude ()), getAltitude (), &r_c, &r_s);
+
+	tle_rho_cos_phi->setValueDouble (r_c);
+	tle_rho_sin_phi->setValueDouble (r_s);
+
 	return rts2core::Device::initValues ();
 }
 
@@ -1150,6 +1168,9 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	struct ln_equ_posn pos;
 
+	// apply computed corrections (precession, aberation, refraction)
+	double JD = ln_get_julian_from_sys ();
+
 	// calculate from MPEC..
 	if (mpec->getValueString ().length () > 0)
 	{
@@ -1160,6 +1181,55 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		LibnovaCurrentFromOrbit (&pos, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
 
 		oriRaDec->setValueRaDec (pos.ra, pos.dec);
+	}
+
+	// calculate from TLE..
+	if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
+	{
+
+		double sat_params[N_SAT_PARAMS], observer_loc[3];
+		double ra, dec, dist_to_satellite, t_since;
+		double sat_pos[3]; /* Satellite position vector */
+
+		int ephem = 1;
+
+		int is_deep = select_ephemeris (&tle);
+		if (is_deep && (ephem == 1 || ephem == 2))
+			ephem += 2;    /* switch to an SDx */
+		if (!is_deep && (ephem == 3 || ephem == 4))
+			ephem -= 2;    /* switch to an SGx */
+
+		observer_cartesian_coords (JD, ln_deg_to_rad (getLongitude ()), tle_rho_cos_phi->getValueDouble (), tle_rho_sin_phi->getValueDouble (), observer_loc);
+
+		tle_ephem->setValueInteger (ephem);
+		t_since = (JD - tle.epoch) * 1440.;
+		switch (ephem)
+		{
+			case 0:
+				SGP_init (sat_params, &tle);
+				SGP (t_since, &tle, sat_params, sat_pos, NULL);
+				break;
+			case 1:
+				SGP4_init (sat_params, &tle);
+				SGP4 (t_since, &tle, sat_params, sat_pos, NULL);
+				break;
+			case 2:
+				SGP8_init (sat_params, &tle);
+				SGP8 (t_since, &tle, sat_params, sat_pos, NULL);
+				break;
+			case 3:
+				SDP4_init (sat_params, &tle);
+				SDP4 (t_since, &tle, sat_params, sat_pos, NULL);
+				break;
+			case 4:
+				SDP8_init (sat_params, &tle);
+				SDP8 (t_since, &tle, sat_params, sat_pos, NULL);
+				break;
+		}
+		get_satellite_ra_dec_delta (observer_loc, sat_pos, &ra, &dec, &dist_to_satellite);
+
+		oriRaDec->setValueRaDec (ln_rad_to_deg (ra), ln_rad_to_deg (dec));
+		tle_distance->setValueDouble (dist_to_satellite);
 	}
 
 	// if object was not specified, do not move
@@ -1206,8 +1276,6 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	setCRVAL (pos.ra, pos.dec);
 
 	// apply computed corrections (precession, aberation, refraction)
-	double JD = ln_get_julian_from_sys ();
-
 	applyCorrections (&pos, JD);
 
 	LibnovaRaDec syncTo (&pos);
@@ -1643,6 +1711,26 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		_os << "ignoring correction - cor_mark " << cor_mark << " moveNum " << moveNum->getValueInteger () << " corr_img " << corr_img << " corrImgId " << corrImgId->getValueInteger () << " img_id " << img_id << " wCorrImgId " << wCorrImgId->getValueInteger ();
 		conn->sendCommandEnd (DEVDEM_E_IGNORE, _os.str ().c_str ());
 		return -1;
+	}
+	else if (conn->isCommand ("tle"))
+	{
+		char *l1;
+		char *l2;
+		if (conn->paramNextString (&l1) || conn->paramNextString (&l2) || ! conn->paramEnd ())
+			return -2;
+
+		tle_l1->setValueString (l1);
+		tle_l2->setValueString (l2);
+
+		ret = parse_elements (tle_l1->getValueString ().c_str (), tle_l2->getValueString ().c_str (), &tle);
+		if (ret != 0)
+		{
+			logStream (MESSAGE_ERROR) << "cannot target on TLEs" << sendLog;
+			logStream (MESSAGE_ERROR) << "Line 1: " << tle_l1->getValueString () << sendLog;
+			logStream (MESSAGE_ERROR) << "Line 2: " << tle_l2->getValueString () << sendLog;
+			return -1;
+		}
+		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("park"))
 	{

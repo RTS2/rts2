@@ -23,6 +23,7 @@
 #include <libnova/libnova.h>
 #include <sys/time.h>
 #include <time.h>
+#include "pluto/norad.h"
 
 #include "device.h"
 #include "objectcheck.h"
@@ -1120,12 +1121,16 @@ class Telescope:public rts2core::Device
 		 * tracking.
 		 */
 
-		rts2core::ValueString *tle;
+		rts2core::ValueString *tle_l1;
+		rts2core::ValueString *tle_l2;
 		rts2core::ValueString *tle_ephem;
+		rts2core::ValueDouble *tle_distance;
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;
 
 		rts2core::ValueDouble *tle_refresh;
+
+		tle_t tle;
 
 		// Value for RA DEC differential tracking
 		rts2core::ValueRaDec *diffRaDec;
