@@ -11,7 +11,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 
 noinst_HEADERS = sitech.h
 
-LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
+LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 
