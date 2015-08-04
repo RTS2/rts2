@@ -60,6 +60,7 @@ class PrintTarget:public rts2db::AppDb
 		void printTargetDS9 (rts2db::Target *target);
 
 		struct ln_lnlat_posn *obs;
+		double obs_altitude;
 		rts2db::CamList cameras;
 
 	private:

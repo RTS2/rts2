@@ -61,7 +61,7 @@ void ConnBBQueue::processCommand (char *cmd)
 		if (paramNextInteger (&tar_id))
 			return;
 	
-		rts2db::Target *tar = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver ());
+		rts2db::Target *tar = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 
 		std::ostringstream os;
 

@@ -41,13 +41,13 @@ ConstTarget::ConstTarget () : Target ()
 	proper_motion.ra = proper_motion.dec = NAN;
 }
 
-ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
+ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):Target (in_tar_id, in_obs, in_altitude)
 {
 	position.ra = position.dec = 0;
 	proper_motion.ra = proper_motion.dec = NAN;
 }
 
-ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):Target (in_tar_id, in_obs)
+ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude, struct ln_equ_posn *pos):Target (in_tar_id, in_obs, in_altitude)
 {
 	position.ra = pos->ra;
 	position.dec = pos->dec;
@@ -219,7 +219,7 @@ void ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 		<< InfoVal <LibnovaDegArcMin> ("PROPER MOTION DEC", LibnovaDegArcMin (proper_motion.dec));
 }
 
-DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
+DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude): Target (in_tar_id, in_obs, in_altitude)
 {
 	currPos.ra = NAN;
 	currPos.dec = NAN;
@@ -263,7 +263,7 @@ moveType DarkTarget::startSlew (struct ln_equ_posn *position, bool update_positi
 	return OBS_DONT_MOVE;
 }
 
-FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
+FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude): ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 	setTargetName ("flat target");
 }
@@ -403,7 +403,7 @@ void FlatTarget::printExtra (Rts2InfoValStream & _os, double JD)
 		<< std::endl;
 }
 
-CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 	airmassPosition.ra = airmassPosition.dec = 0;
 	time (&lastImage);
@@ -487,8 +487,7 @@ void CalibrationTarget::load ()
 		ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
 		if (rts2core::Configuration::instance ()->getObjectChecker ()->is_good (&hrz))
 		{
-			PosCalibration *newCal = new PosCalibration (db_tar_id, db_tar_ra, db_tar_dec, db_type_id,
-				db_tar_name.arr, observer, JD);
+			PosCalibration *newCal = new PosCalibration (db_tar_id, db_tar_ra, db_tar_dec, db_type_id, db_tar_name.arr, observer, obs_altitude, JD);
 			cal_list.push_back (newCal);
 		}
 	}
@@ -677,7 +676,7 @@ float CalibrationTarget::getBonus (double JD)
 	return minBonus + ((maxBonus - minBonus) * t_diff / (maxDelay - validTime));
 }
 
-ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 	modelStepType = 2;
 	rts2core::Configuration::instance ()->getInteger ("observatory", "model_step_type", modelStepType);
@@ -907,7 +906,7 @@ void ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 // pick up some opportunity target; don't pick it too often
-OportunityTarget::OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+OportunityTarget::OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 }
 
@@ -950,7 +949,7 @@ float OportunityTarget::getBonus (double JD)
 }
 
 // will pickup the Moon
-LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
+LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):Target (in_tar_id, in_obs, in_altitude)
 {
 }
 
@@ -964,7 +963,7 @@ int LunarTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 	return ln_get_body_rst_horizon (JD, observer, ln_get_lunar_equ_coords, horizon, rst);
 }
 
-TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
+TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):Target (in_tar_id, in_obs, in_altitude)
 {
 	swiftOnBonus = 0;
 	target_id = TARGET_SWIFT_FOV;
@@ -1264,7 +1263,7 @@ void TargetSwiftFOV::printExtra (Rts2InfoValStream &_os, double JD)
 	}
 }
 
-TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
+TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):Target (in_tar_id, in_obs, in_altitude)
 {
 	target_id = TARGET_INTEGRAL_FOV;
 	integralId = -1;
@@ -1480,7 +1479,7 @@ void TargetIntegralFOV::printExtra (Rts2InfoValStream &_os, double JD)
 		<< std::endl;
 }
 
-TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
+TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude): ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 }
 
@@ -1509,7 +1508,7 @@ float TargetGps::getBonus (double JD)
 	return ConstTarget::getBonus (JD) + 20 * (hrz.alt / (90 - observer->lat + curr.dec)) + gal_ctr / 9 - numobs * 10 - numobs2 * 5;
 }
 
-TargetSkySurvey::TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
+TargetSkySurvey::TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude): ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 }
 
@@ -1525,7 +1524,7 @@ float TargetSkySurvey::getBonus (double JD)
 	return ConstTarget::getBonus (JD) - numobs * 10;
 }
 
-TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 }
 
@@ -1574,7 +1573,7 @@ moveType TargetTerestial::afterSlewProcessed ()
 	return OBS_MOVE_FIXED;
 }
 
-TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (in_tar_id, in_obs)
+TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude) : Target (in_tar_id, in_obs, in_altitude)
 {
 	selectedPlan = NULL;
 	nextPlan = NULL;

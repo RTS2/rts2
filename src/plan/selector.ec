@@ -32,6 +32,7 @@ using namespace rts2plan;
 Selector::Selector (rts2db::CamList *cameras)
 {
 	observer = NULL;
+	obs_altitude = NAN;
 	cameraList = cameras;
 }
 
@@ -129,7 +130,7 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 		return;
 
 	// add us..
-	newTar = createTarget (consider_tar_id, observer);
+	newTar = createTarget (consider_tar_id, observer, obs_altitude);
 	if (!newTar)
 		return;
 	ret = newTar->considerForObserving (JD);

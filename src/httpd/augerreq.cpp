@@ -62,7 +62,7 @@ void Auger::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path, X
 
 void Auger::printTarget (int auger_id, const char* &response_type, char* &response, size_t &response_length)
 {
-	rts2db::TargetAuger ta (-1, rts2core::Configuration::instance ()->getObserver (), -1);
+	rts2db::TargetAuger ta (-1, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude (), -1);
 
 	ta.load (auger_id);
 

@@ -44,7 +44,7 @@ rts2db::Target * rts2json::getTarget (XmlRpc::HttpParams *params, const char *pa
 	int id = params->getInteger (paramname, -1);
 	if (id <= 0)
 		throw XmlRpc::JSONException ("invalid id parameter");
-	rts2db::Target *target = createTarget (id, rts2core::Configuration::instance ()->getObserver ());
+	rts2db::Target *target = createTarget (id, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 	if (target == NULL)
 		throw XmlRpc::JSONException ("cannot find target with given ID");
 	return target;
@@ -624,7 +624,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 	else if (vals[0] == "auger")
 	{
 		int a_id = params->getInteger ("id", -1);
-		rts2db::TargetAuger ta (-1, rts2core::Configuration::instance ()->getObserver (), 10);
+		rts2db::TargetAuger ta (-1, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude (), 10);
 		if (a_id < 0)
 		{
 			a_id = params->getInteger ("obs_id", -1);

@@ -341,7 +341,7 @@ Target * Plan::getTarget ()
 {
 	if (target)
 		return target;
-	target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver ());
+	target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 	return target;
 }
 

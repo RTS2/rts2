@@ -65,7 +65,7 @@ Target * Rts2Prop::getTarget ()
 		return target;
 	try
 	{
-		target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver());
+		target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver(), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 	}
 	catch (SqlError err)
 	{

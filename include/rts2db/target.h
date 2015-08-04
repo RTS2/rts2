@@ -157,12 +157,19 @@ class Target:public Rts2Target
 {
 	public:
 		/**
-		 * @param watchConn connection for watch events (inotify)
+		 * Construct new target. As Target is abstract class, used mainly in 
+		 * childrens.
+		 *
+		 * @param  in_tar_id     target number
+		 * @param  in_obs        observer position (longitude, latitude)
+		 * @param  in_altitude   observer altitude (in km)
 		 */
-		Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		Target (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
+
 		// create new target. Save will save it to the database..
 		Target ();
 		virtual ~ Target (void);
+
 		void logMsgDb (const char *message, messageType_t msgType);
 		void getTargetSubject (std::string & subj);
 
@@ -813,6 +820,11 @@ class Target:public Rts2Target
 		struct ln_lnlat_posn *observer;
 
 		/**
+		 * Observer altitude (in KM).
+		 */
+		double obs_altitude;
+
+		/**
 		 * Return script for camera exposure.
 		 *
 		 * @param camera_name   name of the camera
@@ -876,8 +888,8 @@ class ConstTarget:public Target
 {
 	public:
 		ConstTarget ();
-		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos);
+		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
+		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude, struct ln_equ_posn *pos);
 		virtual void load ();
 		virtual int saveWithID (bool overwrite, int tar_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
@@ -915,7 +927,7 @@ class DarkTarget:public Target
 	private:
 		struct ln_equ_posn currPos;
 	public:
-		DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual ~ DarkTarget (void);
 		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
@@ -927,7 +939,7 @@ class DarkTarget:public Target
 class FlatTarget:public ConstTarget
 {
 	public:
-		FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual void load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
@@ -944,7 +956,7 @@ class FlatTarget:public ConstTarget
 class PosCalibration:public Target
 {
 	public:
-		PosCalibration (int in_tar_id, double ra, double dec, char in_type_id, char *in_tar_name, struct ln_lnlat_posn *in_observer, double JD):Target (in_tar_id, in_observer)
+		PosCalibration (int in_tar_id, double ra, double dec, char in_type_id, char *in_tar_name, struct ln_lnlat_posn *in_observer, double in_altitude, double JD):Target (in_tar_id, in_observer, in_altitude)
 		{
 			struct ln_hrz_posn hrz;
 
@@ -980,7 +992,7 @@ class PosCalibration:public Target
 class CalibrationTarget:public ConstTarget
 {
 	public:
-		CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual void load ();
 		virtual int beforeMove ();
 		virtual int endObservation (int in_next_id);
@@ -1025,7 +1037,7 @@ class ModelTarget:public ConstTarget
 		int getNextPosition ();
 		int calPosition ();
 	public:
-		ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual ~ ModelTarget (void);
 		virtual void load ();
 		virtual int beforeMove ();
@@ -1045,7 +1057,7 @@ class ModelTarget:public ConstTarget
 class OportunityTarget:public ConstTarget
 {
 	public:
-		OportunityTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
+		OportunityTarget (int in_tar_id, struct ln_lnlat_posn * in_obs, double in_altitude);
 		virtual float getBonus (double JD);
 		virtual int isContinues () { return 1; }
 
@@ -1055,7 +1067,7 @@ class OportunityTarget:public ConstTarget
 class LunarTarget:public Target
 {
 	public:
-		LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
+		LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs, double in_altitude);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 };
@@ -1083,7 +1095,7 @@ class TargetSwiftFOV:public Target
 		time_t swiftLastTarTimeEnd;
 		struct ln_equ_posn swiftLastTarPos;
 	public:
-		TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual ~ TargetSwiftFOV (void);
 
 		virtual void load ();	 // find Swift pointing for observation
@@ -1108,7 +1120,7 @@ class TargetIntegralFOV:public Target
 		time_t integralTimeStart;
 		double integralOnBonus;
 	public:
-		TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual ~ TargetIntegralFOV (void);
 
 		virtual void load ();	 // find Swift pointing for observation
@@ -1127,21 +1139,21 @@ class TargetIntegralFOV:public Target
 class TargetGps:public ConstTarget
 {
 	public:
-		TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual float getBonus (double JD);
 };
 
 class TargetSkySurvey:public ConstTarget
 {
 	public:
-		TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual float getBonus (double JD);
 };
 
 class TargetTerestial:public ConstTarget
 {
 	public:
-		TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual int considerForObserving (double JD);
 		virtual float getBonus (double JD);
 		virtual moveType afterSlewProcessed ();
@@ -1152,7 +1164,7 @@ class Plan;
 class TargetPlan:public Target
 {
 	public:
-		TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		virtual ~ TargetPlan (void);
 
 		virtual void load ();
@@ -1191,12 +1203,13 @@ Rts2InfoValStream & operator << (Rts2InfoValStream & _os, rts2db::Target & targe
 /**
  * Select target from database with given target ID.
  *
- * @param tar_id  ID of target which will be loaded
- * @param obs     observer position
+ * @param tar_id      ID of target which will be loaded
+ * @param obs         observer position
+ * @param altitude    observator altitude
  *
  * @return New target if it can be found. Otherwise will return NULL.
  */
-rts2db::Target *createTarget (int tar_id, struct ln_lnlat_posn *obs);
+rts2db::Target *createTarget (int tar_id, struct ln_lnlat_posn *obs, double altitude);
 
 /**
  * Create target by name.

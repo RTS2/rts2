@@ -92,7 +92,7 @@ class TargetSet:public std::map <int, Target * >
 		 *
 		 * @param in_obs Observer location.
 		 */
-		TargetSet (struct ln_lnlat_posn *in_obs = NULL);
+		TargetSet (struct ln_lnlat_posn *in_obs = NULL, double in_altitude = NAN);
 
 		/**
 		 * Construct set of targets around given position.
@@ -101,7 +101,7 @@ class TargetSet:public std::map <int, Target * >
 		 * @param radius Radius in arcdeg of the circle in which search will be performed.
 		 * @param in_obs Observer location.
 		 */
-		TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs = NULL);
+		TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs = NULL, double in_altitude = NAN);
 
 		/**
 		 * Construct set of targets with given type.
@@ -109,7 +109,7 @@ class TargetSet:public std::map <int, Target * >
 		 * @param target_type Type(s) of targets.
 		 * @param in_obs Observer location.
 		 */
-		TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs = NULL);
+		TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs = NULL, double in_altitude = NAN);
 
 		virtual ~TargetSet (void);
 
@@ -222,6 +222,7 @@ class TargetSet:public std::map <int, Target * >
 		void printTypeWhere (std::ostream & _os, const char *target_type);
 
 		struct ln_lnlat_posn *obs;
+		double obs_altitude;
 
 		// values for load operation
 		std::string where;
@@ -267,7 +268,7 @@ class TargetSetCalibration:public TargetSet
 class  TargetSetGrb:public std::vector <TargetGRB *>
 {
 	public:
-		TargetSetGrb (struct ln_lnlat_posn *in_obs = NULL);
+		TargetSetGrb (struct ln_lnlat_posn *in_obs = NULL, double in_altitude = NAN);
 		virtual ~TargetSetGrb (void);
 
 		virtual void load ();
@@ -276,6 +277,7 @@ class  TargetSetGrb:public std::vector <TargetGRB *>
 
 	protected:
 		struct ln_lnlat_posn *obs;
+		double obs_altitude;
 };
 
 

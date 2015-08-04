@@ -51,6 +51,7 @@
 #define TYPE_SKY_SURVEY         'S'
 #define TYPE_GPS                'P'
 #define TYPE_ELLIPTICAL         'E'
+#define TYPE_TLE                'B'
 #define TYPE_HETE               'H'
 #define TYPE_PHOTOMETRIC        'M'
 #define TYPE_TECHNICAL          't'

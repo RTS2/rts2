@@ -68,6 +68,7 @@ using namespace rts2plan;
 PrintTarget::PrintTarget (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	obs = NULL;
+	obs_altitude = NAN;
 	printExtended = 0;
 	printConstraints = false;
 	printCalTargets = false;
@@ -665,7 +666,7 @@ int PrintTarget::printTargets (rts2db::TargetSet & set)
 		// find and print calibration targets..
 		if (printCalTargets)
 		{
-			rts2db::TargetSet calibSet = rts2db::TargetSet (obs);
+			rts2db::TargetSet calibSet = rts2db::TargetSet (obs, obs_altitude);
 			for (iter = set.begin (); iter != set.end (); iter++)
 			{
 				target = (*iter).second;
@@ -770,6 +771,11 @@ int PrintTarget::init ()
 	if (!obs)
 	{
 		obs = config->getObserver ();
+	}
+
+	if (isnan (obs_altitude))
+	{
+		obs_altitude = config->getObservatoryAltitude ();
 	}
 
 	ret = cameras.load ();

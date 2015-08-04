@@ -102,6 +102,7 @@ class Executor:public rts2db::DeviceDb
 		int waitState;
 		std::list < rts2db::Target * > targetsQue;
 		struct ln_lnlat_posn *observer;
+		double obs_altitude;
 
 		// Queue management
 		std::list < ExecutorQueue > queues;
@@ -286,6 +287,7 @@ int Executor::reloadConfig ()
 	if (ret)
 		return ret;
 	observer = config->getObserver ();
+	obs_altitude = config->getObservatoryAltitude ();
 	f = 0;
 	config->getDouble ("grbd", "seplimit", f);
 	grb_sep_limit->setValueDouble (f);
@@ -591,7 +593,7 @@ void Executor::changeMasterState (rts2_status_t old_state, rts2_status_t new_sta
 			{
 			  	try
 				{
-					getActiveQueue ()->addFront (createTarget (1, observer));
+					getActiveQueue ()->addFront (createTarget (1, observer, obs_altitude));
 					if (!currentTarget)
 						switchTarget ();
 				}
@@ -643,7 +645,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end, int plan_id)
 {
 	try
 	{
-		rts2db::Target *nt = createTarget (tarId, observer);
+		rts2db::Target *nt = createTarget (tarId, observer, obs_altitude);
 		if (!nt)
 			return -2;
 		if (nt->getTargetType () == TYPE_DARK && doDarks->getValueInteger () == 0)
@@ -688,7 +690,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end, int plan_id)
 
 void Executor::createQueue (const char *name)
 {
-  	queues.push_back (ExecutorQueue (this, name, &observer, -1));
+  	queues.push_back (ExecutorQueue (this, name, &observer, obs_altitude, -1));
 	activeQueue->addSelVal (name, (Rts2SelData *) &(queues.back()));
 }
 
@@ -701,7 +703,7 @@ int Executor::setNow (int nextId, int plan_id)
 
 	try
 	{
-		newTarget = createTarget (nextId, observer);
+		newTarget = createTarget (nextId, observer, obs_altitude);
 		if (!newTarget)
 			// error..
 			return -2;
@@ -761,7 +763,7 @@ int Executor::setGrb (int grbId)
 			logStream (MESSAGE_INFO) << "GRBs has 0 validity period, grb command ignored for GRB with target id " << grbId << sendLog;
 			return 0;
 		}
-		grbTarget = createTarget (grbId, observer);
+		grbTarget = createTarget (grbId, observer, obs_altitude);
 
 		if (!grbTarget)
 			return -2;
@@ -899,7 +901,7 @@ void Executor::doSwitch ()
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ()))
 	{
 		// create again our target..since conditions changed, we will get different target id
-		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer));
+		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer, obs_altitude));
 	}
 	// log loop if the next target will be the same
 	if (currentTarget && ((getActiveQueue ()->size () > 0 && getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ())
