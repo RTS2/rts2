@@ -181,6 +181,37 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 					}
 				}
 				break;
+			// counterweight down
+			case 6:
+			// counterweight up
+			case 7:
+				// calculate distance towards "meridian" - counterweight down - position
+				// normalize distances by ra_ticks
+				int32_t diff_nf = fabs (t_ac - (int32_t) ((haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) % ra_ticks->getValueLong ());
+				int32_t diff_f = fabs (tf_ac - (int32_t) ((haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) % ra_ticks->getValueLong ());
+				// make sure we have shortest value for flipped/non flipped difference
+				if (diff_nf < diff_f)
+					diff_f = ra_ticks->getValueLong () - diff_f;
+				else
+					diff_nf = ra_ticks->getValueLong () - diff_nf;
+				break;
+				logStream (MESSAGE_DEBUG) << "cw diffs flipped " << diff_f << " nf " << diff_nf << sendLog;
+				if ((actual_flip == 6 && haZeroPos->getValueInteger () == 1) || (actual_flip == 7 && haZeroPos->getValueInteger () == 0))
+				{
+					if (diff_f < diff_nf)
+					{
+						t_ac = tf_ac;
+						t_dc = tf_dc;
+					}
+				}
+				else
+				{
+					if (diff_f > diff_nf)
+					{
+						t_ac = tf_ac;
+						t_dc = tf_dc;
+					}
+				}
 		}
 	}
 	// otherwise, non-flipped is the only way, stay on it..
@@ -271,6 +302,12 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 	flipping->addSelVal ("west");
 	flipping->addSelVal ("east");
 	flipping->addSelVal ("longest");
+	flipping->addSelVal ("cw down");
+	flipping->addSelVal ("cw up");
+
+	createValue (haZeroPos, "_ha_zero_pos", "position of the telescope on zero", false);
+	haZeroPos->addSelVal ("EAST");
+	haZeroPos->addSelVal ("WEST");
 
 	createValue (haZero, "_ha_zero", "HA zero offset", false);
 	createValue (decZero, "_dec_zero", "DEC zero offset", false);
@@ -294,6 +331,7 @@ GEM::~GEM (void)
 
 void GEM::unlockPointing ()
 {
+	haZeroPos->setWritable ();
 	haZero->setWritable ();
 	decZero->setWritable ();
 	haCpd->setWritable ();

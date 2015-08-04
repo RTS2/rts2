@@ -42,6 +42,7 @@ class GEM: public Telescope
 		/**
 		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
 		 */
+		rts2core::ValueSelection *haZeroPos;
 		rts2core::ValueDouble *haZero;
 		rts2core::ValueDouble *decZero;
 
