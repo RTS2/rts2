@@ -1064,6 +1064,41 @@ int Telescope::setTracking (bool track)
 	return 0;
 }
 
+void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite)
+{
+	double sat_params[N_SAT_PARAMS], observer_loc[3];
+	double t_since;
+	double sat_pos[3]; /* Satellite position vector */
+
+	observer_cartesian_coords (JD, ln_deg_to_rad (getLongitude ()), tle_rho_cos_phi->getValueDouble (), tle_rho_sin_phi->getValueDouble (), observer_loc);
+
+	t_since = (JD - tle.epoch) * 1440.;
+	switch (tle_ephem->getValueInteger ())
+	{
+		case 0:
+			SGP_init (sat_params, &tle);
+			SGP (t_since, &tle, sat_params, sat_pos, NULL);
+			break;
+		case 1:
+			SGP4_init (sat_params, &tle);
+			SGP4 (t_since, &tle, sat_params, sat_pos, NULL);
+			break;
+		case 2:
+			SGP8_init (sat_params, &tle);
+			SGP8 (t_since, &tle, sat_params, sat_pos, NULL);
+			break;
+		case 3:
+			SDP4_init (sat_params, &tle);
+			SDP4 (t_since, &tle, sat_params, sat_pos, NULL);
+			break;
+		case 4:
+			SDP8_init (sat_params, &tle);
+			SDP8 (t_since, &tle, sat_params, sat_pos, NULL);
+			break;
+	}
+	get_satellite_ra_dec_delta (observer_loc, sat_pos, &ra, &dec, &dist_to_satellite);
+}
+
 void Telescope::addParkPosOption ()
 {
 	addOption (OPT_PARK_POS, "park-position", 1, "parking position (alt:az[:flip])");
@@ -1186,48 +1221,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	// calculate from TLE..
 	if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
 	{
-
-		double sat_params[N_SAT_PARAMS], observer_loc[3];
-		double ra, dec, dist_to_satellite, t_since;
-		double sat_pos[3]; /* Satellite position vector */
-
-		int ephem = 1;
-
-		int is_deep = select_ephemeris (&tle);
-		if (is_deep && (ephem == 1 || ephem == 2))
-			ephem += 2;    /* switch to an SDx */
-		if (!is_deep && (ephem == 3 || ephem == 4))
-			ephem -= 2;    /* switch to an SGx */
-
-		observer_cartesian_coords (JD, ln_deg_to_rad (getLongitude ()), tle_rho_cos_phi->getValueDouble (), tle_rho_sin_phi->getValueDouble (), observer_loc);
-
-		tle_ephem->setValueInteger (ephem);
-		t_since = (JD - tle.epoch) * 1440.;
-		switch (ephem)
-		{
-			case 0:
-				SGP_init (sat_params, &tle);
-				SGP (t_since, &tle, sat_params, sat_pos, NULL);
-				break;
-			case 1:
-				SGP4_init (sat_params, &tle);
-				SGP4 (t_since, &tle, sat_params, sat_pos, NULL);
-				break;
-			case 2:
-				SGP8_init (sat_params, &tle);
-				SGP8 (t_since, &tle, sat_params, sat_pos, NULL);
-				break;
-			case 3:
-				SDP4_init (sat_params, &tle);
-				SDP4 (t_since, &tle, sat_params, sat_pos, NULL);
-				break;
-			case 4:
-				SDP8_init (sat_params, &tle);
-				SDP8 (t_since, &tle, sat_params, sat_pos, NULL);
-				break;
-		}
-		get_satellite_ra_dec_delta (observer_loc, sat_pos, &ra, &dec, &dist_to_satellite);
-
+		double ra, dec, dist_to_satellite;
+		calculateTLE (JD, ra, dec, dist_to_satellite);
 		oriRaDec->setValueRaDec (ln_rad_to_deg (ra), ln_rad_to_deg (dec));
 		tle_distance->setValueDouble (dist_to_satellite);
 	}
@@ -1730,6 +1725,16 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			logStream (MESSAGE_ERROR) << "Line 2: " << tle_l2->getValueString () << sendLog;
 			return -1;
 		}
+
+		int ephem = 1;
+
+		int is_deep = select_ephemeris (&tle);
+		if (is_deep && (ephem == 1 || ephem == 2))
+			ephem += 2;    /* switch to an SDx */
+		if (!is_deep && (ephem == 3 || ephem == 4))
+			ephem -= 2;    /* switch to an SGx */
+		tle_ephem->setValueInteger (ephem);
+
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("park"))

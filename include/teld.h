@@ -822,6 +822,12 @@ class Telescope:public rts2core::Device
 		 */
 		virtual int setTracking (bool track);
 
+
+		/**
+		 * Calculate TLE RA DEC for given time.
+		 */
+		void calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite);
+
 		/**
 		 * Set differential tracking values. All inputs is in degrees / hour.
 		 *
