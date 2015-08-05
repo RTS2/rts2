@@ -370,7 +370,7 @@ class Telescope:public rts2core::Device
 		 * @param pos ln_equ_posn RA/DEC position (typically TAR, i.e. precessed coordinates), will be corrected by computed model and correction corrRaDec.
 		 * @param model_change ln_equ_posn difference against original pos position, includes coputed model's difference together with correction corrRaDec.
 		 */
-		void applyModel (double JD, struct ln_equ_posn *pos, double &t_ac, double &t_dc);
+		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
 
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.
@@ -405,14 +405,6 @@ class Telescope:public rts2core::Device
 		 * @param tar_dec target DEC, returns its value.
 		 */
 		virtual void applyCorrections (double &tar_ra, double &tar_dec);
-
-		/**
-		 * Transform sky coordinates to telescope counts.
-		 *
-		 * Default implementation returns same coordinates as RA, DEC
-		 */
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, double & tar_ac, double & tar_dc);
-
 
 		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		char telType[64];
@@ -577,7 +569,7 @@ class Telescope:public rts2core::Device
 		 * @param out_tar         target position
 		 * @param tar_distance    distance to target (in m), if know (satellites,..)
 		 */
-		int calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance, double &tar_ac, double &tar_dc);
+		int calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance);
 
 		void getTargetAltAz (struct ln_hrz_posn *hrz)
 		{

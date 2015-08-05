@@ -292,7 +292,7 @@ double Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
-int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance, double &tar_ac, double &tar_dc)
+int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance)
 {
 	tar_distance = NAN;
 
@@ -319,32 +319,9 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, double &
 	}
 
 	// offsets, corrections,..
-	out_tar->ra += offsRaDec->getRa () + corrRaDec->getRa ();
-	out_tar->dec += offsRaDec->getDec () + corrRaDec->getDec ();
+	out_tar->ra +=  0;
 
-	// correctins and offset beyod pole - flip
-	if (out_tar->dec > 90)
-	{
-		out_tar->dec = 180.0 - out_tar->dec;
-		out_tar->ra = ln_range_degrees (out_tar->ra + 180.0);
-	}
-	else if (out_tar->dec < -90)
-	{
-		out_tar->dec = 180.0 + out_tar->dec;
-		out_tar->ra = ln_range_degrees (out_tar->ra + 180.0);
-	}
-
-	// abberation, refraction, ..
-	applyCorrections (out_tar, JD);
-
-	// get true sky coordinates
-	// this includes changed dec, if we need to move to the other hemisphere
-	int ret = sky2counts (JD, out_tar, tar_ac, tar_dc);
-	if (ret)
-		return -1;
-
-	// at the end, apply model
-	return applyModel (JD, out_tar, tar_ac, tar_dc);
+	return 0;
 }
 
 void Telescope::createRaGuide ()
@@ -732,7 +709,7 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 	return 0;
 }
 
-void Telescope::applyModel (double JD, struct ln_equ_posn *pos, double &t_ac, double &t_dc)
+void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
 {
 	ln_equ_posn pos_n;
 
@@ -1231,13 +1208,6 @@ void Telescope::applyCorrections (double &tar_ra, double &tar_dec)
 
 	tar_ra = pos.ra;
 	tar_dec = pos.dec;
-}
-
-int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, double & tar_ac, double & tar_dc)
-{
-	tar_ac = pos->ra;
-	tar_dc = pos->dec;
-	return 0;
 }
 
 void Telescope::startCupolaSync ()
