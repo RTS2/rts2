@@ -17,9 +17,11 @@ class APMMirror : public Sensor
         public:
                 APMMirror (int argc, char **argv);
 		virtual int processOption (int in_opt);
-                virtual int initHardware ();
-                virtual int commandAuthorized (rts2core::Connection *conn);
-                virtual int info ();
+		virtual int initHardware ();
+		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
+		virtual int info ();
+
         private:
                 int mirror_state;
                 HostString *host;
@@ -84,6 +86,32 @@ int APMMirror::commandAuthorized (rts2core::Connection * conn)
         }
 
         return 0;
+}
+
+void APMMirror::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+{
+	switch (new_state & SERVERD_STATUS_MASK)
+	{
+		case SERVERD_DUSK:
+		case SERVERD_NIGHT:
+		case SERVERD_DAWN:
+			{
+				switch (new_state & SERVERD_ONOFF_MASK)
+				{
+					case SERVERD_ON:
+						open ();
+						break;
+					default:
+						close();
+						break;
+				}
+			}
+			break;
+		default:
+			close();
+			break;
+	}
+	Sensor::changeMasterState (old_state, new_state);
 }
 
 int APMMirror::info ()
