@@ -484,10 +484,10 @@ class Telescope:public rts2core::Device
 		 * Returns original, J2000 coordinates, used as observational
 		 * target.
 		 */
-		void getOrigin (struct ln_equ_posn _ori)
+		void getOrigin (struct ln_equ_posn *_ori)
 		{
-			_ori.ra = oriRaDec->getRa ();
-			_ori.dec = oriRaDec->getDec ();
+			_ori->ra = oriRaDec->getRa ();
+			_ori->dec = oriRaDec->getDec ();
 		}
 	
 		void setOrigin (double ra, double dec, bool withObj = false)
@@ -560,6 +560,16 @@ class Telescope:public rts2core::Device
 			out_tar->ra = tarRaDec->getRa ();
 			out_tar->dec = tarRaDec->getDec ();
 		}
+
+		/**
+		 * Calculate target position for given JD.
+		 * This function shall be used for adaptive tracking.
+		 *
+		 * @param JD              date for which position will be calculated
+		 * @param out_tar         target position
+		 * @param tar_distance    distance to target (in m), if know (satellites,..)
+		 */
+		int calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance);
 
 		void getTargetAltAz (struct ln_hrz_posn *hrz)
 		{
@@ -1129,7 +1139,7 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueString *tle_l1;
 		rts2core::ValueString *tle_l2;
-		rts2core::ValueString *tle_ephem;
+		rts2core::ValueInteger *tle_ephem;
 		rts2core::ValueDouble *tle_distance;
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;

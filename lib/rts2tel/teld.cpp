@@ -292,6 +292,38 @@ double Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
+int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance)
+{
+	tar_distance = NAN;
+
+	// calculate from MPEC..
+	if (mpec->getValueString ().length () > 0)
+	{
+		struct ln_lnlat_posn observer;
+		struct ln_equ_posn parallax;
+		observer.lat = telLatitude->getValueDouble ();
+		observer.lng = telLongitude->getValueDouble ();
+		LibnovaCurrentFromOrbit (out_tar, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
+	}
+	// calculate from TLE..
+	else if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
+	{
+		calculateTLE (JD, out_tar->ra, out_tar->dec, tar_distance);
+		out_tar->ra = ln_rad_to_deg (out_tar->ra);
+		out_tar->dec = ln_rad_to_deg (out_tar->dec);
+	}
+	// get from ORI, if constant..
+	else
+	{
+		getOrigin (out_tar);
+	}
+
+	// offsets, corrections,..
+	out_tar->ra +=  0;
+
+	return 0;
+}
+
 void Telescope::createRaGuide ()
 {
 	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
@@ -1095,6 +1127,8 @@ void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_t
 			SDP8_init (sat_params, &tle);
 			SDP8 (t_since, &tle, sat_params, sat_pos, NULL);
 			break;
+		default:
+			logStream (MESSAGE_ERROR) << "invalid tle_ephem " << tle_ephem->getValueInteger () << sendLog;
 	}
 	get_satellite_ra_dec_delta (observer_loc, sat_pos, &ra, &dec, &dist_to_satellite);
 }
@@ -1235,6 +1269,12 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
         if (mpec->getValueString ().length () > 0)
 	{
 		if (mpec->wasChanged ())
+			incMoveNum ();
+	}
+	// same for TLEs
+	else if (tle_l1->getValueString ().length () > 0)
+	{
+		if (tle_l1->wasChanged () || tle_l2->wasChanged ())
 			incMoveNum ();
 	}
 	// object changed from last call to startResyncMove and it is a stationary object
