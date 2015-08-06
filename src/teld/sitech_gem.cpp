@@ -26,9 +26,6 @@
 #include "sitech.h"
 #include "connection/sitech.h"
 
-#define RTS2_SITECH_TIMER       RTS2_LOCAL_EVENT + 1220
-#define TRACK_TIME_DELTA        1.0
-
 // SITech counts/servero loop -> speed value
 #define SPEED_MULTI             65536
 
@@ -48,8 +45,6 @@ class Sitech:public GEM
 	public:
 		Sitech (int argc, char **argv);
 		~Sitech (void);
-
-		virtual void postEvent (rts2core::Event *event);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -91,9 +86,13 @@ class Sitech:public GEM
 			return isMoving ();
 		}
 
-		virtual int setTracking (bool track);
+		virtual int setTracking (bool track, bool addTrackingTimer = false);
 
-		virtual void setDiffTrack (double dra, double ddec);
+		/**
+		 * Starts mount tracking - endless speed limited pointing.
+                 * Called periodically to make sure we stay on target.
+		 */
+		virtual void runTracking ();
 
 		virtual double estimateTargetTime ()
 		{
@@ -125,12 +124,6 @@ class Sitech:public GEM
 		 * Check if movement only in DEC axis is a possibility.
 		 */
 		int checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d);
-
-		/**
-		 * Starts mount tracking - endless speed limited pointing.
-                 * Called periodically to make sure we stay on target.
-		 */
-		void sitechStartTracking (bool startTimer);
 
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
@@ -372,33 +365,18 @@ Sitech::~Sitech(void)
 	serConn = NULL;
 }
 
-void Sitech::postEvent (rts2core::Event *event)
-{
-	switch (event->getType ())
-	{
-		case RTS2_SITECH_TIMER:
-			if (wasStopped)
-				break;
-			sitechStartTracking (false);
-			addTimer (TRACK_TIME_DELTA, event);
-			return;
-			break;
-	}
-	GEM::postEvent (event);
-}
-
 /* Full stop */
 void Sitech::fullStop (void)
 {
 	partialMove->setValueInteger (0);
 	try
 	{
+		setTracking (false);
 		serConn->siTechCommand ('X', "N");
 		usleep (100000);
 		serConn->siTechCommand ('Y', "N");
 
 		wasStopped = true;
-		deleteTimers (RTS2_SITECH_TIMER);
 	}
 	catch (rts2core::Error er)
 	{
@@ -560,6 +538,8 @@ int Sitech::initHardware ()
 	int ret;
 	int numread;
 
+	trackingInterval->setValueFloat (0.5);
+
 	rts2core::Configuration *config;
 	config = rts2core::Configuration::instance ();
 	config->loadFile ();
@@ -698,24 +678,6 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 		getConfiguration ();
 		return 0;
 	}
-	else if (conn->isCommand ("si_track"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		sitechStartTracking (true);
-		return 0;
-	}
-	else if (conn->isCommand ("si_strack"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
-		dec_track_speed->setValueDouble (0);
-		sendValueAll (ra_track_speed);
-		sendValueAll (dec_track_speed);
-		sitechStartTracking (true);
-		return 0;
-	}
 	return GEM::commandAuthorized (conn);
 }
 
@@ -726,8 +688,6 @@ int Sitech::initValues ()
 
 int Sitech::startResync ()
 {
-	deleteTimers (RTS2_SITECH_TIMER);
-
 	getConfiguration ();
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
@@ -795,27 +755,21 @@ int Sitech::isMoving ()
 int Sitech::endMove ()
 {
 	partialMove->setValueInteger (0);
-	setTracking (true);
+	setTracking (true, true);
 	return GEM::endMove ();
 }
 
-int Sitech::setTracking (bool track)
+int Sitech::setTracking (bool track, bool addTrackingTimer)
 {
 	if (track)
 	{
 		wasStopped = false;
-		sitechStartTracking (true);
 	}
 	else
 	{
 		fullStop ();
 	}
-	return GEM::setTracking (track);
-}
-
-void Sitech::setDiffTrack (double dra, double ddec)
-{
-	// convert to counts / hour
+	return GEM::setTracking (track, addTrackingTimer);
 }
 
 int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -990,29 +944,24 @@ int Sitech::checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d)
 	return 0;
 }
 
-void Sitech::sitechStartTracking (bool startTimer)
+void Sitech::runTracking ()
 {
 	double sec_step = 2.0;
 	// calculate position sec_step from last position, base speed on this..
 	struct ln_equ_posn tarPos;
-	getTarget (&tarPos);
+	double tar_distance;
 
 	info ();
 
 	int32_t ac = r_ra_pos->getValueLong ();
 	int32_t dc = r_dec_pos->getValueLong ();
 
-	int32_t homeOff;
-
-	getHomeOffset (homeOff);
-
 	double futureJD = getTelJD + sec_step / 86400.0;
-
-	int ret = sky2counts (&tarPos, ac, dc, futureJD, homeOff, 0);
+	int ret = calculateTarget (futureJD, sec_step, &tarPos, tar_distance, ac, dc);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "cannot calculate target position in 2 second from now, stop tracking" << sendLog;
-		stopMove ();
+		logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
+		setTracking (false);
 		return;
 	}
 
@@ -1080,13 +1029,6 @@ void Sitech::sitechStartTracking (bool startTimer)
 	}
 
 	serConn->sendXAxisRequest (radec_Xrequest);
-
-	// make sure we will be called again
-	if (startTimer && (wasStopped == false))
-	{
-		deleteTimers (RTS2_SITECH_TIMER);
-		addTimer (TRACK_TIME_DELTA, new rts2core::Event (RTS2_SITECH_TIMER));
-	}
 }
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
