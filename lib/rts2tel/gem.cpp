@@ -370,7 +370,18 @@ void GEM::unlockPointing ()
 
 double GEM::getHACWDAngle (int32_t ha_count)
 {
-	return 360.0 * ((ha_count + (haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+	// sign of haCpd
+	int haCpdSign = haCpd->getValueDouble () > 0 ? 1 : -1;
+	switch (haZeroPos->getValueInteger ())
+	{
+		// TODO west (haZeroPos == 1), haCpd >0 is the only proved combination (and haZero was negative, but that should not play any role..).
+		// Other values must be confirmed
+		case 1:
+			return -360.0 * ((ha_count + (haZero->getValueDouble () + haCpdSign * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+		case 0:
+		default:
+			return 360.0 * ((ha_count + (haZero->getValueDouble () - haCpdSign * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+	}
 }
 
 int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD, double ls, double dec)
