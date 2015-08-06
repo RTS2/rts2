@@ -19,17 +19,13 @@
 #include "multidev.h"
 #include "sensord.h"
 #include "apm-filter.h"
+#include "apm-mirror.h"
 #include "connection/apm.h"
 
 #define RELAY1_OFF      1
 #define RELAY1_ON       2
 #define RELAY2_OFF      3
 #define RELAY2_ON       4
-
-#define MIRROR_OPENED	5
-#define MIRROR_CLOSED	6
-#define MIRROR_OPENING	7
-#define MIRROR_CLOSING	8
 
 namespace rts2sensord
 {
@@ -46,6 +42,7 @@ class APMRelay : public Sensor
 		virtual int initHardware ();
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual int info ();
+
 	protected:
 		virtual int processOption (int in_opt);
 	private:
@@ -56,30 +53,6 @@ class APMRelay : public Sensor
 		int relayOn (int n);
 		int relayOff (int n);
 		int sendUDPMessage (const char * _message);
-};
-
-/**
- * APM mirror cover driver.
- *
- * @author Stanislav Vitek <standa@vitkovi.net>
- */
-class APMMirror : public Sensor
-{
-	public:
-		APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter);
-		virtual int initHardware ();
-		virtual int commandAuthorized (rts2core::Connection *conn);
-		virtual int info ();
-	protected:
-		virtual int processOption (int in_opt);
-	private:
-		int mirror_state;
-                rts2core::ConnAPM *connMirror;
-		rts2filterd::APMFilter *filter;
-                rts2core::ValueString *mirror;
-                int open ();
-                int close ();
-                int sendUDPMessage (const char * _message);
 };
 
 }
@@ -235,135 +208,6 @@ APMRelay::APMRelay (int argc, char **argv, const char *sn, rts2filterd::APMFilte
 
 	createValue(relay1, "relay1", "Relay 1 state", true);
 	createValue(relay2, "relay2", "Relay 2 state", true);
-
-	filter = in_filter;
-}
-
-/*------------------------------------------------------------------------------------------*/
-
-int APMMirror::initHardware ()
-{
-	connMirror = filter->connFilter;
-
-	sendUDPMessage ("C999");
-
-	return 0;
-}
-
-int APMMirror::commandAuthorized (rts2core::Connection * conn)
-{
-	if (conn->isCommand ("open"))
-	{
-		return open();
-	}
-	
-	if (conn->isCommand ("close"))
-	{
-		return close();
-	}
-
-	return 0;
-}
-
-int APMMirror::info ()
-{
-	sendUDPMessage ("C999");
-
-	switch (mirror_state)
-        {
-                case MIRROR_OPENED:
-                        mirror->setValueString("opened");
-                        break;
-                case MIRROR_CLOSED:
-                        mirror->setValueString("closed");
-                        break;
-		case MIRROR_OPENING:
-			mirror->setValueString("opening");
-			break;
-		case MIRROR_CLOSING:
-			mirror->setValueString("closing");
-			break;
-	}
-
-	sendValueAll(mirror);
-
-	return Sensor::info ();
-}
-
-int APMMirror::processOption (int in_opt)
-{
-	switch (in_opt)
-	{
-		case 'e':
-			return 0;
-		case 'F':
-			return 0;
-		default:
-			return Sensor::processOption (in_opt);
-	}
-}
-
-int APMMirror::open ()
-{
-	sendUDPMessage ("C001");
-
-	if (mirror_state == MIRROR_CLOSED)
-		mirror_state = MIRROR_OPENING;
-
-	info ();
-
-	return 0;
-}
-
-int APMMirror::close ()
-{
-	sendUDPMessage ("C000");
-
-	if (mirror_state == MIRROR_OPENED)
-		mirror_state = MIRROR_CLOSING;
-
-	info ();
-
-	return 0;
-}	
-
-int APMMirror::sendUDPMessage (const char * _message)
-{
-        char *response = (char *)malloc(20*sizeof(char));
-
-        logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
-
-        int n = connMirror->send (_message, response, 20);
-
-        logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
-
-        if (n > 0)
-        {
-                if (response[0] == 'C' && response[1] == '9')
-                {
-                        switch (response[3])
-                        {
-                                case '0':
-					if (mirror_state != MIRROR_OPENING)
-                                        	mirror_state = MIRROR_CLOSED;
-                                        break;
-                                case '1':
-					if (mirror_state != MIRROR_CLOSING)
-                                        	mirror_state = MIRROR_OPENED;
-                                        break;
-                        }
-                }
-        }
-
-        return 0;
-}
-
-APMMirror::APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
-{
-	addOption ('e', NULL, 1, "IP and port (separated by :)");
-	addOption ('F', NULL, 1, "filter names, separated by : (double colon)");
-
-	createValue (mirror, "mirror", "Mirror cover state", true);
 
 	filter = in_filter;
 }
