@@ -984,31 +984,37 @@ void Sitech::runTracking ()
 	}
 	else
 	{
-		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (labs (ac - r_ra_pos->getValueLong ()) / sec_step);
-		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (labs (dc - r_dec_pos->getValueLong ()) / sec_step);
+		// 1 step change
+		int32_t ac_step = labs (ac - r_ra_pos->getValueLong ()) / sec_step;
+		int32_t dc_step = labs (dc - r_dec_pos->getValueLong ()) / sec_step;
+
+		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (ac_step);
+		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (dc_step);
+
+		// put axis in future
 
 		if (radec_Xrequest.y_speed != 0)
 		{
 			if (ac > r_ra_pos->getValueLong ())
-				radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () + ac_step * 10;
 			else
-				radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () - ac_step * 10;
 		}
 		else
 		{
 			radec_Xrequest.y_dest = r_ra_pos->getValueLong ();
 		}
 
-		if (radec_Yrequest.x_speed != 0)
+		if (radec_Xrequest.x_speed != 0)
 		{
 			if (dc > r_dec_pos->getValueLong ())
-				radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () + dc_step * 10;
 			else
-				radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () - dc_step * 10;
 		}
 		else
 		{
-			radec_Yrequest.x_dest = r_dec_pos->getValueLong ();
+			radec_Xrequest.x_dest = r_dec_pos->getValueLong ();
 		}
 	}
 
