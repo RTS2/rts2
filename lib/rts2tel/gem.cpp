@@ -305,6 +305,8 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 	flipping->addSelVal ("cw down");
 	flipping->addSelVal ("cw up");
 
+	createValue (haCWDAngle, "ha_cwd_angle", "[deg] angle between HA axis and local meridian", false);
+
 	createValue (haZeroPos, "_ha_zero_pos", "position of the telescope on zero", false);
 	haZeroPos->addSelVal ("EAST");
 	haZeroPos->addSelVal ("WEST");
@@ -357,6 +359,11 @@ void GEM::unlockPointing ()
 
 	updateMetaInformations (ra_ticks);
 	updateMetaInformations (dec_ticks);
+}
+
+double GEM::getHACWDAngle (int32_t ha_count)
+{
+	return 360.0 * ((ha_count - (haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
 }
 
 int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD, double ls, double dec)

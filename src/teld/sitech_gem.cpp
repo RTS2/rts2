@@ -645,6 +645,8 @@ int Sitech::info ()
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
 
+	haCWDAngle->setValueDouble (getHACWDAngle (r_ra_pos->getValueLong ()));
+
 	return rts2teld::GEM::info ();
 }
 
