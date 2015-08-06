@@ -196,7 +196,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				else
 					diff_f = 360 - diff_f;
 				logStream (MESSAGE_DEBUG) << "cw diffs flipped " << diff_f << " nf " << diff_nf << sendLog;
-				if ((actual_flip == 6 && haZeroPos->getValueInteger () == 1) || (actual_flip == 7 && haZeroPos->getValueInteger () == 0))
+				if (actual_flip == 6)
 				{
 					if (diff_f < diff_nf)
 					{
