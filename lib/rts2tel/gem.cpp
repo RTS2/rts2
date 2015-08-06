@@ -187,14 +187,14 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			case 7:
 				// calculate distance towards "meridian" - counterweight down - position
 				// normalize distances by ra_ticks
-				int32_t diff_nf = fabs (t_ac - (int32_t) ((haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) % ra_ticks->getValueLong ());
-				int32_t diff_f = fabs (tf_ac - (int32_t) ((haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) % ra_ticks->getValueLong ());
-				// make sure we have shortest value for flipped/non flipped difference
-				if (diff_nf < diff_f)
-					diff_f = ra_ticks->getValueLong () - diff_f;
+				double diff_nf = fabs (fmod (getHACWDAngle (t_ac), 360));
+				double diff_f = fabs (fmod (getHACWDAngle (tf_ac), 360));
+				// normalize to degree distance to HA
+				if (diff_nf > 180)
+					diff_nf = 360 - diff_nf;
+				// only one axis can be larger than 180 deg
 				else
-					diff_nf = ra_ticks->getValueLong () - diff_nf;
-				break;
+					diff_f = 360 - diff_f;
 				logStream (MESSAGE_DEBUG) << "cw diffs flipped " << diff_f << " nf " << diff_nf << sendLog;
 				if ((actual_flip == 6 && haZeroPos->getValueInteger () == 1) || (actual_flip == 7 && haZeroPos->getValueInteger () == 0))
 				{
@@ -363,7 +363,7 @@ void GEM::unlockPointing ()
 
 double GEM::getHACWDAngle (int32_t ha_count)
 {
-	return 360.0 * ((ha_count - (haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+	return 360.0 * ((ha_count + (haZero->getValueDouble () + 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
 }
 
 int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD, double ls, double dec)
