@@ -866,7 +866,7 @@ class Telescope:public rts2core::Device
 		 * @param dra  differential tracking in RA
 		 * @param ddec differential tracking in DEC
 		 */
-		virtual void setDiffTrack (double dra, double ddec) {}
+		virtual void setDiffTrack (double dra, double ddec);
 
 		/**
 		 * Hard horizon. Use it to check if telescope coordinates are within limits.
@@ -980,6 +980,11 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *woffsRaDec;
 
 		rts2core::ValueRaDec *diffTrackRaDec;
+
+		/**
+		 * Start time of differential tracking.
+		 */
+		rts2core::ValueDouble *diffTrackStart;
 
 		/**
 		 * Coordinates of the object, after offsets are applied (in J2000).
