@@ -40,12 +40,14 @@ class APMRelay : public Sensor
 {
         public:
                 APMRelay (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter);
+		APMRelay (int argc, char **argv, const char *sn);
                 virtual int initHardware ();
                 virtual int commandAuthorized (rts2core::Connection *conn);
                 virtual int info ();
 
         protected:
                 virtual int processOption (int in_opt);
+
         private:
                 int relay1_state, relay2_state;
                 rts2core::ConnAPM *connRelay;
