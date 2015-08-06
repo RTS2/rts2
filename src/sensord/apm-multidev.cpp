@@ -1,4 +1,5 @@
 /**
+ * Driver for multiple APM device
  * Copyright (C) 2015 Stanislav Vitek
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,7 +31,7 @@ int main (int argc, char **argv)
 	rts2core::MultiDev md;
 	rts2filterd::APMFilter *filter = new rts2filterd::APMFilter (argc, argv);
 	md.push_back (filter);
-	md.push_back (new APMRelay (argc, argv, "R1", filter));
-	md.push_back (new APMMirror (argc, argv, "M1", filter));
+	md.push_back (new APMRelay (0, NULL, "R1", filter));
+	md.push_back (new APMMirror (0, NULL, "M1", filter));
 	return md.run ();
 }
