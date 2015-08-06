@@ -377,10 +377,10 @@ double GEM::getHACWDAngle (int32_t ha_count)
 		// TODO west (haZeroPos == 1), haCpd >0 is the only proved combination (and haZero was negative, but that should not play any role..).
 		// Other values must be confirmed
 		case 1:
-			return -360.0 * (ha_count + (haZero->getValueDouble () + haCpdSign * (haCpd->getValueDouble () * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+			return -360.0 * ((ha_count + (haZero->getValueDouble () + haCpdSign * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
 		case 0:
 		default:
-			return 360.0 * (ha_count + (haZero->getValueDouble () - haCpdSign * (haCpd->getValueDouble () * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+			return 360.0 * ((ha_count + (haZero->getValueDouble () - haCpdSign * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
 	}
 }
 
