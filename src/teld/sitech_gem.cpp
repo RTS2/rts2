@@ -32,6 +32,8 @@
 // Crystal frequency
 #define CRYSTAL_FREQ            96000000
 
+#define TRAJECTORY_CHECK_LIMIT  2000
+
 namespace rts2teld
 {
 
@@ -371,7 +373,6 @@ void Sitech::fullStop (void)
 	partialMove->setValueInteger (0);
 	try
 	{
-		setTracking (false);
 		serConn->siTechCommand ('X', "N");
 		usleep (100000);
 		serConn->siTechCommand ('Y', "N");
@@ -726,7 +727,7 @@ int Sitech::isMoving ()
 	if (partialMove->getValueInteger ())
 	{
 		// check if we are close enough to partial target values
-		if ((labs (t_ra_pos->getValueLong () - r_ra_pos->getValueLong ()) < haCpd->getValueLong ()) && (labs (t_dec_pos->getValueLong () - r_dec_pos->getValueLong ()) < decCpd->getValueLong ()))
+		if ((labs (t_ra_pos->getValueLong () - r_ra_pos->getValueLong ()) < fabs (haCpd->getValueLong ())) && (labs (t_dec_pos->getValueLong () - r_dec_pos->getValueLong ()) < fabs (decCpd->getValueLong ())))
 		{
 			// try new move
 			startResync ();
@@ -832,7 +833,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	logStream (MESSAGE_DEBUG) << "sitechMove " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << partialMove->getValueInteger () << sendLog;
 
 	// 5 deg margin in altitude and azimuth
-	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, false, false);
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
 	logStream (MESSAGE_DEBUG) << "sitechMove checkTrajectory " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 	// cannot check trajectory, log & return..
 	if (ret == -1)
@@ -864,7 +865,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 			else
 				ac = r_ra_pos->getValueLong () - move_diff;
 			dc = r_dec_pos->getValueLong ();
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 3.0, 3.0, true, false);
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)
 			{
@@ -929,7 +930,7 @@ int Sitech::checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d)
 	// move for a time only in DEC
 	ac = r_ra_pos->getValueLong ();
 	dc = r_dec_pos->getValueLong () + move_d;
-	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 3.0, 3.0, true, false);
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
 	logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 	if (ret == -1)
 	{
@@ -1020,13 +1021,16 @@ void Sitech::runTracking ()
 	xbits |= (0x01 << 4);
 
 	// check that the entered trajactory is valid
-	ret = checkTrajectory (ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 2.0, 2.0, false, false);
+	ret = checkTrajectory (ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
 	if (ret != 0)
 	{
 		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
 		setTracking (false);
 		return;
 	}
+
+	t_ra_pos->setValueLong (radec_Xrequest.y_dest);
+	t_dec_pos->setValueLong (radec_Xrequest.x_dest);
 
 	serConn->sendXAxisRequest (radec_Xrequest);
 }

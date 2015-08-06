@@ -1487,6 +1487,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		flip_move_start = telFlip->getValueInteger ();
 	}
 
+	setTracking (false);
+
 	// everything is OK and prepared, let's move!
 	ret = startResync ();
 	if (ret)
