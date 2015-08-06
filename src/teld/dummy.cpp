@@ -52,6 +52,7 @@ class Dummy:public Telescope
 			telLongitude->setValueDouble (config->getObserver ()->lng);
 			telAltitude->setValueDouble (config->getObservatoryAltitude ());
 			strcpy (telType, "Dummy");
+			trackingInterval->setValueFloat (0.5);
 			return Telescope::initValues ();
 		}
 
@@ -106,6 +107,8 @@ class Dummy:public Telescope
 		}
 
 		virtual void runTracking ();
+
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
 
 	private:
 
@@ -236,7 +239,15 @@ void Dummy::runTracking ()
 		return;
 	}
 
-	setOrigin (target.ra, target.dec, false);
+	t_axRa->setValueLong (target.ra * 10000);
+	t_axDec->setValueLong (target.dec * 10000);
+}
+
+int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+{
+	ac = pos->ra * 10000;
+	dc = pos->dec * 10000;
+	return 0;
 }
 
 int main (int argc, char **argv)

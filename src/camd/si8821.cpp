@@ -395,11 +395,14 @@ int SI8821::closeShutter ()
 
 int SI8821::stopExposure ()
 {
+	send_command_yn ('O');
 	return Camera::stopExposure ();
 }
 
 int SI8821::doReadout ()
 {
+	logStream (MESSAGE_DEBUG) << "do readout" << sendLog;
+
 	// split to half..1st and 2nd channel
 	int ret = ioctl (camera.fd, SI_IOCTL_DMA_NEXT, &camera.dma_status);
 
@@ -419,6 +422,8 @@ int SI8821::doReadout ()
 		logStream (MESSAGE_ERROR) << "timeout occured" << sendLog;
 		return -1;
 	}
+
+	logStream (MESSAGE_DEBUG) << "got data" << sendLog;
 
 	short unsigned int *p = chanBuffer;
 	short unsigned int *d = camera.ptr;

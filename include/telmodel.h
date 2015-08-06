@@ -122,8 +122,8 @@ class Model:public std::vector < ModelTerm * >
 
 		char caption[81];		 // Model description: 80 chars + NULL
 		char method;			 // method: T or S
-		int num;				 // Number of active observations
-		double rms;				 // sky RMS (arcseconds)
+		int num;			 // Number of active observations
+		double rms;			 // sky RMS (arcseconds)
 		double refA;			 // refraction constant A (arcseconds)
 		double refB;			 // refraction constant B (arcseconds)
 };

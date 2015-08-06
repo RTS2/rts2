@@ -77,10 +77,13 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		createValue (diffTrackRaDec, "DRATE", "[deg/hour] differential tracking rate", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 		diffTrackRaDec->setValueRaDec (0, 0);
+
+		createValue (diffTrackStart, "DSTART", "start time of differential tracking", false);
 	}
 	else
 	{
 		diffTrackRaDec = NULL;
+		diffTrackStart = NULL;
 	}
 
 	if (hasTracking)
@@ -319,7 +322,8 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 	else
 	{
 		getOrigin (out_tar);
-		addDiffRaDec (out_tar, secdiff);
+		if (!isnan (diffTrackStart->getValueDouble ()))
+			addDiffRaDec (out_tar, (JD - diffTrackStart->getValueDouble ()) * 86400.0);
 	}
 
 	// offsets, corrections,..
@@ -340,9 +344,7 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 
 	applyCorrections (out_tar, JD);
 
-	sky2counts (JD, out_tar, ac, dc);
-
-	return 0;
+	return sky2counts (JD, out_tar, ac, dc);
 }
 
 int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
@@ -651,6 +653,7 @@ void Telescope::incMoveNum ()
 	if (diffTrackRaDec)
 	{
 		diffTrackRaDec->setValueRaDec (0, 0);
+		diffTrackStart->setValueDouble (NAN);
 	  	setDiffTrack (0,0);
 	}
 	// reset offsets
@@ -1028,11 +1031,10 @@ void Telescope::postEvent (rts2core::Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_TRACKING_TIMER:
-			// schedule again if tracking was able to run
-			runTracking ();
 			// if tracking is still relevant, reschedule
 			if (tracking->getValueBool ())
 			{
+				runTracking ();
 				addTimer (trackingInterval->getValueFloat (), event);
 				return;
 			}
@@ -1189,6 +1191,14 @@ void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_t
 			logStream (MESSAGE_ERROR) << "invalid tle_ephem " << tle_ephem->getValueInteger () << sendLog;
 	}
 	get_satellite_ra_dec_delta (observer_loc, sat_pos, &ra, &dec, &dist_to_satellite);
+}
+
+void Telescope::setDiffTrack (double dra, double ddec)
+{
+	if (dra == 0 && ddec == 0)
+		diffTrackStart->setValueDouble (NAN);
+	else
+		diffTrackStart->setValueDouble (ln_get_julian_from_sys ());
 }
 
 void Telescope::addParkPosOption ()
@@ -1489,6 +1499,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 		flip_move_start = telFlip->getValueInteger ();
 	}
+
+	setTracking (false);
 
 	// everything is OK and prepared, let's move!
 	ret = startResync ();

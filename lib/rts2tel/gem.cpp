@@ -192,8 +192,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				// normalize to degree distance to HA
 				if (diff_nf > 180)
 					diff_nf = 360 - diff_nf;
-				// only one axis can be larger than 180 deg
-				else
+				if (diff_f > 180)
 					diff_f = 360 - diff_f;
 				logStream (MESSAGE_DEBUG) << "cw diffs flipped " << diff_f << " nf " << diff_nf << sendLog;
 				if (actual_flip == 6)
