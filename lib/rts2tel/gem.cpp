@@ -238,6 +238,14 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
+int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+{
+	int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
+
+	// returns without home offset, which will be removed in future
+	return sky2counts (pos, ac, dc, JD, 0, actual_flip);
+}
+
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
 {
 	double ls, ha;

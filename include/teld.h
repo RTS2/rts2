@@ -568,8 +568,18 @@ class Telescope:public rts2core::Device
 		 * @param JD              date for which position will be calculated
 		 * @param out_tar         target position
 		 * @param tar_distance    distance to target (in m), if know (satellites,..)
+		 * @param ac              current (input) and target (output) HA axis value
+		 * @param dc              current (input) and target (output) DEC axis value
 		 */
-		int calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance);
+		int calculateTarget (double JD, double secdiff, struct ln_equ_posn *out_tar, double &tar_distance, int32_t &ac, int32_t &dc);
+
+		/**
+		 * Transforms sky coordinates to axis coordinates. Placeholder, used only for
+		 * telescopes with possibility to command directly telescope axes.
+		 */
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+
+		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
 
 		void getTargetAltAz (struct ln_hrz_posn *hrz)
 		{
@@ -827,11 +837,23 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track   if true, tracking is set to on
+		 * @param track                if true, tracking is set to on
+		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (bool track);
+		virtual int setTracking (bool track, bool addTrackingTimer = false);
 
+		/**
+		 * Called to run tracking. It is up to driver implementation
+		 * to send updated position to telescope driver.
+		 *
+		 * If tracking timer shall not be called agin, call setTracking (false).
+		 * Run every trackingInterval seconds.
+		 *
+		 * @see setTracking
+		 * @see trackingInterval
+		 */
+		virtual void runTracking ();
 
 		/**
 		 * Calculate TLE RA DEC for given time.
@@ -890,6 +912,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueSelection *decGuide;
 
 		rts2core::ValueBool *tracking;
+		rts2core::ValueFloat *trackingInterval;
 
 		/**
 		 * Returns differential tracking values. Telescope must support
@@ -897,8 +920,8 @@ class Telescope:public rts2core::Device
 		 * should be called only from child subclass which pass true for
 		 * diffTrack in Telescope contructor.
 		 */
-		double getDiffRa () { return diffRaDec->getRa (); }
-		double getDiffDec () { return diffRaDec->getDec (); }
+		double getDiffTrackRa () { return diffTrackRaDec->getRa (); }
+		double getDiffTrackDec () { return diffTrackRaDec->getDec (); }
 
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }

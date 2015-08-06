@@ -44,6 +44,7 @@
 #define OPT_DEC_UPPER_LIMIT   OPT_LOCAL + 122
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
+#define EVENT_TRACKING_TIMER     RTS2_LOCAL_EVENT + 561
 
 using namespace rts2teld;
 
@@ -85,10 +86,12 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	if (hasTracking)
 	{
 		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 	}
 	else
 	{
 		tracking = NULL;
+		trackingInterval = NULL;
 	}
 
 
@@ -292,7 +295,7 @@ double Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
-int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, double &tar_distance)
+int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *out_tar, double &tar_distance, int32_t &ac, int32_t &dc)
 {
 	tar_distance = NAN;
 
@@ -316,12 +319,44 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, double &
 	else
 	{
 		getOrigin (out_tar);
+		addDiffRaDec (out_tar, secdiff);
 	}
 
 	// offsets, corrections,..
-	out_tar->ra +=  0;
+	out_tar->ra += getCorrRa () + getOffsetRa ();
+	out_tar->dec += getCorrDec () + getOffsetDec ();
+
+	// crossed pole
+	if (out_tar->dec > 90)
+	{
+		out_tar->ra = ln_range_degrees (out_tar->ra + 180.0);
+		out_tar->dec = 180 - out_tar->dec;
+	}
+	else if (out_tar->dec < -90)
+	{
+		out_tar->ra = ln_range_degrees (out_tar->ra + 180.0);
+		out_tar->dec = -180 - out_tar->dec;
+	}
+
+	applyCorrections (out_tar, JD);
+
+	sky2counts (JD, out_tar, ac, dc);
 
 	return 0;
+}
+
+int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+{
+	return -1;
+}
+
+void Telescope::addDiffRaDec (struct ln_equ_posn *tar, double secdiff)
+{
+	if (diffTrackRaDec)
+	{
+		tar->ra += getDiffTrackRa () * secdiff / 3600.0;
+		tar->dec += getDiffTrackDec () * secdiff / 3600.0;
+	}
 }
 
 void Telescope::createRaGuide ()
@@ -522,7 +557,7 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 {
 	if (old_value == tracking)
 	{
-		if (setTracking (((rts2core::ValueBool *) new_value)->getValueBool ()))
+		if (setTracking (((rts2core::ValueBool *) new_value)->getValueBool (), true))
 			return -2;
 	}
 	else if (old_value == mpec)
@@ -992,6 +1027,16 @@ void Telescope::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
+		case EVENT_TRACKING_TIMER:
+			// schedule again if tracking was able to run
+			runTracking ();
+			// if tracking is still relevant, reschedule
+			if (tracking->getValueBool ())
+			{
+				addTimer (trackingInterval->getValueFloat (), event);
+				return;
+			}
+			break;
 		case EVENT_CUP_SYNCED:
 			maskState (TEL_MASK_CUP, TEL_NO_WAIT_CUP);
 			break;
@@ -1089,11 +1134,24 @@ double Telescope::estimateTargetTime ()
 	return getTargetDistance () / 2.0;
 }
 
-int Telescope::setTracking (bool track)
+int Telescope::setTracking (bool track, bool addTrackingTimer)
 {
 	if (tracking != NULL)
+	{
 		tracking->setValueBool (track);
+		// make sure we will not run two timers
+		deleteTimers (EVENT_TRACKING_TIMER);
+		if (track && addTrackingTimer)
+		{
+			addTimer (trackingInterval->getValueFloat (), new rts2core::Event (EVENT_TRACKING_TIMER));
+		}
+	}
 	return 0;
+}
+
+void Telescope::runTracking ()
+{
+
 }
 
 void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite)
@@ -1610,7 +1668,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (true);
+		setTracking (true, true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_ha_sg"))
@@ -1642,7 +1700,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (true);
+		setTracking (true, true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_mpec"))
@@ -1654,7 +1712,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		mpec->setValueString (str);
 		tle_l1->setValueString ("");
 		tle_l2->setValueString ("");
-		setTracking (true);
+		setTracking (true, true);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("altaz"))

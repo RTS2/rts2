@@ -72,6 +72,8 @@ class GEM: public Telescope
 		int sky2counts (int32_t & ac, int32_t & dc);
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip);
 
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+
 		/**
 		 * Convert counts to RA&Dec coordinates.
 		 *
