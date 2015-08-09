@@ -17,23 +17,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <time.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <unistd.h>
-
 #include "dome.h"
 
-#define ESATBT_DOME_OPENING		1
-#define ESATBT_DOME_CLOSING		2
-#define ESATBT_DOME_OPENED		3
-#define ESATBT_DOME_CLOSED		4
-#define ESATBT_DOME_STOPPED		5
-#define ESATBT_DOME_INIT		6
+#include "connection/apm.h"
+
+#define APMDOME_OPENING		1
+#define APMDOME_CLOSING		2
+#define APMDOME_OPENED		3
+#define APMDOME_CLOSED		4
+#define APMDOME_STOPPED		5
+#define APMDOME_INIT		6
+
+#define EVENT_APMDOME_DELAY_OPEN	RTS2_LOCAL_EVENT + 667
+#define EVENT_APMDOME_DELAY_CLOSE	RTS2_LOCAL_EVENT + 668
 
 using namespace rts2dome;
 
@@ -45,14 +41,13 @@ namespace rts2dome
  *
  * @author Standa Vítek <standa@vitkovi.net>
  */
-class EsaDome:public Dome
+class APMDome:public Dome
 {
 	public:
-		EsaDome (int argc, char **argv);
+		APMDome (int argc, char **argv);
 		virtual int initHardware ();
-
 		virtual int commandAuthorized (rts2core::Connection *conn);
-
+		virtual void postEvent (rts2core::Event *event);
                 virtual int info ();
 
                 virtual int startOpen ();
@@ -71,7 +66,8 @@ class EsaDome:public Dome
 		rts2core::ValueString * domeStatus;
 		rts2core::ValueString * sideApos, * sideBpos;
 		rts2core::ValueSelection * closeDome;
-
+		rts2core::ConnAPM *connDome;
+		int delay;
 		int dome_state;
 
 		HostString *host;
@@ -80,47 +76,82 @@ class EsaDome:public Dome
                 struct sockaddr_in servaddr, clientaddr;
 
 		bool isMoving ();
-		int getUDPStatus ();
 		int sendUDPMessage (const char * in_message);
 };
 
 }
 
-EsaDome::EsaDome (int argc, char **argv):Dome (argc, argv)
+APMDome::APMDome (int argc, char **argv):Dome (argc, argv)
 {
 	host = NULL;
+	delay = 0;
 
 	addOption ('e', NULL, 1, "ESA dome IP and port (separated by :)");
+	addOption ('t', NULL, 10, "Delay betwen dome sides during open/close");
 	createValue(domeStatus, "dome_status", "current dome status", true);
 	createValue(sideApos, "sideA_pos", "last known side A position", true);
 	createValue(sideBpos, "sideB_pos", "last known side B position", true);
 }
 
-int EsaDome::commandAuthorized (rts2core::Connection * conn)
+int APMDome::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("stop"))
 	{
 		sendUDPMessage ("D666");
 		return 0;	
 	}
-	
+	else if (conn->isCommand ("sideA"))
+	{
+		char *val;
+		if (conn->paramNextString(&val) || !conn->paramEnd ())
+			return -2;
+		
+		if (strcmp (val, "open"))
+		{
+			//
+		}
+		else if (strcmp (val, "close"))
+		{
+			//
+		}
+		return 0;
+	}
+	else if (conn->isCommand ("sideB"))
+	{
+		char *val;
+		if (conn->paramNextString(&val) || !conn->paramEnd ())
+			return -2;
+
+		if (strcmp (val, "open"))
+		{
+			//
+		}
+		else if (strcmp (val, "close"));
+		{
+			//
+		}
+		return 0;
+	}	
 	return Dome::commandAuthorized (conn);
 }
 
-int EsaDome::processOption (int in_opt)
+int APMDome::processOption (int in_opt)
 {
 	switch (in_opt)
         {
                 case 'e':
 			host = new HostString (optarg, "1000");
                         break;
+		case 't':
+			delay = atoi (optarg);
+			break;
                 default:
                         return Dome::processOption (in_opt);
         }
         return 0;
 }
 
-int EsaDome::initHardware ()
+int APMDome::initHardware ()
 {
 	if (host == NULL)
 	{
@@ -128,23 +159,12 @@ int EsaDome::initHardware ()
 		return -1;
 	}
 
-	sock = socket (AF_INET, SOCK_DGRAM, 0);
-
-        bzero (&servaddr, sizeof (servaddr));
-        servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = inet_addr (host->getHostname ());
-        servaddr.sin_port = htons (host->getPort ());
- 
-	bzero (&clientaddr, sizeof (clientaddr));
-	clientaddr.sin_family = AF_INET; 
-	clientaddr.sin_port = htons (host->getPort());
-    	clientaddr.sin_addr.s_addr = htonl (INADDR_ANY);
-
-	if (bind (sock , (struct sockaddr*)&clientaddr, sizeof(clientaddr) ) == -1)
-    	{
-        	logStream (MESSAGE_ERROR) << "Unable to bind socket to port" << sendLog;
-        	return 1;
-    	}
+	connDome = new rts2core::ConnAPM (this, host->getHostname(), host->getPort());
+	
+	int ret = connDome->init();
+        
+	if (ret)
+		return ret;
 
 	if (!isMoving ())
         {
@@ -157,7 +177,21 @@ int EsaDome::initHardware ()
 	return 0;
 }
 
-int EsaDome::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
+void APMDome::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_APMDOME_DELAY_OPEN:
+			sendUDPMessage ("DB100");
+			return;
+		case EVENT_APMDOME_DELAY_CLOSE:
+			sendUDPMessage ("DA000");
+			return;
+	}
+	Dome::postEvent (event);
+}
+
+int APMDome::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
 {
     
 	if (old_value == closeDome)
@@ -175,26 +209,28 @@ int EsaDome::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
 	return Dome::setValue(old_value, new_value);
 }
 
-int EsaDome::info ()
+int APMDome::info ()
 {
+	sendUDPMessage ("D999");
+
 	switch(dome_state)
 	{
-		case ESATBT_DOME_CLOSING:
+		case APMDOME_CLOSING:
 			domeStatus->setValueString("Closing");
 			break;
-		case ESATBT_DOME_OPENING:
+		case APMDOME_OPENING:
 			domeStatus->setValueString("Openning");
 			break;
-		case ESATBT_DOME_CLOSED:
+		case APMDOME_CLOSED:
 			domeStatus->setValueString("Closed");
 			break;
-		case ESATBT_DOME_OPENED:
+		case APMDOME_OPENED:
 			domeStatus->setValueString("Opened");
 			break;
-		case ESATBT_DOME_STOPPED:
+		case APMDOME_STOPPED:
 			domeStatus->setValueString("Stopped");
 			break;
-		case ESATBT_DOME_INIT:
+		case APMDOME_INIT:
 			domeStatus->setValueString("Closing (init)");
 			break;
 		default:
@@ -206,38 +242,46 @@ int EsaDome::info ()
 	return Dome::info ();
 }
 
-int EsaDome::startOpen ()
+int APMDome::startOpen ()
 {
-	if (isMoving () || dome_state == ESATBT_DOME_OPENED)                
+	if (isMoving () || dome_state == APMDOME_OPENED)                
 		return 0;
 
-	sendUDPMessage ("D100");
+	if (delay == 0)
+	{
+		sendUDPMessage ("D100");
+	}
+	else
+	{
+		sendUDPMessage ("DA100");
+		addTimer (delay, new rts2core::Event (EVENT_APMDOME_DELAY_OPEN));
+	}
 	domeStatus->setValueString("Openning");
 	sendValueAll(domeStatus);
 	
 	return 0;
 }
 
-long EsaDome::isOpened ()
+long APMDome::isOpened ()
 {
 	// return (getState () & DOME_DOME_MASK) == DOME_CLOSED ? 0 : -2;
-	if (isMoving () || dome_state == ESATBT_DOME_CLOSED)
+	if (isMoving () || dome_state == APMDOME_CLOSED)
 		return USEC_SEC;
 
-	if (dome_state == ESATBT_DOME_OPENED)
+	if (dome_state == APMDOME_OPENED)
 		return -2;
 
 	return USEC_SEC;
 }
                 
-int EsaDome::endOpen ()
+int APMDome::endOpen ()
 {
 	return 0;
 }
                 
-int EsaDome::startClose ()
+int APMDome::startClose ()
 {
-	if (isMoving () || dome_state == ESATBT_DOME_CLOSED)
+	if (isMoving () || dome_state == APMDOME_CLOSED)
 		return 0;
 
 	sendUDPMessage ("D000");
@@ -246,71 +290,66 @@ int EsaDome::startClose ()
 	return 0;
 }
                 
-long EsaDome::isClosed ()
+long APMDome::isClosed ()
 {
 	// return (getState () & DOME_DOME_MASK) == DOME_OPENED ? 0 : -2;
-	if (isMoving () || dome_state == ESATBT_DOME_OPENED)
+	if (isMoving () || dome_state == APMDOME_OPENED)
                 return USEC_SEC;
 
-        if (dome_state == ESATBT_DOME_CLOSED)
+        if (dome_state == APMDOME_CLOSED)
                 return -2;
 
         return USEC_SEC;
 }
                 
-int EsaDome::endClose ()
+int APMDome::endClose ()
 {
 	return 0;
 }
 
-bool EsaDome::isMoving ()
+bool APMDome::isMoving ()
 {
-	int response = getUDPStatus();
+	sendUDPMessage ("D999");
 
-	if (dome_state == ESATBT_DOME_CLOSING || dome_state == ESATBT_DOME_OPENING)
+	if (dome_state == APMDOME_CLOSING || dome_state == APMDOME_OPENING)
 		return true;
 
 	return false;
 }
 
-int EsaDome::getUDPStatus ()
+int APMDome::sendUDPMessage (const char * _message)
 {
-	return sendUDPMessage ("D999");
-}
-
-int EsaDome::sendUDPMessage (const char * in_message)
-{
-	unsigned int slen = sizeof (clientaddr);
-	char * status_message = (char *)malloc (20*sizeof (char));
+	char *response = (char *)malloc (20*sizeof (char));
 	char sA, sB, sideA[4], sideB[4];
 	
 	if (getDebug())
-		logStream (MESSAGE_DEBUG) << "command to controller: " << in_message << sendLog;
-	
-	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr,sizeof(servaddr));
+		logStream (MESSAGE_DEBUG) << "command to controller: " << _message << sendLog;
 
-	int n = recvfrom (sock, status_message, 20, 0, (struct sockaddr *) &clientaddr, &slen);
+	int n = connDome->send (_message, response, 20, false);
 
         if (getDebug())
-		logStream (MESSAGE_DEBUG) << "reponse from controller: " << status_message << sendLog;
+	{
+		std::string res (response);
+		logStream (MESSAGE_DEBUG) << "reponse from controller: " << res.substr (0, n) << sendLog;
+	}
 
 	if (n > 4)
 	{
-		if (status_message[0] == 'E') 
+		if (response[0] == 'E') 
 		{
 			// echo from controller "Echo: [cmd]"
 			return 10;
 		}
 		else
 		{
-			sA = status_message[2];
-			sB = status_message[6];
+			sA = response[2];
+			sB = response[6];
 
 			// side A position
-			strncpy (sideA, status_message+3, 3);
+			strncpy (sideA, response + 3, 3);
 			sideA[3] = '\0';
 
-			strncpy (sideB, status_message+7, 3);
+			strncpy (sideB, response + 7, 3);
                         sideB[3] = '\0';
 
 
@@ -324,38 +363,38 @@ int EsaDome::sendUDPMessage (const char * in_message)
 			if (sA == '1' || sB == '1')
 			{
 				// moving to open
-				dome_state = ESATBT_DOME_OPENING;
+				dome_state = APMDOME_OPENING;
 				return 0;
 			} 
 
 			if (sA == '2' || sB == '2')
 			{
 				// moving to close
-				dome_state = ESATBT_DOME_CLOSING; 
+				dome_state = APMDOME_CLOSING; 
 			}
 		
 			if (sA == '3' || sB == '3')
 			{
 				// emergency stop
-				dome_state = ESATBT_DOME_STOPPED;
+				dome_state = APMDOME_STOPPED;
 			}
 
 			if (sA == '4' || sB == '4')
 			{
 				// initial closing
-				dome_state = ESATBT_DOME_INIT;
+				dome_state = APMDOME_INIT;
 			}
 
 			if ((strcmp (sideA, "100") == 0) && (strcmp (sideB, "100") == 0))
 			{
 				// dome fully opened
-				dome_state = ESATBT_DOME_OPENED;				
+				dome_state = APMDOME_OPENED;				
 			}
 
 			if ((strcmp (sideA, "000") == 0) && (strcmp (sideB, "000") == 0))
                         {
                                 // dome fully closed
-                                dome_state = ESATBT_DOME_CLOSED;
+                                dome_state = APMDOME_CLOSED;
                         }
 
 			return 0;
@@ -367,6 +406,6 @@ int EsaDome::sendUDPMessage (const char * in_message)
 
 int main (int argc, char **argv)
 {
-	EsaDome device (argc, argv);
+	APMDome device (argc, argv);
 	return device.run ();
 }
