@@ -65,6 +65,7 @@ class ThermoCube:public Sensor
 		rts2core::ValueBool *RTDShort;
 
 		int setPower (bool pwr);
+		int default_state;
 };
 
 }
@@ -74,6 +75,8 @@ using namespace rts2sensord;
 ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 {
 	device_file = NULL;
+
+	default_state = 1;
 
 	createValue (targetTemperature, "TARTEMP", "[C] target temperature", false, RTS2_VALUE_WRITABLE);
 	createValue (currentTemperature, "CURTEMP", "[C] current temperature");
@@ -87,6 +90,7 @@ ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 	createValue (RTDShort, "rtd_short", "RTD shorted (failure)", false);
 
 	addOption ('f', NULL, 1, "serial port on which is ThermoCube connected");
+	addOption ('s', NULL, 1, "default state of the device (default on = 1, off = 0)");
 }
 
 ThermoCube::~ThermoCube ()
@@ -133,6 +137,9 @@ int ThermoCube::processOption (int opt)
 		case 'f':
 			device_file = optarg;
 			break;
+		case 's':
+			default_state = atoi (optarg);
+			break;
 		default:
 			return Sensor::processOption (opt);
 	}
@@ -153,6 +160,8 @@ int ThermoCube::initHardware ()
 		return ret;
 
 	thermocubeConn->setDebug (getDebug ());
+
+	setPower (default_state);
 
 	return 0;
 }
