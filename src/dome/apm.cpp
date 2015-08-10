@@ -28,8 +28,7 @@
 #define APMDOME_STOPPED		5
 #define APMDOME_INIT		6
 
-#define EVENT_APMDOME_DELAY_OPEN	RTS2_LOCAL_EVENT + 667
-#define EVENT_APMDOME_DELAY_CLOSE	RTS2_LOCAL_EVENT + 668
+#define EVENT_APMDOME_DELAY_INIT	RTS2_LOCAL_EVENT + 667
 
 using namespace rts2dome;
 
@@ -47,9 +46,8 @@ class APMDome:public Dome
 		APMDome (int argc, char **argv);
 		virtual int initHardware ();
 		virtual int commandAuthorized (rts2core::Connection *conn);
-		virtual void postEvent (rts2core::Event *event);
                 virtual int info ();
-
+		virtual void postEvent (rts2core::Event *event);
                 virtual int startOpen ();
                 virtual long isOpened ();
                 virtual int endOpen ();
@@ -67,7 +65,6 @@ class APMDome:public Dome
 		rts2core::ValueString * sideApos, * sideBpos;
 		rts2core::ValueSelection * closeDome;
 		rts2core::ConnAPM *connDome;
-		int delay;
 		int dome_state;
 
 		HostString *host;
@@ -84,10 +81,8 @@ class APMDome:public Dome
 APMDome::APMDome (int argc, char **argv):Dome (argc, argv)
 {
 	host = NULL;
-	delay = 0;
 
 	addOption ('e', NULL, 1, "ESA dome IP and port (separated by :)");
-	addOption ('t', NULL, 10, "Delay betwen dome sides during open/close");
 	createValue(domeStatus, "dome_status", "current dome status", true);
 	createValue(sideApos, "sideA_pos", "last known side A position", true);
 	createValue(sideBpos, "sideB_pos", "last known side B position", true);
@@ -100,36 +95,9 @@ int APMDome::commandAuthorized (rts2core::Connection * conn)
 		sendUDPMessage ("D666");
 		return 0;	
 	}
-	else if (conn->isCommand ("sideA"))
+	else if (conn->isCommand ("init"))
 	{
-		char *val;
-		if (conn->paramNextString(&val) || !conn->paramEnd ())
-			return -2;
-		
-		if (strcmp (val, "open"))
-		{
-			//
-		}
-		else if (strcmp (val, "close"))
-		{
-			//
-		}
-		return 0;
-	}
-	else if (conn->isCommand ("sideB"))
-	{
-		char *val;
-		if (conn->paramNextString(&val) || !conn->paramEnd ())
-			return -2;
-
-		if (strcmp (val, "open"))
-		{
-			//
-		}
-		else if (strcmp (val, "close"));
-		{
-			//
-		}
+		sendUDPMessage ("D777");
 		return 0;
 	}	
 	return Dome::commandAuthorized (conn);
@@ -142,13 +110,21 @@ int APMDome::processOption (int in_opt)
                 case 'e':
 			host = new HostString (optarg, "1000");
                         break;
-		case 't':
-			delay = atoi (optarg);
-			break;
                 default:
                         return Dome::processOption (in_opt);
         }
         return 0;
+}
+
+void APMDome::postEvent (rts2core::Event *event)
+{
+	if (event->getType () == EVENT_APMDOME_DELAY_INIT)
+	{
+		sendUDPMessage ("D777");
+		return;
+	}
+	
+	Dome::postEvent (event);
 }
 
 int APMDome::initHardware ()
@@ -166,29 +142,13 @@ int APMDome::initHardware ()
 	if (ret)
 		return ret;
 
-	if (!isMoving ())
-        {
-                // initial dome close
-		sendUDPMessage ("D777");
+	sendUDPMessage ("D999");
 
-                maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome after init");
-        }
+	setIdleInfoInterval (1);
+
+        maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome after init");
 
 	return 0;
-}
-
-void APMDome::postEvent (rts2core::Event *event)
-{
-	switch (event->getType ())
-	{
-		case EVENT_APMDOME_DELAY_OPEN:
-			sendUDPMessage ("DB100");
-			return;
-		case EVENT_APMDOME_DELAY_CLOSE:
-			sendUDPMessage ("DA000");
-			return;
-	}
-	Dome::postEvent (event);
 }
 
 int APMDome::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
@@ -212,33 +172,7 @@ int APMDome::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
 int APMDome::info ()
 {
 	sendUDPMessage ("D999");
-
-	switch(dome_state)
-	{
-		case APMDOME_CLOSING:
-			domeStatus->setValueString("Closing");
-			break;
-		case APMDOME_OPENING:
-			domeStatus->setValueString("Openning");
-			break;
-		case APMDOME_CLOSED:
-			domeStatus->setValueString("Closed");
-			break;
-		case APMDOME_OPENED:
-			domeStatus->setValueString("Opened");
-			break;
-		case APMDOME_STOPPED:
-			domeStatus->setValueString("Stopped");
-			break;
-		case APMDOME_INIT:
-			domeStatus->setValueString("Closing (init)");
-			break;
-		default:
-			domeStatus->setValueString("Unknown...");
-	}
 	
-	sendValueAll(domeStatus);
-
 	return Dome::info ();
 }
 
@@ -247,24 +181,13 @@ int APMDome::startOpen ()
 	if (isMoving () || dome_state == APMDOME_OPENED)                
 		return 0;
 
-	if (delay == 0)
-	{
-		sendUDPMessage ("D100");
-	}
-	else
-	{
-		sendUDPMessage ("DA100");
-		addTimer (delay, new rts2core::Event (EVENT_APMDOME_DELAY_OPEN));
-	}
-	domeStatus->setValueString("Openning");
-	sendValueAll(domeStatus);
+	sendUDPMessage ("D100");
 	
 	return 0;
 }
 
 long APMDome::isOpened ()
 {
-	// return (getState () & DOME_DOME_MASK) == DOME_CLOSED ? 0 : -2;
 	if (isMoving () || dome_state == APMDOME_CLOSED)
 		return USEC_SEC;
 
@@ -284,15 +207,12 @@ int APMDome::startClose ()
 	if (isMoving () || dome_state == APMDOME_CLOSED)
 		return 0;
 
-	sendUDPMessage ("D000");
-	domeStatus->setValueString("Closing");
-	sendValueAll(domeStatus);
+	sendUDPMessage ("D777");
 	return 0;
 }
                 
 long APMDome::isClosed ()
 {
-	// return (getState () & DOME_DOME_MASK) == DOME_OPENED ? 0 : -2;
 	if (isMoving () || dome_state == APMDOME_OPENED)
                 return USEC_SEC;
 
@@ -309,9 +229,7 @@ int APMDome::endClose ()
 
 bool APMDome::isMoving ()
 {
-	sendUDPMessage ("D999");
-
-	if (dome_state == APMDOME_CLOSING || dome_state == APMDOME_OPENING)
+	if (dome_state == APMDOME_CLOSING || dome_state == APMDOME_OPENING || dome_state == APMDOME_INIT)
 		return true;
 
 	return false;
@@ -321,18 +239,18 @@ int APMDome::sendUDPMessage (const char * _message)
 {
 	char *response = (char *)malloc (20*sizeof (char));
 	char sA, sB, sideA[4], sideB[4];
+	bool nowait = false;	
 	
-	if (getDebug())
-		logStream (MESSAGE_DEBUG) << "command to controller: " << _message << sendLog;
+	// logStream (MESSAGE_DEBUG) << "command to controller: " << _message << sendLog;
 
-	int n = connDome->send (_message, response, 20, false);
+	if (strcmp (_message, "D666") == 0)
+		nowait = true;
 
-        if (getDebug())
-	{
-		std::string res (response);
-		logStream (MESSAGE_DEBUG) << "reponse from controller: " << res.substr (0, n) << sendLog;
-	}
+	int n = connDome->send (_message, response, 20, nowait);
 
+	// std::string res (response);
+	// logStream (MESSAGE_DEBUG) << "reponse from controller: " << res.substr (0, n) << sendLog;
+	
 	if (n > 4)
 	{
 		if (response[0] == 'E') 
@@ -358,50 +276,55 @@ int APMDome::sendUDPMessage (const char * _message)
 			sideBpos->setValueString(sideB);
 			sendValueAll(sideBpos);
 
-			logStream (MESSAGE_DEBUG) << "#1: " << sA << " #2:" << sideA << " #3: " << sB << " #4: " << sideB << sendLog;
+			// logStream (MESSAGE_DEBUG) << "#1: " << sA << " #2:" << sideA << " #3: " << sB << " #4: " << sideB << sendLog;
 
 			if (sA == '1' || sB == '1')
 			{
 				// moving to open
 				dome_state = APMDOME_OPENING;
-				return 0;
+				domeStatus->setValueString("Opening");
 			} 
 
 			if (sA == '2' || sB == '2')
 			{
 				// moving to close
 				dome_state = APMDOME_CLOSING; 
+				domeStatus->setValueString("Closing");
 			}
 		
 			if (sA == '3' || sB == '3')
 			{
 				// emergency stop
 				dome_state = APMDOME_STOPPED;
+				domeStatus->setValueString("Stopped");
 			}
 
 			if (sA == '4' || sB == '4')
 			{
 				// initial closing
 				dome_state = APMDOME_INIT;
+				domeStatus->setValueString("Closing / init");
 			}
 
-			if ((strcmp (sideA, "100") == 0) && (strcmp (sideB, "100") == 0))
+			if ((strcmp (sideA, "100") == 0) && (strcmp (sideB, "100") == 0) && sA == '0' && sB == '0')
 			{
 				// dome fully opened
 				dome_state = APMDOME_OPENED;				
+				domeStatus->setValueString("Opened");
 			}
 
-			if ((strcmp (sideA, "000") == 0) && (strcmp (sideB, "000") == 0))
+			if ((strcmp (sideA, "000") == 0) && (strcmp (sideB, "000") == 0) && sA == '0' && sB == '0')
                         {
                                 // dome fully closed
                                 dome_state = APMDOME_CLOSED;
+				domeStatus->setValueString("Closed");
                         }
 
-			return 0;
+			sendValueAll(domeStatus);
 		}
 	}
 
-	return -1;
+	return 0;
 }
 
 int main (int argc, char **argv)

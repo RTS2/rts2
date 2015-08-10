@@ -53,8 +53,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define READOUT_PARALLEL_BINNING_IX    6
 #define READOUT_PARALLEL_POSTSCAN_IX   7
 #define READOUT_EXPOSURE_IX            8
+#define READOUT_CCLEAR_IX              9
+#define READOUT_DSI_SAMPLE_IX         10
+#define READOUT_AATTENUATION_IX       11
+#define READOUT_PORT1_OFFSET_IX       12
+#define READOUT_PORT2_OFFSET_IX       13
+#define READOUT_TDIDELAY_IX           12
+#define READOUT_SAMPLEPIX_IX          20
 
-#define CONFIG_SET_TEMP_IX            14 
+
+#define CONFIG_SERIAL_PHASING_IX       3
+#define CONFIG_SERIAL_SPLIT_IX         4
+#define CONFIG_SERIAL_SIZE_IX          5
+#define CONFIG_PARALLEL_PHASING_IX     6
+#define CONFIG_PARALLEL_SPLIT_IX       7
+#define CONFIG_PARALLEL_SIZE_IX        8
+#define CONFIG_PARALLEL_SHIFTD_IX      9
+#define CONFIG_PORTS_IX               10
+#define CONFIG_SHUTTER_CLOSE_D_IX     11
+#define CONFIG_SET_TEMP_IX            14
 
 struct CFG_ENTRY {
   char *name;
