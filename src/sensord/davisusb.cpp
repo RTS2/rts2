@@ -250,6 +250,15 @@ int DavisUsb::getAndParseData ()
 
         logStream (MESSAGE_DEBUG) << "test ( " << ret <<  " ): " << rcd.wBarometer * 33.865 / 1000.0 << sendLog;
 
+	temperature->setValueFloat ((rcd.wOutsideTemp-320) * 5 / 90.0);
+	humidity->setValueFloat (rcd.yOutsideHum);
+	rainRate->setValueFloat (rcd.rcd.wRainRate);
+	avgWindSpeed->setValueFloat ((rcd.yAvgWindSpeed *1.609)+0.5);
+	/*  
+	maeekWindSpeed (peekwindspeed);
+	master->setWindDir (rtWindDir);
+	master->setBaroCurr (rtBaroCurr);
+	*/
         return 0;
 }
 
