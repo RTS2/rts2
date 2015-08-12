@@ -1,5 +1,5 @@
 bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor-newport-lamp \
-	rts2-sensor-phytron rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis rts2-sensor-davisusb \
+	rts2-sensor-phytron rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
 	rts2-sensor-fram-weather rts2-sensor-bart-rain rts2-sensor-ms260 rts2-sensor-l150 \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
 	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-aag rts2-sensor-pwc \
@@ -44,9 +44,7 @@ rts2_sensor_cloud4_SOURCES = cloud4.cpp
 
 rts2_sensor_pixy_SOURCES = pixy.cpp
 
-rts2_sensor_davis_SOURCES = davis.cpp davisudp.cpp
-
-rts2_sensor_davisusb_SOURCES = davisusb.cpp
+rts2_sensor_davis_SOURCES = davis.cpp davisudp.cpp davisusb.cpp
 
 rts2_sensor_fram_weather_SOURCES = fram-weather.cpp framudp.cpp
 

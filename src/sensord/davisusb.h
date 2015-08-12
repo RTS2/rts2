@@ -1,5 +1,5 @@
 /* 
- * Davis weather sensor.
+ * Infrastructure for Davis UDP connection.
  * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,193 +17,82 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-// how long after weather was bad can weather be good again; in
-// seconds
-#define BART_BAD_WEATHER_TIMEOUT    1200
-#define BART_BAD_WINDSPEED_TIMEOUT  1200
-#define BART_CONN_TIMEOUT           1200
-
 #ifndef __RTS2_DAVISUSB__
 #define __RTS2_DAVISUSB__
 
-#include <fcntl.h>
-#include <termios.h>
-
-#include "davisdata.h"
-
-#include "sensord.h"
-
-#include "connection/serial.h"
+#include "connnosend.h"
 
 namespace rts2sensord
 {
 
-/**
- * Davis Vantage (and other) meteo stations.
- * Needs modified Davis driver, which sends data over UDP.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class DavisUsb: public SensorWeather
+class Davis;
+/*
+class WeatherVal
+{
+	private:
+		const char *name;
+	public:
+		float value;
+
+		WeatherVal (const char *in_name, float in_value)
+		{
+			name = in_name;
+			value = in_value;
+		}
+
+		bool isValue (const char *in_name)
+		{
+			return !strcmp (name, in_name);
+		}
+};
+
+class WeatherBinaryBuf
+{
+	private:
+		std::vector < WeatherVal > values;
+	public:
+		WeatherBuf ();
+		virtual ~ WeatherBuf (void);
+
+		int parse (char *buf);
+		void getValue (const char *name, float &val, int &status);
+};
+*/
+class DavisUsb:public rts2core::ConnNoSend
 {
 	public:
-		DavisUsb (int argc, char **argv);
+		DavisUsb (const char * _weather_device, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master);
 
-		void setTemperature (float in_temp)
-		{
-			temperature->setValueFloat (in_temp);
-		}
-		float getTemperature ()
-		{
-			return temperature->getValueFloat ();
-		}
-		void setHumidity (float in_humidity)
-		{
-			humidity->setValueFloat (in_humidity);
-			if (!isnan (maxHumidity->getValueFloat ()) && humidity->getValueFloat () > maxHumidity->getValueFloat ())
-			{
-				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining");
-				valueError (humidity);
-			}
-			else
-			{
-				valueGood (humidity);
-			}
-		}
-		float getHumidity ()
-		{
-			return humidity->getValueFloat ();
-		}
-		void setRain (bool _rain)
-		{
-			rain->setValueBool (_rain);
-			if (_rain)
-			{
-				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining");
-				valueError (rain);
-			}
-			else
-			{
-				valueGood (rain);
-			}
-		}
-		bool getRain ()
-		{
-			return rain->getValueBool ();
-		}
+		virtual int init ();
 
-		void setAvgWindSpeed (float _avgWindSpeed)
-		{
-			avgWindSpeed->setValueFloat (_avgWindSpeed);
-			avgWindSpeedStat->addValue (_avgWindSpeed, 20);
-			avgWindSpeedStat->calculate ();
-			if (!isnan (avgWindSpeedStat->getValueFloat ()) && avgWindSpeedStat->getValueFloat () >= maxWindSpeed->getValueFloat ())
-			{
-				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high average wind");
-				valueError (avgWindSpeed);
-				valueError (avgWindSpeedStat);
-			}
-			else if (!isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
-			{
-				valueError (avgWindSpeed);
-				valueWarning (avgWindSpeedStat);
-			}
-			else
-			{
-				valueGood (avgWindSpeed);
-				valueGood (avgWindSpeedStat);
-			}
-		}
+		virtual int receive (fd_set * set);
 
-		void setPeekWindSpeed (float _peekWindSpeed)
-		{
-			peekWindSpeed->setValueFloat (_peekWindSpeed);
-			if (!isnan (maxPeekWindSpeed->getValueFloat ()) && _peekWindSpeed >= maxPeekWindSpeed->getValueFloat ())
-			{
-				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high peek wind");
-				valueError (peekWindSpeed);
-			}
-			else
-			{
-				valueGood (peekWindSpeed);
-			}
-		}
-
-		void setWindDir (float _windDir) { windDir->setValueFloat (_windDir); }
-		void setBaroCurr (float _baroCurr) { pressure->setValueFloat (_baroCurr); }
-
-		void setRainRate (float _rainRate)
-		{
-			rainRate->setValueFloat (_rainRate);
-			if (_rainRate > 0)
-			{
-				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining (rainrate)");	
-				valueError (rainRate);
-			}
-			else
-			{
-				valueGood (rainRate);
-			}
-		}
-
-		void setWetness (double _wetness);
-
-		void setCloud (double _cloud, double _top, double _bottom);
-
-		float getMaxPeekWindspeed ()
-		{
-			return maxPeekWindSpeed->getValueFloat ();
-		}
-
-		float getMaxWindSpeed ()
-		{
-			return maxWindSpeed->getValueFloat ();
-		}
-
+		void setConnTimeout (int _ct) { conn_timeout = _ct; }
 	protected:
-		virtual int processOption (int _opt);
-		virtual int initHardware ();
-		virtual void postEvent (rts2core::Event *event);
-		virtual int idle ();
-		virtual int info ();
-		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
+		void setWeatherTimeout (time_t wait_time, const char *msg);
 
+		virtual void connectionError (int last_data_size)
+		{
+			// do NOT call Rts2Conn::connectionError. Weather connection must be kept even when error occurs.
+			return;
+		}
 	private:
-		int ReadNextChar (int device, char *ch);
-		int ReadToBuffer (int device, char *buffer, int bsize);
-		int getAndParseData ();
-		RTDATA rcd;
+		Davis *master;
+		const char *weather_device;
 		int fdser;
+		int weather_timeout;
+		int conn_timeout;
+		int bad_weather_timeout;
 
-		const char *device_file;
+		int rain;
+		float peekwindspeed;
+		float avgWindSpeed;
+		time_t lastWeatherStatus;
+		time_t lastBadWeather;
 
-		rts2core::ConnSerial *weatherConn;
-
-		rts2core::ValueInteger *connTimeout;
-
-		rts2core::ValueFloat *temperature;
-		rts2core::ValueFloat *humidity;
-		rts2core::ValueBool *rain;
-		rts2core::ValueFloat *pressure;
-
-		rts2core::ValueFloat *avgWindSpeed;
-		rts2core::ValueDoubleStat *avgWindSpeedStat;
-		rts2core::ValueFloat *peekWindSpeed;
-		rts2core::ValueFloat *windDir;
-
-		rts2core::ValueFloat *rainRate;
-
-		rts2core::ValueDouble *wetness;
-
-		rts2core::ValueDouble *cloud;
-		rts2core::ValueDouble *cloudTop;
-		rts2core::ValueDouble *cloudBottom;
-		rts2core::ValueDouble *cloud_bad;
-
-		rts2core::ValueFloat *maxWindSpeed;
-		rts2core::ValueFloat *maxPeekWindSpeed;
-
-		rts2core::ValueFloat *maxHumidity;
+		int ReadToBuffer (int nfd, char *pszBuffer, int nBufSize);
+		int ReadNextChar(int nfd, char *pChar);
+		void GetRTData(unsigned char *szData);
 };
 
 }

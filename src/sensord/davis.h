@@ -28,6 +28,7 @@
 
 #include "sensord.h"
 #include "davisudp.h"
+#include "davisusb.h"
 
 namespace rts2sensord
 {
@@ -163,6 +164,7 @@ class Davis: public SensorWeather
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
 		DavisUdp *weatherConn;
+		DavisUsb *usbConn;
 
 		rts2core::ValueInteger *connTimeout;
 
@@ -191,6 +193,8 @@ class Davis: public SensorWeather
 		rts2core::ValueFloat *maxHumidity;
 
 		rts2core::ValueInteger *udpPort;
+		const char *device_file;
+		int conn_method;
 };
 
 }
