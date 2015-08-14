@@ -11,7 +11,6 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity \
 	rts2-sensor-apm-multidev \
 	rts2-sensor-thermocube \
-	rts2-sensor-test
 	
 
 noinst_HEADERS = davisudp.h davisusb.h davisdata.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h apm-filter.h \
@@ -95,8 +94,6 @@ rts2_sensor_aws_mlab_SOURCES = aws-mlab.cpp
 rts2_sensor_clarity_SOURCES = clarity.cpp
 
 rts2_sensor_apm_multidev_SOURCES = apm-multidev.cpp apm-filter.cpp apm-mirror.cpp apm-relay.cpp
-
-rts2_sensor_test_SOURCES = test.cpp
 
 if SUNCYGMAC
 EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp
