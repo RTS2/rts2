@@ -371,6 +371,7 @@ Sitech::~Sitech(void)
 void Sitech::fullStop (void)
 {
 	partialMove->setValueInteger (0);
+	tracking->setValueInteger (0);
 	try
 	{
 		serConn->siTechCommand ('X', "N");
