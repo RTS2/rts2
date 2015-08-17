@@ -765,9 +765,6 @@ class Telescope:public rts2core::Device
 		 */
 		virtual int loadModel () { return -1; }
 
-		virtual int stopWorm () { return -1; }
-
-		virtual int startWorm () { return -1; }
 		virtual int resetMount () { return 0; }
 
 		/**
@@ -792,9 +789,10 @@ class Telescope:public rts2core::Device
 		 * Set telescope tracking.
 		 *
 		 * @param track   if true, tracking is set to on
+		 * @param send    if true, set rts2value and send in to all connections
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (bool track);
+		virtual int setTracking (bool track, bool send = true);
 
 		/**
 		 * Set differential tracking values. All inputs is in degrees / hour.

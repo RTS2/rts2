@@ -79,9 +79,10 @@ class Trencin:public Fork
 
 		virtual void valueChanged (rts2core::Value *changed_value);
 
+		virtual int setTracking (bool track, bool send = true);
 		// start worm drive on given unit
-		virtual int startWorm ();
-		virtual int stopWorm ();
+		int startWorm ();
+		int stopWorm ();
 
 		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
 		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
@@ -134,7 +135,6 @@ class Trencin:public Fork
 		rts2core::ValueTime *raMovingEnd;
 		rts2core::ValueTime *decMovingEnd;
 
-		rts2core::ValueBool *wormRa;
 		rts2core::ValueTime *raWormStart;
 
 		int32_t worm_start_unit_ra;
@@ -265,6 +265,26 @@ void Trencin::tel_write_ra (char command, int32_t value)
 void Trencin::tel_write_dec (char command, int32_t value)
 {
 	tel_write (trencinConnDec, command, value);
+}
+
+int Trencin::setTracking (bool track, bool send)
+{
+	int ret;
+
+	if (track)
+	{
+		if (raMoving->getValueInteger () == 0)
+			ret = startWorm ();
+		else
+			ret = 0;
+	}
+	else
+		ret = stopWorm ();
+
+	if (ret)
+		return ret;
+
+	return Telescope::setTracking (track, send);
 }
 
 int Trencin::startWorm ()
@@ -410,7 +430,7 @@ void Trencin::setGuideRa (int value)
 	{
 		if (decGuide->getValueInteger () == 0)
 			setIdleInfoInterval (60);
-		if (wormRa->getValueBool () == true)
+		if (tracking->getValueBool () == true)
 			startWorm ();
 		return;
 	}
@@ -503,7 +523,7 @@ void Trencin::checkAcc (rts2core::ConnSerial *conn, rts2core::ValueInteger *acc,
 void Trencin::setSpeedRa (int new_speed)
 {
 	// apply offset for sidereal motion
-	if (wormRa->getValueBool () == true)
+	if (tracking->getValueBool () == true)
 	{
 		switch (raGuide->getValueInteger ())
 		{
@@ -578,7 +598,7 @@ void Trencin::setRa (long new_ra)
 	long diff = new_ra - unitRa->getValueInteger () - cycleRa->getValueInteger () * MAX_MOVE;
 	long old_diff = diff;
 
-	if (wormRa->getValueBool ())
+	if (tracking->getValueBool ())
 	{
 		// adjust for siderial move..
 		double v = ((double) velRa->getValueInteger ()) * 64;
@@ -613,7 +633,7 @@ void Trencin::setDec (long new_dec)
 	tel_run (trencinConnDec, diff);
 }
 
-Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
+Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv, false, true)
 {
 	trencinConnRa = NULL;
 	trencinConnDec = NULL;
@@ -660,9 +680,6 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 
 	createValue (raMovingEnd, "ra_moving_end", "time of end of last RA movement", false);
 	createValue (decMovingEnd, "dec_moving_end", "time of end of last DEC movement", false);
-
-	createValue (wormRa, "TRACKING", "RA worm drive", false, RTS2_VALUE_WRITABLE);
-	wormRa->setValueBool (false);
 
 	createValue (raWormStart, "ra_worm_start", "RA worm start time", false);
 	raWormStart->setValueDouble (NAN);
@@ -833,7 +850,7 @@ int Trencin::setTo (double set_ra, double set_dec)
 	last_move_ra = 0;
 	last_move_dec = 0;
 
-	if (wormRa->getValueBool () == true)
+	if (tracking->getValueBool () == true)
 		return startWorm ();
 	return 0;
 }
@@ -1017,19 +1034,6 @@ int Trencin::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 			tel_write_dec ('s', new_value->getValueInteger ());
 			return 0;
 		}
-		else if (old_value == wormRa)
-		{
-			if (((rts2core::ValueBool *)new_value)->getValueBool () == true)
-			{
-				if (raMoving->getValueInteger () == 0)
-					startWorm ();
-			}
-			else
-			{
-				stopWorm ();
-			}
-			return 0;
-		}
 	}
 	catch (rts2core::Error &er)
 	{
@@ -1044,7 +1048,7 @@ void Trencin::valueChanged (rts2core::Value *changed_value)
 	if (changed_value == accWormRa || changed_value == velWormRa
 		|| changed_value == backWormRa || changed_value == waitWormRa)
 	{
-		if (wormRa->getValueBool ())
+		if (tracking->getValueBool ())
 		{
 			try
 			{
@@ -1250,7 +1254,7 @@ int Trencin::endMove ()
 	raMoving->setValueInteger (0);
 	decMoving->setValueInteger (0);
 
-	if (wormRa->getValueBool () == true)
+	if (tracking->getValueBool () == true)
 		startWorm ();
 	return Fork::endMove ();
 }
@@ -1326,11 +1330,11 @@ int Trencin::startPark ()
 	{
 		if ((getState () & TEL_MASK_MOVING) == TEL_PARKED || (getState () & TEL_MASK_MOVING) == TEL_PARKING)
 			return 0;
-		if (wormRa->getValueBool ())
+		if (tracking->getValueBool ())
 		{
 			stopWorm ();
 			sleep (3);
-			wormRa->setValueBool (true);
+			//tracking->setValueBool (true);
 		}
 		initRa ();
 		initDec ();

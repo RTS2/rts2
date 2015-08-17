@@ -79,6 +79,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	if (hasTracking)
 	{
 		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		tracking->setValueBool (false);
 	}
 	else
 	{
@@ -459,7 +460,13 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 {
 	if (old_value == tracking)
 	{
-		if (setTracking (((rts2core::ValueBool *) new_value)->getValueBool ()))
+		if (((rts2core::ValueBool *) new_value)->getValueBool ())
+		{
+			// we don't allow starting of tracking via setValue in these cases...
+			if (blockMove->getValueBool () == true || (getState () & TEL_MASK_MOVING) == TEL_PARKING || (getState () & TEL_MASK_MOVING) == TEL_PARKED)
+				return -2;
+		}
+		if (setTracking (((rts2core::ValueBool *) new_value)->getValueBool (), false))
 			return -2;
 	}
 	else if (old_value == mpec)
@@ -940,6 +947,7 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	{
 		blockMove->setValueBool (true);
 		sendValueAll (blockMove);
+		setTracking (false);
 		stopMove ();
 		logStream (MESSAGE_WARNING) << "stoped movement of the delescope, triggered by STOP_MASK change" << sendLog;
 	}
@@ -997,10 +1005,14 @@ double Telescope::estimateTargetTime ()
 	return getTargetDistance () / 2.0;
 }
 
-int Telescope::setTracking (bool track)
+int Telescope::setTracking (bool track, bool send)
 {
-	if (tracking != NULL)
+	if (tracking != NULL && tracking->getValueBool () != track)
+	{
 		tracking->setValueBool (track);
+		if (send==true)
+			sendValueAll (tracking);
+	}
 	return 0;
 }
 
@@ -1041,7 +1053,7 @@ int Telescope::info ()
 		hrpos.az = telAltAz->getAz ();
 		if (!hardHorizon->is_good (&hrpos))
 		{
-			stopWorm ();
+			setTracking (false);
 		}
 	}
 	
@@ -1455,7 +1467,10 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
 		setTracking (true);
-		return startResyncMove (conn, 0);
+		ret = startResyncMove (conn, 0);
+		if (ret)
+			setTracking (false);
+		return ret;
 	}
 	else if (conn->isCommand ("move_ha_sg"))
 	{
@@ -1469,16 +1484,6 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		tarRaDec->setValueRaDec (NAN, NAN);
 		return startResyncMove (conn, 0);
 	}
-	else if (conn->isCommand ("do_move"))
-	{
-		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
-		modelOn ();
-		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		mpec->setValueString ("");
-		tarRaDec->setValueRaDec (NAN, NAN);
-		return startResyncMove (conn, 0);
-	}
 	else if (conn->isCommand ("move_not_model"))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
@@ -1487,7 +1492,10 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
 		setTracking (true);
-		return startResyncMove (conn, 0);
+		ret = startResyncMove (conn, 0);
+		if (ret)
+			setTracking (false);
+		return ret;
 	}
 	else if (conn->isCommand ("move_mpec"))
 	{
@@ -1497,7 +1505,10 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		mpec->setValueString (str);
 		setTracking (true);
-		return startResyncMove (conn, 0);
+		ret = startResyncMove (conn, 0);
+		if (ret)
+			setTracking (false);
+		return ret;
 	}
 	else if (conn->isCommand ("altaz"))
 	{
@@ -1604,6 +1615,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
+		setTracking (false);
 		return stopMove ();
 	}
 	else if (conn->isCommand ("change"))
@@ -1635,7 +1647,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("worm_stop"))
 	{
-		ret = stopWorm ();
+		ret = setTracking (false);
 		if (ret)
 		{
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot stop worm");
@@ -1644,7 +1656,11 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("worm_start"))
 	{
-		ret = startWorm ();
+		if (blockMove->getValueBool () == true || (getState () & TEL_MASK_MOVING) == TEL_PARKING || (getState () & TEL_MASK_MOVING) == TEL_PARKED)
+			ret = -1;
+		else
+			ret = setTracking (true);
+
 		if (ret)
 		{
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot start worm");

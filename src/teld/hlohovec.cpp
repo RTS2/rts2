@@ -302,8 +302,6 @@ int Hlohovec::resetMount ()
 int Hlohovec::startResync ()
 {
 	deleteTimers (RTS2_HLOHOVEC_AUTOSAVE);
-	if (getState () & TEL_MOVING)
-		tracking->setValueBool (true);
 	int32_t dc;
 	int ret = sky2counts (tAc, dc);
 	if (ret)
@@ -316,8 +314,6 @@ int Hlohovec::startResync ()
 int Hlohovec::isMoving ()
 {
 	callAutosave ();
-	if (getState () & TEL_MOVING)
-		tracking->setValueBool (true);
 	if (tracking->getValueBool () && raDrive->isInPositionMode ())
 	{
 		if (raDrive->isMovingPosition ())
@@ -403,7 +399,6 @@ int Hlohovec::setToPark ()
 
 int Hlohovec::startPark ()
 {
-	tracking->setValueBool (false);
 	if (parkPos)
 	{
 		parking = true;

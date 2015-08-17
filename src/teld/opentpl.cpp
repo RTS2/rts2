@@ -56,8 +56,9 @@ class OpenTPL:public Telescope
 		virtual int isMoving ();
 		virtual int stopMove ();
 
-		virtual int stopWorm ();
-		virtual int startWorm ();
+		virtual int setTracking (bool track, bool send = true);
+		int stopWorm ();
+		int startWorm ();
 
 		virtual int startPark ();
 		int moveCheck (bool park);
@@ -334,7 +335,7 @@ int OpenTPL::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	return Telescope::setValue (old_value, new_value);
 }
 
-OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true)
+OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true, true)
 {
 	openTPLServer = NULL;
 
@@ -1408,6 +1409,21 @@ int OpenTPL::endPark ()
 	if (standbyPoweroff->getValueBool () == true)
 		powerOff ();
 	return 0;
+}
+
+int OpenTPL::setTracking (bool track, bool send)
+{
+	int ret;
+
+	if (track)
+		ret = startWorm ();
+	else
+		ret = stopWorm ();
+
+	if (ret)
+		return ret;
+
+	return Telescope::setTracking (track, send);
 }
 
 int OpenTPL::startWorm ()

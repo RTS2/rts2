@@ -160,7 +160,8 @@ class MM2:public Telescope
 		virtual int isParking ();
 		virtual int endPark ();
 
-		virtual int stopWorm ();
+		virtual int setTracking (bool track, bool send = true);
+		int stopWorm ();
 
 		virtual int startDir (char *dir);
 		virtual int stopDir (char *dir);
@@ -462,7 +463,7 @@ int MM2::tel_write_dec (double dec)
 	return tel_rep_write (command);
 }
 
-MM2::MM2 (int argc, char **argv):Telescope (argc, argv)
+MM2::MM2 (int argc, char **argv):Telescope (argc, argv, false, true)
 {
 	createValue (axRa, "CNT_RA", "RA counts", true);
 	createValue (axDec, "CNT_DEC", "DEC counts", true);
@@ -1112,6 +1113,24 @@ int MM2::endPark ()
 {
 	stopWorm ();
 	return 0;
+}
+
+
+int MM2::setTracking (bool track, bool send)
+{
+	int ret;
+
+	if (track)
+		// there is no startWorm defined, strange, but OK, let's presume the worm is started after every movement automatically...
+		//ret = startWorm ();
+		ret = 0;
+	else
+		ret = stopWorm ();
+
+	if (ret)
+		return ret;
+
+	return Telescope::setTracking (track, send);
 }
 
 int MM2::stopWorm ()
