@@ -56,7 +56,7 @@ class OpenTPL:public Telescope
 		virtual int isMoving ();
 		virtual int stopMove ();
 
-		virtual int setTracking (bool track, bool send = true);
+		virtual int setTracking (bool track, bool addTrackingTimer = false, bool send = true);
 		int stopWorm ();
 		int startWorm ();
 
@@ -1411,7 +1411,7 @@ int OpenTPL::endPark ()
 	return 0;
 }
 
-int OpenTPL::setTracking (bool track, bool send)
+int OpenTPL::setTracking (bool track, bool addTrackingTimer, bool send)
 {
 	int ret;
 
@@ -1423,7 +1423,7 @@ int OpenTPL::setTracking (bool track, bool send)
 	if (ret)
 		return ret;
 
-	return Telescope::setTracking (track, send);
+	return Telescope::setTracking (track, addTrackingTimer, send);
 }
 
 int OpenTPL::startWorm ()
