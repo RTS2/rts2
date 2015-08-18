@@ -1002,9 +1002,9 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		else if (oldValue == domeTimeout)
 		{
 			// prepare new bits for timeout
-			if (domeTimeout->getValueInteger () > 0)
+			if (newValue->getValueInteger () > 0)
 			{
-				int16_t nreg = domeTimeout->getValueInteger () & 0x00ff;
+				int16_t nreg = newValue->getValueInteger () & 0x00ff;
 				nreg = (nreg << 7) & ZI_TIMEOUT_MASK;
 				// user switched timeout
 				nreg |= 0x8000;
