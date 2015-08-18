@@ -1,6 +1,6 @@
 /* 
  * Check if object is above horizon.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2015 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,18 +38,44 @@ class HorizonEntry
 		}
 };
 
-typedef
-std::vector < struct HorizonEntry >
-horizon_t;
+typedef std::vector < struct HorizonEntry > horizon_t;
 
 /**
  * Class for checking, whenewer observation target is correct or no.
  *
  * @author Petr Kubanek <petr@lascaux.asu.cas.cz>
  */
-class
-ObjectCheck
+class ObjectCheck
 {
+
+	public:
+		ObjectCheck (const char *horizon_file);
+
+		~ObjectCheck ();
+		/**
+		 * Check, if that target can be observerd (is above horizon).
+		 *
+		 * @param hrz           object horizontal coordinates
+		 * @param hardness	how many limits to ignore (Moon distance etc.)
+		 *
+		 * @return 0 if object at given horizontal position cannot be observed (is below horizon limit), 1 if it can be observed (its altitude is above horizon for given azimuth)
+		 */
+		int is_good (const struct ln_hrz_posn *hrz, int hardness = 0);
+
+		int is_good_with_margin (struct ln_hrz_posn *hrz, double alt_margin, double az_margin, int hardness = 0);
+
+		double getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness);
+
+		horizon_t::iterator begin ()
+		{
+			return horizon.begin ();
+		}
+
+		horizon_t::iterator end ()
+		{
+			return horizon.end ();
+		}
+
 	private:
 		enum
 		{
@@ -57,45 +83,10 @@ ObjectCheck
 			AZ_ALT
 		} horType;
 
-		horizon_t
-			horizon;
-		int
-			load_horizon (const char *horizon_file);
+		horizon_t horizon;
 
-		double
-			getHorizonHeightAz (double az, horizon_t::iterator iter1,
-			horizon_t::iterator iter2);
+		int load_horizon (const char *horizon_file);
 
-	public:
-		ObjectCheck (const char *horizon_file);
-
-		~ObjectCheck ();
-		/**
-		 * Check, if that target can be observerd.
-		 *
-		 * @param st		local sidereal time of the observation in hours (0-24)
-		 * @param ra		target ra in deg (0-360)
-		 * @param dec		target dec
-		 * @param hardness	how many limits to ignore (Moon distance etc.)
-		 *
-		 * @return 0 if we can observe, <0 otherwise
-		 */
-		int
-			is_good (const struct ln_hrz_posn *hrz, int hardness = 0);
-
-		double
-			getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness);
-
-		horizon_t::iterator
-			begin ()
-		{
-			return horizon.begin ();
-		}
-
-		horizon_t::iterator
-			end ()
-		{
-			return horizon.end ();
-		}
+		double getHorizonHeightAz (double az, horizon_t::iterator iter1, horizon_t::iterator iter2);
 };
 #endif							 /* ! __RTS2__OBJECTCHECK__ */

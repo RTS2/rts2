@@ -53,7 +53,7 @@ class QueuedTarget:public rts2db::QueueEntry
 	public:
 		QueuedTarget (unsigned int queue_id, rts2db::Target * _target, double _t_start = NAN, double _t_end = NAN, int _rep_n = -1, float _rep_separation = NAN, int _plan_id = -1, bool _hard = false, bool persistent = true);
 
-		QueuedTarget (unsigned int queue_id, unsigned int qid, struct ln_lnlat_posn *observer);
+		QueuedTarget (unsigned int queue_id, unsigned int qid, struct ln_lnlat_posn *observer, double obs_altitude);
 
 		/**
 		 * Copy constructor. Used in simulation queue to create copy of QueuedTarget.
@@ -98,9 +98,10 @@ class QueuedTarget:public rts2db::QueueEntry
 class TargetQueue:public std::list <QueuedTarget>
 {
 	public:  
-		TargetQueue (rts2db::DeviceDb *_master, struct ln_lnlat_posn **_observer):std::list <QueuedTarget> ()
+		TargetQueue (rts2db::DeviceDb *_master, struct ln_lnlat_posn **_observer, double _altitude):std::list <QueuedTarget> ()
 		{
 			observer = _observer;
+			obs_altitude = _altitude;
 			master = _master;
 			cameras = NULL;
 		}
@@ -167,6 +168,7 @@ class TargetQueue:public std::list <QueuedTarget>
 	protected:
 		rts2db::DeviceDb *master;
 		struct ln_lnlat_posn **observer;
+		double obs_altitude;
 
 		virtual int getQueueType () = 0;
 		virtual const bool getSkipBelowHorizon () = 0;
@@ -244,7 +246,7 @@ class ExecutorQueue:public TargetQueue
 		/**
 		 * If read-only is set, queue cannot be changed.
 		 */
-		ExecutorQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, int queue_id, bool read_only = false);
+		ExecutorQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, double _altitude, int queue_id, bool read_only = false);
 		virtual ~ExecutorQueue ();
 
 		/**

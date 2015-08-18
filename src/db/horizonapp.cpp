@@ -55,9 +55,10 @@ HorizonApp::HorizonApp (int in_argc, char **in_argv):rts2core::CliApp (in_argc, 
 	horizonFile = NULL;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
-	addOption ('f', NULL, 1,
-		"horizon file; overwrites file specified in configuration file");
+	addOption ('f', NULL, 1,"horizon file; overwrites file specified in configuration file");
 	addOption ('d', NULL, 0, "dump horizon file in AZ-ALT format");
+	addOption ('A', NULL, 1, "check given alt-az pair (separated by :)");
+	addOption ('R', NULL, 1, "check given ra-dec pair (separated by :)");
 }
 
 int HorizonApp::processOption (int in_opt)

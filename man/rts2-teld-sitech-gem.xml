@@ -1,0 +1,256 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2015-07-08</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-teld-sitech-gem">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2015</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Manual page for RTS2 Sitech controller on German Equatorial Mount.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &deviceapp;
+      <arg choice="opt">
+	<arg choice="plain"><option>--park-position <replaceable>alt</replaceable>:<replaceable>az</replaceable>:<replaceable>flip</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-f <replaceable>dev entry</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+       This manual page describes driver for German Equatorial Mount (GEM)
+       commanded by Sidereal Technology motor controller. For manual page
+       describing generic telescope driver, please see 
+       <citerefentry><refentrytitle>rts2-teld</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+       manual page.
+     </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    &optiongnu;
+
+    <variablelist>
+      &deviceapplist;
+      <varlistentry>
+        <term><option>-f</option></term>
+        <listitem>
+          <para>
+            Provide name of the device where telescope is connected. Usually /dev/ttyUSB0.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Sitech variables</title>
+    <para>
+      Mount interface provides common variables, visible in
+      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry> and <citerefentry><refentrytitle>rts2-xmlrpcclient</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+      They govern focuser behaviour and show its state. They are described
+      below. 
+    </para>
+
+   <variablelist>
+      <varlistentry>
+        <term>AXRA</term>
+	<para>
+          RA axis count value, corrected with offset.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>AXDEC</term>
+	<para>
+          DEC axis count value, corrected with offset.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>R_AXRA</term>
+        <para>
+          Raw RA axis value, value readed from encoders.
+        </para>
+      </varlistentry>
+      <varlistentry>
+        <term>R_AXDEC</term>
+        <para>
+          Raw DEC axis value, value readed from encoders.
+        </para>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Setting up limits and count values</title>
+    <para>
+      When telescope parameters need to be set into driver init file, please follow this checklist:
+    </para>
+    <orderedlist>
+      <listitem>
+        <para>
+	  Put telescope into parking position. Parking position is usually on
+	  one side of the pier, telescope looking to zenith (altitude = 90
+          degrees, zenith distance = 0 degrees).
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Power off the Sidereal electronic box.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+	  Power on the Sidereal electronic box.
+        </para>
+        <para>
+	  It is important you start with freshly powered electronic, with
+	  telescope in parking position. If you do not start with powered up
+	  electronic with telescope in parking position, chances are that you
+	  will have RA or DEC axis turned full turn from "0" position (when
+          axis value is between 0 and counts per full turn).
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Move telescope in RA axis to a limit (physical) and record R_AXRA value.
+        </para>
+      </listitem>
+    </orderedlist>
+  </refsect1>
+  <refsect1>
+    <title>Checking mount parameters</title>
+    <para>
+      Following checks should be performed after setting mount parameters.
+      Those ensure that the mount parameters are set correctly, and the RTS2
+      driver software react to all possible situations so it does endanger the
+      telescope.
+    </para>
+    <para>
+      Those checks should be made with somebody on-site to immediatelly hit
+      emergency stop/power down SiTech controller when things goes wrong. It is
+      not reccomended to run those checks remotely, without human close to the
+      mount, as with wrong parameters the mount can execute a wrong trajectory,
+      possibly resulting in damage to the telescope or observatory.
+    </para>
+    <orderedlist>
+      <listitem>
+        <para>
+	  Try to move mount a bit in RA or DEC. You can get current RA DEC
+	  values in <emphasis>TEL</emphasis> variable, just add few degrees in
+          both axes. Make sure the mount moved to target position.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+	  Move mount to declination 0, ra close to local sidereal time (LST
+	  value in rts2-mon). Telescope must to point to location perpendicular
+          to the pole, close to local meridian.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+	  Move mount to declination 0, ra close to local sidereal time (LST
+	  value in rts2-mon). Telescope must point to location perpendicular
+          to the pole, close to local meridian.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+	  Move mount to declination 45 (or -45 on southern hemisphere), right
+	  ascension close to local sidereal time (LST value in rts2-mon).
+          Telescope must point halfway (at 45 degrees angle) between celestial equator
+          and pole.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+	  Increase right ascension by 1 hour. Telescope must move to east from
+	  current positon, by 15 degrees. As 15 degrees is hard to estimate,
+          increase right ascension further by 5 hours - that makes total 6 hours, 90
+	  degrees from local meridian. Be aware that on some latitudes you have
+	  to increase declination toward pole, as 45 degrees declination might
+          be below horizon.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+	  Move to current right ascension minus 12 hours. Telescope must move
+	  from east toward west, to position perpendicular to local meridian
+          (12 hours is 180 degrees).
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+	  Try flips and values close to axis limits. Raw axis counts are
+	  displayed in <emphasis>R_AXRA</emphasis> and
+	  <emphasis>R_AXDEC</emphasis> variables.
+        </para>
+      </listitem>
+    </orderedlist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+        <refentrytitle>rts2-mon</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+        <refentrytitle>rts2-device</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-horizon</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

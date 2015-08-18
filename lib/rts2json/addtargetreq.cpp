@@ -196,7 +196,7 @@ void AddTarget::schedule (int tarid, const char* &response_type, char* &response
 {
 	std::ostringstream _os;
 
-	rts2db::Target *tar = createTarget (tarid, rts2core::Configuration::instance ()->getObserver ());
+	rts2db::Target *tar = createTarget (tarid, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 
 	if (tar == NULL)
 		throw XmlRpc::XmlRpcException ("Cannot find target with given ID!");

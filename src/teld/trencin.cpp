@@ -664,7 +664,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv, false, true)
 	addOption (OPT_ASSSUME_0_PARK, "assume-parked", 0, "assume mount is parked when motors read 0 0");
 
 	addParkPosOption ();
-	createParkPos (20, 0);
+	createParkPos (20, 0, 0);
 
 	createRaGuide ();
 	createDecGuide ();

@@ -1,96 +1,112 @@
-#include "sensord.h"
-#include "connection/apm.h"
-
-#define MIRROR_OPENED   1
-#define MIRROR_CLOSED   2
-
-namespace rts2sensord
-{
-
 /**
- * APM mirror cover driver.
+ * Driver for APM mirror cover
+ * Copyright (C) 2015 Stanislav Vitek
  *
- * @author Stanislav Vitek <standa@vitkovi.net>
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-class APMMirror : public Sensor
-{
-        public:
-                APMMirror (int argc, char **argv);
-		virtual int processOption (int in_opt);
-                virtual int initHardware ();
-                virtual int commandAuthorized (rts2core::Connection *conn);
-                virtual int info ();
-        private:
-                int mirror_state;
-                HostString *host;
-                rts2core::ConnAPM *connMirror;
-                rts2core::ValueString *mirror;
-                int open ();
-                int close ();
-                int sendUDPMessage (const char * _message);
-};
 
-}
+#include "apm-mirror.h"
+#include "connection/apm.h"
 
 using namespace rts2sensord;
 
-APMMirror::APMMirror (int argc, char **argv):Sensor (argc, argv)
-{
-        host = NULL;
+/**
+ * Driver for APM mirror cover
+ *
+ * @author Standa Vitek <standa@vitkovi.net>
+ */
 
-        addOption ('e', NULL, 1, "IP and port (separated by :)");
+/*
+ *  Constructor for APM multidev, taking connection from filter.
+ *  Arguments argc and argv has to be set to 0 and NULL respectively.
+ *  See apm-multidev.cpp for example.
+ */
+
+APMMirror::APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
+{
+	createValue (mirror, "mirror", "Mirror cover state", true);
+
+	filter = in_filter;
 }
 
-int APMMirror::processOption (int in_opt)
+/*
+ *  Constructor for standalone driver
+ */
+
+APMMirror::APMMirror (int argc, char **argv, const char *sn): Sensor (argc, argv, sn)
 {
-        switch (in_opt)
-        {
-                case 'e':
-                        host = new HostString (optarg, "1000");
-                        break;
-                default:
-                        return Sensor::processOption (in_opt);
-        }
-        return 0;
+        addOption ('e', NULL, 1, "IP and port (separated by :)");
+
+        createValue (mirror, "mirror", "Mirror cover state", true);
 }
 
 int APMMirror::initHardware ()
 {
-	if (host == NULL)
-        {
-                logStream (MESSAGE_ERROR) << "You must specify filter hostname (with -e option)." << sendLog;
-                return -1;
-        }
+	connMirror = filter->connFilter;
 
-        connMirror = new rts2core::ConnAPM (this, host->getHostname (), host->getPort ());
+	sendUDPMessage ("C999");
 
-        int ret = connMirror->init();
-        if (ret)
-                return ret;
-
-        return info();
+	return 0;
 }
 
 int APMMirror::commandAuthorized (rts2core::Connection * conn)
 {
-        if (conn->isCommand ("open"))
-        {
-                return open();
-        }
+	if (conn->isCommand ("open"))
+	{
+		return open();
+	}
+	
+	if (conn->isCommand ("close"))
+	{
+		return close();
+	}
 
-        if (conn->isCommand ("close"))
-        {
-                return close();
-        }
+	return 0;
+}
 
-        return 0;
+void APMMirror::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+{
+	switch (new_state & SERVERD_STATUS_MASK)
+	{
+		case SERVERD_DUSK:
+		case SERVERD_NIGHT:
+		case SERVERD_DAWN:
+			{
+				switch (new_state & SERVERD_ONOFF_MASK)
+				{
+					case SERVERD_ON:
+						open ();
+						break;
+					default:
+						close();
+						break;
+				}
+			}
+			break;
+		default:
+			close();
+			break;
+	}
+	Sensor::changeMasterState (old_state, new_state);
 }
 
 int APMMirror::info ()
 {
-        sendUDPMessage ("C999");
+	sendUDPMessage ("C999");
 
-        switch (mirror_state)
+	switch (mirror_state)
         {
                 case MIRROR_OPENED:
                         mirror->setValueString("opened");
@@ -98,26 +114,54 @@ int APMMirror::info ()
                 case MIRROR_CLOSED:
                         mirror->setValueString("closed");
                         break;
-        }
+		case MIRROR_OPENING:
+			mirror->setValueString("opening");
+			break;
+		case MIRROR_CLOSING:
+			mirror->setValueString("closing");
+			break;
+	}
 
-        sendValueAll(mirror);
+	sendValueAll(mirror);
 
-        return Sensor::info ();
+	return Sensor::info ();
+}
+
+int APMMirror::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'e':
+		case 'F':
+			return 0;
+		default:
+			return Sensor::processOption (in_opt);
+	}
 }
 
 int APMMirror::open ()
 {
-        sendUDPMessage ("C001");
+	sendUDPMessage ("C001");
 
-        return info ();
+	if (mirror_state == MIRROR_CLOSED)
+		mirror_state = MIRROR_OPENING;
+
+	info ();
+
+	return 0;
 }
 
 int APMMirror::close ()
 {
-        sendUDPMessage ("C000");
+	sendUDPMessage ("C000");
 
-        return info ();
-}
+	if (mirror_state == MIRROR_OPENED)
+		mirror_state = MIRROR_CLOSING;
+
+	info ();
+
+	return 0;
+}	
 
 int APMMirror::sendUDPMessage (const char * _message)
 {
@@ -136,20 +180,16 @@ int APMMirror::sendUDPMessage (const char * _message)
                         switch (response[3])
                         {
                                 case '0':
-                                        mirror_state = MIRROR_OPENED;
+					if (mirror_state != MIRROR_OPENING)
+                                        	mirror_state = MIRROR_CLOSED;
                                         break;
                                 case '1':
-                                        mirror_state = MIRROR_CLOSED;
+					if (mirror_state != MIRROR_CLOSING)
+                                        	mirror_state = MIRROR_OPENED;
                                         break;
                         }
                 }
         }
 
         return 0;
-}
-
-int main (int argc, char **argv)
-{
-	APMMirror device (argc, argv);
-        return device.run ();
 }

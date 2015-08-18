@@ -367,7 +367,7 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	int32_t dc;
 	int32_t off;
 	getHomeOffset (off);
-	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off);
+	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off, 0);
 	if (ret)
 		return -1;
 	raDrive->setCurrentPos (ac);

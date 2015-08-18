@@ -63,6 +63,11 @@ void ConnSitech::switchToBinary ()
 	binary = true;
 }
 
+void ConnSitech::resetErrors ()
+{
+	siTechCommand ('Y', "XS");
+}
+
 void ConnSitech::resetController ()
 {
 	siTechCommand ('X', "Q");
@@ -153,7 +158,7 @@ void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
 	*((uint32_t *) (data + 12)) = htole32 (ax_request.y_speed);
 
 	// we would like to set Xbits and Ybits..
-	*((uint8_t *) (data + 16)) = 1;
+	*((uint8_t *) (data + 16)) = 1;    // there isn't reason to use this anymore
 	*((uint8_t *) (data + 17)) = ax_request.x_bits;
 	*((uint8_t *) (data + 18)) = ax_request.y_bits;
 
@@ -221,8 +226,8 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 	ax_status.mclock = le32toh (*((uint32_t *) (ret + 25)));
 	ax_status.temperature = ret[29];
 	ax_status.y_worm_phase = ret[30];
-	ax_status.x_last = le32toh (*((uint32_t *) (ret + 31)));
-	ax_status.y_last = le32toh (*((uint32_t *) (ret + 35)));
+	memcpy (ax_status.x_last, ret + 31, 4);
+	memcpy (ax_status.y_last, ret + 35, 4);
 }
 
 void ConnSitech::readConfiguration (SitechControllerConfiguration &config)

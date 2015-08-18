@@ -162,7 +162,7 @@ float slantd_elev (float est, float nor, float X, float azimut, float sdphi, flo
 
 /*****************************************************************/
 
-TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, _obs)
+TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, double _altitude, int in_augerPriorityTimeout):ConstTarget (in_tar_id, _obs, _altitude)
 {
 	augerPriorityTimeout = in_augerPriorityTimeout;
 	cor.x = NAN;
@@ -170,7 +170,7 @@ TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, int in_aug
 	cor.z = NAN;
 }
 
-TargetAuger::TargetAuger (int _auger_t3id, double _auger_date, double _auger_ra, double _auger_dec, struct ln_lnlat_posn *_obs):ConstTarget (-1, _obs)
+TargetAuger::TargetAuger (int _auger_t3id, double _auger_date, double _auger_ra, double _auger_dec, struct ln_lnlat_posn *_obs, double _altitude):ConstTarget (-1, _obs, _altitude)
 {
 	augerPriorityTimeout = -1;
 

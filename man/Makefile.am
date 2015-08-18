@@ -35,6 +35,7 @@ EXTRA_DIST = \
     rts2-dome.xml \
     rts2-focusd.xml \
     rts2-teld.xml \
+    rts2-teld-sitech-gem.xml \
     rts2-simbadinfo.xml \
     rts2-httpd.xml \
     rts2-xmlrpcclient.xml \
@@ -92,6 +93,7 @@ man_MANS = \
     rts2-dome.7 \
     rts2-focusd.7 \
     rts2-teld.7 \
+    rts2-teld-sitech-gem.7 \
     rts2-simbadinfo.1 \
     rts2-httpd.7 \
     rts2-xmlrpcclient.1 \

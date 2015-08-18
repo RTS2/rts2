@@ -1725,7 +1725,7 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	addOption (OPT_APGTO_LIMIT_SWITCH, "limit-switch", 1, "use limit switch with given name");
 
 	addParkPosOption ();
-	createParkPos (70, 0);
+	createParkPos (70, 0, 0);
 }
 
 int main (int argc, char **argv)

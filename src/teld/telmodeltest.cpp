@@ -21,6 +21,7 @@
 #include "libnova_cpp.h"
 #include "rts2format.h"
 #include "cliapp.h"
+#include "radecparser.h"
 #include "rts2fits/imagedb.h"
 
 #include <iostream>
@@ -30,6 +31,10 @@
 #include <string>
 #include <vector>
 #include <stdlib.h>
+
+#define OPT_DATE      OPT_LOCAL + 1002
+#define OPT_RADEC     OPT_LOCAL + 1003
+
 
 using namespace rts2telmodel;
 
@@ -67,6 +72,20 @@ class ModelTest:public Telescope
 
 class TelModelTest:public rts2core::CliApp
 {
+	public:
+		TelModelTest (int in_argc, char **in_argv);
+		virtual ~ TelModelTest (void);
+
+		virtual int init ();
+
+	protected:
+		virtual void usage ();
+		
+		virtual int processOption (int in_opt);
+		virtual int processArgs (const char *arg);
+
+		virtual int doProcessing ();
+
 	private:
 		char *modelFile;
 		Model *model;
@@ -80,24 +99,13 @@ class TelModelTest:public rts2core::CliApp
 		bool printAltAz;
 		bool printJD;
 		bool includeRefraction;
+		time_t localDate;
+		struct ln_equ_posn localPosition;
 
 		void test (double ra, double dec);
 		void runOnFile (std::string filename, std::ostream & os);
 		void runOnFitsFile (std::string filename, std::ostream & os);
 		void runOnDatFile (std::string filename, std::ostream & os);
-	protected:
-		virtual void usage ();
-		
-		virtual int processOption (int in_opt);
-		virtual int processArgs (const char *arg);
-
-		virtual int doProcessing ();
-
-	public:
-		TelModelTest (int in_argc, char **in_argv);
-		virtual ~ TelModelTest (void);
-
-		virtual int init ();
 };
 
 };
@@ -117,6 +125,7 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	printAltAz = false;
 	printJD = false;
 	includeRefraction = false;
+	localDate = 0;
 	addOption ('m', NULL, 1, "Model file to use");
 	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC. All values in arcminutes.");
 	addOption ('R', NULL, 0, "Include atmospheric refraction into corrections.");
@@ -126,6 +135,8 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	addOption ('v', NULL, 0, "Report model progress");
 	addOption ('i', NULL, 0, "Print model for given images");
 	addOption ('r', NULL, 0, "Print random RA DEC, handy for telescope pointing tests");
+	addOption (OPT_DATE, "date", 1, "Print transformations for given date");
+	addOption (OPT_RADEC, "radec", 1, "Print transformations of given RA-DEC target pair");
 }
 
 TelModelTest::~TelModelTest (void)
@@ -175,6 +186,12 @@ int TelModelTest::processOption (int in_opt)
 		case 'r':
 			rpoint = true;
 			break;
+		case OPT_DATE:
+			return parseDate (optarg, &localDate);
+			break;
+		case OPT_RADEC:
+			return parseRaDec (optarg, localPosition.ra, localPosition.dec);
+			break;
 		default:
 			return rts2core::App::processOption (in_opt);
 	}
@@ -194,7 +211,7 @@ int TelModelTest::init ()
 	if (ret)
 		return ret;
 
-	if (!rpoint && runFiles.empty ())
+	if (!rpoint && runFiles.empty () && localDate == 0)
 	{
 		help ();
 		return -1;
@@ -208,6 +225,9 @@ int TelModelTest::init ()
 
 	model = new Model (telescope, modelFile);
 	ret = model->load ();
+	
+	if (localDate != 0)
+		return 0;
 
 	return ret;
 }
@@ -506,6 +526,13 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 
 int TelModelTest::doProcessing ()
 {
+	if (localDate != 0)
+	{
+		struct ln_hrz_posn hrz;
+		ln_get_hrz_from_equ (&localPosition, rts2core::Configuration::instance ()->getObserver (), ln_get_julian_from_timet (&localDate), &hrz);
+		std::cout << "ALT " << hrz.alt << " AZ " << hrz.az << " s_good " << telescope->isGood (&hrz) << std::endl;
+		return 0;
+	}
 	if (rpoint)
 	{
 		srandom (time (NULL));

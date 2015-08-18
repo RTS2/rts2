@@ -277,7 +277,7 @@ void AugerSet::load (double _from, double _to)
 		if (sqlca.sqlcode)
 			break;
 
-		TargetAuger tarAuger (d_auger_t3id, d_auger_date, d_auger_ra, d_auger_dec, rts2core::Configuration::instance ()->getObserver ());
+		TargetAuger tarAuger (d_auger_t3id, d_auger_date, d_auger_ra, d_auger_dec, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 
 		tarAuger.cut = db_cut;
 		tarAuger.Eye = db_Eye;

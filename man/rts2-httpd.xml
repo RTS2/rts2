@@ -427,15 +427,15 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-xmlrpcclient</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-bb</refentrytitle>
 	<manvolnum>7</manvolnum>

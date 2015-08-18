@@ -21,7 +21,7 @@
 
 using namespace rts2plan;
 
-SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.master, eq.observer)
+SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.master, eq.observer, eq.obs_altitude)
 {
   	queueType = eq.getQueueType ();
 	removeAfterExecution = eq.getRemoveAfterExecution ();
@@ -31,7 +31,7 @@ SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.master,
 	checkTargetLength = eq.getCheckTargetLength ();
 
 	for (ExecutorQueue::iterator qi = eq.begin (); qi != eq.end (); qi++)
-		push_back ( QueuedTarget (*qi, createTarget (qi->target->getTargetID(), *observer) ) );
+		push_back ( QueuedTarget (*qi, createTarget (qi->target->getTargetID(), *observer, obs_altitude) ) );
 }
 
 SimulQueueTargets::~SimulQueueTargets ()
@@ -107,7 +107,7 @@ double SimulQueue::step ()
 						
 				}
 				t = e_end;
-				rts2db::Target *tar = createTarget (n_id, *observer);
+				rts2db::Target *tar = createTarget (n_id, *observer, obs_altitude);
 				addTarget (tar, fr, t, -1, -1, false, false);
 				logStream (MESSAGE_DEBUG) << "adding to simulation:" << n_id << " " << tar->getTargetName () << " from " << LibnovaDateDouble (fr) << " to " << LibnovaDateDouble (t) << sendLog;
 				sq->front ().target->startObservation ();

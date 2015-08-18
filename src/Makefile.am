@@ -21,4 +21,5 @@ SUBDIRS = \
 	logger \
 	scheduler \
 	httpd \
-	bb
+	bb \
+	pluto

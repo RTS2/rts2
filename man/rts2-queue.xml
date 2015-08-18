@@ -237,15 +237,15 @@
       <citerefentry>
         <refentrytitle>rts2.queues</refentrytitle>
 	<manvolnum>5</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-selector</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
+      </citerefentry>,
       <citerefentry>
         <refentrytitle>rts2-seltest</refentrytitle>
 	<manvolnum>1</manvolnum>

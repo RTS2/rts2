@@ -12,33 +12,33 @@
 namespace rts2focusd
 {
 
-class APMFocuser: public Focusd
-{
-	public:
-		APMFocuser (int argc, char **argv);                
-		virtual ~ APMFocuser (void);
+	class APMFocuser: public Focusd
+	{
+		public:
+			APMFocuser (int argc, char **argv);                
+			virtual ~ APMFocuser (void);
 
-	protected:
-		virtual int isFocusing ();
-		virtual bool isAtStartPosition ();
+		protected:
+			virtual int isFocusing ();
+			virtual bool isAtStartPosition ();
 
-		virtual int processOption (int in_opt);
-                virtual int initHardware ();
-		virtual int commandAuthorized (rts2core::Connection *conn);
-                virtual int info ();
-                virtual int setTo (double num);
-		virtual double tcOffset () { return 0.;};
+			virtual int processOption (int in_opt);
+			virtual int initHardware ();
+			virtual int commandAuthorized (rts2core::Connection *conn);
+			virtual int info ();
+			virtual int setTo (double num);
+			virtual double tcOffset () { return 0.;};
 
-	private:
-		long steps;
-		int focuser_state;
-		HostString *host;
-                rts2core::ConnAPM *connFocuser;
-		rts2core::ValueString *focuser;
-		int sendUDPMessage (const char * _message);
-		void calibrate ();
-		void stop ();
-};
+		private:
+			long steps;
+			int focuser_state;
+			HostString *host;
+			rts2core::ConnAPM *connFocuser;
+			rts2core::ValueString *focuser;
+			int sendUDPMessage (const char * _message);
+			void calibrate ();
+			void stop ();
+	};
 
 };
 
@@ -61,49 +61,49 @@ APMFocuser::~APMFocuser (void)
 int APMFocuser::processOption (int in_opt)
 {
 	switch (in_opt)
-        {
-                case 'e':
-                        host = new HostString (optarg, "1000");
-                        break;
-                default:
-                        return Focusd::processOption (in_opt);
-        }
-        return 0;	
+	{
+		case 'e':
+			host = new HostString (optarg, "1000");
+			break;
+		default:
+			return Focusd::processOption (in_opt);
+	}
+	return 0;	
 }
 
 int APMFocuser::initHardware ()
 {
 	if (host == NULL)
-        {
-                logStream (MESSAGE_ERROR) << "You must specify dome hostname (with -e option)." << sendLog;
-                return -1;
-        }
+	{
+		logStream (MESSAGE_ERROR) << "You must specify dome hostname (with -e option)." << sendLog;
+		return -1;
+	}
 
 	connFocuser = new rts2core::ConnAPM (this, host->getHostname(), host->getPort());
-        
+
 	int ret = connFocuser->init();
-        
+
 	if (ret)
-                return ret;
+		return ret;
 
-        sendUDPMessage ("FO99999");
+	sendUDPMessage ("FO99999");
 
-        return 0;
+	return 0;
 }
 
 int APMFocuser::commandAuthorized (rts2core::Connection * conn)
 {
-        if (conn->isCommand ("calib"))
-        {
+	if (conn->isCommand ("calib"))
+	{
 		calibrate ();
-        }
+	}
 
-        if (conn->isCommand ("stop"))
-        {
+	if (conn->isCommand ("stop"))
+	{
 		stop ();
-        }
+	}
 
-        return 0;
+	return 0;
 }
 
 void APMFocuser::calibrate ()
@@ -122,11 +122,11 @@ void APMFocuser::stop ()
 
 int APMFocuser::info ()
 {
-	int ret = sendUDPMessage ("FO99999");
+	sendUDPMessage ("FO99999");
 
-	logStream (MESSAGE_DEBUG) << "state: " << (int)ret << sendLog;	
+	logStream (MESSAGE_DEBUG) << "state: " << focuser_state << sendLog;	
 
-	switch (ret)
+	switch (focuser_state)
 	{
 		case FOCUSER_WAIT:
 			setIdleInfoInterval (0);
@@ -158,7 +158,7 @@ int APMFocuser::info ()
 
 	sendValueAll (focuser);
 
-        return Focusd::info ();
+	return Focusd::info ();
 }
 
 int APMFocuser::setTo (double num)
@@ -176,51 +176,71 @@ int APMFocuser::setTo (double num)
 
 int APMFocuser::isFocusing ()
 {
-	return 0;
+	sendUDPMessage ("FO99999");
+
+	if ((focuser_state == FOCUSER_UP) || (focuser_state == FOCUSER_DOWN))
+		return 10;
+	else
+		return -2;
 }
 
 bool APMFocuser::isAtStartPosition ()
 {
 	return 0;
+/*
+	sendUDPMessage ("FO99999");
+
+	if (position == 0)
+		return true;
+	else 
+		return false;
+*/
 }
 
 int APMFocuser::sendUDPMessage (const char * _message)
 {
-	int ret = -1;
+	int old_focuser_state = focuser_state;
 	bool wait = false;
 	char *response = (char *)malloc(20*sizeof(char));
 
-        logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
+	logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
 	if (!strcmp (_message, "FO99998") || !strcmp (_message, "FOSTOP"))
 		wait = true;
 
-        // int n = connFocuser->send (_message, response, 20, strcmp (_message, "FO99999"));
+	// int n = connFocuser->send (_message, response, 20, strcmp (_message, "FO99999"));
 
 	int n = connFocuser->send (_message, response, 20, wait);
 
-        if (n > 0)
-        {
+	if (n > 0)
+	{
 		std::string res (response);
 
 		logStream (MESSAGE_DEBUG) << "response: " << res.substr(0,n) << sendLog;
-	
-                if (response[0] == 'F' && response[1] == 'O')
-		{
-			steps = atol (res.substr(2, 6).c_str());
-			logStream (MESSAGE_DEBUG) << "foc. position: " << steps << sendLog; 
-			position->setValueInteger ((int) steps);
 
-			if (response[7] == '-') 
-				ret = atoi (res.substr(8,1).c_str());
+		if (response[0] == 'F' && response[1] == 'O')
+		{
+			if (strlen (response) > 8)
+			{
+				steps = atol (res.substr(2, 6).c_str());
+				logStream (MESSAGE_DEBUG) << "foc. position: " << steps << sendLog; 
+				position->setValueDouble ((int) steps);
+
+				if (response[7] == '-') 
+					focuser_state = atoi (res.substr(8,1).c_str());
+			}
+			else
+			{
+				focuser_state = old_focuser_state;
+			}
 		}
 	}
-	
-	return ret;
+
+	return n;
 }
 
 int main (int argc, char **argv)
 {
-        APMFocuser device = APMFocuser (argc, argv);
-        return device.run ();
+	APMFocuser device = APMFocuser (argc, argv);
+	return device.run ();
 }

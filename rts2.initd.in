@@ -88,6 +88,11 @@ case $system in
 			echo -n $* "  ."
 		}
 
+		function log_success_msg
+		{
+			echo -n $* "  ."
+		}
+
 		function log_end_msg
 		{
 			if [ $1 == 0 ]; then
@@ -188,11 +193,20 @@ rts2_start()
 	while read device type device_name options; do
 		case $system in
 			debian)
-				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1 
+				# some devices do not like to have device name on command line
+				if [ "x$device_name" == "x-" ]; then
+					start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1 
+				else
+					start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1
+				fi 
 				rts2_start_log_end_msg $? $device_name "$device_name"
 				;;
 			redhat|suse|slackware|cygwin)
-				daemon $RTS2_BIN_PREFIX/rts2-$device-$type $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1
+				if [ "x$device_name" == "x-" ]; then
+					daemon $RTS2_BIN_PREFIX/rts2-$device-$type $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
+				else
+					daemon $RTS2_BIN_PREFIX/rts2-$device-$type $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1
+				fi
 				rts2_start_log_end_msg $? $device_name "$device_name"
 				wait_pid ${RTS2_PID_PREFIX}${device_name} $? $device_name
 				;;

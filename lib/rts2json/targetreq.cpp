@@ -81,7 +81,7 @@ void Targets::authorizedExecute (XmlRpc::XmlRpcSource *source, std::string path,
 			if (tar_id < 0)
 				throw rts2core::Error ("Target id < 0");
 
-			tar = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver ());
+			tar = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver (), rts2core::Configuration::instance ()->getObservatoryAltitude ());
 		}	
 		if (tar == NULL)
 			throw rts2core::Error ("Cannot find target with given ID");

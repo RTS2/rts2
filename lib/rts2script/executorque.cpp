@@ -45,10 +45,10 @@ QueuedTarget::QueuedTarget (unsigned int _queue_id, rts2db::Target * _target, do
 	create ();
 }
 
-QueuedTarget::QueuedTarget (unsigned int _queue_id, unsigned int _qid, struct ln_lnlat_posn *observer):QueueEntry (_qid, _queue_id)
+QueuedTarget::QueuedTarget (unsigned int _queue_id, unsigned int _qid, struct ln_lnlat_posn *observer, double obs_altitude):QueueEntry (_qid, _queue_id)
 {
 	load ();
-	target = createTarget (tar_id, observer);
+	target = createTarget (tar_id, observer, obs_altitude);
 }
 
 /**
@@ -173,7 +173,7 @@ void TargetQueue::beforeChange (double now)
 						front ().t_start = now + front ().rep_separation;
 					}
 				}
-				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer)));
+				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer, obs_altitude)));
 				delete front ().target;
 				pop_front ();
 			}
@@ -191,7 +191,7 @@ void TargetQueue::beforeChange (double now)
 				{
 					front ().t_start = now + front ().rep_separation;
 				}
-				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer)));
+				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer, obs_altitude)));
 				delete front ().target;
 				pop_front ();
 			}
@@ -255,7 +255,7 @@ void TargetQueue::load (int queue_id)
 	std::list <unsigned int> qids = rts2db::queueQids (queue_id);
 
 	for (std::list <unsigned int>::iterator iter = qids.begin (); iter != qids.end (); iter++)
-		push_back (QueuedTarget (queue_id, *iter, *observer));
+		push_back (QueuedTarget (queue_id, *iter, *observer, obs_altitude));
 	
 	updateVals ();
 }
@@ -536,7 +536,7 @@ bool TargetQueue::frontTimeExpires (double now)
 	return !iter->notExpired (now);
 }
 
-ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, int _queue_id, bool read_only):TargetQueue (_master, _observer), queue (_queue_id)
+ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, double _altitude, int _queue_id, bool read_only):TargetQueue (_master, _observer, _altitude), queue (_queue_id)
 {
 	std::string sn (name);
 	currentTarget = NULL;
@@ -906,7 +906,7 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 				continue;
 			}
 		}
-		rts2db::Target *nt = createTarget (tar_id, *observer);
+		rts2db::Target *nt = createTarget (tar_id, *observer, obs_altitude);
 		if (nt == NULL)
 		{
 			failed++;
@@ -936,7 +936,7 @@ int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn)
 			failed++;
 			continue;
 		}
-		rts2db::Target *nt = createTarget (tar_id, *observer);
+		rts2db::Target *nt = createTarget (tar_id, *observer, obs_altitude);
 		if (nt == NULL)
 		{
 			failed++;

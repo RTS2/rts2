@@ -1,0 +1,20 @@
+#  Input file for 'obs_test'
+#  Set up desired lat/lon/ht in meters/JD,  specify a TLE,  and
+#  the topocentric RA/dec/distance will be shown.
+lat 44.01
+lon -69.9
+# Western longitudes are negative,  eastern positive
+ht 100
+JD 2452541.5         /* 24 Sep 2002 0h UT */
+ISS
+1 25544U 98067A   02256.70033192  .00045618  00000-0  57184-3 0  1499
+2 25544  51.6396 328.6851 0018421 253.2171 244.7656 15.59086742217834
+
+# Above should give RA = 350.1615 deg, dec = -24.0241, dist = 1867.97542 km
+
+# Now compute a second,  higher satellite for the same place/time:
+Cosmos 1966 Rk
+1 19448U 88076D   02255.52918163 -.00000002  00000-0  10000-3 0  4873
+2 19448  65.7943 338.1906 7142558 193.4853 125.7046  2.04085818104610
+
+# Above should give RA = 3.5743, dec = 30.4293, dist = 32114.83063 km

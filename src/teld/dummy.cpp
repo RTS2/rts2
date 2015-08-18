@@ -21,7 +21,7 @@
 #include "teld.h"
 #include "configuration.h"
 
-#define OPT_MOVE_FAST    OPT_LOCAL + 510
+#define OPT_MOVE_FAST      OPT_LOCAL + 510
 
 /*!
  * Dummy teld for testing purposes.
@@ -52,6 +52,7 @@ class Dummy:public Telescope
 			telLongitude->setValueDouble (config->getObserver ()->lng);
 			telAltitude->setValueDouble (config->getObservatoryAltitude ());
 			strcpy (telType, "Dummy");
+			trackingInterval->setValueFloat (0.5);
 			return Telescope::initValues ();
 		}
 
@@ -105,6 +106,10 @@ class Dummy:public Telescope
 			return getTargetDistance () * 2.0;
 		}
 
+		virtual void runTracking ();
+
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+
 	private:
 
                 struct ln_equ_posn dummyPos;
@@ -114,13 +119,18 @@ class Dummy:public Telescope
 		rts2core::ValueDouble *crpix_aux2;
 
 		rts2core::ValueDouble *julian_day;
+
+		rts2core::ValueDouble *recalDelay;
+
+		rts2core::ValueLong *t_axRa;
+		rts2core::ValueLong *t_axDec;
 };
 
 }
 
 using namespace rts2teld;
 
-Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
+Dummy::Dummy (int argc, char **argv):Telescope (argc, argv, true, true)
 {
 	createValue (move_fast, "MOVE_FAST", "fast: reach target position fast, else: slow", false, RTS2_VALUE_WRITABLE);
 	move_fast->setValueBool (false);
@@ -128,10 +138,14 @@ Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
 	createValue (crpix_aux1, "CRPIX1AG", "autoguider offset", false, RTS2_DT_AUXWCS_CRPIX1 | RTS2_VALUE_WRITABLE);
 	createValue (crpix_aux2, "CRPIX2AG", "autoguider offset", false, RTS2_DT_AUXWCS_CRPIX2 | RTS2_VALUE_WRITABLE);
 
-	createValue (julian_day, "JULIAN_DAY", "Julian date", false);
-
 	crpix_aux1->setValueDouble (10);
 	crpix_aux2->setValueDouble (20);
+
+	createValue (julian_day, "JULIAN_DAY", "Julian date", false);
+
+	createValue (recalDelay, "recal_delay", "recalculate position every n second", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	createValue (t_axRa, "T_AXRA", "RA axis target position", false);
+	createValue (t_axDec, "T_AXDEC", "DEC axis target position", false);
 
 	dummyPos.ra = 0;
 	dummyPos.dec = 0;
@@ -206,6 +220,34 @@ int Dummy::isMoving ()
 	if (dummyPos.ra == tar.ra && dummyPos.dec == tar.dec)
 		return -2;
 	return USEC_SEC;
+}
+
+void Dummy::runTracking ()
+{
+	double JD = ln_get_julian_from_sys () + 2 / 86400.0;
+	struct ln_equ_posn target;
+	double tar_distance;
+	int32_t t_ac, t_dc;
+
+	t_ac = t_axRa->getValueLong ();
+	t_dc = t_axDec->getValueLong ();
+
+	int ret = calculateTarget (JD, 2, &target, tar_distance, t_ac, t_dc);
+	if (ret)
+	{
+		setTracking (false);
+		return;
+	}
+
+	t_axRa->setValueLong (target.ra * 10000);
+	t_axDec->setValueLong (target.dec * 10000);
+}
+
+int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+{
+	ac = pos->ra * 10000;
+	dc = pos->dec * 10000;
+	return 0;
 }
 
 int main (int argc, char **argv)

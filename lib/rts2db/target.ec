@@ -21,6 +21,7 @@
 #include "rts2db/targetell.h"
 #include "rts2targetplanet.h"
 #include "rts2db/targetgrb.h"
+#include "rts2db/targettle.h"
 
 #include "rts2db/constraints.h"
 #include "rts2db/target.h"
@@ -169,13 +170,14 @@ void Target::printAltTable (std::ostream & _os, double JD)
 	printAltTable (_os, jd_start, -1, 24);
 }
 
-Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
+Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):Rts2Target ()
 {
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
 	tar_telescope_mode = -1;
 
 	observer = in_obs;
+	obs_altitude = in_altitude;
 
 	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 
@@ -212,6 +214,7 @@ Target::Target ()
 	tar_telescope_mode = -1;
 
 	observer = config->getObserver ();
+	obs_altitude = config->getObservatoryAltitude ();
 
 	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 
@@ -1700,7 +1703,7 @@ int Target::printImages (double JD, std::ostream &_os, int flags, const char *im
 	return img_set.size ();
 }
 
-Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
+Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs, double _altitude)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = _tar_id;
@@ -1731,52 +1734,55 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 	{
 		// calibration targets..
 		case TYPE_DARK:
-			retTarget = new DarkTarget (_tar_id, _obs);
+			retTarget = new DarkTarget (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_FLAT:
-			retTarget = new FlatTarget (_tar_id, _obs);
+			retTarget = new FlatTarget (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_CALIBRATION:
-			retTarget = new CalibrationTarget (_tar_id, _obs);
+			retTarget = new CalibrationTarget (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_MODEL:
-			retTarget = new ModelTarget (_tar_id, _obs);
+			retTarget = new ModelTarget (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_OPORTUNITY:
-			retTarget = new OportunityTarget (_tar_id, _obs);
+			retTarget = new OportunityTarget (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_ELLIPTICAL:
-			retTarget = new EllTarget (_tar_id, _obs);
+			retTarget = new EllTarget (_tar_id, _obs, _altitude);
+			break;
+		case TYPE_TLE:
+			retTarget = new TLETarget (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_GRB:
-			retTarget = new TargetGRB (_tar_id, _obs, 3600, 86400, 5 * 86400);
+			retTarget = new TargetGRB (_tar_id, _obs, _altitude, 3600, 86400, 5 * 86400);
 			break;
 		case TYPE_SWIFT_FOV:
-			retTarget = new TargetSwiftFOV (_tar_id, _obs);
+			retTarget = new TargetSwiftFOV (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_INTEGRAL_FOV:
-			retTarget = new TargetIntegralFOV (_tar_id, _obs);
+			retTarget = new TargetIntegralFOV (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_GPS:
-			retTarget = new TargetGps (_tar_id, _obs);
+			retTarget = new TargetGps (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_SKY_SURVEY:
-			retTarget = new TargetSkySurvey (_tar_id, _obs);
+			retTarget = new TargetSkySurvey (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_TERESTIAL:
-			retTarget = new TargetTerestial (_tar_id, _obs);
+			retTarget = new TargetTerestial (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_PLAN:
-			retTarget = new TargetPlan (_tar_id, _obs);
+			retTarget = new TargetPlan (_tar_id, _obs, _altitude);
 			break;
 		case TYPE_AUGER:
-			retTarget = new TargetAuger (_tar_id, _obs, 1800);
+			retTarget = new TargetAuger (_tar_id, _obs, _altitude, 1800);
 			break;
 		case TYPE_PLANET:
-			retTarget = new TargetPlanet (_tar_id, _obs);
+			retTarget = new TargetPlanet (_tar_id, _obs, _altitude);
 			break;
 		default:
-			retTarget = new ConstTarget (_tar_id, _obs);
+			retTarget = new ConstTarget (_tar_id, _obs, _altitude);
 			break;
 	}
 
