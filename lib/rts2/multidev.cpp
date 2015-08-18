@@ -1,5 +1,5 @@
 /* 
- * Conteiner holding multiple daemon.
+ * Container holding multiple daemons.
  * Copyright (C) 2012 Petr Kubanek, Institute of Physics AS CR  <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
