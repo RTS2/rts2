@@ -245,17 +245,48 @@ int MICCD::initHardware ()
 int MICCD::initValues ()
 {
 	int ret;
+	char *buf;
+	int i;
+
 	ret = miccd_info (&camera, &cami);
 	if (ret)
 		return -1;
 
-	cami.description[10] = '\0';
-	cami.serial[10] = '\0';
-	cami.chip[10] = '\0';
+	// remove trailing spaces
+	for (i = sizeof (cami.description)/sizeof (cami.description[0]) - 1; i>=0; i--)
+	{
+		if (cami.description[i] == ' ')
+			cami.description[i] = '\0';
+		else
+			break;
+	}
+	for (i = sizeof (cami.serial)/sizeof (cami.serial[0]) - 1; i>=0; i--)
+	{
+		if (cami.serial[i] == ' ')
+			cami.serial[i] = '\0';
+		else
+			break;
+	}
+	for (i = sizeof (cami.chip)/sizeof (cami.chip[0]) - 1; i>=0; i--)
+	{
+		if (cami.chip[i] == ' ')
+			cami.chip[i] = '\0';
+		else
+			break;
+	}
 
-	addConstValue ("DESCRIPTION", "camera description", cami.description);
-	addConstValue ("SERIAL", "camera serial number", cami.serial);
-	addConstValue ("CHIP", "camera chip", cami.chip);
+	buf = (char *) malloc (100);
+
+	sprintf (buf, "MI %.15s rev.%d", cami.description, cami.hwrevision);
+	ccdRealType->setValueCharArr (buf);
+
+	sprintf (buf, "%.15s", cami.serial);
+	serialNumber->setValueCharArr (buf);
+
+	sprintf (buf, "%.15s", cami.chip);
+	ccdChipType->setValueCharArr (buf);
+
+	free (buf);
 
 	id->setValueInteger (cami.id);
 

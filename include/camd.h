@@ -613,6 +613,7 @@ class Camera:public rts2core::ScriptDevice
 
 		rts2core::ValueString *ccdRealType;
 		rts2core::ValueString *serialNumber;
+		rts2core::ValueString *ccdChipType;
 
 		virtual void checkQueChanges (int fakeState);
 

@@ -414,6 +414,7 @@ int Fli::initHardware ()
 	char **nam;					 // current name
 
 	const char *devnam;
+	int i;
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, fliDebug);
@@ -485,7 +486,7 @@ int Fli::initHardware ()
 	else if (camNum > 0)
 	{
 		nam = names;
-		int i = 1;
+		i = 1;
 		while (*nam && i != camNum)
 		{
 			nam++;
@@ -522,23 +523,70 @@ int Fli::initHardware ()
 		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush->getValueInteger () <<	sendLog;
 	}
 
-	FLIGetDeviceName (dev, &devnam);
-	serialNumber->setValueCharArr (devnam);
 
 	long hwrev;
 	long fwrev;
-	char ccdType[64];
-	ret = FLIGetModel (dev, ccdType, 64);
-	if (ret)
-		return -1;
+	long sernum;
+	char *buf = (char *) malloc (100);
+	char *buf2 = (char *) malloc (150);
+
 	ret = FLIGetHWRevision (dev, &hwrev);
 	if (ret)
 		return -1;
 	ret = FLIGetFWRevision (dev, &fwrev);
 	if (ret)
 		return -1;
-	sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
-	ccdRealType->setValueCharArr (ccdType);
+
+	ret = FLIGetModel (dev, buf, 100);
+	if (ret)
+		return -1;
+	for (i = strlen (buf) - 1; i>=0; i--)	// remove trailing spaces
+	{
+		if (buf[i] == ' ')
+			buf[i] = '\0';
+		else
+			break;
+	}
+	sprintf (buf2, "FLI %s rev.%li.%li", buf, hwrev, fwrev);
+	ccdRealType->setValueCharArr (buf2);
+	// example: "FLI CCD47-10 rev.258.534", "FLI MicroLine ML4022 rev.258.534"...
+
+
+	ret = FLIGetSerialNum (dev, &sernum);
+	if (ret)
+		return -1;
+	ret = FLIGetSerialString (dev, buf, 100);
+	if (ret)
+		return -1;
+	for (i = strlen (buf) - 1; i>=0; i--)	// remove trailing spaces
+	{
+		if (buf[i] == ' ')
+			buf[i] = '\0';
+		else
+			break;
+	}
+	sprintf (buf2, "%d-%s-%li.%li", sernum, buf, hwrev, fwrev);
+	serialNumber->setValueCharArr (buf2);
+	// example: "1--258.534",... - should give something reasonable for old and also new (and future) devices...
+
+
+	ret = FLIGetDeviceName (dev, &devnam);
+	if (ret)
+		return -1;
+	strncpy (buf, devnam, 100);
+	for (i = strlen (buf) - 1; i>=0; i--)	// remove trailing spaces
+	{
+		if (buf[i] == ' ')
+			buf[i] = '\0';
+		else
+			break;
+	}
+	ccdChipType->setValueCharArr (buf);
+	// example: "CCD47-10",... - For old CCDs (maxCam, IMG) this gives reasonable ChipType, maybe this will not be so perfect for newer types...
+
+	free (buf);
+	free (buf2);
+
 
 	long devid;
 	ret = FLIGetDeviceID (dev, &devid);
