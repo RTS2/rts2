@@ -86,8 +86,9 @@ class Gemini:public TelLX200
 		int correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec);
 		virtual int saveModel ();
 		virtual int loadModel ();
-		virtual int stopWorm ();
-		virtual int startWorm ();
+		virtual int setTracking (bool track, bool addTrackingTimer = false, bool send = true);
+		int stopWorm ();
+		int startWorm ();
 		virtual int resetMount ();
 		virtual int getFlip ();
 
@@ -604,7 +605,7 @@ int Gemini::tel_gemini_reset ()
 	return -1;
 }
 
-Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
+Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv, false, true)
 {
 	createValue (telGuidingSpeed, "guiding_speed", "telescope guiding speed", false);
 
@@ -1087,7 +1088,7 @@ int Gemini::idle ()
 		}
 		else
 		{
-			stopWorm ();
+			setTracking (false);
 			stopMove ();
 			ret = -1;
 		}
@@ -1321,8 +1322,6 @@ int Gemini::startResync ()
 	if (telMotorState != TEL_OK) // lastMoveRa && lastMoveDec will bring us to correct location after we finish rebooting/reparking
 		return 0;
 
-	startWorm ();
-
 	struct ln_equ_posn telPos;
 	getTelRaDec (&telPos);
 
@@ -1367,7 +1366,7 @@ int Gemini::isMoving ()
 		if (nextChangeDec != 0)
 		{
 			// worm need to be started - most probably due to error in Gemini
-			startWorm ();
+			setTracking (true, true);
 			// initiate dec change
 			if (changeDec ())
 				return -1;
@@ -1442,7 +1441,7 @@ int Gemini::endMove ()
 	if (changeTime.tv_sec > 0)
 	{
 		if (!decChanged)
-			startWorm ();
+			setTracking (true, true);
 		decChanged = false;
 		timerclear (&changeTime);
 		return TelLX200::endMove ();
@@ -1464,160 +1463,6 @@ int Gemini::stopMove ()
 	#endif
 	return 0;
 }
-
-
-/*
-int
-Gemini::startMoveFixedReal ()
-{
-	int ret;
-
-	// compute ra
-	lastMoveRa = getLocSidTime () * 15.0 - fixed_ha;
-
-	normalizeRaDec (lastMoveRa, lastMoveDec);
-
-	if (telMotorState != TEL_OK) // same as for startMove - after repark. we will get to correct location
-		return 0;
-
-	stopWorm ();
-
-	time (&moveTimeout);
-	moveTimeout += 300;
-
-	ret = tel_start_move ();
-	if (!ret)
-	{
-		setTarget (lastMoveRa, lastMoveDec);
-		fixed_ntries++;
-	}
-	return ret;
-}
-*/
-
-/*
-int Gemini::startMoveFixed (double tar_ha, double tar_dec)
-{
-	int32_t ra_ind;
-	int32_t dec_ind;
-	int ret;
-
-	double ha_diff;
-	double dec_diff;
-
-	ret = tel_gemini_get (205, ra_ind);
-	if (ret)
-		return ret;
-	ret = tel_gemini_get (206, dec_ind);
-	if (ret)
-		return ret;
-
-	// apply offsets
-	//tar_ha += ((double) ra_ind) / 3600;
-	//tar_dec += ((double) dec_ind) / 3600.0;
-
-	// we moved to fixed ra before..
-	if (!isnan (fixed_ha))
-	{
-		// check if we can only change..
-		// if we want to go to W, diff have to be negative, as RA is decreasing to W,
-		// so we need to substract tar_ha from last one (smaller - bigger number)
-		ha_diff = ln_range_degrees (fixed_ha - tar_ha);
-		dec_diff = tar_dec - lastMoveDec;
-		if (ha_diff > 180)
-			ha_diff = ha_diff - 360;
-		// do changes smaller then max change arc min using precision guide command
-		#ifdef L4_GUIDE
-		if (fabs (ha_diff) < maxPrecGuideRa
-			&& fabs (dec_diff) < maxPrecGuideDec)
-		#else
-			if (fabs (ha_diff) < 5 / 60.0 && fabs (dec_diff) < 5 / 60.0)
-		#endif
-		{
-			ret = change_real (ha_diff, dec_diff);
-			if (!ret)
-			{
-				fixed_ha = tar_ha;
-				lastMoveDec += dec_diff;
-				// move_fixed = 0;        // we are performing change, not moveFixed
-				maskState (TEL_MASK_MOVING, TEL_MOVING, "change started");
-				return ret;
-			}
-		}
-	}
-
-	fixed_ha = tar_ha;
-	lastMoveDec = tar_dec;
-
-	fixed_ntries = 0;
-
-	ret = startMoveFixedReal ();
-	// move OK
-	if (!ret)
-		return TelLX200::startMoveFixed (tar_ha, tar_dec);
-	// try to do small change..
-	#ifndef L4_GUIDE
-	if (!isnan (fixed_ha) && fabs (ha_diff) < 5 && fabs (dec_diff) < 5)
-	{
-		ret = change_real (ha_diff, dec_diff);
-		if (!ret)
-		{
-			fixed_ha = tar_ha;
-			lastMoveDec += dec_diff;
-			// move_fixed = 0;    // we are performing change, not moveFixed
-			maskState (TEL_MASK_MOVING, TEL_MOVING, "change started");
-			return TelLX200::startMoveFixed (tar_ha, tar_dec);
-		}
-	}
-	#endif
-	return ret;
-}
-
-int Gemini::isMovingFixed ()
-{
-	int ret;
-	ret = isMoving ();
-	// move ended
-	if (ret == -2 && fixed_ntries < 3)
-	{
-		struct ln_equ_posn pos1, pos2;
-		double sep;
-		// check that we reach destination..
-		info ();
-		pos1.ra = getLocSidTime () * 15.0 - fixed_ha;
-		pos1.dec = lastMoveDec;
-
-		pos2.ra = telRaDec->getRa ();
-		pos2.dec = telRaDec->getDec ();
-		sep = ln_get_angular_separation (&pos1, &pos2);
-								 // 15 seconds..
-		if (sep > 15.0 / 60.0 / 4.0)
-		{
-			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "Losmandy isMovingFixed sep " << sep *
-				3600 << " arcsec" << sendLog;
-			#endif
-			// reque move..
-			ret = startMoveFixedReal ();
-			if (ret)			 // end in case of error
-				return -2;
-			return USEC_SEC;
-		}
-	}
-	return ret;
-}
-
-int Gemini::endMoveFixed ()
-{
-	int32_t track;
-	stopWorm ();
-	tel_gemini_get (130, track);
-	setTimeout (USEC_SEC);
-	if (serConn->writePort (":ONfixed#", 9) == 0)
-		return TelLX200::endMoveFixed ();
-	return -1;
-}
-*/
 
 int Gemini::isParking ()
 {
@@ -1650,7 +1495,7 @@ int Gemini::endPark ()
 		usleep (USEC_SEC / 15);
 	}
 	setTimeout (USEC_SEC);
-	return stopWorm ();
+	return 0;
 }
 
 int Gemini::setTo (double set_ra, double set_dec, int appendModel)
@@ -2118,6 +1963,23 @@ extern int Gemini::loadModel ()
 	return 0;
 }
 
+
+int Gemini::setTracking (bool track, bool addTrackingTimer, bool send)
+{
+	int ret;
+
+	if (track)
+		ret = startWorm ();
+	else
+		ret = stopWorm ();
+
+	if (ret)
+		return ret;
+
+	return TelLX200::setTracking (track, addTrackingTimer, send);
+}
+
+
 int Gemini::stopWorm ()
 {
 	worm = 135;
@@ -2138,7 +2000,7 @@ int Gemini::parkBootesSensors ()
 	time_t now;
 	double old_tel_axis;
 	ret = info ();
-	startWorm ();
+	setTracking (true, true);
 	// first park in RA
 	old_tel_axis = featurePort->getValueInteger () & 1;
 	direction = old_tel_axis ? DIR_EAST : DIR_WEST;

@@ -811,9 +811,6 @@ class Telescope:public rts2core::Device
 		 */
 		virtual int loadModel () { return -1; }
 
-		virtual int stopWorm () { return -1; }
-
-		virtual int startWorm () { return -1; }
 		virtual int resetMount () { return 0; }
 
 		/**
@@ -839,9 +836,10 @@ class Telescope:public rts2core::Device
 		 *
 		 * @param track                if true, tracking is set to on
 		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
+		 * @param send                 if true, set rts2value and send in to all connections
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (bool track, bool addTrackingTimer = false);
+		virtual int setTracking (bool track, bool addTrackingTimer = false, bool send = true);
 
 		/**
 		 * Called to run tracking. It is up to driver implementation

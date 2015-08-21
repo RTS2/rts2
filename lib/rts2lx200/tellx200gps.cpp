@@ -45,7 +45,7 @@
 
 using namespace rts2teld;
 
-TelLX200GPS::TelLX200GPS (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv)
+TelLX200GPS::TelLX200GPS (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):TelLX200 (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
 {
     createValue(trackingSpeed, "trac_spd", "RA Tracking Speed", true, RTS2_VALUE_WRITABLE);
     trackingSpeed->setValueDouble(0);

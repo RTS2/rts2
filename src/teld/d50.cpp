@@ -88,9 +88,6 @@ class D50:public Fork
 		virtual int isParking () { return isMoving (); };
 		virtual int endPark ();
 
-		virtual int stopWorm ();
-		virtual int startWorm ();
-
 		virtual void setDiffTrack (double dra, double ddec);
 
 		virtual int updateLimits ();
@@ -478,16 +475,11 @@ int D50::startResync ()
 {
 	logStream (MESSAGE_DEBUG) << "****** startResync ()" << sendLog;
         //deleteTimers (RTS2_D50_AUTOSAVE);
-        if (!tracking->getValueBool () && !parking)
-	{
-		logStream (MESSAGE_DEBUG) << "------ zapinam tracking0! tracking=" << tracking->getValueBool () << ", parking=" << parking << sendLog;
-                startWorm ();
-	}
         int32_t dc;
         int ret = sky2counts (tAc, dc);
         if (ret)
                 return -1;
-	// this maight be redundant local check, we make to be sure not make flip and harm ourselfs...
+	// this maight be redundant local check, we do it to be sure not to make flip and harm ourselfs...
 	if (dc < dcMin || dc > dcMax)
 	{
 		logStream (MESSAGE_ERROR) << "dc value out of limits!" << sendLog;
@@ -507,12 +499,6 @@ int D50::isMoving ()
 	logStream (MESSAGE_DEBUG) << "****** isMoving ()" << sendLog;
         //callAutosave ();
 	logStream (MESSAGE_DEBUG) << "------ isMoving: getState=" << getState () << ", tracking=" << tracking->getValueBool () << ", parking=" << parking << ", raDrive->isMoving=" << raDrive->isMoving () << ", raDrive->isInPositionMode=" << raDrive->isInPositionMode () << ", decDrive->isMoving=" << decDrive->isMoving () << sendLog;
-        /*if ((getState () & TEL_MOVING) && !tracking->getValueBool () && !parking)
-	{
-		//logStream (MESSAGE_DEBUG) << "------ zapinam tracking!" << sendLog;
-		logStream (MESSAGE_DEBUG) << "------ zapinam tracking1! tracking=" << tracking->getValueBool () << ", parking=" << parking << sendLog;
-                startWorm ();
-	}*/
         if (tracking->getValueBool () && raDrive->isInPositionMode ())
         {
                 if (raDrive->isMovingPosition ())
@@ -562,7 +548,6 @@ int D50::stopMove ()
 {
 	logStream (MESSAGE_DEBUG) << "****** stopMove ()" << sendLog;
         //addTimer (5, new rts2core::Event (RTS2_D50_AUTOSAVE));
-	stopWorm ();
 	if (raDrive->isMoving () || decDrive->isMoving ())	// otherwise it's only about cleaning the TEL_MOVING state, we don't want to clean parking flag and other things then
 	{
         	parking = false;
@@ -635,7 +620,6 @@ int D50::setToPark ()
 int D50::startPark ()
 {
 	logStream (MESSAGE_DEBUG) << "****** startPark ()" << sendLog;
-        stopWorm ();
         if (parkPos)
         {
                 parking = true;
@@ -667,28 +651,6 @@ int D50::endPark ()
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	//setTimeout (USEC_SEC * 10);
 	setTimeout (USEC_SEC);
-        return 0;
-}
-
-int D50::stopWorm ()
-{
-	logStream (MESSAGE_DEBUG) << "****** stopWorm ()" << sendLog;
-	if (tracking->getValueBool ())
-	{
-		tracking->setValueBool (false);
-		sendValueAll (tracking);
-	}
-        return 0;
-}
-
-int D50::startWorm ()
-{
-	logStream (MESSAGE_DEBUG) << "****** startWorm ()" << sendLog;
-	if (!tracking->getValueBool ())
-	{
-		tracking->setValueBool (true);
-		sendValueAll (tracking);
-	}
         return 0;
 }
 
@@ -804,21 +766,6 @@ int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
                 matchGuideDec (new_value->getValueInteger ());
                 return 0;
         }*/
-        else if (old_value == tracking)
-        {
-                //raDrive->setTargetSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? TRACK_SPEED : 0, false);
-                if (((rts2core::ValueBool *) new_value)->getValueBool ())
-                {
-			if (parking || (getState () & TEL_MASK_MOVING) == TEL_PARKED)
-				return -2;
-                        startWorm ();
-                }
-                else
-                {
-			stopWorm ();
-                }
-		return 0;
-        }
 	/* else if (old_value == wormRa)
 	{
 		return tel_write_unit (1,
