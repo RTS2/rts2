@@ -1451,6 +1451,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
+			setTracking (false);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1470,6 +1471,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
+			setTracking (false);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1584,6 +1586,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 	}
 	int ret;
 	resetMpecTLE ();
+	setTracking (false);
 	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = stopMove ();
