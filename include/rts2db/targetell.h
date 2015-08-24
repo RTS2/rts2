@@ -33,7 +33,7 @@ namespace rts2db
 class EllTarget:public Target
 {
 	public:
-		EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude);
 		EllTarget (std::string _tar_info):Target () { setTargetInfo (_tar_info); }
 		EllTarget ():Target () { }
 		virtual void load ();

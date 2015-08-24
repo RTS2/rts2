@@ -36,12 +36,12 @@ class TargetAuger:public rts2db::ConstTarget
 {
 	public:
 		TargetAuger () {}
-		TargetAuger (int in_tar_id, struct ln_lnlat_posn *_obs, int in_augerPriorityTimeout);
+		TargetAuger (int in_tar_id, struct ln_lnlat_posn *_obs, double _altitude, int in_augerPriorityTimeout);
 		/**
 		 * Crate target if targets fields are know. You should not call load ont target
 		 * created with this contructor.
 		 */
-		TargetAuger (int _auger_t3id, double _auger_date, double _auger_ra, double _auger_dec, struct ln_lnlat_posn *_obs);
+		TargetAuger (int _auger_t3id, double _auger_date, double _auger_ra, double _auger_dec, struct ln_lnlat_posn *_obs, double _altitude);
 		virtual ~ TargetAuger (void);
 
 		virtual void load ();

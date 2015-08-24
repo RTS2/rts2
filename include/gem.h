@@ -39,9 +39,12 @@ class GEM: public Telescope
 
 		rts2core::ValueSelection *flipping; //* flipping strategy - shortest, preffer same, preffer opposite,..
 
+		rts2core::ValueDouble *haCWDAngle;
+
 		/**
 		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
 		 */
+		rts2core::ValueSelection *haZeroPos;
 		rts2core::ValueDouble *haZero;
 		rts2core::ValueDouble *decZero;
 
@@ -69,6 +72,8 @@ class GEM: public Telescope
 		int sky2counts (int32_t & ac, int32_t & dc);
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip);
 
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+
 		/**
 		 * Convert counts to RA&Dec coordinates.
 		 *
@@ -92,6 +97,13 @@ class GEM: public Telescope
 		 */
 		void unlockPointing ();
 
+		/**
+		 * Returns angle of HA axis from counterweight down position.
+		 *
+		 * @param   ha_count    HA axis count (corrected for offset)
+		 * @return  angle between HA axis and local meridian (counterweight down position).
+		 */
+		double getHACWDAngle (int32_t ha_count);
 
 		/**
 		 * Check trajectory. If hardHorizon is present, make sure that the path between current and target coordinates does

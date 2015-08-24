@@ -40,13 +40,11 @@ lib/rts2db/recordsavg.cpp
 lib/rts2db/recvals.cpp
 lib/rts2db/rts2count.cpp
 lib/rts2db/rts2prop.cpp
-lib/rts2db/rts2targetplanet.cpp
 lib/rts2db/sqlcolumn.cpp
 lib/rts2db/sqlerror.cpp
 lib/rts2db/sub_targets.cpp
 lib/rts2db/target.cpp
 lib/rts2db/target_auger.cpp
-lib/rts2db/targetell.cpp
 lib/rts2db/targetgrb.cpp
 lib/rts2db/targetset.cpp
 lib/rts2db/taruser.cpp

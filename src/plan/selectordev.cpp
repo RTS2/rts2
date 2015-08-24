@@ -133,6 +133,7 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2core::ValueString *nightDisabledTypes;
 
 		struct ln_lnlat_posn *observer;
+		double obs_altitude;
 		int last_auto_id;
 
 		rts2core::StringArray *selQueNames;
@@ -200,6 +201,7 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 {
 	sel = NULL;
 	observer = NULL;
+	obs_altitude = NAN;
 
 	simulQueue = NULL;
 
@@ -329,6 +331,7 @@ int SelectorDev::reloadConfig ()
 	Configuration *devConfig;
 	devConfig = Configuration::instance ();
 	observer = devConfig->getObserver ();
+	obs_altitude = devConfig->getObservatoryAltitude ();
 
 	nightHorizon = devConfig->getDoubleDefault ("observatory", "night_horizon", -10);
 
@@ -336,7 +339,7 @@ int SelectorDev::reloadConfig ()
 
 	sel = new rts2plan::Selector (&cameras);
 
-	sel->setObserver (observer);
+	sel->setObserver (observer, obs_altitude);
 	sel->init ();
 
 	std::list <const char *>::iterator iter;
@@ -377,7 +380,7 @@ int SelectorDev::init ()
 	
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++, i++)
 	{
-		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer, i));
+		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer, obs_altitude, i));
 		queues.back ().load (i);
 
 		lastQueue->addSelVal (*iter);
@@ -794,7 +797,7 @@ void SelectorDev::message (Message & msg)
 					logStream (MESSAGE_INFO) << "not re-queueing target #" << current_target->getValueInteger () << ", as it is still in the queue" << sendLog;
 					return;
 				}
-				rts2db::Target *tar = createTarget (current_target->getValueInteger (), observer);
+				rts2db::Target *tar = createTarget (current_target->getValueInteger (), observer, obs_altitude);
 				if (tar == NULL)
 					return;
 				logStream (MESSAGE_INFO) << "adding " << tar->getTargetName () << " (#" << tar->getTargetID () << ") to the top of the queue " << queueNames[current_queue->getValueInteger () - 1] << ", as a result of the interruption" << sendLog;
@@ -947,7 +950,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 				return -2;
 			}
 		}
-		rts2db::Target *tar = createTarget (tar_id, observer);
+		rts2db::Target *tar = createTarget (tar_id, observer, obs_altitude);
 		if (tar == NULL)
 			return -2;
 		logStream (MESSAGE_INFO) << "adding " << tar->getTargetName () << " (#" << tar->getTargetID () << ") on top of the queue " << name << " as the result of " << conn->getCommand () << " command." << sendLog;

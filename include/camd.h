@@ -35,6 +35,8 @@
 #define STATISTIC_ONLY    2
 #define STATISTIC_NO      3
 
+typedef enum {CEIL = -1, ROUND, FLOOR} rounding_t;
+
 /**
  * Camera and CCD interfaces.
  */
@@ -197,7 +199,7 @@ digraph "Camera states" {
 class Camera:public rts2core::ScriptDevice
 {
 	public:
-		Camera (int argc, char **argv);
+		Camera (int argc, char **argv, rounding_t binning_rounding = CEIL);
 		virtual ~ Camera (void);
 
 		virtual int deleteConnection (rts2core::Connection * conn);
@@ -689,7 +691,7 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @return getUsedWidth() / binningHorizontal()
 		 */
-		const int getUsedWidthBinned () { return (int) (ceil (getUsedWidth () / binningHorizontal ())); }
+		const int getUsedWidthBinned () { return getBinningRounding (getUsedWidth () / binningHorizontal ()); }
 
 		/**
 		 * Returns size of single row in bytes.
@@ -729,7 +731,7 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @return getUsedHeight() / binningVertical()
 		 */
-		const int getUsedHeightBinned () { return (int) (ceil (getUsedHeight () / binningVertical ())); }
+		const int getUsedHeightBinned () { return getBinningRounding (getUsedHeight () / binningVertical ()); }
 
 		/**
 		 * Get X of top corner in chip coordinates.
@@ -1274,6 +1276,25 @@ class Camera:public rts2core::ScriptDevice
 		void setFilterOffsetFile (const char *filename);
 
 		std::map <std::string, double> filterOffsets;
+
+		// mode of rounding binned 
+		//-1 - ceil
+		//0 round
+		//1 floor
+		rounding_t binningRounding;
+
+		int getBinningRounding (float n) {
+			switch (binningRounding)
+			{
+				case CEIL:
+					return (int) (ceil (n)); 
+				case FLOOR:
+					return (int) (floor (n));
+				case ROUND:
+				default:
+					return (int) (round (n));
+			}
+		}
 };
 
 }

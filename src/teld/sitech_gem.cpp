@@ -26,14 +26,13 @@
 #include "sitech.h"
 #include "connection/sitech.h"
 
-#define RTS2_SITECH_TIMER       RTS2_LOCAL_EVENT + 1220
-#define TRACK_TIME_DELTA        1.0
-
 // SITech counts/servero loop -> speed value
 #define SPEED_MULTI             65536
 
 // Crystal frequency
 #define CRYSTAL_FREQ            96000000
+
+#define TRAJECTORY_CHECK_LIMIT  2000
 
 namespace rts2teld
 {
@@ -48,8 +47,6 @@ class Sitech:public GEM
 	public:
 		Sitech (int argc, char **argv);
 		~Sitech (void);
-
-		virtual void postEvent (rts2core::Event *event);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -91,9 +88,13 @@ class Sitech:public GEM
 			return isMoving ();
 		}
 
-		virtual int setTracking (bool track);
+		virtual int setTracking (bool track, bool addTrackingTimer = false);
 
-		virtual void setDiffTrack (double dra, double ddec);
+		/**
+		 * Starts mount tracking - endless speed limited pointing.
+                 * Called periodically to make sure we stay on target.
+		 */
+		virtual void runTracking ();
 
 		virtual double estimateTargetTime ()
 		{
@@ -122,10 +123,9 @@ class Sitech:public GEM
 		int sitechMove (int32_t ac, int32_t dc);
 
 		/**
-		 * Starts mount tracking - endless speed limited pointing.
-                 * Called periodically to make sure we stay on target.
+		 * Check if movement only in DEC axis is a possibility.
 		 */
-		void sitechStartTracking (bool startTimer);
+		int checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d);
 
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
@@ -151,7 +151,6 @@ class Sitech:public GEM
 		rts2core::ValueLong *t_dec_pos;
 
 		rts2core::ValueInteger *partialMove;
-		time_t moveTimeout;
 
 		rts2core::ValueDouble *trackingDist;
 
@@ -306,7 +305,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (dec_last, "dec_last", "DEC motor location at last DEC scope encoder location change", false);
 
 	createValue (ra_errors, "ra_errors", "RA errors (only for FORCE ONE)", false);
-	createValue (dec_errors, "dec_erorrs", "DEC errors (only for FORCE_ONE)", false);
+	createValue (dec_errors, "dec_errors", "DEC errors (only for FORCE_ONE)", false);
 
 	createValue (ra_errors_val, "ra_errors_val", "RA errors value", false);
 	createValue (dec_errors_val, "dec_erorrs_val", "DEC errors value", false);
@@ -368,25 +367,11 @@ Sitech::~Sitech(void)
 	serConn = NULL;
 }
 
-void Sitech::postEvent (rts2core::Event *event)
-{
-	switch (event->getType ())
-	{
-		case RTS2_SITECH_TIMER:
-			if (wasStopped)
-				break;
-			sitechStartTracking (false);
-			addTimer (TRACK_TIME_DELTA, event);
-			return;
-			break;
-	}
-	GEM::postEvent (event);
-}
-
 /* Full stop */
 void Sitech::fullStop (void)
 {
 	partialMove->setValueInteger (0);
+	tracking->setValueInteger (0);
 	try
 	{
 		serConn->siTechCommand ('X', "N");
@@ -394,7 +379,6 @@ void Sitech::fullStop (void)
 		serConn->siTechCommand ('Y', "N");
 
 		wasStopped = true;
-		deleteTimers (RTS2_SITECH_TIMER);
 	}
 	catch (rts2core::Error er)
 	{
@@ -485,10 +469,10 @@ void Sitech::getTel ()
 					dec_pid_out->setValueInteger (dec_val);
 					break;
 			}
-			break;
 
 			ra_pos_error->setValueInteger (*(uint16_t*) &radec_status.y_last[2]);
 			dec_pos_error->setValueInteger (*(uint16_t*) &radec_status.x_last[2]);
+			break;
 		}
 	}
 
@@ -555,6 +539,8 @@ int Sitech::initHardware ()
 {
 	int ret;
 	int numread;
+
+	trackingInterval->setValueFloat (0.5);
 
 	rts2core::Configuration *config;
 	config = rts2core::Configuration::instance ();
@@ -641,6 +627,8 @@ int Sitech::info ()
 	telFlip->setValueInteger (t_telFlip);
 	setTelUnRaDec (ut_telRa, ut_telDec);
 
+	haCWDAngle->setValueDouble (getHACWDAngle (r_ra_pos->getValueLong ()));
+
 	return rts2teld::GEM::info ();
 }
 
@@ -692,24 +680,6 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 		getConfiguration ();
 		return 0;
 	}
-	else if (conn->isCommand ("si_track"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		sitechStartTracking (true);
-		return 0;
-	}
-	else if (conn->isCommand ("si_strack"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
-		dec_track_speed->setValueDouble (0);
-		sendValueAll (ra_track_speed);
-		sendValueAll (dec_track_speed);
-		sitechStartTracking (true);
-		return 0;
-	}
 	return GEM::commandAuthorized (conn);
 }
 
@@ -720,8 +690,6 @@ int Sitech::initValues ()
 
 int Sitech::startResync ()
 {
-	deleteTimers (RTS2_SITECH_TIMER);
-
 	getConfiguration ();
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
@@ -741,9 +709,6 @@ int Sitech::startResync ()
 	partialMove->setValueInteger (ret);
 	sendValueAll (partialMove);
 
-	// 1 minute timeout for move
-	moveTimeout = time (NULL) + 60;
-
 	return 0;
 }
 
@@ -753,7 +718,7 @@ int Sitech::isMoving ()
 		return -1;
 
 	time_t now = time (NULL);
-	if (moveTimeout < now)
+	if ((getTargetStarted () + 120) < now)
 	{
 		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
 		return -1;
@@ -763,7 +728,7 @@ int Sitech::isMoving ()
 	if (partialMove->getValueInteger ())
 	{
 		// check if we are close enough to partial target values
-		if ((labs (t_ra_pos->getValueLong () - r_ra_pos->getValueLong ()) < haCpd->getValueLong ()) && (labs (t_dec_pos->getValueLong () - r_dec_pos->getValueLong ()) < decCpd->getValueLong ()))
+		if ((labs (t_ra_pos->getValueLong () - r_ra_pos->getValueLong ()) < fabs (haCpd->getValueLong ())) && (labs (t_dec_pos->getValueLong () - r_dec_pos->getValueLong ()) < fabs (decCpd->getValueLong ())))
 		{
 			// try new move
 			startResync ();
@@ -792,27 +757,21 @@ int Sitech::isMoving ()
 int Sitech::endMove ()
 {
 	partialMove->setValueInteger (0);
-	setTracking (true);
+	setTracking (true, true);
 	return GEM::endMove ();
 }
 
-int Sitech::setTracking (bool track)
+int Sitech::setTracking (bool track, bool addTrackingTimer)
 {
 	if (track)
 	{
 		wasStopped = false;
-		sitechStartTracking (true);
 	}
 	else
 	{
 		fullStop ();
 	}
-	return GEM::setTracking (track);
-}
-
-void Sitech::setDiffTrack (double dra, double ddec)
-{
-	// convert to counts / hour
+	return GEM::setTracking (track, addTrackingTimer);
 }
 
 int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -875,7 +834,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	logStream (MESSAGE_DEBUG) << "sitechMove " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << partialMove->getValueInteger () << sendLog;
 
 	// 5 deg margin in altitude and azimuth
-	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, false, false);
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
 	logStream (MESSAGE_DEBUG) << "sitechMove checkTrajectory " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 	// cannot check trajectory, log & return..
 	if (ret == -1)
@@ -897,42 +856,51 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 		// if we already tried DEC axis, we need to go with RA as second
 		if ((move_diff > 0 && partialMove->getValueInteger () == 0) || partialMove->getValueInteger () == 2)
 		{
+			// if we already move partialy, try to move maximum distance; otherwise, move only difference between axes, so we can decide once we hit point with the same axis distance what's next
 			if (partialMove->getValueInteger () == 2)
 				move_diff = labs (move_a);
+
 			// move for a time only in RA; move_diff is positive, see check above
 			if (move_a > 0)
 				ac = r_ra_pos->getValueLong () + move_diff;
 			else
 				ac = r_ra_pos->getValueLong () - move_diff;
 			dc = r_dec_pos->getValueLong ();
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true, false);
+			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)
 			{
 				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
 				return -1;
 			}
+
+			if (ret == 3)
+			{
+				logStream (MESSAGE_WARNING) << "cannot move out of limits with RA only, trying DEC only move" << sendLog;
+				ret = checkMoveDEC (ac, dc, move_d);
+				if (ret < 0)
+				{
+					logStream (MESSAGE_ERROR) << "cannot move RA and DEC only, aborting move" << sendLog;
+					return ret;
+				}
+			}
 			// move RA only
 			ret = 1;
 		}
 		else
 		{
-			if (partialMove->getValueInteger () == 1)
-				move_diff = -labs (move_d);
-			// move for a time only in DEC; move_diff is negative, see check above
-			ac = r_ra_pos->getValueLong ();
-			if (move_d > 0)
-				dc = r_dec_pos->getValueLong () - move_diff;
-			else
-				dc = r_dec_pos->getValueLong () + move_diff;
-			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), 1000, 5.0, 5.0, true, false);
-			logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
-			if (ret == -1)
+			// first move - move only move_diff, to reach point where both axis will have same distance to go
+			if (partialMove->getValueInteger () == 0)
 			{
-				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
-				return -1;
+				// move_diff is negative, see check above; fill to move_d move_diff with move_d sign
+				if (move_d < 0)
+					move_d = move_diff;
+				else
+					move_d = -move_diff;
 			}
+			ret = checkMoveDEC (ac, dc, move_d);
+			if (ret < 0)
+				return ret;
 			// move DEC only
 			ret = 2;
 		}
@@ -958,48 +926,47 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	return ret;
 }
 
-void Sitech::sitechStartTracking (bool startTimer)
+int Sitech::checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d)
+{
+	// move for a time only in DEC
+	ac = r_ra_pos->getValueLong ();
+	dc = r_dec_pos->getValueLong () + move_d;
+	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
+	logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
+	if (ret == -1)
+	{
+		logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+		return -1;
+	}
+	if (ret == 3)
+	{
+		logStream (MESSAGE_WARNING) << "cannot move out of limits with DEC only, aborting move" << sendLog;
+		return -1;
+	}
+	return 0;
+}
+
+void Sitech::runTracking ()
 {
 	double sec_step = 2.0;
 	// calculate position sec_step from last position, base speed on this..
 	struct ln_equ_posn tarPos;
-	getTarget (&tarPos);
+	double tar_distance;
 
 	info ();
 
 	int32_t ac = r_ra_pos->getValueLong ();
 	int32_t dc = r_dec_pos->getValueLong ();
 
-	int32_t homeOff;
-
-	getHomeOffset (homeOff);
-
 	double futureJD = getTelJD + sec_step / 86400.0;
-
-	int ret = sky2counts (&tarPos, ac, dc, futureJD, homeOff, 0);
+	int ret = calculateTarget (futureJD, sec_step, &tarPos, tar_distance, ac, dc);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "cannot calculate target position in 2 second from now, stop tracking" << sendLog;
-		stopMove ();
+		logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
+		setTracking (false);
 		return;
 	}
 
-	if (hardHorizon)
-	{
-
-		// check if not tracking below horizon within target RA DEC - maximum tracking is 2 degrees from current position
-		struct ln_hrz_posn hrz;
-		getTargetAltAz (&hrz);
-
-		if (hardHorizon->is_good_with_margin (&hrz, 2, 2) != 0)
-		{
-			logStream (MESSAGE_WARNING) << "tracking past hardware limits, stop tracking" << sendLog;
-			stopMove ();
-			return;
-		}
-	}
-
-	
 	if (use_constant_speed->getValueBool () == true)
 	{
 		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
@@ -1018,31 +985,37 @@ void Sitech::sitechStartTracking (bool startTimer)
 	}
 	else
 	{
-		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (labs (ac - r_ra_pos->getValueLong ()) / sec_step);
-		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (labs (dc - r_dec_pos->getValueLong ()) / sec_step);
+		// 1 step change
+		int32_t ac_step = labs (ac - r_ra_pos->getValueLong ()) / sec_step;
+		int32_t dc_step = labs (dc - r_dec_pos->getValueLong ()) / sec_step;
+
+		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (ac_step);
+		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (dc_step);
+
+		// put axis in future
 
 		if (radec_Xrequest.y_speed != 0)
 		{
 			if (ac > r_ra_pos->getValueLong ())
-				radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () + ac_step * 10;
 			else
-				radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () - ac_step * 10;
 		}
 		else
 		{
 			radec_Xrequest.y_dest = r_ra_pos->getValueLong ();
 		}
 
-		if (radec_Yrequest.x_speed != 0)
+		if (radec_Xrequest.x_speed != 0)
 		{
 			if (dc > r_dec_pos->getValueLong ())
-				radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () + dc_step * 10;
 			else
-				radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () - dc_step * 10;
 		}
 		else
 		{
-			radec_Yrequest.x_dest = r_dec_pos->getValueLong ();
+			radec_Xrequest.x_dest = r_dec_pos->getValueLong ();
 		}
 	}
 
@@ -1054,14 +1027,19 @@ void Sitech::sitechStartTracking (bool startTimer)
 
 	xbits |= (0x01 << 4);
 
-	serConn->sendXAxisRequest (radec_Xrequest);
-
-	// make sure we will be called again
-	if (startTimer && (wasStopped == false))
+	// check that the entered trajactory is valid
+	ret = checkTrajectory (ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
+	if (ret != 0)
 	{
-		deleteTimers (RTS2_SITECH_TIMER);
-		addTimer (TRACK_TIME_DELTA, new rts2core::Event (RTS2_SITECH_TIMER));
+		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
+		setTracking (false);
+		return;
 	}
+
+	t_ra_pos->setValueLong (radec_Xrequest.y_dest);
+	t_dec_pos->setValueLong (radec_Xrequest.x_dest);
+
+	serConn->sendXAxisRequest (radec_Xrequest);
 }
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)

@@ -177,8 +177,9 @@ int SelectorApp::doProcessing ()
 
 	config = Configuration::instance ();
 	observer = config->getObserver ();
+	obs_altitude = config->getObservatoryAltitude ();
 
-	sel.setObserver (observer);
+	sel.setObserver (observer, obs_altitude);
 	sel.init ();
 
 	next_tar = sel.selectNextNight (0, verbosity, maxLength);
@@ -198,7 +199,7 @@ int SelectorApp::doProcessing ()
 	if (interactive)
 		return runInteractive ();  
 
-	rts2db::Target *tar = createTarget (next_tar, observer);
+	rts2db::Target *tar = createTarget (next_tar, observer, obs_altitude);
 	
 	if (tar)
 	{

@@ -35,6 +35,7 @@ class ThorLaser:public Sensor
 {
 	public:
 		ThorLaser (int argc, char **argv);
+		virtual ~ThorLaser ();
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
@@ -111,7 +112,7 @@ int ThorLaser::initHardware ()
 		return ret;
 	
 	laserConn->flushPortIO ();
-	laserConn->setDebug (false);
+	laserConn->setDebug (getDebug ());
 
 	return 0;
 }
@@ -208,6 +209,11 @@ ThorLaser::ThorLaser (int argc, char **argv): Sensor (argc, argv)
 	}
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for ThorLaser USB serial connection");
+}
+
+ThorLaser::~ThorLaser ()
+{
+	delete laserConn;
 }
 
 int ThorLaser::commandAuthorized (rts2core::Connection * conn)

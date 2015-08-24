@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-dome-bart rts2-dome-esa rts2-dome-fram \
+bin_PROGRAMS = rts2-dome-bart rts2-dome-apm rts2-dome-fram \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl \
 	rts2-cupola-maxdomeii
@@ -15,7 +15,7 @@ noinst_HEADERS =  ahe.h
 
 rts2_dome_bart_SOURCES = bart.cpp
 
-rts2_dome_esa_SOURCES = esa.cpp
+rts2_dome_apm_SOURCES = apm.cpp
 
 rts2_dome_fram_SOURCES = fram.cpp
 

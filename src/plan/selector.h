@@ -75,7 +75,7 @@ class Selector
 		Selector (rts2db::CamList *cameras = NULL);
 		virtual ~ Selector (void);
 
-		void setObserver (struct ln_lnlat_posn *in_observer) { observer = in_observer; }
+		void setObserver (struct ln_lnlat_posn *in_observer, double in_altitude) { observer = in_observer; obs_altitude = in_altitude; }
 		void init ();
 
 		// return next observation..
@@ -155,6 +155,7 @@ class Selector
 		int selectFlats ();
 		int selectDarks ();
 		struct ln_lnlat_posn *observer;
+		double obs_altitude;
 		double flat_sun_min;
 		double flat_sun_max;
 

@@ -67,6 +67,12 @@
 
 // dead man timeout
 #define ZI_DEADMAN_MASK  0x007f
+// dead man bit
+#define ZI_DEADN_MASK    0x0001
+// timeout mask
+#define ZI_TIMEOUT_MASK  0x7f80
+// user timeout mask
+#define ZI_USER_TIO_MASK 0x8000
 // emergency button reset
 #define ZI_EMMERGENCY_R  0x2000
 // bit for Q9 - remote switch
@@ -143,6 +149,7 @@ class Zelio:public Dome
 		rts2core::ValueString *zelioModelString;
 
 		rts2core::ValueInteger *deadTimeout;
+		rts2core::ValueInteger *domeTimeout;
 
 		rts2core::ValueBool *rain;
 		rts2core::ValueBool *openingIgnoreRain;
@@ -280,8 +287,8 @@ int Zelio::startOpen ()
 		}
 
 		zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, deadTimeout->getValueInteger ());
-		zelioConn->writeHoldingRegister (ZREG_J2XT1, 0);
-		zelioConn->writeHoldingRegister (ZREG_J2XT1, 1);
+		zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_DEADN_MASK, 0);
+		zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_DEADN_MASK, 1);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -563,7 +570,7 @@ void Zelio::postEvent (rts2core::Event *event)
 			{
 			  	try
 				{
-					zelioConn->writeHoldingRegister (ZREG_J2XT1, deadManNum);
+					zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_DEADN_MASK, deadManNum);
 				}
 				catch (rts2core::ConnError err)
 				{
@@ -588,8 +595,11 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
-	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false, RTS2_VALUE_WRITABLE);
+	createValue (deadTimeout, "dead_timeout", "[s] timeout for dead man button", false, RTS2_VALUE_WRITABLE);
 	deadTimeout->setValueInteger (60);
+
+	createValue (domeTimeout, "dome_timeout", "[s] dome timeout", false, RTS2_VALUE_WRITABLE);
+	domeTimeout->setValueInteger (-1);
 
 	createValue (automode, "automode", "state of automatic dome mode", false, RTS2_DT_ONOFF);
 	createValue (ignoreAutomode, "automode_ignore", "do not switch to off when not in automatic", false, RTS2_VALUE_WRITABLE);
@@ -988,6 +998,23 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		{
 			zelioConn->writeHoldingRegister (ZREG_J4XT1, newValue->getValueInteger ());
 			return 0;
+		}
+		else if (oldValue == domeTimeout)
+		{
+			// prepare new bits for timeout
+			if (newValue->getValueInteger () > 0)
+			{
+				int16_t nreg = newValue->getValueInteger () & 0x00ff;
+				nreg = (nreg << 7) & ZI_TIMEOUT_MASK;
+				// user switched timeout
+				nreg |= 0x8000;
+				// put in value
+				zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_USER_TIO_MASK | ZI_TIMEOUT_MASK, nreg);
+			}
+			else
+			{
+				zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_USER_TIO_MASK, 0);
+			}
 		}
 	}
 	catch (rts2core::ConnError err)

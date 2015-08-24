@@ -28,7 +28,7 @@
 
 using namespace rts2db;
 
-TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout):ConstTarget (in_tar_id, in_obs)
+TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout):ConstTarget (in_tar_id, in_obs, in_altitude)
 {
 	shouldUpdate = 1;
 	grb_is_grb = true;

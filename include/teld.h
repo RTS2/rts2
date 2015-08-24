@@ -23,6 +23,7 @@
 #include <libnova/libnova.h>
 #include <sys/time.h>
 #include <time.h>
+#include "pluto/norad.h"
 
 #include "device.h"
 #include "objectcheck.h"
@@ -93,6 +94,8 @@ class Telescope:public rts2core::Device
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
 		double getLatitude () { return telLatitude->getValueDouble (); }
+		double getLongitude () { return telLongitude->getValueDouble (); }
+		double getAltitude () { return telAltitude->getValueDouble (); }
 
 		// callback functions from telescope connection
 		virtual int info ();
@@ -481,10 +484,10 @@ class Telescope:public rts2core::Device
 		 * Returns original, J2000 coordinates, used as observational
 		 * target.
 		 */
-		void getOrigin (struct ln_equ_posn _ori)
+		void getOrigin (struct ln_equ_posn *_ori)
 		{
-			_ori.ra = oriRaDec->getRa ();
-			_ori.dec = oriRaDec->getDec ();
+			_ori->ra = oriRaDec->getRa ();
+			_ori->dec = oriRaDec->getDec ();
 		}
 	
 		void setOrigin (double ra, double dec, bool withObj = false)
@@ -558,10 +561,38 @@ class Telescope:public rts2core::Device
 			out_tar->dec = tarRaDec->getDec ();
 		}
 
+		/**
+		 * Calculate target position for given JD.
+		 * This function shall be used for adaptive tracking.
+		 *
+		 * @param JD              date for which position will be calculated
+		 * @param out_tar         target position
+		 * @param tar_distance    distance to target (in m), if know (satellites,..)
+		 * @param ac              current (input) and target (output) HA axis value
+		 * @param dc              current (input) and target (output) DEC axis value
+		 */
+		int calculateTarget (double JD, double secdiff, struct ln_equ_posn *out_tar, double &tar_distance, int32_t &ac, int32_t &dc);
+
+		/**
+		 * Transforms sky coordinates to axis coordinates. Placeholder, used only for
+		 * telescopes with possibility to command directly telescope axes.
+		 */
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+
+		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
+
 		void getTargetAltAz (struct ln_hrz_posn *hrz)
 		{
 			hrz->alt = telAltAz->getAlt ();
 			hrz->az = telAltAz->getAz ();
+		}
+
+		/**
+		 * Returns time when move start was commanded (in ctime).
+		 */
+		double getTargetStarted ()
+		{
+			return targetStarted->getValueDouble ();
 		}
 
 		double getOffsetRa () { return offsRaDec->getRa (); }
@@ -806,10 +837,28 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track   if true, tracking is set to on
+		 * @param track                if true, tracking is set to on
+		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (bool track);
+		virtual int setTracking (bool track, bool addTrackingTimer = false);
+
+		/**
+		 * Called to run tracking. It is up to driver implementation
+		 * to send updated position to telescope driver.
+		 *
+		 * If tracking timer shall not be called agin, call setTracking (false).
+		 * Run every trackingInterval seconds.
+		 *
+		 * @see setTracking
+		 * @see trackingInterval
+		 */
+		virtual void runTracking ();
+
+		/**
+		 * Calculate TLE RA DEC for given time.
+		 */
+		void calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite);
 
 		/**
 		 * Set differential tracking values. All inputs is in degrees / hour.
@@ -817,7 +866,7 @@ class Telescope:public rts2core::Device
 		 * @param dra  differential tracking in RA
 		 * @param ddec differential tracking in DEC
 		 */
-		virtual void setDiffTrack (double dra, double ddec) {}
+		virtual void setDiffTrack (double dra, double ddec);
 
 		/**
 		 * Hard horizon. Use it to check if telescope coordinates are within limits.
@@ -863,6 +912,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueSelection *decGuide;
 
 		rts2core::ValueBool *tracking;
+		rts2core::ValueFloat *trackingInterval;
 
 		/**
 		 * Returns differential tracking values. Telescope must support
@@ -870,8 +920,8 @@ class Telescope:public rts2core::Device
 		 * should be called only from child subclass which pass true for
 		 * diffTrack in Telescope contructor.
 		 */
-		double getDiffRa () { return diffRaDec->getRa (); }
-		double getDiffDec () { return diffRaDec->getDec (); }
+		double getDiffTrackRa () { return diffTrackRaDec->getRa (); }
+		double getDiffTrackDec () { return diffTrackRaDec->getDec (); }
 
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
@@ -930,6 +980,11 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *woffsRaDec;
 
 		rts2core::ValueRaDec *diffTrackRaDec;
+
+		/**
+		 * Start time of differential tracking.
+		 */
+		rts2core::ValueDouble *diffTrackStart;
 
 		/**
 		 * Coordinates of the object, after offsets are applied (in J2000).
@@ -1105,14 +1160,33 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *mpec_refresh;
 		rts2core::ValueDouble *mpec_angle;
 
+		/**
+		 * Satellite (from Two Line Element, passed as string with lines separated by :)
+		 * tracking.
+		 */
+
+		rts2core::ValueString *tle_l1;
+		rts2core::ValueString *tle_l2;
+		rts2core::ValueInteger *tle_ephem;
+		rts2core::ValueDouble *tle_distance;
+		rts2core::ValueDouble *tle_rho_sin_phi;
+		rts2core::ValueDouble *tle_rho_cos_phi;
+
+		rts2core::ValueDouble *tle_refresh;
+
+		tle_t tle;
+
 		// Value for RA DEC differential tracking
 		rts2core::ValueRaDec *diffRaDec;
 
 		void recalculateMpecDIffs ();
+		void recalculateTLEDiffs ();
 
 		char wcs_multi;
 
 		rts2core::ValueFloat *decUpperLimit;
+
+		void resetMpecTLE ();
 };
 
 };

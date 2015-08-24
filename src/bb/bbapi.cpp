@@ -184,7 +184,7 @@ void BBAPI::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc:
 			Observatory obs (observatory_id);
 			obs.load ();
 
-			rts2db::Target *target = createTarget (tar_id, Configuration::instance ()->getObserver ());
+			rts2db::Target *target = createTarget (tar_id, Configuration::instance ()->getObserver (), Configuration::instance ()->getObservatoryAltitude ());
 			if (target == NULL)
 				throw JSONException ("cannot find target with given ID");
 

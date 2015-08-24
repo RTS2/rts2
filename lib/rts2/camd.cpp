@@ -376,8 +376,9 @@ bool Camera::supportFrameTransfer ()
 	return false;
 }
 
-Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
+Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2core::ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
+	binningRounding = binning_rounding;
 	expType = NULL;
 
 	dataChannels = NULL;
@@ -1500,7 +1501,7 @@ void Camera::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 			{
 				switch (new_state & SERVERD_ONOFF_MASK)
 				{
-					case 0:
+					case SERVERD_ON:
 					case SERVERD_STANDBY:
 						beforeNight ();
 						break;

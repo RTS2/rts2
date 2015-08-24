@@ -181,6 +181,36 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 					}
 				}
 				break;
+			// counterweight down
+			case 6:
+			// counterweight up
+			case 7:
+				// calculate distance towards "meridian" - counterweight down - position
+				// normalize distances by ra_ticks
+				double diff_nf = fabs (fmod (getHACWDAngle (t_ac), 360));
+				double diff_f = fabs (fmod (getHACWDAngle (tf_ac), 360));
+				// normalize to degree distance to HA
+				if (diff_nf > 180)
+					diff_nf = 360 - diff_nf;
+				if (diff_f > 180)
+					diff_f = 360 - diff_f;
+				logStream (MESSAGE_DEBUG) << "cw diffs flipped " << diff_f << " nf " << diff_nf << sendLog;
+				if (actual_flip == 6)
+				{
+					if (diff_f < diff_nf)
+					{
+						t_ac = tf_ac;
+						t_dc = tf_dc;
+					}
+				}
+				else
+				{
+					if (diff_f > diff_nf)
+					{
+						t_ac = tf_ac;
+						t_dc = tf_dc;
+					}
+				}
 		}
 	}
 	// otherwise, non-flipped is the only way, stay on it..
@@ -205,6 +235,14 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	dc = t_dc;
 
 	return 0;
+}
+
+int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+{
+	int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
+
+	// returns without home offset, which will be removed in future
+	return sky2counts (pos, ac, dc, JD, 0, actual_flip);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
@@ -271,6 +309,14 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 	flipping->addSelVal ("west");
 	flipping->addSelVal ("east");
 	flipping->addSelVal ("longest");
+	flipping->addSelVal ("cw down");
+	flipping->addSelVal ("cw up");
+
+	createValue (haCWDAngle, "ha_cwd_angle", "[deg] angle between HA axis and local meridian", false);
+
+	createValue (haZeroPos, "_ha_zero_pos", "position of the telescope on zero", false);
+	haZeroPos->addSelVal ("EAST");
+	haZeroPos->addSelVal ("WEST");
 
 	createValue (haZero, "_ha_zero", "HA zero offset", false);
 	createValue (decZero, "_dec_zero", "DEC zero offset", false);
@@ -294,6 +340,7 @@ GEM::~GEM (void)
 
 void GEM::unlockPointing ()
 {
+	haZeroPos->setWritable ();
 	haZero->setWritable ();
 	decZero->setWritable ();
 	haCpd->setWritable ();
@@ -319,6 +366,22 @@ void GEM::unlockPointing ()
 
 	updateMetaInformations (ra_ticks);
 	updateMetaInformations (dec_ticks);
+}
+
+double GEM::getHACWDAngle (int32_t ha_count)
+{
+	// sign of haCpd
+	int haCpdSign = haCpd->getValueDouble () > 0 ? 1 : -1;
+	switch (haZeroPos->getValueInteger ())
+	{
+		// TODO west (haZeroPos == 1), haCpd >0 is the only proved combination (and haZero was negative, but that should not play any role..).
+		// Other values must be confirmed
+		case 1:
+			return -360.0 * ((ha_count + (haZero->getValueDouble () + haCpdSign * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+		case 0:
+		default:
+			return 360.0 * ((ha_count + (haZero->getValueDouble () - haCpdSign * 90) * haCpd->getValueDouble ()) / ra_ticks->getValueDouble ());
+	}
 }
 
 int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD, double ls, double dec)

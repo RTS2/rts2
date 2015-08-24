@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2015-07-02</date>">
+  <!ENTITY dhdate      "<date>2015-08-15</date>">
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -89,6 +89,39 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Comman commands</title>
+    <para>
+      Every telescope driver has basic commands, which can be executed either through 
+      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>7</manvolnum></citerefentry> or 
+      through <citerefentry><refentrytitle>rts2-httpd</refentrytitle><manvolnum>7</manvolnum></citerefentry> JSON
+      interface.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>move</term>
+        <para>
+          Move telescope to equatorial (RA and DEC) coordinates. Target values are specified as 
+          parameters to move command. RA and DEC can be specified in any format understand by RTS2
+	  - either as floats in degrees (RA 0..360, DEC -90..90), or in
+	    hours,minutes and seconds (for RA) or degrees, minutes and seconds
+          (for DEC). Following two examples explain the format of RA DEC:
+        </para>
+        <para>
+          <emphasis>move</emphasis> 187.50 +20.50
+        </para>
+        <para>
+          <emphasis>move</emphasis> 12:30 +20:30
+        </para>
+      </varlistentry>
+      <varlistentry>
+        <term>tle</term>
+        <para>
+          Start tracking a satellite with given Two Line Element ephemerides.
+        </para>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
     <title>Common variables</title>
     <para>
       Mount interface provides common variables, visible in
@@ -155,6 +188,20 @@
             <para>
 	      Opposite to shortest. Does not provides any benefits, but can be
 	      used to test mount performance.
+            </para>
+          </varlistentry>
+          <varlistentry>
+            <term>cw down</term>
+            <para>
+	      Counter weight down position. Prefers to place mount such as
+              counterweight will be positioned down, and telescope axis up.
+            </para>
+          </varlistentry>
+          <varlistentry>
+            <term>cw up</term>
+            <para>
+              Counter weight up position. Prefers to place mount such as
+              counterweight will be positioned down, and telescope axis up.
             </para>
           </varlistentry>
         </variablelist>

@@ -19,10 +19,14 @@
 
 #include "davis.h"
 #include "davisudp.h"
+#include "davisusb.h"
 
-#define OPT_UDP                     OPT_LOCAL + 1001
-#define OPT_AVG_WINDSPEED           OPT_LOCAL + 1002
-#define OPT_PEEK_WINDSPEED          OPT_LOCAL + 1003
+#define OPT_UDP			OPT_LOCAL + 1001
+#define OPT_AVG_WINDSPEED	OPT_LOCAL + 1002
+#define OPT_PEEK_WINDSPEED	OPT_LOCAL + 1003
+#define OPT_USB			OPT_LOCAL + 1004
+#define CONN_METHOD		OPT_LOCAL + 1005
+
 
 using namespace rts2sensord;
 
@@ -37,6 +41,12 @@ int Davis::processOption (int _opt)
 			break;
 		case OPT_UDP:
 			udpPort->setValueInteger (atoi (optarg));
+			break;
+		case OPT_USB:
+			device_file = optarg;
+			break;
+		case CONN_METHOD:
+			conn_method = atoi (optarg);
 			break;
 		case OPT_PEEK_WINDSPEED:
 			maxPeekWindSpeed->setValueCharArr (optarg);
@@ -57,9 +67,24 @@ int Davis::init ()
 	if (ret)
 		return ret;
 
-	weatherConn = new DavisUdp (udpPort->getValueInteger (), connTimeout->getValueInteger (), BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
-	weatherConn->init ();
-	addConnection (weatherConn);
+	if (conn_method == 0)
+	{
+		weatherConn = new DavisUdp (udpPort->getValueInteger (), connTimeout->getValueInteger (), BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
+		weatherConn->init ();
+		addConnection (weatherConn);
+	}
+	else if (conn_method == 1)
+	{
+		logStream (MESSAGE_DEBUG) << "init: " << device_file << sendLog;
+		usbConn = new DavisUsb (device_file, connTimeout->getValueInteger (), BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
+		usbConn->init ();
+		addConnection (usbConn);
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "unknown connection method" << sendLog;
+		exit (1);
+	}
 
 	return 0;
 }
@@ -81,6 +106,10 @@ int Davis::idle ()
 
 Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 {
+	device_file = NULL;
+	
+	conn_method = 0;
+
   	createValue (connTimeout, "conn_timeout", "connection timeout", false, RTS2_VALUE_WRITABLE);
 	connTimeout->setValueInteger (360);
 
@@ -122,6 +151,8 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 	addOption (OPT_PEEK_WINDSPEED, "max-peek-windspeed", 1, "maximal allowed peek windspeed (in m/sec)");
 	addOption (OPT_AVG_WINDSPEED, "max-avg-windspeed", 1, "maximal allowed average windspeed (in m/sec");
 	addOption (OPT_UDP, "udp-port", 1, "UDP port for incoming weather connections");
+	addOption (OPT_USB, "usb-port", 1, "USB port where Davis Vantage Pro is connected");
+	addOption (CONN_METHOD, "conn-method", 1, "udp (0 = default) / usb (1) connection");
 }
 
 int Davis::info ()

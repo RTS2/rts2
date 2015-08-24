@@ -30,7 +30,7 @@ class ConstTarget;
 class TargetGRB:public ConstTarget
 {
 	public:
-		TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout);
+		TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, double _altitude, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout);
 		virtual void load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);

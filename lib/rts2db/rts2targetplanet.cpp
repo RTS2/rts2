@@ -129,7 +129,7 @@ planet_info_t planets[PLANETS] =
 	}
 };
 
-TargetPlanet::TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs):Target (tar_id, in_obs)
+TargetPlanet::TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):Target (tar_id, in_obs, in_altitude)
 {
 	planet_info = NULL;
 }

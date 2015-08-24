@@ -85,7 +85,7 @@ void TargetSet::load (std::list<int> &target_ids)
 
 void TargetSet::load (int id)
 {
-	Target *tar = createTarget (id, obs);
+	Target *tar = createTarget (id, obs, obs_altitude);
 	(*this)[id] = tar;
 }
 
@@ -169,7 +169,7 @@ void TargetSet::load (const char * name, TargetSet::iterator const (*multiple_re
 			// numeric target
 			try
 			{
-				Target *tar = createTarget (tid, obs);
+				Target *tar = createTarget (tid, obs, obs_altitude);
 				(*this)[tid] = tar;
 				return;
 			}
@@ -223,16 +223,19 @@ void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator con
 	}
 }
 
-TargetSet::TargetSet (struct ln_lnlat_posn * in_obs): std::map <int, Target *> ()
+TargetSet::TargetSet (struct ln_lnlat_posn * in_obs, double in_altitude): std::map <int, Target *> ()
 {
 	obs = in_obs;
 	if (!obs)
 		obs = rts2core::Configuration::instance ()->getObserver ();
+	obs_altitude = in_altitude;
+	if (isnan (obs_altitude))
+		obs_altitude = rts2core::Configuration::instance ()->getObservatoryAltitude ();
 	where = std::string ("true");
 	order_by = std::string ("tar_id ASC");
 }
 
-TargetSet::TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs)
+TargetSet::TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs, double in_altitude)
 {
 	std::ostringstream where_os;
 	std::ostringstream order_os;
@@ -246,15 +249,21 @@ TargetSet::TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_po
 	obs = in_obs;
 	if (!obs)
 		obs = rts2core::Configuration::instance ()->getObserver ();
+	obs_altitude = in_altitude;
+	if (isnan (obs_altitude))
+		obs_altitude = rts2core::Configuration::instance ()->getObservatoryAltitude ();
 	where = where_os.str ();
 	order_by = order_os.str ();
 }
 
-TargetSet::TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs)
+TargetSet::TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs, double in_altitude)
 {
 	obs = in_obs;
 	if (!obs)
 		obs = rts2core::Configuration::instance ()->getObserver ();
+	obs_altitude = in_altitude;
+	if (isnan (obs_altitude))
+		obs_altitude = rts2core::Configuration::instance ()->getObservatoryAltitude ();
 
 	std::ostringstream os;
 	printTypeWhere (os, target_type);
@@ -481,11 +490,14 @@ TargetSetCalibration::TargetSetCalibration (Target *in_masterTarget, double JD, 
 	order_by = ord.str ();
 }
 
-TargetSetGrb::TargetSetGrb (struct ln_lnlat_posn * in_obs)
+TargetSetGrb::TargetSetGrb (struct ln_lnlat_posn * in_obs, double in_altitude)
 {
 	obs = in_obs;
 	if (!obs)
 		obs = rts2core::Configuration::instance ()->getObserver ();
+	obs_altitude = in_altitude;
+	if (isnan (obs_altitude))
+		obs_altitude = rts2core::Configuration::instance ()->getObservatoryAltitude ();
 }
 
 TargetSetGrb::~TargetSetGrb (void)
@@ -532,7 +544,7 @@ void TargetSetGrb::load ()
 
 	for (std::list<int>::iterator iter = targets.begin(); iter != targets.end(); iter++)
 	{
-		TargetGRB *tar = (TargetGRB *) createTarget (*iter, obs);
+		TargetGRB *tar = (TargetGRB *) createTarget (*iter, obs, obs_altitude);
 		if (tar)
 			push_back (tar);
 	}

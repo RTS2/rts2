@@ -26,7 +26,7 @@
 using namespace rts2db;
 
 // EllTarget - for comments and other solar system rocks
-EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
+EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_altitude):Target (in_tar_id, in_obs, in_altitude)
 {
 }
 
