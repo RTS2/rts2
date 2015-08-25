@@ -425,7 +425,12 @@ int MICCD::setFilterNum (int new_filter, const char *fn)
 {
 	if (fn != NULL)
 		return Camera::setFilterNum (new_filter, fn);
+	logStream (MESSAGE_INFO) << "moving filter from #" << camFilterVal->getValueInteger () << " (" << camFilterVal->getSelName () << ")" << " to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << sendLog;
 	int ret = miccd_filter (&camera, new_filter) ? -1 : 0;
+	if (ret == 0)
+		logStream (MESSAGE_INFO) << "filter moved to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << sendLog;
+	else
+		logStream (MESSAGE_INFO) << "filter movement error?" << sendLog;
 	checkQueuedExposures ();
 	return ret;
 }
