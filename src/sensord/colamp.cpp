@@ -47,6 +47,7 @@ class Colamp:public Sensor
 	public:
 		Colamp (int argc, char **argv);
 		virtual ~Colamp ();
+		virtual int scriptEnds ();
 
 	protected:
 		virtual int processOption (int opt);
@@ -143,6 +144,13 @@ int Colamp::info ()
 	return Sensor::info ();
 }
 
+int Colamp::scriptEnds ()
+{
+changeValue(lampHg, false);
+changeValue(lampKr, false);
+return 0;
+}
+
 int Colamp::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == lampHg)
@@ -196,6 +204,7 @@ void Colamp::colampCommand (char c)
 	char buf[200];
 	char buf2[32],buf3[32];
 
+	colampConn->flushPortIO();
 	colampConn->writeRead (&c, 1, buf, 199, '\n');
 
 	// typical reply is: 25.6 abcDEfgh abcDEfgh\n
@@ -211,8 +220,18 @@ void Colamp::colampCommand (char c)
 
 	domeTemp->setValueFloat (dt);
 
-	lampHg->setValueBool (buf2[0] == 'A');
-	lampHg->setValueBool (buf2[1] == 'B');
+	// modified logic, now obsolete, but still valid
+	if(buf2[0] == 'A')
+		{
+		lampHg->setValueBool (buf2[1] == 'B');
+		lampKr->setValueBool (buf2[1] == 'b');
+		}
+	else
+		{
+		lampHg->setValueBool (false);
+		lampKr->setValueBool (false);
+		}
+
 	halogenPower->setValueBool (buf2[2] == 'C');
 	focuserPower->setValueBool (buf2[3] == 'D');
 	coloresPower->setValueBool (buf2[4] == 'E');
