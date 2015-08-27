@@ -28,7 +28,7 @@ namespace rts2teld
 class TelLX200GPS:public TelLX200
 {
 	public:
-		TelLX200GPS (int argc, char **argv);
+		TelLX200GPS (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = false);
 		virtual ~TelLX200GPS (void);
 
 		virtual int initHardware ();

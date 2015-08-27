@@ -39,7 +39,7 @@ namespace rts2teld
 class TelLX200:public Telescope
 {
 	public:
-		TelLX200 (int argc, char **argv);
+		TelLX200 (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = false);
 		virtual ~TelLX200 (void);
 
 		rts2core::ConnSerial *getSerialConn () { return serConn; }
