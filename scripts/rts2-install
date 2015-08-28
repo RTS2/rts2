@@ -1,7 +1,7 @@
 #!/bin/bash
 
 with_db=1
-steps=sys,svn,configure,compile,db,gtk
+steps=sys,git,configure,compile,db,gtk
 download_dir=/tmp
 
 display_help()
@@ -10,12 +10,12 @@ display_help()
 This script will build and configure any system to run RTS2. The following options can be added to modify script behaviour:
 	--help,-h       print this help
 	--without-db    do not configure database, compile without PostgreSQL database bindings
-	--steps         performs the following, comma separated steps: sys,svn,compile,configure,db,start,gtk
+	--steps         performs the following, comma separated steps: sys,git,svn,compile,configure,db,start,gtk
 	--download-dir  download packages to the given directory
 
 The possible steps (defaults is to do all) are:
 	sys             configure system (install C/C++, autotools,..)
-	svn             download RTS2 from subversion
+	git             download RTS2 from Github
 	compile         configure and compile RTS2 source code, install RTS2
 	configure       configure installed RTS2, prepare for startup
 	db              configure database
@@ -70,7 +70,7 @@ can review the script before running it from its source code, to make
 sure sudo do only secure operations.
 
 (C) 2011 Petr Kubanek, Institute of Physics, Prague <kubanek@fzu.cz>
-(C) 2012-2014 Petr Kubanek, <petr@kubanek.net>
+(C) 2012-2015 Petr Kubanek, <petr@kubanek.net>
 
 EOF
 
@@ -118,7 +118,7 @@ step_sys_ubuntu()
 
 	echo "Installing required Ubuntu packages"
 
-	sudo apt-get -y install subversion $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config
+	sudo apt-get -y install git $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-scipy python-pyfits python-matplotlib libxt-dev libfftw3-dev gnuplot-x11 patch make libjson-glib-dev libsoup2.4-dev pkg-config
 }
 
 step_sys_ds9()
@@ -332,6 +332,41 @@ step_svn()
 	fi
 }
 
+step_git()
+{
+	echo "Source files will be downloaded and configured in `pwd`."
+
+	if [ -d rts2 ]; then
+		echo "Updating RTS2 source code"
+		cd rts2
+		git pull
+		cd ..
+	else
+		if [ -f rts2 ]; then
+			echo "Please remove rts2 file and rerun!"
+			exit 4
+		else
+			echo "Retrieving RTS2 source code"
+			git clone https://github.com/RTS2/rts2
+		fi
+	fi
+
+	if [ -d rts2-gtk ]; then
+		echo "Updating rts2-gtk source code"
+		cd rts2-gtk
+		git pull
+		cd ..
+	else
+		if [ -f rts2-gtk ]; then
+			echo "Please remove rts2-gtk file and rerun!"
+			exit 5
+		else
+			echo "Retrieving rts2-gtk source code"
+			git clone https://github.com/RTS2/rts2-gtk
+		fi
+	fi
+}
+
 step_compile()
 {
 	echo "Compiling RTS2"
@@ -443,6 +478,9 @@ while read s; do
 		svn)
 			step_svn=1
 			;;
+		git)
+			step_git=1
+			;;
 		compile)
 			step_compile=1
 			;;
@@ -472,12 +510,11 @@ while read s; do
 	esac
 done < $step_file
 
-echo "step_svn" $step_svn
-
 rm $step_file
 
 if [ -n "$step_sys" ]       ; then step_sys; fi
 if [ -n "$step_svn" ]       ; then step_svn; fi
+if [ -n "$step_git" ]       ; then step_git; fi
 if [ -n "$step_compile" ]   ; then step_compile; fi
 if [ -n "$step_configure" ] ; then step_configure; fi
 if [ -n "$step_db" ]        ; then step_db; fi
