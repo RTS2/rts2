@@ -299,6 +299,9 @@ step_sys()
 
 step_svn()
 {
+	echo "Installing subversion"
+	sudo apt-get install subversion
+
 	echo "Source files will be downloaded and configured in `pwd`."
 
 	if [ -d rts2 ]; then
