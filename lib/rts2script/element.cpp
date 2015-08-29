@@ -220,7 +220,7 @@ int ElementImage::nextCommand (rts2core::DevClientCamera * camera, rts2core::Com
 		return NEXT_COMMAND_KEEP;
 	}
 	*new_command = new rts2core::CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
-	// prepare for next exposure in loop..
+	// prepare for next exposure in a loop..
 	callProgress = first;
 	return 0;
 }
