@@ -149,7 +149,7 @@ class Zelio:public Dome
 		rts2core::ValueString *zelioModelString;
 
 		rts2core::ValueInteger *deadTimeout;
-		rts2core::ValueInteger *domeTimeout;
+		rts2core::ValueIntegerMinMax *domeTimeout;
 
 		rts2core::ValueBool *rain;
 		rts2core::ValueBool *openingIgnoreRain;
@@ -600,6 +600,8 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 
 	createValue (domeTimeout, "dome_timeout", "[s] dome timeout", false, RTS2_VALUE_WRITABLE);
 	domeTimeout->setValueInteger (-1);
+	domeTimeout->setMin (-1);
+	domeTimeout->setMax (0xff);
 
 	createValue (automode, "automode", "state of automatic dome mode", false, RTS2_DT_ONOFF);
 	createValue (ignoreAutomode, "automode_ignore", "do not switch to off when not in automatic", false, RTS2_VALUE_WRITABLE);
