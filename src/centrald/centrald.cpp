@@ -388,10 +388,10 @@ Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF 
 	createValue (morning_standby, "morning_standby", "switch to standby in the morning", false, RTS2_VALUE_WRITABLE);
 
 	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false, RTS2_VALUE_WRITABLE);
-	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
+	createValue (badWeatherDevices, "bad_weather_devices", "devices reporting bad weather or required and not present", false);
 
-	createValue (badWeatherReason, "weather_reason", "why system was switched to bad weather", false);
-	createValue (badWeatherDevice, "weather_device", "device reporting as the first bad weather", false);
+	createValue (badWeatherReason, "bad_weather_reason", "why system was switched to bad weather", false);
+	createValue (badWeatherDevice, "bad_weather_device", "device reporting as the first bad weather", false);
 
 	createValue (nextStateChange, "next_state_change", "time of next state change", false);
 	createValue (nextState, "next_state", "next server state", false);
@@ -871,8 +871,8 @@ void Centrald::weatherChanged (const char * device, const char * msg)
 			}
 		}
 	}
-	failedDevices->setValueArray (failedArr);
-	sendValueAll (failedDevices);
+	badWeatherDevices->setValueArray (failedArr);
+	sendValueAll (badWeatherDevices);
 
 	setWeatherState (failedArr.size () > 0 ? false : true, "weather state update from weatherChanged");
 	if (failedArr.size () > 0)

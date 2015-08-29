@@ -242,7 +242,7 @@ class Centrald:public Daemon
 		rts2core::ValueBool *morning_standby;
 
 		StringArray *requiredDevices;
-		StringArray *failedDevices;
+		StringArray *badWeatherDevices;
 
 		rts2core::ValueString *badWeatherReason;
 		rts2core::ValueString *badWeatherDevice;
