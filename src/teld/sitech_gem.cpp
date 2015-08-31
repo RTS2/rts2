@@ -880,12 +880,22 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 				ret = checkMoveDEC (ac, dc, move_d);
 				if (ret < 0)
 				{
-					logStream (MESSAGE_ERROR) << "cannot move RA and DEC only, aborting move" << sendLog;
-					return ret;
+					logStream (MESSAGE_WARNING) << "cannot move RA or DEC only, trying opposite DEC direction for 20 degrees" << sendLog;
+					ret = checkMoveDEC (ac, dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
+					if (ret < 0)
+					{
+						logStream (MESSAGE_ERROR) << "cannot move DEC even in oposite direction, aborting move" << sendLog;
+						return ret;
+					}
 				}
+				// move DEC only, next move will be RA only
+				ret = 2;
 			}
-			// move RA only
-			ret = 1;
+			else
+			{
+				// move RA only
+				ret = 1;
+			}
 		}
 		else
 		{

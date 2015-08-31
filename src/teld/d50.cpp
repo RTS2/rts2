@@ -429,13 +429,13 @@ int D50::runD50 ()
 	logStream (MESSAGE_DEBUG) << "****** D50:runD50 ()" << sendLog;
 	if (!(getState () & TEL_MOVING))
 	{
-		if ((!tracking->getValueBool ()) && raDrive->isInStepperMode ())
+		if (tracking->getValueInteger () == 0 && raDrive->isInStepperMode ())
 		{
 			logStream (MESSAGE_DEBUG) << "****** runD50 () - setting tracking to off - DS mode" << sendLog;
                         raDrive->setTargetSpeed ( 0, true );
                         raDrive->setMode (TGA_MODE_DS);
                         //raDrive->info ();
-		} else if (tracking->getValueBool () && !raDrive->isInStepperMode ()) 
+		} else if (tracking->getValueInteger () > 0 && !raDrive->isInStepperMode ()) 
 		{
 			logStream (MESSAGE_DEBUG) << "****** runD50 () - setting tracking to on - SM mode" << sendLog;
 			if (!raDrive->isMoving ())
@@ -498,8 +498,8 @@ int D50::isMoving ()
 {
 	logStream (MESSAGE_DEBUG) << "****** isMoving ()" << sendLog;
         //callAutosave ();
-	logStream (MESSAGE_DEBUG) << "------ isMoving: getState=" << getState () << ", tracking=" << tracking->getValueBool () << ", parking=" << parking << ", raDrive->isMoving=" << raDrive->isMoving () << ", raDrive->isInPositionMode=" << raDrive->isInPositionMode () << ", decDrive->isMoving=" << decDrive->isMoving () << sendLog;
-        if (tracking->getValueBool () && raDrive->isInPositionMode ())
+	logStream (MESSAGE_DEBUG) << "------ isMoving: getState=" << getState () << ", tracking=" << tracking->getValueInteger () << ", parking=" << parking << ", raDrive->isMoving=" << raDrive->isMoving () << ", raDrive->isInPositionMode=" << raDrive->isInPositionMode () << ", decDrive->isMoving=" << decDrive->isMoving () << sendLog;
+        if (tracking->getValueInteger () > 0 && raDrive->isInPositionMode ())
         {
                 if (raDrive->isMovingPosition ())
                 {
@@ -526,7 +526,7 @@ int D50::isMoving ()
                         //raDrive->info ();
                 }
         }
-        if ((tracking->getValueBool () && raDrive->isInPositionMode ()) || (!tracking->getValueBool () && raDrive->isMoving ()) || decDrive->isMoving ())
+        if ((tracking->getValueInteger () > 0 && raDrive->isInPositionMode ()) || (tracking->getValueInteger () == 0 && raDrive->isMoving ()) || decDrive->isMoving ())
 		return USEC_SEC / 10;
         return -2;
 }
@@ -579,7 +579,7 @@ int D50::setTo (double set_ra, double set_dec)
         int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off);
         if (ret)
                 return -1;
-        //if (tracking->getValueBool ())
+        //if (tracking->getValueInteger () > 0)
 	//{
 	//	raDrive->setMode (TGA_MODE_DS);
 	//	raDrive->setTargetSpeed ( 0, true );
@@ -588,7 +588,7 @@ int D50::setTo (double set_ra, double set_dec)
         raDrive->setCurrentPos (ac);
         decDrive->setCurrentPos (dc);
         //callAutosave ();
-        if (tracking->getValueBool ())
+        if (tracking->getValueInteger () > 0)
 	{
                 raDrive->setMode (TGA_MODE_SM);
                 //raDrive->info ();
@@ -663,7 +663,7 @@ void D50::setDiffTrack (double dra, double ddec)
                 throw rts2core::Error ("cannot call info in setDiffTrack");
         if (!raDrive->isInPositionMode () || !raDrive->isMovingPosition ())
         {
-                if (tracking->getValueBool ())
+                if (tracking->getValueInteger () > 0)
 		{
                         //raDrive->setTargetSpeed (TRACK_SPEED + dra * SPEED_ARCDEGSEC);
 			//TODO: tady se musi dodelat trackovani pres REMOTES
