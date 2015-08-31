@@ -223,6 +223,8 @@ std::string Connection::getStateString ()
 				default:
 					_os << "unknow state " << real_state;
 			}
+			if (real_state & TEL_TRACKING)
+				_os << " | TRACKING";
 			if (real_state & TEL_CORRECTING)
 				_os << " | CORRECTING";
 			if (real_state & TEL_WAIT_CUP)
