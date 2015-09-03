@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2015-08-15</date>">
+  <!ENTITY dhdate      "<date>2015-08-31</date>">
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -116,7 +116,21 @@
       <varlistentry>
         <term>tle</term>
         <para>
-          Start tracking a satellite with given Two Line Element ephemerides.
+	  Start tracking a satellite with given Two Line Element ephemerides.
+	  Two lines epemerides are given as two string, enclosed in "". See
+          example below for an old Cosmos 1966 Rk ephemerides:
+        </para>
+        <para>
+          <emphasis>tle</emphasis> "1 19448U 88076D   02255.52918163 -.00000002  00000-0  10000-3 0  4873" "2 19448  65.7943 338.1906 7142558 193.4853 125.7046  2.04085818104610"
+        </para>
+        <para>
+          Those are the two line elements:
+        </para>
+        <para>
+          1 19448U 88076D   02255.52918163 -.00000002  00000-0  10000-3 0  4873
+        </para>
+        <para>
+          2 19448  65.7943 338.1906 7142558 193.4853 125.7046  2.04085818104610
         </para>
       </varlistentry>
     </variablelist>
