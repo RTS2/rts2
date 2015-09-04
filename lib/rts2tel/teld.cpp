@@ -89,7 +89,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	if (hasTracking)
 	{
 		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-		tracking->setValueBool (false);
+		tracking->addSelVal ("off");
+		tracking->addSelVal ("on");
+		tracking->addSelVal ("sidereal");
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 	}
@@ -1040,7 +1042,7 @@ void Telescope::postEvent (rts2core::Event * event)
 	{
 		case EVENT_TRACKING_TIMER:
 			// if tracking is still relevant, reschedule
-			if (tracking->getValueBool ())
+			if (tracking->getValueInteger ())
 			{
 				runTracking ();
 				addTimer (trackingInterval->getValueFloat (), event);
@@ -1145,11 +1147,11 @@ double Telescope::estimateTargetTime ()
 	return getTargetDistance () / 2.0;
 }
 
-int Telescope::setTracking (bool track, bool addTrackingTimer, bool send)
+int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 {
 	if (tracking != NULL)
 	{
-		tracking->setValueBool (track);
+		tracking->setValueInteger (track);
 		// make sure we will not run two timers
 		deleteTimers (EVENT_TRACKING_TIMER);
 		if (track && addTrackingTimer)
@@ -1451,6 +1453,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
+			setTracking (false);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1470,6 +1473,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
+			setTracking (false);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1584,6 +1588,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 	}
 	int ret;
 	resetMpecTLE ();
+	setTracking (false);
 	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = stopMove ();

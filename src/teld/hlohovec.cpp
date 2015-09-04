@@ -314,7 +314,7 @@ int Hlohovec::startResync ()
 int Hlohovec::isMoving ()
 {
 	callAutosave ();
-	if (tracking->getValueBool () && raDrive->isInPositionMode ())
+	if (tracking->getValueInteger () > 0 && raDrive->isInPositionMode ())
 	{
 		if (raDrive->isMovingPosition ())
 		{
@@ -338,7 +338,7 @@ int Hlohovec::isMoving ()
 			raDrive->setTargetSpeed (TRACK_SPEED);
 		}
 	}
-	if ((tracking->getValueBool () && raDrive->isInPositionMode ()) || (!tracking->getValueBool () && raDrive->isMoving ()) || decDrive->isMoving ())
+	if ((tracking->getValueInteger () > 0 && raDrive->isInPositionMode ()) || (tracking->getValueInteger () == 0 && raDrive->isMoving ()) || decDrive->isMoving ())
 		return 0;
 	return -2;
 }
@@ -373,7 +373,7 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	raDrive->setCurrentPos (ac);
 	decDrive->setCurrentPos (dc);
 	callAutosave ();
-	if (tracking->getValueBool ())
+	if (tracking->getValueInteger () > 0)
 		raDrive->setTargetSpeed (TRACK_SPEED);
 	return 0;
 }
@@ -425,7 +425,7 @@ void Hlohovec::setDiffTrack (double dra, double ddec)
 		throw rts2core::Error ("cannot call info in setDiffTrack");
 	if (!raDrive->isInPositionMode () || !raDrive->isMovingPosition ())
 	{
-		if (tracking->getValueBool ())
+		if (tracking->getValueInteger () > 0)
 			raDrive->setTargetSpeed (TRACK_SPEED + dra * SPEED_ARCDEGSEC);
 		else
 			raDrive->setTargetSpeed (dra * SPEED_ARCDEGSEC);

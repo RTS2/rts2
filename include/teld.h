@@ -834,12 +834,12 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track                if true, tracking is set to on
+		 * @param track                0 - no tracking, 1 - on object, 2 - sidereal
 		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
 		 * @param send                 if true, set rts2value and send in to all connections
 		 * @return 0 on success, -1 on error
 		 */
-		virtual int setTracking (bool track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
 		/**
 		 * Called to run tracking. It is up to driver implementation
@@ -909,7 +909,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueSelection *raGuide;
 		rts2core::ValueSelection *decGuide;
 
-		rts2core::ValueBool *tracking;
+		rts2core::ValueSelection *tracking;
 		rts2core::ValueFloat *trackingInterval;
 
 		/**

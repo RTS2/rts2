@@ -118,3 +118,100 @@ void ValueDoubleMinMax::setFromValue (Value * newValue)
 		copyMinMax ((ValueDoubleMinMax *) newValue);
 	}
 }
+
+ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name):ValueInteger (in_val_name)
+{
+	min = NAN;
+	max = NAN;
+	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
+}
+
+ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):ValueInteger (in_val_name, in_description, writeToFits, flags)
+{
+	min = NAN;
+	max = NAN;
+	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
+}
+
+int ValueIntegerMinMax::setValue (Connection * connection)
+{
+	int new_val;
+	if (connection->paramNextInteger (&new_val))
+		return -2;
+	// if we set it only with value..
+	if (connection->paramEnd ())
+	{
+		if (new_val < min || new_val > max)
+			return -2;
+		setValueInteger (new_val);
+		return 0;
+	}
+	if (connection->paramNextInteger (&min) || connection->paramNextInteger (&max) || !connection->paramEnd ())
+		return -2;
+	if (new_val < min || new_val > max)
+		return -2;
+	setValueInteger (new_val);
+	return 0;
+}
+
+int ValueIntegerMinMax::checkNotNull ()
+{
+	int local_failures = 0;
+	if (isnan (min))
+	{
+		local_failures ++;
+		logStream (MESSAGE_ERROR) << getName () << " limit (minimum) is not set" << sendLog;
+	}
+	if (isnan (max))
+	{
+		local_failures ++;
+		logStream (MESSAGE_ERROR) << getName () << " limit (maximum) is not set" << sendLog;
+	}
+
+	return local_failures + ValueInteger::checkNotNull ();
+}
+
+int ValueIntegerMinMax::doOpValue (char op, Value * old_value)
+{
+	int new_val;
+	switch (op)
+	{
+		case '+':
+			new_val = old_value->getValueInteger () + getValueInteger ();
+			break;
+		case '-':
+			new_val = old_value->getValueInteger () - getValueInteger ();
+			break;
+		case '=':
+			new_val = getValueInteger ();
+			break;
+			// no op
+		default:
+			return -2;
+	}
+	if (new_val < min || new_val > max)
+		return -2;
+	setValueInteger (new_val);
+	return 0;
+}
+
+const char * ValueIntegerMinMax::getValue ()
+{
+	sprintf (buf, "%.20le %.20le %.20le", getValueInteger (), getMin (), getMax ());
+	return buf;
+}
+
+const char * ValueIntegerMinMax::getDisplayValue ()
+{
+	sprintf (buf, "%d %d %d", getValueInteger (), getMin (), getMax ());
+	return buf;
+}
+
+void ValueIntegerMinMax::setFromValue (Value * newValue)
+{
+	ValueInteger::setFromValue (newValue);
+	if (newValue->getValueType () == (RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE))
+	{
+		copyMinMax ((ValueIntegerMinMax *) newValue);
+	}
+}
