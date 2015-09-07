@@ -958,6 +958,8 @@ int Sitech::checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d)
 
 void Sitech::runTracking ()
 {
+        if (getState & TEL_MASK_MOVING != TEL_OBSERVING)
+                return;
 	double sec_step = 2.0;
 	// calculate position sec_step from last position, base speed on this..
 	struct ln_equ_posn tarPos;
