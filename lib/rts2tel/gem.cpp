@@ -389,9 +389,27 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	struct ln_equ_posn model_change;
 	struct ln_equ_posn u_pos;
 
-	// minimize movement from current position, don't rotate around axis more then once
-	int32_t diff_ac = (ac - t_ac) % (int32_t)fabs(haCpd->getValueDouble () * 360.0);
-	int32_t diff_dc = (dc - t_dc) % (int32_t)fabs(decCpd->getValueDouble () * 360.0);
+	int32_t full_ac = (int32_t) fabs(haCpd->getValueDouble () * 360.0);
+	int32_t full_dc = (int32_t) fabs(decCpd->getValueDouble () * 360.0);
+
+	int32_t half_ac = (int32_t) fabs(haCpd->getValueDouble () * 180.0);
+	int32_t half_dc = (int32_t) fabs(decCpd->getValueDouble () * 180.0);
+
+	// minimize movement from current position, don't rotate around axis more than once
+	int32_t diff_ac = (ac - t_ac) % full_ac;
+	int32_t diff_dc = (dc - t_dc) % full_dc;
+
+
+	// still, when diff is bigger than half a circle, shorter path is opposite direction what's left
+	if (diff_ac > half_ac)
+		diff_ac -= full_ac;
+	if (diff_dc < -half_ac)
+		diff_ac += full_ac;
+
+	if (diff_dc > half_dc)
+		diff_dc -= full_dc;
+	if (diff_dc < -half_dc)
+		diff_dc += full_dc;
 
 	t_ac = ac - diff_ac;
 	t_dc = dc - diff_dc;
