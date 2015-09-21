@@ -219,6 +219,7 @@ int MICCD::initHardware ()
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			fan = NULL;
 			createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			mode->addSelVal ("NORMAL");
@@ -311,6 +312,7 @@ void MICCD::initDataTypes ()
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			addDataType (RTS2_DATA_USHORT);
 			break;
 	}
@@ -338,6 +340,7 @@ int MICCD::info ()
 			case G2:
 			case G3:
 			case G3_H:
+                        case GX_BI:
 				ret = reinitCamera ();
 				if (ret)
 					return -1;
@@ -360,6 +363,7 @@ int MICCD::info ()
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			ret = miccd_environment_temperature (&camera, &val);
 			if (ret)
 				return -1;
@@ -392,6 +396,7 @@ int MICCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			case G2:
 			case G3:
 			case G3_H:
+                        case GX_BI:
 			default:
 				return miccd_mode (&camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
 		}
@@ -500,6 +505,7 @@ int MICCD::startExposure ()
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			if (getExpType () != 1)
 			{
 				ret = miccd_open_shutter (&camera);
@@ -537,6 +543,7 @@ int MICCD::endExposure (int ret)
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			if (getExpType () != 1)
 			{
 				cret = miccd_close_shutter (&camera);
@@ -577,6 +584,7 @@ int MICCD::stopExposure ()
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			ret = miccd_close_shutter (&camera);
 			if (ret)
 				return -1;
@@ -607,6 +615,7 @@ int MICCD::doReadout ()
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			ret = miccd_read_frame (&camera, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getDataBuffer (0));
 			break;
 	}
@@ -667,6 +676,7 @@ int MICCD::reinitCamera ()
 		case G2:
 		case G3:
 		case G3_H:
+                case GX_BI:
 			if (miccd_mode (&camera, mode->getValueInteger ()))
 			{
 				logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set mode" << sendLog;
