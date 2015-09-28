@@ -40,7 +40,7 @@ def fit_model(params, a_ra, r_ra, a_dec, r_dec):
 
 def flip_dec(dec, ax_dec):
 	print 'flip_dec', dec, ax_dec
-	if ax_dec < -49246948.6862348300:
+	if ax_dec > -49246948.6862348300:
 		return 180 - dec
 	else:
 		return dec
@@ -98,5 +98,5 @@ with open(sys.argv[1]) as f:
 	diff_model = fit_model(best, aa_ra, ar_ra, aa_dec, ar_dec)
 	print diff_model * 3600.0
 
-	plot(range(0,len(diff_model)), diff_model * 3600.0, 'bo', range(0,len(diff_ra)), diff_ra * 3600.0, 'ro')
+	plot(range(0,len(diff_model)), diff_model * 3600.0, 'bo', range(0,len(diff_ra)), diff_ra * 3600.0, 'ro', range(len(diff_ra), len(diff_ra) + len(diff_dec)), diff_dec * 3600.0, 'go')
 	show()

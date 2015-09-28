@@ -31,9 +31,9 @@
 # this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 # Place - Suite 330, Boston, MA  02111-1307, USA.
 
-import sextractor
+import rts2.sextractor
 import sys
-import focusing
+import rts2.focusing
 import numpy
 from scipy import array
 
@@ -204,7 +204,7 @@ class ShiftStore:
 		pass them through sequence finding algorithm, and fit focusing position.
 		"""
 
-		c = sextractor.Sextractor(['NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+		c = rts2.sextractor.Sextractor(['NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
 		c.runSExtractor(fn)
 
 
@@ -271,9 +271,9 @@ class ShiftStore:
 						print 'removing focuser position, because not enough matches were found',self.focpos[x]
 					self.focpos.remove(self.focpos[x])
 			# fit it
-			foc = focusing.Focusing()
+			foc = rts2.focusing.Focusing()
 
-			res,ftype = foc.doFitOnArrays(fwhm,self.focpos,focusing.H2)
+			res,ftype = foc.doFitOnArrays(fwhm,self.focpos,rts2.focusing.H2)
 			if interactive:
 				print res,ftype
 				foc.plotFit(res,ftype)

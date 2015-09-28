@@ -8,6 +8,7 @@ GRANT ALL ON grb_script TO GROUP observers;
 GRANT ALL ON swift TO GROUP observers;
 GRANT ALL ON integral TO GROUP observers;
 GRANT ALL ON targets TO GROUP observers;
+GRANT ALL ON scripts TO GROUP observers;
 GRANT ALL ON observations TO GROUP observers;
 GRANT ALL ON ot TO GROUP observers;
 GRANT ALL ON terestial TO GROUP observers;
