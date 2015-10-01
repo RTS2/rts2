@@ -121,16 +121,19 @@
           example below for an old Cosmos 1966 Rk ephemerides:
         </para>
         <para>
-          <emphasis>tle</emphasis> "1 19448U 88076D   02255.52918163 -.00000002  00000-0  10000-3 0  4873" "2 19448  65.7943 338.1906 7142558 193.4853 125.7046  2.04085818104610"
+          <emphasis>tle</emphasis> "1 19448U 88076D&nbsp;&nbsp;&nbsp;02255.52918163 -.00000002&nbsp;&nbsp;00000-0&nbsp;&nbsp;10000-3 0&nbsp;&nbsp;4873" "2 19448&nbsp;&nbsp;65.7943 338.1906 7142558 193.4853 125.7046&nbsp;&nbsp;2.04085818104610"
         </para>
         <para>
           Those are the two line elements:
         </para>
         <para>
-          1 19448U 88076D   02255.52918163 -.00000002  00000-0  10000-3 0  4873
+          1 19448U 88076D&nbsp;&nbsp;&nbsp;02255.52918163 -.00000002&nbsp;&nbsp;00000-0&nbsp;&nbsp;10000-3 0&nbsp;&nbsp;4873
         </para>
         <para>
-          2 19448  65.7943 338.1906 7142558 193.4853 125.7046  2.04085818104610
+          2 19448&nbsp;&nbsp;65.7943 338.1906 7142558 193.4853 125.7046&nbsp;&nbsp;2.04085818104610
+        </para>
+        <para>
+          <bold>Please keep in mind that TLE format is space sensitive, e.g. when copying above to rts2-mon, make sure proper amount of spaces is included.</bold>
         </para>
       </varlistentry>
     </variablelist>

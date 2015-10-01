@@ -88,7 +88,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	if (hasTracking)
 	{
-		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE);
 		tracking->addSelVal ("off");
 		tracking->addSelVal ("on");
 		tracking->addSelVal ("sidereal");
@@ -306,28 +306,36 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 {
 	tar_distance = NAN;
 
-	// calculate from MPEC..
-	if (mpec->getValueString ().length () > 0)
+	switch (tracking->getValueInteger ())
 	{
-		struct ln_lnlat_posn observer;
-		struct ln_equ_posn parallax;
-		observer.lat = telLatitude->getValueDouble ();
-		observer.lng = telLongitude->getValueDouble ();
-		LibnovaCurrentFromOrbit (out_tar, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
-	}
-	// calculate from TLE..
-	else if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
-	{
-		calculateTLE (JD, out_tar->ra, out_tar->dec, tar_distance);
-		out_tar->ra = ln_rad_to_deg (out_tar->ra);
-		out_tar->dec = ln_rad_to_deg (out_tar->dec);
-	}
-	// get from ORI, if constant..
-	else
-	{
-		getOrigin (out_tar);
-		if (!isnan (diffTrackStart->getValueDouble ()))
-			addDiffRaDec (out_tar, (JD - diffTrackStart->getValueDouble ()) * 86400.0);
+		case 0:       // no tracking
+			return 1;
+			break;
+		case 1:       // on object
+			// calculate from MPEC..
+			if (mpec->getValueString ().length () > 0)
+			{
+				struct ln_lnlat_posn observer;
+				struct ln_equ_posn parallax;
+				observer.lat = telLatitude->getValueDouble ();
+				observer.lng = telLongitude->getValueDouble ();
+				LibnovaCurrentFromOrbit (out_tar, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
+				break;
+			}
+			// calculate from TLE..
+			else if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
+			{
+				calculateTLE (JD, out_tar->ra, out_tar->dec, tar_distance);
+				out_tar->ra = ln_rad_to_deg (out_tar->ra);
+				out_tar->dec = ln_rad_to_deg (out_tar->dec);
+				break;
+			}
+			// don't break, as siderail tracking will be used
+		default:
+			// get from ORI, if constant..
+			getOrigin (out_tar);
+			if (!isnan (diffTrackStart->getValueDouble ()))
+				addDiffRaDec (out_tar, (JD - diffTrackStart->getValueDouble ()) * 86400.0);
 	}
 
 	// offsets, corrections,..
@@ -569,7 +577,7 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 			if (blockMove->getValueBool () == true || (getState () & TEL_MASK_MOVING) == TEL_PARKING || (getState () & TEL_MASK_MOVING) == TEL_PARKED)
 				return -2;
 		}
-		if (setTracking (((rts2core::ValueBool *) new_value)->getValueBool (), true, false))
+		if (setTracking (new_value->getValueInteger (), true, false))
 			return -2;
 	}
 	else if (old_value == mpec)
@@ -965,10 +973,7 @@ void Telescope::checkMoves ()
 		{
 			if (move_connection)
 				sendInfo (move_connection);
-			maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
-				TEL_MASK_MOVING | BOP_EXPOSURE,
-				DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
-				"move finished with error");
+			maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished with error");
 			move_connection = NULL;
 			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
@@ -978,15 +983,10 @@ void Telescope::checkMoves ()
 			ret = endMove ();
 			if (ret)
 			{
-				maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
-					TEL_MASK_MOVING | BOP_EXPOSURE,
-					DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
-					"move finished with error");
+				maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished with error");
 			}
 			else
-				maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE,
-					TEL_NOT_CORRECTING | TEL_OBSERVING,
-					"move finished without error");
+				maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished without error");
 			if (move_connection)
 			{
 				sendInfo (move_connection);
@@ -1006,9 +1006,7 @@ void Telescope::checkMoves ()
 		{
 			useParkFlipping = false;
 			infoAll ();
-			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
-				DEVICE_ERROR_HW | TEL_PARKED,
-				"park command finished with error");
+			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_PARKED, "park command finished with error");
 			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 		else if (ret == -2)
@@ -1089,7 +1087,7 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	{
 		blockMove->setValueBool (true);
 		sendValueAll (blockMove);
-		setTracking (false);
+		setTracking (0);
 		stopMove ();
 		logStream (MESSAGE_WARNING) << "stoped movement of the delescope, triggered by STOP_MASK change" << sendLog;
 	}
@@ -1154,11 +1152,17 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 		tracking->setValueInteger (track);
 		// make sure we will not run two timers
 		deleteTimers (EVENT_TRACKING_TIMER);
-		if (track && addTrackingTimer)
+		if (track > 0)
 		{
-			addTimer (trackingInterval->getValueFloat (), new rts2core::Event (EVENT_TRACKING_TIMER));
+			maskState (TEL_MASK_TRACK, TEL_TRACKING, "tracking started");
+			if (addTrackingTimer == true)
+				addTimer (trackingInterval->getValueFloat (), new rts2core::Event (EVENT_TRACKING_TIMER));
 		}
-		if (send==true)
+		else
+		{
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking finished");
+		}
+		if (send == true)
 			sendValueAll (tracking);
 	}
 	return 0;
@@ -1254,7 +1258,7 @@ int Telescope::info ()
 		hrpos.az = telAltAz->getAz ();
 		if (!hardHorizon->is_good (&hrpos))
 		{
-			setTracking (false);
+			setTracking (0);
 		}
 	}
 	
@@ -1453,7 +1457,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
-			setTracking (false);
+			setTracking (0);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1473,7 +1477,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
-			setTracking (false);
+			setTracking (0);
 			stopMove ();
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
@@ -1511,7 +1515,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING, 0, "correcting interrupted by move");
 		}
 		logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
-		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
+		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | TEL_MASK_TRACK | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 		flip_move_start = telFlip->getValueInteger ();
 	}
 
@@ -1520,7 +1524,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	if (ret)
 	{
 		useParkFlipping = false;
-		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING, "movement failed");
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
 		return ret;
@@ -1588,7 +1592,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 	}
 	int ret;
 	resetMpecTLE ();
-	setTracking (false);
+	setTracking (0);
 	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = stopMove ();
@@ -1618,7 +1622,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 
 		incMoveNum ();
 		setParkTimeNow ();
-		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING, "parking started");
+		maskState (TEL_MASK_MOVING | TEL_MASK_TRACK | TEL_MASK_NEED_STOP, TEL_PARKING, "parking started");
 	}
 
 	setIdleInfoInterval (refreshSlew->getValueDouble ());
@@ -1694,10 +1698,10 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (true, true);
+		setTracking (tracking->getValueInteger (), true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			setTracking (false);
+			setTracking (0);
 		return ret;
 	}
 	else if (conn->isCommand ("move_ha_sg"))
@@ -1719,10 +1723,10 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (true, true);
+		setTracking (tracking->getValueInteger (), true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			setTracking (false);
+			setTracking (0);
 		return ret;
 	}
 	else if (conn->isCommand ("move_mpec"))
@@ -1734,10 +1738,10 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		mpec->setValueString (str);
 		tle_l1->setValueString ("");
 		tle_l2->setValueString ("");
-		setTracking (true, true);
+		setTracking (tracking->getValueInteger (), true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			setTracking (false);
+			setTracking (0);
 		return ret;
 	}
 	else if (conn->isCommand ("altaz"))
@@ -1746,7 +1750,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (false);
+		setTracking (0);
 		return moveAltAz ();
 	}
 	else if (conn->isCommand ("resync"))
@@ -1870,14 +1874,14 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return -2;
 		modelOn ();
-		setTracking (false);
+		setTracking (0);
 		return startPark (conn);
 	}
 	else if (conn->isCommand ("stop"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		setTracking (false);
+		setTracking (0);
 		return stopMove ();
 	}
 	else if (conn->isCommand ("change"))
@@ -1909,7 +1913,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("worm_stop"))
 	{
-		ret = setTracking (false);
+		ret = setTracking (0);
 		if (ret)
 		{
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot stop worm");
@@ -1921,7 +1925,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (blockMove->getValueBool () == true || (getState () & TEL_MASK_MOVING) == TEL_PARKING || (getState () & TEL_MASK_MOVING) == TEL_PARKED)
 			ret = -1;
 		else
-			ret = setTracking (true, true);
+			ret = setTracking (tracking->getValueInteger (), true);
 
 		if (ret)
 		{

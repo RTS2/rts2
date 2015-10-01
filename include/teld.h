@@ -565,6 +565,11 @@ class Telescope:public rts2core::Device
 		 * Calculate target position for given JD.
 		 * This function shall be used for adaptive tracking.
 		 *
+		 * If tracking is set to object, future position is calculated from
+		 * current RA DEC position. Otherwise, future position is calculated
+		 * from target position, where target position can change in time (for 
+		 * MPEC and LTE targets).
+		 *
 		 * @param JD              date for which position will be calculated
 		 * @param out_tar         target position
 		 * @param tar_distance    distance to target (in m), if know (satellites,..)

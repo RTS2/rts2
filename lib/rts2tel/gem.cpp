@@ -313,6 +313,7 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 	flipping->addSelVal ("cw up");
 
 	createValue (haCWDAngle, "ha_cwd_angle", "[deg] angle between HA axis and local meridian", false);
+	createValue (targetHaCWDAngle, "tar_ha_cwd_angle", "[deg] target angle between HA axis and local meridian", false);
 
 	createValue (haZeroPos, "_ha_zero_pos", "position of the telescope on zero", false);
 	haZeroPos->addSelVal ("EAST");

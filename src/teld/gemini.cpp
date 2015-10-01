@@ -86,7 +86,7 @@ class Gemini:public TelLX200
 		int correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec);
 		virtual int saveModel ();
 		virtual int loadModel ();
-		virtual int setTracking (bool track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 		int stopWorm ();
 		int startWorm ();
 		virtual int resetMount ();
@@ -1088,7 +1088,7 @@ int Gemini::idle ()
 		}
 		else
 		{
-			setTracking (false);
+			setTracking (0);
 			stopMove ();
 			ret = -1;
 		}
@@ -1366,7 +1366,7 @@ int Gemini::isMoving ()
 		if (nextChangeDec != 0)
 		{
 			// worm need to be started - most probably due to error in Gemini
-			setTracking (true, true);
+			setTracking (tracking->getValueInteger (), true);
 			// initiate dec change
 			if (changeDec ())
 				return -1;
@@ -1441,7 +1441,7 @@ int Gemini::endMove ()
 	if (changeTime.tv_sec > 0)
 	{
 		if (!decChanged)
-			setTracking (true, true);
+			setTracking (tracking->getValueInteger (), true);
 		decChanged = false;
 		timerclear (&changeTime);
 		return TelLX200::endMove ();
@@ -1964,7 +1964,7 @@ extern int Gemini::loadModel ()
 }
 
 
-int Gemini::setTracking (bool track, bool addTrackingTimer, bool send)
+int Gemini::setTracking (int track, bool addTrackingTimer, bool send)
 {
 	int ret;
 
@@ -2000,7 +2000,7 @@ int Gemini::parkBootesSensors ()
 	time_t now;
 	double old_tel_axis;
 	ret = info ();
-	setTracking (true, true);
+	setTracking (tracking->getValueInteger (), true);
 	// first park in RA
 	old_tel_axis = featurePort->getValueInteger () & 1;
 	direction = old_tel_axis ? DIR_EAST : DIR_WEST;

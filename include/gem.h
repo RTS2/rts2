@@ -37,9 +37,10 @@ class GEM: public Telescope
 
 	protected:
 
-		rts2core::ValueSelection *flipping; //* flipping strategy - shortest, preffer same, preffer opposite,..
+		rts2core::ValueSelection *flipping;       //* flipping strategy - shortest, preffer same, preffer opposite,..
 
-		rts2core::ValueDouble *haCWDAngle;
+		rts2core::ValueDouble *haCWDAngle;        //* current HA counterweight down angle
+		rts2core::ValueDouble *targetHaCWDAngle;  //* target HA counterweight down angle
 
 		/**
 		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).

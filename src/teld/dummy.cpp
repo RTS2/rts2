@@ -235,7 +235,7 @@ void Dummy::runTracking ()
 	int ret = calculateTarget (JD, 2, &target, tar_distance, t_ac, t_dc);
 	if (ret)
 	{
-		setTracking (false);
+		setTracking (0);
 		return;
 	}
 

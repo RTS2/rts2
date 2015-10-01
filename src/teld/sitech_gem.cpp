@@ -88,7 +88,7 @@ class Sitech:public GEM
 			return isMoving ();
 		}
 
-		virtual int setTracking (bool track, bool addTrackingTimer = false, bool send = true);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
 		/**
 		 * Starts mount tracking - endless speed limited pointing.
@@ -219,8 +219,6 @@ class Sitech:public GEM
 		double offsetha;
 		double offsetdec;
                  
-		int pmodel;                    /* pointing model default to raw data */
-	
 		/* Communications variables and routines for internal use */
 		const char *device_file;
 
@@ -263,8 +261,6 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 
 	offsetha = 0.;
 	offsetdec = 0.;
-
-	pmodel = RAW;
 
 	device_file = "/dev/ttyUSB0";
 
@@ -331,7 +327,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (ra_sitech_speed, "ra_sitech_speed", "speed in controller units", false);
 	createValue (dec_sitech_speed, "dec_sitech_speed", "speed in controller units", false);
 
-	createValue (use_constant_speed, "use_constant_speed", "use precalculated speed for corrections", false, RTS2_VALUE_WRITABLE);
+	createValue (use_constant_speed, "use_constant_speed", "use precalculated speed for tracking", false, RTS2_VALUE_WRITABLE);
 	use_constant_speed->setValueBool (false);
 
 	createValue (trackingPIDs, "tracking_pids", "true if tracking PIDs are in action", false);
@@ -701,6 +697,7 @@ int Sitech::startResync ()
 
 	t_ra_pos->setValueLong (ac);
 	t_dec_pos->setValueLong (dc);
+	targetHaCWDAngle->setValueDouble (getHACWDAngle (ac));
 
 	ret = sitechMove (ac, dc);
 	if (ret < 0)
@@ -757,11 +754,11 @@ int Sitech::isMoving ()
 int Sitech::endMove ()
 {
 	partialMove->setValueInteger (0);
-	setTracking (true, true);
+	setTracking (tracking->getValueInteger (), true);
 	return GEM::endMove ();
 }
 
-int Sitech::setTracking (bool track, bool addTrackingTimer, bool send)
+int Sitech::setTracking (int track, bool addTrackingTimer, bool send)
 {
 	if (track)
 	{
@@ -982,8 +979,9 @@ void Sitech::runTracking ()
 	int ret = calculateTarget (futureJD, sec_step, &tarPos, tar_distance, ac, dc);
 	if (ret)
 	{
-		logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
-		setTracking (false);
+		if (ret < 0)
+			logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
+		setTracking (0);
 		return;
 	}
 
@@ -1052,7 +1050,7 @@ void Sitech::runTracking ()
 	if (ret != 0)
 	{
 		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
-		setTracking (false);
+		setTracking (0);
 		return;
 	}
 

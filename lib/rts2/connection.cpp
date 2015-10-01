@@ -209,7 +209,10 @@ std::string Connection::getStateString ()
 			switch (real_state & TEL_MASK_MOVING)
 			{
 				case TEL_OBSERVING:
-					_os << "observing";
+					if (real_state & TEL_TRACKING)
+						_os << "TRACKING";
+					else
+						_os << "not tracking";
 					break;
 				case TEL_MOVING:
 					_os << "MOVING";
@@ -223,8 +226,6 @@ std::string Connection::getStateString ()
 				default:
 					_os << "unknow state " << real_state;
 			}
-			if (real_state & TEL_TRACKING)
-				_os << " | TRACKING";
 			if (real_state & TEL_CORRECTING)
 				_os << " | CORRECTING";
 			if (real_state & TEL_WAIT_CUP)
