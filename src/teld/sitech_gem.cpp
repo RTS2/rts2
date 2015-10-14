@@ -32,7 +32,22 @@
 // Crystal frequency
 #define CRYSTAL_FREQ            96000000
 
+// Limit on number of steps for trajectory check
 #define TRAJECTORY_CHECK_LIMIT  2000
+
+// Bits in error state
+#define ERROR_GATE_VOLTS_LOW          0x001
+#define ERROR_OVERCURRENT_HARDWARE    0x002
+#define ERROR_OVERCURRENT_FIRMWARE    0x004
+#define ERROR_MOTOR_VOLTS_LOW         0x008
+#define ERROR_POWER_BOARD_OVER_TEMP   0x010
+#define ERROR_NEEDS_RESET             0x020
+#define ERROR_LIMIT_MINUS             0x040
+#define ERROR_LIMIT_PLUS              0x080
+#define ERROR_TIMED_OVER_CURRENT      0x100
+#define ERROR_POSITION_ERROR          0x200
+#define ERROR_BISS_ENCODER_ERROR      0x400
+#define ERROR_CHECKSUM                0x800
 
 namespace rts2teld
 {
@@ -422,6 +437,9 @@ void Sitech::getTel ()
 				case 0:
 					ra_errors_val->setValueInteger (ra_val);
 					ra_errors->setValueString (findErrors (ra_val));
+					// stop if on limits
+					if ((ra_val & ERROR_LIMIT_MINUS) || (ra_val & ERROR_LIMIT_PLUS))
+						fullStop ();
 					break;
 
 				case 1:
@@ -447,6 +465,9 @@ void Sitech::getTel ()
 				case 0:
 					dec_errors_val->setValueInteger (dec_val);
 					dec_errors->setValueString (findErrors (dec_val));
+					// stop if on limits
+					if ((dec_val & ERROR_LIMIT_MINUS) || (dec_val & ERROR_LIMIT_PLUS))
+						fullStop ();
 					break;
 
 				case 1:
@@ -499,29 +520,29 @@ void Sitech::getPIDs ()
 std::string Sitech::findErrors (uint16_t e)
 {
 	std::string ret;
-	if (e & 0x001)
+	if (e & ERROR_GATE_VOLTS_LOW)
 		ret += "Gate Volts Low. ";
-	if (e & 0x002)
+	if (e & ERROR_OVERCURRENT_HARDWARE)
 		ret += "OverCurrent Hardware. ";
-	if (e & 0x004)
+	if (e & ERROR_OVERCURRENT_FIRMWARE)
 		ret += "OverCurrent Firmware. ";
-	if (e & 0x008)
+	if (e & ERROR_MOTOR_VOLTS_LOW)
 		ret += "Motor Volts Low. ";
-	if (e & 0x010)
+	if (e & ERROR_POWER_BOARD_OVER_TEMP)
 		ret += "Power Board Over Temp. ";
-	if (e & 0x020)
+	if (e & ERROR_NEEDS_RESET)
 		ret += "Needs Reset (may not have any other errors). ";
-	if (e & 0x040)
+	if (e & ERROR_LIMIT_MINUS)
 		ret += "Limit -. ";
-	if (e & 0x080)
+	if (e & ERROR_LIMIT_PLUS)
 		ret += "Limit +. ";
-	if (e & 0x100)
+	if (e & ERROR_TIMED_OVER_CURRENT)
 		ret += "Timed Over Current. ";
-	if (e & 0x200)
+	if (e & ERROR_POSITION_ERROR)
 		ret += "Position Error. ";
-	if (e & 0x400)
+	if (e & ERROR_BISS_ENCODER_ERROR)
 		ret += "BiSS Encoder Error. ";
-	if (e & 0x800)
+	if (e & ERROR_CHECKSUM)
 		ret += "Checksum Error in return from Power Board. ";
 	return ret;
 }
