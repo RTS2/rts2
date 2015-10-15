@@ -174,6 +174,8 @@ class Sitech:public GEM
 		rts2core::ValueLong *ra_enc;
 		rts2core::ValueLong *dec_enc;
 
+		rts2core::ValueInteger *extraBit;
+		rts2core::ValueBool *autoMode;
 		rts2core::ValueLong *mclock;
 		rts2core::ValueInteger *temperature;
 
@@ -308,6 +310,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (ra_enc, "ENCRA", "RA encoder readout", true);
 	createValue (dec_enc, "ENCDEC", "DEC encoder readout", true);
 
+	createValue (extraBit, "extra_bits", "extra bits from axis status", false, RTS2_DT_HEX);
+	createValue (autoMode, "auto_mode", "sitech auto mode", false, RTS2_DT_ONOFF);
 	createValue (mclock, "mclock", "millisecond board clocks", false);
 	createValue (temperature, "temperature", "[C] board temperature (CPU)", false);
 	createValue (ra_worm_phase, "y_worm_phase", "RA worm phase", false);
@@ -410,6 +414,9 @@ void Sitech::getTel ()
 	ra_enc->setValueLong (radec_status.y_enc);
 	dec_enc->setValueLong (radec_status.x_enc);
 
+	extraBit->setValueInteger (radec_status.extra_bits);
+	// not stopped, not in manual mode
+	autoMode->setValueBool ((radec_status.extra_bits & 0x33) == 0);
 	mclock->setValueLong (radec_status.mclock);
 	temperature->setValueInteger (radec_status.temperature);
 
