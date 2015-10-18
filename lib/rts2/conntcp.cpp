@@ -72,6 +72,16 @@ int ConnTCP::init ()
 	// empty hostname opens server connection (listening socket)
 	if (hostname.length () == 0)
 	{
+		struct sockaddr_in server;
+		server.sin_family = AF_INET;
+		server.sin_port = htons (port);
+		server.sin_addr.s_addr = htonl (INADDR_ANY);
+		// bind
+		ret = bind (sock, (struct sockaddr *) &server, sizeof (server));
+		if (ret)
+			throw ConnCreateError (this, "cannot bind on socket", errno);
+
+		// listen 
 		ret = listen (sock, 1);
 		if (ret)
 			throw ConnCreateError (this, "cannot listen on socket", errno);

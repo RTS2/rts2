@@ -24,7 +24,7 @@ class AzCam:public rts2camd::Camera
 
 		int callCommand (const char *cmd);
 
-		const char *azcamHost;
+		HostString *azcamHost;
 };
 
 }
@@ -42,6 +42,7 @@ AzCam::~AzCam ()
 {
 	delete dataConn;
 	delete commandConn;
+	delete azcamHost;
 }
 
 int AzCam::processOption (int opt)
@@ -49,7 +50,7 @@ int AzCam::processOption (int opt)
 	switch (opt)
 	{
 		case 'a':
-			azcamHost = optarg;
+			azcamHost = new HostString (optarg, "123");
 			break;
 		default:
 			return Camera::processOption (opt);
@@ -65,10 +66,17 @@ int AzCam::initHardware()
 		return -1;
 	}
 
-	commandConn = new rts2core::ConnTCP (this, azcamHost, 123);
-	dataConn = new rts2core::ConnTCP (this, azcamHost, 1234);
+	commandConn = new rts2core::ConnTCP (this, azcamHost->getHostname (), azcamHost->getPort ());
+	dataConn = new rts2core::ConnTCP (this, 1234);
 
-	commandConn->init ();
+	try
+	{
+		commandConn->init ();
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << "cannot connect to " << azcamHost->getHostname () << ":" << azcamHost->getPort () << sendLog;
+	}
 	dataConn->init ();
 
 	if (getDebug())
@@ -76,6 +84,9 @@ int AzCam::initHardware()
 		commandConn->setDebug ();
 		dataConn->setDebug ();
 	}
+
+	addConnection (dataConn);
+
 	return 0;
 }
 
