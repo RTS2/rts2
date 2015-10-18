@@ -220,7 +220,7 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 	ax_status.keypad = ret[17];
 	ax_status.x_bit = ret[18];
 	ax_status.y_bit = ret[19];
-	ax_status.extra_bit = ret[20];
+	ax_status.extra_bits = ret[20];
 	ax_status.ain_1 = le16toh (*((uint16_t *) (ret + 21)));
 	ax_status.ain_2 = le16toh (*((uint16_t *) (ret + 23)));
 	ax_status.mclock = le32toh (*((uint32_t *) (ret + 25)));

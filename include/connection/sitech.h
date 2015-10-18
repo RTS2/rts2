@@ -38,7 +38,7 @@ typedef struct
 	int8_t keypad;           //* Keypad status
 	int8_t x_bit;            //* XBits
 	int8_t y_bit;            //* YBits
-	int8_t extra_bit;        //* Extra bits
+	int8_t extra_bits;       //* Extra bits
 	int16_t ain_1;           //* Analog input 1
 	int16_t ain_2;           //* Analog input 2
 	// bit 25
