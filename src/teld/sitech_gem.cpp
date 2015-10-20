@@ -418,8 +418,8 @@ void Sitech::getTel ()
 
 	extraBit->setValueInteger (radec_status.extra_bits);
 	// not stopped, not in manual mode
-	autoModeRa->setValueBool ((radec_status.extra_bits & 0x30) == 0);
-	autoModeDec->setValueBool ((radec_status.extra_bits & 0x03) == 0);
+	autoModeRa->setValueBool ((radec_status.extra_bits & 0x20) == 0);
+	autoModeDec->setValueBool ((radec_status.extra_bits & 0x02) == 0);
 	mclock->setValueLong (radec_status.mclock);
 	temperature->setValueInteger (radec_status.temperature);
 
