@@ -23,7 +23,7 @@ lib_LTLIBRARIES = librts2db.la
 nodist_librts2db_la_SOURCES = sqlerror.cpp devicedb.cpp target.cpp sub_targets.cpp appdb.cpp sqlcolumn.cpp observation.cpp \
 	observationset.cpp taruser.cpp rts2count.cpp imageset.cpp targetset.cpp plan.cpp planset.cpp \
 	rts2prop.cpp camlist.cpp target_auger.cpp messagedb.cpp rts2targetplanet.cpp targetgrb.cpp \
-	targetell.cpp targettle.cpp user.cpp userset.cpp account.cpp accountset.cpp recvals.cpp records.cpp recordsavg.cpp \
+	targetell.cpp tletarget.cpp user.cpp userset.cpp account.cpp accountset.cpp recvals.cpp records.cpp recordsavg.cpp \
 	augerset.cpp labels.cpp labellist.cpp queues.cpp
 
 librts2db_la_SOURCES = simbadtarget.cpp mpectarget.cpp imagesetstat.cpp constraints.cpp

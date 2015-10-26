@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2db/targettle.h"
+#include "rts2db/tletarget.h"
 
 #include "infoval.h"
 #include "libnova_cpp.h"

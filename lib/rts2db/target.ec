@@ -21,7 +21,7 @@
 #include "rts2db/targetell.h"
 #include "rts2targetplanet.h"
 #include "rts2db/targetgrb.h"
-#include "rts2db/targettle.h"
+#include "rts2db/tletarget.h"
 
 #include "rts2db/constraints.h"
 #include "rts2db/target.h"
