@@ -71,6 +71,20 @@
 #define COMMAND_TELD_MOVE       "move"
 
 /**
+ * Peek telescope movement. @ingroup RTS2Command
+ *
+ * @subsection Examples
+ *
+ * To preview movement to 1:20 in RA, -85:21:00 in DEC, use one of the following:
+ *  - peek 20.00 -85:21:00
+ *  - peek 1:20 -85:21
+ *  - peek 1:20:00 -85:21
+ *  - peek 20 -85.35
+ */ 
+
+#define COMMAND_TELD_PEEK       "peek"
+
+/**
  * Send client location of the latest camera image. @ingroup RTS2Command
  *
  * This command is used when camera produces data directly written on the disk.

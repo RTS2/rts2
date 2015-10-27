@@ -22,6 +22,8 @@
 
 #include "target.h"
 
+#include "pluto/norad.h"
+
 namespace rts2db
 {
 
@@ -49,7 +51,14 @@ class TLETarget:public Target
 		double getSolarDistance (double JD);
 
 	private:
-		std::string tle;
+		std::string tle1;
+		std::string tle2;
+
+		tle_t tle;
+
+		int ephem;
+		int is_deep;
+
 		void getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax);
 };
 
