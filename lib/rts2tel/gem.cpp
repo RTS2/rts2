@@ -312,8 +312,10 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 	flipping->addSelVal ("cw down");
 	flipping->addSelVal ("cw up");
 
-	createValue (haCWDAngle, "ha_cwd_angle", "[deg] angle between HA axis and local meridian", false);
-	createValue (targetHaCWDAngle, "tar_ha_cwd_angle", "[deg] target angle between HA axis and local meridian", false);
+	createValue (haCWDAngle, "ha_cwd_angle", "[deg] angle between HA axis and local meridian", false, RTS2_DT_DEGREES);
+	createValue (targetHaCWDAngle, "tar_ha_cwd_angle", "[deg] target angle between HA axis and local meridian", false, RTS2_DT_DEGREES);
+
+	createValue (peekHaCwdAngle, "peek_ha_cwd_angle", "[deg] peek angle (on peek command) between HA axis and local meridian", false, RTS2_DT_DEGREES);
 
 	createValue (haZeroPos, "_ha_zero_pos", "position of the telescope on zero", false);
 	haZeroPos->addSelVal ("EAST");
@@ -337,6 +339,25 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 GEM::~GEM (void)
 {
 
+}
+
+int GEM::peek (double ra, double dec)
+{
+	struct ln_equ_posn peekPos;
+	peekPos.ra = ra;
+	peekPos.dec = dec;
+
+	int32_t ac;
+	int32_t dc;
+
+	double JD = ln_get_julian_from_sys ();
+
+	int ret = sky2counts (JD, &peekPos, ac, dc);
+	if (ret)
+		return ret;
+
+	peekHaCwdAngle->setValueDouble (getHACWDAngle (ac));
+	return 0;
 }
 
 void GEM::unlockPointing ()

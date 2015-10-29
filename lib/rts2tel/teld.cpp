@@ -1668,6 +1668,11 @@ void Telescope::startOffseting (rts2core::Value *changed_value)
 	startResyncMove (NULL, 0);
 }
 
+int Telescope::peek (double ra, double dec)
+{
+	return 0;
+}
+
 int Telescope::moveAltAz ()
 {
 	struct ln_hrz_posn hrz;
@@ -1743,6 +1748,12 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (ret)
 			setTracking (0);
 		return ret;
+	}
+	else if (conn->isCommand (COMMAND_TELD_PEEK))
+	{
+		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
+			return -2;
+		return peek (obj_ra, obj_dec);
 	}
 	else if (conn->isCommand ("altaz"))
 	{

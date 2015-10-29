@@ -41,6 +41,7 @@ class GEM: public Telescope
 
 		rts2core::ValueDouble *haCWDAngle;        //* current HA counterweight down angle
 		rts2core::ValueDouble *targetHaCWDAngle;  //* target HA counterweight down angle
+		rts2core::ValueDouble *peekHaCwdAngle;    //* peek HA counterweight down angle
 
 		/**
 		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
@@ -92,6 +93,8 @@ class GEM: public Telescope
 		}
 
 		int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD);
+
+		virtual int peek (double ra, double dec);
 
 		/**
 		 * Unlock basic pointing parameters. The parameters such as zero offsets etc. are made writable.

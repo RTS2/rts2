@@ -736,6 +736,20 @@ class Telescope:public rts2core::Device
 		virtual void startOffseting (rts2core::Value *changed_value);
 
 		/**
+		 * Preview (peek) movement to given RA DEC coordinates. Peek
+		 * variables names are prefixed with peek_, and depends on telescope
+		 * model (GEM, Alt-Az, Fork etc..). Usually target axis counts values
+		 * are present, with optional data on axis orientation and time
+		 * telescope can remain tracking at sidereal rate.
+		 *
+		 * @param ra    peek RA coordinate
+		 * @param dec   peek DEC coordinate
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		virtual int peek (double ra, double dec);
+
+		/**
 		 * Move telescope to target ALTAZ coordinates.
 		 */
 		virtual int moveAltAz ();
