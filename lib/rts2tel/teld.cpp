@@ -1699,7 +1699,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	if (conn->isCommand (COMMAND_TELD_MOVE))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
@@ -1712,7 +1712,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand ("move_ha_sg"))
 	{
 		if (conn->paramNextHMS (&obj_ha) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		double JD = ln_get_julian_from_sys ();
 		obj_ra = getLocSidTime ( JD) * 15. - obj_ha ;
 
@@ -1724,7 +1724,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand ("move_not_model"))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
@@ -1738,7 +1738,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		char *str;
 		if (conn->paramNextString (&str) || !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		mpec->setValueString (str);
 		tle_l1->setValueString ("");
@@ -1752,13 +1752,13 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand (COMMAND_TELD_PEEK))
 	{
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
-		return peek (obj_ra, obj_dec);
+			return DEVDEM_E_PARAMSNUM;
+		return peek (obj_ra, obj_dec) == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
 	else if (conn->isCommand ("altaz"))
 	{
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
 		resetMpecTLE ();
 		setTracking (0);
@@ -1767,7 +1767,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand ("resync"))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
 		return startResyncMove (conn, 0);
@@ -1775,23 +1775,23 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand ("setto"))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		return setTo (conn, obj_ra, obj_dec);
 	}
 	else if (conn->isCommand ("settopark"))
 	{
 		if (!conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		return setToPark (conn);
 	}
 	else if (conn->isCommand ("synccorr"))
 	{
 		if (!conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		ret = setTo (conn, tarRaDec->getRa (), tarRaDec->getDec ());
 		if (ret)
-			return -2;
+			return DEVDEM_E_PARAMSVAL;
 		corrRaDec->setValueRaDec (0, 0);
 		wcorrRaDec->setValueRaDec (0, 0);
 		return ret;
@@ -1811,15 +1811,15 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			|| conn->paramNextDouble (&total_cor_dec)
 			|| conn->paramNextDouble (&pos_err)
 			|| !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		if (applyCorrectionsFixed (total_cor_ra, total_cor_dec) == 0)
-			return 0;
+			return DEVDEM_OK;
 		if (cor_mark == moveNum->getValueInteger () && corr_img == corrImgId->getValueInteger () && img_id > wCorrImgId->getValueInteger ())
 		{
 			if (pos_err < ignoreCorrection->getValueDouble ())
 			{
 				conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as it is too small");
-				return -1;
+				return DEVDEM_E_COMMAND;
 			}
 
 			wcorrRaDec->setValueRaDec (total_cor_ra, total_cor_dec);
@@ -1854,7 +1854,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		char *l1;
 		char *l2;
 		if (conn->paramNextString (&l1) || conn->paramNextString (&l2) || ! conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 
 		mpec->setValueString ("");
 		tle_l1->setValueString (l1);
@@ -1866,7 +1866,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			logStream (MESSAGE_ERROR) << "cannot target on TLEs" << sendLog;
 			logStream (MESSAGE_ERROR) << "Line 1: " << tle_l1->getValueString () << sendLog;
 			logStream (MESSAGE_ERROR) << "Line 2: " << tle_l2->getValueString () << sendLog;
-			return -1;
+			return DEVDEM_E_PARAMSVAL;
 		}
 
 		int ephem = 1;
@@ -1883,7 +1883,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand ("park"))
 	{
 		if (!conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		setTracking (0);
 		return startPark (conn);
@@ -1891,7 +1891,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	else if (conn->isCommand ("stop"))
 	{
 		if (!conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		setTracking (0);
 		return stopMove ();
 	}
@@ -1899,13 +1899,15 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec)
 			|| !conn->paramEnd ())
-			return -2;
+			return DEVDEM_E_PARAMSNUM;
 		offsRaDec->incValueRaDec (obj_ra, obj_dec);
 		woffsRaDec->incValueRaDec (obj_ra, obj_dec);
 		return startResyncMove (conn, 1);
 	}
 	else if (conn->isCommand ("save_model"))
 	{
+		if (!conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
 		ret = saveModel ();
 		if (ret)
 		{
@@ -1915,6 +1917,8 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("load_model"))
 	{
+		if (!conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
 		ret = loadModel ();
 		if (ret)
 		{
@@ -1924,6 +1928,8 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("worm_stop"))
 	{
+		if (!conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
 		ret = setTracking (0);
 		if (ret)
 		{
@@ -1933,12 +1939,14 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("worm_start"))
 	{
+		if (!conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
 		if (blockMove->getValueBool () == true || (getState () & TEL_MASK_MOVING) == TEL_PARKING || (getState () & TEL_MASK_MOVING) == TEL_PARKED)
 			ret = -1;
 		else
 			ret = setTracking (tracking->getValueInteger (), true);
 
-		if (ret)
+		if (ret == -1)
 		{
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot start worm");
 		}
@@ -1946,8 +1954,10 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand ("reset"))
 	{
+		if (!conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
 		ret = resetMount ();
-		if (ret)
+		if (ret == DEVDEM_E_COMMAND)
 		{
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot reset mount");
 		}

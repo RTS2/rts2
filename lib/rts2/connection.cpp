@@ -910,12 +910,22 @@ void Connection::processLine ()
 	std::cerr << "Connection::processLine [" << getCentraldId ()
 		<< "] command: " << getCommand () << " ret: " << ret << std::endl;
 	#endif
-	if (!ret)
-		sendCommandEnd (DEVDEM_OK, "OK");
-	else if (ret == -2)
-	{
-		logStream (MESSAGE_DEBUG) << "Connection::processLine [" << getCentraldId () << "] command: " << getCommand () << " ret: " << ret << sendLog;
-		sendCommandEnd (DEVDEM_E_COMMAND, (std::string ("invalid parameters/invalid number of parameters - ") + getCommand ()).c_str ());
+        switch (ret)
+        {
+                case DEVDEM_OK:
+			sendCommandEnd (DEVDEM_OK, "OK");
+			break;
+		case DEVDEM_E_COMMAND:
+                        // shall be handled by command itself, which should sendCommandEnd..
+			break;
+		case DEVDEM_E_PARAMSNUM:
+			sendCommandEnd (DEVDEM_E_PARAMSNUM, (std::string ("invalid parameters/invalid number of parameters - ") + getCommand ()).c_str ());
+			break;
+		case DEVDEM_E_PARAMSVAL:
+			sendCommandEnd (DEVDEM_E_PARAMSVAL, (std::string ("invalid parameter values for command ") + getCommand ()).c_str ());
+			break;
+		default:
+			break;
 	}
 }
 
@@ -1262,7 +1272,7 @@ int Connection::command ()
 	std::ostringstream ss;
 	ss << "unknow command " << getCommand ();
 	logStream (MESSAGE_DEBUG) << "Connection::command unknow command: getCommand " << getCommand () << " state: " << conn_state << " type: " << getType () << " name: " << getName () << sendLog;
-	sendCommandEnd (-4, ss.str ().c_str ());
+	sendCommandEnd (DEVDEM_E_COMMAND, ss.str ().c_str ());
 	return -4;
 }
 
