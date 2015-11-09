@@ -75,8 +75,8 @@ extern "C"
 	}
 	CCD_ID;
 
-	inline void CameraPulse (int a);
-	inline PAR_ERROR CameraReady ();
+	void CameraPulse (int a);
+	PAR_ERROR CameraReady ();
 
 	PAR_ERROR DigitizeLine_st237 (int left, int len, int horzBefore, int bin,
 		unsigned short *dest, int clearWidth);

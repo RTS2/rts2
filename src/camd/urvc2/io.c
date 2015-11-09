@@ -228,7 +228,7 @@ CameraOut (unsigned char reg, int val)
 #endif
 }
 
-inline PAR_ERROR
+PAR_ERROR
 CameraReady ()
 {
   int t0 = 0;
