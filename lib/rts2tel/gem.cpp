@@ -357,6 +357,7 @@ int GEM::peek (double ra, double dec)
 		return ret;
 
 	peekHaCwdAngle->setValueDouble (getHACWDAngle (ac));
+	sendValueAll (peekHaCwdAngle);
 	return 0;
 }
 
