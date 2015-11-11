@@ -193,7 +193,7 @@ void Reinhardt::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_
 						{
 							// try to find vname in r_values
 							reinhardt_value_t *rv;
-							for (rv = r_values; rv->name != NULL; rv++)
+							for (rv = r_values; rv->rts2_name != NULL && rv->rts2_comment != NULL; rv++)
 							{
 								if (strcmp (rv->name, vname) == 0)
 									break;
