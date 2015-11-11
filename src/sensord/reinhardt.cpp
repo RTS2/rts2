@@ -211,7 +211,7 @@ void Reinhardt::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_
 						}
 						if (dval == NULL)
 						{
-							logStream (MESSAGE_ERROR) << "cannot find value with name " << dval << sendLog;
+							logStream (MESSAGE_ERROR) << "cannot find value with name " << vname << sendLog;
 						}
 						else
 						{
