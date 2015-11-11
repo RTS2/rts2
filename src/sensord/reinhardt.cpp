@@ -172,7 +172,7 @@ void Reinhardt::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_
 						while (*p == ' ')
 							p++;
 						// reached end..
-						if (*p == '\0')
+						if (*p == '\0' || *p == '\r' || *p == '\n')
 							break;
 						// try to find two letter identifier
 						char vname[3];
@@ -216,8 +216,9 @@ void Reinhardt::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_
 						else
 						{
 							dval->setValueDouble (atof (p + 2));
-							p = vend; // ++ in for will shift us
+                                                        sendValueAll (dval);
 						}
+						p = vend; // ++ in for will shift us
 					}
 				}
 			}
