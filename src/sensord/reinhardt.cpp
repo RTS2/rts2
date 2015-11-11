@@ -198,7 +198,7 @@ void Reinhardt::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_
 								if (strcmp (rv->name, vname) == 0)
 									break;
 							}
-							if (rv->name != NULL)
+							if (rv->rts2_name != NULL && rv->rts2_comment != NULL)
 							{
 								dval = new rts2core::ValueDouble (rv->rts2_name, rv->rts2_comment, false);
 								addValue (dval);
