@@ -48,12 +48,12 @@ endif
 endif
 
 if SBIG
-bin_PROGRAMS += rts2-camd-sbigusb
-rts2_camd_sbigusb_SOURCES = sbigusb.cpp
-rts2_camd_sbigusb_LDFLAGS = @LIB_SBIG@ ${LDADD} @LIB_CFITSIO@
-rts2_camd_sbigusb_CXXFLAGS = @INC_SBIG@ -I../../include @CFITSIO_CFLAGS@
+bin_PROGRAMS += rts2-camd-sbig
+rts2_camd_sbig_SOURCES = sbig.cpp
+rts2_camd_sbig_LDFLAGS = @LIB_SBIG@ ${LDADD} @LIB_CFITSIO@
+rts2_camd_sbig_CXXFLAGS = @INC_SBIG@ -I../../include @CFITSIO_CFLAGS@
 else
-EXTRA_DIST += sbigusb.cpp
+EXTRA_DIST += sbig.cpp
 endif
 
 if ANDOR 

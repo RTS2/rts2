@@ -18,6 +18,7 @@
  */
 
 #include <math.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +32,7 @@
 
 #define OPT_USBPORT     OPT_LOCAL + 230
 #define OPT_SERIAL      OPT_LOCAL + 231
+#define OPT_TCP         OPT_LOCAL + 232
 
 unsigned int ccd_c2ad (double t)
 {
@@ -120,8 +122,9 @@ class Sbig:public Camera
 			return -1;
 		}
 		int fanState (int newFanState);
-		int usb_port;
+		int usb_port; // > 0 for USB, -1 means TCP/IP
 		char *reqSerialNumber;
+                char *reqTcpIpAddress;
 
 		SBIG_DEVICE_TYPE getDevType ();
 
@@ -327,8 +330,11 @@ Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	pcam = NULL;
 	usb_port = 0;
 	reqSerialNumber = NULL;
+	reqTcpIpAddress = NULL;
+
 	addOption (OPT_USBPORT, "usb-port", 1, "USB port number - defaults to 0");
 	addOption (OPT_SERIAL, "serial-number", 1, "SBIG serial number to accept for that camera");
+        addOption (OPT_TCP, "tpc-host", 1, "SBIG TCP/IP server hostname");
  	addOption ('f', NULL, 1, "filter names (separated with :)");
 }
 
@@ -343,6 +349,11 @@ int Sbig::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+                case OPT_TCP:
+                        usb_port = -1;
+			reqTcpIpAddress = optarg;
+                        break;
+
 		case OPT_USBPORT:
 			usb_port = atoi (optarg);
 			if (usb_port <= 0 || usb_port > 3)
@@ -381,7 +392,7 @@ SBIG_DEVICE_TYPE Sbig::getDevType ()
 		case 4:
 			return DEV_USB4;
 		default:
-			return DEV_USB;
+			return usb_port < 0 ? DEV_ETH : DEV_USB;
 	}
 }
 
@@ -422,6 +433,34 @@ int Sbig::initHardware ()
 
 	OpenDeviceParams odp;
 	odp.deviceType = getDevType ();
+	if (getDevType () == DEV_ETH)
+	{
+		struct hostent *he;
+		he = gethostbyname (reqTcpIpAddress);
+		if (he == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "invalid hostname " << reqTcpIpAddress << sendLog;
+			return initError ();
+		}
+		// convert xxx.yy.zzz.ggg string to long, representing 0-255 of the ip address
+		int point = 0;
+		unsigned char ips[4];
+		bzero (ips, sizeof(ips));
+		for (char *p = he->h_addr; p != '\0'; p++)
+		{
+			if (*p == '.')
+			{
+				point++;
+				if (point > 3)
+					break;
+			}
+			else
+			{
+				ips[point] = 10 * ips[point] + (*p - '0');
+			}
+		}
+		odp.ipAddress = *((uint32_t *) (ips));
+	}
 	if (pcam->OpenDevice (odp) != CE_NO_ERROR)
 		return initError ();
 

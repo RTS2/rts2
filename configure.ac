@@ -225,11 +225,18 @@ esac],[epics=no])
 
 AM_CONDITIONAL(EPICS, test x$epics != xno)
 
-AC_ARG_WITH(sbig,
-[  --with-sbig             path to SBIG USB CCD driver, build SBIG USB CCD driver],
-SBIG="${withval}";
-LIB_SBIG="-L${SBIG} -lsbigudrv $SBIG/csbigcam.o $SBIG/csbigimg.o -lusb";
-INC_SBIG="-I${SBIG}",
+SBIG=yes
+
+AC_ARG_WITH(sbig-include,
+[  --with-sbig-include     path to SBIG USB CCD driver include files, build SBIG USB CCD driver],
+SBIG_INC="${withval}";
+INC_SBIG="-I${SBIG_INC}",
+[SBIG=no])
+
+AC_ARG_WITH(sbig-lib,
+[  --with-sbig-lib         path to SBIG USB CCD driver library files, build SBIG USB CCD driver],
+SBIG_LIB="${withval}";
+LIB_SBIG="-L${SBIG_LIB} -lsbigudrv ${SBIG_INC}/csbigcam.o ${SBIG_INC}/csbigimg.o -lusb",
 [SBIG=no])
 
 AM_CONDITIONAL(SBIG, test x$SBIG != xno)
@@ -994,6 +1001,8 @@ CCDs:
   fli           ${FLI}
   miccd         ${MICCD}
   sbig          ${SBIG}
+  sbig include  ${SBIG_INC}
+  sbig lib      ${SBIG_LIB}
   SI3097        ${SI3097}
 
 MOUNTs:
