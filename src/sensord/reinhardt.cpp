@@ -88,6 +88,8 @@ reinhardt_value_t r_values[] = {
         {"GY", "GPS_Y", "GPS Y-coordinate"},
         {"GV", "GPS_S", "GPS speed"},
         {"TK", "INTERNAL_TEMP", "[mV] internal temperature"},
+        {"TI", "TEMP_INT", "[C] internal temperatur"},
+        {"FI", "HUMI_INT", "[%] internal humidity"},
         {"TR", "REF_VOLT", "[V] internal reference voltage"},
         {"VI", "OPER_VOLT", "[V] operating voltage"},
         {"UH", "HEAT_VOLT", "[V] voltage heating control"},
