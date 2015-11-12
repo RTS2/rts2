@@ -39,12 +39,12 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	getTarget (&pos);
 
-	int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
+	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 
-	return sky2counts (&pos, ac, dc, JD, homeOff, actual_flip);
+	return sky2counts (&pos, ac, dc, JD, homeOff, used_flipping);
 }
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
@@ -112,7 +112,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	else if (ret == 0 && ret_f == 0)
 	{
 #define max(a,b) ((a) > (b) ? (a) : (b))
-		switch (actual_flip)
+		switch (used_flipping)
 		{
 			// shortest
 			case 0:
@@ -195,7 +195,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				if (diff_f > 180)
 					diff_f = 360 - diff_f;
 				logStream (MESSAGE_DEBUG) << "cw diffs flipped " << diff_f << " nf " << diff_nf << sendLog;
-				if (actual_flip == 6)
+				if (used_flipping == 6)
 				{
 					if (diff_f < diff_nf)
 					{
@@ -239,10 +239,10 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
 {
-	int actual_flip = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
+	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 
 	// returns without home offset, which will be removed in future
-	return sky2counts (pos, ac, dc, JD, 0, actual_flip);
+	return sky2counts (pos, ac, dc, JD, 0, used_flipping);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
