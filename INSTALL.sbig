@@ -12,12 +12,7 @@ sudo apt-get install fxload
 
 in Ubuntu/Debian.
 
-Then you need to put into single directory those files:
-
-csbigcam.h  csbigimg.h  libsbigudrv.a   sbigudrv.h
-csbigcam.o  csbigimg.o  libsbigudrv.so
-
-find them in sbig tree. *.o are result of compilation of the testapp. Check that the sbigudrv.h file contains:
+Check that the sbigudrv.h file contains:
 
  #define TARGET                 ENV_LINUX                   /* Set for your target */
 
@@ -29,9 +24,13 @@ sudo apt-get install libusb-dev
 
 You then add to ./configure call:
 
---with-sbig=<path_to_the_directory>
+--with-sbig-include=<path_to_the_directory_with_includes> --with-sbig-lib=<path_to_the_directory_with_libs>
 
-You can use --serial-number to distinguish between multiple cameras by serial
+Assuming you are compilling for x86 (64bit) architecture, and you extract LinuxDevKit to /home/sbig, the arquments will be following:
+
+--with-sbig-include=/home/sbig/LinuxDevKit/x86/c/testapp --with-sbig-lib=/home/sbig/LinuxDevKit/x86/c/lib64
+
+You can use --serial-number argument to rts2-camd-sbig to distinguish between multiple cameras by serial
 number.
 
 Petr Kubánek <petr@kubanek.net>
