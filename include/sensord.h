@@ -49,8 +49,20 @@ class Sensor:public rts2core::Device
  * to some time in future, the device will set WEATHER_BAD flag up to this
  * time.
  *
+ * If you subclass from this device, please use isGoodWeather as placeholder for checks
+ * to distinguish good/bad weather.
+ *
+ * For example. if the sensor provides (among other) windspeed measurements,
+ * and you would like to make sure the reported windspeed is not higher than
+ * certain limit, you should add following code to isGoodWeather method:
+ *
+ * // check for windspeed over limit
+ * if (windSpeed->getValueDouble () > maxAllowedWindSpeed->getValueDouble ())
+ *    return false;
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  */
+
 class SensorWeather:public Sensor
 {
 	public:
@@ -73,6 +85,15 @@ class SensorWeather:public Sensor
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
+		/**
+		 * Called to check if sensor does not block observing. This is
+		 * the place you should place any custom checks, returning
+		 * false if weather does not allow observations to be
+		 * performed.
+		 *
+		 * @return true if weather allows observations, false if
+		 * weather is bad and does not allow observations.
+		 */
 		virtual bool isGoodWeather ();
 	private:
 		rts2core::ValueTime *nextGoodWeather;
