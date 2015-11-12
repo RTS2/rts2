@@ -203,15 +203,20 @@ int Sbig::startExposure ()
 	if (!pcam->CheckLink ())
 		return -1;
 
-	StartExposureParams sep;
+	StartExposureParams2 sep;
 	sep.ccd = 0;
 	sep.exposureTime = (unsigned long) (getExposure () * 100.0 + 0.5);
 	if (sep.exposureTime < 1)
 		sep.exposureTime = 1;
 	sep.abgState = ABG_LOW7;
 	sep.openShutter = getExpType () ? SC_CLOSE_SHUTTER : SC_OPEN_SHUTTER;
-
-	ret = pcam->SBIGUnivDrvCommand (CC_START_EXPOSURE, &sep, NULL);
+	sep.readoutMode = sbig_readout_mode;
+	sep.top = chipUsedReadout->getXInt();
+	sep.left = chipUsedReadout->getYInt();
+	sep.height = chipUsedReadout->getHeightInt() / binningVertical ();
+	sep.width = chipUsedReadout->getWidthInt() / binningHorizontal ();
+ 
+	ret = pcam->SBIGUnivDrvCommand (CC_START_EXPOSURE2, &sep, NULL);
 	return checkSbigHw (ret);
 }
 
@@ -444,22 +449,25 @@ int Sbig::initHardware ()
 		}
 		// convert xxx.yy.zzz.ggg string to long, representing 0-255 of the ip address
 		int point = 0;
-		unsigned char ips[4];
-		bzero (ips, sizeof(ips));
-		for (char *p = he->h_addr; p != '\0'; p++)
+		unsigned char ips = 0;
+		odp.ipAddress = 0;
+		for (char *p = he->h_name; *p != '\0'; p++)
 		{
 			if (*p == '.')
 			{
 				point++;
+				odp.ipAddress = (odp.ipAddress << 8) | ips;
+				ips = 0;
 				if (point > 3)
 					break;
 			}
 			else
 			{
-				ips[point] = 10 * ips[point] + (*p - '0');
+				ips = 10 * ips + (*p - '0');
 			}
 		}
-		odp.ipAddress = *((uint32_t *) (ips));
+		odp.ipAddress = odp.ipAddress << 8 | ips;
+		logStream (MESSAGE_DEBUG) << "ip address " << std::hex << odp.ipAddress << sendLog;
 	}
 	if (pcam->OpenDevice (odp) != CE_NO_ERROR)
 		return initError ();
