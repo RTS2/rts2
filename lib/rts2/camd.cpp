@@ -399,6 +399,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 
 	chan1delta = NULL;
 	chan2delta = NULL;
+        acquireTime = NULL;
 
 	timeReadoutStart = NAN;
 	timeTransferStart = NAN;
@@ -1600,7 +1601,8 @@ int Camera::camStartExposureWithoutCheck ()
 
 	double now = getNow ();
 
-	exposureEnd->setValueDouble (now + exposure->getValueDouble ());
+        exposureEnd->setValueDouble (now + ( acquireTime ? acquireTime->getValueDouble () : exposure->getValueDouble () ));
+
 	infoAll ();
 
 	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE | CAM_MASK_HAS_IMAGE, (ret == 0 ? CAM_EXPOSING : CAM_EXPOSING_NOIM) | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);

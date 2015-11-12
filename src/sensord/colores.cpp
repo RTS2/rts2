@@ -39,6 +39,7 @@ class Colores:public Sensor
 		virtual int processOption (int opt);
 		virtual int initHardware ();
 		virtual int info ();
+		virtual int scriptEnds ();
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
@@ -144,6 +145,13 @@ int Colores::info ()
 {
 	coloresCommand ('\n');
 	return Sensor::info ();
+}
+
+int Colores::scriptEnds ()
+{
+	// it is not nice to leave the mirror in for the next script. :)
+	changeValue (mirror, true);
+        return Sensor::scriptEnds ();
 }
 
 int Colores::setValue (rts2core::Value *old_value, rts2core::Value *new_value)

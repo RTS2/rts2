@@ -958,7 +958,17 @@ class Camera:public rts2core::ScriptDevice
 
 		void setFitsTransfer () { currentImageTransfer = FITS; }
 
+                rts2core::ValueDoubleMinMax *exposure;
+		// physical readout time from device
+		rts2core::ValueDouble *pixelsSecond;
+		rts2core::ValueDouble *readoutTime;
+                // Time to acquire a sequence (for complex cases)
+		rts2core::ValueDouble *acquireTime;
+		// set chipUsedSize size
+		virtual int box (int _x, int _y, int _width, int _height, rts2core::ValueRectangle *retv = NULL);
+
 	private:
+
 		size_t readoutPixels;
 		// data buffers - separated for each channel
 		char** dataBuffers;
@@ -975,17 +985,12 @@ class Camera:public rts2core::ScriptDevice
 		// focusing header data
 		struct imghdr *fhd;
 
-		// physical readout time from device
-		rts2core::ValueDouble *pixelsSecond;
-		rts2core::ValueDouble *readoutTime;
-
 		// data time including transfer overhead
 		rts2core::ValueDouble *transferTime;
 
 		// connection which requries data to be send after end of exposure
 		rts2core::Connection *exposureConn;
 
-		rts2core::ValueDoubleMinMax *exposure;
 		rts2core::ValueString *lastImagePath;
 
 		// shared memory identifier
@@ -1238,8 +1243,6 @@ class Camera:public rts2core::ScriptDevice
 		// filter wheel is moving
 		rts2core::ValueBool *focuserMoving;
 
-		// set chipUsedSize size
-		int box (int _x, int _y, int _width, int _height, rts2core::ValueRectangle *retv = NULL);
 
 		// callback functions from camera connection
 		int camExpose (rts2core::Connection * conn, int chipState, bool fromQue);
