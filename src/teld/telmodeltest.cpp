@@ -18,6 +18,7 @@
  */
 
 #include "telmodel.h"
+#include "tpointmodel.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
 #include "cliapp.h"
@@ -88,7 +89,7 @@ class TelModelTest:public rts2core::CliApp
 
 	private:
 		char *modelFile;
-		Model *model;
+		TPointModel *model;
 		std::vector < std::string > runFiles;
 		ModelTest *telescope;
 		int errors;
@@ -223,7 +224,7 @@ int TelModelTest::init ()
 	telescope = new ModelTest ();
 	telescope->setCorrections (false, false, false);
 
-	model = new Model (telescope, modelFile);
+	model = new TPointModel (telescope, modelFile);
 	ret = model->load ();
 	
 	if (localDate != 0)

@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_MODELTERM__
-#define __RTS2_MODELTERM__
+#ifndef __RTS2_TPOINTMODELTERM__
+#define __RTS2_TPOINTMODELTERM__
 
 #include "telmodel.h"
 #include "value.h"
@@ -31,24 +31,24 @@ namespace rts2telmodel
  * @file
  * Include classes for various TPoint terms.
  *
- * @defgroup RTS2TPointTerm Modelling terms for TPOINT
+ * @defgroup RTS2TPointTerm TPointModelling terms for TPOINT
  */
 
 class ObsConditions;
 
 /**
  * Represents model term. Child of that class are created
- * in TelModel::load, and used in apply functions.
+ * in TelTPointModel::load, and used in apply functions.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
  * @ingroup RTS2TPointTerm
  */
-class ModelTerm:public rts2core::ValueDouble
+class TPointModelTerm:public rts2core::ValueDouble
 {
 	public:
-		ModelTerm (const char *in_name, double in_corr, double in_sigma);
-		virtual ~ ModelTerm (void) {}
+		TPointModelTerm (const char *in_name, double in_corr, double in_sigma);
+		virtual ~ TPointModelTerm (void) {}
 		
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions) = 0;
 		virtual void reverse (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
@@ -69,7 +69,7 @@ class ModelTerm:public rts2core::ValueDouble
 		std::string name;
 };
 
-std::ostream & operator << (std::ostream & os, ModelTerm * term);
+std::ostream & operator << (std::ostream & os, TPointModelTerm * term);
 
 /**
  * Polar axis misalignment in elevation term.
@@ -78,10 +78,10 @@ std::ostream & operator << (std::ostream & os, ModelTerm * term);
  *
  * @ingroup RTS2TPointTerm
  */
-class TermME:public ModelTerm
+class TermME:public TPointModelTerm
 {
 	public:
-		TermME (double in_corr, double in_sigma):ModelTerm ("ME", in_corr, in_sigma) {}
+		TermME (double in_corr, double in_sigma):TPointModelTerm ("ME", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -92,10 +92,10 @@ class TermME:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermMA:public ModelTerm
+class TermMA:public TPointModelTerm
 {
 	public:
-		TermMA (double in_corr, double in_sigma):ModelTerm ("MA", in_corr, in_sigma) {}
+		TermMA (double in_corr, double in_sigma):TPointModelTerm ("MA", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -106,10 +106,10 @@ class TermMA:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermIH:public ModelTerm
+class TermIH:public TPointModelTerm
 {
 	public:
-		TermIH (double in_corr, double in_sigma):ModelTerm ("IH", in_corr, in_sigma) {}
+		TermIH (double in_corr, double in_sigma):TPointModelTerm ("IH", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -120,10 +120,10 @@ class TermIH:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermID:public ModelTerm
+class TermID:public TPointModelTerm
 {
 	public:
-		TermID (double in_corr, double in_sigma):ModelTerm ("ID", in_corr, in_sigma) {}
+		TermID (double in_corr, double in_sigma):TPointModelTerm ("ID", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -134,10 +134,10 @@ class TermID:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermCH:public ModelTerm
+class TermCH:public TPointModelTerm
 {
 	public:
-		TermCH (double in_corr, double in_sigma):ModelTerm ("CH", in_corr, in_sigma) {}
+		TermCH (double in_corr, double in_sigma):TPointModelTerm ("CH", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -148,10 +148,10 @@ class TermCH:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermNP:public ModelTerm
+class TermNP:public TPointModelTerm
 {
 	public:
-		TermNP (double in_corr, double in_sigma):ModelTerm ("NP", in_corr, in_sigma) {}
+		TermNP (double in_corr, double in_sigma):TPointModelTerm ("NP", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -162,10 +162,10 @@ class TermNP:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermFO:public ModelTerm
+class TermFO:public TPointModelTerm
 {
 	public:
-		TermFO (double in_corr, double in_sigma):ModelTerm ("FO", in_corr, in_sigma) {}
+		TermFO (double in_corr, double in_sigma):TPointModelTerm ("FO", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -176,10 +176,10 @@ class TermFO:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermPHH:public ModelTerm
+class TermPHH:public TPointModelTerm
 {
 	public:
-		TermPHH (double in_corr, double in_sigma):ModelTerm ("PHH", in_corr, in_sigma) {}
+		TermPHH (double in_corr, double in_sigma):TPointModelTerm ("PHH", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -188,10 +188,10 @@ class TermPHH:public ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  */
-class TermPDD:public ModelTerm
+class TermPDD:public TPointModelTerm
 {
 	public:
-		TermPDD (double in_corr, double in_sigma):ModelTerm ("PDD", in_corr, in_sigma) {}
+		TermPDD (double in_corr, double in_sigma):TPointModelTerm ("PDD", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -202,10 +202,10 @@ class TermPDD:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermA1H:public ModelTerm
+class TermA1H:public TPointModelTerm
 {
 	public:
-		TermA1H (double in_corr, double in_sigma):ModelTerm ("A1H", in_corr, in_sigma) {}
+		TermA1H (double in_corr, double in_sigma):TPointModelTerm ("A1H", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -216,10 +216,10 @@ class TermA1H:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermA1D:public ModelTerm
+class TermA1D:public TPointModelTerm
 {
 	public:
-		TermA1D (double in_corr, double in_sigma):ModelTerm ("A1D", in_corr, in_sigma) {}
+		TermA1D (double in_corr, double in_sigma):TPointModelTerm ("A1D", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -230,10 +230,10 @@ class TermA1D:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermTF:public ModelTerm
+class TermTF:public TPointModelTerm
 {
 	public:
-		TermTF (double in_corr, double in_sigma):ModelTerm ("TF", in_corr, in_sigma) {}
+		TermTF (double in_corr, double in_sigma):TPointModelTerm ("TF", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -244,10 +244,10 @@ class TermTF:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermTX:public ModelTerm
+class TermTX:public TPointModelTerm
 {
 	public:
-		TermTX (double in_corr, double in_sigma):ModelTerm ("TX", in_corr, in_sigma) {}
+		TermTX (double in_corr, double in_sigma):TPointModelTerm ("TX", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -258,10 +258,10 @@ class TermTX:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermHCEC:public ModelTerm
+class TermHCEC:public TPointModelTerm
 {
 	public:
-		TermHCEC (double in_corr, double in_sigma):ModelTerm ("HCEC", in_corr, in_sigma) {}
+		TermHCEC (double in_corr, double in_sigma):TPointModelTerm ("HCEC", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -272,10 +272,10 @@ class TermHCEC:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermHCES:public ModelTerm
+class TermHCES:public TPointModelTerm
 {
 	public:
-		TermHCES (double in_corr, double in_sigma):ModelTerm ("HCES", in_corr, in_sigma) {}
+		TermHCES (double in_corr, double in_sigma):TPointModelTerm ("HCES", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -286,10 +286,10 @@ class TermHCES:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermDCEC:public ModelTerm
+class TermDCEC:public TPointModelTerm
 {
 	public:
-		TermDCEC (double in_corr, double in_sigma):ModelTerm ("DCEC", in_corr, in_sigma) {}
+		TermDCEC (double in_corr, double in_sigma):TPointModelTerm ("DCEC", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -300,10 +300,10 @@ class TermDCEC:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermDCES:public ModelTerm
+class TermDCES:public TPointModelTerm
 {
 	public:
-		TermDCES (double in_corr, double in_sigma):ModelTerm ("DCES", in_corr, in_sigma) {}
+		TermDCES (double in_corr, double in_sigma):TPointModelTerm ("DCES", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -314,10 +314,10 @@ class TermDCES:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermDAB:public ModelTerm
+class TermDAB:public TPointModelTerm
 {
 	public:
-		TermDAB (double in_corr, double in_sigma):ModelTerm ("DAB", in_corr, in_sigma) {}
+		TermDAB (double in_corr, double in_sigma):TPointModelTerm ("DAB", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -328,10 +328,10 @@ class TermDAB:public ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class TermDAF:public ModelTerm
+class TermDAF:public TPointModelTerm
 {
 	public:
-		TermDAF (double in_corr, double in_sigma):ModelTerm ("DAF", in_corr, in_sigma) {}
+		TermDAF (double in_corr, double in_sigma):TPointModelTerm ("DAF", in_corr, in_sigma) {}
 		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
@@ -347,7 +347,7 @@ sincos_t;
  *
  * @ingroup RTS2TPointTerm
  */
-class TermHarmonics:public ModelTerm
+class TermHarmonics:public TPointModelTerm
 {
 	public:
 		TermHarmonics (double in_corr, double in_sigma, const char *in_name);
@@ -365,4 +365,4 @@ class TermHarmonics:public ModelTerm
 };
 
 };
-#endif							 /*! __RTS2_MODELTERM__ */
+#endif							 /*! __RTS2_TPOINTMODELTERM__ */

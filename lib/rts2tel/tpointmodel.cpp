@@ -17,25 +17,25 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "telmodel.h"
+#include "tpointmodel.h"
 #include "libnova_cpp.h"
 
 #include <fstream>
 
 using namespace rts2telmodel;
 
-Model::Model (rts2teld::Telescope * in_telescope, const char *in_modelFile)
+TPointModel::TPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
 {
 	cond = new ObsConditions (in_telescope);
 	modelFile = in_modelFile;
 }
 
-Model::~Model (void)
+TPointModel::~TPointModel (void)
 {
 	delete cond;
 }
 
-int Model::load ()
+int TPointModel::load ()
 {
 	std::ifstream is (modelFile);
 	load (is);
@@ -44,18 +44,18 @@ int Model::load ()
 	return 0;
 }
 
-int Model::apply (struct ln_equ_posn *pos)
+int TPointModel::apply (struct ln_equ_posn *pos)
 {
-	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
+	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		(*iter)->apply (pos, cond);
 	}
 	return 0;
 }
 
-int Model::applyVerbose (struct ln_equ_posn *pos)
+int TPointModel::applyVerbose (struct ln_equ_posn *pos)
 {
-	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
+	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		struct ln_equ_posn old_pos = *pos;
 		logStream (MESSAGE_DEBUG) // << (*iter)
@@ -69,11 +69,11 @@ int Model::applyVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int Model::reverse (struct ln_equ_posn *pos)
+int TPointModel::reverse (struct ln_equ_posn *pos)
 {
 	struct ln_equ_posn pos2;
 
-	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
+	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		pos2.ra = pos->ra;
 		pos2.dec = pos->dec;
@@ -86,11 +86,11 @@ int Model::reverse (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int Model::reverseVerbose (struct ln_equ_posn *pos)
+int TPointModel::reverseVerbose (struct ln_equ_posn *pos)
 {
 	struct ln_equ_posn pos2;
 
-	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
+	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		struct ln_equ_posn old_pos = *pos;
 
@@ -116,16 +116,16 @@ int Model::reverseVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int Model::reverse (struct ln_equ_posn *pos, double sid)
+int TPointModel::reverse (struct ln_equ_posn *pos, double sid)
 {
-	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
+	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		(*iter)->reverse (pos, cond);
 	}
 	return 0;
 }
 
-std::istream & Model::load (std::istream & is)
+std::istream & TPointModel::load (std::istream & is)
 {
 	std::string name;
 
@@ -133,7 +133,7 @@ std::istream & Model::load (std::istream & is)
 
 	double corr;
 	double sigma;
-	ModelTerm *term;
+	TPointModelTerm *term;
 	// first line
 	is.getline (caption, 80);
 	if (is.fail ())
@@ -268,21 +268,21 @@ std::istream & Model::load (std::istream & is)
 	return is;
 }
 
-std::ostream & Model::print (std::ostream & os)
+std::ostream & TPointModel::print (std::ostream & os)
 {
-	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
+	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		(*iter)->print (os);
 	}
 	return os;
 }
 
-inline std::istream & operator >> (std::istream & is, Model * model)
+inline std::istream & operator >> (std::istream & is, TPointModel * model)
 {
 	return model->load (is);
 }
 
-inline std::ostream & operator << (std::ostream & os, Model * model)
+inline std::ostream & operator << (std::ostream & os, TPointModel * model)
 {
 	return model->print (os);
 }

@@ -1,5 +1,5 @@
 /* 
- * Telescope model reader.
+ * Telescope T-Point pointing model.
  * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,24 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_TELMODEL__
-#define __RTS2_TELMODEL__
-
-/**
- * @file
- * Basic TPoint routines.
- *
- * @defgroup RTS2TPoint TPoint interface
- */
-
-namespace rts2telmodel
-{
-};
+#ifndef __RTS2_TPOINTMODEL__
+#define __RTS2_TPOINTMODEL__
 
 #include "teld.h"
 #include "configuration.h"
+#include "telmodel.h"
 
-#include "modelterm.h"
+#include "tpointmodelterm.h"
 
 #include <libnova/libnova.h>
 
@@ -45,35 +35,7 @@ namespace rts2telmodel
 namespace rts2telmodel
 {
 
-class ModelTerm;
-
-/**
- * Conditions for model calculation.
- *
- * Holds only conditions which are static, e.g. it will not hold alt&az, as
- * those will be changed in course of model calculation. Holds mount
- * geographics position, current time etc.
- *
- * @ingroup RTS2TPoint
- */
-class ObsConditions
-{
-	private:
-		rts2teld::Telescope * telescope;
-	public:
-		ObsConditions (rts2teld::Telescope * in_telescope)
-		{
-			telescope = in_telescope;
-		}
-		int getFlip ()
-		{
-			return telescope->getFlip ();
-		}
-		double getLatitude ()
-		{
-			return telescope->getLatitude ();
-		}
-};
+class TPointModelTerm;
 
 /**
  * Holds telescope model.
@@ -87,11 +49,11 @@ class ObsConditions
  *
  * @ingroup RTS2TPoint
  */
-class Model:public std::vector < ModelTerm * >
+class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 {
 	public:
-		Model (rts2teld::Telescope * in_telescope, const char *in_modelFile);
-		virtual ~ Model (void);
+		TPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile);
+		virtual ~ TPointModel (void);
 		int load ();
 		/**
 		 * Apply model to coordinates. Pos.ra is hour angle, not RA.
@@ -120,7 +82,7 @@ class Model:public std::vector < ModelTerm * >
 		ObsConditions * cond;
 		const char *modelFile;
 
-		char caption[81];		 // Model description: 80 chars + NULL
+		char caption[81];		 // TPointModel description: 80 chars + NULL
 		char method;			 // method: T or S
 		int num;			 // Number of active observations
 		double rms;			 // sky RMS (arcseconds)
@@ -129,8 +91,8 @@ class Model:public std::vector < ModelTerm * >
 };
 
 
-std::istream & operator >> (std::istream & is, Model * model);
-std::ostream & operator << (std::ostream & os, Model * model);
+std::istream & operator >> (std::istream & is, TPointModel * model);
+std::ostream & operator << (std::ostream & os, TPointModel * model);
 
 };
-#endif							 /* !__RTS2_TELMODEL__ */
+#endif							 /* !__RTS2_TPOINTMODEL__ */

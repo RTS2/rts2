@@ -18,26 +18,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "modelterm.h"
+#include "tpointmodelterm.h"
 #include <math.h>
 
 using namespace rts2telmodel;
 
-ModelTerm::ModelTerm (const char *in_name, double in_corr, double in_sigma):rts2core::ValueDouble (in_name, std::string(in_name) + " model value", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES)
+TPointModelTerm::TPointModelTerm (const char *in_name, double in_corr, double in_sigma):rts2core::ValueDouble (in_name, std::string(in_name) + " model value", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES)
 {
 	name = std::string (in_name);
 	setValueDouble (in_corr);
 	sigma = in_sigma;
 }
 
-std::ostream & ModelTerm::print (std::ostream & os)
+std::ostream & TPointModelTerm::print (std::ostream & os)
 {
 	// getValueDouble ()ection is (internally) in degrees!
 	os << name << " " << (getValueDouble () * 3600.0) << " " << sigma << std::endl;
 	return os;
 }
 
-inline std::ostream & operator << (std::ostream & os, ModelTerm * term)
+inline std::ostream & operator << (std::ostream & os, TPointModelTerm * term)
 {
 	return term->print (os);
 }
@@ -190,7 +190,7 @@ void TermDAF::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 	pos->ra -= getValueDouble () * (sin (f) * tan (d) + cos (f) * cos (h));
 }
 
-TermHarmonics::TermHarmonics (double in_corr, double in_sigma, const char *in_name):ModelTerm (in_name, in_corr, in_sigma)
+TermHarmonics::TermHarmonics (double in_corr, double in_sigma, const char *in_name):TPointModelTerm (in_name, in_corr, in_sigma)
 {
 	func[0] = NOT;
 	func[1] = NOT;

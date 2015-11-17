@@ -35,6 +35,7 @@
 #include "pluto/observe.h"
 
 #include "telmodel.h"
+#include "tpointmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
 #define OPT_HORIZON           OPT_LOCAL + 118
@@ -904,11 +905,11 @@ int Telescope::init ()
 
 	if (modelFile)
 	{
-		model = new rts2telmodel::Model (this, modelFile);
+		model = new rts2telmodel::TPointModel (this, modelFile);
 		ret = model->load ();
 		if (ret)
 			return ret;
-		for (std::vector <rts2telmodel::ModelTerm *>::iterator iter = model->begin (); iter != model->end (); iter++)
+		for (std::vector <rts2telmodel::TPointModelTerm *>::iterator iter = ((rts2telmodel::TPointModel*) model)->begin (); iter != ((rts2telmodel::TPointModel*) model)->end (); iter++)
 			addValue (*iter, TEL_MOVING);
 	}
 
@@ -1645,7 +1646,7 @@ void Telescope::signaledHUP ()
 	if (modelFile)
 	{
 		delete model;
-		model = new rts2telmodel::Model (this, modelFile);
+		model = new rts2telmodel::TPointModel (this, modelFile);
 		ret = model->load ();
 		if (ret)
 		{

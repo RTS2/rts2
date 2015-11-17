@@ -38,7 +38,7 @@
 
 namespace rts2telmodel
 {
-	class Model;
+	class TelModel;
 };
 
 /**
@@ -1136,7 +1136,7 @@ class Telescope:public rts2core::Device
 		struct timeval dir_timeouts[4];
 
 		char *modelFile;
-		rts2telmodel::Model *model;
+		rts2telmodel::TelModel *model;
 
 		rts2core::ValueSelection *standbyPark;
 		const char *horizonFile;
