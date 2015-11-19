@@ -58,4 +58,8 @@ class RTS2Model:public TelModel
 		double params[9];
 };
 
+std::istream & operator >> (std::istream & is, RTS2Model * model);
+std::ostream & operator << (std::ostream & os, RTS2Model * model);
+
 }
+#endif		// !__RTS2_RTS2MODEL__

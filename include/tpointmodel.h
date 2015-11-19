@@ -91,5 +91,5 @@ class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 std::istream & operator >> (std::istream & is, TPointModel * model);
 std::ostream & operator << (std::ostream & os, TPointModel * model);
 
-};
+}
 #endif							 /* !__RTS2_TPOINTMODEL__ */
