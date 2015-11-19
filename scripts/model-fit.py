@@ -98,5 +98,10 @@ with open(sys.argv[1]) as f:
 	diff_model = fit_model(best, aa_ra, ar_ra, aa_dec, ar_dec)
 	print diff_model * 3600.0
 
+	print 'RTS2_MODEL',
+	for a in best:
+		print a,
+	print
+
 	plot(range(0,len(diff_model)), diff_model * 3600.0, 'bo', range(0,len(diff_ra)), diff_ra * 3600.0, 'ro', range(len(diff_ra), len(diff_ra) + len(diff_dec)), diff_dec * 3600.0, 'go')
 	show()

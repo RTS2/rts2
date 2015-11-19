@@ -9,6 +9,6 @@ noinst_HEADERS = rts2.h imghdr.h status.h bbstatus.h imgdisplay.h connection.h l
 		iniparser.h configuration.h object.h centralstate.h serverstate.h libnova_cpp.h timestamp.h rts2format.h \
 		valueminmax.h valuerectangle.h data.h error.h nan.h riseset.h nimotion.h connnosend.h connnotify.h \
 		radecparser.h askchoice.h cliapp.h rts2target.h domeford.h client.h displayvalue.h clicupola.h clirotator.h fork.h gem.h \
-		telmodel.h \
+		telmodel.h rts2model.h \
                 tpointmodel.h tpointmodelterm.h expander.h expression.h counted_ptr.h infoval.h userlogins.h userpermissions.h \
                 door_vermes.h vermes.h slitazimuth.h OakHidBase.h OakFeatureReports.h tsqueue.h dirsupport.h altaz.h

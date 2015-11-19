@@ -177,7 +177,7 @@ int Dummy::startResync ()
 	double JD = ln_get_julian_from_sys ();
 
 	getTarget (&tar);
-	applyModel (&tar, &model_change, telFlip->getValueInteger (), JD);
+	applyModel (&tar, &model_change, JD);
 
 	setTarget (tar.ra, tar.dec);
 

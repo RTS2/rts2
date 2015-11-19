@@ -564,8 +564,7 @@ double Telescope::getTargetHa (double jd)
 
 double Telescope::getLstDeg (double JD)
 {
-	return ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) +
-		telLongitude->getValueDouble ());
+	return ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) + telLongitude->getValueDouble ());
 }
 
 int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
@@ -766,11 +765,11 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 	return 0;
 }
 
-void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
+void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD)
 {
 	ln_equ_posn pos_n;
 
-	Telescope::computeModel (pos, model_change, flip, JD);
+	Telescope::computeModel (pos, model_change, JD);
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
 
@@ -810,7 +809,7 @@ void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_po
 	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }
 
-void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
+void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD)
 {
 	struct ln_equ_posn hadec;
 	double ra;
@@ -823,38 +822,10 @@ void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		return;
 	}
 	ls = getLstDeg (JD);
-	hadec.ra = ls - pos->ra;	// intentionally without ln_range_degrees, for proper model computations when flip=0
+	hadec.ra = ls - pos->ra;	// intentionally without ln_range_degrees
 	hadec.dec = pos->dec;
 
-	// change RA and DEC when modeling flipped position
-	if (flip)
-	{
-		LibnovaRaDec fhadec (&hadec);
-
-		struct ln_lnlat_posn observer;
-		observer.lng = telLongitude->getValueDouble ();
-		observer.lat = telLatitude->getValueDouble ();
-
-		fhadec.flip (&observer);
-
-		hadec.ra = fhadec.getRa ();
-		hadec.dec = fhadec.getDec ();
-
-		model->reverse (&hadec);
-
-		// now flip back
-		fhadec.setRa (hadec.ra);
-		fhadec.setDec (hadec.dec);
-
-		fhadec.flip (&observer);
-
-		hadec.ra = fhadec.getRa ();
-		hadec.dec = fhadec.getDec ();
-	}
-	else
-	{
-		model->reverse (&hadec);
-	}
+	model->reverse (&hadec);
 
 	// get back from model - from HA
 	ra = ls - hadec.ra;

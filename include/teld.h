@@ -370,7 +370,7 @@ class Telescope:public rts2core::Device
 		 * @param pos ln_equ_posn RA/DEC position (typically TAR, i.e. precessed coordinates), will be corrected by computed model and correction corrRaDec.
 		 * @param model_change ln_equ_posn difference against original pos position, includes coputed model's difference together with correction corrRaDec.
 		 */
-		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
+		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD);
 
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.
@@ -379,13 +379,13 @@ class Telescope:public rts2core::Device
 		void applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr);
 
 		/**
-		 * Compute model for RA/DEC position pos, for specified flip and JD.
+		 * Compute model for RA/DEC position pos and JD.
 		 * Can be used to compute non-cyclic model, with flip=0 and pos in raw mount coordinates.
 		 *
 		 * @param pos ln_equ_posn RA/DEC position (typically TAR, i.e. precessed coordinates), will be corrected by computed model.
 		 * @param model_change ln_equ_posn coputed model's difference.
 		 */
-		void computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
+		void computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD);
 
 		/**
 		 * Apply corrections (at system time).

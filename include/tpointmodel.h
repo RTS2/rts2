@@ -54,16 +54,16 @@ class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 	public:
 		TPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile);
 		virtual ~ TPointModel (void);
-		int load ();
+		virtual int load ();
 		/**
 		 * Apply model to coordinates. Pos.ra is hour angle, not RA.
 		 */
-		int apply (struct ln_equ_posn *pos);
-		int applyVerbose (struct ln_equ_posn *pos);
+		virtual int apply (struct ln_equ_posn *pos);
+		virtual int applyVerbose (struct ln_equ_posn *pos);
 
-		int reverse (struct ln_equ_posn *pos);
-		int reverseVerbose (struct ln_equ_posn *pos);
-		int reverse (struct ln_equ_posn *pos, double sid);
+		virtual int reverse (struct ln_equ_posn *pos);
+		virtual int reverseVerbose (struct ln_equ_posn *pos);
+		virtual int reverse (struct ln_equ_posn *pos, double sid);
 
 		/**
 		 * Return RMS in degrees.
@@ -75,13 +75,10 @@ class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 			return rms / 3600;
 		}
 
-		std::istream & load (std::istream & is);
-		std::ostream & print (std::ostream & os);
+		virtual std::istream & load (std::istream & is);
+		virtual std::ostream & print (std::ostream & os);
 
 	private:
-		ObsConditions * cond;
-		const char *modelFile;
-
 		char caption[81];		 // TPointModel description: 80 chars + NULL
 		char method;			 // method: T or S
 		int num;			 // Number of active observations

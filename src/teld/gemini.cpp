@@ -1217,6 +1217,13 @@ int Gemini::startResync ()
 	pos_flip[0] = pos;
 	pos_flip[1] = pos;
 
+	// second flip needs to be set to 180 - dec or 180 + dec, depending if the dec is > 0 or < 0
+	// dec is in -90 .. +90 range, given it was normalized by normalizeRaDec call
+	if (pos_flip[1].dec < 0)
+		pos_flip[1].dec = -180 - pos_flip[1].dec;
+	else
+		pos_flip[1].dec = 180 - pos_flip[1].dec;
+
 	JD = ln_get_julian_from_sys ();
 	locSidTimeDeg = getLocSidTime () * 15.0;
 
@@ -1227,7 +1234,7 @@ int Gemini::startResync ()
 	// for both flips....
 	for (i = 0; i <= 1; i++)
 	{
-		computeModel (&pos_flip[i], &model_change_flip[i], i, JD);
+		computeModel (&pos_flip[i], &model_change_flip[i], JD);
 		applyCorrRaDec (&pos_flip[i]);
 		// We don't take care of dec 90deg overflow, as it is not necessary here, we only want to measure distances and feasibility.
 		// Also, we don't want to solve funny things like flip change because of model or corrections... But gemini can handle these values, hopefully, so we don't care :-).
@@ -1293,7 +1300,6 @@ int Gemini::startResync ()
 
 	// OK, we have just taken decision which flip to choose, now really do it...
 	// hard way:
-	//applyModel (&pos, &model_change, newFlip, ln_get_julian_from_sys ());
 	// smart way:
 	applyModelPrecomputed (&pos_flip[newFlip], &model_change_flip[newFlip], false);	// false - we have already made corrections
 
@@ -1512,7 +1518,7 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 	JD = ln_get_julian_from_sys ();
 
 	zeroCorrRaDec ();
-	applyModel (&pos, &model_change, telFlip->getValueInteger (), JD);
+	applyModel (&pos, &model_change, JD);
 
 	if ((tel_write_ra (pos.ra) < 0) || usleep (USEC_SEC / 15) || (tel_write_dec (pos.dec) < 0) || usleep (USEC_SEC / 15))
 		return -1;

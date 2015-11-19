@@ -482,7 +482,7 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	u_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 	if (telLatitude->getValueDouble () < 0)
 		u_pos.dec *= -1;
-	applyModel (&u_pos, &model_change, 0, JD);	// we give raw (unflipped) position => flip=0 for model computation
+	applyModel (&u_pos, &model_change, JD);
 
 	// when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
 	if (telLatitude->getValueDouble () < 0)

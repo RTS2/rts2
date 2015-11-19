@@ -1,6 +1,6 @@
 /* 
- * Telescope model reader.
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ * RTS2 telescope pointing model.
+ * Copyright (C) 2015 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,22 +17,22 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "tpointmodel.h"
+#include "rts2model.h"
 #include "libnova_cpp.h"
 
 #include <fstream>
 
 using namespace rts2telmodel;
 
-TPointModel::TPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
+RTS2Model::RTS2Model (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
 {
 }
 
-TPointModel::~TPointModel (void)
+RTS2Model::~RTS2Model (void)
 {
 }
 
-int TPointModel::load ()
+int RTS2Model::load ()
 {
 	std::ifstream is (modelFile);
 	load (is);
@@ -41,75 +41,38 @@ int TPointModel::load ()
 	return 0;
 }
 
-int TPointModel::apply (struct ln_equ_posn *pos)
+int RTS2Model::apply (struct ln_equ_posn *pos)
 {
-	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
-	{
-		(*iter)->apply (pos, cond);
-	}
+        double d_tar, r_tar;
+        pos.ra = ln_radians(pos.ra);
+        pos.dec = ln_radians(pos.dec);
+
+        double lat_r = cond->getLatitudeRadians ();
+
+        d_tar = pos.dec + params[0] - params[1] * cos (pos.ra) - params[2] * sin (pos.ra) - params[3] * (sin (lat_r) * cos(pos.dec) + cos (lat_r) * sin (pos.dec) * cos (pos.ra);
+        r_tar = pos.ra + params[4] + params[5] / cos (pos.dec) - params[6] * tan (pos.dec) + (-params[1] * sin (pos.ra) + params[2] * cos (pos.dec)) * tan (pos.dec) + params[3] * cos (lat_r) * sin (pos.ra) / cos (pos.dec) + params[7] * (sin (lat_r) * tan (pos.dec) + cos (pos.dec) * cos (pos.ra)) + params[8] * pos.ra;
+
+        pos.ra = d_tar;
+        pos.dec = d_dec;
+
 	return 0;
 }
 
-int TPointModel::applyVerbose (struct ln_equ_posn *pos)
+int RTS2Model::applyVerbose (struct ln_equ_posn *pos)
 {
-	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
-	{
-		struct ln_equ_posn old_pos = *pos;
-		logStream (MESSAGE_DEBUG) // << (*iter)
-			<< "Before: " << pos->ra << " " << pos->dec << sendLog;
-		(*iter)->apply (pos, cond);
-		logStream (MESSAGE_DEBUG) << "After: " << pos->ra << " " << pos->dec 
-			<< "(" << LibnovaDegDist (pos->ra - old_pos.ra) 
-			<< " " << LibnovaDegDist (pos->dec - old_pos.dec)
-			<< ")" << sendLog;
-	}
+        logStream (MESSAGE_DEBUG) << "Before: " << pos.ra << " " << pos.dec << sendLog;
+        apply (pos);
+        logStream (MESSAGE_DEBUG) << "After: " << pos.ra << " " << pos.dec << sendLog;
 	return 0;
 }
 
-int TPointModel::reverse (struct ln_equ_posn *pos)
+int RTS2Model::reverse (struct ln_equ_posn *pos)
 {
-	struct ln_equ_posn pos2;
-
-	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
-	{
-		pos2.ra = pos->ra;
-		pos2.dec = pos->dec;
-
-		(*iter)->apply (pos, cond);
-
-		pos->ra = 2. * pos2.ra - pos->ra;
-		pos->dec = 2. * pos2.dec - pos->dec;
-	}
 	return 0;
 }
 
 int TPointModel::reverseVerbose (struct ln_equ_posn *pos)
 {
-	struct ln_equ_posn pos2;
-
-	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
-	{
-		struct ln_equ_posn old_pos = *pos;
-
-		pos2.ra = pos->ra;
-		pos2.dec = pos->dec;
-
-		logStream (MESSAGE_DEBUG) << //(*iter) << 
-			"Before: " << pos->ra << " " << pos->dec << sendLog;
-
-		(*iter)->apply (pos, cond);
-
-		logStream (MESSAGE_DEBUG) << "After1: " << pos->ra << " " << pos->dec
-			<< "(" << LibnovaDegDist (pos->ra - old_pos.ra) << " "
-			<< (pos->dec - old_pos.dec) << ")" << sendLog;
-
-		pos->ra = 2. * pos2.ra - pos->ra;
-		pos->dec = 2. * pos2.dec - pos->dec;
-
-		logStream (MESSAGE_DEBUG) << "After2: " << pos->ra << " " << pos->dec
-			<< "(" << (pos->ra - old_pos.ra) << " "
-			<< (pos->dec - old_pos.dec) << ")" << sendLog;
-	}
 	return 0;
 }
 
