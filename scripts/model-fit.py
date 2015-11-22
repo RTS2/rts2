@@ -96,7 +96,10 @@ with open(sys.argv[1]) as f:
 
 	# feed parameters to diff, obtain model differences. Closer to zero = better
 	diff_model = fit_model(best, aa_ra, ar_ra, aa_dec, ar_dec)
-	print diff_model * 3600.0
+	print 'DIFF_MODEL ',
+	for d in diff_model:
+		print d,
+	print
 
 	print 'RTS2_MODEL',
 	for a in best:

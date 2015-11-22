@@ -53,8 +53,7 @@ class RTS2Model:public TelModel
 
 		virtual std::istream & load (std::istream & is);
 		virtual std::ostream & print (std::ostream & os);
-	
-	private:
+
 		double params[9];
 };
 

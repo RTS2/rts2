@@ -1136,6 +1136,7 @@ class Telescope:public rts2core::Device
 		struct timeval dir_timeouts[4];
 
 		char *modelFile;
+		char *rts2ModelFile;
 		rts2telmodel::TelModel *model;
 
 		rts2core::ValueSelection *standbyPark;

@@ -35,6 +35,7 @@
 #include "pluto/observe.h"
 
 #include "telmodel.h"
+#include "rts2model.h"
 #include "tpointmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
@@ -43,6 +44,7 @@
 #define OPT_WCS_MULTI         OPT_LOCAL + 120
 #define OPT_PARK_POS          OPT_LOCAL + 121
 #define OPT_DEC_UPPER_LIMIT   OPT_LOCAL + 122
+#define OPT_RTS2_MODEL        OPT_LOCAL + 123
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
 #define EVENT_TRACKING_TIMER     RTS2_LOCAL_EVENT + 561
@@ -256,6 +258,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (rotators, "rotators", "Rotator(s) connected to telescope.", false);
 
 	modelFile = NULL;
+	rts2ModelFile = NULL;
 	model = NULL;
 
 	createValue (standbyPark, "standby_park", "Park telescope when switching to standby", false, RTS2_VALUE_WRITABLE);
@@ -270,7 +273,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	wcs_multi = '!';
 
-	addOption ('m', NULL, 1, "name of file holding model parameters, calculated by T-Point");
+	addOption ('m', NULL, 1, "T-Point model filename");
+	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 pointing model filename");
 	addOption ('l', NULL, 1, "separation limit (corrections above that number in degrees will be ignored)");
 	addOption ('g', NULL, 1, "minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
 
@@ -398,6 +402,9 @@ int Telescope::processOption (int in_opt)
 			modelFile = optarg;
 			calModel->setValueBool (true);
 			break;
+		case OPT_RTS2_MODEL:
+			rts2ModelFile = optarg;
+			calModel->setValueBool (true);
 		case 'l':
 			modelLimit->setValueDouble (atof (optarg));
 			break;
@@ -874,7 +881,25 @@ int Telescope::init ()
 		createValue (wcs_crval2, multiWCS ("CRVAL2", wcs_multi), "second reference value", false, RTS2_DT_WCS_CRVAL2);
 	}
 
-	if (modelFile)
+	if (modelFile && rts2ModelFile)
+	{
+		std::cerr << "cannot specify both 'm' and 'rts2-model'. Please choose only one model file" << std::endl;
+		return -1;
+	}
+
+	if (rts2ModelFile)
+	{
+		model = new rts2telmodel::RTS2Model (this, modelFile);
+		ret = model->load ();
+		if (ret)
+			return ret;
+		rts2core::DoubleArray *p;
+		createValue (p, "rts2_model", "RTS2 model parameters", false);
+		for (int i = 0; i < 9; i++)
+			p->addValue (((rts2telmodel::RTS2Model *) model)->params[i]);
+
+	}
+	else if (modelFile)
 	{
 		model = new rts2telmodel::TPointModel (this, modelFile);
 		ret = model->load ();
