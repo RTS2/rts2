@@ -18,6 +18,7 @@
  */
 
 #include "telmodel.h"
+#include "rts2model.h"
 #include "tpointmodel.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
@@ -33,9 +34,9 @@
 #include <vector>
 #include <stdlib.h>
 
-#define OPT_DATE      OPT_LOCAL + 1002
-#define OPT_RADEC     OPT_LOCAL + 1003
-
+#define OPT_DATE           OPT_LOCAL + 1002
+#define OPT_RADEC          OPT_LOCAL + 1003
+#define OPT_RTS2_MODEL     OPT_LOCAL + 1004
 
 using namespace rts2telmodel;
 
@@ -88,8 +89,9 @@ class TelModelTest:public rts2core::CliApp
 		virtual int doProcessing ();
 
 	private:
-		char *modelFile;
-		TPointModel *model;
+		const char *modelFile;
+		const char *rts2ModelFile;
+		TelModel *model;
 		std::vector < std::string > runFiles;
 		ModelTest *telescope;
 		int errors;
@@ -117,6 +119,7 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 {
 	rts2core::Configuration::instance ();
 	modelFile = NULL;
+        rts2ModelFile = NULL;
 	model = NULL;
 	telescope = NULL;
 	errors = 0;
@@ -128,6 +131,7 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	includeRefraction = false;
 	localDate = 0;
 	addOption ('m', NULL, 1, "Model file to use");
+	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 model");
 	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC. All values in arcminutes.");
 	addOption ('R', NULL, 0, "Include atmospheric refraction into corrections.");
 	addOption ('a', NULL, 0, "Print also alt-az coordinates together with errors.");
@@ -162,6 +166,9 @@ int TelModelTest::processOption (int in_opt)
 	{
 		case 'm':
 			modelFile = optarg;
+			break;
+		case OPT_RTS2_MODEL:
+			rts2ModelFile = optarg;
 			break;
 		case 'e':
 			errors++;
@@ -224,8 +231,18 @@ int TelModelTest::init ()
 	telescope = new ModelTest ();
 	telescope->setCorrections (false, false, false);
 
-	model = new TPointModel (telescope, modelFile);
-	ret = model->load ();
+        if (modelFile && rts2ModelFile)
+        {
+                std::cerr << "You cannot specify both T-Point and RTS2 model, exiting" << std::endl;
+                return -1;
+        }
+
+        if (rts2ModelFile)
+                model = new RTS2Model (telescope, rts2ModelFile);
+        else
+	        model = new TPointModel (telescope, modelFile);
+
+       	ret = model->load ();
 	
 	if (localDate != 0)
 		return 0;

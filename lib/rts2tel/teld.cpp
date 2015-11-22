@@ -889,7 +889,7 @@ int Telescope::init ()
 
 	if (rts2ModelFile)
 	{
-		model = new rts2telmodel::RTS2Model (this, modelFile);
+		model = new rts2telmodel::RTS2Model (this, rts2ModelFile);
 		ret = model->load ();
 		if (ret)
 			return ret;

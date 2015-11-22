@@ -52,8 +52,8 @@ int RTS2Model::apply (struct ln_equ_posn *pos)
         d_tar = pos->dec - params[0] + params[1] * cos (pos->ra) + params[2] * sin (pos->ra) + params[3] * (sin (lat_r) * cos(pos->dec) + cos (lat_r) * sin (pos->dec) * cos (pos->ra));
         r_tar = pos->ra - params[4] - params[5] / cos (pos->dec) + params[6] * tan (pos->dec) - (-params[1] * sin (pos->ra) + params[2] * cos (pos->dec)) * tan (pos->dec) - params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) - params[7] * (sin (lat_r) * tan (pos->dec) + cos (pos->dec) * cos (pos->ra)) - params[8] * pos->ra;
 
-        pos->ra = r_tar;
-        pos->dec = d_tar;
+        pos->ra = ln_rad_to_deg (r_tar);
+        pos->dec = ln_rad_to_deg (d_tar);
 
 	return 0;
 }
@@ -77,8 +77,8 @@ int RTS2Model::reverse (struct ln_equ_posn *pos)
         d_tar = pos->dec + params[0] - params[1] * cos (pos->ra) - params[2] * sin (pos->ra) - params[3] * (sin (lat_r) * cos(pos->dec) + cos (lat_r) * sin (pos->dec) * cos (pos->ra));
         r_tar = pos->ra + params[4] + params[5] / cos (pos->dec) - params[6] * tan (pos->dec) + (-params[1] * sin (pos->ra) + params[2] * cos (pos->dec)) * tan (pos->dec) + params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) + params[7] * (sin (lat_r) * tan (pos->dec) + cos (pos->dec) * cos (pos->ra)) + params[8] * pos->ra;
 
-        pos->ra = r_tar;
-        pos->dec = d_tar;
+        pos->ra = ln_rad_to_deg (r_tar);
+        pos->dec = ln_rad_to_deg (d_tar);
 
 	return 0;
 }

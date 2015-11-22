@@ -444,12 +444,18 @@ void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 	struct ::archive *a;
 	struct ::archive_entry *entry;
 
+        int ret;
+
 	a = archive_write_new ();
-	archive_write_set_compression_bzip2 (a);
+        if (a == NULL)
+                throw XmlRpc::XmlRpcException ("Cannot create archive");
+	archive_write_add_filter_bzip2 (a);
 	archive_write_set_format_ustar (a);
 	archive_write_set_bytes_in_last_block (a, 1);
 
-	archive_write_open (a, this, &open_callback, &write_callback, &close_callback);
+	ret = archive_write_open (a, this, &open_callback, &write_callback, &close_callback);
+        if (ret != ARCHIVE_OK)
+                throw XmlRpc::XmlRpcException (archive_error_string (a));
 
 	for (XmlRpc::HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 	{
@@ -480,7 +486,13 @@ void DownloadRequest::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 		}
 	}
 
-	archive_write_finish (a);
+        archive_write_close (a);
+        if (ret != ARCHIVE_OK)
+                throw XmlRpc::XmlRpcException (archive_error_string (a));
+
+	archive_write_free (a);
+        if (ret != ARCHIVE_OK)
+                throw XmlRpc::XmlRpcException (archive_error_string (a));
 
 	response_length = buf_size;
 	response = buf;

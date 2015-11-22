@@ -70,10 +70,7 @@ class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 		 *
 		 * @return RMS error in degrees.
 		 */
-		double getRMS ()
-		{
-			return rms / 3600;
-		}
+		virtual double getRMS () { return rms / 3600; }
 
 		virtual std::istream & load (std::istream & is);
 		virtual std::ostream & print (std::ostream & os);
