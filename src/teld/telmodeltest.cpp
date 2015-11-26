@@ -34,9 +34,11 @@
 #include <vector>
 #include <stdlib.h>
 
-#define OPT_DATE           OPT_LOCAL + 1002
-#define OPT_RADEC          OPT_LOCAL + 1003
-#define OPT_RTS2_MODEL     OPT_LOCAL + 1004
+#define OPT_DATE	       OPT_LOCAL + 1002
+#define OPT_RADEC	      OPT_LOCAL + 1003
+#define OPT_RTS2_MODEL	 OPT_LOCAL + 1004
+#define OPT_T_POINT_MODEL      OPT_LOCAL + 1005
+#define OPT_CALCULATE_ERRORS   OPT_LOCAL + 1006
 
 using namespace rts2telmodel;
 
@@ -91,6 +93,7 @@ class TelModelTest:public rts2core::CliApp
 	private:
 		const char *modelFile;
 		const char *rts2ModelFile;
+		const char *errorFile;
 		TelModel *model;
 		std::vector < std::string > runFiles;
 		ModelTest *telescope;
@@ -105,6 +108,7 @@ class TelModelTest:public rts2core::CliApp
 		time_t localDate;
 		struct ln_equ_posn localPosition;
 
+		void processErrorFile ();
 		void test (double ra, double dec);
 		void runOnFile (std::string filename, std::ostream & os);
 		void runOnFitsFile (std::string filename, std::ostream & os);
@@ -119,7 +123,8 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 {
 	rts2core::Configuration::instance ();
 	modelFile = NULL;
-        rts2ModelFile = NULL;
+	rts2ModelFile = NULL;
+	errorFile = NULL;
 	model = NULL;
 	telescope = NULL;
 	errors = 0;
@@ -130,14 +135,15 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	printJD = false;
 	includeRefraction = false;
 	localDate = 0;
-	addOption ('m', NULL, 1, "Model file to use");
-	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 model");
+	addOption (OPT_T_POINT_MODEL, "t-point-model", 1, "T-Point model filename");
+	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 model filename");
+	addOption (OPT_CALCULATE_ERRORS, "calculate-errors", 1, "Calculate errors from given input file, specified in input format for model-fit.py script");
 	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC. All values in arcminutes.");
 	addOption ('R', NULL, 0, "Include atmospheric refraction into corrections.");
 	addOption ('a', NULL, 0, "Print also alt-az coordinates together with errors.");
 	addOption ('j', NULL, 0, "Print also computed JD together with errors.");
 	addOption ('N', NULL, 0, "Print numbers, do not pretty print.");
-	addOption ('v', NULL, 0, "Report model progress");
+	addOption ('v', NULL, 0, "Verbose mode, report model progress");
 	addOption ('i', NULL, 0, "Print model for given images");
 	addOption ('r', NULL, 0, "Print random RA DEC, handy for telescope pointing tests");
 	addOption (OPT_DATE, "date", 1, "Print transformations for given date");
@@ -164,11 +170,14 @@ int TelModelTest::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'm':
-			modelFile = optarg;
-			break;
 		case OPT_RTS2_MODEL:
 			rts2ModelFile = optarg;
+			break;
+		case OPT_T_POINT_MODEL:
+			modelFile = optarg;
+			break;
+		case OPT_CALCULATE_ERRORS:
+			errorFile = optarg;
 			break;
 		case 'e':
 			errors++;
@@ -219,11 +228,16 @@ int TelModelTest::init ()
 	if (ret)
 		return ret;
 
-	if (!rpoint && runFiles.empty () && localDate == 0)
+	if (!rpoint && runFiles.empty () && localDate == 0 && errorFile == NULL)
 	{
 		help ();
 		return -1;
 	}
+
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
+	ret = config->loadFile ();
+	if (ret)
+		return -1;
 
 	if (rpoint)
 		return 0;
@@ -231,16 +245,16 @@ int TelModelTest::init ()
 	telescope = new ModelTest ();
 	telescope->setCorrections (false, false, false);
 
-        if (modelFile && rts2ModelFile)
-        {
-                std::cerr << "You cannot specify both T-Point and RTS2 model, exiting" << std::endl;
-                return -1;
-        }
+	if (modelFile && rts2ModelFile)
+	{
+		std::cerr << "You cannot specify both T-Point and RTS2 model, exiting" << std::endl;
+		return -1;
+	}
 
-        if (rts2ModelFile)
-                model = new RTS2Model (telescope, rts2ModelFile);
-        else
-	        model = new TPointModel (telescope, modelFile);
+	if (rts2ModelFile)
+		model = new RTS2Model (telescope, rts2ModelFile);
+	else
+		model = new TPointModel (telescope, modelFile);
 
        	ret = model->load ();
 	
@@ -544,6 +558,10 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 
 int TelModelTest::doProcessing ()
 {
+	if (errorFile != NULL)
+	{
+		processErrorFile ();
+	}
 	if (localDate != 0)
 	{
 		struct ln_hrz_posn hrz;
@@ -567,13 +585,77 @@ int TelModelTest::doProcessing ()
 		for (std::vector < std::string >::iterator iter = runFiles.begin (); iter != runFiles.end (); iter++)
 			runOnFile ((*iter), std::cout);
 	}
-	else
+	else if (errorFile == NULL)
 	{
 		// some generic tests
 		test (10, 20);
 		test (30, 50);
 	}
 	return 0;
+}
+
+void TelModelTest::processErrorFile ()
+{
+	std::ifstream ef (errorFile);
+	std::string line;
+	// skip first line with format
+	getline (ef, line);
+	std::list <struct ln_equ_posn> diffs;
+	while (ef.good())
+	{
+		getline (ef, line);
+		if (!ef.good ())
+			break;
+		char observation[50];
+		double mjd, ra_mnt, dec_mnt, lst_mnt, ra_true, dec_true;
+		long axra, axdec;
+		// parse line..
+		// Observation      MJD       RA-MNT   DEC-MNT LST-MNT      AXRA      AXDEC   RA-TRUE  DEC-TRUE
+		int ret = sscanf (line.c_str(), "%50s %lf %lf %lf %lf %ld %ld %lf %lf", observation, &mjd, &ra_mnt, &dec_mnt, &lst_mnt, &axra, &axdec, &ra_true, &dec_true);
+		if (ret != 9)
+		{
+			std::cerr << "Ignoring invalid line: " << line << std::endl;
+			continue;
+		}
+		struct ln_equ_posn axis, real, diff;
+		axis.ra = lst_mnt - ra_mnt;
+		axis.dec = 180 - dec_mnt;
+		real.ra = lst_mnt - ra_true;
+		real.dec = 180 - dec_true;
+
+		if (verbose)
+			model->applyVerbose (&axis);
+		else
+			model->apply (&axis);
+
+		// remove real and save diffs
+		diff.ra = axis.ra - real.ra;
+		diff.dec = axis.dec - real.dec;
+
+		diffs.push_back (diff);
+	}
+	ef.close ();
+
+	// print out differences
+	std::list<struct ln_equ_posn>::iterator iter = diffs.begin ();
+
+        std::cout << iter->ra << " " << iter->dec << std::endl;
+
+	for (iter = diffs.begin (); iter != diffs.end (); iter++)
+	{
+		if (iter != diffs.begin ())
+			std::cout << " ";
+		std::cout << iter->dec;
+	}
+
+	for (iter = diffs.begin (); iter != diffs.end (); iter++)
+	{
+		if (iter != diffs.begin ())
+			std::cout << " ";
+		std::cout << iter->ra;
+	}
+
+	std::cout << std::endl;
 }
 
 int main (int argc, char **argv)

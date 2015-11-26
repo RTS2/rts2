@@ -45,6 +45,7 @@
 #define OPT_PARK_POS          OPT_LOCAL + 121
 #define OPT_DEC_UPPER_LIMIT   OPT_LOCAL + 122
 #define OPT_RTS2_MODEL        OPT_LOCAL + 123
+#define OPT_T_POINT_MODEL     OPT_LOCAL + 124
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
 #define EVENT_TRACKING_TIMER     RTS2_LOCAL_EVENT + 561
@@ -273,8 +274,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	wcs_multi = '!';
 
-	addOption ('m', NULL, 1, "T-Point model filename");
 	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 pointing model filename");
+	addOption (OPT_T_POINT_MODEL, "t-point-model", 1, "T-Point model filename");
 	addOption ('l', NULL, 1, "separation limit (corrections above that number in degrees will be ignored)");
 	addOption ('g', NULL, 1, "minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
 
@@ -398,13 +399,14 @@ int Telescope::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'm':
-			modelFile = optarg;
-			calModel->setValueBool (true);
-			break;
 		case OPT_RTS2_MODEL:
 			rts2ModelFile = optarg;
 			calModel->setValueBool (true);
+			break;
+		case OPT_T_POINT_MODEL:
+			modelFile = optarg;
+			calModel->setValueBool (true);
+			break;
 		case 'l':
 			modelLimit->setValueDouble (atof (optarg));
 			break;

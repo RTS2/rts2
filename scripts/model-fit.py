@@ -21,12 +21,13 @@ longitude = -110
 latitude_r = radians(latitude)
 
 # Fit function.
-# a_ra - target RA
-# r_ra - calculated (real) RA
+# a_ra - target HA
+# r_ra - calculated (real) HA
 # a_dec - target DEC
 # r_dec - calculated (real) DEC
 # DEC > 90 or < -90 means telescope flipped (DEC axis continues for modelling purposes)
 def fit_model(params, a_ra, r_ra, a_dec, r_dec):
+        print 'computing', latitude_r, params, a_ra, r_ra, a_dec, r_dec
 	diff1 = a_dec - r_dec - params[0] + params[1]*np.cos(a_ra) + params[2]*np.sin(a_ra) + params[3]*(sin(latitude_r) * np.cos(a_dec) - cos(latitude_r) * np.sin(a_dec) * np.cos(a_ra))
 	diff2 = a_ra - r_ra - params[4] - params[5]/np.cos(a_dec) + params[6]*np.tan(a_dec) - (-params[1]*np.sin(a_ra) + params[2]*np.cos(a_ra)) * np.tan(a_dec) - params[3]*np.cos(latitude_r)*np.sin(a_ra) / np.cos(a_dec) - params[7]*(np.sin(latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ra)) - params[8] * a_ra
 	return np.concatenate((diff1, diff2))
@@ -68,8 +69,8 @@ with open(sys.argv[1]) as f:
 	ar_ra = np.radians(np.array(a_data[:,2],np.float))
 	ar_dec = np.radians(np.array(a_data[:,3],np.float))
 
-	diff_ra = aa_ra - ar_ra
-	diff_dec = aa_dec - ar_dec
+	diff_ra = np.degrees(aa_ra - ar_ra)
+	diff_dec = np.degrees(aa_dec - ar_dec)
 
 	best, cov, info, message, ier = leastsq(fit_model, par_init, args=(aa_ra, ar_ra, aa_dec, ar_dec), full_output=True)
 
@@ -95,7 +96,8 @@ with open(sys.argv[1]) as f:
 	print diff_dec * 3600.0
 
 	# feed parameters to diff, obtain model differences. Closer to zero = better
-	diff_model = fit_model(best, aa_ra, ar_ra, aa_dec, ar_dec)
+	diff_model = np.degrees(fit_model(best, np.array([aa_ra[0]]), np.array([ar_ra[0]]), np.array([aa_dec[0]]), np.array([ar_dec[0]])))
+	#diff_model = np.degrees(fit_model(best, aa_ra, ar_ra, aa_dec, ar_dec))
 	print 'DIFF_MODEL ',
 	for d in diff_model:
 		print d,

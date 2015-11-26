@@ -52,6 +52,8 @@
       &deviceapp;
       <arg choice="opt">
 	<arg choice="plain"><option>--park-position <replaceable>alt</replaceable>:<replaceable>az</replaceable>:<replaceable>flip</replaceable></option></arg>
+	<arg choice="plain"><option>--rts2-model <replaceable>RTS2 model filename</replaceable></option></arg>
+	<arg choice="plain"><option>--t-point-model <replaceable>RTS2 model filename</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
 
@@ -83,6 +85,17 @@
 	  <para>
 	    If flip is provided, the telescope will flip to the given flip.
             Please see discussion below for possible flip values.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--rts2-model</option></term>
+        <listitem>
+          <para>
+            RTS2 pointing model. Pointing model correct for errors in telescope pointing, allowing more precise pointing to predefined targets.
+            Please see
+            <citerefentry><refentrytitle>rts2-telescope-model</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+            for details.
 	  </para>
         </listitem>
       </varlistentry>

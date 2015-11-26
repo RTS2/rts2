@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2015-11-24</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-telescope-model">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2015</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Documentation for RTS2 telescope pointing model.</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+      Pointing model function is to, give target position, calculate corrected
+      position the TCS shall be pointed to in order to point on target.
+      Pointing model is in fact a function, which accepts two parameters (hour
+      angle and declination for GEMs) and returns corrected target coordinates.
+    </para>
+  </refsect1> 
+</refentry>
