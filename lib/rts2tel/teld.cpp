@@ -39,12 +39,12 @@
 #include "tpointmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
-#define OPT_HORIZON           OPT_LOCAL + 118
-#define OPT_CORRECTION        OPT_LOCAL + 119
-#define OPT_WCS_MULTI         OPT_LOCAL + 120
-#define OPT_PARK_POS          OPT_LOCAL + 121
+#define OPT_HORIZON	   OPT_LOCAL + 118
+#define OPT_CORRECTION	OPT_LOCAL + 119
+#define OPT_WCS_MULTI	 OPT_LOCAL + 120
+#define OPT_PARK_POS	  OPT_LOCAL + 121
 #define OPT_DEC_UPPER_LIMIT   OPT_LOCAL + 122
-#define OPT_RTS2_MODEL        OPT_LOCAL + 123
+#define OPT_RTS2_MODEL	OPT_LOCAL + 123
 #define OPT_T_POINT_MODEL     OPT_LOCAL + 124
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
@@ -109,6 +109,15 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
 	createValue (tarRaDec, "TAR", "target position with computed corrections (precession, refraction, aberation) applied", true);
+
+	if (hasUnTelCoordinates)
+	{
+		createValue (tarTelRaDec, "TAR_TEL", "target position (TAR) in telescope coordinates (DEC in 180 .. -180 range)", true);
+	}
+	else
+	{
+		tarTelRaDec = NULL;
+	}
 
 	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	corrRaDec->setValueRaDec (0, 0);
@@ -308,6 +317,27 @@ double Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
+void Telescope::setTarTel (bool flipped)
+{
+	if (tarTelRaDec == NULL)
+		return;
+
+	tarTelRaDec->setValueRaDec (tarRaDec->getRa (), tarRaDec->getDec ());
+	if (flipped == true)
+	{
+		tarRaDec->setRa (ln_range_degrees (tarRaDec->getRa () + 180));
+		if (tarRaDec->getDec () > 0)
+		{
+			tarRaDec->setDec (180 - tarRaDec->getDec ());
+		}
+		else
+		{
+			tarRaDec->setDec (-180 + tarRaDec->getDec ());
+		}
+	}
+}
+
+
 int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *out_tar, double &tar_distance, int32_t &ac, int32_t &dc)
 {
 	tar_distance = NAN;
@@ -449,36 +479,36 @@ int Telescope::processOption (int in_opt)
 			decUpperLimit->setValueCharArr (optarg);
 			break;
 
-                case OPT_PARK_POS:
-                        {
-                                std::istringstream *is;
-                                is = new std::istringstream (std::string(optarg));
-                                double palt,paz;
+		case OPT_PARK_POS:
+			{
+				std::istringstream *is;
+				is = new std::istringstream (std::string(optarg));
+				double palt,paz;
 				int flip;
-                                char c;
-                                *is >> palt >> c >> paz;
-                                if (is->fail () || c != ':')
-                                {
-                                        logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
-                                        delete is;
-                                        return -1;
-                                }
+				char c;
+				*is >> palt >> c >> paz;
+				if (is->fail () || c != ':')
+				{
+					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
+					delete is;
+					return -1;
+				}
 				*is >> c >> flip;
 				if (is->fail ())
 					flip = -1;
 
-                                delete is;
-                                if (parkPos == NULL)
+				delete is;
+				if (parkPos == NULL)
 				{
 					createParkPos (palt, paz, flip);
 				}
 				else
 				{
-                                	parkPos->setValueAltAz (palt, paz);
+					parkPos->setValueAltAz (palt, paz);
 					parkFlip->setValueInteger (flip);
 				}
-                        }
-                        break;
+			}
+			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
 	}
@@ -1349,8 +1379,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	if (isnan (oriRaDec->getRa ()) || isnan (oriRaDec->getDec ()))
 		return -1;
 
-        // MPEC objects changes coordinates regularly, so we will not bother incrementing 
-        if (mpec->getValueString ().length () > 0)
+	// MPEC objects changes coordinates regularly, so we will not bother incrementing 
+	if (mpec->getValueString ().length () > 0)
 	{
 		if (mpec->wasChanged ())
 			incMoveNum ();

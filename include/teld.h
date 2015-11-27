@@ -513,14 +513,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Sets new movement target, used exclusively to change target flip.
 		 */
-		void setTargetFlipped ()
-		{
-			if (tarRaDec->getDec () > 0)
-				tarRaDec->setDec (180 - tarRaDec->getDec ());
-			else
-				tarRaDec->setDec (-180 + tarRaDec->getDec ());
-
-		}
+		void setTarTel (bool flipped);
 
 		/**
 		 * Set WCS reference values telescope is reporting.
@@ -1026,6 +1019,8 @@ class Telescope:public rts2core::Device
 		 * TAR[RA|DEC] = OBJ[RA|DEC] + precession, etc.
 		 */
 		rts2core::ValueRaDec *tarRaDec;
+
+		rts2core::ValueRaDec *tarTelRaDec;
 
 		/**
 		 * Corrections from astrometry/user.

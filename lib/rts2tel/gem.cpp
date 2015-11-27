@@ -44,10 +44,8 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	ret = sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped);
 
-	if (ret == 0 && use_flipped == true)
-	{
-		setTargetFlipped ();
-	}
+	if (ret == 0)
+		setTarTel (use_flipped);
 
 	return ret;
 }
