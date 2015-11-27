@@ -14,7 +14,7 @@ from scipy.optimize import leastsq
 from pylab import *
 
 # telescope latitude - north positive
-latitude = 20.70752
+latitude = 40.454069
 # telescope longitude - not used at the moment
 longitude = -110
 
@@ -29,8 +29,10 @@ latitude_r = radians(latitude)
 def fit_model(params, a_ra, r_ra, a_dec, r_dec):
         print 'computing', latitude_r, params, a_ra, r_ra, a_dec, r_dec
 	diff1 = a_dec - r_dec - params[0] + params[1]*np.cos(a_ra) + params[2]*np.sin(a_ra) + params[3]*(sin(latitude_r) * np.cos(a_dec) - cos(latitude_r) * np.sin(a_dec) * np.cos(a_ra))
+	#diff1 = a_dec - r_dec - params[0]
+	#diff2 = a_ra - r_ra - params[4]
 	diff2 = a_ra - r_ra - params[4] - params[5]/np.cos(a_dec) + params[6]*np.tan(a_dec) - (-params[1]*np.sin(a_ra) + params[2]*np.cos(a_ra)) * np.tan(a_dec) - params[3]*np.cos(latitude_r)*np.sin(a_ra) / np.cos(a_dec) - params[7]*(np.sin(latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ra)) - params[8] * a_ra
-	return np.concatenate((diff1, diff2))
+	return np.concatenate((diff2, diff1))
 
 
 # open file
@@ -38,13 +40,6 @@ def fit_model(params, a_ra, r_ra, a_dec, r_dec):
 #  Observation      MJD       RA-MNT   DEC-MNT LST-MNT      AXRA      AXDEC   RA-TRUE  DEC-TRUE
 #02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
 #skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
-
-def flip_dec(dec, ax_dec):
-	print 'flip_dec', dec, ax_dec
-	if ax_dec > -49246948.6862348300:
-		return 180 - dec
-	else:
-		return dec
 
 with open(sys.argv[1]) as f:
 	# skip first line
@@ -57,7 +52,7 @@ with open(sys.argv[1]) as f:
 
 	print rdata
 
-	data = [(float(lst) - float(a_ra), flip_dec(float(a_dec), float(ax_dec)), float(lst) - float(r_ra), flip_dec(float(r_dec), float(ax_dec)), sn) for sn,mjd,a_ra,a_dec,lst,ax_ra,ax_dec,r_ra,r_dec in rdata[:-1]]
+	data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - float(r_ra), float(r_dec), sn) for sn,mjd,a_ra,a_dec,lst,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
 	a_data = np.array(data)
 	print a_data

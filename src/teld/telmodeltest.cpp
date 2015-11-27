@@ -34,10 +34,10 @@
 #include <vector>
 #include <stdlib.h>
 
-#define OPT_DATE	       OPT_LOCAL + 1002
-#define OPT_RADEC	      OPT_LOCAL + 1003
+#define OPT_DATE		   OPT_LOCAL + 1002
+#define OPT_RADEC		  OPT_LOCAL + 1003
 #define OPT_RTS2_MODEL	 OPT_LOCAL + 1004
-#define OPT_T_POINT_MODEL      OPT_LOCAL + 1005
+#define OPT_T_POINT_MODEL	  OPT_LOCAL + 1005
 #define OPT_CALCULATE_ERRORS   OPT_LOCAL + 1006
 
 using namespace rts2telmodel;
@@ -256,7 +256,7 @@ int TelModelTest::init ()
 	else
 		model = new TPointModel (telescope, modelFile);
 
-       	ret = model->load ();
+	   	ret = model->load ();
 	
 	if (localDate != 0)
 		return 0;
@@ -610,7 +610,7 @@ void TelModelTest::processErrorFile ()
 		double mjd, ra_mnt, dec_mnt, lst_mnt, ra_true, dec_true;
 		long axra, axdec;
 		// parse line..
-		// Observation      MJD       RA-MNT   DEC-MNT LST-MNT      AXRA      AXDEC   RA-TRUE  DEC-TRUE
+		// Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE
 		int ret = sscanf (line.c_str(), "%50s %lf %lf %lf %lf %ld %ld %lf %lf", observation, &mjd, &ra_mnt, &dec_mnt, &lst_mnt, &axra, &axdec, &ra_true, &dec_true);
 		if (ret != 9)
 		{
@@ -619,9 +619,9 @@ void TelModelTest::processErrorFile ()
 		}
 		struct ln_equ_posn axis, real, diff;
 		axis.ra = lst_mnt - ra_mnt;
-		axis.dec = 180 - dec_mnt;
+		axis.dec = dec_mnt;
 		real.ra = lst_mnt - ra_true;
-		real.dec = 180 - dec_true;
+		real.dec = dec_true;
 
 		if (verbose)
 			model->applyVerbose (&axis);
@@ -629,8 +629,8 @@ void TelModelTest::processErrorFile ()
 			model->apply (&axis);
 
 		// remove real and save diffs
-		diff.ra = axis.ra - real.ra;
-		diff.dec = axis.dec - real.dec;
+		diff.ra = (axis.ra - real.ra) * 3600.0;
+		diff.dec = (axis.dec - real.dec) * 3600.0;
 
 		diffs.push_back (diff);
 	}
@@ -639,20 +639,16 @@ void TelModelTest::processErrorFile ()
 	// print out differences
 	std::list<struct ln_equ_posn>::iterator iter = diffs.begin ();
 
-        std::cout << iter->ra << " " << iter->dec << std::endl;
-
-	for (iter = diffs.begin (); iter != diffs.end (); iter++)
-	{
-		if (iter != diffs.begin ())
-			std::cout << " ";
-		std::cout << iter->dec;
-	}
-
 	for (iter = diffs.begin (); iter != diffs.end (); iter++)
 	{
 		if (iter != diffs.begin ())
 			std::cout << " ";
 		std::cout << iter->ra;
+	}
+
+	for (iter = diffs.begin (); iter != diffs.end (); iter++)
+	{
+		std::cout << " " << iter->dec;
 	}
 
 	std::cout << std::endl;
