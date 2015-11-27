@@ -90,7 +90,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		return -1;
 	}
 
-	// if we cannot move with those values, we cannot move with the any other more optiomal setting, so give up
+	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
 	ret = checkCountValues (pos, ac, dc, t_ac, t_dc, JD, ls, dec);
 
 	// let's see what will different flip do..
@@ -111,6 +111,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// both ways are possible, decide base on flipping parameter
 	else if (ret == 0 && ret_f == 0)
 	{
+		// when set to true, will use flipped coordinates
+		bool use_flipped = false;
 #define max(a,b) ((a) > (b) ? (a) : (b))
 		switch (used_flipping)
 		{
@@ -121,35 +123,25 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 					int32_t diff_f = max (fabs (ac - tf_ac), fabs (dc - tf_dc));
 
 					if (diff_f < diff_nf)
-					{
-						t_ac = tf_ac;
-						t_dc = tf_dc;
-					}
+						use_flipped = true;
 				}
 				break;
 			// same
 			case 1:
 				if (flip_move_start == 1)
-				{
-					t_ac = tf_ac;
-					t_dc = tf_dc;
-				}
+					use_flipped = true;
 				break;
 			// opposite
 			case 2:
 				if (flip_move_start == 0)
-				{
-					t_ac = tf_ac;
-					t_dc = tf_dc;
-				}
+					use_flipped = true;
 				break;
 			// west
 			case 3:
 				break;
 			// east
 			case 4:
-				t_ac = tf_ac;
-				t_dc = tf_dc;
+				use_flipped = true;
 				break;
 			// longest
 			case 5:
@@ -159,8 +151,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 						case 0:
 							break;
 						case 1:
-							t_ac = tf_ac;
-							t_dc = tf_dc;
+							use_flipped = true;
 							break;
 						default:
 							{
@@ -169,8 +160,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 								if (diff_f > diff_nf)
 								{
-									t_ac = tf_ac;
-									t_dc = tf_dc;
+									use_flipped = true;
 									flip_longest_path = 1;
 								}
 								else
@@ -199,19 +189,25 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				{
 					if (diff_f < diff_nf)
 					{
-						t_ac = tf_ac;
-						t_dc = tf_dc;
+						use_flipped = true;
 					}
 				}
 				else
 				{
 					if (diff_f > diff_nf)
 					{
-						t_ac = tf_ac;
-						t_dc = tf_dc;
+						use_flipped = true;
 					}
 				}
 		}
+
+		// when we will go to flipped..
+		if (use_flipped == true)
+		{
+			t_ac = tf_ac;
+			t_dc = tf_dc;
+		}
+
 	}
 	// otherwise, non-flipped is the only way, stay on it..
 
