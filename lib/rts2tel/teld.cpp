@@ -1069,11 +1069,17 @@ void Telescope::postEvent (rts2core::Event * event)
 	{
 		case EVENT_TRACKING_TIMER:
 			// if tracking is still relevant, reschedule
-			if (tracking->getValueInteger ())
+			if ((getState () & TEL_MASK_TRACK) == TEL_TRACKING)
 			{
 				runTracking ();
 				addTimer (trackingInterval->getValueFloat (), event);
 				return;
+			}
+			else
+			{
+				// rather stop move, if trackin is not allowed
+				// stopMove shall be called before, this is just security check it will be really called before we end track timer
+				stopMove ();
 			}
 			break;
 		case EVENT_CUP_SYNCED:
@@ -1116,7 +1122,7 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	{
 		blockMove->setValueBool (true);
 		sendValueAll (blockMove);
-		setTracking (0);
+		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking blocked");
 		stopMove ();
 		logStream (MESSAGE_WARNING) << "stoped movement of the delescope, triggered by STOP_MASK change" << sendLog;
 	}
@@ -1279,7 +1285,7 @@ int Telescope::info ()
 	hourAngle->setValueDouble (ln_range_degrees (lst->getValueDouble () - telRaDec->getRa ()));
 	targetDistance->setValueDouble (getTargetDistance ());
 
-	// check if we aren't bellow hard horizon - if yes, stop worm..
+	// check if we aren't bellow hard horizon - if yes, stop tracking..
 	if (hardHorizon)
 	{
 		struct ln_hrz_posn hrpos;
@@ -1287,7 +1293,7 @@ int Telescope::info ()
 		hrpos.az = telAltAz->getAz ();
 		if (!hardHorizon->is_good (&hrpos))
 		{
-			setTracking (0);
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking below horizon");
 		}
 	}
 	
@@ -1486,9 +1492,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
-			setTracking (0);
 			stopMove ();
-			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
+			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
 			if (conn)
 				conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
 			return -1;
@@ -1506,9 +1511,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
-			setTracking (0);
 			stopMove ();
-			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
+			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE | TEL_MASK_TRACK, TEL_NOT_CORRECTING | TEL_OBSERVING | TEL_NOTRACK, "cannot perform move");
 			if (conn)
 				conn->sendCommandEnd (DEVDEM_E_HW, "declination limit violated");
 			return -1;
@@ -1621,7 +1625,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 	}
 	int ret;
 	resetMpecTLE ();
-	setTracking (0);
+	maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking while telescope is being parked");
 	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = stopMove ();
@@ -1735,7 +1739,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		setTracking (tracking->getValueInteger (), true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			setTracking (0);
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand ("move_ha_sg"))
@@ -1760,7 +1764,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		setTracking (tracking->getValueInteger (), true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			setTracking (0);
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand ("move_mpec"))
@@ -1775,7 +1779,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		setTracking (tracking->getValueInteger (), true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
-			setTracking (0);
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
 		return ret;
 	}
 	else if (conn->isCommand (COMMAND_TELD_PEEK))
@@ -1790,7 +1794,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (0);
+		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
 		return moveAltAz ();
 	}
 	else if (conn->isCommand ("resync"))
@@ -1914,14 +1918,13 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
-		setTracking (0);
 		return startPark (conn);
 	}
 	else if (conn->isCommand ("stop"))
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
-		setTracking (0);
+		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped");
 		return stopMove ();
 	}
 	else if (conn->isCommand ("change"))
@@ -1959,21 +1962,24 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
-		ret = setTracking (0);
-		if (ret)
-		{
-			conn->sendCommandEnd (DEVDEM_E_HW, "cannot stop worm");
-		}
-		return ret;
+		stopMove ();
+		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped by worm_stop command");
+		return 0;
 	}
 	else if (conn->isCommand ("worm_start"))
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		if (blockMove->getValueBool () == true || (getState () & TEL_MASK_MOVING) == TEL_PARKING || (getState () & TEL_MASK_MOVING) == TEL_PARKED)
+		{
 			ret = -1;
+		}
 		else
+		{
+			if (tracking->getValueInteger () == 0)
+				tracking->setValueInteger (1);
 			ret = setTracking (tracking->getValueInteger (), true);
+		}
 
 		if (ret == -1)
 		{
