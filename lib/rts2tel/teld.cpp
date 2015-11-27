@@ -325,14 +325,14 @@ void Telescope::setTarTel (bool flipped)
 	tarTelRaDec->setValueRaDec (tarRaDec->getRa (), tarRaDec->getDec ());
 	if (flipped == true)
 	{
-		tarRaDec->setRa (ln_range_degrees (tarRaDec->getRa () + 180));
-		if (tarRaDec->getDec () > 0)
+		tarTelRaDec->setRa (ln_range_degrees (tarTelRaDec->getRa () + 180));
+		if (tarTelRaDec->getDec () > 0)
 		{
-			tarRaDec->setDec (180 - tarRaDec->getDec ());
+			tarTelRaDec->setDec (180 - tarTelRaDec->getDec ());
 		}
 		else
 		{
-			tarRaDec->setDec (-180 + tarRaDec->getDec ());
+			tarTelRaDec->setDec (-180 + tarTelRaDec->getDec ());
 		}
 	}
 }
