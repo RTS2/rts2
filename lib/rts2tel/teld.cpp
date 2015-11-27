@@ -1195,12 +1195,18 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 		}
 		else
 		{
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking finished");
+                        stopTracking ();
 		}
 		if (send == true)
 			sendValueAll (tracking);
 	}
 	return 0;
+}
+
+void Telescope::stopTracking ()
+{
+        stopMove ();
+        maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped");
 }
 
 void Telescope::runTracking ()
@@ -1794,7 +1800,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
 		resetMpecTLE ();
-		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking while in AltAz");
 		return moveAltAz ();
 	}
 	else if (conn->isCommand ("resync"))

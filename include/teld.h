@@ -866,6 +866,11 @@ class Telescope:public rts2core::Device
 		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
 		/**
+		 * Stops tracking. Calls stopMove and set tracking state to NOTRACK.
+		 */
+		void stopTracking ();
+
+		/**
 		 * Called to run tracking. It is up to driver implementation
 		 * to send updated position to telescope driver.
 		 *

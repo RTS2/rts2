@@ -27,27 +27,27 @@
 #include "connection/sitech.h"
 
 // SITech counts/servero loop -> speed value
-#define SPEED_MULTI             65536
+#define SPEED_MULTI	     65536
 
 // Crystal frequency
-#define CRYSTAL_FREQ            96000000
+#define CRYSTAL_FREQ	    96000000
 
 // Limit on number of steps for trajectory check
 #define TRAJECTORY_CHECK_LIMIT  2000
 
 // Bits in error state
-#define ERROR_GATE_VOLTS_LOW          0x001
+#define ERROR_GATE_VOLTS_LOW	  0x001
 #define ERROR_OVERCURRENT_HARDWARE    0x002
 #define ERROR_OVERCURRENT_FIRMWARE    0x004
-#define ERROR_MOTOR_VOLTS_LOW         0x008
+#define ERROR_MOTOR_VOLTS_LOW	 0x008
 #define ERROR_POWER_BOARD_OVER_TEMP   0x010
-#define ERROR_NEEDS_RESET             0x020
-#define ERROR_LIMIT_MINUS             0x040
-#define ERROR_LIMIT_PLUS              0x080
+#define ERROR_NEEDS_RESET	     0x020
+#define ERROR_LIMIT_MINUS	     0x040
+#define ERROR_LIMIT_PLUS	      0x080
 #define ERROR_TIMED_OVER_CURRENT      0x100
-#define ERROR_POSITION_ERROR          0x200
+#define ERROR_POSITION_ERROR	  0x200
 #define ERROR_BISS_ENCODER_ERROR      0x400
-#define ERROR_CHECKSUM                0x800
+#define ERROR_CHECKSUM		0x800
 
 namespace rts2teld
 {
@@ -107,7 +107,7 @@ class Sitech:public GEM
 
 		/**
 		 * Starts mount tracking - endless speed limited pointing.
-                 * Called periodically to make sure we stay on target.
+		 * Called periodically to make sure we stay on target.
 		 */
 		virtual void runTracking ();
 
@@ -236,7 +236,7 @@ class Sitech:public GEM
 
 		double offsetha;
 		double offsetdec;
-                 
+		 
 		/* Communications variables and routines for internal use */
 		const char *device_file;
 
@@ -579,8 +579,8 @@ int Sitech::initHardware ()
 
 	/* Make the connection */
 	
-	/* On the Sidereal Technologies controller                                */
-	/*   there is an FTDI USB to serial converter that appears as             */
+	/* On the Sidereal Technologies controller				*/
+	/*   there is an FTDI USB to serial converter that appears as	     */
 	/*   /dev/ttyUSB0 on Linux systems without other USB serial converters.   */
 	/*   The serial device is known to the program that calls this procedure. */
 	
@@ -994,8 +994,8 @@ int Sitech::checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d)
 
 void Sitech::runTracking ()
 {
-        if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
-                return;
+	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
+		return;
 	double sec_step = 2.0;
 	// calculate position sec_step from last position, base speed on this..
 	struct ln_equ_posn tarPos;
@@ -1012,7 +1012,7 @@ void Sitech::runTracking ()
 	{
 		if (ret < 0)
 			logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
-		setTracking (0);
+		stopTracking ();
 		return;
 	}
 
@@ -1081,7 +1081,7 @@ void Sitech::runTracking ()
 	if (ret != 0)
 	{
 		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
-		setTracking (0);
+		stopTracking ();
 		return;
 	}
 
