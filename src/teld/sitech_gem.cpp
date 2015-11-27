@@ -77,11 +77,7 @@ class Sitech:public GEM
 
 		virtual int endMove ();
 
-		virtual int stopMove ()
-		{
-			fullStop();
-			return 0;
-		}
+		virtual int stopMove ();
 
 		virtual int startPark ();
 
@@ -240,8 +236,6 @@ class Sitech:public GEM
 		/* Communications variables and routines for internal use */
 		const char *device_file;
 
-		void fullStop ();
-
 		// JD used in last getTel call
 		double getTelJD;
 		
@@ -385,10 +379,9 @@ Sitech::~Sitech(void)
 }
 
 /* Full stop */
-void Sitech::fullStop (void)
+int Sitech::stopMove ()
 {
 	partialMove->setValueInteger (0);
-	tracking->setValueInteger (0);
 	try
 	{
 		serConn->siTechCommand ('X', "N");
@@ -399,8 +392,10 @@ void Sitech::fullStop (void)
 	}
 	catch (rts2core::Error er)
 	{
-		logStream (MESSAGE_ERROR) << "cannot send full stop " << er << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot stop " << er << sendLog;
+		return -1;
 	}
+	return 0;
 }
 
 void Sitech::getTel ()
@@ -449,7 +444,7 @@ void Sitech::getTel ()
 					ra_errors->setValueString (findErrors (ra_val));
 					// stop if on limits
 					if ((ra_val & ERROR_LIMIT_MINUS) || (ra_val & ERROR_LIMIT_PLUS))
-						fullStop ();
+						stopTracking ();
 					break;
 
 				case 1:
@@ -477,7 +472,7 @@ void Sitech::getTel ()
 					dec_errors->setValueString (findErrors (dec_val));
 					// stop if on limits
 					if ((dec_val & ERROR_LIMIT_MINUS) || (dec_val & ERROR_LIMIT_PLUS))
-						fullStop ();
+						stopTracking ();
 					break;
 
 				case 1:
@@ -785,7 +780,7 @@ int Sitech::isMoving ()
 int Sitech::endMove ()
 {
 	partialMove->setValueInteger (0);
-	setTracking (tracking->getValueInteger (), true);
+	startTracking ();
 	return GEM::endMove ();
 }
 
@@ -794,10 +789,6 @@ int Sitech::setTracking (int track, bool addTrackingTimer, bool send)
 	if (track)
 	{
 		wasStopped = false;
-	}
-	else
-	{
-		fullStop ();
 	}
 	return GEM::setTracking (track, addTrackingTimer, send);
 }

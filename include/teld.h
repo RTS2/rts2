@@ -865,6 +865,10 @@ class Telescope:public rts2core::Device
 		 */
 		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
+		void startTracking () { setTracking (tracking->getValueInteger (), true); }
+
+		bool isTracking () { return (getState () & TEL_MASK_TRACK) == TEL_TRACKING; }
+
 		/**
 		 * Stops tracking. Calls stopMove and set tracking state to NOTRACK.
 		 */
@@ -938,7 +942,6 @@ class Telescope:public rts2core::Device
 		rts2core::ValueSelection *raGuide;
 		rts2core::ValueSelection *decGuide;
 
-		rts2core::ValueSelection *tracking;
 		rts2core::ValueFloat *trackingInterval;
 
 		/**
@@ -956,6 +959,8 @@ class Telescope:public rts2core::Device
 		rts2core::Connection * move_connection;
 		int moveInfoCount;
 		int moveInfoMax;
+
+		rts2core::ValueSelection *tracking;
 
 		/**
 		 * Last error.

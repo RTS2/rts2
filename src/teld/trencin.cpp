@@ -430,7 +430,7 @@ void Trencin::setGuideRa (int value)
 	{
 		if (decGuide->getValueInteger () == 0)
 			setIdleInfoInterval (60);
-		if (tracking->getValueInteger () > 0)
+		if (isTracking ())
 			startWorm ();
 		return;
 	}
@@ -523,7 +523,7 @@ void Trencin::checkAcc (rts2core::ConnSerial *conn, rts2core::ValueInteger *acc,
 void Trencin::setSpeedRa (int new_speed)
 {
 	// apply offset for sidereal motion
-	if (tracking->getValueInteger () > 0)
+	if (isTracking ())
 	{
 		switch (raGuide->getValueInteger ())
 		{
@@ -598,7 +598,7 @@ void Trencin::setRa (long new_ra)
 	long diff = new_ra - unitRa->getValueInteger () - cycleRa->getValueInteger () * MAX_MOVE;
 	long old_diff = diff;
 
-	if (tracking->getValueInteger () > 0)
+	if (isTracking ())
 	{
 		// adjust for siderial move..
 		double v = ((double) velRa->getValueInteger ()) * 64;
@@ -850,7 +850,7 @@ int Trencin::setTo (double set_ra, double set_dec)
 	last_move_ra = 0;
 	last_move_dec = 0;
 
-	if (tracking->getValueInteger () > 0)
+	if (isTracking ())
 		return startWorm ();
 	return 0;
 }
@@ -1048,7 +1048,7 @@ void Trencin::valueChanged (rts2core::Value *changed_value)
 	if (changed_value == accWormRa || changed_value == velWormRa
 		|| changed_value == backWormRa || changed_value == waitWormRa)
 	{
-		if (tracking->getValueInteger () > 0)
+		if (isTracking ())
 		{
 			try
 			{
@@ -1254,7 +1254,7 @@ int Trencin::endMove ()
 	raMoving->setValueInteger (0);
 	decMoving->setValueInteger (0);
 
-	if (tracking->getValueInteger () > 0)
+	if (isTracking ())
 		startWorm ();
 	return Fork::endMove ();
 }
@@ -1330,11 +1330,10 @@ int Trencin::startPark ()
 	{
 		if ((getState () & TEL_MASK_MOVING) == TEL_PARKED || (getState () & TEL_MASK_MOVING) == TEL_PARKING)
 			return 0;
-		if (tracking->getValueInteger () > 0)
+		if (isTracking ())
 		{
 			stopWorm ();
 			sleep (3);
-			//tracking->setValueInteger (1);
 		}
 		initRa ();
 		initDec ();

@@ -22,8 +22,8 @@
 
 #include "configuration.h"
 
-#define OPT_RA                OPT_LOCAL + 2201
-#define OPT_DEC               OPT_LOCAL + 2202
+#define OPT_RA		OPT_LOCAL + 2201
+#define OPT_DEC	       OPT_LOCAL + 2202
 
 #define RTS2_HLOHOVEC_TIMERRG    RTS2_LOCAL_EVENT + 1210
 #define RTS2_HLOHOVEC_TIMERDG    RTS2_LOCAL_EVENT + 1211
@@ -33,14 +33,14 @@
 #define RTS2_HLOHOVEC_AUTOSAVE   RTS2_LOCAL_EVENT + 1214
 
 // steps per full RA and DEC revolutions (360 degrees)
-#define RA_TICKS                 (-14350 * 65535)
-#define DEC_TICKS                (-10400 * 65535)
+#define RA_TICKS		 (-14350 * 65535)
+#define DEC_TICKS		(-10400 * 65535)
 
-#define RAGSTEP                  1000
-#define DEGSTEP                  1000
+#define RAGSTEP		  1000
+#define DEGSTEP		  1000
 
 // track is 15 arcsec/second
-#define TRACK_SPEED              (-TGA_SPEEDFACTOR / 6.0)
+#define TRACK_SPEED	      (-TGA_SPEEDFACTOR / 6.0)
 // track one arcdeg in second
 #define SPEED_ARCDEGSEC		 (TRACK_SPEED * (4.0 * 60.0))
 
@@ -82,6 +82,7 @@ class Hlohovec:public GEM
 		virtual int endPark ();
 
 		virtual void setDiffTrack (double dra, double ddec);
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
 		virtual int updateLimits ();
 		virtual int getHomeOffset (int32_t & off);
@@ -314,7 +315,7 @@ int Hlohovec::startResync ()
 int Hlohovec::isMoving ()
 {
 	callAutosave ();
-	if (tracking->getValueInteger () > 0 && raDrive->isInPositionMode ())
+	if (((getState () & TEL_MASK_TRACK) == TEL_TRACKING) && raDrive->isInPositionMode ())
 	{
 		if (raDrive->isMovingPosition ())
 		{
@@ -338,7 +339,7 @@ int Hlohovec::isMoving ()
 			raDrive->setTargetSpeed (TRACK_SPEED);
 		}
 	}
-	if ((tracking->getValueInteger () > 0 && raDrive->isInPositionMode ()) || (tracking->getValueInteger () == 0 && raDrive->isMoving ()) || decDrive->isMoving ())
+	if ((isTracking () && raDrive->isInPositionMode ()) || (isTracking () && raDrive->isMoving ()) || decDrive->isMoving ())
 		return 0;
 	return -2;
 }
@@ -367,14 +368,14 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	int32_t dc;
 	int32_t off;
 	getHomeOffset (off);
-        bool use_flipped;
+	bool use_flipped;
 	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off, 0, use_flipped);
 	if (ret)
 		return -1;
 	raDrive->setCurrentPos (ac);
 	decDrive->setCurrentPos (dc);
 	callAutosave ();
-	if (tracking->getValueInteger () > 0)
+	if (isTracking ())
 		raDrive->setTargetSpeed (TRACK_SPEED);
 	return 0;
 }
@@ -426,7 +427,7 @@ void Hlohovec::setDiffTrack (double dra, double ddec)
 		throw rts2core::Error ("cannot call info in setDiffTrack");
 	if (!raDrive->isInPositionMode () || !raDrive->isMovingPosition ())
 	{
-		if (tracking->getValueInteger () > 0)
+		if (isTracking ())
 			raDrive->setTargetSpeed (TRACK_SPEED + dra * SPEED_ARCDEGSEC);
 		else
 			raDrive->setTargetSpeed (dra * SPEED_ARCDEGSEC);
@@ -435,6 +436,12 @@ void Hlohovec::setDiffTrack (double dra, double ddec)
 	{
 		decDrive->setTargetSpeed (ddec * SPEED_ARCDEGSEC);
 	}
+}
+
+int Hlohovec::setTracking (int track, bool addTrackingTimer, bool send)
+{
+	raDrive->setTargetSpeed (track > 0 ? TRACK_SPEED : 0, false);
+        return GEM::setTracking (track, addTrackingTimer, send);
 }
 
 int Hlohovec::updateLimits ()
@@ -500,10 +507,6 @@ int Hlohovec::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	{
 		matchGuideDec (new_value->getValueInteger ());
 		return 0;
-	}
-	else if (old_value == tracking)
-	{
-		raDrive->setTargetSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? TRACK_SPEED : 0, false);
 	}
 	int ret = raDrive->setValue (old_value, new_value);
 	if (ret != 1)

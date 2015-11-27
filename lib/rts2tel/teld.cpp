@@ -1069,7 +1069,7 @@ void Telescope::postEvent (rts2core::Event * event)
 	{
 		case EVENT_TRACKING_TIMER:
 			// if tracking is still relevant, reschedule
-			if ((getState () & TEL_MASK_TRACK) == TEL_TRACKING)
+			if (isTracking ())
 			{
 				runTracking ();
 				addTimer (trackingInterval->getValueFloat (), event);

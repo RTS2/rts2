@@ -1088,8 +1088,7 @@ int Gemini::idle ()
 		}
 		else
 		{
-			setTracking (0);
-			stopMove ();
+			stopTracking ();
 			ret = -1;
 		}
 	}
@@ -1372,7 +1371,7 @@ int Gemini::isMoving ()
 		if (nextChangeDec != 0)
 		{
 			// worm need to be started - most probably due to error in Gemini
-			setTracking (tracking->getValueInteger (), true);
+			startTracking ();
 			// initiate dec change
 			if (changeDec ())
 				return -1;
@@ -1447,7 +1446,7 @@ int Gemini::endMove ()
 	if (changeTime.tv_sec > 0)
 	{
 		if (!decChanged)
-			setTracking (tracking->getValueInteger (), true);
+			startTracking ();
 		decChanged = false;
 		timerclear (&changeTime);
 		return TelLX200::endMove ();
@@ -2006,7 +2005,7 @@ int Gemini::parkBootesSensors ()
 	time_t now;
 	double old_tel_axis;
 	ret = info ();
-	setTracking (tracking->getValueInteger (), true);
+	startTracking ();
 	// first park in RA
 	old_tel_axis = featurePort->getValueInteger () & 1;
 	direction = old_tel_axis ? DIR_EAST : DIR_WEST;
