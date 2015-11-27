@@ -30,6 +30,7 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 	int32_t homeOff;
 	struct ln_equ_posn pos;
 	int ret;
+	bool use_flipped;
 
 	JD = ln_get_julian_from_sys ();
 
@@ -41,16 +42,26 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 
-	return sky2counts (&pos, ac, dc, JD, homeOff, used_flipping);
+	ret = sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped);
+
+	if (ret == 0 && use_flipped == true)
+	{
+		setTargetFlipped ();
+	}
+
+	return ret;
 }
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
 	int ret;
 
 	int32_t t_ac, t_dc;
+
+	// when set to true, will use flipped coordinates
+	use_flipped = false;
 
 	if (isnan(pos->ra) || isnan(pos->dec))
 	{
@@ -101,18 +112,17 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	// there isn't path, give up...
 	if (ret != 0 && ret_f != 0)
+	{
 		return -1;
+	}
 	// only flipped..
 	else if (ret != 0 && ret_f == 0)
 	{
-		t_ac = tf_ac;
-		t_dc = tf_dc;
+		use_flipped = true;
 	}
 	// both ways are possible, decide base on flipping parameter
 	else if (ret == 0 && ret_f == 0)
 	{
-		// when set to true, will use flipped coordinates
-		bool use_flipped = false;
 #define max(a,b) ((a) > (b) ? (a) : (b))
 		switch (used_flipping)
 		{
@@ -201,13 +211,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				}
 		}
 
-		// when we will go to flipped..
-		if (use_flipped == true)
-		{
-			t_ac = tf_ac;
-			t_dc = tf_dc;
-		}
-
 	}
 	// otherwise, non-flipped is the only way, stay on it..
 
@@ -225,6 +228,13 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		return -1;
 	}
 
+	// when we will go to flipped..
+	if (use_flipped == true)
+	{
+		t_ac = tf_ac;
+		t_dc = tf_dc;
+	}
+
 	t_ac -= homeOff;
 
 	ac = t_ac;
@@ -236,9 +246,10 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
 {
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
+	bool use_flipped;
 
 	// returns without home offset, which will be removed in future
-	return sky2counts (pos, ac, dc, JD, 0, used_flipping);
+	return sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)

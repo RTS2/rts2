@@ -72,7 +72,7 @@ class GEM: public Telescope
 		virtual int getHomeOffset (int32_t & off) = 0;
 
 		int sky2counts (int32_t & ac, int32_t & dc);
-		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip);
+		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip, bool &use_flipped);
 
 		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
 

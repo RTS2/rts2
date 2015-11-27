@@ -511,6 +511,18 @@ class Telescope:public rts2core::Device
 		}
 
 		/**
+		 * Sets new movement target, used exclusively to change target flip.
+		 */
+		void setTargetFlipped ()
+		{
+			if (tarRaDec->getDec () > 0)
+				tarRaDec->setDec (180 - tarRaDec->getDec ());
+			else
+				tarRaDec->setDec (-180 + tarRaDec->getDec ());
+
+		}
+
+		/**
 		 * Set WCS reference values telescope is reporting.
 		 *
 		 * @param ra  WCS RA (CRVAL1)
@@ -570,11 +582,11 @@ class Telescope:public rts2core::Device
 		 * from target position, where target position can change in time (for 
 		 * MPEC and LTE targets).
 		 *
-		 * @param JD              date for which position will be calculated
-		 * @param out_tar         target position
+		 * @param JD	      date for which position will be calculated
+		 * @param out_tar	 target position
 		 * @param tar_distance    distance to target (in m), if know (satellites,..)
-		 * @param ac              current (input) and target (output) HA axis value
-		 * @param dc              current (input) and target (output) DEC axis value
+		 * @param ac	      current (input) and target (output) HA axis value
+		 * @param dc	      current (input) and target (output) DEC axis value
 		 */
 		int calculateTarget (double JD, double secdiff, struct ln_equ_posn *out_tar, double &tar_distance, int32_t &ac, int32_t &dc);
 
@@ -853,9 +865,9 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track                0 - no tracking, 1 - on object, 2 - sidereal
+		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal
 		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
-		 * @param send                 if true, set rts2value and send in to all connections
+		 * @param send		 if true, set rts2value and send in to all connections
 		 * @return 0 on success, -1 on error
 		 */
 		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
@@ -1010,7 +1022,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *objRaDec;
 
 		/**
-		 * Real sky coordinates of target, with computed corrections (precession, aberation, refraction). Still without corrRaDec (astrometry feedback) and tpoint model.
+		 * Real sky coordinates of target, with computed corrections (precession, aberation, refraction). Still without corrRaDec (astrometry feedback) and pointing model. Dec in 180..-180 range for GEMs, forks etc mounts.
 		 * TAR[RA|DEC] = OBJ[RA|DEC] + precession, etc.
 		 */
 		rts2core::ValueRaDec *tarRaDec;
