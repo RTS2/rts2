@@ -112,18 +112,6 @@ void TermPDD::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 	pos->dec += getValueDouble () * ln_deg_to_rad (pos->dec);
 }
 
-// status: testing (nonstandard!)
-void TermA1H::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
-{
-	pos->ra = pos->ra - ln_rad_to_deg (ln_deg_to_rad (getValueDouble ()) * obs_conditions->getFlip ());
-}
-
-// status: testing (nonstandard!)
-void TermA1D::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
-{
-	pos->dec = pos->dec - ln_rad_to_deg (ln_deg_to_rad (getValueDouble ()) * obs_conditions->getFlip ());
-}
-
 void TermTF::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
 	double d, h, f;

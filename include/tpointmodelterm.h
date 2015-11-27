@@ -196,34 +196,6 @@ class TermPDD:public TPointModelTerm
 };
 
 /**
- * Aux1 to h (for Paramount, where it's unsure).
- *
- * @author Martin Jelinek <mates@iaa.es>
- *
- * @ingroup RTS2TPointTerm
- */
-class TermA1H:public TPointModelTerm
-{
-	public:
-		TermA1H (double in_corr, double in_sigma):TPointModelTerm ("A1H", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
-};
-
-/**
- * Aux1 to in declination (for Paramount, where it's unsure).
- *
- * @author Martin Jelinek <mates@iaa.es>
- *
- * @ingroup RTS2TPointTerm
- */
-class TermA1D:public TPointModelTerm
-{
-	public:
-		TermA1D (double in_corr, double in_sigma):TPointModelTerm ("A1D", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
-};
-
-/**
  * Tube flexture.
  *
  * @author Martin Jelinek <mates@iaa.es>

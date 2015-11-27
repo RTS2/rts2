@@ -209,14 +209,6 @@ std::istream & TPointModel::load (std::istream & is)
 		{
 			term = new TermPDD (corr, sigma);
 		}
-		else if (name == "A1H")
-		{
-			term = new TermA1H (corr, sigma);
-		}
-		else if (name == "A1D")
-		{
-			term = new TermA1D (corr, sigma);
-		}
 		else if (name == "TF")
 		{
 			term = new TermTF (corr, sigma);

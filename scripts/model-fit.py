@@ -96,11 +96,10 @@ with open(sys.argv[1]) as f:
 	print diff_dec * 3600.0
 
 	# feed parameters to diff, obtain model differences. Closer to zero = better
-	diff_model = np.degrees(fit_model(best, np.array([aa_ra[0]]), np.array([ar_ra[0]]), np.array([aa_dec[0]]), np.array([ar_dec[0]])))
-	#diff_model = np.degrees(fit_model(best, aa_ra, ar_ra, aa_dec, ar_dec))
+	diff_model = np.degrees(fit_model(best, aa_ra, ar_ra, aa_dec, ar_dec))
 	print 'DIFF_MODEL ',
 	for d in diff_model:
-		print d,
+		print d * 3600.0,
 	print
 
 	print 'RTS2_MODEL',
