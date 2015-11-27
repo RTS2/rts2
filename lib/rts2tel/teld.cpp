@@ -1075,12 +1075,7 @@ void Telescope::postEvent (rts2core::Event * event)
 				addTimer (trackingInterval->getValueFloat (), event);
 				return;
 			}
-			else
-			{
-				// rather stop move, if trackin is not allowed
-				// stopMove shall be called before, this is just security check it will be really called before we end track timer
-				stopMove ();
-			}
+			// don't call stopMove - it shall be called if tracking was stop by stopTracking..
 			break;
 		case EVENT_CUP_SYNCED:
 			maskState (TEL_MASK_CUP, TEL_NO_WAIT_CUP);
@@ -1195,7 +1190,7 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 		}
 		else
 		{
-                        stopTracking ();
+			stopTracking ();
 		}
 		if (send == true)
 			sendValueAll (tracking);
@@ -1205,8 +1200,8 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 
 void Telescope::stopTracking ()
 {
-        stopMove ();
-        maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped");
+	stopMove ();
+	maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped");
 }
 
 void Telescope::runTracking ()
