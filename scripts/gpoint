@@ -1,0 +1,222 @@
+#!/usr/bin/env python
+
+# g(nu)-Point - Telescope pointing model fit, as described in paper by Marc Buie:
+#
+# ftp://ftp.lowell.edu/pub/buie/idl/pointing/pointing.pdf 
+#
+# (C) 2015 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+import sys
+import numpy as np
+
+from math import radians,degrees,cos,sin,tan,sqrt,atan2,acos
+from scipy.optimize import leastsq
+
+import argparse
+
+# telescope latitude - north positive
+latitude = 40.454069
+# telescope longitude - not used at the moment
+longitude = -110
+
+latitude_r = radians(latitude)
+
+# transform HA-DEc vector to ALT-AZ vector
+def equ_to_hrz(ha,dec):
+	A = np.sin(latitude_r) * np.sin(dec) + np.cos(latitude_r) * np.cos(dec) * np.cos(ha)
+	alt = np.arcsin(A)
+
+	Z = np.arccos(A)
+	Zs = np.sin(Z)
+	As = (np.cos(dec) * np.sin(ha)) / Zs;
+	Ac = (np.sin(latitude_r) * np.cos(dec) * np.cos(ha) - np.cos(latitude_r) * np.sin(dec)) / Zs;
+	Aa = np.arctan2(As,Ac)
+
+	return np.degrees(alt),(np.degrees(Aa) + 360) % 360
+
+class GPoint:
+	# @param 
+	def __init__(self):
+		self.aa_ra = None
+
+	# Fit functions.
+	# a_ra - target HA
+	# r_ra - calculated (real) HA
+	# a_dec - target DEC
+	# r_dec - calculated (real) DEC
+	# DEC > 90 or < -90 means telescope flipped (DEC axis continues for modelling purposes)
+	def fit_model_ra(self,params,a_ra,r_ra,a_dec,r_dec):
+		return a_ra - r_ra \
+			- params[4] \
+			- params[5]/np.cos(a_dec) \
+			+ params[6]*np.tan(a_dec) \
+			- (-params[1]*np.sin(a_ra) + params[2]*np.cos(a_ra)) * np.tan(a_dec) \
+			- params[3]*np.cos(latitude_r)*np.sin(a_ra) / np.cos(a_dec) \
+			- params[7]*(np.sin(latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ra)) \
+			- params[8] * a_ra
+
+	def fit_model_dec(self,params,a_ra,r_ra,a_dec,r_dec):
+		return a_dec - r_dec \
+			- params[0] \
+			+ params[1]*np.cos(a_ra) \
+			+ params[2]*np.sin(a_ra) \
+			+ params[3]*(sin(latitude_r) * np.cos(a_dec) - cos(latitude_r) * np.sin(a_dec) * np.cos(a_ra))
+
+	def fit_model(self,params,a_ra,r_ra,a_dec,r_dec):
+		print 'computing', latitude_r, params, a_ra, r_ra, a_dec, r_dec
+		return np.concatenate((self.fit_model_ra(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
+
+	# open file, produce model
+	# expected format:
+	#  Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE
+	#02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
+	#skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
+	def process_file(self,filename):
+		f = open(filename)
+		# skip first line
+		f.readline()
+		line = f.readline()
+		rdata = []
+		while not(line == ''):
+			# skip commented lines
+			if line[0] != '#':
+				rdata.append(line.split())
+			line = f.readline()
+
+		print rdata
+
+		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - float(r_ra), float(r_dec), sn) for sn,mjd,a_ra,a_dec,lst,ax_ra,ax_dec,r_ra,r_dec in rdata]
+
+		a_data = np.array(data)
+		print a_data
+	
+		par_init = np.array([0,0,0,0,0,0,0,0,0])
+	
+		self.aa_ra = np.radians(np.array(a_data[:,0],np.float))
+		self.aa_dec = np.radians(np.array(a_data[:,1],np.float))
+		self.ar_ra = np.radians(np.array(a_data[:,2],np.float))
+		self.ar_dec = np.radians(np.array(a_data[:,3],np.float))
+
+		self.diff_ra = np.degrees(self.aa_ra - self.ar_ra)
+		self.diff_dec = np.degrees(self.aa_dec - self.ar_dec)
+
+		# transform to alt/az
+		self.aa_alt,self.aa_az = equ_to_hrz(self.aa_ra,self.aa_dec)
+		self.ar_alt,self.ar_az = equ_to_hrz(self.ar_ra,self.ar_dec)
+
+		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec),full_output=True)
+
+		# feed parameters to diff, obtain model differences. Closer to zero = better
+		self.diff_model_ra = np.degrees(self.fit_model_ra(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
+		self.diff_model_dec = np.degrees(self.fit_model_dec(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
+
+		f.close()
+
+		return self.best
+
+	def print_params(self):
+		print "Best fit",np.degrees(self.best)
+		print self.cov
+		print self.info
+		print self.message
+		print self.ier
+
+		print 'Zero point in DEC (") {0}'.format(degrees(self.best[0])*60.0)
+		print 'Zero point in RA (") {0}'.format(degrees(self.best[4])*60.0)
+		i = sqrt(self.best[1]**2 + self.best[2]**2)
+		print 'Angle between true and instrumental poles (") {0}'.format(degrees(i)*60.0)
+		print self.best[1],i,self.best[1]/i,acos(self.best[1]/i),atan2(self.best[2],self.best[1])
+		print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best[2],self.best[1]))*60.0)
+		print 'Telescope tube droop in HA and DEC (") {0}'.format(degrees(self.best[3])*60.0)
+		print 'Angle between optical and telescope tube axes (") {0}'.format(degrees(self.best[5])*60.0)
+		print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best[6])*60.0)
+		print 'Dec axis flexure (") {0}'.format(degrees(self.best[7])*60.0)
+		print 'HA encoder scale error ("/degree) {0}'.format(degrees(self.best[8])*60.0)
+
+		print self.diff_ra * 3600.0
+		print self.diff_dec * 3600.0
+
+		print 'DIFF_MODEL RA',
+		for d in self.diff_model_ra:
+			print d * 3600.0,
+		print
+
+		print 'DIFF_MODEL DEC',
+		for d in self.diff_model_dec:
+			print d * 3600.0,
+		print
+
+		print 'RTS2_MODEL',
+		for a in self.best:
+			print a,
+		print
+
+		print 'RMS RA {0}"'.format(np.sqrt(np.mean(np.square(self.diff_model_ra*3600))))
+		print 'RMS DEC {0}"'.format(np.sqrt(np.mean(np.square(self.diff_model_dec*3600))))
+		print 'RMS',np.sqrt(np.mean(np.square(np.concatenate((self.diff_model_ra,self.diff_model_dec))*3600)))
+
+
+		return self.best
+
+	def ploterrors(self,count):
+		import pylab
+		# count is number from command line, need real number of plots
+		pcount = [3,5][count-1]
+		all_error = pylab.subplot(pcount,1,1)
+
+		all_error.plot( \
+			range(0,len(self.diff_model_ra)),self.diff_model_ra * 3600.0,'g+', \
+			range(0,len(self.diff_model_dec)),self.diff_model_dec * 3600.0,'g*')
+
+		all_error.set_title('RA DEC error')
+		all_error.set_ylabel('model error (arcsec)')
+
+		
+		ra_error = pylab.subplot(pcount,1,2)
+		ra_error.plot(range(0,len(self.diff_ra)), self.diff_ra*3600.0, 'r+')
+		ra_error.set_ylabel('RA error')
+
+		dec_error = pylab.subplot(pcount,1,3)
+		dec_error.plot(range(0,len(self.diff_dec)), self.diff_dec*3600.0, 'r*')
+		dec_error.set_ylabel('DEC error')
+
+		if count > 1:
+			alt_error = pylab.subplot(pcount,1,1)
+			alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
+			alt_error.set_title('Az-Alt error')
+
+			az_error = pylab.subplot(pcount,1,2)
+			az_error.plot(self.aa_alt, (self.aa_az - self.ar_az) * 3600.0, 'r.')
+			az_error.set_title('Alt-Az error')
+
+		pylab.show()
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='G-Point Model fitting and error plotting routines')
+	parser.add_argument('errorfile',help='input file',type=str)
+	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
+	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
+
+	args = parser.parse_args()
+	print args.model_output
+
+	model = GPoint()
+	model.process_file(args.errorfile)
+	model.print_params()
+
+	if args.plot > 0:
+		model.ploterrors(args.plot)
