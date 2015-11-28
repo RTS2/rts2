@@ -87,11 +87,15 @@ class SI8821:public Camera
 		int load_cfg (struct CFG_ENTRY **e, const char *fname, const char *var);
 		int load_camera_cfg (struct SI_CAMERA *c, const char *fname);
 		int parse_cfg_string (struct CFG_ENTRY *entry );
-		int setfile_readout (const char *file ); 
+		int getReadoutFromFile (bool bReadFormat, int iMode = NULL);
+		int setfile_readout (const char *file, bool bReadFormat, int iMode = NULL );
+		int setfile_config (const char *file );  
 		int receive_n_ints (int n, int *data);
 		int send_n_ints (int n, int *data); 
 		struct CFG_ENTRY *find_readout (char *name);
-		void send_readout (); 
+		struct CFG_ENTRY *find_config (char *name);
+		void send_readout ();
+		void send_config ();
 
 		void write_dma_data (unsigned char *ptr);
 		void dma_unmap ();
@@ -116,10 +120,16 @@ class SI8821:public Camera
 		void setReadout (int idx, int v, const char *name);
 		void setConfig (int idx, int v, const char *name);
 
+		void print_readout ();
+		void print_config ();
+		void print_cfg (struct CFG_ENTRY *cfg, int val);
+
 		rts2core::ValueFloat *backplateTemperature;
 		rts2core::ValueInteger *ccdPressure;
 
 		rts2core::ValueSelection *shutterStatus;
+		
+		rts2core::ValueSelection *readOutModes; // Read Out Modes from cam set file - Modoe 1, Mode 2, ...
 
 		rts2core::ValueBool *testImage;
 		int total;   // DMA size
@@ -162,6 +172,8 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv, FLOOR)
 
 	createValue (testImage, "test_image", "if true, make a test image", true, RTS2_VALUE_WRITABLE);
 	testImage->setValueBool (false);
+
+	createValue (readOutModes, "READOUT_MODES", "ReadOut Camera Selectable Modes", false, RTS2_VALUE_WRITABLE);
 }
 
 SI8821::~SI8821 ()
@@ -231,19 +243,57 @@ int SI8821::initHardware ()
 	}
 	logStream (MESSAGE_INFO) << "loaded configuration file " << cameraCfg << sendLog;
 
-	setfile_readout (cameraSet);
-	send_readout ();
-	send_command ('H');     // H    - load readout
-	receive_n_ints (32, (int *) &camera.readout);
-	if (expect_yn () != 1)
+
+	// Loads [Readout & Format] parameters from file	
+	if( getReadoutFromFile (true) )
 	{
-		logStream (MESSAGE_ERROR) << "cannot read camera configuration" << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot load Readout & Format from file "  << cameraCfg << sendLog;
 		return -1;
+	}
+	// Loads [Readout Mode X] parameters from file
+	getReadoutFromFile (false, 0);
+        readOutModes->addSelVal ("Mode 0");
+	getReadoutFromFile (false, 1);
+        readOutModes->addSelVal ("Mode 1");
+	getReadoutFromFile (false, 2);
+        readOutModes->addSelVal ("Mode 2");
+	getReadoutFromFile (false, 3);
+        readOutModes->addSelVal ("Mode 3");
+	getReadoutFromFile (false, 4);
+        readOutModes->addSelVal ("Mode 4");
+	getReadoutFromFile (false, 5);
+        readOutModes->addSelVal ("Mode 5");
+	getReadoutFromFile (false, 6);
+        readOutModes->addSelVal ("Mode 6");
+
+	// Load config parameters from file 
+	setfile_config (cameraSet);
+	send_config ();
+	send_command ('L'); // J    - load config
+	//print_config (); // APMONTERO: FOR TESTING
+	receive_n_ints (32, (int *) &camera.config );
+	if( expect_yn () != 1 )
+	{
+	   	logStream (MESSAGE_ERROR) << "cannot read configuration parameters from camera" << sendLog;
+		return -1;
+	}
+	else
+	{
+		logStream (MESSAGE_INFO) << "configuration parameters have been read succesfully from camera" << sendLog;
+		//print_config (); // APMONTERO: FOR TESTING
 	}
 
 	chanBuffer = new uint16_t[(camera.readout[READOUT_SERIAL_ORIGIN_IX] + camera.readout[READOUT_SERIAL_LENGTH_IX]) * (camera.readout[READOUT_PARALLEL_ORIGIN_IX] + camera.readout[READOUT_PARALLEL_LENGTH_IX])];
 
 	setSize (camera.readout[READOUT_SERIAL_LENGTH_IX], camera.readout[READOUT_PARALLEL_LENGTH_IX], camera.readout[READOUT_SERIAL_ORIGIN_IX], camera.readout[READOUT_PARALLEL_ORIGIN_IX]);
+
+	// APMONTERO begin: Switching the cooler 
+	//printf("set_temp: %f\n",kelvinToCelsius(camera.config[CONFIG_SET_TEMP_IX]/10.0));
+	//printf("temp: %u\n",(unsigned)camera.config[CONFIG_SET_TEMP_IX]);
+	setCoolTemp( kelvinToCelsius (camera.config[CONFIG_SET_TEMP_IX] / 10.0));
+	send_command ('S'); // switchCooling (true) not working
+	// APMONTERO end
+
 	return 0;
 }
 
@@ -265,8 +315,8 @@ int SI8821::info ()
 
 	coolingOnOff->setValueBool (camera.status[STATUS_COOLER_IX] == 1);
 
-	send_command ('L');
-	receive_n_ints (32, camera.config);
+	send_command ('L'); // L     - load config
+	receive_n_ints (32, (int *) &camera.config);
 	if (expect_yn () != 1)
 	{
 		logStream (MESSAGE_WARNING) << "cannot read camera config" << sendLog;
@@ -280,6 +330,22 @@ int SI8821::info ()
 
 int SI8821::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
+	if (oldValue == readOutModes)
+        {
+		int iMode = ((rts2core::ValueInteger *) newValue)->getValueInteger ();
+		if (getReadoutFromFile (false, iMode) != 0) 
+		{
+			logStream (MESSAGE_WARNING) << "cannot read camera Readout Mode " << iMode << sendLog;
+		}
+		else
+		{
+			logStream (MESSAGE_INFO) << "[Readout Mode " << iMode << "] "
+			<< " DSI Sample Time : " << camera.readout[READOUT_DSI_SAMPLE_IX]
+			<< " | Analog Attenuation : " << camera.readout[READOUT_AATTENUATION_IX]
+			<< " | Port 1 Offset : " << (camera.readout[READOUT_PORT1_OFFSET_IX] - pow(2,24))
+			<< " | Port 2 Offset : "  << (camera.readout[READOUT_PORT2_OFFSET_IX] - pow(2,24)) << sendLog;
+		}
+        }
 	return Camera::setValue (oldValue, newValue);
 }
 
@@ -475,7 +541,7 @@ int SI8821::setCoolTemp (float new_temp)
 {
 	try
 	{
-		setConfig (CONFIG_SET_TEMP_IX, celsiusToKelvin (new_temp) * 10, "ccd setpoint");
+//		setConfig (CONFIG_SET_TEMP_IX, celsiusToKelvin (new_temp) * 10, "ccd setpoint");
 	}
 	catch (rts2core::Error &e)
 	{
@@ -488,9 +554,14 @@ int SI8821::setCoolTemp (float new_temp)
 int SI8821::switchCooling (bool newval)
 {
 	if (newval)
+	{
 		send_command ('S');
+	}	
 	else
+	{
 		send_command ('T');
+	}
+	logStream (MESSAGE_WARNING) << "switchCooling " << newval << sendLog;
 	return Camera::switchCooling (newval);
 }
 
@@ -596,14 +667,15 @@ struct CFG_ENTRY *SI8821::find_readout (char *name )
 
 		if (cfg && cfg->name)
 		{
-			printf ("%s|%s", cfg->name, name);
+			//printf ("%s|%s", cfg->name, name);
 			if (strncasecmp (cfg->name, name, strlen(cfg->name)) == 0)
 			{
+				// printf ("%s|%s", cfg->name, name);
 				return cfg;
 			}
 		}
 	}
-	logStream (MESSAGE_ERROR) << "parameter " << name << " not found in configuration" << sendLog;
+	//logStream (MESSAGE_ERROR) << "parameter " << name << " not found in readout parameters" << sendLog;
 	return NULL;
 }
 
@@ -614,7 +686,86 @@ void SI8821::send_readout ()
 	expect_yn ();
 }
 
-int SI8821::setfile_readout (const char *file )
+int SI8821::setfile_readout (const char *file, bool bReadFormat, int iMode)
+{
+	FILE *fd;
+	const char *delim = "=\n";
+	char *s;
+	char buf[256];
+	struct CFG_ENTRY *cfg;
+
+	if (!(fd = fopen( file, "r" )))
+	{
+		return -1;
+	}
+
+	bool bSectionFound = false;
+	char sectionName[17];
+	if( bReadFormat )
+	{
+        	sprintf( sectionName, "[Readout & Format]" );
+	}
+	else
+	{
+        	sprintf( sectionName, "[Readout Mode %d]", iMode );
+	}
+
+	
+	while (fgets (buf, 256, fd))
+	{
+		if( !bSectionFound )
+		{	
+	       		if (strncasecmp (sectionName, buf, strlen(sectionName)) == 0)
+                        {
+		 		bSectionFound = true;
+		 	}	
+		 	continue;
+		}
+		else if ( buf[0] == '[' ) 
+		{
+			break;
+		}
+		else
+		{
+			//printf ("BUF: %s",buf);
+			if (!(cfg = find_readout (buf)))
+				continue;
+	
+			strtok (buf, delim);
+			// if( s = strtok( NULL, delim ))
+			s = strtok (NULL, delim);
+			if (s)
+			{
+			//	printf ("PARAM... %s\n",s);
+				camera.readout [cfg->index] = atoi(s);
+			}
+		}
+	}
+	fclose (fd);
+	return 0;
+}
+
+int SI8821::getReadoutFromFile (bool bReadFormat, int iMode)
+{
+	setfile_readout (cameraSet, bReadFormat, iMode);
+	send_readout ();
+	send_command ('H');     // H    - load readout
+	//print_readout (); // APMONTERO: FOR TESTING
+	receive_n_ints (32, (int *) &camera.readout);
+	if (expect_yn () != 1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read readout parameters from camera" << sendLog; 
+		return -1; 
+	}
+	else
+	{
+		logStream (MESSAGE_INFO) << "readout parameters have been read successfully from camera" << sendLog;
+		print_readout(); // APMONTERO: FOR TESTING
+	} 
+	return 0;
+}
+
+/*int SI8821::setfile_readout (const char *file )
 {
 	FILE *fd;
 	const char *delim = "=\n";
@@ -629,7 +780,7 @@ int SI8821::setfile_readout (const char *file )
 
 	while (fgets (buf, 256, fd))
 	{
-		printf ("BUF: %s",buf);
+		//printf ("BUF: %s",buf);
 		if (!(cfg = find_readout (buf)))
 			continue;
 	
@@ -638,8 +789,69 @@ int SI8821::setfile_readout (const char *file )
 		s = strtok (NULL, delim);
 		if (s)
 		{
-			printf ("PARAM... %s\n",s);
+		//	printf ("PARAM... %s\n",s);
 			camera.readout [cfg->index] = atoi(s);
+		}
+	}
+	fclose (fd);
+	return 0;
+}*/
+
+struct CFG_ENTRY *SI8821::find_config (char *name )
+{
+	struct CFG_ENTRY *cfg;
+	int i;
+
+	for (i=0; i<SI_CONFIG_MAX; i++)
+	{
+		cfg = camera.e_config[i];
+
+		if (cfg && cfg->name)
+		{
+			//printf ("%s|%s", cfg->name, name);
+			if (strncasecmp (cfg->name, name, strlen(cfg->name)) == 0)
+			{
+				return cfg;
+			}
+		}
+	}
+	//logStream (MESSAGE_ERROR) << "parameter " << name << " not found in configuration parameters" << sendLog;
+	return NULL;
+}
+
+void SI8821::send_config ()
+{
+	send_command ('J'); // J    - Send Configuration Parameters
+	send_n_ints (32, (int *) &camera.config); 
+	expect_yn ();
+}
+
+int SI8821::setfile_config (const char *file )
+{
+	FILE *fd;
+	const char *delim = "=\n";
+	char *s;
+	char buf[256];
+	struct CFG_ENTRY *cfg;
+
+	if (!(fd = fopen( file, "r" )))
+	{
+		return -1;
+	}
+
+	while (fgets (buf, 256, fd))
+	{
+		//printf ("BUF: %s",buf);
+		if (!(cfg = find_config (buf)))
+			continue;
+	
+		strtok (buf, delim);
+		// if( s = strtok( NULL, delim ))
+		s = strtok (NULL, delim);
+		if (s)
+		{
+			//printf ("PARAM... %s\n",s);
+			camera.config [cfg->index] = atoi(s);
 		}
 	}
 	fclose (fd);
@@ -649,7 +861,7 @@ int SI8821::setfile_readout (const char *file )
 int SI8821::load_camera_cfg( struct SI_CAMERA *c, const char *fname)
 {
 	load_cfg (c->e_status, fname, "SP");
-	load_cfg (c->e_readout, fname, "ESP");
+//	load_cfg (c->e_readout, fname, "ESP");
 	load_cfg (c->e_readout, fname, "RFP");
 	load_cfg (c->e_config, fname, "CP");
 
@@ -663,6 +875,7 @@ int SI8821::load_cfg( struct CFG_ENTRY **e, const char *fname, const char *var )
 	char buf[256];
 	struct CFG_ENTRY *entry;
 
+	logStream (MESSAGE_ERROR) << " ---> load_cfg"  << sendLog;
 	varlen = strlen(var);
 
 	if( !(fd = fopen(fname,"r")) ) {
@@ -675,13 +888,18 @@ int SI8821::load_cfg( struct CFG_ENTRY **e, const char *fname, const char *var )
 		if( strncmp( buf, var, varlen ) == 0 ) {
 			index = atoi( &buf[varlen] );
 			len = strlen(buf);
-			len -=1;
-			buf[len] = 0;
+			//len -=1;
+			buf[len] = '\0';
+
 			entry = (struct CFG_ENTRY *)malloc( sizeof(struct CFG_ENTRY ));
+
 			bzero( entry, sizeof(struct CFG_ENTRY ));
 			entry->index = index;
-			entry->cfg_string = (char *)malloc( len );
+
+
+			entry->cfg_string = (char *)malloc( len + 1 );
 			strcpy( entry->cfg_string, buf );
+
 			parse_cfg_string( entry );
 			if( index!=pindex || index > 32 ) {
 				printf("CFG error\n");
@@ -750,6 +968,7 @@ int SI8821::parse_cfg_string (struct CFG_ENTRY *entry)
 		return -1;
 
 	entry->name = (char*)malloc(strlen(s)+1);
+
 	strcpy( entry->name, s );
 	printf("READING entry->NAME %s\n",entry->name);
   
@@ -763,6 +982,8 @@ int SI8821::parse_cfg_string (struct CFG_ENTRY *entry)
 			if( !(s = strtok( NULL, delim ))) 
 				return -1;
 			entry->u.iobox.max = atoi(s);
+			entry->u.iobox.mult = 1.0; // APMONTERO: line added to solve parsing errors with oritype 2,3,7,11
+			entry->u.iobox.offset = 0; // APMONTERO: line added to solve parsing errors with oritype 2,3,7,11
 
 			if( !(s = strtok( NULL, delim ))) 
 				return -1;
@@ -812,7 +1033,7 @@ int SI8821::parse_cfg_string (struct CFG_ENTRY *entry)
 			for( i=0; i<tot; i++ ){
 				if( !(s = strtok( NULL, delim ))) 
 					return -1;
-				entry->u.dropp.val = atoi(s);
+				entry->u.dropp.val = atoi(s); //TODO APMONTERO: overwrite values?
 				printf("DROPP %s\n",s);
 				if( !(s = strtok( NULL, delim ))) 
 					return -1;
@@ -984,6 +1205,103 @@ void SI8821::setConfig (int idx, int v, const char *name)
 		throw rts2core::Error (std::string ("cannot set ") + name);
 	}
 	camera.config[idx] = v;
+}
+
+void SI8821::print_readout () 
+{
+	int i;
+  	struct CFG_ENTRY *cfg;
+
+	printf("**********************************************\n");
+	printf("Readout Parameters\n");
+	printf("------------------\n");
+	for (i=0; i< SI_READOUT_MAX; i++)
+	{
+		cfg = camera.e_readout[i];
+		if( cfg && cfg->name )
+		{
+			print_cfg (cfg, camera.readout[i]);
+		}
+	}
+	printf("**********************************************\n");
+}
+
+
+void SI8821::print_config ()
+{
+	int i;
+	struct CFG_ENTRY *cfg;
+	printf("**********************************************\n");
+	printf("Configuration Parameters\n");
+	printf("------------------------\n");
+	for( i=0; i< SI_CONFIG_MAX; i++ )
+	{
+		cfg = camera.e_config[i];
+		if( cfg && cfg->name )
+		{
+			print_cfg (cfg, camera.config[i]);
+		}
+  	}
+	printf("**********************************************\n");
+}
+
+void SI8821::print_cfg (struct CFG_ENTRY *cfg, int val)
+{
+	int ix;
+	unsigned int mask;
+	double value;
+	const char *units;
+
+	switch( cfg->type )
+	{
+		case CFG_TYPE_NOTUSED:
+			break;
+		case CFG_TYPE_INPUTD:
+        		if (cfg->u.iobox.units)
+			{
+				units = cfg->u.iobox.units;
+			}
+        		else
+			{
+          			units = "";
+			}
+		        value = cfg->u.iobox.mult * val + cfg->u.iobox.offset;
+		        //printf("%s %f %s val %d index %d\n", cfg->name, value, units, val, cfg->index );
+		        printf("%s %f %s val %d index %d offset %f\n", cfg->name, value, units, val, cfg->index, cfg->u.iobox.offset );
+			break;
+		case CFG_TYPE_DROPDI:
+			ix = val-cfg->u.dropi.min;
+			if (ix < cfg->u.dropi.min || ix > cfg->u.dropi.max)
+			{	
+				printf("%s val %d index %d\n", cfg->name, val, cfg->index);
+			}
+			else
+			{
+				printf("%s %s val %d index %d\n", cfg->name, cfg->u.dropi.list[ix], val, cfg->index);
+			}
+			break;
+	      case CFG_TYPE_DROPDP:
+			ix = val-cfg->u.dropp.val;
+			if (ix < cfg->u.dropp.val || ix > cfg->u.dropp.val)
+			{
+				printf ("%s val %d index %d\n", cfg->name, val, cfg->index);
+			}
+		        else
+			{
+		        	printf ("%s %s val %d index %d\n", cfg->name, cfg->u.dropp.list[ix], val, cfg->index);
+			}
+			break;
+		case CFG_TYPE_BITF:
+			mask = cfg->u.bitf.mask&val;
+			ix = 0;
+			while (!(mask & 1))
+			{
+				ix++;
+				mask = (mask>>1);
+			}
+			printf ("%s %s val %d index %d\n", cfg->name, cfg->u.bitf.list[ix], val, cfg->index);
+			break;
+	}
 }
 
 int main (int argc, char **argv)
