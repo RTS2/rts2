@@ -1198,6 +1198,16 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 	return 0;
 }
 
+void Telescope::startTracking (bool check)
+{
+	if (check && tracking->getValueInteger () == 0)
+	{
+		tracking->setValueInteger (1);
+		sendValueAll (tracking);
+	}
+	setTracking (tracking->getValueInteger (), true);
+}
+
 void Telescope::stopTracking ()
 {
 	stopMove ();
@@ -1737,7 +1747,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (tracking->getValueInteger (), true);
+		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
 			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
@@ -1762,7 +1772,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		resetMpecTLE ();
-		setTracking (tracking->getValueInteger (), true);
+		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
 			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
@@ -1777,7 +1787,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		mpec->setValueString (str);
 		tle_l1->setValueString ("");
 		tle_l2->setValueString ("");
-		setTracking (tracking->getValueInteger (), true);
+		startTracking (true);
 		ret = startResyncMove (conn, 0);
 		if (ret)
 			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
@@ -1911,6 +1921,8 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (!is_deep && (ephem == 3 || ephem == 4))
 			ephem -= 2;	/* switch to an SGx */
 		tle_ephem->setValueInteger (ephem);
+
+		startTracking (true);
 
 		return startResyncMove (conn, 0);
 	}

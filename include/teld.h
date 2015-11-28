@@ -865,7 +865,7 @@ class Telescope:public rts2core::Device
 		 */
 		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
-		void startTracking () { setTracking (tracking->getValueInteger (), true); }
+		void startTracking (bool check = false);
 
 		bool isTracking () { return (getState () & TEL_MASK_TRACK) == TEL_TRACKING; }
 
