@@ -45,10 +45,10 @@
 #define OPT_PARK_POS	  OPT_LOCAL + 121
 #define OPT_DEC_UPPER_LIMIT   OPT_LOCAL + 122
 #define OPT_RTS2_MODEL	OPT_LOCAL + 123
-#define OPT_T_POINT_MODEL     OPT_LOCAL + 124
+#define OPT_T_POINT_MODEL	 OPT_LOCAL + 124
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
-#define EVENT_TRACKING_TIMER     RTS2_LOCAL_EVENT + 561
+#define EVENT_TRACKING_TIMER	 RTS2_LOCAL_EVENT + 561
 
 using namespace rts2teld;
 
@@ -344,10 +344,10 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 
 	switch (tracking->getValueInteger ())
 	{
-		case 0:       // no tracking
+		case 0:	   // no tracking
 			return 1;
 			break;
-		case 1:       // on object
+		case 1:	   // on object
 			// calculate from MPEC..
 			if (mpec->getValueString ().length () > 0)
 			{
@@ -823,6 +823,8 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	}
 	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
 	pos_n = *pos;
+	pos_n.ra += model_change->ra;
+	pos_n.dec += model_change->dec;
 	normalizeRaDec (pos_n.ra, pos_n.dec);
 	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }
@@ -844,6 +846,8 @@ void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_po
 	}
 	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
 	pos_n = *pos;
+	pos_n.ra += model_change->ra;
+	pos_n.dec += model_change->dec;
 	normalizeRaDec (pos_n.ra, pos_n.dec);
 	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }
@@ -1907,9 +1911,9 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 
 		int is_deep = select_ephemeris (&tle);
 		if (is_deep && (ephem == 1 || ephem == 2))
-			ephem += 2;    /* switch to an SDx */
+			ephem += 2;	/* switch to an SDx */
 		if (!is_deep && (ephem == 3 || ephem == 4))
-			ephem -= 2;    /* switch to an SGx */
+			ephem -= 2;	/* switch to an SGx */
 		tle_ephem->setValueInteger (ephem);
 
 		return startResyncMove (conn, 0);
