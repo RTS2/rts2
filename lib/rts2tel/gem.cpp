@@ -69,7 +69,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	ls = getLstDeg (JD);
 
 	ln_get_hrz_from_equ (pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
-	if (hrz.alt < -1)
+	if (hrz.alt < -5)
 	{
 		logStream (MESSAGE_ERROR) << "object is below horizon, azimuth is "
 			<< hrz.az  << " and altitude " << hrz.alt  << " RA/DEC targets was " << LibnovaRaDec (pos)
@@ -100,13 +100,13 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 
 	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
-	ret = checkCountValues (pos, ac, dc, t_ac, t_dc, JD, ls, dec);
+	ret = checkCountValues (pos, ac, dc, t_ac, t_dc);
 
 	// let's see what will different flip do..
 	int32_t tf_ac = t_ac - (int32_t) (fabs(haCpd->getValueDouble () * 360.0)/2.0);
 	int32_t tf_dc = t_dc + (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
 
-	int ret_f = checkCountValues (pos, ac, dc, tf_ac, tf_dc, JD, ls, dec);
+	int ret_f = checkCountValues (pos, ac, dc, tf_ac, tf_dc);
 
 	// there isn't path, give up...
 	if (ret != 0 && ret_f != 0)
@@ -232,6 +232,30 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		t_ac = tf_ac;
 		t_dc = tf_dc;
 	}
+
+	// and finally, apply model
+	struct ln_equ_posn model_change;
+	struct ln_equ_posn u_pos;
+
+	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
+	u_pos.ra = ls - ((double) (t_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
+	u_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
+	if (telLatitude->getValueDouble () < 0)
+		u_pos.dec *= -1;
+	applyModel (&u_pos, &model_change, JD);
+
+	#ifdef DEBUG_EXTRA
+	LibnovaRaDec lchange (&model_change);
+
+	logStream (MESSAGE_DEBUG) << "Before model " << t_ac << t_dc << lchange << sendLog;
+	#endif						 /* DEBUG_EXTRA */
+
+	t_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
+	t_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
+
+	#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "After model" << t_ac << t_dc << sendLog;
+	#endif						 /* DEBUG_EXTRA */
 
 	t_ac -= homeOff;
 
@@ -412,11 +436,8 @@ double GEM::getHACWDAngle (int32_t ha_count)
 	}
 }
 
-int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD, double ls, double dec)
+int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc)
 {
-	struct ln_equ_posn model_change;
-	struct ln_equ_posn u_pos;
-
 	int32_t full_ac = (int32_t) fabs(haCpd->getValueDouble () * 360.0);
 	int32_t full_dc = (int32_t) fabs(decCpd->getValueDouble () * 360.0);
 
@@ -481,30 +502,6 @@ int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int3
 	{
 		return -1;
 	}
-
-	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-	u_pos.ra = ls - ((double) (t_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
-	u_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
-	if (telLatitude->getValueDouble () < 0)
-		u_pos.dec *= -1;
-	applyModel (&u_pos, &model_change, JD);
-
-	// when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
-	if (telLatitude->getValueDouble () < 0)
-		model_change.dec *= -1;
-
-	#ifdef DEBUG_EXTRA
-	LibnovaRaDec lchange (&model_change);
-
-	logStream (MESSAGE_DEBUG) << "Before model " << t_ac << t_dc << lchange << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	t_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
-	t_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "After model" << t_ac << t_dc << sendLog;
-	#endif						 /* DEBUG_EXTRA */
 
 	return 0;
 }
