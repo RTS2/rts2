@@ -20,6 +20,18 @@ longitude = -110
 
 latitude_r = radians(latitude)
 
+def equ_to_hrz(ha,dec):
+	A = np.sin(latitude_r) * np.sin(dec) + np.cos(latitude_r) * np.cos(dec) * np.cos(ha)
+	alt = np.arcsin(A)
+
+	Z = np.arccos(A)
+	Zs = np.sin(Z)
+	As = (np.cos(dec) * np.sin(ha)) / Zs;
+	Ac = (np.sin(latitude_r) * np.cos(dec) * np.cos(ha) - np.cos(latitude_r) * np.sin(dec)) / Zs;
+	Aa = np.arctan2(As,Ac)
+
+	return np.degrees(alt),(np.degrees(Aa) + 360) % 360
+
 # Fit function.
 # a_ra - target HA
 # r_ra - calculated (real) HA
@@ -27,7 +39,7 @@ latitude_r = radians(latitude)
 # r_dec - calculated (real) DEC
 # DEC > 90 or < -90 means telescope flipped (DEC axis continues for modelling purposes)
 def fit_model(params, a_ra, r_ra, a_dec, r_dec):
-        print 'computing', latitude_r, params, a_ra, r_ra, a_dec, r_dec
+	print 'computing', latitude_r, params, a_ra, r_ra, a_dec, r_dec
 	diff1 = a_dec - r_dec - params[0] + params[1]*np.cos(a_ra) + params[2]*np.sin(a_ra) + params[3]*(sin(latitude_r) * np.cos(a_dec) - cos(latitude_r) * np.sin(a_dec) * np.cos(a_ra))
 	#diff1 = a_dec - r_dec - params[0]
 	#diff2 = a_ra - r_ra - params[4]
@@ -37,7 +49,7 @@ def fit_model(params, a_ra, r_ra, a_dec, r_dec):
 
 # open file
 # expected format:
-#  Observation      MJD       RA-MNT   DEC-MNT LST-MNT      AXRA      AXDEC   RA-TRUE  DEC-TRUE
+#  Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE
 #02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
 #skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
 
@@ -47,7 +59,8 @@ with open(sys.argv[1]) as f:
 	line = f.readline()
 	rdata = []
 	while not(line == ''):
-		rdata.append(line.split())
+		if line[0] != '#':
+			rdata.append(line.split())
 		line = f.readline()
 
 	print rdata
@@ -66,6 +79,10 @@ with open(sys.argv[1]) as f:
 
 	diff_ra = np.degrees(aa_ra - ar_ra)
 	diff_dec = np.degrees(aa_dec - ar_dec)
+
+	# transform to alt/az
+	aa_alt,aa_az = equ_to_hrz(aa_ra,aa_dec)
+	ar_alt,ar_az = equ_to_hrz(ar_ra,ar_dec)
 
 	best, cov, info, message, ier = leastsq(fit_model, par_init, args=(aa_ra, ar_ra, aa_dec, ar_dec), full_output=True)
 
@@ -102,5 +119,17 @@ with open(sys.argv[1]) as f:
 		print a,
 	print
 
-	plot(range(0,len(diff_model)), diff_model * 3600.0, 'bo', range(0,len(diff_ra)), diff_ra * 3600.0, 'ro', range(len(diff_ra), len(diff_ra) + len(diff_dec)), diff_dec * 3600.0, 'go')
+	all_error = subplot2grid((3,3),(0,0))
+
+	all_error.plot(range(0,len(diff_model)), diff_model * 3600.0, 'b.', range(0,len(diff_ra)), diff_ra * 3600.0, 'r.', range(len(diff_ra), len(diff_ra) + len(diff_dec)), diff_dec * 3600.0, 'g.')
+	all_error.set_title('RA DEC error')
+
+	alt_error = subplot2grid((3,3),(0,1))
+	alt_error.plot(aa_az, (aa_alt - ar_alt) * 3600.0, 'r.')
+	alt_error.set_title('Az-Alt error')
+
+	az_error = subplot2grid((3,3),(0,2))
+	az_error.plot(aa_alt, (aa_az - ar_az) * 3600.0, 'r.')
+	az_error.set_title('Alt-Az error')
+
 	show()
