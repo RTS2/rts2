@@ -85,8 +85,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	// pretend we are at north hemispehere.. at least for dec
 	dec = pos->dec;
-	if (telLatitude->getValueDouble () < 0)
-		dec *= -1;
 
 	// convert to count values
 	t_ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());

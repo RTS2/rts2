@@ -823,8 +823,6 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	}
 	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
 	pos_n = *pos;
-	pos_n.ra += model_change->ra;
-	pos_n.dec += model_change->dec;
 	normalizeRaDec (pos_n.ra, pos_n.dec);
 	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }
@@ -846,8 +844,6 @@ void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_po
 	}
 	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
 	pos_n = *pos;
-	pos_n.ra += model_change->ra;
-	pos_n.dec += model_change->dec;
 	normalizeRaDec (pos_n.ra, pos_n.dec);
 	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }
