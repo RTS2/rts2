@@ -213,7 +213,7 @@ int Rts2NewTarget::saveTarget ()
 
 	if (ret)
 	{
-		if (askForBoolean ("Target with given ID already exists. Do you want to overwrite it?", false))
+		if (askForBoolean (string_format ("Target with ID %i already exists. Do you want to overwrite it?", target->getTargetID ()).c_str (), false))
 		{
 			if (n_tar_id != INT_MIN)
 				ret = target->saveWithID (true, n_tar_id);

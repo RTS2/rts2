@@ -382,4 +382,6 @@ float kelvinToCelsius (float k);
  */
 float celsiusToKelvin (float c);
 
+std::string string_format (const char* format, ...);
+
 #endif							 /* !__RTS_UTILSFUNC__ */
