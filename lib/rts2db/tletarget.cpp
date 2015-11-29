@@ -77,7 +77,9 @@ void TLETarget::getPosition (struct ln_equ_posn *pos, double JD)
 
 	double r_s, r_c;
 
-	lat_alt_to_parallax (ln_deg_to_rad (observer->lat), obs_altitude * 1000, &r_s, &r_c);
+	lat_alt_to_parallax (ln_deg_to_rad (observer->lat), obs_altitude * 1000, &r_c, &r_s);
+
+	observer_cartesian_coords (JD, ln_deg_to_rad (observer->lng), r_c, r_s, observer_loc);
 
 	t_since = (JD - tle.epoch) * 1440.;
 	switch (ephem)
