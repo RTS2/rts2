@@ -60,6 +60,8 @@ int TLETarget::orbitFromTLE (std::string target_tle)
 			ephem += 2;	/* switch to an SDx */
 		if (!is_deep && (ephem == 3 || ephem == 4))
 			ephem -= 2;	/* switch to an SGx */
+		setTargetName (tle.intl_desig);
+		setTargetInfo (target_tle.c_str ());
 		setTargetType (TYPE_TLE);
 	        return 0;
 	}
