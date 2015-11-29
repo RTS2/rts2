@@ -205,7 +205,7 @@ int Rts2NewTarget::saveTarget ()
 		}
 	}
 
-	if (n_tar_id != INT_MIN)
+	if (n_tar_id > 0)
 		ret = target->saveWithID (forcedRun, n_tar_id);
 	else
 		ret = target->save (forcedRun);
@@ -261,16 +261,16 @@ int Rts2NewTarget::doProcessing ()
 		if (n_tar_name == NULL)
 		{
 			std::cout << "Default values are written inside [].." << std::endl;
-			ret = askForObject ("Target name, RA&DEC or anything else");
+			ret = askForObject ("Target name, RA&DEC or anything else (MPEC one line, TLEs separated with |,..)");
 		}
 		else
 		{
-			ret = askForObject ("Target name, RA&DEC or anything else", std::string (n_tar_name));
+			ret = askForObject ("Target name, RA&DEC or anything else (MPEC one line, TLEs separated with |,..)", std::string (n_tar_name));
 		}
 	}
 	else
 	{
-		ret = askForObject ("Target, RA&DEC or anything else", std::string (n_tar_ra_dec));
+		ret = askForObject ("Target, RA&DEC or anything else (MPEC one line, TLEs separated with |,..)", std::string (n_tar_ra_dec));
 	}
 	if (ret)
 		return ret;

@@ -19,6 +19,7 @@
 
 #include "rts2db/simbadtarget.h"
 #include "rts2db/mpectarget.h"
+#include "rts2db/tletarget.h"
 
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlrpc++/urlencoding.h"
@@ -233,13 +234,13 @@ void SimbadTarget::printExtra (Rts2InfoValStream & _ivs)
 	}
 }
 
-Target *createTargetByString (const char *tar_string, bool debug)
+Target *createTargetByString (std::string tar_string, bool debug)
 {
 	Target *rtar = NULL;
 
 	LibnovaRaDec raDec;
 
-	int ret = raDec.parseString (tar_string);
+	int ret = raDec.parseString (tar_string.c_str ());
 	if (ret == 0)
 	{
 		std::string new_prefix;
@@ -260,11 +261,16 @@ Target *createTargetByString (const char *tar_string, bool debug)
 	}
 	// if it's MPC ephemeris..
 	rtar = new EllTarget ();
-	ret = ((EllTarget *) rtar)->orbitFromMPC (tar_string, debug);
+	ret = ((EllTarget *) rtar)->orbitFromMPC (tar_string.c_str ());
 	if (ret == 0)
-	{
 		return rtar;
-	}
+
+	delete rtar;
+
+	rtar = new TLETarget ();
+	ret = ((TLETarget *) rtar)->orbitFromTLE (tar_string);
+	if (ret == 0)
+		return rtar;
 
 	delete rtar;
 
@@ -273,7 +279,7 @@ Target *createTargetByString (const char *tar_string, bool debug)
 	// try to get target from SIMBAD
 	try
 	{
-		rtar = new rts2db::SimbadTarget (tar_string);
+		rtar = new rts2db::SimbadTarget (tar_string.c_str ());
 		rtar->load ();
 		rtar->setTargetType (TYPE_OPORTUNITY);
 		return rtar;
@@ -281,7 +287,7 @@ Target *createTargetByString (const char *tar_string, bool debug)
 	catch (rts2core::Error &er)
 	{
 		// MPEC fallback
-		rtar = new rts2db::MPECTarget (tar_string);
+		rtar = new rts2db::MPECTarget (tar_string.c_str ());
 		rtar->load ();
 		return rtar;
 	}

@@ -39,7 +39,7 @@ Rts2TargetApp::~Rts2TargetApp (void)
 	delete target;
 }
 
-void Rts2TargetApp::getObject (const char *obj_text)
+void Rts2TargetApp::getObject (std::string obj_text)
 {
 	target = createTargetByString (obj_text, getDebug ());
 }
@@ -74,7 +74,7 @@ int Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
 
 	try
 	{
-		getObject (obj_text.c_str ());
+		getObject (obj_text);
 		return 0;
 	}
 	catch (rts2core::Error err)

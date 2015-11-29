@@ -42,11 +42,10 @@ class EllTarget:public Target
 		 * Get orbit structure from target info.
 		 *
 		 * @param mpc MPC 1-line element.
-		 * @param debug Print debug messages.
 		 *
 		 * @return -1 on error, 0 on success
 		 */
-		int orbitFromMPC (const char *mpc, bool debug);
+		int orbitFromMPC (const char *mpc);
 
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);

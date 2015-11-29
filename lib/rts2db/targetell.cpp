@@ -43,7 +43,7 @@ void EllTarget::load ()
 	}
 }
 
-int EllTarget::orbitFromMPC (const char *mpc, bool debug)
+int EllTarget::orbitFromMPC (const char *mpc)
 {
 	int ret;
 	ret = LibnovaEllFromMPC (&orbit, designation, mpc);

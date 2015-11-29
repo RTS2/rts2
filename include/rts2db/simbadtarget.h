@@ -67,6 +67,6 @@ class SimbadTarget:public ConstTarget
  *
  * @return new target object. Caller must deallocate target object (delete it).
  */
-rts2db::Target *createTargetByString (const char *tar_string, bool debug);
+rts2db::Target *createTargetByString (std::string tar_string, bool debug);
 
 #endif							 /* !__RTS2__SIMBADTARGET__ */

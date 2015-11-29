@@ -37,11 +37,17 @@ void TLETarget::load ()
 	Target::load ();
 	// split two lines..
 	std::string tarInfo (getTargetInfo());
-	size_t sub = tarInfo.find ('|');
+	if (orbitFromTLE (tarInfo) != 0)
+		throw rts2core::Error ("cannot parse " + tarInfo);
+}
+
+int TLETarget::orbitFromTLE (std::string target_tle)
+{
+	size_t sub = target_tle.find ('|');
 	if (sub != std::string::npos)
 	{
-		tle1 = tarInfo.substr (0, sub - 1);
-		tle2 = tarInfo.substr (sub + 1);
+		tle1 = target_tle.substr (0, sub);
+		tle2 = target_tle.substr (sub + 1);
 
 		int ret = parse_elements (tle1.c_str (), tle2.c_str (), &tle);
 		if (ret != 0)
@@ -53,10 +59,11 @@ void TLETarget::load ()
 		is_deep = select_ephemeris (&tle);
 
 		if (is_deep && (ephem == 1 || ephem == 2))
-			ephem += 2;    /* switch to an SDx */
+			ephem += 2;	/* switch to an SDx */
 		if (!is_deep && (ephem == 3 || ephem == 4))
-			ephem -= 2;    /* switch to an SGx */
+			ephem -= 2;	/* switch to an SGx */
 	}
+	return 0;
 }
 
 void TLETarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -102,6 +109,7 @@ void TLETarget::getPosition (struct ln_equ_posn *pos, double JD)
 
 int TLETarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
+	return 0;
 }
 
 void TLETarget::printExtra (Rts2InfoValStream & _os, double JD)
@@ -116,8 +124,10 @@ void TLETarget::writeToImage (rts2image::Image * image, double JD)
 
 double TLETarget::getEarthDistance (double JD)
 {
+	return 0;
 }
 
 double TLETarget::getSolarDistance (double JD)
 {
+	return 0;
 }

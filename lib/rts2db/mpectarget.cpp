@@ -66,7 +66,7 @@ void MPECTarget::load ()
 	  	err << "error requesting " << url;
 		throw rts2core::Error (err.str ());
 	}
-	ret = orbitFromMPC (reply, false);
+	ret = orbitFromMPC (reply);
 	if (ret)
 	{
 		std::ostringstream err;

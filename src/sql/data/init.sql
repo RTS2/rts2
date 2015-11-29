@@ -16,6 +16,7 @@ m	Modeling (have optional parameters in target_model)
 c	Opportunity targets
 p	Plan target
 L	Planets
+B	TLE (satellites)
 \.
 
 COPY medias FROM stdin;
