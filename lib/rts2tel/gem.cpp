@@ -210,20 +210,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 	// otherwise, non-flipped is the only way, stay on it..
 
-	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
-	{
-		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " dc:" << t_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
-		return -1;
-	}
-
-	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))
-	{
-		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " ac:" << t_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
-		return -1;
-	}
-
 	// when we will go to flipped..
 	if (use_flipped == true)
 	{
@@ -254,6 +240,20 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "After model" << t_ac << t_dc << sendLog;
 	#endif						 /* DEBUG_EXTRA */
+
+	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
+	{
+		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
+			<< LibnovaRaDec (pos) << " dc:" << t_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
+		return -1;
+	}
+
+	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))
+	{
+		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
+			<< LibnovaRaDec (pos) << " ac:" << t_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
+		return -1;
+	}
 
 	t_ac -= homeOff;
 
