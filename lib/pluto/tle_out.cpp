@@ -1,3 +1,28 @@
+/* tle_out.cpp: code to create ASCII TLEs (Two-Line Elements)
+
+Copyright (C) 2014, Project Pluto
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301, USA.    */
+
+
+/* Code to convert the in-memory artificial satellite elements into
+the "standard" TLE (Two-Line Element) form described at
+
+https://en.wikipedia.org/wiki/Two-line_elements       */
+
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -46,13 +71,28 @@ static double zero_to_two_pi( double angle_in_radians)
    return( angle_in_radians);
 }
 
+/* See comments for get_high_value() in 'get_el.cpp'.  Essentially,  we are
+   writing out a state vector in convoluted form.  */
+
+static void set_high_value( char *obuff, const double value)
+{
+   *obuff++ = (value >= 0. ? '+' : '-');
+   sprintf( obuff, "%08X", (unsigned)fabs( value));
+   obuff[8] = ' ';
+}
+
+
+/* The second derivative of the mean motion,  'xnddo6',  and the 'bstar'
+drag term,  are stored in a simplified scientific notation.  To save
+valuable bytes,  the decimal point and 'E' are assumed.     */
+
 static void put_sci( char *obuff, double ival)
 {
    if( !ival)
       memcpy( obuff, " 00000-0", 7);
    else
       {
-      int oval = 0, exponent = 0;
+      int oval, exponent = 0;
 
       if( ival > 0.)
          *obuff++ = ' ';
@@ -61,25 +101,24 @@ static void put_sci( char *obuff, double ival)
          *obuff++ = '-';
          ival = -ival;
          }
-
-      while( ival > 1.)    /* start exponent search in floats,  to evade */
-         {                 /* an integer overflow */
-         ival /= 10.;
-         exponent++;
-         }                 /* then do it in ints,  to evade roundoffs */
-      while( oval > 99999 || oval < 10000)
+      while( true)
          {
-         oval = (int)( ival * 100000. + .5);
+         if( ival > 1.)    /* avoid integer overflow */
+            oval = 100000;
+         else
+            oval = (int)( ival * 100000. + .5);
          if( oval > 99999)
             {
             ival /= 10;
             exponent++;
             }
-         if( oval < 10000)
+         else if( oval < 10000)
             {
             ival *= 10;
             exponent--;
             }
+         else
+            break;
          }
       sprintf( obuff, "%5d", oval);
       if( exponent > 0)
@@ -95,12 +134,23 @@ static void put_sci( char *obuff, double ival)
       }
 }
 
+/* SpaceTrack TLEs have,  on the second line,  leading zeroes in front of the
+inclination,  ascending node,  argument of perigee,  and mean motion.  Which
+is why I've used this format string :
+
+      sprintf( line2 + 8, "%08.4f %08.4f %07ld %08.4f %08.4f %011.8f", ...)
+
+   'classfd.tle' and some other sources don't use leading zeroes.  For them,
+use the following format string for those four quantities :
+
+      sprintf( line2 + 8, "%8.4f %8.4f %07ld %8.4f %8.4f %11.8f", ...)  */
+
 void DLL_FUNC write_elements_in_tle_format( char *buff, const tle_t *tle)
 {
-   long year;
-   double day_of_year, deriv_mean_motion;
+   long year = (long)( tle->epoch - J1900) / 365 + 1;
+   double day_of_year;
+   char *line2;
 
-   year = (int)( tle->epoch - J1900) / 365 + 1;
    do
       {
       double start_of_year;
@@ -112,7 +162,7 @@ void DLL_FUNC write_elements_in_tle_format( char *buff, const tle_t *tle)
       while( day_of_year < 1.);
    sprintf( buff,
 /*                                     xndt2o    xndd6o   bstar  eph bull */
-           "1 %05d%c %-8s %02ld%12.8lf -.00000000 +00000-0 +00000-0 %c %4dZ\n",
+           "1 %05d%c %-8s %02ld%12.8f -.000hit00 +00000-0 +00000-0 %c %4dZ\n",
            tle->norad_number, tle->classification, tle->intl_desig,
            year % 100L, day_of_year,
            tle->ephemeris_type, tle->bulletin_number);
@@ -120,24 +170,46 @@ void DLL_FUNC write_elements_in_tle_format( char *buff, const tle_t *tle)
       buff[20] = '0';
    if( buff[21] == ' ')
       buff[21] = '0';
-   deriv_mean_motion = tle->xndt2o * MINUTES_PER_DAY_SQUARED / (2. * PI);
-   if( deriv_mean_motion >= 0)
-      buff[33] = ' ';
-   deriv_mean_motion = fabs( deriv_mean_motion * 100000000.) + .5;
-   sprintf( buff + 35, "%08ld", (long)deriv_mean_motion);
-   buff[43] = ' ';
-   put_sci( buff + 44, tle->xndd6o * MINUTES_PER_DAY_CUBED / (2. * PI));
-   put_sci( buff + 53, tle->bstar / AE);
+   if( tle->ephemeris_type != 'H')     /* "normal",  standard TLEs */
+      {
+      double deriv_mean_motion = tle->xndt2o * MINUTES_PER_DAY_SQUARED / (2. * PI);
+      if( deriv_mean_motion >= 0)
+         buff[33] = ' ';
+      deriv_mean_motion = fabs( deriv_mean_motion * 100000000.) + .5;
+      sprintf( buff + 35, "%08ld", (long)deriv_mean_motion);
+      buff[43] = ' ';
+      put_sci( buff + 44, tle->xndd6o * MINUTES_PER_DAY_CUBED / (2. * PI));
+      put_sci( buff + 53, tle->bstar / AE);
+      }
+   else
+      {
+      size_t i;
+      const double *posn = &tle->xincl;
+
+      for( i = 0; i < 3; i++)
+         set_high_value( buff + 33 + i * 10, posn[i]);
+      buff[62] = 'H';
+      }
    add_tle_checksum_data( buff);
-   buff += strlen( buff);
-   sprintf( buff, "2 %05d %8.4lf %8.4lf %07ld %8.4lf %8.4lf %11.8lf%5dZ\n",
-           tle->norad_number,
+   line2 = buff + strlen( buff);
+   sprintf( line2, "2 %05d ", tle->norad_number);
+   if( tle->ephemeris_type != 'H')     /* "normal",  standard TLEs */
+      sprintf( line2 + 8, "%08.4f %08.4f %07ld %08.4f %08.4f %011.8f",
            zero_to_two_pi( tle->xincl) * 180. / PI,
            zero_to_two_pi( tle->xnodeo) * 180. / PI,
            (long)( tle->eo * 10000000. + .5),
            zero_to_two_pi( tle->omegao) * 180. / PI,
            zero_to_two_pi( tle->xmo) * 180. / PI,
-                           tle->xno * MINUTES_PER_DAY / (2. * PI),
-           tle->revolution_number);
-   add_tle_checksum_data( buff);
+           tle->xno * MINUTES_PER_DAY / (2. * PI));
+   else
+      {
+      size_t i;
+      const double *vel = &tle->xincl + 3;
+
+      memset( line2 + 8, ' ', 25);     /* reserved for future use */
+      for( i = 0; i < 3; i++)
+         set_high_value( line2 + 33 + i * 10, vel[i] * 1e+4);
+      }
+   sprintf( line2 + 63, "%5dZ\n", tle->revolution_number);
+   add_tle_checksum_data( line2);
 }

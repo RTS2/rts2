@@ -44,7 +44,7 @@ void DLL_FUNC SGP_init( double *params, const tle_t *tle)
 }
 
 
-void DLL_FUNC SGP( const double tsince, const tle_t *tle, const double *params,
+int DLL_FUNC SGP( const double tsince, const tle_t *tle, const double *params,
                                      double *pos, double *vel)
 {
   double
@@ -55,94 +55,113 @@ void DLL_FUNC SGP( const double tsince, const tle_t *tle, const double *params,
     rk, uk, xl, su, ux, uy, uz, vx, vy, vz, pl2,
     xnodek, cosnok, xnodes, el2, eo1, r1, sinnok,
     xls, xmx, xmy, tem2, tem5;
+   const double chicken_factor_on_eccentricity = 1.e-6;
 
-  int i;
+   int i, rval = 0;
 
-  /* Update for secular gravity and atmospheric drag */
-  a = tle->xno+(tle->xndt2o*2.+tle->xndd6o*3.*tsince)*tsince;
-  a = ao * pow( tle->xno / a, two_thirds);
-  e = e6a;
-  if (a > qo) e = 1.-qo/a;
-  p = a*(1.-e*e);
-  xnodes = tle->xnodeo+xnodot*tsince;
-  omgas = tle->omegao+omgdt*tsince;
-  r1 = xlo+(tle->xno+omgdt+xnodot+
-      (tle->xndt2o+tle->xndd6o*tsince)*tsince)*tsince;
-  xls = FMod2p(r1);
+    /* Update for secular gravity and atmospheric drag */
+   a = tle->xno+(tle->xndt2o*2.+tle->xndd6o*3.*tsince)*tsince;
+   if( a < 0.)
+      rval = SXPX_ERR_NEGATIVE_MAJOR_AXIS;
+   e = e6a;
+   if( e > 1. - chicken_factor_on_eccentricity)
+      rval = SXPX_ERR_NEARLY_PARABOLIC;
+   if( rval)
+      {
+      for( i = 0; i < 3; i++)
+         {
+         pos[i] = 0.;
+         if( vel)
+            vel[i] = 0.;
+         }
+      return( rval);
+      }
+   a = ao * pow( tle->xno / a, two_thirds);
+   if( a * (1. - e) < 1. && a * (1. + e) < 1.)   /* entirely within earth */
+      rval = SXPX_WARN_ORBIT_WITHIN_EARTH;     /* remember, e can be negative */
+   if( a * (1. - e) < 1. || a * (1. + e) < 1.)   /* perigee within earth */
+      rval = SXPX_WARN_PERIGEE_WITHIN_EARTH;
+   if (a > qo) e = 1.-qo/a;
+   p = a*(1.-e*e);
+   xnodes = tle->xnodeo+xnodot*tsince;
+   omgas = tle->omegao+omgdt*tsince;
+   r1 = xlo+(tle->xno+omgdt+xnodot+
+       (tle->xndt2o+tle->xndd6o*tsince)*tsince)*tsince;
+   xls = FMod2p(r1);
 
-  /* Long period periodics */
-  axnsl = e*cos(omgas);
-  aynsl = e*sin(omgas)-c6/p;
-  r1 = xls-c5/p*axnsl;
-  xl = FMod2p(r1);
+   /* Long period periodics */
+   axnsl = e*cos(omgas);
+   aynsl = e*sin(omgas)-c6/p;
+   r1 = xls-c5/p*axnsl;
+   xl = FMod2p(r1);
 
-  /* Solve Kepler's equation */
-  r1 = xl-xnodes;
-  u = FMod2p(r1);
-  eo1 = u;
-  tem5 = 1.;
+   /* Solve Kepler's equation */
+   r1 = xl-xnodes;
+   u = FMod2p(r1);
+   eo1 = u;
+   tem5 = 1.;
 
-  i = 0;
-  do
-    {
-      sineo1 = sin(eo1);
-      coseo1 = cos(eo1);
-      if (fabs(tem5) < e6a) break;
-      tem5 = 1.-coseo1*axnsl-sineo1*aynsl;
-      tem5 = (u-aynsl*coseo1+axnsl*sineo1-eo1)/tem5;
-      tem2 = fabs(tem5);
-      if (tem2 > 1.) tem5 = tem2/tem5;
-      eo1 += tem5;
-    }
-  while(i++ < 10);
-
-  /* Short period preliminary quantities */
-  ecose = axnsl*coseo1+aynsl*sineo1;
-  esine = axnsl*sineo1-aynsl*coseo1;
-  el2 = axnsl*axnsl+aynsl*aynsl;
-  pl = a*(1.-el2);
-  pl2 = pl*pl;
-  rr = a*(1.-ecose);
-  rdot = xke*sqrt(a)/rr*esine;
-  rvdot = xke*sqrt(pl)/rr;
-  temp = esine/(sqrt(1.-el2)+1.);
-  sinu = a/rr*(sineo1-aynsl-axnsl*temp);
-  cosu = a/rr*(coseo1-axnsl+aynsl*temp);
-  su = atan2(sinu, cosu);
-
-  /* Update for short periodics */
-  sin2u = (cosu+cosu)*sinu;
-  cos2u = 1.-2.*sinu*sinu;
-  rk = rr+d1o/pl*cos2u;
-  uk = su-d2o/pl2*sin2u;
-  xnodek = xnodes+d3o*sin2u/pl2;
-  xinck = tle->xincl+d4o/pl2*cos2u;
-
-  /* Orientation vectors */
-  sinuk = sin(uk);
-  cosuk = cos(uk);
-  sinnok = sin(xnodek);
-  cosnok = cos(xnodek);
-  sinik = sin(xinck);
-  cosik = cos(xinck);
-  xmx = -sinnok*cosik;
-  xmy = cosnok*cosik;
-  ux = xmx*sinuk+cosnok*cosuk;
-  uy = xmy*sinuk+sinnok*cosuk;
-  uz = sinik*sinuk;
-  vx = xmx*cosuk-cosnok*sinuk;
-  vy = xmy*cosuk-sinnok*sinuk;
-  vz = sinik*cosuk;
-
-  /* Position and velocity */
-  pos[0] = rk*ux*earth_radius_in_km;
-  pos[1] = rk*uy*earth_radius_in_km;
-  pos[2] = rk*uz*earth_radius_in_km;
-  if( vel)
+   i = 0;
+   do
      {
-     vel[0] = (rdot*ux + rvdot * vx)*earth_radius_in_km;
-     vel[1] = (rdot*uy + rvdot * vy)*earth_radius_in_km;
-     vel[2] = (rdot*uz + rvdot * vz)*earth_radius_in_km;
+       sineo1 = sin(eo1);
+       coseo1 = cos(eo1);
+       if (fabs(tem5) < e6a) break;
+       tem5 = 1.-coseo1*axnsl-sineo1*aynsl;
+       tem5 = (u-aynsl*coseo1+axnsl*sineo1-eo1)/tem5;
+       tem2 = fabs(tem5);
+       if (tem2 > 1.) tem5 = tem2/tem5;
+       eo1 += tem5;
      }
+   while(i++ < 10);
 
+   /* Short period preliminary quantities */
+   ecose = axnsl*coseo1+aynsl*sineo1;
+   esine = axnsl*sineo1-aynsl*coseo1;
+   el2 = axnsl*axnsl+aynsl*aynsl;
+   pl = a*(1.-el2);
+   pl2 = pl*pl;
+   rr = a*(1.-ecose);
+   rdot = xke*sqrt(a)/rr*esine;
+   rvdot = xke*sqrt(pl)/rr;
+   temp = esine/(sqrt(1.-el2)+1.);
+   sinu = a/rr*(sineo1-aynsl-axnsl*temp);
+   cosu = a/rr*(coseo1-axnsl+aynsl*temp);
+   su = atan2(sinu, cosu);
+
+   /* Update for short periodics */
+   sin2u = (cosu+cosu)*sinu;
+   cos2u = 1.-2.*sinu*sinu;
+   rk = rr+d1o/pl*cos2u;
+   uk = su-d2o/pl2*sin2u;
+   xnodek = xnodes+d3o*sin2u/pl2;
+   xinck = tle->xincl+d4o/pl2*cos2u;
+
+   /* Orientation vectors */
+   sinuk = sin(uk);
+   cosuk = cos(uk);
+   sinnok = sin(xnodek);
+   cosnok = cos(xnodek);
+   sinik = sin(xinck);
+   cosik = cos(xinck);
+   xmx = -sinnok*cosik;
+   xmy = cosnok*cosik;
+   ux = xmx*sinuk+cosnok*cosuk;
+   uy = xmy*sinuk+sinnok*cosuk;
+   uz = sinik*sinuk;
+   vx = xmx*cosuk-cosnok*sinuk;
+   vy = xmy*cosuk-sinnok*sinuk;
+   vz = sinik*cosuk;
+
+   /* Position and velocity */
+   pos[0] = rk*ux*earth_radius_in_km;
+   pos[1] = rk*uy*earth_radius_in_km;
+   pos[2] = rk*uz*earth_radius_in_km;
+   if( vel)
+      {
+      vel[0] = (rdot*ux + rvdot * vx)*earth_radius_in_km;
+      vel[1] = (rdot*uy + rvdot * vy)*earth_radius_in_km;
+      vel[2] = (rdot*uz + rvdot * vz)*earth_radius_in_km;
+      }
+   return( rval);
 } /* SGP */

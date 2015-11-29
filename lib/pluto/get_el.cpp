@@ -1,5 +1,7 @@
 #include <string.h>
+#include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "pluto/norad.h"
 
 #define PI 3.141592653589793238462643383279502884197
@@ -101,6 +103,35 @@ int DLL_FUNC tle_checksum( const char *buff)
    return( rval % 10);
 }
 
+/* The "standard" SDP4 model fails badly for very high-flying satellites.
+As a non-standard extension,  I'm simply storing state vectors for them,
+using the following somewhat odd scheme :
+
+1 40391U 15007B   15091.99922241 sxxxxxxxx syyyyyyyy szzzzzzzzh  9997
+2 49391 [valid range, accuracy]  saaaaaaaa sbbbbbbbb scccccccc    0 8
+
+   Epoch,  int'l & NORAD IDs are stored in the standard manner.  The
+'ephemeris type' is h (rather than the otherwise universal 0).  The
+xyz position and vx, vy, vz velocity are stored as 8-digit signed
+hexadecimal values,  hence a range of +/- 2^32.
+
+  x, y, z are in meters,  and hence cover a range +/- 4.29 million km.
+vx, vy, vz are in 10^-4 m/s,  range +/- 429 km/s.  I do have ideas in
+mind if we have to go beyond that... but let's hope that doesn't happen. */
+
+static double get_high_value( const char *iptr)
+{
+   int bytes_scanned;
+   unsigned value = 0;
+   double rval = 0.;
+
+   if( *iptr == '+' || *iptr == '-')
+      if( sscanf( iptr + 1, "%x%n", &value, &bytes_scanned) == 1
+                     && bytes_scanned == 8)
+         rval = (*iptr == '-' ? -(double)value : (double)value);
+   return( rval);
+}
+
 static inline double get_eight_places( const char *ptr)
 {
    return( (double)atoi( ptr) + (double)atoi(ptr + 4) * 1e-8);
@@ -122,7 +153,7 @@ static inline double get_eight_places( const char *ptr)
 
 int DLL_FUNC parse_elements( const char *line1, const char *line2, tle_t *sat)
 {
-   int year, rval, checksum_problem = 0;
+   int rval, checksum_problem = 0;
 
    if( *line1 != '1' || *line2 != '2')
       rval = -4;
@@ -151,6 +182,37 @@ int DLL_FUNC parse_elements( const char *line1, const char *line2, tle_t *sat)
    if( !rval)
       {
       char tbuff[13];
+      int year = line1[19] - '0';
+
+      if( line1[18] >= '0')
+         year += (line1[18] - '0') * 10;
+      if( year < 57)          /* cycle around Y2K */
+         year += 100;
+      sat->epoch = get_eight_places( line1 + 20) + J1900
+             + (double)( year * 365 + (year - 1) / 4);
+      sat->norad_number = atoi( line1 + 2);
+      memcpy( tbuff, line1 + 64, 4);
+      tbuff[4] = '\0';
+      sat->bulletin_number = atoi( tbuff);
+      sat->classification = line1[7];       /* almost always 'U' */
+      memcpy( sat->intl_desig, line1 + 9, 8);
+      sat->intl_desig[8] = '\0';
+      memcpy( tbuff, line2 + 63, 5);
+      tbuff[5] = '\0';
+      sat->revolution_number = atoi( tbuff);
+      sat->ephemeris_type = line1[62];
+      if( sat->ephemeris_type == 'H')
+         {
+         size_t i;
+         double *state_vect = &sat->xincl;
+
+         for( i = 0; i < 3; i++)
+            {
+            state_vect[i]     = get_high_value( line1 + 33 + i * 10);
+            state_vect[i + 3] = get_high_value( line2 + 33 + i * 10) * 1e-4;
+            }
+         return( 0);
+         }
 
       sat->xmo = (double)get_angle( line2 + 43) * (PI / 180e+4);
       sat->xnodeo = (double)get_angle( line2 + 17) * (PI / 180e+4);
@@ -172,25 +234,7 @@ int DLL_FUNC parse_elements( const char *line1, const char *line2, tle_t *sat)
          sat->xndt2o *= -1.;
       sat->xndd6o = sci( line1 + 44) * TWOPI / MINUTES_PER_DAY_CUBED;
 
-      sat->bstar = sci(line1 + 53) * AE;
-      year = line1[19] - '0';
-      if( line1[18] >= '0')
-         year += (line1[18] - '0') * 10;
-      if( year < 57)          /* cycle around Y2K */
-         year += 100;
-      sat->epoch = get_eight_places( line1 + 20) + J1900
-             + (double)( year * 365 + (year - 1) / 4);
-      sat->norad_number = atoi( line1 + 2);
-      memcpy( tbuff, line1 + 64, 4);
-      tbuff[4] = '\0';
-      sat->bulletin_number = atoi( tbuff);
-      sat->classification = line1[7];
-      memcpy( sat->intl_desig, line1 + 9, 8);
-      sat->intl_desig[8] = '\0';
-      memcpy( tbuff, line2 + 63, 5);
-      tbuff[5] = '\0';
-      sat->revolution_number = atoi( tbuff);
-      sat->ephemeris_type = line1[62];
+      sat->bstar = sci( line1 + 53) * AE;
       }
    return( rval ? rval : checksum_problem);
 }

@@ -40,7 +40,7 @@ void Deep_dpsec( const tle_t *tle, deep_arg_t *deep_arg);
 void Deep_dpper( const tle_t *tle, deep_arg_t *deep_arg);
 
 int sxpx_posn_vel( const double xnode, const double a, const double e,
-      const double *params, const double cosio, const double sinio,
+      const double cosio, const double sinio,
       const double xincl, const double omega,
       const double xl, double *pos, double *vel);
 
@@ -73,8 +73,7 @@ void sxpx_common_init( double *params, const tle_t *tle,
 #else
 #define xj4      (-1.65597e-6)
 #define ck4      (-.375 * xj4 * ae * ae * ae * ae)
-//#define ck4    6.2098875E-7
-#define s        (ae * (1. + 78. / earth_radius_in_km))
+#define s_const  (ae * (1. + 78. / earth_radius_in_km))
 #define qoms2t   1.880279159015270643865e-9
 #define xke      0.0743669161331734132
 #endif

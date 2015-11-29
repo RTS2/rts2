@@ -33,8 +33,8 @@ void DLL_FUNC SDP8_init( double *params, const tle_t *tle)
 
    /* Initialization */
    po = deep_arg->aodp*deep_arg->betao2;
-   tsi = 1./(po-s);
-   eta = tle->eo*s*tsi;
+   tsi = 1./(po-s_const);
+   eta = tle->eo*s_const*tsi;
    eta2 = eta * eta;
    psim2 = (r1 = 1./(1.-eta2), fabs(r1));
    alpha2 = deep_arg->eosq+1.;

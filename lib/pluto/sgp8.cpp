@@ -83,8 +83,8 @@ void DLL_FUNC SGP8_init( double *params, const tle_t *tle)
    omgdt = deep_arg.omgdot;
    xnodot_ = deep_arg.xnodot;
    po = deep_arg.aodp * deep_arg.betao2;
-   tsi = 1./(po-s);
-   eta = tle->eo*s*tsi;
+   tsi = 1./(po-s_const);
+   eta = tle->eo*s_const*tsi;
    eta2 = eta * eta;
    psim2 = (r1 = 1./(1.-eta2), fabs(r1));
    alpha2 = deep_arg.eosq+1.;
@@ -137,7 +137,7 @@ void DLL_FUNC SGP8_init( double *params, const tle_t *tle)
                  (eta2*15.+5.)+d1*d6*b1+c8*cos2g+c9*deep_arg.sing);
       tsdtts = deep_arg.aodp*2.*tsi*(d20*deep_arg.betao2+tle->eo*edot);
       aldtal = tle->eo*edot/alpha2;
-      etdt = (edot+tle->eo*tsdtts)*tsi*s;
+      etdt = (edot+tle->eo*tsdtts)*tsi*s_const;
       psdtps = -eta*etdt*psim2;
       c0dtc0 = d20+tsdtts*4.-aldtal-psdtps*7.;
       c1dtc1 = xndtn+aldtal*4.+c0dtc0;
@@ -166,7 +166,7 @@ void DLL_FUNC SGP8_init( double *params, const tle_t *tle)
       tsddts = tsdtts*2.*(tsdtts-d20)+deep_arg.aodp*tsi*
                (two_thirds*deep_arg.betao2*d17-d20*4.*tle->eo*edot+
                (d25+tle->eo*eddot)*2.);
-      etddt = (eddot+edot*2.*tsdtts)*tsi*s+tsddts*eta;
+      etddt = (eddot+edot*2.*tsdtts)*tsi*s_const+tsddts*eta;
       r1 = tsdtts;
       d18 = tsddts-r1*r1;
       r1 = psdtps;

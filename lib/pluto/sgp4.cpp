@@ -128,6 +128,6 @@ int DLL_FUNC SGP4( const double tsince, const tle_t *tle, const double *params,
   xl = xmp+omega+xnode+p_xnodp*templ;
   if( tempa < 0.)       /* force negative a,  to indicate error condition */
      a = -a;
-  return( sxpx_posn_vel( xnode, a, e, params, p_cosio, p_sinio, tle->xincl,
+  return( sxpx_posn_vel( xnode, a, e, p_cosio, p_sinio, tle->xincl,
                                           omega, xl, pos, vel));
 } /*SGP4*/

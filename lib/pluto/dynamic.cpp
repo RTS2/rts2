@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "windows.h"
+#include "pluto/windows.h"
 #include "pluto/norad.h"
 
 typedef void (__stdcall *sxpx_init_fn)( double *params, const tle_t *tle);

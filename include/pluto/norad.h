@@ -89,7 +89,7 @@ extern "C" {
 
 
 void DLL_FUNC SGP_init( double *params, const tle_t *tle);
-void DLL_FUNC SGP(  const double tsince, const tle_t *tle, const double *params,
+int  DLL_FUNC SGP(  const double tsince, const tle_t *tle, const double *params,
                                      double *pos, double *vel);
 
 void DLL_FUNC SGP4_init( double *params, const tle_t *tle);

@@ -1,4 +1,5 @@
 #include <math.h>
+#include <assert.h>
 #include "pluto/norad.h"
 #include "pluto/norad_in.h"
 
@@ -44,7 +45,7 @@ void sxpx_common_init( double *params, const tle_t *tle,
    x3thm1 = 3*deep_arg->theta2-1;
    /* For perigee below 156 km, the values */
    /* of s and qoms2t are altered.         */
-   init->s4 = s;
+   init->s4 = s_const;
    qoms24 = qoms2t;
    perige = (deep_arg->aodp*(1-tle->eo)-ae)*earth_radius_in_km;
    if(perige < 156)
@@ -99,8 +100,19 @@ void sxpx_common_init( double *params, const tle_t *tle,
    t2cof = 1.5*c1;
 }
 
+inline double centralize_angle( const double ival)
+{
+   double rval = fmod( ival, twopi);
+
+   if( rval > pi)
+      rval -= twopi;
+   else if( rval < - pi)
+      rval += twopi;
+   return( rval);
+}
+
 int sxpx_posn_vel( const double xnode, const double a, const double ecc,
-      const double *params, const double cosio, const double sinio,
+      const double cosio, const double sinio,
       const double xincl, const double omega,
       const double xl, double *pos, double *vel)
 {
@@ -114,7 +126,7 @@ int sxpx_posn_vel( const double xnode, const double a, const double ecc,
    const double xlt = xl+xll;
    const double ayn = ecc*sin(omega)+aynl;
    const double elsq = axn*axn+ayn*ayn;
-   const double capu = fmod( xlt - xnode, twopi);
+   const double capu = centralize_angle( xlt - xnode);
    const double chicken_factor_on_eccentricity = 1.e-6;
    double epw = capu;
    double temp1, temp2;
@@ -191,6 +203,7 @@ int sxpx_posn_vel( const double xnode, const double a, const double ecc,
                              /* f/(fdot - 0.5*fdotdot * f / fdot) */
       epw += delta_epw;
       }
+   assert( i < 8);     /* convergence should _always_ occur */
 
   /* Short period preliminary quantities */
    temp = 1-elsq;
