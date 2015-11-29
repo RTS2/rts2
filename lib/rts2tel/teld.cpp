@@ -808,7 +808,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 {
 	ln_equ_posn pos_n;
 
-	Telescope::computeModel (pos, model_change, JD);
+	computeModel (pos, model_change, JD);
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
 
