@@ -109,8 +109,8 @@ void TLETarget::getPosition (struct ln_equ_posn *pos, double JD)
 	}
 
 	get_satellite_ra_dec_delta (observer_loc, sat_pos, &(pos->ra), &(pos->dec), &dist_to_satellite);
-        pos->ra = ln_rad_to_deg (pos->ra);
-        pos->dec = ln_rad_to_deg (pos->dec);
+	pos->ra = ln_rad_to_deg (pos->ra);
+	pos->dec = ln_rad_to_deg (pos->dec);
 }
 
 int TLETarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
@@ -120,14 +120,14 @@ int TLETarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 
 moveType TLETarget::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id)
 {
-        if (tle1.size () > 0 && tle2.size () > 0)
-        {
-                Target::startSlew (position, p1, p2, update_position, plan_id);
-                p1 = tle1;
-                p2 = tle2;
-                return OBS_MOVE_TLE;
-        }
-        return Target::startSlew (position, p1, p2, update_position, plan_id);
+	if (tle1.size () > 0 && tle2.size () > 0)
+	{
+		Target::startSlew (position, p1, p2, update_position, plan_id);
+		p1 = tle1;
+		p2 = tle2;
+		return OBS_MOVE_TLE;
+	}
+	return Target::startSlew (position, p1, p2, update_position, plan_id);
 }
 
 void TLETarget::printExtra (Rts2InfoValStream & _os, double JD)
