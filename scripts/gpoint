@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# g(nu)-Point - Telescope pointing model fit, as described in paper by Marc Buie:
+# g(pl)-Point - GPLed Telescope pointing model fit, as described in paper by Marc Buie:
 #
 # ftp://ftp.lowell.edu/pub/buie/idl/pointing/pointing.pdf 
 #

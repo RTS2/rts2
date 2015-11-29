@@ -569,12 +569,13 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 int DevClientTelescopeExec::syncTarget (bool now, int plan_id)
 {
 	struct ln_equ_posn coord;
+        std::string p1, p2;
 	int ret;
 	if (!currentTarget)
 		return -1;
 	getEqu (&coord);
 	// startSlew fills coordinates, if needed..
-	ret = currentTarget->startSlew (&coord, true, plan_id);
+	ret = currentTarget->startSlew (&coord, p1, p2, true, plan_id);
 	if (isnan (coord.ra) || isnan (coord.dec))
 	{
 #ifdef DEBUG_EXTRA
@@ -593,6 +594,14 @@ int DevClientTelescopeExec::syncTarget (bool now, int plan_id)
 		case OBS_MOVE_UNMODELLED:
 			currentTarget->moveStarted ();
 			queCommand (new rts2core::CommandMoveUnmodelled (getMaster (), this, coord.ra, coord.dec), bopTel);
+			break;
+		case OBS_MOVE_MPEC:
+			currentTarget->moveStarted ();
+			queCommand (new rts2core::CommandMoveMpec (getMaster (), this, coord.ra, coord.dec, p1), bopTel);
+			break;
+		case OBS_MOVE_TLE:
+			currentTarget->moveStarted ();
+			queCommand (new rts2core::CommandMoveTle (getMaster (), this, coord.ra, coord.dec, p1, p2), bopTel);
 			break;
 		case OBS_MOVE_FIXED:
 			currentTarget->moveStarted ();

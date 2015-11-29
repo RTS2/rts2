@@ -325,7 +325,7 @@ CommandMove::CommandMove (Block * _master, DevClientTelescope * _tel):Command (_
 CommandMove::CommandMove (Block * _master, DevClientTelescope * _tel, double ra, double dec):Command (_master)
 {
 	std::ostringstream _os;
-	_os << "move " << ra << " " << dec;
+	_os << COMMAND_TELD_MOVE " " << ra << " " << dec;
 	setCommand (_os);
 	tel = _tel;
 }
@@ -340,6 +340,20 @@ CommandMoveUnmodelled::CommandMoveUnmodelled (Block * _master, DevClientTelescop
 {
 	std::ostringstream _os;
 	_os << "move_not_model " << ra << " " << dec;
+	setCommand (_os);
+}
+
+CommandMoveMpec::CommandMoveMpec (Block * _master, DevClientTelescope * _tel, double ra, double dec, std::string mpec_oneline):CommandMove (_master, _tel)
+{
+	std::ostringstream _os;
+	_os << COMMAND_TELD_MOVE_MPEC " \"" << mpec_oneline << "\"";
+	setCommand (_os);
+}
+
+CommandMoveTle::CommandMoveTle (Block * _master, DevClientTelescope * _tel, double ra, double dec, std::string tle1, std::string tle2):CommandMove (_master, _tel)
+{
+	std::ostringstream _os;
+	_os << COMMAND_TELD_MOVE_TLE " \"" << tle1 << "\" \"" << tle2 << "\"";
 	setCommand (_os);
 }
 

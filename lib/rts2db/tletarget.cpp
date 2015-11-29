@@ -34,6 +34,7 @@ TLETarget::TLETarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_alt
 
 void TLETarget::load ()
 {
+        std::cout << "TLETarget load" << std::endl;
 	Target::load ();
 	// split two lines..
 	std::string tarInfo (getTargetInfo());
@@ -63,7 +64,7 @@ int TLETarget::orbitFromTLE (std::string target_tle)
 		setTargetName (tle.intl_desig);
 		setTargetInfo (target_tle.c_str ());
 		setTargetType (TYPE_TLE);
-	        return 0;
+		return 0;
 	}
 	throw rts2core::Error ("cannot parse TLE " + target_tle);
 }
@@ -109,6 +110,8 @@ void TLETarget::getPosition (struct ln_equ_posn *pos, double JD)
 	}
 
 	get_satellite_ra_dec_delta (observer_loc, sat_pos, &(pos->ra), &(pos->dec), &dist_to_satellite);
+        pos->ra = ln_rad_to_deg (pos->ra);
+        pos->dec = ln_rad_to_deg (pos->dec);
 }
 
 int TLETarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
@@ -116,14 +119,34 @@ int TLETarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 	return 0;
 }
 
+moveType TLETarget::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id)
+{
+        std::cout << "startSlew " << tle1 << " " << tle2 << std::endl;
+        if (tle1.size () > 0 && tle2.size () > 0)
+        {
+                Target::startSlew (position, p1, p2, update_position, plan_id);
+                p1 = tle1;
+                p2 = tle2;
+                return OBS_MOVE_TLE;
+        }
+        return Target::startSlew (position, p1, p2, update_position, plan_id);
+}
+
 void TLETarget::printExtra (Rts2InfoValStream & _os, double JD)
 {
 	Target::printExtra (_os, JD);
+
+	_os 
+		<< InfoVal<std::string> ("TLE1", tle1)
+		<< InfoVal<std::string> ("TLE2", tle2);
 }
 
 void TLETarget::writeToImage (rts2image::Image * image, double JD)
 {
 	Target::writeToImage (image, JD);
+
+	image->setValue ("TLE1", tle1.c_str (), "TLE 1st line");
+	image->setValue ("TLE2", tle2.c_str (), "TLE 2nd line");
 }
 
 double TLETarget::getEarthDistance (double JD)

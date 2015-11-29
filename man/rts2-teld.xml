@@ -127,14 +127,14 @@
         </para>
       </varlistentry>
       <varlistentry>
-        <term>tle</term>
+        <term>move_tle</term>
         <para>
 	  Start tracking a satellite with given Two Line Element ephemerides.
 	  Two lines epemerides are given as two string, enclosed in "". See
           example below for an old Cosmos 1966 Rk ephemerides:
         </para>
         <para>
-          <emphasis>tle</emphasis> "1 19448U 88076D&nbsp;&nbsp;&nbsp;02255.52918163 -.00000002&nbsp;&nbsp;00000-0&nbsp;&nbsp;10000-3 0&nbsp;&nbsp;4873" "2 19448&nbsp;&nbsp;65.7943 338.1906 7142558 193.4853 125.7046&nbsp;&nbsp;2.04085818104610"
+          <emphasis>move_tle</emphasis> "1 19448U 88076D&nbsp;&nbsp;&nbsp;02255.52918163 -.00000002&nbsp;&nbsp;00000-0&nbsp;&nbsp;10000-3 0&nbsp;&nbsp;4873" "2 19448&nbsp;&nbsp;65.7943 338.1906 7142558 193.4853 125.7046&nbsp;&nbsp;2.04085818104610"
         </para>
         <para>
           Those are the two line elements:

@@ -50,6 +50,8 @@ class TLETarget:public Target
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 
+		virtual moveType startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id = -1);
+
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 		virtual void writeToImage (rts2image::Image * image, double JD);

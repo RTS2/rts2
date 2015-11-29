@@ -1,3 +1,8 @@
+2015-11-29
+ * G(PL)-Point telescope pointing modelling
+ * rts2-model options for GPoint
+ * TLE and MPEC targets executed with proper commands passed to telescope
+
 2015-08-04
  * integrated Project Pluto (http://www.projectpluto.com/sat_code.html) code for TLE
 

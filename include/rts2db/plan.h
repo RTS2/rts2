@@ -55,7 +55,7 @@ class Plan
 		int save ();
 		int del ();
 
-		moveType startSlew (struct ln_equ_posn *position, bool update_position);
+		moveType startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position);
 
 		Target *getTarget ();
 		void clearTarget () { target = NULL; }

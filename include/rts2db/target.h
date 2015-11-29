@@ -476,17 +476,27 @@ class Target:public Rts2Target
 		// interruption of this target is not necessary
 		// otherwise (when interruption is necessary) returns 0
 		virtual int compareWithTarget (Target * in_target, double in_sep_limit);
-		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position, int plan_id = -1);
+
+                /**
+		 * Get coordinates of the new move.
+		 *
+		 * @param position           target RA/DEC
+		 * @param p1                 1st extra parameter; holds MPEC one line or TLE1 for MPEC or TLE
+		 * @param p2                 2nd extra parameter; holds TLE2 for TLE
+		 * @param update_position    true if new position shall be calculated
+		 * @param plan_id            plan ID of the move
+		 */
+		virtual moveType startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id = -1);
 
 		/**
 		 * Start new observation of the target.
 		 */
-		int newObsSlew (struct ln_equ_posn *position, int plan_id);
+		int newObsSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, int plan_id);
 
 		/**
 		 * Update slew position - record in Observation class.
 		 */
-		int updateSlew (struct ln_equ_posn *position, int plan_id);
+		int updateSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, int plan_id);
 
 		virtual moveType afterSlewProcessed ();
 		virtual int startObservation ();
@@ -932,7 +942,7 @@ class DarkTarget:public Target
 		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon) { return 1; }
-		virtual moveType startSlew (struct ln_equ_posn * position, bool update_position, int plan_id = -1);
+		virtual moveType startSlew (struct ln_equ_posn * position, std::string &p1, std::string &p2, bool update_position, int plan_id = -1);
 		virtual int isContinues () { return 1; }
 };
 
@@ -1176,7 +1186,7 @@ class TargetPlan:public Target
 		virtual float getBonus (double JD);
 		virtual int isContinues ();
 		virtual int beforeMove ();
-		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position, int plan_id = -1);
+		virtual moveType startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id = -1);
 	
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 

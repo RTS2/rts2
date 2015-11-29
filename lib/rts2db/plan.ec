@@ -332,9 +332,9 @@ int Plan::del ()
 	return 0;
 }
 
-moveType Plan::startSlew (struct ln_equ_posn *position, bool update_position)
+moveType Plan::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position)
 {
-	return getTarget ()->startSlew (position, update_position);
+	return getTarget ()->startSlew (position, p1, p2, update_position);
 }
 
 Target * Plan::getTarget ()

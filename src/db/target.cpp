@@ -613,7 +613,8 @@ int TargetApp::doProcessing ()
 			}
 			rts2db::Target *tar = (target_set.begin ())->second;
 			struct ln_equ_posn pos;
-			tar->startSlew (&pos, true);
+			std::string p1, p2;
+			tar->startSlew (&pos, p1, p2, true);
 			std::cout << tar->getObsId () << std::endl;
 			return target_set.save (true, true);
 		}

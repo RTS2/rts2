@@ -335,6 +335,7 @@ rts2core::DevClient * Executor::createOtherType (rts2core::Connection * conn, in
 
 void Executor::postEvent (rts2core::Event * event)
 {
+	std::string p1, p2;
 	switch (event->getType ())
 	{
 		case EVENT_SLEW_TO_TARGET:
@@ -342,10 +343,10 @@ void Executor::postEvent (rts2core::Event * event)
 			maskState (EXEC_STATE_MASK, EXEC_MOVE);
 			break;
 		case EVENT_NEW_TARGET:
-			currentTarget->newObsSlew ((struct ln_equ_posn *) event->getArg (), current_plan_id->getValueInteger ());
+			currentTarget->newObsSlew ((struct ln_equ_posn *) event->getArg (), p1, p2, current_plan_id->getValueInteger ());
 			break;
 		case EVENT_CHANGE_TARGET:
-			currentTarget->updateSlew ((struct ln_equ_posn *) event->getArg (), current_plan_id->getValueInteger ());
+			currentTarget->updateSlew ((struct ln_equ_posn *) event->getArg (), p1, p2, current_plan_id->getValueInteger ());
 			break;
 		case EVENT_NEW_TARGET_ALTAZ:
 		case EVENT_CHANGE_TARGET_ALTAZ:
@@ -354,9 +355,9 @@ void Executor::postEvent (rts2core::Event * event)
 				struct ln_equ_posn pos;
 				ln_get_equ_from_hrz (hrz, observer, ln_get_julian_from_sys (), &pos);
 				if (event->getType () == EVENT_NEW_TARGET_ALTAZ)
-					currentTarget->newObsSlew (&pos, current_plan_id->getValueInteger ());
+					currentTarget->newObsSlew (&pos, p1, p2, current_plan_id->getValueInteger ());
 				else
-					currentTarget->updateSlew (&pos, current_plan_id->getValueInteger ());
+					currentTarget->updateSlew (&pos, p1, p2, current_plan_id->getValueInteger ());
 			}
 			break;
 		// EVENT_OBSERVE is send for continues observation

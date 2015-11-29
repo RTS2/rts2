@@ -71,6 +71,16 @@
 #define COMMAND_TELD_MOVE       "move"
 
 /**
+ * Move to MPEC one line element position. @ingroup RTS2Command
+ */ 
+#define COMMAND_TELD_MOVE_MPEC  "move_mpec"
+
+/**
+ * Move to TLE two line elements. @ingroup RTS2Command
+ */ 
+#define COMMAND_TELD_MOVE_TLE   "move_tle"
+
+/**
  * Peek telescope movement. @ingroup RTS2Command
  *
  * @subsection Examples
@@ -81,7 +91,6 @@
  *  - peek 1:20:00 -85:21
  *  - peek 20 -85.35
  */ 
-
 #define COMMAND_TELD_PEEK       "peek"
 
 /**
@@ -476,6 +485,28 @@ class CommandMoveUnmodelled:public CommandMove
 {
 	public:
 		CommandMoveUnmodelled (Block * _master, DevClientTelescope * _tel, double ra, double dec);
+};
+
+/**
+ * Move telescope to MPEC one-line.
+ *
+ * @ingroup RTS2Command
+ */
+class CommandMoveMpec:public CommandMove
+{
+	public:
+		CommandMoveMpec (Block * _master, DevClientTelescope * _tel, double ra, double dec, std::string mpec_oneline);
+};
+
+/**
+ * Move telescope to MPEC one-line.
+ *
+ * @ingroup RTS2Command
+ */
+class CommandMoveTle:public CommandMove
+{
+	public:
+		CommandMoveTle (Block * _master, DevClientTelescope * _tel, double ra, double dec, std::string tel1, std::string tle2);
 };
 
 /**

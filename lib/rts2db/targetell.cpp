@@ -97,6 +97,18 @@ int EllTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 	return ln_get_ell_body_next_rst_horizon (JD, observer, &orbit, horizon, rst);
 }
 
+moveType EllTarget::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id)
+{
+        std::string tari (getTargetInfo ());
+	if (tari.size () > 0)
+	{
+		Target::startSlew (position, p1, p2, update_position, plan_id);
+		p1 = tari;
+		return OBS_MOVE_MPEC;
+	}
+	return Target::startSlew (position, p1, p2, update_position, plan_id);
+}
+
 void EllTarget::printExtra (Rts2InfoValStream & _os, double JD)
 {
 	struct ln_equ_posn pos, parallax;

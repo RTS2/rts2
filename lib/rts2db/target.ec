@@ -556,7 +556,7 @@ int Target::compareWithTarget (Target *in_target, double in_sep_limit)
 	return (getDistance (&other_position) < in_sep_limit);
 }
 
-moveType Target::startSlew (struct ln_equ_posn *position, bool update_position, int plan_id)
+moveType Target::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = getObsTargetID ();
@@ -640,19 +640,19 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position, 
 	return afterSlewProcessed ();
 }
 
-int Target::newObsSlew (struct ln_equ_posn *position, int plan_id)
+int Target::newObsSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, int plan_id)
 {
 	endObservation (-1);
 	delete observation;
 	observation = NULL;
 	nullImgId ();
-	return updateSlew (position, plan_id);
+	return updateSlew (position, p1, p2, plan_id);
 }
 
-int Target::updateSlew (struct ln_equ_posn *position, int plan_id)
+int Target::updateSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, int plan_id)
 {
 	if (observation == NULL)
-		return startSlew (position, false, plan_id) == OBS_MOVE_FAILED ? -1 : 0;
+		return startSlew (position, p1, p2, false, plan_id) == OBS_MOVE_FAILED ? -1 : 0;
 
 	struct ln_hrz_posn hrz;
 	ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);

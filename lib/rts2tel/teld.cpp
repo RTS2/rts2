@@ -1778,7 +1778,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
 		return ret;
 	}
-	else if (conn->isCommand ("move_mpec"))
+	else if (conn->isCommand (COMMAND_TELD_MOVE_MPEC))
 	{
 		char *str;
 		if (conn->paramNextString (&str) || !conn->paramEnd ())
@@ -1893,7 +1893,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		conn->sendCommandEnd (DEVDEM_E_IGNORE, _os.str ().c_str ());
 		return -1;
 	}
-	else if (conn->isCommand ("tle"))
+	else if (conn->isCommand (COMMAND_TELD_MOVE_TLE))
 	{
 		char *l1;
 		char *l2;

@@ -114,7 +114,9 @@ typedef enum
 	OBS_ALREADY_STARTED,
 	OBS_DONT_MOVE,
 	OBS_MOVE_FIXED,
-	OBS_MOVE_UNMODELLED
+	OBS_MOVE_UNMODELLED,
+	OBS_MOVE_MPEC,
+	OBS_MOVE_TLE
 } moveType;
 
 /**
@@ -223,7 +225,7 @@ class Rts2Target
 		// called when we can move to next observation - good to generate next target in mosaic observation etc..
 		virtual int beforeMove () { return 0; }
 
-		virtual moveType startSlew (struct ln_equ_posn * position, bool update_position, int plan_id = -1) = 0;
+		virtual moveType startSlew (struct ln_equ_posn * position, std::string &p1, std::string &p2, bool update_position, int plan_id = -1) = 0;
 		virtual int startObservation () = 0;
 
 		int getObsId () { return obs_id; }

@@ -66,7 +66,7 @@ int ScriptTarget::saveWithID (bool overwrite, int tar_id)
 	return 0;
 }
 
-moveType ScriptTarget::startSlew (struct ln_equ_posn * position, bool update_position, int plan_id)
+moveType ScriptTarget::startSlew (struct ln_equ_posn * position, std::string &p1, std::string &p2, bool update_position, int plan_id)
 {
 	position->ra = position->dec = 0;
 	return OBS_MOVE_FAILED;
