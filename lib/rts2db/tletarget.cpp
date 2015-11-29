@@ -34,7 +34,6 @@ TLETarget::TLETarget (int in_tar_id, struct ln_lnlat_posn *in_obs, double in_alt
 
 void TLETarget::load ()
 {
-        std::cout << "TLETarget load" << std::endl;
 	Target::load ();
 	// split two lines..
 	std::string tarInfo (getTargetInfo());
@@ -121,7 +120,6 @@ int TLETarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 
 moveType TLETarget::startSlew (struct ln_equ_posn *position, std::string &p1, std::string &p2, bool update_position, int plan_id)
 {
-        std::cout << "startSlew " << tle1 << " " << tle2 << std::endl;
         if (tle1.size () > 0 && tle2.size () > 0)
         {
                 Target::startSlew (position, p1, p2, update_position, plan_id);
