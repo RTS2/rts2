@@ -51,9 +51,7 @@ int TLETarget::orbitFromTLE (std::string target_tle)
 
 		int ret = parse_elements (tle1.c_str (), tle2.c_str (), &tle);
 		if (ret != 0)
-		{
-			throw rts2core::Error ("cannot parse TLE");
-		}
+			throw rts2core::Error ("cannot parse TLE " + tle1 + " " + tle2);
 
 		ephem = 1;
 		is_deep = select_ephemeris (&tle);
@@ -62,8 +60,9 @@ int TLETarget::orbitFromTLE (std::string target_tle)
 			ephem += 2;	/* switch to an SDx */
 		if (!is_deep && (ephem == 3 || ephem == 4))
 			ephem -= 2;	/* switch to an SGx */
+	        return 0;
 	}
-	return 0;
+	throw rts2core::Error ("cannot parse TLE " + target_tle);
 }
 
 void TLETarget::getPosition (struct ln_equ_posn *pos, double JD)
