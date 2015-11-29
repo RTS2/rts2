@@ -297,24 +297,8 @@ int SI8821::initHardware ()
 	switchCooling (true);
 	// APMONTERO end
 
-        // init DMA
-	total = getWidth () * getHeight () * 2 * 2; /* 2 bytes per short, 2 readout?? */
-
 	camera.dma_config.maxever = 16 * getWidth () * getHeight ();
-	camera.dma_config.total = total;
-	camera.dma_config.buflen = 1024*1024; /* power of 2 makes it easy to mmap */
-	camera.dma_config.timeout = 50000;
-	camera.dma_config.config = SI_DMA_CONFIG_WAKEUP_ONEND;
 
-	if (ioctl (camera.fd, SI_IOCTL_DMA_INIT, &camera.dma_config) < 0)
-	{
-		logStream (MESSAGE_ERROR) << "cannot init DMA " << errno << " " << strerror (errno) << sendLog;
-    		return -1;
-	}
-
-	int nbufs = camera.dma_config.total / camera.dma_config.buflen ;
-	if (camera.dma_config.total % camera.dma_config.buflen)
-		nbufs += 1;
 	camera.ptr = (unsigned short *) mmap (0, camera.dma_config.maxever, PROT_READ, MAP_SHARED, camera.fd, 0);
 	if(!camera.ptr)
 	{
@@ -426,6 +410,23 @@ int SI8821::startExposure ()
 		logStream (MESSAGE_ERROR) << e.what () << sendLog;
 		return -1;
 	}
+
+	total = getUsedWidthBinned () * getUsedHeightBinned () * 2 * 2; /* 2 bytes per short, 2 readout?? */
+
+	camera.dma_config.total = total;
+	camera.dma_config.buflen = 1024*1024; /* power of 2 makes it easy to mmap */
+	camera.dma_config.timeout = 50000;
+	camera.dma_config.config = SI_DMA_CONFIG_WAKEUP_ONEND;
+
+	if (ioctl (camera.fd, SI_IOCTL_DMA_INIT, &camera.dma_config) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot init DMA " << errno << " " << strerror (errno) << sendLog;
+    		return -1;
+	}
+
+	int nbufs = camera.dma_config.total / camera.dma_config.buflen ;
+	if (camera.dma_config.total % camera.dma_config.buflen)
+		nbufs += 1;
 
 	camera.dma_active = 1;
 
