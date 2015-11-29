@@ -87,8 +87,8 @@ class SI8821:public Camera
 		int load_cfg (struct CFG_ENTRY **e, const char *fname, const char *var);
 		int load_camera_cfg (struct SI_CAMERA *c, const char *fname);
 		int parse_cfg_string (struct CFG_ENTRY *entry );
-		int getReadoutFromFile (bool bReadFormat, int iMode = NULL);
-		int setfile_readout (const char *file, bool bReadFormat, int iMode = NULL );
+		int getReadoutFromFile (bool bReadFormat, int iMode = 0);
+		int setfile_readout (const char *file, bool bReadFormat, int iMode = 0);
 		int setfile_config (const char *file );  
 		int receive_n_ints (int n, int *data);
 		int send_n_ints (int n, int *data); 
@@ -178,6 +178,9 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv, FLOOR)
 
 SI8821::~SI8821 ()
 {
+        if (camera.ptr)
+                dma_unmap ();
+
 	if (camera.fd)
 		close (camera.fd);
 	delete []chanBuffer;
@@ -245,7 +248,7 @@ int SI8821::initHardware ()
 
 
 	// Loads [Readout & Format] parameters from file	
-	if( getReadoutFromFile (true) )
+	if (getReadoutFromFile (true))
 	{
 		logStream (MESSAGE_ERROR) << "cannot load Readout & Format from file "  << cameraCfg << sendLog;
 		return -1;
@@ -291,8 +294,33 @@ int SI8821::initHardware ()
 	//printf("set_temp: %f\n",kelvinToCelsius(camera.config[CONFIG_SET_TEMP_IX]/10.0));
 	//printf("temp: %u\n",(unsigned)camera.config[CONFIG_SET_TEMP_IX]);
 	setCoolTemp( kelvinToCelsius (camera.config[CONFIG_SET_TEMP_IX] / 10.0));
-	send_command ('S'); // switchCooling (true) not working
+	switchCooling (true);
 	// APMONTERO end
+
+        // init DMA
+	total = getWidth () * getHeight () * 2 * 2; /* 2 bytes per short, 2 readout?? */
+
+	camera.dma_config.maxever = 16 * getWidth () * getHeight ();
+	camera.dma_config.total = total;
+	camera.dma_config.buflen = 1024*1024; /* power of 2 makes it easy to mmap */
+	camera.dma_config.timeout = 50000;
+	camera.dma_config.config = SI_DMA_CONFIG_WAKEUP_ONEND;
+
+	if (ioctl (camera.fd, SI_IOCTL_DMA_INIT, &camera.dma_config) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot init DMA " << errno << " " << strerror (errno) << sendLog;
+    		return -1;
+	}
+
+	int nbufs = camera.dma_config.total / camera.dma_config.buflen ;
+	if (camera.dma_config.total % camera.dma_config.buflen)
+		nbufs += 1;
+	camera.ptr = (unsigned short *) mmap (0, camera.dma_config.maxever, PROT_READ, MAP_SHARED, camera.fd, 0);
+	if(!camera.ptr)
+	{
+        	logStream (MESSAGE_ERROR) << "mmap " << errno << " " << strerror (errno) << sendLog;
+	        return -1;
+	}
 
 	return 0;
 }
@@ -351,11 +379,6 @@ int SI8821::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 int SI8821::startExposure ()
 {
-	int nbufs;
-
-	if (camera.ptr)
-		dma_unmap ();
-
 	try
 	{
 		// exposure time in ms
@@ -404,29 +427,6 @@ int SI8821::startExposure ()
 		return -1;
 	}
 
-	total = getUsedHeightBinned () * getUsedWidthBinned () * 2 * 2; /* 2 bytes per short, 2 readout?? */
-
-	camera.dma_config.maxever = 16 * getUsedHeightBinned () * getUsedWidthBinned ();
-	camera.dma_config.total = total;
-	camera.dma_config.buflen = 1024*1024; /* power of 2 makes it easy to mmap */
-	camera.dma_config.timeout = 50000;
-	camera.dma_config.config = SI_DMA_CONFIG_WAKEUP_ONEND;
-
-	if (ioctl (camera.fd, SI_IOCTL_DMA_INIT, &camera.dma_config) < 0)
-	{
-		logStream (MESSAGE_ERROR) << "cannot init DMA " << errno << " " << strerror (errno) << sendLog;
-    		return -1;
-	}
-
-	nbufs = camera.dma_config.total / camera.dma_config.buflen ;
-	if (camera.dma_config.total % camera.dma_config.buflen)
-		nbufs += 1;
-	camera.ptr = (unsigned short *) mmap (0, camera.dma_config.maxever, PROT_READ, MAP_SHARED, camera.fd, 0);
-	if(!camera.ptr)
-	{
-        	logStream (MESSAGE_ERROR) << "mmap " << errno << " " << strerror (errno) << sendLog;
-	        return -1;
-	}
 	camera.dma_active = 1;
 
 	if (ioctl (camera.fd, SI_IOCTL_DMA_START, &camera.dma_status ) < 0)
