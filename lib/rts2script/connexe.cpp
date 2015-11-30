@@ -210,7 +210,7 @@ void ConnExe::processCommand (char *cmd)
 			tom += time (NULL);
 			while (time (NULL) < tom)
 			{
-				if (conn->isIdle ())
+				if ((conn->getOtherType () == DEVICE_TYPE_MOUNT && (conn->getState () & TEL_MASK_MOVING) != TEL_MOVING) || conn->isIdle ())
 				{
 					writeToProcess ("1");
 					break;
