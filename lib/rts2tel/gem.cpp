@@ -224,8 +224,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
 	u_pos.ra = ls - ((double) (t_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
 	u_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
-	if (telLatitude->getValueDouble () < 0)
-		u_pos.dec *= -1;
 	applyModel (&u_pos, &model_change, JD);
 
 	#ifdef DEBUG_EXTRA
