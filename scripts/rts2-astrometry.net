@@ -31,7 +31,7 @@ import math
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None):
+def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs_keys=None, wcs_scale=1.0, radius=5, scale_relative_error=0.05, timeout=None, print_results=True, x_offset=None, y_offset=None, odir=None, bashrc=None, center=False, downsample=None):
 	c = rts2.Rts2Comm()
 
 	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error, odir=odir)
@@ -83,7 +83,7 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 			
 	ff.close()
 
-	ret=a.run(replace=True,verbose=verbose) if blind else a.run(scale=scale, ra=ra, dec=dec, radius=radius, replace=True, timeout=timeout, verbose=verbose)
+	ret=a.run(replace=True,verbose=verbose,center=center,downsample=downsample) if blind else a.run(scale=scale, ra=ra, dec=dec, radius=radius, replace=True, timeout=timeout, verbose=verbose, center=center, downsample=downsample)
 
 	if ret and print_results:
 		# script needs to reopen file 
@@ -158,7 +158,9 @@ parser.add_option('--verbose', help='Be verbose, print what the script is doing'
 parser.add_option('--quiet', help="don't compute ora, odec,..", action='store_true', dest='quiet', default=False)
 parser.add_option('--xoffset', help="X offset (used in mosaic images)", action='store', dest='x_offset', default=None)
 parser.add_option('--yoffset', help="Y offset (used in mosaic images)", action='store', dest='y_offset', default=None)
-parser.add_option('--bashrc', help="write results into bash export file", action="store", dest="bashrc", default=None)
+parser.add_option('--center', help="put reference pixel to center", action="store", dest="center", default=None)
+parser.add_option('-z', help="downsample the image before running source extractions", action="store", dest="downsample", default=None)
+parser.add_option('--bashrc', help="write results into bash export file", action="store_true", dest="bashrc", default=False)
 
 (options,args) = parser.parse_args()
 
@@ -195,6 +197,6 @@ if options.wcsscale is not None:
 ret = 0	
 
 for x in args:
-	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, noblind=options.noblind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc)
+	ret += run_on_image(x, verbose=options.verbose, blind=options.blind, noblind=options.noblind, multiwcs=options.multiwcs, wcs_keys=wcs_keys, wcs_scale=wcs_scale, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0, timeout=options.timeout, print_results=not(options.quiet), x_offset=options.x_offset, y_offset=options.y_offset, odir=options.temp_dir, bashrc=options.bashrc, center=options.center, downsample=options.downsample)
 
 sys.exit(ret)
