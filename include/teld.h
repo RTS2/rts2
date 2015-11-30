@@ -515,6 +515,12 @@ class Telescope:public rts2core::Device
 		 */
 		void setTarTel (bool flipped);
 
+		void getTarTel (struct ln_equ_posn *pos)
+		{
+			pos->ra = tarTelRaDec->getRa ();
+			pos->dec = tarTelRaDec->getDec ();
+		}
+
 		/**
 		 * Set WCS reference values telescope is reporting.
 		 *

@@ -44,9 +44,6 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	ret = sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped);
 
-	if (ret == 0)
-		setTarTel (use_flipped);
-
 	return ret;
 }
 
@@ -217,13 +214,16 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		t_dc = tf_dc;
 	}
 
+	setTarTel (use_flipped);
+
 	// and finally, apply model
 	struct ln_equ_posn model_change;
 	struct ln_equ_posn u_pos;
 
+	// same position as entered to model..
+	getTarTel (&u_pos);
+
 	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-	u_pos.ra = ls - ((double) (t_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
-	u_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 	applyModel (&u_pos, &model_change, JD);
 
 	#ifdef DEBUG_EXTRA
