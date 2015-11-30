@@ -101,7 +101,7 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (barometer, "PRESSURE", "[hPa] barometer reading", false);
 	createValue (insideTemp, "TEMP_IN", "[C] inside temperature", false);
 	createValue (insideHuminity, "HUM_IN", "[%] inside humidity", false);
-	createValue (insideTemp, "TEMP_OUT", "[C] outside temperature", false);
+	createValue (outsideTemp, "TEMP_OUT", "[C] outside temperature", false);
 	createValue (windSpeed, "WIND", "[m/s] wind speed", false);
 	createValue (windDirection, "WIND_DIR", "wind direction", false, RTS2_DT_DEGREES);
 	createValue (wind10min, "WIND10", "[m/s] average wind speed for last 10 minutes", false);
