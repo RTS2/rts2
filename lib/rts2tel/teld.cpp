@@ -811,8 +811,8 @@ void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_po
 	computeModel (m_pos, model_change, JD);
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
-        tt_pos->ra += model_change->ra;
-        tt_pos->dec += model_change->dec;
+        tt_pos->ra -= model_change->ra;
+        tt_pos->dec -= model_change->dec;
 
 	// also include corrRaDec correction to get resulting values...
 	if (applyCorrRaDec (tt_pos) == 0)
