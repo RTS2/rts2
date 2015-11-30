@@ -804,25 +804,27 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 	return 0;
 }
 
-void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD)
+void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD)
 {
 	ln_equ_posn pos_n;
 
-	computeModel (pos, model_change, JD);
+	computeModel (m_pos, model_change, JD);
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
+        tt_pos->ra += model_change->ra;
+        tt_pos->dec += model_change->dec;
 
 	// also include corrRaDec correction to get resulting values...
-	if (applyCorrRaDec (pos) == 0)
+	if (applyCorrRaDec (tt_pos) == 0)
 	{
 		model_change->ra -= corrRaDec->getRa();
-		if (fabs (pos->dec) > 90.0)
+		if (fabs (m_pos->dec) > 90.0)
 			model_change->dec += corrRaDec->getDec();
 		else
 			model_change->dec -= corrRaDec->getDec();
 	}
 	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
-	pos_n = *pos;
+	pos_n = *tt_pos;
 	normalizeRaDec (pos_n.ra, pos_n.dec);
 	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }

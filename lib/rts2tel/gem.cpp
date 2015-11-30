@@ -218,13 +218,17 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	// and finally, apply model
 	struct ln_equ_posn model_change;
-	struct ln_equ_posn u_pos;
+	struct ln_equ_posn m_pos, tt_pos;
 
 	// same position as entered to model..
-	getTarTel (&u_pos);
+	getTarTel (&m_pos);
+
+	// to set telescope target
+	tt_pos.ra = ls - ((double) (t_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
+	tt_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 
 	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-	applyModel (&u_pos, &model_change, JD);
+	applyModel (&m_pos, &tt_pos, &model_change, JD);
 
 	#ifdef DEBUG_EXTRA
 	LibnovaRaDec lchange (&model_change);

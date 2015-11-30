@@ -47,7 +47,7 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
 	struct ln_equ_posn model_change;
-	struct ln_equ_posn u_pos;
+	struct ln_equ_posn u_pos, tt_pos;
 	int ret;
 	bool flip = false;
 
@@ -128,9 +128,11 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	// apply model (some modeling components are not cyclic => we want to use real mount)
 	u_pos.ra = ls - ((double) (ac / haCpd) + haZero);
 	u_pos.dec = (double) (dc / decCpd) + decZero;
-	if (telLatitude->getValueDouble () < 0)
-		u_pos.dec *= -1;
-	applyModel (&u_pos, &model_change, JD);
+
+        tt_pos.ra = u_pos.ra;
+        tt_pos.dec = u_pos.dec;
+
+	applyModel (&u_pos, &tt_pos, &model_change, JD);
 
         // when on south, change sign (don't take care of flip - we use raw position, applyModel takes it into account)
 	if (telLatitude->getValueDouble () < 0)

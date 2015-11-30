@@ -170,14 +170,15 @@ int Dummy::processOption (int in_opt)
 int Dummy::startResync ()
 {
 	// check if target is above/below horizon
-	struct ln_equ_posn tar;
+	struct ln_equ_posn tar, tt_pos;
 	struct ln_hrz_posn hrz;
 	struct ln_equ_posn model_change;
 
 	double JD = ln_get_julian_from_sys ();
 
 	getTarget (&tar);
-	applyModel (&tar, &model_change, JD);
+        getTarget (&tt_pos);
+	applyModel (&tar, &tt_pos, &model_change, JD);
 
 	setTarget (tar.ra, tar.dec);
 

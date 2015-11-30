@@ -1507,17 +1507,19 @@ int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 {
 	char readback[101];
 	int32_t v205, v206, v205_new, v206_new;
-	struct ln_equ_posn pos, model_change;
+	struct ln_equ_posn pos, tt_pos, model_change;
 	double JD;
 
 	normalizeRaDec (set_ra, set_dec);
 
 	pos.ra = set_ra;
 	pos.dec = set_dec;
+        tt_pos.ra = set_ra;
+        tt_pos.dec = set_dec;
 	JD = ln_get_julian_from_sys ();
 
 	zeroCorrRaDec ();
-	applyModel (&pos, &model_change, JD);
+	applyModel (&pos, &tt_pos, &model_change, JD);
 
 	if ((tel_write_ra (pos.ra) < 0) || usleep (USEC_SEC / 15) || (tel_write_dec (pos.dec) < 0) || usleep (USEC_SEC / 15))
 		return -1;

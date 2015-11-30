@@ -14,18 +14,7 @@ def print_model_input(filename):
 	ra,dec = w.all_pix2world(2000,2000,0)
 	tar_telra = float(h['TAR_TELRA'])
 	tar_teldec = float(h['TAR_TELDEC'])
-	if tar_teldec > 90:
-		ra += 180.0
-		if ra > 360.0:
-			ra = ra - 360.0
-		dec = 180 - dec
-	elif tar_teldec < -90:
-		ra += 180.0
-		if ra > 360.0:
-			ra = ra - 360.0
-		dec = -180 + dec
-
-	print(h['IMGID'],h['JD'],tar_telra,tar_teldec,h['LST'],h['AXRA'],h['AXDEC'],ra,dec)
+	print(h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec)
 
 if __name__ == '__main__':
 	print('#  Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE')

@@ -370,7 +370,7 @@ class Telescope:public rts2core::Device
 		 * @param pos ln_equ_posn RA/DEC position (typically TAR, i.e. precessed coordinates), will be corrected by computed model and correction corrRaDec.
 		 * @param model_change ln_equ_posn difference against original pos position, includes coputed model's difference together with correction corrRaDec.
 		 */
-		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD);
+		void applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD);
 
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.

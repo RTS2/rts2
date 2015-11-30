@@ -48,6 +48,18 @@ def equ_to_hrz(ha,dec):
 
 	return np.degrees(alt),(np.degrees(Aa) + 360) % 360
 
+def flip_ra(a_ra,dec):
+	if abs(dec) > 90:
+		return (a_ra + 180) % 360
+	return a_ra
+
+def flip_dec(a_dec,dec):
+	if dec > 90:
+		return 180 - a_dec
+	elif dec < -90:
+		return -180 - a_dec
+	return a_dec
+
 class GPoint:
 	# @param 
 	def __init__(self):
@@ -99,7 +111,7 @@ class GPoint:
 
 		print rdata
 
-		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - float(r_ra), float(r_dec), sn) for sn,mjd,a_ra,a_dec,lst,ax_ra,ax_dec,r_ra,r_dec in rdata]
+		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
 		a_data = np.array(data)
 		print a_data
