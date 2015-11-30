@@ -21,6 +21,8 @@
 
 #include "connection/serial.h"
 
+#define EVENT_LOOP          RTS2_LOCAL_EVENT + 1601
+
 namespace rts2sensord
 {
 
@@ -37,6 +39,10 @@ class Davis:public SensorWeather
 
 		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
 		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+
+		virtual int info ();
+
+		virtual void postEvent (rts2core::Event *event);
 
 	protected:
 		virtual int processOption (int opt);
@@ -150,6 +156,7 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 				if (checkCrc ())
 				{
 					processData ();
+                                        updateInfoTime ();
 				}
 				else
 				{
@@ -157,12 +164,30 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 				}
 				// make sure we start with empty received buffer
 				lastReceivedChar = 0;
-				davisConn->writePort ("LOOP 1\n", 7);
+				addTimer (2, new rts2core::Event (EVENT_LOOP));
 			}
 		}
 	}
 
 	SensorWeather::selectSuccess (read_set, write_set, exp_set);
+}
+
+int Davis::info ()
+{
+        // do not send infotime..
+	return 0;
+}
+
+void Davis::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_LOOP:
+			if (lastReceivedChar == 0)
+				davisConn->writePort ("LOOP 1\n", 7);
+			break;
+	}
+	SensorWeather::postEvent (event);
 }
 
 int Davis::processOption (int opt)
