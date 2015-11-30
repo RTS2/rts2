@@ -52,8 +52,6 @@ class Reinhardt:public SensorWeather
 
 		char dataBuff[REINHARDT_BUFF_SIZE];
 		int lastReceivedChar;
-
-		rts2core::ValueDouble *temperature;
 };
 
 }
@@ -121,7 +119,7 @@ Reinhardt::Reinhardt (int argc, char **argv):SensorWeather (argc, argv)
 
 	lastReceivedChar = 0;
 
-	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for ThorLaser USB serial connection");
+	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSBn)");
 }
 
 Reinhardt::~Reinhardt ()

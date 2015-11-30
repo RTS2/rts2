@@ -1,5 +1,5 @@
 bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor-newport-lamp \
-	rts2-sensor-phytron rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
+	rts2-sensor-phytron rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis-udp \
 	rts2-sensor-fram-weather rts2-sensor-bart-rain rts2-sensor-ms260 rts2-sensor-l150 \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
 	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-aag rts2-sensor-pwc \
@@ -9,10 +9,10 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
 	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
 	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity \
-	rts2-sensor-apm-multidev rts2-sensor-thermocube rts2-sensor-reinhardt
+	rts2-sensor-apm-multidev rts2-sensor-thermocube rts2-sensor-reinhardt rts2-sensor-davis
 	
 
-noinst_HEADERS = davisudp.h davisusb.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h apm-filter.h \
+noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h apm-filter.h \
 	apm-mirror.h apm-relay.h
 
 EXTRA_DIST = 
@@ -42,7 +42,7 @@ rts2_sensor_cloud4_SOURCES = cloud4.cpp
 
 rts2_sensor_pixy_SOURCES = pixy.cpp
 
-rts2_sensor_davis_SOURCES = davis.cpp davisudp.cpp davisusb.cpp
+rts2_sensor_davis_udp_SOURCES = davisudpmain.cpp davisudp.cpp
 
 rts2_sensor_fram_weather_SOURCES = fram-weather.cpp framudp.cpp
 
@@ -129,6 +129,8 @@ rts2_sensor_dws_t5_SOURCES = dws_t5.cpp
 rts2_sensor_thermocube_SOURCES = thermocube.cpp
 
 rts2_sensor_reinhardt_SOURCES = reinhardt.cpp
+
+rts2_sensor_davis_SOURCES = davis.cpp
 
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe

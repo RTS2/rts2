@@ -1,6 +1,6 @@
 /* 
- * Davis weather sensor.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Sensor for Davis Vantage weather station
+ * Copyright (C) 2015 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,198 +17,180 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "davis.h"
-#include "davisudp.h"
-#include "davisusb.h"
+#include "sensord.h"
 
-#define OPT_UDP			OPT_LOCAL + 1001
-#define OPT_AVG_WINDSPEED	OPT_LOCAL + 1002
-#define OPT_PEEK_WINDSPEED	OPT_LOCAL + 1003
-#define OPT_USB			OPT_LOCAL + 1004
-#define CONN_METHOD		OPT_LOCAL + 1005
+#include "connection/serial.h"
+
+namespace rts2sensord
+{
+
+/**
+ * Class for Davis Vantage serial connected weather station.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
+ */
+class Davis:public SensorWeather
+{
+	public:
+		Davis (int argc, char **argv);
+		virtual ~Davis ();
+
+		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+
+	protected:
+		virtual int processOption (int opt);
+		virtual int initHardware ();
+		virtual bool isGoodWeather ();
+	private:
+		char *device_file;
+		rts2core::ConnSerial *davisConn;
+
+		char dataBuff[100];
+		int lastReceivedChar;
+		
+		/** check received buffer for CRC */
+		bool checkCrc ();
+};
+
+}
 
 
 using namespace rts2sensord;
 
-int Davis::processOption (int _opt)
-{
-	switch (_opt)
-	{
-		case 'b':
-			if (cloud_bad == NULL)
-				createValue (cloud_bad, "cloud_bad", "bad cloud trigger", false, RTS2_VALUE_WRITABLE);
-			cloud_bad->setValueCharArr (optarg);
-			break;
-		case OPT_UDP:
-			udpPort->setValueInteger (atoi (optarg));
-			break;
-		case OPT_USB:
-			device_file = optarg;
-			break;
-		case CONN_METHOD:
-			conn_method = atoi (optarg);
-			break;
-		case OPT_PEEK_WINDSPEED:
-			maxPeekWindSpeed->setValueCharArr (optarg);
-			break;
-		case OPT_AVG_WINDSPEED:
-			maxWindSpeed->setValueCharArr (optarg);
-			break;
-		default:
-			return SensorWeather::processOption (_opt);
-	}
-	return 0;
-}
-
-int Davis::init ()
-{
-	int ret;
-	ret = SensorWeather::init ();
-	if (ret)
-		return ret;
-
-	if (conn_method == 0)
-	{
-		weatherConn = new DavisUdp (udpPort->getValueInteger (), connTimeout->getValueInteger (), BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
-		weatherConn->init ();
-		addConnection (weatherConn);
-	}
-	else if (conn_method == 1)
-	{
-		logStream (MESSAGE_DEBUG) << "init: " << device_file << sendLog;
-		usbConn = new DavisUsb (device_file, connTimeout->getValueInteger (), BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
-		usbConn->init ();
-		addConnection (usbConn);
-	}
-	else
-	{
-		logStream (MESSAGE_ERROR) << "unknown connection method" << sendLog;
-		exit (1);
-	}
-
-	return 0;
-}
-
-int Davis::idle ()
-{
-	if (getLastInfoTime () > connTimeout->getValueInteger ())
-	{
-		if (isGoodWeather ())
-		{
-			logStream (MESSAGE_ERROR) << "Weather station did not send any data for " << connTimeout->getValueInteger () << " seconds, switching to bad weather" << sendLog;
-		}
-		std::ostringstream os;
-		os << "cannot retrieve information from Davis sensor within last " << connTimeout->getValueInteger () << " seconds";
-		setWeatherTimeout (300, os.str ().c_str ());
-	}
-	return SensorWeather::idle ();
-}
-
-Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
+Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 {
 	device_file = NULL;
-	
-	conn_method = 0;
+	davisConn = NULL;
 
-  	createValue (connTimeout, "conn_timeout", "connection timeout", false, RTS2_VALUE_WRITABLE);
-	connTimeout->setValueInteger (360);
+	lastReceivedChar = 0;
 
-	createValue (temperature, "DOME_TMP", "temperature in degrees C", true);
-	createValue (humidity, "DOME_HUM", "(outside) humidity", true);
-	createValue (rain, "RAIN", "whenever is raining", true);
-	rain->setValueInteger (true);
-
-	createValue (avgWindSpeed, "AVGWIND", "average windspeed", true);
-	createValue (avgWindSpeedStat, "AVGWINDS", "average windspeed statistic", false);
-	createValue (peekWindSpeed, "PEEKWIND", "peek windspeed", true);
-	createValue (windDir, "WINDDIR", "wind direction", true, RTS2_DT_DEGREES);
-
-	createValue (rainRate, "rain_rate", "rain rate from bucket sensor", false);
-
-	createValue (pressure, "BAR_PRESS", "barometric pressure", true);
-        
-	createValue (maxWindSpeed, "max_windspeed", "maximal average windspeed", false, RTS2_VALUE_WRITABLE);
-	createValue (maxPeekWindSpeed, "max_peek_windspeed", "maximal peek windspeed", false, RTS2_VALUE_WRITABLE);
-
-	maxWindSpeed->setValueFloat (NAN);
-	maxPeekWindSpeed->setValueFloat (NAN);
-
-	createValue (maxHumidity, "max_humidity", "maximal allowed humidity", false, RTS2_VALUE_WRITABLE);
-	maxHumidity->setValueFloat (NAN);
-
-	weatherConn = NULL;
-
-	wetness = NULL;
-
-	cloud = NULL;
-	cloudTop = NULL;
-	cloudBottom = NULL;
-	cloud_bad = NULL;
-
-	createValue (udpPort, "udp-port", "port for UDP connection from meteopoll", false);
-	udpPort->setValueInteger (1500);
-
-	addOption (OPT_PEEK_WINDSPEED, "max-peek-windspeed", 1, "maximal allowed peek windspeed (in m/sec)");
-	addOption (OPT_AVG_WINDSPEED, "max-avg-windspeed", 1, "maximal allowed average windspeed (in m/sec");
-	addOption (OPT_UDP, "udp-port", 1, "UDP port for incoming weather connections");
-	addOption (OPT_USB, "usb-port", 1, "USB port where Davis Vantage Pro is connected");
-	addOption (CONN_METHOD, "conn-method", 1, "udp (0 = default) / usb (1) connection");
+	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSBn)");
 }
 
-int Davis::info ()
+Davis::~Davis ()
 {
-	// do not call infotime update..
+	delete davisConn;
+}
+
+void Davis::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+{
+	davisConn->add (&read_set, &write_set, &exp_set);
+	SensorWeather::addSelectSocks (read_set, write_set, exp_set);
+}
+
+void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+{
+	if (davisConn->receivedData (&read_set))
+	{
+		int ret = davisConn->readPort (dataBuff + lastReceivedChar, 99 - lastReceivedChar);
+		if (ret > 0)
+		{
+			lastReceivedChar += ret;
+			if (lastReceivedChar >= 99)
+			{
+				if (checkCrc ())
+				{
+				}
+				else
+				{
+					logStream (MESSAGE_ERROR) << "invalid CRC received!" << sendLog;
+				}
+				// make sure we start with empty received buffer
+				lastReceivedChar = 0;
+				davisConn->writePort ("LOOP 1", 6);
+			}
+		}
+	}
+
+	SensorWeather::selectSuccess (read_set, write_set, exp_set);
+}
+
+int Davis::processOption (int opt)
+{
+	switch (opt)
+	{
+		case 'f':
+			device_file = optarg;
+			break;
+		default:
+			return SensorWeather::processOption (opt);
+	}
 	return 0;
 }
 
-int Davis::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
+int Davis::initHardware ()
 {
-	if (old_value == connTimeout)
+	if (device_file == NULL)
 	{
-		weatherConn->setConnTimeout (new_value->getValueInteger ());
-		return 0;
+		logStream (MESSAGE_ERROR) << "you must specify device file (TTY port)" << sendLog;
+		return -1;
 	}
-	return SensorWeather::setValue (old_value, new_value);
+
+	davisConn = new rts2core::ConnSerial (device_file, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 30);
+	int ret = davisConn->init ();
+	if (ret)
+		return ret;
+	davisConn->setDebug (getDebug ());
+	davisConn->writePort ('\r');
+	return ret;
 }
 
-void Davis::setWetness (double _wetness)
+bool Davis::isGoodWeather ()
 {
-      if (wetness == NULL)
-      {
-	      createValue (wetness, "WETNESS", "wetness index");
-	      updateMetaInformations (wetness);
-      }
-      wetness->setValueDouble (_wetness);
+	return SensorWeather::isGoodWeather ();
 }
 
-void Davis::setCloud (double _cloud, double _top, double _bottom)
+bool Davis::checkCrc ()
 {
-      if (cloud == NULL)
-      {
-	      createValue (cloud, "CLOUD_S", "cloud sensor value", true);
-	      updateMetaInformations (cloud);
-	      createValue (cloudTop, "CLOUD_T", "cloud sensor top temperature", true);
-	      updateMetaInformations (cloudTop);
-	      createValue (cloudBottom, "CLOUD_B", "cloud sensor bottom temperature", true);
-	      updateMetaInformations (cloudBottom);
-      }
+	uint16_t crc = 0;
 
-      cloud->setValueDouble (_cloud);
-      cloudTop->setValueDouble (_top);
-      cloudBottom->setValueDouble (_bottom);
-      if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
-      {
-	      setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "cloud sensor reports cloudy");
-	      valueError (cloud);
-      }
-      else
-      {
-              valueGood (cloud);
-      }
+	uint16_t crc_table [] = {
+		0x0000,  0x1021,  0x2042,  0x3063,  0x4084,  0x50a5,  0x60c6,  0x70e7,  
+		0x8108,  0x9129,  0xa14a,  0xb16b,  0xc18c,  0xd1ad,  0xe1ce,  0xf1ef,  
+		0x1231,  0x0210,  0x3273,  0x2252,  0x52b5,  0x4294,  0x72f7,  0x62d6,  
+		0x9339,  0x8318,  0xb37b,  0xa35a,  0xd3bd,  0xc39c,  0xf3ff,  0xe3de,  
+		0x2462,  0x3443,  0x0420,  0x1401,  0x64e6,  0x74c7,  0x44a4,  0x5485,  
+		0xa56a,  0xb54b,  0x8528,  0x9509,  0xe5ee,  0xf5cf,  0xc5ac,  0xd58d,  
+		0x3653,  0x2672,  0x1611,  0x0630,  0x76d7,  0x66f6,  0x5695,  0x46b4,  
+		0xb75b,  0xa77a,  0x9719,  0x8738,  0xf7df,  0xe7fe,  0xd79d,  0xc7bc,  
+		0x48c4,  0x58e5,  0x6886,  0x78a7,  0x0840,  0x1861,  0x2802,  0x3823,  
+		0xc9cc,  0xd9ed,  0xe98e,  0xf9af,  0x8948,  0x9969,  0xa90a,  0xb92b,  
+		0x5af5,  0x4ad4,  0x7ab7,  0x6a96,  0x1a71,  0x0a50,  0x3a33,  0x2a12,  
+		0xdbfd,  0xcbdc,  0xfbbf,  0xeb9e,  0x9b79,  0x8b58,  0xbb3b,  0xab1a,  
+		0x6ca6,  0x7c87,  0x4ce4,  0x5cc5,  0x2c22,  0x3c03,  0x0c60,  0x1c41,  
+		0xedae,  0xfd8f,  0xcdec,  0xddcd,  0xad2a,  0xbd0b,  0x8d68,  0x9d49,  
+		0x7e97,  0x6eb6,  0x5ed5,  0x4ef4,  0x3e13,  0x2e32,  0x1e51,  0x0e70,  
+		0xff9f,  0xefbe,  0xdfdd,  0xcffc,  0xbf1b,  0xaf3a,  0x9f59,  0x8f78,  
+		0x9188,  0x81a9,  0xb1ca,  0xa1eb,  0xd10c,  0xc12d,  0xf14e,  0xe16f,  
+		0x1080,  0x00a1,  0x30c2,  0x20e3,  0x5004,  0x4025,  0x7046,  0x6067,  
+		0x83b9,  0x9398,  0xa3fb,  0xb3da,  0xc33d,  0xd31c,  0xe37f,  0xf35e,  
+		0x02b1,  0x1290,  0x22f3,  0x32d2,  0x4235,  0x5214,  0x6277,  0x7256,  
+		0xb5ea,  0xa5cb,  0x95a8,  0x8589,  0xf56e,  0xe54f,  0xd52c,  0xc50d,  
+		0x34e2,  0x24c3,  0x14a0,  0x0481,  0x7466,  0x6447,  0x5424,  0x4405,  
+		0xa7db,  0xb7fa,  0x8799,  0x97b8,  0xe75f,  0xf77e,  0xc71d,  0xd73c,  
+		0x26d3,  0x36f2,  0x0691,  0x16b0,  0x6657,  0x7676,  0x4615,  0x5634,  
+		0xd94c,  0xc96d,  0xf90e,  0xe92f,  0x99c8,  0x89e9,  0xb98a,  0xa9ab,  
+		0x5844,  0x4865,  0x7806,  0x6827,  0x18c0,  0x08e1,  0x3882,  0x28a3,  
+		0xcb7d,  0xdb5c,  0xeb3f,  0xfb1e,  0x8bf9,  0x9bd8,  0xabbb,  0xbb9a,  
+		0x4a75,  0x5a54,  0x6a37,  0x7a16,  0x0af1,  0x1ad0,  0x2ab3,  0x3a92,  
+		0xfd2e,  0xed0f,  0xdd6c,  0xcd4d,  0xbdaa,  0xad8b,  0x9de8,  0x8dc9,  
+		0x7c26,  0x6c07,  0x5c64,  0x4c45,  0x3ca2,  0x2c83,  0x1ce0,  0x0cc1,  
+		0xef1f,  0xff3e,  0xcf5d,  0xdf7c,  0xaf9b,  0xbfba,  0x8fd9,  0x9ff8,  
+		0x6e17,  0x7e36,  0x4e55,  0x5e74,  0x2e93,  0x3eb2,  0x0ed1,  0x1ef0,  
+	};
+
+	for (int i = 0; i < lastReceivedChar; i++)
+	{
+		crc = crc_table [(crc >> 8) ^ dataBuff[i]] ^ (crc << 8);
+	}
+
+	// value should be 0 at the end..
+	return crc == 0x0000;
 }
 
 int main (int argc, char **argv)
 {
-	Davis device = Davis (argc, argv);
+	Davis device (argc, argv);
 	return device.run ();
 }

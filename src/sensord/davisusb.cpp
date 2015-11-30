@@ -1,6 +1,7 @@
 /* 
- * Infrastructure for Davis UDP connection.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Vantage Davis USB/serial driver.
+ * Copyright (C) 2015 Stanislav Vitek 
+ * Copyright (C) 2015 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,78 +22,21 @@
 #include "davisusb.h"
 #include "utilsfunc.h"
 
-#include <fcntl.h>
-#include <termios.h>
+#include "connection/serial.h"
 
 using namespace rts2sensord;
-
-#define FRAM_CONN_TIMEOUT    60
 
 void DavisUsb::setWeatherTimeout (time_t wait_time, const char *msg)
 {
 	master->setWeatherTimeout (wait_time, msg);
 }
 
-DavisUsb::DavisUsb (const char * _weather_device, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master):rts2core::ConnNoSend (_master)
+DavisUsb::DavisUsb (const char * _weather_device, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master):rts2core::ConnSerial (_weather_device, _master, BS19200, C8, NONE, 100)
 {
-	weather_device = _weather_device;
 	weather_timeout = _weather_timeout;
-	conn_timeout = _conn_timeout;
 	bad_weather_timeout = _bad_weather_timeout;
 	master = _master;
 }
-
-int DavisUsb::init ()
-{
-	struct termios oldtio, newtio;
-        fdser = open(weather_device, O_RDWR | O_NOCTTY );
-
-        tcgetattr(fdser, &oldtio);
-        bzero(&newtio, sizeof(newtio));
-        newtio.c_cflag = CRTSCTS | CS8 | CLOCAL | CREAD;
-        newtio.c_iflag = IGNBRK | IGNPAR;
-        newtio.c_oflag = 0;
-        newtio.c_lflag = 0;
-        newtio.c_cc[VTIME]    = 10;
-        newtio.c_cc[VMIN]     = 0;
-        cfsetospeed (&newtio, B19200);
-        cfsetispeed (&newtio, B19200);
-
-        if (tcsetattr (fdser, TCSAFLUSH, &newtio)) {
-                logStream (MESSAGE_ERROR) << "Problem configuring serial device, check device name" << sendLog;
-                return -1;
-        }
-
-        if (tcflush (fdser, TCIOFLUSH)) {
-                logStream (MESSAGE_ERROR) << "Problem flushing serial device, check device name" << sendLog;
-                return -1;
-        }
-
-        return 0;	
-}
-
-int DavisUsb::ReadNextChar (int device, char *ch)
-{
-	int ret = read (device, ch, 1);
-	        
-	if (ret == -1)	
-		logStream (MESSAGE_ERROR) << "Problem reading Davis device" << sendLog;
-
-	return ret;
-}
-
-int DavisUsb::ReadToBuffer (int device, char *buffer, int bsize)
-{
-        int pos = 0;
-        char *tmp = buffer;
-
-        while(pos < bsize) {
-                if(!ReadNextChar (device, tmp++))
-                        return pos;
-                ++pos;
-        }
-        return -1;
-} 
 
 void DavisUsb::GetRTData(unsigned char *szData)
 {
