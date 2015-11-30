@@ -160,7 +160,7 @@ parser.add_option('--xoffset', help="X offset (used in mosaic images)", action='
 parser.add_option('--yoffset', help="Y offset (used in mosaic images)", action='store', dest='y_offset', default=None)
 parser.add_option('--center', help="put reference pixel to center", action="store_true", dest="center", default=False)
 parser.add_option('-z', help="downsample the image before running source extractions", action="store", dest="downsample", default=None)
-parser.add_option('--bashrc', help="write results into bash export file", action="store_true", dest="bashrc", default=False)
+parser.add_option('--bashrc', help="write results into bash export file", action="store", dest="bashrc", default=None)
 
 (options,args) = parser.parse_args()
 
