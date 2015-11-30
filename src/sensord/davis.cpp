@@ -98,7 +98,7 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 				}
 				// make sure we start with empty received buffer
 				lastReceivedChar = 0;
-				davisConn->writePort ("LOOP 1", 6);
+				davisConn->writePort ("LOOP 1\n", 7);
 			}
 		}
 	}
@@ -133,6 +133,16 @@ int Davis::initHardware ()
 		return ret;
 	davisConn->setDebug (getDebug ());
 	davisConn->writePort ('\r');
+	ret = davisConn->readPort (dataBuff, 2);
+	if (ret != 2)
+	{
+		logStream (MESSAGE_ERROR) << "Davis not connected" << sendLog;
+	}
+	if (dataBuff[0] != '\r' || dataBuff[1] != '\n')
+	{
+		logStream (MESSAGE_ERROR) << "invalid reply" << dataBuff[0] << dataBuff[1] << sendLog;
+	}
+	davisConn->writePort ("LOOP 1\n", 7);
 	return ret;
 }
 
