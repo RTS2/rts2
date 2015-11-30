@@ -733,6 +733,11 @@ int Device::init ()
 		addCentraldConnection (conn_master, true);
 	}
 
+	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
+	ret = checkLockFile (s.c_str ());
+	if (ret < 0)
+		exit (ret);
+
 	return initHardware ();
 }
 
@@ -743,11 +748,7 @@ void Device::beforeRun ()
 		logStream (MESSAGE_ERROR) << "some values are not set. Please see above errors and fix them, or run driver with --nocheck option" << sendLog;
 		exit (1);
 	}
-	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
-	int ret = checkLockFile (s.c_str ());
-	if (ret < 0)
-		exit (ret);
-	ret = doDaemonize ();
+	int ret = doDaemonize ();
 	if (ret)
 		exit (ret);
 #ifndef RTS2_HAVE_FLOCK
