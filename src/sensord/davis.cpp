@@ -48,9 +48,34 @@ class Davis:public SensorWeather
 
 		char dataBuff[101];
 		int lastReceivedChar;
+
+		// values with Davis data
+		rts2core::ValueSelection *barTrend;
+		rts2core::ValueFloat *barometer;
+		rts2core::ValueFloat *insideTemp;
+		rts2core::ValueFloat *insideHuminity;
+		rts2core::ValueFloat *outsideTemp;
+		rts2core::ValueFloat *windSpeed;
+		rts2core::ValueInteger *windDirection;
+		rts2core::ValueFloat *wind10min;
+		rts2core::ValueFloat *wind2min;
+		rts2core::ValueFloat *wind10mingust;
+		rts2core::ValueInteger *wind10mingustDirection;
+		rts2core::ValueFloat *dewPoint;
+		rts2core::ValueFloat *outsideHumidity;
+		rts2core::ValueInteger *rainRate;
+		rts2core::ValueInteger *uvIndex;
+		rts2core::ValueInteger *stormRain;
 		
-		/** check received buffer for CRC */
+		/**
+		 * Check received buffer for CRC
+		 */
 		bool checkCrc ();
+
+		/**
+		 * Process received data from LOOP command.
+		 */
+		void processData ();
 };
 
 }
@@ -64,6 +89,30 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 	davisConn = NULL;
 
 	lastReceivedChar = 0;
+
+	createValue (barTrend, "bar_trend", "barometric trend in last 3 hours", false);
+	barTrend->addSelVal ("not known");
+	barTrend->addSelVal ("Falling Rapidly");
+	barTrend->addSelVal ("Falling Slowly");
+	barTrend->addSelVal ("Steady");
+	barTrend->addSelVal ("Rising Slowly");
+	barTrend->addSelVal ("Rising Rapidly");
+
+	createValue (barometer, "PRESSURE", "[hPa] barometer reading", false);
+	createValue (insideTemp, "TEMP_IN", "[C] inside temperature", false);
+	createValue (insideHuminity, "HUM_IN", "[%] inside humidity", false);
+	createValue (insideTemp, "TEMP_OUT", "[C] outside temperature", false);
+	createValue (windSpeed, "WIND", "[m/s] wind speed", false);
+	createValue (windDirection, "WIND_DIR", "wind direction", false, RTS2_DT_DEGREES);
+	createValue (wind10min, "WIND10", "[m/s] average wind speed for last 10 minutes", false);
+	createValue (wind2min, "WIND2", "[m/s] average wind speed for last 2 minutes", false);
+	createValue (wind10mingust, "WIND10G", "[m/s] wind 10 minutes gust speed", false);
+	createValue (wind10mingustDirection, "WIND10GD", "wind gust 10 minutes direction", false);
+	createValue (dewPoint, "DEWPT", "[C] dew point", false);
+	createValue (outsideHumidity, "HUM_OUT", "[%] outside humidity", false);
+	createValue (rainRate, "RAINRT", "[mm/hour] rain rate", false);
+	createValue (uvIndex, "UVINDEX", "UV index", false);
+	createValue (stormRain, "RAINST", "[mm] storm rain", false);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSBn)");
 }
@@ -86,11 +135,21 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 		int ret = davisConn->readPort (dataBuff + lastReceivedChar, 100 - lastReceivedChar);
 		if (ret > 0)
 		{
+			// check that the first received character is ACK
+			if (lastReceivedChar == 0 && dataBuff[0] != 0x06)
+			{
+				logStream (MESSAGE_ERROR) << "data buffer does not start with ACK" << sendLog;
+				sleep (4);
+				davisConn->flushPortIO ();
+				davisConn->writePort ("LOOP 1\n", 7);
+				return;
+			}
 			lastReceivedChar += ret;
 			if (lastReceivedChar >= 100)
 			{
 				if (checkCrc ())
 				{
+					processData ();
 				}
 				else
 				{
@@ -197,6 +256,33 @@ static unsigned short crc_table [256] = {
 
 	// value should be 0 at the end..
 	return crc == 0x0000;
+}
+
+void Davis::processData ()
+{
+	switch (dataBuff[4])
+	{
+		case -60:
+			barTrend->setValueInteger (1);
+			break;
+		case -20:
+			barTrend->setValueInteger (2);
+			break;
+		case 0:
+			barTrend->setValueInteger (3);
+			break;
+		case 20:
+			barTrend->setValueInteger (4);
+			break;
+		case 60:
+			barTrend->setValueInteger (5);
+			break;
+		default:
+			barTrend->setValueInteger (0);
+	}
+
+	insideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 10)) / 10.0));
+	outsideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 13)) / 10.0));
 }
 
 int main (int argc, char **argv)
