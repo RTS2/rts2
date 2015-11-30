@@ -143,7 +143,7 @@ int Davis::initHardware ()
 		logStream (MESSAGE_ERROR) << "invalid reply" << dataBuff[0] << dataBuff[1] << sendLog;
 	}
 	davisConn->writePort ("LOOP 1\n", 7);
-	return ret;
+	return 0;
 }
 
 bool Davis::isGoodWeather ()
