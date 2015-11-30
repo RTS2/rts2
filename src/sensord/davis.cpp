@@ -46,7 +46,7 @@ class Davis:public SensorWeather
 		char *device_file;
 		rts2core::ConnSerial *davisConn;
 
-		char dataBuff[100];
+		char dataBuff[101];
 		int lastReceivedChar;
 		
 		/** check received buffer for CRC */
@@ -83,11 +83,11 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	if (davisConn->receivedData (&read_set))
 	{
-		int ret = davisConn->readPort (dataBuff + lastReceivedChar, 99 - lastReceivedChar);
+		int ret = davisConn->readPort (dataBuff + lastReceivedChar, 100 - lastReceivedChar);
 		if (ret > 0)
 		{
 			lastReceivedChar += ret;
-			if (lastReceivedChar >= 99)
+			if (lastReceivedChar >= 100)
 			{
 				if (checkCrc ())
 				{
@@ -138,7 +138,7 @@ int Davis::initHardware ()
 	{
 		logStream (MESSAGE_ERROR) << "Davis not connected" << sendLog;
 	}
-	if (dataBuff[0] != '\r' || dataBuff[1] != '\n')
+	if (dataBuff[0] != '\n' || dataBuff[1] != '\r')
 	{
 		logStream (MESSAGE_ERROR) << "invalid reply" << dataBuff[0] << dataBuff[1] << sendLog;
 	}
@@ -190,7 +190,7 @@ bool Davis::checkCrc ()
 		0x6e17,  0x7e36,  0x4e55,  0x5e74,  0x2e93,  0x3eb2,  0x0ed1,  0x1ef0,  
 	};
 
-	for (int i = 0; i < lastReceivedChar; i++)
+	for (int i = 1; i < lastReceivedChar; i++)
 	{
 		crc = crc_table [(crc >> 8) ^ dataBuff[i]] ^ (crc << 8);
 	}
