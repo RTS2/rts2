@@ -108,16 +108,16 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
-	createValue (tarRaDec, "TAR", "target position with computed corrections (precession, refraction, aberation) applied", true);
-
 	if (hasUnTelCoordinates)
 	{
-		createValue (tarTelRaDec, "TAR_TEL", "target position (TAR) in telescope coordinates (DEC in 180 .. -180 range)", true);
+		createValue (tarTelRaDec, "TAR_TEL", "target position (OBJ) in telescope coordinates (DEC in 180 .. -180 range)", true);
 	}
 	else
 	{
 		tarTelRaDec = NULL;
 	}
+
+	createValue (tarRaDec, "TAR", "target position with computed corrections (precession, refraction, aberation) applied", true);
 
 	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	corrRaDec->setValueRaDec (0, 0);
@@ -322,17 +322,17 @@ void Telescope::setTarTel (bool flipped)
 	if (tarTelRaDec == NULL)
 		return;
 
-	tarTelRaDec->setValueRaDec (tarRaDec->getRa (), tarRaDec->getDec ());
+	tarTelRaDec->setValueRaDec (objRaDec->getRa (), objRaDec->getDec ());
 	if (flipped == true)
 	{
-		tarTelRaDec->setRa (ln_range_degrees (tarTelRaDec->getRa () + 180));
+		tarTelRaDec->setRa (ln_range_degrees (objRaDec->getRa () + 180));
 		if (tarTelRaDec->getDec () > 0)
 		{
-			tarTelRaDec->setDec (180 - tarTelRaDec->getDec ());
+			tarTelRaDec->setDec (180 - objRaDec->getDec ());
 		}
 		else
 		{
-			tarTelRaDec->setDec (-180 + tarTelRaDec->getDec ());
+			tarTelRaDec->setDec (-180 + objRaDec->getDec ());
 		}
 	}
 }
@@ -1315,6 +1315,7 @@ int Telescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);
 	woffsRaDec->setValueRaDec (0, 0);
+	tracking->setValueInteger (1);
 	return rts2core::Device::scriptEnds ();
 }
 

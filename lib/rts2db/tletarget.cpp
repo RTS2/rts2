@@ -136,7 +136,8 @@ void TLETarget::printExtra (Rts2InfoValStream & _os, double JD)
 
 	_os 
 		<< InfoVal<std::string> ("TLE1", tle1)
-		<< InfoVal<std::string> ("TLE2", tle2);
+		<< InfoVal<std::string> ("TLE2", tle2)
+		<< std::endl;
 }
 
 void TLETarget::writeToImage (rts2image::Image * image, double JD)

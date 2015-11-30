@@ -74,6 +74,48 @@
     </para>
 
   </refsect1>
+  <refsect1>
+    <title>Resolved strings</title>
+    <para>
+      When <command>rts2-newtarget</command> asks for a target name, it expect
+      string describing target properties. The following are resolved:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>RA and DEC</term>
+        <para>
+          Declination shall be prefixed with + or -, all possible formats
+          (degrees, hexadecimal separated by : or spaces, ..) are accepted.
+        </para>
+      </varlistentry>
+      <varlistentry>
+        <term>Simbad target name</term>
+        <para>
+          Any name resolvable by Simbad/Vizier can be entered.
+        </para>
+      </varlistentry>
+      <varlistentry>
+        <term>MPEC name</term>
+        <para>
+          MPEC comments and minor planets names and designation can be entered.
+        </para>
+      </varlistentry>
+      <varlistentry>
+        <term>TLE</term>
+        <para>
+          Satellite two lines elements, separated with | (pipe). RTS2 will
+          compute actual satellite position with  using the integrated Pluto
+          library.
+        </para>
+      </varlistentry>
+      <varlistentry>
+        <term>TLE</term>
+        <para>
+
+        </para>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
   <refsect1 id="options">
     <title>OPTIONS</title>
 
