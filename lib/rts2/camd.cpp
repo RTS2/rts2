@@ -35,7 +35,6 @@
 #include "timestamp.h"
 
 #define OPT_WCS_MULTI         OPT_LOCAL + 400
-//#define OPT_WCS_CRPIX         OPT_LOCAL + 401
 #define OPT_WCS_CDELT         OPT_LOCAL + 402
 #define OPT_FOCUS             OPT_LOCAL + 403
 #define OPT_WHEEL             OPT_LOCAL + 404
@@ -50,6 +49,7 @@
 #define OPT_WCS_AUXS          OPT_LOCAL + 420
 #define OPT_COMMENTS          OPT_LOCAL + 421
 #define OPT_HISTORIES         OPT_LOCAL + 422
+#define OPT_RTS2_COOLING      OPT_LOCAL + 423
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
@@ -384,6 +384,8 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	dataChannels = NULL;
 	channels = NULL;
 
+        rts2ControlCooling = true;
+
 	tempAir = NULL;
 	tempCCD = NULL;
 	tempCCDHistory = NULL;
@@ -544,6 +546,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	focuserMoving->setValueBool (false);
 
 	// other options..
+	addOption (OPT_RTS2_COOLING, "no-autocooling", 0, "when set, RTS2 did not switch cooling of at the end of night");
 	addOption (OPT_COMMENTS, "add-comments", 1, "add given number of comment fields");
 	addOption (OPT_HISTORIES, "add-history", 1, "add given number of history fields");
 	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
@@ -769,6 +772,9 @@ int Camera::processOption (int in_opt)
 			break;
 		case OPT_COMMENTS:
 			comments = atoi (optarg);
+			break;
+		case OPT_RTS2_COOLING:
+			rts2ControlCooling = false;
 			break;
 		case OPT_FOCUS:
 			focuserDevice = optarg;

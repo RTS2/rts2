@@ -264,7 +264,8 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual void afterNight ()
 		{
-			switchCooling (false);
+			if (rts2ControlCooling)
+				switchCooling (false);
 		}
 
 		/**
@@ -1009,6 +1010,8 @@ class Camera:public rts2core::ScriptDevice
 
 		char *focuserDevice;
 		std::vector < const char * > wheelDevices;
+
+		bool rts2ControlCooling;
 
 		int lastFilterNum;
 
