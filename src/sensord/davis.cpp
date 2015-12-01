@@ -113,7 +113,7 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (wind10min, "WIND10", "[m/s] average wind speed for last 10 minutes", false);
 	createValue (wind2min, "WIND2", "[m/s] average wind speed for last 2 minutes", false);
 	createValue (wind10mingust, "WIND10G", "[m/s] wind 10 minutes gust speed", false);
-	createValue (wind10mingustDirection, "WIND10GD", "wind gust 10 minutes direction", false);
+	createValue (wind10mingustDirection, "WIND10GD", "wind gust 10 minutes direction", false, RTS2_DT_DEGREES);
 	createValue (dewPoint, "DEWPT", "[C] dew point", false);
 	createValue (outsideHumidity, "HUM_OUT", "[%] outside humidity", false);
 	createValue (rainRate, "RAINRT", "[mm/hour] rain rate", false);
@@ -306,16 +306,16 @@ void Davis::processData ()
 			barTrend->setValueInteger (0);
 	}
 	float hg2mg = 33.8639;
-	barometer->setValueFloat (hg2mg * *((uint16_t *) (dataBuff + 8 )));
+	barometer->setValueFloat (hg2mg * *((uint16_t *) (dataBuff + 8 )) / 1000.0);
 	insideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 10)) / 10.0));
 	insideHumidity->setValueFloat(*((uint8_t *) (dataBuff + 12)));
 	outsideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 13)) / 10.0));
 
 	windSpeed->setValueFloat(mphToMs (*((int8_t *) (dataBuff + 15))));
 	windDirection->setValueInteger(*((uint16_t *) (dataBuff + 17)) * 0.1);
-	wind10min->setValueFloat(*((uint8_t *) (dataBuff + 19)) * 0.1);
-	wind2min->setValueFloat(*((uint8_t *) (dataBuff + 21)) * 0.1);
-	wind10mingust->setValueFloat(*((uint8_t *) (dataBuff + 23)) * 0.1);
+	wind10min->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 19)) * 0.1));
+	wind2min->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 21)) * 0.1));
+	wind10mingust->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 23)) * 0.1));
 	wind10mingustDirection->setValueInteger(*((uint16_t *) (dataBuff + 25)));
 	dewPoint->setValueFloat(fahrenheitToCelsius (*((int16_t *) (dataBuff + 31))));
 	outsideHumidity->setValueFloat(*((uint8_t *) (dataBuff + 34)));
