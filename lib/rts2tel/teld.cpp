@@ -326,7 +326,7 @@ void Telescope::setTarTel (bool flipped)
 	if (flipped == true)
 	{
 		tarTelRaDec->setRa (ln_range_degrees (objRaDec->getRa () + 180));
-		if (tarTelRaDec->getDec () > 0)
+		if (telLatitude->getValueDouble () > 0)
 		{
 			tarTelRaDec->setDec (180 - objRaDec->getDec ());
 		}
