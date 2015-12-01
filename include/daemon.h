@@ -703,6 +703,8 @@ class Daemon:public rts2core::Block
 
 		double state_start;
 		double state_expected_end;
+
+		std::map <std::string, std::string> argValues;
 };
 
 }

@@ -178,18 +178,7 @@ int Daemon::processArgs (const char *arg)
 		return -1;
 	}
 
-	rts2core::Value *new_value = duplicateValue (val);
-	int ret = new_value->setValueCharArr (eq + 1);
-	if (ret)
-	{
-		std::cerr << "cannot set value with name " << vname << " to '" << (eq + 1) << "', exiting";
-		return -1;
-	}
-	if (setInitValue (val, new_value) == -2)
-	{
-		std::cerr << "cannot set value with name " << vname << " to '" << (eq + 1) << "', exiting";
-		return -1;
-	}
+	argValues[std::string (vname)] = std::string (eq + 1);
 	return 0;
 }
 
@@ -383,6 +372,29 @@ int Daemon::init ()
 
 int Daemon::initValues ()
 {
+	for (std::map <std::string, std::string>::iterator iter = argValues.begin (); iter != argValues.end (); iter++)
+	{
+		rts2core::Value *val = getOwnValue (iter->first.c_str ());
+		if (val == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "cannot find value with name " << iter->first << ", exiting" << sendLog;
+			return -1;
+		}
+
+		rts2core::Value *new_value = duplicateValue (val);
+		int ret = new_value->setValueCharArr (iter->second.c_str ());
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "cannot set value with name " << iter->first << " to '" << iter->second << "', exiting" << sendLog;
+			return -1;
+		}
+		if (setInitValue (val, new_value) == -2)
+		{
+			logStream (MESSAGE_ERROR) << "cannot set value with name " << iter->first << " to '" << iter->second << "', exiting" << sendLog;
+			return -1;
+		}
+	}
+ 
 	int ret = loadCreateFile ();
 	if (ret)
 		return ret;
