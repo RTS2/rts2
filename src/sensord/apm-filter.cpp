@@ -83,7 +83,7 @@ int APMFilter::initHardware ()
                 return -1;
         }
 
-	connFilter = new rts2core::ConnAPM (this, host->getHostname (), host->getPort ());
+	connFilter = new rts2core::ConnAPM (host->getPort (), this, host->getHostname ());
 
 	int ret = connFilter->init();
 
@@ -102,7 +102,7 @@ int APMFilter::sendUDPMessage (const char * _message)
 	if (getDebug())
 		logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-	int n = connFilter->send (_message, response, 20);
+	int n = connFilter->sendReceive (_message, response, 20);
 
 	if (getDebug())
 		logStream (MESSAGE_DEBUG) << "reponse: " << response << sendLog;

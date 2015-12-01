@@ -135,7 +135,7 @@ int APMDome::initHardware ()
 		return -1;
 	}
 
-	connDome = new rts2core::ConnAPM (this, host->getHostname(), host->getPort());
+	connDome = new rts2core::ConnAPM (host->getPort (), this, host->getHostname());
 	
 	int ret = connDome->init();
         
@@ -246,7 +246,7 @@ int APMDome::sendUDPMessage (const char * _message)
 	if (strcmp (_message, "D666") == 0)
 		nowait = true;
 
-	int n = connDome->send (_message, response, 20, nowait);
+	int n = connDome->sendReceive (_message, response, 20, nowait);
 
 	// std::string res (response);
 	// logStream (MESSAGE_DEBUG) << "reponse from controller: " << res.substr (0, n) << sendLog;

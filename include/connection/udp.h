@@ -1,6 +1,6 @@
 /* 
  * Infrastructure for UDP connection.
- * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2015 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 
 #include <sys/types.h>
 #include <time.h>
+#include <arpa/inet.h>
 
 #include "connnosend.h"
 
@@ -33,13 +34,20 @@ namespace rts2core
  * UDP connection.
  *
  * @author Petr Kubanek <petr@kubanek.net>
+ * @autor Standa Vitek <standa@vitkovi.net>
  */
 class ConnUDP:public ConnNoSend
 {
 	public:
-		ConnUDP (int _port, rts2core::Block * _master, size_t _maxSize = 500);
+		/**
+		 * Configure UDP connection.
+		 *
+		 * @param hostname   host to which data will be send, can be left NULL
+		 */
+		ConnUDP (int _port, rts2core::Block * _master, const char* hostname = NULL, size_t _maxSize = 500);
 		virtual int init ();
 		virtual int receive (fd_set * set);
+		int sendReceive (const char * in_message, char * out_message, unsigned int length, int noreceive = 0);
 	protected:
 		/**
 		 * Process received data. Data are stored in buf member variable.
@@ -54,7 +62,9 @@ class ConnUDP:public ConnNoSend
 			return;
 		}
 	private:
+		const char *hostname;
 		size_t maxSize;
+		struct sockaddr_in servaddr, clientaddr;
 };
 
 }

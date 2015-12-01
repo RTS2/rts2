@@ -158,7 +158,7 @@ int APMRelay::sendUDPMessage (const char * _message)
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-        int n = connRelay->send (_message, response, 20);
+        int n = connRelay->sendReceive (_message, response, 20);
 
         logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
 

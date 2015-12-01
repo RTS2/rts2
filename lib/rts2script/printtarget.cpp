@@ -20,18 +20,19 @@
 #include "rts2script/printtarget.h"
 #include "utilsfunc.h"
 
-#define OPT_FULL_DAY              OPT_LOCAL + 200
-#define OPT_NAME                  OPT_LOCAL + 201
-#define OPT_PI                    OPT_LOCAL + 202
-#define OPT_PROGRAM               OPT_LOCAL + 203
-#define OPT_PARSE_SCRIPT          OPT_LOCAL + 204
+#define OPT_FULL_DAY	      OPT_LOCAL + 200
+#define OPT_NAME		  OPT_LOCAL + 201
+#define OPT_PI		    OPT_LOCAL + 202
+#define OPT_PROGRAM	       OPT_LOCAL + 203
+#define OPT_PARSE_SCRIPT	  OPT_LOCAL + 204
 #define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 205
-#define OPT_AIRMASS               OPT_LOCAL + 206
-#define OPT_TARGETID              OPT_LOCAL + 207
-#define OPT_SATISFIED             OPT_LOCAL + 208
-#define OPT_VIOLATED              OPT_LOCAL + 209
-#define OPT_SCRIPT_IMAGES         OPT_LOCAL + 210
-#define OPT_VISIBLE_FOR           OPT_LOCAL + 211
+#define OPT_AIRMASS	       OPT_LOCAL + 206
+#define OPT_TARGETID	      OPT_LOCAL + 207
+#define OPT_SATISFIED	     OPT_LOCAL + 208
+#define OPT_VIOLATED	      OPT_LOCAL + 209
+#define OPT_SCRIPT_IMAGES	 OPT_LOCAL + 210
+#define OPT_VISIBLE_FOR	   OPT_LOCAL + 211
+#define OPT_STEP		  OPT_LOCAL + 212
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -69,6 +70,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):rts2db::AppDb (in_argc, i
 {
 	obs = NULL;
 	obs_altitude = NAN;
+	step = NAN;
 	printExtended = 0;
 	printConstraints = false;
 	printCalTargets = false;
@@ -118,6 +120,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):rts2db::AppDb (in_argc, i
 	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
 	addOption (OPT_SATISFIED, "satisfied", 0, "print targets satisfied intervals");
 	addOption (OPT_VIOLATED, "violated", 0, "print targets violated intervals");
+	addOption (OPT_STEP, "step", 1, "step (in seconds) between calculation of target visibility");
 }
 
 PrintTarget::~PrintTarget ()
@@ -251,9 +254,13 @@ int PrintTarget::processOption (int in_opt)
 		case OPT_VIOLATED:
 			printViolated = true;
 			break;
+		case OPT_STEP:
+			step = atof (optarg) / 3600.0;
+			break;
 		case OPT_VISIBLE_FOR:
 			printVisible = atof (optarg);
 			break;
+
 		default:
 			return rts2db::AppDb::processOption (in_opt);
 	}
@@ -483,14 +490,6 @@ void PrintTarget::printTarget (rts2db::Target *target)
 
 void PrintTarget::printTargetGNUplot (rts2db::Target *target)
 {
-	/*struct ln_hrz_posn hrz;
-
-	for (double i = gbeg; i <= gend; i += step)
-	{
-		std::cout << i << " ";
-		target->getAltAz (&hrz, jd_start + i/24.0);
-		std::cout << hrz.alt << std::endl;
-	}*/
 	// extended table enables the use of user's individual advanced gnuplotting with output
 	target->printAltTable (std::cout, jd_start, gbeg, gend, step, true, false);
 }
@@ -707,7 +706,8 @@ int PrintTarget::printTargets (rts2db::TargetSet & set)
 	}
 
 	jd_start = ((int) JD) - 0.5;
-	step = 0.2;
+	if (isnan (step))
+		step = 0.2;
 
 	if (printDS9)
 	{

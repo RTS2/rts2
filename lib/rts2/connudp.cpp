@@ -1,6 +1,6 @@
 /* 
- * Infrastructure for Pierre Auger UDP connection.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Infrastructure for UDP connections.
+ * Copyright (C) 2005-2015 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,10 +30,11 @@
 
 using namespace rts2core;
 
-ConnUDP::ConnUDP (int _port, rts2core::Block * _master, size_t _maxSize):ConnNoSend (_master)
+ConnUDP::ConnUDP (int _port, rts2core::Block * _master, const char *_hostname, size_t _maxSize):ConnNoSend (_master)
 {
 	setPort (_port);
 	maxSize = _maxSize;
+	hostname = _hostname;
 }
 
 int ConnUDP::init ()
@@ -41,9 +42,18 @@ int ConnUDP::init ()
 	struct sockaddr_in bind_addr;
 	int ret;
 
-	bind_addr.sin_family = AF_INET;
-	bind_addr.sin_port = htons (getLocalPort ());
-	bind_addr.sin_addr.s_addr = htonl (INADDR_ANY);
+	bzero (&servaddr, sizeof (servaddr));
+        if (hostname != NULL)
+	{
+		servaddr.sin_family = AF_INET;
+       		servaddr.sin_addr.s_addr = inet_addr (hostname);
+		servaddr.sin_port = htons (getLocalPort ());
+	}
+
+	bzero (&clientaddr, sizeof (clientaddr));
+	clientaddr.sin_family = AF_INET;
+	clientaddr.sin_port = htons (getLocalPort ());
+	clientaddr.sin_addr.s_addr = htonl (INADDR_ANY);
 
 	sock = socket (PF_INET, SOCK_DGRAM, 0);
 	if (sock < 0)
@@ -70,14 +80,26 @@ int ConnUDP::init ()
 	return ret;
 }
 
+int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned int length, int noreceive)
+{
+	int ret;
+	unsigned int slen = sizeof (clientaddr);
+
+	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+	if (noreceive == 0)
+		ret = recvfrom (sock, ret_message, length, 0, (struct sockaddr *) &clientaddr, &slen);
+
+	return ret;
+}
+
 int ConnUDP::receive (fd_set * set)
 {
 	int data_size = 0;
 	if (sock >= 0 && FD_ISSET (sock, set))
 	{
-		struct sockaddr_in from;
-		socklen_t size = sizeof (from);
-		data_size = recvfrom (sock, buf, maxSize, 0, (struct sockaddr *) &from, &size);
+		socklen_t size = sizeof (clientaddr);
+		data_size = recvfrom (sock, buf, maxSize, 0, (struct sockaddr *) &clientaddr, &size);
 		if (data_size < 0)
 		{
 			logStream (MESSAGE_DEBUG) << "error in receiving weather data: %m" << strerror (errno) << sendLog;
@@ -85,7 +107,7 @@ int ConnUDP::receive (fd_set * set)
 		}
 		buf[data_size] = 0;
 		command_buf_top = buf;
-		process (data_size, from);
+		process (data_size, clientaddr);
 	}
 	return data_size;
 }

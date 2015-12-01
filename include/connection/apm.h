@@ -1,7 +1,7 @@
 #ifndef __RTS2_CONNECTION_APM__
 #define __RTS2_CONNECTION_APM__
 
-#include "connnosend.h"
+#include "udp.h"
 #include "error.h"
 
 #include <ostream>
@@ -12,25 +12,19 @@
  * Provides basic operations on UDP connection - establish it,
  * send and receive data. 
  *
- * @autor Standa Vitek standa@vitkovi.net
+ * @autor Standa Vitek <standa@vitkovi.net>
  */
 
 namespace rts2core
 {
 
-class ConnAPM:public ConnNoSend
+class ConnAPM:public ConnUDP
 {
 	public:
-		ConnAPM (rts2core::Block *_master, const char *_hostname, int _port);
+		ConnAPM (int _port, rts2core::Block *_master, const char *_hostname);
 
-		virtual int init ();
-		int send (const char * in_message, char * out_message, unsigned int length, int noreceive = 0);
-
-	private:
-		const char *hostname;
-		int port;
-		int sock;        
-		struct sockaddr_in servaddr, clientaddr;
+	protected:
+		virtual int process (size_t len, struct sockaddr_in &from);
 };
 
 }

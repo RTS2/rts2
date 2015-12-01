@@ -79,7 +79,7 @@ int APMFocuser::initHardware ()
 		return -1;
 	}
 
-	connFocuser = new rts2core::ConnAPM (this, host->getHostname(), host->getPort());
+	connFocuser = new rts2core::ConnAPM (host->getPort (), this, host->getHostname());
 
 	int ret = connFocuser->init();
 
@@ -210,7 +210,7 @@ int APMFocuser::sendUDPMessage (const char * _message)
 
 	// int n = connFocuser->send (_message, response, 20, strcmp (_message, "FO99999"));
 
-	int n = connFocuser->send (_message, response, 20, wait);
+	int n = connFocuser->sendReceive (_message, response, 20, wait);
 
 	if (n > 0)
 	{

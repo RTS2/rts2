@@ -169,7 +169,7 @@ int APMMirror::sendUDPMessage (const char * _message)
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-        int n = connMirror->send (_message, response, 20);
+        int n = connMirror->sendReceive (_message, response, 20);
 
         logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
 

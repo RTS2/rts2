@@ -85,7 +85,7 @@ class FlwoMe:public SensorWeather
 		friend class MEarthWeather;
 };
 
-MEarthWeather::MEarthWeather (int _port, FlwoMe *_master):ConnUDP (_port, _master, 500)
+MEarthWeather::MEarthWeather (int _port, FlwoMe *_master):ConnUDP (_port, _master, NULL, 500)
 {
 };
 

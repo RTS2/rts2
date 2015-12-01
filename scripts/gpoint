@@ -48,6 +48,10 @@ def equ_to_hrz(ha,dec):
 
 	return np.degrees(alt),(np.degrees(Aa) + 360) % 360
 
+# caclulates root mean squeare of vector/array
+def RMS(vector):
+	return np.sqrt(np.mean(np.square(vector)))
+
 def flip_ra(a_ra,dec):
 	if abs(dec) > 90:
 		return (a_ra + 180) % 360
@@ -62,8 +66,9 @@ def flip_dec(a_dec,dec):
 
 class GPoint:
 	# @param 
-	def __init__(self):
+	def __init__(self,verbose=0):
 		self.aa_ra = None
+		self.verbose = verbose
 
 	# Fit functions.
 	# a_ra - target HA
@@ -108,13 +113,16 @@ class GPoint:
 			if line[0] != '#':
 				rdata.append(line.split())
 			line = f.readline()
-
-		print rdata
+		f.close()
+		
+		if self.verbose:
+			print "Input data",rdata
 
 		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
 		a_data = np.array(data)
-		print a_data
+		if self.verbose:
+			print "Parsed data",a_data
 	
 		par_init = np.array([0,0,0,0,0,0,0,0,0])
 	
@@ -136,16 +144,15 @@ class GPoint:
 		self.diff_model_ra = np.degrees(self.fit_model_ra(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
 		self.diff_model_dec = np.degrees(self.fit_model_dec(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
 
-		f.close()
-
 		return self.best
 
 	def print_params(self):
 		print "Best fit",np.degrees(self.best)
-		print self.cov
-		print self.info
-		print self.message
-		print self.ier
+		if self.verbose:
+			print self.cov
+			print self.info
+			print self.message
+			print self.ier
 
 		print 'Zero point in DEC (") {0}'.format(degrees(self.best[0])*60.0)
 		print 'Zero point in RA (") {0}'.format(degrees(self.best[4])*60.0)
@@ -158,9 +165,6 @@ class GPoint:
 		print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best[6])*60.0)
 		print 'Dec axis flexure (") {0}'.format(degrees(self.best[7])*60.0)
 		print 'HA encoder scale error ("/degree) {0}'.format(degrees(self.best[8])*60.0)
-
-		print self.diff_ra * 3600.0
-		print self.diff_dec * 3600.0
 
 		print 'DIFF_MODEL RA',
 		for d in self.diff_model_ra:
@@ -177,10 +181,18 @@ class GPoint:
 			print a,
 		print
 
-		print 'RMS RA {0}"'.format(np.sqrt(np.mean(np.square(self.diff_model_ra*3600))))
-		print 'RMS DEC {0}"'.format(np.sqrt(np.mean(np.square(self.diff_model_dec*3600))))
-		print 'RMS',np.sqrt(np.mean(np.square(np.concatenate((self.diff_model_ra,self.diff_model_dec))*3600)))
 
+	def print_stat(self):
+		if self.verbose:
+			print self.diff_ra * 3600.0
+			print self.diff_dec * 3600.0
+
+		print 'RMS RA DIFF {0}"'.format(RMS(self.diff_ra*3600))
+		print 'RMS DEC DIFF {0}"'.format(RMS(self.diff_dec*3600))
+
+		print 'RMS MODEL RA DIFF {0}"'.format(RMS(self.diff_model_ra*3600))
+		print 'RMS MODEL DEC DIFF {0}"'.format(RMS(self.diff_model_dec*3600))
+		print 'RMS {0}'.format(np.square(np.concatenate((self.diff_model_ra,self.diff_model_dec))*3600))
 
 		return self.best
 
@@ -222,13 +234,14 @@ if __name__ == '__main__':
 	parser.add_argument('errorfile',help='input file',type=str)
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
+	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
 
 	args = parser.parse_args()
-	print args.model_output
 
-	model = GPoint()
+	model = GPoint(args.verbose)
 	model.process_file(args.errorfile)
 	model.print_params()
+	model.print_stat()
 
 	if args.plot > 0:
 		model.ploterrors(args.plot)
