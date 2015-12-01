@@ -59,7 +59,7 @@ class Davis:public SensorWeather
 		rts2core::ValueSelection *barTrend;
 		rts2core::ValueFloat *barometer;
 		rts2core::ValueFloat *insideTemp;
-		rts2core::ValueFloat *insideHuminity;
+		rts2core::ValueFloat *insideHumidity;
 		rts2core::ValueFloat *outsideTemp;
 		rts2core::ValueFloat *windSpeed;
 		rts2core::ValueInteger *windDirection;
@@ -106,7 +106,7 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 
 	createValue (barometer, "PRESSURE", "[hPa] barometer reading", false);
 	createValue (insideTemp, "TEMP_IN", "[C] inside temperature", false);
-	createValue (insideHuminity, "HUM_IN", "[%] inside humidity", false);
+	createValue (insideHumidity, "HUM_IN", "[%] inside humidity", false);
 	createValue (outsideTemp, "TEMP_OUT", "[C] outside temperature", false);
 	createValue (windSpeed, "WIND", "[m/s] wind speed", false);
 	createValue (windDirection, "WIND_DIR", "wind direction", false, RTS2_DT_DEGREES);
@@ -305,9 +305,25 @@ void Davis::processData ()
 		default:
 			barTrend->setValueInteger (0);
 	}
-
+	float hg2mg = 33.8639;
+	barometer->setValueFloat (hg2mg * *((float *) (dataBuff + 8 )));
 	insideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 10)) / 10.0));
+	insideHumidity->setValueFloat(*((uint8_t *) (dataBuff + 12)));
 	outsideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 13)) / 10.0));
+
+	windSpeed->setValueFloat(mphToMs (*((int16_t *) (dataBuff + 15))));
+	windDirection->setValueInteger(*((uint16_t *) (dataBuff + 17)) * 0.1);
+	wind10min->setValueFloat(*((uint8_t *) (dataBuff + 19)) * 0.1);
+	wind2min->setValueFloat(*((uint8_t *) (dataBuff + 21)) * 0.1);
+	wind10mingust->setValueFloat(*((uint8_t *) (dataBuff + 23)) * 0.1);
+	wind10mingustDirection->setValueInteger(*((uint16_t *) (dataBuff + 25)));
+	dewPoint->setValueFloat(fahrenheitToCelsius (*((int16_t *) (dataBuff + 31))));
+	outsideHumidity->setValueFloat(*((uint8_t *) (dataBuff + 34)));
+
+	float rainClicks2mm = 0.2;
+	rainRate->setValueInteger(rainClicks2mm * *((float *) (dataBuff + 42 )));
+	uvIndex->setValueInteger(*((uint8_t *) (dataBuff + 44)));	
+	stormRain->setValueInteger(*((float *) (dataBuff + 47)));
 }
 
 int main (int argc, char **argv)

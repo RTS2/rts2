@@ -384,4 +384,9 @@ float celsiusToKelvin (float c);
 
 std::string string_format (const char* format, ...);
 
+/**
+ * Converts speed in miles/hour to meters/second.
+ */
+float mphToMs (float mph);
+
 #endif							 /* !__RTS_UTILSFUNC__ */

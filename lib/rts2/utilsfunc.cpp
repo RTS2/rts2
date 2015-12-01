@@ -504,6 +504,11 @@ float celsiusToKelvin (float c)
 	return c + 273.15;
 }
 
+float mphToMs (float mph)
+{
+	return 0.4474 * mph;
+}
+
 std::string string_format(const char *fmt, ...)
 {
 	int size = strlen (fmt) * 2 + 50;   // Use a rubric appropriate for your code
