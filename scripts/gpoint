@@ -113,8 +113,13 @@ class GPoint:
 			self.latitude=float(m.group(2))
 		rdata = []
 		while not(line == ''):
-			# skip commented lines
-			if line[0] != '#':
+			if line[0] == '#':
+				m = obsmatch.math(line)
+				if m:
+					if self.latitude is not None:
+						sys.exit('You cannot specify latitude twice!')
+					self.latitude=float(m.group(2))
+			else:
 				rdata.append(line.split())
 			line = f.readline()
 		f.close()
@@ -239,7 +244,7 @@ class GPoint:
 		pylab.show()
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='G-Point Model fitting and error plotting routines')
+	parser = argparse.ArgumentParser(description='G-Point Model fitting and error plotting routines. Works on input file, where ')
 	parser.add_argument('errorfile',help='input file',type=str)
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
