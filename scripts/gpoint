@@ -258,5 +258,12 @@ if __name__ == '__main__':
 	model.print_params()
 	model.print_stat()
 
+	if args.model_output is not None:
+		f = open(args.model_output,'w+')
+		f.write('RTS2_MODEL ')
+		for b in model.best:
+			f.write('{0} '.format(b))
+		f.close()
+
 	if args.plot > 0:
 		model.ploterrors(args.plot)
