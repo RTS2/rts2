@@ -76,7 +76,7 @@ ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 {
 	device_file = NULL;
 
-	default_state = 1;
+	default_state = 0;
 
 	createValue (targetTemperature, "TARTEMP", "[C] target temperature", false, RTS2_VALUE_WRITABLE);
 	createValue (currentTemperature, "CURTEMP", "[C] current temperature");
@@ -90,7 +90,7 @@ ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 	createValue (RTDShort, "rtd_short", "RTD shorted (failure)", false);
 
 	addOption ('f', NULL, 1, "serial port on which is ThermoCube connected");
-	addOption ('s', NULL, 1, "default state of the device (default on = 1, off = 0)");
+	addOption ('s', NULL, 1, "default state of the device (default on = 1, off = 0; if on, will not switch off when in standby/day)");
 }
 
 ThermoCube::~ThermoCube ()
@@ -116,14 +116,14 @@ void ThermoCube::changeMasterState (rts2_status_t old_state, rts2_status_t new_s
 							setPower (true);
 						break;
 					default:
-						if (on->getValueBool () == true)
+						if (on->getValueBool () == true && default_state == 0)
 							setPower (false);
 						break;
 				}
 			}
 			break;
 		default:
-			if (on->getValueBool () == true)
+			if (on->getValueBool () == true && default_state == 0)
 				setPower (false);
 			break;
 	}
