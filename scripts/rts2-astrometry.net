@@ -45,7 +45,10 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 		if wcs_keys is not None:
 			ra=ff[0].header[wcs_keys[0]]
 			dec=ff[0].header[wcs_keys[1]]
-			scale=abs(float(ff[0].header[wcs_keys[2]])) * wcs_scale
+			try:
+				scale=abs(float(ff[0].header[wcs_keys[2]])) * wcs_scale
+			except IndexError,ie:
+				pass
 
 			# parse WCS keys
 			try:
