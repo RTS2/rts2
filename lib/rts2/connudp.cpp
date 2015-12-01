@@ -39,7 +39,6 @@ ConnUDP::ConnUDP (int _port, rts2core::Block * _master, const char *_hostname, s
 
 int ConnUDP::init ()
 {
-	struct sockaddr_in bind_addr;
 	int ret;
 
 	bzero (&servaddr, sizeof (servaddr));
@@ -67,7 +66,7 @@ int ConnUDP::init ()
 		logStream (MESSAGE_ERROR) << "ConnUPD::init fcntl: " << strerror (errno) << sendLog;
 		return -1;
 	}
-	ret = bind (sock, (struct sockaddr *) &bind_addr, sizeof (bind_addr));
+	ret = bind (sock, (struct sockaddr *) &clientaddr, sizeof (clientaddr));
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "ConnUPD::init bind: " << strerror (errno) << sendLog;
