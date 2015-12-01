@@ -72,6 +72,8 @@ class APMDome:public Dome
 		int sock;
                 struct sockaddr_in servaddr, clientaddr;
 
+		bool shouldClose;
+
 		bool isMoving ();
 		int sendUDPMessage (const char * in_message);
 };
@@ -81,6 +83,8 @@ class APMDome:public Dome
 APMDome::APMDome (int argc, char **argv):Dome (argc, argv)
 {
 	host = NULL;
+
+	shouldClose = false;
 
 	addOption ('e', NULL, 1, "ESA dome IP and port (separated by :)");
 	createValue(domeStatus, "dome_status", "current dome status", true);
@@ -204,7 +208,14 @@ int APMDome::endOpen ()
                 
 int APMDome::startClose ()
 {
-	if (isMoving () || dome_state == APMDOME_CLOSED)
+	if (isMoving ())
+	{
+		shouldClose = true;
+		return 0;
+	}
+	shouldClose = false;
+
+	if (dome_state == APMDOME_CLOSED)
 		return 0;
 
 	sendUDPMessage ("D777");
@@ -309,7 +320,12 @@ int APMDome::sendUDPMessage (const char * _message)
 			if ((strcmp (sideA, "100") == 0) && (strcmp (sideB, "100") == 0) && sA == '0' && sB == '0')
 			{
 				// dome fully opened
-				dome_state = APMDOME_OPENED;				
+				dome_state = APMDOME_OPENED;
+				if (shouldClose)
+				{
+					sleep (2);
+					startClose ();
+				}
 				domeStatus->setValueString("Opened");
 			}
 
@@ -317,6 +333,7 @@ int APMDome::sendUDPMessage (const char * _message)
                         {
                                 // dome fully closed
                                 dome_state = APMDOME_CLOSED;
+				shouldClose = false;
 				domeStatus->setValueString("Closed");
                         }
 
