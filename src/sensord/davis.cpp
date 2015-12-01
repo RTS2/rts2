@@ -147,7 +147,7 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 				logStream (MESSAGE_ERROR) << "data buffer does not start with ACK" << sendLog;
 				sleep (4);
 				davisConn->flushPortIO ();
-				davisConn->writePort ("LPS 1\n", 7);
+				davisConn->writePort ("LPS 1\n", 6);
 				return;
 			}
 			lastReceivedChar += ret;
@@ -184,7 +184,7 @@ void Davis::postEvent (rts2core::Event *event)
 	{
 		case EVENT_LOOP:
 			if (lastReceivedChar == 0)
-				davisConn->writePort ("LPS 1\n", 7);
+				davisConn->writePort ("LPS 1\n", 6);
 			break;
 	}
 	SensorWeather::postEvent (event);
@@ -226,7 +226,7 @@ int Davis::initHardware ()
 	{
 		logStream (MESSAGE_ERROR) << "invalid reply" << dataBuff[0] << dataBuff[1] << sendLog;
 	}
-	davisConn->writePort ("LPS 1\n", 7);
+	davisConn->writePort ("LPS 1\n", 6);
 	return 0;
 }
 
