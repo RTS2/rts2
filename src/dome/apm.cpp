@@ -186,6 +186,8 @@ int APMDome::startOpen ()
 		return 0;
 
 	sendUDPMessage ("D100");
+
+	shouldClose = false;
 	
 	return 0;
 }
@@ -213,10 +215,11 @@ int APMDome::startClose ()
 		shouldClose = true;
 		return 0;
 	}
-	shouldClose = false;
 
 	if (dome_state == APMDOME_CLOSED)
 		return 0;
+
+	shouldClose = false;
 
 	sendUDPMessage ("D777");
 	return 0;
@@ -333,7 +336,6 @@ int APMDome::sendUDPMessage (const char * _message)
                         {
                                 // dome fully closed
                                 dome_state = APMDOME_CLOSED;
-				shouldClose = false;
 				domeStatus->setValueString("Closed");
                         }
 
