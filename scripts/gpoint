@@ -26,27 +26,9 @@ import numpy as np
 from math import radians,degrees,cos,sin,tan,sqrt,atan2,acos
 from scipy.optimize import leastsq
 
+import re
+
 import argparse
-
-# telescope latitude - north positive
-latitude = 40.454069
-# telescope longitude - not used at the moment
-longitude = -110
-
-latitude_r = radians(latitude)
-
-# transform HA-DEc vector to ALT-AZ vector
-def equ_to_hrz(ha,dec):
-	A = np.sin(latitude_r) * np.sin(dec) + np.cos(latitude_r) * np.cos(dec) * np.cos(ha)
-	alt = np.arcsin(A)
-
-	Z = np.arccos(A)
-	Zs = np.sin(Z)
-	As = (np.cos(dec) * np.sin(ha)) / Zs;
-	Ac = (np.sin(latitude_r) * np.cos(dec) * np.cos(ha) - np.cos(latitude_r) * np.sin(dec)) / Zs;
-	Aa = np.arctan2(As,Ac)
-
-	return np.degrees(alt),(np.degrees(Aa) + 360) % 360
 
 # caclulates root mean squeare of vector/array
 def RMS(vector):
@@ -66,9 +48,24 @@ def flip_dec(a_dec,dec):
 
 class GPoint:
 	# @param 
-	def __init__(self,verbose=0):
+	def __init__(self,verbose=0,latitude=None):
 		self.aa_ra = None
 		self.verbose = verbose
+		# telescope latitude - north positive
+		self.latitude = latitude
+
+	# transform HA-DEc vector to ALT-AZ vector
+	def equ_to_hrz(self,ha,dec):
+		A = np.sin(self.latitude_r) * np.sin(dec) + np.cos(self.latitude_r) * np.cos(dec) * np.cos(ha)
+		alt = np.arcsin(A)
+
+		Z = np.arccos(A)
+		Zs = np.sin(Z)
+		As = (np.cos(dec) * np.sin(ha)) / Zs;
+		Ac = (np.sin(self.latitude_r) * np.cos(dec) * np.cos(ha) - np.cos(self.latitude_r) * np.sin(dec)) / Zs;
+		Aa = np.arctan2(As,Ac)
+
+		return np.degrees(alt),(np.degrees(Aa) + 360) % 360
 
 	# Fit functions.
 	# a_ra - target HA
@@ -82,8 +79,8 @@ class GPoint:
 			- params[5]/np.cos(a_dec) \
 			+ params[6]*np.tan(a_dec) \
 			- (-params[1]*np.sin(a_ra) + params[2]*np.cos(a_ra)) * np.tan(a_dec) \
-			- params[3]*np.cos(latitude_r)*np.sin(a_ra) / np.cos(a_dec) \
-			- params[7]*(np.sin(latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ra)) \
+			- params[3]*np.cos(self.latitude_r)*np.sin(a_ra) / np.cos(a_dec) \
+			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ra)) \
 			- params[8] * a_ra
 
 	def fit_model_dec(self,params,a_ra,r_ra,a_dec,r_dec):
@@ -91,22 +88,29 @@ class GPoint:
 			- params[0] \
 			+ params[1]*np.cos(a_ra) \
 			+ params[2]*np.sin(a_ra) \
-			+ params[3]*(sin(latitude_r) * np.cos(a_dec) - cos(latitude_r) * np.sin(a_dec) * np.cos(a_ra))
+			+ params[3]*(sin(self.latitude_r) * np.cos(a_dec) - cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ra))
 
 	def fit_model(self,params,a_ra,r_ra,a_dec,r_dec):
-		print 'computing', latitude_r, params, a_ra, r_ra, a_dec, r_dec
+		if self.verbose:
+			print 'computing', self.latitude_r, params, a_ra, r_ra, a_dec, r_dec
 		return np.concatenate((self.fit_model_ra(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
 
 	# open file, produce model
 	# expected format:
 	#  Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE
+	## observatory <longitude> <latitude> <altitude>
 	#02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
 	#skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
 	def process_file(self,filename):
+		obsmatch = re.compile('#\s*observatory\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+')
+
 		f = open(filename)
 		# skip first line
 		f.readline()
 		line = f.readline()
+		m = obsmatch.match(line)
+		if m:
+			self.latitude=float(m.group(2))
 		rdata = []
 		while not(line == ''):
 			# skip commented lines
@@ -117,6 +121,11 @@ class GPoint:
 		
 		if self.verbose:
 			print "Input data",rdata
+
+		if self.latitude is None:
+			sys.exit("You must specify latitude! Either through --latitude option, or in input file. Exiting")
+
+		self.latitude_r = radians(self.latitude)
 
 		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
@@ -135,8 +144,8 @@ class GPoint:
 		self.diff_dec = np.degrees(self.aa_dec - self.ar_dec)
 
 		# transform to alt/az
-		self.aa_alt,self.aa_az = equ_to_hrz(self.aa_ra,self.aa_dec)
-		self.ar_alt,self.ar_az = equ_to_hrz(self.ar_ra,self.ar_dec)
+		self.aa_alt,self.aa_az = self.equ_to_hrz(self.aa_ra,self.aa_dec)
+		self.ar_alt,self.ar_az = self.equ_to_hrz(self.ar_ra,self.ar_dec)
 
 		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec),full_output=True)
 
@@ -235,10 +244,11 @@ if __name__ == '__main__':
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
+	parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
 
 	args = parser.parse_args()
 
-	model = GPoint(args.verbose)
+	model = GPoint(args.verbose,latitude=args.latitude)
 	model.process_file(args.errorfile)
 	model.print_params()
 	model.print_stat()
