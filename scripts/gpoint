@@ -92,7 +92,7 @@ class GPoint:
 
 	def fit_model(self,params,a_ra,r_ra,a_dec,r_dec):
 		if self.verbose:
-			print 'computing', self.latitude_r, params, a_ra, r_ra, a_dec, r_dec
+			print 'computing', self.latitude, self.latitude_r, params, a_ra, r_ra, a_dec, r_dec
 		return np.concatenate((self.fit_model_ra(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
 
 	# open file, produce model
@@ -102,26 +102,25 @@ class GPoint:
 	#02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
 	#skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
 	def process_file(self,filename):
-		obsmatch = re.compile('#\s*observatory\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+')
+		obsmatch = re.compile('#\s*observatory\s+(\S*)\s+(\S*)\s+(\S*)\s*')
 
 		f = open(filename)
 		# skip first line
 		f.readline()
 		line = f.readline()
-		m = obsmatch.match(line)
-		if m:
-			self.latitude=float(m.group(2))
 		rdata = []
 		while not(line == ''):
 			if line[0] == '#':
-				m = obsmatch.math(line)
+				m = obsmatch.match(line)
 				if m:
 					if self.latitude is not None:
 						sys.exit('You cannot specify latitude twice!')
 					self.latitude=float(m.group(2))
 			else:
 				rdata.append(line.split())
+
 			line = f.readline()
+
 		f.close()
 		
 		if self.verbose:
