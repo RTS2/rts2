@@ -15,12 +15,12 @@ import os
 
 def median(of,files):
 	"""Computes normalized median of files."""
-	f = pyfits.fitsopen(files[0])
+	f = pyfits.open(files[0])
 	d = numpy.empty([len(files),len(f[0].data),len(f[0].data[0])])
 	avrg = numpy.mean(f[0].data)
 	d[0] = f[0].data / avrg
 	for x in range(1,len(files)):
-	  	f = pyfits.fitsopen(files[x])
+	  	f = pyfits.open(files[x])
 		avrg = numpy.mean(f[0].data)
 		d[x] = f[0].data / avrg
 	if (os.path.exists(of)):
@@ -37,7 +37,7 @@ def filtersort(of,files):
 	# sort by filters..
 	flats = {}
 	for x in files:
-	  	f = pyfits.fitsopen(x)
+	  	f = pyfits.open(x)
 		filt = f[0].header['FILTER']
 		try:
 			flats[filt].append(x)
