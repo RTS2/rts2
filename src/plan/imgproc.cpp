@@ -508,6 +508,7 @@ void ImageProc::changeRunning (ConnProcess * newImage)
 		}
 	}
 	runningImage = newImage;
+        runningImage->setConnectionDebug (getDebug ());
 	ret = runningImage->init ();
 	if (ret < 0)
 	{
