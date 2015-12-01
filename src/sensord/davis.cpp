@@ -147,7 +147,7 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 				logStream (MESSAGE_ERROR) << "data buffer does not start with ACK" << sendLog;
 				sleep (4);
 				davisConn->flushPortIO ();
-				davisConn->writePort ("LOOP 1\n", 7);
+				davisConn->writePort ("LPS 1\n", 7);
 				return;
 			}
 			lastReceivedChar += ret;
@@ -184,7 +184,7 @@ void Davis::postEvent (rts2core::Event *event)
 	{
 		case EVENT_LOOP:
 			if (lastReceivedChar == 0)
-				davisConn->writePort ("LOOP 1\n", 7);
+				davisConn->writePort ("LPS 1\n", 7);
 			break;
 	}
 	SensorWeather::postEvent (event);
@@ -226,7 +226,7 @@ int Davis::initHardware ()
 	{
 		logStream (MESSAGE_ERROR) << "invalid reply" << dataBuff[0] << dataBuff[1] << sendLog;
 	}
-	davisConn->writePort ("LOOP 1\n", 7);
+	davisConn->writePort ("LPS 1\n", 7);
 	return 0;
 }
 
@@ -306,12 +306,12 @@ void Davis::processData ()
 			barTrend->setValueInteger (0);
 	}
 	float hg2mg = 33.8639;
-	barometer->setValueFloat (hg2mg * *((float *) (dataBuff + 8 )));
+	barometer->setValueFloat (hg2mg * *((uint16_t *) (dataBuff + 8 )));
 	insideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 10)) / 10.0));
 	insideHumidity->setValueFloat(*((uint8_t *) (dataBuff + 12)));
 	outsideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 13)) / 10.0));
 
-	windSpeed->setValueFloat(mphToMs (*((int16_t *) (dataBuff + 15))));
+	windSpeed->setValueFloat(mphToMs (*((int8_t *) (dataBuff + 15))));
 	windDirection->setValueInteger(*((uint16_t *) (dataBuff + 17)) * 0.1);
 	wind10min->setValueFloat(*((uint8_t *) (dataBuff + 19)) * 0.1);
 	wind2min->setValueFloat(*((uint8_t *) (dataBuff + 21)) * 0.1);
@@ -321,9 +321,9 @@ void Davis::processData ()
 	outsideHumidity->setValueFloat(*((uint8_t *) (dataBuff + 34)));
 
 	float rainClicks2mm = 0.2;
-	rainRate->setValueInteger(rainClicks2mm * *((float *) (dataBuff + 42 )));
+	rainRate->setValueInteger(rainClicks2mm * *((uint16_t *) (dataBuff + 42 )));
 	uvIndex->setValueInteger(*((uint8_t *) (dataBuff + 44)));	
-	stormRain->setValueInteger(*((float *) (dataBuff + 47)));
+	stormRain->setValueInteger(*((uint16_t *) (dataBuff + 47)));
 }
 
 int main (int argc, char **argv)
