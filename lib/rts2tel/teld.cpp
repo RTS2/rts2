@@ -393,10 +393,12 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 
 	applyCorrections (out_tar, JD);
 
-	return sky2counts (JD, out_tar, ac, dc);
+        bool used_flip = false;
+
+	return sky2counts (JD, out_tar, ac, dc, used_flip);
 }
 
-int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool &used_flip)
 {
 	return -1;
 }

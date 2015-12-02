@@ -67,33 +67,37 @@ class GPoint:
 
 		return np.degrees(alt),(np.degrees(Aa) + 360) % 360
 
+	def model_ha(self,params,a_ha,a_dec):
+		return - params[4] \
+			- params[5]/np.cos(a_dec) \
+			+ params[6]*np.tan(a_dec) \
+			- (-params[1]*np.sin(a_ha) + params[2]*np.cos(a_ha)) * np.tan(a_dec) \
+			- params[3]*np.cos(self.latitude_r)*np.sin(a_ha) / np.cos(a_dec) \
+			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ha)) \
+			- params[8] * a_ha
+
+	def model_dec(self,params,a_ha,a_dec):
+		return - params[0] \
+			+ params[1]*np.cos(a_ha) \
+			+ params[2]*np.sin(a_ha) \
+			+ params[3]*(sin(self.latitude_r) * np.cos(a_dec) - cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha))
+
 	# Fit functions.
-	# a_ra - target HA
-	# r_ra - calculated (real) HA
+	# a_ha - target HA (hour angle)
+	# r_ha - calculated (real) HA
 	# a_dec - target DEC
 	# r_dec - calculated (real) DEC
 	# DEC > 90 or < -90 means telescope flipped (DEC axis continues for modelling purposes)
-	def fit_model_ra(self,params,a_ra,r_ra,a_dec,r_dec):
-		return a_ra - r_ra \
-			- params[4] \
-			- params[5]/np.cos(a_dec) \
-			+ params[6]*np.tan(a_dec) \
-			- (-params[1]*np.sin(a_ra) + params[2]*np.cos(a_ra)) * np.tan(a_dec) \
-			- params[3]*np.cos(self.latitude_r)*np.sin(a_ra) / np.cos(a_dec) \
-			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ra)) \
-			- params[8] * a_ra
+	def fit_model_ha(self,params,a_ha,r_ha,a_dec,r_dec):
+		return a_ha - r_ha + self.model_ha(a_ra,a_dec)
 
-	def fit_model_dec(self,params,a_ra,r_ra,a_dec,r_dec):
-		return a_dec - r_dec \
-			- params[0] \
-			+ params[1]*np.cos(a_ra) \
-			+ params[2]*np.sin(a_ra) \
-			+ params[3]*(sin(self.latitude_r) * np.cos(a_dec) - cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ra))
+	def fit_model_dec(self,params,a_ha,r_ha,a_dec,r_dec):
+		return a_dec - r_dec + self.model_dec(a_ha,a_dec)
 
 	def fit_model(self,params,a_ra,r_ra,a_dec,r_dec):
 		if self.verbose:
 			print 'computing', self.latitude, self.latitude_r, params, a_ra, r_ra, a_dec, r_dec
-		return np.concatenate((self.fit_model_ra(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
+		return np.concatenate((self.fit_model_ha(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
 
 	# open file, produce model
 	# expected format:
@@ -154,7 +158,7 @@ class GPoint:
 		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec),full_output=True)
 
 		# feed parameters to diff, obtain model differences. Closer to zero = better
-		self.diff_model_ra = np.degrees(self.fit_model_ra(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
+		self.diff_model_ha = np.degrees(self.fit_model_ra(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
 		self.diff_model_dec = np.degrees(self.fit_model_dec(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
 
 		return self.best
@@ -242,17 +246,21 @@ class GPoint:
 
 		pylab.show()
 
-if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='G-Point Model fitting and error plotting routines. Works on input file, where ')
-	parser.add_argument('errorfile',help='input file',type=str)
-	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
-	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
-	parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
+	def plotoffsets(self,best,ha_start,ha_end,dec):
+		ha_range = range(ha_start,ha_end,0.01)
+		ha_offsets = []
+		dec_offsets = []
+		for ha in ha_range:
+			ha_offsets.append(self.model_ha(ha,dec))
+			dec_offsets.append(self.model_dec(ha,dec))
 
-	args = parser.parse_args()
+		pylab.plot(ha_range,ha_offsets,'b-',ha_range,dec_offsets,'g=')
+		pylab.show()
 
+# Generate pointing model
+def generate_model(args):
 	model = GPoint(args.verbose,latitude=args.latitude)
+	
 	model.process_file(args.errorfile)
 	model.print_params()
 	model.print_stat()
@@ -266,3 +274,35 @@ if __name__ == '__main__':
 
 	if args.plot > 0:
 		model.ploterrors(args.plot)
+
+# Plot model offsets
+def plotOffsets(args):
+	if args.latitude = None:
+		sys.exit('you must specify latitude as parameter')
+	# load model..
+	f = open(args.model_file)
+	line = f.readline().split()
+	if line[0] != 'RTS2_MODEL ' or len(line) != 10:
+		sys.exit('invalid input model format')
+
+	ha_b,ha_e,dec = map(lambda f:float(f),args.plot_offsets.split(':'))
+	
+	model = GPoint(args.verbose,latitude=args.latitude)
+	model.plotoffsets(map(lambda f:float(f),line),ha_b,ha_e,dec)
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).')
+	parser.add_argument('errorfile',help='input file',type=str)
+	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
+	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
+	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
+	parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
+	parser.add_argument('--model-file',dest='model_file',action='store',default=None,type=str,help='existing model file to load and investigate')
+	parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
+
+	args = parser.parse_args()
+
+	if args.model_file:
+		plotOffsets(args)
+	else:
+		generateModel(args)
