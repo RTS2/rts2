@@ -265,10 +265,9 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool &use_flipped)
 {
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
-	bool use_flipped;
 
 	// returns without home offset, which will be removed in future
 	return sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped);
@@ -376,17 +375,23 @@ int GEM::peek (double ra, double dec)
 	peekPos.ra = ra;
 	peekPos.dec = dec;
 
+	bool use_flipped = false;
+
 	int32_t ac;
 	int32_t dc;
 
 	double JD = ln_get_julian_from_sys ();
 
-	int ret = sky2counts (JD, &peekPos, ac, dc);
+	int ret = sky2counts (JD, &peekPos, ac, dc, use_flipped);
 	if (ret)
 		return ret;
 
 	peekHaCwdAngle->setValueDouble (getHACWDAngle (ac));
+	peekFlip->setValueInteger (use_flipped);
+
 	sendValueAll (peekHaCwdAngle);
+	sendValueAll (peekFlip);
+
 	return 0;
 }
 

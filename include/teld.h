@@ -411,6 +411,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueAltAz *telAltAz;
 
 		rts2core::ValueInteger *telFlip;
+		rts2core::ValueInteger *peekFlip;
 
 		int flip_move_start;
 		int flip_longest_path;

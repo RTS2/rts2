@@ -246,6 +246,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	telFov->setValueDouble (180.0);
 
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
+	createValue (peekFlip, "peek_flip", "predicted telescope flip for peek command");
 
 	flip_move_start = 0;
 	flip_longest_path = -1;
