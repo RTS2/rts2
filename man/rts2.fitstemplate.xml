@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2011-12-26</date>">
+  <!ENTITY dhdate      "<date>2015-12-02</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -32,6 +32,10 @@
     </authorgroup>
     <copyright>
       <year>2011</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <copyright>
+      <year>2015</year>
       <holder>&dhusername;</holder>
     </copyright>
     &legal;
@@ -72,6 +76,15 @@ KEYA = @VAL1 / this is a comment
 TVAL = @TV.AL / value of variable AL from device named TV
 TVDOUBLE.d = @TV.double / double value, written as double
       </literallayout>
+    </para>
+
+    <para>
+       How templete is used is governed by <emphasis>no-metadata</emphasis>
+       parameter in
+       <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+       If the <emphasis>no-metadata</emphasis> parameter is set to true, RTS2 will write only
+       basic image/table data and append keywords from the template. The default value, false, will result in
+       RTS2 and template values present in FITS header.
     </para>
 
   </refsect1>
