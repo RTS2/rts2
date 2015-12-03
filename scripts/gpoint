@@ -265,7 +265,7 @@ class GPoint:
 def generateModel(args):
 	model = GPoint(args.verbose,latitude=args.latitude)
 	
-	model.process_file(args.inputfile)
+	model.process_file(args.inputfiles[0])
 	model.print_params()
 	model.print_stat()
 
@@ -279,34 +279,50 @@ def generateModel(args):
 	if args.plot > 0:
 		model.ploterrors(args.plot)
 
+def loadModel(modelfile):
+	f = open(modelfile)
+	line = f.readline().split()
+	if line[0] != 'RTS2_MODEL' or len(line) != 10:
+		sys.exit('invalid input model format')
+	f.close()
+	return map(lambda f:float(f),line[1:])
+
 # Plot model offsets
 def plotOffsets(args):
 	if args.latitude == None:
 		sys.exit('you must specify latitude as parameter')
 	# load model..
-	f = open(args.inputfile)
-	line = f.readline().split()
-	if line[0] != 'RTS2_MODEL' or len(line) != 10:
-		sys.exit('invalid input model format')
-
+	params = loadModel(args.inputfiles[0])
+	
 	ha_b,ha_e,dec = map(lambda f:float(f),args.plot_offsets.split(':'))
 	
 	model = GPoint(args.verbose,latitude=args.latitude)
-	model.plotoffsets(map(lambda f:float(f),line[1:]),ha_b,ha_e,dec)
+	model.plotoffsets(params,ha_b,ha_e,dec)
+
+def addModels(args):
+	params=[]
+	for f in args.inputfiles:
+		params.append(loadModel(f))
+	
+	print 'RTS2_MODEL ',' '.join(map(lambda f:str(f),np.sum(params,axis=0)))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).')
-	parser.add_argument('inputfile',help='input file(s)',type=str)
+	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
+        parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
 	parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
 	parser.add_argument('--model-input',dest='model_input',action='store_true',default=False,help='input file(s) are existing model file(s) to load and investigate')
 	parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
+	parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
 
 	args = parser.parse_args()
 
 	if args.model_input:
 		plotOffsets(args)
+	elif args.add_models:
+		addModels(args)
 	else:
 		generateModel(args)
