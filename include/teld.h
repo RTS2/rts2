@@ -594,7 +594,7 @@ class Telescope:public rts2core::Device
 		 * Transforms sky coordinates to axis coordinates. Placeholder, used only for
 		 * telescopes with possibility to command directly telescope axes.
 		 */
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool &used_flip);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
 
 		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
 
