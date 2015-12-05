@@ -284,11 +284,15 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	{
 		ac = tf_ac;
 		dc = tf_dc;
+		pos->ra = tf_pos.ra;
+		pos->dec = tf_pos.dec;
 	}
 	else
 	{
 		ac = tn_ac;
 		dc = tn_dc;
+		pos->ra = tn_pos.ra;
+		pos->dec = tn_pos.dec;
 	}
 
 	ac -= homeOff;
