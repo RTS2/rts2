@@ -99,13 +99,13 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	// apply model;
 	struct ln_equ_posn model_change;
-	struct ln_equ_posn tf_pos, tn_pos, tt_pos;
 
 	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
 	int ret_n = normalizeCountValues (ac, dc, tn_ac, tn_dc);
 
 	if (ret_n == 0)
 	{
+		struct ln_equ_posn tn_pos, tt_pos;
 		getOrigin (&tn_pos);
 
 		// to set telescope target
@@ -141,6 +141,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	if (ret_f == 0)
 	{
+		struct ln_equ_posn tf_pos, tt_pos;
 		getOrigin (&tf_pos);
 		tf_pos.ra = ln_range_degrees (tf_pos.ra + 180);
 		if (getLatitude () > 0)
@@ -278,20 +279,23 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 	// otherwise, non-flipped is the only way, stay on it..
 
+	getOrigin (pos);
+
 	// when we will go to flipped..
 	if (use_flipped == true)
 	{
 		ac = tf_ac;
 		dc = tf_dc;
-		pos->ra = tf_pos.ra;
-		pos->dec = tf_pos.dec;
+		pos->ra = ln_range_degrees (pos->ra + 180);
+		if (getLatitude () > 0)
+			pos->dec = 180 - pos->dec;
+		else
+			pos->dec = -180 - pos->dec;
 	}
 	else
 	{
 		ac = tn_ac;
 		dc = tn_dc;
-		pos->ra = tn_pos.ra;
-		pos->dec = tn_pos.dec;
 	}
 
 	ac -= homeOff;
