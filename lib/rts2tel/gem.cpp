@@ -106,8 +106,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	if (ret_n == 0)
 	{
-		tn_pos.ra = pos->ra;
-		tn_pos.dec = pos->dec;
+		getOrigin (&tn_pos);
 
 		// to set telescope target
 		tt_pos.ra = ls - ((double) (tn_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
@@ -142,8 +141,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	if (ret_f == 0)
 	{
-		tf_pos.ra = ln_range_degrees (pos->ra + 180);
-		tf_pos.dec = pos->dec;
+		getOrigin (&tf_pos);
+		tf_pos.ra = ln_range_degrees (tf_pos.ra + 180);
 		if (getLatitude () > 0)
 			tf_pos.dec = 180 - tf_pos.dec;
 		else
