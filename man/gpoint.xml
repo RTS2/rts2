@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2015-12-1</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-telmodeltest">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2015</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>G(PL) telescope pointing model builder and verificator</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &basicapp;
+      <arg choice="plain"><option>-o <replaceable class="parameter">output file</replaceable></option></arg>
+      <arg choice="plain"><option>-p</option></arg>
+      <arg choice="plain"><option>-v</option></arg>
+      <arg choice="plain"><option>--latitude <replaceable class="parameter">observatory latitude</replaceable></option></arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &basicapp;
+      <arg choice="plain"><option>-v</option></arg>
+      <arg choice="plain"><option>--model-file <replaceable class="parameter">existing model file</replaceable></option></arg>
+      <arg choice="plain"><option>--plot-offsets <replaceable class="parameter">offsets ha from-ha to-dec</replaceable></option></arg>
+      <arg choice="plain"><option>--latitude <replaceable class="parameter">observatory latitude</replaceable></option></arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &basicapp;
+      <arg choice="plain"><option>-r</option></arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    
+    <para>
+      Purpose of the pointing model is to correct for various missaligement,
+      caused either by mechanical or electronics components of the telescope.
+      GPoint is a tool to generate and verify such poiting model.
+    </para>
+
+    <para>
+      For model generation, input file is needed. This can be prepared from
+      pointing run images, which has WCS. GPoint itself cannot prepare the
+      input file. Input file must contain local sidereal time, relevant RA and
+      DEC of the telescope (in telescope coordinates, where e.g. on GEM DEC
+      axis values continue to count above 90/below -90) and true RA DEC
+      coordinates (of center pixel on camera).
+    </para>
+
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    &optiongnu;
+
+    <variablelist>
+      &basicapplist;
+      <varlistentry>
+        <term><option>-o</option></term>
+	<listitem>
+	  <para>
+            Output modelling file.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+        <refentrytitle>rts2-telmodeltest</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

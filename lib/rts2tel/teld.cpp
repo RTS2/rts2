@@ -318,24 +318,12 @@ double Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
-void Telescope::setTarTel (bool flipped)
+void Telescope::setTarTel (struct ln_equ_posn *pos)
 {
 	if (tarTelRaDec == NULL)
 		return;
 
-	tarTelRaDec->setValueRaDec (objRaDec->getRa (), objRaDec->getDec ());
-	if (flipped == true)
-	{
-		tarTelRaDec->setRa (ln_range_degrees (objRaDec->getRa () + 180));
-		if (telLatitude->getValueDouble () > 0)
-		{
-			tarTelRaDec->setDec (180 - objRaDec->getDec ());
-		}
-		else
-		{
-			tarTelRaDec->setDec (-180 + objRaDec->getDec ());
-		}
-	}
+	tarTelRaDec->setValueRaDec (pos->ra, pos->dec);
 }
 
 

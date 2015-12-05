@@ -44,6 +44,11 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	ret = sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped);
 
+	if (ret == 0)
+	{
+		setTarTel (&pos);
+	}
+
 	return ret;
 }
 
@@ -52,8 +57,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
 	int ret;
-
-	int32_t t_ac, t_dc;
 
 	// when set to true, will use flipped coordinates
 	use_flipped = false;
@@ -84,8 +87,8 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	dec = pos->dec;
 
 	// convert to count values
-	t_ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());
-	t_dc = (int32_t) ((dec - decZero->getValueDouble ()) * decCpd->getValueDouble ());
+	int32_t tn_ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());
+	int32_t tn_dc = (int32_t) ((dec - decZero->getValueDouble ()) * decCpd->getValueDouble ());
 
 	// gets the limits
 	ret = updateLimits ();
@@ -94,27 +97,96 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		return -1;
 	}
 
+	// apply model;
+	struct ln_equ_posn model_change;
+	struct ln_equ_posn tf_pos, tn_pos, tt_pos;
+
 	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
-	ret = checkCountValues (pos, ac, dc, t_ac, t_dc);
+	int ret_n = normalizeCountValues (ac, dc, tn_ac, tn_dc);
+
+	if (ret_n == 0)
+	{
+		tn_pos.ra = pos->ra;
+		tn_pos.dec = pos->dec;
+
+		// to set telescope target
+		tt_pos.ra = ls - ((double) (tn_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
+		tt_pos.dec = (double) (tn_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
+
+		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
+		applyModel (&tn_pos, &tt_pos, &model_change, JD);
+
+		tn_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
+		tn_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
+
+		if ((tn_dc < dcMin->getValueLong ()) || (tn_dc > dcMax->getValueLong ()))
+		{
+			logStream (MESSAGE_ERROR) << "non-flipped target declination position is outside limits. RA/DEC target "
+				<< LibnovaRaDec (pos) << " dc:" << tn_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
+			ret_n = -1;
+		}
+
+		if ((tn_ac < acMin->getValueLong ()) || (tn_ac > acMax->getValueLong ()))
+		{
+			logStream (MESSAGE_ERROR) << "non-flipped target RA position is outside limits. RA/DEC target "
+				<< LibnovaRaDec (pos) << " ac:" << tn_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
+			ret_n = -1;
+		}
+	}
 
 	// let's see what will different flip do..
-	int32_t tf_ac = t_ac - (int32_t) (fabs(haCpd->getValueDouble () * 360.0)/2.0);
-	int32_t tf_dc = t_dc + (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
+	int32_t tf_ac = tn_ac - (int32_t) (fabs(haCpd->getValueDouble () * 360.0)/2.0);
+	int32_t tf_dc = tn_dc + (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
 
-	int ret_f = checkCountValues (pos, ac, dc, tf_ac, tf_dc);
+	int ret_f = normalizeCountValues (ac, dc, tf_ac, tf_dc);
+
+	if (ret_f == 0)
+	{
+		tf_pos.ra = ln_range_degrees (pos->ra + 180);
+		tf_pos.dec = pos->dec;
+		if (getLatitude () > 0)
+			tf_pos.dec = 180 - tf_pos.dec;
+		else
+			tf_pos.dec = -180 - tf_pos.dec;
+
+		// to set telescope target
+		tt_pos.ra = ls - ((double) (tf_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
+		tt_pos.dec = (double) (tf_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
+	
+		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
+		applyModel (&tf_pos, &tt_pos, &model_change, JD);
+
+		tf_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
+		tf_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
+
+		if ((tf_dc < dcMin->getValueLong ()) || (tf_dc > dcMax->getValueLong ()))
+		{
+			logStream (MESSAGE_ERROR) << "non-flipped target declination position is outside limits. RA/DEC target "
+				<< LibnovaRaDec (pos) << " dc:" << tf_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
+			ret_n = -1;
+		}
+
+		if ((tf_ac < acMin->getValueLong ()) || (tf_ac > acMax->getValueLong ()))
+		{
+			logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
+				<< LibnovaRaDec (pos) << " ac:" << tf_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
+			ret_n = -1;
+		}
+	}
 
 	// there isn't path, give up...
-	if (ret != 0 && ret_f != 0)
+	if (ret_n != 0 && ret_f != 0)
 	{
+		logStream (MESSAGE_WARNING) << "no way to reach for " << LibnovaRaDec (pos) << ", returning -1" << sendLog;
 		return -1;
 	}
 	// only flipped..
-	else if (ret != 0 && ret_f == 0)
+	else if (ret_n != 0 && ret_f == 0)
 	{
 		use_flipped = true;
 	}
 	// both ways are possible, decide base on flipping parameter
-	else if (ret == 0 && ret_f == 0)
+	else if (ret_n == 0 && ret_f == 0)
 	{
 #define max(a,b) ((a) > (b) ? (a) : (b))
 		switch (used_flipping)
@@ -122,7 +194,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			// shortest
 			case 0:
 				{
-					int32_t diff_nf = max (fabs (ac - t_ac), fabs (dc - t_dc));
+					int32_t diff_nf = max (fabs (ac - tn_ac), fabs (dc - tn_dc));
 					int32_t diff_f = max (fabs (ac - tf_ac), fabs (dc - tf_dc));
 
 					if (diff_f < diff_nf)
@@ -158,7 +230,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 							break;
 						default:
 							{
-								int32_t diff_nf = max (fabs (ac - t_ac), fabs (dc - t_dc));
+								int32_t diff_nf = max (fabs (ac - tn_ac), fabs (dc - tn_dc));
 								int32_t diff_f = max (fabs (ac - tf_ac), fabs (dc - tf_dc));
 
 								if (diff_f > diff_nf)
@@ -180,7 +252,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			case 7:
 				// calculate distance towards "meridian" - counterweight down - position
 				// normalize distances by ra_ticks
-				double diff_nf = fabs (fmod (getHACWDAngle (t_ac), 360));
+				double diff_nf = fabs (fmod (getHACWDAngle (tn_ac), 360));
 				double diff_f = fabs (fmod (getHACWDAngle (tf_ac), 360));
 				// normalize to degree distance to HA
 				if (diff_nf > 180)
@@ -210,57 +282,16 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// when we will go to flipped..
 	if (use_flipped == true)
 	{
-		t_ac = tf_ac;
-		t_dc = tf_dc;
+		ac = tf_ac;
+		dc = tf_dc;
 	}
-
-	setTarTel (use_flipped);
-
-	// and finally, apply model
-	struct ln_equ_posn model_change;
-	struct ln_equ_posn m_pos, tt_pos;
-
-	// same position as entered to model..
-	getTarTel (&m_pos);
-
-	// to set telescope target
-	tt_pos.ra = ls - ((double) (t_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
-	tt_pos.dec = (double) (t_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
-
-	// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-	applyModel (&m_pos, &tt_pos, &model_change, JD);
-
-	#ifdef DEBUG_EXTRA
-	LibnovaRaDec lchange (&model_change);
-
-	logStream (MESSAGE_DEBUG) << "Before model " << t_ac << t_dc << lchange << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	t_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
-	t_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "After model" << t_ac << t_dc << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
+	else
 	{
-		logStream (MESSAGE_ERROR) << "target declination position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " dc:" << t_dc << " dcMin:" << dcMin->getValueLong () << " dcMax:" << dcMax->getValueLong () << sendLog;
-		return -1;
+		ac = tn_ac;
+		dc = tn_dc;
 	}
 
-	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))
-	{
-		logStream (MESSAGE_ERROR) << "target RA position is outside limits. RA/DEC target "
-			<< LibnovaRaDec (pos) << " ac:" << t_ac << " acMin:" << acMin->getValueLong () << " acMax:" << acMax->getValueDouble () << sendLog;
-		return -1;
-	}
-
-	t_ac -= homeOff;
-
-	ac = t_ac;
-	dc = t_dc;
+	ac -= homeOff;
 
 	return 0;
 }
@@ -442,7 +473,7 @@ double GEM::getHACWDAngle (int32_t ha_count)
 	}
 }
 
-int GEM::checkCountValues (struct ln_equ_posn *pos, int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc)
+int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc)
 {
 	int32_t full_ac = (int32_t) fabs(haCpd->getValueDouble () * 360.0);
 	int32_t full_dc = (int32_t) fabs(decCpd->getValueDouble () * 360.0);

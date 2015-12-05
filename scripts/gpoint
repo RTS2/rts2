@@ -22,6 +22,7 @@
 
 import sys
 import numpy as np
+import rts2.libnova
 
 from math import radians,degrees,cos,sin,tan,sqrt,atan2,acos
 from scipy.optimize import leastsq
@@ -47,16 +48,16 @@ def flip_dec(a_dec,dec):
 	return a_dec
 
 class GPoint:
-	# @param 
+	# @param   verbose  verbosity of the
 	def __init__(self,verbose=0,latitude=None):
 		self.aa_ra = None
 		self.verbose = verbose
 		# telescope latitude - north positive
 		self.latitude = latitude
 		if latitude is not None:
-			self.latitude_r = radians(latitude)
+			self.latitude_r = np.radians(latitude)
 
-	# transform HA-DEc vector to ALT-AZ vector
+	# transform HA-DEC vector to ALT-AZ vector
 	def equ_to_hrz(self,ha,dec):
 		A = np.sin(self.latitude_r) * np.sin(dec) + np.cos(self.latitude_r) * np.cos(dec) * np.cos(ha)
 		alt = np.arcsin(A)
@@ -82,7 +83,7 @@ class GPoint:
 		return - params[0] \
 			+ params[1]*np.cos(a_ha) \
 			+ params[2]*np.sin(a_ha) \
-			+ params[3]*(sin(self.latitude_r) * np.cos(a_dec) - cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha))
+			+ params[3]*(np.sin(self.latitude_r) * np.cos(a_dec) - np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha))
 
 	# Fit functions.
 	# a_ha - target HA (hour angle)
@@ -123,7 +124,7 @@ class GPoint:
 						sys.exit('You cannot specify latitude twice!')
 					self.latitude=float(m.group(2))
 			else:
-				rdata.append(line.split())
+				rdata.append(line.split()[:9])
 
 			line = f.readline()
 
@@ -135,7 +136,7 @@ class GPoint:
 		if self.latitude is None:
 			sys.exit("You must specify latitude! Either through --latitude option, or in input file. Exiting")
 
-		self.latitude_r = radians(self.latitude)
+		self.latitude_r = np.radians(self.latitude)
 
 		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
@@ -152,6 +153,7 @@ class GPoint:
 
 		self.diff_ra = np.degrees(self.aa_ra - self.ar_ra)
 		self.diff_dec = np.degrees(self.aa_dec - self.ar_dec)
+		self.diff_angular = rts2.libnova.angularSeparation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
 
 		# transform to alt/az
 		self.aa_alt,self.aa_az = self.equ_to_hrz(self.aa_ra,self.aa_dec)
@@ -185,20 +187,9 @@ class GPoint:
 		print 'Dec axis flexure (") {0}'.format(degrees(self.best[7])*60.0)
 		print 'HA encoder scale error ("/degree) {0}'.format(degrees(self.best[8])*60.0)
 
-		print 'DIFF_MODEL RA',
-		for d in self.diff_model_ha:
-			print d * 3600.0,
-		print
-
-		print 'DIFF_MODEL DEC',
-		for d in self.diff_model_dec:
-			print d * 3600.0,
-		print
-
-		print 'RTS2_MODEL',
-		for a in self.best:
-			print a,
-		print
+		print 'DIFF_MODEL RA',' '.join(map(str,self.diff_model_ha*3600))
+		print 'DIFF_MODEL DEC',' '.join(map(str,self.diff_model_dec*3600))
+		print 'RTS2_MODEL',' '.join(map(str,self.best))
 
 
 	def print_stat(self):
@@ -206,11 +197,12 @@ class GPoint:
 			print self.diff_ra * 3600.0
 			print self.diff_dec * 3600.0
 
-		print 'RMS RA DIFF {0}"'.format(RMS(self.diff_ra*3600))
-		print 'RMS DEC DIFF {0}"'.format(RMS(self.diff_dec*3600))
+		print 'RMS RA DIFF {0}"'.format(RMS(self.diff_ra)*3600)
+		print 'RMS DEC DIFF {0}"'.format(RMS(self.diff_dec)*3600)
+		print 'RMS ANGULAR SEP DIFF {0}"'.format(RMS(self.diff_angular)*3600)
 
-		print 'RMS MODEL RA DIFF {0}"'.format(RMS(self.diff_model_ha*3600))
-		print 'RMS MODEL DEC DIFF {0}"'.format(RMS(self.diff_model_dec*3600))
+		print 'RMS MODEL RA DIFF {0}"'.format(RMS(self.diff_model_ha)*3600)
+		print 'RMS MODEL DEC DIFF {0}"'.format(RMS(self.diff_model_dec)*3600)
 		print 'RMS {0}'.format(np.square(np.concatenate((self.diff_model_ha,self.diff_model_dec))*3600))
 
 		return self.best

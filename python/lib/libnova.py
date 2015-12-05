@@ -17,7 +17,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from math import cos,sin,atan2,sqrt,radians,degrees
+from numpy import cos,sin,arctan2,sqrt,radians,degrees
 
 def angularSeparation(ra1,dec1,ra2,dec2):
 	a1 = radians(ra1)
@@ -31,7 +31,7 @@ def angularSeparation(ra1,dec1,ra2,dec2):
 
 	x = x * x;
 	y = y * y;
-	d = atan2(sqrt(x+y),z)
+	d = arctan2(sqrt(x+y),z)
 
 	return degrees(d)
 
