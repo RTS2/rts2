@@ -1553,7 +1553,14 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		{
 			maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING, 0, "correcting interrupted by move");
 		}
-		logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
+
+		struct ln_hrz_posn hrz;
+		getTelAltAz (&hrz);
+
+		LibnovaHrz syncFromAltAz (&hrz);
+
+		//logStream (INFO_MOUNT_SLEW_START | MESSAGE_INFO) << syncTo << " " << syncFrom << " " << syncFromAltAz << sendLog;
+		logStream (MESSAGE_INFO) << "moving from " << syncFrom << " to " << syncTo << " (altaz from " << syncFromAltAz << ")" << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | TEL_MASK_TRACK | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 		flip_move_start = telFlip->getValueInteger ();
 	}

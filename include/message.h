@@ -60,6 +60,10 @@ typedef uint32_t messageType_t;
 #define INFO_OBSERVATION_INTERRUPTED    0x000800
 #define INFO_OBSERVATION_LOOP           0x000900
 
+// INFO_MOUNT_xx messages logs mount movements
+#define INFO_MOUNT_SLEW_START           0x001000
+#define INFO_MOUNT_SLEW_ALTAZ           0x001100
+
 #define MESSAGE_MASK_ALL                0xFFFFFF
 
 namespace rts2core

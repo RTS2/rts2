@@ -105,6 +105,9 @@ const std::string Message::getMessageString ()
 		case INFO_OBSERVATION_LOOP:
 			os << expandString ("starting new loop of observation #$0 on target #$1");
 			break;
+		case INFO_MOUNT_SLEW_START:
+			os << expandString ("moving from $0 (altaz $2) to $1");
+			break;
 		default:
 			return messageString;
 	}
