@@ -131,7 +131,7 @@ if __name__ == '__main__':
 	    raastr=float(ret[0])*15.0
 	    decastr=float(ret[1])
 
-	    err = pynova.angularSeparation(raorig,decorig,raastr+xoffs/3600,decastr+yoffs/3600.0)
+	    err = pynova.angular_separation(raorig,decorig,raastr+xoffs/3600,decastr+yoffs/3600.0)
 
 	    ra_err = math.cos(math.radians(decorig))*((raorig-raastr)-xoffs/3600.0)
 	    dec_err = decorig-decastr-yoffs/3600.0

@@ -19,7 +19,7 @@
 
 from numpy import cos,sin,arctan2,sqrt,radians,degrees
 
-def angularSeparation(ra1,dec1,ra2,dec2):
+def angular_separation(ra1,dec1,ra2,dec2):
 	a1 = radians(ra1)
 	d1 = radians(dec1)
 	a2 = radians(ra2)
@@ -36,7 +36,7 @@ def angularSeparation(ra1,dec1,ra2,dec2):
 	return degrees(d)
 
 if __name__ == '__main__':
-	print angularSeparation(0,0,1,1)
-	print angularSeparation(0,0,0,90)
-	print angularSeparation(0,0,180,0)
-	print angularSeparation(0,0,180,-40)
+	print angular_separation(0,0,1,1)
+	print angular_separation(0,0,0,90)
+	print angular_separation(0,0,180,0)
+	print angular_separation(0,0,180,-40)

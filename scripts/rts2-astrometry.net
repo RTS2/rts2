@@ -111,7 +111,7 @@ def run_on_image(fn, verbose=False, blind=False, noblind=False, multiwcs='', wcs
 		c.doubleValue('real_dec','[deg] image dec as calculated from astrometry',rastrxy[1],rts2.scriptcomm.DT_DEC)
 
 		if raorig is not None and decorig is not None:
-			err = rts2.libnova.angularSeparation(raorig, decorig, rastrxy[0] + x_o/3600.0, rastrxy[1] + y_o/3600.0)
+			err = rts2.libnova.angular_separation(raorig, decorig, rastrxy[0] + x_o/3600.0, rastrxy[1] + y_o/3600.0)
 
 			ra_err = math.cos(math.radians(decorig))*((raorig-rastrxy[0])-x_o/3600.0)
 			dec_err = decorig-rastrxy[1]-y_o/3600.0

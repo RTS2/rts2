@@ -153,7 +153,7 @@ class GPoint:
 
 		self.diff_ra = np.degrees(self.aa_ra - self.ar_ra)
 		self.diff_dec = np.degrees(self.aa_dec - self.ar_dec)
-		self.diff_angular = rts2.libnova.angularSeparation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
+		self.diff_angular = rts2.libnova.angular_separation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
 
 		# transform to alt/az
 		self.aa_alt,self.aa_az = self.equ_to_hrz(self.aa_ra,self.aa_dec)
@@ -164,6 +164,8 @@ class GPoint:
 		# feed parameters to diff, obtain model differences. Closer to zero = better
 		self.diff_model_ha = np.degrees(self.fit_model_ha(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
 		self.diff_model_dec = np.degrees(self.fit_model_dec(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
+
+                self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra - self.diff_model_ha,self.aa_dec - self.diff_model_dec,self.ar_ra,self.ar_dec)
 
 		return self.best
 
@@ -203,6 +205,7 @@ class GPoint:
 
 		print 'RMS MODEL RA DIFF {0}"'.format(RMS(self.diff_model_ha)*3600)
 		print 'RMS MODEL DEC DIFF {0}"'.format(RMS(self.diff_model_dec)*3600)
+		print 'RMS MODEL ANGULAR SEP DIFF {0}"'.format(RMS(self.diff_model_angular)*3600)
 		print 'RMS {0}'.format(np.square(np.concatenate((self.diff_model_ha,self.diff_model_dec))*3600))
 
 		return self.best
