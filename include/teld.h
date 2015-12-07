@@ -699,7 +699,7 @@ class Telescope:public rts2core::Device
 		 * @param hrz ALT AZ coordinates of target.
 		 * @param jd  Julian date for which position will be calculated.
 		 */
-		void getTelTargetAltAz (struct ln_hrz_posn *hrz, double jd);
+		void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
 
 		double getTargetHa ();
 		double getTargetHa (double jd);

@@ -574,10 +574,10 @@ double Telescope::getTargetDistance ()
 	return ln_get_angular_separation (&tel, &tar);
 }
 
-void Telescope::getTelTargetAltAz (struct ln_hrz_posn *hrz, double jd)
+void Telescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 {
 	struct ln_equ_posn tar;
-	getTelTargetRaDec (&tar);
+	getTarget (&tar);
 	struct ln_lnlat_posn observer;
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
@@ -1487,7 +1487,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	if (hardHorizon)
 	{
 		struct ln_hrz_posn hrpos;
-		getTelTargetAltAz (&hrpos, JD);
+		getTargetAltAz (&hrpos, JD);
 		if (!hardHorizon->is_good (&hrpos))
 		{
 			useParkFlipping = false;
