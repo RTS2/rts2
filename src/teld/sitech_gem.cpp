@@ -126,6 +126,8 @@ class Sitech:public GEM
 		}
 
 	private:
+		void internalTracking ();
+
 		void getConfiguration ();
 
 		/**
@@ -761,11 +763,15 @@ int Sitech::isMoving ()
 
 	if (getTargetDistance () > trackingDist->getValueDouble ())
 	{
+		// close to target, run tracking
+		if (getTargetDistance () < 0.5)
+		{
+			internalTracking ();
+			return 0;
+		}
+
 		// if too far away, update target
 		startResync ();
-		// close to target, increase update frequvency..
-		if (getTargetDistance () < 0.5)
-			return 0;
 
 		return USEC_SEC / 10;
 	}
@@ -828,6 +834,103 @@ int Sitech::startPark ()
 	}
 	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
 	return moveAltAz ();
+}
+
+void Sitech::internalTracking ()
+{
+	double sec_step = 2.0;
+	// calculate position sec_step from last position, base speed on this..
+	struct ln_equ_posn tarPos;
+	double tar_distance;
+
+	info ();
+
+	int32_t ac = r_ra_pos->getValueLong ();
+	int32_t dc = r_dec_pos->getValueLong ();
+
+	double futureJD = getTelJD + sec_step / 86400.0;
+	int ret = calculateTarget (futureJD, sec_step, &tarPos, tar_distance, ac, dc);
+	if (ret)
+	{
+		if (ret < 0)
+			logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
+		stopTracking ();
+		return;
+	}
+
+	if (use_constant_speed->getValueBool () == true)
+	{
+		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
+		radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;
+
+		// 2 degrees in ra; will be called periodically..
+		if (ra_track_speed->getValueDouble () > 0)
+			radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+		else
+			radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+
+		if (dec_track_speed->getValueDouble () > 0)
+			radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
+		else
+			radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
+	}
+	else
+	{
+		// 1 step change
+		int32_t ac_step = labs (ac - r_ra_pos->getValueLong ()) / sec_step;
+		int32_t dc_step = labs (dc - r_dec_pos->getValueLong ()) / sec_step;
+
+		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (ac_step);
+		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (dc_step);
+
+		// put axis in future
+
+		if (radec_Xrequest.y_speed != 0)
+		{
+			if (ac > r_ra_pos->getValueLong ())
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () + ac_step * 10;
+			else
+				radec_Xrequest.y_dest = r_ra_pos->getValueLong () - ac_step * 10;
+		}
+		else
+		{
+			radec_Xrequest.y_dest = r_ra_pos->getValueLong ();
+		}
+
+		if (radec_Xrequest.x_speed != 0)
+		{
+			if (dc > r_dec_pos->getValueLong ())
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () + dc_step * 10;
+			else
+				radec_Xrequest.x_dest = r_dec_pos->getValueLong () - dc_step * 10;
+		}
+		else
+		{
+			radec_Xrequest.x_dest = r_dec_pos->getValueLong ();
+		}
+	}
+
+	ra_sitech_speed->setValueLong (radec_Xrequest.y_speed);
+	dec_sitech_speed->setValueLong (radec_Xrequest.x_speed);
+
+	radec_Xrequest.x_bits = xbits;
+	radec_Xrequest.y_bits = ybits;
+
+	xbits |= (0x01 << 4);
+
+	// check that the entered trajactory is valid
+	ret = checkTrajectory (ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
+	if (ret != 0)
+	{
+		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
+		stopTracking ();
+		return;
+	}
+
+	t_ra_pos->setValueLong (radec_Xrequest.y_dest);
+	t_dec_pos->setValueLong (radec_Xrequest.x_dest);
+
+	serConn->sendXAxisRequest (radec_Xrequest);
 }
 
 void Sitech::getConfiguration ()
@@ -987,99 +1090,7 @@ void Sitech::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
-	double sec_step = 2.0;
-	// calculate position sec_step from last position, base speed on this..
-	struct ln_equ_posn tarPos;
-	double tar_distance;
-
-	info ();
-
-	int32_t ac = r_ra_pos->getValueLong ();
-	int32_t dc = r_dec_pos->getValueLong ();
-
-	double futureJD = getTelJD + sec_step / 86400.0;
-	int ret = calculateTarget (futureJD, sec_step, &tarPos, tar_distance, ac, dc);
-	if (ret)
-	{
-		if (ret < 0)
-			logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
-		stopTracking ();
-		return;
-	}
-
-	if (use_constant_speed->getValueBool () == true)
-	{
-		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
-		radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;
-
-		// 2 degrees in ra; will be called periodically..
-		if (ra_track_speed->getValueDouble () > 0)
-			radec_Xrequest.y_dest = r_ra_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
-		else
-			radec_Xrequest.y_dest = r_ra_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
-
-		if (dec_track_speed->getValueDouble () > 0)
-			radec_Xrequest.x_dest = r_dec_pos->getValueLong () + haCpd->getValueDouble () * 2.0;
-		else
-			radec_Xrequest.x_dest = r_dec_pos->getValueLong () - haCpd->getValueDouble () * 2.0;
-	}
-	else
-	{
-		// 1 step change
-		int32_t ac_step = labs (ac - r_ra_pos->getValueLong ()) / sec_step;
-		int32_t dc_step = labs (dc - r_dec_pos->getValueLong ()) / sec_step;
-
-		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (ac_step);
-		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (dc_step);
-
-		// put axis in future
-
-		if (radec_Xrequest.y_speed != 0)
-		{
-			if (ac > r_ra_pos->getValueLong ())
-				radec_Xrequest.y_dest = r_ra_pos->getValueLong () + ac_step * 10;
-			else
-				radec_Xrequest.y_dest = r_ra_pos->getValueLong () - ac_step * 10;
-		}
-		else
-		{
-			radec_Xrequest.y_dest = r_ra_pos->getValueLong ();
-		}
-
-		if (radec_Xrequest.x_speed != 0)
-		{
-			if (dc > r_dec_pos->getValueLong ())
-				radec_Xrequest.x_dest = r_dec_pos->getValueLong () + dc_step * 10;
-			else
-				radec_Xrequest.x_dest = r_dec_pos->getValueLong () - dc_step * 10;
-		}
-		else
-		{
-			radec_Xrequest.x_dest = r_dec_pos->getValueLong ();
-		}
-	}
-
-	ra_sitech_speed->setValueLong (radec_Xrequest.y_speed);
-	dec_sitech_speed->setValueLong (radec_Xrequest.x_speed);
-
-	radec_Xrequest.x_bits = xbits;
-	radec_Xrequest.y_bits = ybits;
-
-	xbits |= (0x01 << 4);
-
-	// check that the entered trajactory is valid
-	ret = checkTrajectory (ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
-	if (ret != 0)
-	{
-		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
-		stopTracking ();
-		return;
-	}
-
-	t_ra_pos->setValueLong (radec_Xrequest.y_dest);
-	t_dec_pos->setValueLong (radec_Xrequest.x_dest);
-
-	serConn->sendXAxisRequest (radec_Xrequest);
+	internalTracking ();
 }
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
