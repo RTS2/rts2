@@ -146,14 +146,19 @@ class GPoint:
 	
 		par_init = np.array([0,0,0,0,0,0,0,0,0])
 	
-		self.aa_ra = np.radians(np.array(a_data[:,0],np.float))
-		self.aa_dec = np.radians(np.array(a_data[:,1],np.float))
-		self.ar_ra = np.radians(np.array(a_data[:,2],np.float))
-		self.ar_dec = np.radians(np.array(a_data[:,3],np.float))
+		self.aa_ra = np.array(a_data[:,0],np.float)
+		self.aa_dec = np.array(a_data[:,1],np.float)
+		self.ar_ra = np.array(a_data[:,2],np.float)
+		self.ar_dec = np.array(a_data[:,3],np.float)
 
-		self.diff_ra = np.degrees(self.aa_ra - self.ar_ra)
-		self.diff_dec = np.degrees(self.aa_dec - self.ar_dec)
+		self.diff_ra = self.aa_ra - self.ar_ra
+		self.diff_dec = self.aa_dec - self.ar_dec
 		self.diff_angular = rts2.libnova.angular_separation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
+
+		self.aa_ra = np.radians(self.aa_ra)
+		self.aa_dec = np.radians(self.aa_dec)
+		self.ar_ra = np.radians(self.ar_ra)
+		self.ar_dec = np.radians(self.ar_dec)
 
 		# transform to alt/az
 		self.aa_alt,self.aa_az = self.equ_to_hrz(self.aa_ra,self.aa_dec)
