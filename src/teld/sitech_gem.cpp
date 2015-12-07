@@ -767,7 +767,7 @@ int Sitech::isMoving ()
 		if (getTargetDistance () < 0.5)
 		{
 			internalTracking ();
-			return 0;
+			return USEC_SEC * trackingInterval->getValueFloat ();
 		}
 
 		// if too far away, update target
