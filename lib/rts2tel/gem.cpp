@@ -28,7 +28,7 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
 	int32_t homeOff;
-	struct ln_equ_posn pos;
+	struct ln_equ_posn pos, tel_target;
 	int ret;
 	bool use_flipped;
 
@@ -42,11 +42,12 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 
-	ret = sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped);
+	ret = sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped, &tel_target);
 
 	if (ret == 0)
 	{
 		setTarTel (&pos);
+		setTelTarget (tel_target.ra, tel_target.dec);
 	}
 
 	return ret;
