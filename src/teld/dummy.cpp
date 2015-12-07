@@ -248,6 +248,8 @@ int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t 
 {
 	ac = pos->ra * 10000;
 	dc = pos->dec * 10000;
+        applyCorrections (pos, JD);
+        setTelTarget (pos->ra, pos->dec);
 	return 0;
 }
 

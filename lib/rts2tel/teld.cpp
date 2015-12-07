@@ -133,10 +133,14 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST_180);
 
-	createValue (telTargetRaDec, "tel_target", "target RA DEC telescope coordinates - one feeded to TCS", false);
+	createValue (aberated, "aberated", "target coordinates, aberated", false);
+	createValue (precessed, "precessed", "target coordinates, aberated and precessed", false);
+	createValue (refraction, "refraction", "[deg] refraction (in altitude)", false, RTS2_DT_DEG_DIST_180);
 
 	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true, RTS2_DT_DEGREES, 0);
 	modelRaDec->setValueRaDec (0, 0);
+
+	createValue (telTargetRaDec, "tel_target", "target RA DEC telescope coordinates - virtual coordinates feeded to TCS", false);
 
 	wcs_crval1 = wcs_crval2 = NULL;
 
@@ -246,7 +250,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	telFov->setValueDouble (180.0);
 
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
-	createValue (peekFlip, "peek_flip", "predicted telescope flip for peek command");
+	createValue (peekFlip, "peek_flip", "predicted telescope flip for peek command", false);
 
 	flip_move_start = 0;
 	flip_longest_path = -1;
@@ -672,11 +676,13 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 void Telescope::applyAberation (struct ln_equ_posn *pos, double JD)
 {
 	ln_get_equ_aber (pos, JD, pos);
+	aberated->setValueRaDec (pos->ra, pos->dec);
 }
 
 void Telescope::applyPrecession (struct ln_equ_posn *pos, double JD)
 {
 	ln_get_equ_prec (pos, JD, pos);
+	precessed->setValueRaDec (pos->ra, pos->dec);
 }
 
 void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD)
@@ -691,6 +697,7 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
 	ref = ln_get_refraction_adj (hrz.alt, 860, 10);
 	hrz.alt += ref;
+	refraction->setValueDouble (ref);
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
 
@@ -795,8 +802,6 @@ int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool inve
 
 void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD)
 {
-	ln_equ_posn pos_n;
-
 	computeModel (m_pos, model_change, JD);
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
@@ -812,16 +817,10 @@ void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_po
 		else
 			model_change->dec -= corrRaDec->getDec();
 	}
-	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
-	pos_n = *tt_pos;
-	normalizeRaDec (pos_n.ra, pos_n.dec);
-	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }
 
 void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr)
 {
-	ln_equ_posn pos_n;
-
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
 
 	// also include corrRaDec correction to get resulting values when applyCorr set to true...
@@ -833,10 +832,6 @@ void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_po
 		else
 			model_change->dec -= corrRaDec->getDec();
 	}
-	// we want to set telTargetRaDec in sky coordinates (pos can be raw)...
-	pos_n = *pos;
-	normalizeRaDec (pos_n.ra, pos_n.dec);
-	telTargetRaDec->setValueRaDec (pos_n.ra, pos_n.dec);
 }
 
 void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, double JD)
@@ -947,10 +942,13 @@ int Telescope::initValues ()
 	if (ret)
 		return ret;
 	tarRaDec->setFromValue (telRaDec);
-	telTargetRaDec->setFromValue (telRaDec);
 	oriRaDec->setFromValue (telRaDec);
 	objRaDec->setFromValue (telRaDec);
+	aberated->setFromValue (telRaDec);
+	precessed->setFromValue (telRaDec);
+	refraction->setValueDouble (NAN);
 	modelRaDec->setValueRaDec (0, 0);
+	telTargetRaDec->setFromValue (telRaDec);
 
 	if (wcs_crval1 && wcs_crval2)
 	{
@@ -1447,7 +1445,6 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	// calculate target after corrections from astrometry
 	applyCorrRaDec (&pos, false, false);
 
-	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);
 
 	moveInfoCount = 0;
@@ -1585,10 +1582,10 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	infoAll ();
 
 	tarRaDec->resetValueChanged ();
-	telTargetRaDec->resetValueChanged ();
 	oriRaDec->resetValueChanged ();
 	offsRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
+	telTargetRaDec->resetValueChanged ();
 	mpec->resetValueChanged ();
 
 	if (woffsRaDec->wasChanged ())

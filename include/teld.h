@@ -507,9 +507,13 @@ class Telescope:public rts2core::Device
 		void setTarget (double ra, double dec)
 		{
 			tarRaDec->setValueRaDec (ra, dec);
-			telTargetRaDec->setValueRaDec (ra, dec);
 			modelRaDec->setValueRaDec (0, 0);
 		}
+
+                void setTelTarget (double ra, double dec)
+                {
+                        telTargetRaDec->setValueRaDec (ra, dec);
+                }
 
 		/**
 		 * Sets new movement target, used exclusively to change target flip.
@@ -1045,13 +1049,18 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueRaDec *total_offsets;
 
+		rts2core::ValueRaDec *aberated;
+		rts2core::ValueRaDec *precessed;
+
+		rts2core::ValueDouble *refraction;
+
 		/**
 		 * Modelling changes.
 		 */
 		rts2core::ValueRaDec *modelRaDec;
 
 		/**
-		 * Corrected, modelled coordinates feeded to telescope.
+		 * Telescope target coordinates, corrected (precessed, aberated, refracted) with modelling offset.
 		 */
 		rts2core::ValueRaDec *telTargetRaDec;
 

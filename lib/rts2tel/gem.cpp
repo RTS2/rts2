@@ -52,7 +52,7 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 	return ret;
 }
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped, struct ln_equ_posn *targetPos)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
@@ -99,18 +99,20 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	// apply model;
 	struct ln_equ_posn model_change;
+	struct ln_equ_posn tf_pos, tn_pos, tt_pos;
 
 	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
 	int ret_n = normalizeCountValues (ac, dc, tn_ac, tn_dc);
 
 	if (ret_n == 0)
 	{
-		struct ln_equ_posn tn_pos, tt_pos;
 		getOrigin (&tn_pos);
 
 		// to set telescope target
 		tt_pos.ra = ls - ((double) (tn_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
 		tt_pos.dec = (double) (tn_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
+
+		applyCorrections (&tn_pos, JD);
 
 		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
 		applyModel (&tn_pos, &tt_pos, &model_change, JD);
@@ -141,8 +143,10 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	if (ret_f == 0)
 	{
-		struct ln_equ_posn tf_pos, tt_pos;
 		getOrigin (&tf_pos);
+
+		applyCorrections (&tf_pos, JD);
+
 		tf_pos.ra = ln_range_degrees (tf_pos.ra + 180);
 		if (getLatitude () > 0)
 			tf_pos.dec = 180 - tf_pos.dec;
@@ -291,11 +295,21 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			pos->dec = 180 - pos->dec;
 		else
 			pos->dec = -180 - pos->dec;
+		if (targetPos != NULL)
+		{
+			targetPos->ra = tf_pos.ra;
+			targetPos->dec = tf_pos.dec;
+		}
 	}
 	else
 	{
 		ac = tn_ac;
 		dc = tn_dc;
+		if (targetPos != NULL)
+		{
+			targetPos->ra = tn_pos.ra;
+			targetPos->dec = tn_pos.dec;
+		}
 	}
 
 	ac -= homeOff;
