@@ -322,9 +322,16 @@ int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &d
 {
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
         bool use_flipped;
+	struct ln_equ_posn tar_pos;
 
 	// returns without home offset, which will be removed in future
-	return sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped);
+	int ret = sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped, &tar_pos);
+	if (ret == 0)
+	{
+		setTarTel (pos);
+		setTelTarget (tar_pos.ra, tar_pos.dec);
+	}
+	return ret;
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
