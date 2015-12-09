@@ -84,7 +84,7 @@ class APGTO:public TelLX200 {
 		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 
 		virtual int applyCorrectionsFixed (double ra, double dec);
-		virtual void applyCorrections (double &tar_ra, double &tar_dec);
+		virtual void applyCorrections (double &tar_ra, double &tar_dec, bool writeValues);
 
 		virtual void notMoveCupola ();
 
@@ -1004,9 +1004,9 @@ int APGTO::applyCorrectionsFixed (double ra, double dec)
 	return TelLX200::applyCorrectionsFixed (ra, dec);
 }
 
-void APGTO::applyCorrections (double &tar_ra, double &tar_dec)
+void APGTO::applyCorrections (double &tar_ra, double &tar_dec, bool writeValues)
 {
-	TelLX200::applyCorrections (tar_ra, tar_dec);
+	TelLX200::applyCorrections (tar_ra, tar_dec, writeValues);
 	tar_ra -= fixedOffsets->getRa ();
 	if (telFlip->getValueInteger () == 0)
 		tar_dec -= fixedOffsets->getDec ();

@@ -70,6 +70,12 @@ class Dummy:public Telescope
 			return 0;
 		}
 
+		virtual int endMove ()
+		{
+			startTracking ();
+			return Telescope::endMove ();
+		}
+
 		virtual int stopMove ()
 		{
 			return 0;
@@ -86,8 +92,6 @@ class Dummy:public Telescope
 		{
 			return 0;
 		}
-
-
 
 		virtual int isMoving ();
 
@@ -108,7 +112,7 @@ class Dummy:public Telescope
 
 		virtual void runTracking ();
 
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues);
 
 	private:
 
@@ -181,6 +185,7 @@ int Dummy::startResync ()
 	applyModel (&tar, &tt_pos, &model_change, JD);
 
 	setTarget (tar.ra, tar.dec);
+	setTelTarget (tar.ra, tar.dec);
 
 	ln_get_hrz_from_equ (&tar, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < 0)
@@ -227,29 +232,31 @@ void Dummy::runTracking ()
 {
 	double JD = ln_get_julian_from_sys () + 2 / 86400.0;
 	struct ln_equ_posn target;
-	double tar_distance;
 	int32_t t_ac, t_dc;
 
 	t_ac = t_axRa->getValueLong ();
 	t_dc = t_axDec->getValueLong ();
 
-	int ret = calculateTarget (JD, 2, &target, tar_distance, t_ac, t_dc);
+	int ret = calculateTarget (JD + 2 / 86400.0, &target, t_ac, t_dc, true);
 	if (ret)
 	{
 		setTracking (0);
 		return;
 	}
 
+        setTelTarget (target.ra, target.dec);
+
 	t_axRa->setValueLong (target.ra * 10000);
 	t_axDec->setValueLong (target.dec * 10000);
 }
 
-int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
 {
 	ac = pos->ra * 10000;
 	dc = pos->dec * 10000;
-        applyCorrections (pos, JD);
-        setTelTarget (pos->ra, pos->dec);
+	applyCorrections (pos, JD, writeValues);
+	if (writeValues)
+		setTelTarget (pos->ra, pos->dec);
 	return 0;
 }
 

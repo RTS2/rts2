@@ -510,7 +510,7 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 					else
 						JD = JD0;
 
-					telescope->applyCorrections (&pos_in, JD);
+					telescope->applyCorrections (&pos_in, JD, false);
 				}
 
 				double err = ln_get_angular_separation (&pos_in, &pos_out);

@@ -28,7 +28,7 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
 	int32_t homeOff;
-	struct ln_equ_posn pos, tel_target;
+	struct ln_equ_posn pos;
 	int ret;
 	bool use_flipped;
 
@@ -42,21 +42,14 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 
-	ret = sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped, &tel_target);
-
-	if (ret == 0)
-	{
-		setTarTel (&pos);
-		setTelTarget (tel_target.ra, tel_target.dec);
-	}
-
-	return ret;
+	return sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped, true);
 }
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped, struct ln_equ_posn *targetPos)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped, bool writeValues)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
+        struct ln_equ_posn tar_pos;
 	int ret;
 
 	// when set to true, will use flipped coordinates
@@ -79,13 +72,20 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		return -1;
 	}
 
+        tar_pos.ra = pos->ra;
+        tar_pos.dec = pos->dec;
+
+        // apply corrections
+        applyCorrections (&tar_pos, JD, writeValues);
+        applyCorrRaDec (&tar_pos, false, false);
+
 	// get hour angle
-	ha = ln_range_degrees (ls - pos->ra);
+	ha = ln_range_degrees (ls - tar_pos.ra);
 	if (ha > 180.0)
 		ha -= 360.0;
 
 	// pretend we are at north hemispehere.. at least for dec
-	dec = pos->dec;
+	dec = tar_pos.dec;
 
 	// convert to count values
 	int32_t tn_ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());
@@ -99,7 +99,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 
 	// apply model;
-	struct ln_equ_posn model_change;
+	struct ln_equ_posn f_model_change, n_model_change;
 	struct ln_equ_posn tf_pos, tn_pos, tt_pos;
 
 	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
@@ -107,19 +107,18 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	if (ret_n == 0)
 	{
-		getOrigin (&tn_pos);
+                tn_pos.ra = pos->ra;
+                tn_pos.dec = pos->dec;
 
 		// to set telescope target
 		tt_pos.ra = ls - ((double) (tn_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
 		tt_pos.dec = (double) (tn_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 
-		applyCorrections (&tn_pos, JD);
-
 		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-		applyModel (&tn_pos, &tt_pos, &model_change, JD);
+		applyModel (&tn_pos, &tt_pos, &n_model_change, JD);
 
-		tn_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
-		tn_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
+		tn_ac += (int32_t) (n_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
+		tn_dc -= (int32_t) (n_model_change.dec * decCpd->getValueDouble ());
 
 		if ((tn_dc < dcMin->getValueLong ()) || (tn_dc > dcMax->getValueLong ()))
 		{
@@ -144,25 +143,21 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 	if (ret_f == 0)
 	{
-		getOrigin (&tf_pos);
-
-		applyCorrections (&tf_pos, JD);
-
-		tf_pos.ra = ln_range_degrees (tf_pos.ra + 180);
+		tf_pos.ra = ln_range_degrees (pos->ra + 180);
 		if (getLatitude () > 0)
-			tf_pos.dec = 180 - tf_pos.dec;
+			tf_pos.dec = 180 - pos->dec;
 		else
-			tf_pos.dec = -180 - tf_pos.dec;
+			tf_pos.dec = -180 - pos->dec;
 
 		// to set telescope target
 		tt_pos.ra = ls - ((double) (tf_ac / haCpd->getValueDouble ()) + haZero->getValueDouble ());
 		tt_pos.dec = (double) (tf_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 	
 		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-		applyModel (&tf_pos, &tt_pos, &model_change, JD);
+		applyModel (&tf_pos, &tt_pos, &f_model_change, JD);
 
-		tf_ac -= -1.0 * (int32_t) (model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
-		tf_dc -= (int32_t) (model_change.dec * decCpd->getValueDouble ());
+		tf_ac += (int32_t) (f_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
+		tf_dc -= (int32_t) (f_model_change.dec * decCpd->getValueDouble ());
 
 		if ((tf_dc < dcMin->getValueLong ()) || (tf_dc > dcMax->getValueLong ()))
 		{
@@ -284,32 +279,27 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 	// otherwise, non-flipped is the only way, stay on it..
 
-	getOrigin (pos);
-
 	// when we will go to flipped..
 	if (use_flipped == true)
 	{
 		ac = tf_ac;
 		dc = tf_dc;
-		pos->ra = ln_range_degrees (pos->ra + 180);
-		if (getLatitude () > 0)
-			pos->dec = 180 - pos->dec;
-		else
-			pos->dec = -180 - pos->dec;
-		if (targetPos != NULL)
+		if (writeValues)
 		{
-			targetPos->ra = tf_pos.ra;
-			targetPos->dec = tf_pos.dec;
+                        tar_pos.ra -= f_model_change.ra;
+                        tar_pos.dec -= f_model_change.dec;
+                        setTelTarget (tar_pos.ra, tar_pos.dec);
 		}
 	}
 	else
 	{
 		ac = tn_ac;
 		dc = tn_dc;
-		if (targetPos != NULL)
+		if (writeValues)
 		{
-			targetPos->ra = tn_pos.ra;
-			targetPos->dec = tn_pos.dec;
+                        tar_pos.ra -= n_model_change.ra;
+                        tar_pos.dec -= n_model_change.dec;
+                        setTelTarget (tar_pos.ra, tar_pos.dec);
 		}
 	}
 
@@ -318,20 +308,13 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
 {
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
         bool use_flipped;
-	struct ln_equ_posn tar_pos;
 
 	// returns without home offset, which will be removed in future
-	int ret = sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped, &tar_pos);
-	if (ret == 0)
-	{
-		setTarTel (pos);
-		setTelTarget (tar_pos.ra, tar_pos.dec);
-	}
-	return ret;
+	return sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped, writeValues);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
@@ -443,7 +426,7 @@ int GEM::peek (double ra, double dec)
 
 	double JD = ln_get_julian_from_sys ();
 
-	int ret = sky2counts (&peekPos, ac, dc, JD, 0, flipping->getValueInteger (), use_flipped);
+	int ret = calculateTarget (JD, &peekPos, ac, dc, false);
 	if (ret)
 		return ret;
 

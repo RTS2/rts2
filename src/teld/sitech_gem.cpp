@@ -841,7 +841,6 @@ void Sitech::internalTracking ()
 	double sec_step = 2.0;
 	// calculate position sec_step from last position, base speed on this..
 	struct ln_equ_posn tarPos;
-	double tar_distance;
 
 	info ();
 
@@ -849,7 +848,7 @@ void Sitech::internalTracking ()
 	int32_t dc = r_dec_pos->getValueLong ();
 
 	double futureJD = getTelJD + sec_step / 86400.0;
-	int ret = calculateTarget (futureJD, sec_step, &tarPos, tar_distance, ac, dc);
+	int ret = calculateTarget (futureJD, &tarPos, ac, dc);
 	if (ret)
 	{
 		if (ret < 0)

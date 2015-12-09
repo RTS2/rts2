@@ -105,8 +105,8 @@ void Irait::trackingThread ()
   
         struct ln_equ_posn target;
 	double deltat=0.4;   //in secondi
-	double destPos;
-	double currPos;
+	double destPos = 0;
+	double currPos = 0;
         struct ln_lnlat_posn observatory;
         observatory.lat = -75;
         observatory.lng = 123;
@@ -192,22 +192,22 @@ int Irait::isMoving ()
 
 int Irait::startResync ()
 {
-
+        return 0;
 }
 
 int Irait::stopMove ()
 {
-
+        return 0;
 }
 
 int Irait::startPark ()
 {
-
+        return 0;
 }
 
 int Irait::endPark ()
 {
-
+        return 0;
 }
 
 int main (int argc, char **argv)

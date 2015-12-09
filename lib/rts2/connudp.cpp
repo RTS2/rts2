@@ -84,7 +84,7 @@ int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned 
 	int ret;
 	unsigned int slen = sizeof (clientaddr);
 
-	sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
+	ret = sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
 	if (noreceive == 0)
 		ret = recvfrom (sock, ret_message, length, 0, (struct sockaddr *) &clientaddr, &slen);

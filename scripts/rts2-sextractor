@@ -63,7 +63,7 @@ for fn in args:
 	
 	if d:
 		# display in ds9
-		d.set('file mosaicimage iraf {0}'.format(fn))
+		d.set('file {0}'.format(fn))
 		i_x = c.get_field('X_IMAGE')
 		i_y = c.get_field('Y_IMAGE')
 		for x in c.objects:

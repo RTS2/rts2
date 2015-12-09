@@ -112,7 +112,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Apply corrections to position.
 		 */
-		void applyCorrections (struct ln_equ_posn *pos, double JD);
+		void applyCorrections (struct ln_equ_posn *pos, double JD, bool writeValues);
 
 		/**
 		 * Set telescope correctios.
@@ -363,7 +363,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Apply model for RA/DEC position pos, for specified flip and JD.
 		 * All resulting coordinates also includes corrRaDec corection. 
-		 * Also changes tel_target (telTargetRA) variable, including model computation and corrRaDec.
+		 * If writeValue is set to true, changes tel_target (telTargetRA) variable, including model computation and corrRaDec.
 		 * Also sets MO_RTS2 (modelRaDec) variable, mirroring (only) computed model difference.
 		 * Can be used to compute non-cyclic model, with flip=0 and pos in raw mount coordinates.
 		 *
@@ -404,7 +404,7 @@ class Telescope:public rts2core::Device
 		 * @param tar_ra  target RA, returns its value.
 		 * @param tar_dec target DEC, returns its value.
 		 */
-		virtual void applyCorrections (double &tar_ra, double &tar_dec);
+		virtual void applyCorrections (double &tar_ra, double &tar_dec, bool writeValues);
 
 		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		char telType[64];
@@ -491,11 +491,14 @@ class Telescope:public rts2core::Device
 			_ori->dec = oriRaDec->getDec ();
 		}
 	
-		void setOrigin (double ra, double dec, bool withObj = false)
+		void setOrigin (double ra, double dec)
 		{
 			oriRaDec->setValueRaDec (ra, dec);
-			if (withObj)
-				objRaDec->setValueRaDec (ra, dec);
+		}
+
+		void setObject (double ra, double dec)
+		{
+			objRaDec->setValueRaDec (ra, dec);
 		}
 
 		/**
@@ -580,19 +583,25 @@ class Telescope:public rts2core::Device
 		 * from target position, where target position can change in time (for 
 		 * MPEC and LTE targets).
 		 *
-		 * @param JD	      date for which position will be calculated
-		 * @param out_tar	 target position
-		 * @param tar_distance    distance to target (in m), if know (satellites,..)
-		 * @param ac	      current (input) and target (output) HA axis value
-		 * @param dc	      current (input) and target (output) DEC axis value
+		 * @param JD	         date for which position will be calculated
+		 * @param out_tar	 target position, excluding precission, ..
+		 * @param ac	         current (input) and target (output) HA axis value
+		 * @param dc	         current (input) and target (output) DEC axis value
+		 * @param writeValues    if true, values inside RTS2 will be updated to reflect new target position
 		 */
-		int calculateTarget (double JD, double secdiff, struct ln_equ_posn *out_tar, double &tar_distance, int32_t &ac, int32_t &dc);
+		int calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues = false);
 
 		/**
-		 * Transforms sky coordinates to axis coordinates. Placeholder, used only for
-		 * telescopes with possibility to command directly telescope axes.
+		 * Transform sky coordinates to axis coordinates. Implemented in classes
+                 * commanding directly the telescope axes in counts.
+                 *
+                 * @param JD		date for which transformation will be valid
+                 * @param pos		target position (sky position, excluding precession, refraction, and corections ...)
+		 * @param ac		current (input) and target (output) HA axis counts value
+		 * @param dc		current (input) and target (output) DEC axis counts value
+		 * @param writeValues   when true, RTS2 values will be updated to reflect new target values
 		 */
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValue);
 
 		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
 
@@ -1172,17 +1181,17 @@ class Telescope:public rts2core::Device
 		/**
 		 * Apply aberation correction.
 		 */
-		void applyAberation (struct ln_equ_posn *pos, double JD);
+		void applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue);
 
 		/**
 		 * Apply precision correction.
 		 */
-		void applyPrecession (struct ln_equ_posn *pos, double JD);
+		void applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue);
 
 		/**
 		 * Apply refraction correction.
 		 */
-		void applyRefraction (struct ln_equ_posn *pos, double JD);
+		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
 
 		/**
 		 * Zero's all corrections, increment move count. Called before move.

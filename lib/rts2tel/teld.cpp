@@ -331,9 +331,9 @@ void Telescope::setTarTel (struct ln_equ_posn *pos)
 }
 
 
-int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *out_tar, double &tar_distance, int32_t &ac, int32_t &dc)
+int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues)
 {
-	tar_distance = NAN;
+	double tar_distance = NAN;
 
 	switch (tracking->getValueInteger ())
 	{
@@ -348,7 +348,9 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 				struct ln_equ_posn parallax;
 				observer.lat = telLatitude->getValueDouble ();
 				observer.lng = telLongitude->getValueDouble ();
-				LibnovaCurrentFromOrbit (out_tar, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
+				LibnovaCurrentFromOrbit (out_tar, &mpec_orbit, &observer, telAltitude->getValueDouble (), JD, &parallax);
+                                if (writeValues)
+					setOrigin (out_tar->ra, out_tar->dec);
 				break;
 			}
 			// calculate from TLE..
@@ -357,6 +359,8 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 				calculateTLE (JD, out_tar->ra, out_tar->dec, tar_distance);
 				out_tar->ra = ln_rad_to_deg (out_tar->ra);
 				out_tar->dec = ln_rad_to_deg (out_tar->dec);
+				if (writeValues)
+					setOrigin (out_tar->ra, out_tar->dec);
 				break;
 			}
 			// don't break, as siderail tracking will be used
@@ -368,10 +372,10 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 	}
 
 	// offsets, corrections,..
-	out_tar->ra += getCorrRa () + getOffsetRa ();
-	out_tar->dec += getCorrDec () + getOffsetDec ();
+	out_tar->ra += getOffsetRa ();
+	out_tar->dec += getOffsetDec ();
 
-	// crossed pole
+	// crossed pole, put on opposite side..
 	if (out_tar->dec > 90)
 	{
 		out_tar->ra = ln_range_degrees (out_tar->ra + 180.0);
@@ -383,12 +387,13 @@ int Telescope::calculateTarget (double JD, double secdiff, struct ln_equ_posn *o
 		out_tar->dec = -180 - out_tar->dec;
 	}
 
-	applyCorrections (out_tar, JD);
+	if (writeValues)
+		setObject (out_tar->ra, out_tar->dec);
 
-	return sky2counts (JD, out_tar, ac, dc);
+	return sky2counts (JD, out_tar, ac, dc, writeValues);
 }
 
-int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
+int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
 {
 	return -1;
 }
@@ -673,19 +678,21 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 	rts2core::Device::valueChanged (changed_value);
 }
 
-void Telescope::applyAberation (struct ln_equ_posn *pos, double JD)
+void Telescope::applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue)
 {
 	ln_get_equ_aber (pos, JD, pos);
-	aberated->setValueRaDec (pos->ra, pos->dec);
+	if (writeValue)
+		aberated->setValueRaDec (pos->ra, pos->dec);
 }
 
-void Telescope::applyPrecession (struct ln_equ_posn *pos, double JD)
+void Telescope::applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue)
 {
 	ln_get_equ_prec (pos, JD, pos);
-	precessed->setValueRaDec (pos->ra, pos->dec);
+	if (writeValue)
+		precessed->setValueRaDec (pos->ra, pos->dec);
 }
 
-void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD)
+void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue)
 {
 	struct ln_hrz_posn hrz;
 	struct ln_lnlat_posn obs;
@@ -697,7 +704,8 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
 	ref = ln_get_refraction_adj (hrz.alt, 860, 10);
 	hrz.alt += ref;
-	refraction->setValueDouble (ref);
+	if (writeValue)
+		refraction->setValueDouble (ref);
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
 
@@ -1311,24 +1319,24 @@ int Telescope::scriptEnds ()
 	return rts2core::Device::scriptEnds ();
 }
 
-void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD)
+void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, bool writeValues)
 {
 	// apply all posible corrections
 	if (calAberation->getValueBool () == true)
-		applyAberation (pos, JD);
+		applyAberation (pos, JD, writeValues);
 	if (calPrecession->getValueBool () == true)
-		applyPrecession (pos, JD);
+		applyPrecession (pos, JD, writeValues);
 	if (calRefraction->getValueBool () == true)
-		applyRefraction (pos, JD);
+		applyRefraction (pos, JD, writeValues);
 }
 
-void Telescope::applyCorrections (double &tar_ra, double &tar_dec)
+void Telescope::applyCorrections (double &tar_ra, double &tar_dec, bool writeValues)
 {
 	struct ln_equ_posn pos;
 	pos.ra = tar_ra;
 	pos.dec = tar_dec;
 
-	applyCorrections (&pos, ln_get_julian_from_sys ());
+	applyCorrections (&pos, ln_get_julian_from_sys (), writeValues);
 
 	tar_ra = pos.ra;
 	tar_dec = pos.dec;
@@ -1435,7 +1443,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	setCRVAL (pos.ra, pos.dec);
 
 	// apply computed corrections (precession, aberation, refraction)
-	applyCorrections (&pos, JD);
+	applyCorrections (&pos, JD, true);
 
 	LibnovaRaDec syncTo (&pos);
 	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
