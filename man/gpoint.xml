@@ -8,7 +8,7 @@
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhpackage   "rts2-telmodeltest">
+  <!ENTITY dhpackage   "gpoint">
 
   <!ENTITY % rts2 SYSTEM "rts2.ent">
   %rts2;
