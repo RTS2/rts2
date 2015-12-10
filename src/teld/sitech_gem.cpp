@@ -855,7 +855,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	calculateTarget (getTelJD, &tarPos, ac, dc, true);
 
 	double futureJD = getTelJD + sec_step / 86400.0;
-	int ret = calculateTarget (futureJD, &tarPos, ac, dc);
+	int ret = calculateTarget (futureJD, &tarPos, ac, dc, false);
 	if (ret)
 	{
 		if (ret < 0)

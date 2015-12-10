@@ -156,7 +156,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		applyModel (&tf_pos, &tt_pos, &f_model_change, JD);
 
 		tf_ac += (int32_t) (f_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
-		tf_dc += (int32_t) (f_model_change.dec * decCpd->getValueDouble ());    // flipped, that means DEC is counted in opossite direction
+		tf_dc -= (int32_t) (f_model_change.dec * decCpd->getValueDouble ());    // flipped, that means DEC is counted in opossite direction
 
 		if ((tf_dc < dcMin->getValueLong ()) || (tf_dc > dcMax->getValueLong ()))
 		{
@@ -286,7 +286,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		if (writeValues)
 		{
 			tar_pos.ra -= f_model_change.ra;
-			tar_pos.dec -= f_model_change.dec;
+			tar_pos.dec += f_model_change.dec;
 			setTelTarget (tar_pos.ra, tar_pos.dec);
 			setTarTel (&tf_pos);
 		}
