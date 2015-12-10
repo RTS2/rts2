@@ -77,7 +77,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
         // apply corrections
         applyCorrections (&tar_pos, JD, writeValues);
-        applyCorrRaDec (&tar_pos, false, false);
 
 	// get hour angle
 	ha = ln_range_degrees (ls - tar_pos.ra);
@@ -90,6 +89,10 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	// convert to count values
 	int32_t tn_ac = (int32_t) ((ha - haZero->getValueDouble ()) * haCpd->getValueDouble ());
 	int32_t tn_dc = (int32_t) ((dec - decZero->getValueDouble ()) * decCpd->getValueDouble ());
+
+	// prepare for other flip as well..
+	int32_t tf_ac = tn_ac - (int32_t) (fabs(haCpd->getValueDouble () * 360.0)/2.0);
+	int32_t tf_dc = tn_dc + (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
 
 	// gets the limits
 	ret = updateLimits ();
@@ -135,10 +138,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		}
 	}
 
-	// let's see what will different flip do..
-	int32_t tf_ac = tn_ac - (int32_t) (fabs(haCpd->getValueDouble () * 360.0)/2.0);
-	int32_t tf_dc = tn_dc + (int32_t) ((90 - dec) * 2 * decCpd->getValueDouble ());
-
 	int ret_f = normalizeCountValues (ac, dc, tf_ac, tf_dc);
 
 	if (ret_f == 0)
@@ -157,7 +156,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		applyModel (&tf_pos, &tt_pos, &f_model_change, JD);
 
 		tf_ac += (int32_t) (f_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
-		tf_dc -= (int32_t) (f_model_change.dec * decCpd->getValueDouble ());
+		tf_dc += (int32_t) (f_model_change.dec * decCpd->getValueDouble ());    // flipped, that means DEC is counted in opossite direction
 
 		if ((tf_dc < dcMin->getValueLong ()) || (tf_dc > dcMax->getValueLong ()))
 		{
@@ -286,9 +285,15 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		dc = tf_dc;
 		if (writeValues)
 		{
-                        tar_pos.ra -= f_model_change.ra;
-                        tar_pos.dec -= f_model_change.dec;
-                        setTelTarget (tar_pos.ra, tar_pos.dec);
+			tar_pos.ra -= f_model_change.ra;
+			tar_pos.dec -= f_model_change.dec;
+			setTelTarget (tar_pos.ra, tar_pos.dec);
+			pos->ra = ln_range_degrees (pos->ra + 180.0);
+			if (getLatitude () > 0)
+				pos->dec = 180 - pos->dec;
+			else
+				pos->dec = -180 - pos->dec;
+			setTarTel (pos);
 		}
 	}
 	else
@@ -297,9 +302,10 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		dc = tn_dc;
 		if (writeValues)
 		{
-                        tar_pos.ra -= n_model_change.ra;
-                        tar_pos.dec -= n_model_change.dec;
-                        setTelTarget (tar_pos.ra, tar_pos.dec);
+			tar_pos.ra -= n_model_change.ra;
+			tar_pos.dec -= n_model_change.dec;
+			setTelTarget (tar_pos.ra, tar_pos.dec);
+			setTarTel (pos);
 		}
 	}
 
