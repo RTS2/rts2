@@ -588,8 +588,9 @@ class Telescope:public rts2core::Device
 		 * @param ac	         current (input) and target (output) HA axis value
 		 * @param dc	         current (input) and target (output) DEC axis value
 		 * @param writeValues    if true, values inside RTS2 will be updated to reflect new target position
+		 * @param haMargin       margin (in degrees) for which HA axis must be allowed to move in sidereal tracking
 		 */
-		int calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues = false);
+		int calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues = false, double haMargin = 0);
 
 		/**
 		 * Transform sky coordinates to axis coordinates. Implemented in classes
@@ -600,8 +601,9 @@ class Telescope:public rts2core::Device
 		 * @param ac		current (input) and target (output) HA axis counts value
 		 * @param dc		current (input) and target (output) DEC axis counts value
 		 * @param writeValues   when true, RTS2 values will be updated to reflect new target values
+                 * @param haMargin      ha value (in degrees), for which mount must be allowed to move
 		 */
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValue);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValue, double haMargin);
 
 		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
 

@@ -304,7 +304,7 @@ int Hlohovec::startResync ()
 {
 	deleteTimers (RTS2_HLOHOVEC_AUTOSAVE);
 	int32_t dc;
-	int ret = sky2counts (tAc, dc);
+	int ret = sky2counts (tAc, dc, haSlewMargin->getValueDouble ());
 	if (ret)
 		return -1;
 	raDrive->setTargetPos (tAc);
@@ -322,7 +322,7 @@ int Hlohovec::isMoving ()
 			int32_t diffAc;
 			int32_t ac;
 			int32_t dc;
-			int ret = sky2counts (ac, dc);
+			int ret = sky2counts (ac, dc, 0);
 			if (ret)
 				return -1;
 			diffAc = ac - tAc;
@@ -369,7 +369,7 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	int32_t off;
 	getHomeOffset (off);
 	bool use_flipped;
-	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off, 0, use_flipped, true);
+	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off, 0, use_flipped, true, 0);
 	if (ret)
 		return -1;
 	raDrive->setCurrentPos (ac);

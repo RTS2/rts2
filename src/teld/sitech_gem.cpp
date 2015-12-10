@@ -234,6 +234,8 @@ class Sitech:public GEM
 
 		double offsetha;
 		double offsetdec;
+
+		bool firstSlewCall;
 		 
 		/* Communications variables and routines for internal use */
 		const char *device_file;
@@ -275,6 +277,8 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 
 	offsetha = 0.;
 	offsetdec = 0.;
+
+	firstSlewCall = true;
 
 	device_file = "/dev/ttyUSB0";
 
@@ -384,6 +388,7 @@ Sitech::~Sitech(void)
 int Sitech::stopMove ()
 {
 	partialMove->setValueInteger (0);
+	firstSlewCall = true;
 	try
 	{
 		serConn->siTechCommand ('X', "N");
@@ -716,8 +721,12 @@ int Sitech::startResync ()
 {
 	getConfiguration ();
 
+        double JD = ln_get_julian_from_sys ();
+        struct ln_equ_posn tar;
+
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
-	int ret = sky2counts (ac, dc);
+	int ret = calculateTarget (JD, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0);
+	firstSlewCall = false;
 	if (ret)
 		return -1;
 
@@ -791,6 +800,7 @@ int Sitech::isMoving ()
 int Sitech::endMove ()
 {
 	partialMove->setValueInteger (0);
+	firstSlewCall = true;
 	startTracking ();
 	return GEM::endMove ();
 }
@@ -809,12 +819,14 @@ int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == ra_pos)
 	{
 		partialMove->setValueInteger (0);
+		firstSlewCall = true;
 		sitechMove (newValue->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), dec_pos->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
 	if (oldValue == dec_pos)
 	{
 		partialMove->setValueInteger (0);
+		firstSlewCall = true;
 		sitechMove (ra_pos->getValueLong () - haZero->getValueDouble () * haCpd->getValueDouble (), newValue->getValueLong () - decZero->getValueDouble () * decCpd->getValueDouble ());
 		return 0;
 	}
@@ -852,10 +864,10 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	int32_t dc = r_dec_pos->getValueLong ();
 
 	// refresh current target..
-	calculateTarget (getTelJD, &tarPos, ac, dc, true);
+	calculateTarget (getTelJD, &tarPos, ac, dc, true, 0);
 
 	double futureJD = getTelJD + sec_step / 86400.0;
-	int ret = calculateTarget (futureJD, &tarPos, ac, dc, false);
+	int ret = calculateTarget (futureJD, &tarPos, ac, dc, false, 0);
 	if (ret)
 	{
 		if (ret < 0)

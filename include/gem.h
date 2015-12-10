@@ -43,6 +43,8 @@ class GEM: public Telescope
 		rts2core::ValueDouble *targetHaCWDAngle;  //* target HA counterweight down angle
 		rts2core::ValueDouble *peekHaCwdAngle;    //* peek HA counterweight down angle
 
+                rts2core::ValueDouble *haSlewMargin;      //* margin for ha axis during slew (used only on first call of startResync during new movement)
+
 		/**
 		 * GEM parameters, in degrees (HA/Dec coordinates of hw-zero positions, decZero with inverted sign on south hemisphere).
 		 */
@@ -71,10 +73,10 @@ class GEM: public Telescope
 		 */
 		virtual int getHomeOffset (int32_t & off) = 0;
 
-		int sky2counts (int32_t & ac, int32_t & dc);
-		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip, bool &use_flipped, bool writeValues);
+		int sky2counts (int32_t & ac, int32_t & dc, double haMargin);
+		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip, bool &use_flipped, bool writeValues, double haMargin);
 
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin);
 
 		/**
 		 * Convert counts to RA&Dec coordinates.

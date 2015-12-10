@@ -24,7 +24,7 @@
 
 using namespace rts2teld;
 
-int GEM::sky2counts (int32_t & ac, int32_t & dc)
+int GEM::sky2counts (int32_t & ac, int32_t & dc, double haMargin)
 {
 	double JD;
 	int32_t homeOff;
@@ -42,10 +42,10 @@ int GEM::sky2counts (int32_t & ac, int32_t & dc)
 
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
 
-	return sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped, true);
+	return sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped, true, haMargin);
 }
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped, bool writeValues)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped, bool writeValues, double haMargin)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
@@ -275,6 +275,24 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 				}
 		}
 
+		// check if we are close to margin..
+		// if that's the cause, the only natural way is to use other flip, which must be
+		// better then the current one (as there is only one direction of sidereal motion,
+		// and the other flip will be half circle around
+		if (haMargin > 0)
+		{
+			int32_t t_margin = use_flipped ? tf_ac : tn_ac;
+			if (haCpd->getValueDouble () > 0)
+			{
+				if (t_margin > (acMax->getValueLong () - haMargin * haCpd->getValueDouble ()))
+					use_flipped = !use_flipped;
+			}
+			else
+			{
+				if (t_margin < (acMin->getValueLong () - haMargin * haCpd->getValueDouble ()))
+					use_flipped = !use_flipped;
+			}
+		}
 	}
 	// otherwise, non-flipped is the only way, stay on it..
 
@@ -309,13 +327,13 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
+int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin)
 {
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
         bool use_flipped;
 
 	// returns without home offset, which will be removed in future
-	return sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped, writeValues);
+	return sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped, writeValues, haMargin);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
@@ -389,6 +407,9 @@ GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool ha
 	createValue (targetHaCWDAngle, "tar_ha_cwd_angle", "[deg] target angle between HA axis and local meridian", false, RTS2_DT_DEGREES);
 
 	createValue (peekHaCwdAngle, "peek_ha_cwd_angle", "[deg] peek angle (on peek command) between HA axis and local meridian", false, RTS2_DT_DEGREES);
+
+	createValue (haSlewMargin, "ha_slew_margin", "[deg] slew margin in HA axis (allows to avoid moving too close to meridian)", false, RTS2_DT_DEGREES);
+	haSlewMargin->setValueDouble (0.5);  // 0.5 degrees = 2 minutes of track
 
 	createValue (haZeroPos, "_ha_zero_pos", "position of the telescope on zero", false);
 	haZeroPos->addSelVal ("EAST");
