@@ -288,12 +288,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			tar_pos.ra -= f_model_change.ra;
 			tar_pos.dec -= f_model_change.dec;
 			setTelTarget (tar_pos.ra, tar_pos.dec);
-			pos->ra = ln_range_degrees (pos->ra + 180.0);
-			if (getLatitude () > 0)
-				pos->dec = 180 - pos->dec;
-			else
-				pos->dec = -180 - pos->dec;
-			setTarTel (pos);
+			setTarTel (&tf_pos);
 		}
 	}
 	else
@@ -305,7 +300,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			tar_pos.ra -= n_model_change.ra;
 			tar_pos.dec -= n_model_change.dec;
 			setTelTarget (tar_pos.ra, tar_pos.dec);
-			setTarTel (pos);
+			setTarTel (&tn_pos);
 		}
 	}
 

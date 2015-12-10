@@ -126,7 +126,7 @@ class Sitech:public GEM
 		}
 
 	private:
-		void internalTracking ();
+		void internalTracking (double sec_step, float speed_factor);
 
 		void getConfiguration ();
 
@@ -761,13 +761,18 @@ int Sitech::isMoving ()
 		return USEC_SEC / 10;
 	}
 
-	if (getTargetDistance () > trackingDist->getValueDouble ())
+	double tdist = getTargetDistance ();
+
+	if (tdist > trackingDist->getValueDouble ())
 	{
 		// close to target, run tracking
-		if (getTargetDistance () < 0.5)
+		if (tdist < 0.5)
 		{
-			internalTracking ();
-			return USEC_SEC * trackingInterval->getValueFloat ();
+			if (tdist < trackingDist->getValueDouble () * 2.0)
+				internalTracking (2.0, 1.0);
+			else
+				internalTracking (2.0, 4.0);
+			return USEC_SEC * trackingInterval->getValueFloat () / 10;
 		}
 
 		// if too far away, update target
@@ -836,9 +841,8 @@ int Sitech::startPark ()
 	return moveAltAz ();
 }
 
-void Sitech::internalTracking ()
+void Sitech::internalTracking (double sec_step, float speed_factor)
 {
-	double sec_step = 2.0;
 	// calculate position sec_step from last position, base speed on this..
 	struct ln_equ_posn tarPos;
 
@@ -846,6 +850,9 @@ void Sitech::internalTracking ()
 
 	int32_t ac = r_ra_pos->getValueLong ();
 	int32_t dc = r_dec_pos->getValueLong ();
+
+	// refresh current target..
+	calculateTarget (getTelJD, &tarPos, ac, dc, true);
 
 	double futureJD = getTelJD + sec_step / 86400.0;
 	int ret = calculateTarget (futureJD, &tarPos, ac, dc);
@@ -876,8 +883,8 @@ void Sitech::internalTracking ()
 	else
 	{
 		// 1 step change
-		int32_t ac_step = labs (ac - r_ra_pos->getValueLong ()) / sec_step;
-		int32_t dc_step = labs (dc - r_dec_pos->getValueLong ()) / sec_step;
+		int32_t ac_step = speed_factor * labs (ac - r_ra_pos->getValueLong ()) / sec_step;
+		int32_t dc_step = speed_factor * labs (dc - r_dec_pos->getValueLong ()) / sec_step;
 
 		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (ac_step);
 		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (dc_step);
@@ -1089,7 +1096,7 @@ void Sitech::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
-	internalTracking ();
+	internalTracking (2.0, 1.0);
 }
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)

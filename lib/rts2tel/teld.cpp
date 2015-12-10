@@ -889,9 +889,6 @@ void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		<< "Telescope::computeModel offsets ra: "
 		<< model_change->ra << " dec: " << model_change->dec
 		<< sendLog;
-
-	pos->ra -= model_change->ra;
-	pos->dec -= model_change->dec;
 }
 
 int Telescope::init ()
