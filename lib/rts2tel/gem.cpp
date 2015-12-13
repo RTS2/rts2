@@ -569,6 +569,18 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 		return -1;
 	}
 
+	// if moving in dec for more than 180 degrees, and we will approach target position at the
+	// direction as + dec axis, that means that mount would like to flip bottom down. We would like
+	// to prevent this, hence disables this..
+	if (fabs (t_dc - dc) > 180 * decCpd->getValueDouble ())
+	{
+		if ((t_dc > dc && decCpd->getValueDouble () > 0) || (t_dc < dc && decCpd->getValueDouble () < 0))
+		{
+			logStream (MESSAGE_WARNING) << "down-flip not allowed: target dc " << t_dc << " current dc " << dc << sendLog;
+			return -1;
+		}
+	}
+
 	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))
 	{
 		return -1;
