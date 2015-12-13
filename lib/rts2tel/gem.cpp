@@ -106,7 +106,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	struct ln_equ_posn tf_pos, tn_pos, tt_pos;
 
 	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
-	int ret_n = normalizeCountValues (ac, dc, tn_ac, tn_dc);
+	int ret_n = normalizeCountValues (ac, dc, tn_ac, tn_dc, JD);
 
 	if (ret_n == 0)
 	{
@@ -138,7 +138,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		}
 	}
 
-	int ret_f = normalizeCountValues (ac, dc, tf_ac, tf_dc);
+	int ret_f = normalizeCountValues (ac, dc, tf_ac, tf_dc, JD);
 
 	if (ret_f == 0)
 	{
@@ -507,7 +507,7 @@ double GEM::getHACWDAngle (int32_t ha_count)
 	}
 }
 
-int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc)
+int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD)
 {
 	int32_t full_ac = (int32_t) fabs(haCpd->getValueDouble () * 360.0);
 	int32_t full_dc = (int32_t) fabs(decCpd->getValueDouble () * 360.0);
@@ -564,21 +564,34 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 	while (t_dc > dcMax->getValueLong ())
 		t_dc -= (int32_t) fabs(decCpd->getValueDouble () * 360.0);
 
-	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
-	{
+	// when moving to target in HA, staying on current dec will lead to position tube down, and
+	// moving towards target DEC will be in direction of DEC axis, this is not allowed; the only
+	// possible way, should telescope stay above horizon through the trajectory, is to move towards pole, e.g.
+	// different direction in dec
+	struct ln_equ_posn tar_radec, untar_radec;
+	struct ln_hrz_posn hrz;
+	int tar_flip;
+	int ret = counts2sky (t_ac, dc, tar_radec.ra, tar_radec.dec, tar_flip, untar_radec.ra, untar_radec.dec, JD);
+	if (ret)
 		return -1;
-	}
+	ln_get_hrz_from_equ (&tar_radec, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 
-	// if moving in dec for more than 180 degrees, and we will approach target position at the
-	// direction as + dec axis, that means that mount would like to flip bottom down. We would like
-	// to prevent this, hence disables this..
-	if (fabs (t_dc - dc) > 180 * decCpd->getValueDouble ())
+	if (hrz.alt < 0)
 	{
 		if ((t_dc > dc && decCpd->getValueDouble () > 0) || (t_dc < dc && decCpd->getValueDouble () < 0))
 		{
-			logStream (MESSAGE_WARNING) << "down-flip not allowed: target dc " << t_dc << " current dc " << dc << sendLog;
-			return -1;
+			logStream (MESSAGE_DEBUG) << "down-flip not allowed: target dc " << t_dc << " current dc " << dc << sendLog;
+			if (t_dc > dc)
+				t_dc -= full_dc;
+			else
+				t_dc += full_dc;
+			logStream (MESSAGE_DEBUG) << "down-flip new target dc: " << t_dc << sendLog;
 		}
+	}
+
+	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))
+	{
+		return -1;
 	}
 
 	if ((t_ac < acMin->getValueLong ()) || (t_ac > acMax->getValueLong ()))

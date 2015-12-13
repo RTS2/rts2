@@ -130,7 +130,7 @@ class GEM: public Telescope
 
 
 	private:
-		int normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc);
+		int normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD);
 };
 
 };
