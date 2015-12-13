@@ -130,7 +130,9 @@ class GEM: public Telescope
 
 
 	private:
+		int counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD);
 		int normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD);
+
 };
 
 };

@@ -507,6 +507,17 @@ double GEM::getHACWDAngle (int32_t ha_count)
 	}
 }
 
+int GEM::counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD)
+{
+	struct ln_equ_posn tar_radec, untar_radec;
+	int tar_flip;
+	int ret = counts2sky (ac, dc, tar_radec.ra, tar_radec.dec, tar_flip, untar_radec.ra, untar_radec.dec, JD);
+	if (ret)
+		return -1;
+	ln_get_hrz_from_equ (&tar_radec, rts2core::Configuration::instance ()->getObserver (), JD, hrz);
+        return 0;
+}
+
 int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD)
 {
 	int32_t full_ac = (int32_t) fabs(haCpd->getValueDouble () * 360.0);
@@ -564,21 +575,27 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 	while (t_dc > dcMax->getValueLong ())
 		t_dc -= (int32_t) fabs(decCpd->getValueDouble () * 360.0);
 
+
 	// when moving to target in HA, staying on current dec will lead to position tube down, and
 	// moving towards target DEC will be in direction of DEC axis, this is not allowed; the only
 	// possible way, should telescope stay above horizon through the trajectory, is to move towards pole, e.g.
 	// different direction in dec
-	struct ln_equ_posn tar_radec, untar_radec;
 	struct ln_hrz_posn hrz;
-	int tar_flip;
-	int ret = counts2sky (t_ac, dc, tar_radec.ra, tar_radec.dec, tar_flip, untar_radec.ra, untar_radec.dec, JD);
+	int ret = counts2hrz (t_ac, dc, &hrz, JD);
 	if (ret)
 		return -1;
-	ln_get_hrz_from_equ (&tar_radec, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 
 	if (hrz.alt < 0)
 	{
-		if ((t_dc > dc && decCpd->getValueDouble () > 0) || (t_dc < dc && decCpd->getValueDouble () < 0))
+                // get hrz position at target and few steps before target, to find out where we are going to..
+		struct ln_hrz_posn hrz_tar, hrz_before;
+		ret = counts2hrz (t_ac, t_dc, &hrz_tar, JD);
+		if (ret)
+			return -1;
+		ret = counts2hrz (t_ac, (t_dc > dc) ? (t_dc - fabs(decCpd->getValueDouble ())) : (t_dc + fabs (decCpd->getValueDouble ())), &hrz_before, JD);
+		if (ret)
+			return -1;
+		if (hrz_tar.alt > hrz_before.alt)
 		{
 			logStream (MESSAGE_DEBUG) << "down-flip not allowed: target dc " << t_dc << " current dc " << dc << sendLog;
 			if (t_dc > dc)
