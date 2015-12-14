@@ -337,9 +337,6 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 
 	switch (tracking->getValueInteger ())
 	{
-		case 0:	   // no tracking
-			return 1;
-			break;
 		case 1:	   // on object
 			// calculate from MPEC..
 			if (mpec->getValueString ().length () > 0)
@@ -363,7 +360,7 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 					setOrigin (out_tar->ra, out_tar->dec);
 				break;
 			}
-			// don't break, as siderail tracking will be used
+			// don't break, as sidereal tracking will be used
 		default:
 			// get from ORI, if constant..
 			getOrigin (out_tar);
