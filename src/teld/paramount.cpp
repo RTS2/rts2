@@ -175,6 +175,7 @@ class Paramount:public GEM
 		virtual int getHomeOffset (int32_t & off);
 
 		virtual int startResync ();
+		virtual int endMove ();
 		virtual int stopMove ();
 
 		virtual int startPark ();
@@ -1272,6 +1273,12 @@ int Paramount::isMoving ()
 		return USEC_SEC / 10;
 
 	return -2;
+}
+
+int Paramount::endMove ()
+{
+        startTracking ();
+        return GEM::endMove ();
 }
 
 int Paramount::stopMove ()
