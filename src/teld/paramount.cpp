@@ -37,17 +37,13 @@
 #define TEL_FORCED_HOMING1  0x02
 
 // counts per revolution
-//#define RA_TICKS        11520000 // ME
-//#define RA_TICKS        (1.8*11520000) // MEII
-#define RA_TICKS        (11520000/2.25) // MYT
+#define RA_TICKS_ME		11520000 // ME
+#define RA_TICKS_MEII		(1.8*11520000) // MEII
+#define RA_TICKS_MYT		(11520000/2.25) // MYT
 
-//#define DEC_TICKS       7500000 // ME
-//#define DEC_TICKS       (2.279*7500000) // MEII
-#define DEC_TICKS       (5109455.55555555555553328) // MYX ?, needs research... 
-
-// counts per degree 
-#define HA_CPD        (-RA_TICKS/360.0)
-#define DEC_CPD       (-DEC_TICKS/360.0)
+#define DEC_TICKS_ME		7500000 // ME
+#define DEC_TICKS_MEII		(2.279*7500000) // MEII
+#define DEC_TICKS_MYT		(5109455.55555555555553328) // MYX ?, needs research... 
 
 // #define TERM_OUT
 // park positions
@@ -591,9 +587,6 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 
 	move_timeout = 0;
 
-	ra_ticks->setValueLong (RA_TICKS);
-	dec_ticks->setValueLong (DEC_TICKS);
-
 	setIndices = false;
 
 	device_name = "/dev/ttyS0";
@@ -602,27 +595,19 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 	addOption ('P', "paramount_cfg", 1, "paramount config file (default /etc/rts2/paramount.cfg");
 	addOption ('R', "recalculate", 1, "track update interval in sec; < 0 to disable track updates; defaults to 1 sec");
 	addOption ('t', "set indices", 0, "if we need to load indices as first operation");
-//	addOption ('G', "dec_zero", 0, "Declination Zero position");
-//	addOption ('H', "ha_zero", 0, "Hour Angle Zero position");
 
 	addOption ('D', "dec_park", 1, "DEC park position");
 	// in degrees! 30 for south, -30 for north hemisphere; S swap is done later
 	// it's (lst - ra(home))
 	// haZero and haCpd S swap are handled in ::init, after we get latitude from config file
 
-// this is bootes-1a weirdness
-//	haZero = +31.82333;
-	//decZero = +10.31777;
-	//haZero = +28.17667;
-//	decZero = -10.31777;
+	// this is normal
 
-// this is normal
 	haZero->setValueDouble (+30.0);
 	decZero->setValueDouble (0.0);
 
-	// how many counts per degree
-	haCpd->setValueDouble (HA_CPD);	 // - for N hemisphere, + for S hemisphere; S swap is done later
-	decCpd->setValueDouble (DEC_CPD);
+	haCpd->setValueDouble (NAN);
+	decCpd->setValueDouble (NAN);
 
 	acMargin = 10000;
 
@@ -724,15 +709,6 @@ int Paramount::initHardware ()
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
-								 // south hemispehere
-	if (telLatitude->getValueDouble () < 0)
-	{
-		// swap values which are opposite for south hemispehere
-		haZero->setValueDouble (haZero->getValueDouble () * -1.0);
-		haCpd->setValueDouble (haCpd->getValueDouble () * -1.0);
-		hourRa->setValueLong (-1 * hourRa->getValueLong ());
-		decCpd->setValueDouble (decCpd->getValueDouble () * -1.0);
-	}
 
 	logStream (MESSAGE_DEBUG) << "MKS3Init" << sendLog;
 	ret = MKS3Init (device_name);
@@ -755,7 +731,19 @@ int Paramount::initHardware ()
 	fflush(stdout);
 #endif
 
-	basicInfo();
+	ret = basicInfo ();
+	if (ret)
+		return -1;
+
+	// south hemispehere
+	if (telLatitude->getValueDouble () < 0)
+	{
+		// swap values which are opposite for south hemispehere
+		haZero->setValueDouble (haZero->getValueDouble () * -1.0);
+		haCpd->setValueDouble (haCpd->getValueDouble () * -1.0);
+		hourRa->setValueLong (-1 * hourRa->getValueLong ());
+		decCpd->setValueDouble (decCpd->getValueDouble () * -1.0);
+	}
 
 	return 0;
 }
@@ -781,6 +769,32 @@ int Paramount::basicInfo()
 	char version[60];
 	snprintf (version, 60, "%i.%i.%i", pMajor, pMinor, pBuild);
 	paraVersion->setValueString (version);
+
+	switch (pMajor)
+	{
+		case 1:
+		case 2:
+			haCpd->setValueDouble (RA_TICKS_ME / 360.0);
+			decCpd->setValueDouble (DEC_TICKS_ME / 360.0);
+			ra_ticks->setValueLong (RA_TICKS_ME);
+			dec_ticks->setValueLong (DEC_TICKS_ME);
+			break;
+		case 3:
+			haCpd->setValueDouble (RA_TICKS_MEII / 360.0);
+			decCpd->setValueDouble (DEC_TICKS_MEII / 360.0);
+			ra_ticks->setValueLong (RA_TICKS_MEII);
+			dec_ticks->setValueLong (DEC_TICKS_MEII);
+			break;
+		case 4:
+			haCpd->setValueDouble (RA_TICKS_MYT / 360.0);
+			decCpd->setValueDouble (DEC_TICKS_MYT / 360.0);
+			ra_ticks->setValueLong (RA_TICKS_MYT);
+			dec_ticks->setValueLong (DEC_TICKS_MYT);
+			break;
+		default:
+			logStream (MESSAGE_ERROR) << "unsuported Paramount major version: " << pMajor << sendLog;
+			return -1;
+	}
 
   	ret = getParamountValue32 (CMD_VAL32_SLEW_VEL, speedRa, speedDec);
 	if (ret)
