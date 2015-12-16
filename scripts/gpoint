@@ -52,6 +52,7 @@ class GPoint:
 	def __init__(self,verbose=0,latitude=None):
 		self.aa_ra = None
 		self.verbose = verbose
+		self.indata = []
 		# telescope latitude - north positive
 		self.latitude = latitude
 		if latitude is not None:
@@ -124,7 +125,9 @@ class GPoint:
 						sys.exit('You cannot specify latitude twice!')
 					self.latitude=float(m.group(2))
 			else:
-				rdata.append(line.split()[:9])
+				s = line.split()
+				self.indata.append(s)
+				rdata.append(s[:9])
 
 			line = f.readline()
 
@@ -201,8 +204,9 @@ class GPoint:
 
 	def print_stat(self):
 		if self.verbose:
-			print self.diff_ra * 3600.0
-			print self.diff_dec * 3600.0
+			print 'DIFF_RA', self.diff_ra * 3600
+			print 'DIFF_DEC', self.diff_dec * 3600
+			print 'DIFF_ANGULAR', self.diff_angular * 3600
 
 		print 'RMS RA DIFF {0}"'.format(RMS(self.diff_ra)*3600)
 		print 'RMS DEC DIFF {0}"'.format(RMS(self.diff_dec)*3600)
@@ -275,6 +279,15 @@ def generateModel(args):
 		for b in model.best:
 			f.write('{0} '.format(b))
 		f.close()
+	if args.error_output is not None:
+		f = open(args.error_output,'w+')
+		out_dat = model.indata
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_ra),axis=1)
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_dec),axis=1)
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_angular),axis=1)
+		for b in out_dat:
+			f.write('{0}\n'.format('\t'.join(b)))
+		f.close()
 
 	if args.plot > 0:
 		model.ploterrors(args.plot)
@@ -311,6 +324,7 @@ if __name__ == '__main__':
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
+	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
         parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
 	parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
