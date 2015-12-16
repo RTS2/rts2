@@ -877,7 +877,8 @@ void Paramount::updateTrack ()
 	JD += track_next.tv_usec / USEC_SEC / 86400.0;
 	getTarget (&corr_pos);
 	// calculate position at track_next time
-	sky2counts (&corr_pos, ac, dc, JD, 0, flipping->getValueInteger ());
+	bool use_flipped = false;
+	sky2counts (&corr_pos, ac, dc, JD, 0, flipping->getValueInteger (), use_flipped, true, 0);
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " << track_delta << sendLog;
@@ -1045,7 +1046,7 @@ int Paramount::doPara()
 			if(stat1 & MOTOR_OFF) ret1 = MKS3MotorOn (axis1);
 			
 			// issue the actual move
-			ret = sky2counts (ac, dc);
+			ret = sky2counts (ac, dc, 0);
 			if (ret) return -1;
 
 			//logStream (MESSAGE_DEBUG) << "MKS3PosRelativeSet axis1" << sendLog;
