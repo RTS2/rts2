@@ -171,7 +171,6 @@ int BAIT::initValues ()
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
-	strcpy (telType, "MDM 1.3m");
 	return Telescope::initValues ();
 }
 

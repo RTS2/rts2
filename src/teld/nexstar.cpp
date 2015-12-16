@@ -203,7 +203,6 @@ int NexStar::initValues ()
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
-	strcpy (telType, "NexStar");
 	return Telescope::initValues ();
 }
 

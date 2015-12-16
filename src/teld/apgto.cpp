@@ -2091,7 +2091,6 @@ int APGTO::initValues ()
 	int ret = -1;
         int flip= -1 ;
 
-	strcpy (telType, "APGTO");
 	config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
 	if (ret)

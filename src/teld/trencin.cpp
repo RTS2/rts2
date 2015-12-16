@@ -896,8 +896,6 @@ int Trencin::init ()
 	trencinConnDec->setDebug ();
 	trencinConnDec->flushPortIO ();
 
-	snprintf (telType, 64, "Trencin");
-
 	try
 	{
 		tel_write_ra ('K');

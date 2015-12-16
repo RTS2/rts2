@@ -172,7 +172,6 @@ int MDM::initValues ()
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
-	strcpy (telType, "MDM2.4m");
 	return Telescope::initValues ();
 }
 

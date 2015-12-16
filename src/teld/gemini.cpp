@@ -986,7 +986,6 @@ int Gemini::initValues ()
 	ret = tel_gemini_get (0, gem_type);
 	if (ret)
 		return ret;
-	strcpy (telType, getGemType (gem_type));
 	switch (gem_type)
 	{
 		case 6:
@@ -997,15 +996,13 @@ int Gemini::initValues ()
 		logStream (MESSAGE_ERROR) <<
 			"Cannot init teld, because, it's type is not expected. Expected " <<
 			expectedType << " (" << getGemType (expectedType) << "), get " <<
-			gem_type << " (" << telType << ")." << sendLog;
+			gem_type << " (" << gem_type << ")." << sendLog;
 		return -1;
 	}
 	ret = tel_write_read_hash (":GV#", 4, buf, 4);
 	if (ret <= 0)
 		return -1;
 	buf[4] = '\0';
-	strcat (telType, "_");
-	strcat (telType, buf);
 	telAltitude->setValueDouble (500);
 
 	telFlip->setValueInteger (0);

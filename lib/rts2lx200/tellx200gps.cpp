@@ -85,21 +85,20 @@ int TelLX200GPS::initHardware ()
  */
 int TelLX200GPS::initValues ()
 {
-    int ret = -1 ;
+	int ret = -1 ;
 
-    rts2core::Configuration *config = rts2core::Configuration::instance ();
-    ret = config->loadFile ();
-    if (ret)
-        return -1;
-
-    telLongitude->setValueDouble (config->getObserver ()->lng);
-    telLatitude->setValueDouble (config->getObserver ()->lat);
-    telAltitude->setValueDouble (config->getObservatoryAltitude ());
-
-    if (tel_read_longitude () || tel_read_latitude ())
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
+    	ret = config->loadFile ();
+	if (ret)
 		return -1;
 
-	strcpy (telType, "TelLX200GPS");
+	telLongitude->setValueDouble (config->getObserver ()->lng);
+	telLatitude->setValueDouble (config->getObserver ()->lat);
+	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+
+	if (tel_read_longitude () || tel_read_latitude ())
+		return -1;
+
 	telAltitude->setValueDouble (600);
 
 	telFlip->setValueInteger (0);

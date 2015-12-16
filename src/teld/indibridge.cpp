@@ -318,7 +318,6 @@ INDIBridge::initValues ()
 				      << indiport << "failed" << sendLog;
 	    return -1;
 	}
-	strcpy (telType, "LX200 INDI bridge");
 
 	telFlip->setValueInteger (0);
 

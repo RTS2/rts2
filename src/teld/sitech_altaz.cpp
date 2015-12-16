@@ -1629,7 +1629,6 @@ int Sitech:: initValues()
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
 	SiteLatitude = telLatitude->getValueDouble();
 	SiteLongitude= telLongitude->getValueDouble();
-	strcpy (telType, "Sitech");
 	return Telescope::initValues ();
 }
 

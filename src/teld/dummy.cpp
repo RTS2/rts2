@@ -51,7 +51,6 @@ class Dummy:public Telescope
 			telLatitude->setValueDouble (config->getObserver ()->lat);
 			telLongitude->setValueDouble (config->getObserver ()->lng);
 			telAltitude->setValueDouble (config->getObservatoryAltitude ());
-			strcpy (telType, "Dummy");
 			trackingInterval->setValueFloat (0.5);
 			return Telescope::initValues ();
 		}

@@ -1585,8 +1585,6 @@ int APGTO::initValues ()
 {
 	int ret = -1;
 
-	strcpy (telType, "APGTO");
-
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
 	if (ret)

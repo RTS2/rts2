@@ -201,6 +201,8 @@ class Paramount:public GEM
 		int ret0;
 		int ret1;
 
+		rts2core::ValueString *paraVersion;
+
 		rts2core::ValueInteger *statusRa;
 		rts2core::ValueInteger *statusDec;
 
@@ -532,6 +534,8 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 	createValue (encoderRa, "ENCODER_RA", "RA encoder value", false);
 	createValue (encoderDec, "ENCODER_DEC", "DEC encoder value", false);
 
+	createConstValue (paraVersion, "para_version", "Paramount version", false);
+
 	createValue (statusRa, "status_ra", "RA axis status", false, RTS2_DT_HEX);
 	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
 
@@ -727,6 +731,7 @@ int Paramount::initHardware ()
 		haZero->setValueDouble (haZero->getValueDouble () * -1.0);
 		haCpd->setValueDouble (haCpd->getValueDouble () * -1.0);
 		hourRa->setValueLong (-1 * hourRa->getValueLong ());
+		decCpd->setValueDouble (decCpd->getValueDouble () * -1.0);
 	}
 
 	logStream (MESSAGE_DEBUG) << "MKS3Init" << sendLog;
@@ -773,7 +778,9 @@ int Paramount::basicInfo()
 	ret = MKS3VersionGet (axis0, &pMajor, &pMinor, &pBuild);
 	if (ret)
 		return ret;
-	snprintf (telType, 64, "Paramount %i %i %i", pMajor, pMinor, pBuild);
+	char version[60];
+	snprintf (version, 60, "%i.%i.%i", pMajor, pMinor, pBuild);
+	paraVersion->setValueString (version);
 
   	ret = getParamountValue32 (CMD_VAL32_SLEW_VEL, speedRa, speedDec);
 	if (ret)

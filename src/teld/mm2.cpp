@@ -617,7 +617,6 @@ int MM2::initValues ()
 	if (tel_read_longtitude () || tel_read_latitude ())
 		return -1;
 
-	strcpy (telType, "MM2");
 	telAltitude->setValueDouble (600);
 
 	telFlip->setValueInteger (0);

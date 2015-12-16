@@ -372,8 +372,6 @@ int D50::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	snprintf (telType, 64, "D50");
-
 	/*
 	// switch both motors off
 	ret = write_both ("D\x0d", 2);

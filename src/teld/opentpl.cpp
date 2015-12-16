@@ -364,8 +364,6 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 
 	createValue (mountTrack, "TRACK", "mount track", true, RTS2_VALUE_WRITABLE);
 
-	strcpy (telType, "BOOTES_IR");
-
 	createValue (modelQuality, "model_quality", "quality of model data", false);
 	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	// 2.7 arcsec
