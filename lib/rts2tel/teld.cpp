@@ -1194,6 +1194,9 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 
 void Telescope::startTracking (bool check)
 {
+	if (tracking == NULL)
+		return;
+
 	if (check && tracking->getValueInteger () == 0)
 	{
 		tracking->setValueInteger (1);
@@ -1345,6 +1348,7 @@ void Telescope::startCupolaSync ()
 
 int Telescope::endMove ()
 {
+	startTracking ();
 	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
 	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
 	LibnovaRaDec l_telTar (telTargetRaDec->getRa (), telTargetRaDec->getDec ());

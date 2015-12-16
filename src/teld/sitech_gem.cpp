@@ -801,7 +801,6 @@ int Sitech::endMove ()
 {
 	partialMove->setValueInteger (0);
 	firstSlewCall = true;
-	startTracking ();
 	return GEM::endMove ();
 }
 
