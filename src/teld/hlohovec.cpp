@@ -303,8 +303,11 @@ int Hlohovec::resetMount ()
 int Hlohovec::startResync ()
 {
 	deleteTimers (RTS2_HLOHOVEC_AUTOSAVE);
-	int32_t dc;
-	int ret = sky2counts (tAc, dc, haSlewMargin->getValueDouble ());
+	tAc = raDrive->getPosition ();
+	int32_t dc = decDrive->getPosition ();
+	double JD = ln_get_julian_from_sys ();
+	struct ln_equ_posn tar;
+	int ret = calculateTarget (JD, &tar, tAc, dc, true, haSlewMargin->getValueDouble ());
 	if (ret)
 		return -1;
 	raDrive->setTargetPos (tAc);
@@ -320,9 +323,11 @@ int Hlohovec::isMoving ()
 		if (raDrive->isMovingPosition ())
 		{
 			int32_t diffAc;
-			int32_t ac;
-			int32_t dc;
-			int ret = sky2counts (ac, dc, 0);
+			int32_t ac = raDrive->getPosition ();
+			int32_t dc = decDrive->getPosition ();
+			double JD = ln_get_julian_from_sys ();
+			struct ln_equ_posn tar;
+			int ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble ());
 			if (ret)
 				return -1;
 			diffAc = ac - tAc;

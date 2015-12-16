@@ -24,27 +24,6 @@
 
 using namespace rts2teld;
 
-int GEM::sky2counts (int32_t & ac, int32_t & dc, double haMargin)
-{
-	double JD;
-	int32_t homeOff;
-	struct ln_equ_posn pos;
-	int ret;
-	bool use_flipped;
-
-	JD = ln_get_julian_from_sys ();
-
-	ret = getHomeOffset (homeOff);
-	if (ret)
-		return -1;
-
-	getTarget (&pos);
-
-	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
-
-	return sky2counts (&pos, ac, dc, JD, homeOff, used_flipping, use_flipped, true, haMargin);
-}
-
 int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped, bool writeValues, double haMargin)
 {
 	double ls, ha, dec;
@@ -332,8 +311,10 @@ int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &d
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
         bool use_flipped;
 
-	// returns without home offset, which will be removed in future
-	return sky2counts (pos, ac, dc, JD, 0, used_flipping, use_flipped, writeValues, haMargin);
+        int32_t homeOff;
+        getHomeOffset (homeOff);
+
+	return sky2counts (pos, ac, dc, JD, homeOff, used_flipping, use_flipped, writeValues, haMargin);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)

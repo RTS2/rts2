@@ -1045,16 +1045,19 @@ int Paramount::doPara()
 			&&  (!(stat1 & MOTOR_INDEXING)) &&  (!(stat1 & MOTOR_SLEWING)) 
 			&&  (!(stat1 & MOTOR_JOYSTICKING)) )
 		{
-			CWORD32 ac = 0;
-			CWORD32 dc = 0;
+			CWORD32 ac = axRa->getValueLong ();
+			CWORD32 dc = axDec->getValueLong ();
 			int ret;
+
+			double JD = ln_get_julian_from_sys ();
+			struct ln_equ_posn tar;
 
 			// Switch the motor on if necessary
 			if(stat0 & MOTOR_OFF) ret0 = MKS3MotorOn (axis0);
 			if(stat1 & MOTOR_OFF) ret1 = MKS3MotorOn (axis1);
 			
 			// issue the actual move
-			ret = sky2counts (ac, dc, 0);
+			ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble ());
 			if (ret) return -1;
 
 			//logStream (MESSAGE_DEBUG) << "MKS3PosRelativeSet axis1" << sendLog;
