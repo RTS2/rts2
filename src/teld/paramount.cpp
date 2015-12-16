@@ -171,6 +171,8 @@ class Paramount:public GEM
 
 		virtual int updateLimits ();
 
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+
 		virtual void updateTrack ();
 
 		// returns actual home offset
@@ -228,8 +230,6 @@ class Paramount:public GEM
 
 		rts2core::ValueLong *relRa;
 		rts2core::ValueLong *relDec;
-
-		rts2core::ValueBool *tracking;
 
 		rts2core::ValueBool *motorRa;
 		rts2core::ValueBool *motorDec;
@@ -519,11 +519,9 @@ int Paramount::updateLimits ()
 	return 0;
 }
 
-Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
+Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, true)
 {
 	logStream (MESSAGE_DEBUG) << "Paramount::Paramount" << sendLog;
-	createValue (tracking, "tracking", "if RA worm is enabled", false, RTS2_VALUE_WRITABLE);
-	tracking->setValueBool (true);
 
 	createValue (axRa, "AXRA", "RA axis count", true);
 	createValue (axDec, "AXDEC", "DEC axis count", true);
@@ -844,6 +842,16 @@ int Paramount::initValues ()
 	// ignore corrections bellow 5 arcsec
 	setIgnoreCorrection (5/3600);
 	return Telescope::initValues ();
+}
+
+int Paramount::setTracking (int track, bool addTrackingTimer, bool send)
+{
+	if (track)
+		MKS3MotorOn (axis0);
+	else
+		MKS3MotorOff (axis0);
+	// do not run tracking (yet)
+	return Telescope::setTracking (track, false, send);
 }
 
 void Paramount::updateTrack ()
@@ -1277,21 +1285,6 @@ int Paramount::isParking ()
 int Paramount::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	logStream (MESSAGE_DEBUG) << "Paramount::setValue" << sendLog;
-	if (oldValue == tracking)
-	{
-		if (((rts2core::ValueBool * ) newValue)->getValueBool () == true)
-			{
-			logStream (MESSAGE_DEBUG) << "MKS3MotorOn6 axis0" << sendLog;
-			MKS3MotorOn (axis0);
-			}
-		else
-			{
-			logStream (MESSAGE_DEBUG) << "MKS3MotorOff6 axis0" << sendLog;
-			MKS3MotorOff (axis0);
-			}
-		return 0;
-
-	}
 	if (oldValue == speedRa)
 		return setParamountValue32 (CMD_VAL32_SLEW_VEL, newValue, speedDec) ? -2 : 0;
 	if (oldValue == speedDec)
