@@ -337,6 +337,9 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 
 	switch (tracking->getValueInteger ())
 	{
+		case 0:	   // no tracking
+			return 1;
+			break;
 		case 1:	   // on object
 			// calculate from MPEC..
 			if (mpec->getValueString ().length () > 0)
@@ -1811,7 +1814,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		telAltAz->setValueAltAz (obj_ra, obj_dec);
 		resetMpecTLE ();
 		maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking while in AltAz");
-		return moveAltAz ();
+		return moveAltAz () == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
 	else if (conn->isCommand ("resync"))
 	{
