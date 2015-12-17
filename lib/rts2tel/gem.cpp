@@ -567,7 +567,6 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 		ret = counts2hrz (t_ac, t_dc, &hrz_tar, JD);
 		if (ret)
 			return -1;
-
 		if (hrz_tar.alt < 45)
 		{
 			ret = counts2hrz (t_ac, (t_dc > dc) ? (t_dc - fabs(decCpd->getValueDouble ())) : (t_dc + fabs (decCpd->getValueDouble ())), &hrz_before, JD);
@@ -582,7 +581,7 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 					t_dc += full_dc;
 				logStream (MESSAGE_DEBUG) << "down-flip new target dc: " << t_dc << sendLog;
 			}
-		} 
+		}
 	}
 
 	if ((t_dc < dcMin->getValueLong ()) || (t_dc > dcMax->getValueLong ()))

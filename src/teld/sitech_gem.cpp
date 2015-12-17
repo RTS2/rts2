@@ -777,7 +777,7 @@ int Sitech::isMoving ()
 		// close to target, run tracking
 		if (tdist < 0.5)
 		{
-			if (tdist < trackingDist->getValueDouble () * 2.0)
+			if (tdist < 0.05)
 				internalTracking (2.0, 1.0);
 			else
 				internalTracking (2.0, 4.0);
