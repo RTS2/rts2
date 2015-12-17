@@ -740,9 +740,7 @@ int Paramount::initHardware ()
 	{
 		// swap values which are opposite for south hemispehere
 		haZero->setValueDouble (haZero->getValueDouble () * -1.0);
-		haCpd->setValueDouble (haCpd->getValueDouble () * -1.0);
 		hourRa->setValueLong (-1 * hourRa->getValueLong ());
-		decCpd->setValueDouble (decCpd->getValueDouble () * -1.0);
 	}
 
 	return 0;
@@ -895,7 +893,8 @@ void Paramount::updateTrack ()
 		return;
 	}
 	double track_delta;
-	CWORD32 ac, dc;
+	CWORD32 ac = encoderRa->getValueLong ();
+	CWORD32 dc = encoderDec->getValueLong ();;
 	MKS3ObjTrackStat stat0, stat1;
 
 	track_delta =
@@ -1066,8 +1065,8 @@ int Paramount::doPara()
 			&&  (!(stat1 & MOTOR_INDEXING)) &&  (!(stat1 & MOTOR_SLEWING)) 
 			&&  (!(stat1 & MOTOR_JOYSTICKING)) )
 		{
-			CWORD32 ac = axRa->getValueLong ();
-			CWORD32 dc = axDec->getValueLong ();
+			CWORD32 ac = encoderRa->getValueLong ();
+			CWORD32 dc = encoderDec->getValueLong ();
 			int ret;
 
 			double JD = ln_get_julian_from_sys ();
