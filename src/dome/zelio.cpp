@@ -794,6 +794,9 @@ int Zelio::initHardware ()
 			zelioModel = ZELIO_SIMPLE;
 			zelioModelString->setValueString ("ZELIO_SIMPLE");
 			break;
+		case ZS_SIMPLE | ZS_FRAM:
+			// ELYA model
+			break;
 		default:
 			logStream (MESSAGE_ERROR) << "cannot retrieve dome model (" << model << ")" << sendLog;
 			return -1;

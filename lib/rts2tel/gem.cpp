@@ -613,6 +613,8 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 	int32_t soft_a;
 	int32_t soft_d;
 
+	bool hard_beginning = false;
+
 	if (ac > at)
 		step_a = -as;
 
@@ -626,7 +628,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 	// turned to true if we are in "soft" boundaries, e.g hit with margin applied
 	bool soft_hit = false;
 
-	for (; steps > 0; steps--)
+	for (unsigned int c = 0; c < steps; c++)
 	{
 		// check if still visible
 		struct ln_equ_posn pos, un_pos;
@@ -676,21 +678,35 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 			// if we really cannot go further
 			if (hardHorizon->is_good (&hrz) == 0)
 			{
-				logStream (MESSAGE_DEBUG) << "hit hard limit at alt az " << hrz.alt << " " << hrz.az << " " << soft_a << " " << soft_d << " " << n_a << " " << n_d << sendLog;
-				if (soft_hit == true)
+				// even at hard hit on first step, let's see if it can move out of limits
+				if (c == 0) 
 				{
-					// then use last good position, and return we reached horizon..
-					at = soft_a;
-					dt = soft_d;
-					return 2;
+					logStream (MESSAGE_WARNING) << "below hard limit, see if we can move above in a few steps" << sendLog;
+					hard_beginning = true;
 				}
-				else
+				else if (hard_beginning == false || c > 20)
 				{
-					// case when moving within soft will lead to hard hit..we don't want this path
-					at = t_a;
-					dt = t_d;
-					return 3;
+					logStream (MESSAGE_DEBUG) << "hit hard limit at alt az " << hrz.alt << " " << hrz.az << " " << soft_a << " " << soft_d << " " << n_a << " " << n_d << sendLog;
+					if (soft_hit == true)
+					{
+						// then use last good position, and return we reached horizon..
+						at = soft_a;
+						dt = soft_d;
+						return 2;
+					}
+					else
+					{
+						// case when moving within soft will lead to hard hit..we don't want this path
+						at = t_a;
+						dt = t_d;
+						return 3;
+					}
+					hard_beginning = false;
 				}
+			}
+			else
+			{
+				hard_beginning = false;
 			}
 		}
 
@@ -698,7 +714,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 		if (step_a == 0 && step_d == 0)
 			return 0;
 
-		if (soft_hit == false)
+		if (soft_hit == false && hard_beginning == false)
 		{
 			// check soft margins..
 			if (hardHorizon->is_good_with_margin (&hrz, alt_margin, az_margin) == 0)

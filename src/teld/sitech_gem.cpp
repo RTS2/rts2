@@ -166,6 +166,8 @@ class Sitech:public GEM
 		rts2core::ValueInteger *partialMove;
 
 		rts2core::ValueDouble *trackingDist;
+                rts2core::ValueDouble *slowSyncDistance;
+		rts2core::ValueFloat *fastSyncSpeed;
 
 		rts2core::IntegerArray *PIDs;
 
@@ -303,10 +305,16 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 
 	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 
-	createValue (PIDs, "pids", "axis PID values", false);
-
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
+
+	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	slowSyncDistance->setValueDouble (0.05);  // 3 arcmin
+
+	createValue (fastSyncSpeed, "fast_sync_speed", "fast speed factor (compared to siderial trackign) for fast alignment (above slow_track_distance)", false, RTS2_VALUE_WRITABLE);
+	fastSyncSpeed->setValueFloat (4);
+
+	createValue (PIDs, "pids", "axis PID values", false);
 
 	createValue (ra_enc, "ENCRA", "RA encoder readout", true);
 	createValue (dec_enc, "ENCDEC", "DEC encoder readout", true);
@@ -777,10 +785,10 @@ int Sitech::isMoving ()
 		// close to target, run tracking
 		if (tdist < 0.5)
 		{
-			if (tdist < 0.05)
+			if (tdist < slowSyncDistance->getValueDouble ())
 				internalTracking (2.0, 1.0);
 			else
-				internalTracking (2.0, 4.0);
+				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
 			return USEC_SEC * trackingInterval->getValueFloat () / 10;
 		}
 

@@ -1078,7 +1078,8 @@ int Paramount::doPara()
 			
 			// issue the actual move
 			ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble ());
-			if (ret) return -1;
+			if (ret)
+                                return -1;
 
 			//logStream (MESSAGE_DEBUG) << "MKS3PosRelativeSet axis1" << sendLog;
 			//ret1 = MKS3PosRelativeSet (axis1, 0);

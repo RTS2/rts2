@@ -1205,10 +1205,10 @@ void Telescope::startTracking (bool check)
 	setTracking (tracking->getValueInteger (), true);
 }
 
-void Telescope::stopTracking ()
+void Telescope::stopTracking (const char *message)
 {
 	stopMove ();
-	maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking stopped");
+	maskState (TEL_MASK_TRACK, TEL_NOTRACK, message);
 }
 
 void Telescope::runTracking ()
@@ -1301,7 +1301,7 @@ int Telescope::info ()
 		hrpos.az = telAltAz->getAz ();
 		if (!hardHorizon->is_good (&hrpos))
 		{
-			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "tracking below horizon");
+			stopTracking ("tracking below horizon");
 		}
 	}
 	
