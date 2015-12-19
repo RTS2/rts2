@@ -265,6 +265,15 @@ class GPoint:
 		pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
 		pylab.show()
 
+	def plotpolar(self,count):
+		import pylab
+
+		polar = pylab.subplot(111, projection='polar')
+		polar.plot(self.aa_az,90 - self.aa_alt,'r*',self.ar_az,90 - self.ar_alt,'g.')
+		polar.set_rmax(90)
+                polar.set_xticklabels(['S','','W','','N','','E',''])
+		pylab.show()
+
 # Generate pointing model
 def generateModel(args):
 	model = GPoint(args.verbose,latitude=args.latitude)
@@ -289,8 +298,10 @@ def generateModel(args):
 			f.write('{0}\n'.format('\t'.join(b)))
 		f.close()
 
-	if args.plot > 0:
+	if args.plot == 1 or args.plot == 2:
 		model.ploterrors(args.plot)
+	elif args.plot == 3:
+		model.plotpolar(args.plot)
 
 def loadModel(modelfile):
 	f = open(modelfile)
