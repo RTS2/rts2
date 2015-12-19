@@ -887,7 +887,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Stops tracking. Calls stopMove and set tracking state to NOTRACK.
 		 */
-		void stopTracking (const char *message = "tracking stopped");
+		void stopTracking (const char *msg = "tracking stopped");
 
 		/**
 		 * Called to run tracking. It is up to driver implementation

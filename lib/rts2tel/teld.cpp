@@ -1205,10 +1205,10 @@ void Telescope::startTracking (bool check)
 	setTracking (tracking->getValueInteger (), true);
 }
 
-void Telescope::stopTracking (const char *message)
+void Telescope::stopTracking (const char *msg)
 {
 	stopMove ();
-	maskState (TEL_MASK_TRACK, TEL_NOTRACK, message);
+	maskState (TEL_MASK_TRACK, TEL_NOTRACK, msg);
 }
 
 void Telescope::runTracking ()
