@@ -699,7 +699,7 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	obs.lat = telLatitude->getValueDouble ();
 
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
-	ref = ln_get_refraction_adj (hrz.alt, 860, 10);
+	ref = ln_get_refraction_adj (hrz.alt, getAltitude (), 10);
 	hrz.alt += ref;
 	if (writeValue)
 		refraction->setValueDouble (ref);
