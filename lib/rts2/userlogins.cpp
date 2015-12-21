@@ -69,6 +69,7 @@ void UserLogins::load (const char *filename)
 			if (logins.size () == 3)
 				logins[fields[0]].second = SplitStr (fields[2], " ");
 		}
+		else
 		{
 			std::ostringstream os;
 			os << "invalid line in logins " << filename << "file on line " << ln << ", expected two entries separated with :, got " << fields.size () << " entries";
