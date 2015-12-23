@@ -14,7 +14,8 @@ def point_altaz(alt,az):
 	s.altaz(alt,az)
 	time.sleep(2)
 	s.waitIdle(tel,180)
-	s.exposure()
+	img=s.exposure()
+        s.process(img)
 
 # first run at alt 20 degrees
 az_r=range(0,360,30)
@@ -29,7 +30,7 @@ for az in az_r:
 # third at alt 60 degrees
 az_r=range(0,360,60)
 for az in az_r:
-	point_altaz(60,az)
+	point_altaz(75,az)
 
 # zenith
 point_altaz(90,0)
