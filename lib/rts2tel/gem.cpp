@@ -24,7 +24,7 @@
 
 using namespace rts2teld;
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int used_flipping, bool &use_flipped, bool writeValues, double haMargin)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int used_flipping, bool &use_flipped, bool writeValues, double haMargin)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
@@ -301,8 +301,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		}
 	}
 
-	ac -= homeOff;
-
 	return 0;
 }
 
@@ -311,25 +309,14 @@ int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &d
 	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
         bool use_flipped;
 
-        int32_t homeOff;
-        getHomeOffset (homeOff);
-
-	return sky2counts (pos, ac, dc, JD, homeOff, used_flipping, use_flipped, writeValues, haMargin);
+	return sky2counts (pos, ac, dc, JD, used_flipping, use_flipped, writeValues, haMargin);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)
 {
 	double ls, ha;
-	int32_t homeOff;
-	int ret;
-
-	ret = getHomeOffset (homeOff);
-	if (ret)
-		return -1;
 
 	ls = getLstDeg (JD);
-
-	ac += homeOff;
 
 	ha = (double) (ac / haCpd->getValueDouble ()) + haZero->getValueDouble ();
 	dec = (double) (dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();

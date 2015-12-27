@@ -91,7 +91,6 @@ class D50:public Fork
 		virtual void setDiffTrack (double dra, double ddec);
 
 		virtual int updateLimits ();
-		virtual int getHomeOffset (int32_t & off);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
@@ -570,11 +569,9 @@ int D50::setTo (double set_ra, double set_dec)
         eq.dec = set_dec;
         int32_t ac;
         int32_t dc;
-        int32_t off;
 	logStream (MESSAGE_DEBUG) << "------ setting coordinates to RA: " << set_ra << ", DEC: " << set_dec << sendLog;
-        getHomeOffset (off);
 	zeroCorrRaDec ();
-        int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off);
+        int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys ());
         if (ret)
                 return -1;
         //if (isTracking ())
@@ -703,13 +700,6 @@ int D50::updateLimits ()
 		dcMax = (int32_t) 0;	// in our case, dc=0 in parking (and lowest possible dec) position
 		dcMin = (int32_t) (decCpd * (90.0 - decZero));
 	}
-	return 0;
-}
-
-int D50::getHomeOffset (int32_t & off)
-{
-	logStream (MESSAGE_DEBUG) << "****** getHomeOffset ()" << sendLog;
-	off = 0;
 	return 0;
 }
 

@@ -171,9 +171,6 @@ class Paramount:public GEM
 
 		virtual void updateTrack ();
 
-		// returns actual home offset
-		virtual int getHomeOffset (int32_t & off);
-
 		virtual int startResync ();
 		virtual int stopMove ();
 
@@ -480,12 +477,6 @@ int Paramount::getHomeOffsetAxis (MKS3Id axis, int32_t & off)
 		return ret;
 	off = en0 - pos0;
 	return 0;
-}
-
-int Paramount::getHomeOffset (int32_t & off)
-{
-//	logStream (MESSAGE_DEBUG) << "Paramount::getHomeOffset" << sendLog;
-	return getHomeOffsetAxis (axis0, off);
 }
 
 int Paramount::updateLimits ()
@@ -906,7 +897,13 @@ void Paramount::updateTrack ()
 	getTarget (&corr_pos);
 	// calculate position at track_next time
 	bool use_flipped = false;
-	sky2counts (&corr_pos, ac, dc, JD, 0, flipping->getValueInteger (), use_flipped, true, 0);
+	sky2counts (&corr_pos, ac, dc, JD, flipping->getValueInteger (), use_flipped, true, 0);
+
+	int32_t haOff;
+	int ret = getHomeOffsetAxis (axis0, haOff);
+	if (ret)
+		return;
+	ac -= haOff;
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " << track_delta << sendLog;
@@ -1081,6 +1078,14 @@ int Paramount::doPara()
 			if (ret)
                                 return -1;
 
+			int32_t haOff;
+
+			// update by home offset
+			ret = getHomeOffsetAxis (axis0, haOff);
+			if (ret)
+				return -1;
+			ac -= haOff;
+
 			//logStream (MESSAGE_DEBUG) << "MKS3PosRelativeSet axis1" << sendLog;
 			//ret1 = MKS3PosRelativeSet (axis1, 0);
 			//logStream (MESSAGE_DEBUG) << "_MKS3DoSetVal32 axis1" << sendLog;
@@ -1215,6 +1220,12 @@ int Paramount::doInfo ()
 	int t_telFlip;
 	double ut_telRa;
 	double ut_telDec;
+
+	int32_t haOff;
+	ret = getHomeOffsetAxis (axis0, haOff);
+	if (ret) return ret;
+
+	ac += haOff;
 
 	ret = counts2sky (ac, dc, t_telRa, t_telDec, t_telFlip, ut_telRa, ut_telDec);
 

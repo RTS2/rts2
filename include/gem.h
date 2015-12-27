@@ -68,12 +68,7 @@ class GEM: public Telescope
 
 		virtual int updateLimits () = 0;
 
-		/**
-		 * Gets home offset.
-		 */
-		virtual int getHomeOffset (int32_t & off) = 0;
-
-		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff, int actual_flip, bool &use_flipped, bool writeValues, double haMargin);
+		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int actual_flip, bool &use_flipped, bool writeValues, double haMargin);
 
 		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin);
 

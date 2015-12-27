@@ -27,22 +27,16 @@ using namespace rts2teld;
 int Fork::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
-	int32_t homeOff;
 	struct ln_equ_posn pos;
-	int ret;
 
 	JD = ln_get_julian_from_sys ();
 
-	ret = getHomeOffset (homeOff);
-	if (ret)
-		return -1;
-
 	getTarget (&pos);
 
-	return sky2counts (&pos, ac, dc, JD, homeOff);
+	return sky2counts (&pos, ac, dc, JD);
 }
 
-int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
+int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
@@ -151,25 +145,15 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
-	ac -= homeOff;
-
 	return 0;
 }
 
 int Fork::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec)
 {
 	double JD, ls, ha;
-	int32_t homeOff;
-	int ret;
-
-	ret = getHomeOffset (homeOff);
-	if (ret)
-		return -1;
 
 	JD = ln_get_julian_from_sys ();
 	ls = getLstDeg (JD);
-
-	ac += homeOff;
 
 	ha = (double) (ac / haCpd) + haZero;
 	dec = (double) (dc / decCpd) + decZero;

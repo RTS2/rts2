@@ -47,7 +47,6 @@ class Kolonica:public Fork
 		virtual int startPark();
 		virtual int endPark();
 		virtual int updateLimits();
-		virtual int getHomeOffset(int32_t&);
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
@@ -280,11 +279,6 @@ int Kolonica::endPark()
 int Kolonica::updateLimits()
 {
 	return -1;
-}
-
-int Kolonica::getHomeOffset(int32_t&)
-{
-	return 0;
 }
 
 int Kolonica::setValue (rts2core::Value *old_value, rts2core::Value *new_value)

@@ -59,13 +59,8 @@ class Fork: public Telescope
 
 		virtual int updateLimits () = 0;
 
-		/**
-		 * Gets home offset.
-		 */
-		virtual int getHomeOffset (int32_t & off) = 0;
-
 		int sky2counts (int32_t & ac, int32_t & dc);
-		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
+		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD);
 
 		/**
 		 * Convert counts to RA&Dec coordinates.

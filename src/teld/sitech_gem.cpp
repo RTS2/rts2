@@ -116,15 +116,6 @@ class Sitech:public GEM
 
 		virtual int updateLimits ();
 
-		/**
-		 * Gets home offset.
-		 */
-		virtual int getHomeOffset (int32_t & off)
-		{
-			off = 0;
-			return 0;
-		}
-
 	private:
 		void internalTracking (double sec_step, float speed_factor);
 

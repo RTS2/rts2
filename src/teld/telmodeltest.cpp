@@ -18,6 +18,7 @@
  */
 
 #include "telmodel.h"
+#include "gem.h"
 #include "rts2model.h"
 #include "tpointmodel.h"
 #include "libnova_cpp.h"
@@ -34,11 +35,12 @@
 #include <vector>
 #include <stdlib.h>
 
-#define OPT_DATE		   OPT_LOCAL + 1002
+#define OPT_DATE	          OPT_LOCAL + 1002
 #define OPT_RADEC		  OPT_LOCAL + 1003
-#define OPT_RTS2_MODEL	 OPT_LOCAL + 1004
+#define OPT_RTS2_MODEL	          OPT_LOCAL + 1004
 #define OPT_T_POINT_MODEL	  OPT_LOCAL + 1005
-#define OPT_CALCULATE_ERRORS   OPT_LOCAL + 1006
+#define OPT_CALCULATE_ERRORS      OPT_LOCAL + 1006
+#define OPT_CALCULATE_COUNTS      OPT_LOCAL + 1007
 
 using namespace rts2telmodel;
 
@@ -74,6 +76,37 @@ class ModelTest:public Telescope
 		int endPark () { return 0; }
 };
 
+class ModelTestGEM:public GEM
+{
+	public:
+		ModelTestGEM ():GEM (0, NULL)
+		{
+			createConstValue (telLongitude, "LONGITUD", "telescope longtitude");
+			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
+			createConstValue (telAltitude, "ALTITUDE", "telescope altitude");
+
+			telLongitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lng);
+			telLatitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lat);
+		}
+
+		void setObserverLat (double in_lat) { telLatitude->setValueDouble (in_lat); }
+		double getLST (double JD) { return getLocSidTime (JD);}
+		void getObs (ln_lnlat_posn *obs)
+		{
+			obs->lng = telLongitude->getValueDouble ();
+			obs->lat = telLatitude->getValueDouble ();
+		}
+
+	protected:
+		virtual int startResync () { return 0; }
+		virtual int isMoving () { return -2; }
+		virtual int stopMove () { return 0; }
+		virtual int startPark () { return 0; }
+		virtual int endPark () { return 0; }
+
+		virtual int updateLimits () { return 0; }
+};
+
 class TelModelTest:public rts2core::CliApp
 {
 	public:
@@ -94,9 +127,11 @@ class TelModelTest:public rts2core::CliApp
 		const char *modelFile;
 		const char *rts2ModelFile;
 		const char *errorFile;
+		const char *countsFile;
 		TelModel *model;
 		std::vector < std::string > runFiles;
 		ModelTest *telescope;
+		ModelTestGEM *gemTelescope;
 		int errors;
 		bool verbose;
 		// if input are images
@@ -125,8 +160,10 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	modelFile = NULL;
 	rts2ModelFile = NULL;
 	errorFile = NULL;
+	countsFile = NULL;
 	model = NULL;
 	telescope = NULL;
+	gemTelescope = NULL;
 	errors = 0;
 	image = false;
 	rpoint = false;
@@ -137,7 +174,8 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	localDate = 0;
 	addOption (OPT_T_POINT_MODEL, "t-point-model", 1, "T-Point model filename");
 	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 model filename");
-	addOption (OPT_CALCULATE_ERRORS, "calculate-errors", 1, "Calculate errors from given input file, specified in input format for model-fit.py script");
+	addOption (OPT_CALCULATE_ERRORS, "calculate-errors", 1, "calculate errors from given input file, specified in input format for model-fit.py script");
+	addOption (OPT_CALCULATE_COUNTS, "calculate-counts", 1, "calculate axis counts from given imput file, specified in input format for model-fit.py script");
 	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC. All values in arcminutes.");
 	addOption ('R', NULL, 0, "Include atmospheric refraction into corrections.");
 	addOption ('a', NULL, 0, "Print also alt-az coordinates together with errors.");
@@ -152,6 +190,7 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 
 TelModelTest::~TelModelTest (void)
 {
+	delete gemTelescope;
 	delete telescope;
 	runFiles.clear ();
 }
@@ -178,6 +217,9 @@ int TelModelTest::processOption (int in_opt)
 			break;
 		case OPT_CALCULATE_ERRORS:
 			errorFile = optarg;
+			break;
+		case OPT_CALCULATE_COUNTS:
+			countsFile = optarg;
 			break;
 		case 'e':
 			errors++;
@@ -228,7 +270,7 @@ int TelModelTest::init ()
 	if (ret)
 		return ret;
 
-	if (!rpoint && runFiles.empty () && localDate == 0 && errorFile == NULL)
+	if (!rpoint && runFiles.empty () && localDate == 0 && errorFile == NULL && countsFile == NULL)
 	{
 		help ();
 		return -1;
@@ -244,6 +286,9 @@ int TelModelTest::init ()
 
 	telescope = new ModelTest ();
 	telescope->setCorrections (false, false, false);
+
+	gemTelescope = new ModelTestGEM ();
+	gemTelescope->setCorrections (true, true, true);
 
 	if (modelFile && rts2ModelFile)
 	{

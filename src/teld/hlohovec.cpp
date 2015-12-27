@@ -85,7 +85,6 @@ class Hlohovec:public GEM
 		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
 		virtual int updateLimits ();
-		virtual int getHomeOffset (int32_t & off);
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 	private:
@@ -371,10 +370,8 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	eq.dec = set_dec;
 	int32_t ac;
 	int32_t dc;
-	int32_t off;
-	getHomeOffset (off);
 	bool use_flipped;
-	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off, 0, use_flipped, true, 0);
+	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), 0, use_flipped, true, 0);
 	if (ret)
 		return -1;
 	raDrive->setCurrentPos (ac);
@@ -455,12 +452,6 @@ int Hlohovec::updateLimits ()
 	acMax->setValueLong (labs (RA_TICKS));
 	dcMin->setValueLong (-1 * labs (DEC_TICKS));
 	dcMax->setValueLong (labs (DEC_TICKS));
-	return 0;
-}
-
-int Hlohovec::getHomeOffset (int32_t & off)
-{
-	off = 0;
 	return 0;
 }
 

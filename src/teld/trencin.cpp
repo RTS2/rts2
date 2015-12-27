@@ -64,8 +64,6 @@ class Trencin:public Fork
 	protected:
 		virtual int processOption (int in_opt);
 
-		virtual int getHomeOffset (int32_t & off);
-
 		virtual int setTo (double set_ra, double set_dec);
 
 		virtual int isMoving ();
@@ -783,12 +781,6 @@ int Trencin::processOption (int in_opt)
 	return 0;
 }
 
-int Trencin::getHomeOffset (int32_t & off)
-{
-	off = 0;
-	return 0;
-}
-
 int Trencin::setTo (double set_ra, double set_dec)
 {
 	int ret = stopMove ();
@@ -800,8 +792,6 @@ int Trencin::setTo (double set_ra, double set_dec)
 	// calculate expected RA and DEC ticsk..
 	int32_t u_ra;
 	int32_t u_dec;
-	int32_t off;
-	getHomeOffset (off);
 
 	struct ln_equ_posn pos;
 	pos.ra = set_ra;
