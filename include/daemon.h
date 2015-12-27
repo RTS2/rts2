@@ -198,6 +198,12 @@ class Daemon:public rts2core::Block
 		}
 
 		/**
+		 * Load value file, specified as argument.
+		 * Value file list variable names and values on "variable_name=value " lines.
+		 */
+		int loadValuesFile (const char *valuefile);
+
+		/**
 		 * Autosave values marked for autosaving.
 		 */
 		int autosaveValues ();
@@ -672,7 +678,6 @@ class Daemon:public rts2core::Block
 		void switchUser (const char *usrgrp);
 
 		int loadCreateFile ();
-		int loadValuesFile (const char *valuefile);
 		int loadModefile ();
 
 		/**

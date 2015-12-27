@@ -28,6 +28,11 @@
 #include <math.h>
 
 /**
+ * Modified Julian Day offset - JD = MJD + offset
+ */
+#define MJD_OFFSET    2400000.5
+
+/**
  * @file Libnova utility classes
  *
  * @defgroup LibnovaCPP Libnova clases

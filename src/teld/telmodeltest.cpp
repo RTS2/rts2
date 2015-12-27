@@ -58,6 +58,7 @@ class ModelTest:public Telescope
 
 			telLongitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lng);
 			telLatitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lat);
+                        telAltitude->setValueDouble (rts2core::Configuration::instance ()->getObservatoryAltitude ());
 		}
 
 		void setObserverLat (double in_lat) { telLatitude->setValueDouble (in_lat); }
@@ -79,7 +80,7 @@ class ModelTest:public Telescope
 class ModelTestGEM:public GEM
 {
 	public:
-		ModelTestGEM ():GEM (0, NULL)
+		ModelTestGEM ():GEM (0, NULL, true, true, true)
 		{
 			createConstValue (telLongitude, "LONGITUD", "telescope longtitude");
 			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
@@ -87,6 +88,7 @@ class ModelTestGEM:public GEM
 
 			telLongitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lng);
 			telLatitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lat);
+                        telAltitude->setValueDouble (rts2core::Configuration::instance ()->getObservatoryAltitude ());
 		}
 
 		void setObserverLat (double in_lat) { telLatitude->setValueDouble (in_lat); }
@@ -128,6 +130,7 @@ class TelModelTest:public rts2core::CliApp
 		const char *rts2ModelFile;
 		const char *errorFile;
 		const char *countsFile;
+		const char *defaultsFile;
 		TelModel *model;
 		std::vector < std::string > runFiles;
 		ModelTest *telescope;
@@ -144,6 +147,7 @@ class TelModelTest:public rts2core::CliApp
 		struct ln_equ_posn localPosition;
 
 		void processErrorFile ();
+		void processCountsFile ();
 		void test (double ra, double dec);
 		void runOnFile (std::string filename, std::ostream & os);
 		void runOnFitsFile (std::string filename, std::ostream & os);
@@ -161,6 +165,7 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	rts2ModelFile = NULL;
 	errorFile = NULL;
 	countsFile = NULL;
+	defaultsFile = NULL;
 	model = NULL;
 	telescope = NULL;
 	gemTelescope = NULL;
@@ -176,6 +181,7 @@ TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_ar
 	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 model filename");
 	addOption (OPT_CALCULATE_ERRORS, "calculate-errors", 1, "calculate errors from given input file, specified in input format for model-fit.py script");
 	addOption (OPT_CALCULATE_COUNTS, "calculate-counts", 1, "calculate axis counts from given imput file, specified in input format for model-fit.py script");
+	addOption (OPT_DEFAULTS, "defaults", 1, "file with default values for telescope");
 	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC. All values in arcminutes.");
 	addOption ('R', NULL, 0, "Include atmospheric refraction into corrections.");
 	addOption ('a', NULL, 0, "Print also alt-az coordinates together with errors.");
@@ -220,6 +226,9 @@ int TelModelTest::processOption (int in_opt)
 			break;
 		case OPT_CALCULATE_COUNTS:
 			countsFile = optarg;
+			break;
+		case OPT_DEFAULTS:
+			defaultsFile = optarg;
 			break;
 		case 'e':
 			errors++;
@@ -290,6 +299,16 @@ int TelModelTest::init ()
 	gemTelescope = new ModelTestGEM ();
 	gemTelescope->setCorrections (true, true, true);
 
+	if (defaultsFile)
+	{
+		ret = gemTelescope->loadValuesFile (defaultsFile);
+		if (ret)
+		{
+			std::cerr << "cannot load telescope default file: " << defaultsFile << std::endl;
+			return -1;
+		}
+	}
+
 	if (modelFile && rts2ModelFile)
 	{
 		std::cerr << "You cannot specify both T-Point and RTS2 model, exiting" << std::endl;
@@ -303,7 +322,7 @@ int TelModelTest::init ()
 
 	   	ret = model->load ();
 	
-	if (localDate != 0)
+	if (localDate != 0 || countsFile)
 		return 0;
 
 	return ret;
@@ -607,6 +626,10 @@ int TelModelTest::doProcessing ()
 	{
 		processErrorFile ();
 	}
+	if (countsFile != NULL)
+	{
+		processCountsFile ();
+	}
 	if (localDate != 0)
 	{
 		struct ln_hrz_posn hrz;
@@ -656,7 +679,7 @@ void TelModelTest::processErrorFile ()
 		long axra, axdec;
 		// parse line..
 		// Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE
-		int ret = sscanf (line.c_str(), "%50s %lf %lf %lf %lf %ld %ld %lf %lf", observation, &mjd, &ra_mnt, &dec_mnt, &lst_mnt, &axra, &axdec, &ra_true, &dec_true);
+		int ret = sscanf (line.c_str(), "%50s %lf %lf %lf %lf %ld %ld %lf %lf", observation, &mjd, &lst_mnt, &ra_mnt, &dec_mnt, &axra, &axdec, &ra_true, &dec_true);
 		if (ret != 9)
 		{
 			std::cerr << "Ignoring invalid line: " << line << std::endl;
@@ -667,11 +690,6 @@ void TelModelTest::processErrorFile ()
 		axis.dec = dec_mnt;
 		real.ra = lst_mnt - ra_true;
 		real.dec = dec_true;
-
-		if (verbose)
-			model->applyVerbose (&axis);
-		else
-			model->apply (&axis);
 
 		// remove real and save diffs
 		diff.ra = (axis.ra - real.ra) * 3600.0;
@@ -697,6 +715,79 @@ void TelModelTest::processErrorFile ()
 	}
 
 	std::cout << std::endl;
+}
+
+void TelModelTest::processCountsFile ()
+{
+	std::ifstream ef (countsFile);
+	std::string line;
+	// skip first line with format
+	getline (ef, line);
+	std::cout << "# MJD..." << std::endl;
+	std::cout << "#observatory " << gemTelescope->getLongitude () << " " << gemTelescope->getLatitude () << " " << gemTelescope->getAltitude () << std::endl;
+	while (ef.good())
+	{
+		getline (ef, line);
+		if (!ef.good ())
+			break;
+		char observation[50];
+		double mjd, ra_mnt, dec_mnt, lst_mnt, ra_true, dec_true;
+		long axra, axdec;
+                int32_t compaxra, compaxdec;
+		// parse line..
+		// Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE
+		int ret = sscanf (line.c_str(), "%50s %lf %lf %lf %lf %ld %ld %lf %lf", observation, &mjd, &lst_mnt, &ra_mnt, &dec_mnt, &axra, &axdec, &ra_true, &dec_true);
+		if (ret != 9)
+		{
+			std::cerr << "Ignoring invalid line: " << line << std::endl;
+			continue;
+		}
+		// calculate transformation..
+
+		struct ln_equ_posn tar;
+		tar.ra = ra_mnt;
+		tar.dec = dec_mnt;
+
+		// compute axra and axdec, with zero offsets
+		compaxra = axra;
+		compaxdec = axdec;
+
+		bool use_flipped = false;
+		bool ignore = false;
+
+		ret = gemTelescope->sky2counts (&tar, compaxra, compaxdec, mjd + MJD_OFFSET, 0, use_flipped, false, 0);
+		if (ret)
+		{
+			std::cerr << "Cannot calculate target for line: " << line << std::endl;
+			continue;
+		}
+
+		// compute axra and axdec, with zero offsets
+		compaxra = compaxra + gemTelescope->getRaTicks () + gemTelescope->getHaZero () * (gemTelescope->getRaTicks () / 360.0);
+
+		if (use_flipped)
+		{
+			tar.ra = ln_range_degrees (tar.ra + 180);
+			tar.dec = 180 - tar.dec;
+			compaxdec = abs(compaxdec) - (gemTelescope->getDecZero () + 180) * (gemTelescope->getDecTicks () / 360.0);
+			// different RTS2 and sitech flip, ignore measurement
+			if (fabs (axdec - compaxdec) > gemTelescope->getDecTicks () / 4.0)
+				ignore = true;
+		}
+		else
+		{
+			compaxra += gemTelescope->getRaTicks () / 2.0;
+			compaxdec = compaxdec + gemTelescope->getDecTicks () + gemTelescope->getDecZero () * (gemTelescope->getDecTicks () / 360.0);
+		}
+
+		std::cout << "# " << observation << " " << std::fixed << std::setprecision (6) << mjd << " " << std::setprecision (4) << lst_mnt << " " << ra_mnt << " " << dec_mnt << " " << tar.ra << " " << tar.dec << " " << compaxra << " " << compaxdec << " " << axra << " " << axdec << " " << (axra - compaxra) << " " << (axdec - compaxdec) << " " << ra_true << " " << dec_true << std::endl;
+
+		if (ignore)
+			std::cout << "#ignored - different original and RTS2 flip" << std::endl;
+		else
+			std::cout << observation << " " << std::fixed << std::setprecision (6) << mjd << " " << std::setprecision (4) << lst_mnt << " " << tar.ra << " " << tar.dec << " " << compaxra << " " << compaxdec << " " << ra_true << " " << dec_true << std::endl;
+	}
+	ef.close ();
 }
 
 int main (int argc, char **argv)

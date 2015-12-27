@@ -35,6 +35,13 @@ class GEM: public Telescope
 		GEM (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
 		virtual ~GEM (void);
 
+		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int actual_flip, bool &use_flipped, bool writeValues, double haMargin);
+
+		double getHaZero () { return haZero->getValueDouble (); }
+		double getDecZero () { return decZero->getValueDouble (); }
+		double getRaTicks () { return ra_ticks->getValueDouble (); }
+		double getDecTicks () { return dec_ticks->getValueDouble (); }
+
 	protected:
 
 		rts2core::ValueSelection *flipping;       //* flipping strategy - shortest, preffer same, preffer opposite,..
@@ -67,8 +74,6 @@ class GEM: public Telescope
 		rts2core::ValueLong *dec_ticks;
 
 		virtual int updateLimits () = 0;
-
-		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int actual_flip, bool &use_flipped, bool writeValues, double haMargin);
 
 		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin);
 
