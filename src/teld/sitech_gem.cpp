@@ -834,10 +834,6 @@ int Sitech::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 int Sitech::updateLimits ()
 {
-//	acMin->setValueLong (-20000000);
-//	acMax->setValueLong (20000000);
-//	dcMin->setValueLong (-20000000);
-//	dcMax->setValueLong (20000000);
 	return 0;
 }
 
