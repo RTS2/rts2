@@ -691,6 +691,11 @@ void TelModelTest::processErrorFile ()
 		real.ra = lst_mnt - ra_true;
 		real.dec = dec_true;
 
+		if (verbose)
+			model->applyVerbose (&axis);
+		else
+			model->apply (&axis);
+
 		// remove real and save diffs
 		diff.ra = (axis.ra - real.ra) * 3600.0;
 		diff.dec = (axis.dec - real.dec) * 3600.0;
@@ -770,15 +775,19 @@ void TelModelTest::processCountsFile ()
 			tar.ra = ln_range_degrees (tar.ra + 180);
 			tar.dec = 180 - tar.dec;
 			compaxdec = abs(compaxdec) - (gemTelescope->getDecZero () + 180) * (gemTelescope->getDecTicks () / 360.0);
-			// different RTS2 and sitech flip, ignore measurement
-			if (fabs (axdec - compaxdec) > gemTelescope->getDecTicks () / 4.0)
-				ignore = true;
-		}
+                }
 		else
 		{
 			compaxra += gemTelescope->getRaTicks () / 2.0;
 			compaxdec = compaxdec + gemTelescope->getDecTicks () + gemTelescope->getDecZero () * (gemTelescope->getDecTicks () / 360.0);
 		}
+
+		tar.ra -= (axra - compaxra) / (double) (gemTelescope->getRaTicks () / 360.0);
+		tar.dec -= (axdec - compaxdec) / (double) (gemTelescope->getDecTicks () / 360.0);
+
+		// different RTS2 and sitech flip, ignore measurement
+		if (fabs (axra - compaxra) > gemTelescope->getRaTicks () / 4.0)
+			ignore = true;
 
 		std::cout << "# " << observation << " " << std::fixed << std::setprecision (6) << mjd << " " << std::setprecision (4) << lst_mnt << " " << ra_mnt << " " << dec_mnt << " " << tar.ra << " " << tar.dec << " " << compaxra << " " << compaxdec << " " << axra << " " << axdec << " " << (axra - compaxra) << " " << (axdec - compaxdec) << " " << ra_true << " " << dec_true << std::endl;
 
