@@ -126,7 +126,7 @@ class TelModelTest:public rts2core::CliApp
 		virtual int doProcessing ();
 
 	private:
-		const char *modelFile;
+		const char *tPointModelFile;
 		const char *rts2ModelFile;
 		const char *errorFile;
 		const char *countsFile;
@@ -161,7 +161,7 @@ using namespace rts2teld;
 TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 {
 	rts2core::Configuration::instance ();
-	modelFile = NULL;
+	tPointModelFile = NULL;
 	rts2ModelFile = NULL;
 	errorFile = NULL;
 	countsFile = NULL;
@@ -219,7 +219,7 @@ int TelModelTest::processOption (int in_opt)
 			rts2ModelFile = optarg;
 			break;
 		case OPT_T_POINT_MODEL:
-			modelFile = optarg;
+			tPointModelFile = optarg;
 			break;
 		case OPT_CALCULATE_ERRORS:
 			errorFile = optarg;
@@ -309,7 +309,7 @@ int TelModelTest::init ()
 		}
 	}
 
-	if (modelFile && rts2ModelFile)
+	if (tPointModelFile && rts2ModelFile)
 	{
 		std::cerr << "You cannot specify both T-Point and RTS2 model, exiting" << std::endl;
 		return -1;
@@ -318,7 +318,7 @@ int TelModelTest::init ()
 	if (rts2ModelFile)
 		model = new RTS2Model (telescope, rts2ModelFile);
 	else
-		model = new TPointModel (telescope, modelFile);
+		model = new TPointModel (telescope, tPointModelFile);
 
 	   	ret = model->load ();
 	

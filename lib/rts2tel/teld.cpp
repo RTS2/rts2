@@ -272,7 +272,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (rotators, "rotators", "Rotator(s) connected to telescope.", false);
 
-	modelFile = NULL;
+	tPointModelFile = NULL;
 	rts2ModelFile = NULL;
 	model = NULL;
 
@@ -429,7 +429,7 @@ int Telescope::processOption (int in_opt)
 			calModel->setValueBool (true);
 			break;
 		case OPT_T_POINT_MODEL:
-			modelFile = optarg;
+			tPointModelFile = optarg;
 			calModel->setValueBool (true);
 			break;
 		case 'l':
@@ -901,9 +901,9 @@ int Telescope::init ()
 		createValue (wcs_crval2, multiWCS ("CRVAL2", wcs_multi), "second reference value", false, RTS2_DT_WCS_CRVAL2);
 	}
 
-	if (modelFile && rts2ModelFile)
+	if (tPointModelFile && rts2ModelFile)
 	{
-		std::cerr << "cannot specify both 'm' and 'rts2-model'. Please choose only one model file" << std::endl;
+		std::cerr << "cannot specify both 'tpoint-model' and 'rts2-model'. Please choose only one model file" << std::endl;
 		return -1;
 	}
 
@@ -919,9 +919,9 @@ int Telescope::init ()
 			p->addValue (((rts2telmodel::RTS2Model *) model)->params[i]);
 
 	}
-	else if (modelFile)
+	else if (tPointModelFile)
 	{
-		model = new rts2telmodel::TPointModel (this, modelFile);
+		model = new rts2telmodel::TPointModel (this, tPointModelFile);
 		ret = model->load ();
 		if (ret)
 			return ret;
@@ -1691,24 +1691,39 @@ int Telescope::getFlip ()
 void Telescope::signaledHUP ()
 {
 	int ret;
-	if (modelFile)
+	if (tPointModelFile)
 	{
 		delete model;
-		model = new rts2telmodel::TPointModel (this, modelFile);
+		model = new rts2telmodel::TPointModel (this, tPointModelFile);
 		ret = model->load ();
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Failed to reload model from file " <<
-				modelFile << sendLog;
+			logStream (MESSAGE_ERROR) << "Failed to reload model from file " << tPointModelFile << sendLog;
 			delete model;
 			model = NULL;
 		}
 		else
 		{
-			logStream (MESSAGE_INFO) << "Reloaded model from file " <<
-				modelFile << sendLog;
+			logStream (MESSAGE_INFO) << "Reloaded model from file " << tPointModelFile << sendLog;
 		}
 	}
+	if (rts2ModelFile)
+	{
+		delete model;
+		model = new rts2telmodel::RTS2Model (this, rts2ModelFile);
+		ret = model->load ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Failed to reload model from file " << rts2ModelFile << sendLog;
+			delete model;
+			model = NULL;
+		}
+		else
+		{
+			logStream (MESSAGE_INFO) << "Reloaded model from file " << rts2ModelFile << sendLog;
+		}
+	}
+
 	rts2core::Device::signaledHUP ();
 }
 

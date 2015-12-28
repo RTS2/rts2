@@ -1172,7 +1172,7 @@ class Telescope:public rts2core::Device
 
 		struct timeval dir_timeouts[4];
 
-		char *modelFile;
+		char *tPointModelFile;
 		char *rts2ModelFile;
 		rts2telmodel::TelModel *model;
 
