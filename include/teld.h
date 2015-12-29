@@ -170,6 +170,8 @@ class Telescope:public rts2core::Device
 			else
 				return -1;
 		}
+
+		void setModel (rts2telmodel::TelModel *_model) { model = _model; calModel->setValueBool (model != NULL); }
 		
 	protected:
 		void applyOffsets (struct ln_equ_posn *pos)

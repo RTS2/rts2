@@ -317,13 +317,19 @@ int TelModelTest::init ()
 
 	if (rts2ModelFile)
 		model = new RTS2Model (telescope, rts2ModelFile);
-	else
+	else if (tPointModelFile)
 		model = new TPointModel (telescope, tPointModelFile);
 
-	   	ret = model->load ();
-	
-	if (localDate != 0 || countsFile)
-		return 0;
+	if (model)
+	{
+		ret = model->load ();
+		
+		telescope->setModel (model);
+		gemTelescope->setModel (model);
+
+		if (localDate != 0)
+			return 0;
+	}
 
 	return ret;
 }
@@ -653,7 +659,7 @@ int TelModelTest::doProcessing ()
 		for (std::vector < std::string >::iterator iter = runFiles.begin (); iter != runFiles.end (); iter++)
 			runOnFile ((*iter), std::cout);
 	}
-	else if (errorFile == NULL)
+	else if (errorFile == NULL && countsFile == NULL)
 	{
 		// some generic tests
 		test (10, 20);
@@ -783,7 +789,7 @@ void TelModelTest::processCountsFile ()
 		}
 
 		tar.ra -= (axra - compaxra) / (double) (gemTelescope->getRaTicks () / 360.0);
-		tar.dec -= (axdec - compaxdec) / (double) (gemTelescope->getDecTicks () / 360.0);
+		tar.dec += (axdec - compaxdec) / (double) (gemTelescope->getDecTicks () / 360.0);
 
 		// different RTS2 and sitech flip, ignore measurement
 		if (fabs (axra - compaxra) > gemTelescope->getRaTicks () / 4.0)
