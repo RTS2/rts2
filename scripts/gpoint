@@ -47,6 +47,18 @@ def flip_dec(a_dec,dec):
 		return -180 - a_dec
 	return a_dec
 
+def print_model_input(filename,first):
+	hdulist = fits.open(filename)
+	h = hdulist[0].header
+	w = wcs.WCS(h)
+	ra,dec = w.all_pix2world(2000,2000,0)
+	tar_telra = float(h['TAR_TELRA'])
+	tar_teldec = float(h['TAR_TELDEC'])
+	if first:
+		print "#observatory",h['SITELONG'],h['SITELAT'],h['ELEVATION']
+	print(h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec)
+
+# Computes, output, concetanetes and plot pointing models.
 class GPoint:
 	# @param   verbose  verbosity of the
 	def __init__(self,verbose=0,latitude=None):
@@ -269,9 +281,17 @@ class GPoint:
 		import pylab
 
 		polar = pylab.subplot(111, projection='polar')
-		polar.plot(self.aa_az,90 - self.aa_alt,'r*',self.ar_az,90 - self.ar_alt,'g.')
+		polar.plot(np.radians(self.aa_az),90 - self.aa_alt,'r*',np.radians(self.ar_az),90 - self.ar_alt,'g.')
 		polar.set_rmax(90)
                 polar.set_xticklabels(['S','','W','','N','','E',''])
+		pylab.show()
+
+	def plotpolarradec(self,count):
+		import pylab
+
+		polar = pylab.subplot(111, projection='polar')
+		polar.plot(np.degrees(self.aa_ra),np.abs(np.degrees(self.aa_dec)),'r*',np.degrees(self.ar_ra),np.abs(np.degrees(self.ar_dec)),'g.')
+		polar.set_rmax(90)
 		pylab.show()
 
 # Generate pointing model
@@ -302,6 +322,8 @@ def generateModel(args):
 		model.ploterrors(args.plot)
 	elif args.plot == 3:
 		model.plotpolar(args.plot)
+	elif args.plot == 4:
+		model.plotpolarradec(args.plot)
 
 def loadModel(modelfile):
 	f = open(modelfile)
