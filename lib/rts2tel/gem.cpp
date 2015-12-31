@@ -555,7 +555,7 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 		if (ret)
 			return -1;
 		// to flip, target and origin dc must be on oposite N/S sides
-		if (hrz_tar.alt < 45 && (((hrz.az < 90 || hrz.az > 270) && (hrz_tar.az > 90 && hrz_tar.az < 270)) || ((hrz.az > 90 && hrz.az < 270) && (hrz_tar.az < 90 || hrz_tar.az > 270))))
+		if (hrz_tar.alt < 45 && (((hrz.az < 180 && hrz_tar.az > 180) || (hrz.az > 180 && hrz_tar.az < 180))))
 		{
 			ret = counts2hrz (t_ac, (t_dc > dc) ? (t_dc - fabs(decCpd->getValueDouble ())) : (t_dc + fabs (decCpd->getValueDouble ())), &hrz_before, JD);
 			if (ret)
