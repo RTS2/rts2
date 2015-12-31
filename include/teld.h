@@ -1157,6 +1157,8 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueInteger *moveNum;
 		rts2core::ValueInteger *corrImgId;
+		rts2core::ValueInteger *failedMoveNum;
+		rts2core::ValueTime *lastFailedMove;
 
 		rts2core::ValueInteger *wCorrImgId;
 

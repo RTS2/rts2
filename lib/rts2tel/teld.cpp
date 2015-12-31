@@ -226,6 +226,11 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (corrImgId, "CORR_IMG", "ID of last image used for correction", true, RTS2_VALUE_WRITABLE);
 	corrImgId->setValueInteger (0);
 
+	createValue (failedMoveNum, "move_failed", "number of failed movements", false);
+	failedMoveNum->setValueInteger (0);
+
+	createValue (lastFailedMove, "move_failed_last", "last time movement failed", false);
+
 	defaultRotang = 0;
 	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_WCS_ROTANG | RTS2_VALUE_WRITABLE);
 
@@ -991,6 +996,8 @@ void Telescope::checkMoves ()
 		}
 		else if (ret == -1)
 		{
+			failedMoveNum->inc ();
+			lastFailedMove->setNow ();
 			if (move_connection)
 				sendInfo (move_connection);
 			maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished with error");
@@ -1003,10 +1010,16 @@ void Telescope::checkMoves ()
 			ret = endMove ();
 			if (ret)
 			{
+				failedMoveNum->inc ();
+				lastFailedMove->setNow ();
+
 				maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished with error");
 			}
 			else
+			{
 				maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished without error");
+			}
+
 			if (move_connection)
 			{
 				sendInfo (move_connection);
@@ -1024,6 +1037,9 @@ void Telescope::checkMoves ()
 		}
 		if (ret == -1)
 		{
+			failedMoveNum->inc ();
+			lastFailedMove->setNow ();
+
 			useParkFlipping = false;
 			infoAll ();
 			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_PARKED, "park command finished with error");
@@ -1036,9 +1052,16 @@ void Telescope::checkMoves ()
 			logStream (MESSAGE_INFO) << "parking of telescope finished" << sendLog;
 			ret = endPark ();
 			if (ret)
+			{
+				failedMoveNum->inc ();
+				lastFailedMove->setNow ();
+
 				maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_PARKED, "park command finished with error");
+			}
 			else
+			{
 				maskState (TEL_MASK_MOVING | BOP_EXPOSURE, TEL_PARKED, "park command finished without error");
+			}
 			if (move_connection)
 			{
 				sendInfo (move_connection);
