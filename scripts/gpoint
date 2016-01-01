@@ -153,7 +153,7 @@ class GPoint:
 
 		self.latitude_r = np.radians(self.latitude)
 
-		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
+		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
 		a_data = np.array(data)
 		if self.verbose:
@@ -165,6 +165,8 @@ class GPoint:
 		self.aa_dec = np.array(a_data[:,1],np.float)
 		self.ar_ra = np.array(a_data[:,2],np.float)
 		self.ar_dec = np.array(a_data[:,3],np.float)
+
+		self.mjd = np.array(a_data[:,5],np.float)
 
 		self.diff_ra = self.aa_ra - self.ar_ra
 		self.diff_dec = self.aa_dec - self.ar_dec
@@ -230,37 +232,67 @@ class GPoint:
 		print 'RMS {0}'.format(np.square(np.concatenate((self.diff_model_ha,self.diff_model_dec))*3600))
 
 		return self.best
-
-	def ploterrors(self,count):
-		import pylab
-		# count is number from command line, need real number of plots
-		pcount = [3,5][count-1]
-		all_error = pylab.subplot(pcount,1,1)
-
+	# various plots
+	def plot_model_err(self,grid):
+                import pylab
+		all_error = pylab.subplot2grid(self.plotgrid,grid)
 		all_error.plot( \
-			range(0,len(self.diff_model_ha)),self.diff_model_ha * 3600.0,'g+', \
-			range(0,len(self.diff_model_dec)),self.diff_model_dec * 3600.0,'g*')
+			self.mjd,self.diff_model_ha * 3600.0,'g+', \
+			self.mjd,self.diff_model_dec * 3600.0,'g*')
 
 		all_error.set_title('RA DEC error')
 		all_error.set_ylabel('model error (arcsec)')
+		return all_error
 
-		
-		ra_error = pylab.subplot(pcount,1,2)
-		ra_error.plot(range(0,len(self.diff_ra)), self.diff_ra*3600.0, 'r+')
+	def plot_ra_err(self,grid):
+		import pylab
+		ra_error = pylab.subplot2grid(self.plotgrid,grid)
+		ra_error.plot(self.mjd, self.diff_ra*3600.0, 'r+')
 		ra_error.set_ylabel('RA error')
+		return ra_error
 
-		dec_error = pylab.subplot(pcount,1,3)
-		dec_error.plot(range(0,len(self.diff_dec)), self.diff_dec*3600.0, 'r*')
+	def plot_dec_err(self,grid):
+		import pylab
+		dec_error = pylab.subplot2grid(self.plotgrid,grid)
+		dec_error.plot(self.mjd, self.diff_dec*3600.0, 'r*')
 		dec_error.set_ylabel('DEC error')
+		return dec_error
 
-		if count > 1:
-			alt_error = pylab.subplot(pcount,1,1)
-			alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
-			alt_error.set_title('Az-Alt error')
+	def plot_alt_az(self,grid):
+		import pylab
+		polar = pylab.subplot2grid(self.plotgrid,grid,projection='polar')
+		polar.plot(np.radians(self.aa_az),90 - self.aa_alt,'r*',np.radians(self.ar_az),90 - self.ar_alt,'g.')
+		polar.set_rmax(90)
+                polar.set_xticklabels(['S','','W','','N','','E',''])
+                return polar
 
-			az_error = pylab.subplot(pcount,1,2)
-			az_error.plot(self.aa_alt, (self.aa_az - self.ar_az) * 3600.0, 'r.')
-			az_error.set_title('Alt-Az error')
+	def plot(self,plots):
+		import pylab
+
+		plot = args.plots.split(',')
+		self.plotgrid = (len(plot),1)
+		i = 0
+
+		for p in plot:
+			if p == 'model-err':
+				self.plot_model_err((i,0))
+			elif p == 'ra-err':
+				self.plot_ra_err((i,0))
+			elif p == 'dec-err':
+				self.plot_dec_err((i,0))
+			elif p == 'alt-az':
+				self.plot_alt_az((i,0))
+			else:
+				print 'Uknown plot type',p
+			i += 1
+		#if count > 1:
+		#	alt_error = pylab.subplot(pcount,1,1)
+		#	alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
+		#	alt_error.set_title('Az-Alt error')
+                #
+		#	az_error = pylab.subplot(pcount,1,2)
+		#	az_error.plot(self.aa_alt, (self.aa_az - self.ar_az) * 3600.0, 'r.')
+		#	az_error.set_title('Alt-Az error')
 
 		pylab.show()
 
@@ -275,15 +307,6 @@ class GPoint:
 			dec_offsets.append(self.model_dec(best,ha,dec))
 
 		pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
-		pylab.show()
-
-	def plotpolar(self,count):
-		import pylab
-
-		polar = pylab.subplot(111, projection='polar')
-		polar.plot(np.radians(self.aa_az),90 - self.aa_alt,'r*',np.radians(self.ar_az),90 - self.ar_alt,'g.')
-		polar.set_rmax(90)
-                polar.set_xticklabels(['S','','W','','N','','E',''])
 		pylab.show()
 
 	def plotpolarradec(self,count):
@@ -318,12 +341,8 @@ def generateModel(args):
 			f.write('{0}\n'.format('\t'.join(b)))
 		f.close()
 
-	if args.plot == 1 or args.plot == 2:
-		model.ploterrors(args.plot)
-	elif args.plot == 3:
-		model.plotpolar(args.plot)
-	elif args.plot == 4:
-		model.plotpolarradec(args.plot)
+	if args.plots:
+		model.plot(args.plots)
 
 def loadModel(modelfile):
 	f = open(modelfile)
@@ -353,10 +372,11 @@ def addModels(args):
 	print 'RTS2_MODEL ',' '.join(map(lambda f:str(f),np.sum(params,axis=0)))
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).')
+	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
+        '\tgpoint -p model-ra,ra-err,dec-err modelin\tproduces model and model-ra,ra-err and dec-err plots')
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plot',action='count',help='plot graphs (more -p for more graphs)')
+	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,..)',default='model-err,ra-err,dec-err')
 	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
         parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
