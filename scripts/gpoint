@@ -237,7 +237,7 @@ class GPoint:
 	# various plots
 	def plot_model_err(self,grid):
                 import pylab
-		all_error = pylab.subplot2grid(self.plotgrid,grid)
+		all_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		all_error.plot( \
 			self.mjd,self.diff_model_ha * 3600.0,'g+', \
 			self.mjd,self.diff_model_dec * 3600.0,'g*')
@@ -248,21 +248,22 @@ class GPoint:
 
 	def plot_ra_err(self,grid):
 		import pylab
-		ra_error = pylab.subplot2grid(self.plotgrid,grid)
+		ra_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		ra_error.plot(self.mjd, self.diff_ra*3600.0, 'r+')
 		ra_error.set_ylabel('RA error')
 		return ra_error
 
 	def plot_dec_err(self,grid):
 		import pylab
-		dec_error = pylab.subplot2grid(self.plotgrid,grid)
+		dec_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		dec_error.plot(self.mjd, self.diff_dec*3600.0, 'r*')
 		dec_error.set_ylabel('DEC error')
 		return dec_error
 
 	def plot_alt_az(self,grid):
 		import pylab
-		polar = pylab.subplot2grid(self.plotgrid,grid,projection='polar')
+                print 'colspan',grid
+		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
 		polar.plot(np.radians(self.aa_az),90 - self.aa_alt,'r*',np.radians(self.ar_az),90 - self.ar_alt,'g.')
 		polar.set_rmax(90)
                 polar.set_xticklabels(['S','','W','','N','','E',''])
@@ -270,7 +271,7 @@ class GPoint:
 
 	def plot_alt_err(self,grid):
 		import pylab
-		alt_error = pylab.subplot2grid(self.plotgrid,grid)
+		alt_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
 		alt_error.set_autoscalex_on(False)
 		alt_error.set_xlim(0,360)
@@ -279,33 +280,51 @@ class GPoint:
 
 	def plot_az_err(self,grid):
 		import pylab
-		az_error = pylab.subplot2grid(self.plotgrid,grid)
+		az_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		az_error.set_title('Alt-Az error')
 		az_error.plot(self.aa_alt, (self.aa_az - self.ar_az) * 3600.0, 'r.')
 		return az_error
 
 	def plot(self,plots):
 		import pylab
-		plot = plots.split(',')
-		self.plotgrid = (len(plot),1)
-		i = 0
+		plot = []
+		grid = []
 
-		for p in plot:
-			if p == 'model-err':
-				self.plot_model_err((i,0))
-			elif p == 'ra-err':
-				self.plot_ra_err((i,0))
-			elif p == 'dec-err':
-				self.plot_dec_err((i,0))
-			elif p == 'alt-az':
-				self.plot_alt_az((i,0))
-			elif p == 'alt-err':
-				self.plot_alt_err((i,0))
-			elif p == 'az-err':
-				self.plot_az_err((i,0))
-			else:
-				print 'Uknown plot type',p
+		i = 0
+		rows = 1
+		cols = 1
+		# find grid size
+		for mg in plots.split(','):
+			try:
+				pmg = mg.split(':')
+                                plot.append(pmg[0])
+                                grid.append(map(int,pmg[1:]))
+			except ValueError,va:
+				plot.append(mg)
+				grid.append(i,0,1,1)
+			lg = grid[-1]
+			rows = max(lg[0] + lg[2],rows)
+			cols = max(lg[1] + lg[3],cols)
 			i += 1
+
+		print plot,grid,rows,cols
+
+		self.plotgrid = (rows,cols)
+		for i in range(0,len(plot)):
+			if plot[i] == 'model-err':
+				self.plot_model_err(grid[i])
+			elif plot[i] == 'ra-err':
+				self.plot_ra_err(grid[i])
+			elif plot[i] == 'dec-err':
+				self.plot_dec_err(grid[i])
+			elif plot[i] == 'alt-az':
+				self.plot_alt_az(grid[i])
+			elif plot[i] == 'alt-err':
+				self.plot_alt_err(grid[i])
+			elif plot[i] == 'az-err':
+				self.plot_az_err(grid[i])
+			else:
+				print 'Uknown plot type',plot[i]
 
 		pylab.show()
 
