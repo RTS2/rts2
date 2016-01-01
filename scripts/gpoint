@@ -164,6 +164,21 @@ class GPoint:
 
 		self.mjd = np.array(a_data[:,5],np.float)
 
+		# prepare for X ticks positions
+		last_mjd = 0
+		last_mjd_hour = 0
+		self.mjd_ticks = {}
+		self.mjd_hours = {}
+
+		for m in range(0,len(self.mjd)):
+			jd = self.mjd[m]
+			if last_mjd != round(jd):
+				last_mjd = round(jd)
+				self.mjd_ticks[m] = last_mjd
+			if last_mjd_hour != round(jd * 24):
+				last_mjd_hour = round(jd * 24)
+				self.mjd_hours[m] = jd
+
 		self.diff_ra = self.aa_ra - self.ar_ra
 		self.diff_dec = self.aa_dec - self.ar_dec
 		self.diff_angular = rts2.libnova.angular_separation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
@@ -234,38 +249,72 @@ class GPoint:
 		print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
 		return self.best
+
+	# set X axis to MJD data
+	def set_x_axis(self,plot):
+		import pylab
+		def mjd_formatter(x, pos):
+			try:
+				return self.mjd_ticks[int(x)]
+			except KeyError,ke:
+				return self.mjd[int(x)]
+
+		plot.xaxis.set_major_formatter(pylab.FuncFormatter(mjd_formatter))
+		plot.set_xticks(self.mjd_ticks.keys())
+		plot.set_xticks(self.mjd_hours.keys(),minor=True)
+		plot.grid(which='major')
+		return plot
+
+	# set Y axis to arcsec distance
+	def set_y_axis(self,plot):
+		import pylab
+		def arcmin_formatter(x, pos):
+			return "{0}'".format(int(x / 60))
+		ymin,ymax = plot.get_ylim()
+		numticks = len(plot.get_yticks())
+		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, 60 * int(abs(ymax - ymin) / numticks / 60)))
+		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, 15), minor = True)
+		plot.yaxis.set_major_formatter(pylab.FuncFormatter(arcmin_formatter))
+		return plot
+
 	# various plots
 	def plot_model_err(self,grid):
                 import pylab
 		all_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		all_error.plot( \
-			self.mjd,self.diff_model_ha * 3600.0,'g+', \
-			self.mjd,self.diff_model_dec * 3600.0,'g*')
+		all_error.plot(self.diff_model_ha * 3600, 'g.')
+		all_error.plot(self.diff_model_dec * 3600.0,'b.')
 
 		all_error.set_title('RA DEC error')
 		all_error.set_ylabel('model error (arcsec)')
+		self.set_x_axis(all_error)
+		self.set_y_axis(all_error)
 		return all_error
 
 	def plot_ra_err(self,grid):
 		import pylab
 		ra_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		ra_error.plot(self.mjd, self.diff_ra*3600.0, 'r+')
+		ra_error.plot(self.diff_ra*3600.0, 'r+')
 		ra_error.set_ylabel('RA error')
+		self.set_x_axis(ra_error)
+		self.set_y_axis(ra_error)
 		return ra_error
 
 	def plot_dec_err(self,grid):
 		import pylab
 		dec_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		dec_error.plot(self.mjd, self.diff_dec*3600.0, 'r*')
+		dec_error.plot(self.diff_dec*3600.0, 'r*')
 		dec_error.set_ylabel('DEC error')
+		self.set_x_axis(dec_error)
+		self.set_y_axis(dec_error)
 		return dec_error
 
 	def plot_alt_az(self,grid):
 		import pylab
 		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
-		polar.plot(np.radians(self.aa_az),90 - self.aa_alt,'r*',np.radians(self.ar_az),90 - self.ar_alt,'g.')
+		polar.plot(np.radians(self.aa_az - 90),90 - self.aa_alt,'r*')
+		polar.plot(np.radians(self.ar_az - 90),90 - self.ar_alt,'g.')
 		polar.set_rmax(90)
-                polar.set_xticklabels(['S','','W','','N','','E',''])
+                polar.set_xticklabels(['E','SE','S','SW','W','NW','N','NE'])
                 return polar
 
 	def plot_alt_err(self,grid):
@@ -274,6 +323,9 @@ class GPoint:
 		alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
 		alt_error.set_autoscalex_on(False)
 		alt_error.set_xlim(0,360)
+		alt_error.set_xticks([0,90,180,270])
+		alt_error.set_xticks([45,135,225,315],minor=True)
+		alt_error.grid(which='both')
 		alt_error.set_title('Az-Alt error')
 		return alt_error
 
