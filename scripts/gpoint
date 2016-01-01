@@ -262,7 +262,6 @@ class GPoint:
 
 	def plot_alt_az(self,grid):
 		import pylab
-                print 'colspan',grid
 		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
 		polar.plot(np.radians(self.aa_az),90 - self.aa_alt,'r*',np.radians(self.ar_az),90 - self.ar_alt,'g.')
 		polar.set_rmax(90)
@@ -295,19 +294,19 @@ class GPoint:
 		cols = 1
 		# find grid size
 		for mg in plots.split(','):
+			g = [i,0,1,1]
 			try:
 				pmg = mg.split(':')
                                 plot.append(pmg[0])
-                                grid.append(map(int,pmg[1:]))
+				g = map(int,pmg[1:]) + g[len(pmg[1:]):]
+				grid.append(g)
 			except ValueError,va:
 				plot.append(mg)
-				grid.append(i,0,1,1)
+				grid.append(g)
 			lg = grid[-1]
 			rows = max(lg[0] + lg[2],rows)
 			cols = max(lg[1] + lg[3],cols)
 			i += 1
-
-		print plot,grid,rows,cols
 
 		self.plotgrid = (rows,cols)
 		for i in range(0,len(plot)):
@@ -378,6 +377,10 @@ def generateModel(args):
 		bp='model-err,ra-err,dec-err'
 		plots=','.join([bp,plots]) if plots else bp
 
+	if args.altaz_plots:
+		altaz='model-err:0:0:3:1,ra-err:1:0:1:1,dec-err:2:0:1:1,alt-az:1:1:2:2'
+		plots=','.join([altaz,plots]) if plots else altaz
+
 	if plots:
 		model.plot(plots)
 
@@ -415,6 +418,7 @@ if __name__ == '__main__':
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,..)')
 	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ra-err,dec-err)',default=False)
+	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ra-err,dec-err,alt-az)',default=False)
 	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
         parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
