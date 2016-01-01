@@ -31,10 +31,6 @@ import re
 
 import argparse
 
-# caclulates root mean squeare of vector/array
-def RMS(vector):
-	return np.sqrt(np.mean(np.square(vector)))
-
 def flip_ra(a_ra,dec):
 	if abs(dec) > 90:
 		return (a_ra + 180) % 360
@@ -217,19 +213,25 @@ class GPoint:
 
 
 	def print_stat(self):
+		# calculates root mean squeare of vector/array
+		def RMS(vector):
+			return np.sqrt(np.mean(np.square(vector)))
+
+		def print_vect_stat(v):
+			return 'MIN {0} MAX {1} MEAN {2} RMS {3}'.format(np.min(v),np.max(v),np.mean(v),RMS(v))
+
 		if self.verbose:
-			print 'DIFF_RA', self.diff_ra * 3600
-			print 'DIFF_DEC', self.diff_dec * 3600
-			print 'DIFF_ANGULAR', self.diff_angular * 3600
+			print 'DIFF_RA',print_vect_stat(self.diff_ra*3600)
+			print 'DIFF_DEC',print_vect_stat(self.diff_dec*3600)
+			print 'DIFF_ANGULAR',print_vect_stat(self.diff_angular*3600)
 
-		print 'RMS RA DIFF {0}"'.format(RMS(self.diff_ra)*3600)
-		print 'RMS DEC DIFF {0}"'.format(RMS(self.diff_dec)*3600)
-		print 'RMS ANGULAR SEP DIFF {0}"'.format(RMS(self.diff_angular)*3600)
+		print 'RMS RA DIFF',print_vect_stat(self.diff_ra*3600)
+		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
+		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
 
-		print 'RMS MODEL RA DIFF {0}"'.format(RMS(self.diff_model_ha)*3600)
-		print 'RMS MODEL DEC DIFF {0}"'.format(RMS(self.diff_model_dec)*3600)
-		print 'RMS MODEL ANGULAR SEP DIFF {0}"'.format(RMS(self.diff_model_angular)*3600)
-		print 'RMS {0}'.format(np.square(np.concatenate((self.diff_model_ha,self.diff_model_dec))*3600))
+		print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
+		print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
+		print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
 		return self.best
 	# various plots
