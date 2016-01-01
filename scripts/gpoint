@@ -266,10 +266,25 @@ class GPoint:
                 polar.set_xticklabels(['S','','W','','N','','E',''])
                 return polar
 
+	def plot_alt_err(self,grid):
+		import pylab
+		alt_error = pylab.subplot2grid(self.plotgrid,grid)
+		alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
+		alt_error.set_autoscalex_on(False)
+		alt_error.set_xlim(0,360)
+		alt_error.set_title('Az-Alt error')
+		return alt_error
+
+	def plot_az_err(self,grid):
+		import pylab
+		az_error = pylab.subplot2grid(self.plotgrid,grid)
+		az_error.set_title('Alt-Az error')
+		az_error.plot(self.aa_alt, (self.aa_az - self.ar_az) * 3600.0, 'r.')
+		return az_error
+
 	def plot(self,plots):
 		import pylab
-
-		plot = args.plots.split(',')
+		plot = plots.split(',')
 		self.plotgrid = (len(plot),1)
 		i = 0
 
@@ -282,17 +297,13 @@ class GPoint:
 				self.plot_dec_err((i,0))
 			elif p == 'alt-az':
 				self.plot_alt_az((i,0))
+			elif p == 'alt-err':
+				self.plot_alt_err((i,0))
+			elif p == 'az-err':
+				self.plot_az_err((i,0))
 			else:
 				print 'Uknown plot type',p
 			i += 1
-		#if count > 1:
-		#	alt_error = pylab.subplot(pcount,1,1)
-		#	alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
-		#	alt_error.set_title('Az-Alt error')
-                #
-		#	az_error = pylab.subplot(pcount,1,2)
-		#	az_error.plot(self.aa_alt, (self.aa_az - self.ar_az) * 3600.0, 'r.')
-		#	az_error.set_title('Alt-Az error')
 
 		pylab.show()
 
@@ -341,8 +352,13 @@ def generateModel(args):
 			f.write('{0}\n'.format('\t'.join(b)))
 		f.close()
 
-	if args.plots:
-		model.plot(args.plots)
+	plots = args.plots
+	if args.basic_plots:
+		bp='model-err,ra-err,dec-err'
+		plots=','.join([bp,plots]) if plots else bp
+
+	if plots:
+		model.plot(plots)
 
 def loadModel(modelfile):
 	f = open(modelfile)
@@ -376,7 +392,8 @@ if __name__ == '__main__':
         '\tgpoint -p model-ra,ra-err,dec-err modelin\tproduces model and model-ra,ra-err and dec-err plots')
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,..)',default='model-err,ra-err,dec-err')
+	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,..)')
+	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ra-err,dec-err)',default=False)
 	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
         parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
