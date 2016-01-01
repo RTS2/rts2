@@ -35,7 +35,7 @@ class GEM: public Telescope
 		GEM (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
 		virtual ~GEM (void);
 
-		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int actual_flip, bool &use_flipped, bool writeValues, double haMargin);
+		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int used_flipping, bool &use_flipped, bool writeValues, double haMargin);
 
 		double getHaZero () { return haZero->getValueDouble (); }
 		double getDecZero () { return decZero->getValueDouble (); }

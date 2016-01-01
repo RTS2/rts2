@@ -760,8 +760,8 @@ void TelModelTest::processCountsFile ()
 		tar.dec = dec_mnt;
 
 		// compute axra and axdec, with zero offsets
-		compaxra = axra;
-		compaxdec = axdec;
+		compaxra = axra - gemTelescope->getRaTicks () - gemTelescope->getHaZero () * (gemTelescope->getRaTicks () / 360.0);
+		compaxdec = axdec - gemTelescope->getDecTicks () - gemTelescope->getDecZero () * (gemTelescope->getDecTicks () / 360.0);
 
 		bool use_flipped = false;
 		bool ignore = false;
@@ -780,13 +780,14 @@ void TelModelTest::processCountsFile ()
 		{
 			tar.ra = ln_range_degrees (tar.ra + 180);
 			tar.dec = 180 - tar.dec;
-			compaxdec = abs(compaxdec) - (gemTelescope->getDecZero () + 180) * (gemTelescope->getDecTicks () / 360.0);
-                }
+//			compaxdec = abs(compaxdec) - (gemTelescope->getDecZero () + 180) * (gemTelescope->getDecTicks () / 360.0);
+		}
 		else
 		{
-			compaxra += gemTelescope->getRaTicks () / 2.0;
-			compaxdec = compaxdec + gemTelescope->getDecTicks () + gemTelescope->getDecZero () * (gemTelescope->getDecTicks () / 360.0);
 		}
+		compaxdec = compaxdec + gemTelescope->getDecTicks () + gemTelescope->getDecZero () * (gemTelescope->getDecTicks () / 360.0);
+
+		compaxra += gemTelescope->getRaTicks () / 2.0;
 
 		tar.ra -= (axra - compaxra) / (double) (gemTelescope->getRaTicks () / 360.0);
 		tar.dec += (axdec - compaxdec) / (double) (gemTelescope->getDecTicks () / 360.0);
@@ -795,7 +796,7 @@ void TelModelTest::processCountsFile ()
 		if (fabs (axra - compaxra) > gemTelescope->getRaTicks () / 4.0)
 			ignore = true;
 
-		std::cout << "# " << observation << " " << std::fixed << std::setprecision (6) << mjd << " " << std::setprecision (4) << lst_mnt << " " << ra_mnt << " " << dec_mnt << " " << tar.ra << " " << tar.dec << " " << compaxra << " " << compaxdec << " " << axra << " " << axdec << " " << (axra - compaxra) << " " << (axdec - compaxdec) << " " << ra_true << " " << dec_true << std::endl;
+		std::cout << "# " << observation << " " << std::fixed << std::setprecision (6) << mjd << " " << std::setprecision (4) << lst_mnt << " " << ra_mnt << " " << dec_mnt << " " << tar.ra << " " << tar.dec << " " << compaxra << " " << compaxdec << " " << axra << " " << axdec << " " << (axra - compaxra) << " " << (axdec - compaxdec) << " " << ra_true << " " << dec_true << " use_flipped " << use_flipped << std::endl;
 
 		if (ignore)
 			std::cout << "#ignored - different original and RTS2 flip" << std::endl;
