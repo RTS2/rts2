@@ -453,7 +453,7 @@ def generateModel(args):
 		plots=','.join([bp,plots]) if plots else bp
 
 	if args.altaz_plots:
-		altaz='model-err:0:0:3:1,ra-err:1:0:1:1,dec-err:2:0:1:1,alt-az:1:1:2:2'
+		altaz='model-err:0:0:3:1,ra-err:1:0:1:1,dec-err:2:0:1:1,alt-az-real:1:1:2:2'
 		plots=','.join([altaz,plots]) if plots else altaz
 
 	if plots:
@@ -491,9 +491,9 @@ if __name__ == '__main__':
         '\tgpoint -p model-ra,ra-err,dec-err modelin\tproduces model and model-ra,ra-err and dec-err plots')
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,..)')
+	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-err,az-err)')
 	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ra-err,dec-err)',default=False)
-	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ra-err,dec-err,alt-az)',default=False)
+	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ra-err,dec-err,alt-az-real)',default=False)
 	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
         parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
