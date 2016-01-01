@@ -308,13 +308,31 @@ class GPoint:
 		self.set_y_axis(dec_error)
 		return dec_error
 
-	def plot_alt_az(self,grid):
+	def plot_alt_az(self,grid,contour=''):
 		import pylab
 		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
 		polar.plot(np.radians(self.aa_az - 90),90 - self.aa_alt,'r*')
 		polar.plot(np.radians(self.ar_az - 90),90 - self.ar_alt,'g.')
 		polar.set_rmax(90)
-                polar.set_xticklabels(['E','SE','S','SW','W','NW','N','NE'])
+		polar.set_xticklabels(['E','SE','S','SW','W','NW','N','NE'])
+		if contour:
+			X = np.radians(self.ar_az - 90)
+			Y = 90 - self.ar_alt
+
+			if contour == 'model':
+				Z = self.diff_model_angular * 3600
+				polar.set_title('Model differences')
+			elif contour == 'real':
+				Z = self.diff_angular * 3600
+				polar.set_title('Real differences')
+
+			xi = np.linspace(np.radians(-90),np.radians(271),num = 720)
+			yi = np.linspace(min(Y),max(Y))
+			zi = pylab.griddata(X, Y, Z, xi, yi, interp='linear')
+			ctf = polar.contourf(xi,yi,zi)
+			pylab.colorbar(ctf)
+		else:
+			polar.set_title('Alt-Az distribution')
                 return polar
 
 	def plot_alt_err(self,grid):
@@ -370,6 +388,10 @@ class GPoint:
 				self.plot_dec_err(grid[i])
 			elif plot[i] == 'alt-az':
 				self.plot_alt_az(grid[i])
+			elif plot[i] == 'alt-az-model':
+				self.plot_alt_az(grid[i],'model')
+			elif plot[i] == 'alt-az-real':
+				self.plot_alt_az(grid[i],'real')
 			elif plot[i] == 'alt-err':
 				self.plot_alt_err(grid[i])
 			elif plot[i] == 'az-err':
