@@ -1828,6 +1828,9 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		mpec->setValueString (str);
+		std::string desc;
+		if (LibnovaEllFromMPC (&mpec_orbit, desc, mpec->getValue ()))
+			return DEVDEM_E_PARAMSVAL;
 		tle_l1->setValueString ("");
 		tle_l2->setValueString ("");
 		startTracking (true);
