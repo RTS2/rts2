@@ -623,7 +623,8 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	{
 		std::string desc;
 		if (LibnovaEllFromMPC (&mpec_orbit, desc, new_value->getValue ()))
-			return -2;
+			if (LibnovaEllFromMPCComet (&mpec_orbit, desc, new_value->getValue ()))
+				return -2;
 	}
 	else if (old_value == diffTrackRaDec)
 	{
@@ -1829,8 +1830,9 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		mpec->setValueString (str);
 		std::string desc;
-		if (LibnovaEllFromMPC (&mpec_orbit, desc, mpec->getValue ()))
-			return DEVDEM_E_PARAMSVAL;
+		if (LibnovaEllFromMPC (&mpec_orbit, desc, str))
+			if (LibnovaEllFromMPCComet (&mpec_orbit, desc, str))
+				return DEVDEM_E_PARAMSVAL;
 		tle_l1->setValueString ("");
 		tle_l2->setValueString ("");
 		startTracking (true);
