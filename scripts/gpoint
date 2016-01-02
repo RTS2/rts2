@@ -117,7 +117,7 @@ class GPoint:
 	## observatory <longitude> <latitude> <altitude>
 	#02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
 	#skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
-	def process_file(self,filename):
+	def process_file(self,filename,flips):
 		obsmatch = re.compile('#\s*observatory\s+(\S*)\s+(\S*)\s+(\S*)\s*')
 
 		f = open(filename)
@@ -145,11 +145,16 @@ class GPoint:
 			print "Input data",rdata
 
 		if self.latitude is None:
-			sys.exit("You must specify latitude! Either through --latitude option, or in input file. Exiting")
+			sys.exit("You must specify latitude! Either through --latitude option, or in input file (on #observatory line).")
 
 		self.latitude_r = np.radians(self.latitude)
 
 		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
+
+		if flips == 'east':
+			data = [d for d in data if abs(d[1]) > 90]
+		elif flips == 'west':
+			data = [d for d in data if abs(d[1]) < 90]
 
 		a_data = np.array(data)
 		if self.verbose:
@@ -272,8 +277,9 @@ class GPoint:
 			return "{0}'".format(int(x / 60))
 		ymin,ymax = plot.get_ylim()
 		numticks = len(plot.get_yticks())
-		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, 60 * int(abs(ymax - ymin) / numticks / 60)))
-		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, 15), minor = True)
+		mtscale = 60 * int(abs(ymax - ymin) / numticks / 60)
+		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, mtscale))
+		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, mtscale / 6.0))
 		plot.yaxis.set_major_formatter(pylab.FuncFormatter(arcmin_formatter))
 		return plot
 
@@ -308,7 +314,7 @@ class GPoint:
 		self.set_y_axis(dec_error)
 		return dec_error
 
-	def plot_alt_az(self,grid,contour=''):
+	def plot_alt_az(self,grid,contour='',pfact=4):
 		import pylab
 		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
 		polar.plot(np.radians(self.aa_az - 90),90 - self.aa_alt,'r.')
@@ -326,12 +332,13 @@ class GPoint:
 				Z = self.diff_angular * 3600
 				polar.set_title('Real differences')
 
-			xi = np.linspace(np.radians(-90),np.radians(271),num = 720)
-			yi = np.linspace(min(Y),max(Y))
+			xi = np.linspace(np.radians(-90),np.radians(271),num = 360 * pfact)
+			yi = np.linspace(min(Y),max(Y),num = 90 * pfact)
 			zi = pylab.griddata(X, Y, Z, xi, yi, interp='linear')
 			ctf = polar.contourf(xi,yi,zi,cmap='hot')
-			cbar = pylab.colorbar(ctf, ticks = range(0,int(max(Z)),60), orientation='horizontal')
-			cbar.ax.set_xticklabels(map("{0}'".format,range(0,int(max(Z)),60)))
+			cbar = pylab.colorbar(ctf, orientation='horizontal', pad=0.05)
+			cbar.set_ticks(range(0,int(max(Z)),60))
+			cbar.ax.set_xticklabels(map("{0}'".format,range(0,int(max(Z) / 60))))
 		else:
 			polar.set_title('Alt-Az distribution')
                 return polar
@@ -344,6 +351,7 @@ class GPoint:
 		alt_error.set_xlim(0,360)
 		alt_error.set_xticks([0,90,180,270])
 		alt_error.set_xticks([45,135,225,315],minor=True)
+		self.set_y_axis(alt_error)
 		alt_error.grid(which='both')
 		alt_error.set_title('Az-Alt error')
 		return alt_error
@@ -352,7 +360,9 @@ class GPoint:
 		import pylab
 		az_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		az_error.set_title('Alt-Az error')
-		az_error.plot(self.aa_alt, (self.aa_az - self.ar_az) * 3600.0, 'r.')
+		errs = np.array(map(lambda x: x if x < 180 else x - 360, (self.aa_az - self.ar_az) % 360))
+		az_error.plot(self.aa_alt, errs * 3600.0, 'r.')
+		self.set_y_axis(az_error)
 		return az_error
 
 	def plot(self,plots):
@@ -427,7 +437,7 @@ class GPoint:
 def generateModel(args):
 	model = GPoint(args.verbose,latitude=args.latitude)
 	
-	model.process_file(args.inputfiles[0])
+	model.process_file(args.inputfiles[0],args.flips)
 	model.print_params()
 	model.print_stat()
 
@@ -454,6 +464,10 @@ def generateModel(args):
 
 	if args.altaz_plots:
 		altaz='model-err:0:0:3:1,ra-err:1:0:1:1,dec-err:2:0:1:1,alt-az-real:1:1:2:2'
+		plots=','.join([altaz,plots]) if plots else altaz
+
+	if args.altaz_heatmaps:
+		altaz='alt-az-model:0:0:1:1,alt-az-real:0:1:1:1'
 		plots=','.join([altaz,plots]) if plots else altaz
 
 	if plots:
@@ -494,6 +508,8 @@ if __name__ == '__main__':
 	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-err,az-err)')
 	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ra-err,dec-err)',default=False)
 	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ra-err,dec-err,alt-az-real)',default=False)
+	parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
+	parser.add_argument('--flip',dest='flips',action='store',help='flips (both, east, west - select pointings only on given side)',default='both')
 	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
 	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
         parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
