@@ -277,9 +277,9 @@ class GPoint:
 			return "{0}'".format(int(x / 60))
 		ymin,ymax = plot.get_ylim()
 		numticks = len(plot.get_yticks())
-		mtscale = 60 * int(abs(ymax - ymin) / numticks / 60)
+		mtscale = max(60,60 * int(abs(ymax - ymin) / numticks / 60))
 		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, mtscale))
-		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, mtscale / 6.0))
+		plot.set_yticks(np.arange(ymin - ymin % 60, ymax - ymax % 60, mtscale / 6.0), minor=True)
 		plot.yaxis.set_major_formatter(pylab.FuncFormatter(arcmin_formatter))
 		return plot
 
@@ -343,26 +343,59 @@ class GPoint:
 			polar.set_title('Alt-Az distribution')
                 return polar
 
-	def plot_alt_err(self,grid):
+	def plot_alt_err(self,grid,err):
 		import pylab
 		alt_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		alt_error.plot(self.aa_az, (self.aa_alt - self.ar_alt) * 3600.0, 'r.')
-		alt_error.set_autoscalex_on(False)
-		alt_error.set_xlim(0,360)
-		alt_error.set_xticks([0,90,180,270])
-		alt_error.set_xticks([45,135,225,315],minor=True)
+		if err == 'az':
+			alt_error.set_title('Alt-Az error')
+			errs = np.array(map(lambda x: x if x < 180 else x - 360, (self.aa_az - self.ar_az) % 360))
+		elif err == 'dec':
+			alt_error.set_title('Alt-Dec error')
+			errs = self.diff_dec
+		elif err == 'ha':
+			alt_error.set_title('Alt-HA error')
+			errs = self.diff_ra
+		elif err == 'model-az':
+			alt_error.set_title('Model Alt-Az error')
+			errs = np.array(map(lambda x: x if x < 180 else x - 360, (self.aa_az - self.ar_az) % 360))
+		elif err == 'model-dec':
+			alt_error.set_title('Model Alt-Dec error')
+			errs = self.diff_model_dec
+		elif err == 'model-ha':
+			alt_error.set_title('Model Alt-HA error')
+			errs = self.diff_model_ha
+		alt_error.plot(self.aa_alt, errs * 3600.0, 'r.')
 		self.set_y_axis(alt_error)
-		alt_error.grid(which='both')
-		alt_error.set_title('Az-Alt error')
 		return alt_error
 
-	def plot_az_err(self,grid):
+	def plot_az_err(self,grid,err):
 		import pylab
 		az_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		az_error.set_title('Alt-Az error')
-		errs = np.array(map(lambda x: x if x < 180 else x - 360, (self.aa_az - self.ar_az) % 360))
-		az_error.plot(self.aa_alt, errs * 3600.0, 'r.')
+		if err == 'alt':
+			az_error.set_title('Az-Alt error')
+			errs = self.aa_alt - self.ar_alt
+		elif err == 'dec':
+			az_error.set_title('Az-Dec error')
+			errs = self.diff_dec
+		elif err == 'ha':
+			az_error.set_title('Az-HA error')
+			errs = self.diff_ra
+		elif err == 'model-alt':
+			az_error.set_title('Model Az-Alt error')
+			errs = self.aa_alt - self.ar_alt
+		elif err == 'model-dec':
+			az_error.set_title('Model Az-Dec error')
+			errs = self.diff_model_dec
+		elif err == 'model-ha':
+			az_error.set_title('Model Az-HA error')
+			errs = self.diff_model_ha
+		az_error.plot(self.aa_az, errs * 3600.0, 'r.')
+		az_error.set_autoscalex_on(False)
+		az_error.set_xlim(0,360)
+		az_error.set_xticks([0,90,180,270])
+		az_error.set_xticks([45,135,225,315],minor=True)
 		self.set_y_axis(az_error)
+		az_error.grid(which='both')
 		return az_error
 
 	def plot(self,plots):
@@ -391,24 +424,44 @@ class GPoint:
 
 		self.plotgrid = (rows,cols)
 		for i in range(0,len(plot)):
-			if plot[i] == 'model-err':
-				self.plot_model_err(grid[i])
-			elif plot[i] == 'ra-err':
-				self.plot_ra_err(grid[i])
-			elif plot[i] == 'dec-err':
-				self.plot_dec_err(grid[i])
-			elif plot[i] == 'alt-az':
+			if plot[i] == 'alt-az':
 				self.plot_alt_az(grid[i])
 			elif plot[i] == 'alt-az-model':
 				self.plot_alt_az(grid[i],'model')
 			elif plot[i] == 'alt-az-real':
 				self.plot_alt_az(grid[i],'real')
-			elif plot[i] == 'alt-err':
-				self.plot_alt_err(grid[i])
-			elif plot[i] == 'az-err':
-				self.plot_az_err(grid[i])
+			elif plot[i] == 'alt-az-err':
+				self.plot_alt_err(grid[i],'az')
+			elif plot[i] == 'alt-dec-err':
+				self.plot_alt_err(grid[i],'dec')
+			elif plot[i] == 'alt-ha-err':
+				self.plot_alt_err(grid[i],'ha')
+			elif plot[i] == 'az-dec-err':
+				self.plot_az_err(grid[i],'dec')
+			elif plot[i] == 'az-alt-err':
+				self.plot_az_err(grid[i],'alt')
+			elif plot[i] == 'az-ha-err':
+				self.plot_az_err(grid[i],'ha')
+			elif plot[i] == 'dec-err':
+				self.plot_dec_err(grid[i])
+			elif plot[i] == 'model-err':
+				self.plot_model_err(grid[i])
+			elif plot[i] == 'model-alt-az-err':
+				self.plot_alt_err(grid[i],'model-az')
+			elif plot[i] == 'model-alt-dec-err':
+				self.plot_alt_err(grid[i],'model-dec')
+			elif plot[i] == 'model-alt-ha-err':
+				self.plot_alt_err(grid[i],'model-ha')
+			elif plot[i] == 'model-az-alt-err':
+				self.plot_az_err(grid[i],'model-alt')
+			elif plot[i] == 'model-alt-dec-err':
+				self.plot_alt_err(grid[i],'model-dec')
+			elif plot[i] == 'model-alt-ha-err':
+				self.plot_alt_err(grid[i],'model-ha')
+			elif plot[i] == 'ra-err':
+				self.plot_ra_err(grid[i])
 			else:
-				print 'Uknown plot type',plot[i]
+				print 'Uknown plot type',plot[i],'know plot types are: alt-az,alt-az-model,alt-az-real,alt-err,az-err,dec-err,model-err,ra-err'
 
 		pylab.show()
 
@@ -505,7 +558,7 @@ if __name__ == '__main__':
         '\tgpoint -p model-ra,ra-err,dec-err modelin\tproduces model and model-ra,ra-err and dec-err plots')
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-err,az-err)')
+	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err)')
 	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ra-err,dec-err)',default=False)
 	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ra-err,dec-err,alt-az-real)',default=False)
 	parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
