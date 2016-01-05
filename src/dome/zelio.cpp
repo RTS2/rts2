@@ -34,7 +34,7 @@
 #define ZREG_O3XT1       22
 #define ZREG_O4XT1       23
 
-// bite mask for O1 and O2 registers
+// bit mask for O1 and O2 registers
 #define ZO_EP_OPEN       0x0004
 #define ZO_EP_CLOSE      0x0008
 #define ZO_STATE_OPEN    0x0020
@@ -46,7 +46,14 @@
 #define ZO_BLOCK_OPEN    0x0800
 #define ZO_BLOCK_CLOSE   0x1000
 
-// bite mask for state register
+// bit mask for O3 and ELYA model
+#define ELYA_LOW_OIL     0x0001
+#define ELYA_BAT_FAULT   0x0002
+#define ELYA_BAT_ON      0x0004
+#define ELYA_BAT_LOW     0x0008
+#define ELYA_LOW_PRESS   0x0010
+
+// bit mask for state register
 #define ZS_SW_AUTO       0x0001
 #define ZS_SW_OPENCLOSE  0x0002
 #define ZS_TIMEOUT       0x0004
@@ -132,7 +139,7 @@ class Zelio:public Dome
 		int16_t deadManNum;
 		bool restartDuringOpening;
 
-		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR_WOUTPLUGS, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
+		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR_WOUTPLUGS, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM, ZELIO_ELYA } zelioModel;
 
 		// if model have hardware rain signal
 		bool haveRainSignal;
@@ -197,6 +204,13 @@ class Zelio:public Dome
 		rts2core::ValueFloat *batteryMin;
 
 		rts2core::ValueFloat *humidity;
+
+		// ELYA values
+		rts2core::ValueBool *lowOil;
+		rts2core::ValueBool *batteryFault;
+		rts2core::ValueBool *onBattery;
+		rts2core::ValueBool *batteryLow;
+		rts2core::ValueBool *lowAccPressure;
 
 		rts2core::ValueInteger *J1XT1;
 		rts2core::ValueInteger *J2XT1;
@@ -311,7 +325,7 @@ bool Zelio::isGoodWeather ()
 	try
 	{
 		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
-		if (haveBatteryLevel || haveHumidityOutput)
+		if (haveBatteryLevel || haveHumidityOutput || zelioModel == ZELIO_ELYA)
 			zelioConn->readHoldingRegisters (ZREG_O3XT1, 1, &reg3);
 	}
 	catch (rts2core::ConnError err)
@@ -363,6 +377,66 @@ bool Zelio::isGoodWeather ()
 	else if (battery)
 	{
 		valueGood (battery);
+	}
+
+	// values for Elya model
+	if (zelioModel == ZELIO_ELYA)
+	{
+		lowOil->setValueBool (reg3 & ELYA_LOW_OIL);
+		batteryFault->setValueBool (reg3 & ELYA_BAT_FAULT);
+		onBattery->setValueBool (reg3 & ELYA_BAT_ON);
+		batteryLow->setValueBool (reg3 & ELYA_BAT_LOW);
+		lowAccPressure->setValueBool (reg3 & ELYA_LOW_PRESS);
+
+		if (lowOil->getValueBool ())
+		{
+			valueError (lowOil);
+			setWeatherTimeout (60, "low oil level");
+			return false;
+		}
+		else
+		{
+			valueGood (lowOil);
+		}
+
+		if (batteryFault->getValueBool ())
+		{
+			valueError (batteryFault);
+			setWeatherTimeout (60, "failed battery");
+			return false;
+		}
+		else
+		{
+			valueGood (batteryFault);
+		}
+
+		if (batteryLow->getValueBool ())
+		{
+			valueError (batteryLow);
+			setWeatherTimeout (60, "low battery level");
+			return false;
+		}
+		else
+		{
+			valueGood (batteryLow);
+		}
+
+		if (lowAccPressure->getValueBool ())
+		{
+			valueError (lowAccPressure);
+			setWeatherTimeout (60, "low accumulator pressure");
+			return false;
+		}
+		else
+		{
+			valueGood (lowAccPressure);
+		}
+
+		sendValueAll (lowOil);
+		sendValueAll (batteryFault);
+		sendValueAll (onBattery);
+		sendValueAll (batteryLow);
+		sendValueAll (lowAccPressure);
 	}
 	// not in auto mode..
 	automode->setValueBool (reg & ZS_SW_AUTO);
@@ -432,6 +506,7 @@ long Zelio::isOpened ()
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
+		case ZELIO_ELYA:
 			if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
 				return -2;
 			break;
@@ -514,6 +589,7 @@ long Zelio::isClosed ()
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
+		case ZELIO_ELYA:
 			if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
 				return -2;
 			break;
@@ -633,6 +709,17 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	Q9_name = "Q9_switch";
 	QA_name = "QA_switch";
 
+	blockOpenLeft = NULL;
+	blockOpenRight = NULL;
+	blockCloseLeft = NULL;
+	blockCloseRight = NULL;
+
+	lowOil = NULL;
+	batteryFault = NULL;
+	onBattery = NULL;
+	batteryLow = NULL;
+	lowAccPressure = NULL;
+
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
 	addOption (OPT_NO_POWER, "without-on-power", 0, "do not create onPower value (some Zelios does not support it)");
 	addOption (OPT_BATTERY, "min-battery", 1, "minimal battery level [V])");
@@ -699,6 +786,7 @@ int Zelio::info ()
 				sendValueAll (onPower);
 			}
 		case ZELIO_FRAM:
+		case ZELIO_ELYA:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_SIMPLE:
@@ -782,6 +870,10 @@ int Zelio::initHardware ()
 			haveBatteryLevel = true;
 			zelioModelString->setValueString ("ZELIO_FRAM");
 			break;
+		case ZS_FRAM | ZS_SIMPLE:
+			zelioModel = ZELIO_ELYA;
+			zelioModelString->setValueString ("ZELIO_ELYA");
+			break;
 		case ZS_COMPRESSOR:
 			zelioModel = ZELIO_COMPRESSOR_WOUTPLUGS;
 			zelioModelString->setValueString ("ZELIO_COMPRESSOR_WOUTPLUGS");
@@ -793,9 +885,6 @@ int Zelio::initHardware ()
 		case ZS_SIMPLE:
 			zelioModel = ZELIO_SIMPLE;
 			zelioModelString->setValueString ("ZELIO_SIMPLE");
-			break;
-		case ZS_SIMPLE | ZS_FRAM:
-			// ELYA model
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "cannot retrieve dome model (" << model << ")" << sendLog;
@@ -820,6 +909,7 @@ int Zelio::initHardware ()
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
+		case ZELIO_ELYA:
 			if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
 			{
 				maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
@@ -885,6 +975,7 @@ void Zelio::createZelioValues ()
 			if (createonPower)
 				createValue (onPower, "on_power", "true if power is connected", false);
 		case ZELIO_FRAM:
+		case ZELIO_ELYA:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 			createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
@@ -901,6 +992,16 @@ void Zelio::createZelioValues ()
 			createValue (timeoCloseLeft, "timeo_close_left", "left close timeout", false);
 			createValue (timeoOpenRight, "timeo_open_right", "right open timeout", false);
 			createValue (timeoCloseRight, "timeo_close_right", "right close timeout", false);
+
+			if (zelioModel == ZELIO_ELYA)
+			{
+				createValue (lowOil, "low_oil", "low oil level", false);
+				createValue (batteryFault, "battery_fault", "battery fault", false);
+				createValue (onBattery, "on_battery", "running on battery", false);
+				createValue (batteryLow, "battery_low", "low battery voltage", false);
+				createValue (lowAccPressure, "low_acc_pressure", "not enough pressure in accumulator", false);
+				break;
+			}
 
 			createValue (blockOpenLeft, "block_open_left", "left open block", false);
 			createValue (blockCloseLeft, "block_close_left", "left close block", false);
@@ -1037,6 +1138,7 @@ void Zelio::sendSwInfo (uint16_t regs[2])
 	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 		case ZELIO_FRAM:
+		case ZELIO_ELYA:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 			if (swCloseRight->getValueBool () != (bool) (regs[1] & ZO_EP_CLOSE))
@@ -1067,11 +1169,14 @@ void Zelio::sendSwInfo (uint16_t regs[2])
 			sendValueAll (timeoOpenRight);
 			sendValueAll (timeoCloseRight);
 
-			blockOpenRight->setValueBool (regs[1] & ZO_BLOCK_OPEN);
-			blockCloseRight->setValueBool (regs[1] & ZO_BLOCK_CLOSE);
+			if (zelioModel != ZELIO_ELYA)
+			{
+				blockOpenRight->setValueBool (regs[1] & ZO_BLOCK_OPEN);
+				blockCloseRight->setValueBool (regs[1] & ZO_BLOCK_CLOSE);
 
-			sendValueAll (blockOpenRight);
-			sendValueAll (blockCloseRight);
+				sendValueAll (blockOpenRight);
+				sendValueAll (blockCloseRight);
+			}
 
 		case ZELIO_SIMPLE:
 			if (swOpenLeft->getValueBool () != (bool) (regs[0] & ZO_EP_OPEN))
@@ -1101,6 +1206,9 @@ void Zelio::sendSwInfo (uint16_t regs[2])
 
 			sendValueAll (timeoOpenLeft);
 			sendValueAll (timeoCloseLeft);
+
+			if (zelioModel == ZELIO_ELYA)
+				break;
 
 			blockOpenLeft->setValueBool (regs[0] & ZO_BLOCK_OPEN);
 			blockCloseLeft->setValueBool (regs[0] & ZO_BLOCK_CLOSE);
