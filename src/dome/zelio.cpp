@@ -527,7 +527,15 @@ int Zelio::startClose ()
 	try
 	{
 		uint16_t reg;
-		zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, 0);
+		switch (zelioModel)
+		{
+			case ZELIO_ELYA:
+				// ELYA needs to set timeout to some small value, not 0
+				zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, 1);
+				break;
+			default:
+				zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, 0);
+		}
 		try
 		{
 			// update automode status..
