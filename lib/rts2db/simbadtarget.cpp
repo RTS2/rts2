@@ -267,12 +267,19 @@ Target *createTargetByString (std::string tar_string, bool debug)
 
 	delete rtar;
 
-	rtar = new TLETarget ();
-	ret = ((TLETarget *) rtar)->orbitFromTLE (tar_string);
-	if (ret == 0)
-		return rtar;
+	try
+	{
+		rtar = new TLETarget ();
+		ret = ((TLETarget *) rtar)->orbitFromTLE (tar_string);
+		if (ret == 0)
+			return rtar;
 
-	delete rtar;
+		delete rtar;
+	}
+	catch (rts2core::Error &er)
+	{
+		// ignore, if it is not TLE, it will be something else..
+	}
 
 	XmlRpcLogHandler::setVerbosity (debug ? 5 : 0);
 
