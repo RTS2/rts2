@@ -160,7 +160,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 			"$(document).ready(function() {\n"
 				"$('#targets').dataTable( {\n"
 					"'bProcessing': true,\n"
-					"'sAjaxSource': 'api?jqapi=1',\n"
+					"'sAjaxSource': 'targets/api?jqapi=1',\n"
 					"'bPaginate': false,\n"
 					"'aoColumnDefs': [{\n"
 						"'aTargets' : [1],\n"
