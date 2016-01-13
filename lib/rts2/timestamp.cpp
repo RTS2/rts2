@@ -154,10 +154,11 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			mprinted = true;
 		}
 
-		if ( diff == 0 && msec>0 )
-			if( msec > 99 )
+		if (diff == 0 && msec>0)
+		{
+			if (msec > 99)
 			{
-				if ( msec > 0 && _td.print_milisec )
+				if (msec > 0 && _td.print_milisec)
 					_oss << "0." << msec;
 						
 				_oss << "s";
@@ -165,15 +166,13 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			}
 			else
 			{	
-				int msec = usec_diff / (USEC_SEC / 1000);
-			
-				if ( msec > 0 && _td.print_milisec )
+				if (msec > 0 && _td.print_milisec)
 					_oss  << msec;
 						
 				_oss << "ms";
 				mprinted = true;
 			}	
-
+		}
 
 		if (!mprinted)
 			_oss << "0";
