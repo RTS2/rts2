@@ -785,16 +785,19 @@ int Zelio::info ()
 
 	switch (zelioModel)
 	{
+		case ZELIO_FRAM:
+		case ZELIO_ELYA:
+			if ((regs[2] & ZI_USER_TIO_MASK) == 0)
+				domeTimeout->setValueInteger (-1);
+			else
+				domeTimeout->setValueInteger ((regs[2] & ZI_TIMEOUT_MASK) >> 7);
 	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			if (onPower)
 			{
 				onPower->setValueBool (regs[7] & ZS_POWER);
-
 				sendValueAll (onPower);
 			}
-		case ZELIO_FRAM:
-		case ZELIO_ELYA:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_SIMPLE:
