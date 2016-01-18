@@ -97,7 +97,7 @@ int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned 
 		FD_ZERO (&read_set);
 		FD_SET (sock, &read_set);
 
-		int ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
+		ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
 		if (ret <= 0)
 			// timeout..
 			return -1;
