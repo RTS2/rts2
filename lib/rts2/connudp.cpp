@@ -79,7 +79,7 @@ int ConnUDP::init ()
 	return ret;
 }
 
-int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned int length, int noreceive)
+int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned int length, int noreceive, float rectimeout)
 {
 	int ret;
 	unsigned int slen = sizeof (clientaddr);
@@ -87,7 +87,23 @@ int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned 
 	ret = sendto (sock, in_message, strlen(in_message), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
 	if (noreceive == 0)
+	{
+		fd_set read_set;
+		struct timeval read_tout;
+
+		read_tout.tv_sec = rectimeout;
+		read_tout.tv_usec = (rectimeout - floor (rectimeout)) * USEC_SEC;
+
+		FD_ZERO (&read_set);
+		FD_SET (sock, &read_set);
+
+		int ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
+		if (ret <= 0)
+			// timeout..
+			return -1;
+
 		ret = recvfrom (sock, ret_message, length, 0, (struct sockaddr *) &clientaddr, &slen);
+	}
 
 	return ret;
 }
