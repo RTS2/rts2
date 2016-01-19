@@ -16,13 +16,18 @@ class AzCam:public rts2camd::Camera
 		virtual int initHardware ();
 
 		virtual int startExposure ();
+		virtual long isExposing ();
 		virtual int doReadout ();
 
 	private:
 		rts2core::ConnTCP *commandConn;
 		rts2core::ConnTCP *dataConn;
 
+		char rbuf[200];
+
 		int callCommand (const char *cmd);
+		int callCommand (const char *cmd, double p1, const char *p2);
+		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
 
 		HostString *azcamHost;
 };
@@ -92,18 +97,49 @@ int AzCam::initHardware()
 
 int AzCam::callCommand (const char *cmd)
 {
-	char rbuf[200];
-
 	// end character \r, 20 second wtime
-	commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20);
+	int ret = commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20);
+	if (ret >= 0)
+		rbuf[ret] = '\0';
+	return ret > 0 ? (strncmp (rbuf, "OK", 2) == 0) : 0;
+}
 
-	return 0;
+int AzCam::callCommand (const char *cmd, double p1, const char *p2)
+{
+	char buf[200];
+	snprintf (buf, 200, "%s %f \'%s\'\r\n", cmd, p1, p2);
+	return callCommand (buf);
+}
+
+int AzCam::callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6)
+{
+	char buf[200];
+	snprintf (buf, 200, "%s %d %d %d %d %d %d\r\n", cmd, p1, p2, p3, p4, p5, p6);
+	return callCommand (buf);
 }
 
 int AzCam::startExposure()
 {
-	callCommand ("exposure");
-	return 0;
+	int ret = callCommand ("setROI", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+	if (ret)
+		return ret;
+
+	const char *imgType[3] = {"object", "dark", "zero"};
+	return callCommand ("StartExposure", getExposure(), imgType[getExpType ()]);
+}
+
+long AzCam::isExposing ()
+{
+	int ret = callCommand ("GetExposureTimeRemaining\r\n");
+	if (ret)
+		return -1;
+	char retConf[200];
+	double retT;
+	if (sscanf (rbuf, "%200s %lf", retConf, &retT) != 2)
+		return -1;
+	if (retT <= 0)
+		return -2;
+	return retT * 1000;
 }
 
 int AzCam::doReadout ()
