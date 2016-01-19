@@ -775,6 +775,7 @@ int Paramount::basicInfo()
 			dec_ticks->setValueLong (DEC_TICKS_MEII);
 			break;
 		case 4:
+		case 5:
 			haCpd->setValueDouble (RA_TICKS_MYT / 360.0);
 			decCpd->setValueDouble (DEC_TICKS_MYT / 360.0);
 			ra_ticks->setValueLong (RA_TICKS_MYT);
