@@ -177,7 +177,7 @@ class ConnTCP:public ConnNoSend
 		 *
 		 * @throw ConnError on error.
 		 */
-		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar, int wtime = 5);
+		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar, int wtime = 5, bool binary=true);
 
 		virtual void postEvent (Event * event);
 
