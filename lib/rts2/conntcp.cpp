@@ -260,12 +260,14 @@ void ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 
 int ConnTCP::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar, int wtime, bool binary)
 {
-	std::istringstream is;
+	std::istringstream *is;
 	sendData (wbuf, wlen, binary);
-	receiveData (is, endChar, wtime);
-	strncpy (rbuf, is.str ().c_str (), rlen);
+	receiveData (&is, wtime, endChar);
+	strncpy (rbuf, is->str ().c_str (), rlen);
 	rbuf[rlen] = '\0';
-	return is.str ().length ();
+	int ret = is->str ().length ();
+	delete is;
+	return ret;
 }
 
 void ConnTCP::postEvent (Event *event)
