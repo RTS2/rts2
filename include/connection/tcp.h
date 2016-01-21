@@ -120,6 +120,11 @@ class ConnTCP:public ConnNoSend
 		virtual int init ();
 
 		/**
+		 * Returns TCP/IP port.
+		 */
+		int getPort () { return port; }
+
+		/**
 		 * Set debugging flag. When debugging is enabled, all data send
 		 * to and from the socket will be logged using standard RTS2
 		 * logging with MESSAGE_DEBUG type.

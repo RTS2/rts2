@@ -85,6 +85,15 @@ int ConnTCP::init ()
 		ret = listen (sock, 1);
 		if (ret)
 			throw ConnCreateError (this, "cannot listen on socket", errno);
+
+		if (port == 0)
+		{
+			socklen_t sock_size = sizeof (server);
+			ret = getsockname (sock, (struct sockaddr *) &server, &sock_size);
+			if (ret)
+				throw ConnCreateError (this, "cannot get listen port address", errno);
+			port = ntohs (server.sin_port);
+		}
 	}
 	else
 	{

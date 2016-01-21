@@ -29,6 +29,9 @@ class AzCam:public rts2camd::Camera
 		int callCommand (const char *cmd, double p1, const char *p2);
 		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
 
+		int setCamera (const char *name, const char *value);
+		int setCamera (const char *name, int value);
+
 		HostString *azcamHost;
 };
 
@@ -72,7 +75,7 @@ int AzCam::initHardware()
 	}
 
 	commandConn = new rts2core::ConnTCP (this, azcamHost->getHostname (), azcamHost->getPort ());
-	dataConn = new rts2core::ConnTCP (this, 1234);
+	dataConn = new rts2core::ConnTCP (this, 0);
 
 	try
 	{
@@ -118,11 +121,35 @@ int AzCam::callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5,
 	return callCommand (buf);
 }
 
+int AzCam::setCamera (const char *name, const char *value)
+{
+	size_t len = strlen (name) + strlen (value);
+	char buf[8 + len];
+	snprintf (buf, 8 + len, "Set %s %s\r\n", name, value);
+	return callCommand (buf);
+}
+
+int AzCam::setCamera (const char *name, int value)
+{
+	size_t len = strlen (name) + 20;
+	char buf[8 + len];
+	snprintf (buf, 8 + len, "Set %s %d\r\n", name, value);
+	return callCommand (buf);
+}
+
 int AzCam::startExposure()
 {
-	int ret = callCommand ("setROI", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+	int ret = setCamera ("RemoteImageServerHost", "mogit");
 	if (ret)
 		return ret;
+
+	ret = setCamera ("RemoteImageServerPort", dataConn->getPort ());
+	if (ret)
+		return ret;
+
+//	int ret = callCommand ("setROI", getUsedX (), getUsedX () + getUsedWidth () - 1, getUsedY (), getUsedY () + getUsedHeight () - 1, binningHorizontal (), binningVertical ());
+//	if (ret)
+//		return ret;
 
 	const char *imgType[3] = {"object", "dark", "zero"};
 	return callCommand ("StartExposure", getExposure(), imgType[getExpType ()]);

@@ -339,30 +339,26 @@ int Daemon::init ()
 	server.sin_port = htons (getPort ());
 	server.sin_addr.s_addr = htonl (INADDR_ANY);
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Daemon::init binding to port: " <<
-		getPort () << sendLog;
+	logStream (MESSAGE_DEBUG) << "Daemon::init binding to port: " << getPort () << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	ret = bind (listen_sock, (struct sockaddr *) &server, sizeof (server));
 	if (ret == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Daemon::init bind " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Daemon::init bind " << strerror (errno) << sendLog;
 		return -1;
 	}
 	socklen_t sock_size = sizeof (server);
 	ret = getsockname (listen_sock, (struct sockaddr *) &server, &sock_size);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Daemon::init getsockname " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Daemon::init getsockname " << strerror (errno) << sendLog;
 		return -1;
 	}
 	setPort (ntohs (server.sin_port));
 	ret = listen (listen_sock, 5);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "rts2core::Block::init cannot listen: " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "rts2core::Block::init cannot listen: " << strerror (errno) << sendLog;
 		close (listen_sock);
 		listen_sock = -1;
 		return -1;
