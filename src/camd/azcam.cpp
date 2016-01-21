@@ -5,6 +5,39 @@
 namespace rts2camd
 {
 
+class AzCamDataConn:public rts2core::ConnTCP
+{
+	public:
+		AzCamDataConn (rts2core::Block *_master, int _port);
+
+		virtual int receive (fd_set * readset);
+};
+
+AzCamDataConn::AzCamDataConn (rts2core::Block *_master, int _port):ConnTCP (_master, _port)
+{
+}
+
+int AzCamDataConn::receive (fd_set *readset)
+{
+	if (isConnState (CONN_DELETE))
+		return -1;
+	if (sock >= 0 && FD_ISSET (sock, readset))
+	{
+		if (isConnState (CONN_CONNECTING))
+			return acceptConn ();
+
+		char rbuf[20];
+		int rec = recv (sock, rbuf, 20, 0);
+		if (rec > 0)
+		{
+			for (int i = 0; i < rec; i++)
+				std::cerr << "receive " << std::hex << rbuf[i] << std::endl;
+		}
+		return rec;
+	}
+	return 0;
+}
+
 class AzCam:public rts2camd::Camera
 {
 	public:
@@ -77,7 +110,7 @@ int AzCam::initHardware()
 	}
 
 	commandConn = new rts2core::ConnTCP (this, azcamHost->getHostname (), azcamHost->getPort ());
-	dataConn = new rts2core::ConnTCP (this, 0);
+	dataConn = new AzCamDataConn (this, 0);
 
 	try
 	{
@@ -96,6 +129,10 @@ int AzCam::initHardware()
 	}
 
 	addConnection (dataConn);
+
+	int ret = callCommand ("Reset\r\n");
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -149,6 +186,22 @@ int AzCam::startExposure()
 		return ret;
 
 	ret = setCamera ("RemoteImageServerPort", dataConn->getPort ());
+	if (ret)
+		return ret;
+
+	ret = setCamera ("RemoteImageFileName", "im10.fits");
+	if (ret)
+		return ret;
+
+	ret = setCamera ("RemoteImageFileName", "im10.fits");
+	if (ret)
+		return ret;
+
+	ret = setCamera ("Globals.newroi", 1);
+	if (ret)
+		return ret;
+
+	ret = setCamera ("ReadoutMode", "Wait");
 	if (ret)
 		return ret;
 

@@ -575,8 +575,7 @@ int Connection::acceptConn ()
 	new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
 	if (new_sock == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Connection::acceptConn data accept " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Connection::acceptConn data accept " << strerror (errno) << sendLog;
 		return -1;
 	}
 	else
@@ -584,8 +583,7 @@ int Connection::acceptConn ()
 		close (sock);
 		sock = new_sock;
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "Connection::acceptConn connection accepted"
-			<< sendLog;
+		logStream (MESSAGE_DEBUG) << "Connection::acceptConn connection accepted" << sendLog;
 		#endif
 		setConnState (CONN_CONNECTED);
 		return 0;
