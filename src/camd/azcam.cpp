@@ -103,8 +103,11 @@ int AzCam::callCommand (const char *cmd)
 	// end character \r, 20 second wtime
 	int ret = commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20, false);
 	if (ret >= 0)
+	{
 		rbuf[ret] = '\0';
-	return ret > 0 ? (strncmp (rbuf, "OK", 2) == 0) : 0;
+		return (strncmp (rbuf, "OK", 2) == 0) ? 0 : -1;
+	}
+	return -1;
 }
 
 int AzCam::callCommand (const char *cmd, double p1, const char *p2)
