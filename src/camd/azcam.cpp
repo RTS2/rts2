@@ -43,6 +43,8 @@ AzCam::AzCam (int argc, char **argv): Camera (argc, argv)
 {
 	azcamHost = NULL;
 
+	createExpType ();
+
 	addOption ('a', NULL, 1, "AZCAM hostname, hostname of the computer running AZCam");
 }
 
