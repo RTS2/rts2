@@ -193,7 +193,7 @@ int AzCam::startExposure()
 	if (ret)
 		return ret;
 
-	ret = setCamera ("RemoteImageFileName", "im10.fits");
+	ret = setCamera ("RemoteImageServer", 1);
 	if (ret)
 		return ret;
 
@@ -229,7 +229,6 @@ long AzCam::isExposing ()
 
 int AzCam::doReadout ()
 {
-	callCommand ("readout");
 	return 0;
 }
 
