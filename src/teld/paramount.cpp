@@ -39,7 +39,8 @@
 // counts per revolution
 #define RA_TICKS_ME		11520000 // ME
 #define RA_TICKS_MEII		(1.8*11520000) // MEII
-#define RA_TICKS_MYT		(11520000/2.25) // MYT
+#define RAF_MYT                 2.25
+#define RA_TICKS_MYT		(11520000/RAF_MYT) // MYT
 
 #define DEC_TICKS_ME		7500000 // ME
 #define DEC_TICKS_MEII		(2.279*7500000) // MEII
@@ -775,11 +776,18 @@ int Paramount::basicInfo()
 			dec_ticks->setValueLong (DEC_TICKS_MEII);
 			break;
 		case 4:
-		case 5:
 			haCpd->setValueDouble (RA_TICKS_MYT / 360.0);
 			decCpd->setValueDouble (DEC_TICKS_MYT / 360.0);
 			ra_ticks->setValueLong (RA_TICKS_MYT);
 			dec_ticks->setValueLong (DEC_TICKS_MYT);
+			break;
+		case 5:
+			haCpd->setValueDouble (-RA_TICKS_MYT / 360.0);
+			decCpd->setValueDouble (-DEC_TICKS_MYT / 360.0);
+			ra_ticks->setValueLong (-RA_TICKS_MYT);
+			dec_ticks->setValueLong (-DEC_TICKS_MYT);
+			hourRa->setValueLong (hourRa->getValueLong () / RAF_MYT);
+			baseRa->setValueLong (hourRa->getValueLong ());
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "unsuported Paramount major version: " << pMajor << sendLog;
