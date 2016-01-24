@@ -170,14 +170,15 @@ int AzCam::initHardware()
 	if (getDebug())
 	{
 		commandConn->setDebug ();
-		dataConn->setDebug ();
 	}
 
 	int ret = callCommand ("Reset\r\n");
 	if (ret)
 		return ret;
 
-	return 0;
+	initCameraChip (101, 101, 0, 0);
+
+	return initChips ();
 }
 
 int AzCam::callCommand (const char *cmd)
@@ -236,6 +237,8 @@ int AzCam::startExposure()
 	dataConn->init ();
 
 	addConnection (dataConn);
+
+	setFitsTransfer ();
 
 	int ret = setCamera ("RemoteImageServerHost", "mogit");
 	if (ret)
