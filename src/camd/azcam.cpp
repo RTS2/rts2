@@ -1,3 +1,5 @@
+#include <fcntl.h>
+
 #include "camd.h"
 
 #include "connection/tcp.h"
@@ -11,10 +13,22 @@ class AzCamDataConn:public rts2core::ConnTCP
 		AzCamDataConn (rts2core::Block *_master, int _port);
 
 		virtual int receive (fd_set * readset);
+
+		size_t getDataSize () { return dataSize; } 
+
+	private:
+		size_t dataSize;
+		size_t headerSize;
+		char header[257];
+		int outFile;
 };
 
 AzCamDataConn::AzCamDataConn (rts2core::Block *_master, int _port):ConnTCP (_master, _port)
 {
+	dataSize = 0;
+	headerSize = 0;
+	memset (header, 0, sizeof (header));
+	outFile = 0;
 }
 
 int AzCamDataConn::receive (fd_set *readset)
@@ -23,15 +37,47 @@ int AzCamDataConn::receive (fd_set *readset)
 		return -1;
 	if (sock >= 0 && FD_ISSET (sock, readset))
 	{
+		int rec;
 		if (isConnState (CONN_CONNECTING))
 			return acceptConn ();
 
-		char rbuf[20];
-		int rec = recv (sock, rbuf, 20, 0);
+		if (headerSize < 256)
+		{
+			rec = recv (sock, header + headerSize, 256 - headerSize, 0);
+			if (rec < 0)
+				return -1;
+			headerSize += rec;
+			if (headerSize == 256)
+			{
+				std::cerr << "header " << header << std::endl;
+				sscanf (header, "%ld", &dataSize);
+			}
+			return 0;
+		}
+
+		static char rbuf[2048];
+
+		rec = recv (sock, rbuf, 2048, 0);
+
 		if (rec > 0)
 		{
-			for (int i = 0; i < rec; i++)
-				std::cerr << "receive " << std::hex << rbuf[i] << std::endl;
+			if (outFile == 0)
+			{
+				outFile = open ("/tmp/m.fits", O_CREAT | O_TRUNC | O_WRONLY, 00666);
+				if (outFile < 0)
+					return -1;
+			}
+			write (outFile, rbuf, rec);
+			fsync (outFile);
+
+			dataSize -= rec;
+			if (dataSize <= 0)
+			{
+				close (outFile);
+				dataSize = 0;
+				headerSize = 0;
+				return 0;
+			}
 		}
 		return rec;
 	}
@@ -54,7 +100,7 @@ class AzCam:public rts2camd::Camera
 
 	private:
 		rts2core::ConnTCP *commandConn;
-		rts2core::ConnTCP *dataConn;
+		AzCamDataConn *dataConn;
 
 		char rbuf[200];
 
@@ -110,7 +156,7 @@ int AzCam::initHardware()
 	}
 
 	commandConn = new rts2core::ConnTCP (this, azcamHost->getHostname (), azcamHost->getPort ());
-	dataConn = new AzCamDataConn (this, 0);
+	dataConn = NULL;
 
 	try
 	{
@@ -120,15 +166,12 @@ int AzCam::initHardware()
 	{
 		logStream (MESSAGE_ERROR) << "cannot connect to " << azcamHost->getHostname () << ":" << azcamHost->getPort () << sendLog;
 	}
-	dataConn->init ();
 
 	if (getDebug())
 	{
 		commandConn->setDebug ();
 		dataConn->setDebug ();
 	}
-
-	addConnection (dataConn);
 
 	int ret = callCommand ("Reset\r\n");
 	if (ret)
@@ -181,6 +224,19 @@ int AzCam::setCamera (const char *name, int value)
 
 int AzCam::startExposure()
 {
+	if (dataConn)
+	{
+		removeConnection (dataConn);
+		delete dataConn;
+	}
+
+	dataConn = new AzCamDataConn (this, 0);
+	if (getDebug ())
+		dataConn->setDebug ();
+	dataConn->init ();
+
+	addConnection (dataConn);
+
 	int ret = setCamera ("RemoteImageServerHost", "mogit");
 	if (ret)
 		return ret;
@@ -229,7 +285,14 @@ long AzCam::isExposing ()
 
 int AzCam::doReadout ()
 {
-	return 0;
+	if (dataConn)
+	{
+		if (dataConn->getDataSize () > 0)
+			return 10;
+		fitsDataTransfer ("/tmp/m.fits");
+		return -2;
+	}
+	return -1;
 }
 
 int main (int argc, char **argv)
