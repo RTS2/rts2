@@ -11,6 +11,9 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 
 noinst_HEADERS = sitech.h
 
+TESTS = check_gem_hko
+check_PROGRAMS = check_gem_hko
+
 LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
@@ -102,3 +105,7 @@ rts2_teld_bait_CPPFLAGS = @INC_MDMTCS@ -I../../include
 else
 EXTRA_DIST += mdm.cpp bait.cpp
 endif
+
+check_gem_hko_SOURCES = check_gem_hko.cpp
+check_gem_hko_CPPFLAGS = @CHECK_CFLAGS@ -I../../include
+check_gem_hko_LDADD = @CHECK_LIBS@ ${LDADD}
