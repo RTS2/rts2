@@ -1797,7 +1797,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
 		return ret;
 	}
-	else if (conn->isCommand ("move_ha_sg"))
+	else if (conn->isCommand (COMMAND_TELD_HADEC))
 	{
 		if (conn->paramNextHMS (&obj_ha) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;

@@ -41,7 +41,11 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 	ls = getLstDeg (JD);
 
-	ln_get_hrz_from_equ (pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
+	struct ln_lnlat_posn latpos;
+	latpos.lat = telLatitude->getValueDouble ();
+	latpos.lng = telLongitude->getValueDouble ();
+
+	ln_get_hrz_from_equ (pos, &latpos, JD, &hrz);
 	if (hrz.alt < -5)
 	{
 		logStream (MESSAGE_ERROR) << "object is below horizon, azimuth is "
@@ -476,7 +480,12 @@ int GEM::counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD)
 	int ret = counts2sky (ac, dc, tar_radec.ra, tar_radec.dec, tar_flip, untar_radec.ra, untar_radec.dec, JD);
 	if (ret)
 		return -1;
-	ln_get_hrz_from_equ (&tar_radec, rts2core::Configuration::instance ()->getObserver (), JD, hrz);
+
+	struct ln_lnlat_posn latpos;
+	latpos.lat = telLatitude->getValueDouble ();
+	latpos.lng = telLongitude->getValueDouble ();
+
+	ln_get_hrz_from_equ (&tar_radec, &latpos, JD, hrz);
         return 0;
 }
 
@@ -658,7 +667,11 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 			return 4;
 		}
 
-		ln_get_hrz_from_equ (&pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
+		struct ln_lnlat_posn latpos;
+		latpos.lat = telLatitude->getValueDouble ();
+		latpos.lng = telLongitude->getValueDouble ();
+
+		ln_get_hrz_from_equ (&pos, &latpos, JD, &hrz);
 
 		if (soft_hit == true || ignore_soft_beginning == true)
 		{

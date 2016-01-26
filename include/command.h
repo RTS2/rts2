@@ -71,6 +71,11 @@
 #define COMMAND_TELD_MOVE       "move"
 
 /**
+ *
+ */
+#define COMMAND_TELD_HADEC      "hadec"
+
+/**
  * Move to MPEC one line element position. @ingroup RTS2Command
  */ 
 #define COMMAND_TELD_MOVE_MPEC  "move_mpec"
