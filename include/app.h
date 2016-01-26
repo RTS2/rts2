@@ -266,6 +266,8 @@ class App:public Object
 		 */
 		virtual int init ();
 
+		void setDebug (int d) { debug = d; }
+
 	private:
 		/**
 		 * Holds options which might be passed to the program.

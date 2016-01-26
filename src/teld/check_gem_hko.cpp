@@ -34,6 +34,8 @@ GemTest::~GemTest ()
 
 void GemTest::setTelescope (double _lat, double _long, double _alt, long _ra_ticks, long _dec_ticks, int _haZeroPos, double _haZero, double _decZero, double _haCpd, double _decCpd, long _acMin, long _acMax, long _dcMin, long _dcMax)
 {
+	setDebug (1);
+
 	telLatitude->setValueDouble (_lat);
 	telLongitude->setValueDouble (_long);
 	telAltitude->setValueDouble (_alt);
@@ -54,60 +56,77 @@ void GemTest::setTelescope (double _lat, double _long, double _alt, long _ra_tic
 	dcMax->setValueLong (_dcMax);
 }
 
+// global telescope object
+GemTest* gemTest;
+
+void setup_hko (void)
+{
+	gemTest = new GemTest(0, NULL);
+
+	gemTest->setTelescope (20.70752, -156.257, 3039, 67108864, 67108864, 0, 75.81458333, -5.8187805555, 186413.511111, 186413.511111, -81949557, -47392062, -76983817, -21692458);
+}
+
+void teardown_hko (void)
+{
+	delete gemTest;
+	gemTest = NULL;
+}
+
 int GemTest::test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
 {
 	return sky2counts (JD, pos, ac, dc, false, 0);
 }
 
+#define ck_assert_dbl_eq(v1,v2,alow)  ck_assert_msg(fabs(v1-v2) < alow, "difference %f and %f > %f", v1, v2, alow)
+
 START_TEST(test_gem_hko)
 {
-	// set to UTC, to make test independent of local timezone
-	timezone = 0;
-	daylight = 0;
-
-	GemTest* gemTest = new GemTest(0, NULL);
-
-	gemTest->setTelescope (20.70752, -156.257, 3039, 67108864, 67108864, 0, 75.81458333, -5.8187805555, 186413.511111, 186413.511111, -81949557, -47392062, -76983817, -21692458);
-
 	// test 1, 2016-01-12T19:20:47 HST = 2016-01-13U05:20:47
-	struct tm test_t;
-	test_t.tm_year = 116;
-	test_t.tm_mon = 0;
-	test_t.tm_mday = 13;
-	test_t.tm_hour = 5;
-	test_t.tm_min = 20;
-	test_t.tm_sec = 47;
+	struct ln_date test_t;
+	test_t.years = 2016;
+	test_t.months = 1;
+	test_t.days = 13;
+	test_t.hours = 5;
+	test_t.minutes = 20;
+	test_t.seconds = 47;
 
-	time_t t = mktime (&test_t);
-	ck_assert_int_eq (t, 1452658847);
-
-	double JD = ln_get_julian_from_timet (&t);
+	double JD = ln_get_julian_day (&test_t);
+	ck_assert_dbl_eq (JD, 2457400.722766, 10e-5);
 
 	struct ln_equ_posn pos;
 	pos.ra = 20;
 	pos.dec = 80;
 
-	int32_t ac, dc;
+	int32_t ac = 0, dc = 0;
 
 	int ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
-	ck_assert_int_eq (ac, -47494169);
-	ck_assert_int_eq (dc, -47382813);
-	
-	delete gemTest;
+	ck_assert_int_eq (ac, -78244743);
+	ck_assert_int_eq (dc, -51111083);
+
+	// origin
+	pos.ra = 344.16613;
+	pos.dec = 2.3703305;
+
+	ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+
+	ck_assert_int_eq (ret, 0);
+	ck_assert_int_eq (ac, -71564825);
+	ck_assert_int_eq (dc, -65582303);
 }
 END_TEST
 
 Suite * gem_suite (void)
 {
 	Suite *s;
-	TCase *tc_gem_pointings;
+	TCase *tc_gem_hko_pointings;
 
 	s = suite_create ("GEM");
-	tc_gem_pointings = tcase_create ("Pointings");
+	tc_gem_hko_pointings = tcase_create ("HKO Pointings");
 
-	tcase_add_test (tc_gem_pointings, test_gem_hko);
-	suite_add_tcase (s, tc_gem_pointings);
+	tcase_add_checked_fixture (tc_gem_hko_pointings, setup_hko, teardown_hko);
+	tcase_add_test (tc_gem_hko_pointings, test_gem_hko);
+	suite_add_tcase (s, tc_gem_hko_pointings);
 
 	return s;
 }

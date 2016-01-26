@@ -129,7 +129,7 @@ class Sitech:public GEM
 		/**
 		 * Check if movement only in DEC axis is a possibility.
 		 */
-		int checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d);
+		int checkMoveDEC (double JD, int32_t &ac, int32_t &dc, int32_t move_d);
 
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
@@ -931,7 +931,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	xbits |= (0x01 << 4);
 
 	// check that the entered trajactory is valid
-	ret = checkTrajectory (ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
+	ret = checkTrajectory (getTelJD, ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
 	if (ret != 0)
 	{
 		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
@@ -967,8 +967,10 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 
 	logStream (MESSAGE_DEBUG) << "sitechMove " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << partialMove->getValueInteger () << sendLog;
 
+	double JD = ln_get_julian_from_sys ();
+
 	// 5 deg margin in altitude and azimuth
-	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
+	int ret = checkTrajectory (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
 	logStream (MESSAGE_DEBUG) << "sitechMove checkTrajectory " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 	// cannot check trajectory, log & return..
 	if (ret == -1)
@@ -1000,7 +1002,7 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 			else
 				ac = r_ra_pos->getValueLong () - move_diff;
 			dc = r_dec_pos->getValueLong ();
-			ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
+			ret = checkTrajectory (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
 			logStream (MESSAGE_DEBUG) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 			if (ret == -1)
 			{
@@ -1011,11 +1013,11 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 			if (ret == 3)
 			{
 				logStream (MESSAGE_WARNING) << "cannot move out of limits with RA only, trying DEC only move" << sendLog;
-				ret = checkMoveDEC (ac, dc, move_d);
+				ret = checkMoveDEC (JD, ac, dc, move_d);
 				if (ret < 0)
 				{
 					logStream (MESSAGE_WARNING) << "cannot move RA or DEC only, trying opposite DEC direction for 20 degrees" << sendLog;
-					ret = checkMoveDEC (ac, dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
+					ret = checkMoveDEC (JD, ac, dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
 					if (ret < 0)
 					{
 						logStream (MESSAGE_ERROR) << "cannot move DEC even in oposite direction, aborting move" << sendLog;
@@ -1042,11 +1044,11 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 				else
 					move_d = -move_diff;
 			}
-			ret = checkMoveDEC (ac, dc, move_d);
+			ret = checkMoveDEC (JD, ac, dc, move_d);
 			if (ret < 0)
 			{
 				logStream (MESSAGE_WARNING) << "cannot move RA or DEC only, trying opposite DEC direction for 20 degrees" << sendLog;
-				ret = checkMoveDEC (ac, dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
+				ret = checkMoveDEC (JD, ac, dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
 				if (ret < 0)
 				{
 					logStream (MESSAGE_ERROR) << "cannot move DEC even in oposite direction, aborting move" << sendLog;
@@ -1078,12 +1080,12 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	return ret;
 }
 
-int Sitech::checkMoveDEC (int32_t &ac, int32_t &dc, int32_t move_d)
+int Sitech::checkMoveDEC (double JD, int32_t &ac, int32_t &dc, int32_t move_d)
 {
 	// move for a time only in DEC
 	ac = r_ra_pos->getValueLong ();
 	dc = r_dec_pos->getValueLong () + move_d;
-	int ret = checkTrajectory (r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
+	int ret = checkTrajectory (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
 	logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
 	if (ret == -1)
 	{
