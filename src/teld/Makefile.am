@@ -107,5 +107,5 @@ EXTRA_DIST += mdm.cpp bait.cpp
 endif
 
 check_gem_hko_SOURCES = check_gem_hko.cpp
-check_gem_hko_CPPFLAGS = @CHECK_CFLAGS@ -I../../include
+check_gem_hko_CPPFLAGS = @CHECK_CFLAGS@ ${CPPFLAGS} -I../../include
 check_gem_hko_LDADD = @CHECK_LIBS@ ${LDADD}

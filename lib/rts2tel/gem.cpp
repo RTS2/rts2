@@ -473,6 +473,12 @@ double GEM::getHACWDAngle (int32_t ha_count)
 	}
 }
 
+double GEM::getPoleAngle (int32_t dc)
+{
+	double dec_angle = ln_range_degrees ((dc / decCpd->getValueDouble ()) + decZero->getValueDouble () - 90);
+	return dec_angle < 180 ? dec_angle : dec_angle - 360;
+}
+
 int GEM::counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD)
 {
 	struct ln_equ_posn tar_radec, untar_radec;
@@ -594,7 +600,7 @@ int GEM::normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t
 	return 0;
 }
 
-int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning, bool dont_flip)
+int GEM::checkTrajectory (double JD, int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning, bool dont_flip)
 {
 	// nothing to check
 	if (hardHorizon == NULL)
@@ -618,8 +624,6 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 		step_d = -ds;
 
 	int first_flip = telFlip->getValueInteger ();
-
-	double JD = ln_get_julian_from_sys ();  // fixed time; assuming slew does not take too long, this will work
 
 	// turned to true if we are in "soft" boundaries, e.g hit with margin applied
 	bool soft_hit = false;
@@ -656,7 +660,7 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 			n_d = t_d + step_d;
 		}
 
-		ret = counts2sky (n_a, n_d, pos.ra, pos.dec, flip, un_pos.ra, un_pos.dec);
+		ret = counts2sky (n_a, n_d, pos.ra, pos.dec, flip, un_pos.ra, un_pos.dec, JD);
 		if (ret)
 			return -1;
 
@@ -756,3 +760,123 @@ int GEM::checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int3
 	// we are fine to move at least to the given coordinates
 	return 1;
 }
+
+int GEM::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, int32_t &t_dc, int pm)
+{
+	const int32_t tt_ac = t_ac;
+	const int32_t tt_dc = t_dc;
+	// 5 deg margin in altitude and azimuth
+	logStream (MESSAGE_DEBUG) << "calculateMove checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << sendLog;
+	int ret = checkTrajectory (JD, c_ac, c_dc, t_ac, t_dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
+	logStream (MESSAGE_DEBUG) << "calculateMove checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << ret << sendLog;
+	// cannot check trajectory, log & return..
+	if (ret == -1)
+	{
+		logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot calculate move to " << t_ac << " " << t_dc << sendLog;
+		return -1;
+	}
+	// possible hit, move just to where we can go..
+	if (ret > 0)
+	{
+		int32_t move_a = tt_ac - c_ac;
+		int32_t move_d = tt_dc - c_dc;
+
+		int32_t move_diff = labs (move_a) - labs (move_d);
+
+		logStream (MESSAGE_DEBUG) << "calculateMove a " << move_a << " d " << move_d << " diff " << move_diff << sendLog;
+
+		// move for a time, move only one axe..the one which needs more time to move
+		// if we already tried DEC axis, we need to go with RA as second
+		if ((move_diff > 0 && pm == 0) || pm == 2)
+		{
+			// if we already move partialy, try to move maximum distance; otherwise, move only difference between axes, so we can decide once we hit point with the same axis distance what's next
+			if (pm == 2)
+				move_diff = labs (move_a);
+
+			// move for a time only in RA; move_diff is positive, see check above
+			if (move_a > 0)
+				t_ac = c_ac + move_diff;
+			else
+				t_ac = c_ac - move_diff;
+			t_dc = c_dc;
+			ret = checkTrajectory (JD, c_ac, c_dc, t_ac, t_dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
+			logStream (MESSAGE_DEBUG) << "calculateMove RA axis only " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << ret << sendLog;
+			if (ret == -1)
+			{
+				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << t_ac << " " << t_dc << sendLog;
+				return -1;
+			}
+
+			if (ret == 3)
+			{
+				logStream (MESSAGE_WARNING) << "cannot move out of limits with RA only, trying DEC only move" << sendLog;
+				ret = checkMoveDEC (JD, c_ac, c_dc, t_ac, t_dc, move_d);
+				if (ret < 0)
+				{
+					logStream (MESSAGE_WARNING) << "cannot move RA or DEC only, trying opposite DEC direction for 20 degrees" << sendLog;
+					ret = checkMoveDEC (JD, c_ac, c_dc, t_ac, t_dc, fabs (decCpd->getValueDouble ()) * (move_d > 0 ? -20 : 20));
+					if (ret < 0)
+					{
+						logStream (MESSAGE_ERROR) << "cannot move DEC even in oposite direction, aborting move" << sendLog;
+						return ret;
+					}
+				}
+				// move DEC only, next move will be RA only
+				ret = 2;
+			}
+			else
+			{
+				// move RA only
+				ret = 1;
+			}
+		}
+		else
+		{
+			// first move - move only move_diff, to reach point where both axis will have same distance to go
+			if (pm == 0)
+			{
+				// move_diff is negative, see check above; fill to move_d move_diff with move_d sign
+				if (move_d < 0)
+					move_d = move_diff;
+				else
+					move_d = -move_diff;
+			}
+			ret = checkMoveDEC (JD, c_ac, c_dc, t_ac, t_dc, move_d);
+			if (ret < 0)
+			{
+				logStream (MESSAGE_WARNING) << "cannot move RA or DEC only, trying opposite DEC direction for 20 degrees" << sendLog;
+				ret = checkMoveDEC (JD, c_ac, c_dc, t_ac, t_dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
+				if (ret < 0)
+				{
+					logStream (MESSAGE_ERROR) << "cannot move DEC even in oposite direction, aborting move" << sendLog;
+					return ret;
+				}
+			}
+			// move DEC only
+			ret = 2;
+		}
+	}
+	return ret;
+}
+
+int GEM::checkMoveDEC (double JD, int32_t c_ac, int32_t &c_dc, int32_t &ac, int32_t &dc, int32_t move_d)
+{
+	// move for a time only in DEC
+	ac = c_ac;
+	dc = c_dc + move_d;
+	int ret = checkTrajectory (JD, c_ac, c_dc, ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
+	logStream (MESSAGE_DEBUG) << "checkMoveDEC DEC axis only " << c_ac << " " << ac << " " << c_dc << " " << dc << " " << ret << sendLog;
+	if (ret == -1)
+	{
+		logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
+		return -1;
+	}
+	if (ret == 3)
+	{
+		logStream (MESSAGE_WARNING) << "cannot move out of limits with DEC only, aborting move" << sendLog;
+		return -1;
+	}
+	return 0;
+}
+
+

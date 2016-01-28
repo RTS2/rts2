@@ -23,6 +23,7 @@
 #include "observation.h"
 #include "timelog.h"
 
+#include <list>
 #include <string>
 #include <vector>
 
@@ -56,8 +57,10 @@ class ObservationSet:public std::vector <Observation>, public TimeLog
 		 */
 		void loadLabel (int label_id);
 
-		void  printImages (int _images, const char *_imageFormat = NULL) { images = _images; imageFormat = _imageFormat; }
+		void printImages (int _images, const char *_imageFormat = NULL) { images = _images; imageFormat = _imageFormat; }
 		int getPrintImages () { return images; }
+
+		void printCameraImages (const char *cameraName) { cameraNames.push_back (cameraName); }
 
 		int getPrintCounts () { return counts; }
 		void printCounts (int _counts) { counts = _counts; }
@@ -162,6 +165,8 @@ class ObservationSet:public std::vector <Observation>, public TimeLog
 		double errAvgRad;
 
 		std::vector <Observation>::iterator timeLogIter;
+
+		std::list <const char*> cameraNames;
 };
 
 /**

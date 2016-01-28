@@ -14,6 +14,11 @@ class GemTest:public rts2teld::GEM
 		void setTelescope (double _lat, double _long, double _alt, long _ra_ticks, long _dec_ticks, int _haZeroPos, double _haZero, double _decZero, double _haCpd, double _decCpd, long _acMin, long _acMax, long _dcMin, long _dcMax);
 		int test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
 
+		/**
+		 * Test movement to given target position, from counts in ac dc parameters.
+		 */
+		float test_move (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, float speed, float max_time);
+
 	protected:
 		virtual int isMoving () { return 0; };
 		virtual int startResync () { return 0; }
@@ -35,6 +40,7 @@ GemTest::~GemTest ()
 void GemTest::setTelescope (double _lat, double _long, double _alt, long _ra_ticks, long _dec_ticks, int _haZeroPos, double _haZero, double _decZero, double _haCpd, double _decCpd, long _acMin, long _acMax, long _dcMin, long _dcMax)
 {
 	setDebug (1);
+	setNotDaemonize ();
 
 	telLatitude->setValueDouble (_lat);
 	telLongitude->setValueDouble (_long);
@@ -54,6 +60,8 @@ void GemTest::setTelescope (double _lat, double _long, double _alt, long _ra_tic
 	acMax->setValueLong (_acMax);
 	dcMin->setValueLong (_dcMin);
 	dcMax->setValueLong (_dcMax);
+
+	hardHorizon = new ObjectCheck ("../../conf/horizon_flat_19_flip.txt");
 }
 
 // global telescope object
@@ -61,7 +69,8 @@ GemTest* gemTest;
 
 void setup_hko (void)
 {
-	gemTest = new GemTest(0, NULL);
+	static const char *argv[] = {"testapp"};
+	gemTest = new GemTest(0, (char **) argv);
 
 	gemTest->setTelescope (20.70752, -156.257, 3039, 67108864, 67108864, 0, 75.81458333, -5.8187805555, 186413.511111, 186413.511111, -81949557, -47392062, -76983817, -21692458);
 }
@@ -75,6 +84,73 @@ void teardown_hko (void)
 int GemTest::test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
 {
 	return sky2counts (JD, pos, ac, dc, false, 0);
+}
+
+float GemTest::test_move (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, float speed, float max_time)
+{
+	int32_t t_ac = ac;
+	int32_t t_dc = dc;
+
+	// calculates elapsed time
+	float elapsed = 0;
+
+	int ret = test_sky2counts (JD, pos, t_ac, t_dc);
+	if (ret)
+		return NAN;
+
+	const int32_t tt_ac = t_ac;
+	const int32_t tt_dc = t_dc;
+
+	int pm = 0;
+
+	struct ln_hrz_posn hrz;
+
+	counts2hrz (ac, dc, &hrz, JD);
+
+	std::cout << "moving from alt az " << hrz.alt << " " << hrz.az << std::endl;
+
+	while (elapsed < max_time)
+	{
+		pm = calculateMove (JD, ac, dc, t_ac, t_dc, pm);
+		if (pm == -1)
+			return NAN;
+
+		int32_t d_ac = labs (ac - t_ac);
+		int32_t d_dc = labs (dc - t_dc);
+
+		float e = 1;
+
+		if (d_ac > d_dc)
+			e = d_ac / haCpd->getValueDouble () / speed;
+		else
+			e = d_dc / decCpd->getValueDouble () / speed;
+		elapsed += (e > 1) ? e : 1;
+
+		counts2hrz (t_ac, t_dc, &hrz, JD);
+
+		std::cout << "move to alt az " << hrz.alt << " " << hrz.az << " pm " << pm << std::endl;
+
+		if (pm == 0)
+			break;
+
+		// 1 deg margin for check..
+		if (ac < t_ac)
+			ac = t_ac - haCpd->getValueDouble ();
+		else if (ac > t_ac)
+			ac = t_ac + haCpd->getValueDouble ();
+
+		if (dc < t_dc)
+			dc = t_dc - decCpd->getValueDouble ();
+		else if (ac > t_ac)
+			dc = t_dc + decCpd->getValueDouble ();
+
+		t_ac = tt_ac;
+		t_dc = tt_dc;
+
+		JD += elapsed / 86400.0;
+	}
+	
+	return elapsed;
 }
 
 #define ck_assert_dbl_eq(v1,v2,alow)  ck_assert_msg(fabs(v1-v2) < alow, "difference %f and %f > %f", v1, v2, alow)
@@ -97,7 +173,8 @@ START_TEST(test_gem_hko)
 	pos.ra = 20;
 	pos.dec = 80;
 
-	int32_t ac = 0, dc = 0;
+	int32_t ac = -70000000;
+	int32_t dc = -68000000;
 
 	int ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
@@ -109,10 +186,15 @@ START_TEST(test_gem_hko)
 	pos.dec = 2.3703305;
 
 	ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
-
 	ck_assert_int_eq (ret, 0);
 	ck_assert_int_eq (ac, -71564825);
 	ck_assert_int_eq (dc, -65582303);
+
+	pos.ra = 62.95859;
+	pos.dec = -3.51601;
+
+	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
+	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 }
 END_TEST
 

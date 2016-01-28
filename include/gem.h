@@ -19,6 +19,9 @@
 
 #include "teld.h"
 
+// Limit on number of steps for trajectory check
+#define TRAJECTORY_CHECK_LIMIT  2000
+
 namespace rts2teld
 {
 
@@ -111,10 +114,17 @@ class GEM: public Telescope
 		double getHACWDAngle (int32_t ha_count);
 
 		/**
+		 * Returns angle of DEC axis from pole position (where dec = 90).
+		 */
+		double getPoleAngle (int32_t dc);
+
+		int counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD);
+
+		/**
 		 * Check trajectory. If hardHorizon is present, make sure that the path between current and target coordinates does
 		 * not approach to horizon with given alt/az margin.
 		 *
-		 *
+		 * @param JD                    Julian day for which trajectory will be checked
 		 * @param as			step in counts on RA/HA axe. Must be positive number
 		 * @param ds			step in counts on DEC axe. Must be positive number
 		 * @param steps			total number of steps the trajectory will check
@@ -125,11 +135,16 @@ class GEM: public Telescope
 		 * 1 if the trajectory will hit horizon limit (at and dt contains maximum point where we can track safely)
 		 * 2 if the trajectory will hit hard horizon (at and dt contains maximum point where we can track safely)
 		 */
-		int checkTrajectory (int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning, bool dont_flip);
+		int checkTrajectory (double JD, int32_t ac, int32_t dc, int32_t &at, int32_t &dt, int32_t as, int32_t ds, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning, bool dont_flip);
 
+		/**
+		 * Calculate move to reach given target ac/dc, keeping in mind horizon and other limits.
+		 */
+		int calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, int32_t &t_dc, int pm);
+
+		int checkMoveDEC (double JD, int32_t c_ac, int32_t &c_dc, int32_t &ac, int32_t &dc, int32_t move_d);
 
 	private:
-		int counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD);
 		int normalizeCountValues (int32_t ac, int32_t dc, int32_t &t_ac, int32_t &t_dc, double JD);
 
 };

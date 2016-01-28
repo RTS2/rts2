@@ -32,9 +32,6 @@
 // Crystal frequency
 #define CRYSTAL_FREQ	    96000000
 
-// Limit on number of steps for trajectory check
-#define TRAJECTORY_CHECK_LIMIT  2000
-
 // Bits in error state
 #define ERROR_GATE_VOLTS_LOW	  0x001
 #define ERROR_OVERCURRENT_HARDWARE    0x002
@@ -386,12 +383,9 @@ Sitech::~Sitech(void)
 /* Full stop */
 int Sitech::stopMove ()
 {
-	partialMove->setValueInteger (0);
-	firstSlewCall = true;
 	try
 	{
 		serConn->siTechCommand ('X', "N");
-		usleep (100000);
 		serConn->siTechCommand ('Y', "N");
 
 		wasStopped = true;
@@ -401,6 +395,8 @@ int Sitech::stopMove ()
 		logStream (MESSAGE_ERROR) << "cannot stop " << er << sendLog;
 		return -1;
 	}
+	partialMove->setValueInteger (0);
+	firstSlewCall = true;
 	return 0;
 }
 
@@ -962,106 +958,11 @@ void Sitech::getConfiguration ()
 
 int Sitech::sitechMove (int32_t ac, int32_t dc)
 {
-	int32_t t_ac = ac;
-	int32_t t_dc = dc;
-
 	logStream (MESSAGE_DEBUG) << "sitechMove " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << partialMove->getValueInteger () << sendLog;
 
 	double JD = ln_get_julian_from_sys ();
 
-	// 5 deg margin in altitude and azimuth
-	int ret = checkTrajectory (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
-	logStream (MESSAGE_DEBUG) << "sitechMove checkTrajectory " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
-	// cannot check trajectory, log & return..
-	if (ret == -1)
-	{
-		logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
-		return -1;
-	}
-	// possible hit, move just to where we can go..
-	if (ret > 0)
-	{
-		int32_t move_a = t_ac - r_ra_pos->getValueLong ();
-		int32_t move_d = t_dc - r_dec_pos->getValueLong ();
-
-		int32_t move_diff = labs (move_a) - labs (move_d);
-
-		logStream (MESSAGE_DEBUG) << "sitechMove a " << move_a << " d " << move_d << " diff " << move_diff << sendLog;
-
-		// move for a time, move only one axe..the one which needs more time to move
-		// if we already tried DEC axis, we need to go with RA as second
-		if ((move_diff > 0 && partialMove->getValueInteger () == 0) || partialMove->getValueInteger () == 2)
-		{
-			// if we already move partialy, try to move maximum distance; otherwise, move only difference between axes, so we can decide once we hit point with the same axis distance what's next
-			if (partialMove->getValueInteger () == 2)
-				move_diff = labs (move_a);
-
-			// move for a time only in RA; move_diff is positive, see check above
-			if (move_a > 0)
-				ac = r_ra_pos->getValueLong () + move_diff;
-			else
-				ac = r_ra_pos->getValueLong () - move_diff;
-			dc = r_dec_pos->getValueLong ();
-			ret = checkTrajectory (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
-			logStream (MESSAGE_DEBUG) << "sitechMove RA axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
-			if (ret == -1)
-			{
-				logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
-				return -1;
-			}
-
-			if (ret == 3)
-			{
-				logStream (MESSAGE_WARNING) << "cannot move out of limits with RA only, trying DEC only move" << sendLog;
-				ret = checkMoveDEC (JD, ac, dc, move_d);
-				if (ret < 0)
-				{
-					logStream (MESSAGE_WARNING) << "cannot move RA or DEC only, trying opposite DEC direction for 20 degrees" << sendLog;
-					ret = checkMoveDEC (JD, ac, dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
-					if (ret < 0)
-					{
-						logStream (MESSAGE_ERROR) << "cannot move DEC even in oposite direction, aborting move" << sendLog;
-						return ret;
-					}
-				}
-				// move DEC only, next move will be RA only
-				ret = 2;
-			}
-			else
-			{
-				// move RA only
-				ret = 1;
-			}
-		}
-		else
-		{
-			// first move - move only move_diff, to reach point where both axis will have same distance to go
-			if (partialMove->getValueInteger () == 0)
-			{
-				// move_diff is negative, see check above; fill to move_d move_diff with move_d sign
-				if (move_d < 0)
-					move_d = move_diff;
-				else
-					move_d = -move_diff;
-			}
-			ret = checkMoveDEC (JD, ac, dc, move_d);
-			if (ret < 0)
-			{
-				logStream (MESSAGE_WARNING) << "cannot move RA or DEC only, trying opposite DEC direction for 20 degrees" << sendLog;
-				ret = checkMoveDEC (JD, ac, dc, abs(decCpd->getValueLong ()) * (move_d > 0 ? -20 : 20));
-				if (ret < 0)
-				{
-					logStream (MESSAGE_ERROR) << "cannot move DEC even in oposite direction, aborting move" << sendLog;
-					return ret;
-				}
-			}
-			// move DEC only
-			ret = 2;
-		}
-
-		t_ra_pos->setValueLong (ac);
-		t_dec_pos->setValueLong (dc);
-	}
+	int ret = calculateMove (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, partialMove->getValueInteger ());
 
 	radec_Xrequest.y_dest = ac;
 	radec_Xrequest.x_dest = dc;
@@ -1078,26 +979,6 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	serConn->sendXAxisRequest (radec_Xrequest);
 
 	return ret;
-}
-
-int Sitech::checkMoveDEC (double JD, int32_t &ac, int32_t &dc, int32_t move_d)
-{
-	// move for a time only in DEC
-	ac = r_ra_pos->getValueLong ();
-	dc = r_dec_pos->getValueLong () + move_d;
-	int ret = checkTrajectory (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
-	logStream (MESSAGE_DEBUG) << "sitechMove DEC axis only " << r_ra_pos->getValueLong () << " " << ac << " " << r_dec_pos->getValueLong () << " " << dc << " " << ret << sendLog;
-	if (ret == -1)
-	{
-		logStream (MESSAGE_ERROR | MESSAGE_CRITICAL) << "cannot move to " << ac << " " << dc << sendLog;
-		return -1;
-	}
-	if (ret == 3)
-	{
-		logStream (MESSAGE_WARNING) << "cannot move out of limits with DEC only, aborting move" << sendLog;
-		return -1;
-	}
-	return 0;
 }
 
 void Sitech::runTracking ()
