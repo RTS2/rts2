@@ -138,9 +138,12 @@ int MICCD::info ()
 			case G10400:
 			case G10800:
 			case G11400:
+			case G11200:
 			case G12000:
 			case G2:
 			case G3:
+			case G3_H:
+			case GX_BI:
 				ret = reinitFW ();
 				if (ret)
 					return -1;
@@ -157,10 +160,13 @@ int MICCD::info ()
 		case G10400:
 		case G10800:
 		case G11400:
+		case G11200:
 		case G12000:
 			break;
 		case G2:
 		case G3:
+		case G3_H:
+		case GX_BI:
 			ret = miccd_environment_temperature (&camera, &val);
 			if (ret)
 				return -1;
