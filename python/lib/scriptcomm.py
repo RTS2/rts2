@@ -36,8 +36,14 @@ DEVICE_EXECUTOR    = "EXEC"
 DEVICE_SELECTOR    = "SELECTOR"
 DEVICE_IMGP        = "IMGP"
 
-# constants for dataypes
+# constants for device states
+CAM_EXPOSING       = 0x001
+TEL_TRACKING       = 0x020
+FOC_FOCUSING       = 0x001
+DOME_OPENING       = 0x002
+DOME_CLOSING       = 0x008
 
+# constants for dataypes
 DT_RA              = "DT_RA"
 DT_DEC             = "DT_DEC"
 DT_DEGREES         = "DT_DEGREES"
@@ -190,6 +196,12 @@ class Rts2Comm:
 	def waitIdle(self,device,timeout):
 		"""Wait for idle state (with timeout)"""
 		print 'waitidle',device,timeout
+		sys.stdout.flush()
+		return int(self.readline())
+
+	def waitMask(self,device,mask,timeout):
+		"""Wait for given state (when mask & state = mask)"""
+		print 'waitmask',device,mask,timeout
 		sys.stdout.flush()
 		return int(self.readline())
 
