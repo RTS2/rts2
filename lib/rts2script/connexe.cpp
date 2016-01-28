@@ -225,6 +225,32 @@ void ConnExe::processCommand (char *cmd)
 			writeToProcess ("ERR");
 		}
 	}
+	else if (!strcmp (cmd, "waitmask"))
+	{
+		int tom,mask;
+		if (paramNextString (&device) || paramNextInteger (&mask) || paramNextInteger (&tom))
+			return;
+		rts2core::Connection *conn = getConnectionForScript (device);
+		if (conn)
+		{
+			tom += time (NULL);
+			while (time (NULL) < tom)
+			{
+				if ((conn->getState () & mask) == mask)
+				{
+					writeToProcess ("1");
+					break;
+				}
+				getMaster ()->oneRunLoop ();
+			}
+			if (time (NULL) >= tom)
+				writeToProcess ("0");
+		}
+		else
+		{
+			writeToProcess ("ERR");
+		}
+	}
 	else if (!strcmp (cmd, "log"))
 	{
 		if (paramNextString (&device) || (value = paramNextWholeString ()) == NULL)
