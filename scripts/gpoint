@@ -54,6 +54,9 @@ def print_model_input(filename,first):
 		print "#observatory",h['SITELONG'],h['SITELAT'],h['ELEVATION']
 	print(h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec)
 
+def normalize_az_err(errs):
+	return np.array(map(lambda x: x if x < 180 else x - 360, errs % 360))
+
 # Computes, output, concetanetes and plot pointing models.
 class GPoint:
 	# @param   verbose  verbosity of the
@@ -287,8 +290,8 @@ class GPoint:
 	def plot_model_err(self,grid):
                 import pylab
 		all_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		all_error.plot(self.diff_model_ha * 3600, 'g.')
-		all_error.plot(self.diff_model_dec * 3600.0,'b.')
+		all_error.plot(self.diff_model_ha * 3600, 'g+')
+		all_error.plot(self.diff_model_dec * 3600.0,'b*')
 
 		all_error.set_title('RA DEC error')
 		all_error.set_ylabel('model error (arcsec)')
@@ -296,19 +299,19 @@ class GPoint:
 		self.set_y_axis(all_error)
 		return all_error
 
-	def plot_ra_err(self,grid):
+	def plot_ra_err(self,grid,err):
 		import pylab
 		ra_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		ra_error.plot(self.diff_ra*3600.0, 'r+')
+		ra_error.plot(self.diff_ra*3600.0, 'g+')
 		ra_error.set_ylabel('RA error')
 		self.set_x_axis(ra_error)
 		self.set_y_axis(ra_error)
 		return ra_error
 
-	def plot_dec_err(self,grid):
+	def plot_dec_err(self,grid,err):
 		import pylab
 		dec_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		dec_error.plot(self.diff_dec*3600.0, 'r*')
+		dec_error.plot(self.diff_dec*3600.0, 'b*')
 		dec_error.set_ylabel('DEC error')
 		self.set_x_axis(dec_error)
 		self.set_y_axis(dec_error)
@@ -346,9 +349,12 @@ class GPoint:
 	def plot_alt_err(self,grid,err):
 		import pylab
 		alt_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		if err == 'az':
+		if err == 'alt':
+			alt_error.set_title('Alt-Alt error')
+			errs = self.aa_alt - self.ar_alt
+		elif err == 'az':
 			alt_error.set_title('Alt-Az error')
-			errs = np.array(map(lambda x: x if x < 180 else x - 360, (self.aa_az - self.ar_az) % 360))
+			errs = normalize_az_err(self.aa_az - self.ar_az)
 		elif err == 'dec':
 			alt_error.set_title('Alt-Dec error')
 			errs = self.diff_dec
@@ -357,7 +363,7 @@ class GPoint:
 			errs = self.diff_ra
 		elif err == 'model-az':
 			alt_error.set_title('Model Alt-Az error')
-			errs = np.array(map(lambda x: x if x < 180 else x - 360, (self.aa_az - self.ar_az) % 360))
+			errs = normalize_az_err(self.aa_az - self.ar_az)
 		elif err == 'model-dec':
 			alt_error.set_title('Model Alt-Dec error')
 			errs = self.diff_model_dec
@@ -374,6 +380,9 @@ class GPoint:
 		if err == 'alt':
 			az_error.set_title('Az-Alt error')
 			errs = self.aa_alt - self.ar_alt
+		elif err == 'az':
+			az_error.set_title('Az-Az error')
+			errs = normalize_az_err(self.aa_az - self.ar_az)
 		elif err == 'dec':
 			az_error.set_title('Az-Dec error')
 			errs = self.diff_dec
@@ -430,16 +439,18 @@ class GPoint:
 				self.plot_alt_az(grid[i],'model')
 			elif plot[i] == 'alt-az-real':
 				self.plot_alt_az(grid[i],'real')
+			elif plot[i] == 'alt-alt-err':
+				self.plot_alt_err(grid[i],'alt')
 			elif plot[i] == 'alt-az-err':
 				self.plot_alt_err(grid[i],'az')
 			elif plot[i] == 'alt-dec-err':
 				self.plot_alt_err(grid[i],'dec')
 			elif plot[i] == 'alt-ha-err':
 				self.plot_alt_err(grid[i],'ha')
-			elif plot[i] == 'az-dec-err':
-				self.plot_az_err(grid[i],'dec')
 			elif plot[i] == 'az-alt-err':
 				self.plot_az_err(grid[i],'alt')
+			elif plot[i] == 'az-dec-err':
+				self.plot_az_err(grid[i],'dec')
 			elif plot[i] == 'az-ha-err':
 				self.plot_az_err(grid[i],'ha')
 			elif plot[i] == 'dec-err':
@@ -461,7 +472,7 @@ class GPoint:
 			elif plot[i] == 'ra-err':
 				self.plot_ra_err(grid[i])
 			else:
-				print 'Uknown plot type',plot[i],'know plot types are: alt-az,alt-az-model,alt-az-real,alt-err,az-err,dec-err,model-err,ra-err'
+				print 'Uknown plot type',plot[i],'know plot types are: alt-az,alt-az-model,alt-az-real,alt-alt-err,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err,dec-err,model-err,model-alt-az-err,model-alt-dec-err,model-alt-ha-err,model-az-alt-err,model-alt-dec-err,model-alt-ha-err,ra-err'
 
 		pylab.show()
 

@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2015-12-1</date>">
+  <!ENTITY dhdate      "<date>2016-1-3</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -32,6 +32,7 @@
     </authorgroup>
     <copyright>
       <year>2015</year>
+      <year>2016</year>
       <holder>&dhusername;</holder>
     </copyright>
     &legal;
@@ -50,7 +51,11 @@
       <command>&dhpackage;</command>
       &basicapp;
       <arg choice="plain"><option>-o <replaceable class="parameter">output file</replaceable></option></arg>
-      <arg choice="plain"><option>-p</option></arg>
+      <arg choice="plain"><option>--basic-plots</option></arg>
+      <arg choice="plain"><option>--altaz-plots</option></arg>
+      <arg choice="plain"><option>--altaz-heatmaps</option></arg>
+      <arg choice="plain"><option>--flip <replaceable class="parameter">both|west|east</replaceable></option></arg>
+      <arg choice="plain"><option>-p <replaceable class="parameter">plots</replaceable></option></arg>
       <arg choice="plain"><option>-v</option></arg>
       <arg choice="plain"><option>--latitude <replaceable class="parameter">observatory latitude</replaceable></option></arg>
     </cmdsynopsis>
@@ -67,7 +72,7 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       &basicapp;
-      <arg choice="plain"><option>-r</option></arg>
+      <arg choice="plain"><option>--add-models</option></arg>
     </cmdsynopsis>
 
   </refsynopsisdiv>
@@ -83,11 +88,20 @@
 
     <para>
       For model generation, input file is needed. This can be prepared from
-      pointing run images, which has WCS. GPoint itself cannot prepare the
-      input file. Input file must contain local sidereal time, relevant RA and
-      DEC of the telescope (in telescope coordinates, where e.g. on GEM DEC
-      axis values continue to count above 90/below -90) and true RA DEC
-      coordinates (of center pixel on camera).
+      pointing run images, where correct WCS is recorded. GPoint itself cannot
+      prepare the input file. Input file must contain local sidereal time,
+      relevant RA and DEC of the telescope (in telescope coordinates, where
+      e.g. on GEM DEC axis values continue to count above 90/below -90) and
+      true RA DEC coordinates (of center pixel on camera).
+    </para>
+
+    <para>
+      RTS2 provides a way to run pointing model target. In
+      scripts/build-model.py is a Python script, which if executed as exe
+      (<emphasis>exe /etc/rts2/build-model.py</emphasis>) will take exposures
+      distributed on the sky. If those files are processed by for example
+      <citerefentry><refentrytitle>astrometry.net</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      to obtain true WCS coordinates, they can be feeded to gpoint.
     </para>
 
   </refsect1>
@@ -107,6 +121,12 @@
 	</listitem>
       </varlistentry>
     </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Input file format</title>
+  </refsect1>
+  <refsect1>
+    <title>Plotting options</title>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
