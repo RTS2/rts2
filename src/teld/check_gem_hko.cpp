@@ -13,6 +13,8 @@ class GemTest:public rts2teld::GEM
 
 		void setTelescope (double _lat, double _long, double _alt, long _ra_ticks, long _dec_ticks, int _haZeroPos, double _haZero, double _decZero, double _haCpd, double _decCpd, long _acMin, long _acMax, long _dcMin, long _dcMax);
 		int test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc);
+		int test_counts2sky (double JD, int32_t ac, int32_t dc, double &ra, double &dec);
+		int test_counts2hrz (double JD, int32_t ac, int32_t dc, struct ln_hrz_posn *hrz);
 
 		/**
 		 * Test movement to given target position, from counts in ac dc parameters.
@@ -84,6 +86,18 @@ void teardown_hko (void)
 int GemTest::test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc)
 {
 	return sky2counts (JD, pos, ac, dc, false, 0);
+}
+
+int GemTest::test_counts2sky (double JD, int32_t ac, int32_t dc, double &ra, double &dec)
+{
+	double un_ra, un_dec;
+	int flip;
+	return counts2sky (ac, dc, ra, dec, flip, un_ra, un_dec, JD);
+}
+
+int GemTest::test_counts2hrz (double JD, int32_t ac, int32_t dc, struct ln_hrz_posn *hrz)
+{
+	return counts2hrz (ac, dc, hrz, JD);
 }
 
 float GemTest::test_move (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, float speed, float max_time)
@@ -195,6 +209,16 @@ START_TEST(test_gem_hko)
 
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
 	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
+
+	struct ln_hrz_posn hrz;
+
+	gemTest->test_counts2hrz (JD, -70194687, -48165219, &hrz);
+	ck_assert_dbl_eq (hrz.alt, 17.664712, 10e-2);
+	ck_assert_dbl_eq (hrz.az, 185.232715, 10e-2);
+
+	gemTest->test_counts2hrz (JD, -68591258, -68591258, &hrz);
+	ck_assert_dbl_eq (hrz.alt, 14.962282, 10e-2);
+	ck_assert_dbl_eq (hrz.az, 68.627175, 10e-2);
 }
 END_TEST
 

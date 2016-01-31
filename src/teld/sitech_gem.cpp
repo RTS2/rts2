@@ -76,6 +76,10 @@ class Sitech:public GEM
 
 		virtual int stopMove ();
 
+		virtual void telescopeAboveHorizon ();
+
+		virtual void abortMoveTracking ();
+
 		virtual int startPark ();
 
 		virtual int endPark ()
@@ -122,6 +126,11 @@ class Sitech:public GEM
 		 * Sends SiTech XYS command with requested coordinates.
 		 */
 		int sitechMove (int32_t ac, int32_t dc);
+
+		/**
+		 * Sends SiTech XYS command with requested coordinates.
+		 */
+		void sitechSetTarget (int32_t ac, int32_t dc);
 
 		/**
 		 * Check if movement only in DEC axis is a possibility.
@@ -252,6 +261,9 @@ class Sitech:public GEM
 
 		bool wasStopped;
 
+		int32_t lastSafeAc;
+		int32_t lastSafeDc;
+
 		std::string findErrors (uint16_t e);
 };
 
@@ -267,6 +279,9 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 
 	offsetha = 0.;
 	offsetdec = 0.;
+
+	lastSafeAc = INT_MAX;
+	lastSafeDc = INT_MAX;
 
 	firstSlewCall = true;
 
@@ -288,7 +303,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (t_ra_pos, "T_AXRA", "target RA motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (t_dec_pos, "T_AXDEC", "target DEC motor axis count", true, RTS2_VALUE_WRITABLE);
 
-	createValue (partialMove, "partial_move", "1 - RA only, 2 - DEC only, move just close to the horizon", false);
+	createValue (partialMove, "partial_move", "1 - RA only, 2 - DEC only, 3 - DEC to pole, move just close to the horizon", false);
 	partialMove->setValueInteger (0);
 
 	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
@@ -398,6 +413,26 @@ int Sitech::stopMove ()
 	partialMove->setValueInteger (0);
 	firstSlewCall = true;
 	return 0;
+}
+
+void Sitech::telescopeAboveHorizon ()
+{
+	lastSafeAc = r_ra_pos->getValueLong ();
+	lastSafeDc = r_dec_pos->getValueLong ();
+}
+
+void Sitech::abortMoveTracking ()
+{
+	// check if we are close enough to last safe position..
+	if (fabs (r_ra_pos->getValueLong () - lastSafeAc) < 5 * haCpd->getValueDouble () && fabs (r_dec_pos->getValueLong () - lastSafeDc) < 5 * decCpd->getValueDouble ())
+	{
+		logStream (MESSAGE_INFO) << "moving to last safe position " << lastSafeAc << " " << lastSafeDc << sendLog;
+		sitechSetTarget (lastSafeAc, lastSafeDc);
+	}
+	else
+	{
+		stopMove ();	
+	}
 }
 
 void Sitech::getTel ()
@@ -727,8 +762,6 @@ int Sitech::startResync ()
 
 	wasStopped = false;
 
-	t_ra_pos->setValueLong (ac);
-	t_dec_pos->setValueLong (dc);
 	targetHaCWDAngle->setValueDouble (getHACWDAngle (ac));
 
 	ret = sitechMove (ac, dc);
@@ -752,6 +785,8 @@ int Sitech::isMoving ()
 		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
 		return -1;
 	}
+
+	info ();
 
 	// if resync was only partial..
 	if (partialMove->getValueInteger ())
@@ -963,7 +998,16 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 	double JD = ln_get_julian_from_sys ();
 
 	int ret = calculateMove (JD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), ac, dc, partialMove->getValueInteger ());
+	if (ret < 0)
+		return ret;
 
+	sitechSetTarget (ac, dc);
+
+	return ret;
+}
+
+void Sitech::sitechSetTarget (int32_t ac, int32_t dc)
+{
 	radec_Xrequest.y_dest = ac;
 	radec_Xrequest.x_dest = dc;
 
@@ -978,7 +1022,8 @@ int Sitech::sitechMove (int32_t ac, int32_t dc)
 
 	serConn->sendXAxisRequest (radec_Xrequest);
 
-	return ret;
+	t_ra_pos->setValueLong (ac);
+	t_dec_pos->setValueLong (dc);
 }
 
 void Sitech::runTracking ()

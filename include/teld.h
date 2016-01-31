@@ -804,6 +804,17 @@ class Telescope:public rts2core::Device
 		virtual int stopMove () = 0;
 
 		/**
+		 * Called when telescope is above horizon. Usefull to retrieve
+		 * tick values, which are checked as good.
+		 */
+		virtual void telescopeAboveHorizon () {}
+
+		/** 
+		 * Called when telescope is suddently pointed below horizon.
+		 */
+		virtual void abortMoveTracking ();
+
+		/**
 		 * Set telescope to match given coordinates
 		 *
 		 * This function is mainly used to tell the telescope, where it
