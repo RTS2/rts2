@@ -967,6 +967,7 @@ AC_OUTPUT([Makefile
 	   src/scheduler/Makefile
 	   src/bb/Makefile
 	   src/pluto/Makefile
+	   checks/Makefile
 	   scripts/rts2saf/Makefile
 	   scripts/rts2saf/rts2saf/Makefile]
 )
