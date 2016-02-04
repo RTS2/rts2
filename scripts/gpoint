@@ -299,7 +299,7 @@ class GPoint:
 		self.set_y_axis(all_error)
 		return all_error
 
-	def plot_ra_err(self,grid,err):
+	def plot_ra_err(self,grid):
 		import pylab
 		ra_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		ra_error.plot(self.diff_ra*3600.0, 'g+')
@@ -308,7 +308,7 @@ class GPoint:
 		self.set_y_axis(ra_error)
 		return ra_error
 
-	def plot_dec_err(self,grid,err):
+	def plot_dec_err(self,grid):
 		import pylab
 		dec_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		dec_error.plot(self.diff_dec*3600.0, 'b*')
@@ -562,7 +562,16 @@ def addModels(args):
 	for f in args.inputfiles:
 		params.append(loadModel(f))
 	
-	print 'RTS2_MODEL ',' '.join(map(lambda f:str(f),np.sum(params,axis=0)))
+	out = map(lambda f:str(f),np.sum(params,axis=0))
+
+	if args.model_output is not None:
+		f = open(args.model_output,'w+')
+		f.write('RTS2_MODEL ')
+		for b in out:
+			f.write('{0} '.format(b))
+		f.close()
+
+	print 'RTS2_MODEL ',' '.join(out)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
