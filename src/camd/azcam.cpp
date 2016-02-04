@@ -112,6 +112,7 @@ class AzCam:public rts2camd::Camera
 		int setCamera (const char *name, int value);
 
 		HostString *azcamHost;
+		const char *hostname;
 };
 
 }
@@ -121,10 +122,12 @@ using namespace rts2camd;
 AzCam::AzCam (int argc, char **argv): Camera (argc, argv)
 {
 	azcamHost = NULL;
+	hostname = NULL;
 
 	createExpType ();
 
 	addOption ('a', NULL, 1, "AZCAM hostname, hostname of the computer running AZCam");
+	addOption ('n', NULL, 1, "local hostname, hostname of the computer running RTS2");
 }
 
 AzCam::~AzCam ()
@@ -139,7 +142,10 @@ int AzCam::processOption (int opt)
 	switch (opt)
 	{
 		case 'a':
-			azcamHost = new HostString (optarg, "123");
+			azcamHost = new HostString (optarg, "2402");
+			break;
+		case 'n':
+			hostname = optarg;
 			break;
 		default:
 			return Camera::processOption (opt);
@@ -152,6 +158,12 @@ int AzCam::initHardware()
 	if (azcamHost == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "you need to specify AZCAM host with -a argument" << sendLog;
+		return -1;
+	}
+
+	if (hostname == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "you need to specify local hostname with -n argument" << sendLog;
 		return -1;
 	}
 
@@ -240,7 +252,7 @@ int AzCam::startExposure()
 
 	setFitsTransfer ();
 
-	int ret = setCamera ("RemoteImageServerHost", "mogit");
+	int ret = setCamera ("RemoteImageServerHost", hostname);
 	if (ret)
 		return ret;
 
