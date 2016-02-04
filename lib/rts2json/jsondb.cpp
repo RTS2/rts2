@@ -29,6 +29,7 @@
 #include "rts2db/messagedb.h"
 #include "rts2db/planset.h"
 #include "rts2db/target_auger.h"
+#include "rts2db/tletarget.h"
 
 #include "rts2json/jsondb.h"
 #include "rts2json/jsonvalue.h"
@@ -361,6 +362,22 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		nt.setTargetInfo (std::string (info));
 		nt.setTargetComment (comment);
 		nt.setTargetType (type[0]);
+		nt.save (false);
+
+		os << "\"id\":" << nt.getTargetID ();
+	}
+	else if (vals[0] == "create_tle_target")
+	{
+		const char *tn = params->getString ("tn", "");
+		std::string tle1 = std::string (params->getString ("tle1", ""));
+		std::string tle2 = std::string (params->getString ("tle2", ""));
+		const char *comment = params->getString ("comment", "");
+
+		rts2db::TLETarget nt;
+		nt.setTargetName (tn);
+		nt.setTargetInfo (tle1 + "|" + tle2);
+		nt.setTargetComment (comment);
+		nt.setTargetType (TYPE_TLE);
 		nt.save (false);
 
 		os << "\"id\":" << nt.getTargetID ();

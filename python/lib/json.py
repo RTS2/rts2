@@ -111,6 +111,17 @@ class ChunkResponse(httplib.HTTPResponse):
 		self._safe_read(2)
 		return ret
 
+# Handles db stuff. Internal class, visible through Rts2JSON.db
+class _Rts2JSON__db:
+	def __init__(self,json):
+		self.json = json
+
+	def createTarget(self,name,ra,dec,info='',comment=''):
+		return self.json.loadJson('/api/create_target',{'tn':name,'ra':ra,'dec':dec,'info':info,'comment':comment})
+
+	def createTLETarget(self,name,tle1,tle2,comment=''):
+		return self.json.loadJson('/api/create_tle_target',{'tn':name,'tle1':tle1,'tle2':tle2,'comment':comment})
+
 class Rts2JSON:
 	def __init__(self,url='http://localhost:8889',username=None,password=None,verbose=False,http_proxy=None):
 		use_proxy = False
@@ -140,6 +151,8 @@ class Rts2JSON:
 		elif len(a) == 2:
 			self.host = a[0]
 			self.port = int(a[1])
+
+		self.db = __db(self)
 
 		self.headers = {'Authorization':'Basic' + string.strip(base64.encodestring('{0}:{1}'.format(username,password)))}
 		self.prefix = prefix
