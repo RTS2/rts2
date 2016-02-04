@@ -901,10 +901,17 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 		return;
 	}
 
+	int32_t ac_change = 0;
+	int32_t dc_change = 0;
+
 	if (use_constant_speed->getValueBool () == true)
 	{
-		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI;
-		radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI;
+		// constant 2 degrees tracking..
+		ac_change = fabs (haCpd->getValueDouble ()) * 2.0;
+		dc_change = fabs (decCpd->getValueDouble ()) * 2.0;
+
+		radec_Xrequest.y_speed = fabs (ra_track_speed->getValueDouble ()) * SPEED_MULTI * speed_factor;
+		radec_Xrequest.x_speed = fabs (dec_track_speed->getValueDouble ()) * SPEED_MULTI * speed_factor;
 
 		// 2 degrees in ra; will be called periodically..
 		if (ra_track_speed->getValueDouble () > 0)
@@ -920,8 +927,11 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	else
 	{
 		// 1 step change
-		int32_t ac_step = speed_factor * labs (ac - r_ra_pos->getValueLong ()) / sec_step;
-		int32_t dc_step = speed_factor * labs (dc - r_dec_pos->getValueLong ()) / sec_step;
+		ac_change = labs (ac - r_ra_pos->getValueLong ());
+		dc_change = labs (dc - r_dec_pos->getValueLong ());
+
+		int32_t ac_step = speed_factor * ac_change / sec_step;
+		int32_t dc_step = speed_factor * dc_change / sec_step;
 
 		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (ac_step);
 		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (dc_step);
@@ -962,10 +972,14 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	xbits |= (0x01 << 4);
 
 	// check that the entered trajactory is valid
-	ret = checkTrajectory (getTelJD, ac, dc, radec_Xrequest.y_dest, radec_Xrequest.x_dest, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
-	if (ret != 0)
+	ret = checkTrajectory (getTelJD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), radec_Xrequest.y_dest, radec_Xrequest.x_dest, ac_change / sec_step / 2.0, dc_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
+	if (ret == 2 && speed_factor > 1) // too big move to future, keep target
 	{
-		logStream (MESSAGE_WARNING) << "trajectory from " << ac << " " << dc << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
+		logStream (MESSAGE_INFO) << "soft stop detected while running tracking, move from " << r_ra_pos->getValueLong () << " " << r_dec_pos->getValueLong () << " only to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << sendLog;
+	}
+	else if (ret != 0)
+	{
+		logStream (MESSAGE_WARNING) << "trajectory from " << r_ra_pos->getValueLong () << " " << r_dec_pos->getValueLong () << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
 		stopTracking ();
 		return;
 	}
