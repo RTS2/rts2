@@ -479,6 +479,14 @@ double GEM::getPoleAngle (int32_t dc)
 	return dec_angle < 180 ? dec_angle : dec_angle - 360;
 }
 
+int32_t GEM::getPoleTargetD (int32_t dc)
+{
+	double poleA = getPoleAngle (dc);
+	int32_t t_dc = dc - fabs (decCpd->getValueDouble ()) * poleA;
+	logStream (MESSAGE_DEBUG) << "getPoleTargetD " << dc << " " << t_dc << " pole " << poleA << sendLog;
+	return t_dc;
+}
+
 int GEM::counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD)
 {
 	struct ln_equ_posn tar_radec, untar_radec;
@@ -778,7 +786,7 @@ int GEM::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, in
 			move_d = (move_d > 0 ? 20 : -20) * fabs (decCpd->getValueDouble ());
 		t_ac = c_ac;
 		t_dc = c_dc + move_d;
-		logStream (MESSAGE_DEBUG) << "calculateMove DEC only checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << sendLog;
+		logStream (MESSAGE_DEBUG) << "calculateMove DEC only checkTrajectory +20 deg " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << sendLog;
 		ret = checkTrajectory (JD, c_ac, c_dc, t_ac, t_dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
 		if (ret == -1)
 		{
@@ -789,9 +797,8 @@ int GEM::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, in
 		{
 			// continue moving DEC to pole
 			t_ac = c_ac;
-			double poleA = getPoleAngle (c_dc);
-			t_dc = c_dc - fabs (decCpd->getValueDouble ()) * poleA;
-			logStream (MESSAGE_DEBUG) << "moving DEC axis to pole " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " pole " << poleA << sendLog;
+			t_dc = getPoleTargetD (c_dc);
+			logStream (MESSAGE_DEBUG) << "moving DEC axis to pole " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << sendLog;
 			ret = checkTrajectory (JD, c_ac, c_dc, t_ac, t_dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, false, false);
 			if (ret != 0)
 			{
@@ -800,16 +807,21 @@ int GEM::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, in
 			}
 			return 3;
 		}
+		t_ac = tt_ac;
+		t_dc = tt_dc;
 	}
 	// previously moving in DEC towards pole, now move in HA axis only
 	else if (pm == 3)
 	{
 		int32_t move_a = tt_ac - c_ac;
-		if (fabs (move_a) > 20 * fabs (haCpd->getValueDouble ()))
-			move_a = (move_a > 0 ? 20 : -20) * fabs (haCpd->getValueDouble ());
-		t_ac = c_ac + move_a;
-		t_dc = c_dc - fabs (decCpd->getValueDouble ()) * getPoleAngle (c_dc);
-		logStream (MESSAGE_DEBUG) << "calculateMove HA only checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << sendLog;
+		int32_t move_d = tt_dc - c_dc;
+		// take as target c_ac + count on axis which moves shorter
+		if (fabs (move_a) > fabs (move_d))
+			t_ac = c_ac + (move_a > 0 ? fabs (move_d) : -fabs (move_d));
+		else
+			t_ac = c_ac + move_a;
+		t_dc = getPoleTargetD (c_dc);
+		logStream (MESSAGE_DEBUG) << "calculateMove HA only (DEC to pole) checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << sendLog;
 		ret = checkTrajectory (JD, c_ac, c_dc, t_ac, t_dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, false, false);
 		if (ret != 0)
 		{
@@ -818,11 +830,8 @@ int GEM::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, in
 		}
 		return 1;
 	}
-	else
-	{
-		logStream (MESSAGE_DEBUG) << "calculateMove checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << sendLog;
-		ret = checkTrajectory (JD, c_ac, c_dc, t_ac, t_dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
-	}
+	logStream (MESSAGE_DEBUG) << "calculateMove checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << sendLog;
+	ret = checkTrajectory (JD, c_ac, c_dc, t_ac, t_dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 5.0, 5.0, false, false);
 	logStream (MESSAGE_DEBUG) << "calculateMove checkTrajectory " << c_ac << " " << t_ac << " " << c_dc << " " << t_dc << " " << ret << sendLog;
 	// cannot check trajectory, log & return..
 	if (ret == -1)
@@ -896,6 +905,7 @@ int GEM::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, in
 				else
 					move_d = -move_diff;
 			}
+			t_dc = tt_dc;
 			ret = checkMoveDEC (JD, c_ac, c_dc, t_ac, t_dc, move_d);
 			if (ret < 0)
 			{
@@ -918,7 +928,13 @@ int GEM::checkMoveDEC (double JD, int32_t c_ac, int32_t &c_dc, int32_t &ac, int3
 {
 	// move for a time only in DEC
 	ac = c_ac;
-	dc = c_dc + move_d;
+	int32_t pole_dc = getPoleTargetD (c_dc);
+	// if we can move toward pole, move just toward pole..
+	std::cerr << "c_dc " << c_dc << " pole_dc " << pole_dc << " dc " << dc << std::endl;
+	if ((c_dc < pole_dc && pole_dc < dc) || (dc > pole_dc && pole_dc > c_dc))
+		dc = pole_dc;
+	else
+		dc = c_dc + move_d;
 	int ret = checkTrajectory (JD, c_ac, c_dc, ac, dc, labs (haCpd->getValueLong () / 10), labs (decCpd->getValueLong () / 10), TRAJECTORY_CHECK_LIMIT, 3.0, 3.0, true, false);
 	logStream (MESSAGE_DEBUG) << "checkMoveDEC DEC axis only " << c_ac << " " << ac << " " << c_dc << " " << dc << " " << ret << sendLog;
 	if (ret == -1)
