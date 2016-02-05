@@ -118,6 +118,8 @@ class GEM: public Telescope
 		 */
 		double getPoleAngle (int32_t dc);
 
+		int32_t getPoleTargetD (int32_t dc);
+
 		int counts2hrz (int32_t ac, int32_t dc, struct ln_hrz_posn *hrz, double JD);
 
 		/**
