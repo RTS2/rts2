@@ -930,8 +930,7 @@ int GEM::checkMoveDEC (double JD, int32_t c_ac, int32_t &c_dc, int32_t &ac, int3
 	ac = c_ac;
 	int32_t pole_dc = getPoleTargetD (c_dc);
 	// if we can move toward pole, move just toward pole..
-	std::cerr << "c_dc " << c_dc << " pole_dc " << pole_dc << " dc " << dc << std::endl;
-	if ((c_dc < pole_dc && pole_dc < dc) || (dc > pole_dc && pole_dc > c_dc))
+	if ((c_dc < pole_dc && pole_dc < dc) || (c_dc > pole_dc && pole_dc > dc))
 		dc = pole_dc;
 	else
 		dc = c_dc + move_d;
