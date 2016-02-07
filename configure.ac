@@ -21,7 +21,15 @@ AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
 AM_PATH_PYTHON
-PKG_CHECK_MODULES([CHECK],[check >= 0.9.6])
+
+libcheck="no"
+
+PKG_CHECK_MODULES([CHECK],[check >= 0.9.6],,AC_MSG_RESULT(not found))
+AM_CONDITIONAL(LIBCHECK, test "x$CHECK_LIBS" != x)
+AS_IF([test "x$CHECK_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(LIBCHECK, "1", [use libcheck checking])
+  libcheck="yes"
+])
 
 # check for lang
 AC_LANG_CPLUSPLUS
@@ -76,7 +84,7 @@ AC_ARG_ENABLE(ssl,
 	yes) ssl=yes ;;
 	no)  ssl=no ;;
 	*) AC_MSG_ERROR(bad value ${enableval} for --enable-ssl) ;;
-esac],[ssl=no])
+esac],[ssl=yes])
 
 AC_ARG_ENABLE(focusing,
 [  --disable-focusing      disables focusing in camd (=>camd doesn't need cfitsio to build)],
@@ -135,15 +143,14 @@ AC_ARG_WITH(graphicsmagic,
 esac],[graphicsmagic_config="GraphicsMagick++-config"])
 
 AC_MSG_CHECKING(looking for GraphicsMagick++ library)
-if ${graphicsmagic_config} --libs > /dev/null 2>&1
-then
+AS_IF(["${graphicsmagic_config}" --libs > /dev/null 2>&1], [
 	GRAPHICSMAGICK_VERS=`${graphicsmagic_config} --version`
 	AC_MSG_RESULT(${GRAPHICSMAGICK_VERS} found)
-else
+], [
 	GRAPHICSMAGICK_VERS="no"
 	AC_MSG_RESULT(${graphicsmagic_config} not found)
 	graphicsmagic_config="no"
-fi
+])
 
 AH_TEMPLATE([JSONSOUP],[JSON and SOUP libraries are present])
 
@@ -152,9 +159,9 @@ PKG_CHECK_MODULES([JSONGLIB], [json-glib-1.0 >= 0.1 libsoup-2.4 >= 0.1],,AC_MSG_
 
 AM_CONDITIONAL(JSONSOUP, test "x$JSONGLIB_CFLAGS" != x)
 
-if test "x$JSONGLIB_CFLAGS" != x; then
+AS_IF([test "x$JSONGLIB_CFLAGS" != x], [
 	AC_DEFINE_UNQUOTED(JSONSOUP, "1", [JSON and SOUP libraries are present])
-fi
+])
 
 dnl Check for ROOT (to build contrib scripts)
 
@@ -167,15 +174,14 @@ AC_ARG_WITH(cern-root,
 esac],[root_config="root-config"])
 
 AC_MSG_CHECKING(looking for ROOT libraries)
-if ${root_config} --libs > /dev/null 2>&1
-then
+AS_IF(["${root_config}" --libs > /dev/null 2>&1], [
 	ROOT_VERS=`${root_config} --version`
 	AC_MSG_RESULT(${ROOT_VERS} found)
-else
+], [
 	ROOT_VERS="no"
 	AC_MSG_RESULT(${root_config} not found)
 	root_config="no"
-fi
+])
 
 dnl Check for the XML library
 AC_ARG_WITH(xml2,
@@ -186,17 +192,16 @@ AC_ARG_WITH(xml2,
 	*) XML_CONFIG=${withval} ;;
 esac],[XML_CONFIG=xml2-config])
 AC_MSG_CHECKING(looking for xml2 library)
-if ${XML_CONFIG} --libs print > /dev/null 2>&1
-then
+AS_IF(["${XML_CONFIG}" --libs print > /dev/null 2>&1], [
 	XMLVERS=`${XML_CONFIG} --version`
 	LIBXML_LIBS=`${XML_CONFIG} --libs`
 	LIBXML_CFLAGS=`${XML_CONFIG} --cflags`
 	AC_SUBST(LIBXML_LIBS)
 	AC_SUBST(LIBXML_CFLAGS)
 	AC_MSG_RESULT(${XMLVERS} found)
-else
+], [
 	AC_MSG_ERROR([Could not find ${XML_CONFIG} anywhere, apt-get install libxml2-dev or check ftp://xmlsoft.org/])
-fi
+])
 
 AC_ARG_WITH(pgsql,
 [  --without-pgsql         don't build pgsql dependent clients],
@@ -278,36 +283,36 @@ AC_ARG_WITH(arc-3,
 [  --with-arc-3              path to Astronomical Research Cameras headers, version 3.x. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
 ARC_3="${withval}";
 ARC="${withval}";
-if test x${target_os} == xcygwin; then
+AS_IF([test x${target_os} == xcygwin], [
 	LIB_ARC="${ARC}/CController/CController.a ${ARC}/CDeinterlace/CDeinterlace.o /lib/w32api/libsetupapi.a";
 	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src"
-else
+], [
 	LIB_ARC="-L${ARC}/Release/x64 -lCArcDevice -lCArcDeinterlace";
 	INC_ARC="-I${ARC}/CArcDevice/src -I${ARC}/CArcDeinterlace/src -std=gnu++11"
-fi,
+]),
 [ARC_3=no])
 
-if test x$ARC_3 != xno; then
+AS_IF([test x$ARC_3 != xno], [
 	AC_DEFINE_UNQUOTED([ARC_API_3],1,[If ARC API version 3 is used])
-fi
+])
 
 AH_TEMPLATE([ARC_API_2],[If ARC API version 2 is used])
 AC_ARG_WITH(arc-2,
 [  --with-arc-2              path to Astronomical Research Cameras headers, version 2.0. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
 ARC_2="${withval}";
 ARC="${withval}";
-if test x${target_os} == xcygwin; then
+AS_IF([test x${target_os} == xcygwin] , [
 	LIB_ARC="${ARC}/CController/CController.a ${ARC}/CDeinterlace/CDeinterlace.o /lib/w32api/libsetupapi.a";
 	INC_ARC="-DARC_API_2 -I${ARC}"
-else
+], [
 	LIB_ARC="-L${ARC}/Release -lCController";
 	INC_ARC="-DARC_API_2 -I${ARC}"
-fi,
+]),
 [ARC_2=no])
 
-if test x$ARC_2 != xno; then
+AS_IF([test x$ARC_2 != xno], [
 	AC_DEFINE_UNQUOTED([ARC_API_2],1,[If ARC API version 2 is used])
-fi
+])
 
 AH_TEMPLATE([ARC_API_1_7],[If ARC API version 1.7 is used])
 AC_ARG_WITH(arc-1-7,
@@ -318,9 +323,9 @@ LIB_ARC="-lastropciAPI";
 INC_ARC="-DARC_API_1_7 -I${ARC_1_7}/src",
 [ARC_1_7=no])
 
-if test x$ARC_1_7 != xno; then
+AS_IF([test x$ARC_1_7 != xno], [
 	AC_DEFINE_UNQUOTED([ARC_API_1_7],1,[If ARC API version 1.7 is used])
-fi
+])
 
 AM_CONDITIONAL(ARC, test x$ARC != xno)
 AC_SUBST(ARC)
@@ -332,13 +337,13 @@ AC_ARG_WITH(alta,
 [  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
 # checks for libusb-config
 AC_CHECK_PROG(LIBUSB_CONFIG, libusb-config, yes, no)
-if test "$LIBUSB_CONFIG" = "yes"; then
+AS_IF([test "$LIBUSB_CONFIG" = "yes"], [
   LIBUSB_LDFLAGS=`libusb-config --libs`
   LIBUSB_CFLAGS=`libusb-config --cflags`
   LIBUSB_VERSION=`libusb-config --version`
-else
+], [
   AC_MSG_ERROR([libusb not found!])
-fi
+])
 ALTA="${withval}";
 LIB_ALTA_USB="${ALTA}/apogee_USB.so ${LIBUSB_LDFLAGS}";
 LIB_ALTA_NET="${ALTA}/apogee_NET.so ${LIBUSB_LDFLAGS}";
@@ -386,9 +391,9 @@ LIB_K8055='')
 
 AH_TEMPLATE([WITH_K8055],[K8055 library is not present])
 
-if test x$K8055 != xno; then
+AS_IF([test x$K8055 != xno], [
 	AC_DEFINE_UNQUOTED(WITH_K8055, "1", [K8055 library is present])
-fi
+])
 
 AM_CONDITIONAL(K8055, test x$K8055 != xno)
 AC_SUBST(K8055)
@@ -410,7 +415,7 @@ AC_ARG_WITH(comedi,
 [  --with-comedi	path to COMEDI library, build comedi dependent binaries],
 COMEDI="${withval}";
 LIB_COMEDI="-lcomedi";
-if [ "x${withval}" != "xyes" ]; then INC_COMEDI="-I${withval}"; else INC_COMEDI=""; fi,
+AS_IF([test "x${withval}" != "xyes"], [INC_COMEDI="-I${withval}"], [INC_COMEDI=""]),
 [COMEDI=no])
 
 AM_CONDITIONAL(COMEDI, test x$COMEDI != xno)
@@ -463,9 +468,9 @@ GPIBLIB="${withval}";
 LIB_GPIB="-lgpib",
 [GPIBLIB=no])
 
-if test "x$GPIBLIB" != "xno" ; then
+AS_IF([test "x$GPIBLIB" != "xno"], [
   AC_CHECK_HEADERS([gpib/ib.h])
-fi
+])
 
 AM_CONDITIONAL(GPIBLIB, test x$GPIBLIB != xno)
 AC_SUBST(GPIBLIB)
@@ -516,20 +521,20 @@ AC_SUBST(INC_BIGNG)
 AH_TEMPLATE([PREFIX],[prefix])
 AH_TEMPLATE([SHARE_PREFIX],[share prefix])
 
-if test "x${prefix}" = "x/"; then
+AS_IF([test "x${prefix}" = "x/"], [
         AC_DEFINE_UNQUOTED(PREFIX, "", [prefix])
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "/usr/share", [share prefix])
-else
-	if test "x${prefix}" = "x" -o "x${prefix}" = "xNONE"; then
+], [
+	AS_IF([test "x${prefix}" = "x" -o "x${prefix}" = "xNONE"], [
 		loc_prefix="/usr/local"
 		main_prefix=""
-	else
+	], [
 		loc_prefix="${prefix}"
 		main_prefix="${prefix}"
-	fi
+	])
         AC_DEFINE_UNQUOTED(PREFIX, "${main_prefix}", [prefix])
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "${loc_prefix}/share", [share prefix])
-fi
+])
 AC_SUBST(PREFIX)
 AC_SUBST(SHARE_PREFIX)
 
@@ -558,19 +563,19 @@ AC_SUBST(CENTRALD_PORT)
 # Checks for libraries.
 
 AH_TEMPLATE([SSL], [using openssl in httpd])
-if test "x${ssl}" != "xno"; then
+AS_IF([test "x${ssl}" != "xno"], [
   PKG_CHECK_MODULES(SSL, [openssl >= 1.0.1],,AC_MSG_RESULT(not found))
-fi
+])
 AM_CONDITIONAL(SSL, test "x$SSL_LIBS" != x)
-if test "x$SSL_LIBS" != x; then
+AS_IF([test "x$SSL_LIBS" != x], [
   AC_DEFINE_UNQUOTED(SSL, "1", [using openssl in httpd])
-fi
+])
 
 
-if test "x${cfitsio}" != "xno"; then
-  if test "x${cfitsio}" != "xyes"; then
+AS_IF([test "x${cfitsio}" != "xno"], [
+  AS_IF([test "x${cfitsio}" != "xyes"], [
     LDFLAGS="${LDFLAGS} -L${cfitsio}"
-  fi
+  ])
   AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
 , [cat <<EOF
 **** You don't have cfitsio installed.
@@ -578,20 +583,20 @@ if test "x${cfitsio}" != "xno"; then
 **** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
 EOF
 exit 1])
-  if test "x${cfitsio}" != "xyes"; then
+  AS_IF([test "x${cfitsio}" != "xyes"], [
     LIB_CFITSIO="-L${cfitsio} ${LIB_CFITSIO}"
     CFITSIO_CFLAGS="-I${cfitsio}"
-  else
+  ], [
     CFITSIO_CFLAGS=""
-  fi
+  ])
   AC_SUBST(CFITSIO_CFLAGS)
   AC_SUBST(LIB_CFITSIO)
-fi
+])
 
-if test "x${libwcs}" != "xno"; then
-  if test "x${libwcs}" != "xyes"; then
+AS_IF([test "x${libwcs}" != "xno"], [
+  AS_IF([test "x${libwcs}" != "xyes"], [
     LDFLAGS="${LDFLAGS} -L${libwcs}/libwcs"
-  fi
+  ])
   AC_CHECK_LIB([wcs], [wcs2pix], LIBWCS_LDFLAGS="-lwcs", 
   [cat <<EOF
 **** You don't have libwcs installed.
@@ -602,21 +607,21 @@ if test "x${libwcs}" != "xno"; then
 **** WCS library.
 EOF
   exit 1])
-  if test "x${libwcs}" != "xyes"; then
+  AS_IF([test "x${libwcs}" != "xyes"], [
     LIBWCS_LDFLAGS="-L${libwcs}/libwcs -lwcs"
     LIBWCS_CFLAGS="-I${libwcs}"
-  else
+  ], [
     LIBWCS_LDFLAGS="-lwcs"
-  fi
-fi
+  ])
+])
 
 AM_CONDITIONAL(LIBWCS, test x$libwcs != xno)
 AC_SUBST(LIBWCS_CFLAGS)
 AC_SUBST(LIBWCS_LDFLAGS)
 
-if test "x${ncurses}" != "xyes"; then
+AS_IF([test "x${ncurses}" != "xyes"], [
   LDFLAGS="${LDFLAGS} -L${ncurses}/lib"
-fi     
+])
 
 AC_CHECK_LIB([ncurses], [mvwprintw], LIBNCURSES_LDFLAGS="-lncurses";
 AC_SUBST(LIB_NCURSES), [cat << EOF
@@ -625,29 +630,29 @@ AC_SUBST(LIB_NCURSES), [cat << EOF
 EOF
 exit 1])
 
-if test "x${ncurses}" != "xyes"; then
+AS_IF([test "x${ncurses}" != "xyes"], [
   LIBNCURSES_CFLAGS="-I${ncurses}/include"
   LIBNCURSES_LDFLAGS="-L${ncurses}/lib -lncurses"
-fi
+])
 
 AC_SUBST(LIBNCURSES_CFLAGS)
 AC_SUBST(LIBNCURSES_LDFLAGS)
 
-if test "x${libnova}" != "xyes"; then
+AS_IF([test "x${libnova}" != "xyes"], [
   LDFLAGS="${LDFLAGS} -L${libnova}/lib"
-fi
+])
 AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova", 
 [cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
 exit 1])
-if test "x${libnova}" != "xyes"; then
+AS_IF([test "x${libnova}" != "xyes"], [
   LIB_NOVA="-L${libnova}/lib ${LIB_NOVA}"
   NOVA_CFLAGS="-I${libnova}/include"
-else
+], [
   NOVA_CFLAGS=""
-fi
+])
 AC_SUBST(LIB_NOVA)
 AC_SUBST(NOVA_CFLAGS)
 
@@ -662,32 +667,32 @@ exit 1])
 AH_TEMPLATE([HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF],[If Libnova provides ln_get_heliocentric_time_diff function])
 
 AC_CHECK_DECL(ln_get_heliocentric_time_diff, , ,[#include <libnova/libnova.h>])
-if test "x$ac_cv_have_decl_ln_get_heliocentric_time_diff" = "xyes"; then
+AS_IF([test "x$ac_cv_have_decl_ln_get_heliocentric_time_diff" = "xyes"], [
 	AC_DEFINE_UNQUOTED(HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF, 1, [If Libnova provides ln_get_heliocentric_time_diff function])
-fi
+])
 
 AH_TEMPLATE([HAVE_DECL_LN_GET_ALT_FROM_AIRMASS],[If Libnova provides ln_get_alt_from_airmass function])
 
 AC_CHECK_DECL(ln_get_alt_from_airmass, , ,[#include <libnova/libnova.h>])
-if test "x$ac_cv_have_decl_ln_get_alt_from_airmass" = "xyes"; then
+AS_IF([test "x$ac_cv_have_decl_ln_get_alt_from_airmass" = "xyes"], [
 	AC_DEFINE_UNQUOTED(HAVE_DECL_LN_GET_ALT_FROM_AIRMASS, 1, [If Libnova provides ln_get_alt_from_airmass function])
-fi
+])
 
-if test "x"$xfocusc = "xyes"; then
+AS_IF([test "x"$xfocusc = "xyes"], [
 	AC_PATH_XTRA
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
-fi
+])
 
 AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagicsk++ is installed])
 
-if test "x${graphicsmagic_config}" != "xno"; then
+AS_IF([test "x${graphicsmagic_config}" != "xno"], [
   LIB_JPEG=`${graphicsmagic_config} --libs`
   JPEG_CFLAGS=`${graphicsmagic_config} --cppflags`
   AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[Whenever JPEG is installed])
-else
+], [
   LIB_JPEG=""
   JPEG_CFLAGS=""
-fi
+])
 AC_SUBST(LIB_JPEG)
 AC_SUBST(JPEG_CFLAGS)
 
@@ -695,14 +700,14 @@ AM_CONDITIONAL(GRAPHICSMAGICK, test x$graphicsmagic_config != xno)
 
 AH_TEMPLATE([HAVE_CERN_ROOT],[If CERN ROOT package is installed])
 
-if test "x${root_config}" != "xno"; then
+AS_IF([test "x${root_config}" != "xno"], [
   LIB_ROOT=`${root_config} --libs`
   ROOT_CXXFLAGS="-I `${root_config} --incdir`"
   AC_DEFINE_UNQUOTED(HAVE_CERN_ROOT,1,[If CERN ROOT package is installed])
-else
+], [
   LIB_ROOT=""
   ROOT_CXXFLAGS=""
-fi
+])
 AC_SUBST(LIB_ROOT)
 AC_SUBST(ROOT_CXXFLAGS)
 
@@ -714,54 +719,54 @@ AC_SUBST(LIBARCHIVE_CFLAGS)
 
 AH_TEMPLATE([HAVE_LIBARCHIVE],[If libarchive is present])
  
-if test "x$LIBARCHIVE_LIBS" != "x"; then
+AS_IF([test "x$LIBARCHIVE_LIBS" != "x"], [
 	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
 	libarchive="yes"
-else
+], [
 	libarchive="no"
-fi
+])
 
-if test "x$COMEDI" != "xno"; then
+AS_IF([test "x$COMEDI" != "xno"], [
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 	AC_SUBST(LIB_COMEDI), [cat << EOF
 #**** You don't have comedi library installed.
 **** Please download it from http://www.comedi.org
 EOF
 	exit 1])
-fi
+])
 
-if test "x$epics" != "xno"; then
-	if test `uname` == 'Linux'; then
+AS_IF([test "x$epics" != "xno"], [
+	AS_IF([test `uname` == 'Linux'], [
 		AC_CHECK_LIB([readline],[readline],,[cat << EOF
 **** You do not have readline library. For some reasons, it is
 **** needed if you build with EPICS. Please install readline-dev package.
 EOF
 			exit 1])
-	fi
-  	if test "x$epics" != "xyes"; then
-		if test "x$EPICS_HOST_ARCH" = "x"; then
+	])
+  	AS_IF([test "x$epics" != "xyes"], [
+		AS_IF([test "x$EPICS_HOST_ARCH" = "x"], [
 		  	cat << EOF
 **** Please define EPICS_HOST_ARCH varible. It content should be same as
 **** the variable you used when you build EPICS library.
 EOF
 			exit 1
-		fi
+		])
 		LDFLAGS="${LDFLAGS} -L${epics}/lib/${EPICS_HOST_ARCH}"
 		LIB_EPICS="-L${epics}/lib/${EPICS_HOST_ARCH}"
-		if echo $EPICS_HOST_ARCH | grep ^linux; then
+		AS_IF([echo "$EPICS_HOST_ARCH" | grep ^linux], [
 			INC_EPICS="-I${epics}/include -I${epics}/include/os/Linux"
-		else
-		if echo $EPICS_HOST_ARCH | grep ^solaris; then
-			INC_EPICS="-I${epics}/include -I${epics}/include/os/solaris"
-		else
-		  	echo "**** Unsupported EPICS_HOST_ARCH argument ${EPICS_HOST_ARCH}"
-			exit 1
-		fi
-		fi
-	else
+		], [
+			AS_IF([echo "$EPICS_HOST_ARCH" | grep ^solaris], [
+				INC_EPICS="-I${epics}/include -I${epics}/include/os/solaris"
+			], [
+			  	echo "**** Unsupported EPICS_HOST_ARCH argument ${EPICS_HOST_ARCH}"
+				exit 1
+			])
+		])
+	], [
 		LIB_EPICS=""
 		INC_EPICS=""
-	fi
+	])
 	AC_CHECK_LIB([ca], [ca_context_create],
 	LIB_EPICS="-lca ${LIB_EPICS}",
 	[cat << EOF
@@ -772,7 +777,7 @@ EOF
 
 	AC_SUBST(LIB_EPICS)
 	AC_SUBST(INC_EPICS)
-fi
+])
 
 AH_TEMPLATE([HAVE_CRYPT],[If crypt library is installed])
 
@@ -789,12 +794,12 @@ LIB_CRYPT=""
 
 AC_MSG_CHECKING(for build date)
 DATE=`date +%Y-%m-%d`
-if test "z"$DATE = "z" ; then
+AS_IF([test "z"$DATE = "z"], [
 	AC_MSG_RESULT(none found)
 	DATE="unknow"
-else
+], [
 	AC_MSG_RESULT($DATE)
-fi
+])
 
 LDADD=""
 AC_SUBST(LDADD)
@@ -811,7 +816,7 @@ AH_TEMPLATE([HAVE_PGSQL_9], [If PGSQL version is 9 or higher])
 AH_TEMPLATE([HAVE_ECPG_9], [If ECPG version is 9 or higher])
 AH_TEMPLATE([HAVE_PGSQL_SET_VARSIZE], [If PGSQL provides SET_VARSIZE function])
 
-if test "x"$psql = xyes ; then
+AS_IF([test "x"$psql = xyes], [
   AC_POSTGRESQL
   AC_ECPG
 
@@ -823,20 +828,20 @@ if test "x"$psql = xyes ; then
 
   AC_DEFINE_UNQUOTED(HAVE_PGSQL, 1, [Whenever PGSQL is installed])
 
-  if test $PG_MAJOR -gt 7 ; then
+  AS_IF([test $PG_MAJOR -gt 7], [
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_8, 1, [If PGSQL version is 8 or higher])
-  fi
-  if test $PG_MAJOR -gt 8 ; then
+  ])
+  AS_IF([test $PG_MAJOR -gt 8], [
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_9, 1, [If PGSQL version is 9 or higher])
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_SET_VARSIZE, 1, [If PGSQL provides SET_VARSIZE function])
-  fi
-  if test $ECPG_MAJOR -gt 8 ; then
+  ])
+  AS_IF([test $ECPG_MAJOR -gt 8], [
     AC_DEFINE_UNQUOTED(HAVE_ECPG_9, 1, [If ECPG version is 9 or higher])
-  fi
-  if test $PG_MAJOR -eq 8 -a $PG_MINOR -gt 2 ; then
+  ])
+  AS_IF([test $PG_MAJOR -eq 8 -a $PG_MINOR -gt 2], [
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_SET_VARSIZE, 1, [If PGSQL provides SET_VARSIZE function])
-  fi
-fi
+  ])
+])
 
 AM_CONDITIONAL(PGSQL, test x$psql = xyes)
 
@@ -850,7 +855,7 @@ DB2MAN=$docbook/manpages/docbook.xsl;
 DB2FOP=$docbook/fo/docbook.xsl,
 [docbook=detect])
 
-if test "x$docbook" == 'xdetect'; then
+AS_IF([test "x$docbook" == 'xdetect'], [
 	# Ubuntu docbook localization
 	AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl,[])
 	AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl,[])
@@ -862,17 +867,17 @@ if test "x$docbook" == 'xdetect'; then
 	# SUSE docbook localization
 	AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl],DB2MAN=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl,[])
 	AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/fo/docbook.xsl],DB2FOP=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/fo/docbook.xsl,[])
-else
-	if test "x$docbook" != "xno"; then
-		if test x$DB2MAN != "xno"; then
+], [
+	AS_IF([test "x$docbook" != "xno"], [
+		AS_IF([test x$DB2MAN != "xno"], [
 			AC_CHECK_FILE([$DB2MAN],[],exit)
-		fi
+		])
 
-		if test x$DB2FOP != "xno"; then
+		AS_IF([test x$DB2FOP != "xno"], [
 			AC_CHECK_FILE([$DB2FOP],[],exit)
-		fi
-	fi
-fi
+		])
+	])
+])
 
 AC_SUBST(DB2MAN)
 AC_SUBST(DB2FOP)
@@ -993,6 +998,7 @@ echo "
   crypt         ${LIB_CRYPT}
   libgjson	${JSONGLIB_CFLAGS} ${JSONGLIB_LIBS}
   openssl       ${ssl}
+  libcheck	${libcheck}
 
 CCDs:
   alta          ${ALTA}
