@@ -135,6 +135,56 @@ START_TEST(test_gem_hko_2)
 }
 END_TEST
 
+START_TEST(test_gem_hko_3)
+{
+	// 2016-02-06T04:26:33.577 HST T0 4 moving from 13:16:08.440 +57:54:02.97 to 12:52:00.000 +52:50:13.89 (altaz from +52 45 44.70 182 10 55.11)
+	// counts ra -48150538 -80529275 dec -43263229 -56169569
+	struct ln_date test_t;
+	test_t.years = 2016;
+	test_t.months = 2;
+	test_t.days = 6;
+	test_t.hours = 14;
+	test_t.minutes = 26;
+	test_t.seconds = 33;
+
+	double JD = ln_get_julian_day (&test_t);
+	ck_assert_dbl_eq (JD, 2457425.101771, 10e-5);
+
+	struct ln_equ_posn pos;
+
+	// origin
+	pos.ra = 199.0333;
+	pos.dec = 57.900;
+
+	int32_t ac = -40000000;
+	int32_t dc = -68000000;
+
+	int ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+	ck_assert_int_eq (ret, 0);
+	ck_assert_int_eq (ac, -48150618);
+	ck_assert_int_eq (dc, -43263075);
+
+	// target
+	pos.ra = 193.0;
+	pos.dec = 52.837;
+
+	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
+	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
+
+	ck_assert_int_eq (ac, -80580362);
+	ck_assert_int_eq (dc, -56174633);
+
+	struct ln_equ_posn curr;
+	curr.ra = curr.dec = 0;
+
+	gemTest->test_counts2sky (JD, ac, dc, curr.ra, curr.dec);
+
+	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-5);
+	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-5);
+}
+END_TEST
+
+
 Suite * gem_suite (void)
 {
 	Suite *s;
@@ -146,6 +196,7 @@ Suite * gem_suite (void)
 	tcase_add_checked_fixture (tc_gem_hko_pointings, setup_hko, teardown_hko);
 	tcase_add_test (tc_gem_hko_pointings, test_gem_hko_1);
 	tcase_add_test (tc_gem_hko_pointings, test_gem_hko_2);
+	tcase_add_test (tc_gem_hko_pointings, test_gem_hko_3);
 	suite_add_tcase (s, tc_gem_hko_pointings);
 
 	return s;
