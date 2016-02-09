@@ -10,7 +10,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
 	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity \
 	rts2-sensor-apm-multidev rts2-sensor-thermocube rts2-sensor-reinhardt rts2-sensor-davis \
-	rts2-sensor-servodrive
+	rts2-sensor-servodrive-r272
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h apm-filter.h \
 	apm-mirror.h apm-relay.h
@@ -132,7 +132,7 @@ rts2_sensor_reinhardt_SOURCES = reinhardt.cpp
 
 rts2_sensor_davis_SOURCES = davis.cpp
 
-rts2_sensor_servodrive_SOURCES = servodrive.cpp
+rts2_sensor_servodrive_r272_SOURCES = servodrive-r272.cpp
 
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe
