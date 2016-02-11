@@ -407,7 +407,7 @@ class GPoint:
 		az_error.grid(which='both')
 		return az_error
 
-	def plot(self,plots):
+	def __gen_plot(self,plots):
 		import pylab
 		plot = []
 		grid = []
@@ -474,7 +474,13 @@ class GPoint:
 			else:
 				print 'Uknown plot type',plot[i],'know plot types are: alt-az,alt-az-model,alt-az-real,alt-alt-err,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err,dec-err,model-err,model-alt-az-err,model-alt-dec-err,model-alt-ha-err,model-az-alt-err,model-alt-dec-err,model-alt-ha-err,ra-err'
 
-		pylab.show()
+	def plot(self,plots,ofile=None):
+		import pylab
+		self.__gen_plot(plots)
+		if ofile is None:
+			pylab.show()
+		else:
+			pylab.savefig(ofile)
 
 	def plotoffsets(self,best,ha_start,ha_end,dec):
 		import pylab
@@ -487,14 +493,6 @@ class GPoint:
 			dec_offsets.append(self.model_dec(best,ha,dec))
 
 		pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
-		pylab.show()
-
-	def plotpolarradec(self,count):
-		import pylab
-
-		polar = pylab.subplot(111, projection='polar')
-		polar.plot(np.degrees(self.aa_ra),np.abs(np.degrees(self.aa_dec)),'r*',np.degrees(self.ar_ra),np.abs(np.degrees(self.ar_dec)),'g.')
-		polar.set_rmax(90)
 		pylab.show()
 
 # Generate pointing model
@@ -535,7 +533,7 @@ def generateModel(args):
 		plots=','.join([altaz,plots]) if plots else altaz
 
 	if plots:
-		model.plot(plots)
+		model.plot(plots,args.oplot)
 
 def loadModel(modelfile):
 	f = open(modelfile)
@@ -579,6 +577,7 @@ if __name__ == '__main__':
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err)')
+	parser.add_argument('-s',dest='oplot',action='store',help='save plot to file instead of displaying it on screen',default=None)
 	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ra-err,dec-err)',default=False)
 	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ra-err,dec-err,alt-az-real)',default=False)
 	parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
