@@ -53,6 +53,8 @@ class ServoDrive:public Sensor
 
 		int beginLoading ();
 		int executeProgramme ();
+
+		int home (char d);
 };
 
 };
@@ -81,6 +83,7 @@ int ServoDrive::setValue (rts2core::Value * old_value, rts2core::Value * new_val
 		beginLoading ();
 		long diff = new_value->getValueLong () - old_value->getValueLong ();
 		sendCommand ("BG*");
+		sendCommand ("EN*");
 		if (diff == 0)
 			return 0;
 		if (diff > 0)
@@ -112,10 +115,11 @@ int ServoDrive::processOption (int in_opt)
 
 int ServoDrive::initHardware ()
 {
-	servoDev = new rts2core::ConnSerial (dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 200);
+	servoDev = new rts2core::ConnSerial (dev, this, rts2core::BS9600, rts2core::C8, rts2core::EVEN, 200);
 	int ret = servoDev->init ();
 	if (ret)
 		return ret;
+	servoDev->setDebug (getDebug ());
 	servoDev->flushPortIO ();
 	
 	return 0;
@@ -128,13 +132,27 @@ int ServoDrive::info ()
 
 int ServoDrive::commandAuthorized (rts2core::Connection * conn)
 {
+	if (conn->isCommand ("home"))
+	{
+		char *mv;
+		if (!conn->paramEnd ())
+		{
+			if (conn->paramNextStringNull (&mv) || !conn->paramEnd ())
+				return -2;
+			return home (mv[0]);
+		}
+		else
+		{
+			return home ('H');
+		}
+	}
 	return Sensor::commandAuthorized (conn);
 }
 
 int ServoDrive::sendCommand (const char *cmd)
 {
-	char rbuf[5];
-	int ret = servoDev->writeRead (cmd, strlen (cmd), rbuf, 4);
+	char rbuf[strlen (cmd) + 5];
+	int ret = servoDev->writeRead (cmd, strlen (cmd), rbuf, strlen (cmd) + 4);
 	if (ret != 4)
 		return -1;
 	if (rbuf[0] != 'E' || isdigit (rbuf[1]) == 0 || isdigit (rbuf[2]) == 0 || rbuf[3] != '*')
@@ -153,6 +171,27 @@ int ServoDrive::beginLoading ()
 int ServoDrive::executeProgramme ()
 {
 	return sendCommand ("ST1*");
+}
+
+int ServoDrive::home (char d)
+{
+	beginLoading ();
+	sendCommand ("BG*");
+	sendCommand ("EN*");
+	char md = 'R';
+	if (!(d == 'L' || d == 'H'))
+		d = 'H';
+	if (d == 'H')
+		md = 'L';
+	char dcmd[4] = "DR*";
+	dcmd[1] = md;
+	sendCommand (dcmd);
+	char cmd[4] = "MH*";
+	cmd[1] = d;
+	sendCommand (cmd);
+	sendCommand ("ED*");
+	executeProgramme ();
+	return 0;
 }
 
 int main (int argc, char **argv)
