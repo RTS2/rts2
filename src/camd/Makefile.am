@@ -1,17 +1,16 @@
 # $Id$
 
-SUBDIRS = urvc2 apogee edtsao si8821
+SUBDIRS = urvc2 apogee edtsao si8821 sxccd
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam rts2-camd-si8821
+bin_PROGRAMS = rts2-camd-sx rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam rts2-camd-si8821
 
-noinst_HEADERS = ccd_msg.h reflex.h
+noinst_HEADERS = reflex.h
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
-rts2_camd_miniccd_SOURCES = miniccd.cpp
-
-rts2_camd_miniccd_il_SOURCES = miniccd_il.cpp
+rts2_camd_sx_SOURCES = sx.cpp
+rts2_camd_sx_LDADD = sxccd/libsxccdusb.a ${LDADD} -lusb-1.0
 
 rts2_camd_dummy_SOURCES = dummy.cpp
 rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
