@@ -80,6 +80,7 @@ int ServoDrive::setValue (rts2core::Value * old_value, rts2core::Value * new_val
 {
 	if (old_value == target)
 	{
+		servoDev->flushPortIO ();
 		beginLoading ();
 		long diff = new_value->getValueLong () - old_value->getValueLong ();
 		sendCommand ("BG*");
@@ -145,6 +146,12 @@ int ServoDrive::commandAuthorized (rts2core::Connection * conn)
 		{
 			return home ('H');
 		}
+	}
+	if (conn->isCommand ("r"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return sendCommand ("ST1*") == 0 ? 0 : -2;
 	}
 	return Sensor::commandAuthorized (conn);
 }
