@@ -941,6 +941,7 @@ AC_OUTPUT([Makefile
 	   src/camd/apogee/Makefile
 	   src/camd/edtsao/Makefile
 	   src/camd/si8821/Makefile
+	   src/camd/sxccd/Makefile
 	   src/dome/Makefile
 	   src/dome/zelio/Makefile
 	   src/filterd/Makefile
