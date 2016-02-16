@@ -60,12 +60,14 @@ def normalize_az_err(errs):
 # Computes, output, concetanetes and plot pointing models.
 class GPoint:
 	# @param   verbose  verbosity of the
-	def __init__(self,verbose=0,latitude=None):
+	def __init__(self,verbose=0,latitude=None,longitude=None,altitude=None):
 		self.aa_ra = None
 		self.verbose = verbose
 		self.indata = []
 		# telescope latitude - north positive
-		self.latitude = latitude
+		self.latitude = self.def_latitude = latitude
+		self.longitude = self.def_longitude = longitude
+		self.altitude = self.def_altitude = altitude
 		if latitude is not None:
 			self.latitude_r = np.radians(latitude)
 
@@ -120,29 +122,37 @@ class GPoint:
 	## observatory <longitude> <latitude> <altitude>
 	#02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
 	#skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
-	def process_file(self,filename,flips):
+	def process_files(self,filenames,flips):
 		obsmatch = re.compile('#\s*observatory\s+(\S*)\s+(\S*)\s+(\S*)\s*')
 
-		f = open(filename)
-		# skip first line
-		f.readline()
-		line = f.readline()
 		rdata = []
-		while not(line == ''):
-			if line[0] == '#':
-				m = obsmatch.match(line)
-				if m:
-					if self.latitude is not None:
-						sys.exit('You cannot specify latitude twice!')
-					self.latitude=float(m.group(2))
-			else:
-				s = line.split()
-				self.indata.append(s)
-				rdata.append(s[:9])
 
+		for filename in filenames:
+			f = open(filename)
+			# skip first line
+			f.readline()
 			line = f.readline()
+			while not(line == ''):
+				if line[0] == '#':
+					m = obsmatch.match(line)
+					if m:
+						if self.latitude is None:
+							self.latitude=m.group(2)
+						elif self.def_latitude is None and self.latitude!=m.group(2):
+							sys.exit('Cannot (yet) perform calculation on two different latitudes: {0} {1}'.format(self.latitude,m.group(2)))
+						# others are not yet used..will be interesting for refraction, if included in model
+						if self.longitude is None:
+							self.longitude=float(m.group(1))
+						if self.altitude is None:
+							self.altitude=float(m.group(3))
+				else:
+					s = line.split()
+					self.indata.append(s)
+					rdata.append(s[:9])
 
-		f.close()
+				line = f.readline()
+
+			f.close()
 		
 		if self.verbose:
 			print "Input data",rdata
@@ -150,7 +160,7 @@ class GPoint:
 		if self.latitude is None:
 			sys.exit("You must specify latitude! Either through --latitude option, or in input file (on #observatory line).")
 
-		self.latitude_r = np.radians(self.latitude)
+		self.latitude_r = np.radians(float(self.latitude))
 
 		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
@@ -191,28 +201,28 @@ class GPoint:
 		self.diff_dec = self.aa_dec - self.ar_dec
 		self.diff_angular = rts2.libnova.angular_separation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
 
-		self.aa_ra = np.radians(self.aa_ra)
-		self.aa_dec = np.radians(self.aa_dec)
-		self.ar_ra = np.radians(self.ar_ra)
-		self.ar_dec = np.radians(self.ar_dec)
+		self.rad_aa_ra = np.radians(self.aa_ra)
+		self.rad_aa_dec = np.radians(self.aa_dec)
+		self.rad_ar_ra = np.radians(self.ar_ra)
+		self.rad_ar_dec = np.radians(self.ar_dec)
 
 		# transform to alt/az
-		self.aa_alt,self.aa_az = self.equ_to_hrz(self.aa_ra,self.aa_dec)
-		self.ar_alt,self.ar_az = self.equ_to_hrz(self.ar_ra,self.ar_dec)
+		self.aa_alt,self.aa_az = self.equ_to_hrz(self.rad_aa_ra,self.rad_aa_dec)
+		self.ar_alt,self.ar_az = self.equ_to_hrz(self.rad_ar_ra,self.rad_ar_dec)
 
-		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec),full_output=True)
+		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec),full_output=True)
 
 		# feed parameters to diff, obtain model differences. Closer to zero = better
 
-		self.f_model_ha = self.fit_model_ha(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec)
-		self.f_model_dec = self.fit_model_dec(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec)
+		self.f_model_ha = self.fit_model_ha(self.best,self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec)
+		self.f_model_dec = self.fit_model_dec(self.best,self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec)
 
 		self.diff_model_ha = np.degrees(self.f_model_ha)
 		self.diff_model_dec = np.degrees(self.f_model_dec)
 
-		self.am_alt,self.am_az = self.equ_to_hrz(self.aa_ra - self.f_model_ha,self.aa_dec - self.f_model_dec)
+		self.am_alt,self.am_az = self.equ_to_hrz(self.rad_aa_ra - self.f_model_ha,self.rad_aa_dec - self.f_model_dec)
 
-		self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra - self.f_model_ha,self.aa_dec - self.f_model_dec,self.ar_ra,self.ar_dec)
+		self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra - self.diff_model_ha,self.aa_dec - self.diff_model_dec,self.ar_ra,self.ar_dec)
 
 		return self.best
 
@@ -509,8 +519,8 @@ class GPoint:
 # Generate pointing model
 def generateModel(args):
 	model = GPoint(args.verbose,latitude=args.latitude)
-	
-	model.process_file(args.inputfiles[0],args.flips)
+
+	model.process_files(args.inputfiles,args.flips)
 	model.print_params()
 	model.print_stat()
 
