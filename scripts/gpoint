@@ -203,10 +203,16 @@ class GPoint:
 		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec),full_output=True)
 
 		# feed parameters to diff, obtain model differences. Closer to zero = better
-		self.diff_model_ha = np.degrees(self.fit_model_ha(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
-		self.diff_model_dec = np.degrees(self.fit_model_dec(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec))
 
-                self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra - self.diff_model_ha,self.aa_dec - self.diff_model_dec,self.ar_ra,self.ar_dec)
+		self.f_model_ha = self.fit_model_ha(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec)
+		self.f_model_dec = self.fit_model_dec(self.best,self.aa_ra,self.ar_ra,self.aa_dec,self.ar_dec)
+
+		self.diff_model_ha = np.degrees(self.f_model_ha)
+		self.diff_model_dec = np.degrees(self.f_model_dec)
+
+		self.am_alt,self.am_az = self.equ_to_hrz(self.aa_ra - self.f_model_ha,self.aa_dec - self.f_model_dec)
+
+		self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra - self.f_model_ha,self.aa_dec - self.f_model_dec,self.ar_ra,self.ar_dec)
 
 		return self.best
 
@@ -346,7 +352,7 @@ class GPoint:
 			polar.set_title('Alt-Az distribution')
                 return polar
 
-	def plot_alt_err(self,grid,err):
+	def plot_alt_err(self,grid,err,errm=None):
 		import pylab
 		alt_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		if err == 'alt':
@@ -363,7 +369,7 @@ class GPoint:
 			errs = self.diff_ra
 		elif err == 'model-az':
 			alt_error.set_title('Model Alt-Az error')
-			errs = normalize_az_err(self.aa_az - self.ar_az)
+			errs = normalize_az_err(self.am_az - self.ar_az)
 		elif err == 'model-dec':
 			alt_error.set_title('Model Alt-Dec error')
 			errs = self.diff_model_dec
@@ -371,6 +377,9 @@ class GPoint:
 			alt_error.set_title('Model Alt-HA error')
 			errs = self.diff_model_ha
 		alt_error.plot(self.aa_alt, errs * 3600.0, 'r.')
+		if errm is not None:
+			if errm == 'model-az':
+				alt_error.plot(self.aa_alt,normalize_az_err(self.am_az - self.ar_az) * 3600.0, 'g.')
 		self.set_y_axis(alt_error)
 		return alt_error
 
@@ -391,7 +400,7 @@ class GPoint:
 			errs = self.diff_ra
 		elif err == 'model-alt':
 			az_error.set_title('Model Az-Alt error')
-			errs = self.aa_alt - self.ar_alt
+			errs = self.am_alt - self.ar_alt
 		elif err == 'model-dec':
 			az_error.set_title('Model Az-Dec error')
 			errs = self.diff_model_dec
@@ -443,6 +452,8 @@ class GPoint:
 				self.plot_alt_err(grid[i],'alt')
 			elif plot[i] == 'alt-az-err':
 				self.plot_alt_err(grid[i],'az')
+			elif plot[i] == 'alt-az-model-az-err':
+				self.plot_alt_err(grid[i],'az','model-az')
 			elif plot[i] == 'alt-dec-err':
 				self.plot_alt_err(grid[i],'dec')
 			elif plot[i] == 'alt-ha-err':
