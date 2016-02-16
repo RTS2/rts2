@@ -281,7 +281,10 @@ class GPoint:
 			try:
 				return self.mjd_ticks[int(x)]
 			except KeyError,ke:
-				return self.mjd[int(x)]
+				try:
+					return self.mjd[int(x)]
+				except IndexError,ie:
+					return x
 
 		plot.xaxis.set_major_formatter(pylab.FuncFormatter(mjd_formatter))
 		plot.set_xticks(self.mjd_ticks.keys())
@@ -315,21 +318,39 @@ class GPoint:
 		self.set_y_axis(all_error)
 		return all_error
 
-	def plot_ra_err(self,grid):
+	def plot_ha_err(self,grid,err=''):
 		import pylab
 		ra_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		ra_error.plot(self.diff_ra*3600.0, 'g+')
+		if err == '':
+			errs = self.diff_ra
+		elif err == 'alt':
+			errs = self.aa_alt - self.ar_alt
+		elif err == 'az':
+			errs = self.aa_az - self.ar_az
+		elif err == 'model-alt':
+			errs = self.am_alt - self.ar_alt
+		elif err == 'model-az':
+			errs = self.am_az - self.ar_az
+		ra_error.plot(self.aa_ra,errs*3600.0, 'g+')
 		ra_error.set_ylabel('RA error')
-		self.set_x_axis(ra_error)
 		self.set_y_axis(ra_error)
 		return ra_error
 
-	def plot_dec_err(self,grid):
+	def plot_dec_err(self,grid,err):
 		import pylab
 		dec_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		dec_error.plot(self.diff_dec*3600.0, 'b*')
+		if err == '':
+			errs = self.diff_ra
+		elif err == 'alt':
+			errs = self.aa_alt - self.ar_alt
+		elif err == 'az':
+			errs = self.aa_az - self.ar_az
+		elif err == 'model-alt':
+			errs = self.am_alt - self.ar_alt
+		elif err == 'model-az':
+			errs = self.am_az - self.ar_az
+		dec_error.plot(self.aa_dec,errs*3600.0, 'b*')
 		dec_error.set_ylabel('DEC error')
-		self.set_x_axis(dec_error)
 		self.set_y_axis(dec_error)
 		return dec_error
 
@@ -474,8 +495,6 @@ class GPoint:
 				self.plot_az_err(grid[i],'dec')
 			elif plot[i] == 'az-ha-err':
 				self.plot_az_err(grid[i],'ha')
-			elif plot[i] == 'dec-err':
-				self.plot_dec_err(grid[i])
 			elif plot[i] == 'model-err':
 				self.plot_model_err(grid[i])
 			elif plot[i] == 'model-alt-az-err':
@@ -490,8 +509,26 @@ class GPoint:
 				self.plot_alt_err(grid[i],'model-dec')
 			elif plot[i] == 'model-alt-ha-err':
 				self.plot_alt_err(grid[i],'model-ha')
-			elif plot[i] == 'ra-err':
-				self.plot_ra_err(grid[i])
+			elif plot[i] == 'ha-err':
+				self.plot_ha_err(grid[i])
+			elif plot[i] == 'ha-alt-err':
+				self.plot_ha_err(grid[i],'alt')
+			elif plot[i] == 'ha-az-err':
+				self.plot_ha_err(grid[i],'az')
+			elif plot[i] == 'model-ha-alt-err':
+				self.plot_ha_err(grid[i],'model-alt')
+			elif plot[i] == 'model-ha-az-err':
+				self.plot_ha_err(grid[i],'model-az')
+			elif plot[i] == 'dec-err':
+				self.plot_dec_err(grid[i])
+			elif plot[i] == 'dec-alt-err':
+				self.plot_dec_err(grid[i],'alt')
+			elif plot[i] == 'dec-az-err':
+				self.plot_dec_err(grid[i],'az')
+			elif plot[i] == 'model-dec-alt-err':
+				self.plot_dec_err(grid[i],'model-alt')
+			elif plot[i] == 'model-dec-az-err':
+				self.plot_dec_err(grid[i],'model-az')
 			else:
 				print 'Uknown plot type',plot[i],'know plot types are: alt-az,alt-az-model,alt-az-real,alt-alt-err,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err,dec-err,model-err,model-alt-az-err,model-alt-dec-err,model-alt-ha-err,model-az-alt-err,model-alt-dec-err,model-alt-ha-err,ra-err'
 
