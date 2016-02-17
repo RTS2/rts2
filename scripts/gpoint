@@ -87,17 +87,17 @@ class GPoint:
 	def model_ha(self,params,a_ha,a_dec):
 		return - params[4] \
 			- params[5]/np.cos(a_dec) \
-			+ params[6]*np.tan(a_dec) \
-			- (-params[1]*np.sin(a_ha) + params[2]*np.cos(a_ha)) * np.tan(a_dec) \
+			- params[6]*np.tan(a_dec) \
+			- (params[1]*np.sin(a_ha) - params[2]*np.cos(a_ha)) * np.tan(a_dec) \
 			- params[3]*np.cos(self.latitude_r)*np.sin(a_ha) / np.cos(a_dec) \
-			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(a_dec) * np.cos(a_ha)) \
-			- params[8] * a_ha
+			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha)) \
 
 	def model_dec(self,params,a_ha,a_dec):
 		return - params[0] \
-			+ params[1]*np.cos(a_ha) \
-			+ params[2]*np.sin(a_ha) \
-			+ params[3]*(np.sin(self.latitude_r) * np.cos(a_dec) - np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha))
+			- params[1]*np.cos(a_ha) \
+			- params[2]*np.sin(a_ha) \
+			- params[3]*(np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha) - np.sin(self.latitude_r) * np.cos(a_dec)) \
+			- params[8]*np.cos(a_ha)
 
 	# Fit functions.
 	# a_ha - target HA (hour angle)
@@ -114,7 +114,8 @@ class GPoint:
 	def fit_model(self,params,a_ra,r_ra,a_dec,r_dec):
 		if self.verbose:
 			print 'computing', self.latitude, self.latitude_r, params, a_ra, r_ra, a_dec, r_dec
-		return np.concatenate((self.fit_model_ha(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
+#		return np.concatenate((self.fit_model_ha(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
+		return rts2.libnova.angular_separation(np.degrees(a_ra + self.model_ha(params,a_ra,a_dec)),np.degrees(a_dec + self.model_dec(params,a_ra,a_dec)),np.degrees(r_ra),np.degrees(r_dec))
 
 	# open file, produce model
 	# expected format:
@@ -162,6 +163,7 @@ class GPoint:
 
 		self.latitude_r = np.radians(float(self.latitude))
 
+		# data = [(float(lst) - flip_ra(float(a_ra),float(a_dec)), float(a_dec), float(lst) - float(r_ra), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 
 		if flips == 'east':
@@ -197,7 +199,7 @@ class GPoint:
 				last_mjd_hour = round(jd * 24)
 				self.mjd_hours[m] = jd
 
-		self.diff_ra = self.aa_ra - self.ar_ra
+		self.diff_ha = self.aa_ra - self.ar_ra
 		self.diff_dec = self.aa_dec - self.ar_dec
 		self.diff_angular = rts2.libnova.angular_separation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
 
@@ -210,7 +212,9 @@ class GPoint:
 		self.aa_alt,self.aa_az = self.equ_to_hrz(self.rad_aa_ra,self.rad_aa_dec)
 		self.ar_alt,self.ar_az = self.equ_to_hrz(self.rad_ar_ra,self.rad_ar_dec)
 
-		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec),full_output=True)
+		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=10000)
+
+		print self.message,self.ier,self.info
 
 		# feed parameters to diff, obtain model differences. Closer to zero = better
 
@@ -222,7 +226,8 @@ class GPoint:
 
 		self.am_alt,self.am_az = self.equ_to_hrz(self.rad_aa_ra - self.f_model_ha,self.rad_aa_dec - self.f_model_dec)
 
-		self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra - self.diff_model_ha,self.aa_dec - self.diff_model_dec,self.ar_ra,self.ar_dec)
+		#self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra + np.degrees(self.model_ha(self.best,self.rad_aa_ra,self.rad_aa_dec)),self.aa_dec + np.degrees(self.model_dec(self.best,self.rad_aa_ra,self.rad_aa_dec)),self.ar_ra,self.ar_dec)
+		self.diff_model_angular = self.fit_model(self.best,self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec)
 
 		return self.best
 
@@ -260,11 +265,11 @@ class GPoint:
 			return 'MIN {0} MAX {1} MEAN {2} RMS {3}'.format(np.min(v),np.max(v),np.mean(v),RMS(v))
 
 		if self.verbose:
-			print 'DIFF_RA',print_vect_stat(self.diff_ra*3600)
+			print 'DIFF_RA',print_vect_stat(self.diff_ha*3600)
 			print 'DIFF_DEC',print_vect_stat(self.diff_dec*3600)
 			print 'DIFF_ANGULAR',print_vect_stat(self.diff_angular*3600)
 
-		print 'RMS RA DIFF',print_vect_stat(self.diff_ra*3600)
+		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
 		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
 		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
 
@@ -322,7 +327,13 @@ class GPoint:
 		import pylab
 		ra_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		if err == '':
-			errs = self.diff_ra
+			errs = self.diff_ha
+		elif err == 'dec':
+			errs = self.diff_dec
+		elif err == 'model-ha':
+			errs = self.diff_model_ha
+		elif err == 'model-dec':
+			errs = self.diff_model_dec
 		elif err == 'alt':
 			errs = self.aa_alt - self.ar_alt
 		elif err == 'az':
@@ -336,11 +347,17 @@ class GPoint:
 		self.set_y_axis(ra_error)
 		return ra_error
 
-	def plot_dec_err(self,grid,err):
+	def plot_dec_err(self,grid,err=''):
 		import pylab
 		dec_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
 		if err == '':
-			errs = self.diff_ra
+			errs = self.diff_dec
+		elif err == 'ha':
+			errs = self.diff_ha
+		elif err == 'model-ha':
+			errs = self.diff_model_ha
+		elif err == 'model-dec':
+			errs = self.diff_model_dec
 		elif err == 'alt':
 			errs = self.aa_alt - self.ar_alt
 		elif err == 'az':
@@ -383,6 +400,25 @@ class GPoint:
 			polar.set_title('Alt-Az distribution')
                 return polar
 
+	def __get_err(self,name):
+		if name == 'alt':
+			return self.aa_alt - self.ar_alt
+		elif name == 'az':
+			return normalize_az_err(self.aa_az - self.ar_az)
+		elif name == 'dec':
+			return self.diff_dec
+		elif name == 'ha':
+			return self.diff_ha
+		elif name == 'model-alt':
+			return self.am_alt - self.ar_alt
+		elif name == 'model-az':
+			return normalize_az_err(self.am_az - self.ar_az)
+		elif name == 'model-dec':
+			return self.diff_model_dec
+		elif name == 'model-ha':
+			return self.diff_model_ha
+		return None
+
 	def plot_alt_err(self,grid,err,errm=None):
 		import pylab
 		alt_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
@@ -397,7 +433,7 @@ class GPoint:
 			errs = self.diff_dec
 		elif err == 'ha':
 			alt_error.set_title('Alt-HA error')
-			errs = self.diff_ra
+			errs = self.diff_ha
 		elif err == 'model-az':
 			alt_error.set_title('Model Alt-Az error')
 			errs = normalize_az_err(self.am_az - self.ar_az)
@@ -428,7 +464,7 @@ class GPoint:
 			errs = self.diff_dec
 		elif err == 'ha':
 			az_error.set_title('Az-HA error')
-			errs = self.diff_ra
+			errs = self.diff_ha
 		elif err == 'model-alt':
 			az_error.set_title('Model Az-Alt error')
 			errs = self.am_alt - self.ar_alt
@@ -446,6 +482,12 @@ class GPoint:
 		self.set_y_axis(az_error)
 		az_error.grid(which='both')
 		return az_error
+
+	def plot_diff(self,grid,nx,ny):
+		import pylab
+		err = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
+		err.plot(self.__get_err(nx) * 3600.0,self.__get_err(ny) * 3600.0,'g.')
+		return err
 
 	def __gen_plot(self,plots):
 		import pylab
@@ -511,16 +553,28 @@ class GPoint:
 				self.plot_alt_err(grid[i],'model-ha')
 			elif plot[i] == 'ha-err':
 				self.plot_ha_err(grid[i])
+			elif plot[i] == 'ha-dec-err':
+				self.plot_ha_err(grid[i],'dec')
 			elif plot[i] == 'ha-alt-err':
 				self.plot_ha_err(grid[i],'alt')
 			elif plot[i] == 'ha-az-err':
 				self.plot_ha_err(grid[i],'az')
+			elif plot[i] == 'model-ha-err':
+				self.plot_ha_err(grid[i],'model-ha')
+			elif plot[i] == 'model-ha-dec-err':
+				self.plot_ha_err(grid[i],'model-dec')
 			elif plot[i] == 'model-ha-alt-err':
 				self.plot_ha_err(grid[i],'model-alt')
 			elif plot[i] == 'model-ha-az-err':
 				self.plot_ha_err(grid[i],'model-az')
 			elif plot[i] == 'dec-err':
 				self.plot_dec_err(grid[i])
+			elif plot[i] == 'dec-ha-err':
+				self.plot_dec_err(grid[i],'ha')
+			elif plot[i] == 'model-dec-err':
+				self.plot_dec_err(grid[i],'model-dec')
+			elif plot[i] == 'model-dec-ha-err':
+				self.plot_dec_err(grid[i],'model-ha')
 			elif plot[i] == 'dec-alt-err':
 				self.plot_dec_err(grid[i],'alt')
 			elif plot[i] == 'dec-az-err':
@@ -529,8 +583,16 @@ class GPoint:
 				self.plot_dec_err(grid[i],'model-alt')
 			elif plot[i] == 'model-dec-az-err':
 				self.plot_dec_err(grid[i],'model-az')
+			elif plot[i] == 'diff-err':
+				self.plot_diff(grid[i],'ha','dec')
+			elif plot[i] == 'diff-model-err':
+				self.plot_diff(grid[i],'model-ha','model-dec')
+			elif plot[i] == 'diff-altaz-err':
+				self.plot_diff(grid[i],'alt','az')
+			elif plot[i] == 'diff-model-altaz-err':
+				self.plot_diff(grid[i],'model-alt','model-az')
 			else:
-				print 'Uknown plot type',plot[i],'know plot types are: alt-az,alt-az-model,alt-az-real,alt-alt-err,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err,dec-err,model-err,model-alt-az-err,model-alt-dec-err,model-alt-ha-err,model-az-alt-err,model-alt-dec-err,model-alt-ha-err,ra-err'
+				print 'Uknown plot type',plot[i],'know plot types are: alt-az,alt-az-model,alt-az-real,alt-alt-err,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err,dec-err,model-err,model-alt-az-err,model-alt-dec-err,model-alt-ha-err,model-az-alt-err,model-alt-dec-err,model-alt-ha-err,ha-err'
 
 	def plot(self,plots,ofile=None):
 		import pylab
@@ -570,7 +632,7 @@ def generateModel(args):
 	if args.error_output is not None:
 		f = open(args.error_output,'w+')
 		out_dat = model.indata
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_ra),axis=1)
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_ha),axis=1)
 		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_dec),axis=1)
 		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_angular),axis=1)
 		for b in out_dat:
@@ -579,11 +641,11 @@ def generateModel(args):
 
 	plots = args.plots
 	if args.basic_plots:
-		bp='model-err,ra-err,dec-err'
+		bp='model-err,ha-err,dec-err'
 		plots=','.join([bp,plots]) if plots else bp
 
 	if args.altaz_plots:
-		altaz='model-err:0:0:3:1,ra-err:1:0:1:1,dec-err:2:0:1:1,alt-az-real:1:1:2:2'
+		altaz='model-err:0:0:3:1,ha-err:1:0:1:1,dec-err:2:0:1:1,alt-az-real:1:1:2:2'
 		plots=','.join([altaz,plots]) if plots else altaz
 
 	if args.altaz_heatmaps:
@@ -631,13 +693,13 @@ def addModels(args):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
-        '\tgpoint -p model-ra,ra-err,dec-err modelin\tproduces model and model-ra,ra-err and dec-err plots')
+        '\tgpoint -p model-ra,ha-err,dec-err modelin\tproduces model and model-ra,ha-err and dec-err plots')
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ra-err,dec-err,model-ra-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err)')
+	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ha-err,dec-err,model-ha-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err)')
 	parser.add_argument('-s',dest='oplot',action='store',help='save plot to file instead of displaying it on screen',default=None)
-	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ra-err,dec-err)',default=False)
-	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ra-err,dec-err,alt-az-real)',default=False)
+	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ha-err,dec-err)',default=False)
+	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ha-err,dec-err,alt-az-real)',default=False)
 	parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
 	parser.add_argument('--flip',dest='flips',action='store',help='flips (both, east, west - select pointings only on given side)',default='both')
 	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
