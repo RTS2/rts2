@@ -739,6 +739,14 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 		getConfiguration ();
 		return 0;
 	}
+	else if (conn->isCommand ("recover"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		getTel ();
+		int32_t dc = getPoleTargetD (r_dec_pos->getValueLong ());
+		return sitechMove (r_ra_pos->getValueLong (), dc) < 0 ? -2 : 0;
+	}
 	return GEM::commandAuthorized (conn);
 }
 
