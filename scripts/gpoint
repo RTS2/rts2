@@ -90,7 +90,7 @@ class GPoint:
 			- params[6]*np.tan(a_dec) \
 			- (params[1]*np.sin(a_ha) - params[2]*np.cos(a_ha)) * np.tan(a_dec) \
 			- params[3]*np.cos(self.latitude_r)*np.sin(a_ha) / np.cos(a_dec) \
-			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha)) \
+			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
 
 	def model_dec(self,params,a_ha,a_dec):
 		return - params[0] \
@@ -212,6 +212,9 @@ class GPoint:
 		self.aa_alt,self.aa_az = self.equ_to_hrz(self.rad_aa_ra,self.rad_aa_dec)
 		self.ar_alt,self.ar_az = self.equ_to_hrz(self.rad_ar_ra,self.rad_ar_dec)
 
+		self.diff_alt = self.aa_alt - self.ar_alt
+		self.diff_az = normalize_az_err(self.aa_az - self.ar_az)
+
 		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=10000)
 
 		print self.message,self.ier,self.info
@@ -224,9 +227,11 @@ class GPoint:
 		self.diff_model_ha = np.degrees(self.f_model_ha)
 		self.diff_model_dec = np.degrees(self.f_model_dec)
 
-		self.am_alt,self.am_az = self.equ_to_hrz(self.rad_aa_ra - self.f_model_ha,self.rad_aa_dec - self.f_model_dec)
+		self.am_alt,self.am_az = self.equ_to_hrz(self.rad_ar_ra - self.f_model_ha,self.rad_ar_dec - self.f_model_dec)
 
-		#self.diff_model_angular = rts2.libnova.angular_separation(self.aa_ra + np.degrees(self.model_ha(self.best,self.rad_aa_ra,self.rad_aa_dec)),self.aa_dec + np.degrees(self.model_dec(self.best,self.rad_aa_ra,self.rad_aa_dec)),self.ar_ra,self.ar_dec)
+		self.diff_model_alt = self.am_alt - self.ar_alt
+		self.diff_model_az = normalize_az_err(self.am_az - self.ar_az)
+
 		self.diff_model_angular = self.fit_model(self.best,self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec)
 
 		return self.best
@@ -271,10 +276,14 @@ class GPoint:
 
 		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
 		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
+		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
+		print 'RMS AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
 		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
 
 		print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
 		print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
+		print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
+		print 'RMS MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
 		print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
 		return self.best
@@ -402,17 +411,17 @@ class GPoint:
 
 	def __get_err(self,name):
 		if name == 'alt':
-			return self.aa_alt - self.ar_alt
+			return self.diff_alt
 		elif name == 'az':
-			return normalize_az_err(self.aa_az - self.ar_az)
+			return self.diff_az
 		elif name == 'dec':
 			return self.diff_dec
 		elif name == 'ha':
 			return self.diff_ha
 		elif name == 'model-alt':
-			return self.am_alt - self.ar_alt
+			return self.diff_model_alt
 		elif name == 'model-az':
-			return normalize_az_err(self.am_az - self.ar_az)
+			return self.diff_model_az
 		elif name == 'model-dec':
 			return self.diff_model_dec
 		elif name == 'model-ha':
