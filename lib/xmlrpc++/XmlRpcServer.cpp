@@ -15,7 +15,7 @@ using namespace XmlRpc;
 #ifdef RTS2_SSL
 int XmlRpcServer::initSSL(const char *certFile, const char *keyFile)
 {
-	return XmlRpcSocket::initSSL(certFile, keyFile);
+	return XmlRpcSocketSSL::initSSL(certFile, keyFile);
 }
 #endif
 

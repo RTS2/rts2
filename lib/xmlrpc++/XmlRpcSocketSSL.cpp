@@ -37,8 +37,8 @@ extern "C"
 
 using namespace XmlRpc;
 
-SSL_CTX *XmlRpcSocket::ctx = NULL;
-std::map<int, SSL*> XmlRpcSocket::ssl_map;
+SSL_CTX *XmlRpcSocketSSL::ctx = NULL;
+std::map<int, SSL*> XmlRpcSocketSSL::ssl_map;
 
 #if defined(_WINDOWS)
 
@@ -64,12 +64,12 @@ static void initWinSock()
 static inline bool
 nonFatalError()
 {
-	int err = XmlRpcSocket::getError();
+	int err = XmlRpcSocketSSL::getError();
 	return (err == EINPROGRESS || err == EAGAIN || err == EWOULDBLOCK || err == EINTR);
 }
 
 int
-XmlRpcSocket::initSSL(const char *certFile, const char *keyFile)
+XmlRpcSocketSSL::initSSL(const char *certFile, const char *keyFile)
 {
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
@@ -87,7 +87,7 @@ XmlRpcSocket::initSSL(const char *certFile, const char *keyFile)
 }
 
 int
-XmlRpcSocket::socket()
+XmlRpcSocketSSL::socket()
 {
 	initWinSock();
 	return (int) ::socket(AF_INET, SOCK_STREAM, 0);
@@ -95,9 +95,9 @@ XmlRpcSocket::socket()
 
 
 void
-XmlRpcSocket::close(int fd)
+XmlRpcSocketSSL::close(int fd)
 {
-	XmlRpcUtil::log(4, "XmlRpcSocket::close: fd %d.", fd);
+	XmlRpcUtil::log(4, "XmlRpcSocketSSL::close: fd %d.", fd);
 	#if defined(_WINDOWS)
 	closesocket(fd);
 	#else
@@ -106,7 +106,7 @@ XmlRpcSocket::close(int fd)
 }
 
 bool
-XmlRpcSocket::setNonBlocking(int fd)
+XmlRpcSocketSSL::setNonBlocking(int fd)
 {
 	#if defined(_WINDOWS)
 	unsigned long flag = 1;
@@ -117,7 +117,7 @@ XmlRpcSocket::setNonBlocking(int fd)
 }
 
 bool
-XmlRpcSocket::unsetNonBlocking(int fd)
+XmlRpcSocketSSL::unsetNonBlocking(int fd)
 {
 	#if defined(_WINDOWS)
 	unsigned long flag = 1;
@@ -128,7 +128,7 @@ XmlRpcSocket::unsetNonBlocking(int fd)
 }
 
 bool
-XmlRpcSocket::setReuseAddr(int fd)
+XmlRpcSocketSSL::setReuseAddr(int fd)
 {
 	// Allow this port to be re-bound immediately so server re-starts are not delayed
 	int sflag = 1;
@@ -138,7 +138,7 @@ XmlRpcSocket::setReuseAddr(int fd)
 
 // Bind to a specified port
 bool
-XmlRpcSocket::bind(int fd, int port)
+XmlRpcSocketSSL::bind(int fd, int port)
 {
 	struct sockaddr_in saddr;
 	memset(&saddr, 0, sizeof(saddr));
@@ -151,7 +151,7 @@ XmlRpcSocket::bind(int fd, int port)
 
 // Set socket in listen mode
 bool
-XmlRpcSocket::listen(int fd, int backlog)
+XmlRpcSocketSSL::listen(int fd, int backlog)
 {
 	return (::listen(fd, backlog) == 0);
 }
@@ -159,9 +159,9 @@ XmlRpcSocket::listen(int fd, int backlog)
 
 int
 #ifdef _WINDOWS
-XmlRpcSocket::accept(int fd, struct sockaddr_in &addr, int &addrlen)
+XmlRpcSocketSSL::accept(int fd, struct sockaddr_in &addr, int &addrlen)
 #else
-XmlRpcSocket::accept(int fd, struct sockaddr_in &addr, socklen_t &addrlen)
+XmlRpcSocketSSL::accept(int fd, struct sockaddr_in &addr, socklen_t &addrlen)
 #endif
 {
 	addrlen = sizeof(addr);
@@ -179,7 +179,7 @@ XmlRpcSocket::accept(int fd, struct sockaddr_in &addr, socklen_t &addrlen)
 
 // Connect a socket to a server (from a client)
 bool
-XmlRpcSocket::connect(int fd, std::string& host, int port)
+XmlRpcSocketSSL::connect(int fd, std::string& host, int port)
 {
 	struct sockaddr_in saddr;
 	memset(&saddr, 0, sizeof(saddr));
@@ -201,7 +201,7 @@ XmlRpcSocket::connect(int fd, std::string& host, int port)
 
 // Read available text from the specified socket. Returns false on error.
 bool
-XmlRpcSocket::nbRead(int fd, char* &s, int &l, bool *eof)
+XmlRpcSocketSSL::nbRead(int fd, char* &s, int &l, bool *eof)
 {
 	const int READ_SIZE = 4096;	 // Number of bytes to attempt to read at a time
 	char readBuf[READ_SIZE];
@@ -214,7 +214,7 @@ XmlRpcSocket::nbRead(int fd, char* &s, int &l, bool *eof)
 	while ( ! wouldBlock && ! *eof)
 	{
 		int n = SSL_read(ssl, readBuf, READ_SIZE-1);
-		XmlRpcUtil::log(5, "XmlRpcSocket::nbRead: read/recv returned %d.", n);
+		XmlRpcUtil::log(5, "XmlRpcSocketSSL::nbRead: read/recv returned %d.", n);
 
 		if (n > 0)
 		{
@@ -242,7 +242,7 @@ XmlRpcSocket::nbRead(int fd, char* &s, int &l, bool *eof)
 
 // Write text to the specified socket. Returns false on error.
 size_t
-XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
+XmlRpcSocketSSL::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 {
 	int nToWrite = int(s.length()) - *bytesSoFar;
 	char *sp = const_cast<char*>(s.c_str()) + *bytesSoFar;
@@ -257,7 +257,7 @@ XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 			sp += n;
 			*bytesSoFar += n;
 			nToWrite -= n;
-			XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send/write returned %d.", n);
+			XmlRpcUtil::log(5, "XmlRpcSocketSSL::nbWrite: send/write returned %d.", n);
 		}
 		else if (nonFatalError())
 		{
@@ -266,7 +266,7 @@ XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 		}
 		else
 		{
-			XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send error %s (%d)", strerror(errno), errno);
+			XmlRpcUtil::log(5, "XmlRpcSocketSSL::nbWrite: send error %s (%d)", strerror(errno), errno);
 			return -1;		 // Error
 		}
 	}
@@ -276,7 +276,7 @@ XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 
 // Write text to the specified socket. Returns false on error.
 size_t
-XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull, bool retry)
+XmlRpcSocketSSL::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull, bool retry)
 {
 	size_t nToWrite = buf_len - *bytesSoFar;
 
@@ -284,7 +284,7 @@ XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesS
 	while ( nToWrite > 0 )
 	{
 		int n = SSL_write(ssl, buf + *bytesSoFar, nToWrite);
-		XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send/write returned %d.", n);
+		XmlRpcUtil::log(5, "XmlRpcSocketSSL::nbWrite: send/write returned %d.", n);
 
 		if (n > 0)
 		{
@@ -312,7 +312,7 @@ XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesS
 
 // Returns last errno
 int
-XmlRpcSocket::getError()
+XmlRpcSocketSSL::getError()
 {
 	#if defined(_WINDOWS)
 	return WSAGetLastError();
@@ -324,7 +324,7 @@ XmlRpcSocket::getError()
 
 // Returns message corresponding to last errno
 std::string
-XmlRpcSocket::getErrorMsg()
+XmlRpcSocketSSL::getErrorMsg()
 {
 	return getErrorMsg(getError());
 }
@@ -332,7 +332,7 @@ XmlRpcSocket::getErrorMsg()
 
 // Returns message corresponding to errno... well, it should anyway
 std::string
-XmlRpcSocket::getErrorMsg(int error)
+XmlRpcSocketSSL::getErrorMsg(int error)
 {
 	char err[120];
         #if defined(_WINDOWS)

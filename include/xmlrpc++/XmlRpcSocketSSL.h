@@ -1,5 +1,5 @@
-#ifndef _XMLRPCSOCKET_H_
-#define _XMLRPCSOCKET_H_
+#ifndef _XMLRPCSOCKETSSL_H_
+#define _XMLRPCSOCKETSSL_H_
 //
 // XmlRpc++ Copyright (c) 2002-2003 by Chris Morley
 //
@@ -29,11 +29,13 @@ extern "C"
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 
+#include "XmlRpcSocket.h"
+
 namespace XmlRpc
 {
 
 	//! A platform-independent socket API.
-	class XmlRpcSocket
+	class XmlRpcSocketSSL: public XmlRpcSocket
 	{
 		public:
 

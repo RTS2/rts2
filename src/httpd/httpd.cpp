@@ -545,13 +545,19 @@ int HttpD::init ()
 		XmlRpc::setVerbosity (5);
 
 #ifdef RTS2_SSL
-	if (sslKey == "" || sslCert == "") {
+	if (sslKey == "" || sslCert == "")
+	{
 		Configuration::instance ()->getString ("xmlrpcd", "ssl_cert", sslCert, "");
 		Configuration::instance ()->getString ("xmlrpcd", "ssl_key", sslKey, "");
 	}
-	if (sslKey == "" || sslCert == "")
-		abort();
-	initSSL(sslCert.c_str(), sslKey.c_str());
+	if (sslKey != "" && sslCert != "")
+	{
+		initSSL (sslCert.c_str(), sslKey.c_str());
+	}
+	else
+	{
+		logStream (MESSAGE_WARNING) << "creating non-SSL socket" << sendLog;
+	}
 #endif
 
 	XmlRpcServer::bindAndListen (rpcPort);

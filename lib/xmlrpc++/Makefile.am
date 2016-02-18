@@ -10,7 +10,8 @@ librts2xmlrpc_la_SOURCES = \
 	XmlRpcServerGetRequest.cpp \
 	XmlRpcSource.cpp \
 	XmlRpcUtil.cpp \
-	XmlRpcValue.cpp
+	XmlRpcValue.cpp \
+	XmlRpcSocket.cpp
 
 librts2xmlrpc_la_CXXFLAGS = @NOVA_CFLAGS@ -I../../include -I../../include/xmlrpc++
 
@@ -18,11 +19,9 @@ if SSL
 
 librts2xmlrpc_la_SOURCES += XmlRpcSocketSSL.cpp
 librts2xmlrpc_la_LIBADD = @SSL_LIBS@
-EXTRA_DIST = XmlRpcSocket.cpp
 
 else
 
-librts2xmlrpc_la_SOURCES += XmlRpcSocket.cpp
 EXTRA_DIST = XmlRpcSocketSSL.cpp
 
 endif
