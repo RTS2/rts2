@@ -259,7 +259,7 @@ INC_SBIG="-I${SBIG_INC}",
 AC_ARG_WITH(sbig-lib,
 [  --with-sbig-lib         path to SBIG USB CCD driver library files, build SBIG USB CCD driver],
 SBIG_LIB="${withval}";
-LIB_SBIG="-L${SBIG_LIB} -lsbigudrv ${SBIG_INC}/csbigcam.o ${SBIG_INC}/csbigimg.o -lusb",
+LIB_SBIG="-L${SBIG_LIB} -lsbigudrv ${SBIG_INC}/csbigcam.o ${SBIG_INC}/csbigimg.o ${USB_LIBS}",
 [SBIG=no])
 
 AM_CONDITIONAL(SBIG, test x$SBIG != xno)
@@ -353,18 +353,10 @@ AC_SUBST(INC_ARC)
 AC_ARG_WITH(alta,
 [  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
 # checks for libusb-config
-AC_CHECK_PROG(LIBUSB_CONFIG, libusb-config, yes, no)
-AS_IF([test "$LIBUSB_CONFIG" = "yes"], [
-  LIBUSB_LDFLAGS=`libusb-config --libs`
-  LIBUSB_CFLAGS=`libusb-config --cflags`
-  LIBUSB_VERSION=`libusb-config --version`
-], [
-  AC_MSG_ERROR([libusb not found!])
-])
 ALTA="${withval}";
-LIB_ALTA_USB="${ALTA}/apogee_USB.so ${LIBUSB_LDFLAGS}";
-LIB_ALTA_NET="${ALTA}/apogee_NET.so ${LIBUSB_LDFLAGS}";
-INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${LIBUSB_CFLAGS}",
+LIB_ALTA_USB="${ALTA}/apogee_USB.so ${USB_LIBS}";
+LIB_ALTA_NET="${ALTA}/apogee_NET.so ${USB_LIBS}";
+INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${USB_CFLAGS}",
 [ALTA=no])
 
 AM_CONDITIONAL(ALTA, test x$ALTA != xno)
@@ -402,7 +394,7 @@ AC_SUBST(INC_MICCD)
 AC_ARG_WITH(k8055,
 [  --with-k8055           path to Velleman k8055 library],
 K8055="${withval}";
-LIB_K8055="-lk8055 -lusb",
+LIB_K8055="-lk8055 ${USB_LIBS}",
 K8055=no;
 LIB_K8055='')
 
