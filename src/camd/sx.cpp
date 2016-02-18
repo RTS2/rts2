@@ -141,7 +141,7 @@ int SX::initHardware ()
 	if (!ret)
 		return -1;
 
-	return 0;
+	return initChips ();
 }
 
 int SX::initChips ()
