@@ -51,6 +51,9 @@ class SX:public Camera
 		bool listNames;
 
 		HANDLE sxHandle;
+
+		rts2core::ValueInteger *model;
+		rts2core::ValueBool *interlaced;
 };
 
 };
@@ -68,6 +71,9 @@ SX::SX (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('l', NULL, 0, "list available camera names");
 	
 	createExpType ();
+
+	createValue (model, "model", "camera model", false);
+	createValue (interlaced, "interlaced", "true if using interlaced camera", true);
 }
 
 SX::~SX ()
@@ -136,6 +142,9 @@ int SX::initHardware ()
 	int ret = sxOpen (devices[cn], &sxHandle);
 	if (!ret)
 		return -1;
+
+	model->setValueInteger (sxGetCameraModel (sxHandle));
+	interlaced->setValueBool (sxIsInterlaced (model->getValueInteger ()));
 
 	ret = sxReset (sxHandle);
 	if (!ret)
