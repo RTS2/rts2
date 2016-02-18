@@ -810,9 +810,9 @@ class Telescope:public rts2core::Device
 		virtual void telescopeAboveHorizon () {}
 
 		/** 
-		 * Called when telescope is suddently pointed below horizon.
+		 * Called when telescope is suddently pointed below horizon. Returns < 0 on error, 0 on sucess, 1 when abort was not called (temproary allowed violation of bellow horizon..)
 		 */
-		virtual void abortMoveTracking ();
+		virtual int abortMoveTracking ();
 
 		/**
 		 * Set telescope to match given coordinates

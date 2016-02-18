@@ -78,7 +78,7 @@ class Sitech:public GEM
 
 		virtual void telescopeAboveHorizon ();
 
-		virtual void abortMoveTracking ();
+		virtual int abortMoveTracking ();
 
 		virtual int startPark ();
 
@@ -421,8 +421,11 @@ void Sitech::telescopeAboveHorizon ()
 	lastSafeDc = r_dec_pos->getValueLong ();
 }
 
-void Sitech::abortMoveTracking ()
+int Sitech::abortMoveTracking ()
 {
+	// recovery, ignored
+	if (partialMove->getValueInteger () == 100)
+		return 1;
 	// check if we are close enough to last safe position..
 	if (fabs (r_ra_pos->getValueLong () - lastSafeAc) < 5 * haCpd->getValueDouble () && fabs (r_dec_pos->getValueLong () - lastSafeDc) < 5 * decCpd->getValueDouble ())
 	{
@@ -433,6 +436,7 @@ void Sitech::abortMoveTracking ()
 	{
 		stopMove ();	
 	}
+	return 0;
 }
 
 void Sitech::getTel ()
@@ -745,7 +749,9 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 			return -2;
 		getTel ();
 		int32_t dc = getPoleTargetD (r_dec_pos->getValueLong ());
-		return sitechMove (r_ra_pos->getValueLong (), dc) < 0 ? -2 : 0;
+		partialMove->setValueInteger (100);
+		sitechSetTarget (r_ra_pos->getValueLong (), dc);
+		return 0;
 	}
 	return GEM::commandAuthorized (conn);
 }

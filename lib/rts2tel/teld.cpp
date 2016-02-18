@@ -1325,8 +1325,9 @@ int Telescope::info ()
 		hrpos.az = telAltAz->getAz ();
 		if (!hardHorizon->is_good (&hrpos))
 		{
-			abortMoveTracking ();
-			logStream (MESSAGE_ERROR) << "info retrieved below horizon position, stop move. alt az: " << hrpos.alt << " " << hrpos.az << sendLog;
+			int ret = abortMoveTracking ();
+			if (ret <= 0)
+				logStream (MESSAGE_ERROR) << "info retrieved below horizon position, stop move. alt az: " << hrpos.alt << " " << hrpos.az << sendLog;
 		}
 		else
 		{
@@ -1391,9 +1392,10 @@ int Telescope::endMove ()
 	return 0;
 }
 
-void Telescope::abortMoveTracking ()
+int Telescope::abortMoveTracking ()
 {
 	stopTracking ("tracking below horizon");
+	return 0;
 }
 
 int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
