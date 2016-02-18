@@ -54,8 +54,8 @@ int RTS2Model::apply (struct ln_equ_posn *pos)
 	for (int i = 0; i < 9; i++)
 		std::cout << params[i] << " ";
 
-	d_tar = pos->dec - params[0] + params[1] * cos (pos->ra) + params[2] * sin (pos->ra) + params[3] * (sin (lat_r) * cos(pos->dec) - cos (lat_r) * sin (pos->dec) * cos (pos->ra));
-	r_tar = pos->ra - params[4] - params[5] / cos (pos->dec) + params[6] * tan (pos->dec) - (-params[1] * sin (pos->ra) + params[2] * cos (pos->ra)) * tan (pos->dec) - params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) - params[7] * (sin (lat_r) * tan (pos->dec) + cos (pos->dec) * cos (pos->ra)) - params[8] * pos->ra;
+	d_tar = pos->dec - params[0] - params[1] * cos (pos->ra) - params[2] * sin (pos->ra) - params[3] * (cos (lat_r) * sin (pos->dec) * cos (pos->ra) - sin (lat_r) * cos(pos->dec)) - params[8] * cos (pos->ra);
+	r_tar = pos->ra - params[4] - params[5] / cos (pos->dec) - params[6] * tan (pos->dec) - (params[1] * sin (pos->ra) - params[2] * cos (pos->ra)) * tan (pos->dec) - params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) - params[7] * (sin (lat_r) * tan (pos->dec) + cos (lat_r) * cos (pos->ra));
 
 	std::cout << pos->ra << " " << pos->dec << " " << std::endl;
 
@@ -81,8 +81,8 @@ int RTS2Model::reverse (struct ln_equ_posn *pos)
 
 	double lat_r = cond->getLatitudeRadians ();
 
-	d_tar = pos->dec + params[0] - params[1] * cos (pos->ra) - params[2] * sin (pos->ra) - params[3] * (sin (lat_r) * cos(pos->dec) - cos (lat_r) * sin (pos->dec) * cos (pos->ra));
-	r_tar = pos->ra + params[4] + params[5] / cos (pos->dec) - params[6] * tan (pos->dec) + (-params[1] * sin (pos->ra) + params[2] * cos (pos->ra)) * tan (pos->dec) - params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) + params[7] * (sin (lat_r) * tan (pos->dec) + cos (pos->dec) * cos (pos->ra)) + params[8] * pos->ra;
+	d_tar = pos->dec + params[0] + params[1] * cos (pos->ra) + params[2] * sin (pos->ra) + params[3] * (cos (lat_r) * sin (pos->dec) * cos (pos->ra) - sin (lat_r) * cos(pos->dec)) + params[8] * cos (pos->ra);
+	r_tar = pos->ra + params[4] + params[5] / cos (pos->dec) + params[6] * tan (pos->dec) + (params[1] * sin (pos->ra) - params[2] * cos (pos->ra)) * tan (pos->dec) + params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) + params[7] * (sin (lat_r) * tan (pos->dec) + cos (lat_r) * cos (pos->ra));
 
 	pos->ra = ln_rad_to_deg (r_tar);
 	pos->dec = ln_rad_to_deg (d_tar);
