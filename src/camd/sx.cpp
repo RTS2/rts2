@@ -122,8 +122,12 @@ int SX::initHardware ()
 		}
 	}
 
-	int ret = sxOpen (devices[0], &sxHandle);
-	if (ret)
+	int ret = sxOpen (devices[cn], &sxHandle);
+	if (!ret)
+		return -1;
+
+	ret = sxReset (sxHandle);
+	if (!ret)
 		return -1;
 
 	return 0;
@@ -131,25 +135,63 @@ int SX::initHardware ()
 
 int SX::initChips ()
 {
+	return Camera::initChips ();
 }
 
 int SX::info ()
 {
+	return Camera::info ();
 }
 
 int SX::startExposure ()
 {
+	int ret = sxReset (sxHandle);
+	if (!ret)
+		return -1;
+
+	ret = sxClearPixels (sxHandle, CCD_EXP_FLAGS_FIELD_BOTH, 0);
+	if (!ret)
+		return -1;
+	
+	ret = sxSetShutter (sxHandle, 0);
+	if (!ret)
+		return -1;
+
+	ret = sxSetTimer (sxHandle, getExposure () * 100.0);
+	if (!ret)
+		return -1;
+	
 	return 0;
 }
 
 long SX::isExposing ()
 {
-	return 0;
+	unsigned long ret = sxGetTimer (sxHandle);
+
+	if (ret == 0)
+		return -2;
+
+	return ret;
 }
 
 int SX::doReadout ()
 {
-	return -2;
+	int ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_BOTH, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), binningHorizontal (), binningVertical ());
+	if (!ret)
+		return -1;
+
+	ret = sxReadPixels (sxHandle, getDataBuffer (0), chipUsedSize ());
+	if (!ret)
+		return -1;
+
+	updateReadoutSpeed (getReadoutPixels ());
+
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
+	if (ret < 0)
+		return -1;
+	if (getWriteBinaryDataSize () == 0)
+		return -2;
+	return 0;
 }
 
 int main (int argc, char **argv)
