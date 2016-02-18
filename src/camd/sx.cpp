@@ -78,7 +78,18 @@ SX::~SX ()
 
 int SX::processOption (int in_opt)
 {
-	return Camera::processOption (in_opt);
+	switch (in_opt)
+	{
+		case 'n':
+			sxName = optarg;
+			break;
+		case 'l':
+			listNames = true;
+			break;
+		default:
+			return Camera::processOption (in_opt);
+	}
+	return 0;
 }
 
 int SX::initHardware ()
@@ -135,6 +146,11 @@ int SX::initHardware ()
 
 int SX::initChips ()
 {
+	struct t_sxccd_params cp;
+	int ret = sxGetCameraParams (sxHandle, 0, &cp);
+	if (!ret)
+		return -1;
+	setSize (cp.width, cp.height, 0, 0);
 	return Camera::initChips ();
 }
 
