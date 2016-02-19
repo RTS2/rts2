@@ -54,6 +54,9 @@ class SX:public Camera
 
 		rts2core::ValueInteger *model;
 		rts2core::ValueBool *interlaced;
+		rts2core::ValueLong *wipeDelay;
+
+		char *evenBuffer, *oddBuffer;
 };
 
 };
@@ -67,6 +70,9 @@ SX::SX (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	sxHandle = NULL;
 
+	evenBuffer = NULL;
+	oddBuffer = NULL;
+
 	addOption ('n', NULL, 1, "camera name (for systems with multiple CCDs)");
 	addOption ('l', NULL, 0, "list available camera names");
 	
@@ -74,12 +80,18 @@ SX::SX (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createValue (model, "model", "camera model", false);
 	createValue (interlaced, "interlaced", "true if using interlaced camera", true);
+	createValue (wipeDelay, "wipe_delay", "[us] delay for image wipe", true);
+	wipeDelay->setValueLong (130000);
 }
 
 SX::~SX ()
 {
 	if (sxHandle != NULL)
 		sxClose (&sxHandle);
+	if (evenBuffer)
+		free (evenBuffer);
+	if (oddBuffer)
+		free (oddBuffer);
 }
 
 int SX::processOption (int in_opt)
@@ -159,7 +171,16 @@ int SX::initChips ()
 	int ret = sxGetCameraParams (sxHandle, 0, &cp);
 	if (!ret)
 		return -1;
-	setSize (cp.width, cp.height, 0, 0);
+	if (interlaced->getValueBool ())
+	{
+		setSize (cp.width, cp.height * 2, 0, 0);
+		evenBuffer = (char *) malloc (cp.height / 2 * cp.width * cp.bits_per_pixel / 8);
+		oddBuffer = (char *) malloc (cp.height / 2 * cp.width * cp.bits_per_pixel / 8);
+	}
+	else
+	{
+		setSize (cp.width, cp.height, 0, 0);
+	}
 	return Camera::initChips ();
 }
 
@@ -170,13 +191,24 @@ int SX::info ()
 
 int SX::startExposure ()
 {
-	int ret = sxReset (sxHandle);
-	if (!ret)
-		return -1;
+	int ret;
 
-	ret = sxClearPixels (sxHandle, CCD_EXP_FLAGS_FIELD_BOTH, 0);
-	if (!ret)
-		return -1;
+	if (interlaced->getValueBool () && binningVertical () == 1)
+	{
+		ret = sxClearPixels (sxHandle, CCD_EXP_FLAGS_FIELD_EVEN | CCD_EXP_FLAGS_NOWIPE_FRAME, 0);
+		if (!ret)
+			return -1;
+		usleep (wipeDelay->getValueLong ());
+		ret = sxClearPixels (sxHandle, CCD_EXP_FLAGS_FIELD_ODD | CCD_EXP_FLAGS_NOWIPE_FRAME, 0);
+		if (!ret)
+			return -1;
+	}
+	else
+	{
+		ret = sxClearPixels (sxHandle, CCD_EXP_FLAGS_FIELD_BOTH, 0);
+		if (!ret)
+			return -1;
+	}
 	
 	ret = sxSetShutter (sxHandle, 0);
 	if (!ret)
@@ -201,13 +233,52 @@ long SX::isExposing ()
 
 int SX::doReadout ()
 {
-	int ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_BOTH, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), binningHorizontal (), binningVertical ());
-	if (!ret)
-		return -1;
-
-	ret = sxReadPixels (sxHandle, getDataBuffer (0), chipUsedSize ());
-	if (!ret)
-		return -1;
+	int ret;
+	if (interlaced)
+	{
+		if (binningVertical () > 1)
+		{
+			ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_BOTH, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt () / 2, binningHorizontal (), binningVertical () / 2);
+			if (!ret)
+				return -1;
+			ret = sxReadPixels (sxHandle, getDataBuffer (0), chipUsedSize ());
+			if (!ret)
+				return -1;
+		}
+		else
+		{
+			ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_EVEN | CCD_EXP_FLAGS_SPARE2, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt () / 2, chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt () / 2, binningHorizontal (), 1);
+			if (!ret)
+				return -1;
+			struct timespec start_time, end_time;
+			clock_gettime (CLOCK_MONOTONIC, &start_time);
+			ret = sxReadPixels (sxHandle, evenBuffer, chipUsedSize () / 2);
+			if (ret)
+				return -1;
+			clock_gettime (CLOCK_MONOTONIC, &end_time);
+			wipeDelay->setValueLong ((end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_nsec - start_time.tv_nsec + 500) / 1000000);
+			ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_ODD | CCD_EXP_FLAGS_SPARE2, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt () / 2, chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt () / 2, binningHorizontal (), 1);
+			if (!ret)
+				return -1;
+			ret = sxReadPixels (sxHandle, oddBuffer, chipUsedSize () / 2);
+			if (ret)
+				return -1;
+			for (int i = 0, j = 0; i < chipUsedReadout->getHeightInt (); i += 2, j++)
+			{
+				memcpy (getDataBuffer (0) + i * lineByteSize (), oddBuffer + (j * lineByteSize ()), lineByteSize ());
+				memcpy (getDataBuffer (0) + ((i + 1) * lineByteSize ()), evenBuffer + (j * lineByteSize ()), lineByteSize ()); 
+			}
+		}
+	}
+	else
+	{
+		ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_BOTH, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), binningHorizontal (), binningVertical ());
+		if (!ret)
+			return -1;
+		ret = sxReadPixels (sxHandle, getDataBuffer (0), chipUsedSize ());
+		if (!ret)
+			return -1;
+	}
 
 	updateReadoutSpeed (getReadoutPixels ());
 
