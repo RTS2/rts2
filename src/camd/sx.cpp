@@ -259,7 +259,7 @@ int SX::doReadout ()
 			struct timespec start_time, end_time;
 			clock_gettime (CLOCK_MONOTONIC, &start_time);
 			ret = sxReadPixels (sxHandle, evenBuffer, chipUsedSize () / 2);
-			if (ret)
+			if (!ret)
 				return -1;
 			clock_gettime (CLOCK_MONOTONIC, &end_time);
 			wipeDelay->setValueLong ((end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_nsec - start_time.tv_nsec + 500) / 1000000);
@@ -267,7 +267,7 @@ int SX::doReadout ()
 			if (!ret)
 				return -1;
 			ret = sxReadPixels (sxHandle, oddBuffer, chipUsedSize () / 2);
-			if (ret)
+			if (!ret)
 				return -1;
 			for (int i = 0, j = 0; i < chipUsedReadout->getHeightInt (); i += 2, j++)
 			{
