@@ -133,6 +133,7 @@ if __name__ == '__main__':
         fts = [ x.strip() for x in  args.filterNames ]
         args.filterNames = fts
 
+
     rtc.checkConfiguration(args=args)
     # environment
     ev = Environment(debug = args.debug, rt = rtc, logger = logger)

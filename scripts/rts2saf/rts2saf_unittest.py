@@ -38,7 +38,7 @@ unittestFiles = [
     '/tmp/COLWFLT', 
     '/tmp/COLWGRS', 
     '/tmp/COLWSLT', 
-    '/tmp/XMLRPC', 
+    '/tmp/HTTPD', 
     '/tmp/andor3', 
     ]
 
@@ -72,12 +72,13 @@ def sextractor_version():
         cmd= [sex, '--version']
         versionStr= subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
         version = versionStr[0].split(' ')[2].split('.')
-
-        if int(version[0]) >= 2 and int(version[1]) >= 8 and int(version[2]) >= 6:
+        vs= int(version[0]) * 1000 + int(version[1]) * 100 + int(version[2]) * 10
+        vsm = 2 * 1000 + 8 * 100 + 6 * 10
+        if vs >  vsm:
             return True 
         else:
             print 'rts2saf_unittest.py: SExtractor: {}, has version {}.{}.{}, required is 2.8.6, exiting'.format(sex, version[0], version[1], version[2])
-            sys.exit(1)
+            #sys.exit(1)
             
     else:
         print 'rts2saf_unittest.py: SExtractor: {}, is not present or not executable, exiting'.format(sex)
