@@ -158,7 +158,7 @@ int SX::initHardware ()
 
 	memset (&caps, 0, sizeof (caps));
 	ret = sxGetCameraParams (sxHandle, 0, &caps);
-	if (ret)
+	if (!ret)
 		return ret;
 
 	ret = sxReset (sxHandle);
