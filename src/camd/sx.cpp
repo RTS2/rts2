@@ -51,6 +51,7 @@ class SX:public Camera
 		bool listNames;
 
 		HANDLE sxHandle;
+		struct t_sxccd_params caps;
 
 		rts2core::ValueInteger *model;
 		rts2core::ValueBool *interlaced;
@@ -155,12 +156,17 @@ int SX::initHardware ()
 	if (!ret)
 		return -1;
 
-	model->setValueInteger (sxGetCameraModel (sxHandle));
-	interlaced->setValueBool (sxIsInterlaced (model->getValueInteger ()));
+	memset (&caps, 0, sizeof (caps));
+	ret = sxGetCameraParams (sxHandle, 0, &caps);
+	if (ret)
+		return ret;
 
 	ret = sxReset (sxHandle);
 	if (!ret)
 		return -1;
+
+	model->setValueInteger (sxGetCameraModel (sxHandle));
+	interlaced->setValueBool (sxIsInterlaced (model->getValueInteger ()));
 
 	return initChips ();
 }
