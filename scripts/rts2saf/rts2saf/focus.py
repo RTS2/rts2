@@ -186,7 +186,7 @@ class Focus(object):
                     while True:
                         # if some external source wants to stop me
                         if TERM:
-                            acqu.stopScan(timeout=1.)
+                            acqu.stopScan(timeout=1., blind=self.args.blind)
                             time.sleep(2.)
                             self.logger.info('Focus: received signal, reset FOC_TOFF, stopped thread, exiting')
                             # threads are zombies
@@ -222,7 +222,7 @@ class Focus(object):
                 else:
                     if self.debug: self.logger.debug('Focus: got all images')
 
-                acqu.stopScan(timeout=1.)
+                acqu.stopScan(timeout=1., blind=self.args.blind)
                 # 
                 rFt, rMnsFwhm = self.fitFocDef(dataSxtr = dataSxtr, ftw = ftw, ft = ft)
 
@@ -230,7 +230,10 @@ class Focus(object):
                     # save them for filter offset calucaltion
                     rFts.append(rFt)
                     # ToDo is a glitch: rMnsFwhm
-                    self.writeFocDef(ft = ft, rFt = rFt, rMns = rMnsFwhm, acqu = acqu)
+                    if self.args.blind and rMnsFwhm is None:
+                         self.logger.warn('Focus: means FWHM is None, can not write FOC_DEF ')
+                    else:
+                        self.writeFocDef(ft = ft, rFt = rFt, rMns = rMnsFwhm, acqu = acqu)
 
             else:
                 if self.debug: self.logger.debug('Focus: end filter wheel: {}, filter:{}'.format(ftw.name, ft.name))

@@ -274,7 +274,7 @@ class Configuration(DefaultConfiguration):
             if section=='SExtractor':
                 if identifier in 'FIELDS':
                     value=value.replace("'", '')
-                    self.cfg['FIELDS']=value[1:-1].split(',')
+                    self.cfg['FIELDS']=filter(None,value[1:-1].split(','))
                 else:
                     self.cfg[identifier]= value
 
@@ -290,7 +290,7 @@ class Configuration(DefaultConfiguration):
 
             elif section=='focuser properties':
                 if identifier in 'FOCUSER_NO_FTW_RANGE':
-                    self.cfg[identifier]=value[1:-1].split(',')
+                    self.cfg[identifier]=filter(None,value[1:-1].split(','))
                 else:
                     self.cfg[identifier]= value
             #
@@ -299,36 +299,36 @@ class Configuration(DefaultConfiguration):
                 ftds.append(value)
             #
             elif section=='filter wheel':
-                items= value[1:-1].split(',')
+                items= filter(None,value[1:-1].split(','))
                 filterWheelsDefs[items[0]]=[ x for x in items[1:] if x is not '']
             #
             elif( section=='filter wheels'):
                 fakeFtw=False
                 if identifier in 'inuse':
-                    filterWheelsInuse=value[1:-1].split(',')
+                    filterWheelsInuse=filter(None,value[1:-1].split(','))
                     self.cfg[identifier]=filterWheelsInuse
                 elif identifier in 'EMPTY_SLOT_NAMES':
-                    self.cfg[identifier]=value[1:-1].split(',')
+                    self.cfg[identifier]=filter(None,value[1:-1].split(','))
             #
             elif( section == 'ccd' and identifier == 'WINDOW'):
-                items= value[1:-1].split(',')
+                items= filter(None,value[1:-1].split(','))
                 self.cfg[identifier] = [ int(x) for x in items ]
                 if len(self.cfg[identifier]) != 4:
                     self.logger.warn( 'Configuration.readConfiguration: wrong ccd window specification {0} {1}, using the whole CCD area'.format(len(self.cfg[identifier]), self.cfg[identifier]))
                     self.cfg[identifier] = [ -1, -1, -1, -1]
 
             elif( section=='analysis') and identifier == 'FOCUSER_INTERVAL':
-                items= value[1:-1].split(',')
+                items= filter(None,value[1:-1].split(','))
                 self.cfg[identifier] = [ int(x) for x in items ]
                 if len(self.cfg[identifier]) != 2:
                     self.logger.warn( 'Configuration.readConfiguration: wrong focuser interval specification {0} {1}, using all images'.format(len(self.cfg[identifier]), self.cfg[identifier]))
                     self.cfg[identifier] = list()
 
             elif( section=='IMGP analysis'):
-                items= value[1:-1].split(',')
+                items= filter(None,value[1:-1].split(','))
                 if identifier in 'FILTERS_TO_EXCLUDE':
                     tDict=dict()
-                    for e in value[1:-1].split(','):
+                    for e in filter(None,value[1:-1].split(',')):
                         k,v=e.split(':')
                         tDict[v]=k # that's ok !!
                     self.cfg[identifier]=tDict
@@ -419,7 +419,7 @@ class Configuration(DefaultConfiguration):
         ftws = self.cfg['FILTER WHEEL DEFINITIONS'].keys()
         fts=list()
         for x in self.cfg['FILTER DEFINITIONS']:
-            ele= x.strip('[]').split(',')
+            ele= filter(None,x.strip('[]').split(','))
             fts.append(ele[0])
 
         for ftw in self.cfg['FILTER WHEELS INUSE']:

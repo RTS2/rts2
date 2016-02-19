@@ -28,6 +28,30 @@ import threading
 import time
 import shutil
 
+# Todo: ugly
+def waitForFocuser(foc=None, focPosCalc=None, focDef=None, proxy=None, debug=None, logger=None):
+    debug=True
+    focPos = int(proxy.getSingleValue(foc.name,'FOC_POS'))
+    slt= abs(float(focPosCalc-focPos)/ foc.speed) 
+    logger.info('waitForFocuser: focPosCalc:{0}, focPos: {1}, speed:{2}, sleep: {3:4.2f} sec'.format(focPosCalc, focPos, foc.speed, slt))
+    time.sleep( slt)
+    proxy.refresh()
+    focPos = int(proxy.getSingleValue(foc.name,'FOC_POS'))
+    commitSucide=1000
+    while abs( focPosCalc- focPos) > foc.resolution:
+                
+        # if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
+        proxy.refresh()
+        focPos = int(proxy.getSingleValue(foc.name,'FOC_POS'))
+        if debug: logger.debug('waitForFocuser: not yet reached focuser position: {0}, now:{1}, sleeping'.format(focPosCalc, focPos))
+        time.sleep(.1) # leave it alone
+        commitSucide -= 1
+        if commitSucide < 0:
+            logger.error('waitForFocuser: can not reach FOC_TAR: {} after {} seconds, exiting'.format(focPosCalc, commitSucide * .1))
+            sys.exit(1)
+        else:
+            if debug: logger.debug('waitForFocuser: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(int(focPosCalc), focPos, abs( focPosCalc- focPos), foc.resolution, focDef, slt))
+
 
 
 class ScanThread(threading.Thread):
@@ -93,27 +117,8 @@ class ScanThread(threading.Thread):
             if not self.blind:
                 focPosCalc += int(self.focDef)
             
-            focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-            slt= abs(float(focPosCalc-focPos)/ self.foc.speed) 
-            self.logger.info('acquire: focPosCalc:{0}, focPos: {1}, speed:{2}, sleep: {3:4.2f} sec'.format(focPosCalc, focPos, self.foc.speed, slt))
-            time.sleep( slt)
-            self.proxy.refresh()
-            focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
             if self.writeToDevices:
-                commitSucide=1000
-                while abs( focPosCalc- focPos) > self.foc.resolution:
-                
-#                    if self.debug: self.logger.debug('acquire: focuser position not reached: abs({0:5d}- {1:5d})= {2:5d} > {3:5d} FOC_DEF: {4}, sleep time: {5:3.1f}'.format(int(focPosCalc), focPos, int(abs( focPosCalc- focPos)), self.foc.resolution, self.focDef, slt))
-                    self.proxy.refresh()
-                    focPos = int(self.proxy.getSingleValue(self.foc.name,'FOC_POS'))
-                    if self.debug: self.logger.debug('acquire: not yet reached focuser position: {0}, now:{1}, sleeping'.format(focPosCalc, focPos))
-                    time.sleep(.1) # leave it alone
-                    commitSucide -= 1
-                    if commitSucide < 0:
-                        self.logger.error('acquire: can not reach FOC_TAR: {} after {} seconds, exiting'.format(focPosCalc, commitSucide * .1))
-                        sys.exit(1)
-                else:
-                    if self.debug: self.logger.debug('acquire: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(focPosCalc, focPos, abs( focPosCalc- focPos), self.foc.resolution, self.focDef, slt))
+                waitForFocuser(foc=self.foc, focPosCalc=focPosCalc, focDef=self.focDef, proxy=self.proxy, debug=self.debug, logger=self.logger)
 
                 fn=self.expose()
             if fn:
@@ -154,27 +159,32 @@ class ScanThread(threading.Thread):
             self.logger.warn('acquire: disabled setting exposure/expose: {0}'.format(exp))
 
         self.proxy.refresh()
-        expEnd = self.proxy.getDevice(self.ccd.name)['exposure_end'][1]
+        # does not really work expEnd = self.proxy.getDevice(self.ccd.name)['exposure_end'][1]
         rdtt= self.proxy.getDevice(self.ccd.name)['readout_time'][1]
+        trtt= self.proxy.getDevice(self.ccd.name)['transfer_time'][1]
+        
         # at a fresh start readout_time may be empty
         # ToDo check that at run time
         if not rdtt:
             rdtt= 5. # being on the save side, subsequent calls have the correct time, ToDo: might not be true!
             self.logger.warn('acquire: no read out time received, that is ok if RTS2 CCD driver has just been (re-)started, sleeping:{}'.format(rdtt))
-                
+        if not trtt:
+            trtt= 5. 
+            self.logger.warn('acquire: no transfer time received, that is ok if RTS2 CCD driver has just been (re-)started, sleeping:{}'.format(trtt))
+        
         # critical: RTS2 creates the file on start of exposure
         # see TAG WAIT
         if self.writeToDevices:
             # sleep necessary
             try:
-                self.logger.info('acquire:time.sleep for: {0:3.1f} sec, waiting for exposure end'.format(expEnd-time.time() + rdtt))
-                time.sleep(expEnd-time.time() + rdtt)
+                self.logger.info('acquire:time.sleep for: {0:3.1f} sec, waiting for exposure end'.format(exp + rdtt + trtt))
+                time.sleep(exp + rdtt + trtt)
             except Exception, e:
-                self.logger.warn('acquire:time.sleep received: read out time: {0:3.1f}, should sleep: {0:3.1f}'.format(rdtt, expEnd-time.time() + rdtt))
+                self.logger.warn('acquire:time.sleep received read out time: {0:3.1f}, transfer time: {0:3.1f}, should sleep: {0:3.1f}'.format(rdtt, trtt, exp + rdtt + trtt))
                 self.logger.warn('acquire: not sleeping, error from time.sleep(): {}'.format(e))
                 
         self.proxy.refresh()
-        fn=self.proxy.getDevice('XMLRPC')['{0}_lastimage'.format(self.ccd.name)][1]
+        fn=self.proxy.getDevice('HTTPD')['{0}_lastimage'.format(self.ccd.name)][1]
 
         if self.ftw and self.ft:
             if not self.ev.createAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name):
@@ -206,12 +216,16 @@ class ScanThread(threading.Thread):
             try:
                 # ToDo shutil.move(src=fn, dst=storeFn)
                 # the file belongs to root or user.group
+                # ToDo inadequate use pynotify
+                time.sleep(10) # ToDo
+
                 shutil.copy(src=srcTmpFn, dst=storeFn)
                 if not ready:
                     self.logger.info('____ScanThread: received {0}'.format(srcTmpFn))
                 return storeFn 
             except Exception, e:
                 self.logger.warn('____ScanThread: not yet ready {0}, error: {1}'.format(srcTmpFn, e))
+                # on slow system this is glitch use pynotify
                 time.sleep(.2) # ToDo
                 cnt +=1
                 if cnt > 40:
@@ -279,6 +293,7 @@ class Acquire(object):
         self.iFocPos=None
         self.iFocTar=None
         self.iFocDef=None
+        self.iFocFilteroff=None
         self.iFocFoff=None
         self.iFocToff=None
         self.iBinning=None
@@ -299,6 +314,7 @@ class Acquire(object):
         self.iFocPos = self.proxy.getSingleValue(self.foc.name,'FOC_POS')    
         self.iFocTar = self.proxy.getSingleValue(self.foc.name,'FOC_TAR')    
         self.iFocDef = self.proxy.getSingleValue(self.foc.name,'FOC_DEF')    
+        self.iFocFilteroff = self.proxy.getSingleValue(self.foc.name,'FOC_FILTEROFF')    
         self.iFocFoff= self.proxy.getSingleValue(self.foc.name,'FOC_FOFF')    
         self.iFocToff= self.proxy.getSingleValue(self.foc.name,'FOC_TOFF')    
         self.iBinning= self.proxy.getSingleValue(self.ccd.name,'binning')    
@@ -308,7 +324,20 @@ class Acquire(object):
         self.logger.debug('acquire: current FOC_DEF: {0}'.format(self.iFocDef))
 
         if self.writeToDevices:
+            # FOC_FILTEROFF, FOC_FOFF may be non zero
+            self.proxy.setValue(self.foc.name,'FOC_FILTEROFF', 0)
+            tar=self.iFocDef + self.iFocFoff + self.iFocToff
+            waitForFocuser(foc=self.foc, focPosCalc=tar, focDef=self.iFocDef, proxy=self.proxy, debug=self.debug, logger=self.logger)
+
+            self.proxy.setValue(self.foc.name,'FOC_FOFF', 0)
+            tar=self.iFocDef + self.iFocToff
+            waitForFocuser(foc=self.foc, focPosCalc=tar, focDef=self.iFocDef, proxy=self.proxy, debug=self.debug, logger=self.logger)
+
             self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
+            tar=self.iFocDef 
+            waitForFocuser(foc=self.foc, focPosCalc=tar, focDef=self.iFocDef, proxy=self.proxy, debug=self.debug, logger=self.logger)
+
+
             self.proxy.setValue(self.ccd.name,'binning', self.ccd.binning)
             self.proxy.setValue(self.ccd.name,'WINDOW', ' '.join(str(x) for x in self.ccd.window))
         else:
@@ -336,9 +365,16 @@ class Acquire(object):
             else:
                 self.logger.warn('acquire: disabled setting filter: {0} on {1}'.format(self.ft.name, self.ftw.name,ftw.name))
 
-    def __finalState(self):
+    def __finalState(self, blind=None):
         if self.writeToDevices:
-            self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
+            if blind:
+                # do nothing
+                pass # NO self.proxy.setValue(self.foc.name,'FOC_TAR', self.iFocDef)
+            else:
+                self.proxy.setValue(self.foc.name,'FOC_TOFF', 0)
+                tar=self.iFocDef 
+                waitForFocuser(foc=self.foc, focPosCalc=tar, focDef=self.iFocDef, proxy=self.proxy, debug=self.debug, logger=self.logger)
+
             self.proxy.setValue(self.ccd.name,'binning', self.iBinning)
             self.proxy.setValue(self.ccd.name,'WINDOW', ' '.join(str(x) for x in self.iWindow))
         else:
@@ -360,8 +396,11 @@ class Acquire(object):
         Write only for camd::filter filters variable the offsets 
         This method has never been really used and therefore assume it does not work.
         """
+        theWheel= self.ccd.name
         self.proxy.refresh()
-        theWheel=  self.proxy.getSingleValue(self.ccd.name, 'wheel')
+        if self.ccd.name not in self.ftws[0].name: # if it is real wheel and not CCD 'built in' filter wheel 
+            theWheel=  self.proxy.getSingleValue(self.ccd.name, 'wheel')
+
         if ftw.name in theWheel:
             filterNames=  self.proxy.getSelection(self.ccd.name, 'filter')
             # order matters :-))
@@ -425,8 +464,8 @@ class Acquire(object):
         self.scanThread.start()
         return True
             
-    def stopScan(self, timeout=1.):
+    def stopScan(self, timeout=1., blind=None):
         """Stop acquisition thread :py:mod:`rts2saf.acquire.ScanThread`. Restore RTS2 devices initial state."""
         self.scanThread.join(timeout)
-        self.__finalState()
+        self.__finalState(blind=blind)
 

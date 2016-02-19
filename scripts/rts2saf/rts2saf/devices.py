@@ -230,8 +230,13 @@ class CCD(object):
 
         # ToDo check all of them
         # check presence of a filter wheel
+        dpr =   'wheel' 
+        if self.name in self.ftws[0].name: # CCD 'built in' filter wheel 
+            dpr = 'filter'
+            self.logger.error('CCD: using built in filter wheel')
+        
         try:
-            proxy.getValue(self.name, 'wheel')
+            proxy.getValue(self.name, dpr)
         except Exception, e:
             self.logger.error('CCD: no filter wheel present, error: {0}'.format(e))
             return False

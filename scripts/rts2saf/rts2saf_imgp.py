@@ -94,8 +94,8 @@ class ImgpAnalysis():
         except Exception, e:
             self.logger.error( '{0}: starting suprocess: {1} failed, continuing with astrometrical calibration, error:{2}'.format(self.scriptName, cmd, e))
 
-        self.logger.info( '{0}: TEMP ending, command {1}'.format(self.scriptName, cmd))
-        return 
+        #self.logger.info( '{0}: TEMP ending, command {1}'.format(self.scriptName, cmd))
+        #return 
         cmd= [  self.astrometryCmd,
                 self.fitsFileName,
                 ]
