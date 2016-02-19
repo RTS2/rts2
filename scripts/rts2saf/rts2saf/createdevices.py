@@ -166,9 +166,13 @@ class CreateCCD(CreateDevice):
                 fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'FILT{0}'.format(ext))
                 ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets_{0}'.format(ext))
             else:
-                ccdN ='wheel'
-                ftwn=self.proxy.getValue(self.ccd.name, ccdN)
-                ccdFtwn[ftwn] =  ccdN
+                if self.ccd.name in ftw.name: # CCD 'built in' filter wheel 
+                    ftwn=ftw.name # the name does not exist in driver camd
+                else:
+                    ccdN ='wheel'
+                    ftwn=self.proxy.getValue(self.ccd.name, ccdN)
+                    ccdFtwn[ftwn] =  ccdN
+
                 fts[ftwn] =self.proxy.getSelection(self.ccd.name, 'filter')
                 ftos[ftwn]=self.proxy.getValue(self.ccd.name, 'filter_offsets')
 

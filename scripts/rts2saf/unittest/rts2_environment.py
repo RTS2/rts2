@@ -50,7 +50,7 @@ class Args(object):
 class RTS2Environment(unittest.TestCase):
 
     def tearDown(self):
-        processes=['rts2-centrald','rts2-executor', 'rts2-xmlrpcd','rts2-focusd-dummy','rts2-filterd-dummy', 'rts2-camd-dummy']
+        processes=['rts2-centrald','rts2-executor', 'rts2-httpd','rts2-focusd-dummy','rts2-filterd-dummy', 'rts2-camd-dummy']
         p = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE)
         out, err = p.communicate()
 
@@ -101,8 +101,8 @@ class RTS2Environment(unittest.TestCase):
         ]
         self.p_exec= subprocess.Popen(cmd)
 
-        # rts2-xmlrpcd
-        cmd=[ '/usr/local/bin/rts2-xmlrpcd', 
+        # rts2-httpd
+        cmd=[ '/usr/local/bin/rts2-httpd', 
               '--run-as', '{}.{}'.format(self.uid,self.gid), 
               '--lock-prefix', self.lockPrefix, 
               '--config', './rts2-unittest.ini',
@@ -110,7 +110,7 @@ class RTS2Environment(unittest.TestCase):
               '-p', '9999', 
               '--noauth'
         ]
-        self.p_xmlrpcd= subprocess.Popen(cmd)
+        self.p_httpd= subprocess.Popen(cmd)
 
         # rts2-focusd-dummy
         focName=self.rt.cfg['FOCUSER_NAME']
