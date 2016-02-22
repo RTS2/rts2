@@ -581,7 +581,7 @@ void Sitech::getTel ()
 				}
 				else
 				{
-					valueGood (r_ra_pos);
+					valueGood (r_dec_pos);
 				}
 
 				if (check_failed != 0)
