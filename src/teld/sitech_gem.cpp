@@ -579,6 +579,7 @@ void Sitech::getTel ()
 		// new measurement..
 		last_meas_tdiff_ac = diff_ac;
 		last_meas_tdiff_dc = diff_dc;
+		last_meas = now;
 	}
 
 	xbits = radec_status.x_bit;
