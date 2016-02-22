@@ -562,27 +562,29 @@ void Sitech::getTel ()
 			int32_t diff_dc = labs (r_dec_pos->getValueLong () - t_dec_pos->getValueLong ());
 			if (last_meas > 0)
 			{
-				bool check_failed = false;
+				int check_failed = 0;  //0x01 - RA, 0x02 - DEC
 				// check if current measurement is smaller than the last one..
 				if (labs (last_meas_tdiff_ac - diff_ac) < fabs (haCpd->getValueDouble ()) * ra_speed->getValueDouble () / 10.0 && diff_ac > fabs (haCpd->getValueDouble ()) / 60.0)
 				{
 					valueWarning (r_ra_pos);
-					check_failed = true;
+					check_failed |= 0x01;
 				}
 				else
 				{
 					valueGood (r_ra_pos);
 				}
+
 				if (labs (last_meas_tdiff_dc - diff_dc) < fabs (decCpd->getValueDouble ()) * dec_speed->getValueDouble () / 10.0 && diff_dc > fabs (decCpd->getValueDouble ()) / 60.0)
 				{
 					valueWarning (r_dec_pos);
-					check_failed = true;
+					check_failed = 0x02;
 				}
 				else
 				{
 					valueGood (r_ra_pos);
 				}
-				if (check_failed)
+
+				if (check_failed != 0)
 				{
 					diff_failed_count++;
 				}
@@ -590,11 +592,16 @@ void Sitech::getTel ()
 				{
 					diff_failed_count = 0;
 				}
-				// give up after 5 seconds..
+
+				// give up after 5 measurements
 				if (diff_failed_count > 5)
 				{
-					logStream (MESSAGE_ERROR) << "non-divergenting movement, stop tracking " << sendLog;
-					maskState (TEL_MASK_MOVING, TEL_OBSERVING);
+					if (check_failed & 0x01)
+						valueError (r_ra_pos);
+					if (check_failed & 0x02)
+						valueError (r_dec_pos);
+					logStream (MESSAGE_ERROR) << "move does not converge, finishing" << sendLog;
+					maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING, DEVICE_ERROR_HW | TEL_OBSERVING, "move does not converge");
 				}
 			}
 			// new measurement..
@@ -840,7 +847,6 @@ int Sitech::startResync ()
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
 	int ret = calculateTarget (JD, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0);
-	firstSlewCall = false;
 	if (ret)
 		return -1;
 
@@ -851,6 +857,13 @@ int Sitech::startResync ()
 	ret = sitechMove (ac, dc);
 	if (ret < 0)
 		return ret;
+
+	if (firstSlewCall == true)
+	{
+		valueGood (r_ra_pos);
+		valueGood (r_dec_pos);
+		firstSlewCall = false;
+	}
 
 	partialMove->setValueInteger (ret);
 	sendValueAll (partialMove);
