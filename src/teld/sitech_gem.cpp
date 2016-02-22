@@ -264,7 +264,15 @@ class Sitech:public GEM
 		int32_t lastSafeAc;
 		int32_t lastSafeDc;
 
+
+		time_t last_meas;
+		int diff_failed_count;
+		int32_t last_meas_tdiff_ac;
+		int32_t last_meas_tdiff_dc;
+
 		std::string findErrors (uint16_t e);
+
+		void recover ();
 };
 
 }
@@ -290,6 +298,10 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	acMargin = 0;
 
 	wasStopped = false;
+
+	last_meas = 0;
+	diff_failed_count = 0;
+	last_meas_tdiff_ac = last_meas_tdiff_dc = 0;
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -539,6 +551,36 @@ void Sitech::getTel ()
 		}
 	}
 
+	time_t now;
+	time (&now);
+
+	if (last_meas + 1 < now)
+	{
+		int32_t diff_ac = labs (r_ra_pos->getValueLong () - t_ra_pos->getValueLong ());
+		int32_t diff_dc = labs (r_dec_pos->getValueLong () - t_dec_pos->getValueLong ());
+		if (last_meas > 0)
+		{
+			// check if current measurement is smaller than the last one..
+			if (labs (last_meas_tdiff_ac - diff_ac) > ra_speed->getValueDouble () / 10.0 || labs (last_meas_tdiff_dc - diff_dc) > dec_speed->getValueDouble () / 10.0 || diff_ac < haCpd->getValueDouble () / 60.0 || diff_dc < decCpd->getValueDouble () / 60.0)
+			{
+				diff_failed_count = 0;
+			}
+			else
+			{
+				diff_failed_count++;
+			}
+			// give up after 5 seconds..
+			if (diff_failed_count > 5)
+			{
+				logStream (MESSAGE_ERROR) << "non-divergenting movement, stop tracking " << sendLog;
+				maskState (TEL_MASK_MOVING, TEL_OBSERVING);
+			}
+		}
+		// new measurement..
+		last_meas_tdiff_ac = diff_ac;
+		last_meas_tdiff_dc = diff_dc;
+	}
+
 	xbits = radec_status.x_bit;
 	ybits = radec_status.y_bit;
 }
@@ -591,6 +633,14 @@ std::string Sitech::findErrors (uint16_t e)
 	if (e & ERROR_CHECKSUM)
 		ret += "Checksum Error in return from Power Board. ";
 	return ret;
+}
+
+void Sitech::recover ()
+{
+	getTel ();
+	int32_t dc = getPoleTargetD (r_dec_pos->getValueLong ());
+	partialMove->setValueInteger (100);
+	sitechSetTarget (r_ra_pos->getValueLong (), dc);
 }
 
 /*!
@@ -747,10 +797,7 @@ int Sitech::commandAuthorized (rts2core::Connection *conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		getTel ();
-		int32_t dc = getPoleTargetD (r_dec_pos->getValueLong ());
-		partialMove->setValueInteger (100);
-		sitechSetTarget (r_ra_pos->getValueLong (), dc);
+		recover ();
 		return 0;
 	}
 	return GEM::commandAuthorized (conn);
