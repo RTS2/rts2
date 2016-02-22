@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import rts2.altazpath
 import rts2.scriptcomm
 import time
 
@@ -17,20 +18,6 @@ def point_altaz(alt,az):
 	img=s.exposure()
         s.process(img)
 
-# first run at alt 20 degrees
-az_r=range(0,360,30)
-for az in az_r:
-	point_altaz(20,az)
-
-# second at alt 40 degrees
-az_r=range(0,360,50)
-for az in az_r:
-	point_altaz(40,az)
-
-# third at alt 60 degrees
-az_r=range(0,360,60)
-for az in az_r:
-	point_altaz(75,az)
-
-# zenith
-point_altaz(90,0)
+for p in rts2.altazpath.random_path():
+#for p in rts2.altazpath.constant_path():
+	point_altaz(p[0],p[1])
