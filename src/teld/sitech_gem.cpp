@@ -561,7 +561,7 @@ void Sitech::getTel ()
 		if (last_meas > 0)
 		{
 			// check if current measurement is smaller than the last one..
-			if (labs (last_meas_tdiff_ac - diff_ac) > ra_speed->getValueDouble () / 10.0 || labs (last_meas_tdiff_dc - diff_dc) > dec_speed->getValueDouble () / 10.0 || diff_ac < haCpd->getValueDouble () / 60.0 || diff_dc < decCpd->getValueDouble () / 60.0)
+			if (labs (last_meas_tdiff_ac - diff_ac) > haCpd->getValueDouble () * ra_speed->getValueDouble () / 10.0 || labs (last_meas_tdiff_dc - diff_dc) > decCpd->getValueDouble () * dec_speed->getValueDouble () / 10.0 || diff_ac < haCpd->getValueDouble () / 60.0 || diff_dc < decCpd->getValueDouble () / 60.0)
 			{
 				diff_failed_count = 0;
 			}
