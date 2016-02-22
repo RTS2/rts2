@@ -551,35 +551,57 @@ void Sitech::getTel ()
 		}
 	}
 
-	time_t now;
-	time (&now);
-
-	if (last_meas + 1 < now)
+	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING || (getState () & TEL_MASK_MOVING) == TEL_PARKING)
 	{
-		int32_t diff_ac = labs (r_ra_pos->getValueLong () - t_ra_pos->getValueLong ());
-		int32_t diff_dc = labs (r_dec_pos->getValueLong () - t_dec_pos->getValueLong ());
-		if (last_meas > 0)
+		time_t now;
+		time (&now);
+
+		if (last_meas + 1 < now)
 		{
-			// check if current measurement is smaller than the last one..
-			if (labs (last_meas_tdiff_ac - diff_ac) > haCpd->getValueDouble () * ra_speed->getValueDouble () / 10.0 || labs (last_meas_tdiff_dc - diff_dc) > decCpd->getValueDouble () * dec_speed->getValueDouble () / 10.0 || (diff_ac < haCpd->getValueDouble () / 60.0 && diff_dc < decCpd->getValueDouble () / 60.0))
+			int32_t diff_ac = labs (r_ra_pos->getValueLong () - t_ra_pos->getValueLong ());
+			int32_t diff_dc = labs (r_dec_pos->getValueLong () - t_dec_pos->getValueLong ());
+			if (last_meas > 0)
 			{
-				diff_failed_count = 0;
+				bool check_failed = false;
+				// check if current measurement is smaller than the last one..
+				if (labs (last_meas_tdiff_ac - diff_ac) < fabs (haCpd->getValueDouble ()) * ra_speed->getValueDouble () / 10.0 && diff_ac > fabs (haCpd->getValueDouble ()) / 60.0)
+				{
+					valueWarning (r_ra_pos);
+					check_failed = true;
+				}
+				else
+				{
+					valueGood (r_ra_pos);
+				}
+				if (labs (last_meas_tdiff_dc - diff_dc) < fabs (decCpd->getValueDouble ()) * dec_speed->getValueDouble () / 10.0 && diff_dc > fabs (decCpd->getValueDouble ()) / 60.0)
+				{
+					valueWarning (r_dec_pos);
+					check_failed = true;
+				}
+				else
+				{
+					valueGood (r_ra_pos);
+				}
+				if (check_failed)
+				{
+					diff_failed_count++;
+				}
+				else
+				{
+					diff_failed_count = 0;
+				}
+				// give up after 5 seconds..
+				if (diff_failed_count > 5)
+				{
+					logStream (MESSAGE_ERROR) << "non-divergenting movement, stop tracking " << sendLog;
+					maskState (TEL_MASK_MOVING, TEL_OBSERVING);
+				}
 			}
-			else
-			{
-				diff_failed_count++;
-			}
-			// give up after 5 seconds..
-			if (diff_failed_count > 5)
-			{
-				logStream (MESSAGE_ERROR) << "non-divergenting movement, stop tracking " << sendLog;
-				maskState (TEL_MASK_MOVING, TEL_OBSERVING);
-			}
+			// new measurement..
+			last_meas_tdiff_ac = diff_ac;
+			last_meas_tdiff_dc = diff_dc;
+			last_meas = now;
 		}
-		// new measurement..
-		last_meas_tdiff_ac = diff_ac;
-		last_meas_tdiff_dc = diff_dc;
-		last_meas = now;
 	}
 
 	xbits = radec_status.x_bit;
