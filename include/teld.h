@@ -705,6 +705,8 @@ class Telescope:public rts2core::Device
 		 */
 		double getTargetDistance ();
 
+		double getStoredTargetDistance () { return targetDistance->getValueDouble (); }
+
 		/**
 		 * Returns ALT AZ coordinates of target.
 		 *

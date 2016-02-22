@@ -556,7 +556,12 @@ void Sitech::getTel ()
 		time_t now;
 		time (&now);
 
-		if (last_meas + 1 < now)
+		if (getStoredTargetDistance () < trackingDist->getValueDouble ())
+		{
+			valueGood (r_ra_pos);
+			valueGood (r_dec_pos);
+		}
+		else if (last_meas + 1 < now)
 		{
 			int32_t diff_ac = labs (r_ra_pos->getValueLong () - t_ra_pos->getValueLong ());
 			int32_t diff_dc = labs (r_dec_pos->getValueLong () - t_dec_pos->getValueLong ());
@@ -593,7 +598,7 @@ void Sitech::getTel ()
 					diff_failed_count = 0;
 				}
 
-				// give up after 5 measurements
+				// give up after 5 failed measurements
 				if (diff_failed_count > 5)
 				{
 					if (check_failed & 0x01)
@@ -926,6 +931,8 @@ int Sitech::isMoving ()
 
 int Sitech::endMove ()
 {
+	valueGood (r_ra_pos);
+	valueGood (r_dec_pos);
 	partialMove->setValueInteger (0);
 	firstSlewCall = true;
 	return GEM::endMove ();
