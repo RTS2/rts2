@@ -556,7 +556,7 @@ void Sitech::getTel ()
 		time_t now;
 		time (&now);
 
-		if (getStoredTargetDistance () < trackingDist->getValueDouble ())
+		if (getStoredTargetDistance () < slowSyncDistance->getValueDouble () * 2)
 		{
 			valueGood (r_ra_pos);
 			valueGood (r_dec_pos);
@@ -607,6 +607,7 @@ void Sitech::getTel ()
 						valueError (r_dec_pos);
 					logStream (MESSAGE_ERROR) << "move does not converge, finishing" << sendLog;
 					maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING, DEVICE_ERROR_HW | TEL_OBSERVING, "move does not converge");
+					failedMove ();
 				}
 			}
 			// new measurement..

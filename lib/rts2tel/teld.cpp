@@ -997,8 +997,7 @@ void Telescope::checkMoves ()
 		}
 		else if (ret == -1)
 		{
-			failedMoveNum->inc ();
-			lastFailedMove->setNow ();
+			failedMove ();
 			if (move_connection)
 				sendInfo (move_connection);
 			maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished with error");
@@ -1011,8 +1010,7 @@ void Telescope::checkMoves ()
 			ret = endMove ();
 			if (ret)
 			{
-				failedMoveNum->inc ();
-				lastFailedMove->setNow ();
+				failedMove ();
 
 				maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING, "move finished with error");
 			}
@@ -1038,8 +1036,7 @@ void Telescope::checkMoves ()
 		}
 		if (ret == -1)
 		{
-			failedMoveNum->inc ();
-			lastFailedMove->setNow ();
+			failedMove ();
 
 			useParkFlipping = false;
 			infoAll ();
@@ -1054,8 +1051,7 @@ void Telescope::checkMoves ()
 			ret = endPark ();
 			if (ret)
 			{
-				failedMoveNum->inc ();
-				lastFailedMove->setNow ();
+				failedMove ();
 
 				maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_PARKED, "park command finished with error");
 			}
@@ -1390,6 +1386,12 @@ int Telescope::endMove ()
 		<< " target " << l_tar
 		<< sendLog;
 	return 0;
+}
+
+void Telescope::failedMove ()
+{
+	failedMoveNum->inc ();
+	lastFailedMove->setNow ();
 }
 
 int Telescope::abortMoveTracking ()

@@ -796,6 +796,11 @@ class Telescope:public rts2core::Device
 		virtual int endMove ();
 
 		/**
+		 * Called when movements fails.
+		 */
+		virtual void failedMove ();
+
+		/**
 		 * Stop telescope movement. It is called in two cases. Either when new
 		 * target is entered and telescope should stop movement to current target,
 		 * or when some failure of telescope is detected and telescope should stop 
