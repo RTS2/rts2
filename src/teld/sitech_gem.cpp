@@ -414,8 +414,8 @@ int Sitech::abortMoveTracking ()
 	// check if we are close enough to last safe position..
 	if (fabs (r_ra_pos->getValueLong () - lastSafeAc) < 5 * haCpd->getValueDouble () && fabs (r_dec_pos->getValueLong () - lastSafeDc) < 5 * decCpd->getValueDouble ())
 	{
-		logStream (MESSAGE_INFO) << "moving to last safe position " << lastSafeAc << " " << lastSafeDc << sendLog;
-		sitechSetTarget (lastSafeAc, lastSafeDc);
+		logStream (MESSAGE_WARNING) << "recovering (moving to pole), last counts: " << lastSafeAc << " " << lastSafeDc << sendLog;
+		recover ();
 	}
 	else
 	{
