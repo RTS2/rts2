@@ -990,6 +990,8 @@ class Telescope:public rts2core::Device
 
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
+
+		void getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz_posn *hrz);
 	private:
 		rts2core::Connection * move_connection;
 		int moveInfoCount;
