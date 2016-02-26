@@ -66,13 +66,7 @@ class Sitech:public GEM
 			return 0;
 		}
 
-
 		virtual int isMoving ();
-
-		virtual int isMovingFixed ()
-		{
-			return isMoving ();
-		}
 
 		virtual int isParking ()
 		{

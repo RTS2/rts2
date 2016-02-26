@@ -75,9 +75,6 @@ class Gemini:public TelLX200
 		virtual int isMoving ();
 		virtual int endMove ();
 		virtual int stopMove ();
-		//		virtual int startMoveFixed (double tar_ha, double tar_dec);
-		//		virtual int isMovingFixed ();
-		//		virtual int endMoveFixed ();
 		virtual int startPark ();
 		virtual int isParking ();
 		virtual int endPark ();
@@ -225,7 +222,6 @@ class Gemini:public TelLX200
 		double fixed_ha;
 		int fixed_ntries;
 
-		//		int startMoveFixedReal ();
 	#ifdef L4_GUIDE
 		bool isGuiding (struct timeval *now);
 		int guide (char direction, unsigned int val);

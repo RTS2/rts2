@@ -43,11 +43,13 @@ class SitechAltAz:public AltAz
 
 		virtual int initHardware ();
 
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 		virtual int info ();
 
 		virtual int startResync ();
 
-		virtual int startMoveFixed (double tar_az, double tar_alt);
+		virtual int moveAltAz ();
 
 		virtual int stopMove ();
 
@@ -157,6 +159,8 @@ class SitechAltAz:public AltAz
 
 		void getConfiguration ();
 
+		void sitechSetTarget (int32_t ac, int32_t dc);
+
 		// JD used in last getTel call
 		double getTelJD;
 
@@ -169,6 +173,9 @@ class SitechAltAz:public AltAz
 		void getPIDs ();
 		std::string findErrors (uint16_t e);
 
+		// speed conversion; see Dan manual for details
+		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
+		double ticksPerSec2MotorSpeed (double tps);
 		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
 
 		// which controller is connected
@@ -358,6 +365,50 @@ int SitechAltAz::initHardware ()
 	return 0;
 }
 
+int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("zero_motor"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->setSiTechValue ('X', "F", 0);
+		serConn->setSiTechValue ('Y', "F", 0);
+		return 0;
+	}
+	else if (conn->isCommand ("reset_errors"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->resetErrors ();
+		return 0;
+	}
+	else if (conn->isCommand ("reset_controller"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->resetController ();
+		getConfiguration ();
+		return 0;
+	}
+	else if (conn->isCommand ("go_auto"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		serConn->siTechCommand ('X', "A");
+		serConn->siTechCommand ('Y', "A");
+		getConfiguration ();
+		return 0;
+	}
+/*	else if (conn->isCommand ("recover"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		recover ();
+		return 0;
+	} */
+	return AltAz::commandAuthorized (conn);
+}
+
 int SitechAltAz::info ()
 {
 	getTel ();
@@ -369,9 +420,21 @@ int SitechAltAz::startResync ()
 	return -1;
 }
 
-int SitechAltAz::startMoveFixed (double tar_az, double tar_alt)
+int SitechAltAz::moveAltAz ()
 {
-	return -1;
+	struct ln_hrz_posn hrz;
+	telAltAz->getAltAz (&hrz);
+
+	int32_t taz = r_az_pos->getValueLong ();
+	int32_t talt = r_alt_pos->getValueLong ();
+
+	int ret = hrz2counts (&hrz, taz, talt, false, 0);
+	if (ret)
+		return ret;
+
+	sitechSetTarget (taz, talt);
+
+	return 0;
 }
 
 int SitechAltAz::stopMove ()
@@ -402,6 +465,26 @@ void SitechAltAz::getConfiguration ()
 
 	az_pwm->setValueInteger (serConn->getSiTechValue ('Y', "O"));
 	alt_pwm->setValueInteger (serConn->getSiTechValue ('X', "O"));
+}
+
+void SitechAltAz::sitechSetTarget (int32_t ac, int32_t dc)
+{
+	altaz_Xrequest.y_dest = ac;
+	altaz_Xrequest.x_dest = dc;
+
+	altaz_Xrequest.y_speed = degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI;
+	altaz_Xrequest.x_speed = degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI;
+
+	// clear bit 4, tracking
+	xbits &= ~(0x01 << 4);
+
+	altaz_Xrequest.x_bits = xbits;
+	altaz_Xrequest.y_bits = ybits;
+
+	serConn->sendXAxisRequest (altaz_Xrequest);
+
+	t_az_pos->setValueLong (ac);
+	t_alt_pos->setValueLong (dc);
 }
 
 void SitechAltAz::getTel ()
@@ -547,6 +630,34 @@ std::string SitechAltAz::findErrors (uint16_t e)
 	if (e & ERROR_CHECKSUM)
 		ret += "Checksum Error in return from Power Board. ";
 	return ret;
+}
+
+double SitechAltAz::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
+{
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return ((loop_ticks / full_circle) * dps) / 1953;
+		case FORCE_ONE:
+			return ((loop_ticks / full_circle) * dps) / servoPIDSampleRate->getValueDouble ();
+		default:
+			return 0;
+	}
+}
+
+double SitechAltAz::ticksPerSec2MotorSpeed (double tps)
+{
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return tps * SPEED_MULTI / 1953;
+		case FORCE_ONE:
+			return tps * SPEED_MULTI / servoPIDSampleRate->getValueDouble ();
+		default:
+			return 0;
+	}
 }
 
 double SitechAltAz::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)

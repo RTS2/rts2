@@ -39,7 +39,6 @@ class MDM:public Telescope
 		virtual ~MDM ();
 
 		virtual int startResync ();
-		virtual int startMoveFixed (double tar_az, double tar_alt);
 
 		virtual int stopMove ();
 
@@ -127,12 +126,6 @@ int MDM::startResync ()
 		return -1;
 	}
 
-	return 0;
-}
-
-int MDM::startMoveFixed (double tar_az, double tar_alt)
-{
-//	getTarget (&dummyPos);
 	return 0;
 }
 

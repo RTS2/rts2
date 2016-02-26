@@ -30,7 +30,7 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (alt_ticks, "_alt_ticks", "[cnts] counts per full revolution on alt axis", false);
 
 	createValue (azZero, "_az_zero", "[deg] azimuth zero offset", false);
-	createValue (altZero, "_alt_zero", "[deg] altitude zero offset", false);
+	createValue (zdZero, "_zd_zero", "[deg] zenith zero offset", false);
 
 	createValue (azCpd, "_az_cpd", "[cnts] azimuth counts per azimth degree", false);
 	createValue (altCpd, "_alt_cpd", "[cnts] altitude counts per azimth degree", false);
@@ -45,13 +45,18 @@ AltAz::~AltAz (void)
 {
 }
 
-int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &altc, int32_t &azc, bool writeValue, double haMargin)
+int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin)
 {
 	struct ln_hrz_posn hrz;
 	getHrzFromEqu (pos, JD, &hrz);
 
-	int32_t d_alt = altc - (hrz.alt - altZero->getValueDouble ()) * altCpd->getValueDouble ();
-	int32_t d_az = azc - (hrz.az - azZero->getValueDouble ()) * azCpd->getValueDouble ();
+	return hrz2counts (&hrz, azc, altc, writeValue, haMargin);
+}
+
+int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, bool writeValue, double haMargin)
+{
+	int32_t d_alt = altc - ((90 - hrz->alt) - zdZero->getValueDouble ()) * altCpd->getValueDouble ();
+	int32_t d_az = azc - (hrz->az - azZero->getValueDouble ()) * azCpd->getValueDouble ();
 
 	d_alt %= alt_ticks->getValueLong ();
 	d_az %= az_ticks->getValueLong ();
@@ -75,10 +80,16 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &altc, int32_
 	while (t_az > azMax->getValueLong ())
 		t_az -= az_ticks->getValueLong ();
 
-	if (t_alt > altMin->getValueLong () && t_alt < altMax->getValueLong () && t_az > azMin->getValueLong () && t_az < azMax->getValueLong ())
-		return 0;
+	if (t_alt < altMin->getValueLong () || t_alt > altMax->getValueLong ())
+		return -1;
+	
+	if (t_az < azMin->getValueLong () || t_az > azMax->getValueLong ())
+		return -1;
 
-	return -1;
+	azc = t_az;
+	altc = t_alt;
+
+	return 0;
 }
 
 void AltAz::unlockPointing ()
@@ -87,7 +98,7 @@ void AltAz::unlockPointing ()
 	alt_ticks->setWritable ();
 
 	azZero->setWritable ();
-	altZero->setWritable ();
+	zdZero->setWritable ();
 	azCpd->setWritable ();
 	altCpd->setWritable ();
 
@@ -100,7 +111,7 @@ void AltAz::unlockPointing ()
 	updateMetaInformations (alt_ticks);
 
 	updateMetaInformations (azZero);
-	updateMetaInformations (altZero);
+	updateMetaInformations (zdZero);
 	updateMetaInformations (azCpd);
 	updateMetaInformations (altCpd);
 

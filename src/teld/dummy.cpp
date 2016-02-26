@@ -64,11 +64,6 @@ class Dummy:public Telescope
 
 		virtual int startResync ();
 
-		virtual int startMoveFixed (double tar_az, double tar_alt)
-		{
-			return 0;
-		}
-
 		virtual int endMove ()
 		{
 			startTracking ();
