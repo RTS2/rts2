@@ -72,6 +72,8 @@ class SitechAltAz:public AltAz
 			return isMoving ();
 		}
 
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 		virtual double estimateTargetTime ()
 		{
 			return getTargetDistance () * 2.0;
@@ -452,6 +454,22 @@ int SitechAltAz::startPark()
 	return -1;
 }
 
+int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == t_az_pos)
+	{
+		sitechSetTarget (newValue->getValueLong (), t_alt_pos->getValueLong ());
+		return 0;
+	}
+	if (oldValue == t_alt_pos)
+	{
+		sitechSetTarget (t_az_pos->getValueLong (), newValue->getValueLong ());
+		return 0;
+	}
+
+	return AltAz::setValue (oldValue, newValue);
+}
+
 void SitechAltAz::getConfiguration ()
 {
 	az_acceleration->setValueDouble (serConn->getSiTechValue ('Y', "R"));
@@ -495,7 +513,7 @@ void SitechAltAz::getTel ()
 	r_alt_pos->setValueLong (altaz_status.x_pos);
 
 	az_pos->setValueLong (altaz_status.y_pos + azZero->getValueDouble () * azCpd->getValueDouble ());
-	alt_pos->setValueLong (altaz_status.x_pos + altZero->getValueDouble () * altCpd->getValueDouble ());
+	alt_pos->setValueLong (altaz_status.x_pos + zdZero->getValueDouble () * altCpd->getValueDouble ());
 
 	az_enc->setValueLong (altaz_status.y_enc);
 	alt_enc->setValueLong (altaz_status.x_enc);
