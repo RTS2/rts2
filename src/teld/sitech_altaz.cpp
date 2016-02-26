@@ -194,8 +194,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	createValue (az_pos, "AXAZ", "AZ motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (alt_pos, "AXALT", "ALT motor axis count", true, RTS2_VALUE_WRITABLE);
 
-	createValue (r_az_pos, "R_AXRA", "real AZ motor axis count", true);
-	createValue (r_alt_pos, "R_AXDEC", "real ALT motor axis count", true);
+	createValue (r_az_pos, "R_AXAZ", "real AZ motor axis count", true);
+	createValue (r_alt_pos, "R_AXALT", "real ALT motor axis count", true);
 
 	createValue (t_az_pos, "T_AXAZ", "target AZ motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (t_alt_pos, "T_AXALT", "target ALT motor axis count", true, RTS2_VALUE_WRITABLE);
