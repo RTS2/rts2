@@ -284,7 +284,7 @@ int SX::doReadout ()
 		}
 		else
 		{
-			ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_EVEN | CCD_EXP_FLAGS_SPARE2, 0, 0, 0, chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt () / 2, binningHorizontal (), 1);
+			ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_EVEN | CCD_EXP_FLAGS_SPARE2, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt () / 2, chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt () / 2, binningHorizontal (), 1);
 			if (!ret)
 				return -1;
 
@@ -299,7 +299,7 @@ int SX::doReadout ()
 			wipeDelay->setValueLong ((end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_nsec - start_time.tv_nsec + 500) / 1000);
 			//std::cout << "wipe " << wipeDelay->getValueLong () << " " << end_time.tv_sec - start_time.tv_sec << " " << end_time.tv_nsec - start_time.tv_nsec << std::endl;
 
-			ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_ODD | CCD_EXP_FLAGS_SPARE2, 0, 0, 0, chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt () / 2, binningHorizontal (), 1);
+			ret = sxLatchPixels (sxHandle, CCD_EXP_FLAGS_FIELD_ODD | CCD_EXP_FLAGS_SPARE2, 0, chipUsedReadout->getXInt (), chipUsedReadout->getYInt () / 2, chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt () / 2, binningHorizontal (), 1);
 			if (!ret)
 				return -1;
 
