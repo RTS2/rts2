@@ -151,7 +151,8 @@ class TelModelTest:public rts2core::CliApp
 		void test (double ra, double dec);
 		void runOnFile (std::string filename, std::ostream & os);
 		void runOnFitsFile (std::string filename, std::ostream & os);
-		void runOnDatFile (std::string filename, std::ostream & os);
+		void runOnRTS2DatFile (std::string filename, std::ostream & os);
+		void runOnTPDatFile (std::string filename, std::ostream & os);
 };
 
 };
@@ -347,8 +348,10 @@ void TelModelTest::runOnFile (std::string filename, std::ostream & os)
 {
 	if (image)
 		runOnFitsFile (filename, os);
+	else if (rts2ModelFile != NULL)
+		runOnRTS2DatFile (filename, os);
 	else
-		runOnDatFile (filename, os);
+		runOnTPDatFile (filename, os);
 }
 
 void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
@@ -415,7 +418,11 @@ void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 
 }
 
-void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
+void TelModelTest::runOnRTS2DatFile (std::string filename, std::ostream & os)
+{
+}
+
+void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 {
 	char caption[81];
 	double temp;

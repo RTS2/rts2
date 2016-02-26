@@ -1294,6 +1294,15 @@ void Telescope::createParkPos (double alt, double az, int flip)
 	parkFlip->setValueInteger (flip);
 }
 
+void Telescope::getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz_posn *hrz)
+{
+	struct ln_lnlat_posn obs;
+	obs.lat = getLatitude ();
+	obs.lng = getLongitude ();
+
+	ln_get_hrz_from_equ (pos, &obs, JD, hrz);
+}
+
 int Telescope::info ()
 {
 	struct ln_hrz_posn hrz;

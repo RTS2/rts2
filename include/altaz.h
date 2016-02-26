@@ -36,9 +36,26 @@ class AltAz: public Telescope
 		virtual ~AltAz (void);
 
 	protected:
-		//int sky2counts (int32_t & ac, int32_t & dc);
-		//int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
-		//int counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &altc, int32_t &azc, bool writeValue, double haMargin);
+
+		/**
+		 * Unlock basic pointing parameters. The parameters such as zero offsets etc. are made writable.
+		 */
+		void unlockPointing ();
+
+		rts2core::ValueLong *az_ticks;
+		rts2core::ValueLong *alt_ticks;
+
+		rts2core::ValueDouble *azZero;
+		rts2core::ValueDouble *altZero;
+
+		rts2core::ValueDouble *azCpd;
+		rts2core::ValueDouble *altCpd;
+
+		rts2core::ValueLong *azMin;
+		rts2core::ValueLong *azMax;
+		rts2core::ValueLong *altMin;
+		rts2core::ValueLong *altMax;
 };
 
 };
