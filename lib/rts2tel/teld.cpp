@@ -1303,6 +1303,15 @@ void Telescope::getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz
 	ln_get_hrz_from_equ (pos, &obs, JD, hrz);
 }
 
+void Telescope::getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos)
+{
+	struct ln_lnlat_posn obs;
+	obs.lat = getLatitude ();
+	obs.lng = getLongitude ();
+
+	ln_get_equ_from_hrz (hrz, &obs, JD, pos);
+}
+
 int Telescope::info ()
 {
 	struct ln_hrz_posn hrz;

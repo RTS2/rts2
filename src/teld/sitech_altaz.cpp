@@ -99,6 +99,9 @@ class SitechAltAz:public AltAz
 		rts2core::ValueLong *t_az_pos;
 		rts2core::ValueLong *t_alt_pos;
 
+		rts2core::ValueDouble *trackingDist;
+		rts2core::ValueDouble *slowSyncDistance;
+
 		rts2core::IntegerArray *PIDs;
 
 		rts2core::ValueLong *az_enc;
@@ -161,6 +164,8 @@ class SitechAltAz:public AltAz
 
 		void getConfiguration ();
 
+		int sitechMove (int32_t azc, int32_t altc);
+
 		void sitechSetTarget (int32_t ac, int32_t dc);
 
 		bool firstSlewCall;
@@ -173,7 +178,7 @@ class SitechAltAz:public AltAz
 		 * Retrieve telescope counts, convert them to RA and Declination.
 		 */
 		void getTel ();
-		void getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec);
+		void getTel (double &telra, double &teldec, double &un_telra, double &un_telzd);
 
 		void getPIDs ();
 		std::string findErrors (uint16_t e);
@@ -194,9 +199,10 @@ class SitechAltAz:public AltAz
 
 using namespace rts2teld;
 
-
 SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 {
+	unlockPointing ();
+
 	device_file = "/dev/ttyUSB0";
 	serConn = NULL;
 
@@ -211,6 +217,14 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 
 	createValue (t_az_pos, "T_AXAZ", "target AZ motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (t_alt_pos, "T_AXALT", "target ALT motor axis count", true, RTS2_VALUE_WRITABLE);
+
+	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+
+	// default to 1 arcsec
+	trackingDist->setValueDouble (1 / 60.0 / 60.0);
+
+	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	slowSyncDistance->setValueDouble (0.05);  // 3 arcmin
 
 	createValue (az_acceleration, "az_acceleration", "[deg/s^2] AZ motor acceleration", false);
 	createValue (alt_acceleration, "alt_acceleration", "[deg/s^2] Alt motor acceleration", false);
@@ -419,7 +433,15 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 
 int SitechAltAz::info ()
 {
-	getTel ();
+	struct ln_hrz_posn hrz;
+	double un_az, un_zd;
+	getTel (hrz.az, hrz.alt, un_az, un_zd);
+
+	struct ln_equ_posn pos;
+
+	getEquFromHrz (&hrz, getTelJD, &pos);
+	setTelRaDec (pos.ra, pos.dec);
+
 	return AltAz::info ();
 }
 
@@ -448,9 +470,6 @@ int SitechAltAz::startResync ()
 		valueGood (r_alt_pos);
 		firstSlewCall = false;
 	}
-
-	partialMove->setValueInteger (ret);
-	sendValueAll (partialMove);
 
 	return 0;
 
@@ -499,10 +518,10 @@ int SitechAltAz::isMoving ()
 		// close to target, run tracking
 		if (tdist < 0.5)
 		{
-			if (tdist < slowSyncDistance->getValueDouble ())
-				internalTracking (2.0, 1.0);
-			else
-				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
+//			if (tdist < slowSyncDistance->getValueDouble ())
+//				internalTracking (2.0, 1.0);
+//			else
+//				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
 			return USEC_SEC * trackingInterval->getValueFloat () / 10;
 		}
 
@@ -511,10 +530,6 @@ int SitechAltAz::isMoving ()
 
 		return USEC_SEC / 10;
 	}
-
-	// set ra speed to sidereal tracking
-	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
-	sendValueAll (ra_track_speed);
 
 	return -2;
 }
@@ -555,13 +570,13 @@ void SitechAltAz::getConfiguration ()
 	alt_pwm->setValueInteger (serConn->getSiTechValue ('X', "O"));
 }
 
-int Sitech::sitechMove (int32_t azc, int32_t altc)
+int SitechAltAz::sitechMove (int32_t azc, int32_t altc)
 {
-	logStream (MESSAGE_DEBUG) << "sitechMove " << r_az_pos->getValueLong () << " " << azc << " " << r_alt_pos->getValueLong () << " " << altc << " " << partialMove->getValueInteger () << sendLog;
+	logStream (MESSAGE_DEBUG) << "sitechMove " << r_az_pos->getValueLong () << " " << azc << " " << r_alt_pos->getValueLong () << " " << altc << " " << sendLog;
 
 	double JD = ln_get_julian_from_sys ();
 
-	int ret = calculateMove (JD, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), azc, altc, 0);
+	int ret = calculateMove (JD, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), azc, altc);
 	if (ret < 0)
 		return ret;
 
@@ -691,9 +706,12 @@ void SitechAltAz::getTel ()
 	}
 }
 
-void SitechAltAz::getTel (double &telaz, double &telalt, int &telflip, double &un_telaz, double &un_telalt)
+void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, double &un_telzd)
 {
+	getTelJD = ln_get_julian_from_sys ();
 	getTel ();
+
+	counts2hrz (altaz_status.y_pos, altaz_status.x_pos, telaz, telalt, un_telaz, un_telzd);
 }
 
 void SitechAltAz::getPIDs ()

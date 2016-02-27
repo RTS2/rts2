@@ -45,6 +45,12 @@ AltAz::~AltAz (void)
 {
 }
 
+
+int AltAz::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, int32_t &t_dc)
+{
+	return 0;
+}
+
 int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin)
 {
 	struct ln_hrz_posn hrz;
@@ -67,8 +73,8 @@ int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, boo
 	if (d_az > az_ticks->getValueLong () / 2.0)
 		d_az -= az_ticks->getValueLong ();
 
-	int32_t t_alt = altc + d_alt;
-	int32_t t_az = azc + d_az;
+	int32_t t_alt = altc - d_alt;
+	int32_t t_az = azc - d_az;
 
 	while (t_alt < altMin->getValueLong ())
 		t_alt += alt_ticks->getValueLong ();
@@ -90,6 +96,35 @@ int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, boo
 	altc = t_alt;
 
 	return 0;
+}
+
+void AltAz::counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, double &un_az, double &un_zd)
+{
+	un_az = azc / azCpd->getValueDouble () + azZero->getValueDouble ();
+	az = ln_range_degrees (un_az);
+
+	un_zd = altc / altCpd->getValueDouble () + zdZero->getValueDouble ();
+	alt = ln_range_degrees (un_zd + 90);
+	if (alt > 270)
+	{
+		alt = -360 + alt;
+	}
+	else if (alt > 90)
+	{
+		alt = 180 - alt;
+		az = ln_range_degrees (az + 180);
+	}
+}
+
+void AltAz::counts2sky (int32_t azc, int32_t altc, double &ra, double &dec)
+{
+	struct ln_hrz_posn hrz;
+	double un_az, un_zd;
+	counts2hrz (azc, altc, hrz.az, hrz.alt, un_az, un_zd);
+	struct ln_equ_posn pos;
+	getEquFromHrz (&hrz, ln_get_julian_from_sys (), &pos);
+	ra = pos.ra;
+	dec = pos.dec;
 }
 
 void AltAz::unlockPointing ()

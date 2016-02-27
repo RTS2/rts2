@@ -36,14 +36,22 @@ class AltAz: public Telescope
 		virtual ~AltAz (void);
 
 	protected:
+		int calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, int32_t &t_dc);
+
 		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin);
 
 		virtual int hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, bool writeValue, double haMargin);
+
+		void counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, double &un_az, double &un_zd);
+
+		void counts2sky (int32_t azc, int32_t altc, double &ra, double &dec);
 
 		/**
 		 * Unlock basic pointing parameters. The parameters such as zero offsets etc. are made writable.
 		 */
 		void unlockPointing ();
+
+                rts2core::ValueDouble *azSlewMargin;      //* margin for az axis during slew (used only on first call of startResync during new movement)
 
 		rts2core::ValueLong *az_ticks;
 		rts2core::ValueLong *alt_ticks;
