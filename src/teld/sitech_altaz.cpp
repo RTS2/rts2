@@ -84,9 +84,9 @@ class SitechAltAz:public AltAz
 		ConnSitech *telConn;
 		ConnSitech *derConn;
 
-		SitechAxisStatus altaz_status;
-		SitechYAxisRequest altaz_Yrequest;
-		SitechXAxisRequest altaz_Xrequest;
+		SitechAxisStatus altaz_status, der_status;
+		SitechYAxisRequest altaz_Yrequest, der_Yrequest;
+		SitechXAxisRequest altaz_Xrequest, der_Xrequest;
 
 		rts2core::ValueDouble *sitechVersion;
 		rts2core::ValueInteger *sitechSerial;
@@ -160,6 +160,28 @@ class SitechAltAz:public AltAz
 		rts2core::ValueInteger *az_pwm;
 		rts2core::ValueInteger *alt_pwm;
 
+		// derotator
+		rts2core::ValueLong *r_der1_pos;
+		rts2core::ValueLong *r_der2_pos;
+
+		rts2core::ValueLong *t_der1_pos;
+		rts2core::ValueLong *t_der2_pos;
+
+		rts2core::ValueLong *der1_ticks;
+		rts2core::ValueLong *der2_ticks;
+
+		rts2core::ValueDouble *der1_acceleration;
+		rts2core::ValueDouble *der2_acceleration;
+
+		rts2core::ValueDouble *der1_max_velocity;
+		rts2core::ValueDouble *der2_max_velocity;
+
+		rts2core::ValueDouble *der1_current;
+		rts2core::ValueDouble *der2_current;
+
+		rts2core::ValueInteger *der1_pwm;
+		rts2core::ValueInteger *der2_pwm;
+
 		rts2core::ValueInteger *countUp;
 		rts2core::ValueDouble *servoPIDSampleRate;
 
@@ -167,7 +189,8 @@ class SitechAltAz:public AltAz
 
 		int sitechMove (int32_t azc, int32_t altc);
 
-		void sitechSetTarget (int32_t ac, int32_t dc);
+		void telSetTarget (int32_t ac, int32_t dc);
+		void derSetTarget (int32_t d1, int32_t d2);
 
 		bool firstSlewCall;
 		bool wasStopped;
@@ -288,7 +311,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	wasStopped = false;
 
 	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
-	addOption ('r', "derotator", 1, "derotator tty (ussualy /dev/ttyUSBx");
+	addOption ('F', "derotator", 1, "derotator tty (ussualy /dev/ttyUSBx");
 }
 
 
@@ -307,6 +330,10 @@ int SitechAltAz::processOption (int in_opt)
 	{
 		case 'f':
 			tel_tty = optarg;
+			break;
+
+		case 'F':
+			der_tty = optarg;
 			break;
 
 		default:
@@ -341,10 +368,41 @@ int SitechAltAz::initHardware ()
 	telConn->setDebug (getDebug ());
 
 	ret = telConn->init ();
-
 	if (ret)
 		return -1;
 	telConn->flushPortIO ();
+
+	if (der_tty != NULL)
+	{
+		derConn = new ConnSitech (der_tty, this);
+		derConn->setDebug (getDebug ());
+
+		ret = derConn->init ();
+		if (ret)
+			return -1;
+		derConn->flushPortIO ();
+
+		createValue (r_der1_pos, "R_AXD1", "[cnts] position of first derotator", true);
+		createValue (r_der2_pos, "R_AXD2", "[cnts] position of second derotator", true);
+
+		createValue (t_der1_pos, "T_AXD1", "[cnts] target position of first derotator", true, RTS2_VALUE_WRITABLE);
+		createValue (t_der2_pos, "T_AXD2", "[cnts] target position of second derotator", true, RTS2_VALUE_WRITABLE);
+
+		createValue (der1_ticks, "der1_ticks", "[cnts] 1st derotator full circle ticks", false);
+		createValue (der2_ticks, "der2_ticks", "[cnts] 1nd derotator full circle ticks", false);
+
+		createValue (der1_acceleration, "der1_acceleration", "1st derotator", false);
+		createValue (der2_acceleration, "der2_acceleration", "1st derotator", false);
+
+		createValue (der1_max_velocity, "der1_max_velocity", "1st derotator", false);
+		createValue (der2_max_velocity, "der2_max_velocity", "2nd derotator", false);
+
+		createValue (der1_current, "der1_current", "1st derotator", false);
+		createValue (der2_current, "der2_current", "2nd derotator", false);
+
+		createValue (der1_pwm, "der1_pwm", "1st derotator", false);
+		createValue (der2_pwm, "der2_pwm", "2nd derotator", false);
+	}
 
 	xbits = telConn->getSiTechValue ('X', "B");
 	ybits = telConn->getSiTechValue ('Y', "B");
@@ -426,6 +484,12 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 			return -2;
 		telConn->siTechCommand ('X', "A");
 		telConn->siTechCommand ('Y', "A");
+		if (derConn)
+		{
+			derConn->siTechCommand ('X', "A");
+			derConn->siTechCommand ('Y', "A");
+		}
+	
 		getConfiguration ();
 		return 0;
 	}
@@ -444,6 +508,14 @@ int SitechAltAz::info ()
 	struct ln_hrz_posn hrz;
 	double un_az, un_zd;
 	getTel (hrz.az, hrz.alt, un_az, un_zd);
+
+	if (derConn != NULL)
+	{
+		derConn->getAxisStatus ('X', der_status);
+
+		r_der1_pos->setValueLong (der_status.y_pos);
+		r_der2_pos->setValueLong (der_status.x_pos);
+	}
 
 	struct ln_equ_posn pos;
 
@@ -498,7 +570,7 @@ int SitechAltAz::moveAltAz ()
 	if (ret)
 		return ret;
 
-	sitechSetTarget (taz, talt);
+	telSetTarget (taz, talt);
 
 	return 0;
 }
@@ -554,12 +626,24 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == t_az_pos)
 	{
-		sitechSetTarget (newValue->getValueLong (), t_alt_pos->getValueLong ());
+		telSetTarget (newValue->getValueLong (), t_alt_pos->getValueLong ());
 		return 0;
 	}
 	if (oldValue == t_alt_pos)
 	{
-		sitechSetTarget (t_az_pos->getValueLong (), newValue->getValueLong ());
+		telSetTarget (t_az_pos->getValueLong (), newValue->getValueLong ());
+		return 0;
+	}
+
+	if (oldValue == t_der1_pos)
+	{
+		derSetTarget (newValue->getValueLong (), t_der2_pos->getValueLong ());
+		return 0;
+	}
+
+	if (oldValue == t_der2_pos)
+	{
+		derSetTarget (t_der1_pos->getValueLong (), newValue->getValueLong ());
 		return 0;
 	}
 
@@ -579,6 +663,21 @@ void SitechAltAz::getConfiguration ()
 
 	az_pwm->setValueInteger (telConn->getSiTechValue ('Y', "O"));
 	alt_pwm->setValueInteger (telConn->getSiTechValue ('X', "O"));
+
+	if (derConn)
+	{
+		der1_acceleration->setValueDouble (derConn->getSiTechValue ('Y', "R"));
+		der2_acceleration->setValueDouble (derConn->getSiTechValue ('X', "R"));
+
+		der1_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('Y', "S"), der1_ticks->getValueLong ()));
+		der2_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('X', "S"), der2_ticks->getValueLong ()));
+
+		der1_current->setValueDouble (derConn->getSiTechValue ('Y', "C") / 100.0);
+		der2_current->setValueDouble (derConn->getSiTechValue ('X', "C") / 100.0);
+
+		der1_pwm->setValueInteger (derConn->getSiTechValue ('Y', "O"));
+		der2_pwm->setValueInteger (derConn->getSiTechValue ('X', "O"));
+	}
 }
 
 int SitechAltAz::sitechMove (int32_t azc, int32_t altc)
@@ -591,12 +690,12 @@ int SitechAltAz::sitechMove (int32_t azc, int32_t altc)
 	if (ret < 0)
 		return ret;
 
-	sitechSetTarget (azc, altc);
+	telSetTarget (azc, altc);
 
 	return ret;
 }
 
-void SitechAltAz::sitechSetTarget (int32_t ac, int32_t dc)
+void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 {
 	altaz_Xrequest.y_dest = ac;
 	altaz_Xrequest.x_dest = dc;
@@ -614,6 +713,23 @@ void SitechAltAz::sitechSetTarget (int32_t ac, int32_t dc)
 
 	t_az_pos->setValueLong (ac);
 	t_alt_pos->setValueLong (dc);
+}
+
+void SitechAltAz::derSetTarget (int32_t d1, int32_t d2)
+{
+	der_Xrequest.y_dest = d1;
+	der_Xrequest.x_dest = d2;
+
+	der_Xrequest.y_speed = degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI;
+	der_Xrequest.x_speed = degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI;
+
+	der_Xrequest.x_bits = xbits;
+	der_Xrequest.y_bits = ybits;
+
+	derConn->sendXAxisRequest (der_Xrequest);
+
+	t_der1_pos->setValueLong (d1);
+	t_der2_pos->setValueLong (d2);
 }
 
 void SitechAltAz::getTel ()
