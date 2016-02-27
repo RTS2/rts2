@@ -183,7 +183,10 @@ class SitechAltAz:public AltAz
 		rts2core::ValueInteger *der2_pwm;
 
 		rts2core::ValueInteger *countUp;
-		rts2core::ValueDouble *servoPIDSampleRate;
+		rts2core::ValueDouble *telPIDSampleRate;
+
+		rts2core::ValueInteger *countDerUp;
+		rts2core::ValueDouble *derPIDSampleRate;
 
 		void getConfiguration ();
 
@@ -208,15 +211,18 @@ class SitechAltAz:public AltAz
 		std::string findErrors (uint16_t e);
 
 		// speed conversion; see Dan manual for details
-		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
+		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle);
 		double ticksPerSec2MotorSpeed (double tps);
-		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
+		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID);
 
 		// which controller is connected
 		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
 
 		uint8_t xbits;
 		uint8_t ybits;
+
+		uint8_t der_xbits;
+		uint8_t der_ybits;
 };
 
 }
@@ -402,6 +408,9 @@ int SitechAltAz::initHardware ()
 
 		createValue (der1_pwm, "der1_pwm", "1st derotator", false);
 		createValue (der2_pwm, "der2_pwm", "2nd derotator", false);
+
+		der_xbits = derConn->getSiTechValue ('X', "B");
+		der_ybits = derConn->getSiTechValue ('Y', "B");
 	}
 
 	xbits = telConn->getSiTechValue ('X', "B");
@@ -433,8 +442,17 @@ int SitechAltAz::initHardware ()
 		createValue (countUp, "count_up", "CPU count up", false);
 		countUp->setValueInteger (telConn->getSiTechValue ('Y', "XHC"));
 
-		createValue (servoPIDSampleRate, "servo_pid_sample_rate", "number of CPU cycles per second", false);
-		servoPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp->getValueInteger ()));
+		createValue (telPIDSampleRate, "tel_pid_sample_rate", "number of CPU cycles per second", false);
+		telPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp->getValueInteger ()));
+
+		if (derConn != NULL)
+		{
+			createValue (countDerUp, "der_count_up", "CPU count up", false);
+			countDerUp->setValueInteger (derConn->getSiTechValue ('Y', "XHC"));
+
+			createValue (derPIDSampleRate, "der_pid_sample_rate", "number of CPU cycles per second", false);
+			derPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countDerUp->getValueInteger ()));
+		}
 
 		getPIDs ();
 	}
@@ -446,7 +464,10 @@ int SitechAltAz::initHardware ()
 	
 	/* Flush the input buffer in case there is something left from startup */
 
-	telConn->flushPortIO();
+	telConn->flushPortIO ();
+
+	if (derConn)
+		derConn->flushPortIO ();
 
 	getConfiguration ();
 
@@ -468,6 +489,8 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		if (!conn->paramEnd ())
 			return -2;
 		telConn->resetErrors ();
+		if (derConn)
+			derConn->resetErrors ();
 		return 0;
 	}
 	else if (conn->isCommand ("reset_controller"))
@@ -475,6 +498,8 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		if (!conn->paramEnd ())
 			return -2;
 		telConn->resetController ();
+		if (derConn)
+			derConn->resetController ();
 		getConfiguration ();
 		return 0;
 	}
@@ -655,8 +680,8 @@ void SitechAltAz::getConfiguration ()
 	az_acceleration->setValueDouble (telConn->getSiTechValue ('Y', "R"));
 	alt_acceleration->setValueDouble (telConn->getSiTechValue ('X', "R"));
 
-	az_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('Y', "S"), az_ticks->getValueLong ()));
-	alt_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('X', "S"), alt_ticks->getValueLong ()));
+	az_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('Y', "S"), az_ticks->getValueLong (), telPIDSampleRate->getValueDouble ()));
+	alt_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('X', "S"), alt_ticks->getValueLong (), telPIDSampleRate->getValueDouble ()));
 
 	az_current->setValueDouble (telConn->getSiTechValue ('Y', "C") / 100.0);
 	alt_current->setValueDouble (telConn->getSiTechValue ('X', "C") / 100.0);
@@ -669,8 +694,8 @@ void SitechAltAz::getConfiguration ()
 		der1_acceleration->setValueDouble (derConn->getSiTechValue ('Y', "R"));
 		der2_acceleration->setValueDouble (derConn->getSiTechValue ('X', "R"));
 
-		der1_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('Y', "S"), der1_ticks->getValueLong ()));
-		der2_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('X', "S"), der2_ticks->getValueLong ()));
+		der1_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('Y', "S"), der1_ticks->getValueLong (), derPIDSampleRate->getValueDouble ()));
+		der2_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('X', "S"), der2_ticks->getValueLong (), derPIDSampleRate->getValueDouble ()));
 
 		der1_current->setValueDouble (derConn->getSiTechValue ('Y', "C") / 100.0);
 		der2_current->setValueDouble (derConn->getSiTechValue ('X', "C") / 100.0);
@@ -700,8 +725,8 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 	altaz_Xrequest.y_dest = ac;
 	altaz_Xrequest.x_dest = dc;
 
-	altaz_Xrequest.y_speed = degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI;
-	altaz_Xrequest.x_speed = degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI;
+	altaz_Xrequest.y_speed = degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), telPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
+	altaz_Xrequest.x_speed = degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), telPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
 
 	// clear bit 4, tracking
 	xbits &= ~(0x01 << 4);
@@ -720,11 +745,14 @@ void SitechAltAz::derSetTarget (int32_t d1, int32_t d2)
 	der_Xrequest.y_dest = d1;
 	der_Xrequest.x_dest = d2;
 
-	der_Xrequest.y_speed = degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI;
-	der_Xrequest.x_speed = degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI;
+	der_Xrequest.y_speed = degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
+	der_Xrequest.x_speed = degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
 
-	der_Xrequest.x_bits = xbits;
-	der_Xrequest.y_bits = ybits;
+	//der_xbits &= ~(0x01 << 4);
+	//der_ybits &= ~(0x01 << 4);
+
+	der_Xrequest.x_bits = der_xbits;
+	der_Xrequest.y_bits = der_ybits;
 
 	derConn->sendXAxisRequest (der_Xrequest);
 
@@ -848,6 +876,21 @@ void SitechAltAz::getPIDs ()
 	PIDs->addValue (telConn->getSiTechValue ('X', "PPP"));
 	PIDs->addValue (telConn->getSiTechValue ('X', "III"));
 	PIDs->addValue (telConn->getSiTechValue ('X', "DDD"));
+
+	PIDs->addValue (telConn->getSiTechValue ('Y', "PPP"));
+	PIDs->addValue (telConn->getSiTechValue ('Y', "III"));
+	PIDs->addValue (telConn->getSiTechValue ('Y', "DDD"));
+
+	if (derConn)
+	{
+		PIDs->addValue (derConn->getSiTechValue ('X', "PPP"));
+		PIDs->addValue (derConn->getSiTechValue ('X', "III"));
+		PIDs->addValue (derConn->getSiTechValue ('X', "DDD"));
+
+		PIDs->addValue (derConn->getSiTechValue ('Y', "PPP"));
+		PIDs->addValue (derConn->getSiTechValue ('Y', "III"));
+		PIDs->addValue (derConn->getSiTechValue ('Y', "DDD"));
+	}
 }
 
 std::string SitechAltAz::findErrors (uint16_t e)
@@ -880,7 +923,7 @@ std::string SitechAltAz::findErrors (uint16_t e)
 	return ret;
 }
 
-double SitechAltAz::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
+double SitechAltAz::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle)
 {
 	switch (sitechType)
 	{
@@ -888,7 +931,7 @@ double SitechAltAz::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, doubl
 		case SERVO_II:
 			return ((loop_ticks / full_circle) * dps) / 1953;
 		case FORCE_ONE:
-			return ((loop_ticks / full_circle) * dps) / servoPIDSampleRate->getValueDouble ();
+			return ((loop_ticks / full_circle) * dps) / samplePID;
 		default:
 			return 0;
 	}
@@ -902,13 +945,13 @@ double SitechAltAz::ticksPerSec2MotorSpeed (double tps)
 		case SERVO_II:
 			return tps * SPEED_MULTI / 1953;
 		case FORCE_ONE:
-			return tps * SPEED_MULTI / servoPIDSampleRate->getValueDouble ();
+			return tps * SPEED_MULTI / telPIDSampleRate->getValueDouble ();
 		default:
 			return 0;
 	}
 }
 
-double SitechAltAz::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
+double SitechAltAz::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID)
 {
 	switch (sitechType)
 	{
@@ -916,7 +959,7 @@ double SitechAltAz::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
 		case SERVO_II:
 			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
 		case FORCE_ONE:
-			return (double) speed / loop_ticks * (360.0 * servoPIDSampleRate->getValueDouble () / SPEED_MULTI);
+			return (double) speed / loop_ticks * (360.0 * samplePID / SPEED_MULTI);
 		default:
 			return 0;
 	}
