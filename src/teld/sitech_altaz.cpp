@@ -163,6 +163,9 @@ class SitechAltAz:public AltAz
 
 		void sitechSetTarget (int32_t ac, int32_t dc);
 
+		bool firstSlewCall;
+		bool wasStopped;
+
 		// JD used in last getTel call
 		double getTelJD;
 
@@ -262,6 +265,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 
 	createValue (az_sitech_speed, "az_sitech_speed", "speed in controller units", false);
 	createValue (alt_sitech_speed, "alt_sitech_speed", "speed in controller units", false);
+
+	firstSlewCall = true;
+	wasStopped = false;
 
 	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
 }
@@ -419,7 +425,35 @@ int SitechAltAz::info ()
 
 int SitechAltAz::startResync ()
 {
-	return -1;
+	getConfiguration ();
+
+	double JD = ln_get_julian_from_sys ();
+	struct ln_equ_posn tar;
+
+	int32_t azc = r_az_pos->getValueLong (), altc = r_alt_pos->getValueLong ();
+	int ret = calculateTarget (JD, &tar, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0);
+
+	if (ret)
+		return -1;
+
+	wasStopped = false;
+
+	ret = sitechMove (azc, altc);
+	if (ret < 0)
+		return ret;
+
+	if (firstSlewCall == true)
+	{
+		valueGood (r_az_pos);
+		valueGood (r_alt_pos);
+		firstSlewCall = false;
+	}
+
+	partialMove->setValueInteger (ret);
+	sendValueAll (partialMove);
+
+	return 0;
+
 }
 
 int SitechAltAz::moveAltAz ()
@@ -446,7 +480,43 @@ int SitechAltAz::stopMove ()
 
 int SitechAltAz::isMoving ()
 {
-	return -1;
+	if (wasStopped)
+		return -1;
+
+	time_t now = time (NULL);
+	if ((getTargetStarted () + 120) < now)
+	{
+		logStream (MESSAGE_ERROR) << "finished move due to timeout, target position not reached" << sendLog;
+		return -1;
+	}
+
+	info ();
+
+	double tdist = getTargetDistance ();
+
+	if (tdist > trackingDist->getValueDouble ())
+	{
+		// close to target, run tracking
+		if (tdist < 0.5)
+		{
+			if (tdist < slowSyncDistance->getValueDouble ())
+				internalTracking (2.0, 1.0);
+			else
+				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
+			return USEC_SEC * trackingInterval->getValueFloat () / 10;
+		}
+
+		// if too far away, update target
+		startResync ();
+
+		return USEC_SEC / 10;
+	}
+
+	// set ra speed to sidereal tracking
+	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
+	sendValueAll (ra_track_speed);
+
+	return -2;
 }
 
 int SitechAltAz::startPark()
@@ -483,6 +553,21 @@ void SitechAltAz::getConfiguration ()
 
 	az_pwm->setValueInteger (serConn->getSiTechValue ('Y', "O"));
 	alt_pwm->setValueInteger (serConn->getSiTechValue ('X', "O"));
+}
+
+int Sitech::sitechMove (int32_t azc, int32_t altc)
+{
+	logStream (MESSAGE_DEBUG) << "sitechMove " << r_az_pos->getValueLong () << " " << azc << " " << r_alt_pos->getValueLong () << " " << altc << " " << partialMove->getValueInteger () << sendLog;
+
+	double JD = ln_get_julian_from_sys ();
+
+	int ret = calculateMove (JD, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), azc, altc, 0);
+	if (ret < 0)
+		return ret;
+
+	sitechSetTarget (azc, altc);
+
+	return ret;
 }
 
 void SitechAltAz::sitechSetTarget (int32_t ac, int32_t dc)
