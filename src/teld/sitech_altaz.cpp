@@ -80,8 +80,9 @@ class SitechAltAz:public AltAz
 		}
 
 	private:
-		const char *device_file;
-		ConnSitech *serConn;
+		const char *tel_tty, *der_tty;
+		ConnSitech *telConn;
+		ConnSitech *derConn;
 
 		SitechAxisStatus altaz_status;
 		SitechYAxisRequest altaz_Yrequest;
@@ -203,8 +204,11 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 {
 	unlockPointing ();
 
-	device_file = "/dev/ttyUSB0";
-	serConn = NULL;
+	tel_tty = "/dev/ttyUSB0";
+	telConn = NULL;
+
+	der_tty = NULL;
+	derConn = NULL;
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -283,14 +287,18 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	firstSlewCall = true;
 	wasStopped = false;
 
-	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
+	addOption ('r', "derotator", 1, "derotator tty (ussualy /dev/ttyUSBx");
 }
 
 
 SitechAltAz::~SitechAltAz(void)
 {
-	delete serConn;
-	serConn = NULL;
+	delete telConn;
+	telConn = NULL;
+
+	delete derConn;
+	derConn = NULL;
 }
 
 int SitechAltAz::processOption (int in_opt)
@@ -298,7 +306,7 @@ int SitechAltAz::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case 'f':
-			device_file = optarg;
+			tel_tty = optarg;
 			break;
 
 		default:
@@ -329,19 +337,19 @@ int SitechAltAz::initHardware ()
 	/*   /dev/ttyUSB0 on Linux systems without other USB serial converters.   */
 	/*   The serial device is known to the program that calls this procedure. */
 	
-	serConn = new ConnSitech (device_file, this);
-	serConn->setDebug (getDebug ());
+	telConn = new ConnSitech (tel_tty, this);
+	telConn->setDebug (getDebug ());
 
-	ret = serConn->init ();
+	ret = telConn->init ();
 
 	if (ret)
 		return -1;
-	serConn->flushPortIO ();
+	telConn->flushPortIO ();
 
-	xbits = serConn->getSiTechValue ('X', "B");
-	ybits = serConn->getSiTechValue ('Y', "B");
+	xbits = telConn->getSiTechValue ('X', "B");
+	ybits = telConn->getSiTechValue ('Y', "B");
 
-	numread = serConn->getSiTechValue ('X', "V");
+	numread = telConn->getSiTechValue ('X', "V");
      
 	if (numread != 0) 
 	{
@@ -354,7 +362,7 @@ int SitechAltAz::initHardware ()
 	}
 
 	sitechVersion->setValueDouble (numread);
-	sitechSerial->setValueInteger (serConn->getSiTechValue ('Y', "V"));
+	sitechSerial->setValueInteger (telConn->getSiTechValue ('Y', "V"));
 
 	if (numread < 112)
 	{
@@ -365,7 +373,7 @@ int SitechAltAz::initHardware ()
 		sitechType = FORCE_ONE;
 
 		createValue (countUp, "count_up", "CPU count up", false);
-		countUp->setValueInteger (serConn->getSiTechValue ('Y', "XHC"));
+		countUp->setValueInteger (telConn->getSiTechValue ('Y', "XHC"));
 
 		createValue (servoPIDSampleRate, "servo_pid_sample_rate", "number of CPU cycles per second", false);
 		servoPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp->getValueInteger ()));
@@ -374,13 +382,13 @@ int SitechAltAz::initHardware ()
 	}
 
 	//SitechControllerConfiguration sconfig;
-	//serConn->getConfiguration (sconfig);
+	//telConn->getConfiguration (sconfig);
 
-	//serConn->resetController ();
+	//telConn->resetController ();
 	
 	/* Flush the input buffer in case there is something left from startup */
 
-	serConn->flushPortIO();
+	telConn->flushPortIO();
 
 	getConfiguration ();
 
@@ -393,22 +401,22 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		serConn->setSiTechValue ('X', "F", 0);
-		serConn->setSiTechValue ('Y', "F", 0);
+		telConn->setSiTechValue ('X', "F", 0);
+		telConn->setSiTechValue ('Y', "F", 0);
 		return 0;
 	}
 	else if (conn->isCommand ("reset_errors"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		serConn->resetErrors ();
+		telConn->resetErrors ();
 		return 0;
 	}
 	else if (conn->isCommand ("reset_controller"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		serConn->resetController ();
+		telConn->resetController ();
 		getConfiguration ();
 		return 0;
 	}
@@ -416,8 +424,8 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		serConn->siTechCommand ('X', "A");
-		serConn->siTechCommand ('Y', "A");
+		telConn->siTechCommand ('X', "A");
+		telConn->siTechCommand ('Y', "A");
 		getConfiguration ();
 		return 0;
 	}
@@ -560,17 +568,17 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 void SitechAltAz::getConfiguration ()
 {
-	az_acceleration->setValueDouble (serConn->getSiTechValue ('Y', "R"));
-	alt_acceleration->setValueDouble (serConn->getSiTechValue ('X', "R"));
+	az_acceleration->setValueDouble (telConn->getSiTechValue ('Y', "R"));
+	alt_acceleration->setValueDouble (telConn->getSiTechValue ('X', "R"));
 
-	az_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('Y', "S"), az_ticks->getValueLong ()));
-	alt_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('X', "S"), alt_ticks->getValueLong ()));
+	az_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('Y', "S"), az_ticks->getValueLong ()));
+	alt_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('X', "S"), alt_ticks->getValueLong ()));
 
-	az_current->setValueDouble (serConn->getSiTechValue ('Y', "C") / 100.0);
-	alt_current->setValueDouble (serConn->getSiTechValue ('X', "C") / 100.0);
+	az_current->setValueDouble (telConn->getSiTechValue ('Y', "C") / 100.0);
+	alt_current->setValueDouble (telConn->getSiTechValue ('X', "C") / 100.0);
 
-	az_pwm->setValueInteger (serConn->getSiTechValue ('Y', "O"));
-	alt_pwm->setValueInteger (serConn->getSiTechValue ('X', "O"));
+	az_pwm->setValueInteger (telConn->getSiTechValue ('Y', "O"));
+	alt_pwm->setValueInteger (telConn->getSiTechValue ('X', "O"));
 }
 
 int SitechAltAz::sitechMove (int32_t azc, int32_t altc)
@@ -602,7 +610,7 @@ void SitechAltAz::sitechSetTarget (int32_t ac, int32_t dc)
 	altaz_Xrequest.x_bits = xbits;
 	altaz_Xrequest.y_bits = ybits;
 
-	serConn->sendXAxisRequest (altaz_Xrequest);
+	telConn->sendXAxisRequest (altaz_Xrequest);
 
 	t_az_pos->setValueLong (ac);
 	t_alt_pos->setValueLong (dc);
@@ -610,7 +618,7 @@ void SitechAltAz::sitechSetTarget (int32_t ac, int32_t dc)
 
 void SitechAltAz::getTel ()
 {
-	serConn->getAxisStatus ('X', altaz_status);
+	telConn->getAxisStatus ('X', altaz_status);
 
 	r_az_pos->setValueLong (altaz_status.y_pos);
 	r_alt_pos->setValueLong (altaz_status.x_pos);
@@ -721,9 +729,9 @@ void SitechAltAz::getPIDs ()
 {
 	PIDs->clear ();
 	
-	PIDs->addValue (serConn->getSiTechValue ('X', "PPP"));
-	PIDs->addValue (serConn->getSiTechValue ('X', "III"));
-	PIDs->addValue (serConn->getSiTechValue ('X', "DDD"));
+	PIDs->addValue (telConn->getSiTechValue ('X', "PPP"));
+	PIDs->addValue (telConn->getSiTechValue ('X', "III"));
+	PIDs->addValue (telConn->getSiTechValue ('X', "DDD"));
 }
 
 std::string SitechAltAz::findErrors (uint16_t e)

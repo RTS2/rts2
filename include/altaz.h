@@ -47,6 +47,11 @@ class AltAz: public Telescope
 		void counts2sky (int32_t azc, int32_t altc, double &ra, double &dec);
 
 		/**
+		 * Returns deratotor rate, in degrees/h.
+		 */
+		double derotator_rate (double az, double alt);
+
+		/**
 		 * Unlock basic pointing parameters. The parameters such as zero offsets etc. are made writable.
 		 */
 		void unlockPointing ();
@@ -66,6 +71,9 @@ class AltAz: public Telescope
 		rts2core::ValueLong *azMax;
 		rts2core::ValueLong *altMin;
 		rts2core::ValueLong *altMax;
+
+	private:
+		double cos_lat;
 };
 
 };

@@ -39,6 +39,8 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (azMax, "_az_max", "[cnts] maximal azimuth axis count", false);
 	createValue (altMin, "_alt_min", "[cnts] minimal altitude axis count", false);
 	createValue (altMax, "_alt_max", "[cnts] maximal altitude axis count", false);
+
+	cos_lat = 0.1;
 }
 
 AltAz::~AltAz (void)
@@ -125,6 +127,11 @@ void AltAz::counts2sky (int32_t azc, int32_t altc, double &ra, double &dec)
 	getEquFromHrz (&hrz, ln_get_julian_from_sys (), &pos);
 	ra = pos.ra;
 	dec = pos.dec;
+}
+
+double AltAz::derotator_rate (double az, double alt)
+{
+	return cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt));
 }
 
 void AltAz::unlockPointing ()
