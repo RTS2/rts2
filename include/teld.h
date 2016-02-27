@@ -99,6 +99,7 @@ class Telescope:public rts2core::Device
 
 		// callback functions from telescope connection
 		virtual int info ();
+		virtual int infoJD (double JD);
 
 		virtual int scriptEnds ();
 

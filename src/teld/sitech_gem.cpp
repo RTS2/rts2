@@ -751,7 +751,7 @@ int Sitech::info ()
 
 	haCWDAngle->setValueDouble (getHACWDAngle (r_ra_pos->getValueLong ()));
 
-	return rts2teld::GEM::info ();
+	return rts2teld::GEM::infoJD (getTelJD);
 }
 
 int Sitech::processOption (int in_opt)

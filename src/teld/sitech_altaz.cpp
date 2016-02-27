@@ -548,7 +548,7 @@ int SitechAltAz::info ()
 	setTelRaDec (pos.ra, pos.dec);
 	setTelUnAltAz (un_zd, un_az);
 
-	return AltAz::info ();
+	return AltAz::infoJD (getTelJD);
 }
 
 int SitechAltAz::startResync ()
