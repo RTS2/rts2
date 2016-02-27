@@ -52,7 +52,7 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, int hasUnTelCoordinates):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -108,7 +108,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
-	if (hasUnTelCoordinates)
+	if (hasUnTelCoordinates != 0)
 	{
 		createValue (tarTelRaDec, "TAR_TEL", "target position (OBJ) in telescope coordinates (DEC in 180 .. -180 range)", true);
 	}
@@ -148,13 +148,16 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (telRaDec, "TEL", "mount position (from sensors, sky coordinates)", true);
 
 	// like TEL, but raw values, no normalization (i.e. no flip transformation):
-	if (hasUnTelCoordinates)
+	telUnRaDec = NULL;
+	telUnAltAz = NULL;
+	switch (hasUnTelCoordinates)
 	{
-		createValue (telUnRaDec, "U_TEL", "mount position (from sensors, raw coordinates, no flip transformation)", true);
-	}
-	else
-	{
-		telUnRaDec = NULL;
+		case 1:
+			createValue (telUnRaDec, "U_TEL", "mount position (from sensors, raw coordinates, no flip transformation)", true);
+			break;
+		case -1:
+			createValue (telUnAltAz, "U_TEL", "mount position (from sensors, raw coordinates, no flip transformation)", true);
+			break;
 	}
 
 	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true, RTS2_VALUE_WRITABLE);

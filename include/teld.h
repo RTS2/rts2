@@ -84,7 +84,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = false);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (rts2core::Event * event);
@@ -257,55 +257,20 @@ class Telescope:public rts2core::Device
 			tel->dec = getTelDec ();
 		}
 
-
-		/**
-		 * Set telescope untouched (i.e. physical) RA.
-		 *
-		 * @param ra Telescope right ascenation in degrees.
-		 */
-		void setTelUnRa (double new_ra) { telUnRaDec->setRa (new_ra); }
-
-		/**
-		 * Set telescope untouched (i.e. physical) DEC.
-		 *
-		 * @param new_dec Telescope declination in degrees.
-		 */
-		void setTelUnDec (double new_dec) { telUnRaDec->setDec (new_dec); }
-
 		/**
 		 * Set telescope untouched (i.e. physical) RA and DEC.
 		 */
 		void setTelUnRaDec (double new_ra, double new_dec) 
 		{
-			setTelUnRa (new_ra);
-			setTelUnDec (new_dec);
+			telUnRaDec->setRa (new_ra);
+			telUnRaDec->setDec (new_dec);
 		}
 
-		/**
-		 * Returns current telescope untouched (i.e. physical) RA.
-		 *
-		 * @return Current telescope untouched (i.e. physical) RA.
-		 */
-		double getTelUnRa () { return telUnRaDec->getRa (); }
-
-		/**
-		 * Returns current telescope untouched (i.e. physical) DEC.
-		 *
-		 * @return Current telescope untouched (i.e. physical) DEC.
-		 */
-		double getTelUnDec () { return telUnRaDec->getDec (); }
-
-		/**
-		 * Returns telescope untouched (i.e. physical) RA and DEC.
-		 *
-		 * @param tel ln_equ_posn which will be filled with telescope RA and DEC.
-		 */
-		void getTelUnRaDec (struct ln_equ_posn *tel)
+		void setTelUnAltAz (double alt, double az)
 		{
-			tel->ra = getTelUnRa ();
-			tel->dec = getTelUnDec ();
+			telUnAltAz->setAlt (alt);
+			telUnAltAz->setAz (az);
 		}
-
 
 		/**
 		 * Set ignore correction - size bellow which correction commands will
@@ -313,14 +278,12 @@ class Telescope:public rts2core::Device
 		 */
 		void setIgnoreCorrection (double new_ign) { ignoreCorrection->setValueDouble (new_ign); }
 
-
 		/**
 		 * Set ponting model. 0 is EQU, 1 is ALT-AZ
 		 *
 		 * @param pModel 0 for EQU, 1 for ALT-AZ.
 		 */
 		void setPointingModel (int pModel) { pointingModel->setValueInteger (pModel); }
-
 
 		/**
 		 * Return telescope pointing model.
@@ -1135,10 +1098,11 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *telRaDec;
 
 		/**
-		 * Telescope untouched physical RA and DEC, read from sensors, without flip-transformation.
-		 * Equivalent to telRaDec, but reflects real physical mount position.
+		 * Telescope untouched physical axis angles, read from sensors, without flip-transformation.
+		 * Alt-Az for altaz, hadec for GEM
 		 */
 		rts2core::ValueRaDec *telUnRaDec;
+		rts2core::ValueAltAz *telUnAltAz;
 
 		/**
 		 * Current airmass.

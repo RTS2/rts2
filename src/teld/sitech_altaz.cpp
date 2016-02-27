@@ -441,6 +441,7 @@ int SitechAltAz::info ()
 
 	getEquFromHrz (&hrz, getTelJD, &pos);
 	setTelRaDec (pos.ra, pos.dec);
+	setTelUnAltAz (un_zd, un_az);
 
 	return AltAz::info ();
 }
@@ -483,7 +484,9 @@ int SitechAltAz::moveAltAz ()
 	int32_t taz = r_az_pos->getValueLong ();
 	int32_t talt = r_alt_pos->getValueLong ();
 
-	int ret = hrz2counts (&hrz, taz, talt, false, 0);
+	bool flip;
+
+	int ret = hrz2counts (&hrz, taz, talt, 0, flip, false, 0);
 	if (ret)
 		return ret;
 

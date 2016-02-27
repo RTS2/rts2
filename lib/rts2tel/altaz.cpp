@@ -24,7 +24,7 @@
 
 using namespace rts2teld;
 
-AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
+AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0)
 {
 	createValue (az_ticks, "_az_ticks", "[cnts] counts per full revolution on az axis", false);
 	createValue (alt_ticks, "_alt_ticks", "[cnts] counts per full revolution on alt axis", false);
@@ -51,15 +51,15 @@ int AltAz::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, 
 	return 0;
 }
 
-int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin)
+int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin)
 {
 	struct ln_hrz_posn hrz;
 	getHrzFromEqu (pos, JD, &hrz);
 
-	return hrz2counts (&hrz, azc, altc, writeValue, haMargin);
+	return hrz2counts (&hrz, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
 }
 
-int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, bool writeValue, double haMargin)
+int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin)
 {
 	int32_t d_alt = altc - ((90 - hrz->alt) - zdZero->getValueDouble ()) * altCpd->getValueDouble ();
 	int32_t d_az = azc - (hrz->az - azZero->getValueDouble ()) * azCpd->getValueDouble ();
