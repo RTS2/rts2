@@ -106,7 +106,7 @@ void AltAz::counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, doub
 	az = ln_range_degrees (un_az);
 
 	un_zd = altc / altCpd->getValueDouble () + zdZero->getValueDouble ();
-	alt = ln_range_degrees (un_zd + 90);
+	alt = ln_range_degrees (90 - un_zd);
 	if (alt > 270)
 	{
 		alt = -360 + alt;
