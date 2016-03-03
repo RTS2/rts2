@@ -40,12 +40,18 @@ int AltAzTest::test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc
 	return sky2counts (JD, pos, azc, altc, false, use_flipped, false, 0);
 }
 
-void AltAzTest::test_counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec)
+int AltAzTest::test_hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc)
 {
-	counts2sky (azc, altc, ra, dec);
+	bool use_flipped = false;
+	return hrz2counts (hrz, azc, altc, false, use_flipped, false, 0);
 }
 
-void AltAzTest::test_counts2hrz (double JD, int32_t azc, int32_t altc, struct ln_hrz_posn *hrz)
+void AltAzTest::test_counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec)
+{
+	counts2sky (JD, azc, altc, ra, dec);
+}
+
+void AltAzTest::test_counts2hrz (int32_t azc, int32_t altc, struct ln_hrz_posn *hrz)
 {
 	double un_az, un_zd;
 	counts2hrz (azc, altc, hrz->az, hrz->alt, un_az, un_zd);
