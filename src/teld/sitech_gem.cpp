@@ -291,7 +291,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	createValue (partialMove, "partial_move", "1 - RA only, 2 - DEC only, 3 - DEC to pole, move just close to the horizon", false);
 	partialMove->setValueInteger (0);
 
-	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	createValue (trackingDist, "tracking_dist", "tracking error margin (when error drops below this value, telescope will start tracking)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
@@ -751,7 +751,7 @@ int Sitech::info ()
 
 	haCWDAngle->setValueDouble (getHACWDAngle (r_ra_pos->getValueLong ()));
 
-	return rts2teld::GEM::info ();
+	return rts2teld::GEM::infoJD (getTelJD);
 }
 
 int Sitech::processOption (int in_opt)

@@ -1317,6 +1317,11 @@ void Telescope::getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ
 
 int Telescope::info ()
 {
+	return infoJD (ln_get_julian_from_sys ());
+}
+
+int Telescope::infoJD (double JD)
+{
 	struct ln_hrz_posn hrz;
 	// calculate alt+az
 	getTelAltAz (&hrz);
@@ -1329,8 +1334,8 @@ int Telescope::info ()
 
 	// fill in airmass, ha and lst
 	airmass->setValueDouble (ln_get_airmass (telAltAz->getAlt (), 750));
-	jdVal->setValueDouble (ln_get_julian_from_sys ());
-	lst->setValueDouble (getLstDeg (jdVal->getValueDouble ()));
+	jdVal->setValueDouble (JD);
+	lst->setValueDouble (getLstDeg (JD));
 	hourAngle->setValueDouble (ln_range_degrees (lst->getValueDouble () - telRaDec->getRa ()));
 	targetDistance->setValueDouble (getTargetDistance ());
 
