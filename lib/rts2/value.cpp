@@ -172,7 +172,7 @@ ValueInteger::ValueInteger (std::string in_val_name, std::string in_description,
 
 const char * ValueInteger::getValue ()
 {
-	sprintf (buf, "%i", value);
+	snprintf (buf, VALUE_BUF_LEN, "%i", value);
 	return buf;
 }
 
@@ -237,13 +237,13 @@ ValueDouble::ValueDouble (std::string in_val_name, std::string in_description, b
 
 const char * ValueDouble::getValue ()
 {
-	sprintf (buf, "%.20le", value);
+	snprintf (buf, VALUE_BUF_LEN, "%.20le", value);
 	return buf;
 }
 
 const char * ValueDouble::getDisplayValue ()
 {
-	sprintf (buf, "%.20lg", value);
+	snprintf (buf, VALUE_BUF_LEN, "%.20lg", value);
 	return buf;
 }
 
@@ -791,13 +791,18 @@ int ValueRaDec::doOpValue (char op, Value *old_value)
 
 const char * ValueRaDec::getValue ()
 {
-	std::ostringstream _os;
-	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-	_os.precision (20);
-	_os << getRa () << " " << getDec ();
+	snprintf (buf, VALUE_BUF_LEN, "%.20le %.20le", getRa (), getDec ());
+	return buf;
+}
 
-	strcpy (buf, _os.str ().c_str ());
-
+const char * ValueRaDec::getDisplaySubValue (const char *subv)
+{
+	if (strcasecmp (subv, "ra") == 0)
+		snprintf (buf, VALUE_BUF_LEN, "%.20lf", getRa ());
+	else if (strcasecmp (subv, "dec") == 0)
+		snprintf (buf, VALUE_BUF_LEN, "%.20lf", getDec ());
+	else
+		return getDisplayValue ();
 	return buf;
 }
 
@@ -903,11 +908,7 @@ int ValueAltAz::doOpValue (char op, Value *old_value)
 
 const char * ValueAltAz::getValue ()
 {
-	std::ostringstream _os;
-	_os << getAlt () << " " << getAz ();
-
-	strcpy (buf, _os.str ().c_str ());
-
+	snprintf (buf, VALUE_BUF_LEN, "%.20lf %20.lf", getAlt (), getAz ());
 	return buf;
 }
 

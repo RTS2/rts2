@@ -343,9 +343,20 @@ std::string Image::expandVariable (std::string expression)
 
 	if (templateDeviceName)
 	{
-		rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValueExpression (expression, templateDeviceName);
-		if (val != NULL)
-			return val->getDisplayValue ();
+		// : is for sub-values
+		size_t dblc = expression.find (':');
+		if (dblc != std::string::npos)
+		{
+			rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValueExpression (expression.substr (0, dblc), templateDeviceName);
+			if (val != NULL)
+				return val->getDisplaySubValue (expression.substr (dblc + 1).c_str ());
+		}
+		else
+		{
+			rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValueExpression (expression, templateDeviceName);
+			if (val != NULL)
+				return val->getDisplayValue ();
+		}
 	}
 
 	try

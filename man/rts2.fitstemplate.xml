@@ -60,7 +60,7 @@
     <para>
       Template format is similar to <emphasis>.ini</emphasis> files. Everything
       after ; (semicolon) is considered as comment and is ignored. Section
-      names are written in square brackeds, keys are written on line separated
+      names are written in square brackets, keys are written on line separated
       by =.  Finally comments for FITS keys are separated by
       <emphasis>/</emphasis>. Both comment and values can contain variable
       names, which start with <emphasis>@</emphasis>. Device and variable can
@@ -75,6 +75,7 @@
 KEYA = @VAL1 / this is a comment
 TVAL = @TV.AL / value of variable AL from device named TV
 TVDOUBLE.d = @TV.double / double value, written as double
+RA.d = @T0.TEL:ra / tel RA value, recorded as double number
       </literallayout>
     </para>
 
@@ -142,6 +143,12 @@ TVDOUBLE.d = @TV.double / double value, written as double
       variable names are separated with <emphasis>.</emphasis> (dot). If device
       is not specified, default device, which is name of the device running the
       script, is used.
+    </para>
+
+    <para>
+      Sub-value are separated by <emphasis>:</emphasis> (double colon). This allows access to values from
+      from complex types, e.g. RaDec values. For example, T0 telescope's TEL
+      variable RA can be accessed with T0.TEL:RA.
     </para>
   </refsect1>
   <refsect1>

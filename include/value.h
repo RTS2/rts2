@@ -403,6 +403,12 @@ class Value
 		 */
 		virtual const char *getDisplayValue () { return getValue (); }
 
+		/**
+		 * Returns part value as string.
+		 * Use to expand subvalues, like RA/DEC for ValueRaDec.
+		 */
+		virtual const char *getDisplaySubValue (const char *subv) { return getDisplayValue (); }
+
 		int32_t getValueWriteFlags () { return rts2Type & RTS2_VWHEN_MASK; }
 
 		bool getDebugFlag () { return rts2Type & RTS2_VALUE_DEBUG; }
@@ -1007,6 +1013,7 @@ class ValueRaDec: public Value
 		virtual int doOpValue (char op, Value * old_value);
 
 		virtual const char *getValue ();
+		virtual const char *getDisplaySubValue (const char *subv);
 		virtual double getValueDouble () { return NAN; }
 		virtual float getValueFloat () { return NAN; }
 		virtual int getValueInteger () { return INT_MAX; }

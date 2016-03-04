@@ -315,7 +315,7 @@ std::string Expander::expand (std::string expression, bool onlyAlphaNum)
 				iter++;
 				exp = "";
 				getFormating (expression, iter, ret);
-				for (; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-' || (*iter) == '.'); iter++)
+				for (; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-' || (*iter) == '.' || (*iter == ':')); iter++)
 					exp += *iter;
 				iter--;
 				ret << replaceNonAlpha (expandVariable (exp), onlyAlphaNum);
