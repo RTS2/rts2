@@ -132,6 +132,7 @@ class ValueRectangle: public Value
 		virtual bool isEqual (Value * other_value);
 
 		virtual const char *getDisplayValue ();
+		virtual const char *getDisplaySubValue (const char *subv);
 
 		virtual void resetValueChanged ();
 };

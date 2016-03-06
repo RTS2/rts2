@@ -134,17 +134,30 @@ const char *ValueRectangle::getDisplayValue ()
 	switch (getValueBaseType ())
 	{
 		case RTS2_VALUE_INTEGER:
-			sprintf (buf, "[%d:%d,%d:%d]", x->getValueInteger (), w->getValueInteger (), y->getValueInteger (), h->getValueInteger ());
+			snprintf (buf, VALUE_BUF_LEN, "[%d:%d,%d:%d]", x->getValueInteger (), w->getValueInteger (), y->getValueInteger (), h->getValueInteger ());
 			break;
 		case RTS2_VALUE_LONGINT:
-			sprintf (buf, "[%ld:%ld,%ld:%ld]", x->getValueLong (), w->getValueLong (), y->getValueLong (), h->getValueLong ());
+			snprintf (buf, VALUE_BUF_LEN, "[%ld:%ld,%ld:%ld]", x->getValueLong (), w->getValueLong (), y->getValueLong (), h->getValueLong ());
 			break;
 		case RTS2_VALUE_FLOAT:
 		case RTS2_VALUE_DOUBLE:
-			sprintf (buf, "[%g:%g,%g:%g]", x->getValueDouble (), w->getValueDouble (), y->getValueDouble (), h->getValueDouble ());
+			snprintf (buf, VALUE_BUF_LEN, "[%g:%g,%g:%g]", x->getValueDouble (), w->getValueDouble (), y->getValueDouble (), h->getValueDouble ());
 			break;
 	}
 	return buf;
+}
+
+const char *ValueRectangle::getDisplaySubValue (const char *subv)
+{
+	if (strcasecmp (subv, "x") == 0)
+		return x->getDisplayValue ();
+	else if (strcasecmp (subv, "y") == 0)
+		return y->getDisplayValue ();
+	else if (strcasecmp (subv, "w") == 0)
+		return w->getDisplayValue ();
+	else if (strcasecmp (subv, "h") == 0)
+		return h->getDisplayValue ();
+	return getDisplayValue ();
 }
 
 void ValueRectangle::resetValueChanged ()
