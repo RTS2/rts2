@@ -103,6 +103,7 @@ int APMFilter::sendUDPMessage (const char * _message)
 		logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
 	int n = connFilter->sendReceive (_message, response, 20);
+	response[n] = '\0';
 
 	if (getDebug())
 		logStream (MESSAGE_DEBUG) << "reponse: " << response << sendLog;

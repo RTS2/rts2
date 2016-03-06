@@ -18,10 +18,12 @@
  */
 
 #include "sensord.h"
-
 #include "connection/serial.h"
 
 #define EVENT_LOOP          RTS2_LOCAL_EVENT + 1601
+#define OPT_WIND_BAD        OPT_LOCAL + 370
+#define OPT_PEEKWIND_BAD    OPT_LOCAL + 371
+#define OPT_HUM_BAD         OPT_LOCAL + 372
 
 namespace rts2sensord
 {
@@ -69,9 +71,13 @@ class Davis:public SensorWeather
 		rts2core::ValueInteger *wind10mingustDirection;
 		rts2core::ValueFloat *dewPoint;
 		rts2core::ValueFloat *outsideHumidity;
-		rts2core::ValueInteger *rainRate;
+		rts2core::ValueFloat *rainRate;
 		rts2core::ValueInteger *uvIndex;
 		rts2core::ValueInteger *stormRain;
+
+		rts2core::ValueInteger *maxWindSpeed;
+                rts2core::ValueInteger *maxPeekWindSpeed;
+                rts2core::ValueInteger *maxHumidity;
 		
 		/**
 		 * Check received buffer for CRC
@@ -82,6 +88,11 @@ class Davis:public SensorWeather
 		 * Process received data from LOOP command.
 		 */
 		void processData ();
+
+		/**
+		 * Ckeck good/bad weather alarms
+		 */
+		void checkTriggers ();
 };
 
 }
@@ -121,6 +132,10 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (stormRain, "RAINST", "[mm] storm rain", false);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSBn)");
+	addOption (OPT_WIND_BAD, "wind-bad", 1, "wind speed bad trigger point");
+        addOption (OPT_PEEKWIND_BAD, "peekwind-bad", 1, "peek wind speed bad trigger point");
+        addOption (OPT_HUM_BAD, "hum-bad", 1, "humidity bad trigger point");
+
 }
 
 Davis::~Davis ()
@@ -147,7 +162,7 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 				logStream (MESSAGE_ERROR) << "data buffer does not start with ACK" << sendLog;
 				sleep (4);
 				davisConn->flushPortIO ();
-				davisConn->writePort ("LPS 1 1\n", 8);
+				davisConn->writePort ("LPS 2 1\n", 8);
 				return;
 			}
 			lastReceivedChar += ret;
@@ -184,7 +199,7 @@ void Davis::postEvent (rts2core::Event *event)
 	{
 		case EVENT_LOOP:
 			if (lastReceivedChar == 0)
-				davisConn->writePort ("LPS 1 1\n", 8);
+				davisConn->writePort ("LPS 2 1\n", 8);
 			break;
 	}
 	SensorWeather::postEvent (event);
@@ -192,11 +207,27 @@ void Davis::postEvent (rts2core::Event *event)
 
 int Davis::processOption (int opt)
 {
+	logStream (MESSAGE_INFO) << "************* Davis::processOption ************" <<  sendLog;
 	switch (opt)
 	{
 		case 'f':
 			device_file = optarg;
 			break;
+		case OPT_WIND_BAD:
+			createValue (maxWindSpeed, "MAX_WIND_TRIGGER", "[m/s] maximum wind speed", false);
+			maxWindSpeed->setValueInteger (atoi(optarg));
+			logStream (MESSAGE_INFO) << "DAVIS max wind speed:" << maxWindSpeed << sendLog;
+                        break;
+                case OPT_PEEKWIND_BAD:
+			createValue (maxPeekWindSpeed, "MAX_PEEKWIND_TRIGGER", "[m/s] maximum peek wind speed", false);
+			maxPeekWindSpeed->setValueInteger (atoi(optarg));
+			logStream (MESSAGE_INFO) << "DAVIS max peek wind speed:" << maxPeekWindSpeed << sendLog;
+                        break;
+                case OPT_HUM_BAD:
+			createValue (maxHumidity, "MAX_HUM_TRIGGER", "[%] maximum humidity", false);
+                        maxHumidity->setValueInteger (atoi(optarg));
+			logStream (MESSAGE_INFO) << "DAVIS max humidity:" << maxHumidity << sendLog;
+                        break;
 		default:
 			return SensorWeather::processOption (opt);
 	}
@@ -226,7 +257,7 @@ int Davis::initHardware ()
 	{
 		logStream (MESSAGE_ERROR) << "invalid reply" << dataBuff[0] << dataBuff[1] << sendLog;
 	}
-	davisConn->writePort ("LPS 1 1\n", 8);
+	davisConn->writePort ("LPS 2 1\n", 8);
 	return 0;
 }
 
@@ -312,19 +343,67 @@ void Davis::processData ()
 	outsideTemp->setValueFloat (fahrenheitToCelsius (*((int16_t *) (dataBuff + 13)) / 10.0));
 
 	windSpeed->setValueFloat(mphToMs (*((int8_t *) (dataBuff + 15))));
-	windDirection->setValueInteger(*((uint16_t *) (dataBuff + 17)) * 0.1);
+	windDirection->setValueInteger(*((uint16_t *) (dataBuff + 17)));
 	wind10min->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 19)) * 0.1));
 	wind2min->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 21)) * 0.1));
-	wind10mingust->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 23)) * 0.1));
+	//wind10mingust->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 23)) * 0.1)); // According to Davis manual units are tenths of mph. Values measured suggests them to be in mph. See next line
+	wind10mingust->setValueFloat(mphToMs (*((uint8_t *) (dataBuff + 23))));
 	wind10mingustDirection->setValueInteger(*((uint16_t *) (dataBuff + 25)));
 	dewPoint->setValueFloat(fahrenheitToCelsius (*((int16_t *) (dataBuff + 31))));
 	outsideHumidity->setValueFloat(*((uint8_t *) (dataBuff + 34)));
 
 	float rainClicks2mm = 0.2;
-	rainRate->setValueInteger(rainClicks2mm * *((uint16_t *) (dataBuff + 42 )));
+	rainRate->setValueFloat(rainClicks2mm * *((uint16_t *) (dataBuff + 42 )));
 	uvIndex->setValueInteger(*((uint8_t *) (dataBuff + 44)));	
 	stormRain->setValueInteger(*((uint16_t *) (dataBuff + 47)));
+
+	checkTriggers();	 
 }
+
+void Davis::checkTriggers ()
+{
+        if (!isnan (maxHumidity->getValueInteger ()) && outsideHumidity->getValueFloat () >= maxHumidity->getValueInteger ())
+        {
+         	setWeatherTimeout (600, "humidity has crossed alarm limits");
+                valueError (outsideHumidity);
+        }
+        else
+	{
+        	valueGood (outsideHumidity);
+	}
+	
+	if (!isnan (maxWindSpeed->getValueInteger ()) && wind2min->getValueFloat () >= maxWindSpeed->getValueInteger ())
+        {
+		setWeatherTimeout (300, "high wind");
+		valueError (windSpeed);
+	}
+	else
+	{
+		valueGood (windSpeed);
+        }
+
+	if (!isnan (maxPeekWindSpeed->getValueInteger ()) && wind10mingust->getValueFloat () >= maxPeekWindSpeed->getValueInteger ())
+        {
+		setWeatherTimeout (300, "high peek wind");
+		valueError (wind10mingust);
+	}
+	else
+	{
+		valueGood (wind10mingust);
+        }
+	
+	if (rainRate->getValueFloat () > 0)
+	{
+        	setWeatherTimeout (1200, "raining (rainrate)");
+                valueError (rainRate);
+	}
+        else
+	{
+        	valueGood (rainRate);
+	}
+
+}
+
 
 int main (int argc, char **argv)
 {

@@ -58,10 +58,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define READOUT_AATTENUATION_IX       11
 #define READOUT_PORT1_OFFSET_IX       12
 #define READOUT_PORT2_OFFSET_IX       13
+#define READOUT_GAIN_IX               14
 #define READOUT_TDIDELAY_IX           16
 #define READOUT_SAMPLEPIX_IX          20
 
 
+#define CONFIG_INSTRUMENT_SN_IX        1
 #define CONFIG_SERIAL_PHASING_IX       3
 #define CONFIG_SERIAL_SPLIT_IX         4
 #define CONFIG_SERIAL_SIZE_IX          5

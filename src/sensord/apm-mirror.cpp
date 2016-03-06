@@ -165,11 +165,13 @@ int APMMirror::close ()
 
 int APMMirror::sendUDPMessage (const char * _message)
 {
-        char *response = (char *)malloc(20*sizeof(char));
+        char *response = (char *)malloc(20);
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
         int n = connMirror->sendReceive (_message, response, 20);
+
+	response[n] = '\0';
 
         logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
 

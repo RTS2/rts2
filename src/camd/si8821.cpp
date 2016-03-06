@@ -119,6 +119,8 @@ class SI8821:public Camera
 
 		void setReadout (int idx, int v, const char *name);
 		void setConfig (int idx, int v, const char *name);
+		
+		float getGain( int iMode );
 
 		void print_readout ();
 		void print_config ();
@@ -129,7 +131,8 @@ class SI8821:public Camera
 
 		rts2core::ValueSelection *shutterStatus;
 		
-		rts2core::ValueSelection *readOutModes; // Read Out Modes from cam set file - Modoe 1, Mode 2, ...
+		rts2core::ValueSelection *readOutModes; // Read Out Modes from cam set file - Mode 1, Mode 2, ...
+		rts2core::ValueFloat *gain; // Gain in electrons / DN
 
 		rts2core::ValueBool *testImage;
 		int total;   // DMA size
@@ -174,6 +177,8 @@ SI8821::SI8821 (int argc, char **argv):Camera (argc, argv, FLOOR)
 	testImage->setValueBool (false);
 
 	createValue (readOutModes, "READOUT_MODES", "ReadOut Camera Selectable Modes", false, RTS2_VALUE_WRITABLE);
+	createValue (gain, "GAIN", "Gain in electrons / DN", false, RTS2_VALUE_WRITABLE);
+
 }
 
 SI8821::~SI8821 ()
@@ -254,19 +259,19 @@ int SI8821::initHardware ()
 		return -1;
 	}
 	// Loads [Readout Mode X] parameters from file
-	getReadoutFromFile (false, 0);
+	//getReadoutFromFile (false, 0);
         readOutModes->addSelVal ("Mode 0");
-	getReadoutFromFile (false, 1);
+	//getReadoutFromFile (false, 1);
         readOutModes->addSelVal ("Mode 1");
-	getReadoutFromFile (false, 2);
+	//getReadoutFromFile (false, 2);
         readOutModes->addSelVal ("Mode 2");
-	getReadoutFromFile (false, 3);
+	//getReadoutFromFile (false, 3);
         readOutModes->addSelVal ("Mode 3");
-	getReadoutFromFile (false, 4);
+	//getReadoutFromFile (false, 4);
         readOutModes->addSelVal ("Mode 4");
-	getReadoutFromFile (false, 5);
+	//getReadoutFromFile (false, 5);
         readOutModes->addSelVal ("Mode 5");
-	getReadoutFromFile (false, 6);
+	//getReadoutFromFile (false, 6);
         readOutModes->addSelVal ("Mode 6");
 
 	// Load config parameters from file 
@@ -290,12 +295,12 @@ int SI8821::initHardware ()
 
 	setSize (camera.readout[READOUT_SERIAL_LENGTH_IX], camera.readout[READOUT_PARALLEL_LENGTH_IX], camera.readout[READOUT_SERIAL_ORIGIN_IX], camera.readout[READOUT_PARALLEL_ORIGIN_IX]);
 
-	// APMONTERO begin: Switching the cooler 
 	//printf("set_temp: %f\n",kelvinToCelsius(camera.config[CONFIG_SET_TEMP_IX]/10.0));
 	//printf("temp: %u\n",(unsigned)camera.config[CONFIG_SET_TEMP_IX]);
 	setCoolTemp( kelvinToCelsius (camera.config[CONFIG_SET_TEMP_IX] / 10.0));
-	switchCooling (true);
-	// APMONTERO end
+	//switchCooling (true);
+	//instrumentSerialNumber->setValueString(std::to_string(camera.config[CONFIG_INSTRUMENT_SN_IX]));  
+	serialNumber->setValueInteger(camera.config[CONFIG_INSTRUMENT_SN_IX]);  
 
 	camera.dma_config.maxever = 16 * getWidth () * getHeight ();
 
@@ -336,7 +341,7 @@ int SI8821::info ()
 	}
 
 	tempSet->setValueDouble (kelvinToCelsius (camera.config[CONFIG_SET_TEMP_IX] / 10.0));
-
+	gain->setValueFloat(camera.readout[READOUT_GAIN_IX] * 0.01); // APMONTERO: TESTING
 	return Camera::info ();
 }
 
@@ -356,6 +361,8 @@ int SI8821::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			<< " | Analog Attenuation : " << camera.readout[READOUT_AATTENUATION_IX]
 			<< " | Port 1 Offset : " << (camera.readout[READOUT_PORT1_OFFSET_IX] - pow(2,24))
 			<< " | Port 2 Offset : "  << (camera.readout[READOUT_PORT2_OFFSET_IX] - pow(2,24)) << sendLog;
+			gain->setValueFloat(camera.readout[READOUT_GAIN_IX] * 0.01); // APMONTERO: TESTING
+			sendValueAll(gain);
 		}
         }
 	return Camera::setValue (oldValue, newValue);
@@ -564,6 +571,11 @@ int SI8821::switchCooling (bool newval)
 	}
 	logStream (MESSAGE_WARNING) << "switchCooling " << newval << sendLog;
 	return Camera::switchCooling (newval);
+}
+
+float SI8821::getGain (int iMode)
+{
+	return (float)iMode;
 }
 
 void SI8821::dma_unmap ()

@@ -260,7 +260,7 @@ int APMDome::sendUDPMessage (const char * _message)
 	if (strcmp (_message, "D666") == 0)
 		nowait = true;
 
-	int n = connDome->sendReceive (_message, response, 20, nowait);
+	int n = connDome->sendReceive (_message, response, 20, nowait, 60);
 
 	// std::string res (response);
 	// logStream (MESSAGE_DEBUG) << "reponse from controller: " << res.substr (0, n) << sendLog;

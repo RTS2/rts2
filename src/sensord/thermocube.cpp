@@ -21,6 +21,9 @@
 
 #include "connection/serial.h"
 
+#define OPT_MAX_TEMP	OPT_LOCAL + 380
+#define OPT_MIN_TEMP	OPT_LOCAL + 381
+
 #define TC_TARGET_TEMP     0x01
 #define TC_CURRENT_TEMP    0x09
 #define TC_FAULTS          0x08
@@ -55,6 +58,9 @@ class ThermoCube:public Sensor
 
 		rts2core::ValueFloat *targetTemperature;
 		rts2core::ValueFloat *currentTemperature;
+
+		rts2core::ValueFloat *maxTempAlert;
+		rts2core::ValueFloat *minTempAlert;
 
 		rts2core::ValueBool *on;
 
@@ -91,6 +97,8 @@ ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 
 	addOption ('f', NULL, 1, "serial port on which is ThermoCube connected");
 	addOption ('s', NULL, 1, "default state of the device (default on = 1, off = 0; if on, will not switch off when in standby/day)");
+	addOption (OPT_MIN_TEMP, "min-temp", 1, "minimum temperature allowed");
+        addOption (OPT_MAX_TEMP, "max-temp", 1, "maximum temperature allowed");
 }
 
 ThermoCube::~ThermoCube ()
@@ -140,6 +148,16 @@ int ThermoCube::processOption (int opt)
 		case 's':
 			default_state = atoi (optarg);
 			break;
+		case OPT_MIN_TEMP:
+			createValue (minTempAlert, "min_temp_alert", "[C] minimum temperature alert", false, RTS2_VALUE_WRITABLE);
+                        minTempAlert->setValueInteger (atoi(optarg));
+                        logStream (MESSAGE_INFO) << "Thermocube Min. target temp:" << minTempAlert << sendLog;
+                        break;
+		case OPT_MAX_TEMP:
+			createValue (maxTempAlert, "max_temp_alert", "[C] maximum temperature alert", false, RTS2_VALUE_WRITABLE);
+                        maxTempAlert->setValueInteger (atoi(optarg));
+                        logStream (MESSAGE_INFO) << "Thermocube Max. target temp:" << maxTempAlert << sendLog;
+                        break;
 		default:
 			return Sensor::processOption (opt);
 	}
@@ -204,6 +222,26 @@ int ThermoCube::info ()
 	pumpFail->setValueBool (buf[0] & 0x08);
 	RTDOpen->setValueBool (buf[0] & 0x10);
 	RTDShort->setValueBool (buf[0] & 0x20);
+
+	if (!isnan (minTempAlert->getValueInteger ()) && currentTemperature->getValueFloat () <= minTempAlert->getValueInteger ())
+        {
+		logStream (MESSAGE_WARNING) << "Thermocube temperature is lower than minimum level:" << sendLog;
+                valueWarning (currentTemperature);
+        }
+        else
+        {
+                valueGood (currentTemperature);
+        }
+	if (!isnan (maxTempAlert->getValueInteger ()) && currentTemperature->getValueFloat () >= maxTempAlert->getValueInteger ())
+        {
+		logStream (MESSAGE_WARNING) << "Thermocube temperature is upper than maximum level:" << sendLog;
+                valueWarning (currentTemperature);
+        }
+        else
+        {
+                valueGood (currentTemperature);
+        }
+
 
 	return Sensor::info ();
 }

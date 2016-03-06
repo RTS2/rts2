@@ -426,7 +426,22 @@ int Sitech::abortMoveTracking ()
 
 void Sitech::getTel ()
 {
-	serConn->getAxisStatus ('X', radec_status);
+	try
+	{
+		serConn->getAxisStatus ('X', radec_status);
+	}
+	catch (rts2core::Error er)
+	{
+		delete serConn;
+
+		serConn = new ConnSitech (device_file, this);
+		serConn->setDebug (getDebug ());
+		serConn->init ();
+
+		serConn->flushPortIO ();
+		serConn->getSiTechValue ('Y', "XY");
+		return;
+	}
 
 	r_ra_pos->setValueLong (radec_status.y_pos);
 	r_dec_pos->setValueLong (radec_status.x_pos);
@@ -1059,8 +1074,22 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 
 	t_ra_pos->setValueLong (radec_Xrequest.y_dest);
 	t_dec_pos->setValueLong (radec_Xrequest.x_dest);
+	try
+	{
+		serConn->sendXAxisRequest (radec_Xrequest);
+	}
+	catch (rts2core::Error &e)
+	{
+		delete serConn;
 
-	serConn->sendXAxisRequest (radec_Xrequest);
+		serConn = new ConnSitech (device_file, this);
+		serConn->setDebug (getDebug ());
+		serConn->init ();
+
+		serConn->flushPortIO ();
+		serConn->getSiTechValue ('Y', "XY");
+		serConn->sendXAxisRequest (radec_Xrequest);
+	}
 }
 
 void Sitech::getConfiguration ()

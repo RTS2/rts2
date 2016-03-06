@@ -47,6 +47,7 @@ using namespace rts2focusd;
 APMFocuser::APMFocuser (int argc, char **argv):Focusd (argc, argv)
 {
 	host = NULL;
+	focuser_state = -1;
 
 	addOption ('e', NULL, 1, "APM focuser IP and port (separated by :)");
 
@@ -163,13 +164,21 @@ int APMFocuser::info ()
 
 int APMFocuser::setTo (double num)
 {
-	char * pos = (char *)malloc (5*sizeof(char));
+	int value = (int)num;
+	if (value >= 0 && value < 28000)
+	{	
+		char * pos = (char *)malloc (5*sizeof(char));
+		
+		sprintf (pos, "FO%05d", (int)num);
+		
+		sendUDPMessage (pos);
 
-	sprintf (pos, "FO%05d", (int)num);
-
-	sendUDPMessage (pos);
-
-	info ();
+		info ();
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "You must specify a value between [0..28000]" << sendLog;
+	}
 
 	return 0;
 }
