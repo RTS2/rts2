@@ -118,13 +118,13 @@ void AltAz::counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, doub
 	}
 }
 
-void AltAz::counts2sky (int32_t azc, int32_t altc, double &ra, double &dec)
+void AltAz::counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec)
 {
 	struct ln_hrz_posn hrz;
 	double un_az, un_zd;
 	counts2hrz (azc, altc, hrz.az, hrz.alt, un_az, un_zd);
 	struct ln_equ_posn pos;
-	getEquFromHrz (&hrz, ln_get_julian_from_sys (), &pos);
+	getEquFromHrz (&hrz, JD, &pos);
 	ra = pos.ra;
 	dec = pos.dec;
 }

@@ -44,7 +44,7 @@ class AltAz: public Telescope
 
 		void counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, double &un_az, double &un_zd);
 
-		void counts2sky (int32_t azc, int32_t altc, double &ra, double &dec);
+		void counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec);
 
 		/**
 		 * Returns deratotor rate, in degrees/h.
