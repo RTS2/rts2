@@ -320,54 +320,6 @@ class GPoint:
 		plot.yaxis.set_major_formatter(pylab.FuncFormatter(arcmin_formatter))
 		return plot
 
-	def plot_ha_err(self,grid,err=''):
-		import pylab
-		ra_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		if err == '':
-			errs = self.diff_ha
-		elif err == 'dec':
-			errs = self.diff_dec
-		elif err == 'model-ha':
-			errs = self.diff_model_ha
-		elif err == 'model-dec':
-			errs = self.diff_model_dec
-		elif err == 'alt':
-			errs = self.aa_alt - self.ar_alt
-		elif err == 'az':
-			errs = self.aa_az - self.ar_az
-		elif err == 'model-alt':
-			errs = self.am_alt - self.ar_alt
-		elif err == 'model-az':
-			errs = self.am_az - self.ar_az
-		ra_error.plot(self.aa_ra,errs*3600.0, 'g+')
-		ra_error.set_ylabel('RA error')
-		self.set_y_axis(ra_error)
-		return ra_error
-
-	def plot_dec_err(self,grid,err=''):
-		import pylab
-		dec_error = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		if err == '':
-			errs = self.diff_dec
-		elif err == 'ha':
-			errs = self.diff_ha
-		elif err == 'model-ha':
-			errs = self.diff_model_ha
-		elif err == 'model-dec':
-			errs = self.diff_model_dec
-		elif err == 'alt':
-			errs = self.aa_alt - self.ar_alt
-		elif err == 'az':
-			errs = self.aa_az - self.ar_az
-		elif err == 'model-alt':
-			errs = self.am_alt - self.ar_alt
-		elif err == 'model-az':
-			errs = self.am_az - self.ar_az
-		dec_error.plot(self.aa_dec,errs*3600.0, 'b*')
-		dec_error.set_ylabel('DEC error')
-		self.set_y_axis(dec_error)
-		return dec_error
-
 	def plot_alt_az(self,grid,contour='',pfact=4):
 		import pylab
 		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
@@ -569,10 +521,10 @@ if __name__ == '__main__':
         '\tgpoint -p ha:ha-merr,mjd:ha-err,num:dec-err modelin\tproduces model and ha model error,ha-err and dec-err plots')
 	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
 	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plots',action='store',help='plot graphs (model-err,ha-err,dec-err,model-ha-err,model-dec-err,alt-az,alt-az-real,alt-az-model,alt-az-err,alt-dec-err,alt-ha-err,az-alt-err,az-dec-err,az-ha-err)')
+	parser.add_argument('-p',dest='plots',action='store',help='plot graphs, please see manual page for examples (allowed axis names: alt-err,az-err,dec-err,ha-err,alt-merr,az-merr,dec-merr,ha-merr,mjd,num,paz,az,alt,dec,ha,model-err,real-err)')
 	parser.add_argument('-s',dest='oplot',action='store',help='save plot to file instead of displaying it on screen',default=None)
-	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (model-err,ha-err,dec-err)',default=False)
-	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (model-err,ha-err,dec-err,alt-az-real)',default=False)
+	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (num:model-err,num:ha-err,num:dec-err)',default=False)
+	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (num:model-err,num:ha-err,num:dec-err,paz:contour-model-err%1:1:2:2)',default=False)
 	parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
 	parser.add_argument('--flip',dest='flips',action='store',help='flips (both, east, west - select pointings only on given side)',default='both')
 	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
