@@ -113,6 +113,7 @@ int Optec::initHardware ()
 	if (!damagedTempSens)
 	{
 		createTemperature ();
+		createLinearOffset ();
 	}
 
 	optecConn = new rts2core::ConnSerial (device_file, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 40);

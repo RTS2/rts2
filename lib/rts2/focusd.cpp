@@ -27,6 +27,10 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 {
 	temperature = NULL;
 
+	linearOffset = NULL;
+	slope = NULL;
+	intercept = NULL;
+
 	createValue (position, "FOC_POS", "focuser position", true); // reported by focuser, use FOC_TAR to set the target position
 	createValue (target, "FOC_TAR", "focuser target position", true, RTS2_VALUE_WRITABLE);
 
@@ -116,6 +120,17 @@ int Focusd::idle ()
 			}
 		}
 	}
+	else if (linearOffset != NULL && slope != NULL && intercept != NULL && temperature != NULL && linearOffset->getValueBool () == true && !isnan (slope->getValueFloat ()) && !isnan (intercept->getValueFloat ()) && !isnan (temperature->getValueDouble ()))
+	{
+		// calculate new position based on linear fit to temperature
+		int np = round (slope->getValueFloat () * temperature->getValueFloat () + intercept->getValueFloat ());
+		if (np != round (getPosition ()))
+		{
+			logStream (MESSAGE_INFO) << "temperature offseting focusing value from " << getPosition () << " to " << np << " at temperature " << temperature->getValueFloat () << sendLog;
+			setPosition (np);
+		}
+	}
+
 	return rts2core::Device::idle ();
 }
 
