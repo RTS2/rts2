@@ -171,13 +171,6 @@ int Daemon::processArgs (const char *arg)
 	strncpy (vname, arg, vlen);
 	vname[vlen] = '\0';
 
-	rts2core::Value *val = getOwnValue (vname);
-	if (val == NULL)
-	{
-		std::cerr << "cannot find value with name " << vname << ", exiting";
-		return -1;
-	}
-
 	argValues[std::string (vname)] = std::string (eq + 1);
 	return 0;
 }

@@ -122,7 +122,7 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	createTempCCD ();
 	createTempSet ();
 
-	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE);
+	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	tempRamp->setValueFloat (1.0);
 
 	createValue (tempTarget, "TETAR", "[C] current target temperature", false);

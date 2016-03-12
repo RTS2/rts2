@@ -159,7 +159,7 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (applyCorrections, "apply_corrections", "apply corrections from astrometry", false, RTS2_VALUE_WRITABLE);
 	applyCorrections->setValueBool (true);
 
-	createValue (astrometryTimeout, "astrometry_timeout", "[s] timeout for astrometry processes", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
+	createValue (astrometryTimeout, "astrometry_timeout", "[s] timeout for astrometry processes", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL| RTS2_VALUE_AUTOSAVE);
 	astrometryTimeout->setValueInteger (3600);
 
 	createValue (goodImages, "good_astrom", "number of images with astrometry", false);

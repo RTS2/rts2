@@ -133,10 +133,10 @@ class Focusd:public rts2core::Device
 
 		void createLinearOffset ()
 		{
-			createValue (linearOffset, "linear_offset", "linear offset", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+			createValue (linearOffset, "linear_offset", "linear offset", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			linearOffset->setValueBool (false);
-			createValue (slope, "linear_slope", "slope parameter for linear function to fit temperature sensor", false, RTS2_VALUE_WRITABLE);
-			createValue (intercept, "linear_intercept", "intercept parameter for 0 value of temperature sensor", false, RTS2_VALUE_WRITABLE);
+			createValue (slope, "linear_slope", "slope parameter for linear function to fit temperature sensor", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			createValue (intercept, "linear_intercept", "intercept parameter for 0 value of temperature sensor", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 		}
 
 		/**

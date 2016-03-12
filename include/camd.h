@@ -888,9 +888,9 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void createTempSet ()
 		{
-			createValue (coolingOnOff, "COOLING", "camera cooling start/stop", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
+			createValue (coolingOnOff, "COOLING", "camera cooling start/stop", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF | RTS2_VALUE_AUTOSAVE, CAM_WORKING);
 			createValue (tempSet, "CCD_SET", "CCD set temperature", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false, RTS2_VALUE_WRITABLE);
+			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			nightCoolTemp->setValueFloat (NAN);
 			addOption ('c', NULL, 1, "night cooling temperature");
 		}
