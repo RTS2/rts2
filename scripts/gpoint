@@ -372,15 +372,19 @@ class GPoint:
 		}
 		return name_map[string.lower(name)]
 
-	def plot_data(self,p,nx,ny):
+	def plot_data(self,p,nx,ny,band):
 		xdata = self.__get_data(nx)
 		ydata = self.__get_data(ny)
 		p.plot(xdata[0],ydata[0],ydata[1])
 		p.set_xlabel(xdata[2])
 		p.set_ylabel(ydata[2])
+		if band is not None:
+			import matplotlib.patches as patches
+			band = float(band)
+			p.add_patch(patches.Rectangle((min(xdata[0]), -band), max(xdata[0]) - min(xdata[0]), 2*band, alpha=0.7, facecolor='red', edgecolor='none'))
 		return p
 
-	def __gen_plot(self,plots):
+	def __gen_plot(self,plots,band):
 		import pylab
 		plot = []
 		grid = []
@@ -413,14 +417,18 @@ class GPoint:
 			g = grid[i]
 			p = pylab.subplot2grid(self.plotgrid,g[:2],colspan=g[2],rowspan=g[3])
 			if axnam[0] == 'paz':
-				self.plot_alt_az(g,axnam[1].split('-')[1])
+				ax=axnam[1].split('-')
+				if ax[0] == 'contour':
+					self.plot_alt_az(g,ax[1])
+				else:
+					self.plot_alt_az(g)
 			else:
 				for j in axnam[1:]:
-					self.plot_data(p,axnam[0],j)
+					self.plot_data(p,axnam[0],j,band)
 
-	def plot(self,plots,ofile=None):
+	def plot(self,plots,band=None,ofile=None):
 		import pylab
-		self.__gen_plot(plots)
+		self.__gen_plot(plots,band)
 		pylab.tight_layout()
 		if ofile is None:
 			pylab.show()
@@ -478,7 +486,7 @@ def generateModel(args):
 		plots=','.join([altaz,plots]) if plots else altaz
 
 	if plots:
-		model.plot(plots,args.oplot)
+		model.plot(plots,args.plot_band,args.oplot)
 
 def loadModel(modelfile):
 	f = open(modelfile)
@@ -533,6 +541,7 @@ if __name__ == '__main__':
 	parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
 	parser.add_argument('--model-input',dest='model_input',action='store_true',default=False,help='input file(s) are existing model file(s) to load and investigate')
 	parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
+	parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
 	parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
 
 	args = parser.parse_args()
