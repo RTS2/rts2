@@ -146,10 +146,15 @@ int TCSNG::initHardware ()
 
 int TCSNG::info ()
 {
-	const char *rb = ngconn->request ("RA", reqcount->getValueInteger ());
+	double tra = ngconn->getSexadecimal ("RA", reqcount->getValueInteger ()) * 15.0;
 	reqcount->inc ();
 
-	return 0;
+	double tdec = ngconn->getSexadecimal ("DEC", reqcount->getValueInteger ());
+	reqcount->inc ();
+
+	setTelRaDec (tra, tdec);
+
+	return Telescope::info ();
 }
 
 int TCSNG::startResync ()

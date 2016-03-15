@@ -32,3 +32,16 @@ const char * ConnTCSNG::request (const char *req, int refNum)
 
 	return ngbuf + wlen;
 }
+
+double ConnTCSNG::getSexadecimal (const char *req, int refnum)
+{
+	char *ret = request (req, refnum);
+	if (strlen (ret) < 6)
+		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+
+	int h,m;
+	double sec;
+	if (sscanf (ret, "%2d%2d%f", &h, &m, &sec) != 3)
+		throw rts2core::Error ("cannot parse sexadecimal reply");
+	return h + m / 60.0 + sec / 3600.0;
+}
