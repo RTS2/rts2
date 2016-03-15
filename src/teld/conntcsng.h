@@ -24,6 +24,7 @@ class ConnTCSNG:public rts2core::ConnTCP
 		 * Returns sexadecimal value from telescope control system. Sexadecimal is packet as hhmmss.SS.
 		 */
 		double getSexadecimalHours (const char *req);
+		double getSexadecimalTime (const char *req);
 		double getSexadecimalAngle (const char *req);
 
 		int getReqCount () { return reqCount; }

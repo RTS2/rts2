@@ -58,6 +58,19 @@ double ConnTCSNG::getSexadecimalHours (const char *req)
 	return 15 * (h + m / 60.0 + sec / 3600.0);
 }
 
+double ConnTCSNG::getSexadecimalTime (const char *req)
+{
+	const char *ret = request (req);
+	if (strlen (ret) < 6)
+		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
+
+	int h,m;
+	double sec;
+	if (sscanf (ret, "%d:%d:%lf", &h, &m, &sec) != 3)
+		throw rts2core::Error ("cannot parse sexadecimal reply");
+	return 15 * (h + m / 60.0 + sec / 3600.0);
+}
+
 double ConnTCSNG::getSexadecimalAngle (const char *req)
 {
 	const char *ret = request (req);
