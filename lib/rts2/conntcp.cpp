@@ -225,6 +225,45 @@ void ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
 	}
 }
 
+void ConnTCP::receiveTillEnd (char *data, size_t len, int wtime)
+{
+	int rest = len;
+
+	fd_set read_set;
+
+	struct timeval read_tout;
+	read_tout.tv_sec = wtime;
+	read_tout.tv_usec = 0;
+
+	while (rest > 0)
+	{
+		FD_ZERO (&read_set);
+
+		FD_SET (sock, &read_set);
+
+		int ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
+		if (ret < 0)
+			throw ConnError (this, "error calling select function", errno);
+		else if (ret == 0)
+		  	throw ConnTimeoutError (this, "timeout during receiving data");
+
+		// read from descriptor
+		ret = recv (sock, (char *)data + (len - rest), rest, 0);
+		if (ret == 0)
+			break;
+		if (ret == -1)
+			throw ConnReceivingError (this, "cannot read from TCP/IP connection", errno);
+		rest -= ret;
+	}
+
+	data[len - rest] = '\0';
+
+	if (debug)
+	{
+		logStream (MESSAGE_DEBUG) << "recv " << data << sendLog;
+	}
+}
+
 void ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 {
 	// check if buffer contains end character..

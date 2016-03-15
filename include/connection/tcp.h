@@ -160,6 +160,11 @@ class ConnTCP:public ConnNoSend
 		void receiveData (void *data, size_t len, int wtime, bool binary = true);
 
 		/**
+		 * Read data till other side closes the socket.
+		 */
+		void receiveTillEnd (char *data, size_t len, int wtime);
+
+		/**
 		 * Receive data from connection till character in end is encoutered.
 		 *
 		 * @param _is    Input string stream which will receive data.
