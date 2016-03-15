@@ -177,6 +177,7 @@ int TCSNG::startResync ()
 	char cmd[200];
 	snprintf (cmd, 200, "NEXTPOS %s %s 2000 0 0", deg2hours (tar.ra), deg2dec (tar.dec));
 	ngconn->command (cmd);
+	ngconn->command ("MOVENEXT");
   	return 0;
 }
 
