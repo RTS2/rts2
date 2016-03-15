@@ -35,7 +35,7 @@ const char * ConnTCSNG::request (const char *req, int refNum)
 
 double ConnTCSNG::getSexadecimal (const char *req, int refnum)
 {
-	char *ret = request (req, refnum);
+	const char *ret = request (req, refnum);
 	if (strlen (ret) < 6)
 		throw rts2core::Error ("reply to sexadecimal request must be at least 6 characters long");
 
