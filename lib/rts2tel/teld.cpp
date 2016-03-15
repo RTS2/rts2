@@ -1322,6 +1322,16 @@ int Telescope::info ()
 
 int Telescope::infoJD (double JD)
 {
+	return infoJDLST (JD, getLstDeg (JD));
+}
+
+int Telescope::infoLST (double telLST)
+{
+	return infoJDLST (ln_get_julian_from_sys (), telLST);
+}
+
+int Telescope::infoJDLST (double JD, double telLST)
+{
 	struct ln_hrz_posn hrz;
 	// calculate alt+az
 	getTelAltAz (&hrz);
@@ -1335,7 +1345,7 @@ int Telescope::infoJD (double JD)
 	// fill in airmass, ha and lst
 	airmass->setValueDouble (ln_get_airmass (telAltAz->getAlt (), 750));
 	jdVal->setValueDouble (JD);
-	lst->setValueDouble (getLstDeg (JD));
+	lst->setValueDouble (telLST);
 	hourAngle->setValueDouble (ln_range_degrees (lst->getValueDouble () - telRaDec->getRa ()));
 	targetDistance->setValueDouble (getTargetDistance ());
 
