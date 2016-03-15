@@ -83,9 +83,9 @@ const char *deg2hours (double h)
 {
 	static char rbuf[200];
 	struct ln_hms hms;
-	ln_deg_to_hms (h / 15.0, &hms);
+	ln_deg_to_hms (h, &hms);
 
-	snprintf (rbuf, 200, "%2d:%2d:%2.2f", hms.hours, hms.minutes, hms.seconds);
+	snprintf (rbuf, 200, "%02d:%02d:%02.2f", hms.hours, hms.minutes, hms.seconds);
 	return rbuf;
 }
 
@@ -95,7 +95,7 @@ const char *deg2dec (double d)
 	struct ln_dms dms;
 	ln_deg_to_dms (d, &dms);
 
-	snprintf (rbuf, 200, "%c%2d:%2d:%2.2f", dms.neg ? '-':'+', dms.degrees, dms.minutes, dms.seconds);
+	snprintf (rbuf, 200, "%c%02d:%02d:%02.2f", dms.neg ? '-':'+', dms.degrees, dms.minutes, dms.seconds);
 	return rbuf;
 }
 
