@@ -162,7 +162,7 @@ int TCSNG::initHardware ()
 int TCSNG::info ()
 {
 	setTelRaDec (ngconn->getSexadecimalHours ("RA"), ngconn->getSexadecimalAngle ("DEC"));
-	double nglst = ngconn->getSexadecimalHours ("ST");
+	double nglst = ngconn->getSexadecimalTime ("ST");
 
 	reqcount->setValueInteger (ngconn->getReqCount ());
 
