@@ -16,18 +16,25 @@ class ConnTCSNG:public rts2core::ConnTCP
 		/**
 		 * Request response from TCSNG. Returns pointer to buffer. Throws connection error if request cannot be made.
 		 */
-		const char * request (const char *req, int refNum);
+		const char * runCommand (const char *cmd, const char *req);
+		const char * request (const char *val);
+		const char * command (const char *cmd);
 
 		/**
 		 * Returns sexadecimal value from telescope control system. Sexadecimal is packet as hhmmss.SS.
 		 */
-		double getSexadecimal (const char *req, int refNum);
+		double getSexadecimalHours (const char *req);
+		double getSexadecimalAngle (const char *req);
+
+		int getReqCount () { return reqCount; }
 
 	private:
 		const char *obsID;   // observatory ID
 		const char *subID;   // subsystem ID
 
 		char ngbuf[NGMAXSIZE];
+
+		int reqCount;
 };
 
 }

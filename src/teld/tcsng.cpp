@@ -42,11 +42,7 @@ class TCSNG:public Telescope
 			return 0;
 		}
 
-		virtual int startPark ()
-		{
-			//tel.comMOVSTOW();
-			return 0;
-		}
+		virtual int startPark ();
 
 		virtual int endPark ()
 		{
@@ -81,8 +77,27 @@ class TCSNG:public Telescope
 		rts2core::ValueInteger *reqcount;
 };
 
-
 using namespace rts2teld;
+
+const char *deg2hours (double h)
+{
+	static char rbuf[200];
+	struct ln_hms hms;
+	ln_deg_to_hms (h / 15.0, &hms);
+
+	snprintf (rbuf, 200, "%2d:%2d:%2.2f", hms.hours, hms.minutes, hms.seconds);
+	return rbuf;
+}
+
+const char *deg2dec (double d)
+{
+	static char rbuf[200];
+	struct ln_dms dms;
+	ln_deg_to_dms (d, &dms);
+
+	snprintf (rbuf, 200, "%c%2d:%2d:%2.2f", dms.neg ? '-':'+', dms.degrees, dms.minutes, dms.seconds);
+	return rbuf;
+}
 
 TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv)
 {
@@ -146,27 +161,28 @@ int TCSNG::initHardware ()
 
 int TCSNG::info ()
 {
-	double tra = ngconn->getSexadecimal ("RA", reqcount->getValueInteger ()) * 15.0;
-	reqcount->inc ();
+	setTelRaDec (ngconn->getSexadecimalHours ("RA"), ngconn->getSexadecimalAngle ("DEC"));
+	double nglst = ngconn->getSexadecimalHours ("ST");
 
-	double tdec = ngconn->getSexadecimal ("DEC", reqcount->getValueInteger ());
-	reqcount->inc ();
+	reqcount->setValueInteger (ngconn->getReqCount ());
 
-	setTelRaDec (tra, tdec);
-
-	return Telescope::info ();
+	return Telescope::infoLST (nglst);
 }
 
 int TCSNG::startResync ()
 {
 	struct ln_equ_posn tar;
-	struct ln_hrz_posn hrz;
-
-	double JD = ln_get_julian_from_sys ();
-	
 	getTarget (&tar);
-	
+
+	char cmd[200];
+	snprintf (cmd, 200, "NEXTPOS %s %s 2000 0 0", deg2hours (tar.ra), deg2dec (tar.dec));
   	return 0;
+}
+
+int TCSNG::startPark ()
+{
+	ngconn->command ("MOVSTOW");
+	return 0;
 }
 
 int TCSNG::isMoving ()
