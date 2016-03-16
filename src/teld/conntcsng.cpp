@@ -13,7 +13,7 @@ const char * ConnTCSNG::runCommand (const char *cmd, const char *req)
 	char wbuf[200];
 	size_t wlen = snprintf (wbuf, 200, "%s %s %d %s %s\n", obsID, subID, reqCount, cmd, req);
 
-	init ();
+	init (reqCount == 0);
 
 	sendData (wbuf, wlen, false);
 	receiveTillEnd (ngbuf, NGMAXSIZE, 3);

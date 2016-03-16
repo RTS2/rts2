@@ -117,7 +117,7 @@ class ConnTCP:public ConnNoSend
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		virtual int init ();
+		virtual int init (bool reportcon = true);
 
 		/**
 		 * Returns TCP/IP port.

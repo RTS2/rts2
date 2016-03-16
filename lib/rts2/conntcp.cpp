@@ -59,7 +59,7 @@ bool ConnTCP::checkBufferForChar (std::istringstream **_is, char end_char)
 	return false;
 }
 
-int ConnTCP::init ()
+int ConnTCP::init (bool reportConn)
 {
 	int ret;
 	struct sockaddr_in apc_addr;
@@ -129,7 +129,8 @@ int ConnTCP::init ()
 	else
 	{   
 		setConnState (CONN_CONNECTED);
-		logStream (MESSAGE_INFO) << "connected to " << hostname << ":" << port << sendLog;
+		if (reportConn)
+			logStream (MESSAGE_INFO) << "connected to " << hostname << ":" << port << sendLog;
 	}
         return 0;
 }
