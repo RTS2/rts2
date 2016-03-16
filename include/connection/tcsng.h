@@ -10,10 +10,10 @@
 #define TCSNG_FOCUS          0x04
 #define TCSNG_DOME           0x08
 
-namespace rts2teld
+namespace rts2core
 {
 
-class ConnTCSNG:public rts2core::ConnTCP
+class ConnTCSNG:public ConnTCP
 {
 	public:
 		ConnTCSNG (rts2core::Block *_master, const char *_hostname, int _port, const char *_obsID, const char *_subID);

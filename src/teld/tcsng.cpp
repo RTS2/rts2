@@ -1,6 +1,6 @@
 #include "teld.h"
 #include "configuration.h"
-#include "conntcsng.h"
+#include "connection/tcsng.h"
 
 using namespace rts2teld;
 
@@ -67,7 +67,7 @@ class TCSNG:public Telescope
 		}
 
 	private:
-		ConnTCSNG *ngconn;
+		rts2core::ConnTCSNG *ngconn;
 
 		HostString *host;
 		const char *cfgFile;
@@ -152,7 +152,7 @@ int TCSNG::initHardware ()
 		return -1;
 	}
 
-	ngconn = new ConnTCSNG (this, host->getHostname (), host->getPort (), "TCSNG", "TCS");
+	ngconn = new rts2core::ConnTCSNG (this, host->getHostname (), host->getPort (), "TCSNG", "TCS");
 	ngconn->setDebug (getDebug ());
 
 	rts2core::Configuration *config;

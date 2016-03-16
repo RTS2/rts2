@@ -1,8 +1,8 @@
-#include "conntcsng.h"
+#include "connection/tcsng.h"
 
-using namespace rts2teld;
+using namespace rts2core;
 
-ConnTCSNG::ConnTCSNG (rts2core::Block *_master, const char *_hostname, int _port, const char *_obsID, const char *_subID) : rts2core::ConnTCP (_master, _hostname, _port)
+ConnTCSNG::ConnTCSNG (rts2core::Block *_master, const char *_hostname, int _port, const char *_obsID, const char *_subID) : ConnTCP (_master, _hostname, _port)
 {
 	obsID = _obsID;
 	subID = _subID;
