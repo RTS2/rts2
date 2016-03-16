@@ -30,17 +30,9 @@ class TCSNG:public Telescope
 
 		virtual int startResync ();
 
-		virtual int startMoveFixed (double tar_az, double tar_alt)
-		{
-			return 0;
-		}
+		virtual int startMoveFixed (double tar_az, double tar_alt);
 
-		virtual int stopMove ()
-		{
-			
-			//tel.comCANCEL();
-			return 0;
-		}
+		virtual int stopMove ();
 
 		virtual int startPark ();
 
@@ -61,6 +53,8 @@ class TCSNG:public Telescope
 			return isMoving ();
 		}
 
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 		virtual double estimateTargetTime ()
 		{
 			return getTargetDistance () * 2.0;
@@ -73,6 +67,8 @@ class TCSNG:public Telescope
 		const char *cfgFile;
 
 		bool nillMove;
+		rts2core::ValueBool *domeAuto;
+		rts2core::ValueDouble *domeAz;
 		rts2core::ValueSelection *tcsngmoveState;
 
 		rts2core::ValueInteger *reqcount;
@@ -102,6 +98,10 @@ const char *deg2dec (double d)
 
 TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv)
 {
+	createValue (domeAuto, "dome_auto", "dome follows the telescope", false, RTS2_VALUE_WRITABLE);
+	domeAuto->setValueBool (false);
+
+	createValue (domeAz, "dome_az", "dome azimuth", false);
 	
 	/*RTS2 moveState is an rts2 data type that is alwasy 
 	set equal to the tcsng.moveState member 
@@ -170,6 +170,23 @@ int TCSNG::info ()
 	setTelRaDec (ngconn->getSexadecimalHours ("RA"), ngconn->getSexadecimalAngle ("DEC"));
 	double nglst = ngconn->getSexadecimalTime ("ST");
 
+	const char * domest = ngconn->request ("DOME");
+	double del,telaz,az;
+	char *mod, *init, *home;
+	mod = init = home = NULL;
+	size_t slen = sscanf (domest, "%lf %ms %ms %lf %lf %ms", &del, &mod, &init, &telaz, &az, &home);
+	if (slen == 6)
+	{
+		domeAuto->setValueBool (strcmp (mod, "AUTO"));
+		domeAz->setValueDouble (az);
+	}
+	if (mod)
+		free (mod);
+	if (init)
+		free (init);
+	if (home)
+		free (home);
+
 	reqcount->setValueInteger (ngconn->getReqCount ());
 
 	return Telescope::infoLST (nglst);
@@ -187,6 +204,22 @@ int TCSNG::startResync ()
 
 	tcsngmoveState->setValueInteger (TCSNG_MOVE_CALLED);
   	return 0;
+}
+
+int TCSNG::startMoveFixed (double tar_az, double tar_alt)
+{
+	char cmd[200];
+	snprintf (cmd, 200, "ELAZ %lf %lf", tar_alt, tar_az);
+
+	ngconn->command (cmd);
+	return 0;
+}
+
+int TCSNG::stopMove ()
+{
+	ngconn->command ("CANCEL");
+	tcsngmoveState->setValueInteger (TCSNG_NO_MOVE_CALLED);
+	return 0;
 }
 
 int TCSNG::startPark ()
@@ -214,7 +247,19 @@ int TCSNG::isMoving ()
 			break;
 	}
 	return -1;
-	
+}
+
+int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == domeAuto)
+	{
+		if (((rts2core::ValueBool *) newValue)->getValueBool ())
+			ngconn->command ("DOME AUTO ON");
+		else
+			ngconn->command ("DOME AUTO OFF");
+		return 0;
+	}
+	return Telescope::setValue (oldValue, newValue);
 }
 
 int main (int argc, char **argv)
