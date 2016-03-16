@@ -112,7 +112,7 @@ TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv)
 	tcsngmoveState->setValueInteger (0);
 
 	createValue (reqcount, "tcsng_req_count", "TCSNG request counter", false);
-	reqcount->setValueInteger (0);
+	reqcount->setValueInteger (TCSNG_NO_MOVE_CALLED);
 
 	ngconn = NULL;
 	host = NULL;
@@ -177,7 +177,9 @@ int TCSNG::startResync ()
 	char cmd[200];
 	snprintf (cmd, 200, "NEXTPOS %s %s 2000 0 0", deg2hours (tar.ra), deg2dec (tar.dec));
 	ngconn->command (cmd);
-	ngconn->command ("MOVENEXT");
+	ngconn->command ("MOVNEXT");
+
+	tcsngmoveState->setValueInteger (TCSNG_MOVE_CALLED);
   	return 0;
 }
 
@@ -188,8 +190,23 @@ int TCSNG::startPark ()
 }
 
 int TCSNG::isMoving ()
-{	
-	return -2;
+{
+	int mot = atoi (ngconn->request ("MOTION"));
+	switch (tcsngmoveState->getValueInteger ())
+	{
+		case TCSNG_MOVE_CALLED:
+			if ((mot & TCSNG_RA_AZ) || (mot & TCSNG_DEC_AL) || (mot & TCSNG_DOME))
+				tcsngmoveState->setValueInteger (TCSNG_MOVING);
+			return USEC_SEC / 100;
+			break;
+		case TCSNG_MOVING:
+			if ((mot & TCSNG_RA_AZ) || (mot & TCSNG_DEC_AL) || (mot & TCSNG_DOME))
+				return USEC_SEC / 100;
+			tcsngmoveState->setValueInteger (TCSNG_NO_MOVE_CALLED);
+			return -2;
+			break;
+	}
+	return -1;
 	
 }
 

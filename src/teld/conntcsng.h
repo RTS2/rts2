@@ -5,6 +5,11 @@
 
 #define NGMAXSIZE    200
 
+#define TCSNG_RA_AZ          0x01
+#define TCSNG_DEC_AL         0x02
+#define TCSNG_FOCUS          0x04
+#define TCSNG_DOME           0x08
+
 namespace rts2teld
 {
 
