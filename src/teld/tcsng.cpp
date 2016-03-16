@@ -186,6 +186,7 @@ int TCSNG::startResync ()
 int TCSNG::startPark ()
 {
 	ngconn->command ("MOVSTOW");
+	tcsngmoveState->setValueInteger (TCSNG_MOVE_CALLED);
 	return 0;
 }
 
