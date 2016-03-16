@@ -70,6 +70,7 @@ class TCSNG:public Telescope
 		ConnTCSNG *ngconn;
 
 		HostString *host;
+		const char *cfgFile;
 
 		bool nillMove;
 		rts2core::ValueSelection *tcsngmoveState;
@@ -116,7 +117,9 @@ TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv)
 
 	ngconn = NULL;
 	host = NULL;
+	cfgFile = NULL;
 
+	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption ('t', NULL, 1, "TCS NG hostname[:port]");
 }
 
@@ -129,6 +132,9 @@ int TCSNG::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case OPT_CONFIG:
+			cfgFile = optarg;
+			break;
 		case 't':
 			host = new HostString (optarg, "5750");
 			break;
@@ -151,7 +157,7 @@ int TCSNG::initHardware ()
 
 	rts2core::Configuration *config;
 	config = rts2core::Configuration::instance ();
-	config->loadFile ();
+	config->loadFile (cfgFile);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
