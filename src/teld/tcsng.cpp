@@ -87,8 +87,10 @@ class TCSNG:public Telescope
 		HostString *host;
 		const char *cfgFile;
 
-		bool nillMove;
+		rts2core::ValueBool *systemEnable;
 		rts2core::ValueBool *domeAuto;
+		rts2core::ValueBool *domeInit;
+		rts2core::ValueBool *domeHome;
 		rts2core::ValueDouble *domeAz;
 		rts2core::ValueSelection *tcsngmoveState;
 		rts2core::ValueInteger *motionState;
@@ -120,8 +122,17 @@ const char *deg2dec (double d)
 
 TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv, true, true)
 {
+	createValue (systemEnable, "system_enable", "system is enabled for observations", false, RTS2_VALUE_WRITABLE);
+	systemEnable->setValueBool (false);
+
 	createValue (domeAuto, "dome_auto", "dome follows the telescope", false, RTS2_VALUE_WRITABLE);
 	domeAuto->setValueBool (false);
+
+	createValue (domeInit, "dome_init", "dome is ready to work", false);
+	domeInit->setValueBool (false);
+
+	createValue (domeHome, "dome_home", "dome is homed", false);
+	domeHome->setValueBool (false);
 
 	createValue (domeAz, "dome_az", "dome azimuth", false);
 	
@@ -194,22 +205,19 @@ int TCSNG::info ()
 	setTelRaDec (ngconn->getSexadecimalHours ("RA"), ngconn->getSexadecimalAngle ("DEC"));
 	double nglst = ngconn->getSexadecimalTime ("ST");
 
+	systemEnable->setValueBool (ngconn->getInteger ("ENABLE"));
+
 	const char * domest = ngconn->request ("DOME");
 	double del,telaz,az;
-	char *mod, *in, *home;
-	mod = in = home = NULL;
-	size_t slen = sscanf (domest, "%lf %ms %ms %lf %lf %ms", &del, &mod, &in, &telaz, &az, &home);
+	int mod, in, home;
+	size_t slen = sscanf (domest, "%lf %d %d %lf %lf %d", &del, &mod, &in, &telaz, &az, &home);
 	if (slen == 6)
 	{
-		domeAuto->setValueBool (strcmp (mod, "AUTO"));
+		domeAuto->setValueBool (mod == 1);
+		domeInit->setValueBool (in == 1);
 		domeAz->setValueDouble (az);
+		domeHome->setValueBool (home == 1);
 	}
-	if (mod)
-		free (mod);
-	if (in)
-		free (in);
-	if (home)
-		free (home);
 
 	reqcount->setValueInteger (ngconn->getReqCount ());
 
@@ -280,13 +288,12 @@ int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == domeAuto)
 	{
-		if (((rts2core::ValueBool *) newValue)->getValueBool ())
-		{
-			ngconn->command ("ENABLE");
-			ngconn->command ("DOME AUTO ON");
-		}
-		else
-			ngconn->command ("DOME AUTO OFF");
+		ngconn->command (((rts2core::ValueBool *) newValue)->getValueBool () ? "DOME AUTO ON" : "DOME AUTO OFF");
+		return 0;
+	}
+	if (oldValue == systemEnable)
+	{
+		ngconn->command (((rts2core::ValueBool *) newValue)->getValueBool () ? "ENABLE" : "DISABLE");
 		return 0;
 	}
 	return Telescope::setValue (oldValue, newValue);

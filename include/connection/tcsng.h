@@ -52,6 +52,8 @@ class ConnTCSNG:public ConnTCP
 		double getSexadecimalTime (const char *req);
 		double getSexadecimalAngle (const char *req);
 
+		int getInteger (const char *req);
+
 		int getReqCount () { return reqCount; }
 
 	private:

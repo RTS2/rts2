@@ -103,3 +103,9 @@ double ConnTCSNG::getSexadecimalAngle (const char *req)
 		throw rts2core::Error ("cannot parse sexadecimal reply");
 	return h + m / 60.0 + sec / 3600.0;
 }
+
+int ConnTCSNG::getInteger (const char *req)
+{
+	const char *ret = request (req);
+	return atoi(ret);
+}
