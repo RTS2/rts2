@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# Build rts2-bb database.
+# Copyright (C) 2016 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+INITDIR=.
+
+while [ "x$1" != "x" ]; do
+  case $1 in
+    -h)
+      cat << EOF
+Build RTS2-BB PostgreSQL database.
+
+Usage:
+To fill in stars database:
+  rts2-builddb stars
+
+Options:
+  -h .. this help
+  -d .. directory with initialization files
+
+Options must be folowed by name of an existing database. You must create database with createdb binary and populate it with rts2-builddb script.
+
+WARNING: Please be aware that if you select to not fill database with initialization data, some of the RTS2 functionalities will be broken. Particularly specifying -I will result in empty types table, which means that you will be unable to create any new target before you create entry for its type. Please use -T and -I options only when you are sure you know what they do. Use-A to load all available data (planetary targets,..).
+
+EOF
+      exit 1
+      ;;
+    -d)
+      INITDIR=$2
+      shift
+      ;;
+    *)
+      if [ "x$DBNAME" != "x" ]; then
+        echo "You can specify only one DB to create."
+        exit 1
+      fi
+      DBNAME=$1
+      ;;
+  esac
+  shift
+done
+
+# check that we are run properly
+if [ ! -e $INITDIR/bb -a ! -e $INITDIR/bb/create.sql ]; then
+  echo "You are most probably running rts2-bbbuilddb from wrong directory."
+  echo "Either cd to directory with rts2-bbbuilddb, or specify path to init files with -d argument"
+fi
+
+# process arguments..
+
+PSQL="psql"
+
+PSQLDB="$PSQL $DBNAME"
+
+if [ "x$DBNAME" == "x" ]; then
+  echo "Usage: $0 <db_name>"
+  exit 1
+fi
+
+LOGFILE="/tmp/bbbuild_$DBNAME.log"
+
+rm -f $LOGFILE
+
+echo "Logs generated in $LOGFILE"
+
+function run_psql
+{
+  echo -n $1 " ."
+  echo "running $PSQLDB < $2" >> $LOGFILE
+  $PSQLDB --echo-all 2>> $LOGFILE < $2|while read x; do echo -n "."; done
+  echo " OK"
+}
+
+$PSQLDB -c "select * from pg_tables" 2>&1 >/dev/null
+if [ $? != 0 ]; then
+  echo "Cannot execute psql / you don't have access to database '$DBNAME'"
+  exit 2
+fi
+
+# build database
+
+run_psql "creating BB tables" $INITDIR/bb/create.sql
+
+# grant rights
+run_psql "Granting database rights" $INITDIR/bb/grant.sql
+
+cat << EOF
+
+Database $DBNAME configured for use with RTS2-BB. Please examine $LOGFILE if something in RTS2 does not work.
+
+You can now access database through RTS2 commands, or with psql $DBNAME.
+
+EOF
