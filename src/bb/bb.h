@@ -27,6 +27,7 @@
 #include "rts2db/user.h"
 #include "xmlrpc++/XmlRpc.h"
 
+#include "rts2json/addtargetreq.h"
 #include "rts2json/httpreq.h"
 #include "rts2json/images.h"
 #include "rts2json/libjavascript.h"
@@ -106,6 +107,7 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		rts2json::LibJavaScript javaScriptRequests;
 		rts2json::LibCSS cssRequests;
 		rts2json::Targets tarRequests;
+		rts2json::AddTarget addTarget;
 
 		rts2core::ValueBool *debugConn;
 		rts2core::ValueInteger *queueSize;

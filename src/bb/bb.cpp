@@ -39,6 +39,7 @@ BB::BB (int argc, char ** argv):
 	javaScriptRequests ("/js", this, this),
 	cssRequests ("/css", this, this),
 	tarRequests ("/targets", this, this),
+	addTarget ("/addtarget", this, this),
 	task_queue (this)
 {
 	rpcPort = 8889;
