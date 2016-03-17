@@ -1,3 +1,24 @@
+/*
+ * TCS NG telescope driver.
+ * Copyright (C) 2016 Scott Swindel
+ * Copyright (C) 2016 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+
 #include "teld.h"
 #include "configuration.h"
 #include "connection/tcsng.h"
@@ -70,6 +91,7 @@ class TCSNG:public Telescope
 		rts2core::ValueBool *domeAuto;
 		rts2core::ValueDouble *domeAz;
 		rts2core::ValueSelection *tcsngmoveState;
+		rts2core::ValueInteger *motionState;
 
 		rts2core::ValueInteger *reqcount;
 };
@@ -96,7 +118,7 @@ const char *deg2dec (double d)
 	return rbuf;
 }
 
-TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv)
+TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv, true, true)
 {
 	createValue (domeAuto, "dome_auto", "dome follows the telescope", false, RTS2_VALUE_WRITABLE);
 	domeAuto->setValueBool (false);
@@ -111,6 +133,8 @@ TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv)
 	tcsngmoveState->addSelVal ("MOVE CALLED");
 	tcsngmoveState->addSelVal ("MOVING");
 	tcsngmoveState->setValueInteger (0);
+
+	createValue (motionState, "motion", "TCSNG motion variable", false, RTS2_DT_HEX);
 
 	createValue (reqcount, "tcsng_req_count", "TCSNG request counter", false);
 	reqcount->setValueInteger (TCSNG_NO_MOVE_CALLED);
@@ -172,9 +196,9 @@ int TCSNG::info ()
 
 	const char * domest = ngconn->request ("DOME");
 	double del,telaz,az;
-	char *mod, *init, *home;
-	mod = init = home = NULL;
-	size_t slen = sscanf (domest, "%lf %ms %ms %lf %lf %ms", &del, &mod, &init, &telaz, &az, &home);
+	char *mod, *in, *home;
+	mod = in = home = NULL;
+	size_t slen = sscanf (domest, "%lf %ms %ms %lf %lf %ms", &del, &mod, &in, &telaz, &az, &home);
 	if (slen == 6)
 	{
 		domeAuto->setValueBool (strcmp (mod, "AUTO"));
@@ -182,8 +206,8 @@ int TCSNG::info ()
 	}
 	if (mod)
 		free (mod);
-	if (init)
-		free (init);
+	if (in)
+		free (in);
 	if (home)
 		free (home);
 
@@ -232,11 +256,14 @@ int TCSNG::startPark ()
 int TCSNG::isMoving ()
 {
 	int mot = atoi (ngconn->request ("MOTION"));
+	motionState->setValueInteger (mot);
 	switch (tcsngmoveState->getValueInteger ())
 	{
 		case TCSNG_MOVE_CALLED:
 			if ((mot & TCSNG_RA_AZ) || (mot & TCSNG_DEC_AL) || (mot & TCSNG_DOME))
 				tcsngmoveState->setValueInteger (TCSNG_MOVING);
+			if (getNow () - getTargetStarted () > 5)
+				return -2;
 			return USEC_SEC / 100;
 			break;
 		case TCSNG_MOVING:
@@ -254,7 +281,10 @@ int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == domeAuto)
 	{
 		if (((rts2core::ValueBool *) newValue)->getValueBool ())
+		{
+			ngconn->command ("ENABLE");
 			ngconn->command ("DOME AUTO ON");
+		}
 		else
 			ngconn->command ("DOME AUTO OFF");
 		return 0;
