@@ -37,11 +37,10 @@ void TLETarget::load ()
 	Target::load ();
 	// split two lines..
 	std::string tarInfo (getTargetInfo());
-	if (orbitFromTLE (tarInfo) != 0)
-		throw rts2core::Error ("cannot parse " + tarInfo);
+	orbitFromTLE (tarInfo);
 }
 
-int TLETarget::orbitFromTLE (std::string target_tle)
+void TLETarget::orbitFromTLE (std::string target_tle)
 {
 	size_t sub = target_tle.find ('|');
 	if (sub != std::string::npos)
@@ -51,7 +50,7 @@ int TLETarget::orbitFromTLE (std::string target_tle)
 
 		int ret = parse_elements (tle1.c_str (), tle2.c_str (), &tle);
 		if (ret != 0)
-			throw rts2core::Error ("cannot parse TLE " + tle1 + " " + tle2);
+			throw rts2core::Error ("cannot parse TLE " + tle1 + " " + tle2 + " for target " + getTargetName ());
 
 		ephem = 1;
 		is_deep = select_ephemeris (&tle);
@@ -63,7 +62,7 @@ int TLETarget::orbitFromTLE (std::string target_tle)
 		setTargetName (tle.intl_desig);
 		setTargetInfo (target_tle.c_str ());
 		setTargetType (TYPE_TLE);
-		return 0;
+		return;
 	}
 	throw rts2core::Error ("cannot parse TLE " + target_tle);
 }

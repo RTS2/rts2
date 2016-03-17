@@ -270,16 +270,14 @@ Target *createTargetByString (std::string tar_string, bool debug)
 	try
 	{
 		rtar = new TLETarget ();
-		ret = ((TLETarget *) rtar)->orbitFromTLE (tar_string);
-		if (ret == 0)
-			return rtar;
-
-		delete rtar;
+		((TLETarget *) rtar)->orbitFromTLE (tar_string);
+		return rtar;
 	}
 	catch (rts2core::Error &er)
 	{
-		// ignore, if it is not TLE, it will be something else..
 	}
+
+	delete rtar;
 
 	XmlRpcLogHandler::setVerbosity (debug ? 5 : 0);
 
@@ -293,6 +291,8 @@ Target *createTargetByString (std::string tar_string, bool debug)
 	}
 	catch (rts2core::Error &er)
 	{
+		delete rtar;
+
 		// MPEC fallback
 		rtar = new rts2db::MPECTarget (tar_string.c_str ());
 		rtar->load ();

@@ -80,7 +80,15 @@ void TargetSet::load ()
 void TargetSet::load (std::list<int> &target_ids)
 {
 	for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
-	  	load (*iter);
+	{
+		try
+		{
+	  		load (*iter);
+		}
+		catch (rts2core::Error &e)
+		{
+		}
+	}
 }
 
 void TargetSet::load (int id)

@@ -45,7 +45,7 @@ class TLETarget:public Target
 		 *
 		 * @param tle      two line element, separated with |
 		 */
-		int orbitFromTLE (std::string tle);
+		void orbitFromTLE (std::string tle);
 
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
