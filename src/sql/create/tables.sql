@@ -132,10 +132,10 @@ CREATE TABLE observations (
 	obs_dec		float8,
 	obs_alt		float,
 	obs_az		float,
-	obs_slew	timestamp,  -- start of slew
-	obs_start	timestamp,  -- start of observation
+	obs_slew	timestamp with time zone,  -- start of slew
+	obs_start	timestamp with time zone,  -- start of observation
 	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
-	obs_end		timestamp
+	obs_end		timestamp with time zone
 );
 
 CREATE SEQUENCE tar_id START WITH 1000;
