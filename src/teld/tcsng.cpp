@@ -205,7 +205,7 @@ int TCSNG::info ()
 	setTelRaDec (ngconn->getSexadecimalHours ("RA"), ngconn->getSexadecimalAngle ("DEC"));
 	double nglst = ngconn->getSexadecimalTime ("ST");
 
-	systemEnable->setValueBool (ngconn->getInteger ("ENABLE"));
+	systemEnable->setValueBool (ngconn->getInteger ("DISABLE") == 0);
 
 	const char * domest = ngconn->request ("DOME");
 	double del,telaz,az;
