@@ -74,7 +74,7 @@ int ConnNotify::receive (fd_set * readset)
 			}
 			// handle multiple events
 			struct inotify_event *ep = event;
-			while (ep < (event + len))
+			while (((char *) ep) < (((char *) event) + len))
 			{
 				getMaster ()->fileModified (ep);
 				if (getDebug ())
