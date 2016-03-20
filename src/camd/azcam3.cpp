@@ -14,10 +14,10 @@ class AzCamDataConn:public rts2core::ConnTCP
 
 		virtual int receive (fd_set * readset);
 
-		size_t getDataSize () { return dataSize; } 
+		ssize_t getDataSize () { return dataSize; } 
 
 	private:
-		size_t dataSize;
+		ssize_t dataSize;
 		size_t headerSize;
 		char header[257];
 		int outFile;
