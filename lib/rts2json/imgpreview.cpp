@@ -186,13 +186,19 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
 	{
 		_os << "<option value='" << i << "'";
 		if (c == i)
-			_os << "selected";
+			_os << " selected";
 		_os << ">" << (i + 1) << "</option>";
 	}
 
 	_os << "</select> \n" 
 #endif
-	"Label <input type='text' textwidth='20' name='lb' value='" << label << "'></input><input type='hidden' name='p' value='" << page << "'></input><input type='hidden' name='ps' value='" << ps << "'></input><input type='hidden' name='s' value='" << s << "'><input type='hidden' name='q' value='" << quantiles << "'><input type='hidden' name='cv' value='" << colourVariant << "'></input><input type='submit' value='Redraw'></input>&nbsp;\n"
+	"Color map <select name='cv'>";
+
+	for (int i = 0; i < 14; i++)
+		_os << "<option value='" << i << (colourVariant == i ? "' selected" : "'") << ">" << i << "</option>";
+
+
+	_os << "</select> Label <input type='text' textwidth='20' name='lb' value='" << label << "'></input><input type='hidden' name='p' value='" << page << "'></input><input type='hidden' name='ps' value='" << ps << "'></input><input type='hidden' name='s' value='" << s << "'><input type='hidden' name='q' value='" << quantiles << "'><input type='hidden' name='cv' value='" << colourVariant << "'></input><input type='submit' value='Redraw'></input>&nbsp;\n"
         << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 
