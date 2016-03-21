@@ -14,7 +14,7 @@ class AzCamDataConn:public rts2core::ConnTCP
 
 		virtual int receive (fd_set * readset);
 
-		ssize_t getDataSize () { return dataSize; } 
+		ssize_t getDataSize () { return dataSize; }
 
 	private:
 		ssize_t dataSize;
@@ -307,6 +307,8 @@ int AzCam::doReadout ()
 	{
 		if (dataConn->getDataSize () > 0)
 			return 10;
+		removeConnection (dataConn);
+		dataConn = NULL;
 		fitsDataTransfer ("/tmp/m.fits");
 		return -2;
 	}

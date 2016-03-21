@@ -86,6 +86,7 @@ class TCSNG:public Telescope
 
 		HostString *host;
 		const char *cfgFile;
+		const char *ngname;
 
 		rts2core::ValueBool *systemEnable;
 		rts2core::ValueBool *domeAuto;
@@ -153,9 +154,11 @@ TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv, true, true)
 	ngconn = NULL;
 	host = NULL;
 	cfgFile = NULL;
+	ngname = NULL;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption ('t', NULL, 1, "TCS NG hostname[:port]");
+	addOption ('n', NULL, 1, "TCS NG telescope device name");
 }
 
 TCSNG::~TCSNG ()
@@ -173,6 +176,9 @@ int TCSNG::processOption (int in_opt)
 		case 't':
 			host = new HostString (optarg, "5750");
 			break;
+		case 'n':
+			ngname = optarg;
+			break;
 		default:
 			return Telescope::processOption (in_opt);
 	}
@@ -187,7 +193,14 @@ int TCSNG::initHardware ()
 		return -1;
 	}
 
-	ngconn = new rts2core::ConnTCSNG (this, host->getHostname (), host->getPort (), "TCSNG", "TCS");
+	if (ngname == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "You must specify TCS NG device name (with -n option)." << sendLog;
+		return -1;
+	}
+
+
+	ngconn = new rts2core::ConnTCSNG (this, host->getHostname (), host->getPort (), ngname, "TCS");
 	ngconn->setDebug (getDebug ());
 
 	rts2core::Configuration *config;
