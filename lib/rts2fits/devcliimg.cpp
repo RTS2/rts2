@@ -272,8 +272,7 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
 		{
-			if (data2fits)
-				ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
+			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data2fits ? data->size () : -data->size ());
 
 			struct imghdr *imgh = (struct imghdr *) ((*di)->getDataBuff ());
 

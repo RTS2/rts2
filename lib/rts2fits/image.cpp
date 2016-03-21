@@ -978,7 +978,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 			return -1;
 		}
 	}
-	else
+	else if (nchan > 1)
 	{
 		if (dataType == RTS2_DATA_SBYTE)
 		{
@@ -995,47 +995,52 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 		}
 	}
 
-	ret = writeImgHeader (im_h, nchan);
+	ret = writeImgHeader (im_h, abs (nchan));
 
 	long pixelSize = dataSize / getPixelByteSize ();
-	switch (dataType)
+
+	if (nchan > 0)
 	{
-		case RTS2_DATA_BYTE:
-			fits_write_img_byt (getFitsFile (), 0, 1, pixelSize, (unsigned char *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_SHORT:
-			fits_write_img_sht (getFitsFile (), 0, 1, pixelSize, (int16_t *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_LONG:
-			fits_write_img_int (getFitsFile (), 0, 1, pixelSize, (int *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_LONGLONG:
-			fits_write_img_lnglng (getFitsFile (), 0, 1, pixelSize, (LONGLONG *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_FLOAT:
-			fits_write_img_flt (getFitsFile (), 0, 1, pixelSize, (float *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_DOUBLE:
-			fits_write_img_dbl (getFitsFile (), 0, 1, pixelSize, (double *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_SBYTE:
-			fits_write_img_sbyt (getFitsFile (), 0, 1, pixelSize, (signed char *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_USHORT:
-			fits_write_img_usht (getFitsFile (), 0, 1, pixelSize, (short unsigned int *) pixelData, &fits_status);
-			break;
-		case RTS2_DATA_ULONG:
-			fits_write_img_uint (getFitsFile (), 0, 1, pixelSize, (unsigned int *) pixelData, &fits_status);
-			break;
-		default:
-			logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
+		switch (dataType)
+		{
+			case RTS2_DATA_BYTE:
+				fits_write_img_byt (getFitsFile (), 0, 1, pixelSize, (unsigned char *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_SHORT:
+				fits_write_img_sht (getFitsFile (), 0, 1, pixelSize, (int16_t *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_LONG:
+				fits_write_img_int (getFitsFile (), 0, 1, pixelSize, (int *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_LONGLONG:
+				fits_write_img_lnglng (getFitsFile (), 0, 1, pixelSize, (LONGLONG *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_FLOAT:
+				fits_write_img_flt (getFitsFile (), 0, 1, pixelSize, (float *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_DOUBLE:
+				fits_write_img_dbl (getFitsFile (), 0, 1, pixelSize, (double *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_SBYTE:
+				fits_write_img_sbyt (getFitsFile (), 0, 1, pixelSize, (signed char *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_USHORT:
+				fits_write_img_usht (getFitsFile (), 0, 1, pixelSize, (short unsigned int *) pixelData, &fits_status);
+				break;
+			case RTS2_DATA_ULONG:
+				fits_write_img_uint (getFitsFile (), 0, 1, pixelSize, (unsigned int *) pixelData, &fits_status);
+				break;
+			default:
+				logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
+				return -1;
+		}
+		if (fits_status)
+		{
+			logStream (MESSAGE_ERROR) << "cannot write data: " << getFitsErrors () << sendLog;
 			return -1;
+		}
 	}
-	if (fits_status)
-	{
-		logStream (MESSAGE_ERROR) << "cannot write data: " << getFitsErrors () << sendLog;
-		return -1;
-	}
+
 	if (writeRTS2Values)
 	{
 		ch->computeStatistics (0, pixelSize);
