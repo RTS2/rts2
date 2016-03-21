@@ -239,7 +239,7 @@ void DevClientCameraImage::newDataConn (int data_conn)
 	actualImage = NULL;
 }
 
-void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChannels *data)
+void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataChannels *data, bool data2fits)
 {
 	CameraImages::iterator iter = images.find (data_conn);
 	if (data_conn == -1 && iter == images.end ())
@@ -272,7 +272,8 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
 		{
-			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
+			if (data2fits)
+				ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
 
 			struct imghdr *imgh = (struct imghdr *) ((*di)->getDataBuff ());
 
@@ -454,7 +455,7 @@ void DevClientCameraImage::fitsData (const char *fn)
 		images[0]->setExEnd (getNow ());
 		writeToFitsTransfer (img);
 
-		fullDataReceived (0, data);
+		allImageDataReceived (0, data, false);
 	}
 	catch (rts2core::Error &ex)
 	{

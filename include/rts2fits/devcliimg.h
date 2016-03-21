@@ -52,7 +52,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		virtual void postEvent (rts2core::Event * event);
 
 		virtual void newDataConn (int data_conn);
-		virtual void fullDataReceived (int data_conn, rts2core::DataChannels *data);
+		virtual void fullDataReceived (int data_conn, rts2core::DataChannels *data) { allImageDataReceived (data_conn, data, true); }
 		virtual void fitsData (const char *fn);
 		virtual Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Image * image);
@@ -135,6 +135,8 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		 * Write camera related meatadat to FITS header.
 		 */
 		void cameraMetadata (Image * image);
+
+		void allImageDataReceived (int data_conn, rts2core::DataChannels *data, bool data2fits);
 
 		/**
 		 * Convert FITS image to DataChannels.
