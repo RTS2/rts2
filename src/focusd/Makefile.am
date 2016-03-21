@@ -1,6 +1,8 @@
 SUBDIRS = 
 
-bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl rts2-focusd-atc2 rts2-focusd-microfocuser rts2-focusd-nstep rts2-focusd-planewave rts2-focusd-apm
+bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl \
+	rts2-focusd-atc2 rts2-focusd-microfocuser rts2-focusd-nstep rts2-focusd-planewave rts2-focusd-apm \
+	rts2-focusd-ng
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
@@ -22,6 +24,8 @@ rts2_focusd_nstep_SOURCES = nstep.cpp
 rts2_focusd_planewave_SOURCES = planewave.cpp
 
 rts2_focusd_apm_SOURCES = apm.cpp
+
+rts2_focusd_ng_SOURCES = ng.cpp
 
 EXTRA_DIST = 
 
