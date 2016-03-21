@@ -65,8 +65,14 @@ class Filterd:public rts2core::Device
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		int getFilterNumFromName (std::string filter_name) { return filter->getSelIndex (filter_name); }
+		const char *getFilterNameFromNum (int num) { return filter->getSelName (num); }
 
 		void addFilter (const char *new_filter) { filter->addSelVal (new_filter); }
+
+		/**
+		 * Must be called when filters are added dynamicaly (e.g. by addFilter in initHardware).
+		 */
+		void sendFilterNames () { updateMetaInformations (filter); }
 
 		/**
 		 * Set filter names from space separated argument list.
