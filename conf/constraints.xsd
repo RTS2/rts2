@@ -38,6 +38,7 @@
       <xs:element name="time" type="timeInterval" minOccurs="0"/>
       <xs:element name="airmass" type="doubleInterval" minOccurs="0"/>
       <xs:element name="HA" type="doubleInterval" minOccurs="0"/>
+      <xs:element name="dec" type="doubleInterval" minOccurs="0"/>
       <xs:element name="measuredSeeing" type="doubleInterval" minOccurs="0"/>
       <xs:element name="expectedSeeing" type="doubleInterval" minOccurs="0"/>
       <xs:element name="lunarDistance" type="doubleInterval" minOccurs="0"/>

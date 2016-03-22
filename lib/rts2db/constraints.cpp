@@ -484,6 +484,21 @@ bool ConstraintHA::satisfy (Target *tar, double JD, double *nextJD)
 	return isBetween (ha);
 }
 
+bool ConstraintDec::satisfy (Target *tar, double JD, double *nextJD)
+{
+	struct ln_equ_posn pos;
+	tar->getPosition (&pos, JD);
+	if (isnan (pos.dec))
+	{
+	 	if (nextJD)
+			*nextJD = NAN;
+		return true;
+	}
+	if (nextJD)
+		*nextJD = 0;
+	return isBetween (pos.dec);
+}
+
 bool ConstraintLunarDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double ld = tar->getLunarDistance (JD);
@@ -603,6 +618,7 @@ Constraints::Constraints (Constraints &cs): std::map <std::string, ConstraintPtr
 			|| con->getName () == CONSTRAINT_AIRMASS
 			|| con->getName () == CONSTRAINT_ZENITH_DIST
 			|| con->getName () == CONSTRAINT_HA
+			|| con->getName () == CONSTRAINT_DEC
 			|| con->getName () == CONSTRAINT_LDISTANCE
 			|| con->getName () == CONSTRAINT_LALTITUDE
 			|| con->getName () == CONSTRAINT_LPHASE
@@ -674,6 +690,7 @@ size_t Constraints::getTimeConstraints (std::map <std::string, ConstraintPtr> &c
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
 		if (!strcmp (iter->second->getName (), CONSTRAINT_HA)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_DEC)
 			|| !strcmp (iter->second->getName (), CONSTRAINT_TIME)
 			|| !strcmp (iter->second->getName (), CONSTRAINT_LDISTANCE)
 			|| !strcmp (iter->second->getName (), CONSTRAINT_LALTITUDE)
@@ -887,6 +904,8 @@ Constraint *Constraints::createConstraint (const char *name)
 		return new ConstraintZenithDistance ();
 	else if (!strcmp (name, CONSTRAINT_HA))
 		return new ConstraintHA ();
+	else if (!strcmp (name, CONSTRAINT_DEC))
+		return new ConstraintDec ();
 	else if (!strcmp (name, CONSTRAINT_LDISTANCE))
 		return new ConstraintLunarDistance ();
 	else if (!strcmp (name, CONSTRAINT_LALTITUDE))

@@ -184,6 +184,14 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
+        <term>dec</term>
+	<listitem>
+	  <para>
+	    Allowed declination in units of degrees [0, +/-90]. 
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term>lunarDistance</term>
 	<listitem>
 	  <para>

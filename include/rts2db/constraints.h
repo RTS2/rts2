@@ -33,6 +33,7 @@ static const char* CONSTRAINT_TIME         = "time";
 static const char* CONSTRAINT_AIRMASS      = "airmass";
 static const char* CONSTRAINT_ZENITH_DIST  = "zenithDistance";
 static const char* CONSTRAINT_HA           = "HA";
+static const char* CONSTRAINT_DEC          = "dec";
 static const char* CONSTRAINT_LDISTANCE    = "lunarDistance";
 static const char* CONSTRAINT_LALTITUDE    = "lunarAltitude";
 static const char* CONSTRAINT_LPHASE       = "lunarPhase";
@@ -241,6 +242,14 @@ class ConstraintHA:public ConstraintInterval
 		virtual bool satisfy (Target *tar, double JD, double *nextJD);
 
 		virtual const char* getName () { return CONSTRAINT_HA; }
+};
+
+class ConstraintDec:public ConstraintInterval
+{
+	public:
+		virtual bool satisfy (Target *tar, double JD, double *nextJD);
+
+		virtual const char* getName () { return CONSTRAINT_DEC; }
 };
 
 class ConstraintLunarDistance:public ConstraintInterval

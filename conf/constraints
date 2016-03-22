@@ -21,5 +21,11 @@
 			<upper>2</upper>
 		</interval>
 	</HA>
+	<dec>
+		<interval>
+			<lower>-30</lower>
+			<upper>90</upper>
+		</interval>
+	</dec>
 	<maxRepeats>10</maxRepeats>
 </constraints>
