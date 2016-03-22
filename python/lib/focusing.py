@@ -37,6 +37,12 @@
 
 import scriptcomm
 import sextractor
+sepPresent = False
+try:
+	import sep
+	sepPresent = True
+except Exception,ex:
+	pass
 
 from pylab import *
 from scipy import *
@@ -57,12 +63,12 @@ H2 = 4
 class Focusing (scriptcomm.Rts2Comm):
 	"""Take and process focussing data."""
 
-	def __init__(self,exptime = 2, filterGalaxies=False):
+	def __init__(self,exptime = 2,step=1,attempts=20,filterGalaxies=False):
 		scriptcomm.Rts2Comm.__init__(self)
 		self.exptime = 2 # 60 # 10
-		self.step = 1 # 0.2
-		self.attempts = 20 #30 # 20
-		self.focuser = self.getValue('focuser')
+		self.step = step
+		self.attempts = attempts
+		self.focuser = None
 		# if |offset| is above this value, try linear fit
 		self.linear_fit = self.step * self.attempts / 2.0
 		# target FWHM for linear fit
@@ -151,12 +157,11 @@ class Focusing (scriptcomm.Rts2Comm):
 				min_fwhm = fwhm[x]
 		return self.tryFit(defaultFit)
 
-	def findBestFWHM(self,tries,defaultFit=H3,min_stars=15,ds9display=False,threshold=2.7,deblendmin=0.03):
-		# X is FWHM, Y is offset value
-		self.focpos=[]
-		self.fwhm=[]
-		fwhm_min = None
-		self.fwhm_MinimumX = None
+	def __sexFindFWHM(self,tries,threshold,deblendmin):
+		focpos=[]
+		fwhm=[]
+		fwhm_min=None
+		fwhm_MinimumX=None
 		keys = tries.keys()
 		keys.sort()
 		sextr = sextractor.Sextractor(threshold=threshold,deblendmin=deblendmin)
@@ -168,12 +173,57 @@ class Focusing (scriptcomm.Rts2Comm):
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue
 			self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,fwhm,nstars))
-			self.focpos.append(k)
-			self.fwhm.append(fwhm)
+			focpos.append(k)
+			fwhm.append(fwhm)
 			if (fwhm_min is None or fwhm < fwhm_min):
-				self.fwhm_MinimumX = k
+				fwhm_MinimumX = k
 				fwhm_min = fwhm
+		return focpos,fwhm,fwhm_min,fwhm_MinimumX
 
+	def __sepFindFWHM(self,tries):
+		from astropy.io import fits
+		import math
+		focpos=[]
+		fwhm=[]
+		fwhm_min=None
+		fwhm_MinimumX=None
+		keys = tries.keys()
+		keys.sort()
+		ln2=math.log(2)
+		for k in keys:
+			try:
+				fwhms=[]
+				ff=fits.open(tries[k])
+				# loop on images..
+				for i in range(1,len(ff)):
+					data=ff[i].data
+					bkg=sep.Background(data)
+					sources=sep.extract(data-bkg, 5.0 * bkg.globalrms)
+					for s in sources:
+						fwhms.append(2 * math.sqrt(ln2 * (s[12]**2 + s[13]**2)))
+				im_fwhm=numpy.median(fwhms)
+				# find median from fwhms measurements..
+				self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,im_fwhm,len(fwhm)))
+				focpos.append(k)
+				fwhm.append(im_fwhm)
+				if (fwhm_min is None or im_fwhm < fwhm_min):
+					fwhm_MinimumX = k
+					fwhm_min = im_fwhm
+			except Exception,ex:
+				self.log('W','offset {0}: {1}'.format(k,ex))
+		return focpos,fwhm,fwhm_min,fwhm_MinimumX
+
+
+	def findBestFWHM(self,tries,defaultFit=H3,min_stars=15,ds9display=False,threshold=2.7,deblendmin=0.03):
+		# X is FWHM, Y is offset value
+		self.focpos=[]
+		self.fwhm=[]
+		self.fwhm_min = None
+		self.fwhm_MinimumX = None
+		if sepPresent:
+			self.focpos,self.fwhm,self.fwhm_min,self.fwhm_MinimumX = self.__sepFindFWHM(tries)
+		else:
+			self.focpos,self.fwhm,self.fwhm_min,self.fwhm_MinimumX = self.__sexFindFWHM(tries,threshold,deblendmin)
 		self.focpos = array(self.focpos)
 		self.fwhm = array(self.fwhm)
 
@@ -206,6 +256,7 @@ class Focusing (scriptcomm.Rts2Comm):
 		return self.findBestFWHM(tries)
 
 	def run(self):
+		self.focuser = self.getValue('focuser')
 		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
 		self.altaz (82,10)
 
@@ -235,6 +286,6 @@ class Focusing (scriptcomm.Rts2Comm):
 
 		x = linspace(self.focpos.min() - 1, self.focpos.max() + 1)
 
-		plot (self.focpos, self.fwhm, "ro", x, fitfunc(self.fwhm_poly, x), "r-")
+		plot (self.focpos, self.fwhm, "r+", x, fitfunc(self.fwhm_poly, x), "r-")
 
 		show()

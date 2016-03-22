@@ -3,7 +3,7 @@
 # Autofocosing routines.
 #
 # You will need: scipy matplotlib sextractor
-# This should work on Debian/ubuntu:
+# This should work on Debian/Ubuntu:
 # sudo apt-get install python-matplotlib python-scipy python-pyfits sextractor
 #
 # If you would like to see sextractor results, get DS9 and pyds9:
@@ -15,10 +15,12 @@
 # sextractor binary with one compiled from sources (so you will have access
 # to sextractor configuration files, which program assumes).
 #
+# Alternatively, use SEP package (pip install sep; http://sep.readthedocs.org).
+#
 # (C) 2002-2008 Stanislav Vitek
 # (C) 2002-2010 Martin Jelinek
 # (C) 2009-2010 Markus Wildi
-# (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+# (C) 2010-2016 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 # (C) 2010      Francisco Forster Buron, Universidad de Chile
 #
 # This program is free software; you can redistribute it and/or

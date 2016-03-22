@@ -2,9 +2,9 @@
 
 # Test focusing infrastrucure
 
-import focusing
+import rts2.focusing
 import sys
-import pyfits
+from astropy.io import fits
 
 from scipy import *
 from pylab import *
@@ -12,10 +12,15 @@ from pylab import *
 tries = {}
 
 for fn in sys.argv[1:]:
-	ff = pyfits.fitsopen(fn)
-	tries[float(ff[0].header['FOC_POS'])]=fn
+	ff = fits.open(fn)
+	focpos=len(tries)
+	try:
+		focpos=float(ff[0].header['FOC_POS'])
+	except KeyError,ke:
+		pass
+	tries[focpos]=fn
 
-f = focusing.Focusing()
+f = rts2.focusing.Focusing()
 
 b,ftype = f.findBestFWHM(tries)
 # for way off-focus, low S/N images..
