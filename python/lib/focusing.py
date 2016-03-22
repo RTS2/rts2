@@ -204,7 +204,7 @@ class Focusing (scriptcomm.Rts2Comm):
 						fwhms.append(2 * math.sqrt(ln2 * (s[12]**2 + s[13]**2)))
 				im_fwhm=numpy.median(fwhms)
 				# find median from fwhms measurements..
-				self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,im_fwhm,len(fwhm)))
+				self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,im_fwhm,len(fwhms)))
 				focpos.append(k)
 				fwhm.append(im_fwhm)
 				if (fwhm_min is None or im_fwhm < fwhm_min):
