@@ -505,15 +505,5 @@ int DevScript::haveNextCommand (rts2core::DevClient *devClient)
 		|| waitScript == WAIT_MIRROR || waitScript == WAIT_SEARCH
 		|| nextComd == NULL)
 		return 0;
-								 // some telescope command..
-	if (!strcmp (cmd_device, "TX"))
-	{
-		script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_TEL_SCRIPT_CHANGE, (void *) nextComd));
-		// postEvent have to create copy (in case we will serve more devices) .. so we have to delete command
-		delete nextComd;
-		nextComd = NULL;
-		setWaitMove ();
-		return 0;
-	}
 	return 1;
 }

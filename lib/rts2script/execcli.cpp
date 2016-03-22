@@ -126,10 +126,52 @@ int DevClientCameraExec::getNextCommand ()
 		if (nextComd)
 		{
 			// send command to other device
-			if (strcmp (getName (), cmd_device))
+			if (strcmp (getName (), cmd_device) != 0)
 			{
-				cmdConn = getMaster ()->getOpenConnection (cmd_device);
-				if (!cmdConn)
+				// special names, on two charactesrs, ending on X..
+				if (strlen (cmd_device) == 2 && cmd_device[1] == 'X')
+				{
+					int dt = DEVICE_TYPE_UNKNOW;
+					switch (cmd_device[0])
+					{
+						case 'C':
+							dt = DEVICE_TYPE_CCD;
+							break;
+						case 'T':
+							dt = DEVICE_TYPE_MOUNT;
+							break;
+						case 'F':
+							dt = DEVICE_TYPE_FOCUS;
+							break;
+						case 'W':
+							dt = DEVICE_TYPE_FW;
+							break;
+						case 'R':
+							dt = DEVICE_TYPE_ROTATOR;
+							break;
+						case 'P':
+							dt = DEVICE_TYPE_PHOT;
+							break;
+						case 'M':
+							dt = DEVICE_TYPE_MIRROR;
+							break;
+					}
+
+					connections_t::iterator iter = getMaster ()->getConnections ()->begin ();
+					getMaster ()->getOpenConnectionType (dt, iter);
+					while (iter != getMaster ()->getConnections ()->end ())
+					{
+						cmdConns.push_back (*iter);
+						iter++;
+						getMaster ()->getOpenConnectionType (dt, iter);
+					}
+				}
+				else
+				{
+					cmdConns.push_back (getMaster ()->getOpenConnection (cmd_device));
+				}
+
+				if (cmdConns.size () == 0 || !cmdConns[0])
 				{
 					logStream (MESSAGE_ERROR)
 						<< "cannot find device : " << cmd_device
@@ -141,12 +183,12 @@ int DevClientCameraExec::getNextCommand ()
 			}
 			else
 			{
-				cmdConn = NULL;
+				cmdConns.clear ();
 			}
 			nextComd->setOriginator (this);
 			return ret;
 		}
-		cmdConn = NULL;
+		cmdConns.clear ();
 		return ret;
 	}
 }
@@ -262,7 +304,7 @@ void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 	}
 
 	// send command to other device
-	if (cmdConn)
+	if (cmdConns.size () > 0)
 	{
 		if (!(nextComd->getBopMask () & BOP_WHILE_STATE))
 		{
@@ -298,10 +340,13 @@ void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 
 		// execute command
 		// when it returns, we can execute next command
+		for (connections_t::iterator iter = cmdConns.begin (); iter != cmdConns.end (); iter++)
+		{
 #ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "sending command " << nextComd->getText () << " to " << cmdConn->getName () << sendLog;
+			logStream (MESSAGE_DEBUG) << "sending command " << nextComd->getText () << " to " << (*iter)->getName () << sendLog;
 #endif
-		cmdConn->queCommand (nextComd);
+			(*iter)->queCommand (nextComd);
+		}
 		nextComd = NULL;
 		waitForExposure = false;
 		return;
@@ -433,7 +478,7 @@ void DevClientCameraExec::stateChanged (rts2core::ServerState * state)
 {
 	DevClientCameraImage::stateChanged (state);
 	DevScript::stateChanged (state);
-	if (nextComd && cmdConn && !(state->getValue () & BOP_TEL_MOVE) && !(getConnection ()->getFullBopState () & BOP_TEL_MOVE))
+	if (nextComd && cmdConns.size () > 0 && !(state->getValue () & BOP_TEL_MOVE) && !(getConnection ()->getFullBopState () & BOP_TEL_MOVE))
 		nextCommand ();
 }
 
@@ -521,10 +566,6 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 			break;
 		case EVENT_TEL_SCRIPT_RESYNC:
 			cmdChng = NULL;
-			checkInterChange ();
-			break;
-		case EVENT_TEL_SCRIPT_CHANGE:
-			cmdChng = new rts2core::CommandChange ((rts2core::CommandChange *) event->getArg (), this);
 			checkInterChange ();
 			break;
 		case EVENT_ENTER_WAIT:

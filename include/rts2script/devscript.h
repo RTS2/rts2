@@ -67,9 +67,9 @@ class DevScript
 		rts2core::Command *nextComd;
 
 		/**
-		 * Reference to next command connection, if it differs from scripting device.
+		 * Reference to next command connection(s), if it differs from scripting device.
 		 */
-		rts2core::Connection *cmdConn;
+		connections_t cmdConns;
 		char cmd_device[DEVICE_NAME_SIZE];
 
 		enum

@@ -107,6 +107,7 @@ int Focusd::idle ()
 		else
 		{
 			ret = endFocusing ();
+			sendValueAll (position);
 			infoAll ();
 			setTimeout (USEC_SEC);
 			if (ret)
