@@ -183,6 +183,7 @@ class Focusing (scriptcomm.Rts2Comm):
 	def __sepFindFWHM(self,tries):
 		from astropy.io import fits
 		import math
+		import traceback
 		focpos=[]
 		fwhm=[]
 		fwhm_min=None
@@ -197,7 +198,7 @@ class Focusing (scriptcomm.Rts2Comm):
 				# loop on images..
 				for i in range(1,len(ff)):
 					data=ff[i].data
-					bkg=sep.Background(data)
+					bkg=sep.Background(numpy.array(data,numpy.float))
 					sources=sep.extract(data-bkg, 5.0 * bkg.globalrms)
 					for s in sources:
 						fwhms.append(2 * math.sqrt(ln2 * (s[12]**2 + s[13]**2)))
@@ -210,7 +211,7 @@ class Focusing (scriptcomm.Rts2Comm):
 					fwhm_MinimumX = k
 					fwhm_min = im_fwhm
 			except Exception,ex:
-				self.log('W','offset {0}: {1}'.format(k,ex))
+				self.log('W','offset {0}: {1} {2}'.format(k,ex,traceback.format_exc()))
 		return focpos,fwhm,fwhm_min,fwhm_MinimumX
 
 
