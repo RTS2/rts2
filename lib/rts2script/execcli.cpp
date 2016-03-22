@@ -114,6 +114,7 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 
 void DevClientCameraExec::startTarget ()
 {
+	cmdConns.clear ();
 	DevScript::startTarget ();
 }
 
@@ -168,10 +169,12 @@ int DevClientCameraExec::getNextCommand ()
 				}
 				else
 				{
-					cmdConns.push_back (getMaster ()->getOpenConnection (cmd_device));
+					rts2core::Connection *cmdC = getMaster ()->getOpenConnection (cmd_device);
+					if (cmdC != NULL)
+						cmdConns.push_back (cmdC);
 				}
 
-				if (cmdConns.size () == 0 || !cmdConns[0])
+				if (cmdConns.size () == 0)
 				{
 					logStream (MESSAGE_ERROR)
 						<< "cannot find device : " << cmd_device
