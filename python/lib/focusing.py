@@ -65,7 +65,7 @@ class Focusing (scriptcomm.Rts2Comm):
 
 	def __init__(self,exptime = 2,step=1,attempts=20,filterGalaxies=False):
 		scriptcomm.Rts2Comm.__init__(self)
-		self.exptime = 2 # 60 # 10
+		self.exptime = exptime
 		self.step = step
 		self.attempts = attempts
 		self.focuser = None
