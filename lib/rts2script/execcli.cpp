@@ -124,6 +124,7 @@ int DevClientCameraExec::getNextCommand ()
 	while (true)
 	{
 		int ret = getScript ()->nextCommand (*this, &nextComd, cmd_device);
+		cmdConns.clear ();
 		if (nextComd)
 		{
 			// send command to other device
@@ -184,14 +185,9 @@ int DevClientCameraExec::getNextCommand ()
 					continue;
 				}
 			}
-			else
-			{
-				cmdConns.clear ();
-			}
 			nextComd->setOriginator (this);
 			return ret;
 		}
-		cmdConns.clear ();
 		return ret;
 	}
 }
@@ -348,7 +344,10 @@ void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 #ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "sending command " << nextComd->getText () << " to " << (*iter)->getName () << sendLog;
 #endif
-			(*iter)->queCommand (nextComd);
+			if (iter == cmdConns.begin ())
+				(*iter)->queCommand (nextComd);
+			else
+				(*iter)->queCommand (new rts2core::Command (nextComd));
 		}
 		nextComd = NULL;
 		waitForExposure = false;
