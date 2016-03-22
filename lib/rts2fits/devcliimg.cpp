@@ -450,7 +450,6 @@ void DevClientCameraImage::fitsData (const char *fn)
 
 		queCommand (new rts2core::CommandFitsStat (getMaster (), img->getAverage (), img->getMin (), img->getMax (), img->getPixelSum (), img->getAvgStdDev ()));
 
-		logStream (MESSAGE_INFO) << "average " << img->getAverage () << sendLog;
 		// convert FITS to data
 		fits2DataChannels (img, data);
 
