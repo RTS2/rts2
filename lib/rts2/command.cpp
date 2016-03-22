@@ -186,6 +186,13 @@ CommandReadout::CommandReadout (Block * _master):Command (_master)
 	setCommand ("readout");
 }
 
+CommandFitsStat::CommandFitsStat (Block * _master, double average, double min, double max, double sum, double mode):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_FITS_STAT << " " << average << " " << min << " " << max << " " << sum << " " << mode;
+	setCommand (_os);
+}
+
 void CommandFilter::setCommandFilter (int filter)
 {
 	std::ostringstream _os;

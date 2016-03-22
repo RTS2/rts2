@@ -1956,6 +1956,29 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 		sendValueAll (centerAvgStat);
 		return 0;
 	}
+	else if (conn->isCommand (COMMAND_FITS_STAT))
+	{
+		double p_average, p_min, p_max, p_sum, p_mode;
+		if (conn->paramNextDouble (&p_average)
+			|| conn->paramNextDouble (&p_min)
+			|| conn->paramNextDouble (&p_max)
+			|| conn->paramNextDouble (&p_sum)
+			|| conn->paramNextDouble (&p_mode)
+			|| !conn->paramEnd ())
+			return -2;
+		average->setValueDouble (p_average);
+		min->setValueDouble (p_min);
+		max->setValueDouble (p_max);
+		sum->setValueDouble (p_sum);
+		image_mode->setValueDouble (p_mode);
+
+		sendValueAll (average);
+		sendValueAll (min);
+		sendValueAll (max);
+		sendValueAll (sum);
+		sendValueAll (image_mode);
+		return 0;
+	}
 	return rts2core::ScriptDevice::commandAuthorized (conn);
 }
 

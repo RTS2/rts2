@@ -88,7 +88,7 @@ void Image::initData ()
 	filter_i = -1;
 	filter = NULL;
 	avg_stdev = 0;
-	min = max = mean = 0;
+	min = max = mean = pixelSum = 0;
 	dataType = RTS2_DATA_USHORT;
 	sexResults = NULL;
 	sexResultNum = 0;
@@ -1860,7 +1860,7 @@ void Image::computeStatistics (size_t _from, size_t _dataSize)
 	if (channels.size () == 0)
 		loadChannels ();
 
-	long double pixelSum = 0;
+	pixelSum = 0;
 	long totalSize = 0;
 
 	avg_stdev = 0;

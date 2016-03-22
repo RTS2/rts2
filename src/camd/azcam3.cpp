@@ -7,10 +7,10 @@
 namespace rts2camd
 {
 
-class AzCamDataConn:public rts2core::ConnTCP
+class AzCam3DataConn:public rts2core::ConnTCP
 {
 	public:
-		AzCamDataConn (rts2core::Block *_master, int _port);
+		AzCam3DataConn (rts2core::Block *_master, int _port);
 
 		virtual int receive (fd_set * readset);
 
@@ -23,7 +23,7 @@ class AzCamDataConn:public rts2core::ConnTCP
 		int outFile;
 };
 
-AzCamDataConn::AzCamDataConn (rts2core::Block *_master, int _port):ConnTCP (_master, _port)
+AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_master, _port)
 {
 	dataSize = -1;
 	headerSize = 0;
@@ -31,7 +31,7 @@ AzCamDataConn::AzCamDataConn (rts2core::Block *_master, int _port):ConnTCP (_mas
 	outFile = 0;
 }
 
-int AzCamDataConn::receive (fd_set *readset)
+int AzCam3DataConn::receive (fd_set *readset)
 {
 	if (isConnState (CONN_DELETE))
 		return -1;
@@ -84,11 +84,11 @@ int AzCamDataConn::receive (fd_set *readset)
 	return 0;
 }
 
-class AzCam:public rts2camd::Camera
+class AzCam3:public rts2camd::Camera
 {
 	public:
-		AzCam (int argc, char **argv);
-		virtual ~AzCam ();
+		AzCam3 (int argc, char **argv);
+		virtual ~AzCam3 ();
 
 	protected:
 		virtual int processOption (int opt);
@@ -100,7 +100,7 @@ class AzCam:public rts2camd::Camera
 
 	private:
 		rts2core::ConnTCP *commandConn;
-		AzCamDataConn *dataConn;
+		AzCam3DataConn *dataConn;
 
 		char rbuf[200];
 
@@ -121,7 +121,7 @@ class AzCam:public rts2camd::Camera
 
 using namespace rts2camd;
 
-AzCam::AzCam (int argc, char **argv): Camera (argc, argv)
+AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 {
 	azcamHost = NULL;
 	hostname = NULL;
@@ -132,14 +132,14 @@ AzCam::AzCam (int argc, char **argv): Camera (argc, argv)
 	addOption ('n', NULL, 1, "local hostname, hostname of the computer running RTS2");
 }
 
-AzCam::~AzCam ()
+AzCam3::~AzCam3 ()
 {
 	delete dataConn;
 	delete commandConn;
 	delete azcamHost;
 }
 
-int AzCam::processOption (int opt)
+int AzCam3::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -155,7 +155,7 @@ int AzCam::processOption (int opt)
 	return 0;	
 }
 
-int AzCam::initHardware()
+int AzCam3::initHardware()
 {
 	if (azcamHost == NULL)
 	{
@@ -195,7 +195,7 @@ int AzCam::initHardware()
 	return initChips ();
 }
 
-int AzCam::callCommand (const char *cmd)
+int AzCam3::callCommand (const char *cmd)
 {
 	// end character \r, 20 second wtime
 	int ret = commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20, false);
@@ -207,7 +207,7 @@ int AzCam::callCommand (const char *cmd)
 	return -1;
 }
 
-int AzCam::callExposure (const char *cmd, double p1, const char *p2)
+int AzCam3::callExposure (const char *cmd, double p1, const char *p2)
 {
 	char buf[200];
 	snprintf (buf, 200, "%s(%f,\'%s\','test')\r\n", cmd, p1, p2);
@@ -223,21 +223,21 @@ int AzCam::callExposure (const char *cmd, double p1, const char *p2)
 	}
 }
 
-int AzCam::callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6)
+int AzCam3::callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6)
 {
 	char buf[200];
 	snprintf (buf, 200, "%s %d %d %d %d %d %d\r\n", cmd, p1, p2, p3, p4, p5, p6);
 	return callCommand (buf);
 }
 
-int AzCam::callArg (const char *cmd)
+int AzCam3::callArg (const char *cmd)
 {
 	// end character \r, 20 second wtime
 	int ret = commandConn->writeRead (cmd, strlen(cmd), rbuf, 200, '\r', 20, false);
 	return ret >= 0 ? 0 : -1;
 }
 
-int AzCam::setCamera (const char *name, const char *value)
+int AzCam3::setCamera (const char *name, const char *value)
 {
 	size_t len = strlen (name) + strlen (value);
 	char buf[8 + len];
@@ -245,7 +245,7 @@ int AzCam::setCamera (const char *name, const char *value)
 	return callArg (buf);
 }
 
-int AzCam::setCamera (const char *name, int value)
+int AzCam3::setCamera (const char *name, int value)
 {
 	size_t len = strlen (name) + 20;
 	char buf[8 + len];
@@ -253,7 +253,7 @@ int AzCam::setCamera (const char *name, int value)
 	return callArg (buf);
 }
 
-int AzCam::startExposure()
+int AzCam3::startExposure()
 {
 	if (dataConn)
 	{
@@ -261,7 +261,7 @@ int AzCam::startExposure()
 		delete dataConn;
 	}
 
-	dataConn = new AzCamDataConn (this, 0);
+	dataConn = new AzCam3DataConn (this, 0);
 	if (getDebug ())
 		dataConn->setDebug ();
 	dataConn->init ();
@@ -290,7 +290,7 @@ int AzCam::startExposure()
 	return callExposure ("exposure.Expose", getExposure(), imgType[getExpType ()]);
 }
 
-long AzCam::isExposing ()
+long AzCam3::isExposing ()
 {
 	if (dataConn)
 	{
@@ -301,7 +301,7 @@ long AzCam::isExposing ()
 	return -1;
 }
 
-int AzCam::doReadout ()
+int AzCam3::doReadout ()
 {
 	if (dataConn)
 	{
@@ -317,6 +317,6 @@ int AzCam::doReadout ()
 
 int main (int argc, char **argv)
 {
-	AzCam device (argc, argv);
+	AzCam3 device (argc, argv);
 	device.run ();
 }

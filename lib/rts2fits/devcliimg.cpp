@@ -434,6 +434,7 @@ void DevClientCameraImage::fitsData (const char *fn)
 		if (actualImage == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "FITS data received without exposure start, file " << fn << " kept at its location" << sendLog;
+			delete img;
 			return;
 		}
 		std::string abs = std::string (actualImage->image->getAbsoluteFileName ());
@@ -445,6 +446,11 @@ void DevClientCameraImage::fitsData (const char *fn)
 		img->closeFile ();
 		img->openFile (abs.c_str (), false, false);
 		img->loadChannels ();
+		img->computeStatistics (0, 0);
+
+		queCommand (new rts2core::CommandFitsStat (getMaster (), img->getAverage (), img->getMin (), img->getMax (), img->getPixelSum (), img->getAvgStdDev ()));
+
+		logStream (MESSAGE_INFO) << "average " << img->getAverage () << sendLog;
 		// convert FITS to data
 		fits2DataChannels (img, data);
 

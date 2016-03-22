@@ -448,6 +448,10 @@ class Image:public FitsFile
 
 		double getAverage () { return average; }
 
+		double getMin () { return min; }
+		double getMax () { return max; }
+		double getPixelSum () { return pixelSum; }
+
 		double getAvgStdDev () { return avg_stdev; }
 
 		int getFocPos () { return focPos; }
@@ -765,9 +769,10 @@ class Image:public FitsFile
 		int getFailed;
 		double average;
 		double avg_stdev;
-		short int min;
-		short int max;
-		short int mean;
+		double min;
+		double max;
+		double mean;
+		long double pixelSum;
 		int isAcquiring;
 		// that value is nan when rotang was already set;
 		// it is calculated as sum of partial rotangs.

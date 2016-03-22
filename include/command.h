@@ -108,6 +108,13 @@
 #define COMMAND_DATA_IN_FITS    "fits_data"
 
 /**
+ * Send by recipient connction to update image statistics. Can be used only
+ * for FITS transfere data.
+ */
+#define COMMAND_FITS_STAT       "fits_statistics"
+
+
+/**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
  * to reach given state uses this to control their execution.
  */
@@ -404,6 +411,15 @@ class CommandReadout:public Command
 {
 	public:
 		CommandReadout (Block * _master);
+};
+
+/**
+ * Sends image statistics.
+ */
+class CommandFitsStat:public Command
+{
+	public:
+		CommandFitsStat (Block * _master, double average, double min, double max, double sum, double mode);
 };
 
 /**
