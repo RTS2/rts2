@@ -104,7 +104,7 @@ class AstrometryScript:
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, center=False, downsample=None):
+	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
 
@@ -130,6 +130,10 @@ class AstrometryScript:
 			solve_field.append('--use-sextractor')
 			solve_field.append('--sextractor-path')
 			solve_field.append(self.sextractor_bin)
+
+		if extension is not None:
+			solve_field.append('-6')
+			solve_field.append(extension)
 
 		if center:
 			solve_field.append('--crpix-center')
