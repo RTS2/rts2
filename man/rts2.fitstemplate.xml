@@ -116,8 +116,48 @@ RA.d = @T0.TEL:ra / tel RA value, recorded as double number
 	</term>
 	<listitem>
 	  <para>
-	    Float (double) number. Value will be formated as number with decimal point. If value cannot be
+	    float (double) number. Value will be formated as number with decimal point. If value cannot be
 	    converted to float number, 0 will be written.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>dms</option>
+	</term>
+	<listitem>
+	  <para>
+	    degrees, minutes and seconds, separated by :.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>hms</option>
+	</term>
+	<listitem>
+	  <para>
+	    hour, minutes and seconds, separated by :.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>tra</option>
+	</term>
+	<listitem>
+	  <para>
+	    RA in TFRM format.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>tdec</option>
+	</term>
+	<listitem>
+	  <para>
+	    declination in TFRM format.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -127,7 +167,7 @@ RA.d = @T0.TEL:ra / tel RA value, recorded as double number
 	</term>
 	<listitem>
 	  <para>
-	    Integer number. Value will be formatted as number without decimal
+	    integer number. Value will be formatted as number without decimal
 	    point. Floats will be rounded, non-numbers will be written as 0.
 	  </para>
 	</listitem>

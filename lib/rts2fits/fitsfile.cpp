@@ -25,6 +25,8 @@
 #include "block.h"
 #include "utilsfunc.h"
 #include "radecparser.h"
+#include "libnova_cpp.h"
+#include "rts2format.h"
 
 #include "rts2-config.h"
 
@@ -767,6 +769,30 @@ void FitsFile::writeTemplate (rts2core::IniSection *hc)
 		{
 			double dv = atof (v.c_str ());
 			setValue (iter->getValueName ().c_str (), dv, com.c_str ());
+		}
+		else if (suff == "hms")
+		{
+			std::ostringstream os;
+			os << LibnovaRa (atof (v.c_str ()));
+			setValue (iter->getValueName ().c_str (), os.str ().c_str (), com.c_str ());
+		}
+		else if (suff == "tra")
+		{
+			std::ostringstream os;
+			os << spaceDegSep << LibnovaRa (atof (v.c_str ()));
+			setValue (iter->getValueName ().c_str (), os.str ().c_str (), com.c_str ());
+		}
+		else if (suff == "dms")
+		{
+			std::ostringstream os;
+			os << LibnovaDeg (atof (v.c_str ()));
+			setValue (iter->getValueName ().c_str (), os.str ().c_str (), com.c_str ());
+		}
+		else if (suff == "tdec")
+		{
+			std::ostringstream os;
+			os << spaceDegSep << LibnovaDec (atof (v.c_str ()));
+			setValue (iter->getValueName ().c_str (), os.str ().c_str (), com.c_str ());
 		}
 		else
 		{
