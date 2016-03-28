@@ -432,7 +432,11 @@ class Value
 
 		bool onlyFitsHeader () { return rts2Type & RTS2_FITS_HEADERS; }
 
-		bool isAutosave () { return rts2Type & RTS2_VALUE_AUTOSAVE; }
+		/**
+		 * Returns true if value should be autosaved.
+		 * Can be overwritten to signal values which shall not be autosaved (unknow,..).
+		 */
+		virtual bool isAutosave () { return rts2Type & RTS2_VALUE_AUTOSAVE; }
 
 		bool isWritable () { return rts2Type & RTS2_VALUE_WRITABLE; }
 
@@ -749,6 +753,8 @@ class ValueBool:public ValueInteger
 			return getValueInteger () == 1 ? true : false;
 		}
 		virtual const char *getDisplayValue ();
+
+		virtual bool isAutosave () { return getValueInteger () == 2 ? false : ValueInteger::isAutosave (); }
 };
 
 /**
