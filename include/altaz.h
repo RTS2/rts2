@@ -38,7 +38,7 @@ class AltAz: public Telescope
 	protected:
 		int calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, int32_t &t_dc);
 
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, int used_flippingm, bool &use_flipped, bool writeValue, double haMargin);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, int used_flippingm, bool &use_flipped, bool writeValue, double haMargin, bool forceShortest);
 
 		virtual int hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin);
 

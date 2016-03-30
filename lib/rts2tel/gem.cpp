@@ -308,9 +308,9 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin)
+int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortes)
 {
-	int used_flipping = useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ();
+	int used_flipping = forceShortes ? 0 : (useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ());
         bool use_flipped;
 
 	return sky2counts (pos, ac, dc, JD, used_flipping, use_flipped, writeValues, haMargin);
@@ -414,7 +414,7 @@ int GEM::peek (double ra, double dec)
 
 	double JD = ln_get_julian_from_sys ();
 
-	int ret = calculateTarget (JD, &peekPos, ac, dc, false);
+	int ret = calculateTarget (JD, &peekPos, ac, dc, false, 0, false);
 	if (ret)
 		return ret;
 

@@ -1083,7 +1083,7 @@ int Paramount::doPara()
 			if(stat1 & MOTOR_OFF) ret1 = MKS3MotorOn (axis1);
 			
 			// issue the actual move
-			ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble ());
+			ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
 			if (ret)
                                 return -1;
 

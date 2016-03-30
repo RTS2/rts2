@@ -72,6 +72,9 @@ class SitechAltAz:public AltAz
 			return isMoving ();
 		}
 
+
+		virtual void runTracking ();
+
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual double estimateTargetTime ()
@@ -80,6 +83,8 @@ class SitechAltAz:public AltAz
 		}
 
 	private:
+		void internalTracking (double sec_step, float speed_factor);
+
 		const char *tel_tty, *der_tty;
 		ConnSitech *telConn;
 		ConnSitech *derConn;
@@ -102,6 +107,7 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueDouble *trackingDist;
 		rts2core::ValueDouble *slowSyncDistance;
+		rts2core::ValueFloat *fastSyncSpeed;
 
 		rts2core::IntegerArray *PIDs;
 
@@ -147,6 +153,8 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueLong *az_sitech_speed;
 		rts2core::ValueLong *alt_sitech_speed;
+
+		rts2core::ValueBool *computed_only_speed;
 
 		rts2core::ValueDouble *az_acceleration;
 		rts2core::ValueDouble *alt_acceleration;
@@ -259,6 +267,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	slowSyncDistance->setValueDouble (0.05);  // 3 arcmin
 
+	createValue (fastSyncSpeed, "fast_sync_speed", "fast speed factor (compared to siderial trackign) for fast alignment (above slow_track_distance)", false, RTS2_VALUE_WRITABLE);
+	fastSyncSpeed->setValueFloat (4);
+
 	createValue (az_acceleration, "az_acceleration", "[deg/s^2] AZ motor acceleration", false);
 	createValue (alt_acceleration, "alt_acceleration", "[deg/s^2] Alt motor acceleration", false);
 
@@ -312,6 +323,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 
 	createValue (az_sitech_speed, "az_sitech_speed", "speed in controller units", false);
 	createValue (alt_sitech_speed, "alt_sitech_speed", "speed in controller units", false);
+
+	createValue (computed_only_speed, "computed_speed", "base speed vector calculations only on calculations, do not factor current target position", false);
+	computed_only_speed->setValueBool (false);
 
 	firstSlewCall = true;
 	wasStopped = false;
@@ -559,7 +573,7 @@ int SitechAltAz::startResync ()
 	struct ln_equ_posn tar;
 
 	int32_t azc = r_az_pos->getValueLong (), altc = r_alt_pos->getValueLong ();
-	int ret = calculateTarget (JD, &tar, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0);
+	int ret = calculateTarget (JD, &tar, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0, false);
 
 	if (ret)
 		return -1;
@@ -626,10 +640,10 @@ int SitechAltAz::isMoving ()
 		// close to target, run tracking
 		if (tdist < 0.5)
 		{
-//			if (tdist < slowSyncDistance->getValueDouble ())
-//				internalTracking (2.0, 1.0);
-//			else
-//				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
+			if (tdist < slowSyncDistance->getValueDouble ())
+				internalTracking (2.0, 1.0);
+			else
+				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
 			return USEC_SEC * trackingInterval->getValueFloat () / 10;
 		}
 
@@ -645,6 +659,13 @@ int SitechAltAz::isMoving ()
 int SitechAltAz::startPark()
 {
 	return -1;
+}
+
+void SitechAltAz::runTracking ()
+{
+	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
+		return;
+	internalTracking (2.0, 1.0);
 }
 
 int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -673,6 +694,132 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	}
 
 	return AltAz::setValue (oldValue, newValue);
+}
+
+void SitechAltAz::internalTracking (double sec_step, float speed_factor)
+{
+	// calculate position sec_step from last position, base speed on this..
+	struct ln_equ_posn tarPos;
+
+	info ();
+
+	int32_t a_azc = r_az_pos->getValueLong ();
+	int32_t a_altc = r_alt_pos->getValueLong ();
+
+	// refresh current target..
+	calculateTarget (getTelJD, &tarPos, a_azc, a_altc, true, 0, true);
+
+	double futureJD = getTelJD + sec_step / 86400.0;
+	int ret = calculateTarget (futureJD, &tarPos, a_azc, a_altc, false, 0, true);
+	if (ret)
+	{
+		if (ret < 0)
+			logStream (MESSAGE_WARNING) << "cannot calculate next tracking, aborting tracking" << sendLog;
+		stopTracking ();
+		return;
+	}
+
+	int32_t az_change = 0;
+	int32_t alt_change = 0;
+
+	if (computed_only_speed->getValueBool () == true)
+	{
+		// constant 2 degrees tracking..
+		az_change = fabs (azCpd->getValueDouble ()) * 2.0;
+		alt_change = fabs (altCpd->getValueDouble ()) * 2.0;
+
+		altaz_Xrequest.y_speed = fabs (az_track_speed->getValueDouble ()) * SPEED_MULTI * speed_factor;
+		altaz_Xrequest.x_speed = fabs (alt_track_speed->getValueDouble ()) * SPEED_MULTI * speed_factor;
+
+		// 2 degrees in ra; will be called periodically..
+		if (az_track_speed->getValueDouble () > 0)
+			altaz_Xrequest.y_dest = r_az_pos->getValueLong () + azCpd->getValueDouble () * 2.0;
+		else
+			altaz_Xrequest.y_dest = r_az_pos->getValueLong () - azCpd->getValueDouble () * 2.0;
+
+		if (alt_track_speed->getValueDouble () > 0)
+			altaz_Xrequest.x_dest = r_alt_pos->getValueLong () + altCpd->getValueDouble () * 2.0;
+		else
+			altaz_Xrequest.x_dest = r_alt_pos->getValueLong () - altCpd->getValueDouble () * 2.0;
+	}
+	else
+	{
+		// 1 step change
+		az_change = labs (a_azc - r_az_pos->getValueLong ());
+		alt_change = labs (a_altc - r_alt_pos->getValueLong ());
+
+		int32_t az_step = speed_factor * az_change / sec_step;
+		int32_t alt_step = speed_factor * alt_change / sec_step;
+
+		altaz_Xrequest.y_speed = ticksPerSec2MotorSpeed (az_step);
+		altaz_Xrequest.x_speed = ticksPerSec2MotorSpeed (alt_step);
+
+		// put axis in future
+
+		if (altaz_Xrequest.y_speed != 0)
+		{
+			if (a_azc > r_az_pos->getValueLong ())
+				altaz_Xrequest.y_dest = r_az_pos->getValueLong () + az_step * 10;
+			else
+				altaz_Xrequest.y_dest = r_az_pos->getValueLong () - az_step * 10;
+		}
+		else
+		{
+			altaz_Xrequest.y_dest = r_az_pos->getValueLong ();
+		}
+
+		if (altaz_Xrequest.x_speed != 0)
+		{
+			if (a_altc > r_alt_pos->getValueLong ())
+				altaz_Xrequest.x_dest = r_alt_pos->getValueLong () + alt_step * 10;
+			else
+				altaz_Xrequest.x_dest = r_alt_pos->getValueLong () - alt_step * 10;
+		}
+		else
+		{
+			altaz_Xrequest.x_dest = r_alt_pos->getValueLong ();
+		}
+	}
+
+	az_sitech_speed->setValueLong (altaz_Xrequest.y_speed);
+	alt_sitech_speed->setValueLong (altaz_Xrequest.x_speed);
+
+	altaz_Xrequest.x_bits = xbits;
+	altaz_Xrequest.y_bits = ybits;
+
+	xbits |= (0x01 << 4);
+
+	// check that the entered trajactory is valid
+/*	ret = checkTrajectory (getTelJD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), radec_Xrequest.y_dest, radec_Xrequest.x_dest, ac_change / sec_step / 2.0, dc_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
+	if (ret == 2 && speed_factor > 1) // too big move to future, keep target
+	{
+		logStream (MESSAGE_INFO) << "soft stop detected while running tracking, move from " << r_ra_pos->getValueLong () << " " << r_dec_pos->getValueLong () << " only to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << sendLog;
+	}
+	else if (ret != 0)
+	{
+		logStream (MESSAGE_WARNING) << "trajectory from " << r_ra_pos->getValueLong () << " " << r_dec_pos->getValueLong () << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
+		stopTracking ();
+		return;
+	} */
+
+	t_az_pos->setValueLong (altaz_Xrequest.y_dest);
+	t_alt_pos->setValueLong (altaz_Xrequest.x_dest);
+	try
+	{
+		telConn->sendXAxisRequest (altaz_Xrequest);
+	}
+	catch (rts2core::Error &e)
+	{
+		delete telConn;
+
+		telConn = new ConnSitech (tel_tty, this);
+		telConn->setDebug (getDebug ());
+		telConn->init ();
+
+		telConn->flushPortIO ();
+		telConn->getSiTechValue ('Y', "XY");
+		telConn->sendXAxisRequest (altaz_Xrequest);
+	}
 }
 
 void SitechAltAz::getConfiguration ()

@@ -78,7 +78,7 @@ class GEM: public Telescope
 
 		virtual int updateLimits () = 0;
 
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin);
+		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest);
 
 		/**
 		 * Convert counts to RA&Dec coordinates.

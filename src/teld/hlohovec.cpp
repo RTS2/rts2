@@ -306,7 +306,7 @@ int Hlohovec::startResync ()
 	int32_t dc = decDrive->getPosition ();
 	double JD = ln_get_julian_from_sys ();
 	struct ln_equ_posn tar;
-	int ret = calculateTarget (JD, &tar, tAc, dc, true, haSlewMargin->getValueDouble ());
+	int ret = calculateTarget (JD, &tar, tAc, dc, true, haSlewMargin->getValueDouble (), false);
 	if (ret)
 		return -1;
 	raDrive->setTargetPos (tAc);
@@ -326,7 +326,7 @@ int Hlohovec::isMoving ()
 			int32_t dc = decDrive->getPosition ();
 			double JD = ln_get_julian_from_sys ();
 			struct ln_equ_posn tar;
-			int ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble ());
+			int ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
 			if (ret)
 				return -1;
 			diffAc = ac - tAc;

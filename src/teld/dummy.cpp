@@ -231,7 +231,7 @@ void Dummy::runTracking ()
 	t_ac = t_axRa->getValueLong ();
 	t_dc = t_axDec->getValueLong ();
 
-	int ret = calculateTarget (JD + 2 / 86400.0, &target, t_ac, t_dc, true);
+	int ret = calculateTarget (JD + 2 / 86400.0, &target, t_ac, t_dc, true, 0, false);
 	if (ret)
 	{
 		setTracking (0);

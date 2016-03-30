@@ -339,7 +339,7 @@ void Telescope::setTarTel (struct ln_equ_posn *pos)
 }
 
 
-int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin)
+int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	double tar_distance = NAN;
 
@@ -395,10 +395,10 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 	if (writeValues)
 		setObject (out_tar->ra, out_tar->dec);
 
-	return sky2counts (JD, out_tar, ac, dc, writeValues, haMargin);
+	return sky2counts (JD, out_tar, ac, dc, writeValues, haMargin, forceShortest);
 }
 
-int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin)
+int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	return -1;
 }

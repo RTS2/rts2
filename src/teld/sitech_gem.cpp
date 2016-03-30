@@ -835,7 +835,7 @@ int Sitech::startResync ()
         struct ln_equ_posn tar;
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
-	int ret = calculateTarget (JD, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0);
+	int ret = calculateTarget (JD, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0, false);
 	if (ret)
 		return -1;
 
@@ -977,10 +977,10 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	int32_t dc = r_dec_pos->getValueLong ();
 
 	// refresh current target..
-	calculateTarget (getTelJD, &tarPos, ac, dc, true, 0);
+	calculateTarget (getTelJD, &tarPos, ac, dc, true, 0, true);
 
 	double futureJD = getTelJD + sec_step / 86400.0;
-	int ret = calculateTarget (futureJD, &tarPos, ac, dc, false, 0);
+	int ret = calculateTarget (futureJD, &tarPos, ac, dc, false, 0, true);
 	if (ret)
 	{
 		if (ret < 0)
