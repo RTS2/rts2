@@ -968,19 +968,15 @@ int Sitech::startPark ()
 
 void Sitech::internalTracking (double sec_step, float speed_factor)
 {
-	// calculate position sec_step from last position, base speed on this..
-	struct ln_equ_posn tarPos;
-
 	info ();
 
 	int32_t ac = r_ra_pos->getValueLong ();
 	int32_t dc = r_dec_pos->getValueLong ();
 
-	// refresh current target..
-	calculateTarget (getTelJD, &tarPos, ac, dc, true, 0, true);
+	int32_t ac_speed = 0;
+	int32_t dc_speed = 0;
 
-	double futureJD = getTelJD + sec_step / 86400.0;
-	int ret = calculateTarget (futureJD, &tarPos, ac, dc, false, 0, true);
+	int ret = calculateTracking (getTelJD, sec_step, ac, dc, ac_speed, dc_speed);
 	if (ret)
 	{
 		if (ret < 0)

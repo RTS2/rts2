@@ -550,7 +550,7 @@ class Telescope:public rts2core::Device
 		 * from target position, where target position can change in time (for 
 		 * MPEC and LTE targets).
 		 *
-		 * @param JD	         date for which position will be calculated
+		 * @param JD	         Julian date for which position will be calculated
 		 * @param out_tar	 target position, excluding precission, ..
 		 * @param ac	         current (input) and target (output) HA axis value
 		 * @param dc	         current (input) and target (output) DEC axis value
@@ -559,6 +559,20 @@ class Telescope:public rts2core::Device
 		 * @param forceShortest  if true, shortest path wlll be taken - desired flipping will be ignored
 		 */
 		int calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest);
+
+		/**
+		 * Calculate speed vector from arc of given duration.
+		 *
+		 * This method calculates position in time JD and JD + sec_step / 86400.0.
+		 *
+		 * @param JD             start Julian date
+		 * @param sec_step       lenght of arc in seconds
+		 * @param ac             current (input) and target (output) first axis (HA, AZ) count value
+		 * @param dc             current (intput) and target (output) second axis (DEC, ALT) count value
+		 * @param ac_speed       first axis speed in counts per second
+		 * @param dc_speed       second axis speed in counts per second
+		 */
+		int calculateTracking (double JD, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed);
 
 		/**
 		 * Transform sky coordinates to axis coordinates. Implemented in classes
@@ -1064,6 +1078,11 @@ class Telescope:public rts2core::Device
 		 * Telescope target coordinates, corrected (precessed, aberated, refracted) with modelling offset.
 		 */
 		rts2core::ValueRaDec *telTargetRaDec;
+
+		/**
+		 * Tracking vector. Speeds in RA and DEC for in degrees/second.
+		 */
+		rts2core::ValueRaDec *trackingVect;
 
 		/**
 		 * If this value is true, any software move of the telescope is blocked.

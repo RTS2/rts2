@@ -698,19 +698,15 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 {
-	// calculate position sec_step from last position, base speed on this..
-	struct ln_equ_posn tarPos;
-
 	info ();
 
 	int32_t a_azc = r_az_pos->getValueLong ();
 	int32_t a_altc = r_alt_pos->getValueLong ();
 
-	// refresh current target..
-	calculateTarget (getTelJD, &tarPos, a_azc, a_altc, true, 0, true);
+	int32_t azc_speed = 0;
+	int32_t altc_speed = 0;
 
-	double futureJD = getTelJD + sec_step / 86400.0;
-	int ret = calculateTarget (futureJD, &tarPos, a_azc, a_altc, false, 0, true);
+	int ret = calculateTracking (getTelJD, sec_step, a_azc, a_altc, azc_speed, altc_speed);
 	if (ret)
 	{
 		if (ret < 0)

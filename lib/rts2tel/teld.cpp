@@ -98,13 +98,15 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		tracking->addSelVal ("sidereal");
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
+
+		createValue (trackingVect, "TRACKSPD", "[deg/sec] tracking speeds vector", true);
 	}
 	else
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
+		trackingVect = NULL;
 	}
-
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
@@ -396,6 +398,37 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 		setObject (out_tar->ra, out_tar->dec);
 
 	return sky2counts (JD, out_tar, ac, dc, writeValues, haMargin, forceShortest);
+}
+
+int Telescope::calculateTracking (double JD, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed)
+{
+	struct ln_equ_posn eqpos, t_eqpos;
+	// refresh current target..
+
+	int32_t t_ac = ac;
+	int32_t t_dc = dc;
+	int ret = calculateTarget (JD, &eqpos, t_ac, t_dc, true, 0, true);
+	if (ret)
+		return ret;
+
+	ret = calculateTarget (JD + sec_step / 86400.0, &t_eqpos, t_ac, t_dc, false, 0, true);
+	if (ret)
+		return ret;
+
+	// for speed vector calculation..
+	double ra_diff = t_eqpos.ra - eqpos.ra;
+	double dec_diff = t_eqpos.dec - eqpos.dec;
+
+	if (ra_diff > 180.0)
+		ra_diff = ra_diff - 360;
+	else if (ra_diff < -180.0)
+		ra_diff = ra_diff + 360;
+
+	trackingVect->setValueRaDec (ra_diff / sec_step, dec_diff / sec_step);
+
+	ac_speed = (ac - t_ac) / sec_step;
+	dc_speed = (dc - t_dc) / sec_step;
+	return 0;
 }
 
 int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
