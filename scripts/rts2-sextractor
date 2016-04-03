@@ -40,6 +40,8 @@ parser.add_option('--save-regs',help='save .reg output of what sextractor found'
 parser.add_option('--segment',help='run statistics on given segments',action='append',dest='segments')
 parser.add_option('--max-stars',help='maximal number of stars used for statistics',action='store',dest='max_stars',default=None)
 parser.add_option('--verbose',help='produce verbose output',action='store_true',dest='verbose',default=False)
+parser.add_option('--sx-bin',help='path to sextractor binary',action='store',dest='sx_bin',default=None)
+parser.add_option('--sx-conf',help='path to sextractor configuration files',action='store',dest='sx_path',default=None)
 
 (options,args) = parser.parse_args()
 
@@ -51,7 +53,19 @@ if options.plot_ds9:
 if options.segments:
 	options.segments = map(lambda x:int(x),options.segments)
 
-c = rts2.sextractor.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+if options.sx_bin is None:
+        sx_bin='/usr/bin/sextractor' 
+else:
+        sx_bin= options.sx_bin
+
+if options.sx_path is None:
+        sexconfig='/usr/share/sextractor/default.sex',
+        starnnw='/usr/share/sextractor/default.nnw'
+else:
+        sexconfig='{0}/default.sex'.format(options.sx_path)
+        starnnw='{0}/default.nnw'.format(options.sx_path)
+
+c = rts2.sextractor.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath=sx_bin,sexconfig=sexconfig,starnnw=starnnw)
 
 fwhms_segments = None
 
