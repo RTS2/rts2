@@ -1533,8 +1533,8 @@ int Connection::sendBinaryData (int data_conn, int chan, char *data, size_t data
 	{
 		if (dataSize > getWriteBinaryDataSize (data_conn))
 		{
-			logStream (MESSAGE_ERROR) << "Attemp to send too much data - "
-				<< dataSize << "bytes, but there are only " << getWriteBinaryDataSize (data_conn) << " bytes remain to be send" << sendLog;
+			logStream (MESSAGE_ERROR) << "Attemp to send too much data on channel " << chan << " - "
+				<< dataSize << " bytes, but there are only " << getWriteBinaryDataSize (data_conn) << " bytes remain to be send" << sendLog;
 			dataSize = getWriteBinaryDataSize (data_conn);
 		}
 		ret = send (sock, binaryWriteTop, dataSize, 0);

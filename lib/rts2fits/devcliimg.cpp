@@ -29,6 +29,8 @@ using namespace rts2image;
 
 DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection, std::string templateFile):rts2core::DevClientCamera (in_connection)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::DevClientCameraImage" << sendLog;
+
 	chipNumbers = 0;
 	saveImage = 1;
 
@@ -82,12 +84,14 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 
 DevClientCameraImage::~DevClientCameraImage (void)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::~DevClientCameraImage" << sendLog;
 	delete fitsTemplate;
 	delete actualImage;
 }
 
 Image * DevClientCameraImage::setImage (Image * old_img, Image * new_image)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::setImage" << sendLog;
 	for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
 		CameraImage *ci = (*iter).second;
@@ -103,6 +107,7 @@ Image * DevClientCameraImage::setImage (Image * old_img, Image * new_image)
 void DevClientCameraImage::postEvent (rts2core::Event * event)
 {
 	bool ret_all,ret_actual;
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::postEvent" << sendLog;
 	switch (event->getType ())
 	{
 		case EVENT_INFO_DEVCLI_OK:
@@ -179,6 +184,7 @@ void DevClientCameraImage::postEvent (rts2core::Event * event)
 
 void DevClientCameraImage::cameraMetadata (Image *image)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::cameraMetadata" << sendLog;
 	double exposureTime = getConnection ()->getValueDouble ("exposure");
 	image->setTemplate (fitsTemplate);
 
@@ -204,6 +210,7 @@ void DevClientCameraImage::cameraMetadata (Image *image)
 
 void DevClientCameraImage::fits2DataChannels (Image *img, rts2core::DataChannels *&data)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::fits2DataChannels" << sendLog;
 	data = new rts2core::DataChannels ();
 	// add channels one by one
 	for (int i = 0; i < img->getChannelSize (); i++)
@@ -221,6 +228,7 @@ void DevClientCameraImage::fits2DataChannels (Image *img, rts2core::DataChannels
 
 void DevClientCameraImage::writeFilter (Image *img)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::writeFilter" << sendLog;
 	int camFilter = img->getFilterNum ();
 	char imageFilter[5];
 	strncpy (imageFilter, getConnection()->getValueSelection ("filter", camFilter), 4);
@@ -230,10 +238,45 @@ void DevClientCameraImage::writeFilter (Image *img)
 
 void DevClientCameraImage::newDataConn (int data_conn)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::newDataConn" << sendLog;
 	if (!actualImage)
 	{
-		logStream (MESSAGE_ERROR) << "Data stream of camera " << getName () << " started without exposure!" << sendLog;
-		return;
+		Image *image = NULL;
+
+		try
+		{
+			struct timeval expStart;
+			gettimeofday (&expStart, NULL);
+
+			image = createImage (&expStart);
+
+			if (image == NULL)
+				return;
+			cameraMetadata (image);
+
+			const char *last_filename = image->getAbsoluteFileName ();
+			if (last_filename)
+				queCommand (new rts2core::CommandChangeValue (this, "last_image", '=', std::string (last_filename)));
+
+			// delete old image
+			delete actualImage;
+			 // create image
+			actualImage = new CameraImage (image, getNow (), prematurelyReceived);
+
+			prematurelyReceived.clear ();
+
+			actualImage->image->writePrimaryHeader (getName ());
+			actualImage->image->writeConn (getConnection (), EXPOSURE_START);
+		}
+		catch (rts2core::Error &ex)
+		{
+			if (image)
+				logStream (MESSAGE_ERROR) << "cannot create image " << image->getAbsoluteFileName () << " for exposure " << ex << sendLog;
+			else
+				logStream (MESSAGE_ERROR) << "error creating image:" << ex << sendLog;
+			return;
+		}
+		connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, actualImage));
 	}
 	images[data_conn] = actualImage;
 	actualImage = NULL;
@@ -241,6 +284,7 @@ void DevClientCameraImage::newDataConn (int data_conn)
 
 void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataChannels *data, bool data2fits)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::fullDataReceived" << sendLog;
 	CameraImages::iterator iter = images.find (data_conn);
 	if (data_conn == -1 && iter == images.end ())
 	{
@@ -424,6 +468,7 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 
 void DevClientCameraImage::fitsData (const char *fn)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::fitsData" << sendLog;
 	Image *img = new Image ();
 	rts2core::DataChannels *data = NULL;
 
@@ -476,12 +521,14 @@ void DevClientCameraImage::fitsData (const char *fn)
 
 Image * DevClientCameraImage::createImage (const struct timeval *expStart)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::createImage" << sendLog;
 	Image * ret = new Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection, false, writeConnection, writeRTS2Values);
 	return ret;
 }
 
 void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::processCameraImage" << sendLog;
 	CameraImage *ci = (*cis).second;
 	std::vector <Image *>::iterator chi = std::find (checkImages.begin (), checkImages.end (), ci->image);
 	if (chi != checkImages.end ())
@@ -520,15 +567,18 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 
 void DevClientCameraImage::beforeProcess (Image * image)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::beforeProcess" << sendLog;
 }
 
 imageProceRes DevClientCameraImage::processImage (Image * image)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::processImage" << sendLog;
 	return IMAGE_DO_BASIC_PROCESSING;
 }
 
 void DevClientCameraImage::stateChanged (rts2core::ServerState * state)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::stateChanged" << sendLog;
 	rts2core::DevClientCamera::stateChanged (state);
 	if (triggered && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
 		triggered = false;
@@ -536,6 +586,7 @@ void DevClientCameraImage::stateChanged (rts2core::ServerState * state)
 
 void DevClientCameraImage::exposureStarted (bool expectImage)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::exposureStarted" << sendLog;
 	struct timeval expStart;
 	gettimeofday (&expStart, NULL);
 
@@ -581,6 +632,7 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 
 void DevClientCameraImage::exposureEnd (bool expectImage)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::exposureEnd" << sendLog;
 	logStream (MESSAGE_DEBUG) << "end of camera " << connection->getName () << " exposure" << sendLog;
 
 	if (expectImage == true && actualImage)
@@ -594,6 +646,7 @@ void DevClientCameraImage::exposureEnd (bool expectImage)
 
 bool DevClientCameraImage::waitForMetaData ()
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::waitForMetaData" << sendLog;
 	if (triggered && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
 		triggered = false;
 	if (actualImage && actualImage->waitForMetaData ())
@@ -611,6 +664,7 @@ bool DevClientCameraImage::waitForMetaData ()
 
 void DevClientCameraImage::writeToFitsTransfer (Image *img)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::writeToFitsTransfer" << sendLog;
 	img->setCameraName (getConnection ()->getName ());
 	img->setValue ("CCD_NAME", getConnection ()->getName (), "camera name");
 	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
@@ -628,6 +682,7 @@ void DevClientCameraImage::writeToFitsTransfer (Image *img)
 
 rts2core::DoubleArray * DevClientCameraImage::getDoubleArray (const char *name)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::getDoubleArray" << sendLog;
 	rts2core::Value *v = getConnection ()->getValue (name);
 	if (v == NULL || !(v->getValueExtType () == RTS2_VALUE_ARRAY && v->getValueBaseType () == RTS2_VALUE_DOUBLE))
 		return NULL;
@@ -636,6 +691,7 @@ rts2core::DoubleArray * DevClientCameraImage::getDoubleArray (const char *name)
 
 rts2core::ValueRectangle * DevClientCameraImage::getRectangle (const char *name)
 {
+	logStream (MESSAGE_INFO) << "DevClientCameraImage::getRectangle" << sendLog;
 	rts2core::Value *v = getConnection ()->getValue (name);
 	if (v == NULL || !(v->getValueExtType () == RTS2_VALUE_RECTANGLE))
 		return NULL;

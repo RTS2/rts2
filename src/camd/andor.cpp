@@ -64,12 +64,12 @@ using namespace std;
 // underlying driver, because they are referenced as numbers in the
 // documentation. So I opted to rather have a "none" in the list than to have
 // mess in these numbers
-#define ACQMODE_NONE 0
-#define ACQMODE_SINGLE 1
-#define ACQMODE_ACCUMULATE 2
-#define ACQMODE_KINETIC 3
-#define ACQMODE_FASTKINETICS 4
-#define ACQMODE_VIDEO 5
+#define ACQMODE_NONE            0
+#define ACQMODE_SINGLE          1
+#define ACQMODE_ACCUMULATE      2
+#define ACQMODE_KINETIC         3
+#define ACQMODE_FASTKINETICS    4
+#define ACQMODE_VIDEO           5
 
 #define MAX_ADC_MODES     32
 #define TEXTBUF_LEN 32
@@ -178,7 +178,7 @@ namespace rts2camd {
 		 rts2core::ValueInteger * XXXgain;
 		 rts2core::ValueInteger * emccdgain;
 
-		 rts2core::ValueBool * useRunTillAbort;
+		 //rts2core::ValueBool * useRunTillAbort;
 
 		 rts2core::ValueSelection * VSAmp;
 		 rts2core::ValueBool * FTShutter;
@@ -276,6 +276,20 @@ int Andor::startExposure ()
 {
 	int ret;
 
+	// camd.cpp creates an image unless told we would make it ourself
+	switch (acqMode->getValueInteger ())
+	{
+		case ACQMODE_KINETIC:
+//                        dataChannels->setValueInteger (kinNumber->getValueInteger ());
+			startExposureConnImageData ();
+		case ACQMODE_VIDEO:  // video is still broken
+			realTimeDataTransfer = true;
+			break;
+		default:
+			realTimeDataTransfer = false;
+			break;
+	}
+
 // This is called by setTiming anyway
 //      ret =
 //          SetImage (binningHorizontal (), binningVertical (), chipTopX () + 1,
@@ -331,7 +345,7 @@ long Andor::isExposing ()
 	int ret;
 
 	// KINETIC SERIES
-	if (acqMode->getValueInteger () == 3)
+	if (acqMode->getValueInteger () == ACQMODE_KINETIC)
 	{
 		int n = 0, last = 0;
 		do
@@ -356,13 +370,16 @@ long Andor::isExposing ()
 											getDataBuffer (0))[4] << sendLog;*/
 			// now send the data
 			if (ret == DRV_SUCCESS)
-				sendImage (getDataBuffer (0), chipUsedSize ());
+			{
+				std::cerr << "Andor::sendImage " << chipByteSize () << std::endl;
+				sendImage (getDataBuffer (0), chipByteSize ());
+			}
 		}
 		while (ret == DRV_SUCCESS);
 	}
 
 	// RUN TILL ABORT
-	if (acqMode->getValueInteger () == 5)
+	if (acqMode->getValueInteger () == ACQMODE_VIDEO)
 	{
 
 		{
@@ -397,7 +414,7 @@ long Andor::isExposing ()
 		    ((unsigned short *) getDataBuffer (0))[1] << " " << ((unsigned short *) getDataBuffer (0))[2] << " " <<
 		    ((unsigned short *) getDataBuffer (0))[3] << " " << ((unsigned short *) getDataBuffer (0))[4] << sendLog;
 		// now send the data
-		ret = sendImage (getDataBuffer (0), chipUsedSize ());
+		ret = sendImage (getDataBuffer (0), chipByteSize ());
 		if (ret)
 			return ret;
 		if (quedExpNumber->getValueInteger () == 0)
@@ -459,7 +476,7 @@ int Andor::doReadout ()
 	}
 
 
-	if (acqMode->getValueInteger () == 1 || acqMode->getValueInteger () == 2)
+	if (acqMode->getValueInteger () == ACQMODE_SINGLE || acqMode->getValueInteger () == ACQMODE_ACCUMULATE)
 	{
 		switch (getDataType ())
 		{
@@ -539,7 +556,7 @@ int Andor::scriptEnds ()
 	changeValue (FTShutter, false);
 	changeValue (useFT, true);
 
-	changeValue (useRunTillAbort, false);
+	// changeValue (useRunTillAbort, false);
 
 	//      closeShutter ();
 	return Camera::scriptEnds ();
@@ -716,8 +733,8 @@ int Andor::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		setTiming ();
 	}
 
-	if (old_value == useRunTillAbort)
-		return 0;
+//	if (old_value == useRunTillAbort)
+//		return 0;
 	if (old_value == filterCr)
 	{
 		return SetFilterMode (((rts2core::ValueBool *) new_value)->getValueBool ()? 2 : 0) == DRV_SUCCESS ? 0 : -2;
@@ -1188,6 +1205,8 @@ Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	baselineOff = NULL;
 
 	createExpType ();
+	createDataChannels ();
+	setNumChannels (1);
 
 	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	FTShutter->setValueBool (false);
@@ -1524,6 +1543,8 @@ int Andor::initHardware ()
 	checkRet ("initHardware()", "Initialize()");
 
 	sleep (2);		//sleep to allow initialization to complete
+
+	SetCoolerMode (1);       // maintain temperature after shutdown
 
 	cap.ulSize = sizeof (AndorCapabilities);
 	ret = GetCapabilities (&cap);

@@ -968,6 +968,11 @@ class Camera:public rts2core::ScriptDevice
 		// set chipUsedSize size
 		virtual int box (int _x, int _y, int _width, int _height, rts2core::ValueRectangle *retv = NULL);
 
+		//* if true, camera custom drives data transfer; data isn't created on readout
+		bool realTimeDataTransfer;
+
+		void startExposureConnImageData () { startImageData (exposureConn); }
+
 	private:
 
 		size_t readoutPixels;
