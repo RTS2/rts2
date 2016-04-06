@@ -328,7 +328,7 @@ int Andor::startExposure ()
 	ret = StartAcquisition ();
 	checkRet ("startExposure()", "StartAcquisition()");
 
-	return 0;
+	return realTimeDataTransfer == true ? 1 : 0;
 }
 
 int Andor::stopExposure ()
