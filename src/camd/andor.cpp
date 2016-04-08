@@ -362,18 +362,14 @@ long Andor::isExposing ()
 				return 100;
 			}
 			ret = GetOldestImage16 ((uint16_t *) getDataBuffer (0), chipUsedSize ());
-			logStream (MESSAGE_INFO) << "isExposing: GetOldestImage16 n=" << n << "/" <<
-			    kinNumber->getValueInteger () << " ret=" << ret << sendLog;
-/*			logStream (MESSAGE_INFO) << "Image " << n << " " << ((unsigned short *) getDataBuffer (0))[0] << " " <<
-			    ((unsigned short *) getDataBuffer (0))[1] << " " << ((unsigned short *) getDataBuffer (0))[2] <<
-			    " " << ((unsigned short *) getDataBuffer (0))[3] << " " << ((unsigned short *)
-											getDataBuffer (0))[4] << sendLog;*/
+			logStream (MESSAGE_INFO) << "isExposing: GetOldestImage16 n=" << n << "/" << kinNumber->getValueInteger () << " ret=" << ret << sendLog;
 			// now send the data
 			if (ret == DRV_SUCCESS)
 			{
 				std::cerr << "Andor::sendImage " << chipByteSize () << std::endl;
 				sendImage (getDataBuffer (0), chipByteSize ());
 			}
+
 		}
 		while (ret == DRV_SUCCESS);
 	}

@@ -574,8 +574,8 @@ Camera::~Camera ()
 	delete sharedData;
 	delete fhd;
 
-	delete dataBuffers;
-	delete dataWritten;
+	delete[] dataBuffers;
+	delete[] dataWritten;
 	
 	delete[] modeCount;
 }
