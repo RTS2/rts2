@@ -20,10 +20,12 @@
 #define DEBUG_EXTRA
 
 #include "connection/tgdrive.h"
+#include "connection/remotes.h"
 #include "fork.h"
 
 #include "configuration.h"
 #include "libnova_cpp.h"
+
 
 #define OPT_RA                OPT_LOCAL + 2201
 #define OPT_DEC               OPT_LOCAL + 2202
@@ -55,6 +57,11 @@
 // track one arcdeg in second
 #define SPEED_ARCDEGSEC          (TRACK_SPEED * (4.0 * 60.0))
 
+#define REMOTES_REG_MC_POWERSUPPLYENABLED	0x80
+#define REMOTES_REG_MC_DRIVEOUTPUTENABLED	0x40
+#define REMOTES_REG_MC_PRESSURELIMITENABLED	0x20
+#define REMOTES_REG_MC_STEPPERSIGNALENABLED	0x02
+#define REMOTES_REG_MC_CLOCKWISEDIRECTIONENABLED	0x01
 
 
 namespace rts2teld
@@ -91,12 +98,19 @@ class D50:public Fork
 		virtual void setDiffTrack (double dra, double ddec);
 
 		virtual int updateLimits ();
+		virtual int getHomeOffset (int32_t & off);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
 		int runD50 ();
+
 		TGDrive *raDrive;
 		TGDrive *decDrive;
+
+		rts2core::ConnREMOTES *remotesRA;
+		rts2core::ConnREMOTES *remotesDec;
+		unsigned char remotesMCRegisterRAState;
+		unsigned char remotesMCRegisterDecState;
 
 		int32_t tAc;
 
@@ -117,46 +131,40 @@ class D50:public Fork
 		void callAutosave ();
 		bool parking;
 
+		// low-level functions for communication with REMOTES
+		int remotesGetMCRegister (rts2core::ConnREMOTES * connRem, unsigned char * mcReg);
+		int remotesSetMCRegister (rts2core::ConnREMOTES * connRem, unsigned char mcReg);
+		int remotesGetStepperPulseLength (rts2core::ConnREMOTES * connRem, unsigned short * pulseLength);
+		int remotesSetStepperPulseLength (rts2core::ConnREMOTES * connRem, unsigned short pulseLength);
+		int remotesGetAbsolutePosition (rts2core::ConnREMOTES * connRem, unsigned short * absPos);
+
+		// rts2 variables mirroring actual state
 		rts2core::ValueBool *remotesMotorsPower;
 		rts2core::ValueBool *remotesMotorsExternalEnable;
 		rts2core::ValueBool *remotesWormPressureLimiter;
 		rts2core::ValueBool *remotesWormStepsGenerator;
-		//rts2core::ValueInteger *remotesWormStepsSpeed;
+		rts2core::ValueDouble *remotesWormStepsFreqTarget;
+		rts2core::ValueDouble *remotesWormStepsFreqReal;
+		rts2core::ValueInteger *remotesWormStepsPulseLength;
+		rts2core::ValueInteger *remotesAbsEncRA;
+		rts2core::ValueInteger *remotesAbsEncDec;
+		//rts2core::ValueInteger *remotesIncEncRA;
+		//rts2core::ValueInteger *remotesIncEncDec;
 
-		/*const char *device_name;
-		rts2core::ConnSerial *d50Conn;
+		// high-level functions for managing the REMOTES things
+		int setMotorsPower (bool power);
+		int setMotorsExternalEnable (bool extEnable);
+		int setWormPressureLimiter (bool pressureLimiter);
+		int setWormStepsGenerator (bool stepsGenerator);
+		int setWormStepsFreq (double freq);
+		int updateWormStepsFreq (bool updateAlsoTargetFreq = false);
 
-		rts2core::ValueBool *motorRa;
-		rts2core::ValueBool *motorDec;
-
-		rts2core::ValueBool *wormRa;
-		rts2core::ValueBool *wormDec;
-
-		rts2core::ValueInteger *wormRaSpeed;
-
-		rts2core::ValueBool *moveSleep;
-
-		rts2core::ValueInteger *unitRa;
-		rts2core::ValueInteger *unitDec;
-
-		rts2core::ValueInteger *utarRa;
-		rts2core::ValueInteger *utarDec;
-
-		rts2core::ValueInteger *procRa;
-		rts2core::ValueInteger *procDec;
-
-		rts2core::ValueInteger *velRa;
-		rts2core::ValueInteger *velDec;
-
-		rts2core::ValueInteger *accRa;
-		rts2core::ValueInteger *accDec;
-
-		int32_t ac, dc;*/
 };
 
 };
 
 using namespace rts2teld;
+
 
 
 D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
@@ -205,22 +213,20 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 
 	addParkPosOption ();
 
-	createValue (remotesMotorsPower, "remotes_motors_power", "el. power to both motors", false, RTS2_VALUE_WRITABLE);
-	remotesMotorsPower->setValueBool (false);
+	createValue (remotesMotorsPower, "remotes_motors_power", "el. power to both motors", false);
+	remotesMotorsPower->setValueBool (true);  // tady pozor, vypnuti serv zpusobi ztratu polohy, radeji prozatim nastavuji jako RO, nez se to nejak dale osetri...
 	createValue (remotesMotorsExternalEnable, "remotes_motors_external_enable", "external enable switch to both motors", false, RTS2_VALUE_WRITABLE);
-	remotesMotorsExternalEnable->setValueBool (false);
+	remotesMotorsExternalEnable->setValueBool (true);
 	createValue (remotesWormPressureLimiter, "remotes_worm_pressure_limiter", "decrease pressure on worm (for slew)", false, RTS2_VALUE_WRITABLE);
 	remotesWormPressureLimiter->setValueBool (false);
 	createValue (remotesWormStepsGenerator, "remotes_worm_steps_generator", "generator of steps for HA tracking", false, RTS2_VALUE_WRITABLE);
 	remotesWormStepsGenerator->setValueBool (false);
-	//createValue (remotesWormStepsSpeed, "remotes_worm_steps_speed", "speed of stepper generator for HA tracking", false, RTS2_VALUE_WRITABLE);
-	//remotesWormStepsSpeed->setValueInteger ();
-
-
-	//createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false, RTS2_VALUE_WRITABLE);
-
-	//reateValue (moveSleep, "move_sleep", "sleep this number of seconds after finishing", false, RTS2_VALUE_WRITABLE);
-	//moveSleep->setValueInteger (7);
+	createValue (remotesWormStepsFreqTarget, "remotes_worm_steps_freq_tar", "target frequency of HA tracking steps generator [Hz]", false, RTS2_VALUE_WRITABLE);
+	remotesWormStepsFreqTarget->setValueDouble (1752.41140771);	// computed default value
+	createValue (remotesWormStepsFreqReal, "remotes_worm_steps_freq", "actual frequency of HA tracking steps generator [Hz]", false);
+	createValue (remotesWormStepsPulseLength, "remotes_worm_steps_pulse_length", "pulse length of HA tracking steps generator", false);
+	createValue (remotesAbsEncRA, "remotes_abs_encoder_ra", "raw abs. encoder position, RA axis", false);
+	createValue (remotesAbsEncDec, "remotes_abs_encoder_dec", "raw abs. encoder position, Dec axis", false);
 
 	// apply all corrections by rts2 for mount
 	setCorrections (true, true, true);
@@ -322,11 +328,37 @@ int D50::processOption (int opt)
 int D50::init ()
 {
 	int ret;
+	unsigned char remotesMacRA[6] = {0x00, 0x04, 0xa3, 0x12, 0x34, 0x56};
+	unsigned char remotesMacDec[6] = {0x00, 0x04, 0xa3, 0x12, 0x34, 0x55};
+	char remotesEthRA [] = "eth1";
+	char remotesEthDec [] = "eth1";
+	unsigned short us;
 
 	ret = Fork::init ();
 	if (ret)
 		return ret;
 
+	// initialize REMOTES units first...
+	remotesRA = new rts2core::ConnREMOTES (this, remotesEthRA, remotesMacRA);
+	//remotesRA->setDebug (getDebug ());
+	remotesRA->setDebug (true);
+	remotesRA->init ();
+	remotesMCRegisterRAState = REMOTES_REG_MC_POWERSUPPLYENABLED | REMOTES_REG_MC_DRIVEOUTPUTENABLED | REMOTES_REG_MC_CLOCKWISEDIRECTIONENABLED;
+	ret = remotesSetMCRegister (remotesRA, remotesMCRegisterRAState);
+        if (ret)
+                return ret;
+
+	remotesDec = new rts2core::ConnREMOTES (this, remotesEthDec, remotesMacDec);
+	//remotesDec->setDebug (getDebug ());
+	remotesDec->setDebug (true);
+	remotesDec->init ();
+	remotesMCRegisterDecState = REMOTES_REG_MC_POWERSUPPLYENABLED | REMOTES_REG_MC_DRIVEOUTPUTENABLED;
+	ret = remotesSetMCRegister (remotesDec, remotesMCRegisterDecState);
+        if (ret)
+                return ret;
+
+
+	// then servo controllers...
         if (devRA == NULL)
         {
                 logStream (MESSAGE_ERROR) << "RA device file was not specified." << sendLog;
@@ -353,6 +385,22 @@ int D50::init ()
         if (ret)
                 return ret;
 
+	// for special cases of persisting movement, try to gently stop motors first...
+	raDrive->stop ();
+	decDrive->stop ();
+	while (raDrive->checkStopPlain () || decDrive->checkStopPlain ())
+	{
+		usleep (USEC_SEC / 5);
+	}
+
+	setWormStepsFreq (remotesWormStepsFreqTarget->getValueDouble ());
+	remotesGetAbsolutePosition (remotesRA, &us);
+	remotesAbsEncRA->setValueInteger (us);
+	remotesGetAbsolutePosition (remotesDec, &us);
+	remotesAbsEncDec->setValueInteger (us);
+
+
+	// and finally, the remaining usual teld setup...
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
 	if (ret)
@@ -371,22 +419,8 @@ int D50::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	/*
-	// switch both motors off
-	ret = write_both ("D\x0d", 2);
-	if (ret)
-		return ret;
-	motorRa->setValueBool (false);
-	motorDec->setValueBool (false);
+	// TODO: mozna jeste poresit i uplne vypnuti serv? A take pridat check, jestli aktualni poloha ze serv odpovida te z cidel...
 
-	ret = tel_write_unit (1, 'h', 25000);
-	if (ret)
-		return ret;
-	wormRaSpeed->setValueInteger (25000);
-	*/
-
-	// TODO: mozna zastaveni (plynule) motoru, vypnuti hodinace, vypnuti limiteru pritlaku, uplne vypnuti serv, nastaveni rychlosti hodinace?
-	
 	//addTimer (1, new rts2core::Event (RTS2_D50_AUTOSAVE));
 
 	return 0;
@@ -394,9 +428,23 @@ int D50::init ()
 
 int D50::info ()
 {
+	unsigned short us;
+
 	logStream (MESSAGE_DEBUG) << "****** info ()" << sendLog;
         raDrive->info ();
         decDrive->info ();
+
+	remotesGetMCRegister (remotesRA, &remotesMCRegisterRAState);
+	remotesGetMCRegister (remotesDec, &remotesMCRegisterDecState);
+	remotesWormPressureLimiter->setValueBool ((remotesMCRegisterRAState & REMOTES_REG_MC_PRESSURELIMITENABLED) == 0x00 ? false : true);
+	remotesWormStepsGenerator->setValueBool ((remotesMCRegisterRAState & REMOTES_REG_MC_STEPPERSIGNALENABLED) == 0x00 ? false : true);
+	updateWormStepsFreq ();
+
+	remotesGetAbsolutePosition (remotesRA, &us);
+	remotesAbsEncRA->setValueInteger (us);
+	//logStream (MESSAGE_DEBUG) << "RA position: " << us << " " << std::hex << us << sendLog;
+	remotesGetAbsolutePosition (remotesDec, &us);
+	remotesAbsEncDec->setValueInteger (us);
 
         double t_telRa;
         double t_telDec;
@@ -426,17 +474,19 @@ int D50::runD50 ()
 	logStream (MESSAGE_DEBUG) << "****** D50:runD50 ()" << sendLog;
 	if (!(getState () & TEL_MOVING))
 	{
-		if (isTracking () == false && raDrive->isInStepperMode ())
+		if ((isTracking () == false) && raDrive->isInStepperMode ())
 		{
 			logStream (MESSAGE_DEBUG) << "****** runD50 () - setting tracking to off - DS mode" << sendLog;
                         raDrive->setTargetSpeed ( 0, true );
                         raDrive->setMode (TGA_MODE_DS);
+			setWormStepsGenerator (false);
                         //raDrive->info ();
 		} else if (isTracking () == true && !raDrive->isInStepperMode ()) 
 		{
 			logStream (MESSAGE_DEBUG) << "****** runD50 () - setting tracking to on - SM mode" << sendLog;
 			if (!raDrive->isMoving ())
 			{
+				setWormStepsGenerator (true);
 				raDrive->setMode (TGA_MODE_SM);
                         	//raDrive->info ();
 			}
@@ -482,7 +532,8 @@ int D50::startResync ()
 		logStream (MESSAGE_ERROR) << "dc value out of limits!" << sendLog;
 		return -1;
 	}
-	//TODO: zapnout snizeni pritlaku sneku
+
+	setWormPressureLimiter (true);
 	raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	addTimer (moveSpeedBacklashInterval->getValueDouble (), new rts2core::Event (RTS2_D50_BOOSTSPEED));
@@ -519,11 +570,12 @@ int D50::isMoving ()
                 else
                 {
                         //raDrive->setTargetSpeed (TRACK_SPEED);
+			setWormStepsGenerator (true);
                         raDrive->setMode (TGA_MODE_SM);
                         //raDrive->info ();
                 }
         }
-        if ((isTracking () && raDrive->isInPositionMode ()) || (isTracking () == false && raDrive->isMoving ()) || decDrive->isMoving ())
+        if ((isTracking () && raDrive->isInPositionMode ()) || (!isTracking () && raDrive->isMoving ()) || decDrive->isMoving ())
 		return USEC_SEC / 10;
         return -2;
 }
@@ -532,12 +584,13 @@ int D50::endMove ()
 {
 	logStream (MESSAGE_DEBUG) << "****** endMove ()" << sendLog;
 	//addTimer (5, new rts2core::Event (RTS2_D50_AUTOSAVE));
-	// TODO: tady bude vypnuti snizovani pritlaku sneku
+	setWormPressureLimiter (false);
 	// snizeni rychlosti presunu obou motoru
 	deleteTimers (RTS2_D50_BOOSTSPEED);
 	raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	setTimeout (USEC_SEC);
+	//TODO: pridat check, jestli informace z ABS (a inc?) cidel odpovida poloze!
 	return Fork::endMove ();
 }
 
@@ -555,6 +608,7 @@ int D50::stopMove ()
 			usleep (USEC_SEC / 5);
 		}
 	}
+	setWormPressureLimiter (false);
 	deleteTimers (RTS2_D50_BOOSTSPEED);
 	raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
@@ -569,22 +623,21 @@ int D50::setTo (double set_ra, double set_dec)
         eq.dec = set_dec;
         int32_t ac;
         int32_t dc;
+        int32_t off;
 	logStream (MESSAGE_DEBUG) << "------ setting coordinates to RA: " << set_ra << ", DEC: " << set_dec << sendLog;
+        getHomeOffset (off);
 	zeroCorrRaDec ();
         int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys ());
         if (ret)
                 return -1;
-        //if (isTracking ())
-	//{
-	//	raDrive->setMode (TGA_MODE_DS);
-	//	raDrive->setTargetSpeed ( 0, true );
-	//}
+
 	logStream (MESSAGE_DEBUG) << "------ setting coordinates to ac: " << ac << ", dc: " << dc << sendLog;
         raDrive->setCurrentPos (ac);
         decDrive->setCurrentPos (dc);
         //callAutosave ();
         if (isTracking ())
 	{
+		setWormStepsGenerator (true);
                 raDrive->setMode (TGA_MODE_SM);
                 //raDrive->info ();
 	}
@@ -641,11 +694,13 @@ int D50::endPark ()
 	logStream (MESSAGE_DEBUG) << "****** endPark ()" << sendLog;
         //callAutosave ();
         parking = false;
+	setWormPressureLimiter (false);
 	deleteTimers (RTS2_D50_BOOSTSPEED);
 	raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	//setTimeout (USEC_SEC * 10);
 	setTimeout (USEC_SEC);
+	//TODO: pridat check, jestli informace z ABS (a inc?) cidel odpovida poloze!
         return 0;
 }
 
@@ -703,6 +758,13 @@ int D50::updateLimits ()
 	return 0;
 }
 
+int D50::getHomeOffset (int32_t & off)
+{
+	logStream (MESSAGE_DEBUG) << "****** getHomeOffset ()" << sendLog;
+	off = 0;
+	return 0;
+}
+
 /*void D50::matchGuideRa (int rag)
 {
         raDrive->info ();
@@ -754,16 +816,27 @@ int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
                 matchGuideDec (new_value->getValueInteger ());
                 return 0;
         }*/
-	/* else if (old_value == wormRa)
+	else if (old_value == remotesMotorsPower)
 	{
-		return tel_write_unit (1,
-			((rts2core::ValueBool *) new_value)->getValueBool ()? "o0" : "c0", 2) == 0 ? 0 : -2;
-
+		return setMotorsPower (new_value->getValueInteger ());
 	}
-	else if (old_value == wormRaSpeed)
+	else if (old_value == remotesMotorsExternalEnable)
 	{
-		return tel_write_unit (1, 'h', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}*/
+		return setMotorsExternalEnable (new_value->getValueInteger ());
+	}
+	else if (old_value == remotesWormPressureLimiter)
+	{
+		return setWormPressureLimiter (new_value->getValueInteger ());
+	}
+	else if (old_value == remotesWormStepsGenerator)
+	{
+		return setWormStepsGenerator (new_value->getValueInteger ());
+	}
+	else if (old_value == remotesWormStepsFreqTarget)
+	{
+		return setWormStepsFreq (new_value->getValueDouble ());
+	}
+
         int ret = raDrive->setValue (old_value, new_value);
         if (ret != 1)
                 return ret;
@@ -783,6 +856,188 @@ int D50::scriptEnds ()
 	}
 	return Telescope::scriptEnds ();
 }
+
+int D50::remotesGetMCRegister (rts2core::ConnREMOTES * connRem, unsigned char * mcReg)
+{
+	int ret;
+	ret = connRem->read1b (0, mcReg);
+	if (ret == 1)
+		return 0;
+	else
+		return -1;
+}
+
+int D50::remotesSetMCRegister (rts2core::ConnREMOTES * connRem, unsigned char mcReg)
+{
+	int ret;
+	unsigned char uch;
+	ret = connRem->write1b (0, mcReg, &uch);
+	// we could check the previous value in uch, but we don't bother now...
+	if (ret == 1)
+		return 0;
+	else
+		return -1;
+}
+
+int D50::remotesGetStepperPulseLength (rts2core::ConnREMOTES * connRem, unsigned short * pulseLength)
+{
+	int ret;
+	ret = connRem->read2b (1, pulseLength);
+	if (ret == 2)
+		return 0;
+	else
+		return -1;
+}
+
+int D50::remotesSetStepperPulseLength (rts2core::ConnREMOTES * connRem, unsigned short pulseLength)
+{
+	int ret;
+	unsigned short us;
+	ret = connRem->write2b (1, pulseLength, &us);
+	if (ret == 2)
+		return 0;
+	else
+		return -1;
+}
+
+int D50::remotesGetAbsolutePosition (rts2core::ConnREMOTES * connRem, unsigned short * absPos)
+{
+	int ret;
+	ret = connRem->read2b (2, absPos);
+	if (ret == 2)
+		return 0;
+	else
+		return -1;
+}
+
+int D50::setMotorsPower (bool power)
+{
+	int ret1, ret2;
+	if (power == true)
+	{
+		remotesMCRegisterRAState |= REMOTES_REG_MC_POWERSUPPLYENABLED;
+		remotesMCRegisterDecState |= REMOTES_REG_MC_POWERSUPPLYENABLED;
+	}
+	else
+	{
+		remotesMCRegisterRAState &= ~REMOTES_REG_MC_POWERSUPPLYENABLED;
+		remotesMCRegisterDecState &= ~REMOTES_REG_MC_POWERSUPPLYENABLED;
+	}
+	ret1 = remotesSetMCRegister (remotesRA, remotesMCRegisterRAState);
+	ret2 = remotesSetMCRegister (remotesDec, remotesMCRegisterDecState);
+	if (ret1 == 0 && ret2 == 0)
+	{
+		remotesMotorsPower->setValueBool (power);
+		return 0;
+	}
+	remotesGetMCRegister (remotesRA, &remotesMCRegisterRAState);
+	remotesGetMCRegister (remotesDec, &remotesMCRegisterDecState);
+	return -1;
+}
+
+int D50::setMotorsExternalEnable (bool extEnable)
+{
+	int ret1, ret2;
+	if (extEnable == true)
+	{
+		remotesMCRegisterRAState |= REMOTES_REG_MC_DRIVEOUTPUTENABLED;
+		remotesMCRegisterDecState |= REMOTES_REG_MC_DRIVEOUTPUTENABLED;
+	}
+	else
+	{
+		remotesMCRegisterRAState &= ~REMOTES_REG_MC_DRIVEOUTPUTENABLED;
+		remotesMCRegisterDecState &= ~REMOTES_REG_MC_DRIVEOUTPUTENABLED;
+	}
+	ret1 = remotesSetMCRegister (remotesRA, remotesMCRegisterRAState);
+	ret2 = remotesSetMCRegister (remotesDec, remotesMCRegisterDecState);
+	if (ret1 == 0 && ret2 == 0)
+	{
+		remotesMotorsExternalEnable->setValueBool (extEnable);
+		return 0;
+	}
+	remotesGetMCRegister (remotesRA, &remotesMCRegisterRAState);
+	remotesGetMCRegister (remotesDec, &remotesMCRegisterDecState);
+	return -1;
+}
+
+int D50::setWormPressureLimiter (bool pressureLimiter)
+{
+	int ret;
+	if (pressureLimiter == true)
+	{
+		remotesMCRegisterRAState |= REMOTES_REG_MC_PRESSURELIMITENABLED;
+	}
+	else
+	{
+		remotesMCRegisterRAState &= ~REMOTES_REG_MC_PRESSURELIMITENABLED;
+	}
+	ret = remotesSetMCRegister (remotesRA, remotesMCRegisterRAState);
+	if (ret == 0)
+	{
+		remotesWormPressureLimiter->setValueBool (pressureLimiter);
+		return 0;
+	}
+	remotesGetMCRegister (remotesRA, &remotesMCRegisterRAState);
+	return -1;
+}
+
+int D50::setWormStepsGenerator (bool stepsGenerator)
+{
+	int ret;
+	if (stepsGenerator == true)
+	{
+		remotesMCRegisterRAState |= REMOTES_REG_MC_STEPPERSIGNALENABLED;
+	}
+	else
+	{
+		remotesMCRegisterRAState &= ~REMOTES_REG_MC_STEPPERSIGNALENABLED;
+	}
+	ret = remotesSetMCRegister (remotesRA, remotesMCRegisterRAState);
+	if (ret == 0)
+	{
+		remotesWormStepsGenerator->setValueBool (stepsGenerator);
+		return 0;
+	}
+	remotesGetMCRegister (remotesRA, &remotesMCRegisterRAState);
+	return -1;
+}
+
+int D50::setWormStepsFreq (double freq)
+{
+	int ret;
+	unsigned short pulseLength;
+	double freqReal;
+	pulseLength = (unsigned short) (96000000.0/freq - 1.0 + 0.5);
+	freqReal = 96000000/(1.0 + pulseLength);
+	ret = remotesSetStepperPulseLength (remotesRA, pulseLength);
+	if (ret == 0)
+	{
+		remotesWormStepsPulseLength->setValueInteger (pulseLength);
+		remotesWormStepsFreqReal->setValueDouble (freqReal);
+		remotesWormStepsFreqTarget->setValueDouble (freq);
+		return 0;
+	}
+	return -1;
+}
+
+int D50::updateWormStepsFreq (bool updateAlsoTargetFreq)
+{
+	int ret;
+	unsigned short pulseLength;
+	double freqReal;
+	ret = remotesGetStepperPulseLength (remotesRA, &pulseLength);
+	if (ret == 0)
+	{
+		freqReal = 96000000/(1.0 + pulseLength);
+		remotesWormStepsPulseLength->setValueInteger (pulseLength);
+		remotesWormStepsFreqReal->setValueDouble (freqReal);
+		if (updateAlsoTargetFreq == true)
+			remotesWormStepsFreqTarget->setValueDouble (freqReal);
+		return 0;
+	}
+	return ret;
+}
+
 
 int main (int argc, char **argv)
 {
