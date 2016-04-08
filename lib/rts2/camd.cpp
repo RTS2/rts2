@@ -281,7 +281,6 @@ void Camera::startImageData (rts2core::Connection * conn)
 	int chnTot = dataChannels ? dataChannels->getValueInteger () : 1;
 	size_t chansize[chnTot];
 	int i;
-	std::cerr << "chipByteSize " << chipByteSize () << " imghdr " << sizeof (imghdr) << std::endl;
 	for (i = 0; i < chnTot; i++)
 		chansize[i] = chipByteSize () + sizeof (imghdr);
 
@@ -436,7 +435,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 
 	filterOffsetFile = NULL;
 
-	realTimeDataTransfer = false;
+	realTimeDataTransferCount = -1;
 
 	createValue (ccdRealType, "CCD_TYPE", "camera type", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (serialNumber, "CCD_SER", "camera serial number", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
@@ -939,7 +938,10 @@ int Camera::sendImage (char *data, size_t dataSize)
 		return -1;
 	if (calculateStatistics->getValueInteger () != STATISTIC_ONLY)
 	{
-		startImageData (exposureConn);
+		if (realTimeDataTransferCount != 0)
+			startImageData (exposureConn);
+		if (realTimeDataTransferCount >= 0)
+			realTimeDataTransferCount++;
 		if (currentImageData == -1)
 			return -1;
 	}
@@ -1615,9 +1617,9 @@ int Camera::camStartExposureWithoutCheck ()
 
 	infoAll ();
 
-	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE | CAM_MASK_HAS_IMAGE, (ret == 0 ? CAM_EXPOSING : CAM_EXPOSING_NOIM) | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);
+	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE | CAM_MASK_HAS_IMAGE, (ret == 0 ? (CAM_EXPOSING) : (CAM_EXPOSING | CAM_EXPOSING_NOIM)) | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);
 	if (ret == 0)
-		logStream (MESSAGE_INFO) << "starting " << TimeDiff (exposure->getValueFloat ()) << " exposure for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
+		logStream (MESSAGE_INFO) << "starting " << TimeDiff (exposure->getValueFloat ()) << (ret == 1 ? "no image " : "") << " exposure for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 	else
 		logStream (MESSAGE_INFO) << "starting " << TimeDiff (exposure->getValueFloat ()) << " exposure cycle (without image) for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
@@ -1723,9 +1725,9 @@ int Camera::camReadout (rts2core::Connection * conn)
 	{
 		checkQueChanges (getStateChip (0) & ~ (CAM_EXPOSING | CAM_EXPOSING_NOIM));
 		maskState (CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT, "starting frame transfer", NAN, NAN, exposureConn);
-		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY || realTimeDataTransfer == true)
+		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 			currentImageData = -1;
-		else
+		else if (realTimeDataTransferCount < 0)
 			startImageData (conn);
 		if (queValues.empty ())
 			// remove exposure flag from state
@@ -1738,9 +1740,9 @@ int Camera::camReadout (rts2core::Connection * conn)
 		// do not signal BOP_TEL_MOVE down if there are exposures in que
 		double now = getNow ();
 		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_READING, "readout started", now, now + (double) chipUsedSize () / pixelsSecond->getValueDouble (), exposureConn);
-		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY || realTimeDataTransfer == true)
+		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 			currentImageData = -1;
-		else
+		else if (realTimeDataTransferCount < 0)
 			startImageData (conn);
 	}
 
@@ -1749,17 +1751,18 @@ int Camera::camReadout (rts2core::Connection * conn)
 
 	memset (dataWritten, 0, getNumChannels () * sizeof (size_t));
 
+	if (realTimeDataTransferCount >= 0)
+	{
+		realTimeDataTransferCount++;
+		return 0;
+	}
+
 	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
 		if (isnan (timeReadoutStart))
 			timeReadoutStart = getNow ();
 		return readoutStart ();
-	}
-
-	if (realTimeDataTransfer == true)
-	{
-		return 0;
 	}
 
 	maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", NAN, NAN, exposureConn);

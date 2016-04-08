@@ -439,6 +439,9 @@ void DevClientCameraImage::allImageDataReceived (int data_conn, rts2core::DataCh
 
 		cameraImageReady (ci->image);
 
+		if (getStatus () & CAM_EXPOSING_NOIM)
+			ci->setExEnd (getNow ());
+
 		if (ci->canDelete ())
 		{
 			processCameraImage (iter);
@@ -620,10 +623,13 @@ void DevClientCameraImage::exposureEnd (bool expectImage)
 {
 	logStream (MESSAGE_DEBUG) << "end of camera " << connection->getName () << " exposure" << sendLog;
 
-	if (expectImage == true && actualImage)
+	if (actualImage)
 	{
 		actualImage->setExEnd (getNow ());
-		connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
+		if (expectImage == true)
+		{
+			connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
+		}
 	}
 
 	rts2core::DevClientCamera::exposureEnd (expectImage);

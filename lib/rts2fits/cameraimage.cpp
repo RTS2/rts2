@@ -78,9 +78,16 @@ void CameraImage::waitForTrigger (rts2core::DevClient * devClient)
 {
 	// check if this device was not prematurely triggered
 	if (std::find (prematurelyReceived.begin (), prematurelyReceived.end (), devClient) == prematurelyReceived.end ())
+	{
+		// do not wait for metadata on images which should be recorded immediately
+		if (devClient->getOtherType () == DEVICE_TYPE_CCD && (devClient->getStatus () & CAM_EXPOSING_NOIM))
+			return;
 		triggerWaits.push_back (devClient);
+	}
 	else
+	{
 		std::cout << "received premature trigger " << devClient->getName () << std::endl;
+	}
 }
 
 bool CameraImage::wasTriggered (rts2core::DevClient * devClient)
@@ -102,6 +109,11 @@ bool CameraImage::canDelete ()
 	if (isnan (exEnd) || !dataWriten)
 		return false;
 	return !waitForMetaData ();
+}
+
+bool CameraImage::waitForMetaData ()
+{
+	return !(deviceWaits.empty () && triggerWaits.empty ());
 }
 
 CameraImages::~CameraImages (void)

@@ -283,10 +283,10 @@ int Andor::startExposure ()
 //                        dataChannels->setValueInteger (kinNumber->getValueInteger ());
 			startExposureConnImageData ();
 		case ACQMODE_VIDEO:  // video is still broken
-			realTimeDataTransfer = true;
+			realTimeDataTransferCount = 0;
 			break;
 		default:
-			realTimeDataTransfer = false;
+			realTimeDataTransferCount = -1;
 			break;
 	}
 
@@ -328,7 +328,7 @@ int Andor::startExposure ()
 	ret = StartAcquisition ();
 	checkRet ("startExposure()", "StartAcquisition()");
 
-	return realTimeDataTransfer == true ? 1 : 0;
+	return realTimeDataTransferCount >= 0 ? 1 : 0;
 }
 
 int Andor::stopExposure ()

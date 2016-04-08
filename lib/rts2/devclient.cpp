@@ -162,7 +162,7 @@ void DevClientCamera::stateChanged (ServerState * state)
 			case CAM_EXPOSING_NOIM:
 				if (!(state->getValue () & DEVICE_SC_CURR))
 					break;
-				lastExpectImage = state->getValue () & CAM_EXPOSING;
+				lastExpectImage = !(state->getValue () & CAM_EXPOSING_NOIM);
 				if (connection->getErrorState () == DEVICE_NO_ERROR)
 					exposureStarted (lastExpectImage);
 				else
