@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <check.h>
+#include <check_utils.h>
 #include <libnova/libnova.h>
 
 // global telescope object
@@ -21,8 +22,6 @@ void teardown_altcaz (void)
 	delete altAzTest;
 	altAzTest = NULL;
 }
-
-#define ck_assert_dbl_eq(v1,v2,alow)  ck_assert_msg(fabs(v1-v2) < alow, "difference %f and %f > %f", v1, v2, alow)
 
 START_TEST(test_altaz_1)
 {
@@ -81,7 +80,7 @@ START_TEST(test_altaz_1)
 	pos.dec = -3.51601;
 
 	float e = altAzTest->test_move (JD, &pos, azc, altc, 2.0, 200);
-	ck_assert_msg (!isnan (e), "position %f %f not reazched", pos.ra, pos.dec);
+	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
 	struct ln_equ_posn curr;
 	curr.ra = curr.dec = 0;

@@ -11,6 +11,13 @@ class GemTest:public rts2teld::GEM
 		int test_counts2sky (double JD, int32_t ac, int32_t dc, double &ra, double &dec);
 		int test_counts2hrz (double JD, int32_t ac, int32_t dc, struct ln_hrz_posn *hrz);
 
+		double test_getAltitudePressure (double alt, double see_press) { return getAltitudePressure (alt, see_press); };
+
+		void test_getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz_posn *hrz) { return getHrzFromEqu (pos, JD, hrz); };
+		void test_getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos) { return getEquFromHrz (hrz, JD, pos); };
+
+		void test_applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue) { return applyRefraction (pos, JD, writeValue); };
+
 		/**
 		 * Test movement to given target position, from counts in ac dc parameters.
 		 */

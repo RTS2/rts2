@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <check.h>
+#include <check_utils.h>
 #include <libnova/libnova.h>
 
 // global telescope object
