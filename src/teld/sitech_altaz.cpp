@@ -108,6 +108,7 @@ class SitechAltAz:public AltAz
 		rts2core::ValueDouble *trackingDist;
 		rts2core::ValueDouble *slowSyncDistance;
 		rts2core::ValueFloat *fastSyncSpeed;
+		rts2core::ValueFloat *trackingFactor;
 
 		rts2core::IntegerArray *PIDs;
 
@@ -300,10 +301,13 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
 
 	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
-	slowSyncDistance->setValueDouble (0.05);  // 3 arcmin
+	slowSyncDistance->setValueDouble (0.1);  // 6 arcmin
 
 	createValue (fastSyncSpeed, "fast_sync_speed", "fast speed factor (compared to siderial trackign) for fast alignment (above slow_track_distance)", false, RTS2_VALUE_WRITABLE);
 	fastSyncSpeed->setValueFloat (4);
+
+	createValue (trackingFactor, "tracking_factor", "tracking speed multiplier", false, RTS2_VALUE_WRITABLE);
+	trackingFactor->setValueFloat (0.89);
 
 	createValue (az_acceleration, "az_acceleration", "[deg/s^2] AZ motor acceleration", false);
 	createValue (alt_acceleration, "alt_acceleration", "[deg/s^2] Alt motor acceleration", false);
@@ -367,6 +371,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 
 	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
 	addOption ('F', "derotator", 1, "derotator tty (ussualy /dev/ttyUSBx");
+
+	addParkPosOption ();
 }
 
 
@@ -706,16 +712,16 @@ int SitechAltAz::isMoving ()
 		if (tdist < 0.5)
 		{
 			if (tdist < slowSyncDistance->getValueDouble ())
-				internalTracking (2.0, 1.0);
+				internalTracking (2.0, trackingFactor->getValueFloat ());
 			else
 				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
-			return USEC_SEC * trackingInterval->getValueFloat () / 10;
+			return USEC_SEC * trackingInterval->getValueFloat () / 1000;
 		}
 
 		// if too far away, update target
 		startResync ();
 
-		return USEC_SEC / 10;
+		return USEC_SEC / 1000;
 	}
 
 	return -2;
@@ -723,14 +729,19 @@ int SitechAltAz::isMoving ()
 
 int SitechAltAz::startPark()
 {
-	return -1;
+	if (parkPos == NULL)
+	{
+		return 0;
+	}
+	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
+	return moveAltAz ();
 }
 
 void SitechAltAz::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
-	internalTracking (2.0, 1.0);
+	internalTracking (2.0, trackingFactor->getValueFloat ());
 }
 
 int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)

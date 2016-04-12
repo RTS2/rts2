@@ -81,8 +81,14 @@ int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_a
 
 int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
 {
+	struct ln_equ_posn tar_pos;
+	tar_pos.ra = pos->ra;
+	tar_pos.dec = pos->dec;
+
+	applyCorrections (&tar_pos, JD, writeValue);
+
 	struct ln_hrz_posn hrz;
-	getHrzFromEqu (pos, JD, &hrz);
+	getHrzFromEqu (&tar_pos, JD, &hrz);
 
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;
@@ -93,7 +99,7 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 
 	if (writeValue)
 	{
-		setTelTarget (pos->ra, pos->dec);
+		setTelTarget (tar_pos.ra, tar_pos.dec);
 	}
 	return 0;
 }
