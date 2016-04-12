@@ -29,6 +29,8 @@ START_TEST(test_pressure)
 	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (1000, 1010), 895.86, 10e-1);
 	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (2345, 1010), 759.04, 10e-1);
 	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (4000, 1010), 614.43, 10e-1);
+	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (4015, 998), 605.99, 10e-1);
+	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (6087, 998), 459.19, 10e-1);
 }
 END_TEST
 
