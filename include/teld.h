@@ -100,6 +100,8 @@ class Telescope:public rts2core::Device
 		double getLongitude () { return telLongitude->getValueDouble (); }
 		double getAltitude () { return telAltitude->getValueDouble (); }
 
+		double getAltitudePressure (double alt, double sea_press);
+
 		// callback functions from telescope connection
 		virtual int info ();
 		int infoJD (double JD);
@@ -978,6 +980,21 @@ class Telescope:public rts2core::Device
 
 		void getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz_posn *hrz);
 		void getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos);
+
+		/**
+		 * Apply aberation correction.
+		 */
+		void applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		/**
+		 * Apply precision correction.
+		 */
+		void applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		/**
+		 * Apply refraction correction.
+		 */
+		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
 	private:
 		rts2core::Connection * move_connection;
 		int moveInfoCount;
@@ -1194,21 +1211,6 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueSelection *standbyPark;
 		const char *horizonFile;
-
-		/**
-		 * Apply aberation correction.
-		 */
-		void applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue);
-
-		/**
-		 * Apply precision correction.
-		 */
-		void applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue);
-
-		/**
-		 * Apply refraction correction.
-		 */
-		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
 
 		/**
 		 * Zero's all corrections, increment move count. Called before move.

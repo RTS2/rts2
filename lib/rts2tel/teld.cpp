@@ -741,7 +741,7 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	obs.lat = telLatitude->getValueDouble ();
 
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
-	ref = ln_get_refraction_adj (hrz.alt, getAltitude (), 10);
+	ref = ln_get_refraction_adj (hrz.alt, getAltitudePressure (getAltitude (), 1010), 10);
 	hrz.alt += ref;
 	if (writeValue)
 		refraction->setValueDouble (ref);
@@ -1346,6 +1346,11 @@ void Telescope::getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ
 	obs.lng = getLongitude ();
 
 	ln_get_equ_from_hrz (hrz, &obs, JD, pos);
+}
+
+double Telescope::getAltitudePressure (double alt, double see_pres)
+{
+	return see_pres * pow (1 - (0.0065 * alt) / 288.15, (9.80665 * 0.0289644) / (8.31447 * 0.0065));
 }
 
 int Telescope::info ()
