@@ -274,6 +274,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 {
 	unlockPointing ();
 
+	setCorrections (true, true, true);
+
 	tel_tty = "/dev/ttyUSB0";
 	telConn = NULL;
 
@@ -400,7 +402,7 @@ int SitechAltAz::initHardware ()
 	int ret;
 	int numread;
 
-	trackingInterval->setValueFloat (0.5);
+	trackingInterval->setValueFloat (0.01);
 
 	rts2core::Configuration *config;
 	config = rts2core::Configuration::instance ();
@@ -477,8 +479,8 @@ int SitechAltAz::initHardware ()
 		createValue (der1_pos_error, "der1_pos_error", "1st derotator position error", false);
 		createValue (der2_pos_error, "der2_pos_error", "2nd derotator position error", false);
 
-		createValue (der1_supply, "der1_pos_error", "[V] 1st derotator position error", false);
-		createValue (der2_supply, "der2_pos_error", "[V] 2nd derotator position error", false);
+		createValue (der1_supply, "der1_supply", "[V] 1st derotator position error", false);
+		createValue (der2_supply, "der2_supply", "[V] 2nd derotator position error", false);
 
 		createValue (der1_temp, "der1_temp", "[F] 1st derotator temperature", false);
 		createValue (der2_temp, "der2_temp", "[F] 2nd derotator temperature", false);
@@ -1089,7 +1091,7 @@ void SitechAltAz::getDerotator ()
 	autoModeDer1->setValueBool ((der_status.extra_bits & 0x20) == 0);
 	autoModeDer2->setValueBool ((der_status.extra_bits & 0x02) == 0);
 	der_mclock->setValueLong (der_status.mclock);
-	temperature->setValueInteger (der_status.temperature);
+	der_temperature->setValueInteger (der_status.temperature);
 
 	switch (sitechType)
 	{
