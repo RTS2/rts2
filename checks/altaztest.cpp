@@ -36,8 +36,7 @@ void AltAzTest::setTelescope (double _lat, double _long, double _alt, long _az_t
 
 int AltAzTest::test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc)
 {
-	bool use_flipped = false;
-	return sky2counts (JD, pos, azc, altc, false, use_flipped, false, 0, false);
+	return sky2counts (JD, pos, azc, altc, false, 0, false);
 }
 
 int AltAzTest::test_hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc)
