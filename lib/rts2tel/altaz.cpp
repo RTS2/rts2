@@ -40,6 +40,9 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (altMin, "_alt_min", "[cnts] minimal altitude axis count", false);
 	createValue (altMax, "_alt_max", "[cnts] maximal altitude axis count", false);
 
+	createValue (azSlewMargin, "az_slew_margin", "[deg] azimuth slew margin", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	azSlewMargin->setValueDouble (0);
+
 	cos_lat = 0.1;
 }
 
@@ -60,10 +63,13 @@ int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_a
 	return 0;
 }
 
-int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin, bool forceShortest)
+int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
 {
 	struct ln_hrz_posn hrz;
 	getHrzFromEqu (pos, JD, &hrz);
+
+	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
+        bool use_flipped;
 
 	return hrz2counts (&hrz, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
 }
