@@ -29,12 +29,15 @@
 #include "objectcheck.h"
 
 // pointing models
-#define POINTING_RADEC       0
-#define POINTING_ALTAZ       1
-#define POINTING_ALTALT      2
+#define POINTING_RADEC          0
+#define POINTING_ALTAZ          1
+#define POINTING_ALTALT         2
 
 
-#define SIDEREAL_HOURS       23.9344696
+#define SIDEREAL_HOURS          23.9344696
+
+// Limit on number of steps for trajectory check
+#define TRAJECTORY_CHECK_LIMIT  2000
 
 namespace rts2telmodel
 {

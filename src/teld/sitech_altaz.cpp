@@ -786,17 +786,17 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	xbits |= (0x01 << 4);
 
 	// check that the entered trajactory is valid
-/*	ret = checkTrajectory (getTelJD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), radec_Xrequest.y_dest, radec_Xrequest.x_dest, ac_change / sec_step / 2.0, dc_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
+	ret = checkTrajectory (getTelJD, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), altaz_Xrequest.y_dest, altaz_Xrequest.x_dest, az_change / sec_step / 2.0, alt_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false);
 	if (ret == 2 && speed_factor > 1) // too big move to future, keep target
 	{
-		logStream (MESSAGE_INFO) << "soft stop detected while running tracking, move from " << r_ra_pos->getValueLong () << " " << r_dec_pos->getValueLong () << " only to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << sendLog;
+		logStream (MESSAGE_INFO) << "soft stop detected while running tracking, move from " << r_az_pos->getValueLong () << " " << r_alt_pos->getValueLong () << " only to " << altaz_Xrequest.y_dest << " " << altaz_Xrequest.x_dest << sendLog;
 	}
 	else if (ret != 0)
 	{
-		logStream (MESSAGE_WARNING) << "trajectory from " << r_ra_pos->getValueLong () << " " << r_dec_pos->getValueLong () << " to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
+		logStream (MESSAGE_WARNING) << "trajectory from " << r_az_pos->getValueLong () << " " << r_alt_pos->getValueLong () << " to " << altaz_Xrequest.y_dest << " " << altaz_Xrequest.x_dest << " will hit (" << ret << "), stopping tracking" << sendLog;
 		stopTracking ();
 		return;
-	} */
+	}
 
 	t_az_pos->setValueLong (altaz_Xrequest.y_dest);
 	t_alt_pos->setValueLong (altaz_Xrequest.x_dest);

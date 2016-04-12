@@ -19,9 +19,6 @@
 
 #include "teld.h"
 
-// Limit on number of steps for trajectory check
-#define TRAJECTORY_CHECK_LIMIT  2000
-
 namespace rts2teld
 {
 

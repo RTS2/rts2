@@ -47,9 +47,16 @@ AltAz::~AltAz (void)
 {
 }
 
-
-int AltAz::calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, int32_t &t_dc)
+int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc)
 {
+	struct ln_hrz_posn hrz, u_hrz;
+	// check if both start and end are above horizon
+	counts2hrz (c_azc, c_altc, hrz.az, hrz.alt, u_hrz.az, u_hrz.alt);
+	if (!isGood (&hrz))
+		return -1;
+	counts2hrz (t_azc, t_altc, hrz.az, hrz.alt, u_hrz.az, u_hrz.alt);
+	if (!isGood (&hrz))
+		return -2;
 	return 0;
 }
 
@@ -132,6 +139,150 @@ void AltAz::counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double
 double AltAz::derotator_rate (double az, double alt)
 {
 	return cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt));
+}
+
+int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
+{
+	// nothing to check
+	if (hardHorizon == NULL)
+		return 0;
+
+	int32_t t_az = azc;
+	int32_t t_alt = altc;
+
+	int32_t step_az = azs;
+	int32_t step_alt = alts;
+
+	int32_t soft_az = azc;
+	int32_t soft_alt = altc;
+
+	bool hard_beginning = false;
+
+	if (azc > azt)
+		step_az = -azs;
+
+	if (altc > altt)
+		step_alt = -alts;
+
+	// turned to true if we are in "soft" boundaries, e.g hit with margin applied
+	bool soft_hit = false;
+
+	for (unsigned int c = 0; c < steps; c++)
+	{
+		// check if still visible
+		struct ln_hrz_posn hrz, u_hrz;
+
+		int32_t n_az;
+		int32_t n_alt;
+
+		// if we already reached destionation, e.g. currently computed position is within step to target, don't go further..
+		if (labs (t_az - azt) < azs)
+		{
+			n_az = azt;
+			step_az = 0;
+		}
+		else
+		{
+			n_az = t_az + step_az;
+		}
+
+		if (labs (t_alt - altt) < alts)
+		{
+			n_alt = altt;
+			step_alt = 0;
+		}
+		else
+		{
+			n_alt = t_alt + step_alt;
+		}
+
+		counts2hrz (n_az, n_alt, hrz.az, hrz.alt, u_hrz.az, u_hrz.alt);
+
+		// uncomment to see which checks are being performed
+		//std::cerr << "checkTrajectory hrz " << n_a << " " << n_d << " hrz alt az " << hrz.alt << " " << hrz.az << std::endl;
+
+		if (soft_hit == true || ignore_soft_beginning == true)
+		{
+			// if we really cannot go further
+			if (hardHorizon->is_good (&hrz) == 0)
+			{
+				// even at hard hit on first step, let's see if it can move out of limits
+				if (c == 0) 
+				{
+					logStream (MESSAGE_WARNING) << "below hard limit, see if we can move above in a few steps" << sendLog;
+					hard_beginning = true;
+				}
+				else if (hard_beginning == false || c > 20)
+				{
+					logStream (MESSAGE_DEBUG) << "hit hard limit at alt az " << hrz.alt << " " << hrz.az << " " << soft_az << " " << soft_alt << " " << n_az << " " << n_alt << sendLog;
+					if (soft_hit == true)
+					{
+						// then use last good position, and return we reached horizon..
+						azt = soft_az;
+						altt = soft_alt;
+						return 2;
+					}
+					else
+					{
+						// case when moving within soft will lead to hard hit..we don't want this path
+						azt = t_az;
+						altt = t_alt;
+						return 3;
+					}
+					hard_beginning = false;
+				}
+			}
+			else
+			{
+				hard_beginning = false;
+			}
+		}
+
+		// we don't need to move anymore, full trajectory is valid
+		if (step_az == 0 && step_alt == 0)
+			return 0;
+
+		if (soft_hit == false && hard_beginning == false)
+		{
+			// check soft margins..
+			if (hardHorizon->is_good_with_margin (&hrz, alt_margin, az_margin) == 0)
+			{
+				if (ignore_soft_beginning == false)
+				{
+					soft_hit = true;
+					soft_az = t_az;
+					soft_alt = t_alt;
+				}
+			}
+			else
+			{
+				// we moved away from soft hit region
+				if (ignore_soft_beginning == true)
+				{
+					ignore_soft_beginning = false;
+					soft_az = t_az;
+					soft_alt = t_alt;
+				}
+			}
+		}
+
+		t_az = n_az;
+		t_alt = n_alt;
+	}
+
+	if (soft_hit == true)
+	{
+		azt = soft_az;
+		altt = soft_alt;
+	}
+	else
+	{
+		azt = t_az;
+		altt = t_alt;
+	}
+
+	// we are fine to move at least to the given coordinates
+	return 1;
 }
 
 void AltAz::unlockPointing ()

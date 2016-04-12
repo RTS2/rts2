@@ -36,7 +36,7 @@ class AltAz: public Telescope
 		virtual ~AltAz (void);
 
 	protected:
-		int calculateMove (double JD, int32_t c_ac, int32_t c_dc, int32_t &t_ac, int32_t &t_dc);
+		int calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc);
 
 		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, int used_flippingm, bool &use_flipped, bool writeValue, double haMargin, bool forceShortest);
 
@@ -50,6 +50,22 @@ class AltAz: public Telescope
 		 * Returns deratotor rate, in degrees/h.
 		 */
 		double derotator_rate (double az, double alt);
+
+		/**
+		 * Check trajectory. If hardHorizon is present, make sure that the path between current and target coordinates does
+		 * not approach to horizon with given alt/az margin.
+		 *
+		 * @param JD                    Julian day for which trajectory will be checked
+		 * @param azs			step in counts on AZ axe. Must be positive number
+		 * @param alts			step in counts on ALT axe. Must be positive number
+		 * @param steps			total number of steps the trajectory will check
+		 * @param ignore_soft_beginning if true, algorithm will ignore fact that the mount is in soft limit at the beginning of the trajectory
+		 *
+		 * @return 0 if trajectory can be run without restriction, -1 if the trajectory goal is currently outside pointing limits,
+		 * 1 if the trajectory will hit horizon limit (at and dt contains maximum point where we can track safely)
+		 * 2 if the trajectory will hit hard horizon (at and dt contains maximum point where we can track safely)
+		 */
+		int checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning);
 
 		/**
 		 * Unlock basic pointing parameters. The parameters such as zero offsets etc. are made writable.
