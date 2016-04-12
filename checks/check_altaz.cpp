@@ -68,16 +68,16 @@ START_TEST(test_altaz_1)
 
 	// origin
 	pos.ra = 344.16613;
-	pos.dec = 2.3703305;
+	pos.dec = -80.3703305;
 
 	ret = altAzTest->test_sky2counts (JD, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-	ck_assert_int_eq (azc, 43783567);
-	ck_assert_int_eq (altc, 26826255);
+	ck_assert_int_eq (azc, 49510274);
+	ck_assert_int_eq (altc, 12292285);
 
 	// target
 	pos.ra = 62.95859;
-	pos.dec = -3.51601;
+	pos.dec = -80.51601;
 
 	float e = altAzTest->test_move (JD, &pos, azc, altc, 2.0, 200);
 	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
@@ -97,7 +97,7 @@ START_TEST(test_altaz_1)
 	ret = altAzTest->test_hrz2counts (&hrz, azc, altc);
 	ck_assert_int_eq (ret, 0);
 	ck_assert_int_eq (azc, 64023041);
-	ck_assert_int_eq (altc, 18943645);
+	ck_assert_int_eq (altc, 18943644);
 
 	altAzTest->test_counts2hrz (-68591258, -68591258, &hrz);
 	ck_assert_dbl_eq (hrz.alt, 75.047819, 10e-2);
