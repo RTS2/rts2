@@ -25,27 +25,27 @@ void teardown_altcaz (void)
 
 START_TEST(derotator_1)
 {
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0, 20), 0.1064, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0, 40), 0.1305, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0.23, 60.21), 0.2012, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (12.3, 70.21), 0.2885, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (8.3, 82.21), 0.7300, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (4.3, 85.21), 1.1941, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-1.3, 89.21), 7.2509, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-12.3, 89.99), 559.8058, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0, 20), 6.0972, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0, 40), 7.4794, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0.23, 60.21), 11.5323, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (12.3, 70.21), 16.5342, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (8.3, 82.21), 41.8286, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (4.3, 85.21), 68.4213, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-1.3, 89.21), 415.4513, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-12.3, 89.99), 32074.5143, 10e-4);
 }
 END_TEST
 
 START_TEST(derotator_2)
 {
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180, 20), -0.1064, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180, 40), -0.1305, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180.23, 60.21), -0.2012, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (182.3, 70.21), -0.2951, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (188.3, 82.21), -0.7300, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (184.3, 85.21), -1.1941, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-179.3, 89.21), -7.2523, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-179.3, 89.99), -572.9150, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180, 20), -6.0972, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180, 40), -7.4794, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180.23, 60.21), -11.5323, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (182.3, 70.21), -16.9090, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (188.3, 82.21), -41.8286, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (184.3, 85.21), -68.4213, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-179.3, 89.21), -415.5272, 10e-4);
+	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-179.3, 89.99), -32825.6136, 10e-4);
 }
 END_TEST
 

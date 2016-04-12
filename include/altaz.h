@@ -35,6 +35,8 @@ class AltAz: public Telescope
 		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
 		virtual ~AltAz (void);
 
+		virtual int infoJDLST (double JD, double telLST);
+
 	protected:
 		int calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc);
 
@@ -45,6 +47,11 @@ class AltAz: public Telescope
 		void counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, double &un_az, double &un_zd);
 
 		void counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec);
+
+		/**
+		 * Returns parallactic angle.
+		 */
+		double parallactic_angle (double ha, double dec);
 
 		/**
 		 * Returns deratotor rate, in degrees/h.
@@ -71,6 +78,9 @@ class AltAz: public Telescope
 		 * Unlock basic pointing parameters. The parameters such as zero offsets etc. are made writable.
 		 */
 		void unlockPointing ();
+
+		rts2core::ValueDouble *parallAngle;
+		rts2core::ValueDouble *derRate;
 
                 rts2core::ValueDouble *azSlewMargin;      //* margin for az axis during slew (used only on first call of startResync during new movement)
 

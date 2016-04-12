@@ -26,6 +26,9 @@ using namespace rts2teld;
 
 AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0)
 {
+	createValue (parallAngle, "parallactic_ang", "[deg] parallactic angle", false, RTS2_DT_DEGREES);
+	createValue (derRate, "DERRATE", "[deg/sec] derotator rate", false, RTS2_DT_DEGREES);
+
 	createValue (az_ticks, "_az_ticks", "[cnts] counts per full revolution on az axis", false);
 	createValue (alt_ticks, "_alt_ticks", "[cnts] counts per full revolution on alt axis", false);
 
@@ -48,6 +51,19 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 
 AltAz::~AltAz (void)
 {
+}
+
+int AltAz::infoJDLST (double JD, double LST)
+{
+	int ret = Telescope::infoJDLST (JD, LST);
+	if (ret)
+		return ret;
+	parallAngle->setValueDouble (parallactic_angle (getHourAngle (), getTelDec ()));
+	struct ln_hrz_posn hrz;
+	getTelAltAz (&hrz);
+	derRate->setValueDouble (derotator_rate (hrz.az, hrz.alt));
+
+	return ret;
 }
 
 int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc)
@@ -150,9 +166,17 @@ void AltAz::counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double
 	dec = pos.dec;
 }
 
+double AltAz::parallactic_angle (double ha, double dec)
+{
+	double radha = ln_deg_to_rad (ha);
+	double raddec = ln_deg_to_rad (dec);
+	double radlat = ln_deg_to_rad (getLatitude ());
+	return ln_rad_to_deg (atan (cos (radlat) * sin (radha) / (sin (radlat) * cos (raddec) - cos (radlat) * sin (raddec) * cos (radha))));
+}
+
 double AltAz::derotator_rate (double az, double alt)
 {
-	return cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt));
+	return ln_rad_to_deg (cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt)));
 }
 
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)

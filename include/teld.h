@@ -100,13 +100,15 @@ class Telescope:public rts2core::Device
 		double getLongitude () { return telLongitude->getValueDouble (); }
 		double getAltitude () { return telAltitude->getValueDouble (); }
 
+		double getHourAngle () { return hourAngle->getValueDouble (); }
+
 		double getAltitudePressure (double alt, double sea_press);
 
 		// callback functions from telescope connection
 		virtual int info ();
 		int infoJD (double JD);
 		int infoLST (double telLST);
-		int infoJDLST (double JD, double telLST);
+		virtual int infoJDLST (double JD, double telLST);
 
 		virtual int scriptEnds ();
 

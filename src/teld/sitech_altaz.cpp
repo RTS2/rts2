@@ -178,6 +178,12 @@ class SitechAltAz:public AltAz
 		rts2core::ValueLong *der1_ticks;
 		rts2core::ValueLong *der2_ticks;
 
+		rts2core::ValueFloat *der1_zero;
+		rts2core::ValueFloat *der2_zero;
+
+		rts2core::ValueFloat *der1_offset;
+		rts2core::ValueFloat *der2_offset;
+
 		rts2core::ValueDouble *der1_acceleration;
 		rts2core::ValueDouble *der2_acceleration;
 
@@ -189,6 +195,31 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueInteger *der1_pwm;
 		rts2core::ValueInteger *der2_pwm;
+
+		rts2core::ValueString *der1_errors;
+		rts2core::ValueString *der2_errors;
+
+		rts2core::ValueInteger *der1_errors_val;
+		rts2core::ValueInteger *der2_errors_val;
+
+		rts2core::ValueInteger *der1_pos_error;
+		rts2core::ValueInteger *der2_pos_error;
+
+		rts2core::ValueInteger *der1_supply;
+		rts2core::ValueInteger *der2_supply;
+
+		rts2core::ValueInteger *der1_temp;
+		rts2core::ValueInteger *der2_temp;
+
+		rts2core::ValueInteger *der1_pid_out;
+		rts2core::ValueInteger *der2_pid_out;
+
+		rts2core::ValueBool *autoModeDer1;
+		rts2core::ValueBool *autoModeDer2;
+		rts2core::ValueLong *der_mclock;
+		rts2core::ValueInteger *der_temperature;
+
+		rts2core::IntegerArray *der_PIDs;
 
 		rts2core::ValueInteger *countUp;
 		rts2core::ValueDouble *telPIDSampleRate;
@@ -214,6 +245,8 @@ class SitechAltAz:public AltAz
 		 */
 		void getTel ();
 		void getTel (double &telra, double &teldec, double &un_telra, double &un_telzd);
+
+		void getDerotator ();
 
 		void getPIDs ();
 		std::string findErrors (uint16_t e);
@@ -288,8 +321,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	createValue (alt_enc, "ENCALT", "ALT encoder readout", true);
 
 	createValue (extraBit, "extra_bits", "extra bits from axis status", false, RTS2_DT_HEX);
-	createValue (autoModeAz, "auto_mode_az", "AZ axis auto mode", false, RTS2_DT_ONOFF);
-	createValue (autoModeAlt, "auto_mode_alt", "ALT axis auto mode", false, RTS2_DT_ONOFF);
+	createValue (autoModeAz, "auto_mode_az", "AZ axis auto mode", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (autoModeAlt, "auto_mode_alt", "ALT axis auto mode", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (mclock, "mclock", "millisecond board clocks", false);
 	createValue (temperature, "temperature", "[C] board temperature (CPU)", false);
 	createValue (az_worm_phase, "y_worm_phase", "AZ worm phase", false);
@@ -411,17 +444,54 @@ int SitechAltAz::initHardware ()
 		createValue (der1_ticks, "der1_ticks", "[cnts] 1st derotator full circle ticks", false);
 		createValue (der2_ticks, "der2_ticks", "[cnts] 1nd derotator full circle ticks", false);
 
-		createValue (der1_acceleration, "der1_acceleration", "1st derotator", false);
-		createValue (der2_acceleration, "der2_acceleration", "1st derotator", false);
+		createValue (der1_zero, "der1_zero", "[deg] 1st derotator zero offset", false);
+		createValue (der2_zero, "der2_zero", "[deg] 1nd derotator zero offset", false);
 
-		createValue (der1_max_velocity, "der1_max_velocity", "1st derotator", false);
-		createValue (der2_max_velocity, "der2_max_velocity", "2nd derotator", false);
+		der1_zero->setValueFloat (0);
+		der2_zero->setValueFloat (0);
 
-		createValue (der1_current, "der1_current", "1st derotator", false);
-		createValue (der2_current, "der2_current", "2nd derotator", false);
+		createValue (der1_offset, "der1_offset", "[deg] 1st derotator user offset", false);
+		createValue (der2_offset, "der2_offset", "[deg] 2nd derotator user offset", false);
 
-		createValue (der1_pwm, "der1_pwm", "1st derotator", false);
-		createValue (der2_pwm, "der2_pwm", "2nd derotator", false);
+		der1_offset->setValueFloat (0);
+		der2_offset->setValueFloat (0);
+
+		createValue (der1_acceleration, "der1_acceleration", "1st derotator acceleration", false);
+		createValue (der2_acceleration, "der2_acceleration", "1st derotator acceleration", false);
+
+		createValue (der1_max_velocity, "der1_max_velocity", "1st derotator maximal velocity", false);
+		createValue (der2_max_velocity, "der2_max_velocity", "2nd derotator maximal velocity", false);
+
+		createValue (der1_current, "der1_current", "1st derotator current", false);
+		createValue (der2_current, "der2_current", "2nd derotator current", false);
+
+		createValue (der1_pwm, "der1_pwm", "1st derotator PWM", false);
+		createValue (der2_pwm, "der2_pwm", "2nd derotator PWM", false);
+
+		createValue (der1_errors, "der1_errors", "1st derotator errors (only for FORCE ONE)", false);
+		createValue (der2_errors, "der2_errors", "2nd derotator errors (only for FORCE ONE)", false);
+
+		createValue (der1_errors_val, "der1_errors_val", "1st derotator error value", false);
+		createValue (der2_errors_val, "der2_errors_val", "2nd derotator error value", false);
+
+		createValue (der1_pos_error, "der1_pos_error", "1st derotator position error", false);
+		createValue (der2_pos_error, "der2_pos_error", "2nd derotator position error", false);
+
+		createValue (der1_supply, "der1_pos_error", "[V] 1st derotator position error", false);
+		createValue (der2_supply, "der2_pos_error", "[V] 2nd derotator position error", false);
+
+		createValue (der1_temp, "der1_temp", "[F] 1st derotator temperature", false);
+		createValue (der2_temp, "der2_temp", "[F] 2nd derotator temperature", false);
+
+		createValue (der1_pid_out, "der1_pid_out", "1st derotator PID output", false);
+		createValue (der2_pid_out, "der2_pid_out", "2nd derotator PID output", false);
+
+		createValue (autoModeDer1, "der1_auto", "1st derotator auto", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+		createValue (autoModeDer2, "der2_auto", "2nd derotator auto", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+		createValue (der_mclock, "der_mclock", "derotator clocks", false);
+		createValue (der_temperature, "der_temperature", "[C] derotator CPU board temperature", false);
+
+		createValue (der_PIDs, "der_PIDs", "derotator PIDs", false);
 
 		der_xbits = derConn->getSiTechValue ('X', "B");
 		der_ybits = derConn->getSiTechValue ('Y', "B");
@@ -547,14 +617,7 @@ int SitechAltAz::info ()
 	struct ln_hrz_posn hrz;
 	double un_az, un_zd;
 	getTel (hrz.az, hrz.alt, un_az, un_zd);
-
-	if (derConn != NULL)
-	{
-		derConn->getAxisStatus ('X', der_status);
-
-		r_der1_pos->setValueLong (der_status.y_pos);
-		r_der2_pos->setValueLong (der_status.x_pos);
-	}
+	getDerotator ();
 
 	struct ln_equ_posn pos;
 
@@ -1012,6 +1075,99 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 	counts2hrz (altaz_status.y_pos, altaz_status.x_pos, telaz, telalt, un_telaz, un_telzd);
 }
 
+void SitechAltAz::getDerotator ()
+{
+	if (derConn == NULL)
+		return;
+
+	derConn->getAxisStatus ('X', der_status);
+
+	r_der1_pos->setValueLong (der_status.y_pos);
+	r_der2_pos->setValueLong (der_status.x_pos);
+
+	// not stopped, not in manual mode
+	autoModeDer1->setValueBool ((der_status.extra_bits & 0x20) == 0);
+	autoModeDer2->setValueBool ((der_status.extra_bits & 0x02) == 0);
+	der_mclock->setValueLong (der_status.mclock);
+	temperature->setValueInteger (der_status.temperature);
+
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			break;
+		case FORCE_ONE:
+		{
+			// upper nimble
+			uint16_t der1_val = der_status.y_last[0] << 4;
+			der1_val += der_status.y_last[1];
+
+			uint16_t der2_val = der_status.x_last[0] << 4;
+			der2_val += der_status.x_last[1];
+
+			// find all possible errors
+			switch (der_status.y_last[0] & 0x0F)
+			{
+				case 0:
+					der1_errors_val->setValueInteger (der1_val);
+					der1_errors->setValueString (findErrors (der1_val));
+					// stop if on limits
+					if ((der1_val & ERROR_LIMIT_MINUS) || (der1_val & ERROR_LIMIT_PLUS))
+						stopTracking ();
+					break;
+
+				case 1:
+					der1_current->setValueInteger (der1_val);
+					break;
+
+				case 2:
+					der1_supply->setValueInteger (der1_val);
+					break;
+
+				case 3:
+					der1_temp->setValueInteger (der1_val);
+					break;
+
+				case 4:
+					der1_pid_out->setValueInteger (der1_val);
+					break;
+			}
+
+
+			switch (der_status.x_last[0] & 0x0F)
+			{
+				case 0:
+					der2_errors_val->setValueInteger (der2_val);
+					der2_errors->setValueString (findErrors (der2_val));
+					// stop if on limits
+					if ((der2_val & ERROR_LIMIT_MINUS) || (der2_val & ERROR_LIMIT_PLUS))
+						stopTracking ();
+					break;
+
+				case 1:
+					der2_current->setValueInteger (der2_val);
+					break;
+
+				case 2:
+					der2_supply->setValueInteger (der2_val);
+					break;
+
+				case 3:
+					der2_temp->setValueInteger (der2_val);
+					break;
+
+				case 4:
+					der2_pid_out->setValueInteger (der2_val);
+					break;
+			}
+
+			der1_pos_error->setValueInteger (*(uint16_t*) &der_status.y_last[2]);
+			der2_pos_error->setValueInteger (*(uint16_t*) &der_status.x_last[2]);
+			break;
+		}
+	}
+}
+
 void SitechAltAz::getPIDs ()
 {
 	PIDs->clear ();
@@ -1026,13 +1182,15 @@ void SitechAltAz::getPIDs ()
 
 	if (derConn)
 	{
-		PIDs->addValue (derConn->getSiTechValue ('X', "PPP"));
-		PIDs->addValue (derConn->getSiTechValue ('X', "III"));
-		PIDs->addValue (derConn->getSiTechValue ('X', "DDD"));
+		der_PIDs->clear ();
 
-		PIDs->addValue (derConn->getSiTechValue ('Y', "PPP"));
-		PIDs->addValue (derConn->getSiTechValue ('Y', "III"));
-		PIDs->addValue (derConn->getSiTechValue ('Y', "DDD"));
+		der_PIDs->addValue (derConn->getSiTechValue ('X', "PPP"));
+		der_PIDs->addValue (derConn->getSiTechValue ('X', "III"));
+		der_PIDs->addValue (derConn->getSiTechValue ('X', "DDD"));
+
+		der_PIDs->addValue (derConn->getSiTechValue ('Y', "PPP"));
+		der_PIDs->addValue (derConn->getSiTechValue ('Y', "III"));
+		der_PIDs->addValue (derConn->getSiTechValue ('Y', "DDD"));
 	}
 }
 
