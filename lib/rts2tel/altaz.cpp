@@ -71,7 +71,15 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;
 
-	return hrz2counts (&hrz, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
+	int ret = hrz2counts (&hrz, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
+	if (ret)
+		return ret;
+
+	if (writeValue)
+	{
+		setTelTarget (pos->ra, pos->dec);
+	}
+	return 0;
 }
 
 int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin)
