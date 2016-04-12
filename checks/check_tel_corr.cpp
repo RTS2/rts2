@@ -1,4 +1,5 @@
 #include "gemtest.h"
+#include "check_utils.h"
 
 #include <time.h>
 #include <stdlib.h>
@@ -22,18 +23,20 @@ void teardown_tel (void)
 	gemTest = NULL;
 }
 
-#define ck_assert_dbl_eq(v1,v2,alow)  ck_assert_msg(fabs(v1-v2) < alow, "difference %f and %f > %f", v1, v2, alow)
+START_TEST(test_pressure)
+{
+	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (0, 1010), 1010, 10e-1);
+	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (1000, 1010), 895.86, 10e-1);
+	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (2345, 1010), 759.04, 10e-1);
+	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (4000, 1010), 614.43, 10e-1);
+}
+END_TEST
 
 START_TEST(test_refraction)
 {
 	struct ln_hrz_posn tpos;
 	struct ln_equ_posn teq;
 	double JD = 2452134;
-
-	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (0, 1010), 1010, 10e-1);
-	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (1000, 1010), 895.86, 10e-1);
-	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (2345, 1010), 759.04, 10e-1);
-	ck_assert_dbl_eq (gemTest->test_getAltitudePressure (4000, 1010), 614.43, 10e-1);
 
 	tpos.alt = 20;
 	tpos.az = 300;
@@ -52,17 +55,51 @@ START_TEST(test_refraction)
 	ck_assert_dbl_eq (tpos.az, 300.00475, 10e-4);
 	ck_assert_dbl_eq (tpos.alt, 20.0381, 10e-4);
 
+	teq.ra += 1;
+
+	gemTest->test_applyRefraction (&teq, JD, false);
+
+	ck_assert_dbl_eq (teq.ra, 44.8305, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -18.5430, 10e-4);
+
+	gemTest->test_getHrzFromEqu (&teq, JD, &tpos);
+
+	ck_assert_dbl_eq (tpos.az, 299.4879, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 19.2619, 10e-4);
+
 	tpos.alt = 89;
 	tpos.az = 231;
 	gemTest->test_getEquFromHrz (&tpos, JD, &teq);
 
-	ck_assert_dbl_eq (teq.ra, 43.8965, 10e-4);
-	ck_assert_dbl_eq (teq.dec, -18.5755, 10e-4);
+	ck_assert_dbl_eq (teq.ra, 345.5796, 10e-4);
+	ck_assert_dbl_eq (teq.dec, 21.3348, 10e-4);
 
 	gemTest->test_applyRefraction (&teq, JD, false);
 
-	ck_assert_dbl_eq (teq.ra, 43.8642, 10e-4);
-	ck_assert_dbl_eq (teq.dec, -18.5595, 10e-4);
+	ck_assert_dbl_eq (teq.ra, 345.5751, 10e-4);
+	ck_assert_dbl_eq (teq.dec, 21.3348, 10e-4);
+
+	gemTest->test_getHrzFromEqu (&teq, JD, &tpos);
+
+	ck_assert_dbl_eq (tpos.az, 230.6954, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 89.0066, 10e-4);
+
+	tpos.alt = 2.34;
+	tpos.az = 130.558;
+	gemTest->test_getEquFromHrz (&tpos, JD, &teq);
+
+	ck_assert_dbl_eq (teq.ra, 240.5846, 10e-4);
+	ck_assert_dbl_eq (teq.dec, 38.4727, 10e-4);
+
+	gemTest->test_applyRefraction (&teq, JD, false);
+
+	ck_assert_dbl_eq (teq.ra, 240.8026, 10e-4);
+	ck_assert_dbl_eq (teq.dec, 38.5529, 10e-4);
+
+	gemTest->test_getHrzFromEqu (&teq, JD, &tpos);
+
+	ck_assert_dbl_eq (tpos.az, 130.5609, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 2.5252, 10e-4);
 }
 END_TEST
 
@@ -75,6 +112,7 @@ Suite * tel_suite (void)
 	tc_tel_corrs = tcase_create ("Basic");
 
 	tcase_add_checked_fixture (tc_tel_corrs, setup_tel, teardown_tel);
+	tcase_add_test (tc_tel_corrs, test_pressure);
 	tcase_add_test (tc_tel_corrs, test_refraction);
 	suite_add_tcase (s, tc_tel_corrs);
 
