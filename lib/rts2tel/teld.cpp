@@ -428,6 +428,10 @@ int Telescope::calculateTracking (double JD, double sec_step, int32_t &ac, int32
 
 	ac_speed = (ac - t_ac) / sec_step;
 	dc_speed = (dc - t_dc) / sec_step;
+
+	ac = t_ac;
+	dc = t_dc;
+
 	return 0;
 }
 
