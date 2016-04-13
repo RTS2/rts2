@@ -271,11 +271,6 @@ typedef uint32_t rts2_status_t;
 #define MIRROR_MASK_MOVE    0x010
 #define MIRROR_MOVE         0x010
 #define MIRROR_NOTMOVE      0x000
-#define MIRROR_UNKNOW       0x000
-#define MIRROR_A            0x001
-#define MIRROR_A_B          0x012
-#define MIRROR_B            0x003
-#define MIRROR_B_A          0x014
 
 #define FILTERD_MASK        0x002
 #define FILTERD_IDLE        0x000

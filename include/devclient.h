@@ -231,8 +231,7 @@ class DevClientMirror:public DevClient
 		virtual void stateChanged (ServerState * state);
 
 	protected:
-		virtual void mirrorA ();
-		virtual void mirrorB ();
+		virtual void mirrorMoving ();
 };
 
 class DevClientRotator:public DevClient

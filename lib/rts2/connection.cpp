@@ -333,18 +333,6 @@ std::string Connection::getStateString ()
 				case MIRROR_NOTMOVE:
 					_os << "idle";
 					break;
-				case MIRROR_A:
-					_os << "A";
-					break;
-				case MIRROR_A_B:
-					_os << "MOVING_A_B";
-					break;
-				case MIRROR_B:
-					_os << "B";
-					break;
-				case MIRROR_B_A:
-					_os << "MOVING_B_A";
-					break;
 				default:
 					_os << "unknow";
 			}

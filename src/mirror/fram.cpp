@@ -30,8 +30,21 @@
 #define RAMP_STEP   1
 #define STEPS_OPEN_CLOSE  180
 
-class Rts2DevMirrorFram:public Rts2DevMirror
+namespace rts2mirror
 {
+
+class Fram:public Mirror
+{
+	public:
+		Fram (int argc, char **argv);
+		virtual ~Fram (void);
+
+		virtual int processOption (int in_op);
+		virtual int init ();
+
+		virtual int movePosition (int pos);
+		virtual int isMoving ();
+
 	private:
 		char *mirror_dev;
 		int mirror_fd;
@@ -44,24 +57,13 @@ class Rts2DevMirrorFram:public Rts2DevMirror
 
 		int steps;
 		int set_ret;
-	public:
-		Rts2DevMirrorFram (int argc, char **argv);
-		virtual ~ Rts2DevMirrorFram (void);
-
-		virtual int processOption (int in_op);
-		virtual int init ();
-
-		virtual int startOpen ();
-		virtual int isOpened ();
-
-		virtual int startClose ();
-		virtual int isClosed ();
-
 };
 
-int
-Rts2DevMirrorFram::mirror_command (char cmd, int arg, char *ret_cmd,
-int *ret_arg)
+}
+
+using namespace rts2mirror;
+
+int Fram::mirror_command (char cmd, int arg, char *ret_cmd, int *ret_arg)
 {
 	char command_buffer[3];
 	int ret;
@@ -105,9 +107,7 @@ int *ret_arg)
 	return 0;
 }
 
-
-Rts2DevMirrorFram::Rts2DevMirrorFram (int in_argc, char **in_argv):Rts2DevMirror (in_argc,
-in_argv)
+Fram::Fram (int in_argc, char **in_argv):Mirror (in_argc, in_argv)
 {
 	addOption ('f', "mirror_dev", 1, "mirror device");
 	mirror_dev = NULL;
@@ -115,8 +115,7 @@ in_argv)
 	mirr_log = NULL;
 }
 
-
-Rts2DevMirrorFram::~Rts2DevMirrorFram (void)
+Fram::~Fram (void)
 {
 	if (mirror_fd != -1)
 		close (mirror_fd);
@@ -124,9 +123,7 @@ Rts2DevMirrorFram::~Rts2DevMirrorFram (void)
 		fclose (mirr_log);
 }
 
-
-int
-Rts2DevMirrorFram::processOption (int in_opt)
+int Fram::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -134,19 +131,17 @@ Rts2DevMirrorFram::processOption (int in_opt)
 			mirror_dev = optarg;
 			break;
 		default:
-			return Rts2DevMirror::processOption (in_opt);
+			return Mirror::processOption (in_opt);
 	}
 	return 0;
 }
 
-
-int
-Rts2DevMirrorFram::init ()
+int Fram::init ()
 {
 	struct termios oldtio, newtio;
 	int ret;
 
-	ret = Rts2DevMirror::init ();
+	ret = Mirror::init ();
 	if (ret)
 		return ret;
 
@@ -155,26 +150,21 @@ Rts2DevMirrorFram::init ()
 
 	if (!mirror_dev)
 	{
-		logStream (MESSAGE_ERROR)
-			<<
-			"Rts2DevMirrorFram::init /dev entry wasn't passed as parameter - exiting"
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init /dev entry wasn't passed as parameter - exiting" << sendLog;
 		return -1;
 	}
 
 	mirror_fd = open (mirror_dev, O_RDWR);
 	if (mirror_fd < 0)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init mirror open: " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init mirror open: " << strerror (errno) << sendLog;
 		return -1;
 	}
 
 	ret = tcgetattr (mirror_fd, &oldtio);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init tcgetattr " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Fram::init tcgetattr " << strerror (errno) << sendLog;
 		return -1;
 	}
 
@@ -191,27 +181,21 @@ Rts2DevMirrorFram::init ()
 	ret = tcsetattr (mirror_fd, TCSANOW, &newtio);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init tcsetattr " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Fram::init tcsetattr " << strerror (errno) << sendLog;
 		return -1;
 	}
 
-	logStream (MESSAGE_DEBUG) <<
-		"Rts2DevMirrorFram::init mirror initialized on " << mirror_dev << sendLog;
+	logStream (MESSAGE_DEBUG) << "Fram::init mirror initialized on " << mirror_dev << sendLog;
 
-	return startClose ();
+	return movePosition (0);
 }
 
-
-int
-Rts2DevMirrorFram::mirror_get (int *pos)
+int Fram::mirror_get (int *pos)
 {
 	return mirror_command (CMD_MIRROR_GET, 0, NULL, pos);
 }
 
-
-int
-Rts2DevMirrorFram::mirror_set ()
+int Fram::mirror_set ()
 {
 	int ret;
 	int mpos, new_pos;
@@ -238,7 +222,7 @@ Rts2DevMirrorFram::mirror_set ()
 		move = steps;
 	}
 
-	if ((getState () & MIRROR_MASK) == MIRROR_A_B)
+	if ((getState () & MIRROR_MASK) == MIRROR_MOVE)
 	{
 		cmd = CMD_MIRROR_PLUS;
 		new_pos = mpos + move;
@@ -267,40 +251,19 @@ Rts2DevMirrorFram::mirror_set ()
 	return -1;
 }
 
-
-int
-Rts2DevMirrorFram::startOpen ()
+int Fram::movePosition (int pos)
 {
 	steps = STEPS_OPEN_CLOSE;
-	return Rts2DevMirror::startOpen ();
+	return 0;
 }
 
-
-int
-Rts2DevMirrorFram::isOpened ()
+int Fram::isMoving ()
 {
 	return mirror_set ();
 }
 
-
-int
-Rts2DevMirrorFram::startClose ()
+int main (int argc, char **argv)
 {
-	steps = STEPS_OPEN_CLOSE;
-	return Rts2DevMirror::startClose ();
-}
-
-
-int
-Rts2DevMirrorFram::isClosed ()
-{
-	return mirror_set ();
-}
-
-
-int
-main (int argc, char **argv)
-{
-	Rts2DevMirrorFram device = Rts2DevMirrorFram (argc, argv);
+	Fram device (argc, argv);
 	return device.run ();
 }
