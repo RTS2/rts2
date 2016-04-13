@@ -1,5 +1,5 @@
 /* 
- * Sitech connection.
+ * Sitech axis controller connection.
  * Copyright (C) 2014 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 
 #include "serial.h"
 
-namespace rts2teld
+namespace rts2core
 {
 
 /**
@@ -178,7 +178,7 @@ class SitechXAxisRequest
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnSitech: public rts2core::ConnSerial
+class ConnSitech: public ConnSerial
 {
 	public:
 		/**
@@ -187,7 +187,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 * @param devName device name
 		 * @param master reference to master block
 		 */
-		ConnSitech (const char *devName, rts2core::Block *master);
+		ConnSitech (const char *devName, Block *master);
 
 		/**
 		 * Initialize connection. Switch to checksumed mode.
@@ -220,7 +220,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 * @param axis Command axis (X, Y, T, U, V or W)
 		 * @param cmd  Command to execute (see SiTech doc for details)
 		 *
-		 * @throw rts2core::Error on communication error
+		 * @throw Error on communication error
 		 */
 		void siTechCommand (const char axis, const char *cmd);
 
@@ -232,7 +232,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 *
 		 * @return Value of the given axis/value combination
 		 *
-		 * @throw rts2core::Error on communication error
+		 * @throw Error on communication error
 		 */
 		int32_t getSiTechValue (const char axis, const char *val);
 
@@ -241,7 +241,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 *
 		 * @param axis          Axis for which status will be retrieved.
 		 *
-		 * @throw rts2core::Error on communication error
+		 * @throw Error on communication error
 		 */
 		void getAxisStatus (char axis, SitechAxisStatus &ax_status);
 

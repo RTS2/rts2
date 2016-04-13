@@ -21,16 +21,16 @@
 
 #include <endian.h>
 
-using namespace rts2teld;
+using namespace rts2core;
 
-ConnSitech::ConnSitech (const char *devName, rts2core::Block *_master):rts2core::ConnSerial (devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 5,5)
+ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName, _master, BS19200, C8, NONE, 5,5)
 {
 	binary = false;
 }
 
 int ConnSitech::init ()
 {
-	int ret = rts2core::ConnSerial::init ();
+	int ret = ConnSerial::init ();
 	if (ret)
 		return ret;
 
@@ -47,7 +47,7 @@ void ConnSitech::switchToASCI ()
 	{
 		int ret = writePort ("YXY0\r\xb8", 6);
 		if (ret < 0)
-			throw rts2core::Error ("Cannot switch to ASCII mode");
+			throw Error ("Cannot switch to ASCII mode");
 	}
 	binary = false;
 }
@@ -58,7 +58,7 @@ void ConnSitech::switchToBinary ()
 	{
 		int ret = writePort ("YXY1\r", 5);
 		if (ret < 0)
-			throw rts2core::Error ("Cannot switch to ASCII mode");
+			throw Error ("Cannot switch to ASCII mode");
 	}
 	binary = true;
 }
@@ -91,7 +91,7 @@ void ConnSitech::siTechCommand (const char axis, const char *cmd)
 	{
 		int ret = writePort (ccmd, len + 2);
 		if (ret < 0)
-			throw rts2core::Error (std::string("cannot send command ") + cmd);
+			throw Error (std::string("cannot send command ") + cmd);
 	}
 }
 
@@ -104,7 +104,7 @@ int32_t ConnSitech::getSiTechValue (const char axis, const char *val)
 
 	size_t len = readPort (ret, 100, "\n");
 	if (len <= 0)
-		throw rts2core::Error (std::string ("cannot read response get value command ") + val);
+		throw Error (std::string ("cannot read response get value command ") + val);
 
 	return atol (ret + 1);
 }
@@ -199,7 +199,7 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 	if (len != 41)
 	{
 		flushPortIO ();
-		throw rts2core::Error ("cannot read all 41 bits from status response!");
+		throw Error ("cannot read all 41 bits from status response!");
 	}
 
 	// checksum checks
@@ -207,7 +207,7 @@ void ConnSitech::readAxisStatus (SitechAxisStatus &ax_status)
 
 	if ((*((uint16_t *) (ret + 39))) != checksum)
 	{
-		throw rts2core::Error ("invalid checksum in readAxisStatus");
+		throw Error ("invalid checksum in readAxisStatus");
 	}
 
 	// fill in proper return values..
@@ -239,7 +239,7 @@ void ConnSitech::readConfiguration (SitechControllerConfiguration &config)
 	{
 		std::cout << "len " << len << std::endl;
 		flushPortIO ();
-		throw rts2core::Error ("cannot read Sitech configuration");
+		throw Error ("cannot read Sitech configuration");
 	}
 
 	// checksum checks
@@ -247,7 +247,7 @@ void ConnSitech::readConfiguration (SitechControllerConfiguration &config)
 	if ((*((uint16_t *) (ret + 129))) != checksum)
 	{
 		std::cerr << *((uint16_t *) (ret + 129)) << " " << checksum << std::endl;
-		throw rts2core::Error ("invalid checksum in readConfiguration");
+		throw Error ("invalid checksum in readConfiguration");
 	}
 
 	// fill in proper values
@@ -331,11 +331,11 @@ void ConnSitech::writePortChecksumed (const char *cmd, size_t len)
 {
 	size_t ret = writePort (cmd, len);
 	if (ret < 0)
-		throw rts2core::Error (std::string ("cannot write ") + cmd + " :" + strerror (errno));
+		throw Error (std::string ("cannot write ") + cmd + " :" + strerror (errno));
 
 	ret = writePort ((char) calculateChecksum (cmd, len));
 	if (ret < 0)
-		throw rts2core::Error (std::string ("cannot write checksum of ") + cmd + " :" + strerror (errno));
+		throw Error (std::string ("cannot write checksum of ") + cmd + " :" + strerror (errno));
 }
 
 uint8_t ConnSitech::calculateChecksum (const char *cbuf, size_t len)

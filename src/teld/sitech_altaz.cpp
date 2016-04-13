@@ -86,12 +86,12 @@ class SitechAltAz:public AltAz
 		void internalTracking (double sec_step, float speed_factor);
 
 		const char *tel_tty, *der_tty;
-		ConnSitech *telConn;
-		ConnSitech *derConn;
+		rts2core::ConnSitech *telConn;
+		rts2core::ConnSitech *derConn;
 
-		SitechAxisStatus altaz_status, der_status;
-		SitechYAxisRequest altaz_Yrequest, der_Yrequest;
-		SitechXAxisRequest altaz_Xrequest, der_Xrequest;
+		rts2core::SitechAxisStatus altaz_status, der_status;
+		rts2core::SitechYAxisRequest altaz_Yrequest, der_Yrequest;
+		rts2core::SitechXAxisRequest altaz_Xrequest, der_Xrequest;
 
 		rts2core::ValueDouble *sitechVersion;
 		rts2core::ValueInteger *sitechSerial;
@@ -425,7 +425,7 @@ int SitechAltAz::initHardware ()
 	/*   /dev/ttyUSB0 on Linux systems without other USB serial converters.   */
 	/*   The serial device is known to the program that calls this procedure. */
 	
-	telConn = new ConnSitech (tel_tty, this);
+	telConn = new rts2core::ConnSitech (tel_tty, this);
 	telConn->setDebug (getDebug ());
 
 	ret = telConn->init ();
@@ -435,7 +435,7 @@ int SitechAltAz::initHardware ()
 
 	if (der_tty != NULL)
 	{
-		derConn = new ConnSitech (der_tty, this);
+		derConn = new rts2core::ConnSitech (der_tty, this);
 		derConn->setDebug (getDebug ());
 
 		ret = derConn->init ();
@@ -884,7 +884,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	{
 		delete telConn;
 
-		telConn = new ConnSitech (tel_tty, this);
+		telConn = new rts2core::ConnSitech (tel_tty, this);
 		telConn->setDebug (getDebug ());
 		telConn->init ();
 

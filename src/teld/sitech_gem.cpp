@@ -115,11 +115,11 @@ class Sitech:public GEM
 		double ticksPerSec2MotorSpeed (double tps);
 		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
 
-		ConnSitech *serConn;
+		rts2core::ConnSitech *serConn;
 
-		SitechAxisStatus radec_status;
-		SitechYAxisRequest radec_Yrequest;
-		SitechXAxisRequest radec_Xrequest;
+		rts2core::SitechAxisStatus radec_status;
+		rts2core::SitechYAxisRequest radec_Yrequest;
+		rts2core::SitechXAxisRequest radec_Xrequest;
 
 		rts2core::ValueDouble *sitechVersion;
 		rts2core::ValueInteger *sitechSerial;
@@ -434,7 +434,7 @@ void Sitech::getTel ()
 	{
 		delete serConn;
 
-		serConn = new ConnSitech (device_file, this);
+		serConn = new rts2core::ConnSitech (device_file, this);
 		serConn->setDebug (getDebug ());
 		serConn->init ();
 
@@ -694,7 +694,7 @@ int Sitech::initHardware ()
 	/*   /dev/ttyUSB0 on Linux systems without other USB serial converters.   */
 	/*   The serial device is known to the program that calls this procedure. */
 	
-	serConn = new ConnSitech (device_file, this);
+	serConn = new rts2core::ConnSitech (device_file, this);
 	serConn->setDebug (getDebug ());
 
 	ret = serConn->init ();
@@ -1078,7 +1078,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	{
 		delete serConn;
 
-		serConn = new ConnSitech (device_file, this);
+		serConn = new rts2core::ConnSitech (device_file, this);
 		serConn->setDebug (getDebug ());
 		serConn->init ();
 

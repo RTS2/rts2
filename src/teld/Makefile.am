@@ -65,10 +65,8 @@ rts2_teld_trencin_SOURCES = trencin.cpp
 rts2_teld_nexstar_SOURCES = nexstar.cpp
 
 rts2_teld_sitech_gem_SOURCES = sitech_gem.cpp
-rts2_teld_sitech_gem_LDADD = -L../../lib/rts2tel -lrts2sitech ${LDADD}
 
 rts2_teld_sitech_altaz_SOURCES = sitech_altaz.cpp
-rts2_teld_sitech_altaz_LDADD = -L../../lib/rts2tel -lrts2sitech ${LDADD}
 
 rts2_teld_irait_SOURCES = irait.cpp
 rts2_teld_irait_LDADD = -Lirait -lirait ${LIB_PTHREAD} ${LDADD}
