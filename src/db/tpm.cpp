@@ -23,8 +23,8 @@
 #include <math.h>
 #include <time.h>
 #include <libnova/libnova.h>
-#include <libwcs/wcs.h>
-#include <libwcs/fitsfile.h>
+#include <wcstools/wcs.h>
+#include <wcstools/fitsfile.h>
 
 #include <ostream>
 #include <iostream>
