@@ -24,6 +24,10 @@ Instalation from SVN
    you begin, important note: on Ubuntu 64bit installations, you need to
    compile wcs with -fPIC CFLAG.
 
+   Note that as of April 2016 libwcstools-dev is available in both Debian and
+   Ubuntu and should be installed via the package manager, rather than the
+   process described here.
+
 user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.8.1.tar.gz
 user@host:tar xzf wcstools-3.7.7.tar.gz
 user@host:cd wcstools-3.7.7/
@@ -48,8 +52,8 @@ make[1]: Leaving directory `/home/petr/wcstools-3.7.7/libned'
 cc -g -o bin/nedpos nedpos.c libwcs/libwcs.a -lm libned/libned.a
 cc -g -o bin/bincat bincat.c libwcs/libwcs.a -lm
 user@host:~/wcstools-3.7.7$ cd libwcs
-user@host:~/wcstools-3.7.7/libwcs$ sudo mkdir /usr/local/include/wcs
-user@host:~/wcstools-3.7.7/libwcs$ sudo cp *.h /usr/local/include/wcs/
+user@host:~/wcstools-3.7.7/libwcs$ sudo mkdir /usr/local/include/wcstools
+user@host:~/wcstools-3.7.7/libwcs$ sudo cp *.h /usr/local/include/wcstools/
 user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/libwcstools.a
 
    For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
