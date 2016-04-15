@@ -48,9 +48,9 @@ make[1]: Leaving directory `/home/petr/wcstools-3.7.7/libned'
 cc -g -o bin/nedpos nedpos.c libwcs/libwcs.a -lm libned/libned.a
 cc -g -o bin/bincat bincat.c libwcs/libwcs.a -lm
 user@host:~/wcstools-3.7.7$ cd libwcs
-user@host:~/wcstools-3.7.7/libwcs$ sudo mkdir /usr/local/include/libwcs
-user@host:~/wcstools-3.7.7/libwcs$ sudo cp *.h /usr/local/include/libwcs/
-user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/
+user@host:~/wcstools-3.7.7/libwcs$ sudo mkdir /usr/local/include/wcs
+user@host:~/wcstools-3.7.7/libwcs$ sudo cp *.h /usr/local/include/wcs/
+user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/libwcstools.a
 
    For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
 
