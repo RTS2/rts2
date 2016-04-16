@@ -1,17 +1,17 @@
 Please skip to "Basic Installation" if you are not performing
-installation from SVN.
+installation from Git.
 
 Note 1: you need to have libtool installed (apt-get install libtool on Debian),
 otherwise it will not work. I'll investigate that. Please enter any request to
 SF tracking system, or send them to the author (petr@kubanek.net).
 
-Instalation from SVN 
+Instalation from Git
 ====================
 
    You will need following packages (apt-get install on Debian based systems
    should install them).
 
-   subversion postgresql postgresql-server-dev libecpg-dev automake libtool
+   git postgresql postgresql-server-dev libecpg-dev automake libtool
    libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev
    libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev
    libjson-glib-dev libsoup2.4-dev pkg-config
@@ -58,7 +58,7 @@ user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/libwcstools.a
 
    For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
 
-user@host:$ svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts-2 rts2
+user@host:$ git clone https://github.com/RTS2/rts2.git
 user@host:$ cd rts2
 user@host:~/rts2$ ./autogen.sh
 user@host:~/rts2$ ./configure --without-wcs
