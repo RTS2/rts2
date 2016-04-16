@@ -211,13 +211,13 @@ AC_ARG_WITH(pgsql,
 	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
 esac],[psql=yes])
 
-AC_ARG_WITH(wcs,
-[  --with-wcs           path to WCS programs],
+AC_ARG_WITH(wcstools,
+[  --with-wcstools           path to WCS programs],
 [case "${withval}" in
-	yes) libwcs=yes ;;
-	no)  libwcs=no ;;
-	*) libwcs=${withval} ;;
-esac],[libwcs=yes])
+	yes) libwcstools=yes ;;
+	no)  libwcstools=no ;;
+	*) libwcstools=${withval} ;;
+esac],[libwcstools=yes])
 
 
 # check for EPICS
@@ -602,13 +602,13 @@ exit 1])
   AC_SUBST(LIB_CFITSIO)
 ])
 
-AS_IF([test "x${libwcs}" != "xno"], [
-  AS_IF([test "x${libwcs}" != "xyes"], [
-    LDFLAGS="${LDFLAGS} -L${libwcs}/libwcs"
+AS_IF([test "x${libwcstools}" != "xno"], [
+  AS_IF([test "x${libwcstools}" != "xyes"], [
+    LDFLAGS="${LDFLAGS} -L${libwcstools}/libwcstools"
   ])
-  AC_CHECK_LIB([wcs], [wcs2pix], LIBWCS_LDFLAGS="-lwcs", 
+  AC_CHECK_LIB([wcstools], [wcs2pix], LIBWCS_LDFLAGS="-lwcstools", 
   [cat <<EOF
-**** You don't have libwcs installed.
+**** You don't have wcstools installed.
 **** You can download one from
 **** http://tdc-www.harvard.edu/software/wcstools/.
 **** Please note that there is no standart procedure to install
@@ -616,15 +616,15 @@ AS_IF([test "x${libwcs}" != "xno"], [
 **** WCS library.
 EOF
   exit 1])
-  AS_IF([test "x${libwcs}" != "xyes"], [
-    LIBWCS_LDFLAGS="-L${libwcs}/libwcs -lwcs"
-    LIBWCS_CFLAGS="-I${libwcs}"
+  AS_IF([test "x${libwcstools}" != "xyes"], [
+    LIBWCS_LDFLAGS="-L${libwcstools}/libwcstools -lwcstools"
+    LIBWCS_CFLAGS="-I${libwcstools}"
   ], [
-    LIBWCS_LDFLAGS="-lwcs"
+    LIBWCS_LDFLAGS="-lwcstools"
   ])
 ])
 
-AM_CONDITIONAL(LIBWCS, test x$libwcs != xno)
+AM_CONDITIONAL(LIBWCS, test x$libwcstools != xno)
 AC_SUBST(LIBWCS_CFLAGS)
 AC_SUBST(LIBWCS_LDFLAGS)
 
@@ -998,7 +998,7 @@ echo "
   libusb1	${libusb1}
   libusb	${libusb}
   cfitsio       ${cfitsio}
-  libwcs        ${libwcs}
+  libwcstools        ${libwcstools}
   pgsql		${psql}
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
