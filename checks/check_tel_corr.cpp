@@ -17,6 +17,8 @@ void setup_tel (void)
 	gemTest = new GemTest(0, (char **) argv);
 	gemTest->setTelescope (20.70752, -156.257, 3039, 67108864, 67108864, 0, 75.81458333, -5.8187805555, 186413.511111, 186413.511111, -81949557, -47392062, -76983817, -21692458);
 
+	// telescope at 4 atmosphere pressure - test for pressure and altitude missuse
+
 	gemTest4000 = new GemTest(0, (char **) argv);
 	gemTest4000->setTelescope (20.70752, -156.257, -13500, 67108864, 67108864, 0, 75.81458333, -5.8187805555, 186413.511111, 186413.511111, -81949557, -47392062, -76983817, -21692458);
 }
