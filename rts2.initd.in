@@ -229,8 +229,12 @@ rts2_start()
 			centrald_options="--local-port $centrald_port $centrald_options"
 		fi
 		case $system in
-			gentoo|debian)
+			debian)
 				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- $centrald_options >>$RTS2_LOG 2>&1
+				rts2_start_log_end_msg $? "rts2-centrald $centrald_options" "centrald daemon on port $centrald_port"
+				;;
+			gentoo)
+				busybox start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- $centrald_options >>$RTS2_LOG 2>&1
 				rts2_start_log_end_msg $? "rts2-centrald $centrald_options" "centrald daemon on port $centrald_port"
 				;;
 			redhat|suse|slackware|cygwin)
@@ -242,12 +246,21 @@ rts2_start()
 	CENTRALD_OPTIONS=`grep '^-' $CENTRALD_FILE 2>/dev/null`
 	while read device type device_name options; do
 		case $system in
-			gentoo|debian)
+			debian)
 				# some devices do not like to have device name on command line
 				if [ "x$device_name" == "x-" ]; then
 					start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1 
 				else
 					start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1
+				fi 
+				rts2_start_log_end_msg $? $device_name "$device_name"
+				;;
+			gentoo)
+				# some devices do not like to have device name on command line
+				if [ "x$device_name" == "x-" ]; then
+					busybox start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1 
+				else
+					busybox start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name >>$RTS2_LOG 2>&1
 				fi 
 				rts2_start_log_end_msg $? $device_name "$device_name"
 				;;
@@ -264,8 +277,12 @@ rts2_start()
 	done < <(cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$')
 	while read service service_name options; do
 		case $system in
-			gentoo|debian)
+			debian)
 				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${service_name} --exec $RTS2_BIN_PREFIX/rts2-$service -- $options $CENTRALD_OPTIONS -d $service_name >>$RTS2_LOG 2>&1
+				rts2_start_log_end_msg $? $service_name "$service_name"
+				;;
+			gentoo)
+				busybox start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${service_name} --exec $RTS2_BIN_PREFIX/rts2-$service -- $options $CENTRALD_OPTIONS -d $service_name >>$RTS2_LOG 2>&1
 				rts2_start_log_end_msg $? $service_name "$service_name"
 				;;
 			redhat|suse|slackware|cygwin)
@@ -289,9 +306,15 @@ rts2_stop_devices()
 {
 	while read device type device_name options; do
 		case $system in
-			gentoo|debian)
+			debian)
 				if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
 					start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${device_name} >>$RTS2_LOG 2>&1
+					rts2_stop_log_end_msg $? $device_name
+				fi
+				;;
+			gentoo)
+				if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
+					busybox start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${device_name} >>$RTS2_LOG 2>&1
 					rts2_stop_log_end_msg $? $device_name
 				fi
 				;;
@@ -310,9 +333,15 @@ rts2_stop_services()
 {
 	while read service service_name options; do
 		case $system in
-			gentoo|debian)
+			debian)
 				if [ -e ${RTS2_PID_PREFIX}$service_name ]; then
 					start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${service_name} >>$RTS2_LOG 2>&1
+					rts2_stop_log_end_msg $? $service_name
+				fi
+				;;
+			gentoo)
+				if [ -e ${RTS2_PID_PREFIX}$service_name ]; then
+					busybox start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${service_name} >>$RTS2_LOG 2>&1
 					rts2_stop_log_end_msg $? $service_name
 				fi
 				;;
@@ -335,8 +364,12 @@ rts2_stop()
 	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
 		for cf in ${RTS2_PID_PREFIX}centrald_*; do
 		  	case $system in
-				gentoo|debian)
+				debian)
 					start-stop-daemon --stop --pidfile $cf >>$RTS2_LOG 2>&1
+					rts2_stop_log_end_msg $? rts2-centrald
+					;;
+				gentoo)
+					busybox start-stop-daemon --stop --pidfile $cf >>$RTS2_LOG 2>&1
 					rts2_stop_log_end_msg $? rts2-centrald
 					;;
 				redhat|suse|slackware|cygwin)
