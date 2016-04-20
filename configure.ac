@@ -556,6 +556,7 @@ LOCK_PREFIX="/var/run/rts2_")
 AH_TEMPLATE([LOCK_PREFIX],[Lock file prefix path])
 
 AC_DEFINE_UNQUOTED(LOCK_PREFIX, "$LOCK_PREFIX", [Lock file prefix path])
+AC_SUBST(LOCK_PREFIX)
 
 # Default centrald port
 AC_ARG_WITH(port,
