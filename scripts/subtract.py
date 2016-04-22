@@ -21,7 +21,8 @@ bias = pyfits.open(sys.argv[2])
 substract = f1[0].data - bias[0].data
 
 of = pyfits.open(sys.argv[3],mode='append')
-i = pyfits.PrimaryHDU(data=substract,header=f1[0].header)
+i = pyfits.PrimaryHDU(uint=True,data=substract,header=f1[0].header)
+i.scale('int16', bzero=32768)
 of.append(i)
 of.close()
 

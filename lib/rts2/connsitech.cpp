@@ -23,7 +23,7 @@
 
 using namespace rts2core;
 
-ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName, _master, BS19200, C8, NONE, 5,5)
+ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName, _master, BS19200, C8, NONE, 50, 5)
 {
 	binary = false;
 }
