@@ -136,8 +136,9 @@ class Sitech:public GEM
 		rts2core::ValueInteger *partialMove;
 
 		rts2core::ValueDouble *trackingDist;
-                rts2core::ValueDouble *slowSyncDistance;
+		rts2core::ValueDouble *slowSyncDistance;
 		rts2core::ValueFloat *fastSyncSpeed;
+		rts2core::ValueFloat *trackingFactor;
 
 		rts2core::IntegerArray *PIDs;
 
@@ -301,6 +302,9 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 
 	createValue (fastSyncSpeed, "fast_sync_speed", "fast speed factor (compared to siderial trackign) for fast alignment (above slow_track_distance)", false, RTS2_VALUE_WRITABLE);
 	fastSyncSpeed->setValueFloat (4);
+
+	createValue (trackingFactor, "tracking_factor", "tracking speed multiplier", false, RTS2_VALUE_WRITABLE);
+	trackingFactor->setValueFloat (0.89);
 
 	createValue (PIDs, "pids", "axis PID values", false);
 
@@ -894,7 +898,7 @@ int Sitech::isMoving ()
 		if (tdist < 0.5)
 		{
 			if (tdist < slowSyncDistance->getValueDouble ())
-				internalTracking (2.0, 1.0);
+				internalTracking (2.0, trackingFactor->getValueFloat ());
 			else
 				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
 			return USEC_SEC * trackingInterval->getValueFloat () / 10;
@@ -1142,7 +1146,7 @@ void Sitech::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
-	internalTracking (2.0, 1.0);
+	internalTracking (2.0, trackingFactor->getValueFloat ());
 }
 
 double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
