@@ -794,6 +794,16 @@ void FitsFile::writeTemplate (rts2core::IniSection *hc)
 			os << spaceDegSep << LibnovaDec (atof (v.c_str ()));
 			setValue (iter->getValueName ().c_str (), os.str ().c_str (), com.c_str ());
 		}
+		else if (suff == "arcsecm")
+		{
+			double dv = atof (v.c_str ()) * 60.0;
+			setValue (iter->getValueName ().c_str (), dv, com.c_str ());
+		}
+		else if (suff == "arcsech")
+		{
+			double dv = atof (v.c_str ()) * 3600.0;
+			setValue (iter->getValueName ().c_str (), dv, com.c_str ());
+		}
 		else
 		{
 			setValue (iter->getValueName ().c_str (), v.c_str (), com.c_str ());

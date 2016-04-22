@@ -1102,9 +1102,9 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *telTargetRaDec;
 
 		/**
-		 * Tracking vector. Speeds in RA and DEC for in degrees/second.
+		 * Sky speed vector. Speeds in RA and DEC for in degrees/hour.
 		 */
-		rts2core::ValueRaDec *trackingVect;
+		rts2core::ValueRaDec *skyVect;
 
 		/**
 		 * If this value is true, any software move of the telescope is blocked.
