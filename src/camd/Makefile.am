@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = urvc2 apogee edtsao si8821
+SUBDIRS = urvc2 apogee edtsao si8821 sxccd
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam rts2-camd-azcam3 rts2-camd-si8821
 
@@ -125,4 +125,12 @@ rts2_camd_si3097_SOURCES = si3097.cpp
 rts2_camd_si3097_CXXFLAGS = @INC_SI3097@ -I../../include
 else
 EXTRA_DIST += si3097.cpp
+endif
+
+if LIBUSB1
+bin_PROGRAMS += rts2-camd-sx
+rts2_camd_sx_SOURCES = sx.cpp
+rts2_camd_sx_LDADD = -Lsxccd -lsxccdusb @USB1_LIBS@ ${LDADD}
+else
+EXTRA_DIST += sx.cpp
 endif
