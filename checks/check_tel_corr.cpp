@@ -143,6 +143,14 @@ START_TEST(test_refraction4000)
 	ck_assert_dbl_eq (teq.ra, 27.6771, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -7.4805, 10e-4);
 
+	teq.ra = 27.7491;
+	teq.dec = -7.5267;
+
+	gemTest->test_applyRefraction (&teq, JD, false);
+
+	ck_assert_dbl_eq (teq.ra, 27.7330, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -7.5188, 10e-4);
+
 	teq.ra = 30.7491;
 	teq.dec = -7.5267;
 
