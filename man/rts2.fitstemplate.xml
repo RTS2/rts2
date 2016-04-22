@@ -112,6 +112,37 @@ RA.d = @T0.TEL:ra / tel RA value, recorded as double number
     <variablelist>
       <varlistentry>
         <term>
+	  <option>arcsecm</option>
+	</term>
+	<listitem>
+	  <para>
+            Arcsec per minute. Multiply douple value (preasumbly speed in arcdeg per hour) by 60 and write it.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>arcsech</option>
+	</term>
+	<listitem>
+	  <para>
+            Arcsec per hour. Multiply douple value (preasumbly speed in arcdeg per hour) by 3600 and write it.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>arcsech</option>
+	</term>
+	<listitem>
+	  <para>
+	    float (double) number. Value will be formated as number with decimal point. If value cannot be
+	    converted to float number, 0 will be written.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>d</option>
 	</term>
 	<listitem>

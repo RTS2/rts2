@@ -99,13 +99,13 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
-		createValue (trackingVect, "TRACKSPD", "[deg/sec] tracking speeds vector", true);
+		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true);
 	}
 	else
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
-		trackingVect = NULL;
+		skyVect = NULL;
 	}
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
@@ -424,7 +424,7 @@ int Telescope::calculateTracking (double JD, double sec_step, int32_t &ac, int32
 	else if (ra_diff < -180.0)
 		ra_diff = ra_diff + 360;
 
-	trackingVect->setValueRaDec (ra_diff / sec_step, dec_diff / sec_step);
+	skyVect->setValueRaDec (3600 * ra_diff / sec_step, 3600 * dec_diff / sec_step);
 
 	ac_speed = (ac - t_ac) / sec_step;
 	dc_speed = (dc - t_dc) / sec_step;

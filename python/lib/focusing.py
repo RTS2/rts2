@@ -65,10 +65,20 @@ class Focusing (scriptcomm.Rts2Comm):
 
 	def __init__(self,exptime = 2,step=1,attempts=20,filterGalaxies=False):
 		scriptcomm.Rts2Comm.__init__(self)
-		self.exptime = exptime
-		self.step = step
-		self.attempts = attempts
-		self.focuser = None
+		self.exptime = 2 # 60 # 10
+		self.focuser = self.getValue('focuser')
+		try:
+			self.getValueFloat('AF_step',self.focuser)
+		except NameError:
+			self.step = 1 # 0.2
+		else:
+			self.step = self.getValueFloat('AF_step',self.focuser)
+		try:
+			self.getValueFloat('AF_attempts',self.focuser)
+		except NameError:
+			self.attempts = 20 #30 # 20
+		else:
+			self.attempts = self.getValueInteger('AF_attempts',self.focuser)
 		# if |offset| is above this value, try linear fit
 		self.linear_fit = self.step * self.attempts / 2.0
 		# target FWHM for linear fit
@@ -157,11 +167,12 @@ class Focusing (scriptcomm.Rts2Comm):
 				min_fwhm = fwhm[x]
 		return self.tryFit(defaultFit)
 
-	def __sexFindFWHM(self,tries,threshold,deblendmin):
-		focpos=[]
-		fwhm=[]
-		fwhm_min=None
-		fwhm_MinimumX=None
+	def findBestFWHM(self,tries,defaultFit=H3,min_stars=95,ds9display=False,threshold=2.7,deblendmin=0.03):
+		# X is FWHM, Y is offset value
+		self.focpos=[]
+		self.fwhm=[]
+		fwhm_min = None
+		self.fwhm_MinimumX = None
 		keys = tries.keys()
 		keys.sort()
 		sextr = sextractor.Sextractor(threshold=threshold,deblendmin=deblendmin)
@@ -259,8 +270,7 @@ class Focusing (scriptcomm.Rts2Comm):
 	def run(self):
 		self.focuser = self.getValue('focuser')
 		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
-		self.altaz (82,10)
-
+		self.altaz (89,90)
 		b,fit = self.takeImages()
 		if fit == LINEAR:
 			self.setValue('FOC_DEF',b,self.focuser)
