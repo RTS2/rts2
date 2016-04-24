@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_CONNECTION_SITECH__
+#define __RTS2_CONNECTION_SITECH__
+
 #include "serial.h"
 
 namespace rts2core
@@ -285,3 +288,5 @@ class ConnSitech: public ConnSerial
 };
 
 }
+
+#endif //!__RTS2_CONNECTION_SITECH__
