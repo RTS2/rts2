@@ -9,6 +9,9 @@ class Dummy:public Mirror
 	public:
 		Dummy (int in_argc, char **in_argv):Mirror (in_argc, in_argv)
 		{
+			addPosition ("A");
+			addPosition ("B");
+			addPosition ("C");
 		}
 		virtual int movePosition (int pos)
 		{
