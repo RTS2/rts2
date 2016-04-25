@@ -960,6 +960,7 @@ AC_OUTPUT([Makefile
 	   src/grb/Makefile
 	   src/mirror/Makefile
 	   src/monitor/Makefile
+	   src/multidevd/Makefile
 	   src/plan/Makefile
 	   src/sql/Makefile
 	   src/sql/auger/Makefile
