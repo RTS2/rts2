@@ -419,6 +419,8 @@ class Device:public Daemon
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
+		void setDeviceName (const char *n) { device_name = n; }
+
 	private:
 		std::list <HostString> centraldHosts;
 

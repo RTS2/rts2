@@ -18,6 +18,7 @@ SUBDIRS = \
 	sql \
 	sensord \
 	rotad \
+	multidevd \
 	logger \
 	scheduler \
 	httpd \
