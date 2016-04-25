@@ -31,13 +31,43 @@ SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c):Mi
 {
 	setDeviceName (name);
 	setSitechConnection (sitech_c);
+
+	createValue (posA, "posA", "A position", false, RTS2_VALUE_WRITABLE);
+	createValue (posB, "posB", "B position", false, RTS2_VALUE_WRITABLE);
+
+	createValue (currPos, "current_pos", "current position", false);
+	createValue (tarPos, "target_pos", "target position", false, RTS2_VALUE_WRITABLE);
+}
+
+int SitechMirror::info ()
+{
+	sitech->getAxisStatus ('X', axisStatus);
+
+	currPos->setValueLong (axisStatus.x_pos);
+
+	return 0;
 }
 
 int SitechMirror::movePosition (int pos)
 {
+	if (pos == 0)
+		requestX.x_dest = posA->getValueLong ();
+	else
+		requestX.x_dest = posB->getValueLong ();
 
+	requestX.x_speed = 200000;
+
+	sitech->sendXAxisRequest (requestX);
+
+	tarPos->setValueLong (requestX.x_dest);
+
+	return 0;
 }
 
 int SitechMirror::isMoving ()
 {
+	int ret = info ();
+	if (ret)
+		return -1;
+	return abs (axisStatus.x_pos - tarPos->getValueLong ()) < 1000 ? -2: 100;
 }

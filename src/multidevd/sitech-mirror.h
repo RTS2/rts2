@@ -29,9 +29,19 @@ class SitechMirror:public Mirror, public SitechMultidev
 	public:
 		SitechMirror (const char *name, rts2core::ConnSitech *sitech_C);
 
+
 	protected:
+		virtual int info ();
+
 		virtual int movePosition (int pos);
 		virtual int isMoving ();
+
+	private:
+		rts2core::ValueLong *posA;
+		rts2core::ValueLong *posB;
+
+		rts2core::ValueLong *currPos;
+		rts2core::ValueLong *tarPos;
 };
 
 }
