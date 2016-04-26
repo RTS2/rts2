@@ -40,6 +40,14 @@ SitechMultiBase::~SitechMultiBase ()
 
 int SitechMultiBase::run ()
 {
+	int ret = init ();
+	if (ret)
+		return ret;
+
+	ret = initHardware ();
+	if (ret)
+		return ret;
+
 	return md.run ();
 }
 
@@ -62,6 +70,7 @@ int SitechMultiBase::initHardware ()
 		return -1;
 
 	sitechConn = new rts2core::ConnSitech (sitechDev, this);
+	sitechConn->setDebug (getDebug ());
 	int ret = sitechConn->init ();
 	if (ret)
 		return -1;

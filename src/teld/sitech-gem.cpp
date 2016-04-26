@@ -244,8 +244,6 @@ class Sitech:public GEM
 		int32_t last_meas_tdiff_ac;
 		int32_t last_meas_tdiff_dc;
 
-		std::string findErrors (uint16_t e);
-
 		void recover ();
 };
 
@@ -486,7 +484,7 @@ void Sitech::getTel ()
 			{
 				case 0:
 					ra_errors_val->setValueInteger (ra_val);
-					ra_errors->setValueString (findErrors (ra_val));
+					ra_errors->setValueString (serConn->findErrors (ra_val));
 					// stop if on limits
 					if ((ra_val & ERROR_LIMIT_MINUS) || (ra_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -514,7 +512,7 @@ void Sitech::getTel ()
 			{
 				case 0:
 					dec_errors_val->setValueInteger (dec_val);
-					dec_errors->setValueString (findErrors (dec_val));
+					dec_errors->setValueString (serConn->findErrors (dec_val));
 					// stop if on limits
 					if ((dec_val & ERROR_LIMIT_MINUS) || (dec_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -631,36 +629,6 @@ void Sitech::getPIDs ()
 	PIDs->addValue (serConn->getSiTechValue ('X', "PPP"));
 	PIDs->addValue (serConn->getSiTechValue ('X', "III"));
 	PIDs->addValue (serConn->getSiTechValue ('X', "DDD"));
-}
-
-std::string Sitech::findErrors (uint16_t e)
-{
-	std::string ret;
-	if (e & ERROR_GATE_VOLTS_LOW)
-		ret += "Gate Volts Low. ";
-	if (e & ERROR_OVERCURRENT_HARDWARE)
-		ret += "OverCurrent Hardware. ";
-	if (e & ERROR_OVERCURRENT_FIRMWARE)
-		ret += "OverCurrent Firmware. ";
-	if (e & ERROR_MOTOR_VOLTS_LOW)
-		ret += "Motor Volts Low. ";
-	if (e & ERROR_POWER_BOARD_OVER_TEMP)
-		ret += "Power Board Over Temp. ";
-	if (e & ERROR_NEEDS_RESET)
-		ret += "Needs Reset (may not have any other errors). ";
-	if (e & ERROR_LIMIT_MINUS)
-		ret += "Limit -. ";
-	if (e & ERROR_LIMIT_PLUS)
-		ret += "Limit +. ";
-	if (e & ERROR_TIMED_OVER_CURRENT)
-		ret += "Timed Over Current. ";
-	if (e & ERROR_POSITION_ERROR)
-		ret += "Position Error. ";
-	if (e & ERROR_BISS_ENCODER_ERROR)
-		ret += "BiSS Encoder Error. ";
-	if (e & ERROR_CHECKSUM)
-		ret += "Checksum Error in return from Power Board. ";
-	return ret;
 }
 
 void Sitech::recover ()

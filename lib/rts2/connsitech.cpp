@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "constsitech.h"
 #include "connection/sitech.h"
 
 #include <endian.h>
@@ -61,6 +62,36 @@ void ConnSitech::switchToBinary ()
 			throw Error ("Cannot switch to ASCII mode");
 	}
 	binary = true;
+}
+
+std::string ConnSitech::findErrors (uint16_t e)
+{
+	std::string ret;
+	if (e & ERROR_GATE_VOLTS_LOW)
+		ret += "Gate Volts Low. ";
+	if (e & ERROR_OVERCURRENT_HARDWARE)
+		ret += "OverCurrent Hardware. ";
+	if (e & ERROR_OVERCURRENT_FIRMWARE)
+		ret += "OverCurrent Firmware. ";
+	if (e & ERROR_MOTOR_VOLTS_LOW)
+		ret += "Motor Volts Low. ";
+	if (e & ERROR_POWER_BOARD_OVER_TEMP)
+		ret += "Power Board Over Temp. ";
+	if (e & ERROR_NEEDS_RESET)
+		ret += "Needs Reset (may not have any other errors). ";
+	if (e & ERROR_LIMIT_MINUS)
+		ret += "Limit -. ";
+	if (e & ERROR_LIMIT_PLUS)
+		ret += "Limit +. ";
+	if (e & ERROR_TIMED_OVER_CURRENT)
+		ret += "Timed Over Current. ";
+	if (e & ERROR_POSITION_ERROR)
+		ret += "Position Error. ";
+	if (e & ERROR_BISS_ENCODER_ERROR)
+		ret += "BiSS Encoder Error. ";
+	if (e & ERROR_CHECKSUM)
+		ret += "Checksum Error in return from Power Board. ";
+	return ret;
 }
 
 void ConnSitech::resetErrors ()

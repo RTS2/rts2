@@ -21,26 +21,59 @@
 
 using namespace rts2focusd;
 
-SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c):Focusd (0, NULL), SitechMultidev ()
+SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c):Focusd (0, (char **) &name), SitechMultidev ()
 {
 	setDeviceName (name);
 	setSitechConnection (sitech_c);
+
+	createValue (encoder, "encoder", "encoder position", false);
+
+	createValue (focSpeed, "speed", "focuser speed (in controller units)", false, RTS2_VALUE_WRITABLE);
+	focSpeed->setValueLong (10000000);
+
+	createValue (errors, "errors", "controller errors", false);
+	createValue (errors_val, "errros", "controller errors string", false);
+
+	setNotDaemonize ();
 }
 
 int SitechFocuser::info ()
 {
 	sitech->getAxisStatus ('X', axisStatus);
 
-	setPosition (axisStatus.y_pos);
+	position->setValueInteger (axisStatus.y_pos);
+	encoder->setValueLong (axisStatus.y_enc);
+
+	uint16_t val = axisStatus.y_last[0] << 4;
+	val += axisStatus.y_last[1];
+
+	switch (axisStatus.y_last[0] & 0x0F)
+	{
+		case 0:
+			errors_val->setValueInteger (val);
+			errors->setValueString (sitech->findErrors (val));
+	}
 
 	return Focusd::info ();	
+}
+
+int SitechFocuser::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("go_auto"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sitech->siTechCommand ('Y', "A");
+		return 0;
+	}
+	return Focusd::commandAuthorized (conn);
 }
 
 int SitechFocuser::setTo (double num)
 {
 	requestX.y_dest = num;
 
-	requestX.y_speed = 200000;
+	requestX.y_speed = focSpeed->getValueLong ();
 
 	sitech->sendXAxisRequest (requestX);
 

@@ -33,8 +33,12 @@ class SitechMirror:public Mirror, public SitechMultidev
 	protected:
 		virtual int info ();
 
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 		virtual int movePosition (int pos);
 		virtual int isMoving ();
+
+		virtual int setValue (rts2core::Value* oldValue, rts2core::Value *newValue);
 
 	private:
 		rts2core::ValueLong *posA;
@@ -42,6 +46,8 @@ class SitechMirror:public Mirror, public SitechMultidev
 
 		rts2core::ValueLong *currPos;
 		rts2core::ValueLong *tarPos;
+
+		rts2core::ValueLong *moveSpeed;
 };
 
 }

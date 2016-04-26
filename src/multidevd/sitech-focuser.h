@@ -32,14 +32,19 @@ class SitechFocuser:public Focusd, public SitechMultidev
 	protected:
 		virtual int info ();
 
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 		virtual int setTo (double num);
 		virtual double tcOffset ();
 
 		virtual bool isAtStartPosition ();
 
 	private:
-		rts2core::ValueLong *currPos;
-		rts2core::ValueLong *tarPos;
+		rts2core::ValueLong *encoder;
+
+		rts2core::ValueLong *focSpeed;
+		rts2core::ValueString *errors;
+		rts2core::ValueInteger *errors_val;
 };
 
 }

@@ -27,7 +27,7 @@ using namespace rts2mirror;
  * @author Petr Kubanek <petr@kubanek.net>>
  */
 
-SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c):Mirror (0, NULL), SitechMultidev ()
+SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c):Mirror (0, (char **) &name), SitechMultidev ()
 {
 	setDeviceName (name);
 	setSitechConnection (sitech_c);
@@ -37,6 +37,14 @@ SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c):Mi
 
 	createValue (currPos, "current_pos", "current position", false);
 	createValue (tarPos, "target_pos", "target position", false, RTS2_VALUE_WRITABLE);
+
+	createValue (moveSpeed, "speed", "movement speed (controller units)", false, RTS2_VALUE_WRITABLE);
+	moveSpeed->setValueLong (67000000);
+
+	addPosition ("1");
+	addPosition ("2");
+
+	setNotDaemonize ();
 }
 
 int SitechMirror::info ()
@@ -48,6 +56,18 @@ int SitechMirror::info ()
 	return Mirror::info ();
 }
 
+int SitechMirror::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("go_auto"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sitech->siTechCommand ('X', "A");
+		return 0;
+	}
+	return Mirror::commandAuthorized (conn);
+}
+
 int SitechMirror::movePosition (int pos)
 {
 	if (pos == 0)
@@ -55,7 +75,7 @@ int SitechMirror::movePosition (int pos)
 	else
 		requestX.x_dest = posB->getValueLong ();
 
-	requestX.x_speed = 200000;
+	requestX.x_speed = 20000000;
 
 	sitech->sendXAxisRequest (requestX);
 
@@ -70,4 +90,18 @@ int SitechMirror::isMoving ()
 	if (ret)
 		return -1;
 	return abs (axisStatus.x_pos - tarPos->getValueLong ()) < 1000 ? -2: 100;
+}
+
+int SitechMirror::setValue (rts2core::Value* oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == tarPos)
+	{
+		requestX.x_dest = newValue->getValueLong ();
+		requestX.x_speed = moveSpeed->getValueLong ();
+
+		sitech->sendXAxisRequest (requestX);
+
+		return 0;
+	}
+	return Mirror::setValue (oldValue, newValue);
 }

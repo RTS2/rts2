@@ -208,6 +208,11 @@ class ConnSitech: public ConnSerial
 		void switchToBinary ();
 
 		/**
+		 * Returns error bits transcribed to string.
+		 */
+		std::string findErrors (uint16_t e);
+
+		/**
 		 * Reset controller errors.
 		 */
 		void resetErrors ();

@@ -11,4 +11,4 @@ noinst_HEADERS = rts2.h imghdr.h status.h bbstatus.h imgdisplay.h connection.h l
 		radecparser.h askchoice.h cliapp.h rts2target.h domeford.h client.h displayvalue.h clicupola.h clirotator.h fork.h gem.h \
 		telmodel.h rts2model.h \
                 tpointmodel.h tpointmodelterm.h expander.h expression.h counted_ptr.h infoval.h userlogins.h userpermissions.h \
-                door_vermes.h vermes.h slitazimuth.h OakHidBase.h OakFeatureReports.h tsqueue.h dirsupport.h altaz.h
+                door_vermes.h vermes.h slitazimuth.h OakHidBase.h OakFeatureReports.h tsqueue.h dirsupport.h altaz.h constsitech.h

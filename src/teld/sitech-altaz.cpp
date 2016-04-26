@@ -250,7 +250,6 @@ class SitechAltAz:public AltAz
 		void getDerotator ();
 
 		void getPIDs ();
-		std::string findErrors (uint16_t e);
 
 		// speed conversion; see Dan manual for details
 		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle);
@@ -1022,7 +1021,7 @@ void SitechAltAz::getTel ()
 			{
 				case 0:
 					az_errors_val->setValueInteger (az_val);
-					az_errors->setValueString (findErrors (az_val));
+					az_errors->setValueString (telConn->findErrors (az_val));
 					// stop if on limits
 					if ((az_val & ERROR_LIMIT_MINUS) || (az_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -1050,7 +1049,7 @@ void SitechAltAz::getTel ()
 			{
 				case 0:
 					alt_errors_val->setValueInteger (alt_val);
-					alt_errors->setValueString (findErrors (alt_val));
+					alt_errors->setValueString (telConn->findErrors (alt_val));
 					// stop if on limits
 					if ((alt_val & ERROR_LIMIT_MINUS) || (alt_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -1123,7 +1122,7 @@ void SitechAltAz::getDerotator ()
 			{
 				case 0:
 					der1_errors_val->setValueInteger (der1_val);
-					der1_errors->setValueString (findErrors (der1_val));
+					der1_errors->setValueString (derConn->findErrors (der1_val));
 					// stop if on limits
 					if ((der1_val & ERROR_LIMIT_MINUS) || (der1_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -1151,7 +1150,7 @@ void SitechAltAz::getDerotator ()
 			{
 				case 0:
 					der2_errors_val->setValueInteger (der2_val);
-					der2_errors->setValueString (findErrors (der2_val));
+					der2_errors->setValueString (derConn->findErrors (der2_val));
 					// stop if on limits
 					if ((der2_val & ERROR_LIMIT_MINUS) || (der2_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -1205,36 +1204,6 @@ void SitechAltAz::getPIDs ()
 		der_PIDs->addValue (derConn->getSiTechValue ('Y', "III"));
 		der_PIDs->addValue (derConn->getSiTechValue ('Y', "DDD"));
 	}
-}
-
-std::string SitechAltAz::findErrors (uint16_t e)
-{
-	std::string ret;
-	if (e & ERROR_GATE_VOLTS_LOW)
-		ret += "Gate Volts Low. ";
-	if (e & ERROR_OVERCURRENT_HARDWARE)
-		ret += "OverCurrent Hardware. ";
-	if (e & ERROR_OVERCURRENT_FIRMWARE)
-		ret += "OverCurrent Firmware. ";
-	if (e & ERROR_MOTOR_VOLTS_LOW)
-		ret += "Motor Volts Low. ";
-	if (e & ERROR_POWER_BOARD_OVER_TEMP)
-		ret += "Power Board Over Temp. ";
-	if (e & ERROR_NEEDS_RESET)
-		ret += "Needs Reset (may not have any other errors). ";
-	if (e & ERROR_LIMIT_MINUS)
-		ret += "Limit -. ";
-	if (e & ERROR_LIMIT_PLUS)
-		ret += "Limit +. ";
-	if (e & ERROR_TIMED_OVER_CURRENT)
-		ret += "Timed Over Current. ";
-	if (e & ERROR_POSITION_ERROR)
-		ret += "Position Error. ";
-	if (e & ERROR_BISS_ENCODER_ERROR)
-		ret += "BiSS Encoder Error. ";
-	if (e & ERROR_CHECKSUM)
-		ret += "Checksum Error in return from Power Board. ";
-	return ret;
 }
 
 double SitechAltAz::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle)
