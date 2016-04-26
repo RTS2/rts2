@@ -75,7 +75,7 @@ int SitechMirror::movePosition (int pos)
 	else
 		requestX.x_dest = posB->getValueLong ();
 
-	requestX.x_speed = 20000000;
+	requestX.x_speed = moveSpeed->getValueLong ();
 
 	sitech->sendXAxisRequest (requestX);
 
