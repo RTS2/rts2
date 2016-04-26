@@ -686,7 +686,26 @@ int SitechAltAz::moveAltAz ()
 
 int SitechAltAz::stopMove ()
 {
-	return -1;
+	try
+	{
+		telConn->siTechCommand ('X', "N");
+		telConn->siTechCommand ('Y', "N");
+
+		if (derConn)
+		{
+			derConn->siTechCommand ('X', "N");
+			derConn->siTechCommand ('Y', "N");
+		}
+
+		wasStopped = true;
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot stop " << er << sendLog;
+		return -1;
+	}
+	firstSlewCall = true;
+	return 0;
 }
 
 int SitechAltAz::isMoving ()
