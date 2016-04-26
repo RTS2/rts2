@@ -17,29 +17,42 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "connection/sitech.h"
-#include "focusd.h"
-#include "sitech-multidev.h"
+#include "sitech-focuser.h"
 
-namespace rts2focusd
+using namespace rts2focusd;
+
+SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c):Focusd (0, NULL), SitechMultidev ()
 {
+	setDeviceName (name);
+	setSitechConnection (sitech_c);
+}
 
-class SitechFocuser:public Focusd, public SitechMultidev
+int SitechFocuser::info ()
 {
-	public:
-		SitechFocuser (const char *dev_name, rts2core::ConnSitech *sitech_c);
+	sitech->getAxisStatus ('X', axisStatus);
 
-	protected:
-		virtual int info ();
+	setPosition (axisStatus.y_pos);
 
-		virtual int setTo (double num);
-		virtual double tcOffset ();
+	return Focusd::info ();	
+}
 
-		virtual bool isAtStartPosition ();
+int SitechFocuser::setTo (double num)
+{
+	requestX.y_dest = num;
 
-	private:
-		rts2core::ValueLong *currPos;
-		rts2core::ValueLong *tarPos;
-};
+	requestX.y_speed = 200000;
 
+	sitech->sendXAxisRequest (requestX);
+
+	return 0;
+}
+
+double SitechFocuser::tcOffset ()
+{
+	return 0;
+}
+
+bool SitechFocuser::isAtStartPosition ()
+{
+	return false;
 }

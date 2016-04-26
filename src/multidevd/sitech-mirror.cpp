@@ -45,7 +45,7 @@ int SitechMirror::info ()
 
 	currPos->setValueLong (axisStatus.x_pos);
 
-	return 0;
+	return Mirror::info ();
 }
 
 int SitechMirror::movePosition (int pos)
