@@ -265,12 +265,27 @@ class ConnSitech: public ConnSerial
 
 		void setSiTechValue (const char axis, const char *val, int value);
 
+		void setSiTechValueLong (const char axis, const char *val, long value);
+
+		void setPosition (const char axis, uint32_t target, uint32_t speed);
 		/**
 		 * Returns SiTech controller status, including motor current.
 		 */
 		void getControllerStatus (SitechControllerStatus &controller_status);
 
 		void getConfiguration (SitechControllerConfiguration &config);
+
+		// speed conversion; see Dan manual for details
+		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle);
+		double ticksPerSec2MotorSpeed (double tps);
+		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID);
+
+		int version;
+		int countUp;
+		double PIDSampleRate;
+
+		// which controller is connected
+		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
 
 	private:
 		/**

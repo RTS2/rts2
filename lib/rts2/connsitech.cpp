@@ -27,6 +27,7 @@ using namespace rts2core;
 ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName, _master, BS19200, C8, NONE, 50, 5)
 {
 	binary = false;
+	version = -1;
 }
 
 int ConnSitech::init ()
@@ -39,6 +40,28 @@ int ConnSitech::init ()
 	binary = true;
 	binary = getSiTechValue ('Y', "XY") == 0;
 
+	version = getSiTechValue ('X', "V");
+
+	if (version != 0)
+	{
+		logStream (MESSAGE_DEBUG) << "Sidereal Technology Controller version " << version / 10.0 << sendLog;
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "A200HR drive control did not respond." << sendLog;
+		return -1;
+	}
+
+	if (version < 112)
+	{
+		sitechType = SERVO_II;
+	}
+	else
+	{
+		sitechType = FORCE_ONE;
+		countUp = getSiTechValue ('Y', "XHC");
+		PIDSampleRate = (CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp);
+	}
 	return 0;
 }
 
@@ -201,11 +224,26 @@ void ConnSitech::sendXAxisRequest (SitechXAxisRequest &ax_request)
 	readAxisStatus (ax_status);
 }
 
-
 void ConnSitech::setSiTechValue (const char axis, const char *val, int value)
 {
 	char *ccmd = NULL;
 	asprintf (&ccmd, "%s%d", val, value);
+
+	siTechCommand (axis, ccmd);
+}
+
+void ConnSitech::setSiTechValueLong (const char axis, const char *val, long value)
+{
+	char *ccmd = NULL;
+	asprintf (&ccmd, "%s%ld", val, value);
+
+	siTechCommand (axis, ccmd);
+}
+
+void ConnSitech::setPosition (const char axis, uint32_t target, uint32_t speed)
+{
+	char *ccmd = NULL;
+	asprintf (&ccmd, "%dS%d", target, speed);
 
 	siTechCommand (axis, ccmd);
 }
@@ -386,4 +424,46 @@ uint16_t ConnSitech::binaryChecksum (const char *dbuf, size_t blen, bool invertH
 		checksum += (uint8_t) dbuf[i];
 
 	return invertH ? (checksum ^ 0xFF00) : checksum;
+}
+
+double ConnSitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle)
+{
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return ((loop_ticks / full_circle) * dps) / 1953;
+		case FORCE_ONE:
+			return ((loop_ticks / full_circle) * dps) / samplePID;
+		default:
+			return 0;
+	}
+}
+
+double ConnSitech::ticksPerSec2MotorSpeed (double tps)
+{
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return tps * SPEED_MULTI / 1953;
+		case FORCE_ONE:
+			return tps * SPEED_MULTI / PIDSampleRate;
+		default:
+			return 0;
+	}
+}
+
+double ConnSitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID)
+{
+	switch (sitechType)
+	{
+		case SERVO_I:
+		case SERVO_II:
+			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
+		case FORCE_ONE:
+			return (double) speed / loop_ticks * (360.0 * samplePID / SPEED_MULTI);
+		default:
+			return 0;
+	}
 }
