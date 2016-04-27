@@ -52,6 +52,7 @@ int SitechFocuser::info ()
 		case 0:
 			errors_val->setValueInteger (val);
 			errors->setValueString (sitech->findErrors (val));
+			break;
 	}
 
 	return Focusd::info ();	
@@ -71,11 +72,7 @@ int SitechFocuser::commandAuthorized (rts2core::Connection *conn)
 
 int SitechFocuser::setTo (double num)
 {
-	requestX.y_dest = num;
-
-	requestX.y_speed = focSpeed->getValueLong ();
-
-	sitech->sendXAxisRequest (requestX);
+	sitech->setPosition ('Y', num, focSpeed->getValueLong ());
 
 	return 0;
 }

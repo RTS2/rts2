@@ -70,16 +70,10 @@ int SitechMirror::commandAuthorized (rts2core::Connection *conn)
 
 int SitechMirror::movePosition (int pos)
 {
-	if (pos == 0)
-		requestX.x_dest = posA->getValueLong ();
-	else
-		requestX.x_dest = posB->getValueLong ();
+	long t = pos == 0 ? posA->getValueLong () : posB->getValueLong ();
 
-	requestX.x_speed = moveSpeed->getValueLong ();
-
-	sitech->sendXAxisRequest (requestX);
-
-	tarPos->setValueLong (requestX.x_dest);
+	sitech->setPosition ('X', t, moveSpeed->getValueLong ());
+	tarPos->setValueLong (t);
 
 	return 0;
 }
@@ -96,11 +90,12 @@ int SitechMirror::setValue (rts2core::Value* oldValue, rts2core::Value *newValue
 {
 	if (oldValue == tarPos)
 	{
-		requestX.x_dest = newValue->getValueLong ();
-		requestX.x_speed = moveSpeed->getValueLong ();
-
-		sitech->sendXAxisRequest (requestX);
-
+		sitech->setPosition ('X', newValue->getValueLong (), moveSpeed->getValueLong ());
+		return 0;
+	}
+	else if (oldValue == moveSpeed)
+	{
+		sitech->setPosition ('X', tarPos->getValueLong (), newValue->getValueLong ());
 		return 0;
 	}
 	return Mirror::setValue (oldValue, newValue);
