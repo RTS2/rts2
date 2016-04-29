@@ -87,7 +87,7 @@ void Plot::plotYDegrees ()
 	bool crossed0 = false;
 
 	// round start and plot grid..
-	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff; y += grid_y_step)
+	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff - grid_y_step * 0.5; y += grid_y_step)
 	{
 	  	std::ostringstream _os;
 		_os << LibnovaDegDist (y + min);
@@ -145,7 +145,7 @@ void Plot::plotYDouble ()
 	bool crossed0 = false;
 
 	// round start and plot grid..
-	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff; y += grid_y_step)
+	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff - grid_y_step * 0.5; y += grid_y_step)
 	{
 		// do not plot around 0
 		if (fabs (y + min) < grid_y_step / 2.0)
@@ -307,12 +307,12 @@ void Plot::plotXDate (bool shadowSun, bool localdate)
 
 	double x;
 
-	for (x = (ceil (from / tick_scale) + 0.1) * tick_scale - from; x < t_diff; x += tick_scale)
+	for (x = ceil (from / tick_scale) * tick_scale - from; x < t_diff - tick_scale * 0.7; x += tick_scale)
 	{
 		tv.tv_sec = from + x;
 		ex.setExpandDate (&tv, localdate);
 
-		image->transformOrigin (y_axis_width + x * scaleX, size.height () - 10);
+		image->transformOrigin (y_axis_width + x * scaleX + 6, size.height () - 10);
 		image->transformRotation (45);
 		image->draw (Magick::DrawableText (0, 0, ex.expand (tick_format).c_str ()));
 
