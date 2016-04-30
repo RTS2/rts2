@@ -695,6 +695,7 @@ int D50::endPark ()
         //callAutosave ();
         parking = false;
 	setWormPressureLimiter (false);
+	setWormStepsGenerator (false);
 	deleteTimers (RTS2_D50_BOOSTSPEED);
 	raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
