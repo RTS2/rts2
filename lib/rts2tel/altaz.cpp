@@ -177,7 +177,11 @@ double AltAz::parallactic_angle (double ha, double dec)
 	double radha = ln_deg_to_rad (ha);
 	double raddec = ln_deg_to_rad (dec);
 	double radlat = ln_deg_to_rad (getLatitude ());
-	return ln_rad_to_deg (atan (cos (radlat) * sin (radha) / (sin (radlat) * cos (raddec) - cos (radlat) * sin (raddec) * cos (radha))));
+	double div = (sin (radlat) * cos (raddec) - cos (radlat) * sin (raddec) * cos (radha));
+	// don't divide by 0
+	if (fabs (div) < 10e-5)
+		return 0;
+	return ln_rad_to_deg (atan (cos (radlat) * sin (radha) / div));
 }
 
 double AltAz::derotator_rate (double az, double alt)

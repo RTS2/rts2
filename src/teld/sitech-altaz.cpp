@@ -21,7 +21,12 @@
 #include "configuration.h"
 #include "constsitech.h"
 
+#include "sitech-rotator.h"
+
 #include "connection/sitech.h"
+
+// fixed maximum number of rotators
+#define NUM_ROTATORS    2
 
 /**
  * Sitech AltAz driver.
@@ -88,6 +93,8 @@ class SitechAltAz:public AltAz
 		const char *tel_tty, *der_tty;
 		rts2core::ConnSitech *telConn;
 		rts2core::ConnSitech *derConn;
+
+		rts2rotad::SitechRotator *rotators[NUM_ROTATORS];
 
 		rts2core::SitechAxisStatus altaz_status, der_status;
 		rts2core::SitechYAxisRequest altaz_Yrequest, der_Yrequest;
@@ -169,64 +176,8 @@ class SitechAltAz:public AltAz
 		rts2core::ValueInteger *az_pwm;
 		rts2core::ValueInteger *alt_pwm;
 
-		// derotator
-		rts2core::ValueLong *r_der1_pos;
-		rts2core::ValueLong *r_der2_pos;
-
-		rts2core::ValueLong *t_der1_pos;
-		rts2core::ValueLong *t_der2_pos;
-
-		rts2core::ValueLong *der1_ticks;
-		rts2core::ValueLong *der2_ticks;
-
-		rts2core::ValueFloat *der1_zero;
-		rts2core::ValueFloat *der2_zero;
-
-		rts2core::ValueFloat *der1_offset;
-		rts2core::ValueFloat *der2_offset;
-
-		rts2core::ValueDouble *der1_acceleration;
-		rts2core::ValueDouble *der2_acceleration;
-
-		rts2core::ValueDouble *der1_max_velocity;
-		rts2core::ValueDouble *der2_max_velocity;
-
-		rts2core::ValueDouble *der1_current;
-		rts2core::ValueDouble *der2_current;
-
-		rts2core::ValueInteger *der1_pwm;
-		rts2core::ValueInteger *der2_pwm;
-
-		rts2core::ValueString *der1_errors;
-		rts2core::ValueString *der2_errors;
-
-		rts2core::ValueInteger *der1_errors_val;
-		rts2core::ValueInteger *der2_errors_val;
-
-		rts2core::ValueInteger *der1_pos_error;
-		rts2core::ValueInteger *der2_pos_error;
-
-		rts2core::ValueInteger *der1_supply;
-		rts2core::ValueInteger *der2_supply;
-
-		rts2core::ValueInteger *der1_temp;
-		rts2core::ValueInteger *der2_temp;
-
-		rts2core::ValueInteger *der1_pid_out;
-		rts2core::ValueInteger *der2_pid_out;
-
-		rts2core::ValueBool *autoModeDer1;
-		rts2core::ValueBool *autoModeDer2;
-		rts2core::ValueLong *der_mclock;
-		rts2core::ValueInteger *der_temperature;
-
-		rts2core::IntegerArray *der_PIDs;
-
 		rts2core::ValueInteger *countUp;
-		rts2core::ValueDouble *telPIDSampleRate;
-
-		rts2core::ValueInteger *countDerUp;
-		rts2core::ValueDouble *derPIDSampleRate;
+		rts2core::ValueDouble *PIDSampleRate;
 
 		void getConfiguration ();
 
@@ -247,17 +198,7 @@ class SitechAltAz:public AltAz
 		void getTel ();
 		void getTel (double &telra, double &teldec, double &un_telra, double &un_telzd);
 
-		void getDerotator ();
-
 		void getPIDs ();
-
-		// speed conversion; see Dan manual for details
-		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle);
-		double ticksPerSec2MotorSpeed (double tps);
-		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID);
-
-		// which controller is connected
-		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
 
 		uint8_t xbits;
 		uint8_t ybits;
@@ -282,6 +223,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	der_tty = NULL;
 	derConn = NULL;
 
+	memset (rotators, 0, sizeof(rotators));
+
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
 
@@ -302,7 +245,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	slowSyncDistance->setValueDouble (0.1);  // 6 arcmin
 
-	createValue (fastSyncSpeed, "fast_sync_speed", "fast speed factor (compared to siderial trackign) for fast alignment (above slow_track_distance)", false, RTS2_VALUE_WRITABLE);
+	createValue (fastSyncSpeed, "fast_sync_speed", "fast speed factor (compared to siderial tracking) for fast alignment (above slow_track_distance)", false, RTS2_VALUE_WRITABLE);
 	fastSyncSpeed->setValueFloat (4);
 
 	createValue (trackingFactor, "tracking_factor", "tracking speed multiplier", false, RTS2_VALUE_WRITABLE);
@@ -380,8 +323,13 @@ SitechAltAz::~SitechAltAz(void)
 	delete telConn;
 	telConn = NULL;
 
-	delete derConn;
-	derConn = NULL;
+	if (derConn)
+	{
+		for (int i = 0; i < NUM_ROTATORS; i++)
+			delete rotators[i];
+		delete derConn;
+		derConn = NULL;
+	}
 }
 
 int SitechAltAz::processOption (int in_opt)
@@ -405,7 +353,6 @@ int SitechAltAz::processOption (int in_opt)
 int SitechAltAz::initHardware ()
 {
 	int ret;
-	int numread;
 
 	trackingInterval->setValueFloat (0.01);
 
@@ -442,63 +389,8 @@ int SitechAltAz::initHardware ()
 			return -1;
 		derConn->flushPortIO ();
 
-		createValue (r_der1_pos, "R_AXD1", "[cnts] position of first derotator", true);
-		createValue (r_der2_pos, "R_AXD2", "[cnts] position of second derotator", true);
-
-		createValue (t_der1_pos, "T_AXD1", "[cnts] target position of first derotator", true, RTS2_VALUE_WRITABLE);
-		createValue (t_der2_pos, "T_AXD2", "[cnts] target position of second derotator", true, RTS2_VALUE_WRITABLE);
-
-		createValue (der1_ticks, "der1_ticks", "[cnts] 1st derotator full circle ticks", false);
-		createValue (der2_ticks, "der2_ticks", "[cnts] 1nd derotator full circle ticks", false);
-
-		createValue (der1_zero, "der1_zero", "[deg] 1st derotator zero offset", false);
-		createValue (der2_zero, "der2_zero", "[deg] 1nd derotator zero offset", false);
-
-		der1_zero->setValueFloat (0);
-		der2_zero->setValueFloat (0);
-
-		createValue (der1_offset, "der1_offset", "[deg] 1st derotator user offset", false);
-		createValue (der2_offset, "der2_offset", "[deg] 2nd derotator user offset", false);
-
-		der1_offset->setValueFloat (0);
-		der2_offset->setValueFloat (0);
-
-		createValue (der1_acceleration, "der1_acceleration", "1st derotator acceleration", false);
-		createValue (der2_acceleration, "der2_acceleration", "1st derotator acceleration", false);
-
-		createValue (der1_max_velocity, "der1_max_velocity", "1st derotator maximal velocity", false);
-		createValue (der2_max_velocity, "der2_max_velocity", "2nd derotator maximal velocity", false);
-
-		createValue (der1_current, "der1_current", "1st derotator current", false);
-		createValue (der2_current, "der2_current", "2nd derotator current", false);
-
-		createValue (der1_pwm, "der1_pwm", "1st derotator PWM", false);
-		createValue (der2_pwm, "der2_pwm", "2nd derotator PWM", false);
-
-		createValue (der1_errors, "der1_errors", "1st derotator errors (only for FORCE ONE)", false);
-		createValue (der2_errors, "der2_errors", "2nd derotator errors (only for FORCE ONE)", false);
-
-		createValue (der1_errors_val, "der1_errors_val", "1st derotator error value", false);
-		createValue (der2_errors_val, "der2_errors_val", "2nd derotator error value", false);
-
-		createValue (der1_pos_error, "der1_pos_error", "1st derotator position error", false);
-		createValue (der2_pos_error, "der2_pos_error", "2nd derotator position error", false);
-
-		createValue (der1_supply, "der1_supply", "[V] 1st derotator position error", false);
-		createValue (der2_supply, "der2_supply", "[V] 2nd derotator position error", false);
-
-		createValue (der1_temp, "der1_temp", "[F] 1st derotator temperature", false);
-		createValue (der2_temp, "der2_temp", "[F] 2nd derotator temperature", false);
-
-		createValue (der1_pid_out, "der1_pid_out", "1st derotator PID output", false);
-		createValue (der2_pid_out, "der2_pid_out", "2nd derotator PID output", false);
-
-		createValue (autoModeDer1, "der1_auto", "1st derotator auto", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
-		createValue (autoModeDer2, "der2_auto", "2nd derotator auto", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
-		createValue (der_mclock, "der_mclock", "derotator clocks", false);
-		createValue (der_temperature, "der_temperature", "[C] derotator CPU board temperature", false);
-
-		createValue (der_PIDs, "der_PIDs", "derotator PIDs", false);
+		rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn);
+		rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn);
 
 		der_xbits = derConn->getSiTechValue ('X', "B");
 		der_ybits = derConn->getSiTechValue ('Y', "B");
@@ -507,43 +399,16 @@ int SitechAltAz::initHardware ()
 	xbits = telConn->getSiTechValue ('X', "B");
 	ybits = telConn->getSiTechValue ('Y', "B");
 
-	numread = telConn->getSiTechValue ('X', "V");
-     
-	if (numread != 0) 
-	{
-		logStream (MESSAGE_DEBUG) << "Sidereal Technology Controller version " << numread / 10.0 << sendLog;
-	}
-	else
-	{
-		logStream (MESSAGE_ERROR) << "A200HR drive control did not respond." << sendLog;
-		return -1;
-	}
-
-	sitechVersion->setValueDouble (numread);
+	sitechVersion->setValueDouble (telConn->version);
 	sitechSerial->setValueInteger (telConn->getSiTechValue ('Y', "V"));
 
-	if (numread < 112)
+	if (telConn->sitechType == rts2core::ConnSitech::FORCE_ONE)
 	{
-		sitechType = SERVO_II;
-	}
-	else
-	{
-		sitechType = FORCE_ONE;
-
 		createValue (countUp, "count_up", "CPU count up", false);
-		countUp->setValueInteger (telConn->getSiTechValue ('Y', "XHC"));
+		countUp->setValueInteger (telConn->countUp);
 
-		createValue (telPIDSampleRate, "tel_pid_sample_rate", "number of CPU cycles per second", false);
-		telPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countUp->getValueInteger ()));
-
-		if (derConn != NULL)
-		{
-			createValue (countDerUp, "der_count_up", "CPU count up", false);
-			countDerUp->setValueInteger (derConn->getSiTechValue ('Y', "XHC"));
-
-			createValue (derPIDSampleRate, "der_pid_sample_rate", "number of CPU cycles per second", false);
-			derPIDSampleRate->setValueDouble ((CRYSTAL_FREQ / 12.0) / (SPEED_MULTI - countDerUp->getValueInteger ()));
-		}
+		createValue (PIDSampleRate, "pid_sample_rate", "number of CPU cycles per second", false);
+		PIDSampleRate->setValueDouble (telConn->PIDSampleRate);
 
 		getPIDs ();
 	}
@@ -624,7 +489,7 @@ int SitechAltAz::info ()
 	struct ln_hrz_posn hrz;
 	double un_az, un_zd;
 	getTel (hrz.az, hrz.alt, un_az, un_zd);
-	getDerotator ();
+	//getDerotator ();
 
 	struct ln_equ_posn pos;
 
@@ -775,18 +640,6 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		return 0;
 	}
 
-	if (oldValue == t_der1_pos)
-	{
-		derSetTarget (newValue->getValueLong (), t_der2_pos->getValueLong ());
-		return 0;
-	}
-
-	if (oldValue == t_der2_pos)
-	{
-		derSetTarget (t_der1_pos->getValueLong (), newValue->getValueLong ());
-		return 0;
-	}
-
 	return AltAz::setValue (oldValue, newValue);
 }
 
@@ -841,8 +694,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		int32_t az_step = speed_factor * az_change / sec_step;
 		int32_t alt_step = speed_factor * alt_change / sec_step;
 
-		altaz_Xrequest.y_speed = ticksPerSec2MotorSpeed (az_step);
-		altaz_Xrequest.x_speed = ticksPerSec2MotorSpeed (alt_step);
+		altaz_Xrequest.y_speed = telConn->ticksPerSec2MotorSpeed (az_step);
+		altaz_Xrequest.x_speed = telConn->ticksPerSec2MotorSpeed (alt_step);
 
 		// put axis in future
 
@@ -897,6 +750,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	try
 	{
 		telConn->sendXAxisRequest (altaz_Xrequest);
+		updateTrackingFrequency ();
 	}
 	catch (rts2core::Error &e)
 	{
@@ -909,6 +763,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		telConn->flushPortIO ();
 		telConn->getSiTechValue ('Y', "XY");
 		telConn->sendXAxisRequest (altaz_Xrequest);
+		updateTrackingFrequency ();
 	}
 }
 
@@ -917,8 +772,8 @@ void SitechAltAz::getConfiguration ()
 	az_acceleration->setValueDouble (telConn->getSiTechValue ('Y', "R"));
 	alt_acceleration->setValueDouble (telConn->getSiTechValue ('X', "R"));
 
-	az_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('Y', "S"), az_ticks->getValueLong (), telPIDSampleRate->getValueDouble ()));
-	alt_max_velocity->setValueDouble (motorSpeed2DegsPerSec (telConn->getSiTechValue ('X', "S"), alt_ticks->getValueLong (), telPIDSampleRate->getValueDouble ()));
+	az_max_velocity->setValueDouble (telConn->motorSpeed2DegsPerSec (telConn->getSiTechValue ('Y', "S"), az_ticks->getValueLong ()));
+	alt_max_velocity->setValueDouble (telConn->motorSpeed2DegsPerSec (telConn->getSiTechValue ('X', "S"), alt_ticks->getValueLong ()));
 
 	az_current->setValueDouble (telConn->getSiTechValue ('Y', "C") / 100.0);
 	alt_current->setValueDouble (telConn->getSiTechValue ('X', "C") / 100.0);
@@ -926,20 +781,9 @@ void SitechAltAz::getConfiguration ()
 	az_pwm->setValueInteger (telConn->getSiTechValue ('Y', "O"));
 	alt_pwm->setValueInteger (telConn->getSiTechValue ('X', "O"));
 
-	if (derConn)
-	{
-		der1_acceleration->setValueDouble (derConn->getSiTechValue ('Y', "R"));
-		der2_acceleration->setValueDouble (derConn->getSiTechValue ('X', "R"));
-
-		der1_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('Y', "S"), der1_ticks->getValueLong (), derPIDSampleRate->getValueDouble ()));
-		der2_max_velocity->setValueDouble (motorSpeed2DegsPerSec (derConn->getSiTechValue ('X', "S"), der2_ticks->getValueLong (), derPIDSampleRate->getValueDouble ()));
-
-		der1_current->setValueDouble (derConn->getSiTechValue ('Y', "C") / 100.0);
-		der2_current->setValueDouble (derConn->getSiTechValue ('X', "C") / 100.0);
-
-		der1_pwm->setValueInteger (derConn->getSiTechValue ('Y', "O"));
-		der2_pwm->setValueInteger (derConn->getSiTechValue ('X', "O"));
-	}
+	for (int i = 0; i < NUM_ROTATORS; i++)
+		if (rotators[i])
+			rotators[i]->getConfiguration ();
 }
 
 int SitechAltAz::sitechMove (int32_t azc, int32_t altc)
@@ -962,8 +806,8 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 	altaz_Xrequest.y_dest = ac;
 	altaz_Xrequest.x_dest = dc;
 
-	altaz_Xrequest.y_speed = degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), telPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
-	altaz_Xrequest.x_speed = degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), telPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
+	altaz_Xrequest.y_speed = telConn->degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI;
+	altaz_Xrequest.x_speed = telConn->degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI;
 
 	// clear bit 4, tracking
 	xbits &= ~(0x01 << 4);
@@ -977,13 +821,14 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 	t_alt_pos->setValueLong (dc);
 }
 
+/*
 void SitechAltAz::derSetTarget (int32_t d1, int32_t d2)
 {
 	der_Xrequest.y_dest = d1;
 	der_Xrequest.x_dest = d2;
 
-	der_Xrequest.y_speed = degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
-	der_Xrequest.x_speed = degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
+	der_Xrequest.y_speed = telConn->degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
+	der_Xrequest.x_speed = telConn->degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
 
 	//der_xbits &= ~(0x01 << 4);
 	//der_ybits &= ~(0x01 << 4);
@@ -993,9 +838,9 @@ void SitechAltAz::derSetTarget (int32_t d1, int32_t d2)
 
 	derConn->sendXAxisRequest (der_Xrequest);
 
-	t_der1_pos->setValueLong (d1);
-	t_der2_pos->setValueLong (d2);
-}
+//	t_der1_pos->setValueLong (d1);
+//	t_der2_pos->setValueLong (d2);
+} */
 
 void SitechAltAz::getTel ()
 {
@@ -1019,14 +864,14 @@ void SitechAltAz::getTel ()
 
 	az_worm_phase->setValueInteger (altaz_status.y_worm_phase);
 
-	switch (sitechType)
+	switch (telConn->sitechType)
 	{
-		case SERVO_I:
-		case SERVO_II:
+		case rts2core::ConnSitech::SERVO_I:
+		case rts2core::ConnSitech::SERVO_II:
 			az_last->setValueLong (le32toh (*(uint32_t*) &altaz_status.y_last));
 			alt_last->setValueLong (le32toh (*(uint32_t*) &altaz_status.x_last));
 			break;
-		case FORCE_ONE:
+		case rts2core::ConnSitech::FORCE_ONE:
 		{
 			// upper nimble
 			uint16_t az_val = altaz_status.y_last[0] << 4;
@@ -1106,6 +951,7 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 	counts2hrz (altaz_status.y_pos, altaz_status.x_pos, telaz, telalt, un_telaz, un_telzd);
 }
 
+/*
 void SitechAltAz::getDerotator ()
 {
 	if (derConn == NULL)
@@ -1122,7 +968,7 @@ void SitechAltAz::getDerotator ()
 	der_mclock->setValueLong (der_status.mclock);
 	der_temperature->setValueInteger (der_status.temperature);
 
-	switch (sitechType)
+	switch (derConn->sitechType)
 	{
 		case SERVO_I:
 		case SERVO_II:
@@ -1197,7 +1043,7 @@ void SitechAltAz::getDerotator ()
 			break;
 		}
 	}
-}
+} */
 
 void SitechAltAz::getPIDs ()
 {
@@ -1211,60 +1057,9 @@ void SitechAltAz::getPIDs ()
 	PIDs->addValue (telConn->getSiTechValue ('Y', "III"));
 	PIDs->addValue (telConn->getSiTechValue ('Y', "DDD"));
 
-	if (derConn)
-	{
-		der_PIDs->clear ();
-
-		der_PIDs->addValue (derConn->getSiTechValue ('X', "PPP"));
-		der_PIDs->addValue (derConn->getSiTechValue ('X', "III"));
-		der_PIDs->addValue (derConn->getSiTechValue ('X', "DDD"));
-
-		der_PIDs->addValue (derConn->getSiTechValue ('Y', "PPP"));
-		der_PIDs->addValue (derConn->getSiTechValue ('Y', "III"));
-		der_PIDs->addValue (derConn->getSiTechValue ('Y', "DDD"));
-	}
-}
-
-double SitechAltAz::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle)
-{
-	switch (sitechType)
-	{
-		case SERVO_I:
-		case SERVO_II:
-			return ((loop_ticks / full_circle) * dps) / 1953;
-		case FORCE_ONE:
-			return ((loop_ticks / full_circle) * dps) / samplePID;
-		default:
-			return 0;
-	}
-}
-
-double SitechAltAz::ticksPerSec2MotorSpeed (double tps)
-{
-	switch (sitechType)
-	{
-		case SERVO_I:
-		case SERVO_II:
-			return tps * SPEED_MULTI / 1953;
-		case FORCE_ONE:
-			return tps * SPEED_MULTI / telPIDSampleRate->getValueDouble ();
-		default:
-			return 0;
-	}
-}
-
-double SitechAltAz::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID)
-{
-	switch (sitechType)
-	{
-		case SERVO_I:
-		case SERVO_II:
-			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
-		case FORCE_ONE:
-			return (double) speed / loop_ticks * (360.0 * samplePID / SPEED_MULTI);
-		default:
-			return 0;
-	}
+	for (int i = 0; i < NUM_ROTATORS; i++)
+		if (rotators[i])
+			rotators[i]->getPIDs ();
 }
 
 int main (int argc, char **argv)

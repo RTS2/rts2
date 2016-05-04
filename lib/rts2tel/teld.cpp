@@ -99,14 +99,19 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
+		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
+
 		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true);
 	}
 	else
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
+		trackingFrequency = NULL;
 		skyVect = NULL;
 	}
+
+	lastTrackingRun = NAN;
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
@@ -1267,6 +1272,7 @@ void Telescope::startTracking (bool check)
 
 void Telescope::stopTracking (const char *msg)
 {
+	lastTrackingRun = NAN;
 	stopMove ();
 	maskState (TEL_MASK_TRACK, TEL_NOTRACK, msg);
 }
@@ -1274,6 +1280,14 @@ void Telescope::stopTracking (const char *msg)
 void Telescope::runTracking ()
 {
 
+}
+
+void Telescope::updateTrackingFrequency ()
+{
+	double n = getNow ();
+	if (!isnan (lastTrackingRun))
+		trackingFrequency->addValue (n - lastTrackingRun);
+	lastTrackingRun = n;
 }
 
 void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite)

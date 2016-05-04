@@ -911,6 +911,12 @@ class Telescope:public rts2core::Device
 		virtual void runTracking ();
 
 		/**
+		 * Update tracking frequency. Should be run after new tracking vector
+		 * is send to the mount motion controller.
+		 */
+		void updateTrackingFrequency ();
+
+		/**
 		 * Calculate TLE RA DEC for given time.
 		 */
 		void calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite);
@@ -1003,6 +1009,8 @@ class Telescope:public rts2core::Device
 		int moveInfoMax;
 
 		rts2core::ValueSelection *tracking;
+		rts2core::ValueDoubleStat *trackingFrequency;
+		double lastTrackingRun;
 
 		/**
 		 * Last error.
