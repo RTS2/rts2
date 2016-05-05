@@ -36,10 +36,12 @@ def combine_image(fi,fo,window=None,verbose=0):
 		try:
 			if im.header['XTENSION'] == "IMAGE":
 				d = im.data
-				if w is not None:
-					d = d[w[2]:w[2] + w[3],w[0]:w[0] + w[1]]
-
 				bl,br,ul,ur = map(lambda x:int(x), arm.match(im.header['DETSEC']).groups())
+
+				if w is not None:
+					d = d[w[2]:w[3], w[0]:w[1]]
+
+
 				if verbose > 1:
 					print d.shape
 				if bl > br:
@@ -48,6 +50,11 @@ def combine_image(fi,fo,window=None,verbose=0):
 				if ul > ur:
 					d = numpy.flipud(d)
 					ul, ur = ur, ul
+
+				# round position of starting points
+				if w is not None:
+					ul = d.shape[0] * round (float(ul) / d.shape[0])
+					bl = d.shape[1] * round (float(bl) / d.shape[1])
 
 				if outa is None:
 					outa = numpy.zeros((ul + d.shape[0], bl + d.shape[1]), int)
