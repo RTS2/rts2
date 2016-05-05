@@ -612,11 +612,10 @@ AS_IF([test "x${libwcstools}" != "xno"], [
 **** You don't have wcstools installed.
 **** You can download one from
 **** http://tdc-www.harvard.edu/software/wcstools/.
-**** Please note that there is no standart procedure to install
-**** that library. Please see INSTALL file for instructions how to install
-**** WCS library.
+**** That will not affect compilation, as RTS2 comes with
+**** own WCS functions in case wcstools are not available.
 EOF
-  exit 1])
+  ])
   AS_IF([test "x${libwcstools}" != "xyes"], [
     LIBWCS_LDFLAGS="-L${libwcstools}/libwcstools -lwcstools"
     LIBWCS_CFLAGS="-I${libwcstools}"
