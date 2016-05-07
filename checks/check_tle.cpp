@@ -110,11 +110,16 @@ void test_tle_alt_az (const char *tle1, const char *tle2, double JD, struct ln_l
 
 	get_satellite_ra_dec_delta (observer_loc, sat_pos, &radec.ra, &radec.dec, &dist_to_satellite);
 
+	epoch_of_date_to_j2000 (JD, &radec.ra, &radec.dec);
+
+	radec.ra = ln_rad_to_deg (radec.ra);
+	radec.dec = ln_rad_to_deg (radec.dec);
+
 	ln_get_hrz_from_equ (&radec, observer, JD, &hrz);
 
 	ck_assert_dbl_eq (hrz.alt, alt, 0.5);
 	ck_assert_dbl_eq (hrz.az, az, 0.5);
-	ck_assert_dbl_eq (dist_to_satellite, 38.0, 0.5);
+	ck_assert_dbl_eq (dist_to_satellite, distance, 0.5);
 }
 
 START_TEST(PLUTO)
@@ -134,8 +139,8 @@ END_TEST
 
 START_TEST(ISS)
 {
-	const char *tle1 = "1 25544U 98067A   16128.53078663  .00005510  00000-0  89300-4 0  9991";
-	const char *tle2 = "2 25544  51.6431 260.8455 0002000  94.4314 357.7410 15.54472888998655";
+	const char *tle1 = "1 25544U 98067A   16128.85424799  .00005564  00000-0  90091-4 0  9999";
+	const char *tle2 = "2 25544  51.6438 259.2325 0002021  92.7504  10.7493 15.54477273998701";
 
 	struct ln_date test_t;
 	test_t.years = 2016;
@@ -146,13 +151,30 @@ START_TEST(ISS)
 	test_t.seconds = 26;
 
 	double JD = ln_get_julian_day (&test_t);
-	//ck_assert_dbl_eq (JD, 2457516.215127, 10e-5);
 
 	struct ln_lnlat_posn observer;
 	observer.lng = -4.4643;
 	observer.lat = 40.4610;
 
-	//test_tle_alt_az (tle1, tle2, JD, &observer, 791, 29, 14);
+	test_tle_alt_az (tle1, tle2, JD, &observer, 791, 21, 14.7, 963);
+
+	test_t.minutes = 49;
+	test_t.seconds = 8;
+	JD = ln_get_julian_day (&test_t);
+
+	test_tle_alt_az (tle1, tle2, JD, &observer, 791, 39, 318, 621);
+
+	test_t.minutes = 52;
+	test_t.seconds = 12;
+	JD = ln_get_julian_day (&test_t);
+
+	test_tle_alt_az (tle1, tle2, JD, &observer, 791, 10, 247, 1448);
+
+	test_t.minutes = 54;
+	test_t.seconds = 22;
+	JD = ln_get_julian_day (&test_t);
+
+	test_tle_alt_az (tle1, tle2, JD, &observer, 791, 0, 239.6, 2315);
 }
 END_TEST
 
@@ -177,7 +199,7 @@ START_TEST(XMM)
 	observer.lng = -4.4643;
 	observer.lat = 40.4610;
 
-	//test_tle_alt_az (tle1, tle2, JD, &observer, 791, 38, 184, 6974);
+	test_tle_alt_az (tle1, tle2, JD, &observer, 791, 37, 184, 6974);
 /*
 Vychází	18:18:40	0°	271° (Z)	18 309	11,6	32,8°
 Dosahuje výšku nad obzorem 10°	18:38:41	10°	286° (ZSZ)	12 988	11,1	29,0°
