@@ -53,12 +53,11 @@ class Observatories:
 				except KeyError,ke:
 					obs = ephem.Observer()
 					le = l.split()
-					print "'{0}'".format(l),le
 					if len(le) == 4:
 						name = le[0]
 						obs.long = le[1]
 						obs.lat = le[2]
-						obs.elevation = le[3]
+						obs.elevation = float(le[3])
 						self.observatories.append(obs)
 			l = f.readline()
 		f.close()
