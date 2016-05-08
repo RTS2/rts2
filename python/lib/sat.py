@@ -4,6 +4,10 @@ import ephem
 import time
 import json
 
+"""Module for TLE computation.
+   Allows load set of satellites and cities/observatiries. On the set, passes can
+   be computed."""
+
 class TLESet:
 	"""Set of two line elements satellite data.
 	Set can be loaded from a file. Satellite visibility can be computed for
@@ -29,3 +33,33 @@ class TLESet:
 
 			l = f.readline()
 		f.close()
+
+class Observatories:
+	"""Set of cities or lat/lon/altitude with name"""
+	def __init__(self):
+		self.observatories = []
+
+	def parse_file(self, filename):
+		f = open(filename)
+		lines = [None,None,None]
+		l = f.readline()
+		while not(l == ''):
+			if l[0] == '#':
+				pass
+			else:
+				l = l.rstrip()
+				try:
+					self.observatories.append(ephem.city(l))
+				except KeyError,ke:
+					obs = ephem.Observer()
+					le = l.split()
+					print "'{0}'".format(l),le
+					if len(le) == 4:
+						name = le[0]
+						obs.long = le[1]
+						obs.lat = le[2]
+						obs.elevation = le[3]
+						self.observatories.append(obs)
+			l = f.readline()
+		f.close()
+	
