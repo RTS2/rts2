@@ -929,6 +929,7 @@ AC_OUTPUT([Makefile
 	   lib/Makefile
 	   lib/xmlrpc++/Makefile
 	   lib/pluto/Makefile
+	   lib/sgp4/Makefile
 	   lib/rts2/Makefile
 	   lib/rts2/vermes/Makefile
 	   lib/rts2fits/Makefile

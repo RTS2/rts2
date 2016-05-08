@@ -3,6 +3,7 @@
 #include "pluto/norad.h"
 #include "pluto/norad_in.h"
 
+#include <libnova/libnova.h>
 #include <stdio.h>
 
 /* For high satellites,  we do a numerical integration that uses a */
@@ -12,61 +13,25 @@
 /* Algorithms_,  2nd edition.  Results are in meters from the center */
 /* of the earth. */
 
+// updated to use precise Libnova computations - Petr Kubanek
+
 static void lunar_solar_position( const double jd, double *lunar_xyzr, double *solar_xyzr)
 {
-   const double j2000 = 2451545;    /* 1.5 Jan 2000 = JD 2451545 */
-   const double t_cen = (jd - j2000) / 36525.;
-            /* Mean lunar longitude, (47.1) */
-   const double l_prime = 218.3164477 * pi / 180.
-                        + (481267.88123421 * pi / 180.) * t_cen;
-            /* Lunar mean anomaly,  (47.4) */
-   const double m_prime = 134.9633964 * pi / 180.
-                        + (477198.8675055 * pi / 180.) * t_cen;
-            /* Solar mean longitude, (25.2) */
-   const double l_solar = 280.46646 * pi / 180.
-                        + (36000.76983 * pi / 180.) * t_cen;
-            /* Solar mean anomaly, (47.3)  */
-   const double m_solar = 357.5291092 * pi / 180.
-                        + (35999.0502909 * pi / 180.) * t_cen;
-            /* Lunar mean argument of latitude (47.5) */
-   const double f = 93.2720950 * pi / 180.
-                        + (483202.0175233 * pi / 180.) * t_cen;
-   const double lunar_mean_elong = (297.8501921 * pi / 180.)
-                        + (445267.1114034 * pi / 180.) * t_cen;
-   const double term2 = 2. * lunar_mean_elong - m_prime;
-   const double lunar_lon = l_prime   /* See table 47.A */
-                        + (6.288774 * pi / 180.) * sin( m_prime)
-                        + (1.274027 * pi / 180.) * sin( term2)
-                        + (0.658314 * pi / 180.) * sin( 2. * lunar_mean_elong)
-                        + (0.213618 * pi / 180.) * sin( 2. * m_prime)
-                        - (0.185166 * pi / 180.) * sin( m_solar)
-                        - (0.114332 * pi / 180.) * sin( 2. * f);
-   const double lunar_lat = (5.128122 * pi / 180.) * sin( f)
-                          + (0.280602 * pi / 180.) * sin( m_prime + f)
-                          + (0.277693 * pi / 180.) * sin( m_prime - f)
-                          + (0.173237 * pi / 180.) * sin( 2. * lunar_mean_elong - f);
-   const double lunar_r = 385000560.       /* in meters */
-                         - 20905355. * cos( m_prime)
-                         -  3699111. * cos( term2)
-                         -  2955968  * cos( 2. * lunar_mean_elong)
-                         -   569925  * cos( 2. * m_solar);
-   const double solar_ecc = 0.016708634;     /* (25.4) */
-   const double solar_lon = l_solar          /* (above (25.5)) */
-                        + (1.914602 * pi / 180.) * sin( m_solar);
-   const double au_in_meters = 1.495978707e+11;
-   const double solar_r = au_in_meters * (1. - solar_ecc * cos( m_solar));
-   double tval;
+   struct ln_rect_posn solar;
+   struct ln_rect_posn lunar;
 
-   tval = lunar_r * cos( lunar_lat);
-   *lunar_xyzr++ = tval * cos( lunar_lon);
-   *lunar_xyzr++ = tval * sin( lunar_lon);
-   *lunar_xyzr++ = lunar_r * sin( lunar_lat);
-   *lunar_xyzr++ = lunar_r;
+   ln_get_solar_geo_coords (jd, &solar);
+   ln_get_lunar_geo_posn (jd, &lunar, 0);
 
-   *solar_xyzr++ = solar_r * cos( solar_lon);
-   *solar_xyzr++ = solar_r * sin( solar_lon);
-   *solar_xyzr++ = 0.;
-   *solar_xyzr++ = solar_r;
+   *lunar_xyzr++ = lunar.X;
+   *lunar_xyzr++ = lunar.Y;
+   *lunar_xyzr++ = lunar.Z;
+   *lunar_xyzr++ = sqrt (lunar.X * lunar.X + lunar.Y * lunar.Y + lunar.Z * lunar.Z);
+
+   *solar_xyzr++ = solar.X;
+   *solar_xyzr++ = solar.Y;
+   *solar_xyzr++ = solar.Z;
+   *solar_xyzr++ = sqrt (solar.X * solar.X + solar.Y * solar.Y + solar.Z * solar.Z);
 }
 
 static void cached_lunar_solar_position( const double jd,

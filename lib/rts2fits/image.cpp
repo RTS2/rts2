@@ -835,7 +835,10 @@ void Image::setAUXWCS (rts2core::StringArray * wcsaux)
 int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 {
 	if (nchan != 1)
+	{
+		setValue ("INHERIT", true, "inherit key-values pairs from master HDU");
 		setValue ("CHANNEL", ntohs (im_h->channel), "channel number");
+	}
 	if (templateFile)
 	{
 		// write header from template..
