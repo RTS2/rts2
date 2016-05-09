@@ -1,6 +1,6 @@
 <!--
   Configuration file for events actions.
-  Please read man rts2-xmlrpcd to learn more.
+  Please read man rts2-httpd to learn more.
   Petr Kubanek <petr@kubanek.net>
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
