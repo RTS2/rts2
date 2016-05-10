@@ -98,20 +98,3 @@ def next_visible_pass(sat,obs,date,future_days=30):
 			'transit':t_transit, 'transit_alt':transit_alt, 'transit_az':transit_az,
 			'set':t_set, 'set_alt':set_alt, 'set_az':set_az}
 	return None
-
-if __name__ == '__main__':
-	obs = Observatories()
-	obs.parse_file('c.list')
-	
-	sat = TLESet()
-	sat.parse_file('t.tle')
-
-	date = ephem.now()
-
-	for o in obs.observatories:
-		print o.name
-		for s in sat.sats:
-			p = next_visible_pass(s,o,date)
-			if p is not None:
-				print 'Sat: {0} Observatory: {1} transit: {2} alt: {3} az: {4}'.format(s.name, o.name, p['transit'], p['transit_alt'], p['transit_az'])
-
