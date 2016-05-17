@@ -220,10 +220,10 @@ int sxList(DEVICE *sxDevices, const char **names, int maxCount) {
     if (!libusb_get_device_descriptor(device, &descriptor)) {
       if (descriptor.idVendor == SX_VID) {
         int pid = descriptor.idProduct;
-        for (int i = 0; SX_PIDS[i].pid; i++) {
-          if (pid == SX_PIDS[i].pid) {
-            DEBUG(log(true, "sxList: '%s' [0x%x, 0x%x] found\n", SX_PIDS[i].name, SX_VID, pid));
-            names[count] = SX_PIDS[i].name;
+        for (int j = 0; SX_PIDS[j].pid; j++) {
+          if (pid == SX_PIDS[j].pid) {
+            DEBUG(log(true, "sxList: '%s' [0x%x, 0x%x] found\n", SX_PIDS[j].name, SX_VID, pid));
+            names[count] = SX_PIDS[j].name;
             sxDevices[count++] = device;
             libusb_ref_device(device);
             break;

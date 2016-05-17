@@ -19,6 +19,8 @@
 
 #include "multidev.h"
 
+#include <signal.h>
+
 using namespace rts2core;
 
 int MultiDev::run ()
@@ -33,27 +35,33 @@ int MultiDev::run ()
 
 	while (true)
 	{
-		fd_set read_set;
-		fd_set write_set;
-		fd_set exp_set;
-
-		FD_ZERO (&read_set);
-		FD_ZERO (&write_set);
-		FD_ZERO (&exp_set);
-
-		struct timeval read_tout;
+		struct timespec read_tout;
 		read_tout.tv_sec = 10;
-		read_tout.tv_usec = 0;
+		read_tout.tv_nsec = 0;
+
+		nfds_t polls = 0;
 
 		for (iter = begin (); iter != end (); iter++)
 		{
-			(*iter)->addSelectSocks (read_set, write_set, exp_set);
+			(*iter)->addPollSocks ();
+			polls += (*iter)->npolls;
 		}
 
-		if (select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout) > 0)
+		struct pollfd allpolls[polls + 1];
+		int i = 0;
+		for (iter = begin (); iter != end (); iter++)
+		{
+			memcpy (allpolls + i, (*iter)->fds, sizeof (struct pollfd) * (*iter)->npolls);
+			i += (*iter)->npolls;
+		}
+
+		sigset_t sigmask;
+		sigemptyset (&sigmask);
+
+		if (ppoll (allpolls, polls, &read_tout, &sigmask) > 0)
 		{
 			for (iter = begin (); iter != end (); iter++)
-				(*iter)->selectSuccess (read_set, write_set, exp_set);
+				(*iter)->pollSuccess ();
 		}
 
 		for (iter = begin (); iter != end (); iter++)

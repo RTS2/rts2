@@ -37,8 +37,8 @@ class Reinhardt:public SensorWeather
 		Reinhardt (int argc, char **argv);
 		virtual ~Reinhardt ();
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 	protected:
 		virtual int processOption (int opt);
@@ -127,15 +127,15 @@ Reinhardt::~Reinhardt ()
 	delete reinhardtConn;
 }
 
-void Reinhardt::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Reinhardt::addPollSocks ()
 {
-	reinhardtConn->add (&read_set, &write_set, &exp_set);
-	SensorWeather::addSelectSocks (read_set, write_set, exp_set);
+	SensorWeather::addPollSocks ();
+	reinhardtConn->add (this);
 }
 
-void Reinhardt::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Reinhardt::pollSuccess ()
 {
-	if (reinhardtConn->receivedData (&read_set))
+	if (reinhardtConn->receivedData (this))
 	{
 		if (lastReceivedChar == REINHARDT_BUFF_SIZE) // buffer full..
 		{
@@ -228,7 +228,7 @@ void Reinhardt::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_
 		}
 	}
 
-	SensorWeather::selectSuccess (read_set, write_set, exp_set);
+	SensorWeather::pollSuccess ();
 }
 
 int Reinhardt::processOption (int opt)

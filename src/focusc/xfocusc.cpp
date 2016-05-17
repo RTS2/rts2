@@ -213,19 +213,19 @@ FocusCameraClient * XFocusClient::createFocCamera (Connection * conn)
 	return cam;
 }
 
-void XFocusClient::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void XFocusClient::addPollSocks ()
 {
-	FD_SET (ConnectionNumber (display), &read_set);
-	FocusClient::addSelectSocks (read_set, write_set, exp_set);
+	FocusClient::addPollSocks ();
+	addPollFD (ConnectionNumber (display), POLLIN | POLLPRI);
 }
 
-void XFocusClient::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void XFocusClient::pollSuccess ()
 {
-	if (FD_ISSET (ConnectionNumber (display), &read_set))
+	if (isForRead (ConnectionNumber (display)))
 	{
 		postEvent (new Event (EVENT_XWIN_SOCK));
 	}
-	FocusClient::selectSuccess (read_set, write_set, exp_set);
+	FocusClient::pollSuccess ();
 }
 
 int main (int argc, char **argv)

@@ -134,15 +134,12 @@ class Connection:public Object
 		virtual void postEvent (Event * event);
 
 		/**
-		 * Add to read/write/exception sets sockets identifiers which
-		 * belong to current connection. Those sets are used in 
-		 * main select call of Block.
+		 * Add to poll which belong to the current connection. Those
+		 * sets are used in main poll call of Block.
 		 *
-		 * @param readset   Set of sockets which will be checked for new data.
-		 * @param writeset  Set of sockets which will be checked for possibility to write new data.
-		 * @param expset    Set of sockets checked for any connection exceptions.
+		 * @param Block	pointer to the block which required adding of the FDs
 		 */
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+		virtual int add (Block * block);
 
 		/**
 		 * Set if command is in progress.
@@ -284,19 +281,19 @@ class Connection:public Object
 		/**
 		 * Returns true if connection is in read_set, and so can be read.
 		 *
-		 * @param read_set   Set used to read data.
+		 * @param fds	poll returned structure
 		 */
-		int receivedData (fd_set *read_set) { return FD_ISSET (sock, read_set); }
+		bool receivedData (Block *block);
 
 		/**
 		 * Called when select call indicates that socket holds new
 		 * data for reading.
 		 *
-		 * @param readset  Read FD_SET, connection must test if socket is among this set.
+		 * @param fds	poll returned structure
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		virtual int receive (fd_set * readset);
+		virtual int receive (Block *block);
 
 		/**
 		 * Called when select call indicates that socket 
@@ -305,7 +302,7 @@ class Connection:public Object
 		 * @param write  Write FD_SET, connection must test if socket is among this set.
 		 * @return -1 on error, 0 on success.
 		 */
-		virtual int writable (fd_set * writeset);
+		virtual int writable (Block *block);
 
 		conn_type_t getType () { return type; };
 		void setType (conn_type_t in_type) { type = in_type; }

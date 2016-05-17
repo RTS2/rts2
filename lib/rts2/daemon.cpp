@@ -631,32 +631,31 @@ void Daemon::sendStatusMessageConn (rts2_status_t new_state, Connection * conn)
 	conn->sendMsg (_os);
 }
 
-void Daemon::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Daemon::addPollSocks ()
 {
-	FD_SET (listen_sock, &read_set);
-	rts2core::Block::addSelectSocks (read_set, write_set, exp_set);
+	rts2core::Block::addPollSocks ();
+	addPollFD (listen_sock, POLLIN | POLLPRI);
 }
 
-void Daemon::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Daemon::pollSuccess ()
 {
 	int client;
 	// accept connection on master
-	if (FD_ISSET (listen_sock, &read_set))
+	if (isForRead (listen_sock))
 	{
 		struct sockaddr_in other_side;
 		socklen_t addr_size = sizeof (struct sockaddr_in);
 		client = accept (listen_sock, (struct sockaddr *) &other_side, &addr_size);
 		if (client == -1)
 		{
-			logStream (MESSAGE_DEBUG) << "client accept: " << strerror (errno)
-				<< " " << listen_sock << sendLog;
+			logStream (MESSAGE_DEBUG) << "client accept: " << strerror (errno) << " " << listen_sock << sendLog;
 		}
 		else
 		{
 			addConnectionSock (client);
 		}
 	}
-	rts2core::Block::selectSuccess (read_set, write_set, exp_set);
+	rts2core::Block::pollSuccess ();
 }
 
 void Daemon::addValue (Value * value, int queCondition)

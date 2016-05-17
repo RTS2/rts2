@@ -31,6 +31,15 @@ AS_IF([test "x$CHECK_LIBS" != x], [
   libcheck="yes"
 ])
 
+libwebsockets="no"
+
+PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.0],,AC_MSG_RESULT(not found))
+AM_CONDITIONAL(LIBWEBSOCKETS,test "x$LIBWEBSOCKETS_LIBS" != x)
+AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(LIBWEBSOCKETS, "1", [has libwebsockets])
+  libwebsockets="yes"
+])
+
 # check for lang
 AC_LANG_CPLUSPLUS
 
@@ -56,11 +65,10 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset poll socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
 
 AC_FUNC_CHOWN 
 AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES 
 AC_FUNC_STAT
 AC_FUNC_STRFTIME 
 AC_FUNC_VPRINTF 
@@ -981,6 +989,7 @@ AC_OUTPUT([Makefile
 	   src/rotad/Makefile
 	   src/logger/Makefile
 	   src/httpd/Makefile
+	   src/wsd/Makefile
 	   src/scheduler/Makefile
 	   src/bb/Makefile
 	   src/pluto/Makefile
@@ -1013,6 +1022,7 @@ echo "
   libgjson	${JSONGLIB_CFLAGS} ${JSONGLIB_LIBS}
   openssl       ${ssl}
   libcheck	${libcheck}
+  libwebsockets	${libwebsockets}
 
 CCDs:
   alta          ${ALTA}

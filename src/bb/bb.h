@@ -89,8 +89,8 @@ class BB:public rts2db::DeviceDb, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		virtual int idle ();
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 	private:
 		int rpcPort;

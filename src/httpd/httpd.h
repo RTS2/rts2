@@ -396,8 +396,8 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		void valueChangedEvent (rts2core::Connection *conn, rts2core::Value *new_value);
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 		virtual void message (Message & msg);
 

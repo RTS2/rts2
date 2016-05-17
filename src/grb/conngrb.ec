@@ -1438,14 +1438,14 @@ int ConnGrb::init ()
 		return init_call ();
 }
 
-int ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int ConnGrb::add (rts2core::Block *block)
 {
 	if (gcn_listen_sock >= 0)
 	{
-		FD_SET (gcn_listen_sock, readset);
+		block->addPollFD (gcn_listen_sock, POLLIN | POLLPRI);
 		return 0;
 	}
-	return rts2core::Connection::add (readset, writeset, expset);
+	return rts2core::Connection::add (block);
 }
 
 void ConnGrb::connectionError (int last_data_size)

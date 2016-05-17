@@ -97,10 +97,10 @@ void ConnFork::processLine ()
 	}
 }
 
-int ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int ConnFork::add (Block *block)
 {
 	if (sockerr > 0)
-		FD_SET (sockerr, readset);
+		block->addPollFD (sockerr, POLLIN | POLLPRI);
 	if (input.length () > 0)
 	{
 		if (sockwrite < 0)
@@ -110,15 +110,15 @@ int ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 		}
 		else
 		{
-			FD_SET (sockwrite, writeset);
+			block->addPollFD (sockwrite, POLLOUT);
 		}
 	}
-	return ConnNoSend::add (readset, writeset, expset);
+	return ConnNoSend::add (block);
 }
 
-int ConnFork::receive (fd_set * readset)
+int ConnFork::receive (Block *block)
 {
-	if (sockerr > 0 && FD_ISSET (sockerr, readset))
+	if (sockerr > 0 && block->isForRead (sock))
 	{
 		int data_size;
 		char errbuf[5001];
@@ -138,10 +138,10 @@ int ConnFork::receive (fd_set * readset)
 			logStream (MESSAGE_ERROR) << "From error pipe read error " << strerror (errno) << "." << sendLog;
 		}
 	}
-	return ConnNoSend::receive (readset);
+	return ConnNoSend::receive (block);
 }
 
-int ConnFork::writable (fd_set * writeset)
+int ConnFork::writable (Block *block)
 {
 	if (input.length () > 0)
 	{
@@ -150,7 +150,7 @@ int ConnFork::writable (fd_set * writeset)
 			connectionError (-1);
 			return -1;
 		}
-	 	if (FD_ISSET (sockwrite, writeset))
+	 	if (block->isForWrite (sockwrite))
 		{
 			int write_size = write (sockwrite, input.c_str (), input.length ());
 			if (write_size < 0)
@@ -175,7 +175,7 @@ int ConnFork::writable (fd_set * writeset)
 			}
 		}
 	}
-	return ConnNoSend::writable (writeset);
+	return ConnNoSend::writable (block);
 }
 
 void ConnFork::connectionError (int last_data_size)
@@ -381,6 +381,7 @@ int ConnFork::init ()
 	exit (0);
 }
 
+/*
 int ConnFork::run ()
 {
 	int ret;
@@ -393,23 +394,21 @@ int ConnFork::run ()
 	read_tout.tv_sec = 10;
 	read_tout.tv_usec = 0;
 
+	add (getMaster ());
+
 	while (sock > 0)
 	{
-		FD_ZERO (&read_set);
-		FD_ZERO (&write_set);
-		FD_ZERO (&exp_set);
-
-		add (&read_set, &write_set, &exp_set);
-		ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
+		ret = ppoll (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
 		if (ret == -1)
 			return -1;
-		if (receive (&read_set) == -1 || writable (&write_set) == -1)
+		if (receive (getMaster ()) == -1 || writable (getMaster ()) == -1)
 			return 0;
 		idle ();
 	}
 
 	return 0;
 }
+*/
 
 void ConnFork::stop ()
 {

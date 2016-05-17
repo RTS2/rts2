@@ -26,7 +26,7 @@
 
 using namespace rts2core;
 
-ConnNotify::ConnNotify (rts2core::Block *_master):ConnNoSend (_master)
+ConnNotify::ConnNotify (Block *_master):ConnNoSend (_master)
 {
 	debug = false;
 }
@@ -52,9 +52,9 @@ int ConnNotify::init ()
 #endif
 }
 
-int ConnNotify::receive (fd_set * readset)
+int ConnNotify::receive (Block *block)
 {
-	if (sock >= 0 && FD_ISSET (sock, readset))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 #ifdef RTS2_HAVE_SYS_INOTIFY_H
 		int len;

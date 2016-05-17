@@ -48,12 +48,12 @@ class XFocusClient:public FocusClient
 		/**
 		 * Add XWin connection socket, obtained by ConnectionNumber macro.
 		 */
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
 
 		/**
 		 * Query and process possible XWin event from top of XWin event loop.
 		 */
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void pollSuccess ();
 
 		virtual void usage ();
 		virtual void help ();

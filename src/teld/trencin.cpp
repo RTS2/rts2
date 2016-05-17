@@ -82,8 +82,8 @@ class Trencin:public Fork
 		int startWorm ();
 		int stopWorm ();
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 	private:
 		const char *device_nameRa;
@@ -331,19 +331,19 @@ int Trencin::stopWorm ()
 	return 0;
 }
 
-void Trencin::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Trencin::addPollSocks ()
 {
+	Telescope::addPollSocks ();
 	if (raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ()))
-		trencinConnRa->add (&read_set, &write_set, &exp_set);
+		trencinConnRa->add (this);
 	if (decMoving->getValueInteger () != 0)
-		trencinConnDec->add (&read_set, &write_set, &exp_set);
-	Telescope::addSelectSocks (read_set, write_set, exp_set);
+		trencinConnDec->add (this);
 }
 
-void Trencin::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Trencin::pollSuccess ()
 {
 	// old axis value
-	if ((raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ())) && trencinConnRa->receivedData (&read_set))
+	if ((raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ())) && trencinConnRa->receivedData (this))
 	{
 		int old_axis = unitRa->getValueInteger ();
 		if (readAxis (trencinConnRa, unitRa, false) == 0)
@@ -374,11 +374,11 @@ void Trencin::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_se
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "cannot read ra " << trencinConnRa->receivedData (&read_set) << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot read ra " << trencinConnRa->receivedData (this) << sendLog;
 		}
 	}
 
-	if (decMoving->getValueInteger () != 0 && trencinConnDec->receivedData (&read_set))
+	if (decMoving->getValueInteger () != 0 && trencinConnDec->receivedData (this))
 	{
 		if (readAxis (trencinConnDec, unitDec, false) == 0)
 		{
@@ -394,11 +394,11 @@ void Trencin::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_se
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "cannot read dec " << trencinConnDec->receivedData (&read_set) << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot read dec " << trencinConnDec->receivedData (this) << sendLog;
 		}
 	}
 
-	Telescope::selectSuccess (read_set, write_set, exp_set);
+	Telescope::pollSuccess ();
 }
 
 int Trencin::readAxis (rts2core::ConnSerial *conn, rts2core::ValueInteger *value, bool write_axis)

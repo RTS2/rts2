@@ -33,6 +33,7 @@
 #include "status.h"
 
 #include <sstream>
+#include <poll.h>
 
 #include "rts2-config.h"
 
@@ -104,6 +105,8 @@ class Rts2Command;
 
 class DevClient;
 
+class MultiDev;
+
 /**
  * Base class of RTS2 devices and clients.
  *
@@ -114,8 +117,12 @@ class DevClient;
  */
 class Block: public App
 {
-	public:
+		/**
+		 * Allows MultiDev to access pollfd fields.
+		 */
+		friend class MultiDev;
 
+	public:
 		/**
 		 * Basic constructor. Fill argc and argv values.
 		 *
@@ -146,7 +153,7 @@ class Block: public App
 		int getPort (void);
 
 		/**
-		 * Add connection to block. Block select call then take into
+		 * Add connection to block. Block poll call then take into
 		 * account connections file descriptor and call hooks either
 		 * when data arrives or writing on connection is possible.
 		 *
@@ -181,25 +188,21 @@ class Block: public App
 		}
 
 		/** 
-		 * Adds sockets for select call.
+		 * Adds sockets for poll call.
 		 *
 		 * Enable application to add arbitary sockets.
 		 * This hook is usefull for various applications that gets input
 		 * from other then connection sockets, and for which creating
 		 * extra Connection instance will be too heavy solution.
-		 *
-		 * @param _read_set      read set for select call
-		 * @param _write_set     write set for select call
-		 * @param _exp_set       exceptin set for select call
 		 */
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
 
 		/**
-		 * Called when select call suceed.
+		 * Called when poll call suceed.
 		 *
-		 * This method is called when select call on registered sockects succeed.
+		 * This method is called when poll call on registered sockects succeed.
 		 */
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void pollSuccess ();
 
 		int callIdle () { return idle (); }
 
@@ -674,7 +677,27 @@ class Block: public App
 		/**
 		 * Called when modified file entry is read from inotify file descriptor.
 		 */
-		 virtual void fileModified (struct inotify_event *event) {};
+		virtual void fileModified (struct inotify_event *event) {};
+
+		/**
+		 * Add entry to block pole.
+		 */
+		void addPollFD (int fd, short events);
+
+		/**
+		 * Returns events associated with the given descriptor.
+		 */
+		short getPollEvents (int fd);
+
+		/**
+		 * Returns true, if some data awaits on the file descriptor.
+		 */
+		bool isForRead (int fd) { return getPollEvents (fd) & (POLLIN | POLLPRI); }
+
+		/**
+		 * Returns true, if data can be written to the file descriptor.
+		 */
+		bool isForWrite (int fd) { return getPollEvents (fd) & POLLOUT; }
 
 	protected:
 
@@ -776,6 +799,10 @@ class Block: public App
 		int port;
 		long int idle_timeout;	 // in nsec
 
+		struct pollfd *fds;
+		nfds_t pollsize;
+		nfds_t npolls;
+
 		// timers - time when they should be executed, event which should be triggered
 		std::map <double, Event*> timers;
 
@@ -821,5 +848,9 @@ class Block: public App
  * @return true if name matches centrald.
  */
 bool isCentraldName (const char *_name);
+
+void getMasterAddPollFD (int fd, short events);
+
+short getMasterGetEvents (int fd);
 
 #endif							 // !__RTS2_NETBLOCK__

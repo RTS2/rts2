@@ -66,11 +66,11 @@ class ConnFork:public ConnNoSend
 
 		void setInput (std::string _input) { input = _input; }
 
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+		virtual int add (Block *block);
 
-		virtual int receive (fd_set * readset);
+		virtual int receive (Block *block);
 
-		virtual int writable (fd_set * writeset);
+		virtual int writable (Block *block);
 
 		/**
 		 * Create and execute processing.
@@ -92,7 +92,7 @@ class ConnFork:public ConnNoSend
 		 * executed process has ended. Do not use this to run processes
 		 * which might take a long time to execute.
 		 */
-		int run ();
+		//int run ();
 
 		virtual void stop ();
 		void terminate ();

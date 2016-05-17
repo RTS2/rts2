@@ -43,7 +43,7 @@ class Rts2ConnFwGrb:public rts2core::ConnNoSend
 		virtual int idle ();
 		virtual int init ();
 
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+		virtual int add (rts2core::Block *block);
 
 		virtual void connectionError (int last_data_size);
 		virtual int receive (fd_set * set);
@@ -278,14 +278,14 @@ int Rts2ConnFwGrb::init ()
 		return init_call ();
 }
 
-int Rts2ConnFwGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int Rts2ConnFwGrb::add (rts2core::Block *block)
 {
 	if (gcn_listen_sock >= 0)
 	{
-		FD_SET (gcn_listen_sock, readset);
+		block->addPollFD (gcn_listen_sock, POLLIN | POLLPRI);
 		return 0;
 	}
-	return rts2core::Connection::add (readset, writeset, expset);
+	return rts2core::Connection::add (block);
 }
 
 void Rts2ConnFwGrb::connectionError (int last_data_size)

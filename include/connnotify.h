@@ -48,7 +48,7 @@ class ConnNotify:public ConnNoSend
 		 *
 		 * @param _master   Reference to master holding this connection.
 		 */
-		ConnNotify (rts2core::Block *_master);
+		ConnNotify (Block *_master);
 
 		/**
 		 * Init TCP/IP connection to host given at constructor.
@@ -68,11 +68,11 @@ class ConnNotify:public ConnNoSend
 		 * Called when select call indicates that socket holds new
 		 * data for reading.
 		 *
-		 * @param readset  Read FD_SET, connection must test if socket is among this set.
+		 * @param fds	poll structure, connection must test if socket has data to read
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		virtual int receive (fd_set * readset);
+		virtual int receive (Block *block);
 
 		bool getDebug () { return debug; }
 

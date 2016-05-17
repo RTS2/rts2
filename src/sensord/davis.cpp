@@ -39,8 +39,8 @@ class Davis:public SensorWeather
 		Davis (int argc, char **argv);
 		virtual ~Davis ();
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 		virtual int info ();
 
@@ -143,15 +143,15 @@ Davis::~Davis ()
 	delete davisConn;
 }
 
-void Davis::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Davis::addPollSocks ()
 {
-	davisConn->add (&read_set, &write_set, &exp_set);
-	SensorWeather::addSelectSocks (read_set, write_set, exp_set);
+	SensorWeather::addPollSocks ();
+	davisConn->add (this);
 }
 
-void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Davis::pollSuccess ()
 {
-	if (davisConn->receivedData (&read_set))
+	if (davisConn->receivedData (this))
 	{
 		int ret = davisConn->readPort (dataBuff + lastReceivedChar, 100 - lastReceivedChar);
 		if (ret > 0)
@@ -184,7 +184,7 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 		}
 	}
 
-	SensorWeather::selectSuccess (read_set, write_set, exp_set);
+	SensorWeather::pollSuccess ();
 }
 
 int Davis::info ()

@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <netinet/in.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -47,11 +48,18 @@ const char *type_names[] =
   "EXEC", "IMGP", "SELECTOR", "XMLRPC", "INDI", "LOGD", "SCRIPTOR", NULL
 };
 
+//* Size of pollfd descriptors allocated
+#define POLLS_SIZE    200
+
 using namespace rts2core;
 
 Block::Block (int in_argc, char **in_argv):App (in_argc, in_argv)
 {
 	idle_timeout = USEC_SEC * 10;
+
+	pollsize = POLLS_SIZE;
+	fds = new struct pollfd[pollsize];
+	npolls = 0;
 
 	signal (SIGPIPE, SIG_IGN);
 
@@ -82,6 +90,7 @@ Block::~Block (void)
 	blockAddress.clear ();
 	for (std::list <ConnUser *>::iterator iu = blockUsers.begin (); iu != blockUsers.end (); iu++)
 		delete *iu;
+	delete[] fds;
 	blockUsers.clear ();
 }
 
@@ -95,13 +104,14 @@ int Block::getPort (void)
 	return port;
 }
 
-void Block::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Block::addPollSocks ()
 {
 	connections_t::iterator iter;
+	npolls = 0;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
-		(*iter)->add (&read_set, &write_set, &exp_set);
+		(*iter)->add (this);
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
-		(*iter)->add (&read_set, &write_set, &exp_set);
+		(*iter)->add (this);
 }
 
 bool Block::commandQueEmpty ()
@@ -298,7 +308,7 @@ int Block::idle ()
 	return 0;
 }
 
-void Block::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Block::pollSuccess ()
 {
 	Connection *conn;
 	int ret;
@@ -308,7 +318,7 @@ void Block::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 	for (iter = connections.begin (); iter != connections.end ();)
 	{
 		conn = *iter;
-		if (conn->receive (&read_set) == -1 || conn->writable (&write_set) == -1)
+		if (conn->receive (this) == -1 || conn->writable (this) == -1)
 		{
 			ret = deleteConnection (conn);
 			// delete connection only when it really requested to be deleted..
@@ -331,7 +341,7 @@ void Block::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 	for (iter = centraldConns.begin (); iter != centraldConns.end ();)
 	{
 		conn = *iter;
-		if (conn->receive (&read_set) == -1 || conn->writable (&write_set) == -1)
+		if (conn->receive (this) == -1 || conn->writable (this) == -1)
 		{
 			#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "Will delete connection " << " name: " << conn->getName () << sendLog;
@@ -366,24 +376,20 @@ void Block::setMessageMask (int new_mask)
 void Block::oneRunLoop ()
 {
 	int ret;
-	struct timeval read_tout;
+	struct timespec read_tout;
 	double t_diff;
-
-	fd_set read_set;
-	fd_set write_set;
-	fd_set exp_set;
 
 	if (timers.begin () != timers.end () && (USEC_SEC * (t_diff = (timers.begin ()->first - getNow ()))) < idle_timeout)
 	{
 		if (t_diff <= 0)
 		{
 			read_tout.tv_sec = 0;
-			read_tout.tv_usec = 0;
+			read_tout.tv_nsec = 0;
 		}
 		else
 		{
 			read_tout.tv_sec = t_diff;
-			read_tout.tv_usec = (t_diff - floor (t_diff)) * USEC_SEC;
+			read_tout.tv_nsec = (t_diff - floor (t_diff)) * USEC_SEC;
 		}
 	}
 	else
@@ -391,22 +397,21 @@ void Block::oneRunLoop ()
 		if (idle_timeout <= 0)
 		{
 			read_tout.tv_sec = 0;
-			read_tout.tv_usec = 0;
+			read_tout.tv_nsec = 0;
 		}
 		else
 		{
 			read_tout.tv_sec = idle_timeout / USEC_SEC;
-			read_tout.tv_usec = idle_timeout % USEC_SEC;
+			read_tout.tv_nsec = idle_timeout % USEC_SEC;
 		}
 	}
 
-	FD_ZERO (&read_set);
-	FD_ZERO (&write_set);
-	FD_ZERO (&exp_set);
+	sigset_t sigmask;
+	sigemptyset (&sigmask);
 
-	addSelectSocks (read_set, write_set, exp_set);
-	if (select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout) > 0)
-		selectSuccess (read_set, write_set, exp_set);
+	addPollSocks ();
+	if (ppoll (fds, npolls, &read_tout, &sigmask) > 0)
+		pollSuccess ();
 	ret = idle ();
 	if (ret == -1)
 		endRunLoop ();
@@ -498,6 +503,32 @@ std::map <Connection *, std::vector <Value *> > Block::failedValues ()
 		}
 	}
 	return ret;
+}
+
+void Block::addPollFD (int fd, short events)
+{
+	if (npolls == pollsize)
+	{
+		struct pollfd *npollfds;
+		npollfds = new struct pollfd[npolls + POLLS_SIZE];
+		memcpy ((void *) npollfds, (void *) fds, sizeof (struct pollfd) * npolls);
+		delete[] fds;
+		fds = npollfds;
+	}
+	fds[npolls].fd = fd;
+	fds[npolls].events = events;
+	fds[npolls].revents = 0;
+	npolls++;
+}
+
+short Block::getPollEvents (int fd)
+{
+	for (nfds_t i = 0; i < npolls; i++)
+	{
+		if (fds[i].fd == fd)
+			return fds[i].revents;
+	}
+	return 0;
 }
 
 bool Block::centralServerInState (rts2_status_t state)
@@ -997,3 +1028,14 @@ bool isCentraldName (const char *_name)
 {
 	return !strcmp (_name, "..") || !strcmp (_name, "centrald");
 }
+
+void getMasterAddPollFD (int fd, short events)
+{
+	((Block *) getMasterApp())->addPollFD (fd, events);
+}
+
+short getMasterGetEvents (int fd)
+{
+	return ((Block *) getMasterApp ())->getPollEvents (fd);
+}
+

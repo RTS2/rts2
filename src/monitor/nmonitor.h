@@ -112,8 +112,8 @@ class NMonitor:public rts2core::Client
 
 		void commandReturn (rts2core::Command * cmd, int cmd_status);
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 	protected:
 		virtual int processOption (int in_opt);
