@@ -107,6 +107,10 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 
 	lastReceivedChar = 0;
 
+	maxHumidity = NULL;
+	maxWindSpeed = NULL;
+	maxPeekWindSpeed = NULL;
+
 	createValue (barTrend, "bar_trend", "barometric trend in last 3 hours", false);
 	barTrend->addSelVal ("not known");
 	barTrend->addSelVal ("Falling Rapidly");
@@ -362,7 +366,7 @@ void Davis::processData ()
 
 void Davis::checkTriggers ()
 {
-        if (!isnan (maxHumidity->getValueInteger ()) && outsideHumidity->getValueFloat () >= maxHumidity->getValueInteger ())
+        if (maxHumidity && outsideHumidity->getValueFloat () >= maxHumidity->getValueInteger ())
         {
          	setWeatherTimeout (600, "humidity has crossed alarm limits");
                 valueError (outsideHumidity);
@@ -372,7 +376,7 @@ void Davis::checkTriggers ()
         	valueGood (outsideHumidity);
 	}
 	
-	if (!isnan (maxWindSpeed->getValueInteger ()) && wind2min->getValueFloat () >= maxWindSpeed->getValueInteger ())
+	if (maxWindSpeed && wind2min->getValueFloat () >= maxWindSpeed->getValueInteger ())
         {
 		setWeatherTimeout (300, "high wind");
 		valueError (windSpeed);
@@ -382,7 +386,7 @@ void Davis::checkTriggers ()
 		valueGood (windSpeed);
         }
 
-	if (!isnan (maxPeekWindSpeed->getValueInteger ()) && wind10mingust->getValueFloat () >= maxPeekWindSpeed->getValueInteger ())
+	if (maxPeekWindSpeed && wind10mingust->getValueFloat () >= maxPeekWindSpeed->getValueInteger ())
         {
 		setWeatherTimeout (300, "high peek wind");
 		valueError (wind10mingust);

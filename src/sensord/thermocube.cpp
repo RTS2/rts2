@@ -84,6 +84,9 @@ ThermoCube::ThermoCube (int argc, char **argv):Sensor (argc, argv)
 
 	default_state = 0;
 
+	minTempAlert = NULL;
+	maxTempAlert = NULL;
+
 	createValue (targetTemperature, "TARTEMP", "[C] target temperature", false, RTS2_VALUE_WRITABLE);
 	createValue (currentTemperature, "CURTEMP", "[C] current temperature");
 
@@ -223,7 +226,7 @@ int ThermoCube::info ()
 	RTDOpen->setValueBool (buf[0] & 0x10);
 	RTDShort->setValueBool (buf[0] & 0x20);
 
-	if (!isnan (minTempAlert->getValueInteger ()) && currentTemperature->getValueFloat () <= minTempAlert->getValueInteger ())
+	if (minTempAlert && currentTemperature->getValueFloat () <= minTempAlert->getValueInteger ())
         {
 		logStream (MESSAGE_WARNING) << "Thermocube temperature is lower than minimum level:" << sendLog;
                 valueWarning (currentTemperature);
@@ -232,7 +235,7 @@ int ThermoCube::info ()
         {
                 valueGood (currentTemperature);
         }
-	if (!isnan (maxTempAlert->getValueInteger ()) && currentTemperature->getValueFloat () >= maxTempAlert->getValueInteger ())
+	if (maxTempAlert && currentTemperature->getValueFloat () >= maxTempAlert->getValueInteger ())
         {
 		logStream (MESSAGE_WARNING) << "Thermocube temperature is upper than maximum level:" << sendLog;
                 valueWarning (currentTemperature);
