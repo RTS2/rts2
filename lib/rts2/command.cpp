@@ -164,7 +164,7 @@ CommandCameraSettings::CommandCameraSettings (DevClientCamera * _camera):Command
 
 CommandExposure::CommandExposure (Block * _master, DevClientCamera * _camera, int _bopMask):Command (_master)
 {
-	setCommand ("expose");
+	setCommand (COMMAND_CCD_EXPOSURE);
 	camera = _camera;
 	setBopMask (_bopMask);
 }

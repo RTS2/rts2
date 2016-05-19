@@ -920,6 +920,17 @@ class Camera:public rts2core::ScriptDevice
 		int getExpType () { return expType->getValueInteger ();	}
 
 		/**
+		 * Indicates camera can do shift-store focusing.
+		 */
+		void createShiftStore () { createValue (shiftstoreLines, "shiftstore", "pixels of shiftstore", true); }
+
+		virtual int shiftStoreStart (Connection *conn, float exptime);
+
+		virtual int shiftStoreShift (Connection *conn, int shift, float exptime);
+
+		virtual int shiftStoreEnd (Connection *conn, int shift, float exptime);
+
+		/**
 		 * Set camera filter.
 		 *
 		 * @param @new_filter   new filter number
@@ -1009,6 +1020,9 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueLong *scriptExposureNum;
 		rts2core::ValueBool *waitingForEmptyQue;
 		rts2core::ValueBool *waitingForNotBop;
+
+		// number of lines partially readed-out. Skip clear if the exposure is in progress.
+		rts2core::IntegerArray *shiftstoreLines;
 
 		rts2core::ValueInteger *binningX;
 		rts2core::ValueInteger *binningY;

@@ -403,6 +403,8 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	chan2delta = NULL;
         acquireTime = NULL;
 
+	shiftstoreLines = NULL;
+
 	timeReadoutStart = NAN;
 	timeTransferStart = NAN;
 
@@ -499,7 +501,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, RTS2_VALUE_WRITABLE, 0);
 	quedExpNumber->setValueInteger (0);
 
-	createValue (exposureNumber, "exposure_num", "number of exposures camera takes", false, 0, 0);
+	createValue (exposureNumber, "exposure_num", "number of exposures camera took from driver restart", false, RTS2_VALUE_WRITABLE, 0);
 	exposureNumber->setValueLong (0);
 
 	createValue (scriptExposureNum, "script_exp_num", "number of images taken in script", false, 0, 0);
@@ -1770,6 +1772,21 @@ int Camera::camReadout (rts2core::Connection * conn)
 	return -1;
 }
 
+int Camera::shiftStoreStart (Connection *conn, float exptime)
+{
+
+}
+
+int Camera::shiftStoreShift (Connection *conn, int shift, float exptime)
+{
+
+}
+
+int Camera::shiftStoreEnd (Connection *conn, int shift, float exptime)
+{
+
+}
+
 int Camera::setFilterNum (int new_filter, const char *fn)
 {
 	int ret = -1;
@@ -1910,11 +1927,38 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
-	else if (conn->isCommand ("expose"))
+	else if (conn->isCommand (COMMAND_CCD_EXPOSURE))
 	{
 		if (!conn->paramEnd ())
 			return -2;
 		return camExpose (conn, getStateChip (0), false);
+	}
+	else if (conn->isCommand (COMMAND_CCD_SHIFTSTORE))
+	{
+		// not supported
+		if (shiftstoreLines == NULL)
+			return -2;
+		char *kind;
+		int shift;
+		float exptime;
+		if (conn->paramNextString (&kind))
+			return -2;
+		if (strcmp (kind, "start") == 0)
+		{
+			if (conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+				return -2;
+			return shiftStoreStart (conn, exptime);
+		}
+		else if (strcmp (kind, "shift") == 0)
+		{
+			if (conn->paramNextInteger (&shift) || conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+				return -2;
+			return shiftStoreShift (conn, shift, exptime);
+		}
+		else if (strcmp (kind, "end") == 0)
+			if (conn->paramNextInteger (&shift) || conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+				return -2;
+			return shiftStoreEnd (conn, shift, exptime);
 	}
 	else if (conn->isCommand ("stopexpo"))
 	{

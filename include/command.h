@@ -113,6 +113,16 @@
  */
 #define COMMAND_FITS_STAT       "fits_statistics"
 
+/**
+ * Start exposure on camera.
+ */
+#define COMMAND_CCD_EXPOSURE    "expose"
+
+/**
+ * Shift-store sequence.
+ */
+#define COMMAND_CCD_SHIFTSTORE  "shiftstore"
+
 
 /**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
