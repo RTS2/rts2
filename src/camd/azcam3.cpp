@@ -218,6 +218,8 @@ int AzCam3::initHardware()
 	if (ret)
 		return ret;
 
+	callCommand ("controller.ReadoutAbort()\r\n");
+
 	initCameraChip (101, 101, 0, 0);
 
 	return initChips ();
@@ -344,6 +346,7 @@ int AzCam3::startExposure()
 int AzCam3::stopExposure ()
 {
 	callCommand ("exposure.Abort()\r\n");
+	callCommand ("controller.ReadoutAbort()\r\n");
 	return Camera::stopExposure ();
 }
 
@@ -351,11 +354,10 @@ long AzCam3::isExposing ()
 {
 	try
 	{
-		double rem = getDouble ("controller.UpdateExposureTimeRemaining()\r\n");
-		exposureRemaining->setValueFloat (rem);
+		exposureRemaining->setValueFloat (getDouble ("controller.UpdateExposureTimeRemaining()\r\n"));
 		sendValueAll (exposureRemaining);
-		if (rem > 0)
-			return rem * USEC_SEC;
+		if (exposureRemaining->getValueFloat () > 0)
+			return exposureRemaining->getValueFloat () * USEC_SEC;
 	}
 	catch (rts2core::Error &er)
 	{
@@ -372,7 +374,8 @@ int AzCam3::doReadout ()
 		{
 			try
 			{
-				getLong ("controller.GetPixelsRemaining()\r\n");
+				pixelsRemaining->setValueLong (getLong ("controller.GetPixelsRemaining()\r\n"));
+				sendValueAll (pixelsRemaining);
 				return 10000;
 			}
 			catch (rts2core::Error &er)
