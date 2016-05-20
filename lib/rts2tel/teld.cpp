@@ -1289,7 +1289,10 @@ void Telescope::updateTrackingFrequency ()
 {
 	double n = getNow ();
 	if (!isnan (lastTrackingRun) && n != lastTrackingRun)
+	{
 		trackingFrequency->addValue (1 / (n - lastTrackingRun), trackingFSize->getValueInteger ());
+		trackingFrequency->calculate ();
+	}
 	lastTrackingRun = n;
 }
 
