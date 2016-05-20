@@ -928,7 +928,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
 
-		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
+		virtual int shiftStoreEnd (rts2core::Connection *conn);
 
 		/**
 		 * Set camera filter.

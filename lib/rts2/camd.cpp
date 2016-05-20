@@ -1775,18 +1775,22 @@ int Camera::camReadout (rts2core::Connection * conn)
 int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
 {
 	shiftstoreLines->clear ();
+	sendValueAll (shiftstoreLines);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE, CAM_EXPOSING | CAM_EXPOSING_SHIFT, "starting shift-store", NAN, NAN, conn);
 	return 0;
 }
 
 int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
 {
 	shiftstoreLines->addValue (shift);
+	sendValueAll (shiftstoreLines);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE, CAM_EXPOSING | CAM_EXPOSING_SHIFT, "shifting shift-store", NAN, NAN, conn);
 	return 0;
 }
 
-int Camera::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+int Camera::shiftStoreEnd (rts2core::Connection *conn)
 {
-	shiftstoreLines->addValue (shift);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_READING, "end shift-store", NAN, NAN, conn);
 	return 0;
 }
 
@@ -1959,9 +1963,9 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 			return shiftStoreShift (conn, shift, exptime);
 		}
 		else if (strcmp (kind, "end") == 0)
-			if (conn->paramNextInteger (&shift) || conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+			if (!conn->paramEnd ())
 				return -2;
-			return shiftStoreEnd (conn, shift, exptime);
+			return shiftStoreEnd (conn);
 	}
 	else if (conn->isCommand ("stopexpo"))
 	{
