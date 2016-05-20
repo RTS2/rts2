@@ -1,7 +1,24 @@
+/*
+ * Driver for Arizona Camera (TCP-IP server) CCD.
+ * Copyright (C) 2016 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <fcntl.h>
-
 #include "camd.h"
-
 #include "connection/tcp.h"
 
 namespace rts2camd
@@ -12,7 +29,7 @@ class AzCam3DataConn:public rts2core::ConnTCP
 	public:
 		AzCam3DataConn (rts2core::Block *_master, int _port);
 
-		virtual int receive (fd_set * readset);
+		virtual int receive (rts2core::Block *block);
 
 		ssize_t getDataSize () { return dataSize; }
 
@@ -31,11 +48,11 @@ AzCam3DataConn::AzCam3DataConn (rts2core::Block *_master, int _port):ConnTCP (_m
 	outFile = 0;
 }
 
-int AzCam3DataConn::receive (fd_set *readset)
+int AzCam3DataConn::receive (rts2core::Block *block)
 {
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if (sock >= 0 && FD_ISSET (sock, readset))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		int rec;
 		if (isConnState (CONN_CONNECTING))
@@ -95,6 +112,7 @@ class AzCam3:public rts2camd::Camera
 		virtual int initHardware ();
 
 		virtual int startExposure ();
+		virtual int stopExposure ();
 		virtual long isExposing ();
 		virtual int doReadout ();
 
@@ -105,6 +123,7 @@ class AzCam3:public rts2camd::Camera
 		char rbuf[200];
 
 		int callCommand (const char *cmd);
+		int callCommand (const char *cmd, double p1, const char *p2, const char *p3);
 		int callExposure (const char *cmd, double p1, const char *p2);
 		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
 
@@ -112,6 +131,9 @@ class AzCam3:public rts2camd::Camera
 
 		int setCamera (const char *name, const char *value);
 		int setCamera (const char *name, int value);
+
+		long getLong (const char *cmd);
+		double getDouble (const char *cmd);
 
 		HostString *azcamHost;
 		const char *hostname;
@@ -207,6 +229,13 @@ int AzCam3::callCommand (const char *cmd)
 	return -1;
 }
 
+int AzCam3::callCommand (const char *cmd, double p1, const char *p2, const char *p3)
+{
+	char buf[200];
+	snprintf (buf, 200, "%s(%f,'%s','%s')\r\n", cmd, p1, p2, p3);
+	return callCommand (buf);
+}
+
 int AzCam3::callExposure (const char *cmd, double p1, const char *p2)
 {
 	char buf[200];
@@ -253,6 +282,22 @@ int AzCam3::setCamera (const char *name, int value)
 	return callArg (buf);
 }
 
+long AzCam3::getLong (const char *cmd)
+{
+	callCommand (cmd);
+	if (strncmp (rbuf, "OK ", 3) != 0)
+		throw rts2core::Error ("invalid reply");
+	return atol (rbuf + 3);
+}
+
+double AzCam3::getDouble (const char *cmd)
+{
+	callCommand (cmd);
+	if (strncmp (rbuf, "OK ", 3) != 0)
+		throw rts2core::Error ("invalid reply");
+	return atof (rbuf + 3);
+}
+
 int AzCam3::startExposure()
 {
 	if (dataConn)
@@ -287,25 +332,47 @@ int AzCam3::startExposure()
 //		return ret;
 
 	const char *imgType[3] = {"object", "dark", "zero"};
-	return callExposure ("exposure.Expose", getExposure(), imgType[getExpType ()]);
+	return callCommand ("exposure.Expose1", getExposure(), imgType[getExpType ()], "RTS2");
+}
+
+int AzCam3::stopExposure ()
+{
+	callCommand ("exposure.Abort()\r\n");
+	return Camera::stopExposure ();
 }
 
 long AzCam3::isExposing ()
 {
-	if (dataConn)
+	try
 	{
-		if (dataConn->getDataSize () >= 0)
-			return -2;
-		return 1000;
+		double rem = getDouble ("controller.UpdateExposureTimeRemaining()\r\n");
+		if (rem > 0)
+			return rem * 1000;
 	}
-	return -1;
+	catch (rts2core::Error &er)
+	{
+		return -1;
+	}
+	return -2;
 }
 
 int AzCam3::doReadout ()
 {
 	if (dataConn)
 	{
-		if (dataConn->getDataSize () > 0)
+		if (dataConn->getDataSize () == -1)
+		{
+			try
+			{
+				getLong ("controller.GetPixelsRemaining()\r\n");
+				return 1000;
+			}
+			catch (rts2core::Error &er)
+			{
+				return -1;
+			}
+		}
+		else if (dataConn->getDataSize () > 0)
 			return 10;
 		removeConnection (dataConn);
 		dataConn = NULL;
