@@ -417,7 +417,7 @@ int AzCam3::doReadout ()
 int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 {
 	int ret = callCommand ("exposure.SetExposureTime", exptime);
-	if (fabs (ret - exptime * 1000) > 10)
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
 		return -2;
@@ -436,7 +436,7 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
 {
 	int ret = callCommand ("exposure.SetExposureTime", exptime);
-	if (fabs (ret - exptime * 1000) > 10)
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
 		return -2;
