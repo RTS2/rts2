@@ -422,11 +422,11 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
 		return -2;
 	}
-	ret = callCommand ("exposure.Begin");
+	ret = callCommand ("exposure.Begin()\r\n");
 	if (ret)
 		return -2;
 
-	ret = callCommand ("exposure.Integrate");
+	ret = callCommand ("exposure.Integrate()\r\n");
 	if (ret)
 		return -2;
 
@@ -444,16 +444,16 @@ int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 	ret = callCommand ("exposure.Parshift", shift);
 	if (ret)
 		return -2;
-	ret = callCommand ("exposure.Integrate");
+	ret = callCommand ("exposure.Integrate()\r\n");
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
 int AzCam3::shiftStoreEnd (rts2core::Connection *conn)
 {
-	int ret = callCommand ("exposure.Readout");
+	int ret = callCommand ("exposure.Readout()\r\n");
 	if (ret)
 		return -2;
-	ret = callCommand ("exposure.End");
+	ret = callCommand ("exposure.End()\r\n");
 	if (ret)
 		return -2;
 	return Camera::shiftStoreEnd (conn);
