@@ -120,6 +120,9 @@ class AzCam3:public rts2camd::Camera
 		rts2core::ConnTCP *commandConn;
 		AzCam3DataConn *dataConn;
 
+		rts2core::ValueFloat *exposureRemaining;
+		rts2core::ValueLong *pixelsRemaining;
+
 		char rbuf[200];
 
 		int callCommand (const char *cmd);
@@ -149,6 +152,9 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 	hostname = NULL;
 
 	createExpType ();
+
+	createValue (exposureRemaining, "exposure_rem", "[s] AZCam remaining exposure time", false);
+	createValue (pixelsRemaining, "pixels_rem", "AZCam remaining readout pixels", false);
 
 	addOption ('a', NULL, 1, "AZCAM hostname, hostname of the computer running AZCam");
 	addOption ('n', NULL, 1, "local hostname, hostname of the computer running RTS2");
@@ -346,8 +352,10 @@ long AzCam3::isExposing ()
 	try
 	{
 		double rem = getDouble ("controller.UpdateExposureTimeRemaining()\r\n");
+		exposureRemaining->setValueFloat (rem);
+		sendValueAll (exposureRemaining);
 		if (rem > 0)
-			return rem * 1000;
+			return rem * USEC_SEC;
 	}
 	catch (rts2core::Error &er)
 	{
@@ -365,7 +373,7 @@ int AzCam3::doReadout ()
 			try
 			{
 				getLong ("controller.GetPixelsRemaining()\r\n");
-				return 1000;
+				return 10000;
 			}
 			catch (rts2core::Error &er)
 			{
