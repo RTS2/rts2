@@ -48,10 +48,12 @@ int MultiDev::run ()
 		}
 
 		struct pollfd allpolls[polls + 1];
-		int i = 0;
-		for (iter = begin (); iter != end (); iter++)
+		int pollsa[size ()];
+		int i = 0, j = 0;
+		for (iter = begin (); iter != end (); iter++, j++)
 		{
 			memcpy (allpolls + i, (*iter)->fds, sizeof (struct pollfd) * (*iter)->npolls);
+			pollsa[j] = (*iter)->npolls;
 			i += (*iter)->npolls;
 		}
 
@@ -60,8 +62,16 @@ int MultiDev::run ()
 
 		if (ppoll (allpolls, polls, &read_tout, &sigmask) > 0)
 		{
-			for (iter = begin (); iter != end (); iter++)
+			j = 0;
+			int polloff = 0;
+			for (iter = begin (); iter != end (); iter++, j++)
+			{
+				struct pollfd *oldfd = (*iter)->fds;
+				(*iter)->fds = allpolls + polloff;
 				(*iter)->pollSuccess ();
+				(*iter)->fds = oldfd;
+				polloff += pollsa[j];
+			}
 		}
 
 		for (iter = begin (); iter != end (); iter++)
