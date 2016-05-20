@@ -861,10 +861,10 @@ void ConnShooter::connectionError (int last_data_size)
 }
 
 
-int ConnShooter::receive (fd_set * set)
+int ConnShooter::receive (rts2core::Block *block)
 {
 	int ret = 0;
-	if (sock >= 0 && FD_ISSET (sock, set))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		ret = read (sock, nbuf + nbuf_pos, sizeof (nbuf) - nbuf_pos);
 		if (ret == 0 && isConnState (CONN_CONNECTING))

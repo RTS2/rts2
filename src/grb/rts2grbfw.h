@@ -38,7 +38,7 @@ class Rts2GrbForwardConnection:public rts2core::ConnNoSend
 		Rts2GrbForwardConnection (rts2core::Block * in_master, int in_forwardPort);
 		virtual int init ();
 		// span new GRBFw connection
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 };
 
 class Rts2GrbForwardClientConn:public rts2core::ConnNoSend
@@ -49,6 +49,6 @@ class Rts2GrbForwardClientConn:public rts2core::ConnNoSend
 		Rts2GrbForwardClientConn (int in_sock, rts2core::Block * in_master);
 		virtual void postEvent (rts2core::Event * event);
 
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 };
 #endif							 /* !__RTS2_GRBFW__ */
