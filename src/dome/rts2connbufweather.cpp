@@ -93,7 +93,7 @@ Rts2ConnFramWeather (in_weather_port, in_weather_timeout, in_master)
 
 
 int
-Rts2ConnBufWeather::receive (fd_set * set)
+Rts2ConnBufWeather::receive (rts2core::Block *block)
 {
 	#define BUF_SIZE 1000
 	int ret, ret_c;
@@ -108,17 +108,15 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	float rtOutsideTemp;
 	float weatherTimeout = FRAM_CONN_TIMEOUT;
 	double cloud = nan ("f");
-	if (sock >= 0 && FD_ISSET (sock, set))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		struct sockaddr_in from;
 		socklen_t size = sizeof (from);
 		data_size =
-			recvfrom (sock, Wbuf, BUF_SIZE - 1, 0, (struct sockaddr *) &from,
-			&size);
+			recvfrom (sock, Wbuf, BUF_SIZE - 1, 0, (struct sockaddr *) &from, &size);
 		if (data_size < 0)
 		{
-			logStream (MESSAGE_DEBUG) << "error in receiving weather data: " <<
-				sendLog;
+			logStream (MESSAGE_DEBUG) << "error in receiving weather data: " << sendLog;
 			return 1;
 		}
 		Wbuf[data_size] = 0;

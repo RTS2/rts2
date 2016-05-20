@@ -47,6 +47,6 @@ class Rts2ConnBufWeather:public Rts2ConnFramWeather
 			int in_conn_timeout, int in_bad_weather_timeout,
 			int in_bad_windspeed_timeout,
 			Rts2DevDome * in_master);
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 };
 #endif							 /* !__RTS2_CONNBUFWEATHER__ */
