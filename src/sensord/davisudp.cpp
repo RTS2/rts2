@@ -154,7 +154,7 @@ int DavisUdp::init ()
 	return ret;
 }
 
-int DavisUdp::receive (fd_set * set)
+int DavisUdp::receive (rts2core::Block *block)
 {
 	#define BUF_SIZE 1000
 	int ret, ret_c;
@@ -170,7 +170,7 @@ int DavisUdp::receive (fd_set * set)
 	float rtBaroCurr;
 	float rtWindDir;
 	double cloud = NAN;
-	if (sock >= 0 && FD_ISSET (sock, set))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		struct sockaddr_in from;
 		socklen_t size = sizeof (from);

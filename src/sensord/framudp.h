@@ -47,7 +47,7 @@ class ConnFramWeather:public rts2core::ConnNoSend
 	public:
 		ConnFramWeather (int _weather_port, int _weather_timeout, FramWeather * _master);
 		virtual int init ();
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 };
 
 }

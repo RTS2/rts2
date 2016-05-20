@@ -31,11 +31,11 @@ AzCamDataConn::AzCamDataConn (rts2core::Block *_master, int _port):ConnTCP (_mas
 	outFile = 0;
 }
 
-int AzCamDataConn::receive (rts2core::Block *block))
+int AzCamDataConn::receive (rts2core::Block *block)
 {
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if (sock >= 0 && block->isForRead (readset))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		int rec;
 		if (isConnState (CONN_CONNECTING))

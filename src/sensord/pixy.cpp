@@ -39,7 +39,7 @@ class Rts2ConnPixy:public rts2core::ConnSerial
 		Rts2ConnPixy (const char *in_devName, Pixy * in_master, rts2core::bSpeedT in_baudSpeed = rts2core::BS9600, rts2core::cSizeT in_cSize = rts2core::C8, rts2core::parityT in_parity = rts2core::NONE, int in_vTime = 40);
 
 	protected:
-		virtual int receive (fd_set *set);
+		virtual int receive (rts2core::Block *block);
 
 	private:
 		/**
@@ -79,9 +79,9 @@ class Pixy:public Sensor
 
 using namespace rts2sensord;
 
-int Rts2ConnPixy::receive (fd_set *set)
+int Rts2ConnPixy::receive (rts2core::Block *block)
 {
-	if (sock < 0 || !FD_ISSET (sock, set))
+	if (sock < 0 || !block->isForRead (sock))
 	 	return 0;
 	// get one byte..
 	if (readPort (lastVal) != 1)

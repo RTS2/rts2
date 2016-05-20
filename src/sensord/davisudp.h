@@ -65,7 +65,7 @@ class DavisUdp:public rts2core::ConnNoSend
 
 		virtual int init ();
 
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 
 		void setConnTimeout (int _ct) { conn_timeout = _ct; }
 	protected:
