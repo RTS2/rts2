@@ -1465,11 +1465,11 @@ void ConnGrb::connectionError (int last_data_size)
 	gcnReceivedBytes = 0;
 }
 
-int ConnGrb::receive (fd_set *set)
+int ConnGrb::receive (rts2core::Block *block)
 {
 	int ret = 0;
 	struct tm *t;
-	if (gcn_listen_sock >= 0 && FD_ISSET (gcn_listen_sock, set))
+	if (gcn_listen_sock >= 0 && block->isForRead (gcn_listen_sock))
 	{
 		// try to accept connection..
 		close (sock);			 // close previous connections..we support only one GCN connection

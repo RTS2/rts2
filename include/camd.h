@@ -924,11 +924,11 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void createShiftStore () { createValue (shiftstoreLines, "shiftstore", "pixels of shiftstore", true); }
 
-		virtual int shiftStoreStart (Connection *conn, float exptime);
+		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
 
-		virtual int shiftStoreShift (Connection *conn, int shift, float exptime);
+		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
 
-		virtual int shiftStoreEnd (Connection *conn, int shift, float exptime);
+		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
 
 		/**
 		 * Set camera filter.

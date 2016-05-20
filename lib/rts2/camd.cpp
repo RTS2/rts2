@@ -1772,19 +1772,22 @@ int Camera::camReadout (rts2core::Connection * conn)
 	return -1;
 }
 
-int Camera::shiftStoreStart (Connection *conn, float exptime)
+int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
 {
-
+	shiftstoreLines->clear ();
+	return 0;
 }
 
-int Camera::shiftStoreShift (Connection *conn, int shift, float exptime)
+int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
 {
-
+	shiftstoreLines->addValue (shift);
+	return 0;
 }
 
-int Camera::shiftStoreEnd (Connection *conn, int shift, float exptime)
+int Camera::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 {
-
+	shiftstoreLines->addValue (shift);
+	return 0;
 }
 
 int Camera::setFilterNum (int new_filter, const char *fn)

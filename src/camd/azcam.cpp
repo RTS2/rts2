@@ -12,7 +12,7 @@ class AzCamDataConn:public rts2core::ConnTCP
 	public:
 		AzCamDataConn (rts2core::Block *_master, int _port);
 
-		virtual int receive (fd_set * readset);
+		virtual int receive (rts2core::Block *block);
 
 		size_t getDataSize () { return dataSize; } 
 
@@ -31,11 +31,11 @@ AzCamDataConn::AzCamDataConn (rts2core::Block *_master, int _port):ConnTCP (_mas
 	outFile = 0;
 }
 
-int AzCamDataConn::receive (fd_set *readset)
+int AzCamDataConn::receive (rts2core::Block *block))
 {
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if (sock >= 0 && FD_ISSET (sock, readset))
+	if (sock >= 0 && block->isForRead (readset))
 	{
 		int rec;
 		if (isConnState (CONN_CONNECTING))

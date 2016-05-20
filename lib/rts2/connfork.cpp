@@ -381,35 +381,6 @@ int ConnFork::init ()
 	exit (0);
 }
 
-/*
-int ConnFork::run ()
-{
-	int ret;
-	ret = init ();
-	if (ret)
-		return ret;
-	
-	fd_set read_set, write_set, exp_set;
-	struct timeval read_tout;
-	read_tout.tv_sec = 10;
-	read_tout.tv_usec = 0;
-
-	add (getMaster ());
-
-	while (sock > 0)
-	{
-		ret = ppoll (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
-		if (ret == -1)
-			return -1;
-		if (receive (getMaster ()) == -1 || writable (getMaster ()) == -1)
-			return 0;
-		idle ();
-	}
-
-	return 0;
-}
-*/
-
 void ConnFork::stop ()
 {
 	if (childPid > 0)
