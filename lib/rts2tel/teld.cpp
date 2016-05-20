@@ -101,6 +101,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
+		trackingFSize->setValueInteger (20);
 
 		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true);
 	}
@@ -1287,7 +1288,7 @@ void Telescope::runTracking ()
 void Telescope::updateTrackingFrequency ()
 {
 	double n = getNow ();
-	if (!isnan (lastTrackingRun))
+	if (!isnan (lastTrackingRun) && n != lastTrackingRun)
 		trackingFrequency->addValue (1 / (n - lastTrackingRun), trackingFSize->getValueInteger ());
 	lastTrackingRun = n;
 }
