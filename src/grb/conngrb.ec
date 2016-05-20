@@ -1487,10 +1487,9 @@ int ConnGrb::receive (rts2core::Block *block)
 		close (gcn_listen_sock);
 		gcn_listen_sock = -1;
 		setConnState (CONN_CONNECTED);
-		logStream (MESSAGE_INFO) << "ConnGrb::receive accept gcn_listen_sock from "
-			<< inet_ntoa (other_side.sin_addr) << " port " << ntohs (other_side.sin_port) << sendLog;
+		logStream (MESSAGE_INFO) << "ConnGrb::receive accept gcn_listen_sock from " << inet_ntoa (other_side.sin_addr) << " port " << ntohs (other_side.sin_port) << sendLog;
 	}
-	else if (sock >= 0 && FD_ISSET (sock, set))
+	else if (sock >= 0 && block->isForRead (sock))
 	{
 		try
 		{
