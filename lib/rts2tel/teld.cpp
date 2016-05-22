@@ -83,11 +83,14 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		diffTrackRaDec->setValueRaDec (0, 0);
 
 		createValue (diffTrackStart, "DSTART", "start time of differential tracking", false);
+		createValue (diffTrackOn, "DON", "differential tracking on/off", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		diffTrackOn->setValueBool (false);
 	}
 	else
 	{
 		diffTrackRaDec = NULL;
 		diffTrackStart = NULL;
+		diffTrackOn = NULL;
 	}
 
 	if (hasTracking)
@@ -449,7 +452,7 @@ int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int3
 
 void Telescope::addDiffRaDec (struct ln_equ_posn *tar, double secdiff)
 {
-	if (diffTrackRaDec)
+	if (diffTrackRaDec && diffTrackOn->getValueBool () == true)
 	{
 		tar->ra += getDiffTrackRa () * secdiff / 3600.0;
 		tar->dec += getDiffTrackDec () * secdiff / 3600.0;
@@ -678,6 +681,18 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	  	setDiffTrack (((rts2core::ValueRaDec *)new_value)->getRa (), ((rts2core::ValueRaDec *)new_value)->getDec ());
 		return 0;
 	}
+	else if (old_value == diffTrackOn)
+	{
+		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
+		{
+			setDiffTrack (diffTrackRaDec->getRa (), diffTrackRaDec->getDec ());
+		}
+		else
+		{
+			setDiffTrack (0, 0);
+		}
+		return 0;
+	}
 	else if (old_value == refreshIdle)
 	{
 		switch (getState () & TEL_MASK_MOVING)
@@ -766,6 +781,7 @@ void Telescope::incMoveNum ()
 		diffTrackRaDec->setValueRaDec (0, 0);
 		diffTrackStart->setValueDouble (NAN);
 	  	setDiffTrack (0,0);
+		diffTrackOn->setValueBool (false);
 	}
 	// reset offsets
 	offsRaDec->setValueRaDec (0, 0);
@@ -1336,9 +1352,17 @@ void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_t
 void Telescope::setDiffTrack (double dra, double ddec)
 {
 	if (dra == 0 && ddec == 0)
+	{
 		diffTrackStart->setValueDouble (NAN);
+		diffTrackOn->setValueBool (false);
+	}
 	else
+	{
 		diffTrackStart->setValueDouble (ln_get_julian_from_sys ());
+		diffTrackOn->setValueBool (true);
+	}
+	sendValueAll (diffTrackStart);
+	sendValueAll (diffTrackOn);
 }
 
 void Telescope::addParkPosOption ()
@@ -1960,7 +1984,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		return peek (obj_ra, obj_dec) == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
-	else if (conn->isCommand ("altaz"))
+	else if (conn->isCommand (COMMAND_TELD_ALTAZ))
 	{
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
@@ -2087,7 +2111,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 
 		return startResyncMove (conn, 0);
 	}
-	else if (conn->isCommand ("park"))
+	else if (conn->isCommand (COMMAND_TELD_PARK))
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;

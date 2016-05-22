@@ -71,9 +71,14 @@
 #define COMMAND_TELD_MOVE       "move"
 
 /**
- *
+ * Move to HA DEC coordinates.
  */
 #define COMMAND_TELD_HADEC      "hadec"
+
+/**
+ * Move telescope to altaz coordinates.
+ */
+#define COMMAND_TELD_ALTAZ      "altaz"
 
 /**
  * Move to MPEC one line element position. @ingroup RTS2Command
@@ -84,6 +89,11 @@
  * Move to TLE two line elements. @ingroup RTS2Command
  */ 
 #define COMMAND_TELD_MOVE_TLE   "move_tle"
+
+/**
+ * Park telescope.
+ */
+#define COMMAND_TELD_PARK       "park"
 
 /**
  * Peek telescope movement. @ingroup RTS2Command

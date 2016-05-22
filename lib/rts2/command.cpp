@@ -374,7 +374,7 @@ CommandMoveFixed::CommandMoveFixed (Block * _master, DevClientTelescope * _tel, 
 CommandMoveAltAz::CommandMoveAltAz (Block * _master, DevClientTelescope * _tel, double alt, double az):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
-	_os << "altaz " << alt << " " << az;
+	_os << COMMAND_TELD_ALTAZ " " << alt << " " << az;
 	setCommand (_os);
 }
 

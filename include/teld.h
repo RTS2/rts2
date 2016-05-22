@@ -1070,6 +1070,11 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *diffTrackStart;
 
 		/**
+		 * Differential tracking on/off.
+		 */
+		rts2core::ValueBool *diffTrackOn;
+
+		/**
 		 * Coordinates of the object, after offsets are applied (in J2000).
 		 * OBJ[RA|DEC] = ORI[|RA|DEC] + OFFS[|RA|DEC]
 		 */
