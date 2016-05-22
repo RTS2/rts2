@@ -200,6 +200,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (tle_l2, "tle_l2_target", "TLE target line 2", false);
 	createValue (tle_ephem, "tle_ephem", "TLE emphemeris type", false);
 	createValue (tle_distance, "tle_distance", "[km] satellite distance", false);
+	createValue (tle_freeze, "tle_freeze", "if true, stop updating TLE positions; put current speed vector to DRATE", false, RTS2_VALUE_WRITABLE);
+	tle_freeze->setValueBool (false);
 	createValue (tle_rho_sin_phi, "tle_rho_sin", "TLE rho_sin_phi (observatory position)", false);
 	createValue (tle_rho_cos_phi, "tle_rho_cos", "TLE rho_cos_phi (observatory position)", false);
 	createValue (tle_refresh, "tle_refresh", "refresh TLE ra_diff and dec_diff every tle_refresh seconds", false, RTS2_VALUE_WRITABLE);
@@ -371,7 +373,7 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 				break;
 			}
 			// calculate from TLE..
-			else if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
+			else if (tle_freeze->getValueBool () == false && tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
 			{
 				calculateTLE (JD, out_tar->ra, out_tar->dec, tar_distance);
 				out_tar->ra = ln_rad_to_deg (out_tar->ra);
@@ -679,7 +681,6 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	else if (old_value == diffTrackRaDec)
 	{
 	  	setDiffTrack (((rts2core::ValueRaDec *)new_value)->getRa (), ((rts2core::ValueRaDec *)new_value)->getDec ());
-		return 0;
 	}
 	else if (old_value == diffTrackOn)
 	{
@@ -691,7 +692,6 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 		{
 			setDiffTrack (0, 0);
 		}
-		return 0;
 	}
 	else if (old_value == refreshIdle)
 	{
@@ -711,6 +711,18 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 			case TEL_PARKING:
 				setIdleInfoInterval (((rts2core::ValueDouble *)new_value)->getValueDouble ());
 				break;
+		}
+	}
+	else if (old_value == tle_freeze)
+	{
+		if (((rts2core::ValueBool *) new_value)->getValueBool () == false)
+		{
+			// reset DRATE, probably set by tle_freeze = true
+			setDiffTrack (0, 0);
+		}
+		else
+		{
+			setDiffTrack (skyVect->getRa (), skyVect->getDec ());
 		}
 	}
 	return rts2core::Device::setValue (old_value, new_value);
@@ -783,6 +795,9 @@ void Telescope::incMoveNum ()
 	  	setDiffTrack (0,0);
 		diffTrackOn->setValueBool (false);
 	}
+
+	tle_freeze->setValueBool (false);
+
 	// reset offsets
 	offsRaDec->setValueRaDec (0, 0);
 	offsRaDec->resetValueChanged ();
@@ -1544,7 +1559,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	}
 
 	// calculate from TLE..
-	if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
+	if (tle_freeze->getValueBool () == false && tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
 	{
 		double ra, dec, dist_to_satellite;
 		calculateTLE (JD, ra, dec, dist_to_satellite);

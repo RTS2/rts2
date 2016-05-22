@@ -1258,6 +1258,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueString *tle_l2;
 		rts2core::ValueInteger *tle_ephem;
 		rts2core::ValueDouble *tle_distance;
+		rts2core::ValueBool *tle_freeze;
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;
 
