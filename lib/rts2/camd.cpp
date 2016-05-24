@@ -171,7 +171,7 @@ int Camera::endExposure (int ret)
 		logStream (MESSAGE_INFO) << "end exposure for " << exposureConn->getName () << sendLog;
 		return camReadout (exposureConn);
 	}
-	if (getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM))
+	if (getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM | CAM_EXPOSING_SHIFT))
 	{
 		if (ret == -4)
 		{
@@ -181,7 +181,7 @@ int Camera::endExposure (int ret)
 		else
 		{
 			stopExposure ();
-			logStream (MESSAGE_WARNING) << "end exposure without exposure connection" << sendLog;
+			logStream (MESSAGE_WARNING) << "end exposure without exposure connection, state " << getStateChip (0) << sendLog;
 		}
 	}
 
