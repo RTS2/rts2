@@ -388,6 +388,38 @@ Element *Script::parseBuf (Rts2Target * target)
 			return NULL;
 		return new ElementDark (this, exp_time);
 	}
+	else if (!strcmp (commandStart, COMMAND_SHIFTSTART))
+	{
+		float exp_time;
+		ret = getNextParamFloat (&exp_time);
+		if (ret)
+			return NULL;
+		return new ElementShiftStoreStart (this, exp_time);
+	}
+	else if (!strcmp (commandStart, COMMAND_SHIFTPROGRESS))
+	{
+		int shift;
+		float exp_time;
+		ret = getNextParamInteger (&shift);
+		if (ret)
+			return NULL;
+		ret = getNextParamFloat (&exp_time);
+		if (ret)
+			return NULL;
+		return new ElementShiftStoreProgress (this, exp_time, shift);
+	}
+	else if (!strcmp (commandStart, COMMAND_SHIFTEND))
+	{
+		int shift;
+		float exp_time;
+		ret = getNextParamInteger (&shift);
+		if (ret)
+			return NULL;
+		ret = getNextParamFloat (&exp_time);
+		if (ret)
+			return NULL;
+		return new ElementShiftStoreEnd (this, exp_time, shift);
+	}
 	else if (!strcmp (commandStart, COMMAND_BOX))
 	{
 		int x, y, w, h;

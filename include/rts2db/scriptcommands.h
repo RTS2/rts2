@@ -30,6 +30,12 @@
 #define COMMAND_IMAGE           "I"
 #define COMMAND_EXPOSURE        "E"
 #define COMMAND_DARK            "D"
+/**
+ * Command to start SHIFT sequence on CCD
+ */
+#define COMMAND_SHIFTSTART      "STARTSHIFT"
+#define COMMAND_SHIFTPROGRESS   "DOSHIFT"
+#define COMMAND_SHIFTEND        "ENDSHIFT"
 #define COMMAND_CHANGE          "C"
 #define COMMAND_BOX             "BOX"
 #define COMMAND_CENTER          "CENTER"

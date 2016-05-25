@@ -299,6 +299,52 @@ class ElementDark:public ElementImage
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_DARK "\",\"duration\":" << expTime; }
 };
 
+class ElementShiftStoreStart:public Element
+{
+	public:
+		ElementShiftStoreStart (Script * _script, float in_expTime);
+		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "startshift " << expTime; }
+		virtual void printXml (std::ostream &os) { os << "  <startshift length='" << expTime << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_SHIFTSTART " " << expTime; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_SHIFTSTART << "\",\"duration\":" << expTime; }
+
+	private:
+		float expTime;
+};
+
+class ElementShiftStoreProgress:public Element
+{
+	public:
+		ElementShiftStoreProgress (Script * _script, int in_shift, float in_expTime);
+		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "startshift " << shift << " " << expTime; }
+		virtual void printXml (std::ostream &os) { os << "  <startshift shift='" << shift << "' length='" << expTime << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_SHIFTPROGRESS " " << shift << " " << expTime; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_SHIFTPROGRESS << "\",\"shift\":" << shift << "\"duration\":" << expTime; }
+
+	private:
+		float expTime;
+		int shift;
+};
+
+class ElementShiftStoreEnd:public ElementImage
+{
+	public:
+		ElementShiftStoreEnd (Script * _script, int in_shift, float in_expTime);
+		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "endshift " << expTime; }
+		virtual void printXml (std::ostream &os) { os << "  <endshift shift='" << shift << "' length='" << expTime << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_SHIFTEND " " << shift << " " << expTime; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_SHIFTEND << "\",\"shift\":" << shift << ",\"duration\":" << expTime; }
+
+	private:
+		int shift;
+};
+
 class ElementBox:public Element
 {
 	public:

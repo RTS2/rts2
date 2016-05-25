@@ -118,7 +118,7 @@ class AzCam3:public rts2camd::Camera
 
 		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
 		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
-		virtual int shiftStoreEnd (rts2core::Connection *conn);
+		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
 
 	private:
 		rts2core::ConnTCP *commandConn;
@@ -384,6 +384,8 @@ long AzCam3::isExposing ()
 	{
 		return -1;
 	}
+	if (getState () & CAM_EXPOSING_SHIFT)
+		return -4;
 	return -2;
 }
 
@@ -444,22 +446,34 @@ int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
 		return -2;
 	}
-	ret = callCommand ("exposure.Parshift", shift);
+	ret = callCommand ("controller.Parshift", shift);
 	if (ret)
 		return -2;
 	ret = callCommand ("exposure.Integrate()\r\n");
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
-int AzCam3::shiftStoreEnd (rts2core::Connection *conn)
+int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 {
-	int ret = callCommand ("exposure.Readout()\r\n");
+	int ret = callCommand ("exposure.SetExposureTime", exptime);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
+		return -2;
+	}
+	ret = callCommand ("controller.Parshift", shift);
+	if (ret)
+		return -2;
+	ret = callCommand ("exposure.Integrate()\r\n");
+	if (ret)
+		return -2;
+	ret = callCommand ("exposure.Readout()\r\n");
 	if (ret)
 		return -2;
 	ret = callCommand ("exposure.End()\r\n");
 	if (ret)
 		return -2;
-	return Camera::shiftStoreEnd (conn);
+	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
 
 int main (int argc, char **argv)

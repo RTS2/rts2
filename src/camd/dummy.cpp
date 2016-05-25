@@ -287,7 +287,7 @@ class Dummy:public Camera
 
 		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
 
-		virtual int shiftStoreEnd (rts2core::Connection *conn);
+		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
 
 	private:
 		bool supportFrameT;
@@ -375,9 +375,9 @@ int Dummy::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
-int Dummy::shiftStoreEnd (rts2core::Connection *conn)
+int Dummy::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 {
-	return Camera::shiftStoreEnd (conn);
+	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
 
 int Dummy::doReadout ()
