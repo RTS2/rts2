@@ -56,7 +56,9 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 	{
 		int rec;
 		if (isConnState (CONN_CONNECTING))
+		{
 			return acceptConn ();
+		}
 
 		if (headerSize < 256)
 		{
@@ -395,7 +397,7 @@ long AzCam3::isExposing ()
 	{
 		return -1;
 	}
-	if (getState () & CAM_EXPOSING_SHIFT)
+	if (getState () & CAM_SHIFT)
 		return -4;
 	return -2;
 }
@@ -429,7 +431,11 @@ int AzCam3::doReadout ()
 
 int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 {
-	int ret = callCommand ("exposure.SetExposureTime", exptime);
+	int ret = setupDataConnection ();
+	if (ret)
+		return -2;
+
+	ret = callCommand ("exposure.SetExposureTime", exptime);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
@@ -484,10 +490,6 @@ int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 		lastShiftExpTime = exptime;
 	}
 
-	ret = setupDataConnection ();	
-	if (ret)
-		return -2;
-
 	ret = callCommand ("controller.Parshift", shift);
 	if (ret)
 		return -2;
@@ -497,9 +499,9 @@ int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 	ret = callCommand ("exposure.Readout()\r\n");
 	if (ret)
 		return -2;
-	ret = callCommand ("exposure.End()\r\n");
-	if (ret)
-		return -2;
+	commandConn->sendData ("exposure.End()\r\n");
+	//if (ret)
+	//	return -2;
 	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
 

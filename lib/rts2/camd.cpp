@@ -171,7 +171,7 @@ int Camera::endExposure (int ret)
 		logStream (MESSAGE_INFO) << "end exposure for " << exposureConn->getName () << sendLog;
 		return camReadout (exposureConn);
 	}
-	if (getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM | CAM_EXPOSING_SHIFT))
+	if (getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM | CAM_SHIFT))
 	{
 		if (ret == -4)
 		{
@@ -1776,7 +1776,7 @@ int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
 {
 	shiftstoreLines->clear ();
 	sendValueAll (shiftstoreLines);
-	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE, CAM_EXPOSING | CAM_EXPOSING_SHIFT, "starting shift-store", NAN, NAN, conn);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_SHIFTING, CAM_EXPOSING | CAM_SHIFT, "starting shift-store", NAN, NAN, conn);
 	return 0;
 }
 
@@ -1784,7 +1784,7 @@ int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 {
 	shiftstoreLines->addValue (shift);
 	sendValueAll (shiftstoreLines);
-	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE, CAM_EXPOSING | CAM_EXPOSING_SHIFT, "shifting shift-store", NAN, NAN, conn);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE, CAM_EXPOSING, "shifting shift-store", NAN, NAN, conn);
 	return 0;
 }
 
@@ -1792,7 +1792,7 @@ int Camera::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 {
 	shiftstoreLines->addValue (shift);
 	sendValueAll (shiftstoreLines);
-	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_READING, "end shift-store", NAN, NAN, conn);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_SHIFTING | CAM_MASK_READING, CAM_READING, "end shift-store", NAN, NAN, conn);
 	return 0;
 }
 
@@ -1965,9 +1965,12 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 			return shiftStoreShift (conn, shift, exptime);
 		}
 		else if (strcmp (kind, "end") == 0)
+		{
 			if (conn->paramNextInteger (&shift) << conn->paramNextFloat (&exptime) || !conn->paramEnd ())
 				return -2;
 			return shiftStoreEnd (conn, shift, exptime);
+		}
+		return -2;
 	}
 	else if (conn->isCommand ("stopexpo"))
 	{
