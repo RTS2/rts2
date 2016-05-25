@@ -426,7 +426,7 @@ int AzCam3::doReadout ()
 			return 10;
 		std::istringstream *is;
 		commandConn->receiveData (&is, 20, '\r');
-		if (is->str () != "OK\n")
+		if (is->str ().substr (0, 2) != "OK")
 			return -1;
 		delete is;
 		removeConnection (dataConn);
