@@ -398,7 +398,7 @@ long AzCam3::isExposing ()
 		return -1;
 	}
 	if (getState () & CAM_SHIFT)
-		return -4;
+		return -5;
 	return -2;
 }
 
@@ -410,8 +410,11 @@ int AzCam3::doReadout ()
 		{
 			try
 			{
-				pixelsRemaining->setValueLong (getLong ("controller.GetPixelsRemaining()\r\n"));
-				sendValueAll (pixelsRemaining);
+				if (!(getState () & CAM_SHIFT))
+				{
+					pixelsRemaining->setValueLong (getLong ("controller.GetPixelsRemaining()\r\n"));
+					sendValueAll (pixelsRemaining);
+				}
 				return 10000;
 			}
 			catch (rts2core::Error &er)
@@ -421,6 +424,11 @@ int AzCam3::doReadout ()
 		}
 		else if (dataConn->getDataSize () > 0)
 			return 10;
+		std::istringstream *is;
+		commandConn->receiveData (&is, 20, '\r');
+		if (is->str () != "OK\n")
+			return -1;
+		delete is;
 		removeConnection (dataConn);
 		dataConn = NULL;
 		fitsDataTransfer ("/tmp/m.fits");
@@ -500,8 +508,6 @@ int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 	if (ret)
 		return -2;
 	commandConn->sendData ("exposure.End()\r\n");
-	//if (ret)
-	//	return -2;
 	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
 
