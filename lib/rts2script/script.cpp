@@ -406,7 +406,7 @@ Element *Script::parseBuf (Rts2Target * target)
 		ret = getNextParamFloat (&exp_time);
 		if (ret)
 			return NULL;
-		return new ElementShiftStoreProgress (this, exp_time, shift);
+		return new ElementShiftStoreProgress (this, shift, exp_time);
 	}
 	else if (!strcmp (commandStart, COMMAND_SHIFTEND))
 	{
@@ -418,7 +418,7 @@ Element *Script::parseBuf (Rts2Target * target)
 		ret = getNextParamFloat (&exp_time);
 		if (ret)
 			return NULL;
-		return new ElementShiftStoreEnd (this, exp_time, shift);
+		return new ElementShiftStoreEnd (this, shift, exp_time);
 	}
 	else if (!strcmp (commandStart, COMMAND_BOX))
 	{

@@ -144,8 +144,11 @@ class AzCam3:public rts2camd::Camera
 		long getLong (const char *cmd);
 		double getDouble (const char *cmd);
 
+		int setupDataConnection ();
+
 		HostString *azcamHost;
 		const char *hostname;
+		float lastShiftExpTime;
 };
 
 }
@@ -156,6 +159,8 @@ AzCam3::AzCam3 (int argc, char **argv): Camera (argc, argv)
 {
 	azcamHost = NULL;
 	hostname = NULL;
+
+	lastShiftExpTime = NAN;
 
 	createExpType ();
 	createShiftStore ();
@@ -327,7 +332,7 @@ double AzCam3::getDouble (const char *cmd)
 	return atof (rbuf + 3);
 }
 
-int AzCam3::startExposure()
+int AzCam3::setupDataConnection ()
 {
 	if (dataConn)
 	{
@@ -353,6 +358,12 @@ int AzCam3::startExposure()
 		return ret;
 
 	ret = setCamera ("exposure.RemoteImageServerPort", dataConn->getPort ());
+	return ret;
+}
+
+int AzCam3::startExposure()
+{
+	int ret = setupDataConnection ();
 	if (ret)
 		return ret;
 
@@ -424,6 +435,7 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
 		return -2;
 	}
+	lastShiftExpTime = exptime;
 	ret = Camera::shiftStoreStart (conn, exptime);
 	if (ret)
 		return -2;
@@ -440,11 +452,16 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 
 int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
 {
-	int ret = callCommand ("exposure.SetExposureTime", exptime);
-	if (ret)
+	int ret;
+	if (lastShiftExpTime != exptime)
 	{
-		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
-		return -2;
+		ret = callCommand ("exposure.SetExposureTime", exptime);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
+			return -2;
+		}
+		lastShiftExpTime = exptime;
 	}
 	ret = callCommand ("controller.Parshift", shift);
 	if (ret)
@@ -455,12 +472,22 @@ int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 
 int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
 {
-	int ret = callCommand ("exposure.SetExposureTime", exptime);
-	if (ret)
+	int ret;
+	if (lastShiftExpTime != exptime)
 	{
-		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
-		return -2;
+		ret = callCommand ("exposure.SetExposureTime", exptime);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
+			return -2;
+		}
+		lastShiftExpTime = exptime;
 	}
+
+	ret = setupDataConnection ();	
+	if (ret)
+		return -2;
+
 	ret = callCommand ("controller.Parshift", shift);
 	if (ret)
 		return -2;
