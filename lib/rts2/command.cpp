@@ -186,6 +186,27 @@ CommandReadout::CommandReadout (Block * _master):Command (_master)
 	setCommand ("readout");
 }
 
+CommandShiftStart::CommandShiftStart (Block * _master, float expTime):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " start " << expTime;
+	setCommand (_os);
+}
+
+CommandShiftProgress::CommandShiftProgress (Block * _master, int shift, float expTime):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " shift " << shift << " " << expTime;
+	setCommand (_os);
+}
+
+CommandShiftEnd::CommandShiftEnd (Block * _master, int shift, float expTime):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " end " << shift << " " << expTime;
+	setCommand (_os);
+}
+
 CommandFitsStat::CommandFitsStat (Block * _master, double average, double min, double max, double sum, double mode):Command (_master)
 {
 	std::ostringstream _os;

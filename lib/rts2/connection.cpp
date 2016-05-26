@@ -180,6 +180,12 @@ std::string Connection::getCameraChipState (int chipN)
 				_os << " | ";
 			_os << chipN << " EXPOSING NOIMG";
 		}
+		if (chip_state & CAM_SHIFT)
+		{
+			if (_os.str ().size ())
+				_os << " | ";
+			_os << chipN << " SHIFTSTORE";
+		}
 		if (chip_state & CAM_READING)
 		{
 			if (_os.str ().size ())

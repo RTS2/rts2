@@ -455,6 +455,7 @@ class Camera:public rts2core::ScriptDevice
 		{
 			if (exposureConn)
 				return exposureConn->fitsDataTransfer (fn);
+			logStream (MESSAGE_WARNING) << "fits data without exposure connection, no data will be received" << sendLog;
 			return 0;
 		}
 		
@@ -928,7 +929,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
 
-		virtual int shiftStoreEnd (rts2core::Connection *conn);
+		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
 
 		/**
 		 * Set camera filter.

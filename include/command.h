@@ -433,6 +433,25 @@ class CommandReadout:public Command
 		CommandReadout (Block * _master);
 };
 
+class CommandShiftStart: public Command
+{
+	public:
+		CommandShiftStart (Block * _master, float expTime);
+};
+
+class CommandShiftProgress: public Command
+{
+	public:
+		CommandShiftProgress (Block * _master, int shift, float expTime);
+};
+
+class CommandShiftEnd: public Command
+{
+	public:
+		CommandShiftEnd (Block * _master, int shift, float expTime);
+};
+
+
 /**
  * Sends image statistics.
  */
