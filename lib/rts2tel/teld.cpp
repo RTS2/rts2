@@ -722,6 +722,8 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 		}
 		else
 		{
+			diffTrackRaDec->setValueRaDec (skyVect->getRa (), skyVect->getDec ());
+			sendValueAll (diffTrackRaDec);
 			setDiffTrack (skyVect->getRa (), skyVect->getDec ());
 		}
 	}
