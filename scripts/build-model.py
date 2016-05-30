@@ -7,6 +7,7 @@ import time
 s = rts2.scriptcomm.Rts2Comm()
 
 s.setValue('exposure',20)
+s.setValue('SHUTTER',0)
 #sidereal tracking
 tel = s.getDeviceByType(rts2.scriptcomm.DEVICE_TELESCOPE)
 s.setValue('TRACKING',2,tel)
