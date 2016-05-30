@@ -715,6 +715,9 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	}
 	else if (old_value == tle_freeze)
 	{
+		if (tle_l1->getValueString ().length () == 0 || tle_l2->getValueString ().length () == 0)
+			return -2;
+
 		if (((rts2core::ValueBool *) new_value)->getValueBool () == false)
 		{
 			// reset DRATE, probably set by tle_freeze = true
@@ -722,9 +725,22 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 		}
 		else
 		{
-			diffTrackRaDec->setValueRaDec (skyVect->getRa (), skyVect->getDec ());
+			// TLE not yet calculated..
+			double JD = ln_get_julian_from_sys ();
+			struct ln_equ_posn p1, p2, speed;
+			double d1, d2;
+			const double sec_step = 10.0;
+			calculateTLE (JD, p1.ra, p1.dec, d1);
+			calculateTLE (JD + sec_step / 86400.0, p2.ra, p2.dec, d2);
+			speed.ra = (p2.ra - p1.ra) / sec_step;
+			if (speed.ra > 180.0)
+				speed.ra -= 360.0;
+			else if (speed.ra < -180.0)
+				speed.ra += 360.0;
+			speed.dec = (p2.dec - p1.dec) / sec_step;
+			diffTrackRaDec->setValueRaDec (speed.ra, speed.dec);
 			sendValueAll (diffTrackRaDec);
-			setDiffTrack (skyVect->getRa (), skyVect->getDec ());
+			setDiffTrack (speed.ra, speed.dec);
 		}
 	}
 	return rts2core::Device::setValue (old_value, new_value);
