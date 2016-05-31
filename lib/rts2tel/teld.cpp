@@ -1787,6 +1787,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	corrRaDec->resetValueChanged ();
 	telTargetRaDec->resetValueChanged ();
 	mpec->resetValueChanged ();
+	tle_l1->resetValueChanged ();
+	tle_l2->resetValueChanged ();
 
 	if (woffsRaDec->wasChanged ())
 	{
