@@ -732,12 +732,12 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 			const double sec_step = 10.0;
 			calculateTLE (JD, p1.ra, p1.dec, d1);
 			calculateTLE (JD + sec_step / 86400.0, p2.ra, p2.dec, d2);
-			speed.ra = (ln_rad_to_deg (p2.ra - p1.ra)) / sec_step;
+			speed.ra = (3600 * ln_rad_to_deg (p2.ra - p1.ra)) / sec_step;
 			if (speed.ra > 180.0)
 				speed.ra -= 360.0;
 			else if (speed.ra < -180.0)
 				speed.ra += 360.0;
-			speed.dec = (ln_rad_to_deg (p2.dec - p1.dec)) / sec_step;
+			speed.dec = (3600 * ln_rad_to_deg (p2.dec - p1.dec)) / sec_step;
 			diffTrackRaDec->setValueRaDec (speed.ra, speed.dec);
 			sendValueAll (diffTrackRaDec);
 			setDiffTrack (speed.ra, speed.dec);
