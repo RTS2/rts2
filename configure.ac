@@ -142,7 +142,9 @@ esac],[ncurses=yes])
 
 dnl Check for GraphicsMagic++ library
 
-PKG_CHECK_MODULES([MAGIC], [GraphicsMagick++],,AC_MSG_RESULT(not found))
+AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagick++ is installed])
+
+PKG_CHECK_MODULES([MAGIC], [GraphicsMagick++], AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[If JPEG is installed]), AC_MSG_RESULT(not found))
 
 AH_TEMPLATE([JSONSOUP],[JSON and SOUP libraries are present])
 
