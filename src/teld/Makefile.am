@@ -77,8 +77,8 @@ if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
 
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
-rts2_telmodeltest_LDADD = -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_JPEG@ @LIB_CFITSIO@ @LIBXML_LIBS@ @LIB_CRYPT@
-rts2_telmodeltest_CPPFLAGS = @JPEG_CFLAGS@ @CFITSIO_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
+rts2_telmodeltest_LDADD = -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @MAGIC_LIBS@ @LIB_CFITSIO@ @LIBXML_LIBS@ @LIB_CRYPT@
+rts2_telmodeltest_CPPFLAGS = @MAGIC_CFLAGS@ @CFITSIO_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
 
 else
 EXTRA_DIST += telmodeltest.cpp

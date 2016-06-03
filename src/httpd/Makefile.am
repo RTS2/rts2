@@ -4,8 +4,8 @@ noinst_HEADERS = xmlstream.h httpd.h r2x.h session.h stateevents.h valueevents.h
 	valueplot.h emailaction.h augerreq.h devicesreq.h planreq.h graphreq.h bbserver.h api.h \
 	bbapi.h messageevents.h switchstatereq.h xmlapi.h
 
-LDADD = @LIB_M@ @LIB_NOVA@ @JSONGLIB_LIBS@
-AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ @JSONGLIB_CFLAGS@ -I../../include
+LDADD = @MAGIC_LIBS@ @LIB_M@ @LIB_NOVA@ @JSONGLIB_LIBS@
+AM_CXXFLAGS = @MAGIC_CFLAGS@ @NOVA_CFLAGS@ @MAGIC_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ @JSONGLIB_CFLAGS@ -I../../include
 
 if PGSQL
 
@@ -16,7 +16,7 @@ rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp stateevent
 rts2_httpd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_httpd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -lrts2scheduler -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db -L../../lib/pluto -lpluto \
 	-L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIBPG_LIBS@ \
-	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIB_CRYPT@ @LIBARCHIVE_LIBS@ @LIB_PTHREAD@ $(LDADD)
+	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @MAGIC_LIBS@ @LIBXML_LIBS@ @LIB_CRYPT@ @LIBARCHIVE_LIBS@ @LIB_PTHREAD@ $(LDADD)
 
 CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
 
@@ -30,7 +30,7 @@ rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp valueevent
 	xmlapi.cpp
 rts2_httpd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_httpd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \
-	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ @LIB_CRYPT@ @LIB_PTHREAD@ ${LDADD}
+	@LIB_NOVA@ @LIB_CFITSIO@ @MAGIC_LIBS@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ @LIB_CRYPT@ @LIB_PTHREAD@ ${LDADD}
 
 endif
 

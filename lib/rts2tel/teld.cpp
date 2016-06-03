@@ -106,7 +106,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
 		trackingFSize->setValueInteger (20);
 
-		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true);
+		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true, RTS2_DT_DEGREES);
 	}
 	else
 	{
@@ -715,6 +715,9 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	}
 	else if (old_value == tle_freeze)
 	{
+		if (tle_l1->getValueString ().length () == 0 || tle_l2->getValueString ().length () == 0)
+			return -2;
+
 		if (((rts2core::ValueBool *) new_value)->getValueBool () == false)
 		{
 			// reset DRATE, probably set by tle_freeze = true
@@ -722,7 +725,22 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 		}
 		else
 		{
-			setDiffTrack (skyVect->getRa (), skyVect->getDec ());
+			// TLE not yet calculated..
+			double JD = ln_get_julian_from_sys ();
+			struct ln_equ_posn p1, p2, speed;
+			double d1, d2;
+			const double sec_step = 10.0;
+			calculateTLE (JD, p1.ra, p1.dec, d1);
+			calculateTLE (JD + sec_step / 86400.0, p2.ra, p2.dec, d2);
+			speed.ra = (3600 * ln_rad_to_deg (p2.ra - p1.ra)) / sec_step;
+			if (speed.ra > 180.0)
+				speed.ra -= 360.0;
+			else if (speed.ra < -180.0)
+				speed.ra += 360.0;
+			speed.dec = (3600 * ln_rad_to_deg (p2.dec - p1.dec)) / sec_step;
+			diffTrackRaDec->setValueRaDec (speed.ra, speed.dec);
+			sendValueAll (diffTrackRaDec);
+			setDiffTrack (speed.ra, speed.dec);
 		}
 	}
 	return rts2core::Device::setValue (old_value, new_value);
@@ -1477,6 +1495,9 @@ int Telescope::scriptEnds ()
 	corrImgId->setValueInteger (0);
 	woffsRaDec->setValueRaDec (0, 0);
 	tracking->setValueInteger (1);
+
+	tle_freeze->setValueBool (false);
+
 	return rts2core::Device::scriptEnds ();
 }
 
@@ -1769,6 +1790,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	corrRaDec->resetValueChanged ();
 	telTargetRaDec->resetValueChanged ();
 	mpec->resetValueChanged ();
+	tle_l1->resetValueChanged ();
+	tle_l2->resetValueChanged ();
 
 	if (woffsRaDec->wasChanged ())
 	{

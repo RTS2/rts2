@@ -131,6 +131,20 @@ class Connection:public Object
 		Connection (int in_sock, Block * in_master);
 		virtual ~ Connection (void);
 
+		/**
+		 * Set if debug messages from port communication will be printed.
+		 *
+		 * @param printDebug  True if all port communication should be written to log.
+		 */
+		void setDebug (bool printDebug = true) { debugComm = printDebug; }
+		
+		/**
+		 * Log all trafix as hex.
+		 *
+		 * @param logArrAsHex If true, all traffic will be logged in hex values.
+		 */
+		void setLogAsHex (bool logArrAsHex = true) { logTrafficAsHex = logArrAsHex; }
+
 		virtual void postEvent (Event * event);
 
 		/**
@@ -664,6 +678,12 @@ class Connection:public Object
 		 * Connection file descriptor.
 		 */
 		int sock;
+
+		// if we will print connection communication
+		bool debugComm;
+
+		// if debugging will be in hex only
+		bool logTrafficAsHex;
 
 		/**
 		 * Check if buffer is fully filled. If that's the case, increase buffer size.

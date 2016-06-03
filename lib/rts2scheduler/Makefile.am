@@ -3,7 +3,7 @@ if PGSQL
 lib_LTLIBRARIES = librts2scheduler.la
 
 librts2scheduler_la_SOURCES = schedbag.cpp schedule.cpp schedobs.cpp ticket.cpp ticketset.cpp utils.cpp
-librts2scheduler_la_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
+librts2scheduler_la_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ @MAGIC_CFLAGS@ -I../../include
 
 .ec.cpp:
 	@ECPG@ -o $@ $^

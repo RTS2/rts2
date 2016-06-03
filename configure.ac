@@ -142,23 +142,9 @@ esac],[ncurses=yes])
 
 dnl Check for GraphicsMagic++ library
 
-AC_ARG_WITH(graphicsmagic,
-[  --with-graphicsmagic    path to GraphicsMagic++ config or "no" if it is not installed],
-[case "${withval}" in
-	yes) graphicsmagic_config="GraphicsMagick++-config" ;;
-	no)  graphicsmagic_config=no ;;
-	*) graphicsmagic_config=${withval} ;;
-esac],[graphicsmagic_config="GraphicsMagick++-config"])
+AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagick++ is installed])
 
-AC_MSG_CHECKING(looking for GraphicsMagick++ library)
-AS_IF(["${graphicsmagic_config}" --libs > /dev/null 2>&1], [
-	GRAPHICSMAGICK_VERS=`${graphicsmagic_config} --version`
-	AC_MSG_RESULT(${GRAPHICSMAGICK_VERS} found)
-], [
-	GRAPHICSMAGICK_VERS="no"
-	AC_MSG_RESULT(${graphicsmagic_config} not found)
-	graphicsmagic_config="no"
-])
+PKG_CHECK_MODULES([MAGIC], [GraphicsMagick++], AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[If JPEG is installed]), AC_MSG_RESULT(not found))
 
 AH_TEMPLATE([JSONSOUP],[JSON and SOUP libraries are present])
 
@@ -623,6 +609,7 @@ AS_IF([test "x${libwcstools}" != "xno"], [
 **** That will not affect compilation, as RTS2 comes with
 **** own WCS functions in case wcstools are not available.
 EOF
+  libwcstools=no
   ])
   AS_IF([test "x${libwcstools}" != "xyes"], [
     LIBWCS_LDFLAGS="-L${libwcstools}/libwcstools -lwcstools"
@@ -700,20 +687,7 @@ AS_IF([test "x"$xfocusc = "xyes"], [
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 ])
 
-AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagicsk++ is installed])
-
-AS_IF([test "x${graphicsmagic_config}" != "xno"], [
-  LIB_JPEG=`${graphicsmagic_config} --libs`
-  JPEG_CFLAGS=`${graphicsmagic_config} --cppflags`
-  AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[Whenever JPEG is installed])
-], [
-  LIB_JPEG=""
-  JPEG_CFLAGS=""
-])
-AC_SUBST(LIB_JPEG)
-AC_SUBST(JPEG_CFLAGS)
-
-AM_CONDITIONAL(GRAPHICSMAGICK, test x$graphicsmagic_config != xno)
+AM_CONDITIONAL(GRAPHICSMAGICK, test x$MAGIC_LIBS != x)
 
 AH_TEMPLATE([HAVE_CERN_ROOT],[If CERN ROOT package is installed])
 
@@ -1009,13 +983,13 @@ echo "
   libusb1	${libusb1}
   libusb	${libusb}
   cfitsio       ${cfitsio}
-  libwcstools        ${libwcstools}
+  libwcstools   ${libwcstools}
   pgsql		${psql}
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
   epics         ${epics}
   libxml2       ${XMLVERS}
-  graphicsmagic ${GRAPHICSMAGICK_VERS}
+  graphicsmagic ${MAGIC_CFLAGS} ${MAGIC_LIBS}
   CERN ROOT     ${ROOT_VERS}
   libarchive    ${libarchive}
   crypt         ${LIB_CRYPT}
