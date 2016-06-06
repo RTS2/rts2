@@ -110,11 +110,6 @@ class Sitech:public GEM
 		 */
 		int checkMoveDEC (double JD, int32_t &ac, int32_t &dc, int32_t move_d);
 
-		// speed conversion; see Dan manual for details
-		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle = SIDEREAL_HOURS * 15.0);
-		double ticksPerSec2MotorSpeed (double tps);
-		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
-
 		rts2core::ConnSitech *serConn;
 
 		rts2core::SitechAxisStatus radec_status;
@@ -226,9 +221,6 @@ class Sitech:public GEM
 		 * Retrieves current PID settings
 		 */
 		void getPIDs ();
-
-		// which controller is connected
-		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
 
 		uint8_t xbits;
 		uint8_t ybits;
@@ -463,14 +455,14 @@ void Sitech::getTel ()
 
 	ra_worm_phase->setValueInteger (radec_status.y_worm_phase);
 
-	switch (sitechType)
+	switch (serConn->sitechType)
 	{
-		case SERVO_I:
-		case SERVO_II:
+		case rts2core::ConnSitech::SERVO_I:
+		case rts2core::ConnSitech::SERVO_II:
 			ra_last->setValueLong (le32toh (*(uint32_t*) &radec_status.y_last));
 			dec_last->setValueLong (le32toh (*(uint32_t*) &radec_status.x_last));
 			break;
-		case FORCE_ONE:
+		case rts2core::ConnSitech::FORCE_ONE:
 		{
 			// upper nimble
 			uint16_t ra_val = radec_status.y_last[0] << 4;
@@ -693,14 +685,8 @@ int Sitech::initHardware ()
 	sitechVersion->setValueDouble (numread);
 	sitechSerial->setValueInteger (serConn->getSiTechValue ('Y', "V"));
 
-	if (numread < 112)
+	if (serConn->sitechType == rts2core::ConnSitech::FORCE_ONE)
 	{
-		sitechType = SERVO_II;
-	}
-	else
-	{
-		sitechType = FORCE_ONE;
-
 		createValue (countUp, "count_up", "CPU count up", false);
 		countUp->setValueInteger (serConn->getSiTechValue ('Y', "XHC"));
 
@@ -879,7 +865,7 @@ int Sitech::isMoving ()
 	}
 
 	// set ra speed to sidereal tracking
-	ra_track_speed->setValueDouble (degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong ()));
+	ra_track_speed->setValueDouble (serConn->degsPerSec2MotorSpeed (15.0 / 3600.0, ra_ticks->getValueLong (), 360.0));
 	sendValueAll (ra_track_speed);
 
 	return -2;
@@ -989,8 +975,8 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 		int32_t ac_step = speed_factor * ac_change / sec_step;
 		int32_t dc_step = speed_factor * dc_change / sec_step;
 
-		radec_Xrequest.y_speed = ticksPerSec2MotorSpeed (ac_step);
-		radec_Xrequest.x_speed = ticksPerSec2MotorSpeed (dc_step);
+		radec_Xrequest.y_speed = serConn->ticksPerSec2MotorSpeed (ac_step);
+		radec_Xrequest.x_speed = serConn->ticksPerSec2MotorSpeed (dc_step);
 
 		// put axis in future
 
@@ -1045,6 +1031,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	try
 	{
 		serConn->sendXAxisRequest (radec_Xrequest);
+		updateTrackingFrequency ();
 	}
 	catch (rts2core::Error &e)
 	{
@@ -1057,6 +1044,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 		serConn->flushPortIO ();
 		serConn->getSiTechValue ('Y', "XY");
 		serConn->sendXAxisRequest (radec_Xrequest);
+		updateTrackingFrequency ();
 	}
 }
 
@@ -1065,8 +1053,8 @@ void Sitech::getConfiguration ()
 	ra_acceleration->setValueDouble (serConn->getSiTechValue ('Y', "R"));
 	dec_acceleration->setValueDouble (serConn->getSiTechValue ('X', "R"));
 
-	ra_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('Y', "S"), ra_ticks->getValueLong ()));
-	dec_max_velocity->setValueDouble (motorSpeed2DegsPerSec (serConn->getSiTechValue ('X', "S"), dec_ticks->getValueLong ()));
+	ra_max_velocity->setValueDouble (serConn->motorSpeed2DegsPerSec (serConn->getSiTechValue ('Y', "S"), ra_ticks->getValueLong ()));
+	dec_max_velocity->setValueDouble (serConn->motorSpeed2DegsPerSec (serConn->getSiTechValue ('X', "S"), dec_ticks->getValueLong ()));
 
 	ra_current->setValueDouble (serConn->getSiTechValue ('Y', "C") / 100.0);
 	dec_current->setValueDouble (serConn->getSiTechValue ('X', "C") / 100.0);
@@ -1095,8 +1083,8 @@ void Sitech::sitechSetTarget (int32_t ac, int32_t dc)
 	radec_Xrequest.y_dest = ac;
 	radec_Xrequest.x_dest = dc;
 
-	radec_Xrequest.y_speed = degsPerSec2MotorSpeed (ra_speed->getValueDouble (), ra_ticks->getValueLong (), 360) * SPEED_MULTI;
-	radec_Xrequest.x_speed = degsPerSec2MotorSpeed (dec_speed->getValueDouble (), dec_ticks->getValueLong (), 360) * SPEED_MULTI;
+	radec_Xrequest.y_speed = serConn->degsPerSec2MotorSpeed (ra_speed->getValueDouble (), ra_ticks->getValueLong (), 360) * SPEED_MULTI;
+	radec_Xrequest.x_speed = serConn->degsPerSec2MotorSpeed (dec_speed->getValueDouble (), dec_ticks->getValueLong (), 360) * SPEED_MULTI;
 
 	// clear bit 4, tracking
 	xbits &= ~(0x01 << 4);
@@ -1115,48 +1103,6 @@ void Sitech::runTracking ()
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
 	internalTracking (2.0, trackingFactor->getValueFloat ());
-}
-
-double Sitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
-{
-	switch (sitechType)
-	{
-		case SERVO_I:
-		case SERVO_II:
-			return ((loop_ticks / full_circle) * dps) / 1953;
-		case FORCE_ONE:
-			return ((loop_ticks / full_circle) * dps) / servoPIDSampleRate->getValueDouble ();
-		default:
-			return 0;
-	}
-}
-
-double Sitech::ticksPerSec2MotorSpeed (double tps)
-{
-	switch (sitechType)
-	{
-		case SERVO_I:
-		case SERVO_II:
-			return tps * SPEED_MULTI / 1953;
-		case FORCE_ONE:
-			return tps * SPEED_MULTI / servoPIDSampleRate->getValueDouble ();
-		default:
-			return 0;
-	}
-}
-
-double Sitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
-{
-	switch (sitechType)
-	{
-		case SERVO_I:
-		case SERVO_II:
-			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
-		case FORCE_ONE:
-			return (double) speed / loop_ticks * (360.0 * servoPIDSampleRate->getValueDouble () / SPEED_MULTI);
-		default:
-			return 0;
-	}
 }
 
 int main (int argc, char **argv)

@@ -108,10 +108,10 @@ int ConnUDP::sendReceive (const char * in_message, char * ret_message, unsigned 
 	return ret;
 }
 
-int ConnUDP::receive (fd_set * set)
+int ConnUDP::receive (Block *block)
 {
 	int data_size = 0;
-	if (sock >= 0 && FD_ISSET (sock, set))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		socklen_t size = sizeof (clientaddr);
 		data_size = recvfrom (sock, buf, maxSize, 0, (struct sockaddr *) &clientaddr, &size);

@@ -276,9 +276,9 @@ class ConnSitech: public ConnSerial
 		void getConfiguration (SitechControllerConfiguration &config);
 
 		// speed conversion; see Dan manual for details
-		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle);
+		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle);
 		double ticksPerSec2MotorSpeed (double tps);
-		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID);
+		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
 
 		int version;
 		int countUp;

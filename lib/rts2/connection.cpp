@@ -148,13 +148,14 @@ Connection::~Connection (void)
 	delete otherDevice;
 }
 
-int Connection::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int Connection::add (Block *block)
 {
 	if (sock >= 0)
 	{
-		FD_SET (sock, readset);
+		short events = POLLIN | POLLPRI;
 		if (isConnState (CONN_INPROGRESS))
-			FD_SET (sock, writeset);
+			events |= POLLOUT;
+		block->addPollFD (sock, events);
 	}
 	return 0;
 }
@@ -178,6 +179,12 @@ std::string Connection::getCameraChipState (int chipN)
 			if (_os.str ().size ())
 				_os << " | ";
 			_os << chipN << " EXPOSING NOIMG";
+		}
+		if (chip_state & CAM_SHIFT)
+		{
+			if (_os.str ().size ())
+				_os << " | ";
+			_os << chipN << " SHIFTSTORE";
 		}
 		if (chip_state & CAM_READING)
 		{
@@ -915,6 +922,11 @@ void Connection::processLine ()
 	}
 }
 
+bool Connection::receivedData (Block *block)
+{
+	return block->isForRead (sock);
+}
+
 void Connection::processBuffer ()
 {
 	if (full_data_end)
@@ -975,13 +987,13 @@ void Connection::processBuffer ()
 	full_data_end = NULL;
 }
 
-int Connection::receive (fd_set * readset)
+int Connection::receive (Block *block)
 {
 	int data_size = 0;
 	// connections market for deletion
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if ((sock >= 0) && FD_ISSET (sock, readset))
+	if ((sock >= 0) && (block->getPollEvents (sock) & (POLLIN | POLLPRI)))
 	{
 		if (isConnState (CONN_CONNECTING))
 		{
@@ -1029,9 +1041,9 @@ int Connection::receive (fd_set * readset)
 	return data_size;
 }
 
-int Connection::writable (fd_set * writeset)
+int Connection::writable (Block *block)
 {
-	if (sock >=0 && FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
+	if (sock >=0 && (block->getPollEvents (sock) & POLLOUT) && isConnState (CONN_INPROGRESS))
 	{
 		int err = 0;
 		int ret;

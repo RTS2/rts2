@@ -911,6 +911,12 @@ class Telescope:public rts2core::Device
 		virtual void runTracking ();
 
 		/**
+		 * Update tracking frequency. Should be run after new tracking vector
+		 * is send to the mount motion controller.
+		 */
+		void updateTrackingFrequency ();
+
+		/**
 		 * Calculate TLE RA DEC for given time.
 		 */
 		void calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite);
@@ -1003,6 +1009,9 @@ class Telescope:public rts2core::Device
 		int moveInfoMax;
 
 		rts2core::ValueSelection *tracking;
+		rts2core::ValueDoubleStat *trackingFrequency;
+		rts2core::ValueInteger *trackingFSize;
+		double lastTrackingRun;
 
 		/**
 		 * Last error.
@@ -1059,6 +1068,11 @@ class Telescope:public rts2core::Device
 		 * Start time of differential tracking.
 		 */
 		rts2core::ValueDouble *diffTrackStart;
+
+		/**
+		 * Differential tracking on/off.
+		 */
+		rts2core::ValueBool *diffTrackOn;
 
 		/**
 		 * Coordinates of the object, after offsets are applied (in J2000).
@@ -1244,6 +1258,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueString *tle_l2;
 		rts2core::ValueInteger *tle_ephem;
 		rts2core::ValueDouble *tle_distance;
+		rts2core::ValueBool *tle_freeze;
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;
 

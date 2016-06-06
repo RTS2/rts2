@@ -170,20 +170,6 @@ class ConnSerial: public ConnNoSend
 		int flushPortO ();
 
 		/**
-		 * Set if debug messages from port communication will be printed.
-		 *
-		 * @param printDebug  True if all port communication should be written to log.
-		 */
-		void setDebug (bool printDebug = true) { debugPortComm = printDebug; }
-		
-		/**
-		 * Log all trafix as hex.
-		 *
-		 * @param logArrAsHex If true, all traffic will be logged in hex values.
-		 */
-		void setLogAsHex (bool logArrAsHex = true) { logTrafficAsHex = logArrAsHex; }
-
-		/**
 		 * Exchange packets - write to port and read reply.
 		 *
 		 * This call combines ConnSerial::writePort ()
@@ -232,12 +218,6 @@ class ConnSerial: public ConnNoSend
 
 		// sleep seconds before flushing after an error
 		int flushSleepTime;
-
-		// if we will preint port communication
-		bool debugPortComm;
-
-		// if debugging will be in hex only
-		bool logTrafficAsHex;
 
 		/**
 		 * Log buffer read from port, honest selection between hex and standard debugging.

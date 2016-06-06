@@ -173,11 +173,11 @@ int NMonitor::processArgs (const char *arg)
 #endif
 }
 
-void NMonitor::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void NMonitor::addPollSocks ()
 {
+	rts2core::Client::addPollSocks ();
 	// add stdin for ncurses input
-	FD_SET (1, &read_set);
-	rts2core::Client::addSelectSocks (read_set, write_set, exp_set);
+	addPollFD (1, POLLIN | POLLPRI);
 }
 
 rts2core::ConnCentraldClient * NMonitor::createCentralConn ()
@@ -185,9 +185,9 @@ rts2core::ConnCentraldClient * NMonitor::createCentralConn ()
 	return new NMonCentralConn (this, getCentralLogin (), getName (), getCentralPassword (), getCentralHost (), getCentralPort ());
 }
 
-void NMonitor::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void NMonitor::pollSuccess ()
 {
-	rts2core::Client::selectSuccess (read_set, write_set, exp_set);
+	rts2core::Client::pollSuccess ();
 	while (1)
 	{
 		int input = getch ();

@@ -1,0 +1,105 @@
+#!/usr/bin/python
+
+# mosaic-combine - combine mosaic image to one. Uses IRAF DETSEC keyword (if available..).
+#
+# (C) 2016 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+from astropy.io import fits
+import numpy
+import re
+import sys
+
+# regular expression to parse DETECTOR and others..
+
+def combine_image(fi,fo,window=None,channel_filter=None,verbose=0):
+	"""Combines channels in image 
+	"""
+	arm = re.compile('\[(\d+):(\d+),(\d+):(\d+)]')
+	outa = None
+	f = fits.open(fi)
+	w = None
+	if window is not None:
+		w = map(lambda x:int(x), arm.match(window).groups())
+	for im in f:
+		try:
+			if im.header['XTENSION'] == "IMAGE":
+				d = im.data
+				bl,br,ul,ur = map(lambda x:int(x), arm.match(im.header['DETSEC']).groups())
+
+				if w is not None:
+					d = d[w[2]:w[3], w[0]:w[1]]
+
+
+				if verbose > 1:
+					print d.shape
+				if bl > br:
+					d = numpy.fliplr(d)
+					bl, br = br, bl
+				if ul > ur:
+					d = numpy.flipud(d)
+					ul, ur = ur, ul
+
+				# round position of starting points
+				if w is not None:
+					ul = d.shape[0] * round (float(ul) / d.shape[0])
+					bl = d.shape[1] * round (float(bl) / d.shape[1])
+
+				if outa is None:
+					outa = numpy.zeros((ul + d.shape[0], bl + d.shape[1]), int)
+				if verbose > 1:
+					print ul,ul+d.shape[0], bl, bl + d.shape[1], d.shape
+				if outa.shape[0] < ul + d.shape[0] or outa.shape[1] < bl + d.shape[1]:
+					ta = numpy.zeros((max(outa.shape[0], ul + d.shape[0]), max(outa.shape[1], bl + d.shape[1])), int)
+					ta[0:outa.shape[0], 0:outa.shape[1]] = outa
+					outa = ta
+
+				outa[ul:ul+d.shape[0], bl:bl+d.shape[1]] = d
+		except KeyError,ke:
+			pass
+			# get origins
+	f.close()
+
+	if verbose > 1:
+		print outa.shape
+
+	hdu = fits.PrimaryHDU(outa)
+	hdu.writeto(fo)
+
+	if verbose:
+		print "Write combined {0} to {1}".format(fi,fo)
+
+if __name__ == '__main__':
+	import argparse
+	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Combines mosaic image to single image.\n\nExample usage:\n\n'\
+	'\tmosaic-combine in.fits -o out.fits -w \'[10:200,20:200]\'')
+	parser.add_argument('inputfiles',help='input FITS file(s)',type=str,nargs='+')
+	parser.add_argument('-v',dest='verbose',action='count',help='be verbose; add more -v for more verbosity')
+	parser.add_argument('-o',dest='output',action='store',default=None,help='output FITS file')
+	parser.add_argument('-w',dest='window',action='store',help='channel window to use')
+	parser.add_argument('-c',dest='channels',action='append',help='channels to process')
+
+	args = parser.parse_args()
+
+	if args.verbose > 1:
+		print 'set verbosity level to {0}'.format(args.verbose)
+
+	of = args.output
+
+	for fi in args.inputfiles:
+		if of is None:
+			of = fi + '.combined'
+		combine_image(fi,of,args.window,args.verbose)

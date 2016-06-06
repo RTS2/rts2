@@ -13,8 +13,9 @@
 #endif
 
 #include <malloc.h>
-#include <sys/select.h>
+#include <poll.h>
 #include <stdlib.h>
+
 
 namespace XmlRpc
 {
@@ -70,9 +71,9 @@ namespace XmlRpc
 			void work(double msTime, XmlRpcClient *chunkWait = NULL);
 
 			//! Add sockets to file descriptor set
-			void addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd);
+			void addToFd (void (*addFD) (int, short));
 
-			void checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSource *chunkWait = NULL);
+			void checkFd (short (*getFDEvents) (int), XmlRpcSource *chunkWait = NULL);
 
 			//! Exit from work routine
 			void exitWork();

@@ -165,10 +165,13 @@ typedef uint32_t rts2_status_t;
 // Camera status
 #define CAM_MASK_CHIP       0x0ff
 #define CAM_MASK_EXPOSE     0x011
+#define CAM_MASK_SHIFTING   0x020
 
 #define CAM_NOEXPOSURE      0x000
 #define CAM_EXPOSING        0x001
-#define CAM_EXPOSING_NOIM   0x010 
+#define CAM_EXPOSING_NOIM   0x010
+
+#define CAM_SHIFT           0x020
 
 #define CAM_MASK_READING    0x002
 

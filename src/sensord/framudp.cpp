@@ -69,7 +69,7 @@ int ConnFramWeather::init ()
 	return ret;
 }
 
-int ConnFramWeather::receive (fd_set * set)
+int ConnFramWeather::receive (rts2core::Block *block)
 {
 	int ret;
 	char Wbuf[100];
@@ -78,7 +78,7 @@ int ConnFramWeather::receive (fd_set * set)
 	struct ln_date statDate;
 	int rain = 1;
 	float windspeed;
-	if (sock >= 0 && FD_ISSET (sock, set))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		struct sockaddr_in from;
 		socklen_t size = sizeof (from);

@@ -42,8 +42,8 @@ CREATE TABLE queues_targets (
 	queue_id    integer NOT NULL,
 	tar_id 	    integer REFERENCES targets(tar_id),
 	plan_id     integer REFERENCES plan(plan_id),
-	time_start  timestamp,
-	time_end    timestamp,
+	time_start  timestamp with time zone,
+	time_end    timestamp with time zone,
 	queue_order integer
 );
 

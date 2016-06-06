@@ -71,9 +71,14 @@
 #define COMMAND_TELD_MOVE       "move"
 
 /**
- *
+ * Move to HA DEC coordinates.
  */
 #define COMMAND_TELD_HADEC      "hadec"
+
+/**
+ * Move telescope to altaz coordinates.
+ */
+#define COMMAND_TELD_ALTAZ      "altaz"
 
 /**
  * Move to MPEC one line element position. @ingroup RTS2Command
@@ -84,6 +89,11 @@
  * Move to TLE two line elements. @ingroup RTS2Command
  */ 
 #define COMMAND_TELD_MOVE_TLE   "move_tle"
+
+/**
+ * Park telescope.
+ */
+#define COMMAND_TELD_PARK       "park"
 
 /**
  * Peek telescope movement. @ingroup RTS2Command
@@ -112,6 +122,16 @@
  * for FITS transfere data.
  */
 #define COMMAND_FITS_STAT       "fits_statistics"
+
+/**
+ * Start exposure on camera.
+ */
+#define COMMAND_CCD_EXPOSURE    "expose"
+
+/**
+ * Shift-store sequence.
+ */
+#define COMMAND_CCD_SHIFTSTORE  "shiftstore"
 
 
 /**
@@ -412,6 +432,25 @@ class CommandReadout:public Command
 	public:
 		CommandReadout (Block * _master);
 };
+
+class CommandShiftStart: public Command
+{
+	public:
+		CommandShiftStart (Block * _master, float expTime);
+};
+
+class CommandShiftProgress: public Command
+{
+	public:
+		CommandShiftProgress (Block * _master, int shift, float expTime);
+};
+
+class CommandShiftEnd: public Command
+{
+	public:
+		CommandShiftEnd (Block * _master, int shift, float expTime);
+};
+
 
 /**
  * Sends image statistics.

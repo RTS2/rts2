@@ -51,7 +51,7 @@ class ConnShooter:public rts2core::ConnNoSend
 		virtual int init ();
 
 		virtual void connectionError (int last_data_size);
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 
 		int lastPacket ();
 		double lastTargetTime ();

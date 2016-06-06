@@ -65,6 +65,8 @@ void XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 	addSource(source, eventMask);	
 }
 
+#define MAX_POLLS	200
+
 // Watch current set of sources and process events
 void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 {
@@ -83,23 +85,22 @@ void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 	{
 
 		// Construct the sets of descriptors we are interested in
-		fd_set inFd, outFd, excFd;
-		FD_ZERO(&inFd);
-		FD_ZERO(&outFd);
-		FD_ZERO(&excFd);
+		struct pollfd fds[MAX_POLLS];
+		nfds_t nfds = 0;
 
-		addToFd (&inFd, &outFd, &excFd);
+	//	addToFd (fds, nfds);
+	//	fds[nfds].fd = -1;
 
 		// Check for events
 		int nEvents;
 		if (timeout < 0.0)
-			nEvents = select(FD_SETSIZE, &inFd, &outFd, &excFd, NULL);
+			nEvents = poll(fds, nfds, 0);
 		else
 		{
-			struct timeval tv;
+			struct timespec tv;
 			tv.tv_sec = (int)floor(timeout);
-			tv.tv_usec = ((int)floor(1000000.0 * (timeout-floor(timeout)))) % 1000000;
-			nEvents = select(FD_SETSIZE, &inFd, &outFd, &excFd, &tv);
+			tv.tv_nsec = ((int)floor(1000000.0 * (timeout-floor(timeout)))) % 1000000;
+			nEvents = ppoll(fds, nfds, &tv, NULL);
 		}
 
 		if (nEvents < 0)
@@ -109,7 +110,7 @@ void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 			return;
 		}
 
-		checkFd (&inFd, &outFd, &excFd, chunkWait);
+	//	checkFd (fds, chunkWait);
 
 		// Check whether to clear all sources
 		if (_doClear)
@@ -137,19 +138,21 @@ void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 	_inWork = false;
 }
 
-void XmlRpcDispatch::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+void XmlRpcDispatch::addToFd (void (*addFD) (int, short))
 {
 	SourceList::iterator it;
 	for (it=_sources.begin(); it!=_sources.end(); ++it)
 	{
-		int fd = it->getSource()->getfd();
-		if (it->getMask() & ReadableEvent) FD_SET(fd, inFd);
-		if (it->getMask() & WritableEvent) FD_SET(fd, outFd);
-		if (it->getMask() & Exception)     FD_SET(fd, excFd);
+		short events = 0;
+		if (it->getMask() & ReadableEvent) events |= POLLIN | POLLPRI;
+		if (it->getMask() & WritableEvent) events |= POLLOUT;
+		if (it->getMask() & Exception)     events |= POLLRDHUP | POLLERR | POLLHUP | POLLNVAL;
+		if (events != 0)
+			addFD (it->getSource()->getfd(), events);
 	}
 }
 
-void XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSource *chunkWait)
+void XmlRpcDispatch::checkFd (short (*getFDEvents) (int), XmlRpcSource *chunkWait)
 {
 	SourceList::iterator it;
 	// Process events
@@ -158,11 +161,15 @@ void XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpc
 		SourceList::iterator thisIt = it++;
 		XmlRpcSource* src = thisIt->getSource();
 		int fd = src->getfd();
+		short revents = getFDEvents(fd);
+		if (revents == 0)
+			continue;
+
 		unsigned newMask = (unsigned) -1;
 		// If you select on multiple event types this could be ambiguous
 		try
 		{
-			if (FD_ISSET(fd, inFd))
+			if (revents & (POLLIN | POLLPRI))
 				newMask &= (src == chunkWait) ? src->handleChunkEvent(ReadableEvent) : src->handleEvent(ReadableEvent);
 		}
 		catch (const XmlRpcAsynchronous &async)
@@ -173,9 +180,9 @@ void XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpc
 			src->goAsync ();
 		}
 
-		if (FD_ISSET(fd, outFd))
+		if (revents & POLLOUT)
 			newMask &= (src == chunkWait) ? src->handleChunkEvent(WritableEvent) : src->handleEvent(WritableEvent);
-		if (FD_ISSET(fd, excFd))
+		if (revents & (POLLRDHUP | POLLERR | POLLHUP | POLLNVAL))
 			newMask &= (src == chunkWait) ? src->handleChunkEvent(Exception) : src->handleEvent(Exception);
 
 		if ( ! newMask)

@@ -23,8 +23,6 @@ void teardown_mlo (void)
 	gemTest = NULL;
 }
 
-#define ck_assert_dbl_eq(v1,v2,alow)  ck_assert_msg(fabs(v1-v2) < alow, "difference %f and %f > %f", v1, v2, alow)
-
 START_TEST(test_gem_mlo)
 {
 	// test 1, 2016-01-12T19:20:47 HST = 2016-01-13U05:20:47

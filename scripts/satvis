@@ -1,0 +1,31 @@
+#!/usr/bin/python
+
+import rts2.sat
+import argparse
+import sys
+import ephem
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Calculate visibility of satellites from observatories, suggest the best possible observing plan')
+parser.add_argument('inputfiles',help='observatories satellites',type=str,nargs='+')
+
+
+args = parser.parse_args()
+
+if len(args.inputfiles) < 2:
+	sys.exit('you need to specify at least two input files - one with observatories, second with TLEs')
+
+obs = rts2.sat.Observatories()
+obs.parse_file(args.inputfiles[0])
+	
+sat = rts2.sat.TLESet()
+for tlef in args.inputfiles[1:]:
+	sat.parse_file(tlef)
+
+date = ephem.now()
+
+for o in obs.observatories:
+	print o.name
+	for s in sat.sats:
+		p = rts2.sat.next_visible_pass(s,o,date)
+		if p is not None:
+			print 'Sat: {0} Observatory: {1} transit: {2} alt: {3} az: {4}'.format(s.name, o.name, p['transit'], p['transit_alt'], p['transit_az'])

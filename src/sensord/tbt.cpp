@@ -19,6 +19,7 @@
 
 #include "sensord.h"
 #include "connection/modbus.h"
+#include <bitset>
 
 // Zelio registers
 
@@ -32,15 +33,24 @@
 #define ZREG_O3XT1       22
 #define ZREG_O4XT1       23
 
+#define ZS_TBT_RAIN      0x0001
+#define ZS_TBT_Q1        0x0001
+#define ZS_TBT_Q2        0x0002
+#define ZS_TBT_Q3        0x0004
+
+#define OPT_Q1_NAME      OPT_LOCAL + 502
+#define OPT_Q2_NAME      OPT_LOCAL + 503
+#define OPT_Q3_NAME      OPT_LOCAL + 504
+
 namespace rts2sensord
 {
 
 /**
  * TBT Zelio control.
  *
- * @author Petr Kubanek <petr@kubanek.net>
+ * @author Aitor Ibarra <petr@kubanek.net>
  */
-class TBT:public Sensor
+class TBT:public SensorWeather
 {
 	public:
 		TBT (int argc, char **argv);
@@ -69,13 +79,26 @@ class TBT:public Sensor
 		rts2core::ValueInteger *O4XT1;
 
 		rts2core::ConnModbus *zelioConn;
+
+		rts2core::ValueInteger *rainTimeout;
+
+                rts2core::ValueBool *rain;
+		rts2core::ValueBool *Q1;
+		rts2core::ValueBool *Q2;
+		rts2core::ValueBool *Q3;
+		const char *Q1_name;
+		const char *Q2_name;
+		const char *Q3_name;
+
+                void createZelioValues ();
+                int setBitsInput (uint16_t reg, uint16_t mask, bool value);
 };
 
 }
 
 using namespace rts2sensord;
 
-TBT::TBT (int argc, char **argv):Sensor (argc, argv)
+TBT::TBT (int argc, char **argv):SensorWeather (argc, argv)
 {
 	zelioConn = NULL;
 	host = NULL;
@@ -91,6 +114,17 @@ TBT::TBT (int argc, char **argv):Sensor (argc, argv)
 	createValue (O4XT1, "O4XT1", "fourth output", false, RTS2_DT_HEX);
 
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
+
+	Q1 = NULL;
+	Q2 = NULL;
+	Q3 = NULL;
+
+	Q1_name = "White_Lights";
+	Q2_name = "Red_Lights";
+	Q3_name = "Flat_Screen";
+	addOption (OPT_Q1_NAME, "Q1-name", 1, "name of the Q1 switch");
+	addOption (OPT_Q2_NAME, "Q2-name", 1, "name of the Q2 switch");
+	addOption (OPT_Q3_NAME, "Q3-name", 1, "name of the Q3 switch");
 }
 
 TBT::~TBT (void)
@@ -105,6 +139,15 @@ int TBT::processOption (int in_opt)
 	{
 		case 'z':
 			host = new HostString (optarg, "502");
+			break;
+		case OPT_Q1_NAME:
+			Q1_name = optarg;
+			break;
+		case OPT_Q2_NAME:
+			Q2_name = optarg;
+			break;
+		case OPT_Q3_NAME:
+			Q3_name = optarg;
 			break;
 		default:
 			return Sensor::processOption (in_opt);
@@ -124,6 +167,18 @@ int TBT::info ()
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
 		return -1;
 	}
+	
+	rain->setValueBool (!(regs[4] & ZS_TBT_RAIN));
+	if (rain->getValueBool ())
+	{
+		setWeatherTimeout (rainTimeout->getValueInteger (), "rain detected");
+		valueError (rain);
+	}
+	else
+	{
+		valueGood (rain);
+	}
+	sendValueAll (rain);
 
 	J1XT1->setValueInteger (regs[0]);
 	J2XT1->setValueInteger (regs[1]);
@@ -170,11 +225,24 @@ int TBT::initHardware ()
 		return -1;
 	}
 
+	createZelioValues ();
+
 	int ret = info ();
 	if (ret)
 		return ret;
 
 	return 0;
+}
+
+void TBT::createZelioValues ()
+{
+	// create rain values only if rain sensor is present
+	createValue (rain, "rain", "state of rain sensor", false);
+	createValue (rainTimeout, "rain_timeout", "[s] timeout for rain signal", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
+	rainTimeout->setValueInteger (600);
+	createValue (Q1, Q1_name, "Q1 switch", false, RTS2_VALUE_WRITABLE);
+	createValue (Q2, Q2_name, "Q2 switch", false, RTS2_VALUE_WRITABLE);
+	createValue (Q3, Q3_name, "Q3 switch", false, RTS2_VALUE_WRITABLE);
 }
 
 int TBT::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -201,13 +269,39 @@ int TBT::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			zelioConn->writeHoldingRegister (ZREG_J4XT1, newValue->getValueInteger ());
 			return 0;
 		}
+		if (oldValue == Q1)
+			return setBitsInput (ZREG_J1XT1, ZS_TBT_Q1, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		if (oldValue == Q2)
+			return setBitsInput (ZREG_J1XT1, ZS_TBT_Q2, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		if (oldValue == Q3)
+			return setBitsInput (ZREG_J1XT1, ZS_TBT_Q3, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	catch (rts2core::ConnError err)
 	{
 		logStream (MESSAGE_ERROR) << "setValue " << oldValue->getName () << " " << err << sendLog;
-		return -2;
+			return -2;
 	}
 	return Sensor::setValue (oldValue, newValue);
+}
+
+int TBT::setBitsInput (uint16_t reg, uint16_t mask, bool value)
+{
+	uint16_t oldValue;
+	try
+	{
+		zelioConn->readHoldingRegisters (reg, 1, &oldValue);
+		// switch mask..
+		oldValue &= ~mask;
+		if (value)
+			oldValue |= mask;
+		zelioConn->writeHoldingRegister (reg, oldValue);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
+		return -1;
+	}
+	return 0;
 }
 
 int main (int argc, char **argv)

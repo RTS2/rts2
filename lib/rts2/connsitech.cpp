@@ -28,6 +28,7 @@ ConnSitech::ConnSitech (const char *devName, Block *_master):ConnSerial (devName
 {
 	binary = false;
 	version = -1;
+	PIDSampleRate = 1;
 }
 
 int ConnSitech::init ()
@@ -426,7 +427,7 @@ uint16_t ConnSitech::binaryChecksum (const char *dbuf, size_t blen, bool invertH
 	return invertH ? (checksum ^ 0xFF00) : checksum;
 }
 
-double ConnSitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double samplePID, double full_circle)
+double ConnSitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle)
 {
 	switch (sitechType)
 	{
@@ -434,7 +435,7 @@ double ConnSitech::degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double
 		case SERVO_II:
 			return ((loop_ticks / full_circle) * dps) / 1953;
 		case FORCE_ONE:
-			return ((loop_ticks / full_circle) * dps) / samplePID;
+			return ((loop_ticks / full_circle) * dps) / PIDSampleRate;
 		default:
 			return 0;
 	}
@@ -454,7 +455,7 @@ double ConnSitech::ticksPerSec2MotorSpeed (double tps)
 	}
 }
 
-double ConnSitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, double samplePID)
+double ConnSitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks)
 {
 	switch (sitechType)
 	{
@@ -462,7 +463,7 @@ double ConnSitech::motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks, dou
 		case SERVO_II:
 			return (double) speed / loop_ticks * (360.0 * 1953 / SPEED_MULTI);
 		case FORCE_ONE:
-			return (double) speed / loop_ticks * (360.0 * samplePID / SPEED_MULTI);
+			return (double) speed / loop_ticks * (360.0 * PIDSampleRate / SPEED_MULTI);
 		default:
 			return 0;
 	}

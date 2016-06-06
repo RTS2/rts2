@@ -31,6 +31,15 @@ AS_IF([test "x$CHECK_LIBS" != x], [
   libcheck="yes"
 ])
 
+libwebsockets="no"
+
+PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.0],,AC_MSG_RESULT(not found))
+AM_CONDITIONAL(LIBWEBSOCKETS,test "x$LIBWEBSOCKETS_LIBS" != x)
+AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(LIBWEBSOCKETS, "1", [has libwebsockets])
+  libwebsockets="yes"
+])
+
 # check for lang
 AC_LANG_CPLUSPLUS
 
@@ -56,11 +65,10 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset poll socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
 
 AC_FUNC_CHOWN 
 AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES 
 AC_FUNC_STAT
 AC_FUNC_STRFTIME 
 AC_FUNC_VPRINTF 
@@ -134,23 +142,9 @@ esac],[ncurses=yes])
 
 dnl Check for GraphicsMagic++ library
 
-AC_ARG_WITH(graphicsmagic,
-[  --with-graphicsmagic    path to GraphicsMagic++ config or "no" if it is not installed],
-[case "${withval}" in
-	yes) graphicsmagic_config="GraphicsMagick++-config" ;;
-	no)  graphicsmagic_config=no ;;
-	*) graphicsmagic_config=${withval} ;;
-esac],[graphicsmagic_config="GraphicsMagick++-config"])
+AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagick++ is installed])
 
-AC_MSG_CHECKING(looking for GraphicsMagick++ library)
-AS_IF(["${graphicsmagic_config}" --libs > /dev/null 2>&1], [
-	GRAPHICSMAGICK_VERS=`${graphicsmagic_config} --version`
-	AC_MSG_RESULT(${GRAPHICSMAGICK_VERS} found)
-], [
-	GRAPHICSMAGICK_VERS="no"
-	AC_MSG_RESULT(${graphicsmagic_config} not found)
-	graphicsmagic_config="no"
-])
+PKG_CHECK_MODULES([MAGIC], [GraphicsMagick++], AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[If JPEG is installed]), AC_MSG_RESULT(not found))
 
 AH_TEMPLATE([JSONSOUP],[JSON and SOUP libraries are present])
 
@@ -612,11 +606,11 @@ AS_IF([test "x${libwcstools}" != "xno"], [
 **** You don't have wcstools installed.
 **** You can download one from
 **** http://tdc-www.harvard.edu/software/wcstools/.
-**** Please note that there is no standart procedure to install
-**** that library. Please see INSTALL file for instructions how to install
-**** WCS library.
+**** That will not affect compilation, as RTS2 comes with
+**** own WCS functions in case wcstools are not available.
 EOF
-  exit 1])
+  libwcstools=no
+  ])
   AS_IF([test "x${libwcstools}" != "xyes"], [
     LIBWCS_LDFLAGS="-L${libwcstools}/libwcstools -lwcstools"
     LIBWCS_CFLAGS="-I${libwcstools}"
@@ -693,20 +687,7 @@ AS_IF([test "x"$xfocusc = "xyes"], [
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 ])
 
-AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagicsk++ is installed])
-
-AS_IF([test "x${graphicsmagic_config}" != "xno"], [
-  LIB_JPEG=`${graphicsmagic_config} --libs`
-  JPEG_CFLAGS=`${graphicsmagic_config} --cppflags`
-  AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[Whenever JPEG is installed])
-], [
-  LIB_JPEG=""
-  JPEG_CFLAGS=""
-])
-AC_SUBST(LIB_JPEG)
-AC_SUBST(JPEG_CFLAGS)
-
-AM_CONDITIONAL(GRAPHICSMAGICK, test x$graphicsmagic_config != xno)
+AM_CONDITIONAL(GRAPHICSMAGICK, test x$MAGIC_LIBS != x)
 
 AH_TEMPLATE([HAVE_CERN_ROOT],[If CERN ROOT package is installed])
 
@@ -930,6 +911,7 @@ AC_OUTPUT([Makefile
 	   lib/Makefile
 	   lib/xmlrpc++/Makefile
 	   lib/pluto/Makefile
+	   lib/sgp4/Makefile
 	   lib/rts2/Makefile
 	   lib/rts2/vermes/Makefile
 	   lib/rts2fits/Makefile
@@ -981,6 +963,7 @@ AC_OUTPUT([Makefile
 	   src/rotad/Makefile
 	   src/logger/Makefile
 	   src/httpd/Makefile
+	   src/wsd/Makefile
 	   src/scheduler/Makefile
 	   src/bb/Makefile
 	   src/pluto/Makefile
@@ -1000,19 +983,20 @@ echo "
   libusb1	${libusb1}
   libusb	${libusb}
   cfitsio       ${cfitsio}
-  libwcstools        ${libwcstools}
+  libwcstools   ${libwcstools}
   pgsql		${psql}
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
   epics         ${epics}
   libxml2       ${XMLVERS}
-  graphicsmagic ${GRAPHICSMAGICK_VERS}
+  graphicsmagic ${MAGIC_CFLAGS} ${MAGIC_LIBS}
   CERN ROOT     ${ROOT_VERS}
   libarchive    ${libarchive}
   crypt         ${LIB_CRYPT}
   libgjson	${JSONGLIB_CFLAGS} ${JSONGLIB_LIBS}
   openssl       ${ssl}
   libcheck	${libcheck}
+  libwebsockets	${libwebsockets}
 
 CCDs:
   alta          ${ALTA}

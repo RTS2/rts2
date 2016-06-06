@@ -36,7 +36,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2006-2014</year>
+      <year>2006-2016</year>
       <holder>&dhusername;</holder>
     </copyright>
     <copyright>
@@ -205,15 +205,21 @@
 
       <varlistentry>
         <term>
-	  <option>O {unknown}</option>
+	  <replaceable>{device name}.!{value name}</replaceable><replaceable>operation</replaceable><replaceable>{new value}</replaceable>
 	</term>
 	<listitem>
 	  <para>
-	    Reserved for focusing command. Not implemented yet.
+            Perform value only when camera is exposing. Useful to start an operation synchronously with camera exposure. For example, the following script:
+	  </para>
+	  <para>TX.DRATE=(0.001,0.02) TX.DON=off for 10 { TX.!DON=on E 30 TX.DON=off sleep 5 }</para>
+	  <para>
+	    will set differential tracking rate, but does not apply it. It will
+	    apply differential tracking only when starting exposure, and reset it after exposure is done.
+	    Note that TX represents any telescope device.
 	  </para>
 	</listitem>
       </varlistentry>
-
+	
       <varlistentry>
         <term>
 	  <option>C {ra_diff} {dec_diff}</option>

@@ -103,10 +103,10 @@ namespace XmlRpc
 			void work(double msTime);
 
 			//! Add sockets to file descriptor set
-			void addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd);
+			void addToFd (void (* addFD) (int, short));
 
 			//! Check if it should server any of the modified sockets
-			void checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd);
+			void checkFd (short (* getFDEvents) (int));
 
 			//! Temporarily stop processing client requests and exit the work() method.
 			void exitWork();

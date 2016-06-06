@@ -245,6 +245,43 @@ ElementDark::ElementDark (Script * _script, float in_expTime):ElementImage (_scr
 	targetShutter = 1;
 }
 
+ElementShiftStoreStart::ElementShiftStoreStart (Script * _script, float in_expTime):Element (_script)
+{
+	expTime = in_expTime;
+}
+
+int ElementShiftStoreStart::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	*new_command = new rts2core::CommandShiftStart (script->getMaster (), expTime);
+	getDevice (new_device);
+	return 0;
+}
+
+ElementShiftStoreProgress::ElementShiftStoreProgress (Script * _script, int in_shift, float in_expTime):Element (_script)
+{
+	shift = in_shift;
+	expTime = in_expTime;
+}
+
+int ElementShiftStoreProgress::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	*new_command = new rts2core::CommandShiftProgress (script->getMaster (), shift, expTime);
+	getDevice (new_device);
+	return 0;
+}
+
+ElementShiftStoreEnd::ElementShiftStoreEnd (Script * _script, int in_shift, float in_expTime):ElementImage (_script, in_expTime)
+{
+	shift = in_shift;
+}
+
+int ElementShiftStoreEnd::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	*new_command = new rts2core::CommandShiftEnd (script->getMaster (), shift, expTime);
+	getDevice (new_device);
+	return 0;
+}
+
 ElementBox::ElementBox (Script * _script, int in_x, int in_y, int in_w, int in_h):Element (_script)
 {
 	x = in_x;

@@ -164,7 +164,7 @@ CommandCameraSettings::CommandCameraSettings (DevClientCamera * _camera):Command
 
 CommandExposure::CommandExposure (Block * _master, DevClientCamera * _camera, int _bopMask):Command (_master)
 {
-	setCommand ("expose");
+	setCommand (COMMAND_CCD_EXPOSURE);
 	camera = _camera;
 	setBopMask (_bopMask);
 }
@@ -184,6 +184,27 @@ int CommandExposure::commandReturnFailed (int status, Connection * conn)
 CommandReadout::CommandReadout (Block * _master):Command (_master)
 {
 	setCommand ("readout");
+}
+
+CommandShiftStart::CommandShiftStart (Block * _master, float expTime):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " start " << expTime;
+	setCommand (_os);
+}
+
+CommandShiftProgress::CommandShiftProgress (Block * _master, int shift, float expTime):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " shift " << shift << " " << expTime;
+	setCommand (_os);
+}
+
+CommandShiftEnd::CommandShiftEnd (Block * _master, int shift, float expTime):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " end " << shift << " " << expTime;
+	setCommand (_os);
 }
 
 CommandFitsStat::CommandFitsStat (Block * _master, double average, double min, double max, double sum, double mode):Command (_master)
@@ -374,7 +395,7 @@ CommandMoveFixed::CommandMoveFixed (Block * _master, DevClientTelescope * _tel, 
 CommandMoveAltAz::CommandMoveAltAz (Block * _master, DevClientTelescope * _tel, double alt, double az):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
-	_os << "altaz " << alt << " " << az;
+	_os << COMMAND_TELD_ALTAZ " " << alt << " " << az;
 	setCommand (_os);
 }
 

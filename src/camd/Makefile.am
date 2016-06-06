@@ -14,8 +14,8 @@ rts2_camd_miniccd_SOURCES = miniccd.cpp
 rts2_camd_miniccd_il_SOURCES = miniccd_il.cpp
 
 rts2_camd_dummy_SOURCES = dummy.cpp
-rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
-rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @LIB_CFITSIO@ @LIB_JPEG@
+rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @MAGIC_CFLAGS@ -I../../include
+rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @LIB_CFITSIO@ @MAGIC_LIBS@
 
 rts2_camd_sidecar_SOURCES = sidecar.cpp
 

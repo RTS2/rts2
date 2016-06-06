@@ -43,10 +43,10 @@ class ConnGrb:public rts2core::ConnNoSend
 		virtual int idle ();
 		virtual int init ();
 
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+		virtual int add (rts2core::Block *block);
 
 		virtual void connectionError (int last_data_size);
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 
 		double lastPacket ();
 		double delta ();

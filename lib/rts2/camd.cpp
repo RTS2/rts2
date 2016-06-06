@@ -171,23 +171,25 @@ int Camera::endExposure (int ret)
 		logStream (MESSAGE_INFO) << "end exposure for " << exposureConn->getName () << sendLog;
 		return camReadout (exposureConn);
 	}
-	if (getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM))
+	if (getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM | CAM_SHIFT))
 	{
-		if (ret == -4)
+		switch (ret)
 		{
-			logStream (MESSAGE_INFO) << "end exposure, readout was not commanded" << sendLog;
-			return 0;
-		}
-		else
-		{
-			stopExposure ();
-			logStream (MESSAGE_WARNING) << "end exposure without exposure connection" << sendLog;
+			case -5:
+				logStream (MESSAGE_INFO) << "end shifting partial exposure" << sendLog;
+				return 0;
+			case -4:
+				logStream (MESSAGE_INFO) << "end exposure, readout was not commanded" << sendLog;
+				break;
+			default:
+				stopExposure ();
+				logStream (MESSAGE_WARNING) << "end exposure without exposure connection, state " << getStateChip (0) << sendLog;
 		}
 	}
 
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "chip exposure interrupted", NAN, NAN, exposureConn);
+	maskState (CAM_MASK_EXPOSE | CAM_MASK_SHIFTING | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "chip exposure interrupted", NAN, NAN, exposureConn);
 	return 0;
 }
 
@@ -403,6 +405,8 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	chan2delta = NULL;
         acquireTime = NULL;
 
+	shiftstoreLines = NULL;
+
 	timeReadoutStart = NAN;
 	timeTransferStart = NAN;
 
@@ -499,7 +503,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, RTS2_VALUE_WRITABLE, 0);
 	quedExpNumber->setValueInteger (0);
 
-	createValue (exposureNumber, "exposure_num", "number of exposures camera takes", false, 0, 0);
+	createValue (exposureNumber, "exposure_num", "number of exposures camera took from driver restart", false, RTS2_VALUE_WRITABLE, 0);
 	exposureNumber->setValueLong (0);
 
 	createValue (scriptExposureNum, "script_exp_num", "number of images taken in script", false, 0, 0);
@@ -698,7 +702,7 @@ int Camera::killAll (bool callScriptEnds)
 	centerAvgStat->clearStat ();
 	sendValueAll (centerAvgStat);
 
-	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL, "exposure interrupted", NAN, NAN, exposureConn);
+	maskState (CAM_MASK_EXPOSE | CAM_MASK_SHIFTING | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL, "exposure interrupted", NAN, NAN, exposureConn);
 
 	return rts2core::ScriptDevice::killAll (callScriptEnds);
 }
@@ -1307,6 +1311,10 @@ void Camera::checkExposures ()
 			int expNum;
 			switch (ret)
 			{
+				case -5:
+					endExposure (ret);
+					maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", NAN, NAN, exposureConn);
+					break;
 				case -4:
 					exposureConn = NULL;
 					endExposure (ret);
@@ -1331,7 +1339,7 @@ void Camera::checkExposures ()
 						maskState (CAM_MASK_FT, CAM_NOFT, "ft exposure chip finished", NAN, NAN, exposureConn);
 					break;
 				case -1:
-					maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NOTREADING, "exposure finished with error", NAN, NAN, exposureConn);
+					maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_SHIFTING | CAM_MASK_READING | BOP_TEL_MOVE, DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NOTREADING, "exposure finished with error", NAN, NAN, exposureConn);
 					stopExposure ();
 					if (quedExpNumber->getValueInteger () > 0)
 					{
@@ -1359,9 +1367,9 @@ void Camera::checkReadouts ()
 		endReadout ();
 		afterReadout ();
 		if (ret == -2)
-			maskState (CAM_MASK_READING | CAM_MASK_HAS_IMAGE, CAM_NOTREADING | CAM_HAS_IMAGE, "readout ended", NAN, NAN, exposureConn);
+			maskState (CAM_MASK_SHIFTING | CAM_MASK_READING | CAM_MASK_HAS_IMAGE, CAM_NOTREADING | CAM_HAS_IMAGE, "readout ended", NAN, NAN, exposureConn);
 		else
-			maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout ended with error", NAN, NAN, exposureConn);
+			maskState (DEVICE_ERROR_MASK | CAM_MASK_SHIFTING | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout ended with error", NAN, NAN, exposureConn);
 	}
 }
 
@@ -1765,9 +1773,34 @@ int Camera::camReadout (rts2core::Connection * conn)
 		return readoutStart ();
 	}
 
-	maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", NAN, NAN, exposureConn);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_SHIFTING | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", NAN, NAN, exposureConn);
 	conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
 	return -1;
+}
+
+int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
+{
+	shiftstoreLines->clear ();
+	sendValueAll (shiftstoreLines);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_SHIFTING, CAM_EXPOSING | CAM_SHIFT, "starting shift-store", NAN, NAN, conn);
+	return 0;
+}
+
+int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
+{
+	shiftstoreLines->addValue (shift);
+	sendValueAll (shiftstoreLines);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE, CAM_EXPOSING, "shifting shift-store", NAN, NAN, conn);
+	return 0;
+}
+
+int Camera::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+{
+	shiftstoreLines->addValue (shift);
+	sendValueAll (shiftstoreLines);
+	exposureConn = conn;
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_READING, "end shift-store", NAN, NAN, conn);
+	return 0;
 }
 
 int Camera::setFilterNum (int new_filter, const char *fn)
@@ -1910,11 +1943,41 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
-	else if (conn->isCommand ("expose"))
+	else if (conn->isCommand (COMMAND_CCD_EXPOSURE))
 	{
 		if (!conn->paramEnd ())
 			return -2;
 		return camExpose (conn, getStateChip (0), false);
+	}
+	else if (conn->isCommand (COMMAND_CCD_SHIFTSTORE))
+	{
+		// not supported
+		if (shiftstoreLines == NULL)
+			return -2;
+		char *kind;
+		int shift;
+		float exptime;
+		if (conn->paramNextString (&kind))
+			return -2;
+		if (strcmp (kind, "start") == 0)
+		{
+			if (conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+				return -2;
+			return shiftStoreStart (conn, exptime);
+		}
+		else if (strcmp (kind, "shift") == 0)
+		{
+			if (conn->paramNextInteger (&shift) || conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+				return -2;
+			return shiftStoreShift (conn, shift, exptime);
+		}
+		else if (strcmp (kind, "end") == 0)
+		{
+			if (conn->paramNextInteger (&shift) << conn->paramNextFloat (&exptime) || !conn->paramEnd ())
+				return -2;
+			return shiftStoreEnd (conn, shift, exptime);
+		}
+		return -2;
 	}
 	else if (conn->isCommand ("stopexpo"))
 	{
@@ -1923,11 +1986,11 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 		int ret = stopExposure ();
 		if (ret)
 		{
-			maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL, "chip exposure interrupted", NAN, NAN, exposureConn);
+			maskState (CAM_MASK_EXPOSE | CAM_MASK_SHIFTING | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL, "chip exposure interrupted", NAN, NAN, exposureConn);
 		}
 		else
 		{
-			maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL | DEVICE_ERROR_HW, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL | DEVICE_ERROR_HW, "chip exposure interrupted with error", NAN, NAN, exposureConn);
+			maskState (CAM_MASK_EXPOSE | CAM_MASK_SHIFTING | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL | DEVICE_ERROR_HW, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL | DEVICE_ERROR_HW, "chip exposure interrupted with error", NAN, NAN, exposureConn);
 		}
 		return 0;
 	}

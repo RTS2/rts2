@@ -166,15 +166,15 @@ void XmlRpcServer::work(double msTime)
 }
 
 // Add sockets to file descriptor set
-void XmlRpcServer::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+void XmlRpcServer::addToFd (void (*addFD) (int, short))
 {
-	_disp.addToFd(inFd, outFd, excFd);
+	_disp.addToFd(addFD);
 }
 
 // Check if it should server any of the modified sockets
-void XmlRpcServer::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+void XmlRpcServer::checkFd (short (*getFDEvents) (int))
 {
-	_disp.checkFd(inFd, outFd, excFd);
+	_disp.checkFd(getFDEvents);
 }
 
 // Handle input on the server socket by accepting the connection

@@ -619,24 +619,24 @@ int HttpD::init ()
 	return ret;
 }
 
-void HttpD::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void HttpD::addPollSocks ()
 {
 #ifdef RTS2_HAVE_PGSQL
-	DeviceDb::addSelectSocks (read_set, write_set, exp_set);
+	DeviceDb::addPollSocks ();
 #else
-	rts2core::Device::addSelectSocks (read_set, write_set, exp_set);
+	rts2core::Device::addPollSocks ();
 #endif
-	XmlRpcServer::addToFd (&read_set, &write_set, &exp_set);
+	XmlRpcServer::addToFd (&getMasterAddPollFD);
 }
 
-void HttpD::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void HttpD::pollSuccess ()
 {
 #ifdef RTS2_HAVE_PGSQL
-	DeviceDb::selectSuccess (read_set, write_set, exp_set);
+	DeviceDb::pollSuccess ();
 #else
-	rts2core::Device::selectSuccess (read_set, write_set, exp_set);
+	rts2core::Device::pollSuccess ();
 #endif
-	XmlRpcServer::checkFd (&read_set, &write_set, &exp_set);
+	XmlRpcServer::checkFd (&getMasterGetEvents);
 }
 
 void HttpD::signaledHUP ()
