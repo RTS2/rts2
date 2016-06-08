@@ -186,25 +186,28 @@ CommandReadout::CommandReadout (Block * _master):Command (_master)
 	setCommand ("readout");
 }
 
-CommandShiftStart::CommandShiftStart (Block * _master, float expTime):Command (_master)
+CommandShiftStart::CommandShiftStart (Block * _master, float expTime, int _bopMask):Command (_master)
 {
 	std::ostringstream _os;
 	_os << COMMAND_CCD_SHIFTSTORE << " start " << expTime;
 	setCommand (_os);
+	setBopMask (_bopMask);
 }
 
-CommandShiftProgress::CommandShiftProgress (Block * _master, int shift, float expTime):Command (_master)
+CommandShiftProgress::CommandShiftProgress (Block * _master, int shift, float expTime, int _bopMask):Command (_master)
 {
 	std::ostringstream _os;
 	_os << COMMAND_CCD_SHIFTSTORE << " shift " << shift << " " << expTime;
 	setCommand (_os);
+	setBopMask (_bopMask);
 }
 
-CommandShiftEnd::CommandShiftEnd (Block * _master, int shift, float expTime):Command (_master)
+CommandShiftEnd::CommandShiftEnd (Block * _master, int shift, float expTime, int _bopMask):Command (_master)
 {
 	std::ostringstream _os;
 	_os << COMMAND_CCD_SHIFTSTORE << " end " << shift << " " << expTime;
 	setCommand (_os);
+	setBopMask (_bopMask);
 }
 
 CommandFitsStat::CommandFitsStat (Block * _master, double average, double min, double max, double sum, double mode):Command (_master)

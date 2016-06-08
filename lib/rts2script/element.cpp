@@ -252,7 +252,7 @@ ElementShiftStoreStart::ElementShiftStoreStart (Script * _script, float in_expTi
 
 int ElementShiftStoreStart::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new rts2core::CommandShiftStart (script->getMaster (), expTime);
+	*new_command = new rts2core::CommandShiftStart (script->getMaster (), expTime, BOP_EXPOSURE);
 	getDevice (new_device);
 	return 0;
 }
@@ -265,7 +265,7 @@ ElementShiftStoreProgress::ElementShiftStoreProgress (Script * _script, int in_s
 
 int ElementShiftStoreProgress::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new rts2core::CommandShiftProgress (script->getMaster (), shift, expTime);
+	*new_command = new rts2core::CommandShiftProgress (script->getMaster (), shift, expTime, BOP_EXPOSURE);
 	getDevice (new_device);
 	return 0;
 }
@@ -277,7 +277,7 @@ ElementShiftStoreEnd::ElementShiftStoreEnd (Script * _script, int in_shift, floa
 
 int ElementShiftStoreEnd::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new rts2core::CommandShiftEnd (script->getMaster (), shift, expTime);
+	*new_command = new rts2core::CommandShiftEnd (script->getMaster (), shift, expTime, BOP_EXPOSURE);
 	getDevice (new_device);
 	return 0;
 }
