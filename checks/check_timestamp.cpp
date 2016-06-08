@@ -34,6 +34,24 @@ START_TEST(TIMEDIFF2)
 }
 END_TEST
 
+START_TEST(TIMEDIFF3)
+{
+	std::ostringstream oss;
+	oss << TimeDiff (0.5, false);
+
+	ck_assert_str_eq (oss.str ().c_str (), "0.500s");
+}
+END_TEST
+
+START_TEST(TIMEDIFF4)
+{
+	std::ostringstream oss;
+	oss << TimeDiff (0.005, false);
+
+	ck_assert_str_eq (oss.str ().c_str (), "5ms");
+}
+END_TEST
+
 Suite * timestamp_suite (void)
 {
 	Suite *s;
@@ -45,6 +63,8 @@ Suite * timestamp_suite (void)
 	tcase_add_checked_fixture (tc_timestamp, setup_timestamp, teardown_timestamp);
 	tcase_add_test (tc_timestamp, TIMEDIFF1);
 	tcase_add_test (tc_timestamp, TIMEDIFF2);
+	tcase_add_test (tc_timestamp, TIMEDIFF3);
+	tcase_add_test (tc_timestamp, TIMEDIFF4);
 	suite_add_tcase (s, tc_timestamp);
 
 	return s;
