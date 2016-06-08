@@ -95,7 +95,7 @@ int AzCam3DataConn::receive (rts2core::Block *block)
 				close (outFile);
 				dataSize = 0;
 				headerSize = 0;
-				return 0;
+				return rec;
 			}
 		}
 		return rec;
@@ -134,6 +134,7 @@ class AzCam3:public rts2camd::Camera
 		int callCommand (const char *cmd);
 		int callCommand (const char *cmd, int p1);
 		int callCommand (const char *cmd, double p1);
+		int callCommand (const char *cmd, const char *p1);
 		int callCommand (const char *cmd, double p1, const char *p2, const char *p3);
 		int callExposure (const char *cmd, double p1, const char *p2);
 		int callCommand (const char *cmd, int p1, int p2, int p3, int p4, int p5, int p6);
@@ -265,6 +266,13 @@ int AzCam3::callCommand (const char *cmd, double p1)
 	return callCommand (buf);
 }
 
+int AzCam3::callCommand (const char *cmd, const char *p1)
+{
+	char buf[200];
+	snprintf (buf, 200, "%s('%s')\r\n", cmd, p1);
+	return callCommand (buf);
+}
+
 int AzCam3::callCommand (const char *cmd, double p1, const char *p2, const char *p3)
 {
 	char buf[200];
@@ -374,6 +382,7 @@ int AzCam3::startExposure()
 //		return ret;
 
 	const char *imgType[3] = {"object", "dark", "zero"};
+
 	return callCommand ("exposure.Expose1", getExposure(), imgType[getExpType ()], "RTS2");
 }
 
@@ -424,11 +433,25 @@ int AzCam3::doReadout ()
 		}
 		else if (dataConn->getDataSize () > 0)
 			return 10;
-		std::istringstream *is;
-		commandConn->receiveData (&is, 20, '\r');
-		if (is->str ().substr (0, 2) != "OK")
-			return -1;
-		delete is;
+		if (getState () & CAM_SHIFT)
+		{
+			std::istringstream *is;
+			try
+			{
+				commandConn->receiveData (&is, 20, '\r');
+				if (is->str ().substr (0, 2) != "OK")
+				{
+					logStream (MESSAGE_ERROR) << "invalid response to readout command " << is->str () << sendLog;
+					delete is;
+					return -1;
+				}
+				delete is;
+			}
+			catch (rts2core::ConnTimeoutError &ctoe)
+			{
+				logStream (MESSAGE_ERROR) << "cannot receive reply to readout command" << sendLog;
+			}
+		}
 		removeConnection (dataConn);
 		dataConn = NULL;
 		fitsDataTransfer ("/tmp/m.fits");
@@ -442,6 +465,13 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	int ret = setupDataConnection ();
 	if (ret)
 		return -2;
+
+	ret = callCommand ("exposure.SetImageType", "object");
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "invalid return from exposure.SetExposureTime call: " << ret << sendLog;
+		return -2;
+	}
 
 	ret = callCommand ("exposure.SetExposureTime", exptime);
 	if (ret)
