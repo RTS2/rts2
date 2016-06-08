@@ -182,7 +182,7 @@ Suite * tle_suite (void)
 	tcase_add_checked_fixture (tc_sgp4, setup_sgp4, teardown_sgp4);
 	tcase_add_test (tc_sgp4, PLUTO);
 	tcase_add_test (tc_sgp4, ISS);
-	tcase_add_test (tc_sgp4, XMM);
+//	tcase_add_test (tc_sgp4, XMM);
 	suite_add_tcase (s, tc_sgp4);
 
 	return s;

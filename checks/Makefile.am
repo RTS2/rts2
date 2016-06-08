@@ -2,8 +2,8 @@ LDADD = @CHECK_LIBS@ -L../lib/rts2tel -lrts2tel -L../lib/sgp4 -lsgp4 -L../lib/pl
 AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
 if LIBCHECK
-TESTS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4
-check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4
+TESTS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp
+check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp
 
 noinst_HEADERS = check_utils.h gemtest.h altaztest.h
 
@@ -14,6 +14,8 @@ check_altaz_SOURCES = check_altaz.cpp altaztest.cpp
 check_tle_SOURCES = check_tle.cpp
 check_sgp4_SOURCES = check_sgp4.cpp
 
+check_timestamp_SOURCES = check_timestamp.cpp
+
 else
-EXTRA_DIST=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp
+EXTRA_DIST=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp
 endif

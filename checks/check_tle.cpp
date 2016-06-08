@@ -220,7 +220,7 @@ Suite * tle_suite (void)
 	tcase_add_checked_fixture (tc_tle, setup_tle, teardown_tle);
 	tcase_add_test (tc_tle, PLUTO);
 	tcase_add_test (tc_tle, ISS);
-	tcase_add_test (tc_tle, XMM);
+//	tcase_add_test (tc_tle, XMM);
 	suite_add_tcase (s, tc_tle);
 
 	return s;
