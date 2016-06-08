@@ -436,19 +436,19 @@ class CommandReadout:public Command
 class CommandShiftStart: public Command
 {
 	public:
-		CommandShiftStart (Block * _master, float expTime);
+		CommandShiftStart (Block * _master, float expTime, int _bopMask);
 };
 
 class CommandShiftProgress: public Command
 {
 	public:
-		CommandShiftProgress (Block * _master, int shift, float expTime);
+		CommandShiftProgress (Block * _master, int shift, float expTime, int _bopMask);
 };
 
 class CommandShiftEnd: public Command
 {
 	public:
-		CommandShiftEnd (Block * _master, int shift, float expTime);
+		CommandShiftEnd (Block * _master, int shift, float expTime, int _bopMask);
 };
 
 

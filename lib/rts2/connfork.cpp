@@ -118,7 +118,7 @@ int ConnFork::add (Block *block)
 
 int ConnFork::receive (Block *block)
 {
-	if (sockerr > 0 && block->isForRead (sock))
+	if (sockerr > 0 && block->isForRead (sockerr))
 	{
 		int data_size;
 		char errbuf[5001];
