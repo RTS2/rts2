@@ -146,7 +146,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			if (mprinted)
 				_oss << " ";
 			_oss << std::setw (2) << diff;
-			if (_td.print_milisec)
+			if (_td.print_milisec || mprinted == false)
 				if (msec > 0 || print_all)
 					 _oss << "." << std::setfill('0') << std::setw (3) << msec;
 			if (!print_all)
@@ -154,11 +154,11 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			mprinted = true;
 		}
 
-		if (diff == 0 && msec>0)
+		if (diff == 0 && msec > 0)
 		{
 			if (msec > 99)
 			{
-				if (msec > 0 && _td.print_milisec)
+				if ((msec > 0 && _td.print_milisec) || mprinted == false)
 					_oss << "0." << msec;
 						
 				_oss << "s";
@@ -166,7 +166,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			}
 			else
 			{	
-				if (msec > 0 && _td.print_milisec)
+				if ((msec > 0 && _td.print_milisec) || mprinted == false)
 					_oss  << msec;
 						
 				_oss << "ms";
