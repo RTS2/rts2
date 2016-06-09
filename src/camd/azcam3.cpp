@@ -405,6 +405,10 @@ long AzCam3::isExposing ()
 		sendValueAll (exposureRemaining);
 		if (exposureRemaining->getValueFloat () > 0)
 			return exposureRemaining->getValueFloat () * USEC_SEC;
+		// else exposureRemaining is 0..or negative in case of AzCam bug..
+		long camExp = Camera::isExposing ();
+		if (camExp > USEC_SEC)
+			return camExp;
 	}
 	catch (rts2core::Error &er)
 	{

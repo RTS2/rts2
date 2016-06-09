@@ -212,8 +212,6 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual bool supportFrameTransfer ();
 
-		// end of CameraChip
-
 		virtual int initChips ();
 		virtual int initValues ();
 		void checkExposures ();
@@ -362,14 +360,13 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		/**
-		 * Decrease/increase exposure end with given offset.
+		 * Set exposure end time.
 		 *
-		 * @param off Time offset (in seconds). If positive, isExposing
-		 * will run longer then nominal exposure time.
+		 * @param remaining  remaining exposure time in seconds (and fraction of second)
 		 */
-		void changeExposureEnd (double off)
+		void setExposureEnd (double remaining)
 		{
-			exposureEnd->setValueDouble (exposureEnd->getValueDouble () + off);
+			exposureEnd->setValueDouble (getNow () + remaining);
 		}
 
 		/**

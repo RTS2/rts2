@@ -491,6 +491,7 @@ int Dummy::doReadout ()
 			{
 				size_t s = (ssize_t) chipByteSize () - written[0] < callReadoutSize->getValueLong () ? chipByteSize () - written[0] : callReadoutSize->getValueLong ();
 				ret = sendReadoutData (getDataTop (0), s, 0);
+				std::cout << "ret " << ret << " " << s << std::endl;
 
 				if (ret < 0)
 					return ret;
