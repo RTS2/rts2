@@ -24,4 +24,5 @@ SUBDIRS = \
 	httpd \
 	wsd \
 	bb \
-	pluto
+	pluto \
+	catd
