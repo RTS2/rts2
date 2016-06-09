@@ -383,7 +383,11 @@ int AzCam3::startExposure()
 
 	const char *imgType[3] = {"object", "dark", "zero"};
 
-	return callCommand ("exposure.Expose1", getExposure(), imgType[getExpType ()], "RTS2");
+	ret = callCommand ("exposure.Expose1", getExposure(), imgType[getExpType ()], "RTS2");
+	if (ret)
+		return ret;
+	sleep (5);
+	return 0;
 }
 
 int AzCam3::stopExposure ()
@@ -401,6 +405,10 @@ long AzCam3::isExposing ()
 		sendValueAll (exposureRemaining);
 		if (exposureRemaining->getValueFloat () > 0)
 			return exposureRemaining->getValueFloat () * USEC_SEC;
+		// else exposureRemaining is 0..or negative in case of AzCam bug..
+		long camExp = Camera::isExposing ();
+		if (camExp > USEC_SEC)
+			return camExp;
 	}
 	catch (rts2core::Error &er)
 	{
@@ -424,7 +432,7 @@ int AzCam3::doReadout ()
 					pixelsRemaining->setValueLong (getLong ("controller.GetPixelsRemaining()\r\n"));
 					sendValueAll (pixelsRemaining);
 				}
-				return 10000;
+				return USEC_SEC;
 			}
 			catch (rts2core::Error &er)
 			{
