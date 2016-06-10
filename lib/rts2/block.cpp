@@ -389,7 +389,7 @@ void Block::oneRunLoop ()
 		else
 		{
 			read_tout.tv_sec = t_diff;
-			read_tout.tv_nsec = (t_diff - floor (t_diff)) * USEC_SEC;
+			read_tout.tv_nsec = (t_diff - floor (t_diff)) * NSEC_SEC;
 		}
 	}
 	else
@@ -402,7 +402,7 @@ void Block::oneRunLoop ()
 		else
 		{
 			read_tout.tv_sec = idle_timeout / USEC_SEC;
-			read_tout.tv_nsec = idle_timeout % USEC_SEC;
+			read_tout.tv_nsec = (idle_timeout % USEC_SEC) * 1000;
 		}
 	}
 

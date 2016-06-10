@@ -797,7 +797,7 @@ class Block: public App
 
 	private:
 		int port;
-		long int idle_timeout;	 // in nsec
+		long int idle_timeout;	 // in usec
 
 		struct pollfd *fds;
 		nfds_t pollsize;
