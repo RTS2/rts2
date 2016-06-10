@@ -68,10 +68,10 @@ void XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 #define MAX_POLLS	200
 
 // Watch current set of sources and process events
-void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
+void XmlRpcDispatch::work(double timeout_ms, XmlRpcClient *chunkWait)
 {
 	// Compute end time
-	_endTime = (timeout < 0.0) ? -1.0 : (getTime() + timeout);
+	_endTime = (timeout_ms < 0.0) ? -1.0 : (getTime() + timeout_ms/1000.0);
 	_doClear = false;
 	_inWork = true;
 
@@ -93,13 +93,13 @@ void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 
 		// Check for events
 		int nEvents;
-		if (timeout < 0.0)
+		if (timeout_ms < 0.0)
 			nEvents = poll(fds, nfds, 0);
 		else
 		{
 			struct timespec tv;
-			tv.tv_sec = (int)floor(timeout);
-			tv.tv_nsec = ((int)floor(1000000.0 * (timeout-floor(timeout)))) % 1000000;
+			tv.tv_sec = (int) floor (timeout_ms / 1000.0);
+			tv.tv_nsec = (int) (fmod (timeout_ms, 1000.0) * 1000000.0);
 			nEvents = ppoll(fds, nfds, &tv, NULL);
 		}
 
