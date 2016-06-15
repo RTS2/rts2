@@ -30,6 +30,7 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 	linearOffset = NULL;
 	slope = NULL;
 	intercept = NULL;
+	temperatureNightOnly = NULL;
 
 	createValue (position, "FOC_POS", "focuser position", true); // reported by focuser, use FOC_TAR to set the target position
 	createValue (target, "FOC_TAR", "focuser target position", true, RTS2_VALUE_WRITABLE);
@@ -121,14 +122,17 @@ int Focusd::idle ()
 			}
 		}
 	}
-	else if (linearOffset != NULL && slope != NULL && intercept != NULL && temperature != NULL && linearOffset->getValueBool () == true && !isnan (slope->getValueFloat ()) && !isnan (intercept->getValueFloat ()) && !isnan (temperature->getValueDouble ()))
+	else if (linearOffset != NULL && slope != NULL && intercept != NULL && temperature != NULL && temperatureNightOnly != NULL && linearOffset->getValueBool () == true && !isnan (slope->getValueFloat ()) && !isnan (intercept->getValueFloat ()) && !isnan (temperature->getValueDouble ()))
 	{
-		// calculate new position based on linear fit to temperature
-		int np = round (slope->getValueFloat () * temperature->getValueFloat () + intercept->getValueFloat ());
-		if (np != round (getPosition ()))
+		if (temperatureNightOnly->getValueBool () == false || getMasterState () == (SERVERD_NIGHT | SERVERD_ON) )
 		{
-			logStream (MESSAGE_INFO) << "temperature offseting focusing value from " << getPosition () << " to " << np << " at temperature " << temperature->getValueFloat () << sendLog;
-			setPosition (np);
+			// calculate new position based on linear fit to temperature
+			int np = round (slope->getValueFloat () * temperature->getValueFloat () + intercept->getValueFloat ());
+			if (np != round (getPosition ()))
+			{
+				logStream (MESSAGE_INFO) << "temperature offseting focusing value from " << getPosition () << " to " << np << " at temperature " << temperature->getValueFloat () << sendLog;
+				setPosition (np);
+			}
 		}
 	}
 
@@ -247,6 +251,16 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat () + tco )? -2 : 0;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
+}
+
+void Focusd::createLinearOffset ()
+{
+	createValue (linearOffset, "linear_offset", "linear offset", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	linearOffset->setValueBool (false);
+	createValue (slope, "linear_slope", "slope parameter for linear function to fit temperature sensor", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (intercept, "linear_intercept", "intercept parameter for 0 value of temperature sensor", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (temperatureNightOnly, "linear_nightonly", "performs temperature based focusing only during night", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	temperatureNightOnly->setValueBool (true);
 }
 
 int Focusd::scriptEnds ()
