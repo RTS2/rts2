@@ -211,7 +211,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			int ext = params->getInteger ("e", 0);
 			os << "[";
 			if (ext)
-				os << "[\"" << ((HttpD *) getMasterApp ())->getDeviceName () << "\"," << DEVICE_TYPE_XMLRPC << ']';
+				os << "[\"" << ((HttpD *) getMasterApp ())->getDeviceName () << "\"," << DEVICE_TYPE_HTTPD << ']';
 			else
 				os << '"' << ((HttpD *) getMasterApp ())->getDeviceName () << '"';
 			for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
