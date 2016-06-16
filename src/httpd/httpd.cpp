@@ -699,9 +699,9 @@ void HttpD::removeConnection (XmlRpcServerConnection *source)
 }
 
 #ifdef RTS2_HAVE_PGSQL
-HttpD::HttpD (int argc, char **argv): DeviceDb (argc, argv, DEVICE_TYPE_XMLRPC, "HTTPD")
+HttpD::HttpD (int argc, char **argv): DeviceDb (argc, argv, DEVICE_TYPE_HTTPD, "HTTPD")
 #else
-HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_XMLRPC, "HTTPD")
+HttpD::HttpD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_HTTPD, "HTTPD")
 #endif
 ,XmlRpcServer (),
   events(this),

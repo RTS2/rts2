@@ -413,7 +413,7 @@ std::string Connection::getStateString ()
 			else
 				_os << "idle";
 			break;
-		case DEVICE_TYPE_XMLRPC:
+		case DEVICE_TYPE_HTTPD:
 			switch (real_state & EXEC_MASK_SCRIPT)
 			{
 				case EXEC_SCRIPT_RUNNING:

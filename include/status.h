@@ -386,7 +386,7 @@ typedef uint32_t rts2_status_t;
 #define DEVICE_TYPE_EXECUTOR  20
 #define DEVICE_TYPE_IMGPROC   21
 #define DEVICE_TYPE_SELECTOR  22
-#define DEVICE_TYPE_XMLRPC    23
+#define DEVICE_TYPE_HTTPD     23
 #define DEVICE_TYPE_INDI      24
 #define DEVICE_TYPE_LOGD      25
 #define DEVICE_TYPE_SCRIPTOR  26
