@@ -25,4 +25,5 @@ SUBDIRS = \
 	wsd \
 	bb \
 	pluto \
-	catd
+	catd \
+	thrift

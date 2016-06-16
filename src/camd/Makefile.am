@@ -15,7 +15,7 @@ rts2_camd_miniccd_il_SOURCES = miniccd_il.cpp
 
 rts2_camd_dummy_SOURCES = dummy.cpp
 rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @MAGIC_CFLAGS@ -I../../include
-rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @LIB_CFITSIO@ @MAGIC_LIBS@
+rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @CFITSIO_LIBS@ @MAGIC_LIBS@
 
 rts2_camd_sidecar_SOURCES = sidecar.cpp
 
@@ -51,7 +51,7 @@ endif
 if SBIG
 bin_PROGRAMS += rts2-camd-sbig
 rts2_camd_sbig_SOURCES = sbig.cpp
-rts2_camd_sbig_LDFLAGS = @LIB_SBIG@ ${LDADD} @LIB_CFITSIO@
+rts2_camd_sbig_LDFLAGS = @LIB_SBIG@ ${LDADD} @CFITSIO_LIBS@
 rts2_camd_sbig_CXXFLAGS = @INC_SBIG@ -I../../include @CFITSIO_CFLAGS@
 else
 EXTRA_DIST += sbig.cpp

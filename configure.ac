@@ -123,22 +123,11 @@ esac],[libnova=yes])
 
 AM_CONDITIONAL(LIBNOVA, test x$libnova != xno)
 
-AC_ARG_WITH(cfitsio,
-[  --with-cfitsio       path to CFITSO library or "no" if cfitsio is not installed],
-[case "${withval}" in
-	yes) cfitsio=yes ;;
-	no)  cfitsio=no ;;
-	*) cfitsio=${withval} ;;
-esac],[cfitsio=yes])
+PKG_CHECK_MODULES([CFITSIO],[cfitsio],,AC_MSG_RESULT(not found))
 
-AM_CONDITIONAL(CFITSIO, test x$cfitsio != xno)
+AM_CONDITIONAL(CFITSIO, test x$CFITSIO_LIBS != x)
 
-AC_ARG_WITH(ncurses,
-[  --with-ncurses       path to ncurses library or "yes" if ncurses is in standard path],
-[case "${withval}" in
-	yes) ncurses=yes ;;
-	*) ncurses=${withval} ;;
-esac],[ncurses=yes])
+PKG_CHECK_MODULES([NCURSES],[ncurses],,)
 
 dnl Check for GraphicsMagic++ library
 
@@ -156,6 +145,10 @@ AM_CONDITIONAL(JSONSOUP, test "x$JSONGLIB_CFLAGS" != x)
 AS_IF([test "x$JSONGLIB_CFLAGS" != x], [
 	AC_DEFINE_UNQUOTED(JSONSOUP, "1", [JSON and SOUP libraries are present])
 ])
+
+PKG_CHECK_MODULES([THRIFT], [thrift],,AC_MSG_RESULT(not found))
+
+AM_CONDITIONAL(THRIFT, test "x$THRIFT_CFLAGS" != x)
 
 dnl Check for ROOT (to build contrib scripts)
 
@@ -575,28 +568,6 @@ AS_IF([test "x$SSL_LIBS" != x], [
   AC_DEFINE_UNQUOTED(SSL, "1", [using openssl in httpd])
 ])
 
-
-AS_IF([test "x${cfitsio}" != "xno"], [
-  AS_IF([test "x${cfitsio}" != "xyes"], [
-    LDFLAGS="${LDFLAGS} -L${cfitsio}"
-  ])
-  AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
-, [cat <<EOF
-**** You don't have cfitsio installed.
-**** Please download one from 
-**** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
-EOF
-exit 1])
-  AS_IF([test "x${cfitsio}" != "xyes"], [
-    LIB_CFITSIO="-L${cfitsio} ${LIB_CFITSIO}"
-    CFITSIO_CFLAGS="-I${cfitsio}"
-  ], [
-    CFITSIO_CFLAGS=""
-  ])
-  AC_SUBST(CFITSIO_CFLAGS)
-  AC_SUBST(LIB_CFITSIO)
-])
-
 AS_IF([test "x${libwcstools}" != "xno"], [
   AS_IF([test "x${libwcstools}" != "xyes"], [
     LDFLAGS="${LDFLAGS} -L${libwcstools}/libwcstools"
@@ -622,25 +593,6 @@ EOF
 AM_CONDITIONAL(LIBWCS, test x$libwcstools != xno)
 AC_SUBST(LIBWCS_CFLAGS)
 AC_SUBST(LIBWCS_LDFLAGS)
-
-AS_IF([test "x${ncurses}" != "xyes"], [
-  LDFLAGS="${LDFLAGS} -L${ncurses}/lib"
-])
-
-AC_CHECK_LIB([ncurses], [mvwprintw], LIBNCURSES_LDFLAGS="-lncurses";
-AC_SUBST(LIB_NCURSES), [cat << EOF
-**** You don't have ncurser libraries.
-**** Please install ncursers (you need devel package as well)
-EOF
-exit 1])
-
-AS_IF([test "x${ncurses}" != "xyes"], [
-  LIBNCURSES_CFLAGS="-I${ncurses}/include"
-  LIBNCURSES_LDFLAGS="-L${ncurses}/lib -lncurses"
-])
-
-AC_SUBST(LIBNCURSES_CFLAGS)
-AC_SUBST(LIBNCURSES_LDFLAGS)
 
 AS_IF([test "x${libnova}" != "xyes"], [
   LDFLAGS="${LDFLAGS} -L${libnova}/lib"
@@ -968,6 +920,7 @@ AC_OUTPUT([Makefile
 	   src/bb/Makefile
 	   src/pluto/Makefile
 	   src/catd/Makefile
+	   src/thrift/Makefile
 	   checks/Makefile
 	   scripts/rts2saf/Makefile
 	   scripts/rts2saf/rts2saf/Makefile]
@@ -983,7 +936,8 @@ echo "
   libnova       ${libnova}
   libusb1	${libusb1}
   libusb	${libusb}
-  cfitsio       ${cfitsio}
+  ncurses       ${NCURSES_CFLAGS} ${NCURSES_LIBS}
+  cfitsio       ${CFITSIO_CFLAGS} ${CFITSIO_LIBS}
   libwcstools   ${libwcstools}
   pgsql		${psql}
   gpib          ${GPIBLIB}
@@ -998,6 +952,7 @@ echo "
   openssl       ${ssl}
   libcheck	${libcheck}
   libwebsockets	${libwebsockets}
+  libthrift     ${THRIFT_CFLAGS} ${THRIFT_LIBS}
 
 CCDs:
   alta          ${ALTA}

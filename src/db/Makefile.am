@@ -1,4 +1,4 @@
-LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @MAGIC_LIBS@
+LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @CFITSIO_LIBS@ @MAGIC_LIBS@
 AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @MAGIC_CFLAGS@ -I../../include
 
 bin_PROGRAMS = rts2-image rts2-user rts2-horizon
