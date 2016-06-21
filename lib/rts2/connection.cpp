@@ -900,7 +900,7 @@ void Connection::processLine ()
 		ret = command ();
 	}
 	#ifdef DEBUG_ALL
-	std::cerr << "Connection::processLine [" << getCentraldId ()
+	std::cout << "Connection::processLine [" << getCentraldId ()
 		<< "] command: " << getCommand () << " ret: " << ret << std::endl;
 	#endif
         switch (ret)
@@ -1026,6 +1026,7 @@ int Connection::receive (Block *block)
 		successfullRead ();
 		#ifdef DEBUG_ALL
 		std::cout << "Connection::receive name " << getName ()
+			<< " [" << getCentraldId () << ":" << sock << "]"
 			<< " reas: " << buf_top
 			<< " full_buf: " << buf
 			<< " size: " << data_size
