@@ -95,7 +95,7 @@ AC_ARG_ENABLE(ssl,
 esac],[ssl=yes])
 
 AC_ARG_ENABLE(focusing,
-[  --disable-focusing      disables focusing in camd (=>camd doesn't need cfitsio to build)],
+[  --disable-focusing      disables focusing in camd (=>camd does not need cfitsio to build)],
 [case "${enableval}" in
 	yes) focusing=yes ;;
 	no)  focusing=no ;;
@@ -133,7 +133,7 @@ esac],[cfitsio=yes])
 
 AS_IF([test "x${CFITSIO_LIBS}" != "xno"],[
 	PKG_CHECK_MODULES([CFITSIO],[cfitsio],,[
-		AC_MSG_RESULT(not fount)
+		AC_MSG_RESULT(not found)
 		AS_IF([test "x${cfitsio}" != "xyes"], [LDFLAGS="${LDFLAGS} -L${cfitsio}"])
 		AC_CHECK_LIB([cfitsio], [ffinit], CFITSIO_LIBS="-lcfitsio",[
 			cat <<EOF
@@ -155,7 +155,35 @@ EOF
 
 AM_CONDITIONAL(CFITSIO, test "x${CFITSIO_LIBS}" != "x")
 
-PKG_CHECK_MODULES([NCURSES],[ncurses],,)
+AC_ARG_WITH(ncurses,
+[  --with-ncurses       path to ncurses library or "yes" if ncurses is in standard path],
+[case "${withval}" in
+	yes) ncurses=yes ;;
+	*) ncurses=${withval} ;;
+esac],[ncurses=yes])
+
+PKG_CHECK_MODULES([NCURSES],[ncurses],,[
+	AC_MSG_RESULT(not found)
+	AS_IF([test "x${ncurses}" !- "xyes"], [LDFLAGS="${LDFLAGS} -L${ncurses}"])
+	AC_CHECK_LIB([ncurses], [mvwprintw], [
+		NCURSES_LIBS="-lncurses"
+	],[
+		cat<<EOF
+**** ncurses library is not installed.
+**** Please install ncurses (development package)
+EOF
+		exit 1
+	])
+	AS_IF([test "x${ncurses}" != "xyes"], [
+		NCURSES_LIBS="-L${ncurses} ${NCURSES_LIBS}"
+		NCURSES_CFLAGS="-I${ncurses}"
+	],[
+		NCURSES_CFLAGS=""
+	])
+])
+
+AC_SUBST(NCURSES_LIBS)
+AC_SUBST(NCURSES_CFLAGS)
 
 dnl Check for GraphicsMagic++ library
 
