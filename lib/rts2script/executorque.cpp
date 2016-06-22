@@ -794,7 +794,6 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 				if (!isnan (queueWindow->getValueFloat ()))
 				{
 					t += queueWindow->getValueFloat ();
-					timerAdded += queueWindow->getValueFloat ();
 				}
 				master->addTimer (t_start - t, new rts2core::Event (EVENT_NEXT_START));
 			}
