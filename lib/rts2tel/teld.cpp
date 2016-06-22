@@ -684,6 +684,7 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	}
 	else if (old_value == diffTrackOn)
 	{
+		logStream (MESSAGE_INFO) << "switching DON to " << ((rts2core::ValueBool *) new_value)->getValueBool () << sendLog;
 		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
 		{
 			setDiffTrack (diffTrackRaDec->getRa (), diffTrackRaDec->getDec ());
