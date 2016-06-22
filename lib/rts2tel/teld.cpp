@@ -985,10 +985,13 @@ void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		return;
 	}
 
-	logStream (MESSAGE_DEBUG)
-		<< "Telescope::computeModel offsets ra: "
-		<< model_change->ra << " dec: " << model_change->dec
-		<< sendLog;
+	if (getDebug ())
+	{
+		logStream (MESSAGE_DEBUG)
+			<< "Telescope::computeModel offsets ra: "
+			<< model_change->ra << " dec: " << model_change->dec
+			<< sendLog;
+	}
 }
 
 int Telescope::init ()
