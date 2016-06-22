@@ -1,7 +1,7 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-apm rts2-dome-fram \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl \
-	rts2-cupola-maxdomeii
+	rts2-cupola-maxdomeii rts2-cupola-saao
 
 SUBDIRS = zelio
 
@@ -49,6 +49,8 @@ rts2_dome_door_vermes_SOURCES =  door_vermes.cpp
 rts2_dome_door_vermes_LDADD =  -L../../lib/rts2/vermes/.libs -lrts2vermes   @LIB_PTHREAD@  ${LDADD} 
 
 rts2_dome_watcher_SOURCES = watcher.cpp
+
+rts2_cupola_saao_SOURCES = saao.cpp
 
 
 endif

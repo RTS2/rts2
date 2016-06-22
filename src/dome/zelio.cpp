@@ -106,7 +106,7 @@ class Zelio:public Dome
 	protected:
 		virtual int processOption (int in_opt);
 
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
@@ -692,12 +692,8 @@ int Zelio::info ()
 	return Dome::info ();
 }
 
-int Zelio::init ()
+int Zelio::initHardware ()
 {
-	int ret = Dome::init ();
-	if (ret)
-		return ret;
-
 	if (host == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
@@ -759,7 +755,7 @@ int Zelio::init ()
 
 	createZelioValues ();
 
-	ret = info ();
+	int ret = info ();
 	if (ret)
 		return ret;
 
