@@ -123,9 +123,37 @@ esac],[libnova=yes])
 
 AM_CONDITIONAL(LIBNOVA, test x$libnova != xno)
 
-PKG_CHECK_MODULES([CFITSIO],[cfitsio],,AC_MSG_RESULT(not found))
+AC_ARG_WITH(cfitsio,
+[  --with-cfitsio       path to CFITSO library or "no" if cfitsio is not installed],
+[case "${withval}" in
+	yes) cfitsio=yes ;;
+	no)  cfitsio=no ;;
+	*) cfitsio=${withval} ;;
+esac],[cfitsio=yes])
 
-AM_CONDITIONAL(CFITSIO, test x$CFITSIO_LIBS != x)
+AS_IF([test "x${CFITSIO_LIBS}" != "xno"],[
+	PKG_CHECK_MODULES([CFITSIO],[cfitsio],,[
+		AC_MSG_RESULT(not fount)
+		AS_IF([test "x${cfitsio}" != "xyes"], [LDFLAGS="${LDFLAGS} -L${cfitsio}"])
+		AC_CHECK_LIB([cfitsio], [ffinit], CFITSIO_LIBS="-lcfitsio",[
+			cat <<EOF
+**** cfitsio is not installed.
+**** Please download one from 
+**** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
+EOF
+			exit 1])
+		AS_IF([test "x${cfitsio}" != "xyes"],[
+			CFITSIO_LIBS="-L${cfitsio} ${CFITSIO_LIBS}"
+			CFITSIO_CFLAGS="-I${cfitsio}"
+		],[
+			CFITSIO_CFLAGS=""
+		])
+		AC_SUBST(CFITSIO_LIBS)
+		AC_SUBST(CFITSIO_CFLAGS)
+	])
+])
+
+AM_CONDITIONAL(CFITSIO, test "x${CFITSIO_LIBS}" != "x")
 
 PKG_CHECK_MODULES([NCURSES],[ncurses],,)
 
@@ -140,9 +168,9 @@ AH_TEMPLATE([JSONSOUP],[JSON and SOUP libraries are present])
 dnl check for JSON Glib
 PKG_CHECK_MODULES([JSONGLIB], [json-glib-1.0 >= 0.1 libsoup-2.4 >= 0.1],,AC_MSG_RESULT(not found))
 
-AM_CONDITIONAL(JSONSOUP, test "x$JSONGLIB_CFLAGS" != x)
+AM_CONDITIONAL(JSONSOUP, test "x$JSONGLIB_CFLAGS" != "x")
 
-AS_IF([test "x$JSONGLIB_CFLAGS" != x], [
+AS_IF([test "x$JSONGLIB_CFLAGS" != "x"], [
 	AC_DEFINE_UNQUOTED(JSONSOUP, "1", [JSON and SOUP libraries are present])
 ])
 
