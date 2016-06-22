@@ -2127,6 +2127,9 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextString (&l1) || conn->paramNextString (&l2) || ! conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 
+		// we would like to always calculate next TLE position
+		tle_freeze->setValueBool (false);
+
 		mpec->setValueString ("");
 		tle_l1->setValueString (l1);
 		tle_l2->setValueString (l2);
