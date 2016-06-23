@@ -1594,7 +1594,10 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	// if object was not specified, do not move
 	if (isnan (oriRaDec->getRa ()) || isnan (oriRaDec->getDec ()))
+	{
+		logStream (MESSAGE_ERROR) << "cannot move, null RA or DEC " << oriRaDec->getRa () << " " << oriRaDec->getDec () << sendLog;
 		return -1;
+	}
 
 	// MPEC objects changes coordinates regularly, so we will not bother incrementing 
 	if (mpec->getValueString ().length () > 0)
