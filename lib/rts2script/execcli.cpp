@@ -212,6 +212,151 @@ void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 		scriptKillCommand = NULL;
 		scriptKillcallScriptEnds = false;
 	}
+	doNextCommand ();
+}
+
+void DevClientCameraExec::queImage (rts2image::Image * image, bool run_after)
+{
+	// try immediately processing..
+	std::string after_command;
+	if (run_after && Configuration::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
+	{
+		int timeout = 60;
+		std::string arg;
+		Configuration::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
+		rts2plan::ConnImgProcess *afterCommand = new rts2plan::ConnImgProcess (getMaster (), after_command.c_str (), image->getAbsoluteFileName (), timeout, EVENT_AFTER_COMMAND_FINISHED);
+		Configuration::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
+		afterCommand->addArg (image->expand (arg));
+		int ret = afterCommand->init ();
+		if (ret)
+		{
+			delete afterCommand;
+		}
+		else
+		{
+			getMaster ()->addConnection (afterCommand);
+			return;
+		}
+	}
+
+	// find image processor with lowest que number..
+	rts2core::Connection *minConn = getMaster ()->getMinConn ("queue_size");
+	if (!minConn)
+		return;
+
+	if (image->getImageType () != rts2image::IMGTYPE_FLAT && image->getImageType () != rts2image::IMGTYPE_DARK)
+	{
+		minConn->queCommand (new rts2image::CommandQueImage (getMaster (), image));
+	}
+}
+
+rts2image::imageProceRes DevClientCameraExec::processImage (rts2image::Image * image)
+{
+	int ret;
+	// make sure script continues if it is waiting for metadata
+	if (waitMetaData && !waitForExposure)
+		nextCommand ();
+	// try processing in script..
+	if (exposureScript.get ())
+	{
+		ret = exposureScript->processImage (image);
+		if (ret > 0)
+		{
+			return rts2image::IMAGE_KEEP_COPY;
+		}
+		else if (ret == 0)
+		{
+			return rts2image::IMAGE_DO_BASIC_PROCESSING;
+		}
+		// otherwise queue image processing
+	}
+	queImage (image);
+	return rts2image::IMAGE_DO_BASIC_PROCESSING;
+}
+
+void DevClientCameraExec::idle ()
+{
+	DevScript::idle ();
+	DevClientCameraImage::idle ();
+	// when it is the first command in the script..
+	if (getScript ().get () && getScript ()->getExecutedCount () == 0)
+		nextCommand ();
+}
+
+void DevClientCameraExec::exposureStarted (bool expectImage)
+{
+	if (nextComd && (nextComd->getBopMask () & BOP_WHILE_STATE))
+		nextCommand ();
+
+	if (waitForExposure)
+	{
+		waitForExposure = false;
+		if (nextComd && (nextComd->getBopMask () & BOP_TEL_MOVE))
+			nextCommand ();
+	}
+
+	DevClientCameraImage::exposureStarted (expectImage);
+}
+
+void DevClientCameraExec::exposureEnd (bool expectImage)
+{
+	rts2core::Value *val = getConnection ()->getValue ("que_exp_num");
+	// if script is running, inform it about end of exposure..
+	if (exposureScript.get ())
+		exposureScript->exposureEnd (expectImage);
+	// if script is running and it does not have anything to do, end it
+	if (getScript ().get ()
+		&& !nextComd
+		&& getScript ()->isLastCommand ()
+		&& (!val || val->getValueInteger () == 0)
+		&& !getMaster ()->commandOriginatorPending (this, NULL)
+		)
+	{
+		deleteScript ();
+		getMaster ()->postEvent (new rts2core::Event (EVENT_LAST_READOUT));
+	}
+	// execute value change, if we do not execute that during exposure
+	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) && !isExposing () && val && val->getValueInteger () == 0)
+		nextCommand ();
+
+	// execute next command if it's null
+	if (nextComd == NULL)
+		nextCommand ();
+
+	// send readout after we deal with next command - which can be filter move
+	DevClientCameraImage::exposureEnd (expectImage);
+}
+
+void DevClientCameraExec::stateChanged (rts2core::ServerState * state)
+{
+	DevClientCameraImage::stateChanged (state);
+	DevScript::stateChanged (state);
+	if (nextComd && cmdConns.size () > 0 && !(state->getValue () & BOP_TEL_MOVE) && !(getConnection ()->getFullBopState () & BOP_TEL_MOVE))
+		nextCommand ();
+}
+
+void DevClientCameraExec::exposureFailed (int status)
+{
+	// in case of an error..
+	DevClientCameraImage::exposureFailed (status);
+	logStream (MESSAGE_WARNING) << "detected exposure failure. Continuing with the script, script " << exposureScript.get () << sendLog;
+	if (exposureScript.get ())
+		exposureScript->exposureFailed ();
+	clearImages ();
+	nextCommand ();
+}
+
+void DevClientCameraExec::readoutEnd ()
+{
+	DevClientCameraImage::readoutEnd ();
+	// already deleted script..try to query again for next one by sending EVENT_LAST_READOUT
+	if (!haveScript ())
+		getMaster ()->postEvent (new rts2core::Event (EVENT_SCRIPT_ENDED));
+	nextCommand ();
+}
+
+void DevClientCameraExec::doNextCommand ()
+{
 	int ret = haveNextCommand (this);
 #ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "connection " << getName () << " DevClientCameraExec::nextComd haveNextCommand " << ret << sendLog;
@@ -342,7 +487,7 @@ void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 		for (connections_t::iterator iter = cmdConns.begin (); iter != cmdConns.end (); iter++)
 		{
 #ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "sending command " << nextComd->getText () << " to " << (*iter)->getName () << sendLog;
+			logStream (MESSAGE_DEBUG) << "queueing command " << nextComd->getText () << " to " << (*iter)->getName () << sendLog;
 #endif
 			if (iter == cmdConns.begin ())
 				(*iter)->queCommand (nextComd);
@@ -362,146 +507,6 @@ void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 	nextComd = NULL;			 // after command execute, it will be deleted
 	if (waitForExposure)
 		setTriggered ();
-}
-
-void DevClientCameraExec::queImage (rts2image::Image * image, bool run_after)
-{
-	// try immediately processing..
-	std::string after_command;
-	if (run_after && Configuration::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
-	{
-		int timeout = 60;
-		std::string arg;
-		Configuration::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
-		rts2plan::ConnImgProcess *afterCommand = new rts2plan::ConnImgProcess (getMaster (), after_command.c_str (), image->getAbsoluteFileName (), timeout, EVENT_AFTER_COMMAND_FINISHED);
-		Configuration::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
-		afterCommand->addArg (image->expand (arg));
-		int ret = afterCommand->init ();
-		if (ret)
-		{
-			delete afterCommand;
-		}
-		else
-		{
-			getMaster ()->addConnection (afterCommand);
-			return;
-		}
-	}
-
-	// find image processor with lowest que number..
-	rts2core::Connection *minConn = getMaster ()->getMinConn ("queue_size");
-	if (!minConn)
-		return;
-
-	if (image->getImageType () != rts2image::IMGTYPE_FLAT && image->getImageType () != rts2image::IMGTYPE_DARK)
-	{
-		minConn->queCommand (new rts2image::CommandQueImage (getMaster (), image));
-	}
-}
-
-rts2image::imageProceRes DevClientCameraExec::processImage (rts2image::Image * image)
-{
-	int ret;
-	// make sure script continues if it is waiting for metadata
-	if (waitMetaData && !waitForExposure)
-		nextCommand ();
-	// try processing in script..
-	if (exposureScript.get ())
-	{
-		ret = exposureScript->processImage (image);
-		if (ret > 0)
-		{
-			return rts2image::IMAGE_KEEP_COPY;
-		}
-		else if (ret == 0)
-		{
-			return rts2image::IMAGE_DO_BASIC_PROCESSING;
-		}
-		// otherwise queue image processing
-	}
-	queImage (image);
-	return rts2image::IMAGE_DO_BASIC_PROCESSING;
-}
-
-void DevClientCameraExec::idle ()
-{
-	DevScript::idle ();
-	DevClientCameraImage::idle ();
-	// when it is the first command in the script..
-	if (getScript ().get () && getScript ()->getExecutedCount () == 0)
-		nextCommand ();
-}
-
-void DevClientCameraExec::exposureStarted (bool expectImage)
-{
-	if (nextComd && (nextComd->getBopMask () & BOP_WHILE_STATE))
-		nextCommand ();
-	
-	if (waitForExposure)
-	{
-		waitForExposure = false;
-		if (nextComd && (nextComd->getBopMask () & BOP_TEL_MOVE))
-			nextCommand ();
-	}
-
-	DevClientCameraImage::exposureStarted (expectImage);
-}
-
-void DevClientCameraExec::exposureEnd (bool expectImage)
-{
-	rts2core::Value *val = getConnection ()->getValue ("que_exp_num");
-	// if script is running, inform it about end of exposure..
-	if (exposureScript.get ())
-		exposureScript->exposureEnd (expectImage);
-	// if script is running and it does not have anything to do, end it
-	if (getScript ().get ()
-		&& !nextComd
-		&& getScript ()->isLastCommand ()
-		&& (!val || val->getValueInteger () == 0)
-		&& !getMaster ()->commandOriginatorPending (this, NULL)
-		)
-	{
-		deleteScript ();
-		getMaster ()->postEvent (new rts2core::Event (EVENT_LAST_READOUT));
-	}
-	// execute value change, if we do not execute that during exposure
-	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) && !isExposing () && val && val->getValueInteger () == 0)
-		nextCommand ();
-
-	// execute next command if it's null
-	if (nextComd == NULL)
-		nextCommand ();
-
-	// send readout after we deal with next command - which can be filter move
-	DevClientCameraImage::exposureEnd (expectImage);
-}
-
-void DevClientCameraExec::stateChanged (rts2core::ServerState * state)
-{
-	DevClientCameraImage::stateChanged (state);
-	DevScript::stateChanged (state);
-	if (nextComd && cmdConns.size () > 0 && !(state->getValue () & BOP_TEL_MOVE) && !(getConnection ()->getFullBopState () & BOP_TEL_MOVE))
-		nextCommand ();
-}
-
-void DevClientCameraExec::exposureFailed (int status)
-{
-	// in case of an error..
-	DevClientCameraImage::exposureFailed (status);
-	logStream (MESSAGE_WARNING) << "detected exposure failure. Continuing with the script, script " << exposureScript.get () << sendLog;
-	if (exposureScript.get ())
-		exposureScript->exposureFailed ();
-	clearImages ();
-	nextCommand ();
-}
-
-void DevClientCameraExec::readoutEnd ()
-{
-	DevClientCameraImage::readoutEnd ();
-	// already deleted script..try to query again for next one by sending EVENT_LAST_READOUT
-	if (!haveScript ())
-		getMaster ()->postEvent (new rts2core::Event (EVENT_SCRIPT_ENDED));
-	nextCommand ();
 }
 
 DevClientTelescopeExec::DevClientTelescopeExec (rts2core::Connection * _connection):DevClientTelescopeImage (_connection)

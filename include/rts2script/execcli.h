@@ -142,6 +142,9 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 
 		std::string expandPathString;
 	private:
+		// really execute next command
+		void doNextCommand ();
+
 		rts2core::ValueString *expandPathValue;
 		bool expandOverwrite;
 		bool waitForExposure;
