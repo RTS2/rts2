@@ -82,7 +82,7 @@ class DevClient:public Object
 
 		Block *getMaster () { return connection->getMaster (); }
 
-		void queCommand (Command * cmd) { connection->queCommand (cmd); }
+		int queCommand (Command * cmd) { return connection->queCommand (cmd); }
 
 		void queCommand (Command * cmd, int notBop) { connection->queCommand (cmd, notBop); }
 

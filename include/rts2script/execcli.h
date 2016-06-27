@@ -111,7 +111,7 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 
 		virtual void setWaitMove () { rts2image::DevClientCameraImage::setWaitMove (); }
 
-		virtual void queCommandFromScript (rts2core::Command * com) { queCommand (com); }
+		virtual int queCommandFromScript (rts2core::Command * com) { return queCommand (com); }
 
 		virtual int getFailedCount () { return rts2image::DevClientCameraImage::getFailedCount (); }
 
@@ -143,7 +143,7 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		std::string expandPathString;
 	private:
 		// really execute next command
-		void doNextCommand ();
+		int doNextCommand ();
 
 		rts2core::ValueString *expandPathValue;
 		bool expandOverwrite;

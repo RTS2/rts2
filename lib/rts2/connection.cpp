@@ -1105,7 +1105,7 @@ void Connection::queCommand (Command * cmd, int notBop, Object * originator)
 	queCommand (cmd);
 }
 
-void Connection::queCommand (Command * cmd)
+int Connection::queCommand (Command * cmd)
 {
 	cmd->setConnection (this);
 	if (runningCommand
@@ -1115,10 +1115,14 @@ void Connection::queCommand (Command * cmd)
 		|| isConnState (CONN_UNKNOW))
 	{
 		commandQue.push_back (cmd);
-		return;
+		return 1;
 	}
 	runningCommand = cmd;
 	sendCommand ();
+	// if command was send, retun 0 - otherwise, return 1
+	if (runningCommandStatus == SEND)
+		return 0;
+	return 1;
 }
 
 void Connection::queSend (Command * cmd)

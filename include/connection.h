@@ -362,8 +362,6 @@ class Connection:public Object
 		 * @param originator Originator of the command request. If fill, it will be
 		 *   sent EVENT_COMMAND_xxx messgae.
 		 *
-		 * @return 0 when sucessfull, -1 on error.
-		 *
 		 * @callergraph
 		 */
 		void queCommand (Command * cmd, int notBop, Object * originator = NULL);
@@ -375,9 +373,9 @@ class Connection:public Object
 		 *
 		 * @param cmd Command which will be send.
 		 *
-		 * @return 0 when sucessfull, -1 on error.
+		 * @return 0 when sucessfull, 1 if command was queued (waiting for external state transition)
 		 */
-		void queCommand (Command * cmd);
+		int queCommand (Command * cmd);
 
 		/**
 		 * Send immediatelly command to connection.

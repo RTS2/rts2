@@ -212,7 +212,15 @@ void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 		scriptKillCommand = NULL;
 		scriptKillcallScriptEnds = false;
 	}
-	doNextCommand ();
+	int ret = 0;
+	do
+	{
+		// if commands are just queued in, keep getting next commands
+		ret = doNextCommand ();
+#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "return from doNextCommand " << ret << sendLog;
+#endif
+	} while (ret > 0);
 }
 
 void DevClientCameraExec::queImage (rts2image::Image * image, bool run_after)
@@ -355,14 +363,14 @@ void DevClientCameraExec::readoutEnd ()
 	nextCommand ();
 }
 
-void DevClientCameraExec::doNextCommand ()
+int DevClientCameraExec::doNextCommand ()
 {
 	int ret = haveNextCommand (this);
 #ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "connection " << getName () << " DevClientCameraExec::nextComd haveNextCommand " << ret << sendLog;
 #endif						 /* DEBUG_EXTRA */
 	if (!ret)
-		return;
+		return -1;
 
 #ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "connection " << getName () << " next command " << nextComd->getText () << " bopmask " << nextComd->getBopMask () << sendLog;
@@ -378,7 +386,7 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "BOP_EXPOSURE target not moved" << sendLog;
 #endif
-			return;
+			return -2;
 		}
 		// do not execute next exposure before all meta data of the current exposure are written
 		if (waitForMetaData ())
@@ -387,7 +395,7 @@ void DevClientCameraExec::doNextCommand ()
 			logStream (MESSAGE_DEBUG) << "BOP_EXPOSURE wait for metadata" << sendLog;
 #endif
 			waitMetaData = true;
-		  	return;
+		  	return -3;
 		}
 	}
 
@@ -406,7 +414,7 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "BOP_WHILE_STATE que_exp_num > 0" << sendLog;
 #endif
-			return;
+			return -4;
 		}
 		// if there are commands in queue, do not execute command
 		if (!connection->queEmptyForOriginator (this))
@@ -414,7 +422,7 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "command queue is not empty " << sendLog;
 #endif
-			return;
+			return -5;
 		}
 	}
 	else if (nextComd->getBopMask () & BOP_TEL_MOVE)
@@ -426,14 +434,14 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "BOP_TEL_MOVE que_exp_num > 0" << sendLog;
 #endif
-			return;
+			return -6;
 		}
 		if (waitForExposure)
 		{
 #ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "BOP_TEL_MOVE wait for exposure" << sendLog;
 #endif
-			return;
+			return -7;
 		}
 	}
 	else if (nextComd->getBopMask () & BOP_EXPOSURE)
@@ -443,7 +451,7 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "BOP_EXPOSURE wait for exposure" << sendLog;
 #endif
-			return;
+			return -8;
 		}
 	}
 
@@ -458,7 +466,7 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 				logStream (MESSAGE_DEBUG) << "with cmdConn !BOP_WHILE_STATE queue not empty" << sendLog;
 #endif
-				return;
+				return -9;
 			}
 
 			// do not execute if there are some exposures in queue
@@ -468,7 +476,7 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 				logStream (MESSAGE_DEBUG) << "with cmdConn !BOP_WHILE_STATE que_exp_num > 0" << sendLog;
 #endif
-				return;
+				return -10;
 			}
 
 			if ((getConnection ()->getState () & CAM_EXPOSING) || (getConnection ()->getBopState () & BOP_TEL_MOVE) || (getConnection ()->getFullBopState () & BOP_TEL_MOVE))
@@ -476,11 +484,13 @@ void DevClientCameraExec::doNextCommand ()
 #ifdef DEBUG_EXTRA
 				logStream (MESSAGE_DEBUG) << "with cmdConn CAM_EXPOSING " << getConnection ()->getState () << " BOP_TEL_MOVE " << getConnection ()->getBopState () << " full state " << getConnection ()->getFullBopState () << sendLog;
 #endif
-				return;
+				return -11;
 			}
 
 			nextComd->setBopMask (nextComd->getBopMask () & ~BOP_TEL_MOVE);
 		}
+
+		ret = 0;
 
 		// execute command
 		// when it returns, we can execute next command
@@ -490,23 +500,24 @@ void DevClientCameraExec::doNextCommand ()
 			logStream (MESSAGE_DEBUG) << "queueing command " << nextComd->getText () << " to " << (*iter)->getName () << sendLog;
 #endif
 			if (iter == cmdConns.begin ())
-				(*iter)->queCommand (nextComd);
+				ret += (*iter)->queCommand (nextComd);
 			else
-				(*iter)->queCommand (new rts2core::Command (nextComd));
+				ret += (*iter)->queCommand (new rts2core::Command (nextComd));
 		}
 		nextComd = NULL;
 		waitForExposure = false;
-		return;
+		return ret;
 	}
 
 #ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "for " << getName () << " queueing " << nextComd->getText () << sendLog;
 #endif						 /* DEBUG_EXTRA */
 	waitForExposure = nextComd->getBopMask () & BOP_EXPOSURE;
-	queCommand (nextComd);
+	ret = queCommand (nextComd);
 	nextComd = NULL;			 // after command execute, it will be deleted
 	if (waitForExposure)
 		setTriggered ();
+	return ret;
 }
 
 DevClientTelescopeExec::DevClientTelescopeExec (rts2core::Connection * _connection):DevClientTelescopeImage (_connection)
