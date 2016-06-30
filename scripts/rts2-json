@@ -121,7 +121,7 @@ try:
 
 	if options.push:
 		arg = []
-		for a in args:
+		for a in options.args:
 			entry = a.split('.')
 			if len(entry) != 2:
 				raise Exception('invalid argument for push: {0}'.format(a))
