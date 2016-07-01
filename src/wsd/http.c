@@ -130,9 +130,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 	char b64[64];
 	int n, m;
 
-#ifdef EXTERNAL_POLL
 	struct lws_pollargs *pa = (struct lws_pollargs *)in;
-#endif
 
 	switch (reason) {
 	case LWS_CALLBACK_HTTP:
@@ -420,7 +418,6 @@ bail:
 		//test_server_unlock(len);
 		break;
 
-#ifdef EXTERNAL_POLL
 	case LWS_CALLBACK_ADD_POLL_FD:
 
 		if (count_pollfds >= max_poll_elements) {
@@ -446,7 +443,6 @@ bail:
 	case LWS_CALLBACK_CHANGE_MODE_POLL_FD:
 	        pollfds[fd_lookup[pa->fd]].events = pa->events;
 		break;
-#endif
 
 	case LWS_CALLBACK_GET_THREAD_ID:
 		/*

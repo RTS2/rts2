@@ -10,6 +10,12 @@
 extern "C" {
 #endif
 
+extern int max_poll_elements;
+
+extern struct lws_pollfd *pollfds;
+extern int *fd_lookup;
+extern int count_pollfds;
+
 struct per_session_data__http {
 	int fd;
 	unsigned int client_finished:1;

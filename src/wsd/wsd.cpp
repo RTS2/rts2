@@ -26,6 +26,12 @@
 #include "device.h"
 #endif
 
+int max_poll_elements;
+
+struct lws_pollfd *pollfds;
+int *fd_lookup;
+int count_pollfds;
+
 int callback_dumb_increment (struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
 	unsigned char buf[LWS_PRE + 512];
