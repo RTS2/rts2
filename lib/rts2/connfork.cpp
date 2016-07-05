@@ -396,7 +396,7 @@ void ConnFork::terminate ()
 
 int ConnFork::idle ()
 {
-	if (endTime > 0)
+	if (childPid > 0 && endTime > 0)
 	{
 		time_t now;
 		time (&now);

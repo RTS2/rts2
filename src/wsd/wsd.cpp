@@ -125,6 +125,7 @@ class WsD:public rts2core::Device
 
 	private:
 		struct lws_context_creation_info info;
+		struct lws_context *context;
 };
 
 #ifdef RTS2_HAVE_PGSQL
@@ -136,11 +137,14 @@ WsD::WsD (int argc, char **argv):rts2core::Device (argc, argv, DEVICE_TYPE_XMLRP
 	memset (&info, 0, sizeof info);
 	info.port = 8888;
 
+	context = NULL;
+
 	addOption ('p', NULL, 1, "websocket port. Default to 8888");
 }
 
 WsD::~WsD()
 {
+	lws_context_destroy (context);
 }
 
 int WsD::processOption (int opt)
@@ -162,6 +166,34 @@ int WsD::processOption (int opt)
 
 int WsD::initHardware ()
 {
+	info.protocols = protocols;
+
+	info.gid = -1;
+	info.uid = -1;
+	info.max_http_header_pool = 16;
+	info.options = LWS_SERVER_OPTION_ALLOW_NON_SSL_ON_SSL_PORT | LWS_SERVER_OPTION_VALIDATE_UTF8;
+	info.extensions = NULL;
+	info.timeout_secs = 5;
+	info.ssl_cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:"
+			       "ECDHE-RSA-AES256-GCM-SHA384:"
+			       "DHE-RSA-AES256-GCM-SHA384:"
+			       "ECDHE-RSA-AES256-SHA384:"
+			       "HIGH:!aNULL:!eNULL:!EXPORT:"
+			       "!DES:!MD5:!PSK:!RC4:!HMAC_SHA1:"
+			       "!SHA1:!DHE-RSA-AES128-GCM-SHA256:"
+			       "!DHE-RSA-AES128-SHA256:"
+			       "!AES128-GCM-SHA256:"
+			       "!AES128-SHA256:"
+			       "!DHE-RSA-AES256-SHA256:"
+			       "!AES256-GCM-SHA384:"
+			       "!AES256-SHA256";
+	context = lws_create_context(&info);
+	if (context == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create libwebsocket context" << sendLog;
+		return -1;
+	}
+
 	return 0;
 }
 
