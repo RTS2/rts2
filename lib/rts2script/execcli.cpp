@@ -243,6 +243,7 @@ void DevClientCameraExec::queImage (rts2image::Image * image, bool run_after)
 		else
 		{
 			getMaster ()->addConnection (afterCommand);
+			logStream (MESSAGE_DEBUG) << "running " << afterCommand->getExePath () << sendLog;
 			return;
 		}
 	}
@@ -250,11 +251,18 @@ void DevClientCameraExec::queImage (rts2image::Image * image, bool run_after)
 	// find image processor with lowest que number..
 	rts2core::Connection *minConn = getMaster ()->getMinConn ("queue_size");
 	if (!minConn)
+	{
+		logStream (MESSAGE_WARNING) << "cannot find IMGP connection for image" << sendLog;
 		return;
+	}
 
 	if (image->getImageType () != rts2image::IMGTYPE_FLAT && image->getImageType () != rts2image::IMGTYPE_DARK)
 	{
 		minConn->queCommand (new rts2image::CommandQueImage (getMaster (), image));
+	}
+	else
+	{
+		logStream (MESSAGE_DEBUG) << "ignored processing of flat or dark image " << image->getAbsoluteFileName () << sendLog;
 	}
 }
 
