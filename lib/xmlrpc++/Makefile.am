@@ -14,11 +14,12 @@ librts2xmlrpc_la_SOURCES = \
 	XmlRpcSocket.cpp
 
 librts2xmlrpc_la_CXXFLAGS = @NOVA_CFLAGS@ -I../../include -I../../include/xmlrpc++
+librts2xmlrpc_la_LIBADD = ../rts2/librts2.la
 
 if SSL
 
 librts2xmlrpc_la_SOURCES += XmlRpcSocketSSL.cpp
-librts2xmlrpc_la_LIBADD = @SSL_LIBS@
+librts2xmlrpc_la_LIBADD += @SSL_LIBS@
 
 else
 
