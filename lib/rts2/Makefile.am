@@ -1,6 +1,6 @@
 # Process this file with automake to produce Makefile.in
 
-SUBDIRS = vermes  
+SUBDIRS = vermes
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 AM_CFLAGS=@NOVA_CFLAGS@ -I../../include
@@ -23,16 +23,18 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp clirotator.cpp slitazimuth.c connthorlabs.cpp \
 	dirsupport.cpp userpermissions.cpp conntcsng.cpp connethernet.cpp connremotes.cpp connsitech.cpp \
 	catd.cpp
+librts2_la_LIBADD = @LIB_NOVA@
 
 librts2gpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp connscpi.cpp
+librts2gpib_la_LIBADD = librts2.la
 
 if GPIBLIB
 librts2gpib_la_SOURCES += conngpiblinux.cpp
-librts2gpib_la_LIBADD = @LIB_GPIB@
+librts2gpib_la_LIBADD += @LIB_GPIB@
 else
 EXTRA_DIST += conngpiblinux.cpp
 endif
-	
+
 if SUNCYGMAC
 EXTRA_DIST += OakFeatureReports.c OakHidBase.c
 else
@@ -40,6 +42,7 @@ librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c
 endif
 
 librts2users_la_SOURCES = userlogins.cpp
+librts2users_la_LIBADD = librts2.la @LIB_CRYPT@
 
 # CYGWIN workaround
 if NOT_GETADDRINFO

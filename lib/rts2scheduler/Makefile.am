@@ -4,6 +4,7 @@ lib_LTLIBRARIES = librts2scheduler.la
 
 librts2scheduler_la_SOURCES = schedbag.cpp schedule.cpp schedobs.cpp ticket.cpp ticketset.cpp utils.cpp
 librts2scheduler_la_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ @MAGIC_CFLAGS@ -I../../include
+librts2scheduler_la_LIBADD = ../rts2db/librts2db.la ../rts2fits/librts2imagedb.la
 
 .ec.cpp:
 	@ECPG@ -o $@ $^
