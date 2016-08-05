@@ -65,6 +65,9 @@ class SitechRotator: public Rotator
 
 		rts2core::ValueInteger *supply;
 
+		rts2core::ValueLong *ticks;
+		rts2core::ValueFloat *speed;
+
 	protected:
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
@@ -77,9 +80,6 @@ class SitechRotator: public Rotator
 
 		rts2core::ValueFloat *zeroOffs;
 		rts2core::ValueFloat *offset;
-		rts2core::ValueFloat *speed;
-
-		rts2core::ValueLong *ticks;
 };
 
 }

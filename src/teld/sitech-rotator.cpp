@@ -76,7 +76,7 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 {
 	if (oldValue == t_pos)
 	{
-		//derSetTarget (newValue->getValueLong (), t_der2_pos->getValueLong ());
+		// valueChanged will do the trick..
 		return 0;
 	}
 	return Rotator::setValue (oldValue, newValue);

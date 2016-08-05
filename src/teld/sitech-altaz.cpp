@@ -80,7 +80,6 @@ class SitechAltAz:public AltAz, public rts2core::MultiDev
 			return isMoving ();
 		}
 
-
 		virtual void runTracking ();
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
@@ -187,7 +186,7 @@ class SitechAltAz:public AltAz, public rts2core::MultiDev
 		int sitechMove (int32_t azc, int32_t altc);
 
 		void telSetTarget (int32_t ac, int32_t dc);
-		void derSetTarget (int32_t d1, int32_t d2);
+		void derSetTarget ();
 
 		bool firstSlewCall;
 		bool wasStopped;
@@ -528,6 +527,9 @@ int SitechAltAz::info ()
 	setTelRaDec (pos.ra, pos.dec);
 	setTelUnAltAz (un_zd, un_az);
 
+	if ((rotators[0] != NULL && rotators[0]->t_pos->wasChanged ()) || (rotators[1] != NULL && rotators[1]->t_pos->wasChanged ()))
+		derSetTarget ();
+
 	return AltAz::infoJD (getTelJD);
 }
 
@@ -852,14 +854,21 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 	t_alt_pos->setValueLong (dc);
 }
 
-/*
-void SitechAltAz::derSetTarget (int32_t d1, int32_t d2)
+void SitechAltAz::derSetTarget ()
 {
-	der_Xrequest.y_dest = d1;
-	der_Xrequest.x_dest = d2;
+	der_Xrequest.y_dest = 0;
+	der_Xrequest.x_dest = 0;
 
-	der_Xrequest.y_speed = telConn->degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
-	der_Xrequest.x_speed = telConn->degsPerSec2MotorSpeed (1, az_ticks->getValueLong (), derPIDSampleRate->getValueDouble (), 360) * SPEED_MULTI;
+	if (rotators[0] != NULL)
+	{
+		der_Xrequest.y_dest = rotators[0]->t_pos->getValueLong ();
+		der_Xrequest.y_speed = derConn->degsPerSec2MotorSpeed (rotators[0]->speed->getValueDouble (), rotators[0]->ticks->getValueLong (), 360) * SPEED_MULTI;
+	}
+	if (rotators[1] != NULL)
+	{
+		der_Xrequest.x_dest = rotators[1]->t_pos->getValueLong ();
+		der_Xrequest.x_speed = derConn->degsPerSec2MotorSpeed (rotators[1]->speed->getValueDouble (), rotators[1]->ticks->getValueLong (), 360) * SPEED_MULTI;
+	}
 
 	//der_xbits &= ~(0x01 << 4);
 	//der_ybits &= ~(0x01 << 4);
@@ -869,9 +878,11 @@ void SitechAltAz::derSetTarget (int32_t d1, int32_t d2)
 
 	derConn->sendXAxisRequest (der_Xrequest);
 
-//	t_der1_pos->setValueLong (d1);
-//	t_der2_pos->setValueLong (d2);
-} */
+	if (rotators[0] != NULL)
+		rotators[0]->t_pos->resetValueChanged ();
+	if (rotators[1] != NULL)
+		rotators[1]->t_pos->resetValueChanged ();
+}
 
 void SitechAltAz::getTel ()
 {
