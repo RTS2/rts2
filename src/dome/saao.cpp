@@ -34,7 +34,7 @@
 #define CMD_PRESET_MULTI_REG	"10"
 #define CMD_REPORT_SLAVE_ID	"11"
 
-// bit 1
+// byte 1
 #define STATUS_LIGHTS_MANUAL	0x0100
 #define STATUS_SHUTTER_MAN_OP	0x0200
 #define STATUS_SHUTTRE_MAN_CL	0x0400
@@ -43,7 +43,7 @@
 #define STATUS_SHUTTER_POWER	0x4000
 #define STATUS_ROTAT_POWER	0x8000
 
-// bit 2
+// byte 2
 #define STATUS_SHUTTER_CLOSED	0x0001
 #define STATUS_SHUTTER_OPENED	0x0002
 #define STATUS_SHUTTER_MOVING	0x0004
@@ -52,17 +52,18 @@
 #define STATUS_DOME_FAULT	0x0020
 #define STATUS_LIGHTS		0x0080
 
-// bit 3
-#define STATUS_REMOTE		0x0100
-#define STATUS_RAINING		0x0200
+// byte 3
+#define STATUS_EM_PRESSED	0x0400
+#define STATUS_CLOSED_REM	0x0800
+#define STATUS_CLOSED_RAIN	0x1000
+#define STATUS_PWR_FAILURE	0x2000
+#define STATUS_CLOSED_PWR	0x4000
+#define STATUS_WATCHDOG		0x8000
 
-// bit 4
-#define STATUS_EM_PRESSED	0x0004
-#define STATUS_CLOSED_REM	0x0008
-#define STATUS_CLOSED_RAIN	0x0010
-#define STATUS_PWR_FAILURE	0x0020
-#define STATUS_CLOSED_PWR	0x0040
-#define STATUS_WATCHDOG		0x0080
+
+// byte 4
+#define STATUS_REMOTE		0x0001
+#define STATUS_RAINING		0x0002
 
 namespace rts2dome
 {
@@ -84,6 +85,8 @@ class SAAO:public Cupola
 
 		virtual int info ();
 
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 		virtual int startOpen ();
 		virtual long isOpened ();
 		virtual int endOpen ();
@@ -99,9 +102,15 @@ class SAAO:public Cupola
 
 		void sendCommand (uint8_t address, const char *cmd, const char *data, char *ret, int retl);
 		void readRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *rbuf);
-		void setRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *sbuf);
+		void setRegisters (uint8_t address, uint16_t regaddr, int len, const uint16_t *sbuf);
+
+		void setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition);
 
 		rts2core::ConnSerial *domeConn;
+
+		rts2core::ValueBool *remoteControl;
+		rts2core::ValueBool *raining;
+		rts2core::ValueBool *domeAuto;
 
 		rts2core::ValueBool *shutterClosed;
 		rts2core::ValueBool *shutterOpened;
@@ -116,8 +125,6 @@ class SAAO:public Cupola
 
 		rts2core::ValueBool *shutterPower;
 		rts2core::ValueBool *rotatPower;
-
-		rts2core::ValueFloat *domePosition;
 };
 
 }
@@ -160,6 +167,21 @@ uint16_t bhex2num (uint16_t h)
 	return ret;
 }
 
+// convert number to hex
+// expample 3536 = 0x3536
+uint16_t num2hex (uint16_t num)
+{
+	uint16_t ret = 0;
+
+	for (int i = 0; i <= 12; i += 4)
+	{
+		ret |= (num % 10) << i;
+		num /= 10;
+	}
+
+	return ret;
+}
+
 /**
  * Calculates longitude CRC on data. Add modulo 0xFF, produces hex represenation of the CRC.
  */
@@ -181,21 +203,24 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
 	device_file = "/dev/ttyS0";
 	domeConn = NULL;
 
+	createValue (remoteControl, "remote", "remote control enabled", false);
+	createValue (raining, "raining", "if true, rain is detected", false);
+	createValue (domeAuto, "dome_auto", "dome track azimuth", false, RTS2_VALUE_WRITABLE);
+	domeAuto->setValueBool (true);
+
 	createValue (shutterClosed, "shutter_closed", "dome shutter is closed", false);
-	createValue (shutterOpened, "shutter_openned", "dome shutter is opened", false);
+	createValue (shutterOpened, "shutter_opened", "dome shutter is opened", false);
 	createValue (shutterMoving, "shutter_moving", "dome shutter is moving", false);
 	createValue (shutterFaults, "shutter_faults", "dome shutter faults", false);
 
 	createValue (domeMoving, "dome_moving", "dome is moving", false);
 	createValue (domeFault, "dome_fault", "dome fault", false);
 
-	createValue (lightsOn, "lights", "dome lights", false, RTS2_DT_ONOFF);
-	createValue (lightsManual, "lights_manual", "dome lights switched on by manual switch", false);
+	createValue (lightsOn, "lights", "dome lights", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (lightsManual, "lights_manual", "dome lights switched on by manual switch", false, RTS2_DT_ONOFF);
 
-	createValue (shutterPower, "shutter_power", "shutter power", false, RTS2_DT_ONOFF);
-	createValue (rotatPower, "rotator_power", "dome rotator power", false, RTS2_DT_ONOFF);
-
-	createValue (domePosition, "dome_rotation", "dome rotation", false, RTS2_DT_DEGREES);
+	createValue (shutterPower, "shutter_power", "shutter power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (rotatPower, "rotator_power", "dome rotator power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 
 	addOption ('f', NULL, 1, "path to device file, default is /dev/ttyS0");
 }
@@ -233,6 +258,9 @@ int SAAO::info ()
 	uint16_t reg[8];
 	readRegisters (1, 0x106E, 8, reg);
 
+	remoteControl->setValueBool (reg[1] & STATUS_REMOTE);
+	raining->setValueBool (reg[1] & STATUS_RAINING);
+
 	shutterClosed->setValueBool (reg[0] & STATUS_SHUTTER_CLOSED);
 	shutterOpened->setValueBool (reg[0] & STATUS_SHUTTER_OPENED);
 	shutterMoving->setValueBool (reg[0] & STATUS_SHUTTER_MOVING);
@@ -248,19 +276,36 @@ int SAAO::info ()
 	shutterPower->setValueBool (reg[0] & STATUS_SHUTTER_POWER);
 	rotatPower->setValueBool (reg[0] & STATUS_ROTAT_POWER);
 
-	domePosition->setValueFloat (bhex2num (reg[2]) / 10.0);
+	setCurrentAz (bhex2num (reg[2]) / 10.0);
 
 	return Cupola::info ();
 }
 
+int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == lightsOn)
+	{
+		setDome (((rts2core::ValueBool *) newValue)->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, NAN);
+		return 0;
+	}
+//	else if (oldValue == domePosition)
+//	{
+//		setDome (lightsOn->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, newValue->getValueFloat ());
+//		return 0;
+//	}
+	return Cupola::setValue (oldValue, newValue);
+}
+
 int SAAO::startOpen ()
 {
+	setDome (lightsOn->getValueBool (), true, true, false, true, NAN);
 	return 0;
 }
 
 long SAAO::isOpened ()
 {
-	return 0;
+	info ();
+	return shutterOpened->getValueBool () ? -2 : 0;
 }
 
 int SAAO::endOpen ()
@@ -270,12 +315,14 @@ int SAAO::endOpen ()
 
 int SAAO::startClose ()
 {
+	setDome (lightsOn->getValueBool (), true, true, true, false, NAN);
 	return 0;
 }
 
 long SAAO::isClosed ()
 {
-	return 0;
+	info ();
+	return shutterClosed->getValueBool () ? -2 : 0;
 }
 
 int SAAO::endClose ()
@@ -313,15 +360,17 @@ void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char
 	if (memcmp (retb + retc - 4, lcrc, 2) != 0)
 		throw rts2core::Error ("invalid reply LCRC");
 
-	memcpy (ret, retb + 5, retl > retc ? retc - 9 : retl);
+	if (retl < (retc - 9))
+		throw rts2core::Error ("too short buffer for reply");
+	memcpy (ret, retb + 5, retc - 9);
 }
 
 void SAAO::readRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *rbuf)
 {
-	char cmd[9];
-	snprintf (cmd, 9, "%04X%04d", regaddr, len);
+	char data[9];
+	snprintf (data, 9, "%04X%04d", regaddr, len);
 	char retb[len * 4 + 2];
-	sendCommand (address, CMD_READ_HOLDING_REG, cmd, retb, len * 4 + 2);
+	sendCommand (address, CMD_READ_HOLDING_REG, data, retb, len * 4 + 2);
 	if (hexp2num (retb[0], retb[1]) != len * 2)
 		throw rts2core::Error ("not all registers were read");
 
@@ -330,9 +379,55 @@ void SAAO::readRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *
 		rbuf[i] = hexq2num (hexp2num (retb[i * 4 + 2], retb[i * 4 + 3]), hexp2num (retb[i * 4 + 4], retb[i * 4 + 5]));
 }
 
-void SAAO::setRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *sbuf)
+void SAAO::setRegisters (uint8_t address, uint16_t regaddr, int len, const uint16_t *sbuf)
 {
+	char rbuf[8];
+	char payload[len * 4 + 11];
+	// payload header
+	snprintf (payload, 11, "%04X%04X%02X", regaddr, len, len * 2);
+	for (int i = 0; i < len; i++)
+		snprintf (payload + 10 + i * 4, 5, "%04X", sbuf[i]);
+	sendCommand (address, CMD_PRESET_MULTI_REG, payload, rbuf, 8);
+}
 
+void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition)
+{
+	uint16_t data[4];
+	memset (data, 0, sizeof (data));
+	// reset watchdog
+	data[1] |= 0x8000;
+
+	// request control, if not enabled..
+	if (remoteControl->getValueBool () == false)
+	{
+		// get transition for remote control..
+		uint16_t req = 0x8000;
+		setRegisters (1, 0x1065, 1, &req);
+		data[1] |= 0x0001;
+	}
+
+	// keep power as requested
+	if (rotatP)
+		data[0] |= 0x8000;
+	if (shutterP)
+		data[0] |= 0x4000;
+
+	if (shutterClose)
+		data[0] |= 0x0001;
+	else if (shutterOpen)
+		data[0] |= 0x0002;
+	
+	if (lights)
+		data[0] |= 0x0100;
+
+	if (!isnan (reqPosition) && reqPosition > 0 && reqPosition < 360)
+	{
+		data[0] |= 0x0008;
+		data[2] = num2hex (reqPosition * 10);
+		if (domeAuto->getValueBool ())
+			data[0] |= 0x0010;
+	}
+	setRegisters (0x01, 0x1064, 3, data);
 }
 
 int main (int argc, char **argv)
