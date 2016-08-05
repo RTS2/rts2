@@ -69,7 +69,7 @@ class SAAO:public Cupola
 	private:
 		const char *device_file;
 
-		void sendCommand (uint8_t address, const char *cmd, const char *data, char *ret, size_t retl);
+		void sendCommand (uint8_t address, const char *cmd, const char *data, char *ret, int retl);
 		void readRegisters (uint8_t address, uint16_t regaddr, int len, uint8_t *rbuf);
 
 		rts2core::ConnSerial *domeConn;
@@ -200,7 +200,7 @@ double SAAO::getSlitWidth (double alt)
 	return 1;
 }
 
-void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char *ret, size_t retl)
+void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char *ret, int retl)
 {
 	size_t dl = strlen (data);
 	char buf[8 + dl];
@@ -216,8 +216,8 @@ void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char
 	if (retc < 10)
 		throw rts2core::Error ("short reply to read command");
 	if (memcmp (buf, retb, 5) != 0)
-		throw rts2core::Error ("invalid start of reply packet reply");
-	memcpy (ret, retb + 5, (int) retl > retc ? retc - 9 : retl);
+		throw rts2core::Error ("invalid start of response packet");
+	memcpy (ret, retb + 5, retl > retc ? retc - 9 : retl);
 }
 
 void SAAO::readRegisters (uint8_t address, uint16_t regaddr, int len, uint8_t *rbuf)
