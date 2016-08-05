@@ -71,6 +71,9 @@ namespace rts2dome
 /**
  * Driver for DELTA DVP Series PLC controlling 1m SAAO dome.
  *
+ * Protocol is Modbus-like on serial lines, with commands to set multiple registers and
+ * read them out. Implementation details can be requested from SAAO.
+ *
  * @author Petr Kubánek <petr@kubanek.net>
  */
 class SAAO:public Cupola
@@ -125,6 +128,14 @@ class SAAO:public Cupola
 
 		rts2core::ValueBool *lightsOn;
 		rts2core::ValueBool *lightsManual;
+
+		rts2core::ValueBool *emergencyPressed;
+		rts2core::ValueBool *closedRemote;
+		rts2core::ValueBool *closedRain;
+		rts2core::ValueBool *powerFailure;
+		rts2core::ValueBool *closedPowerFailure;
+		rts2core::ValueBool *watchdogStatus;
+
 
 		rts2core::ValueBool *shutterPower;
 		rts2core::ValueBool *rotatPower;
@@ -225,6 +236,13 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
 	createValue (shutterPower, "shutter_power", "shutter power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (rotatPower, "rotator_power", "dome rotator power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 
+	createValue (emergencyPressed, "emergency", "emergency stop pressed", false);
+	createValue (closedRemote, "closed_remote", "forced closure by remote switch", false);
+	createValue (closedRain, "closed_rain", "forced closure due to rain", false);
+	createValue (powerFailure, "power_failure", "power failure detected", false);
+	createValue (closedPowerFailure, "closed_power_failure", "closed due to power failure", false);
+	createValue (watchdogStatus, "watchdog", "watchdog status (true = tripped)", false);
+
 	addOption ('f', NULL, 1, "path to device file, default is /dev/ttyS0");
 }
 
@@ -273,8 +291,14 @@ int SAAO::info ()
 	domeFault->setValueBool (reg[0] & STATUS_DOME_FAULT);
 
 	lightsOn->setValueBool (reg[0] & STATUS_LIGHTS);
-
 	lightsManual->setValueBool (reg[0] & STATUS_LIGHTS_MANUAL);
+
+	emergencyPressed->setValueBool (reg[1] & STATUS_EM_PRESSED);
+	closedRemote->setValueBool (reg[1] & STATUS_CLOSED_REM);
+	closedRain->setValueBool (reg[1] & STATUS_CLOSED_RAIN);
+	powerFailure->setValueBool (reg[1] & STATUS_PWR_FAILURE);
+	closedPowerFailure->setValueBool (reg[1] & STATUS_CLOSED_PWR);
+	watchdogStatus->setValueBool (reg[1] & STATUS_WATCHDOG);
 
 	shutterPower->setValueBool (reg[0] & STATUS_SHUTTER_POWER);
 	rotatPower->setValueBool (reg[0] & STATUS_ROTAT_POWER);
