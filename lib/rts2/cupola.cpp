@@ -29,14 +29,13 @@ Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE
 
 	createValue (tarRa, "tar_ra", "cupola target ra", false, RTS2_DT_RA);
 	createValue (tarDec, "tar_dec", "cupola target dec", false, RTS2_DT_DEC);
-	createValue (tarAlt, "tar_alt", "cupola target altitude", false,
-		RTS2_DT_DEC);
-	createValue (tarAz, "tar_az", "cupola target azimut", false,
-		RTS2_DT_DEGREES);
+	createValue (tarAlt, "tar_alt", "cupola target altitude", false, RTS2_DT_DEC);
+	createValue (tarAz, "tar_az", "cupola target azimut", false, RTS2_DT_DEGREES);
 
 	createValue (currentAz, "CUP_AZ", "cupola azimut", true, RTS2_DT_DEGREES);
 
 	targetDistance = 0;
+	observer = NULL;
 
 	configFile = NULL;
 
@@ -77,9 +76,12 @@ int Cupola::info ()
 	// target ra+dec
 	tarRa->setValueDouble (targetPos.ra);
 	tarDec->setValueDouble (targetPos.dec);
-	getTargetAltAz (&hrz);
-	tarAlt->setValueDouble (hrz.alt);
-	tarAz->setValueDouble (hrz.az);
+	if (!isnan (targetPos.ra) && !isnan (targetPos.dec))
+	{
+		getTargetAltAz (&hrz);
+		tarAlt->setValueDouble (hrz.alt);
+		tarAz->setValueDouble (hrz.az);
+	}
 
 	return Dome::info ();
 }
@@ -198,10 +200,19 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 	{
 		double tar_ra;
 		double tar_dec;
-		if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+		if (conn->paramNextHMS (&tar_ra) || conn->paramNextDMS (&tar_dec)
 			|| !conn->paramEnd ())
 			return -2;
 		return moveTo (conn, tar_ra, tar_dec);
+	}
+	if (conn->isCommand (COMMAND_CUPOLA_AZ))
+	{
+		double tar_az;
+		if (conn->paramNextDMS (&tar_az) || !conn->paramEnd ())
+			return -2;
+		targetPos.ra = targetPos.dec = NAN;
+		setTargetAz (tar_az);
+		return moveStart ();
 	}
 	else if (conn->isCommand ("stop"))
 	{

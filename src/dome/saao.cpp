@@ -87,6 +87,9 @@ class SAAO:public Cupola
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
+		virtual int moveStart ();
+		virtual long isMoving ();
+
 		virtual int startOpen ();
 		virtual long isOpened ();
 		virtual int endOpen ();
@@ -195,7 +198,7 @@ void calculateLCRC (const char *buf, size_t len, char crc[3])
 	{
 		sum += hexp2num (buf[i], buf[i+1]);
 	}
-	snprintf (crc, 3, "%02X", (0x100 - (sum & 0xFF)));
+	snprintf (crc, 3, "%02X", 0xFF & (0x100 - (sum & 0xFF)));
 }
 
 SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
@@ -276,7 +279,7 @@ int SAAO::info ()
 	shutterPower->setValueBool (reg[0] & STATUS_SHUTTER_POWER);
 	rotatPower->setValueBool (reg[0] & STATUS_ROTAT_POWER);
 
-	setCurrentAz (bhex2num (reg[2]) / 10.0);
+	setCurrentAz (ln_range_degrees (bhex2num (reg[2]) / 10.0 + 180));
 
 	return Cupola::info ();
 }
@@ -288,12 +291,19 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		setDome (((rts2core::ValueBool *) newValue)->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, NAN);
 		return 0;
 	}
-//	else if (oldValue == domePosition)
-//	{
-//		setDome (lightsOn->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, newValue->getValueFloat ());
-//		return 0;
-//	}
 	return Cupola::setValue (oldValue, newValue);
+}
+
+int SAAO::moveStart ()
+{
+	setDome (lightsOn->getValueBool (), true, shutterPower->getValueBool (), false, false, getTargetAz ());
+	return 0;
+}
+
+long SAAO::isMoving ()
+{
+	info ();
+	return fabs (getCurrentAz () - getTargetAz ()) < 2.0 ? -2 : USEC_SEC;
 }
 
 int SAAO::startOpen ()
@@ -412,21 +422,32 @@ void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, 
 	if (shutterP)
 		data[0] |= 0x4000;
 
-	if (shutterClose)
-		data[0] |= 0x0001;
-	else if (shutterOpen)
-		data[0] |= 0x0002;
-	
+	if (shutterClose || shutterOpen)
+	{
+		// reset shutter first..to be on safe side
+		data[0] |= 0x0200;
+		setRegisters (1, 0x1064, 2, data);
+		data[0] &= ~0x0200;
+
+		if (shutterClose)
+			data[0] |= 0x0001;
+		else if (shutterOpen)
+			data[0] |= 0x0002;
+	}
+
 	if (lights)
 		data[0] |= 0x0100;
 
 	if (!isnan (reqPosition) && reqPosition > 0 && reqPosition < 360)
 	{
 		data[0] |= 0x0008;
-		data[2] = num2hex (reqPosition * 10);
+		data[2] = num2hex (ln_range_degrees (reqPosition + 180) * 10);
 		if (domeAuto->getValueBool ())
 			data[0] |= 0x0010;
 	}
+	else
+		data[2] = num2hex (ln_range_degrees (getTargetAz () + 180) * 10);
+
 	setRegisters (0x01, 0x1064, 3, data);
 }
 
