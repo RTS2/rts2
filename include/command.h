@@ -133,6 +133,17 @@
  */
 #define COMMAND_CCD_SHIFTSTORE  "shiftstore"
 
+/**
+ * Cupola azimuth move. @ingroup RTS2Command
+ *
+ * @subsection Examples
+ *
+ * To move the cupola slit to face azimuth 90 degrees, use one of the following:
+ *  - az 90
+ *  - az 90:00:00
+ *  - az 90.000
+ */
+#define COMMAND_CUPOLA_AZ       "az"
 
 /**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
