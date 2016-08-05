@@ -60,13 +60,14 @@ def normalize_az_err(errs):
 class GPoint:
 	# @param   verbose  verbosity of the
 	def __init__(self,verbose=0,latitude=None,longitude=None,altitude=None):
-		self.aa_ra = None
+		self.aa_ha = None
 		self.verbose = verbose
 		self.indata = []
 		# telescope latitude - north positive
 		self.latitude = self.def_latitude = latitude
 		self.longitude = self.def_longitude = longitude
 		self.altitude = self.def_altitude = altitude
+		self.altaz = False # by default, model GEM
 		if latitude is not None:
 			self.latitude_r = np.radians(latitude)
 
@@ -118,12 +119,16 @@ class GPoint:
 
 	# open file, produce model
 	# expected format:
-	#  Observation	  MJD	   RA-MNT   DEC-MNT LST-MNT	  AXRA	  AXDEC   RA-TRUE  DEC-TRUE
+	#  Observation	  MJD	   LST-MNT RA-MNT   DEC-MNT   AXRA	  AXDEC   RA-TRUE  DEC-TRUE
 	## observatory <longitude> <latitude> <altitude>
-	#02a57222e0002o 57222.260012 275.7921  77.0452 233.8937  -55497734  -46831997 276.0206  77.0643
+	#02a57222e0002o 57222.260012 233.8937 275.7921  77.0452  -55497734  -46831997 276.0206  77.0643
+	# or for alt-az
+	#  Observation	  MJD	   LST-MNT   AZ-MNT   ALT-MNT   AXAZ	  AXALT   AZ-TRUE  ALT-TRUE
+	## altaz <longitude> <latitude> <altitude>
+	#02a57222e0002o 57222.260012 233.8937 275.7921  77.0452  -55497734  -46831997 276.0206  77.0643
 	#skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
 	def process_files(self,filenames,flips):
-		obsmatch = re.compile('#\s*observatory\s+(\S*)\s+(\S*)\s+(\S*)\s*')
+		obsmatch = re.compile('#\s*(\S*)\s+(\S*)\s+(\S*)\s+(\S*)\s*')
 
 		rdata = []
 
@@ -136,15 +141,22 @@ class GPoint:
 				if line[0] == '#':
 					m = obsmatch.match(line)
 					if m:
+						if m.group(1) in ['observatory','gem']:
+							self.altaz = False
+						elif m.group(1) in ['altaz']:
+							self.altaz = True
+						else:
+							sys.exit('Unknow pointing file format - valid are altaz or gem')
+
 						if self.latitude is None:
-							self.latitude=m.group(2)
+							self.latitude=m.group(3)
 						elif self.def_latitude is None and self.latitude!=m.group(2):
-							sys.exit('Cannot (yet) perform calculation on two different latitudes: {0} {1}'.format(self.latitude,m.group(2)))
+							sys.exit('Cannot (yet) perform calculation on two different latitudes: {0} {1}'.format(self.latitude,m.group(3)))
 						# others are not yet used..will be interesting for refraction, if included in model
 						if self.longitude is None:
-							self.longitude=float(m.group(1))
+							self.longitude=float(m.group(2))
 						if self.altitude is None:
-							self.altitude=float(m.group(3))
+							self.altitude=float(m.group(4))
 				else:
 					s = line.split()
 					self.indata.append(s)
@@ -162,25 +174,36 @@ class GPoint:
 
 		self.latitude_r = np.radians(float(self.latitude))
 
-		# data = [(float(lst) - flip_ra(float(a_ra),float(a_dec)), float(a_dec), float(lst) - float(r_ra), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
-		data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
+		data = []
 
-		if flips == 'east':
-			data = [d for d in data if abs(d[1]) > 90]
-		elif flips == 'west':
-			data = [d for d in data if abs(d[1]) < 90]
+
+		if self.altaz:
+			data = [(float(a_az), float(a_alt), float(r_az), float(r_alt), sn, float(mjd)) for sn,mjd,lst,a_az,a_alt,ax_az,ax_alt,r_az,r_alt in rdata]
+		else:
+			# data = [(float(lst) - flip_ra(float(a_ra),float(a_dec)), float(a_dec), float(lst) - float(r_ra), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
+			data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
+			if flips == 'east':
+				data = [d for d in data if abs(d[1]) > 90]
+			elif flips == 'west':
+				data = [d for d in data if abs(d[1]) < 90]
 
 		a_data = np.array(data)
 		if self.verbose:
 			print "Parsed data",a_data
 	
 		par_init = np.array([0,0,0,0,0,0,0,0,0])
-	
-		self.aa_ra = np.array(a_data[:,0],np.float)
-		self.aa_dec = np.array(a_data[:,1],np.float)
-		self.ar_ra = np.array(a_data[:,2],np.float)
-		self.ar_dec = np.array(a_data[:,3],np.float)
 
+		if self.altaz:
+			self.aa_az = np.array(a_data[:,0],np.float)
+			self.aa_alt = np.array(a_data[:,1],np.float)
+			self.ar_az = np.array(a_data[:,2],np.float)
+			self.ar_alt = np.array(a_data[:,3],np.float)
+		else:	
+			self.aa_ha = np.array(a_data[:,0],np.float)
+			self.aa_dec = np.array(a_data[:,1],np.float)
+			self.ar_ha = np.array(a_data[:,2],np.float)
+			self.ar_dec = np.array(a_data[:,3],np.float)
+	
 		self.mjd = np.array(a_data[:,5],np.float)
 
 		# prepare for X ticks positions
@@ -198,40 +221,46 @@ class GPoint:
 				last_mjd_hour = round(jd * 24)
 				self.mjd_hours[m] = jd
 
-		self.diff_ha = self.aa_ra - self.ar_ra
-		self.diff_dec = self.aa_dec - self.ar_dec
-		self.diff_angular = libnova.angular_separation(self.aa_ra,self.aa_dec,self.ar_ra,self.ar_dec)
 
-		self.rad_aa_ra = np.radians(self.aa_ra)
-		self.rad_aa_dec = np.radians(self.aa_dec)
-		self.rad_ar_ra = np.radians(self.ar_ra)
-		self.rad_ar_dec = np.radians(self.ar_dec)
+		if self.altaz:
+			# transform to alt/az
+			self.aa_ha,self.aa_dec = self.equ_to_hrz(self.rad_aa_ha,self.rad_aa_dec)
+			self.ar_ha,self.ar_dec = self.equ_to_hrz(self.rad_ar_ha,self.rad_ar_dec)
+		else:
+			self.rad_aa_ha = np.radians(self.aa_ha)
+			self.rad_aa_dec = np.radians(self.aa_dec)
+			self.rad_ar_ha = np.radians(self.ar_ha)
+			self.rad_ar_dec = np.radians(self.ar_dec)
 
-		# transform to alt/az
-		self.aa_alt,self.aa_az = self.equ_to_hrz(self.rad_aa_ra,self.rad_aa_dec)
-		self.ar_alt,self.ar_az = self.equ_to_hrz(self.rad_ar_ra,self.rad_ar_dec)
+			self.diff_ha = self.aa_ha - self.ar_ha
+			self.diff_dec = self.aa_dec - self.ar_dec
+			self.diff_angular = libnova.angular_separation(self.aa_ha,self.aa_dec,self.ar_ha,self.ar_dec)
+
+			# transform to alt/az
+			self.aa_alt,self.aa_az = self.equ_to_hrz(self.rad_aa_ha,self.rad_aa_dec)
+			self.ar_alt,self.ar_az = self.equ_to_hrz(self.rad_ar_ha,self.rad_ar_dec)
 
 		self.diff_alt = self.aa_alt - self.ar_alt
 		self.diff_az = normalize_az_err(self.aa_az - self.ar_az)
 
-		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=10000)
+		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=10000)
 
 		print self.message,self.ier,self.info
 
 		# feed parameters to diff, obtain model differences. Closer to zero = better
 
-		self.f_model_ha = self.fit_model_ha(self.best,self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec)
-		self.f_model_dec = self.fit_model_dec(self.best,self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec)
+		self.f_model_ha = self.fit_model_ha(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
+		self.f_model_dec = self.fit_model_dec(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
 
 		self.diff_model_ha = np.degrees(self.f_model_ha)
 		self.diff_model_dec = np.degrees(self.f_model_dec)
 
-		self.am_alt,self.am_az = self.equ_to_hrz(self.rad_ar_ra - self.f_model_ha,self.rad_ar_dec - self.f_model_dec)
+		self.am_alt,self.am_az = self.equ_to_hrz(self.rad_ar_ha - self.f_model_ha,self.rad_ar_dec - self.f_model_dec)
 
 		self.diff_model_alt = self.am_alt - self.ar_alt
 		self.diff_model_az = normalize_az_err(self.am_az - self.ar_az)
 
-		self.diff_model_angular = self.fit_model(self.best,self.rad_aa_ra,self.rad_ar_ra,self.rad_aa_dec,self.rad_ar_dec)
+		self.diff_model_angular = self.fit_model(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
 
 		return self.best
 
@@ -364,7 +393,7 @@ class GPoint:
 			'az':[self.aa_az,'rx','Azimuth'],
 			'alt':[self.aa_alt,'yx','Altitude'],
 			'dec':[self.aa_dec,'bx','Dec'],
-			'ha':[self.aa_ra,'gx','HA'],
+			'ha':[self.aa_ha,'gx','HA'],
 			'model-err':[self.diff_model_angular*3600,'c+','Model angular error'],
 			'real-err':[self.diff_angular*3600,'c+','Real angular error']
 		}
