@@ -92,3 +92,64 @@ long SitechRotator::isRotating ()
 {
 	return -2;
 }
+
+void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status, bool xStatus)
+{
+	if (xStatus)
+	{
+		r_pos->setValueLong (der_status->x_pos);
+	}
+	else
+	{
+		r_pos->setValueLong (der_status->y_pos);
+	}
+
+	// not stopped, not in manual mode
+	autoMode->setValueBool ((der_status->extra_bits & 0x20) == 0);
+	mclock->setValueLong (der_status->mclock);
+	temperature->setValueInteger (der_status->temperature);
+
+	switch (sitech->sitechType)
+	{
+		case rts2core::ConnSitech::SERVO_I:
+		case rts2core::ConnSitech::SERVO_II:
+			break;
+		case rts2core::ConnSitech::FORCE_ONE:
+		{
+			// upper nimble
+			uint16_t der_val = (xStatus ? der_status->x_last[0] : der_status->y_last[0]) << 4;
+			der_val += xStatus ? der_status->x_last[1] : der_status->y_last[1];
+
+			// find all possible errors
+			switch ((xStatus ? der_status->x_last[0] : der_status->y_last[0]) & 0x0F)
+			{
+				case 0:
+					errors_val->setValueInteger (der_val);
+					errors->setValueString (sitech->findErrors (der_val));
+					// stop if on limits
+//					if ((der_val & ERROR_LIMIT_MINUS) || (der_val & ERROR_LIMIT_PLUS))
+//						stopTracking ();
+					break;
+
+				case 1:
+					current->setValueInteger (der_val);
+					break;
+
+				case 2:
+					supply->setValueInteger (der_val);
+					break;
+
+				case 3:
+					temperature->setValueInteger (der_val);
+					break;
+
+				case 4:
+					pid_out->setValueInteger (der_val);
+					break;
+			}
+
+			pos_error->setValueInteger (*(uint16_t*) &(xStatus ? der_status->x_last[2] : der_status->y_last[2]));
+			break;
+		}
+	}
+}

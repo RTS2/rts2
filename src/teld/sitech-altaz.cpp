@@ -504,13 +504,6 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		getConfiguration ();
 		return 0;
 	}
-/*	else if (conn->isCommand ("recover"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		recover ();
-		return 0;
-	} */
 	return AltAz::commandAuthorized (conn);
 }
 
@@ -519,7 +512,15 @@ int SitechAltAz::info ()
 	struct ln_hrz_posn hrz;
 	double un_az, un_zd;
 	getTel (hrz.az, hrz.alt, un_az, un_zd);
-	//getDerotator ();
+	if (derConn != NULL)
+	{
+		derConn->getAxisStatus ('X', der_status);
+
+		if (rotators[0] != NULL)
+			rotators[0]->processAxisStatus (&der_status, false);
+		if (rotators[1] != NULL)
+			rotators[1]->processAxisStatus (&der_status, true);
+	}
 
 	struct ln_equ_posn pos;
 
@@ -980,100 +981,6 @@ void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, doubl
 
 	counts2hrz (altaz_status.y_pos, altaz_status.x_pos, telaz, telalt, un_telaz, un_telzd);
 }
-
-/*
-void SitechAltAz::getDerotator ()
-{
-	if (derConn == NULL)
-		return;
-
-	derConn->getAxisStatus ('X', der_status);
-
-	r_der1_pos->setValueLong (der_status.y_pos);
-	r_der2_pos->setValueLong (der_status.x_pos);
-
-	// not stopped, not in manual mode
-	autoModeDer1->setValueBool ((der_status.extra_bits & 0x20) == 0);
-	autoModeDer2->setValueBool ((der_status.extra_bits & 0x02) == 0);
-	der_mclock->setValueLong (der_status.mclock);
-	der_temperature->setValueInteger (der_status.temperature);
-
-	switch (derConn->sitechType)
-	{
-		case SERVO_I:
-		case SERVO_II:
-			break;
-		case FORCE_ONE:
-		{
-			// upper nimble
-			uint16_t der1_val = der_status.y_last[0] << 4;
-			der1_val += der_status.y_last[1];
-
-			uint16_t der2_val = der_status.x_last[0] << 4;
-			der2_val += der_status.x_last[1];
-
-			// find all possible errors
-			switch (der_status.y_last[0] & 0x0F)
-			{
-				case 0:
-					der1_errors_val->setValueInteger (der1_val);
-					der1_errors->setValueString (derConn->findErrors (der1_val));
-					// stop if on limits
-					if ((der1_val & ERROR_LIMIT_MINUS) || (der1_val & ERROR_LIMIT_PLUS))
-						stopTracking ();
-					break;
-
-				case 1:
-					der1_current->setValueInteger (der1_val);
-					break;
-
-				case 2:
-					der1_supply->setValueInteger (der1_val);
-					break;
-
-				case 3:
-					der1_temp->setValueInteger (der1_val);
-					break;
-
-				case 4:
-					der1_pid_out->setValueInteger (der1_val);
-					break;
-			}
-
-
-			switch (der_status.x_last[0] & 0x0F)
-			{
-				case 0:
-					der2_errors_val->setValueInteger (der2_val);
-					der2_errors->setValueString (derConn->findErrors (der2_val));
-					// stop if on limits
-					if ((der2_val & ERROR_LIMIT_MINUS) || (der2_val & ERROR_LIMIT_PLUS))
-						stopTracking ();
-					break;
-
-				case 1:
-					der2_current->setValueInteger (der2_val);
-					break;
-
-				case 2:
-					der2_supply->setValueInteger (der2_val);
-					break;
-
-				case 3:
-					der2_temp->setValueInteger (der2_val);
-					break;
-
-				case 4:
-					der2_pid_out->setValueInteger (der2_val);
-					break;
-			}
-
-			der1_pos_error->setValueInteger (*(uint16_t*) &der_status.y_last[2]);
-			der2_pos_error->setValueInteger (*(uint16_t*) &der_status.x_last[2]);
-			break;
-		}
-	}
-} */
 
 void SitechAltAz::getPIDs ()
 {
