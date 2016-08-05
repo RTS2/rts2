@@ -430,10 +430,8 @@ void Daemon::setIdleInfoInterval (double interval)
 	idleInfoInterval = interval;
 }
 
-int Daemon::run ()
+int Daemon::setupAutoRestart ()
 {
-	initDaemon ();
-	beforeRun ();
 	while (autorestart > 0)
 	{
 		watched_child = fork ();
@@ -449,7 +447,7 @@ int Daemon::run ()
 			if (ret < 0)
 			{
 				logStream (MESSAGE_ERROR) << "cannot wait for child after autostart, exiting " << strerror (errno) << sendLog;
-				return -1;
+				return -2;
 			}
 			// kill signal/endRunLoop call can set autorestart to -1..
 			if (autorestart > 0)
@@ -465,6 +463,16 @@ int Daemon::run ()
 			setEndLoop (false);
 		}
 	}
+
+	return autorestart;
+}
+
+int Daemon::run ()
+{
+	initDaemon ();
+	beforeRun ();
+	if (setupAutoRestart () != -1)
+		return 0;
 	while (!getEndLoop ())
 		oneRunLoop ();
 	return 0;

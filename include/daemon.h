@@ -55,6 +55,12 @@ class Daemon:public rts2core::Block
 		Daemon (int in_argc, char **in_argv, int _init_state = 0);
 
 		virtual ~ Daemon (void);
+
+		/**
+		 * Handle autorestart option - if really needed.
+		 */
+		int setupAutoRestart ();
+
 		virtual int run ();
 
 		virtual void endRunLoop ();

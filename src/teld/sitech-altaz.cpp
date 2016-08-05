@@ -20,6 +20,7 @@
 #include "altaz.h"
 #include "configuration.h"
 #include "constsitech.h"
+#include "multidev.h"
 
 #include "sitech-rotator.h"
 
@@ -37,11 +38,13 @@ namespace rts2teld
 /**
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class SitechAltAz:public AltAz
+class SitechAltAz:public AltAz, public rts2core::MultiDev
 {
 	public:
 		SitechAltAz (int argc, char **argv);
 		~SitechAltAz (void);
+
+		virtual int run ();
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -330,6 +333,33 @@ SitechAltAz::~SitechAltAz(void)
 		delete derConn;
 		derConn = NULL;
 	}
+}
+
+int SitechAltAz::run ()
+{
+	AltAz::initDaemon ();
+	AltAz::beforeRun ();
+
+	// don't continue running parent..
+	if (AltAz::setupAutoRestart () != -1)
+		return 0;
+
+	if (rotators[0] == NULL)
+	{
+		while (!getEndLoop ())
+			oneRunLoop ();
+	}
+	else
+	{
+		push_back (rotators[0]);
+		if (rotators[1] != NULL)
+			push_back (rotators[1]);
+
+		rts2core::MultiDev::iterator iter;
+
+		multiLoop ();
+	}
+	return 0;
 }
 
 int SitechAltAz::processOption (int in_opt)

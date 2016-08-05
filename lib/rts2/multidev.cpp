@@ -33,6 +33,13 @@ int MultiDev::run ()
 		(*iter)->beforeRun ();
 	}
 
+	multiLoop ();
+	return -1;
+}
+
+void MultiDev::multiLoop ()
+{
+	MultiDev::iterator iter;
 	while (true)
 	{
 		struct timespec read_tout;
@@ -79,5 +86,4 @@ int MultiDev::run ()
 			(*iter)->callIdle ();
 		}
 	}
-	return 0;
 }
