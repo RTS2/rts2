@@ -30,11 +30,39 @@
 #define CMD_READ_HOLDING_REG	"03"
 #define CMD_FORCE_SINGLE_COIL	"05"
 #define CMD_PRESET_SINGLE_REG	"06"
-#define CMD_FORCE_MULTI_COILS	"15"
-#define CMD_PRESET_MULTI_REG	"16"
-#define CMD_REPORT_SLAVE_ID	"17"
+#define CMD_FORCE_MULTI_COILS	"0F"
+#define CMD_PRESET_MULTI_REG	"10"
+#define CMD_REPORT_SLAVE_ID	"11"
 
-#define STATUS_BIT_LIGHTS	0x0080
+// bit 1
+#define STATUS_LIGHTS_MANUAL	0x0100
+#define STATUS_SHUTTER_MAN_OP	0x0200
+#define STATUS_SHUTTRE_MAN_CL	0x0400
+#define STATUS_DOME_MAN_RIGHT	0x0800
+#define STATUS_DOME_MAN_LEFT	0x1000
+#define STATUS_SHUTTER_POWER	0x4000
+#define STATUS_ROTAT_POWER	0x8000
+
+// bit 2
+#define STATUS_SHUTTER_CLOSED	0x0001
+#define STATUS_SHUTTER_OPENED	0x0002
+#define STATUS_SHUTTER_MOVING	0x0004
+#define STATUS_SHUTTER_FAULTS	0x0008
+#define STATUS_DOME_MOVING	0x0010
+#define STATUS_DOME_FAULT	0x0020
+#define STATUS_LIGHTS		0x0080
+
+// bit 3
+#define STATUS_REMOTE		0x0100
+#define STATUS_RAINING		0x0200
+
+// bit 4
+#define STATUS_EM_PRESSED	0x0004
+#define STATUS_CLOSED_REM	0x0008
+#define STATUS_CLOSED_RAIN	0x0010
+#define STATUS_PWR_FAILURE	0x0020
+#define STATUS_CLOSED_PWR	0x0040
+#define STATUS_WATCHDOG		0x0080
 
 namespace rts2dome
 {
@@ -70,11 +98,26 @@ class SAAO:public Cupola
 		const char *device_file;
 
 		void sendCommand (uint8_t address, const char *cmd, const char *data, char *ret, int retl);
-		void readRegisters (uint8_t address, uint16_t regaddr, int len, uint8_t *rbuf);
+		void readRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *rbuf);
+		void setRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *sbuf);
 
 		rts2core::ConnSerial *domeConn;
 
+		rts2core::ValueBool *shutterClosed;
+		rts2core::ValueBool *shutterOpened;
+		rts2core::ValueBool *shutterMoving;
+		rts2core::ValueBool *shutterFaults;
+
+		rts2core::ValueBool *domeMoving;
+		rts2core::ValueBool *domeFault;
+
 		rts2core::ValueBool *lightsOn;
+		rts2core::ValueBool *lightsManual;
+
+		rts2core::ValueBool *shutterPower;
+		rts2core::ValueBool *rotatPower;
+
+		rts2core::ValueFloat *domePosition;
 };
 
 }
@@ -90,10 +133,31 @@ uint8_t hex2num (char hex)
 	throw rts2core::Error ("invalid hex");
 }
 
-uint16_t hexp2num (char h1, char h2)
+uint8_t hexp2num (char h1, char h2)
 {
-	uint16_t ret = hex2num (h1);
+	uint8_t ret = hex2num (h1);
 	return (ret << 4) | hex2num (h2);
+}
+
+uint16_t hexq2num (uint8_t h1, uint8_t h2)
+{
+	uint16_t ret = h1;
+	return (ret << 8) | h2;
+}
+
+// convert number in binary hex to number
+// e.g. 0x3535 = 3535
+uint16_t bhex2num (uint16_t h)
+{
+	uint16_t ret = 0;
+	uint16_t mask = 0xF000;
+	for (int i = 12; i >= 0; i -= 4)
+	{
+		ret *= 10;
+		ret += (h & mask) >> i;
+		mask >>= 4;
+	}
+	return ret;
 }
 
 /**
@@ -102,19 +166,14 @@ uint16_t hexp2num (char h1, char h2)
 void calculateLCRC (const char *buf, size_t len, char crc[3])
 {
 	// CRC is calculated from hex representation..length must be dividable by 2
-	int sumhi = 0;
-	int sumlo = 0;
+	uint8_t sum = 0;
 	if (len % 2 != 0)
 		throw rts2core::Error ("length of CRC buffer must be dividable by even!");
-	for (size_t i = 0; i < len; i++)
+	for (size_t i = 0; i < len; i += 2)
 	{
-		sumhi += hex2num (buf[i++]);
-		sumlo += hex2num (buf[i]);
+		sum += hexp2num (buf[i], buf[i+1]);
 	}
-	sumhi = ~(0xF - (sumhi & 0xF));
-	sumlo = 0x10 - (sumlo & 0xF);
-	int sum = ((sumhi << 4) & 0xF0) | (sumlo & 0x0F);
-	snprintf (crc, 3, "%02X", sum);
+	snprintf (crc, 3, "%02X", (0x100 - (sum & 0xFF)));
 }
 
 SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
@@ -122,7 +181,21 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
 	device_file = "/dev/ttyS0";
 	domeConn = NULL;
 
+	createValue (shutterClosed, "shutter_closed", "dome shutter is closed", false);
+	createValue (shutterOpened, "shutter_openned", "dome shutter is opened", false);
+	createValue (shutterMoving, "shutter_moving", "dome shutter is moving", false);
+	createValue (shutterFaults, "shutter_faults", "dome shutter faults", false);
+
+	createValue (domeMoving, "dome_moving", "dome is moving", false);
+	createValue (domeFault, "dome_fault", "dome fault", false);
+
 	createValue (lightsOn, "lights", "dome lights", false, RTS2_DT_ONOFF);
+	createValue (lightsManual, "lights_manual", "dome lights switched on by manual switch", false);
+
+	createValue (shutterPower, "shutter_power", "shutter power", false, RTS2_DT_ONOFF);
+	createValue (rotatPower, "rotator_power", "dome rotator power", false, RTS2_DT_ONOFF);
+
+	createValue (domePosition, "dome_rotation", "dome rotation", false, RTS2_DT_DEGREES);
 
 	addOption ('f', NULL, 1, "path to device file, default is /dev/ttyS0");
 }
@@ -152,16 +225,31 @@ int SAAO::initHardware ()
 	int ret = domeConn->init ();
 	if (ret)
 		return ret;
-	info ();
 	return 0;
 }
 
 int SAAO::info ()
 {
-	uint8_t reg[16];
+	uint16_t reg[8];
 	readRegisters (1, 0x106E, 8, reg);
 
-	lightsOn->setValueBool (reg[0] & STATUS_BIT_LIGHTS);
+	shutterClosed->setValueBool (reg[0] & STATUS_SHUTTER_CLOSED);
+	shutterOpened->setValueBool (reg[0] & STATUS_SHUTTER_OPENED);
+	shutterMoving->setValueBool (reg[0] & STATUS_SHUTTER_MOVING);
+	shutterFaults->setValueBool (reg[0] & STATUS_SHUTTER_FAULTS);
+
+	domeMoving->setValueBool (reg[0] & STATUS_DOME_MOVING);
+	domeFault->setValueBool (reg[0] & STATUS_DOME_FAULT);
+
+	lightsOn->setValueBool (reg[0] & STATUS_LIGHTS);
+
+	lightsManual->setValueBool (reg[0] & STATUS_LIGHTS_MANUAL);
+
+	shutterPower->setValueBool (reg[0] & STATUS_SHUTTER_POWER);
+	rotatPower->setValueBool (reg[0] & STATUS_ROTAT_POWER);
+
+	domePosition->setValueFloat (bhex2num (reg[2]) / 10.0);
+
 	return Cupola::info ();
 }
 
@@ -217,20 +305,34 @@ void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char
 		throw rts2core::Error ("short reply to read command");
 	if (memcmp (buf, retb, 5) != 0)
 		throw rts2core::Error ("invalid start of response packet");
+
+	// checks for CRC
+	char lcrc[3];
+	calculateLCRC (retb + 1, retc - 5, lcrc);
+
+	if (memcmp (retb + retc - 4, lcrc, 2) != 0)
+		throw rts2core::Error ("invalid reply LCRC");
+
 	memcpy (ret, retb + 5, retl > retc ? retc - 9 : retl);
 }
 
-void SAAO::readRegisters (uint8_t address, uint16_t regaddr, int len, uint8_t *rbuf)
+void SAAO::readRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *rbuf)
 {
 	char cmd[9];
 	snprintf (cmd, 9, "%04X%04d", regaddr, len);
-	char retb[len * 2 + 2];
-	sendCommand (address, CMD_READ_HOLDING_REG, cmd, retb, len * 2 + 2);
+	char retb[len * 4 + 2];
+	sendCommand (address, CMD_READ_HOLDING_REG, cmd, retb, len * 4 + 2);
 	if (hexp2num (retb[0], retb[1]) != len * 2)
 		throw rts2core::Error ("not all registers were read");
+
 	// converts hex to numbers
 	for (int i = 0; i < len; i++)
-		rbuf[i] = hexp2num (retb[i + 2], retb[i + 3]);
+		rbuf[i] = hexq2num (hexp2num (retb[i * 4 + 2], retb[i * 4 + 3]), hexp2num (retb[i * 4 + 4], retb[i * 4 + 5]));
+}
+
+void SAAO::setRegisters (uint8_t address, uint16_t regaddr, int len, uint16_t *sbuf)
+{
+
 }
 
 int main (int argc, char **argv)
