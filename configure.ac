@@ -977,6 +977,7 @@ AC_OUTPUT([Makefile
 	   src/pluto/Makefile
 	   src/catd/Makefile
 	   src/thrift/Makefile
+	   tests/Makefile
 	   checks/Makefile
 	   scripts/rts2saf/Makefile
 	   scripts/rts2saf/rts2saf/Makefile]
