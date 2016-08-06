@@ -21,6 +21,8 @@
 #include "connection/serial.h"
 #include "error.h"
 
+#define EVENT_WATCHDOG          RTS2_LOCAL_EVENT + 1352
+
 #define STX			0x3A
 #define END1			0x0D
 #define END0			0x0A
@@ -81,6 +83,8 @@ class SAAO:public Cupola
 	public:
 		SAAO (int argc, char **argv);
 		virtual ~SAAO ();
+
+		virtual void postEvent (rts2core::Event *event);
 
 	protected:
 		virtual int processOption (int opt);
@@ -251,6 +255,30 @@ SAAO::~SAAO ()
 	delete domeConn;
 }
 
+void SAAO::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_WATCHDOG:
+			if (isGoodWeather () && ((getState () & DOME_DOME_MASK) == DOME_OPENED || (getState () & DOME_DOME_MASK) == DOME_OPENING))
+			{
+				try
+				{
+					uint16_t req = 0x8000;
+					setRegisters (1, 0x1065, 1, &req);
+				}
+				catch (rts2core::ConnError err)
+				{
+					logStream (MESSAGE_ERROR) << err << sendLog;
+				}
+				addTimer (50, event);
+				return;
+			}
+	}
+	Cupola::postEvent (event);
+}
+
+
 int SAAO::processOption (int opt)
 {
 	switch (opt)
@@ -344,6 +372,7 @@ long SAAO::isOpened ()
 
 int SAAO::endOpen ()
 {
+	addTimer (50, new rts2core::Event (EVENT_WATCHDOG, this));
 	return 0;
 }
 
