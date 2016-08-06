@@ -21,7 +21,7 @@
  */
 
 #include "sensord.h"
-#include "apm-filter.h"
+#include "apm-multidev.h"
 
 #define MIRROR_OPENED	5
 #define MIRROR_CLOSED	6
@@ -36,23 +36,16 @@ namespace rts2sensord
  *
  * @author Stanislav Vitek <standa@vitkovi.net>
  */
-class APMMirror : public Sensor
+class APMMirror : public Sensor, rts2multidev::APMMultidev
 {
 	public:
-		APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter);
-		APMMirror (int argc, char **argv, const char *sn);
-		virtual int initHardware ();
+		APMMirror (const char *name, rts2core::ConnAPM *apmConn);
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 		virtual int info ();
 
-	protected:
-		virtual int processOption (int in_opt);
-
 	private:
 		int mirror_state;
-                rts2core::ConnAPM *connMirror;
-		rts2filterd::APMFilter *filter;
                 rts2core::ValueString *mirror;
                 int open ();
                 int close ();

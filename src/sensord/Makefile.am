@@ -13,7 +13,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-servodrive-r272 rts2-sensor-tbt
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h apm-filter.h \
-	apm-mirror.h apm-relay.h
+	apm-mirror.h apm-relay.h apm-multidev.h
 
 EXTRA_DIST = 
 

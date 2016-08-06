@@ -21,7 +21,7 @@
  */
 
 #include "sensord.h"
-#include "apm-filter.h"
+#include "apm-multidev.h"
 
 #define RELAY1_OFF      1
 #define RELAY1_ON       2
@@ -36,23 +36,17 @@ namespace rts2sensord
  *     
  * @author Stanislav Vitek <standa@vitkovi.net>
  */
-class APMRelay : public Sensor
+class APMRelay : public Sensor, rts2multidev::APMMultidev
 {
         public:
-                APMRelay (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter);
-		APMRelay (int argc, char **argv, const char *sn);
-                virtual int initHardware ();
+                APMRelay (const char *name, rts2core::ConnAPM *conn);
                 virtual int commandAuthorized (rts2core::Connection *conn);
                 virtual int info ();
 
-        protected:
-                virtual int processOption (int in_opt);
-
         private:
                 int relay1_state, relay2_state;
-                rts2core::ConnAPM *connRelay;
-                rts2filterd::APMFilter *filter;
-                rts2core::ValueString *relay1, *relay2;
+                rts2core::ValueString *relay1;
+		rts2core::ValueString *relay2;
                 int relayOn (int n);
                 int relayOff (int n);
                 int sendUDPMessage (const char * _message);

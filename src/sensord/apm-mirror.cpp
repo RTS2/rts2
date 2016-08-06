@@ -33,33 +33,17 @@ using namespace rts2sensord;
  *  Arguments argc and argv has to be set to 0 and NULL respectively.
  *  See apm-multidev.cpp for example.
  */
-
-APMMirror::APMMirror (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
+APMMirror::APMMirror (const char *name, rts2core::ConnAPM *conn): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
 {
 	createValue (mirror, "mirror", "Mirror cover state", true);
-
-	filter = in_filter;
 }
 
-/*
- *  Constructor for standalone driver
- */
-
-APMMirror::APMMirror (int argc, char **argv, const char *sn): Sensor (argc, argv, sn)
+/*int APMMirror::initHardware ()
 {
-        addOption ('e', NULL, 1, "IP and port (separated by :)");
-
-        createValue (mirror, "mirror", "Mirror cover state", true);
-}
-
-int APMMirror::initHardware ()
-{
-	connMirror = filter->connFilter;
-
 	sendUDPMessage ("C999");
 
 	return 0;
-}
+}*/
 
 int APMMirror::commandAuthorized (rts2core::Connection * conn)
 {
@@ -127,18 +111,6 @@ int APMMirror::info ()
 	return Sensor::info ();
 }
 
-int APMMirror::processOption (int in_opt)
-{
-	switch (in_opt)
-	{
-		case 'e':
-		case 'F':
-			return 0;
-		default:
-			return Sensor::processOption (in_opt);
-	}
-}
-
 int APMMirror::open ()
 {
 	sendUDPMessage ("C001");
@@ -169,7 +141,7 @@ int APMMirror::sendUDPMessage (const char * _message)
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-        int n = connMirror->sendReceive (_message, response, 20);
+        int n = apmConn->sendReceive (_message, response, 20);
 
 	response[n] = '\0';
 

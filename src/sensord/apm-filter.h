@@ -21,7 +21,7 @@
 #define __RTS2_APM_FILTER__
 
 #include "filterd.h"
-#include "connection/apm.h"
+#include "apm-multidev.h"
 
 namespace rts2filterd
 {
@@ -31,22 +31,17 @@ namespace rts2filterd
  *
  * @author Standa Vitek <standa@vitkovi.net>
  */
-class APMFilter : public Filterd
+class APMFilter : public Filterd, rts2multidev::APMMultidev
 {
         public:
-                APMFilter (int in_argc, char **in_argv);
-                virtual int initHardware ();
-                rts2core::ConnAPM *connFilter;
-        protected:
-                virtual int processOption (int in_opt);
+                APMFilter (const char *name, rts2core::ConnAPM *conn);
+
+	protected:
                 virtual int getFilterNum (void);
                 virtual int setFilterNum (int new_filter);
                 virtual int homeFilter ();
+
         private:
-                HostString *host;
-                int sock;
-                struct sockaddr_in servaddr, clientaddr;
-                // rts2core::ConnAPM *connFilter;
                 int sendUDPMessage (const char * in_message);
                 int filterNum;
                 int filterSleep;

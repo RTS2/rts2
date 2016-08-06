@@ -28,38 +28,13 @@ using namespace rts2sensord;
  * @author Standa Vitek <standa@vitkovi.net>
  */
 
-/*
- *  Constructor for APM multidev, taking connection from filter.
- *  Arguments argc and argv has to be set to 0 and NULL respectively.
+/**
+ *  Constructor for APM multidev, taking connection from APMMultidev.
  */
-
-APMRelay::APMRelay (int argc, char **argv, const char *sn, rts2filterd::APMFilter *in_filter): Sensor (argc, argv, sn)
+APMRelay::APMRelay (const char *name, rts2core::ConnAPM *conn): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
 {
         createValue(relay1, "relay1", "Relay 1 state", true);
         createValue(relay2, "relay2", "Relay 2 state", true);
-
-        filter = in_filter;
-}
-
-/*
- *  Constructor for standalone driver
- */
-
-APMRelay::APMRelay (int argc, char **argv, const char *sn): Sensor (argc, argv, sn)
-{
-	addOption ('e', NULL, 1, "IP and port (separated by :)");
-
-	createValue(relay1, "relay1", "Relay 1 state", true);
-	createValue(relay2, "relay2", "Relay 2 state", true);
-}
-
-int APMRelay::initHardware ()
-{
-        connRelay = filter->connFilter;
-
-        sendUDPMessage ("A999");
-
-        return 0;
 }
 
 int APMRelay::commandAuthorized (rts2core::Connection * conn)
@@ -113,19 +88,6 @@ int APMRelay::info ()
         return Sensor::info();
 }
 
-int APMRelay::processOption (int in_opt)
-{
-        switch (in_opt)
-        {
-                case 'e':
-                        return 0;
-                case 'F':
-                        return 0;
-                default:
-                        return Sensor::processOption (in_opt);
-        }
-}
-
 int APMRelay::relayOn (int n)
 {
         char *cmd = (char *)malloc(4*sizeof (char));
@@ -158,7 +120,7 @@ int APMRelay::sendUDPMessage (const char * _message)
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-        int n = connRelay->sendReceive (_message, response, 20);
+        int n = apmConn->sendReceive (_message, response, 20);
 	response[n] = '\0';
 
         logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;

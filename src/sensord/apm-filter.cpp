@@ -21,30 +21,13 @@
 
 using namespace rts2filterd;
 
-APMFilter::APMFilter (int argc, char **argv):Filterd (argc, argv)
+APMFilter::APMFilter (const char *name, rts2core::ConnAPM *conn):Filterd (0, NULL, name), APMMultidev (conn)
 {
-	host = NULL;
 	filterNum = 0;
 	filterSleep = 3;
 
 	addOption ('e', NULL, 1, "IP and port (separated by :)");
-	addOption ('s', "filter_sleep", 1, "how long wait for filter change");
-}
-
-int APMFilter::processOption (int in_opt)
-{
-        switch (in_opt)
-        {
-                case 'e':
-                        host = new HostString (optarg, "1000");
-                        break;
-		case 's':
-			filterSleep = atoi (optarg);
-			break;
-                default:
-                        return Filterd::processOption (in_opt);
-        }
-        return 0;
+//	addOption ('s', "filter_sleep", 1, "how long wait for filter change");
 }
 
 int APMFilter::getFilterNum ()
@@ -75,25 +58,13 @@ int APMFilter::homeFilter ()
 	return 0;
 }
 
+/**
 int APMFilter::initHardware ()
 {
-	if (host == NULL)
-        {
-                logStream (MESSAGE_ERROR) << "You must specify filter hostname (with -e option)." << sendLog;
-                return -1;
-        }
-
-	connFilter = new rts2core::ConnAPM (host->getPort (), this, host->getHostname ());
-
-	int ret = connFilter->init();
-
-	if (ret)
-		return ret;
-
 	sendUDPMessage ("F999");
 
 	return 0;
-}
+}*/
 
 int APMFilter::sendUDPMessage (const char * _message)
 {
@@ -102,7 +73,7 @@ int APMFilter::sendUDPMessage (const char * _message)
 	if (getDebug())
 		logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-	int n = connFilter->sendReceive (_message, response, 20);
+	int n = apmConn->sendReceive (_message, response, 20);
 	response[n] = '\0';
 
 	if (getDebug())
