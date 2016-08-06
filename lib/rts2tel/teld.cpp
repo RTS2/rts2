@@ -59,7 +59,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		timerclear (dir_timeouts + i);
 	}
 
-	raGuide = decGuide = NULL;
 	parkPos = NULL;
 	parkFlip = NULL;
 
@@ -461,21 +460,27 @@ void Telescope::addDiffRaDec (struct ln_equ_posn *tar, double secdiff)
 	}
 }
 
-void Telescope::createRaGuide ()
+void Telescope::createRaPAN ()
 {
-	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
-	raGuide->addSelVal ("NONE");
-	raGuide->addSelVal ("MINUS");
-	raGuide->addSelVal ("PLUS");
+	createValue (raPAN, "ra_pan", "RA panning", false, RTS2_VALUE_WRITABLE);
+	raPAN->addSelVal ("NONE");
+	raPAN->addSelVal ("MINUS");
+	raPAN->addSelVal ("PLUS");
+
+	createValue (raPANSpeed, "ra_pan_speed", "speed of RA panning", false, RTS2_VALUE_WRITABLE);
 }
 
-void Telescope::createDecGuide ()
+void Telescope::createDecPAN ()
 {
-	createValue (decGuide, "dec_guide", "DEC guiding status", false, RTS2_VALUE_WRITABLE);
-	decGuide->addSelVal ("NONE");
-	decGuide->addSelVal ("MINUS");
-	decGuide->addSelVal ("PLUS");
+	createValue (decPAN, "dec_pan", "DEC panning", false, RTS2_VALUE_WRITABLE);
+	decPAN->addSelVal ("NONE");
+	decPAN->addSelVal ("MINUS");
+	decPAN->addSelVal ("PLUS");
+
+	createValue (decPANSpeed, "dec_pan_speed", "speed of DEC panning", false, RTS2_VALUE_WRITABLE);
 }
+
+
 
 int Telescope::processOption (int in_opt)
 {

@@ -43,7 +43,6 @@ class GEM: public Telescope
 		double getDecTicks () { return dec_ticks->getValueDouble (); }
 
 	protected:
-
 		rts2core::ValueSelection *flipping;       //* flipping strategy - shortest, preffer same, preffer opposite,..
 
 		rts2core::ValueDouble *haCWDAngle;        //* current HA counterweight down angle

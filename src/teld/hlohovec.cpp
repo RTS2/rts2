@@ -129,8 +129,8 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 
 	parking = false;
 
-	createRaGuide ();
-	createDecGuide ();
+	createRaPAN ();
+	createDecPAN ();
 
 	createValue (moveTolerance, "move_tolerance", "[deg] minimal movement distance", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	moveTolerance->setValueDouble (4.0 / 60.0);
@@ -152,10 +152,10 @@ void Hlohovec::postEvent (rts2core::Event *event)
 	switch (event->getType ())
 	{
 		case RTS2_HLOHOVEC_TIMERRG:
-			matchGuideRa (raGuide->getValueInteger ());
+			matchGuideRa (raPAN->getValueInteger ());
 			break;
 		case RTS2_HLOHOVEC_TIMERDG:
-			matchGuideDec (decGuide->getValueInteger ());
+			matchGuideDec (decPAN->getValueInteger ());
 			break;
 		case RTS2_HLOHOVEC_TSTOPRG:
 			if (raDrive->checkStop ())
@@ -494,12 +494,12 @@ void Hlohovec::callAutosave ()
 
 int Hlohovec::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
-	if (old_value == raGuide)
+	if (old_value == raPAN)
 	{
 		matchGuideRa (new_value->getValueInteger ());
 		return 0;
 	}
-	else if (old_value == decGuide)
+	else if (old_value == decPAN)
 	{
 		matchGuideDec (new_value->getValueInteger ());
 		return 0;

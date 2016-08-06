@@ -187,8 +187,8 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	
 	parking = false;
 	
-	createRaGuide ();
-	createDecGuide ();
+	createRaPAN ();
+	createDecPAN ();
 	
 	createValue (moveSpeedBacklash, "speed_backlash", "[deg/s] initial speed to cross backlash", false, RTS2_VALUE_WRITABLE);
 	moveSpeedBacklash->setValueDouble (0.3);
@@ -807,17 +807,17 @@ void D50::callAutosave ()
 int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	logStream (MESSAGE_DEBUG) << "****** setValue ()" << sendLog;
-        if (old_value == raGuide)
-        {
-                //matchGuideRa (new_value->getValueInteger ());
-                return 0;
-        }
-        /*else if (old_value == decGuide)
-        {
-                matchGuideDec (new_value->getValueInteger ());
-                return 0;
-        }*/
-	else if (old_value == remotesMotorsPower)
+	/*if (old_value == raPAN)
+	{
+		matchGuideRa (new_value->getValueInteger ());
+		return 0;
+	}
+	else if (old_value == decPAN)
+	{
+		matchGuideDec (new_value->getValueInteger ());
+		return 0;
+	}*/
+	if (old_value == remotesMotorsPower)
 	{
 		return setMotorsPower (new_value->getValueInteger ());
 	}

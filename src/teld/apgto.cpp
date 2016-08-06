@@ -1445,11 +1445,11 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 		//logStream (MESSAGE_DEBUG) << "APGTO::setValue, sending cmd: " << cmd << sendLog; 
 		return serConn->writePort (cmd, 9) ? -2 : 0;
 	}
-	if (oldValue == raGuide || oldValue == decGuide)
+	if (oldValue == raPAN || oldValue == decPAN)
 	{
 		const char *cmd[2][3] = {{":Qe#:Qw#", ":Mw#", ":Me#"}, {":Qs#:Qn#", ":Ms#", ":Mn#"}};
 		const char *c;
-		if (oldValue == raGuide)
+		if (oldValue == raPAN)
 			c = cmd[0][newValue->getValueInteger ()];
 		else
 			c = cmd[1][newValue->getValueInteger ()];
@@ -2291,8 +2291,8 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	APguide_rate->addSelVal ("0.5");
 	APguide_rate->addSelVal ("1.0");
 
-	createRaGuide ();
-	createDecGuide ();
+	createRaPAN ();
+	createDecPAN ();
 	
 	createValue (collision_detection, "COLLILSION_DETECTION", "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
 	collision_detection->setValueBool (true) ;

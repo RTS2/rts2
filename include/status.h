@@ -228,6 +228,7 @@ typedef uint32_t rts2_status_t;
 
 #define TEL_MASK_TRACK      0x020
 
+// tracking - if the telescope is moving to track an object
 #define TEL_NOTRACK         0x000
 #define TEL_TRACKING        0x020
 
@@ -238,6 +239,12 @@ typedef uint32_t rts2_status_t;
 // when telescope need stop of observation - when it's aproaching limits etc.
 #define TEL_MASK_NEED_STOP  0x080
 #define TEL_NEED_STOP       0x080
+
+// pan mode, for nice viewing
+#define TEL_MASK_PAN        0x100
+
+#define TEL_NO_PAN          0x000
+#define TEL_PANNING         0x100
 
 // sensor performing command
 #define SENSOR_INPROGRESS   0x001

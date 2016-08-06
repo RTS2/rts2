@@ -426,7 +426,7 @@ void Trencin::setGuideRa (int value)
 	stopMoveRa ();
 	if (value == 0)
 	{
-		if (decGuide->getValueInteger () == 0)
+		if (decPAN->getValueInteger () == 0)
 			setIdleInfoInterval (60);
 		if (isTracking ())
 			startWorm ();
@@ -452,7 +452,7 @@ void Trencin::setGuideDec (int value)
 	stopMoveDec ();
 	if (value == 0)
 	{
-		if (raGuide->getValueInteger () == 0)
+		if (raPAN->getValueInteger () == 0)
 			setIdleInfoInterval (60);
 		return;
 	}
@@ -472,16 +472,16 @@ void Trencin::setGuideDec (int value)
 
 void Trencin::setGuidingSpeed (double value)
 {
-	if (raGuide->getValueInteger () != 0 || decGuide->getValueInteger () != 0)
+	if (raPAN->getValueInteger () != 0 || decPAN->getValueInteger () != 0)
 	{
-		if (raGuide->getValueInteger () != 0)
+		if (raPAN->getValueInteger () != 0)
 			tel_kill (trencinConnRa, 0x01);
-		if (decGuide->getValueInteger () != 0)
+		if (decPAN->getValueInteger () != 0)
 		  	tel_kill (trencinConnDec, 0x01);
 
-		if (raGuide->getValueInteger () != 0)
+		if (raPAN->getValueInteger () != 0)
 		  	tel_kill (trencinConnRa, 0x02);
-		if (decGuide->getValueInteger () != 0);
+		if (decPAN->getValueInteger () != 0);
 			tel_kill (trencinConnDec, 0x02);
 	}
 
@@ -499,10 +499,10 @@ void Trencin::setGuidingSpeed (double value)
 
 	usleep (USEC_SEC / 20);
 
-	if (raGuide->getValueInteger () != 0)
-		setGuideRa (raGuide->getValueInteger ());
-	if (decGuide->getValueInteger () != 0)
-		setGuideDec (decGuide->getValueInteger ());
+	if (raPAN->getValueInteger () != 0)
+		setGuideRa (raPAN->getValueInteger ());
+	if (decPAN->getValueInteger () != 0)
+		setGuideDec (decPAN->getValueInteger ());
 }
 
 void Trencin::checkAcc (rts2core::ConnSerial *conn, rts2core::ValueInteger *acc, rts2core::ValueInteger *startStop)
@@ -523,7 +523,7 @@ void Trencin::setSpeedRa (int new_speed)
 	// apply offset for sidereal motion
 	if (isTracking ())
 	{
-		switch (raGuide->getValueInteger ())
+		switch (raPAN->getValueInteger ())
 		{
 			case 1:
 				// in sidereal direction - we need to be quicker
@@ -664,8 +664,8 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv, false, true)
 	addParkPosOption ();
 	createParkPos (20, 0, 0);
 
-	createRaGuide ();
-	createDecGuide ();
+	createRaPAN ();
+	createDecPAN ();
 
 	createValue (guidingSpeed, "guiding_speed", "guiding speed in deg/sec", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	guidingSpeed->setValueDouble (0.5);
@@ -933,12 +933,12 @@ int Trencin::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	try
 	{
-	  	if (old_value == raGuide)
+		if (old_value == raPAN)
 		{
 		  	setGuideRa (new_value->getValueInteger ());
 			return 0;
 		}
-		if (old_value == decGuide)
+		if (old_value == decPAN)
 		{
 			setGuideDec (new_value->getValueInteger ());
 			return 0;

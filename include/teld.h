@@ -184,6 +184,18 @@ class Telescope:public rts2core::Device
 		void setModel (rts2telmodel::TelModel *_model) { model = _model; calModel->setValueBool (model != NULL); }
 		
 	protected:
+		/**
+		 * Creates values for guiding movements.
+		 */
+		void createRaPAN ();
+		void createDecPAN ();
+
+		rts2core::ValueSelection *raPAN;
+		rts2core::ValueSelection *decPAN;
+
+		rts2core::ValueDouble *raPANSpeed;
+		rts2core::ValueDouble *decPANSpeed;
+
 		void applyOffsets (struct ln_equ_posn *pos)
 		{
 			pos->ra = oriRaDec->getRa () + offsRaDec->getRa ();
@@ -301,17 +313,6 @@ class Telescope:public rts2core::Device
 		 * @return 0 if pointing model is EQU, 1 if it is ALT-AZ
 		 */
 		int getPointingModel () { return pointingModel->getValueInteger (); }
-
-		/**
-		 * Creates values for guiding movements.
-		 */
-		void createRaGuide ();
-		void createDecGuide ();
-
-		/**
-		 * Telescope can track.
-		 */
-		void createTracking ();
 
 		virtual int processOption (int in_opt);
 
@@ -968,9 +969,6 @@ class Telescope:public rts2core::Device
 		 * Telescope idea of julian date.
 		 */
 		rts2core::ValueDouble *jdVal;
-
-		rts2core::ValueSelection *raGuide;
-		rts2core::ValueSelection *decGuide;
 
 		rts2core::ValueFloat *trackingInterval;
 
