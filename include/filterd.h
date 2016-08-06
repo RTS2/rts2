@@ -39,7 +39,7 @@ namespace rts2filterd
 class Filterd:public rts2core::Device
 {
 	public:
-		Filterd (int in_argc, char **in_argv);
+		Filterd (int in_argc, char **in_argv, const char *defName = "W0");
 		virtual ~ Filterd (void);
 
 		virtual int info ();
