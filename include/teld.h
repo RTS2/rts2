@@ -1009,6 +1009,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueSelection *tracking;
 		rts2core::ValueDoubleStat *trackingFrequency;
 		rts2core::ValueInteger *trackingFSize;
+		rts2core::ValueFloat *trackingWarning;
 		double lastTrackingRun;
 
 		/**

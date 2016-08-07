@@ -103,6 +103,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
+		createValue (trackingWarning, "tracking_warning", "issue warning if tracking frequency drops bellow this number", false, RTS2_VALUE_WRITABLE);
+		trackingWarning->setValueFloat (1);
 		trackingFSize->setValueInteger (20);
 
 		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true, RTS2_DT_DEGREES);
@@ -112,6 +114,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		tracking = NULL;
 		trackingInterval = NULL;
 		trackingFrequency = NULL;
+		trackingWarning = NULL;
 		skyVect = NULL;
 	}
 
@@ -1348,8 +1351,11 @@ void Telescope::updateTrackingFrequency ()
 	double n = getNow ();
 	if (!isnan (lastTrackingRun) && n != lastTrackingRun)
 	{
-		trackingFrequency->addValue (1 / (n - lastTrackingRun), trackingFSize->getValueInteger ());
+		double tv = 1 / (n - lastTrackingRun);
+		trackingFrequency->addValue (tv, trackingFSize->getValueInteger ());
 		trackingFrequency->calculate ();
+		if (tv < trackingWarning->getValueFloat ())
+			logStream (MESSAGE_ERROR) << "lost telescope tracking, frequency is " << tv << sendLog;
 	}
 	lastTrackingRun = n;
 }
