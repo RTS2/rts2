@@ -31,6 +31,8 @@ class SitechRotator: public Rotator
 	public:
 		SitechRotator (const char axis, const char *name, rts2core::ConnSitech *conn);
 
+		void multiInit (int _debug);
+
 		void calculateTarget (double pa_current, double pa_future, double t_diff, uint32_t tarpos, uint32_t tarspeed);
 
 		void getConfiguration ();

@@ -343,18 +343,22 @@ int SitechAltAz::run ()
 	if (AltAz::setupAutoRestart () != -1)
 		return 0;
 
-	if (rotators[0] == NULL)
+	if (rotators[0] == NULL && rotators[1] == NULL)
 	{
 		while (!getEndLoop ())
 			oneRunLoop ();
 	}
 	else
 	{
-		push_back (rotators[0]);
-		if (rotators[1] != NULL)
-			push_back (rotators[1]);
-
-		rts2core::MultiDev::iterator iter;
+		push_back (this);
+		for (int i = 0; i < 2; i++)
+		{
+			if (rotators[0] != NULL)
+			{
+				rotators[i]->multiInit (getDebug ());
+				push_back (rotators[i]);
+			}
+		}
 
 		multiLoop ();
 	}
@@ -672,6 +676,16 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		telSetTarget (t_az_pos->getValueLong (), newValue->getValueLong ());
 		return 0;
 	}
+	if (oldValue == autoModeAz)
+	{
+		telConn->siTechCommand ('Y', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		return 0;
+	}
+	if (oldValue == autoModeAlt)
+	{
+		telConn->siTechCommand ('X', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		return 0;
+	}	
 
 	return AltAz::setValue (oldValue, newValue);
 }

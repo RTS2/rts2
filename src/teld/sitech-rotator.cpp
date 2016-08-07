@@ -21,7 +21,7 @@
 
 using namespace rts2rotad;
 
-SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn):Rotator (0, (char **) &name)
+SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn):Rotator (0, NULL, name)
 {
 	setDeviceName (name);
 	sitech = conn;
@@ -50,9 +50,20 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 	createValue (temp, "temp", "[F] derotator temperature", false);
 	createValue (pid_out, "pid_out", "1st derotator PID output", false);
 	createValue (autoMode, "auto", "derotator auto mode", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (ticks, "_ticks", "[cnts] counts per full turn", false);
 	createValue (mclock, "mclock", "derotator clocks", false);
 	createValue (temperature, "temperature", "[C] derotator CPU board temperature", false);
 	createValue (PIDs, "PIDs", "derotator PIDs", false);
+
+	ticks->setValueLong (67108864);
+}
+
+void SitechRotator::multiInit (int _debug)
+{
+	setNotDaemonize ();
+	setDebug (_debug);
+	initDaemon ();
+	beforeRun ();
 }
 
 void SitechRotator::getConfiguration ()
@@ -77,6 +88,11 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 	if (oldValue == t_pos)
 	{
 		// valueChanged will do the trick..
+		return 0;
+	}
+	if (oldValue == autoMode)
+	{
+		sitech->siTechCommand (axis, ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
 		return 0;
 	}
 	return Rotator::setValue (oldValue, newValue);

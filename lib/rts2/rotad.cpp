@@ -21,7 +21,7 @@
 
 using namespace rts2rotad;
 
-Rotator::Rotator (int argc, char **argv):rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, "R0")
+Rotator::Rotator (int argc, char **argv, const char *defname):rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, defname)
 {
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
 	createValue (targetPosition, "TAR_POS", "[deg] target rotator position", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);

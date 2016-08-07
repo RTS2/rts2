@@ -33,7 +33,7 @@ class Rotator:public rts2core::Device
 		/**
 		 * Rotator constructor.
 		 */
-		Rotator (int argc, char **argv);
+		Rotator (int argc, char **argv, const char *defname = "R0");
 
 	protected:
 		virtual int idle ();
