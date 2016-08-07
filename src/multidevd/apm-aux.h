@@ -51,21 +51,26 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
-		int mirror_state;
-                rts2core::ValueString *mirror;
+		rts2core::ValueSelection *coverState;
 		rts2core::ValueBool *fan;
-		rts2core::ValueString *baffle;
+		rts2core::ValueSelection *baffle;
 		rts2core::ValueBool *relay1;
 		rts2core::ValueBool *relay2;
-		
-                int open ();
-                int close ();
-                int openBaffle ();
-                int closeBaffle ();
+
+		// to organize timeouts,..
+		rts2core::ValueTime *coverCommand;
+		rts2core::ValueTime *baffleCommand;
+	
+		int open ();
+		int close ();
+		int openCover ();
+		int closeCover ();
+		int openBaffle ();
+		int closeBaffle ();
 
 		int relayControl (int n, bool on);
 
-                int sendUDPMessage (const char * _message);
+		int sendUDPMessage (const char * _message);
 };
 
 }

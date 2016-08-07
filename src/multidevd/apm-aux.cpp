@@ -21,6 +21,9 @@
 #include "apm-aux.h"
 #include "connection/apm.h"
 
+#define COVER_TIME    35
+#define BAFFLE_TIME   30
+
 using namespace rts2sensord;
 
 /**
@@ -40,11 +43,28 @@ APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool has
 	baffle = NULL;
 	relay1 = NULL;
 	relay2 = NULL;
+
+	coverCommand = 0;
+	baffleCommand = 0;
+
+	createValue (coverState, "cover", "mirror cover state", true);
+	coverState->addSelVal ("CLOSED");
+	coverState->addSelVal ("OPENING");
+	coverState->addSelVal ("OPENED");
+	coverState->addSelVal ("CLOSING");
+
+	createValue (coverCommand, "cmd_cover", "when last cover command is expected to complete", false);
+
 	if (hasBaffle)
 	{
 		createValue (baffle, "baffle", "baffle cover state", true);
+		baffle->addSelVal ("CLOSED");
+		baffle->addSelVal ("OPENING");
+		baffle->addSelVal ("OPENED");
+		baffle->addSelVal ("CLOSING");
+
+		createValue (baffleCommand, "cmd_baffle", "when last baffle command is expected to complete", false);
 	}
-	createValue (mirror, "mirror", "mirror cover state", true);
 	if (hasFan)
 	{
 		createValue (fan, "fan", "fan state", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
@@ -67,6 +87,10 @@ int APMAux::commandAuthorized (rts2core::Connection * conn)
 		return open ();
 	else if (conn->isCommand ("close"))
 		return close ();
+	else if (conn->isCommand ("open_cover"))
+		return openCover ();
+	else if (conn->isCommand ("close_cover"))
+		return closeCover ();
 	else if (baffle != NULL && conn->isCommand ("open_baffle"))
 		return openBaffle ();
 	else if (baffle != NULL && conn->isCommand ("close_baffle"))
@@ -104,22 +128,6 @@ int APMAux::info ()
 {
 	sendUDPMessage ("C999");
 
-	switch (mirror_state)
-        {
-                case MIRROR_OPENED:
-                        mirror->setValueString("opened");
-                        break;
-                case MIRROR_CLOSED:
-                        mirror->setValueString("closed");
-                        break;
-		case MIRROR_OPENING:
-			mirror->setValueString("opening");
-			break;
-		case MIRROR_CLOSING:
-			mirror->setValueString("closing");
-			break;
-	}
-
 	if (relay1 != NULL || relay2 != NULL)
 	{
         	sendUDPMessage ("A999");
@@ -133,9 +141,9 @@ int APMAux::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	if (old_value == fan)
 	{
 		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
-			return sendUDPMessage ("CF01");
+			return sendUDPMessage ("CF01") ? -2 : 0;
 		else
-			return sendUDPMessage ("CF00");
+			return sendUDPMessage ("CF00") ? -2 : 0;
 	}
 	else if (old_value == relay1)
 	{
@@ -152,22 +160,42 @@ int APMAux::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 
 int APMAux::open ()
 {
-	sendUDPMessage ("C001");
+	return 0;
+}
 
-	if (mirror_state == MIRROR_CLOSED)
-		mirror_state = MIRROR_OPENING;
+int APMAux::close ()
+{
+	return 0;
+}
+
+int APMAux::openCover ()
+{
+	sendUDPMessage ("C001");
+	if (coverState->getValueInteger () == 0)
+	{
+		coverState->setValueInteger (1);
+		sendValueAll (coverState);
+	}
+
+	coverCommand->setValueTime (time (NULL) + COVER_TIME);
+	sendValueAll (coverCommand);
 
 	info ();
 
 	return 0;
 }
 
-int APMAux::close ()
+int APMAux::closeCover ()
 {
 	sendUDPMessage ("C000");
+	if (coverState->getValueInteger () == 2)
+	{
+		coverState->setValueInteger (3);
+		sendValueAll (coverState);
+	}
 
-	if (mirror_state == MIRROR_OPENED)
-		mirror_state = MIRROR_CLOSING;
+	coverCommand->setValueTime (time (NULL) + COVER_TIME);
+	sendValueAll (coverCommand);
 
 	info ();
 
@@ -176,12 +204,36 @@ int APMAux::close ()
 
 int APMAux::openBaffle ()
 {
-	return sendUDPMessage ("B001");
+	if (sendUDPMessage ("B001"))
+		return -1;
+
+	if (baffle->getValueInteger () == 0)
+	{
+		baffle->setValueInteger (1);
+		sendValueAll (baffle);
+	}
+
+	baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
+	sendValueAll (baffleCommand);
+
+	return 0;
 }
 
 int APMAux::closeBaffle ()
 {
-	return sendUDPMessage ("B000");
+	if (sendUDPMessage ("B000"))
+		return -1;
+
+	if (baffle->getValueInteger () == 2)
+	{
+		baffle->setValueInteger (3);
+		sendValueAll (baffle);
+	}
+
+	baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
+	sendValueAll (baffleCommand);
+
+	return 0;
 }
 
 int APMAux::relayControl (int n, bool on)
@@ -197,47 +249,75 @@ int APMAux::relayControl (int n, bool on)
 
 int APMAux::sendUDPMessage (const char * _message)
 {
-        char *response = (char *)malloc(20);
+	char *response = (char *)malloc(20);
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
-        int n = apmConn->sendReceive (_message, response, 20);
+	int n = apmConn->sendReceive (_message, response, 20);
 
-	if (n < 0)
+	if (n <= 0)
 	{
 		logStream (MESSAGE_ERROR) << "no response" << sendLog;
 		return -1;
 	}
 
 	response[n] = '\0';
+	logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
 
-        logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
+	if (!isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
+	{
+		if (baffle->getValueInteger () == 1)
+			baffle->setValueInteger (2);
+		if (baffle->getValueInteger () == 3)
+			baffle->setValueInteger (0);
+		baffleCommand->setValueDouble (NAN);
+		sendValueAll (baffle);
+		sendValueAll (baffleCommand);
+	}
 
-        if (n > 0)
-        {
-                if (response[0] == 'C' && response[1] == '9')
-                {
-                        switch (response[3])
-                        {
-                                case '0':
-					if (mirror_state != MIRROR_OPENING)
-                                        	mirror_state = MIRROR_CLOSED;
-                                        break;
-                                case '1':
-					if (mirror_state != MIRROR_CLOSING)
-                                        	mirror_state = MIRROR_OPENED;
-                                        break;
-                        }
-                }
+	if (response[0] == 'C' && response[1] == '9')
+	{
+		switch (response[3])
+		{
+			case '0':
+				if (!isnan (coverCommand->getValueDouble ()))
+				{
+					if (coverCommand->getValueInteger () > time (NULL))
+						break;
+					coverCommand->setValueDouble (NAN);
+					sendValueAll (coverCommand);
+				}
+				coverState->setValueInteger (0);
+				sendValueAll (coverState);
+				break;
+			case '1':
+				if (!isnan (coverCommand->getValueDouble ()))
+				{
+					if (coverCommand->getValueInteger () > time (NULL))
+						break;
+					coverCommand->setValueDouble (NAN);
+					sendValueAll (coverCommand);
+				}
+				coverState->setValueInteger (2);
+				sendValueAll (coverState);
+				break;
+			default:
+				logStream (MESSAGE_ERROR) << "invalid cover state:" << response[3] << sendLog;
+				return -1;
+		}
+	}
 
-                if (response[0] == 'A' && response[1] == '9')
-                {
-			int rv = response[3] - '0';
-                        relay1->setValueBool (rv & 0x01);
-                        relay2->setValueBool (rv & 0x02);
-                }
-
-        }
+	if (response[0] == 'A' && response[1] == '9')
+	{
+		if (response[3] < '0' || response[3] > '3')
+		{
+			logStream (MESSAGE_ERROR) << "invalid relay state " << response[3] << sendLog;
+			return -1;
+		}
+		int rv = response[3] - '0';
+		relay1->setValueBool (rv & 0x01);
+		relay2->setValueBool (rv & 0x02);
+	}
 
         return 0;
 }
