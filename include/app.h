@@ -246,7 +246,7 @@ class App:public Object
 		 */
 		const char *getAppName ()
 		{
-			return app_argv[0] != NULL ? app_argv[0] : "NULL";
+			return (app_argv != NULL && app_argv[0] != NULL) ? app_argv[0] : "--child--";
 		}
 
 		/**

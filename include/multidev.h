@@ -30,7 +30,7 @@ namespace rts2core
 class MultiDev: public std::list < Device* >
 {
 	public:
-		virtual int run ();
+		virtual int run (int debug = 0);
 		void multiLoop ();
 };
 

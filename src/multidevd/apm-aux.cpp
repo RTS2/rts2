@@ -1,6 +1,7 @@
 /**
- * Driver for APM mirror cover
+ * Driver for APM auxiliary devices (mirror covers, fans,..)
  * Copyright (C) 2015 Stanislav Vitek
+ * Copyright (C) 2016 Petr Kubanek
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "apm-mirror.h"
+#include "apm-aux.h"
 #include "connection/apm.h"
 
 using namespace rts2sensord;
@@ -33,34 +34,47 @@ using namespace rts2sensord;
  *  Arguments argc and argv has to be set to 0 and NULL respectively.
  *  See apm-multidev.cpp for example.
  */
-APMMirror::APMMirror (const char *name, rts2core::ConnAPM *conn): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
+APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool hasBaffle, bool hasRelays): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
 {
-	createValue (mirror, "mirror", "Mirror cover state", true);
+	fan = NULL;
+	baffle = NULL;
+	relay1 = NULL;
+	relay2 = NULL;
+	if (hasBaffle)
+	{
+		createValue (baffle, "baffle", "baffle cover state", true);
+	}
+	createValue (mirror, "mirror", "mirror cover state", true);
+	if (hasFan)
+	{
+		createValue (fan, "fan", "fan state", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	}
+	if (hasRelays)
+	{
+	        createValue(relay1, "relay1", "relay 1 state", true);
+	        createValue(relay2, "relay2", "relay 2 state", true);
+	}
 }
 
-/*int APMMirror::initHardware ()
+int APMAux::initHardware ()
 {
-	sendUDPMessage ("C999");
-
 	return 0;
-}*/
+}
 
-int APMMirror::commandAuthorized (rts2core::Connection * conn)
+int APMAux::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("open"))
-	{
-		return open();
-	}
-	
-	if (conn->isCommand ("close"))
-	{
-		return close();
-	}
-
-	return 0;
+		return open ();
+	else if (conn->isCommand ("close"))
+		return close ();
+	else if (baffle != NULL && conn->isCommand ("open_baffle"))
+		return openBaffle ();
+	else if (baffle != NULL && conn->isCommand ("close_baffle"))
+		return closeBaffle ();
+	return Sensor::commandAuthorized (conn);
 }
 
-void APMMirror::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+void APMAux::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
@@ -86,7 +100,7 @@ void APMMirror::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	Sensor::changeMasterState (old_state, new_state);
 }
 
-int APMMirror::info ()
+int APMAux::info ()
 {
 	sendUDPMessage ("C999");
 
@@ -106,12 +120,37 @@ int APMMirror::info ()
 			break;
 	}
 
-	sendValueAll(mirror);
+	if (relay1 != NULL || relay2 != NULL)
+	{
+        	sendUDPMessage ("A999");
+	}
 
 	return Sensor::info ();
 }
 
-int APMMirror::open ()
+int APMAux::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
+{
+	if (old_value == fan)
+	{
+		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
+			return sendUDPMessage ("CF01");
+		else
+			return sendUDPMessage ("CF00");
+	}
+	else if (old_value == relay1)
+	{
+		return relayControl (0, ((rts2core::ValueBool *) new_value)->getValueBool ());
+
+	}
+	else if (old_value == relay2)
+	{
+		return relayControl (1, ((rts2core::ValueBool *) new_value)->getValueBool ());
+
+	}
+	return Sensor::setValue (old_value, new_value);
+}
+
+int APMAux::open ()
 {
 	sendUDPMessage ("C001");
 
@@ -123,7 +162,7 @@ int APMMirror::open ()
 	return 0;
 }
 
-int APMMirror::close ()
+int APMAux::close ()
 {
 	sendUDPMessage ("C000");
 
@@ -133,15 +172,42 @@ int APMMirror::close ()
 	info ();
 
 	return 0;
-}	
+}
 
-int APMMirror::sendUDPMessage (const char * _message)
+int APMAux::openBaffle ()
+{
+	return sendUDPMessage ("B001");
+}
+
+int APMAux::closeBaffle ()
+{
+	return sendUDPMessage ("B000");
+}
+
+int APMAux::relayControl (int n, bool on)
+{
+        char cmd[5];
+        snprintf (cmd, 5, "A0%d%c", n, on ? '1': '0');
+        sendUDPMessage (cmd);
+
+        info ();
+
+        return 0;
+}
+
+int APMAux::sendUDPMessage (const char * _message)
 {
         char *response = (char *)malloc(20);
 
         logStream (MESSAGE_DEBUG) << "command: " << _message << sendLog;
 
         int n = apmConn->sendReceive (_message, response, 20);
+
+	if (n < 0)
+	{
+		logStream (MESSAGE_ERROR) << "no response" << sendLog;
+		return -1;
+	}
 
 	response[n] = '\0';
 
@@ -163,6 +229,14 @@ int APMMirror::sendUDPMessage (const char * _message)
                                         break;
                         }
                 }
+
+                if (response[0] == 'A' && response[1] == '9')
+                {
+			int rv = response[3] - '0';
+                        relay1->setValueBool (rv & 0x01);
+                        relay2->setValueBool (rv & 0x02);
+                }
+
         }
 
         return 0;

@@ -43,8 +43,6 @@ SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c):Mi
 
 	addPosition ("1");
 	addPosition ("2");
-
-	setNotDaemonize ();
 }
 
 int SitechMirror::info ()

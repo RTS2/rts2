@@ -54,9 +54,11 @@ class APMMultiBase:public rts2core::Daemon
 		virtual int initHardware ();
 	private:
 		const char *filterName;
-		const char *relayName;
-		const char *coversName;
-		const char *fanName;
+		const char *auxName;
+
+		bool hasFan;
+		bool hasBaffle;
+		bool hasRelays;
 
 		HostString *host;
 		rts2core::ConnAPM *apmConn;

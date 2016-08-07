@@ -33,8 +33,6 @@ SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c):
 
 	createValue (errors, "errors", "controller errors", false);
 	createValue (errors_val, "errros", "controller errors string", false);
-
-	setNotDaemonize ();
 }
 
 int SitechFocuser::info ()

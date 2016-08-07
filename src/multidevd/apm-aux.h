@@ -36,19 +36,35 @@ namespace rts2sensord
  *
  * @author Stanislav Vitek <standa@vitkovi.net>
  */
-class APMMirror : public Sensor, rts2multidev::APMMultidev
+class APMAux : public Sensor, rts2multidev::APMMultidev
 {
 	public:
-		APMMirror (const char *name, rts2core::ConnAPM *apmConn);
+		APMAux (const char *name, rts2core::ConnAPM *apmConn, bool hasFan, bool hasBaffle, bool hasRelays);
+
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
+
+	protected:
+		virtual int initHardware ();
 		virtual int info ();
+
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
 		int mirror_state;
                 rts2core::ValueString *mirror;
+		rts2core::ValueBool *fan;
+		rts2core::ValueString *baffle;
+		rts2core::ValueBool *relay1;
+		rts2core::ValueBool *relay2;
+		
                 int open ();
                 int close ();
+                int openBaffle ();
+                int closeBaffle ();
+
+		int relayControl (int n, bool on);
+
                 int sendUDPMessage (const char * _message);
 };
 

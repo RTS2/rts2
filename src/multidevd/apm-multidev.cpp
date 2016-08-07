@@ -19,22 +19,34 @@
 
 #include "apm-multidev.h"
 #include "apm-filter.h"
-#include "apm-mirror.h"
-#include "apm-relay.h"
+#include "apm-aux.h"
+
+#define OPT_FILTER         OPT_LOCAL + 50
+#define OPT_AUX            OPT_LOCAL + 51
+#define OPT_FAN            OPT_LOCAL + 52
+#define OPT_BAFFLE         OPT_LOCAL + 53
+#define OPT_RELAYS         OPT_LOCAL + 54
 
 using namespace rts2multidev;
 
 APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
 {
-	filterName = "FW0";
-	relayName = "R0";
-	coversName = "MC0";
-	fanName = "FAN0";
+	filterName = NULL;
+	auxName = NULL;
 		
 	host = NULL;
 	apmConn = NULL;
 
-	addOption ('e', NULL, 1, "IP and port (separated by :) of APM box");
+	hasFan = false;
+	hasBaffle = false;
+	hasRelays = false;
+
+	addOption ('e', NULL, 1, "IP and port (separated by :) of the APM box");
+	addOption (OPT_FILTER, "filter", 1, "filter wheel device name");
+	addOption (OPT_AUX, "aux", 1, "auxiliary device name");
+	addOption (OPT_FAN, "fan", 0, "auxiliary device with fan control");
+	addOption (OPT_BAFFLE, "baffle", 0, "auxiliary device with baffle (and mirror covers) control");
+	addOption (OPT_RELAYS, "relays", 0, "auxiliary device with relay control");
 }
 
 APMMultiBase::~APMMultiBase ()
@@ -51,17 +63,28 @@ int APMMultiBase::run ()
 	if (ret)
 		return ret;
 	doDaemonize ();
-	return md.run ();
+	return md.run (getDebug ());
 }
 
 int APMMultiBase::processOption (int opt)
 {
 	switch (opt)
 	{
-		case 'f':
+		case 'e':
                         host = new HostString (optarg, "5000");
                         break;
-
+		case OPT_AUX:
+			auxName = optarg;
+			break;
+		case OPT_FAN:
+			hasFan = true;
+			break;
+		case OPT_BAFFLE:
+			hasBaffle = true;
+			break;
+		case OPT_RELAYS:
+			hasRelays = true;
+			break;
 		default:
 			return Daemon::processOption (opt);
 	}
@@ -86,11 +109,8 @@ int APMMultiBase::initHardware ()
 	if (filterName != NULL)
 		md.push_back (new rts2filterd::APMFilter (filterName, apmConn));
 
-	if (relayName != NULL)
-		md.push_back (new rts2sensord::APMRelay (relayName, apmConn));
-
-	if (coversName != NULL)
-		md.push_back (new rts2sensord::APMMirror (coversName, apmConn));
+	if (auxName != NULL)
+		md.push_back (new rts2sensord::APMAux (auxName, apmConn, hasFan, hasBaffle, hasRelays));
 
 	return 0;
 }

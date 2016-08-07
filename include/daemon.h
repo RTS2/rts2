@@ -233,10 +233,13 @@ class Daemon:public rts2core::Block
 		void sendProgressAll (double start, double end, Connection *except);
 
 		int checkLockFile (const char *_lock_fname);
+
+
 		void setNotDaemonize ()
 		{
 			daemonize = DONT_DAEMONIZE;
 		}
+
 		/**
 		 * Returns true if daemon should stream debug messages to standart output.
 		 *

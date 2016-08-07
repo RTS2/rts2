@@ -23,12 +23,13 @@
 
 using namespace rts2core;
 
-int MultiDev::run ()
+int MultiDev::run (int debug)
 {
 	MultiDev::iterator iter;
 	for (iter = begin (); iter != end (); iter++)
 	{
-		optind = 1;
+		(*iter)->setNotDaemonize ();
+		(*iter)->setDebug (debug);
 		(*iter)->initDaemon ();
 		(*iter)->beforeRun ();
 	}
