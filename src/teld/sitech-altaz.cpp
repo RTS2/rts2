@@ -798,6 +798,14 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	{
 		telConn->sendXAxisRequest (altaz_Xrequest);
 		updateTrackingFrequency ();
+
+		if (rotators[0] != NULL)
+			rotators[0]->updateParallAngle (getParallacticAngle ());
+		if (rotators[1] != NULL)
+			rotators[1]->updateParallAngle (getParallacticAngle ());
+
+		if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
+			derSetTarget ();
 	}
 	catch (rts2core::Error &e)
 	{

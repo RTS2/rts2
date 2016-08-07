@@ -102,7 +102,7 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 
 void SitechRotator::setTarget (double tv)
 {
-	t_pos->setValueLong ((tv - zeroOffs->getValueFloat ()) * ticks->getValueLong () / 360.0);
+	t_pos->setValueLong ((tv - zeroOffs->getValueFloat () - offset->getValueFloat ()) * ticks->getValueLong () / 360.0);
 	updated = true;
 }
 
@@ -122,7 +122,7 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 		r_pos->setValueLong (der_status->y_pos);
 	}
 
-	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + zeroOffs->getValueFloat ());
+	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + zeroOffs->getValueFloat () + offset->getValueFloat ());
 
 	// not stopped, not in manual mode
 	autoMode->setValueBool ((der_status->extra_bits & (axis == 'X' ? 0x02 : 0x20)) == 0);
@@ -172,4 +172,9 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 			break;
 		}
 	}
+}
+
+void SitechRotator::updateParallAngle (double pa)
+{
+	setTarget (pa);
 }

@@ -41,6 +41,8 @@ class SitechRotator: public Rotator
 
 		void processAxisStatus (rts2core::SitechAxisStatus *der_status);
 
+		void updateParallAngle (double pa);
+
 		bool updated;
 
 		// derotator statistics
