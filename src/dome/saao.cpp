@@ -299,6 +299,15 @@ int SAAO::initHardware ()
 	int ret = domeConn->init ();
 	if (ret)
 		return ret;
+
+	uint16_t reg;
+	readRegisters (1, 0x106E, 1, &reg);
+
+	if (reg & STATUS_SHUTTER_CLOSED)
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome stats is closed");
+	else if (reg & STATUS_SHUTTER_OPENED)
+		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome stats is opened");
+
 	return 0;
 }
 
