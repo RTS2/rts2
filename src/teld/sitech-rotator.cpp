@@ -27,8 +27,10 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 	sitech = conn;
 	axis = ax;
 
-	createValue (r_pos, "ENC", "[cnts] encoder readout", false);
-	createValue (t_pos, "TARGET", "[cnts] target position", false);
+	updated = false;
+
+	createValue (r_pos, "REAL", "[cnts] encoder readout", false);
+	createValue (t_pos, "TARGET", "[cnts] target position", false, RTS2_VALUE_WRITABLE);
 
 	createValue (zeroOffs, "zero_offs", "[deg] zero offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	zeroOffs->setValueFloat (0);
@@ -87,7 +89,7 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 {
 	if (oldValue == t_pos)
 	{
-		// valueChanged will do the trick..
+		updated = true;
 		return 0;
 	}
 	if (oldValue == autoMode)
@@ -109,9 +111,10 @@ long SitechRotator::isRotating ()
 	return -2;
 }
 
-void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status, bool xStatus)
+void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 {
-	if (xStatus)
+	std::cout << "processAxisStatus " << axis << std::endl;
+	if (axis == 'X')
 	{
 		r_pos->setValueLong (der_status->x_pos);
 	}
@@ -133,11 +136,11 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status, b
 		case rts2core::ConnSitech::FORCE_ONE:
 		{
 			// upper nimble
-			uint16_t der_val = (xStatus ? der_status->x_last[0] : der_status->y_last[0]) << 4;
-			der_val += xStatus ? der_status->x_last[1] : der_status->y_last[1];
+			uint16_t der_val = (axis == 'X' ? der_status->x_last[0] : der_status->y_last[0]) << 4;
+			der_val += axis == 'X' ? der_status->x_last[1] : der_status->y_last[1];
 
 			// find all possible errors
-			switch ((xStatus ? der_status->x_last[0] : der_status->y_last[0]) & 0x0F)
+			switch ((axis == 'X' ? der_status->x_last[0] : der_status->y_last[0]) & 0x0F)
 			{
 				case 0:
 					errors_val->setValueInteger (der_val);
@@ -164,7 +167,7 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status, b
 					break;
 			}
 
-			pos_error->setValueInteger (*(uint16_t*) &(xStatus ? der_status->x_last[2] : der_status->y_last[2]));
+			pos_error->setValueInteger (*(uint16_t*) &(axis == 'X' ? der_status->x_last[2] : der_status->y_last[2]));
 			break;
 		}
 	}

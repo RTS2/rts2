@@ -425,8 +425,8 @@ int SitechAltAz::initHardware ()
 		rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn);
 		rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn);
 
-		der_xbits = derConn->getSiTechValue ('X', "B");
 		der_ybits = derConn->getSiTechValue ('Y', "B");
+		der_xbits = derConn->getSiTechValue ('X', "B");
 	}
 
 	xbits = telConn->getSiTechValue ('X', "B");
@@ -520,9 +520,9 @@ int SitechAltAz::info ()
 		derConn->getAxisStatus ('X', der_status);
 
 		if (rotators[0] != NULL)
-			rotators[0]->processAxisStatus (&der_status, false);
+			rotators[0]->processAxisStatus (&der_status);
 		if (rotators[1] != NULL)
-			rotators[1]->processAxisStatus (&der_status, true);
+			rotators[1]->processAxisStatus (&der_status);
 	}
 
 	struct ln_equ_posn pos;
@@ -531,7 +531,7 @@ int SitechAltAz::info ()
 	setTelRaDec (pos.ra, pos.dec);
 	setTelUnAltAz (un_zd, un_az);
 
-	if ((rotators[0] != NULL && rotators[0]->t_pos->wasChanged ()) || (rotators[1] != NULL && rotators[1]->t_pos->wasChanged ()))
+	if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
 		derSetTarget ();
 
 	return AltAz::infoJD (getTelJD);
@@ -875,13 +875,13 @@ void SitechAltAz::derSetTarget ()
 
 	if (rotators[0] != NULL)
 	{
-		der_Xrequest.y_dest = rotators[0]->t_pos->getValueLong ();
-		der_Xrequest.y_speed = derConn->degsPerSec2MotorSpeed (rotators[0]->speed->getValueDouble (), rotators[0]->ticks->getValueLong (), 360) * SPEED_MULTI;
+		der_Xrequest.x_dest = rotators[0]->t_pos->getValueLong ();
+		der_Xrequest.x_speed = derConn->degsPerSec2MotorSpeed (rotators[0]->speed->getValueDouble (), rotators[0]->ticks->getValueLong (), 360) * SPEED_MULTI;
 	}
 	if (rotators[1] != NULL)
 	{
-		der_Xrequest.x_dest = rotators[1]->t_pos->getValueLong ();
-		der_Xrequest.x_speed = derConn->degsPerSec2MotorSpeed (rotators[1]->speed->getValueDouble (), rotators[1]->ticks->getValueLong (), 360) * SPEED_MULTI;
+		der_Xrequest.y_dest = rotators[1]->t_pos->getValueLong ();
+		der_Xrequest.y_speed = derConn->degsPerSec2MotorSpeed (rotators[1]->speed->getValueDouble (), rotators[1]->ticks->getValueLong (), 360) * SPEED_MULTI;
 	}
 
 	//der_xbits &= ~(0x01 << 4);
@@ -890,12 +890,14 @@ void SitechAltAz::derSetTarget ()
 	der_Xrequest.x_bits = der_xbits;
 	der_Xrequest.y_bits = der_ybits;
 
+	std::cout << "derSetTarget " << der_Xrequest.x_dest << " " << der_Xrequest.x_speed << " Y " << der_Xrequest.y_dest << " " << der_Xrequest.y_speed << std::endl;
+
 	derConn->sendXAxisRequest (der_Xrequest);
 
 	if (rotators[0] != NULL)
-		rotators[0]->t_pos->resetValueChanged ();
+		rotators[0]->updated = false;
 	if (rotators[1] != NULL)
-		rotators[1]->t_pos->resetValueChanged ();
+		rotators[1]->updated = false;
 }
 
 void SitechAltAz::getTel ()

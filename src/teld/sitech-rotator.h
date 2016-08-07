@@ -39,7 +39,9 @@ class SitechRotator: public Rotator
 
 		void getPIDs ();
 
-		void processAxisStatus (rts2core::SitechAxisStatus *der_status, bool xStatus);
+		void processAxisStatus (rts2core::SitechAxisStatus *der_status);
+
+		bool updated;
 
 		// derotator statistics
 		rts2core::ValueLong *r_pos;
