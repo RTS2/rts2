@@ -890,8 +890,6 @@ void SitechAltAz::derSetTarget ()
 	der_Xrequest.x_bits = der_xbits;
 	der_Xrequest.y_bits = der_ybits;
 
-	std::cout << "derSetTarget " << der_Xrequest.x_dest << " " << der_Xrequest.x_speed << " Y " << der_Xrequest.y_dest << " " << der_Xrequest.y_speed << std::endl;
-
 	derConn->sendXAxisRequest (der_Xrequest);
 
 	if (rotators[0] != NULL)

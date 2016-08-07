@@ -113,7 +113,6 @@ long SitechRotator::isRotating ()
 
 void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 {
-	std::cout << "processAxisStatus " << axis << std::endl;
 	if (axis == 'X')
 	{
 		r_pos->setValueLong (der_status->x_pos);
@@ -124,7 +123,7 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 	}
 
 	// not stopped, not in manual mode
-	autoMode->setValueBool ((der_status->extra_bits & 0x20) == 0);
+	autoMode->setValueBool ((der_status->extra_bits & (axis == 'X' ? 0x02 : 0x20)) == 0);
 	mclock->setValueLong (der_status->mclock);
 	temperature->setValueInteger (der_status->temperature);
 
