@@ -125,17 +125,6 @@ int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int
 	int32_t t_alt = altc - d_alt;
 	int32_t t_az = azc - d_az;
 
-/*	while (t_alt < altMin->getValueLong ())
-	{
-		t_alt += alt_ticks->getValueLong () / 4.0;
-		t_az += az_ticks->getValueLong () / 2.0;
-	}
-	while (t_alt > altMax->getValueLong ())
-	{
-		t_alt -= alt_ticks->getValueLong () / 4.0;
-		t_az += az_ticks->getValueLong () / 2.0;
-	} */
-
 	while (t_az < azMin->getValueLong ())
 		t_az += az_ticks->getValueLong ();
 	while (t_az > azMax->getValueLong ())

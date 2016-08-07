@@ -79,6 +79,11 @@ class AltAz: public Telescope
 		 */
 		void unlockPointing ();
 
+		/**
+		 * Returns current (target) parralactic angle.
+		 */
+		double getParallacticAngle () { return parallAngle->getValueDouble (); }
+
 		rts2core::ValueDouble *parallAngle;
 		rts2core::ValueDouble *derRate;
 
