@@ -27,7 +27,7 @@ using namespace rts2teld;
 AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0)
 {
 	createValue (parallAngle, "parallactic_ang", "[deg] parallactic angle", false, RTS2_DT_DEGREES);
-	createValue (derRate, "DERRATE", "[deg/sec] derotator rate", false, RTS2_DT_DEGREES);
+	createValue (derRate, "DERRATE", "[deg/hour] derotator rate", false, RTS2_DT_DEGREES);
 
 	createValue (az_ticks, "_az_ticks", "[cnts] counts per full revolution on az axis", false);
 	createValue (alt_ticks, "_alt_ticks", "[cnts] counts per full revolution on alt axis", false);
