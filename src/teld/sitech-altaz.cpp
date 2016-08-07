@@ -20,14 +20,8 @@
 #include "altaz.h"
 #include "configuration.h"
 #include "constsitech.h"
-#include "multidev.h"
-
-#include "sitech-rotator.h"
 
 #include "connection/sitech.h"
-
-// fixed maximum number of rotators
-#define NUM_ROTATORS    2
 
 /**
  * Sitech AltAz driver.
@@ -38,13 +32,11 @@ namespace rts2teld
 /**
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class SitechAltAz:public AltAz, public rts2core::MultiDev
+class SitechAltAz:public AltAz
 {
 	public:
 		SitechAltAz (int argc, char **argv);
 		~SitechAltAz (void);
-
-		virtual int run ();
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -92,15 +84,12 @@ class SitechAltAz:public AltAz, public rts2core::MultiDev
 	private:
 		void internalTracking (double sec_step, float speed_factor);
 
-		const char *tel_tty, *der_tty;
+		const char *tel_tty;
 		rts2core::ConnSitech *telConn;
-		rts2core::ConnSitech *derConn;
 
-		rts2rotad::SitechRotator *rotators[NUM_ROTATORS];
-
-		rts2core::SitechAxisStatus altaz_status, der_status;
-		rts2core::SitechYAxisRequest altaz_Yrequest, der_Yrequest;
-		rts2core::SitechXAxisRequest altaz_Xrequest, der_Xrequest;
+		rts2core::SitechAxisStatus altaz_status;
+		rts2core::SitechYAxisRequest altaz_Yrequest;
+		rts2core::SitechXAxisRequest altaz_Xrequest;
 
 		rts2core::ValueDouble *sitechVersion;
 		rts2core::ValueInteger *sitechSerial;
@@ -204,9 +193,6 @@ class SitechAltAz:public AltAz, public rts2core::MultiDev
 
 		uint8_t xbits;
 		uint8_t ybits;
-
-		uint8_t der_xbits;
-		uint8_t der_ybits;
 };
 
 }
@@ -221,11 +207,6 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 
 	tel_tty = "/dev/ttyUSB0";
 	telConn = NULL;
-
-	der_tty = NULL;
-	derConn = NULL;
-
-	memset (rotators, 0, sizeof(rotators));
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -314,7 +295,6 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	wasStopped = false;
 
 	addOption ('f', "telescope", 1, "telescope tty (ussualy /dev/ttyUSBx");
-	addOption ('F', "derotator", 1, "derotator tty (ussualy /dev/ttyUSBx");
 
 	addParkPosOption ();
 }
@@ -324,45 +304,6 @@ SitechAltAz::~SitechAltAz(void)
 {
 	delete telConn;
 	telConn = NULL;
-
-	if (derConn)
-	{
-		for (int i = 0; i < NUM_ROTATORS; i++)
-			delete rotators[i];
-		delete derConn;
-		derConn = NULL;
-	}
-}
-
-int SitechAltAz::run ()
-{
-	AltAz::initDaemon ();
-	AltAz::beforeRun ();
-
-	// don't continue running parent..
-	if (AltAz::setupAutoRestart () != -1)
-		return 0;
-
-	if (rotators[0] == NULL && rotators[1] == NULL)
-	{
-		while (!getEndLoop ())
-			oneRunLoop ();
-	}
-	else
-	{
-		push_back (this);
-		for (int i = 0; i < 2; i++)
-		{
-			if (rotators[0] != NULL)
-			{
-				rotators[i]->multiInit (getDebug ());
-				push_back (rotators[i]);
-			}
-		}
-
-		multiLoop ();
-	}
-	return 0;
 }
 
 int SitechAltAz::processOption (int in_opt)
@@ -371,10 +312,6 @@ int SitechAltAz::processOption (int in_opt)
 	{
 		case 'f':
 			tel_tty = optarg;
-			break;
-
-		case 'F':
-			der_tty = optarg;
 			break;
 
 		default:
@@ -412,23 +349,6 @@ int SitechAltAz::initHardware ()
 		return -1;
 	telConn->flushPortIO ();
 
-	if (der_tty != NULL)
-	{
-		derConn = new rts2core::ConnSitech (der_tty, this);
-		derConn->setDebug (getDebug ());
-
-		ret = derConn->init ();
-		if (ret)
-			return -1;
-		derConn->flushPortIO ();
-
-		rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn);
-		rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn);
-
-		der_ybits = derConn->getSiTechValue ('Y', "B");
-		der_xbits = derConn->getSiTechValue ('X', "B");
-	}
-
 	xbits = telConn->getSiTechValue ('X', "B");
 	ybits = telConn->getSiTechValue ('Y', "B");
 
@@ -455,9 +375,6 @@ int SitechAltAz::initHardware ()
 
 	telConn->flushPortIO ();
 
-	if (derConn)
-		derConn->flushPortIO ();
-
 	getConfiguration ();
 
 	return 0;
@@ -478,8 +395,6 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		if (!conn->paramEnd ())
 			return -2;
 		telConn->resetErrors ();
-		if (derConn)
-			derConn->resetErrors ();
 		return 0;
 	}
 	else if (conn->isCommand ("reset_controller"))
@@ -487,8 +402,6 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 		if (!conn->paramEnd ())
 			return -2;
 		telConn->resetController ();
-		if (derConn)
-			derConn->resetController ();
 		getConfiguration ();
 		return 0;
 	}
@@ -498,12 +411,6 @@ int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
 			return -2;
 		telConn->siTechCommand ('X', "A");
 		telConn->siTechCommand ('Y', "A");
-		if (derConn)
-		{
-			derConn->siTechCommand ('X', "A");
-			derConn->siTechCommand ('Y', "A");
-		}
-	
 		getConfiguration ();
 		return 0;
 	}
@@ -515,24 +422,12 @@ int SitechAltAz::info ()
 	struct ln_hrz_posn hrz;
 	double un_az, un_zd;
 	getTel (hrz.az, hrz.alt, un_az, un_zd);
-	if (derConn != NULL)
-	{
-		derConn->getAxisStatus ('X', der_status);
-
-		if (rotators[0] != NULL)
-			rotators[0]->processAxisStatus (&der_status);
-		if (rotators[1] != NULL)
-			rotators[1]->processAxisStatus (&der_status);
-	}
 
 	struct ln_equ_posn pos;
 
 	getEquFromHrz (&hrz, getTelJD, &pos);
 	setTelRaDec (pos.ra, pos.dec);
 	setTelUnAltAz (un_zd, un_az);
-
-	if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
-		derSetTarget ();
 
 	return AltAz::infoJD (getTelJD);
 }
@@ -592,12 +487,6 @@ int SitechAltAz::stopMove ()
 	{
 		telConn->siTechCommand ('X', "N");
 		telConn->siTechCommand ('Y', "N");
-
-		if (derConn)
-		{
-			derConn->siTechCommand ('X', "N");
-			derConn->siTechCommand ('Y', "N");
-		}
 
 		wasStopped = true;
 	}
@@ -798,14 +687,6 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	{
 		telConn->sendXAxisRequest (altaz_Xrequest);
 		updateTrackingFrequency ();
-
-		if (rotators[0] != NULL)
-			rotators[0]->updateParallAngle (getParallacticAngle ());
-		if (rotators[1] != NULL)
-			rotators[1]->updateParallAngle (getParallacticAngle ());
-
-		if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
-			derSetTarget ();
 	}
 	catch (rts2core::Error &e)
 	{
@@ -820,6 +701,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		telConn->sendXAxisRequest (altaz_Xrequest);
 		updateTrackingFrequency ();
 	}
+	
+	parallacticTracking ();
 }
 
 void SitechAltAz::getConfiguration ()
@@ -835,10 +718,6 @@ void SitechAltAz::getConfiguration ()
 
 	az_pwm->setValueInteger (telConn->getSiTechValue ('Y', "O"));
 	alt_pwm->setValueInteger (telConn->getSiTechValue ('X', "O"));
-
-	for (int i = 0; i < NUM_ROTATORS; i++)
-		if (rotators[i])
-			rotators[i]->getConfiguration ();
 }
 
 int SitechAltAz::sitechMove (int32_t azc, int32_t altc)
@@ -874,36 +753,6 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 
 	t_az_pos->setValueLong (ac);
 	t_alt_pos->setValueLong (dc);
-}
-
-void SitechAltAz::derSetTarget ()
-{
-	der_Xrequest.y_dest = 0;
-	der_Xrequest.x_dest = 0;
-
-	if (rotators[0] != NULL)
-	{
-		der_Xrequest.x_dest = rotators[0]->t_pos->getValueLong ();
-		der_Xrequest.x_speed = derConn->degsPerSec2MotorSpeed (rotators[0]->speed->getValueDouble (), rotators[0]->ticks->getValueLong (), 360) * SPEED_MULTI;
-	}
-	if (rotators[1] != NULL)
-	{
-		der_Xrequest.y_dest = rotators[1]->t_pos->getValueLong ();
-		der_Xrequest.y_speed = derConn->degsPerSec2MotorSpeed (rotators[1]->speed->getValueDouble (), rotators[1]->ticks->getValueLong (), 360) * SPEED_MULTI;
-	}
-
-	//der_xbits &= ~(0x01 << 4);
-	//der_ybits &= ~(0x01 << 4);
-
-	der_Xrequest.x_bits = der_xbits;
-	der_Xrequest.y_bits = der_ybits;
-
-	derConn->sendXAxisRequest (der_Xrequest);
-
-	if (rotators[0] != NULL)
-		rotators[0]->updated = false;
-	if (rotators[1] != NULL)
-		rotators[1]->updated = false;
 }
 
 void SitechAltAz::getTel ()
@@ -1026,10 +875,6 @@ void SitechAltAz::getPIDs ()
 	PIDs->addValue (telConn->getSiTechValue ('Y', "PPP"));
 	PIDs->addValue (telConn->getSiTechValue ('Y', "III"));
 	PIDs->addValue (telConn->getSiTechValue ('Y', "DDD"));
-
-	for (int i = 0; i < NUM_ROTATORS; i++)
-		if (rotators[i])
-			rotators[i]->getPIDs ();
 }
 
 int main (int argc, char **argv)

@@ -360,3 +360,9 @@ void AltAz::unlockPointing ()
 	updateMetaInformations (altMin);
 	updateMetaInformations (altMax);
 }
+
+void AltAz::parallacticTracking ()
+{
+	rts2core::CommandParallacticAngle cmd (this, getParallacticAngle ());
+	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd);
+}

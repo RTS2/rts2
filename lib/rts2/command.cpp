@@ -708,3 +708,10 @@ CommandDeviceStatus::CommandDeviceStatus (Block * master, Connection * _control_
 {
 	setCommand ("device_status");
 }
+
+CommandParallacticAngle::CommandParallacticAngle (Block * _master, double pa):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_PARALLACTIC_UPDATE " " << pa;
+	setCommand (_os);
+}

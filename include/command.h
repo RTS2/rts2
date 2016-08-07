@@ -146,6 +146,14 @@
 #define COMMAND_CUPOLA_AZ       "az"
 
 /**
+ * Distribution of the new parallactic angle. @ingroup RTS2Command
+ *
+ * Updates devices about parallactic angle, calculated at their master device.
+ * The only parameter so far is new value of parallactic angle.
+ */
+#define COMMAND_PARALLACTIC_UPDATE   "pa_update"
+
+/**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
  * to reach given state uses this to control their execution.
  */
@@ -852,6 +860,12 @@ class CommandDeviceStatus:public CommandStatusInfo
 {
 	public:
 		CommandDeviceStatus (Block * master, Connection * _control_conn);
+};
+
+class CommandParallacticAngle:public Command
+{
+	public:
+		CommandParallacticAngle (Block * _master, double pa);
 };
 
 }

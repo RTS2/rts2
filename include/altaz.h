@@ -84,6 +84,12 @@ class AltAz: public Telescope
 		 */
 		double getParallacticAngle () { return parallAngle->getValueDouble (); }
 
+		/**
+		 * Sends new target parallactic angle to 
+		 * devices requiring it (rotators,..).
+		 */
+		virtual void parallacticTracking ();
+
 		rts2core::ValueDouble *parallAngle;
 		rts2core::ValueDouble *derRate;
 

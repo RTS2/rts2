@@ -10,8 +10,6 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-sitech-gem rts2-teld-sitech-altaz \
 	rts2-teld-irait rts2-teld-tcsng
 
-noinst_HEADERS = sitech-rotator.h
-
 LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
@@ -66,8 +64,7 @@ rts2_teld_nexstar_SOURCES = nexstar.cpp
 
 rts2_teld_sitech_gem_SOURCES = sitech-gem.cpp
 
-rts2_teld_sitech_altaz_SOURCES = sitech-altaz.cpp sitech-rotator.cpp
-
+rts2_teld_sitech_altaz_SOURCES = sitech-altaz.cpp
 rts2_teld_irait_SOURCES = irait.cpp
 rts2_teld_irait_LDADD = -Lirait -lirait ${LIB_PTHREAD} ${LDADD}
 

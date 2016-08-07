@@ -1209,7 +1209,7 @@ void Telescope::postEvent (rts2core::Event * event)
 
 int Telescope::willConnect (rts2core::NetworkAddress * in_addr)
 {
-	if (in_addr->getType () == DEVICE_TYPE_CUPOLA)
+	if (in_addr->getType () == DEVICE_TYPE_CUPOLA || in_addr->getType () == DEVICE_TYPE_ROTATOR)
 		return 1;
 	return rts2core::Device::willConnect (in_addr);
 }

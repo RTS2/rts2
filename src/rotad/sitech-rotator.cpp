@@ -21,11 +21,12 @@
 
 using namespace rts2rotad;
 
-SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn):Rotator (0, NULL, name)
+SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn, SitechMulti *sitechBase):Rotator (0, NULL, name)
 {
 	setDeviceName (name);
 	sitech = conn;
 	axis = ax;
+	base = sitechBase;
 
 	updated = false;
 
@@ -60,14 +61,6 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 	ticks->setValueLong (67108864);
 }
 
-void SitechRotator::multiInit (int _debug)
-{
-	setNotDaemonize ();
-	setDebug (_debug);
-	initDaemon ();
-	beforeRun ();
-}
-
 void SitechRotator::getConfiguration ()
 {
 	acceleration->setValueDouble (sitech->getSiTechValue (axis, "R"));
@@ -83,6 +76,47 @@ void SitechRotator::getPIDs ()
 	PIDs->addValue (sitech->getSiTechValue (axis, "PPP"));
 	PIDs->addValue (sitech->getSiTechValue (axis, "III"));
 	PIDs->addValue (sitech->getSiTechValue (axis, "DDD"));
+}
+
+int SitechRotator::info ()
+{
+	return base->callInfo ();
+}
+
+int SitechRotator::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("stop"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sitech->siTechCommand (axis, "N");
+		return 0;
+	}
+	else if (conn->isCommand ("reset_errors"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sitech->resetErrors ();
+		return 0;
+	}
+	else if (conn->isCommand ("reset_controller"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sitech->resetController ();
+		getConfiguration ();
+		return 0;
+	}
+	else if (conn->isCommand ("go_auto"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sitech->siTechCommand ('X', "A");
+		sitech->siTechCommand ('Y', "A");
+		getConfiguration ();
+		return 0;
+	}
+	return Rotator::commandAuthorized (conn);
 }
 
 int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -104,6 +138,7 @@ void SitechRotator::setTarget (double tv)
 {
 	t_pos->setValueLong ((tv - zeroOffs->getValueFloat () - offset->getValueFloat ()) * ticks->getValueLong () / 360.0);
 	updated = true;
+	base->callUpdate ();
 }
 
 long SitechRotator::isRotating ()
@@ -172,9 +207,4 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 			break;
 		}
 	}
-}
-
-void SitechRotator::updateParallAngle (double pa)
-{
-	setTarget (pa);
 }

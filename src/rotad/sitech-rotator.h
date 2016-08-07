@@ -22,16 +22,17 @@
 
 #include "rotad.h"
 #include "connection/sitech.h"
+#include "sitech-multi.h"
 
 namespace rts2rotad
 {
 
+class SitechMulti;
+
 class SitechRotator: public Rotator
 {
 	public:
-		SitechRotator (const char axis, const char *name, rts2core::ConnSitech *conn);
-
-		void multiInit (int _debug);
+		SitechRotator (const char axis, const char *name, rts2core::ConnSitech *conn, SitechMulti *multiBase);
 
 		void calculateTarget (double pa_current, double pa_future, double t_diff, uint32_t tarpos, uint32_t tarspeed);
 
@@ -40,8 +41,6 @@ class SitechRotator: public Rotator
 		void getPIDs ();
 
 		void processAxisStatus (rts2core::SitechAxisStatus *der_status);
-
-		void updateParallAngle (double pa);
 
 		bool updated;
 
@@ -75,6 +74,10 @@ class SitechRotator: public Rotator
 		rts2core::ValueFloat *speed;
 
 	protected:
+		virtual int info ();
+
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual void setTarget (double tv);
@@ -82,6 +85,7 @@ class SitechRotator: public Rotator
 
 	private:
 		rts2core::ConnSitech *sitech;
+		SitechMulti *base;
 		char axis;
 
 		rts2core::ValueFloat *zeroOffs;

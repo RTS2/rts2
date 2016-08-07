@@ -35,6 +35,8 @@ class Rotator:public rts2core::Device
 		 */
 		Rotator (int argc, char **argv, const char *defname = "R0");
 
+		virtual int commandAuthorized (rts2core::Connection * conn);
+
 	protected:
 		virtual int idle ();
 
@@ -44,6 +46,7 @@ class Rotator:public rts2core::Device
 		 * Called to set rotator target and start rotating.
 		 */
 		virtual void setTarget (double tv) = 0;
+		virtual void updateParallacticAngle (double pa) { setTarget (pa); }
 
 		void setCurrentPosition (double cp);
 
@@ -64,6 +67,7 @@ class Rotator:public rts2core::Device
 	private:
 		rts2core::ValueDouble *currentPosition;
 		rts2core::ValueDoubleMinMax *targetPosition;
+		rts2core::ValueDouble *parallacticAngle;
 		rts2core::ValueDouble *toGo;
 
 		void updateToGo ();
