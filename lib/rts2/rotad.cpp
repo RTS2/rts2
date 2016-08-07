@@ -72,11 +72,14 @@ int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	return rts2core::Device::setValue (old_value, new_value);
 }
 
+void Rotator::setCurrentPosition (double cp)
+{
+	currentPosition->setValueDouble (cp);
+	updateToGo ();
+}
+
+
 void Rotator::updateToGo ()
 {
-	toGo->setValueDouble (ln_range_degrees (getCurrentPosition () - getTargetPosition ()));
-	if (toGo->getValueDouble () > 180)
-	{
-		toGo->setValueDouble (toGo->getValueDouble () - 360);
-	}
+	toGo->setValueDouble (getCurrentPosition () - getTargetPosition ());
 }

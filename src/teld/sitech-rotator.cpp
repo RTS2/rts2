@@ -102,13 +102,13 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 
 void SitechRotator::setTarget (double tv)
 {
-	int32_t cnts = (tv - zeroOffs->getValueFloat ()) * ticks->getValueLong () / 360.0;
-	sitech->setPosition (axis, cnts, speed->getValueDouble ());
+	t_pos->setValueLong ((tv - zeroOffs->getValueFloat ()) * ticks->getValueLong () / 360.0);
+	updated = true;
 }
 
 long SitechRotator::isRotating ()
 {
-	return -2;
+	return (labs (r_pos->getValueLong () - t_pos->getValueLong ()) < 2000) ? -2 : USEC_SEC;
 }
 
 void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
@@ -121,6 +121,8 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 	{
 		r_pos->setValueLong (der_status->y_pos);
 	}
+
+	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + zeroOffs->getValueFloat ());
 
 	// not stopped, not in manual mode
 	autoMode->setValueBool ((der_status->extra_bits & (axis == 'X' ? 0x02 : 0x20)) == 0);

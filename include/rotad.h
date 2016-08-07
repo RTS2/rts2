@@ -45,7 +45,7 @@ class Rotator:public rts2core::Device
 		 */
 		virtual void setTarget (double tv) = 0;
 
-		void setCurrentPosition (double cp) {currentPosition->setValueDouble (cp); }
+		void setCurrentPosition (double cp);
 
 		/**
 		 * Returns >0 if rotator is rotating image.
