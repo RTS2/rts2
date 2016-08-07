@@ -213,7 +213,7 @@ void calculateLCRC (const char *buf, size_t len, char crc[3])
 	{
 		sum += hexp2num (buf[i], buf[i+1]);
 	}
-	snprintf (crc, 3, "%02X", 0xFF & (0x100 - (sum & 0xFF)));
+	snprintf (crc, 3, "%02X", 0xFF & (~sum + 1));
 }
 
 SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
