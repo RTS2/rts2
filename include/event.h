@@ -122,6 +122,7 @@
 // executorque.h          1400-1449
 // nmonitor.h             1450-1499
 // bb.h                   1500-1549
+// apm-aux.h              1550-1599
 
 // local (device,..)     10000-
 

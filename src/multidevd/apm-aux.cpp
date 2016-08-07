@@ -21,8 +21,10 @@
 #include "apm-aux.h"
 #include "connection/apm.h"
 
-#define COVER_TIME    35
-#define BAFFLE_TIME   30
+#define COVER_TIME      35
+#define BAFFLE_TIME     30
+
+#define COMMAND_TIMER   1550
 
 using namespace rts2sensord;
 
@@ -44,8 +46,10 @@ APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool has
 	relay1 = NULL;
 	relay2 = NULL;
 
-	coverCommand = 0;
-	baffleCommand = 0;
+	coverCommand = NULL;
+	baffleCommand = NULL;
+
+	commandInProgress = NONE;
 
 	createValue (coverState, "cover", "mirror cover state", true);
 	coverState->addSelVal ("CLOSED");
@@ -124,6 +128,17 @@ void APMAux::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 	Sensor::changeMasterState (old_state, new_state);
 }
 
+void APMAux::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case COMMAND_TIMER:
+			info ();
+			break;
+	}
+	Sensor::postEvent (event);
+}
+
 int APMAux::info ()
 {
 	sendUDPMessage ("C999");
@@ -131,6 +146,26 @@ int APMAux::info ()
 	if (relay1 != NULL || relay2 != NULL)
 	{
         	sendUDPMessage ("A999");
+	}
+
+	switch (commandInProgress)
+	{
+		case OPENING:
+			if (baffle && baffle->getValueInteger () == 2)
+			{
+				openCover ();
+				commandInProgress = NONE;
+			}
+			break;
+		case CLOSING:
+			if (coverState && coverState->getValueInteger () == 0)
+			{
+				closeBaffle ();
+				commandInProgress = NONE;
+			}
+			break;
+		case NONE:
+			break;
 	}
 
 	return Sensor::info ();
@@ -160,12 +195,26 @@ int APMAux::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 
 int APMAux::open ()
 {
-	return 0;
+	if (baffle == NULL || baffle->getValueInteger () == 2)
+		return openCover ();
+	if (baffleCommand->getValueInteger () > time (NULL))
+		return -2;
+	commandInProgress = OPENING;
+	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
+	return openBaffle ();
 }
 
 int APMAux::close ()
 {
-	return 0;
+	if (baffle == NULL || baffle->getValueInteger () == 0 || coverState->getValueInteger () == 2)
+	{
+		commandInProgress = CLOSING;
+		addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
+		return closeCover ();
+	}
+	if (baffleCommand->getValueInteger () > time (NULL))
+		return -2;
+	return closeBaffle ();
 }
 
 int APMAux::openCover ()
@@ -179,8 +228,6 @@ int APMAux::openCover ()
 
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
 	sendValueAll (coverCommand);
-
-	info ();
 
 	return 0;
 }
@@ -196,8 +243,6 @@ int APMAux::closeCover ()
 
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
 	sendValueAll (coverCommand);
-
-	info ();
 
 	return 0;
 }

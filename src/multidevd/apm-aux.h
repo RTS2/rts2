@@ -44,6 +44,8 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
+		virtual void postEvent (rts2core::Event *event);
+
 	protected:
 		virtual int initHardware ();
 		virtual int info ();
@@ -60,6 +62,8 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		// to organize timeouts,..
 		rts2core::ValueTime *coverCommand;
 		rts2core::ValueTime *baffleCommand;
+
+		enum {NONE, OPENING, CLOSING} commandInProgress;
 	
 		int open ();
 		int close ();
