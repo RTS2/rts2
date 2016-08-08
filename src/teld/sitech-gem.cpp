@@ -1103,6 +1103,7 @@ void Sitech::runTracking ()
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
 	internalTracking (2.0, trackingFactor->getValueFloat ());
+	GEM::runTracking ();
 }
 
 int main (int argc, char **argv)

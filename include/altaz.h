@@ -80,6 +80,11 @@ class AltAz: public Telescope
 		void unlockPointing ();
 
 		/**
+		 * Sends updates to derotators.
+		 */
+		virtual void runTracking ();
+
+		/**
 		 * Sends new target parallactic angle to 
 		 * devices requiring it (rotators,..).
 		 */

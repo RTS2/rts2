@@ -363,6 +363,12 @@ void AltAz::unlockPointing ()
 	updateMetaInformations (altMax);
 }
 
+void AltAz::runTracking ()
+{
+	parallacticTracking ();
+	Telescope::runTracking ();
+}
+
 void AltAz::parallacticTracking ()
 {
 	double n = getNow ();

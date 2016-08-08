@@ -32,6 +32,7 @@ Rotator::Rotator (int argc, char **argv, const char *defname):rts2core::Device (
 	createValue (parallacticAngleRef, "parangle_ref", "time when parallactic angle was calculated", false);
 	createValue (parallacticAngle, "PARANGLE", "[deg] telescope parallactic angle", false, RTS2_DT_DEGREES);
 	createValue (parallacticAngleRate, "PARATE", "[deg/hour] calculated change of parallactic angle", false, RTS2_DT_DEGREES);
+	paTracking->setValueBool (true);
 
 	createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 	createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);

@@ -242,6 +242,8 @@ void Dummy::runTracking ()
 
 	t_axRa->setValueLong (target.ra * 10000);
 	t_axDec->setValueLong (target.dec * 10000);
+
+	Telescope::runTracking ();
 }
 
 int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
