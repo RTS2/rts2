@@ -87,6 +87,8 @@ class SitechAltAz:public AltAz
 		const char *tel_tty;
 		rts2core::ConnSitech *telConn;
 
+		unsigned int parUpdateCount;
+
 		rts2core::SitechAxisStatus altaz_status;
 		rts2core::SitechYAxisRequest altaz_Yrequest;
 		rts2core::SitechXAxisRequest altaz_Xrequest;
@@ -207,6 +209,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 
 	tel_tty = "/dev/ttyUSB0";
 	telConn = NULL;
+
+	parUpdateCount = 0;
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -435,6 +439,8 @@ int SitechAltAz::info ()
 int SitechAltAz::startResync ()
 {
 	getConfiguration ();
+
+	parUpdateCount = 0;
 
 	double JD = ln_get_julian_from_sys ();
 	struct ln_equ_posn tar;
@@ -701,8 +707,11 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		telConn->sendXAxisRequest (altaz_Xrequest);
 		updateTrackingFrequency ();
 	}
-	
-	parallacticTracking ();
+
+	if (parUpdateCount % 15 == 0)
+		parallacticTracking ();
+
+	parUpdateCount++;
 }
 
 void SitechAltAz::getConfiguration ()

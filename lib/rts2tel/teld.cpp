@@ -1223,6 +1223,7 @@ rts2core::DevClient *Telescope::createOtherType (rts2core::Connection * conn, in
 			cupolas->addValue (std::string (conn->getName ()));
 			return new ClientCupola (conn);
 		case DEVICE_TYPE_ROTATOR:
+			logStream (MESSAGE_INFO) << "connecting to rotator " << conn->getName () << sendLog;
 			rotators->addValue (std::string (conn->getName ()));
 			return new ClientRotator (conn);
 	}
