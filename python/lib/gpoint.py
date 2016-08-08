@@ -304,7 +304,7 @@ class GPoint:
 			self.diff_model_ha = normalize_ha_err(self.am_ha - self.ar_ha)
 			self.diff_model_dec = self.am_dec - self.ar_dec
 
-			self.diff_model_angular = self.fit_model_gem(self.best,self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt)
+			self.diff_model_angular = self.fit_model_altaz(self.best,self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt)
 		else:
 			# feed parameters to diff, obtain model differences. Closer to zero = better
 			self.f_model_ha = self.fit_model_ha(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
