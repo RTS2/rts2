@@ -120,6 +120,8 @@ Connection::Connection (int in_sock, Block * in_master):Object ()
 	otherDevice = NULL;
 	otherType = -1;
 
+	sendAll = true;
+
 	connectionTimeout = 300;	 // 5 minutes timeout (150 + 150)
 
 	statusStart = NAN;
