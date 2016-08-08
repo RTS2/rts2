@@ -54,14 +54,8 @@ void ClientCupola::notMoveFailed (int status)
 
 void ClientCupola::postEvent (rts2core::Event * event)
 {
-	struct ln_equ_posn *dome_position;
 	switch (event->getType ())
 	{
-		case EVENT_CUP_START_SYNC:
-			dome_position = (struct ln_equ_posn *) event->getArg ();
-			connection->queCommand (new rts2core::CommandCupolaMove (this, dome_position->ra, dome_position->dec));
-			dome_position->ra = NAN;
-			break;
 		case EVENT_CUP_NOT_MOVE:
 			connection->queCommand (new rts2core::CommandCupolaNotMove (this));
 			break;

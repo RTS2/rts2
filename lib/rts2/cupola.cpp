@@ -34,6 +34,9 @@ Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE
 
 	createValue (currentAz, "CUP_AZ", "cupola azimut", true, RTS2_DT_DEGREES);
 
+	createValue (trackTelescope, "track_telescope", "track telescope movements", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	trackTelescope->setValueBool (true);
+
 	targetDistance = 0;
 	observer = NULL;
 
@@ -196,7 +199,12 @@ bool Cupola::needSlitChange ()
 
 int Cupola::commandAuthorized (rts2core::Connection * conn)
 {
-	if (conn->isCommand (COMMAND_TELD_MOVE))
+	if (conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
+	{
+		if (trackTelescope->getValueBool () == false)
+			return -2;
+	}
+	if (conn->isCommand (COMMAND_CUPOLA_MOVE) || conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
 	{
 		double tar_ra;
 		double tar_dec;

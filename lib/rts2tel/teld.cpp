@@ -62,6 +62,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	parkPos = NULL;
 	parkFlip = NULL;
 
+	nextCupSync = 0;
+
 	useParkFlipping = false;
 	
 	decUpperLimit = NULL;
@@ -813,6 +815,12 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
 
+void Telescope::afterMovementStart ()
+{
+	nextCupSync = 0;
+	startCupolaSync ();
+}
+
 void Telescope::incMoveNum ()
 {
 	if (diffTrackRaDec)
@@ -1349,7 +1357,7 @@ void Telescope::stopTracking (const char *msg)
 
 void Telescope::runTracking ()
 {
-
+	startCupolaSync ();
 }
 
 void Telescope::updateTrackingFrequency ()
@@ -1547,9 +1555,14 @@ void Telescope::applyCorrections (double &tar_ra, double &tar_dec, bool writeVal
 
 void Telescope::startCupolaSync ()
 {
+	double n = getNow ();
+	if (nextCupSync > n)
+		return;
 	struct ln_equ_posn tar;
 	getTarget (&tar);
-	postEvent (new rts2core::Event (EVENT_CUP_START_SYNC, (void*) &tar));
+	rts2core::CommandCupolaSyncTel cmd (this, tar.ra, tar.dec);
+	queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
+	nextCupSync = n + 20;
 }
 
 int Telescope::endMove ()
@@ -1800,13 +1813,13 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		return ret;
 	}
 
-	// synchronize cupola
-	startCupolaSync ();
-
 	targetStarted->setNow ();
 	targetReached->setValueDouble (targetStarted->getValueDouble () + estimateTargetTime ());
 
 	infoAll ();
+
+	// synchronize cupola...
+	afterMovementStart ();
 
 	tarRaDec->resetValueChanged ();
 	oriRaDec->resetValueChanged ();

@@ -1197,13 +1197,15 @@ void APGTO::startCupolaSync ()
     target_equ.ra = fmod( target_equ.ra + 360., 360.) ;
     target_equ.dec= fmod( target_equ.dec, 90.) ; 
     if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
-      postEvent (new rts2core::Event (EVENT_CUP_START_SYNC, (void*) &target_equ));
+      rts2core::CommandCupolaSyncTel cmd (this, target_equ.ra, target_equ.dec);
+      queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
     } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
       //tel_equ.dec += 180. ;
       struct ln_equ_posn t_equ;
       t_equ.ra = target_equ.ra ;
       t_equ.dec= target_equ.dec + 180. ;
-      postEvent (new rts2core::Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
+      rts2core::CommandCupolaSyncTel cmd (this, t_equ.ra, t_equ.dec);
+      queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
     }
     logStream (MESSAGE_INFO) << "APGTO::startCupolaSync sync cupola" << sendLog;
   }

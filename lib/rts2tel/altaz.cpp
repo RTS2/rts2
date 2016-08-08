@@ -378,3 +378,10 @@ void AltAz::parallacticTracking ()
 	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd);
 	nextParUpdate = n + 1;
 }
+
+void AltAz::afterMovementStart ()
+{
+	Telescope::afterMovementStart ();
+	nextParUpdate = 0;
+	parallacticTracking ();
+}
