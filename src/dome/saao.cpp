@@ -404,7 +404,7 @@ int SAAO::endClose ()
 
 double SAAO::getSlitWidth (double alt)
 {
-	return 1;
+	return 3;
 }
 
 void SAAO::sendCommand (uint8_t address, const char *cmd, const char *data, char *ret, int retl)
