@@ -56,6 +56,9 @@ def print_model_input(filename,first):
 def normalize_az_err(errs):
 	return np.array(map(lambda x: x if x < 180 else x - 360, errs % 360))
 
+def normalize_ha_err(errs):
+	return np.array(map(lambda x: x if x < 180 else x - 360, errs % 360))
+
 # Computes, output, concetanetes and plot pointing models.
 class GPoint:
 	# @param   verbose  verbosity of the
@@ -86,16 +89,12 @@ class GPoint:
 
 	def hrz_to_equ(self,az,alt):
 		""" Transform AZ-ALT (in radians) vector to HA-DEC (in degrees) vector"""
-		A = np.sin(self.latitude_r) * np.sin(dec) + np.cos(self.latitude_r) * np.cos(dec) * np.cos(ha)
-		alt = np.arcsin(A)
 
-		Z = np.arccos(A)
-		Zs = np.sin(Z)
-		As = (np.cos(dec) * np.sin(ha)) / Zs;
-		Ac = (np.sin(self.latitude_r) * np.cos(dec) * np.cos(ha) - np.cos(self.latitude_r) * np.sin(dec)) / Zs;
-		Aa = np.arctan2(As,Ac)
+		ha = np.arctan2(np.sin(az), (np.cos(az) + np.sin(self.latitude_r) + np.tan(alt) * np.cos(self.latitude_r)))
+		dec = np.sin(self.latitude_r) * np.sin(alt) - np.cos(self.latitude_r) * np.cos(alt) * np.cos(az)
+		dec = np.arcsin(dec)
 
-		return np.degrees(alt),(np.degrees(Aa) + 360) % 360
+		return self.longitude - np.degrees(ha),np.degrees(dec)
 
 	def model_ha(self,params,a_ha,a_dec):
 		return - params[4] \
@@ -112,6 +111,19 @@ class GPoint:
 			- params[3]*(np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha) - np.sin(self.latitude_r) * np.cos(a_dec)) \
 			- params[8]*np.cos(a_ha)
 
+	def model_az(self,params,a_az,a_el):
+		return - params[0] \
+			- params[1]*np.sin(a_az)*np.tan(a_el) \
+			- params[2]*np.cos(a_az)*np.tan(a_el) \
+			- params[3]*np.tan(a_el) \
+			+ params[4]/np.cos(a_el)
+
+	def model_el(self,params,a_az,a_el):
+		return - params[5] \
+			+ params[1]*np.cos(a_az) \
+			- params[2]*np.sin(a_az) \
+			+ params[6]*np.cos(a_el)
+
 	# Fit functions.
 	# a_ha - target HA (hour angle)
 	# r_ha - calculated (real) HA
@@ -124,11 +136,23 @@ class GPoint:
 	def fit_model_dec(self,params,a_ha,r_ha,a_dec,r_dec):
 		return a_dec - r_dec + self.model_dec(params,a_ha,a_dec)
 
-	def fit_model(self,params,a_ra,r_ra,a_dec,r_dec):
+	def fit_model_gem(self,params,a_ra,r_ra,a_dec,r_dec):
 		if self.verbose:
 			print 'computing', self.latitude, self.latitude_r, params, a_ra, r_ra, a_dec, r_dec
 #		return np.concatenate((self.fit_model_ha(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
 		return libnova.angular_separation(np.degrees(a_ra + self.model_ha(params,a_ra,a_dec)),np.degrees(a_dec + self.model_dec(params,a_ra,a_dec)),np.degrees(r_ra),np.degrees(r_dec))
+
+	def fit_model_az(self,params,a_az,r_az,a_el,r_el):
+		return a_az - r_az + self.model_az(params,a_az,a_el)
+
+	def fit_model_el(self,params,a_az,r_az,a_el,r_el):
+		return a_el - r_el + self.model_el(params,a_az,a_el)
+
+	def fit_model_altaz(self,params,a_az,r_az,a_el,r_el):
+		if self.verbose:
+			print 'computing', self.latitude, self.latitude_r, params, a_az, r_az, a_el, r_el
+#		return np.concatenate((self.fit_model_ha(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
+		return libnova.angular_separation(np.degrees(a_az + self.model_az(params,a_az,a_el)),np.degrees(a_el + self.model_el(params,a_az,a_el)),np.degrees(r_az),np.degrees(r_el))
 
 	# open file, produce model
 	# expected format:
@@ -189,7 +213,6 @@ class GPoint:
 
 		data = []
 
-
 		if self.altaz:
 			data = [(float(a_az), float(a_alt), float(r_az), float(r_alt), sn, float(mjd)) for sn,mjd,lst,a_az,a_alt,ax_az,ax_alt,r_az,r_alt in rdata]
 		else:
@@ -236,44 +259,66 @@ class GPoint:
 
 
 		if self.altaz:
-			# transform to alt/az
-			self.aa_ha,self.aa_dec = self.equ_to_hrz(self.rad_aa_ha,self.rad_aa_dec)
-			self.ar_ha,self.ar_dec = self.equ_to_hrz(self.rad_ar_ha,self.rad_ar_dec)
+			self.rad_aa_az = np.radians(self.aa_az)
+			self.rad_aa_alt = np.radians(self.aa_alt)
+			self.rad_ar_az = np.radians(self.ar_az)
+			self.rad_ar_alt = np.radians(self.ar_alt)
+
+			# transform to ha/dec
+			self.aa_ha,self.aa_dec = self.hrz_to_equ(self.rad_aa_az,self.rad_aa_alt)
+			self.ar_ha,self.ar_dec = self.hrz_to_equ(self.rad_ar_az,self.rad_ar_alt)
 		else:
 			self.rad_aa_ha = np.radians(self.aa_ha)
 			self.rad_aa_dec = np.radians(self.aa_dec)
 			self.rad_ar_ha = np.radians(self.ar_ha)
 			self.rad_ar_dec = np.radians(self.ar_dec)
 
-			self.diff_ha = self.aa_ha - self.ar_ha
-			self.diff_dec = self.aa_dec - self.ar_dec
-			self.diff_angular = libnova.angular_separation(self.aa_ha,self.aa_dec,self.ar_ha,self.ar_dec)
-
 			# transform to alt/az
 			self.aa_alt,self.aa_az = self.equ_to_hrz(self.rad_aa_ha,self.rad_aa_dec)
 			self.ar_alt,self.ar_az = self.equ_to_hrz(self.rad_ar_ha,self.rad_ar_dec)
 
+		self.diff_ha = self.aa_ha - self.ar_ha
+		self.diff_dec = self.aa_dec - self.ar_dec
+		self.diff_angular = libnova.angular_separation(self.aa_ha,self.aa_dec,self.ar_ha,self.ar_dec)
+
 		self.diff_alt = self.aa_alt - self.ar_alt
 		self.diff_az = normalize_az_err(self.aa_az - self.ar_az)
 
-		self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model,par_init,args=(self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=10000)
+		if self.altaz:
+			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_altaz,par_init,args=(self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt),full_output=True,maxfev=10000)
+		else:
+			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_gem,par_init,args=(self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=10000)
 
 		print self.message,self.ier,self.info
 
-		# feed parameters to diff, obtain model differences. Closer to zero = better
+		if self.altaz:
 
-		self.f_model_ha = self.fit_model_ha(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
-		self.f_model_dec = self.fit_model_dec(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
+			self.f_model_az = self.fit_model_az(self.best,self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt)
+			self.f_model_alt = self.fit_model_el(self.best,self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt)
 
-		self.diff_model_ha = np.degrees(self.f_model_ha)
-		self.diff_model_dec = np.degrees(self.f_model_dec)
+			self.diff_model_az = np.degrees(self.f_model_az)
+			self.diff_model_alt = np.degrees(self.f_model_alt)
 
-		self.am_alt,self.am_az = self.equ_to_hrz(self.rad_ar_ha - self.f_model_ha,self.rad_ar_dec - self.f_model_dec)
+			self.am_ha,self.am_dec = self.hrz_to_equ(self.rad_ar_az - self.f_model_az,self.rad_ar_alt - self.f_model_alt)
 
-		self.diff_model_alt = self.am_alt - self.ar_alt
-		self.diff_model_az = normalize_az_err(self.am_az - self.ar_az)
+			self.diff_model_ha = normalize_ha_err(self.am_ha - self.ar_ha)
+			self.diff_model_dec = self.am_dec - self.ar_dec
 
-		self.diff_model_angular = self.fit_model(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
+			self.diff_model_angular = self.fit_model_gem(self.best,self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt)
+		else:
+			# feed parameters to diff, obtain model differences. Closer to zero = better
+			self.f_model_ha = self.fit_model_ha(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
+			self.f_model_dec = self.fit_model_dec(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
+
+			self.diff_model_ha = np.degrees(self.f_model_ha)
+			self.diff_model_dec = np.degrees(self.f_model_dec)
+
+			self.am_alt,self.am_az = self.equ_to_hrz(self.rad_ar_ha - self.f_model_ha,self.rad_ar_dec - self.f_model_dec)
+
+			self.diff_model_alt = self.am_alt - self.ar_alt
+			self.diff_model_az = normalize_az_err(self.am_az - self.ar_az)
+
+			self.diff_model_angular = self.fit_model_gem(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
 
 		return self.best
 

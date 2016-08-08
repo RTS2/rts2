@@ -229,6 +229,30 @@ class Rts2Comm:
 		image,fn = a.split()
 		return fn
 
+	def endShift(self, fileexpand = None, overwrite = False):
+		"""Ends shiftstore sequence.
+		Unless fileexpand parameter is provided, user is responsible to specify image treatment."""
+		if fileexpand:
+			if overwrite:
+				print "exposure_overwrite", fileexpand
+			else:
+				print "exposure_wfn", fileexpand
+		else:
+			print "endshift"
+		sys.stdout.flush()
+		a = self.readline()
+		if a == 'exposure_failed':
+			raise Rts2Exception("exposure failed")
+		if a == 'exposure_end_noimage':
+			return None
+		if a != "exposure_end":
+			self.log('E', "invalid return from exposure - expected exposure_end, received " + a)
+		if not (before_readout_callback is None):
+			before_readout_callback()
+		a = self.readline()
+		image,fn = a.split()
+		return fn
+
 	def progressUpdate(self,expected_end,start=time.time()):
 		print "progress",start,expected_end
 		sys.stdout.flush()
