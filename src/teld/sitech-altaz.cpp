@@ -551,6 +551,7 @@ void SitechAltAz::runTracking ()
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
 	internalTracking (2.0, trackingFactor->getValueFloat ());
+	AltAz::runTracking ();
 }
 
 int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -701,8 +702,6 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 		telConn->sendXAxisRequest (altaz_Xrequest);
 		updateTrackingFrequency ();
 	}
-
-	parallacticTracking ();
 }
 
 void SitechAltAz::getConfiguration ()

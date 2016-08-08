@@ -460,19 +460,11 @@ CommandStopGuide::CommandStopGuide (Block * _master, char dir):Command (_master)
 	setCommand (_os);
 }
 
-CommandCupolaMove::CommandCupolaMove (DevClientCupola * _copula, double ra, double dec):Command (_copula->getMaster ())
+CommandCupolaSyncTel::CommandCupolaSyncTel (Block * _master, double ra, double dec):Command (_master)
 {
 	std::ostringstream _os;
-	copula = _copula;
-	_os << "move " << ra << " " << dec;
+	_os << COMMAND_CUPOLA_SYNCTEL " " << ra << " " << dec;
 	setCommand (_os);
-}
-
-int CommandCupolaMove::commandReturnFailed (int status, Connection * conn)
-{
-	if (copula)
-		copula->syncFailed (status);
-	return Command::commandReturnFailed (status, conn);
 }
 
 CommandCupolaNotMove::CommandCupolaNotMove (DevClientCupola * _copula):Command (_copula->getMaster ())

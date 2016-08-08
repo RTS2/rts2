@@ -145,6 +145,9 @@
  */
 #define COMMAND_CUPOLA_AZ       "az"
 
+#define COMMAND_CUPOLA_MOVE     "move"
+#define COMMAND_CUPOLA_SYNCTEL  "synctel"
+
 /**
  * Distribution of the new parallactic angle. @ingroup RTS2Command
  *
@@ -653,13 +656,10 @@ class CommandStopGuideAll:public Command
 		}
 };
 
-class CommandCupolaMove:public Command
+class CommandCupolaSyncTel:public Command
 {
-	DevClientCupola * copula;
 	public:
-		CommandCupolaMove (DevClientCupola * _copula, double ra,
-			double dec);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		CommandCupolaSyncTel (Block * _master, double ra, double dec);
 };
 
 class CommandCupolaNotMove:public Command

@@ -101,6 +101,8 @@ class Cupola:public Dome
 		rts2core::ValueDouble *tarAz;
 		rts2core::ValueDouble *currentAz;
 
+		rts2core::ValueBool *trackTelescope;
+
 		char *configFile;
 
 		double targetDistance;

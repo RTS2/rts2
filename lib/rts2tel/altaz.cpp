@@ -363,6 +363,12 @@ void AltAz::unlockPointing ()
 	updateMetaInformations (altMax);
 }
 
+void AltAz::runTracking ()
+{
+	parallacticTracking ();
+	Telescope::runTracking ();
+}
+
 void AltAz::parallacticTracking ()
 {
 	double n = getNow ();
@@ -371,4 +377,11 @@ void AltAz::parallacticTracking ()
 	rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), derRate->getValueDouble ());
 	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd);
 	nextParUpdate = n + 1;
+}
+
+void AltAz::afterMovementStart ()
+{
+	Telescope::afterMovementStart ();
+	nextParUpdate = 0;
+	parallacticTracking ();
 }

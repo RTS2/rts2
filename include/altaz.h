@@ -80,6 +80,11 @@ class AltAz: public Telescope
 		void unlockPointing ();
 
 		/**
+		 * Sends updates to derotators.
+		 */
+		virtual void runTracking ();
+
+		/**
 		 * Sends new target parallactic angle to 
 		 * devices requiring it (rotators,..).
 		 */
@@ -103,6 +108,8 @@ class AltAz: public Telescope
 		rts2core::ValueLong *azMax;
 		rts2core::ValueLong *altMin;
 		rts2core::ValueLong *altMax;
+
+		virtual void afterMovementStart ();
 
 	private:
 		double cos_lat;

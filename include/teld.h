@@ -1001,6 +1001,9 @@ class Telescope:public rts2core::Device
 		 * Apply refraction correction.
 		 */
 		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		virtual void afterMovementStart ();
+
 	private:
 		rts2core::Connection * move_connection;
 		int moveInfoCount;
@@ -1276,6 +1279,8 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *decUpperLimit;
 
 		void resetMpecTLE ();
+
+		double nextCupSync;
 };
 
 };

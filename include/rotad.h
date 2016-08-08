@@ -76,9 +76,21 @@ class Rotator:public rts2core::Device
 		double getDifference () { return toGo->getValueDouble (); }
 
 	private:
+		/**
+		 * Update tracking frequency. Should be run after new tracking vector
+		 * is send to the mount motion controller.
+		 */
+		void updateTrackingFrequency ();
+
 		rts2core::ValueDouble *currentPosition;
 		rts2core::ValueDoubleMinMax *targetPosition;
+
 		rts2core::ValueBool *paTracking;
+		rts2core::ValueDoubleStat *trackingFrequency;
+		rts2core::ValueInteger *trackingFSize;
+		rts2core::ValueFloat *trackingWarning;
+		double lastTrackingRun;
+
 		rts2core::ValueTime *parallacticAngleRef;
 		rts2core::ValueDouble *parallacticAngle;
 		rts2core::ValueDouble *parallacticAngleRate;
