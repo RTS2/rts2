@@ -344,8 +344,13 @@ class GPoint:
 
 		print 'DIFF_MODEL RA',' '.join(map(str,self.diff_model_ha*3600))
 		print 'DIFF_MODEL DEC',' '.join(map(str,self.diff_model_dec*3600))
-		print 'RTS2_MODEL',' '.join(map(str,self.best))
+		print self.get_model_type(),' '.join(map(str,self.best))
 
+	def get_model_type(self):
+		if self.altaz:
+			return 'RTS2_ALTAZ'
+		else:
+			return 'RTS2_GEM'
 
 	def print_stat(self):
 		# calculates root mean squeare of vector/array
