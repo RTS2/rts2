@@ -35,9 +35,8 @@ def generateModel(args):
 
 	if args.model_output is not None:
 		f = open(args.model_output,'w+')
-		f.write('RTS2_MODEL ')
-		for b in model.best:
-			f.write('{0} '.format(b))
+		f.write(model.get_model_type() + ' ')
+		f.write(' '.join(map(lambda x:str(x),model.best)))
 		f.close()
 	if args.error_output is not None:
 		f = open(args.error_output,'w+')
