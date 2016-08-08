@@ -213,6 +213,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
 	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
+	createConstValue (telPressure, "PRESSURE", "observatory atmospheric pressure", false, RTS2_VALUE_WRITABLE);
+	telPressure->setValueFloat (1000);
 
 	createValue (refreshIdle, "refresh_idle", "idle and tracking refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
 	createValue (refreshSlew, "refresh_slew", "slew refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
@@ -808,7 +810,7 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	obs.lat = telLatitude->getValueDouble ();
 
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
-	ref = ln_get_refraction_adj (hrz.alt, getAltitudePressure (getAltitude (), 1010), 10);
+	ref = ln_get_refraction_adj (hrz.alt, getPressure (), 10);
 	hrz.alt += ref;
 	if (writeValue)
 		refraction->setValueDouble (ref);
@@ -1284,6 +1286,12 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	}
 
 	rts2core::Device::changeMasterState (old_state, new_state);
+}
+
+void Telescope::setTelAltitude (float altitude)
+{
+	telAltitude->setValueDouble (altitude);
+	telPressure->setValueFloat (getAltitudePressure (altitude, 1010));
 }
 
 void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)

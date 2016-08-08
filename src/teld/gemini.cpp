@@ -999,7 +999,7 @@ int Gemini::initValues ()
 	if (ret <= 0)
 		return -1;
 	buf[4] = '\0';
-	telAltitude->setValueDouble (500);
+	setTelAltitude (500);
 
 	telFlip->setValueInteger (0);
 

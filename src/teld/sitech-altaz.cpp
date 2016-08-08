@@ -232,7 +232,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true)
 	fastSyncSpeed->setValueFloat (4);
 
 	createValue (trackingFactor, "tracking_factor", "tracking speed multiplier", false, RTS2_VALUE_WRITABLE);
-	trackingFactor->setValueFloat (0.89);
+	trackingFactor->setValueFloat (1);
 
 	createValue (az_acceleration, "az_acceleration", "[deg/s^2] AZ motor acceleration", false);
 	createValue (alt_acceleration, "alt_acceleration", "[deg/s^2] Alt motor acceleration", false);
@@ -332,7 +332,7 @@ int SitechAltAz::initHardware ()
 
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	/* Make the connection */
 	

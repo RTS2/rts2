@@ -649,7 +649,7 @@ int Sitech::initHardware ()
 
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	/* Make the connection */
 	

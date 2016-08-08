@@ -99,6 +99,9 @@ class Telescope:public rts2core::Device
 		double getLatitude () { return telLatitude->getValueDouble (); }
 		double getLongitude () { return telLongitude->getValueDouble (); }
 		double getAltitude () { return telAltitude->getValueDouble (); }
+		float getPressure () { return telPressure->getValueFloat (); }
+
+		void setTelAltitude (float altitude);
 
 		double getHourAngle () { return hourAngle->getValueDouble (); }
 
@@ -398,6 +401,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *telLongitude;
 		rts2core::ValueDouble *telLatitude;
 		rts2core::ValueDouble *telAltitude;
+		rts2core::ValueFloat *telPressure;
 
 		/**
 		 * Check if telescope is moving to fixed position. Called during telescope

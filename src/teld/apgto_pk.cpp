@@ -1592,7 +1592,7 @@ int APGTO::initValues ()
 
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	if(( ret= setBasicData()) != 0)
 		return -1 ;

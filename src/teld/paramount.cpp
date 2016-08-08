@@ -700,7 +700,7 @@ int Paramount::initHardware ()
 
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	logStream (MESSAGE_DEBUG) << "MKS3Init" << sendLog;
 	ret = MKS3Init (device_name);
