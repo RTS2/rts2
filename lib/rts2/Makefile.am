@@ -1,7 +1,5 @@
 # Process this file with automake to produce Makefile.in
 
-SUBDIRS = vermes
-
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
 AM_CFLAGS=@NOVA_CFLAGS@ -I../../include
 
@@ -73,3 +71,5 @@ EXTRA_DIST += nimotion.c
 else
 librts2_la_SOURCES += nimotion.c
 endif
+
+SUBDIRS = vermes

@@ -649,6 +649,13 @@ class Connection:public Object
 		 */
 		DataAbstractRead *lastDataChannel (int chan);
 
+		/**
+		 * Send value using sendValueAll?
+		 */
+		bool getSendAll () { return sendAll; }
+
+		void setSendAll (bool sa) { sendAll = sa; }
+
 	protected:
 		char *buf;
 		size_t buf_size;
@@ -776,6 +783,8 @@ class Connection:public Object
 		int centrald_id;		// id of connection on central server
 		in_addr addr;
 		int port;				 // local port & connection
+
+		bool sendAll;	// if true, sendValueAll will send the value to the connection
 
 		std::list < Command * > commandQue;
 		Command *runningCommand;

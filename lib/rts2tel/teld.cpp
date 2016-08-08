@@ -1200,8 +1200,12 @@ void Telescope::postEvent (rts2core::Event * event)
 			maskState (TEL_MASK_CUP, TEL_NO_WAIT_CUP);
 			break;
 		case EVENT_CUP_ENDED:
-			logStream (MESSAGE_INFO) << "removed " << ((ClientCupola *)(event->getArg ()))->getName () << sendLog;
+			logStream (MESSAGE_INFO) << "removed cupola " << ((ClientCupola *)(event->getArg ()))->getName () << sendLog;
 			cupolas->remove (((ClientCupola *)(event->getArg ()))->getName ());
+			break;
+		case EVENT_ROT_ENDED:
+			logStream (MESSAGE_INFO) << "removed rotator " << ((ClientRotator *)(event->getArg ()))->getName () << sendLog;
+			rotators->remove (((ClientRotator *)(event->getArg ()))->getName ());
 			break;
 	}
 	rts2core::Device::postEvent (event);
@@ -1225,6 +1229,7 @@ rts2core::DevClient *Telescope::createOtherType (rts2core::Connection * conn, in
 		case DEVICE_TYPE_ROTATOR:
 			logStream (MESSAGE_INFO) << "connecting to rotator " << conn->getName () << sendLog;
 			rotators->addValue (std::string (conn->getName ()));
+			conn->setSendAll (false);
 			return new ClientRotator (conn);
 	}
 	return rts2core::Device::createOtherType (conn, other_device_type);

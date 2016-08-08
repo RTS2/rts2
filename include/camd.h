@@ -262,7 +262,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual void afterNight ()
 		{
-			if (rts2ControlCooling)
+			if (rts2ControlCooling && rts2ControlCooling->getValueBool ())
 				switchCooling (false);
 		}
 
@@ -881,14 +881,16 @@ class Camera:public rts2core::ScriptDevice
 
 		/**
 		 * Create CCD target temperature. Used for devices which can
-		 * actively regulate CCD temperature. It creates tempSet and 
-		 * nightCoolTemp variables.
+		 * actively regulate CCD temperature. It creates tempSet,
+		 * nightCoolTemp and autocooling variables.
 		 */
 		void createTempSet ()
 		{
 			createValue (coolingOnOff, "COOLING", "camera cooling start/stop", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF | RTS2_VALUE_AUTOSAVE, CAM_WORKING);
 			createValue (tempSet, "CCD_SET", "CCD set temperature", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			createValue (rts2ControlCooling, "autocooling", "turn off cooling after night", false, RTS2_VALUE_WRITABLE);
+			rts2ControlCooling->setValueBool (true);
 			nightCoolTemp->setValueFloat (NAN);
 			addOption ('c', NULL, 1, "night cooling temperature");
 		}
@@ -1028,7 +1030,7 @@ class Camera:public rts2core::ScriptDevice
 		char *focuserDevice;
 		std::vector < const char * > wheelDevices;
 
-		bool rts2ControlCooling;
+		rts2core::ValueBool *rts2ControlCooling;
 
 		int lastFilterNum;
 

@@ -386,7 +386,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	dataChannels = NULL;
 	channels = NULL;
 
-        rts2ControlCooling = true;
+	rts2ControlCooling = NULL;
 
 	tempAir = NULL;
 	tempCCD = NULL;
@@ -552,7 +552,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	focuserMoving->setValueBool (false);
 
 	// other options..
-	addOption (OPT_RTS2_COOLING, "no-autocooling", 0, "when set, RTS2 did not switch cooling of at the end of night");
+	addOption (OPT_RTS2_COOLING, "no-autocooling", 0, "when set, RTS2 did not switch cooling off at the end of night");
 	addOption (OPT_COMMENTS, "add-comments", 1, "add given number of comment fields");
 	addOption (OPT_HISTORIES, "add-history", 1, "add given number of history fields");
 	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
@@ -780,7 +780,8 @@ int Camera::processOption (int in_opt)
 			comments = atoi (optarg);
 			break;
 		case OPT_RTS2_COOLING:
-			rts2ControlCooling = false;
+			if (rts2ControlCooling != NULL)
+				rts2ControlCooling->setValueBool (false);
 			break;
 		case OPT_FOCUS:
 			focuserDevice = optarg;

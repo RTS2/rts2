@@ -1049,9 +1049,11 @@ void Daemon::sendValueAll (Value * value)
 	{
 		connections_t::iterator iter;
 		for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
-			value->send (*iter);
+			if ((*iter)->getSendAll ())
+				value->send (*iter);
 		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-			value->send (*iter);
+			if ((*iter)->getSendAll ())
+				value->send (*iter);
 		value->resetNeedSend ();
 	}
 }

@@ -77,6 +77,8 @@ Connection::Connection (Block * in_master):Object ()
 	otherDevice = NULL;
 	otherType = -1;
 
+	sendAll = true;
+
 	statusStart = NAN;
 	statusExpectedEnd = NAN;
 
