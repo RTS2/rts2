@@ -301,17 +301,25 @@ std::string Connection::getStateString ()
 			_os << "weather " << real_state;
 			break;
 		case DEVICE_TYPE_ROTATOR:
-			switch (real_state & ROT_MASK_ROTATING)
+			if (real_state & ROT_PA_TRACK)
 			{
-				case ROT_IDLE:
-					_os << "idle";
-					break;
-				case ROT_ROTATING:
-					_os << "ROTATING";
-					break;
-				default:
-					_os << "UNKNOWN";	
+				_os << "TRACKING";
 			}
+			else
+			{
+				switch  (real_state & ROT_MASK_ROTATING)
+				{
+					case ROT_IDLE:
+						_os << "idle";
+						break;
+					case ROT_ROTATING:
+						_os << "ROTATING";
+						break;
+					default:
+						_os << "UNKNOWN";
+				}
+			}
+
 			break;
 		case DEVICE_TYPE_PHOT:
 			if (real_state & PHOT_INTEGRATE)

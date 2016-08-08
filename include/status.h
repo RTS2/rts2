@@ -213,6 +213,11 @@ typedef uint32_t rts2_status_t;
 #define ROT_IDLE            0x000
 #define ROT_ROTATING        0x001
 
+// rotator tracking/not tracking
+#define ROT_MASK_PATRACK    0x002
+#define ROT_PA_NOT          0x000
+#define ROT_PA_TRACK        0x002
+
 // telescope status
 #define TEL_MASK_MOVING     0x007
 #define TEL_MASK_CUP_MOVING 0x00f

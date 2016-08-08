@@ -71,8 +71,21 @@ class GPoint:
 		if latitude is not None:
 			self.latitude_r = np.radians(latitude)
 
-	# transform HA-DEC vector to ALT-AZ vector
 	def equ_to_hrz(self,ha,dec):
+		""" Transform HA-DEC (in radians) vector to ALT-AZ (in degrees) vector"""
+		A = np.sin(self.latitude_r) * np.sin(dec) + np.cos(self.latitude_r) * np.cos(dec) * np.cos(ha)
+		alt = np.arcsin(A)
+
+		Z = np.arccos(A)
+		Zs = np.sin(Z)
+		As = (np.cos(dec) * np.sin(ha)) / Zs;
+		Ac = (np.sin(self.latitude_r) * np.cos(dec) * np.cos(ha) - np.cos(self.latitude_r) * np.sin(dec)) / Zs;
+		Aa = np.arctan2(As,Ac)
+
+		return np.degrees(alt),(np.degrees(Aa) + 360) % 360
+
+	def hrz_to_equ(self,az,alt):
+		""" Transform AZ-ALT (in radians) vector to HA-DEC (in degrees) vector"""
 		A = np.sin(self.latitude_r) * np.sin(dec) + np.cos(self.latitude_r) * np.cos(dec) * np.cos(ha)
 		alt = np.arcsin(A)
 

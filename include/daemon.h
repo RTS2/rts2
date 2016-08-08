@@ -486,6 +486,8 @@ class Daemon:public rts2core::Block
 			info_time->setValueInteger (_time);
 		}
 
+		double getInfoTime () { return info_time->getValueDouble (); }
+
 		/**
 		 * Get time from last info time in seconds (and second fractions).
 		 *

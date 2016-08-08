@@ -862,10 +862,19 @@ class CommandDeviceStatus:public CommandStatusInfo
 		CommandDeviceStatus (Block * master, Connection * _control_conn);
 };
 
+/**
+ * Update parallactic angle (PA) tracking. Parameters of the command are:
+ *
+ * <ol>
+ *   <li>time when PA was calculated</li>
+ *   <li>calculated PA</li>
+ *   <li>rate of PA change (in degrees/hour)</li>
+ * </ol>
+ */
 class CommandParallacticAngle:public Command
 {
 	public:
-		CommandParallacticAngle (Block * _master, double pa);
+		CommandParallacticAngle (Block * _master, double reftime, double pa, double rate);
 };
 
 }

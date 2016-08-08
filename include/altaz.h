@@ -80,11 +80,6 @@ class AltAz: public Telescope
 		void unlockPointing ();
 
 		/**
-		 * Returns current (target) parralactic angle.
-		 */
-		double getParallacticAngle () { return parallAngle->getValueDouble (); }
-
-		/**
 		 * Sends new target parallactic angle to 
 		 * devices requiring it (rotators,..).
 		 */
@@ -111,6 +106,7 @@ class AltAz: public Telescope
 
 	private:
 		double cos_lat;
+		double nextParUpdate;
 };
 
 };

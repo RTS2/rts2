@@ -47,6 +47,8 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	azSlewMargin->setValueDouble (0);
 
 	cos_lat = 0.1;
+
+	nextParUpdate = 0;
 }
 
 AltAz::~AltAz (void)
@@ -363,6 +365,10 @@ void AltAz::unlockPointing ()
 
 void AltAz::parallacticTracking ()
 {
-	rts2core::CommandParallacticAngle cmd (this, getParallacticAngle ());
+	double n = getNow ();
+	if (nextParUpdate > n)
+		return;
+	rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), derRate->getValueDouble ());
 	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd);
+	nextParUpdate = n + 1;
 }

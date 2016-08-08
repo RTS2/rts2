@@ -26,18 +26,24 @@ Rotator::Rotator (int argc, char **argv, const char *defname):rts2core::Device (
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
 	createValue (targetPosition, "TAR_POS", "[deg] target rotator position", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (toGo, "TAR_DIFF", "[deg] difference between target and current position", false, RTS2_DT_DEG_DIST);
-	createValue (parallacticAngle, "PARANGLE", "[deg] telescope parallactic angle", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	createValue (paTracking, "parangle_track", "run parralactic tracking code", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (parallacticAngleRef, "parangle_ref", "time when parallactic angle was calculated", false);
+	createValue (parallacticAngle, "PARANGLE", "[deg] telescope parallactic angle", false, RTS2_DT_DEGREES);
+	createValue (parallacticAngleRate, "PARATE", "[deg/hour] calculated change of parallactic angle", false, RTS2_DT_DEGREES);
 }
 
 int Rotator::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand (COMMAND_PARALLACTIC_UPDATE))
 	{
+		double reftime;
 		double pa;
-		if (conn->paramNextDouble (&pa) || !conn->paramEnd ())
+		double rate;
+		if (conn->paramNextDouble (&reftime) || conn->paramNextDouble (&pa) || conn->paramNextDouble (&rate) || !conn->paramEnd ())
 			return -2;
+		parallacticAngleRef->setValueDouble (reftime);
 		parallacticAngle->setValueDouble (pa);
-		updateParallacticAngle (pa);
+		parallacticAngleRate->setValueDouble (rate);
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);
@@ -70,6 +76,13 @@ int Rotator::idle ()
 		sendValueAll (currentPosition);
 		sendValueAll (toGo);
 	}
+	if ((getState () & ROT_MASK_PATRACK) == ROT_PA_TRACK)
+	{
+		double t = getNow ();
+		double pa = getPA (t);
+		if (!isnan (pa))
+			setTarget (getPA (t));
+	}
 	return rts2core::Device::idle ();
 }
 
@@ -83,9 +96,9 @@ int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		maskState (ROT_MASK_ROTATING | BOP_EXPOSURE, ROT_ROTATING | BOP_EXPOSURE, "rotator rotation started");
 		return 0;
 	}
-	else if (old_value == parallacticAngle)
+	if (old_value == paTracking)
 	{
-		updateParallacticAngle (new_value->getValueDouble ());
+		maskState (ROT_MASK_PATRACK, ((rts2core::ValueBool *) new_value)->getValueBool () ? ROT_PA_TRACK : ROT_PA_NOT, "change PA rotation");
 		return 0;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
@@ -95,6 +108,11 @@ void Rotator::setCurrentPosition (double cp)
 {
 	currentPosition->setValueDouble (cp);
 	updateToGo ();
+}
+
+double Rotator::getPA (double t)
+{
+	return parallacticAngle->getValueDouble () + (parallacticAngleRate->getValueDouble () / 3600.0) * (t - parallacticAngleRef->getValueDouble ());
 }
 
 void Rotator::updateToGo ()

@@ -25,6 +25,8 @@ namespace rts2rotad
 /**
  * Abstract class for rotators.
  *
+ * PA in this class stands for Parallactic Angle.
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rotator:public rts2core::Device
@@ -46,9 +48,18 @@ class Rotator:public rts2core::Device
 		 * Called to set rotator target and start rotating.
 		 */
 		virtual void setTarget (double tv) = 0;
-		virtual void updateParallacticAngle (double pa) { setTarget (pa); }
 
 		void setCurrentPosition (double cp);
+
+		/**
+		 * Calculate current PA as linear estimate from the past value and speed.
+		 */
+		double getPA (double t);
+
+		/**
+		 * Runs PA tracking.
+		 */
+		void runPATracking ();
 
 		/**
 		 * Returns >0 if rotator is rotating image.
@@ -67,7 +78,10 @@ class Rotator:public rts2core::Device
 	private:
 		rts2core::ValueDouble *currentPosition;
 		rts2core::ValueDoubleMinMax *targetPosition;
+		rts2core::ValueBool *paTracking;
+		rts2core::ValueTime *parallacticAngleRef;
 		rts2core::ValueDouble *parallacticAngle;
+		rts2core::ValueDouble *parallacticAngleRate;
 		rts2core::ValueDouble *toGo;
 
 		void updateToGo ();
