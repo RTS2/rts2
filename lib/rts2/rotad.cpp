@@ -23,6 +23,8 @@ using namespace rts2rotad;
 
 Rotator::Rotator (int argc, char **argv, const char *defname):rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, defname)
 {
+	lastTrackingRun = 0;
+
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
 	createValue (targetPosition, "TAR_POS", "[deg] target rotator position", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (toGo, "TAR_DIFF", "[deg] difference between target and current position", false, RTS2_DT_DEG_DIST);
@@ -30,6 +32,12 @@ Rotator::Rotator (int argc, char **argv, const char *defname):rts2core::Device (
 	createValue (parallacticAngleRef, "parangle_ref", "time when parallactic angle was calculated", false);
 	createValue (parallacticAngle, "PARANGLE", "[deg] telescope parallactic angle", false, RTS2_DT_DEGREES);
 	createValue (parallacticAngleRate, "PARATE", "[deg/hour] calculated change of parallactic angle", false, RTS2_DT_DEGREES);
+
+	createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
+	createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
+	createValue (trackingWarning, "tracking_warning", "issue warning if tracking frequency drops bellow this number", false, RTS2_VALUE_WRITABLE);
+	trackingWarning->setValueFloat (1);
+	trackingFSize->setValueInteger (20);
 }
 
 int Rotator::commandAuthorized (rts2core::Connection * conn)
@@ -81,7 +89,10 @@ int Rotator::idle ()
 		double t = getNow ();
 		double pa = getPA (t);
 		if (!isnan (pa))
+		{
 			setTarget (getPA (t));
+			updateTrackingFrequency ();
+		}
 	}
 	return rts2core::Device::idle ();
 }
@@ -94,12 +105,10 @@ int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		targetPosition->setValueDouble (new_value->getValueDouble ());
 		updateToGo ();
 		maskState (ROT_MASK_ROTATING | BOP_EXPOSURE, ROT_ROTATING | BOP_EXPOSURE, "rotator rotation started");
-		return 0;
 	}
 	if (old_value == paTracking)
 	{
 		maskState (ROT_MASK_PATRACK, ((rts2core::ValueBool *) new_value)->getValueBool () ? ROT_PA_TRACK : ROT_PA_NOT, "change PA rotation");
-		return 0;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
@@ -118,4 +127,18 @@ double Rotator::getPA (double t)
 void Rotator::updateToGo ()
 {
 	toGo->setValueDouble (getCurrentPosition () - getTargetPosition ());
+}
+
+void Rotator::updateTrackingFrequency ()
+{
+	double n = getNow ();
+	if (!isnan (lastTrackingRun) && n != lastTrackingRun)
+	{
+		double tv = 1 / (n - lastTrackingRun);
+		trackingFrequency->addValue (tv, trackingFSize->getValueInteger ());
+		trackingFrequency->calculate ();
+		if (tv < trackingWarning->getValueFloat ())
+			logStream (MESSAGE_ERROR) << "lost rotator tracking, frequency is " << tv << sendLog;
+	}
+	lastTrackingRun = n;
 }
