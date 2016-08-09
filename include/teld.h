@@ -87,7 +87,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (rts2core::Event * event);
@@ -364,6 +364,8 @@ class Telescope:public rts2core::Device
 		 */
 		void applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD);
 
+		void applyModelAltAz (struct ln_hrz_posn *hrz);
+
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.
 		 * Sets MO_RTS2 (modelRaDec) and tel_target (telTargetRA) variables, also includes applyCorrRaDec if applyCorr parameter set to true.
@@ -617,6 +619,7 @@ class Telescope:public rts2core::Device
 		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValue, double haMargin, bool forceShortest);
 
 		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
+		void addDiffAltAz (struct ln_hrz_posn *hrz, double secdiff);
 
 		void getTargetAltAz (struct ln_hrz_posn *hrz)
 		{
@@ -950,6 +953,8 @@ class Telescope:public rts2core::Device
 		 */
 		virtual void setDiffTrack (double dra, double ddec);
 
+		virtual void setDiffTrackAltAz (double daz, double dalt);
+
 		/**
 		 * Hard horizon. Use it to check if telescope coordinates are within limits.
 		 */
@@ -1000,6 +1005,9 @@ class Telescope:public rts2core::Device
 		 */
 		double getDiffTrackRa () { return diffTrackRaDec->getRa (); }
 		double getDiffTrackDec () { return diffTrackRaDec->getDec (); }
+
+		double getDiffTrackAz () { return diffTrackAltAz->getAz (); }
+		double getDiffTrackAlt () { return diffTrackAltAz->getAlt (); }
 
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
@@ -1100,6 +1108,13 @@ class Telescope:public rts2core::Device
 		 * Differential tracking on/off.
 		 */
 		rts2core::ValueBool *diffTrackOn;
+
+		/**
+		 * Alt/az diferential tracking.
+		 */
+		rts2core::ValueAltAz *diffTrackAltAz;
+		rts2core::ValueDouble *diffTrackAltAzStart;
+		rts2core::ValueBool *diffTrackAltAzOn;
 
 		/**
 		 * Coordinates of the object, after offsets are applied (in J2000).

@@ -52,7 +52,7 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, int hasUnTelCoordinates):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, int hasUnTelCoordinates, bool hasAltAzDiff):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -74,8 +74,15 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	offsRaDec->setValueRaDec (0, 0);
 
-	createValue (offsAltAz, "AZALOFFS", "alt-azimuth offsets", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
-	offsAltAz->setValueAltAz (0, 0);
+	if (hasAltAzDiff)
+	{
+		createValue (offsAltAz, "AZALOFFS", "alt-azimuth offsets", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
+		offsAltAz->setValueAltAz (0, 0);
+	}
+	else
+	{
+		offsAltAz = NULL;
+	}
 
 	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	woffsRaDec->setValueRaDec (0, 0);
@@ -98,6 +105,27 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		diffTrackRaDec = NULL;
 		diffTrackStart = NULL;
 		diffTrackOn = NULL;
+	}
+
+	if (hasAltAzDiff)
+	{
+		createValue (diffTrackAltAz, "AZALRATE", "[deg/hour] differential tracking rate in alt/az", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+		diffTrackAltAz->setValueAltAz (0, 0);
+
+		createValue (diffTrackAltAzStart, "AZALSTART", "start time of differential tracking", false);
+		createValue (diffTrackAltAzOn, "AZALON", "differential tracking on/off", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		diffTrackAltAzOn->setValueBool (false);
+	}
+	else
+	{
+		diffTrackAltAz = NULL;
+		diffTrackAltAzStart = NULL;
+		diffTrackAltAzOn = NULL;
+	}
+
+	if (hasAltAzDiff)
+	{
+
 	}
 
 	if (hasTracking)
@@ -473,6 +501,15 @@ void Telescope::addDiffRaDec (struct ln_equ_posn *tar, double secdiff)
 	}
 }
 
+void Telescope::addDiffAltAz (struct ln_hrz_posn *hrz, double secdiff)
+{
+	if (diffTrackAltAz && diffTrackAltAzOn->getValueBool () == true)
+	{
+		hrz->az += getDiffTrackAz () * secdiff / 3600.0;
+		hrz->alt += getDiffTrackAlt () * secdiff / 3600.0;
+	}
+}
+
 void Telescope::createRaPAN ()
 {
 	createValue (raPAN, "ra_pan", "RA panning", false, RTS2_VALUE_WRITABLE);
@@ -705,11 +742,27 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 		logStream (MESSAGE_INFO) << "switching DON to " << ((rts2core::ValueBool *) new_value)->getValueBool () << sendLog;
 		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
 		{
-			setDiffTrack (diffTrackRaDec->getRa (), diffTrackRaDec->getDec ());
+			setDiffTrack (getDiffTrackRa (), getDiffTrackDec ());
 		}
 		else
 		{
 			setDiffTrack (0, 0);
+		}
+	}
+	else if (old_value == diffTrackAltAz)
+	{
+		setDiffTrackAltAz (((rts2core::ValueAltAz *)new_value)->getAz (), ((rts2core::ValueAltAz *)new_value)->getAlt ());
+	}
+	else if (old_value == diffTrackAltAzOn)
+	{
+		logStream (MESSAGE_INFO) << "switching AZALON to " << ((rts2core::ValueBool *) new_value)->getValueBool () << sendLog;
+		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
+		{
+			setDiffTrackAltAz (getDiffTrackAz (), getDiffTrackAlt ());
+		}
+		else
+		{
+			setDiffTrackAltAz (0, 0);
 		}
 	}
 	else if (old_value == refreshIdle)
@@ -741,6 +794,7 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 		{
 			// reset DRATE, probably set by tle_freeze = true
 			setDiffTrack (0, 0);
+			setDiffTrackAltAz (0, 0);
 		}
 		else
 		{
@@ -837,6 +891,14 @@ void Telescope::incMoveNum ()
 		diffTrackStart->setValueDouble (NAN);
 	  	setDiffTrack (0,0);
 		diffTrackOn->setValueBool (false);
+	}
+
+	if (diffTrackAltAz)
+	{
+		diffTrackAltAz->setValueAltAz (0, 0);
+		diffTrackStart->setValueDouble (NAN);
+		setDiffTrackAltAz (0, 0);
+		diffTrackAltAzOn->setValueBool (false);
 	}
 
 	tle_freeze->setValueBool (false);
@@ -952,6 +1014,13 @@ void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_po
 		else
 			model_change->dec -= corrRaDec->getDec();
 	}
+}
+
+void Telescope::applyModelAltAz (struct ln_hrz_posn *hrz)
+{
+	if (!model || calModel->getValueBool () == false)
+		return;
+	model->reverseAltAz (hrz);	
 }
 
 void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr)
@@ -1451,6 +1520,22 @@ void Telescope::setDiffTrack (double dra, double ddec)
 	}
 	sendValueAll (diffTrackStart);
 	sendValueAll (diffTrackOn);
+}
+
+void Telescope::setDiffTrackAltAz (double daz, double dalt)
+{
+	if (daz == 0 && dalt == 0)
+	{
+		diffTrackAltAzStart->setValueDouble (NAN);
+		diffTrackAltAzOn->setValueBool (false);
+	}
+	else
+	{
+		diffTrackAltAzStart->setValueDouble (ln_get_julian_from_sys ());
+		diffTrackAltAzOn->setValueBool (true);
+	}
+	sendValueAll (diffTrackAltAzStart);
+	sendValueAll (diffTrackAltAzOn);
 }
 
 void Telescope::addParkPosOption ()

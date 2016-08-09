@@ -167,6 +167,8 @@ class GPoint:
 	def process_files(self,filenames,flips):
 		obsmatch = re.compile('#\s*(\S*)\s+(\S*)\s+(\S*)\s+(\S*)\s*')
 
+		format = "astrometry"	
+
 		rdata = []
 
 		for filename in filenames:
@@ -182,8 +184,11 @@ class GPoint:
 							self.altaz = False
 						elif m.group(1) in ['altaz']:
 							self.altaz = True
+						elif m.group(1) in ['altaz-manual']:
+							self.altaz = True
+							format = "manual"
 						else:
-							sys.exit('Unknow pointing file format - valid are altaz or gem')
+							sys.exit('Unknow pointing file format {0} - valid are altaz or gem'.format(m.group(1)))
 
 						if self.latitude is None:
 							self.latitude=m.group(3)
@@ -214,7 +219,10 @@ class GPoint:
 		data = []
 
 		if self.altaz:
-			data = [(float(a_az), float(a_alt), float(r_az), float(r_alt), sn, float(mjd)) for sn,mjd,lst,a_az,a_alt,ax_az,ax_alt,r_az,r_alt in rdata]
+			if format == "manual":
+				data = [(float(a_az), float(a_alt), float(a_az) + float(e_az), float(a_alt) + float(e_alt), sn, float(sn)) for sn,ra,dec,e_alt,e_az,a_alt,a_az in rdata]
+			else:
+				data = [(float(a_az), float(a_alt), float(r_az), float(r_alt), sn, float(mjd)) for sn,mjd,lst,a_az,a_alt,ax_az,ax_alt,r_az,r_alt in rdata]
 		else:
 			# data = [(float(lst) - flip_ra(float(a_ra),float(a_dec)), float(a_dec), float(lst) - float(r_ra), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
 			data = [(float(lst) - float(a_ra), float(a_dec), float(lst) - flip_ra(float(r_ra),float(a_dec)), flip_dec(float(r_dec),float(a_dec)), sn, float(mjd)) for sn,mjd,lst,a_ra,a_dec,ax_ra,ax_dec,r_ra,r_dec in rdata]
@@ -227,14 +235,16 @@ class GPoint:
 		if self.verbose:
 			print "Parsed data",a_data
 	
-		par_init = np.array([0,0,0,0,0,0,0,0,0])
-
 		if self.altaz:
+			par_init = np.array([0,0,0,0,0,0,0])
+
 			self.aa_az = np.array(a_data[:,0],np.float)
 			self.aa_alt = np.array(a_data[:,1],np.float)
 			self.ar_az = np.array(a_data[:,2],np.float)
 			self.ar_alt = np.array(a_data[:,3],np.float)
 		else:	
+			par_init = np.array([0,0,0,0,0,0,0,0,0])
+
 			self.aa_ha = np.array(a_data[:,0],np.float)
 			self.aa_dec = np.array(a_data[:,1],np.float)
 			self.ar_ha = np.array(a_data[:,2],np.float)
@@ -330,21 +340,26 @@ class GPoint:
 			print self.message
 			print self.ier
 
-		print 'Zero point in DEC (") {0}'.format(degrees(self.best[0])*60.0)
-		print 'Zero point in RA (") {0}'.format(degrees(self.best[4])*60.0)
-		i = sqrt(self.best[1]**2 + self.best[2]**2)
-		print 'Angle between true and instrumental poles (") {0}'.format(degrees(i)*60.0)
-		print self.best[1],i,self.best[1]/i,acos(self.best[1]/i),atan2(self.best[2],self.best[1])
-		print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best[2],self.best[1]))*60.0)
-		print 'Telescope tube droop in HA and DEC (") {0}'.format(degrees(self.best[3])*60.0)
-		print 'Angle between optical and telescope tube axes (") {0}'.format(degrees(self.best[5])*60.0)
-		print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best[6])*60.0)
-		print 'Dec axis flexure (") {0}'.format(degrees(self.best[7])*60.0)
-		print 'HA encoder scale error ("/degree) {0}'.format(degrees(self.best[8])*60.0)
+		if self.altaz:
+			print 'Zero point in AZ (") {0}'.format(degrees(self.best[0])*60.0)
+			print 'Zero point in ALT (") {0}'.format(degrees(self.best[4])*60.0)
+	
+		else:
+			print 'Zero point in DEC (") {0}'.format(degrees(self.best[0])*60.0)
+			print 'Zero point in RA (") {0}'.format(degrees(self.best[4])*60.0)
+			i = sqrt(self.best[1]**2 + self.best[2]**2)
+			print 'Angle between true and instrumental poles (") {0}'.format(degrees(i)*60.0)
+			print self.best[1],i,self.best[1]/i,acos(self.best[1]/i),atan2(self.best[2],self.best[1])
+			print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best[2],self.best[1]))*60.0)
+			print 'Telescope tube droop in HA and DEC (") {0}'.format(degrees(self.best[3])*60.0)
+			print 'Angle between optical and telescope tube axes (") {0}'.format(degrees(self.best[5])*60.0)
+			print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best[6])*60.0)
+			print 'Dec axis flexure (") {0}'.format(degrees(self.best[7])*60.0)
+			print 'HA encoder scale error ("/degree) {0}'.format(degrees(self.best[8])*60.0)
 
-		print 'DIFF_MODEL RA',' '.join(map(str,self.diff_model_ha*3600))
-		print 'DIFF_MODEL DEC',' '.join(map(str,self.diff_model_dec*3600))
-		print self.get_model_type(),' '.join(map(str,self.best))
+			print 'DIFF_MODEL RA',' '.join(map(str,self.diff_model_ha*3600))
+			print 'DIFF_MODEL DEC',' '.join(map(str,self.diff_model_dec*3600))
+			print self.get_model_type(),' '.join(map(str,self.best))
 
 	def get_model_type(self):
 		if self.altaz:

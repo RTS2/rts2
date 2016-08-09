@@ -26,6 +26,9 @@ using namespace rts2telmodel;
 
 RTS2Model::RTS2Model (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
 {
+	altaz = false;
+	for (int i = 0; i < 9; i++)
+		params[i] = 0;
 }
 
 RTS2Model::~RTS2Model (void)
@@ -49,15 +52,8 @@ int RTS2Model::apply (struct ln_equ_posn *pos)
 
 	double lat_r = cond->getLatitudeRadians ();
 
-        std::cout << lat_r << " ";
-
-	for (int i = 0; i < 9; i++)
-		std::cout << params[i] << " ";
-
 	d_tar = pos->dec - params[0] - params[1] * cos (pos->ra) - params[2] * sin (pos->ra) - params[3] * (cos (lat_r) * sin (pos->dec) * cos (pos->ra) - sin (lat_r) * cos(pos->dec)) - params[8] * cos (pos->ra);
 	r_tar = pos->ra - params[4] - params[5] / cos (pos->dec) - params[6] * tan (pos->dec) - (params[1] * sin (pos->ra) - params[2] * cos (pos->ra)) * tan (pos->dec) - params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) - params[7] * (sin (lat_r) * tan (pos->dec) + cos (lat_r) * cos (pos->ra));
-
-	std::cout << pos->ra << " " << pos->dec << " " << std::endl;
 
 	pos->ra = ln_rad_to_deg (r_tar);
 	pos->dec = ln_rad_to_deg (d_tar);
@@ -104,15 +100,53 @@ int RTS2Model::reverse (struct ln_equ_posn *pos, double sid)
 	return reverse (pos);
 }
 
+int RTS2Model::applyAltAz (struct ln_hrz_posn *hrz)
+{
+	double alt_tar, az_tar;
+	hrz->az = ln_deg_to_rad (hrz->az);
+	hrz->alt = ln_deg_to_rad (hrz->alt);
+
+	az_tar = hrz->az - params[0] - params[1] * sin (hrz->az)  * tan (hrz->alt) - params[2] * cos (hrz->az) * tan (hrz->alt) - params[3] * tan (hrz->alt) + params[4] / cos (hrz->alt);
+	alt_tar = hrz->alt - params[5] + params[1] * cos (hrz->az) - params[2] * sin (hrz->az) + params[6] * cos (hrz->alt);
+
+	hrz->az = ln_rad_to_deg (az_tar);
+	hrz->alt = ln_rad_to_deg (alt_tar);
+
+	return 0;
+}
+
+int RTS2Model::reverseAltAz (struct ln_hrz_posn *hrz)
+{
+	double alt_tar, az_tar;
+	hrz->az = ln_deg_to_rad (hrz->az);
+	hrz->alt = ln_deg_to_rad (hrz->alt);
+
+	az_tar = hrz->az + params[0] + params[1] * sin (hrz->az)  * tan (hrz->alt) + params[2] * cos (hrz->az) * tan (hrz->alt) + params[3] * tan (hrz->alt) - params[4] / cos (hrz->alt);
+	alt_tar = hrz->alt - params[5] + params[1] * cos (hrz->az) - params[2] * sin (hrz->az) + params[6] * cos (hrz->alt);
+
+	hrz->az = ln_rad_to_deg (az_tar);
+	hrz->alt = ln_rad_to_deg (alt_tar);
+
+	return 0;
+}
+
 std::istream & RTS2Model::load (std::istream & is)
 {
 	std::string name;
 
 	is >> name;
 
+	int pn = 9;
+
+	if (name == "RTS2_ALTAZ")
+	{
+		altaz = true;
+		pn = 7;
+	}
+
 	int i = 0;
 
-	while (!is.eof () && i < 9)
+	while (!is.eof () && i < pn)
 	{
 		is >> params[i];
 		if (is.fail ())
@@ -127,8 +161,17 @@ std::istream & RTS2Model::load (std::istream & is)
 
 std::ostream & RTS2Model::print (std::ostream & os)
 {
-	os << "RTS2_MODEL";
-	for (int i = 0; i < 9; i++)
+	int pn = 9;
+	if (altaz)
+	{
+		pn = 7;
+		os << "RTS2_ALTAZ";
+	}
+	else
+	{
+		os << "RTS2_MODEL";
+	}
+	for (int i = 0; i < pn; i++)
 		os << " " << params[i];
 	return os;
 }

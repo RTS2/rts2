@@ -51,10 +51,15 @@ class RTS2Model:public TelModel
 		virtual int reverseVerbose (struct ln_equ_posn *pos);
 		virtual int reverse (struct ln_equ_posn *pos, double sid);
 
+		virtual int applyAltAz (struct ln_hrz_posn *hrz);
+		virtual int reverseAltAz (struct ln_hrz_posn *hrz);
+
 		virtual std::istream & load (std::istream & is);
 		virtual std::ostream & print (std::ostream & os);
 
 		double params[9];
+
+		bool altaz;
 };
 
 std::istream & operator >> (std::istream & is, RTS2Model * model);

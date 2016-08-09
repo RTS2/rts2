@@ -107,6 +107,9 @@ class TelModel
 		virtual int reverseVerbose (struct ln_equ_posn *pos) = 0;
 		virtual int reverse (struct ln_equ_posn *pos, double sid) = 0;
 
+		virtual int applyAltAz (struct ln_hrz_posn *hrz) { return 0; }
+		virtual int reverseAltAz (struct ln_hrz_posn *hrz) { return 0; }
+
                 virtual double getRMS () { return -1; }
 
 		virtual std::istream & load (std::istream & is) = 0;

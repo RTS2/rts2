@@ -32,7 +32,7 @@ namespace rts2teld
 class AltAz: public Telescope
 {
 	public:
-		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
+		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true, bool hasAltAzDiff = true);
 		virtual ~AltAz (void);
 
 		virtual int infoJDLST (double JD, double telLST);

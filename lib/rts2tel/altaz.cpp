@@ -24,7 +24,7 @@
 
 using namespace rts2teld;
 
-AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0)
+AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool hasAltAzDiff):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0, hasAltAzDiff)
 {
 	createValue (parallAngle, "parallactic_ang", "[deg] parallactic angle", false, RTS2_DT_DEGREES);
 	createValue (derRate, "DERRATE", "[deg/hour] derotator rate", false, RTS2_DT_DEGREES);
@@ -92,6 +92,8 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;
+
+	applyModelAltAz (&hrz);
 
 	int ret = hrz2counts (&hrz, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
 	if (ret)
