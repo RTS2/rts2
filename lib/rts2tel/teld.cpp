@@ -78,6 +78,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
 
+	cos_lat = NAN;
+	sin_lat = NAN;
+
 	if (diffTrack)
 	{
 		createValue (diffTrackRaDec, "DRATE", "[deg/hour] differential tracking rate", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
@@ -1288,6 +1291,15 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	rts2core::Device::changeMasterState (old_state, new_state);
 }
 
+void Telescope::setTelLongLat (double longitude, double latitude)
+{
+	telLongitude->setValueDouble (longitude);
+	telLatitude->setValueDouble (latitude);
+
+	cos_lat = cos (ln_deg_to_rad (latitude));
+	sin_lat = sin (ln_deg_to_rad (latitude));
+}
+
 void Telescope::setTelAltitude (float altitude)
 {
 	telAltitude->setValueDouble (altitude);
@@ -1569,7 +1581,7 @@ void Telescope::startCupolaSync ()
 	struct ln_equ_posn tar;
 	getTarget (&tar);
 	rts2core::CommandCupolaSyncTel cmd (this, tar.ra, tar.dec);
-	queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
+	queueCommandForType (DEVICE_TYPE_CUPOLA, cmd, NULL, true);
 	nextCupSync = n + 20;
 }
 

@@ -56,8 +56,7 @@ class ModelTest:public Telescope
 			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
 			createConstValue (telAltitude, "ALTITUDE", "telescope altitude");
 
-			telLongitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lng);
-			telLatitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lat);
+			setTelLongLat (rts2core::Configuration::instance()->getObserver ()->lng, rts2core::Configuration::instance()->getObserver ()->lat);
                         telAltitude->setValueDouble (rts2core::Configuration::instance ()->getObservatoryAltitude ());
 		}
 

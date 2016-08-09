@@ -2098,8 +2098,7 @@ int APGTO::initValues ()
 	if (ret)
 		return -1;
 	// read from configuration, will not be overwritten (e.g. by getAPLongitude, latitude)
-	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telLatitude->setValueDouble (config->getObserver ()->lat);
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
 	setTelAltitude (config->getObservatoryAltitude ());
 
 	if(( ret= setBasicData()) != 0)

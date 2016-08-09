@@ -46,8 +46,6 @@ AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, boo
 	createValue (azSlewMargin, "az_slew_margin", "[deg] azimuth slew margin", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	azSlewMargin->setValueDouble (0);
 
-	cos_lat = 0.1;
-
 	nextParUpdate = 0;
 }
 
@@ -177,17 +175,16 @@ double AltAz::parallactic_angle (double ha, double dec)
 {
 	double radha = ln_deg_to_rad (ha);
 	double raddec = ln_deg_to_rad (dec);
-	double radlat = ln_deg_to_rad (getLatitude ());
-	double div = (sin (radlat) * cos (raddec) - cos (radlat) * sin (raddec) * cos (radha));
+	double div = (sin_lat * cos (raddec) - cos_lat * sin (raddec) * cos (radha));
 	// don't divide by 0
 	if (fabs (div) < 10e-5)
 		return 0;
-	return ln_rad_to_deg (atan (cos (radlat) * sin (radha) / div));
+	return ln_rad_to_deg (atan (cos_lat * sin (radha) / div));
 }
 
 double AltAz::derotator_rate (double az, double alt)
 {
-	return ln_rad_to_deg (cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt)));
+	return ln_rad_to_deg (0.262 * cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt)));
 }
 
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
@@ -375,7 +372,7 @@ void AltAz::parallacticTracking ()
 	if (nextParUpdate > n)
 		return;
 	rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), derRate->getValueDouble ());
-	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd);
+	queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
 	nextParUpdate = n + 1;
 }
 

@@ -611,12 +611,10 @@ int MM2::init ()
 
 int MM2::initValues ()
 {
-	telLongitude->setValueDouble (TEL_LONG);
-	telLatitude->setValueDouble (TEL_LAT);
-
 	if (tel_read_longtitude () || tel_read_latitude ())
 		return -1;
 
+        setTelLongLat (telLongitude->getValueDouble (), telLatitude->getValueDouble ());
 	setTelAltitude (600);
 
 	telFlip->setValueInteger (0);

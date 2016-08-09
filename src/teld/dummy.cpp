@@ -48,8 +48,7 @@ class Dummy:public Telescope
 			rts2core::Configuration *config;
 			config = rts2core::Configuration::instance ();
 			config->loadFile ();
-			telLatitude->setValueDouble (config->getObserver ()->lat);
-			telLongitude->setValueDouble (config->getObserver ()->lng);
+			setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
 			setTelAltitude (config->getObservatoryAltitude ());
 			trackingInterval->setValueFloat (0.5);
 			return Telescope::initValues ();

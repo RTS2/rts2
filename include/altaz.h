@@ -112,7 +112,6 @@ class AltAz: public Telescope
 		virtual void afterMovementStart ();
 
 	private:
-		double cos_lat;
 		double nextParUpdate;
 };
 

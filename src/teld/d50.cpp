@@ -406,8 +406,7 @@ int D50::init ()
 	if (ret)
 		return -1;
 
-	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telLatitude->setValueDouble (config->getObserver ()->lat);
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
 	setTelAltitude (config->getObservatoryAltitude ());
 
 	// zero dec is on local meridian, 90 - telLatitude bellow (to nadir)

@@ -168,8 +168,7 @@ int BAIT::initValues ()
 	rts2core::Configuration *config;
 	config = rts2core::Configuration::instance ();
 	config->loadFile ();
-	telLatitude->setValueDouble (config->getObserver ()->lat);
-	telLongitude->setValueDouble (config->getObserver ()->lng);
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
 	setTelAltitude (config->getObservatoryAltitude ());
 	return Telescope::initValues ();
 }

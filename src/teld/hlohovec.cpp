@@ -254,8 +254,7 @@ int Hlohovec::init ()
 	if (ret)
 		return -1;
 
-	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telLatitude->setValueDouble (config->getObserver ()->lat);
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
 	setTelAltitude (config->getObservatoryAltitude ());
 
 	addTimer (1, new rts2core::Event (RTS2_HLOHOVEC_AUTOSAVE));
