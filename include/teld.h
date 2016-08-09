@@ -206,6 +206,12 @@ class Telescope:public rts2core::Device
 			pos->dec = oriRaDec->getDec () + offsRaDec->getDec ();
 		}
 
+		void applyAltAzOffsets (struct ln_hrz_posn *hrz)
+		{
+			hrz->az = ln_range_degrees (hrz->az + offsAltAz->getAz ());
+			hrz->alt += offsAltAz->getAlt ();
+		}
+
 		/**
 		 * Called before corrections are processed. If returns 0, then corrections
 		 * will skip the standard correcting mechanism.
@@ -1066,6 +1072,11 @@ class Telescope:public rts2core::Device
 		 * User offsets, used to create dithering pattern.
 		 */
 		rts2core::ValueRaDec *offsRaDec;
+
+		/**
+		 * User alt-az offsets. Supported primary on alt-az mounts.
+		 */
+		rts2core::ValueAltAz *offsAltAz;
 
 		/**
 		 * Offsets which should be applied from last movement.
