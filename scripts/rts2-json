@@ -21,6 +21,7 @@
 import sys
 import urllib
 import rts2.json
+import time
 
 import argparse
 
@@ -40,11 +41,12 @@ parser.add_argument('--kill-script', help='attempt to kill currently running scr
 parser.add_argument('--list-minmax', help='list miminal/maximal values', action='store_true', dest='list_minmax', default=False)
 parser.add_argument('--device', help='device for cmd and run-script options', action='store', dest='device')
 parser.add_argument('--expose', help='start exposure on device')
-
+parser.add_argument('--altazm', help='output line for alt-az model build', action='store', dest='altazm')
+parser.add_argument('--spiral', help='run spiral offseting on telescope', action='store', dest='spiral')
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
 parser.add_argument('--create-tle-target', help='create TLE target. Target name, first and second line of TLE must be entered as command line arguments', action='store_true', dest='create_tle_target')
-parser.add_argument('args',help='arguments for target creation',type=str,nargs='+')
+#parser.add_argument('args',help='arguments for target creation',type=str,nargs='+')
 
 parser.add_argument('--url', help='load and parse given URL. String after first ? is regarded as parameter and is escaped', action='append', dest='urls')
 
@@ -83,6 +85,28 @@ try:
 			if j.getVariable(options.device, v)[0] & rts2.json.RTS2_VALUE_MMAX:
 				print '{0}.min ='.format(v)
 				print '{0}.max ='.format(v)
+	if options.altazm:
+		print j.getValue(options.altazm,'infotime',refresh_not_found=True)
+	if options.spiral:
+		import rts2.spiral
+		import math
+		s = rts2.spiral.Spiral(1,1)
+		x = 0
+		y = 0
+		step_alt = 0.04
+		step_az = 0.04
+		alt=j.getValue(options.spiral,"TEL_",refresh_not_found=True)['alt']
+		cosa = math.cos(math.radians(alt))
+		step_az /= cosa
+		print 'Scaling azimuth by factor {0} to {1}'.format(cosa,step_az)
+		for i in range(0,500):
+			a,e = s.get_next_step()
+			x += a
+			y += e
+			print 'step {0} next {1} {2} altaz {3} {4}'.format(i,x,y,x*step_alt,y*step_az)
+			j.setValue(options.spiral, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
+			time.sleep(7)
+
 	if options.runscript:
 		print 'running script', options.runscript, j.loadJson('/api/runscript', {'d':options.device, 's':options.runscript, 'kill': 1 if options.kill_script else 0})
 
@@ -102,7 +126,7 @@ try:
 			else:
 				print j.loadJson(us[0])
 
-	if not(options.get_array) and not(options.get_int_array) and not(options.push) and not(options.create_target) and not(options.create_tle_target):
+	if not(options.get_array) and not(options.get_int_array) and not(options.push) and not(options.create_target) and not(options.create_tle_target) and not(options.altazm):
 	  	for a in options.args:
 			try:
 				a=j.loadJson(a)
