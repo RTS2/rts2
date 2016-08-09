@@ -21,12 +21,14 @@
 
 using namespace rts2rotad;
 
-SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn, SitechMulti *sitechBase):Rotator (0, NULL, name)
+SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn, SitechMulti *sitechBase, const char *defaults):Rotator (0, NULL, name)
 {
 	setDeviceName (name);
 	sitech = conn;
 	axis = ax;
 	base = sitechBase;
+
+	setDefaultsFile (defaults);
 
 	updated = false;
 

@@ -19,6 +19,9 @@
 
 #include "sitech-multi.h"
 
+#define OPT_DEF_DER1    OPT_LOCAL + 2451
+#define OPT_DEF_DER2    OPT_LOCAL + 2452
+
 using namespace rts2rotad;
 
 SitechMulti::SitechMulti (int argc, char **argv):rts2core::Daemon (argc, argv)
@@ -26,9 +29,12 @@ SitechMulti::SitechMulti (int argc, char **argv):rts2core::Daemon (argc, argv)
 	der_tty = NULL;
 	derConn = NULL;
 
+	memset (derdefaults, 0, sizeof (derdefaults));
 	memset (rotators, 0, sizeof (rotators));
 
 	addOption ('f', NULL, 1, "derotator serial port (ussually /dev/ttyUSBxx)");
+	addOption (OPT_DEF_DER1, "defaults-der1", 1, "defaults values for derotator 1");
+	addOption (OPT_DEF_DER2, "defaults-der2", 1, "defaults values for derotator 2");
 }
 
 SitechMulti::~SitechMulti ()
@@ -57,6 +63,14 @@ int SitechMulti::processOption (int opt)
 			der_tty = optarg;
 			break;
 
+		case OPT_DEF_DER1:
+			derdefaults[0] = optarg;
+			break;
+
+		case OPT_DEF_DER2:
+			derdefaults[1] = optarg;
+			break;
+
 		default:
 			return Daemon::processOption (opt);
 	}
@@ -73,8 +87,8 @@ int SitechMulti::initHardware ()
 		return -1;
 	derConn->flushPortIO ();
 
-	rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn, this);
-	rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn, this);
+	rotators[0] = new rts2rotad::SitechRotator ('X', "DER1", derConn, this, derdefaults[0]);
+	rotators[1] = new rts2rotad::SitechRotator ('Y', "DER2", derConn, this, derdefaults[1]);
 
 	ybits = derConn->getSiTechValue ('Y', "B");
 	xbits = derConn->getSiTechValue ('X', "B");

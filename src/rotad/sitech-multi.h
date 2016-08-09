@@ -57,6 +57,8 @@ class SitechMulti:public rts2core::Daemon
 		const char *der_tty;
 		rts2core::ConnSitech *derConn;
 
+		const char *derdefaults[2];
+
 		SitechRotator *rotators[NUM_ROTATORS];
 
 		rts2core::MultiDev md;
