@@ -634,6 +634,8 @@ class Daemon:public rts2core::Block
 		 */
 		void addGroup (const char *groupname);
 
+		void setDefaultsFile (const char *fn) { optDefaultsFile = fn; }
+
 	private:
 		rts2core::StringArray *groups;
 

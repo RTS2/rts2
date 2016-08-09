@@ -27,7 +27,7 @@ namespace rts2mirror
 class SitechMirror:public Mirror, public SitechMultidev
 {
 	public:
-		SitechMirror (const char *name, rts2core::ConnSitech *sitech_C);
+		SitechMirror (const char *name, rts2core::ConnSitech *sitech_C, const char *defaults);
 
 
 	protected:

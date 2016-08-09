@@ -21,10 +21,12 @@
 
 using namespace rts2focusd;
 
-SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c):Focusd (0, (char **) &name), SitechMultidev ()
+SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c, const char *defaults):Focusd (0, NULL), SitechMultidev ()
 {
 	setDeviceName (name);
 	setSitechConnection (sitech_c);
+
+	setDefaultsFile (defaults);
 
 	createValue (encoder, "encoder", "encoder position", false);
 

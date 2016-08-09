@@ -68,6 +68,9 @@ class SitechMultiBase:public rts2core::Daemon
 		rts2core::ConnSitech *sitechConn;
 
 		rts2core::MultiDev md;
+
+		const char *defaultM3;
+		const char *defaultFoc;
 };
 
 #endif //!__RTS2_SITECH_MULTIDEV__

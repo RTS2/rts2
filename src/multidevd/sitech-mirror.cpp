@@ -27,10 +27,12 @@ using namespace rts2mirror;
  * @author Petr Kubanek <petr@kubanek.net>>
  */
 
-SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c):Mirror (0, (char **) &name), SitechMultidev ()
+SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c, const char *defaults):Mirror (0, NULL), SitechMultidev ()
 {
 	setDeviceName (name);
 	setSitechConnection (sitech_c);
+
+	setDefaultsFile (defaults);
 
 	createValue (posA, "posA", "A position", false, RTS2_VALUE_WRITABLE);
 	createValue (posB, "posB", "B position", false, RTS2_VALUE_WRITABLE);

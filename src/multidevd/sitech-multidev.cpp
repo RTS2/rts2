@@ -23,6 +23,9 @@
 #include "sitech-mirror.h"
 #include "connection/sitech.h"
 
+#define OPT_CONFIG_M3     OPT_LOCAL + 1243
+#define OPT_CONFIG_FOC    OPT_LOCAL + 1244
+
 SitechMultiBase::SitechMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
 {
 	focName = "F0";
@@ -30,7 +33,12 @@ SitechMultiBase::SitechMultiBase (int argc, char **argv):rts2core::Daemon (argc,
 	sitechDev = NULL;
 	sitechConn = NULL;
 
+	defaultM3 = NULL;
+	defaultFoc = NULL;
+
 	addOption ('f', NULL, 1, "sitech device file");
+	addOption (OPT_CONFIG_M3, "defaults-m3", 1, "defaults for device");
+	addOption (OPT_CONFIG_FOC, "defaults-foc", 1, "defaults for focuser");
 }
 
 SitechMultiBase::~SitechMultiBase ()
@@ -57,6 +65,12 @@ int SitechMultiBase::processOption (int opt)
 		case 'f':
 			sitechDev = optarg;
 			break;
+		case OPT_CONFIG_M3:
+			defaultM3 = optarg;
+			break;
+		case OPT_CONFIG_FOC:
+			defaultFoc = optarg;
+			break;
 		default:
 			return Daemon::processOption (opt);
 	}
@@ -75,8 +89,8 @@ int SitechMultiBase::initHardware ()
 		return -1;
 	sitechConn->flushPortIO ();
 
-	md.push_back (new rts2focusd::SitechFocuser (focName, sitechConn));
-	md.push_back (new rts2mirror::SitechMirror (mirrorName, sitechConn));
+	md.push_back (new rts2focusd::SitechFocuser (focName, sitechConn, defaultFoc));
+	md.push_back (new rts2mirror::SitechMirror (mirrorName, sitechConn, defaultM3));
 
 	return 0;
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Driver for Sitech focuser
  * Copyright (C) 2016 Petr Kubanek
  *
@@ -27,7 +27,7 @@ namespace rts2focusd
 class SitechFocuser:public Focusd, public SitechMultidev
 {
 	public:
-		SitechFocuser (const char *dev_name, rts2core::ConnSitech *sitech_c);
+		SitechFocuser (const char *dev_name, rts2core::ConnSitech *sitech_c, const char *defaults);
 
 	protected:
 		virtual int info ();

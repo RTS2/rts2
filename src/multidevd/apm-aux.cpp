@@ -141,7 +141,10 @@ void APMAux::postEvent (rts2core::Event *event)
 
 int APMAux::info ()
 {
-	sendUDPMessage ("C999");
+	if (rec % 5 == 0)
+		sendUDPMessage ("C999");
+
+	rec++;
 
 	if (relay1 != NULL || relay2 != NULL)
 	{
