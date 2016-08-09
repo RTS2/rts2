@@ -475,13 +475,15 @@ class Block: public App
 		 * @param deviceType numeric device type
 		 * @param command    command (subclass of Rts2Command)
 		 */
-		template <typename T> void queueCommandForType (int deviceType, T &command, int *numdev = NULL)
+		template <typename T> void queueCommandForType (int deviceType, T &command, int *numdev = NULL, bool clearQueue = false)
 		{
 			if (numdev)
 				*numdev = 0;
 			connections_t::iterator iter = connections.begin ();
 			for (getOpenConnectionType (deviceType, iter); iter != connections.end (); getOpenConnectionType (deviceType, iter))
 			{
+				if (clearQueue)
+					(*iter)->queClear ();
 				(*iter)->queCommand (new T (command));
 				iter++;
 				if (numdev)
