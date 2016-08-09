@@ -212,6 +212,12 @@ class Telescope:public rts2core::Device
 			hrz->alt += offsAltAz->getAlt ();
 		}
 
+		void reverseAltAzOffsets (double &alt, double &az)
+		{
+			alt -= offsAltAz->getAlt ();
+			az = ln_range_degrees (az - offsAltAz->getAz ());
+		}
+
 		/**
 		 * Called before corrections are processed. If returns 0, then corrections
 		 * will skip the standard correcting mechanism.

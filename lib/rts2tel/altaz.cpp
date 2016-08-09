@@ -147,10 +147,13 @@ int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int
 void AltAz::counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, double &un_az, double &un_zd)
 {
 	un_az = azc / azCpd->getValueDouble () + azZero->getValueDouble ();
-	az = ln_range_degrees (un_az);
-
 	un_zd = altc / altCpd->getValueDouble () + zdZero->getValueDouble ();
+
+	az = ln_range_degrees (un_az);
 	alt = ln_range_degrees (90 - un_zd);
+
+	reverseAltAzOffsets (alt, az);
+
 	if (alt > 270)
 	{
 		alt = -360 + alt;
