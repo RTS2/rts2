@@ -167,7 +167,7 @@ class GPoint:
 	def process_files(self,filenames,flips):
 		obsmatch = re.compile('#\s*(\S*)\s+(\S*)\s+(\S*)\s+(\S*)\s*')
 
-		format = "astrometry"	
+		frmt = "astrometry"
 
 		rdata = []
 
@@ -186,9 +186,10 @@ class GPoint:
 							self.altaz = True
 						elif m.group(1) in ['altaz-manual']:
 							self.altaz = True
-							format = "manual"
+							frmt = "manual"
 						else:
-							sys.exit('Unknow pointing file format {0} - valid are altaz or gem'.format(m.group(1)))
+							line = f.readline()
+							continue
 
 						if self.latitude is None:
 							self.latitude=m.group(3)
@@ -219,7 +220,7 @@ class GPoint:
 		data = []
 
 		if self.altaz:
-			if format == "manual":
+			if frmt == "manual":
 				data = [(float(a_az), float(a_alt), float(a_az) + float(e_az), float(a_alt) + float(e_alt), sn, float(sn)) for sn,ra,dec,e_alt,e_az,a_alt,a_az in rdata]
 			else:
 				data = [(float(a_az), float(a_alt), float(r_az), float(r_alt), sn, float(mjd)) for sn,mjd,lst,a_az,a_alt,ax_az,ax_alt,r_az,r_alt in rdata]
