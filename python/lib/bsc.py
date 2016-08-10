@@ -17,7 +17,7 @@
 import numpy as np
 import libnova
 
-# Bright Star catalogue data
+# Bright Star catalogue data, from http://pages.astronomy.ua.edu/keel/talks/skyplot/ybs.degbv
 __bsc_data = [
 [2491,101.2871,-16.7161,-1.46,0.00],
 [2326,95.9879,-52.6958,-0.72,0.15],
