@@ -1,6 +1,6 @@
-#!/usr/bin/python
-#
 # (C) 2016 Petr Kubanek <petr@kubanek.net>
+#
+# Routine to generate steps for spiral search
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,6 +17,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 class Spiral:
+	"""Generates steps for spiral search, in step-size space."""
 	def __init__(self,step_size_x=1,step_size_y=1):
 		self.step = 0;
 		self.step_size_x = step_size_x
@@ -25,6 +26,7 @@ class Spiral:
 		self.up_d = 1;
 
 	def get_next_step(self):
+		"""Get next step from the generator. Returns steps offsets pair - x,y, deltas for the next step."""
 		if self.step == self.step_size:
 			self.up_d *= -1
 			if self.up_d == 1:
