@@ -156,12 +156,15 @@ def run_manual_altaz(telescope,timeout):
 		while next_please == False:
 			run_spiral(telescope,timeout)
 			while True:
-				print 'Now either type offsets (comulative, arcmin) or m when start is centered and hit enter'
+				print 'Now either type offsets (comulative, arcmin), m when star is centered or s to skip this field and hit enter'
 				ans = sys.stdin.readline().rstrip()
 				if ans == 'm':
 					oa.write('{0}\t{1}\n'.format(mn,get_altazm_line(telescope)))
 					oa.flush()
 					mn += 1
+					next_please = True
+					break
+				if ans == 's':
 					next_please = True
 					break
 				try:
