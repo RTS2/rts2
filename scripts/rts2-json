@@ -65,7 +65,7 @@ def get_altazm_line(telescope):
 	j.refresh()
 	ori = j.getValue(telescope,'ORI')
 	altaz = j.getValue(telescope,'TEL_')
-	offs = j.getValue(telescope,'AZALRATE')
+	offs = j.getValue(telescope,'AZALOFFS')
 	return '\t'.join(map(str,[ori['ra'],ori['dec'],offs['alt'],offs['az'],altaz['alt'],altaz['az']]))
 
 def run_spiral(telescope,timeout):
@@ -152,21 +152,24 @@ def run_manual_altaz(telescope,timeout):
 
 		print '\nMove finished, starting spiral search now'
 		time.sleep(5)
-		while True:
+		next_please = False
+		while next_please == False:
 			run_spiral(telescope,timeout)
-			print 'Now either type offsets (comulative, arcmin) or m when start is centered and hit enter'
-			ans = sys.stdin.readline()
-			if ans == 'm':
-				oa.write('{1}\t{2}\n',mn,get_altazm_line(telescope))
-				oa.flush()
-				mn += 1
-				break
-			try:
-				azo,alto = ans.split()
-				j.executeCommand(telescope,'X AZALOFFS += {0} {1}'.format(azo,alto))
+			while True:
+				print 'Now either type offsets (comulative, arcmin) or m when start is centered and hit enter'
+				ans = sys.stdin.readline().rstrip()
+				if ans == 'm':
+					oa.write('{0}\t{1}\n'.format(mn,get_altazm_line(telescope)))
+					oa.flush()
+					mn += 1
+					next_please = True
+					break
+				try:
+					azo,alto = ans.split()
+					j.executeCommand(telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
 
-			except Exception,ex:
-				print 'unknow command, please try again'
+				except Exception,ex:
+					print 'unknow command {0}, please try again'.format(ans)
 				
 
 	
