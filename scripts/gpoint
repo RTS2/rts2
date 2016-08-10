@@ -22,6 +22,7 @@
 
 import sys
 import rts2.gpoint
+import numpy as np
 
 import argparse
 
@@ -67,10 +68,10 @@ def generateModel(args):
 def loadModel(modelfile):
 	f = open(modelfile)
 	line = f.readline().split()
-	if line[0] != 'RTS2_MODEL' or len(line) != 10:
+	if not ((line[0] == 'RTS2_MODEL' and len(line) == 10) or (line[0] == 'RTS2_ALTAZ' and len(line) == 8)):
 		sys.exit('invalid input model format')
 	f.close()
-	return map(lambda f:float(f),line[1:])
+	return line[0],map(lambda f:float(f),line[1:])
 
 # Plot model offsets
 def plotOffsets(args):
@@ -86,19 +87,25 @@ def plotOffsets(args):
 
 def addModels(args):
 	params=[]
+	emt = None
 	for f in args.inputfiles:
-		params.append(loadModel(f))
+		mt,m = loadModel(f)
+		if emt is None:
+			emt = mt
+		elif emt != mt:
+			sys.exit('incompatible models: {0} {1}'.format(emt,mt))
+		params.append(m)
 	
 	out = map(lambda f:str(f),np.sum(params,axis=0))
 
 	if args.model_output is not None:
 		f = open(args.model_output,'w+')
-		f.write('RTS2_MODEL ')
+		f.write(emt + ' ')
 		for b in out:
 			f.write('{0} '.format(b))
 		f.close()
 
-	print 'RTS2_MODEL ',' '.join(out)
+	print emt,' '.join(out)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
