@@ -8430,12 +8430,4 @@ def find_nearest(ra,dec,mag_min=None,mag_max=None):
 	data = __bsc_data
 	if mag_min and mag_max is not None:
 		data = filter(lambda x: mag_min < x[3] < mag_max, data)
-	ret = data[0]
-	min_sep = libnova.angular_separation(ret[1],ret[2],ra,dec)
-	for s in data[1:]:
-		sep = libnova.angular_separation(s[1],s[2],ra,dec)
-		if sep < min_sep:
-			min_sep = sep
-			ret = s
-	
-	return ret
+	return min(data, key=lambda x: libnova.angular_separation(x[1],x[2],ra,dec))
