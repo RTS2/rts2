@@ -35,6 +35,22 @@ def angular_separation(ra1,dec1,ra2,dec2):
 
 	return degrees(d)
 
+def equ_to_hrz(ra,dec,lst,latitude):
+	""" Transform HA-DEC (in degrees) vector to ALT-AZ (in degrees) vector"""
+	ha = radians(lst - ra)
+	dec = radians(dec)
+	latitude_r = radians(latitude)
+	A = sin(latitude_r) * sin(dec) + cos(latitude_r) * cos(dec) * cos(ha)
+	alt = arcsin(A)
+
+	Z = arccos(A)
+	Zs = sin(Z)
+	As = (cos(dec) * sin(ha)) / Zs;
+	Ac = (sin(latitude_r) * cos(dec) * cos(ha) - cos(latitude_r) * sin(dec)) / Zs;
+	Aa = arctan2(As,Ac)
+
+	return degrees(alt),(degrees(Aa) + 360) % 360
+
 if __name__ == '__main__':
 	print angular_separation(0,0,1,1)
 	print angular_separation(0,0,0,90)
