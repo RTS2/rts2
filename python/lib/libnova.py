@@ -17,7 +17,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from numpy import cos,sin,arctan2,sqrt,radians,degrees
+from numpy import cos,sin,arctan2,tan,sqrt,radians,degrees,arcsin
 
 def angular_separation(ra1,dec1,ra2,dec2):
 	a1 = radians(ra1)
@@ -51,17 +51,22 @@ def equ_to_hrz(ra,dec,lst,latitude):
 
 	return degrees(alt),(degrees(Aa) + 360) % 360
 
-def hrz_to_equ(self,az,alt,latitude,longitude):
-	""" Transform AZ-ALT (in radians) vector to HA-DEC (in degrees) vector"""
+def hrz_to_equ(az,alt,latitude,longitude):
+	""" Transform AZ-ALT (in degrees) vector to HA-DEC (in degrees) vector"""
 	latitude_r = radians(latitude)
-	ha = arctan2(sin(az), (cos(az) + sin(latitude_r) + tan(alt) * cos(latitude_r)))
+	az = radians(az)
+	alt = radians(alt)
+
+	ha = arctan2(sin(az), cos(az) * sin(latitude_r) + tan(alt) * cos(latitude_r))
 	dec = sin(latitude_r) * sin(alt) - cos(latitude_r) * cos(alt) * cos(az)
 	dec = arcsin(dec)
 
-	return longitude - degrees(ha),degrees(dec)
+	return (degrees(ha) + longitude),degrees(dec)
 
 if __name__ == '__main__':
 	print angular_separation(0,0,1,1)
 	print angular_separation(0,0,0,90)
 	print angular_separation(0,0,180,0)
 	print angular_separation(0,0,180,-40)
+	print hrz_to_equ(42,28,-32,20) # dec -53, ha 105
+	print hrz_to_equ(168,57,-32,20) # dec -53, ha 
