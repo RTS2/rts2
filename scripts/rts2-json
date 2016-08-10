@@ -68,7 +68,7 @@ def get_altazm_line(telescope):
 	offs = j.getValue(telescope,'AZALOFFS')
 	return '\t'.join(map(str,[ori['ra'],ori['dec'],offs['alt'],offs['az'],altaz['alt'],altaz['az']]))
 
-def run_spiral(telescope,timeout):
+def run_spiral(telescope,timeout,last_step=0):
 	"""Runs spiral pointing to find the star."""
 	from select import select
 	def wait_for_key(t):
@@ -96,12 +96,14 @@ def run_spiral(telescope,timeout):
 	print 'Scaling azimuth by factor {0} to {1}'.format(cosa,step_az)
 	for i in range(0,500):
 		a,e = s.get_next_step()
+		if i < last_step:
+			continue
 		x += a
 		y += e
 		print 'step {0} next {1} {2} altaz {3} {4}'.format(i,x,y,x*step_alt,y*step_az)
 		j.setValue(telescope, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
 		if wait_for_key(timeout):
-			return
+			return i
 
 def run_manual_altaz(telescope,timeout):
 	import rts2.altazpath
@@ -153,10 +155,11 @@ def run_manual_altaz(telescope,timeout):
 		print '\nMove finished, starting spiral search now'
 		time.sleep(5)
 		next_please = False
+		last_step = 0
 		while next_please == False:
-			run_spiral(telescope,timeout)
+			last_step = run_spiral(telescope,timeout,last_step)
 			while True:
-				print 'Now either type offsets (comulative, arcmin), m when star is centered or s to skip this field and hit enter'
+				print 'Now either type offsets (comulative, arcmin), m when star is centered, r to repeat from 0 steps, or s to skip this field and hit enter'
 				ans = sys.stdin.readline().rstrip()
 				if ans == 'm':
 					oa.write('{0}\t{1}\n'.format(mn,get_altazm_line(telescope)))
@@ -164,8 +167,14 @@ def run_manual_altaz(telescope,timeout):
 					mn += 1
 					next_please = True
 					break
-				if ans == 's':
+				elif ans == 's':
 					next_please = True
+					break
+				elif ans == 'r':
+					last_step = 0
+					break
+				elif ans == 'c':
+					last_step -= 1
 					break
 				try:
 					azo,alto = ans.split()
