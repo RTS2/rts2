@@ -51,6 +51,15 @@ def equ_to_hrz(ra,dec,lst,latitude):
 
 	return degrees(alt),(degrees(Aa) + 360) % 360
 
+def hrz_to_equ(self,az,alt,latitude,longitude):
+	""" Transform AZ-ALT (in radians) vector to HA-DEC (in degrees) vector"""
+	latitude_r = radians(latitude)
+	ha = arctan2(sin(az), (cos(az) + sin(latitude_r) + tan(alt) * cos(latitude_r)))
+	dec = sin(latitude_r) * sin(alt) - cos(latitude_r) * cos(alt) * cos(az)
+	dec = arcsin(dec)
+
+	return longitude - degrees(ha),degrees(dec)
+
 if __name__ == '__main__':
 	print angular_separation(0,0,1,1)
 	print angular_separation(0,0,0,90)
