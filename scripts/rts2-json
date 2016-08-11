@@ -96,10 +96,10 @@ def run_spiral(telescope,timeout,last_step=0):
 	print 'Scaling azimuth by factor {0} to {1}'.format(cosa,step_az)
 	for i in range(0,500):
 		a,e = s.get_next_step()
-		if i < last_step:
-			continue
 		x += a
 		y += e
+		if i < last_step:
+			continue
 		print 'step {0} next {1} {2} altaz {3} {4}'.format(i,x,y,x*step_alt,y*step_az)
 		j.setValue(telescope, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
 		if wait_for_key(timeout):
@@ -118,7 +118,8 @@ def run_manual_altaz(telescope,timeout):
 	oa = open('align','a')
 	mn = 1
 
-	for p in rts2.altazpath.random_path():
+	#for p in rts2.altazpath.random_path():
+	for p in rts2.altazpath.constant_path([30,45,75]):
 		alt = p[0]
 		az = p[1]
 
@@ -161,7 +162,9 @@ def run_manual_altaz(telescope,timeout):
 			while True:
 				print 'Now either type offsets (comulative, arcmin), m when star is centered, r to repeat from 0 steps, or s to skip this field and hit enter'
 				ans = sys.stdin.readline().rstrip()
-				if ans == 'm':
+				if ans == '':
+					continue
+				elif ans == 'm':
 					oa.write('{0}\t{1}\n'.format(mn,get_altazm_line(telescope)))
 					oa.flush()
 					mn += 1
@@ -170,9 +173,17 @@ def run_manual_altaz(telescope,timeout):
 				elif ans == 's':
 					next_please = True
 					break
-				elif ans == 'r':
-					last_step = 0
-					break
+				elif ans[0] == 'r':
+					ls = ans.split()
+					try:
+						if len(ls) == 2:
+							last_step -= int(ls[1])
+						else:
+							last_step = 0
+						break
+					except Exception,ex:
+						print 'invalid r command format: {0}'.format(ans)
+						continue
 				elif ans == 'c':
 					last_step -= 1
 					break
