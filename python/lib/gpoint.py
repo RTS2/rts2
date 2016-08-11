@@ -382,15 +382,19 @@ class GPoint:
 			print 'DIFF_ANGULAR',print_vect_stat(self.diff_angular*3600)
 
 		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
+		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_ha*np.cos(self.aa_dec)*3600)
 		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
-		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
 		print 'RMS AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
+		print 'RMS AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_az*np.cos(self.aa_alt)*3600)
+		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
 		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
 
 		print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
+		print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_ha*np.cos(self.aa_dec)*3600)
 		print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
-		print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
 		print 'RMS MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
+		print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_az*np.cos(self.aa_dec)*3600)
+		print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
 		print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
 		return self.best
