@@ -148,9 +148,25 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 			break;
 		case RTS2_VALUE_ALTAZ:
 			{
-				LibnovaHrz hrz (((rts2core::ValueAltAz *) value)->getAlt (), ((rts2core::ValueAltAz *) value)->getAz ());
-				_os << hrz;
+				if (value->getValueDisplayType () == RTS2_DT_DEGREES)
+				{
+					LibnovaDeg v_ad (((rts2core::ValueAltAz *) value)->getAlt ());
+					LibnovaDeg v_zd (((rts2core::ValueAltAz *) value)->getAz ());
+					_os << v_ad << " " << v_zd;
+				}
+				else if (value->getValueDisplayType () == RTS2_DT_DEG_DIST_180)
+				{
+					LibnovaDeg90 v_ad (((rts2core::ValueAltAz *) value)->getAlt ());
+					LibnovaDeg180 v_zd (((rts2core::ValueAltAz *) value)->getAz ());
+					_os << v_ad << " " << v_zd;
+				}
+				else
+				{
+					LibnovaHrz hrz (((rts2core::ValueAltAz *) value)->getAlt (), ((rts2core::ValueAltAz *) value)->getAz ());
+					_os << hrz;
+				}
 				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
+				
 			}
 			break;
 		case RTS2_VALUE_SELECTION:
