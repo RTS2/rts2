@@ -39,12 +39,13 @@ using namespace rts2sensord;
  *  Arguments argc and argv has to be set to 0 and NULL respectively.
  *  See apm-multidev.cpp for example.
  */
-APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool hasBaffle, bool hasRelays): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
+APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool hasBaffle, bool hasRelays, bool hasTemp): Sensor (0, NULL, name), rts2multidev::APMMultidev (conn)
 {
 	fan = NULL;
 	baffle = NULL;
 	relay1 = NULL;
 	relay2 = NULL;
+	temperature = NULL;
 
 	coverCommand = NULL;
 	baffleCommand = NULL;
@@ -75,8 +76,12 @@ APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool has
 	}
 	if (hasRelays)
 	{
-	        createValue(relay1, "relay1", "relay 1 state", true);
-	        createValue(relay2, "relay2", "relay 2 state", true);
+	        createValue (relay1, "relay1", "relay 1 state", true);
+	        createValue (relay2, "relay2", "relay 2 state", true);
+	}
+	if (hasTemp)
+	{
+		createValue (temperature, "temperature", "telescope temperature", true);
 	}
 }
 
@@ -141,16 +146,6 @@ void APMAux::postEvent (rts2core::Event *event)
 
 int APMAux::info ()
 {
-	if (rec % 5 == 0)
-		sendUDPMessage ("C999");
-
-	rec++;
-
-	if (relay1 != NULL || relay2 != NULL)
-	{
-        	sendUDPMessage ("A999");
-	}
-
 	switch (commandInProgress)
 	{
 		case OPENING:
@@ -169,6 +164,16 @@ int APMAux::info ()
 			break;
 		case NONE:
 			break;
+	}
+
+	if (relay1 != NULL || relay2 != NULL)
+	{
+        	sendUDPMessage ("A999");
+	}
+
+	if (temperature != NULL)
+	{
+		sendUDPMessage ("GETTEMP");
 	}
 
 	return Sensor::info ();
@@ -306,6 +311,7 @@ int APMAux::sendUDPMessage (const char * _message)
 	if (n <= 0)
 	{
 		logStream (MESSAGE_ERROR) << "no response" << sendLog;
+		sleep (2);
 		return -1;
 	}
 
@@ -360,12 +366,15 @@ int APMAux::sendUDPMessage (const char * _message)
 		if (response[3] < '0' || response[3] > '3')
 		{
 			logStream (MESSAGE_ERROR) << "invalid relay state " << response[3] << sendLog;
+			sleep (2);
 			return -1;
 		}
 		int rv = response[3] - '0';
 		relay1->setValueBool (rv & 0x01);
 		relay2->setValueBool (rv & 0x02);
 	}
+
+	sleep (2);
 
         return 0;
 }

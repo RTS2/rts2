@@ -48,6 +48,10 @@ class SitechMirror:public Mirror, public SitechMultidev
 		rts2core::ValueLong *tarPos;
 
 		rts2core::ValueLong *moveSpeed;
+
+		rts2core::ValueString *errors;
+		rts2core::ValueInteger *errors_val;
+		rts2core::ValueBool *autoMode;
 };
 
 }

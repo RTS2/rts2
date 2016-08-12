@@ -28,8 +28,8 @@
 
 SitechMultiBase::SitechMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
 {
-	focName = "F0";
-	mirrorName = "M0";
+	focName = "F2";
+	mirrorName = "M3";
 	sitechDev = NULL;
 	sitechConn = NULL;
 

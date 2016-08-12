@@ -59,6 +59,7 @@ class APMMultiBase:public rts2core::Daemon
 		bool hasFan;
 		bool hasBaffle;
 		bool hasRelays;
+		bool hasTemp;
 
 		HostString *host;
 		rts2core::ConnAPM *apmConn;

@@ -26,6 +26,7 @@
 #define OPT_FAN            OPT_LOCAL + 52
 #define OPT_BAFFLE         OPT_LOCAL + 53
 #define OPT_RELAYS         OPT_LOCAL + 54
+#define OPT_TEMPERATURE    OPT_LOCAL + 55
 
 using namespace rts2multidev;
 
@@ -40,6 +41,7 @@ APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
 	hasFan = false;
 	hasBaffle = false;
 	hasRelays = false;
+	hasTemp = false;
 
 	addOption ('e', NULL, 1, "IP and port (separated by :) of the APM box");
 	addOption (OPT_FILTER, "filter", 1, "filter wheel device name");
@@ -47,6 +49,7 @@ APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
 	addOption (OPT_FAN, "fan", 0, "auxiliary device with fan control");
 	addOption (OPT_BAFFLE, "baffle", 0, "auxiliary device with baffle (and mirror covers) control");
 	addOption (OPT_RELAYS, "relays", 0, "auxiliary device with relay control");
+	addOption (OPT_TEMPERATURE, "temperature", 0, "auxiliary device with temperature readout");
 }
 
 APMMultiBase::~APMMultiBase ()
@@ -85,6 +88,9 @@ int APMMultiBase::processOption (int opt)
 		case OPT_RELAYS:
 			hasRelays = true;
 			break;
+		case OPT_TEMPERATURE:
+			hasTemp = true;
+			break;
 		default:
 			return Daemon::processOption (opt);
 	}
@@ -110,7 +116,7 @@ int APMMultiBase::initHardware ()
 		md.push_back (new rts2filterd::APMFilter (filterName, apmConn));
 
 	if (auxName != NULL)
-		md.push_back (new rts2sensord::APMAux (auxName, apmConn, hasFan, hasBaffle, hasRelays));
+		md.push_back (new rts2sensord::APMAux (auxName, apmConn, hasFan, hasBaffle, hasRelays, hasTemp));
 
 	return 0;
 }

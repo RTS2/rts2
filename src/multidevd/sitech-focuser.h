@@ -30,6 +30,8 @@ class SitechFocuser:public Focusd, public SitechMultidev
 		SitechFocuser (const char *dev_name, rts2core::ConnSitech *sitech_c, const char *defaults);
 
 	protected:
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 		virtual int info ();
 
 		virtual int commandAuthorized (rts2core::Connection *conn);
@@ -45,6 +47,7 @@ class SitechFocuser:public Focusd, public SitechMultidev
 		rts2core::ValueLong *focSpeed;
 		rts2core::ValueString *errors;
 		rts2core::ValueInteger *errors_val;
+		rts2core::ValueBool *autoMode;
 };
 
 }

@@ -39,7 +39,7 @@ namespace rts2sensord
 class APMAux : public Sensor, rts2multidev::APMMultidev
 {
 	public:
-		APMAux (const char *name, rts2core::ConnAPM *apmConn, bool hasFan, bool hasBaffle, bool hasRelays);
+		APMAux (const char *name, rts2core::ConnAPM *apmConn, bool hasFan, bool hasBaffle, bool hasRelays, bool hasTemp);
 
 		virtual int commandAuthorized (rts2core::Connection *conn);
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
@@ -58,6 +58,7 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		rts2core::ValueSelection *baffle;
 		rts2core::ValueBool *relay1;
 		rts2core::ValueBool *relay2;
+		rts2core::ValueDouble *temperature;
 
 		// to organize timeouts,..
 		rts2core::ValueTime *coverCommand;
@@ -75,8 +76,6 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		int relayControl (int n, bool on);
 
 		int sendUDPMessage (const char * _message);
-
-		int rec;
 };
 
 }

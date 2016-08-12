@@ -18,6 +18,7 @@
  */
 
 #include "sitech-focuser.h"
+#include "constsitech.h"
 
 using namespace rts2focusd;
 
@@ -34,7 +35,20 @@ SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c, 
 	focSpeed->setValueLong (10000000);
 
 	createValue (errors, "errors", "controller errors", false);
-	createValue (errors_val, "errros", "controller errors string", false);
+	createValue (errors_val, "error_str", "controller errors string", false);
+
+	createValue (autoMode, "auto", "driver enabled", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+}
+
+int SitechFocuser::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (autoMode == oldValue)
+	{
+		sitech->siTechCommand ('Y', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		return 0;
+	}
+
+	return Focusd::setValue (oldValue, newValue);
 }
 
 int SitechFocuser::info ()
@@ -43,6 +57,8 @@ int SitechFocuser::info ()
 
 	position->setValueInteger (axisStatus.y_pos);
 	encoder->setValueLong (axisStatus.y_enc);
+
+	autoMode->setValueBool ((axisStatus.extra_bits & AUTO_Y) == 0);
 
 	uint16_t val = axisStatus.y_last[0] << 4;
 	val += axisStatus.y_last[1];

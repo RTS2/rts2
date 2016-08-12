@@ -18,6 +18,7 @@
  */
 
 #include "sitech-mirror.h"
+#include "constsitech.h"
 
 using namespace rts2mirror;
 
@@ -43,6 +44,11 @@ SitechMirror::SitechMirror (const char *name, rts2core::ConnSitech *sitech_c, co
 	createValue (moveSpeed, "speed", "movement speed (controller units)", false, RTS2_VALUE_WRITABLE);
 	moveSpeed->setValueLong (67000000);
 
+	createValue (errors, "errors", "controller errors", false);
+	createValue (errors_val, "error_str", "controller errors string", false);
+
+	createValue (autoMode, "auto", "driver enabled", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+
 	addPosition ("1");
 	addPosition ("2");
 }
@@ -52,6 +58,19 @@ int SitechMirror::info ()
 	sitech->getAxisStatus ('X', axisStatus);
 
 	currPos->setValueLong (axisStatus.x_pos);
+
+	autoMode->setValueBool ((axisStatus.extra_bits & AUTO_X) == 0);
+
+	uint16_t val = axisStatus.x_last[0] << 4;
+	val += axisStatus.x_last[1];
+
+	switch (axisStatus.x_last[0] & 0x0F)
+	{
+		case 0:
+			errors_val->setValueInteger (val);
+			errors->setValueString (sitech->findErrors (val));
+			break;
+	}
 
 	return Mirror::info ();
 }
@@ -98,5 +117,11 @@ int SitechMirror::setValue (rts2core::Value* oldValue, rts2core::Value *newValue
 		sitech->setPosition ('X', tarPos->getValueLong (), newValue->getValueLong ());
 		return 0;
 	}
+	else if (autoMode == oldValue)
+	{
+		sitech->siTechCommand ('X', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
+		return 0;
+	}
+
 	return Mirror::setValue (oldValue, newValue);
 }
