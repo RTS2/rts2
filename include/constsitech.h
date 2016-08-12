@@ -18,3 +18,5 @@
 #define ERROR_BISS_ENCODER_ERROR        0x400
 #define ERROR_CHECKSUM                  0x800
 
+#define AUTO_Y                          0x20
+#define AUTO_X                          0x02
