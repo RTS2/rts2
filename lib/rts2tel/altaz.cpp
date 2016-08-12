@@ -93,7 +93,9 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;
 
-	applyModelAltAz (&hrz);
+	struct ln_hrz_posn model_change;
+
+	applyModelAltAz (&hrz, &model_change);
 
 	int ret = hrz2counts (&hrz, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
 	if (ret)

@@ -364,7 +364,7 @@ class Telescope:public rts2core::Device
 		 */
 		void applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD);
 
-		void applyModelAltAz (struct ln_hrz_posn *hrz);
+		void applyModelAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err);
 
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.

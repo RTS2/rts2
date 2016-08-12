@@ -100,34 +100,28 @@ int RTS2Model::reverse (struct ln_equ_posn *pos, double sid)
 	return reverse (pos);
 }
 
-int RTS2Model::applyAltAz (struct ln_hrz_posn *hrz)
+void RTS2Model::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 {
-	double alt_tar, az_tar;
-	hrz->az = ln_deg_to_rad (hrz->az);
-	hrz->alt = ln_deg_to_rad (hrz->alt);
+	double az_r, el_r;
+	az_r = ln_deg_to_rad (hrz->az);
+	el_r = ln_deg_to_rad (hrz->alt);
 
-	az_tar = hrz->az - params[0] - params[1] * sin (hrz->az)  * tan (hrz->alt) - params[2] * cos (hrz->az) * tan (hrz->alt) - params[3] * tan (hrz->alt) + params[4] / cos (hrz->alt);
-	alt_tar = hrz->alt - params[5] + params[1] * cos (hrz->az) - params[2] * sin (hrz->az) + params[6] * cos (hrz->alt);
+	err->az = - params[0] \
+		- params[1] * sin (az_r)  * tan (el_r) \
+		- params[2] * cos (az_r) * tan (el_r) \
+		- params[3] * tan (el_r) \
+		+ params[4] / cos (el_r);
 
-	hrz->az = ln_rad_to_deg (az_tar);
-	hrz->alt = ln_rad_to_deg (alt_tar);
+	err->alt = - params[5] \
+		+ params[1] * cos (az_r) \
+		- params[2] * sin (az_r) \
+		+ params[6] * cos (el_r);
 
-	return 0;
-}
+	err->az = ln_rad_to_deg (err->az);
+	err->alt = ln_rad_to_deg (err->alt);
 
-int RTS2Model::reverseAltAz (struct ln_hrz_posn *hrz)
-{
-	double alt_tar, az_tar;
-	hrz->az = ln_deg_to_rad (hrz->az);
-	hrz->alt = ln_deg_to_rad (hrz->alt);
-
-	az_tar = hrz->az + params[0] + params[1] * sin (hrz->az)  * tan (hrz->alt) + params[2] * cos (hrz->az) * tan (hrz->alt) + params[3] * tan (hrz->alt) - params[4] / cos (hrz->alt);
-	alt_tar = hrz->alt - params[5] + params[1] * cos (hrz->az) - params[2] * sin (hrz->az) + params[6] * cos (hrz->alt);
-
-	hrz->az = ln_rad_to_deg (az_tar);
-	hrz->alt = ln_rad_to_deg (alt_tar);
-
-	return 0;
+	hrz->az += err->az;
+	hrz->alt += err->alt;
 }
 
 std::istream & RTS2Model::load (std::istream & is)

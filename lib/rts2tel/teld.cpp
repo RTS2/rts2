@@ -1016,11 +1016,12 @@ void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_po
 	}
 }
 
-void Telescope::applyModelAltAz (struct ln_hrz_posn *hrz)
+void Telescope::applyModelAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 {
 	if (!model || calModel->getValueBool () == false)
 		return;
-	model->reverseAltAz (hrz);	
+	model->getErrAltAz (hrz, err);
+	modelRaDec->setValueRaDec (err->alt, err->az);
 }
 
 void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr)

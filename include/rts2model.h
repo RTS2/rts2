@@ -51,8 +51,10 @@ class RTS2Model:public TelModel
 		virtual int reverseVerbose (struct ln_equ_posn *pos);
 		virtual int reverse (struct ln_equ_posn *pos, double sid);
 
-		virtual int applyAltAz (struct ln_hrz_posn *hrz);
-		virtual int reverseAltAz (struct ln_hrz_posn *hrz);
+		/**
+		 * Calculate error for alt-az model. Returns expected error in err parameter.
+		 */
+		void getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err);
 
 		virtual std::istream & load (std::istream & is);
 		virtual std::ostream & print (std::ostream & os);
