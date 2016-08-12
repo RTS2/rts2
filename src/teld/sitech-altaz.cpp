@@ -768,8 +768,8 @@ void SitechAltAz::getTel ()
 
 	extraBit->setValueInteger (altaz_status.extra_bits);
 	// not stopped, not in manual mode
-	autoModeAz->setValueBool ((altaz_status.extra_bits & 0x20) == 0);
-	autoModeAlt->setValueBool ((altaz_status.extra_bits & 0x02) == 0);
+	autoModeAz->setValueBool ((altaz_status.extra_bits & AUTO_Y) == 0);
+	autoModeAlt->setValueBool ((altaz_status.extra_bits & AUTO_X) == 0);
 	mclock->setValueLong (altaz_status.mclock);
 	temperature->setValueInteger (altaz_status.temperature);
 
