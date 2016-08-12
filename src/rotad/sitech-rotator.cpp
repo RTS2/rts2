@@ -44,6 +44,9 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 	createValue (speed, "SPEED", "[deg/sec] maximal speed", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	speed->setValueFloat (20);
 
+	createValue (minAngle, "MIN", "[deg] minimal angle", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	createValue (maxAngle, "MAX", "[deg] maximal angle", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+
 	createValue (acceleration, "acceleration", "derotator acceleration", false);
 	createValue (max_velocity, "max_velocity", "derotator maximal velocity", false);
 	createValue (current, "current", "derotator current", false);
@@ -138,7 +141,61 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 
 void SitechRotator::setTarget (double tv)
 {
-	t_pos->setValueLong ((tv - zeroOffs->getValueFloat () - offset->getValueFloat ()) * ticks->getValueLong () / 360.0);
+	double t_angle = tv - offset->getValueDouble ();
+	if (!isnan (maxAngle->getValueDouble ()))
+	{
+		while (t_angle > maxAngle->getValueDouble ())
+			t_angle -= 360.0;
+	}
+	if (!isnan (minAngle->getValueDouble ()))
+	{
+		while (t_angle < minAngle->getValueDouble ())
+			t_angle += 360.0;
+	}
+	if (!isnan (minAngle->getValueDouble()) && !isnan (maxAngle->getValueDouble ()))
+	{
+		if (t_angle < minAngle->getValueDouble ())
+		{
+			if (minAngle->getValueDouble () < (t_angle + 180) && (t_angle + 180) < maxAngle->getValueDouble ())
+			{
+				t_angle += 180;
+			}
+			else if (minAngle->getValueDouble () < (t_angle + 90) && (t_angle + 90) < maxAngle->getValueDouble ())
+			{
+				t_angle += 90;
+			}
+			else if (minAngle->getValueDouble () < (t_angle + 270) && (t_angle + 270) < maxAngle->getValueDouble ())
+			{
+				t_angle += 270;
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "cannot set target value to " << tv << sendLog;
+				return;
+			}
+		}
+		else if (t_angle > maxAngle->getValueDouble ())
+		{
+			if (minAngle->getValueDouble () < (t_angle - 180) && (t_angle - 180) < maxAngle->getValueDouble ())
+			{
+				t_angle -= 180;
+			}
+			else if (minAngle->getValueDouble () < (t_angle - 90) && (t_angle - 90) < maxAngle->getValueDouble ())
+			{
+				t_angle -= 90;
+			}
+			else if (minAngle->getValueDouble () < (t_angle - 270) && (t_angle - 270) < maxAngle->getValueDouble ())
+			{
+				t_angle -= 270;
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "cannot set target value to " << tv << sendLog;
+				return;
+			}
+		}
+	}
+	t_pos->setValueLong ((t_angle - zeroOffs->getValueFloat ()) * ticks->getValueLong () / 360.0);
 	updated = true;
 	base->callUpdate ();
 }
