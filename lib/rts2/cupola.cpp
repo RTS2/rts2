@@ -37,6 +37,9 @@ Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE
 	createValue (trackTelescope, "track_telescope", "track telescope movements", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	trackTelescope->setValueBool (true);
 
+	createValue (trackDuringDay, "track_day", "track even during daytime", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	trackDuringDay->setValueBool (false);
+
 	targetDistance = 0;
 	observer = NULL;
 
@@ -108,7 +111,21 @@ int Cupola::idle ()
 	}
 	else if (needSlitChange () > 0)
 	{
-		moveStart ();
+		if ((getMasterState () & SERVERD_ONOFF_MASK) == SERVERD_ON)
+		{
+			switch (getMasterState ())
+			{
+				case SERVERD_DUSK:
+				case SERVERD_NIGHT:
+				case SERVERD_DAWN:
+					if (trackTelescope->getValueBool () == true)
+						moveStart ();
+					break;
+				default:
+					if (trackDuringDay->getValueBool () == true)
+						moveStart ();
+			}
+		}
 		setTimeout (USEC_SEC);
 	}
 	else

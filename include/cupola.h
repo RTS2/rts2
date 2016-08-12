@@ -102,6 +102,7 @@ class Cupola:public Dome
 		rts2core::ValueDouble *currentAz;
 
 		rts2core::ValueBool *trackTelescope;
+		rts2core::ValueBool *trackDuringDay;
 
 		char *configFile;
 
