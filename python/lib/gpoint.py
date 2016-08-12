@@ -120,9 +120,10 @@ class GPoint:
 
 	def model_el(self,params,a_az,a_el):
 		return - params[5] \
-			+ params[1]*np.cos(a_az) \
 			- params[2]*np.sin(a_az) \
-			+ params[6]*np.cos(a_el)
+			+ params[6]*np.cos(a_el) \
+			+ params[7]*np.cos(a_az) \
+			+ params[8]*np.sin(a_az-params[9])
 
 	# Fit functions.
 	# a_ha - target HA (hour angle)
@@ -237,7 +238,7 @@ class GPoint:
 			print "Parsed data",a_data
 	
 		if self.altaz:
-			par_init = np.array([0,0,0,0,0,0,0])
+			par_init = np.array([0,0,0,0,0,0,0,0,0,0])
 
 			self.aa_az = np.array(a_data[:,0],np.float)
 			self.aa_alt = np.array(a_data[:,1],np.float)

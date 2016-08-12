@@ -44,6 +44,8 @@ parser.add_argument('--expose', help='start exposure on device')
 parser.add_argument('--altazm', help='output line for alt-az model build', action='store', dest='altazm')
 parser.add_argument('--spiral', help='run spiral offseting on telescope', action='store', dest='spiral')
 parser.add_argument('--manual-altaz', help='build manual alt-az model',action='store_true', dest='manual_altaz', default=False)
+parser.add_argument('--path-altaz', help='build manual alt-az model along path provided as argument', action='store', dest='path_altaz', default=None)
+parser.add_argument('--bright-star', help='point to bright star closest to given alt az pair', action='store', dest='bright_star', default=None)
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
 parser.add_argument('--create-tle-target', help='create TLE target. Target name, first and second line of TLE must be entered as command line arguments', action='store_true', dest='create_tle_target')
@@ -88,8 +90,8 @@ def run_spiral(telescope,timeout,last_step=0):
 	s = rts2.spiral.Spiral(1,1)
 	x = 0
 	y = 0
-	step_alt = 0.04
-	step_az = 0.04
+	step_alt = 0.08
+	step_az = 0.08
 	alt=j.getValue(telescope,"TEL_",refresh_not_found=True)['alt']
 	cosa = math.cos(math.radians(alt))
 	step_az /= cosa
@@ -105,34 +107,35 @@ def run_spiral(telescope,timeout,last_step=0):
 		if wait_for_key(timeout):
 			return i
 
-def run_manual_altaz(telescope,timeout):
-	import rts2.altazpath
+def find_bright_star(telescope,alt,az,mag_max=0,mag_min=4.5):
 	import rts2.bsc
-	import rts2.libnova
-
 	j.refresh()
-
+	lst = j.getValue(telescope,'LST')
 	lat = j.getValue(telescope,'LATITUDE')
 	lng = j.getValue(telescope,'LONGITUD')
+
+	ha,dec = rts2.libnova.hrz_to_equ(az,alt,lat,lng)
+	ra = (lst - ha) % 360.0
+	print 'Looking for star around RA {0:3} DEC {1:2} (LST {2:3}), magnitude {3} to {4}'.format(ra,dec,lst,mag_max,mag_min)
+	# find bsc..
+	bsc=rts2.bsc.find_nearest(ra,dec,mag_max,mag_min)
+	print 'Found BSC #{0} at RA {1} DEC {2} mag {3}'.format(bsc[0],bsc[1],bsc[2],bsc[3])
+	return bsc
+
+def run_manual_altaz(telescope,timeout,path):
+	import rts2.libnova
 
 	oa = open('align','a')
 	mn = 1
 
 	#for p in rts2.altazpath.random_path():
-	for p in rts2.altazpath.constant_path([30,45,75]):
+	#for p in rts2.altazpath.constant_path([30,45,75]):
+	for p in path:
 		alt = p[0]
 		az = p[1]
 
 		print 'Next model point at altitude {0} azimuth {1}'.format(alt,az)
-
-		j.refresh()
-		lst = j.getValue(telescope,'LST')
-		ha,dec = rts2.libnova.hrz_to_equ(az,alt,lat,lng)
-		ra = (lst - ha) % 360.0
-		print 'Looking for star around RA {0:3} DEC {1:2} (LST {2:3})'.format(ra,dec,lst)
-		# find bsc..
-		bsc = rts2.bsc.find_nearest(ra,dec,2.5,4.5)
-		print 'Found BSC #{0} at RA {1} DEC {2} mag {3}'.format(bsc[0],bsc[1],bsc[2],bsc[3])
+		bsc = find_bright_star(telescope,alt,az)
 		bsc_ra = bsc[1]
 		bsc_dec = bsc[2]
 		
@@ -140,7 +143,7 @@ def run_manual_altaz(telescope,timeout):
 		time.sleep(2)
 		j.refresh(telescope)
 		tmout = 120
-		while tmout > 0 and j.getState(telescope) & 0x020 == 0x000:
+		while tmout > 0 and j.getState(telescope) & 0x01000020 == 0x01000000:
 			j.refresh(telescope)
 			tel=j.getValue(telescope,'TEL')
 			hrz=j.getValue(telescope,'TEL_')
@@ -224,9 +227,16 @@ try:
 	if options.altazm:
 		print get_altazm_line(options.altazm)
 	if options.spiral:
-		run_spiral(options.split,7)	
+		run_spiral(options.spiral,7)	
 	if options.manual_altaz:
-		run_manual_altaz('T0',7)
+		import rts2.altazpath
+		run_manual_altaz('T0',7,rts2.altazpath.constant_path([45,75]))
+	if options.path_altaz:
+		run_manual_altaz('T0',7,map(lambda x:map(float,x.split(':')),options.path_altaz.split(',')))
+	if options.bright_star:
+		alt,az=map(float,options.bright_star.split(':'))
+		bsc = find_bright_star('T0',alt,az)
+		j.executeCommand('T0','move {0} {1}'.format(bsc[1],bsc[2]))
 	if options.runscript:
 		print 'running script', options.runscript, j.loadJson('/api/runscript', {'d':options.device, 's':options.runscript, 'kill': 1 if options.kill_script else 0})
 
