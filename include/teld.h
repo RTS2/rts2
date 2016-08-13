@@ -571,6 +571,8 @@ class Telescope:public rts2core::Device
 			out_tar->dec = tarRaDec->getDec ();
 		}
 
+		double getTargetDec () { return tarRaDec->getValueDouble (); }
+
 		/**
 		 * Calculate target position for given JD.
 		 * This function shall be used for adaptive tracking.
@@ -620,12 +622,6 @@ class Telescope:public rts2core::Device
 
 		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
 		void addDiffAltAz (struct ln_hrz_posn *hrz, double secdiff);
-
-		void getTargetAltAz (struct ln_hrz_posn *hrz)
-		{
-			hrz->alt = telAltAz->getAlt ();
-			hrz->az = telAltAz->getAz ();
-		}
 
 		/**
 		 * Returns time when move start was commanded (in ctime).

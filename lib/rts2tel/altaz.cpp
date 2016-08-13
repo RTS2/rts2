@@ -58,9 +58,9 @@ int AltAz::infoJDLST (double JD, double LST)
 	int ret = Telescope::infoJDLST (JD, LST);
 	if (ret)
 		return ret;
-	parallAngle->setValueDouble (parallactic_angle (getHourAngle (), getTelDec ()));
+	parallAngle->setValueDouble (parallactic_angle (getTargetHa (), getTargetDec ()));
 	struct ln_hrz_posn hrz;
-	getTelAltAz (&hrz);
+	getTargetAltAz (&hrz, JD);
 	derRate->setValueDouble (derotator_rate (hrz.az, hrz.alt));
 
 	return ret;

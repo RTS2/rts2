@@ -705,7 +705,7 @@ double Telescope::getTargetHa ()
 
 double Telescope::getTargetHa (double jd)
 {
-	return ln_range_degrees (ln_get_apparent_sidereal_time (jd) - telRaDec->getRa ());
+	return ln_range_degrees (ln_get_apparent_sidereal_time (jd) - tarRaDec->getRa ());
 }
 
 double Telescope::getLstDeg (double JD)
