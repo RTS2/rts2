@@ -123,11 +123,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		diffTrackAltAzOn = NULL;
 	}
 
-	if (hasAltAzDiff)
-	{
-
-	}
-
 	if (hasTracking)
 	{
 		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE);
@@ -158,13 +153,18 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
-	if (hasUnTelCoordinates != 0)
+	tarTelRaDec = NULL;
+	tarTelAltAz = NULL;
+
+	switch (hasUnTelCoordinates)
 	{
-		createValue (tarTelRaDec, "TAR_TEL", "target position (OBJ) in telescope coordinates (DEC in 180 .. -180 range)", true);
-	}
-	else
-	{
-		tarTelRaDec = NULL;
+		case 1:
+			createValue (tarTelRaDec, "TAR_TEL", "target position (OBJ) in telescope coordinates (DEC in 180 .. -180 range)", true);
+			break;
+
+		case -1:
+			createValue (tarTelAltAz, "TAR_TEL", "target position (OBJ) in telescope coordinates (AZ in 180 .. -180 range)", true);
+			break;
 	}
 
 	createValue (tarRaDec, "TAR", "target position with computed corrections (precession, refraction, aberation) applied", true);
@@ -384,7 +384,7 @@ double Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
-void Telescope::setTarTel (struct ln_equ_posn *pos)
+void Telescope::setTarTelRaDec (struct ln_equ_posn *pos)
 {
 	if (tarTelRaDec == NULL)
 		return;
@@ -392,6 +392,13 @@ void Telescope::setTarTel (struct ln_equ_posn *pos)
 	tarTelRaDec->setValueRaDec (pos->ra, pos->dec);
 }
 
+void Telescope::setTarTelAltAz (struct ln_hrz_posn *hrz)
+{
+	if (tarTelAltAz == NULL)
+		return;
+
+	tarTelAltAz->setValueAltAz (hrz->alt, hrz->az);
+}
 
 int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
@@ -678,9 +685,23 @@ double Telescope::getCorrAz ()
 double Telescope::getTargetDistance ()
 {
 	struct ln_equ_posn tar,tel;
-	getTelTargetRaDec (&tar);
-	getTelRaDec (&tel);
-	normalizeRaDec (tel.ra, tel.dec);
+	if (tarTelAltAz != NULL)
+	{
+		struct ln_hrz_posn hrz_tar, hrz_tel;
+		tarTelAltAz->getAltAz (&hrz_tar);	
+		getTelAltAz (&hrz_tel);
+
+		tar.ra = hrz_tar.az;
+		tar.dec = hrz_tar.alt;
+		tel.ra = hrz_tel.az;
+		tel.dec = hrz_tel.alt;
+	}
+	else
+	{
+		getTelTargetRaDec (&tar);
+		getTelRaDec (&tel);
+		normalizeRaDec (tel.ra, tel.dec);
+	}
 
 	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))
 		return -1;

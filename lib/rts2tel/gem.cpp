@@ -289,7 +289,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			tar_pos.ra -= f_model_change.ra;
 			tar_pos.dec += f_model_change.dec;
 			setTelTarget (tar_pos.ra, tar_pos.dec);
-			setTarTel (&tf_pos);
+			setTarTelRaDec (&tf_pos);
 		}
 	}
 	else
@@ -301,7 +301,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			tar_pos.ra -= n_model_change.ra;
 			tar_pos.dec -= n_model_change.dec;
 			setTelTarget (tar_pos.ra, tar_pos.dec);
-			setTarTel (&tn_pos);
+			setTarTelRaDec (&tn_pos);
 		}
 	}
 

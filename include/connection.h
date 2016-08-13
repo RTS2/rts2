@@ -432,7 +432,7 @@ class Connection:public Object
 		 * Will remove all pending commands from que. Will also
 		 * delete runningCommand, if it was not send.
 		 */
-		void queClear ();
+		void queClear (bool running = false);
 
 		/**
 		 * Called when connection will be deleted from system to

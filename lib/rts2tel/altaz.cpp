@@ -104,6 +104,7 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 	if (writeValue)
 	{
 		setTelTarget (tar_pos.ra, tar_pos.dec);
+		setTarTelAltAz (&hrz);
 	}
 	return 0;
 }

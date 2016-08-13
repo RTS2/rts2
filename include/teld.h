@@ -518,7 +518,8 @@ class Telescope:public rts2core::Device
 		/**
 		 * Sets new movement target, used exclusively to change target flip.
 		 */
-		void setTarTel (struct ln_equ_posn *pos);
+		void setTarTelRaDec (struct ln_equ_posn *pos);
+		void setTarTelAltAz (struct ln_hrz_posn *hrz);
 
 		/**
 		 * Set WCS reference values telescope is reporting.
@@ -571,7 +572,7 @@ class Telescope:public rts2core::Device
 			out_tar->dec = tarRaDec->getDec ();
 		}
 
-		double getTargetDec () { return tarRaDec->getValueDouble (); }
+		double getTargetDec () { return tarRaDec->getDec (); }
 
 		/**
 		 * Calculate target position for given JD.
@@ -1125,6 +1126,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *tarRaDec;
 
 		rts2core::ValueRaDec *tarTelRaDec;
+		rts2core::ValueAltAz *tarTelAltAz;
 
 		/**
 		 * Corrections from astrometry/user.
