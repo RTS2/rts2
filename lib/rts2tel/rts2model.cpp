@@ -113,9 +113,10 @@ void RTS2Model::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 		+ params[4] / cos (el_r);
 
 	err->alt = - params[5] \
-		+ params[1] * cos (az_r) \
 		- params[2] * sin (az_r) \
-		+ params[6] * cos (el_r);
+		+ params[6] * cos (el_r) \
+		+ params[7] * cos (az_r) \
+		+ params[8] * sin (az_r - params[9]);
 
 	err->az = ln_rad_to_deg (err->az);
 	err->alt = ln_rad_to_deg (err->alt);
@@ -135,7 +136,6 @@ std::istream & RTS2Model::load (std::istream & is)
 	if (name == "RTS2_ALTAZ")
 	{
 		altaz = true;
-		pn = 7;
 	}
 
 	int i = 0;
@@ -158,7 +158,6 @@ std::ostream & RTS2Model::print (std::ostream & os)
 	int pn = 9;
 	if (altaz)
 	{
-		pn = 7;
 		os << "RTS2_ALTAZ";
 	}
 	else
