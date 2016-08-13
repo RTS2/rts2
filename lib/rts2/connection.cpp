@@ -1181,9 +1181,9 @@ bool Connection::queEmptyForOriginator (Object *testOriginator)
 	return true;
 }
 
-void Connection::queClear ()
+void Connection::queClear (bool running)
 {
-	if (runningCommand && runningCommandStatus != SEND)
+	if (runningCommand && (running == true || runningCommandStatus != SEND))
 	{
 		delete runningCommand;
 		runningCommand = NULL;
