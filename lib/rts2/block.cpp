@@ -406,11 +406,8 @@ void Block::oneRunLoop ()
 		}
 	}
 
-	sigset_t sigmask;
-	sigemptyset (&sigmask);
-
 	addPollSocks ();
-	if (ppoll (fds, npolls, &read_tout, &sigmask) > 0)
+	if (ppoll (fds, npolls, &read_tout, NULL) > 0)
 		pollSuccess ();
 	ret = idle ();
 	if (ret == -1)

@@ -1119,6 +1119,9 @@ void Connection::queCommand (Command * cmd, int notBop, Object * originator)
 
 int Connection::queCommand (Command * cmd)
 {
+	#ifdef DEBUG_ALL
+	std::cout << "Connection::queCommand " << cmd->getText () << " runningCommand " << runningCommand << " queu size " << commandQue.size () << std::endl;
+	#endif
 	cmd->setConnection (this);
 	if (runningCommand
 		|| isConnState (CONN_CONNECTING)
@@ -1454,6 +1457,9 @@ int Connection::commandReturn ()
 	runningCommandStatus = RETURNING;
 	commandReturn (runningCommand, stat);
 	ret = runningCommand->commandReturn (stat, this);
+	#ifdef DEBUG_ALL
+	std::cout << "Connection::commandReturn " << ret << std::endl;
+	#endif
 	switch (ret)
 	{
 		case RTS2_COMMAND_REQUE:
@@ -1472,10 +1478,18 @@ int Connection::sendMsg (const char *msg)
 	int len;
 	int ret;
 	if (sock == -1)
+	{
+		#ifdef DEBUG_ALL
+		std::cout << "Connection::sendMsg sock -1" << std::endl;
+		#endif
 		return -1;
+	}
 	len = strlen (msg) + 1;
 	char *mbuf = new char[len + 1];
 	strcpy (mbuf, msg);
+	#ifdef DEBUG_ALL
+	std::cout << "Connection::sendMsg will send " << msg << std::endl;
+	#endif
 	strcat (mbuf, "\n");
 	// ignore EINTR
 	do
@@ -1489,7 +1503,7 @@ int Connection::sendMsg (const char *msg)
 			msg, sock, len, ret, errno);
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_ERROR)
-			<< "Connection::send [" << getCentraldId () << ":" << conn_state << "] error "
+			<< "Connection::sendMsg [" << getCentraldId () << ":" << conn_state << "] error "
 			<< sock << " state: " << ret << " sending " << msg << ":" << strerror (errno)
 			<< sendLog;
 		#endif
@@ -1498,7 +1512,7 @@ int Connection::sendMsg (const char *msg)
 		return -1;
 	}
 	#ifdef DEBUG_ALL
-	std::cout << "Connection::send " << getName ()
+	std::cout << "Connection::sendMsg " << getName ()
 		<< " [" << getCentraldId () << ":" << sock << "] send " << ret << ": " << msg
 		<< std::endl;
 	#endif

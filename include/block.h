@@ -483,7 +483,7 @@ class Block: public App
 			for (getOpenConnectionType (deviceType, iter); iter != connections.end (); getOpenConnectionType (deviceType, iter))
 			{
 				if (clearQueue)
-					(*iter)->queClear (true);
+					(*iter)->queClear ();
 				(*iter)->queCommand (new T (command));
 				iter++;
 				if (numdev)

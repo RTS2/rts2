@@ -211,8 +211,9 @@ class Command
 
 		virtual int send ();
 		int commandReturn (int status, Connection * conn);
+
 		/**
-		 * Returns command test.
+		 * Returns command text.
 		 */
 		char * getText () { return text; }
 

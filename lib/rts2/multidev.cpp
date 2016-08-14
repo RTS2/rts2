@@ -65,10 +65,7 @@ void MultiDev::multiLoop ()
 			i += (*iter)->npolls;
 		}
 
-		sigset_t sigmask;
-		sigemptyset (&sigmask);
-
-		if (ppoll (allpolls, polls, &read_tout, &sigmask) > 0)
+		if (ppoll (allpolls, polls, &read_tout, NULL) > 0)
 		{
 			j = 0;
 			int polloff = 0;

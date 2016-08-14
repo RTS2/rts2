@@ -42,7 +42,7 @@
 #include "logstream.h"
 #include "valuelist.h"
 
-#define MAX_DATA    200
+#define MAX_DATA    2000
 
 /**
  * Identifier of shared data connection.

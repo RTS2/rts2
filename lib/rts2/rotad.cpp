@@ -55,7 +55,6 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		parallacticAngleRate->setValueDouble (rate);
 		if (paTracking->getValueBool ())
 			maskState (ROT_MASK_PATRACK, ROT_PA_TRACK, "started tracking");
-
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);
