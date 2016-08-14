@@ -155,7 +155,7 @@ int ServoDrive::commandAuthorized (rts2core::Connection * conn)
 		}
 		else
 		{
-			return home ('H');
+			return home ('L');
 		}
 	}
 	if (conn->isCommand ("r"))
@@ -198,7 +198,7 @@ int ServoDrive::home (char d)
 	sendCommand ("EN*");
 	char md = 'R';
 	if (!(d == 'L' || d == 'H'))
-		d = 'H';
+		d = 'L';
 	if (d == 'H')
 		md = 'L';
 		
