@@ -73,6 +73,8 @@ class GPoint:
 		self.altaz = False # by default, model GEM
 		if latitude is not None:
 			self.latitude_r = np.radians(latitude)
+		self.best = None
+		self.name_map = None
 
 	def equ_to_hrz(self,ha,dec):
 		""" Transform HA-DEC (in radians) vector to ALT-AZ (in degrees) vector"""
@@ -236,17 +238,13 @@ class GPoint:
 		a_data = np.array(data)
 		if self.verbose:
 			print "Parsed data",a_data
-	
-		if self.altaz:
-			par_init = np.array([0,0,0,0,0,0,0,0,0,0])
 
+		if self.altaz:
 			self.aa_az = np.array(a_data[:,0],np.float)
 			self.aa_alt = np.array(a_data[:,1],np.float)
 			self.ar_az = np.array(a_data[:,2],np.float)
 			self.ar_alt = np.array(a_data[:,3],np.float)
 		else:	
-			par_init = np.array([0,0,0,0,0,0,0,0,0])
-
 			self.aa_ha = np.array(a_data[:,0],np.float)
 			self.aa_dec = np.array(a_data[:,1],np.float)
 			self.ar_ha = np.array(a_data[:,2],np.float)
@@ -296,12 +294,16 @@ class GPoint:
 		self.diff_alt = self.aa_alt - self.ar_alt
 		self.diff_az = normalize_az_err(self.aa_az - self.ar_az)
 
+	def fit(self):
 		if self.altaz:
+			par_init = np.array([0,0,0,0,0,0,0,0,0,0])
 			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_altaz,par_init,args=(self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt),full_output=True,maxfev=10000)
 		else:
+			par_init = np.array([0,0,0,0,0,0,0,0,0])
 			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_gem,par_init,args=(self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=10000)
 
-		print self.message,self.ier,self.info
+		if self.verbose:
+			print self.message,self.ier,self.info
 
 		if self.altaz:
 
@@ -390,15 +392,14 @@ class GPoint:
 		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
 		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
 
-		print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
-		print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_ha*np.cos(self.aa_dec)*3600)
-		print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
-		print 'RMS MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
-		print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_az*np.cos(self.aa_dec)*3600)
-		print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
-		print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
-
-		return self.best
+		if self.best is not None:
+			print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
+			print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_ha*np.cos(self.aa_dec)*3600)
+			print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
+			print 'RMS MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
+			print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_az*np.cos(self.aa_dec)*3600)
+			print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
+			print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
 	# set X axis to MJD data
 	def set_x_axis(self,plot):
@@ -461,26 +462,31 @@ class GPoint:
                 return polar
 
 	def __get_data(self,name):
-		# maps name to data,plot style,label
-		name_map = {
-			'alt-err':[self.diff_alt*3600,'r.','Alt error'],
-			'az-err':[self.diff_az*3600,'y.','Az error'],
-			'dec-err':[self.diff_dec*3600,'b.','Dec error'],
-			'ha-err':[self.diff_ha*3600,'g.','HA error'],
-			'alt-merr':[self.diff_model_alt*3600,'r*','Alt model error'],
-			'az-merr':[self.diff_model_az*3600,'y*','Az model error'],
-			'dec-merr':[self.diff_model_dec*3600,'b*','Dec model error'],
-			'ha-merr':[self.diff_model_ha*3600,'g*','HA model error'],
-			'mjd':[self.mjd,'m','MJD'],
-			'num':[range(len(self.mjd)),'m','Number'],
-			'paz':[self.aa_az,'rx','Azimuth'],
-			'az':[self.aa_az,'rx','Azimuth'],
-			'alt':[self.aa_alt,'yx','Altitude'],
-			'dec':[self.aa_dec,'bx','Dec'],
-			'ha':[self.aa_ha,'gx','HA'],
-			'model-err':[self.diff_model_angular*3600,'c+','Model angular error'],
-			'real-err':[self.diff_angular*3600,'c+','Real angular error']
-		}
+		if self.name_map is None:
+			# maps name to data,plot style,label
+			name_map = {
+				'alt-err':[self.diff_alt*3600,'r.','Alt error'],
+				'az-err':[self.diff_az*3600,'y.','Az error'],
+				'dec-err':[self.diff_dec*3600,'b.','Dec error'],
+				'ha-err':[self.diff_ha*3600,'g.','HA error'],
+				'mjd':[self.mjd,'m','MJD'],
+				'num':[range(len(self.mjd)),'m','Number'],
+				'paz':[self.aa_az,'rx','Azimuth'],
+				'az':[self.aa_az,'rx','Azimuth'],
+				'alt':[self.aa_alt,'yx','Altitude'],
+				'dec':[self.aa_dec,'bx','Dec'],
+				'ha':[self.aa_ha,'gx','HA']
+			}
+			# append model output only if model was fitted
+			if self.best:
+				name_map.update({
+					'alt-merr':[self.diff_model_alt*3600,'r*','Alt model error'],
+					'az-merr':[self.diff_model_az*3600,'y*','Az model error'],
+					'dec-merr':[self.diff_model_dec*3600,'b*','Dec model error'],
+					'ha-merr':[self.diff_model_ha*3600,'g*','HA model error'],
+					'model-err':[self.diff_model_angular*3600,'c+','Model angular error'],
+					'real-err':[self.diff_angular*3600,'c+','Real angular error']
+				})
 		return name_map[string.lower(name)]
 
 	def plot_data(self,p,nx,ny,band):

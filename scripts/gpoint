@@ -31,7 +31,9 @@ def generateModel(args):
 	model = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
 
 	model.process_files(args.inputfiles,args.flips)
-	model.print_params()
+	if args.stat_only == False:
+		model.fit()
+		model.print_params()
 	model.print_stat()
 
 	if args.model_output is not None:
@@ -115,6 +117,7 @@ if __name__ == '__main__':
 	parser.add_argument('-p',dest='plots',action='store',help='plot graphs, please see manual page for examples (allowed axis names: alt-err,az-err,dec-err,ha-err,alt-merr,az-merr,dec-merr,ha-merr,mjd,num,paz,az,alt,dec,ha,model-err,real-err)')
 	parser.add_argument('-s',dest='oplot',action='store',help='save plot to file instead of displaying it on screen',default=None)
 	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (num:model-err,num:ha-err,num:dec-err)',default=False)
+	parser.add_argument('--stat-only',dest='stat_only',action='store_true',help='do not attempt to fit the model - only print statistics',default=False)
 	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (num:model-err,num:ha-err,num:dec-err,paz:contour-model-err%%1:1:2:2)',default=False)
 	parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
 	parser.add_argument('--flip',dest='flips',action='store',help='flips (both, east, west - select pointings only on given side)',default='both')
