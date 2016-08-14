@@ -59,6 +59,8 @@ class EllTarget:public Target
 		double getEarthDistance (double JD);
 		double getSolarDistance (double JD);
 
+		virtual bool hasConstantPosition () { return true; }
+
 	private:
 		struct ln_ell_orbit orbit;
 
