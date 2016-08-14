@@ -46,6 +46,7 @@ parser.add_argument('--spiral', help='run spiral offseting on telescope', action
 parser.add_argument('--manual-altaz', help='build manual alt-az model',action='store_true', dest='manual_altaz', default=False)
 parser.add_argument('--path-altaz', help='build manual alt-az model along path provided as argument', action='store', dest='path_altaz', default=None)
 parser.add_argument('--bright-star', help='point to bright star closest to given alt az pair', action='store', dest='bright_star', default=None)
+parser.add_argument('--mags', help='magnitude range for BSC lookup', action='store', dest='mags', default='4.5:2')
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
 parser.add_argument('--create-tle-target', help='create TLE target. Target name, first and second line of TLE must be entered as command line arguments', action='store_true', dest='create_tle_target')
@@ -58,6 +59,10 @@ parser.add_argument('--push', help='print value on its updates', action='store_t
 options = parser.parse_args()
 
 j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+
+__mm = map(float,options.mags.split(':'))
+__mm.sort()
+mag_max, mag_min = __mm
 
 if (options.runscript or options.list_minmax) and not (options.device):
 	print >>sys.stderr,'--device argument must be specified with --cmd option'
@@ -107,7 +112,7 @@ def run_spiral(telescope,timeout,last_step=0):
 		if wait_for_key(timeout):
 			return i
 
-def find_bright_star(telescope,alt,az,mag_max=0,mag_min=4.5):
+def find_bright_star(telescope,alt,az):
 	import rts2.bsc
 	j.refresh()
 	lst = j.getValue(telescope,'LST')
