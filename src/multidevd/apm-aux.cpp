@@ -146,6 +146,8 @@ void APMAux::postEvent (rts2core::Event *event)
 
 int APMAux::info ()
 {
+       	sendUDPMessage ("C999");
+
 	switch (commandInProgress)
 	{
 		case OPENING:
@@ -173,7 +175,7 @@ int APMAux::info ()
 
 	if (temperature != NULL)
 	{
-		sendUDPMessage ("GETTEMP");
+		sendUDPMessage ("T000", true);
 	}
 
 	return Sensor::info ();
@@ -300,7 +302,7 @@ int APMAux::relayControl (int n, bool on)
         return 0;
 }
 
-int APMAux::sendUDPMessage (const char * _message)
+int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 {
 	char *response = (char *)malloc(20);
 
@@ -317,6 +319,20 @@ int APMAux::sendUDPMessage (const char * _message)
 
 	response[n] = '\0';
 	logStream (MESSAGE_DEBUG) << "response: " << response << sendLog;
+
+	// temperature commands needs second read
+	if (expectSecond)
+	{
+		n = apmConn->receiveMessage (response, 20, 10);
+		if (n <= 0)
+		{
+			logStream (MESSAGE_ERROR) << "no second response" << sendLog;
+			sleep (2);
+			return -1;
+		}
+		response[n] = '\0';
+		logStream (MESSAGE_DEBUG) << "response 2: " << response << sendLog;
+	}
 
 	if (!isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
 	{
@@ -372,6 +388,11 @@ int APMAux::sendUDPMessage (const char * _message)
 		int rv = response[3] - '0';
 		relay1->setValueBool (rv & 0x01);
 		relay2->setValueBool (rv & 0x02);
+	}
+
+	if (response[0] == 'T')
+	{
+		temperature->setValueFloat (atof (response + 1));
 	}
 
 	sleep (2);

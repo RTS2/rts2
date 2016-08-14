@@ -51,6 +51,8 @@ class ConnUDP:public ConnNoSend
 		 * @param rectimeout receive timeout in seconds
 		 */
 		int sendReceive (const char * in_message, char * out_message, unsigned int length, int noreceive = 0, float rectimeout=10);
+
+		int receiveMessage (char *out_message, unsigned int length, float rectimeout);
 	protected:
 		/**
 		 * Process received data. Data are stored in buf member variable.

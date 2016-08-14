@@ -58,7 +58,7 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		rts2core::ValueSelection *baffle;
 		rts2core::ValueBool *relay1;
 		rts2core::ValueBool *relay2;
-		rts2core::ValueDouble *temperature;
+		rts2core::ValueFloat *temperature;
 
 		// to organize timeouts,..
 		rts2core::ValueTime *coverCommand;
@@ -75,7 +75,7 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 
 		int relayControl (int n, bool on);
 
-		int sendUDPMessage (const char * _message);
+		int sendUDPMessage (const char * _message, bool expectSecond = false);
 };
 
 }
