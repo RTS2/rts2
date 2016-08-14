@@ -48,6 +48,8 @@ class ServoDrive:public Sensor
 		const char *dev;
 
 		rts2core::ValueLong *target;
+		rts2core::ValueLong *minTarget;
+		rts2core::ValueLong *maxTarget;
 
 		int sendCommand (const char *cmd);
 
@@ -69,6 +71,10 @@ ServoDrive::ServoDrive (int argc, char **argv):Sensor (argc, argv)
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 
 	createValue (target, "TARGET", "target position", false, RTS2_VALUE_WRITABLE);
+	createValue (minTarget , "MIN", "minimal axis value",  false, RTS2_VALUE_WRITABLE);
+	createValue (maxTarget, "MAX", "maximal target value", false, RTS2_VALUE_WRITABLE);
+	minTarget->setValueLong (INT_MIN);
+	maxTarget->setValueLong (INT_MAX);
 }
 
 ServoDrive::~ServoDrive (void)
@@ -80,6 +86,8 @@ int ServoDrive::setValue (rts2core::Value * old_value, rts2core::Value * new_val
 {
 	if (old_value == target)
 	{
+		if (new_value->getValueLong () < minTarget->getValueLong () || new_value->getValueLong () > maxTarget->getValueLong ())
+			return -2;
 		servoDev->flushPortIO ();
 		beginLoading ();
 		long diff = new_value->getValueLong () - old_value->getValueLong ();
