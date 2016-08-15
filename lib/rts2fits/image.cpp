@@ -2483,7 +2483,7 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 
 	// array groups to write. First they are created, then they are written at the end
 
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
+	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || conn->getOtherType () == DEVICE_TYPE_ROTATOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
 	{
 		name = new char[strlen (name) + strlen (conn->getName ()) + 2];
 		strcpy (name, conn->getName ());
