@@ -24,15 +24,11 @@
 
 Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE_CUPOLA)
 {
-	targetPos.ra = NAN;
-	targetPos.dec = NAN;
-
-	createValue (tarRa, "tar_ra", "cupola target ra", false, RTS2_DT_RA);
-	createValue (tarDec, "tar_dec", "cupola target dec", false, RTS2_DT_DEC);
-	createValue (tarAlt, "tar_alt", "cupola target altitude", false, RTS2_DT_DEC);
-	createValue (tarAz, "tar_az", "cupola target azimut", false, RTS2_DT_DEGREES);
+	createValue (tarRaDec, "TAR_RADEC", "cupola target RA DEC", false);
+	createValue (tarAltAz, "TAR_ALTAZ", "cupola target ALT AZ", false);
 
 	createValue (currentAz, "CUP_AZ", "cupola azimut", true, RTS2_DT_DEGREES);
+	createValue (targetDistance, "TARDIST", "target distance", false, RTS2_DT_DEGREES);
 
 	createValue (trackTelescope, "track_telescope", "track telescope movements", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	trackTelescope->setValueBool (true);
@@ -40,7 +36,6 @@ Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE
 	createValue (trackDuringDay, "track_day", "track even during daytime", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	trackDuringDay->setValueBool (false);
 
-	targetDistance = 0;
 	observer = NULL;
 
 	configFile = NULL;
@@ -78,15 +73,12 @@ int Cupola::init ()
 
 int Cupola::info ()
 {
-	struct ln_hrz_posn hrz;
 	// target ra+dec
-	tarRa->setValueDouble (targetPos.ra);
-	tarDec->setValueDouble (targetPos.dec);
-	if (!isnan (targetPos.ra) && !isnan (targetPos.dec))
+	if (!isnan (tarRaDec->getRa ()) && !isnan (tarRaDec->getDec ()))
 	{
+		struct ln_hrz_posn hrz;
 		getTargetAltAz (&hrz);
-		tarAlt->setValueDouble (hrz.alt);
-		tarAz->setValueDouble (hrz.az);
+		tarAltAz->setValueAltAz (hrz.alt, hrz.az);
 	}
 
 	return Dome::info ();
@@ -138,8 +130,7 @@ int Cupola::idle ()
 int Cupola::moveTo (rts2core::Connection * conn, double ra, double dec)
 {
 	int ret;
-	targetPos.ra = ra;
-	targetPos.dec = dec;
+	tarRaDec->setValueRaDec (ra, dec);
 	infoAll ();
 	ret = moveStart ();
 	if (ret)
@@ -156,10 +147,8 @@ int Cupola::moveStart ()
 
 int Cupola::moveStop ()
 {
-	targetPos.ra = NAN;
-	targetPos.dec = NAN;
-	maskState (DOME_CUP_MASK | BOP_EXPOSURE,
-		DOME_CUP_NOT_MOVE | DOME_CUP_NOT_SYNC);
+	tarRaDec->setValueRaDec (NAN, NAN);
+	maskState (DOME_CUP_MASK | BOP_EXPOSURE, DOME_CUP_NOT_MOVE | DOME_CUP_NOT_SYNC);
 	infoAll ();
 	return 0;
 }
@@ -181,7 +170,10 @@ void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
 	double JD;
 	JD = ln_get_julian_from_sys ();
-	ln_get_hrz_from_equ (&targetPos, observer, JD, hrz);
+	struct ln_equ_posn target;
+	target.ra = tarRaDec->getRa ();
+	target.dec = tarRaDec->getDec ();
+	ln_get_hrz_from_equ (&target, observer, JD, hrz);
 }
 
 bool Cupola::needSlitChange ()
@@ -189,7 +181,7 @@ bool Cupola::needSlitChange ()
 	int ret;
 	struct ln_hrz_posn targetHrz;
 	double splitWidth;
-	if (isnan (targetPos.ra) || isnan (targetPos.dec))
+	if (isnan (tarRaDec->getRa ()) || isnan (tarRaDec->getDec ()))
 		return false;
 	getTargetAltAz (&targetHrz);
 	splitWidth = getSlitWidth (targetHrz.alt);
@@ -200,12 +192,12 @@ bool Cupola::needSlitChange ()
 	if (ret)
 		return false;
 	// simple check; can be repleaced by some more complicated for more complicated setups
-	targetDistance = getCurrentAz () - targetHrz.az;
-	if (targetDistance > 180)
-		targetDistance = (targetDistance - 360);
-	else if (targetDistance < -180)
-		targetDistance = (targetDistance + 360);
-	if (fabs (targetDistance) < splitWidth)
+	targetDistance->setValueDouble (getCurrentAz () - targetHrz.az);
+	if (targetDistance->getValueDouble () > 180)
+		targetDistance->setValueDouble (targetDistance->getValueDouble () - 360);
+	else if (targetDistance->getValueDouble () < -180)
+		targetDistance->setValueDouble (targetDistance->getValueDouble () + 360);
+	if (fabs (targetDistance->getValueDouble ()) < splitWidth)
 	{
 		if ((getState () & DOME_CUP_MASK_SYNC) == DOME_CUP_NOT_SYNC)
 			synced ();
@@ -235,7 +227,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 		double tar_az;
 		if (conn->paramNextDMS (&tar_az) || !conn->paramEnd ())
 			return -2;
-		targetPos.ra = targetPos.dec = NAN;
+		tarRaDec->setValueRaDec (NAN, NAN);
 		setTargetAz (tar_az);
 		return moveStart ();
 	}

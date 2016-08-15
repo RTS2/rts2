@@ -66,6 +66,7 @@
 // byte 4
 #define STATUS_REMOTE		0x0001
 #define STATUS_RAINING		0x0002
+#define STATUS_MANUAL		0x0004
 
 namespace rts2dome
 {
@@ -74,7 +75,8 @@ namespace rts2dome
  * Driver for DELTA DVP Series PLC controlling 1m SAAO dome.
  *
  * Protocol is Modbus-like on serial lines, with commands to set multiple registers and
- * read them out. Implementation details can be requested from SAAO.
+ * read them out. Implementation details can be requested from SAAO, from
+ * Peter Fourie <pah@saao.ac.za>.
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
@@ -120,6 +122,7 @@ class SAAO:public Cupola
 
 		rts2core::ValueBool *remoteControl;
 		rts2core::ValueBool *raining;
+		rts2core::ValueBool *manual;
 		rts2core::ValueBool *domeAuto;
 
 		rts2core::ValueBool *shutterClosed;
@@ -221,6 +224,7 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
 	device_file = "/dev/ttyS0";
 	domeConn = NULL;
 
+	createValue (manual, "manual", "dome is in manual mode", false);
 	createValue (remoteControl, "remote", "remote control enabled", false);
 	createValue (raining, "raining", "if true, rain is detected", false);
 	createValue (domeAuto, "dome_auto", "dome track azimuth", false, RTS2_VALUE_WRITABLE);
@@ -318,14 +322,30 @@ int SAAO::info ()
 
 	remoteControl->setValueBool (reg[1] & STATUS_REMOTE);
 	raining->setValueBool (reg[1] & STATUS_RAINING);
+	manual->setValueBool (reg[1] & STATUS_MANUAL);
+
+	if (manual->getValueBool ())
+		valueError (manual);
+	else
+		valueGood (manual);
 
 	shutterClosed->setValueBool (reg[0] & STATUS_SHUTTER_CLOSED);
 	shutterOpened->setValueBool (reg[0] & STATUS_SHUTTER_OPENED);
 	shutterMoving->setValueBool (reg[0] & STATUS_SHUTTER_MOVING);
 	shutterFaults->setValueBool (reg[0] & STATUS_SHUTTER_FAULTS);
 
+	if (shutterFaults->getValueBool ())
+		valueError (shutterFaults);
+	else
+		valueGood (shutterFaults);
+
 	domeMoving->setValueBool (reg[0] & STATUS_DOME_MOVING);
 	domeFault->setValueBool (reg[0] & STATUS_DOME_FAULT);
+
+	if (domeFault->getValueBool ())
+		valueError (domeFault);
+	else
+		valueGood (domeFault);
 
 	lightsOn->setValueBool (reg[0] & STATUS_LIGHTS);
 	lightsManual->setValueBool (reg[0] & STATUS_LIGHTS_MANUAL);
@@ -338,7 +358,16 @@ int SAAO::info ()
 	watchdogStatus->setValueBool (reg[1] & STATUS_WATCHDOG);
 
 	shutterPower->setValueBool (reg[0] & STATUS_SHUTTER_POWER);
+	if (shutterPower->getValueBool ())
+		valueGood (shutterPower);
+	else
+		valueWarning (shutterPower);
+
 	rotatPower->setValueBool (reg[0] & STATUS_ROTAT_POWER);
+	if (rotatPower->getValueBool ())
+		valueGood (rotatPower);
+	else
+		valueError (rotatPower);
 
 	setCurrentAz (ln_range_degrees (bhex2num (reg[2]) / 10.0 + 180));
 
@@ -350,6 +379,16 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == lightsOn)
 	{
 		setDome (((rts2core::ValueBool *) newValue)->getValueBool (), rotatPower->getValueBool (), shutterPower->getValueBool (), false, false, NAN);
+		return 0;
+	}
+	if (oldValue == rotatPower)
+	{
+		setDome (lightsOn->getValueBool (), ((rts2core::ValueBool *) newValue)->getValueBool (), shutterPower->getValueBool (), false, false, NAN);
+		return 0;
+	}
+	if (oldValue == shutterPower)
+	{
+		setDome (lightsOn->getValueBool (), rotatPower->getValueBool (), ((rts2core::ValueBool *) newValue)->getValueBool (), false, false, NAN);
 		return 0;
 	}
 	return Cupola::setValue (oldValue, newValue);
