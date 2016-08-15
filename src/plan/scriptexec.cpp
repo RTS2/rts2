@@ -388,6 +388,7 @@ rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, i
 				  break; */
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
+		case DEVICE_TYPE_ROTATOR:
 			cli = new rts2image::DevClientWriteImage (conn);
 			break;
 		default:
