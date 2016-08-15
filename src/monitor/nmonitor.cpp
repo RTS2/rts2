@@ -151,11 +151,10 @@ int NMonitor::processOption (int in_opt)
 
 int NMonitor::processArgs (const char *arg)
 {
-#ifdef RTS2_HAVE_PGSQL
-	tarArg = new rts2db::SimbadTarget (arg);
+	tarArg = new rts2core::SimbadTarget ();
 	try
 	{
-		tarArg->load ();
+		tarArg->resolve (arg);
 	}
 	catch (rts2core::Error err)
 	{
@@ -163,14 +162,15 @@ int NMonitor::processArgs (const char *arg)
 		return -1;
 	}
 
-	std::cout << "Type Y and press enter.." << std::endl;
+	struct ln_equ_posn tar;
+	tarArg->getSimbadPosition (&tar);
+
+	std::cout << "Found target at " << LibnovaRaDec (&tar) << std::endl;
+	std::cout << "To point to the target, please type Y and press enter.." << std::endl;
 
 	char c;
 	std::cin >> c;
 	return 0;
-#else
-	return -1;
-#endif
 }
 
 void NMonitor::addPollSocks ()
@@ -582,14 +582,12 @@ rts2core::ConnClient * NMonitor::createClientConnection (int _centrald_num, char
 rts2core::DevClient * NMonitor::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	rts2core::DevClient *retC = rts2core::Client::createOtherType (conn, other_device_type);
-#ifdef RTS2_HAVE_PGSQL
 	if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
 	{
 		struct ln_equ_posn tarPos;
-		tarArg->getPosition (&tarPos);
+		tarArg->getSimbadPosition (&tarPos);
 		conn->queCommand (new rts2core::CommandMove (this, (rts2core::DevClientTelescope *) retC, tarPos.ra, tarPos.dec));
 	}
-#endif
 	// queue in commands
 	std::map <std::string, std::list <std::string> >::iterator iter = initCommands.find (conn->getName ());
 	if (iter != initCommands.end ())

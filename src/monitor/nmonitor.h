@@ -31,9 +31,7 @@
 
 #include "rts2fits/devcliimg.h"
 
-#ifdef RTS2_HAVE_PGSQL
-#include "rts2db/simbadtarget.h"
-#endif
+#include "simbadtarget.h"
 
 #define EVENT_MONITOR_REFRESH      RTS2_LOCAL_EVENT + 1450
 
@@ -170,9 +168,7 @@ class NMonitor:public rts2core::Client
 
 		void sendCommand ();
 
-#ifdef RTS2_HAVE_PGSQL
-		rts2db::SimbadTarget *tarArg;
-#endif
+		rts2core::SimbadTarget *tarArg;
 
 		enum { ORDER_RTS2, ORDER_ALPHA } connOrder;
 		bool hideDebugValues;

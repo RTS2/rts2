@@ -1,6 +1,6 @@
 # Process this file with automake to produce Makefile.in
 
-AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
+AM_CXXFLAGS=@NOVA_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
 AM_CFLAGS=@NOVA_CFLAGS@ -I../../include
 
 EXTRA_DIST =
@@ -12,7 +12,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	devclient.cpp utilsfunc.cpp iniparser.cpp configuration.cpp connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp askchoice.cpp \
 	message.cpp conntcp.cpp connnotify.cpp connudp.cpp connapm.cpp connection.cpp logstream.cpp centralstate.cpp \
-	rts2target.cpp displayvalue.cpp scriptdevice.cpp \
+	rts2target.cpp simbadtarget.cpp displayvalue.cpp scriptdevice.cpp \
 	cliapp.cpp valueminmax.cpp expander.cpp \
 	riseset.cpp valuerectangle.cpp data.cpp radecparser.cpp \
 	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
@@ -21,7 +21,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	tgdrive.cpp clicupola.cpp cliwheel.cpp clifocuser.cpp clirotator.cpp slitazimuth.c connthorlabs.cpp \
 	dirsupport.cpp userpermissions.cpp conntcsng.cpp connethernet.cpp connremotes.cpp connsitech.cpp \
 	catd.cpp
-librts2_la_LIBADD = @LIB_NOVA@
+librts2_la_LIBADD = ../xmlrpc++/librts2xmlrpc.la @LIB_NOVA@ @LIBXML_LIBS@
 
 librts2gpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpibenet.cpp conngpibprologix.cpp conngpibserial.cpp connscpi.cpp
 librts2gpib_la_LIBADD = librts2.la

@@ -25,11 +25,12 @@
 #include "rts2db/devicedb.h"
 #include "rts2db/imageset.h"
 #include "rts2db/labellist.h"
-#include "rts2db/simbadtarget.h"
+#include "rts2db/simbadtargetdb.h"
 #include "rts2db/messagedb.h"
 #include "rts2db/planset.h"
 #include "rts2db/target_auger.h"
 #include "rts2db/tletarget.h"
+#include "rts2db/targetres.h"
 
 #include "rts2json/jsondb.h"
 #include "rts2json/jsonvalue.h"
@@ -334,7 +335,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		}
 		else
 		{
-			rts2db::Target *target = new rts2db::SimbadTarget (ts);
+			rts2db::Target *target = new rts2db::SimbadTargetDb (ts);
 			target->load ();
 			target->getPosition (&pos);
 

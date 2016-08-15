@@ -1,6 +1,6 @@
 /*
- * Target from SIMBAD database.
- * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
+ * Target from any string.
+ * Copyright (C) 2005-2016 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,46 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2__SIMBADTARGET__
-#define __RTS2__SIMBADTARGET__
-
-#include <string>
-#include <libnova/libnova.h>
-#include <list>
+#ifndef __RTS2_TARGETRES__
+#define __RTS2_TARGETRES__
 
 #include "target.h"
-
-namespace rts2db
-{
-
-/**
- * Holds information gathered from Simbad about target with given name
- * or around given location.
- */
-class SimbadTarget:public ConstTarget
-{
-	public:
-		SimbadTarget (const char *in_name);
-		virtual ~SimbadTarget (void);
-
-		virtual void load ();
-
-		void getPosition (struct ln_equ_posn *pos) { Target::getPosition (pos); }
-
-		virtual void printExtra (Rts2InfoValStream & _os);
-
-		std::list < std::string > getAliases () { return aliases; }
-
-	private:
-		// target name
-		std::list < std::string > aliases;
-		std::string references;
-		std::string simbadType;
-		struct ln_equ_posn propMotions;
-		float simbadBMag;
-};
-
-}
 
 /**
  * Return new target object, created from string. String might contain RA DEC pair, MPEC one-line or any Simbad or MPEC name.
@@ -69,4 +33,4 @@ class SimbadTarget:public ConstTarget
  */
 rts2db::Target *createTargetByString (std::string tar_string, bool debug);
 
-#endif							 /* !__RTS2__SIMBADTARGET__ */
+#endif // __RTS2_TARGETRES__

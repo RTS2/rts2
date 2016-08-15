@@ -24,9 +24,9 @@ nodist_librts2db_la_SOURCES = sqlerror.cpp devicedb.cpp target.cpp sub_targets.c
 	observationset.cpp taruser.cpp rts2count.cpp imageset.cpp targetset.cpp plan.cpp planset.cpp \
 	rts2prop.cpp camlist.cpp target_auger.cpp messagedb.cpp rts2targetplanet.cpp targetgrb.cpp \
 	targetell.cpp tletarget.cpp user.cpp userset.cpp account.cpp accountset.cpp recvals.cpp records.cpp recordsavg.cpp \
-	augerset.cpp labels.cpp labellist.cpp queues.cpp
+	augerset.cpp labels.cpp labellist.cpp queues.cpp targetres.cpp simbadtargetdb.cpp
 
-librts2db_la_SOURCES = simbadtarget.cpp mpectarget.cpp imagesetstat.cpp constraints.cpp
+librts2db_la_SOURCES = mpectarget.cpp imagesetstat.cpp constraints.cpp
 librts2db_la_LIBADD = ../rts2/librts2.la ../pluto/libpluto.la ../xmlrpc++/librts2xmlrpc.la \
 	@LIBPG_LIBS@ @LIBXML_LIBS@ @CFITSIO_LIBS@ @MAGIC_LIBS@ @LIB_ECPG@ @LIB_CRYPT@
 
@@ -35,6 +35,6 @@ librts2db_la_LIBADD = ../rts2/librts2.la ../pluto/libpluto.la ../xmlrpc++/librts
 
 else
 
-EXTRA_DIST += simbadtarget.cpp mpectarget.cpp imagesetstat.cpp constraints.cpp
+EXTRA_DIST += mpectarget.cpp imagesetstat.cpp constraints.cpp
 
 endif

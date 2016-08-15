@@ -21,7 +21,7 @@
 #include "configuration.h"
 #include "libnova_cpp.h"
 
-#include "rts2db/simbadtarget.h"
+#include "rts2db/targetres.h"
 
 #include <sstream>
 #include <iostream>
@@ -39,9 +39,9 @@ Rts2TargetApp::~Rts2TargetApp (void)
 	delete target;
 }
 
-void Rts2TargetApp::getObject (std::string obj_text)
+void Rts2TargetApp::getObject (std::string tar_name)
 {
-	target = createTargetByString (obj_text, getDebug ());
+	target = createTargetByString (tar_name, getDebug ());
 }
 
 int Rts2TargetApp::askForDegrees (const char *desc, double &val)

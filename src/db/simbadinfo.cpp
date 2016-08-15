@@ -19,7 +19,7 @@
 
 #include "rts2db/appdb.h"
 #include "rts2db/target.h"
-#include "rts2db/simbadtarget.h"
+#include "rts2db/targetres.h"
 
 #include "configuration.h"
 #include "libnova_cpp.h"

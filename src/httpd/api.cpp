@@ -70,7 +70,6 @@ digraph "JSON API calls handling" {
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/labellist.h"
-#include "rts2db/simbadtarget.h"
 #include "rts2db/messagedb.h"
 #include "rts2db/target_auger.h"
 #endif

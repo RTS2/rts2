@@ -29,7 +29,6 @@
 #include "rts2db/observationset.h"
 #include "rts2db/targetset.h"
 #include "rts2db/sqlerror.h"
-#include "rts2db/simbadtarget.h"
 
 #include "connnotify.h"
 #include "infoval.h"

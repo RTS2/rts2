@@ -20,7 +20,7 @@
 
 #include "rts2db/target.h"
 #include "rts2db/targetset.h"
-#include "rts2db/simbadtarget.h"
+#include "rts2db/simbadtargetdb.h"
 #include "rts2json/addtargetreq.h"
 
 #include "radecparser.h"
@@ -135,7 +135,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 			}
 		}
 		// check for simbad
-		rts2db::Target *target = new rts2db::SimbadTarget (tar);
+		rts2db::Target *target = new rts2db::SimbadTargetDb (tar);
 		target->load ();
 		target->getPosition (&pos);
 		delete target;

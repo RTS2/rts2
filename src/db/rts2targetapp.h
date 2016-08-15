@@ -50,7 +50,7 @@ class Rts2TargetApp:public rts2db::AppDb
 		/**
 		 * Tries to resolve object from provided string.
 		 */
-		void getObject (std::string obj_text);
+		void getObject (std::string tar_name);
 
 		int askForDegrees (const char *desc, double &val);
 		int askForObject (const char *desc, std::string obj_text = std::string (""));

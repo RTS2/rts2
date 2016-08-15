@@ -17,9 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2db/simbadtarget.h"
-#include "rts2db/mpectarget.h"
-#include "rts2db/tletarget.h"
+#include "simbadtarget.h"
 
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlrpc++/urlencoding.h"
@@ -32,13 +30,14 @@
 #include <libxml/xpath.h>
 
 using namespace std;
-using namespace rts2db;
+using namespace rts2core;
 using namespace XmlRpc;
 
-SimbadTarget::SimbadTarget (const char *in_name):ConstTarget ()
+SimbadTarget::SimbadTarget ()
 {
-	setTargetName (in_name);
 	simbadBMag = NAN;
+	position.ra = NAN;
+	position.dec = NAN;
 	propMotions.ra = NAN;
 	propMotions.dec = NAN;
 
@@ -50,7 +49,7 @@ SimbadTarget::~SimbadTarget (void)
 	xmlCleanupParser ();
 }
 
-void SimbadTarget::load ()
+void SimbadTarget::resolve (const char *tarname)
 {
 	#define LINEBUF  200
 	char buf[LINEBUF];
@@ -60,7 +59,7 @@ void SimbadTarget::load ()
 	int reply_length = 0;
 
 	std::ostringstream os;
-	std::string name (getTargetName ());
+	std::string name (tarname);
 	urlencode (name);
 
 	std::string simbadurl;
@@ -131,7 +130,8 @@ void SimbadTarget::load ()
 			double ra, dec;
 			iss >> ra >> dec;
 			iss.getline (buf, LINEBUF);
-			setPosition (ra, dec);
+			position.ra = ra;
+			position.dec = dec;
 		}
 		else if (str_type == "#=Simbad:")
 		{
@@ -157,7 +157,7 @@ void SimbadTarget::load ()
 		}
 		else if (str_type.substr (0, 3) == "#!E")
 		{
-			err << "object with name " << getTargetName () << " was not resolved by Simbad";
+			err << "object with name " << tarname << " was not resolved by Simbad";
 			throw rts2core::Error (err.str ());
 		}
 		else if (str_type == "%J.E")
@@ -171,7 +171,7 @@ void SimbadTarget::load ()
 			iss >> std::ws;
 
 			iss.getline (buf, LINEBUF);
-			setTargetName (buf);
+			simbadName = buf;
 		}
 		else if (str_type == "%@")
 		{
@@ -192,7 +192,7 @@ void SimbadTarget::load ()
 			if (strcasestr (buf, "nothing found"))
 			{
 				// errrors;;
-				err << "object with name " << getTargetName () << " was not resolved by Simbad";
+				err << "object with name " << tarname << " was not resolved by Simbad";
 				throw rts2core::Error (err.str ());
 			}
 		}
@@ -208,94 +208,4 @@ void SimbadTarget::load ()
 		}
 	}
 	#undef LINEBUF
-}
-
-void SimbadTarget::printExtra (Rts2InfoValStream & _ivs)
-{
-	ConstTarget::printExtra (_ivs, ln_get_julian_from_sys ());
-
-	if (_ivs.getStream ())
-	{
-		std::ostream* _os = _ivs.getStream ();
-		*_os << "REFERENCED " << references << std::endl;
-		int old_prec = _os->precision (2);
-		*_os << "PROPER MOTION RA " <<
-			(propMotions.ra * 360000.0)
-			<< " DEC " << (propMotions.dec * 360000.0) << " (mas/y)";
-		*_os << "TYPE " << simbadType << std::endl;
-		*_os << "B MAG " << simbadBMag << std::endl;
-		_os->precision (old_prec);
-
-		for (std::list < std::string >::iterator alias = aliases.begin ();
-			alias != aliases.end (); alias++)
-		{
-			*_os << "ALIAS " << (*alias) << std::endl;
-		}
-	}
-}
-
-Target *createTargetByString (std::string tar_string, bool debug)
-{
-	Target *rtar = NULL;
-
-	LibnovaRaDec raDec;
-
-	int ret = raDec.parseString (tar_string.c_str ());
-	if (ret == 0)
-	{
-		std::string new_prefix;
-
-		// default prefix for new RTS2 sources
-		new_prefix = std::string ("RTS2_");
-
-		// set name..
-		ConstTarget *constTarget = new ConstTarget ();
-		constTarget->setPosition (raDec.getRa (), raDec.getDec ());
-		std::ostringstream os;
-
-		rts2core::Configuration::instance ()->getString ("newtarget", "prefix", new_prefix, "RTS2");
-		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
-		constTarget->setTargetName (os.str ().c_str ());
-		constTarget->setTargetType (TYPE_OPORTUNITY);
-		return constTarget;
-	}
-	// if it's MPC ephemeris..
-	rtar = new EllTarget ();
-	ret = ((EllTarget *) rtar)->orbitFromMPC (tar_string.c_str ());
-	if (ret == 0)
-		return rtar;
-
-	delete rtar;
-
-	try
-	{
-		rtar = new TLETarget ();
-		((TLETarget *) rtar)->orbitFromTLE (tar_string);
-		return rtar;
-	}
-	catch (rts2core::Error &er)
-	{
-	}
-
-	delete rtar;
-
-	XmlRpcLogHandler::setVerbosity (debug ? 5 : 0);
-
-	// try to get target from SIMBAD
-	try
-	{
-		rtar = new rts2db::SimbadTarget (tar_string.c_str ());
-		rtar->load ();
-		rtar->setTargetType (TYPE_OPORTUNITY);
-		return rtar;
-	}
-	catch (rts2core::Error &er)
-	{
-		delete rtar;
-
-		// MPEC fallback
-		rtar = new rts2db::MPECTarget (tar_string.c_str ());
-		rtar->load ();
-		return rtar;
-	}
 }
