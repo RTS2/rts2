@@ -75,20 +75,21 @@ def get_altazm_line(telescope):
 	offs = j.getValue(telescope,'AZALOFFS')
 	return '\t'.join(map(str,[ori['ra'],ori['dec'],offs['alt'],offs['az'],altaz['alt'],altaz['az']]))
 
+def wait_for_key(t):
+	from select import select
+	while t > 0:
+		print "Hit enter to interrupt the sequencei within {0} seconds...\r".format(t),
+		sys.stdout.flush()
+		rlist, wlist, xlist = select([sys.stdin], [], [], 1)
+		if rlist:
+			print "Interrupted. Now either find the bright stars typing alt-az offsets, or type c to continue"
+			sys.stdin.readline()
+			return True
+		t -= 1
+	return False
+
 def run_spiral(telescope,timeout,last_step=0):
 	"""Runs spiral pointing to find the star."""
-	from select import select
-	def wait_for_key(t):
-		while t > 0:
-			print "Hit enter to interrupt the sequencei within {0} seconds...\r".format(t),
-			sys.stdout.flush()
-			rlist, wlist, xlist = select([sys.stdin], [], [], 1)
-			if rlist:
-				print "Interrupted. Now either find the bright stars typing alt-az offsets, or type c to continue"
-				sys.stdin.readline()
-				return True
-			t -= 1
-		return False
 
 	import rts2.spiral
 	import math
@@ -162,24 +163,32 @@ def run_manual_altaz(telescope,timeout,path):
 			continue
 
 		print '\nMove finished, starting spiral search now'
-		time.sleep(5)
 		next_please = False
 		last_step = 0
 		while next_please == False:
-			last_step = run_spiral(telescope,timeout,last_step)
+			skip_spiral = False
+			if last_step <= 0:
+				j.setValue(telescope,'AZALOFFS','0 0')
+				skip_spiral = wait_for_key(7)
+				last_step = 0
+			if skip_spiral == False:
+				last_step = run_spiral(telescope,timeout,last_step)
 			while True:
-				print 'Now either type offsets (comulative, arcmin), m when star is centered, r to repeat from 0 steps, or s to skip this field and hit enter'
+				print 'Now either type offsets (comulative, arcmin), m when star is centered, r to repeat from 0 steps, z to zero offsets, or s to skip this field and hit enter'
 				ans = sys.stdin.readline().rstrip()
 				if ans == '':
 					continue
 				elif ans == 'm':
-					oa.write('{0}\t{1}\n'.format(mn,get_altazm_line(telescope)))
+					modline = get_altazm_line(telescope)
+					print 'adding to aling file {0}'.format(modline)
+					oa.write('{0}\t{1}\n'.format(mn,modline))
 					oa.flush()
 					mn += 1
 					next_please = True
 					break
 				elif ans == 's':
 					next_please = True
+					print 'skipping this field, going to the next target'
 					break
 				elif ans[0] == 'r':
 					ls = ans.split()
@@ -189,14 +198,21 @@ def run_manual_altaz(telescope,timeout,path):
 						else:
 							last_step = 0
 						break
+						print 'going back to step {0}'.format(last_step)
 					except Exception,ex:
 						print 'invalid r command format: {0}'.format(ans)
 						continue
 				elif ans == 'c':
+					print 'continuing..'
 					last_step -= 1
+					break
+				elif ans == 'z':
+					print 'zeroing offsets'
+					j.setValue(telescope,'AZALOFFS','0 0')
 					break
 				try:
 					azo,alto = ans.split()
+					print 'offseting ALT {0} AZ {1} arcmin'.format(azo,alto)
 					j.executeCommand(telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
 
 				except Exception,ex:
