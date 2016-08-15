@@ -73,17 +73,16 @@ class Cupola:public Dome
 		}
 		virtual int moveEnd ();
 
-		void setTargetAz (double in_az) { tarAz->setValueDouble (in_az); }
-
-		double getTargetAz () { return tarAz->getValueDouble (); }
+		void setTargetAz (double in_az) { tarAltAz->setAz (in_az); }
+		double getTargetAz () { return tarAltAz->getAz (); }
 
 		void setCurrentAz (double in_az) { currentAz->setValueDouble (in_az); }
-
-		double getTargetDistance () { return targetDistance; }
-
 		double getCurrentAz () { return currentAz->getValueDouble (); }
-		double getTargetRa () { return tarRa->getValueDouble (); }
-		double getTargetDec () { return tarDec->getValueDouble (); }
+
+		double getTargetDistance () { return targetDistance->getValueDouble (); }
+
+		double getTargetRa () { return tarRaDec->getRa (); }
+		double getTargetDec () { return tarRaDec->getDec (); }
 		struct ln_lnlat_posn *getObserver ()
 		{
 			return observer;
@@ -91,22 +90,19 @@ class Cupola:public Dome
 		void synced ();
 
 	private:
-		struct ln_equ_posn targetPos;
-								 // defaults to 0, 0; will be readed from config file
+		// defaults to 0, 0; will be readed from config file
 		struct ln_lnlat_posn *observer;
 
-		rts2core::ValueDouble *tarRa;
-		rts2core::ValueDouble *tarDec;
-		rts2core::ValueDouble *tarAlt;
-		rts2core::ValueDouble *tarAz;
+		rts2core::ValueRaDec *tarRaDec;
+		rts2core::ValueAltAz *tarAltAz;
 		rts2core::ValueDouble *currentAz;
+
+		rts2core::ValueDouble *targetDistance;
 
 		rts2core::ValueBool *trackTelescope;
 		rts2core::ValueBool *trackDuringDay;
 
 		char *configFile;
-
-		double targetDistance;
 };
 
 }
