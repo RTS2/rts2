@@ -3,8 +3,8 @@ AM_CXXFLAGS = -Igen-cpp @THRIFT_CFLAGS@
 
 if THRIFT
 
-bin_PROGRAMS = rts2-thriftd
-rts2_thriftd_SOURCES = mount.cpp
+#bin_PROGRAMS = rts2-thriftd
+#rts2_thriftd_SOURCES = mount.cpp
 
 else
 

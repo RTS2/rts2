@@ -313,7 +313,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 	if (n <= 0)
 	{
 		logStream (MESSAGE_ERROR) << "no response" << sendLog;
-		sleep (2);
+		usleep (200);
 		return -1;
 	}
 
@@ -327,7 +327,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 		if (n <= 0)
 		{
 			logStream (MESSAGE_ERROR) << "no second response" << sendLog;
-			sleep (2);
+			usleep (200);
 			return -1;
 		}
 		response[n] = '\0';
@@ -382,7 +382,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 		if (response[3] < '0' || response[3] > '3')
 		{
 			logStream (MESSAGE_ERROR) << "invalid relay state " << response[3] << sendLog;
-			sleep (2);
+			usleep (200);
 			return -1;
 		}
 		int rv = response[3] - '0';
@@ -395,7 +395,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 		temperature->setValueFloat (atof (response + 1));
 	}
 
-	sleep (2);
+	usleep (200);
 
         return 0;
 }

@@ -26,7 +26,7 @@ using namespace rts2teld;
 
 AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool hasAltAzDiff):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0, hasAltAzDiff)
 {
-	createValue (parallAngle, "parallactic_ang", "[deg] parallactic angle", false, RTS2_DT_DEGREES);
+	createValue (parallAngle, "PANGLE", "[deg] parallactic angle", true, RTS2_DT_DEGREES);
 	createValue (derRate, "DERRATE", "[deg/hour] derotator rate", false, RTS2_DT_DEGREES);
 
 	createValue (az_ticks, "_az_ticks", "[cnts] counts per full revolution on az axis", false);
@@ -58,11 +58,15 @@ int AltAz::infoJDLST (double JD, double LST)
 	int ret = Telescope::infoJDLST (JD, LST);
 	if (ret)
 		return ret;
-	parallAngle->setValueDouble (parallactic_angle (getTargetHa (), getTargetDec ()));
-	struct ln_hrz_posn hrz;
-	getTargetAltAz (&hrz, JD);
-	derRate->setValueDouble (derotator_rate (hrz.az, hrz.alt));
-
+	double HA = ln_range_degrees (LST - getTargetRa ());
+	double dec = getTargetDec ();
+	parallAngle->setValueDouble (parallactic_angle (HA, dec));
+//	struct ln_hrz_posn hrz;
+//	getTargetAltAz (&hrz, JD);
+//	derRate->setValueDouble (derotator_rate (hrz.az, hrz.alt));
+	// calculate parallactic angle in second..
+	double p2 = parallactic_angle (HA + 360.0 / 86400.0, dec);
+	derRate->setValueDouble ((p2 - parallAngle->getValueDouble ()) / 3600.0);
 	return ret;
 }
 
@@ -194,7 +198,7 @@ double AltAz::parallactic_angle (double ha, double dec)
 
 double AltAz::derotator_rate (double az, double alt)
 {
-	return ln_rad_to_deg (0.262 * cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt)));
+	return ln_rad_to_deg (-0.262 * cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt)));
 }
 
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)

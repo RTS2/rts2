@@ -44,9 +44,13 @@ parser.add_argument('--expose', help='start exposure on device')
 parser.add_argument('--altazm', help='output line for alt-az model build', action='store', dest='altazm')
 parser.add_argument('--spiral', help='run spiral offseting on telescope', action='store', dest='spiral')
 parser.add_argument('--manual-altaz', help='build manual alt-az model',action='store_true', dest='manual_altaz', default=False)
+parser.add_argument('--random-altaz', help='randomg alt-az model',action='store_true',dest='random_altaz', default=False)
 parser.add_argument('--path-altaz', help='build manual alt-az model along path provided as argument', action='store', dest='path_altaz', default=None)
 parser.add_argument('--bright-star', help='point to bright star closest to given alt az pair', action='store', dest='bright_star', default=None)
 parser.add_argument('--mags', help='magnitude range for BSC lookup', action='store', dest='mags', default='4.5:2')
+parser.add_argument('--modelname', help='filename where model lines will be stored', action='store', dest='modelname', default='align')
+parser.add_argument('--maxspiral', help='maximal number of steps in spiral', action='store', type=int, dest='maxspiral', default=500)
+parser.add_argument('--takeimage', help='take image when we moved to target (exposure time in seconds)', action='store', type=float, dest='takeimage', default=0)
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
 parser.add_argument('--create-tle-target', help='create TLE target. Target name, first and second line of TLE must be entered as command line arguments', action='store_true', dest='create_tle_target')
@@ -88,7 +92,7 @@ def wait_for_key(t):
 		t -= 1
 	return False
 
-def run_spiral(telescope,timeout,last_step=0):
+def run_spiral(telescope,timeout,last_step=0,maxsteps=500):
 	"""Runs spiral pointing to find the star."""
 
 	import rts2.spiral
@@ -102,7 +106,7 @@ def run_spiral(telescope,timeout,last_step=0):
 	cosa = math.cos(math.radians(alt))
 	step_az /= cosa
 	print 'Scaling azimuth by factor {0} to {1}'.format(cosa,step_az)
-	for i in range(0,500):
+	for i in range(maxsteps):
 		a,e = s.get_next_step()
 		x += a
 		y += e
@@ -128,10 +132,12 @@ def find_bright_star(telescope,alt,az):
 	print 'Found BSC #{0} at RA {1} DEC {2} mag {3}'.format(bsc[0],bsc[1],bsc[2],bsc[3])
 	return bsc
 
-def run_manual_altaz(telescope,timeout,path):
+def run_manual_altaz(telescope,timeout,path,modelname='align',maxspiral=500,takeimage=0):
 	import rts2.libnova
+	import os
+	import ds9
+	d = ds9.ds9()
 
-	oa = open('align','a')
 	mn = 1
 
 	#for p in rts2.altazpath.random_path():
@@ -159,10 +165,18 @@ def run_manual_altaz(telescope,timeout,path):
 			tmout -= 1
 
 		if tmout <= 0:
-			print 'destination not reached, continue with new target'
+			print 'destination not reached, continue with new target                         '
 			continue
 
-		print '\nMove finished, starting spiral search now'
+		print 'moved to {0:2} {1:3}...at {2:3} {3:2} HRZ {4:1} {5:1}                      '.format(bsc_ra,bsc_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
+		if takeimage > 0:
+			print 'taking {0} s image'.format(takeimage)
+			fn = 'model_{0:03}.fits'.format(mn)
+			os.system("rts2-scriptexec -d C0 -s 'ADCMODE=15 E {0}' -e '{1}'".format(takeimage,fn))
+			d.set('file {0}'.format(fn))
+			mn += 1
+			continue
+		print 'Move finished, starting search now'
 		next_please = False
 		last_step = 0
 		while next_please == False:
@@ -172,7 +186,7 @@ def run_manual_altaz(telescope,timeout,path):
 				skip_spiral = wait_for_key(7)
 				last_step = 0
 			if skip_spiral == False:
-				last_step = run_spiral(telescope,timeout,last_step)
+				last_step = run_spiral(telescope,timeout,last_step,maxspiral)
 			while True:
 				print 'Now either type offsets (comulative, arcmin), m when star is centered, r to repeat from 0 steps, z to zero offsets, or s to skip this field and hit enter'
 				ans = sys.stdin.readline().rstrip()
@@ -181,8 +195,10 @@ def run_manual_altaz(telescope,timeout,path):
 				elif ans == 'm':
 					modline = get_altazm_line(telescope)
 					print 'adding to aling file {0}'.format(modline)
+					oa = open(modelname,'a')
 					oa.write('{0}\t{1}\n'.format(mn,modline))
 					oa.flush()
+					oa.close()
 					mn += 1
 					next_please = True
 					break
@@ -251,9 +267,12 @@ try:
 		run_spiral(options.spiral,7)	
 	if options.manual_altaz:
 		import rts2.altazpath
-		run_manual_altaz('T0',7,rts2.altazpath.constant_path([45,75]))
+		run_manual_altaz('T0',7,rts2.altazpath.constant_path([45,75]),options.modelname,options.maxspiral,options.takeimage)
+	if options.random_altaz:
+		import rts2.altazpath
+		run_manual_altaz('T0',7,rts2.altazpath.random_path(),options.modelname,options.maxspiral,options.takeimage)
 	if options.path_altaz:
-		run_manual_altaz('T0',7,map(lambda x:map(float,x.split(':')),options.path_altaz.split(',')))
+		run_manual_altaz('T0',7,map(lambda x:map(float,x.split(':')),options.path_altaz.split(',')),options.modelname,options.maxspiral,options.takeimage)
 	if options.bright_star:
 		alt,az=map(float,options.bright_star.split(':'))
 		bsc = find_bright_star('T0',alt,az)

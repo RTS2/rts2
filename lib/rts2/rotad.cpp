@@ -94,7 +94,17 @@ int Rotator::idle ()
 		if (!isnan (pa))
 		{
 			setTarget (getPA (t));
-			updateTrackingFrequency ();
+			int ret = isRotating ();
+			if (ret >= 0)
+			{
+				maskState (BOP_EXPOSURE, BOP_EXPOSURE, "rotating to target");
+				setIdleInfoInterval (((float) ret) / USEC_SEC);
+			}
+			else
+			{
+				maskState (BOP_EXPOSURE, 0, "rotated to target");
+				setIdleInfoInterval (100);
+			}
 		}
 	}
 	return rts2core::Device::idle ();

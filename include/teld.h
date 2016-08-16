@@ -572,6 +572,7 @@ class Telescope:public rts2core::Device
 			out_tar->dec = tarRaDec->getDec ();
 		}
 
+		double getTargetRa () { return tarRaDec->getRa (); }
 		double getTargetDec () { return tarRaDec->getDec (); }
 
 		/**

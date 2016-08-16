@@ -149,9 +149,15 @@ void SitechMulti::derSetTarget ()
 	derConn->sendXAxisRequest (der_Xrequest);
 
 	if (rotators[0] != NULL)
+	{
 		rotators[0]->updated = false;
+		rotators[0]->updateTrackingFrequency ();
+	}
 	if (rotators[1] != NULL)
+	{
 		rotators[1]->updated = false;
+		rotators[1]->updateTrackingFrequency ();
+	}
 }
 
 int main (int argc, char **argv)

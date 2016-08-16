@@ -39,6 +39,12 @@ class Rotator:public rts2core::Device
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
+		/**
+		 * Update tracking frequency. Should be run after new tracking vector
+		 * is send to the rotator motion controller.
+		 */
+		void updateTrackingFrequency ();
+
 	protected:
 		virtual int idle ();
 
@@ -76,12 +82,6 @@ class Rotator:public rts2core::Device
 		double getDifference () { return toGo->getValueDouble (); }
 
 	private:
-		/**
-		 * Update tracking frequency. Should be run after new tracking vector
-		 * is send to the mount motion controller.
-		 */
-		void updateTrackingFrequency ();
-
 		rts2core::ValueDouble *currentPosition;
 		rts2core::ValueDoubleMinMax *targetPosition;
 
