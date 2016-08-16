@@ -40,6 +40,13 @@ AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
   libwebsockets="yes"
 ])
 
+PKG_CHECK_MODULES([HIREDIS],[hiredis >= 0.10],,AC_MSG_RESULT(not fould))
+AM_CONDITIONAL(HIREDIS,test "x$HIREDIS_LIBS" != x)
+AS_IF([test "x$HIREDIS_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(HIREDIS, "1", [has hiredis])
+  hiredis="yes"
+])
+
 # check for lang
 AC_LANG_CPLUSPLUS
 
@@ -977,6 +984,7 @@ AC_OUTPUT([Makefile
 	   src/pluto/Makefile
 	   src/catd/Makefile
 	   src/thrift/Makefile
+	   src/redis/Makefile
 	   tests/Makefile
 	   checks/Makefile
 	   scripts/rts2saf/Makefile
@@ -1010,6 +1018,7 @@ echo "
   libcheck	${libcheck}
   libwebsockets	${libwebsockets}
   libthrift     ${THRIFT_CFLAGS} ${THRIFT_LIBS}
+  hiredis	${hiredis}
 
 CCDs:
   alta          ${ALTA}

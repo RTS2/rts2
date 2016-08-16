@@ -102,6 +102,7 @@ src/pluto/sat_id
 src/pluto/test2
 src/pluto/test_out
 src/pluto/test_sat
+src/redis/rts2-redis
 src/rotad/rts2-rotad-*
 src/scheduler/rts2-scheduler
 src/sensord/rts2-sensor-*
