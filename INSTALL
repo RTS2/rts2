@@ -3,7 +3,7 @@ installation from Git.
 
 Note 1: you need to have libtool installed (apt-get install libtool on Debian),
 otherwise it will not work. I'll investigate that. Please enter any request to
-SF tracking system, or send them to the author (petr@kubanek.net).
+GitHub tracking system, or send them to the author (petr@kubanek.net).
 
 Instalation from Git
 ====================
