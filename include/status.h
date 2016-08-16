@@ -403,5 +403,6 @@ typedef uint32_t rts2_status_t;
 #define DEVICE_TYPE_LOGD      25
 #define DEVICE_TYPE_SCRIPTOR  26
 #define DEVICE_TYPE_BB        27
+#define DEVICE_TYPE_REDIS     28
 
 #endif	 /* __RTS2__STATUS__ */

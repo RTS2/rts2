@@ -26,4 +26,5 @@ SUBDIRS = \
 	bb \
 	pluto \
 	catd \
+	redis \
 	thrift
