@@ -47,8 +47,8 @@
 #define OPT_RTS2_MODEL	OPT_LOCAL + 123
 #define OPT_T_POINT_MODEL	 OPT_LOCAL + 124
 
-#define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
-#define EVENT_TRACKING_TIMER	 RTS2_LOCAL_EVENT + 561
+#define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 1200
+#define EVENT_TRACKING_TIMER	 RTS2_LOCAL_EVENT + 1201
 
 using namespace rts2teld;
 
@@ -90,6 +90,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	cos_lat = NAN;
 	sin_lat = NAN;
+	tan_lat = NAN;
 
 	if (diffTrack)
 	{
@@ -1395,6 +1396,7 @@ void Telescope::setTelLongLat (double longitude, double latitude)
 
 	cos_lat = cos (ln_deg_to_rad (latitude));
 	sin_lat = sin (ln_deg_to_rad (latitude));
+	tan_lat = sin_lat / cos_lat;
 }
 
 void Telescope::setTelAltitude (float altitude)
@@ -2021,6 +2023,9 @@ int Telescope::startPark (rts2core::Connection * conn)
 		}
 	}
 	useParkFlipping = true;
+	if (tarTelAltAz && parkPos)
+		tarTelAltAz->setFromValue (parkPos);
+	stopTracking ("parking telescope");
 	ret = startPark ();
 	if (ret < 0)
 	{

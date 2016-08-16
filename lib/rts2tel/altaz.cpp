@@ -60,13 +60,12 @@ int AltAz::infoJDLST (double JD, double LST)
 		return ret;
 	double HA = ln_range_degrees (LST - getTargetRa ());
 	double dec = getTargetDec ();
-	parallAngle->setValueDouble (parallactic_angle (HA, dec));
-//	struct ln_hrz_posn hrz;
-//	getTargetAltAz (&hrz, JD);
-//	derRate->setValueDouble (derotator_rate (hrz.az, hrz.alt));
-	// calculate parallactic angle in second..
-	double p2 = parallactic_angle (HA + 360.0 / 86400.0, dec);
-	derRate->setValueDouble ((p2 - parallAngle->getValueDouble ()) / 3600.0);
+
+	double pa = 0;
+	double parate = 0;
+	parallactic_angle (HA, dec, pa, parate);
+	parallAngle->setValueDouble (pa);
+	derRate->setValueDouble (parate);
 	return ret;
 }
 
@@ -185,20 +184,22 @@ void AltAz::counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double
 	dec = pos.dec;
 }
 
-double AltAz::parallactic_angle (double ha, double dec)
+void AltAz::parallactic_angle (double ha, double dec, double &pa, double &parate)
 {
 	double radha = ln_deg_to_rad (ha);
 	double raddec = ln_deg_to_rad (dec);
-	double div = (sin_lat * cos (raddec) - cos_lat * sin (raddec) * cos (radha));
+	double cos_dec = cos (raddec);
+	double sin_dec = sin (raddec);
+	double cos_ha = cos (radha);
+	double sin_ha = sin (radha);
+	double div = (sin_lat * cos_dec - cos_lat * sin_dec * cos_ha);
 	// don't divide by 0
 	if (fabs (div) < 10e-5)
-		return 0;
-	return ln_rad_to_deg (atan (cos_lat * sin (radha) / div));
-}
-
-double AltAz::derotator_rate (double az, double alt)
-{
-	return ln_rad_to_deg (-0.262 * cos_lat * cos (ln_deg_to_rad (az)) / cos (ln_deg_to_rad (alt)));
+		pa = 0;
+	else
+		pa = ln_rad_to_deg (atan (cos_lat * sin_ha / div));
+	double par1 = (tan_lat * cos_dec - sin_dec * cos_ha);
+	parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
 }
 
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)

@@ -418,8 +418,13 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *telAltitude;
 		rts2core::ValueFloat *telPressure;
 
+
+		/**
+		 * Precalculated latitude values..
+		 */
 		double cos_lat;
 		double sin_lat;
+		double tan_lat;
 
 		/**
 		 * Check if telescope is moving to fixed position. Called during telescope

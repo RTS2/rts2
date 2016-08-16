@@ -67,10 +67,7 @@ class SitechAltAz:public AltAz
 			return isMoving ();
 		}
 
-		virtual int isParking ()
-		{
-			return isMoving ();
-		}
+		virtual int isParking ();
 
 		virtual void runTracking ();
 
@@ -511,7 +508,6 @@ int SitechAltAz::isMoving ()
 	}
 
 	info ();
-
 	double tdist = getTargetDistance ();
 
 	if (tdist > trackingDist->getValueDouble ())
@@ -535,13 +531,25 @@ int SitechAltAz::isMoving ()
 	return -2;
 }
 
-int SitechAltAz::startPark()
+int SitechAltAz::isParking ()
+{
+	info ();
+	double tdist = getTargetDistance ();
+
+	if (tdist > trackingDist->getValueDouble ())
+		return USEC_SEC / 1000;
+
+	return -2;
+}
+
+int SitechAltAz::startPark ()
 {
 	if (parkPos == NULL)
 	{
 		return 0;
 	}
 	setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
+	wasStopped = false;
 	return moveAltAz ();
 }
 

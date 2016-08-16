@@ -49,14 +49,9 @@ class AltAz: public Telescope
 		void counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec);
 
 		/**
-		 * Returns parallactic angle.
+		 * Returns parallactic angle and its change (in deg/h).
 		 */
-		double parallactic_angle (double ha, double dec);
-
-		/**
-		 * Returns deratotor rate, in degrees/h.
-		 */
-		double derotator_rate (double az, double alt);
+		void parallactic_angle (double ha, double dec, double &pa, double &parate);
 
 		/**
 		 * Check trajectory. If hardHorizon is present, make sure that the path between current and target coordinates does
