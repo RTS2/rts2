@@ -19,6 +19,8 @@
 
 #include "rotad.h"
 
+#define EVENT_TRACK_TIMER   RTS2_LOCAL_EVENT + 1600
+
 using namespace rts2rotad;
 
 Rotator::Rotator (int argc, char **argv, const char *defname):rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, defname)
@@ -55,12 +57,31 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		parallacticAngleRate->setValueDouble (rate);
 		if (paTracking->getValueBool ())
 			maskState (ROT_MASK_PATRACK, ROT_PA_TRACK, "started tracking");
+		addTimer (0.01, new rts2core::Event (EVENT_TRACK_TIMER));
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);
 }
 
 int Rotator::idle ()
+{
+	checkRotators ();
+	return rts2core::Device::idle ();
+}
+
+void Rotator::postEvent (rts2core::Event * event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TRACK_TIMER:
+			checkRotators ();
+			addTimer (0.01, event);
+			return;
+	}
+	return Device::postEvent (event);
+}
+
+void Rotator::checkRotators ()
 {
 	if ((getState () & ROT_MASK_ROTATING) == ROT_ROTATING)
 	{
@@ -97,17 +118,15 @@ int Rotator::idle ()
 			int ret = isRotating ();
 			if (ret >= 0)
 			{
-				maskState (BOP_EXPOSURE, BOP_EXPOSURE, "rotating to target");
-				setIdleInfoInterval (((float) ret) / USEC_SEC);
+				if (paTracking->getValueBool () == true)
+					maskState (BOP_EXPOSURE, BOP_EXPOSURE, "rotating to target");
 			}
 			else
 			{
 				maskState (BOP_EXPOSURE, 0, "rotated to target");
-				setIdleInfoInterval (100);
 			}
 		}
 	}
-	return rts2core::Device::idle ();
 }
 
 int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
@@ -121,7 +140,7 @@ int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	}
 	if (old_value == paTracking)
 	{
-		maskState (ROT_MASK_PATRACK, ((rts2core::ValueBool *) new_value)->getValueBool () ? ROT_PA_TRACK : ROT_PA_NOT, "change PA rotation");
+		maskState (ROT_MASK_PATRACK | BOP_EXPOSURE, ((rts2core::ValueBool *) new_value)->getValueBool () ? ROT_PA_TRACK : ROT_PA_NOT, "change PA rotation");
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }

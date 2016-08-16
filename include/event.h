@@ -124,6 +124,7 @@
 // nmonitor.h             1450-1499
 // bb.h                   1500-1549
 // apm-aux.h              1550-1599
+// rotator                1600-1649
 
 // local (device,..)     10000-
 

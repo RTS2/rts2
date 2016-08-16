@@ -45,6 +45,10 @@ class Rotator:public rts2core::Device
 		 */
 		void updateTrackingFrequency ();
 
+		virtual void postEvent (rts2core::Event * event);
+
+		void checkRotators ();
+
 	protected:
 		virtual int idle ();
 

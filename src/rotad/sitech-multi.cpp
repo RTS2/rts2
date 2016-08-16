@@ -52,7 +52,12 @@ int SitechMulti::run ()
 	if (ret)
 		return ret;
 	doDaemonize ();
-	return md.run (getDebug ());
+	md.initMultidev (getDebug ());
+	while (true)
+	{
+		md.runLoop (0.005);
+		callInfo ();
+	}
 }
 
 int SitechMulti::processOption (int opt)
@@ -151,11 +156,13 @@ void SitechMulti::derSetTarget ()
 	if (rotators[0] != NULL)
 	{
 		rotators[0]->updated = false;
+		rotators[0]->checkRotators ();
 		rotators[0]->updateTrackingFrequency ();
 	}
 	if (rotators[1] != NULL)
 	{
 		rotators[1]->updated = false;
+		rotators[1]->checkRotators ();
 		rotators[1]->updateTrackingFrequency ();
 	}
 }

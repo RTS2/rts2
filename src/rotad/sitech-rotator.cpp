@@ -197,12 +197,11 @@ void SitechRotator::setTarget (double tv)
 	}
 	t_pos->setValueLong ((t_angle - zeroOffs->getValueFloat ()) * ticks->getValueLong () / 360.0);
 	updated = true;
-	base->callUpdate ();
 }
 
 long SitechRotator::isRotating ()
 {
-	return (labs (r_pos->getValueLong () - t_pos->getValueLong ()) < 2000) ? -2 : USEC_SEC;
+	return (labs (r_pos->getValueLong () - t_pos->getValueLong ()) < 20000) ? -2 : USEC_SEC;
 }
 
 void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)

@@ -23,7 +23,8 @@
 
 using namespace rts2core;
 
-int MultiDev::run (int debug)
+
+void MultiDev::initMultidev (int debug)
 {
 	MultiDev::iterator iter;
 	for (iter = begin (); iter != end (); iter++)
@@ -33,55 +34,65 @@ int MultiDev::run (int debug)
 		(*iter)->initDaemon ();
 		(*iter)->beforeRun ();
 	}
+}
 
+int MultiDev::run (int debug)
+{
+	initMultidev (debug);
 	multiLoop ();
 	return -1;
 }
 
 void MultiDev::multiLoop ()
 {
-	MultiDev::iterator iter;
 	while (true)
 	{
-		struct timespec read_tout;
-		read_tout.tv_sec = 10;
-		read_tout.tv_nsec = 0;
+		runLoop (10);
+	}
+}
 
-		nfds_t polls = 0;
+void MultiDev::runLoop (float tmout)
+{
+	MultiDev::iterator iter;
 
-		for (iter = begin (); iter != end (); iter++)
-		{
-			(*iter)->addPollSocks ();
-			polls += (*iter)->npolls;
-		}
+	struct timespec read_tout;
+	read_tout.tv_sec = int (tmout);
+	read_tout.tv_nsec = (tmout - read_tout.tv_sec) * NSEC_SEC;
 
-		struct pollfd allpolls[polls + 1];
-		int pollsa[size ()];
-		int i = 0, j = 0;
+	nfds_t polls = 0;
+
+	for (iter = begin (); iter != end (); iter++)
+	{
+		(*iter)->addPollSocks ();
+		polls += (*iter)->npolls;
+	}
+
+	struct pollfd allpolls[polls + 1];
+	int pollsa[size ()];
+	int i = 0, j = 0;
+	for (iter = begin (); iter != end (); iter++, j++)
+	{
+		memcpy (allpolls + i, (*iter)->fds, sizeof (struct pollfd) * (*iter)->npolls);
+		pollsa[j] = (*iter)->npolls;
+		i += (*iter)->npolls;
+	}
+
+	if (ppoll (allpolls, polls, &read_tout, NULL) > 0)
+	{
+		j = 0;
+		int polloff = 0;
 		for (iter = begin (); iter != end (); iter++, j++)
 		{
-			memcpy (allpolls + i, (*iter)->fds, sizeof (struct pollfd) * (*iter)->npolls);
-			pollsa[j] = (*iter)->npolls;
-			i += (*iter)->npolls;
+			struct pollfd *oldfd = (*iter)->fds;
+			(*iter)->fds = allpolls + polloff;
+			(*iter)->pollSuccess ();
+			(*iter)->fds = oldfd;
+			polloff += pollsa[j];
 		}
+	}
 
-		if (ppoll (allpolls, polls, &read_tout, NULL) > 0)
-		{
-			j = 0;
-			int polloff = 0;
-			for (iter = begin (); iter != end (); iter++, j++)
-			{
-				struct pollfd *oldfd = (*iter)->fds;
-				(*iter)->fds = allpolls + polloff;
-				(*iter)->pollSuccess ();
-				(*iter)->fds = oldfd;
-				polloff += pollsa[j];
-			}
-		}
-
-		for (iter = begin (); iter != end (); iter++)
-		{
-			(*iter)->callIdle ();
-		}
+	for (iter = begin (); iter != end (); iter++)
+	{
+		(*iter)->callIdle ();
 	}
 }
