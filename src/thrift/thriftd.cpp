@@ -2,6 +2,7 @@
 
 #include <pthread.h>
 #include "device.h"
+#include <libnova/libnova.h>
 
 #include "MountService.h"
 #include <thrift/protocol/TBinaryProtocol.h>
@@ -23,10 +24,45 @@ class ThriftD: public rts2core::Device
 {
 	public:
 		ThriftD (int argc, char **argv);
+		virtual int idle ();
+
+		MountInfo mountInfo;
+
+	protected:
+		virtual int willConnect (rts2core::NetworkAddress * _addr);
 };
 
 ThriftD::ThriftD (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_THRIFT, "THRIFT")
 {
+}
+
+int ThriftD::idle ()
+{
+	rts2core::Connection *telConn = getOpenConnection (DEVICE_TYPE_MOUNT);
+	if (telConn != NULL)
+	{
+		rts2core::ValueRaDec *ori = (rts2core::ValueRaDec *) telConn->getValue ("ORI");
+		if (ori != NULL)
+		{
+			mountInfo.ORI.ra = ori->getRa ();
+			mountInfo.ORI.dec = ori->getDec ();
+		}
+		rts2core::ValueRaDec *tel = (rts2core::ValueRaDec *) telConn->getValue ("TEL");
+		if (tel != NULL)
+		{
+			mountInfo.TEL.ra = tel->getRa ();
+			mountInfo.TEL.dec = tel->getDec ();
+		}
+
+	}
+	return Device::idle ();
+}
+
+int ThriftD::willConnect (rts2core::NetworkAddress *_addr)
+{
+	if (_addr->getType () < getDeviceType () || (_addr->getType () == getDeviceType () && strcmp (_addr->getName (), getDeviceName ()) < 0))
+		return 1;
+	return 0;
 }
 
 ThriftD *rts2Device;
@@ -45,12 +81,12 @@ class MountServiceHandler : virtual public MountServiceIf {
 
   void info(MountInfo& _return) {
     // Your implementation goes here
-    printf("info\n");
+    _return = rts2Device->mountInfo;
   }
 
   int32_t Slew(const RaDec& target) {
-    // Your implementation goes here
-    printf("Slew\n");
+    rts2core::CommandMove cmd (rts2Device, NULL, target.ra, target.dec);
+    rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
     return 0;
   }
 
@@ -58,7 +94,7 @@ class MountServiceHandler : virtual public MountServiceIf {
 
 void *thrift_thread (void *args)
 {
-  int port = 9090;
+  int port = 9093;
   shared_ptr<MountServiceHandler> handler(new MountServiceHandler());
   shared_ptr<TProcessor> processor(new MountServiceProcessor(handler));
   shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
@@ -75,8 +111,6 @@ int main (int argc, char **argv)
   rts2Device = new ThriftD (argc, argv);
  
   pthread_t thrift_thr;
-  pthread_attr_t attr;
-
   pthread_t rts2_thr;
 
   pthread_create (&rts2_thr, NULL, &rts2_thread, NULL);
