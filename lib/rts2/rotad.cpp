@@ -23,9 +23,10 @@
 
 using namespace rts2rotad;
 
-Rotator::Rotator (int argc, char **argv, const char *defname):rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, defname)
+Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts2core::Device (argc, argv, DEVICE_TYPE_ROTATOR, defname)
 {
 	lastTrackingRun = 0;
+	hasTimer = ownTimer;
 
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
 	createValue (targetPosition, "TAR_POS", "[deg] target rotator position", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
@@ -57,7 +58,8 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		parallacticAngleRate->setValueDouble (rate);
 		if (paTracking->getValueBool ())
 			maskState (ROT_MASK_PATRACK, ROT_PA_TRACK, "started tracking");
-		addTimer (0.01, new rts2core::Event (EVENT_TRACK_TIMER));
+		if (hasTimer == false)
+			addTimer (0.01, new rts2core::Event (EVENT_TRACK_TIMER));
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);

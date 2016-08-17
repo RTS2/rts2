@@ -21,7 +21,7 @@
 
 using namespace rts2rotad;
 
-SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn, SitechMulti *sitechBase, const char *defaults):Rotator (0, NULL, name)
+SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSitech *conn, SitechMulti *sitechBase, const char *defaults):Rotator (0, NULL, name, true)
 {
 	setDeviceName (name);
 	sitech = conn;

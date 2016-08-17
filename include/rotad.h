@@ -34,8 +34,11 @@ class Rotator:public rts2core::Device
 	public:
 		/**
 		 * Rotator constructor.
+		 *
+		 * @param ownTimer   if true, rotator own timer to keep trackign will be disabled. Usefully for inteligent devices,
+		 *                   which has own tracking, or for multidev where timer is in base device.
 		 */
-		Rotator (int argc, char **argv, const char *defname = "R0");
+		Rotator (int argc, char **argv, const char *defname = "R0", bool ownTimer = false);
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
@@ -94,6 +97,8 @@ class Rotator:public rts2core::Device
 		rts2core::ValueInteger *trackingFSize;
 		rts2core::ValueFloat *trackingWarning;
 		double lastTrackingRun;
+
+		bool hasTimer;
 
 		rts2core::ValueTime *parallacticAngleRef;
 		rts2core::ValueDouble *parallacticAngle;
