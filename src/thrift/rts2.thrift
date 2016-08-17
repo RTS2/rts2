@@ -10,7 +10,7 @@ struct MountInfo {
   2: RaDec TEL
 }
 
-service Mount {
+service MountService {
   MountInfo info(),
   i32 Slew(1: RaDec target)
 }
