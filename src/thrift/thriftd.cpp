@@ -41,18 +41,45 @@ int ThriftD::idle ()
 	rts2core::Connection *telConn = getOpenConnection (DEVICE_TYPE_MOUNT);
 	if (telConn != NULL)
 	{
-		rts2core::ValueRaDec *ori = (rts2core::ValueRaDec *) telConn->getValue ("ORI");
-		if (ori != NULL)
+		rts2core::Value *val;
+		rts2core::ValueRaDec *raDec;
+		rts2core::ValueAltAz *altAz;
+
+		val = telConn->getValue ("infotime");
+		if (val != NULL)
 		{
-			mountInfo.ORI.ra = ori->getRa ();
-			mountInfo.ORI.dec = ori->getDec ();
+			mountInfo.infotime = val->getValueDouble ();
 		}
-		rts2core::ValueRaDec *tel = (rts2core::ValueRaDec *) telConn->getValue ("TEL");
-		if (tel != NULL)
+		raDec = (rts2core::ValueRaDec *) telConn->getValue ("ORI");
+		if (raDec != NULL)
 		{
-			mountInfo.TEL.ra = tel->getRa ();
-			mountInfo.TEL.dec = tel->getDec ();
+			mountInfo.ORI.ra = raDec->getRa ();
+			mountInfo.ORI.dec = raDec->getDec ();
 		}
+		raDec = (rts2core::ValueRaDec *) telConn->getValue ("OFFS");
+		if (raDec != NULL)
+		{
+			mountInfo.offsets.ra = raDec->getRa ();
+			mountInfo.offsets.dec = raDec->getDec ();
+		}
+		raDec = (rts2core::ValueRaDec *) telConn->getValue ("TEL");
+		if (raDec != NULL)
+		{
+			mountInfo.TEL.ra = raDec->getRa ();
+			mountInfo.TEL.dec = raDec->getDec ();
+		}
+		altAz = (rts2core::ValueAltAz *) telConn->getValue ("TEL_");
+		if (altAz != NULL)
+		{
+			mountInfo.HRZ.alt = altAz->getAlt ();
+			mountInfo.HRZ.az = ln_range_degrees (altAz->getAz () + 180.0);
+		}
+		val = telConn->getValue ("JD");
+		if (val != NULL)
+		{
+			mountInfo.JulianDay = val->getValueDouble ();
+		}
+
 
 	}
 	return Device::idle ();
@@ -74,49 +101,46 @@ void *rts2_thread (void *args)
 }
 
 class MountServiceHandler : virtual public MountServiceIf {
- public:
-  MountServiceHandler() {
-    // Your initialization goes here
-  }
+	public:
+		MountServiceHandler() {
+		}
 
-  void info(MountInfo& _return) {
-    // Your implementation goes here
-    _return = rts2Device->mountInfo;
-  }
+		void info(MountInfo& _return) {
+			_return = rts2Device->mountInfo;
+		}
 
-  int32_t Slew(const RaDec& target) {
-    rts2core::CommandMove cmd (rts2Device, NULL, target.ra, target.dec);
-    rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
-    return 0;
-  }
-
+		int32_t Slew(const RaDec& target) {
+			rts2core::CommandMove cmd (rts2Device, NULL, target.ra, target.dec);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
+			return 0;
+		}
 };
 
 void *thrift_thread (void *args)
 {
-  int port = 9093;
-  shared_ptr<MountServiceHandler> handler(new MountServiceHandler());
-  shared_ptr<TProcessor> processor(new MountServiceProcessor(handler));
-  shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
-  shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
-  shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
+		int port = 9093;
+		shared_ptr<MountServiceHandler> handler(new MountServiceHandler());
+		shared_ptr<TProcessor> processor(new MountServiceProcessor(handler));
+		shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
+		shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
+		shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
-  TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
-  server.serve();
-  return NULL;
+		TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+		server.serve();
+		return NULL;
 }
 
 int main (int argc, char **argv)
 {
-  rts2Device = new ThriftD (argc, argv);
+		rts2Device = new ThriftD (argc, argv);
  
-  pthread_t thrift_thr;
-  pthread_t rts2_thr;
+		pthread_t thrift_thr;
+		pthread_t rts2_thr;
 
-  pthread_create (&rts2_thr, NULL, &rts2_thread, NULL);
-  pthread_create (&thrift_thr, NULL, &thrift_thread, NULL);
+		pthread_create (&rts2_thr, NULL, &rts2_thread, NULL);
+		pthread_create (&thrift_thr, NULL, &thrift_thread, NULL);
 
-  pthread_join (thrift_thr, NULL);
-  pthread_join (rts2_thr, NULL);
-  return 0;
+		pthread_join (thrift_thr, NULL);
+		pthread_join (rts2_thr, NULL);
+		return 0;
 }
