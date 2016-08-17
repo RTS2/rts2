@@ -13,9 +13,8 @@ void GemTest::setTelescope (double _lat, double _long, double _alt, long _ra_tic
 	setDebug (1);
 	setNotDaemonize ();
 
-	telLatitude->setValueDouble (_lat);
-	telLongitude->setValueDouble (_long);
-	telAltitude->setValueDouble (_alt);
+	setTelLongLat (_long, _lat);
+	setTelAltitude (_alt);
 
 	ra_ticks->setValueLong (_ra_ticks);
 	dec_ticks->setValueLong (_dec_ticks);
