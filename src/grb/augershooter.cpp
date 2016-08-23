@@ -160,6 +160,25 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):DeviceDb (in_argc
 
  /*       fourth set of cuts - end   */
 
+ /*       fifth set of cuts         */
+	createValue (EyeId5, "Eye_Id_cut5", "Eye Id, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	EyeId5->setValueInteger (1);
+
+	createValue (XmaxEnergyShift5, "XMax_energy_shift_cut5", "XMax energy shift factor, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	XmaxEnergyShift5->setValueDouble (900);
+
+	createValue (XmaxEnergyLin5, "XMax_energy_lin_cut5", "XMax energy linear factor, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	XmaxEnergyLin5->setValueDouble (50);
+
+	createValue (XmaxErr5, "XMax_err_cut5", "XMax error, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	XmaxEnergyLin5->setValueDouble (50);
+
+	createValue (Energy5, "Energy_cut5", "minimal energy, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	Energy5->setValueDouble (0.6);
+
+	createValue (ChkovFrac5, "Chkov_Frac_cut5", "cherenkov fraction, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	ChkovFrac5->setValueDouble (50);
+ /*       fifth set of cuts - end   */
 }
 
 DevAugerShooter::~DevAugerShooter (void)
@@ -183,20 +202,6 @@ int DevAugerShooter::processOption (int in_opt)
 		default:
 			return DeviceDb::processOption (in_opt);
 	}
-	return 0;
-}
-
-int DevAugerShooter::reloadConfig ()
-{
-	int ret = DeviceDb::reloadConfig ();
-	if (ret)
-		return ret;
-
-	rts2core::Configuration *config = rts2core::Configuration::instance ();
-	minEnergy->setValueDouble (config->getDoubleDefault ("augershooter", "minenergy", minEnergy->getValueDouble ()));
-
-	maxTime->setValueInteger (config->getIntegerDefault ("augershooter", "maxtime", maxTime->getValueInteger ()));
-
 	return 0;
 }
 

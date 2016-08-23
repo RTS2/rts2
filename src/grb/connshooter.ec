@@ -117,6 +117,8 @@ int ConnShooter::processAuger ()
 	double db_MaxAngle;       /// Maximum viewing angle (deg)
 	double db_MeanAngle;      /// Mean viewing angle (deg)
 
+	double db_ChkovFrac;      /// Cherenkov fraction (unitless)
+
 	int    db_NTank;          /// Number of stations in hybrid db_it
 	int    db_HottestTank;    /// Station used in hybrid-geometry reco
 	double db_AxisDist;       /// Shower axis distance to hottest station (m)
@@ -171,6 +173,12 @@ int ConnShooter::processAuger ()
 	int db_EyeId4;
 	int db_minNPix4;
 	double db_maxDGHChi2Improv4;
+	int db_EyeId5;
+	double db_XmaxEnergyShift5;
+	double db_XmaxEnergyLin5;
+	double db_XmaxErr5;
+	double db_Energy5;
+	double db_ChkovFrac5;
 
 	int db_cut = 0;
 
@@ -198,7 +206,6 @@ int ConnShooter::processAuger ()
 	double GalLongErr;
 	double GalLatErr;
 	double RhoLL;
-	double ChkovFrac;
 	double EyeXmaxAtt;
 	double MieDatabase;
 	double BadPeriod;
@@ -278,7 +285,7 @@ int ConnShooter::processAuger ()
 		>> db_MinAngle
 		>> db_MaxAngle
 		>> db_MeanAngle
-		>> ChkovFrac
+		>> db_ChkovFrac
 		>> db_NTank
 		>> db_HottestTank
 		>> db_AxisDist
@@ -370,6 +377,12 @@ int ConnShooter::processAuger ()
 	db_EyeId4 = master->EyeId4->getValueInteger ();
 	db_minNPix4 = master->minNPix4->getValueInteger ();
 	db_maxDGHChi2Improv4 = master->maxDGHChi2Improv4->getValueDouble ();
+	db_EyeId5 = master->EyeId5->getValueInteger ();
+	db_XmaxEnergyShift5 = master->XmaxEnergyShift5->getValueDouble ();
+	db_XmaxEnergyLin5 = master->XmaxEnergyLin5->getValueDouble ();
+	db_XmaxErr5 = master->XmaxErr5->getValueDouble ();
+	db_Energy5 = master->Energy5->getValueDouble ();
+	db_ChkovFrac5 = master->ChkovFrac5->getValueDouble ();
 
 	if (compare (db_Energy, CMP_GT, db_minEnergy, "Energy")
 		&& compare (db_Eye, CMP_EQ, db_EyeId1, "Eye")
@@ -388,7 +401,7 @@ int ConnShooter::processAuger ()
 		&& compare ((db_TimeChi2 / db_TimeNdf), CMP_LT, db_maxTimeDiv, "TimeChi2 to TimeNDf ratio")
 		&& compare (db_Theta, CMP_LT, db_maxTheta, "Theta")
 	)
-		db_cut |= 1;
+		db_cut |= 0x01;
 
 	cutindex = 1;
 
@@ -411,12 +424,12 @@ int ConnShooter::processAuger ()
 		&& compare ((((CoreDist >= 24. + 12.*(log10(db_Energy)-1.)) || (log10(db_Energy) < 1.)) &&
           		((CoreDist > 24. + 6.*(log10(db_Energy)-1.)) || (log10(db_Energy) >= 1.))), CMP_EQ, true, "CoreDist and Energy cuts")
 	)
-		db_cut |= 2;
-	 /*       second set of cuts - end   */
+		db_cut |= 0x02;
+	/*       second set of cuts - end   */
 
-	 cutindex = 2;
+	cutindex = 2;
 
-	 /*       third set of cuts          */
+	/*       third set of cuts          */
 
 	if (compare (db_Energy, CMP_GT, db_minEnergy3, "Energy")
 		&& compare (db_Eye, CMP_EQ, db_EyeId3, "Eye")
@@ -431,9 +444,8 @@ int ConnShooter::processAuger ()
 		&& compare ((db_SDPChi2 / db_SDPNdf), CMP_LT, db_maxSPDDiv3, "SDPChi2 to SDPNdf ratio")
 		&& compare ((db_TimeChi2 / db_TimeNdf), CMP_LT, db_maxTimeDiv3, "TimeChi2 to TimeNdf ratio")
 	)
-		db_cut |= 4;
+		db_cut |= 0x04;
  	/*       third set of cuts - end    */
-
 
 	cutindex = 3;
 
@@ -442,8 +454,21 @@ int ConnShooter::processAuger ()
 		&& compare (db_Eye, CMP_EQ, db_EyeId4, "Eye")
 		&& compare ((db_DGHChi2Improv / db_GHNdf), CMP_LT, db_maxDGHChi2Improv4, "DGHChi2Improv to GHNdf ratio")
 	)
-		db_cut |= 8;
+		db_cut |= 0x08;
 	/*       fourth set of cuts - end   */
+
+	cutindex = 4;
+
+	/*       fifth set of cuts         */
+
+	if (compare (db_Xmax, CMP_GT, db_XmaxEnergyShift5 + db_XmaxEnergyLin5 * log10 (db_Energy), "XMax to transformed Energy")
+		&& compare (db_Eye, CMP_EQ, db_EyeId5, "Eye")
+		&& compare (db_XmaxErr, CMP_LT, db_XmaxErr5, "XMaxErr")
+		&& compare (db_Energy, CMP_GT, db_Energy5, "Energy")
+		&& compare (db_ChkovFrac, CMP_LT, db_ChkovFrac5, "Cherenkov Fraction")
+	)
+		db_cut |= 0x10;
+	/*       fifth set of cuts - end   */
 
 	if (db_cut == 0)
 	{
@@ -466,6 +491,7 @@ int ConnShooter::processAuger ()
 			<< " maxGHChiDiv " << db_maxGHChiDiv
 			<< " (LineFitChi2 " << db_LineFitChi2 << " - GHChi2 " << db_GHChi2 << ")"
 			<< " minLineFitDiff " << db_minLineFitDiff
+			<< " ChkovFrac " << db_ChkovFrac
 			<< " AxisDist " << db_AxisDist
 			<< " maxAxisDist " << db_maxAxisDist
 			<< " Rp " << db_Rp
