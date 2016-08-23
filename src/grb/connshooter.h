@@ -27,7 +27,7 @@
 #define AUGER_BUF_SIZE  20000
 
 // number of cuts
-#define NUM_CUTS        4
+#define NUM_CUTS        5
 
 namespace rts2grbd
 {
