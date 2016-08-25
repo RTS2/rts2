@@ -128,16 +128,19 @@ int ConnFork::receive (Block *block)
 			if (data_size > 0)
 			{
 				errbuf[data_size] = '\0';
-				processErrorLine (errbuf);	
+				processErrorLine (errbuf);
+				return 0;
 			}
 			else if (data_size == 0)
 			{
 				close (sockerr);
 				sockerr = -1;
+				return -1;
 			}
 			else
 			{
 				logStream (MESSAGE_ERROR) << "From error pipe read error " << strerror (errno) << "." << sendLog;
+				return -1;
 			}
 		}
 	}
