@@ -13,9 +13,8 @@ void AltAzTest::setTelescope (double _lat, double _long, double _alt, long _az_t
 	setDebug (1);
 	setNotDaemonize ();
 
-	telLatitude->setValueDouble (_lat);
-	telLongitude->setValueDouble (_long);
-	telAltitude->setValueDouble (_alt);
+	setTelLongLat (_long, _lat);
+	setTelAltitude (_alt);
 
 	az_ticks->setValueLong (_az_ticks);
 	alt_ticks->setValueLong (_alt_ticks);

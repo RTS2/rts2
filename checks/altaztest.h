@@ -12,7 +12,7 @@ class AltAzTest:public rts2teld::AltAz
 		void test_counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec);
 		void test_counts2hrz (int32_t azc, int32_t altc, struct ln_hrz_posn *hrz);
 
-		double test_derotator_rate (double az, double alt) { return derotator_rate (az, alt); };
+		void test_parallactic_angle (double ha, double dec, double &pa, double &parate) { parallactic_angle (ha, dec, pa, parate); };
 
 		/**
 		 * Test movement to given target position, from counts in ac dc parameters.

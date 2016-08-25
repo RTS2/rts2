@@ -23,29 +23,93 @@ void teardown_altcaz (void)
 	altAzTest = NULL;
 }
 
+void test_pa (double ha, double dec, double pa, double parate)
+{
+	double c_pa, c_parate;
+	altAzTest->test_parallactic_angle (ha, dec, c_pa, c_parate);
+	ck_assert_dbl_eq (c_pa, pa, 10e-4);
+	ck_assert_dbl_eq (c_parate, parate, 10e-4);
+}
+
 START_TEST(derotator_1)
 {
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0, 20), 6.0972, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0, 40), 7.4794, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (0.23, 60.21), 11.5323, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (12.3, 70.21), 16.5342, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (8.3, 82.21), 41.8286, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (4.3, 85.21), 68.4213, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-1.3, 89.21), 415.4513, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-12.3, 89.99), 32074.5143, 10e-4);
+	test_pa (0, -70, 0, 22.9813);
+	test_pa (1, -70, 1.5319, 22.9765);
+	test_pa (15, -70, 22.6356, 21.9735);
+	test_pa (-15, -70, -22.6356, 21.9735);
+	test_pa (30, -70, 43.5044, 19.6526);
+	test_pa (45, -70, 61.9054, 17.2009);
+	test_pa (60, -70, 78.0773, 15.2443);
+	test_pa (90, -70, 106.0128, 13.0227);
+	test_pa (120, -70, 131.1507, 12.2828);
+	test_pa (150, -70, 155.5714, 12.1934);
+	test_pa (179, -70, 179.1847, 12.2281);
+	test_pa (180, -70, 180.0, 12.2281);
+	test_pa (181, -70, -179.1847, 12.2281);
+	test_pa (210, -70, -155.5714, 12.1934);
+	test_pa (240, -70, -131.1507, 12.2828);
+	test_pa (270, -70, -106.0128, 13.0227);
+	test_pa (300, -70, -78.0773, 15.2443);
+	test_pa (315, -70, -61.9054, 17.2009);
+	test_pa (330, -70, -43.5044, 19.6526);
+	test_pa (359, -70, -1.5319, 22.9765);
+	test_pa (360, -70, 0, 22.9813);
 }
 END_TEST
 
 START_TEST(derotator_2)
 {
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180, 20), -6.0972, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180, 40), -7.4794, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (180.23, 60.21), -11.5323, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (182.3, 70.21), -16.9090, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (188.3, 82.21), -41.8286, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (184.3, 85.21), -68.4213, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-179.3, 89.21), -415.5272, 10e-4);
-	ck_assert_dbl_eq (altAzTest->test_derotator_rate (-179.3, 89.99), -32825.6136, 10e-4);
+	test_pa (1, -40, 0, 4.8211);
+	test_pa (-1, -40, 0, 4.8211);
+	test_pa (0, -39.99, 180, -65836.6706);
+	test_pa (0, -40.01, 0, 65836.6705);
+	test_pa (0.01, -40.01, 37.4549, 41493.6137);
+	test_pa (-0.01, -40.01, -37.4549, 41493.6137);
+	test_pa (0.01, -39.99, 142.5474, -41485.5540);
+	test_pa (-0.01, -39.99, -142.5474, -41485.5540);
+}
+END_TEST
+
+START_TEST(derotator_3)
+{
+	test_pa (15, -40, 94.8371, 4.8695);
+	test_pa (30, -40, 99.7724, 5.0181);
+	test_pa (60, -40, 110.3605, 5.6497);
+	test_pa (90, -40, 122.7324, 6.8227);
+	test_pa (120, -40, 138.0698, 8.6105);
+	test_pa (150, -40, 157.3709, 10.6542);
+	test_pa (179, -40, 179.2221, 11.6666);
+	test_pa (180, -40, 180, 11.6679);
+	test_pa (181, -40, -179.2221, 11.6666);
+	test_pa (210, -40, -157.3709, 10.6542);
+	test_pa (240, -40, -138.0698, 8.6105);
+	test_pa (270, -40, -122.7324, 6.8227);
+	test_pa (300, -40, -110.3605, 5.6497);
+	test_pa (330, -40, -99.7724, 5.0181);
+	test_pa (345, -40, -94.8371, 4.8695);
+}
+END_TEST
+
+START_TEST(derotator_4)
+{
+	test_pa (0, -80, 0, 17.8763);
+	test_pa (1, -80, 1.1917, 17.8754);
+	test_pa (-1, -80, -1.1917, 17.8754);
+	test_pa (15, -80, 17.8120, 17.6857);
+	test_pa (30, -80, 35.2623, 17.1706);
+	test_pa (60, -80, 68.1823, 15.7197);
+	test_pa (90, -80, 98.2901, 14.4650);
+	test_pa (120, -80, 126.3838, 13.7099);
+	test_pa (150, -80, 153.4022, 13.3623);
+	test_pa (179, -80, 179.1154, 13.2682);
+	test_pa (180, -80, 180, 13.2682);
+	test_pa (181, -80, -179.1154, 13.2682);
+	test_pa (210, -80, -153.4022, 13.3623);
+	test_pa (240, -80, -126.3838, 13.7099);
+	test_pa (270, -80, -98.2901, 14.4650);
+	test_pa (300, -80, -68.1823, 15.7197);
+	test_pa (330, -80, -35.2623, 17.1706);
+	test_pa (345, -80, -17.8120, 17.6857);
 }
 END_TEST
 
@@ -147,6 +211,8 @@ Suite * altaz_suite (void)
 	tcase_add_checked_fixture (tc_altaz_pointings, setup_altcaz, teardown_altcaz);
 	tcase_add_test (tc_altaz_pointings, derotator_1);
 	tcase_add_test (tc_altaz_pointings, derotator_2);
+	tcase_add_test (tc_altaz_pointings, derotator_3);
+	tcase_add_test (tc_altaz_pointings, derotator_4);
 	tcase_add_test (tc_altaz_pointings, test_altaz_1);
 	suite_add_tcase (s, tc_altaz_pointings);
 
