@@ -135,11 +135,13 @@ int ConnFork::receive (Block *block)
 			{
 				close (sockerr);
 				sockerr = -1;
+				connectionError (0);
 				return -1;
 			}
 			else
 			{
 				logStream (MESSAGE_ERROR) << "From error pipe read error " << strerror (errno) << "." << sendLog;
+				connectionError (-1);
 				return -1;
 			}
 		}
