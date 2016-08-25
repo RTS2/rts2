@@ -197,7 +197,7 @@ void AltAz::parallactic_angle (double ha, double dec, double &pa, double &parate
 	if (fabs (div) < 10e-5)
 		pa = 0;
 	else
-		pa = ln_rad_to_deg (atan (cos_lat * sin_ha / div));
+		pa = ln_rad_to_deg (atan2 (cos_lat * sin_ha, div));
 	double par1 = (tan_lat * cos_dec - sin_dec * cos_ha);
 	parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
 }
