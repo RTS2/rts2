@@ -697,6 +697,11 @@ class Block: public App
 		bool isForRead (int fd) { return getPollEvents (fd) & (POLLIN | POLLPRI); }
 
 		/**
+		 * Returns true, if the other end closed connection.
+		 */
+		bool isHup (int fd) { return getPollEvents (fd) & POLLHUP; }
+
+		/**
 		 * Returns true, if data can be written to the file descriptor.
 		 */
 		bool isForWrite (int fd) { return getPollEvents (fd) & POLLOUT; }

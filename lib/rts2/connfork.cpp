@@ -100,7 +100,7 @@ void ConnFork::processLine ()
 int ConnFork::add (Block *block)
 {
 	if (sockerr > 0)
-		block->addPollFD (sockerr, POLLIN | POLLPRI);
+		block->addPollFD (sockerr, POLLIN | POLLPRI | POLLHUP);
 	if (input.length () > 0)
 	{
 		if (sockwrite < 0)
@@ -118,24 +118,27 @@ int ConnFork::add (Block *block)
 
 int ConnFork::receive (Block *block)
 {
-	if (sockerr > 0 && block->isForRead (sockerr))
+	if (sockerr > 0)
 	{
-		int data_size;
-		char errbuf[5001];
-		data_size = read (sockerr, errbuf, 5000);
-		if (data_size > 0)
+		if (block->isForRead (sockerr) || block->isHup (sockerr))
 		{
-			errbuf[data_size] = '\0';
-			processErrorLine (errbuf);	
-		}
-		else if (data_size == 0)
-		{
-			close (sockerr);
-			sockerr = -1;
-		}
-		else
-		{
-			logStream (MESSAGE_ERROR) << "From error pipe read error " << strerror (errno) << "." << sendLog;
+			int data_size;
+			char errbuf[5001];
+			data_size = read (sockerr, errbuf, 5000);
+			if (data_size > 0)
+			{
+				errbuf[data_size] = '\0';
+				processErrorLine (errbuf);	
+			}
+			else if (data_size == 0)
+			{
+				close (sockerr);
+				sockerr = -1;
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "From error pipe read error " << strerror (errno) << "." << sendLog;
+			}
 		}
 	}
 	return ConnNoSend::receive (block);
