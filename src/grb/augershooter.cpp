@@ -171,7 +171,7 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):DeviceDb (in_argc
 	XmaxEnergyLin5->setValueDouble (50);
 
 	createValue (XmaxErr5, "XMax_err_cut5", "XMax error, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	XmaxEnergyLin5->setValueDouble (50);
+	XmaxErr5->setValueDouble (50);
 
 	createValue (Energy5, "Energy_cut5", "minimal energy, cut5", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	Energy5->setValueDouble (0.6);
