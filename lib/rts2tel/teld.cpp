@@ -929,8 +929,11 @@ void Telescope::incMoveNum ()
 	offsRaDec->setValueRaDec (0, 0);
 	offsRaDec->resetValueChanged ();
 
-	offsAltAz->setValueAltAz (0, 0);
-	offsAltAz->resetValueChanged ();
+	if (offsAltAz)
+	{
+		offsAltAz->setValueAltAz (0, 0);
+		offsAltAz->resetValueChanged ();
+	}
 
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
