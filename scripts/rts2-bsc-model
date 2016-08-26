@@ -9,11 +9,12 @@ from astropy.io import fits
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Too to find brightest star on the image, produce preliminary WCS based on bright stars found in images')
 
-parser.add_argument('-v',help='verbose',action='count',dest='verbose',default=0)
-parser.add_argument('--dss',help='show DSS image, match on WCS for comparsion of the fields', dest='dss', action='store_true', default=False)
-parser.add_argument('--asecpix',help='image scale (arcsec/pixel)',dest='asecpix', type=float, action='store', default=0.3)
-parser.add_argument('--rotang',help='basic rotational angle (degrees)',dest='rotang', type=float, action='store', default=0)
-parser.add_argument('args',help='files to process',nargs='+')
+parser.add_argument('-v', help='verbose', action='count', dest='verbose', default=0)
+parser.add_argument('--dss', help='show DSS image, match on WCS for comparsion of the fields', dest='dss', action='store_true', default=False)
+parser.add_argument('--asecpix', help='image scale (arcsec/pixel)', dest='asecpix', type=float, action='store', default=0.3)
+parser.add_argument('--rotang', help='basic rotational angle (degrees)', dest='rotang', type=float, action='store', default=0)
+parser.add_argument('--flip', help='flip image by those axis (empty, X, Y or XY allowed)', dest='flip', action='store', default='')
+parser.add_argument('args', help='files to process', nargs='+')
 
 options = parser.parse_args()
 
@@ -65,8 +66,8 @@ def add_wcs(fn):
 	b_dec = hdu[0].header['OBJDEC']
 	if options.dss:
 		d = ds9.ds9(__DS9)
-		d.set('dss coord {0} {1} degrees'.format(b_ra, b_dec))
 		d.set('dss size 7 7')
+		d.set('dss coord {0} {1} degrees'.format(b_ra, b_dec))
 
 	w = wcs.WCS(naxis=2)
 	w.wcs.crpix = [x,y]
@@ -76,20 +77,33 @@ def add_wcs(fn):
 	rt_cos = np.cos(rt_rad)
 	rt_sin = np.sin(rt_rad)
 
-	w.wcs.cd = (options.asecpix / 3600.0) * np.array([[rt_cos,rt_sin], [-rt_sin,rt_cos]], np.float)
+	flip_x = -1 if options.flip.find('X') >= 0 else 1
+	flip_y = -1 if options.flip.find('Y') >= 0 else 1
+
+	w.wcs.cd = (options.asecpix / 3600.0) * np.array([[flip_x * rt_cos,flip_x * rt_sin], [flip_y * -rt_sin,flip_y * rt_cos]], np.float)
 	w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
 
 	if options.verbose > 1:
-		pixcrd = np.array( [[x, y], [x + 1, y + 1], [0,0]], np.float)
+		pixcrd = np.array([[x, y], [x + 1, y + 1], [0,0]], np.float)
 		print 'some pixels', w.wcs_pix2world(pixcrd, 1)
-	
-	hdu[0].header.append(w.to_fits()[0].header)
+
+	wh = w.to_header()
+	for h in wh.items():
+		hdu[0].header.append((h[0], h[1], wh.comments[h[0]]))
 	hdu.writeto('out.fits', clobber=True)
 
 	if options.verbose:
 		d = ds9.ds9(__DS9)
 		d.set('frame clear 1')
 		d.set('frame 1')
+		d.set('file out.fits')
+		if options.dss:
+			d.set('frame 2')
+			d.set('match frame wcs')
+		d.set('zoom to fit')
+		d.set('scale zscale')
+		d.set('catalog nomad')
+		d.set('catalog filter $Rmag>-2&&$Rmag<13.5')
 
 for fn in options.args:
 	add_wcs(fn)
