@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import ds9
+import argparse
+import sep
+import numpy as np
+from astropy.io import fits
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Too to find brightest star on the image, produce preliminary WCS based on bright stars found in images')
+
+parser.add_argument('-v',help='verbose',action='count',dest='verbose',default=0)
+parser.add_argument('args',help='files to process',nargs='+')
+
+options = parser.parse_args()
+
+def find_brightest(fn):
+	"""Find brightests stars"""
+	hdu = fits.open(fn)
+	data = np.array(hdu[0].data,np.int32)
+	bkg = sep.Background(data)
+	bkg.subfrom(data)
+	thres = 1.5 * bkg.globalrms
+	if options.verbose:
+		print 'global average background: {0:.2f} rms: {1:.3f} threshold: {2:.3f}'.format(bkg.globalback, bkg.globalrms, thres)
+	objects = sep.extract(data, thres)
+	# order by flux
+	s_objects = sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
+	b_x = s_objects[0]['x']
+	b_y = s_objects[0]['y']
+	b_flux = s_objects[0]['flux']
+	if options.verbose:
+		print 'detected {0} objects',format(len(objects))
+		print 'brightest at {0:.2f} {1:.2f}'.format(b_x,b_y)
+		if options.verbose > 1:
+			for o in objects:
+				print 'object {0}'.format(o)
+		d=ds9.ds9('bsc')
+		d.set('file {0}'.format(fn))
+		d.set('regions','image; point({0},{1}) # point=cross 25, color=green'.format(b_x,b_y))
+		if options.verbose > 1:
+			w_flux = s_objects[-1]['flux']
+			bb_flux = s_objects[1]['flux']
+			for o in s_objects[1:]:
+				w = 1 + (o['flux'] - w_flux) / (bb_flux - w_flux)
+				w = np.log(w)
+				w = 20 * w
+				print w
+				d.set('regions','image; circle({0},{1},{2:.4f}) # color=green'.format(o['x'],o['y'],w))
+
+for fn in options.args:
+	find_brightest(fn)
