@@ -1,8 +1,10 @@
 LDADD = @CHECK_LIBS@ -L../lib/rts2tel -lrts2tel -L../lib/sgp4 -lsgp4 -L../lib/pluto -lpluto -L../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
+TESTS = check_python_libnova
+
 if LIBCHECK
-TESTS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp
+TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp
 check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp
 
 noinst_HEADERS = check_utils.h gemtest.h altaztest.h
