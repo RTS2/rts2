@@ -339,6 +339,11 @@ int SAAO::info ()
 	else
 		valueGood (shutterFaults);
 
+	sendValueAll (shutterClosed);
+	sendValueAll (shutterOpened);
+	sendValueAll (shutterMoving);
+	sendValueAll (shutterFaults);
+
 	domeMoving->setValueBool (reg[0] & STATUS_DOME_MOVING);
 	domeFault->setValueBool (reg[0] & STATUS_DOME_FAULT);
 
@@ -347,8 +352,14 @@ int SAAO::info ()
 	else
 		valueGood (domeFault);
 
+	sendValueAll (domeMoving);
+	sendValueAll (domeFault);
+
 	lightsOn->setValueBool (reg[0] & STATUS_LIGHTS);
 	lightsManual->setValueBool (reg[0] & STATUS_LIGHTS_MANUAL);
+
+	sendValueAll (lightsOn);
+	sendValueAll (lightsManual);
 
 	emergencyPressed->setValueBool (reg[1] & STATUS_EM_PRESSED);
 	closedRemote->setValueBool (reg[1] & STATUS_CLOSED_REM);
@@ -368,6 +379,13 @@ int SAAO::info ()
 		valueGood (rotatPower);
 	else
 		valueError (rotatPower);
+
+	sendValueAll (emergencyPressed);
+	sendValueAll (closedRemote);
+	sendValueAll (closedRain);
+	sendValueAll (powerFailure);
+	sendValueAll (shutterPower);
+	sendValueAll (rotatPower);
 
 	setCurrentAz (ln_range_degrees (bhex2num (reg[2]) / 10.0 + 180));
 
