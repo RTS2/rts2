@@ -122,15 +122,15 @@ def tel_hrz_to_equ(telescope,alt,az):
 	j.refresh()
 	lst = j.getValue(telescope,'LST')
 	lat = j.getValue(telescope,'LATITUDE')
-	lng = j.getValue(telescope,'LONGITUD')
 
-	ha,dec = rts2.libnova.hrz_to_equ(az,alt,lat,lng)
+	ha,dec = rts2.libnova.hrz_to_equ(az,alt,lat)
 	ra = (lst - ha) % 360.0
 	return ra,dec
 
 def find_bright_star(telescope,alt,az):
 	import rts2.bsc
 	ra,dec = tel_hrz_to_equ(telescope,alt,az)
+	lst = j.getValue(telescope,'LST')
 	print 'Looking for star around RA {0:3} DEC {1:2} (LST {2:3}), magnitude {3} to {4}'.format(ra,dec,lst,mag_max,mag_min)
 	# find bsc..
 	bsc=rts2.bsc.find_nearest(ra,dec,mag_max,mag_min)
