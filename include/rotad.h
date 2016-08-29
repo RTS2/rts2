@@ -91,12 +91,18 @@ class Rotator:public rts2core::Device
 		double getTargetMin () { return targetPosition->getMin (); }
 		double getTargetMax () { return targetPosition->getMax (); }
 
+		double getZeroOffset () { return zeroOffs->getValueDouble (); }
+		double getOffset () { return offset->getValueDouble (); }
+
 		/**
 		 * Set parallactic angle offset.
 		 */
 		void setPAOffset (double paOff) { paOffset->setValueDouble (paOff); }
 
 	private:
+		rts2core::ValueDouble *zeroOffs;
+		rts2core::ValueDouble *offset;
+
 		rts2core::ValueDouble *currentPosition;
 		rts2core::ValueDoubleMinMax *targetPosition;
 		rts2core::ValueDouble *paOffset;
@@ -115,6 +121,9 @@ class Rotator:public rts2core::Device
 		rts2core::ValueDouble *toGo;
 
 		void updateToGo ();
+
+		// autorotating in plus direction..
+		bool autoPlus;
 };
 
 }

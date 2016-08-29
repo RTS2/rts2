@@ -88,9 +88,6 @@ class SitechRotator: public Rotator
 		rts2core::ConnSitech *sitech;
 		SitechMulti *base;
 		char axis;
-
-		rts2core::ValueFloat *zeroOffs;
-		rts2core::ValueFloat *offset;
 };
 
 }

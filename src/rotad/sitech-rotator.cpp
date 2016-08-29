@@ -35,12 +35,6 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 	createValue (r_pos, "REAL", "[cnts] encoder readout", false);
 	createValue (t_pos, "TARGET", "[cnts] target position", false, RTS2_VALUE_WRITABLE);
 
-	createValue (zeroOffs, "zero_offs", "[deg] zero offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
-	zeroOffs->setValueFloat (0);
-
-	createValue (offset, "OFFSET", "[deg] custom offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
-	offset->setValueFloat (0);
-
 	createValue (speed, "SPEED", "[deg/sec] maximal speed", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	speed->setValueFloat (20);
 
@@ -138,9 +132,9 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 
 void SitechRotator::setTarget (double tv)
 {
-	double t_angle = tv - offset->getValueDouble ();
+	double paOff = getOffset ();
 
-	double paOff = offset->getValueDouble ();
+	double t_angle = tv - paOff;
 
 	if (!isnan (getTargetMax ()))
 	{
@@ -201,7 +195,7 @@ void SitechRotator::setTarget (double tv)
 			}
 		}
 	}
-	t_pos->setValueLong ((t_angle - zeroOffs->getValueFloat ()) * ticks->getValueLong () / 360.0);
+	t_pos->setValueLong ((t_angle - getZeroOffset ()) * ticks->getValueLong () / 360.0);
 	setPAOffset (paOff);
 	updated = true;
 }
@@ -222,7 +216,7 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 		r_pos->setValueLong (der_status->y_pos);
 	}
 
-	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + zeroOffs->getValueFloat () + offset->getValueFloat ());
+	setCurrentPosition (360 * ((double) r_pos->getValueLong () / ticks->getValueLong ()) + getZeroOffset () + getOffset ());
 
 	// not stopped, not in manual mode
 	autoMode->setValueBool ((der_status->extra_bits & (axis == 'X' ? 0x02 : 0x20)) == 0);

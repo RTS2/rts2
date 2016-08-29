@@ -321,6 +321,8 @@ std::string Connection::getStateString ()
 						_os << "UNKNOWN";
 				}
 			}
+			if (real_state & ROT_AUTO)
+				_os << " | AUTOROTATE";
 
 			break;
 		case DEVICE_TYPE_PHOT:

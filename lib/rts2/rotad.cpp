@@ -28,6 +28,14 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	lastTrackingRun = 0;
 	hasTimer = ownTimer;
 
+	autoPlus = false;
+
+	createValue (zeroOffs, "zero_offs", "[deg] zero offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	zeroOffs->setValueDouble (0);
+
+	createValue (offset, "OFFSET", "[deg] custom offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	offset->setValueDouble (0);
+
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
 	createValue (targetPosition, "TAR_POS", "[deg] target rotator position", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (paOffset, "PA", "[deg] target parallactic angle offset", true, RTS2_DT_DEGREES);
@@ -58,9 +66,18 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 		parallacticAngle->setValueDouble (pa);
 		parallacticAngleRate->setValueDouble (rate);
 		if (paTracking->getValueBool ())
-			maskState (ROT_MASK_PATRACK, ROT_PA_TRACK, "started tracking");
+			maskState (ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PA_TRACK, "started tracking");
 		if (hasTimer == false)
 			addTimer (0.01, new rts2core::Event (EVENT_TRACK_TIMER));
+		return 0;
+	}
+	else if (conn->isCommand (COMMAND_ROTATOR_AUTO))
+	{
+		paTracking->setValueBool (false);
+		autoPlus = true;
+		maskState (ROT_MASK_AUTOROT | ROT_MASK_PATRACK, ROT_AUTO | ROT_PA_NOT, "autorotating");
+		if (hasTimer == false)
+			addTimer (0.1, new rts2core::Event (EVENT_TRACK_TIMER));
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);
@@ -130,6 +147,38 @@ void Rotator::checkRotators ()
 			}
 		}
 	}
+	if ((getState () & ROT_MASK_AUTOROT) == ROT_AUTO)
+	{
+		long ret = isRotating ();
+		if (ret < 0)
+		{
+			if (ret == -2)
+			{
+				if (autoPlus == true)
+				{
+					setTarget (isnan (getTargetMax ()) ? 180 : getTargetMax () + getOffset ());
+					autoPlus = false;
+				}
+				else
+				{
+					setTarget (isnan (getTargetMin ()) ? -180 : getTargetMin () + getOffset ());
+					autoPlus = true;
+				}
+			}
+			else
+			{
+				maskState (ROT_MASK_ROTATING, ROT_IDLE, "rotation finished with error");
+			}
+			setIdleInfoInterval (5);
+		}
+		else
+		{
+			setIdleInfoInterval (((float) ret) / USEC_SEC);
+		}
+		updateToGo ();
+		sendValueAll (currentPosition);
+		sendValueAll (toGo);
+	}
 }
 
 int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
@@ -139,11 +188,11 @@ int Rotator::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		setTarget (new_value->getValueDouble ());
 		targetPosition->setValueDouble (new_value->getValueDouble ());
 		updateToGo ();
-		maskState (ROT_MASK_ROTATING | BOP_EXPOSURE, ROT_ROTATING | BOP_EXPOSURE, "rotator rotation started");
+		maskState (ROT_MASK_AUTOROT | ROT_MASK_ROTATING | BOP_EXPOSURE, ROT_ROTATING | BOP_EXPOSURE, "rotator rotation started");
 	}
 	if (old_value == paTracking)
 	{
-		maskState (ROT_MASK_PATRACK | BOP_EXPOSURE, ((rts2core::ValueBool *) new_value)->getValueBool () ? ROT_PA_TRACK : ROT_PA_NOT, "change PA rotation");
+		maskState (ROT_MASK_AUTOROT | ROT_MASK_PATRACK | BOP_EXPOSURE, ((rts2core::ValueBool *) new_value)->getValueBool () ? ROT_PA_TRACK : ROT_PA_NOT, "change PA rotation");
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
