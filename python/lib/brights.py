@@ -20,6 +20,7 @@ import sep
 import numpy as np
 from astropy import wcs
 from astropy.io import fits
+import libnova
 
 __DS9 = 'brights'
 
@@ -59,7 +60,7 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 				d.set('regions','image; point({0},{1}) # point=cross {2},color=green'.format(o['x'],o['y'],int(w)))
 	return b_x,b_y
 
-def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False):
+def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits'):
 	if useDS9 and (verbose or dss):
 		import ds9
 		d = ds9.ds9(__DS9)
@@ -70,6 +71,8 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 	x,y = find_brightest(fn, hdu, verbose, useDS9)
 	b_ra = hdu[0].header['OBJRA']
 	b_dec = hdu[0].header['OBJDEC']
+
+	paoff = hdu[0].header['DER1.PA']
 
 	d = None
 	if useDS9 or dss:
@@ -83,7 +86,7 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 	w.wcs.crpix = [x,y]
 	w.wcs.crval = [b_ra,b_dec]
 
-	rt_rad = np.radians(rotang)
+	rt_rad = np.radians(rotang + paoff)
 	rt_cos = np.cos(rt_rad)
 	rt_sin = np.sin(rt_rad)
 
@@ -95,7 +98,7 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 
 	if verbose > 1:
 		pixcrd = np.array([[x, y], [x + 1, y + 1], [0,0]], np.float)
-		print 'some pixels', w.wcs_pix2world(pixcrd, 1)
+		print 'some pixels', w.all_pix2world(pixcrd, 1)
 
 	wh = w.to_header()
 	for h in wh.items():
@@ -113,3 +116,27 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 		d.set('scale zscale')
 		d.set('catalog nomad')
 		d.set('catalog filter $Rmag>-2&&$Rmag<13.5')
+
+	# calculate offsets..ra dec, and alt az
+	offsp = np.array([[x,y], [hdu[0].header['NAXIS1'] / 2.0, hdu[0].header['NAXIS2'] / 2.0]], np.float)
+	radecoff = w.all_pix2world(offsp)
+
+	off_ra = (radecoff[0][0] - radecoff[1][0] + 360.0) % 360.0
+	if off_ra > 180.0:
+		off_ra -= 360.0
+	off_dec = radecoff[0][1] - radecoff[1][1]
+
+	lst = hdu[0].header['LST']
+	lat = hdu[0].header['LATITUDE']
+
+	racs = [radecoff[0][0], radecoff[1][0]]
+	decs = [radecoff[0][1], radecoff[1][1]]
+	
+	alt,az = libnova.equ_to_hrz(racs,decs,lst,lat)
+	off_alt = alt[0] - alt[1]
+	off_az = (az[0] - az[1] + 360.0) % 360.0
+	if off_az > 180.0:
+		off_az -= 360.0
+
+	return (off_ra,off_dec),(off_az,off_alt)
+
