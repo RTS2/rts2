@@ -128,6 +128,12 @@
  */
 #define COMMAND_CCD_EXPOSURE    "expose"
 
+
+/**
+ * Start exposure on camera, do not check for blocking states.
+ */
+#define COMMAND_CCD_EXPOSURE_NO_CHECKS  "expose_no_checks"
+
 /**
  * Shift-store sequence.
  */
@@ -155,6 +161,11 @@
  * The only parameter so far is new value of parallactic angle.
  */
 #define COMMAND_PARALLACTIC_UPDATE   "pa_update"
+
+/**
+ * Start autorotating (rotate max/min, without raising BLOCK_EXPOSURE)
+ */
+#define COMMAND_ROTATOR_AUTO         "autorotate"
 
 /**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
