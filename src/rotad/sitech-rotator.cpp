@@ -44,9 +44,6 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 	createValue (speed, "SPEED", "[deg/sec] maximal speed", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	speed->setValueFloat (20);
 
-	createValue (minAngle, "MIN", "[deg] minimal angle", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
-	createValue (maxAngle, "MAX", "[deg] maximal angle", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
-
 	createValue (acceleration, "acceleration", "derotator acceleration", false);
 	createValue (max_velocity, "max_velocity", "derotator maximal velocity", false);
 	createValue (current, "current", "derotator current", false);
@@ -142,31 +139,37 @@ int SitechRotator::setValue (rts2core::Value *oldValue, rts2core::Value *newValu
 void SitechRotator::setTarget (double tv)
 {
 	double t_angle = tv - offset->getValueDouble ();
-	if (!isnan (maxAngle->getValueDouble ()))
+
+	double paOff = offset->getValueDouble ();
+
+	if (!isnan (getTargetMax ()))
 	{
-		while (t_angle > maxAngle->getValueDouble ())
+		while (t_angle > getTargetMax ())
 			t_angle -= 360.0;
 	}
-	if (!isnan (minAngle->getValueDouble ()))
+	if (!isnan (getTargetMin ()))
 	{
-		while (t_angle < minAngle->getValueDouble ())
+		while (t_angle < getTargetMin ())
 			t_angle += 360.0;
 	}
-	if (!isnan (minAngle->getValueDouble()) && !isnan (maxAngle->getValueDouble ()))
+	if (!isnan (getTargetMin ()) && !isnan (getTargetMax ()))
 	{
-		if (t_angle < minAngle->getValueDouble ())
+		if (t_angle < getTargetMin ())
 		{
-			if (minAngle->getValueDouble () < (t_angle + 180) && (t_angle + 180) < maxAngle->getValueDouble ())
+			if (getTargetMin () < (t_angle + 180) && (t_angle + 180) < getTargetMax ())
 			{
 				t_angle += 180;
+				paOff -= 180;
 			}
-			else if (minAngle->getValueDouble () < (t_angle + 90) && (t_angle + 90) < maxAngle->getValueDouble ())
+			else if (getTargetMin () < (t_angle + 90) && (t_angle + 90) < getTargetMax ())
 			{
 				t_angle += 90;
+				paOff -= 90;
 			}
-			else if (minAngle->getValueDouble () < (t_angle + 270) && (t_angle + 270) < maxAngle->getValueDouble ())
+			else if (getTargetMin () < (t_angle + 270) && (t_angle + 270) < getTargetMax ())
 			{
 				t_angle += 270;
+				paOff -= 270;
 			}
 			else
 			{
@@ -174,19 +177,22 @@ void SitechRotator::setTarget (double tv)
 				return;
 			}
 		}
-		else if (t_angle > maxAngle->getValueDouble ())
+		else if (t_angle > getTargetMax ())
 		{
-			if (minAngle->getValueDouble () < (t_angle - 180) && (t_angle - 180) < maxAngle->getValueDouble ())
+			if (getTargetMin () < (t_angle - 180) && (t_angle - 180) < getTargetMax ())
 			{
 				t_angle -= 180;
+				paOff += 180;
 			}
-			else if (minAngle->getValueDouble () < (t_angle - 90) && (t_angle - 90) < maxAngle->getValueDouble ())
+			else if (getTargetMin () < (t_angle - 90) && (t_angle - 90) < getTargetMax ())
 			{
 				t_angle -= 90;
+				paOff += 90;
 			}
-			else if (minAngle->getValueDouble () < (t_angle - 270) && (t_angle - 270) < maxAngle->getValueDouble ())
+			else if (getTargetMin () < (t_angle - 270) && (t_angle - 270) < getTargetMax ())
 			{
 				t_angle -= 270;
+				paOff += 270;
 			}
 			else
 			{
@@ -196,6 +202,7 @@ void SitechRotator::setTarget (double tv)
 		}
 	}
 	t_pos->setValueLong ((t_angle - zeroOffs->getValueFloat ()) * ticks->getValueLong () / 360.0);
+	setPAOffset (paOff);
 	updated = true;
 }
 

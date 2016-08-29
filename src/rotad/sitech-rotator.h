@@ -48,9 +48,6 @@ class SitechRotator: public Rotator
 		rts2core::ValueLong *r_pos;
 		rts2core::ValueLong *t_pos;
 
-		rts2core::ValueDouble *minAngle;
-		rts2core::ValueDouble *maxAngle;
-
 		rts2core::ValueDouble *acceleration;
 		rts2core::ValueDouble *max_velocity;
 		rts2core::ValueDouble *current;

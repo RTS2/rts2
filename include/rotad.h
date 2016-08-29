@@ -88,9 +88,18 @@ class Rotator:public rts2core::Device
 		double getTargetPosition () { return targetPosition->getValueDouble (); }
 		double getDifference () { return toGo->getValueDouble (); }
 
+		double getTargetMin () { return targetPosition->getMin (); }
+		double getTargetMax () { return targetPosition->getMax (); }
+
+		/**
+		 * Set parallactic angle offset.
+		 */
+		void setPAOffset (double paOff) { paOffset->setValueDouble (paOff); }
+
 	private:
 		rts2core::ValueDouble *currentPosition;
 		rts2core::ValueDoubleMinMax *targetPosition;
+		rts2core::ValueDouble *paOffset;
 
 		rts2core::ValueBool *paTracking;
 		rts2core::ValueDoubleStat *trackingFrequency;
