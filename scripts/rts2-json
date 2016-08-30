@@ -139,7 +139,20 @@ def find_bright_star(telescope,alt,az):
 	return bsc
 
 
-def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn):
+def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn,useDS9=False):
+	import rts2.libnova
+	import os
+	import ds9
+	d = None
+	if useDS9:
+		d = ds9.ds9('Model')
+
+	if mn is None:
+		for mn in range(1,999):
+			if os.path.isfile('model_{0:03}.fits'.format(mn)) == False:
+				break
+		print 'run #{0}'.format(mn)
+
 	if maxspiral >= -1:
 		print 'Next model point at altitude {0} azimuth {1}'.format(alt,az)
 		bsc = find_bright_star(telescope,alt,az)
@@ -152,6 +165,9 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 	time.sleep(2)
 	j.refresh(telescope)
 	tmout = 120
+
+	tel=j.getValue(telescope,'TEL',True)
+	hrz=j.getValue(telescope,'TEL_')
 	while tmout > 0 and j.getState(telescope) & 0x01000020 == 0x01000000:
 		j.refresh(telescope)
 		tel=j.getValue(telescope,'TEL')
@@ -169,13 +185,14 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 	if imagescript is not None:
 		print 'taking script {0}'.format(imagescript)
 		fn = 'model_{0:03}.fits'.format(mn)
-		os.system("rts2-scriptexec -d C0 -s '{0}' -e '{1}'".format(imagescript,fn))
-		try:
-			d.set('file {0}'.format(fn))
-		except Exception,ex:
-			d = ds9.ds9()
-			d.set('file {0}'.format(fn))
-		return fn
+		os.system("rts2-scriptexec --reset -d C0 -s '{0}' -e '{1}'".format(imagescript,fn))
+		if d is not None:
+			try:
+				d.set('file {0}'.format(fn))
+			except Exception,ex:
+				d = ds9.ds9()
+				d.set('file {0}'.format(fn))
+		return fn,mn
 	print 'Move finished, starting search now'
 	next_please = False
 	last_step = 0
@@ -240,11 +257,6 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 
 
 def run_manual_path(telescope,timeout,path,modelname='align',maxspiral=500,imagescript=None):
-	import rts2.libnova
-	import os
-	import ds9
-	d = ds9.ds9()
-
 	mn = 1
 
 	#for p in rts2.altazpath.random_path():
@@ -254,13 +266,21 @@ def run_manual_path(telescope,timeout,path,modelname='align',maxspiral=500,image
 
 		mn += 1
 
-def run_verify_brigths(telescope,timeout,alt,az,imagescript):
+def run_verify_brigths(telescope,timeout,alt,az,imagescript,useDS9=False):
 	# run exposure..
 	import rts2.brights
-	fn = run_manual_altaz(telescope,timeout,alt,az,None,-1,imagescript)
-	ra_off,dec_off,alt_off,az_off = rts2.brights.add_wcs(fn, 0.33, 90, 'X', 2, False, True, '/tmp/wcs.fits')
-	print 'Will offset by altaz {0:.3f} {1:.3f} arcsec'.format(alt_off * 3600, az_off * 3600)
-	j.setValue('AZALOFFS','{0} {1}'.format(az_off, alt_off))
+	import os
+	j.setValue(telescope,'AZALOFFS','0 0')
+	fn,mn = run_manual_altaz(telescope,alt,az,timeout,None,-1,imagescript,None,useDS9)
+	off_radec,off_azalt = rts2.brights.add_wcs(fn, 0.33, 270, 'X', 2, False, useDS9, '/tmp/wcs.fits')
+	print 'Will offset by alt {0:.3f} az {1:.3f} arcsec'.format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+	j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+	time.sleep(15)
+	vfn = 'verify_{0:03}.fits'.format(mn)
+	print 'taking verify exposure {0}'.format(vfn)
+	if os.path.isfile(vfn):
+		os.unlink(vfn)
+	os.system("rts2-scriptexec --reset -d C0 -s '{0}' -e '{1}'".format(imagescript,vfn))
 
 try:
 	if options.get_array:
