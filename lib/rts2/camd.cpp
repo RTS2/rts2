@@ -253,7 +253,7 @@ int Camera::endReadout ()
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
 		// do not report that we start exposure
-		camExpose (exposureConn, getStateChip(0) & CAM_MASK_EXPOSE, true);
+		camExpose (exposureConn, getStateChip(0) & CAM_MASK_EXPOSE, true, lastCareBlock);
 	}
 	return 0;
 }
@@ -440,6 +440,8 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	filterOffsetFile = NULL;
 
 	realTimeDataTransferCount = -1;
+
+	lastCareBlock = true;
 
 	createValue (ccdRealType, "CCD_TYPE", "camera type", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	createValue (serialNumber, "CCD_SER", "camera serial number", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
@@ -654,7 +656,7 @@ void Camera::checkQueuedExposures ()
 	if (quedExpNumber->getValueInteger () > 0)
 	{
 		quedExpNumber->dec ();
-		camExpose (exposureConn, getStateChip (0), false);
+		camExpose (exposureConn, getStateChip (0), false, lastCareBlock);
 	}
 	infoAll ();
 }
@@ -1321,7 +1323,7 @@ void Camera::checkExposures ()
 					endExposure (ret);
 					maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", NAN, NAN, exposureConn);
 					if (quedExpNumber->getValueInteger () > 0)
-						camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
+						camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true, lastCareBlock);
 					break;
 				case -3:
 					exposureConn = NULL;
@@ -1345,7 +1347,7 @@ void Camera::checkExposures ()
 					if (quedExpNumber->getValueInteger () > 0)
 					{
 						logStream (MESSAGE_DEBUG) << "starting new exposure after camera failure" << sendLog;
-						camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
+						camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true, lastCareBlock);
 					}
 					break;
 			}
@@ -1539,11 +1541,12 @@ void Camera::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 	rts2core::ScriptDevice::changeMasterState (old_state, new_state);
 }
 
-int Camera::camStartExposure ()
+int Camera::camStartExposure (bool careBlock)
 {
 	// check if we aren't blocked
 	// we can allow this test as camStartExposure is called only after quedExpNumber was decreased
-	if ((!expType || expType->getValueInteger () == 0)
+	if (careBlock == true
+		&& (!expType || expType->getValueInteger () == 0)
 		&& (
 			(getDeviceBopState () & BOP_EXPOSURE)
 			|| (getMasterStateFull () & BOP_EXPOSURE)
@@ -1651,7 +1654,7 @@ int Camera::camStartExposureWithoutCheck ()
 	return 0;
 }
 
-int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue)
+int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue, bool careBlock)
 {
 	int ret;
 
@@ -1687,7 +1690,7 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue)
 
 	exposureConn = conn;
 
-	ret = camStartExposure ();
+	ret = camStartExposure (careBlock);
 	if (ret)
 	{
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
@@ -1740,7 +1743,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 			startImageData (conn);
 		if (queValues.empty ())
 			// remove exposure flag from state
-			camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
+			camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true, lastCareBlock);
 	}
 	else
 	{
@@ -1948,7 +1951,15 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return camExpose (conn, getStateChip (0), false);
+		lastCareBlock = true;
+		return camExpose (conn, getStateChip (0), false, true);
+	}
+	else if (conn->isCommand (COMMAND_CCD_EXPOSURE_NO_CHECKS))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		lastCareBlock = false;
+		return camExpose (conn, getStateChip (0), false, false);
 	}
 	else if (conn->isCommand (COMMAND_CCD_SHIFTSTORE))
 	{

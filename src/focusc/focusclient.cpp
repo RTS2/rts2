@@ -62,7 +62,7 @@ void FocusCameraClient::exposureStarted (bool expectImage)
 {
 	if (exe == NULL)
 	{
-		queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
+		queCommand (new rts2core::CommandExposure (getMaster (), this, bop >= 0 ? bop : 0));
 	}
 	rts2image::DevClientCameraFoc::exposureStarted (expectImage);
 }
@@ -285,7 +285,7 @@ FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
 			logStream (MESSAGE_DEBUG) << "exposing on " << cam->getName () << sendLog;
-			cam->queCommand (new rts2core::CommandExposure (this, cam, bop));
+			cam->queCommand (new rts2core::CommandExposure (this, cam, bop >= 0 ? bop : 0));
 		}
 	}
 	return cam;

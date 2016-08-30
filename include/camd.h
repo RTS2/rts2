@@ -1246,7 +1246,7 @@ class Camera:public rts2core::ScriptDevice
 
 		rts2core::ValueRectangle *chipSize;
 
-		int camStartExposure ();
+		int camStartExposure (bool careBlock);
 		int camStartExposureWithoutCheck ();
 
 		rts2core::ValueInteger *camFocVal;
@@ -1267,7 +1267,7 @@ class Camera:public rts2core::ScriptDevice
 
 
 		// callback functions from camera connection
-		int camExpose (rts2core::Connection * conn, int chipState, bool fromQue);
+		int camExpose (rts2core::Connection * conn, int chipState, bool fromQue, bool careBlock);
 		int camBox (rts2core::Connection * conn, int x, int y, int width, int height);
 		int camCenter (rts2core::Connection * conn, int in_w, int in_h);
 
@@ -1318,6 +1318,8 @@ class Camera:public rts2core::ScriptDevice
 					return (int) (round (n));
 			}
 		}
+
+		bool lastCareBlock;
 };
 
 }
