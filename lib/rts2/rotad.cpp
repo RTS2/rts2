@@ -38,6 +38,8 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
 	createValue (targetPosition, "TAR_POS", "[deg] target rotator position", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	createValue (tarMin, "MIN", "[deg] minimum angle", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	createValue (tarMax, "MAX", "[deg] maximum angle", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (paOffset, "PA", "[deg] target parallactic angle offset", true, RTS2_DT_DEGREES);
 	createValue (toGo, "TAR_DIFF", "[deg] difference between target and current position", false, RTS2_DT_DEG_DIST);
 	createValue (paTracking, "parangle_track", "run parralactic tracking code", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
