@@ -119,22 +119,22 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 
 	# calculate offsets..ra dec, and alt az
 	offsp = np.array([[x,y], [hdu[0].header['NAXIS1'] / 2.0, hdu[0].header['NAXIS2'] / 2.0]], np.float)
-	radecoff = w.all_pix2world(offsp)
+	radecoff = w.all_pix2world(offsp, 1)
 
-	off_ra = (radecoff[0][0] - radecoff[1][0] + 360.0) % 360.0
+	off_ra = (radecoff[1][0] - radecoff[0][0] + 360.0) % 360.0
 	if off_ra > 180.0:
 		off_ra -= 360.0
-	off_dec = radecoff[0][1] - radecoff[1][1]
+	off_dec = radecoff[1][1] - radecoff[0][1]
 
 	lst = hdu[0].header['LST']
 	lat = hdu[0].header['LATITUDE']
 
-	racs = [radecoff[0][0], radecoff[1][0]]
-	decs = [radecoff[0][1], radecoff[1][1]]
+	racs = np.array([radecoff[0][0], radecoff[1][0]], np.float)
+	decs = np.array([radecoff[0][1], radecoff[1][1]], np.float)
 	
 	alt,az = libnova.equ_to_hrz(racs,decs,lst,lat)
-	off_alt = alt[0] - alt[1]
-	off_az = (az[0] - az[1] + 360.0) % 360.0
+	off_alt = alt[1] - alt[0]
+	off_az = (az[1] - az[0] + 360.0) % 360.0
 	if off_az > 180.0:
 		off_az -= 360.0
 
