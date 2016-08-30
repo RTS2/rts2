@@ -270,17 +270,26 @@ def run_verify_brigths(telescope,timeout,alt,az,imagescript,useDS9=False):
 	# run exposure..
 	import rts2.brights
 	import os
+	from astropy.io import fits
 	j.setValue(telescope,'AZALOFFS','0 0')
 	fn,mn = run_manual_altaz(telescope,alt,az,timeout,None,-1,imagescript,None,useDS9)
-	off_radec,off_azalt = rts2.brights.add_wcs(fn, 0.33, 270, 'X', 2, False, useDS9, '/tmp/wcs.fits')
+	off_radec,off_azalt = rts2.brights.add_wcs(fn, 0.33, 270, 'X', 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn))
 	print 'Will offset by alt {0:.3f} az {1:.3f} arcsec'.format(off_azalt[1] * 3600, off_azalt[0] * 3600)
 	j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 	time.sleep(15)
+	# verify ve really center on star
 	vfn = 'verify_{0:03}.fits'.format(mn)
 	print 'taking verify exposure {0}'.format(vfn)
 	if os.path.isfile(vfn):
+		print 'removing {0}'.format(vfn)
 		os.unlink(vfn)
 	os.system("rts2-scriptexec --reset -d C0 -s '{0}' -e '{1}'".format(imagescript,vfn))
+	vhdu = fits.open(vfn)
+	b_x,b_y = rts2.brights.find_brightest(vfn, vhdu, 1, useDS9)
+	off_x = abs(vhdu[0].header['NAXIS1'] / 2.0 - b_x)
+	off_y = abs(vhdu[0].header['NAXIS2'] / 2.0 - b_y)
+	print 'brightest X {0:2} Y {1:2} offset from center {3:2} {4:2}'.format(b_x, b_y, off_x, off_y)
+	return off_x < 5 and off_y < 5
 
 try:
 	if options.get_array:

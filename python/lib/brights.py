@@ -25,7 +25,7 @@ import libnova
 __DS9 = 'brights'
 
 def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
-	"""Find brightests stars"""
+	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
 	data = np.array(hdu[0].data,np.int32)
 	bkg = sep.Background(data)
 	bkg.subfrom(data)
@@ -61,8 +61,10 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 	return b_x,b_y
 
 def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits'):
+	"""Add WCS solution to the image."""
+	import ds9
+	d = None
 	if useDS9 and (verbose or dss):
-		import ds9
 		d = ds9.ds9(__DS9)
 		d.set('frame delete all')
 		d.set('frame new')
@@ -72,11 +74,12 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 	b_ra = hdu[0].header['OBJRA']
 	b_dec = hdu[0].header['OBJDEC']
 
-	paoff = hdu[0].header['DER1.PA']
+	paoff = 0
 
-	d = None
-	if useDS9 or dss:
-		d = ds9.ds9(__DS9)
+	try:
+		paoff = hdu[0].header['DER1.PA']
+	except KeyError,ke:
+		print 'cannot find DER1.PA, using defaults'
 
 	if dss:
 		d.set('dss size 7 7')
