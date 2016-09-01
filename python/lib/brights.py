@@ -40,7 +40,7 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 	b_y = s_objects[0]['y']
 	b_flux = s_objects[0]['flux']
 	if verbose:
-		print 'detected {0} objects',format(len(objects))
+		print 'detected {0} objects'.format(len(objects))
 		print 'brightest at {0:.2f} {1:.2f}'.format(b_x,b_y)
 		if verbose > 1:
 			for o in objects:
