@@ -17,6 +17,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import sep
+import os
 import numpy as np
 from astropy import wcs
 from astropy.io import fits
@@ -44,6 +45,8 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 		if verbose > 1:
 			for o in objects:
 				print 'object {0}'.format(o)
+
+	bb_flux = s_objects[1]['flux']
 	if useDS9:
 		import ds9
 		d=ds9.ds9(__DS9)
@@ -51,16 +54,15 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 		d.set('regions','image; point({0},{1}) # point=cross 25, color=green'.format(b_x,b_y))
 		if verbose > 1:
 			w_flux = s_objects[-1]['flux']
-			bb_flux = s_objects[1]['flux']
 			for o in s_objects[1:]:
 				w = 1 + (o['flux'] - w_flux) / (bb_flux - w_flux)
 				w = np.log(w)
 				w = 20 * w
 				w = w if w > 1 else 1
 				d.set('regions','image; point({0},{1}) # point=cross {2},color=green'.format(o['x'],o['y'],int(w)))
-	return b_x,b_y
+	return b_x,b_y,b_flux,b_flux / bb_flux
 
-def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits'):
+def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits', save_regions=None):
 	"""Add WCS solution to the image."""
 	import ds9
 	d = None
@@ -70,7 +72,7 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 		d.set('frame new')
 
 	hdu = fits.open(fn)
-	x,y = find_brightest(fn, hdu, verbose, useDS9)
+	x,y,flux,flux_ratio = find_brightest(fn, hdu, verbose, useDS9)
 	b_ra = hdu[0].header['OBJRA']
 	b_dec = hdu[0].header['OBJDEC']
 
@@ -119,6 +121,12 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 		d.set('scale zscale')
 		d.set('catalog nomad')
 		d.set('catalog filter $Rmag>-2&&$Rmag<13.5')
+		if save_regions:
+			d.set('catalog regions')
+			d.set('regions select all')
+			if os.path.isfile(save_regions):
+				os.unlink(save_regions)
+			d.set('regions export tsv {0}'.format(save_regions))
 
 	# calculate offsets..ra dec, and alt az
 	offsp = np.array([[x,y], [hdu[0].header['NAXIS1'] / 2.0, hdu[0].header['NAXIS2'] / 2.0]], np.float)
