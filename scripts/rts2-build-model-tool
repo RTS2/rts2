@@ -45,6 +45,7 @@ parser.add_argument('--modelname', help=_('filename where model lines will be st
 parser.add_argument('--maxspiral', help=_('maximal number of steps in spiral'), action='store', type=int, dest='maxspiral', default=500)
 parser.add_argument('--maxverify', help=_('maximal number of tries to verify offset'), action='store', type=int, dest='maxverify', default=5)
 parser.add_argument('--verifyradius', help=_('radius fore sucessfull verify (in pixels)'), action='store', type=float, dest='verifyradius', default=2)
+parser.add_argument('--verifywcs', help=_('WCS for verify images - arcseconds per pixel:rotang:flip'), action='store', dest='verifywcs', type=str, default=None)
 parser.add_argument('--timeout', help=_('timeout after move'), action='store', type=float, dest='timeout', default=7)
 parser.add_argument('--imagescript', help=_('RTS2 script for camera exposure'), action='store', dest='imagescript', default='E 1')
 parser.add_argument('--camera', help=_('name of camera to take exposures'), action='store', dest='camera', default='C0')
@@ -84,7 +85,6 @@ def wait_for_key(t):
 
 def run_spiral(telescope,timeout,last_step=0,maxsteps=500):
 	"""Runs spiral pointing to find the star."""
-
 	s = rts2.spiral.Spiral(1,1)
 	x = 0
 	y = 0
@@ -251,7 +251,7 @@ def run_manual_path(telescope,timeout,path,modelname='align',maxspiral=500,image
 		mn += 1
 
 def __get_offset_by_image(fn,useDS9,mn):
-	return rts2.brights.add_wcs(fn, 0.33, 270, 'X', 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn))
+	return rts2.brights.add_wcs(fn, 0.335, 270, 'X', 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn))
 
 def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 	for vn in range(maxverify):

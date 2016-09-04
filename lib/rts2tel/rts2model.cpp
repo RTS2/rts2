@@ -116,7 +116,7 @@ void RTS2Model::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 		- params[2] * sin (az_r) \
 		+ params[6] * cos (el_r) \
 		+ params[7] * cos (az_r) \
-		+ params[8] * sin (az_r - params[9]);
+		+ params[8] * sin (az_r);
 
 	err->az = ln_rad_to_deg (err->az);
 	err->alt = ln_rad_to_deg (err->alt);

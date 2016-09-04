@@ -125,7 +125,7 @@ class GPoint:
 			- params[2]*np.sin(a_az) \
 			+ params[6]*np.cos(a_el) \
 			+ params[7]*np.cos(a_az) \
-			+ params[8]*np.sin(a_az-params[9])
+			+ params[8]*np.sin(a_az)
 
 	# Fit functions.
 	# a_ha - target HA (hour angle)
@@ -224,7 +224,7 @@ class GPoint:
 
 		if self.altaz:
 			if frmt == "manual":
-				data = [(float(a_az), float(a_alt), float(a_az) + float(e_az), float(a_alt) + float(e_alt), sn, float(sn)) for sn,ra,dec,e_alt,e_az,a_alt,a_az in rdata]
+				data = [(float(a_az), float(a_alt), float(a_az) + float(e_az), float(a_alt) + float(e_alt), sn, float(mjd)) for sn,mjd,ra,dec,e_alt,e_az,a_alt,a_az in rdata]
 			else:
 				data = [(float(a_az), float(a_alt), float(r_az), float(r_alt), sn, float(mjd)) for sn,mjd,lst,a_az,a_alt,ax_az,ax_alt,r_az,r_alt in rdata]
 		else:
@@ -296,7 +296,7 @@ class GPoint:
 
 	def fit(self):
 		if self.altaz:
-			par_init = np.array([0,0,0,0,0,0,0,0,0,0])
+			par_init = np.array([0,0,0,0,0,0,0,0,0])
 			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_altaz,par_init,args=(self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt),full_output=True,maxfev=10000)
 		else:
 			par_init = np.array([0,0,0,0,0,0,0,0,0])
@@ -478,7 +478,7 @@ class GPoint:
 				'ha':[self.aa_ha,'gx','HA']
 			}
 			# append model output only if model was fitted
-			if self.best:
+			if self.best is not None:
 				name_map.update({
 					'alt-merr':[self.diff_model_alt*3600,'r*','Alt model error'],
 					'az-merr':[self.diff_model_az*3600,'y*','Az model error'],
