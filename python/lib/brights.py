@@ -77,6 +77,8 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 
 	hdu = fits.open(fn)
 	x,y,flux,flux_ratio = find_brightest(fn, hdu, verbose, useDS9)
+	if x is None:
+		return None,None
 	b_ra = hdu[0].header['OBJRA']
 	b_dec = hdu[0].header['OBJDEC']
 
@@ -157,4 +159,3 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 		off_az -= 360.0
 
 	return (off_ra,off_dec),(off_az,off_alt)
-
