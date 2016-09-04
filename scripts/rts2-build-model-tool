@@ -254,6 +254,7 @@ def __get_offset_by_image(fn,useDS9,mn):
 	return rts2.brights.add_wcs(fn, 0.335, 270, 'X', 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn))
 
 def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
+	from astropy.io import fits
 	for vn in range(maxverify):
 		time.sleep(15)
 		# verify ve really center on star
