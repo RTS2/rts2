@@ -274,8 +274,8 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 			return True
 		# calculate offsets in alt-az, increment offsets
 		off_radec,off_azalt = __get_offset_by_image(fn,useDS9,mn)
-		print _('will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
-		j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+		print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+		j.incValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 
 	return False
 
