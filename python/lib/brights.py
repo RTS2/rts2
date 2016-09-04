@@ -116,11 +116,14 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 		d.set('file out.fits')
 		if dss:
 			d.set('frame 2')
+			d.set('zoom to fit')
 			d.set('match frame wcs')
-		d.set('zoom to fit')
+			d.set('lock frame wcs')
+			d.set('frame 1')
+		else:
+			d.set('zoom to fit')
 		d.set('scale zscale')
-		d.set('catalog nomad')
-		d.set('catalog filter $Rmag>-2&&$Rmag<13.5')
+		d.set('catalog GSC')
 		if save_regions:
 			d.set('catalog regions')
 			d.set('regions select all')
