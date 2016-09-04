@@ -35,6 +35,8 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 		print 'global average background: {0:.2f} rms: {1:.3f} threshold: {2:.3f}'.format(bkg.globalback, bkg.globalrms, thres)
 	objects = sep.extract(data, thres)
 	# order by flux
+	if len(objects) == 0:
+		return None,None,None,None
 	s_objects = sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
 	b_x = s_objects[0]['x']
 	b_y = s_objects[0]['y']
@@ -46,7 +48,9 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 			for o in objects:
 				print 'object {0}'.format(o)
 
-	bb_flux = s_objects[1]['flux']
+	bb_flux = b_flux
+	if len(s_objects) > 1:
+		bb_flux = s_objects[1]['flux']
 	if useDS9:
 		import ds9
 		d=ds9.ds9(__DS9)
