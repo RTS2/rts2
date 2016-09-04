@@ -283,13 +283,14 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 	# run exposure..
 	from astropy.io import fits
 	j.setValue(telescope,'AZALOFFS','0 0')
-	fn,mn = run_manual_altaz(telescope,alt,az,timeout,None,-1,imagescript,None,useDS9)
-	off_radec,off_azalt = __get_offset_by_image(fn,useDS9,mn)
-	print _('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
-	j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
-	ver = __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius)
-	if ver == True:
-		__save_modeline(telescope,modelname,mn)
+	for p in path:
+		fn,mn = run_manual_altaz(telescope,p[0],p[1],timeout,None,-1,imagescript,None,useDS9)
+		off_radec,off_azalt = __get_offset_by_image(fn,useDS9,mn)
+		print _('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+		j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+		ver = __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius)
+		if ver == True:
+			__save_modeline(telescope,modelname,mn)
 
 try:
 	telescope = j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)[0]
