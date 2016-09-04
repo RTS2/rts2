@@ -265,11 +265,11 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 			os.unlink(vfn)
 		os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(options.camera,imagescript,vfn))
 		vhdu = fits.open(vfn)
-		b_x,b_y = rts2.brights.find_brightest(vfn, vhdu, 1, useDS9)
+		b_x,b_y,b_flux,b_flux_ratio = rts2.brights.find_brightest(vfn, vhdu, 1, useDS9)
 		off_x = abs(vhdu[0].header['NAXIS1'] / 2.0 - b_x)
 		off_y = abs(vhdu[0].header['NAXIS2'] / 2.0 - b_y)
 		pixdist = math.sqrt(off_x * off_x + off_y * off_y)
-		print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2}').format(b_x, b_y, off_x, off_y, pixdist)
+		print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
 		if pixdist < verifyradius:
 			print _('converged')
 			return True
