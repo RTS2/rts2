@@ -255,6 +255,8 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 	from astropy.io import fits
 	flux_history = []
 	flux_ratio_history = []
+	history_x = []
+	history_y = []
 	for vn in range(maxverify):
 		time.sleep(15)
 		# verify ve really center on star
@@ -272,9 +274,11 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 		print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
 		flux_history.append(b_flux)
 		flux_ratio_history.append(b_flux_ratio)
+		history_x.append(off_x)
+		history_y.append(off_y)
 		if pixdist < verifyradius:
 			print _('converged')
-			return True,flux_history,flux_ratio_history
+			return True,flux_history,flux_ratio_history,history_x,history_y
 		# calculate offsets in alt-az, increment offsets
 		off_radec,off_azalt = __get_offset_by_image(vfn,useDS9,mn)
 		if off_radec is None:
@@ -282,7 +286,7 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 		print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
 		j.incValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 
-	return False,flux_history,flux_ratio_history
+	return False,flux_history,flux_ratio_history,history_x,history_y
 
 def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxverify,verifyradius):
 	# run exposure..
@@ -300,10 +304,11 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 			continue
 		print _('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
 		j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
-		ver,flux_history,flux_ratio_history = __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius)
+		ver,flux_history,flux_ratio_history,history_x,history_y = __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius)
 		if modelname is not None:
 			modelf = open(modelname,'a')
 			modelf.write('# alt {0:.3} az {1:.3} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
+			modelf.write('# x {0} y {1}\n'.format(','.join(map(str,history_x)),','.join(map(str,history_y)))
 			modelf.close()
 		if ver == True:
 			__save_modeline(telescope,modelname,mn)
