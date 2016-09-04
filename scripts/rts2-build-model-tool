@@ -271,7 +271,7 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 		pixdist = math.sqrt(off_x * off_x + off_y * off_y)
 		print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
 		flux_history.append(b_flux)
-		flux_ratio_history.append(b_flux)
+		flux_ratio_history.append(b_flux_ratio)
 		if pixdist < verifyradius:
 			print _('converged')
 			return True,flux_history,flux_ratio_history
