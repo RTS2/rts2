@@ -70,7 +70,7 @@ def generateModel(args):
 def loadModel(modelfile):
 	f = open(modelfile)
 	line = f.readline().split()
-	if not ((line[0] == 'RTS2_MODEL' and len(line) == 10) or (line[0] == 'RTS2_ALTAZ' and len(line) == 11)):
+	if not ((line[0] == 'RTS2_MODEL' and len(line) == 10) or (line[0] == 'RTS2_ALTAZ' and len(line) == 10)):
 		sys.exit('invalid input model format')
 	f.close()
 	return line[0],map(lambda f:float(f),line[1:])
