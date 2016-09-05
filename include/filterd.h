@@ -42,6 +42,13 @@ class Filterd:public rts2core::Device
 		Filterd (int in_argc, char **in_argv, const char *defName = "W0");
 		virtual ~ Filterd (void);
 
+		/**
+		 * Set filter names from space separated argument list.
+		 *
+		 * @return -1 on error, otherwise 0.
+		 */
+		int setFilters (const char *filters);
+
 		virtual int info ();
 
 		int setFilterNum (rts2core::Connection * conn, int new_filter);
@@ -73,13 +80,6 @@ class Filterd:public rts2core::Device
 		 * Must be called when filters are added dynamicaly (e.g. by addFilter in initHardware).
 		 */
 		void sendFilterNames () { updateMetaInformations (filter); }
-
-		/**
-		 * Set filter names from space separated argument list.
-		 *
-		 * @return -1 on error, otherwise 0.
-		 */
-		int setFilters (char *filters);
 
 	private:
 		rts2core::ValueSelection *filter;

@@ -34,6 +34,7 @@ APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
 {
 	filterName = NULL;
 	auxName = NULL;
+	filters = NULL;
 		
 	host = NULL;
 	apmConn = NULL;
@@ -46,6 +47,7 @@ APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
 	addOption ('e', NULL, 1, "IP and port (separated by :) of the APM box");
 	addOption (OPT_FILTER, "filter", 1, "filter wheel device name");
 	addOption (OPT_AUX, "aux", 1, "auxiliary device name");
+	addOption ('F', NULL, 1, "filter names");
 	addOption (OPT_FAN, "fan", 0, "auxiliary device with fan control");
 	addOption (OPT_BAFFLE, "baffle", 0, "auxiliary device with baffle (and mirror covers) control");
 	addOption (OPT_RELAYS, "relays", 0, "auxiliary device with relay control");
@@ -76,8 +78,14 @@ int APMMultiBase::processOption (int opt)
 		case 'e':
                         host = new HostString (optarg, "5000");
                         break;
+		case OPT_FILTER:
+			filterName = optarg;
+			break;
 		case OPT_AUX:
 			auxName = optarg;
+			break;
+		case 'F':
+			filters = optarg;
 			break;
 		case OPT_FAN:
 			hasFan = true;
@@ -113,7 +121,11 @@ int APMMultiBase::initHardware ()
 		return ret;
 
 	if (filterName != NULL)
-		md.push_back (new rts2filterd::APMFilter (filterName, apmConn));
+	{
+		rts2filterd::APMFilter *f = new rts2filterd::APMFilter (filterName, apmConn);
+		f->setFilters (filters);
+		md.push_back (f);
+	}
 
 	if (auxName != NULL)
 		md.push_back (new rts2sensord::APMAux (auxName, apmConn, hasFan, hasBaffle, hasRelays, hasTemp));

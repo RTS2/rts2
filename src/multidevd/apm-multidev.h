@@ -56,6 +56,8 @@ class APMMultiBase:public rts2core::Daemon
 		const char *filterName;
 		const char *auxName;
 
+		const char *filters;
+
 		bool hasFan;
 		bool hasBaffle;
 		bool hasRelays;
