@@ -25,7 +25,7 @@ import time
 
 import argparse
 
-parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Simple Python script to demonstrate RTS2 JSON API\nReturn:\n\t0 on success, 1 on failure. Errors are not reported - you must enable their reporting with --verbose.\n\nExample use:\n\n\trts2-json -G C0.infotime -G C0.exposure\n\trts2-json --server http://example.rts2.org:8889 -G C0.infotime\n\trts2-json -s C0.exposure=10\n\trts2-json --create-target Test 12.34 45.67\n\trts2-json --create-tle-target "Test sat" "1 19448U 88076D   02255.52918163 -.00000002  00000-0  10000-3 0  4873" "2 19448  65.7943 338.1906 7142558 193.4853 125.7046  2.04085818104610"')
+parser = argparse.ArgumentParser(description='Simple Python script to demonstrate RTS2 JSON API\nReturn:\n\t0 on success, 1 on failure. Errors are not reported - you must enable their reporting with --verbose.\n\nExample use:\n\n\trts2-json -G C0.infotime -G C0.exposure\n\trts2-json --server http://example.rts2.org:8889 -G C0.infotime\n\trts2-json -s C0.exposure=10\n\trts2-json --create-target Test 12.34 45.67\n\trts2-json --create-tle-target "Test sat" "1 19448U 88076D   02255.52918163 -.00000002  00000-0  10000-3 0  4873" "2 19448  65.7943 338.1906 7142558 193.4853 125.7046  2.04085818104610"')
 
 parser.add_argument('--server', help='URL to RTS2 XML-RPC server', action='store', dest='server', default='http://localhost:8889')
 parser.add_argument('--user', help='RTS2 web server username', action='store', dest='user', default=None)
@@ -40,19 +40,7 @@ parser.add_argument('--run-script', help='run script on device. Device must be s
 parser.add_argument('--kill-script', help='attempt to kill currently running script', action='store_true', dest='kill_script', default=False)
 parser.add_argument('--list-minmax', help='list miminal/maximal values', action='store_true', dest='list_minmax', default=False)
 parser.add_argument('--device', help='device for cmd and run-script options', action='store', dest='device')
-parser.add_argument('--expose', help='start exposure on device')
-parser.add_argument('--altazm', help='output line for alt-az model build', action='store', dest='altazm')
-parser.add_argument('--spiral', help='run spiral offseting on telescope', action='store', dest='spiral')
-parser.add_argument('--manual-altaz', help='build manual alt-az model',action='store_true', dest='manual_altaz', default=False)
-parser.add_argument('--random-altaz', help='random alt-az model',action='store_true',dest='random_altaz', default=False)
-parser.add_argument('--bright-random-altaz', help='random alt-az model on bright stars',action='store_true',dest='bright_random_altaz', default=False)
-parser.add_argument('--path-altaz', help='build manual alt-az model along path provided as argument', action='store', dest='path_altaz', default=None)
-parser.add_argument('--bright-star', help='point to bright star closest to given alt az pair', action='store', dest='bright_star', default=None)
-parser.add_argument('--verify-brights', help='point to bright star closest to given alt az pair, take image, determine brightest star position, put correction for brightests star in offsets, and take another image to verify star is in center', dest='verify_brights', default=None)
-parser.add_argument('--mags', help='magnitude range for BSC lookup', action='store', dest='mags', default='4.5:2')
-parser.add_argument('--modelname', help='filename where model lines will be stored', action='store', dest='modelname', default='align')
-parser.add_argument('--maxspiral', help='maximal number of steps in spiral', action='store', type=int, dest='maxspiral', default=500)
-parser.add_argument('--imagescript', help='take image when we moved to target (RTS2 script)', action='store', dest='imagescript', default=0)
+parser.add_argument('--expose', help='start exposure on device', action='store', dest='expose', default=None)
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
 parser.add_argument('--create-tle-target', help='create TLE target. Target name, first and second line of TLE must be entered as command line arguments', action='store_true', dest='create_tle_target')
@@ -66,230 +54,9 @@ options = parser.parse_args()
 
 j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
 
-__mm = map(float,options.mags.split(':'))
-__mm.sort()
-mag_max, mag_min = __mm
-
 if (options.runscript or options.list_minmax) and not (options.device):
 	print >>sys.stderr,'--device argument must be specified with --cmd option'
 	sys.exit(1)
-
-def get_altazm_line(telescope):
-	j.refresh()
-	ori = j.getValue(telescope,'ORI')
-	altaz = j.getValue(telescope,'TEL_')
-	offs = j.getValue(telescope,'AZALOFFS')
-	return '\t'.join(map(str,[ori['ra'],ori['dec'],offs['alt'],offs['az'],altaz['alt'],altaz['az']]))
-
-def wait_for_key(t):
-	from select import select
-	while t > 0:
-		print "Hit enter to interrupt the sequencei within {0} seconds...\r".format(t),
-		sys.stdout.flush()
-		rlist, wlist, xlist = select([sys.stdin], [], [], 1)
-		if rlist:
-			print "Interrupted. Now either find the bright stars typing alt-az offsets, or type c to continue"
-			sys.stdin.readline()
-			return True
-		t -= 1
-	return False
-
-def run_spiral(telescope,timeout,last_step=0,maxsteps=500):
-	"""Runs spiral pointing to find the star."""
-
-	import rts2.spiral
-	import math
-	s = rts2.spiral.Spiral(1,1)
-	x = 0
-	y = 0
-	step_alt = 0.08
-	step_az = 0.08
-	alt=j.getValue(telescope,"TEL_",refresh_not_found=True)['alt']
-	cosa = math.cos(math.radians(alt))
-	step_az /= cosa
-	print 'Scaling azimuth by factor {0} to {1}'.format(cosa,step_az)
-	for i in range(maxsteps):
-		a,e = s.get_next_step()
-		x += a
-		y += e
-		if i < last_step:
-			continue
-		print 'step {0} next {1} {2} altaz {3} {4}'.format(i,x,y,x*step_alt,y*step_az)
-		j.setValue(telescope, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
-		if wait_for_key(timeout):
-			return i
-
-def tel_hrz_to_equ(telescope,alt,az):
-	j.refresh()
-	lst = j.getValue(telescope,'LST')
-	lat = j.getValue(telescope,'LATITUDE')
-
-	ha,dec = rts2.libnova.hrz_to_equ(az,alt,lat)
-	ra = (lst - ha) % 360.0
-	return ra,dec
-
-def find_bright_star(telescope,alt,az):
-	import rts2.bsc
-	ra,dec = tel_hrz_to_equ(telescope,alt,az)
-	lst = j.getValue(telescope,'LST')
-	print 'Looking for star around RA {0:3} DEC {1:2} (LST {2:3}), magnitude {3} to {4}'.format(ra,dec,lst,mag_max,mag_min)
-	# find bsc..
-	bsc=rts2.bsc.find_nearest(ra,dec,mag_max,mag_min)
-	print 'Found BSC #{0} at RA {1} DEC {2} mag {3}'.format(bsc[0],bsc[1],bsc[2],bsc[3])
-	return bsc
-
-
-def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn,useDS9=False):
-	import rts2.libnova
-	import os
-	import ds9
-	d = None
-	if useDS9:
-		d = ds9.ds9('Model')
-
-	if mn is None:
-		for mn in range(1,999):
-			if os.path.isfile('model_{0:03}.fits'.format(mn)) == False:
-				break
-		print 'run #{0}'.format(mn)
-
-	if maxspiral >= -1:
-		print 'Next model point at altitude {0} azimuth {1}'.format(alt,az)
-		bsc = find_bright_star(telescope,alt,az)
-		tarf_ra = bsc[1]
-		tarf_dec = bsc[2]
-	else:
-		tarf_ra,tarf_dec = tel_hrz_to_equ(telescope,alt,az)
-
-	j.executeCommand(telescope, 'move {0} {1}'.format(tarf_ra,tarf_dec))
-	time.sleep(2)
-	j.refresh(telescope)
-	tmout = 120
-
-	tel=j.getValue(telescope,'TEL',True)
-	hrz=j.getValue(telescope,'TEL_')
-	while tmout > 0 and j.getState(telescope) & 0x01000020 == 0x01000000:
-		j.refresh(telescope)
-		tel=j.getValue(telescope,'TEL')
-		hrz=j.getValue(telescope,'TEL_')
-		print 'moving to {0:2} {1:3}...at {2:3} {3:2} HRZ {4:1} {5:1}\r'.format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az']),
-		sys.stdout.flush()
-		time.sleep(1)
-		tmout -= 1
-
-	if tmout <= 0:
-		print 'destination not reached, continue with new target                         '
-		return None
-
-	print 'moved to {0:2} {1:3}...at {2:3} {3:2} HRZ {4:1} {5:1}                      '.format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
-	if imagescript is not None:
-		print 'taking script {0}'.format(imagescript)
-		fn = 'model_{0:03}.fits'.format(mn)
-		os.system("rts2-scriptexec --reset -d C0 -s '{0}' -e '{1}'".format(imagescript,fn))
-		if d is not None:
-			try:
-				d.set('file {0}'.format(fn))
-			except Exception,ex:
-				d = ds9.ds9()
-				d.set('file {0}'.format(fn))
-		return fn,mn
-	print 'Move finished, starting search now'
-	next_please = False
-	last_step = 0
-	while next_please == False:
-		skip_spiral = False
-		if last_step <= 0:
-			j.setValue(telescope,'AZALOFFS','0 0')
-			skip_spiral = wait_for_key(7)
-			last_step = 0
-		if skip_spiral == False:
-			last_step = run_spiral(telescope,timeout,last_step,maxspiral)
-		while True:
-			print 'Now either type offsets (comulative, arcmin), m when star is centered, r to repeat from 0 steps, z to zero offsets, or s to skip this field and hit enter'
-			ans = sys.stdin.readline().rstrip()
-			if ans == '':
-				continue
-			elif ans == 'm':
-				modline = get_altazm_line(telescope)
-				if modelname is None:
-					print 'model line {0}'.format(modline)
-					break
-				print 'adding to aling file {0}'.format(modline)
-				oa = open(modelname,'a')
-				oa.write('{0}\t{1}\n'.format(mn,modline))
-				oa.flush()
-				oa.close()
-				mn += 1
-				next_please = True
-				break
-			elif ans == 's':
-				next_please = True
-				print 'skipping this field, going to the next target'
-				break
-			elif ans[0] == 'r':
-				ls = ans.split()
-				try:
-					if len(ls) == 2:
-						last_step -= int(ls[1])
-					else:
-						last_step = 0
-					break
-					print 'going back to step {0}'.format(last_step)
-				except Exception,ex:
-					print 'invalid r command format: {0}'.format(ans)
-					continue
-			elif ans == 'c':
-				print 'continuing..'
-				last_step -= 1
-				break
-			elif ans == 'z':
-				print 'zeroing offsets'
-				j.setValue(telescope,'AZALOFFS','0 0')
-				break
-			try:
-				azo,alto = ans.split()
-				print 'offseting ALT {0} AZ {1} arcmin'.format(azo,alto)
-				j.executeCommand(telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
-
-			except Exception,ex:
-				print 'unknow command {0}, please try again'.format(ans)
-	return None
-
-
-def run_manual_path(telescope,timeout,path,modelname='align',maxspiral=500,imagescript=None):
-	mn = 1
-
-	#for p in rts2.altazpath.random_path():
-	#for p in rts2.altazpath.constant_path([30,45,75]):
-	for p in path:
-		run_manual_altaz(telescope,p[0],p[1],timeout,modelname,maxspiral,imagescript,mn)
-
-		mn += 1
-
-def run_verify_brigths(telescope,timeout,alt,az,imagescript,useDS9=False):
-	# run exposure..
-	import rts2.brights
-	import os
-	from astropy.io import fits
-	j.setValue(telescope,'AZALOFFS','0 0')
-	fn,mn = run_manual_altaz(telescope,alt,az,timeout,None,-1,imagescript,None,useDS9)
-	off_radec,off_azalt = rts2.brights.add_wcs(fn, 0.33, 270, 'X', 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn))
-	print 'Will offset by alt {0:.3f} az {1:.3f} arcsec'.format(off_azalt[1] * 3600, off_azalt[0] * 3600)
-	j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
-	time.sleep(15)
-	# verify ve really center on star
-	vfn = 'verify_{0:03}.fits'.format(mn)
-	print 'taking verify exposure {0}'.format(vfn)
-	if os.path.isfile(vfn):
-		print 'removing {0}'.format(vfn)
-		os.unlink(vfn)
-	os.system("rts2-scriptexec --reset -d C0 -s '{0}' -e '{1}'".format(imagescript,vfn))
-	vhdu = fits.open(vfn)
-	b_x,b_y = rts2.brights.find_brightest(vfn, vhdu, 1, useDS9)
-	off_x = abs(vhdu[0].header['NAXIS1'] / 2.0 - b_x)
-	off_y = abs(vhdu[0].header['NAXIS2'] / 2.0 - b_y)
-	print 'brightest X {0:2} Y {1:2} offset from center {3:2} {4:2}'.format(b_x, b_y, off_x, off_y)
-	return off_x < 5 and off_y < 5
 
 try:
 	if options.get_array:
@@ -316,28 +83,6 @@ try:
 			if j.getVariable(options.device, v)[0] & rts2.json.RTS2_VALUE_MMAX:
 				print '{0}.min ='.format(v)
 				print '{0}.max ='.format(v)
-	if options.altazm:
-		print get_altazm_line(options.altazm)
-	if options.spiral:
-		run_spiral(options.spiral,7)	
-	if options.manual_altaz:
-		import rts2.altazpath
-		run_manual_altaz('T0',7,rts2.altazpath.constant_path([45,75]),options.modelname,options.maxspiral,options.imagescript)
-	if options.random_altaz:
-		import rts2.altazpath
-		run_manual_altaz('T0',7,rts2.altazpath.random_path(),options.modelname,-2,options.imagescript)
-	if options.bright_random_altaz:
-		import rts2.altazpath
-		run_manual_altaz('T0',7,rts2.altazpath.random_path(),options.modelname,options.maxspiral,options.imagescript)
-	if options.path_altaz:
-		run_manual_altaz('T0',7,map(lambda x:map(float,x.split(':')),options.path_altaz.split(',')),options.modelname,options.maxspiral,options.imagescript)
-	if options.bright_star:
-		alt,az=map(float,options.bright_star.split(':'))
-		bsc = find_bright_star('T0',alt,az)
-		j.executeCommand('T0','move {0} {1}'.format(bsc[1],bsc[2]))
-	if options.verify_brights:
-		alt,az=map(float,options.verify_brights.split(':'))
-		run_verify_brigths('T0',7,alt,az,options.imagescript)
 	if options.runscript:
 		print 'running script', options.runscript, j.loadJson('/api/runscript', {'d':options.device, 's':options.runscript, 'kill': 1 if options.kill_script else 0})
 
@@ -357,7 +102,7 @@ try:
 			else:
 				print j.loadJson(us[0])
 
-	if not(options.get_array) and not(options.get_int_array) and not(options.push) and not(options.create_target) and not(options.create_tle_target) and not(options.altazm):
+	if not(options.get_array) and not(options.get_int_array) and not(options.push) and not(options.create_target) and not(options.create_tle_target):
 	  	for a in options.args:
 			try:
 				a=j.loadJson(a)
@@ -396,6 +141,9 @@ try:
 			sys.exit('the program expect 3 or 4 arguments for target creation')
 		tid=j.db.createTLETarget(*options.args)
 		print 'Created target with ID {0}'.format(tid)
+
+	if options.expose:
+		r = j.getResponse
 
 	sys.exit(0)
 
