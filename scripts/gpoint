@@ -26,9 +26,14 @@ import numpy as np
 
 import argparse
 
-# Generate pointing model
-def generateModel(args):
+def generate_model(args):
+	"""Generate pointing model."""
 	model = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
+
+	for e in args.extra_az:
+		model.add_extra_az(e)
+	for e in args.extra_el:
+		model.add_extra_el(e)
 
 	model.process_files(args.inputfiles,args.flips)
 	if args.stat_only == False:
@@ -37,10 +42,7 @@ def generateModel(args):
 	model.print_stat()
 
 	if args.model_output is not None:
-		f = open(args.model_output,'w+')
-		f.write(model.get_model_type() + ' ')
-		f.write(' '.join(map(lambda x:str(x),model.best)))
-		f.close()
+		model.save(args.model_output)
 	if args.error_output is not None:
 		f = open(args.error_output,'w+')
 		out_dat = model.indata
@@ -67,7 +69,7 @@ def generateModel(args):
 	if plots:
 		model.plot(plots,args.plot_band,args.oplot)
 
-def loadModel(modelfile):
+def load_model(modelfile):
 	f = open(modelfile)
 	line = f.readline().split()
 	if not ((line[0] == 'RTS2_MODEL' and len(line) == 10) or (line[0] == 'RTS2_ALTAZ' and len(line) == 10)):
@@ -76,22 +78,22 @@ def loadModel(modelfile):
 	return line[0],map(lambda f:float(f),line[1:])
 
 # Plot model offsets
-def plotOffsets(args):
+def plot_offsets(args):
 	if args.latitude == None:
 		sys.exit('you must specify latitude as parameter')
 	# load model..
-	params = loadModel(args.inputfiles[0])
+	params = load_model(args.inputfiles[0])
 	
 	ha_b,ha_e,dec = map(lambda f:float(f),args.plot_offsets.split(':'))
 	
 	model = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
 	model.plotoffsets(params,ha_b,ha_e,dec)
 
-def addModels(args):
+def add_models(args):
 	params=[]
 	emt = None
 	for f in args.inputfiles:
-		mt,m = loadModel(f)
+		mt,m = load_model(f)
 		if emt is None:
 			emt = mt
 		elif emt != mt:
@@ -129,12 +131,14 @@ if __name__ == '__main__':
 	parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
 	parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
 	parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
+	parser.add_argument('--extra-az',dest='extra_az',action='append',default=[],help='extra azimuth parameters')
+	parser.add_argument('--extra-el',dest='extra_el',action='append',default=[],help='extra elevation parameters')
 
 	args = parser.parse_args()
 
 	if args.model_input:
-		plotOffsets(args)
+		plot_offsets(args)
 	elif args.add_models:
-		addModels(args)
+		add_models(args)
 	else:
-		generateModel(args)
+		generate_model(args)
