@@ -59,6 +59,20 @@ def normalize_az_err(errs):
 def normalize_ha_err(errs):
 	return np.array(map(lambda x: x if x < 180 else x - 360, errs % 360))
 
+class ExtraParam:
+	"""Extra parameter - term for model evaluation"""
+	def __init__(self,ede):
+		p = ede.split(':')
+		if len(p) != 3:
+			raise Exception('invalid extra parameter format - {0}'.format(ede))
+
+		self.function = p[0]
+		self.param = p[1].split(';')
+		self.consts = map(float,p[2].split(';'))
+
+	def __str__(self):
+		return '{0}\t{1}\t{2}'.format(self.function,';'.join(map(str,self.param)),';'.join(map(str,self.consts)))
+
 # Computes, output, concetanetes and plot pointing models.
 class GPoint:
 	# @param   verbose  verbosity of the
@@ -75,6 +89,12 @@ class GPoint:
 			self.latitude_r = np.radians(latitude)
 		self.best = None
 		self.name_map = None
+		# addtional terms for ra-dec model
+		# addtional terms for alt-az model
+		self.extra_az_start = 9
+		self.extra_az = []
+		self.extra_el_start = 9
+		self.extra_el = []
 
 	def equ_to_hrz(self,ha,dec):
 		""" Transform HA-DEC (in radians) vector to ALT-AZ (in degrees) vector"""
@@ -96,7 +116,7 @@ class GPoint:
 		dec = np.sin(self.latitude_r) * np.sin(alt) - np.cos(self.latitude_r) * np.cos(alt) * np.cos(az)
 		dec = np.arcsin(dec)
 
-		return self.longitude - np.degrees(ha),np.degrees(dec)
+		return np.degrees(ha),np.degrees(dec)
 
 	def model_ha(self,params,a_ha,a_dec):
 		return - params[4] \
@@ -113,19 +133,58 @@ class GPoint:
 			- params[3]*(np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha) - np.sin(self.latitude_r) * np.cos(a_dec)) \
 			- params[8]*np.cos(a_ha)
 
+	def get_extra_val_altaz(self,e,az,el,num):
+		if e.param[num] == 'az':
+			return az
+		elif e.param[num] == 'el':
+			return el
+		elif e.param[num] == 'zd':
+			return (np.pi / 2) - el
+		else:
+			sys.exit('unknow parameter {0}'.format(e.param[num]))
+
+	def cal_extra_azalt(self,e,az,el):
+		if e.function == 'sin':
+			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
+		elif e.function == 'cos':
+			return np.cos(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
+		elif e.function == 'tan':
+			return np.tan(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
+		elif e.function == 'sincos':
+			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val_altaz(e,az,el,1))
+		else:
+			sys.exit('unknow function {0}'.format(e.function))
+
+	def add_extra_az(self,e):
+		self.extra_az.append(ExtraParam(e))
+		self.extra_el_start += 1
+
+	def add_extra_el(self,e):
+		self.extra_el.append(ExtraParam(e))
+
 	def model_az(self,params,a_az,a_el):
-		return - params[0] \
+		ret = - params[0] \
 			- params[1]*np.sin(a_az)*np.tan(a_el) \
 			- params[2]*np.cos(a_az)*np.tan(a_el) \
 			- params[3]*np.tan(a_el) \
 			+ params[4]/np.cos(a_el)
+		pi = self.extra_az_start
+		for e in self.extra_az:
+			ret += params[pi] * self.cal_extra_azalt(e, a_az, a_el)
+			pi += 1
+		return ret
 
 	def model_el(self,params,a_az,a_el):
-		return - params[5] \
+		ret = - params[5] \
 			- params[2]*np.sin(a_az) \
 			+ params[6]*np.cos(a_el) \
 			+ params[7]*np.cos(a_az) \
 			+ params[8]*np.sin(a_az)
+		pi = self.extra_el_start
+		for e in self.extra_el:
+			ret += params[pi] * self.cal_extra_azalt(e, a_az, a_el)
+			pi += 1
+		return ret
 
 	# Fit functions.
 	# a_ha - target HA (hour angle)
@@ -296,7 +355,7 @@ class GPoint:
 
 	def fit(self):
 		if self.altaz:
-			par_init = np.array([0,0,0,0,0,0,0,0,0])
+			par_init = np.array([0] * (9 + len(self.extra_az) + len(self.extra_el)))
 			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_altaz,par_init,args=(self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt),full_output=True,maxfev=10000)
 		else:
 			par_init = np.array([0,0,0,0,0,0,0,0,0])
@@ -564,3 +623,15 @@ class GPoint:
 
 		pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
 		pylab.show()
+
+	def save(self,fn):
+		"""Save model to file."""
+		f = open(fn,'w+')
+		f.write(self.get_model_type() + ' ')
+		f.write(' '.join(map(lambda x:str(x),self.best)))
+		for e in self.extra_az:
+			f.write('\n{0}'.format(e))
+		for e in self.extra_el:
+			f.write('\n{0}'.format(e))
+		f.close()
+
