@@ -160,7 +160,8 @@ int APMAux::info ()
 		case CLOSING:
 			if (coverState && coverState->getValueInteger () == 0)
 			{
-				closeBaffle ();
+				if (baffleCommand != NULL)
+					closeBaffle ();
 				commandInProgress = NONE;
 			}
 			break;
@@ -279,14 +280,13 @@ int APMAux::closeBaffle ()
 	if (sendUDPMessage ("B000"))
 		return -1;
 
-	if (baffle->getValueInteger () == 2)
+	if (baffle != NULL && baffle->getValueInteger () == 2)
 	{
 		baffle->setValueInteger (3);
 		sendValueAll (baffle);
+		baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
+		sendValueAll (baffleCommand);
 	}
-
-	baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
-	sendValueAll (baffleCommand);
 
 	return 0;
 }
@@ -334,7 +334,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 		logStream (MESSAGE_DEBUG) << "response 2: " << response << sendLog;
 	}
 
-	if (!isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
+	if (baffleCommand != NULL && !isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
 	{
 		if (baffle->getValueInteger () == 1)
 			baffle->setValueInteger (2);

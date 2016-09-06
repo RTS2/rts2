@@ -107,7 +107,6 @@ int Filterd::setFilters (const char *filters)
 		filter->addSelVal (tf);
 		tf = top + 1;
 	}
-	delete[] tf;
 	if (filter->selSize () == 0)
 		return -1;
 	return 0;
