@@ -17,25 +17,40 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2model.h"
+#include "gpointmodel.h"
 #include "libnova_cpp.h"
 
 #include <fstream>
 
 using namespace rts2telmodel;
 
-RTS2Model::RTS2Model (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
+ExtraParam::ExtraParam ()
+{
+
+}
+
+void parse (const char *line)
+{
+
+}
+
+double getValue (double az, double alt)
+{
+
+}
+
+GPointModel::GPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
 {
 	altaz = false;
 	for (int i = 0; i < 9; i++)
 		params[i] = 0;
 }
 
-RTS2Model::~RTS2Model (void)
+GPointModel::~GPointModel (void)
 {
 }
 
-int RTS2Model::load ()
+int GPointModel::load ()
 {
 	std::ifstream is (modelFile);
 	load (is);
@@ -44,7 +59,7 @@ int RTS2Model::load ()
 	return 0;
 }
 
-int RTS2Model::apply (struct ln_equ_posn *pos)
+int GPointModel::apply (struct ln_equ_posn *pos)
 {
 	double d_tar, r_tar;
 	pos->ra = ln_deg_to_rad (pos->ra);
@@ -61,7 +76,7 @@ int RTS2Model::apply (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int RTS2Model::applyVerbose (struct ln_equ_posn *pos)
+int GPointModel::applyVerbose (struct ln_equ_posn *pos)
 {
 	logStream (MESSAGE_DEBUG) << "Before: " << pos->ra << " " << pos->dec << sendLog;
 	apply (pos);
@@ -69,7 +84,7 @@ int RTS2Model::applyVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int RTS2Model::reverse (struct ln_equ_posn *pos)
+int GPointModel::reverse (struct ln_equ_posn *pos)
 {
 	double d_tar, r_tar;
 	pos->ra = ln_deg_to_rad (pos->ra);
@@ -86,7 +101,7 @@ int RTS2Model::reverse (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int RTS2Model::reverseVerbose (struct ln_equ_posn *pos)
+int GPointModel::reverseVerbose (struct ln_equ_posn *pos)
 {
 	logStream (MESSAGE_DEBUG) << "Before: " << pos->ra << " " << pos->dec << sendLog;
 	reverse (pos);
@@ -95,12 +110,12 @@ int RTS2Model::reverseVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-int RTS2Model::reverse (struct ln_equ_posn *pos, double sid)
+int GPointModel::reverse (struct ln_equ_posn *pos, double sid)
 {
 	return reverse (pos);
 }
 
-void RTS2Model::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
+void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 {
 	double az_r, el_r;
 	az_r = ln_deg_to_rad (hrz->az);
@@ -125,7 +140,7 @@ void RTS2Model::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 	hrz->alt += err->alt;
 }
 
-std::istream & RTS2Model::load (std::istream & is)
+std::istream & GPointModel::load (std::istream & is)
 {
 	std::string name;
 
@@ -153,7 +168,7 @@ std::istream & RTS2Model::load (std::istream & is)
 	return is;
 }
 
-std::ostream & RTS2Model::print (std::ostream & os)
+std::ostream & GPointModel::print (std::ostream & os)
 {
 	int pn = 9;
 	if (altaz)
@@ -169,12 +184,12 @@ std::ostream & RTS2Model::print (std::ostream & os)
 	return os;
 }
 
-inline std::istream & operator >> (std::istream & is, RTS2Model * model)
+inline std::istream & operator >> (std::istream & is, GPointModel * model)
 {
 	return model->load (is);
 }
 
-inline std::ostream & operator << (std::ostream & os, RTS2Model * model)
+inline std::ostream & operator << (std::ostream & os, GPointModel * model)
 {
 	return model->print (os);
 }

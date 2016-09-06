@@ -35,7 +35,7 @@
 #include "pluto/observe.h"
 
 #include "telmodel.h"
-#include "rts2model.h"
+#include "gpointmodel.h"
 #include "tpointmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
@@ -1137,14 +1137,14 @@ int Telescope::init ()
 
 	if (rts2ModelFile)
 	{
-		model = new rts2telmodel::RTS2Model (this, rts2ModelFile);
+		model = new rts2telmodel::GPointModel (this, rts2ModelFile);
 		ret = model->load ();
 		if (ret)
 			return ret;
 		rts2core::DoubleArray *p;
 		createValue (p, "rts2_model", "RTS2 model parameters", false);
 		for (int i = 0; i < 9; i++)
-			p->addValue (((rts2telmodel::RTS2Model *) model)->params[i]);
+			p->addValue (((rts2telmodel::GPointModel *) model)->params[i]);
 
 	}
 	else if (tPointModelFile)
@@ -2087,7 +2087,7 @@ void Telescope::signaledHUP ()
 	if (rts2ModelFile)
 	{
 		delete model;
-		model = new rts2telmodel::RTS2Model (this, rts2ModelFile);
+		model = new rts2telmodel::GPointModel (this, rts2ModelFile);
 		ret = model->load ();
 		if (ret)
 		{
