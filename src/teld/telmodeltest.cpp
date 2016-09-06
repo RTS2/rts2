@@ -19,7 +19,7 @@
 
 #include "telmodel.h"
 #include "gem.h"
-#include "rts2model.h"
+#include "gpointmodel.h"
 #include "tpointmodel.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
@@ -316,7 +316,7 @@ int TelModelTest::init ()
 	}
 
 	if (rts2ModelFile)
-		model = new RTS2Model (telescope, rts2ModelFile);
+		model = new GPointModel (telescope, rts2ModelFile);
 	else if (tPointModelFile)
 		model = new TPointModel (telescope, tPointModelFile);
 
