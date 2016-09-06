@@ -628,7 +628,7 @@ class GPoint:
 		"""Save model to file."""
 		f = open(fn,'w+')
 		f.write(self.get_model_type() + ' ')
-		f.write(' '.join(map(lambda x:str(x),self.best[:self.extra_az_start)))
+		f.write(' '.join(map(lambda x:str(x),self.best[:self.extra_az_start])))
 		bi = self.extra_az_start
 		for e in self.extra_az:
 			f.write('\nAZ {0}\t{1}'.format(self.best[bi],e))
