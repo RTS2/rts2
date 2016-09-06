@@ -19,24 +19,145 @@
 
 #include "gpointmodel.h"
 #include "libnova_cpp.h"
+#include "error.h"
 
+#include <math.h>
 #include <fstream>
 
 using namespace rts2telmodel;
 
 ExtraParam::ExtraParam ()
 {
-
+	for (int i=0; i < MAX_TERMS; i++)
+	{
+		params[i] = NAN;
+		terms[i] = GPOINT_LASTTERM;
+		consts[i] = NAN;
+	}
 }
 
-void parse (const char *line)
-{
+// function strings
+const char *ExtraParam::fns[] = {"sin", "cos", "tan", "sincos", "coscos", "sinsin"};
+const char *ExtraParam::pns[] = {"az", "el", "zd"};
 
+void ExtraParam::parse (char *line)
+{
+#define DELIMS   " \t"
+	char *saveptr;
+	// first token
+	char *p = strtok_r (line, DELIMS, &saveptr);
+	if (p == NULL)
+		throw rts2core::Error ("missing parameter value");
+	char *endp;
+	int t = 0;
+	char *termssave;
+	char *pp = strtok_r (p, ";", &termssave);
+	while (t < MAX_TERMS && pp != NULL)
+	{
+		params[0] = strtod (pp, &endp);
+		if (endp == NULL)
+			throw rts2core::Error ("invalid parameter value", pp);
+		t++;
+		pp = strtok_r (NULL, ";", &termssave);
+	}
+	if (t == 0)
+		throw rts2core::Error ("invalid param line", p);
+
+	p = strtok_r (NULL, DELIMS, &saveptr);
+	if (p == NULL)
+		throw rts2core::Error ("missing function name");
+	int i;
+	for (i = 0; i < GPOINT_LASTFUN; i++)
+	{
+		if (strcasecmp (p, fns[i]) == 0)
+		{
+			function = static_cast<function_t> (i);
+			break;
+		}
+	}
+	if (i == GPOINT_LASTFUN)
+		throw rts2core::Error ("unknow function name", p);
+
+	p = strtok_r (NULL, DELIMS, &saveptr);
+	if (p == NULL)
+		throw rts2core::Error ("missing parameters");
+
+	t = 0;
+	pp = strtok_r (p, ";", &termssave);
+	while (t < MAX_TERMS && pp != NULL)
+	{
+		for (i = 0; i < GPOINT_LASTTERM; i++)
+		{
+			if (strcasecmp (pp, pns[i]) == 0)
+			{
+				terms[t] = static_cast<terms_t> (i);
+				break;
+			}
+		}
+		if (i == GPOINT_LASTTERM)
+			throw rts2core::Error ("invalid term name", pp);
+		t++;
+		pp = strtok_r (NULL, ";", &termssave);
+	}
+	if (t == 0)
+		throw rts2core::Error ("invalid terms", p);
+
+	p = strtok_r (NULL, DELIMS, &saveptr);
+	if (p == NULL)
+	{
+		for (i = 0; i < t; i++)
+			consts[i] = 1;
+		return;
+	}
+	int tmax = t;
+	pp = strtok_r (p, ";", &termssave);
+	t = 0;
+	while (t < MAX_TERMS && pp != NULL)
+	{
+		consts[t] = strtod (pp, &endp);
+		if (endp == NULL)
+			throw rts2core::Error ("invalid constant", pp);
+		t++;
+		pp = strtok_r (NULL, ";", &termssave);
+	}
+	for (; t < tmax; t++)
+		consts[t] = 1;
 }
 
-double getValue (double az, double alt)
+double ExtraParam::getParamValue (double az, double el, int p)
 {
+	switch (terms[p])
+	{
+		case GPOINT_AZ:
+			return az;
+		case GPOINT_EL:
+			return el;
+		case GPOINT_ZD:
+			return M_PI / 2.0 - el;
+		default:
+			return 0;
+	}
+}
 
+double ExtraParam::getValue (double az, double el)
+{
+	switch (function)
+	{
+		case GPOINT_SIN:
+			return params[0] * sin (consts[0] * getParamValue (az, el, 0));
+		case GPOINT_COS:
+			return params[0] * cos (consts[0] * getParamValue (az, el, 0));
+		case GPOINT_TAN:
+			return params[0] * tan (consts[0] * getParamValue (az, el, 0));
+		case GPOINT_SINCOS:
+			return params[0] * sin (consts[0] * getParamValue (az, el, 0)) * cos (consts[1] * getParamValue (az, el, 1));
+		case GPOINT_COSCOS:
+			return params[0] * cos (consts[0] * getParamValue (az, el, 0)) * cos (consts[1] * getParamValue (az, el, 1));
+		case GPOINT_SINSIN:
+			return sin (consts[0] * getParamValue (az, el, 0)) * sin (consts[1] * getParamValue (az, el, 1));
+		default:
+			return 0;
+	}
 }
 
 GPointModel::GPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
