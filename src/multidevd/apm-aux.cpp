@@ -371,6 +371,9 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 				coverState->setValueInteger (2);
 				sendValueAll (coverState);
 				break;
+			case '2':
+				// ignore, probably after startup..
+				break;
 			default:
 				logStream (MESSAGE_ERROR) << "invalid cover state:" << response[3] << sendLog;
 				return -1;
