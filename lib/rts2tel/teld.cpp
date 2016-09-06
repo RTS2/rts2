@@ -1137,8 +1137,8 @@ int Telescope::init ()
 
 	if (rts2ModelFile)
 	{
-		model = new rts2telmodel::GPointModel (this, rts2ModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::GPointModel (getLatitude ());
+		ret = model->load (rts2ModelFile);
 		if (ret)
 			return ret;
 		rts2core::DoubleArray *p;
@@ -1149,8 +1149,8 @@ int Telescope::init ()
 	}
 	else if (tPointModelFile)
 	{
-		model = new rts2telmodel::TPointModel (this, tPointModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::TPointModel (getLatitude ());
+		ret = model->load (tPointModelFile);
 		if (ret)
 			return ret;
 		for (std::vector <rts2telmodel::TPointModelTerm *>::iterator iter = ((rts2telmodel::TPointModel*) model)->begin (); iter != ((rts2telmodel::TPointModel*) model)->end (); iter++)
@@ -2071,8 +2071,8 @@ void Telescope::signaledHUP ()
 	if (tPointModelFile)
 	{
 		delete model;
-		model = new rts2telmodel::TPointModel (this, tPointModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::TPointModel (getLatitude ());
+		ret = model->load (tPointModelFile);
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Failed to reload model from file " << tPointModelFile << sendLog;
@@ -2087,8 +2087,8 @@ void Telescope::signaledHUP ()
 	if (rts2ModelFile)
 	{
 		delete model;
-		model = new rts2telmodel::GPointModel (this, rts2ModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::GPointModel (getLatitude ());
+		ret = model->load (rts2ModelFile);
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Failed to reload model from file " << rts2ModelFile << sendLog;

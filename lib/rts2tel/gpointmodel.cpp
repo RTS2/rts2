@@ -55,7 +55,7 @@ void ExtraParam::parse (char *line)
 	while (t < MAX_TERMS && pp != NULL)
 	{
 		params[0] = strtod (pp, &endp);
-		if (endp == NULL)
+		if (endp == pp)
 			throw rts2core::Error ("invalid parameter value", pp);
 		t++;
 		pp = strtok_r (NULL, ";", &termssave);
@@ -115,7 +115,7 @@ void ExtraParam::parse (char *line)
 	while (t < MAX_TERMS && pp != NULL)
 	{
 		consts[t] = strtod (pp, &endp);
-		if (endp == NULL)
+		if (endp == pp)
 			throw rts2core::Error ("invalid constant", pp);
 		t++;
 		pp = strtok_r (NULL, ";", &termssave);
@@ -160,7 +160,7 @@ double ExtraParam::getValue (double az, double el)
 	}
 }
 
-GPointModel::GPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
+GPointModel::GPointModel (double in_latitude):TelModel (in_latitude)
 {
 	altaz = false;
 	for (int i = 0; i < 9; i++)
@@ -169,9 +169,15 @@ GPointModel::GPointModel (rts2teld::Telescope * in_telescope, const char *in_mod
 
 GPointModel::~GPointModel (void)
 {
+	std::list <ExtraParam *>::iterator it;
+	for (it = extraParamsAz.begin (); it != extraParamsAz.end (); it++)
+		delete *it;
+
+	for (it = extraParamsEl.begin (); it != extraParamsEl.end (); it++)
+		delete *it;
 }
 
-int GPointModel::load ()
+int GPointModel::load (const char *modelFile)
 {
 	std::ifstream is (modelFile);
 	load (is);
@@ -186,7 +192,7 @@ int GPointModel::apply (struct ln_equ_posn *pos)
 	pos->ra = ln_deg_to_rad (pos->ra);
 	pos->dec = ln_deg_to_rad (pos->dec);
 
-	double lat_r = cond->getLatitudeRadians ();
+	double lat_r = getLatitudeRadians ();
 
 	d_tar = pos->dec - params[0] - params[1] * cos (pos->ra) - params[2] * sin (pos->ra) - params[3] * (cos (lat_r) * sin (pos->dec) * cos (pos->ra) - sin (lat_r) * cos(pos->dec)) - params[8] * cos (pos->ra);
 	r_tar = pos->ra - params[4] - params[5] / cos (pos->dec) - params[6] * tan (pos->dec) - (params[1] * sin (pos->ra) - params[2] * cos (pos->ra)) * tan (pos->dec) - params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) - params[7] * (sin (lat_r) * tan (pos->dec) + cos (lat_r) * cos (pos->ra));
@@ -211,7 +217,7 @@ int GPointModel::reverse (struct ln_equ_posn *pos)
 	pos->ra = ln_deg_to_rad (pos->ra);
 	pos->dec = ln_deg_to_rad (pos->dec);
 
-	double lat_r = cond->getLatitudeRadians ();
+	double lat_r = getLatitudeRadians ();
 
 	d_tar = pos->dec + params[0] + params[1] * cos (pos->ra) + params[2] * sin (pos->ra) + params[3] * (cos (lat_r) * sin (pos->dec) * cos (pos->ra) - sin (lat_r) * cos(pos->dec)) + params[8] * cos (pos->ra);
 	r_tar = pos->ra + params[4] + params[5] / cos (pos->dec) + params[6] * tan (pos->dec) + (params[1] * sin (pos->ra) - params[2] * cos (pos->ra)) * tan (pos->dec) + params[3] * cos (lat_r) * sin (pos->ra) / cos (pos->dec) + params[7] * (sin (lat_r) * tan (pos->dec) + cos (lat_r) * cos (pos->ra));
@@ -254,6 +260,14 @@ void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 		+ params[7] * cos (az_r) \
 		+ params[8] * sin (az_r);
 
+	// now handle extra params
+	std::list <ExtraParam *>::iterator it;
+	for (it = extraParamsAz.begin (); it != extraParamsAz.end (); it++)
+		err->az += (*it)->getValue (az_r, el_r);
+
+	for (it = extraParamsEl.begin (); it != extraParamsEl.end (); it++)
+		err->alt += (*it)->getValue (az_r, el_r);
+
 	err->az = ln_rad_to_deg (err->az);
 	err->alt = ln_rad_to_deg (err->alt);
 
@@ -263,9 +277,16 @@ void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 
 std::istream & GPointModel::load (std::istream & is)
 {
+	std::string line ("");
+
+	while (line.length () < 1 || line[0] == '#')
+		std::getline (is, line);
+
+	std::istringstream iss (line);
+
 	std::string name;
 
-	is >> name;
+	iss >> name;
 
 	int pn = 9;
 
@@ -276,16 +297,56 @@ std::istream & GPointModel::load (std::istream & is)
 
 	int i = 0;
 
-	while (!is.eof () && i < pn)
+	// parse standard parameters
+
+	while (!iss.eof () && i < pn)
 	{
-		is >> params[i];
-		if (is.fail ())
+		iss >> params[i];
+		if (iss.fail ())
 		{
 			logStream (MESSAGE_ERROR) << "cannot read parameter " << i << sendLog;
 			return is;
 		}
 		i++;
 	}
+
+	while (!is.eof ())
+	{
+		line = "";
+		// line must have axis name at the begining..
+		while (line.length () < 1 || line[0] == '#')
+			std::getline (is, line);
+		ExtraParam *p = new ExtraParam ();
+		try
+		{
+			char lc [line.length() + 1];
+			size_t ai = 0;
+			while (ai < line.length () && !(line[ai] == ' ' || line[ai] == '\t'))
+				ai++;
+			const char *axis = line.substr (0, ai).c_str ();
+			while (ai < line.length () && (line[ai] == ' ' || line[ai] == '\t'))
+				ai++;
+			strncpy (lc, line.c_str () + ai, line.length ());
+			p->parse (lc);
+			if (strcasecmp (axis, "az") == 0)
+				extraParamsAz.push_back (p);
+			else if (strcasecmp (axis, "el") == 0)
+				extraParamsEl.push_back (p);
+			else
+			{
+				logStream (MESSAGE_ERROR) << "invalid axis name " << axis << sendLog;
+				delete p;
+				return is;
+			}
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << "parsing line " << line << ": " << er << sendLog;
+			delete p;
+			return is;
+		}
+	}
+
 	return is;
 }
 

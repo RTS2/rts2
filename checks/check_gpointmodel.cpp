@@ -3,22 +3,34 @@
 #include <check.h>
 #include <check_utils.h>
 
-class TestGPoint:public rts2telmodel::GPointModel
-{
-	public:
-		TestGPoint
-};
+rts2telmodel::GPointModel testGPoint_34 (34);
+rts2telmodel::GPointModel testGPoint_n39 (-39);
 
-void setup_altcaz (void)
+void setup_gpoint (void)
 {
+	std::istringstream iss1 ("# test #1\nRTS2_MODEL 0.01 0 0 0 -0.02 0 0 0 0");
+	testGPoint_34.load (iss1);
+
+
+	std::istringstream iss2 ("# test #2\nRTS2_ALTAZ 0.01 0 0 0 -0.02 0 0 0 0\n# extras..\nAZ 0.02 SiN el 2\nEL 0.02 cos az 2");
+	testGPoint_n39.load (iss2);
+
 }
 
-void teardown_altcaz (void)
+void teardown_gpoint (void)
 {
 }
 
 START_TEST(model_1)
 {
+	struct ln_hrz_posn test_hrz;
+	test_hrz.alt = 25;
+	test_hrz.az = 0;
+	struct ln_hrz_posn test_err;
+	testGPoint_n39.getErrAltAz (&test_hrz, &test_err);
+
+	ck_assert_dbl_eq (test_hrz.az, -0.959513, 10e-4);
+	ck_assert_dbl_eq (test_hrz.alt, 26.145916, 10e-4);
 }
 END_TEST
 

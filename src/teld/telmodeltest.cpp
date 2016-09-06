@@ -316,13 +316,16 @@ int TelModelTest::init ()
 	}
 
 	if (rts2ModelFile)
-		model = new GPointModel (telescope, rts2ModelFile);
+		model = new GPointModel (telescope->getLatitude ());
 	else if (tPointModelFile)
-		model = new TPointModel (telescope, tPointModelFile);
+		model = new TPointModel (telescope->getLatitude ());
 
 	if (model)
 	{
-		ret = model->load ();
+		if (rts2ModelFile)
+			ret = model->load (rts2ModelFile);
+		else
+			ret = model->load (tPointModelFile);
 		
 		telescope->setModel (model);
 		gemTelescope->setModel (model);

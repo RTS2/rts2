@@ -43,7 +43,7 @@ inline std::ostream & operator << (std::ostream & os, TPointModelTerm * term)
 }
 
 // status OK
-void TermME::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermME::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	// simple method
 	double dh;
@@ -57,7 +57,7 @@ void TermME::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 }
 
 // status OK
-void TermMA::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermMA::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	double d, h;
 
@@ -69,13 +69,13 @@ void TermMA::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 }
 
 // status: OK
-void TermIH::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermIH::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->ra = pos->ra + getValueDouble ();
 }
 
 // status: OK
-void TermID::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermID::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	// Add a zero point to the declination
 	pos->dec = pos->dec + getValueDouble ();
@@ -83,83 +83,83 @@ void TermID::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 }
 
 // status: OK
-void TermCH::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermCH::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->ra += getValueDouble () / cos (ln_deg_to_rad (pos->dec));
 }
 
 // status: OK
-void TermNP::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermNP::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * tan (ln_deg_to_rad (pos->dec));
 }
 
 // status: OK
-void TermFO::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermFO::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * cos (ln_deg_to_rad (pos->ra));
 }
 
 // status: ok
-void TermPHH::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermPHH::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * ln_deg_to_rad (pos->ra);
 }
 
 // status: ok
-void TermPDD::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermPDD::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * ln_deg_to_rad (pos->dec);
 }
 
-void TermTF::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermTF::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
 	h = ln_deg_to_rad (pos->ra);
-	f = ln_deg_to_rad (obs_conditions->getLatitude ());
+	f = tel_latitude_r;
 
 	pos->ra += getValueDouble () * cos (f) * sin (h) / cos (d);
 	pos->dec += getValueDouble () * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d));
 }
 
-void TermTX::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermTX::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
 	h = ln_deg_to_rad (pos->ra);
-	f = ln_deg_to_rad (obs_conditions->getLatitude ());
+	f = tel_latitude_r;
 
 	pos->ra += getValueDouble () * cos (f) * sin (h) / ((sin (d) * sin (f) + cos (d) * cos (h) * cos (f)) * cos (d));
 	pos->dec += getValueDouble () * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d)) / ((sin (d) * sin (f) + cos (d) * cos (h) * cos (f)) * cos (d));
 }
 
-void TermHCEC::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermHCEC::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * cos (ln_deg_to_rad (pos->ra));
 }
 
-void TermHCES::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermHCES::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->ra += getValueDouble () * sin (ln_deg_to_rad (pos->ra));
 }
 
-void TermDCEC::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermDCEC::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * cos (ln_deg_to_rad (pos->dec));
 }
 
-void TermDCES::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermDCES::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	pos->dec += getValueDouble () * sin (ln_deg_to_rad (pos->dec));
 }
 
-void TermDAB::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermDAB::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
 	h = ln_deg_to_rad (pos->ra);
-	f = ln_deg_to_rad (obs_conditions->getLatitude ());
+	f = tel_latitude_r;
 
 	double sh = sin (h);
 	double sf = sin (f);
@@ -168,12 +168,12 @@ void TermDAB::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 	pos->ra -= getValueDouble () * (sh * sh * sf * sf + ch * ch) * (sf * tan (d) + cos (f) * ch);
 }
 
-void TermDAF::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermDAF::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
 	h = ln_deg_to_rad (pos->ra);
-	f = ln_deg_to_rad (obs_conditions->getLatitude ());
+	f = tel_latitude_r;
 
 	pos->ra -= getValueDouble () * (sin (f) * tan (d) + cos (f) * cos (h));
 }
@@ -227,7 +227,7 @@ const char * TermHarmonics::getFunc (const char *in_func, int i)
 	return end;
 }
 
-double TermHarmonics::getValue (struct ln_equ_posn *pos, ObsConditions * obs_conditions, int i)
+double TermHarmonics::getValue (struct ln_equ_posn *pos, double tel_latitude_r, int i)
 {
 	double val = mul[i];
 	//  struct ln_hrz_posn hrz;
@@ -249,17 +249,17 @@ double TermHarmonics::getValue (struct ln_equ_posn *pos, ObsConditions * obs_con
 	return val;
 }
 
-double TermHarmonics::getMember (struct ln_equ_posn *pos, ObsConditions * obs_conditions, int i)
+double TermHarmonics::getMember (struct ln_equ_posn *pos, double tel_latitude_r, int i)
 {
 	double val;
 	switch (func[i])
 	{
 		case SIN:
-			val = ln_deg_to_rad (getValue (pos, obs_conditions, i));
+			val = ln_deg_to_rad (getValue (pos, tel_latitude_r, i));
 			return sin (val);
 			break;
 		case COS:
-			val = ln_deg_to_rad (getValue (pos, obs_conditions, i));
+			val = ln_deg_to_rad (getValue (pos, tel_latitude_r, i));
 			return cos (val);
 			break;
 		case NOT:
@@ -268,11 +268,11 @@ double TermHarmonics::getMember (struct ln_equ_posn *pos, ObsConditions * obs_co
 	}
 }
 
-void TermHarmonics::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+void TermHarmonics::apply (struct ln_equ_posn *pos, double tel_latitude_r)
 {
 	double resVal = getValueDouble ();
 	for (int i = 0; i < 2; i++)
-		resVal *= getMember (pos, obs_conditions, i);
+		resVal *= getMember (pos, tel_latitude_r, i);
 	switch (resType)
 	{
 		case 'H':

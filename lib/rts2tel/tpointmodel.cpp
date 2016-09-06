@@ -24,7 +24,7 @@
 
 using namespace rts2telmodel;
 
-TPointModel::TPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile):TelModel (in_telescope, in_modelFile)
+TPointModel::TPointModel (double in_latitude):TelModel (in_latitude)
 {
 }
 
@@ -32,7 +32,7 @@ TPointModel::~TPointModel (void)
 {
 }
 
-int TPointModel::load ()
+int TPointModel::load (const char *modelFile)
 {
 	std::ifstream is (modelFile);
 	load (is);
@@ -45,7 +45,7 @@ int TPointModel::apply (struct ln_equ_posn *pos)
 {
 	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->apply (pos, cond);
+		(*iter)->apply (pos, tel_latitude);
 	}
 	return 0;
 }
@@ -57,7 +57,7 @@ int TPointModel::applyVerbose (struct ln_equ_posn *pos)
 		struct ln_equ_posn old_pos = *pos;
 		logStream (MESSAGE_DEBUG) // << (*iter)
 			<< "Before: " << pos->ra << " " << pos->dec << sendLog;
-		(*iter)->apply (pos, cond);
+		(*iter)->apply (pos, tel_latitude);
 		logStream (MESSAGE_DEBUG) << "After: " << pos->ra << " " << pos->dec 
 			<< "(" << LibnovaDegDist (pos->ra - old_pos.ra) 
 			<< " " << LibnovaDegDist (pos->dec - old_pos.dec)
@@ -75,7 +75,7 @@ int TPointModel::reverse (struct ln_equ_posn *pos)
 		pos2.ra = pos->ra;
 		pos2.dec = pos->dec;
 
-		(*iter)->apply (pos, cond);
+		(*iter)->apply (pos, getLatitudeRadians ());
 
 		pos->ra = 2. * pos2.ra - pos->ra;
 		pos->dec = 2. * pos2.dec - pos->dec;
@@ -97,7 +97,7 @@ int TPointModel::reverseVerbose (struct ln_equ_posn *pos)
 		logStream (MESSAGE_DEBUG) << //(*iter) << 
 			"Before: " << pos->ra << " " << pos->dec << sendLog;
 
-		(*iter)->apply (pos, cond);
+		(*iter)->apply (pos, getLatitudeRadians ());
 
 		logStream (MESSAGE_DEBUG) << "After1: " << pos->ra << " " << pos->dec
 			<< "(" << LibnovaDegDist (pos->ra - old_pos.ra) << " "
@@ -117,7 +117,7 @@ int TPointModel::reverse (struct ln_equ_posn *pos, double sid)
 {
 	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->reverse (pos, cond);
+		(*iter)->reverse (pos, getLatitudeRadians ());
 	}
 	return 0;
 }
