@@ -336,6 +336,11 @@ class GPoint:
 			# transform to ha/dec
 			self.aa_ha,self.aa_dec = self.hrz_to_equ(self.rad_aa_az,self.rad_aa_alt)
 			self.ar_ha,self.ar_dec = self.hrz_to_equ(self.rad_ar_az,self.rad_ar_alt)
+
+			self.rad_aa_ha = np.radians(self.aa_ha)
+			self.rad_aa_dec = np.radians(self.aa_dec)
+			self.rad_ar_ha = np.radians(self.ar_ha)
+			self.rad_ar_dec = np.radians(self.ar_dec)
 		else:
 			self.rad_aa_ha = np.radians(self.aa_ha)
 			self.rad_aa_dec = np.radians(self.aa_dec)
@@ -345,6 +350,11 @@ class GPoint:
 			# transform to alt/az
 			self.aa_alt,self.aa_az = self.equ_to_hrz(self.rad_aa_ha,self.rad_aa_dec)
 			self.ar_alt,self.ar_az = self.equ_to_hrz(self.rad_ar_ha,self.rad_ar_dec)
+
+			self.rad_aa_az = np.radians(self.aa_az)
+			self.rad_aa_alt = np.radians(self.aa_alt)
+			self.rad_ar_az = np.radians(self.ar_az)
+			self.rad_ar_alt = np.radians(self.ar_alt)
 
 		self.diff_ha = self.aa_ha - self.ar_ha
 		self.diff_dec = self.aa_dec - self.ar_dec
@@ -395,6 +405,51 @@ class GPoint:
 
 		return self.best
 
+	def remove_line(self,ind):
+		self.rad_aa_az = np.delete(self.rad_aa_az, ind)
+		self.rad_ar_az = np.delete(self.rad_ar_az, ind)
+		self.rad_aa_alt = np.delete(self.rad_aa_alt, ind)
+		self.rad_ar_alt = np.delete(self.rad_ar_alt, ind)
+
+		self.rad_aa_ha = np.delete(self.rad_aa_ha, ind)
+		self.rad_ar_ha = np.delete(self.rad_ar_ha, ind)
+		self.rad_aa_dec = np.delete(self.rad_aa_dec, ind)
+		self.rad_ar_dec = np.delete(self.rad_ar_dec, ind)
+
+		self.aa_ha = np.delete(self.aa_ha, ind)
+		self.ar_ha = np.delete(self.ar_ha, ind)
+		self.aa_dec = np.delete(self.aa_dec, ind)
+		self.ar_dec = np.delete(self.ar_dec, ind)
+
+		self.diff_ha = np.delete(self.diff_ha, ind)
+		self.diff_dec = np.delete(self.diff_dec, ind)
+		self.diff_angular = np.delete(self.diff_angular, ind)
+
+		self.diff_alt = np.delete(self.diff_alt, ind)
+		self.diff_az = np.delete(self.diff_az, ind)
+
+	def filter(self,axis,error,num):
+		# find max error
+		while num > 0:
+			mi = None
+			if axis == 'az':
+				mi = np.argmax(np.abs(self.diff_model_az*np.cos(self.rad_aa_alt)))
+				if abs(self.diff_model_az[mi]*np.cos(self.rad_aa_alt[mi])) < error:
+					return None
+			elif axis == 'alt':
+				mi = np.argmax(np.abs(self.diff_model_alt))
+				if abs(self.diff_model_alt[mi]) < error:
+					return None
+			else:
+				print 'unknow axis {0}'.format(axis)
+				return None
+				
+			self.remove_line(mi)
+			self.fit()
+			self.print_params()
+			num -= 1
+		return ['aa']
+
 	def print_params(self):
 		print "Best fit",np.degrees(self.best)
 		if self.verbose:
@@ -444,19 +499,19 @@ class GPoint:
 			print 'DIFF_ANGULAR',print_vect_stat(self.diff_angular*3600)
 
 		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
-		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_ha*np.cos(self.aa_dec)*3600)
+		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_ha*np.cos(self.rad_aa_dec)*3600)
 		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
 		print 'RMS AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
-		print 'RMS AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_az*np.cos(self.aa_alt)*3600)
+		print 'RMS AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_az*np.cos(self.rad_aa_alt)*3600)
 		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
 		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
 
 		if self.best is not None:
 			print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
-			print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_ha*np.cos(self.aa_dec)*3600)
+			print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_ha*np.cos(self.rad_aa_dec)*3600)
 			print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
 			print 'RMS MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
-			print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_az*np.cos(self.aa_dec)*3600)
+			print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_az*np.cos(self.rad_aa_alt)*3600)
 			print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
 			print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
