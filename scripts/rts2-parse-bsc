@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+from ftplib import FTP
+import gzip
+import sys
+import StringIO
+import re
+
+vis = FTP('cdsarc.u-strasbg.fr')
+vis.login()
+
+sio = StringIO.StringIO()
+rlen = 0
+
+def visdata(data):
+	global sio
+	global rlen
+	sio.write(data)
+	rlen += len(data)
+	sys.stderr.write('\rreceived {0} bytes'.format(rlen))
+	sys.stderr.flush()
+
+resp = vis.retrbinary('RETR /pub/cats/V/50/catalog.gz', callback=visdata)
+sio.seek(0)
+zippy = gzip.GzipFile(fileobj=sio)
+
+line = zippy.readline()
+frm = [
+	[4,'HR'],		# [1/9110]+ Harvard Revised Number
+	[10,'Name'],		# Name, generally Bayer and/or Flamsteed name
+	[11,'DM'],		# Durchmusterung Identification (zone in
+	[6,'HD'],		# [1/225300]? Henry Draper Catalog Number
+	[6,'SAO'],		# [1/258997]? SAO Catalog Number
+	[4,'FK5'],		# ? FK5 star Number
+	[1,'IRflag'],		# [I] I if infrared source
+	[1,'r_IRflag'],		# *[ ':] Coded reference for infrared source
+	[1,'Multiple'],		# *[AWDIRS] Double or multiple-star code
+	[5,'ADS'],		# Aitken's Double Star Catalog (ADS) designation
+	[2,'ADScomp'],		# ADS number components
+	[9,'VarID'],		# Variable star identification
+	[2,'RAh1900'],		# ?Hours RA, equinox B1900, epoch 1900.0 (1)
+	[2,'RAm1900'],		# ?Minutes RA, equinox B1900, epoch 1900.0 (1)
+	[4,'RAs1900'],		# ?Seconds RA, equinox B1900, epoch 1900.0 (1)
+	[1,'DE-1900'],		# ?Sign Dec, equinox B1900, epoch 1900.0 (1)
+	[2,'DEd1900'],		# ?Degrees Dec, equinox B1900, epoch 1900.0 (1)
+	[2,'DEm1900'],		# ?Minutes Dec, equinox B1900, epoch 1900.0 (1)
+	[2,'DEs1900'],		# ?Seconds Dec, equinox B1900, epoch 1900.0 (1)
+	[2,'RAh'],		# ?Hours RA, equinox J2000, epoch 2000.0 (1)
+	[2,'RAm'],		# ?Minutes RA, equinox J2000, epoch 2000.0 (1)
+	[4,'RAs'],		# ?Seconds RA, equinox J2000, epoch 2000.0 (1)
+	[1,'DE-'],		# ?Sign Dec, equinox J2000, epoch 2000.0 (1)
+	[2,'DEd'],		# ?Degrees Dec, equinox J2000, epoch 2000.0 (1)
+	[2,'DEm'],		# ?Minutes Dec, equinox J2000, epoch 2000.0 (1)
+	[2,'DEs'],		# ?Seconds Dec, equinox J2000, epoch 2000.0 (1)
+	[6,'GLON'],		# ?Galactic longitude (1)
+	[6,'GLAT'],		# ?Galactic latitude (1)
+	[5,'Vmag'],		# ?Visual magnitude (1)
+	[1,'n_Vmag'],		# *[ HR] Visual magnitude code
+	[1,'u_Vmag'],		# [ :?] Uncertainty flag on V
+	[5,'B-V'],		# ? B-V color in the UBV system
+	[1,'u_B-V'],		# [ :?] Uncertainty flag on B-V
+	[5,'U-B'],		# ? U-B color in the UBV system
+	[1,'u_U-B'],		# [ :?] Uncertainty flag on U-B
+	[5,'R-I'],		# ? R-I   in system specified by n_R-I
+	[1,'n_R-I'],		# [CE:?D] Code for R-I system (Cousin, Eggen)
+	[20,'SpType'],		# Spectral type
+	[1,'n_SpType'],		# [evt] Spectral type code
+	[6,'pmRA'],		# *?Annual proper motion in RA J2000, FK5 system
+	[6,'pmDE'],		# ?Annual proper motion in Dec J2000, FK5 system
+	[1,'n_Parallax'],	# [D] D indicates a dynamical parallax, otherwise a trigonometric parallax
+	[5,'Parallax'],		# ? Trigonometric parallax (unless n_Parallax)
+	[4,'RadVel'],		# ? Heliocentric Radial Velocity
+	[4,'n_RadVel'],		# *[V?SB123O ] Radial velocity comments
+	[2,'l_RotVel'],		# [<=> ] Rotational velocity limit characters
+	[3,'RotVel'],		# ? Rotational velocity, v sin i
+	[1,'u_RotVel'],		# [ :v] uncertainty and variability flag on RotVel
+	[4,'Dmag'],		# ? Magnitude difference of double, or brightest multiple
+	[6,'Sep'],		# ? Separation of components in Dmag if occultation binary.
+	[4,'MultID'],		# Identifications of components in Dmag
+	[2,'MultCnt'],		# ? Number of components assigned to a multiple
+	[1,'NoteFlag']		# [*] a star indicates that there is a note
+]
+
+sys.stderr.write('\n')
+
+print '__bsc_data = ['
+first = True
+while line:
+	el = {}
+	for e in frm:
+		el[e[1]] = line[:e[0]].strip()
+		line = line[e[0]:]
+	if first:
+		first = False
+	else:
+		print ','
+	try:
+		de = int(el['DEd']) + int(el['DEm']) / 60.0 + int(el['DEs']) / 3600.0
+		if el['DE-'] == '-':
+			de *= -1
+		print "[{0},'{1}',{2},{3},{4},{5},{6}]".format( \
+			el['HR'], \
+			el['Name'],
+			15*(int(el['RAh']) + int(el['RAm']) / 60.0 + float(el['RAs']) / 3600.0), \
+			de, \
+			float(el['Vmag']), \
+			float(el['pmRA']), \
+			float(el['pmDE']) \
+		),
+	except ValueError,va:
+		first = True
+
+	line = zippy.readline()
+print ']'
