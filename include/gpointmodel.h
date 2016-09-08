@@ -29,7 +29,7 @@ namespace rts2telmodel
 //* maximal number of terms
 #define MAX_TERMS   4
 
-typedef enum { GPOINT_SIN=0, GPOINT_COS, GPOINT_TAN, GPOINT_SINCOS, GPOINT_COSCOS, GPOINT_SINSIN, GPOINT_LASTFUN } function_t;
+typedef enum { GPOINT_SIN=0, GPOINT_COS, GPOINT_TAN, GPOINT_SINCOS, GPOINT_COSCOS, GPOINT_SINSIN, GPOINT_ABSSIN, GPOINT_ABSCOS, GPOINT_LASTFUN } function_t;
 typedef enum { GPOINT_AZ=0, GPOINT_EL, GPOINT_ZD, GPOINT_LASTTERM } terms_t;
 
 /**
