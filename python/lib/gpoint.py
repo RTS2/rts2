@@ -148,10 +148,18 @@ class GPoint:
 			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
 		elif e.function == 'cos':
 			return np.cos(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
+		elif e.function == 'abssin':
+			return np.abs(np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)))
+		elif e.function == 'abscos':
+			return np.abs(np.cos(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)))
 		elif e.function == 'tan':
 			return np.tan(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
 		elif e.function == 'sincos':
 			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val_altaz(e,az,el,1))
+		elif e.function == 'sinsin':
+			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)) * np.sin(e.consts[1] * self.get_extra_val_altaz(e,az,el,1))
+		elif e.function == 'coscos':
+			return np.cos(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val_altaz(e,az,el,1))
 		else:
 			sys.exit('unknow function {0}'.format(e.function))
 
@@ -163,10 +171,11 @@ class GPoint:
 		self.extra_el.append(ExtraParam(e))
 
 	def model_az(self,params,a_az,a_el):
+		tan_el = np.tan(a_el)
 		ret = - params[0] \
-			- params[1]*np.sin(a_az)*np.tan(a_el) \
-			- params[2]*np.cos(a_az)*np.tan(a_el) \
-			- params[3]*np.tan(a_el) \
+			- params[1]*np.sin(a_az)*tan_el \
+			- params[2]*np.cos(a_az)*tan_el \
+			- params[3]*tan_el \
 			+ params[4]/np.cos(a_el)
 		pi = self.extra_az_start
 		for e in self.extra_az:
@@ -357,11 +366,13 @@ class GPoint:
 			self.rad_ar_alt = np.radians(self.ar_alt)
 
 		self.diff_ha = self.aa_ha - self.ar_ha
+		self.diff_corr_ha = self.diff_ha * np.cos(self.rad_aa_dec)
 		self.diff_dec = self.aa_dec - self.ar_dec
 		self.diff_angular = libnova.angular_separation(self.aa_ha,self.aa_dec,self.ar_ha,self.ar_dec)
 
 		self.diff_alt = self.aa_alt - self.ar_alt
 		self.diff_az = normalize_az_err(self.aa_az - self.ar_az)
+		self.diff_corr_az = self.diff_az * np.cos(self.rad_aa_alt)
 
 	def fit(self):
 		if self.altaz:
@@ -403,6 +414,9 @@ class GPoint:
 
 			self.diff_model_angular = self.fit_model_gem(self.best,self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec)
 
+		self.diff_model_corr_az = self.diff_model_az * np.cos(self.rad_aa_alt)
+		self.diff_model_corr_ha = self.diff_model_ha * np.cos(self.rad_aa_ha)
+
 		return self.best
 
 	def remove_line(self,ind):
@@ -422,11 +436,13 @@ class GPoint:
 		self.ar_dec = np.delete(self.ar_dec, ind)
 
 		self.diff_ha = np.delete(self.diff_ha, ind)
+		self.diff_corr_ha = np.delete(self.diff_corr_ha, ind)
 		self.diff_dec = np.delete(self.diff_dec, ind)
 		self.diff_angular = np.delete(self.diff_angular, ind)
 
 		self.diff_alt = np.delete(self.diff_alt, ind)
 		self.diff_az = np.delete(self.diff_az, ind)
+		self.diff_corr_az = np.delete(self.diff_corr_az, ind)
 
 	def filter(self,axis,error,num):
 		# find max error
@@ -499,19 +515,19 @@ class GPoint:
 			print 'DIFF_ANGULAR',print_vect_stat(self.diff_angular*3600)
 
 		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
-		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_ha*np.cos(self.rad_aa_dec)*3600)
+		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_corr_ha*3600)
 		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
 		print 'RMS AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
-		print 'RMS AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_az*np.cos(self.rad_aa_alt)*3600)
+		print 'RMS AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_corr_az*3600)
 		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
 		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
 
 		if self.best is not None:
 			print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
-			print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_ha*np.cos(self.rad_aa_dec)*3600)
+			print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_corr_ha*3600)
 			print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
 			print 'RMS MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
-			print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_az*np.cos(self.rad_aa_alt)*3600)
+			print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_corr_az*3600)
 			print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
 			print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
@@ -581,8 +597,10 @@ class GPoint:
 			name_map = {
 				'alt-err':[self.diff_alt*3600,'r.','Alt error'],
 				'az-err':[self.diff_az*3600,'y.','Az error'],
+				'az-corr-err':[self.diff_corr_az*3600, 'y.', 'AZ alt c error'],
 				'dec-err':[self.diff_dec*3600,'b.','Dec error'],
 				'ha-err':[self.diff_ha*3600,'g.','HA error'],
+				'ha-corr-err':[self.diff_corr_ha*3600,'g.','HA dec c error'],
 				'mjd':[self.mjd,'m','MJD'],
 				'num':[range(len(self.mjd)),'m','Number'],
 				'paz':[self.aa_az,'rx','Azimuth'],
@@ -596,8 +614,10 @@ class GPoint:
 				name_map.update({
 					'alt-merr':[self.diff_model_alt*3600,'r*','Alt model error'],
 					'az-merr':[self.diff_model_az*3600,'y*','Az model error'],
+					'az-corr-merr':[self.diff_model_corr_az*3600,'y*','Az c model error'],
 					'dec-merr':[self.diff_model_dec*3600,'b*','Dec model error'],
 					'ha-merr':[self.diff_model_ha*3600,'g*','HA model error'],
+					'ha-corr-merr':[self.diff_model_ha*3600,'g*','HA dec c model error'],
 					'model-err':[self.diff_model_angular*3600,'c+','Model angular error'],
 					'real-err':[self.diff_angular*3600,'c+','Real angular error']
 				})
