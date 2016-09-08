@@ -902,7 +902,7 @@ void Telescope::applyNutation (struct ln_equ_posn *pos, double JD, bool writeVal
 	pos->dec += d_dec;
 
 	if (writeValue)
-		aberated->setValueRaDec (pos->ra, pos->dec);
+		nutated->setValueRaDec (pos->ra, pos->dec);
 }
 
 void Telescope::applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue)
