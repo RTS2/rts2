@@ -247,7 +247,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 {
 	unlockPointing ();
 
-	setCorrections (true, true, true);
+	setCorrections (true, true, true, true);
 
 	offsetha = 0.;
 	offsetdec = 0.;

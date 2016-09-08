@@ -37,7 +37,7 @@ ExtraParam::ExtraParam ()
 }
 
 // function strings
-const char *ExtraParam::fns[] = {"sin", "cos", "tan", "sincos", "coscos", "sinsin"};
+const char *ExtraParam::fns[] = {"sin", "cos", "tan", "sincos", "coscos", "sinsin", "abssin", "abscos"};
 const char *ExtraParam::pns[] = {"az", "el", "zd"};
 
 void ExtraParam::parse (char *line)
@@ -147,6 +147,10 @@ double ExtraParam::getValue (double az, double el)
 			return params[0] * sin (consts[0] * getParamValue (az, el, 0));
 		case GPOINT_COS:
 			return params[0] * cos (consts[0] * getParamValue (az, el, 0));
+		case GPOINT_ABSSIN:
+			return params[0] * abs (sin (consts[0] * getParamValue (az, el, 0)));
+		case GPOINT_ABSCOS:
+			return params[0] * abs (cos (consts[0] * getParamValue (az, el, 0)));
 		case GPOINT_TAN:
 			return params[0] * tan (consts[0] * getParamValue (az, el, 0));
 		case GPOINT_SINCOS:

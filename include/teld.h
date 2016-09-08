@@ -132,12 +132,14 @@ class Telescope:public rts2core::Device
 		 * Set telescope correctios.
 		 *
 		 * @param _aberation     If aberation should be calculated.
+		 * @param _nutation      If nutation should be calculated.
 		 * @param _precession    If precession should be calculated.
 		 * @param _refraction    If refraction should be calculated.
 		 */
-		void setCorrections (bool _aberation, bool _precession, bool _refraction)
+		void setCorrections (bool _aberation, bool _nutation, bool _precession, bool _refraction)
 		{
 			calAberation->setValueBool (_aberation);
+			calNutation->setValueBool (_nutation);
 			calPrecession->setValueBool (_precession);
 			calRefraction->setValueBool (_refraction);
 		}
@@ -146,6 +148,11 @@ class Telescope:public rts2core::Device
 		 * If aberation should be calculated in RTS2.
 		 */
 		bool calculateAberation () { return calAberation->getValueBool (); }
+
+		/**
+		 * If nutation should be calculated in RTS2.
+		 */
+		bool calculateNutation () { return calNutation->getValueBool (); }
 
 		/**
 		 * If precession should be calculated in RTS2.
@@ -1024,6 +1031,11 @@ class Telescope:public rts2core::Device
 		void applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue);
 
 		/**
+		 * Apply nutation correction.
+		 */
+		void applyNutation (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		/**
 		 * Apply precision correction.
 		 */
 		void applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue);
@@ -1147,6 +1159,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *total_offsets;
 
 		rts2core::ValueRaDec *aberated;
+		rts2core::ValueRaDec *nutated;
 		rts2core::ValueRaDec *precessed;
 
 		rts2core::ValueDouble *refraction;
@@ -1176,6 +1189,7 @@ class Telescope:public rts2core::Device
 		// object + telescope position
 
 		rts2core::ValueBool *calAberation;
+		rts2core::ValueBool *calNutation;
 		rts2core::ValueBool *calPrecession;
 		rts2core::ValueBool *calRefraction;
 		rts2core::ValueBool *calModel;

@@ -229,7 +229,7 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	createValue (remotesAbsEncDec, "remotes_abs_encoder_dec", "raw abs. encoder position, Dec axis", false);
 
 	// apply all corrections by rts2 for mount
-	setCorrections (true, true, true);
+	setCorrections (true, true, true, true);
 }
 
 D50::~D50 (void)
@@ -672,14 +672,15 @@ int D50::startPark ()
                 parking = true;
 		// to park to real "zero" position, switch off corrections&modelling, and put it back again after move command
 		bool calAber = calculateAberation ();
+		bool calNut = calculateNutation ();
 		bool calPrec = calculatePrecession ();
 		bool calRef = calculateRefraction ();
 		bool calMod = isModelOn ();
-		setCorrections (false, false, false);
+		setCorrections (false, false, false, false);
 		modelOff ();
                 setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
                 int ret = moveAltAz ();
-		setCorrections (calAber, calPrec, calRef);
+		setCorrections (calAber, calNut, calPrec, calRef);
 		if (calMod)
 			 modelOn ();
                 return ret;

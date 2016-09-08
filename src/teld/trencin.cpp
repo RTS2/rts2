@@ -753,7 +753,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv, false, true)
 	waitWormRa->setValueInteger (101);
 
 	// apply all corrections
-	setCorrections (true, true, true);
+	setCorrections (true, true, true, true);
 }
 
 Trencin::~Trencin (void)

@@ -614,7 +614,7 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 	track1 = NULL;
 
 	// apply all correction for paramount
-	setCorrections (true, true, true);
+	setCorrections (true, true, true, true);
 
 	// int paramout values
 	paramountValues.push_back (ParaVal ("Index angle", T16, CMD_VAL16_INDEX_ANGLE));

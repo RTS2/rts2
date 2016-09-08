@@ -294,10 +294,10 @@ int TelModelTest::init ()
 		return 0;
 
 	telescope = new ModelTest ();
-	telescope->setCorrections (false, false, false);
+	telescope->setCorrections (false, false, false, false);
 
 	gemTelescope = new ModelTestGEM ();
-	gemTelescope->setCorrections (true, true, true);
+	gemTelescope->setCorrections (true, true, true, true);
 
 	if (defaultsFile)
 	{
@@ -507,14 +507,14 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 				{
 					temp = NAN;
 					press = NAN;
-					telescope->setCorrections (true, true, false);
+					telescope->setCorrections (true, true, true, false);
 				}
 				else
 				{
 					if ( includeRefraction )
-						telescope->setCorrections (true, true, true);
+						telescope->setCorrections (true, true, true, true);
 					else
-						telescope->setCorrections (true, true, false);
+						telescope->setCorrections (true, true, true, false);
 				}
 			}
 			if (firstChar == '-')

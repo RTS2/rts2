@@ -200,7 +200,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 {
 	unlockPointing ();
 
-	setCorrections (true, true, true);
+	setCorrections (true, true, true, true);
 
 	tel_tty = "/dev/ttyUSB0";
 	telConn = NULL;

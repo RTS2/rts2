@@ -185,6 +185,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST_180);
 
 	createValue (aberated, "aberated", "target coordinates, aberated", false);
+	createValue (nutated, "nutated", "target coordinates, nutated", false);
 	createValue (precessed, "precessed", "target coordinates, aberated and precessed", false);
 	createValue (refraction, "refraction", "[deg] refraction (in altitude)", false, RTS2_DT_DEG_DIST_180);
 
@@ -321,6 +322,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	// default is to aply model corrections
 	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calAberation->setValueBool (false);
+
+	createValue (calNutation, "CAL_NUT", "if nutation is included in target calculations", false, RTS2_VALUE_WRITABLE);
+	calNutation->setValueBool (false);
 
 	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calPrecession->setValueBool (false);
@@ -871,6 +875,32 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 void Telescope::applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue)
 {
 	ln_get_equ_aber (pos, JD, pos);
+	if (writeValue)
+		aberated->setValueRaDec (pos->ra, pos->dec);
+}
+
+void Telescope::applyNutation (struct ln_equ_posn *pos, double JD, bool writeValue)
+{
+	struct ln_nutation nut;
+	ln_get_nutation (JD, &nut);
+
+	double rad_ecliptic = ln_deg_to_rad (nut.ecliptic);
+	double sin_ecliptic = sin (rad_ecliptic);
+
+	double rad_ra = ln_deg_to_rad (pos->ra);
+	double rad_dec = ln_deg_to_rad (pos->dec);
+
+	double sin_ra = sin (rad_ra);
+	double cos_ra = cos (rad_ra);
+
+	double tan_dec = tan (rad_dec);
+
+	double d_ra = (cos (rad_ecliptic) + sin_ecliptic * sin_ra * tan_dec) * nut.longitude - cos_ra * tan_dec * nut.obliquity;
+	double d_dec = (sin_ecliptic * cos_ra) * nut.longitude + sin_ra * nut.obliquity;
+
+	pos->ra += d_ra;
+	pos->dec += d_dec;
+
 	if (writeValue)
 		aberated->setValueRaDec (pos->ra, pos->dec);
 }
@@ -1673,6 +1703,8 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, bool write
 	// apply all posible corrections
 	if (calAberation->getValueBool () == true)
 		applyAberation (pos, JD, writeValues);
+	if (calNutation->getValueBool () == true)
+		applyNutation (pos, JD, writeValues);
 	if (calPrecession->getValueBool () == true)
 		applyPrecession (pos, JD, writeValues);
 	if (calRefraction->getValueBool () == true)
