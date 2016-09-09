@@ -185,8 +185,6 @@ int GPointModel::load (const char *modelFile)
 {
 	std::ifstream is (modelFile);
 	load (is);
-	if (is.fail ())
-		return -1;
 	return 0;
 }
 
@@ -318,8 +316,11 @@ std::istream & GPointModel::load (std::istream & is)
 	{
 		line = "";
 		// line must have axis name at the begining..
-		while (line.length () < 1 || line[0] == '#')
+		while (!is.fail () && (line.length () < 1 || line[0] == '#'))
 			std::getline (is, line);
+		if (is.fail ())
+			break;
+
 		ExtraParam *p = new ExtraParam ();
 		try
 		{
