@@ -884,7 +884,7 @@ void Telescope::applyNutation (struct ln_equ_posn *pos, double JD, bool writeVal
 	struct ln_nutation nut;
 	ln_get_nutation (JD, &nut);
 
-	double rad_ecliptic = ln_deg_to_rad (nut.ecliptic);
+	double rad_ecliptic = ln_deg_to_rad (nut.ecliptic + nut.obliquity);
 	double sin_ecliptic = sin (rad_ecliptic);
 
 	double rad_ra = ln_deg_to_rad (pos->ra);
