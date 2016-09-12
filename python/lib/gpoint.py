@@ -452,9 +452,24 @@ class GPoint:
 				mi = np.argmax(np.abs(self.diff_model_az*np.cos(self.rad_aa_alt)))
 				if abs(self.diff_model_az[mi]*np.cos(self.rad_aa_alt[mi])) < error:
 					return None
-			elif axis == 'alt':
+			elif axis == 'el' or axis == 'alt':
 				mi = np.argmax(np.abs(self.diff_model_alt))
 				if abs(self.diff_model_alt[mi]) < error:
+					return None
+			elif axis == 'azel' or axis == 'altaz':
+				mi_az = np.argmax(np.abs(self.diff_model_az*np.cos(self.rad_aa_alt)))
+				mi_alt = np.argmax(np.abs(self.diff_model_alt))
+				if abs(self.diff_model_az[mi_az]*np.cos(self.rad_aa_alt[mi_az])) > abs(self.diff_model_alt[mi_az]):
+					mi = mi_az
+					if abs(self.diff_model_az[mi]*np.cos(self.rad_aa_alt[mi])) < error:
+						return None
+				else:
+					mi = mi_alt
+					if abs(self.diff_model_alt[mi]) < error:
+						return None
+			elif axis == 'angular':
+				mi = np.argmax(np.abs(self.diff_model_angular))
+				if abs(self.diff_model_angular[mi]) < error:
 					return None
 			else:
 				print 'unknow axis {0}'.format(axis)
@@ -509,11 +524,7 @@ class GPoint:
 		def print_vect_stat(v):
 			return 'MIN {0} MAX {1} MEAN {2} RMS {3}'.format(np.min(v),np.max(v),np.mean(v),RMS(v))
 
-		if self.verbose:
-			print 'DIFF_RA',print_vect_stat(self.diff_ha*3600)
-			print 'DIFF_DEC',print_vect_stat(self.diff_dec*3600)
-			print 'DIFF_ANGULAR',print_vect_stat(self.diff_angular*3600)
-
+		print 'OBSERVATIONS {0}'.format(len(self.diff_angular))
 		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
 		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_corr_ha*3600)
 		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
