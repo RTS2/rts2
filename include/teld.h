@@ -1158,9 +1158,9 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueRaDec *total_offsets;
 
-		rts2core::ValueRaDec *aberated;
-		rts2core::ValueRaDec *nutated;
 		rts2core::ValueRaDec *precessed;
+		rts2core::ValueRaDec *nutated;
+		rts2core::ValueRaDec *aberated;
 
 		rts2core::ValueDouble *refraction;
 
@@ -1188,9 +1188,9 @@ class Telescope:public rts2core::Device
 
 		// object + telescope position
 
-		rts2core::ValueBool *calAberation;
-		rts2core::ValueBool *calNutation;
 		rts2core::ValueBool *calPrecession;
+		rts2core::ValueBool *calNutation;
+		rts2core::ValueBool *calAberation;
 		rts2core::ValueBool *calRefraction;
 		rts2core::ValueBool *calModel;
 

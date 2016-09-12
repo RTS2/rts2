@@ -184,9 +184,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST_180);
 
-	createValue (aberated, "aberated", "target coordinates, aberated", false);
-	createValue (nutated, "nutated", "target coordinates, nutated", false);
 	createValue (precessed, "precessed", "target coordinates, aberated and precessed", false);
+	createValue (nutated, "nutated", "target coordinates, nutated", false);
+	createValue (aberated, "aberated", "target coordinates, aberated", false);
 	createValue (refraction, "refraction", "[deg] refraction (in altitude)", false, RTS2_DT_DEG_DIST_180);
 
 	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true, RTS2_DT_DEGREES, 0);
@@ -320,14 +320,14 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	flip_longest_path = -1;
 
 	// default is to aply model corrections
-	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
-	calAberation->setValueBool (false);
+	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false, RTS2_VALUE_WRITABLE);
+	calPrecession->setValueBool (false);
 
 	createValue (calNutation, "CAL_NUT", "if nutation is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calNutation->setValueBool (false);
 
-	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false, RTS2_VALUE_WRITABLE);
-	calPrecession->setValueBool (false);
+	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
+	calAberation->setValueBool (false);
 
 	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calRefraction->setValueBool (false);
@@ -1701,12 +1701,12 @@ int Telescope::scriptEnds ()
 void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, bool writeValues)
 {
 	// apply all posible corrections
-	if (calAberation->getValueBool () == true)
-		applyAberation (pos, JD, writeValues);
-	if (calNutation->getValueBool () == true)
-		applyNutation (pos, JD, writeValues);
 	if (calPrecession->getValueBool () == true)
 		applyPrecession (pos, JD, writeValues);
+	if (calNutation->getValueBool () == true)
+		applyNutation (pos, JD, writeValues);
+	if (calAberation->getValueBool () == true)
+		applyAberation (pos, JD, writeValues);
 	if (calRefraction->getValueBool () == true)
 		applyRefraction (pos, JD, writeValues);
 }
