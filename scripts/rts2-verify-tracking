@@ -33,6 +33,7 @@ parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_
 parser.add_argument('--plot', help=_('plot results (x,y,pixel distances)'), action='store_true', dest='plot', default=False)
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
+parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
 
 options = parser.parse_args()
 
@@ -46,40 +47,51 @@ for fn in options.files:
 	print fn
 	hdu = fits.open(fn)
 	sb = [] # contains selected x, y, flux as members
+	for si in range(options.stars):
+		sb.append([])
 	for ci in range(len(hdu[0].data)):
 		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
 		if options.verbose:
 			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
-		if len(sb) == 0:
-			sb.append([objects[0]['x'], objects[0]['y'], objects[0]['flux']])
+		if len(sb[0]) == 0:
+			for si in range(options.stars):
+				sb[si].append([objects[si]['x'], objects[si]['y'], objects[si]['flux']])
 		else:
-			for star in objects:
-				dist = pixel_distance(sb[-1][0], sb[-1][1], star['x'], star['y'])
-				if options.verbose > 1:
-					print _('examining star x {0:.2f} y {1:.2f} flux {2:.2f} distance {3:.2f}').format(star['x'], star['y'], star['flux'], dist)
-				if dist < options.radius:
-					sb.append([star['x'], star['y'], star['flux']])
-					break
+			for si in range(options.stars):
+				for star in objects:
+					dist = pixel_distance(sb[si][-1][0], sb[si][-1][1], star['x'], star['y'])
+					if options.verbose > 1:
+						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
+					if dist < options.radius:
+						sb[si].append([star['x'], star['y'], star['flux']])
+						break
 	np_sb = np.array(sb)
 	# calculate average position
-	a_x = np.average(np_sb[:,0])
-	a_y = np.average(np_sb[:,1])
-	a_flux = np.average(np_sb[:,2])
-	if options.verbose > 1:
-		print _('average x {0:.2f} y {0:.2f} flux {0:.2f}').format(a_x, a_y, a_flux)
-	# now get some stats..
-	dist = map(lambda s: pixel_distance(a_x, a_y, s[0], s[1]), sb)
-	print _('pixel distance min {0} max {1} average {2} mean {3} RMS {4}').format(min(dist), max(dist), np.average(dist), np.mean(dist), RMS(dist))
+	a_x = [0] * options.stars
+	a_y = [0] * options.stars
+	a_flux = [0] * options.stars
+	dist = [0] * options.stars
+	for si in range(options.stars):
+		a_x[si] = np.average(np_sb[si,:,0])
+		a_y[si] = np.average(np_sb[si,:,1])
+		a_flux[si] = np.average(np_sb[si,:,2])
+		if options.verbose > 1:
+			print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
+		# now get some stats..
+		dist[si] = map(lambda s: pixel_distance(a_x[si], a_y[si], s[0], s[1]), sb[si])
+
+		print _('star # {0} pixel distance min {1} max {2} average {3} mean {4} RMS {5}').format(si + 1, min(dist[si]), max(dist[si]), np.average(dist[si]), np.mean(dist[si]), RMS(dist[si]))
+
 	if options.plot:
 		import pylab
 		plotgrid = (3, 1)
-		p = pylab.subplot2grid(plotgrid,[0,0])
-		p.plot (range(len(sb)), np_sb[:,0] - a_x)
+		p_x = pylab.subplot2grid(plotgrid,[0,0])
+		p_y = pylab.subplot2grid(plotgrid,[1,0])
+		p_dist = pylab.subplot2grid(plotgrid,[2,0])
 
-		p = pylab.subplot2grid(plotgrid,[1,0])
-		p.plot (range(len(sb)), np_sb[:,1] - a_y)
-
-		p = pylab.subplot2grid(plotgrid,[2,0])
-		p.plot (range(len(sb)), dist)
+		for si in range(options.stars):
+			p_x.plot (range(len(sb[si])), np_sb[si,:,0] - a_x[si], '-')
+			p_y.plot (range(len(sb[si])), np_sb[si,:,1] - a_y[si], '-')
+			p_dist.plot (range(len(sb[si])), dist[si], '-')
 
 		pylab.show()
