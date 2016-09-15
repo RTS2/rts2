@@ -32,7 +32,7 @@ import argparse
 import gettext
 gettext.install('rts2-build-model-tool')
 
-parser = argparse.ArgumentParser(description='Builds pointing model input data from BSC (Bright Star Catalogue) files.\n\nExample use:\n\n\trts2-model-bsc altazm')
+parser = argparse.ArgumentParser(description=_('Builds pointing model input data from BSC (Bright Star Catalogue) files.\n\nExample use:\n\n\trts2-model-bsc altazm'))
 
 parser.add_argument('--server', help=_('URL to RTS2 XML-RPC server'), action='store', dest='server', default='http://localhost:8889')
 parser.add_argument('--user', help=_('RTS2 web server username'), action='store', dest='user', default=None)
