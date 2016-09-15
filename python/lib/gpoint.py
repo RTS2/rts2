@@ -368,7 +368,8 @@ class GPoint:
 		self.diff_ha = self.aa_ha - self.ar_ha
 		self.diff_corr_ha = self.diff_ha * np.cos(self.rad_aa_dec)
 		self.diff_dec = self.aa_dec - self.ar_dec
-		self.diff_angular = libnova.angular_separation(self.aa_ha,self.aa_dec,self.ar_ha,self.ar_dec)
+		self.diff_angular_hadec = libnova.angular_separation(self.aa_ha,self.aa_dec,self.ar_ha,self.ar_dec)
+		self.diff_angular_altaz = libnova.angular_separation(self.aa_az,self.aa_alt,self.ar_az,self.ar_alt)
 
 		self.diff_alt = self.aa_alt - self.ar_alt
 		self.diff_az = normalize_az_err(self.aa_az - self.ar_az)
@@ -438,7 +439,8 @@ class GPoint:
 		self.diff_ha = np.delete(self.diff_ha, ind)
 		self.diff_corr_ha = np.delete(self.diff_corr_ha, ind)
 		self.diff_dec = np.delete(self.diff_dec, ind)
-		self.diff_angular = np.delete(self.diff_angular, ind)
+		self.diff_angular_hadec = np.delete(self.diff_angular_hadec, ind)
+		self.diff_angular_altaz = np.delete(self.diff_angular_altaz, ind)
 
 		self.diff_alt = np.delete(self.diff_alt, ind)
 		self.diff_az = np.delete(self.diff_az, ind)
@@ -524,14 +526,16 @@ class GPoint:
 		def print_vect_stat(v):
 			return 'MIN {0} MAX {1} MEAN {2} RMS {3}'.format(np.min(v),np.max(v),np.mean(v),RMS(v))
 
-		print 'OBSERVATIONS {0}'.format(len(self.diff_angular))
+		print 'OBSERVATIONS {0}'.format(len(self.diff_angular_hadec))
 		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
 		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_corr_ha*3600)
 		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
 		print 'RMS AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
 		print 'RMS AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_corr_az*3600)
 		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
-		print 'RMS ANGULAR SEP DIFF',print_vect_stat(self.diff_angular*3600)
+		print 'RMS ANGULAR RADEC SEP DIFF',print_vect_stat(self.diff_angular_hadec*3600)
+		print 'RMS ANGULAR ALTAZ SEP DIFF',print_vect_stat(self.diff_angular_altaz*3600)
+		print 'RMS ANGULAR SEP DIFF',print_vect_stat((self.diff_angular_altaz if self.altaz else self.diff_angular_hadec)*3600)
 
 		if self.best is not None:
 			print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
