@@ -61,9 +61,9 @@ if len(__mm) != 2:
 __mm.sort()
 mag_max, mag_min = __mm
 
-__verifywcs = options.args.verifywcs.split(':')
+__verifywcs = options.verifywcs.split(':')
 if len(__verifywcs) != 3:
-	sys.exit(_('VerifyWCS should be three : separated values (asec/pix,rotang and flip), are: {0}'.format(options.args.verifywcs)))
+	sys.exit(_('VerifyWCS should be three : separated values (asec/pix,rotang and flip), are: {0}'.format(options.verifywcs)))
 __verifywcs_asecpix = float(__verifywcs[0])
 __verifywcs_rotang = float(__verifywcs[1])
 __verifywcs_flip = __verifywcs[2]
@@ -100,14 +100,14 @@ def run_spiral(telescope,timeout,last_step=0,maxsteps=500):
 	alt=j.getValue(telescope,"TEL_",refresh_not_found=True)['alt']
 	cosa = math.cos(math.radians(alt))
 	step_az /= cosa
-	print _('Scaling azimuth by factor {0} to {1}').format(cosa,step_az)
+	print _('Scaling azimuth by factor {0:.10f} to {1:.2f}').format(cosa,step_az)
 	for i in range(maxsteps):
 		a,e = s.get_next_step()
 		x += a
 		y += e
 		if i < last_step:
 			continue
-		print _('step {0} next {1} {2} altaz {3} {4}').format(i,x,y,x*step_alt,y*step_az)
+		print _('step {0} next {1} {2} altaz {3:.3f} {4:.3f}').format(i,x,y,x*step_alt,y*step_az)
 		j.setValue(telescope, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
 		if wait_for_key(timeout):
 			return i
@@ -125,10 +125,10 @@ def find_bright_star(telescope,alt,az):
 	import rts2.bsc
 	ra,dec = tel_hrz_to_equ(telescope,alt,az)
 	lst = j.getValue(telescope,'LST')
-	print _('Looking for star around RA {0:3} DEC {1:2} (LST {2:3}), magnitude {3} to {4}').format(ra,dec,lst,mag_max,mag_min)
+	print _('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(ra,dec,lst,mag_max,mag_min)
 	# find bsc..
 	bsc=rts2.bsc.find_nearest(ra,dec,mag_max,mag_min)
-	print _('Found BSC #{0} at RA {1} DEC {2} mag {3}').format(bsc[0],bsc[1],bsc[2],bsc[3])
+	print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f}').format(bsc[0],bsc[1],bsc[2],bsc[3])
 	return bsc
 
 def __save_modeline(telescope,modelname,mn):
@@ -155,7 +155,7 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 		print _('run #{0}').format(mn)
 
 	if maxspiral >= -1:
-		print _('Next model point at altitude {0} azimuth {1}').format(alt,az)
+		print _('Next model point at altitude {0:.3f} azimuth {1:.3f}').format(alt,az)
 		bsc = find_bright_star(telescope,alt,az)
 		tarf_ra = bsc[1]
 		tarf_dec = bsc[2]
@@ -173,7 +173,7 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 		j.refresh(telescope)
 		tel=j.getValue(telescope,'TEL')
 		hrz=j.getValue(telescope,'TEL_')
-		print _('moving to {0:2} {1:3}...at {2:3} {3:2} HRZ {4:1} {5:1}\r').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az']),
+		print _('moving to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}\r').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az']),
 		sys.stdout.flush()
 		time.sleep(1)
 		tmout -= 1
@@ -182,7 +182,7 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 		print _('destination not reached, continue with new target                         ')
 		return None,None,bsc
 
-	print _('moved to {0:2} {1:3}...at {2:3} {3:2} HRZ {4:1} {5:1}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
+	print _('moved to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
 	if imagescript is not None:
 		print _('taking script {0}').format(imagescript)
 		fn = 'model_{0:03}.fits'.format(mn)
