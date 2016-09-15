@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+# Find stars on image, compare tracking based on the stars.
+#
+# (C) 2016 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+import numpy as np
+import rts2.brights
+from astropy.io import fits
+
+import argparse
+import gettext
+gettext.install('rts2-verify-tracking')
+
+parser = argparse.ArgumentParser(description=_('Find brightests star on the first image, look for star on similar position and brightnes on next image. Print tracking date (in pixel coordinates).'))
+
+parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', type=float, default=15)
+parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
+parser.add_argument('--plot', help=_('plot results (x,y,pixel distances)'), action='store_true', dest='plot', default=False)
+parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
+parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
+
+options = parser.parse_args()
+
+def RMS(vector):
+	return np.sqrt(np.mean(np.square(vector)))
+
+def pixel_distance(x1,y1,x2,y2):
+	return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+for fn in options.files:
+	print fn
+	hdu = fits.open(fn)
+	sb = [] # contains selected x, y, flux as members
+	for ci in range(len(hdu[0].data)):
+		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
+		if options.verbose:
+			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
+		if len(sb) == 0:
+			sb.append([objects[0]['x'], objects[0]['y'], objects[0]['flux']])
+		else:
+			for star in objects:
+				dist = pixel_distance(sb[-1][0], sb[-1][1], star['x'], star['y'])
+				if options.verbose > 1:
+					print _('examining star x {0:.2f} y {1:.2f} flux {2:.2f} distance {3:.2f}').format(star['x'], star['y'], star['flux'], dist)
+				if dist < options.radius:
+					sb.append([star['x'], star['y'], star['flux']])
+					break
+	np_sb = np.array(sb)
+	# calculate average position
+	a_x = np.average(np_sb[:,0])
+	a_y = np.average(np_sb[:,1])
+	a_flux = np.average(np_sb[:,2])
+	if options.verbose > 1:
+		print _('average x {0:.2f} y {0:.2f} flux {0:.2f}').format(a_x, a_y, a_flux)
+	# now get some stats..
+	dist = map(lambda s: pixel_distance(a_x, a_y, s[0], s[1]), sb)
+	print _('pixel distance min {0} max {1} average {2} mean {3} RMS {4}').format(min(dist), max(dist), np.average(dist), np.mean(dist), RMS(dist))
+	if options.plot:
+		import pylab
+		plotgrid = (3, 1)
+		p = pylab.subplot2grid(plotgrid,[0,0])
+		p.plot (range(len(sb)), np_sb[:,0] - a_x)
+
+		p = pylab.subplot2grid(plotgrid,[1,0])
+		p.plot (range(len(sb)), np_sb[:,1] - a_y)
+
+		p = pylab.subplot2grid(plotgrid,[2,0])
+		p.plot (range(len(sb)), dist)
+
+		pylab.show()

@@ -25,9 +25,12 @@ import libnova
 
 __DS9 = 'brights'
 
-def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
-	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
-	data = np.array(hdu[0].data,np.int32)
+def find_stars(fn, hdu, verbose = 0, useDS9 = False, cube = None):
+	"""Find stars on the image. Returns flux ordered list of stars."""
+	if cube is None:
+		data = np.array(hdu[0].data,np.int32)
+	else:
+		data = np.array(hdu[0].data[cube],np.int32)
 	bkg = sep.Background(data)
 	bkg.subfrom(data)
 	thres = 1.5 * bkg.globalrms
@@ -36,8 +39,14 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False):
 	objects = sep.extract(data, thres)
 	# order by flux
 	if len(objects) == 0:
-		return None,None,None,None
-	s_objects = sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
+		return None
+	return sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
+
+def find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
+	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
+	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
+	if len(s_objects) == 0:
+		return None, None, None, None
 	b_x = s_objects[0]['x']
 	b_y = s_objects[0]['y']
 	b_flux = s_objects[0]['flux']
