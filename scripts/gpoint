@@ -42,7 +42,11 @@ def generate_model(args):
 			model.print_params()
 			if args.filter is None:
 				break
- 			removed = model.filter('az', float(args.filter) / 3600.0, 1)
+			fs = args.filter.split(':')
+			if len(fs) != 2 or len(fs) != 3:
+				sys.exit('invalid filter parameter')
+			filnum = int(fs[2]) if len(fs) == 3 else 1
+			removed = model.filter(fs[0], float(fs[1]) / 3600.0, filnum)
 			if removed is None:
 				print 'model within bounds'
 				break
