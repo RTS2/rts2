@@ -22,7 +22,7 @@ import scriptcomm
 sc = scriptcomm.Rts2Comm()
 
 class Centering(scriptcomm.Rts2Comm):
-	"""Implements intelligend starfield search. Take an exposure, run image processing on it. If the field is not matched, offset in cross pattern around center and try again. Search in spiral pattern around expected position."""
+	"""Implements intelligent starfield search. Take an exposure, run image processing on it. If the field is not matched, offset in cross pattern around center and try again. Search in spiral pattern around expected position."""
 
 	def __init__(self):
 		scriptcomm.Rts2Comm.__init__(self)
