@@ -70,17 +70,43 @@ for fn in options.files:
 	a_x = [0] * options.stars
 	a_y = [0] * options.stars
 	a_flux = [0] * options.stars
+	b_x = [0] * options.stars
+	b_y = [0] * options.stars
+	b_flux = [0] * options.stars
+	min_x = [0] * options.stars
+	min_y = [0] * options.stars
+	min_flux = [0] * options.stars
+
+	a_dist = [0] * options.stars
+
 	dist = [0] * options.stars
 	for si in range(options.stars):
-		a_x[si] = np.average(np_sb[si,:,0])
-		a_y[si] = np.average(np_sb[si,:,1])
-		a_flux[si] = np.average(np_sb[si,:,2])
-		if options.verbose > 1:
-			print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
-		# now get some stats..
-		dist[si] = map(lambda s: pixel_distance(a_x[si], a_y[si], s[0], s[1]), sb[si])
 
-		print _('star # {0} pixel distance min {1} max {2} average {3} mean {4} RMS {5}').format(si + 1, min(dist[si]), max(dist[si]), np.average(dist[si]), np.mean(dist[si]), RMS(dist[si]))
+		data_x = np_sb[si,:,0]
+		data_y = np_sb[si,:,1]
+		data_flux = np_sb[si,:,2]
+
+		b_x[si] = np.max(data_x)
+		b_y[si] = np.max(data_y)
+		b_flux[si] = np.max(data_flux)
+
+		a_x[si] = np.max(data_x)
+		a_y[si] = np.max(data_y)
+		a_flux[si] = np.max(data_flux)
+
+		min_x[si] = np.min(data_x)
+		min_y[si] = np.min(data_y)
+		min_flux[si] = np.min(data_flux)
+
+		if options.verbose > 1:
+			print _('star # {0} max x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, b_x[si], b_y[si], b_flux[si])
+			print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
+			print _('star # {0} min x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, min_x[si], min_y[si], min_flux[si])
+		# now get some stats..
+		dist[si] = map(lambda s: pixel_distance(b_x[si], b_y[si], s[0], s[1]), sb[si])
+		a_dist[si] = np.average(dist[si])
+
+		print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
 
 	if options.plot:
 		import pylab
@@ -92,6 +118,6 @@ for fn in options.files:
 		for si in range(options.stars):
 			p_x.plot (range(len(sb[si])), np_sb[si,:,0] - a_x[si], '-')
 			p_y.plot (range(len(sb[si])), np_sb[si,:,1] - a_y[si], '-')
-			p_dist.plot (range(len(sb[si])), dist[si], '-')
+			p_dist.plot (range(len(sb[si])), a_dist[si] - dist[si], '-')
 
 		pylab.show()
