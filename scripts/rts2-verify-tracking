@@ -31,6 +31,7 @@ parser = argparse.ArgumentParser(description=_('Find brightests star on the firs
 parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', type=float, default=15)
 parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
 parser.add_argument('--plot', help=_('plot results (x,y,pixel distances)'), action='store_true', dest='plot', default=False)
+parser.add_argument('--save-plot', help=_('do not display plot results, save plots to a file'), action='store', dest='saveplot')
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
 parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
@@ -108,7 +109,7 @@ for fn in options.files:
 
 		print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
 
-	if options.plot:
+	if options.plot or options.saveplot:
 		import pylab
 		plotgrid = (3, 1)
 		p_x = pylab.subplot2grid(plotgrid,[0,0])
@@ -120,4 +121,9 @@ for fn in options.files:
 			p_y.plot (range(len(sb[si])), np_sb[si,:,1] - a_y[si], '-')
 			p_dist.plot (range(len(sb[si])), a_dist[si] - dist[si], '-')
 
-		pylab.show()
+		pylab.tight_layout()
+
+		if options.saveplot is None:
+			pylab.show()
+		else:
+			pylab.savefig(options.saveplot)
