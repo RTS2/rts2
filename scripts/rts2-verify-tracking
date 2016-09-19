@@ -20,6 +20,7 @@
 
 import numpy as np
 import rts2.brights
+import rts2.progressbar
 from astropy.io import fits
 
 import argparse
@@ -45,7 +46,7 @@ def pixel_distance(x1,y1,x2,y2):
 	return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 for fn in options.files:
-	print fn
+	print _('Processing {0}').format(fn)
 	hdu = fits.open(fn)
 	sb = [] # contains selected x, y, flux as members
 	for si in range(options.stars):
@@ -54,6 +55,8 @@ for fn in options.files:
 		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
 		if options.verbose > 1:
 			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
+		else:
+			rts2.progressbar.progress(ci, len(hdu[0].data) - 1)
 		if len(sb[0]) == 0:
 			for si in range(options.stars):
 				sb[si].append([objects[si]['x'], objects[si]['y'], objects[si]['flux']])
@@ -66,6 +69,9 @@ for fn in options.files:
 					if dist < options.radius:
 						sb[si].append([star['x'], star['y'], star['flux']])
 						break
+	if options.verbose == 0:
+		print 'Done'
+
 	np_sb = np.array(sb)
 	# calculate average position
 	a_x = [0] * options.stars
@@ -123,7 +129,8 @@ for fn in options.files:
 
 		pylab.tight_layout()
 
-		if options.saveplot is None:
-			pylab.show()
-		else:
+		if options.saveplot is not None:
 			pylab.savefig(options.saveplot)
+
+		if options.plot:
+			pylab.show()
