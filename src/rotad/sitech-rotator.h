@@ -88,6 +88,8 @@ class SitechRotator: public Rotator
 		rts2core::ConnSitech *sitech;
 		SitechMulti *base;
 		char axis;
+
+		int last_errors;
 };
 
 }

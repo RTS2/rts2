@@ -190,6 +190,9 @@ class SitechAltAz:public AltAz
 
 		uint8_t xbits;
 		uint8_t ybits;
+
+		int az_last_errors;
+		int alt_last_errors;
 };
 
 }
@@ -204,6 +207,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	tel_tty = "/dev/ttyUSB0";
 	telConn = NULL;
+
+	az_last_errors = 0;
+	alt_last_errors = 0;
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
@@ -805,6 +811,14 @@ void SitechAltAz::getTel ()
 				case 0:
 					az_errors_val->setValueInteger (az_val);
 					az_errors->setValueString (telConn->findErrors (az_val));
+					if (az_last_errors != az_val)
+					{
+						if (az_val == 0)
+							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "azimuth axis controller error values cleared" << sendLog;
+						else
+							logStream (MESSAGE_ERROR) << "azimuth axis controller error(s): " << az_errors->getValue () << sendLog;
+						az_last_errors = az_val;
+					}
 					// stop if on limits
 					if ((az_val & ERROR_LIMIT_MINUS) || (az_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -833,6 +847,14 @@ void SitechAltAz::getTel ()
 				case 0:
 					alt_errors_val->setValueInteger (alt_val);
 					alt_errors->setValueString (telConn->findErrors (alt_val));
+					if (alt_last_errors != alt_val)
+					{
+						if (alt_val == 0)
+							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "altitude axis controller error values cleared" << sendLog;
+						else
+							logStream (MESSAGE_ERROR) << "altitude axis controller error(s): " << alt_errors->getValue () << sendLog;
+						alt_last_errors = alt_val;
+					}
 					// stop if on limits
 					if ((alt_val & ERROR_LIMIT_MINUS) || (alt_val & ERROR_LIMIT_PLUS))
 						stopTracking ();

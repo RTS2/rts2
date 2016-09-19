@@ -32,6 +32,8 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 
 	updated = false;
 
+	last_errors = 0;
+
 	createValue (r_pos, "REAL", "[cnts] encoder readout", false);
 	createValue (t_pos, "TARGET", "[cnts] target position", false, RTS2_VALUE_WRITABLE);
 
@@ -240,9 +242,14 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 				case 0:
 					errors_val->setValueInteger (der_val);
 					errors->setValueString (sitech->findErrors (der_val));
-					// stop if on limits
-//					if ((der_val & ERROR_LIMIT_MINUS) || (der_val & ERROR_LIMIT_PLUS))
-//						stopTracking ();
+					if (last_errors != der_val)
+					{
+						if (der_val == 0)
+							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "controller error values cleared" << sendLog;
+						else
+							logStream (MESSAGE_ERROR) << "controller error(s): " << errors->getValue () << sendLog;
+						last_errors = der_val;
+					}
 					break;
 
 				case 1:

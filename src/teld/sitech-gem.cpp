@@ -237,6 +237,9 @@ class Sitech:public GEM
 		int32_t last_meas_tdiff_dc;
 
 		void recover ();
+
+		int ra_last_errors;
+		int dec_last_errors;
 };
 
 }
@@ -248,6 +251,9 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 	unlockPointing ();
 
 	setCorrections (true, true, true, true);
+
+	ra_last_errors = 0;
+	dec_last_errors = 0;
 
 	offsetha = 0.;
 	offsetdec = 0.;
@@ -477,6 +483,14 @@ void Sitech::getTel ()
 				case 0:
 					ra_errors_val->setValueInteger (ra_val);
 					ra_errors->setValueString (serConn->findErrors (ra_val));
+					if (ra_last_errors != ra_val)
+					{
+						if (ra_val == 0)
+							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "RA axis controller error values cleared" << sendLog;
+						else
+							logStream (MESSAGE_ERROR) << "RA axis controller error(s): " << ra_errors->getValue () << sendLog;
+						ra_last_errors = ra_val;
+					}
 					// stop if on limits
 					if ((ra_val & ERROR_LIMIT_MINUS) || (ra_val & ERROR_LIMIT_PLUS))
 						stopTracking ();
@@ -505,6 +519,14 @@ void Sitech::getTel ()
 				case 0:
 					dec_errors_val->setValueInteger (dec_val);
 					dec_errors->setValueString (serConn->findErrors (dec_val));
+					if (dec_last_errors != dec_val)
+					{
+						if (ra_val == 0)
+							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "DEC axis controller error values cleared" << sendLog;
+						else
+							logStream (MESSAGE_ERROR) << "DEC axis controller error(s): " << dec_errors->getValue () << sendLog;
+						dec_last_errors = dec_val;
+					}
 					// stop if on limits
 					if ((dec_val & ERROR_LIMIT_MINUS) || (dec_val & ERROR_LIMIT_PLUS))
 						stopTracking ();

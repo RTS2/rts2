@@ -27,6 +27,8 @@ SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c, 
 	setDeviceName (name);
 	setSitechConnection (sitech_c);
 
+	last_errors = 0;
+
 	setDefaultsFile (defaults);
 
 	createValue (encoder, "encoder", "encoder position", false);
@@ -68,6 +70,14 @@ int SitechFocuser::info ()
 		case 0:
 			errors_val->setValueInteger (val);
 			errors->setValueString (sitech->findErrors (val));
+			if (last_errors != val)
+			{
+				if (val == 0)
+					logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "controller error values cleared" << sendLog;
+				else
+					logStream (MESSAGE_ERROR) << "controller error(s): " << errors->getValue () << sendLog;
+				last_errors = val;
+			}
 			break;
 	}
 

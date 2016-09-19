@@ -52,6 +52,8 @@ class SitechMirror:public Mirror, public SitechMultidev
 		rts2core::ValueString *errors;
 		rts2core::ValueInteger *errors_val;
 		rts2core::ValueBool *autoMode;
+
+		int last_errors;
 };
 
 }
