@@ -52,7 +52,7 @@ for fn in options.files:
 		sb.append([])
 	for ci in range(len(hdu[0].data)):
 		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
-		if options.verbose:
+		if options.verbose > 1:
 			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
 		if len(sb[0]) == 0:
 			for si in range(options.stars):
@@ -99,7 +99,7 @@ for fn in options.files:
 		min_y[si] = np.min(data_y)
 		min_flux[si] = np.min(data_flux)
 
-		if options.verbose > 1:
+		if options.verbose > 0:
 			print _('star # {0} max x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, max_x[si], max_y[si], max_flux[si])
 			print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
 			print _('star # {0} min x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, min_x[si], min_y[si], min_flux[si])

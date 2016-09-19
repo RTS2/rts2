@@ -34,7 +34,7 @@ def find_stars(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 	bkg = sep.Background(data)
 	bkg.subfrom(data)
 	thres = 1.5 * bkg.globalrms
-	if verbose:
+	if verbose > 1:
 		print 'global average background: {0:.2f} rms: {1:.3f} threshold: {2:.3f}'.format(bkg.globalback, bkg.globalrms, thres)
 	objects = sep.extract(data, thres)
 	# order by flux
