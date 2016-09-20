@@ -138,7 +138,7 @@ for fn in options.files:
 			angels = calculate_angels(np_sb)
 			average_ang = np.average(angels, axis=0)
 			ang_deviations = np.degrees(angels - average_ang)
-			max_deviation = np.nanmax(abs(np.nanmax(ang_deviations)), abs(np.nanmin(ang_deviations)))
+			max_deviation = max(abs(np.nanmax(ang_deviations)), abs(np.nanmin(ang_deviations)))
 			if options.verbose:
 				print _('maximal angle deviation: {0:.3f}').format(max_deviation)
 
