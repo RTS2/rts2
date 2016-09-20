@@ -21,6 +21,7 @@
 import numpy as np
 import rts2.brights
 import rts2.progressbar
+import sys
 from astropy.io import fits
 
 import argparse
@@ -36,6 +37,7 @@ parser.add_argument('--save-plot', help=_('do not display plot results, save plo
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
 parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
+parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
 
 options = parser.parse_args()
 
@@ -44,6 +46,19 @@ def RMS(vector):
 
 def pixel_distance(x1,y1,x2,y2):
 	return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+def calculate_angels(sb):
+	"""Calculates matrice of angels between each star and another star"""
+	angels = np.array([[[None] * len(sb)] * len(sb)] * len(sb[0]), np.float)
+	# traverse by images, not by stars..
+	for i in range(len(sb[0])):
+		for s1 in range(len(sb)):
+			for s2 in range(len(sb)):
+				if s1 == s2:
+					continue
+				angels[i,s1,s2] = np.arctan2(sb[s1][i][0] - sb[s2][i][0], sb[s1][i][1] - sb[s2][i][1])
+	return angels
+	
 
 for fn in options.files:
 	print _('Processing {0}').format(fn)
@@ -87,6 +102,9 @@ for fn in options.files:
 	a_dist = [0] * options.stars
 
 	dist = [0] * options.stars
+
+	ang_deviations = None
+
 	for si in range(options.stars):
 
 		data_x = np_sb[si,:,0]
@@ -115,12 +133,25 @@ for fn in options.files:
 
 		print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
 
+		if options.max_angle > 0:
+			angels = calculate_angels(np_sb)
+			average_ang = np.average(angels, axis=0)
+			ang_deviations = np.degrees(angels - average_ang)
+			max_deviation = np.nanmax(abs(np.max(ang_deviations)), abs(np.nanmin(ang_deviations)))
+			if options.verbose:
+				print _('maximal angle deviation: {0:.3f}').format(max_deviation)
+
 	if options.plot or options.saveplot:
 		import pylab
-		plotgrid = (3, 1)
+		plotgrid = (4, 1)
 		p_x = pylab.subplot2grid(plotgrid,[0,0])
 		p_y = pylab.subplot2grid(plotgrid,[1,0])
 		p_dist = pylab.subplot2grid(plotgrid,[2,0])
+
+		if ang_deviations is not None:
+			p_ang = pylab.subplot2grid(plotgrid,[3,0])
+			p_ang.plot (range(len(sb[0])), np.average(ang_deviations, axis=1), '-')
+			p_ang.fill_between (range(len(sb[0])), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
 
 		for si in range(options.stars):
 			p_x.plot (range(len(sb[si])), np_sb[si,:,0] - a_x[si], '-')
@@ -134,3 +165,6 @@ for fn in options.files:
 
 		if options.plot:
 			pylab.show()
+
+	if options.max_angle < max_deviation:
+		sys.exit(_('allowed angle deviation not met'))
