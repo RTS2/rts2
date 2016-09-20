@@ -104,6 +104,7 @@ for fn in options.files:
 	dist = [0] * options.stars
 
 	ang_deviations = None
+	max_deviation = 0
 
 	for si in range(options.stars):
 
@@ -143,7 +144,7 @@ for fn in options.files:
 
 	if options.plot or options.saveplot:
 		import pylab
-		plotgrid = (4, 1)
+		plotgrid = (3 if ang_deviations is None else 4, 1)
 		p_x = pylab.subplot2grid(plotgrid,[0,0])
 		p_y = pylab.subplot2grid(plotgrid,[1,0])
 		p_dist = pylab.subplot2grid(plotgrid,[2,0])
