@@ -134,7 +134,7 @@ for fn in options.files:
 
 		print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
 
-		if options.max_angle > 0:
+		if options.max_angle > 0 and options.stars > 1:
 			angels = calculate_angels(np_sb)
 			average_ang = np.average(angels, axis=0)
 			ang_deviations = np.degrees(angels - average_ang)
@@ -167,5 +167,5 @@ for fn in options.files:
 		if options.plot:
 			pylab.show()
 
-	if options.max_angle < max_deviation:
+	if options.stars > 1 and options.max_angle < max_deviation:
 		sys.exit(_('allowed angle deviation not met, measured maximal deviation: {0:.3f}').format(max_deviation))
