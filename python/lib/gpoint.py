@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # g(pl)-Point - GPLed Telescope pointing model fit, as described in paper by Marc Buie:
 #
 # ftp://ftp.lowell.edu/pub/buie/idl/pointing/pointing.pdf 
@@ -727,4 +725,3 @@ class GPoint:
 			f.write('\nEL {0}\t{1}'.format(self.best[bi],e))
 			bi += 1
 		f.close()
-
