@@ -77,6 +77,30 @@ std::istream & readDeg (std::istream & is, long double &p)
 	return is;
 }
 
+std::string printDeg (long double v, char frmt)
+{
+	std::ostringstream os;
+	os.precision (20);
+	os << std::fixed;
+	switch (frmt)
+	{
+		case 'd':
+			os << ln_rad_to_deg (v) << "d";
+			break;
+		case '\'':
+		case 'm':
+			os << (ln_rad_to_deg (v) * 60.0) << frmt;
+			break;
+		case '"':
+		case 's':
+			os << (ln_rad_to_deg (v) * 3600.0) << frmt;
+			break;
+		default:
+			os << v;
+	}
+	return os.str ();
+}
+
 
 void ExtraParam::parse (std::istream &is)
 {
@@ -155,10 +179,14 @@ void ExtraParam::parse (std::istream &is)
 		char *endp;
 		const char *c = p.c_str () + ci;
 		consts[t] = strtod (c, &endp);
-		if (c  == endp || !(*endp == '\0' || *endp == ';' || isspace (*endp)))
-			throw rts2core::Error ("invalid constant");
-		ci += endp - c;
 		t++;
+		if (c  == endp)
+			throw rts2core::Error ("invalid constant");
+		if (isspace (*endp) || *endp == '\0')
+			break;
+		if (*endp != ';')
+			throw rts2core::Error ("expected ;", p.c_str () + ci);
+		ci += endp - c + 1;
 	}
 	for (; t < tmax; t++)
 		consts[t] = 1;
@@ -206,11 +234,11 @@ double ExtraParam::getValue (double az, double el)
 	}
 }
 
-std::string ExtraParam::toString ()
+std::string ExtraParam::toString (char frmt)
 {
 	std::ostringstream os;
 	os.precision (20);
-	os << std::fixed << params[0] << " " << consts[0];
+	os << std::fixed << printDeg (params[0], frmt) << " " << consts[0];
 	return os.str ();
 }
 
@@ -378,6 +406,8 @@ std::istream & GPointModel::load (std::istream & is)
 	while (!iss.eof ())
 	{
 		int nextch = iss.get ();
+		if (iss.eof())
+			break;
 		if (!isspace (nextch))
 			throw rts2core::Error ("extra after end of line  " + line);
 	}
@@ -421,7 +451,7 @@ std::istream & GPointModel::load (std::istream & is)
 	return is;
 }
 
-std::ostream & GPointModel::print (std::ostream & os)
+std::ostream & GPointModel::print (std::ostream & os, char frmt)
 {
 	int pn = 9;
 	if (altaz)
@@ -434,15 +464,15 @@ std::ostream & GPointModel::print (std::ostream & os)
 		os << "RTS2_MODEL";
 	}
 	for (int i = 0; i < pn; i++)
-		os << " " << params[i];
+		os << " " << printDeg (params[i], frmt);
 
 	os << std::endl;
 
 	std::list <ExtraParam *>::iterator it;
 	for (it = extraParamsAz.begin (); it != extraParamsAz.end (); it++)
-		os << "AZ " << (*it)->toString () << std::endl;
+		os << "AZ " << (*it)->toString (frmt) << std::endl;
 	for (it = extraParamsEl.begin (); it != extraParamsEl.end (); it++)
-		os << "EL " << (*it)->toString () << std::endl;
+		os << "EL " << (*it)->toString (frmt) << std::endl;
 	return os;
 }
 

@@ -83,7 +83,7 @@ class TelModel
                 virtual double getRMS () { return -1; }
 
 		virtual std::istream & load (std::istream & is) = 0;
-		virtual std::ostream & print (std::ostream & os) = 0;
+		virtual std::ostream & print (std::ostream & os, char frmt = 'r') = 0;
 
 		double getLatitudeRadians () { return tel_latitude_r; }
 

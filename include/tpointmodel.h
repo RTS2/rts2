@@ -73,7 +73,7 @@ class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 		virtual double getRMS () { return rms / 3600; }
 
 		virtual std::istream & load (std::istream & is);
-		virtual std::ostream & print (std::ostream & os);
+		virtual std::ostream & print (std::ostream & os, char frmt = 'r');
 
 	private:
 		char caption[81];		 // TPointModel description: 80 chars + NULL

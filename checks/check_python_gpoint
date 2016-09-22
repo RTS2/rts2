@@ -20,6 +20,8 @@ class AltAzTest(unittest.TestCase):
 		self.model.fit()
 		print ','.join(map(str,self.model.best))
 
+		# self.model.save('m.model')
+
 		self.tps = [
 [230.6948712399, 72.8182999447,  0.0242306748,0.0041869971],
 [256.1567260316, 36.7399311447,  0.0120551476,0.0052285709],

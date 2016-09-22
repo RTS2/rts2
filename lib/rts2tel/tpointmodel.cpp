@@ -257,7 +257,7 @@ std::istream & TPointModel::load (std::istream & is)
 	return is;
 }
 
-std::ostream & TPointModel::print (std::ostream & os)
+std::ostream & TPointModel::print (std::ostream & os, char frmt)
 {
 	for (std::vector < TPointModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{

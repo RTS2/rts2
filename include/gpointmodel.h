@@ -44,7 +44,7 @@ class ExtraParam
 		void parse (std::istream &is);
 		double getValue (double az, double el);
 
-		std::string toString ();
+		std::string toString (char frmt = 'r');
 
 		static const char *fns[];
 		static const char *pns[];
@@ -89,7 +89,7 @@ class GPointModel:public TelModel
 		void getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err);
 
 		virtual std::istream & load (std::istream & is);
-		virtual std::ostream & print (std::ostream & os);
+		virtual std::ostream & print (std::ostream & os, char frmt = 'r');
 
 		long double params[9];
 
