@@ -37,88 +37,128 @@ ExtraParam::ExtraParam ()
 }
 
 // function strings
-const char *ExtraParam::fns[] = {"sin", "cos", "tan", "sincos", "coscos", "sinsin", "abssin", "abscos"};
+const char *ExtraParam::fns[] = {"offset", "sin", "cos", "tan", "sincos", "coscos", "sinsin", "abssin", "abscos"};
 const char *ExtraParam::pns[] = {"az", "el", "zd"};
 
-void ExtraParam::parse (char *line)
+/**
+ * Reads from input stream degree (radians, degrees ends with d, arcmin with ' or m, arcsec with " or s).
+ */
+std::istream & readDeg (std::istream & is, long double &p)
 {
-#define DELIMS   " \t"
-	char *saveptr;
-	// first token
-	char *p = strtok_r (line, DELIMS, &saveptr);
-	if (p == NULL)
-		throw rts2core::Error ("missing parameter value");
-	char *endp;
-	int t = 0;
-	char *termssave;
-	char *pp = strtok_r (p, ";", &termssave);
-	while (t < MAX_TERMS && pp != NULL)
+	is >> p;
+	if (is.fail ())
+		throw rts2core::Error ("cannot read parameter");
+
+	// convert parameters to radians
+	int nextch = is.peek ();
+	switch (nextch)
 	{
-		params[0] = strtod (pp, &endp);
-		if (endp == pp)
-			throw rts2core::Error ("invalid parameter value", pp);
+		case 'd':
+			is.get ();
+			p = ln_deg_to_rad (p);
+			break;
+		case '\'':
+		case 'm':
+			is.get ();
+			p = ln_deg_to_rad (p / 60.0);
+			break;
+		case '"':
+		case 's':
+			is.get ();
+			p = ln_deg_to_rad (p / 3600.0);
+			break;
+		case ';':
+			break;
+		default:
+			if (is.eof () || isspace (nextch))
+				return is;
+			throw rts2core::Error ("invalid end character");
+	}
+	return is;
+}
+
+
+void ExtraParam::parse (std::istream &is)
+{
+	std::string p;
+	is >> p;
+	if (is.fail ())
+		throw rts2core::Error ("missing parameter value", p.c_str ());
+	int t = 0;
+	std::istringstream pp (p);
+	while (t < MAX_TERMS && !pp.eof ())
+	{
+		readDeg (pp, params[t]);
+		if (pp.peek () == ';')
+			pp.get ();
 		t++;
-		pp = strtok_r (NULL, ";", &termssave);
 	}
 	if (t == 0)
-		throw rts2core::Error ("invalid param line", p);
+		throw rts2core::Error ("invalid param line", p.c_str ());
 
-	p = strtok_r (NULL, DELIMS, &saveptr);
-	if (p == NULL)
+	is >> p;
+	if (is.fail ())
 		throw rts2core::Error ("missing function name");
+
+	ci_string ci_p (p.c_str ());
+
 	int i;
 	for (i = 0; i < GPOINT_LASTFUN; i++)
 	{
-		if (strcasecmp (p, fns[i]) == 0)
+		if (ci_p == fns[i])
 		{
 			function = static_cast<function_t> (i);
 			break;
 		}
 	}
 	if (i == GPOINT_LASTFUN)
-		throw rts2core::Error ("unknow function name", p);
+		throw rts2core::Error ("unknow function name", p.c_str ());
 
-	p = strtok_r (NULL, DELIMS, &saveptr);
-	if (p == NULL)
-		throw rts2core::Error ("missing parameters");
+	is >> p;
+	if (is.fail ())
+		throw rts2core::Error ("missing terms");
 
 	t = 0;
-	pp = strtok_r (p, ";", &termssave);
-	while (t < MAX_TERMS && pp != NULL)
+
+	std::vector <std::string> sterms = SplitStr (p, ";");
+
+	while (t < MAX_TERMS && t < (int) sterms.size ())
 	{
+		ci_string ci_t (sterms[t].c_str ());
 		for (i = 0; i < GPOINT_LASTTERM; i++)
 		{
-			if (strcasecmp (pp, pns[i]) == 0)
+			if (ci_t == pns[i])
 			{
 				terms[t] = static_cast<terms_t> (i);
 				break;
 			}
 		}
 		if (i == GPOINT_LASTTERM)
-			throw rts2core::Error ("invalid term name", pp);
+			throw rts2core::Error ("invalid term name", p.c_str ());
 		t++;
-		pp = strtok_r (NULL, ";", &termssave);
 	}
 	if (t == 0)
-		throw rts2core::Error ("invalid terms", p);
+		throw rts2core::Error ("invalid terms", p.c_str ());
 
-	p = strtok_r (NULL, DELIMS, &saveptr);
-	if (p == NULL)
+	is >> p;
+	if (is.fail ())
 	{
 		for (i = 0; i < t; i++)
 			consts[i] = 1;
 		return;
 	}
 	int tmax = t;
-	pp = strtok_r (p, ";", &termssave);
+	size_t ci = 0;
 	t = 0;
-	while (t < MAX_TERMS && pp != NULL)
+	while (t < MAX_TERMS && ci < p.length ())
 	{
-		consts[t] = strtod (pp, &endp);
-		if (endp == pp)
-			throw rts2core::Error ("invalid constant", pp);
+		char *endp;
+		const char *c = p.c_str () + ci;
+		consts[t] = strtod (c, &endp);
+		if (c  == endp || !(*endp == '\0' || *endp == ';' || isspace (*endp)))
+			throw rts2core::Error ("invalid constant");
+		ci += endp - c;
 		t++;
-		pp = strtok_r (NULL, ";", &termssave);
 	}
 	for (; t < tmax; t++)
 		consts[t] = 1;
@@ -143,25 +183,35 @@ double ExtraParam::getValue (double az, double el)
 {
 	switch (function)
 	{
+		case GPOINT_OFFSET:
+			return params[0];
 		case GPOINT_SIN:
-			return params[0] * sin (consts[0] * getParamValue (az, el, 0));
+			return params[0] * sinl (consts[0] * getParamValue (az, el, 0));
 		case GPOINT_COS:
-			return params[0] * cos (consts[0] * getParamValue (az, el, 0));
+			return params[0] * cosl (consts[0] * getParamValue (az, el, 0));
 		case GPOINT_ABSSIN:
-			return params[0] * abs (sin (consts[0] * getParamValue (az, el, 0)));
+			return params[0] * abs (sinl (consts[0] * getParamValue (az, el, 0)));
 		case GPOINT_ABSCOS:
-			return params[0] * abs (cos (consts[0] * getParamValue (az, el, 0)));
+			return params[0] * abs (cosl (consts[0] * getParamValue (az, el, 0)));
 		case GPOINT_TAN:
-			return params[0] * tan (consts[0] * getParamValue (az, el, 0));
+			return params[0] * tanl (consts[0] * getParamValue (az, el, 0));
 		case GPOINT_SINCOS:
-			return params[0] * sin (consts[0] * getParamValue (az, el, 0)) * cos (consts[1] * getParamValue (az, el, 1));
+			return params[0] * sinl (consts[0] * getParamValue (az, el, 0)) * cosl (consts[1] * getParamValue (az, el, 1));
 		case GPOINT_COSCOS:
-			return params[0] * cos (consts[0] * getParamValue (az, el, 0)) * cos (consts[1] * getParamValue (az, el, 1));
+			return params[0] * cosl (consts[0] * getParamValue (az, el, 0)) * cosl (consts[1] * getParamValue (az, el, 1));
 		case GPOINT_SINSIN:
-			return sin (consts[0] * getParamValue (az, el, 0)) * sin (consts[1] * getParamValue (az, el, 1));
+			return sinl (consts[0] * getParamValue (az, el, 0)) * sinl (consts[1] * getParamValue (az, el, 1));
 		default:
 			return 0;
 	}
+}
+
+std::string ExtraParam::toString ()
+{
+	std::ostringstream os;
+	os.precision (20);
+	os << std::fixed << params[0] << " " << consts[0];
+	return os.str ();
 }
 
 GPointModel::GPointModel (double in_latitude):TelModel (in_latitude)
@@ -246,21 +296,25 @@ int GPointModel::reverse (struct ln_equ_posn *pos, double sid)
 
 void GPointModel::getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
 {
-	double az_r, el_r;
+	long double az_r, el_r;
 	az_r = ln_deg_to_rad (hrz->az);
 	el_r = ln_deg_to_rad (hrz->alt);
 
+	long double sin_az = sinl (az_r);
+	long double cos_az = cosl (az_r);
+	long double cos_el = cosl (el_r);
+	long double tan_el = tanl (el_r);
+
 	err->az = - params[0] \
-		- params[1] * sin (az_r)  * tan (el_r) \
-		- params[2] * cos (az_r) * tan (el_r) \
-		- params[3] * tan (el_r) \
-		+ params[4] / cos (el_r);
+		+ params[1] * sin_az  * tan_el \
+		- params[2] * cos_az * tan_el \
+		- params[3] * tan_el \
+		+ params[4] / cos_el;
 
 	err->alt = - params[5] \
-		- params[2] * sin (az_r) \
-		+ params[6] * cos (el_r) \
-		+ params[7] * cos (az_r) \
-		+ params[8] * sin (az_r);
+		+ params[1] * cos_az \
+		+ params[2] * sin_az \
+		+ params[6] * cos_el;
 
 	// now handle extra params
 	std::list <ExtraParam *>::iterator it;
@@ -295,6 +349,7 @@ std::istream & GPointModel::load (std::istream & is)
 	if (name == "RTS2_ALTAZ")
 	{
 		altaz = true;
+		pn = 7;
 	}
 
 	int i = 0;
@@ -303,13 +358,28 @@ std::istream & GPointModel::load (std::istream & is)
 
 	while (!iss.eof () && i < pn)
 	{
-		iss >> params[i];
-		if (iss.fail ())
+		try
 		{
+			readDeg (iss, params[i]);
+		}
+		catch (rts2core::Error &er)
+		{	
 			logStream (MESSAGE_ERROR) << "cannot read parameter " << i << sendLog;
 			return is;
 		}
 		i++;
+	}
+
+	if (i != pn)
+	{
+		throw rts2core::Error ("invalid model line " + line);
+	}
+	// make sure there aren't extra chars..
+	while (!iss.eof ())
+	{
+		int nextch = iss.get ();
+		if (!isspace (nextch))
+			throw rts2core::Error ("extra after end of line  " + line);
 	}
 
 	while (!is.eof ())
@@ -324,18 +394,14 @@ std::istream & GPointModel::load (std::istream & is)
 		ExtraParam *p = new ExtraParam ();
 		try
 		{
-			char lc [line.length() + 1];
-			size_t ai = 0;
-			while (ai < line.length () && !(line[ai] == ' ' || line[ai] == '\t'))
-				ai++;
-			const char *axis = line.substr (0, ai).c_str ();
-			while (ai < line.length () && (line[ai] == ' ' || line[ai] == '\t'))
-				ai++;
-			strncpy (lc, line.c_str () + ai, line.length ());
-			p->parse (lc);
-			if (strcasecmp (axis, "az") == 0)
+			std::istringstream pis (line);
+			std::string axis;
+			pis >> axis;
+			ci_string ci_axis (axis.c_str ());
+			p->parse (pis);
+			if (ci_axis ==  "az")
 				extraParamsAz.push_back (p);
-			else if (strcasecmp (axis, "el") == 0)
+			else if (ci_axis == "el")
 				extraParamsEl.push_back (p);
 			else
 			{
@@ -361,6 +427,7 @@ std::ostream & GPointModel::print (std::ostream & os)
 	if (altaz)
 	{
 		os << "RTS2_ALTAZ";
+		pn = 7;
 	}
 	else
 	{
@@ -368,6 +435,14 @@ std::ostream & GPointModel::print (std::ostream & os)
 	}
 	for (int i = 0; i < pn; i++)
 		os << " " << params[i];
+
+	os << std::endl;
+
+	std::list <ExtraParam *>::iterator it;
+	for (it = extraParamsAz.begin (); it != extraParamsAz.end (); it++)
+		os << "AZ " << (*it)->toString () << std::endl;
+	for (it = extraParamsEl.begin (); it != extraParamsEl.end (); it++)
+		os << "EL " << (*it)->toString () << std::endl;
 	return os;
 }
 

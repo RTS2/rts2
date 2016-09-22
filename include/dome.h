@@ -79,6 +79,8 @@ class Dome:public rts2core::Device
 
 		int domeCloseStart ();
 
+		int domeStop ();
+
 		/**
 		 * Checks if weather is acceptable for observing.
 		 *
@@ -136,6 +138,14 @@ class Dome:public rts2core::Device
 		 * @return -1 on error, 0 on sucess.
 		 */
 		virtual int endClose () = 0;
+
+		/**
+		 * Called to stop dome movement. Most of the domes does not
+		 * have capability to remotely stop shutters/dome movements,
+		 * so this function shall not be called in children if it is
+		 * overloaded.
+		 */
+		virtual int stop () { return -1; }
 
 		// called when dome passed some states..
 		virtual int observing ();

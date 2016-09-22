@@ -277,6 +277,9 @@ typedef uint32_t rts2_status_t;
 #define DOME_CLOSING        0x008
 #define DOME_WAIT_CLOSING   0x010
 
+#define DOME_STOPPED_MASK   0x020
+#define DOME_STOPPED        0x020
+
 #define DOME_CUP_MASK       0x0c0
 
 #define DOME_CUP_MASK_MOVE  0x040

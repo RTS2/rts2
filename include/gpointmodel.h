@@ -29,7 +29,7 @@ namespace rts2telmodel
 //* maximal number of terms
 #define MAX_TERMS   4
 
-typedef enum { GPOINT_SIN=0, GPOINT_COS, GPOINT_TAN, GPOINT_SINCOS, GPOINT_COSCOS, GPOINT_SINSIN, GPOINT_ABSSIN, GPOINT_ABSCOS, GPOINT_LASTFUN } function_t;
+typedef enum { GPOINT_OFFSET=0, GPOINT_SIN, GPOINT_COS, GPOINT_TAN, GPOINT_SINCOS, GPOINT_COSCOS, GPOINT_SINSIN, GPOINT_ABSSIN, GPOINT_ABSCOS, GPOINT_LASTFUN } function_t;
 typedef enum { GPOINT_AZ=0, GPOINT_EL, GPOINT_ZD, GPOINT_LASTTERM } terms_t;
 
 /**
@@ -41,16 +41,18 @@ class ExtraParam
 {
 	public:
 		ExtraParam ();
-		void parse (char *line);
+		void parse (std::istream &is);
 		double getValue (double az, double el);
+
+		std::string toString ();
 
 		static const char *fns[];
 		static const char *pns[];
 
 		function_t function;
-		double params[MAX_TERMS];
+		long double params[MAX_TERMS];
 		terms_t terms[MAX_TERMS];
-		double consts[MAX_TERMS];
+		long double consts[MAX_TERMS];
 
 	private:
 		double getParamValue (double az, double alt, int p);
@@ -89,7 +91,7 @@ class GPointModel:public TelModel
 		virtual std::istream & load (std::istream & is);
 		virtual std::ostream & print (std::ostream & os);
 
-		double params[9];
+		long double params[9];
 
 		std::list <ExtraParam *> extraParamsAz;
 		std::list <ExtraParam *> extraParamsEl;

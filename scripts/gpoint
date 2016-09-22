@@ -38,12 +38,12 @@ def generate_model(args):
 	model.process_files(args.inputfiles,args.flips)
 	if args.stat_only == False:
 		while True:
-			model.fit()
+			model.fit(maxfev=args.maxfev, ftol=args.ftol, xtol=args.xtol, gtol=args.gtol)
 			model.print_params()
 			if args.filter is None:
 				break
 			fs = args.filter.split(':')
-			if len(fs) != 2 or len(fs) != 3:
+			if len(fs) != 2 and len(fs) != 3:
 				sys.exit('invalid filter parameter')
 			filnum = int(fs[2]) if len(fs) == 3 else 1
 			removed = model.filter(fs[0], float(fs[1]) / 3600.0, filnum)
@@ -146,6 +146,10 @@ if __name__ == '__main__':
 	parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
 	parser.add_argument('--extra-az',dest='extra_az',action='append',default=[],help='extra azimuth parameters')
 	parser.add_argument('--extra-el',dest='extra_el',action='append',default=[],help='extra elevation parameters')
+	parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='maximal number of least square fitting itterations',type=int)
+	parser.add_argument('--ftol',dest='ftol',action='store',default=1.49012e-08,help='relative error desired in the sum of squares',type=float)
+	parser.add_argument('--xtol',dest='xtol',action='store',default=1.49012e-08,help='relative error desired in the approximate solution',type=float)
+	parser.add_argument('--gtol',dest='gtol',action='store',default=0,help='orthogonality desired between the function vector and the columns of the Jacobian',type=float)
 
 	parser.add_argument('-i',dest='interactive',action='store_true',default=False,help='run interactively, open console to type commands')
 
