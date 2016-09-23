@@ -82,14 +82,6 @@ def generate_model(args):
 	if plots:
 		model.plot(plots,args.plot_band,args.oplot)
 
-def load_model(modelfile):
-	f = open(modelfile)
-	line = f.readline().split()
-	if not ((line[0] == 'RTS2_MODEL' and len(line) == 10) or (line[0] == 'RTS2_ALTAZ' and len(line) == 10)):
-		sys.exit('invalid input model format')
-	f.close()
-	return line[0],map(lambda f:float(f),line[1:])
-
 # Plot model offsets
 def plot_offsets(args):
 	if args.latitude == None:
@@ -103,26 +95,20 @@ def plot_offsets(args):
 	model.plotoffsets(params,ha_b,ha_e,dec)
 
 def add_models(args):
-	params=[]
-	emt = None
-	for f in args.inputfiles:
-		mt,m = load_model(f)
-		if emt is None:
-			emt = mt
-		elif emt != mt:
-			sys.exit('incompatible models: {0} {1}'.format(emt,mt))
-		params.append(m)
+	if len(args.inputfiles) < 2:
+		sys.exit('need at least two models to add')
+
+	m_out = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
+	m_out.load(args.inputfiles[0])
+	for f in args.inputfiles[1:]:
+		m = rts2.gpoint.GPoint()
+		m.load(f)
+		m_out.add_model(m)
 	
-	out = map(lambda f:str(f),np.sum(params,axis=0))
-
 	if args.model_output is not None:
-		f = open(args.model_output,'w+')
-		f.write(emt + ' ')
-		for b in out:
-			f.write('{0} '.format(b))
-		f.close()
+		m_out.write(model_output)
 
-	print emt,' '.join(out)
+	print m_out
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\

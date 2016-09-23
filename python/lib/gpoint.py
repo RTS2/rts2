@@ -57,12 +57,33 @@ def normalize_az_err(errs):
 def normalize_ha_err(errs):
 	return np.array(map(lambda x: x if x < 180 else x - 360, errs % 360))
 
+def _str_to_rad(s):
+	if s[-1] == 'd':
+		return np.radians(float(s[:-1]))
+	elif s[-1] == "'" or s[-1] == 'm':
+		return np.radians(float(s[:-1]) / 60.0)
+	elif s[-1] == '"' or s[-1] == 's':
+		return np.radians(float(s[:-1]) / 3600.0)
+	return float(s)
+
 class ExtraParam:
 	"""Extra parameter - term for model evaluation"""
-	def __init__(self,function,params,consts):
+	def __init__(self,axis,multi,function,params,consts):
+		self.axis = axis
+		if multi is None:
+			self.multi = None
+		else:
+			self.multi = _str_to_rad(multi)
 		self.function = function
 		self.param = params.split(';')
 		self.consts = map(float,consts.split(';'))
+
+	def parnum(self):
+		"""Number of parameters this extra function uses."""
+		return 1
+
+	def __eq__(self,e):
+		return self.axis == e.axis and self.function == e.function and self.param == e.param and self.consts == e.consts
 
 	def __str__(self):
 		return '{0}\t{1}\t{2}'.format(self.function,';'.join(map(str,self.param)),';'.join(map(str,self.consts)))
@@ -83,12 +104,8 @@ class GPoint:
 			self.latitude_r = np.radians(latitude)
 		self.best = None
 		self.name_map = None
-		# addtional terms for ra-dec model
-		# addtional terms for alt-az model
-		self.extra_az_start = 7
-		self.extra_az = []
-		self.extra_el_start = 7
-		self.extra_el = []
+		# addtional terms for model - ExtraParam
+		self.extra = []
 
 	def equ_to_hrz(self,ha,dec):
 		""" Transform HA-DEC (in radians) vector to ALT-AZ (in degrees) vector"""
@@ -164,11 +181,14 @@ class GPoint:
 			sys.exit('unknow function {0}'.format(e.function))
 
 	def add_extra(self,axis,function,params,consts):
-		if axis == 'az':
-			self.extra_az.append(ExtraParam(function,params,consts))
-			self.extra_el_start += 1
-		elif axis == 'el' or axis == 'alt':
-			self.extra_el.append(ExtraParam(function,params,consts))
+		return self.add_extra_multi(axis,None,function,params,consts)
+
+	def add_extra_multi(self,axis,multi,function,params,consts):
+		axis = axis.lower()
+		if axis == 'alt':
+			axis = 'el'
+		if axis == 'az' or axis == 'el':
+			self.extra.append(ExtraParam(axis,multi,function,params,consts))
 		else:
 			raise Exception('invalid axis name: {0}'.format(axis))
 
@@ -179,10 +199,11 @@ class GPoint:
 			- params[2]*np.cos(a_az)*tan_el \
 			- params[3]*tan_el \
 			+ params[4]/np.cos(a_el)
-		pi = self.extra_az_start
-		for e in self.extra_az:
-			ret += params[pi] * self.cal_extra_azalt(e, 'az', a_az, a_el)
-			pi += 1
+		pi = self.get_extra_start()
+		for e in self.extra:
+			if e.axis == 'az':
+				ret += params[pi] * self.cal_extra_azalt(e, 'az', a_az, a_el)
+			pi += e.parnum()
 		return ret
 
 	def model_el(self,params,a_az,a_el):
@@ -190,10 +211,11 @@ class GPoint:
 			+ params[1]*np.cos(a_az) \
 			+ params[2]*np.sin(a_az) \
 			+ params[6]*np.cos(a_el)
-		pi = self.extra_el_start
-		for e in self.extra_el:
-			ret += params[pi] * self.cal_extra_azalt(e, 'el', a_az, a_el)
-			pi += 1
+		pi = self.get_extra_start()
+		for e in self.extra:
+			if e.axis == 'el':
+				ret += params[pi] * self.cal_extra_azalt(e, 'el', a_az, a_el)
+			pi += e.parnum()
 		return ret
 
 	# Fit functions.
@@ -378,10 +400,10 @@ class GPoint:
 
 	def fit(self, ftol=1.49012e-08, xtol=1.49012e-08, gtol=0.0, maxfev=1000):
 		if self.altaz:
-			par_init = np.array([0] * (7 + len(self.extra_az) + len(self.extra_el)))
+			par_init = np.array([0] * (7 + len(self.extra)))
 			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_altaz,par_init,args=(self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt),full_output=True,maxfev=maxfev,ftol=ftol,xtol=xtol,gtol=gtol)
 		else:
-			par_init = np.array([0] * 9)
+			par_init = np.array([0] * (9 + len(self.extra)))
 			self.best,self.cov,self.info,self.message,self.ier = leastsq(self.fit_model_gem,par_init,args=(self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=maxfev,ftol=ftol,xtol=xtol,gtol=gtol)
 
 		if self.verbose:
@@ -522,19 +544,20 @@ class GPoint:
 			print 'DIFF_MODEL DEC',' '.join(map(str,self.diff_model_dec*3600))
 			print self.get_model_type(),' '.join(map(str,self.best))
 
-		bi = self.extra_az_start
-		for e in self.extra_az:
-			print '\nAZ {0}\t{1}'.format(np.degrees(self.best[bi])*3600.0,e)
-			bi += 1
-		for e in self.extra_el:
-			print '\nEL {0}\t{1}'.format(np.degrees(self.best[bi])*3600.0,e)
-			bi += 1
+		bi = self.get_extra_start()
+		for e in self.extra:
+			print '{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best[bi])*3600.0,e)
+			bi += e.parnum()
 
 	def get_model_type(self):
 		if self.altaz:
 			return 'RTS2_ALTAZ'
 		else:
 			return 'RTS2_GEM'
+
+	def get_extra_start(self):
+		"""Returns start index of extra parameters."""
+		return 7 if self.altaz else 9
 
 	def print_stat(self):
 		# calculates root mean squeare of vector/array
@@ -732,16 +755,87 @@ class GPoint:
 		pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
 		pylab.show()
 
+	def __str__(self):
+		bi = self.get_extra_start()
+		out = self.get_model_type() + ' ' + '" '.join(map(lambda x:str(np.degrees(x) * 3600.0),self.best[:bi])) + '"'
+		for e in self.extra:
+			out += '\n{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best[bi]) * 3600.0,e)
+			bi += e.parnum()
+		return out
+
 	def save(self,fn):
 		"""Save model to file."""
 		f = open(fn,'w+')
-		f.write(self.get_model_type() + ' ')
-		f.write('" '.join(map(lambda x:str(np.degrees(x) * 3600.0),self.best[:self.extra_az_start])) + '"')
-		bi = self.extra_az_start
-		for e in self.extra_az:
-			f.write('\nAZ {0}"\t{1}'.format(np.degrees(self.best[bi]) * 3600.0,e))
-			bi += 1
-		for e in self.extra_el:
-			f.write('\nEL {0}"\t{1}'.format(np.degrees(self.best[bi]) * 3600.0,e))
-			bi += 1
+		f.write(str(self))
 		f.close()
+
+	def load(self,fn):
+		f = open(fn)
+		# basic parameters
+		bp = None
+		# extra paramaters
+		ep = []
+		self.altaz = None
+		while True:
+			l = f.readline()
+			if l == '':
+				break
+
+			line = l.split()
+
+			if l[0] == '#':
+				if self.verbose:
+					print 'ignoring comment line {0}'.format(l)
+				continue
+
+			if line[0] == 'RTS2_MODEL' or line[0] == 'RTS2_GEM':
+				if len(line) != 10:
+					raise Exception('invalid number of GEM parameters')
+				if bp is not None:
+					raise Exception('cannot specify model type twice')
+
+				bp = map(_str_to_rad,line[1:])
+				self.altaz = False
+			elif line[0] == 'RTS2_ALTAZ':
+				if len(line) != 8:
+					raise Exception('invalid number of Alt-Az parameters')
+				if bp is not None:
+					raise Exception('cannot specify model type twice')
+
+				bp = map(_str_to_rad,line[1:])
+				self.altaz = True
+			# extra params
+			elif len(line) == 5:
+				self.add_extra_multi(*line)
+			else:
+				raise Exception('unknow line: {0}'.format(l))
+
+		f.close()
+		if len(bp) == 0:
+			raise Exception('model type not specified')
+
+		self.best = np.array(bp + ep)
+
+	def add_model(self,m):
+		"""Adds to current model another (compatible) model."""
+		if self.altaz != m.altaz:
+			raise Exception('cannot add two differnet models')
+
+		bi = self.get_extra_start()
+
+		print np.degrees(self.best) * 3600.0
+		print np.degrees(m.best) * 3600.0
+
+		self.best += m.best[:bi]
+
+		for e in self.extra:
+			for e2 in m.extra:
+				if e == e2:
+					e.multi += e2.multi
+					m.extra.remove(e2)
+
+		# what left is unique to m2
+		self.extra += m.extra
+
+		for e in self.extra:
+			self.best = np.append(self.best,[e.multi])

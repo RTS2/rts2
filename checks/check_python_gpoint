@@ -13,10 +13,10 @@ class AltAzTest(unittest.TestCase):
 
 		self.model = gpoint.GPoint(0)
 		self.model.process_files(['gpoint_in_altaz'],None)
-		self.model.add_extra_az('sincos:az;el:2;2')
-		self.model.add_extra_az('sincos:el;az:5;3')
-		self.model.add_extra_el('sincos:az;el:4;4')
-		self.model.add_extra_el('sin:az:1')
+		self.model.add_extra('az', 'sincos', 'az;el', '2;2')
+		self.model.add_extra('az', 'sincos', 'el;az', '5;3')
+		self.model.add_extra('el', 'sincos', 'az;el', '4;4')
+		self.model.add_extra('el', 'sin', 'az' , '1')
 		self.model.fit()
 		print ','.join(map(str,self.model.best))
 
