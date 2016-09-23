@@ -59,14 +59,10 @@ def normalize_ha_err(errs):
 
 class ExtraParam:
 	"""Extra parameter - term for model evaluation"""
-	def __init__(self,ede):
-		p = ede.split(':')
-		if len(p) != 3:
-			raise Exception('invalid extra parameter format - {0}'.format(ede))
-
-		self.function = p[0]
-		self.param = p[1].split(';')
-		self.consts = map(float,p[2].split(';'))
+	def __init__(self,function,params,consts):
+		self.function = function
+		self.param = params.split(';')
+		self.consts = map(float,consts.split(';'))
 
 	def __str__(self):
 		return '{0}\t{1}\t{2}'.format(self.function,';'.join(map(str,self.param)),';'.join(map(str,self.consts)))
@@ -167,12 +163,14 @@ class GPoint:
 		else:
 			sys.exit('unknow function {0}'.format(e.function))
 
-	def add_extra_az(self,e):
-		self.extra_az.append(ExtraParam(e))
-		self.extra_el_start += 1
-
-	def add_extra_el(self,e):
-		self.extra_el.append(ExtraParam(e))
+	def add_extra(self,axis,function,params,consts):
+		if axis == 'az':
+			self.extra_az.append(ExtraParam(function,params,consts))
+			self.extra_el_start += 1
+		elif axis == 'el' or axis == 'alt':
+			self.extra_el.append(ExtraParam(function,params,consts))
+		else:
+			raise Exception('invalid axis name: {0}'.format(axis))
 
 	def model_az(self,params,a_az,a_el):
 		tan_el = np.tan(a_el)

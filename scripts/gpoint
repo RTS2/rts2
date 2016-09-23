@@ -30,10 +30,11 @@ def generate_model(args):
 	"""Generate pointing model."""
 	model = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
 
-	for e in args.extra_az:
-		model.add_extra_az(e)
-	for e in args.extra_el:
-		model.add_extra_el(e)
+	for e in args.extra:
+		es = e.split(':')
+		if len(es) != 4:
+			sys.exit('invalid extra function description: {0}'.format(e))
+		model.add_extra(*es)
 
 	model.process_files(args.inputfiles,args.flips)
 	if args.stat_only == False:
@@ -144,8 +145,7 @@ if __name__ == '__main__':
 	parser.add_argument('--filter',dest='filter',action='store',default=None,help='filter values which does not fit the model. Those can be errornous measurements')
 	parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
 	parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
-	parser.add_argument('--extra-az',dest='extra_az',action='append',default=[],help='extra azimuth parameters')
-	parser.add_argument('--extra-el',dest='extra_el',action='append',default=[],help='extra elevation parameters')
+	parser.add_argument('--extra',dest='extra',action='append',default=[],help='extra (harmonics,...) functions')
 	parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='maximal number of least square fitting itterations',type=int)
 	parser.add_argument('--ftol',dest='ftol',action='store',default=1.49012e-08,help='relative error desired in the sum of squares',type=float)
 	parser.add_argument('--xtol',dest='xtol',action='store',default=1.49012e-08,help='relative error desired in the approximate solution',type=float)
