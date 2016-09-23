@@ -50,21 +50,18 @@ std::istream & readDeg (std::istream & is, long double &p)
 		throw rts2core::Error ("cannot read parameter");
 
 	// convert parameters to radians
-	int nextch = is.peek ();
+	int nextch = is.get ();
 	switch (nextch)
 	{
 		case 'd':
-			is.get ();
 			p = ln_deg_to_rad (p);
 			break;
 		case '\'':
 		case 'm':
-			is.get ();
 			p = ln_deg_to_rad (p / 60.0);
 			break;
 		case '"':
 		case 's':
-			is.get ();
 			p = ln_deg_to_rad (p / 3600.0);
 			break;
 		case ';':
