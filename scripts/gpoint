@@ -106,7 +106,7 @@ def add_models(args):
 		m_out.add_model(m)
 	
 	if args.model_output is not None:
-		m_out.write(model_output)
+		m_out.save(args.model_output)
 
 	print m_out
 
