@@ -67,6 +67,7 @@ class SitechRotator: public Rotator
 
 		rts2core::ValueString *errors;
 		rts2core::ValueInteger *errors_val;
+		rts2core::ValueInteger *auto_reset;
 		rts2core::ValueInteger *pos_error;
 
 		rts2core::ValueInteger *supply;
@@ -90,6 +91,8 @@ class SitechRotator: public Rotator
 		char axis;
 
 		int last_errors;
+
+		void goAuto ();
 };
 
 }

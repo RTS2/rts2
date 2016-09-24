@@ -46,6 +46,9 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 	createValue (pwm, "pwm", "derotator PWM", false);
 	createValue (errors, "errors", "derotator errors (only for FORCE ONE)", false);
 	createValue (errors_val, "errors_val", "derotator error value", false);
+	createValue (auto_reset, "auto_reset", "errors which will be auto-reset", false, RTS2_VALUE_WRITABLE | RTS2_DT_HEX);
+	auto_reset->setValueInteger (ERROR_TIMED_OVER_CURRENT);
+
 	createValue (pos_error, "pos_error", "derotator position error", false);
 	createValue (supply, "supply", "[V] derotator position error", false);
 	createValue (temp, "temp", "[F] derotator temperature", false);
@@ -109,9 +112,7 @@ int SitechRotator::commandAuthorized (rts2core::Connection *conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		sitech->siTechCommand ('X', "A");
-		sitech->siTechCommand ('Y', "A");
-		getConfiguration ();
+		goAuto ();
 		return 0;
 	}
 	return Rotator::commandAuthorized (conn);
@@ -249,6 +250,12 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 						else
 							logStream (MESSAGE_ERROR) << "controller error(s): " << errors->getValue () << sendLog;
 						last_errors = der_val;
+						if (der_val & auto_reset->getValueInteger ())
+						{
+							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "reseting error which can be auto-reset" << sendLog;
+							sleep (2);
+							goAuto ();
+						}
 					}
 					break;
 
@@ -273,4 +280,11 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 			break;
 		}
 	}
+}
+
+void SitechRotator::goAuto ()
+{
+		sitech->siTechCommand ('X', "A");
+		sitech->siTechCommand ('Y', "A");
+		getConfiguration ();
 }
