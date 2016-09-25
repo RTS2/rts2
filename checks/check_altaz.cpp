@@ -113,6 +113,22 @@ START_TEST(derotator_4)
 }
 END_TEST
 
+START_TEST(zenith_pa)
+{
+	test_pa (0, -39.5, 180, -1316.750118);
+	test_pa (0, -39.5 + 2 / 60.0, 180, -1234.455394);
+	test_pa (0, -39.5 - 2 / 60.0, 180, -1410.801390);
+	test_pa (0 + 2 / 60.0, -39.5, 177.076456, -1313.287352);
+	test_pa (0 - 2 / 60.0, -39.5, -177.076456, -1313.287352);
+
+	test_pa (15, -39.5, 97.280406, 2.350959);
+	test_pa (15, -39.5 - 2 / 60.0, 97.118261, 2.517749);
+	test_pa (15, -39.5 + 2 / 60.0, 97.442431, 2.184371);
+	test_pa (15 + 2 / 60.0, -39.5, 97.285642, 2.362140);
+	test_pa (15 - 2 / 60.0, -39.5, 97.275194, 2.339706);
+}
+END_TEST
+
 START_TEST(test_altaz_1)
 {
 	// test 1, 2016-01-12T19:20:47 HST = 2016-01-13U05:20:47
@@ -213,6 +229,7 @@ Suite * altaz_suite (void)
 	tcase_add_test (tc_altaz_pointings, derotator_2);
 	tcase_add_test (tc_altaz_pointings, derotator_3);
 	tcase_add_test (tc_altaz_pointings, derotator_4);
+	tcase_add_test (tc_altaz_pointings, zenith_pa);
 	tcase_add_test (tc_altaz_pointings, test_altaz_1);
 	suite_add_tcase (s, tc_altaz_pointings);
 
