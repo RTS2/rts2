@@ -69,13 +69,15 @@ for fn in options.files:
 
 	if options.verbose:
 		hdu.info()
+		if options.verbose < 2:
+			rts2.progressbar.progress(0, len(hdu[0].data))
 
 	for ci in range(len(hdu[0].data)):
 		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
 		if options.verbose > 1:
 			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
 		else:
-			rts2.progressbar.progress(ci, len(hdu[0].data) - 1)
+			rts2.progressbar.progress(ci + 1, len(hdu[0].data))
 		if len(sb[0]) == 0:
 			for si in range(options.stars):
 				sb[si].append([objects[si]['x'], objects[si]['y'], objects[si]['flux']])
