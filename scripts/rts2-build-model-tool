@@ -275,8 +275,8 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 		os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(options.camera,imagescript,vfn))
 		vhdu = fits.open(vfn)
 		b_x,b_y,b_flux,b_flux_ratio = rts2.brights.find_brightest(vfn, vhdu, 1, useDS9)
-		off_x = abs(vhdu[0].header['NAXIS1'] / 2.0 - b_x)
-		off_y = abs(vhdu[0].header['NAXIS2'] / 2.0 - b_y)
+		off_x = vhdu[0].header['NAXIS1'] / 2.0 - b_x
+		off_y = vhdu[0].header['NAXIS2'] / 2.0 - b_y
 		pixdist = math.sqrt(off_x * off_x + off_y * off_y)
 		print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
 		flux_history.append(b_flux)
@@ -316,9 +316,11 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 			modelf = open(modelname,'a')
 			modelf.write('# alt {0:.3f} az {1:.3f} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
 			modelf.write('# x {0} y {1}\n'.format(','.join(map(str,history_x)),','.join(map(str,history_y))))
+			# comment lines
+			if ver == False:
+				modelf.write('# ')
 			modelf.close()
-		if ver == True:
-			__save_modeline(telescope,modelname,mn)
+		__save_modeline(telescope,modelname,mn)
 
 try:
 	telescope = j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)[0]
