@@ -21,6 +21,13 @@ import fcntl
 import termios
 import struct
 import time
+import atexit
+
+def show_cursor():
+	sys.stderr.write('\x1b[?;25;h')
+	sys.stderr.flush()
+
+atexit.register(show_cursor)
 
 try:
 	COLS = struct.unpack('hh',  fcntl.ioctl(sys.stderr, termios.TIOCGWINSZ, '1234'))[1]
