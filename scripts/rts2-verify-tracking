@@ -168,7 +168,9 @@ for fn in options.files:
 		pylab.tight_layout()
 
 		if options.saveplot is not None:
+			print _('saving graph to {0}').format(options.saveplot),
 			pylab.savefig(options.saveplot)
+			print _(' done')
 
 		if options.plot:
 			pylab.show()
