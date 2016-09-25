@@ -27,62 +27,7 @@ using namespace rts2core;
 #define OPT_DONOTCLOSE        OPT_LOCAL + 202
 #define OPT_IGNORETIMEOUT     OPT_LOCAL + 203
 
-int Dome::domeOpenStart ()
-{
-	if (isOpened () == -2)
-		return 0;
-
-	if (isGoodWeather () == false)
-		return -1;
-
-	if (startOpen ())
-	{
-	  	logStream (MESSAGE_ERROR) << "opening of the dome failed" << sendLog;
-		return -1;
-	}
-
-	closeFailReported = false;
-
-	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENING | BOP_EXPOSURE, "opening dome");
-	logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to open the dome" << sendLog;
-	return 0;
-}
-
-int Dome::domeCloseStart ()
-{
-	if (isClosed () == -2)
-		return 0;
-
-	int ret = startClose ();
-
-	if (ret < 0)
-	{
-		if (closeFailReported == false)
-			logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
-		closeFailReported = true;
-		return -1;
-	}
-	else if (ret > 0)
-	{
-		if ((getState () & DOME_DOME_MASK) != DOME_WAIT_CLOSING)
-		{
-			logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "wait for equipment to stow" << sendLog;
-		}
-		maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_WAIT_CLOSING, "wait for equipment to stow");
-		return 0;
-	}
-
-	closeFailReported = false;
-
-	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
-	{
-		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
-	}
-	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_CLOSING, "closing dome");
-	return 0;
-};
-
-Dome::Dome (int in_argc, char **in_argv, int in_device_type):Device (in_argc, in_argv, in_device_type, "DOME")
+Dome::Dome (int in_argc, char **in_argv, int in_device_type, bool inhibit_auto_close):Device (in_argc, in_argv, in_device_type, "DOME")
 {
 	stateMaster = NULL;
 
@@ -90,6 +35,16 @@ Dome::Dome (int in_argc, char **in_argv, int in_device_type):Device (in_argc, in
 
 	createValue (weatherOpensDome, "weather_open", "if true, good weather can open dome", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	weatherOpensDome->setValueBool (false);
+
+	if (inhibit_auto_close)
+	{
+		createValue (domeAutoClose, "auto_close", "if false, ignore commands to close dome from centrald", false, RTS2_VALUE_WRITABLE);
+		domeAutoClose->setValueBool (true);
+	}
+	else
+	{
+		domeAutoClose = NULL;
+	}
 
 	createValue (ignoreTimeout, "ignore_time", "ignore weather state until given time", false, RTS2_VALUE_WRITABLE);
 	ignoreTimeout->setValueDouble (0);
@@ -155,6 +110,74 @@ int Dome::init ()
 		}
 		setMasterConn (conn);
 	}
+	return 0;
+}
+
+
+int Dome::domeOpenStart ()
+{
+	if (isOpened () == -2)
+		return 0;
+
+	if (isGoodWeather () == false)
+		return -1;
+
+	if (startOpen ())
+	{
+	  	logStream (MESSAGE_ERROR) << "opening of the dome failed" << sendLog;
+		return -1;
+	}
+
+	closeFailReported = false;
+
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENING | BOP_EXPOSURE, "opening dome");
+	logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to open the dome" << sendLog;
+	return 0;
+}
+
+int Dome::domeCloseStart ()
+{
+	if (isClosed () == -2)
+		return 0;
+
+	int ret = startClose ();
+
+	if (ret < 0)
+	{
+		if (closeFailReported == false)
+			logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
+		closeFailReported = true;
+		return -1;
+	}
+	else if (ret > 0)
+	{
+		if ((getState () & DOME_DOME_MASK) != DOME_WAIT_CLOSING)
+		{
+			logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "wait for equipment to stow" << sendLog;
+		}
+		maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_WAIT_CLOSING, "wait for equipment to stow");
+		return 0;
+	}
+
+	closeFailReported = false;
+
+	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
+	{
+		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
+	}
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_CLOSING, "closing dome");
+	return 0;
+}
+
+int Dome::domeStop ()
+{
+	int ret = stop ();
+	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "stopping dome movement failed" << sendLog;
+		return -1;
+	}
+	maskState (DOME_STOPPED_MASK, DOME_STOPPED, "dome movement stopped");
 	return 0;
 }
 
@@ -298,13 +321,17 @@ int Dome::observing ()
 int Dome::standby ()
 {
 	ignoreTimeout->setValueDouble (getNow () - 1);
-	return domeCloseStart ();
+	if (domeAutoClose == NULL || domeAutoClose->getValueBool () == true)
+		return domeCloseStart ();
+	return 0;
 }
 
 int Dome::off ()
 {
 	ignoreTimeout->setValueDouble (getNow () - 1);
-	return domeCloseStart ();
+	if (domeAutoClose == NULL || domeAutoClose->getValueBool () == true)
+		return domeCloseStart ();
+	return 0;
 }
 
 int Dome::setMasterStandby ()
@@ -399,13 +426,17 @@ void Dome::setWeatherTimeout (time_t wait_time, const char *msg)
 
 int Dome::commandAuthorized (rts2core::Connection * conn)
 {
-	if (conn->isCommand ("open"))
+	if (conn->isCommand (COMMAND_DOME_OPEN))
 	{
 		return (domeOpenStart () == 0 ? 0 : -2);
 	}
-	else if (conn->isCommand ("close"))
+	else if (conn->isCommand (COMMAND_DOME_CLOSE))
 	{
 		return (domeCloseStart () == 0 ? 0 : -2);
+	}
+	else if (conn->isCommand (COMMAND_DOME_STOP))
+	{
+		return (domeStop () == 0 ? 0 : -2);
 	}
 	else if (conn->isCommand ("close_for"))
 	{

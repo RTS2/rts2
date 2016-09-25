@@ -107,6 +107,8 @@ class SAAO:public Cupola
 		virtual long isClosed ();
 		virtual int endClose ();
 
+		virtual int stop ();
+
 		virtual double getSlitWidth (double alt);
 
 	private:
@@ -219,7 +221,7 @@ void calculateLCRC (const char *buf, size_t len, char crc[3])
 	snprintf (crc, 3, "%02X", 0xFF & (~sum + 1));
 }
 
-SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
+SAAO::SAAO (int argc, char **argv):Cupola (argc, argv, true)
 {
 	device_file = "/dev/ttyS0";
 	domeConn = NULL;
@@ -456,6 +458,16 @@ long SAAO::isClosed ()
 
 int SAAO::endClose ()
 {
+	return 0;
+}
+
+int SAAO::stop ()
+{
+	uint16_t data[2];
+	// reset shutter
+	data[0] = 0x0200;
+	data[1] = 0x8000;
+	setRegisters (1, 0x1064, 2, data);
 	return 0;
 }
 

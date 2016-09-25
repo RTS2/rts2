@@ -22,7 +22,7 @@
 
 #include <math.h>
 
-Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE_CUPOLA)
+Cupola::Cupola (int in_argc, char **in_argv, bool inhibit_auto_close):Dome (in_argc, in_argv, DEVICE_TYPE_CUPOLA, inhibit_auto_close)
 {
 	createValue (tarRaDec, "TAR_RADEC", "cupola target RA DEC", false);
 	createValue (tarAltAz, "TAR_ALTAZ", "cupola target ALT AZ", false);
