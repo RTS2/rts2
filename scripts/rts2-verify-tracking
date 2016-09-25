@@ -19,8 +19,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import numpy as np
-import rts2.brights
-import rts2.progressbar
 import sys
 from astropy.io import fits
 
@@ -40,6 +38,14 @@ parser.add_argument('--stars', help=_('number of stars to use'), action='store',
 parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
 
 options = parser.parse_args()
+
+# don't show if not needed
+if not(options.plot) and options.saveplot is not None:
+	import matplotlib
+	matplotlib.use('agg')
+# needs to be called after matplotlib
+import rts2.brights
+import rts2.progressbar
 
 def RMS(vector):
 	return np.sqrt(np.mean(np.square(vector)))
