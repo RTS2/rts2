@@ -318,7 +318,7 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 			modelf.write('# x {0} y {1}\n'.format(','.join(map(str,history_x)),','.join(map(str,history_y))))
 			# comment lines
 			if ver == False:
-				modelf.write('# ')	
+				modelf.write('# ')
 			modelf.close()
 		__save_modeline(telescope,modelname,mn)
 

@@ -66,6 +66,10 @@ for fn in options.files:
 	sb = [] # contains selected x, y, flux as members
 	for si in range(options.stars):
 		sb.append([])
+
+	if options.verbose:
+		hdu.info()
+
 	for ci in range(len(hdu[0].data)):
 		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
 		if options.verbose > 1:
