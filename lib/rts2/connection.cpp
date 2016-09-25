@@ -287,6 +287,12 @@ std::string Connection::getStateString ()
 				default:
 					_os << "UNKNOW";
 			}
+			switch (real_state & DOME_STOPPED_MASK)
+			{
+				case DOME_STOPPED:
+					_os << " | STOPPED";
+					break;
+			}
 			if (getOtherType () == DEVICE_TYPE_CUPOLA)
 			{
 				if (real_state & DOME_CUP_MOVE)
