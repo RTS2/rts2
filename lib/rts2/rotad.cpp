@@ -29,6 +29,7 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	hasTimer = ownTimer;
 
 	autoPlus = false;
+	autoOldTrack = false;
 
 	createValue (zeroOffs, "zero_offs", "[deg] zero offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	zeroOffs->setValueDouble (0);
@@ -75,11 +76,30 @@ int Rotator::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand (COMMAND_ROTATOR_AUTO))
 	{
+		autoOldTrack = paTracking->getValueBool ();
 		paTracking->setValueBool (false);
 		autoPlus = true;
 		maskState (ROT_MASK_AUTOROT | ROT_MASK_PATRACK, ROT_AUTO | ROT_PA_NOT, "autorotating");
 		if (hasTimer == false)
 			addTimer (0.1, new rts2core::Event (EVENT_TRACK_TIMER));
+		return 0;
+	}
+	else if (conn->isCommand (COMMAND_ROTATOR_AUTOSTOP))
+	{
+		if ((getState () & ROT_MASK_AUTOROT) != ROT_AUTO)
+			return -2;
+		setTarget (getCurrentPosition ());
+		paTracking->setValueBool (autoOldTrack);
+		if (autoOldTrack)
+		{
+			maskState (ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PA_TRACK, "restarted tracking");
+			if (hasTimer == false)
+				addTimer (0.01, new rts2core::Event (EVENT_TRACK_TIMER));
+		}
+		else
+		{
+			maskState (ROT_MASK_PATRACK | ROT_MASK_AUTOROT, ROT_PA_NOT, "restarted tracking");
+		}
 		return 0;
 	}
 	return rts2core::Device::commandAuthorized (conn);
