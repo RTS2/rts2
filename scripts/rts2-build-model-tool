@@ -260,8 +260,8 @@ def run_manual_path(telescope,timeout,path,modelname='align',maxspiral=500,image
 		run_manual_altaz(telescope,p[0],p[1],timeout,modelname,maxspiral,imagescript,mn,useDS9)
 		mn += 1
 
-def __get_offset_by_image(fn,useDS9,mn):
-	return rts2.brights.add_wcs(fn, __verifywcs_asecpix, __verifywcs_rotang, __verifywcs_flip, 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn))
+def __get_offset_by_image(fn,useDS9,mn,center):
+	return rts2.brights.add_wcs(fn, __verifywcs_asecpix, __verifywcs_rotang, __verifywcs_flip, 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn), center=center)
 
 def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 	from astropy.io import fits
@@ -286,7 +286,7 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 		else:
 			off_x = fov_center[0] - b_x
 			off_y = fov_center[1] - b_y
-		pixdist = math.sqrt(off_x * off_x + off_y * off_y)
+		pixdist = math.sqrt(off_x ** 2 + off_y ** 2)
 		print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
 		flux_history.append(b_flux)
 		flux_ratio_history.append(b_flux_ratio)
@@ -296,7 +296,7 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
 			print _('converged')
 			return True,flux_history,flux_ratio_history,history_x,history_y
 		# calculate offsets in alt-az, increment offsets
-		off_radec,off_azalt = __get_offset_by_image(vfn,useDS9,mn)
+		off_radec,off_azalt = __get_offset_by_image(vfn,useDS9,mn,fov_center)
 		if off_radec is None:
 			return False,flux_history,flux_ratio_history
 		print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
