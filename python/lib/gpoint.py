@@ -679,7 +679,7 @@ class GPoint:
 				})
 		return name_map[string.lower(name)]
 
-	def plot_data(self,p,nx,ny,band):
+	def plot_data(self,p,nx,ny,band,draw):
 		xdata = self.__get_data(nx)
 		ydata = self.__get_data(ny)
 		p.plot(xdata[0],ydata[0],ydata[1])
@@ -689,12 +689,33 @@ class GPoint:
 			import matplotlib.patches as patches
 			band = float(band)
 			p.add_patch(patches.Rectangle((min(xdata[0]), -band), max(xdata[0]) - min(xdata[0]), 2*band, alpha=0.7, facecolor='red', edgecolor='none'))
+		if draw is not None:
+			import matplotlib.pyplot as plt
+			for d in draw:
+				if d[0] == 'c':
+					try:
+						x,y,r = map(float,d[1:].split(':'))
+					except ValueError,ve:
+						x = y = 0
+						r = float(d[1:])
+					p.add_artist(plt.Circle((x,y), r, fill=False))
+				elif d[0] == 'x':
+					try:
+						x,y,r = map(float,d[1:].split(':'))
+					except ValueError,ve:
+						x = y = 0
+						r = float(d[1:])
+					p.add_artist(plt.Line2D([x,x],[y+r,y-r]))
+					p.add_artist(plt.Line2D([x-r,x+r],[y,y]))
+				else:
+					raise Exception('unknow draw element {0}'.format(d))
 		return p
 
 	def __gen_plot(self,plots,band):
 		import pylab
 		plot = []
 		grid = []
+		draw = []
 
 		i = 0
 		rows = 1
@@ -708,9 +729,17 @@ class GPoint:
 				g = map(int,grids) + g[len(grids):]
                                 plot.append(pmg[0])
 				grid.append(g)
+				draw.append(None)
 			except IndexError,ie:
-				plot.append(mg)
-				grid.append(g)
+				try:
+					pdr = mg.split('@')
+					draw.append(pdr[1].split(';'))
+					plot.append(pdr[0])
+					grid.append(g)
+				except IndexError,ie:
+					plot.append(mg)
+					grid.append(g)
+					draw.append(None)
 			lg = grid[-1]
 			rows = max(lg[0] + lg[2],rows)
 			cols = max(lg[1] + lg[3],cols)
@@ -731,7 +760,7 @@ class GPoint:
 					self.plot_alt_az(g)
 			else:
 				for j in axnam[1:]:
-					self.plot_data(p,axnam[0],j,band)
+					self.plot_data(p,axnam[0],j,band,draw[i])
 
 	def plot(self,plots,band=None,ofile=None):
 		import pylab
