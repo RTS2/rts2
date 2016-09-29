@@ -37,6 +37,7 @@ parser.add_argument('files', help=_('files to process'), action='store', default
 parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
 parser.add_argument('--center-radius', help=_('select stars only that far from center'), action='store', dest='center_radius', default=None, type=float)
 parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
+parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
 
 options = parser.parse_args()
 
@@ -84,6 +85,7 @@ for fn in options.files:
 	c_y = d_y / 2.0
 	if options.verbose:
 		print _('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y)
+	skipped = 0
 	for ci in range(len(hdu[0].data)):
 		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
 		if options.verbose > 1:
@@ -95,6 +97,11 @@ for fn in options.files:
 			bsi = 0
 			while si < options.stars:
 				if bsi == len(objects):
+					if skipped < options.skip_clouds:
+						if options.verbose:
+							print _('skipping frame #{0}').format(ci)
+						skipped += 1
+						continue
 					sys.exit(_('too few stars matching criteria'))
 				x = objects[bsi]['x']
 				y = objects[bsi]['y']
@@ -110,6 +117,7 @@ for fn in options.files:
 				sb[si].append([x, y, flux])
 				si += 1
 		else:
+			found_sb = []
 			for si in range(options.stars):
 				b_x = sb[si][-1][0]
 				b_y = sb[si][-1][1]
@@ -118,13 +126,18 @@ for fn in options.files:
 					if options.verbose > 1:
 						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
 					if dist < options.radius:
-						sb[si].append([star['x'], star['y'], star['flux']])
+						found_sb.append([star['x'], star['y'], star['flux']])
 						break
-				if len(sb[si]) < ci + 1:
-					if options.verbose == 1:
-						print
-					sys.exit(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
+				if len(sb[si]) < ci + 1 and options.verbose:
+					print(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
+			if len(found_sb) < options.stars:
+				if skipped < options.skip_clouds:
+					skipped += 1
+					continue
+				sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), skipped))
 
+			for si in range(options.stars):
+				sb[si].append(found_sb[si])
 	if options.verbose == 0:
 		print 'Done'
 
