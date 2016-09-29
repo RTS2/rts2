@@ -110,40 +110,39 @@ def add_models(args):
 
 	print m_out
 
-if __name__ == '__main__':
-	parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
-        '\tgpoint -p ha:ha-merr,mjd:ha-err,num:dec-err modelin\tproduces model and ha model error,ha-err and dec-err plots')
-	parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
-	parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
-	parser.add_argument('-p',dest='plots',action='store',help='plot graphs, please see manual page for examples (allowed axis names: alt-err,az-err,dec-err,ha-err,alt-merr,az-merr,dec-merr,ha-merr,mjd,num,paz,az,alt,dec,ha,model-err,real-err)')
-	parser.add_argument('-s',dest='oplot',action='store',help='save plot to file instead of displaying it on screen',default=None)
-	parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (num:model-err,num:ha-err,num:dec-err)',default=False)
-	parser.add_argument('--stat-only',dest='stat_only',action='store_true',help='do not attempt to fit the model - only print statistics',default=False)
-	parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (num:model-err,num:ha-err,num:dec-err,paz:contour-model-err%%1:1:2:2)',default=False)
-	parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
-	parser.add_argument('--flip',dest='flips',action='store',help='flips (both, east, west - select pointings only on given side)',default='both')
-	parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
-	parser.add_argument('-v',dest='verbose',action='count',help='verbose')
-        parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
-	parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
-	parser.add_argument('--model-input',dest='model_input',action='store_true',default=False,help='input file(s) are existing model file(s) to load and investigate')
-	parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
-	parser.add_argument('--filter',dest='filter',action='store',default=None,help='filter values which does not fit the model. Those can be errornous measurements')
-	parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
-	parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
-	parser.add_argument('--extra',dest='extra',action='append',default=[],help='extra (harmonics,...) functions')
-	parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='maximal number of least square fitting itterations',type=int)
-	parser.add_argument('--ftol',dest='ftol',action='store',default=1.49012e-08,help='relative error desired in the sum of squares',type=float)
-	parser.add_argument('--xtol',dest='xtol',action='store',default=1.49012e-08,help='relative error desired in the approximate solution',type=float)
-	parser.add_argument('--gtol',dest='gtol',action='store',default=0,help='orthogonality desired between the function vector and the columns of the Jacobian',type=float)
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
+'\tgpoint -p ha:ha-merr,mjd:ha-err,num:dec-err modelin\tproduces model and ha model error,ha-err and dec-err plots')
+parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
+parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
+parser.add_argument('-p',dest='plots',action='store',help='plot graphs, please see manual page for examples (allowed axis names: alt-err,az-err,dec-err,ha-err,alt-merr,az-merr,dec-merr,ha-merr,mjd,num,paz,az,alt,dec,ha,model-err,real-err)')
+parser.add_argument('-s',dest='oplot',action='store',help='save plot to file instead of displaying it on screen',default=None)
+parser.add_argument('--basic-plots',dest='basic_plots',action='store_true',help='plot basic graphs (num:model-err,num:ha-err,num:dec-err)',default=False)
+parser.add_argument('--stat-only',dest='stat_only',action='store_true',help='do not attempt to fit the model - only print statistics',default=False)
+parser.add_argument('--altaz-plots',dest='altaz_plots',action='store_true',help='plot basic and Alt-az distribution graphs (num:model-err,num:ha-err,num:dec-err,paz:contour-model-err%%1:1:2:2)',default=False)
+parser.add_argument('--altaz-heatmaps',dest='altaz_heatmaps',action='store_true',help='plot alt-az distributions with predicted modelled and real (unmodelled) heatmaps',default=False)
+parser.add_argument('--flip',dest='flips',action='store',help='flips (both, east, west - select pointings only on given side)',default='both')
+parser.add_argument('-e',dest='error_output',action='store',help='save file with pointing and model errors')
+parser.add_argument('-v',dest='verbose',action='count',help='verbose')
+parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select only observations with the given flip (1 where abs(dec)>90')
+parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
+parser.add_argument('--model-input',dest='model_input',action='store_true',default=False,help='input file(s) are existing model file(s) to load and investigate')
+parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
+parser.add_argument('--filter',dest='filter',action='store',default=None,help='filter values which does not fit the model. Those can be errornous measurements')
+parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
+parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
+parser.add_argument('--extra',dest='extra',action='append',default=[],help='extra (harmonics,...) functions')
+parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='maximal number of least square fitting itterations',type=int)
+parser.add_argument('--ftol',dest='ftol',action='store',default=1.49012e-08,help='relative error desired in the sum of squares',type=float)
+parser.add_argument('--xtol',dest='xtol',action='store',default=1.49012e-08,help='relative error desired in the approximate solution',type=float)
+parser.add_argument('--gtol',dest='gtol',action='store',default=0,help='orthogonality desired between the function vector and the columns of the Jacobian',type=float)
 
-	parser.add_argument('-i',dest='interactive',action='store_true',default=False,help='run interactively, open console to type commands')
+parser.add_argument('-i',dest='interactive',action='store_true',default=False,help='run interactively, open console to type commands')
 
-	args = parser.parse_args()
+args = parser.parse_args()
 
-	if args.model_input:
-		plot_offsets(args)
-	elif args.add_models:
-		add_models(args)
-	else:
-		generate_model(args)
+if args.model_input:
+	plot_offsets(args)
+elif args.add_models:
+	add_models(args)
+else:
+	generate_model(args)
