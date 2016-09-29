@@ -123,7 +123,7 @@ for fn in options.files:
 				if len(sb[si]) < ci + 1:
 					if options.verbose == 1:
 						print
-					sys.exit(_('cube {0}: cannot find star close to {1:.2f} {2:.2f}').format(ci + 1, b_x, b_y))
+					sys.exit(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
 
 	if options.verbose == 0:
 		print 'Done'
