@@ -121,14 +121,16 @@ for fn in options.files:
 			for si in range(options.stars):
 				b_x = sb[si][-1][0]
 				b_y = sb[si][-1][1]
+				star_find = False
 				for star in objects:
 					dist = pixel_distance(b_x, b_y, star['x'], star['y'])
 					if options.verbose > 1:
 						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
 					if dist < options.radius:
 						found_sb.append([star['x'], star['y'], star['flux']])
+						star_find = True
 						break
-				if len(sb[si]) < ci + 1 and options.verbose:
+				if star_find == False and options.verbose:
 					print(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
 			if len(found_sb) < options.stars:
 				if skipped < options.skip_clouds:
