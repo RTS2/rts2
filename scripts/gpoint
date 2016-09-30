@@ -47,7 +47,7 @@ def generate_model(args):
 			if len(fs) != 2 and len(fs) != 3:
 				sys.exit('invalid filter parameter')
 			filnum = int(fs[2]) if len(fs) == 3 else 1
-			removed = model.filter(fs[0], float(fs[1]) / 3600.0, filnum)
+			removed = model.filter(fs[0], float(fs[1]), filnum)
 			if removed is None:
 				print 'model within bounds'
 				break
