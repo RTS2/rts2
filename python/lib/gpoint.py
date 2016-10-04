@@ -160,6 +160,12 @@ class GPoint:
 			return np.abs(np.cos(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0)))
 		elif e.function == 'tan':
 			return np.tan(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
+		elif e.function == 'csc':
+			return 1.0 / np.sin(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
+		elif e.function == 'sec':
+			return 1.0 / np.cos(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
+		elif e.function == 'cot':
+			return 1.0 / np.tan(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
 		elif e.function == 'sincos':
 			return np.sin(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val(e,ha,dec,az,el,1))
 		elif e.function == 'sinsin':
@@ -734,26 +740,33 @@ class GPoint:
 		i = 0
 		rows = 1
 		cols = 1
-		# find grid size
+		# process plotting string
 		for mg in plots.split(','):
 			g = [i,0,1,1]
-			try:
-				pmg = mg.split('%')
-				grids = pmg[1].split(':')
-				g = map(int,grids) + g[len(grids):]
-                                plot.append(pmg[0])
+			if len(mg) == 0:
+				raise Exception('empty plot specifier')
+			plot_s = re.split('([@%])', mg)
+			plot.append(plot_s[0])
+			i = 1
+			while i < len(plot_s) - 1:
+				if plot_s[i] == '@':
+					i += 1
+					if len(draw) < len(plot):
+						draw.append([])
+					draw[len(plot) - 1].append(plot_s[i])
+				elif plot_s[i] == '%':
+					if g is None:
+						raise Exception('grid can be specified only once')
+					i += 1
+					grids = plot_s[i].split(':')
+					grid.append(map(int, grids) + g[len(grids):])
+					g = None
+				i += 1
+			if g is not None:
 				grid.append(g)
+			if len(draw) < len(plot):
 				draw.append(None)
-			except IndexError,ie:
-				try:
-					pdr = mg.split('@')
-					draw.append(pdr[1].split(';'))
-					plot.append(pdr[0])
-					grid.append(g)
-				except IndexError,ie:
-					plot.append(mg)
-					grid.append(g)
-					draw.append(None)
+
 			lg = grid[-1]
 			rows = max(lg[0] + lg[2],rows)
 			cols = max(lg[1] + lg[3],cols)
