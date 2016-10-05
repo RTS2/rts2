@@ -28,9 +28,9 @@ Instalation from Git
    Ubuntu and should be installed via the package manager, rather than the
    process described here.
 
-user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.8.1.tar.gz
-user@host:tar xzf wcstools-3.7.7.tar.gz
-user@host:cd wcstools-3.7.7/
+user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.9.4.tar.gz
+user@host:tar xzf wcstools-3.9.4.tar.gz
+user@host:cd wcstools-3.9.4/
 
 If you are running 64bit Linux, or encountered problems compiling RTS2,
 suggesting that compiling WCS with -fPIC will fix them:
