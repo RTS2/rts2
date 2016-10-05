@@ -17,7 +17,8 @@ Instalation from Git
    libjson-glib-dev libsoup2.4-dev pkg-config
 
    Please note that postgresql-server-dev is actually postgresql-server-dev-8.3
-   on Ubuntu 9.04 and postgresql-server-dev-8.4 on 9.10.
+   on Ubuntu 9.04, postgresql-server-dev-8.4 on 9.10 and postgresql-server-dev-9.5
+   on 16.04.
 
    WCS libraries are needed for database and for rts2-f2j binary. If you wish
    to use them, you must manually install WCS using folowing steps. Just before
