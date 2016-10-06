@@ -884,6 +884,13 @@ class Telescope:public rts2core::Device
 
 		void startTracking (bool check = false);
 
+		/**
+		 * Returns if tracking is requested.
+		 *
+		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking
+		 */
+		int trackingRequested () { return tracking->getValueInteger (); }
+
 		bool isTracking () { return (getState () & TEL_MASK_TRACK) == TEL_TRACKING; }
 
 		/**
