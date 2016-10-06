@@ -1,17 +1,17 @@
 Please skip to "Basic Installation" if you are not performing
-installation from SVN.
+installation from Git.
 
 Note 1: you need to have libtool installed (apt-get install libtool on Debian),
 otherwise it will not work. I'll investigate that. Please enter any request to
-SF tracking system, or send them to the author (petr@kubanek.net).
+GitHub tracking system, or send them to the author (petr@kubanek.net).
 
-Instalation from SVN 
+Instalation from Git
 ====================
 
    You will need following packages (apt-get install on Debian based systems
    should install them).
 
-   subversion postgresql postgresql-server-dev libecpg-dev automake libtool
+   git postgresql postgresql-server-dev libecpg-dev automake libtool
    libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev
    libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev
    libjson-glib-dev libsoup2.4-dev pkg-config
@@ -23,6 +23,10 @@ Instalation from SVN
    to use them, you must manually install WCS using folowing steps. Just before
    you begin, important note: on Ubuntu 64bit installations, you need to
    compile wcs with -fPIC CFLAG.
+
+   Note that as of April 2016 libwcstools-dev is available in both Debian and
+   Ubuntu and should be installed via the package manager, rather than the
+   process described here.
 
 user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.8.1.tar.gz
 user@host:tar xzf wcstools-3.7.7.tar.gz
@@ -48,13 +52,13 @@ make[1]: Leaving directory `/home/petr/wcstools-3.7.7/libned'
 cc -g -o bin/nedpos nedpos.c libwcs/libwcs.a -lm libned/libned.a
 cc -g -o bin/bincat bincat.c libwcs/libwcs.a -lm
 user@host:~/wcstools-3.7.7$ cd libwcs
-user@host:~/wcstools-3.7.7/libwcs$ sudo mkdir /usr/local/include/libwcs
-user@host:~/wcstools-3.7.7/libwcs$ sudo cp *.h /usr/local/include/libwcs/
-user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/
+user@host:~/wcstools-3.7.7/libwcs$ sudo mkdir /usr/local/include/wcstools
+user@host:~/wcstools-3.7.7/libwcs$ sudo cp *.h /usr/local/include/wcstools/
+user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/libwcstools.a
 
    For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
 
-user@host:$ svn co svn://svn.code.sf.net/p/rts-2/code/trunk/rts-2 rts2
+user@host:$ git clone https://github.com/RTS2/rts2.git
 user@host:$ cd rts2
 user@host:~/rts2$ ./autogen.sh
 user@host:~/rts2$ ./configure --without-wcs

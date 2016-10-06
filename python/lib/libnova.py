@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # Basic libnova calculatons
-# (C) 2011, Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+# (C) 2011 - 2016, Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from numpy import cos,sin,arctan2,sqrt,radians,degrees
+from numpy import cos,sin,arctan2,tan,sqrt,radians,degrees,arcsin,arccos,seterr,divide
 
 def angular_separation(ra1,dec1,ra2,dec2):
 	a1 = radians(ra1)
@@ -27,7 +27,7 @@ def angular_separation(ra1,dec1,ra2,dec2):
 
 	x = (cos(d1) * sin(d2)) - (sin(d1) * cos(d2) * cos(a2-a1))
 	y = cos(d2) * sin(a2-a1)
-	z = (sin (d1) * sin (d2)) + (cos(d1) * cos(d2) * cos(a2-a1))
+	z = (sin(d1) * sin(d2)) + (cos(d1) * cos(d2) * cos(a2-a1))
 
 	x = x * x;
 	y = y * y;
@@ -35,8 +35,33 @@ def angular_separation(ra1,dec1,ra2,dec2):
 
 	return degrees(d)
 
-if __name__ == '__main__':
-	print angular_separation(0,0,1,1)
-	print angular_separation(0,0,0,90)
-	print angular_separation(0,0,180,0)
-	print angular_separation(0,0,180,-40)
+def equ_to_hrz(ra,dec,lst,latitude):
+	""" Transform RA-DEC (in degrees) vector to ALT-AZ (in degrees) vector"""
+	ha = radians(lst - ra)
+	dec = radians(dec)
+	latitude_r = radians(latitude)
+	A = sin(latitude_r) * sin(dec) + cos(latitude_r) * cos(dec) * cos(ha)
+	alt = arcsin(A)
+
+	Z = arccos(A)
+	Zs = sin(Z)
+
+	old_err_state = seterr(divide='ignore',invalid='ignore')
+	As = divide(cos(dec) * sin(ha), Zs)
+	Ac = divide(sin(latitude_r) * cos(dec) * cos(ha) - cos(latitude_r) * sin(dec), Zs)
+	seterr(**old_err_state)
+	Aa = arctan2(As,Ac)
+
+	return degrees(alt),(degrees(Aa) + 360.0) % 360.0
+
+def hrz_to_equ(az,alt,latitude):
+	""" Transform AZ-ALT (in degrees) vector to HA-DEC (in degrees) vector"""
+	latitude_r = radians(latitude)
+	az = radians(az)
+	alt = radians(alt)
+
+	ha = arctan2(sin(az), cos(az) * sin(latitude_r) + tan(alt) * cos(latitude_r))
+	dec = sin(latitude_r) * sin(alt) - cos(latitude_r) * cos(alt) * cos(az)
+	dec = arcsin(dec)
+
+	return (degrees(ha) + 360.0) % 360.0, degrees(dec)

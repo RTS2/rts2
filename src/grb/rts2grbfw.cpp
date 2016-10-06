@@ -65,12 +65,12 @@ int Rts2GrbForwardConnection::init ()
 	return 0;
 }
 
-int Rts2GrbForwardConnection::receive (fd_set * set)
+int Rts2GrbForwardConnection::receive (rts2core::Block *block)
 {
 	int new_sock;
 	struct sockaddr_in other_side;
 	socklen_t addr_size = sizeof (struct sockaddr_in);
-	if (FD_ISSET (sock, set))
+	if (block->isForRead (sock))
 	{
 		new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
 		if (new_sock == -1)
@@ -122,13 +122,13 @@ void Rts2GrbForwardClientConn::postEvent (rts2core::Event * event)
 	rts2core::ConnNoSend::postEvent (event);
 }
 
-int Rts2GrbForwardClientConn::receive (fd_set * set)
+int Rts2GrbForwardClientConn::receive (rts2core::Block *block)
 {
 	static int32_t loc_buf[SIZ_PKT];
 	if (sock < 0)
 		return -1;
 
-	if (FD_ISSET (sock, set))
+	if (block->isForRead (sock))
 	{
 		int ret;
 		ret = read (sock, loc_buf, SIZ_PKT);

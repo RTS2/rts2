@@ -513,7 +513,6 @@ void ImageProc::changeRunning (ConnProcess * newImage)
 	if (ret < 0)
 	{
 		deleteConnection (runningImage);
-		delete runningImage;
 		runningImage = NULL;
 		maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, DEVICE_ERROR_HW | IMGPROC_IDLE);
 		infoAll ();

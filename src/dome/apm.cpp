@@ -140,6 +140,8 @@ int APMDome::initHardware ()
 	}
 
 	connDome = new rts2core::ConnAPM (host->getPort (), this, host->getHostname());
+
+	connDome->setDebug (getDebug ());
 	
 	int ret = connDome->init();
         

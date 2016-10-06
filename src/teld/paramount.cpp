@@ -614,7 +614,7 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 	track1 = NULL;
 
 	// apply all correction for paramount
-	setCorrections (true, true, true);
+	setCorrections (true, true, true, true);
 
 	// int paramout values
 	paramountValues.push_back (ParaVal ("Index angle", T16, CMD_VAL16_INDEX_ANGLE));
@@ -698,9 +698,8 @@ int Paramount::initHardware ()
 	if (ret)
 		return -1;
 
-	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telLatitude->setValueDouble (config->getObserver ()->lat);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	logStream (MESSAGE_DEBUG) << "MKS3Init" << sendLog;
 	ret = MKS3Init (device_name);

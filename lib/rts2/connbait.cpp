@@ -28,7 +28,7 @@
 
 using namespace rts2core;
 
-BAIT::BAIT (rts2core::Block *_master, std::string _hostname, int _port):ConnTCP (_master, _hostname.c_str(), _port)
+BAIT::BAIT (Block *_master, std::string _hostname, int _port):ConnTCP (_master, _hostname.c_str(), _port)
 {
 }
 
@@ -41,7 +41,7 @@ int BAIT::idle ()
 	return 0;
 }
 
-int BAIT::receive (fd_set *fset)
+int BAIT::receive (Block *block)
 {
 	return -1;
 }
@@ -51,7 +51,7 @@ void BAIT::writeRead (const char *cmd, char *reply, size_t buf_len)
 	int cmdlen = strlen (cmd) + 1;
 	int ret = send (sock, cmd, cmdlen, 0);
 	if (ret != cmdlen)
-		throw rts2core::Error ("cannot send BAIT command");
+		throw Error ("cannot send BAIT command");
 	char *buftop = reply;
 	size_t bufused = 0;
 	while (sock > 0)
@@ -76,7 +76,7 @@ void BAIT::writeRead (const char *cmd, char *reply, size_t buf_len)
 		{
 			logStream (MESSAGE_ERROR) << "cannot receive reply from socket within 30 seconds, reinitiliazing" << sendLog;
 			connectionError (-1);
-			throw rts2core::Error ("cannot read from connection");
+			throw Error ("cannot read from connection");
 		}
 
 
@@ -85,7 +85,7 @@ void BAIT::writeRead (const char *cmd, char *reply, size_t buf_len)
 		{
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				continue;
-			throw rts2core::Error ("cannot receive reply from BAIT");
+			throw Error ("cannot receive reply from BAIT");
 		}
 		if (cmdlen == 0)
 			continue;
@@ -97,6 +97,6 @@ void BAIT::writeRead (const char *cmd, char *reply, size_t buf_len)
 			return;
 		}
 		if (bufused >= buf_len)
-			throw rts2core::Error ("too long server reply");
+			throw Error ("too long server reply");
 	}
 }

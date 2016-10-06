@@ -289,7 +289,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			tar_pos.ra -= f_model_change.ra;
 			tar_pos.dec += f_model_change.dec;
 			setTelTarget (tar_pos.ra, tar_pos.dec);
-			setTarTel (&tf_pos);
+			setTarTelRaDec (&tf_pos);
 		}
 	}
 	else
@@ -301,7 +301,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 			tar_pos.ra -= n_model_change.ra;
 			tar_pos.dec -= n_model_change.dec;
 			setTelTarget (tar_pos.ra, tar_pos.dec);
-			setTarTel (&tn_pos);
+			setTarTelRaDec (&tn_pos);
 		}
 	}
 
@@ -359,6 +359,11 @@ int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip,
 
 GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? 1 : 0)
 {
+	raPAN = NULL;
+	decPAN = NULL;
+	raPANSpeed = NULL;
+	decPANSpeed = NULL;
+
 	createValue (flipping, "FLIPPING", "mount flipping strategy", false, RTS2_VALUE_WRITABLE);
 	flipping->addSelVal ("shortest");
 	flipping->addSelVal ("same");

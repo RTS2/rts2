@@ -414,6 +414,7 @@ void TargetQueue::filterExpired (double now)
 				double t_end = iter->t_end;
 				if ((!isnan (t_start) && t_start <= now) || (!isnan (t_end) && t_end <= now))
 				{
+					logStream (MESSAGE_DEBUG) << "target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") has start and end times set (" << LibnovaDateDouble (t_start) << " " << LibnovaDateDouble (t_end) << ", removing previous targets." << sendLog;
 					for (TargetQueue::iterator irem = begin (); irem != iter;)
 						irem = removeEntry (irem, REMOVED_NEXT_NEEDED);
 				}
@@ -793,7 +794,6 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 				if (!isnan (queueWindow->getValueFloat ()))
 				{
 					t += queueWindow->getValueFloat ();
-					timerAdded += queueWindow->getValueFloat ();
 				}
 				master->addTimer (t_start - t, new rts2core::Event (EVENT_NEXT_START));
 			}

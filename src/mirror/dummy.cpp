@@ -1,36 +1,34 @@
 #include "mirror.h"
 #include <iostream>
 
-class Rts2DevMirrorDummy:public Rts2DevMirror
+namespace rts2mirror
+{
+
+class Dummy:public Mirror
 {
 	public:
-		Rts2DevMirrorDummy (int in_argc, char **in_argv):Rts2DevMirror (in_argc,
-			in_argv)
+		Dummy (int in_argc, char **in_argv):Mirror (in_argc, in_argv)
 		{
+			addPosition ("A");
+			addPosition ("B");
+			addPosition ("C");
 		}
-		virtual int endOpen ()
+		virtual int movePosition (int pos)
 		{
-			sleep (10);
-			return Rts2DevMirror::endOpen ();
+			return 0;
 		}
-		virtual int isOpened ()
+		virtual int isMoving ()
 		{
 			return -2;
-		}
-		virtual int isClosed ()
-		{
-			return -2;
-		}
-		virtual int endClose ()
-		{
-			sleep (10);
-			return Rts2DevMirror::endClose ();
 		}
 };
 
-int
-main (int argc, char **argv)
+}
+
+using namespace rts2mirror;
+
+int main (int argc, char **argv)
 {
-	Rts2DevMirrorDummy device = Rts2DevMirrorDummy (argc, argv);
+	Dummy device = Dummy (argc, argv);
 	return device.run ();
 }

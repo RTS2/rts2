@@ -53,7 +53,6 @@ class DevAugerShooter:public rts2db::DeviceDb
 		bool wasSeen (double lastDate, double ra, double dec);
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int reloadConfig ();
 
 	private:
 		ConnShooter * shootercnn;
@@ -115,8 +114,16 @@ class DevAugerShooter:public rts2db::DeviceDb
 		rts2core::ValueInteger *EyeId4;
 		rts2core::ValueDouble *minNPix4;
 		rts2core::ValueDouble *maxDGHChi2Improv4;
- /*       fourth set of cuts - end   */		
+ /*       fourth set of cuts - end   */
 
+ /*       fifth set of cuts         */
+		rts2core::ValueInteger *EyeId5;
+		rts2core::ValueDouble *XmaxEnergyShift5;
+		rts2core::ValueDouble *XmaxEnergyLin5;
+		rts2core::ValueDouble *XmaxErr5;
+		rts2core::ValueDouble *Energy5;
+		rts2core::ValueDouble *ChkovFrac5;
+ /*       fifth set of cuts - end   */
 };
 
 }

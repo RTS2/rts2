@@ -1,5 +1,5 @@
 /* 
- * Sitech connection.
+ * Sitech axis controller connection.
  * Copyright (C) 2014 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,9 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_CONNECTION_SITECH__
+#define __RTS2_CONNECTION_SITECH__
+
 #include "serial.h"
 
-namespace rts2teld
+namespace rts2core
 {
 
 /**
@@ -178,7 +181,7 @@ class SitechXAxisRequest
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnSitech: public rts2core::ConnSerial
+class ConnSitech: public ConnSerial
 {
 	public:
 		/**
@@ -187,7 +190,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 * @param devName device name
 		 * @param master reference to master block
 		 */
-		ConnSitech (const char *devName, rts2core::Block *master);
+		ConnSitech (const char *devName, Block *master);
 
 		/**
 		 * Initialize connection. Switch to checksumed mode.
@@ -205,6 +208,11 @@ class ConnSitech: public rts2core::ConnSerial
 		void switchToBinary ();
 
 		/**
+		 * Returns error bits transcribed to string.
+		 */
+		std::string findErrors (uint16_t e);
+
+		/**
 		 * Reset controller errors.
 		 */
 		void resetErrors ();
@@ -220,7 +228,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 * @param axis Command axis (X, Y, T, U, V or W)
 		 * @param cmd  Command to execute (see SiTech doc for details)
 		 *
-		 * @throw rts2core::Error on communication error
+		 * @throw Error on communication error
 		 */
 		void siTechCommand (const char axis, const char *cmd);
 
@@ -232,7 +240,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 *
 		 * @return Value of the given axis/value combination
 		 *
-		 * @throw rts2core::Error on communication error
+		 * @throw Error on communication error
 		 */
 		int32_t getSiTechValue (const char axis, const char *val);
 
@@ -241,7 +249,7 @@ class ConnSitech: public rts2core::ConnSerial
 		 *
 		 * @param axis          Axis for which status will be retrieved.
 		 *
-		 * @throw rts2core::Error on communication error
+		 * @throw Error on communication error
 		 */
 		void getAxisStatus (char axis, SitechAxisStatus &ax_status);
 
@@ -257,12 +265,27 @@ class ConnSitech: public rts2core::ConnSerial
 
 		void setSiTechValue (const char axis, const char *val, int value);
 
+		void setSiTechValueLong (const char axis, const char *val, long value);
+
+		void setPosition (const char axis, uint32_t target, uint32_t speed);
 		/**
 		 * Returns SiTech controller status, including motor current.
 		 */
 		void getControllerStatus (SitechControllerStatus &controller_status);
 
 		void getConfiguration (SitechControllerConfiguration &config);
+
+		// speed conversion; see Dan manual for details
+		double degsPerSec2MotorSpeed (double dps, int32_t loop_ticks, double full_circle);
+		double ticksPerSec2MotorSpeed (double tps);
+		double motorSpeed2DegsPerSec (int32_t speed, int32_t loop_ticks);
+
+		int version;
+		int countUp;
+		double PIDSampleRate;
+
+		// which controller is connected
+		enum {SERVO_I, SERVO_II, FORCE_ONE} sitechType;
 
 	private:
 		/**
@@ -285,3 +308,5 @@ class ConnSitech: public rts2core::ConnSerial
 };
 
 }
+
+#endif //!__RTS2_CONNECTION_SITECH__

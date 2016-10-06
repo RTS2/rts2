@@ -38,6 +38,8 @@ class Error:public std::exception
 
 		explicit Error (const char *_msg): std::exception () { msg = std::string (_msg); }
 
+		explicit Error (const char *_msg, const char *arg1): std::exception () { msg = std::string (_msg) + " " + arg1; }
+
 		explicit Error (std::string _msg): std::exception () { msg = _msg; }
 
 		virtual ~Error() throw() {};

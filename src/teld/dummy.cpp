@@ -48,9 +48,8 @@ class Dummy:public Telescope
 			rts2core::Configuration *config;
 			config = rts2core::Configuration::instance ();
 			config->loadFile ();
-			telLatitude->setValueDouble (config->getObserver ()->lat);
-			telLongitude->setValueDouble (config->getObserver ()->lng);
-			telAltitude->setValueDouble (config->getObservatoryAltitude ());
+			setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
+			setTelAltitude (config->getObservatoryAltitude ());
 			trackingInterval->setValueFloat (0.5);
 			return Telescope::initValues ();
 		}
@@ -242,6 +241,8 @@ void Dummy::runTracking ()
 
 	t_axRa->setValueLong (target.ra * 10000);
 	t_axDec->setValueLong (target.dec * 10000);
+
+	Telescope::runTracking ();
 }
 
 int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)

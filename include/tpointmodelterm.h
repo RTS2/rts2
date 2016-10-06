@@ -50,13 +50,13 @@ class TPointModelTerm:public rts2core::ValueDouble
 		TPointModelTerm (const char *in_name, double in_corr, double in_sigma);
 		virtual ~ TPointModelTerm (void) {}
 		
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions) = 0;
-		virtual void reverse (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r) = 0;
+		virtual void reverse (struct ln_equ_posn *pos, double tel_latitude_r)
 		{
 			struct ln_equ_posn pos_old;
 			pos_old.ra = pos->ra;
 			pos_old.dec = pos->dec;
-			apply (pos, obs_conditions);
+			apply (pos, tel_latitude_r);
 			pos->ra = 2 * pos_old.ra - pos->ra;
 			pos->dec = 2 * pos_old.dec - pos->dec;
 		}
@@ -82,7 +82,7 @@ class TermME:public TPointModelTerm
 {
 	public:
 		TermME (double in_corr, double in_sigma):TPointModelTerm ("ME", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -96,7 +96,7 @@ class TermMA:public TPointModelTerm
 {
 	public:
 		TermMA (double in_corr, double in_sigma):TPointModelTerm ("MA", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -110,7 +110,7 @@ class TermIH:public TPointModelTerm
 {
 	public:
 		TermIH (double in_corr, double in_sigma):TPointModelTerm ("IH", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -124,7 +124,7 @@ class TermID:public TPointModelTerm
 {
 	public:
 		TermID (double in_corr, double in_sigma):TPointModelTerm ("ID", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -138,7 +138,7 @@ class TermCH:public TPointModelTerm
 {
 	public:
 		TermCH (double in_corr, double in_sigma):TPointModelTerm ("CH", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -152,7 +152,7 @@ class TermNP:public TPointModelTerm
 {
 	public:
 		TermNP (double in_corr, double in_sigma):TPointModelTerm ("NP", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -166,7 +166,7 @@ class TermFO:public TPointModelTerm
 {
 	public:
 		TermFO (double in_corr, double in_sigma):TPointModelTerm ("FO", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -180,7 +180,7 @@ class TermPHH:public TPointModelTerm
 {
 	public:
 		TermPHH (double in_corr, double in_sigma):TPointModelTerm ("PHH", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -192,7 +192,7 @@ class TermPDD:public TPointModelTerm
 {
 	public:
 		TermPDD (double in_corr, double in_sigma):TPointModelTerm ("PDD", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -206,7 +206,7 @@ class TermTF:public TPointModelTerm
 {
 	public:
 		TermTF (double in_corr, double in_sigma):TPointModelTerm ("TF", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -220,7 +220,7 @@ class TermTX:public TPointModelTerm
 {
 	public:
 		TermTX (double in_corr, double in_sigma):TPointModelTerm ("TX", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -234,7 +234,7 @@ class TermHCEC:public TPointModelTerm
 {
 	public:
 		TermHCEC (double in_corr, double in_sigma):TPointModelTerm ("HCEC", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -248,7 +248,7 @@ class TermHCES:public TPointModelTerm
 {
 	public:
 		TermHCES (double in_corr, double in_sigma):TPointModelTerm ("HCES", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -262,7 +262,7 @@ class TermDCEC:public TPointModelTerm
 {
 	public:
 		TermDCEC (double in_corr, double in_sigma):TPointModelTerm ("DCEC", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -276,7 +276,7 @@ class TermDCES:public TPointModelTerm
 {
 	public:
 		TermDCES (double in_corr, double in_sigma):TPointModelTerm ("DCES", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -290,7 +290,7 @@ class TermDAB:public TPointModelTerm
 {
 	public:
 		TermDAB (double in_corr, double in_sigma):TPointModelTerm ("DAB", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 /**
@@ -304,7 +304,7 @@ class TermDAF:public TPointModelTerm
 {
 	public:
 		TermDAF (double in_corr, double in_sigma):TPointModelTerm ("DAF", in_corr, in_sigma) {}
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 };
 
 typedef enum
@@ -323,7 +323,7 @@ class TermHarmonics:public TPointModelTerm
 {
 	public:
 		TermHarmonics (double in_corr, double in_sigma, const char *in_name);
-		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+		virtual void apply (struct ln_equ_posn *pos, double tel_latitude_r);
 
 	private:
 		char resType;
@@ -332,8 +332,8 @@ class TermHarmonics:public TPointModelTerm
 		int mul[2];
 
 		const char *getFunc (const char *in_func, int i);
-		double getValue (struct ln_equ_posn *pos, ObsConditions * obs_conditions, int i);
-		double getMember (struct ln_equ_posn *pos, ObsConditions * obs_conditions, int i);
+		double getValue (struct ln_equ_posn *pos, double tel_latitude_r, int i);
+		double getMember (struct ln_equ_posn *pos, double tel_latitude_r, int i);
 };
 
 };

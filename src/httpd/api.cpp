@@ -70,7 +70,6 @@ digraph "JSON API calls handling" {
 
 #ifdef RTS2_HAVE_PGSQL
 #include "rts2db/labellist.h"
-#include "rts2db/simbadtarget.h"
 #include "rts2db/messagedb.h"
 #include "rts2db/target_auger.h"
 #endif
@@ -211,7 +210,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 			int ext = params->getInteger ("e", 0);
 			os << "[";
 			if (ext)
-				os << "[\"" << ((HttpD *) getMasterApp ())->getDeviceName () << "\"," << DEVICE_TYPE_XMLRPC << ']';
+				os << "[\"" << ((HttpD *) getMasterApp ())->getDeviceName () << "\"," << DEVICE_TYPE_HTTPD << ']';
 			else
 				os << '"' << ((HttpD *) getMasterApp ())->getDeviceName () << '"';
 			for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)

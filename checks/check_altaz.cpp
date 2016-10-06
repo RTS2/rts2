@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <check.h>
+#include <check_utils.h>
 #include <libnova/libnova.h>
 
 // global telescope object
@@ -22,7 +23,111 @@ void teardown_altcaz (void)
 	altAzTest = NULL;
 }
 
-#define ck_assert_dbl_eq(v1,v2,alow)  ck_assert_msg(fabs(v1-v2) < alow, "difference %f and %f > %f", v1, v2, alow)
+void test_pa (double ha, double dec, double pa, double parate)
+{
+	double c_pa, c_parate;
+	altAzTest->test_parallactic_angle (ha, dec, c_pa, c_parate);
+	ck_assert_dbl_eq (c_pa, pa, 10e-4);
+	ck_assert_dbl_eq (c_parate, parate, 10e-4);
+}
+
+START_TEST(derotator_1)
+{
+	test_pa (0, -70, 0, 22.9813);
+	test_pa (1, -70, 1.5319, 22.9765);
+	test_pa (15, -70, 22.6356, 21.9735);
+	test_pa (-15, -70, -22.6356, 21.9735);
+	test_pa (30, -70, 43.5044, 19.6526);
+	test_pa (45, -70, 61.9054, 17.2009);
+	test_pa (60, -70, 78.0773, 15.2443);
+	test_pa (90, -70, 106.0128, 13.0227);
+	test_pa (120, -70, 131.1507, 12.2828);
+	test_pa (150, -70, 155.5714, 12.1934);
+	test_pa (179, -70, 179.1847, 12.2281);
+	test_pa (180, -70, 180.0, 12.2281);
+	test_pa (181, -70, -179.1847, 12.2281);
+	test_pa (210, -70, -155.5714, 12.1934);
+	test_pa (240, -70, -131.1507, 12.2828);
+	test_pa (270, -70, -106.0128, 13.0227);
+	test_pa (300, -70, -78.0773, 15.2443);
+	test_pa (315, -70, -61.9054, 17.2009);
+	test_pa (330, -70, -43.5044, 19.6526);
+	test_pa (359, -70, -1.5319, 22.9765);
+	test_pa (360, -70, 0, 22.9813);
+}
+END_TEST
+
+START_TEST(derotator_2)
+{
+	test_pa (1, -40, 0, 4.8211);
+	test_pa (-1, -40, 0, 4.8211);
+	test_pa (0, -39.99, 180, -65836.6706);
+	test_pa (0, -40.01, 0, 65836.6705);
+	test_pa (0.01, -40.01, 37.4549, 41493.6137);
+	test_pa (-0.01, -40.01, -37.4549, 41493.6137);
+	test_pa (0.01, -39.99, 142.5474, -41485.5540);
+	test_pa (-0.01, -39.99, -142.5474, -41485.5540);
+}
+END_TEST
+
+START_TEST(derotator_3)
+{
+	test_pa (15, -40, 94.8371, 4.8695);
+	test_pa (30, -40, 99.7724, 5.0181);
+	test_pa (60, -40, 110.3605, 5.6497);
+	test_pa (90, -40, 122.7324, 6.8227);
+	test_pa (120, -40, 138.0698, 8.6105);
+	test_pa (150, -40, 157.3709, 10.6542);
+	test_pa (179, -40, 179.2221, 11.6666);
+	test_pa (180, -40, 180, 11.6679);
+	test_pa (181, -40, -179.2221, 11.6666);
+	test_pa (210, -40, -157.3709, 10.6542);
+	test_pa (240, -40, -138.0698, 8.6105);
+	test_pa (270, -40, -122.7324, 6.8227);
+	test_pa (300, -40, -110.3605, 5.6497);
+	test_pa (330, -40, -99.7724, 5.0181);
+	test_pa (345, -40, -94.8371, 4.8695);
+}
+END_TEST
+
+START_TEST(derotator_4)
+{
+	test_pa (0, -80, 0, 17.8763);
+	test_pa (1, -80, 1.1917, 17.8754);
+	test_pa (-1, -80, -1.1917, 17.8754);
+	test_pa (15, -80, 17.8120, 17.6857);
+	test_pa (30, -80, 35.2623, 17.1706);
+	test_pa (60, -80, 68.1823, 15.7197);
+	test_pa (90, -80, 98.2901, 14.4650);
+	test_pa (120, -80, 126.3838, 13.7099);
+	test_pa (150, -80, 153.4022, 13.3623);
+	test_pa (179, -80, 179.1154, 13.2682);
+	test_pa (180, -80, 180, 13.2682);
+	test_pa (181, -80, -179.1154, 13.2682);
+	test_pa (210, -80, -153.4022, 13.3623);
+	test_pa (240, -80, -126.3838, 13.7099);
+	test_pa (270, -80, -98.2901, 14.4650);
+	test_pa (300, -80, -68.1823, 15.7197);
+	test_pa (330, -80, -35.2623, 17.1706);
+	test_pa (345, -80, -17.8120, 17.6857);
+}
+END_TEST
+
+START_TEST(zenith_pa)
+{
+	test_pa (0, -39.5, 180, -1316.750118);
+	test_pa (0, -39.5 + 2 / 60.0, 180, -1234.455394);
+	test_pa (0, -39.5 - 2 / 60.0, 180, -1410.801390);
+	test_pa (0 + 2 / 60.0, -39.5, 177.076456, -1313.287352);
+	test_pa (0 - 2 / 60.0, -39.5, -177.076456, -1313.287352);
+
+	test_pa (15, -39.5, 97.280406, 2.350959);
+	test_pa (15, -39.5 - 2 / 60.0, 97.118261, 2.517749);
+	test_pa (15, -39.5 + 2 / 60.0, 97.442431, 2.184371);
+	test_pa (15 + 2 / 60.0, -39.5, 97.285642, 2.362140);
+	test_pa (15 - 2 / 60.0, -39.5, 97.275194, 2.339706);
+}
+END_TEST
 
 START_TEST(test_altaz_1)
 {
@@ -69,19 +174,19 @@ START_TEST(test_altaz_1)
 
 	// origin
 	pos.ra = 344.16613;
-	pos.dec = 2.3703305;
+	pos.dec = -80.3703305;
 
 	ret = altAzTest->test_sky2counts (JD, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-	ck_assert_int_eq (azc, 43783567);
-	ck_assert_int_eq (altc, 26826255);
+	ck_assert_int_eq (azc, 49510274);
+	ck_assert_int_eq (altc, 12292285);
 
 	// target
 	pos.ra = 62.95859;
-	pos.dec = -3.51601;
+	pos.dec = -80.51601;
 
 	float e = altAzTest->test_move (JD, &pos, azc, altc, 2.0, 200);
-	ck_assert_msg (!isnan (e), "position %f %f not reazched", pos.ra, pos.dec);
+	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
 	struct ln_equ_posn curr;
 	curr.ra = curr.dec = 0;
@@ -98,7 +203,7 @@ START_TEST(test_altaz_1)
 	ret = altAzTest->test_hrz2counts (&hrz, azc, altc);
 	ck_assert_int_eq (ret, 0);
 	ck_assert_int_eq (azc, 64023041);
-	ck_assert_int_eq (altc, 18943645);
+	ck_assert_int_eq (altc, 18943644);
 
 	altAzTest->test_counts2hrz (-68591258, -68591258, &hrz);
 	ck_assert_dbl_eq (hrz.alt, 75.047819, 10e-2);
@@ -120,6 +225,11 @@ Suite * altaz_suite (void)
 	tc_altaz_pointings = tcase_create ("AltAz Pointings");
 
 	tcase_add_checked_fixture (tc_altaz_pointings, setup_altcaz, teardown_altcaz);
+	tcase_add_test (tc_altaz_pointings, derotator_1);
+	tcase_add_test (tc_altaz_pointings, derotator_2);
+	tcase_add_test (tc_altaz_pointings, derotator_3);
+	tcase_add_test (tc_altaz_pointings, derotator_4);
+	tcase_add_test (tc_altaz_pointings, zenith_pa);
 	tcase_add_test (tc_altaz_pointings, test_altaz_1);
 	suite_add_tcase (s, tc_altaz_pointings);
 

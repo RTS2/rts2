@@ -48,6 +48,9 @@ class ServoDrive:public Sensor
 		const char *dev;
 
 		rts2core::ValueLong *target;
+		rts2core::ValueLong *homeHigh;
+		rts2core::ValueLong *minTarget;
+		rts2core::ValueLong *maxTarget;
 
 		int sendCommand (const char *cmd);
 
@@ -69,6 +72,12 @@ ServoDrive::ServoDrive (int argc, char **argv):Sensor (argc, argv)
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 
 	createValue (target, "TARGET", "target position", false, RTS2_VALUE_WRITABLE);
+	createValue (homeHigh, "home_high", "high home position", false, RTS2_VALUE_WRITABLE);
+	homeHigh->setValueLong (3400);
+	createValue (minTarget , "MIN", "minimal axis value",  false, RTS2_VALUE_WRITABLE);
+	createValue (maxTarget, "MAX", "maximal target value", false, RTS2_VALUE_WRITABLE);
+	minTarget->setValueLong (INT_MIN);
+	maxTarget->setValueLong (INT_MAX);
 }
 
 ServoDrive::~ServoDrive (void)
@@ -80,6 +89,8 @@ int ServoDrive::setValue (rts2core::Value * old_value, rts2core::Value * new_val
 {
 	if (old_value == target)
 	{
+		if (new_value->getValueLong () < minTarget->getValueLong () || new_value->getValueLong () > maxTarget->getValueLong ())
+			return -2;
 		servoDev->flushPortIO ();
 		beginLoading ();
 		long diff = new_value->getValueLong () - old_value->getValueLong ();
@@ -144,7 +155,7 @@ int ServoDrive::commandAuthorized (rts2core::Connection * conn)
 		}
 		else
 		{
-			return home ('H');
+			return home ('L');
 		}
 	}
 	if (conn->isCommand ("r"))
@@ -187,9 +198,10 @@ int ServoDrive::home (char d)
 	sendCommand ("EN*");
 	char md = 'R';
 	if (!(d == 'L' || d == 'H'))
-		d = 'H';
+		d = 'L';
 	if (d == 'H')
 		md = 'L';
+		
 	char dcmd[4] = "DR*";
 	dcmd[1] = md;
 	sendCommand (dcmd);
@@ -198,6 +210,14 @@ int ServoDrive::home (char d)
 	sendCommand (cmd);
 	sendCommand ("ED*");
 	executeProgramme ();
+	if (d == 'H')
+	{
+		target->setValueLong (homeHigh->getValueLong ());
+	}
+	else
+	{
+		target->setValueLong (0);
+	}
 	return 0;
 }
 

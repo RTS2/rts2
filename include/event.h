@@ -107,7 +107,8 @@
 // scriptelement.h         250-299
 // devclifoc.h             500-524
 // devcliimg.h             525-549
-// devclicop.h             550-599
+// clicupola.h             550-569
+// clirotator.h            570-599
 // grbd.h                  600-649
 // devcliwheel.h           650-675
 // camd.h                  676-699
@@ -122,6 +123,8 @@
 // executorque.h          1400-1449
 // nmonitor.h             1450-1499
 // bb.h                   1500-1549
+// apm-aux.h              1550-1599
+// rotator                1600-1649
 
 // local (device,..)     10000-
 

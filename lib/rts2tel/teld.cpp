@@ -35,7 +35,7 @@
 #include "pluto/observe.h"
 
 #include "telmodel.h"
-#include "rts2model.h"
+#include "gpointmodel.h"
 #include "tpointmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
@@ -47,21 +47,22 @@
 #define OPT_RTS2_MODEL	OPT_LOCAL + 123
 #define OPT_T_POINT_MODEL	 OPT_LOCAL + 124
 
-#define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
-#define EVENT_TRACKING_TIMER	 RTS2_LOCAL_EVENT + 561
+#define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 1200
+#define EVENT_TRACKING_TIMER	 RTS2_LOCAL_EVENT + 1201
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, int hasUnTelCoordinates):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, int hasUnTelCoordinates, bool hasAltAzDiff):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
 		timerclear (dir_timeouts + i);
 	}
 
-	raGuide = decGuide = NULL;
 	parkPos = NULL;
 	parkFlip = NULL;
+
+	nextCupSync = 0;
 
 	useParkFlipping = false;
 	
@@ -73,9 +74,23 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	offsRaDec->setValueRaDec (0, 0);
 
+	if (hasAltAzDiff)
+	{
+		createValue (offsAltAz, "AZALOFFS", "alt-azimuth offsets", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
+		offsAltAz->setValueAltAz (0, 0);
+	}
+	else
+	{
+		offsAltAz = NULL;
+	}
+
 	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
+
+	cos_lat = NAN;
+	sin_lat = NAN;
+	tan_lat = NAN;
 
 	if (diffTrack)
 	{
@@ -83,11 +98,30 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		diffTrackRaDec->setValueRaDec (0, 0);
 
 		createValue (diffTrackStart, "DSTART", "start time of differential tracking", false);
+		createValue (diffTrackOn, "DON", "differential tracking on/off", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		diffTrackOn->setValueBool (false);
 	}
 	else
 	{
 		diffTrackRaDec = NULL;
 		diffTrackStart = NULL;
+		diffTrackOn = NULL;
+	}
+
+	if (hasAltAzDiff)
+	{
+		createValue (diffTrackAltAz, "AZALRATE", "[deg/hour] differential tracking rate in alt/az", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+		diffTrackAltAz->setValueAltAz (0, 0);
+
+		createValue (diffTrackAltAzStart, "AZALSTART", "start time of differential tracking", false);
+		createValue (diffTrackAltAzOn, "AZALON", "differential tracking on/off", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		diffTrackAltAzOn->setValueBool (false);
+	}
+	else
+	{
+		diffTrackAltAz = NULL;
+		diffTrackAltAzStart = NULL;
+		diffTrackAltAzOn = NULL;
 	}
 
 	if (hasTracking)
@@ -99,24 +133,39 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
-		createValue (trackingVect, "TRACKSPD", "[deg/sec] tracking speeds vector", true);
+		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
+		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
+		createValue (trackingWarning, "tracking_warning", "issue warning if tracking frequency drops bellow this number", false, RTS2_VALUE_WRITABLE);
+		trackingWarning->setValueFloat (1);
+		trackingFSize->setValueInteger (20);
+
+		createValue (skyVect, "SKYSPD", "[deg/hour] tracking speeds vector (in RA/DEC)", true, RTS2_DT_DEGREES);
 	}
 	else
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
-		trackingVect = NULL;
+		trackingFrequency = NULL;
+		trackingWarning = NULL;
+		skyVect = NULL;
 	}
+
+	lastTrackingRun = NAN;
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
-	if (hasUnTelCoordinates != 0)
+	tarTelRaDec = NULL;
+	tarTelAltAz = NULL;
+
+	switch (hasUnTelCoordinates)
 	{
-		createValue (tarTelRaDec, "TAR_TEL", "target position (OBJ) in telescope coordinates (DEC in 180 .. -180 range)", true);
-	}
-	else
-	{
-		tarTelRaDec = NULL;
+		case 1:
+			createValue (tarTelRaDec, "TAR_TEL", "target position (OBJ) in telescope coordinates (DEC in 180 .. -180 range)", true);
+			break;
+
+		case -1:
+			createValue (tarTelAltAz, "TAR_TEL", "target position (OBJ) in telescope coordinates (AZ in 180 .. -180 range)", true);
+			break;
 	}
 
 	createValue (tarRaDec, "TAR", "target position with computed corrections (precession, refraction, aberation) applied", true);
@@ -135,8 +184,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST_180);
 
-	createValue (aberated, "aberated", "target coordinates, aberated", false);
 	createValue (precessed, "precessed", "target coordinates, aberated and precessed", false);
+	createValue (nutated, "nutated", "target coordinates, nutated", false);
+	createValue (aberated, "aberated", "target coordinates, aberated", false);
 	createValue (refraction, "refraction", "[deg] refraction (in altitude)", false, RTS2_DT_DEG_DIST_180);
 
 	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true, RTS2_DT_DEGREES, 0);
@@ -190,6 +240,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (tle_l2, "tle_l2_target", "TLE target line 2", false);
 	createValue (tle_ephem, "tle_ephem", "TLE emphemeris type", false);
 	createValue (tle_distance, "tle_distance", "[km] satellite distance", false);
+	createValue (tle_freeze, "tle_freeze", "if true, stop updating TLE positions; put current speed vector to DRATE", false, RTS2_VALUE_WRITABLE);
+	tle_freeze->setValueBool (false);
 	createValue (tle_rho_sin_phi, "tle_rho_sin", "TLE rho_sin_phi (observatory position)", false);
 	createValue (tle_rho_cos_phi, "tle_rho_cos", "TLE rho_cos_phi (observatory position)", false);
 	createValue (tle_refresh, "tle_refresh", "refresh TLE ra_diff and dec_diff every tle_refresh seconds", false, RTS2_VALUE_WRITABLE);
@@ -197,6 +249,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
 	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
+	createConstValue (telPressure, "PRESSURE", "observatory atmospheric pressure", false, RTS2_VALUE_WRITABLE);
+	telPressure->setValueFloat (1000);
 
 	createValue (refreshIdle, "refresh_idle", "idle and tracking refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
 	createValue (refreshSlew, "refresh_slew", "slew refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
@@ -266,11 +320,14 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	flip_longest_path = -1;
 
 	// default is to aply model corrections
-	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
-	calAberation->setValueBool (false);
-
 	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calPrecession->setValueBool (false);
+
+	createValue (calNutation, "CAL_NUT", "if nutation is included in target calculations", false, RTS2_VALUE_WRITABLE);
+	calNutation->setValueBool (false);
+
+	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
+	calAberation->setValueBool (false);
 
 	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calRefraction->setValueBool (false);
@@ -332,7 +389,7 @@ double Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
-void Telescope::setTarTel (struct ln_equ_posn *pos)
+void Telescope::setTarTelRaDec (struct ln_equ_posn *pos)
 {
 	if (tarTelRaDec == NULL)
 		return;
@@ -340,6 +397,13 @@ void Telescope::setTarTel (struct ln_equ_posn *pos)
 	tarTelRaDec->setValueRaDec (pos->ra, pos->dec);
 }
 
+void Telescope::setTarTelAltAz (struct ln_hrz_posn *hrz)
+{
+	if (tarTelAltAz == NULL)
+		return;
+
+	tarTelAltAz->setValueAltAz (hrz->alt, hrz->az);
+}
 
 int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
@@ -361,7 +425,7 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 				break;
 			}
 			// calculate from TLE..
-			else if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
+			else if (tle_freeze->getValueBool () == false && tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
 			{
 				calculateTLE (JD, out_tar->ra, out_tar->dec, tar_distance);
 				out_tar->ra = ln_rad_to_deg (out_tar->ra);
@@ -424,10 +488,14 @@ int Telescope::calculateTracking (double JD, double sec_step, int32_t &ac, int32
 	else if (ra_diff < -180.0)
 		ra_diff = ra_diff + 360;
 
-	trackingVect->setValueRaDec (ra_diff / sec_step, dec_diff / sec_step);
+	skyVect->setValueRaDec (3600 * ra_diff / sec_step, 3600 * dec_diff / sec_step);
 
 	ac_speed = (ac - t_ac) / sec_step;
 	dc_speed = (dc - t_dc) / sec_step;
+
+	ac = t_ac;
+	dc = t_dc;
+
 	return 0;
 }
 
@@ -438,28 +506,43 @@ int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int3
 
 void Telescope::addDiffRaDec (struct ln_equ_posn *tar, double secdiff)
 {
-	if (diffTrackRaDec)
+	if (diffTrackRaDec && diffTrackOn->getValueBool () == true)
 	{
 		tar->ra += getDiffTrackRa () * secdiff / 3600.0;
 		tar->dec += getDiffTrackDec () * secdiff / 3600.0;
 	}
 }
 
-void Telescope::createRaGuide ()
+void Telescope::addDiffAltAz (struct ln_hrz_posn *hrz, double secdiff)
 {
-	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
-	raGuide->addSelVal ("NONE");
-	raGuide->addSelVal ("MINUS");
-	raGuide->addSelVal ("PLUS");
+	if (diffTrackAltAz && diffTrackAltAzOn->getValueBool () == true)
+	{
+		hrz->az += getDiffTrackAz () * secdiff / 3600.0;
+		hrz->alt += getDiffTrackAlt () * secdiff / 3600.0;
+	}
 }
 
-void Telescope::createDecGuide ()
+void Telescope::createRaPAN ()
 {
-	createValue (decGuide, "dec_guide", "DEC guiding status", false, RTS2_VALUE_WRITABLE);
-	decGuide->addSelVal ("NONE");
-	decGuide->addSelVal ("MINUS");
-	decGuide->addSelVal ("PLUS");
+	createValue (raPAN, "ra_pan", "RA panning", false, RTS2_VALUE_WRITABLE);
+	raPAN->addSelVal ("NONE");
+	raPAN->addSelVal ("MINUS");
+	raPAN->addSelVal ("PLUS");
+
+	createValue (raPANSpeed, "ra_pan_speed", "speed of RA panning", false, RTS2_VALUE_WRITABLE);
 }
+
+void Telescope::createDecPAN ()
+{
+	createValue (decPAN, "dec_pan", "DEC panning", false, RTS2_VALUE_WRITABLE);
+	decPAN->addSelVal ("NONE");
+	decPAN->addSelVal ("MINUS");
+	decPAN->addSelVal ("PLUS");
+
+	createValue (decPANSpeed, "dec_pan_speed", "speed of DEC panning", false, RTS2_VALUE_WRITABLE);
+}
+
+
 
 int Telescope::processOption (int in_opt)
 {
@@ -607,9 +690,23 @@ double Telescope::getCorrAz ()
 double Telescope::getTargetDistance ()
 {
 	struct ln_equ_posn tar,tel;
-	getTelTargetRaDec (&tar);
-	getTelRaDec (&tel);
-	normalizeRaDec (tel.ra, tel.dec);
+	if (tarTelAltAz != NULL)
+	{
+		struct ln_hrz_posn hrz_tar, hrz_tel;
+		tarTelAltAz->getAltAz (&hrz_tar);	
+		getTelAltAz (&hrz_tel);
+
+		tar.ra = hrz_tar.az;
+		tar.dec = hrz_tar.alt;
+		tel.ra = hrz_tel.az;
+		tel.dec = hrz_tel.alt;
+	}
+	else
+	{
+		getTelTargetRaDec (&tar);
+		getTelRaDec (&tel);
+		normalizeRaDec (tel.ra, tel.dec);
+	}
 
 	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))
 		return -1;
@@ -634,7 +731,7 @@ double Telescope::getTargetHa ()
 
 double Telescope::getTargetHa (double jd)
 {
-	return ln_range_degrees (ln_get_apparent_sidereal_time (jd) - telRaDec->getRa ());
+	return ln_range_degrees (ln_get_apparent_sidereal_time (jd) - tarRaDec->getRa ());
 }
 
 double Telescope::getLstDeg (double JD)
@@ -665,7 +762,34 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	else if (old_value == diffTrackRaDec)
 	{
 	  	setDiffTrack (((rts2core::ValueRaDec *)new_value)->getRa (), ((rts2core::ValueRaDec *)new_value)->getDec ());
-		return 0;
+	}
+	else if (old_value == diffTrackOn)
+	{
+		logStream (MESSAGE_INFO) << "switching DON to " << ((rts2core::ValueBool *) new_value)->getValueBool () << sendLog;
+		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
+		{
+			setDiffTrack (getDiffTrackRa (), getDiffTrackDec ());
+		}
+		else
+		{
+			setDiffTrack (0, 0);
+		}
+	}
+	else if (old_value == diffTrackAltAz)
+	{
+		setDiffTrackAltAz (((rts2core::ValueAltAz *)new_value)->getAz (), ((rts2core::ValueAltAz *)new_value)->getAlt ());
+	}
+	else if (old_value == diffTrackAltAzOn)
+	{
+		logStream (MESSAGE_INFO) << "switching AZALON to " << ((rts2core::ValueBool *) new_value)->getValueBool () << sendLog;
+		if (((rts2core::ValueBool *) new_value)->getValueBool () == true)
+		{
+			setDiffTrackAltAz (getDiffTrackAz (), getDiffTrackAlt ());
+		}
+		else
+		{
+			setDiffTrackAltAz (0, 0);
+		}
 	}
 	else if (old_value == refreshIdle)
 	{
@@ -685,6 +809,37 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 			case TEL_PARKING:
 				setIdleInfoInterval (((rts2core::ValueDouble *)new_value)->getValueDouble ());
 				break;
+		}
+	}
+	else if (old_value == tle_freeze)
+	{
+		if (tle_l1->getValueString ().length () == 0 || tle_l2->getValueString ().length () == 0)
+			return -2;
+
+		if (((rts2core::ValueBool *) new_value)->getValueBool () == false)
+		{
+			// reset DRATE, probably set by tle_freeze = true
+			setDiffTrack (0, 0);
+			setDiffTrackAltAz (0, 0);
+		}
+		else
+		{
+			// TLE not yet calculated..
+			double JD = ln_get_julian_from_sys ();
+			struct ln_equ_posn p1, p2, speed;
+			double d1, d2;
+			const double sec_step = 10.0;
+			calculateTLE (JD, p1.ra, p1.dec, d1);
+			calculateTLE (JD + sec_step / 86400.0, p2.ra, p2.dec, d2);
+			speed.ra = (3600 * ln_rad_to_deg (p2.ra - p1.ra)) / sec_step;
+			if (speed.ra > 180.0)
+				speed.ra -= 360.0;
+			else if (speed.ra < -180.0)
+				speed.ra += 360.0;
+			speed.dec = (3600 * ln_rad_to_deg (p2.dec - p1.dec)) / sec_step;
+			diffTrackRaDec->setValueRaDec (speed.ra, speed.dec);
+			sendValueAll (diffTrackRaDec);
+			setDiffTrack (speed.ra, speed.dec);
 		}
 	}
 	return rts2core::Device::setValue (old_value, new_value);
@@ -724,6 +879,32 @@ void Telescope::applyAberation (struct ln_equ_posn *pos, double JD, bool writeVa
 		aberated->setValueRaDec (pos->ra, pos->dec);
 }
 
+void Telescope::applyNutation (struct ln_equ_posn *pos, double JD, bool writeValue)
+{
+	struct ln_nutation nut;
+	ln_get_nutation (JD, &nut);
+
+	double rad_ecliptic = ln_deg_to_rad (nut.ecliptic + nut.obliquity);
+	double sin_ecliptic = sin (rad_ecliptic);
+
+	double rad_ra = ln_deg_to_rad (pos->ra);
+	double rad_dec = ln_deg_to_rad (pos->dec);
+
+	double sin_ra = sin (rad_ra);
+	double cos_ra = cos (rad_ra);
+
+	double tan_dec = tan (rad_dec);
+
+	double d_ra = (cos (rad_ecliptic) + sin_ecliptic * sin_ra * tan_dec) * nut.longitude - cos_ra * tan_dec * nut.obliquity;
+	double d_dec = (sin_ecliptic * cos_ra) * nut.longitude + sin_ra * nut.obliquity;
+
+	pos->ra += d_ra;
+	pos->dec += d_dec;
+
+	if (writeValue)
+		nutated->setValueRaDec (pos->ra, pos->dec);
+}
+
 void Telescope::applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue)
 {
 	ln_get_equ_prec (pos, JD, pos);
@@ -741,11 +922,17 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	obs.lat = telLatitude->getValueDouble ();
 
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
-	ref = ln_get_refraction_adj (hrz.alt, getAltitude (), 10);
+	ref = ln_get_refraction_adj (hrz.alt, getPressure (), 10);
 	hrz.alt += ref;
 	if (writeValue)
 		refraction->setValueDouble (ref);
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
+}
+
+void Telescope::afterMovementStart ()
+{
+	nextCupSync = 0;
+	startCupolaSync ();
 }
 
 void Telescope::incMoveNum ()
@@ -755,10 +942,28 @@ void Telescope::incMoveNum ()
 		diffTrackRaDec->setValueRaDec (0, 0);
 		diffTrackStart->setValueDouble (NAN);
 	  	setDiffTrack (0,0);
+		diffTrackOn->setValueBool (false);
 	}
+
+	if (diffTrackAltAz)
+	{
+		diffTrackAltAz->setValueAltAz (0, 0);
+		diffTrackStart->setValueDouble (NAN);
+		setDiffTrackAltAz (0, 0);
+		diffTrackAltAzOn->setValueBool (false);
+	}
+
+	tle_freeze->setValueBool (false);
+
 	// reset offsets
 	offsRaDec->setValueRaDec (0, 0);
 	offsRaDec->resetValueChanged ();
+
+	if (offsAltAz)
+	{
+		offsAltAz->setValueAltAz (0, 0);
+		offsAltAz->resetValueChanged ();
+	}
 
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
@@ -866,6 +1071,14 @@ void Telescope::applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_po
 	}
 }
 
+void Telescope::applyModelAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err)
+{
+	if (!model || calModel->getValueBool () == false)
+		return;
+	model->getErrAltAz (hrz, err);
+	modelRaDec->setValueRaDec (err->alt, err->az);
+}
+
 void Telescope::applyModelPrecomputed (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, bool applyCorr)
 {
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
@@ -924,10 +1137,13 @@ void Telescope::computeModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		return;
 	}
 
-	logStream (MESSAGE_DEBUG)
-		<< "Telescope::computeModel offsets ra: "
-		<< model_change->ra << " dec: " << model_change->dec
-		<< sendLog;
+	if (getDebug ())
+	{
+		logStream (MESSAGE_DEBUG)
+			<< "Telescope::computeModel offsets ra: "
+			<< model_change->ra << " dec: " << model_change->dec
+			<< sendLog;
+	}
 }
 
 int Telescope::init ()
@@ -951,20 +1167,20 @@ int Telescope::init ()
 
 	if (rts2ModelFile)
 	{
-		model = new rts2telmodel::RTS2Model (this, rts2ModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::GPointModel (getLatitude ());
+		ret = model->load (rts2ModelFile);
 		if (ret)
 			return ret;
 		rts2core::DoubleArray *p;
 		createValue (p, "rts2_model", "RTS2 model parameters", false);
 		for (int i = 0; i < 9; i++)
-			p->addValue (((rts2telmodel::RTS2Model *) model)->params[i]);
+			p->addValue (((rts2telmodel::GPointModel *) model)->params[i]);
 
 	}
 	else if (tPointModelFile)
 	{
-		model = new rts2telmodel::TPointModel (this, tPointModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::TPointModel (getLatitude ());
+		ret = model->load (tPointModelFile);
 		if (ret)
 			return ret;
 		for (std::vector <rts2telmodel::TPointModelTerm *>::iterator iter = ((rts2telmodel::TPointModel*) model)->begin (); iter != ((rts2telmodel::TPointModel*) model)->end (); iter++)
@@ -1128,8 +1344,12 @@ void Telescope::postEvent (rts2core::Event * event)
 			maskState (TEL_MASK_CUP, TEL_NO_WAIT_CUP);
 			break;
 		case EVENT_CUP_ENDED:
-			logStream (MESSAGE_INFO) << "removed " << ((ClientCupola *)(event->getArg ()))->getName () << sendLog;
+			logStream (MESSAGE_INFO) << "removed cupola " << ((ClientCupola *)(event->getArg ()))->getName () << sendLog;
 			cupolas->remove (((ClientCupola *)(event->getArg ()))->getName ());
+			break;
+		case EVENT_ROT_ENDED:
+			logStream (MESSAGE_INFO) << "removed rotator " << ((ClientRotator *)(event->getArg ()))->getName () << sendLog;
+			rotators->remove (((ClientRotator *)(event->getArg ()))->getName ());
 			break;
 	}
 	rts2core::Device::postEvent (event);
@@ -1137,7 +1357,7 @@ void Telescope::postEvent (rts2core::Event * event)
 
 int Telescope::willConnect (rts2core::NetworkAddress * in_addr)
 {
-	if (in_addr->getType () == DEVICE_TYPE_CUPOLA)
+	if (in_addr->getType () == DEVICE_TYPE_CUPOLA || in_addr->getType () == DEVICE_TYPE_ROTATOR)
 		return 1;
 	return rts2core::Device::willConnect (in_addr);
 }
@@ -1151,7 +1371,9 @@ rts2core::DevClient *Telescope::createOtherType (rts2core::Connection * conn, in
 			cupolas->addValue (std::string (conn->getName ()));
 			return new ClientCupola (conn);
 		case DEVICE_TYPE_ROTATOR:
+			logStream (MESSAGE_INFO) << "connecting to rotator " << conn->getName () << sendLog;
 			rotators->addValue (std::string (conn->getName ()));
+			conn->setSendAll (false);
 			return new ClientRotator (conn);
 	}
 	return rts2core::Device::createOtherType (conn, other_device_type);
@@ -1198,6 +1420,22 @@ void Telescope::changeMasterState (rts2_status_t old_state, rts2_status_t new_st
 	}
 
 	rts2core::Device::changeMasterState (old_state, new_state);
+}
+
+void Telescope::setTelLongLat (double longitude, double latitude)
+{
+	telLongitude->setValueDouble (longitude);
+	telLatitude->setValueDouble (latitude);
+
+	cos_lat = cos (ln_deg_to_rad (latitude));
+	sin_lat = sin (ln_deg_to_rad (latitude));
+	tan_lat = sin_lat / cos_lat;
+}
+
+void Telescope::setTelAltitude (float altitude)
+{
+	telAltitude->setValueDouble (altitude);
+	telPressure->setValueFloat (getAltitudePressure (altitude, 1010));
 }
 
 void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
@@ -1258,18 +1496,34 @@ void Telescope::startTracking (bool check)
 		tracking->setValueInteger (1);
 		sendValueAll (tracking);
 	}
+	trackingFrequency->clearStat ();
 	setTracking (tracking->getValueInteger (), true);
 }
 
 void Telescope::stopTracking (const char *msg)
 {
+	lastTrackingRun = NAN;
 	stopMove ();
 	maskState (TEL_MASK_TRACK, TEL_NOTRACK, msg);
 }
 
 void Telescope::runTracking ()
 {
+	startCupolaSync ();
+}
 
+void Telescope::updateTrackingFrequency ()
+{
+	double n = getNow ();
+	if (!isnan (lastTrackingRun) && n != lastTrackingRun)
+	{
+		double tv = 1 / (n - lastTrackingRun);
+		trackingFrequency->addValue (tv, trackingFSize->getValueInteger ());
+		trackingFrequency->calculate ();
+		if (tv < trackingWarning->getValueFloat ())
+			logStream (MESSAGE_ERROR) << "lost telescope tracking, frequency is " << tv << sendLog;
+	}
+	lastTrackingRun = n;
 }
 
 void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite)
@@ -1312,9 +1566,33 @@ void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_t
 void Telescope::setDiffTrack (double dra, double ddec)
 {
 	if (dra == 0 && ddec == 0)
+	{
 		diffTrackStart->setValueDouble (NAN);
+		diffTrackOn->setValueBool (false);
+	}
 	else
+	{
 		diffTrackStart->setValueDouble (ln_get_julian_from_sys ());
+		diffTrackOn->setValueBool (true);
+	}
+	sendValueAll (diffTrackStart);
+	sendValueAll (diffTrackOn);
+}
+
+void Telescope::setDiffTrackAltAz (double daz, double dalt)
+{
+	if (daz == 0 && dalt == 0)
+	{
+		diffTrackAltAzStart->setValueDouble (NAN);
+		diffTrackAltAzOn->setValueBool (false);
+	}
+	else
+	{
+		diffTrackAltAzStart->setValueDouble (ln_get_julian_from_sys ());
+		diffTrackAltAzOn->setValueBool (true);
+	}
+	sendValueAll (diffTrackAltAzStart);
+	sendValueAll (diffTrackAltAzOn);
 }
 
 void Telescope::addParkPosOption ()
@@ -1346,6 +1624,11 @@ void Telescope::getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ
 	obs.lng = getLongitude ();
 
 	ln_get_equ_from_hrz (hrz, &obs, JD, pos);
+}
+
+double Telescope::getAltitudePressure (double alt, double see_pres)
+{
+	return see_pres * pow (1 - (0.0065 * alt) / 288.15, (9.80665 * 0.0289644) / (8.31447 * 0.0065));
 }
 
 int Telescope::info ()
@@ -1409,16 +1692,21 @@ int Telescope::scriptEnds ()
 	corrImgId->setValueInteger (0);
 	woffsRaDec->setValueRaDec (0, 0);
 	tracking->setValueInteger (1);
+
+	tle_freeze->setValueBool (false);
+
 	return rts2core::Device::scriptEnds ();
 }
 
 void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, bool writeValues)
 {
 	// apply all posible corrections
-	if (calAberation->getValueBool () == true)
-		applyAberation (pos, JD, writeValues);
 	if (calPrecession->getValueBool () == true)
 		applyPrecession (pos, JD, writeValues);
+	if (calNutation->getValueBool () == true)
+		applyNutation (pos, JD, writeValues);
+	if (calAberation->getValueBool () == true)
+		applyAberation (pos, JD, writeValues);
 	if (calRefraction->getValueBool () == true)
 		applyRefraction (pos, JD, writeValues);
 }
@@ -1437,9 +1725,14 @@ void Telescope::applyCorrections (double &tar_ra, double &tar_dec, bool writeVal
 
 void Telescope::startCupolaSync ()
 {
+	double n = getNow ();
+	if (nextCupSync > n)
+		return;
 	struct ln_equ_posn tar;
 	getTarget (&tar);
-	postEvent (new rts2core::Event (EVENT_CUP_START_SYNC, (void*) &tar));
+	rts2core::CommandCupolaSyncTel cmd (this, tar.ra, tar.dec);
+	queueCommandForType (DEVICE_TYPE_CUPOLA, cmd, NULL, true);
+	nextCupSync = n + 20;
 }
 
 int Telescope::endMove ()
@@ -1491,7 +1784,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	}
 
 	// calculate from TLE..
-	if (tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
+	if (tle_freeze->getValueBool () == false && tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
 	{
 		double ra, dec, dist_to_satellite;
 		calculateTLE (JD, ra, dec, dist_to_satellite);
@@ -1501,7 +1794,10 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	// if object was not specified, do not move
 	if (isnan (oriRaDec->getRa ()) || isnan (oriRaDec->getDec ()))
+	{
+		logStream (MESSAGE_ERROR) << "cannot move, null RA or DEC " << oriRaDec->getRa () << " " << oriRaDec->getDec () << sendLog;
 		return -1;
+	}
 
 	// MPEC objects changes coordinates regularly, so we will not bother incrementing 
 	if (mpec->getValueString ().length () > 0)
@@ -1687,13 +1983,13 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		return ret;
 	}
 
-	// synchronize cupola
-	startCupolaSync ();
-
 	targetStarted->setNow ();
 	targetReached->setValueDouble (targetStarted->getValueDouble () + estimateTargetTime ());
 
 	infoAll ();
+
+	// synchronize cupola...
+	afterMovementStart ();
 
 	tarRaDec->resetValueChanged ();
 	oriRaDec->resetValueChanged ();
@@ -1701,6 +1997,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	corrRaDec->resetValueChanged ();
 	telTargetRaDec->resetValueChanged ();
 	mpec->resetValueChanged ();
+	tle_l1->resetValueChanged ();
+	tle_l2->resetValueChanged ();
 
 	if (woffsRaDec->wasChanged ())
 	{
@@ -1760,6 +2058,9 @@ int Telescope::startPark (rts2core::Connection * conn)
 		}
 	}
 	useParkFlipping = true;
+	if (tarTelAltAz && parkPos)
+		tarTelAltAz->setFromValue (parkPos);
+	stopTracking ("parking telescope");
 	ret = startPark ();
 	if (ret < 0)
 	{
@@ -1802,8 +2103,8 @@ void Telescope::signaledHUP ()
 	if (tPointModelFile)
 	{
 		delete model;
-		model = new rts2telmodel::TPointModel (this, tPointModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::TPointModel (getLatitude ());
+		ret = model->load (tPointModelFile);
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Failed to reload model from file " << tPointModelFile << sendLog;
@@ -1818,8 +2119,8 @@ void Telescope::signaledHUP ()
 	if (rts2ModelFile)
 	{
 		delete model;
-		model = new rts2telmodel::RTS2Model (this, rts2ModelFile);
-		ret = model->load ();
+		model = new rts2telmodel::GPointModel (getLatitude ());
+		ret = model->load (rts2ModelFile);
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Failed to reload model from file " << rts2ModelFile << sendLog;
@@ -1931,7 +2232,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		return peek (obj_ra, obj_dec) == 0 ? DEVDEM_OK : DEVDEM_E_PARAMSVAL;
 	}
-	else if (conn->isCommand ("altaz"))
+	else if (conn->isCommand (COMMAND_TELD_ALTAZ))
 	{
 		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
@@ -2032,6 +2333,9 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextString (&l1) || conn->paramNextString (&l2) || ! conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 
+		// we would like to always calculate next TLE position
+		tle_freeze->setValueBool (false);
+
 		mpec->setValueString ("");
 		tle_l1->setValueString (l1);
 		tle_l2->setValueString (l2);
@@ -2058,7 +2362,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 
 		return startResyncMove (conn, 0);
 	}
-	else if (conn->isCommand ("park"))
+	else if (conn->isCommand (COMMAND_TELD_PARK))
 	{
 		if (!conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;

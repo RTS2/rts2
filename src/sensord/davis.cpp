@@ -39,8 +39,8 @@ class Davis:public SensorWeather
 		Davis (int argc, char **argv);
 		virtual ~Davis ();
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 		virtual int info ();
 
@@ -107,6 +107,10 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv)
 
 	lastReceivedChar = 0;
 
+	maxHumidity = NULL;
+	maxWindSpeed = NULL;
+	maxPeekWindSpeed = NULL;
+
 	createValue (barTrend, "bar_trend", "barometric trend in last 3 hours", false);
 	barTrend->addSelVal ("not known");
 	barTrend->addSelVal ("Falling Rapidly");
@@ -143,15 +147,15 @@ Davis::~Davis ()
 	delete davisConn;
 }
 
-void Davis::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Davis::addPollSocks ()
 {
-	davisConn->add (&read_set, &write_set, &exp_set);
-	SensorWeather::addSelectSocks (read_set, write_set, exp_set);
+	SensorWeather::addPollSocks ();
+	davisConn->add (this);
 }
 
-void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void Davis::pollSuccess ()
 {
-	if (davisConn->receivedData (&read_set))
+	if (davisConn->receivedData (this))
 	{
 		int ret = davisConn->readPort (dataBuff + lastReceivedChar, 100 - lastReceivedChar);
 		if (ret > 0)
@@ -184,7 +188,7 @@ void Davis::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 		}
 	}
 
-	SensorWeather::selectSuccess (read_set, write_set, exp_set);
+	SensorWeather::pollSuccess ();
 }
 
 int Davis::info ()
@@ -362,7 +366,7 @@ void Davis::processData ()
 
 void Davis::checkTriggers ()
 {
-        if (!isnan (maxHumidity->getValueInteger ()) && outsideHumidity->getValueFloat () >= maxHumidity->getValueInteger ())
+        if (maxHumidity && outsideHumidity->getValueFloat () >= maxHumidity->getValueInteger ())
         {
          	setWeatherTimeout (600, "humidity has crossed alarm limits");
                 valueError (outsideHumidity);
@@ -372,7 +376,7 @@ void Davis::checkTriggers ()
         	valueGood (outsideHumidity);
 	}
 	
-	if (!isnan (maxWindSpeed->getValueInteger ()) && wind2min->getValueFloat () >= maxWindSpeed->getValueInteger ())
+	if (maxWindSpeed && wind2min->getValueFloat () >= maxWindSpeed->getValueInteger ())
         {
 		setWeatherTimeout (300, "high wind");
 		valueError (windSpeed);
@@ -382,7 +386,7 @@ void Davis::checkTriggers ()
 		valueGood (windSpeed);
         }
 
-	if (!isnan (maxPeekWindSpeed->getValueInteger ()) && wind10mingust->getValueFloat () >= maxPeekWindSpeed->getValueInteger ())
+	if (maxPeekWindSpeed && wind10mingust->getValueFloat () >= maxPeekWindSpeed->getValueInteger ())
         {
 		setWeatherTimeout (300, "high peek wind");
 		valueError (wind10mingust);

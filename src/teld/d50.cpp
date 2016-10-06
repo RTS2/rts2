@@ -187,8 +187,8 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	
 	parking = false;
 	
-	createRaGuide ();
-	createDecGuide ();
+	createRaPAN ();
+	createDecPAN ();
 	
 	createValue (moveSpeedBacklash, "speed_backlash", "[deg/s] initial speed to cross backlash", false, RTS2_VALUE_WRITABLE);
 	moveSpeedBacklash->setValueDouble (0.3);
@@ -229,7 +229,7 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv, true, true)
 	createValue (remotesAbsEncDec, "remotes_abs_encoder_dec", "raw abs. encoder position, Dec axis", false);
 
 	// apply all corrections by rts2 for mount
-	setCorrections (true, true, true);
+	setCorrections (true, true, true, true);
 }
 
 D50::~D50 (void)
@@ -406,9 +406,8 @@ int D50::init ()
 	if (ret)
 		return -1;
 
-	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telLatitude->setValueDouble (config->getObserver ()->lat);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	// zero dec is on local meridian, 90 - telLatitude bellow (to nadir)
 	decZero = - (90.0 - fabs (telLatitude->getValueDouble ()));
@@ -673,14 +672,15 @@ int D50::startPark ()
                 parking = true;
 		// to park to real "zero" position, switch off corrections&modelling, and put it back again after move command
 		bool calAber = calculateAberation ();
+		bool calNut = calculateNutation ();
 		bool calPrec = calculatePrecession ();
 		bool calRef = calculateRefraction ();
 		bool calMod = isModelOn ();
-		setCorrections (false, false, false);
+		setCorrections (false, false, false, false);
 		modelOff ();
                 setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
                 int ret = moveAltAz ();
-		setCorrections (calAber, calPrec, calRef);
+		setCorrections (calAber, calNut, calPrec, calRef);
 		if (calMod)
 			 modelOn ();
                 return ret;
@@ -695,6 +695,7 @@ int D50::endPark ()
         //callAutosave ();
         parking = false;
 	setWormPressureLimiter (false);
+	setWormStepsGenerator (false);
 	deleteTimers (RTS2_D50_BOOSTSPEED);
 	raDrive->setMaxSpeed (RA_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
 	decDrive->setMaxSpeed (DEC_TRANSMISION / 360.0 * moveSpeedBacklash->getValueDouble ());
@@ -806,17 +807,17 @@ void D50::callAutosave ()
 int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	logStream (MESSAGE_DEBUG) << "****** setValue ()" << sendLog;
-        if (old_value == raGuide)
-        {
-                //matchGuideRa (new_value->getValueInteger ());
-                return 0;
-        }
-        /*else if (old_value == decGuide)
-        {
-                matchGuideDec (new_value->getValueInteger ());
-                return 0;
-        }*/
-	else if (old_value == remotesMotorsPower)
+	/*if (old_value == raPAN)
+	{
+		matchGuideRa (new_value->getValueInteger ());
+		return 0;
+	}
+	else if (old_value == decPAN)
+	{
+		matchGuideDec (new_value->getValueInteger ());
+		return 0;
+	}*/
+	if (old_value == remotesMotorsPower)
 	{
 		return setMotorsPower (new_value->getValueInteger ());
 	}

@@ -28,7 +28,7 @@
 
 using namespace rts2teld;
 
-TelLX200::TelLX200 (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates)
+TelLX200::TelLX200 (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? 1 : 0)
 {
 	device_file = "/dev/ttyS0";
 	connDebug = false;

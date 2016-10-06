@@ -339,26 +339,15 @@ void DevClientMirror::stateChanged (ServerState * state)
 	{
 		switch (state->getValue () & MIRROR_MASK)
 		{
-			case MIRROR_A:
-				mirrorA ();
-				break;
-			case MIRROR_B:
-				mirrorB ();
-				break;
-			case MIRROR_UNKNOW:
-				// strange, but that can happen
-				moveFailed (DEVICE_ERROR_HW);
+			case MIRROR_MOVE:
+				mirrorMoving ();
 				break;
 		}
 	}
 	DevClient::stateChanged (state);
 }
 
-void DevClientMirror::mirrorA ()
-{
-}
-
-void DevClientMirror::mirrorB ()
+void DevClientMirror::mirrorMoving ()
 {
 }
 

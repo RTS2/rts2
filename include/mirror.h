@@ -1,60 +1,49 @@
+/**
+ * Abstract class for mirror rotators.
+ * Copyright (C) 2012,2016 Petr Kubanek
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #ifndef __RTS2_MIRROR__
 #define __RTS2_MIRROR__
 
 #include "device.h"
 
-class Rts2DevMirror:public rts2core::Device
+namespace rts2mirror
+{
+
+class Mirror:public rts2core::Device
 {
 	public:
-		Rts2DevMirror (int argc, char **argv);
-		virtual ~ Rts2DevMirror (void);
+		Mirror (int argc, char **argv);
+		virtual ~Mirror (void);
 		virtual int idle ();
 
-		virtual int startOpen ()
-		{
-			maskState (MIRROR_MASK, MIRROR_A_B, "moving A->B");
-			return 0;
-		}
-		virtual int isOpened ()
-		{
-			return -1;
-		}
-		virtual int endOpen ()
-		{
-			maskState (MIRROR_MASK, MIRROR_B, "moved A->B");
-			return 0;
-		}
+	protected:
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		virtual int startClose ()
-		{
-			maskState (MIRROR_MASK, MIRROR_B_A, "moving B->A");
-			return 0;
-		}
-		virtual int isClosed ()
-		{
-			return -1;
-		}
-		virtual int endClose ()
-		{
-			maskState (MIRROR_MASK, MIRROR_A, "moved B->A");
-			return 0;
-		}
-
+		virtual int movePosition (int pos) = 0;
 		// return 1, when mirror is (still) moving
-		virtual int isMoving ()
-		{
-			return ((getState () & MIRROR_MASK) == MIRROR_A_B
-				|| (getState () & MIRROR_MASK) == MIRROR_B_A);
-		}
+		virtual int isMoving () = 0;
 
-		virtual int ready ()
-		{
-			return -1;
-		}
+		void addPosition (const char *pos);
 
-		int startOpen (rts2core::Connection * conn);
-		int startClose (rts2core::Connection * conn);
-
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		rts2core::ValueSelection *mirrPos;
 };
-#endif							 /* ! __RTS2_MIRROR__ */
+
+}
+
+#endif /* ! __RTS2_MIRROR__ */

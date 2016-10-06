@@ -18,8 +18,13 @@ SUBDIRS = \
 	sql \
 	sensord \
 	rotad \
+	multidevd \
 	logger \
 	scheduler \
 	httpd \
+	wsd \
 	bb \
-	pluto
+	pluto \
+	catd \
+	redis \
+	thrift

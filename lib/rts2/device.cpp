@@ -600,7 +600,7 @@ int Device::processOption (int in_opt)
 			strcpy (device_host, optarg);
 			break;
 		case OPT_SERVER:
-			centraldHosts.push_back (HostString (optarg));
+			centraldHosts.insert (centraldHosts.begin (), HostString (optarg));
 			break;
 		case OPT_NOTCHECKNULL:
 			doCheck = false;

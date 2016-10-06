@@ -31,6 +31,22 @@ AS_IF([test "x$CHECK_LIBS" != x], [
   libcheck="yes"
 ])
 
+libwebsockets="no"
+
+PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.0],,AC_MSG_RESULT(not found))
+AM_CONDITIONAL(LIBWEBSOCKETS,test "x$LIBWEBSOCKETS_LIBS" != x)
+AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(LIBWEBSOCKETS, "1", [has libwebsockets])
+  libwebsockets="yes"
+])
+
+PKG_CHECK_MODULES([HIREDIS],[hiredis >= 0.10],,AC_MSG_RESULT(not fould))
+AM_CONDITIONAL(HIREDIS,test "x$HIREDIS_LIBS" != x)
+AS_IF([test "x$HIREDIS_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(HIREDIS, "1", [has hiredis])
+  hiredis="yes"
+])
+
 # check for lang
 AC_LANG_CPLUSPLUS
 
@@ -56,11 +72,10 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset poll socket strchr strdup strerror strtol mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr trunc getline inotify_init inotify_add_watch inotify_init1 nftw round strtof isatty])
 
 AC_FUNC_CHOWN 
 AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES 
 AC_FUNC_STAT
 AC_FUNC_STRFTIME 
 AC_FUNC_VPRINTF 
@@ -87,7 +102,7 @@ AC_ARG_ENABLE(ssl,
 esac],[ssl=yes])
 
 AC_ARG_ENABLE(focusing,
-[  --disable-focusing      disables focusing in camd (=>camd doesn't need cfitsio to build)],
+[  --disable-focusing      disables focusing in camd (=>camd does not need cfitsio to build)],
 [case "${enableval}" in
 	yes) focusing=yes ;;
 	no)  focusing=no ;;
@@ -123,7 +138,29 @@ AC_ARG_WITH(cfitsio,
 	*) cfitsio=${withval} ;;
 esac],[cfitsio=yes])
 
-AM_CONDITIONAL(CFITSIO, test x$cfitsio != xno)
+AS_IF([test "x${CFITSIO_LIBS}" != "xno"],[
+	PKG_CHECK_MODULES([CFITSIO],[cfitsio],,[
+		AC_MSG_RESULT(not found)
+		AS_IF([test "x${cfitsio}" != "xyes"], [LDFLAGS="${LDFLAGS} -L${cfitsio}"])
+		AC_CHECK_LIB([cfitsio], [ffinit], CFITSIO_LIBS="-lcfitsio",[
+			cat <<EOF
+**** cfitsio is not installed.
+**** Please download one from 
+**** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
+EOF
+			exit 1])
+		AS_IF([test "x${cfitsio}" != "xyes"],[
+			CFITSIO_LIBS="-L${cfitsio} ${CFITSIO_LIBS}"
+			CFITSIO_CFLAGS="-I${cfitsio}"
+		],[
+			CFITSIO_CFLAGS=""
+		])
+		AC_SUBST(CFITSIO_LIBS)
+		AC_SUBST(CFITSIO_CFLAGS)
+	])
+])
+
+AM_CONDITIONAL(CFITSIO, test "x${CFITSIO_LIBS}" != "x")
 
 AC_ARG_WITH(ncurses,
 [  --with-ncurses       path to ncurses library or "yes" if ncurses is in standard path],
@@ -132,36 +169,49 @@ AC_ARG_WITH(ncurses,
 	*) ncurses=${withval} ;;
 esac],[ncurses=yes])
 
+PKG_CHECK_MODULES([NCURSES],[ncurses],,[
+	AC_MSG_RESULT(not found)
+	AS_IF([test "x${ncurses}" !- "xyes"], [LDFLAGS="${LDFLAGS} -L${ncurses}"])
+	AC_CHECK_LIB([ncurses], [mvwprintw], [
+		NCURSES_LIBS="-lncurses"
+	],[
+		cat<<EOF
+**** ncurses library is not installed.
+**** Please install ncurses (development package)
+EOF
+		exit 1
+	])
+	AS_IF([test "x${ncurses}" != "xyes"], [
+		NCURSES_LIBS="-L${ncurses} ${NCURSES_LIBS}"
+		NCURSES_CFLAGS="-I${ncurses}"
+	],[
+		NCURSES_CFLAGS=""
+	])
+])
+
+AC_SUBST(NCURSES_LIBS)
+AC_SUBST(NCURSES_CFLAGS)
+
 dnl Check for GraphicsMagic++ library
 
-AC_ARG_WITH(graphicsmagic,
-[  --with-graphicsmagic    path to GraphicsMagic++ config or "no" if it is not installed],
-[case "${withval}" in
-	yes) graphicsmagic_config="GraphicsMagick++-config" ;;
-	no)  graphicsmagic_config=no ;;
-	*) graphicsmagic_config=${withval} ;;
-esac],[graphicsmagic_config="GraphicsMagick++-config"])
+AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagick++ is installed])
 
-AC_MSG_CHECKING(looking for GraphicsMagick++ library)
-AS_IF(["${graphicsmagic_config}" --libs > /dev/null 2>&1], [
-	GRAPHICSMAGICK_VERS=`${graphicsmagic_config} --version`
-	AC_MSG_RESULT(${GRAPHICSMAGICK_VERS} found)
-], [
-	GRAPHICSMAGICK_VERS="no"
-	AC_MSG_RESULT(${graphicsmagic_config} not found)
-	graphicsmagic_config="no"
-])
+PKG_CHECK_MODULES([MAGIC], [GraphicsMagick++], AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[If JPEG is installed]), AC_MSG_RESULT(not found))
 
 AH_TEMPLATE([JSONSOUP],[JSON and SOUP libraries are present])
 
 dnl check for JSON Glib
 PKG_CHECK_MODULES([JSONGLIB], [json-glib-1.0 >= 0.1 libsoup-2.4 >= 0.1],,AC_MSG_RESULT(not found))
 
-AM_CONDITIONAL(JSONSOUP, test "x$JSONGLIB_CFLAGS" != x)
+AM_CONDITIONAL(JSONSOUP, test "x$JSONGLIB_CFLAGS" != "x")
 
-AS_IF([test "x$JSONGLIB_CFLAGS" != x], [
+AS_IF([test "x$JSONGLIB_CFLAGS" != "x"], [
 	AC_DEFINE_UNQUOTED(JSONSOUP, "1", [JSON and SOUP libraries are present])
 ])
+
+PKG_CHECK_MODULES([THRIFT], [thrift],,AC_MSG_RESULT(not found))
+
+AM_CONDITIONAL(THRIFT, test "x$THRIFT_CFLAGS" != x)
 
 dnl Check for ROOT (to build contrib scripts)
 
@@ -211,13 +261,13 @@ AC_ARG_WITH(pgsql,
 	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
 esac],[psql=yes])
 
-AC_ARG_WITH(wcs,
-[  --with-wcs           path to WCS programs],
+AC_ARG_WITH(wcstools,
+[  --with-wcstools           path to WCS programs],
 [case "${withval}" in
-	yes) libwcs=yes ;;
-	no)  libwcs=no ;;
-	*) libwcs=${withval} ;;
-esac],[libwcs=yes])
+	yes) libwcstools=yes ;;
+	no)  libwcstools=no ;;
+	*) libwcstools=${withval} ;;
+esac],[libwcstools=yes])
 
 
 # check for EPICS
@@ -556,6 +606,7 @@ LOCK_PREFIX="/var/run/rts2_")
 AH_TEMPLATE([LOCK_PREFIX],[Lock file prefix path])
 
 AC_DEFINE_UNQUOTED(LOCK_PREFIX, "$LOCK_PREFIX", [Lock file prefix path])
+AC_SUBST(LOCK_PREFIX)
 
 # Default centrald port
 AC_ARG_WITH(port,
@@ -580,72 +631,31 @@ AS_IF([test "x$SSL_LIBS" != x], [
   AC_DEFINE_UNQUOTED(SSL, "1", [using openssl in httpd])
 ])
 
-
-AS_IF([test "x${cfitsio}" != "xno"], [
-  AS_IF([test "x${cfitsio}" != "xyes"], [
-    LDFLAGS="${LDFLAGS} -L${cfitsio}"
+AS_IF([test "x${libwcstools}" != "xno"], [
+  AS_IF([test "x${libwcstools}" != "xyes"], [
+    LDFLAGS="${LDFLAGS} -L${libwcstools}/libwcstools"
   ])
-  AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
-, [cat <<EOF
-**** You don't have cfitsio installed.
-**** Please download one from 
-**** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
-EOF
-exit 1])
-  AS_IF([test "x${cfitsio}" != "xyes"], [
-    LIB_CFITSIO="-L${cfitsio} ${LIB_CFITSIO}"
-    CFITSIO_CFLAGS="-I${cfitsio}"
-  ], [
-    CFITSIO_CFLAGS=""
-  ])
-  AC_SUBST(CFITSIO_CFLAGS)
-  AC_SUBST(LIB_CFITSIO)
-])
-
-AS_IF([test "x${libwcs}" != "xno"], [
-  AS_IF([test "x${libwcs}" != "xyes"], [
-    LDFLAGS="${LDFLAGS} -L${libwcs}/libwcs"
-  ])
-  AC_CHECK_LIB([wcs], [wcs2pix], LIBWCS_LDFLAGS="-lwcs", 
+  AC_CHECK_LIB([wcstools], [wcs2pix], LIBWCS_LDFLAGS="-lwcstools", 
   [cat <<EOF
-**** You don't have libwcs installed.
+**** You don't have wcstools installed.
 **** You can download one from
 **** http://tdc-www.harvard.edu/software/wcstools/.
-**** Please note that there is no standart procedure to install
-**** that library. Please see INSTALL file for instructions how to install
-**** WCS library.
+**** That will not affect compilation, as RTS2 comes with
+**** own WCS functions in case wcstools are not available.
 EOF
-  exit 1])
-  AS_IF([test "x${libwcs}" != "xyes"], [
-    LIBWCS_LDFLAGS="-L${libwcs}/libwcs -lwcs"
-    LIBWCS_CFLAGS="-I${libwcs}"
+  libwcstools=no
+  ])
+  AS_IF([test "x${libwcstools}" != "xyes"], [
+    LIBWCS_LDFLAGS="-L${libwcstools}/libwcstools -lwcstools"
+    LIBWCS_CFLAGS="-I${libwcstools}"
   ], [
-    LIBWCS_LDFLAGS="-lwcs"
+    LIBWCS_LDFLAGS="-lwcstools"
   ])
 ])
 
-AM_CONDITIONAL(LIBWCS, test x$libwcs != xno)
+AM_CONDITIONAL(LIBWCS, test x$libwcstools != xno)
 AC_SUBST(LIBWCS_CFLAGS)
 AC_SUBST(LIBWCS_LDFLAGS)
-
-AS_IF([test "x${ncurses}" != "xyes"], [
-  LDFLAGS="${LDFLAGS} -L${ncurses}/lib"
-])
-
-AC_CHECK_LIB([ncurses], [mvwprintw], LIBNCURSES_LDFLAGS="-lncurses";
-AC_SUBST(LIB_NCURSES), [cat << EOF
-**** You don't have ncurser libraries.
-**** Please install ncursers (you need devel package as well)
-EOF
-exit 1])
-
-AS_IF([test "x${ncurses}" != "xyes"], [
-  LIBNCURSES_CFLAGS="-I${ncurses}/include"
-  LIBNCURSES_LDFLAGS="-L${ncurses}/lib -lncurses"
-])
-
-AC_SUBST(LIBNCURSES_CFLAGS)
-AC_SUBST(LIBNCURSES_LDFLAGS)
 
 AS_IF([test "x${libnova}" != "xyes"], [
   LDFLAGS="${LDFLAGS} -L${libnova}/lib"
@@ -692,20 +702,7 @@ AS_IF([test "x"$xfocusc = "xyes"], [
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 ])
 
-AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagicsk++ is installed])
-
-AS_IF([test "x${graphicsmagic_config}" != "xno"], [
-  LIB_JPEG=`${graphicsmagic_config} --libs`
-  JPEG_CFLAGS=`${graphicsmagic_config} --cppflags`
-  AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[Whenever JPEG is installed])
-], [
-  LIB_JPEG=""
-  JPEG_CFLAGS=""
-])
-AC_SUBST(LIB_JPEG)
-AC_SUBST(JPEG_CFLAGS)
-
-AM_CONDITIONAL(GRAPHICSMAGICK, test x$graphicsmagic_config != xno)
+AM_CONDITIONAL(GRAPHICSMAGICK, test x$MAGIC_LIBS != x)
 
 AH_TEMPLATE([HAVE_CERN_ROOT],[If CERN ROOT package is installed])
 
@@ -929,6 +926,7 @@ AC_OUTPUT([Makefile
 	   lib/Makefile
 	   lib/xmlrpc++/Makefile
 	   lib/pluto/Makefile
+	   lib/sgp4/Makefile
 	   lib/rts2/Makefile
 	   lib/rts2/vermes/Makefile
 	   lib/rts2fits/Makefile
@@ -959,6 +957,7 @@ AC_OUTPUT([Makefile
 	   src/grb/Makefile
 	   src/mirror/Makefile
 	   src/monitor/Makefile
+	   src/multidevd/Makefile
 	   src/plan/Makefile
 	   src/sql/Makefile
 	   src/sql/auger/Makefile
@@ -979,9 +978,14 @@ AC_OUTPUT([Makefile
 	   src/rotad/Makefile
 	   src/logger/Makefile
 	   src/httpd/Makefile
+	   src/wsd/Makefile
 	   src/scheduler/Makefile
 	   src/bb/Makefile
 	   src/pluto/Makefile
+	   src/catd/Makefile
+	   src/thrift/Makefile
+	   src/redis/Makefile
+	   tests/Makefile
 	   checks/Makefile
 	   scripts/rts2saf/Makefile
 	   scripts/rts2saf/rts2saf/Makefile]
@@ -997,20 +1001,24 @@ echo "
   libnova       ${libnova}
   libusb1	${libusb1}
   libusb	${libusb}
-  cfitsio       ${cfitsio}
-  libwcs        ${libwcs}
+  ncurses       ${NCURSES_CFLAGS} ${NCURSES_LIBS}
+  cfitsio       ${CFITSIO_CFLAGS} ${CFITSIO_LIBS}
+  libwcstools   ${libwcstools}
   pgsql		${psql}
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
   epics         ${epics}
   libxml2       ${XMLVERS}
-  graphicsmagic ${GRAPHICSMAGICK_VERS}
+  graphicsmagic ${MAGIC_CFLAGS} ${MAGIC_LIBS}
   CERN ROOT     ${ROOT_VERS}
   libarchive    ${libarchive}
   crypt         ${LIB_CRYPT}
   libgjson	${JSONGLIB_CFLAGS} ${JSONGLIB_LIBS}
   openssl       ${ssl}
   libcheck	${libcheck}
+  libwebsockets	${libwebsockets}
+  libthrift     ${THRIFT_CFLAGS} ${THRIFT_LIBS}
+  hiredis	${hiredis}
 
 CCDs:
   alta          ${ALTA}

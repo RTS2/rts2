@@ -77,6 +77,8 @@ Connection::Connection (Block * in_master):Object ()
 	otherDevice = NULL;
 	otherType = -1;
 
+	sendAll = true;
+
 	statusStart = NAN;
 	statusExpectedEnd = NAN;
 
@@ -118,6 +120,8 @@ Connection::Connection (int in_sock, Block * in_master):Object ()
 	otherDevice = NULL;
 	otherType = -1;
 
+	sendAll = true;
+
 	connectionTimeout = 300;	 // 5 minutes timeout (150 + 150)
 
 	statusStart = NAN;
@@ -148,13 +152,14 @@ Connection::~Connection (void)
 	delete otherDevice;
 }
 
-int Connection::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int Connection::add (Block *block)
 {
 	if (sock >= 0)
 	{
-		FD_SET (sock, readset);
+		short events = POLLIN | POLLPRI;
 		if (isConnState (CONN_INPROGRESS))
-			FD_SET (sock, writeset);
+			events |= POLLOUT;
+		block->addPollFD (sock, events);
 	}
 	return 0;
 }
@@ -178,6 +183,12 @@ std::string Connection::getCameraChipState (int chipN)
 			if (_os.str ().size ())
 				_os << " | ";
 			_os << chipN << " EXPOSING NOIMG";
+		}
+		if (chip_state & CAM_SHIFT)
+		{
+			if (_os.str ().size ())
+				_os << " | ";
+			_os << chipN << " SHIFTSTORE";
 		}
 		if (chip_state & CAM_READING)
 		{
@@ -276,6 +287,12 @@ std::string Connection::getStateString ()
 				default:
 					_os << "UNKNOW";
 			}
+			switch (real_state & DOME_STOPPED_MASK)
+			{
+				case DOME_STOPPED:
+					_os << " | STOPPED";
+					break;
+			}
 			if (getOtherType () == DEVICE_TYPE_CUPOLA)
 			{
 				if (real_state & DOME_CUP_MOVE)
@@ -292,17 +309,27 @@ std::string Connection::getStateString ()
 			_os << "weather " << real_state;
 			break;
 		case DEVICE_TYPE_ROTATOR:
-			switch (real_state & ROT_MASK_ROTATING)
+			if (real_state & ROT_PA_TRACK)
 			{
-				case ROT_IDLE:
-					_os << "idle";
-					break;
-				case ROT_ROTATING:
-					_os << "ROTATING";
-					break;
-				default:
-					_os << "UNKNOWN";	
+				_os << "TRACKING";
 			}
+			else
+			{
+				switch  (real_state & ROT_MASK_ROTATING)
+				{
+					case ROT_IDLE:
+						_os << "idle";
+						break;
+					case ROT_ROTATING:
+						_os << "ROTATING";
+						break;
+					default:
+						_os << "UNKNOWN";
+				}
+			}
+			if (real_state & ROT_AUTO)
+				_os << " | AUTOROTATE";
+
 			break;
 		case DEVICE_TYPE_PHOT:
 			if (real_state & PHOT_INTEGRATE)
@@ -332,18 +359,6 @@ std::string Connection::getStateString ()
 					break;
 				case MIRROR_NOTMOVE:
 					_os << "idle";
-					break;
-				case MIRROR_A:
-					_os << "A";
-					break;
-				case MIRROR_A_B:
-					_os << "MOVING_A_B";
-					break;
-				case MIRROR_B:
-					_os << "B";
-					break;
-				case MIRROR_B_A:
-					_os << "MOVING_B_A";
 					break;
 				default:
 					_os << "unknow";
@@ -418,7 +433,7 @@ std::string Connection::getStateString ()
 			else
 				_os << "idle";
 			break;
-		case DEVICE_TYPE_XMLRPC:
+		case DEVICE_TYPE_HTTPD:
 			switch (real_state & EXEC_MASK_SCRIPT)
 			{
 				case EXEC_SCRIPT_RUNNING:
@@ -905,7 +920,7 @@ void Connection::processLine ()
 		ret = command ();
 	}
 	#ifdef DEBUG_ALL
-	std::cerr << "Connection::processLine [" << getCentraldId ()
+	std::cout << "Connection::processLine [" << getCentraldId ()
 		<< "] command: " << getCommand () << " ret: " << ret << std::endl;
 	#endif
         switch (ret)
@@ -925,6 +940,11 @@ void Connection::processLine ()
 		default:
 			break;
 	}
+}
+
+bool Connection::receivedData (Block *block)
+{
+	return block->isForRead (sock);
 }
 
 void Connection::processBuffer ()
@@ -987,13 +1007,13 @@ void Connection::processBuffer ()
 	full_data_end = NULL;
 }
 
-int Connection::receive (fd_set * readset)
+int Connection::receive (Block *block)
 {
 	int data_size = 0;
 	// connections market for deletion
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if ((sock >= 0) && FD_ISSET (sock, readset))
+	if ((sock >= 0) && (block->getPollEvents (sock) & (POLLIN | POLLPRI)))
 	{
 		if (isConnState (CONN_CONNECTING))
 		{
@@ -1026,6 +1046,7 @@ int Connection::receive (fd_set * readset)
 		successfullRead ();
 		#ifdef DEBUG_ALL
 		std::cout << "Connection::receive name " << getName ()
+			<< " [" << getCentraldId () << ":" << sock << "]"
 			<< " reas: " << buf_top
 			<< " full_buf: " << buf
 			<< " size: " << data_size
@@ -1041,9 +1062,9 @@ int Connection::receive (fd_set * readset)
 	return data_size;
 }
 
-int Connection::writable (fd_set * writeset)
+int Connection::writable (Block *block)
 {
-	if (sock >=0 && FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
+	if (sock >=0 && (block->getPollEvents (sock) & POLLOUT) && isConnState (CONN_INPROGRESS))
 	{
 		int err = 0;
 		int ret;
@@ -1104,8 +1125,11 @@ void Connection::queCommand (Command * cmd, int notBop, Object * originator)
 	queCommand (cmd);
 }
 
-void Connection::queCommand (Command * cmd)
+int Connection::queCommand (Command * cmd)
 {
+	#ifdef DEBUG_ALL
+	std::cout << "Connection::queCommand " << cmd->getText () << " runningCommand " << runningCommand << " queu size " << commandQue.size () << std::endl;
+	#endif
 	cmd->setConnection (this);
 	if (runningCommand
 		|| isConnState (CONN_CONNECTING)
@@ -1114,10 +1138,14 @@ void Connection::queCommand (Command * cmd)
 		|| isConnState (CONN_UNKNOW))
 	{
 		commandQue.push_back (cmd);
-		return;
+		return 1;
 	}
 	runningCommand = cmd;
 	sendCommand ();
+	// if command was send, retun 0 - otherwise, return 1
+	if (runningCommandStatus == SEND)
+		return 0;
+	return 1;
 }
 
 void Connection::queSend (Command * cmd)
@@ -1164,9 +1192,9 @@ bool Connection::queEmptyForOriginator (Object *testOriginator)
 	return true;
 }
 
-void Connection::queClear ()
+void Connection::queClear (bool running)
 {
-	if (runningCommand && runningCommandStatus != SEND)
+	if (runningCommand && (running == true || runningCommandStatus != SEND))
 	{
 		delete runningCommand;
 		runningCommand = NULL;
@@ -1437,6 +1465,9 @@ int Connection::commandReturn ()
 	runningCommandStatus = RETURNING;
 	commandReturn (runningCommand, stat);
 	ret = runningCommand->commandReturn (stat, this);
+	#ifdef DEBUG_ALL
+	std::cout << "Connection::commandReturn " << ret << std::endl;
+	#endif
 	switch (ret)
 	{
 		case RTS2_COMMAND_REQUE:
@@ -1455,10 +1486,18 @@ int Connection::sendMsg (const char *msg)
 	int len;
 	int ret;
 	if (sock == -1)
+	{
+		#ifdef DEBUG_ALL
+		std::cout << "Connection::sendMsg sock -1" << std::endl;
+		#endif
 		return -1;
+	}
 	len = strlen (msg) + 1;
 	char *mbuf = new char[len + 1];
 	strcpy (mbuf, msg);
+	#ifdef DEBUG_ALL
+	std::cout << "Connection::sendMsg will send " << msg << std::endl;
+	#endif
 	strcat (mbuf, "\n");
 	// ignore EINTR
 	do
@@ -1472,7 +1511,7 @@ int Connection::sendMsg (const char *msg)
 			msg, sock, len, ret, errno);
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_ERROR)
-			<< "Connection::send [" << getCentraldId () << ":" << conn_state << "] error "
+			<< "Connection::sendMsg [" << getCentraldId () << ":" << conn_state << "] error "
 			<< sock << " state: " << ret << " sending " << msg << ":" << strerror (errno)
 			<< sendLog;
 		#endif
@@ -1481,7 +1520,7 @@ int Connection::sendMsg (const char *msg)
 		return -1;
 	}
 	#ifdef DEBUG_ALL
-	std::cout << "Connection::send " << getName ()
+	std::cout << "Connection::sendMsg " << getName ()
 		<< " [" << getCentraldId () << ":" << sock << "] send " << ret << ": " << msg
 		<< std::endl;
 	#endif

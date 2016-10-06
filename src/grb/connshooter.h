@@ -27,7 +27,7 @@
 #define AUGER_BUF_SIZE  20000
 
 // number of cuts
-#define NUM_CUTS        4
+#define NUM_CUTS        5
 
 namespace rts2grbd
 {
@@ -51,7 +51,7 @@ class ConnShooter:public rts2core::ConnNoSend
 		virtual int init ();
 
 		virtual void connectionError (int last_data_size);
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 
 		int lastPacket ();
 		double lastTargetTime ();

@@ -46,34 +46,6 @@ namespace rts2telmodel
 {
 
 /**
- * Conditions for model calculation.
- *
- * Holds only conditions which are static, e.g. it will not hold alt&az, as
- * those will be changed in course of model calculation. Holds mount
- * geographics position, current time etc.
- *
- * @ingroup RTS2TPoint
- */
-class ObsConditions
-{
-	private:
-		rts2teld::Telescope * telescope;
-	public:
-		ObsConditions (rts2teld::Telescope * in_telescope)
-		{
-			telescope = in_telescope;
-		}
-		double getLatitude ()
-		{
-			return telescope->getLatitude ();
-		}
-		double getLatitudeRadians ()
-		{
-			return ln_deg_to_rad (getLatitude ());
-		}
-};
-
-/**
  * Telescope pointing model abstract class.
  * Child class should implement abstract model, and can be loaded
  * from teld.cpp source file for different pointing model corrections.
@@ -85,18 +57,17 @@ class ObsConditions
 class TelModel
 {
 	public:
-		TelModel (rts2teld::Telescope * in_telescope, const char *in_modelFile)
+		TelModel (double in_latitude)
 		{
-			cond = new ObsConditions (in_telescope);
-			modelFile = in_modelFile;
+			tel_latitude = in_latitude;
+			tel_latitude_r = ln_deg_to_rad (in_latitude);
 		}
 
 		virtual ~ TelModel (void)
 		{
-			delete cond;
 		}
 
-		virtual int load () = 0;
+		virtual int load (const char *modelFile) = 0;
 		/**
 		 * Apply model to coordinates. Pos.ra is hour angle, not RA.
 		 */
@@ -107,14 +78,18 @@ class TelModel
 		virtual int reverseVerbose (struct ln_equ_posn *pos) = 0;
 		virtual int reverse (struct ln_equ_posn *pos, double sid) = 0;
 
+		virtual void getErrAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err) { }
+
                 virtual double getRMS () { return -1; }
 
 		virtual std::istream & load (std::istream & is) = 0;
-		virtual std::ostream & print (std::ostream & os) = 0;
+		virtual std::ostream & print (std::ostream & os, char frmt = 'r') = 0;
+
+		double getLatitudeRadians () { return tel_latitude_r; }
 
 	protected:
-		ObsConditions * cond;
-		const char *modelFile;
+		double tel_latitude;
+		double tel_latitude_r;
 };
 
 };

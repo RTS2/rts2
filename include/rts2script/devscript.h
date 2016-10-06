@@ -116,7 +116,7 @@ class DevScript
 		virtual void clearWait () = 0;
 		virtual int isWaitMove () = 0;
 		virtual void setWaitMove () = 0;
-		virtual void queCommandFromScript (rts2core::Command * comm) = 0;
+		virtual int queCommandFromScript (rts2core::Command * comm) = 0;
 
 		virtual int getFailedCount () = 0;
 		virtual void clearFailedCount () = 0;

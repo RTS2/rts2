@@ -908,7 +908,7 @@ int ValueAltAz::doOpValue (char op, Value *old_value)
 
 const char * ValueAltAz::getValue ()
 {
-	snprintf (buf, VALUE_BUF_LEN, "%.20lf %20.lf", getAlt (), getAz ());
+	snprintf (buf, VALUE_BUF_LEN, "%.20lf %.20lf", getAlt (), getAz ());
 	return buf;
 }
 

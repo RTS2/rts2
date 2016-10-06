@@ -65,11 +65,13 @@ void XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 	addSource(source, eventMask);	
 }
 
+#define MAX_POLLS	200
+
 // Watch current set of sources and process events
-void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
+void XmlRpcDispatch::work(double timeout_ms, XmlRpcClient *chunkWait)
 {
 	// Compute end time
-	_endTime = (timeout < 0.0) ? -1.0 : (getTime() + timeout);
+	_endTime = (timeout_ms < 0.0) ? -1.0 : (getTime() + timeout_ms/1000.0);
 	_doClear = false;
 	_inWork = true;
 
@@ -83,23 +85,22 @@ void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 	{
 
 		// Construct the sets of descriptors we are interested in
-		fd_set inFd, outFd, excFd;
-		FD_ZERO(&inFd);
-		FD_ZERO(&outFd);
-		FD_ZERO(&excFd);
+		struct pollfd fds[MAX_POLLS];
+		nfds_t nfds = 0;
 
-		addToFd (&inFd, &outFd, &excFd);
+		addToFds (fds, nfds);
+		fds[nfds].fd = -1;
 
 		// Check for events
 		int nEvents;
-		if (timeout < 0.0)
-			nEvents = select(FD_SETSIZE, &inFd, &outFd, &excFd, NULL);
+		if (timeout_ms < 0.0)
+			nEvents = poll(fds, nfds, 0);
 		else
 		{
-			struct timeval tv;
-			tv.tv_sec = (int)floor(timeout);
-			tv.tv_usec = ((int)floor(1000000.0 * (timeout-floor(timeout)))) % 1000000;
-			nEvents = select(FD_SETSIZE, &inFd, &outFd, &excFd, &tv);
+			struct timespec tv;
+			tv.tv_sec = (int) floor (timeout_ms / 1000.0);
+			tv.tv_nsec = (int) (fmod (timeout_ms, 1000.0) * 1000000.0);
+			nEvents = ppoll(fds, nfds, &tv, NULL);
 		}
 
 		if (nEvents < 0)
@@ -109,7 +110,7 @@ void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 			return;
 		}
 
-		checkFd (&inFd, &outFd, &excFd, chunkWait);
+		checkFds (fds, nfds, chunkWait);
 
 		// Check whether to clear all sources
 		if (_doClear)
@@ -137,58 +138,112 @@ void XmlRpcDispatch::work(double timeout, XmlRpcClient *chunkWait)
 	_inWork = false;
 }
 
-void XmlRpcDispatch::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+void XmlRpcDispatch::addToFd (void (*addFD) (int, short))
 {
 	SourceList::iterator it;
 	for (it=_sources.begin(); it!=_sources.end(); ++it)
 	{
-		int fd = it->getSource()->getfd();
-		if (it->getMask() & ReadableEvent) FD_SET(fd, inFd);
-		if (it->getMask() & WritableEvent) FD_SET(fd, outFd);
-		if (it->getMask() & Exception)     FD_SET(fd, excFd);
+		short events = 0;
+		if (it->getMask() & ReadableEvent) events |= POLLIN | POLLPRI;
+		if (it->getMask() & WritableEvent) events |= POLLOUT;
+		if (it->getMask() & Exception)     events |= POLLRDHUP | POLLERR | POLLHUP | POLLNVAL;
+		if (events != 0)
+			addFD (it->getSource()->getfd(), events);
 	}
 }
 
-void XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSource *chunkWait)
+void XmlRpcDispatch::addToFds (struct pollfd *fds, nfds_t &nfd)
+{
+	SourceList::iterator it;
+	for (it=_sources.begin(); it!=_sources.end(); ++it)
+	{
+		short events = 0;
+		if (it->getMask() & ReadableEvent) events |= POLLIN | POLLPRI;
+		if (it->getMask() & WritableEvent) events |= POLLOUT;
+		if (it->getMask() & Exception)     events |= POLLRDHUP | POLLERR | POLLHUP | POLLNVAL;
+		if (events != 0)
+		{
+			fds[nfd].fd = it->getSource()->getfd();
+			fds[nfd].events = events;
+			fds[nfd].revents = 0;
+			nfd++;	
+		}
+	}
+}
+
+void XmlRpcDispatch::checkFd (short (*getFDEvents) (int), XmlRpcSource *chunkWait)
 {
 	SourceList::iterator it;
 	// Process events
 	for (it=_sources.begin(); it != _sources.end(); )
 	{
 		SourceList::iterator thisIt = it++;
-		XmlRpcSource* src = thisIt->getSource();
-		int fd = src->getfd();
-		unsigned newMask = (unsigned) -1;
-		// If you select on multiple event types this could be ambiguous
-		try
-		{
-			if (FD_ISSET(fd, inFd))
-				newMask &= (src == chunkWait) ? src->handleChunkEvent(ReadableEvent) : src->handleEvent(ReadableEvent);
-		}
-		catch (const XmlRpcAsynchronous &async)
-		{
-			XmlRpcUtil::log(3, "Asynchronous event while handling response.");
-			// stop monitoring the source..
-			thisIt->getMask() = 0;
-			src->goAsync ();
-		}
+		int fd = thisIt->getSource()->getfd();
+		short revents = getFDEvents(fd);
+		if (revents == 0)
+			continue;
 
-		if (FD_ISSET(fd, outFd))
-			newMask &= (src == chunkWait) ? src->handleChunkEvent(WritableEvent) : src->handleEvent(WritableEvent);
-		if (FD_ISSET(fd, excFd))
-			newMask &= (src == chunkWait) ? src->handleChunkEvent(Exception) : src->handleEvent(Exception);
+		processFds (revents, thisIt, chunkWait);
+	}
+}
 
-		if ( ! newMask)
+void XmlRpcDispatch::checkFds (struct pollfd *fds, nfds_t &nfds, XmlRpcSource *chunkWait)
+{
+	SourceList::iterator it;
+	// Process events
+	for (it=_sources.begin(); it != _sources.end(); )
+	{
+		SourceList::iterator thisIt = it++;
+		int fd = thisIt->getSource()->getfd();
+		short revents = 0;
+		for (nfds_t i = 0; i < nfds; i++)
 		{
-			// Stop monitoring this one
-			_sources.erase(thisIt);
-			if ( ! src->getKeepOpen())
-				src->close();
+			if (fds[i].fd == fd)
+			{
+				revents = fds[i].revents;
+				break;
+			}
 		}
-		else if (newMask != (unsigned) -1)
-		{
-			thisIt->getMask() = newMask;
-		}
+		if (revents == 0)
+			continue;
+		processFds (revents, thisIt, chunkWait);
+	}
+}
+
+
+void XmlRpcDispatch::processFds (short revents, SourceList::iterator thisIt, XmlRpcSource *chunkWait)
+{
+	XmlRpcSource* src = thisIt->getSource();
+	unsigned newMask = (unsigned) -1;
+	// If you select on multiple event types this could be ambiguous
+	try
+	{
+		if (revents & (POLLIN | POLLPRI))
+			newMask &= (src == chunkWait) ? src->handleChunkEvent(ReadableEvent) : src->handleEvent(ReadableEvent);
+	}
+	catch (const XmlRpcAsynchronous &async)
+	{
+		XmlRpcUtil::log(3, "Asynchronous event while handling response.");
+		// stop monitoring the source..
+		thisIt->getMask() = 0;
+		src->goAsync ();
+	}
+
+	if (revents & POLLOUT)
+		newMask &= (src == chunkWait) ? src->handleChunkEvent(WritableEvent) : src->handleEvent(WritableEvent);
+	if (revents & (POLLRDHUP | POLLERR | POLLHUP | POLLNVAL))
+		newMask &= (src == chunkWait) ? src->handleChunkEvent(Exception) : src->handleEvent(Exception);
+
+	if ( ! newMask)
+	{
+		// Stop monitoring this one
+		_sources.erase(thisIt);
+		if ( ! src->getKeepOpen())
+			src->close();
+	}
+	else if (newMask != (unsigned) -1)
+	{
+		thisIt->getMask() = newMask;
 	}
 }
 

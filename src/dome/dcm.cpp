@@ -40,7 +40,7 @@ class Rts2ConnDcm:public Rts2ConnFramWeather
 	public:
 		Rts2ConnDcm (int in_weather_port, Rts2DevDomeDcm * in_master);
 		virtual ~ Rts2ConnDcm (void);
-		virtual int receive (fd_set * set);
+		virtual int receive (rts2core::Block *block);
 };
 
 class Rts2DevDomeDcm:public Rts2DevDome
@@ -58,20 +58,16 @@ class Rts2DevDomeDcm:public Rts2DevDome
 
 };
 
-Rts2ConnDcm::Rts2ConnDcm (int in_weather_port, Rts2DevDomeDcm * in_master):
-Rts2ConnFramWeather (in_weather_port, DCM_WEATHER_TIMEOUT, in_master)
+Rts2ConnDcm::Rts2ConnDcm (int in_weather_port, Rts2DevDomeDcm * in_master):Rts2ConnFramWeather (in_weather_port, DCM_WEATHER_TIMEOUT, in_master)
 {
 	master = in_master;
 }
-
 
 Rts2ConnDcm::~Rts2ConnDcm (void)
 {
 }
 
-
-int
-Rts2ConnDcm::receive (fd_set * set)
+int Rts2ConnDcm::receive (rts2core::Block *block)
 {
 	int ret;
 	char Wbuf[100];
@@ -86,7 +82,7 @@ Rts2ConnDcm::receive (fd_set * set)
 	int sw1, sw2, sw3, sw4;
 
 	float sec_f;
-	if (sock >= 0 && FD_ISSET (sock, set))
+	if (sock >= 0 && block->isForRead (sock))
 	{
 		struct sockaddr_in from;
 		socklen_t size = sizeof (from);
@@ -152,25 +148,19 @@ Rts2ConnDcm::receive (fd_set * set)
 	return data_size;
 }
 
-
-Rts2DevDomeDcm::Rts2DevDomeDcm (int in_argc, char **in_argv):
-Rts2DevDome (in_argc, in_argv)
+Rts2DevDomeDcm::Rts2DevDomeDcm (int in_argc, char **in_argv):Rts2DevDome (in_argc, in_argv)
 {
 	weatherConn = NULL;
 	domeModel = "DCM";
-	addOption ('W', "dcm_weather", 1,
-		"UPD port number of packets from DCM (default to 4998)");
+	addOption ('W', "dcm_weather", 1, "UPD port number of packets from DCM (default to 4998)");
 	dcm_weather_port = 4998;
 }
-
 
 Rts2DevDomeDcm::~Rts2DevDomeDcm (void)
 {
 }
 
-
-int
-Rts2DevDomeDcm::processOption (int in_opt)
+int Rts2DevDomeDcm::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -183,9 +173,7 @@ Rts2DevDomeDcm::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2DevDomeDcm::init ()
+int Rts2DevDomeDcm::init ()
 {
 	int ret;
 
@@ -201,9 +189,7 @@ Rts2DevDomeDcm::init ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2DevDomeDcm device = Rts2DevDomeDcm (argc, argv);
 	return device.run ();

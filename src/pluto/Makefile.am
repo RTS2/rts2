@@ -2,8 +2,8 @@ noinst_PROGRAMS = obs_test obs_test2 test_sat sat_id test2 out_comp test_out
 
 noinst_DATA = obs_test.txt
 
-AM_CXXFLAGS=-I../../include
-LDADD = -L../../lib/pluto -lpluto @LIB_M@
+AM_CXXFLAGS=-I../../include @NOVA_CFLAGS@
+LDADD = -L../../lib/pluto -lpluto @LIB_M@ @LIB_NOVA@
 
 obs_test_SOURCES = obs_test.cpp
 

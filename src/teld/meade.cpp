@@ -535,14 +535,11 @@ int LX200::initValues ()
         if (ret)
 	  return -1;
 
-        telLongitude->setValueDouble (config->getObserver ()->lng);
-        telLatitude->setValueDouble (config->getObserver ()->lat);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+        setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	if (tel_read_longtitude () || tel_read_latitude ())
 		return -1;
-
-	telAltitude->setValueDouble (600);
 
 	telFlip->setValueInteger (0);
 

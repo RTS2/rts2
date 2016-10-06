@@ -1197,13 +1197,15 @@ void APGTO::startCupolaSync ()
     target_equ.ra = fmod( target_equ.ra + 360., 360.) ;
     target_equ.dec= fmod( target_equ.dec, 90.) ; 
     if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
-      postEvent (new rts2core::Event (EVENT_CUP_START_SYNC, (void*) &target_equ));
+      rts2core::CommandCupolaSyncTel cmd (this, target_equ.ra, target_equ.dec);
+      queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
     } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
       //tel_equ.dec += 180. ;
       struct ln_equ_posn t_equ;
       t_equ.ra = target_equ.ra ;
       t_equ.dec= target_equ.dec + 180. ;
-      postEvent (new rts2core::Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
+      rts2core::CommandCupolaSyncTel cmd (this, t_equ.ra, t_equ.dec);
+      queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
     }
     logStream (MESSAGE_INFO) << "APGTO::startCupolaSync sync cupola" << sendLog;
   }
@@ -1445,11 +1447,11 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 		//logStream (MESSAGE_DEBUG) << "APGTO::setValue, sending cmd: " << cmd << sendLog; 
 		return serConn->writePort (cmd, 9) ? -2 : 0;
 	}
-	if (oldValue == raGuide || oldValue == decGuide)
+	if (oldValue == raPAN || oldValue == decPAN)
 	{
 		const char *cmd[2][3] = {{":Qe#:Qw#", ":Mw#", ":Me#"}, {":Qs#:Qn#", ":Ms#", ":Mn#"}};
 		const char *c;
-		if (oldValue == raGuide)
+		if (oldValue == raPAN)
 			c = cmd[0][newValue->getValueInteger ()];
 		else
 			c = cmd[1][newValue->getValueInteger ()];
@@ -2096,9 +2098,8 @@ int APGTO::initValues ()
 	if (ret)
 		return -1;
 	// read from configuration, will not be overwritten (e.g. by getAPLongitude, latitude)
-	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telLatitude->setValueDouble (config->getObserver ()->lat);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
+	setTelAltitude (config->getObservatoryAltitude ());
 
 	if(( ret= setBasicData()) != 0)
 		return -1 ;
@@ -2291,8 +2292,8 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	APguide_rate->addSelVal ("0.5");
 	APguide_rate->addSelVal ("1.0");
 
-	createRaGuide ();
-	createDecGuide ();
+	createRaPAN ();
+	createDecPAN ();
 	
 	createValue (collision_detection, "COLLILSION_DETECTION", "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
 	collision_detection->setValueBool (true) ;

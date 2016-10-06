@@ -125,16 +125,16 @@ int BB::idle ()
 	return rts2db::DeviceDb::idle ();
 }
 
-void BB::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void BB::addPollSocks ()
 {
-	rts2db::DeviceDb::addSelectSocks (read_set, write_set, exp_set);
-	XmlRpcServer::addToFd (&read_set, &write_set, &exp_set);
+	rts2db::DeviceDb::addPollSocks ();
+	XmlRpcServer::addToFd (&getMasterAddPollFD);
 }
 
-void BB::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+void BB::pollSuccess ()
 {
-	rts2db::DeviceDb::selectSuccess (read_set, write_set, exp_set);
-	XmlRpcServer::checkFd (&read_set, &write_set, &exp_set);
+	rts2db::DeviceDb::pollSuccess ();
+	XmlRpcServer::checkFd (&getMasterGetEvents);
 }
 
 void BB::processSchedule (ObservatorySchedule *obs_sched)

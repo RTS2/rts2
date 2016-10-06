@@ -206,9 +206,8 @@ int TCSNG::initHardware ()
 	rts2core::Configuration *config;
 	config = rts2core::Configuration::instance ();
 	config->loadFile (cfgFile);
-	telLatitude->setValueDouble (config->getObserver ()->lat);
-	telLongitude->setValueDouble (config->getObserver ()->lng);
-	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
+	setTelAltitude (config->getObservatoryAltitude ());
 			
 	return Telescope::initHardware ();
 }

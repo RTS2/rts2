@@ -29,12 +29,15 @@
 #include "objectcheck.h"
 
 // pointing models
-#define POINTING_RADEC       0
-#define POINTING_ALTAZ       1
-#define POINTING_ALTALT      2
+#define POINTING_RADEC          0
+#define POINTING_ALTAZ          1
+#define POINTING_ALTALT         2
 
 
-#define SIDEREAL_HOURS       23.9344696
+#define SIDEREAL_HOURS          23.9344696
+
+// Limit on number of steps for trajectory check
+#define TRAJECTORY_CHECK_LIMIT  2000
 
 namespace rts2telmodel
 {
@@ -84,7 +87,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (rts2core::Event * event);
@@ -96,12 +99,20 @@ class Telescope:public rts2core::Device
 		double getLatitude () { return telLatitude->getValueDouble (); }
 		double getLongitude () { return telLongitude->getValueDouble (); }
 		double getAltitude () { return telAltitude->getValueDouble (); }
+		float getPressure () { return telPressure->getValueFloat (); }
+
+		void setTelLongLat (double longitude, double latitude);
+		void setTelAltitude (float altitude);
+
+		double getHourAngle () { return hourAngle->getValueDouble (); }
+
+		double getAltitudePressure (double alt, double sea_press);
 
 		// callback functions from telescope connection
 		virtual int info ();
 		int infoJD (double JD);
 		int infoLST (double telLST);
-		int infoJDLST (double JD, double telLST);
+		virtual int infoJDLST (double JD, double telLST);
 
 		virtual int scriptEnds ();
 
@@ -121,12 +132,14 @@ class Telescope:public rts2core::Device
 		 * Set telescope correctios.
 		 *
 		 * @param _aberation     If aberation should be calculated.
+		 * @param _nutation      If nutation should be calculated.
 		 * @param _precession    If precession should be calculated.
 		 * @param _refraction    If refraction should be calculated.
 		 */
-		void setCorrections (bool _aberation, bool _precession, bool _refraction)
+		void setCorrections (bool _aberation, bool _nutation, bool _precession, bool _refraction)
 		{
 			calAberation->setValueBool (_aberation);
+			calNutation->setValueBool (_nutation);
 			calPrecession->setValueBool (_precession);
 			calRefraction->setValueBool (_refraction);
 		}
@@ -135,6 +148,11 @@ class Telescope:public rts2core::Device
 		 * If aberation should be calculated in RTS2.
 		 */
 		bool calculateAberation () { return calAberation->getValueBool (); }
+
+		/**
+		 * If nutation should be calculated in RTS2.
+		 */
+		bool calculateNutation () { return calNutation->getValueBool (); }
 
 		/**
 		 * If precession should be calculated in RTS2.
@@ -177,10 +195,34 @@ class Telescope:public rts2core::Device
 		void setModel (rts2telmodel::TelModel *_model) { model = _model; calModel->setValueBool (model != NULL); }
 		
 	protected:
+		/**
+		 * Creates values for guiding movements.
+		 */
+		void createRaPAN ();
+		void createDecPAN ();
+
+		rts2core::ValueSelection *raPAN;
+		rts2core::ValueSelection *decPAN;
+
+		rts2core::ValueDouble *raPANSpeed;
+		rts2core::ValueDouble *decPANSpeed;
+
 		void applyOffsets (struct ln_equ_posn *pos)
 		{
 			pos->ra = oriRaDec->getRa () + offsRaDec->getRa ();
 			pos->dec = oriRaDec->getDec () + offsRaDec->getDec ();
+		}
+
+		void applyAltAzOffsets (struct ln_hrz_posn *hrz)
+		{
+			hrz->az = ln_range_degrees (hrz->az + offsAltAz->getAz ());
+			hrz->alt += offsAltAz->getAlt ();
+		}
+
+		void reverseAltAzOffsets (double &alt, double &az)
+		{
+			alt -= offsAltAz->getAlt ();
+			az = ln_range_degrees (az - offsAltAz->getAz ());
 		}
 
 		/**
@@ -295,17 +337,6 @@ class Telescope:public rts2core::Device
 		 */
 		int getPointingModel () { return pointingModel->getValueInteger (); }
 
-		/**
-		 * Creates values for guiding movements.
-		 */
-		void createRaGuide ();
-		void createDecGuide ();
-
-		/**
-		 * Telescope can track.
-		 */
-		void createTracking ();
-
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
@@ -339,6 +370,8 @@ class Telescope:public rts2core::Device
 		 * @param model_change ln_equ_posn difference against original pos position, includes coputed model's difference together with correction corrRaDec.
 		 */
 		void applyModel (struct ln_equ_posn *m_pos, struct ln_equ_posn *tt_pos, struct ln_equ_posn *model_change, double JD);
+
+		void applyModelAltAz (struct ln_hrz_posn *hrz, struct ln_hrz_posn *err);
 
 		/**
 		 * Apply precomputed model by computeModel (), set everything equivalently what applyModel () does.
@@ -390,6 +423,15 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *telLongitude;
 		rts2core::ValueDouble *telLatitude;
 		rts2core::ValueDouble *telAltitude;
+		rts2core::ValueFloat *telPressure;
+
+
+		/**
+		 * Precalculated latitude values..
+		 */
+		double cos_lat;
+		double sin_lat;
+		double tan_lat;
 
 		/**
 		 * Check if telescope is moving to fixed position. Called during telescope
@@ -488,7 +530,8 @@ class Telescope:public rts2core::Device
 		/**
 		 * Sets new movement target, used exclusively to change target flip.
 		 */
-		void setTarTel (struct ln_equ_posn *pos);
+		void setTarTelRaDec (struct ln_equ_posn *pos);
+		void setTarTelAltAz (struct ln_hrz_posn *hrz);
 
 		/**
 		 * Set WCS reference values telescope is reporting.
@@ -541,6 +584,9 @@ class Telescope:public rts2core::Device
 			out_tar->dec = tarRaDec->getDec ();
 		}
 
+		double getTargetRa () { return tarRaDec->getRa (); }
+		double getTargetDec () { return tarRaDec->getDec (); }
+
 		/**
 		 * Calculate target position for given JD.
 		 * This function shall be used for adaptive tracking.
@@ -589,12 +635,7 @@ class Telescope:public rts2core::Device
 		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValue, double haMargin, bool forceShortest);
 
 		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
-
-		void getTargetAltAz (struct ln_hrz_posn *hrz)
-		{
-			hrz->alt = telAltAz->getAlt ();
-			hrz->az = telAltAz->getAz ();
-		}
+		void addDiffAltAz (struct ln_hrz_posn *hrz, double secdiff);
 
 		/**
 		 * Returns time when move start was commanded (in ctime).
@@ -911,6 +952,12 @@ class Telescope:public rts2core::Device
 		virtual void runTracking ();
 
 		/**
+		 * Update tracking frequency. Should be run after new tracking vector
+		 * is send to the mount motion controller.
+		 */
+		void updateTrackingFrequency ();
+
+		/**
 		 * Calculate TLE RA DEC for given time.
 		 */
 		void calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite);
@@ -922,6 +969,8 @@ class Telescope:public rts2core::Device
 		 * @param ddec differential tracking in DEC
 		 */
 		virtual void setDiffTrack (double dra, double ddec);
+
+		virtual void setDiffTrackAltAz (double daz, double dalt);
 
 		/**
 		 * Hard horizon. Use it to check if telescope coordinates are within limits.
@@ -963,9 +1012,6 @@ class Telescope:public rts2core::Device
 		 */
 		rts2core::ValueDouble *jdVal;
 
-		rts2core::ValueSelection *raGuide;
-		rts2core::ValueSelection *decGuide;
-
 		rts2core::ValueFloat *trackingInterval;
 
 		/**
@@ -977,17 +1023,47 @@ class Telescope:public rts2core::Device
 		double getDiffTrackRa () { return diffTrackRaDec->getRa (); }
 		double getDiffTrackDec () { return diffTrackRaDec->getDec (); }
 
+		double getDiffTrackAz () { return diffTrackAltAz->getAz (); }
+		double getDiffTrackAlt () { return diffTrackAltAz->getAlt (); }
+
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
 
 		void getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz_posn *hrz);
 		void getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos);
+
+		/**
+		 * Apply aberation correction.
+		 */
+		void applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		/**
+		 * Apply nutation correction.
+		 */
+		void applyNutation (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		/**
+		 * Apply precision correction.
+		 */
+		void applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		/**
+		 * Apply refraction correction.
+		 */
+		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
+
+		virtual void afterMovementStart ();
+
 	private:
 		rts2core::Connection * move_connection;
 		int moveInfoCount;
 		int moveInfoMax;
 
 		rts2core::ValueSelection *tracking;
+		rts2core::ValueDoubleStat *trackingFrequency;
+		rts2core::ValueInteger *trackingFSize;
+		rts2core::ValueFloat *trackingWarning;
+		double lastTrackingRun;
 
 		/**
 		 * Last error.
@@ -1034,6 +1110,11 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *offsRaDec;
 
 		/**
+		 * User alt-az offsets. Supported primary on alt-az mounts.
+		 */
+		rts2core::ValueAltAz *offsAltAz;
+
+		/**
 		 * Offsets which should be applied from last movement.
 		 */
 		rts2core::ValueRaDec *woffsRaDec;
@@ -1044,6 +1125,18 @@ class Telescope:public rts2core::Device
 		 * Start time of differential tracking.
 		 */
 		rts2core::ValueDouble *diffTrackStart;
+
+		/**
+		 * Differential tracking on/off.
+		 */
+		rts2core::ValueBool *diffTrackOn;
+
+		/**
+		 * Alt/az diferential tracking.
+		 */
+		rts2core::ValueAltAz *diffTrackAltAz;
+		rts2core::ValueDouble *diffTrackAltAzStart;
+		rts2core::ValueBool *diffTrackAltAzOn;
 
 		/**
 		 * Coordinates of the object, after offsets are applied (in J2000).
@@ -1058,6 +1151,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *tarRaDec;
 
 		rts2core::ValueRaDec *tarTelRaDec;
+		rts2core::ValueAltAz *tarTelAltAz;
 
 		/**
 		 * Corrections from astrometry/user.
@@ -1071,8 +1165,9 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueRaDec *total_offsets;
 
-		rts2core::ValueRaDec *aberated;
 		rts2core::ValueRaDec *precessed;
+		rts2core::ValueRaDec *nutated;
+		rts2core::ValueRaDec *aberated;
 
 		rts2core::ValueDouble *refraction;
 
@@ -1087,9 +1182,9 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *telTargetRaDec;
 
 		/**
-		 * Tracking vector. Speeds in RA and DEC for in degrees/second.
+		 * Sky speed vector. Speeds in RA and DEC for in degrees/hour.
 		 */
-		rts2core::ValueRaDec *trackingVect;
+		rts2core::ValueRaDec *skyVect;
 
 		/**
 		 * If this value is true, any software move of the telescope is blocked.
@@ -1100,8 +1195,9 @@ class Telescope:public rts2core::Device
 
 		// object + telescope position
 
-		rts2core::ValueBool *calAberation;
 		rts2core::ValueBool *calPrecession;
+		rts2core::ValueBool *calNutation;
+		rts2core::ValueBool *calAberation;
 		rts2core::ValueBool *calRefraction;
 		rts2core::ValueBool *calModel;
 
@@ -1200,21 +1296,6 @@ class Telescope:public rts2core::Device
 		const char *horizonFile;
 
 		/**
-		 * Apply aberation correction.
-		 */
-		void applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue);
-
-		/**
-		 * Apply precision correction.
-		 */
-		void applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue);
-
-		/**
-		 * Apply refraction correction.
-		 */
-		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
-
-		/**
 		 * Zero's all corrections, increment move count. Called before move.
 		 */
 		void incMoveNum ();
@@ -1244,6 +1325,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueString *tle_l2;
 		rts2core::ValueInteger *tle_ephem;
 		rts2core::ValueDouble *tle_distance;
+		rts2core::ValueBool *tle_freeze;
 		rts2core::ValueDouble *tle_rho_sin_phi;
 		rts2core::ValueDouble *tle_rho_cos_phi;
 
@@ -1262,6 +1344,8 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *decUpperLimit;
 
 		void resetMpecTLE ();
+
+		double nextCupSync;
 };
 
 };

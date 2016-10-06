@@ -124,9 +124,61 @@
   </refsect1>
   <refsect1>
     <title>Input file format</title>
+    <para>
+      Input file is a text file, with format slightly different for GEM (German
+      Equatorial Mount) and Alt-Az (Altitude-azimuth) mounts. Single measurements
+      of stars positions are put into single line in predefined format.
+    </para>
+    <para>
+      Lines starting with # are treated as comments and are ignored. The only exception is for
+      lines providing telescope type (gem or altaz) and observatory coordinates. Those are identified by
+      starting #, followed by either "gem" or "altaz", then followed by longitude, latitude and altitude
+      of the telescope.
+    </para>
   </refsect1>
   <refsect1>
     <title>Plotting options</title>
+  </refsect1>
+  <refsect1>
+    <title>Input files examples</title>
+    <para>
+      Following is an example of GEM file, where only offsets in RA and DEC are set:
+    </para>
+    <programlisting>
+<![CDATA[
+# 15 degrees E, 50 degrees N, 600 m altitude
+# gem 15 50 600
+1    50000.0 280.000  10.000  20.000 -55000 55000 11.000   19.000
+2    50000.1 280.100  50.000  30.000 -55100 55010 51.000   29.000
+3    50000.2 280.200  90.000  40.000 -55200 55020 91.000   39.000
+4    50000.3 280.300  140.000 50.000 -55300 55030 141.000  49.000
+5    50000.4 280.400  180.000 60.000 -55400 55040 181.000  59.000
+6    50000.5 280.500  220.000 70.000 -55500 55050 221.000  69.000
+7    50000.6 280.600  260.000 80.000 -55600 55060 261.000  79.000
+8    50000.7 280.700  300.000 70.000 -55700 55070 301.000  69.000
+9    50000.8 280.800  340.000 60.000 -55800 55080 341.000  59.000
+10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
+]]>
+    </programlisting>
+    <para>
+      And this is an example alt-az file, also with only offsets in AZ and ALT:
+    </para>
+    <programlisting>
+<![CDATA[
+# 15 degrees E, 50 degrees N, 600 m altitude
+# altaz 15 50 600
+1    50000.0 280.000  10.000  20.000 -55000 55000 11.000   19.000
+2    50000.1 280.100  50.000  30.000 -55100 55010 51.000   29.000
+3    50000.2 280.200  90.000  40.000 -55200 55020 91.000   39.000
+4    50000.3 280.300  140.000 50.000 -55300 55030 141.000  49.000
+5    50000.4 280.400  180.000 60.000 -55400 55040 181.000  59.000
+6    50000.5 280.500  220.000 70.000 -55500 55050 221.000  69.000
+7    50000.6 280.600  260.000 80.000 -55600 55060 261.000  79.000
+8    50000.7 280.700  300.000 70.000 -55700 55070 301.000  69.000
+9    50000.8 280.800  340.000 60.000 -55800 55080 341.000  59.000
+10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
+]]>
+    </programlisting>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

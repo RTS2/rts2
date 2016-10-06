@@ -22,7 +22,7 @@
 
 using namespace rts2filterd;
 
-Filterd::Filterd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
+Filterd::Filterd (int in_argc, char **in_argv, const char *defName):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_FW, defName)
 {
 	createValue (filter, "filter", "used filter", false, RTS2_VALUE_WRITABLE);
 
@@ -80,30 +80,32 @@ int Filterd::homeFilter ()
 	return -1;
 }
 
-int Filterd::setFilters (char *filters)
+int Filterd::setFilters (const char *filters)
 {
 	char *top;
-	while (*filters)
+	char *tf = new char[strlen (filters) + 1];
+	strcpy (tf, filters);
+	while (*tf)
 	{
 		// skip leading spaces
-		while (*filters	&& (*filters == ':' || *filters == '"' || *filters == '\''))
-			filters++;
-		if (!*filters)
+		while (*tf && (*tf == ':' || *tf == '"' || *tf == '\''))
+			tf++;
+		if (!*tf)
 			break;
-		top = filters;
+		top = tf;
 		// find filter string
 		while (*top && *top != ':' && *top != '"' && *top != '\'')
 			top++;
 		// it's natural end, add and break..
 		if (!*top)
 		{
-			if (top != filters)
-				filter->addSelVal (filters);
+			if (top != tf)
+				filter->addSelVal (tf);
 			break;
 		}
 		*top = '\0';
-		filter->addSelVal (filters);
-		filters = top + 1;
+		filter->addSelVal (tf);
+		tf = top + 1;
 	}
 	if (filter->selSize () == 0)
 		return -1;

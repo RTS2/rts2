@@ -79,7 +79,7 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (outsideTemp, "outside_temp", "[C] outside temperature", false);
 	createValue (windSpeed, "wind_speed", "[mph] windspeed", false);
 	createValue (windSpeedAvg, "wind_speed_avg", "number of measurements to average", false, RTS2_VALUE_WRITABLE);
-	windSpeedAvg->setValueInteger (20);
+	windSpeedAvg->setValueInteger (8);
 	createValue (windSpeed_limit, "wind_speed_limit", "[mph] windspeed limit", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	windSpeed_limit->setValueFloat (40);
 
@@ -269,9 +269,6 @@ bool FlwoWeather::isGoodWeather ()
 			windSpeed->clearStat ();
 			valueError (windSpeed);
 			sendValueAll (windSpeed);
-
-			windSpeedAvg->setValueInteger (-1);
-			sendValueAll (windSpeedAvg);
 
 			windGustSpeed->setValueFloat (NAN);
 			valueError (windGustSpeed);

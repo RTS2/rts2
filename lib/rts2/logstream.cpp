@@ -21,6 +21,7 @@
 #include "logstream.h"
 
 #include <iomanip>
+#include <iostream>
 
 using namespace rts2core;
 
@@ -56,12 +57,18 @@ void LogStream::logArrAsHex (const char *arr, int len)
 
 void LogStream::sendLog ()
 {
-	masterApp->sendMessage (messageType, ls.str ().c_str ());
+	if (masterApp != NULL)
+		masterApp->sendMessage (messageType, ls.str ().c_str ());
+	else
+		std::cerr << "log " << ls.str () << std::endl;
 }
 
 void LogStream::sendLogNoEndl ()
 {
-	masterApp->sendMessageNoEndl (messageType, ls.str ().c_str ());
+	if (masterApp != NULL)
+		masterApp->sendMessageNoEndl (messageType, ls.str ().c_str ());
+	else
+		std::cerr << "log " << ls.str ();
 }
 
 LogStream & sendLog (LogStream & _ls)

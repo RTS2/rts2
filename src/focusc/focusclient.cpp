@@ -40,6 +40,7 @@
 #define OPT_PHOTOMETER_TIME OPT_LOCAL + 52
 #define OPT_NOSYNC          OPT_LOCAL + 53
 #define OPT_DARK            OPT_LOCAL + 54
+#define OPT_IGNORE_BLOCK    OPT_LOCAL + 55
 
 #define CHECK_TIMER         0.1
 
@@ -61,7 +62,7 @@ void FocusCameraClient::exposureStarted (bool expectImage)
 {
 	if (exe == NULL)
 	{
-		queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
+		queCommand (new rts2core::CommandExposure (getMaster (), this, bop >= 0 ? bop : 0));
 	}
 	rts2image::DevClientCameraFoc::exposureStarted (expectImage);
 }
@@ -155,6 +156,7 @@ FocusClient::FocusClient (int in_argc, char **in_argv):rts2core::Client (in_argc
 	addOption ('d', NULL, 1, "camera device name(s) (multiple for multiple cameras)");
 	addOption ('e', NULL, 1, "exposure (defaults to 10 sec)");
 	addOption (OPT_NOSYNC, "nosync", 0, "do not synchronize camera with telescope (don't block)");
+	addOption (OPT_IGNORE_BLOCK, "ignore-block", 0, "ignore block of camera exposure by device (moving telescope,...)");
 	addOption (OPT_DARK, "dark", 0, "create dark images");
 	addOption ('c', NULL, 0, "takes only center images");
 	addOption ('b', NULL, 1, "default binning (ussually 1, depends on camera setting)");
@@ -192,6 +194,9 @@ int FocusClient::processOption (int in_opt)
 			break;
 		case OPT_NOSYNC:
 			bop = 0;
+			break;
+		case OPT_IGNORE_BLOCK:
+			bop = -1;
 			break;
 		case OPT_DARK:
 			darks = true;
@@ -280,7 +285,7 @@ FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
 			logStream (MESSAGE_DEBUG) << "exposing on " << cam->getName () << sendLog;
-			cam->queCommand (new rts2core::CommandExposure (this, cam, bop));
+			cam->queCommand (new rts2core::CommandExposure (this, cam, bop >= 0 ? bop : 0));
 		}
 	}
 	return cam;

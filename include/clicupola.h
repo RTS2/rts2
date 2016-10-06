@@ -22,7 +22,6 @@
 
 #include "devclient.h"
 
-#define EVENT_CUP_START_SYNC    RTS2_LOCAL_EVENT + 550
 #define EVENT_CUP_SYNCED        RTS2_LOCAL_EVENT + 551
 #define EVENT_CUP_ENDED         RTS2_LOCAL_EVENT + 552
 #define EVENT_CUP_NOT_MOVE      RTS2_LOCAL_EVENT + 553

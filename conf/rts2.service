@@ -1,0 +1,27 @@
+#
+# 2016-09-25, wildi, as of Ubuntu 15.10 systemd is used.
+# Installation:
+#
+# cd $HOME/rts2
+# sudo cp ./rts2.initd /etc/rts2/rts2
+# sudo chmod +x /etc/rts2/rts2
+# cd conf
+# sudo cp ./rts2.service /lib/systemd/system/
+# sudo systemctl daemon-reload
+# 
+# systemctl (start|stop|restart) rts2.service 
+#
+[Unit]
+Description=start RTS2
+Documentation=man:rts2(8)
+
+[Service]
+Type=forking
+Environment=statedir=/var/cache/rts2
+ExecStartPre=/bin/mkdir -p ${statedir}
+ExecStart=/etc/rts2/rts2 start
+ExecStop=/etc/rts2/rts2 stop
+ExecReload=/etc/rts2/rts2 restart
+
+[Install]
+WantedBy=multi-user.target

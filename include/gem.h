@@ -19,9 +19,6 @@
 
 #include "teld.h"
 
-// Limit on number of steps for trajectory check
-#define TRAJECTORY_CHECK_LIMIT  2000
-
 namespace rts2teld
 {
 
@@ -46,7 +43,6 @@ class GEM: public Telescope
 		double getDecTicks () { return dec_ticks->getValueDouble (); }
 
 	protected:
-
 		rts2core::ValueSelection *flipping;       //* flipping strategy - shortest, preffer same, preffer opposite,..
 
 		rts2core::ValueDouble *haCWDAngle;        //* current HA counterweight down angle

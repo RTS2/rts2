@@ -1,0 +1,239 @@
+#!/usr/bin/env python
+
+# Find stars on image, compare tracking based on the stars.
+#
+# (C) 2016 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+import numpy as np
+import sys
+from astropy.io import fits
+
+import argparse
+import gettext
+gettext.install('rts2-verify-tracking')
+
+parser = argparse.ArgumentParser(description=_('Find brightests star on the first image, look for star on similar position and brightnes on next image. Print tracking date (in pixel coordinates).'))
+
+parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', dest='radius', type=float, default=15)
+parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
+parser.add_argument('--plot', help=_('plot results (x,y,pixel distances)'), action='store_true', dest='plot', default=False)
+parser.add_argument('--save-plot', help=_('do not display plot results, save plots to a file'), action='store', dest='saveplot')
+parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
+parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
+parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
+parser.add_argument('--center-radius', help=_('select stars only that far from center'), action='store', dest='center_radius', default=None, type=float)
+parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
+parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
+
+options = parser.parse_args()
+
+# don't show if not needed
+if not(options.plot) and options.saveplot is not None:
+	import matplotlib
+	matplotlib.use('agg')
+# needs to be called after matplotlib
+import rts2.brights
+import rts2.progressbar
+
+def RMS(vector):
+	return np.sqrt(np.mean(np.square(vector)))
+
+def pixel_distance(x1,y1,x2,y2):
+	return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+def calculate_angels(sb):
+	"""Calculates matrice of angels between each star and another star"""
+	angels = np.array([[[None] * len(sb)] * len(sb)] * len(sb[0]), np.float)
+	# traverse by images, not by stars..
+	for i in range(len(sb[0])):
+		for s1 in range(len(sb)):
+			for s2 in range(len(sb)):
+				if s1 == s2:
+					continue
+				angels[i,s1,s2] = np.arctan2(sb[s1][i][0] - sb[s2][i][0], sb[s1][i][1] - sb[s2][i][1])
+	return angels
+	
+
+for fn in options.files:
+	print _('Processing {0}').format(fn)
+	hdu = fits.open(fn)
+	sb = [] # contains selected x, y, flux as members
+	for si in range(options.stars):
+		sb.append([])
+
+	if options.verbose:
+		hdu.info()
+		if options.verbose < 2:
+			rts2.progressbar.progress(0, len(hdu[0].data))
+	d_x = len(hdu[0].data[0])
+	c_x = d_x / 2.0
+	d_y = len(hdu[0].data[0][0])
+	c_y = d_y / 2.0
+	if options.verbose:
+		print _('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y)
+	skipped = 0
+	for ci in range(len(hdu[0].data)):
+		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
+		if options.verbose > 1:
+			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
+		else:
+			rts2.progressbar.progress(ci + 1, len(hdu[0].data))
+		if len(sb[0]) == 0:
+			si = 0
+			bsi = 0
+			while si < options.stars:
+				if bsi == len(objects):
+					if skipped < options.skip_clouds:
+						if options.verbose:
+							print _('skipping frame #{0}').format(ci)
+						skipped += 1
+						continue
+					sys.exit(_('too few stars matching criteria'))
+				x = objects[bsi]['x']
+				y = objects[bsi]['y']
+				flux = objects[bsi]['flux']
+				c_d = pixel_distance(x, y, c_x, c_y)
+				bsi += 1
+				if options.verbose:
+					print _('star x {0:.3f} y {1:.3f} center distance {2:.3f}').format(x, y, c_d)
+				if options.center_radius is not None and c_d > options.center_radius:
+					if options.verbose:
+						print _('star too far from center')
+					continue
+				sb[si].append([x, y, flux])
+				si += 1
+		else:
+			found_sb = []
+			for si in range(options.stars):
+				b_x = sb[si][-1][0]
+				b_y = sb[si][-1][1]
+				star_find = False
+				for star in objects:
+					dist = pixel_distance(b_x, b_y, star['x'], star['y'])
+					if options.verbose > 1:
+						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
+					if dist < options.radius:
+						found_sb.append([star['x'], star['y'], star['flux']])
+						star_find = True
+						break
+				if star_find == False and options.verbose:
+					print(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
+			if len(found_sb) < options.stars:
+				if skipped < options.skip_clouds:
+					skipped += 1
+					continue
+				sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), skipped))
+
+			for si in range(options.stars):
+				sb[si].append(found_sb[si])
+	if options.verbose == 0:
+		print 'Done'
+
+	np_sb = np.array(sb)
+	# calculate average position
+	a_x = [0] * options.stars
+	a_y = [0] * options.stars
+	a_flux = [0] * options.stars
+	max_x = [0] * options.stars
+	max_y = [0] * options.stars
+	max_flux = [0] * options.stars
+	min_x = [0] * options.stars
+	min_y = [0] * options.stars
+	min_flux = [0] * options.stars
+
+	a_dist = [0] * options.stars
+
+	dist = [0] * options.stars
+
+	ang_deviations = None
+	max_deviation = 0
+
+	for si in range(options.stars):
+		data_x = np_sb[si,:,0]
+		data_y = np_sb[si,:,1]
+		data_flux = np_sb[si,:,2]
+
+		max_x[si] = np.max(data_x)
+		max_y[si] = np.max(data_y)
+		max_flux[si] = np.max(data_flux)
+
+		a_x[si] = np.average(data_x)
+		a_y[si] = np.average(data_y)
+		a_flux[si] = np.average(data_flux)
+
+		min_x[si] = np.min(data_x)
+		min_y[si] = np.min(data_y)
+		min_flux[si] = np.min(data_flux)
+
+		if options.verbose > 0:
+			print _('star # {0} max x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, max_x[si], max_y[si], max_flux[si])
+			print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
+			print _('star # {0} min x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, min_x[si], min_y[si], min_flux[si])
+		# now get some stats..
+		dist[si] = map(lambda s: pixel_distance(max_x[si], max_y[si], s[0], s[1]), sb[si])
+		a_dist[si] = np.average(dist[si])
+
+		print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
+
+		if options.max_angle > 0 and options.stars > 1:
+			angels = calculate_angels(np_sb)
+			average_ang = np.average(angels, axis=0)
+			ang_deviations = np.degrees(angels - average_ang)
+			max_deviation = max(abs(np.nanmax(ang_deviations)), abs(np.nanmin(ang_deviations)))
+			if options.verbose:
+				print _('maximal angle deviation: {0:.3f}').format(max_deviation)
+
+	if options.plot or options.saveplot:
+		import pylab
+		pylab.ioff()
+		fig = pylab.figure()
+		plotgrid = (3 if ang_deviations is None else 4, 1)
+		print _('generating plots')
+		rts2.progressbar.progress(0, options.stars + 1)
+		p_x = pylab.subplot2grid(plotgrid,[0,0])
+		p_y = pylab.subplot2grid(plotgrid,[1,0])
+		p_dist = pylab.subplot2grid(plotgrid,[2,0])
+
+		if ang_deviations is not None:
+			p_ang = pylab.subplot2grid(plotgrid,[3,0])
+			p_ang.plot (range(len(sb[0])), np.average(ang_deviations, axis=1), '-')
+			p_ang.fill_between (range(len(sb[0])), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
+
+		rts2.progressbar.progress(1, options.stars + 1)
+
+		for si in range(options.stars):
+			p_x.plot (range(len(sb[si])), np_sb[si,:,0] - a_x[si], '-')
+			p_y.plot (range(len(sb[si])), np_sb[si,:,1] - a_y[si], '-')
+			p_dist.plot (range(len(sb[si])), a_dist[si] - dist[si], '-')
+			rts2.progressbar.progress(si + 1, options.stars + 1)
+
+		pylab.tight_layout()
+
+		rts2.progressbar.progress(options.stars + 1, options.stars + 1)
+
+		if options.saveplot is not None:
+			print _('saving plots to {0}').format(options.saveplot),
+			pylab.savefig(options.saveplot)
+			print _('done')
+
+		if options.plot:
+			pylab.show()
+
+		pylab.close(fig)
+
+	if options.stars > 1 and options.max_angle < max_deviation:
+		sys.exit(_('allowed angle deviation not met, measured maximal deviation: {0:.3f}').format(max_deviation))

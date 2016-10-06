@@ -86,15 +86,15 @@ INDIBridge::tel_read_geo ()
 
  	sscanf( getINDI[0].gev[0].gv, "%f", &flng) ;
  	lng= (double) flng ;
- 	telLongitude->setValueDouble (lng);
 
  	sscanf( getINDI[0].gev[1].gv, "%f", &flat) ;
  	lat= (double) flat ;
- 	telLatitude->setValueDouble ( lat) ;
+
+	setTelLongLat (lng, lat);
 
  	sscanf( getINDI[0].gev[2].gv, "%f", &fhgt) ;
  	hgt= (double) fhgt ;
- 	telAltitude->setValueDouble ( hgt) ;
+ 	setTelAltitude ( hgt) ;
 
 	rts2free_getINDIproperty(getINDI, getINDIn) ;
 

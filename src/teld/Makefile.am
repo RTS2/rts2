@@ -10,8 +10,6 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-sitech-gem rts2-teld-sitech-altaz \
 	rts2-teld-irait rts2-teld-tcsng
 
-noinst_HEADERS = constsitech.h
-
 LDADD = -L../../lib/rts2tel -lrts2tel -L../../lib/pluto -lpluto -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@ -I../../include
@@ -64,12 +62,9 @@ rts2_teld_trencin_SOURCES = trencin.cpp
 
 rts2_teld_nexstar_SOURCES = nexstar.cpp
 
-rts2_teld_sitech_gem_SOURCES = sitech_gem.cpp
-rts2_teld_sitech_gem_LDADD = -L../../lib/rts2tel -lrts2sitech ${LDADD}
+rts2_teld_sitech_gem_SOURCES = sitech-gem.cpp
 
-rts2_teld_sitech_altaz_SOURCES = sitech_altaz.cpp
-rts2_teld_sitech_altaz_LDADD = -L../../lib/rts2tel -lrts2sitech ${LDADD}
-
+rts2_teld_sitech_altaz_SOURCES = sitech-altaz.cpp
 rts2_teld_irait_SOURCES = irait.cpp
 rts2_teld_irait_LDADD = -Lirait -lirait ${LIB_PTHREAD} ${LDADD}
 
@@ -79,8 +74,8 @@ if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
 
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
-rts2_telmodeltest_LDADD = -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_JPEG@ @LIB_CFITSIO@ @LIBXML_LIBS@ @LIB_CRYPT@
-rts2_telmodeltest_CPPFLAGS = @JPEG_CFLAGS@ @CFITSIO_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
+rts2_telmodeltest_LDADD = -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @MAGIC_LIBS@ @CFITSIO_LIBS@ @LIBXML_LIBS@ @LIB_CRYPT@ @LIBPG_LIBS@ @LIB_ECPG@
+rts2_telmodeltest_CPPFLAGS = @LIBPG_CFLAGS@ @MAGIC_CFLAGS@ @CFITSIO_CFLAGS@ @LIBXML_CFLAGS@ -I../../include
 
 else
 EXTRA_DIST += telmodeltest.cpp

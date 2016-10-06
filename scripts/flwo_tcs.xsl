@@ -28,9 +28,13 @@ if ( ! (${?nextautog}) ) set nextautog=`date +%s`
 if ( ! (${?guideon}) ) set guideon=`date +%s`
 
 set continue=1
+# added following to prevent bogus flux print after interrupt EF 16/02/05
+set noimageflux=0
+# added following to prevent fail on Undefined variable EF 16/01/18
+set new_guide="OFF"
 unset imgdir
 set xpa=0
-# XPA takes way too long to queury. Uncomment this if you would like to check for it anyway, but expect ~0.2 sec penalty
+# XPA takes way too long to query. Uncomment this if you would like to check for it anyway, but expect ~0.2 sec penalty
 # xpaget ds9 >&amp; /dev/null
 # if ( $? == 0 ) set xpa=1
 
@@ -67,14 +71,22 @@ endif
 set in=`$xmlrpc -G SEL.interrupt`
 if ( $? == 0 &amp;&amp; $in == 1 ) then
 	rm -f $lasttarget
+<!-- Petr useless, so EF modified message 15/04/08 -->
 	set continue=0
 	rts2-logcom "Interrupt target $name ($tar_id)"
-        set weather_reason=`$xmlrpc -G .weather_reason`
+        set weather_reason=`$xmlrpc -G .bad_weather_reason`
         if ( "$weather_reason" != "" ) then
             rts2-logcom $weather_reason
         else
-            rts2-logcom "No weather reason for interrupt."
+            rts2-logcom "Likely due to overlapping start time for next target."
         endif
+       ccd clear 
+       rts2-logcom "ccd clear to avoid hang state after Interrupt"
+#      rts2-logcom "Possible short exposure due to Interrupt!"
+       set noimageflux = 1
+#      ccd abort
+#      rts2-logcom "NO ccd abort, changed 15/11/14" 
+
         if ( "$new_guide" != "OFF" ) then
             rts2-logcom "Switch guider from $new_guide to OFF"
 	    tele autog OFF
@@ -282,7 +294,7 @@ if ( $continue == 1 ) then
 		set exposure=<xsl:value-of select='@length'/>
 	endif
 
-	rts2-logcom "Starting $actual_filter exposure $imgid ($exposure sec) at `date`"
+#	rts2-logcom "Starting $actual_filter exposure $imgid ($exposure sec) at `date`"
 	<xsl:copy-of select='$abort'/>
 #	if ( $tar_id != 3 &amp;&amp; $defoc_current == 0 ) then
 	if ( $tar_id != 3 ) then
@@ -291,18 +303,26 @@ if ( $continue == 1 ) then
 #	      source $rts2dir/rts2.deltafocus
 #       Back to tempfocus EF 3/13/14
 	endif
+#	rts2-logcom "Call gowait exposure $imgid ($exposure sec) at `date`"
+	rts2-logcom "Starting $actual_filter exposure $imgid ($exposure sec) at `date`"
 	ccd gowait $exposure
 	<xsl:copy-of select='$abort'/>
+#	rts2-logcom "Call dstore done exposure $imgid ($exposure sec) at `date`"
 	dstore
+#	rts2-logcom "Dstore done exposure $imgid ($exposure sec) at `date`"
 	set json_ret=0
 	set fwhm2=`$RTS2/bin/rts2-json -G IMGP.fwhm_KCAM_2` &amp;&amp; set flux=`$RTS2/bin/rts2-json -G IMGP.flux_A` &amp;&amp; set peak=`$RTS2/bin/rts2-json -G IMGP.peak_A`
 	if ( $? != 0 ) then
 		rts2-logcom "Exposure done; last image data are not available, please check if IMGP module is running (if just restarted, wait for next image)"
 	else
+# moved following statement here, show in log before "done" EF 06/12/15
+                rts2-logcom "Exposure `/usr/local/bin/showlast`"
 		if ( $last_obs_id == $obs_id ) then
 			rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f MFL %.0f' $ora_l $odec_l $fwhm2 $flux $peak`
 		else
-			rts2-logcom "Exposure done; last flux " `printf '%.0f' $flux`
+		        if ($noimageflux == 1) then
+			     rts2-logcom "Exposure done; last flux " `printf '%.0f' $flux`
+			endif
 		endif
 	endif
 	$xmlrpc -c SEL.next
@@ -442,7 +462,7 @@ if ( $last_acq_obs_id != $obs_id ) then
 		$autog = 'OFF'
 	endif
 	set pre_l = `echo "<xsl:value-of select='@precision'/> * 3600.0" | bc`
-	@ pre = `printf '%.0f' $pre_l`
+        @ pre = 15
 	@ err = $pre + 1
 	@ maxattemps = 5
 	@ attemps = $maxattemps
@@ -466,27 +486,41 @@ if ( $last_acq_obs_id != $obs_id ) then
 					set l=`echo $line`
 					set ora_l = `echo "$l[5] * 3600.0" | bc`
 					set odec_l = `echo "$l[6] * 3600.0" | bc`
-					set ora_lp = `printf '%+.2f' $ora_l`
-					set odec_lp = `printf '%+.2f' $odec_l`
+#					set ora_lp = `printf '%+.2f' $ora_l`
+#					set odec_lp = `printf '%+.2f' $odec_l`
 					set ora = `printf '%.0f' $ora_l`
 					set odec = `printf '%.0f' $odec_l`
 					set err = `echo "$l[7] * 3600.0" | bc`
 					set err = `printf '%.0f' $err`
+# save offset for heartbeat EF 11/22/15
+					echo $err > /tmp/rts2.offset
 					if ( $err > $pre ) then
-						rts2-logcom "Acquiring: offset by $ora $odec ( $ora_lp $odec_lp ), error is $err arcsec"
+#						rts2-logcom "Acquiring: offset by $ora $odec ( $ora_lp $odec_lp ), error is $err arcsec"
+						rts2-logcom "Acquiring: offset by $ora $odec, error is $err arcsec"
 						tele offset $ora $odec
                                                 sleep 3
                                                 rts2-logcom "FIX POINTING: set telescope position after offsets."
                                                 tele set
 						@ err = 0
+# Ted adds next line to null file after alignment 1/28/16
+					        echo $err > /tmp/rts2.offset
 					else
-						rts2-logcom "Error is less than $pre arcsec ( $ora_lp $odec_lp ), stop acquisition"
+						rts2-logcom "Error $err is less than $pre arcsec, no offset"
+#						rts2-logcom "Error is less than $pre arcsec ( $ora_lp $odec_lp ), stop acquisition"
 						@ err = 0
 					endif
 					@ last_acq_obs_id = $obs_id
 				endif
 			end
 			@ imgid ++
+		endif
+# Put test and bail bad ccd here TG
+		set lastimage = `/usr/local/bin/lf`
+		set lastavg = `rts2-image -s $lastimage | awk '{printf "%5.0f",$2}'`  
+		if ( $lastavg &lt; 280 ) then
+                	rts2-logcom "Bad CCD, bail out."
+            		echo "Bad CCD, empty fifo, exit Rob, Real time sys, reboot kepccd. Restart all. " &gt; /pool/weather/robot.error
+			exit
 		endif
 	end
 	if ( $attemps &lt;= 0 ) then
@@ -506,3 +540,4 @@ endif
 </xsl:template>
 
 </xsl:stylesheet>
+

@@ -1,0 +1,20 @@
+#!/usr/bin/env python
+
+import argparse
+import rts2.brights
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Tool to find brightest star on the image, produce preliminary WCS based on bright stars found in images')
+
+parser.add_argument('-v', help='verbose', action='count', dest='verbose', default=0)
+parser.add_argument('--dss', help='show DSS image, match on WCS for comparsion of the fields', dest='dss', action='store_true', default=False)
+parser.add_argument('--asecpix', help='image scale (arcsec/pixel)', dest='asecpix', type=float, action='store', default=0.3)
+parser.add_argument('--rotang', help='basic rotational angle (degrees)', dest='rotang', type=float, action='store', default=0)
+parser.add_argument('--flip', help='flip image by those axis (empty, X, Y or XY allowed)', dest='flip', action='store', default='')
+parser.add_argument('--ds9', help='show progress in DS9 (requires pyDS9 module)', dest='ds9', action='store_true', default=False)
+parser.add_argument('--save-regions', help='save regions to specified file', dest='regions', action='store', default=None)
+parser.add_argument('args', help='files to process', nargs='+')
+
+options = parser.parse_args()
+
+for fn in options.args:
+	rts2.brights.add_wcs(fn, options.asecpix, options.rotang, options.flip, options.verbose, options.dss, options.ds9, save_regions=options.regions)

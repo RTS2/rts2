@@ -705,16 +705,16 @@ int Gemini::processOption (int in_opt)
 			switch (*optarg)
 			{
 				case '0':
-					setCorrections (true, true, true);
+					setCorrections (true, true, true, true);
 					break;
 				case '1':
-					setCorrections (false, false, true);
+					setCorrections (false, false, false, true);
 					break;
 				case '2':
-					setCorrections (true, true, false);
+					setCorrections (true, true, true, false);
 					break;
 				case '3':
-					setCorrections (false, false, false);
+					setCorrections (false, false, false, false);
 					break;
 				default:
 					std::cerr << "Invalid correction option " << optarg << std::endl;
@@ -999,7 +999,7 @@ int Gemini::initValues ()
 	if (ret <= 0)
 		return -1;
 	buf[4] = '\0';
-	telAltitude->setValueDouble (500);
+	setTelAltitude (500);
 
 	telFlip->setValueInteger (0);
 

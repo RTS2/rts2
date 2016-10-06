@@ -13,14 +13,26 @@
 #endif
 
 #include <malloc.h>
-#include <sys/select.h>
+#include <poll.h>
 #include <stdlib.h>
 
 namespace XmlRpc
 {
-
 	// An RPC source represents a file descriptor to monitor
 	class XmlRpcSource;
+
+	// A source to monitor and what to monitor it for
+	struct MonitoredSource
+	{
+		MonitoredSource(XmlRpcSource* src, unsigned mask) : _src(src), _mask(mask) {}
+		XmlRpcSource* getSource() const { return _src; }
+		unsigned& getMask() { return _mask; }
+		XmlRpcSource* _src;
+		unsigned _mask;
+	};
+
+	// A list of sources to monitor
+	typedef std::list< MonitoredSource > SourceList;
 
 	class XmlRpcClient;
 
@@ -70,9 +82,15 @@ namespace XmlRpc
 			void work(double msTime, XmlRpcClient *chunkWait = NULL);
 
 			//! Add sockets to file descriptor set
-			void addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd);
+			void addToFd (void (*addFD) (int, short));
 
-			void checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd, XmlRpcSource *chunkWait = NULL);
+			void addToFds (struct pollfd *fds, nfds_t &fdnum);
+
+			void checkFd (short (*getFDEvents) (int), XmlRpcSource *chunkWait = NULL);
+
+			void checkFds (struct pollfd *fds, nfds_t &fdnum, XmlRpcSource *chunkWait = NULL);
+
+			void processFds (short revents, SourceList::iterator thisIt, XmlRpcSource *chunkWait);
 
 			//! Exit from work routine
 			void exitWork();
@@ -84,19 +102,6 @@ namespace XmlRpc
 
 			// helper
 			double getTime();
-
-			// A source to monitor and what to monitor it for
-			struct MonitoredSource
-			{
-				MonitoredSource(XmlRpcSource* src, unsigned mask) : _src(src), _mask(mask) {}
-				XmlRpcSource* getSource() const { return _src; }
-				unsigned& getMask() { return _mask; }
-				XmlRpcSource* _src;
-				unsigned _mask;
-			};
-
-			// A list of sources to monitor
-			typedef std::list< MonitoredSource > SourceList;
 
 			// Sources being monitored
 			SourceList _sources;

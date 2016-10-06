@@ -325,8 +325,11 @@ class ProgressIndicator
 		int w;
 };
 
-// number of seconds in msec
+// number of microseconds in sec
 #define USEC_SEC    1000000
+
+// number of nanoseconds in sec
+#define NSEC_SEC    1000000000
 
 /**
  * Return current time as double.

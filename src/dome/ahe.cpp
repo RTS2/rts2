@@ -134,6 +134,7 @@ int AHE::init()
 {
 
     sconn = new rts2core::ConnSerial(devFile, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 50);
+    sconn->setDebug (getDebug ());
     sconn->init();
 
     int ret = Dome::init();

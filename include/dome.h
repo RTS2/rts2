@@ -38,7 +38,7 @@ namespace rts2dome {
 class Dome:public rts2core::Device
 {
 	public:
-		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
+		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME, bool inhibit_auto_close = false);
 		virtual ~Dome ();
 
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
@@ -78,6 +78,8 @@ class Dome:public rts2core::Device
 		int domeOpenStart ();
 
 		int domeCloseStart ();
+
+		int domeStop ();
 
 		/**
 		 * Checks if weather is acceptable for observing.
@@ -137,6 +139,14 @@ class Dome:public rts2core::Device
 		 */
 		virtual int endClose () = 0;
 
+		/**
+		 * Called to stop dome movement. Most of the domes does not
+		 * have capability to remotely stop shutters/dome movements,
+		 * so this function shall not be called in children if it is
+		 * overloaded.
+		 */
+		virtual int stop () { return -1; }
+
 		// called when dome passed some states..
 		virtual int observing ();
 		virtual int standby ();
@@ -151,6 +161,7 @@ class Dome:public rts2core::Device
 		// time for which weather will be ignored - usefull for manual override of
 		// dome operations
 		rts2core::ValueTime *ignoreTimeout;
+		rts2core::ValueBool *domeAutoClose;
 
 		rts2core::ValueBool *weatherOpensDome;
 		rts2core::ValueTime *nextGoodWeather;

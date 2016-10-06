@@ -42,7 +42,7 @@ class BAIT: public ConnTCP
 
 		virtual int idle ();
 		
-		virtual int receive (fd_set *fset);
+		virtual int receive (Block *block);
 
 		/**
 		 * Sends command, wait for reply.

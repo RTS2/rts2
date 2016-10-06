@@ -1438,14 +1438,14 @@ int ConnGrb::init ()
 		return init_call ();
 }
 
-int ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int ConnGrb::add (rts2core::Block *block)
 {
 	if (gcn_listen_sock >= 0)
 	{
-		FD_SET (gcn_listen_sock, readset);
+		block->addPollFD (gcn_listen_sock, POLLIN | POLLPRI);
 		return 0;
 	}
-	return rts2core::Connection::add (readset, writeset, expset);
+	return rts2core::Connection::add (block);
 }
 
 void ConnGrb::connectionError (int last_data_size)
@@ -1465,11 +1465,11 @@ void ConnGrb::connectionError (int last_data_size)
 	gcnReceivedBytes = 0;
 }
 
-int ConnGrb::receive (fd_set *set)
+int ConnGrb::receive (rts2core::Block *block)
 {
 	int ret = 0;
 	struct tm *t;
-	if (gcn_listen_sock >= 0 && FD_ISSET (gcn_listen_sock, set))
+	if (gcn_listen_sock >= 0 && block->isForRead (gcn_listen_sock))
 	{
 		// try to accept connection..
 		close (sock);			 // close previous connections..we support only one GCN connection
@@ -1487,10 +1487,9 @@ int ConnGrb::receive (fd_set *set)
 		close (gcn_listen_sock);
 		gcn_listen_sock = -1;
 		setConnState (CONN_CONNECTED);
-		logStream (MESSAGE_INFO) << "ConnGrb::receive accept gcn_listen_sock from "
-			<< inet_ntoa (other_side.sin_addr) << " port " << ntohs (other_side.sin_port) << sendLog;
+		logStream (MESSAGE_INFO) << "ConnGrb::receive accept gcn_listen_sock from " << inet_ntoa (other_side.sin_addr) << " port " << ntohs (other_side.sin_port) << sendLog;
 	}
-	else if (sock >= 0 && FD_ISSET (sock, set))
+	else if (sock >= 0 && block->isForRead (sock))
 	{
 		try
 		{

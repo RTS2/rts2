@@ -13,9 +13,8 @@ void AltAzTest::setTelescope (double _lat, double _long, double _alt, long _az_t
 	setDebug (1);
 	setNotDaemonize ();
 
-	telLatitude->setValueDouble (_lat);
-	telLongitude->setValueDouble (_long);
-	telAltitude->setValueDouble (_alt);
+	setTelLongLat (_long, _lat);
+	setTelAltitude (_alt);
 
 	az_ticks->setValueLong (_az_ticks);
 	alt_ticks->setValueLong (_alt_ticks);
@@ -36,8 +35,7 @@ void AltAzTest::setTelescope (double _lat, double _long, double _alt, long _az_t
 
 int AltAzTest::test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc)
 {
-	bool use_flipped = false;
-	return sky2counts (JD, pos, azc, altc, false, use_flipped, false, 0);
+	return sky2counts (JD, pos, azc, altc, false, 0, false);
 }
 
 int AltAzTest::test_hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc)

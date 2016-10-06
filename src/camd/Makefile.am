@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = urvc2 apogee edtsao si8821
+SUBDIRS = urvc2 apogee edtsao si8821 sxccd
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar rts2-camd-azcam rts2-camd-azcam3 rts2-camd-si8821
 
@@ -14,8 +14,8 @@ rts2_camd_miniccd_SOURCES = miniccd.cpp
 rts2_camd_miniccd_il_SOURCES = miniccd_il.cpp
 
 rts2_camd_dummy_SOURCES = dummy.cpp
-rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ -I../../include
-rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @LIB_CFITSIO@ @LIB_JPEG@
+rts2_camd_dummy_CXXFLAGS = ${AM_CXXFLAGS} @CFITSIO_CFLAGS@ @MAGIC_CFLAGS@ -I../../include
+rts2_camd_dummy_LDADD = -L../../lib/rts2fits -lrts2image ${LDADD} @CFITSIO_LIBS@ @MAGIC_LIBS@
 
 rts2_camd_sidecar_SOURCES = sidecar.cpp
 
@@ -51,7 +51,7 @@ endif
 if SBIG
 bin_PROGRAMS += rts2-camd-sbig
 rts2_camd_sbig_SOURCES = sbig.cpp
-rts2_camd_sbig_LDFLAGS = @LIB_SBIG@ ${LDADD} @LIB_CFITSIO@
+rts2_camd_sbig_LDFLAGS = @LIB_SBIG@ ${LDADD} @CFITSIO_LIBS@
 rts2_camd_sbig_CXXFLAGS = @INC_SBIG@ -I../../include @CFITSIO_CFLAGS@
 else
 EXTRA_DIST += sbig.cpp
@@ -125,4 +125,12 @@ rts2_camd_si3097_SOURCES = si3097.cpp
 rts2_camd_si3097_CXXFLAGS = @INC_SI3097@ -I../../include
 else
 EXTRA_DIST += si3097.cpp
+endif
+
+if LIBUSB1
+bin_PROGRAMS += rts2-camd-sx
+rts2_camd_sx_SOURCES = sx.cpp
+rts2_camd_sx_LDADD = -Lsxccd -lsxccdusb @USB1_LIBS@ ${LDADD}
+else
+EXTRA_DIST += sx.cpp
 endif

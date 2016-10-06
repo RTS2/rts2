@@ -52,9 +52,9 @@ class TPointModelTerm;
 class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 {
 	public:
-		TPointModel (rts2teld::Telescope * in_telescope, const char *in_modelFile);
+		TPointModel (double in_latitude);
 		virtual ~ TPointModel (void);
-		virtual int load ();
+		virtual int load (const char *modelFile);
 		/**
 		 * Apply model to coordinates. Pos.ra is hour angle, not RA.
 		 */
@@ -73,7 +73,7 @@ class TPointModel:public TelModel, public std::vector < TPointModelTerm * >
 		virtual double getRMS () { return rms / 3600; }
 
 		virtual std::istream & load (std::istream & is);
-		virtual std::ostream & print (std::ostream & os);
+		virtual std::ostream & print (std::ostream & os, char frmt = 'r');
 
 	private:
 		char caption[81];		 // TPointModel description: 80 chars + NULL

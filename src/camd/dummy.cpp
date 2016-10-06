@@ -101,6 +101,8 @@ class Dummy:public Camera
 
 			createExpType ();
 
+			createShiftStore ();
+
 			width = 200;
 			height = 100;
 			dataSize = -1;
@@ -281,6 +283,12 @@ class Dummy:public Camera
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
+		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
+
+		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
+
+		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
+
 	private:
 		bool supportFrameT;
 		int infoSleep;
@@ -355,6 +363,21 @@ int Dummy::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		return 0;
 	}
 	return Camera::setValue (old_value, new_value);
+}
+
+int Dummy::shiftStoreStart (rts2core::Connection *conn, float exptime)
+{
+	return Camera::shiftStoreStart (conn, exptime);
+}
+
+int Dummy::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
+{
+	return Camera::shiftStoreShift (conn, shift, exptime);
+}
+
+int Dummy::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+{
+	return Camera::shiftStoreEnd (conn, shift, exptime);
 }
 
 int Dummy::doReadout ()
@@ -468,6 +491,7 @@ int Dummy::doReadout ()
 			{
 				size_t s = (ssize_t) chipByteSize () - written[0] < callReadoutSize->getValueLong () ? chipByteSize () - written[0] : callReadoutSize->getValueLong ();
 				ret = sendReadoutData (getDataTop (0), s, 0);
+				std::cout << "ret " << ret << " " << s << std::endl;
 
 				if (ret < 0)
 					return ret;

@@ -19,7 +19,7 @@
 
 #include "telmodel.h"
 #include "gem.h"
-#include "rts2model.h"
+#include "gpointmodel.h"
 #include "tpointmodel.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
@@ -56,8 +56,7 @@ class ModelTest:public Telescope
 			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
 			createConstValue (telAltitude, "ALTITUDE", "telescope altitude");
 
-			telLongitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lng);
-			telLatitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lat);
+			setTelLongLat (rts2core::Configuration::instance()->getObserver ()->lng, rts2core::Configuration::instance()->getObserver ()->lat);
                         telAltitude->setValueDouble (rts2core::Configuration::instance ()->getObservatoryAltitude ());
 		}
 
@@ -295,10 +294,10 @@ int TelModelTest::init ()
 		return 0;
 
 	telescope = new ModelTest ();
-	telescope->setCorrections (false, false, false);
+	telescope->setCorrections (false, false, false, false);
 
 	gemTelescope = new ModelTestGEM ();
-	gemTelescope->setCorrections (true, true, true);
+	gemTelescope->setCorrections (true, true, true, true);
 
 	if (defaultsFile)
 	{
@@ -317,13 +316,16 @@ int TelModelTest::init ()
 	}
 
 	if (rts2ModelFile)
-		model = new RTS2Model (telescope, rts2ModelFile);
+		model = new GPointModel (telescope->getLatitude ());
 	else if (tPointModelFile)
-		model = new TPointModel (telescope, tPointModelFile);
+		model = new TPointModel (telescope->getLatitude ());
 
 	if (model)
 	{
-		ret = model->load ();
+		if (rts2ModelFile)
+			ret = model->load (rts2ModelFile);
+		else
+			ret = model->load (tPointModelFile);
 		
 		telescope->setModel (model);
 		gemTelescope->setModel (model);
@@ -505,14 +507,14 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 				{
 					temp = NAN;
 					press = NAN;
-					telescope->setCorrections (true, true, false);
+					telescope->setCorrections (true, true, true, false);
 				}
 				else
 				{
 					if ( includeRefraction )
-						telescope->setCorrections (true, true, true);
+						telescope->setCorrections (true, true, true, true);
 					else
-						telescope->setCorrections (true, true, false);
+						telescope->setCorrections (true, true, true, false);
 				}
 			}
 			if (firstChar == '-')

@@ -165,10 +165,13 @@ typedef uint32_t rts2_status_t;
 // Camera status
 #define CAM_MASK_CHIP       0x0ff
 #define CAM_MASK_EXPOSE     0x011
+#define CAM_MASK_SHIFTING   0x020
 
 #define CAM_NOEXPOSURE      0x000
 #define CAM_EXPOSING        0x001
-#define CAM_EXPOSING_NOIM   0x010 
+#define CAM_EXPOSING_NOIM   0x010
+
+#define CAM_SHIFT           0x020
 
 #define CAM_MASK_READING    0x002
 
@@ -210,6 +213,16 @@ typedef uint32_t rts2_status_t;
 #define ROT_IDLE            0x000
 #define ROT_ROTATING        0x001
 
+// rotator tracking/not tracking
+#define ROT_MASK_PATRACK    0x002
+#define ROT_PA_NOT          0x000
+#define ROT_PA_TRACK        0x002
+
+// autorotating..
+#define ROT_MASK_AUTOROT    0x004
+#define ROT_NOAUTO          0x000
+#define ROT_AUTO            0x004
+
 // telescope status
 #define TEL_MASK_MOVING     0x007
 #define TEL_MASK_CUP_MOVING 0x00f
@@ -225,6 +238,7 @@ typedef uint32_t rts2_status_t;
 
 #define TEL_MASK_TRACK      0x020
 
+// tracking - if the telescope is moving to track an object
 #define TEL_NOTRACK         0x000
 #define TEL_TRACKING        0x020
 
@@ -235,6 +249,12 @@ typedef uint32_t rts2_status_t;
 // when telescope need stop of observation - when it's aproaching limits etc.
 #define TEL_MASK_NEED_STOP  0x080
 #define TEL_NEED_STOP       0x080
+
+// pan mode, for nice viewing
+#define TEL_MASK_PAN        0x100
+
+#define TEL_NO_PAN          0x000
+#define TEL_PANNING         0x100
 
 // sensor performing command
 #define SENSOR_INPROGRESS   0x001
@@ -257,6 +277,9 @@ typedef uint32_t rts2_status_t;
 #define DOME_CLOSING        0x008
 #define DOME_WAIT_CLOSING   0x010
 
+#define DOME_STOPPED_MASK   0x020
+#define DOME_STOPPED        0x020
+
 #define DOME_CUP_MASK       0x0c0
 
 #define DOME_CUP_MASK_MOVE  0x040
@@ -271,11 +294,6 @@ typedef uint32_t rts2_status_t;
 #define MIRROR_MASK_MOVE    0x010
 #define MIRROR_MOVE         0x010
 #define MIRROR_NOTMOVE      0x000
-#define MIRROR_UNKNOW       0x000
-#define MIRROR_A            0x001
-#define MIRROR_A_B          0x012
-#define MIRROR_B            0x003
-#define MIRROR_B_A          0x014
 
 #define FILTERD_MASK        0x002
 #define FILTERD_IDLE        0x000
@@ -383,14 +401,17 @@ typedef uint32_t rts2_status_t;
 #define DEVICE_TYPE_FW        13
 #define DEVICE_TYPE_AUGERSH   14
 #define DEVICE_TYPE_SENSOR    15
+#define DEVICE_TYPE_CAT       16
 
 #define DEVICE_TYPE_EXECUTOR  20
 #define DEVICE_TYPE_IMGPROC   21
 #define DEVICE_TYPE_SELECTOR  22
-#define DEVICE_TYPE_XMLRPC    23
+#define DEVICE_TYPE_HTTPD     23
 #define DEVICE_TYPE_INDI      24
 #define DEVICE_TYPE_LOGD      25
 #define DEVICE_TYPE_SCRIPTOR  26
 #define DEVICE_TYPE_BB        27
+#define DEVICE_TYPE_REDIS     28
+#define DEVICE_TYPE_THRIFT    29
 
 #endif	 /* __RTS2__STATUS__ */

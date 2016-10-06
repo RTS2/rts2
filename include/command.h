@@ -71,9 +71,14 @@
 #define COMMAND_TELD_MOVE       "move"
 
 /**
- *
+ * Move to HA DEC coordinates.
  */
 #define COMMAND_TELD_HADEC      "hadec"
+
+/**
+ * Move telescope to altaz coordinates.
+ */
+#define COMMAND_TELD_ALTAZ      "altaz"
 
 /**
  * Move to MPEC one line element position. @ingroup RTS2Command
@@ -84,6 +89,11 @@
  * Move to TLE two line elements. @ingroup RTS2Command
  */ 
 #define COMMAND_TELD_MOVE_TLE   "move_tle"
+
+/**
+ * Park telescope.
+ */
+#define COMMAND_TELD_PARK       "park"
 
 /**
  * Peek telescope movement. @ingroup RTS2Command
@@ -113,6 +123,60 @@
  */
 #define COMMAND_FITS_STAT       "fits_statistics"
 
+/**
+ * Start exposure on camera.
+ */
+#define COMMAND_CCD_EXPOSURE    "expose"
+
+
+/**
+ * Start exposure on camera, do not check for blocking states.
+ */
+#define COMMAND_CCD_EXPOSURE_NO_CHECKS  "expose_no_checks"
+
+/**
+ * Shift-store sequence.
+ */
+#define COMMAND_CCD_SHIFTSTORE  "shiftstore"
+
+/**
+ * Open dome.
+ */
+#define COMMAND_DOME_OPEN       "open"
+
+#define COMMAND_DOME_CLOSE      "close"
+
+#define COMMAND_DOME_STOP       "stop"
+
+/**
+ * Cupola azimuth move. @ingroup RTS2Command
+ *
+ * @subsection Examples
+ *
+ * To move the cupola slit to face azimuth 90 degrees, use one of the following:
+ *  - az 90
+ *  - az 90:00:00
+ *  - az 90.000
+ */
+#define COMMAND_CUPOLA_AZ       "az"
+
+#define COMMAND_CUPOLA_MOVE     "move"
+#define COMMAND_CUPOLA_SYNCTEL  "synctel"
+
+/**
+ * Distribution of the new parallactic angle. @ingroup RTS2Command
+ *
+ * Updates devices about parallactic angle, calculated at their master device.
+ * The only parameter so far is new value of parallactic angle.
+ */
+#define COMMAND_PARALLACTIC_UPDATE   "pa_update"
+
+/**
+ * Start autorotating (rotate max/min, without raising BLOCK_EXPOSURE)
+ */
+#define COMMAND_ROTATOR_AUTO         "autorotate"
+
+#define COMMAND_ROTATOR_AUTOSTOP     "autostop"
 
 /**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
@@ -169,8 +233,9 @@ class Command
 
 		virtual int send ();
 		int commandReturn (int status, Connection * conn);
+
 		/**
-		 * Returns command test.
+		 * Returns command text.
 		 */
 		char * getText () { return text; }
 
@@ -413,6 +478,25 @@ class CommandReadout:public Command
 		CommandReadout (Block * _master);
 };
 
+class CommandShiftStart: public Command
+{
+	public:
+		CommandShiftStart (Block * _master, float expTime, int _bopMask);
+};
+
+class CommandShiftProgress: public Command
+{
+	public:
+		CommandShiftProgress (Block * _master, int shift, float expTime, int _bopMask);
+};
+
+class CommandShiftEnd: public Command
+{
+	public:
+		CommandShiftEnd (Block * _master, int shift, float expTime, int _bopMask);
+};
+
+
 /**
  * Sends image statistics.
  */
@@ -595,13 +679,10 @@ class CommandStopGuideAll:public Command
 		}
 };
 
-class CommandCupolaMove:public Command
+class CommandCupolaSyncTel:public Command
 {
-	DevClientCupola * copula;
 	public:
-		CommandCupolaMove (DevClientCupola * _copula, double ra,
-			double dec);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		CommandCupolaSyncTel (Block * _master, double ra, double dec);
 };
 
 class CommandCupolaNotMove:public Command
@@ -802,6 +883,21 @@ class CommandDeviceStatus:public CommandStatusInfo
 {
 	public:
 		CommandDeviceStatus (Block * master, Connection * _control_conn);
+};
+
+/**
+ * Update parallactic angle (PA) tracking. Parameters of the command are:
+ *
+ * <ol>
+ *   <li>time when PA was calculated</li>
+ *   <li>calculated PA</li>
+ *   <li>rate of PA change (in degrees/hour)</li>
+ * </ol>
+ */
+class CommandParallacticAngle:public Command
+{
+	public:
+		CommandParallacticAngle (Block * _master, double reftime, double pa, double rate);
 };
 
 }

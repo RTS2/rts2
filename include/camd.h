@@ -212,8 +212,6 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual bool supportFrameTransfer ();
 
-		// end of CameraChip
-
 		virtual int initChips ();
 		virtual int initValues ();
 		void checkExposures ();
@@ -264,7 +262,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual void afterNight ()
 		{
-			if (rts2ControlCooling)
+			if (rts2ControlCooling && rts2ControlCooling->getValueBool ())
 				switchCooling (false);
 		}
 
@@ -362,14 +360,13 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		/**
-		 * Decrease/increase exposure end with given offset.
+		 * Set exposure end time.
 		 *
-		 * @param off Time offset (in seconds). If positive, isExposing
-		 * will run longer then nominal exposure time.
+		 * @param remaining  remaining exposure time in seconds (and fraction of second)
 		 */
-		void changeExposureEnd (double off)
+		void setExposureEnd (double remaining)
 		{
-			exposureEnd->setValueDouble (exposureEnd->getValueDouble () + off);
+			exposureEnd->setValueDouble (getNow () + remaining);
 		}
 
 		/**
@@ -455,6 +452,7 @@ class Camera:public rts2core::ScriptDevice
 		{
 			if (exposureConn)
 				return exposureConn->fitsDataTransfer (fn);
+			logStream (MESSAGE_WARNING) << "fits data without exposure connection, no data will be received" << sendLog;
 			return 0;
 		}
 		
@@ -883,14 +881,16 @@ class Camera:public rts2core::ScriptDevice
 
 		/**
 		 * Create CCD target temperature. Used for devices which can
-		 * actively regulate CCD temperature. It creates tempSet and 
-		 * nightCoolTemp variables.
+		 * actively regulate CCD temperature. It creates tempSet,
+		 * nightCoolTemp and autocooling variables.
 		 */
 		void createTempSet ()
 		{
 			createValue (coolingOnOff, "COOLING", "camera cooling start/stop", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF | RTS2_VALUE_AUTOSAVE, CAM_WORKING);
 			createValue (tempSet, "CCD_SET", "CCD set temperature", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			createValue (rts2ControlCooling, "autocooling", "turn off cooling after night", false, RTS2_VALUE_WRITABLE);
+			rts2ControlCooling->setValueBool (true);
 			nightCoolTemp->setValueFloat (NAN);
 			addOption ('c', NULL, 1, "night cooling temperature");
 		}
@@ -918,6 +918,17 @@ class Camera:public rts2core::ScriptDevice
 		 * @return 0 for light exposures, 1 for dark exposure.
 		 */
 		int getExpType () { return expType->getValueInteger ();	}
+
+		/**
+		 * Indicates camera can do shift-store focusing.
+		 */
+		void createShiftStore () { createValue (shiftstoreLines, "shiftstore", "pixels of shiftstore", true); }
+
+		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
+
+		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
+
+		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
 
 		/**
 		 * Set camera filter.
@@ -1010,13 +1021,16 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueBool *waitingForEmptyQue;
 		rts2core::ValueBool *waitingForNotBop;
 
+		// number of lines partially readed-out. Skip clear if the exposure is in progress.
+		rts2core::IntegerArray *shiftstoreLines;
+
 		rts2core::ValueInteger *binningX;
 		rts2core::ValueInteger *binningY;
 
 		char *focuserDevice;
 		std::vector < const char * > wheelDevices;
 
-		bool rts2ControlCooling;
+		rts2core::ValueBool *rts2ControlCooling;
 
 		int lastFilterNum;
 
@@ -1232,7 +1246,7 @@ class Camera:public rts2core::ScriptDevice
 
 		rts2core::ValueRectangle *chipSize;
 
-		int camStartExposure ();
+		int camStartExposure (bool careBlock);
 		int camStartExposureWithoutCheck ();
 
 		rts2core::ValueInteger *camFocVal;
@@ -1253,7 +1267,7 @@ class Camera:public rts2core::ScriptDevice
 
 
 		// callback functions from camera connection
-		int camExpose (rts2core::Connection * conn, int chipState, bool fromQue);
+		int camExpose (rts2core::Connection * conn, int chipState, bool fromQue, bool careBlock);
 		int camBox (rts2core::Connection * conn, int x, int y, int width, int height);
 		int camCenter (rts2core::Connection * conn, int in_w, int in_h);
 
@@ -1304,6 +1318,8 @@ class Camera:public rts2core::ScriptDevice
 					return (int) (round (n));
 			}
 		}
+
+		bool lastCareBlock;
 };
 
 }

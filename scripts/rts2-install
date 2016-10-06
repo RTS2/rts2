@@ -378,9 +378,9 @@ step_compile()
 
 	./autogen.sh
 	if [ $with_db == 1 ]; then
-		./configure --without-wcs
+		./configure
 	else
-		./configure --without-wcs --without-pgsql
+		./configure --without-pgsql
 	fi
 	make -j`nproc`
 	sudo make install

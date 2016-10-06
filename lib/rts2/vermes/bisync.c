@@ -32,7 +32,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
-#include <sys/select.h>
 #include <malloc.h>
 #include <time.h>
 #include <sys/time.h>

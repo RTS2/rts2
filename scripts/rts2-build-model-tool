@@ -1,0 +1,368 @@
+#!/usr/bin/env python
+#
+# Bright star catalogue model build tool.
+#
+# (C) 2016 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+import sys
+import math
+import os
+import rts2.altazpath
+import rts2.brights
+import rts2.libnova
+import rts2.spiral
+import rts2.json
+import time
+
+import argparse
+import gettext
+gettext.install('rts2-build-model-tool')
+
+parser = argparse.ArgumentParser(description=_('Builds pointing model input data from BSC (Bright Star Catalogue) files.\n\nExample use:\n\n\trts2-model-bsc altazm'))
+
+parser.add_argument('--server', help=_('URL to RTS2 XML-RPC server'), action='store', dest='server', default='http://localhost:8889')
+parser.add_argument('--user', help=_('RTS2 web server username'), action='store', dest='user', default=None)
+parser.add_argument('--password', help=_('password for web user'), action='store', dest='password', default=None)
+parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
+parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
+parser.add_argument('--path', help=_('path (alt:az,alt:az,..) for model build'), action='store', dest='path', default=rts2.altazpath.constant_path([45,75]))
+parser.add_argument('--mags', help=_('magnitude range for BSC lookup'), action='store', dest='mags', default='4.5:2')
+parser.add_argument('--modelname', help=_('filename where model lines will be stored'), action='store', dest='modelname', default=None)
+parser.add_argument('--maxspiral', help=_('maximal number of steps in spiral'), action='store', type=int, dest='maxspiral', default=500)
+parser.add_argument('--maxverify', help=_('maximal number of tries to verify offset'), action='store', type=int, dest='maxverify', default=5)
+parser.add_argument('--verifyradius', help=_('radius fore sucessfull verify (in pixels)'), action='store', type=float, dest='verifyradius', default=5)
+parser.add_argument('--verifywcs', help=_('WCS for verify images - arcseconds per pixel:rotang:flip'), action='store', dest='verifywcs', type=str, default='0.335:270:X')
+parser.add_argument('--timeout', help=_('timeout after move'), action='store', type=float, dest='timeout', default=7)
+parser.add_argument('--imagescript', help=_('RTS2 script for camera exposure'), action='store', dest='imagescript', default='E 1')
+parser.add_argument('--camera', help=_('name of camera to take exposures'), action='store', dest='camera', default='C0')
+parser.add_argument('--center', help=_('image center (rotator center, if on alt-az)'), action='store', dest='center', default=None)
+parser.add_argument('action', help=_('action (line,spiral,model,bright-star,verify-brights'), action='store', default=None, choices=['line','spiral','model','bright-star','verify-brights'], nargs=1)
+
+options = parser.parse_args()
+
+j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+
+__mm = map(float,options.mags.split(':'))
+if len(__mm) != 2:
+	sys.exit(_('Magnitude limit shall be two float values separated with :'))
+__mm.sort()
+mag_max, mag_min = __mm
+
+fov_center = None
+if options.center is not None:
+	fov_center = map(float,options.center.split(':'))
+
+__verifywcs = options.verifywcs.split(':')
+if len(__verifywcs) != 3:
+	sys.exit(_('VerifyWCS should be three : separated values (asec/pix,rotang and flip), are: {0}'.format(options.verifywcs)))
+__verifywcs_asecpix = float(__verifywcs[0])
+__verifywcs_rotang = float(__verifywcs[1])
+__verifywcs_flip = __verifywcs[2]
+
+def get_altazm_line(telescope):
+	j.refresh()
+	jd = j.getValue(telescope,'JD')
+	ori = j.getValue(telescope,'ORI')
+	altaz = j.getValue(telescope,'TEL_')
+	offs = j.getValue(telescope,'AZALOFFS')
+	return '\t'.join(map(str,[jd,ori['ra'],ori['dec'],offs['alt'],offs['az'],altaz['alt'],altaz['az']]))
+
+def wait_for_key(t):
+	"""Wait for key press for maximal t seconds."""
+	from select import select
+	while t > 0:
+		print _("Hit enter to interrupt the sequence within {0} seconds...\r").format(t),
+		sys.stdout.flush()
+		rlist, wlist, xlist = select([sys.stdin], [], [], 1)
+		if rlist:
+			print _("Interrupted. Now either find the bright stars typing alt-az offsets, or type c to continue")
+			sys.stdin.readline()
+			return True
+		t -= 1
+	return False
+
+def run_spiral(telescope,timeout,last_step=0,maxsteps=500):
+	"""Runs spiral pointing to find the star."""
+	s = rts2.spiral.Spiral(1,1)
+	x = 0
+	y = 0
+	step_alt = 0.08
+	step_az = 0.08
+	alt=j.getValue(telescope,"TEL_",refresh_not_found=True)['alt']
+	cosa = math.cos(math.radians(alt))
+	step_az /= cosa
+	print _('Scaling azimuth by factor {0:.10f} to {1:.2f}').format(cosa,step_az)
+	for i in range(maxsteps):
+		a,e = s.get_next_step()
+		x += a
+		y += e
+		if i < last_step:
+			continue
+		print _('step {0} next {1} {2} altaz {3:.3f} {4:.3f}').format(i,x,y,x*step_alt,y*step_az)
+		j.setValue(telescope, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
+		if wait_for_key(timeout):
+			return i
+
+def tel_hrz_to_equ(telescope,alt,az):
+	j.refresh()
+	lst = j.getValue(telescope,'LST')
+	lat = j.getValue(telescope,'LATITUDE')
+
+	ha,dec = rts2.libnova.hrz_to_equ(az,alt,lat)
+	ra = (lst - ha) % 360.0
+	return ra,dec
+
+def find_bright_star(telescope,alt,az):
+	import rts2.bsc
+	ra,dec = tel_hrz_to_equ(telescope,alt,az)
+	lst = j.getValue(telescope,'LST')
+	print _('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(ra,dec,lst,mag_max,mag_min)
+	# find bsc..
+	bsc=rts2.bsc.find_nearest(ra,dec,mag_max,mag_min)
+	print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f}').format(bsc[0],bsc[1],bsc[2],bsc[3])
+	return bsc
+
+def __save_modeline(telescope,modelname,mn):
+	modline = get_altazm_line(telescope)
+	if modelname is None:
+		print _('model line {0}').format(modline)
+		return
+	print _('adding to aling file {0}').format(modline)
+	oa = open(modelname,'a')
+	oa.write('{0}\t{1}\n'.format(mn,modline))
+	oa.flush()
+	oa.close()
+
+def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn,useDS9):
+	import ds9
+	d = None
+	if useDS9:
+		d = ds9.ds9('Model')
+
+	if mn is None:
+		for mn in range(1,999):
+			if os.path.isfile('model_{0:03}.fits'.format(mn)) == False:
+				break
+		print _('run #{0}').format(mn)
+
+	if maxspiral >= -1:
+		print _('Next model point at altitude {0:.3f} azimuth {1:.3f}').format(alt,az)
+		bsc = find_bright_star(telescope,alt,az)
+		tarf_ra = bsc[1]
+		tarf_dec = bsc[2]
+	else:
+		tarf_ra,tarf_dec = tel_hrz_to_equ(telescope,alt,az)
+
+	j.executeCommand(telescope, _('move {0} {1}').format(tarf_ra,tarf_dec))
+	time.sleep(2)
+	j.refresh(telescope)
+	tmout = 120
+
+	tel=j.getValue(telescope,'TEL',True)
+	hrz=j.getValue(telescope,'TEL_')
+	while tmout > 0 and j.getState(telescope) & 0x01000020 == 0x01000000:
+		j.refresh(telescope)
+		tel=j.getValue(telescope,'TEL')
+		hrz=j.getValue(telescope,'TEL_')
+		print _('moving to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}\r').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az']),
+		sys.stdout.flush()
+		time.sleep(1)
+		tmout -= 1
+
+	if tmout <= 0:
+		print _('destination not reached, continue with new target                         ')
+		return None,None,bsc
+
+	print _('moved to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
+	if imagescript is not None:
+		print _('taking script {0}').format(imagescript)
+		fn = 'model_{0:03}.fits'.format(mn)
+		os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(options.camera,imagescript,fn))
+		if d is not None:
+			try:
+				d.set('file {0}'.format(fn))
+			except Exception,ex:
+				d = ds9.ds9()
+				d.set('file {0}'.format(fn))
+		return fn,mn,bsc
+	print _('Slew finished, starting search now')
+	next_please = False
+	last_step = 0
+	while next_please == False:
+		skip_spiral = False
+		if last_step <= 0:
+			j.setValue(telescope,'AZALOFFS','0 0')
+			skip_spiral = wait_for_key(7)
+			last_step = 0
+		if skip_spiral == False:
+			last_step = run_spiral(telescope,timeout,last_step,maxspiral)
+		while True:
+			print _('Now either type offsets (comulative, arcmin), m when star is centered, r to repeat from 0 steps, z to zero offsets, or s to skip this field and hit enter')
+			ans = sys.stdin.readline().rstrip()
+			if ans == '':
+				continue
+			elif ans == 'm':
+				__save_modeline(telescope,modelname,mn)
+				mn += 1
+				next_please = True
+				break
+			elif ans == 's':
+				next_please = True
+				print _('skipping this field, going to the next target')
+				break
+			elif ans[0] == 'r':
+				ls = ans.split()
+				try:
+					if len(ls) == 2:
+						last_step -= int(ls[1])
+					else:
+						last_step = 0
+					break
+					print _('going back to step {0}').format(last_step)
+				except Exception,ex:
+					print _('invalid r command format: {0}').format(ans)
+					continue
+			elif ans == 'c':
+				print _('continuing..')
+				last_step -= 1
+				break
+			elif ans == 'z':
+				print _('zeroing offsets')
+				j.setValue(telescope,'AZALOFFS','0 0')
+				break
+			try:
+				azo,alto = ans.split()
+				print _('offseting ALT {0} AZ {1} arcmin').format(azo,alto)
+				j.executeCommand(telescope,'X AZALOFFS += {0} {1}'.format(float(azo)/60.0,float(alto)/60.0))
+
+			except Exception,ex:
+				print _('unknow command {0}, please try again').format(ans)
+	return None,None,bsc
+
+
+def run_manual_path(telescope,timeout,path,modelname='align',maxspiral=500,imagescript=None,useDS9=False):
+	mn = 1
+	for p in path:
+		run_manual_altaz(telescope,p[0],p[1],timeout,modelname,maxspiral,imagescript,mn,useDS9)
+		mn += 1
+
+def __get_offset_by_image(fn,useDS9,mn,center):
+	return rts2.brights.add_wcs(fn, __verifywcs_asecpix, __verifywcs_rotang, __verifywcs_flip, 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn), center=center)
+
+def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius):
+	from astropy.io import fits
+	flux_history = []
+	flux_ratio_history = []
+	history_x = []
+	history_y = []
+	for vn in range(maxverify):
+		time.sleep(15)
+		# verify ve really center on star
+		vfn = 'verify_{0:03}_{1:02}.fits'.format(mn,vn)
+		print _('taking verify exposure {0} # {1}').format(vfn,vn)
+		if os.path.isfile(vfn):
+			print _('removing {0}').format(vfn)
+			os.unlink(vfn)
+		os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(options.camera,imagescript,vfn))
+		vhdu = fits.open(vfn)
+		b_x,b_y,b_flux,b_flux_ratio = rts2.brights.find_brightest(vfn, vhdu, 1, useDS9)
+		if fov_center is None:
+			off_x = vhdu[0].header['NAXIS1'] / 2.0 - b_x
+			off_y = vhdu[0].header['NAXIS2'] / 2.0 - b_y
+		else:
+			off_x = fov_center[0] - b_x
+			off_y = fov_center[1] - b_y
+		pixdist = math.sqrt(off_x ** 2 + off_y ** 2)
+		print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
+		flux_history.append(b_flux)
+		flux_ratio_history.append(b_flux_ratio)
+		history_x.append(off_x)
+		history_y.append(off_y)
+		if pixdist < verifyradius:
+			print _('converged')
+			return True,flux_history,flux_ratio_history,history_x,history_y
+		# calculate offsets in alt-az, increment offsets
+		off_radec,off_azalt = __get_offset_by_image(vfn,useDS9,mn,fov_center)
+		if off_radec is None:
+			return False,flux_history,flux_ratio_history
+		print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+		j.incValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+
+	return False,flux_history,flux_ratio_history,history_x,history_y
+
+def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxverify,verifyradius):
+	# run exposure..
+	from astropy.io import fits
+	j.setValue(telescope,'AZALOFFS','0 0')
+	for p in path:
+		fn,mn,bsc = run_manual_altaz(telescope,p[0],p[1],timeout,None,-1,imagescript,None,useDS9)
+		off_radec,off_azalt = __get_offset_by_image(fn,useDS9,mn)
+		if off_radec is None:
+			print _('Bright star not found - continue')
+			if modelname is not None:
+				modelf = open(modelname,'a')
+				modelf.write('# bright star not found on image - continue, BS RA {0:.2} DEC {1:.2} mag {2}\n'.format(bsc[1],bsc[2],bsc[3]))
+				modelf.close()
+			continue
+		print _('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+		j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+		ver,flux_history,flux_ratio_history,history_x,history_y = __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius)
+		if modelname is not None:
+			modelf = open(modelname,'a')
+			modelf.write('# alt {0:.3f} az {1:.3f} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
+			modelf.write('# x {0} y {1}\n'.format(','.join(map(str,history_x)),','.join(map(str,history_y))))
+			# comment lines
+			if ver == False:
+				modelf.write('# ')
+			modelf.close()
+		__save_modeline(telescope,modelname,mn)
+
+try:
+	telescope = j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)[0]
+
+	path = options.path
+	if path == 'random':
+		path = rts2.altazpath.random_path()
+	if type(path) == str:
+		path = map(lambda x:map(float,x.split(':')),path.split(','))
+
+	if options.action[0] == 'line':
+		print get_altazm_line(telescope)
+	elif options.action[0] == 'spiral':
+		run_spiral(options.spiral,options.timeout)
+	elif options.action[0] == 'model':
+		run_manual_path(telescope,options.timeout,path,options.modelname,options.maxspiral,options.imagescript,options.useDS9)
+	elif options.action[0] == 'bright-star':
+		for p in path:
+			bsc = find_bright_star(telescope,p[0],p[1])
+			j.executeCommand(telescope,'move {0} {1}'.format(bsc[1],bsc[2]))
+			wait_for_key(options.timeout)
+	elif options.action[0] == 'verify-brights':
+		run_verify_brigths(telescope,options.timeout,path,options.modelname,options.imagescript,options.useDS9,options.maxverify,options.verifyradius)
+	else:
+		argparse.help()
+		sys.exit(1)
+	sys.exit(0)
+
+except Exception,ex:
+	if options.verbose:
+		import traceback
+		traceback.print_exc()
+	else:
+		print >>sys.stderr, 'error', ex
+
+	sys.exit(1)

@@ -75,6 +75,7 @@ class Focusd:public rts2core::Device
 		rts2core::ValueBool *linearOffset;
 		rts2core::ValueFloat *slope;
 		rts2core::ValueFloat *intercept;
+		rts2core::ValueBool *temperatureNightOnly;
 
 		rts2core::ValueDoubleMinMax *defaultPosition;
 		rts2core::ValueDoubleMinMax *filterOffset;
@@ -131,13 +132,10 @@ class Focusd:public rts2core::Device
 			createValue (temperature, "FOC_TEMP", "focuser temperature");
 		}
 
-		void createLinearOffset ()
-		{
-			createValue (linearOffset, "linear_offset", "linear offset", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-			linearOffset->setValueBool (false);
-			createValue (slope, "linear_slope", "slope parameter for linear function to fit temperature sensor", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-			createValue (intercept, "linear_intercept", "intercept parameter for 0 value of temperature sensor", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-		}
+		/**
+		 * Creates values for linear, temperature based offseting.
+		 */
+		void createLinearOffset ();
 
 		/**
 		 * Returns focuser target value.

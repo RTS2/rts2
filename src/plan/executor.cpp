@@ -327,6 +327,7 @@ rts2core::DevClient * Executor::createOtherType (rts2core::Connection * conn, in
 			return new rts2script::DevClientPhotExec (conn);
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
+		case DEVICE_TYPE_ROTATOR:
 			return new rts2image::DevClientWriteImage (conn);
 		default:
 			return rts2db::DeviceDb::createOtherType (conn, other_device_type);

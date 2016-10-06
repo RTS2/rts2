@@ -55,6 +55,12 @@ class Daemon:public rts2core::Block
 		Daemon (int in_argc, char **in_argv, int _init_state = 0);
 
 		virtual ~ Daemon (void);
+
+		/**
+		 * Handle autorestart option - if really needed.
+		 */
+		int setupAutoRestart ();
+
 		virtual int run ();
 
 		virtual void endRunLoop ();
@@ -127,8 +133,8 @@ class Daemon:public rts2core::Block
 
 		int sendMetaInfo (Connection * conn);
 
-		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
-		virtual void selectSuccess (fd_set &_read_set, fd_set &_write_set, fd_set &_exp_set);
+		virtual void addPollSocks ();
+		virtual void pollSuccess ();
 
 		virtual int setValue (Connection * conn);
 
@@ -227,10 +233,13 @@ class Daemon:public rts2core::Block
 		void sendProgressAll (double start, double end, Connection *except);
 
 		int checkLockFile (const char *_lock_fname);
+
+
 		void setNotDaemonize ()
 		{
 			daemonize = DONT_DAEMONIZE;
 		}
+
 		/**
 		 * Returns true if daemon should stream debug messages to standart output.
 		 *
@@ -477,6 +486,8 @@ class Daemon:public rts2core::Block
 			info_time->setValueInteger (_time);
 		}
 
+		double getInfoTime () { return info_time->getValueDouble (); }
+
 		/**
 		 * Get time from last info time in seconds (and second fractions).
 		 *
@@ -622,6 +633,8 @@ class Daemon:public rts2core::Block
 		 * B.bb are group values. A_aa is not a group value.
 		 */
 		void addGroup (const char *groupname);
+
+		void setDefaultsFile (const char *fn) { optDefaultsFile = fn; }
 
 	private:
 		rts2core::StringArray *groups;

@@ -120,7 +120,7 @@ class SI8821:public Camera
 		void setReadout (int idx, int v, const char *name);
 		void setConfig (int idx, int v, const char *name);
 		
-		float getGain( int iMode );
+		void setReadOutMode(int iMode);
 
 		void print_readout ();
 		void print_config ();
@@ -341,7 +341,13 @@ int SI8821::info ()
 	}
 
 	tempSet->setValueDouble (kelvinToCelsius (camera.config[CONFIG_SET_TEMP_IX] / 10.0));
-	gain->setValueFloat(camera.readout[READOUT_GAIN_IX] * 0.01); // APMONTERO: TESTING
+	static bool bFirstTime = true;
+	if( bFirstTime )
+	{
+		setReadOutMode( readOutModes->getValueInteger() );
+		bFirstTime = false;
+	//	gain->setValueFloat(camera.readout[READOUT_GAIN_IX] * 0.01); // APMONTERO: TESTING
+	}
 	return Camera::info ();
 }
 
@@ -350,20 +356,7 @@ int SI8821::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == readOutModes)
         {
 		int iMode = ((rts2core::ValueInteger *) newValue)->getValueInteger ();
-		if (getReadoutFromFile (false, iMode) != 0) 
-		{
-			logStream (MESSAGE_WARNING) << "cannot read camera Readout Mode " << iMode << sendLog;
-		}
-		else
-		{
-			logStream (MESSAGE_INFO) << "[Readout Mode " << iMode << "] "
-			<< " DSI Sample Time : " << camera.readout[READOUT_DSI_SAMPLE_IX]
-			<< " | Analog Attenuation : " << camera.readout[READOUT_AATTENUATION_IX]
-			<< " | Port 1 Offset : " << (camera.readout[READOUT_PORT1_OFFSET_IX] - pow(2,24))
-			<< " | Port 2 Offset : "  << (camera.readout[READOUT_PORT2_OFFSET_IX] - pow(2,24)) << sendLog;
-			gain->setValueFloat(camera.readout[READOUT_GAIN_IX] * 0.01); // APMONTERO: TESTING
-			sendValueAll(gain);
-		}
+		setReadOutMode( iMode ); 
         }
 	return Camera::setValue (oldValue, newValue);
 }
@@ -573,9 +566,22 @@ int SI8821::switchCooling (bool newval)
 	return Camera::switchCooling (newval);
 }
 
-float SI8821::getGain (int iMode)
+void SI8821::setReadOutMode (int iMode)
 {
-	return (float)iMode;
+	if (getReadoutFromFile (false, iMode) != 0) 
+	{
+		logStream (MESSAGE_WARNING) << "cannot read camera Readout Mode " << iMode << sendLog;
+	}
+	else
+	{
+		logStream (MESSAGE_INFO) << "[Readout Mode " << iMode << "] "
+		<< " DSI Sample Time : " << camera.readout[READOUT_DSI_SAMPLE_IX]
+		<< " | Analog Attenuation : " << camera.readout[READOUT_AATTENUATION_IX]
+		<< " | Port 1 Offset : " << (camera.readout[READOUT_PORT1_OFFSET_IX] - pow(2,24))
+		<< " | Port 2 Offset : "  << (camera.readout[READOUT_PORT2_OFFSET_IX] - pow(2,24)) << sendLog;
+		gain->setValueFloat(camera.readout[READOUT_GAIN_IX] * 0.01); // APMONTERO: TESTING
+		sendValueAll(gain);
+	}
 }
 
 void SI8821::dma_unmap ()

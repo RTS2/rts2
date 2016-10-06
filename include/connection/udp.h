@@ -46,11 +46,13 @@ class ConnUDP:public ConnNoSend
 		 */
 		ConnUDP (int _port, rts2core::Block * _master, const char* hostname = NULL, size_t _maxSize = 500);
 		virtual int init ();
-		virtual int receive (fd_set * set);
+		virtual int receive (Block *block);
 		/**
 		 * @param rectimeout receive timeout in seconds
 		 */
 		int sendReceive (const char * in_message, char * out_message, unsigned int length, int noreceive = 0, float rectimeout=10);
+
+		int receiveMessage (char *out_message, unsigned int length, float rectimeout);
 	protected:
 		/**
 		 * Process received data. Data are stored in buf member variable.

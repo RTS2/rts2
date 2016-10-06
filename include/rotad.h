@@ -25,6 +25,8 @@ namespace rts2rotad
 /**
  * Abstract class for rotators.
  *
+ * PA in this class stands for Parallactic Angle.
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rotator:public rts2core::Device
@@ -32,8 +34,23 @@ class Rotator:public rts2core::Device
 	public:
 		/**
 		 * Rotator constructor.
+		 *
+		 * @param ownTimer   if true, rotator own timer to keep trackign will be disabled. Usefully for inteligent devices,
+		 *                   which has own tracking, or for multidev where timer is in base device.
 		 */
-		Rotator (int argc, char **argv);
+		Rotator (int argc, char **argv, const char *defname = "R0", bool ownTimer = false);
+
+		virtual int commandAuthorized (rts2core::Connection * conn);
+
+		/**
+		 * Update tracking frequency. Should be run after new tracking vector
+		 * is send to the rotator motion controller.
+		 */
+		void updateTrackingFrequency ();
+
+		virtual void postEvent (rts2core::Event * event);
+
+		void checkRotators ();
 
 	protected:
 		virtual int idle ();
@@ -45,7 +62,17 @@ class Rotator:public rts2core::Device
 		 */
 		virtual void setTarget (double tv) = 0;
 
-		void setCurrentPosition (double cp) {currentPosition->setValueDouble (cp); }
+		void setCurrentPosition (double cp);
+
+		/**
+		 * Calculate current PA as linear estimate from the past value and speed.
+		 */
+		double getPA (double t);
+
+		/**
+		 * Runs PA tracking.
+		 */
+		void runPATracking ();
 
 		/**
 		 * Returns >0 if rotator is rotating image.
@@ -61,12 +88,45 @@ class Rotator:public rts2core::Device
 		double getTargetPosition () { return targetPosition->getValueDouble (); }
 		double getDifference () { return toGo->getValueDouble (); }
 
+		double getTargetMin () { return tarMin->getValueDouble (); }
+		double getTargetMax () { return tarMax->getValueDouble (); }
+
+		double getZeroOffset () { return zeroOffs->getValueDouble (); }
+		double getOffset () { return offset->getValueDouble (); }
+
+		/**
+		 * Set parallactic angle offset.
+		 */
+		void setPAOffset (double paOff) { paOffset->setValueDouble (paOff); }
+
 	private:
+		rts2core::ValueDouble *zeroOffs;
+		rts2core::ValueDouble *offset;
+
 		rts2core::ValueDouble *currentPosition;
-		rts2core::ValueDoubleMinMax *targetPosition;
+		rts2core::ValueDouble *targetPosition;
+		rts2core::ValueDouble *tarMin;
+		rts2core::ValueDouble *tarMax;
+		rts2core::ValueDouble *paOffset;
+
+		rts2core::ValueBool *paTracking;
+		rts2core::ValueDoubleStat *trackingFrequency;
+		rts2core::ValueInteger *trackingFSize;
+		rts2core::ValueFloat *trackingWarning;
+		double lastTrackingRun;
+
+		bool hasTimer;
+
+		rts2core::ValueTime *parallacticAngleRef;
+		rts2core::ValueDouble *parallacticAngle;
+		rts2core::ValueDouble *parallacticAngleRate;
 		rts2core::ValueDouble *toGo;
 
 		void updateToGo ();
+
+		// autorotating in plus direction..
+		bool autoPlus;
+		bool autoOldTrack;
 };
 
 }

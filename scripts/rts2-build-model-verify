@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+import argparse
+from astropy.io import fits
+import math
+import rts2.brights
+import sys
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Check if the brightest star is close to center, extract offsets for pointing model')
+
+parser.add_argument('-v', help='verbose', action='count', dest='verbose', default=0)
+parser.add_argument('--ds9', help='show progress in DS9 (requires pyDS9 module)', dest='ds9', action='store_true', default=False)
+parser.add_argument('--radius', help='maximal allowed center deviation (in pixels)', dest='radius', action='store', type=float, default=5)
+parser.add_argument('--out', help='output file', dest='out', action='store', type=argparse.FileType(mode='w'), default=sys.stdout)
+parser.add_argument('args', help='files to process', nargs='+')
+
+options = parser.parse_args()
+
+lng = None
+lat = None
+alt = None
+
+for fn in options.args:
+	hdu = fits.open(fn)
+	w = hdu[0].header['NAXIS1']
+	h = hdu[0].header['NAXIS2']
+	if lng is None:
+		lng = hdu[0].header['LONGITUD']
+		lat = hdu[0].header['LATITUDE']
+		alt = hdu[0].header['ALTITUDE']
+		options.out.write("# Observation	  JD	   LST-MNT   AZ-MNT   ALT-MNT   AXAZ	  AXALT   AZ-OFFS  ALT-OFFS\n")
+		options.out.write("# altaz-manual {0} {1} {2}\n".format(lng,lat,alt))
+	else:
+		if lng != hdu[0].header['LONGITUD'] or lat != hdu[0].header['LATITUDE'] or alt != hdu[0].header['ALTITUDE']:
+			sys.exit('Header of image {0} does not match longitude, latitude or altitude'.format(fn))
+	x,y,flux,flux_ratio = rts2.brights.find_brightest(fn, hdu, options.verbose, options.ds9)
+	d_x = w / 2.0 - x
+	d_y = h / 2.0 - y
+	jd = hdu[0].header['JD']
+	pa = hdu[0].header['PANGLE']
+	der1_pa = hdu[0].header['DER1.PA']
+	az_mnt = hdu[0].header['TAR_TELAZ']
+	alt_mnt = hdu[0].header['TAR_TELALT']
+	o_az = hdu[0].header['AZALOFFSAZ']
+	o_alt = hdu[0].header['AZALOFFSALT']
+	a_ra = hdu[0].header['TARRA']
+	a_dec = hdu[0].header['TARDEC']
+	dist = math.sqrt (d_x * d_x + d_y * d_y)
+	options.out.write('# distance {0} pa {1} {2}\n'.format(dist,pa,der1_pa))
+	if dist > options.radius:
+		options.out.write('# ')
+	options.out.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(fn, jd, a_ra, a_dec, o_alt, o_az, alt_mnt, az_mnt))
+	options.out.flush()
+
+options.out.close()

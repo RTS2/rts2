@@ -19,47 +19,80 @@
 
 #include "multidev.h"
 
+#include <signal.h>
+
 using namespace rts2core;
 
-int MultiDev::run ()
+
+void MultiDev::initMultidev (int debug)
 {
 	MultiDev::iterator iter;
 	for (iter = begin (); iter != end (); iter++)
 	{
-		optind = 1;
+		(*iter)->setNotDaemonize ();
+		(*iter)->setDebug (debug);
 		(*iter)->initDaemon ();
 		(*iter)->beforeRun ();
 	}
+}
 
+int MultiDev::run (int debug)
+{
+	initMultidev (debug);
+	multiLoop ();
+	return -1;
+}
+
+void MultiDev::multiLoop ()
+{
 	while (true)
 	{
-		fd_set read_set;
-		fd_set write_set;
-		fd_set exp_set;
+		runLoop (10);
+	}
+}
 
-		FD_ZERO (&read_set);
-		FD_ZERO (&write_set);
-		FD_ZERO (&exp_set);
+void MultiDev::runLoop (float tmout)
+{
+	MultiDev::iterator iter;
 
-		struct timeval read_tout;
-		read_tout.tv_sec = 10;
-		read_tout.tv_usec = 0;
+	struct timespec read_tout;
+	read_tout.tv_sec = int (tmout);
+	read_tout.tv_nsec = (tmout - read_tout.tv_sec) * NSEC_SEC;
 
-		for (iter = begin (); iter != end (); iter++)
+	nfds_t polls = 0;
+
+	for (iter = begin (); iter != end (); iter++)
+	{
+		(*iter)->addPollSocks ();
+		polls += (*iter)->npolls;
+	}
+
+	struct pollfd allpolls[polls + 1];
+	int pollsa[size ()];
+	int i = 0, j = 0;
+	for (iter = begin (); iter != end (); iter++, j++)
+	{
+		memcpy (allpolls + i, (*iter)->fds, sizeof (struct pollfd) * (*iter)->npolls);
+		pollsa[j] = (*iter)->npolls;
+		i += (*iter)->npolls;
+	}
+
+	if (ppoll (allpolls, polls, &read_tout, NULL) > 0)
+	{
+		j = 0;
+		int polloff = 0;
+		for (iter = begin (); iter != end (); iter++, j++)
 		{
-			(*iter)->addSelectSocks (read_set, write_set, exp_set);
-		}
-
-		if (select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout) > 0)
-		{
-			for (iter = begin (); iter != end (); iter++)
-				(*iter)->selectSuccess (read_set, write_set, exp_set);
-		}
-
-		for (iter = begin (); iter != end (); iter++)
-		{
-			(*iter)->callIdle ();
+			struct pollfd *oldfd = (*iter)->fds;
+			(*iter)->fds = allpolls + polloff;
+			(*iter)->pollSuccess ();
+			(*iter)->fds = oldfd;
+			polloff += pollsa[j];
 		}
 	}
-	return 0;
+
+	for (iter = begin (); iter != end (); iter++)
+	{
+		(*iter)->callIdle ();
+	}
 }

@@ -164,7 +164,7 @@ CommandCameraSettings::CommandCameraSettings (DevClientCamera * _camera):Command
 
 CommandExposure::CommandExposure (Block * _master, DevClientCamera * _camera, int _bopMask):Command (_master)
 {
-	setCommand ("expose");
+	setCommand (COMMAND_CCD_EXPOSURE);
 	camera = _camera;
 	setBopMask (_bopMask);
 }
@@ -186,10 +186,34 @@ CommandReadout::CommandReadout (Block * _master):Command (_master)
 	setCommand ("readout");
 }
 
+CommandShiftStart::CommandShiftStart (Block * _master, float expTime, int _bopMask):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " start " << expTime;
+	setCommand (_os);
+	setBopMask (_bopMask);
+}
+
+CommandShiftProgress::CommandShiftProgress (Block * _master, int shift, float expTime, int _bopMask):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " shift " << shift << " " << expTime;
+	setCommand (_os);
+	setBopMask (_bopMask);
+}
+
+CommandShiftEnd::CommandShiftEnd (Block * _master, int shift, float expTime, int _bopMask):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CCD_SHIFTSTORE << " end " << shift << " " << expTime;
+	setCommand (_os);
+	setBopMask (_bopMask);
+}
+
 CommandFitsStat::CommandFitsStat (Block * _master, double average, double min, double max, double sum, double mode):Command (_master)
 {
 	std::ostringstream _os;
-	_os << COMMAND_FITS_STAT << " " << average << " " << min << " " << max << " " << sum << " " << mode;
+	_os << COMMAND_FITS_STAT << " " << std::fixed << average << " " << min << " " << max << " " << sum << " " << mode;
 	setCommand (_os);
 }
 
@@ -277,22 +301,21 @@ CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valNam
 CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, float _operand):Command (_client->getMaster ())
 {
 	std::ostringstream _os;
-	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << std::fixed << _operand;
 	setCommand (_os);
 }
 
 CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand):Command (_client->getMaster ())
 {
 	std::ostringstream _os;
-	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << std::fixed << _operand;
 	setCommand (_os);
 }
 
 CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand1, double _operand2):Command (_client->getMaster ())
 {
 	std::ostringstream _os;
-	_os << PROTO_SET_VALUE " " << _valName << " " << op
-		<< " " << _operand1 << " " << _operand2;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << std::fixed << _operand1 << " " << _operand2;
 	setCommand (_os);
 }
 
@@ -332,7 +355,7 @@ CommandMove::CommandMove (Block * _master, DevClientTelescope * _tel):Command (_
 CommandMove::CommandMove (Block * _master, DevClientTelescope * _tel, double ra, double dec):Command (_master)
 {
 	std::ostringstream _os;
-	_os << COMMAND_TELD_MOVE " " << ra << " " << dec;
+	_os << COMMAND_TELD_MOVE " " << std::fixed << ra << " " << dec;
 	setCommand (_os);
 	tel = _tel;
 }
@@ -346,7 +369,7 @@ int CommandMove::commandReturnFailed (int status, Connection * conn)
 CommandMoveUnmodelled::CommandMoveUnmodelled (Block * _master, DevClientTelescope * _tel, double ra, double dec):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
-	_os << "move_not_model " << ra << " " << dec;
+	_os << "move_not_model " << std::fixed << ra << " " << dec;
 	setCommand (_os);
 }
 
@@ -367,28 +390,28 @@ CommandMoveTle::CommandMoveTle (Block * _master, DevClientTelescope * _tel, doub
 CommandMoveFixed::CommandMoveFixed (Block * _master, DevClientTelescope * _tel, double ra, double dec):CommandMove (_master,_tel)
 {
 	std::ostringstream _os;
-	_os << "fixed " << ra << " " << dec;
+	_os << "fixed " << std::fixed << ra << " " << dec;
 	setCommand (_os);
 }
 
 CommandMoveAltAz::CommandMoveAltAz (Block * _master, DevClientTelescope * _tel, double alt, double az):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
-	_os << "altaz " << alt << " " << az;
+	_os << COMMAND_TELD_ALTAZ " " << std::fixed << alt << " " << az;
 	setCommand (_os);
 }
 
 CommandResyncMove::CommandResyncMove (Block * _master, DevClientTelescope * _tel, double ra, double dec):CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
-	_os << "resync " << ra << " " << dec;
+	_os << "resync " << std::fixed << ra << " " << dec;
 	setCommand (_os);
 }
 
 CommandChange::CommandChange (Block * _master, double ra, double dec):Command (_master)
 {
 	std::ostringstream _os;
-	_os << "change " << ra << " " << dec;
+	_os << "change " << std::fixed << ra << " " << dec;
 	setCommand (_os);
 	tel = NULL;
 }
@@ -396,7 +419,7 @@ CommandChange::CommandChange (Block * _master, double ra, double dec):Command (_
 CommandChange::CommandChange (DevClientTelescope * _tel, double ra, double dec):Command (_tel->getMaster ())
 {
 	std::ostringstream _os;
-	_os << "change " << ra << " " << dec;
+	_os << "change " << std::fixed << ra << " " << dec;
 	setCommand (_os);
 	tel = _tel;
 }
@@ -417,7 +440,7 @@ CommandCorrect::CommandCorrect (Block * _master, int corr_mark, int corr_img, in
 {
  	std::ostringstream _os;
 	_os << "correct " << corr_mark << " " << corr_img
-		<< " " << img_id << " " << ra_corr
+		<< " " << img_id << " " << std::fixed << ra_corr
 		<< " " << dec_corr << " " << pos_err;
 	setCommand (_os);
 }
@@ -436,19 +459,11 @@ CommandStopGuide::CommandStopGuide (Block * _master, char dir):Command (_master)
 	setCommand (_os);
 }
 
-CommandCupolaMove::CommandCupolaMove (DevClientCupola * _copula, double ra, double dec):Command (_copula->getMaster ())
+CommandCupolaSyncTel::CommandCupolaSyncTel (Block * _master, double ra, double dec):Command (_master)
 {
 	std::ostringstream _os;
-	copula = _copula;
-	_os << "move " << ra << " " << dec;
+	_os << COMMAND_CUPOLA_SYNCTEL " " << std::fixed << ra << " " << dec;
 	setCommand (_os);
-}
-
-int CommandCupolaMove::commandReturnFailed (int status, Connection * conn)
-{
-	if (copula)
-		copula->syncFailed (status);
-	return Command::commandReturnFailed (status, conn);
 }
 
 CommandCupolaNotMove::CommandCupolaNotMove (DevClientCupola * _copula):Command (_copula->getMaster ())
@@ -545,7 +560,7 @@ CommandIntegrate::CommandIntegrate (DevClientPhot * _phot, int _filter, float _e
 {
 	phot = _phot;
 	std::ostringstream _os;
-	_os << "intfil " << _filter << " " << _exp << " " <<_count;
+	_os << "intfil " << _filter << " " << std::fixed << _exp << " " <<_count;
 	setCommand (_os);
 }
 
@@ -553,7 +568,7 @@ CommandIntegrate::CommandIntegrate (DevClientPhot * _phot, float _exp, int _coun
 {
 	phot = _phot;
 	std::ostringstream _os;
-	_os << "integrate " << _exp << " " << _count;
+	_os << "integrate " << std::fixed << _exp << " " << _count;
 	setCommand (_os);
 }
 
@@ -683,4 +698,11 @@ void CommandStatusInfo::deleteConnection (Connection * conn)
 CommandDeviceStatus::CommandDeviceStatus (Block * master, Connection * _control_conn):CommandStatusInfo (master, _control_conn)
 {
 	setCommand ("device_status");
+}
+
+CommandParallacticAngle::CommandParallacticAngle (Block * _master, double reftime, double pa, double rate):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_PARALLACTIC_UPDATE " " << std::fixed << reftime << " " << pa << " " << rate;
+	setCommand (_os);
 }

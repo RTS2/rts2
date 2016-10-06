@@ -28,10 +28,5 @@ ClientRotator::ClientRotator (rts2core::Connection * conn):rts2core::DevClientRo
 
 ClientRotator::~ClientRotator (void)
 {
-	// getMaster ()->postEvent (new rts2core::Event (EVENT_CUP_ENDED, this));
-}
-
-void ClientRotator::postEvent (rts2core::Event * event)
-{
-	rts2core::DevClientRotator::postEvent (event);
+	getMaster ()->postEvent (new rts2core::Event (EVENT_ROT_ENDED, this));
 }

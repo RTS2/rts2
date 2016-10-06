@@ -154,8 +154,11 @@ rts2-queue --queue manual --create Test1 --create-radec '10:20:30 -40:30:20'""")
 	rts2.createProxy(url=options.server, username=options.username, password=options.password, verbose=options.debug)
 
 	if options.simulate:
-		night_beginning = rts2.json.getProxy().getValue('centrald', 'night_beginning')
+		now = time.time()
+		night_beginning = rts2.json.getProxy().getValue('centrald', 'night_beginning', True)
 		night_ending = rts2.json.getProxy().getValue('centrald', 'night_ending')
+		if night_beginning > night_ending:
+			night_beginning = now
 		rts2.json.getProxy().executeCommand('SEL', 'simulate {0} {1}'.format(night_beginning, night_ending))
 		sys.exit(0)
 

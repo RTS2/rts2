@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <check.h>
+#include <check_utils.h>
 #include <libnova/libnova.h>
 
 // global telescope object
@@ -21,8 +22,6 @@ void teardown_mlo (void)
 	delete gemTest;
 	gemTest = NULL;
 }
-
-#define ck_assert_dbl_eq(v1,v2,alow)  ck_assert_msg(fabs(v1-v2) < alow, "difference %f and %f > %f", v1, v2, alow)
 
 START_TEST(test_gem_mlo)
 {

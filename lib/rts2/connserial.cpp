@@ -64,7 +64,7 @@ ConnSerial::ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT
 
 	flushSleepTime = _flushSleepTime;
 
-	debugPortComm = false;
+	debugComm = false;
 	logTrafficAsHex = false;
 }
 
@@ -194,7 +194,7 @@ int ConnSerial::setVTime (int _vtime)
 int ConnSerial::writePort (unsigned char ch)
 {
 	int wlen = 0;
-	if (debugPortComm)
+	if (debugComm)
 	{
 		logStream (MESSAGE_DEBUG) << "write char 0x" << std::hex << std::setfill ('0') << std::setw (2) << (int) ch << sendLog;
 	}
@@ -221,7 +221,7 @@ int ConnSerial::writePort (unsigned char ch)
 int ConnSerial::writePort (const char *wbuf, int b_len)
 {
 	int wlen = 0;
-	if (debugPortComm)
+	if (debugComm)
 	{
 		LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "will write to port: '";
@@ -274,7 +274,7 @@ int ConnSerial::readPort (char &ch)
 			ntries--;
 		}
 	}
-	if (debugPortComm)
+	if (debugComm)
 	{
 		logStream (MESSAGE_DEBUG) << "readed from port 0x" << std::hex << std::setfill ('0') << std::setw(2) << ((int) ch) << sendLog;
 	}
@@ -319,7 +319,7 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 
 		rlen += ret;
 	}
-	if (debugPortComm)
+	if (debugComm)
 	{
 		char *tmp_b = new char[rlen + 1];
 		memcpy (tmp_b, rbuf, rlen);
@@ -347,7 +347,7 @@ size_t ConnSerial::readPortNoBlock (char *rbuf, size_t b_len)
 			return 0;
 		throw Error (strerror (errno));	
 	}
-	if (debugPortComm)
+	if (debugComm)
 	{
 		LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "readed from port '";
@@ -392,7 +392,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		if (*(rbuf + rlen) == endChar)
 		{
 			rlen += ret;
-			if (debugPortComm)
+			if (debugComm)
 			{
 				LogStream ls = logStream (MESSAGE_DEBUG);
 				ls << "readed from port '";

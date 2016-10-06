@@ -121,15 +121,15 @@ void ValueDoubleMinMax::setFromValue (Value * newValue)
 
 ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name):ValueInteger (in_val_name)
 {
-	min = NAN;
-	max = NAN;
+	min = INT_MIN;
+	max = INT_MAX;
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
 ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):ValueInteger (in_val_name, in_description, writeToFits, flags)
 {
-	min = NAN;
-	max = NAN;
+	min = INT_MIN;
+	max = INT_MAX;
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
@@ -157,12 +157,12 @@ int ValueIntegerMinMax::setValue (Connection * connection)
 int ValueIntegerMinMax::checkNotNull ()
 {
 	int local_failures = 0;
-	if (isnan (min))
+	if (min == INT_MIN)
 	{
 		local_failures ++;
 		logStream (MESSAGE_ERROR) << getName () << " limit (minimum) is not set" << sendLog;
 	}
-	if (isnan (max))
+	if (max == INT_MAX)
 	{
 		local_failures ++;
 		logStream (MESSAGE_ERROR) << getName () << " limit (maximum) is not set" << sendLog;

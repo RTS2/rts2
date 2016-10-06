@@ -63,9 +63,9 @@ class DevClientPhotExec:public rts2core::DevClientPhot, public DevScript
 			rts2core::DevClientPhot::setWaitMove ();
 		}
 
-		virtual void queCommandFromScript (rts2core::Command * com)
+		virtual int queCommandFromScript (rts2core::Command * com)
 		{
-			queCommand (com);
+			return queCommand (com);
 		}
 
 		virtual int getFailedCount ()
