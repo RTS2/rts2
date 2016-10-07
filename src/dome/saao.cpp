@@ -148,7 +148,10 @@ class SAAO:public Cupola
 
 		rts2core::ValueBool *shutterPower;
 		rts2core::ValueBool *rotatPower;
+
+		uint16_t reg[8];
 };
+
 
 }
 
@@ -306,21 +309,27 @@ int SAAO::initHardware ()
 	if (ret)
 		return ret;
 
-	uint16_t reg;
-	readRegisters (1, 0x106E, 1, &reg);
+	readRegisters (1, 0x106E, 1, reg);
 
-	if (reg & STATUS_SHUTTER_CLOSED)
-		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome stats is closed");
-	else if (reg & STATUS_SHUTTER_OPENED)
-		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome stats is opened");
+	logStream (MESSAGE_DEBUG) << "initial dome shutter status: " << std::hex << reg[0] << sendLog;
+
+	if (reg[0] & STATUS_SHUTTER_CLOSED)
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+	else if (reg[0] & STATUS_SHUTTER_OPENED)
+		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
 
 	return 0;
 }
 
 int SAAO::info ()
 {
-	uint16_t reg[8];
+	uint16_t old_reg[8];
+	memcpy (old_reg, reg, sizeof(uint16_t) * 8);
+
 	readRegisters (1, 0x106E, 8, reg);
+
+	if (old_reg[0] != reg[0])
+		logStream (MESSAGE_DEBUG) << "register 0 change from " << std::hex << old_reg[0] << " to " << std::hex << reg[0] << sendLog;
 
 	remoteControl->setValueBool (reg[1] & STATUS_REMOTE);
 	raining->setValueBool (reg[1] & STATUS_RAINING);
