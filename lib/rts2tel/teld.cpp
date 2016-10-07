@@ -1752,11 +1752,7 @@ int Telescope::endMove ()
 	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
 	LibnovaRaDec l_telTar (telTargetRaDec->getRa (), telTargetRaDec->getDec ());
 
-	logStream (MESSAGE_INFO)
-		<< "moved to " << l_to
-		<< " requested " << l_telTar
-		<< " target " << l_tar
-		<< sendLog;
+	logStream (INFO_MOUNT_SLEW_END | MESSAGE_INFO) << telRaDec->getRa () << " " << telRaDec->getDec () << " " << tarRaDec->getRa () << " " << tarRaDec->getDec () << " " << telTargetRaDec->getRa () << " " << telTargetRaDec->getDec () << sendLog;
 	return 0;
 }
 

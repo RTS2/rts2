@@ -52,7 +52,7 @@ void NMsgWindow::draw ()
 			continue;
 		}
 		char mt;
-		switch (msg.getType ())
+		switch (msg.getLevel ())
 		{
 			case MESSAGE_CRITICAL:
 				mt = 'C';
@@ -71,6 +71,7 @@ void NMsgWindow::draw ()
 				wcolor_set (getWriteWindow (), CLR_OK, NULL);
 				break;
 			case MESSAGE_DEBUG:
+			default:
 				mt = 'd';
 				wcolor_set (getWriteWindow (), CLR_TEXT, NULL);
 				break;

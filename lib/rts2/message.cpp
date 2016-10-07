@@ -92,25 +92,28 @@ const std::string Message::getMessageString ()
 	switch (getID ())
 	{
 		case INFO_OBSERVATION_SLEW:
-			os << expandString ("slew to observation #$0 of target #$1");
+			os << expandString ("slew to observation #$1 of target #$2");
 			break;
 		case INFO_OBSERVATION_STARTED:
-			os << expandString ("observation #$0 of target #$1 started");
+			os << expandString ("observation #$1 of target #$2 started");
 			break;
 		case INFO_OBSERVATION_END:
-			os << expandString ("observation #$0 of target #$1 ended");
+			os << expandString ("observation #$1 of target #$2 ended");
 			break;
 		case INFO_OBSERVATION_INTERRUPTED:
-			os << expandString ("observation #$0 of target #$1 interrupted");
+			os << expandString ("observation #$1 of target #$2 interrupted");
 			break;
 		case INFO_OBSERVATION_LOOP:
-			os << expandString ("starting new loop of observation #$0 on target #$1");
+			os << expandString ("starting new loop of observation #$1 on target #$2");
 			break;
 		case INFO_MOUNT_SLEW_START:
-			os << expandString ("moving from $h0 $d1 (altaz $d4 $d5) to $h2 $d3 (altaz $d6 $d7)");
+			os << expandString ("moving from $H1 $D2 (altaz $D5 $D6) to $H3 $D4 (altaz $D7 $D8)");
+			break;
+		case INFO_MOUNT_SLEW_END:
+			os << expandString ("moved to $H1 $D2 requested $H3 $D4 target $H5 $D6");
 			break;
 		case DEBUG_MOUNT_TRACKING_LOG:
-			os << expandString ("tracking: $0 $1");
+			os << expandString ("tracking: $1 $2");
 			break;
 		default:
 			return messageString;
@@ -122,8 +125,9 @@ const std::string Message::getMessageString ()
 const std::string Message::getMessageArg (int n, char f)
 {
 	size_t ibeg = 0;
-	if (n > 0)
+	if (n > 1)
 	{
+		n--;
 		while (n > 0)
 		{
 			ibeg = messageString.find (' ', ibeg);
@@ -147,10 +151,10 @@ const std::string Message::getMessageArg (int n, char f)
 
 	switch (f)
 	{
-		case 'h':
+		case 'H':
 			os << LibnovaRa (atof (ret.c_str ()));
 			break;
-		case 'd':
+		case 'D':
 			os << LibnovaDeg (atof (ret.c_str ()));
 			break;
 		default:

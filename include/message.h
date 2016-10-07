@@ -63,7 +63,8 @@ typedef uint32_t messageType_t;
 // INFO_MOUNT_xx messages logs mount movements
 #define INFO_MOUNT_SLEW_START           0x001000
 #define INFO_MOUNT_SLEW_ALTAZ           0x001100
-#define DEBUG_MOUNT_TRACKING_LOG        0x001200
+#define INFO_MOUNT_SLEW_END             0x001200
+#define DEBUG_MOUNT_TRACKING_LOG        0x001300
 
 #define MESSAGE_MASK_ALL                0xFFFFFF
 
