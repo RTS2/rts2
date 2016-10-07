@@ -112,15 +112,29 @@ int SitechMulti::initHardware ()
 
 int SitechMulti::callInfo ()
 {
-	derConn->getAxisStatus ('X', der_status);
+	try
+	{
+		derConn->getAxisStatus ('X', der_status);
 
-	if (rotators[0] != NULL)
-		rotators[0]->processAxisStatus (&der_status);
-	if (rotators[1] != NULL)
-		rotators[1]->processAxisStatus (&der_status);
+		if (rotators[0] != NULL)
+			rotators[0]->processAxisStatus (&der_status);
+		if (rotators[1] != NULL)
+			rotators[1]->processAxisStatus (&der_status);
 
-	if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
-		derSetTarget ();
+		if ((rotators[0] != NULL && rotators[0]->updated) || (rotators[1] != NULL && rotators[1]->updated))
+			derSetTarget ();
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << "exception during callInfo: " << er << sendLog;
+		delete derConn;
+		delete rotators[0];
+		delete rotators[1];
+
+		// try to reinit..
+
+		return initHardware ();
+	}
 	return 0;
 }
 
@@ -151,20 +165,28 @@ void SitechMulti::derSetTarget ()
 	der_Xrequest.x_bits = xbits;
 	der_Xrequest.y_bits = ybits;
 
-	derConn->sendXAxisRequest (der_Xrequest);
+	try
+	{
+		derConn->sendXAxisRequest (der_Xrequest);
 
-	if (rotators[0] != NULL)
-	{
-		rotators[0]->updated = false;
-		rotators[0]->checkRotators ();
-		rotators[0]->updateTrackingFrequency ();
+		if (rotators[0] != NULL)
+		{
+			rotators[0]->updated = false;
+			rotators[0]->checkRotators ();
+			rotators[0]->updateTrackingFrequency ();
+		}
+		if (rotators[1] != NULL)
+		{
+			rotators[1]->updated = false;
+			rotators[1]->checkRotators ();
+			rotators[1]->updateTrackingFrequency ();
+		}
 	}
-	if (rotators[1] != NULL)
+	catch (rts2core::Error er)
 	{
-		rotators[1]->updated = false;
-		rotators[1]->checkRotators ();
-		rotators[1]->updateTrackingFrequency ();
+		logStream (MESSAGE_ERROR) << "error in derSetTarget: " << er << sendLog;
 	}
+
 }
 
 int main (int argc, char **argv)
