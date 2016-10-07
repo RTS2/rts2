@@ -1331,6 +1331,8 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueDouble *tle_refresh;
 
+		rts2core::ValueDouble *trackingLogInterval;
+
 		tle_t tle;
 
 		// Value for RA DEC differential tracking
@@ -1346,6 +1348,7 @@ class Telescope:public rts2core::Device
 		void resetMpecTLE ();
 
 		double nextCupSync;
+		double lastTrackLog;
 };
 
 };

@@ -63,6 +63,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	parkFlip = NULL;
 
 	nextCupSync = 0;
+	lastTrackLog = 0;
 
 	useParkFlipping = false;
 	
@@ -235,6 +236,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		diffRaDec = NULL;
 	}
+
+	createValue (trackingLogInterval, "tracking_log_interval", "[s] interval for tracking logs", false, RTS2_VALUE_WRITABLE);
+	trackingLogInterval->setValueDouble (30);
 
 	createValue (tle_l1, "tle_l1_target", "TLE target line 1", false);
 	createValue (tle_l2, "tle_l2_target", "TLE target line 2", false);
@@ -1509,6 +1513,12 @@ void Telescope::stopTracking (const char *msg)
 
 void Telescope::runTracking ()
 {
+	double n = getNow ();
+	if (lastTrackLog < n)
+	{
+		logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_LOG) << tarRaDec->getRa () << " " << tarRaDec->getDec () << sendLog;
+		lastTrackLog = n + trackingLogInterval->getValueDouble ();
+	}
 	startCupolaSync ();
 }
 
@@ -1966,8 +1976,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 		LibnovaHrz syncFromAltAz (&hrz);
 
-		//logStream (INFO_MOUNT_SLEW_START | MESSAGE_INFO) << syncTo << " " << syncFrom << " " << syncFromAltAz << sendLog;
-		logStream (MESSAGE_INFO) << "moving from " << syncFrom << " to " << syncTo << " (altaz from " << syncFromAltAz << ")" << sendLog;
+		logStream (INFO_MOUNT_SLEW_START | MESSAGE_INFO) << syncTo << " " << syncFrom << " " << syncFromAltAz << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | TEL_MASK_TRACK | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 		flip_move_start = telFlip->getValueInteger ();
 	}

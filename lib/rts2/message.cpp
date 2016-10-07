@@ -108,6 +108,9 @@ const std::string Message::getMessageString ()
 		case INFO_MOUNT_SLEW_START:
 			os << expandString ("moving from $0 (altaz $2) to $1");
 			break;
+		case DEBUG_MOUNT_TRACKING_LOG:
+			os << expandString ("tracking: $0 $1");
+			break;
 		default:
 			return messageString;
 	}
