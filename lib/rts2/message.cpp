@@ -19,6 +19,7 @@
 
 #include "message.h"
 #include "block.h"
+#include "libnova_cpp.h"
 
 #include <sys/time.h>
 #include <time.h>
@@ -106,7 +107,7 @@ const std::string Message::getMessageString ()
 			os << expandString ("starting new loop of observation #$0 on target #$1");
 			break;
 		case INFO_MOUNT_SLEW_START:
-			os << expandString ("moving from $0 (altaz $2) to $1");
+			os << expandString ("moving from $h0 $d1 (altaz $d4 $d5) to $h2 $d3 (altaz $d6 $d7)");
 			break;
 		case DEBUG_MOUNT_TRACKING_LOG:
 			os << expandString ("tracking: $0 $1");
@@ -118,7 +119,7 @@ const std::string Message::getMessageString ()
 	return os.str ();
 }
 
-const std::string Message::getMessageArg (int n)
+const std::string Message::getMessageArg (int n, char f)
 {
 	size_t ibeg = 0;
 	if (n > 0)
@@ -135,15 +136,32 @@ const std::string Message::getMessageArg (int n)
 	}
 	size_t iend = messageString.find (' ', ibeg + 1);
 
+	std::string ret;
+
 	if (iend == std::string::npos)
-		return messageString.substr (ibeg);
+		ret = messageString.substr (ibeg);
 	else
-		return messageString.substr (ibeg, iend);
+		ret = messageString.substr (ibeg, iend);
+
+	std::ostringstream os;
+
+	switch (f)
+	{
+		case 'h':
+			os << LibnovaRa (atof (ret.c_str ()));
+			break;
+		case 'd':
+			os << LibnovaDeg (atof (ret.c_str ()));
+			break;
+		default:
+			return ret;
+	}
+	return os.str ();
 }
 
 int Message::getMessageArgInt (int n)
 {
-	return atoi (getMessageArg (n).c_str ());
+	return atoi (getMessageArg (n, ' ').c_str ());
 }
 
 const std::string Message::expandString (const char *str)
@@ -155,12 +173,19 @@ const std::string Message::expandString (const char *str)
 		{
 			int arg = 0;
 			str++;
+			char format = '\0';
+
+			while (*str != '\0' && !isdigit (*str))
+			{
+				format = *str;
+				str++;
+			}
 			while (*str != '\0' && isdigit (*str))
 			{
 				arg = 10 * arg + (*str - '0');
 				str++;
 			}
-			ret += getMessageArg (arg);
+			ret += getMessageArg (arg, format);
 		}
 		else
 		{
