@@ -63,6 +63,8 @@ typedef uint32_t messageType_t;
 // INFO_MOUNT_xx messages logs mount movements
 #define INFO_MOUNT_SLEW_START           0x001000
 #define INFO_MOUNT_SLEW_ALTAZ           0x001100
+#define INFO_MOUNT_SLEW_END             0x001200
+#define DEBUG_MOUNT_TRACKING_LOG        0x001300
 
 #define MESSAGE_MASK_ALL                0xFFFFFF
 
@@ -99,8 +101,9 @@ class Message
 		 * Returns n-th message argument, assuming arguments are separated with space.
 		 *
 		 * @param n argument index - 0 based
+		 * @param f format - ' ', h (hours, for RA), d (degrees)
 		 */
-		const std::string getMessageArg (int n);
+		const std::string getMessageArg (int n, char f);
 
 		/**
 		 * Returns n-th message argument as integer.
@@ -165,14 +168,13 @@ class Message
 			return _of;
 		}
 
+		const std::string expandString (const char *str);
+
 	protected:
 		struct timeval messageTime;
 		std::string messageOName;
 		messageType_t messageType;
 		std::string messageString;
-
-	private:
-		const std::string expandString (const char *str);
 };
 
 }

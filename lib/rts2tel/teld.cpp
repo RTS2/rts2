@@ -63,6 +63,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	parkFlip = NULL;
 
 	nextCupSync = 0;
+	lastTrackLog = 0;
 
 	useParkFlipping = false;
 	
@@ -235,6 +236,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		diffRaDec = NULL;
 	}
+
+	createValue (trackingLogInterval, "tracking_log_interval", "[s] interval for tracking logs", false, RTS2_VALUE_WRITABLE);
+	trackingLogInterval->setValueDouble (30);
 
 	createValue (tle_l1, "tle_l1_target", "TLE target line 1", false);
 	createValue (tle_l2, "tle_l2_target", "TLE target line 2", false);
@@ -1509,6 +1513,12 @@ void Telescope::stopTracking (const char *msg)
 
 void Telescope::runTracking ()
 {
+	double n = getNow ();
+	if (lastTrackLog < n)
+	{
+		logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_LOG) << tarRaDec->getRa () << " " << tarRaDec->getDec () << sendLog;
+		lastTrackLog = n + trackingLogInterval->getValueDouble ();
+	}
 	startCupolaSync ();
 }
 
@@ -1742,11 +1752,7 @@ int Telescope::endMove ()
 	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
 	LibnovaRaDec l_telTar (telTargetRaDec->getRa (), telTargetRaDec->getDec ());
 
-	logStream (MESSAGE_INFO)
-		<< "moved to " << l_to
-		<< " requested " << l_telTar
-		<< " target " << l_tar
-		<< sendLog;
+	logStream (INFO_MOUNT_SLEW_END | MESSAGE_INFO) << telRaDec->getRa () << " " << telRaDec->getDec () << " " << tarRaDec->getRa () << " " << tarRaDec->getDec () << " " << telTargetRaDec->getRa () << " " << telTargetRaDec->getDec () << sendLog;
 	return 0;
 }
 
@@ -1893,15 +1899,16 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 			return ret;
 		}
 	}
+
+	struct ln_hrz_posn hrztar;
+	getTargetAltAz (&hrztar, JD);
 	
 	if (hardHorizon)
 	{
-		struct ln_hrz_posn hrpos;
-		getTargetAltAz (&hrpos, JD);
-		if (!hardHorizon->is_good (&hrpos))
+		if (!hardHorizon->is_good (&hrztar))
 		{
 			useParkFlipping = false;
-			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az " << LibnovaHrz (&hrpos) << sendLog;
+			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az " << LibnovaHrz (&hrztar) << sendLog;
 			oriRaDec->setValueRaDec (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
@@ -1964,10 +1971,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		struct ln_hrz_posn hrz;
 		getTelAltAz (&hrz);
 
-		LibnovaHrz syncFromAltAz (&hrz);
-
-		//logStream (INFO_MOUNT_SLEW_START | MESSAGE_INFO) << syncTo << " " << syncFrom << " " << syncFromAltAz << sendLog;
-		logStream (MESSAGE_INFO) << "moving from " << syncFrom << " to " << syncTo << " (altaz from " << syncFromAltAz << ")" << sendLog;
+		logStream (INFO_MOUNT_SLEW_START | MESSAGE_INFO) << telRaDec->getRa () << " " << telRaDec->getDec () << " " << pos.ra << " " << pos.dec << " " << hrz.az << " " << hrz.alt << " " << hrztar.az << " " << hrztar.alt << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | TEL_MASK_TRACK | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 		flip_move_start = telFlip->getValueInteger ();
 	}

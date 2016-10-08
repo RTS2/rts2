@@ -107,6 +107,8 @@ class SAAO:public Cupola
 		virtual long isClosed ();
 		virtual int endClose ();
 
+		virtual int stop ();
+
 		virtual double getSlitWidth (double alt);
 
 	private:
@@ -146,7 +148,10 @@ class SAAO:public Cupola
 
 		rts2core::ValueBool *shutterPower;
 		rts2core::ValueBool *rotatPower;
+
+		uint16_t reg[8];
 };
+
 
 }
 
@@ -219,7 +224,7 @@ void calculateLCRC (const char *buf, size_t len, char crc[3])
 	snprintf (crc, 3, "%02X", 0xFF & (~sum + 1));
 }
 
-SAAO::SAAO (int argc, char **argv):Cupola (argc, argv)
+SAAO::SAAO (int argc, char **argv):Cupola (argc, argv, true)
 {
 	device_file = "/dev/ttyS0";
 	domeConn = NULL;
@@ -304,21 +309,27 @@ int SAAO::initHardware ()
 	if (ret)
 		return ret;
 
-	uint16_t reg;
-	readRegisters (1, 0x106E, 1, &reg);
+	readRegisters (1, 0x106E, 1, reg);
 
-	if (reg & STATUS_SHUTTER_CLOSED)
-		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome stats is closed");
-	else if (reg & STATUS_SHUTTER_OPENED)
-		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome stats is opened");
+	logStream (MESSAGE_DEBUG) << "initial dome shutter status: " << std::hex << reg[0] << sendLog;
+
+	if (reg[0] & STATUS_SHUTTER_CLOSED)
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+	else if (reg[0] & STATUS_SHUTTER_OPENED)
+		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
 
 	return 0;
 }
 
 int SAAO::info ()
 {
-	uint16_t reg[8];
+	uint16_t old_reg[8];
+	memcpy (old_reg, reg, sizeof(uint16_t) * 8);
+
 	readRegisters (1, 0x106E, 8, reg);
+
+	if (old_reg[0] != reg[0])
+		logStream (MESSAGE_DEBUG) << "register 0 change from " << std::hex << old_reg[0] << " to " << std::hex << reg[0] << sendLog;
 
 	remoteControl->setValueBool (reg[1] & STATUS_REMOTE);
 	raining->setValueBool (reg[1] & STATUS_RAINING);
@@ -456,6 +467,16 @@ long SAAO::isClosed ()
 
 int SAAO::endClose ()
 {
+	return 0;
+}
+
+int SAAO::stop ()
+{
+	uint16_t data[2];
+	// reset shutter
+	data[0] = 0x0200;
+	data[1] = 0x8000;
+	setRegisters (1, 0x1064, 2, data);
 	return 0;
 }
 

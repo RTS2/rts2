@@ -163,9 +163,18 @@ void NDevListWindow::draw ()
 	}
 	for (iter = conns->begin (); iter != conns->end (); iter++)
 	{
+		if ((*iter)->getState () & DEVICE_ERROR_MASK)
+			wcolor_set (scrolpad, CLR_FAILURE, NULL);
+		else if ((*iter)->getState () & WEATHER_MASK)
+			wcolor_set (scrolpad, CLR_WARNING, NULL);
+		else
+			wcolor_set (scrolpad, CLR_OK, NULL);
 		wprintw (scrolpad, "%s\n", (*iter)->getName ());
 		maxrow++;
 	}
+
+	wcolor_set (scrolpad, CLR_DEFAULT, NULL);
+
 	for (rts2core::clients_t::iterator cli = block->getClients ()->begin (); cli != block->getClients ()->end (); cli++)
 	{
 		wprintw (scrolpad, "%s\n", (*cli)->getName ());

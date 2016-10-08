@@ -57,7 +57,7 @@ class Colamp:public Sensor
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 	private:
-		char *device_file;
+		const char *device_file;
 		rts2core::ConnSerial *colampConn;
 
 		rts2core::ValueBool *lampHg;

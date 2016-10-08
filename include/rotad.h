@@ -126,6 +126,7 @@ class Rotator:public rts2core::Device
 
 		// autorotating in plus direction..
 		bool autoPlus;
+		bool autoOldTrack;
 };
 
 }

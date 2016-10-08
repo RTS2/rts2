@@ -129,23 +129,12 @@ class GPoint:
 
 		return np.degrees(ha),np.degrees(dec)
 
-	def model_ha(self,params,a_ha,a_dec):
-		return - params[4] \
-			- params[5]/np.cos(a_dec) \
-			- params[6]*np.tan(a_dec) \
-			- (params[1]*np.sin(a_ha) - params[2]*np.cos(a_ha)) * np.tan(a_dec) \
-			- params[3]*np.cos(self.latitude_r)*np.sin(a_ha) / np.cos(a_dec) \
-			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
-
-	def model_dec(self,params,a_ha,a_dec):
-		return - params[0] \
-			- params[1]*np.cos(a_ha) \
-			- params[2]*np.sin(a_ha) \
-			- params[3]*(np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha) - np.sin(self.latitude_r) * np.cos(a_dec)) \
-			- params[8]*np.cos(a_ha)
-
-	def get_extra_val_altaz(self,e,az,el,num):
-		if e.param[num] == 'az':
+	def get_extra_val(self,e,ha,dec,az,el,num):
+		if e.param[num] == 'ha':
+			return ha
+		elif e.param[num] == 'dec':
+			return dec
+		elif e.param[num] == 'az':
 			return az
 		elif e.param[num] == 'el':
 			return el
@@ -154,29 +143,35 @@ class GPoint:
 		else:
 			sys.exit('unknow parameter {0}'.format(e.param[num]))
 
-	def cal_extra_azalt(self,e,axis,az,el):
+	def cal_extra(self,e,axis,ha,dec,az,el):
 		if e.function == 'offset':
-			oax = self.get_extra_val_altaz(e,az,el,0)
+			oax = self.get_extra_val(e,ha,dec,az,el,0)
 			if ((oax == az).all() and axis == 'az') or ((oax == el).all() and axis == 'el'):
 				return np.array([1] * len(oax))
 			else:
 				return np.array([0] * len(oax))
 		elif e.function == 'sin':
-			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
+			return np.sin(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
 		elif e.function == 'cos':
-			return np.cos(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
+			return np.cos(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
 		elif e.function == 'abssin':
-			return np.abs(np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)))
+			return np.abs(np.sin(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0)))
 		elif e.function == 'abscos':
-			return np.abs(np.cos(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)))
+			return np.abs(np.cos(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0)))
 		elif e.function == 'tan':
-			return np.tan(e.consts[0] * self.get_extra_val_altaz(e,az,el,0))
+			return np.tan(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
+		elif e.function == 'csc':
+			return 1.0 / np.sin(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
+		elif e.function == 'sec':
+			return 1.0 / np.cos(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
+		elif e.function == 'cot':
+			return 1.0 / np.tan(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0))
 		elif e.function == 'sincos':
-			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val_altaz(e,az,el,1))
+			return np.sin(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val(e,ha,dec,az,el,1))
 		elif e.function == 'sinsin':
-			return np.sin(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)) * np.sin(e.consts[1] * self.get_extra_val_altaz(e,az,el,1))
+			return np.sin(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0)) * np.sin(e.consts[1] * self.get_extra_val(e,ha,dec,az,el,1))
 		elif e.function == 'coscos':
-			return np.cos(e.consts[0] * self.get_extra_val_altaz(e,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val_altaz(e,az,el,1))
+			return np.cos(e.consts[0] * self.get_extra_val(e,ha,dec,az,el,0)) * np.cos(e.consts[1] * self.get_extra_val(e,ha,dec,az,el,1))
 		else:
 			sys.exit('unknow function {0}'.format(e.function))
 
@@ -187,10 +182,37 @@ class GPoint:
 		axis = axis.lower()
 		if axis == 'alt':
 			axis = 'el'
-		if axis == 'az' or axis == 'el':
+		if axis == 'ha' or axis == 'dec' or axis == 'az' or axis == 'el':
 			self.extra.append(ExtraParam(axis,multi,function,params,consts))
 		else:
 			raise Exception('invalid axis name: {0}'.format(axis))
+
+	def model_ha(self,params,a_ha,a_dec,a_az,a_el):
+		ret = - params[4] \
+			- params[5]/np.cos(a_dec) \
+			- params[6]*np.tan(a_dec) \
+			- (params[1]*np.sin(a_ha) - params[2]*np.cos(a_ha)) * np.tan(a_dec) \
+			- params[3]*np.cos(self.latitude_r)*np.sin(a_ha) / np.cos(a_dec) \
+			- params[7]*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
+		pi = self.get_extra_start()
+		for e in self.extra:
+			if e.axis == 'ha':
+				ret += params[pi] * self.cal_extra(e, 'ha', a_ha, a_dec, self.rad_aa_az, self.rad_aa_el)
+			pi += e.parnum()
+		return ret
+
+	def model_dec(self,params,a_ha,a_dec,a_az,a_el):
+		ret = - params[0] \
+			- params[1]*np.cos(a_ha) \
+			- params[2]*np.sin(a_ha) \
+			- params[3]*(np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha) - np.sin(self.latitude_r) * np.cos(a_dec)) \
+			- params[8]*np.cos(a_ha)
+		pi = self.get_extra_start()
+		for e in self.extra:
+			if e.axis == 'dec':
+				ret += params[pi] * self.cal_extra(e, 'dec', a_ha, a_dec, self.rad_aa_az, self.rad_aa_el)
+			pi += e.parnum()
+		return ret
 
 	def model_az(self,params,a_az,a_el):
 		tan_el = np.tan(a_el)
@@ -202,7 +224,7 @@ class GPoint:
 		pi = self.get_extra_start()
 		for e in self.extra:
 			if e.axis == 'az':
-				ret += params[pi] * self.cal_extra_azalt(e, 'az', a_az, a_el)
+				ret += params[pi] * self.cal_extra(e, 'az', self.rad_aa_ha, self.rad_aa_dec, a_az, a_el)
 			pi += e.parnum()
 		return ret
 
@@ -214,7 +236,7 @@ class GPoint:
 		pi = self.get_extra_start()
 		for e in self.extra:
 			if e.axis == 'el':
-				ret += params[pi] * self.cal_extra_azalt(e, 'el', a_az, a_el)
+				ret += params[pi] * self.cal_extra(e, 'el', self.rad_aa_ha, self.rad_aa_dec, a_az, a_el)
 			pi += e.parnum()
 		return ret
 
@@ -233,7 +255,6 @@ class GPoint:
 	def fit_model_gem(self,params,a_ra,r_ra,a_dec,r_dec):
 		if self.verbose > 1:
 			print 'computing', self.latitude, self.latitude_r, params, a_ra, r_ra, a_dec, r_dec
-#		return np.concatenate((self.fit_model_ha(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
 		return libnova.angular_separation(np.degrees(a_ra + self.model_ha(params,a_ra,a_dec)),np.degrees(a_dec + self.model_dec(params,a_ra,a_dec)),np.degrees(r_ra),np.degrees(r_dec))
 
 	def fit_model_az(self,params,a_az,r_az,a_el,r_el):
@@ -245,7 +266,6 @@ class GPoint:
 	def fit_model_altaz(self,params,a_az,r_az,a_el,r_el):
 		if self.verbose > 1:
 			print 'computing', self.latitude, self.latitude_r, params, a_az, r_az, a_el, r_el
-#		return np.concatenate((self.fit_model_ha(params,a_ra,r_ra,a_dec,r_dec),self.fit_model_dec(params,a_ra,r_ra,a_dec,r_dec)))
 		return libnova.angular_separation(np.degrees(a_az + self.model_az(params,a_az,a_el)),np.degrees(a_el + self.model_el(params,a_az,a_el)),np.degrees(r_az),np.degrees(r_el))
 
 	# open file, produce model
@@ -474,40 +494,37 @@ class GPoint:
 		self.diff_az = np.delete(self.diff_az, ind)
 		self.diff_corr_az = np.delete(self.diff_corr_az, ind)
 
+		self.mjd = np.delete(self.mjd, ind)
+
 	def filter(self,axis,error,num):
 		# find max error
+		ax_d = []
+		if axis == 'm-azel' or axis == 'm-altaz':
+			ax_d.append(self.diff_model_corr_az)
+			ax_d.append(self.diff_model_alt)
+		else:
+			ax_d.append(self.__get_data(axis)[0])
+
 		while num > 0:
-			mi = None
-			if axis == 'az':
-				mi = np.argmax(np.abs(self.diff_model_az*np.cos(self.rad_aa_alt)))
-				if abs(self.diff_model_az[mi]*np.cos(self.rad_aa_alt[mi])) < error:
-					return None
-			elif axis == 'el' or axis == 'alt':
-				mi = np.argmax(np.abs(self.diff_model_alt))
-				if abs(self.diff_model_alt[mi]) < error:
-					return None
-			elif axis == 'azel' or axis == 'altaz':
-				mi_az = np.argmax(np.abs(self.diff_model_az*np.cos(self.rad_aa_alt)))
-				mi_alt = np.argmax(np.abs(self.diff_model_alt))
-				if abs(self.diff_model_az[mi_az]*np.cos(self.rad_aa_alt[mi_az])) > abs(self.diff_model_alt[mi_az]):
-					mi = mi_az
-					if abs(self.diff_model_az[mi]*np.cos(self.rad_aa_alt[mi])) < error:
-						return None
-				else:
-					mi = mi_alt
-					if abs(self.diff_model_alt[mi]) < error:
-						return None
-			elif axis == 'angular':
-				mi = np.argmax(np.abs(self.diff_model_angular))
-				if abs(self.diff_model_angular[mi]) < error:
-					return None
-			else:
-				print 'unknow axis {0}'.format(axis)
+			mi = np.argmax(np.abs(ax_d[0]))
+			max_v = abs(ax_d[0][mi])
+			for a in ax_d[1:]:
+				ai = np.argmax(np.abs(a))
+				max_a = abs(a[ai])
+				if max_a > max_v:
+					mi = ai
+					max_v = max_a
+
+			if self.verbose:
+				print 'axis {0} found maximal value {1} at index {2}'.format(axis, max_v, mi)
+
+			if max_v < error:
 				return None
-				
+
 			self.remove_line(mi)
 			self.fit()
 			self.print_params()
+			self.print_stat()
 			num -= 1
 		return ['aa']
 
@@ -663,7 +680,8 @@ class GPoint:
 				'az':[self.aa_az,'rx','Azimuth'],
 				'alt':[self.aa_alt,'yx','Altitude'],
 				'dec':[self.aa_dec,'bx','Dec'],
-				'ha':[self.aa_ha,'gx','HA']
+				'ha':[self.aa_ha,'gx','HA'],
+				'real-err':[self.diff_angular_altaz*3600 if self.altaz else self.diff_angular_hadec*3600,'c+','Real angular error']
 			}
 			# append model output only if model was fitted
 			if self.best is not None:
@@ -674,12 +692,14 @@ class GPoint:
 					'dec-merr':[self.diff_model_dec*3600,'b*','Dec model error'],
 					'ha-merr':[self.diff_model_ha*3600,'g*','HA model error'],
 					'ha-corr-merr':[self.diff_model_ha*3600,'g*','HA dec c model error'],
-					'model-err':[self.diff_model_angular*3600,'c+','Model angular error'],
-					'real-err':[self.diff_angular_altaz*3600 if self.altaz else self.diff_angular_hadec*3600,'c+','Real angular error']
+					'model-err':[self.diff_model_angular*3600,'c+','Model angular error']
 				})
 		return name_map[string.lower(name)]
 
-	def plot_data(self,p,nx,ny,band):
+	def plot_data(self,p,nx,ny,band,draw):
+		"""Plots data in plot."""
+		if self.verbose:
+			print 'plotting {0} {1}'.format(nx,ny)
 		xdata = self.__get_data(nx)
 		ydata = self.__get_data(ny)
 		p.plot(xdata[0],ydata[0],ydata[1])
@@ -689,28 +709,64 @@ class GPoint:
 			import matplotlib.patches as patches
 			band = float(band)
 			p.add_patch(patches.Rectangle((min(xdata[0]), -band), max(xdata[0]) - min(xdata[0]), 2*band, alpha=0.7, facecolor='red', edgecolor='none'))
+		if draw is not None:
+			import matplotlib.pyplot as plt
+			for d in draw:
+				if d[0] == 'c':
+					try:
+						x,y,r = map(float,d[1:].split(':'))
+					except ValueError,ve:
+						x = y = 0
+						r = float(d[1:])
+					p.add_artist(plt.Circle((x,y), r, fill=False))
+				elif d[0] == 'x':
+					try:
+						x,y,r = map(float,d[1:].split(':'))
+					except ValueError,ve:
+						x = y = 0
+						r = float(d[1:])
+					p.add_artist(plt.Line2D([x,x],[y+r,y-r]))
+					p.add_artist(plt.Line2D([x-r,x+r],[y,y]))
+				else:
+					raise Exception('unknow draw element {0}'.format(d))
 		return p
 
 	def __gen_plot(self,plots,band):
 		import pylab
 		plot = []
 		grid = []
+		draw = []
 
 		i = 0
 		rows = 1
 		cols = 1
-		# find grid size
+		# process plotting string
 		for mg in plots.split(','):
 			g = [i,0,1,1]
-			try:
-				pmg = mg.split('%')
-				grids = pmg[1].split(':')
-				g = map(int,grids) + g[len(grids):]
-                                plot.append(pmg[0])
+			if len(mg) == 0:
+				raise Exception('empty plot specifier')
+			plot_s = re.split('([@%])', mg)
+			plot.append(plot_s[0])
+			i = 1
+			while i < len(plot_s) - 1:
+				if plot_s[i] == '@':
+					i += 1
+					if len(draw) < len(plot):
+						draw.append([])
+					draw[len(plot) - 1].append(plot_s[i])
+				elif plot_s[i] == '%':
+					if g is None:
+						raise Exception('grid can be specified only once')
+					i += 1
+					grids = plot_s[i].split(':')
+					grid.append(map(int, grids) + g[len(grids):])
+					g = None
+				i += 1
+			if g is not None:
 				grid.append(g)
-			except IndexError,ie:
-				plot.append(mg)
-				grid.append(g)
+			if len(draw) < len(plot):
+				draw.append(None)
+
 			lg = grid[-1]
 			rows = max(lg[0] + lg[2],rows)
 			cols = max(lg[1] + lg[3],cols)
@@ -731,7 +787,7 @@ class GPoint:
 					self.plot_alt_az(g)
 			else:
 				for j in axnam[1:]:
-					self.plot_data(p,axnam[0],j,band)
+					self.plot_data(p,axnam[0],j,band,draw[i])
 
 	def plot(self,plots,band=None,ofile=None):
 		import pylab

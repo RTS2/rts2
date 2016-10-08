@@ -39,7 +39,7 @@ namespace rts2dome
 class Cupola:public Dome
 {
 	public:
-		Cupola (int argc, char **argv);
+		Cupola (int argc, char **argv, bool inhibit_auto_close = false);
 
 		virtual int processOption (int in_opt);
 		virtual int init ();

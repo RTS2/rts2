@@ -176,6 +176,8 @@
  */
 #define COMMAND_ROTATOR_AUTO         "autorotate"
 
+#define COMMAND_ROTATOR_AUTOSTOP     "autostop"
+
 /**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
  * to reach given state uses this to control their execution.

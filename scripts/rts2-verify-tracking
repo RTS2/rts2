@@ -28,14 +28,16 @@ gettext.install('rts2-verify-tracking')
 
 parser = argparse.ArgumentParser(description=_('Find brightests star on the first image, look for star on similar position and brightnes on next image. Print tracking date (in pixel coordinates).'))
 
-parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', type=float, default=15)
+parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', dest='radius', type=float, default=15)
 parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
 parser.add_argument('--plot', help=_('plot results (x,y,pixel distances)'), action='store_true', dest='plot', default=False)
 parser.add_argument('--save-plot', help=_('do not display plot results, save plots to a file'), action='store', dest='saveplot')
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
 parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
+parser.add_argument('--center-radius', help=_('select stars only that far from center'), action='store', dest='center_radius', default=None, type=float)
 parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
+parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
 
 options = parser.parse_args()
 
@@ -77,7 +79,13 @@ for fn in options.files:
 		hdu.info()
 		if options.verbose < 2:
 			rts2.progressbar.progress(0, len(hdu[0].data))
-
+	d_x = len(hdu[0].data[0])
+	c_x = d_x / 2.0
+	d_y = len(hdu[0].data[0][0])
+	c_y = d_y / 2.0
+	if options.verbose:
+		print _('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y)
+	skipped = 0
 	for ci in range(len(hdu[0].data)):
 		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
 		if options.verbose > 1:
@@ -85,17 +93,53 @@ for fn in options.files:
 		else:
 			rts2.progressbar.progress(ci + 1, len(hdu[0].data))
 		if len(sb[0]) == 0:
-			for si in range(options.stars):
-				sb[si].append([objects[si]['x'], objects[si]['y'], objects[si]['flux']])
+			si = 0
+			bsi = 0
+			while si < options.stars:
+				if bsi == len(objects):
+					if skipped < options.skip_clouds:
+						if options.verbose:
+							print _('skipping frame #{0}').format(ci)
+						skipped += 1
+						continue
+					sys.exit(_('too few stars matching criteria'))
+				x = objects[bsi]['x']
+				y = objects[bsi]['y']
+				flux = objects[bsi]['flux']
+				c_d = pixel_distance(x, y, c_x, c_y)
+				bsi += 1
+				if options.verbose:
+					print _('star x {0:.3f} y {1:.3f} center distance {2:.3f}').format(x, y, c_d)
+				if options.center_radius is not None and c_d > options.center_radius:
+					if options.verbose:
+						print _('star too far from center')
+					continue
+				sb[si].append([x, y, flux])
+				si += 1
 		else:
+			found_sb = []
 			for si in range(options.stars):
+				b_x = sb[si][-1][0]
+				b_y = sb[si][-1][1]
+				star_find = False
 				for star in objects:
-					dist = pixel_distance(sb[si][-1][0], sb[si][-1][1], star['x'], star['y'])
+					dist = pixel_distance(b_x, b_y, star['x'], star['y'])
 					if options.verbose > 1:
 						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
 					if dist < options.radius:
-						sb[si].append([star['x'], star['y'], star['flux']])
+						found_sb.append([star['x'], star['y'], star['flux']])
+						star_find = True
 						break
+				if star_find == False and options.verbose:
+					print(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
+			if len(found_sb) < options.stars:
+				if skipped < options.skip_clouds:
+					skipped += 1
+					continue
+				sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), skipped))
+
+			for si in range(options.stars):
+				sb[si].append(found_sb[si])
 	if options.verbose == 0:
 		print 'Done'
 
@@ -119,7 +163,6 @@ for fn in options.files:
 	max_deviation = 0
 
 	for si in range(options.stars):
-
 		data_x = np_sb[si,:,0]
 		data_y = np_sb[si,:,1]
 		data_flux = np_sb[si,:,2]

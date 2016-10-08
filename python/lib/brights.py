@@ -75,7 +75,7 @@ def find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 				d.set('regions','image; point({0},{1}) # point=cross {2},color=green'.format(o['x'],o['y'],int(w)))
 	return b_x,b_y,b_flux,b_flux / bb_flux
 
-def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits', save_regions=None):
+def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits', save_regions=None, center=None):
 	"""Add WCS solution to the image."""
 	import ds9
 	d = None
@@ -147,7 +147,11 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 			d.set('regions export tsv {0}'.format(save_regions))
 
 	# calculate offsets..ra dec, and alt az
-	offsp = np.array([[x,y], [hdu[0].header['NAXIS1'] / 2.0, hdu[0].header['NAXIS2'] / 2.0]], np.float)
+	if center is None:
+		offsp = np.array([[x,y], [hdu[0].header['NAXIS1'] / 2.0, hdu[0].header['NAXIS2'] / 2.0]], np.float)
+	else:
+		offsp = np.array([[x,y], [center[0], center[1]]], np.float)
+
 	radecoff = w.all_pix2world(offsp, 1)
 
 	off_ra = (radecoff[1][0] - radecoff[0][0] + 360.0) % 360.0
