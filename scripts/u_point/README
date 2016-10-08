@@ -1,0 +1,96 @@
+Prerequisites
+=============
+
+ python3
+ pip3 install astropy
+              numpy
+	      scipy
+ libnova (needs to be on LD_PATH as libnova.so)
+ matplotlib
+
+Status as of 2016-10-08
+=======================
+
+I started with astropy and found that there are
+differences e.g. between EQ (CIRS) to AltAz
+transformations I could not explain nor did
+someone on astropy@scipy.org answer.
+
+I developed u_point.py based on libnova and added
+later the astropy code for comparison again. There
+are still differences and I'd be glad if someone
+can point me into the right direction.
+
+Main differences to Petr's gpoint
+---------------------------------
+
+u_point.py includes meteo data and has Python
+bindings for libnova.so, as far as I used it.
+
+Interestingly the AltAz model fits well without
+meteo data since the tube droop parameter is
+a function of Alt too. But as temperature varies
+the model will fail to correct the position.
+
+Adding a different model, e.g. J. Condon (1992)
+suggested to use a Fourier transformed function,
+can be done easily on the source level, at
+least that's my hope.
+
+Getting started with u_point.py
+===============================
+
+ cd ~/rts2/scripts/u_point/
+ # data set without ... 
+ wget http://azug.minpet.unibas.ch/~wildi/mount_data.txt
+ # ... with meteo data (yes, it was cold those days)
+ wget http://azug.minpet.unibas.ch/~wildi/mount_data_meteo.txt
+
+ # fit AltAz model with libnova
+ ./u_point.py --toc --mount-data mount_data.txt 
+ ./u_point.py --toc --mount-data mount_data_meteo.txt 
+
+
+ # fit HAdec model with libnova (same date, not necessarily
+ # a realistic result, but it converges.
+ ./u_point.py --toc --mount-data mount_data.txt  --fit-eq
+ ./u_point.py --toc --mount-data mount_data_meteo.txt --fit-eq
+
+  # fit AltAz model with astropy
+ ./u_point.py --toc --mount-data mount_data.txt --astropy
+ ./u_point.py --toc --mount-data mount_data_meteo.txt --astropy
+
+Further options: ./u_point.py --help
+
+Format of the coordinates file and units
+========================================
+
+On one line:
+
+ date time UTC begin exposure [format iso],
+ catalog RA [rad],
+ catalog DEC [rad],
+ mount position RA [rad],
+ mount position DEC [rad],
+ [
+ exposure time [sec],
+ temperature [deg C],
+ pressure QFE [hPa],
+ humidity [%]
+ ]
+
+Mount coordinates are the apparent coordinates as read
+at the setting circles, while catalog coordinates are
+J2000 (ICRS).
+Exposure, temperature, pressure and humidity are optional.
+QFE is the pressure at the observatory (not sea level).
+
+Further plans
+=============
+
+I saw that pointing models are created with a tool
+like astrometry.net. If the CCD's FoV is small this
+approach will fail. I'm trying to create a script
+which steers the mount, and after a star has been
+centered manually, an image is take and analyzed
+e.g. by SExtractor.
