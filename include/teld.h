@@ -952,6 +952,11 @@ class Telescope:public rts2core::Device
 		virtual void runTracking ();
 
 		/**
+		 * Writes tracking information to the log.
+		 */
+		void logTracking ();
+
+		/**
 		 * Update tracking frequency. Should be run after new tracking vector
 		 * is send to the mount motion controller.
 		 */

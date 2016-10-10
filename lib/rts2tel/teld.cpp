@@ -1516,10 +1516,28 @@ void Telescope::runTracking ()
 	double n = getNow ();
 	if (lastTrackLog < n)
 	{
-		logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_LOG) << tarRaDec->getRa () << " " << tarRaDec->getDec () << sendLog;
+		logTracking ();
 		lastTrackLog = n + trackingLogInterval->getValueDouble ();
 	}
 	startCupolaSync ();
+}
+
+void Telescope::logTracking ()
+{
+	logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_LOG)
+		// 1                            2
+		<< tarRaDec->getRa () << " " << tarRaDec->getDec () << " "
+		// 3                          4
+		<< precessed->getRa () << " " << precessed->getDec () << " "
+		// 5                           6
+		<< nutated->getRa () << " " << nutated->getDec () << " "
+		// 7                            8
+		<< aberated->getRa () << " " << aberated->getDec () << " "
+		// 9
+		<< refraction->getValueDouble () << " "
+		// 10                             11 
+		<< modelRaDec->getRa () << " " << modelRaDec->getDec ()
+		<< sendLog;
 }
 
 void Telescope::updateTrackingFrequency ()
