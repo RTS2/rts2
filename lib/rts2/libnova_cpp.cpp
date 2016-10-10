@@ -161,7 +161,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaHA l_ha)
 	ln_deg_to_hms (t, &hms);
 	int old_precison = _os.precision (3);
 	char old_fill = _os.fill ('0');
-	_os << (neg ? '-' : '+') << std::setw (2) << hms.hours << ":"
+	_os << (neg ? '-' : '+') << std::setw (2) << hms.hours << (formatSpaceDegSep (_os) ? " " : ":")
 		<< std::setw (2) << hms.minutes;
 	_os.fill (old_fill);
 	_os.precision (old_precison);
@@ -240,8 +240,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	_os << (deg_dms.neg ? '-' : '+')
-		<< std::setw (3) << deg_dms.degrees << " "
-		<< std::setw (2) << deg_dms.minutes << " "
+		<< std::setw (3) << deg_dms.degrees << (formatSpaceDegSep (_os) ? " " : ":")
+		<< std::setw (2) << deg_dms.minutes << (formatSpaceDegSep (_os) ? " " : ":")
 		<< std::setw (5) << deg_dms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);
@@ -311,6 +311,40 @@ std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg)
 	}
 	l_deg.fromNegDouble (neg, res);
 	return _is;
+}
+
+std::ostream & operator << (std::ostream & _os, LibnovaAA l_deg)
+{
+	if (formatPureNumbers (_os))
+	{
+		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		_os.precision (6);
+		_os << l_deg.deg;
+		return _os;
+	}
+
+	if (isnan (l_deg.deg))
+	{
+		_os << std::setw (13) << "nan";
+		return _os;
+	}
+	struct ln_dms deg_dms;
+	l_deg.toDms (&deg_dms);
+	char old_fill = _os.fill ('0');
+	int old_precison = _os.precision (2);
+	std::ios_base::fmtflags old_settings = _os.flags ();
+	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	if (deg_dms.neg || (_os.flags () & std::ios_base::showpos))
+		_os << (deg_dms.neg ? '-' : '+');
+
+	_os
+		<< deg_dms.degrees << (formatSpaceDegSep (_os) ? " " : ":")
+		<< std::setw (2) << deg_dms.minutes << (formatSpaceDegSep (_os) ? " " : ":")
+		<< std::setw (5) << deg_dms.seconds;
+	_os.setf (old_settings);
+	_os.precision (old_precison);
+	_os.fill (old_fill);
+	return _os;
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)

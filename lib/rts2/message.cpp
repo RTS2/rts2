@@ -157,6 +157,9 @@ const std::string Message::getMessageArg (int n, char f)
 		case 'D':
 			os << LibnovaDeg (atof (ret.c_str ()));
 			break;
+		case 'A':
+			os << LibnovaAA (atof (ret.c_str ()));
+			break;
 		default:
 			return ret;
 	}

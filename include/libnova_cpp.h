@@ -177,6 +177,20 @@ class LibnovaDeg
 };
 
 /**
+ * Degrees for azimuth/altitude.
+ *
+ * Similar to Don't print leading zeros for altitude/azimuth, don't print signs.
+ */
+class LibnovaAA:public LibnovaDeg
+{
+	public:
+		LibnovaAA ():LibnovaDeg () {}
+		LibnovaAA (double in_deg):LibnovaDeg (in_deg) {}
+
+		friend std::ostream & operator << (std::ostream & _os, LibnovaAA l_deg);
+};
+
+/**
  * Deg -90..90 class, used tyo display DEC.
  *
  * @author Petr Kubanek <petr@kubanek.net>

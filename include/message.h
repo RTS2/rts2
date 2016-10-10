@@ -168,6 +168,18 @@ class Message
 			return _of;
 		}
 
+		/**
+		 * Expands string, uses parameters passed in message.
+		 *
+		 * - $n are replaced with parameters
+		 * - special formating for parameters replacement
+		 * -- H hour angle/hours (0-360 degrees transformed to hours..)
+		 * -- D degrees (with +- sign)
+		 * -- A azimuth (degrees without leading zero and + sign)
+		 *
+		 * @param str string to expand. $n are replaced with message parameters.
+		 */
+
 		const std::string expandString (const char *str);
 
 	protected:
