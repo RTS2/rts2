@@ -31,6 +31,7 @@ parser = argparse.ArgumentParser(description=_('Find brightests star on the firs
 parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', dest='radius', type=float, default=15)
 parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
 parser.add_argument('--plot', help=_('plot results (x,y,pixel distances)'), action='store_true', dest='plot', default=False)
+parser.add_argument('--stars-plot', help=_('generate plot with stars positions'), action='store_true', dest='stars_plot', default=False)
 parser.add_argument('--save-plot', help=_('do not display plot results, save plots to a file'), action='store', dest='saveplot')
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
@@ -95,6 +96,7 @@ for fn in options.files:
 		if len(sb[0]) == 0:
 			si = 0
 			bsi = 0
+			self.detections = objects
 			while si < options.stars:
 				if bsi == len(objects):
 					if skipped < options.skip_clouds:
@@ -197,7 +199,7 @@ for fn in options.files:
 			if options.verbose:
 				print _('maximal angle deviation: {0:.3f}').format(max_deviation)
 
-	if options.plot or options.saveplot:
+	if options.plot or options.saveplot or options.stars_plot:
 		import pylab
 		pylab.ioff()
 		fig = pylab.figure()

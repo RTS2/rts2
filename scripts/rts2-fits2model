@@ -1,0 +1,39 @@
+#!/usr/bin/python
+
+import rts2.fits2model
+import argparse
+import sys
+
+import gettext
+gettext.install('rts2-fits2model')
+
+def print_model_input(filename):
+	hdulist = fits.open(filename)
+	h = hdulist[0].header
+	w = wcs.WCS(h)
+	ra,dec = w.all_pix2world(float(h['NAXIS1'])/2,float(h['NAXIS2'])/2,0)
+	tar_telra = float(h['TAR_TELRA'])
+	tar_teldec = float(h['TAR_TELDEC'])
+	print(h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec)
+
+parser = argparse.ArgumentParser(description=_('Builds model input from FITS files.'))
+parser.add_argument('inputfiles',help=_('input FITS files'),type=str,nargs='+')
+parser.add_argument('--center',help=_('x y center coordinates'),type=str,action='store',dest='center',default=None)
+parser.add_argument('--modelin',help=_('output model file'),type=argparse.FileType('w'),dest='modelin',default=sys.stdout)
+
+options = parser.parse_args()
+
+if options.center:
+	center = map(float,options.center.split(':'))
+	if len(center) != 2:
+		sys.exit(_('invalid center - must be x:y, is {0}').format(options.center))
+else:
+	center = None
+
+first = True
+
+for fn in options.inputfiles:
+	if first:
+		rts2.fits2model.first_line(fn, options.modelin)
+		first = False
+	rts2.fits2model.model_line(fn, options.modelin, center)
