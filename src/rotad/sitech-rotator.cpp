@@ -81,7 +81,10 @@ void SitechRotator::getPIDs ()
 
 int SitechRotator::info ()
 {
-	return base->callInfo ();
+	int ret = base->callInfo ();
+	if (ret)
+		return ret;
+	return Rotator::info ();
 }
 
 int SitechRotator::commandAuthorized (rts2core::Connection *conn)
