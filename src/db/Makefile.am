@@ -4,6 +4,7 @@ AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @MAG
 bin_PROGRAMS = rts2-image rts2-user rts2-horizon
 
 rts2_image_SOURCES = appimagemanip.cpp
+rts2_image_CXXFLAGS = ${AM_CXXFLAGS} @MAGIC_CFLAGS@
 
 rts2_horizon_SOURCES = horizonapp.cpp
 
@@ -17,8 +18,7 @@ PG_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db -L../
 
 noinst_HEADERS = rts2targetapp.h
 
-rts2_image_CXXFLAGS = ${AM_CXXFLAGS} @MAGIC_CFLAGS@
-rts2_image_LDADD = @MAGIC_LIBS@ ${PG_LDADD}
+rts2_image_LDADD = ${PG_LDADD} @MAGIC_LIBS@
 
 rts2_targetinfo_SOURCES = targetinfo.cpp
 rts2_targetinfo_CXXFLAGS = ${AM_CXXFLAGS} @MAGIC_CFLAGS@
