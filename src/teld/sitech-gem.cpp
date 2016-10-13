@@ -486,9 +486,15 @@ void Sitech::getTel ()
 					if (ra_last_errors != ra_val)
 					{
 						if (ra_val == 0)
+						{
+							clearHWError ();
 							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "RA axis controller error values cleared" << sendLog;
+						}
 						else
+						{
+							raiseHWError ();
 							logStream (MESSAGE_ERROR) << "RA axis controller error(s): " << ra_errors->getValue () << sendLog;
+						}
 						ra_last_errors = ra_val;
 					}
 					// stop if on limits
@@ -521,10 +527,16 @@ void Sitech::getTel ()
 					dec_errors->setValueString (serConn->findErrors (dec_val));
 					if (dec_last_errors != dec_val)
 					{
-						if (ra_val == 0)
+						if (dec_val == 0)
+						{
+							clearHWError ();
 							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "DEC axis controller error values cleared" << sendLog;
+						}
 						else
+						{
+							raiseHWError ();
 							logStream (MESSAGE_ERROR) << "DEC axis controller error(s): " << dec_errors->getValue () << sendLog;
+						}
 						dec_last_errors = dec_val;
 					}
 					// stop if on limits

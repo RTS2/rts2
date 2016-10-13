@@ -814,9 +814,15 @@ void SitechAltAz::getTel ()
 					if (az_last_errors != az_val)
 					{
 						if (az_val == 0)
+						{
+							clearHWError ();
 							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "azimuth axis controller error values cleared" << sendLog;
+						}
 						else
+						{
+							raiseHWError ();
 							logStream (MESSAGE_ERROR) << "azimuth axis controller error(s): " << az_errors->getValue () << sendLog;
+						}
 						az_last_errors = az_val;
 					}
 					// stop if on limits
@@ -850,9 +856,15 @@ void SitechAltAz::getTel ()
 					if (alt_last_errors != alt_val)
 					{
 						if (alt_val == 0)
+						{
+							clearHWError ();
 							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "altitude axis controller error values cleared" << sendLog;
+						}
 						else
+						{
+							raiseHWError ();
 							logStream (MESSAGE_ERROR) << "altitude axis controller error(s): " << alt_errors->getValue () << sendLog;
+						}
 						alt_last_errors = alt_val;
 					}
 					// stop if on limits

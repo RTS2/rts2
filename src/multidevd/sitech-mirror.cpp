@@ -74,9 +74,15 @@ int SitechMirror::info ()
 			if (last_errors != val)
 			{
 				if (val == 0)
+				{
+					clearHWError ();
 					logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "controller error values cleared" << sendLog;
+				}
 				else
+				{
+					raiseHWError ();
 					logStream (MESSAGE_ERROR) << "controller error(s): " << errors->getValue () << sendLog;
+				}
 				last_errors = val;
 			}
 			break;

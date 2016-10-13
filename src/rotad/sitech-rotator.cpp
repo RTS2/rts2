@@ -249,9 +249,15 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 					if (last_errors != der_val)
 					{
 						if (der_val == 0)
+						{
+							clearHWError ();
 							logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "controller error values cleared" << sendLog;
+						}
 						else
+						{
+							raiseHWError ();
 							logStream (MESSAGE_ERROR) << "controller error(s): " << errors->getValue () << sendLog;
+						}
 						last_errors = der_val;
 						if (der_val & auto_reset->getValueInteger ())
 						{
