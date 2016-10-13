@@ -145,7 +145,7 @@ const std::string Message::getMessageArg (int n, char f)
 	if (iend == std::string::npos)
 		ret = messageString.substr (ibeg);
 	else
-		ret = messageString.substr (ibeg, iend);
+		ret = messageString.substr (ibeg, iend - ibeg);
 
 	std::ostringstream os;
 
