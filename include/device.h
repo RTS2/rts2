@@ -360,51 +360,6 @@ class Device:public Daemon
 		void blockTelMove () { maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible"); }
 		void clearTelMove () { maskState (BOP_TEL_MOVE, 0, "telescope move possible"); }
 
-		/**
-		 * Signal that device is starting up. All actions should then be suspended.
-		 * It is up to device driver to decide how to suspend those actions.
-		 */
-		void startStartup () { maskState (DEVICE_MISC_MASK, DEVICE_STARTUP, "startup started"); }
-
-		/**
-		 * Signal that device finished startup and is ready to accept commands.
-		 */
-		void endStartup () { maskState (DEVICE_STARTUP, 0, "startup finished"); }
-
-		/**
-		 * Query if device is starting up.
-		 *
-		 * @return true if device is starting up
-		 */
-		bool isStartingUp () { return getState () & DEVICE_STARTUP; }
-
-		/**
-		 * Signal that device is shutting down. All actions should then be suspended.
-		 *
-		 * @see startStartup()
-		 */
-		void startShutdown () { maskState (DEVICE_MISC_MASK, DEVICE_SHUTDOWN, "shutdown started"); }
-
-		/**
-		 * Signal that device finished shutdown sequence and will need
-		 * to be powered up before starting again.
-		 */
-		void endShutdown () { maskState (DEVICE_SHUTDOWN, 0, "shutdown finished"); }
-
-		/**
-		 * Query if device is shutting down.
-		 *
-		 * @return true if device is shutting down
-		 */
-		bool isShutdown () { return getState () & DEVICE_SHUTDOWN; }
-
-		/**
-		 * Signal that device need to reload values while in idle state.
-		 */
-		void setNeedReload () { maskState (DEVICE_NEED_RELOAD, DEVICE_NEED_RELOAD, "need reload values when in idle"); }
-		bool getNeedReload () { return getState () & DEVICE_NEED_RELOAD; }
-		void clearNeedReload () { maskState (DEVICE_NEED_RELOAD, 0, "reload cleared"); }
-
 		virtual Connection *createClientConnection (NetworkAddress * in_addr);
 
 		/**

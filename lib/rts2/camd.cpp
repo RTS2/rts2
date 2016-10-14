@@ -553,6 +553,9 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	createValue (focuserMoving, "foc_moving", "if focuser is moving", false);
 	focuserMoving->setValueBool (false);
 
+	createValue (needReload, "need_reload", "camera needs to be reloaded after finishing the exposure", false);
+	needReload->setValueBool (false);
+
 	// other options..
 	addOption (OPT_RTS2_COOLING, "no-autocooling", 0, "when set, RTS2 did not switch cooling off at the end of night");
 	addOption (OPT_COMMENTS, "add-comments", 1, "add given number of comment fields");
@@ -727,7 +730,7 @@ int Camera::scriptEnds ()
 	binning->setValueInteger (0);
 	if ((getState () & DEVICE_STATUS_MASK) != DEVICE_IDLE)
 	{
-		setNeedReload ();
+		needReload->setValueBool (true);
 	}
 	else
 	{
@@ -1612,11 +1615,11 @@ int Camera::camStartExposureWithoutCheck ()
 		sendValueAll (imageType);
 	}
 
-	if (getNeedReload ())
+	if (needReload->getValueBool ())
 	{
 		Binning2D *bin = (Binning2D *) binning->getData ();
 		setBinning (bin->horizontal, bin->vertical);
-		clearNeedReload ();
+		needReload->setValueBool (false);
 	}
 
 	ret = startExposure ();

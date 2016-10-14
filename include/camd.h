@@ -346,6 +346,8 @@ class Camera:public rts2core::ScriptDevice
 
 		rts2core::ValueString *filterOffsetFile;
 
+		rts2core::ValueBool *needReload;
+
 		// for multiple filter wheels
 		std::list <FilterVal> camFilterVals;
 

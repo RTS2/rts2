@@ -151,11 +151,11 @@ typedef uint32_t rts2_status_t;
  */
 #define DEVICE_SC_CURR      0x00001000
 
-// device need reload when it enter idle state - what should be reload is device specific
-#define DEVICE_NEED_RELOAD  0x00002000
+// device blocks closing of the observatory
+#define DEVICE_BLOCK_CLOSE  0x00002000
 
-// device is starting up
-#define DEVICE_STARTUP      0x00004000
+// device blocks opening of the observatory
+#define DEVICE_BLOCK_OPEN   0x00004000
 
 // device is in shutdown
 #define DEVICE_SHUTDOWN     0x00008000
