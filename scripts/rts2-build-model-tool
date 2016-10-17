@@ -136,13 +136,24 @@ def find_bright_star(telescope,alt,az):
 	print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f}').format(bsc[0],bsc[1],bsc[2],bsc[3])
 	return bsc
 
+def __check_model_firstline(telescope,modelname):
+	oa = open(modelname,'a')
+	if oa.tell() == 0:
+		j.refresh()
+		oa.write('# model file created on {0}\n'.format(time.strftime('%c')))
+		lat = j.getValue(telescope,'LATITUDE')
+		lng = j.getValue(telescope,'LONGITUD')
+		alt = j.getValue(telescope,'ALTITUDE')
+		oa.write('# altaz-manual {0} {1} {2}\n'.format(lng,lat,alt))
+		oa.flush()
+	oa.close()
+
 def __save_modeline(telescope,modelname,mn):
 	modline = get_altazm_line(telescope)
 	if modelname is None:
 		print _('model line {0}').format(modline)
 		return
 	print _('adding to aling file {0}').format(modline)
-	oa = open(modelname,'a')
 	oa.write('{0}\t{1}\n'.format(mn,modline))
 	oa.flush()
 	oa.close()
@@ -216,6 +227,7 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 			if ans == '':
 				continue
 			elif ans == 'm':
+				__check_model_firstline(telescope,modelname)
 				__save_modeline(telescope,modelname,mn)
 				mn += 1
 				next_please = True
@@ -254,7 +266,7 @@ def run_manual_altaz(telescope,alt,az,timeout,modelname,maxspiral,imagescript,mn
 	return None,None,bsc
 
 
-def run_manual_path(telescope,timeout,path,modelname='align',maxspiral=500,imagescript=None,useDS9=False):
+def run_manual_path(telescope,timeout,path,modelname,maxspiral,imagescript,useDS9):
 	mn = 1
 	for p in path:
 		run_manual_altaz(telescope,p[0],p[1],timeout,modelname,maxspiral,imagescript,mn,useDS9)
@@ -322,6 +334,7 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 		j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 		ver,flux_history,flux_ratio_history,history_x,history_y = __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius)
 		if modelname is not None:
+			__check_model_firstline(telescope,modelname)
 			modelf = open(modelname,'a')
 			modelf.write('# alt {0:.3f} az {1:.3f} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
 			modelf.write('# x {0} y {1}\n'.format(','.join(map(str,history_x)),','.join(map(str,history_y))))
