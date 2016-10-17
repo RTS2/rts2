@@ -67,9 +67,14 @@ user@host:$ psql stars < dummy.sql
 
 Try the database with:
 
-user@host: rts2-targetinfo 1
+user@host:$ rts2-targetinfo 1
 
 1 is dark frame target. It shoudl print something like:
+    1 d         nan         nan +00:00 nan          nan         nan transiting Dark frames
+       C0:'D 0'
+        |-- expected light time: 0 # images 1
+        \-- expected duration: 0
+     Expected maximal script duration: 0
 
 If it does not print that out, there is something wrong. Please investigate it,
 try to fix it, or write me.
