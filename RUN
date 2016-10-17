@@ -45,6 +45,13 @@ root@host:$ createuser <username>   # where you replace username with your usern
 Grant rights to create db and superuser (when asked, press y). Please consult
 Postgresql manual for details. Or write me.
 
+For Ubuntu 16.04 you must execute the following commands:
+
+user@host:$ sudo -i -u postgres		# login to 'postgres' user
+postgres@host:$ createuser --interactive user	# change 'user' with your Ubuntu user name.
+Shall the new role be a superuser? (y/n) y
+postgres@host:$ exit # Returns to Ubuntu user.
+
 - setup RTS2 database. Usually it is called stars, but you are free to create
   your own. Just choose other name.
 
