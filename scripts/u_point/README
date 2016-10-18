@@ -87,7 +87,10 @@ can point me into the right direction.
 The EQ models are not usable yet.
 
 The AltAz model does not always converge. Repeat
-the fitting severla times to gain confidence.
+the fitting several times to gain confidence. I
+observed that fits on simulated data does
+not converge. In such cases repeat the
+generation.
 
 
 Main differences to Petr's gpoint
