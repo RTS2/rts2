@@ -5,8 +5,71 @@ Prerequisites
  pip3 install astropy
               numpy
 	      scipy
+	       matplotlib
  libnova (needs to be on LD_PATH as libnova.so)
- matplotlib
+
+Hands on
+========
+
+Fetch real data and fit them
+
+ cd ~/rts2/scripts/u_point/
+ wget http://azug.minpet.unibas.ch/~wildi/mount_data_meteo.txt
+ ./u_point.py --toc  --mount-data mount_data_meteo.txt --plot
+
+the output should be similar to:
+
+ --------------------------------------------------------
+ fited values:
+ C1: horizontal telescope collimation: -339.9976 [arcsec]
+ C2: constant azimuth offset         :+1024.7588 [arcsec]
+ C3: tipping-mount collimation       :   +3.1370 [arcsec]
+ C4: azimuth axis tilt West          : +719.9432 [arcsec]
+ C5: azimuth axis tilt North         : +422.3190 [arcsec]
+ C6: vertical telescope collimation  : +579.9046 [arcsec]
+ C7: gravitational tube bending      :  -85.1722 [arcsec]
+ /home/wildi/sw/python/v_point/lib/python3.5/site-packages/scipy/optimize/minpack.py:427: RuntimeWarning: Number of calls to function has reached maxfev = 800.
+  warnings.warn(errors[info][0], RuntimeWarning)
+  fit projection not converged, status: 5
+
+and the plots appear. Ignore the warning sice it is related
+to a gaussian fit. Then do a simulation
+
+  ./u_simulate.py --sigma 0. --aa "-339.99 1024.75 3.13  719.9 422.31 579.9 -85.17" --mount-data test.dat  --step 12
+  
+and the output should be similar to:
+
+ input parameters
+ C1: horizontal telescope collimation: -339.9900 [arcsec]
+ C2: constant azimuth offset         :+1024.7500 [arcsec]
+ C3: tipping-mount collimation       :   +3.1300 [arcsec]
+ C4: azimuth axis tilt West          : +719.9000 [arcsec]
+ C5: azimuth axis tilt North         : +422.3100 [arcsec]
+ C6: vertical telescope collimation  : +579.9000 [arcsec]
+ C7: gravitational tube bending      :  -85.1700 [arcsec]
+ end input parameters
+
+and finally fit the simulated data with
+
+ ./u_point.py --toc  --mount-data test.dat
+
+and the output shows the parameters in good agreement
+
+ --------------------------------------------------------
+ fited values:
+ C1: horizontal telescope collimation: -339.9803 [arcsec]
+ C2: constant azimuth offset         :+1031.2422 [arcsec]
+ C3: tipping-mount collimation       :   +3.1193 [arcsec]
+ C4: azimuth axis tilt West          : +718.4110 [arcsec]
+ C5: azimuth axis tilt North         : +422.1173 [arcsec]
+ C6: vertical telescope collimation  : +579.8966 [arcsec]
+ C7: gravitational tube bending      :  -85.1844 [arcsec]
+ /home/wildi/sw/python/v_point/lib/python3.5/site-packages/scipy/optimize/minpack.py:427: RuntimeWarning: Number of calls to function has reached maxfev = 800.
+  warnings.warn(errors[info][0], RuntimeWarning)
+  fit projection not converged, status: 5
+
+And the simulated plots are as "ugly" as the data.
+
 
 Status as of 2016-10-08
 =======================
@@ -20,6 +83,12 @@ I developed u_point.py based on libnova and added
 later the astropy code for comparison again. There
 are still differences and I'd be glad if someone
 can point me into the right direction.
+
+The EQ models are not usable yet.
+
+The AltAz model does not always converge. Repeat
+the fitting severla times to gain confidence.
+
 
 Main differences to Petr's gpoint
 ---------------------------------
@@ -50,9 +119,8 @@ Getting started with u_point.py
  ./u_point.py --toc --mount-data mount_data.txt 
  ./u_point.py --toc --mount-data mount_data_meteo.txt 
 
-
- # fit HAdec model with libnova (same date, not necessarily
- # a realistic result, but it converges.
+ # fit HAdec model with libnova (same data, not necessarily
+ # a realistic result, but it converges).
  ./u_point.py --toc --mount-data mount_data.txt  --fit-eq
  ./u_point.py --toc --mount-data mount_data_meteo.txt --fit-eq
 
@@ -92,5 +160,5 @@ I saw that pointing models are created with a tool
 like astrometry.net. If the CCD's FoV is small this
 approach will fail. I'm trying to create a script
 which steers the mount, and after a star has been
-centered manually, an image is take and analyzed
+centered manually, an image is taken and analyzed
 e.g. by SExtractor.

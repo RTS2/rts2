@@ -38,6 +38,8 @@ from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
 from astropy.coordinates import AltAz,CIRS,ITRS
 from astropy.coordinates import Longitude,Latitude,Angle
+# ToDo it is local
+import libnova
         
 # Python bindings for libnova
 from ctypes import *
@@ -55,6 +57,19 @@ ln=cdll.LoadLibrary("libnova.so")
 ln.ln_get_equ_aber.restype = None
 ln.ln_get_equ_prec.restype = None
 ln.ln_get_refraction_adj.restype = c_double
+# ln_get_angular_separation (struct ln_equ_posn *posn1, struct ln_equ_posn *posn2)
+ln.ln_get_angular_separation.restype = c_double
+
+#ln_equ_posn1=LN_equ_posn()
+#ln_equ_posn2=LN_equ_posn()
+#def LN_ln_get_angular_separation(ra1=None,dec1=None,ra2=None,dec2=None):
+#  ln_equ_posn1.ra=ra1
+#  ln_equ_posn1.dec=dec1
+#  ln_equ_posn2.ra=ra2
+#  ln_equ_posn2.dec=dec2
+#  sep=ln.ln_get_angular_separation( byref(ln_equ_posn1), byref(ln_equ_posn2))
+#  return sep
+
 
 ln_pos_eq=LN_equ_posn()
 ln_pos_eq_ab=LN_equ_posn()
@@ -65,6 +80,7 @@ ln_pos_aa_pr=LN_hrz_posn()
 ln_hrz_posn=LN_hrz_posn()
 # http://scipy-cookbook.readthedocs.io/items/FittingData.html#simplifying-the-syntax
 # This is the real big relief
+
 class Parameter:
   def __init__(self, value):
     self.value = value
@@ -144,23 +160,76 @@ def fit_altaz_helper(function, parameters, azs_cat=None,alts_cat=None,d_azs=None
   p = [param() for param in parameters]
   return scipy.optimize.leastsq(local_f, p)#,full_output=True)
 
-
-# Marc W. Buie 2003
-def d_ha(has_cat,decs_cat,d_has,phi):
-  val=Dd()-gamma()*np.cos(has_cat-theta())-e()*(np.sin(phi)*np.cos(decs_cat)-np.cos(phi)*np.sin(decs_cat)*np.cos(has_cat))
+# T-point
+#
+# IH ha index error
+# ID delta index error
+# CH collimation error CH * sec(delta)
+# NP ha/delta non-perpendicularity NP*tan(delta)
+# MA polar axis left-right misalignment ha: -MA* cos(ha)*tan(delta), dec: MA*sin(ha)
+# ME polar axis verticsl misalignment: ha: ME*sin(ha)*tan(delta), dec: ME*cos(ha)
+# TF tube flexure, ha: TF*cos(phi)*sin(ha)*sec(delta), dec: TF*(cos(phi)*cos(ha)*sind(delta)-sin(phi)*cos(delta)
+# FO fork flexure, dec: FO*cos(ha)
+# DAF dec axis flexure, ha: -DAF*(cos(phi)*cos(ha) + sin(phi)*tan(dec)
+global d_ha_t_point
+def d_ha_t_point(has_cat,decs_cat,d_has,phi):
+  val= IH()\
+       +CH()/np.cos(decs_cat)\
+       +NP()*np.tan(decs_cat)\
+       -MA()*np.cos(has_cat)*np.tan(decs_cat)\
+       +ME()*np.sin(has_cat)*np.tan(decs_cat)\
+       +TF()*np.cos(phi)*np.sin(has_cat)/np.cos(decs_cat)\
+       -DAF()*(np.cos(phi)*np.cos(has_cat)+np.sin(phi)*np.tan(decs_cat))
   return val-d_has
 
-def d_dec(has_cat,decs_cat,d_decs,phi):
-  val= Dt()-gamma()*np.sin(has_cat-theta())*np.tan(decs_cat)+ c()/np.cos(decs_cat)-ip() * np.tan(decs_cat) +\
-  e()*np.cos(phi)* 1./np.cos(decs_cat)* np.sin(has_cat)+ l() * (np.sin(phi) *np.tan(decs_cat) + np.cos(decs_cat)* np.cos(has_cat) + r()*has_cat)
+global d_dec_t_point
+def d_dec_t_point(has_cat,decs_cat,d_decs,phi):
+  val=ID()\
+      +MA()*np.sin(has_cat)\
+      +ME()*np.cos(has_cat)\
+      +TF()*(np.cos(phi)*np.cos(has_cat)*np.sin(decs_cat)-np.sin(phi)*np.cos(decs_cat))\
+      +FO()*np.cos(has_cat) # see ME()
   return val-d_decs
 
-def fit_hadec(has_cat=None,decs_cat=None,d_has=None, d_decs=None,phi=None):
-  fha=d_ha(has_cat,decs_cat,d_has,phi)
-  fdec=d_dec(has_cat,decs_cat,d_decs,phi) 
+def fit_hadec_t_point(has_cat=None,decs_cat=None,d_has=None,d_decs=None,phi=None):
+  fha=d_ha_t_point(has_cat,decs_cat,d_has,phi)
+  fdec=d_dec_t_point(has_cat,decs_cat,d_decs,phi) 
   return np.concatenate((fha,fdec))
+  #return libnova.angular_separation(ra1=has_cat+fha,dec1=decs_cat+fdec,ra2=has_cat,dec2=decs_cat)
 
-def fit_hadec_helper(function, parameters, has_cat=None,decs_cat=None,d_has=None, d_decs=None,phi=None):
+
+# Marc W. Buie 2003
+global d_ha
+def d_ha(has_cat,decs_cat,d_has,phi):
+  # ToDo check that:
+  #val= Dt()-gamma()*np.sin(has_cat-theta())*np.tan(decs_cat)+c()/np.cos(decs_cat)-ip()*np.tan(decs_cat) +\
+  #e()*np.cos(phi)*1./np.cos(decs_cat)*np.sin(has_cat-theta())+l()*(np.sin(phi) *np.tan(decs_cat) + np.cos(decs_cat)* np.cos(has_cat-theta())) + r()*(has_cat-theta())
+  val= Dt()\
+       -gamma()*np.sin(has_cat-theta())*np.tan(decs_cat)\
+       +c()/np.cos(decs_cat)\
+       -ip()*np.tan(decs_cat)\
+       +e()*np.cos(phi)/np.cos(decs_cat)*np.sin(has_cat)\
+       +l()*(np.sin(phi)*np.tan(decs_cat) + np.cos(decs_cat)* np.cos(has_cat))\
+       + r()*has_cat
+  return val-d_has  #d_has= τ-t. (τ-t)-val (val: right side) 
+
+global d_dec
+def d_dec(has_cat,decs_cat,d_decs,phi):
+  # ToDo check that:
+  #val=Dd()-gamma()*np.cos(has_cat-theta())-e()*(np.sin(phi)*np.cos(decs_cat)-np.cos(phi)*np.sin(decs_cat)*np.cos(has_cat-theta()))
+  val=Dd()\
+      -gamma()*np.cos(has_cat-theta())\
+      -e()*(np.sin(phi)*np.cos(decs_cat)-np.cos(phi)*np.sin(decs_cat)*np.cos(has_cat))
+  return val-d_decs
+
+
+def fit_hadec(has_cat=None,decs_cat=None,d_has=None, d_decs=None,phi=None):
+  fha=d_ha(has_cat,decs_cat,d_has,phi) 
+  fdec=d_dec(has_cat,decs_cat,d_decs,phi)
+  return np.concatenate((fha,fdec))
+  #return libnova.angular_separation(ra1=has_cat+fha,dec1=decs_cat+fdec,ra2=has_cat,dec2=decs_cat)
+
+def fit_hadec_helper(function=None, parameters=None, has_cat=None,decs_cat=None,d_has=None, d_decs=None,phi=None):
   def local_f(params):
     for i,p in enumerate(parameters):
       p.set(params[i])
@@ -168,7 +237,7 @@ def fit_hadec_helper(function, parameters, has_cat=None,decs_cat=None,d_has=None
     return function(has_cat=has_cat,decs_cat=decs_cat,d_has=d_has, d_decs=d_decs,phi=phi)
 
   p = [param() for param in parameters]
-  return scipy.optimize.leastsq(local_f, p)#,full_output=True)
+  return scipy.optimize.least_squares(local_f, p,method='dogbox',ftol=1.e-8,xtol=1.e-8,max_nfev=10000)
 
 
 class PointingModel(object):
@@ -183,7 +252,7 @@ class PointingModel(object):
     self.ln_obs.lat=obs_lat     # deg
     self.ln_hght=obs_height     # m, not a libnova quantity
 
-  def LN_EQ_to_AltAz(self,ra=None,dec=None,JD=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,correct_cat=False):
+  def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,correct_cat=False):
 
     ln_pos_eq.ra=ra
     ln_pos_eq.dec=dec
@@ -196,9 +265,9 @@ class PointingModel(object):
       # annual parallax
       # diurnal aberration
       # polar motion 
-      ln.ln_get_equ_aber(byref(ln_pos_eq), c_double(JD), byref(ln_pos_eq_ab))
-      ln.ln_get_equ_prec(byref(ln_pos_eq_ab), c_double(JD), byref(ln_pos_eq_pr))
-      ln.ln_get_hrz_from_equ(byref(ln_pos_eq_pr), byref(self.ln_obs), c_double(JD), byref(ln_pos_aa_pr))
+      ln.ln_get_equ_aber(byref(ln_pos_eq), c_double(obstime.jd), byref(ln_pos_eq_ab))
+      ln.ln_get_equ_prec(byref(ln_pos_eq_ab), c_double(obstime.jd), byref(ln_pos_eq_pr))
+      ln.ln_get_hrz_from_equ(byref(ln_pos_eq_pr), byref(self.ln_obs), c_double(obstime.jd), byref(ln_pos_aa_pr))
       # here we use QFE not pressure at sea level!
       # E.g. at Dome-C this formula:
       ###ln_pressure=ln_see_pres * pow(1. - (0.0065 * ln_alt) / 288.15, (9.80665 * 0.0289644) / (8.31447 * 0.0065));
@@ -206,7 +275,7 @@ class PointingModel(object):
       d_alt_deg= ln.ln_get_refraction_adj(c_double(ln_pos_aa_pr.alt),c_double(ln_pressure_qfe),c_double(ln_temperature))
     else:
       # ... but not for the star position as measured in telescope frame
-      ln.ln_get_hrz_from_equ(byref(ln_pos_eq), byref(self.ln_obs), c_double(JD), byref(ln_pos_aa_pr));
+      ln.ln_get_hrz_from_equ(byref(ln_pos_eq), byref(self.ln_obs), c_double(obstime.jd), byref(ln_pos_aa_pr));
       d_alt_deg=0.
   
     a_az=Longitude(ln_pos_aa_pr.az,u.deg)
@@ -242,7 +311,7 @@ class PointingModel(object):
       # print('AP: {0:.3f}, {1:.3f}, {2:.3f}, {3:.3f}'.format(pos_ha_ap.ra.degree,pos_ha_ap.dec.degree,pos_aa_ap.az.degree,pos_aa_ap.alt.degree))
     else:
       # debug:
-      pos_aa_ln=pos_aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,JD=eq.obstime.jd,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,correct_cat=correct_cat_f)
+      pos_aa_ln=pos_aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
       pos_ha=pos_ha_ln=self.LN_AltAz_to_HA(az=pos_aa.az.degree,alt=pos_aa.alt.degree,obstime=eq.obstime)
       
     return pos_ha
@@ -259,7 +328,7 @@ class PointingModel(object):
       pos_aa=eq.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
     else:
       pre_qfe=pre # to make it clear what is used
-      pos_aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,JD=eq.obstime.jd,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,correct_cat=correct_cat_f)
+      pos_aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
 
     return pos_aa
 
@@ -307,21 +376,41 @@ class PointingModel(object):
       dt_utc = Time(utc,format='iso', scale='utc',location=self.obs)
       if exp_f:
         dt_utc=dt_utc + TimeDelta(exp/2.,format='sec') # exp. time is small
-        
+
       cat_eq=SkyCoord(ra=float(cat_ra),dec=float(cat_dc), unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
       mnt_eq=SkyCoord(ra=float(mnt_ra),dec=float(mnt_dc), unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
+      
       if fit_eq:
         cat_ha=self.transform_to_hadec(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
         mnt_ha=self.transform_to_hadec(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
+        #if self.accept(cat_lon=cat_ha.ra.radian, cat_lat=cat_ha.dec.radian, mnt_lon=mnt_ha.ra.radian, mnt_lat=mnt_ha.dec.radian):
         cats.append(cat_ha)
         mnts.append(mnt_ha)
       else:
         cat_aa=self.transform_to_altaz(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
         mnt_aa=self.transform_to_altaz(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
+        #if self.accept(cat_lon=cat_aa.az.radian, cat_lat=cat_aa.alt.radian, mnt_lon=mnt_aa.az.radian, mnt_lat=mnt_aa.alt.radian):
         cats.append(cat_aa)
         mnts.append(mnt_aa)
+          
     return cats,mnts
-        
+
+  def accept(self, cat_lon=None, cat_lat=None, mnt_lon=None, mnt_lat=None):
+    # ToDo: may be a not so good idea
+    acc= False
+    if -2./60./180.*np.pi < (cat_lon-mnt_lon) < 2./60./180.*np.pi:
+      acc=True
+    else:
+      self.lg.debug('reject lon: {0:.4f}'.format((cat_lon-mnt_lon) * 180. * 60. /np.pi))
+
+    if -10./60./180.*np.pi<(cat_lat-mnt_lat) < 10./60./180.*np.pi:
+      acc=True
+    else:
+      self.lg.debug('reject lat: {0:.4f}'.format((cat_lat-mnt_lat) * 180. * 60. /np.pi))
+
+    return acc
+
+  
   def fit_projection_and_plot(self,vals=None, bins=None, axis=None,fit_title=None,fn_frac=None,prefix=None,plt_no=None,plt=None):
     '''
 
@@ -347,7 +436,7 @@ class PointingModel(object):
     res,stat=fit_projection_helper(fit_projection,[mu,sigma,height], cnt_bins, bins)
     if stat != 1:
       self.lg.warn('fit projection not converged, status: {}'.format(stat))
-
+      
     y=fit_projection(bins)
     l = ax.plot(bins, y, 'r--', linewidth=2)
     ax.set_xlabel('{} {} [arcsec]'.format(prefix,axis))
@@ -381,8 +470,10 @@ class PointingModel(object):
     C1=Parameter(0.)
     C2=Parameter(0.)
     C3=Parameter(0.)
-    C4=Parameter(1.)
-    C5=Parameter(1.)
+    C4=Parameter(0.)
+    C5=Parameter(0.)
+    #C6=Parameter(627.47853/3600./180.8 * np.pi)
+    #C7=Parameter(-244.3/3600./180.8 * np.pi)
     C6=Parameter(0.)
     C7=Parameter(0.)
     A0=Parameter(0.)
@@ -392,8 +483,12 @@ class PointingModel(object):
     pars=[C1,C2,C3,C4,C5,C6,C7,A0,A1,A2,A3]
 
     res,stat=fit_altaz_helper(fit_altaz,pars,azs_cat=azs_cat,alts_cat=alts_cat,d_azs=d_azs,d_alts=d_alts,fit_plus_poly=fit_plus_poly)
+    self.lg.info('--------------------------------------------------------')
     if stat != 1:
-      self.lg.warn('fit not converged, status: {}'.format(stat))
+      if stat==5:
+        self.lg.warn('fit not converged, status: {}'.format(stat))
+      else:
+        self.lg.warn('fit converged with status: {}'.format(stat))
     # output used in telescope driver
     if self.dbg:
       for i,c in enumerate(pars):
@@ -401,6 +496,7 @@ class PointingModel(object):
           break
       self.lg.info('C{0:02d}={1};'.format(i+1,res[i]))
 
+    self.lg.info('fited values:')
     self.lg.info('C1: horizontal telescope collimation:{0:+10.4f} [arcsec]'.format(C1()*180.*3600./np.pi))
     self.lg.info('C2: constant azimuth offset         :{0:+10.4f} [arcsec]'.format(C2()*180.*3600./np.pi))
     self.lg.info('C3: tipping-mount collimation       :{0:+10.4f} [arcsec]'.format(C3()*180.*3600./np.pi))
@@ -408,15 +504,16 @@ class PointingModel(object):
     self.lg.info('C5: azimuth axis tilt North         :{0:+10.4f} [arcsec]'.format(C5()*180.*3600./np.pi))
     self.lg.info('C6: vertical telescope collimation  :{0:+10.4f} [arcsec]'.format(C6()*180.*3600./np.pi))
     self.lg.info('C7: gravitational tube bending      :{0:+10.4f} [arcsec]'.format(C7()*180.*3600./np.pi))
-    self.lg.info('A0: a0 (polynom)                    :{0:+10.4f}'.format(A0()))
-    self.lg.info('A1: a1 (polynom)                    :{0:+10.4f}'.format(A1()))
-    self.lg.info('A2: a2 (polynom)                    :{0:+10.4f}'.format(A2()))
-    self.lg.info('A3: a3 (polynom)                    :{0:+10.4f}'.format(A3()))
-
+    if fit_plus_poly:
+      self.lg.info('A0: a0 (polynom)                    :{0:+10.4f}'.format(A0()))
+      self.lg.info('A1: a1 (polynom)                    :{0:+10.4f}'.format(A1()))
+      self.lg.info('A2: a2 (polynom)                    :{0:+10.4f}'.format(A2()))
+      self.lg.info('A3: a3 (polynom)                    :{0:+10.4f}'.format(A3()))
+      
     return res
   
   # Marc W. Buie 2003
-  def fit_model_hadec(self,cat_has=None,mnt_has=None):
+  def fit_model_hadec(self,cat_has=None,mnt_has=None,t_point=False):
 
     has_cat=np.zeros(shape=(len(cat_has)))
     decs_cat=np.zeros(shape=(len(cat_has)))
@@ -425,36 +522,91 @@ class PointingModel(object):
     # make it suitable for fitting
     for i,ct in enumerate(cat_has):
       # x: catlog
-      has_cat[i]=ct.ra.radian
-      decs_cat[i]=ct.dec.radian
+      has_cat[i]= cat_has[i].ra.radian #! it is ha
+      decs_cat[i]=cat_has[i].dec.radian
       #
       # y:  catalog_apparent-star
-      d_has[i]=ct.ra.radian-mnt_has[i].ra.radian
-      d_decs[i]=ct.dec.radian-mnt_has[i].dec.radian
-    global Dd,gamma,theta,e,Dt,c,ip,l,r
-    Dd=Parameter(0.)
-    gamma=Parameter(0.)
-    theta=Parameter(0.)
-    e=Parameter(0.)
-    Dt=Parameter(0.)
-    c=Parameter(0.)
-    ip=Parameter(0.)
-    l=Parameter(0.)
-    r=Parameter(0.)
-    pars=[Dd,gamma,theta,e,Dt,c,ip,l,r]
-    res,stat=fit_hadec_helper(fit_hadec,pars,has_cat=has_cat,decs_cat=decs_cat,d_has=d_has,d_decs=d_decs,phi=self.obs.latitude.radian)
-    if stat != 1:
-      self.lg.warn('fit not converged, status: {}'.format(stat))
+      d_has[i]=cat_has[i].ra.radian-mnt_has[i].ra.radian
+      d_decs[i]=cat_has[i].dec.radian-mnt_has[i].dec.radian
 
-    self.lg.info('Dd:    declination zero-point offset    :{0:+12.4f} [arcsec]'.format(Dd()*180.*3600./np.pi))
-    self.lg.info('Dt:    hour angle zero-point offset     :{0:+12.4f} [arcsec]'.format(Dt()*180.*3600./np.pi))
-    self.lg.info('ip:    angle(polar,declination) axis    :{0:+12.4f} [arcsec]'.format(ip()*180.*3600./np.pi))
-    self.lg.info('c :    angle(optical,mechanical) axis   :{0:+12.4f} [arcsec]'.format(c()*180.*3600./np.pi))
-    self.lg.info('e :    tube flexure away from the zenith:{0:+12.4f} [arcsec]'.format(e()*180.*3600./np.pi))
-    self.lg.info('gamma: angle(true,instrumental) pole    :{0:+12.4f} [arcsec]'.format(gamma()*180.*3600./np.pi))
-    self.lg.info('theta: hour angle instrumental pole     :{0:+12.4f} [deg]'.format(theta()*180./np.pi))
-    self.lg.info('l :    bending of declination axle      :{0:+12.4f} [arcsec]'.format(l()*180.*3600./np.pi))
-    self.lg.info('r :    hour angle scale error           :{0:+12.4f} [arcsec]'.format(r()*180.*3600./np.pi))
+    if t_point:
+      global IH,ID,CH,NP,MA,ME,TF,FO,DAF
+      IH=Parameter(0.)
+      ID=Parameter(0.)
+      CH=Parameter(0.)
+      NP=Parameter(0.)
+      MA=Parameter(0.)
+      ME=Parameter(0.)
+      TF=Parameter(0.)
+      FO=Parameter(0.)
+      DAF=Parameter(0.)
+      pars=[IH,ID,CH,NP,MA,ME,TF,FO,DAF]
+      #pars=[MA,ME]
+
+      res=fit_hadec_helper(
+        fit_hadec_t_point,
+        pars,
+        has_cat=has_cat,
+        decs_cat=decs_cat,
+        d_has=d_has,
+        d_decs=d_decs,
+        phi=self.obs.latitude.radian)
+      print(res)
+      print(type(res))
+      res=stat=1
+
+      self.lg.info('-------------------------------------------------------------')
+      if stat != 1:
+        if stat==5:
+          self.lg.warn('fit not converged, status: {}'.format(stat))
+        else:
+          self.lg.warn('fit converged with status: {}'.format(stat))
+
+      self.lg.info('fited values:')
+      self.lg.info('IH : ha index error                 :{0:+12.4f} [arcsec]'.format(IH()*180.*3600./np.pi))
+      self.lg.info('ID : delta index error              :{0:+12.4f} [arcsec]'.format(ID()*180.*3600./np.pi))
+      self.lg.info('CH : collimation error              :{0:+12.4f} [arcsec]'.format(CH()*180.*3600./np.pi))
+      self.lg.info('NP : ha/delta non-perpendicularity  :{0:+12.4f} [arcsec]'.format(NP()*180.*3600./np.pi))
+      self.lg.info('MA : polar axis left-right alignment:{0:+12.4f} [arcsec]'.format(MA()*180.*3600./np.pi))
+      self.lg.info('ME : polar axis verticsl alignment  :{0:+12.4f} [arcsec]'.format(ME()*180.*3600./np.pi))
+      self.lg.info('TF : tube flexure                   :{0:+12.4f} [arcsec]'.format(TF()*180.*3600./np.pi))
+      self.lg.info('FO : fork flexure                   :{0:+12.4f} [arcsec]'.format(FO()*180.*3600./np.pi))
+      self.lg.info('DAF: dec axis flexure               :{0:+12.4f} [arcsec]'.format(DAF()*180.*3600./np.pi))
+    else:
+      global Dd,gamma,theta,e,Dt,c,ip,l,r
+      Dd=Parameter(0.)
+      gamma=Parameter(0.)
+      theta=Parameter(0.)
+      e=Parameter(0.)
+      Dt=Parameter(0.)
+      c=Parameter(0.)
+      ip=Parameter(0.)
+      l=Parameter(0.)
+      r=Parameter(0.)
+      pars=[Dd,gamma,theta,e,Dt,c,ip,l,r]
+      # all other constant:
+      pars=[gamma]
+      res=fit_hadec_helper(fit_hadec,pars,has_cat=has_cat,decs_cat=decs_cat,d_has=d_has,d_decs=d_decs,phi=self.obs.latitude.radian)
+      # ToDo
+      print(res)
+      print(type(res))
+      res=stat=1
+      self.lg.info('--------------------------------------------------------------')
+      if stat != 1:
+        if stat==5:
+          self.lg.warn('fit not converged, status: {}'.format(stat))
+        else:
+          self.lg.warn('fit converged with status: {}'.format(stat))
+      self.lg.info('fited values:')
+      self.lg.info('Dd:    declination zero-point offset    :{0:+12.4f} [arcsec]'.format(Dd()*180.*3600./np.pi))
+      self.lg.info('Dt:    hour angle zero-point offset     :{0:+12.4f} [arcsec]'.format(Dt()*180.*3600./np.pi))
+      self.lg.info('ip:    angle(polar,declination) axis    :{0:+12.4f} [arcsec]'.format(ip()*180.*3600./np.pi))
+      self.lg.info('c :    angle(optical,mechanical) axis   :{0:+12.4f} [arcsec]'.format(c()*180.*3600./np.pi))
+      self.lg.info('e :    tube flexure away from the zenith:{0:+12.4f} [arcsec]'.format(e()*180.*3600./np.pi))
+      self.lg.info('gamma: angle(true,instrumental) pole    :{0:+12.4f} [arcsec]'.format(gamma()*180.*3600./np.pi))
+      self.lg.info('theta: hour angle instrumental pole     :{0:+12.4f} [deg]'.format(theta()*180./np.pi))
+      self.lg.info('l :    bending of declination axle      :{0:+12.4f} [arcsec]'.format(l()*180.*3600./np.pi))
+      self.lg.info('r :    hour angle scale error           :{0:+12.4f} [arcsec]'.format(r()*180.*3600./np.pi))
 
   def plot_results(self, stars=None,args=None):
     '''
@@ -523,6 +675,8 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lat))
     ax.set_ylabel('d({}) [arcmin]'.format(lon))
     ax.scatter(alt_cat_deg ,[x.df_lon.arcmin for x in stars])
+    # ToDo: think about that:
+    #ax.scatter(alt_cat_deg ,[x.df_lon.arcmin/ np.tan(x.mnt_lat.radian) for x in stars])
     fig.savefig('difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lat,lon))
 
     fig = plt.figure()
@@ -588,24 +742,34 @@ class PointingModel(object):
     self.fit_projection_and_plot(vals=[x.res_lat.arcsec for x in stars],bins=args.bins,axis='{}'.format(lat),fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q2',plt=plt)
 
     plt.show()
+# really ugly!
+def arg_floats(value):
+  return list(map(float, value.split()))
 
-
+def arg_float(value):
+  if 'm' in value:
+    return -float(value[1:])
+  else:
+    return float(value)
+    
 if __name__ == "__main__":
 
-  parser= argparse.ArgumentParser(prog=sys.argv[0], description='AHZ collection Objekt query and spell check script')
+  parser= argparse.ArgumentParser(prog=sys.argv[0], description='Fit an AltAz or EQ pointing model')
   parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
   parser.add_argument('--level', dest='level', default='DEBUG', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
 
-  parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666, help=': %(default)s [deg], observatory longitude + to the East')
-  parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1, help=': %(default)s [deg], observatory latitude')
-  parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237., help=': %(default)s [m], observatory height above sea level')
-  parser.add_argument('--mount-data-filename', dest='mount_data_filename', action='store', default='./mount_data.txt', help=': %(default)s, mount data filename')
+  parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
+  parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
+  parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
+  parser.add_argument('--mount-data', dest='mount_data', action='store', default='./mount_data.txt', help=': %(default)s, mount data filename')
   parser.add_argument('--fit-eq', dest='fit_eq', action='store_true', default=False, help=': %(default)s, True fit EQ model, else AltAz')
+  parser.add_argument('--t-point', dest='t_point', action='store_true', default=False, help=': %(default)s, fit EQ model with T-point compatible model')
   parser.add_argument('--fit-plus-poly', dest='fit_plus_poly', action='store_true', default=False, help=': %(default)s, True: Condon 1992 with polynom')
   parser.add_argument('--astropy', dest='astropy', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with astropy, default libnova')
   parser.add_argument('--bins', dest='bins', action='store', default=40,type=int, help=': %(default)s, number of bins used in the projection histograms')
+  parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
             
   args=parser.parse_args()
   
@@ -629,29 +793,44 @@ if __name__ == "__main__":
   if args.fit_eq and args.fit_plus_poly:
     logger.error('--fit-plus-poly can not be specified with --fit-eq, drop either')
     sys.exit(1)
-    
+  
   pm= PointingModel(dbg=args.debug,lg=logger,obs_lng=args.obs_lng,obs_lat=args.obs_lat,obs_height=args.obs_height)
 
+  if args.t_point:
+    args.fit_eq=True
   stars=list()
   if args.fit_eq:
     # cat_eqs,mnt_eqs: HA, Dec coordinates
-    cat_has,mnt_has=pm.fetch_coordinates(ptfn=args.mount_data_filename,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
-    res=pm.fit_model_hadec(cat_has=cat_has,mnt_has=mnt_has) 
+    cat_has,mnt_has=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+    res=pm.fit_model_hadec(cat_has=cat_has,mnt_has=mnt_has,t_point=args.t_point) 
+    if not args.plot:
+      sys.exit(1)
     # create data structure more suitable for plotting
     for i, cat_ha in enumerate(cat_has):
       mnt_ha=mnt_has[i] # readability
           
       df_dec= Latitude(cat_ha.dec.radian-mnt_ha.dec.radian,u.radian)
-      df_ha= Latitude(cat_ha.ra.radian-mnt_ha.ra.radian,u.radian)
-      #  residuum: difference st.cat(fit corrected) - st.star
-      #
+      df_ha= Longitude(cat_ha.ra.radian-mnt_ha.ra.radian,u.radian,wrap_angle=Angle(np.pi,u.radian))
+      #  residuum: difference st.cat(fit corrected) - st.star      
+      d_ha_f=d_ha
+      d_dec_f=d_dec
+      if args.t_point:
+        d_ha_f=d_ha_t_point
+        d_dec_f=d_dec_t_point
+      
       res_ha=Longitude(        
-        float(d_ha(cat_ha.ra.radian,cat_ha.dec.radian,cat_ha.ra.radian-mnt_ha.ra.radian,pm.obs.latitude.radian)),
+        # ToDo! sign
+        #float(d_ha_f(cat_ha.ra.radian,cat_ha.dec.radian,cat_ha.ra.radian-mnt_ha.ra.radian,pm.obs.latitude.radian)),
+        float(d_ha_f(cat_ha.ra.radian,cat_ha.dec.radian,(cat_ha.ra.radian-mnt_ha.ra.radian),pm.obs.latitude.radian)),
         u.radian,
         wrap_angle=Angle(np.pi,u.radian))
 
       res_dec=Latitude(
-        float(d_dec(cat_ha.ra.radian,cat_ha.dec.radian,cat_ha.dec.radian-mnt_ha.dec.radian,pm.obs.latitude.radian)),u.radian)
+        # ToDo! sign
+        #float(d_dec_f(cat_ha.ra.radian,cat_ha.dec.radian,cat_ha.dec.radian-mnt_ha.dec.radian,pm.obs.latitude.radian)
+        float(d_dec_f(cat_ha.ra.radian,cat_ha.dec.radian,-(cat_ha.dec.radian-mnt_ha.dec.radian),pm.obs.latitude.radian)),
+        u.radian)
+
       st=Point(
         cat_lon=cat_ha.ra,cat_lat=cat_ha.dec,
         mnt_lon=mnt_ha.ra,mnt_lat=mnt_ha.dec,
@@ -662,14 +841,22 @@ if __name__ == "__main__":
   else:
     # ToDo: do not copy yourself
     # cat_aas,mnt_aas: AltAz coordinates
-    cat_aas,mnt_aas=pm.fetch_coordinates(ptfn=args.mount_data_filename,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+    cat_aas,mnt_aas=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
     res=pm.fit_model_altaz(cat_aas=cat_aas,mnt_aas=mnt_aas,fit_plus_poly=args.fit_plus_poly)
 
+    if not args.plot:
+      sys.exit(1)
     for i, cat_aa in enumerate(cat_aas):
       mnt_aa=mnt_aas[i] # readability
           
       df_alt= Latitude(cat_aa.alt.radian-mnt_aas[i].alt.radian,u.radian)
-      df_az= Latitude(cat_aa.az.radian-mnt_aa.az.radian,u.radian)
+      df_az= Longitude(cat_aa.az.radian-mnt_aa.az.radian,u.radian, wrap_angle=Angle(np.pi,u.radian))
+      #if df_alt.radian < 0./60./180.*np.pi:
+      #  pass
+      #elif df_alt.radian > 20./60./180.*np.pi:
+      #  pass
+      #else:
+      #  continue
       #  residuum: difference st.cat(fit corrected) - st.star
       #
       res_az=Longitude(        
@@ -688,4 +875,5 @@ if __name__ == "__main__":
       )
       stars.append(st)
 
-  pm.plot_results(stars=stars,args=args)
+  if args.plot:
+    pm.plot_results(stars=stars,args=args)
