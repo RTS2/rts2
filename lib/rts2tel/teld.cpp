@@ -1649,6 +1649,15 @@ void Telescope::getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz
 	ln_get_hrz_from_equ_sidereal_time (pos, &obs, ln_get_apparent_sidereal_time(JD), hrz);
 }
 
+void Telescope::getHrzFromEquST (struct ln_equ_posn *pos, double ST, struct ln_hrz_posn *hrz)
+{
+	struct ln_lnlat_posn obs;
+	obs.lat = getLatitude ();
+	obs.lng = getLongitude ();
+
+	ln_get_hrz_from_equ_sidereal_time (pos, &obs, ST, hrz);
+}
+
 void Telescope::getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos)
 {
 	struct ln_lnlat_posn obs;

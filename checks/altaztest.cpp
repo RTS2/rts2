@@ -30,6 +30,8 @@ void AltAzTest::setTelescope (double _lat, double _long, double _alt, long _az_t
 	altMin->setValueLong (_altMin);
 	altMax->setValueLong (_altMax);
 
+	setCorrections (false, false, false, false);
+
 	hardHorizon = new ObjectCheck ("../conf/horizon_flat_19_flip.txt");
 }
 

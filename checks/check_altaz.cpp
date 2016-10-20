@@ -141,7 +141,7 @@ START_TEST(test_altaz_1)
 	test_t.seconds = 47;
 
 	double JD = ln_get_julian_day (&test_t);
-	ck_assert_dbl_eq (JD, 2457400.722766, 10e-5);
+	ck_assert_dbl_eq (JD, 2457400.7227662038, 10e-10);
 
 	struct ln_hrz_posn hrz, res_hrz;
 	hrz.alt = 80;
@@ -163,6 +163,10 @@ START_TEST(test_altaz_1)
 	ck_assert_dbl_eq (res_hrz.az, hrz.az, 10e-5);
 	ck_assert_dbl_eq (res_hrz.alt, hrz.alt, 10e-5);
 
+	ck_assert_dbl_eq (ln_get_mean_sidereal_time (JD), ln_get_apparent_sidereal_time (JD) + 7.914799999397815e-06, 10e-10);
+
+	altAzTest->modelOff ();
+
 	ret = altAzTest->test_sky2counts (JD, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
 	ck_assert_int_eq (azc, 16147941);
@@ -171,6 +175,8 @@ START_TEST(test_altaz_1)
 	altAzTest->test_counts2sky (JD, azc, altc, pos.ra, pos.dec);
 	ck_assert_dbl_eq (pos.ra, 20, 10e-4);
 	ck_assert_dbl_eq (pos.dec, 80, 10e-4);
+
+	altAzTest->modelOn ();
 
 	// origin
 	pos.ra = 344.16613;
@@ -216,6 +222,24 @@ START_TEST(test_altaz_1)
 }
 END_TEST
 
+START_TEST(test_altaz_2)
+{
+	// test 2, 2016-04-12T19:20:47 HST = 2016-4-13U20:23:47
+	struct ln_date test_t;
+	test_t.years = 2016;
+	test_t.months = 4;
+	test_t.days = 13;
+	test_t.hours = 20;
+	test_t.minutes = 23;
+	test_t.seconds = 47;
+
+	double JD = ln_get_julian_day (&test_t);
+	ck_assert_dbl_eq (JD, 2457492.34985, 10e-5);
+
+	ck_assert_dbl_eq (ln_get_mean_sidereal_time (JD), ln_get_apparent_sidereal_time (JD) + 6.842610000035165e-05, 10e-10);
+}
+END_TEST
+
 Suite * altaz_suite (void)
 {
 	Suite *s;
@@ -231,6 +255,7 @@ Suite * altaz_suite (void)
 	tcase_add_test (tc_altaz_pointings, derotator_4);
 	tcase_add_test (tc_altaz_pointings, zenith_pa);
 	tcase_add_test (tc_altaz_pointings, test_altaz_1);
+	tcase_add_test (tc_altaz_pointings, test_altaz_2);
 	suite_add_tcase (s, tc_altaz_pointings);
 
 	return s;

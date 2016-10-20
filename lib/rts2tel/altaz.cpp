@@ -21,6 +21,7 @@
 #include "configuration.h"
 
 #include "libnova_cpp.h"
+#include <libnova/libnova.h>
 
 using namespace rts2teld;
 
@@ -91,7 +92,15 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 	applyCorrections (&tar_pos, JD, writeValue);
 
 	struct ln_hrz_posn hrz;
-	getHrzFromEqu (&tar_pos, JD, &hrz);
+
+	if (calculateNutation ())
+	{
+		getHrzFromEquST (&tar_pos, ln_get_mean_sidereal_time (JD), &hrz);
+	}
+	else
+	{
+		getHrzFromEquST (&tar_pos, ln_get_apparent_sidereal_time (JD), &hrz);
+	}
 
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;

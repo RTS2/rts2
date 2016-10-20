@@ -132,7 +132,7 @@ class Telescope:public rts2core::Device
 		 * Set telescope correctios.
 		 *
 		 * @param _aberation     If aberation should be calculated.
-		 * @param _nutation      If nutation should be calculated.
+		 * @param _nutation      If nutation should be calculated. Should be set to false for alt-az telescope, as nutation is included in equ to hrz coordinates (as we are using apparent sidereal time, not mean sidereal time).
 		 * @param _precession    If precession should be calculated.
 		 * @param _refraction    If refraction should be calculated.
 		 */
@@ -1035,6 +1035,7 @@ class Telescope:public rts2core::Device
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
 
 		void getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz_posn *hrz);
+		void getHrzFromEquST (struct ln_equ_posn *pos, double ST, struct ln_hrz_posn *hrz);
 		void getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos);
 
 		/**
