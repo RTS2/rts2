@@ -165,8 +165,8 @@ START_TEST(test_altaz_1)
 
 	ret = altAzTest->test_sky2counts (JD, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-	ck_assert_int_eq (azc, 16147947);
-	ck_assert_int_eq (altc, 27349159);
+	ck_assert_int_eq (azc, 16147941);
+	ck_assert_int_eq (altc, 27349158);
 
 	altAzTest->test_counts2sky (JD, azc, altc, pos.ra, pos.dec);
 	ck_assert_dbl_eq (pos.ra, 20, 10e-4);
@@ -178,8 +178,8 @@ START_TEST(test_altaz_1)
 
 	ret = altAzTest->test_sky2counts (JD, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-	ck_assert_int_eq (azc, 49510274);
-	ck_assert_int_eq (altc, 12292285);
+	ck_assert_int_eq (azc, 49510278);
+	ck_assert_int_eq (altc, 12292286);
 
 	// target
 	pos.ra = 62.95859;

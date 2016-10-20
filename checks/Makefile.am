@@ -10,7 +10,7 @@ check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tl
 
 noinst_HEADERS = check_utils.h gemtest.h altaztest.h
 
-check_tel_corr_SOURCES = check_tel_corr.cpp gemtest.cpp
+check_tel_corr_SOURCES = check_tel_corr.cpp gemtest.cpp altaztest.cpp
 check_gem_hko_SOURCES = check_gem_hko.cpp gemtest.cpp
 check_gem_mlo_SOURCES = check_gem_mlo.cpp gemtest.cpp
 check_altaz_SOURCES = check_altaz.cpp altaztest.cpp

@@ -658,7 +658,9 @@ void Telescope::calculateCorrAltAz ()
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
 
-	ln_get_hrz_from_equ (&equ_target, &observer, jd, &tarAltAz);
+	double ast = ln_get_apparent_sidereal_time(jd);
+
+	ln_get_hrz_from_equ_sidereal_time (&equ_target, &observer, ast, &tarAltAz);
 
 	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
 	{
@@ -667,7 +669,7 @@ void Telescope::calculateCorrAltAz ()
 	}
 	else
 	{
-		ln_get_hrz_from_equ (&equ_corr, &observer, jd, &corrAltAz);
+		ln_get_hrz_from_equ (&equ_corr, &observer, ast, &corrAltAz);
 	}
 }
 
@@ -725,7 +727,7 @@ void Telescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 	struct ln_lnlat_posn observer;
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
-	ln_get_hrz_from_equ (&tar, &observer, jd, hrz);
+	ln_get_hrz_from_equ (&tar, &observer, ln_get_apparent_sidereal_time(jd), hrz);
 }
 
 double Telescope::getTargetHa ()
@@ -925,7 +927,9 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	obs.lng = telLongitude->getValueDouble ();
 	obs.lat = telLatitude->getValueDouble ();
 
-	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
+	double ast = ln_get_apparent_sidereal_time(JD);
+
+	ln_get_hrz_from_equ_sidereal_time (pos, &obs, ast, &hrz);
 	ref = ln_get_refraction_adj (hrz.alt, getPressure (), 10);
 	hrz.alt += ref;
 	if (writeValue)
@@ -1642,7 +1646,7 @@ void Telescope::getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz
 	obs.lat = getLatitude ();
 	obs.lng = getLongitude ();
 
-	ln_get_hrz_from_equ (pos, &obs, JD, hrz);
+	ln_get_hrz_from_equ_sidereal_time (pos, &obs, ln_get_apparent_sidereal_time(JD), hrz);
 }
 
 void Telescope::getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos)

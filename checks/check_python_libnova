@@ -38,12 +38,17 @@ class HrzTest(unittest.TestCase):
 		self.assertEqual(len(ra), len(r_ra))
 		self.assertEqual(len(dec), len(r_dec))
 
+		r_alt,r_az = libnova.equ_to_hrz(r_ra, r_dec, lst, latitude)
+
 		for i in range(len(ra)):
 			# 359.999 = 360
 			if round (r_ra[i], 4) == 360:
 				r_ra[i] = 0
 			self.assertAlmostEqual(ra[i], r_ra[i], 4)
 			self.assertAlmostEqual(dec[i], r_dec[i], 4)
+
+			self.assertAlmostEqual(alt[i], r_alt[i], 4)
+			self.assertAlmostEqual(az[i], r_az[i], 4)
 
 	def testHrzEqu0(self):
 		dec = [-80, -67.78, -55.12, -40.1234, -22] #, 0, 22.345, 55.34, 70.213, 89.34]
