@@ -167,7 +167,6 @@ int ValueIntegerMinMax::checkNotNull ()
 		local_failures ++;
 		logStream (MESSAGE_ERROR) << getName () << " limit (maximum) is not set" << sendLog;
 	}
-
 	return local_failures + ValueInteger::checkNotNull ();
 }
 
