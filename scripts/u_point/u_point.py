@@ -612,11 +612,9 @@ class PointingModel(object):
     '''
     Plot the differences and residues as a function of lon,lat or dlon,dlat or a combination of them.
     '''
-    import matplotlib.mlab as mlab
     import matplotlib
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
-    import matplotlib.mlab as mlab
     import matplotlib.pyplot as plt
     plt.ioff()
     if args.fit_eq:

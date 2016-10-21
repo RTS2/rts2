@@ -115,11 +115,9 @@ class Catalog(object):
     ra = ra.wrap_at(180*u.degree)
     dec = coord.Angle([x.dec.radian for x in self.data['sky']],unit=u.radian)
 
-    import matplotlib.mlab as mlab
     import matplotlib
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
-    import matplotlib.mlab as mlab
     import matplotlib.pyplot as plt
     plt.ioff()
     fig = plt.figure(figsize=(8,6))
