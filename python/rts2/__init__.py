@@ -1,6 +1,6 @@
 # RTS2 libraries
 # (C) 2009-2012 Petr Kubanek <petr@kubanek.net>
-# (C) 2010-2012 Petr Kubanek, Institute of Physics
+# (C) 2010-2016 Petr Kubanek, Institute of Physics
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+# populate namescpace with handy classes
 from scriptcomm import Rts2Comm,Rts2Exception,Rts2NotActive
 from imgprocess import ImgProcess
 from centering import Centering
@@ -25,3 +26,5 @@ from queue import Queue,QueueEntry
 from queues import Queues
 from sextractor import Sextractor
 from focusing import Focusing
+from gpoint import GPoint
+from kmparse import kmparse

@@ -938,8 +938,8 @@ AC_OUTPUT([Makefile
 	   lib/rts2tel/Makefile
 	   lib/libindi/Makefile 
 	   python/Makefile
-	   python/lib/Makefile
-	   python/lib/db/Makefile
+	   python/rts2/Makefile
+	   python/rts2/db/Makefile
 	   scripts/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile

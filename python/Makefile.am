@@ -1,1 +1,1 @@
-SUBDIRS = lib
+SUBDIRS = rts2
