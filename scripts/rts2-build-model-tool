@@ -97,7 +97,7 @@ def wait_for_key(t):
 		t -= 1
 	return False
 
-def run_spiral(telescope,timeout,last_step=0,maxsteps=500,minflux=None):
+def run_spiral(telescope,timeout,last_step=0,maxsteps=500):
 	"""Runs spiral pointing to find the star."""
 	s = rts2.spiral.Spiral(1,1)
 	x = 0
@@ -118,6 +118,8 @@ def run_spiral(telescope,timeout,last_step=0,maxsteps=500,minflux=None):
 		j.setValue(telescope, 'AZALOFFS', '{0} {1}'.format(x*step_alt,y*step_az))
 		if wait_for_key(timeout):
 			return i
+	print _('spiral ends..')
+	return i
 
 def tel_hrz_to_equ(telescope,alt,az):
 	j.refresh()
@@ -156,6 +158,7 @@ def __save_modeline(telescope,modelname,mn):
 		print _('model line {0}').format(modline)
 		return
 	print _('adding to aling file {0}').format(modline)
+	oa = open(modelname, 'a')
 	oa.write('{0}\t{1}\n'.format(mn,modline))
 	oa.flush()
 	oa.close()
@@ -275,7 +278,7 @@ def run_manual_path(telescope,timeout,path,modelname,maxspiral,imagescript,useDS
 		mn += 1
 
 def __get_offset_by_image(fn,useDS9,mn,center):
-	return rts2.brights.add_wcs(fn, __verifywcs_asecpix, __verifywcs_rotang, __verifywcs_flip, 2, False, useDS9, 'wcs_{0:03}.fits'.format(mn), center=center)
+	return rts2.brights.add_wcs(fn, __verifywcs_asecpix, __verifywcs_rotang, __verifywcs_flip, options.verbose, False, useDS9, 'wcs_{0:03}.fits'.format(mn), center=center)
 
 def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius,minflux):
 	from astropy.io import fits
@@ -315,6 +318,7 @@ def __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius,minf
 			return True,flux_history,flux_ratio_history,history_x,history_y
 		# calculate offsets in alt-az, increment offsets
 		off_radec,off_azalt,flux,flux_ratio = __get_offset_by_image(vfn,useDS9,mn,fov_center)
+		print _('Brightest flux {0:.2f}').format(flux)
 		if off_radec is None:
 			return False,flux_history,flux_ratio_history,history_x,history_y
 		print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
@@ -331,12 +335,11 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 		off_radec,off_azalt,flux,flux_ratio = __get_offset_by_image(fn,useDS9,mn,fov_center)
 		if minflux is not None and (flux is None or flux < minflux) and maxspiral >= -1:
 			print _('Bright star not found on the first image, running spiral search')
-			last_step = 0
-			mn = 1000
+			last_step = 1
 			while last_step < maxspiral and (flux is None or flux < minflux):
-				last_step = run_spiral(telescope,timeout,0,maxspiral,minflux)
+				run_spiral(telescope,timeout,last_step,last_step+1)
 				print _('taking script {0}').format(imagescript)
-				fn = 'model_{0:03}.fits'.format(mn)
+				fn = 'spiral_{0:03}_{1:03}.fits'.format(mn,last_step)
 				os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(options.camera,imagescript,fn))
 				if useDS9:
 					if d is not None:
@@ -346,7 +349,8 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 							d = ds9.ds9()
 					d.set('file {0}'.format(fn))
 				off_radec,off_azalt,flux,flux_ratio = __get_offset_by_image(fn,useDS9,mn,fov_center)
-				mn += 1
+				print _('Brightest in {0} flux {1:.1f}').format(fn,flux)
+				last_step += 1
 
 		if off_radec is None or flux is None or (minflux is not None and flux < minflux):
 			print _('Bright star not found - continue')
@@ -357,7 +361,7 @@ def run_verify_brigths(telescope,timeout,path,modelname,imagescript,useDS9,maxve
 			continue
 
 		print _('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
-		j.setValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
+		j.incValue(telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 		ver,flux_history,flux_ratio_history,history_x,history_y = __verify(telescope,mn,timeout,imagescript,useDS9,maxverify,verifyradius,minflux)
 		if modelname is not None:
 			__check_model_firstline(telescope,modelname)
