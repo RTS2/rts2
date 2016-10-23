@@ -42,7 +42,8 @@ def find_stars(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 		return None
 	return sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
 
-def find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
+d
+	print _('Bright star above {0} not found, ef find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
 	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
 	if len(s_objects) == 0:
@@ -87,7 +88,7 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 	hdu = fits.open(fn)
 	x,y,flux,flux_ratio = find_brightest(fn, hdu, verbose, useDS9)
 	if x is None:
-		return None,None
+		return None,None,None,None
 	b_ra = hdu[0].header['OBJRA']
 	b_dec = hdu[0].header['OBJDEC']
 
@@ -171,4 +172,4 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 	if off_az > 180.0:
 		off_az -= 360.0
 
-	return (off_ra,off_dec),(off_az,off_alt)
+	return (off_ra,off_dec),(off_az,off_alt),flux,flux_ratio
