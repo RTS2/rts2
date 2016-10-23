@@ -10,6 +10,7 @@
 // global telescope object
 GemTest* gemTest;
 AltAzTest* altazTest1850;  // 1850 meters above see level
+AltAzTest* altazTest1680;  // 1680 meters above see level, to check for pressure effects
 GemTest* gemTest4000;  // 4 atmosphere pressure
 
 void setup_tel (void)
@@ -21,6 +22,9 @@ void setup_tel (void)
 
 	altazTest1850 = new AltAzTest(0, (char **) argv);
 	altazTest1850->setTelescope (-32.5, 20.2, 1850, 67108864, 67108864, 90, -7, 186413.511111, 186413.511111, -80000000, 80000000, -40000000, 40000000);
+
+	altazTest1680 = new AltAzTest(0, (char **) argv);
+	altazTest1680->setTelescope (-32.5, 20.2, 1680, 67108864, 67108864, 90, -7, 186413.511111, 186413.511111, -80000000, 80000000, -40000000, 40000000);
 
 	// telescope at 4 atmosphere pressure - test for pressure and altitude missuse
 
@@ -134,6 +138,8 @@ START_TEST(test_refraction1850)
 	struct ln_equ_posn teq;
 	double JD = 2452134;
 
+	ck_assert_dbl_eq (altazTest1850->getPressure (), 807.27, 10e-1);
+
 	tpos.alt = 20;
 	tpos.az = 300;
 	altazTest1850->test_getEquFromHrz (&tpos, JD, &teq);
@@ -149,7 +155,7 @@ START_TEST(test_refraction1850)
 	altazTest1850->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
-	ck_assert_dbl_eq (tpos.alt, 20.0358, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 20.0358, 10e-5);
 
 	teq.ra += 1;
 
@@ -162,6 +168,17 @@ START_TEST(test_refraction1850)
 
 	ck_assert_dbl_eq (tpos.az, 300.3856, 10e-4);
 	ck_assert_dbl_eq (tpos.alt, 19.3444, 10e-4);
+
+	tpos.alt = 40;
+	tpos.az = 300;
+	altazTest1850->test_getEquFromHrz (&tpos, JD, &teq);
+
+	altazTest1850->test_applyRefraction (&teq, JD, false);
+
+	altazTest1850->test_getHrzFromEqu (&teq, JD, &tpos);
+
+	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 40.0155, 10e-5);
 
 	tpos.alt = 89;
 	tpos.az = 231;
@@ -199,6 +216,43 @@ START_TEST(test_refraction1850)
 }
 END_TEST
 
+START_TEST(test_refraction1680)
+{
+	struct ln_hrz_posn tpos;
+	struct ln_equ_posn teq;
+	double JD = 2452134;
+
+	ck_assert_dbl_eq (altazTest1680->getPressure (), 824.39, 10e-1);
+
+	tpos.alt = 20;
+	tpos.az = 300;
+	altazTest1680->test_getEquFromHrz (&tpos, JD, &teq);
+
+	ck_assert_dbl_eq (teq.ra, 248.6688, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -35.4527, 10e-4);
+
+	altazTest1680->test_applyRefraction (&teq, JD, false);
+
+	ck_assert_dbl_eq (teq.ra, 248.6293, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -35.4686, 10e-4);
+
+	altazTest1680->test_getHrzFromEqu (&teq, JD, &tpos);
+
+	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 20.0365, 10e-5);
+
+	tpos.alt = 40;
+	tpos.az = 300;
+	altazTest1680->test_getEquFromHrz (&tpos, JD, &teq);
+
+	altazTest1680->test_applyRefraction (&teq, JD, false);
+
+	altazTest1680->test_getHrzFromEqu (&teq, JD, &tpos);
+
+	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 40.0159, 10e-5);
+}
+END_TEST
 
 START_TEST(test_refraction4000)
 {
@@ -266,6 +320,7 @@ Suite * tel_suite (void)
 	tcase_add_test (tc_tel_corrs, test_pressure);
 	tcase_add_test (tc_tel_corrs, test_refraction);
 	tcase_add_test (tc_tel_corrs, test_refraction1850);
+	tcase_add_test (tc_tel_corrs, test_refraction1680);
 	tcase_add_test (tc_tel_corrs, test_refraction4000);
 	suite_add_tcase (s, tc_tel_corrs);
 
