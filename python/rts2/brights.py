@@ -42,8 +42,7 @@ def find_stars(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 		return None
 	return sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
 
-d
-	print _('Bright star above {0} not found, ef find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
+def find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
 	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
 	if len(s_objects) == 0:
