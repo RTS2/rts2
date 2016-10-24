@@ -22,8 +22,8 @@ class AltAzTest:public rts2teld::AltAz
 		double test_getAltitudePressure (double alt, double see_press) { return getAltitudePressure (alt, see_press); };
 
 		void test_getHrzFromEqu (struct ln_equ_posn *pos, double JD, struct ln_hrz_posn *hrz) { return getHrzFromEqu (pos, JD, hrz); };
+		void test_getHrzFromEquST (struct ln_equ_posn *pos, double ST, struct ln_hrz_posn *hrz) { return getHrzFromEquST (pos, ST, hrz); };
 		void test_getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos) { return getEquFromHrz (hrz, JD, pos); };
-
 		void test_applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue) { return applyRefraction (pos, JD, writeValue); };
 	protected:
 		virtual int isMoving () { return 0; };
