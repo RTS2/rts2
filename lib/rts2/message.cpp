@@ -113,7 +113,7 @@ const std::string Message::getMessageString ()
 			os << expandString ("moved to $H1 $D2 requested $H3 $D4 target $H5 $D6");
 			break;
 		case DEBUG_MOUNT_TRACKING_LOG:
-			os << expandString ("target $1 $2 precession $3 $4 nutation $5 $6 aberation $7 $8 refraction $9 model $10 $11");
+			os << expandString ("target $1 $2 precession $3 $4 nutation $5 $6 aberation $7 $8 refraction $9 model $10 $11 etar $12 $13 htar $14 $15");
 			break;
 		default:
 			return messageString;

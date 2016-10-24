@@ -1528,9 +1528,9 @@ void Telescope::runTracking ()
 
 void Telescope::logTracking ()
 {
-	logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_LOG)
+	rts2core::LogStream ls = logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_LOG);
 		// 1                            2
-		<< tarRaDec->getRa () << " " << tarRaDec->getDec () << " "
+	ls	<< tarRaDec->getRa () << " " << tarRaDec->getDec () << " "
 		// 3                          4
 		<< precessed->getRa () << " " << precessed->getDec () << " "
 		// 5                           6
@@ -1540,10 +1540,19 @@ void Telescope::logTracking ()
 		// 9
 		<< refraction->getValueDouble () << " "
 		// 10                             11 
-		<< modelRaDec->getRa () << " " << modelRaDec->getDec ()
-		// 12                             13
-		<< tarAltAz->getAz () << " " << tarAltAz->getAlt ()
-		<< sendLog;
+		<< modelRaDec->getRa () << " " << modelRaDec->getDec () << " ";
+	if (tarTelRaDec != NULL)
+		//    12                              13
+		ls << tarTelRaDec->getRa () << " " << tarTelRaDec->getDec () << " ";
+	else
+		ls << "-0 -0 ";
+
+	if (tarTelAltAz != NULL)
+		//    14                              15
+		ls << tarTelAltAz->getAz () << " " << tarTelAltAz->getAlt ();
+	else
+		ls << "-0 -0 ";
+	ls << sendLog;
 }
 
 void Telescope::updateTrackingFrequency ()
