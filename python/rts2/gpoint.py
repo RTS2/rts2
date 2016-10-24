@@ -191,7 +191,9 @@ class GPoint:
 		if axis == 'alt':
 			axis = 'el'
 		if axis == 'ha' or axis == 'dec' or axis == 'az' or axis == 'el':
-			self.extra.append(ExtraParam(axis,multi,function,params,consts))
+			ep = ExtraParam(axis,multi,function,params,consts)
+			self.extra.append(ep)
+			return ep
 		else:
 			raise Exception('invalid axis name: {0}'.format(axis))
 
@@ -834,11 +836,11 @@ class GPoint:
 		else:
 			bbpn = __gem_params
 
-		bbp = map(lambda x: self.best.params[x], bbpn)
+		bbp = map(lambda x: self.best.params[x].value, bbpn)
 
 		out = self.get_model_type() + ' ' + '" '.join(map(lambda x:str(np.degrees(x) * 3600.0),bbp)) + '"'
 		for e in self.extra:
-			out += '\n{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best.params[e.parname()]) * 3600.0,e)
+			out += '\n{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best.params[e.parname()].value) * 3600.0,e)
 		return out
 
 	def save(self,fn):
@@ -853,7 +855,7 @@ class GPoint:
 		bp = None
 		self.altaz = None
 		self.best = minimizer.MinimizerResult()
-		self.best.params = {}
+		self.best.params = Parameters()
 		while True:
 			l = f.readline()
 			if l == '':
@@ -877,17 +879,20 @@ class GPoint:
 			elif line[0] == 'RTS2_ALTAZ':
 				if len(line) != 8:
 					raise Exception('invalid number of Alt-Az parameters')
-				if bp is not None:
+				if self.altaz is not None:
 					raise Exception('cannot specify model type twice')
 
 				line = line[1:]
 				for pn in _altaz_params:
-					self.best.params[pn] = _str_to_rad(line[0])
+					self.best.params[pn] = minimizer.Parameter()
+					self.best.params[pn].value = _str_to_rad(line[0])
 					line = line[1:]
 				self.altaz = True
 			# extra params
 			elif len(line) == 5:
-				self.add_extra_multi(*line)
+				ep = self.add_extra_multi(*line)
+				self.best.params[ep.parname()] = minimizer.Parameter()
+				self.best.params[ep.parname()].value = ep.multi
 			else:
 				raise Exception('unknow line: {0}'.format(l))
 
@@ -906,7 +911,7 @@ class GPoint:
 			bbpn = __gem_params
 
 		for p in bbpn:
-			self.best.params[p] += m.best.params[p]
+			self.best.params[p].value += m.best.params[p].value
 
 		for e in self.extra:
 			for e2 in m.extra:
@@ -918,4 +923,4 @@ class GPoint:
 		self.extra += m.extra
 
 		for e in self.extra:
-			self.best.params[e.parname()] = e.multi
+			self.best.params[e.parname()].value = e.multi
