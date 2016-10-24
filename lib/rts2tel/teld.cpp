@@ -669,7 +669,7 @@ void Telescope::calculateCorrAltAz ()
 	}
 	else
 	{
-		ln_get_hrz_from_equ (&equ_corr, &observer, ast, &corrAltAz);
+		ln_get_hrz_from_equ_sidereal_time (&equ_corr, &observer, ast, &corrAltAz);
 	}
 }
 
@@ -727,7 +727,7 @@ void Telescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 	struct ln_lnlat_posn observer;
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
-	ln_get_hrz_from_equ (&tar, &observer, ln_get_apparent_sidereal_time(jd), hrz);
+	ln_get_hrz_from_equ_sidereal_time (&tar, &observer, ln_get_apparent_sidereal_time (jd), hrz);
 }
 
 double Telescope::getTargetHa ()
@@ -1541,6 +1541,8 @@ void Telescope::logTracking ()
 		<< refraction->getValueDouble () << " "
 		// 10                             11 
 		<< modelRaDec->getRa () << " " << modelRaDec->getDec ()
+		// 12                             13
+		<< tarAltAz->getAz () << " " << tarAltAz->getAlt ()
 		<< sendLog;
 }
 
