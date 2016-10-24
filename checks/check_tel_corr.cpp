@@ -302,7 +302,7 @@ START_TEST(test_nutation)
 	ck_assert_dbl_eq (hrz.az, 180, 10e-10);
 
 	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
-	pos.dec = -30;
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
 
 	altazTestNutation->test_getHrzFromEquST (&pos, ST, &hrz);
 	if (hrz.az >= 360.0)
@@ -315,6 +315,94 @@ START_TEST(test_nutation)
 	if (hrz.az >= 360.0)
 		hrz.az -= 360.0;
 	ck_assert_dbl_eq (hrz.az, 0, 10e-10);
+
+	double MST = ln_get_mean_sidereal_time (JD);
+
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, MST, &hrz);
+	if (hrz.az >= 180.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az * 3600.0, -18.4364, 10e-3);
+
+	// the biggest nutation period is 180 days, so adding 90 days should change the sign around mean..
+	JD += 90;
+
+	ST = ln_get_apparent_sidereal_time (JD);
+	MST = ln_get_mean_sidereal_time (JD);
+
+	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, MST, &hrz);
+	if (hrz.az >= 180.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az * 3600.0, -19.3717, 10e-3);
+
+	JD += 90;
+
+	ST = ln_get_apparent_sidereal_time (JD);
+	MST = ln_get_mean_sidereal_time (JD);
+
+	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, MST, &hrz);
+	if (hrz.az >= 180.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az * 3600.0, -17.5269, 10e-3);
+
+	JD += 90;
+
+	ST = ln_get_apparent_sidereal_time (JD);
+	MST = ln_get_mean_sidereal_time (JD);
+
+	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, MST, &hrz);
+	if (hrz.az >= 180.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az * 3600.0, -18.9762, 10e-3);
+
+	JD += 11 * 365;
+
+	ST = ln_get_apparent_sidereal_time (JD);
+	MST = ln_get_mean_sidereal_time (JD);
+
+	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, MST, &hrz);
+	if (hrz.az >= 180.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az * 3600.0, 12.6886, 10e-3);
+
+	JD += 365;
+
+	ST = ln_get_apparent_sidereal_time (JD);
+	MST = ln_get_mean_sidereal_time (JD);
+
+	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, MST, &hrz);
+	if (hrz.az >= 180.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az * 3600.0, 7.7707, 10e-3);
+
+	JD += 365;
+
+	ST = ln_get_apparent_sidereal_time (JD);
+	MST = ln_get_mean_sidereal_time (JD);
+
+	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
+	pos.dec = altazTestNutation->getLatitude () - altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, MST, &hrz);
+	if (hrz.az >= 180.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az * 3600.0, 1.6733, 10e-3);
 }
 END_TEST
 
