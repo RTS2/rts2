@@ -2034,18 +2034,18 @@ class AltAzTest(unittest.TestCase):
 ]
 
 	def testFit(self):
-		self.assertAlmostEqual(-0.00015977536724, self.model.best.params['offs_az'].value)
-		self.assertAlmostEqual(-1.83552238465e-06, self.model.best.params['tilt_n'].value)
-		self.assertAlmostEqual(1.79316851432e-05, self.model.best.params['tilt_e'].value)
-		self.assertAlmostEqual(-0.000108612546454, self.model.best.params['np_ae'].value)
-		self.assertAlmostEqual(-3.09363199947e-05, self.model.best.params['np_oa'].value)
-		self.assertAlmostEqual(-7.67361038129e-05, self.model.best.params['offs_el'].value)
-		self.assertAlmostEqual(4.837241682e-05, self.model.best.params['tf'].value)
+		self.assertAlmostEqual(-0.00015977536724, self.model.best.params['ia'])
+		self.assertAlmostEqual(-1.83552238465e-06, self.model.best.params['tn'])
+		self.assertAlmostEqual(1.79316851432e-05, self.model.best.params['te'])
+		self.assertAlmostEqual(-0.000108612546454, self.model.best.params['npae'])
+		self.assertAlmostEqual(-3.09363199947e-05, self.model.best.params['npoa'])
+		self.assertAlmostEqual(-7.67361038129e-05, self.model.best.params['ie'])
+		self.assertAlmostEqual(4.837241682e-05, self.model.best.params['tf'])
 
-		self.assertAlmostEqual(3.16227774408e-05, self.model.best.params['az_sincos_az_el_2_0_2_0'].value)
-		self.assertAlmostEqual(1.39132736253e-05, self.model.best.params['az_sincos_el_az_5_0_3_0'].value)
-		self.assertAlmostEqual(-6.90497289669e-07, self.model.best.params['el_sincos_az_el_4_0_4_0'].value)
-		self.assertAlmostEqual(6.92835243319e-06, self.model.best.params['el_sin_az_1_0'].value)
+		self.assertAlmostEqual(3.16227774408e-05, self.model.best.params['az_sincos_az_el_2_0_2_0'])
+		self.assertAlmostEqual(1.39132736253e-05, self.model.best.params['az_sincos_el_az_5_0_3_0'])
+		self.assertAlmostEqual(-6.90497289669e-07, self.model.best.params['el_sincos_az_el_4_0_4_0'])
+		self.assertAlmostEqual(6.92835243319e-06, self.model.best.params['el_sin_az_1_0'])
 
 	def testPoints(self):
 		for azel in self.tps:

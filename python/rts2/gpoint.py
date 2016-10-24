@@ -24,9 +24,14 @@ import libnova
 import string
 
 from math import radians,degrees,cos,sin,tan,sqrt,atan2,acos
-from lmfit import minimize, Parameters
+from lmfit import minimize, Parameters, minimizer
 
 import re
+
+_gem_params = ['ih', 'ma', 'me', 'tf', 'ch', 'np', 'fo', 'daf']
+
+# name of AltAz parameters
+_altaz_params = ['ia', 'tn', 'te', 'npae', 'npoa', 'ie', 'tf']
 
 def flip_ra(a_ra,dec):
 	if abs(dec) > 90:
@@ -197,7 +202,6 @@ class GPoint:
 			- (params['me']*np.sin(a_ha) - params['ma']*np.cos(a_ha)) * np.tan(a_dec) \
 			- params['tf']*np.cos(self.latitude_r)*np.sin(a_ha) / np.cos(a_dec) \
 			- params['daf']*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
-		pi = self.get_extra_start()
 		for e in self.extra:
 			if e.axis == 'ha':
 				ret += params[pi] * self.cal_extra(e, 'ha', a_ha, a_dec, self.rad_aa_az, self.rad_aa_el)
@@ -210,7 +214,6 @@ class GPoint:
 			- params['ma']*np.sin(a_ha) \
 			- params['tf']*(np.cos(self.latitude_r) * np.sin(a_dec) * np.cos(a_ha) - np.sin(self.latitude_r) * np.cos(a_dec)) \
 			- params['fo']*np.cos(a_ha)
-		pi = self.get_extra_start()
 		for e in self.extra:
 			if e.axis == 'dec':
 				ret += params[pi] * self.cal_extra(e, 'dec', a_ha, a_dec, self.rad_aa_az, self.rad_aa_el)
@@ -219,20 +222,20 @@ class GPoint:
 
 	def model_az(self,params,a_az,a_el):
 		tan_el = np.tan(a_el)
-		ret = - params['offs_az'] \
-			+ params['tilt_n']*np.sin(a_az)*tan_el \
-			- params['tilt_e']*np.cos(a_az)*tan_el \
-			- params['np_ae']*tan_el \
-			+ params['np_oa']/np.cos(a_el)
+		ret = - params['ia'] \
+			+ params['tn']*np.sin(a_az)*tan_el \
+			- params['te']*np.cos(a_az)*tan_el \
+			- params['npae']*tan_el \
+			+ params['npoa']/np.cos(a_el)
 		for e in self.extra:
 			if e.axis == 'az':
 				ret += params[e.parname()] * self.cal_extra(e, 'az', self.rad_aa_ha, self.rad_aa_dec, a_az, a_el)
 		return ret
 
 	def model_el(self,params,a_az,a_el):
-		ret = - params['offs_el'] \
-			+ params['tilt_n']*np.cos(a_az) \
-			+ params['tilt_e']*np.sin(a_az) \
+		ret = - params['ie'] \
+			+ params['tn']*np.cos(a_az) \
+			+ params['te']*np.sin(a_az) \
 			+ params['tf']*np.cos(a_el)
 		for e in self.extra:
 			if e.axis == 'el':
@@ -420,12 +423,12 @@ class GPoint:
 	def fit(self, ftol=1.49012e-08, xtol=1.49012e-08, gtol=0.0, maxfev=1000):
 		self.params = Parameters()
 		if self.altaz:
-			self.params.add('offs_az', value = 0)
-			self.params.add('offs_el', value = 0)
-			self.params.add('tilt_n', value = 0)
-			self.params.add('tilt_e', value = 0)
-			self.params.add('np_ae', value = 0)
-			self.params.add('np_oa', value = 0)
+			self.params.add('ia', value = 0)
+			self.params.add('ie', value = 0)
+			self.params.add('tn', value = 0)
+			self.params.add('te', value = 0)
+			self.params.add('npae', value = 0)
+			self.params.add('npoa', value = 0)
 			self.params.add('tf', value = 0)
 
 			for ep in self.extra:
@@ -558,19 +561,19 @@ class GPoint:
 			print 'Ier: {0}'.format(self.best.ier)
 
 		if self.altaz:
-			print 'Zero point in AZ (") {0}'.format(degrees(self.best.params['offs_az'].value)*3600.0)
-			print 'Zero point in ALT (") {0}'.format(degrees(self.best.params['offs_el'].value)*3600.0)
-			print 'Tilt of az-axis against N (") {0}'.format(degrees(self.best.params['tilt_n'].value)*3600.0)
-			print 'Tilt of az-axis against E (") {0}'.format(degrees(self.best.params['tilt_e'].value)*3600.0)
-			print 'Non-perpendicularity of alt to az axis (") {0}'.format(degrees(self.best.params['np_ae'].value)*3600.0)
-			print 'Non-perpendicularity of optical axis to alt axis (") {0}'.format(degrees(self.best.params['np_oa'].value)*3600.0)
-			print 'Tube flexure (") {0}'.format(degrees(self.best.params['tf'].value)*3600.0)
+			print 'Zero point in AZ (") {0}'.format(degrees(self.best.params['ia'])*3600.0)
+			print 'Zero point in ALT (") {0}'.format(degrees(self.best.params['ie'])*3600.0)
+			print 'Tilt of az-axis against N (") {0}'.format(degrees(self.best.params['tn'])*3600.0)
+			print 'Tilt of az-axis against E (") {0}'.format(degrees(self.best.params['te'])*3600.0)
+			print 'Non-perpendicularity of alt to az axis (") {0}'.format(degrees(self.best.params['npae'])*3600.0)
+			print 'Non-perpendicularity of optical axis to alt axis (") {0}'.format(degrees(self.best.params['npoa'])*3600.0)
+			print 'Tube flexure (") {0}'.format(degrees(self.best.params['tf'])*3600.0)
 		else:
-			print 'Zero point in DEC (") {0}'.format(degrees(self.best.params['id'].value)*3600.0)
-			print 'Zero point in RA (") {0}'.format(degrees(self.best.params['ih'].value)*3600.0)
-			i = sqrt(self.best.params['me'].value**2 + self.best.params['ma'].value**2)
+			print 'Zero point in DEC (") {0}'.format(degrees(self.best.params['id'])*3600.0)
+			print 'Zero point in RA (") {0}'.format(degrees(self.best.params['ih'])*3600.0)
+			i = sqrt(self.best.params['me']**2 + self.best.params['ma']**2)
 			print 'Angle between true and instrumental poles (") {0}'.format(degrees(i)*3600.0)
-			print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best.params['ma'].value,self.best['me'].value))*3600.0)
+			print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best.params['ma'],self.best['me']))*3600.0)
 			print 'Telescope tube droop in HA and DEC (") {0}'.format(degrees(self.best['tf'])*3600.0)
 			print 'Angle between optical and telescope tube axes (") {0}'.format(degrees(self.best['np'])*3600.0)
 			print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best['ma'])*3600.0)
@@ -589,10 +592,6 @@ class GPoint:
 			return 'RTS2_ALTAZ'
 		else:
 			return 'RTS2_GEM'
-
-	def get_extra_start(self):
-		"""Returns start index of extra parameters."""
-		return 7 if self.altaz else 9
 
 	def print_stat(self):
 		# calculates root mean squeare of vector/array
@@ -831,15 +830,15 @@ class GPoint:
 
 	def __str__(self):
 		if self.altaz:
-			bbpn = ['offs_az', 'tilt_n', 'tilt_e', 'np_ae', 'np_oa', 'offs_el', 'tf']
+			bbpn = _altaz_params
 		else:
-			bbpn = ['offs_ha', 'tilt_n', 'tilt_e', 'np_ae', 'np_oa', 'offs_el', 'tf']
+			bbpn = __gem_params
 
-		bbp = map(lambda x: self.best.params[x].value, bbpn)
+		bbp = map(lambda x: self.best.params[x], bbpn)
 
 		out = self.get_model_type() + ' ' + '" '.join(map(lambda x:str(np.degrees(x) * 3600.0),bbp)) + '"'
 		for e in self.extra:
-			out += '\n{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best.params[e.parname()].value) * 3600.0,e)
+			out += '\n{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best.params[e.parname()]) * 3600.0,e)
 		return out
 
 	def save(self,fn):
@@ -852,9 +851,9 @@ class GPoint:
 		f = open(fn)
 		# basic parameters
 		bp = None
-		# extra paramaters
-		ep = []
 		self.altaz = None
+		self.best = minimizer.MinimizerResult()
+		self.best.params = {}
 		while True:
 			l = f.readline()
 			if l == '':
@@ -881,7 +880,10 @@ class GPoint:
 				if bp is not None:
 					raise Exception('cannot specify model type twice')
 
-				bp = map(_str_to_rad,line[1:])
+				line = line[1:]
+				for pn in _altaz_params:
+					self.best.params[pn] = _str_to_rad(line[0])
+					line = line[1:]
 				self.altaz = True
 			# extra params
 			elif len(line) == 5:
@@ -890,22 +892,21 @@ class GPoint:
 				raise Exception('unknow line: {0}'.format(l))
 
 		f.close()
-		if len(bp) == 0:
+		if self.altaz is None:
 			raise Exception('model type not specified')
-
-		self.best = np.array(bp + ep)
 
 	def add_model(self,m):
 		"""Adds to current model another (compatible) model."""
 		if self.altaz != m.altaz:
 			raise Exception('cannot add two differnet models')
 
-		bi = self.get_extra_start()
+		if self.altaz:
+			bbpn = _altaz_params
+		else:
+			bbpn = __gem_params
 
-		print np.degrees(self.best) * 3600.0
-		print np.degrees(m.best) * 3600.0
-
-		self.best += m.best[:bi]
+		for p in bbpn:
+			self.best.params[p] += m.best.params[p]
 
 		for e in self.extra:
 			for e2 in m.extra:
@@ -917,4 +918,4 @@ class GPoint:
 		self.extra += m.extra
 
 		for e in self.extra:
-			self.best = np.append(self.best,[e.multi])
+			self.best.params[e.parname()] = e.multi
