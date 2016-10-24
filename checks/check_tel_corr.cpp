@@ -9,9 +9,10 @@
 
 // global telescope object
 GemTest* gemTest;
-AltAzTest* altazTest1850;  // 1850 meters above see level
-AltAzTest* altazTest1680;  // 1680 meters above see level, to check for pressure effects
-GemTest* gemTest4000;  // 4 atmosphere pressure
+AltAzTest* altazTest1850;	// 1850 meters above see level
+AltAzTest* altazTest1680;	// 1680 meters above see level, to check for pressure effects
+AltAzTest* altazTestNutation;	// test if nutation calculation remains the same..
+GemTest* gemTest4000;		// 4 atmosphere pressure
 
 void setup_tel (void)
 {
@@ -30,6 +31,9 @@ void setup_tel (void)
 
 	gemTest4000 = new GemTest(0, (char **) argv);
 	gemTest4000->setTelescope (20.70752, -156.257, -13500, 67108864, 67108864, 0, 75.81458333, -5.8187805555, 186413.511111, 186413.511111, -81949557, -47392062, -76983817, -21692458);
+
+	altazTestNutation = new AltAzTest(0, (char **) argv);
+	altazTestNutation->setTelescope (-40, -5, 200, 67108864, 67108864, 90, -7, 186413.511111, 186413.511111, -80000000, 80000000, -40000000, 40000000);
 }
 
 void teardown_tel (void)
@@ -39,6 +43,12 @@ void teardown_tel (void)
 
 	delete altazTest1850;
 	altazTest1850 = NULL;
+
+	delete altazTest1680;
+	altazTest1680 = NULL;
+
+	delete altazTestNutation;
+	altazTestNutation = NULL;
 
 	delete gemTest;
 	gemTest = NULL;
@@ -254,6 +264,60 @@ START_TEST(test_refraction1680)
 }
 END_TEST
 
+START_TEST(test_nutation)
+{
+	struct ln_equ_posn pos;
+	struct ln_hrz_posn hrz;
+	int32_t azc = -20000000;
+	int32_t altc = 1000;
+	double JD = 2452164;
+	int ret;
+
+	pos.ra = 270;
+	pos.dec = -85;
+
+	altazTestNutation->setCorrections (true, true, true, true);
+
+	ret = altazTestNutation->test_sky2counts (JD, &pos, azc, altc);
+	ck_assert_int_eq (ret, 0);
+	ck_assert_int_eq (azc, -17930945);
+	ck_assert_int_eq (altc, 10886676);
+
+	// check meridian calculations
+	hrz.az = 180;
+	hrz.alt = 50;
+
+	double ST = ln_get_apparent_sidereal_time (JD);
+
+	altazTestNutation->test_getEquFromHrz (&hrz, JD, &pos);
+	ck_assert_dbl_eq (pos.ra, ST * 15.0 + altazTestNutation->getLongitude (), 10e-10);
+
+	altazTestNutation->test_getHrzFromEquST (&pos, ST, &hrz);
+	ck_assert_dbl_eq (hrz.az, 180, 10e-10);
+
+	pos.ra = ST * 15.0 + altazTestNutation->getLongitude ();
+	pos.dec = -30;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, ST, &hrz);
+	ck_assert_dbl_eq (hrz.az, 180, 10e-10);
+
+	pos.ra = ST * 15.0 + 180 + altazTestNutation->getLongitude ();
+	pos.dec = -30;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, ST, &hrz);
+	if (hrz.az >= 360.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az, 0, 10e-10);
+
+	pos.dec = altazTestNutation->getLatitude () + altazTestNutation->getLatitude () / 2.0;
+
+	altazTestNutation->test_getHrzFromEquST (&pos, ST, &hrz);
+	if (hrz.az >= 360.0)
+		hrz.az -= 360.0;
+	ck_assert_dbl_eq (hrz.az, 0, 10e-10);
+}
+END_TEST
+
 START_TEST(test_refraction4000)
 {
 	struct ln_hrz_posn tpos;
@@ -321,6 +385,7 @@ Suite * tel_suite (void)
 	tcase_add_test (tc_tel_corrs, test_refraction);
 	tcase_add_test (tc_tel_corrs, test_refraction1850);
 	tcase_add_test (tc_tel_corrs, test_refraction1680);
+	tcase_add_test (tc_tel_corrs, test_nutation);
 	tcase_add_test (tc_tel_corrs, test_refraction4000);
 	suite_add_tcase (s, tc_tel_corrs);
 
