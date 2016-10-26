@@ -93,7 +93,7 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 
 	struct ln_hrz_posn hrz;
 
-	getHrzFromEquST (&tar_pos, ln_get_apparent_sidereal_time (JD), &hrz);
+	getHrzFromEquST (&tar_pos, ln_get_mean_sidereal_time (JD), &hrz);
 
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;

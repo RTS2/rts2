@@ -904,8 +904,8 @@ void Telescope::applyNutation (struct ln_equ_posn *pos, double JD, bool writeVal
 	double d_ra = (cos (rad_ecliptic) + sin_ecliptic * sin_ra * tan_dec) * nut.longitude - cos_ra * tan_dec * nut.obliquity;
 	double d_dec = (sin_ecliptic * cos_ra) * nut.longitude + sin_ra * nut.obliquity;
 
-	pos->ra -= d_ra;
-	pos->dec -= d_dec;
+	pos->ra += d_ra;
+	pos->dec += d_dec;
 
 	if (writeValue)
 		nutated->setValueRaDec (pos->ra, pos->dec);
