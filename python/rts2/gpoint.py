@@ -923,4 +923,8 @@ class GPoint:
 		self.extra += m.extra
 
 		for e in self.extra:
-			self.best.params[e.parname()].value = e.multi
+			try:
+				self.best.params[e.parname()].value = e.multi
+			except KeyError,ve:
+				self.best.params[e.parname()] = minimizer.Parameter()
+				self.best.params[e.parname()].value = e.multi
