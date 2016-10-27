@@ -28,7 +28,7 @@ from lmfit import minimize, Parameters, minimizer
 
 import re
 
-_gem_params = ['ih', 'ma', 'me', 'tf', 'ch', 'np', 'fo', 'daf']
+_gem_params = ['id', 'me', 'ma', 'tf', 'ih', 'ch', 'np', 'daf', 'fo']
 
 # name of AltAz parameters
 _altaz_params = ['ia', 'tn', 'te', 'npae', 'npoa', 'ie', 'tf']
