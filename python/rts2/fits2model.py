@@ -39,3 +39,4 @@ def model_line(fitsname, of, center=None):
 	tar_telra = float(h['TAR_TELRA'])
 	tar_teldec = float(h['TAR_TELDEC'])
 	of.write('\t'.join(map(str,[h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec])))
+	of.write('\n')
