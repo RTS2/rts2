@@ -280,8 +280,8 @@ START_TEST(test_nutation)
 
 	ret = altazTestNutation->test_sky2counts (JD, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-	ck_assert_int_eq (azc, -17930945);
-	ck_assert_int_eq (altc, 10886676);
+	ck_assert_int_eq (azc, -17930975);
+	ck_assert_int_eq (altc, 10886604);
 
 	// check meridian calculations
 	hrz.az = 180;
