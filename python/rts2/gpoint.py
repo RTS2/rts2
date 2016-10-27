@@ -871,10 +871,14 @@ class GPoint:
 			if line[0] == 'RTS2_MODEL' or line[0] == 'RTS2_GEM':
 				if len(line) != 10:
 					raise Exception('invalid number of GEM parameters')
-				if bp is not None:
+				if self.altaz is not None:
 					raise Exception('cannot specify model type twice')
 
-				bp = map(_str_to_rad,line[1:])
+				line = line[1:]
+				for pn in _gem_params:
+					self.best.params[pn] = minimizer.Parameter()
+					self.best.params[pn].value = _str_to_rad(line[0])
+					line = line[1:]
 				self.altaz = False
 			elif line[0] == 'RTS2_ALTAZ':
 				if len(line) != 8:
