@@ -38,4 +38,4 @@ def model_line(fitsname, of, center=None):
 		ra,dec = w.all_pix2world(center[0],center[1],0)
 	tar_telra = float(h['TAR_TELRA'])
 	tar_teldec = float(h['TAR_TELDEC'])
-	of.write('\t'.join([h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec]))
+	of.write('\t'.join(map(str,[h['IMGID'],h['JD'],h['LST'],tar_telra,tar_teldec,h['AXRA'],h['AXDEC'],ra,dec])))
