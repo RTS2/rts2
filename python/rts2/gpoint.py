@@ -197,7 +197,7 @@ class GPoint:
 		else:
 			raise Exception('invalid axis name: {0}'.format(axis))
 
-	def model_ha(self,params,a_ha,a_dec,a_az,a_el):
+	def model_ha(self,params,a_ha,a_dec):
 		ret = - params['ih'] \
 			- params['ch']/np.cos(a_dec) \
 			- params['np']*np.tan(a_dec) \
@@ -210,7 +210,7 @@ class GPoint:
 			pi += e.parnum()
 		return ret
 
-	def model_dec(self,params,a_ha,a_dec,a_az,a_el):
+	def model_dec(self,params,a_ha,a_dec):
 		ret = - params['id'] \
 			- params['me']*np.cos(a_ha) \
 			- params['ma']*np.sin(a_ha) \
@@ -575,12 +575,12 @@ class GPoint:
 			print 'Zero point in RA (") {0}'.format(degrees(self.best.params['ih'])*3600.0)
 			i = sqrt(self.best.params['me']**2 + self.best.params['ma']**2)
 			print 'Angle between true and instrumental poles (") {0}'.format(degrees(i)*3600.0)
-			print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best.params['ma'],self.best['me']))*3600.0)
-			print 'Telescope tube droop in HA and DEC (") {0}'.format(degrees(self.best['tf'])*3600.0)
-			print 'Angle between optical and telescope tube axes (") {0}'.format(degrees(self.best['np'])*3600.0)
-			print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best['ma'])*3600.0)
-			print 'Dec axis flexure (") {0}'.format(degrees(self.best['daf'])*3600.0)
-			print 'Fork flexure (") {0}'.format(degrees(self.best['fo'])*3600.0)
+			print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best.params['ma'],self.best.params['me']))*3600.0)
+			print 'Telescope tube drop in HA and DEC (") {0}'.format(degrees(self.best.params['tf'])*3600.0)
+			print 'Angle between optical and telescope tube axes (") {0}'.format(degrees(self.best.params['np'])*3600.0)
+			print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best.params['ma'])*3600.0)
+			print 'Dec axis flexure (") {0}'.format(degrees(self.best.params['daf'])*3600.0)
+			print 'Fork flexure (") {0}'.format(degrees(self.best.params['fo'])*3600.0)
 
 			print 'DIFF_MODEL RA',' '.join(map(str,self.diff_model_ha*3600))
 			print 'DIFF_MODEL DEC',' '.join(map(str,self.diff_model_dec*3600))
@@ -834,7 +834,7 @@ class GPoint:
 		if self.altaz:
 			bbpn = _altaz_params
 		else:
-			bbpn = __gem_params
+			bbpn = _gem_params
 
 		bbp = map(lambda x: self.best.params[x].value, bbpn)
 
@@ -908,7 +908,7 @@ class GPoint:
 		if self.altaz:
 			bbpn = _altaz_params
 		else:
-			bbpn = __gem_params
+			bbpn = _gem_params
 
 		for p in bbpn:
 			self.best.params[p].value += m.best.params[p].value
