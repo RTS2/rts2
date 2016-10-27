@@ -2071,5 +2071,24 @@ class AltAzTest(unittest.TestCase):
 			print 'plotting {0} to {1}'.format(p[i], of)
 			self.model.plot(p[i], False, of)
 
-if __name__ == '__main__':
-	unittest.main()
+	def testAdd(self):
+		import tempfile
+		td = tempfile.mkdtemp()
+		try:
+			mf = td + '/model'
+			self.model.save(mf)
+			m1 = gpoint.GPoint(0)
+			m1.load(mf)
+			m2 = gpoint.GPoint(0)
+			m2.load(mf)
+			# self-adding; result should be two directories 
+			m1.add_model(m2)
+			m1.save(td + '/model_added')
+			for p in m1.best.params.keys():
+				self.assertAlmostEqual(m1.best.params[p].value, m2.best.params[p].value * 2)
+
+		finally:
+			import shutil
+			shutil.rmtree(td)
+		
+unittest.main()

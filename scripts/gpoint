@@ -29,6 +29,8 @@ import argparse
 def generate_model(args):
 	"""Generate pointing model."""
 	model = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
+	if args.refine is not None:
+		model.load(args.refine)
 
 	for e in args.extra:
 		es = e.split(':')
@@ -55,6 +57,10 @@ def generate_model(args):
 	model.print_stat()
 
 	if args.model_output is not None:
+		if args.refine is not None:
+			mr = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
+			mr.load(args.refine)
+			model.add_model(mr)
 		model.save(args.model_output)
 	if args.error_output is not None:
 		f = open(args.error_output,'w+')
@@ -87,7 +93,8 @@ def plot_offsets(args):
 	if args.latitude == None:
 		sys.exit('you must specify latitude as parameter')
 	# load model..
-	params = load_model(args.inputfiles[0])
+	for fn in args.inputfiles:
+		params = load_model(fn)
 	
 	ha_b,ha_e,dec = map(lambda f:float(f),args.plot_offsets.split(':'))
 	
@@ -130,6 +137,7 @@ parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=
 parser.add_argument('--filter',dest='filter',action='store',default=None,help='filter values which does not fit the model. Those can be errornous measurements')
 parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
 parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
+parser.add_argument('--refine',dest='refine',action='store',help='refine existing model - use the same extra parameters, do fit, add two together')
 parser.add_argument('--extra',dest='extra',action='append',default=[],help='extra (harmonics,...) functions')
 parser.add_argument('--maxfev',dest='maxfev',action='store',default=10000,help='maximal number of least square fitting itterations',type=int)
 parser.add_argument('--ftol',dest='ftol',action='store',default=1.49012e-08,help='relative error desired in the sum of squares',type=float)
