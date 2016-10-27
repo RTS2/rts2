@@ -69,6 +69,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	
 	decUpperLimit = NULL;
 
+	createValue (telPressure, "PRESSURE", "observatory atmospheric pressure", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	telPressure->setValueFloat (1000);
+
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
 	// users offset
@@ -253,8 +256,6 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
 	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
-	createConstValue (telPressure, "PRESSURE", "observatory atmospheric pressure", false, RTS2_VALUE_WRITABLE);
-	telPressure->setValueFloat (1000);
 
 	createValue (refreshIdle, "refresh_idle", "idle and tracking refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
 	createValue (refreshSlew, "refresh_slew", "slew refresh interval", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
