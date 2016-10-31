@@ -2,7 +2,7 @@ LDADD = @CHECK_LIBS@ -L../lib/rts2tel -lrts2tel -L../lib/sgp4 -lsgp4 -L../lib/pl
 AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
 TESTS = check_python_libnova check_python_gpoint check_python_rts2
-EXTRA_DIST = gpoint_in_altaz
+EXTRA_DIST = gpoint_in_altaz gpoint_in_gem
 
 if LIBCHECK
 TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message

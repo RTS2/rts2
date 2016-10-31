@@ -10,10 +10,24 @@ import numpy
 class GemTest(unittest.TestCase):
 	def setUp(self):
 		self.model = gpoint.GPoint(0)
-		#self.model.process_files(['gpoint_in_gem'],None)
+		self.model.process_files(['gpoint_in_gem'],None)
+		self.model.fit()
+
+		#for bp in self.model.best.params.keys():
+		#	print bp, self.model.best.params[bp].value
+
+		#self.model.save('g.model')
 
 	def testFit(self):
-		pass
+		self.assertAlmostEqual(-0.0077215222, self.model.best.params['id'])
+		self.assertAlmostEqual(0.0001348661, self.model.best.params['me'])
+		self.assertAlmostEqual(0.0000774638, self.model.best.params['ma'])
+		self.assertAlmostEqual(0.0005952019, self.model.best.params['tf'])
+		self.assertAlmostEqual(-0.0001478327, self.model.best.params['ih'])
+		self.assertAlmostEqual(-0.0007575423, self.model.best.params['ch'])
+		self.assertAlmostEqual(0.0015116117, self.model.best.params['np'])
+		self.assertAlmostEqual(-0.0003465422, self.model.best.params['daf'])
+		self.assertAlmostEqual(0.0001360438, self.model.best.params['fo'])
 
 class AltAzTest(unittest.TestCase):
 	def setUp(self):
@@ -28,7 +42,7 @@ class AltAzTest(unittest.TestCase):
 		#for bp in self.model.best.params.keys():
 		#	print bp, self.model.best.params[bp].value
 
-		#self.model.save('m.model')
+		#self.model.save('a.model')
 
 		self.tps = [
 [230.6948712399,72.8182999447,   0.0242323325, 0.0041853926],
