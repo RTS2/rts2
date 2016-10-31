@@ -183,7 +183,17 @@ class GPointInterpreter(cmd.Cmd):
 			return
 		if self.model.modelfile is not None:
 			print 'Model file {0}'.format(self.model.modelfile)
-		print str(self.model)
+		if line == 'degrees':
+			print self.model.to_string('degrees')
+		elif line == 'arcminutes' or line == 'minutes':
+			print self.model.to_string('arcminutes')
+		elif line == 'arcseconds' or line == 'seconds':
+			print self.model.to_string('arcseconds')
+		else:
+			print str(self.model)
+	
+	def complete_print(self, text, line, begidx, endidx):
+		return filter(lambda x:x[:len(text)] == text, ['degrees', 'arcminutes', 'arcseconds', 'minutes', 'seconds'])
 
 	def do_fit(self,line):
 		"""fit - fit model parameters from modelin file"""

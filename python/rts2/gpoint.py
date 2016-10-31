@@ -831,7 +831,7 @@ class GPoint:
 		pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
 		pylab.show()
 
-	def __str__(self):
+	def to_string(self,unit='arcseconds'):
 		if self.altaz:
 			bbpn = _altaz_params
 		else:
@@ -839,10 +839,23 @@ class GPoint:
 
 		bbp = map(lambda x: self.best.params[x].value, bbpn)
 
-		out = self.get_model_type() + ' ' + '" '.join(map(lambda x:str(np.degrees(x) * 3600.0),bbp)) + '"'
+		uv = '"'
+		mul = 3600.0
+
+		if unit == 'arcminutes':
+			uv = "'"
+			mul = 60.0
+		elif unit == 'degrees':
+			uv = u'\u00B0'
+			mul = 1.0
+
+		out = self.get_model_type() + ' ' + (uv + ' ').join(map(lambda x:str(np.degrees(x) * mul),bbp)) + uv
 		for e in self.extra:
-			out += '\n{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best.params[e.parname()].value) * 3600.0,e)
+			out += ('\n{0}\t{1}' + uv + '\t{2}').format(e.axis.upper(),np.degrees(self.best.params[e.parname()].value) * mul,e)
 		return out
+
+	def __str__(self):
+		return self.to_string()
 
 	def save(self,fn):
 		"""Save model to file."""
