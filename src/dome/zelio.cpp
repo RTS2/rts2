@@ -356,6 +356,16 @@ bool Zelio::isGoodWeather ()
 	}
 	weather->setValueBool (reg & ZS_WEATHER);
 	sendValueAll (weather);
+	if (weather->getValueBool () == true)
+	{
+		valueGood (weather);
+	}
+	else
+	{
+		valueError (weather);
+		if (zelioModel == ZELIO_ELYA)
+			setWeatherTimeout (3600, "bad weather");
+	}
 	// now check for rain..
 	if (haveRainSignal && !(reg & ZS_RAIN) && weather->getValueBool () == false)
 	{
