@@ -119,7 +119,7 @@ def add_models(args):
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='G-Point Model fitting and error plotting routines. Input/output file format is described in manual page (man gpoint).\n\nExample usage:\n\n'\
 '\tgpoint -p ha:ha-merr,mjd:ha-err,num:dec-err modelin\tproduces model and ha model error,ha-err and dec-err plots')
-parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='+')
+parser.add_argument('inputfiles',help='input file(s)',type=str,nargs='*')
 parser.add_argument('-o',dest='model_output',action='store',help='model output filename')
 parser.add_argument('-p',dest='plots',action='store',help='plot graphs, please see manual page for examples (allowed axis names: alt-err,az-err,dec-err,ha-err,alt-merr,az-merr,dec-merr,ha-merr,mjd,num,paz,az,alt,dec,ha,model-err,real-err)')
 parser.add_argument('-s',dest='oplot',action='store',help='save plot to file instead of displaying it on screen',default=None)
@@ -148,9 +148,67 @@ parser.add_argument('-i',dest='interactive',action='store_true',default=False,he
 
 args = parser.parse_args()
 
+import cmd
+import glob
+class GPointInterpreter(cmd.Cmd):
+	def __init__(self):
+		cmd.Cmd.__init__(self)
+		import signal
+		self.model = rts2.gpoint.GPoint()
+		signal.signal(signal.SIGINT, lambda n, f: self.do_exit(None))
+
+	def do_print(self, line):
+		"""print
+		print current model parameters"""
+		if self.model is None:
+			print 'no model loaded'
+			return
+		if self.model.modelfile is not None:
+			print 'Model file {0}'.format(self.model.modelfile)
+		print str(self.model)
+
+	def do_load(self, line):
+		"""load
+		loads model file"""
+		self.model.load(line)
+	
+	def complete_load(self, text, line, begidx, endidx):
+		return glob.glob(text + '*')
+	
+	def do_exit(self, line):
+		print
+		sys.exit()
+
+	def do_EOF(self, line):
+		return True
+
+if args.interactive:
+	import readline
+	import os
+	import atexit
+
+	histfile = os.path.join(os.path.expanduser('~'), ".gpoint_history")
+	try:
+		readline.read_history_file(histfile)
+		readline.set_history_length(1000)
+	except Exception,er:
+		if args.verbose:
+			print 'Cannot read history file {0}:{1}'.format(histfile,str(er))
+		open(histfile, 'wb').close()
+	atexit.register(readline.write_history_file, histfile)
+	gi = GPointInterpreter()
+	gi.prompt = 'gpoint> '
+	while True:
+		line = gi.cmdloop('This is GPoint interactive shell. Type help to get some ideas how I can help you.')
+
+if len(args.inputfiles) == 0:
+	sys.exit('Expecting at least filename to work with')
+
+
 if args.model_input:
 	plot_offsets(args)
 elif args.add_models:
 	add_models(args)
 else:
 	generate_model(args)
+

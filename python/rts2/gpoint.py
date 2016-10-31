@@ -114,6 +114,7 @@ class GPoint:
 		self.name_map = None
 		# addtional terms for model - ExtraParam
 		self.extra = []
+		self.modelfile = None
 
 	def equ_to_hrz(self,ha,dec):
 		""" Transform HA-DEC (in radians) vector to ALT-AZ (in degrees) vector"""
@@ -903,6 +904,7 @@ class GPoint:
 		f.close()
 		if self.altaz is None:
 			raise Exception('model type not specified')
+		self.modelfile = fn
 
 	def add_model(self,m):
 		"""Adds to current model another (compatible) model."""
