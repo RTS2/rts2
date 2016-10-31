@@ -155,11 +155,29 @@ class GPointInterpreter(cmd.Cmd):
 		cmd.Cmd.__init__(self)
 		import signal
 		self.model = rts2.gpoint.GPoint()
+
+		import readline
+		import os
+		import atexit
+
+		histfile = os.path.join(os.path.expanduser('~'), ".gpoint_history")
+		try:
+			readline.read_history_file(histfile)
+			readline.set_history_length(1000)
+			# do not use / as arguments replacement
+			delims = readline.get_completer_delims()
+			readline.set_completer_delims(delims.replace('/',''))
+
+		except Exception,er:
+			if args.verbose:
+				print 'Cannot read history file {0}:{1}'.format(histfile,str(er))
+			open(histfile, 'wb').close()
+		atexit.register(readline.write_history_file, histfile)
+
 		signal.signal(signal.SIGINT, lambda n, f: self.do_exit(None))
 
 	def do_print(self, line):
-		"""print
-		print current model parameters"""
+		"""print - prints current model parameters"""
 		if self.model is None:
 			print 'no model loaded'
 			return
@@ -167,10 +185,39 @@ class GPointInterpreter(cmd.Cmd):
 			print 'Model file {0}'.format(self.model.modelfile)
 		print str(self.model)
 
+	def do_fit(self,line):
+		self.model.process_files([line])
+		self.model.fit()
+
+	def complete_fit(self, text, line, begidx, endidx):
+		return glob.glob(text + '*')
+
 	def do_load(self, line):
-		"""load
-		loads model file"""
+		"""load - loads model file"""
 		self.model.load(line)
+		self.do_print('')
+
+	def do_add(self, line):
+		pass
+
+	def do_remove(self, line):
+		"""remove - removes terms from model"""
+		try:
+			self.model.best.params[line].value = 0
+			self.model.best.params[line].set(vary=False)
+		except Exception,ex:
+			print str(ex)
+
+	def complete_remove(self, text, line, begidx, endidx):
+		return filter(lambda x:x[:len(text)] == text, self.model.best.params.keys())
+
+	def do_save(self, line):
+		"""save - save current model to file"""
+		if self.model.best is None:
+			print 'No model loaded/fitted'
+			return
+		self.model.save(line)
+		print 'Model saved to {0}'.format(line)
 	
 	def complete_load(self, text, line, begidx, endidx):
 		return glob.glob(text + '*')
@@ -183,19 +230,6 @@ class GPointInterpreter(cmd.Cmd):
 		return True
 
 if args.interactive:
-	import readline
-	import os
-	import atexit
-
-	histfile = os.path.join(os.path.expanduser('~'), ".gpoint_history")
-	try:
-		readline.read_history_file(histfile)
-		readline.set_history_length(1000)
-	except Exception,er:
-		if args.verbose:
-			print 'Cannot read history file {0}:{1}'.format(histfile,str(er))
-		open(histfile, 'wb').close()
-	atexit.register(readline.write_history_file, histfile)
 	gi = GPointInterpreter()
 	gi.prompt = 'gpoint> '
 	while True:
