@@ -283,7 +283,7 @@ class GPoint:
 	## altaz <longitude> <latitude> <altitude>
 	#02a57222e0002o 57222.260012 233.8937 275.7921  77.0452  -55497734  -46831997 276.0206  77.0643
 	#skip first line, use what comes next. Make correction on DEC based on axis - if above zeropoint + 90 deg, flip DEC (DEC = 180 - DEC)
-	def process_files(self,filenames,flips):
+	def process_files(self,filenames,flips='both'):
 		obsmatch = re.compile('#\s*(\S*)\s+(\S*)\s+(\S*)\s+(\S*)\s*')
 
 		frmt = "astrometry"
