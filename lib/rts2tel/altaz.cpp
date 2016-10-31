@@ -91,18 +91,21 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 
 	applyCorrections (&tar_pos, JD, writeValue);
 
-	struct ln_hrz_posn hrz;
+	struct ln_hrz_posn hrz, hrz_modelled;
 
 	getHrzFromEquST (&tar_pos, ln_get_mean_sidereal_time (JD), &hrz);
+
+	hrz_modelled.alt = hrz.alt;
+	hrz_modelled.az = hrz.az;
 
 	int used_flipping = 0; // forceShortes ? 0 : flipping->getValueInteger ();
         bool use_flipped;
 
 	struct ln_hrz_posn model_change;
 
-	applyModelAltAz (&hrz, &model_change);
+	applyModelAltAz (&hrz_modelled, &model_change);
 
-	int ret = hrz2counts (&hrz, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
+	int ret = hrz2counts (&hrz_modelled, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
 	if (ret)
 		return ret;
 
@@ -110,6 +113,7 @@ int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t
 	{
 		setTelTarget (tar_pos.ra, tar_pos.dec);
 		setTarTelAltAz (&hrz);
+		setModelTarAltAz (&hrz_modelled);
 	}
 	return 0;
 }

@@ -160,6 +160,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	tarTelRaDec = NULL;
 	tarTelAltAz = NULL;
+	modelTarAltAz = NULL;
 
 	switch (hasUnTelCoordinates)
 	{
@@ -169,6 +170,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 		case -1:
 			createValue (tarTelAltAz, "TAR_TEL", "target position (OBJ) in telescope coordinates (AZ in 180 .. -180 range)", true);
+			createValue (modelTarAltAz, "TAR_MOD", "modelled target position (OBJ) in telescope coordinates (AZ in 180 .. -180 range)", true);
 			break;
 	}
 
@@ -408,6 +410,14 @@ void Telescope::setTarTelAltAz (struct ln_hrz_posn *hrz)
 		return;
 
 	tarTelAltAz->setValueAltAz (hrz->alt, hrz->az);
+}
+
+void Telescope::setModelTarAltAz (struct ln_hrz_posn *hrz)
+{
+	if (modelTarAltAz == NULL)
+		return;
+
+	modelTarAltAz->setValueAltAz (hrz->alt, hrz->az);
 }
 
 int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
@@ -697,10 +707,10 @@ double Telescope::getCorrAz ()
 double Telescope::getTargetDistance ()
 {
 	struct ln_equ_posn tar,tel;
-	if (tarTelAltAz != NULL)
+	if (modelTarAltAz != NULL)
 	{
 		struct ln_hrz_posn hrz_tar, hrz_tel;
-		tarTelAltAz->getAltAz (&hrz_tar);	
+		modelTarAltAz->getAltAz (&hrz_tar);	
 		getTelAltAz (&hrz_tel);
 
 		tar.ra = hrz_tar.az;

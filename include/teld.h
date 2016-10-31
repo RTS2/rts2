@@ -532,6 +532,7 @@ class Telescope:public rts2core::Device
 		 */
 		void setTarTelRaDec (struct ln_equ_posn *pos);
 		void setTarTelAltAz (struct ln_hrz_posn *hrz);
+		void setModelTarAltAz (struct ln_hrz_posn *hrz);
 
 		/**
 		 * Set WCS reference values telescope is reporting.
@@ -1158,6 +1159,7 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueRaDec *tarTelRaDec;
 		rts2core::ValueAltAz *tarTelAltAz;
+		rts2core::ValueAltAz *modelTarAltAz;
 
 		/**
 		 * Corrections from astrometry/user.
