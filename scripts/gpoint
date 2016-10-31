@@ -186,6 +186,7 @@ class GPointInterpreter(cmd.Cmd):
 		print str(self.model)
 
 	def do_fit(self,line):
+		"""fit - fit model parameters from modelin file"""
 		self.model.process_files([line])
 		self.model.fit()
 
@@ -198,6 +199,7 @@ class GPointInterpreter(cmd.Cmd):
 		self.do_print('')
 
 	def do_add(self, line):
+		"""add - add extra (harmonics or standard) parameters"""
 		pass
 
 	def do_remove(self, line):
