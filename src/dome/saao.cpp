@@ -68,6 +68,10 @@
 #define STATUS_RAINING		0x0002
 #define STATUS_MANUAL		0x0004
 
+#define RESET_AG1		0x0001
+#define RESET_AG2		0x0002
+#define RESET_APM		0x0004
+
 namespace rts2dome
 {
 
@@ -119,6 +123,7 @@ class SAAO:public Cupola
 		void setRegisters (uint8_t address, uint16_t regaddr, int len, const uint16_t *sbuf);
 
 		void setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, bool shutterOpen, float reqPosition);
+		void resetPower (uint16_t bit);
 
 		rts2core::ConnSerial *domeConn;
 
@@ -148,6 +153,10 @@ class SAAO:public Cupola
 
 		rts2core::ValueBool *shutterPower;
 		rts2core::ValueBool *rotatPower;
+
+		rts2core::ValueBool *resetAG1;
+		rts2core::ValueBool *resetAG2;
+		rts2core::ValueBool *resetAPM;
 
 		uint16_t reg[8];
 };
@@ -248,6 +257,10 @@ SAAO::SAAO (int argc, char **argv):Cupola (argc, argv, true)
 
 	createValue (shutterPower, "shutter_power", "shutter power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (rotatPower, "rotator_power", "dome rotator power", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+
+	createValue (resetAG1, "reset_AG1", "reset AG1 unit", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (resetAG2, "reset_AG2", "reset AG2 unit", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (resetAPM, "reset_APM", "reset APM unit", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 
 	createValue (emergencyPressed, "emergency", "emergency stop pressed", false);
 	createValue (closedRemote, "closed_remote", "forced closure by remote switch", false);
@@ -420,6 +433,33 @@ int SAAO::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		setDome (lightsOn->getValueBool (), rotatPower->getValueBool (), ((rts2core::ValueBool *) newValue)->getValueBool (), false, false, NAN);
 		return 0;
 	}
+	if (oldValue == resetAG1)
+	{
+		if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
+		{
+			resetPower (RESET_AG1);
+			resetAG1->setValueBool (false);
+		}
+		return 0;
+	}
+	if (oldValue == resetAG2)
+	{
+		if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
+		{
+			resetPower (RESET_AG2);
+			resetAG2->setValueBool (false);
+		}
+		return 0;
+	}
+	if (oldValue == resetAPM)
+	{
+		if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
+		{
+			resetPower (RESET_APM);
+			resetAPM->setValueBool (false);
+		}
+		return 0;
+	}
 	return Cupola::setValue (oldValue, newValue);
 }
 
@@ -589,6 +629,11 @@ void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, 
 		data[2] = num2hex (ln_range_degrees (getTargetAz () + 180) * 10);
 
 	setRegisters (0x01, 0x1064, 3, data);
+}
+
+void SAAO::resetPower (uint16_t bit)
+{
+	setRegisters (0x01, 0x106A, 1, &bit);
 }
 
 int main (int argc, char **argv)
