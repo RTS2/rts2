@@ -89,7 +89,7 @@ class DevConnectionMaster:public Connection
 		 * @param _master_port   Central server port for the connectio.
 		 * @param _serverNum     Server number (number of centrald which device is connected to)
 		 */
-		DevConnectionMaster (rts2core::Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum);
+		DevConnectionMaster (Device * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum);
 		virtual ~ DevConnectionMaster (void);
 
 		virtual int init ();
@@ -112,6 +112,8 @@ class DevConnectionMaster:public Connection
 		int device_type;
 		int device_port;
 		time_t nextTime;
+
+		Device *master;
 };
 
 

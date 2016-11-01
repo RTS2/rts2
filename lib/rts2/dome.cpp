@@ -130,7 +130,7 @@ int Dome::domeOpenStart ()
 
 	closeFailReported = false;
 
-	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENING | BOP_EXPOSURE, "opening dome");
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENING | BOP_EXPOSURE | DEVICE_BLOCK_OPEN, "opening dome");
 	logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to open the dome" << sendLog;
 	return 0;
 }
@@ -165,7 +165,7 @@ int Dome::domeCloseStart ()
 	{
 		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
 	}
-	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_CLOSING, "closing dome");
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSING | DEVICE_BLOCK_CLOSE, "closing dome");
 	return 0;
 }
 
@@ -208,7 +208,7 @@ int Dome::checkOpening ()
 			endOpen ();
 			infoAll ();
 			logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome opening interrupted" << sendLog;
-			maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome opening interrupted");
+			maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENED | DEVICE_BLOCK_CLOSE, "dome opening interrupted");
 		}
 		if (ret == -2)
 		{
@@ -217,11 +217,11 @@ int Dome::checkOpening ()
 			if (ret)
 			{
 				logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome did not open propely" << sendLog;
-				maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome did not open properly");
+				maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENED | DEVICE_BLOCK_CLOSE, "dome did not open properly");
 			}
 			else
 			{
-				maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome opened");
+				maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENED | DEVICE_BLOCK_CLOSE, "dome opened");
 			}
 		}
 	}
@@ -239,7 +239,7 @@ int Dome::checkOpening ()
 			endClose ();
 			infoAll ();
 			logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome closing interrupted" << sendLog;
-			maskState (DOME_DOME_MASK, DOME_CLOSED, "closing finished with error");
+			maskState (DOME_DOME_MASK | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSED | DEVICE_BLOCK_OPEN, "closing finished with error");
 		}
 		if (ret == -2)
 		{
@@ -248,11 +248,11 @@ int Dome::checkOpening ()
 			if (ret)
 			{
 				logStream (MESSAGE_CRITICAL | MESSAGE_REPORTIT) << "dome did not close properly" << sendLog;
-				maskState (DOME_DOME_MASK, DOME_CLOSED, "dome did not close propely");
+				maskState (DOME_DOME_MASK | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSED | DEVICE_BLOCK_OPEN, "dome did not close propely");
 			}
 			else
 			{
-				maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed");
+				maskState (DOME_DOME_MASK | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSED | DEVICE_BLOCK_OPEN, "dome closed");
 				logStream (MESSAGE_INFO) << "dome closed" << sendLog;
 			}
 		}
@@ -426,15 +426,15 @@ void Dome::setWeatherTimeout (time_t wait_time, const char *msg)
 
 int Dome::commandAuthorized (rts2core::Connection * conn)
 {
-	if (conn->isCommand (COMMAND_DOME_OPEN))
+	if (conn->isCommand (COMMAND_OPEN))
 	{
 		return (domeOpenStart () == 0 ? 0 : -2);
 	}
-	else if (conn->isCommand (COMMAND_DOME_CLOSE))
+	else if (conn->isCommand (COMMAND_CLOSE))
 	{
 		return (domeCloseStart () == 0 ? 0 : -2);
 	}
-	else if (conn->isCommand (COMMAND_DOME_STOP))
+	else if (conn->isCommand (COMMAND_STOP))
 	{
 		return (domeStop () == 0 ? 0 : -2);
 	}

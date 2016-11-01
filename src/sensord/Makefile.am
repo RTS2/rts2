@@ -133,6 +133,14 @@ rts2_sensor_servodrive_r272_SOURCES = servodrive-r272.cpp
 
 rts2_sensor_tbt_SOURCES = tbt.cpp
 
+if LIBUSB
+bin_PROGRAMS += rts2-sensor-fows
+rts2_sensor_fows_SOURCES = fows.cpp
+rts2_sensor_fows_LDADD = @USB_LIBS@ ${LDADD}
+else
+EXTRA_DIST += fows.cpp
+endif
+
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe
 

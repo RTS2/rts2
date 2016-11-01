@@ -45,6 +45,13 @@ class Dummy:public SensorWeather
 			createValue (randomDouble, "random_double", "random double value", false);
 			createValue (randomInterval, "random_interval", "[s] time interval between generating two random doubles", false, RTS2_VALUE_WRITABLE);
 			randomInterval->setValueFloat (1.0);
+
+			createValue (openClose, "open_close", "open/close state", false, RTS2_VALUE_WRITABLE);
+			openClose->addSelVal ("CLOSED");
+			openClose->addSelVal ("opening");
+			openClose->addSelVal ("OPEN");
+			openClose->addSelVal ("closing");
+
 			createValue (testTime, "TEST_TIME", "test time value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (wrRain, "wr_rain", "weather reason rain", true, RTS2_VALUE_WRITABLE);
@@ -89,6 +96,8 @@ class Dummy:public SensorWeather
 			generateCriticalMessages->setValueBool (false);
 
 			createValue (constValue, "const_value", "test constant read-only autosave value", false, RTS2_VALUE_AUTOSAVE);
+
+			maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_OPEN);
 		}
 
 		/**
@@ -102,6 +111,21 @@ class Dummy:public SensorWeather
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * newValue)
 		{
+			if (old_value == openClose)
+			{
+				switch (newValue->getValueInteger ())
+				{
+					case 0:
+					case 1:
+						maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_OPEN);
+						break;
+					case 2:
+					case 3:
+						maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
+						break;
+				}
+				return 0;
+			}
 		  	if (old_value == hwError)
 			{
 				maskState (DEVICE_ERROR_MASK, ((rts2core::ValueBool *) newValue)->getValueBool () ? DEVICE_ERROR_HW : 0);
@@ -173,6 +197,7 @@ class Dummy:public SensorWeather
 		rts2core::ValueDouble *testDoubleLimit;
 		rts2core::ValueDouble *randomDouble;
 		rts2core::ValueFloat *randomInterval;
+		rts2core::ValueSelection *openClose;
 		rts2core::ValueTime *testTime;
 		rts2core::ValueBool *goodWeather;
 		rts2core::ValueBool *wrRain;
@@ -284,6 +309,18 @@ int Dummy::commandAuthorized (rts2core::Connection * conn)
 	{
 		testTime->setValueDouble (getNow ());
 		sendValueAll (testTime);
+		return 0;
+	}
+	else if (conn->isCommand (COMMAND_OPEN))
+	{
+		openClose->setValueInteger (1);
+		sendValueAll (openClose);
+		return 0;
+	}
+	else if (conn->isCommand (COMMAND_CLOSE))
+	{
+		openClose->setValueInteger (3);
+		sendValueAll (openClose);
 		return 0;
 	}
 	return SensorWeather::commandAuthorized (conn);

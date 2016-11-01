@@ -187,6 +187,12 @@ class Centrald:public Daemon
 		 */
 		int getStateForConnection (rts2core::Connection * conn);
 
+		/**
+		 * Open/close sequence calls.
+		 */
+		int startOpen ();
+		int startClose ();
+
 	protected:
 		/**
 		 * @param new_state	new state, if -1 -> 3
@@ -301,6 +307,9 @@ class Centrald:public Daemon
 		rts2core::ValueTime *moonSet;
 
 		void processMessage (Message & msg);
+
+		// order of devices during opening - if any device signals block_open, its open method is called
+		rts2core::StringArray *openSequence;
 };
 
 /**

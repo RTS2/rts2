@@ -287,6 +287,18 @@ int ConnCentrald::commandClient ()
 		{
 			return master->changeStateSoftOff (login.c_str ());
 		}
+		if (isCommand (COMMAND_OPEN))
+		{
+			if (!paramEnd ())
+				return -2;
+			return master->startOpen ();
+		}
+		if (isCommand (COMMAND_CLOSE))
+		{
+			if (!paramEnd ())
+				return -2;
+			return master->startClose ();
+		}
 	}
 	return rts2core::Connection::command ();
 }
@@ -390,6 +402,8 @@ Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF 
 	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false, RTS2_VALUE_WRITABLE);
 	createValue (badWeatherDevices, "bad_weather_devices", "devices reporting bad weather or required and not present", false);
 
+	createValue (openSequence, "open_sequence", "opening sequence (reverse for closing)", false, RTS2_VALUE_WRITABLE);
+
 	createValue (badWeatherReason, "bad_weather_reason", "why system was switched to bad weather", false);
 	createValue (badWeatherDevice, "bad_weather_device", "device reporting as the first bad weather", false);
 
@@ -491,6 +505,7 @@ int Centrald::reloadConfig ()
 	observerLat->setValueDouble (observer->lat);
 
 	requiredDevices->setValueArray (config->observatoryRequiredDevices ());
+	openSequence->setValueArray (config->openSequence ());
 
 	nightHorizon->setValueDouble (config->getDoubleDefault ("observatory", "night_horizon", -10));
 
@@ -1013,6 +1028,42 @@ int Centrald::getStateForConnection (rts2core::Connection * conn)
 		sta |= test_conn->getBopState ();
 	}
 	return sta;
+}
+
+int Centrald::startOpen ()
+{
+	for (std::vector <std::string>::iterator iter = openSequence->valueBegin (); iter != openSequence->valueEnd (); iter++)
+	{
+		// first device which blocks opening shall be opened
+		rts2core::Connection *dconn = getOpenConnection (iter->c_str ());
+		if (dconn != NULL && (dconn->getState () & DEVICE_BLOCK_OPEN))
+		{
+			dconn->queCommand (new rts2core::Command (this, COMMAND_OPEN));
+			return 0;
+		}
+	}
+	return 0;
+}
+
+int Centrald::startClose ()
+{
+	if (openSequence->size () < 1)
+		return 0;
+	std::vector <std::string>::iterator iter = openSequence->valueEnd ();
+	do
+	{
+		iter--;
+		// first device which blocks opening shall be opened
+		rts2core::Connection *dconn = getOpenConnection (iter->c_str ());
+		if (dconn != NULL && (dconn->getState () & DEVICE_BLOCK_CLOSE))
+		{
+			dconn->queCommand (new rts2core::Command (this, COMMAND_CLOSE));
+			return 0;
+		}
+	}
+	while (iter != openSequence->valueBegin ());
+
+	return 0;
 }
 
 void Centrald::maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Connection *commandedConn)

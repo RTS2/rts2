@@ -45,6 +45,7 @@ int Configuration::getSpecialValues ()
 	getFloat ("observatory", "ut_offset", utOffset, observer.lng / 15.0);
 
 	getStringVector ("observatory", "required_devices", obs_requiredDevices, false);
+	getStringVector ("observatory", "open_sequence", obs_openSequence, false);
 	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices, false);
 
 	getString ("observatory", "base_path", obs_basePath, "/images/");

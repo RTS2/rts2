@@ -1,4 +1,4 @@
-/**
+	/**
  * Driver for APM auxiliary devices (mirror covers, fans,..)
  * Copyright (C) 2015 Stanislav Vitek
  * Copyright (C) 2016 Petr Kubanek
@@ -92,9 +92,9 @@ int APMAux::initHardware ()
 
 int APMAux::commandAuthorized (rts2core::Connection * conn)
 {
-	if (conn->isCommand ("open"))
+	if (conn->isCommand (COMMAND_OPEN))
 		return open ();
-	else if (conn->isCommand ("close"))
+	else if (conn->isCommand (COMMAND_CLOSE))
 		return close ();
 	else if (conn->isCommand ("open_cover"))
 		return openCover ();
@@ -211,6 +211,7 @@ int APMAux::open ()
 	if (baffleCommand->getValueInteger () > time (NULL))
 		return -2;
 	commandInProgress = OPENING;
+	maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_OPEN);
 	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 	return openBaffle ();
 }
@@ -220,11 +221,13 @@ int APMAux::close ()
 	if (baffle == NULL || baffle->getValueInteger () == 0 || coverState->getValueInteger () == 2)
 	{
 		commandInProgress = CLOSING;
+		maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
 		addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 		return closeCover ();
 	}
 	if (baffleCommand->getValueInteger () > time (NULL))
 		return -2;
+	maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
 	return closeBaffle ();
 }
 

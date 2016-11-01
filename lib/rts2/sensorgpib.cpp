@@ -44,6 +44,7 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	minor = 0;
 	pad = -1;
 	enet_addr = NULL;
+	tcp_addr = NULL;
 	prologix = NULL;
 	serial_port = NULL;
 	
@@ -66,12 +67,15 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	addOption (OPT_PROLOGIX, "prologix", 1, "Prologix GPIB-USB serial port");
 	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
 	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
+	addOption ('t', NULL, 1, "network adress (and port) of raw TCP/IP socket");
 	addOption ('v', NULL, 0, "verbose debugging");
 }
 
 Gpib::~Gpib (void)
 {
 	delete connGpib;
+	delete enet_addr;
+	delete tcp_addr;
 }
 
 void Gpib::writeValue (const char *name, rts2core::Value *value)
@@ -101,6 +105,9 @@ int Gpib::processOption (int _opt)
 			break;
 		case 'n':
 			enet_addr = new HostString (optarg, "5000");
+			break;
+		case 't':
+			tcp_addr = new HostString (optarg, "9221");
 			break;
 		case OPT_PROLOGIX:
 			prologix = optarg;
@@ -184,6 +191,10 @@ int Gpib::initHardware ()
 			return -1;
 		}
 		connGpib = new rts2core::ConnGpibEnet (this, enet_addr->getHostname (), enet_addr->getPort (), pad);
+	}
+	if (tcp_addr != NULL)
+	{
+
 	}
 	// prologix USB
 	else if (prologix != NULL)

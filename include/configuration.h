@@ -233,6 +233,11 @@ class Configuration:public IniParser
 		std::vector <std::string> observatoryRequiredDevices () { return obs_requiredDevices; }
 
 		/**
+		 * Returns opening sequence (closing sequence is opening sequence reversed)
+		 */
+		std::vector <std::string> openSequence () { return obs_openSequence; }
+
+		/**
 		 * Get names of devices which shall be ignored for astrometry
 		 * updates.
 		 *
@@ -390,6 +395,7 @@ class Configuration:public IniParser
 		int grbd_validity;
 
 		std::vector <std::string> obs_requiredDevices;
+		std::vector <std::string> obs_openSequence;
 		std::vector <std::string> imgproc_astrometryDevices;
 
 		std::string obs_basePath;

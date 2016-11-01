@@ -95,6 +95,8 @@ class Gpib:public Sensor
 
 		// used only for GPIB enet interface
 		HostString *enet_addr;
+		// raw TCP/IP interface
+		HostString *tcp_addr;
 		const char *prologix;
 		const char *serial_port;
 

@@ -140,13 +140,13 @@
 #define COMMAND_CCD_SHIFTSTORE  "shiftstore"
 
 /**
- * Open dome.
+ * Open dome/cover/...
  */
-#define COMMAND_DOME_OPEN       "open"
+#define COMMAND_OPEN       "open"
 
-#define COMMAND_DOME_CLOSE      "close"
+#define COMMAND_CLOSE      "close"
 
-#define COMMAND_DOME_STOP       "stop"
+#define COMMAND_STOP       "stop"
 
 /**
  * Cupola azimuth move. @ingroup RTS2Command

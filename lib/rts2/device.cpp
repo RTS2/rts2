@@ -236,8 +236,9 @@ void DevConnection::setConnState (conn_state_t new_conn_state)
 	}
 }
 
-DevConnectionMaster::DevConnectionMaster (Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum):Connection (-1, _master)
+DevConnectionMaster::DevConnectionMaster (Device * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum):Connection (-1, _master)
 {
+	master = _master;
 	device_host = _device_host;
 	device_port = _device_port;
 	strncpy (device_name, _device_name, DEVICE_NAME_SIZE);
@@ -420,6 +421,10 @@ int DevConnectionMaster::command ()
 			((DevConnection *)conn)->setDeviceKey (getCentraldId (), p_key);
 		setCommandInProgress (false);
 		return -1;
+	}
+	if (isCommand (COMMAND_OPEN) || isCommand (COMMAND_CLOSE))
+	{
+		return master->commandAuthorized (this);
 	}
 
 	return Connection::command ();

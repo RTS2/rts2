@@ -459,6 +459,10 @@ std::string Connection::getStateString ()
 		default:
 			_os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
 	}
+	if (getState () & DEVICE_BLOCK_OPEN)
+		_os << " | BLOCK_OPEN";
+	if (getState () & DEVICE_BLOCK_CLOSE)
+		_os << " | BLOCK_CLOSE";
 	if (getState () & DEVICE_ERROR_KILL)
 		_os << " | PRIORITY CHANGED";
 	if (getState () & DEVICE_ERROR_HW)
