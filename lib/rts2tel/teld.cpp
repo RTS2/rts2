@@ -170,7 +170,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 		case -1:
 			createValue (tarTelAltAz, "TAR_TEL", "target position (OBJ) in telescope coordinates (AZ in 180 .. -180 range)", true);
-			createValue (modelTarAltAz, "TAR_MOD", "modelled target position (OBJ) in telescope coordinates (AZ in 180 .. -180 range)", true);
+			createValue (modelTarAltAz, "TAR_MOD", "modelled target position (OBJ) in telescope coordinates (AZ in 180 .. -180 range)", false);
 			break;
 	}
 
