@@ -301,7 +301,7 @@ int Grbd::newGcnGrb (int tar_id)
 		return -1;
 	}
 	rts2core::Connection *exec;
-	exec = getOpenConnection ("EXEC");
+	exec = getOpenConnection (DEVICE_TYPE_EXECUTOR);
 	if (exec)
 	{
 		execC = new rts2core::CommandExecGrb (this, tar_id);
