@@ -2,14 +2,171 @@ Prerequisites
 =============
 
  python3
+ # Ubuntu 16.04:
+ apt install  python3-watchdog
+     	      python3-requests
+              yale # bright star catalog
+	           # http://tdc-www.harvard.edu/catalogs/bsc5.html
+	      libnova-dev
+	      telnet
+	      saods9
+
  pip3 install astropy
               numpy
 	      scipy
-	       matplotlib
+	      matplotlib
+	      
+
  libnova (needs to be on LD_PATH as libnova.so)
 
-Hands on
-========
+Status u_point.py as of 2016-11-06
+==================================
+
+I started with astropy and found that there are
+differences e.g. between EQ (CIRS) to AltAz
+transformations I could not explain nor did
+someone on astropy@scipy.org answer.
+
+I developed u_point.py based on libnova and added
+later the astropy code for comparison again. There
+are still differences and I'd be glad if someone
+can point me into the right direction.
+
+The EQ models are not usable yet.
+
+The AltAz model does not always converge. Repeat
+the fitting several times to gain confidence. I
+observed that fits on simulated data do not
+converge. In such cases repeat the data generation.
+
+Status u_acquire.py as of 2016-11-06
+====================================
+
+I dry tested u_acquire.py in simulation mode and
+together with RTS2 dummy devices. I do not expect
+any major failures if a real altaz mount is used.
+
+u_acquire.py is suitable for altaz mounts but
+soon eq mounts can be used too.
+
+
+Hands on data acquisition
+=========================
+The use case for u_acquire.py is a CCD FoV which
+is too small for astrometry.net or similar to work
+reliably. As targets serve "lonely" objects from
+Yale's Bright Star Catalog which can be identified
+by a human being by looking at the CCD image.
+
+The data acquisition can be interrupted and resumed
+at any time.
+
+Two modes of operations exist:
+
+1) non continuous mode
+2) continuous mode
+
+If operated in continuous mode, no user interaction
+is required and the images are later analyzed by
+e.g. astrometry.net or by SExtractor.
+
+If operated in non continuous mode, user interaction
+is required and done via telnet 127.0.0.1 usually on
+port 9999 (see /tmp/u_acquire.log for the actual
+setting). Allowed commands are setting a different
+exposure time or redo a given nominal position ev.
+with a different exposure time.
+
+The 'ORI' (see rts2-mon, T0) coordinates are always
+be set by u_acquire.py. Once u_acquire.py waits for
+user input, the mount can be commanded using 'OFFS'
+(see rts2-mon, T0) to center the object on the CCD.
+
+If the CCD can not be driven by RTS2 or it is not
+suitable, a watch dog can be set to monitor the
+directory where the FITS images are written. The
+image file name is then written to the book keeping
+file for later analysis together with all necessary
+information.
+
+u_acquire.py does not analyze the images, it simply
+writes the book keeping information to a file. Once
+the run is completed the analysis is done with
+u_analyse.py (to be written very soon) preparing
+the input for u_point.py. u_analyse.py will write
+either RA/Dec coordinates of the brightest star or
+the field center, obtained by astrometry.net, to
+the book keeping file.
+
+
+The following description walks you through a simulated
+data acquisition with DSS image retrieval for an easy
+comparison with the "real" sky.
+
+Configure RTS2 with dummy devices (/etc/rts2/devices):
+
+ #RTS2 devices configuration
+ #device type    device_name     options
+ camd    dummy   C0      --width 400 --height 500 --frame-transfer --localhost localhost
+ teld    dummy   T0      --move fast --localhost localhost
+ 
+
+u_point is not yet installed on the system.
+
+ cd $HOME/rts2/scripts/u_point
+ 
+Create the site specific observable star catalog based on
+Yale Bright Star catalog, see help for e.g. observatory
+specific options
+
+ ./u_select.py --plot --brightness-interval "6.0 7.0" --altitude-interval "10. 80" --minimum-separation 1.5
+ ls -l observable.cat
+ -rw-rw-r-- 1 wildi wildi 108813 Nov  6 10:38 observable.cat
+ 
+Create and plot the grid of nominal positions to observe
+
+ ./u_acquire.py --create-nominal --plot
+ ls -l nominal_positions.cat
+ -rw-rw-r-- 1 wildi wildi 10272 Nov  6 10:31 nominal_positions.cat
+
+See options --altitude-interval, --azimuth-interval and --step for
+further refinements.
+
+Start simulated data acquisition:
+
+ systemctl start rts2 # Ubuntu 16.04, see $HOME/rts2/conf/rts2.service
+ rts2-scriptexec -d C0 -s " exe ./u_acquire_simulate_continuous.sh "
+
+In a separate terminal:
+
+ tail -f /tmp/u_acquire.log 
+
+or at any time for a progress report plot
+
+./u_acquire.py --plot
+
+Red dots are remaining nominal and blue dots are acquired positions
+To see DSS catalog FITS images:
+
+ ds9 -zscale dss*.fits
+
+The brightest star must be in the center.
+
+Recommended terminal set up
+---------------------------
+
+For each listed command open a terminal which can be
+viewed "in parallel":
+
+ tail -f /tmp/u_acquire.log 
+ telnet 127.0.0.1 9998
+ ./u_acquire.py --plot;ds9 -zscale dss*fits
+ rts2-scriptexec -d C0 -s " exe ./u_acquire_simulate_continuous.sh "
+ 
+
+Hands on pointing model analysis
+================================
+
 
 Fetch real data and fit them
 
@@ -32,8 +189,8 @@ the output should be similar to:
   warnings.warn(errors[info][0], RuntimeWarning)
   fit projection not converged, status: 5
 
-and the plots appear. Ignore the warning sice it is related
-to a gaussian fit. Then do a simulation
+and the plots appear. Ignore the warning since it is related
+to a Gaussian fit. Then do a simulation
 
   ./u_simulate.py --sigma 0. --aa "-339.99 1024.75 3.13  719.9 422.31 579.9 -85.17" --mount-data test.dat  --step 12
   
@@ -69,27 +226,6 @@ and the output shows the parameters in good agreement
   fit projection not converged, status: 5
 
 And the simulated plots are as "ugly" as the data.
-
-
-Status as of 2016-10-08
-=======================
-
-I started with astropy and found that there are
-differences e.g. between EQ (CIRS) to AltAz
-transformations I could not explain nor did
-someone on astropy@scipy.org answer.
-
-I developed u_point.py based on libnova and added
-later the astropy code for comparison again. There
-are still differences and I'd be glad if someone
-can point me into the right direction.
-
-The EQ models are not usable yet.
-
-The AltAz model does not always converge. Repeat
-the fitting several times to gain confidence. I
-observed that fits on simulated data do not
-converge. In such cases repeat the data generation.
 
 
 Main differences to Petr's gpoint
@@ -158,9 +294,5 @@ QFE is the pressure at the observatory (not sea level).
 Further plans
 =============
 
-I saw that pointing models are created with a tool
-like astrometry.net. If the CCD's FoV is small this
-approach will fail. I'm trying to create a script
-which steers the mount, and after a star has been
-centered manually, an image is taken and analyzed
-e.g. by SExtractor.
+Adding the analysis tool u_analyse.py to complete
+the chain.
