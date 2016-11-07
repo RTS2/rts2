@@ -558,7 +558,7 @@ double FOWS::decode (unsigned char* raw, ws_types ws_type, float scale)
 			res *= scale;
 			break;
 		case wd:
-			m = raw[0] & 0xF0 ? -1 : 0;
+			m = raw[0] & 0xF0 ? 0 : -1;
 			res = raw[0] * scale;
 			break;
 		default:
