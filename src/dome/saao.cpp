@@ -327,9 +327,9 @@ int SAAO::initHardware ()
 	logStream (MESSAGE_DEBUG) << "initial dome shutter status: " << std::hex << reg[0] << sendLog;
 
 	if (reg[0] & STATUS_SHUTTER_CLOSED)
-		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+		maskState (DOME_DOME_MASK | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSED | DEVICE_BLOCK_OPEN, "initial dome state is closed");
 	else if (reg[0] & STATUS_SHUTTER_OPENED)
-		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
+		maskState (DOME_DOME_MASK | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENED | DEVICE_BLOCK_CLOSE, "initial dome state is opened");
 
 	return 0;
 }
