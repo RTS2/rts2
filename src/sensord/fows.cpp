@@ -159,6 +159,7 @@ class FOWS:public SensorWeather
 		rts2core::ValueFloat *insideHumidity;
 		rts2core::ValueFloat *outsideTemp;
 		rts2core::ValueFloat *windSpeed;
+		rts2core::ValueFloat *windGust;
 		rts2core::ValueInteger *windDirection;
 		rts2core::ValueFloat *wind10min;
 		rts2core::ValueFloat *wind2min;
@@ -200,7 +201,7 @@ using namespace rts2sensord;
 
 FOWS::FOWS (int argc, char **argv):SensorWeather (argc, argv)
 {
-	memset (m_buf, 0, sizeof (m_buf));
+	memset (m_buf, 0xFF, sizeof (m_buf));
 
 	maxHumidity = NULL;
 	maxWindSpeed = NULL;
@@ -210,7 +211,8 @@ FOWS::FOWS (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (insideTemp, "TEMP_IN", "[C] inside temperature", false);
 	createValue (insideHumidity, "HUM_IN", "[%] inside humidity", false);
 	createValue (outsideTemp, "TEMP_OUT", "[C] outside temperature", false);
-	createValue (windSpeed, "WIND", "[m/s] wind speed", false);
+	createValue (windSpeed, "WIND", "[m/s] wind average speed", false);
+	createValue (windGust, "WIND_GUST", "[m/s] wind gust", false);
 	createValue (windDirection, "WIND_DIR", "wind direction", false, RTS2_DT_DEGREES);
 	createValue (outsideHumidity, "HUM_OUT", "[%] outside humidity", false);
 	createValue (rainRate, "RAINRT", "[mm/hour] rain rate", false);
@@ -229,9 +231,36 @@ FOWS::~FOWS ()
 	USBClose ();
 }
 
+unsigned short CWS_unsigned_short (unsigned char* raw)
+{
+ 	return ((unsigned short)raw[1] << 8) | raw[0];
+}
+
+signed short CWS_signed_short (unsigned char* raw)
+{
+ 	unsigned short us = ((((unsigned short)raw[1])&0x7F) << 8) | raw[0];
+	
+	if(raw[1]&0x80)	// Test for sign bit
+		return -us;	// Negative value
+	else
+		return us;	// Positive value
+}
+
 int FOWS::info ()
 {
 	CWS_Read ();
+
+	time_t timestamp = m_timestamp - m_timestamp % 60; // Set to current minute
+	unsigned short current_pos = CWS_unsigned_short (&m_buf[WS_CURRENT_POS]);
+
+	insideHumidity->setValueFloat (decode (m_buf + current_pos + WS_HUMIDITY_IN, ub, 1.0));
+	insideTemp->setValueFloat (decode (m_buf + current_pos + WS_TEMPERATURE_IN, ss, 0.1));
+	outsideHumidity->setValueFloat (decode (m_buf + current_pos + WS_HUMIDITY_OUT, ub, 1.0));
+	outsideTemp->setValueFloat (decode (m_buf + current_pos + WS_TEMPERATURE_OUT, ss, 0.1));
+	barometer->setValueFloat (decode (m_buf + current_pos + WS_ABS_PRESSURE, us, 0.1));
+	windSpeed->setValueFloat (decode (m_buf + current_pos + WS_WIND_AVE, wa, 0.1));
+	windGust->setValueFloat (decode (m_buf + current_pos + WS_WIND_GUST, wg, 0.1));
+	windDirection->setValueInteger (decode (m_buf + current_pos + WS_WIND_DIR, wd, 22.5));
 
         // do not send infotime..
 	return 0;
@@ -468,21 +497,6 @@ unsigned char CWS_bcd_decode (unsigned char byte)
         unsigned char lo = byte & 0x0F;
         unsigned char hi = byte / 16;
         return (lo + (hi * 10));
-}
-
-unsigned short CWS_unsigned_short(unsigned char* raw)
-{
- 	return ((unsigned short)raw[1] << 8) | raw[0];
-}
-
-signed short CWS_signed_short(unsigned char* raw)
-{
- 	unsigned short us = ((((unsigned short)raw[1])&0x7F) << 8) | raw[0];
-	
-	if(raw[1]&0x80)	// Test for sign bit
-		return -us;	// Negative value
-	else
-		return us;	// Positive value
 }
 
 double FOWS::decode (unsigned char* raw, ws_types ws_type, float scale)
