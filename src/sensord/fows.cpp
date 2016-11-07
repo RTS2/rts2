@@ -211,10 +211,10 @@ FOWS::FOWS (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (insideTemp, "TEMP_IN", "[C] inside temperature", false);
 	createValue (insideHumidity, "HUM_IN", "[%] inside humidity", false);
 	createValue (outsideTemp, "TEMP_OUT", "[C] outside temperature", false);
+	createValue (outsideHumidity, "HUM_OUT", "[%] outside humidity", false);
 	createValue (windSpeed, "WIND", "[m/s] wind average speed", false);
 	createValue (windGust, "WIND_GUST", "[m/s] wind gust", false);
 	createValue (windDirection, "WIND_DIR", "wind direction", false, RTS2_DT_DEGREES);
-	createValue (outsideHumidity, "HUM_OUT", "[%] outside humidity", false);
 	createValue (rainRate, "RAINRT", "[mm/hour] rain rate", false);
 	createValue (uvIndex, "UVINDEX", "UV index", false);
 	createValue (stormRain, "RAINST", "[mm] storm rain", false);
