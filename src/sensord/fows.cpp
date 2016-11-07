@@ -158,6 +158,7 @@ class FOWS:public SensorWeather
 		rts2core::ValueFloat *insideTemp;
 		rts2core::ValueFloat *insideHumidity;
 		rts2core::ValueFloat *outsideTemp;
+		rts2core::ValueFloat *outsideHumidity;
 		rts2core::ValueFloat *windSpeed;
 		rts2core::ValueFloat *windGust;
 		rts2core::ValueInteger *windDirection;
@@ -166,7 +167,6 @@ class FOWS:public SensorWeather
 		rts2core::ValueFloat *wind10mingust;
 		rts2core::ValueInteger *wind10mingustDirection;
 		rts2core::ValueFloat *dewPoint;
-		rts2core::ValueFloat *outsideHumidity;
 		rts2core::ValueFloat *rainRate;
 		rts2core::ValueInteger *uvIndex;
 		rts2core::ValueInteger *stormRain;
@@ -565,6 +565,9 @@ double FOWS::decode (unsigned char* raw, ws_types ws_type, float scale)
 			logStream (MESSAGE_ERROR) << "decode: Unknown type " << ws_type << sendLog;
 			return NAN;
 	}
+
+	if (m < 0)
+		return res;
 
 	for (int i=0;i < m;i++)
 	{
