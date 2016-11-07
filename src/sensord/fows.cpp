@@ -180,6 +180,7 @@ class FOWS:public SensorWeather
 		void checkTriggers ();
 
 		unsigned char m_buf[WS_BUFFER_SIZE];	// Raw WS data
+		time_t m_timestamp;
 
 		short USBReadBlock (unsigned short ptr, unsigned char* buf);
 		void USBClose ();
@@ -188,6 +189,8 @@ class FOWS:public SensorWeather
 		short readFixedBlock ();
 
 		double decode (unsigned char* raw, ws_types ws_type, float scale);
+
+		int CWS_Read ();
 };
 
 }
@@ -228,7 +231,7 @@ FOWS::~FOWS ()
 
 int FOWS::info ()
 {
-	readFixedBlock ();
+	CWS_Read ();
 
         // do not send infotime..
 	return 0;
@@ -510,12 +513,12 @@ double FOWS::decode (unsigned char* raw, ws_types ws_type, float scale)
 			break;
 		case dt:
 			{
-				unsigned char year, month, day, hour, minute;
+/*				unsigned char year, month, day, hour, minute;
 				year   = CWS_bcd_decode(raw[0]);
 				month  = CWS_bcd_decode(raw[1]);
 				day    = CWS_bcd_decode(raw[2]);
 				hour   = CWS_bcd_decode(raw[3]);
-				minute = CWS_bcd_decode(raw[4]);
+				minute = CWS_bcd_decode(raw[4]); */
 				m = 5;
 				//n = sprintf(result,"%4d-%02d-%02d %02d:%02d", year + 2000, month, day, hour, minute);
 			}
@@ -555,7 +558,73 @@ double FOWS::decode (unsigned char* raw, ws_types ws_type, float scale)
 			return res;
 	}
 
-	logStream (MESSAGE_ERROR) << "decode: invalid value at 0x" << std::hex << raw << sendLog;
+	return NAN;
+}
+
+unsigned short CWS_dec_ptr(unsigned short ptr)
+{
+	// Step backwards through buffer.
+	ptr -= WS_BUFFER_RECORD;             
+	if (ptr < WS_BUFFER_START)
+		// Start is reached, step to end of buffer.
+		ptr = WS_BUFFER_END;
+	return ptr;
+}
+
+unsigned short CWS_inc_ptr(unsigned short ptr)
+{
+	// Step forward through buffer.
+	ptr += WS_BUFFER_RECORD;             
+	if ((ptr > WS_BUFFER_END) || (ptr < WS_BUFFER_START))
+		// End is reached, step to start of buffer.
+		ptr = WS_BUFFER_START;
+	return ptr;
+}
+
+int FOWS::CWS_Read ()
+{
+// Read fixed block
+// - Get current_pos
+// - Get data_count
+// Read records backwards from current_pos untill previous current_pos reached
+// Step 0x10 in the range 0x10000 to 0x100, wrap at 0x100
+// USB is read in 0x20 byte chunks, so read at even positions only
+// return 1 if new data, otherwise 0
+	m_timestamp = time(NULL);	// Set to current time
+	int old_pos = CWS_unsigned_short(&m_buf[WS_CURRENT_POS]);
+
+	int n, NewDataFlg = readFixedBlock ();
+	unsigned char DataBuf[WS_BUFFER_CHUNK];
+
+	unsigned short data_count = CWS_unsigned_short(&m_buf[WS_DATA_COUNT]);
+	unsigned short current_pos = CWS_unsigned_short(&m_buf[WS_CURRENT_POS]);
+	unsigned short i;
+
+	if ((current_pos % WS_BUFFER_RECORD) || (current_pos < WS_BUFFER_START))
+	{
+		logStream (MESSAGE_ERROR) << "CWS_Read: wrong current_pos=0x" << std::hex << current_pos << sendLog;
+		return -1;
+	}
+
+	for (i=0; i<data_count; )
+	{
+		if (!(current_pos & WS_BUFFER_RECORD))
+		{
+			// Read 2 records on even position
+			n = USBReadBlock (current_pos, DataBuf);
+			if(n<32)
+				exit(1);
+			i += 2;
+			NewDataFlg |= dataHasChanged (&m_buf[current_pos], DataBuf, sizeof(DataBuf));
+		}
+		if (current_pos == (old_pos & (~WS_BUFFER_RECORD)))
+			break;	//break only on even position
+		current_pos = CWS_dec_ptr (current_pos);
+	}
+	if ((old_pos==0) || (old_pos==0xFFFF))	//cachefile empty or empty eeprom was read
+		old_pos = CWS_inc_ptr (current_pos);
+
+	return NewDataFlg;
 }
 
 int main (int argc, char **argv)
