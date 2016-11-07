@@ -25,11 +25,116 @@
 #define OPT_PEEKWIND_BAD    OPT_LOCAL + 371
 #define OPT_HUM_BAD         OPT_LOCAL + 372
 
+#define FOWS_VENDOR         0x1941
+#define FOWS_PRODUCT        0x8021
+
+// Weather Station buffer parameters
+#define WS_BUFFER_SIZE		0x10000	// Size of total buffer
+#define WS_BUFFER_START		0x100	// First address of up to 4080 buffer records
+#define WS_BUFFER_END		0xFFF0	// Start of last buffer record
+#define WS_BUFFER_RECORD	0x10	// Size of one buffer record
+#define WS_BUFFER_CHUNK		0x20	// Size of chunk received over USB
+#define WS_FIXED_BLOCK_START	0x0000	// First address of fixed block
+#define WS_FIXED_BLOCK_SIZE	0x0100	// Size of fixed block
+
+// Weather Station buffer memory positions
+#define WS_DELAY		 0	// Position of delay parameter
+#define WS_HUMIDITY_IN		 1	// Position of inside humidity parameter
+#define WS_TEMPERATURE_IN	 2	// Position of inside temperature parameter
+#define WS_HUMIDITY_OUT		 4	// Position of outside humidity parameter
+#define WS_TEMPERATURE_OUT	 5	// Position of outside temperature parameter
+#define WS_ABS_PRESSURE		 7	// Position of absolute pressure parameter
+#define WS_WIND_AVE		 9	// Position of wind direction parameter
+#define WS_WIND_GUST		10	// Position of wind direction parameter
+#define WS_WIND_DIR		12	// Position of wind direction parameter
+#define WS_RAIN			13	// Position of rain parameter
+#define WS_STATUS		15	// Position of status parameter
+#define WS_DATA_COUNT		27	// Position of data_count parameter
+#define WS_CURRENT_POS		30	// Position of current_pos parameter
+#define WS_CURR_REL_PRESSURE	32	// Position of current relative pressure parameter
+#define WS_CURR_ABS_PRESSURE	34	// Position of current absolute pressure parameter
+
+// Calculated rain parameters
+// NOTE: These positions are NOT stored in the Weather Station
+#define WS_RAIN_HOUR		0x08	// Position of hourly calculated rain
+#define WS_RAIN_DAY		0x0A	// Position of daily calculated rain
+#define WS_RAIN_WEEK		0x0C	// Position of weekly calculated rain
+#define WS_RAIN_MONTH		0x0E	// Position of monthly calculated rain
+
+
+// The following setting parameters are for reference only
+// A future user interface could interpret these parameters
+// Unit settings
+#define WS_UNIT_SETTING_IN_T_C_F	0x01
+#define WS_UNIT_SETTING_OUT_T_C_F	0x02
+#define WS_UNIT_SETTING_RAIN_FALL_CM_IN	0x04
+#define WS_UNIT_SETTING_PRESSURE_HPA	0x20
+#define WS_UNIT_SETTING_PRESSURE_INHG	0x40
+#define WS_UNIT_SETTING_PRESSURE_MMHG	0x80
+// Unit wind speed settings
+#define WS_UNIT_SETTING_WIND_SPEED_MS	0x01
+#define WS_UNIT_SETTING_WIND_SPEED_KMH	0x02
+#define WS_UNIT_SETTING_WIND_SPEED_KNOT	0x04
+#define WS_UNIT_SETTING_WIND_SPEED_MH	0x08
+#define WS_UNIT_SETTING_WIND_SPEED_BFT	0x10
+// Display format 0
+#define WS_DISPLAY_FORMAT_P_ABS_REL	0x01
+#define WS_DISPLAY_FORMAT_WSP_AVG_GUST	0x02
+#define WS_DISPLAY_FORMAT_H_24_12	0x04
+#define WS_DISPLAY_FORMAT_DDMMYY_MMDDYY	0x08
+#define WS_DISPLAY_FORMAT_TS_H_12_24	0x10
+#define WS_DISPLAY_FORMAT_DATE_COMPLETE	0x20
+#define WS_DISPLAY_FORMAT_DATE_AND_WK	0x40
+#define WS_DISPLAY_FORMAT_ALARM_TIME	0x80
+// Display format 1
+#define WS_DISPLAY_FORMAT_OUT_T		0x01
+#define WS_DISPLAY_FORMAT_OUT_WINDCHILL	0x02
+#define WS_DISPLAY_FORMAT_OUT_DEW_POINT	0x04
+#define WS_DISPLAY_FORMAT_RAIN_FALL_1H	0x08
+#define WS_DISPLAY_FORMAT_RAIN_FALL_24H	0x10
+#define WS_DISPLAY_FORMAT_RAIN_FALL_WK	0x20
+#define WS_DISPLAY_FORMAT_RAIN_FALL_MO	0x40
+#define WS_DISPLAY_FORMAT_RAIN_FALL_TOT	0x80
+// Alarm enable 0
+#define WS_ALARM_ENABLE_TIME		0x02
+#define WS_ALARM_ENABLE_WIND_DIR	0x04
+#define WS_ALARM_ENABLE_IN_RH_LO	0x10
+#define WS_ALARM_ENABLE_IN_RH_HI	0x20
+#define WS_ALARM_ENABLE_OUT_RH_LO	0x40
+#define WS_ALARM_ENABLE_OUT_RH_HI	0x80
+// Alarm enable 1
+#define WS_ALARM_ENABLE_WSP_AVG		0x01
+#define WS_ALARM_ENABLE_WSP_GUST	0x02
+#define WS_ALARM_ENABLE_RAIN_FALL_1H	0x04
+#define WS_ALARM_ENABLE_RAIN_FALL_24H	0x08
+#define WS_ALARM_ENABLE_ABS_P_LO	0x10
+#define WS_ALARM_ENABLE_ABS_P_HI	0x20
+#define WS_ALARM_ENABLE_REL_P_LO	0x40
+#define WS_ALARM_ENABLE_REL_P_HI	0x80
+// Alarm enable 2
+#define WS_ALARM_ENABLE_IN_T_LO		0x01
+#define WS_ALARM_ENABLE_IN_T_HI		0x02
+#define WS_ALARM_ENABLE_OUT_T_LO	0x04
+#define WS_ALARM_ENABLE_OUT_T_HI	0x08
+#define WS_ALARM_ENABLE_WINDCHILL_LO	0x10
+#define WS_ALARM_ENABLE_WINDCHILL_HI	0x20
+#define WS_ALARM_ENABLE_DEWPOINT_LO	0x40
+#define WS_ALARM_ENABLE_DEWPOINT_HI	0x80
+
 namespace rts2sensord
 {
 
+// Table for decoding raw weather station data.
+// Each key specifies a (pos, type, scale) tuple that is understood by CWS_decode().
+// See http://www.jim-easterbrook.me.uk/weather/mm/ for description of data
+
+enum ws_types {ub,sb,us,ss,dt,tt,pb,wa,wg,wd/*wind dir*/};
+
 /**
  * Class for FOWS USB connected weather station.
+ *
+ * Based on the following C code:
+ * https://github.com/ajauberg/fowsr
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
@@ -70,19 +175,19 @@ class FOWS:public SensorWeather
                 rts2core::ValueInteger *maxHumidity;
 		
 		/**
-		 * Check received buffer for CRC
-		 */
-		bool checkCrc ();
-
-		/**
-		 * Process received data from LOOP command.
-		 */
-		void processData ();
-
-		/**
-		 * Ckeck good/bad weather alarms
+		 * Check good/bad weather alarms
 		 */
 		void checkTriggers ();
+
+		unsigned char m_buf[WS_BUFFER_SIZE];	// Raw WS data
+
+		short USBReadBlock (unsigned short ptr, unsigned char* buf);
+		void USBClose ();
+
+		short dataHasChanged (unsigned char OldBuf[], unsigned char NewBuf[], size_t size);
+		short readFixedBlock ();
+
+		double decode (unsigned char* raw, ws_types ws_type, float scale);
 };
 
 }
@@ -92,6 +197,8 @@ using namespace rts2sensord;
 
 FOWS::FOWS (int argc, char **argv):SensorWeather (argc, argv)
 {
+	memset (m_buf, 0, sizeof (m_buf));
+
 	maxHumidity = NULL;
 	maxWindSpeed = NULL;
 	maxPeekWindSpeed = NULL;
@@ -116,14 +223,13 @@ FOWS::FOWS (int argc, char **argv):SensorWeather (argc, argv)
 
 FOWS::~FOWS ()
 {
-	int ret = usb_release_interface(devh, 0);
-	logStream (MESSAGE_DEBUG) << "usb_release_interface ret:" << ret << sendLog;
-	ret = usb_close(devh);
-	logStream (MESSAGE_DEBUG) << "usb_close ret:" << ret << sendLog;
+	USBClose ();
 }
 
 int FOWS::info ()
 {
+	readFixedBlock ();
+
         // do not send infotime..
 	return 0;
 }
@@ -153,8 +259,75 @@ int FOWS::processOption (int opt)
 	return 0;
 }
 
+struct usb_device *find_device (int vendor, int product)
+{
+	struct usb_bus *bus;
+    
+	for (bus = usb_get_busses (); bus; bus = bus->next)
+	{
+		struct usb_device *dev;
+	
+		for (dev = bus->devices; dev; dev = dev->next)
+		{
+			if (dev->descriptor.idVendor == vendor && dev->descriptor.idProduct == product)
+				return dev;
+		}
+	}
+	return NULL;
+}
+
 int FOWS::initHardware ()
 {
+	usb_init ();
+	if (getDebug ())
+		usb_set_debug (getDebug ());
+	usb_find_busses ();
+	usb_find_devices ();
+
+	struct usb_device *dev = find_device (FOWS_VENDOR, FOWS_PRODUCT);
+	if (dev == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot find any device with VID 0x" << std::hex << FOWS_VENDOR << " and PID 0x" << std::hex << FOWS_PRODUCT << sendLog;
+		return -1;
+	}
+	devh = usb_open (dev);
+	if (devh == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "open USB device failed" << sendLog;
+		return -1;
+	}
+
+	int ret = usb_claim_interface (devh, 0);
+	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "claim failed with error " << ret << sendLog;
+		return -1;
+	}
+	ret = usb_set_altinterface (devh, 0);
+	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "set_altinterface failed with error " << ret << sendLog;
+		return -1;
+	}
+
+	char buf[1000];
+
+	ret = usb_get_descriptor(devh, 1, 0, buf, 0x12);
+	ret = usb_get_descriptor(devh, 2, 0, buf, 0x09);
+	ret = usb_get_descriptor(devh, 2, 0, buf, 0x22);
+	ret = usb_release_interface(devh, 0);
+	if (ret)
+		logStream (MESSAGE_WARNING) << "failed to release interface before set_configuration: " << ret << sendLog;
+
+	ret = usb_set_configuration(devh, 1);
+	ret = usb_claim_interface(devh, 0);
+	if (ret)
+		logStream (MESSAGE_WARNING) << "claim after set_configuration failed with error " << ret << sendLog;
+	ret = usb_set_altinterface(devh, 0);
+	ret = usb_control_msg(devh, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0xa, 0, 0, buf, 0, 1000);
+	ret = usb_get_descriptor(devh, 0x22, 0, buf, 0x74);
+
+	return 0;
 }
 
 bool FOWS::isGoodWeather ()
@@ -206,6 +379,184 @@ void FOWS::checkTriggers ()
 
 }
 
+short FOWS::USBReadBlock (unsigned short ptr, unsigned char* buf)
+{
+/*
+Read 32 bytes data command	
+
+After sending the read command, the device will send back 32 bytes data wihtin 100ms. 
+If not, then it means the command has not been received correctly.
+*/
+	char buf_1 = (char)(ptr / 256);
+	char buf_2 = (char)(ptr & 0xFF);
+	char tbuf[8];
+	tbuf[0] = 0xA1;		// READ COMMAND
+	tbuf[1] = buf_1;	// READ ADDRESS HIGH
+	tbuf[2] = buf_2;	// READ ADDRESS LOW
+	tbuf[3] = 0x20;		// END MARK
+	tbuf[4] = 0xA1;		// READ COMMAND
+	tbuf[5] = 0;		// READ ADDRESS HIGH
+	tbuf[6] = 0;		// READ ADDRESS LOW
+	tbuf[7] = 0x20;		// END MARK
+
+	// Prepare read of 32-byte chunk from position ptr
+	int ret = usb_control_msg (devh, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 9, 0x200, 0, tbuf, 8, 1000);
+	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "usb_control_msg failed (" << ret << ") whithin readBblock: " << std::hex << ptr << sendLog;
+	}
+	else
+	{
+		// Read 32-byte chunk and place in buffer buf
+		ret = usb_interrupt_read (devh, 0x81, (char *) buf, 0x20, 1000);
+		if (ret < 0)
+			logStream (MESSAGE_ERROR) << "usb_interrupt_read failed (" << ret << ") whithin readBlock: " << std::hex << ptr << sendLog;
+	}
+	return ret;
+}
+
+void FOWS::USBClose ()
+{
+	int ret = usb_release_interface (devh, 0);
+	logStream (MESSAGE_DEBUG) << "usb_release_interface ret:" << ret << sendLog;
+	ret = usb_close (devh);
+	logStream (MESSAGE_DEBUG) << "usb_close ret:" << ret << sendLog;
+}
+
+short FOWS::dataHasChanged (unsigned char OldBuf[], unsigned char NewBuf[], size_t size)
+{	// copies size bytes from NewBuf to OldBuf, if changed
+	// returns 0 if nothing changed, otherwise 1
+	short NewDataFlg = 0;
+
+	for (size_t i = 0;i < size;i++)
+	{
+		if (OldBuf[i] != NewBuf[i])
+		{
+			NewDataFlg = 1;
+			OldBuf[i] = NewBuf[i];
+		}
+	}
+	return NewDataFlg;
+}
+
+short FOWS::readFixedBlock ()
+{
+	// Read fixed block in 32 byte chunks
+	unsigned short i;
+	unsigned char fb_buf[WS_FIXED_BLOCK_SIZE];
+	char NewDataFlg = 0;
+
+	for (i = WS_FIXED_BLOCK_START;i < WS_FIXED_BLOCK_SIZE;i += WS_BUFFER_CHUNK)
+		if (USBReadBlock (i, &fb_buf[i]) < 0)
+			return 0; //failure while reading data
+	// Check for new data
+	memcpy (&m_buf[WS_FIXED_BLOCK_START], fb_buf, 0x10); //disables change detection on the rain val positions 
+	NewDataFlg = dataHasChanged (&m_buf[WS_FIXED_BLOCK_START], fb_buf, sizeof(fb_buf));
+	// Check for valid data
+	if (((m_buf[0]==0x55) && (m_buf[1]==0xAA)) || ((m_buf[0]==0xFF) && (m_buf[1]==0xFF)))
+		return NewDataFlg;
+	
+	logStream (MESSAGE_ERROR) << "fixed block is not valid" << sendLog;
+	return -1;
+}
+
+unsigned char CWS_bcd_decode (unsigned char byte)
+{
+        unsigned char lo = byte & 0x0F;
+        unsigned char hi = byte / 16;
+        return (lo + (hi * 10));
+}
+
+unsigned short CWS_unsigned_short(unsigned char* raw)
+{
+ 	return ((unsigned short)raw[1] << 8) | raw[0];
+}
+
+signed short CWS_signed_short(unsigned char* raw)
+{
+ 	unsigned short us = ((((unsigned short)raw[1])&0x7F) << 8) | raw[0];
+	
+	if(raw[1]&0x80)	// Test for sign bit
+		return -us;	// Negative value
+	else
+		return us;	// Positive value
+}
+
+double FOWS::decode (unsigned char* raw, ws_types ws_type, float scale)
+{
+	double res;
+	int m = 0;
+
+	switch (ws_type)
+	{
+		case ub:
+			m = 1;
+			res = raw[0] * scale;
+			break;
+		case sb:
+			m = 1;
+			res = raw[0] & 0x7F;
+			if (raw[0] & 0x80)	// Test for sign bit
+				res -= res;	//negative value
+			res *= scale;
+			break;
+		case us:
+			m = 2;
+			res = CWS_unsigned_short(raw) * scale;
+			break;
+		case ss:
+			m = 2;
+			res = CWS_signed_short(raw) * scale;
+			break;
+		case dt:
+			{
+				unsigned char year, month, day, hour, minute;
+				year   = CWS_bcd_decode(raw[0]);
+				month  = CWS_bcd_decode(raw[1]);
+				day    = CWS_bcd_decode(raw[2]);
+				hour   = CWS_bcd_decode(raw[3]);
+				minute = CWS_bcd_decode(raw[4]);
+				m = 5;
+				//n = sprintf(result,"%4d-%02d-%02d %02d:%02d", year + 2000, month, day, hour, minute);
+			}
+			break;
+		case tt:
+			m = 2;
+			//n = sprintf(result,"%02d:%02d", CWS_bcd_decode(raw[0]), CWS_bcd_decode(raw[1]));
+			break;
+		case pb:
+			m = 1;
+			//n = sprintf(result,"%02x", raw[0]);
+			break;
+		case wa:
+			m = 3;
+			// wind average - 12 bits split across a byte and a nibble
+			res = raw[0] + ((raw[2] & 0x0F) * 256);
+			res *= scale;
+			break;
+		case wg:
+			m = 3;
+			// wind gust - 12 bits split across a byte and a nibble
+			res = raw[0] + ((raw[1] & 0xF0) * 16);
+			res *= scale;
+			break;
+		case wd:
+			m = raw[0] & 0xF0 ? -1 : 0;
+			res = raw[0] * scale;
+			break;
+		default:
+			logStream (MESSAGE_ERROR) << "decode: Unknown type " << ws_type << sendLog;
+			return NAN;
+	}
+
+	for (int i=0;i < m;i++)
+	{
+		if (raw[i] != 0xFF)
+			return res;
+	}
+
+	logStream (MESSAGE_ERROR) << "decode: invalid value at 0x" << std::hex << raw << sendLog;
+}
 
 int main (int argc, char **argv)
 {
