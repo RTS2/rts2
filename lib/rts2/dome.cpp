@@ -130,7 +130,7 @@ int Dome::domeOpenStart ()
 
 	closeFailReported = false;
 
-	maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENING | BOP_EXPOSURE | DEVICE_BLOCK_OPEN, "opening dome");
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENING | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, "opening dome");
 	logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to open the dome" << sendLog;
 	return 0;
 }
@@ -163,9 +163,9 @@ int Dome::domeCloseStart ()
 
 	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
 	{
-		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
+		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to close dome" << sendLog;
 	}
-	maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSING | DEVICE_BLOCK_CLOSE, "closing dome");
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_CLOSING | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, "starting to close dome");
 	return 0;
 }
 

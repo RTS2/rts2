@@ -420,12 +420,14 @@ void APMAux::setOCBlock ()
 	rts2_status_t b = 0;
 	switch (coverState->getValueInteger ())
 	{
-		case 0:   // CLOSED
 		case 1:   // OPENING
+			b |= DEVICE_BLOCK_CLOSE;
+		case 0:   // CLOSED
 			b |= DEVICE_BLOCK_OPEN;
 			break;
-		case 2:   // OPENED
 		case 3:   // CLOSING
+			b |= DEVICE_BLOCK_OPEN;
+		case 2:   // OPENED
 			b |= DEVICE_BLOCK_CLOSE;
 			break;
 	}
@@ -433,12 +435,14 @@ void APMAux::setOCBlock ()
 	{
 		switch (baffle->getValueInteger ())
 		{
-			case 0:   // CLOSED
 			case 1:   // OPENING
+				b |= DEVICE_BLOCK_CLOSE;
+			case 0:   // CLOSED
 				b |= DEVICE_BLOCK_OPEN;
 				break;
-			case 2:   // OPENED
 			case 3:   // CLOSING
+				b |= DEVICE_BLOCK_OPEN;
+			case 2:   // OPENED
 				b |= DEVICE_BLOCK_CLOSE;
 				break;
 		}
