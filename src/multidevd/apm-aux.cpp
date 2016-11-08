@@ -169,6 +169,8 @@ int APMAux::info ()
 			break;
 	}
 
+	setOCBlock ();
+
 	if (relay1 != NULL || relay2 != NULL)
 	{
         	sendUDPMessage ("A999");
@@ -238,6 +240,7 @@ int APMAux::openCover ()
 	{
 		coverState->setValueInteger (1);
 		sendValueAll (coverState);
+		setOCBlock ();
 	}
 
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
@@ -253,6 +256,7 @@ int APMAux::closeCover ()
 	{
 		coverState->setValueInteger (3);
 		sendValueAll (coverState);
+		setOCBlock ();
 	}
 
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
@@ -270,6 +274,7 @@ int APMAux::openBaffle ()
 	{
 		baffle->setValueInteger (1);
 		sendValueAll (baffle);
+		setOCBlock ();
 	}
 
 	baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
@@ -289,6 +294,7 @@ int APMAux::closeBaffle ()
 		sendValueAll (baffle);
 		baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
 		sendValueAll (baffleCommand);
+		setOCBlock ();
 	}
 
 	return 0;
@@ -346,6 +352,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 		baffleCommand->setValueDouble (NAN);
 		sendValueAll (baffle);
 		sendValueAll (baffleCommand);
+		setOCBlock ();
 	}
 
 	if (response[0] == 'C' && response[1] == '9')
@@ -362,6 +369,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 				}
 				coverState->setValueInteger (0);
 				sendValueAll (coverState);
+				setOCBlock ();
 				break;
 			case '1':
 				if (!isnan (coverCommand->getValueDouble ()))
@@ -373,6 +381,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 				}
 				coverState->setValueInteger (2);
 				sendValueAll (coverState);
+				setOCBlock ();
 				break;
 			case '2':
 				// ignore, probably after startup..
@@ -404,4 +413,35 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 	usleep (200);
 
         return 0;
+}
+
+void APMAux::setOCBlock ()
+{
+	rts2_status_t b = 0;
+	switch (coverState->getValueInteger ())
+	{
+		case 0:   // CLOSED
+		case 1:   // OPENING
+			b |= DEVICE_BLOCK_OPEN;
+			break;
+		case 2:   // OPENED
+		case 3:   // CLOSING
+			b |= DEVICE_BLOCK_CLOSE;
+			break;
+	}
+	if (baffle)
+	{
+		switch (baffle->getValueInteger ())
+		{
+			case 0:   // CLOSED
+			case 1:   // OPENING
+				b |= DEVICE_BLOCK_OPEN;
+				break;
+			case 2:   // OPENED
+			case 3:   // CLOSING
+				b |= DEVICE_BLOCK_CLOSE;
+				break;
+		}
+	}
+	maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, b);
 }

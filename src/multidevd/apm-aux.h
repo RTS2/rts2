@@ -76,6 +76,11 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		int relayControl (int n, bool on);
 
 		int sendUDPMessage (const char * _message, bool expectSecond = false);
+
+		/**
+		 * Sets Open/Close block bit.
+		 */
+		void setOCBlock ();
 };
 
 }
