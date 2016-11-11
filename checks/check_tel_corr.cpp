@@ -285,8 +285,8 @@ START_TEST(test_nutation)
 	ret = altazTestNutation->test_sky2counts (utc1, utc2, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
 #ifdef USE_ERFA
-	ck_assert_int_eq (azc, -17931104);
-	ck_assert_int_eq (altc, 10882736);
+	ck_assert_int_eq (azc, -17930964);
+	ck_assert_int_eq (altc, 10883070);
 #else
 	ck_assert_int_eq (azc, -17930975);
 	ck_assert_int_eq (altc, 10886604);
@@ -443,8 +443,8 @@ START_TEST(test_mean2apparent)
 #ifndef USE_ERFA
 	altazTestNutation->setCorrections (true, true, true, true);
 #endif
-
-	altazTestNutation->applyCorrections (&pos, utc1, utc2, false);
+	struct ln_hrz_posn hrz;
+	altazTestNutation->applyCorrections (&pos, utc1, utc2, &hrz, false);
 
 #ifdef USE_ERFA
 	ck_assert_dbl_eq (pos.ra, 155.2949621001, 10e-7);
@@ -454,15 +454,9 @@ START_TEST(test_mean2apparent)
 	ck_assert_dbl_eq (pos.dec, 9.8786101602, 10e-7);
 #endif
 
-	struct ln_hrz_posn hrz;
-	double AST = ln_get_apparent_sidereal_time (JD);
-//	double MST = ln_get_mean_sidereal_time (JD);
-
-	altazTestNutation->test_getHrzFromEquST (&pos, AST, &hrz);
-
 #ifdef USE_ERFA
-	ck_assert_dbl_eq (hrz.az, 154.9979027296, 10e-7);
-	ck_assert_dbl_eq (hrz.alt, 36.7780707105, 10e-7);
+	ck_assert_dbl_eq (hrz.az, 155.1994725981, 10e-7);
+	ck_assert_dbl_eq (hrz.alt, 36.8339888166, 10e-7);
 #else
 	ck_assert_dbl_eq (hrz.az, 155.1990540442, 10e-7);
 	ck_assert_dbl_eq (hrz.alt, 36.8133130985, 10e-7);
@@ -474,7 +468,7 @@ START_TEST(test_mean2apparent)
 
 		printf ("before RA %f DEC %f\n", pos.ra, pos.dec);
 
-		altazTestNutation->applyCorrections (&pos, utc1, utc2, false);
+		altazTestNutation->applyCorrections (&pos, utc1, utc2, &hrz, false);
 
 		printf ("after RA %f DEC %f\n", pos.ra, pos.dec);
 	}

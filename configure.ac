@@ -31,6 +31,15 @@ AS_IF([test "x$CHECK_LIBS" != x], [
   libcheck="yes"
 ])
 
+liberfa="no"
+
+PKG_CHECK_MODULES([ERFA],[erfa >= 0.1.0],,AC_MSG_RESULT(not found))
+AM_CONDITIONAL(LIBERFA, test "x$ERFA_LIBS" != x)
+AS_IF([test "x$ERFA_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(LIBERFA, "1", [use erfa/sofa library instead of libnova])
+  liberfa="yes"
+])
+
 libwebsockets="no"
 
 PKG_CHECK_MODULES([LIBWEBSOCKETS],[libwebsockets >= 1.0],,AC_MSG_RESULT(not found))
@@ -1019,6 +1028,7 @@ echo "
   libwebsockets	${libwebsockets}
   libthrift     ${THRIFT_CFLAGS} ${THRIFT_LIBS}
   hiredis	${hiredis}
+  liberfa	${LIBERFA}
 
 CCDs:
   alta          ${ALTA}

@@ -1777,7 +1777,7 @@ int Telescope::scriptEnds ()
 	return rts2core::Device::scriptEnds ();
 }
 
-void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, bool writeValues)
+void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, struct ln_hrz_posn *hrz, bool writeValues)
 {
 #ifdef USE_ERFA
 	double aob, zob, hob, dob, rob, co;
@@ -1794,6 +1794,12 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 
 	pos->ra = ln_rad_to_deg (rob);
 	pos->dec = ln_rad_to_deg (dob);
+	if (hrz != NULL)
+	{
+		// what is returned is 0 north, let's transform to IAU 0 south..
+		hrz->az = ln_range_degrees (180 + ln_rad_to_deg (aob));
+		hrz->alt = 90 - ln_rad_to_deg (zob);
+	}
 #else
 	// apply all posible corrections
 	if (calPrecession->getValueBool () == true)
@@ -1804,6 +1810,11 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 		applyAberation (pos, JD, writeValues);
 	if (calRefraction->getValueBool () == true)
 		applyRefraction (pos, JD, writeValues);
+	
+	if (hrz != NULL)
+	{
+		getHrzFromEqu (pos, JD, hrz);
+	}
 #endif
 }
 
@@ -1814,9 +1825,9 @@ void Telescope::applyCorrections (double &t_ra, double &t_dec, bool writeValues)
 	pos.dec = t_dec;
 
 #ifdef USE_ERFA
-	applyCorrections (&pos, 0, 0, writeValues);
+	applyCorrections (&pos, 0, 0, NULL, writeValues);
 #else
-	applyCorrections (&pos, ln_get_julian_from_sys (), 0, writeValues);
+	applyCorrections (&pos, ln_get_julian_from_sys (), 0, NULL, writeValues);
 #endif
 
 	t_ra = pos.ra;
@@ -1956,8 +1967,9 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	setCRVAL (pos.ra, pos.dec);
 
+	struct ln_hrz_posn hrztar;
 	// apply computed corrections (precession, aberation, refraction)
-	applyCorrections (&pos, utc1, utc2, true);
+	applyCorrections (&pos, utc1, utc2, &hrztar, true);
 
 	LibnovaRaDec syncTo (&pos);
 	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
@@ -2006,9 +2018,6 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		}
 	}
 
-	struct ln_hrz_posn hrztar;
-	getTargetAltAz (&hrztar, utc1 + utc2);
-	
 	if (hardHorizon)
 	{
 		if (!hardHorizon->is_good (&hrztar))

@@ -128,8 +128,14 @@ class Telescope:public rts2core::Device
 
 		/**
 		 * Apply corrections to position.
+		 *
+		 * @param pos target equatorial position - input in mean coordinates, output in apparent coordinates
+		 * @param utc1
+		 * @param utc2
+		 * @param hrz computed horizontal position
+		 * @param writeValues
 		 */
-		void applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, bool writeValues);
+		void applyCorrections (struct ln_equ_posn *pos, double utc1, double utc2, struct ln_hrz_posn *hrz, bool writeValues);
 
 #ifndef USE_ERFA
 		/**

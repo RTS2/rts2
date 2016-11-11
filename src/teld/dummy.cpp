@@ -249,7 +249,7 @@ int Dummy::sky2counts (const double utc1, const double utc2, struct ln_equ_posn 
 {
 	ac = pos->ra * 10000;
 	dc = pos->dec * 10000;
-	applyCorrections (pos, utc1, utc2, writeValues);
+	applyCorrections (pos, utc1, utc2, NULL, writeValues);
 	if (writeValues)
 		setTelTarget (pos->ra, pos->dec);
 	return 0;

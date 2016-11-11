@@ -170,8 +170,8 @@ START_TEST(test_altaz_1)
 	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
 #ifdef USE_ERFA
-	ck_assert_int_eq (azc, 16145359);
-	ck_assert_int_eq (altc, 27309790);
+	ck_assert_int_eq (azc, 16135692);
+	ck_assert_int_eq (altc, 27308043);
 #else
 	ck_assert_int_eq (azc, 16147947);
 	ck_assert_int_eq (altc, 27349159);
@@ -196,8 +196,8 @@ START_TEST(test_altaz_1)
 	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
 #ifdef USE_ERFA
-	ck_assert_int_eq (azc, 49507679);
-	ck_assert_int_eq (altc, 12298011);
+	ck_assert_int_eq (azc, 49514704);
+	ck_assert_int_eq (altc, 12300262);
 #else
 	ck_assert_int_eq (azc, 49510274);
 	ck_assert_int_eq (altc, 12292285);

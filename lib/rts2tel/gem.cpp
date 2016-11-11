@@ -41,11 +41,12 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const 
 	}
 	ls = getLstDeg (utc1 + utc2);
 
-	struct ln_lnlat_posn latpos;
-	latpos.lat = telLatitude->getValueDouble ();
-	latpos.lng = telLongitude->getValueDouble ();
+        tar_pos.ra = pos->ra;
+        tar_pos.dec = pos->dec;
 
-	ln_get_hrz_from_equ (pos, &latpos, utc1 + utc2, &hrz);
+        // apply corrections
+        applyCorrections (&tar_pos, utc1, utc2, &hrz, writeValues);
+
 	if (hrz.alt < -5)
 	{
 		logStream (MESSAGE_ERROR) << "object is below horizon, azimuth is "
@@ -54,12 +55,6 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const 
 			<< sendLog;
 		return -1;
 	}
-
-        tar_pos.ra = pos->ra;
-        tar_pos.dec = pos->dec;
-
-        // apply corrections
-        applyCorrections (&tar_pos, utc1, utc2, writeValues);
 
 	// get hour angle
 	ha = ln_range_degrees (ls - tar_pos.ra);

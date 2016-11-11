@@ -89,11 +89,9 @@ int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn 
 	tar_pos.ra = pos->ra;
 	tar_pos.dec = pos->dec;
 
-	applyCorrections (&tar_pos, utc1, utc2, writeValue);
-
 	struct ln_hrz_posn hrz, hrz_modelled;
 
-	getHrzFromEquST (&tar_pos, ln_get_mean_sidereal_time (utc1 + utc2), &hrz);
+	applyCorrections (&tar_pos, utc1, utc2, &hrz, writeValue);
 
 	hrz_modelled.alt = hrz.alt;
 	hrz_modelled.az = hrz.az;
