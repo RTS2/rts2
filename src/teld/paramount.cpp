@@ -614,7 +614,9 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 	track1 = NULL;
 
 	// apply all correction for paramount
+#ifndef USE_ERFA
 	setCorrections (true, true, true, true);
+#endif
 
 	// int paramout values
 	paramountValues.push_back (ParaVal ("Index angle", T16, CMD_VAL16_INDEX_ANGLE));
@@ -905,7 +907,7 @@ void Paramount::updateTrack ()
 	getTarget (&corr_pos);
 	// calculate position at track_next time
 	bool use_flipped = false;
-	sky2counts (&corr_pos, ac, dc, JD, flipping->getValueInteger (), use_flipped, true, 0);
+	sky2counts (&corr_pos, ac, dc, JD, 0, flipping->getValueInteger (), use_flipped, true, 0);
 
 	int32_t haOff;
 	int ret = getHomeOffsetAxis (axis0, haOff);

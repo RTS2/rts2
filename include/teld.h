@@ -39,6 +39,9 @@
 // Limit on number of steps for trajectory check
 #define TRAJECTORY_CHECK_LIMIT  2000
 
+// use ERFA/SOFA functions to transfrom from ICRS to apparent instead of Libnova mean/apparent transformations
+#define USE_ERFA                1
+
 namespace rts2telmodel
 {
 	class TelModel;
@@ -126,8 +129,9 @@ class Telescope:public rts2core::Device
 		/**
 		 * Apply corrections to position.
 		 */
-		void applyCorrections (struct ln_equ_posn *pos, double JD, bool writeValues);
+		void applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, bool writeValues);
 
+#ifndef USE_ERFA
 		/**
 		 * Set telescope correctios.
 		 *
@@ -163,6 +167,9 @@ class Telescope:public rts2core::Device
 		 * If refraction should be calculated in RTS2.
 		 */
 		bool calculateRefraction () { return calRefraction->getValueBool (); }
+#else
+		void getEraUTC (double &utc1, double &utc2);
+#endif
 
 		/**
 		 * Switch model off model will not be used to transform coordinates.
@@ -424,6 +431,9 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *telLatitude;
 		rts2core::ValueDouble *telAltitude;
 		rts2core::ValueFloat *telPressure;
+		rts2core::ValueFloat *telAmbientTemperature;
+		rts2core::ValueFloat *telHumidity;
+		rts2core::ValueFloat *telWavelength;
 
 
 		/**
@@ -1203,10 +1213,15 @@ class Telescope:public rts2core::Device
 
 		// object + telescope position
 
+		// make mean->apparent transformations with ERFA/SOFA library
+		rts2core::ValueBool *useErfa;
+
+#ifndef USE_ERFA
 		rts2core::ValueBool *calPrecession;
 		rts2core::ValueBool *calNutation;
 		rts2core::ValueBool *calAberation;
 		rts2core::ValueBool *calRefraction;
+#endif
 		rts2core::ValueBool *calModel;
 
 		rts2core::StringArray *cupolas;

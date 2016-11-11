@@ -752,8 +752,10 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv, false, true)
 	createValue (waitWormRa, "wait_worm_ra", "wait during RA worm cycle", false, RTS2_VALUE_WRITABLE);
 	waitWormRa->setValueInteger (101);
 
+#ifndef USE_ERFA
 	// apply all corrections
 	setCorrections (true, true, true, true);
+#endif
 }
 
 Trencin::~Trencin (void)

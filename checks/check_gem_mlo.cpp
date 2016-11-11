@@ -44,19 +44,28 @@ START_TEST(test_gem_mlo)
 	int32_t ac = -70000000;
 	int32_t dc = -68000000;
 
-	int ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -47625764);
+	ck_assert_int_eq (dc, -38649844);
+#else
 	ck_assert_int_eq (ac, -47564851);
 	ck_assert_int_eq (dc, -38659919);
-
+#endif
 	// origin
 	pos.ra = 344.16613;
 	pos.dec = 2.3703305;
 
-	ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+	ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -40894838);
+	ck_assert_int_eq (dc, -53111268);
+#else
 	ck_assert_int_eq (ac, -40884933);
 	ck_assert_int_eq (dc, -53131138);
+#endif
 
 	pos.ra = 62.95859;
 	pos.dec = -3.51601;
@@ -66,11 +75,11 @@ START_TEST(test_gem_mlo)
 
 	struct ln_hrz_posn hrz;
 
-	gemTest->test_counts2hrz (JD, -70194687, -48165219, &hrz);
+	gemTest->test_counts2hrz (JD, 0, -70194687, -48165219, &hrz);
 	ck_assert_dbl_eq (hrz.alt, 11.934541, 10e-2);
 	ck_assert_dbl_eq (hrz.az, 243.195274, 10e-2);
 
-	gemTest->test_counts2hrz (JD, -68591258, -68591258, &hrz);
+	gemTest->test_counts2hrz (JD, 0, -68591258, -68591258, &hrz);
 	ck_assert_dbl_eq (hrz.alt, -17.369510, 10e-2);
 	ck_assert_dbl_eq (hrz.az, 350.316641, 10e-2);
 }

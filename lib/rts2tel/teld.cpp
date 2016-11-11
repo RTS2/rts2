@@ -38,6 +38,10 @@
 #include "gpointmodel.h"
 #include "tpointmodel.h"
 
+#ifdef USE_ERFA
+#include "erfa.h"
+#endif
+
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
 #define OPT_HORIZON	   OPT_LOCAL + 118
 #define OPT_CORRECTION	OPT_LOCAL + 119
@@ -71,6 +75,15 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (telPressure, "PRESSURE", "observatory atmospheric pressure", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telPressure->setValueFloat (1000);
+
+	createValue (telAmbientTemperature, "AMBTEMP", "[C] observatory ambient temperature", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	telAmbientTemperature->setValueFloat (10);
+
+	createValue (telHumidity, "AMBHUMIDITY", "[%] observatory relative humidity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	telHumidity->setValueFloat (0.7);
+
+	createValue (telWavelength, "WAVELENGTH", "[nm] incoming radiation wavelength", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	telWavelength->setValueFloat (0.1);
 
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
@@ -327,6 +340,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	flip_longest_path = -1;
 
 	// default is to aply model corrections
+
+#ifndef USE_ERFA
 	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calPrecession->setValueBool (false);
 
@@ -338,6 +353,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calRefraction->setValueBool (false);
+#endif
 
 	createValue (calModel, "CAL_MODE", "if model calculations are included in target calcuations", false, RTS2_VALUE_WRITABLE);
 	calModel->setValueBool (false);
@@ -1761,8 +1777,24 @@ int Telescope::scriptEnds ()
 	return rts2core::Device::scriptEnds ();
 }
 
-void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, bool writeValues)
+void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, bool writeValues)
 {
+#ifdef USE_ERFA
+	double aob, zob, hob, dob, rob, co;
+
+	double rc = ln_deg_to_rad (pos->ra);
+	double dc = ln_deg_to_rad (pos->dec);
+
+	int status = eraAtco13 (rc, dc, 0, 0, 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &aob, &zob, &hob, &dob, &rob, &co);
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "cannot apply corrections to " << pos->ra << " " << pos->dec << sendLog;
+		return;
+	}
+
+	pos->ra = ln_rad_to_deg (rob);
+	pos->dec = ln_rad_to_deg (dob);
+#else
 	// apply all posible corrections
 	if (calPrecession->getValueBool () == true)
 		applyPrecession (pos, JD, writeValues);
@@ -1772,18 +1804,37 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, bool write
 		applyAberation (pos, JD, writeValues);
 	if (calRefraction->getValueBool () == true)
 		applyRefraction (pos, JD, writeValues);
+#endif
 }
 
-void Telescope::applyCorrections (double &tar_ra, double &tar_dec, bool writeValues)
+void Telescope::applyCorrections (double &t_ra, double &t_dec, bool writeValues)
 {
 	struct ln_equ_posn pos;
-	pos.ra = tar_ra;
-	pos.dec = tar_dec;
+	pos.ra = t_ra;
+	pos.dec = t_dec;
 
-	applyCorrections (&pos, ln_get_julian_from_sys (), writeValues);
+#ifdef USE_ERFA
+	applyCorrections (&pos, 0, 0, writeValues);
+#else
+	applyCorrections (&pos, ln_get_julian_from_sys (), 0, writeValues);
+#endif
 
-	tar_ra = pos.ra;
-	tar_dec = pos.dec;
+	t_ra = pos.ra;
+	t_dec = pos.dec;
+}
+
+void Telescope::getEraUTC (double &utc1, double &utc2)
+{
+	struct timeval tv;
+
+	gettimeofday (&tv, NULL);
+
+	struct tm *gt = gmtime (&(tv.tv_sec));
+
+	int status = eraDtf2d ("UTC", gt->tm_year + 1900, gt->tm_mon + 1, gt->tm_mday, gt->tm_hour, gt->tm_min, gt->tm_sec + tv.tv_usec / USEC_SEC, &utc1, &utc2);
+
+	if (status)
+		logStream (MESSAGE_ERROR) << "cannot get system time" << sendLog;
 }
 
 void Telescope::startCupolaSync ()
@@ -1828,7 +1879,9 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	struct ln_equ_posn pos;
 
 	// apply computed corrections (precession, aberation, refraction)
-	double JD = ln_get_julian_from_sys ();
+	double utc1, utc2;
+
+	getEraUTC (utc1, utc2);
 
 	// calculate from MPEC..
 	if (mpec->getValueString ().length () > 0)
@@ -1846,7 +1899,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	if (tle_freeze->getValueBool () == false && tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
 	{
 		double ra, dec, dist_to_satellite;
-		calculateTLE (JD, ra, dec, dist_to_satellite);
+		calculateTLE (utc1 + utc2, ra, dec, dist_to_satellite);
 		oriRaDec->setValueRaDec (ln_rad_to_deg (ra), ln_rad_to_deg (dec));
 		tle_distance->setValueDouble (dist_to_satellite);
 	}
@@ -1904,7 +1957,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	setCRVAL (pos.ra, pos.dec);
 
 	// apply computed corrections (precession, aberation, refraction)
-	applyCorrections (&pos, JD, true);
+	applyCorrections (&pos, utc1, utc2, true);
 
 	LibnovaRaDec syncTo (&pos);
 	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
@@ -1954,7 +2007,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	}
 
 	struct ln_hrz_posn hrztar;
-	getTargetAltAz (&hrztar, JD);
+	getTargetAltAz (&hrztar, utc1 + utc2);
 	
 	if (hardHorizon)
 	{

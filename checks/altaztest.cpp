@@ -30,14 +30,16 @@ void AltAzTest::setTelescope (double _lat, double _long, double _alt, long _az_t
 	altMin->setValueLong (_altMin);
 	altMax->setValueLong (_altMax);
 
+#ifndef USE_ERFA
 	setCorrections (false, false, false, false);
+#endif
 
 	hardHorizon = new ObjectCheck ("../conf/horizon_flat_19_flip.txt");
 }
 
-int AltAzTest::test_sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc)
+int AltAzTest::test_sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc)
 {
-	return sky2counts (JD, pos, azc, altc, false, 0, false);
+	return sky2counts (utc1, utc2, pos, azc, altc, false, 0, false);
 }
 
 int AltAzTest::test_hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc)
@@ -65,7 +67,7 @@ float AltAzTest::test_move (double JD, struct ln_equ_posn *pos, int32_t &azc, in
 	// calculates elapsed time
 	float elapsed = 0;
 
-	int ret = test_sky2counts (JD, pos, t_azc, t_altc);
+	int ret = test_sky2counts (JD, 0, pos, t_azc, t_altc);
 	if (ret)
 		return NAN;
 

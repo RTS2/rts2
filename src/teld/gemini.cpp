@@ -631,14 +631,12 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv, false, 
 
 	addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
 	addOption (OPT_GEMINIMODELFILE, "gemini-model", 1, "gemini config file (with internal model parameters)");
-	addOption (OPT_BOOTES, "bootes", 0,
-		"BOOTES G-11 (with 1/0 pointing sensor)");
-	addOption (OPT_CORR, "corrections", 1,
-		"level of correction done in Gemini - 0 none, 3 all");
-	addOption (OPT_EXPTYPE, "expected-type", 1,
-		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
-	addOption (OPT_FORCETYPE, "force-type", 1,
-		"force Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
+	addOption (OPT_BOOTES, "bootes", 0, "BOOTES G-11 (with 1/0 pointing sensor)");
+#ifndef USE_ERFA
+	addOption (OPT_CORR, "corrections",  1, "level of correction done in Gemini - 0 none, 3 all");
+#endif
+	addOption (OPT_EXPTYPE, "expected-type", 1, "expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
+	addOption (OPT_FORCETYPE, "force-type", 1, "force Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
 	addOption (OPT_FORCELATLON, "force-latlon", 0, "set observing longitude and latitude from configuration file");
 	addOption (OPT_EVENINGRESET, "evening-reset", 0, "park and reset mount at the beginning of every evening");
 
@@ -701,6 +699,7 @@ int Gemini::processOption (int in_opt)
 		case OPT_BOOTES:
 			bootesSensors = 1;
 			break;
+#ifndef USE_ERFA
 		case OPT_CORR:
 			switch (*optarg)
 			{
@@ -720,6 +719,7 @@ int Gemini::processOption (int in_opt)
 					std::cerr << "Invalid correction option " << optarg << std::endl;
 					return -1;
 			}
+#endif
 		case OPT_EXPTYPE:
 			expectedType = atoi (optarg);
 			break;
@@ -857,6 +857,9 @@ int Gemini::setCorrection ()
 		return 0;
 	
 	int ret = -1;
+#ifdef USE_ERFA
+	ret = serConn->writePort (":p3#", 4);
+#else
 	if (calculateAberation () && calculatePrecession () && calculateRefraction ())
 		ret = serConn->writePort (":p0#", 4);
 	else if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())	
@@ -865,6 +868,7 @@ int Gemini::setCorrection ()
 		ret = serConn->writePort (":p2#", 4);
 	else if (!calculateAberation () && !calculatePrecession () && !calculateRefraction ())
 		ret = serConn->writePort (":p3#", 4);
+#endif
 	usleep (USEC_SEC / 15);
 	return ret;
 }

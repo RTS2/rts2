@@ -83,17 +83,17 @@ int AltAz::calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_a
 	return 0;
 }
 
-int AltAz::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
+int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest)
 {
 	struct ln_equ_posn tar_pos;
 	tar_pos.ra = pos->ra;
 	tar_pos.dec = pos->dec;
 
-	applyCorrections (&tar_pos, JD, writeValue);
+	applyCorrections (&tar_pos, utc1, utc2, writeValue);
 
 	struct ln_hrz_posn hrz, hrz_modelled;
 
-	getHrzFromEquST (&tar_pos, ln_get_mean_sidereal_time (JD), &hrz);
+	getHrzFromEquST (&tar_pos, ln_get_mean_sidereal_time (utc1 + utc2), &hrz);
 
 	hrz_modelled.alt = hrz.alt;
 	hrz_modelled.az = hrz.az;

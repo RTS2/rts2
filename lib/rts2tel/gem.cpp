@@ -24,7 +24,7 @@
 
 using namespace rts2teld;
 
-int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int used_flipping, bool &use_flipped, bool writeValues, double haMargin)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const double utc1, const double utc2, int used_flipping, bool &use_flipped, bool writeValues, double haMargin)
 {
 	double ls, ha, dec;
 	struct ln_hrz_posn hrz;
@@ -39,13 +39,13 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		logStream (MESSAGE_ERROR) << "sky2counts called with nan ra/dec" << sendLog;
 		return -1;
 	}
-	ls = getLstDeg (JD);
+	ls = getLstDeg (utc1 + utc2);
 
 	struct ln_lnlat_posn latpos;
 	latpos.lat = telLatitude->getValueDouble ();
 	latpos.lng = telLongitude->getValueDouble ();
 
-	ln_get_hrz_from_equ (pos, &latpos, JD, &hrz);
+	ln_get_hrz_from_equ (pos, &latpos, utc1 + utc2, &hrz);
 	if (hrz.alt < -5)
 	{
 		logStream (MESSAGE_ERROR) << "object is below horizon, azimuth is "
@@ -59,7 +59,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
         tar_pos.dec = pos->dec;
 
         // apply corrections
-        applyCorrections (&tar_pos, JD, writeValues);
+        applyCorrections (&tar_pos, utc1, utc2, writeValues);
 
 	// get hour angle
 	ha = ln_range_degrees (ls - tar_pos.ra);
@@ -89,7 +89,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	struct ln_equ_posn tf_pos, tn_pos, tt_pos;
 
 	// if we cannot move with those values, we cannot move with the any other more optional setting, so give up
-	int ret_n = normalizeCountValues (ac, dc, tn_ac, tn_dc, JD);
+	int ret_n = normalizeCountValues (ac, dc, tn_ac, tn_dc, utc1 + utc2);
 
 	if (ret_n == 0)
 	{
@@ -101,7 +101,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		tt_pos.dec = (double) (tn_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 
 		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-		applyModel (&tn_pos, &tt_pos, &n_model_change, JD);
+		applyModel (&tn_pos, &tt_pos, &n_model_change, utc1 + utc2);
 
 		tn_ac += (int32_t) (n_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
 		tn_dc -= (int32_t) (n_model_change.dec * decCpd->getValueDouble ());
@@ -121,7 +121,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		}
 	}
 
-	int ret_f = normalizeCountValues (ac, dc, tf_ac, tf_dc, JD);
+	int ret_f = normalizeCountValues (ac, dc, tf_ac, tf_dc, utc1 + utc2);
 
 	if (ret_f == 0)
 	{
@@ -136,7 +136,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 		tt_pos.dec = (double) (tf_dc / decCpd->getValueDouble ()) + decZero->getValueDouble ();
 	
 		// apply model (some modeling components are not cyclic => we want to use real mount coordinates)
-		applyModel (&tf_pos, &tt_pos, &f_model_change, JD);
+		applyModel (&tf_pos, &tt_pos, &f_model_change, utc1 + utc2);
 
 		tf_ac += (int32_t) (f_model_change.ra * haCpd->getValueDouble ());	// -1* is because ac is in HA, not in RA
 		tf_dc -= (int32_t) (f_model_change.dec * decCpd->getValueDouble ());    // flipped, that means DEC is counted in opossite direction
@@ -308,12 +308,12 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	return 0;
 }
 
-int GEM::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortes)
+int GEM::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortes)
 {
 	int used_flipping = forceShortes ? 0 : (useParkFlipping ? parkFlip->getValueInteger () : flipping->getValueInteger ());
         bool use_flipped;
 
-	return sky2counts (pos, ac, dc, JD, used_flipping, use_flipped, writeValues, haMargin);
+	return sky2counts (pos, ac, dc, utc1, utc2, used_flipping, use_flipped, writeValues, haMargin);
 }
 
 int GEM::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip, double &un_ra, double &un_dec, double JD)

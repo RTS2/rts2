@@ -105,7 +105,7 @@ class Dummy:public Telescope
 
 		virtual void runTracking ();
 
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues);
+		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues);
 
 	private:
 
@@ -245,11 +245,11 @@ void Dummy::runTracking ()
 	Telescope::runTracking ();
 }
 
-int Dummy::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
+int Dummy::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues)
 {
 	ac = pos->ra * 10000;
 	dc = pos->dec * 10000;
-	applyCorrections (pos, JD, writeValues);
+	applyCorrections (pos, utc1, utc2, writeValues);
 	if (writeValues)
 		setTelTarget (pos->ra, pos->dec);
 	return 0;

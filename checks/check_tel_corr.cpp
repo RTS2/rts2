@@ -34,6 +34,10 @@ void setup_tel (void)
 
 	altazTestNutation = new AltAzTest(0, (char **) argv);
 	altazTestNutation->setTelescope (-40, -5, 200, 67108864, 67108864, 90, -7, 186413.511111, 186413.511111, -80000000, 80000000, -40000000, 40000000);
+
+#ifndef USE_ERFA
+	altazTestNutation->setCorrections (true, true, true, true);
+#endif
 }
 
 void teardown_tel (void)
@@ -270,18 +274,24 @@ START_TEST(test_nutation)
 	struct ln_hrz_posn hrz;
 	int32_t azc = -20000000;
 	int32_t altc = 1000;
-	double JD = 2452164;
+	double utc1 = 2452164;
+	double utc2 = 0;
+	double JD = utc1 + utc2;
 	int ret;
 
 	pos.ra = 270;
 	pos.dec = -85;
 
-	altazTestNutation->setCorrections (true, true, true, true);
-
-	ret = altazTestNutation->test_sky2counts (JD, &pos, azc, altc);
+	ret = altazTestNutation->test_sky2counts (utc1, utc2, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (azc, -17931104);
+	ck_assert_int_eq (altc, 10882736);
+#else
 	ck_assert_int_eq (azc, -17930975);
 	ck_assert_int_eq (altc, 10886604);
+#endif
+
 
 	// check meridian calculations
 	hrz.az = 180;
@@ -290,6 +300,7 @@ START_TEST(test_nutation)
 	double ST = ln_get_apparent_sidereal_time (JD);
 
 	altazTestNutation->test_getEquFromHrz (&hrz, JD, &pos);
+
 	ck_assert_dbl_eq (pos.ra, ST * 15.0 + altazTestNutation->getLongitude (), 10e-10);
 
 	altazTestNutation->test_getHrzFromEquST (&pos, ST, &hrz);
@@ -406,6 +417,70 @@ START_TEST(test_nutation)
 }
 END_TEST
 
+START_TEST(test_mean2apparent)
+{
+	ck_assert_dbl_eq (altazTestNutation->getPressure (), 986.2, 10e-1);
+
+	struct ln_equ_posn pos;
+	pos.ra = ln_rad_to_deg (2.71);
+	pos.dec = ln_rad_to_deg (0.174);
+
+	double utc1 = 2456384.5;
+	double utc2 = 0.969254051;
+
+	double JD = utc1 + utc2;
+
+	ck_assert_dbl_eq (pos.ra, 155.2715624, 10e-7);
+	ck_assert_dbl_eq (pos.dec, 9.96946563, 10e-7);
+
+//	altazTestNutation->applyCorrections (&pos, JD2000, false);
+
+	printf ("JD diff: %f\n", JD - JD2000);
+
+//	ck_assert_dbl_eq (pos.ra, 155.461159413, 10e-7);
+//	ck_assert_dbl_eq (pos.dec, 9.8786101602, 10e-7);
+
+#ifndef USE_ERFA
+	altazTestNutation->setCorrections (true, true, true, true);
+#endif
+
+	altazTestNutation->applyCorrections (&pos, utc1, utc2, false);
+
+#ifdef USE_ERFA
+	ck_assert_dbl_eq (pos.ra, 155.2949621001, 10e-7);
+	ck_assert_dbl_eq (pos.dec, 9.8591743371, 10e-7);
+#else
+	ck_assert_dbl_eq (pos.ra, 155.461159413, 10e-7);
+	ck_assert_dbl_eq (pos.dec, 9.8786101602, 10e-7);
+#endif
+
+	struct ln_hrz_posn hrz;
+	double AST = ln_get_apparent_sidereal_time (JD);
+//	double MST = ln_get_mean_sidereal_time (JD);
+
+	altazTestNutation->test_getHrzFromEquST (&pos, AST, &hrz);
+
+#ifdef USE_ERFA
+	ck_assert_dbl_eq (hrz.az, 154.9979027296, 10e-7);
+	ck_assert_dbl_eq (hrz.alt, 36.7780707105, 10e-7);
+#else
+	ck_assert_dbl_eq (hrz.az, 155.1990540442, 10e-7);
+	ck_assert_dbl_eq (hrz.alt, 36.8133130985, 10e-7);
+#endif
+
+	for (int i = 0; i < 36; i++)
+	{
+		pos.ra += 10;
+
+		printf ("before RA %f DEC %f\n", pos.ra, pos.dec);
+
+		altazTestNutation->applyCorrections (&pos, utc1, utc2, false);
+
+		printf ("after RA %f DEC %f\n", pos.ra, pos.dec);
+	}
+}
+END_TEST
+
 START_TEST(test_refraction4000)
 {
 	struct ln_hrz_posn tpos;
@@ -474,6 +549,7 @@ Suite * tel_suite (void)
 	tcase_add_test (tc_tel_corrs, test_refraction1850);
 	tcase_add_test (tc_tel_corrs, test_refraction1680);
 	tcase_add_test (tc_tel_corrs, test_nutation);
+	tcase_add_test (tc_tel_corrs, test_mean2apparent);
 	tcase_add_test (tc_tel_corrs, test_refraction4000);
 	suite_add_tcase (s, tc_tel_corrs);
 

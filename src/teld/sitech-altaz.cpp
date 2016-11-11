@@ -203,7 +203,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 {
 	unlockPointing ();
 
+#ifndef USE_ERFA
 	setCorrections (true, true, true, true);
+#endif
 
 	tel_tty = "/dev/ttyUSB0";
 	telConn = NULL;

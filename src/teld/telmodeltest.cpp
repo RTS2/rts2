@@ -294,10 +294,14 @@ int TelModelTest::init ()
 		return 0;
 
 	telescope = new ModelTest ();
+#ifndef USE_ERFA
 	telescope->setCorrections (false, false, false, false);
+#endif
 
 	gemTelescope = new ModelTestGEM ();
+#ifndef USE_ERFA
 	gemTelescope->setCorrections (true, true, true, true);
+#endif
 
 	if (defaultsFile)
 	{
@@ -507,14 +511,18 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 				{
 					temp = NAN;
 					press = NAN;
+#ifndef USE_ERFA
 					telescope->setCorrections (true, true, true, false);
+#endif
 				}
 				else
 				{
+#ifndef USE_ERFA
 					if ( includeRefraction )
 						telescope->setCorrections (true, true, true, true);
 					else
 						telescope->setCorrections (true, true, true, false);
+#endif
 				}
 			}
 			if (firstChar == '-')
@@ -589,7 +597,9 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 					else
 						JD = JD0;
 
+#ifndef USE_ERFA
 					telescope->applyCorrections (&pos_in, JD, false);
+#endif
 				}
 
 				double err = ln_get_angular_separation (&pos_in, &pos_out);
@@ -775,7 +785,7 @@ void TelModelTest::processCountsFile ()
 		bool use_flipped = false;
 		bool ignore = false;
 
-		ret = gemTelescope->sky2counts (&tar, compaxra, compaxdec, mjd + MJD_OFFSET, 0, use_flipped, false, 0);
+		ret = gemTelescope->sky2counts (&tar, compaxra, compaxdec, mjd + MJD_OFFSET, 0, 0, use_flipped, false, 0);
 		if (ret)
 		{
 			std::cerr << "Cannot calculate target for line: " << line << std::endl;

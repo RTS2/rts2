@@ -167,14 +167,25 @@ START_TEST(test_altaz_1)
 
 	altAzTest->modelOff ();
 
-	ret = altAzTest->test_sky2counts (JD, &pos, azc, altc);
+	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (azc, 16145359);
+	ck_assert_int_eq (altc, 27309790);
+#else
 	ck_assert_int_eq (azc, 16147947);
 	ck_assert_int_eq (altc, 27349159);
+#endif
 
 	altAzTest->test_counts2sky (JD, azc, altc, pos.ra, pos.dec);
+
+#ifdef USE_ERFA
+	ck_assert_dbl_eq (pos.ra, 20, 10e-1);
+	ck_assert_dbl_eq (pos.dec, 80, 10e-1);
+#else
 	ck_assert_dbl_eq (pos.ra, 20, 10e-4);
 	ck_assert_dbl_eq (pos.dec, 80, 10e-4);
+#endif
 
 	altAzTest->modelOn ();
 
@@ -182,10 +193,15 @@ START_TEST(test_altaz_1)
 	pos.ra = 344.16613;
 	pos.dec = -80.3703305;
 
-	ret = altAzTest->test_sky2counts (JD, &pos, azc, altc);
+	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (azc, 49507679);
+	ck_assert_int_eq (altc, 12298011);
+#else
 	ck_assert_int_eq (azc, 49510274);
 	ck_assert_int_eq (altc, 12292285);
+#endif
 
 	// target
 	pos.ra = 62.95859;
@@ -199,8 +215,13 @@ START_TEST(test_altaz_1)
 
 	altAzTest->test_counts2sky (JD, azc, altc, curr.ra, curr.dec);
 
+#ifdef USE_ERFA
+	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-1);
+	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
+#else
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-3);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-3);
+#endif
 
 	altAzTest->test_counts2hrz (-70194687, -48165219, &hrz);
 	ck_assert_dbl_eq (hrz.alt, -4.621631, 10e-3);

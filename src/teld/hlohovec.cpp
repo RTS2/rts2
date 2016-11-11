@@ -370,7 +370,14 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	int32_t ac;
 	int32_t dc;
 	bool use_flipped;
-	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), 0, use_flipped, true, 0);
+
+#ifdef USE_ERFA
+	double utc1, utc2;
+	getEraUTC (utc1, utc2);
+	int ret = sky2counts (&eq, ac, dc, utc1, utc2, 0, use_flipped, true, 0);
+#else
+	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), 0, 0, use_flipped, true, 0);
+#endif
 	if (ret)
 		return -1;
 	raDrive->setCurrentPos (ac);

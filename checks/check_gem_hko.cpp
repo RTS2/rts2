@@ -44,19 +44,30 @@ START_TEST(test_gem_hko_1)
 	int32_t ac = -70000000;
 	int32_t dc = -68000000;
 
-	int ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -78292145);
+	ck_assert_int_eq (dc, -51101387);
+#else
 	ck_assert_int_eq (ac, -78244743);
 	ck_assert_int_eq (dc, -51111083);
+#endif
 
 	// origin
 	pos.ra = 344.16613;
 	pos.dec = 2.3703305;
 
-	ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+	ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
-	ck_assert_int_eq (ac, -71564825);
+
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -71569137);
+	ck_assert_int_eq (dc, -65564008);
+#else
+`	ck_assert_int_eq (ac, -71564825);
 	ck_assert_int_eq (dc, -65582303);
+#endif
 
 	// target
 	pos.ra = 62.95859;
@@ -68,18 +79,23 @@ START_TEST(test_gem_hko_1)
 	struct ln_equ_posn curr;
 	curr.ra = curr.dec = 0;
 
-	gemTest->test_counts2sky (JD, ac, dc, curr.ra, curr.dec);
+	gemTest->test_counts2sky (JD, 0, ac, dc, curr.ra, curr.dec);
 
+#ifdef USE_ERFA
+	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-1);
+	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
+#else
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-5);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-5);
+#endif
 
 	struct ln_hrz_posn hrz;
 
-	gemTest->test_counts2hrz (JD, -70194687, -48165219, &hrz);
+	gemTest->test_counts2hrz (JD, 0, -70194687, -48165219, &hrz);
 	ck_assert_dbl_eq (hrz.alt, 17.664712, 10e-2);
 	ck_assert_dbl_eq (hrz.az, 185.232715, 10e-2);
 
-	gemTest->test_counts2hrz (JD, -68591258, -68591258, &hrz);
+	gemTest->test_counts2hrz (JD, 0, -68591258, -68591258, &hrz);
 	ck_assert_dbl_eq (hrz.alt, 14.962282, 10e-2);
 	ck_assert_dbl_eq (hrz.az, 68.627175, 10e-2);
 }
@@ -109,10 +125,15 @@ START_TEST(test_gem_hko_2)
 	int32_t ac = -70000000;
 	int32_t dc = -68000000;
 
-	int ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -80983081);
+	ck_assert_int_eq (dc, -72034126);
+#else
 	ck_assert_int_eq (ac, -80983656);
 	ck_assert_int_eq (dc, -72023192);
+#endif
 
 	// target
 	pos.ra = 190.2791;
@@ -121,16 +142,26 @@ START_TEST(test_gem_hko_2)
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
 	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -51445419);
+	ck_assert_int_eq (dc, -29181975);
+#else
 	ck_assert_int_eq (ac, -51445652);
 	ck_assert_int_eq (dc, -29194913);
+#endif
 
 	struct ln_equ_posn curr;
 	curr.ra = curr.dec = 0;
 
-	gemTest->test_counts2sky (JD, ac, dc, curr.ra, curr.dec);
+	gemTest->test_counts2sky (JD, 0, ac, dc, curr.ra, curr.dec);
 
+#ifdef USE_ERFA
+	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-3);
+	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
+#else
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-5);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-5);
+#endif
 }
 END_TEST
 
@@ -158,11 +189,15 @@ START_TEST(test_gem_hko_3)
 	int32_t ac = -40000000;
 	int32_t dc = -68000000;
 
-	int ret = gemTest->test_sky2counts (JD, &pos, ac, dc);
+	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -48141625);
+	ck_assert_int_eq (dc, -43243375);
+#else
 	ck_assert_int_eq (ac, -48150618);
 	ck_assert_int_eq (dc, -43263075);
-
+#endif
 	// target
 	pos.ra = 193.0;
 	pos.dec = 52.837;
@@ -170,16 +205,26 @@ START_TEST(test_gem_hko_3)
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
 	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
+#ifdef USE_ERFA
+	ck_assert_int_eq (ac, -80576113);
+	ck_assert_int_eq (dc, -56194262);
+#else
 	ck_assert_int_eq (ac, -80580362);
 	ck_assert_int_eq (dc, -56174633);
+#endif
 
 	struct ln_equ_posn curr;
 	curr.ra = curr.dec = 0;
 
-	gemTest->test_counts2sky (JD, ac, dc, curr.ra, curr.dec);
+	gemTest->test_counts2sky (JD, 0, ac, dc, curr.ra, curr.dec);
 
+#ifdef USE_ERFA
+	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-2);
+	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
+#else
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-5);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-5);
+#endif
 }
 END_TEST
 
