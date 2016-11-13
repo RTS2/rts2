@@ -18,4 +18,4 @@ cd $HOME/rts2/scripts/u_point/
 #./u_acquire.py --level DEBUG --simulate-image --mode-continues  
 #
 # same with DSS image retrieval
-./u_acquire.py --level DEBUG --simulate-image --mode-continues --fetch-dss-image
+./u_acquire.py --level DEBUG --mode-continues --fetch-dss-image
