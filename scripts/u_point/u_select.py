@@ -18,7 +18,6 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
-
 '''
 Catalog of visible bright and lonely stars 
 
@@ -31,6 +30,7 @@ http://tdc-www.harvard.edu/catalogs/bsc5.html
 __author__ = 'wildi.markus@bluewin.ch'
 
 import sys
+import os
 import argparse
 import logging
 import numpy as np
@@ -43,42 +43,36 @@ from astropy.coordinates import AltAz,CIRS,ITRS
 from astropy.coordinates import Longitude,Latitude,Angle
 import astropy.coordinates as coord
 
-class CatPosition(object):
-  def __init__(self,cat_no=None, cat_eq=None,mag_v=None):
-    self.cat_eq=cat_eq 
-    self.mag_v=mag_v
-    self.cat_no=cat_no
-    
+from position import CatPosition
+
 class Catalog(object):
-  def __init__(self, dbg=None,lg=None, obs_lng=None, obs_lat=None, obs_height=None,break_after=None):
+  def __init__(self, dbg=None,lg=None, obs_lng=None, obs_lat=None, obs_height=None,break_after=None,base_path=None):
     self.dbg=dbg
     self.lg=lg
     self.break_after=break_after
+    self.base_path=base_path
     #
     self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
 
-  def observable(self,cat_eq=None, altitude_interval=None,now=False):
-    if now:
-      cat_aa=cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
-      if altitude_interval[0]<cat_aa.alt.radian<altitude_interval[1]:
+  def observable(self,cat_eq=None):
+    if self.obs.latitude.radian >= 0.:
+      if -(np.pi/2.-self.obs.latitude.radian) < cat_eq.dec.radian:
         return True
-      else:
-        return False
     else:
-      if self.obs.latitude.radian >= 0.:
-        if -(np.pi/2.-self.obs.latitude.radian) < cat_eq.dec.radian:
-          return True
-      else:
-        if -(-np.pi/2.-self.obs.latitude.radian) > cat_eq.dec.radian:
-          return True
+      if -(-np.pi/2.-self.obs.latitude.radian) > cat_eq.dec.radian:
+        return True
 
     return False
     
-  def fetch_catalog(self, ptfn=None,bgrightness=None,altitude_interval=None,now=False):
+  def fetch_catalog(self, ptfn=None,bgrightness=None):
+    if self.base_path in ptfn:
+      fn=ptfn
+    else:
+      fn=os.path.join(self.base_path,ptfn)
 
     lns=list()
-    with  open(ptfn, 'r') as lfl:
+    with  open(fn, 'r') as lfl:
       lns=lfl.readlines()
 
     cats=list()
@@ -109,7 +103,7 @@ class Catalog(object):
         dec='{}{} {} {} '.format(dec_n,dec_d,dec_m,dec_s)
         cat_eq=SkyCoord(ra=ra,dec=dec, unit=(u.hour,u.deg), frame='icrs',obstime=self.dt_utc,location=self.obs)
 
-        if self.observable(cat_eq=cat_eq,altitude_interval=altitude_interval,now=now):
+        if self.observable(cat_eq=cat_eq):
           cat=CatPosition(cat_no=cat_no,cat_eq=cat_eq,mag_v=mag_v)
           cats.append(cat)
     # prepare for u_acquire.py
@@ -136,7 +130,11 @@ class Catalog(object):
     self.lg.info('number of remaining objects: {}'.format(len(self.cats)))
           
   def store_observable_catalog(self,ptfn=None):
-    with  open(ptfn, 'w') as wfl:
+    if self.base_path in ptfn:
+      fn=ptfn
+    else:
+      fn=os.path.join(self.base_path,ptfn)
+    with  open(fn, 'w') as wfl:
       for i,o in enumerate(self.cats):
         wfl.write('{0},{1},{2},{3}\n'.format(o.cat_no,o.cat_eq.ra.radian,o.cat_eq.dec.radian,o.mag_v))
 
@@ -157,6 +155,7 @@ class Catalog(object):
     # eye candy
     npa=np.asarray([np.exp(x.mag_v)/80. for x in self.cats])
     
+    ax.set_title('selected stars for observatory latitude: {0:.2f} deg'.format(self.obs.latitude.degree))
     ax.scatter(ra.radian, dec.radian,s=npa)
     ax.set_xticklabels(['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h'])
     ax.grid(True)
@@ -186,11 +185,10 @@ if __name__ == "__main__":
   parser.add_argument('--yale-catalog', dest='yale_catalog', action='store', default='/usr/share/stardata/yale/catalog.dat', help=': %(default)s, Ubuntu apt install yale')
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
   parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0], type=arg_floats, help=': %(default)s, visual star brightness [mag], format "p1 p2"')
-  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[10.,80.],type=arg_floats,help=': %(default)s,  altitude [deg], format "p1 p2"')
   parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, store the  observable objects')
-  parser.add_argument('--now-observable', dest='now_observable', action='store_true', default=False, help=': %(default)s, select the NOW observable objects, see --altitude-interval')
   parser.add_argument('--minimum-separation', dest='minimum_separation', action='store', default=1.,type=arg_float, help=': %(default)s [deg], minimum separation between catalog stars')
-    
+  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  
   args=parser.parse_args()
   
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
@@ -198,29 +196,21 @@ if __name__ == "__main__":
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()
     
-  if args.level in 'DEBUG' or args.level in 'INFO':
-    toconsole=True
-  else:
-    toconsole=args.toconsole
     
-  if toconsole:
+  if args.toconsole:
     # http://www.mglerner.com/blog/?p=8
     soh = logging.StreamHandler(sys.stdout)
     soh.setLevel(args.level)
     logger.addHandler(soh)
+  
+  if not os.path.exists(args.base_path):
+    os.makedirs(args.base_path)
 
-  altitude_interval=list()
-  for v in args.altitude_interval:
-    altitude_interval.append(v/180.*np.pi)
+  ct= Catalog(dbg=args.debug,lg=logger,obs_lng=args.obs_lng,obs_lat=args.obs_lat,obs_height=args.obs_height,break_after=args.break_after,base_path=args.base_path)
+  ct.fetch_catalog(ptfn=args.yale_catalog, bgrightness=args.brightness_interval)
 
-  ct= Catalog(dbg=args.debug,lg=logger,obs_lng=args.obs_lng,obs_lat=args.obs_lat,obs_height=args.obs_height,break_after=args.break_after)
-  ct.fetch_catalog(ptfn=args.yale_catalog, bgrightness=args.brightness_interval,altitude_interval=altitude_interval,now=args.now_observable)
-
-  ptfn=args.observable_catalog
-  if args.now_observable:
-    ptfn=ct.dt_utc.iso + '_'+ args.observable_catalog
   ct.remove_objects(min_sep=args.minimum_separation)
   
-  ct.store_observable_catalog(ptfn=ptfn)
+  ct.store_observable_catalog(ptfn=args.observable_catalog)
   if args.plot:
     ct.plot()

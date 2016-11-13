@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 # (C) 2016, Markus Wildi, wildi.markus@bluewin.ch
 #
 #   This program is free software; you can redistribute it and/or modify
@@ -20,7 +21,7 @@
 
 # 2016-11-13, wildi.markus@bluewin.ch
 #
-# Demonstrate u_point in simulation mode without RTS2
+# Demonstrate u_point in simulation mode without RTS2.
 #
 # Taking in almost all cases the argument's default values.
 # Site: Dome Concordia, Antarctica
@@ -28,6 +29,7 @@
 # No RTS2 installation required
 #
 export BASE_DIRECTORY=/tmp/u_point
+echo "clean sweep in base directory $BASE_DIRECTORY"
 # clean sweep
 rm -fr $BASE_DIRECTORY
 # since u_point is not yet a python package
@@ -62,17 +64,18 @@ echo "./u_acquire.py --base-path $BASE_DIRECTORY --do-not-use-rts2 --fetch-dss-i
 #
 echo "DONE position acqusition"
 echo "------------------------------------------------"
-echo "forth step, analyse the acquired position"
+echo "forth step, analyze the acquired position"
 echo "in this demo astrometry.net is disabled, since it is too slow for this purpose"
-echo "progress report: once u_analyse.py is running:"
-echo "- open an new terminal and do a: tail -f /tmp/u_analyse.log"
-echo "- create a progress plot:  ./u_analyse.py --base-path $BASE_DIRECTORY  --plot"
-echo "./u_analyse.py  --base-path $BASE_DIRECTORY  --do-not-use-astrometry --level DEBUG"
+echo "progress report: once u_analyze.py is running:"
+echo "- open an new terminal and do a: tail -f /tmp/u_analzse.log"
+echo "- create a progress plot:  ./u_analyze.py --base-path $BASE_DIRECTORY  --plot"
+echo "./u_analyze.py  --base-path $BASE_DIRECTORY  --do-not-use-astrometry --level DEBUG"
 #
-./u_analyse.py  --base-path $BASE_DIRECTORY  --do-not-use-astrometry --level DEBUG --toconsole
+./u_analyze.py  --base-path $BASE_DIRECTORY  --do-not-use-astrometry --level DEBUG --toconsole
 #
 echo "DONE analysis of all positions"
 echo "------------------------------------------------"
 echo "fifth step, create pointing model"
 echo "./u_point.py --base-path $BASE_DIRECTORY --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG"
+#
 ./u_point.py --base-path $BASE_DIRECTORY --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG --toconsole

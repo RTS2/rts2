@@ -63,14 +63,14 @@ class Worker(Process):
     self.dbg=dbg
     self.lg=lg
 
-  def store_analysed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_mnt_eq=None):
+  def store_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_mnt_eq=None):
     lock.acquire()
     if astr_mnt_eq is None and sxtr_ra is None and sxtr_dec is None:
       pass
     elif astr_mnt_eq is None:
-      self.anl.store_analysed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=np.nan,astr_dec=np.nan)
+      self.anl.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=np.nan,astr_dec=np.nan)
     else:
-      self.anl.store_analysed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=astr_mnt_eq.ra.radian,astr_dec=astr_mnt_eq.dec.radian)
+      self.anl.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=astr_mnt_eq.ra.radian,astr_dec=astr_mnt_eq.dec.radian)
     lock.release()
 
   def run(self):
@@ -90,14 +90,14 @@ class Worker(Process):
             acq_image_fn=acq.image_fn
             acq=None
           elif 'q' in cmd:
-            self.store_analysed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
+            self.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
             self.lg.error('{}: got {}, call shutdown'.format(current_process().name, cmd))
             self.shutdown()
             return
           else:
             self.lg.error('{}: got {}, continue'.format(current_process().name, cmd))
         if acq:
-          self.store_analysed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
+          self.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
         elif acq_image_fn is not None:
           self.lg.info('{}: not storing {}'.format(current_process().name, acq_image_fn))
           acq_image_fn=None
@@ -123,7 +123,7 @@ class Worker(Process):
       
       astr_mnt_eq=self.anl.astrometry(acq=acq,pcn=current_process().name)
       if self.ds9_queue is None:
-        self.store_analysed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
+        self.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
       else:
         self.next_queue.put('c')
       # end analysis part
@@ -193,7 +193,7 @@ class Analysis(object):
       radius=None,
       ccd_size=None,
       acquired_positions=None,
-      analysed_positions=None,
+      analyzed_positions=None,
       u_point_positions_base=None,
       break_after=None,
       do_not_use_astrometry=None,
@@ -214,7 +214,7 @@ class Analysis(object):
     self.base_path=base_path
     #
     self.acquired_positions=acquired_positions
-    self.analysed_positions=analysed_positions
+    self.analyzed_positions=analyzed_positions
     self.u_point_positions_base=u_point_positions_base
     self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
     self.dt_utc=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
@@ -342,11 +342,11 @@ class Analysis(object):
         acq.humidity[0],#9
       ))
 
-  def store_analysed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_ra=None,astr_dec=None):
-    if self.base_path in self.analysed_positions:
-      ptfn=self.analysed_positions
+  def store_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_ra=None,astr_dec=None):
+    if self.base_path in self.analyzed_positions:
+      ptfn=self.analyzed_positions
     else:
-      ptfn=os.path.join(self.base_path,self.analysed_positions)
+      ptfn=os.path.join(self.base_path,self.analyzed_positions)
     
     # append, one by one
     with  open(ptfn, 'a') as wfl:
@@ -489,12 +489,12 @@ if __name__ == "__main__":
   #parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, retrieve the observable objects')
   #parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.cat', help=': %(default)s, to be observed positions (AltAz coordinates)')
   parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
-  parser.add_argument('--analysed-positions', dest='analysed_positions', action='store', default='analysed_positions.anl', help=': %(default)s, already observed positions')
+  parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
   parser.add_argument('--u-point-positions-base', dest='u_point_positions_base', action='store', default='u_point_positions_', help=': %(default)s, base path for u_point.py input (SExtractor, astrometry.net)')
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], arcmin/pixel of the CCD camera')
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=arg_float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
-  parser.add_argument('--base-path', dest='base_path', action='store', default='./DSS/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
@@ -522,7 +522,7 @@ if __name__ == "__main__":
     radius=args.radius,
     ccd_size=args.ccd_size,
     acquired_positions=args.acquired_positions,
-    analysed_positions=args.analysed_positions,
+    analyzed_positions=args.analyzed_positions,
     u_point_positions_base=args.u_point_positions_base,
     break_after=args.break_after,
     do_not_use_astrometry=args.do_not_use_astrometry,
@@ -536,7 +536,7 @@ if __name__ == "__main__":
 
   if args.plot:
     anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
-    anl.fetch_positions(fn=anl.analysed_positions,fetch_acq=False,sys_exit=False)
+    anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
     anl.plot(title='acquired (blue), sextracted (red), astrometry (yellow) positions')
     sys.exit(0)
 
@@ -552,15 +552,15 @@ if __name__ == "__main__":
     cpus=2 # one worker
 
   anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
-  anl.fetch_positions(fn=anl.analysed_positions,fetch_acq=False,sys_exit=False)
-  analysed=[x.image_fn for x in anl.anl]
-  #if len(anl.anl)==len(analysed) and len(anl.anl)>0:
-  #  logger.info('all position analysed, exiting')
+  anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
+  analyzed=[x.image_fn for x in anl.anl]
+  #if len(anl.anl)==len(analyzed) and len(anl.anl)>0:
+  #  logger.info('all position analyzed, exiting')
   #  sys.exit(1)
     
   for o in anl.acq:
-    if o.image_fn in analysed:
-      logger.debug('skiping analysed position: {}'.format(o.image_fn))
+    if o.image_fn in analyzed:
+      logger.debug('skiping analyzed position: {}'.format(o.image_fn))
       continue
     else:
       logger.debug('adding position: {}'.format(o.image_fn))
@@ -568,7 +568,7 @@ if __name__ == "__main__":
     work_queue.put(o)
 
   if len(anl.anl) and args.ds9_display:
-    logger.warn('deleted positions will appear again, these are deliberately not stored file: {}'.format(args.analysed_positions))
+    logger.warn('deleted positions will appear again, these are deliberately not stored file: {}'.format(args.analyzed_positions))
     
   processes = list()
   for w in range(1,cpus,1):

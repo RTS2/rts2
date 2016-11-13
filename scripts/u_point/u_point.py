@@ -31,15 +31,17 @@ __author__ = 'wildi.markus@bluewin.ch'
 import sys
 import argparse
 import logging
+import os
+
 import numpy as np
 import scipy.optimize
+import pandas as pd
+
 from astropy import units as u
 from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
 from astropy.coordinates import AltAz,CIRS,ITRS
 from astropy.coordinates import Longitude,Latitude,Angle
-# ToDo it is local
-import libnova
         
 # Python bindings for libnova
 from ctypes import *
@@ -241,9 +243,10 @@ def fit_hadec_helper(function=None, parameters=None, has_cat=None,decs_cat=None,
 
 
 class PointingModel(object):
-  def __init__(self, dbg=None,lg=None, obs_lng=None, obs_lat=None, obs_height=None):
+  def __init__(self, dbg=None,lg=None, base_path=None, obs_lng=None, obs_lat=None, obs_height=None):
     self.dbg=dbg
     self.lg=lg
+    self.base_path=base_path
     #
     self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
     #
@@ -332,6 +335,31 @@ class PointingModel(object):
 
     return pos_aa
 
+  def fetch_pandas(self, ptfn=None,columns=None):
+    pd_cat=None
+    if not os.path.isfile(ptfn):
+      self.lg.debug('fetch_pandas:{} does not exist, exiting'.format(ptfn))
+      sys.exit(1)
+    try:
+      pd_cat = pd.read_csv(ptfn, sep=',',header=None)
+    except ValueError as e:
+      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
+      return
+    except OSError as e:
+      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
+      return
+    except Exception as e:
+      self.lg.debug('fetch_pandas: {},{}, exiting'.format(ptfn, e))
+      sys.exit(1)
+    
+    try:
+      pd_cat.columns = columns
+    except ValueError as e:
+      self.lg.debug('fetch_pandas: {},{}, ignoring'.format(ptfn, e))
+      return
+
+    return pd_cat
+
   def fetch_coordinates(self,ptfn=None,astropy_f=False,break_after=None,fit_eq=False):
     '''
     Data structure, one per line:
@@ -343,43 +371,41 @@ class PointingModel(object):
 
     This method uses the optional items in case they are present.
     '''
-    lns=list()
-    with  open(ptfn, 'r') as lfl:
-      lns=lfl.readlines()
-
-    # format with/out meteo
-    exp_f=meteo_f=False
-    itms=lns[0].split(',')
-    if len(itms)==9:
-      meteo_f=True
-      exp_f=True
-    elif len(itms)==6:
-      exp_f=True
     cats=list()
     mnts=list()
-    tem=pre=hum=0.
-    for i,ln in enumerate(lns):
+    if self.base_path in ptfn:
+      fn=ptfn
+    else:
+      fn=os.path.join(self.base_path,ptfn)
+
+    pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp'])
+    if pd_cat is None:
+      pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','tem','pre','hum'])
+      
+    if pd_cat is None:
+      return
+
+    for i,rw in pd_cat.iterrows():
       if i > break_after:
         break
-      if meteo_f:
-        utc,cat_ra,cat_dc,mnt_ra,mnt_dc,sexp,stem,spre,shum=ln.split(',')
-        exp=float(sexp)
-        tem=float(stem)
-        pre=float(spre)
-        hum=float(shum)
-      elif exp_f:
-        utc,cat_ra,cat_dc,mnt_ra,mnt_dc,sexp=ln.split(',')
-        exp=float(sexp)
+      dt_utc = Time(rw['utc'],format='iso', scale='utc',location=self.obs)
+      if pd.notnull(rw['exp']):
+        dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
+
+      cat_eq=SkyCoord(ra=rw['cat_ra'],dec=rw['cat_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
+      if pd.notnull(rw['mnt_ra']) and pd.notnull(rw['mnt_dc']):
+        mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
       else:
-        utc,cat_ra,cat_dc,mnt_ra,mnt_dc=ln.split(',')
-
-      dt_utc = Time(utc,format='iso', scale='utc',location=self.obs)
-      if exp_f:
-        dt_utc=dt_utc + TimeDelta(exp/2.,format='sec') # exp. time is small
-
-      cat_eq=SkyCoord(ra=float(cat_ra),dec=float(cat_dc), unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
-      mnt_eq=SkyCoord(ra=float(mnt_ra),dec=float(mnt_dc), unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
+        self.lg.warn('fetch_coordinates: no analyzed position on line: {},{}'.format(i,rw))
+        continue
       
+      #if pd.isnull(rw['pre']):
+      tem=pre=hum=0.
+      #else:
+      #  tem=rw['tem']
+      #  pre=rw['pre']
+      #  hum=rw['hum']
+        
       if fit_eq:
         cat_ha=self.transform_to_hadec(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
         mnt_ha=self.transform_to_hadec(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
@@ -392,7 +418,6 @@ class PointingModel(object):
         #if self.accept(cat_lon=cat_aa.az.radian, cat_lat=cat_aa.alt.radian, mnt_lon=mnt_aa.az.radian, mnt_lat=mnt_aa.alt.radian):
         cats.append(cat_aa)
         mnts.append(mnt_aa)
-          
     return cats,mnts
 
   def accept(self, cat_lon=None, cat_lat=None, mnt_lon=None, mnt_lat=None):
@@ -443,10 +468,10 @@ class PointingModel(object):
     ax.set_ylabel('number of events normalized')
     if prefix in 'difference': # ToDo ugly
       ax.set_title('{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec] \n catalog_not_corrected - star'.format(plt_no,prefix,axis,mu(), sigma()))
-      fig.savefig('{}_catalog_not_corrected_projection_{}.png'.format(prefix,axis))
+      fig.savefig(os.path.join(self.base_path,'{}_catalog_not_corrected_projection_{}.png'.format(prefix,axis)))
     else:
       ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,mu(), sigma(),fit_title))
-      fig.savefig('{}_projection_{}_{}.png'.format(prefix,axis,fn_frac))
+      fig.savefig(os.path.join(self.base_path,'{}_projection_{}_{}.png'.format(prefix,axis,fn_frac)))
 
 
   # Condon 1992, fit dAlt and dAz data simultaneously
@@ -496,7 +521,7 @@ class PointingModel(object):
           break
       self.lg.info('C{0:02d}={1};'.format(i+1,res[i]))
 
-    self.lg.info('fited values:')
+    self.lg.info('fitted values:')
     self.lg.info('C1: horizontal telescope collimation:{0:+10.4f} [arcsec]'.format(C1()*180.*3600./np.pi))
     self.lg.info('C2: constant azimuth offset         :{0:+10.4f} [arcsec]'.format(C2()*180.*3600./np.pi))
     self.lg.info('C3: tipping-mount collimation       :{0:+10.4f} [arcsec]'.format(C3()*180.*3600./np.pi))
@@ -562,7 +587,7 @@ class PointingModel(object):
         else:
           self.lg.warn('fit converged with status: {}'.format(stat))
 
-      self.lg.info('fited values:')
+      self.lg.info('fitted values:')
       self.lg.info('IH : ha index error                 :{0:+12.4f} [arcsec]'.format(IH()*180.*3600./np.pi))
       self.lg.info('ID : delta index error              :{0:+12.4f} [arcsec]'.format(ID()*180.*3600./np.pi))
       self.lg.info('CH : collimation error              :{0:+12.4f} [arcsec]'.format(CH()*180.*3600./np.pi))
@@ -597,7 +622,7 @@ class PointingModel(object):
           self.lg.warn('fit not converged, status: {}'.format(stat))
         else:
           self.lg.warn('fit converged with status: {}'.format(stat))
-      self.lg.info('fited values:')
+      self.lg.info('fitted values:')
       self.lg.info('Dd:    declination zero-point offset    :{0:+12.4f} [arcsec]'.format(Dd()*180.*3600./np.pi))
       self.lg.info('Dt:    hour angle zero-point offset     :{0:+12.4f} [arcsec]'.format(Dt()*180.*3600./np.pi))
       self.lg.info('ip:    angle(polar,declination) axis    :{0:+12.4f} [arcsec]'.format(ip()*180.*3600./np.pi))
@@ -649,7 +674,7 @@ class PointingModel(object):
     ax.set_xlabel('d({}) [arcmin]'.format(lon))
     ax.set_ylabel('d({}) [arcmin]'.format(lat))
     ax.scatter([x.df_lon.arcmin for x in stars],[x.df_lat.arcmin for x in stars])
-    fig.savefig('difference_catalog_not_corrected_star.png')
+    fig.savefig(os.path.join(self.base_path,'difference_catalog_not_corrected_star.png'))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -657,7 +682,7 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lon))
     ax.set_ylabel('d({}) [arcmin]'.format(lon))
     ax.scatter(az_cat_deg ,[x.df_lon.arcmin for x in stars])
-    fig.savefig('difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lon))
+    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lon)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -665,7 +690,7 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lon))
     ax.set_ylabel('d({}) [arcmin]'.format(lat))
     ax.scatter(az_cat_deg ,[x.df_lat.arcmin for x in stars])
-    fig.savefig('difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lon,lat))
+    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lon,lat)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -675,7 +700,7 @@ class PointingModel(object):
     ax.scatter(alt_cat_deg ,[x.df_lon.arcmin for x in stars])
     # ToDo: think about that:
     #ax.scatter(alt_cat_deg ,[x.df_lon.arcmin/ np.tan(x.mnt_lat.radian) for x in stars])
-    fig.savefig('difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lat,lon))
+    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lat,lon)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -683,7 +708,7 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lat))
     ax.set_ylabel('d({}) [arcmin]'.format(lat))
     ax.scatter(alt_cat_deg ,[x.df_lat.arcmin for x in stars])
-    fig.savefig('difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lat))
+    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lat)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -691,7 +716,7 @@ class PointingModel(object):
     ax.set_xlabel('d({}) [arcmin]'.format(lon))
     ax.set_ylabel('d({}) [arcmin]'.format(lat))
     ax.scatter([x.res_lon.arcmin for x in stars],[x.res_lat.arcmin for x in stars])
-    fig.savefig('residuum_catalog_corrected_star_{}.png'.format(fn_frac))
+    fig.savefig(os.path.join(self.base_path,'residuum_catalog_corrected_star_{}.png'.format(fn_frac)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -699,7 +724,7 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lon))
     ax.set_ylabel('d({}) [arcmin]'.format(lon))
     ax.scatter(az_cat_deg,[x.res_lon.arcmin for x in stars])
-    fig.savefig('residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lon,fn_frac))
+    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lon,fn_frac)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -707,7 +732,7 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lat))
     ax.set_ylabel('d({}) [arcmin]'.format(lon))
     ax.scatter(alt_cat_deg,[x.res_lon.arcmin for x in stars])
-    fig.savefig('residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lat,lon,fn_frac))
+    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lat,lon,fn_frac)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -715,7 +740,7 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lon))
     ax.set_ylabel('d({}) [arcmin]'.format(lat))
     ax.scatter(az_cat_deg,[x.res_lat.arcmin for x in stars])
-    fig.savefig('residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lon,lat,fn_frac))
+    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lon,lat,fn_frac)))
           
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -723,7 +748,7 @@ class PointingModel(object):
     ax.set_xlabel('{}  [deg]'.format(lat))
     ax.set_ylabel('d({}) [arcmin]'.format(lat))
     ax.scatter(alt_cat_deg,[x.res_lat.arcmin for x in stars])
-    fig.savefig('residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lat,fn_frac))
+    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lat,fn_frac)))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -731,7 +756,7 @@ class PointingModel(object):
     ax.set_xlabel('{} [deg]'.format(lon))
     ax.set_ylabel('{} [deg]'.format(lat))
     ax.scatter([x.cat_lon.degree for x in stars],[x.cat_lat.degree for x in stars])
-    fig.savefig('measurement_locations_catalog.png')
+    fig.savefig(os.path.join(self.base_path,'measurement_locations_catalog.png'))
 
 
     self.fit_projection_and_plot(vals=[x.df_lon.arcsec for x in stars], bins=args.bins,axis='{}'.format(lon), fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P1',plt=plt)
@@ -754,7 +779,7 @@ if __name__ == "__main__":
 
   parser= argparse.ArgumentParser(prog=sys.argv[0], description='Fit an AltAz or EQ pointing model')
   parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
-  parser.add_argument('--level', dest='level', default='DEBUG', help=': %(default)s, debug level')
+  parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
 
@@ -768,6 +793,7 @@ if __name__ == "__main__":
   parser.add_argument('--astropy', dest='astropy', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with astropy, default libnova')
   parser.add_argument('--bins', dest='bins', action='store', default=40,type=int, help=': %(default)s, number of bins used in the projection histograms')
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
             
   args=parser.parse_args()
   
@@ -792,7 +818,10 @@ if __name__ == "__main__":
     logger.error('--fit-plus-poly can not be specified with --fit-eq, drop either')
     sys.exit(1)
   
-  pm= PointingModel(dbg=args.debug,lg=logger,obs_lng=args.obs_lng,obs_lat=args.obs_lat,obs_height=args.obs_height)
+  pm= PointingModel(dbg=args.debug,lg=logger,base_path=args.base_path,obs_lng=args.obs_lng,obs_lat=args.obs_lat,obs_height=args.obs_height)
+
+  if not os.path.exists(args.base_path):
+    os.makedirs(args.base_path)
 
   if args.t_point:
     args.fit_eq=True
@@ -837,7 +866,6 @@ if __name__ == "__main__":
       )
       stars.append(st)
   else:
-    # ToDo: do not copy yourself
     # cat_aas,mnt_aas: AltAz coordinates
     cat_aas,mnt_aas=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
     res=pm.fit_model_altaz(cat_aas=cat_aas,mnt_aas=mnt_aas,fit_plus_poly=args.fit_plus_poly)

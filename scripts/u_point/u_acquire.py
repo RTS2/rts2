@@ -18,7 +18,6 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
-
 '''
 
 Acquire sky positions for a pointing model
@@ -33,6 +32,7 @@ import logging
 import socket
 import numpy as np
 import requests
+import pandas as pd
 
 from collections import OrderedDict
 from datetime import datetime
@@ -49,78 +49,53 @@ from watchdog.events import FileSystemEventHandler
 import queue
 # python 3 version
 import scriptcomm_3
+from position import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
+from meteo import Meteo
 
 dss_base_url='http://archive.eso.org/dss/dss/'
 
-class CatPosition(object):
-  def __init__(self, cat_no=None,cat_eq=None,mag_v=None):
-    self.cat_no=cat_no
-    self.cat_eq=cat_eq 
-    self.mag_v=mag_v
-    
-# ToDo may be only a helper
-class NmlPosition(object):
-  def __init__(self, nml_id=None,aa_nml=None,count=1):
-    self.nml_id=nml_id
-    self.aa_nml=aa_nml # nominal position (grid created with store_nominal_altaz())
-    self.count=count
-  # http://stackoverflow.com/questions/390250/elegant-ways-to-support-equivalence-equality-in-python-classes
-  def __eq__(self, other):
-    """Override the default Equals behavior"""
-    if isinstance(other, self.__class__):
-      return self.__dict__ == other.__dict__
-
-    return NotImplemented
-  
-  def __ne__(self, other):
-    """Define a non-equality test"""
-    if isinstance(other, self.__class__):
-      return not self.__eq__(other)
-    return NotImplemented
-
-  def __hash__(self):
-    """Override the default hash behavior (that returns the id or the object)"""
-    return hash(tuple(sorted(self.__dict__.items())))
-  
-class AcqPosition(object):
-  def __init__(self,
-               nml_id=None,
-               cat_no=None,
-               aa_nml=None,
-               eq=None,
-               dt_begin=None,
-               dt_end=None,
-               dt_end_query=None,
-               JD=None,
-               eq_woffs=None,
-               eq_mnt=None,
-               aa_mnt=None,
-               image_fn=None,
-               exp=None,
-  ):
-    self.nml_id=nml_id,
-    self.cat_no=cat_no,
-    self.aa_nml=aa_nml # nominal position (grid created with store_nominal_altaz())
-    self.eq=eq # ORI (rts2-mon) acquired star positions
-    self.dt_begin=dt_begin 
-    self.dt_end=dt_end
-    self.dt_end_query=dt_end_query
-    self.JD=JD
-    self.eq_woffs=eq_woffs # OFFS, offsets set manually
-    self.eq_mnt=eq_mnt # TEL, read back from encodes
-    self.aa_mnt=aa_mnt # TEL_ altaz 
-    self.image_fn=image_fn
-    self.exp=exp
-    
 class Acquisition(scriptcomm_3.Rts2Comm):
-  def __init__(self, dbg=None,lg=None, obs_lng=None, obs_lat=None, obs_height=None,acqired_positions=None,break_after=None):
-    scriptcomm_3.Rts2Comm.__init__(self)
+  def __init__(
+      self,
+      dbg=None,
+      lg=None,
+      obs_lng=None,
+      obs_lat=None,
+      obs_height=None,
+      acquired_positions=None,
+      break_after=None,
+      do_not_use_rts2=None,
+      px_scale=None,
+      ccd_size=None,
+      mode_continues=None,
+      acq_queue=None,
+      mode_watchdog=None,
+      fetch_dss_image=None,
+      meteo=None,
+      base_path=None,
+  ):
     
+    scriptcomm_3.Rts2Comm.__init__(self)
+
     self.dbg=dbg
     self.lg=lg
+    self.obs_lng=obs_lng
+    self.obs_lat=obs_lat
+    self.obs_height=obs_height
+    self.acquired_positions=acquired_positions
     self.break_after=break_after
+    self.do_not_use_rts2=do_not_use_rts2
+    self.px_scale=px_scale
+    self.ccd_size=ccd_size
+    self.mode_continues=mode_continues
+    self.acq_queue=acq_queue
+    self.mode_watchdog=mode_watchdog
+    self.fetch_dss_image=fetch_dss_image
+    self.acquired_positions=acquired_positions
+    self.meteo=meteo
+    self.base_path=args.base_path
+
     #
-    self.acqired_positions=acqired_positions
     self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     self.cat=list()
@@ -142,47 +117,72 @@ class Acquisition(scriptcomm_3.Rts2Comm):
   def to_eq(self,aa=None):
     return aa.transform_to(ICRS()) 
 
+  def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True):
+    pd_cat=None
+    if not os.path.isfile(ptfn):
+      self.lg.debug('fetch_pandas:{} does not exist'.format(ptfn))
+      if sys_exit:
+        sys.exit(1)
+      return None
+    
+    pd_cat = pd.read_csv(ptfn, sep=',',header=None)
+    try:
+      pd_cat = pd.read_csv(ptfn, sep=',',header=None)
+    except ValueError as e:
+      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
+      return None
+    except OSError as e:
+      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
+      return None
+    except Exception as e:
+      #self.lg.debug('fetch_pandas: {},{}, exiting'.format(ptfn, e))
+      sys.exit(1)
+    pd_cat.columns = columns
+    return pd_cat
+  
   def fetch_observable_catalog(self, ptfn=None):
-    lns=list()
-    with  open(ptfn, 'r') as lfl:
-      lns=lfl.readlines()
-
-    for i,ln in enumerate(lns):
+    pd_cat = self.fetch_pandas(ptfn=ptfn,columns=['cat_no','ra','dec','mag_v',],sys_exit=True)
+    if pd_cat is None:
+      return
+    for i,rw in pd_cat.iterrows():
       if i > self.break_after:
         break
-      cat_nos,ras,decs,mag_vs=ln.split(',')
-      try:
-        cat_no=int(cat_nos)
-        ra=float(ras)
-        dec=float(decs)
-        mag_v=float(mag_vs)
-      except ValueError:
-        self.lg.warn('fetch_observable_catalog: value error on line: {}, {}, {}'.format(i,ln[:-1],ptfn))
-        continue
-      except Exception as e:
-        self.lg.error('fetch_observable_catalog: error on line: {}, {},{}'.format(i,e,ptfn))
-        sys.exit(1)
-      #not yet if brightness[0]<mag_v<brighness[1]:
-      cat_eq=SkyCoord(ra=ra,dec=dec, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
-      self.cat.append(CatPosition(cat_no=cat_no,cat_eq=cat_eq,mag_v=mag_v))
       
+      cat_eq=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
+      self.cat.append(CatPosition(cat_no=rw['cat_no'],cat_eq=cat_eq,mag_v=rw['mag_v'] ))
 
-  def store_nominal_altaz(self,step=None,azimuth_interval=None,altitude_interval=None,ptfn=None):
+  def store_nominal_altaz(self,az_step=None,alt_step=None,azimuth_interval=None,altitude_interval=None,ptfn=None):
     # ToDo from pathlib import Path, fp=Path(ptfb),if fp.is_file())
     # format az_nml,alt_nml
-    if os.path.isfile(ptfn):
+    if self.base_path in ptfn:
+      fn=ptfn
+    else:
+      fn=os.path.join(self.base_path,ptfn)
+
+    if os.path.isfile(fn):
       a=input('overwriting existing file: {} [N/y]'.format(ptfn))
       if a not in 'y':
         self.lg.info('exiting')
         sys.exit(0)
 
-    with  open(ptfn, 'w') as wfl:
+    with  open(fn, 'w') as wfl:
       # ToDo input as int?
-      outer_rng=range(int(azimuth_interval[0]),int(azimuth_interval[1]),args.step)
-      inner_rng=range(int(altitude_interval[0]),int(altitude_interval[1]),step)
-      lir=len(inner_rng)
-      for i,az in enumerate(outer_rng):
-        for j,alt in enumerate(inner_rng):
+      az_rng=range(int(azimuth_interval[0]),int(azimuth_interval[1]),az_step) # No, exclusive + az_step
+      
+      alt_rng_up=range(int(altitude_interval[0]),int(altitude_interval[1]+alt_step),alt_step)
+      alt_rng_down=range(int(altitude_interval[1]),int(altitude_interval[0])-alt_step,-alt_step)
+      lir=len(alt_rng_up)
+      up=True
+      for i,az in enumerate(az_rng):
+        # Epson MX-80
+        if up:
+          up=False
+          rng=alt_rng_up
+        else:
+          up=True
+          rng=alt_rng_down
+          
+        for j,alt in enumerate(rng):
           nml_id=i*lir+j
           azr=az/180.*np.pi
           altr=alt/180.*np.pi
@@ -192,144 +192,67 @@ class Acquisition(scriptcomm_3.Rts2Comm):
           self.nml.append(NmlPosition(nml_id=nml_id,aa_nml=aa_nml))
 
   def fetch_nominal_altaz(self,ptfn=None):
-    # format: az_nml,alt_nml
-    lns=list()
-    try:
-      with  open(ptfn, 'r') as rfl:
-        lns=rfl.readlines()
-    except:
-      self.lg.error('fetch_nominal_altaz: no nominal altaz file found: {}, exiting'.format(ptfn))
-      sys.exit(1)
-    for i,ln in enumerate(lns):
-      try:
-        nml_ids,azs,alts,=ln.split(',')
-        nml_id=int(nml_ids) # id
-        az=float(azs)
-        alt=float(alts)
-      except ValueError:
-        self.lg.warn('fetch_nominal_altaz: value error on line: {}, {}, {}'.format(i,ln[:-1],ptfn))
-        continue
-      except Exception as e:
-        self.lg.error('fetch_nominal_altaz: error on line: {}, {},{}'.format(i,e,ptfn))
-        sys.exit(1)
-      # no Time() here
-      aa_nml=SkyCoord(az=az,alt=alt,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-      self.nml.append(NmlPosition(nml_id=nml_id,aa_nml=aa_nml))
+    if self.base_path in ptfn:
+      fn=ptfn
+    else:
+      fn=os.path.join(self.base_path,ptfn)
+
+    pd_cat = self.fetch_pandas(ptfn=fn,columns=['nml_id','az','alt'],sys_exit=True)
+    if pd_cat is None:
+      return
+
+    for i,rw in pd_cat.iterrows():
+      aa_nml=SkyCoord(az=rw['az'],alt=rw['alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs)
+      self.nml.append(NmlPosition(nml_id=rw['nml_id'],aa_nml=aa_nml))
 
   def fetch_acquired_positions(self):
-    lns=list()
-    try:
-      with  open(self.acqired_positions, 'r') as rfl:
-        lns=rfl.readlines()
-    except Exception as e:
-      self.lg.debug('fetch_acquired_positions: {},{}'.format(self.acqired_positions, e))
+    if self.base_path in self.acquired_positions:
+      ptfn=self.acquired_positions
+    else:
+      fn=os.path.join(self.base_path,self.acquired_positions)    
 
-    for i,ln in enumerate(lns):
-      try:
-        (nml_id,#0
-         cat_no,#1
-         aa_nml_az_radian,#2
-         aa_nml_alt_radian,#3
-         eq_ra_radian,#4
-         eq_dec_radian,#5
-         dt_begins,#6
-         dt_ends,#7
-         dt_end_querys,#8
-         JDs,#9
-         eq_woffs_ra_radian,#10
-         eq_woffs_dec_radian,#11
-         eq_mnt_ra_radian,#12
-         eq_mnt_dec_radian,#13
-         aa_mnt_az_radian,#14
-         aa_mnt_alt_radian,#15
-         image_fn,#16
-         exps)=ln.split(',')
-
-      except ValueError:
-        self.lg.warn('fetch_acquired_positions: value error on line: {},{}'.format(i,ln[:-1]))
-        continue
-      except Exception as e:
-        self.lg.error('fetch_acquired_positions: error on line: {},{}'.format(i,e))
-        sys.exit(1)
-
-      dt_begin = Time(dt_begins,format='iso', scale='utc',location=self.obs,out_subfmt='fits')
-      dt_end = Time(dt_ends,format='iso', scale='utc',location=self.obs,out_subfmt='fits')
-      dt_end_query = Time(dt_end_querys,format='iso', scale='utc',location=self.obs,out_subfmt='fits')
+    pd_cat = self.fetch_pandas(ptfn=fn,columns=cl_nms_acq,sys_exit=False)
+    if pd_cat is None:
+      return
+    for i,rw in pd_cat.iterrows():
+      # ToDo why not out_subfmt='fits'
+      dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
+      dt_end=Time(rw['dt_end'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
+      dt_end_query=Time(rw['dt_end_query'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
 
       # ToDo set best time point
-      aa_nml=SkyCoord(az=float(aa_nml_az_radian),alt=float(aa_nml_alt_radian),unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-      acq_eq=SkyCoord(ra=float(eq_ra_radian),dec=float(eq_dec_radian), unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_woffs=SkyCoord(ra=float(eq_woffs_ra_radian),dec=float(eq_woffs_dec_radian), unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_mnt=SkyCoord(ra=float(eq_mnt_ra_radian),dec=float(eq_mnt_dec_radian), unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_aa_mnt=SkyCoord(az=float(aa_mnt_az_radian),alt=float(aa_mnt_alt_radian),unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-
-      self.lg.debug('{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17}\n'.format(
-        nml_id,#0
-        cat_no,#1
-        aa_nml_az_radian,#2
-        aa_nml_alt_radian,#3
-        eq_ra_radian,#4
-        eq_dec_radian,#5
-        dt_begins,#6
-        dt_ends,#7
-        dt_end_querys,#8
-        JDs,#9
-        eq_woffs_ra_radian,#10
-        eq_woffs_dec_radian,#11
-        eq_mnt_ra_radian,#12
-        eq_mnt_dec_radian,#13
-        aa_mnt_az_radian,#14
-        aa_mnt_alt_radian,#15
-        image_fn,#16
-        exps,#17
-      ))
+      aa_nml=SkyCoord(az=rw['aa_nml_az'],alt=rw['aa_nml_alt'],unit=(u.radian,u.radian),frame='altaz',obstime=dt_end,location=self.obs)
+      acq_eq=SkyCoord(ra=rw['eq_ra'],dec=rw['eq_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      acq_eq_woffs=SkyCoord(ra=rw['eq_woffs_ra'],dec=rw['eq_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      acq_eq_mnt=SkyCoord(ra=rw['eq_mnt_ra'],dec=rw['eq_mnt_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      acq_aa_mnt=SkyCoord(az=rw['aa_mnt_az'],alt=rw['aa_mnt_alt'],unit=(u.radian,u.radian),frame='altaz',obstime=dt_end,location=self.obs)
       acq=AcqPosition(
-        nml_id=nml_id,
-        cat_no=cat_no,
+        nml_id=rw['nml_id'], 
+        cat_no=rw['cat_no'],
         aa_nml=aa_nml,
         eq=acq_eq,
         dt_begin=dt_begin,
         dt_end=dt_end,
         dt_end_query=dt_end_query,
-        JD=float(JDs),
+        JD=rw['JD'],
         eq_woffs=acq_eq_woffs,
         eq_mnt=acq_eq_mnt,
         aa_mnt=acq_aa_mnt,
-        image_fn=image_fn,
-        exp=float(exps),
+        image_fn=rw['image_fn'],
+        exp=rw['exp'],
       )
-
       self.acq.append(acq)
       
   def store_acquired_position(self,acq=None):
+    if self.base_path in self.acquired_positions:
+      fn=self.acquired_positions
+    else:
+      fn=os.path.join(self.base_path,self.acquired_positions)
     # append, one by one
-    with  open(self.acqired_positions, 'a') as wfl:
-      wfl.write('{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17}\n'.format(
-        # TODO what is that: tupple it is an int!
-        acq.nml_id[0],#0
-        acq.cat_no[0],#1
-        acq.aa_nml.az.radian,#2
-        acq.aa_nml.alt.radian,#3
-        acq.eq.ra.radian,#4
-        acq.eq.dec.radian,#5
-        acq.dt_begin,#6
-        acq.dt_end,#7
-        acq.dt_end_query,#8
-        acq.JD,#9
-        acq.eq_woffs.ra.radian,#10
-        acq.eq_woffs.dec.radian,#11
-        acq.eq_mnt.ra.radian,#12
-        acq.eq_mnt.dec.radian,#13
-        acq.aa_mnt.az.radian,#14
-        acq.aa_mnt.alt.radian,#15
-        acq.image_fn,#16
-        acq.exp,#17
-      ))
+    with  open(fn, 'a') as wfl:
+      wfl.write('{0}\n'.format(acq))
 
   def drop_nominal_altaz(self):
-    # comparison nml_id self.nml, self.acq
-    # compare and drop 
-    # ToDo tupple !!
     obs=[int(x.nml_id[0])  for x in self.acq]
     observed=sorted(set(obs),reverse=True)
     for i in observed:
@@ -340,13 +263,13 @@ class Acquisition(scriptcomm_3.Rts2Comm):
     cont=True
     try:
       mnt_nm = self.getDeviceByType(scriptcomm_3.DEVICE_TELESCOPE)
-      self.lg.debug('mount device: {}'.format(mnt_nm))
+      self.lg.debug('check_rts2_devices: mount device: {}'.format(mnt_nm))
     except:
       self.lg.error('check_rts2_devices: could not find telescope')
       cont= False
     try:
       ccd_nm = self.getDeviceByType(scriptcomm_3.DEVICE_CCD)
-      self.lg.debug('CCD device: {}'.format(ccd_nm))
+      self.lg.debug('check_rts2_devices: CCD device: {}'.format(ccd_nm))
     except:
       self.lg.error('check_rts2_devices: could not find CCD')
       cont= False
@@ -363,10 +286,10 @@ class Acquisition(scriptcomm_3.Rts2Comm):
     for p in range(port,port-10,-1):
       try:
         sckt.bind(('0.0.0.0',p)) # () tupple!
-        self.lg.info('port to connect for user input: {0}, use telnet 127.0.0.1 {0}'.format(p))
+        self.lg.info('create_socket port to connect for user input: {0}, use telnet 127.0.0.1 {0}'.format(p))
         break
       except Exception as e :
-        self.lg.debug(': can not bind socket {}'.format(e))
+        self.lg.debug('create_socket: can not bind socket {}'.format(e))
         continue
       
     sckt.listen(1)
@@ -402,10 +325,12 @@ class Acquisition(scriptcomm_3.Rts2Comm):
         exp=last_exposure
         cmd='e'
         break
+      
       if len(ui)==1 and 'r' in ui: # 'r' alone
         exp=last_exposure
         cmd='r'
         break
+      
       try:
         cmd,exps=ui.split()
         exp=float(exps)
@@ -425,86 +350,117 @@ class Acquisition(scriptcomm_3.Rts2Comm):
 
     return cmd,exp
 
-  def expose(self,nml_id=None,cat_no=None,cat_eq=None,mnt_nm=None,ccd_nm=None,px_scale=0.,simulate=False,exp=None,widths=None,heights=None,mode_continues=True,acq_queue=None,mode_watchdog=None,fetch_dss_image=None):
-
-    self.lg.debug('expose size: {},{},{}'.format(widths,heights,px_scale))
-
-    self.setValue('ORI','{0} {1}'.format(cat_eq.cat_eq.ra.degree,cat_eq.cat_eq.dec.degree),mnt_nm)
-    dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-    # ToDo put that in a thread
-    # ToDo check if Morvian can be read out in parallel (RTS2, VM Windows)
-    # if not use maa-2015-10-18.py
-    if simulate:
+  def expose(self,nml_id=None,cat_no=None,cat_eq=None,mnt_nm=None,ccd_nm=None,exp=None):
+    self.lg.debug('expose size: {},{},{}'.format(self.ccd_size[0],self.ccd_size[1],self.px_scale))
+    if not self.do_not_use_rts2:
+      self.setValue('ORI','{0} {1}'.format(cat_eq.cat_eq.ra.degree,cat_eq.cat_eq.dec.degree),mnt_nm)
+      # ToDo check if Morvian can be read out in parallel (RTS2, VM Windows)
+      # ToDo if not use maa-2015-10-18.py
       # ToDo CHECK if mount is THERE
       ra_oris,dec_oris=self.getValue('ORI',mnt_nm).split()
       self.lg.debug('ORI: {0:.3f},{1:.3f}'.format(float(ra_oris),float(dec_oris)))
-      width_s= '{}'.format(float(widths) * px_scale/60.) # DSS [arcmin]
-      height_s= '{}'.format(float(heights) * px_scale/60.) # DSS [arcmin]
-      args=OrderedDict()
-      args['ra']='{0:.6f}'.format(float(ra_oris))# DSS hh mm ss
-      args['dec']='{0:.6f}'.format(float(dec_oris))# DSS ±dd mm ss
-      args['x']='{0:.2f}'.format(float(width_s))# DSS ±dd mm ss
-      args['y']='{0:.2f}'.format(float(height_s))
-      args[ 'mime-type']='image/x-gfits'
-      dss_fn='dss_{}_{}.fits'.format(args['ra'],args['dec']).replace('-','m')
       
+    dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+    if self.fetch_dss_image:
+      px_scale_arcmin=self.px_scale *180. * 60. /np.pi # to arcmin
+      width= '{}'.format(float(self.ccd_size[0]) * px_scale_arcmin) # DSS [arcmin]
+      height= '{}'.format(float(self.ccd_size[1]) * px_scale_arcmin) # DSS [arcmin]
+      args=OrderedDict()
+      # ToDo use cat_eq, attention format
+      args['ra']='{0:.6f}'.format(cat_eq.cat_eq.ra.degree)
+      args['dec']='{0:.6f}'.format(cat_eq.cat_eq.dec.degree)
+      args['x']='{0:.2f}'.format(float(width))
+      args['y']='{0:.2f}'.format(float(height))
+      # compressed fits files SExtractor does not understand
+      #args['mime-type']='image/x-gfits'
+      args['mime-type']='image/x-fits'
+      dfn='dss_{}_{}.fits'.format(args['ra'],args['dec']).replace('-','m').replace('.','_').replace('_fits','.fits') #ToDo lazy
+      dss_fn=os.path.join(self.base_path,dfn)
 
       r=requests.get(dss_base_url, params=args, stream=True)
       self.lg.debug('expose: DSS: {}'.format(r.url))
-      if fetch_dss_image:
-        while True:
-          if r.status_code == 200:
-            with open(dss_fn, 'wb') as f:
-              #for data in tqdm(r.iter_content()):
-              f.write(r.content)
-              for block in r.iter_content(1024):
-                f.write(block)
-              break
-          else:
-            self.lg.warn('expose: could not retrieve DSS: {}, continuing to retrieve'.format(r.url))
-        
+      while True:
+        if r.status_code == 200:
+          with open(dss_fn, 'wb') as f:
+            #for data in tqdm(r.iter_content()):
+            f.write(r.content)
+            for block in r.iter_content(1024):
+              f.write(block)
+          break
+        else:
+          self.lg.warn('expose: could not retrieve DSS: {}, continuing to retrieve'.format(r.url))
+
       exp=.1 # synchronization mount/CCD
     else:
       last_exposure=exp
-    
-    # RTS2 does synchronization mount/CCD
-    self.lg.debug('expose: time {}'.format(exp))
-    self.setValue('exposure',exp)
-    image_fn = self.exposure()
-    if simulate:
+    image_fn=None
+    if not self.do_not_use_rts2:
+      # RTS2 does synchronization mount/CCD
+      self.lg.debug('expose: time {}'.format(exp))
+      self.setValue('exposure',exp)
+      image_fn = self.exposure()
+      self.lg.debug('expose: image from RTS2: {}'.format(image_fn))
+      
+    if self.fetch_dss_image:
       try:
         os.unlink(image_fn) # the noisy CCD image
       except:
         pass # do not care
       image_fn=dss_fn
-    elif mode_watchdog:
+      self.lg.debug('expose: image from DSS: {}'.format(image_fn))
+    elif self.mode_watchdog:
       self.lg.info('expose: waiting for image_fn from acq_queue')
-      image_fn=acq_queue.get(acq)
+      image_fn=self.acq_queue.get(acq)
       self.lg.info('expose: image_fn from queue acq_queue: {}'.format(image_fn))
-    else:
-      self.lg.debug('RTS2 expose image: {}'.format(image_fn))
-
-    # ToDo block should go to caller
+    # ToDo may be best time point: dt_end - exposure/2.
     dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+
+    if image_fn is None:
+      self.lg.error('expose: no image source specified.')
+      self.lg.info('expose: use --fetch_dss_image for simulation, --mode-watchdog for an external source, do not specify: --do-not-use-rts2')
+      self.lg.error('expose: exiting.')
+      sys.exit(1)
+    
+    # ToDo block should go to caller
     # fetch mount position etc
-    JDs=self.getValue('JD',mnt_nm)
-    ras,decs=self.getValue('ORI',mnt_nm).split()
-    now = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
-    acq_eq=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    if not self.do_not_use_rts2:
+      JD=float(self.getValue('JD',mnt_nm))
+      ras,decs=self.getValue('ORI',mnt_nm).split()
+      now = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
+      acq_eq=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
 
-    ras,decs=self.getValue('WOFFS',mnt_nm).split()
-    acq_eq_woffs=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+      ras,decs=self.getValue('WOFFS',mnt_nm).split()
+      acq_eq_woffs=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
 
-    ras,decs=self.getValue('TEL',mnt_nm).split()
-    acq_eq_mnt=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+      ras,decs=self.getValue('TEL',mnt_nm).split()
+      acq_eq_mnt=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
 
-    alts,azs=self.getValue('TEL_',mnt_nm).split()
-    acq_aa_mnt=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
+      alts,azs=self.getValue('TEL_',mnt_nm).split()
+      acq_aa_mnt=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
 
-    # ToDo,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
-    dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+      # ToDo,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
+      # ToDo wrong:
+      aa_nml=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
+      dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+    else:
+      JD=-1.      
+      acq_eq=SkyCoord(ra=cat_eq.cat_eq.ra.radian,dec=cat_eq.cat_eq.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=dt_begin,location=self.obs)
+      acq_eq_woffs=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=dt_begin,location=self.obs)
+      acq_eq_mnt=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=dt_begin,location=self.obs)
+      # not yet used
+      acq_aa_mnt=self.to_altaz(cat_eq=cat_eq.cat_eq)
+      # ToDo wrong:
+      aa_nml=self.to_altaz(cat_eq=cat_eq.cat_eq)
+      dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+    
+    pressure=temperature=humidity=None
+    if self.meteo is not None:
+      pressure,temperature,humidity=meteo.retrieve()
 
-    aa_nml=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
+    if self.base_path in image_fn:
+      fn=image_fn
+    else:
+      fn=os.path.join(self.base_path,image_fn)
 
     acq=AcqPosition(
       nml_id=nml_id,
@@ -514,27 +470,29 @@ class Acquisition(scriptcomm_3.Rts2Comm):
       dt_begin=dt_begin,
       dt_end=dt_end,
       dt_end_query=dt_end_query,
-      JD=float(JDs),
+      JD=JD,
       eq_woffs=acq_eq_woffs,
       eq_mnt=acq_eq_mnt,
       aa_mnt=acq_aa_mnt,
-      image_fn=image_fn,
-      exp=exp,)
-
+      image_fn=fn,
+      exp=exp,
+      pressure=pressure,
+      temperature=temperature,
+      humidity=humidity,
+    )
+    
     self.store_acquired_position(acq=acq)
-
 
   def find_near_neighbor(self,eq_nml=None,altitude_interval=None,max_separation=None):
     il=iu=None
-    max_separation2= max_separation * max_separation
-    for i,o in enumerate(self.cat): # is RA sorted
+    max_separation2= max_separation * max_separation # lazy
+    for i,o in enumerate(self.cat): # catalog is RA sorted
       if il is None and o.cat_eq.ra.radian > eq_nml.ra.radian - max_separation:
         il=i
       if iu is None and o.cat_eq.ra.radian > eq_nml.ra.radian + max_separation:
         iu=i
         break
     else:
-      # self.lg.debug('find_near_neighbor: il: {},iu: {} upper limit not found'.format(il,iu))
       iu=-1
 
     dist=list()
@@ -544,7 +502,6 @@ class Acquisition(scriptcomm_3.Rts2Comm):
 
       cat_aa=self.now_observable(cat_eq=o.cat_eq,altitude_interval=altitude_interval)
       if cat_aa is None:
-        #self.lg.debug('find_near_neighbor: no altitude, cat_no:         {}'.format(o.cat_no))
         val= 2.* np.pi
       else:
         val=dra2 + ddec2
@@ -552,24 +509,23 @@ class Acquisition(scriptcomm_3.Rts2Comm):
  
     dist_min=min(dist)
     if dist_min> max_separation2:
-      self.lg.warn('find_near_neighbor: NO suitable object found')
+      self.lg.warn('find_near_neighbor: NO suitable object found, {0:.3f} deg, maximal distance: {1:.3f} deg'.format(np.sqrt(dist_min)*180./np.pi,max_separation*180./np.pi))
       return None
     
     i_min=dist.index(dist_min)
-    #self.lg.debug('find_near_neighbor: il: {0},index: {1}, min: {2:.2f}, altitude: {3:.2f}'.format(il, i_min,dist[i_min]*180./np.pi,self.to_altaz(cat_eq=self.cat[il+i_min].cat_eq).alt.degree))
-    #self.lg.debug('find_near_neighbor: cat no: {0} {1}<<<<<<<<<<'.format(self.cat[il+i_min].cat_no,il+i_min))
     return self.cat[il+i_min]
       
-  def acquire(self,mnt_nm=None,ccd_nm=None,px_scale=None,simulate=False,altitude_interval=None,mode_continues=False,max_separation=None,acq_queue=None,mode_watchdog=None,fetch_dss_image=None):
-    if not mode_continues:
+  def acquire(self,mnt_nm=None,ccd_nm=None,altitude_interval=None,max_separation=None):
+    if not self.mode_continues:
       user_input=self.create_socket()
-    # full area
-    self.setValue('WINDOW','%d %d %d %d' % (-1, -1, -1, -1))
-    x_0,y_0,widths,heights=self.getValue('WINDOW',ccd_nm).split()
-    self.lg.debug('size: {},{}'.format(widths,heights))
-    # make sure we are taking light images..
-    self.setValue('SHUTTER','LIGHT')
-
+    if not self.do_not_use_rts2:
+      # full area
+      self.setValue('WINDOW','%d %d %d %d' % (-1, -1, -1, -1))
+      x_0,y_0,widths,heights=self.getValue('WINDOW',ccd_nm).split()
+      self.lg.debug('acquire: CCD size: {},{}'.format(widths,heights))
+      # make sure we are taking light images..
+      self.setValue('SHUTTER','LIGHT')
+      
     # self.nml contains only positions which need to be observed
     last_exposure=exp=.1
     not_first=False
@@ -580,11 +536,11 @@ class Acquisition(scriptcomm_3.Rts2Comm):
       aa=SkyCoord(az=aa_nml.az.radian,alt=aa_nml.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
       eq_nml=self.to_eq(aa=aa)
       cat_eq=self.find_near_neighbor(eq_nml=eq_nml,altitude_interval=altitude_interval,max_separation=max_separation)
-      if cat_eq:
-        if not mode_continues:
+      if cat_eq: # else no suitable object found, try next
+        if not self.mode_continues:
             while True:
               if not_first:
-                self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,mnt_nm=mnt_nm,ccd_nm=ccd_nm,px_scale=px_scale,simulate=simulate,exp=exp,widths=widths,heights=heights,mode_continues=mode_continues,acq_queue=acq_queue,mode_watchdog=mode_watchdog,fetch_dss_image=fetch_dss_image)
+                self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,mnt_nm=mnt_nm,ccd_nm=ccd_nm,exp=exp)
               else:
                 not_first=True
               
@@ -596,16 +552,18 @@ class Acquisition(scriptcomm_3.Rts2Comm):
                 break
               else:
                 self.lg.debug('acquire: redoing same position')
-                
+   
         else:
-          self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,mnt_nm=mnt_nm,ccd_nm=ccd_nm,px_scale=px_scale,simulate=simulate,exp=exp,widths=widths,heights=heights,mode_continues=mode_continues,acq_queue=acq_queue,mode_watchdog=mode_watchdog,fetch_dss_image=fetch_dss_image)
+          self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,mnt_nm=mnt_nm,ccd_nm=ccd_nm,exp=exp)
 
   def plot(self,title=None,projection='polar'): #AltAz 
     acq_az = coord.Angle([x.aa_mnt.az.radian for x in self.acq if x.aa_mnt is not None], unit=u.radian)
-    #acq_az = acq_az.wrap_at(180*u.degree)
     acq_alt = coord.Angle([x.aa_mnt.alt.radian for x in self.acq if x.aa_mnt is not None],unit=u.radian)
-    # ToDo rts2,astropy altaz 
-    acq_nml_az = coord.Angle([x.aa_nml.az.radian-np.pi for x in self.nml], unit=u.radian)
+    # ToDo rts2,astropy altaz
+    off=np.pi
+    if self.do_not_use_rts2:
+      off=0.
+    acq_nml_az = coord.Angle([x.aa_nml.az.radian-off for x in self.nml], unit=u.radian)
     #acq_nml_az = acq_nml_az.wrap_at(180*u.degree)
     acq_nml_alt = coord.Angle([x.aa_nml.alt.radian for x in self.nml],unit=u.radian)
 
@@ -620,7 +578,7 @@ class Acquisition(scriptcomm_3.Rts2Comm):
     ax.set_title(title)
     ax.scatter(acq_nml_az, acq_nml_alt,color='red')
     ax.scatter(acq_az, acq_alt,color='blue')
-
+    ax.set_rmax(1.6)
 
     ax.grid(True)
     plt.show()
@@ -658,25 +616,27 @@ if __name__ == "__main__":
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
   parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0], type=arg_floats, help=': %(default)s, visual star brightness [mag], format "p1 p2"')
-  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[10.,80.],type=arg_floats,help=': %(default)s,  allowed altitude [deg], format "p1 p2"')
-  parser.add_argument('--azimuth-interval',   dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s,  allowed azimuth [deg], format "p1 p2"')
-  parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, retrieve the observable objects')
-  parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.cat', help=': %(default)s, to be observed positions (AltAz coordinates)')
-  parser.add_argument('--acqired-positions', dest='acqired_positions', action='store', default='acqired_positions.cat', help=': %(default)s, already observed positions')
-  parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, create positions to be observed, see --nominal-positions')
-  parser.add_argument('--step', dest='step', action='store', default=10, type=int,help=': %(default)s, AltAz points: step is used as: range(0,360,step), range(0,90,step) [deg]')
-  parser.add_argument('--now-observable', dest='now_observable', action='store_true', default=False, help=': %(default)s, created positions are now above horizon')
-  parser.add_argument('--simulate-image', dest='simulate_image', action='store_true', default=False, help=': %(default)s, fetch image from DSS, perform all operations on RTS2')
-  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=4.,type=arg_float, help=': %(default)s [arcmin/pixel], arcmin/pixel of the CCD camera')
-  parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, debug mode: no user input, no images fetched from DSS')
-  parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, debug mode: images fetched from DSS')
-  parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation nominal, catalog position')
-  parser.add_argument('--mode-watchdog', dest='mode_watchdog', action='store_true', default=False, help=': %(default)s, set it, if an RTS2 external CCD camera must be used')
-  parser.add_argument('--watchdog-directory', dest='watchdog_directory', action='store', default='.',type=str, help=': %(default)s , directory where the RTS2 external CCD camer writes the images')
-
+  parser.add_argument('--azimuth-interval',   dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg],  allowed azimuth, format "p1 p2"')
+  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[10.,80.],type=arg_floats,help=': %(default)s [deg],  allowed altitude, format "p1 p2"')
+  parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, file with on site observable objects, see u_select.py')
+  parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
+  parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
+  parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, True: create positions to be observed, see --nominal-positions')
+  parser.add_argument('--az-step', dest='az_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
+  parser.add_argument('--alt-step', dest='alt_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
+  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7/60.,type=arg_float, help=': %(default)s [arcmin/pixel], arcmin/pixel of the CCD camera')
+  parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: simulation mode: no user input, no images fetched from DSS, image download specify: --fetch-dss-image')
+  parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, simulation mode: images fetched from DSS')
+  parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation (nominal, catalog) position')
+  parser.add_argument('--mode-watchdog', dest='mode_watchdog', action='store_true', default=False, help=': %(default)s, True: an RTS2 external CCD camera must be used')
+  parser.add_argument('--watchdog-directory', dest='watchdog_directory', action='store', default='.',type=str, help=': %(default)s , directory where the RTS2 external CCD camera writes the images')
+  parser.add_argument('--do-not-use-rts2', dest='do_not_use_rts2', action='store_true', default=False, help=': %(default)s, True: only useful in simulation mode')
+  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--with-meteo', dest='with_meteo', action='store_true', default=False, help=': %(default)s, True: retrieve meteo data through meteo.py')
 
   args=parser.parse_args()
-  
+
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
@@ -695,16 +655,40 @@ if __name__ == "__main__":
     observer = Observer()
     observer.schedule(event_handler, args.watchdog_directory, recursive=True)
     observer.start()
-
-    
-  ac= Acquisition(dbg=args.debug,lg=logger,obs_lng=args.obs_lng,obs_lat=args.obs_lat,obs_height=args.obs_height,acqired_positions=args.acqired_positions,break_after=args.break_after)
+  meteo=None
+  if args.with_meteo:
+    meteo=Meteo(dbg=args.debug,lg=logger)
+  
+  px_scale=args.pixel_scale/60./180.*np.pi # arcmin
+  ac= Acquisition(
+    dbg=args.debug,
+    lg=logger,
+    obs_lng=args.obs_lng,
+    obs_lat=args.obs_lat,
+    obs_height=args.obs_height,
+    acquired_positions=args.acquired_positions,
+    break_after=args.break_after,
+    do_not_use_rts2=args.do_not_use_rts2,
+    px_scale=px_scale,
+    ccd_size=args.ccd_size,
+    mode_continues=args.mode_continues,
+    acq_queue=acq_queue,
+    mode_watchdog=args.mode_watchdog,
+    fetch_dss_image=args.fetch_dss_image,
+    meteo=meteo,
+    base_path=args.base_path,
+  )
+  
   max_separation=args.max_separation/180.*np.pi
   altitude_interval=list()
   for v in args.altitude_interval:
     altitude_interval.append(v/180.*np.pi)
 
+  if not os.path.exists(args.base_path):
+    os.makedirs(args.base_path)
+        
   if args.create_nominal:
-    ac.store_nominal_altaz(step=args.step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,ptfn=args.nominal_positions)
+    ac.store_nominal_altaz(az_step=args.az_step,alt_step=args.alt_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,ptfn=args.nominal_positions)
     if args.plot:
       ac.plot(title='to be observed nominal positions')
     sys.exit(1)
@@ -715,21 +699,20 @@ if __name__ == "__main__":
   ac.drop_nominal_altaz()
 
   if args.plot:
-    ac.plot(title='progress report, dropped observed nominal positions')
-  else:
+    ac.plot(title='AltAz progress report acquired (blue), to be observed nominal positions (red)')
+    sys.exit(1)
+  
+  mnt_nm=ccd_nm=None
+  if not args.do_not_use_rts2:
     mnt_nm,ccd_nm=ac.check_rts2_devices()
-    # candidate objects, predefined with u_select.py
-    ac.fetch_observable_catalog(ptfn=args.observable_catalog)
-    # acquire unobserved positions
-    ac.acquire(
-      mnt_nm=mnt_nm,
-      ccd_nm=ccd_nm,
-      px_scale=args.pixel_scale,
-      simulate=args.simulate_image,
-      altitude_interval=altitude_interval,
-      mode_continues=args.mode_continues,
-      max_separation=max_separation,
-      acq_queue=acq_queue,
-      mode_watchdog=args.mode_watchdog,
-      fetch_dss_image=args.fetch_dss_image,
-    )
+    
+  # candidate objects, predefined with u_select.py
+  ac.fetch_observable_catalog(ptfn=args.observable_catalog)
+  # acquire unobserved positions
+  ac.acquire(
+    mnt_nm=mnt_nm,
+    ccd_nm=ccd_nm,
+    altitude_interval=altitude_interval,
+    max_separation=max_separation,
+  )
+  logger.info('DONE: {}'.format(sys.argv[0].replace('.py','')))
