@@ -141,7 +141,12 @@ class Acquisition(scriptcomm_3.Rts2Comm):
     return pd_cat
   
   def fetch_observable_catalog(self, ptfn=None):
-    pd_cat = self.fetch_pandas(ptfn=ptfn,columns=['cat_no','ra','dec','mag_v',],sys_exit=True)
+    if self.base_path in ptfn:
+      fn=ptfn
+    else:
+      fn=os.path.join(self.base_path,ptfn)
+
+    pd_cat = self.fetch_pandas(ptfn=fn,columns=['cat_no','ra','dec','mag_v',],sys_exit=True)
     if pd_cat is None:
       return
     for i,rw in pd_cat.iterrows():
