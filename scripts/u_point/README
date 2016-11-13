@@ -16,6 +16,8 @@ Prerequisites
               numpy
 	      scipy
 	      matplotlib
+              pyds9
+	      pyfits
 	      
  libnova (needs to be on LD_PATH as libnova.so)
 
