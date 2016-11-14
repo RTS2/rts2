@@ -1834,6 +1834,7 @@ void Telescope::applyCorrections (double &t_ra, double &t_dec, bool writeValues)
 	t_dec = pos.dec;
 }
 
+#ifdef RTS2_LIBERFA
 void Telescope::getEraUTC (double &utc1, double &utc2)
 {
 	struct timeval tv;
@@ -1847,6 +1848,7 @@ void Telescope::getEraUTC (double &utc1, double &utc2)
 	if (status)
 		logStream (MESSAGE_ERROR) << "cannot get system time" << sendLog;
 }
+#endif
 
 void Telescope::startCupolaSync ()
 {
