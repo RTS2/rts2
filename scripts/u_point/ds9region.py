@@ -21,7 +21,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import threading
-from pyds9 import ds9
+from pyds9 import DS9
 
 # on first call of DS9 a frame is already open
 first = True
@@ -43,9 +43,9 @@ class Ds9DisplayThread(threading.Thread):
         self.logger = logger
         self.stoprequest = threading.Event()
         try:
-            self.display = ds9()
-        except Exception, e:
-            self.logger.warn('__init__: forking ds9 failed:\n{0}'.format(e))
+            self.display = DS9()
+        except Exception as e:
+            self.logger.warn('__init__: forking DS9 failed:\n{0}'.format(e))
 
     def displayWithRegion(self, dSx = None): 
         """
@@ -68,7 +68,7 @@ class Ds9DisplayThread(threading.Thread):
             self.display.set('file {0}'.format(dSx.fitsFn))
             self.display.set('regions command {{text {0} {1} #text="FOC_POS {2}" color=magenta font="helvetica 15 normal"}}'.format(80,10, int(dSx.focPos)))
 
-        except Exception, e:
+        except Exception as e:
             self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
             return False
 
@@ -78,7 +78,7 @@ class Ds9DisplayThread(threading.Thread):
             i_flg = dSx.fields.index('FLAGS')
             i_fwhm = dSx.fields.index('FWHM_IMAGE')
 
-        except Exception, e:
+        except Exception as e:
             self.logger.warn('____DisplayThread: retrieving data failed:\n{0}'.format(e))
             return False
 
@@ -90,7 +90,7 @@ class Ds9DisplayThread(threading.Thread):
                 color='green'
                 try:
                     self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}} text={{{4}}}'.format(x[i_x],x[i_y], x[i_fwhm], color, x[i_fwhm]))
-                except Exception, e:
+                except Exception as e:
                     self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
                     return False
 
@@ -100,7 +100,7 @@ class Ds9DisplayThread(threading.Thread):
                 color='red'
             try:
                 self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}}'.format(x[i_x],x[i_y], x[i_fwhm], color))
-            except Exception, e:
+            except Exception as e:
                 self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
                 return False
         else:
