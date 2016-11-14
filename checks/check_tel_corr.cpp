@@ -288,8 +288,8 @@ START_TEST(test_nutation)
 	ck_assert_int_eq (azc, -17930964);
 	ck_assert_int_eq (altc, 10883070);
 #else
-	ck_assert_int_eq (azc, -17930975);
-	ck_assert_int_eq (altc, 10886604);
+	ck_assert_int_eq (azc, -17930945);
+	ck_assert_int_eq (altc, 10886676);
 #endif
 
 
@@ -450,16 +450,16 @@ START_TEST(test_mean2apparent)
 	ck_assert_dbl_eq (pos.ra, 155.2949621001, 10e-7);
 	ck_assert_dbl_eq (pos.dec, 9.8591743371, 10e-7);
 #else
-	ck_assert_dbl_eq (pos.ra, 155.461159413, 10e-7);
-	ck_assert_dbl_eq (pos.dec, 9.8786101602, 10e-7);
+	ck_assert_dbl_eq (pos.ra, 155.4655661547, 10e-7);
+	ck_assert_dbl_eq (pos.dec, 9.8767953610, 10e-7);
 #endif
 
 #ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (hrz.az, 155.1994725981, 10e-7);
 	ck_assert_dbl_eq (hrz.alt, 36.8339888166, 10e-7);
 #else
-	ck_assert_dbl_eq (hrz.az, 155.1990540442, 10e-7);
-	ck_assert_dbl_eq (hrz.alt, 36.8133130985, 10e-7);
+	ck_assert_dbl_eq (hrz.az, 144.0325956056, 10e-7);
+	ck_assert_dbl_eq (hrz.alt, 32.8926506421, 10e-7);
 #endif
 
 	for (int i = 0; i < 36; i++)

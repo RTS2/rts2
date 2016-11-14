@@ -65,7 +65,7 @@ START_TEST(test_gem_hko_1)
 	ck_assert_int_eq (ac, -71569137);
 	ck_assert_int_eq (dc, -65564008);
 #else
-`	ck_assert_int_eq (ac, -71564825);
+	ck_assert_int_eq (ac, -71564825);
 	ck_assert_int_eq (dc, -65582303);
 #endif
 
