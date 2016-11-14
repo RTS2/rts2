@@ -338,7 +338,7 @@ class PointingModel(object):
   def fetch_pandas(self, ptfn=None,columns=None):
     pd_cat=None
     if not os.path.isfile(ptfn):
-      self.lg.debug('fetch_pandas:{} does not exist, exiting'.format(ptfn))
+      self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
       sys.exit(1)
     try:
       pd_cat = pd.read_csv(ptfn, sep=',',header=None)

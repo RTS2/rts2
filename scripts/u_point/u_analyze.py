@@ -224,7 +224,7 @@ class Analysis(object):
   def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True):
     pd_cat=None
     if not os.path.isfile(ptfn):
-      self.lg.debug('fetch_pandas:{} does not exist, exiting'.format(ptfn))
+      self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
       if sys_exit:
         sys.exit(1)
       return None
@@ -511,6 +511,7 @@ if __name__ == "__main__":
     soh=logging.StreamHandler(sys.stdout)
     soh.setLevel(args.level)
     logger.addHandler(soh)
+  
   px_scale=args.pixel_scale/3600./180.*np.pi
   anl= Analysis(
     dbg=args.debug,

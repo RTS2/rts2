@@ -24,22 +24,20 @@ acquire externel meteo data, this is a stub
 '''
 __author__ = 'wildi.markus@bluewin.ch'
 
-
+# This class must implemented as well as the retrieve method
 class Meteo(object):
   def __init__(
     self, 
-    dbg=None,
     lg=None,
   ):
-    self.dbg=dbg
     self.lg=lg
     self.pressure=636.
     self.temperature=-55.6
     self.humidity=0.5
     
-  def retrieve(self,no_atmosphere=True):
+  def retrieve(self,atmosphere=False): # False: used for simulation
     # fetch the data from external source, e.g. RTS2 weather station
-    if no_atmosphere:
-      return 0.,0.,0.
-    else:
+    if atmosphere:
       return self.pressure,self.temperature,self.humidity
+    else:
+      return 0.,0.,0.

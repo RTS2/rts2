@@ -32,6 +32,8 @@ import logging
 import socket
 import numpy as np
 import requests
+import importlib
+
 import pandas as pd
 
 from collections import OrderedDict
@@ -50,7 +52,7 @@ import queue
 # python 3 version
 import scriptcomm_3
 from position import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
-from meteo import Meteo
+
 
 dss_base_url='http://archive.eso.org/dss/dss/'
 
@@ -120,7 +122,7 @@ class Acquisition(scriptcomm_3.Rts2Comm):
   def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True):
     pd_cat=None
     if not os.path.isfile(ptfn):
-      self.lg.debug('fetch_pandas:{} does not exist'.format(ptfn))
+      self.lg.debug('fetch_pandas: {} does not exist'.format(ptfn))
       if sys_exit:
         sys.exit(1)
       return None
@@ -638,7 +640,7 @@ if __name__ == "__main__":
   parser.add_argument('--do-not-use-rts2', dest='do_not_use_rts2', action='store_true', default=False, help=': %(default)s, True: only useful in simulation mode')
   parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
-  parser.add_argument('--with-meteo', dest='with_meteo', action='store_true', default=False, help=': %(default)s, True: retrieve meteo data through meteo.py')
+  parser.add_argument('--meteo-class', dest='meteo_class', action='store', default='meteo', help=': %(default)s, specify your meteo data collector, see meteo.py for a stub')
 
   args=parser.parse_args()
 
@@ -660,9 +662,10 @@ if __name__ == "__main__":
     observer = Observer()
     observer.schedule(event_handler, args.watchdog_directory, recursive=True)
     observer.start()
-  meteo=None
-  if args.with_meteo:
-    meteo=Meteo(dbg=args.debug,lg=logger)
+  
+  # now load meteo class
+  mt = importlib.import_module(args.meteo_class)
+  meteo=mt.Meteo(lg=logger)
   
   px_scale=args.pixel_scale/60./180.*np.pi # arcmin
   ac= Acquisition(
