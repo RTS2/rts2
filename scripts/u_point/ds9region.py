@@ -21,7 +21,7 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import threading
-from pyds9 import DS9
+from pyds9 import ds9
 
 # on first call of DS9 a frame is already open
 first = True
@@ -34,17 +34,28 @@ class Ds9DisplayThread(threading.Thread):
     :var logger:  :py:mod:`rts2saf.log`
 
     """
-    def __init__(self, debug=False, logger=None):
+
+
+    def __init__(self, debug=False,  dataSxtr=None, logger=None):
         super(Ds9DisplayThread, self).__init__()
         self.debug = debug
+        self.dataSxtr = dataSxtr
         self.logger = logger
         self.stoprequest = threading.Event()
         try:
-            self.display = DS9()
-        except Exception as e:
+            self.display = ds9()
+        except Exception, e:
             self.logger.warn('__init__: forking ds9 failed:\n{0}'.format(e))
 
-    def displayWithRegion(self, fitsFn=None,x=None,y=None,color='blue'): 
+    def displayWithRegion(self, dSx = None): 
+        """
+
+        :var dSx: :py:mod:`rts2saf.data.DataSxtr`
+
+        
+        :return: True if success else False
+
+        """
         global first 
         try:
             if not first:
@@ -54,26 +65,66 @@ class Ds9DisplayThread(threading.Thread):
 
             #self.display.set('zoom to fit')
             self.display.set('scale zscale')
-            self.display.set('file {0}'.format(fitsFn))
+            self.display.set('file {0}'.format(dSx.fitsFn))
+            self.display.set('regions command {{text {0} {1} #text="FOC_POS {2}" color=magenta font="helvetica 15 normal"}}'.format(80,10, int(dSx.focPos)))
 
-        except Exception as e:
+        except Exception, e:
             self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
             return False
 
         try:
-            self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}}'.format(x,y, 20, color))
-        except Exception as e:
-            self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
+            i_x = dSx.fields.index('X_IMAGE')
+            i_y = dSx.fields.index('Y_IMAGE')
+            i_flg = dSx.fields.index('FLAGS')
+            i_fwhm = dSx.fields.index('FWHM_IMAGE')
+
+        except Exception, e:
+            self.logger.warn('____DisplayThread: retrieving data failed:\n{0}'.format(e))
             return False
 
-        return True
+        for x in dSx.rawCatalog:
+            if not x:
+                continue
 
-    def run(self, fitsFn=None,x=None,y=None,color='blue'):
-        if fitsFn:
-            if not self.displayWithRegion(fitsFn=fitsFn,x=x,y=y,color=color):
-                self.logger.error('____DisplayThread: OOOOOOOOPS')
+            if x in dSx.catalog:
+                color='green'
+                try:
+                    self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}} text={{{4}}}'.format(x[i_x],x[i_y], x[i_fwhm], color, x[i_fwhm]))
+                except Exception, e:
+                    self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
+                    return False
+
+            elif x[i_flg] == 0:
+                color='yellow'
+            else:
+                color='red'
+            try:
+                self.display.set('regions', 'image; circle {0} {1} {2} # color={{{3}}}'.format(x[i_x],x[i_y], x[i_fwhm], color))
+            except Exception, e:
+                self.logger.warn('____DisplayThread: plotting fits with regions failed:\n{0}'.format(e))
+                return False
+        else:
+            return True
+
+        return False
+
+    def run(self):
+        """ Display via DS9.  
+        """
+
+        # ToDo create new list
+        self.dataSxtr.sort(key=lambda x: int(x.focPos))
+
+        for dSx in self.dataSxtr:
+            if dSx.fitsFn:
+                if not self.displayWithRegion(dSx=dSx):
+                    break # something went wrong
+            else:
+                self.logger.warn('____DisplayThread: OOOOOOOOPS, no file name for fits image number: {0:3d}'.format(dSx.fitsFn))
             
             self.display.set('zoom to fit')
+        # do not remove me: enough is not enough
+        self.display.set('blink')
 
     def join(self, timeout=None):
         """Stop thread on request.

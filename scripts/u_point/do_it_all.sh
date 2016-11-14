@@ -58,9 +58,9 @@ echo "dummy meteo data are provided by meteo.py"
 echo "progress report: once u_acquire.py is running:"
 echo "- open an new terminal and do a: tail -f /tmp/u_acquire.log"
 echo "- create a progress plot:  ./u_acquire.py --base-path $BASE_DIRECTORY --do-not-use-rts2  --plot"
-echo "./u_acquire.py --base-path $BASE_DIRECTORY --do-not-use-rts2 --fetch-dss-image  --meteo-class meteo_dome_c --mode-continues --level DEBUG"
+echo "./u_acquire.py --base-path $BASE_DIRECTORY --do-not-use-rts2 --fetch-dss-image  --mode-continues --level DEBUG"
 #
-./u_acquire.py --base-path $BASE_DIRECTORY --do-not-use-rts2 --fetch-dss-image  --meteo-class meteo_dome_c --mode-continues --level DEBUG --toconsole
+./u_acquire.py --base-path $BASE_DIRECTORY --do-not-use-rts2 --fetch-dss-image  --mode-continues --level DEBUG --toconsole
 #
 echo "DONE position acqusition"
 echo "------------------------------------------------"
