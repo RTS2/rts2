@@ -1076,7 +1076,14 @@ int Paramount::doPara()
 			CWORD32 dc = encoderDec->getValueLong ();
 			int ret;
 
-			double JD = ln_get_julian_from_sys ();
+			double utc1, utc2;
+#ifdef RTS2_LIBERFA
+			getEraUTC (utc1, utc2);
+#else
+			utc1 = ln_get_julian_from_sys ();
+			utc2 = 0;
+#endif
+
 			struct ln_equ_posn tar;
 
 			// Switch the motor on if necessary
@@ -1084,7 +1091,7 @@ int Paramount::doPara()
 			if(stat1 & MOTOR_OFF) ret1 = MKS3MotorOn (axis1);
 			
 			// issue the actual move
-			ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
+			ret = calculateTarget (utc1, utc2, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
 			if (ret)
                                 return -1;
 

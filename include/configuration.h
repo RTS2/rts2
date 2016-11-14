@@ -369,6 +369,10 @@ class Configuration:public IniParser
 
 		void setShowMilliseconds (bool show) { showMilliseconds = show; }
 
+		typedef enum {AZ_SOUTH_ZERO, AZ_NORTH_ZERO} az_show_t;
+
+		void setShowAzimuth (az_show_t az) { azShow = az; } 
+
 	protected:
 		virtual int getSpecialValues ();
 
@@ -415,6 +419,8 @@ class Configuration:public IniParser
 		std::string masterConsFile;
 
 		bool showMilliseconds;
+
+		az_show_t azShow;
 };
 
 }

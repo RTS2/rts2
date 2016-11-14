@@ -33,6 +33,7 @@
 #define OPT_MONITOR_COMMAND    OPT_LOCAL + 307
 #define OPT_MONITOR_SHOW_DEBUG OPT_LOCAL + 308
 #define OPT_MILISEC            OPT_LOCAL + 309
+#define OPT_NORTH_ZERO         OPT_LOCAL + 310
 
 //default refresh rate
 #define MONITOR_REFRESH   0.1
@@ -142,6 +143,9 @@ int NMonitor::processOption (int in_opt)
 			break;
 		case OPT_MILISEC:
 			rts2core::Configuration::instance ()->setShowMilliseconds (true);
+			break;
+		case OPT_NORTH_ZERO:
+			rts2core::Configuration::instance ()->setShowAzimuth (rts2core::Configuration::AZ_NORTH_ZERO);
 			break;
 		default:
 			return rts2core::Client::processOption (in_opt);
@@ -402,6 +406,7 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	addOption ('r', NULL, 1, "refersh rate (in seconds)");
 	addOption (OPT_MONITOR_COMMAND, "command", 1, "send command to device; separate command and device with .");
 	addOption (OPT_MILISEC, "show-milliseconds", 0, "show milliseconds in time differences");
+	addOption (OPT_NORTH_ZERO, "north-0", 0, "show azimuth starting from north (N=0, E=90,..)");
 
 	char buf[HOST_NAME_MAX];
 

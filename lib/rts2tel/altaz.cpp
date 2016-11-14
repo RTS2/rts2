@@ -54,9 +54,9 @@ AltAz::~AltAz (void)
 {
 }
 
-int AltAz::infoJDLST (double JD, double LST)
+int AltAz::infoUTCLST (const double utc1, const double utc2, double LST)
 {
-	int ret = Telescope::infoJDLST (JD, LST);
+	int ret = Telescope::infoUTCLST (utc1, utc2, LST);
 	if (ret)
 		return ret;
 	double HA = ln_range_degrees (LST - getTargetRa ());

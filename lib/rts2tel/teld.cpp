@@ -436,7 +436,7 @@ void Telescope::setModelTarAltAz (struct ln_hrz_posn *hrz)
 	modelTarAltAz->setValueAltAz (hrz->alt, hrz->az);
 }
 
-int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	double tar_distance = NAN;
 
@@ -450,7 +450,7 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 				struct ln_equ_posn parallax;
 				observer.lat = telLatitude->getValueDouble ();
 				observer.lng = telLongitude->getValueDouble ();
-				LibnovaCurrentFromOrbit (out_tar, &mpec_orbit, &observer, telAltitude->getValueDouble (), JD, &parallax);
+				LibnovaCurrentFromOrbit (out_tar, &mpec_orbit, &observer, telAltitude->getValueDouble (), utc1 + utc2, &parallax);
                                 if (writeValues)
 					setOrigin (out_tar->ra, out_tar->dec);
 				break;
@@ -458,7 +458,7 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 			// calculate from TLE..
 			else if (tle_freeze->getValueBool () == false && tle_l1->getValueString ().length () > 0 && tle_l2->getValueString ().length () > 0)
 			{
-				calculateTLE (JD, out_tar->ra, out_tar->dec, tar_distance);
+				calculateTLE (utc1 + utc2, out_tar->ra, out_tar->dec, tar_distance);
 				out_tar->ra = ln_rad_to_deg (out_tar->ra);
 				out_tar->dec = ln_rad_to_deg (out_tar->dec);
 				if (writeValues)
@@ -470,7 +470,7 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 			// get from ORI, if constant..
 			getOrigin (out_tar);
 			if (!isnan (diffTrackStart->getValueDouble ()))
-				addDiffRaDec (out_tar, (JD - diffTrackStart->getValueDouble ()) * 86400.0);
+				addDiffRaDec (out_tar, (utc1 + utc2 - diffTrackStart->getValueDouble ()) * 86400.0);
 	}
 
 	// offsets, corrections,..
@@ -492,21 +492,21 @@ int Telescope::calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t 
 	if (writeValues)
 		setObject (out_tar->ra, out_tar->dec);
 
-	return sky2counts (JD, out_tar, ac, dc, writeValues, haMargin, forceShortest);
+	return sky2counts (utc1, utc2, out_tar, ac, dc, writeValues, haMargin, forceShortest);
 }
 
-int Telescope::calculateTracking (double JD, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed)
+int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed)
 {
 	struct ln_equ_posn eqpos, t_eqpos;
 	// refresh current target..
 
 	int32_t t_ac = ac;
 	int32_t t_dc = dc;
-	int ret = calculateTarget (JD, &eqpos, t_ac, t_dc, true, 0, true);
+	int ret = calculateTarget (utc1, utc2, &eqpos, t_ac, t_dc, true, 0, true);
 	if (ret)
 		return ret;
 
-	ret = calculateTarget (JD + sec_step / 86400.0, &t_eqpos, t_ac, t_dc, false, 0, true);
+	ret = calculateTarget (utc1, utc2 + sec_step / 86400.0, &t_eqpos, t_ac, t_dc, false, 0, true);
 	if (ret)
 		return ret;
 
@@ -530,7 +530,7 @@ int Telescope::calculateTracking (double JD, double sec_step, int32_t &ac, int32
 	return 0;
 }
 
-int Telescope::sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
+int Telescope::sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest)
 {
 	return -1;
 }
@@ -1712,20 +1712,34 @@ double Telescope::getAltitudePressure (double alt, double see_pres)
 
 int Telescope::info ()
 {
-	return infoJD (ln_get_julian_from_sys ());
+	double utc1, utc2;
+#ifdef RTS2_LIBERFA
+	getEraUTC (utc1, utc2);
+#else
+	utc1 = ln_get_julian_from_sys ();
+	utc2 = 0;
+#endif
+	return infoUTC (utc1, utc2);
 }
 
-int Telescope::infoJD (double JD)
+int Telescope::infoUTC (const double utc1, const double utc2)
 {
-	return infoJDLST (JD, getLstDeg (JD));
+	return infoUTCLST (utc1, utc2, getLstDeg (utc1 + utc2));
 }
 
 int Telescope::infoLST (double telLST)
 {
-	return infoJDLST (ln_get_julian_from_sys (), telLST);
+	double utc1, utc2;
+#ifdef RTS2_LIBERFA
+	getEraUTC (utc1, utc2);
+#else
+	utc1 = ln_get_julian_from_sys ();
+	utc2 = 0;
+#endif
+	return infoUTCLST (utc1, utc2, telLST);
 }
 
-int Telescope::infoJDLST (double JD, double telLST)
+int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 {
 	struct ln_hrz_posn hrz;
 	// calculate alt+az
@@ -1739,7 +1753,7 @@ int Telescope::infoJDLST (double JD, double telLST)
 
 	// fill in airmass, ha and lst
 	airmass->setValueDouble (ln_get_airmass (telAltAz->getAlt (), 750));
-	jdVal->setValueDouble (JD);
+	jdVal->setValueDouble (utc1 + utc2);
 	lst->setValueDouble (telLST);
 	hourAngle->setValueDouble (ln_range_degrees (lst->getValueDouble () - telRaDec->getRa ()));
 	targetDistance->setValueDouble (getTargetDistance ());

@@ -99,6 +99,7 @@ Configuration::Configuration (bool defaultSection):IniParser (defaultSection)
 	astrometryTimeout = 120;
 	targetConstraintsWithName = false;
 	showMilliseconds = true;
+	azShow = AZ_SOUTH_ZERO;
 }
 
 Configuration::~Configuration (void)

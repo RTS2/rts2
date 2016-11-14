@@ -35,7 +35,7 @@ class AltAz: public Telescope
 		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true, bool hasAltAzDiff = true);
 		virtual ~AltAz (void);
 
-		virtual int infoJDLST (double JD, double telLST);
+		virtual int infoUTCLST (const double utc1, const double utc2, double telLST);
 
 	protected:
 		int calculateMove (double JD, int32_t c_azc, int32_t c_altc, int32_t &t_azc, int32_t &t_altc);

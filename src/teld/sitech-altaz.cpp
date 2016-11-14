@@ -178,7 +178,8 @@ class SitechAltAz:public AltAz
 		bool wasStopped;
 
 		// JD used in last getTel call
-		double getTelJD;
+		double getTelUTC1;
+		double getTelUTC2;
 
 		/**
 		 * Retrieve telescope counts, convert them to RA and Declination.
@@ -429,22 +430,28 @@ int SitechAltAz::info ()
 
 	struct ln_equ_posn pos;
 
-	getEquFromHrz (&hrz, getTelJD, &pos);
+	getEquFromHrz (&hrz, getTelUTC1 + getTelUTC2, &pos);
 	setTelRaDec (pos.ra, pos.dec);
 	setTelUnAltAz (un_zd, un_az);
 
-	return AltAz::infoJD (getTelJD);
+	return AltAz::infoUTC (getTelUTC1, getTelUTC2);
 }
 
 int SitechAltAz::startResync ()
 {
 	getConfiguration ();
 
-	double JD = ln_get_julian_from_sys ();
+	double utc1, utc2;
+#ifdef RTS2_LIBERFA
+	getEraUTC (utc1, utc2);
+#else
+	utc1 = ln_get_julian_from_sys ();
+	utc2 = 0;
+#endif
 	struct ln_equ_posn tar;
 
 	int32_t azc = r_az_pos->getValueLong (), altc = r_alt_pos->getValueLong ();
-	int ret = calculateTarget (JD, &tar, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0, false);
+	int ret = calculateTarget (utc1, utc2, &tar, azc, altc, true, firstSlewCall ? azSlewMargin->getValueDouble () : 0, false);
 
 	if (ret)
 		return -1;
@@ -605,7 +612,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t azc_speed = 0;
 	int32_t altc_speed = 0;
 
-	int ret = calculateTracking (getTelJD, sec_step, a_azc, a_altc, azc_speed, altc_speed);
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed);
 	if (ret)
 	{
 		if (ret < 0)
@@ -685,7 +692,7 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	xbits |= (0x01 << 4);
 
 	// check that the entered trajactory is valid
-	ret = checkTrajectory (getTelJD, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), altaz_Xrequest.y_dest, altaz_Xrequest.x_dest, az_change / sec_step / 2.0, alt_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false);
+	ret = checkTrajectory (getTelUTC1 + getTelUTC2, r_az_pos->getValueLong (), r_alt_pos->getValueLong (), altaz_Xrequest.y_dest, altaz_Xrequest.x_dest, az_change / sec_step / 2.0, alt_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false);
 	if (ret == 2 && speed_factor > 1) // too big move to future, keep target
 	{
 		logStream (MESSAGE_INFO) << "soft stop detected while running tracking, move from " << r_az_pos->getValueLong () << " " << r_alt_pos->getValueLong () << " only to " << altaz_Xrequest.y_dest << " " << altaz_Xrequest.x_dest << sendLog;
@@ -900,7 +907,12 @@ void SitechAltAz::getTel ()
 
 void SitechAltAz::getTel (double &telaz, double &telalt, double &un_telaz, double &un_telzd)
 {
-	getTelJD = ln_get_julian_from_sys ();
+#ifdef RTS2_LIBERFA
+	getEraUTC (getTelUTC1, getTelUTC2);
+#else
+	getTelUTC1 = ln_get_julian_from_sys ();
+	getTelUTC2 = 0;
+#endif
 	getTel ();
 
 	counts2hrz (altaz_status.y_pos, altaz_status.x_pos, telaz, telalt, un_telaz, un_telzd);

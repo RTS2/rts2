@@ -412,9 +412,16 @@ int GEM::peek (double ra, double dec)
 	int32_t ac;
 	int32_t dc;
 
-	double JD = ln_get_julian_from_sys ();
+	double utc1, utc2;
 
-	int ret = calculateTarget (JD, &peekPos, ac, dc, false, 0, false);
+#ifdef RTS2_LIBERFA
+	getEraUTC (utc1, utc2);
+#else
+	utc1 = ln_get_julian_from_sys ();
+	utc2 = 0;
+#endif
+
+	int ret = calculateTarget (utc1, utc2, &peekPos, ac, dc, false, 0, false);
 	if (ret)
 		return ret;
 

@@ -110,9 +110,9 @@ class Telescope:public rts2core::Device
 
 		// callback functions from telescope connection
 		virtual int info ();
-		int infoJD (double JD);
+		int infoUTC (const double utc1, const double utc2);
 		int infoLST (double telLST);
-		virtual int infoJDLST (double JD, double telLST);
+		virtual int infoUTCLST (const double utc1, const double utc2, double telLST);
 
 		virtual int scriptEnds ();
 
@@ -618,7 +618,7 @@ class Telescope:public rts2core::Device
 		 * @param haMargin       margin (in degrees) for which HA axis must be allowed to move in sidereal tracking
 		 * @param forceShortest  if true, shortest path wlll be taken - desired flipping will be ignored
 		 */
-		int calculateTarget (double JD, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest);
+		int calculateTarget (const double utc1, const double utc2, struct ln_equ_posn *out_tar, int32_t &ac, int32_t &dc, bool writeValues, double haMargin, bool forceShortest);
 
 		/**
 		 * Calculate speed vector from arc of given duration.
@@ -632,7 +632,7 @@ class Telescope:public rts2core::Device
 		 * @param ac_speed       first axis speed in counts per second
 		 * @param dc_speed       second axis speed in counts per second
 		 */
-		int calculateTracking (double JD, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed);
+		int calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed);
 
 		/**
 		 * Transform sky coordinates to axis coordinates. Implemented in classes
@@ -646,7 +646,7 @@ class Telescope:public rts2core::Device
                  * @param haMargin      ha value (in degrees), for which mount must be allowed to move
 		 * @param forceShortest if true, shortest path will be taken - desired flipping will be ignored
 		 */
-		virtual int sky2counts (double JD, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValue, double haMargin, bool forceShortest);
+		virtual int sky2counts (const double uct1, const double utc2, struct ln_equ_posn *pos, int32_t &ac, int32_t &dc, bool writeValue, double haMargin, bool forceShortest);
 
 		void addDiffRaDec (struct ln_equ_posn *tar, double secdiff);
 		void addDiffAltAz (struct ln_hrz_posn *hrz, double secdiff);

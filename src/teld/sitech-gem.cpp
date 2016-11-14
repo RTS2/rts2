@@ -209,7 +209,7 @@ class Sitech:public GEM
 		const char *device_file;
 
 		// JD used in last getTel call
-		double getTelJD;
+		double getTelUTC1, getTelUTC2;
 		
 		/**
 		 * Retrieve telescope counts, convert them to RA and Declination.
@@ -641,11 +641,16 @@ void Sitech::getTel ()
 
 void Sitech::getTel (double &telra, double &teldec, int &telflip, double &un_telra, double &un_teldec)
 {
-	getTelJD = ln_get_julian_from_sys ();
+#ifdef RTS2_LIBERFA
+	getEraUTC (getTelUTC1, getTelUTC2);
+#else
+	getTelUTC1 = ln_get_julian_from_sys ();
+	getTelUTC2 = 0;
+#endif
 
 	getTel ();
 
-	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec, getTelJD);
+	int ret = counts2sky (radec_status.y_pos, radec_status.x_pos, telra, teldec, telflip, un_telra, un_teldec, getTelUTC1 + getTelUTC2);
 	if (ret)
 		logStream  (MESSAGE_ERROR) << "error transforming counts" << sendLog;
 }
@@ -759,7 +764,7 @@ int Sitech::info ()
 
 	haCWDAngle->setValueDouble (getHACWDAngle (r_ra_pos->getValueLong ()));
 
-	return rts2teld::GEM::infoJD (getTelJD);
+	return rts2teld::GEM::infoUTC (getTelUTC1, getTelUTC2);
 }
 
 int Sitech::processOption (int in_opt)
@@ -824,11 +829,17 @@ int Sitech::startResync ()
 {
 	getConfiguration ();
 
-        double JD = ln_get_julian_from_sys ();
+	double utc1, utc2;
+#ifdef RTS2_LIBERFA
+	getEraUTC (utc1, utc2);
+#else
+        utc1 = ln_get_julian_from_sys ();
+	utc2 = 0;
+#endif
         struct ln_equ_posn tar;
 
 	int32_t ac = r_ra_pos->getValueLong (), dc = r_dec_pos->getValueLong ();
-	int ret = calculateTarget (JD, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0, false);
+	int ret = calculateTarget (utc1, utc2, &tar, ac, dc, true, firstSlewCall ? haSlewMargin->getValueDouble () : 0, false);
 	if (ret)
 		return -1;
 
@@ -969,7 +980,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	int32_t ac_speed = 0;
 	int32_t dc_speed = 0;
 
-	int ret = calculateTracking (getTelJD, sec_step, ac, dc, ac_speed, dc_speed);
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, ac, dc, ac_speed, dc_speed);
 	if (ret)
 	{
 		if (ret < 0)
@@ -1049,7 +1060,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	xbits |= (0x01 << 4);
 
 	// check that the entered trajactory is valid
-	ret = checkTrajectory (getTelJD, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), radec_Xrequest.y_dest, radec_Xrequest.x_dest, ac_change / sec_step / 2.0, dc_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
+	ret = checkTrajectory (getTelUTC1 + getTelUTC2, r_ra_pos->getValueLong (), r_dec_pos->getValueLong (), radec_Xrequest.y_dest, radec_Xrequest.x_dest, ac_change / sec_step / 2.0, dc_change / sec_step / 2.0, TRAJECTORY_CHECK_LIMIT, 2.0, 2.0, false, false);
 	if (ret == 2 && speed_factor > 1) // too big move to future, keep target
 	{
 		logStream (MESSAGE_INFO) << "soft stop detected while running tracking, move from " << r_ra_pos->getValueLong () << " " << r_dec_pos->getValueLong () << " only to " << radec_Xrequest.y_dest << " " << radec_Xrequest.x_dest << sendLog;

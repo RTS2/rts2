@@ -303,9 +303,15 @@ int Hlohovec::startResync ()
 	deleteTimers (RTS2_HLOHOVEC_AUTOSAVE);
 	tAc = raDrive->getPosition ();
 	int32_t dc = decDrive->getPosition ();
-	double JD = ln_get_julian_from_sys ();
+	double utc1, utc2;
+#ifdef RTS2_LIBERFA
+	getEraUTC (utc1, utc2);
+#else
+	utc1 = ln_get_julian_from_sys ();
+	utc2 = 0;
+#endif
 	struct ln_equ_posn tar;
-	int ret = calculateTarget (JD, &tar, tAc, dc, true, haSlewMargin->getValueDouble (), false);
+	int ret = calculateTarget (utc1, utc2, &tar, tAc, dc, true, haSlewMargin->getValueDouble (), false);
 	if (ret)
 		return -1;
 	raDrive->setTargetPos (tAc);
@@ -323,9 +329,15 @@ int Hlohovec::isMoving ()
 			int32_t diffAc;
 			int32_t ac = raDrive->getPosition ();
 			int32_t dc = decDrive->getPosition ();
-			double JD = ln_get_julian_from_sys ();
+			double utc1, utc2;
+#ifdef RTS2_LIBERFA
+			getEraUTC (utc1, utc2);
+#else
+			utc1 = ln_get_julian_from_sys ();
+			utc2 = 0;
+#endif
 			struct ln_equ_posn tar;
-			int ret = calculateTarget (JD, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
+			int ret = calculateTarget (utc1, utc2, &tar, ac, dc, true, haSlewMargin->getValueDouble (), false);
 			if (ret)
 				return -1;
 			diffAc = ac - tAc;

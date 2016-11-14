@@ -223,14 +223,20 @@ int Dummy::isMoving ()
 
 void Dummy::runTracking ()
 {
-	double JD = ln_get_julian_from_sys () + 2 / 86400.0;
+	double utc1, utc2;
+#ifdef RTS2_LIBERFA
+	getEraUTC (utc1, utc2);
+#else
+	utc1 = ln_get_julian_from_sys () + 2 / 86400.0;
+	utc2 = 0;
+#endif
 	struct ln_equ_posn target;
 	int32_t t_ac, t_dc;
 
 	t_ac = t_axRa->getValueLong ();
 	t_dc = t_axDec->getValueLong ();
 
-	int ret = calculateTarget (JD + 2 / 86400.0, &target, t_ac, t_dc, true, 0, false);
+	int ret = calculateTarget (utc1, utc2 + 2 / 86400.0, &target, t_ac, t_dc, true, 0, false);
 	if (ret)
 	{
 		setTracking (0);
