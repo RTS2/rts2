@@ -40,7 +40,7 @@
 #define TRAJECTORY_CHECK_LIMIT  2000
 
 // use ERFA/SOFA functions to transfrom from ICRS to apparent instead of Libnova mean/apparent transformations
-#define USE_ERFA                1
+#define USE_ERFA                RTS2_LIBERFA
 
 namespace rts2telmodel
 {

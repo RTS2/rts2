@@ -49,6 +49,8 @@ AS_IF([test "x$LIBWEBSOCKETS_LIBS" != x], [
   libwebsockets="yes"
 ])
 
+hiredis="no"
+
 PKG_CHECK_MODULES([HIREDIS],[hiredis >= 0.10],,AC_MSG_RESULT(not fould))
 AM_CONDITIONAL(HIREDIS,test "x$HIREDIS_LIBS" != x)
 AS_IF([test "x$HIREDIS_LIBS" != x], [
@@ -218,7 +220,13 @@ AS_IF([test "x$JSONGLIB_CFLAGS" != "x"], [
 	AC_DEFINE_UNQUOTED(JSONSOUP, "1", [JSON and SOUP libraries are present])
 ])
 
+libthrift="no"
 PKG_CHECK_MODULES([THRIFT], [thrift],,AC_MSG_RESULT(not found))
+AM_CONDITIONAL(LIBTHRIFT, test "x$THRIFT_LIBS" != x)
+AS_IF([test "x$THRIFT_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(LIBTHRIFT, "1", [THRIFT is available])
+  libthrift="yes"
+])
 
 AM_CONDITIONAL(THRIFT, test "x$THRIFT_CFLAGS" != x)
 
@@ -1026,9 +1034,9 @@ echo "
   openssl       ${ssl}
   libcheck	${libcheck}
   libwebsockets	${libwebsockets}
-  libthrift     ${THRIFT_CFLAGS} ${THRIFT_LIBS}
+  libthrift     ${libthrift} ${THRIFT_CFLAGS} ${THRIFT_LIBS}
   hiredis	${hiredis}
-  liberfa	${LIBERFA}
+  liberfa	${liberfa} ${ERFA_CFLAGS} ${ERFA_LIBS}
 
 CCDs:
   alta          ${ALTA}
