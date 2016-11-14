@@ -250,7 +250,7 @@ Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_statu
 {
 	unlockPointing ();
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	setCorrections (true, true, true, true);
 #endif
 

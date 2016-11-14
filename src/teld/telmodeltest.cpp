@@ -294,12 +294,12 @@ int TelModelTest::init ()
 		return 0;
 
 	telescope = new ModelTest ();
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	telescope->setCorrections (false, false, false, false);
 #endif
 
 	gemTelescope = new ModelTestGEM ();
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	gemTelescope->setCorrections (true, true, true, true);
 #endif
 
@@ -511,13 +511,13 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 				{
 					temp = NAN;
 					press = NAN;
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 					telescope->setCorrections (true, true, true, false);
 #endif
 				}
 				else
 				{
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 					if ( includeRefraction )
 						telescope->setCorrections (true, true, true, true);
 					else
@@ -597,7 +597,7 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 					else
 						JD = JD0;
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 					telescope->applyCorrections (&pos_in, JD, false);
 #endif
 				}

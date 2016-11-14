@@ -203,7 +203,7 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 {
 	unlockPointing ();
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	setCorrections (true, true, true, true);
 #endif
 

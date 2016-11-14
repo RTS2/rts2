@@ -30,7 +30,7 @@ void AltAzTest::setTelescope (double _lat, double _long, double _alt, long _az_t
 	altMin->setValueLong (_altMin);
 	altMax->setValueLong (_altMax);
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	setCorrections (false, false, false, false);
 #endif
 

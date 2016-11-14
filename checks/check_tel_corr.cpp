@@ -35,7 +35,7 @@ void setup_tel (void)
 	altazTestNutation = new AltAzTest(0, (char **) argv);
 	altazTestNutation->setTelescope (-40, -5, 200, 67108864, 67108864, 90, -7, 186413.511111, 186413.511111, -80000000, 80000000, -40000000, 40000000);
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	altazTestNutation->setCorrections (true, true, true, true);
 #endif
 }
@@ -284,7 +284,7 @@ START_TEST(test_nutation)
 
 	ret = altazTestNutation->test_sky2counts (utc1, utc2, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, -17930964);
 	ck_assert_int_eq (altc, 10883070);
 #else
@@ -440,13 +440,13 @@ START_TEST(test_mean2apparent)
 //	ck_assert_dbl_eq (pos.ra, 155.461159413, 10e-7);
 //	ck_assert_dbl_eq (pos.dec, 9.8786101602, 10e-7);
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	altazTestNutation->setCorrections (true, true, true, true);
 #endif
 	struct ln_hrz_posn hrz;
 	altazTestNutation->applyCorrections (&pos, utc1, utc2, &hrz, false);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (pos.ra, 155.2949621001, 10e-7);
 	ck_assert_dbl_eq (pos.dec, 9.8591743371, 10e-7);
 #else
@@ -454,7 +454,7 @@ START_TEST(test_mean2apparent)
 	ck_assert_dbl_eq (pos.dec, 9.8786101602, 10e-7);
 #endif
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (hrz.az, 155.1994725981, 10e-7);
 	ck_assert_dbl_eq (hrz.alt, 36.8339888166, 10e-7);
 #else

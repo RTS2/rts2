@@ -39,9 +39,6 @@
 // Limit on number of steps for trajectory check
 #define TRAJECTORY_CHECK_LIMIT  2000
 
-// use ERFA/SOFA functions to transfrom from ICRS to apparent instead of Libnova mean/apparent transformations
-#define USE_ERFA                RTS2_LIBERFA
-
 namespace rts2telmodel
 {
 	class TelModel;
@@ -137,7 +134,7 @@ class Telescope:public rts2core::Device
 		 */
 		void applyCorrections (struct ln_equ_posn *pos, double utc1, double utc2, struct ln_hrz_posn *hrz, bool writeValues);
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 		/**
 		 * Set telescope correctios.
 		 *
@@ -1222,7 +1219,7 @@ class Telescope:public rts2core::Device
 		// make mean->apparent transformations with ERFA/SOFA library
 		rts2core::ValueBool *useErfa;
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 		rts2core::ValueBool *calPrecession;
 		rts2core::ValueBool *calNutation;
 		rts2core::ValueBool *calAberation;

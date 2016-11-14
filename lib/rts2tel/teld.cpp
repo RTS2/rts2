@@ -38,7 +38,7 @@
 #include "gpointmodel.h"
 #include "tpointmodel.h"
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 #include "erfa.h"
 #endif
 
@@ -341,7 +341,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	// default is to aply model corrections
 
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calPrecession->setValueBool (false);
 
@@ -1779,7 +1779,7 @@ int Telescope::scriptEnds ()
 
 void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc2, struct ln_hrz_posn *hrz, bool writeValues)
 {
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	double aob, zob, hob, dob, rob, co;
 
 	double rc = ln_deg_to_rad (pos->ra);
@@ -1824,7 +1824,7 @@ void Telescope::applyCorrections (double &t_ra, double &t_dec, bool writeValues)
 	pos.ra = t_ra;
 	pos.dec = t_dec;
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	applyCorrections (&pos, 0, 0, NULL, writeValues);
 #else
 	applyCorrections (&pos, ln_get_julian_from_sys (), 0, NULL, writeValues);

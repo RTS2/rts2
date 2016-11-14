@@ -614,7 +614,7 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true, 
 	track1 = NULL;
 
 	// apply all correction for paramount
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	setCorrections (true, true, true, true);
 #endif
 

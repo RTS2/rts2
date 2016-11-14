@@ -632,7 +632,7 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv, false, 
 	addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
 	addOption (OPT_GEMINIMODELFILE, "gemini-model", 1, "gemini config file (with internal model parameters)");
 	addOption (OPT_BOOTES, "bootes", 0, "BOOTES G-11 (with 1/0 pointing sensor)");
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 	addOption (OPT_CORR, "corrections",  1, "level of correction done in Gemini - 0 none, 3 all");
 #endif
 	addOption (OPT_EXPTYPE, "expected-type", 1, "expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
@@ -699,7 +699,7 @@ int Gemini::processOption (int in_opt)
 		case OPT_BOOTES:
 			bootesSensors = 1;
 			break;
-#ifndef USE_ERFA
+#ifndef RTS2_LIBERFA
 		case OPT_CORR:
 			switch (*optarg)
 			{
@@ -857,7 +857,7 @@ int Gemini::setCorrection ()
 		return 0;
 	
 	int ret = -1;
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ret = serConn->writePort (":p3#", 4);
 #else
 	if (calculateAberation () && calculatePrecession () && calculateRefraction ())

@@ -371,7 +371,7 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	int32_t dc;
 	bool use_flipped;
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	double utc1, utc2;
 	getEraUTC (utc1, utc2);
 	int ret = sky2counts (&eq, ac, dc, utc1, utc2, 0, use_flipped, true, 0);

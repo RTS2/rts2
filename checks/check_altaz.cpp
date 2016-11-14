@@ -169,7 +169,7 @@ START_TEST(test_altaz_1)
 
 	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, 16135692);
 	ck_assert_int_eq (altc, 27308043);
 #else
@@ -179,7 +179,7 @@ START_TEST(test_altaz_1)
 
 	altAzTest->test_counts2sky (JD, azc, altc, pos.ra, pos.dec);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (pos.ra, 20, 10e-1);
 	ck_assert_dbl_eq (pos.dec, 80, 10e-1);
 #else
@@ -195,7 +195,7 @@ START_TEST(test_altaz_1)
 
 	ret = altAzTest->test_sky2counts (JD, 0, &pos, azc, altc);
 	ck_assert_int_eq (ret, 0);
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, 49514704);
 	ck_assert_int_eq (altc, 12300262);
 #else
@@ -215,7 +215,7 @@ START_TEST(test_altaz_1)
 
 	altAzTest->test_counts2sky (JD, azc, altc, curr.ra, curr.dec);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-1);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
 #else

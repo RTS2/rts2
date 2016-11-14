@@ -46,7 +46,7 @@ START_TEST(test_gem_hko_1)
 
 	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -78292145);
 	ck_assert_int_eq (dc, -51101387);
 #else
@@ -61,7 +61,7 @@ START_TEST(test_gem_hko_1)
 	ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -71569137);
 	ck_assert_int_eq (dc, -65564008);
 #else
@@ -81,7 +81,7 @@ START_TEST(test_gem_hko_1)
 
 	gemTest->test_counts2sky (JD, 0, ac, dc, curr.ra, curr.dec);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-1);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
 #else
@@ -127,7 +127,7 @@ START_TEST(test_gem_hko_2)
 
 	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -80983081);
 	ck_assert_int_eq (dc, -72034126);
 #else
@@ -142,7 +142,7 @@ START_TEST(test_gem_hko_2)
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
 	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -51445419);
 	ck_assert_int_eq (dc, -29181975);
 #else
@@ -155,7 +155,7 @@ START_TEST(test_gem_hko_2)
 
 	gemTest->test_counts2sky (JD, 0, ac, dc, curr.ra, curr.dec);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-3);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
 #else
@@ -191,7 +191,7 @@ START_TEST(test_gem_hko_3)
 
 	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -48141625);
 	ck_assert_int_eq (dc, -43243375);
 #else
@@ -205,7 +205,7 @@ START_TEST(test_gem_hko_3)
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
 	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -80576113);
 	ck_assert_int_eq (dc, -56194262);
 #else
@@ -218,7 +218,7 @@ START_TEST(test_gem_hko_3)
 
 	gemTest->test_counts2sky (JD, 0, ac, dc, curr.ra, curr.dec);
 
-#ifdef USE_ERFA
+#ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (pos.ra, curr.ra, 10e-2);
 	ck_assert_dbl_eq (pos.dec, curr.dec, 10e-1);
 #else
