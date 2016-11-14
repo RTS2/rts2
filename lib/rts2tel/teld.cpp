@@ -1894,7 +1894,12 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	// apply computed corrections (precession, aberation, refraction)
 	double utc1, utc2;
 
+#ifdef RTS2_LIBERFA
 	getEraUTC (utc1, utc2);
+#else
+	utc1 = ln_get_julian_from_sys ();
+	utc2 = 0;
+#endif
 
 	// calculate from MPEC..
 	if (mpec->getValueString ().length () > 0)
