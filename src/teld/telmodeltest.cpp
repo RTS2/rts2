@@ -580,6 +580,7 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 			if (errors)
 			{
 				struct ln_equ_posn pos_in, pos_out;
+				struct ln_hrz_posn hrz;
 				_in.getPos (&pos_in);
 				_out_in.getPos (&pos_out);
 
@@ -598,7 +599,7 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 						JD = JD0;
 
 #ifndef RTS2_LIBERFA
-					telescope->applyCorrections (&pos_in, JD, false);
+					telescope->applyCorrections (&pos_in, JD, 0, &hrz, false);
 #endif
 				}
 
@@ -626,7 +627,6 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 
 				if (printAltAz)
 				{
-					struct ln_hrz_posn hrz;
 					struct ln_lnlat_posn obs;
 
 					telescope->getObs (&obs);
