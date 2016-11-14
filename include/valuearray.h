@@ -100,6 +100,12 @@ class StringArray: public ValueArray
 		 */
 		void remove (std::string _str) { std::vector <std::string>::iterator iter = std::find (value.begin (), value.end (), _str); if (iter != value.end ()) value.erase (iter); }
 
+		void clear ()
+		{
+			value.clear ();
+			changed ();
+		}
+
 		std::vector <std::string>::iterator valueBegin () { return value.begin (); }
 
 		std::vector <std::string>::iterator valueEnd () { return value.end (); }
@@ -157,7 +163,8 @@ class DoubleArray: public ValueArray
 
 		size_t size () { return value.size (); }
 
-		void clear () {
+		void clear ()
+		{
 			value.clear ();
 			changed ();
 		}
@@ -238,7 +245,8 @@ class IntegerArray: public ValueArray
 
 		size_t size () { return value.size (); }
 
-		void clear () {
+		void clear ()
+		{
 			value.clear ();
 			changed ();
 		}

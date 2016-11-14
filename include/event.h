@@ -96,6 +96,9 @@
 /** Set target, run killall, don't run scriptends. */
 #define EVENT_SET_TARGET_KILL_NOT_CLEAR  26
 
+/** Timeout for closign sequence. */
+#define EVENT_CLOSE_TIMEOUT              27
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000
 

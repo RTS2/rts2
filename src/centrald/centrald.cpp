@@ -35,6 +35,8 @@ void ConnCentrald::setState (rts2_status_t in_value, char *msg)
 	  	master->stopChanged (getName (), msg);
 	if (serverState->maskValueChanged (BOP_MASK))
 		master->bopMaskChanged ();
+	if (serverState->maskValueChanged (DEVICE_BLOCK_OPEN) || serverState->maskValueChanged (DEVICE_BLOCK_CLOSE))
+		master->openCloseChanged (getName (), msg);
 }
 
 ConnCentrald::ConnCentrald (int in_sock, Centrald * in_master, int in_centrald_id):rts2core::Connection (in_sock, in_master)
@@ -291,13 +293,13 @@ int ConnCentrald::commandClient ()
 		{
 			if (!paramEnd ())
 				return -2;
-			return master->startOpen ();
+			return master->startOpen () ? DEVDEM_E_PARAMSVAL : DEVDEM_OK;
 		}
 		if (isCommand (COMMAND_CLOSE))
 		{
 			if (!paramEnd ())
 				return -2;
-			return master->startClose ();
+			return master->startClose () ? DEVDEM_E_PARAMSVAL : DEVDEM_OK;
 		}
 	}
 	return rts2core::Connection::command ();
@@ -398,6 +400,15 @@ Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF 
 
 	createValue (morning_off, "morning_off", "switch to off in the morning", false, RTS2_VALUE_WRITABLE);
 	createValue (morning_standby, "morning_standby", "switch to standby in the morning", false, RTS2_VALUE_WRITABLE);
+
+	createValue (openClose, "open_close", "open/close operation in progress", false);
+	openClose->addSelVal ("none");
+	openClose->addSelVal ("opening");
+	openClose->addSelVal ("closing");
+
+	createValue (openCloseTimeout, "open_close_timeout", "timeout for open/close device", false);
+	createValue (openCloseLast, "open_close_last", "name of opening/closing device", false);
+	createValue (failedClose, "close_failed", "device(s) failed to close", false);
 
 	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false, RTS2_VALUE_WRITABLE);
 	createValue (badWeatherDevices, "bad_weather_devices", "devices reporting bad weather or required and not present", false);
@@ -812,6 +823,22 @@ void Centrald::deviceReady (rts2core::Connection * conn)
 	stopChanged (conn->getName (), "device ready");
 }
 
+void Centrald::postEvent (rts2core::Event * event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_CLOSE_TIMEOUT:
+			if (openClose->getValueInteger () == 2)
+			{
+				failedClose->addValue (openCloseLast->getValueString ());
+				sendValueAll (failedClose);
+				doClose ();
+			}
+			break;
+	}
+	Daemon::postEvent (event);
+}
+
 void Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
 	Message msg = Message ("centrald", in_messageType, in_messageString);
@@ -976,6 +1003,21 @@ void Centrald::bopMaskChanged ()
 	sendStatusMessage (getState ());
 }
 
+void Centrald::openCloseChanged (const char *device, const char *msg)
+{
+	switch (openClose->getValueInteger ())
+	{
+		// opening
+		case 1:
+			doOpen ();
+			break;
+		// closing
+		case 2:
+			doClose ();
+			break;
+	}
+}
+
 int Centrald::statusInfo (rts2core::Connection * conn)
 {
 	ConnCentrald *c_conn = (ConnCentrald *) conn;
@@ -1032,20 +1074,46 @@ int Centrald::getStateForConnection (rts2core::Connection * conn)
 
 int Centrald::startOpen ()
 {
+	openClose->setValueInteger (1);
+	return doOpen ();
+}
+
+int Centrald::startClose ()
+{
+	openClose->setValueInteger (2);
+	return doClose ();
+}
+
+int Centrald::doOpen ()
+{
 	for (std::vector <std::string>::iterator iter = openSequence->valueBegin (); iter != openSequence->valueEnd (); iter++)
 	{
 		// first device which blocks opening shall be opened
 		rts2core::Connection *dconn = getOpenConnection (iter->c_str ());
-		if (dconn != NULL && (dconn->getState () & DEVICE_BLOCK_OPEN))
+		if (dconn == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "missing " << *iter << " from opening sequence, stopping opening" << sendLog;
+			openClose->setValueInteger (0);
+			updateOpenClose ();
+			return -1;
+		}
+		else if ((dconn->getState () & DEVICE_BLOCK_OPEN))
 		{
 			dconn->queCommand (new rts2core::Command (this, COMMAND_OPEN));
+			if (*iter != openCloseLast->getValueString ())
+			{
+				openCloseTimeout->setValueDouble (getNow () + 180);
+				openCloseLast->setValueCharArr (dconn->getName ());
+				updateOpenClose ();
+			}
 			return 0;
 		}
 	}
-	return 0;
+	updateOpenClose (true);
+	return -1;
 }
 
-int Centrald::startClose ()
+int Centrald::doClose ()
 {
 	if (openSequence->size () < 1)
 		return 0;
@@ -1055,15 +1123,43 @@ int Centrald::startClose ()
 		iter--;
 		// first device which blocks opening shall be opened
 		rts2core::Connection *dconn = getOpenConnection (iter->c_str ());
-		if (dconn != NULL && (dconn->getState () & DEVICE_BLOCK_CLOSE))
+		if (dconn == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "missing " << *iter << " from close sequence, ignoring" << sendLog;
+		}
+		else if (!(failedClose->isPresent (*iter)) && (dconn->getState () & DEVICE_BLOCK_CLOSE))
 		{
 			dconn->queCommand (new rts2core::Command (this, COMMAND_CLOSE));
+			if (*iter != openCloseLast->getValueString ())
+			{
+				openCloseTimeout->setValueDouble (getNow () + 180);
+				openCloseLast->setValueCharArr (dconn->getName ());
+				updateOpenClose ();
+				addTimer (180, new rts2core::Event (EVENT_CLOSE_TIMEOUT));
+			}
 			return 0;
 		}
 	}
 	while (iter != openSequence->valueBegin ());
 
-	return 0;
+	updateOpenClose (true);
+	failedClose->clear ();
+	sendValueAll (failedClose);
+	return -1;
+}
+
+void Centrald::updateOpenClose (bool clear)
+{
+	if (clear)
+	{
+		openClose->setValueInteger (0);
+		openCloseLast->setValueCharArr ("");
+		openCloseTimeout->setValueDouble (NAN);
+	}
+
+	sendValueAll (openClose);
+	sendValueAll (openCloseLast);
+	sendValueAll (openCloseTimeout);
 }
 
 void Centrald::maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Connection *commandedConn)

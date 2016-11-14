@@ -72,6 +72,8 @@ class Centrald:public Daemon
 
 		virtual void deviceReady (rts2core::Connection * conn);
 
+		virtual void postEvent (rts2core::Event * event);
+
 		/**
 		 * Switch centrald state to ON.
 		 *
@@ -161,7 +163,7 @@ class Centrald:public Daemon
 		 *
 		 * @callgraph
 		 */
-		void stopChanged (const char *device, const char * msg);
+		void stopChanged (const char *device, const char *msg);
 
 		/**
 		 * Called when block of operation device mask changed. It checks
@@ -169,6 +171,13 @@ class Centrald:public Daemon
 		 * blocking state.
 		 */
 		void bopMaskChanged ();
+
+		/**
+		 * Called when open/close block on any device changed.
+		 *
+		 * @callgraph
+		 */
+		void openCloseChanged (const char *device, const char *msg);
 
 		virtual int statusInfo (rts2core::Connection * conn);
 
@@ -247,6 +256,11 @@ class Centrald:public Daemon
 		rts2core::ValueBool *morning_off;
 		rts2core::ValueBool *morning_standby;
 
+		rts2core::ValueSelection *openClose;
+		rts2core::ValueTime *openCloseTimeout;
+		rts2core::ValueString *openCloseLast;
+		rts2core::StringArray *failedClose;
+
 		StringArray *requiredDevices;
 		StringArray *badWeatherDevices;
 
@@ -256,13 +270,17 @@ class Centrald:public Daemon
 		char *configFile;
 		std::string logFile;
 		// which sets logfile
-		enum { LOGFILE_ARG, LOGFILE_DEF, LOGFILE_CNF }
-		logFileSource;
+		enum { LOGFILE_ARG, LOGFILE_DEF, LOGFILE_CNF } logFileSource;
 
 		std::ofstream * fileLog;
 
 		void openLog ();
 		int reloadConfig ();
+
+		int doOpen ();
+		int doClose ();
+
+		void updateOpenClose (bool clear = false);
 
 		int connNum;
 
