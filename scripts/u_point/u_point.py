@@ -399,12 +399,12 @@ class PointingModel(object):
         self.lg.warn('fetch_coordinates: no analyzed position on line: {},{}'.format(i,rw))
         continue
       
-      #if pd.isnull(rw['pre']):
-      pre=tmp=hum=0.
-      #else:
-      #  pre=rw['pre']
-      #  tem=rw['tem']
-      #  hum=rw['hum']
+      if pd.isnull(rw['pre']):
+        pre=tem=hum=0.
+      else:
+        pre=rw['pre']
+        tem=rw['tem']
+        hum=rw['hum']
         
       if fit_eq:
         cat_ha=self.transform_to_hadec(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
