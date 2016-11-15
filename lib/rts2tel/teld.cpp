@@ -1596,6 +1596,43 @@ void Telescope::updateTrackingFrequency ()
 	lastTrackingRun = n;
 }
 
+int Telescope::parseTLE (rts2core::Connection *conn, const char *l1, const char *l2)
+{
+	int ret = parse_elements (l1, l2, &tle);
+	if (ret != 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot target on TLEs" << sendLog;
+		logStream (MESSAGE_ERROR) << "Line 1: " << l1 << sendLog;
+		logStream (MESSAGE_ERROR) << "Line 2: " << l2 << sendLog;
+		return DEVDEM_E_PARAMSVAL;
+	}
+
+	setTLE (l1, l2);
+
+	int ephem = 1;
+
+	int is_deep = select_ephemeris (&tle);
+	if (is_deep && (ephem == 1 || ephem == 2))
+		ephem += 2;	/* switch to an SDx */
+	if (!is_deep && (ephem == 3 || ephem == 4))
+		ephem -= 2;	/* switch to an SGx */
+	tle_ephem->setValueInteger (ephem);
+
+	startTracking (true);
+
+	return startResyncMove (conn, 0);
+}
+
+void Telescope::setTLE (const char *l1, const char *l2)
+{
+	// we would like to always calculate next TLE position
+	tle_freeze->setValueBool (false);
+
+	mpec->setValueString ("");
+	tle_l1->setValueString (l1);
+	tle_l2->setValueString (l2);
+}
+
 void Telescope::calculateTLE (double JD, double &ra, double &dec, double &dist_to_satellite)
 {
 	double sat_params[N_SAT_PARAMS], observer_loc[3];
@@ -2473,34 +2510,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextString (&l1) || conn->paramNextString (&l2) || ! conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 
-		// we would like to always calculate next TLE position
-		tle_freeze->setValueBool (false);
-
-		mpec->setValueString ("");
-		tle_l1->setValueString (l1);
-		tle_l2->setValueString (l2);
-
-		ret = parse_elements (tle_l1->getValueString ().c_str (), tle_l2->getValueString ().c_str (), &tle);
-		if (ret != 0)
-		{
-			logStream (MESSAGE_ERROR) << "cannot target on TLEs" << sendLog;
-			logStream (MESSAGE_ERROR) << "Line 1: " << tle_l1->getValueString () << sendLog;
-			logStream (MESSAGE_ERROR) << "Line 2: " << tle_l2->getValueString () << sendLog;
-			return DEVDEM_E_PARAMSVAL;
-		}
-
-		int ephem = 1;
-
-		int is_deep = select_ephemeris (&tle);
-		if (is_deep && (ephem == 1 || ephem == 2))
-			ephem += 2;	/* switch to an SDx */
-		if (!is_deep && (ephem == 3 || ephem == 4))
-			ephem -= 2;	/* switch to an SGx */
-		tle_ephem->setValueInteger (ephem);
-
-		startTracking (true);
-
-		return startResyncMove (conn, 0);
+		return parseTLE (conn, l1, l2);
 	}
 	else if (conn->isCommand (COMMAND_TELD_PARK))
 	{

@@ -976,6 +976,10 @@ class Telescope:public rts2core::Device
 		 */
 		void updateTrackingFrequency ();
 
+		virtual int parseTLE (rts2core::Connection *conn, const char *l1, const char *l2);
+
+		void setTLE (const char *l1, const char *l2);
+
 		/**
 		 * Calculate TLE RA DEC for given time.
 		 */

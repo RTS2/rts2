@@ -81,6 +81,10 @@ class TCSNG:public Telescope
 			return getTargetDistance () * 2.0;
 		}
 
+		virtual int setTracking(int track, bool addTrackingTimer = false, bool send = true);
+
+		virtual int parseTLE (rts2core::Connection * conn, const char *l1, const char *l2);
+		
 	private:
 		rts2core::ConnTCSNG *ngconn;
 
@@ -95,6 +99,15 @@ class TCSNG:public Telescope
 		rts2core::ValueDouble *domeAz;
 		rts2core::ValueSelection *tcsngmoveState;
 		rts2core::ValueInteger *motionState;
+
+		rts2core::ValueString *tle_l1;
+		rts2core::ValueString *tle_l2;
+		rts2core::ValueInteger *tle_ephem; 
+		rts2core::ValueDouble *tle_distance;
+		rts2core::ValueBool *tle_freeze;
+		rts2core::ValueDouble *tle_rho_sin_phi;
+		rts2core::ValueDouble *tle_rho_cos_phi;
+		rts2core::ValueDouble *tle_refresh;
 
 		rts2core::ValueInteger *reqcount;
 };
@@ -150,6 +163,16 @@ TCSNG::TCSNG (int argc, char **argv):Telescope (argc,argv, true, true)
 
 	createValue (reqcount, "tcsng_req_count", "TCSNG request counter", false);
 	reqcount->setValueInteger (TCSNG_NO_MOVE_CALLED);
+	
+	/*
+	createValue (tle_l1, "tle_l1_target", "TLE target line 1", false);
+	createValue (tle_l2, "tle_l2_target", "TLE target line 2", false);
+	createValue (tle_ephem, "tle_ephem", "TLE emphemeris type", false);
+	createValue (tle_distance, "tle_distance", "[km] satellite distance", false);
+	createValue (tle_freeze, "tle_freeze", "if true, stop updating TLE positions; put current speed vector to DRATE", false, RTS2_VALUE_WRITABLE);
+	createValue (tle_rho_sin_phi, "tle_rho_sin", "TLE rho_sin_phi (observatory position)", false); 	
+	createValue (tle_rho_cos_phi, "tle_rho_cos", "TLE rho_cos_phi (observatory position)", false); 
+	*/
 
 	ngconn = NULL;
 	host = NULL;
@@ -242,6 +265,7 @@ int TCSNG::startResync ()
 	getTarget (&tar);
 
 	char cmd[200];
+	ngconn->command("CANCEL");
 	snprintf (cmd, 200, "NEXTPOS %s %s 2000 0 0", deg2hours (tar.ra), deg2dec (tar.dec));
 	ngconn->command (cmd);
 	ngconn->command ("MOVNEXT");
@@ -296,6 +320,11 @@ int TCSNG::isMoving ()
 	return -1;
 }
 
+int TCSNG::setTracking( int track, bool addTrackingTimer, bool send)
+{
+	return 0;
+}
+
 int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == domeAuto)
@@ -309,6 +338,22 @@ int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		return 0;
 	}
 	return Telescope::setValue (oldValue, newValue);
+}
+
+int TCSNG::parseTLE (rts2core::Connection * conn, const char *l1, const char *l2)
+{
+	char cmd[300];
+	//tle_l1->setValueString (l1);
+	//tle_l2->setValueString (l2);
+
+	logStream (MESSAGE_INFO) << "TLE incoming" << l1 << sendLog;
+
+	snprintf (cmd, 300, "TLE\n%s\n%s", l1, l2 );
+	ngconn->command( cmd );
+	logStream (MESSAGE_INFO) << cmd << sendLog;
+	snprintf (cmd, 300, "SATTRACK START");
+	ngconn->command( cmd );
+	return 0;
 }
 
 int main (int argc, char **argv)
