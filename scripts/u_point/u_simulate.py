@@ -411,6 +411,6 @@ if __name__ == "__main__":
         if args.gpoint:
           pass
         else:
-          df.write('{},{},{},{},{},{},{},{},{}\n'.format(dt_utc, cat_eq.ra.radian,cat_eq.dec.radian,mnt_eq.ra.radian,mnt_eq.dec.radian,args.exposure,args.temperature,args.pressure_qfe,args.humidity))
+          df.write('{},{},{},{},{},{},{},{},{}\n'.format(dt_utc, cat_eq.ra.radian,cat_eq.dec.radian,mnt_eq.ra.radian,mnt_eq.dec.radian,args.exposure,args.pressure_qfe,args.temperature,args.humidity))
 
   df.close()

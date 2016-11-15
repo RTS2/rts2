@@ -380,10 +380,10 @@ class PointingModel(object):
 
     pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp'])
     if pd_cat is None:
-      pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','tem','pre','hum'])
+      pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum'])
       
     if pd_cat is None:
-      return
+      return None,None
 
     for i,rw in pd_cat.iterrows():
       if i > break_after:
@@ -400,10 +400,10 @@ class PointingModel(object):
         continue
       
       #if pd.isnull(rw['pre']):
-      tem=pre=hum=0.
+      pre=tmp=hum=0.
       #else:
-      #  tem=rw['tem']
       #  pre=rw['pre']
+      #  tem=rw['tem']
       #  hum=rw['hum']
         
       if fit_eq:
@@ -829,6 +829,10 @@ if __name__ == "__main__":
   if args.fit_eq:
     # cat_eqs,mnt_eqs: HA, Dec coordinates
     cat_has,mnt_has=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+    if cat_aas is None:
+      logger.error('nothing to analyze, exiting')
+      sys.exit(1)
+      
     res=pm.fit_model_hadec(cat_has=cat_has,mnt_has=mnt_has,t_point=args.t_point) 
     if not args.plot:
       sys.exit(1)
@@ -868,6 +872,10 @@ if __name__ == "__main__":
   else:
     # cat_aas,mnt_aas: AltAz coordinates
     cat_aas,mnt_aas=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+    if cat_aas is None:
+      logger.error('nothing to analyze, exiting')
+      sys.exit(1)
+
     res=pm.fit_model_altaz(cat_aas=cat_aas,mnt_aas=mnt_aas,fit_plus_poly=args.fit_plus_poly)
 
     if not args.plot:

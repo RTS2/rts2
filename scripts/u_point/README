@@ -24,12 +24,17 @@ Prerequisites
 Very quick tour: do_it_all.sh
 =============================
 
-Script do_it_all.sh needs no running installation
+Script do_it_all*.sh needs no running installation
 of RTS2 and after the above mentioned packages have
 been installed, it is ready to use.
 
 cd $HOME/rts2/scripts
-./do_it_all.sh
+
+./do_it_all_astropy.sh # use this 
+./do_it_all_libnova.sh
+
+2016-11-15: on going discussion about precision
+astro.py/libnova.
 
 This script performs all necessary steps to get
 a pointing model fit. Steps:

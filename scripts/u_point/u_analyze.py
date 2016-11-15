@@ -328,7 +328,8 @@ class Analysis(object):
       ptfn=fn
     else:
       ptfn=os.path.join(self.base_path,fn)
-
+    # u_point: ['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum'])
+    #          ['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp']
     with  open(ptfn, 'a') as wfl:
       wfl.write('{0},{1},{2},{3},{4},{5},{6},{7},{8}\n'.format(
         acq.dt_end,#1
