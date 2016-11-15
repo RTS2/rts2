@@ -373,6 +373,8 @@ class Configuration:public IniParser
 
 		void setShowAzimuth (az_show_t az) { azShow = az; } 
 
+		az_show_t getShowAzimuth () { return azShow; }
+
 	protected:
 		virtual int getSpecialValues ();
 

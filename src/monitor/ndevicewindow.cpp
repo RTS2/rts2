@@ -148,21 +148,31 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 			break;
 		case RTS2_VALUE_ALTAZ:
 			{
+				double az = NAN;
+				switch (rts2core::Configuration::instance ()->getShowAzimuth ())
+				{
+					case rts2core::Configuration::AZ_SOUTH_ZERO:
+						az = ((rts2core::ValueAltAz *) value)->getAz ();
+						break;
+					case rts2core::Configuration::AZ_NORTH_ZERO:
+						az = ln_range_degrees (180 + ((rts2core::ValueAltAz *) value)->getAz ());
+						break;
+				}
 				if (value->getValueDisplayType () == RTS2_DT_DEGREES)
 				{
 					LibnovaDeg v_ad (((rts2core::ValueAltAz *) value)->getAlt ());
-					LibnovaDeg v_zd (((rts2core::ValueAltAz *) value)->getAz ());
+					LibnovaDeg v_zd (az);
 					_os << v_ad << " " << v_zd;
 				}
 				else if (value->getValueDisplayType () == RTS2_DT_DEG_DIST_180)
 				{
 					LibnovaDeg90 v_ad (((rts2core::ValueAltAz *) value)->getAlt ());
-					LibnovaDeg180 v_zd (((rts2core::ValueAltAz *) value)->getAz ());
+					LibnovaDeg180 v_zd (az);
 					_os << v_ad << " " << v_zd;
 				}
 				else
 				{
-					LibnovaHrz hrz (((rts2core::ValueAltAz *) value)->getAlt (), ((rts2core::ValueAltAz *) value)->getAz ());
+					LibnovaHrz hrz (((rts2core::ValueAltAz *) value)->getAlt (), az);
 					_os << hrz;
 				}
 				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
