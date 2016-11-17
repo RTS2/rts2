@@ -12,7 +12,7 @@ Prerequisites
 	      telnet
 	      saods9
 	      
- pip3 install astropy
+ pip3 install astropy (1.2.1 or newer)
               numpy
 	      scipy
 	      matplotlib

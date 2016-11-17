@@ -43,7 +43,7 @@ from astropy.coordinates import AltAz,CIRS,ITRS
 from astropy.coordinates import Longitude,Latitude,Angle
 import astropy.coordinates as coord
 
-from position import CatPosition
+from structures import CatPosition
 
 class Catalog(object):
   def __init__(self, dbg=None,lg=None, obs_lng=None, obs_lat=None, obs_height=None,break_after=None,base_path=None):

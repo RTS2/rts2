@@ -48,7 +48,7 @@ import astropy.coordinates as coord
 import ds9region
 import sextractor_3
 import astrometry_3
-from position import CatPosition,NmlPosition,AcqPosition,AnlPosition,cl_nms_acq,cl_nms_anl
+from structures import CatPosition,NmlPosition,AcqPosition,AnlPosition,cl_nms_acq,cl_nms_anl
 
 
 class Worker(Process):

@@ -32,6 +32,7 @@ import sys
 import argparse
 import logging
 import os
+import importlib
 
 import numpy as np
 import scipy.optimize
@@ -42,7 +43,14 @@ from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
 from astropy.coordinates import AltAz,CIRS,ITRS
 from astropy.coordinates import Longitude,Latitude,Angle
-        
+from astropy.coordinates.representation import SphericalRepresentation
+
+from structures import Point,Parameter
+
+# find out how caching works
+#from astropy.utils import iers
+#iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_URL)
+
 # Python bindings for libnova
 from ctypes import *
 class LN_equ_posn(Structure):
@@ -80,166 +88,6 @@ ln_pos_eq_app=LN_equ_posn()
 ln_pos_eq_pr=LN_equ_posn()
 ln_pos_aa_pr=LN_hrz_posn()
 ln_hrz_posn=LN_hrz_posn()
-# http://scipy-cookbook.readthedocs.io/items/FittingData.html#simplifying-the-syntax
-# This is the real big relief
-
-class Parameter:
-  def __init__(self, value):
-    self.value = value
-  def set(self, value):
-    self.value = value
-  def __call__(self):
-    return self.value
-
-# data structure
-class Point(object):
-  def __init__(self,cat_lon=None,cat_lat=None,mnt_lon=None,mnt_lat=None,df_lat=None,df_lon=None,res_lat=None,res_lon=None):
-    self.cat_lon=cat_lon
-    self.cat_lat=cat_lat
-    self.mnt_lon=mnt_lon
-    self.mnt_lat=mnt_lat
-    self.df_lat=df_lat
-    self.df_lon=df_lon
-    self.res_lat=res_lat
-    self.res_lon=res_lon
-
-# fit projections with a gaussian
-def fit_projection_helper(function, parameters, y, x = None):
-  def local_f(params):
-    for i,p in enumerate(parameters):
-      p.set(params[i])
-    return y - function(x)
-            
-  p = [param() for param in parameters]
-  return scipy.optimize.leastsq(local_f, p)
-
-def fit_projection(x):
-  return height() * np.exp(-(x-mu())**2/2./sigma()**2) #+ background()
-# end fit the projections
-
-# J.Condon 1992
-# Hamburg:
-# PUBLICATIONS OF THE ASTRONOMICAL SOCIETY OF THE PACIFIC, 120:425–429, 2008 April
-# The Temperature Dependence of the Pointing Model of the Hamburg Robotic Telescope
-#
-def d_az(azs,alts,d_azs):
-  #    C1   C2                C3                C4                            C5             
-  #                                            NO!! (see C4 below): yes, minus! see paper Hamburg
-  #                                            |
-  val=(C1()+C2()*np.cos(alts)+C3()*np.sin(alts)+C4()*np.cos(azs)*np.sin(alts)+C5()*np.sin(azs)*np.sin(alts))/np.cos(alts) 
-  return val-d_azs
-
-def d_alt_plus_poly(azs,alts,d_alts):
-  return A0() + A1() * alts + A2() * alts**2 + A3() * alts**3
-
-def d_alt(azs,alts,d_alts,fit_plus_poly):
-  val_plus_poly=0.
-  # this the way to expand the pointing model
-  if fit_plus_poly:
-    val_plus_poly=d_alt_plus_poly(azs,alts,d_alts)
-  # Condon 1992, see page 6, Eq. 5: D_N cos(A) - D_W sin(A)
-  #              d_alt equation is wrong on p.7
-  #   C6   C7                C4               C5          
-  #                         minus sign here
-  #                         |
-  val=C6()+C7()*np.cos(alts)-C4()*np.sin(azs)+C5()*np.cos(azs)+val_plus_poly 
-  return val-d_alts
-  
-def fit_altaz(azs_cat=None,alts_cat=None,d_azs=None, d_alts=None,fit_plus_poly=False):
-  faz=d_az(azs_cat,alts_cat,d_azs)
-  falt=d_alt(azs_cat,alts_cat,d_alts,fit_plus_poly) 
-  # this is the casus cnactus
-  # http://stackoverflow.com/questions/23532068/fitting-multiple-data-sets-using-scipy-optimize-with-the-same-parameters
-  return np.concatenate((faz,falt))
-
-def fit_altaz_helper(function, parameters, azs_cat=None,alts_cat=None,d_azs=None, d_alts=None,fit_plus_poly=False):
-  def local_f(params):
-    for i,p in enumerate(parameters):
-      p.set(params[i])
-
-    return function(azs_cat=azs_cat,alts_cat=alts_cat,d_azs=d_azs, d_alts=d_alts,fit_plus_poly=fit_plus_poly)
-            
-  p = [param() for param in parameters]
-  return scipy.optimize.leastsq(local_f, p)#,full_output=True)
-
-# T-point
-#
-# IH ha index error
-# ID delta index error
-# CH collimation error CH * sec(delta)
-# NP ha/delta non-perpendicularity NP*tan(delta)
-# MA polar axis left-right misalignment ha: -MA* cos(ha)*tan(delta), dec: MA*sin(ha)
-# ME polar axis verticsl misalignment: ha: ME*sin(ha)*tan(delta), dec: ME*cos(ha)
-# TF tube flexure, ha: TF*cos(phi)*sin(ha)*sec(delta), dec: TF*(cos(phi)*cos(ha)*sind(delta)-sin(phi)*cos(delta)
-# FO fork flexure, dec: FO*cos(ha)
-# DAF dec axis flexure, ha: -DAF*(cos(phi)*cos(ha) + sin(phi)*tan(dec)
-global d_ha_t_point
-def d_ha_t_point(has_cat,decs_cat,d_has,phi):
-  val= IH()\
-       +CH()/np.cos(decs_cat)\
-       +NP()*np.tan(decs_cat)\
-       -MA()*np.cos(has_cat)*np.tan(decs_cat)\
-       +ME()*np.sin(has_cat)*np.tan(decs_cat)\
-       +TF()*np.cos(phi)*np.sin(has_cat)/np.cos(decs_cat)\
-       -DAF()*(np.cos(phi)*np.cos(has_cat)+np.sin(phi)*np.tan(decs_cat))
-  return val-d_has
-
-global d_dec_t_point
-def d_dec_t_point(has_cat,decs_cat,d_decs,phi):
-  val=ID()\
-      +MA()*np.sin(has_cat)\
-      +ME()*np.cos(has_cat)\
-      +TF()*(np.cos(phi)*np.cos(has_cat)*np.sin(decs_cat)-np.sin(phi)*np.cos(decs_cat))\
-      +FO()*np.cos(has_cat) # see ME()
-  return val-d_decs
-
-def fit_hadec_t_point(has_cat=None,decs_cat=None,d_has=None,d_decs=None,phi=None):
-  fha=d_ha_t_point(has_cat,decs_cat,d_has,phi)
-  fdec=d_dec_t_point(has_cat,decs_cat,d_decs,phi) 
-  return np.concatenate((fha,fdec))
-  #return libnova.angular_separation(ra1=has_cat+fha,dec1=decs_cat+fdec,ra2=has_cat,dec2=decs_cat)
-
-
-# Marc W. Buie 2003
-global d_ha
-def d_ha(has_cat,decs_cat,d_has,phi):
-  # ToDo check that:
-  #val= Dt()-gamma()*np.sin(has_cat-theta())*np.tan(decs_cat)+c()/np.cos(decs_cat)-ip()*np.tan(decs_cat) +\
-  #e()*np.cos(phi)*1./np.cos(decs_cat)*np.sin(has_cat-theta())+l()*(np.sin(phi) *np.tan(decs_cat) + np.cos(decs_cat)* np.cos(has_cat-theta())) + r()*(has_cat-theta())
-  val= Dt()\
-       -gamma()*np.sin(has_cat-theta())*np.tan(decs_cat)\
-       +c()/np.cos(decs_cat)\
-       -ip()*np.tan(decs_cat)\
-       +e()*np.cos(phi)/np.cos(decs_cat)*np.sin(has_cat)\
-       +l()*(np.sin(phi)*np.tan(decs_cat) + np.cos(decs_cat)* np.cos(has_cat))\
-       + r()*has_cat
-  return val-d_has  #d_has= τ-t. (τ-t)-val (val: right side) 
-
-global d_dec
-def d_dec(has_cat,decs_cat,d_decs,phi):
-  # ToDo check that:
-  #val=Dd()-gamma()*np.cos(has_cat-theta())-e()*(np.sin(phi)*np.cos(decs_cat)-np.cos(phi)*np.sin(decs_cat)*np.cos(has_cat-theta()))
-  val=Dd()\
-      -gamma()*np.cos(has_cat-theta())\
-      -e()*(np.sin(phi)*np.cos(decs_cat)-np.cos(phi)*np.sin(decs_cat)*np.cos(has_cat))
-  return val-d_decs
-
-
-def fit_hadec(has_cat=None,decs_cat=None,d_has=None, d_decs=None,phi=None):
-  fha=d_ha(has_cat,decs_cat,d_has,phi) 
-  fdec=d_dec(has_cat,decs_cat,d_decs,phi)
-  return np.concatenate((fha,fdec))
-  #return libnova.angular_separation(ra1=has_cat+fha,dec1=decs_cat+fdec,ra2=has_cat,dec2=decs_cat)
-
-def fit_hadec_helper(function=None, parameters=None, has_cat=None,decs_cat=None,d_has=None, d_decs=None,phi=None):
-  def local_f(params):
-    for i,p in enumerate(parameters):
-      p.set(params[i])
-
-    return function(has_cat=has_cat,decs_cat=decs_cat,d_has=d_has, d_decs=d_decs,phi=phi)
-
-  p = [param() for param in parameters]
-  return scipy.optimize.least_squares(local_f, p,method='dogbox',ftol=1.e-8,xtol=1.e-8,max_nfev=10000)
 
 
 class PointingModel(object):
@@ -277,7 +125,7 @@ class PointingModel(object):
       # is not precise.
       d_alt_deg= ln.ln_get_refraction_adj(c_double(ln_pos_aa_pr.alt),c_double(ln_pressure_qfe),c_double(ln_temperature))
     else:
-      # ... but not for the star position as measured in telescope frame
+      # ... but not for the star position as measured in mount frame
       ln.ln_get_hrz_from_equ(byref(ln_pos_eq), byref(self.ln_obs), c_double(obstime.jd), byref(ln_pos_aa_pr));
       d_alt_deg=0.
   
@@ -300,7 +148,7 @@ class PointingModel(object):
   
   def transform_to_hadec(self,eq=None,tem=None,pre=None,hum=None,astropy_f=False,correct_cat_f=None):
     pre_qfe=0.
-    if correct_cat_f:
+    if correct_cat_f: # ToDo: again
       pre_qfe=pre # to make it clear what is used
 
     if astropy_f:
@@ -324,6 +172,10 @@ class PointingModel(object):
     There are substancial differences between astropy and libnova apparent coordinates. 
     Choose option --astropy for Astropy, default is Libnova
     '''
+    pre_qfe=0.
+    if correct_cat_f: # ToDo: again
+      pre_qfe=pre # to make it clear what is used
+      
     if astropy_f:      
       # https://github.com/liberfa/erfa/blob/master/src/refco.c
       # phpa   double    pressure at the observer (hPa = millibar)
@@ -393,10 +245,13 @@ class PointingModel(object):
         dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
 
       cat_eq=SkyCoord(ra=rw['cat_ra'],dec=rw['cat_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
+      cat_eq_sp=cat_eq.represent_as(SphericalRepresentation)
+
       if pd.notnull(rw['mnt_ra']) and pd.notnull(rw['mnt_dc']):
-        mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
+        # replace icrs by cirs (intermediate frame, mount apparent coordinates)
+        mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='cirs',obstime=dt_utc,location=self.obs)
       else:
-        self.lg.warn('fetch_coordinates: no analyzed position on line: {},{}'.format(i,rw))
+        self.lg.warn('fetch_coordinates: no analyzed position on line: {}\n{}'.format(i,rw))
         continue
       
       if pd.isnull(rw['pre']):
@@ -408,34 +263,35 @@ class PointingModel(object):
         
       if fit_eq:
         cat_ha=self.transform_to_hadec(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
+        
+        # to be sure :-))
+        pre=tem=hum=0.
         mnt_ha=self.transform_to_hadec(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
-        #if self.accept(cat_lon=cat_ha.ra.radian, cat_lat=cat_ha.dec.radian, mnt_lon=mnt_ha.ra.radian, mnt_lat=mnt_ha.dec.radian):
         cats.append(cat_ha)
         mnts.append(mnt_ha)
       else:
         cat_aa=self.transform_to_altaz(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
+        pre=tem=hum=0.
         mnt_aa=self.transform_to_altaz(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
-        #if self.accept(cat_lon=cat_aa.az.radian, cat_lat=cat_aa.alt.radian, mnt_lon=mnt_aa.az.radian, mnt_lat=mnt_aa.alt.radian):
         cats.append(cat_aa)
         mnts.append(mnt_aa)
+        
     return cats,mnts
 
-  def accept(self, cat_lon=None, cat_lat=None, mnt_lon=None, mnt_lat=None):
-    # ToDo: may be a not so good idea
-    acc= False
-    if -2./60./180.*np.pi < (cat_lon-mnt_lon) < 2./60./180.*np.pi:
-      acc=True
-    else:
-      self.lg.debug('reject lon: {0:.4f}'.format((cat_lon-mnt_lon) * 180. * 60. /np.pi))
-
-    if -10./60./180.*np.pi<(cat_lat-mnt_lat) < 10./60./180.*np.pi:
-      acc=True
-    else:
-      self.lg.debug('reject lat: {0:.4f}'.format((cat_lat-mnt_lat) * 180. * 60. /np.pi))
-
-    return acc
-
   
+  # fit projections with a gaussian
+  def fit_projection_helper(self,function=None, parameters=None, y=None, x = None):
+    def local_f(params):
+      for i,p in enumerate(parameters):
+        p.set(params[i])
+      return y - function(x)
+            
+    p = [param() for param in parameters]
+    return scipy.optimize.leastsq(local_f, p)
+
+  def fit_projection(self,x):
+    return self.height() * np.exp(-(x-self.mu())**2/2./self.sigma()**2) #+ background()
+
   def fit_projection_and_plot(self,vals=None, bins=None, axis=None,fit_title=None,fn_frac=None,prefix=None,plt_no=None,plt=None):
     '''
 
@@ -452,186 +308,65 @@ class PointingModel(object):
     # estimator, width
     wd=np.sqrt(np.abs(np.sum((bins-cnt_bins)**2*cnt_bins)/np.sum(cnt_bins)))
 
-    global mu,sigma,height,background
-    mu=Parameter(0.)
-    sigma=Parameter(wd) #arcsec!
-    height=Parameter(cnt_bins.max())
+    self.mu=Parameter(0.)
+    self.sigma=Parameter(wd) #arcsec!
+    self.height=Parameter(cnt_bins.max())
     background=Parameter(0.)
-    parameters=[mu,sigma,height]#background
-    res,stat=fit_projection_helper(fit_projection,[mu,sigma,height], cnt_bins, bins)
+    parameters=[self.mu,self.sigma,self.height]# ToDo a bit a contradiction
+    res,stat=self.fit_projection_helper(function=self.fit_projection,parameters=parameters, y=cnt_bins, x=bins)
     if stat != 1:
       self.lg.warn('fit projection not converged, status: {}'.format(stat))
       
-    y=fit_projection(bins)
+    y=self.fit_projection(bins)
     l = ax.plot(bins, y, 'r--', linewidth=2)
     ax.set_xlabel('{} {} [arcsec]'.format(prefix,axis))
     ax.set_ylabel('number of events normalized')
     if prefix in 'difference': # ToDo ugly
-      ax.set_title('{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec] \n catalog_not_corrected - star'.format(plt_no,prefix,axis,mu(), sigma()))
+      ax.set_title('{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec] \n catalog_not_corrected - star'.format(plt_no,prefix,axis,self.mu(), self.sigma()))
       fig.savefig(os.path.join(self.base_path,'{}_catalog_not_corrected_projection_{}.png'.format(prefix,axis)))
     else:
-      ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,mu(), sigma(),fit_title))
+      ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,self.mu(), self.sigma(),fit_title))
       fig.savefig(os.path.join(self.base_path,'{}_projection_{}_{}.png'.format(prefix,axis,fn_frac)))
 
-
-  # Condon 1992, fit dAlt and dAz data simultaneously
-  def fit_model_altaz(self,cat_aas=None,mnt_aas=None,fit_plus_poly=None):
-    # ToDo do not copy yourself
-    azs_cat=np.zeros(shape=(len(cat_aas)))
-    alts_cat=np.zeros(shape=(len(cat_aas)))
-    d_azs=np.zeros(shape=(len(cat_aas)))
-    d_alts=np.zeros(shape=(len(cat_aas)))
-    # make it suitable for fitting
-    for i,ct in enumerate(cat_aas):
-      # x: catlog
-      azs_cat[i]=ct.az.radian
-      alts_cat[i]=ct.alt.radian
-      #
-      # y:  catalog_apparent-star
-      d_azs[i]=ct.az.radian-mnt_aas[i].az.radian
-      d_alts[i]=ct.alt.radian-mnt_aas[i].alt.radian
-    # not nice but useful
-    global C1,C2,C3,C4,C5,C6,C7,A0,A1,A2,A3 
-    C1=Parameter(0.)
-    C2=Parameter(0.)
-    C3=Parameter(0.)
-    C4=Parameter(0.)
-    C5=Parameter(0.)
-    #C6=Parameter(627.47853/3600./180.8 * np.pi)
-    #C7=Parameter(-244.3/3600./180.8 * np.pi)
-    C6=Parameter(0.)
-    C7=Parameter(0.)
-    A0=Parameter(0.)
-    A1=Parameter(0.)
-    A2=Parameter(0.)
-    A3=Parameter(0.)
-    pars=[C1,C2,C3,C4,C5,C6,C7,A0,A1,A2,A3]
-
-    res,stat=fit_altaz_helper(fit_altaz,pars,azs_cat=azs_cat,alts_cat=alts_cat,d_azs=d_azs,d_alts=d_alts,fit_plus_poly=fit_plus_poly)
-    self.lg.info('--------------------------------------------------------')
-    if stat != 1:
-      if stat==5:
-        self.lg.warn('fit not converged, status: {}'.format(stat))
-      else:
-        self.lg.warn('fit converged with status: {}'.format(stat))
-    # output used in telescope driver
-    if self.dbg:
-      for i,c in enumerate(pars):
-        if i == 7 and not fit_plus_poly:
-          break
-      self.lg.info('C{0:02d}={1};'.format(i+1,res[i]))
-
-    self.lg.info('fitted values:')
-    self.lg.info('C1: horizontal telescope collimation:{0:+10.4f} [arcsec]'.format(C1()*180.*3600./np.pi))
-    self.lg.info('C2: constant azimuth offset         :{0:+10.4f} [arcsec]'.format(C2()*180.*3600./np.pi))
-    self.lg.info('C3: tipping-mount collimation       :{0:+10.4f} [arcsec]'.format(C3()*180.*3600./np.pi))
-    self.lg.info('C4: azimuth axis tilt West          :{0:+10.4f} [arcsec]'.format(C4()*180.*3600./np.pi))
-    self.lg.info('C5: azimuth axis tilt North         :{0:+10.4f} [arcsec]'.format(C5()*180.*3600./np.pi))
-    self.lg.info('C6: vertical telescope collimation  :{0:+10.4f} [arcsec]'.format(C6()*180.*3600./np.pi))
-    self.lg.info('C7: gravitational tube bending      :{0:+10.4f} [arcsec]'.format(C7()*180.*3600./np.pi))
-    if fit_plus_poly:
-      self.lg.info('A0: a0 (polynom)                    :{0:+10.4f}'.format(A0()))
-      self.lg.info('A1: a1 (polynom)                    :{0:+10.4f}'.format(A1()))
-      self.lg.info('A2: a2 (polynom)                    :{0:+10.4f}'.format(A2()))
-      self.lg.info('A3: a3 (polynom)                    :{0:+10.4f}'.format(A3()))
+  def prepare_plot(self, cats=None,mnts=None,selected=None,model=None):
+    stars=list()
+    for i, ct in enumerate(cats):
+      if not i in selected:
+        self.lg.debug('star: {} dropped'.format(i))
+        continue
       
-    return res
-  
-  # Marc W. Buie 2003
-  def fit_model_hadec(self,cat_has=None,mnt_has=None,t_point=False):
-
-    has_cat=np.zeros(shape=(len(cat_has)))
-    decs_cat=np.zeros(shape=(len(cat_has)))
-    d_has=np.zeros(shape=(len(cat_has)))
-    d_decs=np.zeros(shape=(len(cat_has)))
-    # make it suitable for fitting
-    for i,ct in enumerate(cat_has):
-      # x: catlog
-      has_cat[i]= cat_has[i].ra.radian #! it is ha
-      decs_cat[i]=cat_has[i].dec.radian
+      mt=mnts[i] # readability
+      # ToDo may not the end of the story
+      cts=ct.represent_as(SphericalRepresentation)
+      mts=mt.represent_as(SphericalRepresentation)
+      df_lat= Latitude(cts.lat.radian-mts.lat.radian,u.radian)
+      df_lat= Latitude(cts.lat.radian-mts.lat.radian,u.radian)
+      df_lon= Longitude(cts.lon.radian-mts.lon.radian,u.radian, wrap_angle=Angle(np.pi,u.radian))
+      #if df_lat.radian < 0./60./180.*np.pi:
+      #  pass
+      #elif df_lat.radian > 20./60./180.*np.pi:
+      #  pass
+      #else:
+      #  continue
+      #  residuum: difference st.cats(fit corrected) - st.star
       #
-      # y:  catalog_apparent-star
-      d_has[i]=cat_has[i].ra.radian-mnt_has[i].ra.radian
-      d_decs[i]=cat_has[i].dec.radian-mnt_has[i].dec.radian
+      res_lon=Longitude(        
+        float(model.d_lon(cts.lon.radian,cts.lat.radian,cts.lon.radian-mts.lon.radian)),
+        u.radian,
+        wrap_angle=Angle(np.pi,u.radian))
 
-    if t_point:
-      global IH,ID,CH,NP,MA,ME,TF,FO,DAF
-      IH=Parameter(0.)
-      ID=Parameter(0.)
-      CH=Parameter(0.)
-      NP=Parameter(0.)
-      MA=Parameter(0.)
-      ME=Parameter(0.)
-      TF=Parameter(0.)
-      FO=Parameter(0.)
-      DAF=Parameter(0.)
-      pars=[IH,ID,CH,NP,MA,ME,TF,FO,DAF]
-      #pars=[MA,ME]
+      res_lat=Latitude(
+        float(model.d_lat(cts.lon.radian,cts.lat.radian,cts.lat.radian-mts.lat.radian)),u.radian)
 
-      res=fit_hadec_helper(
-        fit_hadec_t_point,
-        pars,
-        has_cat=has_cat,
-        decs_cat=decs_cat,
-        d_has=d_has,
-        d_decs=d_decs,
-        phi=self.obs.latitude.radian)
-      print(res)
-      print(type(res))
-      res=stat=1
-
-      self.lg.info('-------------------------------------------------------------')
-      if stat != 1:
-        if stat==5:
-          self.lg.warn('fit not converged, status: {}'.format(stat))
-        else:
-          self.lg.warn('fit converged with status: {}'.format(stat))
-
-      self.lg.info('fitted values:')
-      self.lg.info('IH : ha index error                 :{0:+12.4f} [arcsec]'.format(IH()*180.*3600./np.pi))
-      self.lg.info('ID : delta index error              :{0:+12.4f} [arcsec]'.format(ID()*180.*3600./np.pi))
-      self.lg.info('CH : collimation error              :{0:+12.4f} [arcsec]'.format(CH()*180.*3600./np.pi))
-      self.lg.info('NP : ha/delta non-perpendicularity  :{0:+12.4f} [arcsec]'.format(NP()*180.*3600./np.pi))
-      self.lg.info('MA : polar axis left-right alignment:{0:+12.4f} [arcsec]'.format(MA()*180.*3600./np.pi))
-      self.lg.info('ME : polar axis verticsl alignment  :{0:+12.4f} [arcsec]'.format(ME()*180.*3600./np.pi))
-      self.lg.info('TF : tube flexure                   :{0:+12.4f} [arcsec]'.format(TF()*180.*3600./np.pi))
-      self.lg.info('FO : fork flexure                   :{0:+12.4f} [arcsec]'.format(FO()*180.*3600./np.pi))
-      self.lg.info('DAF: dec axis flexure               :{0:+12.4f} [arcsec]'.format(DAF()*180.*3600./np.pi))
-    else:
-      global Dd,gamma,theta,e,Dt,c,ip,l,r
-      Dd=Parameter(0.)
-      gamma=Parameter(0.)
-      theta=Parameter(0.)
-      e=Parameter(0.)
-      Dt=Parameter(0.)
-      c=Parameter(0.)
-      ip=Parameter(0.)
-      l=Parameter(0.)
-      r=Parameter(0.)
-      pars=[Dd,gamma,theta,e,Dt,c,ip,l,r]
-      # all other constant:
-      pars=[gamma]
-      res=fit_hadec_helper(fit_hadec,pars,has_cat=has_cat,decs_cat=decs_cat,d_has=d_has,d_decs=d_decs,phi=self.obs.latitude.radian)
-      # ToDo
-      print(res)
-      print(type(res))
-      res=stat=1
-      self.lg.info('--------------------------------------------------------------')
-      if stat != 1:
-        if stat==5:
-          self.lg.warn('fit not converged, status: {}'.format(stat))
-        else:
-          self.lg.warn('fit converged with status: {}'.format(stat))
-      self.lg.info('fitted values:')
-      self.lg.info('Dd:    declination zero-point offset    :{0:+12.4f} [arcsec]'.format(Dd()*180.*3600./np.pi))
-      self.lg.info('Dt:    hour angle zero-point offset     :{0:+12.4f} [arcsec]'.format(Dt()*180.*3600./np.pi))
-      self.lg.info('ip:    angle(polar,declination) axis    :{0:+12.4f} [arcsec]'.format(ip()*180.*3600./np.pi))
-      self.lg.info('c :    angle(optical,mechanical) axis   :{0:+12.4f} [arcsec]'.format(c()*180.*3600./np.pi))
-      self.lg.info('e :    tube flexure away from the zenith:{0:+12.4f} [arcsec]'.format(e()*180.*3600./np.pi))
-      self.lg.info('gamma: angle(true,instrumental) pole    :{0:+12.4f} [arcsec]'.format(gamma()*180.*3600./np.pi))
-      self.lg.info('theta: hour angle instrumental pole     :{0:+12.4f} [deg]'.format(theta()*180./np.pi))
-      self.lg.info('l :    bending of declination axle      :{0:+12.4f} [arcsec]'.format(l()*180.*3600./np.pi))
-      self.lg.info('r :    hour angle scale error           :{0:+12.4f} [arcsec]'.format(r()*180.*3600./np.pi))
+      st=Point(
+        cat_lon=cts.lon,cat_lat=cts.lat,
+        mnt_lon=mts.lon,mnt_lat=mts.lat,
+        df_lat=df_lat,df_lon=df_lon,
+        res_lat=res_lat,res_lon=res_lon
+      )
+      stars.append(st)
+                      
+    return stars
 
   def plot_results(self, stars=None,args=None):
     '''
@@ -765,6 +500,41 @@ class PointingModel(object):
     self.fit_projection_and_plot(vals=[x.res_lat.arcsec for x in stars],bins=args.bins,axis='{}'.format(lat),fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q2',plt=plt)
 
     plt.show()
+
+  def select_stars(self, stars=None):
+
+    slected=list()
+    dropped=list()
+    for i,st in enumerate(stars):
+      #st=Point(
+      #    cat_lon=cat_aa.az,cat_lat=cat_aa.alt,
+      #    mnt_lon=mnt_aa.az,mnt_lat=mnt_aa.alt,
+      #    df_lat=df_alt,df_lon=df_az,
+      #    res_lat=res_alt,res_lon=res_az
+      if True:
+        if abs(st.res_lat.radian)> 30./3600./180.*np.pi:
+          selected.append(i)
+        else:
+          dropped.append(i)
+        if abs(st.res_lon.radian)> 30./3600./180.*np.pi:
+          selected.append(i)
+        else:
+          dropped.append(i)
+
+      else:
+        if abs(st.res_lat.radian)> 30./3600./180.*np.pi:
+          if abs(st.res_lon.radian)> 30./3600./180.*np.pi:
+            selected.append(i)
+          else:
+            dropped.append(i)
+        else:
+          dropped.append(i)
+          
+    self.lg.debug('Number of selected stars: {} '.format(len(selected)))
+
+    return selected, dropped
+
+
 # really ugly!
 def arg_floats(value):
   return list(map(float, value.split()))
@@ -794,6 +564,7 @@ if __name__ == "__main__":
   parser.add_argument('--bins', dest='bins', action='store', default=40,type=int, help=': %(default)s, number of bins used in the projection histograms')
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
             
   args=parser.parse_args()
   
@@ -825,89 +596,32 @@ if __name__ == "__main__":
 
   if args.t_point:
     args.fit_eq=True
-  stars=list()
+  
+  # cat,mnt: AltAz, or HA,dec coordinates
+  cats,mnts=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+  if cats is None:
+    logger.error('nothing to analyze, exiting')
+    sys.exit(1)
+  # now load model class
+  md = importlib.import_module(args.model_class)
+  logger.info('loaded: {}'.format(args.model_class))
+  # required methods: fit_model, d_lon, d_lat
+  mdl=md.Model(lg=logger)
+
+  selected=list(range(0,len(cats))) # all  
   if args.fit_eq:
-    # cat_eqs,mnt_eqs: HA, Dec coordinates
-    cat_has,mnt_has=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
-    if cat_aas is None:
-      logger.error('nothing to analyze, exiting')
-      sys.exit(1)
-      
-    res=pm.fit_model_hadec(cat_has=cat_has,mnt_has=mnt_has,t_point=args.t_point) 
-    if not args.plot:
-      sys.exit(1)
-    # create data structure more suitable for plotting
-    for i, cat_ha in enumerate(cat_has):
-      mnt_ha=mnt_has[i] # readability
-          
-      df_dec= Latitude(cat_ha.dec.radian-mnt_ha.dec.radian,u.radian)
-      df_ha= Longitude(cat_ha.ra.radian-mnt_ha.ra.radian,u.radian,wrap_angle=Angle(np.pi,u.radian))
-      #  residuum: difference st.cat(fit corrected) - st.star      
-      d_ha_f=d_ha
-      d_dec_f=d_dec
-      if args.t_point:
-        d_ha_f=d_ha_t_point
-        d_dec_f=d_dec_t_point
-      
-      res_ha=Longitude(        
-        # ToDo! sign
-        #float(d_ha_f(cat_ha.ra.radian,cat_ha.dec.radian,cat_ha.ra.radian-mnt_ha.ra.radian,pm.obs.latitude.radian)),
-        float(d_ha_f(cat_ha.ra.radian,cat_ha.dec.radian,(cat_ha.ra.radian-mnt_ha.ra.radian),pm.obs.latitude.radian)),
-        u.radian,
-        wrap_angle=Angle(np.pi,u.radian))
-
-      res_dec=Latitude(
-        # ToDo! sign
-        #float(d_dec_f(cat_ha.ra.radian,cat_ha.dec.radian,cat_ha.dec.radian-mnt_ha.dec.radian,pm.obs.latitude.radian)
-        float(d_dec_f(cat_ha.ra.radian,cat_ha.dec.radian,-(cat_ha.dec.radian-mnt_ha.dec.radian),pm.obs.latitude.radian)),
-        u.radian)
-
-      st=Point(
-        cat_lon=cat_ha.ra,cat_lat=cat_ha.dec,
-        mnt_lon=mnt_ha.ra,mnt_lat=mnt_ha.dec,
-        df_lat=df_dec,df_lon=df_ha,
-        res_lat=res_dec,res_lon=res_ha
-      )
-      stars.append(st)
+    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
   else:
-    # cat_aas,mnt_aas: AltAz coordinates
-    cat_aas,mnt_aas=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
-    if cat_aas is None:
-      logger.error('nothing to analyze, exiting')
-      sys.exit(1)
-
-    res=pm.fit_model_altaz(cat_aas=cat_aas,mnt_aas=mnt_aas,fit_plus_poly=args.fit_plus_poly)
-
-    if not args.plot:
-      sys.exit(1)
-    for i, cat_aa in enumerate(cat_aas):
-      mnt_aa=mnt_aas[i] # readability
-          
-      df_alt= Latitude(cat_aa.alt.radian-mnt_aas[i].alt.radian,u.radian)
-      df_az= Longitude(cat_aa.az.radian-mnt_aa.az.radian,u.radian, wrap_angle=Angle(np.pi,u.radian))
-      #if df_alt.radian < 0./60./180.*np.pi:
-      #  pass
-      #elif df_alt.radian > 20./60./180.*np.pi:
-      #  pass
-      #else:
-      #  continue
-      #  residuum: difference st.cat(fit corrected) - st.star
-      #
-      res_az=Longitude(        
-        float(d_az(cat_aa.az.radian,cat_aa.alt.radian,cat_aa.az.radian-mnt_aa.az.radian)),
-        u.radian,
-        wrap_angle=Angle(np.pi,u.radian))
-
-      res_alt=Latitude(
-        float(d_alt(cat_aa.az.radian,cat_aa.alt.radian,cat_aa.alt.radian-mnt_aa.alt.radian,args.fit_plus_poly)),u.radian)
-
-      st=Point(
-        cat_lon=cat_aa.az,cat_lat=cat_aa.alt,
-        mnt_lon=mnt_aa.az,mnt_lat=mnt_aa.alt,
-        df_lat=df_alt,df_lon=df_az,
-        res_lat=res_alt,res_lon=res_az
-      )
-      stars.append(st)
-
+    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
+    
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,selected=selected,model=mdl)
+    
   if args.plot:
     pm.plot_results(stars=stars,args=args)
+
+  #selected,dropped=pm.select_stars(stars=stars)
+  #stars=pm.prepare_plot(cat=cat,mnt=mnt,selected=selected)
+  #res=pm.fit_model_altaz(cat_aas=cat,mnt_aas=mnt,fit_plus_poly=args.fit_plus_poly,selected=selected)
+
+  #pm.plot_results(stars=stars,args=args)
+  

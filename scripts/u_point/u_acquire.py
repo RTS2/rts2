@@ -51,7 +51,7 @@ from watchdog.events import FileSystemEventHandler
 import queue
 # python 3 version
 import scriptcomm_3
-from position import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
+from structures import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
 
 
 dss_base_url='http://archive.eso.org/dss/dss/'
