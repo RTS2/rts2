@@ -19,6 +19,7 @@
 
 __author__ = 'wildi.markus@bluewin.ch'
 
+import sys
 import numpy as np
 
 from structures import Parameter
@@ -47,27 +48,27 @@ class Model(ModelBase):
   # PUBLICATIONS OF THE ASTRONOMICAL SOCIETY OF THE PACIFIC, 120:425–429, 2008 April
   # The Temperature Dependence of the Pointing Model of the Hamburg Robotic Telescope
   #
-  def d_lon(self,azs,alts,d_lons):
+  def d_lon(self,cat_lons,cat_lats,d_lons):
     #    C1   C2                C3                C4                            C5             
     #                                            NO!! (see C4 below): yes, minus! see paper Hamburg
     #                                            |
-    val=(self.C1()+self.C2()*np.cos(alts)+self.C3()*np.sin(alts)+self.C4()*np.cos(azs)*np.sin(alts)+self.C5()*np.sin(azs)*np.sin(alts))/np.cos(alts) 
+    val=(self.C1()+self.C2()*np.cos(cat_lats)+self.C3()*np.sin(cat_lats)+self.C4()*np.cos(cat_lons)*np.sin(cat_lats)+self.C5()*np.sin(cat_lons)*np.sin(cat_lats))/np.cos(cat_lats) 
     return val-d_lons
 
-  def d_alt_plus_poly(self,azs,alts,d_lats):
-    return self.A0() + self.A1() * alts + self.A2() * alts**2 + self.A3() * alts**3
+  def d_alt_plus_poly(self,cat_lons,cat_lats,d_lats):
+    return self.A0() + self.A1() * cat_lats + self.A2() * cat_lats**2 + self.A3() * cat_lats**3
 
-  def d_lat(self,azs,alts,d_lats):
+  def d_lat(self,cat_lons,cat_lats,d_lats):
     val_plus_poly=0.
     # this the way to expand the pointing model
     if self.fit_plus_poly:
-      val_plus_poly=self.d_alt_plus_poly(azs,alts,d_lats)
+      val_plus_poly=self.d_alt_plus_poly(cat_lons,cat_lats,d_lats)
     # Condon 1992, see page 6, Eq. 5: D_N cos(A) - D_W sin(A)
     #              d_alt equation is wrong on p.7
     #   C6   C7                C4               C5          
     #                         minus sign here
     #                         |
-    val=self.C6()+self.C7()*np.cos(alts)-self.C4()*np.sin(azs)+self.C5()*np.cos(azs)+val_plus_poly 
+    val=self.C6()+self.C7()*np.cos(cat_lats)-self.C4()*np.sin(cat_lons)+self.C5()*np.cos(cat_lons)+val_plus_poly 
     return val-d_lats
   
 

@@ -107,6 +107,40 @@ Of course astrometry.net is built in and a completely
 unattended image acquisition and pointing model
 analysis is feasible too.
 
+Defining a model
+================
+
+Not sastisfied with the existing models:
+
+ model_buie.py
+ model_u_point.py
+ model_altaz.py
+
+create your own. Create class Moldel(ModelBase) and
+implement methods (see e.g. model_altaz.py):
+
+  def d_lon(self,cat_lons,cat_lats,d_lons):
+  def d_lat(self,cat_lons,cat_lats,d_lats):
+  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
+
+where cat_* are apparent and d_* are the differences
+between cat_* - mnt_*, where mnt_* are the coordinates
+read at the setting circles of the mount. If method fit_model()
+is implemented for a EQ style fit (see model_u_poit.py), 
+observatory's latitude has to be passed:
+
+  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
+    if kwargs is None:
+      self.lg.error('expected key word: obs, exiting'.format(name, value))
+      sys.exit(1)
+
+    for name, value in kwargs.items():
+      if 'obs' in name:
+        self.phi=value.latitude.radian
+        break
+      else:
+        self.lg.error('got unexpected key word: {0}={1}, exiting'.format(name, value))
+        sys.exit(1)
 
 Preparation: u_select.py, u_acquire.py
 ======================================
@@ -130,7 +164,7 @@ is created by
 and the result is written to nominal_positions.nml
 if not specified differently. Check the plot and if
 not satisfied see options --altitude-interval,
---azimuth-interval, --az-step and --alt_step for
+--azimuth-interval, --az-step and --alt-step for
 further refinements.
 
 
@@ -238,7 +272,7 @@ Create the site specific observable star catalog based on
 Yale Bright Star catalog, see help for e.g. observatory
 specific options
 
- ./u_select.py --plot --brightness-interval "6.0 7.0" --altitude-interval "10. 80" --minimum-separation 1.5
+ ./u_select.py --plot --brightness-interval "6.0 7.0" --minimum-separation 1.5
  ls -l observable.cat
  -rw-rw-r-- 1 wildi wildi 108813 Nov  6 10:38 observable.cat
 
