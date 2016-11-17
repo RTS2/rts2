@@ -126,7 +126,7 @@ implement methods (see e.g. model_altaz.py):
 where cat_* are apparent and d_* are the differences
 between cat_* - mnt_*, where mnt_* are the coordinates
 read at the setting circles of the mount. If method fit_model()
-is implemented for a EQ style fit (see model_u_poit.py), 
+is implemented for a EQ style fit (see model_u_point.py), 
 observatory's latitude has to be passed:
 
   def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
