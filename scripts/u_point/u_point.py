@@ -179,10 +179,8 @@ class PointingModel(object):
     if astropy_f:      
       # https://github.com/liberfa/erfa/blob/master/src/refco.c
       # phpa   double    pressure at the observer (hPa = millibar)
-      pre_qfe=pre # to make it clear what is used
       pos_aa=eq.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
     else:
-      pre_qfe=pre # to make it clear what is used
       pos_aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
 
     return pos_aa
@@ -250,6 +248,8 @@ class PointingModel(object):
       if pd.notnull(rw['mnt_ra']) and pd.notnull(rw['mnt_dc']):
         # replace icrs by cirs (intermediate frame, mount apparent coordinates)
         mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='cirs',obstime=dt_utc,location=self.obs)
+        # use this to check the internal accuracy of astropy
+        #mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
       else:
         self.lg.warn('fetch_coordinates: no analyzed position on line: {}\n{}'.format(i,rw))
         continue
@@ -263,7 +263,6 @@ class PointingModel(object):
         
       if fit_eq:
         cat_ha=self.transform_to_hadec(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
-        
         # to be sure :-))
         pre=tem=hum=0.
         mnt_ha=self.transform_to_hadec(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
@@ -332,7 +331,7 @@ class PointingModel(object):
     stars=list()
     for i, ct in enumerate(cats):
       if not i in selected:
-        self.lg.debug('star: {} dropped'.format(i))
+        #self.lg.debug('star: {} dropped'.format(i))
         continue
       
       mt=mnts[i] # readability
@@ -503,35 +502,24 @@ class PointingModel(object):
 
   def select_stars(self, stars=None):
 
-    slected=list()
-    dropped=list()
+    slctd=list()
+    drppd=list()
     for i,st in enumerate(stars):
       #st=Point(
       #    cat_lon=cat_aa.az,cat_lat=cat_aa.alt,
       #    mnt_lon=mnt_aa.az,mnt_lat=mnt_aa.alt,
       #    df_lat=df_alt,df_lon=df_az,
       #    res_lat=res_alt,res_lon=res_az
-      if True:
-        if abs(st.res_lat.radian)> 30./3600./180.*np.pi:
-          selected.append(i)
-        else:
-          dropped.append(i)
-        if abs(st.res_lon.radian)> 30./3600./180.*np.pi:
-          selected.append(i)
-        else:
-          dropped.append(i)
-
+      dist2 = st.res_lat.radian**2 + st.res_lon.radian**2
+      
+      if dist2> (30./3600./180.*np.pi)**2:
+        slctd.append(i)
       else:
-        if abs(st.res_lat.radian)> 30./3600./180.*np.pi:
-          if abs(st.res_lon.radian)> 30./3600./180.*np.pi:
-            selected.append(i)
-          else:
-            dropped.append(i)
-        else:
-          dropped.append(i)
-          
+        drppd.append(i)
+    # ToDo not yet drop set()
+    selected=list(set(slctd))
+    dropped=list(set(drppd))
     self.lg.debug('Number of selected stars: {} '.format(len(selected)))
-
     return selected, dropped
 
 
@@ -619,9 +607,24 @@ if __name__ == "__main__":
   if args.plot:
     pm.plot_results(stars=stars,args=args)
 
-  #selected,dropped=pm.select_stars(stars=stars)
-  #stars=pm.prepare_plot(cat=cat,mnt=mnt,selected=selected)
-  #res=pm.fit_model_altaz(cat_aas=cat,mnt_aas=mnt,fit_plus_poly=args.fit_plus_poly,selected=selected)
+  # for the moment
+  sys.exit(1)
+  selected,dropped=pm.select_stars(stars=stars)
+  logger.info('number of selected: {}, dropped: {} '.format(len(selected),len(dropped)))
 
-  #pm.plot_results(stars=stars,args=args)
+  if args.fit_eq:
+    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
+  else:
+    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
+    
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,selected=selected,model=mdl)
+  pm.plot_results(stars=stars,args=args)
   
+  logger.info('number of selected: {}, dropped: {} '.format(len(selected),len(dropped)))
+  if args.fit_eq:
+    res=mdl.fit_model(cats=cats,mnts=mnts,selected=dropped,obs=pm.obs)
+  else:
+    res=mdl.fit_model(cats=cats,mnts=mnts,selected=dropped,fit_plus_poly=args.fit_plus_poly)
+  
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,selected=dropped,model=mdl)
+  pm.plot_results(stars=stars,args=args)

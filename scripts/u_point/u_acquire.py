@@ -31,13 +31,17 @@ import argparse
 import logging
 import socket
 import numpy as np
-import requests
 import importlib
 
 import pandas as pd
 
-from collections import OrderedDict
 from datetime import datetime
+from astropy.utils import iers
+# astropy pre 1.2.1 may not work correctly
+#  wget http://maia.usno.navy.mil/ser7/finals2000A.all
+# together with IERS_A_FILE
+iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
+#                                            ###########
 from astropy import units as u
 from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
@@ -49,56 +53,39 @@ from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
 from watchdog.events import FileSystemEventHandler
 import queue
-# python 3 version
-import scriptcomm_3
+
 from structures import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
-
-
-dss_base_url='http://archive.eso.org/dss/dss/'
-
-class Acquisition(scriptcomm_3.Rts2Comm):
+    
+class Acquisition(object):
   def __init__(
       self,
       dbg=None,
       lg=None,
-      obs_lng=None,
-      obs_lat=None,
-      obs_height=None,
+      obs=None,
       acquired_positions=None,
       break_after=None,
-      do_not_use_rts2=None,
-      px_scale=None,
-      ccd_size=None,
       mode_continues=None,
       acq_queue=None,
       mode_watchdog=None,
-      fetch_dss_image=None,
       meteo=None,
       base_path=None,
+      device=None,
   ):
     
-    scriptcomm_3.Rts2Comm.__init__(self)
-
     self.dbg=dbg
     self.lg=lg
-    self.obs_lng=obs_lng
-    self.obs_lat=obs_lat
-    self.obs_height=obs_height
+    self.obs=obs
     self.acquired_positions=acquired_positions
     self.break_after=break_after
-    self.do_not_use_rts2=do_not_use_rts2
-    self.px_scale=px_scale
-    self.ccd_size=ccd_size
     self.mode_continues=mode_continues
     self.acq_queue=acq_queue
     self.mode_watchdog=mode_watchdog
-    self.fetch_dss_image=fetch_dss_image
     self.acquired_positions=acquired_positions
     self.meteo=meteo
     self.base_path=args.base_path
-
+    self.device=device
     #
-    self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
+    self.obs=obs
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     self.cat=list()
     self.nml=list()
@@ -260,31 +247,12 @@ class Acquisition(scriptcomm_3.Rts2Comm):
       wfl.write('{0}\n'.format(acq))
 
   def drop_nominal_altaz(self):
-    obs=[int(x.nml_id[0])  for x in self.acq]
+    obs=[int(x.nml_id)  for x in self.acq]
     observed=sorted(set(obs),reverse=True)
     for i in observed:
       del self.nml[i]
       self.lg.debug('drop_nominal_altaz: deleted: {}'.format(i))
-      
-  def check_rts2_devices(self):
-    cont=True
-    try:
-      mnt_nm = self.getDeviceByType(scriptcomm_3.DEVICE_TELESCOPE)
-      self.lg.debug('check_rts2_devices: mount device: {}'.format(mnt_nm))
-    except:
-      self.lg.error('check_rts2_devices: could not find telescope')
-      cont= False
-    try:
-      ccd_nm = self.getDeviceByType(scriptcomm_3.DEVICE_CCD)
-      self.lg.debug('check_rts2_devices: CCD device: {}'.format(ccd_nm))
-    except:
-      self.lg.error('check_rts2_devices: could not find CCD')
-      cont= False
-    if not cont:
-      self.lg.error('check_rts2_devices: exiting')
-      sys.exit(1)
-    return mnt_nm,ccd_nm
-
+  
   def create_socket(self, port=9999):
     # acquire runs as a subprocess of rts2-script-exec and has no
     # stdin available from controlling TTY.
@@ -357,137 +325,27 @@ class Acquisition(scriptcomm_3.Rts2Comm):
 
     return cmd,exp
 
-  def expose(self,nml_id=None,cat_no=None,cat_eq=None,mnt_nm=None,ccd_nm=None,exp=None):
-    self.lg.debug('expose size: {},{},{}'.format(self.ccd_size[0],self.ccd_size[1],self.px_scale))
-    if not self.do_not_use_rts2:
-      self.setValue('ORI','{0} {1}'.format(cat_eq.cat_eq.ra.degree,cat_eq.cat_eq.dec.degree),mnt_nm)
-      # ToDo check if Morvian can be read out in parallel (RTS2, VM Windows)
-      # ToDo if not use maa-2015-10-18.py
-      # ToDo CHECK if mount is THERE
-      ra_oris,dec_oris=self.getValue('ORI',mnt_nm).split()
-      self.lg.debug('ORI: {0:.3f},{1:.3f}'.format(float(ra_oris),float(dec_oris)))
-      
-    dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-    if self.fetch_dss_image:
-      px_scale_arcmin=self.px_scale *180. * 60. /np.pi # to arcmin
-      width= '{}'.format(float(self.ccd_size[0]) * px_scale_arcmin) # DSS [arcmin]
-      height= '{}'.format(float(self.ccd_size[1]) * px_scale_arcmin) # DSS [arcmin]
-      args=OrderedDict()
-      # ToDo use cat_eq, attention format
-      args['ra']='{0:.6f}'.format(cat_eq.cat_eq.ra.degree)
-      args['dec']='{0:.6f}'.format(cat_eq.cat_eq.dec.degree)
-      args['x']='{0:.2f}'.format(float(width))
-      args['y']='{0:.2f}'.format(float(height))
-      # compressed fits files SExtractor does not understand
-      #args['mime-type']='image/x-gfits'
-      args['mime-type']='image/x-fits'
-      dfn='dss_{}_{}.fits'.format(args['ra'],args['dec']).replace('-','m').replace('.','_').replace('_fits','.fits') #ToDo lazy
-      dss_fn=os.path.join(self.base_path,dfn)
+  def expose(self,nml_id=None,cat_no=None,cat_eq=None,exp=None):
 
-      r=requests.get(dss_base_url, params=args, stream=True)
-      self.lg.debug('expose: DSS: {}'.format(r.url))
-      while True:
-        if r.status_code == 200:
-          with open(dss_fn, 'wb') as f:
-            #for data in tqdm(r.iter_content()):
-            f.write(r.content)
-            for block in r.iter_content(1024):
-              f.write(block)
-          break
-        else:
-          self.lg.warn('expose: could not retrieve DSS: {}, continuing to retrieve'.format(r.url))
+    device.mount_set(cat_eq=cat_eq,nml_id=nml_id,cat_no=cat_no)
 
-      exp=.1 # synchronization mount/CCD
-    else:
-      last_exposure=exp
-    image_fn=None
-    if not self.do_not_use_rts2:
-      # RTS2 does synchronization mount/CCD
-      self.lg.debug('expose: time {}'.format(exp))
-      self.setValue('exposure',exp)
-      image_fn = self.exposure()
-      self.lg.debug('expose: image from RTS2: {}'.format(image_fn))
-      
-    if self.fetch_dss_image:
-      try:
-        os.unlink(image_fn) # the noisy CCD image
-      except:
-        pass # do not care
-      image_fn=dss_fn
-      self.lg.debug('expose: image from DSS: {}'.format(image_fn))
-    elif self.mode_watchdog:
-      self.lg.info('expose: waiting for image_fn from acq_queue')
-      image_fn=self.acq_queue.get(acq)
-      self.lg.info('expose: image_fn from queue acq_queue: {}'.format(image_fn))
-    # ToDo may be best time point: dt_end - exposure/2.
-    dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-
-    if image_fn is None:
-      self.lg.error('expose: no image source specified.')
-      self.lg.info('expose: use --fetch_dss_image for simulation, --mode-watchdog for an external source, do not specify: --do-not-use-rts2')
-      self.lg.error('expose: exiting.')
-      sys.exit(1)
-    
-    # ToDo block should go to caller
-    # fetch mount position etc
-    if not self.do_not_use_rts2:
-      JD=float(self.getValue('JD',mnt_nm))
-      ras,decs=self.getValue('ORI',mnt_nm).split()
-      now = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
-      acq_eq=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
-
-      ras,decs=self.getValue('WOFFS',mnt_nm).split()
-      acq_eq_woffs=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
-
-      ras,decs=self.getValue('TEL',mnt_nm).split()
-      acq_eq_mnt=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
-
-      alts,azs=self.getValue('TEL_',mnt_nm).split()
-      acq_aa_mnt=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
-
-      # ToDo,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
-      # ToDo wrong:
-      aa_nml=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
-      dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-    else:
-      JD=-1.      
-      acq_eq=SkyCoord(ra=cat_eq.cat_eq.ra.radian,dec=cat_eq.cat_eq.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=dt_begin,location=self.obs)
-      acq_eq_woffs=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=dt_begin,location=self.obs)
-      acq_eq_mnt=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=dt_begin,location=self.obs)
-      # not yet used
-      acq_aa_mnt=self.to_altaz(cat_eq=cat_eq.cat_eq)
-      # ToDo wrong:
-      aa_nml=self.to_altaz(cat_eq=cat_eq.cat_eq)
-      dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-    
     pressure=temperature=humidity=None
     if self.meteo is not None:
       pressure,temperature,humidity=meteo.retrieve()
+      
+    image_relfn,exp=device.ccd_expose(exp=exp,pressure=pressure,temperature=temperature,humidity=humidity)
+    # ToDo
+    if self.mode_watchdog:
+      self.lg.info('expose: waiting for image_fn from acq_queue')
+      image_fn=self.acq_queue.get(acq)
+      self.lg.info('expose: image_fn from queue acq_queue: {}'.format(image_fn))
 
-    if self.base_path in image_fn:
-      fn=image_fn
+    if self.base_path in image_relfn:
+      image_fn=image_relfn
     else:
-      fn=os.path.join(self.base_path,image_fn)
-
-    acq=AcqPosition(
-      nml_id=nml_id,
-      cat_no=cat_eq.cat_no,
-      aa_nml=aa_nml,
-      eq=acq_eq,
-      dt_begin=dt_begin,
-      dt_end=dt_end,
-      dt_end_query=dt_end_query,
-      JD=JD,
-      eq_woffs=acq_eq_woffs,
-      eq_mnt=acq_eq_mnt,
-      aa_mnt=acq_aa_mnt,
-      image_fn=fn,
-      exp=exp,
-      pressure=pressure,
-      temperature=temperature,
-      humidity=humidity,
-    )
+      image_fn=os.path.join(self.base_path,image_relfn)
     
+    acq=device.mount_retrieve_position()
     self.store_acquired_position(acq=acq)
 
   def find_near_neighbor(self,eq_nml=None,altitude_interval=None,max_separation=None):
@@ -520,25 +378,19 @@ class Acquisition(scriptcomm_3.Rts2Comm):
       return None
     
     i_min=dist.index(dist_min)
-    return self.cat[il+i_min]
+    return self.cat[il+i_min].cat_eq
       
-  def acquire(self,mnt_nm=None,ccd_nm=None,altitude_interval=None,max_separation=None):
+  def acquire(self,altitude_interval=None,max_separation=None):
     if not self.mode_continues:
       user_input=self.create_socket()
-    if not self.do_not_use_rts2:
-      # full area
-      self.setValue('WINDOW','%d %d %d %d' % (-1, -1, -1, -1))
-      x_0,y_0,widths,heights=self.getValue('WINDOW',ccd_nm).split()
-      self.lg.debug('acquire: CCD size: {},{}'.format(widths,heights))
-      # make sure we are taking light images..
-      self.setValue('SHUTTER','LIGHT')
-      
+    #
+    device.ccd_init()  
     # self.nml contains only positions which need to be observed
     last_exposure=exp=.1
     not_first=False
     for nml in self.nml:
       aa_nml=nml.aa_nml
-      # ToDo reconsider
+      #
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
       aa=SkyCoord(az=aa_nml.az.radian,alt=aa_nml.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
       eq_nml=self.to_eq(aa=aa)
@@ -547,7 +399,7 @@ class Acquisition(scriptcomm_3.Rts2Comm):
         if not self.mode_continues:
             while True:
               if not_first:
-                self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,mnt_nm=mnt_nm,ccd_nm=ccd_nm,exp=exp)
+                self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,exp=exp)
               else:
                 not_first=True
               
@@ -561,15 +413,16 @@ class Acquisition(scriptcomm_3.Rts2Comm):
                 self.lg.debug('acquire: redoing same position')
    
         else:
-          self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,mnt_nm=mnt_nm,ccd_nm=ccd_nm,exp=exp)
+          self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,exp=exp)
 
   def plot(self,title=None,projection='polar'): #AltAz 
     acq_az = coord.Angle([x.aa_mnt.az.radian for x in self.acq if x.aa_mnt is not None], unit=u.radian)
     acq_alt = coord.Angle([x.aa_mnt.alt.radian for x in self.acq if x.aa_mnt is not None],unit=u.radian)
     # ToDo rts2,astropy altaz
-    off=np.pi
-    if self.do_not_use_rts2:
-      off=0.
+    #off=np.pi
+    #if self.do_not_use_rts2:
+    #  off=0.
+    off=0.
     acq_nml_az = coord.Angle([x.aa_nml.az.radian-off for x in self.nml], unit=u.radian)
     #acq_nml_az = acq_nml_az.wrap_at(180*u.degree)
     acq_nml_alt = coord.Angle([x.aa_nml.alt.radian for x in self.nml],unit=u.radian)
@@ -599,7 +452,7 @@ class MyHandler(FileSystemEventHandler):
       if 'fit' in event.src_path.lower():
         self.lg.info('RTS2 external CCD image: {}'.format(event.src_path))
         acq=acq_queue.put(event.src_path)
-  
+
 # really ugly!
 def arg_floats(value):
   return list(map(float, value.split()))
@@ -631,17 +484,17 @@ if __name__ == "__main__":
   parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, True: create positions to be observed, see --nominal-positions')
   parser.add_argument('--az-step', dest='az_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
   parser.add_argument('--alt-step', dest='alt_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
-  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7/60.,type=arg_float, help=': %(default)s [arcmin/pixel], arcmin/pixel of the CCD camera')
+  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], pixel scale of the CCD camera')
   parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: simulation mode: no user input, no images fetched from DSS, image download specify: --fetch-dss-image')
-  parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, simulation mode: images fetched from DSS')
   parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation (nominal, catalog) position')
   parser.add_argument('--mode-watchdog', dest='mode_watchdog', action='store_true', default=False, help=': %(default)s, True: an RTS2 external CCD camera must be used')
   parser.add_argument('--watchdog-directory', dest='watchdog_directory', action='store', default='.',type=str, help=': %(default)s , directory where the RTS2 external CCD camera writes the images')
-  parser.add_argument('--do-not-use-rts2', dest='do_not_use_rts2', action='store_true', default=False, help=': %(default)s, True: only useful in simulation mode')
   parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--meteo-class', dest='meteo_class', action='store', default='meteo', help=': %(default)s, specify your meteo data collector, see meteo.py for a stub')
-
+  parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your devices (mount,ccd), see devices.py')
+  parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, simulation mode: images fetched from DSS')
+  
   args=parser.parse_args()
 
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
@@ -662,31 +515,36 @@ if __name__ == "__main__":
     observer = Observer()
     observer.schedule(event_handler, args.watchdog_directory, recursive=True)
     observer.start()
-  
-  # now load meteo class
+  # ToD revisit dynamical loding
+  # now load meteo class ...
   mt = importlib.import_module(args.meteo_class)
   meteo=mt.Meteo(lg=logger)
-  
-  px_scale=args.pixel_scale/60./180.*np.pi # arcmin
+  # ... and device, ToDo revisit
+  mod =importlib. __import__('devices', fromlist=[args.device_class])
+  Device = getattr(mod, args.device_class)
+
+  px_scale=args.pixel_scale/3600./180.*np.pi # arcsec, radian
+
+  obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
+  device= Device(lg=logger,obs=obs,px_scale=px_scale,ccd_size=args.ccd_size,base_path=args.base_path,fetch_dss_image=True)
   ac= Acquisition(
     dbg=args.debug,
     lg=logger,
-    obs_lng=args.obs_lng,
-    obs_lat=args.obs_lat,
-    obs_height=args.obs_height,
+    obs=obs,
     acquired_positions=args.acquired_positions,
     break_after=args.break_after,
-    do_not_use_rts2=args.do_not_use_rts2,
-    px_scale=px_scale,
-    ccd_size=args.ccd_size,
     mode_continues=args.mode_continues,
     acq_queue=acq_queue,
     mode_watchdog=args.mode_watchdog,
-    fetch_dss_image=args.fetch_dss_image,
     meteo=meteo,
     base_path=args.base_path,
+    device=device,
   )
   
+  if not device.check_presence():
+    logger.error('no device present: {}, exiting'.format(args.device_class))
+    sys.exit(1)
+
   max_separation=args.max_separation/180.*np.pi
   altitude_interval=list()
   for v in args.altitude_interval:
@@ -709,17 +567,11 @@ if __name__ == "__main__":
   if args.plot:
     ac.plot(title='AltAz progress report acquired (blue), to be observed nominal positions (red)')
     sys.exit(1)
-  
-  mnt_nm=ccd_nm=None
-  if not args.do_not_use_rts2:
-    mnt_nm,ccd_nm=ac.check_rts2_devices()
-    
+   
   # candidate objects, predefined with u_select.py
   ac.fetch_observable_catalog(ptfn=args.observable_catalog)
   # acquire unobserved positions
   ac.acquire(
-    mnt_nm=mnt_nm,
-    ccd_nm=ccd_nm,
     altitude_interval=altitude_interval,
     max_separation=max_separation,
   )

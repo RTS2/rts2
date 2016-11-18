@@ -300,7 +300,9 @@ class Analysis(object):
         else:
           astr_eq=None
           self.lg.debug('fetch_positions: astr None')
-
+          # to create more or less identical plots:
+          #continue
+          
         anls=AnlPosition(
           nml_id=rw['nml_id'],
           cat_no=rw['cat_no'],
@@ -338,9 +340,9 @@ class Analysis(object):
         ra,
         dec,
         acq.exp,
-        acq.pressure[0], # ToDo why tupple
-        acq.temperature[0],
-        acq.humidity[0],#9
+        acq.pressure, 
+        acq.temperature,
+        acq.humidity,#9
       ))
 
   def store_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_ra=None,astr_dec=None):
@@ -380,7 +382,7 @@ class Analysis(object):
       
   def sextract(self,acq=None,pcn='single'):
     if self.ds9_display:
-      self.lg.debug('sextract: Yale catalog number: {}'.format(int(acq.cat_no[0])))# ToDo why tupple
+      self.lg.debug('sextract: Yale catalog number: {}'.format(int(acq.cat_no)))
       
     if self.base_path in acq.image_fn:
       fn=acq.image_fn

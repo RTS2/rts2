@@ -79,8 +79,8 @@ class AcqPosition(object):
                temperature=None,
                humidity=None,
   ):
-    self.nml_id=nml_id,
-    self.cat_no=cat_no,
+    self.nml_id=nml_id
+    self.cat_no=cat_no
     self.aa_nml=aa_nml # nominal position (grid created with store_nominal_altaz())
     self.eq=eq # ORI (rts2-mon) acquired star positions
     self.dt_begin=dt_begin 
@@ -92,15 +92,15 @@ class AcqPosition(object):
     self.aa_mnt=aa_mnt # TEL_ altaz 
     self.image_fn=image_fn
     self.exp=exp
-    self.pressure=pressure,
-    self.temperature=temperature,
-    self.humidity=humidity,
+    self.pressure=pressure
+    self.temperature=temperature
+    self.humidity=humidity
 
   # ToDo still ugly
   def __str__(self):
     acq_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20}'.format(
-      self.nml_id[0],#0 ToDo why tupple
-      self.cat_no[0],#1
+      self.nml_id,
+      self.cat_no,#1
       self.aa_nml.az.radian,#2
       self.aa_nml.alt.radian,#3
       self.eq.ra.radian,#4
@@ -117,9 +117,9 @@ class AcqPosition(object):
       self.aa_mnt.alt.radian,#15
       self.image_fn,#16
       self.exp,#17
-      self.pressure[0], # ToDo why tupple???
-      self.temperature[0], # ToDo why tupple???
-      self.humidity[0],#20 # ToDo why tupple???
+      self.pressure, 
+      self.temperature, 
+      self.humidity,#20 
     )
     return acq_str
 
