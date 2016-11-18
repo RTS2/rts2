@@ -35,7 +35,7 @@ class NStep:public Focusd
 		NStep (int argc, char **argv);
 		~NStep (void);
 
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (double num);
@@ -118,14 +118,9 @@ int NStep::processOption (int in_opt)
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
-int NStep::init ()
+int NStep::initHardware ()
 {
 	int ret;
-
-	ret = Focusd::init ();
-
-	if (ret)
-		return ret;
 
 	NSConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
 	NSConn->setDebug (getDebug ());
@@ -170,7 +165,11 @@ int NStep::info ()
 		ret = NSConn->writeRead ("#:RT", 4, buf, 4);
 		if (ret != 4)
 		{
-			logStream (MESSAGE_ERROR) << "cannot read temperature" << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot read temperature, will try reinit" << sendLog;
+			delete NSConn;
+			ret = initHardware ();
+			if (ret)
+				logStream (MESSAGE_ERROR) << "reinit failed!" << sendLog;
 			return -1;
 		}
 		buf[4] = '\0';
