@@ -21,6 +21,10 @@ Prerequisites
 	      
  libnova (needs to be on LD_PATH as libnova.so)
 
+ Do a
+
+ wget http://maia.usno.navy.mil/ser7/finals2000A.all  
+
 Very quick tour: do_it_all.sh
 =============================
 
