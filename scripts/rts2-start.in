@@ -53,7 +53,7 @@ while read device type device_name options; do
 		else
 			[ $res == 0 ] && echo "started" || echo "failed"
 		fi
-		if [ "x$all" != "xall" ]; then
+		if [ "x$name" != "xall" ]; then
 			exit $res
 		fi
 	fi
@@ -69,13 +69,13 @@ while read service service_name options; do
 		else
 			[ $res == 0 ] && echo "started" || echo "failed"
 		fi
-		if [ "x$all" != "xall" ]; then
+		if [ "x$name" != "xall" ]; then
 			exit $res
 		fi
 	fi
 done < <(cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$')
 
-if [ "x$all" != "xall" ]; then
+if [ "x$name" != "xall" ]; then
 	exit 1
 fi
 
