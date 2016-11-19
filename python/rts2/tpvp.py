@@ -156,6 +156,8 @@ class TPVP:
 				if os.path.isfile('model_{0:03}.fits'.format(mn)) == False:
 					break
 			print _('run #{0}').format(mn)
+
+		bsc = None
 	
 		if maxspiral >= -1:
 			print _('Next model point at altitude {0:.3f} azimuth {1:.3f}').format(alt,az)
