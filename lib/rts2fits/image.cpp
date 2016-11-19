@@ -2253,8 +2253,10 @@ void Image::print (std::ostream & _os, int in_flags, const char *imageFormat)
 	_os.precision (old_precision);
 }
 
-void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const char *desc)
+void Image::writeConnBaseValue (const std::string sname, rts2core::Value * val, const std::string sdesc)
 {
+	const char *desc = sdesc.c_str ();
+	const char *name = sname.c_str ();
 	switch (val->getValueBaseType ())
 	{
 		case RTS2_VALUE_STRING:
@@ -2405,8 +2407,9 @@ ColumnData *getColumnData (const char *name, rts2core::Value * val)
 	throw rts2core::Error ("unknow array datatype");
 }
 
-void Image::prepareArrayData (const char *name, rts2core::Connection *conn, rts2core::Value *val)
+void Image::prepareArrayData (const std::string sname, rts2core::Connection *conn, rts2core::Value *val)
 {
+	const char *name = sname.c_str ();
 	// if it's simple array, just write as header cards
 	if (val->onlyFitsHeader ())
 	{
@@ -2476,8 +2479,8 @@ void Image::writeConnArray (TableData *tableData)
 
 void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 {
-	const char *desc = val->getDescription ().c_str ();
-	char *name = (char *) val->getName ().c_str ();
+	std::string desc = val->getDescription ();
+	std::string name = val->getName ();
 	char *name_stat;
 	char *n_top;
 
@@ -2485,10 +2488,7 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 
 	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || conn->getOtherType () == DEVICE_TYPE_ROTATOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
 	{
-		name = new char[strlen (name) + strlen (conn->getName ()) + 2];
-		strcpy (name, conn->getName ());
-		strcat (name, ".");
-		strcat (name, val->getName ().c_str ());
+		name = std::string (conn->getName ()) + " " + val->getName ();
 	}
 
 	switch (val->getValueExtType ())
@@ -2501,28 +2501,28 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 			break;
 		case RTS2_VALUE_STAT:
 			writeConnBaseValue (name, val, desc);
-			setValue (name, val->getValueDouble (), desc);
-			name_stat = new char[strlen (name) + 6];
-			n_top = name_stat + strlen (name);
-			strcpy (name_stat, name);
+			setValue (name.c_str (), val->getValueDouble (), desc.c_str ());
+			name_stat = new char[name.length () + 6];
+			n_top = name_stat + name.length ();
+			strcpy (name_stat, name.c_str ());
 			*n_top = '.';
 			n_top++;
 			strcpy (n_top, "MODE");
-			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMode (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMode (), desc.c_str ());
 			strcpy (n_top, "MIN");
-			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMin (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMin (), desc.c_str ());
 			strcpy (n_top, "MAX");
-			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMax (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMax (), desc.c_str ());
 			strcpy (n_top, "STD");
-			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getStdev (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getStdev (), desc.c_str ());
 			strcpy (n_top, "NUM");
-			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getNumMes (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getNumMes (), desc.c_str ());
 			delete[]name_stat;
 			break;
 		case RTS2_VALUE_RECTANGLE:
-			name_stat = new char[strlen(name) + 8];
-			n_top = name_stat + strlen (name);
-			strcpy (name_stat, name);
+			name_stat = new char[name.length () + 8];
+			n_top = name_stat + name.length ();
+			strcpy (name_stat, name.c_str ());
 			*n_top = '.';
 			n_top++;
 			strcpy (n_top, "X");
@@ -2558,10 +2558,6 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 		case RTS2_VALUE_MMAX:
 			writeConnBaseValue (name, val, desc);
 			break;
-	}
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
-	{
-		delete[]name;
 	}
 }
 

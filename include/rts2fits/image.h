@@ -797,13 +797,13 @@ class Image:public FitsFile
 		 */
 		int writeImgHeader (struct imghdr *im_h, int nchan);
 
-		void writeConnBaseValue (const char *name, rts2core::Value *val, const char *desc);
+		void writeConnBaseValue (const std::string name, rts2core::Value *val, const std::string desc);
 
 		/**
 		 * Either prepare array data to be written, or write them to header if those are simple
 		 * data.
 		 */
-		void prepareArrayData (const char *name, rts2core::Connection *conn, rts2core::Value *val);
+		void prepareArrayData (const std::string name, rts2core::Connection *conn, rts2core::Value *val);
 
 		void writeConnArray (TableData *tableData);
 
