@@ -1,0 +1,14 @@
+# systemctl config to start all services
+#
+[Unit]
+Description=RTS2
+Documentation=man:rts2(8)
+After=postgresql.service
+
+[Service]
+Type=forking
+ExecStart=@prefix@/bin/rts2-start all 
+ExecStop=@prefix@/bin/rts2-stop all
+
+[Install]
+WantedBy=multi-user.target

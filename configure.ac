@@ -922,6 +922,8 @@ AM_CONDITIONAL(ARMCPU, test x${target_cpu/arm} != x${target_cpu})
 
 AC_OUTPUT([Makefile
 	   rts2.initd
+	   scripts/rts2-start
+	   scripts/rts2-stop
 	   man/Makefile
 	   man/rts2.ent
 	   include/Makefile
@@ -937,6 +939,8 @@ AC_OUTPUT([Makefile
 	   include/pluto/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
+	   conf/rts2.service
+	   conf/rts2@.service
 	   contrib/Makefile
 	   doc/Makefile
 	   doc/doxyfile

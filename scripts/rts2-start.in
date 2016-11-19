@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# script to start service by name
+
+CENTRALD_FILE=@PREFIX@/etc/rts2/centrald
+DEVICE_CONFIG=@PREFIX@/etc/rts2/devices
+SERVICE_CONFIG=@PREFIX@/etc/rts2/services
+RTS2_BIN_PREFIX=@prefix@/bin
+RTS2_PID_PREFIX=@LOCK_PREFIX@
+RTS2_LOG=@PREFIX@/var/log/rts2-debug
+
+if [ "x$1" == "x" ]; then
+	echo "starting everything"
+	name="all"
+else
+	name=$1
+fi
+
+if [ "x$name" == "xcentrald" -o "x$name" == "xall" ]; then
+	started=1
+	while read centrald centrald_port centrald_options; do
+		if [ "x${centrald_port}" == "x" ]; then
+			centrald_port=@CENTRALD_PORT@
+		else
+			centrald_options="--local-port $centrald_port $centrald_options"
+		fi
+		echo -n "starting centrald on port $centrald_port .. "
+		$RTS2_BIN_PREFIX/rts2-centrald $centrald_options >>$RTS2_LOG 2>&1
+		started=$?
+		if [ $started == 255 ]; then
+			echo "already running"
+		else
+			[ $started == 0 ] && echo "started" || echo "failed"
+		fi
+		if [ $started != 0 -a "x$name" != "xall" ]; then
+			exit 1
+		fi
+	done < <(grep '^centrald' $CENTRALD_FILE)
+	if [ "x$name" != "xall" ]; then
+		exit $started
+	fi
+fi
+
+CENTRALD_OPTIONS=`grep '^-' $CENTRALD_FILE 2>/dev/null`
+
+while read device type device_name options; do
+	if [ "x$device_name" == "x$name" -o "x$name" == "xall" ]; then 
+		echo -n "starting device $device_name .. "
+		$RTS2_BIN_PREFIX/rts2-$device-$type -d $device_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
+		res=$?
+		if [ $res == 255 ]; then
+			echo "already running"
+		else
+			[ $res == 0 ] && echo "started" || echo "failed"
+		fi
+		if [ "x$all" != "xall" ]; then
+			exit $res
+		fi
+	fi
+done < <(cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$')
+
+while read service service_name options; do
+	if [ "x$service_name" == "x$name" -o "x$name" == "xall" ]; then
+		echo -n "starting  service $service_name .. "
+		$RTS2_BIN_PREFIX/rts2-$service -d $service_name $options $CENTRALD_OPTIONS >>$RTS2_LOG 2>&1
+		res=$?
+		if [ $res == 255 ]; then
+			echo "already running"
+		else
+			[ $res == 0 ] && echo "started" || echo "failed"
+		fi
+		if [ "x$all" != "xall" ]; then
+			exit $res
+		fi
+	fi
+done < <(cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$')
+
+if [ "x$all" != "xall" ]; then
+	exit 1
+fi
+
+exit 0
