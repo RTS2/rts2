@@ -46,6 +46,7 @@ from astropy.coordinates import Longitude,Latitude,Angle
 from astropy.coordinates.representation import SphericalRepresentation
 
 from structures import Point,Parameter
+from callback import AnnoteFinder
 
 # find out how caching works
 #from astropy.utils import iers
@@ -223,17 +224,22 @@ class PointingModel(object):
     '''
     cats=list()
     mnts=list()
+    imgs=list()
     if self.base_path in ptfn:
       fn=ptfn
     else:
       fn=os.path.join(self.base_path,ptfn)
 
+    image_fn_present=False
     pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp'])
     if pd_cat is None:
       pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum'])
-      
     if pd_cat is None:
-      return None,None
+      pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum','nml_id','cat_no','image_fn'])
+      image_fn_present=True
+    
+    if pd_cat is None:
+      return None,None,None
 
     for i,rw in pd_cat.iterrows():
       if i > break_after:
@@ -274,8 +280,12 @@ class PointingModel(object):
         mnt_aa=self.transform_to_altaz(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
         cats.append(cat_aa)
         mnts.append(mnt_aa)
-        
-    return cats,mnts
+
+      if image_fn_present:
+        if pd.notnull(rw['image_fn']):
+          imgs.append(rw['image_fn'])
+       
+    return cats,mnts,imgs
 
   
   # fit projections with a gaussian
@@ -327,7 +337,7 @@ class PointingModel(object):
       ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,self.mu(), self.sigma(),fit_title))
       fig.savefig(os.path.join(self.base_path,'{}_projection_{}_{}.png'.format(prefix,axis,fn_frac)))
 
-  def prepare_plot(self, cats=None,mnts=None,selected=None,model=None):
+  def prepare_plot(self, cats=None,mnts=None,imgs=None,selected=None,model=None):
     stars=list()
     for i, ct in enumerate(cats):
       if not i in selected:
@@ -357,11 +367,20 @@ class PointingModel(object):
       res_lat=Latitude(
         float(model.d_lat(cts.lon.radian,cts.lat.radian,cts.lat.radian-mts.lat.radian)),u.radian)
 
+      try:
+        image_fn=imgs[i]
+      except:
+        image_fn='no image file'
       st=Point(
-        cat_lon=cts.lon,cat_lat=cts.lat,
-        mnt_lon=mts.lon,mnt_lat=mts.lat,
-        df_lat=df_lat,df_lon=df_lon,
-        res_lat=res_lat,res_lon=res_lon
+        cat_lon=cts.lon,
+        cat_lat=cts.lat,
+        mnt_lon=mts.lon,
+        mnt_lat=mts.lat,
+        df_lat=df_lat,
+        df_lon=df_lon,
+        res_lat=res_lat,
+        res_lon=res_lon,
+        image_fn=image_fn
       )
       stars.append(st)
                       
@@ -383,8 +402,8 @@ class PointingModel(object):
         fit_title='buie2003, AP'
         fn_frac='buie2003AP'
         
-      lon='hour angle'
-      lat='declination'
+      lon_label='hour angle'
+      lat_label='declination'
     else:
       fit_title='condon1992, LN'
       fn_frac='condon1992LN'
@@ -392,112 +411,196 @@ class PointingModel(object):
         fit_title='condon1992, AP'
         fn_frac='condon1992AP'
       
-      lon='azimuth'
-      lat='altitude'
+      lon_label='azimuth'
+      lat_label='altitude'
 
+    az_cat_deg=[x.cat_lon.degree for x in stars]
+    alt_cat_deg=[x.cat_lat.degree for x in stars]
+    
     if args.fit_plus_poly:
       fit_title='C+PP'
       fn_frac='c_plus_poly'
 
-    az_cat_deg=[x.cat_lon.degree for x in stars]
-    alt_cat_deg=[x.cat_lat.degree for x in stars]
+    # call back version
+    fig00 = plt.figure()
+    ax00 = fig00.add_subplot(111)
+    ax00.set_title('A1 difference: catalog_not_corrected - star')
+    ax00.set_xlabel('d({}) [arcmin]'.format(lon_label))
+    ax00.set_ylabel('d({}) [arcmin]'.format(lat_label))
+    ax00_lon=lon=[x.df_lon.arcmin for x in stars]
+    ax00_lat=lat=[x.df_lat.arcmin for x in stars]
+    ax00.scatter(lon,lat)
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
+    fig00.savefig(os.path.join(self.base_path,'difference_catalog_not_corrected_star.png'))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('A1 difference: catalog_not_corrected - star')
-    ax.set_xlabel('d({}) [arcmin]'.format(lon))
-    ax.set_ylabel('d({}) [arcmin]'.format(lat))
-    ax.scatter([x.df_lon.arcmin for x in stars],[x.df_lat.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'difference_catalog_not_corrected_star.png'))
+    fig01 = plt.figure()
+    ax01 = fig01.add_subplot(111)
+    ax01.set_title('B1 difference {}: catalog_not_corrected - star'.format(lon_label))
+    ax01.set_xlabel('{} [deg]'.format(lon_label))
+    ax01.set_ylabel('d({}) [arcmin]'.format(lon_label))
+    ax01_lon=lon=az_cat_deg
+    ax01_lat=lat=[x.df_lon.arcmin for x in stars]
+    ax01.scatter(lon,lat)
+    fig01.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lon_label)))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('B1 difference {}: catalog_not_corrected - star'.format(lon))
-    ax.set_xlabel('{} [deg]'.format(lon))
-    ax.set_ylabel('d({}) [arcmin]'.format(lon))
-    ax.scatter(az_cat_deg ,[x.df_lon.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lon)))
+    fig02 = plt.figure()
+    ax02 = fig02.add_subplot(111)
+    ax02.set_title('C1 difference {}: catalog_not_corrected - star'.format(lat_label))
+    ax02.set_xlabel('{} [deg]'.format(lon_label))
+    ax02.set_ylabel('d({}) [arcmin]'.format(lat_label))
+    ax02_lon=lon=az_cat_deg
+    ax02_lat=lat=[x.df_lat.arcmin for x in stars]
+    ax02.scatter(lon,lat)
+    fig02.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lon_label,lat_label)))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('C1 difference {}: catalog_not_corrected - star'.format(lat))
-    ax.set_xlabel('{} [deg]'.format(lon))
-    ax.set_ylabel('d({}) [arcmin]'.format(lat))
-    ax.scatter(az_cat_deg ,[x.df_lat.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lon,lat)))
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('D1 difference {}: catalog_not_corrected - star'.format(lon))
-    ax.set_xlabel('{} [deg]'.format(lat))
-    ax.set_ylabel('d({}) [arcmin]'.format(lon))
-    ax.scatter(alt_cat_deg ,[x.df_lon.arcmin for x in stars])
+    fig03 = plt.figure()
+    ax03 = fig03.add_subplot(111)
+    ax03.set_title('D1 difference {}: catalog_not_corrected - star'.format(lon_label))
+    ax03.set_xlabel('{} [deg]'.format(lat_label))
+    ax03.set_ylabel('d({}) [arcmin]'.format(lon_label))
+    ax03_lon=lon=alt_cat_deg
+    ax03_lat=lat=[x.df_lon.arcmin for x in stars]
+    ax03.scatter(lon,lat)
     # ToDo: think about that:
     #ax.scatter(alt_cat_deg ,[x.df_lon.arcmin/ np.tan(x.mnt_lat.radian) for x in stars])
-    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lat,lon)))
+    fig03.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lat_label,lon_label)))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('E1 difference {}: catalog_not_corrected - star'.format(lat))
-    ax.set_xlabel('{} [deg]'.format(lat))
-    ax.set_ylabel('d({}) [arcmin]'.format(lat))
-    ax.scatter(alt_cat_deg ,[x.df_lat.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lat)))
+    fig04 = plt.figure()
+    ax04 = fig04.add_subplot(111)
+    ax04.set_title('E1 difference {}: catalog_not_corrected - star'.format(lat_label))
+    ax04.set_xlabel('{} [deg]'.format(lat_label))
+    ax04.set_ylabel('d({}) [arcmin]'.format(lat_label))
+    ax04_lon=lon=alt_cat_deg
+    ax04_lat=lat=[x.df_lat.arcmin for x in stars]
+    ax04.scatter(lon,lat)
+    fig04.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lat_label)))
+    
+    ## residuum, ax05 is below
+    fig05 = plt.figure()
+    ax05 = fig05.add_subplot(111)
+    ax05.set_title('A2 residuum: catalog_corrected - star {}, CLICK ME'.format(fit_title))
+    ax05.set_xlabel('d({}) [arcmin]'.format(lon_label))
+    ax05.set_ylabel('d({}) [arcmin]'.format(lat_label))
+    ax05_lon=lon=[x.res_lon.arcmin for x in stars]
+    ax05_lat=lat=[x.res_lat.arcmin for x in stars]
+    ax05.scatter(lon,lat)
+    annotes05=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
+    fig05.savefig(os.path.join(self.base_path,'residuum_catalog_corrected_star_{}.png'.format(fn_frac)))
+    
+    fig06 = plt.figure()
+    ax06 = fig06.add_subplot(111)
+    ax06.set_title('B2 residuum {} catalog_corrected - star, fit: {}'.format(lon_label,fit_title))
+    ax06.set_xlabel('{} [deg]'.format(lon_label))
+    ax06.set_ylabel('d({}) [arcmin]'.format(lon_label))
+    ax06_lon=lon=az_cat_deg
+    ax06_lat=lat=[x.res_lon.arcmin for x in stars]
+    ax06.scatter(lon,lat)
+    fig06.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lon_label,fn_frac)))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('A2 residuum: catalog_corrected - star {}'.format(fit_title))
-    ax.set_xlabel('d({}) [arcmin]'.format(lon))
-    ax.set_ylabel('d({}) [arcmin]'.format(lat))
-    ax.scatter([x.res_lon.arcmin for x in stars],[x.res_lat.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'residuum_catalog_corrected_star_{}.png'.format(fn_frac)))
+    fig07 = plt.figure()
+    ax07 = fig07.add_subplot(111)
+    ax07.set_title('D2 residuum {} catalog_corrected - star, fit: {}'.format(lon_label,fit_title))
+    ax07.set_xlabel('{} [deg]'.format(lat_label))
+    ax07.set_ylabel('d({}) [arcmin]'.format(lon_label))
+    ax07_lon=lon=alt_cat_deg
+    ax07_lat=lat=[x.res_lon.arcmin for x in stars]
+    ax07.scatter(lon,lat)
+    fig07.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lat_label,lon_label,fn_frac)))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('B2 residuum {} catalog_corrected - star, fit: {}'.format(lon,fit_title))
-    ax.set_xlabel('{} [deg]'.format(lon))
-    ax.set_ylabel('d({}) [arcmin]'.format(lon))
-    ax.scatter(az_cat_deg,[x.res_lon.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lon,fn_frac)))
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('D2 residuum {} catalog_corrected - star, fit: {}'.format(lon,fit_title))
-    ax.set_xlabel('{} [deg]'.format(lat))
-    ax.set_ylabel('d({}) [arcmin]'.format(lon))
-    ax.scatter(alt_cat_deg,[x.res_lon.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lat,lon,fn_frac)))
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('C2 residuum {} catalog_corrected - star, fit: {}'.format(lat,fit_title))
-    ax.set_xlabel('{} [deg]'.format(lon))
-    ax.set_ylabel('d({}) [arcmin]'.format(lat))
-    ax.scatter(az_cat_deg,[x.res_lat.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lon,lat,fn_frac)))
+    fig08 = plt.figure()
+    ax08 = fig08.add_subplot(111)
+    ax08.set_title('C2 residuum {} catalog_corrected - star, fit: {}'.format(lat_label,fit_title))
+    ax08.set_xlabel('{} [deg]'.format(lon_label))
+    ax08.set_ylabel('d({}) [arcmin]'.format(lat_label))
+    ax08_lon=lon=az_cat_deg
+    ax08_lat=lat=[x.res_lat.arcmin for x in stars]
+    ax08.scatter(lon,lat)
+    fig08.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lon_label,lat_label,fn_frac)))
           
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('E2 residuum {} catalog_corrected - star, fit: {}'.format(lat,fit_title))
-    ax.set_xlabel('{}  [deg]'.format(lat))
-    ax.set_ylabel('d({}) [arcmin]'.format(lat))
-    ax.scatter(alt_cat_deg,[x.res_lat.arcmin for x in stars])
-    fig.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lat,fn_frac)))
+    fig09 = plt.figure()
+    ax09 = fig09.add_subplot(111)
+    ax09.set_title('E2 residuum {} catalog_corrected - star, fit: {}'.format(lat_label,fit_title))
+    ax09.set_xlabel('{}  [deg]'.format(lat_label))
+    ax09.set_ylabel('d({}) [arcmin]'.format(lat_label))
+    ax09_lon=lon=alt_cat_deg
+    ax09_lat=lat=[x.res_lat.arcmin for x in stars]
+    ax09.scatter(lon,lat)
+    fig09.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lat_label,fn_frac)))
+    cnnotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('K measurement locations catalog')
-    ax.set_xlabel('{} [deg]'.format(lon))
-    ax.set_ylabel('{} [deg]'.format(lat))
-    ax.scatter([x.cat_lon.degree for x in stars],[x.cat_lat.degree for x in stars])
-    fig.savefig(os.path.join(self.base_path,'measurement_locations_catalog.png'))
+    fig10 = plt.figure()
+    ax10 = fig10.add_subplot(111)
+    ax10.set_title('K measurement locations catalog, CLICK ME')
+    ax10.set_xlabel('{} [deg]'.format(lon_label))
+    ax10.set_ylabel('{} [deg]'.format(lat_label))
+    ax10_lon=lon=[x.cat_lon.degree for x in stars]
+    ax10_lat=lat=[x.cat_lat.degree for x in stars]
+    ax10.scatter(lon,lat)
+    fig10.savefig(os.path.join(self.base_path,'measurement_locations_catalog.png'))
 
 
-    self.fit_projection_and_plot(vals=[x.df_lon.arcsec for x in stars], bins=args.bins,axis='{}'.format(lon), fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P1',plt=plt)
-    self.fit_projection_and_plot(vals=[x.df_lat.arcsec for x in stars], bins=args.bins,axis='{}'.format(lat),fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P2',plt=plt)
-    self.fit_projection_and_plot(vals=[x.res_lon.arcsec for x in stars],bins=args.bins,axis='{}'.format(lon), fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q1',plt=plt)
-    self.fit_projection_and_plot(vals=[x.res_lat.arcsec for x in stars],bins=args.bins,axis='{}'.format(lat),fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q2',plt=plt)
+    self.fit_projection_and_plot(vals=[x.df_lon.arcsec for x in stars], bins=args.bins,axis='{}'.format(lon_label), fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P1',plt=plt)
+    self.fit_projection_and_plot(vals=[x.df_lat.arcsec for x in stars], bins=args.bins,axis='{}'.format(lat_label),fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P2',plt=plt)
+    self.fit_projection_and_plot(vals=[x.res_lon.arcsec for x in stars],bins=args.bins,axis='{}'.format(lon_label), fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q1',plt=plt)
+    self.fit_projection_and_plot(vals=[x.res_lat.arcsec for x in stars],bins=args.bins,axis='{}'.format(lat_label),fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q2',plt=plt)
 
+
+    from callback import  AnnotatedPlot
+    if True:
+      aps=list()
+      aps.append(AnnotatedPlot(xx=ax00,x=ax00_lon,y=ax00_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax01,x=ax01_lon,y=ax01_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax02,x=ax02_lon,y=ax02_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax03,x=ax03_lon,y=ax03_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax04,x=ax04_lon,y=ax04_lat,annotes=annotes))
+      # no 05
+      aps.append(AnnotatedPlot(xx=ax06,x=ax06_lon,y=ax06_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax07,x=ax07_lon,y=ax07_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax08,x=ax08_lon,y=ax08_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax09,x=ax09_lon,y=ax09_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax10,x=ax10_lon,y=ax10_lat,annotes=annotes))
+    
+      af05 =  AnnoteFinder(
+        a_lon=[x.res_lon.arcmin for x in stars],
+        a_lat=[x.res_lat.arcmin for x in stars],
+        annotes=annotes05,
+        ax=ax05, # leading plot
+        aps=aps,
+        xtol=5.,
+        ytol=5.,
+        ds9_display=args.ds9_display,
+        lg=self.lg)
+    
+      fig05.canvas.mpl_connect('button_press_event', af05)
+
+    if True:
+      aps=list()
+      aps.append(AnnotatedPlot(xx=ax00,x=ax00_lon,y=ax00_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax01,x=ax01_lon,y=ax01_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax02,x=ax02_lon,y=ax02_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax03,x=ax03_lon,y=ax03_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax04,x=ax04_lon,y=ax04_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax05,x=ax05_lon,y=ax05_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax06,x=ax06_lon,y=ax06_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax07,x=ax07_lon,y=ax07_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax08,x=ax08_lon,y=ax08_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax09,x=ax09_lon,y=ax09_lat,annotes=annotes))
+      # no 10
+
+      af10 =  AnnoteFinder(
+        a_lon=ax10_lon,
+        a_lat=ax10_lat,
+        annotes=annotes05,
+        ax=ax10, # leading plot
+        aps=aps,
+        xtol=5.,
+        ytol=5.,
+        ds9_display=args.ds9_display,
+        lg=self.lg)
+    
+      fig10.canvas.mpl_connect('button_press_event', af10)
+
+    
     plt.show()
 
   def select_stars(self, stars=None):
@@ -553,20 +656,19 @@ if __name__ == "__main__":
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
+  parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
             
   args=parser.parse_args()
   
+  if args.toconsole:
+    args.level='DEBUG'
+    
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()
-    
-  if args.level in 'DEBUG' or args.level in 'INFO':
-    toconsole=True
-  else:
-    toconsole=args.toconsole
 
-  if toconsole:
+  if args.toconsole:
     # http://www.mglerner.com/blog/?p=8
     soh = logging.StreamHandler(sys.stdout)
     soh.setLevel(args.level)
@@ -586,7 +688,8 @@ if __name__ == "__main__":
     args.fit_eq=True
   
   # cat,mnt: AltAz, or HA,dec coordinates
-  cats,mnts=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+  cats,mnts,imgs=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+
   if cats is None:
     logger.error('nothing to analyze, exiting')
     sys.exit(1)
@@ -602,7 +705,7 @@ if __name__ == "__main__":
   else:
     res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
     
-  stars=pm.prepare_plot(cats=cats,mnts=mnts,selected=selected,model=mdl)
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,imgs=imgs,selected=selected,model=mdl)
     
   if args.plot:
     pm.plot_results(stars=stars,args=args)

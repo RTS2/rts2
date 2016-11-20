@@ -49,6 +49,7 @@ import ds9region
 import sextractor_3
 import astrometry_3
 from structures import CatPosition,NmlPosition,AcqPosition,AnlPosition,cl_nms_acq,cl_nms_anl
+from callback import SimpleAnnoteFinder
 
 
 class Worker(Process):
@@ -333,7 +334,7 @@ class Analysis(object):
     # u_point: ['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum'])
     #          ['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp']
     with  open(ptfn, 'a') as wfl:
-      wfl.write('{0},{1},{2},{3},{4},{5},{6},{7},{8}\n'.format(
+      wfl.write('{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}\n'.format(
         acq.dt_end,#1
         acq.eq.ra.radian,
         acq.eq.dec.radian,
@@ -343,6 +344,9 @@ class Analysis(object):
         acq.pressure, 
         acq.temperature,
         acq.humidity,#9
+        acq.nml_id,
+        acq.cat_no,
+        acq.image_fn,#12
       ))
 
   def store_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_ra=None,astr_dec=None):
@@ -381,8 +385,8 @@ class Analysis(object):
     ds9.run(fn,x=x,y=y,color=color)
       
   def sextract(self,acq=None,pcn='single'):
-    if self.ds9_display:
-      self.lg.debug('sextract: Yale catalog number: {}'.format(int(acq.cat_no)))
+    #if self.ds9_display:
+    #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(acq.cat_no)))
       
     if self.base_path in acq.image_fn:
       fn=acq.image_fn
@@ -439,32 +443,58 @@ class Analysis(object):
       self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,fn))
       return None
 
-  def plot(self,title=None,projection='mollweide'):
-    acq_eq_ra = coord.Angle([x.eq.ra.radian for x in self.acq if x.eq is not None], unit=u.radian)
-    acq_eq_ra = acq_eq_ra.wrap_at(180*u.degree)
-    acq_eq_dec = coord.Angle([x.eq.dec.radian for x in self.acq if x.eq is not None],unit=u.radian)
-    #
-    anl_sxtr_eq_ra = coord.Angle([x.sxtr.ra.radian for x in self.anl if x.eq is not None], unit=u.radian)
-    #anl_sxtr_eq_ra = anl_sxtr_eq_ra.wrap_at(180*u.degree)
-    anl_sxtr_eq_dec = coord.Angle([x.sxtr.dec.radian for x in self.anl if x.sxtr is not None],unit=u.radian)
-    anl_astr_eq_ra = coord.Angle([x.astr.ra.radian for x in self.anl if x.astr is not None], unit=u.radian)
-    #anl_astr_eq_ra = anl_astr_eq_ra.wrap_at(180*u.degree)
-    anl_astr_eq_dec = coord.Angle([x.astr.dec.radian for x in self.anl if x.astr is not None],unit=u.radian)
+  def fill_scatter(self, anl=None,acq=None):
+    anl_sxtr_eq_ra = [x.sxtr.ra.degree for x in self.anl if x.eq is not None]
+    anl_sxtr_eq_dec = [x.sxtr.dec.degree for x in self.anl if x.sxtr is not None]
+    anl_astr_eq_ra = [x.astr.ra.degree for x in self.anl if x.astr is not None]
+    anl_astr_eq_dec = [x.astr.dec.degree for x in self.anl if x.astr is not None]
+
+    acq_eq_ra =[x.eq.ra.degree for x in self.acq if x.eq is not None]
+    acq_eq_dec = [x.eq.dec.degree for x in self.acq if x.eq is not None]
+    self.ax.scatter(acq_eq_ra, acq_eq_dec,color='blue',s=120.)
+    self.ax.scatter(anl_sxtr_eq_ra, anl_sxtr_eq_dec,color='red',s=40.)
+    self.ax.scatter(anl_astr_eq_ra, anl_astr_eq_dec,color='yellow',s=10.)
+
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
+    if self.af is not None:
+      self.af.data = list(zip(acq_eq_ra,acq_eq_dec,annotes))
+    else:
+      return annotes,acq_eq_ra,acq_eq_dec 
+      
+  def re_plot(self,i):
+    self.acq=list()
+    self.anl=list()
+    self.fetch_positions(fn=self.analyzed_positions,fetch_acq=False,sys_exit=False)
+    self.fetch_positions(fn=self.acquired_positions,fetch_acq=True,sys_exit=True)
+    #self.ax.clear()
+    self.fill_scatter(anl=self.anl,acq=self.acq)
+    self.ax.grid(True)
+    self.ax.set_title(self.tit)
+
+    
+  def plot(self,title=None,projection='mollweide',animate=None):
 
     import matplotlib
+    import matplotlib.animation as animation
+    import matplotlib.animation as animation
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
     import matplotlib.pyplot as plt
     plt.ioff()
     fig = plt.figure(figsize=(8,6))
-    ax = fig.add_subplot(111, projection=projection)
-    ax.set_title(title)
-    ax.scatter(acq_eq_ra, acq_eq_dec,color='blue',s=120.)
-    ax.scatter(anl_sxtr_eq_ra, anl_sxtr_eq_dec,color='red',s=40.)
-    ax.scatter(anl_astr_eq_ra, anl_astr_eq_dec,color='yellow',s=10.)
-    ax.set_xticklabels(['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h',])
+    self.ax = fig.add_subplot(111)#, projection=projection)
+    self.tit=title
+    self.ax.set_title(self.tit)
+    #self.ax.set_xticklabels(['210','240','270','300','330','0','30','60','90','120','150',])
 
-    ax.grid(True)
+    self.ax.grid(True)
+    self.af=None
+    annotes,acq_eq_ra,acq_eq_dec=self.fill_scatter(anl=self.anl,acq=self.acq)
+    
+    self.af= SimpleAnnoteFinder(acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5.,ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True)
+    fig.canvas.mpl_connect('button_press_event', self.af)
+    if animate:
+      ani = animation.FuncAnimation(fig, self.re_plot, interval=10000)
     plt.show()
 
 # really ugly!
@@ -501,9 +531,13 @@ if __name__ == "__main__":
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
+  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
 
   args=parser.parse_args()
   
+  if args.toconsole:
+    args.level='DEBUG'
+
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
@@ -538,12 +572,12 @@ if __name__ == "__main__":
   if not os.path.exists(args.base_path):
     os.makedirs(args.base_path)
 
+  anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
+  anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
   if args.plot:
-    anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
-    anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
-    anl.plot(title='acquired (blue), sextracted (red), astrometry (yellow) positions')
-    sys.exit(0)
-
+    anl.plot(title='acquired (blue), sextracted (red), astrometry (yellow) positions',animate=args.animate)
+    sys.exit(1)
+    
   lock=Lock()
   work_queue=Queue()
   
@@ -555,8 +589,6 @@ if __name__ == "__main__":
     next_queue=Queue()
     cpus=2 # one worker
 
-  anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
-  anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
   analyzed=[x.image_fn for x in anl.anl]
   #if len(anl.anl)==len(analyzed) and len(anl.anl)>0:
   #  logger.info('all position analyzed, exiting')

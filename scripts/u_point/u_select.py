@@ -151,7 +151,7 @@ class Catalog(object):
     import matplotlib.pyplot as plt
     plt.ioff()
     fig = plt.figure(figsize=(8,6))
-    ax = fig.add_subplot(111, projection="mollweide")
+    ax = fig.add_subplot(111, projection='mollweide')
     # eye candy
     npa=np.asarray([np.exp(x.mag_v)/80. for x in self.cats])
     
@@ -190,7 +190,10 @@ if __name__ == "__main__":
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
   
   args=parser.parse_args()
-  
+  if args.toconsole:
+    args.level='DEBUG'
+
+
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)

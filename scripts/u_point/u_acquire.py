@@ -40,8 +40,13 @@ from astropy.utils import iers
 # astropy pre 1.2.1 may not work correctly
 #  wget http://maia.usno.navy.mil/ser7/finals2000A.all
 # together with IERS_A_FILE
-iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
-#                                            ###########
+try:
+  iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
+#                                               ###########
+except:
+  print('download:')
+  print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
+  sys.exit(1)
 from astropy import units as u
 from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
@@ -55,7 +60,8 @@ from watchdog.events import FileSystemEventHandler
 import queue
 
 from structures import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
-    
+from callback import SimpleAnnoteFinder
+
 class Acquisition(object):
   def __init__(
       self,
@@ -251,7 +257,7 @@ class Acquisition(object):
     observed=sorted(set(obs),reverse=True)
     for i in observed:
       del self.nml[i]
-      self.lg.debug('drop_nominal_altaz: deleted: {}'.format(i))
+      #self.lg.debug('drop_nominal_altaz: deleted: {}'.format(i))
   
   def create_socket(self, port=9999):
     # acquire runs as a subprocess of rts2-script-exec and has no
@@ -414,36 +420,87 @@ class Acquisition(object):
    
         else:
           self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,exp=exp)
+    
+  def re_plot(self,i):
+    self.nml=list()
+    self.acq=list()
+    self.fetch_acquired_positions()
+    c_len=len(self.acq)
+    
+    if c_len <= self.l_len:
+      return
+    
+    self.l_len=c_len
+    #self.lg.debug('re_plot: reloading')
+    self.fetch_nominal_altaz(ptfn='/home/wildi/u_point/nominal_positions.nml')
+    self.drop_nominal_altaz()
+    
+    acq_az = [x.aa_mnt.az.degree for x in self.acq if x.aa_mnt is not None]
+    acq_alt = [x.aa_mnt.alt.degree for x in self.acq if x.aa_mnt is not None]
+    acq_nml_az = [x.aa_nml.az.degree for x in self.nml]
+    acq_nml_alt = [x.aa_nml.alt.degree for x in self.nml]
 
-  def plot(self,title=None,projection='polar'): #AltAz 
-    acq_az = coord.Angle([x.aa_mnt.az.radian for x in self.acq if x.aa_mnt is not None], unit=u.radian)
-    acq_alt = coord.Angle([x.aa_mnt.alt.radian for x in self.acq if x.aa_mnt is not None],unit=u.radian)
-    # ToDo rts2,astropy altaz
-    #off=np.pi
-    #if self.do_not_use_rts2:
-    #  off=0.
-    off=0.
-    acq_nml_az = coord.Angle([x.aa_nml.az.radian-off for x in self.nml], unit=u.radian)
-    #acq_nml_az = acq_nml_az.wrap_at(180*u.degree)
-    acq_nml_alt = coord.Angle([x.aa_nml.alt.radian for x in self.nml],unit=u.radian)
+    self.ax.clear()
+    self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
+    if len(acq_az) < 2:
+      self.ax.scatter(acq_az, acq_alt,color='blue')
+    else:
+      self.ax.scatter(acq_az[:-2], acq_alt[:-2],color='blue')
+      self.ax.scatter(acq_az[-1], acq_alt[-1],color='magenta',s=240.)
 
+    self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
+    self.ax.scatter(acq_az, acq_alt,color='blue')
+    self.ax.grid(True)
+    self.ax.set_title(self.tit)
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
+    self.af.data = list(zip(acq_az,acq_alt,annotes))
+
+    
+  def plot(self,title=None,projection=None,ds9_display=None,animate=None):
     import matplotlib
+    import matplotlib.animation as animation
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
     import matplotlib.pyplot as plt
     plt.ioff()
-    fig = plt.figure(figsize=(8,6))
+    self.fig = plt.figure(figsize=(8,6))
+    # ToDO These plots do not yet yield a useful result 
+    ##ax = fig.add_subplot(111,projection=projection)
+    ##ax = fig.add_subplot(111,projection='polar') #'mollweide' 
+    self.ax = self.fig.add_subplot(111)
+    self.tit=title
+    self.ax.set_title(self.tit)
+    acq_az = [x.aa_mnt.az.degree for x in self.acq if x.aa_mnt is not None]
+    acq_alt = [x.aa_mnt.alt.degree for x in self.acq if x.aa_mnt is not None]
+    acq_nml_az = [x.aa_nml.az.degree for x in self.nml]
+    acq_nml_alt = [x.aa_nml.alt.degree for x in self.nml]
 
-    ax = fig.add_subplot(111, projection=projection)
-    ax.set_title(title)
-    ax.scatter(acq_nml_az, acq_nml_alt,color='red')
-    ax.scatter(acq_az, acq_alt,color='blue')
-    ax.set_rmax(1.6)
+    self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
+    #ax.scatter(acq_az, acq_alt,color='blue')
+    if len(acq_az) < 2:
+      self.ax.scatter(acq_az, acq_alt,color='blue')
+    else:
+      self.ax.scatter(acq_az[:-2], acq_alt[:-2],color='blue')
+      self.ax.scatter(acq_az[-1], acq_alt[-1],color='magenta',s=240.)
+    ##ax.set_rmax(90.)
+    #ax.set_yticklabels(['80','70','60','50','40','30','20','10','0',])
+    #ax.set_theta_zero_location("N")
+    self.ax.grid(True)
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
+    ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
 
-    ax.grid(True)
+    self.af = SimpleAnnoteFinder(acq_az,acq_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True)
+    ##self.af =  SimpleAnnoteFinder(acq_nml_az,acq_nml_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=False,lg=self.lg)
+    self.fig.canvas.mpl_connect('button_press_event', self.af)
+    self.l_len=0
+    if animate:
+      ani = animation.FuncAnimation(self.fig, self.re_plot,interval=1000)
+      
     plt.show()
+    
 
 # Ja, ja,..
+# ToDo test it!
 class MyHandler(FileSystemEventHandler):
     def __init__(self,lg=None,acq_queue=None):
         self.lg=lg
@@ -494,9 +551,13 @@ if __name__ == "__main__":
   parser.add_argument('--meteo-class', dest='meteo_class', action='store', default='meteo', help=': %(default)s, specify your meteo data collector, see meteo.py for a stub')
   parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your devices (mount,ccd), see devices.py')
   parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, simulation mode: images fetched from DSS')
-  
+  parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, True: and if --plot is specified: click on data point opens FITS with DS9')
+  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
+
   args=parser.parse_args()
 
+  if args.toconsole:
+    args.level='DEBUG'
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
@@ -505,6 +566,7 @@ if __name__ == "__main__":
   if args.toconsole:
     # http://www.mglerner.com/blog/?p=8
     soh = logging.StreamHandler(sys.stdout)
+    soh.setLevel(args.level)
     soh.setLevel(args.level)
     logger.addHandler(soh)
 
@@ -556,7 +618,7 @@ if __name__ == "__main__":
   if args.create_nominal:
     ac.store_nominal_altaz(az_step=args.az_step,alt_step=args.alt_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,ptfn=args.nominal_positions)
     if args.plot:
-      ac.plot(title='to be observed nominal positions')
+      ac.plot(title='to be observed nominal positions',ds9_display=args.ds9_display) # no images yet
     sys.exit(1)
 
   ac.fetch_nominal_altaz(ptfn=args.nominal_positions)
@@ -565,7 +627,7 @@ if __name__ == "__main__":
   ac.drop_nominal_altaz()
 
   if args.plot:
-    ac.plot(title='AltAz progress report acquired (blue), to be observed nominal positions (red)')
+    ac.plot(title='AltAz progress report acquired (blue), to be observed nominal positions (red)',ds9_display=args.ds9_display,animate=args.animate)
     sys.exit(1)
    
   # candidate objects, predefined with u_select.py

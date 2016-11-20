@@ -29,6 +29,7 @@
 # No RTS2 installation required
 #
 export BASE_DIRECTORY=/tmp/u_point
+##export BASE_DIRECTORY=$HOME/u_point
 echo "clean sweep in base directory $BASE_DIRECTORY"
 # clean sweep
 rm -fr $BASE_DIRECTORY
@@ -57,11 +58,16 @@ echo "since we do not use real equipment"
 echo "dummy meteo data are provided by meteo.py"
 echo "progress report: once u_acquire.py is running:"
 echo "- open an new terminal and do a: tail -f /tmp/u_acquire.log"
-echo "- create a progress plot:  ./u_acquire.py --base-path $BASE_DIRECTORY   --plot"
 echo "./u_acquire.py --base-path $BASE_DIRECTORY  --fetch-dss-image  --mode-continues --level DEBUG"
 #
-./u_acquire.py --base-path $BASE_DIRECTORY  --fetch-dss-image  --mode-continues --level DEBUG --toconsole
+./u_acquire.py --base-path $BASE_DIRECTORY  --fetch-dss-image  --mode-continues --level DEBUG --toconsole &
+pid_u_acquire=$!
+./u_acquire.py --base-path $BASE_DIRECTORY --plot --ds9-display --animate &
 #
+if ps -p $pid_u_acquire >/dev/null; then
+ echo "waiting for u_acquire.py to terminate"
+    wait $pid_u_acquire
+fi
 echo "DONE position acqusition"
 echo "------------------------------------------------"
 echo "forth step, analyze the acquired position"
@@ -71,11 +77,17 @@ echo "- open an new terminal and do a: tail -f /tmp/u_analzse.log"
 echo "- create a progress plot:  ./u_analyze.py --base-path $BASE_DIRECTORY  --plot"
 echo "./u_analyze.py  --base-path $BASE_DIRECTORY  --do-not-use-astrometry --level DEBUG"
 #
-./u_analyze.py  --base-path $BASE_DIRECTORY  --do-not-use-astrometry --level DEBUG --toconsole
+./u_analyze.py  --base-path $BASE_DIRECTORY  --do-not-use-astrometry --level DEBUG --toconsole &
+pid_u_analyze=$!
+./u_analyze.py --base-path $BASE_DIRECTORY --plot --ds9-display --animate &
+if ps -p $pid_u_analyze >/dev/null; then
+    echo "waiting for u_analyze.py to terminate"
+    wait $pid_u_analyze
+fi
 #
 echo "DONE analysis of all positions"
 echo "------------------------------------------------"
 echo "fifth step, create pointing model"
 echo "./u_point.py --base-path $BASE_DIRECTORY --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG"
 #
-./u_point.py --base-path $BASE_DIRECTORY --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG --toconsole
+./u_point.py --base-path $BASE_DIRECTORY --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG --toconsole --ds9

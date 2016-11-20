@@ -36,7 +36,7 @@ class Parameter:
 
 # data structure
 class Point(object):
-  def __init__(self,cat_lon=None,cat_lat=None,mnt_lon=None,mnt_lat=None,df_lat=None,df_lon=None,res_lat=None,res_lon=None):
+  def __init__(self,cat_lon=None,cat_lat=None,mnt_lon=None,mnt_lat=None,df_lat=None,df_lon=None,res_lat=None,res_lon=None,image_fn=None):
     self.cat_lon=cat_lon
     self.cat_lat=cat_lat
     self.mnt_lon=mnt_lon
@@ -45,6 +45,7 @@ class Point(object):
     self.df_lon=df_lon
     self.res_lat=res_lat
     self.res_lon=res_lon
+    self.image_fn=image_fn
 
 class CatPosition(object):
   def __init__(self, cat_no=None,cat_eq=None,mag_v=None):

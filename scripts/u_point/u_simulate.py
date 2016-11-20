@@ -285,16 +285,14 @@ if __name__ == "__main__":
             
   args=parser.parse_args()
   
+  if args.toconsole:
+    args.level='DEBUG'
+
   filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()
     
-  if args.level in 'DEBUG' or args.level in 'INFO':
-    toconsole=True
-  else:
-    toconsole=args.toconsole
-
   if toconsole:
     # http://www.mglerner.com/blog/?p=8
     soh = logging.StreamHandler(sys.stdout)

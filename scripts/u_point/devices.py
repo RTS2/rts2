@@ -110,7 +110,8 @@ class DeviceDss(object):
           break
       else:
         self.lg.warn('expose: could not retrieve DSS: {}, continuing to retrieve'.format(r.url))
-
+    self.lg.debug('expose: DSS: saved {}'.format(r.url))
+    
     return self.dss_fn,self.exp
     
   def mount_set(self,cat_eq=None,nml_id=None,cat_no=None):
