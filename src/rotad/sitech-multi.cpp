@@ -51,7 +51,6 @@ int SitechMulti::run ()
 	ret = initHardware ();
 	if (ret)
 		return ret;
-	doDaemonize ();
 	md.initMultidev (getDebug ());
 	while (true)
 	{

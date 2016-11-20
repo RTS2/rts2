@@ -54,7 +54,6 @@ int SitechMultiBase::run ()
 	ret = initHardware ();
 	if (ret)
 		return ret;
-	doDaemonize ();
 	return md.run ();
 }
 

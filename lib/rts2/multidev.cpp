@@ -121,6 +121,10 @@ int MultiBase::init ()
 	if (ret)
 		return ret;
 
+	ret = doDaemonize ();
+	if (ret)
+		exit (ret);
+
 	std::string s = std::string (getLockPrefix ()) + multi_name;
 	ret = checkLockFile (s.c_str ());
 	if (ret)
