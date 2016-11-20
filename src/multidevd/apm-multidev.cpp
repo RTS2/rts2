@@ -30,7 +30,7 @@
 
 using namespace rts2multidev;
 
-APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
+APMMultiBase::APMMultiBase (int argc, char **argv):rts2core::MultiBase (argc, argv, "MB")
 {
 	filterName = NULL;
 	auxName = NULL;
@@ -100,7 +100,7 @@ int APMMultiBase::processOption (int opt)
 			hasTemp = true;
 			break;
 		default:
-			return Daemon::processOption (opt);
+			return MultiBase::processOption (opt);
 	}
 	return 0;
 }

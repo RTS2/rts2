@@ -26,7 +26,7 @@
 #define OPT_CONFIG_M3     OPT_LOCAL + 1243
 #define OPT_CONFIG_FOC    OPT_LOCAL + 1244
 
-SitechMultiBase::SitechMultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
+SitechMultiBase::SitechMultiBase (int argc, char **argv):rts2core::MultiBase (argc, argv, "SMF")
 {
 	focName = "F2";
 	mirrorName = "M3";
@@ -72,7 +72,7 @@ int SitechMultiBase::processOption (int opt)
 			defaultFoc = optarg;
 			break;
 		default:
-			return Daemon::processOption (opt);
+			return MultiBase::processOption (opt);
 	}
 	return 0;
 }

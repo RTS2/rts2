@@ -33,7 +33,7 @@ namespace rts2rotad
 
 class SitechRotator;
 
-class SitechMulti:public rts2core::Daemon
+class SitechMulti:public rts2core::MultiBase
 {
 	public:
 		SitechMulti (int argc, char **argv);

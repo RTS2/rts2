@@ -24,7 +24,7 @@
 
 using namespace rts2rotad;
 
-SitechMulti::SitechMulti (int argc, char **argv):rts2core::Daemon (argc, argv)
+SitechMulti::SitechMulti (int argc, char **argv):rts2core::MultiBase (argc, argv, "SR")
 {
 	der_tty = NULL;
 	derConn = NULL;
@@ -77,7 +77,7 @@ int SitechMulti::processOption (int opt)
 			break;
 
 		default:
-			return Daemon::processOption (opt);
+			return MultiBase::processOption (opt);
 	}
 	return 0;
 }

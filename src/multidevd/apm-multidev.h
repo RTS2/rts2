@@ -37,7 +37,7 @@ class APMMultidev
 		rts2core::ConnAPM *apmConn;
 };
 
-class APMMultiBase:public rts2core::Daemon
+class APMMultiBase:public rts2core::MultiBase
 {
 	public:
 		APMMultiBase (int argc, char **argv);
@@ -47,9 +47,6 @@ class APMMultiBase:public rts2core::Daemon
 
 	protected:
 		virtual int processOption (int opt);
-
-		virtual bool isRunning (rts2core::Connection *conn) { return false; }
-		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr) { return NULL; }
 
 		virtual int initHardware ();
 	private:
