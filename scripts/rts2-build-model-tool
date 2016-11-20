@@ -38,7 +38,7 @@ parser.add_argument('--user', help=_('RTS2 web server username'), action='store'
 parser.add_argument('--password', help=_('password for web user'), action='store', dest='password', default=None)
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
-parser.add_argument('--path', help=_('path (alt:az,alt:az,..) for model build'), action='store', dest='path', default=rts2.altazpath.constant_path([45,75]))
+parser.add_argument('--path', help=_('path (alt:az,alt:az,#bscnum..) for model build'), action='store', dest='path', default=rts2.altazpath.constant_path([45,75]))
 parser.add_argument('--mags', help=_('magnitude range for BSC lookup'), action='store', dest='mags', default='4.5:2')
 parser.add_argument('--modelname', help=_('filename where model lines will be stored'), action='store', dest='modelname', default=None)
 parser.add_argument('--maxspiral', help=_('maximal number of steps in spiral'), action='store', type=int, dest='maxspiral', default=500)
@@ -78,11 +78,17 @@ try:
 	tp.set_mags(mag_max,mag_min)
 	tp.set_wcs(fov_center,__verifywcs_asecpix,__verifywcs_rotang,__verifywcs_flip)
 
-	path = options.path
-	if path == 'random':
+	if options.path == 'random':
 		path = rts2.altazpath.random_path()
-	if type(path) == str:
-		path = map(lambda x:map(float,x.split(':')),path.split(','))
+	elif type(options.path) == str:
+		path = []
+		for p in options.path.split(','):
+			if p[0] == '#':
+				path.append(int(p[1:]))
+			else:
+				path.append(map(float,p.split(':')))
+	else:
+		path = options.path
 
 	if options.action[0] == 'line':
 		print tp.get_altazm_line(telescope)

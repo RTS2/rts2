@@ -39,7 +39,7 @@ def find_stars(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 	objects = sep.extract(data, thres)
 	# order by flux
 	if len(objects) == 0:
-		return None
+		return []
 	return sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
 
 def find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
@@ -87,7 +87,7 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 	hdu = fits.open(fn)
 	x,y,flux,flux_ratio = find_brightest(fn, hdu, verbose, useDS9)
 	if x is None:
-		return None,None,None,None
+		return None,None,None,None,None
 	b_ra = hdu[0].header['OBJRA']
 	b_dec = hdu[0].header['OBJDEC']
 
