@@ -171,4 +171,4 @@ def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = F
 	if off_az > 180.0:
 		off_az -= 360.0
 
-	return (off_ra,off_dec),(off_az,off_alt),flux,flux_ratio
+	return (off_ra,off_dec),(off_az,off_alt),flux,flux_ratio,(offsp[1][0] - offsp[0][0],offsp[1][1] - offsp[1][0])

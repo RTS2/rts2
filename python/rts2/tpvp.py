@@ -301,7 +301,7 @@ class TPVP:
 				print _('converged')
 				return True,flux_history,flux_ratio_history,history_x,history_y
 			# calculate offsets in alt-az, increment offsets
-			off_radec,off_azalt,flux,flux_ratio = __get_offset_by_image(vfn,useDS9,mn,fov_center)
+			off_radec,off_azalt,flux,flux_ratio,first_xy = __get_offset_by_image(vfn,useDS9,mn,fov_center)
 			print _('Brightest flux {0:.2f}').format(flux)
 			if off_radec is None:
 				return False,flux_history,flux_ratio_history,history_x,history_y
@@ -316,7 +316,7 @@ class TPVP:
 		self.j.setValue(self.telescope,'AZALOFFS','0 0')
 		for p in path:
 			fn,mn,bsc = self.run_manual_altaz(p[0],p[1],timeout,None,-1,imagescript,None,useDS9)
-			off_radec,off_azalt,flux,flux_ratio = self.__get_offset_by_image(fn,useDS9,mn,fov_center)
+			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(fn,useDS9,mn,fov_center)
 			if minflux is not None and (flux is None or flux < minflux) and maxspiral >= -1:
 				print _('Bright star not found on the first image, running spiral search')
 				last_step = 1
@@ -332,7 +332,7 @@ class TPVP:
 							except Exception,ex:
 								d = ds9.ds9()
 						d.set('file {0}'.format(fn))
-					off_radec,off_azalt,flux,flux_ratio = __get_offset_by_image(fn,useDS9,mn,fov_center)
+					off_radec,off_azalt,flux,flux_ratio,first_xy = __get_offset_by_image(fn,useDS9,mn,fov_center)
 					print _('Brightest in {0} flux {1:.1f}').format(fn,flux)
 					last_step += 1
 	
@@ -351,7 +351,7 @@ class TPVP:
 				self.__check_model_firstline(modelname)
 				modelf = open(modelname,'a')
 				modelf.write('# alt {0:.3f} az {1:.3f} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
-				modelf.write('# x {0} y {1}\n'.format(','.join(map(str,history_x)),','.join(map(str,history_y))))
+				modelf.write('# fx {0} fy {1} x {2} y {3}\n'.format(first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y))))
 				# comment lines
 				if ver == False:
 					modelf.write('# ')
