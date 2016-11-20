@@ -96,3 +96,62 @@ void MultiDev::runLoop (float tmout)
 		(*iter)->callIdle ();
 	}
 }
+
+MultiBase::MultiBase (int argc, char **argv, const char *default_name):rts2core::Daemon (argc, argv)
+{
+	multi_name = default_name;
+
+	addOption (OPT_NOAUTH, "noauth", 0, "allow unauthorized connections");
+	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some recomended values are not set");
+	addOption (OPT_LOCALHOST, "localhost", 1, "hostname, if it different from return of gethostname()");
+	addOption (OPT_SERVER, "server", 1, "hostname (and possibly port number, separated by :) of central server");
+	addOption ('d', NULL, 1, "multidev name (lock file suffix)");
+}
+
+void MultiBase::addDevice (Device *dev)
+{
+	md.push_back (dev);
+}
+
+int MultiBase::init ()
+{
+	int ret;
+
+	ret = Daemon::init ();
+	if (ret)
+		return ret;
+
+	std::string s = std::string (getLockPrefix ()) + multi_name;
+	ret = checkLockFile (s.c_str ());
+	if (ret)
+		return ret;
+	return lockFile ();
+}
+
+int MultiBase::run ()
+{
+	// init..
+	int ret = init ();
+	if (ret)
+		return ret;
+	return md.run ();
+}
+
+int MultiBase::processOption (int opt)
+{
+	switch (opt)
+	{
+		// those are handled in md inits
+		case OPT_NOAUTH:
+		case OPT_NOTCHECKNULL:
+		case OPT_LOCALHOST:
+		case OPT_SERVER:
+			break;
+		case 'd':
+			multi_name = optarg;
+			break;
+		default:
+			return Daemon::processOption (opt);
+	}
+	return 0;
+}

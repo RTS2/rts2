@@ -36,6 +36,27 @@ class MultiDev: public std::list < Device* >
 		void runLoop (float tmout);
 };
 
+/**
+ * Master class for multidevs.
+ */
+class MultiBase:public Daemon
+{
+	public:
+		MultiBase (int argc, char **argv, const char *default_name);
+		void addDevice (Device *dev);
+		virtual int init ();
+		virtual int run ();
+
+	protected:
+		virtual int processOption (int opt);
+		virtual bool isRunning (rts2core::Connection *conn) { return false; }
+		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr) { return NULL; }
+
+	private:
+		rts2core::MultiDev md;
+		const char *multi_name;
+};
+
 }
 
 #endif							 /* !__RTS2_MULTIDEV__ */

@@ -501,7 +501,7 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 
 	last_weathermsg = NULL;
 
-	allowDOption = true;
+	multidevPart = false;
 
 	// now add options..
 	addOption (OPT_NOAUTH, "noauth", 0, "allow unauthorized connections");
@@ -616,7 +616,7 @@ int Device::processOption (int in_opt)
 			doAuth = false;
 			break;
 		case 'd':
-			if (allowDOption == true)
+			if (multidevPart == false)
 				device_name = optarg;
 			break;
 		default:
@@ -741,7 +741,8 @@ int Device::init ()
 		addCentraldConnection (conn_master, true);
 	}
 
-	ret = createLockFile ();
+	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
+	ret = checkLockFile (s.c_str ());
 	if (ret < 0)
 		exit (ret);
 
@@ -750,16 +751,10 @@ int Device::init ()
 
 void Device::setMulti ()
 {
-	allowDOption = false;
+	multidevPart = true;
 	setNotDaemonize ();
 	setNoLock ();
 } 
-
-int Device::createLockFile ()
-{
-	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
-	return checkLockFile (s.c_str ());
-}
 
 void Device::beforeRun ()
 {
