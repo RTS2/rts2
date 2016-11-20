@@ -29,8 +29,7 @@ void MultiDev::initMultidev (int debug)
 	MultiDev::iterator iter;
 	for (iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->setNotDaemonize ();
-		(*iter)->setNoLock ();
+		(*iter)->setMulti ();
 		(*iter)->setDebug (debug);
 		(*iter)->initDaemon ();
 		(*iter)->beforeRun ();

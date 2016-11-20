@@ -501,6 +501,8 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 
 	last_weathermsg = NULL;
 
+	allowDOption = true;
+
 	// now add options..
 	addOption (OPT_NOAUTH, "noauth", 0, "allow unauthorized connections");
 	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some recomended values are not set");
@@ -614,7 +616,8 @@ int Device::processOption (int in_opt)
 			doAuth = false;
 			break;
 		case 'd':
-			device_name = optarg;
+			if (allowDOption == true)
+				device_name = optarg;
 			break;
 		default:
 			return Daemon::processOption (in_opt);
@@ -744,6 +747,13 @@ int Device::init ()
 
 	return initHardware ();
 }
+
+void Device::setMulti ()
+{
+	allowDOption = false;
+	setNotDaemonize ();
+	setNoLock ();
+} 
 
 int Device::createLockFile ()
 {

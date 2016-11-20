@@ -155,7 +155,8 @@ int App::initOptions ()
 
 void signalHUP (int sig)
 {
-	masterApp->sigHUP (sig);
+	if (masterApp)
+		masterApp->sigHUP (sig);
 }
 
 void killSignal (int sig)
@@ -173,12 +174,16 @@ void killSignal (int sig)
 	}
 }
 
-int App::init ()
+void App::initSignals ()
 {
 	signal (SIGHUP, signalHUP);
 	signal (SIGINT, killSignal);
 	signal (SIGTERM, killSignal);
+}
 
+int App::init ()
+{
+	initSignals ();
 	try
 	{
 		return initOptions ();

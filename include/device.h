@@ -317,6 +317,11 @@ class Device:public Daemon
 		virtual int init ();
 
 		/**
+		 * Setup device as part of MultiDev, call init method.
+		 */
+		void setMulti ();
+
+		/**
 		 * Init hardware. This method shall close any opened connection
 		 * to hardware, and try to (re)-initialize hardware. 
 		 *
@@ -404,6 +409,8 @@ class Device:public Daemon
 		CommandDeviceStatusInfo *deviceStatusCommand;
 
 		char *last_weathermsg;
+
+		bool allowDOption;
 };
 
 }

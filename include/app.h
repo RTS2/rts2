@@ -210,6 +210,7 @@ class App:public Object
 		 * @return debug level
 		 */
 		int getDebug () { return debug; }
+
 	protected:
 		/**
 		 * Called to process options of the programme.
@@ -278,6 +279,11 @@ class App:public Object
 		 * Call to process options and arguments.
 		 */
 		int initOptions ();
+
+		/**
+		 * Setup signal handling.
+		 */
+		void initSignals ();
 
 		/**
 		 * Prints help message, describing all options
