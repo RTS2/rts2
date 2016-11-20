@@ -738,12 +738,17 @@ int Device::init ()
 		addCentraldConnection (conn_master, true);
 	}
 
-	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
-	ret = checkLockFile (s.c_str ());
+	ret = createLockFile ();
 	if (ret < 0)
 		exit (ret);
 
 	return initHardware ();
+}
+
+int Device::createLockFile ()
+{
+	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
+	return checkLockFile (s.c_str ());
 }
 
 void Device::beforeRun ()

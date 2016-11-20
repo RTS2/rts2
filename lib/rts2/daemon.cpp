@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include <grp.h>
 #include <pwd.h>
-#include <signal.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <sys/fcntl.h>
@@ -113,7 +112,7 @@ Daemon::~Daemon (void)
 {
 	if (listen_sock >= 0)
 		close (listen_sock);
-	if (lock_file)
+	if (lock_file > 0)
 		close (lock_file);
 	delete info_time;
 	closelog ();
@@ -177,6 +176,8 @@ int Daemon::processArgs (const char *arg)
 
 int Daemon::checkLockFile (const char *_lock_fname)
 {
+	if (lock_file == -2)
+		return 0;
 	int ret;
 	lock_fname = _lock_fname;
 	mode_t old_mask = umask (022);
@@ -285,6 +286,8 @@ const char * Daemon::getLockPrefix ()
 
 int Daemon::lockFile ()
 {
+	if (lock_file == -2)
+		return 0;
 	if (!lock_file)
 		return -1;
 	FILE *fd = fdopen (lock_file, "w");

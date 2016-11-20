@@ -324,6 +324,11 @@ class Device:public Daemon
 		 */
 		virtual int initHardware () { return 0; }
 
+		/**
+		 * Create lock file.
+		 */
+		int createLockFile ();
+
 		virtual void beforeRun ();
 
 		virtual bool isRunning (Connection *conn) { return conn->isConnState (CONN_AUTH_OK) || requireAuthorization () == false; }

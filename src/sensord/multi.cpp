@@ -121,11 +121,36 @@ int MultiSensor::initHardware ()
 	return 0;
 }
 
-int main (int argc, char ** argv)
+/**
+ * Master class for multidevs.
+ */
+class MultiBase:public rts2core::Daemon
 {
-	rts2core::MultiDev md;
+	public:
+		MultiBase (int argc, char **argv);
+		virtual int run ();
+
+	protected:
+		virtual bool isRunning (rts2core::Connection *conn) { return false; }
+		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr) { return NULL; }
+
+	private:
+		rts2core::MultiDev md;
+};
+
+MultiBase::MultiBase (int argc, char **argv):rts2core::Daemon (argc, argv)
+{
 	md.push_back (new MultiSensor (argc, argv, "MS1"));
 	md.push_back (new MultiSensor (argc, argv, "MS2"));
+}
 
+int MultiBase::run ()
+{
 	return md.run ();
+}
+
+int main (int argc, char ** argv)
+{
+	MultiBase mb (argc, argv);
+	return mb.run ();
 }

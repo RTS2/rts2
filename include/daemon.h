@@ -42,7 +42,7 @@ namespace rts2core
  *
  * @ingroup RTS2Block
  */
-class Daemon:public rts2core::Block
+class Daemon:public Block
 {
 	public:
 		/**
@@ -238,6 +238,15 @@ class Daemon:public rts2core::Block
 		void setNotDaemonize ()
 		{
 			daemonize = DONT_DAEMONIZE;
+		}
+
+		/**
+		 * Do not create lock file. Usefull when lock file handling is part of another
+		 * class in the process (e.g. in multidev design).
+		 */
+		void setNoLock ()
+		{
+			lock_file = -2;
 		}
 
 		/**
@@ -647,6 +656,8 @@ class Daemon:public rts2core::Block
 		int listen_sock;
 		void addConnectionSock (int in_sock);
 		const char * lock_fname;
+
+		// lock file FD. -2 signals device does not create lock file (usually part of multidev, where only master creates lock file)
 		int lock_file;
 
 		const char *runAs;

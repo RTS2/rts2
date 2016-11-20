@@ -30,6 +30,7 @@ void MultiDev::initMultidev (int debug)
 	for (iter = begin (); iter != end (); iter++)
 	{
 		(*iter)->setNotDaemonize ();
+		(*iter)->setNoLock ();
 		(*iter)->setDebug (debug);
 		(*iter)->initDaemon ();
 		(*iter)->beforeRun ();
@@ -45,7 +46,7 @@ int MultiDev::run (int debug)
 
 void MultiDev::multiLoop ()
 {
-	while (true)
+	while (getMasterApp ()->getEndLoop () == false)
 	{
 		runLoop (10);
 	}
