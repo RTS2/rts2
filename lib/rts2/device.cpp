@@ -758,7 +758,7 @@ void Device::beforeRun ()
 		exit (ret);
 #ifndef RTS2_HAVE_FLOCK
 	// reopen..
-	ret = checkLockFile (s.c_str ());
+	ret = checkLockFile (lock_fname);
 	if (ret < 0)
 		exit (ret);
 #endif
