@@ -98,7 +98,7 @@ try:
 		tp.run_manual_path(options.timeout,path,options.modelname,options.maxspiral,options.imagescript,options.useDS9)
 	elif options.action[0] == 'bright-star':
 		for p in path:
-			bsc = find_bright_star(tp.telescope,p[0],p[1])
+			bsc = tp.find_bright_star(p[0],p[1])
 			j.executeCommand(tp.telescope,'move {0} {1}'.format(bsc[1],bsc[2]))
 			rts2.tpvp.wait_for_key(options.timeout)
 	elif options.action[0] == 'verify-brights':
