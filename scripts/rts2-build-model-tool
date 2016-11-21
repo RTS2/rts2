@@ -91,7 +91,7 @@ try:
 		path = options.path
 
 	if options.action[0] == 'line':
-		print tp.get_altazm_line(telescope)
+		print tp.get_altazm_line()
 	elif options.action[0] == 'spiral':
 		tp.run_spiral(options.spiral,options.timeout)
 	elif options.action[0] == 'model':
