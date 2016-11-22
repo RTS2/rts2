@@ -316,7 +316,7 @@ class TPVP:
 				print _('converged')
 				return True,flux_history,flux_ratio_history,history_x,history_y
 			# calculate offsets in alt-az, increment offsets
-			off_radec,off_azalt,flux,flux_ratio,first_xy = __get_offset_by_image(vfn,useDS9,mn,self.fov_center)
+			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(vfn,useDS9,mn,self.fov_center)
 			print _('Brightest flux {0:.2f}').format(flux)
 			if off_radec is None:
 				return False,flux_history,flux_ratio_history,history_x,history_y
@@ -349,7 +349,7 @@ class TPVP:
 							except Exception,ex:
 								d = ds9.ds9()
 						d.set('file {0}'.format(fn))
-					off_radec,off_azalt,flux,flux_ratio,first_xy = __get_offset_by_image(fn,useDS9,mn,self.fov_center)
+					off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(fn,useDS9,mn,self.fov_center)
 					print _('Brightest in {0} flux {1:.1f}').format(fn,flux)
 					last_step += 1
 	
