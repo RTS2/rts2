@@ -15,4 +15,5 @@ cd $HOME/rts2/scripts/u_point/
 #
 #
 # same with DSS image retrieval
-./u_acquire.py --level DEBUG --mode-continues --fetch-dss-image
+./u_acquire.py --base-path  /tmp/u_point --device DeviceRts2 --mode-continues --fetch-dss-image --level DEBUG 
+

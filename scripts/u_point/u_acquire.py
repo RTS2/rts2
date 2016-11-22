@@ -76,6 +76,7 @@ class Acquisition(object):
       meteo=None,
       base_path=None,
       device=None,
+      use_bright_stars=None,
   ):
     
     self.dbg=dbg
@@ -90,6 +91,7 @@ class Acquisition(object):
     self.meteo=meteo
     self.base_path=args.base_path
     self.device=device
+    self.use_bright_stars=use_bright_stars
     #
     self.obs=obs
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
@@ -115,9 +117,11 @@ class Acquisition(object):
   def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True):
     pd_cat=None
     if not os.path.isfile(ptfn):
-      self.lg.debug('fetch_pandas: {} does not exist'.format(ptfn))
       if sys_exit:
+        self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
         sys.exit(1)
+      else:
+        self.lg.debug('fetch_pandas: {} does not exist'.format(ptfn))
       return None
     
     pd_cat = pd.read_csv(ptfn, sep=',',header=None)
@@ -333,13 +337,13 @@ class Acquisition(object):
 
   def expose(self,nml_id=None,cat_no=None,cat_eq=None,exp=None):
 
-    device.mount_set(cat_eq=cat_eq,nml_id=nml_id,cat_no=cat_no)
+    self.device.store_mount_data(cat_eq=cat_eq,nml_id=nml_id,cat_no=cat_no)
 
     pressure=temperature=humidity=None
     if self.meteo is not None:
       pressure,temperature,humidity=meteo.retrieve()
       
-    image_relfn,exp=device.ccd_expose(exp=exp,pressure=pressure,temperature=temperature,humidity=humidity)
+    image_relfn,exp=self.device.ccd_expose(exp=exp,pressure=pressure,temperature=temperature,humidity=humidity)
     # ToDo
     if self.mode_watchdog:
       self.lg.info('expose: waiting for image_fn from acq_queue')
@@ -351,7 +355,7 @@ class Acquisition(object):
     else:
       image_fn=os.path.join(self.base_path,image_relfn)
     
-    acq=device.mount_retrieve_position()
+    acq=self.device.fetch_mount_data()
     self.store_acquired_position(acq=acq)
 
   def find_near_neighbor(self,eq_nml=None,altitude_interval=None,max_separation=None):
@@ -390,7 +394,7 @@ class Acquisition(object):
     if not self.mode_continues:
       user_input=self.create_socket()
     #
-    device.ccd_init()  
+    self.device.ccd_init()  
     # self.nml contains only positions which need to be observed
     last_exposure=exp=.1
     not_first=False
@@ -400,7 +404,11 @@ class Acquisition(object):
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
       aa=SkyCoord(az=aa_nml.az.radian,alt=aa_nml.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
       eq_nml=self.to_eq(aa=aa)
-      cat_eq=self.find_near_neighbor(eq_nml=eq_nml,altitude_interval=altitude_interval,max_separation=max_separation)
+      if self.use_bright_stars:
+        cat_eq=self.find_near_neighbor(eq_nml=eq_nml,altitude_interval=altitude_interval,max_separation=max_separation)
+      else:
+        cat_eq=eq_nml # observe at the current nominal position
+        
       if cat_eq: # else no suitable object found, try next
         if not self.mode_continues:
             while True:
@@ -420,82 +428,83 @@ class Acquisition(object):
    
         else:
           self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,exp=exp)
-    
-  def re_plot(self,i):
+
+
+  def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
     self.nml=list()
     self.acq=list()
     self.fetch_acquired_positions()
-    c_len=len(self.acq)
-    
-    if c_len <= self.l_len:
-      return
-    
-    self.l_len=c_len
-    #self.lg.debug('re_plot: reloading')
-    self.fetch_nominal_altaz(ptfn='/home/wildi/u_point/nominal_positions.nml')
+    self.fetch_nominal_altaz(ptfn=ptfn)
     self.drop_nominal_altaz()
     
     acq_az = [x.aa_mnt.az.degree for x in self.acq if x.aa_mnt is not None]
     acq_alt = [x.aa_mnt.alt.degree for x in self.acq if x.aa_mnt is not None]
     acq_nml_az = [x.aa_nml.az.degree for x in self.nml]
     acq_nml_alt = [x.aa_nml.alt.degree for x in self.nml]
-
     self.ax.clear()
+    self.ax.set_title(self.title)
+    self.ax.set_xlim([-az_step,360.+az_step]) # ToDo use args.az_step for that
     self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
-    if len(acq_az) < 2:
-      self.ax.scatter(acq_az, acq_alt,color='blue')
-    else:
-      self.ax.scatter(acq_az[:-2], acq_alt[:-2],color='blue')
+
+    if len(acq_az) > 0:
       self.ax.scatter(acq_az[-1], acq_alt[-1],color='magenta',s=240.)
-
-    self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
-    self.ax.scatter(acq_az, acq_alt,color='blue')
-    self.ax.grid(True)
-    self.ax.set_title(self.tit)
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
-    self.af.data = list(zip(acq_az,acq_alt,annotes))
-
+      self.ax.scatter(acq_az, acq_alt,color='blue')
     
-  def plot(self,title=None,projection=None,ds9_display=None,animate=None):
+    if animate:
+      eq_mnt=self.device.fetch_mount_position()
+      if eq_mnt is None:
+        self.lg.debug('re_plot: mount position is None')
+        # shorten it
+        now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
+        self.ax.set_xlabel('azimuth [deg], at: {0} [UTC]'.format(now))
+      else:      
+        aa_mnt=self.to_altaz(cat_eq=eq_mnt)
+        self.lg.debug('re_plot: mount position: {0:.2f}, {1:.2f} [deg]'.format(aa_mnt.az.degree,aa_mnt.alt.degree))
+        self.ax.scatter(aa_mnt.az.degree,aa_mnt.alt.degree,color='green',facecolors='none', edgecolors='g',s=240.)
+        self.ax.scatter(aa_mnt.az.degree,aa_mnt.alt.degree,color='green',marker='+',s=600.)
+        self.ax.set_xlabel('azimut [deg], mt pos: {0:.2f}, {1:.2f} [deg], at: {2} [UTC]'.format(aa_mnt.az.degree,aa_mnt.alt.degree,str(eq_mnt.obstime)[:-7]))
+
+      self.ax.text(0., 0., 'positions:',color='black', fontsize=12,verticalalignment='bottom')
+      self.ax.text(80., 0., 'nominal,',color='red', fontsize=12,verticalalignment='bottom')
+      self.ax.text(140., 0., 'acquired,',color='blue', fontsize=12,verticalalignment='bottom')
+      self.ax.text(210., 0., 'current,',color='magenta', fontsize=12,verticalalignment='bottom')
+      self.ax.text(270., 0., 'mount',color='green', fontsize=12,verticalalignment='bottom')
+
+    else:
+      self.ax.set_xlabel('azimuth [deg]')
+      
+    self.ax.set_ylabel('altitude [deg]')  
+    self.ax.grid(True)
+      
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
+    ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
+    # does not exits at the beginning
+    try:
+      self.af.data = list(zip(acq_az,acq_alt,annotes))
+    except AttributeError:
+      return acq_az,acq_alt,annotes
+
+  
+  def plot(self,title=None,ptfn=None,az_step=None,ds9_display=None,animate=None):
     import matplotlib
     import matplotlib.animation as animation
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
     import matplotlib.pyplot as plt
     plt.ioff()
-    self.fig = plt.figure(figsize=(8,6))
-    # ToDO These plots do not yet yield a useful result 
-    ##ax = fig.add_subplot(111,projection=projection)
-    ##ax = fig.add_subplot(111,projection='polar') #'mollweide' 
-    self.ax = self.fig.add_subplot(111)
-    self.tit=title
-    self.ax.set_title(self.tit)
-    acq_az = [x.aa_mnt.az.degree for x in self.acq if x.aa_mnt is not None]
-    acq_alt = [x.aa_mnt.alt.degree for x in self.acq if x.aa_mnt is not None]
-    acq_nml_az = [x.aa_nml.az.degree for x in self.nml]
-    acq_nml_alt = [x.aa_nml.alt.degree for x in self.nml]
+    fig = plt.figure(figsize=(8,6))
+    self.ax = fig.add_subplot(111)
+    self.title=title # ToDo could be passed via animation.F...
 
-    self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
-    #ax.scatter(acq_az, acq_alt,color='blue')
-    if len(acq_az) < 2:
-      self.ax.scatter(acq_az, acq_alt,color='blue')
-    else:
-      self.ax.scatter(acq_az[:-2], acq_alt[:-2],color='blue')
-      self.ax.scatter(acq_az[-1], acq_alt[-1],color='magenta',s=240.)
-    ##ax.set_rmax(90.)
-    #ax.set_yticklabels(['80','70','60','50','40','30','20','10','0',])
-    #ax.set_theta_zero_location("N")
-    self.ax.grid(True)
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
-    ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
+    if animate:
+      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate,),interval=1000)
+    
+    (acq_az,acq_alt,annotes)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
     self.af = SimpleAnnoteFinder(acq_az,acq_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True)
     ##self.af =  SimpleAnnoteFinder(acq_nml_az,acq_nml_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=False,lg=self.lg)
-    self.fig.canvas.mpl_connect('button_press_event', self.af)
-    self.l_len=0
-    if animate:
-      ani = animation.FuncAnimation(self.fig, self.re_plot,interval=1000)
-      
+    fig.canvas.mpl_connect('button_press_event',self.af)
+
     plt.show()
     
 
@@ -523,37 +532,48 @@ def arg_float(value):
 if __name__ == "__main__":
 
   parser= argparse.ArgumentParser(prog=sys.argv[0], description='Acquire not yet observed positions')
+  # basic options
   parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
   parser.add_argument('--level', dest='level', default='WARN', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
-
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
-  parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0], type=arg_floats, help=': %(default)s, visual star brightness [mag], format "p1 p2"')
-  parser.add_argument('--azimuth-interval',   dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg],  allowed azimuth, format "p1 p2"')
-  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[10.,80.],type=arg_floats,help=': %(default)s [deg],  allowed altitude, format "p1 p2"')
-  parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, file with on site observable objects, see u_select.py')
-  parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
-  parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
-  parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, True: create positions to be observed, see --nominal-positions')
-  parser.add_argument('--az-step', dest='az_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
-  parser.add_argument('--alt-step', dest='alt_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
-  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], pixel scale of the CCD camera')
-  parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: simulation mode: no user input, no images fetched from DSS, image download specify: --fetch-dss-image')
-  parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation (nominal, catalog) position')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  #
+  #
   parser.add_argument('--mode-watchdog', dest='mode_watchdog', action='store_true', default=False, help=': %(default)s, True: an RTS2 external CCD camera must be used')
   parser.add_argument('--watchdog-directory', dest='watchdog_directory', action='store', default='.',type=str, help=': %(default)s , directory where the RTS2 external CCD camera writes the images')
-  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
-  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  #
   parser.add_argument('--meteo-class', dest='meteo_class', action='store', default='meteo', help=': %(default)s, specify your meteo data collector, see meteo.py for a stub')
+  # group device
   parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your devices (mount,ccd), see devices.py')
   parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, simulation mode: images fetched from DSS')
+  parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: simulation mode: no user input, no images fetched from DSS, image download specify: --fetch-dss-image')
+  parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
+  # group plot
+  parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, True: and if --plot is specified: click on data point opens FITS with DS9')
   parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
+  #
+  # group create
+  parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, True: create positions to be observed, see --nominal-positions')
+  parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
+  parser.add_argument('--azimuth-interval',   dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg],  allowed azimuth, format "p1 p2"')
+  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[10.,80.],type=arg_floats,help=': %(default)s [deg],  allowed altitude, format "p1 p2"')
+  parser.add_argument('--az-step', dest='az_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
+  parser.add_argument('--alt-step', dest='alt_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
+  # 
+  parser.add_argument('--use-bright-stars', dest='use_bright_stars', action='store', default=False, type=int, help=': %(default)s, True: use selected stars fron Yale bright Star catalog as target, see u_select.py')
+  parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, file with on site observable objects, see u_select.py')  
+  parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation (nominal, catalog) position')
+  #
+  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
+  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], pixel scale of the CCD camera')
 
+ 
+  
   args=parser.parse_args()
 
   if args.toconsole:
@@ -588,7 +608,7 @@ if __name__ == "__main__":
   px_scale=args.pixel_scale/3600./180.*np.pi # arcsec, radian
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
-  device= Device(lg=logger,obs=obs,px_scale=px_scale,ccd_size=args.ccd_size,base_path=args.base_path,fetch_dss_image=True)
+  device= Device(lg=logger,obs=obs,px_scale=px_scale,ccd_size=args.ccd_size,base_path=args.base_path,fetch_dss_image=args.fetch_dss_image)
   ac= Acquisition(
     dbg=args.debug,
     lg=logger,
@@ -601,6 +621,7 @@ if __name__ == "__main__":
     meteo=meteo,
     base_path=args.base_path,
     device=device,
+    use_bright_stars=args.use_bright_stars,
   )
   
   if not device.check_presence():
@@ -618,7 +639,7 @@ if __name__ == "__main__":
   if args.create_nominal:
     ac.store_nominal_altaz(az_step=args.az_step,alt_step=args.alt_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,ptfn=args.nominal_positions)
     if args.plot:
-      ac.plot(title='to be observed nominal positions',ds9_display=args.ds9_display) # no images yet
+      ac.plot(title='to be observed nominal positions',ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=False) # no images yet
     sys.exit(1)
 
   ac.fetch_nominal_altaz(ptfn=args.nominal_positions)
@@ -627,11 +648,13 @@ if __name__ == "__main__":
   ac.drop_nominal_altaz()
 
   if args.plot:
-    ac.plot(title='AltAz progress report acquired (blue), to be observed nominal positions (red)',ds9_display=args.ds9_display,animate=args.animate)
+    ac.plot(title='progress report',ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=args.animate)
     sys.exit(1)
    
   # candidate objects, predefined with u_select.py
-  ac.fetch_observable_catalog(ptfn=args.observable_catalog)
+  if args.use_bright_stars:
+    ac.fetch_observable_catalog(ptfn=args.observable_catalog)
+    
   # acquire unobserved positions
   ac.acquire(
     altitude_interval=altitude_interval,

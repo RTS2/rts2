@@ -104,7 +104,7 @@ class AstrometryScript:
     self.infpath=self.odir + '/input.fits'
     shutil.copy(self.fits_file, self.infpath)
 
-  def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None):
+  def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False, extension=None, center=False, downsample=None, wrkr=None):
     # '--no-verify: if not specified the output is different
     solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits','--no-verify',]
 
@@ -151,11 +151,14 @@ class AstrometryScript:
 
     if timeout is not None:
       def __term_proc(sig, stack):
+        global lg # not nice
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         if verbose:
           self.lg.warn( 'killing process, as timeout was reached')
+        self.lg.error('{}: time out: {} reached, closing down'.format(wrkr, timeout))
+
       signal.signal(signal.SIGALRM, __term_proc)
-      signal.alarm(timeout)
+      signal.alarm(timeout) # timeout in seconds
     #radecline=re.compile('Field center: \(RA H:M:S, Dec D:M:S\) = \(([^,]*),(.*)\).')
     # Field center: (RA,Dec) = (88.550385, -64.468266) deg.
     # now: 

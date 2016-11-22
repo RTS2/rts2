@@ -152,35 +152,34 @@ class SolverResult():
     self.dec=dec
     self.fn= fn
 
-class SolveField():
+class Solver():
   """Solve a field with astrometry.net """
-  def __init__(self, lg=None, fn=None, blind=False, ra=None, dec=None, scale=None, radius=None, replace=None, verbose=None):
+  def __init__(self, lg=None, blind=False, scale=None, radius=None, replace=None, verbose=None,timeout=None):
     self.lg = lg
-    self.fn= fn
     self.blind= blind
-    self.ra= ra
-    self.dec= dec
-    self.scale  = scale
+    self.scale  = scale/np.pi*3600.*180. # solve-field -u app arcsec/pixel
     self.radius = radius
     self.replace= replace
     self.verbose= verbose
-
-  def solveField(self):
+    self.timeout=timeout
+    
+  def solve_field(self,fn=None, ra=None, dec=None):
     try:
-      self.solver = astrometry_3.AstrometryScript(lg=self.lg,fits_file=self.fn)
+      self.solver = astrometry_3.AstrometryScript(lg=self.lg,fits_file=fn)
     except Exception as e:
-      self.lg.debug('SolveField: solver died, file: {}, exception: {}'.format(self.fn, e))
+      self.lg.debug('Solver: solver died, file: {}, exception: {}'.format(fn, e))
       return None
       
+    # base class method
     if self.blind:
-      center=self.solver.run(scale=self.scale, replace=self.replace,verbose=self.verbose)
+      center=self.solver.run(scale=self.scale, replace=self.replace,timeout=self.timeout,verbose=self.verbose,wrkr=current_process().name)
     else:
       # ToDo
-      center=self.solver.run(scale=self.scale,ra=self.ra,dec=self.dec,radius=self.radius,replace=self.replace,verbose=self.verbose)
+      center=self.solver.run(scale=self.scale,ra=ra,dec=dec,radius=self.radius,replace=self.replace,timeout=self.timeout,verbose=self.verbose,wrkr=current_process().name)
 
       if center!=None:
         if len(center)==2:
-          return SolverResult(ra=center[0],dec=center[1],fn=self.fn)
+          return SolverResult(ra=center[0],dec=center[1],fn=fn)
       return None
 
 class Analysis(object):
@@ -191,28 +190,25 @@ class Analysis(object):
       obs_lat=None,
       obs_height=None,
       px_scale=None,
-      radius=None,
       ccd_size=None,
       acquired_positions=None,
       analyzed_positions=None,
       u_point_positions_base=None,
       break_after=None,
-      do_not_use_astrometry=None,
       verbose_astrometry=None,
       ds9_display=None,
       base_path=None,
-
+      solver=None,
   ):
     self.dbg=dbg
     self.lg=lg
     self.break_after=break_after
-    self.do_not_use_astrometry=do_not_use_astrometry
     self.verbose_astrometry=verbose_astrometry
     self.ds9_display=ds9_display
     self.px_scale=px_scale
-    self.radius=radius
     self.ccd_size=ccd_size
     self.base_path=base_path
+    self.solver=solver
     #
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
@@ -300,7 +296,7 @@ class Analysis(object):
           astr_eq=SkyCoord(ra=rw['astr_ra'],dec=rw['astr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
         else:
           astr_eq=None
-          self.lg.debug('fetch_positions: astr None')
+          #self.lg.debug('fetch_positions: astr None')
           # to create more or less identical plots:
           #continue
           
@@ -361,7 +357,7 @@ class Analysis(object):
     
     # SExtractor
     self.store_u_point(fn=self.u_point_positions_base+'sxtr.anl',acq=acq,ra=sxtr_ra,dec=sxtr_dec)
-    if not self.do_not_use_astrometry:
+    if self.solver is not None:
       # astrometry.net              
       self.store_u_point(fn=self.u_point_positions_base+'astr.anl',acq=acq,ra=astr_ra,dec=astr_dec)
                     
@@ -421,9 +417,10 @@ class Analysis(object):
       self.display_fits(fn=fn, x=brst[i_x],y=brst[i_y],color='red')
     return x,y
     
-  def astrometry(self,acq=None,pcn='single'):
-    if self.do_not_use_astrometry:
-      return None
+  def astrometry(self,acq=None,pcn=None):
+    if self.solver is None:
+      return
+
     if self.base_path in acq.image_fn:
       fn=acq.image_fn
     else:
@@ -432,9 +429,8 @@ class Analysis(object):
     self.lg.debug('{0}:         mount set: {1:.6f} {2:.6f}, file: {3}'.format(pcn,acq.eq.ra.degree,acq.eq.dec.degree,fn))
     if acq.eq_mnt.ra.radian != 0. and acq.eq_mnt.dec.radian != 0.:
       self.lg.debug('{0}:   mount read back: {1:.6f} {2:.6f}, file: {3}'.format(pcn,acq.eq_mnt.ra.degree,acq.eq_mnt.dec.degree,fn))
-    astr_pixel_scale=self.px_scale/np.pi*3600.*180. # solve-field -u app arcsec/pixel
-    sf= SolveField(lg=self.lg, fn=fn, blind=False, ra=acq.eq.ra.degree, dec=acq.eq.dec.degree,scale=astr_pixel_scale, radius=self.radius, replace=False, verbose=self.verbose_astrometry)
-    sr= sf.solveField()
+
+    sr= self.solver.solve_field(fn=acq.image_fn,ra=acq.eq.ra.degree,dec=acq.eq.dec.degree,)
     if sr is not None:
       self.lg.debug('{0}: astrometry result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sr.ra,sr.dec,fn))
       astr_mnt_eq=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs)
@@ -443,7 +439,13 @@ class Analysis(object):
       self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,fn))
       return None
 
-  def fill_scatter(self, anl=None,acq=None):
+      
+  def re_plot(self,i=0,animate=None):
+    self.acq=list()
+    self.anl=list()
+    self.fetch_positions(fn=self.analyzed_positions,fetch_acq=False,sys_exit=False)
+    self.fetch_positions(fn=self.acquired_positions,fetch_acq=True,sys_exit=True)
+
     anl_sxtr_eq_ra = [x.sxtr.ra.degree for x in self.anl if x.eq is not None]
     anl_sxtr_eq_dec = [x.sxtr.dec.degree for x in self.anl if x.sxtr is not None]
     anl_astr_eq_ra = [x.astr.ra.degree for x in self.anl if x.astr is not None]
@@ -451,28 +453,42 @@ class Analysis(object):
 
     acq_eq_ra =[x.eq.ra.degree for x in self.acq if x.eq is not None]
     acq_eq_dec = [x.eq.dec.degree for x in self.acq if x.eq is not None]
+    self.ax.clear()
     self.ax.scatter(acq_eq_ra, acq_eq_dec,color='blue',s=120.)
     self.ax.scatter(anl_sxtr_eq_ra, anl_sxtr_eq_dec,color='red',s=40.)
     self.ax.scatter(anl_astr_eq_ra, anl_astr_eq_dec,color='yellow',s=10.)
 
     annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
-    if self.af is not None:
-      self.af.data = list(zip(acq_eq_ra,acq_eq_dec,annotes))
+
+    self.ax.set_xlim([0.,360.]) 
+
+    if animate:
+      self.ax.set_title('progress report: {}'.format(self.title))
+      now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
+      self.ax.set_xlabel('azimut [deg], at: {0} [UTC]'.format(now))
     else:
-      return annotes,acq_eq_ra,acq_eq_dec 
+      self.ax.set_title(self.title)
+      self.ax.set_xlabel('azimuth [deg]')
       
-  def re_plot(self,i):
-    self.acq=list()
-    self.anl=list()
-    self.fetch_positions(fn=self.analyzed_positions,fetch_acq=False,sys_exit=False)
-    self.fetch_positions(fn=self.acquired_positions,fetch_acq=True,sys_exit=True)
-    #self.ax.clear()
-    self.fill_scatter(anl=self.anl,acq=self.acq)
+    self.ax.text(0., 0., 'positions:',color='black',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
+    self.ax.text(60., 0., 'acquired,',color='blue',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
+    self.ax.text(110., 0., 'sextr,',color='red',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
+    self.ax.text(140., 0., 'astr',color='black',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
+    self.ax.text(160., 0., 'yellow',color='black',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
+
+    self.ax.set_ylabel('altitude [deg]')  
     self.ax.grid(True)
-    self.ax.set_title(self.tit)
+      
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
+    ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
+    # does not exits at the beginning
+    try:
+      self.af.data = list(zip(acq_eq_ra,acq_eq_dec,annotes))
+    except AttributeError:
+      return acq_eq_ra,acq_eq_dec,annotes
 
     
-  def plot(self,title=None,projection='mollweide',animate=None):
+  def plot(self,title=None,animate=None):
 
     import matplotlib
     import matplotlib.animation as animation
@@ -482,19 +498,17 @@ class Analysis(object):
     import matplotlib.pyplot as plt
     plt.ioff()
     fig = plt.figure(figsize=(8,6))
-    self.ax = fig.add_subplot(111)#, projection=projection)
-    self.tit=title
-    self.ax.set_title(self.tit)
-    #self.ax.set_xticklabels(['210','240','270','300','330','0','30','60','90','120','150',])
+    self.ax = fig.add_subplot(111)
+    self.title=title
 
-    self.ax.grid(True)
-    self.af=None
-    annotes,acq_eq_ra,acq_eq_dec=self.fill_scatter(anl=self.anl,acq=self.acq)
-    
-    self.af= SimpleAnnoteFinder(acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5.,ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True)
-    fig.canvas.mpl_connect('button_press_event', self.af)
     if animate:
-      ani = animation.FuncAnimation(fig, self.re_plot, interval=10000)
+      ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=1000)
+    
+    (acq_eq_ra,acq_eq_dec,annotes)=self.re_plot(animate=animate)
+
+    self.af = SimpleAnnoteFinder(acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg, annotate_fn=True)
+    fig.canvas.mpl_connect('button_press_event',self.af)
+
     plt.show()
 
 # really ugly!
@@ -526,6 +540,7 @@ if __name__ == "__main__":
   parser.add_argument('--u-point-positions-base', dest='u_point_positions_base', action='store', default='u_point_positions_', help=': %(default)s, base path for u_point.py input (SExtractor, astrometry.net)')
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], arcmin/pixel of the CCD camera')
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=arg_float, help=': %(default)s [deg], astrometry search radius')
+  parser.add_argument('--timeout', dest='timeout', action='store', default=600,type=int, help=': %(default)s [sec], astrometry timeout for finding a solution')
   parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
@@ -548,8 +563,12 @@ if __name__ == "__main__":
     soh=logging.StreamHandler(sys.stdout)
     soh.setLevel(args.level)
     logger.addHandler(soh)
-  
+    
   px_scale=args.pixel_scale/3600./180.*np.pi
+  solver=None
+  if not args.do_not_use_astrometry: # double neg
+    solver= Solver(lg=logger,blind=False,scale=px_scale,radius=args.radius,replace=False,verbose=args.verbose_astrometry,timeout=args.timeout)
+    
   anl= Analysis(
     dbg=args.debug,
     lg=logger,
@@ -557,16 +576,14 @@ if __name__ == "__main__":
     obs_lat=args.obs_lat,
     obs_height=args.obs_height,
     px_scale=px_scale,
-    radius=args.radius,
     ccd_size=args.ccd_size,
     acquired_positions=args.acquired_positions,
     analyzed_positions=args.analyzed_positions,
     u_point_positions_base=args.u_point_positions_base,
     break_after=args.break_after,
-    do_not_use_astrometry=args.do_not_use_astrometry,
-    verbose_astrometry=args.verbose_astrometry,
     ds9_display=args.ds9_display,
     base_path=args.base_path,
+    solver=solver,
   )
 
   if not os.path.exists(args.base_path):
@@ -575,7 +592,7 @@ if __name__ == "__main__":
   anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
   anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
   if args.plot:
-    anl.plot(title='acquired (blue), sextracted (red), astrometry (yellow) positions',animate=args.animate)
+    anl.plot(title='overview analyzed positions',animate=args.animate)
     sys.exit(1)
     
   lock=Lock()

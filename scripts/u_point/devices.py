@@ -50,7 +50,7 @@ class DeviceDss(object):
     px_scale=None,
     ccd_size=None,
     base_path=None,
-    fetch_dss_image=None, # not used in this class
+    fetch_dss_image=None, 
   ):
     self.lg=lg
     self.dss_base_url='http://archive.eso.org/dss/dss/'
@@ -58,6 +58,7 @@ class DeviceDss(object):
     self.px_scale_arcmin=px_scale *180. * 60. /np.pi # to arcmin
     self.ccd_size=ccd_size
     self.base_path=base_path
+    self.fetch_dss_image=fetch_dss_image
     self.cat_eq=None
     self.dss_fn=None
     self.exp=.1 
@@ -71,7 +72,13 @@ class DeviceDss(object):
     
   def check_presence(self,**kwargs):
     return True
-  
+
+  def fetch_mount_position(self):
+    if self.cat_eq is None:
+      return None
+
+    return self.cat_eq
+                  
   def ccd_init(self):
     pass
 
@@ -96,30 +103,37 @@ class DeviceDss(object):
     dfn='dss_{}_{}.fits'.format(args['ra'],args['dec']).replace('-','m').replace('.','_').replace('_fits','.fits') #ToDo lazy
     self.dss_fn=os.path.join(self.base_path,dfn)
     self.dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-
-    r=requests.get(self.dss_base_url, params=args, stream=True)
-    self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-    self.lg.debug('expose: DSS: {}'.format(r.url))
-    while True:
-      if r.status_code == 200:
-        with open(self.dss_fn, 'wb') as f:
-          #for data in tqdm(r.iter_content()):
-          f.write(r.content)
-          for block in r.iter_content(1024):
-            f.write(block)
-          break
-      else:
-        self.lg.warn('expose: could not retrieve DSS: {}, continuing to retrieve'.format(r.url))
-    self.lg.debug('expose: DSS: saved {}'.format(r.url))
+    if self.fetch_dss_image: # e.g., Done Concordia almost offline
+      r=requests.get(self.dss_base_url, params=args, stream=True)
+      
+      self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+      #self.lg.debug('expose: DSS: {}'.format(r.url))
+      while True:
+        if r.status_code == 200:
+          with open(self.dss_fn, 'wb') as f:
+            #for data in tqdm(r.iter_content()):
+            f.write(r.content)
+            for block in r.iter_content(1024):
+              f.write(block)
+            break
+        else:
+          self.lg.warn('expose: could not retrieve DSS: {}, continuing to retrieve'.format(r.url))
+      self.lg.debug('expose: DSS: saved {}'.format(r.url))
+    else:
+      self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+      self.lg.debug('expose: not fetching from DSS and not storing: {}'.format(self.dss_fn))
+        
     
     return self.dss_fn,self.exp
     
-  def mount_set(self,cat_eq=None,nml_id=None,cat_no=None):
+  def store_mount_data(self,cat_eq=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
     self.cat_eq=cat_eq
   
-  def mount_retrieve_position(self):
+  def fetch_mount_data(self):
+    if self.cat_eq is None:
+      return None
     JD=-1.      
     acq_eq=SkyCoord(ra=self.cat_eq.ra.radian,dec=self.cat_eq.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
     acq_eq_woffs=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
@@ -167,7 +181,8 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.obs=obs
     self.base_path=base_path
     self.px_scale=px_scale
-    self.ccd_size=ccd_size 
+    self.ccd_size=ccd_size
+    self.fetch_dss_image=fetch_dss_image
 
     self.mnt_nm=None
     self.ccd_nm=None
@@ -184,44 +199,38 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.humidity=None
     self.image_fn=None
     # a bit a murcks
+    # RTS2 dummy driver has only noisy pictures
     self.d_dss=None
     if fetch_dss_image:
-        self.d_dss=DeviceDss(lg=self.lg,obs=self.obs,px_scale=self.px_scale,ccd_size=self.ccd_size,base_path=self.base_path)
+        self.d_dss=DeviceDss(lg=self.lg,obs=self.obs,px_scale=self.px_scale,ccd_size=self.ccd_size,base_path=self.base_path,fetch_dss_image=self.fetch_dss_image)
 
     
-  def check_presence(self,**kwargs):
-    # Todo pythonic?    
-    if kwargs is None:
-      self.lg.error('expected key words: mnt_nm, ccd_nm, exiting'.format(name, value))
-      sys.exit(1)
-    mnt_nm=ccd_nm=None
-    for name, value in kwargs.items():
-      if 'mnt_nm' in name:
-        mnt_nm=value
-      elif 'ccd_nm' in name:
-        ccd_nm=value
-      else:
-        self.lg.error('got unexpected key word: {0} = {1},exiting'.format(name, value))
-        sys.exit(1)
-
+  def check_presence(self):
     cont=True
     try:
       self.mnt_nm = self.getDeviceByType(scriptcomm_3.DEVICE_TELESCOPE)
-      self.lg.debug('check_rts2_devices: mount device: {}'.format(mnt_nm))
-    except:
-      self.lg.error('check_rts2_devices: could not find telescope')
+      self.lg.debug('check_presence: mount device: {}'.format(self.mnt_nm))
+    except Exception as e:
+      self.lg.error('check_presence: could not find telescope')
+      self.lg.error('check_presence: exception: {}'.format(e))
       cont= False
     try:
       self.ccd_nm = self.getDeviceByType(scriptcomm_3.DEVICE_CCD)
-      self.lg.debug('check_rts2_devices: CCD device: {}'.format(self.ccd_nm))
-    except:
-      self.lg.error('check_rts2_devices: could not find CCD')
+      self.lg.debug('check_presence: CCD device: {}'.format(self.ccd_nm))
+    except Exception as e:
+      self.lg.error('check_presence: could not find CCD')
+      self.lg.error('check_presence: exception: {}'.format(e))
       cont= False
     
-    if not cont:
-      return False
-    
-    return True
+    return cont
+  
+  def fetch_mount_position(self):
+    #  self.cat_eq is None!
+    now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
+    ras,decs=self.getValue('TEL',self.mnt_nm).split()
+    self.lg.debug('fetch_mount_position: TEL ra: {0:.3f},: dec: {1:.3f}'.format(float(ras),float(decs)))
+    eq_mnt=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    return eq_mnt
   
   def ccd_init(self):
     # full area
@@ -242,9 +251,9 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     # RTS2 does synchronization mount/CCD
     self.lg.debug('expose: time {}'.format(self.exp))
     self.setValue('exposure',self.exp)
-    self.dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+    self.dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     self.image_fn = self.exposure()
-    self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+    self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     self.lg.debug('expose: image from RTS2: {}'.format(self.image_fn))
     # fetch image from DSS
     if self.fetch_dss_image:
@@ -254,13 +263,13 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
       except:
           pass # do not care
 
-      self.d_dss.mount_set(cat_eq=self.cat_eq,nml_id=self.nml_id,cat_no=self.cat_no)
+      self.d_dss.store_mount_data(cat_eq=self.cat_eq,nml_id=self.nml_id,cat_no=self.cat_no)
       self.image_fn,self.exp=self.d_dss.ccd_expose(exp=self.exp,pressure=self.pressure,temperature=self.temperature,humidity=self.humidity)
       self.lg.debug('expose: image from DSS: {}'.format(self.image_fn))
 
     return self.image_fn,self.exp
   
-  def mount_set(self,cat_eq=None,nml_id=None,cat_no=None):
+  def store_mount_data(self,cat_eq=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
     self.cat_eq=cat_eq
@@ -270,7 +279,10 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.lg.debug('ORI: {0:.3f},{1:.3f}'.format(float(ra_oris),float(dec_oris)))
     # ToD return
     
-  def mount_retrieve_position(self):
+  def fetch_mount_data(self):
+    if self.cat_eq is None:
+      return None
+    
     JD=float(self.getValue('JD',self.mnt_nm))
     ras,decs=self.getValue('ORI',self.mnt_nm).split()
     now = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
