@@ -2488,7 +2488,7 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 
 	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || conn->getOtherType () == DEVICE_TYPE_ROTATOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
 	{
-		name = std::string (conn->getName ()) + " " + val->getName ();
+		name = std::string (conn->getName ()) + "." + val->getName ();
 	}
 
 	switch (val->getValueExtType ())
