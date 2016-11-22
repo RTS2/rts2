@@ -2077,11 +2077,8 @@ class AltAzTest(unittest.TestCase):
 		try:
 			self.model.add_extra('az', 'sincos', 'az;el', '2;2')
 			self.fail('added duplicated argument')
-		except gpoint.DuplicatedExtra:
-			self.assertTrue(True,'raised DuplicatedExtra as expected')
-			pass
-
-
+		except gpoint.DuplicatedExtra,de:
+			self.assertTrue(True,'raised DuplicatedExtra as expected on argument {0}'.format(de.argument))
 
 	def testPlot(self):
 		import os
@@ -2106,7 +2103,7 @@ class AltAzTest(unittest.TestCase):
 			m1.load(mf)
 			m2 = gpoint.GPoint(0)
 			m2.load(mf)
-			# self-adding; result should be two directories 
+			# self-adding; result should be original multiplied by 2
 			m1.add_model(m2)
 			m1.save(td + '/model_added')
 			for p in m1.best.params.keys():
@@ -2115,5 +2112,58 @@ class AltAzTest(unittest.TestCase):
 		finally:
 			import shutil
 			shutil.rmtree(td)
+
+	def testRefine(self):
+		import tempfile
+		td = tempfile.mkdtemp()
+		try:
+			# create test model file
+			modelin = td + '/test.modelin'
+			f = open(modelin, 'w')
+			f.write('RTS2_ALTAZ -35.731063627" 0" 8.26451233274" -44.4864702882" 0" -25.4325872048" -3.19003461643"\naz	1"	sincos	az;el	1;1\nel	1"	cos	el	1\n')
+
+			f.close()
+
+			m = gpoint.GPoint(0)
+			m.load(modelin)
+			m.process_files(['gpoint_in_altaz'],None)
+			m.add_extra('az','sincos','el;az','1;1')
+			m.remove_extra('az_sincos_az_el_1_0_1_0')
+			try:
+				m.remove_extra('az_sincos_az_el_2_0_1_0')
+			except gpoint.NonExistentExtra,ne:
+				self.assertTrue(True,'tested removal of non-existend argument'.format(ne.argument))
+
+			m.fit()
+			m.fit_to_extra()
+			morig = gpoint.GPoint(0)
+			morig.load(modelin)
+			m.add_model(morig)
+
+			modelout = td + '/out.gpm'
+			m.save(modelout)
+
+			mtest = gpoint.GPoint(0)
+			mtest.load(modelout)
+
+			# expected result
+			expected = {
+				'ia':-0.000374927956125,
+				'tn':-1.92178421783e-06,
+				'te':6.38308459463e-05,
+				'npae':-0.000382474361695,
+				'npoa':-9.82559709344e-05,
+				'ie':-0.000200192120923,
+				'tf':0.125165960172,
+				'el_cos_el_1_0':-0.125128529061,
+				'az_sincos_el_az_1_0_1_0':6.65059092333e-06,
+				'az_sincos_az_el_1_0_1_0':4.8481368111e-06
+			}
 		
+			for p in mtest.best.params.keys():
+				self.assertAlmostEqual(mtest.best.params[p].value,expected[p])
+		finally:
+			import shutil
+			shutil.rmtree(td)
+
 unittest.main()

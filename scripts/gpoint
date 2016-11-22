@@ -60,6 +60,7 @@ def generate_model(args):
 		if args.refine is not None:
 			mr = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
 			mr.load(args.refine)
+			model.fit_to_extra()
 			model.add_model(mr)
 		model.save(args.model_output)
 	if args.error_output is not None:

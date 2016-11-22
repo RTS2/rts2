@@ -79,6 +79,8 @@ class ExtraParam:
 			self.multi = None
 		else:
 			self.multi = _str_to_rad(multi)
+		# save initial multiplier
+		self.__initial_multi = self.multi
 		self.function = function
 		self.param = params.split(';')
 		self.consts = map(float,consts.split(';'))
@@ -97,8 +99,15 @@ class ExtraParam:
 		return '{0}\t{1}\t{2}'.format(self.function,';'.join(map(str,self.param)),';'.join(map(str,self.consts)))
 
 class DuplicatedExtra(Exception):
+	"""Raised when adding term already present in model terms"""
 	def __init__(self,argument):
 		super(DuplicatedExtra, self).__init__('duplicated argument:{0}'.format(argument))
+		self.argument = argument
+
+class NonExistentExtra(Exception):
+	"""Raised when removing term not present in model terms"""
+	def __init__(self,argument):
+		super(NonExistentExtra, self).__init__('nonexistent term:{0}'.format(argument))
 		self.argument = argument
 
 # Computes, output, concetanetes and plot pointing models.
@@ -191,7 +200,7 @@ class GPoint:
 
 	def add_extra(self,axis,function,params,consts):
 		return self.add_extra_multi(axis,None,function,params,consts)
-
+	
 	def add_extra_multi(self,axis,multi,function,params,consts):
 		axis = axis.lower()
 		if axis == 'alt':
@@ -207,6 +216,14 @@ class GPoint:
 			return ep
 		else:
 			raise Exception('invalid axis name: {0}'.format(axis))
+
+	def remove_extra(self,pn):
+		"""Remove extra parameter by parameter name"""
+		for p in self.extra:
+			if p.parname() == pn:
+				self.extra.remove(p)
+				return
+		raise NonExistentExtra(pn)
 
 	def model_ha(self,params,a_ha,a_dec):
 		ret = - params['ih'] \
@@ -499,6 +516,12 @@ class GPoint:
 		self.diff_model_corr_ha = self.diff_model_ha * np.cos(self.rad_aa_ha)
 
 		return self.best.params
+
+	def fit_to_extra(self):
+		"""Propagates fit to extra parameters (multi). Must be called before fit is used for model operations"""
+		for ep in self.extra:
+			ep.multi = self.best.params[ep.parname()].value
+
 
 	def remove_line(self,ind):
 		self.rad_aa_az = np.delete(self.rad_aa_az, ind)
