@@ -96,9 +96,14 @@ class ExtraParam:
 	def __str__(self):
 		return '{0}\t{1}\t{2}'.format(self.function,';'.join(map(str,self.param)),';'.join(map(str,self.consts)))
 
+class DuplicatedExtra(Exception):
+	def __init__(self,argument):
+		super(DuplicatedExtra, self).__init__('duplicated argument:{0}'.format(argument))
+		self.argument = argument
+
 # Computes, output, concetanetes and plot pointing models.
 class GPoint:
-	# @param   verbose  verbosity of the
+	"""Main GPoint class. verbose  verbosity of the output"""
 	def __init__(self,verbose=0,latitude=None,longitude=None,altitude=None):
 		self.aa_ha = None
 		self.verbose = verbose
@@ -193,6 +198,11 @@ class GPoint:
 			axis = 'el'
 		if axis == 'ha' or axis == 'dec' or axis == 'az' or axis == 'el':
 			ep = ExtraParam(axis,multi,function,params,consts)
+			try:
+				self.extra.index(ep)
+				raise DuplicatedExtra(ep.parname)
+			except ValueError:
+				pass
 			self.extra.append(ep)
 			return ep
 		else:

@@ -37,6 +37,7 @@ class AltAzTest(unittest.TestCase):
 		self.model.add_extra('az', 'sincos', 'el;az', '5;3')
 		self.model.add_extra('el', 'sincos', 'az;el', '4;4')
 		self.model.add_extra('el', 'sin', 'az' , '1')
+		
 		self.model.fit()
 
 		#for bp in self.model.best.params.keys():
@@ -2071,6 +2072,16 @@ class AltAzTest(unittest.TestCase):
 			#print '{0:.10f},{1:.10f},   {2:.10f}, {3:.10f}'.format(azel[0], azel[1], e_az,e_el)
 			self.assertAlmostEqual(e_az, azel[2])
 			self.assertAlmostEqual(e_el, azel[3])
+
+	def testDuplicated(self):
+		try:
+			self.model.add_extra('az', 'sincos', 'az;el', '2;2')
+			self.fail('added duplicated argument')
+		except gpoint.DuplicatedExtra:
+			self.assertTrue(True,'raised DuplicatedExtra as expected')
+			pass
+
+
 
 	def testPlot(self):
 		import os
