@@ -1,6 +1,5 @@
 Prerequisites
 =============
-
  python3(.5)
  # Ubuntu 16.04:
  apt install  python3-watchdog
@@ -19,26 +18,34 @@ Prerequisites
               pyds9
 	      pyfits
 	      
- libnova (needs to be on LD_PATH as libnova.so)
+ libnova needs to be on LD_PATH as libnova.so
 
- Do a
-
+ Do a:
  wget http://maia.usno.navy.mil/ser7/finals2000A.all  
 
-Very quick tour: do_it_all.sh
-=============================
+Use case
+========
+u_point's use cases are:
 
-Script do_it_all*.sh needs no running installation
+- unattended data acquisition and analysis done
+  with astrometry.net. In this case do not use
+  data from SExtractor (stored in file
+  u_point_positions_sxtr.anl, see u_point.py).
+
+- a CCD FoV which is too small for astrometry.net
+  or similar to work reliably.
+  As targets serve "lonely" objects from Yale's
+  Bright Star Catalog which can be identified by a
+  human being by looking at the CCD image.
+
+Very quick tour: do_it_all_dss.sh, do_it_all_rts2.sh
+====================================================
+Script do_it_all_dss.sh needs no running installation
 of RTS2 and after the above mentioned packages have
 been installed, it is ready to use.
 
-cd $HOME/rts2/scripts
-
-./do_it_all_astropy.sh # use this 
-./do_it_all_libnova.sh
-
-2016-11-15: on going discussion about precision
-astro.py/libnova.
+ cd $HOME/rts2/scripts
+ ./do_it_all_dss.sh
 
 This script performs all necessary steps to get
 a pointing model fit. Steps:
@@ -48,18 +55,49 @@ visible at observatory's latitude.
 
 2) creating a grid of nominal AltAz positions
 
-3) acquiring for all nominal grid positions an
-image from DSS
+3) acquiring for grid positions an image from DSS
 
 4) analyzing the obtained images with SExtractor
 (optionally with astrometry.net).
 
-5) performing the fit of the nominal and mount
+5) performing the fit of the catalog and mount
 positions, finally plot the results.
 
-Status u_point as of 2016-11-13
-===============================
+The script provides additional information and
+comments about how to use these scripts.
 
+do_it_all_dss.sh fetches images from DSS if
+option --fetch-dss-image is specified and the
+mount device is purely software (see devices.py).
+
+do_it_all_rts2.sh behaves identically but it
+uses a running RTS2 instance either with real
+or dummy devices. To run this script with
+dummy devices remove in /etc/rts2/devices all
+but
+
+  camd    dummy   C0      --width 862 --height 655 --frame-transfer --localhost localhost
+  teld    dummy   T0      --move fast --localhost localhost
+  # optionally let T0 run at 2deg/sec:
+  #teld    dummy   T0      --localhost localhost
+
+and start do_it_all_rts2.sh. It performs the
+same steps like do_it_all_rts2.sh. Being able
+to communicate with RTS2 the scripts are started
+differently:
+
+ acq_script="$HOME/rts2/scripts/u_point/u_acquire_fetch_dss_continuous.sh"
+ rts2-scriptexec -d C0 -s " exe $acq_script "
+
+where u_acquire_fetch_dss_continuous.sh is
+a (bash) script executing the real script.
+The same thing if a progress plot is displayed:
+
+ plt_script="$HOME/rts2/scripts/u_point/u_acquire_plot.sh"
+ rts2-scriptexec -d C0 -s " exe $plt_script" 
+
+Status u_point as of 2016-11-23
+===============================
 I just completed the first release. Missing are:
 
 - proper documentation
@@ -68,9 +106,8 @@ I just completed the first release. Missing are:
 
 Please feel free to contact me (wildi.markus@bluewin.ch)
 
-Status u_point.py as of 2016-11-13
+Status u_point.py as of 2016-11-23
 ==================================
-
 I started with astropy and found that there are
 differences e.g. between EQ (CIRS) to AltAz
 transformations I could not explain nor did
@@ -88,9 +125,8 @@ the fitting several times to gain confidence. I
 observed that fits on simulated data do not
 converge. In such cases repeat the data generation.
 
-Status u_acquire.py as of 2016-11-13
+Status u_acquire.py as of 2016-11-23
 ====================================
-
 I dry tested u_acquire.py in simulation mode and
 together with RTS2 dummy devices. I do not expect
 any major failures if a real AltAz mount is used.
@@ -98,69 +134,50 @@ any major failures if a real AltAz mount is used.
 u_acquire.py is suitable for AltAz mounts but
 soon EQ mounts can be used too.
 
-Use case
-========
+Common features
+===============
+All scripts read and write best to common
+subdirectory. Set --base-path for all scripts
+identically and do not change the defaults of
+the file names.
 
-u_point's use case is a CCD FoV which is too small
-for astrometry.net or similar to work reliably. As
-targets serve "lonely" objects from Yale's Bright
-Star Catalog which can be identified by a human
-being by looking at the CCD image.
+The log files are written to /tmp/<script_name>.log
+Logging to console is enabled with --toconsole. If
+specidfied the level is set to DEBUG. Default is
+INFO which means the scripts are almost silent.
+If in trouble enable --toconsole.
 
-Of course astrometry.net is built in and a completely
-unattended image acquisition and pointing model
-analysis is feasible too.
+Scripts u_acqurie.py and u_analyze.py can be
+interrupted and resumed at any time, or while
+u_acquire.py is still running, u_analyze.py
+can be started several times, using the time.
 
-Defining a model
-================
+If options --plot and --animate are specified
+u_acqurie.py and u_analyze.py show an updated
+plot e.g. where the mount actually points to
+or which position is analyzed. If --ds9-display
+is specified the the FITS images will be displayed
+through DS9. u_point.py behaves in the same
+way but has no progress report.
 
-Not sastisfied with the existing models:
-
- model_buie.py
- model_u_point.py
- model_altaz.py
-
-create your own. Create class Moldel(ModelBase) and
-implement methods (see e.g. model_altaz.py):
-
-  def d_lon(self,cat_lons,cat_lats,d_lons):
-  def d_lat(self,cat_lons,cat_lats,d_lats):
-  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
-
-where cat_* are apparent and d_* are the differences
-between cat_* - mnt_*, where mnt_* are the coordinates
-read at the setting circles of the mount. If method fit_model()
-is implemented for a EQ style fit (see model_u_point.py), 
-observatory's latitude has to be passed:
-
-  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
-    if kwargs is None:
-      self.lg.error('expected key word: obs, exiting'.format(name, value))
-      sys.exit(1)
-
-    for name, value in kwargs.items():
-      if 'obs' in name:
-        self.phi=value.latitude.radian
-        break
-      else:
-        self.lg.error('got unexpected key word: {0}={1}, exiting'.format(name, value))
-        sys.exit(1)
 
 Preparation: u_select.py, u_acquire.py
 ======================================
+This step is required in case one can not
+use astrometry.net. From SExtractor's list
+only the brightest star is retrieved and that
+is what Yale Bright Star Catalog provides.
 
 Script u_select.py  filters objects which are
 visible at a given latitude
 
  u_select.py --obs-latitude m75.1 --plot
 
-and writes it to a file. The default can be replaced
-with option --observable-catalog. All u_*py scripts
-have a default base path in common where files are
-written and read back. The value is ./u_point_data/.
+and writes it to a file. The default can be
+replaced with option --observable-catalog.
 For further options use u_select.py --help.
 
-The grid of nominal Alt Az positions to observe
+The grid of nominal AltAz positions to be observed
 is created by
 
  u_acquire.py --create-nominal --plot
@@ -171,21 +188,39 @@ not satisfied see options --altitude-interval,
 --azimuth-interval, --az-step and --alt-step for
 further refinements.
 
+Meteo data
+==========
+Often meteo data are acquired from a separate
+system. Either provided by RTS2 or an external
+source. See classes Meteo() in meteo.py (dummy)
+or e.g. meteo_dome_c.py for a real implementation.
+
+As default Meteo() from meteo.py is used if
+not specified with --meteo-class.
 
 Data acquisition: u_acquire.py
 ==============================
-
 The data acquisition can be interrupted and resumed
 at any time.
 
 Two modes of operations exist:
 
-1) non continuous mode
-2) continuous mode
+1) non continuous mode (default)
+2) continuous mode (--mode-continues)
 
 If operated in continuous mode, no user interaction
-is required and the images are later analyzed by
-u_analyze.py.
+is required.
+To watch the mount acquiring data, in case of
+--device-class DeviceDss (default), use
+
+./u_acquire.py --base-path $BASE_PATH --plot \
+  --ds9-display --animate  --level DEBUG --toc
+
+with option --device-class DeviceRts2 (adapt
+u_acquire_plot.sh to your needs)
+
+ plt_script="$HOME/rts2/scripts/u_point/u_acquire_plot.sh"
+ rts2-scriptexec -d C0 -s " exe $plt_script" 
 
 If operated in non continuous mode, user interaction
 is required and done via telnet 127.0.0.1 usually on
@@ -194,8 +229,9 @@ setting). Allowed commands are setting a different
 exposure time or redo a given nominal position ev.
 with a different exposure time.
 
-The 'ORI' (see rts2-mon, T0) coordinates are always
-set by u_acquire.py. Once u_acquire.py waits for
+The mount is operated through, e.g. DeviceRts2 (see
+devices.py). The 'ORI' (see rts2-mon, T0) coordinates
+are set by u_acquire.py. Once u_acquire.py waits for
 user input, the mount can be commanded using 'OFFS'
 (see rts2-mon, T0) to center the object on the CCD.
 
@@ -216,26 +252,31 @@ u_acquire.py does not analyze the images.
 
 Image analysis: u_analyze.py
 ============================
-
 Once the acquisition run is completed the analysis
 is done with u_analyze.py preparing the input for
 u_point.py.
 
-u_analyze.py writes RA/Dec coordinates of the brightest
-star and the field center, obtained by astrometry.net,
-to a second set of files, usually named:
+u_analyze.py writes RA/Dec coordinates of the
+brightest star and the field center, obtained by
+astrometry.net, to a second set of files, usually
+named:
 
  analyzed_positions.anl
  u_point_positions_sxtr.anl
  u_point_positions_astr.anl
 
-In case the analysis was interrupted, positions are
-read back from analyzed_positions.anl and dropped.
+In case the analysis was interrupted, analyzed
+positions are read back from analyzed_positions.anl
+and dropped.
 Only the remaining positions in acquired_positions.acq
 are considered and appended to analyzed_positions.anl
 The files u_point_positions*.anl provide the data of
 SExtractor (sxtr) and astrometry.net (astr) separately
 and can be read in by u_point.py.
+
+If process u_acquire.py is still in progress, you may
+analyze the already acquired data (speeding up the
+whole process). 
 
 
 Pointing model: u_point.py
@@ -247,12 +288,18 @@ The files
 
 prepared in the previous step can be fed into
 
- ./u_point.py --base-path $BASE_DIRECTORY --mount-data  u_point_positions_sxtr.anl --plot 
- ./u_point.py --base-path $BASE_DIRECTORY --mount-data  u_point_positions_astr.anl --plot 
+ ./u_point.py --base-path $BASE_DIRECTORY \
+    --mount-data  u_point_positions_sxtr.anl --plot 
+ ./u_point.py --base-path $BASE_DIRECTORY \
+    --mount-data  u_point_positions_astr.anl --plot 
 
 and the plots will show the result of the fitted
 parameters as well as the raw data.
 
+Plots labled A2 and K (title upper left) provide
+a call back function. If a data point is clicked,
+it is annotated on all other plots. This feature
+is still in it's infancy.
 
 Walk through with RTS2 dummy devices
 ====================================
@@ -280,7 +327,6 @@ specific options
  ls -l observable.cat
  -rw-rw-r-- 1 wildi wildi 108813 Nov  6 10:38 observable.cat
 
-
 Start simulated data acquisition:
 
  sudo bash
@@ -291,16 +337,13 @@ In a separate terminal:
 
  tail -f /tmp/u_acquire.log 
 
-or at any time for a progress report plot
+or at any time for a progress report plot (check option
+--base-path)
 
-./u_acquire.py --plot
+ ./u_acquire.py --plot --animate --ds9-display
 
 Red dots are remaining nominal and blue dots are acquired positions
-To see DSS catalog FITS images:
-
- ds9 -zscale dss*.fits
-
-The brightest star must be in the center.
+To see DSS catalog FITS images, click on a blue point.
 
 Recommended terminal set up
 ---------------------------
@@ -380,7 +423,7 @@ And the simulated plots are as "ugly" as the data.
 Main differences to Petr's gpoint
 ---------------------------------
 
-u_point.py includes meteo data and has Python
+u_point includes meteo data and has Python
 bindings for libnova.so, as far as I used it.
 
 Interestingly the AltAz model fits well without
@@ -393,27 +436,50 @@ suggested to use a Fourier transformed function,
 can be done easily on the source level, at
 least that's my hope.
 
+Defining a model
+================
+Not sastisfied with the existing models:
+
+ model_buie.py
+ model_u_point.py
+ model_altaz.py
+
+create your own. Create class Moldel(ModelBase) and
+implement three methods (see e.g. model_altaz.py):
+
+  def d_lon(self,cat_lons,cat_lats,d_lons):
+  def d_lat(self,cat_lons,cat_lats,d_lats):
+  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
+
+where cat_* are apparent and d_* are the differences
+between cat_* - mnt_*, where mnt_* are the coordinates
+read at the setting circles of the mount. If method fit_model()
+is implemented for a EQ style fit (see model_u_point.py), 
+observatory's latitude has to be passed:
+
+  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
+    if kwargs is None:
+      self.lg.error('expected key word: obs, exiting'.format(name, value))
+      sys.exit(1)
+
+    for name, value in kwargs.items():
+      if 'obs' in name:
+        self.phi=value.latitude.radian
+        break
+      else:
+        self.lg.error('got unexpected key word: {0}={1}, exiting'.format(name, value))
+        sys.exit(1)
+
 
 Format of the coordinates file and units
 ========================================
-
-On one line:
-
- date time UTC begin exposure [format iso],
- catalog RA [rad],
- catalog DEC [rad],
- mount position RA [rad],
- mount position DEC [rad],
- [
- exposure time [sec],
- temperature [deg C],
- pressure QFE [hPa],
- humidity [%]
- ]
+The data formats of the various files and objects
+are best described in structures.py.
 
 Mount coordinates are the apparent coordinates as read
 at the setting circles, while catalog coordinates are
 J2000 (ICRS).
-Exposure, temperature, pressure and humidity are optional.
-QFE is the pressure at the observatory (not sea level).
+Exposure, temperature, pressure and humidity are optional
+as input to u_point.py. QFE is the pressure at the
+observatory (not sea level).
 

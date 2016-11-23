@@ -83,7 +83,7 @@ class AcqPosition(object):
     self.nml_id=nml_id
     self.cat_no=cat_no
     self.aa_nml=aa_nml # nominal position (grid created with store_nominal_altaz())
-    self.eq=eq # ORI (rts2-mon) acquired star positions
+    self.eq=eq         # set catalog position, read back from variable ORI (rts2-mon) 
     self.dt_begin=dt_begin 
     self.dt_end=dt_end
     self.dt_end_query=dt_end_query

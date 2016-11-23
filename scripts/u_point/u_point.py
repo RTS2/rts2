@@ -44,6 +44,17 @@ from astropy.coordinates import SkyCoord,EarthLocation
 from astropy.coordinates import AltAz,CIRS,ITRS
 from astropy.coordinates import Longitude,Latitude,Angle
 from astropy.coordinates.representation import SphericalRepresentation
+from astropy.utils import iers
+# astropy pre 1.2.1 may not work correctly
+#  wget http://maia.usno.navy.mil/ser7/finals2000A.all
+# together with IERS_A_FILE
+try:
+  iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
+#                                               ###########
+except:
+  print('download:')
+  print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
+  sys.exit(1)
 
 from structures import Point,Parameter
 from callback import AnnoteFinder

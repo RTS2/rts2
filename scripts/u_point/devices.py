@@ -137,10 +137,10 @@ class DeviceDss(object):
     JD=-1.      
     acq_eq=SkyCoord(ra=self.cat_eq.ra.radian,dec=self.cat_eq.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
     acq_eq_woffs=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
-    acq_eq_mnt=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
-    # not yet used
+    acq_eq_mnt=acq_eq
+    #
     acq_aa_mnt=self.cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
-    # ToDo wrong:
+    # ToDo wrong?:
     aa_nml=self.cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
       
     dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
@@ -170,7 +170,7 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
       self,
       dbg=None,
       lg=None,
-          obs=None,
+      obs=None,
       base_path=None,
       px_scale=None, 
       ccd_size=None, 
@@ -295,7 +295,9 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     acq_eq_mnt=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
 
     alts,azs=self.getValue('TEL_',self.mnt_nm).split()
-    acq_aa_mnt=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
+    # RTS2 and IAU: S=0,W=90
+    # astropy: N=0,E=90
+    acq_aa_mnt=SkyCoord(az=float(azs)-180.,alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
 
     # ToDo,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
     # ToDo wrong:

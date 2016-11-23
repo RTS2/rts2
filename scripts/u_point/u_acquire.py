@@ -50,7 +50,7 @@ except:
 from astropy import units as u
 from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
-from astropy.coordinates import AltAz,CIRS,ITRS,ICRS
+from astropy.coordinates import AltAz
 from astropy.coordinates import Longitude,Latitude,Angle
 import astropy.coordinates as coord
 
@@ -108,11 +108,14 @@ class Acquisition(object):
       #self.lg.debug('now_observable: out of altitude range {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
       return None
   
-  def to_altaz(self,cat_eq=None):
-    return cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
+  def to_altaz(self,eq=None):
+    # http://docs.astropy.org/en/stable/api/astropy.coordinates.AltAz.html
+    #  Azimuth is oriented East of North (i.e., N=0, E=90 degrees)
+    # RTS2 follows IAU S=0, W=90
+    return eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
 
   def to_eq(self,aa=None):
-    return aa.transform_to(ICRS()) 
+    return aa.transform_to('icrs') 
 
   def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True):
     pd_cat=None
@@ -219,7 +222,6 @@ class Acquisition(object):
     if pd_cat is None:
       return
     for i,rw in pd_cat.iterrows():
-      # ToDo why not out_subfmt='fits'
       dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
       dt_end=Time(rw['dt_end'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
       dt_end_query=Time(rw['dt_end_query'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
@@ -400,8 +402,8 @@ class Acquisition(object):
     not_first=False
     for nml in self.nml:
       aa_nml=nml.aa_nml
-      #
-      now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+      # astropy N=0,E=90
+      now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
       aa=SkyCoord(az=aa_nml.az.radian,alt=aa_nml.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
       eq_nml=self.to_eq(aa=aa)
       if self.use_bright_stars:
@@ -453,16 +455,16 @@ class Acquisition(object):
     if animate:
       eq_mnt=self.device.fetch_mount_position()
       if eq_mnt is None:
-        self.lg.debug('re_plot: mount position is None')
+        #self.lg.debug('re_plot: mount position is None')
         # shorten it
         now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
-        self.ax.set_xlabel('azimuth [deg], at: {0} [UTC]'.format(now))
+        self.ax.set_xlabel('azimuth [deg] (N=0,E=90), at: {0} [UTC]'.format(now))
       else:      
-        aa_mnt=self.to_altaz(cat_eq=eq_mnt)
+        aa_mnt=self.to_altaz(eq=eq_mnt)
         self.lg.debug('re_plot: mount position: {0:.2f}, {1:.2f} [deg]'.format(aa_mnt.az.degree,aa_mnt.alt.degree))
         self.ax.scatter(aa_mnt.az.degree,aa_mnt.alt.degree,color='green',facecolors='none', edgecolors='g',s=240.)
         self.ax.scatter(aa_mnt.az.degree,aa_mnt.alt.degree,color='green',marker='+',s=600.)
-        self.ax.set_xlabel('azimut [deg], mt pos: {0:.2f}, {1:.2f} [deg], at: {2} [UTC]'.format(aa_mnt.az.degree,aa_mnt.alt.degree,str(eq_mnt.obstime)[:-7]))
+        self.ax.set_xlabel('azimut [deg] (N=0,E=90), pos: {0:.1f}, {1:.1f} [deg], at: {2} [UTC]'.format(aa_mnt.az.degree,aa_mnt.alt.degree,str(eq_mnt.obstime)[:-7]))
 
       self.ax.text(0., 0., 'positions:',color='black', fontsize=12,verticalalignment='bottom')
       self.ax.text(80., 0., 'nominal,',color='red', fontsize=12,verticalalignment='bottom')
@@ -471,7 +473,7 @@ class Acquisition(object):
       self.ax.text(270., 0., 'mount',color='green', fontsize=12,verticalalignment='bottom')
 
     else:
-      self.ax.set_xlabel('azimuth [deg]')
+      self.ax.set_xlabel('azimuth [deg] (N=0,E=90)')
       
     self.ax.set_ylabel('altitude [deg]')  
     self.ax.grid(True)
@@ -549,8 +551,8 @@ if __name__ == "__main__":
   parser.add_argument('--meteo-class', dest='meteo_class', action='store', default='meteo', help=': %(default)s, specify your meteo data collector, see meteo.py for a stub')
   # group device
   parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your devices (mount,ccd), see devices.py')
-  parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, simulation mode: images fetched from DSS')
-  parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: simulation mode: no user input, no images fetched from DSS, image download specify: --fetch-dss-image')
+  parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, astrometry.net or simulation mode: images fetched from DSS')
+  parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: pure astrometry.net or simulation mode: no user input, no images fetched from DSS, simulation: image download specify: --fetch-dss-image')
   parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
   # group plot
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
@@ -565,7 +567,7 @@ if __name__ == "__main__":
   parser.add_argument('--az-step', dest='az_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
   parser.add_argument('--alt-step', dest='alt_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
   # 
-  parser.add_argument('--use-bright-stars', dest='use_bright_stars', action='store', default=False, type=int, help=': %(default)s, True: use selected stars fron Yale bright Star catalog as target, see u_select.py')
+  parser.add_argument('--use-bright-stars', dest='use_bright_stars', action='store_true', default=False, help=': %(default)s, True: use selected stars fron Yale bright Star catalog as target, see u_select.py')
   parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, file with on site observable objects, see u_select.py')  
   parser.add_argument('--max-separation', dest='max_separation', action='store', default=5.1,type=float, help=': %(default)s [deg], maximum separation (nominal, catalog) position')
   #
@@ -648,7 +650,10 @@ if __name__ == "__main__":
   ac.drop_nominal_altaz()
 
   if args.plot:
-    ac.plot(title='progress report',ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=args.animate)
+    title='progress: acquired positions'
+    if args.ds9_display:
+      title += ': click on blue dots to watch image (DS9)'
+    ac.plot(title=title,ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=args.animate)
     sys.exit(1)
    
   # candidate objects, predefined with u_select.py

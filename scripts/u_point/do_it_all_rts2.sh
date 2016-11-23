@@ -96,7 +96,7 @@ plt_script=" $HOME/rts2/scripts/u_point/u_acquire_plot.sh "
 #
 # to see the mount coordinates in progress plot
 #
-rts2-scriptexec -d C0 -s " exe $plt_script --toc"
+rts2-scriptexec -d C0 -s " exe $plt_script " &
 echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<"
 echo "leave plot window open"

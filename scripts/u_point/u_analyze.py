@@ -40,9 +40,20 @@ from datetime import datetime
 from astropy import units as u
 from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
-from astropy.coordinates import AltAz,CIRS,ITRS,ICRS
+from astropy.coordinates import AltAz
 from astropy.coordinates import Longitude,Latitude,Angle
 import astropy.coordinates as coord
+from astropy.utils import iers
+# astropy pre 1.2.1 may not work correctly
+#  wget http://maia.usno.navy.mil/ser7/finals2000A.all
+# together with IERS_A_FILE
+try:
+  iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
+#                                               ###########
+except:
+  print('download:')
+  print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
+  sys.exit(1)
 
 
 import ds9region
@@ -85,7 +96,6 @@ class Worker(Process):
           return
         # 'q'
         if isinstance(cmd, str):
-          print('cmd: {}'.format(cmd))
           if 'dl' in cmd:
             self.lg.info('{}: got {}, delete last: {}'.format(current_process().name, cmd,acq.image_fn))
             acq_image_fn=acq.image_fn
@@ -120,7 +130,7 @@ class Worker(Process):
       x,y=self.anl.sextract(acq=acq,pcn=current_process().name)
       sxtr_ra=sxtr_dec=None
       if x is not None and y is not None:
-        sxtr_ra,sxtr_dec=self.anl.xy2lonlat_appr(px=x,py=y,ln0=acq.eq.ra.radian,lt0=acq.eq.dec.radian,acq=acq,pcn=current_process().name)
+        sxtr_ra,sxtr_dec=self.anl.xy2lonlat_appr(px=x,py=y,acq=acq,pcn=current_process().name)
       
       astr_mnt_eq=self.anl.astrometry(acq=acq,pcn=current_process().name)
       if self.ds9_queue is None:
@@ -191,6 +201,8 @@ class Analysis(object):
       obs_height=None,
       px_scale=None,
       ccd_size=None,
+      ccd_angle=None,
+      mount_type_eq=None,
       acquired_positions=None,
       analyzed_positions=None,
       u_point_positions_base=None,
@@ -207,9 +219,12 @@ class Analysis(object):
     self.ds9_display=ds9_display
     self.px_scale=px_scale
     self.ccd_size=ccd_size
+    self.ccd_angle=args.ccd_angle
+    self.mount_type_eq=mount_type_eq
     self.base_path=base_path
     self.solver=solver
     #
+    self.ccd_rotation=self.rot(self.ccd_angle)
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
     self.u_point_positions_base=u_point_positions_base
@@ -299,7 +314,7 @@ class Analysis(object):
           #self.lg.debug('fetch_positions: astr None')
           # to create more or less identical plots:
           #continue
-          
+        
         anls=AnlPosition(
           nml_id=rw['nml_id'],
           cat_no=rw['cat_no'],
@@ -321,7 +336,7 @@ class Analysis(object):
           astr= astr_eq,
         )
         self.anl.append(anls)
-      
+        
   def store_u_point(self,fn=None,acq=None,ra=None,dec=None):
     if self.base_path in fn:
       ptfn=fn
@@ -361,17 +376,70 @@ class Analysis(object):
       # astrometry.net              
       self.store_u_point(fn=self.u_point_positions_base+'astr.anl',acq=acq,ra=astr_ra,dec=astr_dec)
                     
-  def xy2lonlat_appr(self,px=None,py=None,ln0=None,lt0=None,acq=None,pcn=None):
+  def to_altaz(self,eq=None):
+    # http://docs.astropy.org/en/stable/api/astropy.coordinates.AltAz.html
+    # Azimuth is oriented East of North (i.e., N=0, E=90 degrees)
+    # RTS2 follows IAU S=0, W=90
+    return eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
+
+  def to_eq(self,aa=None):
+    return aa.transform_to('icrs') 
+
+
+  def rot(self,rads):
+    s=np.sin(rads)
+    c=np.cos(rads)
+    return np.matrix([[c, -s],[s,  c]])
+    
+  def xy2lonlat_appr(self,px=None,py=None,acq=None,pcn=None):
+    # mnt_eq: read back from mount
+    # in case of RTS2 it includes any OFFS, these are manual corrections
+    if self.mount_type_eq:
+      ln0=acq.eq_mnt.ra.radian
+      lt0=acq.eq_mnt.dec.radian
+    else:
+      aa=self.to_altaz(eq=acq.eq_mnt)
+      ln0=aa.az.radian
+      lt0=aa.alt.radian
+    
+    # ccd angle relative to +dec, +alt
+    p=np.array([px,py])
+    p_r= self.ccd_rotation.dot(p)               
+    px_r=p_r[0,0]
+    py_r=p_r[0,1]
+    self.lg.debug('{0}: xy2lonlat_appr: px: {1}, py: {2}, px_r: {3}, py_r: {4}'.format(pcn,int(px),int(py),int(px_r),int(py_r)))
     # small angle approximation for inverse gnomonic projection
     # ln0,lt0: field center
     # scale: angle/pixel [radian]
-    lon=ln0 + px * self.px_scale/np.cos(lt0)
-    lat=lt0 + py * self.px_scale
+    # px,py from SExtractor are relative to the center equals x,y physical
+    # FITS with astrometry:
+    #  +x: -ra
+    #  +y: +dec
+    if self.mount_type_eq:
+      lon=ln0 - (px_r * self.px_scale/np.cos(lt0))
+      lat=lt0 + py_r * self.px_scale
+      #self.lg.debug('{0}: sextract   center: {1:.6f} {2:.6f}'.format(pcn,ln0*180./np.pi,lt0*180./np.pi))
+      #self.lg.debug('{0}: sextract   star  : {1:.6f} {2:.6f}'.format(pcn,lon*180./np.pi,lat*180./np.pi))
+    else:
+      # astropy AltAz frame is right handed
+      # +x: +az
+      # +y: +alt
+      az=ln0 + px_r * self.px_scale/np.cos(lt0)
+      alt=lt0 + py_r * self.px_scale
+      #self.lg.debug('{0}: sextract   center: {1:.6f} {2:.6f}'.format(pcn,ln0*180./np.pi,lt0*180./np.pi))
+      #self.lg.debug('{0}: sextract   star  : {1:.6f} {2:.6f}'.format(pcn,az*180./np.pi,alt*180./np.pi))
+      
+      # ToDo exptime: dt_end - exp/2.
+      aa=SkyCoord(az=az,alt=alt,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=acq.dt_end)
+      eq=self.to_eq(aa=aa)
+      lon=eq.ra.radian
+      lat=eq.dec.radian
+      
     if self.base_path in acq.image_fn:
       fn=acq.image_fn
     else:
       fn=os.path.join(self.base_path,acq.image_fn)
-    self.lg.debug('{0}: sextract   result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,lon*180/np.pi,lat*180/np.pi,fn))
+    self.lg.debug('{0}: sextract   result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,fn))
     
     return lon,lat
             
@@ -443,13 +511,28 @@ class Analysis(object):
   def re_plot(self,i=0,animate=None):
     self.acq=list()
     self.anl=list()
-    self.fetch_positions(fn=self.analyzed_positions,fetch_acq=False,sys_exit=False)
     self.fetch_positions(fn=self.acquired_positions,fetch_acq=True,sys_exit=True)
+    self.fetch_positions(fn=self.analyzed_positions,fetch_acq=False,sys_exit=False)
+    #                                                             if self.anl=[]
+    result = [(i,x.sxtr.ra.degree) for i,x in enumerate(self.anl) if x is not None and x.sxtr is not None]
+    try:
+      i_sxtr,anl_sxtr_eq_ra=map(list, zip(*result))
+    except Exception as e:
+      self.lg.error('re_plot: sxtr exception: {}'.format(e))
+      return
+    anl_sxtr_eq_dec = [x.sxtr.dec.degree for x in self.anl if x is not None and x.sxtr is not None]
 
-    anl_sxtr_eq_ra = [x.sxtr.ra.degree for x in self.anl if x.eq is not None]
-    anl_sxtr_eq_dec = [x.sxtr.dec.degree for x in self.anl if x.sxtr is not None]
-    anl_astr_eq_ra = [x.astr.ra.degree for x in self.anl if x.astr is not None]
-    anl_astr_eq_dec = [x.astr.dec.degree for x in self.anl if x.astr is not None]
+    # here it is more likely                                      if self.anl=[]
+    result = [(i,x.astr.ra.degree) for i,x in enumerate(self.anl) if x is not None and x.astr is not None]
+    try:
+      i_astr,anl_astr_eq_ra=map(list, zip(*result))
+    except Exception as e:
+      # ToDo a bit a murcks
+      self.lg.error('re_plot: astr exception: {}'.format(e))
+      i_astr=list()
+      anl_astr_eq_ra=list()
+  
+    anl_astr_eq_dec = [x.astr.dec.degree for x in self.anl if x is not None and x.astr is not None]
 
     acq_eq_ra =[x.eq.ra.degree for x in self.acq if x.eq is not None]
     acq_eq_dec = [x.eq.dec.degree for x in self.acq if x.eq is not None]
@@ -457,26 +540,32 @@ class Analysis(object):
     self.ax.scatter(acq_eq_ra, acq_eq_dec,color='blue',s=120.)
     self.ax.scatter(anl_sxtr_eq_ra, anl_sxtr_eq_dec,color='red',s=40.)
     self.ax.scatter(anl_astr_eq_ra, anl_astr_eq_dec,color='yellow',s=10.)
+    # mark last positions
+    if len(i_sxtr) > 0:
+      self.ax.scatter(self.acq[i_sxtr[-1]].eq.ra.degree,self.acq[i_sxtr[-1]].eq.dec.degree,color='green',facecolors='none', edgecolors='green',s=300.)
+    if len(i_astr) > 0:
+      self.ax.scatter(self.acq[i_astr[-1]].eq.ra.degree,self.acq[i_astr[-1]].eq.dec.degree,color='green',facecolors='none', edgecolors='magenta',s=400.)
 
     annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
 
     self.ax.set_xlim([0.,360.]) 
 
     if animate:
-      self.ax.set_title('progress report: {}'.format(self.title))
+      self.ax.set_title(self.title)
       now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
-      self.ax.set_xlabel('azimut [deg], at: {0} [UTC]'.format(now))
+      self.ax.set_xlabel('RA [deg], at: {0} [UTC]'.format(now))
     else:
       self.ax.set_title(self.title)
-      self.ax.set_xlabel('azimuth [deg]')
-      
-    self.ax.text(0., 0., 'positions:',color='black',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
-    self.ax.text(60., 0., 'acquired,',color='blue',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
-    self.ax.text(110., 0., 'sextr,',color='red',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
-    self.ax.text(140., 0., 'astr',color='black',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
-    self.ax.text(160., 0., 'yellow',color='black',transform=self.ax.transAxes,fontsize=12,verticalalignment='bottom')
+      self.ax.set_xlabel('RA [deg]')
+    
+    self.ax.annotate('positions:',color='black', xy=(0.03, 0.05), xycoords='axes fraction')
+    self.ax.annotate('acquired',color='blue', xy=(0.16, 0.05), xycoords='axes fraction')
+    self.ax.annotate('sxtr',color='red', xy=(0.30, 0.05), xycoords='axes fraction')
+    self.ax.annotate('astr: yellow',color='black', xy=(0.43, 0.05), xycoords='axes fraction')
+    self.ax.annotate('last sxtr',color='green', xy=(0.63, 0.05), xycoords='axes fraction')
+    self.ax.annotate('last astr',color='magenta', xy=(0.83, 0.05), xycoords='axes fraction')
 
-    self.ax.set_ylabel('altitude [deg]')  
+    self.ax.set_ylabel('declination [deg]')  
     self.ax.grid(True)
       
     annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
@@ -503,9 +592,15 @@ class Analysis(object):
 
     if animate:
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=1000)
-    
-    (acq_eq_ra,acq_eq_dec,annotes)=self.re_plot(animate=animate)
 
+    acq_eq_ra=list()
+    acq_eq_dec=list()
+    annotes=list()
+    try:
+      (acq_eq_ra,acq_eq_dec,annotes)=self.re_plot(animate=animate)
+    except:
+      pass
+    
     self.af = SimpleAnnoteFinder(acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg, annotate_fn=True)
     fig.canvas.mpl_connect('button_press_event',self.af)
 
@@ -523,7 +618,7 @@ def arg_float(value):
 
 if __name__ == "__main__":
 
-  parser= argparse.ArgumentParser(prog=sys.argv[0], description='Acquire not yet observed positions')
+  parser= argparse.ArgumentParser(prog=sys.argv[0], description='Analyze observed positions')
   parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
   parser.add_argument('--level', dest='level', default='WARN', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
@@ -532,21 +627,26 @@ if __name__ == "__main__":
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
-  parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  #parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, retrieve the observable objects')
-  #parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.cat', help=': %(default)s, to be observed positions (AltAz coordinates)')
   parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
   parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
-  parser.add_argument('--u-point-positions-base', dest='u_point_positions_base', action='store', default='u_point_positions_', help=': %(default)s, base path for u_point.py input (SExtractor, astrometry.net)')
-  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], arcmin/pixel of the CCD camera')
-  parser.add_argument('--radius', dest='radius', action='store', default=1.,type=arg_float, help=': %(default)s [deg], astrometry search radius')
-  parser.add_argument('--timeout', dest='timeout', action='store', default=600,type=int, help=': %(default)s [sec], astrometry timeout for finding a solution')
-  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  # group plot
+  parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
+  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
+  #
+  parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=float, help=': %(default)s [arcsec/pixel], arcmin/pixel of the CCD camera')
+  parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s [px], ccd pixel size x,y[px], format "p1 p2"')
+  # angle is defined relative to the positive dec or alt direction
+  # the rotation is anti clock wise (right hand coordinate system)
+  parser.add_argument('--ccd-angle', dest='ccd_angle', default=0., type=float, help=': %(default)s [deg], ccd angle measured anti clock wise relative to positive Alt or Dec axis, rotation of 180. ')
+  parser.add_argument('--mount-type-eq', dest='mount_type_eq', action='store_true',default=False, help=': %(default)s, True: equatorial mount, False: altaz. Only used together with SExtractor.')
+  # group SExtractor, astrometry.net
+  parser.add_argument('--u-point-positions-base', dest='u_point_positions_base', action='store', default='u_point_positions_', help=': %(default)s, base file name for SExtractor, astrometry.net output files')
+  parser.add_argument('--timeout', dest='timeout', action='store', default=600,type=int, help=': %(default)s [sec], astrometry timeout for finding a solution')
+  parser.add_argument('--radius', dest='radius', action='store', default=1.,type=float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
-  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
 
   args=parser.parse_args()
   
@@ -577,6 +677,8 @@ if __name__ == "__main__":
     obs_height=args.obs_height,
     px_scale=px_scale,
     ccd_size=args.ccd_size,
+    ccd_angle=args.ccd_angle/180. * np.pi,
+    mount_type_eq=args.mount_type_eq,
     acquired_positions=args.acquired_positions,
     analyzed_positions=args.analyzed_positions,
     u_point_positions_base=args.u_point_positions_base,
@@ -592,7 +694,11 @@ if __name__ == "__main__":
   anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
   anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
   if args.plot:
-    anl.plot(title='overview analyzed positions',animate=args.animate)
+    title='progress: analyzed positions'
+    if args.ds9_display:
+      title += ': click on dots to watch image (DS9)'
+
+    anl.plot(title=title,animate=args.animate)
     sys.exit(1)
     
   lock=Lock()

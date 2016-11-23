@@ -63,18 +63,22 @@ echo "./u_select.py --base-path $BASE_PATH --brightness-interval "5.0 7.0" --plo
 #
 echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+echo "takes several 15 seconds..."
 echo "close plot window to continue"
-echo "takes several 30 seconds..."
-
-./u_select.py --base-path $BASE_PATH --brightness-interval "1.0 5.0" --plot #--toconsole
+echo
+echo "./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot"
 #
+./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot #--toconsole
+#
+echo "DONE selecting stars"
 echo "------------------------------------------------"
 echo "second step, define a nominal grid of alt az positions and plot it"
 echo "the grid as an az step of 40. deg (fewer objects)"
 echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
 echo "close plot window to continue"
-echo "./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40"
+echo
+echo "./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40 --toconsole"
 #
 ./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40 --toconsole
 #
@@ -83,16 +87,22 @@ echo "------------------------------------------------"
 echo "third step, acquire positions from DSS: http://archive.eso.org/dss/dss"
 echo "since we do not use real equipment"
 echo "dummy meteo data are provided by meteo.py"
-echo "progress report: once u_acquire.py is running:"
+echo "once u_acquire.py is running:"
 echo "- open an new terminal and do a: tail -f /tmp/u_acquire.log"
-echo "./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image  --mode-continues --level DEBUG"
+echo "or just watch the progress in the plot window"
+echo
+echo "./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image  --mode-continues --use-bright-stars  --level DEBUG --toconsole &"
 #
-./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image  --mode-continues --level DEBUG --toconsole &
+./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image  --mode-continues --use-bright-stars  --level DEBUG --toconsole &
+#
+# no bright stars:
+#./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image  --mode-continues --level DEBUG --toconsole &
 #
 # no internet connection:
 #./u_acquire.py --base-path $BASE_PATH    --mode-continues --level DEBUG --toconsole &
+#
 export pid_u_acquire=$!
-./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate  --level DEBUG &
+./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate  --level DEBUG --toc&
 echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<"
 echo "leave plot window open"
@@ -112,11 +122,13 @@ echo
 echo "------------------------------------------------"
 echo "forth step, analyze the acquired position"
 echo "in this demo astrometry.net is disabled, since it is too slow for this purpose"
-echo "progress report: once u_analyze.py is running:"
+echo "once u_analyze.py is running:"
 echo "- open an new terminal and do a: tail -f /tmp/u_analzse.log"
-echo "./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --level DEBUG"
+echo "or just watch the progress in the plot window"
+echo
+echo "./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --level DEBUG --toconsole --mount-type-eq&"
 #
-./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --level DEBUG --toconsole &
+./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --level DEBUG --toconsole --mount-type-eq&
 ## use astrometry.net
 ##./u_analyze.py  --base-path $BASE_PATH   --level DEBUG --toconsole &
 export pid_u_analyze=$!
@@ -126,9 +138,6 @@ echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<<"
 echo "leave plot window open"
 echo "click on blue points to see FITS being displayed with DS9"
-echo "since option u_acquire.py --use-bright-stars was disabled"
-echo "magenta points (result from SExtractor) will be not"
-echo "excactly centered."
 if ps -p $pid_u_analyze >/dev/null; then
     echo ""
     echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
@@ -140,6 +149,13 @@ echo "DONE u_analyze.py"
 echo "------------------------------------------------"
 echo "fifth step, create pointing model"
 echo "./u_point.py --base-path $BASE_PATH --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG"
+#
+# use file u_point_positions_sxtr.anl only for demonstration purposes
+# 
+./u_point.py --base-path $BASE_PATH --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG --toconsole --ds9
+#
+# with results from astrometry.net
+#./u_point.py --base-path $BASE_PATH --mount-data  u_point_positions_astr.anl --plot --level DEBUG --toconsole --ds9
 echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<<"
 echo "leave plot windows open and click on those labled CLICK ME"
@@ -151,10 +167,3 @@ echo "To terminate script $script, type CTRL-Z followd by 'kill %PID', PID appea
 echo "as e.g. [1]+  Stopped  ./do_it_all.sh"
 echo
 echo
-#
-# use file u_point_positions_sxtr.anl only for demonstration purposes
-# 
-./u_point.py --base-path $BASE_PATH --mount-data  u_point_positions_sxtr.anl --plot --level DEBUG --toconsole --ds9
-#
-# with results from astrometry.net
-#./u_point.py --base-path $BASE_PATH --mount-data  u_point_positions_astr.anl --plot --level DEBUG --toconsole --ds9
