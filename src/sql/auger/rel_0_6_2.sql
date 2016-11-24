@@ -12,3 +12,5 @@ CREATE TABLE auger_observation (
 	obs_id		integer NOT NULL REFERENCES observations (obs_id),
 CONSTRAINT auger_obs_prim_key PRIMARY KEY (auger_t3id, obs_id)
 );
+
+GRANT all on auger_t3id to group observers;
