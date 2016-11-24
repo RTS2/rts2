@@ -60,7 +60,7 @@ import ds9region
 import sextractor_3
 import astrometry_3
 from structures import CatPosition,NmlPosition,AcqPosition,AnlPosition,cl_nms_acq,cl_nms_anl
-from callback import SimpleAnnoteFinder
+from callback import AnnoteFinder
 
 
 class Worker(Process):
@@ -601,8 +601,8 @@ class Analysis(object):
     except:
       pass
     
-    self.af = SimpleAnnoteFinder(acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg, annotate_fn=True)
-    fig.canvas.mpl_connect('button_press_event',self.af)
+    self.af = AnnoteFinder(acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg, annotate_fn=True)
+    fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
 
     plt.show()
 

@@ -60,7 +60,7 @@ from watchdog.events import FileSystemEventHandler
 import queue
 
 from structures import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
-from callback import SimpleAnnoteFinder
+from callback import AnnoteFinder
 
 class Acquisition(object):
   def __init__(
@@ -503,9 +503,13 @@ class Acquisition(object):
     
     (acq_az,acq_alt,annotes)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
-    self.af = SimpleAnnoteFinder(acq_az,acq_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True)
+    self.af = AnnoteFinder(acq_az,acq_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True)
+
+
+
+
     ##self.af =  SimpleAnnoteFinder(acq_nml_az,acq_nml_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=False,lg=self.lg)
-    fig.canvas.mpl_connect('button_press_event',self.af)
+    fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
 
     plt.show()
     
