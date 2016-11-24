@@ -95,17 +95,20 @@ while line:
 	else:
 		print ','
 	try:
+		ra = 15 * (int(el['RAh']) + int(el['RAm']) / 60.0 + float(el['RAs']) / 3600.0)
 		de = int(el['DEd']) + int(el['DEm']) / 60.0 + int(el['DEs']) / 3600.0
 		if el['DE-'] == '-':
 			de *= -1
-		print "[{0},'{1}',{2},{3},{4},{5},{6}]".format( \
+		print "[{0},'{1}',{2},{3},{4},{5},{6},{7},{8}]".format( \
 			el['HR'], \
 			el['Name'],
-			15*(int(el['RAh']) + int(el['RAm']) / 60.0 + float(el['RAs']) / 3600.0), \
+			ra, \
 			de, \
 			float(el['Vmag']), \
 			float(el['pmRA']), \
-			float(el['pmDE']) \
+			float(el['pmDE']), \
+			el['HD'], \
+			el['SAO'] \
 		),
 	except ValueError,va:
 		first = True
