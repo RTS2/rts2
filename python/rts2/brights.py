@@ -25,8 +25,10 @@ import libnova
 
 __DS9 = 'brights'
 
-def find_stars(fn, hdu, verbose = 0, useDS9 = False, cube = None):
+def find_stars(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 	"""Find stars on the image. Returns flux ordered list of stars."""
+	if hdu is None:
+		hdu = fits.open(fn)
 	if cube is None:
 		data = np.array(hdu[0].data,np.int32)
 	else:
@@ -42,7 +44,7 @@ def find_stars(fn, hdu, verbose = 0, useDS9 = False, cube = None):
 		return []
 	return sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
 
-def find_brightest(fn, hdu, verbose = 0, useDS9 = False, cube = None):
+def find_brightest(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
 	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
 	if len(s_objects) == 0:
