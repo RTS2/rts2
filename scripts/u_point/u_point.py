@@ -58,6 +58,7 @@ except:
 
 from structures import Point,Parameter
 from callback import AnnoteFinder
+from callback import  AnnotatedPlot
 
 # find out how caching works
 #from astropy.utils import iers
@@ -556,7 +557,6 @@ class PointingModel(object):
     self.fit_projection_and_plot(vals=[x.res_lat.arcsec for x in stars],bins=args.bins,axis='{}'.format(lat_label),fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q2',plt=plt)
 
 
-    from callback import  AnnotatedPlot
     if True:
       aps=list()
       aps.append(AnnotatedPlot(xx=ax00,x=ax00_lon,y=ax00_lat,annotes=annotes))
@@ -582,7 +582,7 @@ class PointingModel(object):
         ds9_display=args.ds9_display,
         lg=self.lg)
     
-      fig05.canvas.mpl_connect('button_press_event', af05)
+      fig05.canvas.mpl_connect('button_press_event', af05.mouse_event)
 
     if True:
       aps=list()
@@ -609,7 +609,7 @@ class PointingModel(object):
         ds9_display=args.ds9_display,
         lg=self.lg)
     
-      fig10.canvas.mpl_connect('button_press_event', af10)
+      fig10.canvas.mpl_connect('button_press_event', af10.mouse_event)
 
     
     plt.show()
