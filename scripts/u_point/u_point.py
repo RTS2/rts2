@@ -59,6 +59,7 @@ except:
 from structures import Point,Parameter
 from callback import AnnoteFinder
 from callback import  AnnotatedPlot
+from script import Script
 
 # find out how caching works
 #from astropy.utils import iers
@@ -103,19 +104,15 @@ ln_pos_aa_pr=LN_hrz_posn()
 ln_hrz_posn=LN_hrz_posn()
 
 
-class PointingModel(object):
-  def __init__(self, dbg=None,lg=None, base_path=None, obs_lng=None, obs_lat=None, obs_height=None):
-    self.dbg=dbg
-    self.lg=lg
-    self.base_path=base_path
+class PointingModel(Script):
+  def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None,u_point_analyzed_positions=None):
+    Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,analyzed_positions=analyzed_positions,u_point_analyzed_positions=u_point_analyzed_positions,)
     #
-    self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
-    #
-    self.ln_obs=LN_lnlat_posn()
-    self.ln_obs.lng=obs_lng     # deg
-    self.ln_obs.lat=obs_lat     # deg
-    self.ln_hght=obs_height     # m, not a libnova quantity
-
+    self.ln_obs=LN_lnlat_posn()    
+    self.ln_obs.lng=obs.longitude.degree # deg
+    self.ln_obs.lat=obs.latitude.degree  # deg
+    self.ln_hght=obs.height  # hm, no .meter?? m, not a libnova quantity
+    
   def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,correct_cat=False):
 
     ln_pos_eq.ra=ra
@@ -145,6 +142,7 @@ class PointingModel(object):
     a_az=Longitude(ln_pos_aa_pr.az,u.deg)
     # add refraction
     a_alt=Latitude(ln_pos_aa_pr.alt + d_alt_deg,u.deg)
+    #
     pos_aa=SkyCoord(az=a_az.radian,alt=a_alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=obstime,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
     return pos_aa
 
@@ -198,32 +196,7 @@ class PointingModel(object):
 
     return pos_aa
 
-  def fetch_pandas(self, ptfn=None,columns=None):
-    pd_cat=None
-    if not os.path.isfile(ptfn):
-      self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
-      sys.exit(1)
-    try:
-      pd_cat = pd.read_csv(ptfn, sep=',',header=None)
-    except ValueError as e:
-      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
-      return
-    except OSError as e:
-      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
-      return
-    except Exception as e:
-      self.lg.debug('fetch_pandas: {},{}, exiting'.format(ptfn, e))
-      sys.exit(1)
-    
-    try:
-      pd_cat.columns = columns
-    except ValueError as e:
-      self.lg.debug('fetch_pandas: {},{}, ignoring'.format(ptfn, e))
-      return
-
-    return pd_cat
-
-  def fetch_coordinates(self,ptfn=None,astropy_f=False,break_after=None,fit_eq=False):
+  def fetch_coordinates(self,ptfn=None,astropy_f=False,fit_eq=False):
     '''
     Data structure, one per line:
     date time UTC begin exposure [format iso], catalog RA [rad], catalog DEC [rad], mount position RA [rad], mount position DEC [rad], [exposure time [sec], temperature [deg C], pressure QFE [hPa], humidity [%]]
@@ -234,27 +207,17 @@ class PointingModel(object):
 
     This method uses the optional items in case they are present.
     '''
+    df_data=self.fetch_u_point_analyzed_positions()
+    
+    if df_data is None:
+      return None,None,None,None
+
     cats=list()
     mnts=list()
     imgs=list()
-    if self.base_path in ptfn:
-      fn=ptfn
-    else:
-      fn=os.path.join(self.base_path,ptfn)
-
-    image_fn_present=False
-    pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp'])
-    if pd_cat is None:
-      pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum'])
-    if pd_cat is None:
-      pd_cat = self.fetch_pandas(ptfn=fn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum','nml_id','cat_no','image_fn'])
-      image_fn_present=True
-    
-    if pd_cat is None:
-      return None,None,None
-
-    for i,rw in pd_cat.iterrows():
-      if i > break_after:
+    nmls=list()
+    for i,rw in df_data.iterrows():
+      if i > self.break_after:
         break
       dt_utc = Time(rw['utc'],format='iso', scale='utc',location=self.obs)
       if pd.notnull(rw['exp']):
@@ -293,11 +256,11 @@ class PointingModel(object):
         cats.append(cat_aa)
         mnts.append(mnt_aa)
 
-      if image_fn_present:
-        if pd.notnull(rw['image_fn']):
-          imgs.append(rw['image_fn'])
-       
-    return cats,mnts,imgs
+      if pd.notnull(rw['image_fn']):
+        imgs.append(rw['image_fn'])
+        nmls.append(i)
+    
+    return cats,mnts,imgs,nmls
 
   
   # fit projections with a gaussian
@@ -349,7 +312,7 @@ class PointingModel(object):
       ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,self.mu(), self.sigma(),fit_title))
       fig.savefig(os.path.join(self.base_path,'{}_projection_{}_{}.png'.format(prefix,axis,fn_frac)))
 
-  def prepare_plot(self, cats=None,mnts=None,imgs=None,selected=None,model=None):
+  def prepare_plot(self, cats=None,mnts=None,imgs=None,nmls=None,selected=None,model=None):
     stars=list()
     for i, ct in enumerate(cats):
       if not i in selected:
@@ -383,6 +346,10 @@ class PointingModel(object):
         image_fn=imgs[i]
       except:
         image_fn='no image file'
+      try:
+        nml_id=nmls[i]
+      except:
+        nml_id='no nml_id'
       st=Point(
         cat_lon=cts.lon,
         cat_lat=cts.lat,
@@ -392,7 +359,8 @@ class PointingModel(object):
         df_lon=df_lon,
         res_lat=res_lat,
         res_lon=res_lon,
-        image_fn=image_fn
+        image_fn=image_fn,
+        nml_id=nml_id,
       )
       stars.append(st)
                       
@@ -423,9 +391,12 @@ class PointingModel(object):
         fit_title='condon1992, AP'
         fn_frac='condon1992AP'
       
-      lon_label='azimuth'
       lat_label='altitude'
-
+      if args.astropy:
+        lon_label='N=0,E=90 azimuth'
+      else:
+        lon_label='S=0,W=90 azimuth'
+        
     az_cat_deg=[x.cat_lon.degree for x in stars]
     alt_cat_deg=[x.cat_lat.degree for x in stars]
     
@@ -548,6 +519,8 @@ class PointingModel(object):
     ax10_lon=lon=[x.cat_lon.degree for x in stars]
     ax10_lat=lat=[x.cat_lat.degree for x in stars]
     ax10.scatter(lon,lat)
+    ax10.grid(True)
+
     fig10.savefig(os.path.join(self.base_path,'measurement_locations_catalog.png'))
 
 
@@ -556,7 +529,7 @@ class PointingModel(object):
     self.fit_projection_and_plot(vals=[x.res_lon.arcsec for x in stars],bins=args.bins,axis='{}'.format(lon_label), fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q1',plt=plt)
     self.fit_projection_and_plot(vals=[x.res_lat.arcsec for x in stars],bins=args.bins,axis='{}'.format(lat_label),fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q2',plt=plt)
 
-
+    self.fetch_analyzed_positions(sys_exit=True)
     if True:
       aps=list()
       aps.append(AnnotatedPlot(xx=ax00,x=ax00_lon,y=ax00_lat,annotes=annotes))
@@ -572,17 +545,22 @@ class PointingModel(object):
       aps.append(AnnotatedPlot(xx=ax10,x=ax10_lon,y=ax10_lat,annotes=annotes))
     
       af05 =  AnnoteFinder(
-        a_lon=[x.res_lon.arcmin for x in stars],
-        a_lat=[x.res_lat.arcmin for x in stars],
+        nml_id=[x.nml_id for x in stars],
+        a_lon=ax05_lon,
+        a_lat=ax05_lat,
         annotes=annotes05,
-        ax=ax05, # leading plot
+        ax=ax05, # leading plot, put it on the list
         aps=aps,
         xtol=5.,
         ytol=5.,
         ds9_display=args.ds9_display,
-        lg=self.lg)
+        lg=self.lg,
+        annotate_fn=True,
+        delete_one=self.delete_one_u_point_analyzed_positions,)
     
       fig05.canvas.mpl_connect('button_press_event', af05.mouse_event)
+      if args.delete:
+        fig05.canvas.mpl_connect('key_press_event',af05.keyboard_event)
 
     if True:
       aps=list()
@@ -596,20 +574,26 @@ class PointingModel(object):
       aps.append(AnnotatedPlot(xx=ax07,x=ax07_lon,y=ax07_lat,annotes=annotes))
       aps.append(AnnotatedPlot(xx=ax08,x=ax08_lon,y=ax08_lat,annotes=annotes))
       aps.append(AnnotatedPlot(xx=ax09,x=ax09_lon,y=ax09_lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax10,x=ax10_lon,y=ax10_lat,annotes=annotes))
       # no 10
 
       af10 =  AnnoteFinder(
+        nml_id=[x.nml_id for x in stars],
         a_lon=ax10_lon,
         a_lat=ax10_lat,
-        annotes=annotes05,
+        annotes=annotes05, # ok
         ax=ax10, # leading plot
         aps=aps,
         xtol=5.,
         ytol=5.,
         ds9_display=args.ds9_display,
-        lg=self.lg)
+        lg=self.lg,
+        annotate_fn=True,
+        delete_one=self.delete_one_u_point_analyzed_positions,)
     
       fig10.canvas.mpl_connect('button_press_event', af10.mouse_event)
+      if args.delete:
+        fig10.canvas.mpl_connect('key_press_event',af10.keyboard_event)
 
     
     plt.show()
@@ -650,25 +634,26 @@ def arg_float(value):
 if __name__ == "__main__":
 
   parser= argparse.ArgumentParser(prog=sys.argv[0], description='Fit an AltAz or EQ pointing model')
-  parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
   parser.add_argument('--level', dest='level', default='INFO', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
 
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
-  parser.add_argument('--mount-data', dest='mount_data', action='store', default='./mount_data.txt', help=': %(default)s, mount data filename')
+  parser.add_argument('--u_point_analyzed_positions', dest='u_point_analyzed_positions', action='store', default=None, required=True,help=': %(default)s, filename with analyzed_positions u_point format')
   parser.add_argument('--fit-eq', dest='fit_eq', action='store_true', default=False, help=': %(default)s, True fit EQ model, else AltAz')
   parser.add_argument('--t-point', dest='t_point', action='store_true', default=False, help=': %(default)s, fit EQ model with T-point compatible model')
   parser.add_argument('--fit-plus-poly', dest='fit_plus_poly', action='store_true', default=False, help=': %(default)s, True: Condon 1992 with polynom')
   parser.add_argument('--astropy', dest='astropy', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with astropy, default libnova')
   parser.add_argument('--bins', dest='bins', action='store', default=40,type=int, help=': %(default)s, number of bins used in the projection histograms')
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
-            
+  parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
+  parser.add_argument('--delete', dest='delete', action='store_true', default=False, help=': %(default)s, True: click on data point followed by keyboard <Delete> deletes selected ananlyzed point from file --analyzed-positions')
+        
   args=parser.parse_args()
   
   if args.toconsole:
@@ -689,20 +674,22 @@ if __name__ == "__main__":
   if args.fit_eq and args.fit_plus_poly:
     logger.error('--fit-plus-poly can not be specified with --fit-eq, drop either')
     sys.exit(1)
-  
-  pm= PointingModel(dbg=args.debug,lg=logger,base_path=args.base_path,obs_lng=args.obs_lng,obs_lat=args.obs_lat,obs_height=args.obs_height)
-
+    
   if not os.path.exists(args.base_path):
     os.makedirs(args.base_path)
+
+  obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)  
+  pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions,u_point_analyzed_positions=args.u_point_analyzed_positions,)
+
 
   if args.t_point:
     args.fit_eq=True
   
   # cat,mnt: AltAz, or HA,dec coordinates
-  cats,mnts,imgs=pm.fetch_coordinates(ptfn=args.mount_data,astropy_f=args.astropy,break_after=args.break_after,fit_eq=args.fit_eq)
+  cats,mnts,imgs,nmls=pm.fetch_coordinates(astropy_f=args.astropy,fit_eq=args.fit_eq)
 
   if cats is None:
-    logger.error('nothing to analyze, exiting')
+    logger.error('u_point: nothing to analyze, exiting')
     sys.exit(1)
   # now load model class
   md = importlib.import_module(args.model_class)
@@ -716,7 +703,7 @@ if __name__ == "__main__":
   else:
     res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
     
-  stars=pm.prepare_plot(cats=cats,mnts=mnts,imgs=imgs,selected=selected,model=mdl)
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,imgs=imgs,nmls=nmls,selected=selected,model=mdl)
     
   if args.plot:
     pm.plot_results(stars=stars,args=args)
@@ -731,7 +718,7 @@ if __name__ == "__main__":
   else:
     res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
     
-  stars=pm.prepare_plot(cats=cats,mnts=mnts,selected=selected,model=mdl)
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,nmls=nmls,selected=selected,model=mdl)
   pm.plot_results(stars=stars,args=args)
   
   logger.info('number of selected: {}, dropped: {} '.format(len(selected),len(dropped)))
@@ -740,5 +727,6 @@ if __name__ == "__main__":
   else:
     res=mdl.fit_model(cats=cats,mnts=mnts,selected=dropped,fit_plus_poly=args.fit_plus_poly)
   
-  stars=pm.prepare_plot(cats=cats,mnts=mnts,selected=dropped,model=mdl)
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,nmls=nmls,selected=dropped,model=mdl)
   pm.plot_results(stars=stars,args=args)
+  sys.exit(0)

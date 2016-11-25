@@ -36,7 +36,7 @@ class Parameter:
 
 # data structure
 class Point(object):
-  def __init__(self,cat_lon=None,cat_lat=None,mnt_lon=None,mnt_lat=None,df_lat=None,df_lon=None,res_lat=None,res_lon=None,image_fn=None):
+  def __init__(self,cat_lon=None,cat_lat=None,mnt_lon=None,mnt_lat=None,df_lat=None,df_lon=None,res_lat=None,res_lon=None,image_fn=None,nml_id=None):
     self.cat_lon=cat_lon
     self.cat_lat=cat_lat
     self.mnt_lon=mnt_lon
@@ -46,6 +46,7 @@ class Point(object):
     self.res_lat=res_lat
     self.res_lon=res_lon
     self.image_fn=image_fn
+    self.nml_id=nml_id
 
 class CatPosition(object):
   def __init__(self, cat_no=None,cat_eq=None,mag_v=None):
@@ -165,14 +166,14 @@ class AnlPosition(AcqPosition):
       temperature=temperature,
       humidity=humidity,
     )
-
     self.sxtr=sxtr
     self.astr=astr
   # ToDo still ugly
   def __str__(self):
-    anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20,{21},{22},{23},{24}'.format(
-      self.nml_id[0],#0
-      self.cat_no[0],#1
+    
+    anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24}'.format(
+      self.nml_id,#0
+      self.cat_no,#1
       self.aa_nml.az.radian,#2
       self.aa_nml.alt.radian,#3
       self.eq.ra.radian,#4

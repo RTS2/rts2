@@ -31,9 +31,9 @@ import logging
 import socket
 import numpy as np
 import requests
-import pandas as pd
+import pyinotify
 
-from multiprocessing import Lock, Process, Queue, current_process, cpu_count, Event
+from multiprocessing import Lock, Queue, cpu_count
 
 from collections import OrderedDict
 from datetime import datetime
@@ -55,337 +55,53 @@ except:
   print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
   sys.exit(1)
 
-
 import ds9region
 import sextractor_3
-import astrometry_3
 from structures import CatPosition,NmlPosition,AcqPosition,AnlPosition,cl_nms_acq,cl_nms_anl
 from callback import AnnoteFinder
+from notify import EventHandler 
+from worker import Worker
+from solver import SolverResult,Solver
+from script import Script
 
-
-class Worker(Process):
-  def __init__(self, work_queue=None,ds9_queue=None,next_queue=None,lock=None, dbg=None, lg=None, anl=None):
-    Process.__init__(self)
-    self.exit=Event()
-    self.work_queue=work_queue
-    self.ds9_queue=ds9_queue
-    self.next_queue=next_queue
-    self.anl=anl
-    self.lock=lock
-    self.dbg=dbg
-    self.lg=lg
-
-  def store_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_mnt_eq=None):
-    lock.acquire()
-    if astr_mnt_eq is None and sxtr_ra is None and sxtr_dec is None:
-      pass
-    elif astr_mnt_eq is None:
-      self.anl.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=np.nan,astr_dec=np.nan)
-    else:
-      self.anl.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=astr_mnt_eq.ra.radian,astr_dec=astr_mnt_eq.dec.radian)
-    lock.release()
-
-  def run(self):
-    acq=acq_image_fn=None
-    while not self.exit.is_set():
-      if ds9_queue is not None:
-        try:
-          cmd=self.ds9_queue.get()
-        except Queue.Empty:
-          self.lg.info('{}: ds9 queue empty, returning'.format(current_process().name))
-          return
-        # 'q'
-        if isinstance(cmd, str):
-          if 'dl' in cmd:
-            self.lg.info('{}: got {}, delete last: {}'.format(current_process().name, cmd,acq.image_fn))
-            acq_image_fn=acq.image_fn
-            acq=None
-          elif 'q' in cmd:
-            self.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
-            self.lg.error('{}: got {}, call shutdown'.format(current_process().name, cmd))
-            self.shutdown()
-            return
-          else:
-            self.lg.error('{}: got {}, continue'.format(current_process().name, cmd))
-        if acq:
-          self.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
-        elif acq_image_fn is not None:
-          self.lg.info('{}: not storing {}'.format(current_process().name, acq_image_fn))
-          acq_image_fn=None
-      acq=None
-      try:
-        acq=self.work_queue.get()
-      except Queue.Empty:
-        self.lg.info('{}: queue empty, returning'.format(current_process().name))
-        return
-      except Exception as  e:
-        self.lg.error('{}: queue error: {}, returning'.format(current_process().name, e))
-        return
-      # 'STOP'
-      if isinstance(acq, str):
-        self.lg.error('{}: got {}, call shutdown_on_STOP'.format(current_process().name, acq))
-        self.shutdown_on_STOP()
-        return
-      # analysis part
-      x,y=self.anl.sextract(acq=acq,pcn=current_process().name)
-      sxtr_ra=sxtr_dec=None
-      if x is not None and y is not None:
-        sxtr_ra,sxtr_dec=self.anl.xy2lonlat_appr(px=x,py=y,acq=acq,pcn=current_process().name)
-      
-      astr_mnt_eq=self.anl.astrometry(acq=acq,pcn=current_process().name)
-      if self.ds9_queue is None:
-        self.store_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
-      else:
-        self.next_queue.put('c')
-      # end analysis part
-
-    self.lg.info('{}: got shutdown event, exiting'.format(current_process().name))
-
-  def shutdown(self):
-    if next_queue is not None:
-      self.next_queue.put('c')
-    self.lg.info('{}: shutdown event, initiate exit'.format(current_process().name))
-    self.exit.set()
-    return
-
-  def shutdown_on_STOP(self):
-    if next_queue is not None:
-      self.next_queue.put('c')
-    self.lg.info('{}: shutdown on STOP, initiate exit'.format(current_process().name))
-    self.exit.set()
-    return
-                                                        
-class SolverResult():
-  """Results of astrometry.net including necessary fits headers"""
-  def __init__(self, ra=None, dec=None, fn=None):
-    self.ra= ra
-    self.dec=dec
-    self.fn= fn
-
-class Solver():
-  """Solve a field with astrometry.net """
-  def __init__(self, lg=None, blind=False, scale=None, radius=None, replace=None, verbose=None,timeout=None):
-    self.lg = lg
-    self.blind= blind
-    self.scale  = scale/np.pi*3600.*180. # solve-field -u app arcsec/pixel
-    self.radius = radius
-    self.replace= replace
-    self.verbose= verbose
-    self.timeout=timeout
-    
-  def solve_field(self,fn=None, ra=None, dec=None):
-    try:
-      self.solver = astrometry_3.AstrometryScript(lg=self.lg,fits_file=fn)
-    except Exception as e:
-      self.lg.debug('Solver: solver died, file: {}, exception: {}'.format(fn, e))
-      return None
-      
-    # base class method
-    if self.blind:
-      center=self.solver.run(scale=self.scale, replace=self.replace,timeout=self.timeout,verbose=self.verbose,wrkr=current_process().name)
-    else:
-      # ToDo
-      center=self.solver.run(scale=self.scale,ra=ra,dec=dec,radius=self.radius,replace=self.replace,timeout=self.timeout,verbose=self.verbose,wrkr=current_process().name)
-
-      if center!=None:
-        if len(center)==2:
-          return SolverResult(ra=center[0],dec=center[1],fn=fn)
-      return None
-
-class Analysis(object):
+class Analysis(Script):
   def __init__(
       self, dbg=None,
       lg=None,
-      obs_lng=None,
-      obs_lat=None,
-      obs_height=None,
+      break_after=None,
+      base_path=None,
+      obs=None,
+      acquired_positions=None,
+      analyzed_positions=None,
+      acq_e_h=None,
       px_scale=None,
       ccd_size=None,
       ccd_angle=None,
       mount_type_eq=None,
-      acquired_positions=None,
-      analyzed_positions=None,
       u_point_positions_base=None,
-      break_after=None,
       verbose_astrometry=None,
       ds9_display=None,
-      base_path=None,
       solver=None,
   ):
-    self.dbg=dbg
-    self.lg=lg
-    self.break_after=break_after
-    self.verbose_astrometry=verbose_astrometry
-    self.ds9_display=ds9_display
+    Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,acquired_positions=acquired_positions,analyzed_positions=analyzed_positions,acq_e_h=acq_e_h)
+    #
     self.px_scale=px_scale
     self.ccd_size=ccd_size
     self.ccd_angle=args.ccd_angle
     self.mount_type_eq=mount_type_eq
-    self.base_path=base_path
+    self.u_point_positions_base=u_point_positions_base
+    self.verbose_astrometry=verbose_astrometry
+    self.ds9_display=ds9_display
     self.solver=solver
     #
     self.ccd_rotation=self.rot(self.ccd_angle)
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
-    self.u_point_positions_base=u_point_positions_base
-    self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
     self.dt_utc=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     self.acq=list()
     self.anl=list()
 
-  def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True):
-    pd_cat=None
-    if not os.path.isfile(ptfn):
-      self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
-      if sys_exit:
-        sys.exit(1)
-      return None
-
-    try:
-      pd_cat = pd.read_csv(ptfn, sep=',',header=None)
-    except ValueError as e:
-      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
-      return
-    except OSError as e:
-      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
-      return
-    except Exception as e:
-      self.lg.debug('fetch_pandas: {},{}, exiting'.format(ptfn, e))
-      sys.exit(1)
-    pd_cat.columns = columns
-    return pd_cat
-
-  def fetch_positions(self,fn=None,fetch_acq=False,sys_exit=False):
-    cln= cl_nms_anl
-    if fetch_acq:
-      cln= cl_nms_acq
-    if self.base_path in fn:
-      ptfn=fn
-    else:
-      ptfn=os.path.join(self.base_path,fn)
-      
-    pd_cat = self.fetch_pandas(ptfn=ptfn,columns=cln,sys_exit=sys_exit)
-    if pd_cat is None:
-      return
-      
-    for i,rw in pd_cat.iterrows():
-      # ToDo why not out_subfmt='fits'
-      dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-      dt_end=Time(rw['dt_end'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-      dt_end_query=Time(rw['dt_end_query'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-
-      # ToDo set best time point
-      aa_nml=SkyCoord(az=rw['aa_nml_az'],alt=rw['aa_nml_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-      acq_eq=SkyCoord(ra=rw['eq_ra'],dec=rw['eq_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_woffs=SkyCoord(ra=rw['eq_woffs_ra'],dec=rw['eq_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_mnt=SkyCoord(ra=rw['eq_mnt_ra'],dec=rw['eq_mnt_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_aa_mnt=SkyCoord(az=rw['aa_mnt_az'],alt=rw['aa_mnt_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-
-      if fetch_acq:
-        acq=AcqPosition(
-          nml_id=rw['nml_id'],
-          cat_no=rw['cat_no'],
-          aa_nml=aa_nml,
-          eq=acq_eq,
-          dt_begin=dt_begin,
-          dt_end=dt_end,
-          dt_end_query=dt_end_query,
-          JD=rw['JD'],
-          eq_woffs=acq_eq_woffs,
-          eq_mnt=acq_eq_mnt,
-          aa_mnt=acq_aa_mnt,
-          image_fn=rw['image_fn'],
-          exp=rw['exp'],
-          pressure=rw['pressure'],
-          temperature=rw['temperature'],
-          humidity=rw['humidity'],
-        )
-        self.acq.append(acq)
-      else:
-        if pd.notnull(rw['sxtr_ra']) and pd.notnull(rw['sxtr_dec']):
-          sxtr_eq=SkyCoord(ra=rw['sxtr_ra'],dec=rw['sxtr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-        else:
-          sxtr_eq=None
-          self.lg.debug('fetch_positions: sxtr None')
-        if pd.notnull(rw['astr_ra']) and pd.notnull(rw['astr_dec']):
-          astr_eq=SkyCoord(ra=rw['astr_ra'],dec=rw['astr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-        else:
-          astr_eq=None
-          #self.lg.debug('fetch_positions: astr None')
-          # to create more or less identical plots:
-          #continue
-        
-        anls=AnlPosition(
-          nml_id=rw['nml_id'],
-          cat_no=rw['cat_no'],
-          aa_nml=aa_nml,
-          eq=acq_eq,
-          dt_begin=dt_begin,
-          dt_end=dt_end,
-          dt_end_query=dt_end_query,
-          JD=rw['JD'],
-          eq_woffs=acq_eq_woffs,
-          eq_mnt=acq_eq_mnt,
-          aa_mnt=acq_aa_mnt,
-          image_fn=rw['image_fn'],
-          exp=rw['exp'],
-          pressure=rw['pressure'],
-          temperature=rw['temperature'],
-          humidity=rw['humidity'],
-          sxtr= sxtr_eq,
-          astr= astr_eq,
-        )
-        self.anl.append(anls)
-        
-  def store_u_point(self,fn=None,acq=None,ra=None,dec=None):
-    if self.base_path in fn:
-      ptfn=fn
-    else:
-      ptfn=os.path.join(self.base_path,fn)
-    # u_point: ['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum'])
-    #          ['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp']
-    with  open(ptfn, 'a') as wfl:
-      wfl.write('{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}\n'.format(
-        acq.dt_end,#1
-        acq.eq.ra.radian,
-        acq.eq.dec.radian,
-        ra,
-        dec,
-        acq.exp,
-        acq.pressure, 
-        acq.temperature,
-        acq.humidity,#9
-        acq.nml_id,
-        acq.cat_no,
-        acq.image_fn,#12
-      ))
-
-  def store_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_ra=None,astr_dec=None):
-    if self.base_path in self.analyzed_positions:
-      ptfn=self.analyzed_positions
-    else:
-      ptfn=os.path.join(self.base_path,self.analyzed_positions)
-    
-    # append, one by one
-    with  open(ptfn, 'a') as wfl:
-      wfl.write('{},{},{},{},{}\n'.format(acq,sxtr_ra,sxtr_dec,astr_ra,astr_dec))
-    
-    # SExtractor
-    self.store_u_point(fn=self.u_point_positions_base+'sxtr.anl',acq=acq,ra=sxtr_ra,dec=sxtr_dec)
-    if self.solver is not None:
-      # astrometry.net              
-      self.store_u_point(fn=self.u_point_positions_base+'astr.anl',acq=acq,ra=astr_ra,dec=astr_dec)
                     
-  def to_altaz(self,eq=None):
-    # http://docs.astropy.org/en/stable/api/astropy.coordinates.AltAz.html
-    # Azimuth is oriented East of North (i.e., N=0, E=90 degrees)
-    # RTS2 follows IAU S=0, W=90
-    return eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
-
-  def to_eq(self,aa=None):
-    return aa.transform_to('icrs') 
-
-
   def rot(self,rads):
     s=np.sin(rads)
     c=np.cos(rads)
@@ -442,12 +158,7 @@ class Analysis(object):
     self.lg.debug('{0}: sextract   result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,fn))
     
     return lon,lat
-            
-  def display_fits(self,fn=None, x=None,y=None,color=None):
-    ds9=ds9region.Ds9DisplayThread(debug=True,logger=self.lg)
-    # Todo: ugly
-    ds9.run(fn,x=x,y=y,color=color)
-      
+  
   def sextract(self,acq=None,pcn='single'):
     #if self.ds9_display:
     #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(acq.cat_no)))
@@ -507,51 +218,38 @@ class Analysis(object):
       self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,fn))
       return None
 
-      
   def re_plot(self,i=0,animate=None):
-    self.acq=list()
-    self.anl=list()
-    self.fetch_positions(fn=self.acquired_positions,fetch_acq=True,sys_exit=True)
-    self.fetch_positions(fn=self.analyzed_positions,fetch_acq=False,sys_exit=False)
-    #                                                             if self.anl=[]
-    result = [(i,x.sxtr.ra.degree) for i,x in enumerate(self.anl) if x is not None and x.sxtr is not None]
-    try:
-      i_sxtr,anl_sxtr_eq_ra=map(list, zip(*result))
-    except Exception as e:
-      self.lg.error('re_plot: sxtr exception: {}'.format(e))
-      return
-    anl_sxtr_eq_dec = [x.sxtr.dec.degree for x in self.anl if x is not None and x.sxtr is not None]
+    
+    self.fetch_acquired_positions(sys_exit=True)
+    self.fetch_analyzed_positions(sys_exit=False)
+    #                                                               if self.anl=[]
+    anl_sxtr_eq_ra=[x.sxtr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.sxtr is not None]
+    anl_sxtr_eq_dec=[x.sxtr.dec.degree for x in self.anl if x is not None and x.sxtr is not None]
 
-    # here it is more likely                                      if self.anl=[]
-    result = [(i,x.astr.ra.degree) for i,x in enumerate(self.anl) if x is not None and x.astr is not None]
-    try:
-      i_astr,anl_astr_eq_ra=map(list, zip(*result))
-    except Exception as e:
-      # ToDo a bit a murcks
-      self.lg.error('re_plot: astr exception: {}'.format(e))
-      i_astr=list()
-      anl_astr_eq_ra=list()
-  
-    anl_astr_eq_dec = [x.astr.dec.degree for x in self.anl if x is not None and x.astr is not None]
+    anl_astr_eq_ra=[x.astr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.astr is not None]  
+    anl_astr_eq_dec=[x.astr.dec.degree for x in self.anl if x is not None and x.astr is not None]
 
-    acq_eq_ra =[x.eq.ra.degree for x in self.acq if x.eq is not None]
-    acq_eq_dec = [x.eq.dec.degree for x in self.acq if x.eq is not None]
+    acq_eq_ra =[x.eq.ra.degree for x in self.acq]
+    acq_eq_dec = [x.eq.dec.degree for x in self.acq]
+    #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
+    # ToDo: was nu? debug?
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
+    nml_ids=[x.nml_id for x in self.acq if x.aa_mnt is not None]
+
     self.ax.clear()
     self.ax.scatter(acq_eq_ra, acq_eq_dec,color='blue',s=120.)
     self.ax.scatter(anl_sxtr_eq_ra, anl_sxtr_eq_dec,color='red',s=40.)
     self.ax.scatter(anl_astr_eq_ra, anl_astr_eq_dec,color='yellow',s=10.)
     # mark last positions
-    if len(i_sxtr) > 0:
-      self.ax.scatter(self.acq[i_sxtr[-1]].eq.ra.degree,self.acq[i_sxtr[-1]].eq.dec.degree,color='green',facecolors='none', edgecolors='green',s=300.)
-    if len(i_astr) > 0:
-      self.ax.scatter(self.acq[i_astr[-1]].eq.ra.degree,self.acq[i_astr[-1]].eq.dec.degree,color='green',facecolors='none', edgecolors='magenta',s=400.)
-
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
+    if len(anl_sxtr_eq_ra) > 0:
+      self.ax.scatter(anl_sxtr_eq_ra[-1],anl_sxtr_eq_dec[-1],color='green',facecolors='none', edgecolors='green',s=300.)
+    if len(anl_astr_eq_ra) > 0:
+      self.ax.scatter(anl_astr_eq_ra[-1],anl_astr_eq_dec[-1],color='green',facecolors='none', edgecolors='magenta',s=400.)
 
     self.ax.set_xlim([0.,360.]) 
 
     if animate:
-      self.ax.set_title(self.title)
+      self.ax.set_title(self.title, fontsize=10)
       now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
       self.ax.set_xlabel('RA [deg], at: {0} [UTC]'.format(now))
     else:
@@ -568,19 +266,16 @@ class Analysis(object):
     self.ax.set_ylabel('declination [deg]')  
     self.ax.grid(True)
       
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
-    ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
     # does not exits at the beginning
     try:
-      self.af.data = list(zip(acq_eq_ra,acq_eq_dec,annotes))
+      self.af.data = list(zip(nml_ids,acq_eq_ra,acq_eq_dec,annotes))
     except AttributeError:
-      return acq_eq_ra,acq_eq_dec,annotes
+      return nml_ids,acq_eq_ra,acq_eq_dec,annotes
 
     
-  def plot(self,title=None,animate=None):
+  def plot(self,title=None,animate=None,delete=None):
 
     import matplotlib
-    import matplotlib.animation as animation
     import matplotlib.animation as animation
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
@@ -591,18 +286,14 @@ class Analysis(object):
     self.title=title
 
     if animate:
-      ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=1000)
+      ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
 
-    acq_eq_ra=list()
-    acq_eq_dec=list()
-    annotes=list()
-    try:
-      (acq_eq_ra,acq_eq_dec,annotes)=self.re_plot(animate=animate)
-    except:
-      pass
+    (nml_ids,acq_eq_ra,acq_eq_dec,annotes)=self.re_plot(animate=animate)
     
-    self.af = AnnoteFinder(acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg, annotate_fn=True)
+    self.af = AnnoteFinder(nml_ids,acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,delete_one=self.delete_one_acquired_position)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
+    if delete:
+      fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
 
     plt.show()
 
@@ -619,7 +310,6 @@ def arg_float(value):
 if __name__ == "__main__":
 
   parser= argparse.ArgumentParser(prog=sys.argv[0], description='Analyze observed positions')
-  parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
   parser.add_argument('--level', dest='level', default='WARN', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
@@ -628,12 +318,13 @@ if __name__ == "__main__":
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
-  parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
   # group plot
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
+  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
+  parser.add_argument('--delete', dest='delete', action='store_true', default=False, help=': %(default)s, True: click on data point followed by keyboard <Delete> deletes selected acquired measurements from file --acquired-positions')
   #
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=float, help=': %(default)s [arcsec/pixel], arcmin/pixel of the CCD camera')
   parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s [px], ccd pixel size x,y[px], format "p1 p2"')
@@ -643,7 +334,7 @@ if __name__ == "__main__":
   parser.add_argument('--mount-type-eq', dest='mount_type_eq', action='store_true',default=False, help=': %(default)s, True: equatorial mount, False: altaz. Only used together with SExtractor.')
   # group SExtractor, astrometry.net
   parser.add_argument('--u-point-positions-base', dest='u_point_positions_base', action='store', default='u_point_positions_', help=': %(default)s, base file name for SExtractor, astrometry.net output files')
-  parser.add_argument('--timeout', dest='timeout', action='store', default=600,type=int, help=': %(default)s [sec], astrometry timeout for finding a solution')
+  parser.add_argument('--timeout', dest='timeout', action='store', default=120,type=int, help=': %(default)s [sec], astrometry timeout for finding a solution')
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
@@ -668,13 +359,19 @@ if __name__ == "__main__":
   solver=None
   if not args.do_not_use_astrometry: # double neg
     solver= Solver(lg=logger,blind=False,scale=px_scale,radius=args.radius,replace=False,verbose=args.verbose_astrometry,timeout=args.timeout)
-    
+
+  acq_e_h=None
+  if args.delete:
+    wm=pyinotify.WatchManager()
+    wm.add_watch(args.base_path,pyinotify.ALL_EVENTS, rec=True)
+    acq_e_h=EventHandler(lg=logger,fn=args.acquired_positions)
+    nt=pyinotify.ThreadedNotifier(wm,acq_e_h)
+    nt.start()
+
+  obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
   anl= Analysis(
-    dbg=args.debug,
     lg=logger,
-    obs_lng=args.obs_lng,
-    obs_lat=args.obs_lat,
-    obs_height=args.obs_height,
+    obs=obs,
     px_scale=px_scale,
     ccd_size=args.ccd_size,
     ccd_angle=args.ccd_angle/180. * np.pi,
@@ -686,19 +383,23 @@ if __name__ == "__main__":
     ds9_display=args.ds9_display,
     base_path=args.base_path,
     solver=solver,
+    acq_e_h=acq_e_h,
   )
 
   if not os.path.exists(args.base_path):
     os.makedirs(args.base_path)
 
-  anl.fetch_positions(fn=anl.acquired_positions,fetch_acq=True,sys_exit=True)
-  anl.fetch_positions(fn=anl.analyzed_positions,fetch_acq=False,sys_exit=False)
+  anl.fetch_acquired_positions(sys_exit=True)
+  anl.fetch_analyzed_positions(sys_exit=False)
+
   if args.plot:
     title='progress: analyzed positions'
     if args.ds9_display:
-      title += ': click on dots to watch image (DS9)'
+      title += ':\n click on blue dots to watch image (DS9)'
+    if args.delete:
+      title += '\n then press <Delete> to remove from the list of acquired positions'
 
-    anl.plot(title=title,animate=args.animate)
+    anl.plot(title=title,animate=args.animate,delete=args.delete)
     sys.exit(1)
     
   lock=Lock()
@@ -712,26 +413,32 @@ if __name__ == "__main__":
     next_queue=Queue()
     cpus=2 # one worker
 
-  analyzed=[x.image_fn for x in anl.anl]
-  #if len(anl.anl)==len(analyzed) and len(anl.anl)>0:
-  #  logger.info('all position analyzed, exiting')
-  #  sys.exit(1)
+  sxtr_analyzed=[x.nml_id for x in anl.anl if x.sxtr is not None]
+  astr_analyzed=[x.nml_id for x in anl.anl if x.astr is not None]
     
-  for o in anl.acq:
-    if o.image_fn in analyzed:
-      logger.debug('skiping analyzed position: {}'.format(o.image_fn))
-      continue
+  for i,o in enumerate(anl.acq):
+    if args.do_not_use_astrometry: # double neg
+      if o.nml_id in sxtr_analyzed:
+        logger.debug('skiping analyzed position: {}'.format(o.image_fn))
+        continue
+      else:
+        logger.debug('xxx adding position: {},{}'.format(i,o.image_fn))
     else:
-      logger.debug('adding position: {}'.format(o.image_fn))
-      
+      if o.nml_id in sxtr_analyzed and o.nml_id in astr_analyzed:
+        continue
+      else:
+        logger.debug('adding position: {}, {}'.format(i,o.image_fn))
+        work_queue.put(o)
+        continue
+    
     work_queue.put(o)
-
+    
   if len(anl.anl) and args.ds9_display:
     logger.warn('deleted positions will appear again, these are deliberately not stored file: {}'.format(args.analyzed_positions))
     
   processes = list()
   for w in range(1,cpus,1):
-    p=Worker(work_queue=work_queue,ds9_queue=ds9_queue,next_queue=next_queue,lock=lock,dbg=args.debug,lg=logger,anl=anl)
+    p=Worker(work_queue=work_queue,ds9_queue=ds9_queue,next_queue=next_queue,lock=lock,lg=logger,anl=anl)
     logger.debug('starting process: {}'.format(p.name))
     p.start()
     processes.append(p)
@@ -759,3 +466,4 @@ if __name__ == "__main__":
     p.join()
                                                             
   logger.debug('DONE')
+  sys.exit(0)

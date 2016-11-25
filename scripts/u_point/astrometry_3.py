@@ -155,7 +155,7 @@ class AstrometryScript:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         if verbose:
           self.lg.warn( 'killing process, as timeout was reached')
-        self.lg.error('{}: time out: {} reached, closing down'.format(wrkr, timeout))
+        self.lg.error('{}: time out: {} sec reached, closing down'.format(wrkr, timeout))
 
       signal.signal(signal.SIGALRM, __term_proc)
       signal.alarm(timeout) # timeout in seconds

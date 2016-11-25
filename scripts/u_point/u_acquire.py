@@ -32,8 +32,11 @@ import logging
 import socket
 import numpy as np
 import importlib
-
-import pandas as pd
+import queue
+import time
+# ToDo revisit:
+from watchdog.observers import Observer
+import pyinotify
 
 from datetime import datetime
 from astropy.utils import iers
@@ -47,6 +50,7 @@ except:
   print('download:')
   print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
   sys.exit(1)
+
 from astropy import units as u
 from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
@@ -54,50 +58,38 @@ from astropy.coordinates import AltAz
 from astropy.coordinates import Longitude,Latitude,Angle
 import astropy.coordinates as coord
 
-from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
-from watchdog.events import FileSystemEventHandler
-import queue
-
-from structures import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
+from notify import ImageEventHandler 
+from notify import EventHandler 
+from structures import CatPosition,NmlPosition
 from callback import AnnoteFinder
+from script import Script
 
-class Acquisition(object):
+class Acquisition(Script):
   def __init__(
       self,
-      dbg=None,
       lg=None,
+      break_after=None,
+      base_path=None,
       obs=None,
       acquired_positions=None,
-      break_after=None,
+      acq_e_h=None,
       mode_continues=None,
       acq_queue=None,
       mode_watchdog=None,
       meteo=None,
-      base_path=None,
       device=None,
       use_bright_stars=None,
   ):
-    
-    self.dbg=dbg
-    self.lg=lg
-    self.obs=obs
-    self.acquired_positions=acquired_positions
-    self.break_after=break_after
+
+    Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,acquired_positions=acquired_positions,acq_e_h=acq_e_h)
     self.mode_continues=mode_continues
     self.acq_queue=acq_queue
     self.mode_watchdog=mode_watchdog
-    self.acquired_positions=acquired_positions
     self.meteo=meteo
-    self.base_path=args.base_path
     self.device=device
     self.use_bright_stars=use_bright_stars
     #
-    self.obs=obs
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
-    self.cat=list()
-    self.nml=list()
-    self.acq=list()
     
   def now_observable(self,cat_eq=None, altitude_interval=None):
     cat_aa=cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
@@ -108,162 +100,6 @@ class Acquisition(object):
       #self.lg.debug('now_observable: out of altitude range {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
       return None
   
-  def to_altaz(self,eq=None):
-    # http://docs.astropy.org/en/stable/api/astropy.coordinates.AltAz.html
-    #  Azimuth is oriented East of North (i.e., N=0, E=90 degrees)
-    # RTS2 follows IAU S=0, W=90
-    return eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
-
-  def to_eq(self,aa=None):
-    return aa.transform_to('icrs') 
-
-  def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True):
-    pd_cat=None
-    if not os.path.isfile(ptfn):
-      if sys_exit:
-        self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
-        sys.exit(1)
-      else:
-        self.lg.debug('fetch_pandas: {} does not exist'.format(ptfn))
-      return None
-    
-    pd_cat = pd.read_csv(ptfn, sep=',',header=None)
-    try:
-      pd_cat = pd.read_csv(ptfn, sep=',',header=None)
-    except ValueError as e:
-      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
-      return None
-    except OSError as e:
-      self.lg.debug('fetch_pandas: {},{}'.format(ptfn, e))
-      return None
-    except Exception as e:
-      #self.lg.debug('fetch_pandas: {},{}, exiting'.format(ptfn, e))
-      sys.exit(1)
-    pd_cat.columns = columns
-    return pd_cat
-  
-  def fetch_observable_catalog(self, ptfn=None):
-    if self.base_path in ptfn:
-      fn=ptfn
-    else:
-      fn=os.path.join(self.base_path,ptfn)
-
-    pd_cat = self.fetch_pandas(ptfn=fn,columns=['cat_no','ra','dec','mag_v',],sys_exit=True)
-    if pd_cat is None:
-      return
-    for i,rw in pd_cat.iterrows():
-      if i > self.break_after:
-        break
-      
-      cat_eq=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
-      self.cat.append(CatPosition(cat_no=rw['cat_no'],cat_eq=cat_eq,mag_v=rw['mag_v'] ))
-
-  def store_nominal_altaz(self,az_step=None,alt_step=None,azimuth_interval=None,altitude_interval=None,ptfn=None):
-    # ToDo from pathlib import Path, fp=Path(ptfb),if fp.is_file())
-    # format az_nml,alt_nml
-    if self.base_path in ptfn:
-      fn=ptfn
-    else:
-      fn=os.path.join(self.base_path,ptfn)
-
-    if os.path.isfile(fn):
-      a=input('overwriting existing file: {} [N/y]'.format(ptfn))
-      if a not in 'y':
-        self.lg.info('exiting')
-        sys.exit(0)
-
-    with  open(fn, 'w') as wfl:
-      # ToDo input as int?
-      az_rng=range(int(azimuth_interval[0]),int(azimuth_interval[1]),az_step) # No, exclusive + az_step
-      
-      alt_rng_up=range(int(altitude_interval[0]),int(altitude_interval[1]+alt_step),alt_step)
-      alt_rng_down=range(int(altitude_interval[1]),int(altitude_interval[0])-alt_step,-alt_step)
-      lir=len(alt_rng_up)
-      up=True
-      for i,az in enumerate(az_rng):
-        # Epson MX-80
-        if up:
-          up=False
-          rng=alt_rng_up
-        else:
-          up=True
-          rng=alt_rng_down
-          
-        for j,alt in enumerate(rng):
-          nml_id=i*lir+j
-          azr=az/180.*np.pi
-          altr=alt/180.*np.pi
-          #          | is the id
-          wfl.write('{},{},{}\n'.format(nml_id,azr,altr))
-          aa_nml=SkyCoord(az=azr,alt=altr,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-          self.nml.append(NmlPosition(nml_id=nml_id,aa_nml=aa_nml))
-
-  def fetch_nominal_altaz(self,ptfn=None):
-    if self.base_path in ptfn:
-      fn=ptfn
-    else:
-      fn=os.path.join(self.base_path,ptfn)
-
-    pd_cat = self.fetch_pandas(ptfn=fn,columns=['nml_id','az','alt'],sys_exit=True)
-    if pd_cat is None:
-      return
-
-    for i,rw in pd_cat.iterrows():
-      aa_nml=SkyCoord(az=rw['az'],alt=rw['alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-      self.nml.append(NmlPosition(nml_id=rw['nml_id'],aa_nml=aa_nml))
-
-  def fetch_acquired_positions(self):
-    if self.base_path in self.acquired_positions:
-      ptfn=self.acquired_positions
-    else:
-      fn=os.path.join(self.base_path,self.acquired_positions)    
-
-    pd_cat = self.fetch_pandas(ptfn=fn,columns=cl_nms_acq,sys_exit=False)
-    if pd_cat is None:
-      return
-    for i,rw in pd_cat.iterrows():
-      dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-      dt_end=Time(rw['dt_end'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-      dt_end_query=Time(rw['dt_end_query'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-
-      # ToDo set best time point
-      aa_nml=SkyCoord(az=rw['aa_nml_az'],alt=rw['aa_nml_alt'],unit=(u.radian,u.radian),frame='altaz',obstime=dt_end,location=self.obs)
-      acq_eq=SkyCoord(ra=rw['eq_ra'],dec=rw['eq_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_woffs=SkyCoord(ra=rw['eq_woffs_ra'],dec=rw['eq_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_mnt=SkyCoord(ra=rw['eq_mnt_ra'],dec=rw['eq_mnt_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_aa_mnt=SkyCoord(az=rw['aa_mnt_az'],alt=rw['aa_mnt_alt'],unit=(u.radian,u.radian),frame='altaz',obstime=dt_end,location=self.obs)
-      acq=AcqPosition(
-        nml_id=rw['nml_id'], 
-        cat_no=rw['cat_no'],
-        aa_nml=aa_nml,
-        eq=acq_eq,
-        dt_begin=dt_begin,
-        dt_end=dt_end,
-        dt_end_query=dt_end_query,
-        JD=rw['JD'],
-        eq_woffs=acq_eq_woffs,
-        eq_mnt=acq_eq_mnt,
-        aa_mnt=acq_aa_mnt,
-        image_fn=rw['image_fn'],
-        exp=rw['exp'],
-      )
-      self.acq.append(acq)
-      
-  def store_acquired_position(self,acq=None):
-    if self.base_path in self.acquired_positions:
-      fn=self.acquired_positions
-    else:
-      fn=os.path.join(self.base_path,self.acquired_positions)
-    # append, one by one
-    with  open(fn, 'a') as wfl:
-      wfl.write('{0}\n'.format(acq))
-
-  def drop_nominal_altaz(self):
-    obs=[int(x.nml_id)  for x in self.acq]
-    observed=sorted(set(obs),reverse=True)
-    for i in observed:
-      del self.nml[i]
-      #self.lg.debug('drop_nominal_altaz: deleted: {}'.format(i))
   
   def create_socket(self, port=9999):
     # acquire runs as a subprocess of rts2-script-exec and has no
@@ -358,7 +194,7 @@ class Acquisition(object):
       image_fn=os.path.join(self.base_path,image_relfn)
     
     acq=self.device.fetch_mount_data()
-    self.store_acquired_position(acq=acq)
+    self.append_acquired_position(acq=acq)
 
   def find_near_neighbor(self,eq_nml=None,altitude_interval=None,max_separation=None):
     il=iu=None
@@ -387,10 +223,11 @@ class Acquisition(object):
     dist_min=min(dist)
     if dist_min> max_separation2:
       self.lg.warn('find_near_neighbor: NO suitable object found, {0:.3f} deg, maximal distance: {1:.3f} deg'.format(np.sqrt(dist_min)*180./np.pi,max_separation*180./np.pi))
-      return None
+      return None,None
     
     i_min=dist.index(dist_min)
-    return self.cat[il+i_min].cat_eq
+
+    return self.cat[il+i_min].cat_no,self.cat[il+i_min].cat_eq
       
   def acquire(self,altitude_interval=None,max_separation=None):
     if not self.mode_continues:
@@ -406,8 +243,9 @@ class Acquisition(object):
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
       aa=SkyCoord(az=aa_nml.az.radian,alt=aa_nml.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
       eq_nml=self.to_eq(aa=aa)
+      cat_no=None
       if self.use_bright_stars:
-        cat_eq=self.find_near_neighbor(eq_nml=eq_nml,altitude_interval=altitude_interval,max_separation=max_separation)
+        cat_no,cat_eq=self.find_near_neighbor(eq_nml=eq_nml,altitude_interval=altitude_interval,max_separation=max_separation)
       else:
         cat_eq=eq_nml # observe at the current nominal position
         
@@ -415,7 +253,7 @@ class Acquisition(object):
         if not self.mode_continues:
             while True:
               if not_first:
-                self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,exp=exp)
+                self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_eq=cat_eq,exp=exp)
               else:
                 not_first=True
               
@@ -429,22 +267,20 @@ class Acquisition(object):
                 self.lg.debug('acquire: redoing same position')
    
         else:
-          self.expose(nml_id=nml.nml_id,cat_eq=cat_eq,exp=exp)
-
+          self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_eq=cat_eq,exp=exp)
 
   def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
-    self.nml=list()
-    self.acq=list()
-    self.fetch_acquired_positions()
-    self.fetch_nominal_altaz(ptfn=ptfn)
+    self.fetch_acquired_positions(sys_exit=False)
+    self.fetch_nominal_altaz(fn=ptfn)
     self.drop_nominal_altaz()
     
     acq_az = [x.aa_mnt.az.degree for x in self.acq if x.aa_mnt is not None]
     acq_alt = [x.aa_mnt.alt.degree for x in self.acq if x.aa_mnt is not None]
     acq_nml_az = [x.aa_nml.az.degree for x in self.nml]
     acq_nml_alt = [x.aa_nml.alt.degree for x in self.nml]
+    
     self.ax.clear()
-    self.ax.set_title(self.title)
+    self.ax.set_title(self.title, fontsize=10)
     self.ax.set_xlim([-az_step,360.+az_step]) # ToDo use args.az_step for that
     self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
 
@@ -477,17 +313,18 @@ class Acquisition(object):
       
     self.ax.set_ylabel('altitude [deg]')  
     self.ax.grid(True)
-      
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
+    # same if expression as above
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq if x.aa_mnt is not None]
+    nml_ids=[x.nml_id for x in self.acq if x.aa_mnt is not None]
     ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
     # does not exits at the beginning
     try:
-      self.af.data = list(zip(acq_az,acq_alt,annotes))
+      self.af.data = list(zip(nml_ids,acq_az,acq_alt,annotes))
     except AttributeError:
-      return acq_az,acq_alt,annotes
+      return nml_ids,acq_az,acq_alt,annotes
 
   
-  def plot(self,title=None,ptfn=None,az_step=None,ds9_display=None,animate=None):
+  def plot(self,title=None,ptfn=None,az_step=None,ds9_display=None,animate=None,delete=None):
     import matplotlib
     import matplotlib.animation as animation
     # this varies from distro to distro:
@@ -499,31 +336,21 @@ class Acquisition(object):
     self.title=title # ToDo could be passed via animation.F...
 
     if animate:
-      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate,),interval=1000)
+      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate,),interval=5000)
     
-    (acq_az,acq_alt,annotes)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
+    (nml_ids,acq_az,acq_alt,annotes)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
-    self.af = AnnoteFinder(acq_az,acq_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True)
-
-
-
-
+    self.af = AnnoteFinder(nml_ids,acq_az,acq_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True,delete_one=self.delete_one_acquired_position)
     ##self.af =  SimpleAnnoteFinder(acq_nml_az,acq_nml_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=False,lg=self.lg)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
-
+    if delete:
+      fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
+      
     plt.show()
     
 
 # Ja, ja,..
 # ToDo test it!
-class MyHandler(FileSystemEventHandler):
-    def __init__(self,lg=None,acq_queue=None):
-        self.lg=lg
-        self.acq_queue=acq_queue
-    def on_modified(self, event):
-      if 'fit' in event.src_path.lower():
-        self.lg.info('RTS2 external CCD image: {}'.format(event.src_path))
-        acq=acq_queue.put(event.src_path)
 
 # really ugly!
 def arg_floats(value):
@@ -539,15 +366,20 @@ if __name__ == "__main__":
 
   parser= argparse.ArgumentParser(prog=sys.argv[0], description='Acquire not yet observed positions')
   # basic options
-  parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
   parser.add_argument('--level', dest='level', default='WARN', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
+  #
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
-  #
+  parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
+  # group plot
+  parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
+  parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, True: and if --plot is specified: click on data point opens FITS with DS9')
+  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
+  parser.add_argument('--delete', dest='delete', action='store_true', default=False, help=': %(default)s, True: click on data point followed by keyboard <Delete> deletes selected acquired measurements from file --acquired-positions')
   #
   parser.add_argument('--mode-watchdog', dest='mode_watchdog', action='store_true', default=False, help=': %(default)s, True: an RTS2 external CCD camera must be used')
   parser.add_argument('--watchdog-directory', dest='watchdog_directory', action='store', default='.',type=str, help=': %(default)s , directory where the RTS2 external CCD camera writes the images')
@@ -557,12 +389,6 @@ if __name__ == "__main__":
   parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your devices (mount,ccd), see devices.py')
   parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, astrometry.net or simulation mode: images fetched from DSS')
   parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: pure astrometry.net or simulation mode: no user input, no images fetched from DSS, simulation: image download specify: --fetch-dss-image')
-  parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
-  # group plot
-  parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, True: and if --plot is specified: click on data point opens FITS with DS9')
-  parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
-  #
   # group create
   parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, True: create positions to be observed, see --nominal-positions')
   parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
@@ -599,10 +425,19 @@ if __name__ == "__main__":
   acq_queue=None
   if args.mode_watchdog:
     acq_queue=queue.Queue(maxsize=10)
-    event_handler = MyHandler(lg=logger,acq_queue=acq_queue)
-    observer = Observer()
-    observer.schedule(event_handler, args.watchdog_directory, recursive=True)
-    observer.start()
+    image_event_handler = ImageEventHandler(lg=logger,acq_queue=acq_queue)
+    image_observer = Observer()
+    image_observer.schedule(image_event_handler,args.watchdog_directory,recursive=True)
+    image_observer.start()
+    
+  acq_e_h=None
+  if args.delete:
+    wm=pyinotify.WatchManager()
+    wm.add_watch(args.base_path,pyinotify.ALL_EVENTS, rec=True)
+    acq_e_h=EventHandler(lg=logger,fn=args.acquired_positions)
+    nt=pyinotify.ThreadedNotifier(wm,acq_e_h)
+    nt.start()
+    
   # ToD revisit dynamical loding
   # now load meteo class ...
   mt = importlib.import_module(args.meteo_class)
@@ -616,7 +451,6 @@ if __name__ == "__main__":
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
   device= Device(lg=logger,obs=obs,px_scale=px_scale,ccd_size=args.ccd_size,base_path=args.base_path,fetch_dss_image=args.fetch_dss_image)
   ac= Acquisition(
-    dbg=args.debug,
     lg=logger,
     obs=obs,
     acquired_positions=args.acquired_positions,
@@ -628,6 +462,7 @@ if __name__ == "__main__":
     base_path=args.base_path,
     device=device,
     use_bright_stars=args.use_bright_stars,
+    acq_e_h=acq_e_h,
   )
   
   if not device.check_presence():
@@ -643,30 +478,33 @@ if __name__ == "__main__":
     os.makedirs(args.base_path)
         
   if args.create_nominal:
-    ac.store_nominal_altaz(az_step=args.az_step,alt_step=args.alt_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,ptfn=args.nominal_positions)
+    ac.store_nominal_altaz(az_step=args.az_step,alt_step=args.alt_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,fn=args.nominal_positions)
     if args.plot:
-      ac.plot(title='to be observed nominal positions',ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=False) # no images yet
+      ac.plot(title='to be observed nominal positions',ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=False,delete=False) # no images yet
     sys.exit(1)
 
-  ac.fetch_nominal_altaz(ptfn=args.nominal_positions)
-  ac.fetch_acquired_positions()
+  ac.fetch_nominal_altaz(fn=args.nominal_positions)
+  ac.fetch_acquired_positions(sys_exit=False)
   # drop already observed positions
   ac.drop_nominal_altaz()
 
   if args.plot:
     title='progress: acquired positions'
     if args.ds9_display:
-      title += ': click on blue dots to watch image (DS9)'
-    ac.plot(title=title,ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=args.animate)
+      title += ':\n click on blue dots to watch image (DS9)'
+    if args.delete:
+      title += '\n then press <Delete> to remove from the list of acquired positions'
+      
+    ac.plot(title=title,ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=args.animate,delete=args.delete)
     sys.exit(1)
    
   # candidate objects, predefined with u_select.py
   if args.use_bright_stars:
-    ac.fetch_observable_catalog(ptfn=args.observable_catalog)
-    
+    ac.fetch_observable_catalog(fn=args.observable_catalog)
   # acquire unobserved positions
   ac.acquire(
     altitude_interval=altitude_interval,
     max_separation=max_separation,
   )
   logger.info('DONE: {}'.format(sys.argv[0].replace('.py','')))
+  sys.exit(0)

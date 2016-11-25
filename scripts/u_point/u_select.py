@@ -217,3 +217,4 @@ if __name__ == "__main__":
   ct.store_observable_catalog(ptfn=args.observable_catalog)
   if args.plot:
     ct.plot()
+  sys.exit(0)

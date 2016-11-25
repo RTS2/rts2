@@ -21,13 +21,15 @@
 
 '''
 
-Acquire sky positions for a pointing model
+Callbacks for matplotlib
 
 '''
 
 __author__ = 'wildi.markus@bluewin.ch'
+
 import math
 import ds9region
+
 class AnnotatedPlot(object):
   def __init__(self,xx=None,x=None,y=None,annotes=None):
     self.xx=xx # sie ax....
@@ -37,8 +39,10 @@ class AnnotatedPlot(object):
 
 class AnnoteFinder(object):
 
-  def __init__(self, a_lon=None,a_lat=None, annotes=None, ax=None, aps=None, xtol=None, ytol=None,ds9_display=None,lg=None, annotate_fn=False):
-    self.data = list(zip(a_lon, a_lat, annotes))
+  def __init__(self, nml_id=None,a_lon=None,a_lat=None, annotes=None, ax=None, aps=None, xtol=None, ytol=None,ds9_display=None,lg=None, annotate_fn=False,delete_one=None):
+    self.nml_id=nml_id
+    self.data = list(zip(nml_id,a_lon,a_lat,annotes))
+      
     self.xtol = xtol
     self.ytol = ytol
     self.ax = ax # 'leading' plot
@@ -48,6 +52,8 @@ class AnnoteFinder(object):
     self.ds9_display=ds9_display
     self.lg=lg
     self.annotate_fn=annotate_fn
+    self.delete_one=delete_one
+    self.point_annotation=None
     
   def distance(self, x1, x2, y1, y2):# lon,lat
       #a = sin²(Δφ/2) + cos φ1 ⋅ cos φ2 ⋅ sin²(Δλ/2)
@@ -62,25 +68,43 @@ class AnnoteFinder(object):
   
   def mouse_event(self, event):
     if event.inaxes:
+      #self.lg.debug('mouse_event: {}'.format(event.inaxes))
       clickX = event.xdata 
       clickY = event.ydata
       if (self.ax is None) or (self.ax is event.inaxes):
+
         annotes = []
         ##print('candidates: {}'.format(annotes))
         ##print('event x,y: {},{}'.format(clickX, clickY))
-        for i,(x, y, a) in enumerate(self.data):
+        for i,(nml_id, x, y, a) in enumerate(self.data):
           if ((clickX-self.xtol < x < clickX+self.xtol) and (clickY-self.ytol < y < clickY+self.ytol)):
-                      
-            annotes.append((self.distance(x, clickX, y, clickY), x, y, a,i))
-        ##print('candidates: {}'.format(annotes))
+            annotes.append((self.distance(x,clickX,y,clickY),nml_id,x, y, a,i))
+            
+        #print('candidates: {}'.format(annotes))
         if annotes:
           annotes.sort()
-          distance, x, y, annote,i = annotes[0]
+          distance,nml_id,x, y,annote,i=annotes[0]
+          self.point_annotation=annotes[0]
           self.drawAnnote(event.inaxes, x, y, annote,i)
+          self.lg.debug(annote)
           # ToDo understand
           #for l in self.links:
           #  l.drawSpecificAnnote(annote)
-  
+
+  def keyboard_event(self,event):
+    self.lg.debug('key board pressed: {}'.format(event.key))
+
+    if event.key == 'delete':
+      if self.point_annotation is not None:
+        distance,nml_id,x, y,annote,i= self.point_annotation
+        self.lg.debug('keyboard_event: delete nml_id: {}, {}'.format(int(nml_id),self.point_annotation))
+        self.delete_one(nml_id=int(nml_id))#ToDo nml_id are float
+        self.point_annotation=None
+        
+    # ToDO not yet decided
+    #ax.plot(self.randoms, 'o', picker=5)
+    #fig.canvas.draw()
+
   def display_fits(self,fn=None, x=None,y=None,color=None):
     ds9=ds9region.Ds9DisplayThread(debug=True,logger=self.lg)
     # Todo: ugly
@@ -90,7 +114,7 @@ class AnnoteFinder(object):
     """
     Draw the annotation on the plot
     """
-    
+    print(annote)
     fn=annote.split()[1]
     if self.ds9_display:
       self.display_fits(fn=fn, x=0,y=0,color='red')
@@ -99,10 +123,12 @@ class AnnoteFinder(object):
       markers = self.drawnAnnotations[(x, y)]
       for m in markers:
         m.set_visible(not m.get_visible())
-        self.ax.figure.canvas.draw_idle()
-        for ap in self.aps:
-          ap.xx.figure.canvas.draw_idle()       
+        ax.figure.canvas.draw_idle()
+        if self.aps is not None:
+          for ap in self.aps:
+            ap.xx.figure.canvas.draw_idle()       
     else:
+
       if self.annotate_fn:
         t = ax.text(x, y, "%s\n%s" % (annote.split()[0],fn),)
         if self.aps is not None:
@@ -126,10 +152,14 @@ class AnnoteFinder(object):
         for ap in self.aps:
           self.drawnAnnotations[(ap.x[i], ap.y[i])] = (t, m)
 
-      self.ax.figure.canvas.draw_idle()
+      ax.figure.canvas.draw_idle()
       if self.aps is not None:
         for ap in self.aps:
-          ap.xx.figure.canvas.draw_idle()
+          try:
+            ap.xx.figure.canvas.draw_idle()
+          except:
+            self.lg.warn('callback: drawAnnote: something want wrong, most likely plot closed by user')
+
   # ToDo understand
   # def drawSpecificAnnote(self, annote):
   #  annotesToDraw = [(x, y, a) for x, y, a in self.data if a == annote]
