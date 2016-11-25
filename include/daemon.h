@@ -88,7 +88,7 @@ class Daemon:public Block
 		 */
 		void updateInfoTime ()
 		{
-			info_time->setValueDouble (getNow ());
+			info_time->setNow ();
 		}
 
 		virtual void postEvent (Event *event);
@@ -671,6 +671,7 @@ class Daemon:public Block
 		ValueVector constValues;
 
 		ValueTime *info_time;
+		ValueTime *uptime;
 
 		double idleInfoInterval;
 

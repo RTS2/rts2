@@ -227,7 +227,7 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcmp (cmd, "waitmask"))
 	{
-		int tom,mask;
+		int tom, mask;
 		if (paramNextString (&device) || paramNextInteger (&mask) || paramNextInteger (&tom))
 			return;
 		rts2core::Connection *conn = getConnectionForScript (device);
@@ -236,7 +236,7 @@ void ConnExe::processCommand (char *cmd)
 			tom += time (NULL);
 			while (time (NULL) < tom)
 			{
-				if ((conn->getState () & mask) == mask)
+				if ((int) (conn->getState () & mask) == mask)
 				{
 					writeToProcess ("1");
 					break;

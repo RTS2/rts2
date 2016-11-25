@@ -94,6 +94,8 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 	groups = NULL;
 
 	info_time = new ValueTime (RTS2_VALUE_INFOTIME, "time of last update", false);
+	uptime = new ValueTime ("uptime", "daemon uptime", false);
+	uptime->setNow ();
 
 	idleInfoInterval = -1;
 
@@ -114,6 +116,7 @@ Daemon::~Daemon (void)
 		close (listen_sock);
 	if (lock_file > 0)
 		close (lock_file);
+	delete uptime;
 	delete info_time;
 	closelog ();
 	delete modeconf;
@@ -1043,6 +1046,8 @@ int Daemon::sendInfo (Connection * conn, bool forceSend)
 	}
 	if (info_time->needSend ())
 		info_time->send (conn);
+	if (uptime->needSend ())
+		uptime->send (conn);
 	return 0;
 }
 
@@ -1080,6 +1085,9 @@ int Daemon::sendMetaInfo (Connection * conn)
 {
 	int ret;
 	ret = info_time->sendMetaInfo (conn);
+	if (ret < 0)
+		return -1;
+	ret = uptime->sendMetaInfo (conn);
 	if (ret < 0)
 		return -1;
 	for (ValueVector::iterator iter = constValues.begin (); iter != constValues.end (); iter++)
