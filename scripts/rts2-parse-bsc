@@ -93,25 +93,29 @@ while line:
 	if first:
 		first = False
 	else:
-		print ','
+		sys.stdout.write(',\n')
 	try:
 		ra = 15 * (int(el['RAh']) + int(el['RAm']) / 60.0 + float(el['RAs']) / 3600.0)
 		de = int(el['DEd']) + int(el['DEm']) / 60.0 + int(el['DEs']) / 3600.0
 		if el['DE-'] == '-':
 			de *= -1
-		print "[{0},'{1}',{2},{3},{4},{5},{6},{7},{8}]".format( \
+		sys.stdout.write("[{0},{1},{2},{3},{4},{5},{6},{7},{8},'{9}',{10},{11}]".format( \
 			el['HR'], \
-			el['Name'],
 			ra, \
 			de, \
 			float(el['Vmag']), \
+			float(el['B-V']), \
+			float(el['U-B']), \
+			float(el['R-I']), \
 			float(el['pmRA']), \
 			float(el['pmDE']), \
+			el['Name'], \
 			el['HD'], \
 			el['SAO'] \
-		),
+		))
 	except ValueError,va:
 		first = True
 
 	line = zippy.readline()
-print ']'
+sys.stdout.write(']\n')
+sys.stdout.flush()
