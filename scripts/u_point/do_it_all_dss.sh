@@ -219,7 +219,7 @@ echo ""
 echo "display results from SExtractor"
 
 echo "./u_point.py --base-path $BASE_PATH --u_point_analyzed_position  u_point_positions_sxtr.anl --plot --level DEBUG"
-./u_point.py --base-path $BASE_PATH --u_point_analyzed_positions  u_point_positions_sxtr.anl --plot --level DEBUG --toconsole --ds9 &
+./u_point.py --base-path $BASE_PATH  --plot --level DEBUG --toconsole --ds9 &
 #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 if ! [ -z ${ASTROMETRY+x} ]; then
     echo ""
@@ -231,7 +231,7 @@ if ! [ -z ${ASTROMETRY+x} ]; then
     echo ""
     echo "display results from astrometry.net"
     echo "./u_point.py --base-path $BASE_PATH --u_point_analyzed_position  u_point_positions_astr.anl --plot --level DEBUG"
-    ./u_point.py --base-path $BASE_PATH --u_point_analyzed_positions  u_point_positions_astr.anl --plot --level DEBUG --toconsole --ds9 &
+    ./u_point.py --base-path $BASE_PATH  --plot --level DEBUG --toconsole --ds9 &
 fi
 echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<<"
