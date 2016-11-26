@@ -24,6 +24,9 @@ positions classes for u_point
 '''
 
 __author__ = 'wildi.markus@bluewin.ch'
+
+import numpy as np
+
 # http://scipy-cookbook.readthedocs.io/items/FittingData.html#simplifying-the-syntax
 # This is the real big relief
 class Parameter:
@@ -168,9 +171,24 @@ class AnlPosition(AcqPosition):
     )
     self.sxtr=sxtr
     self.astr=astr
+    
   # ToDo still ugly
   def __str__(self):
-    
+    # ToDo a bit ugly, think about that
+    if self.sxtr is None:
+      sxtr_ra_radian=np.nan
+      sxtr_dec_radian=np.nan
+    else:
+      sxtr_ra_radian=self.sxtr.ra.radian
+      sxtr_dec_radian=self.sxtr.dec.radian
+      
+    if self.astr is None:
+      astr_ra_radian=np.nan
+      astr_dec_radian=np.nan
+    else:
+      astr_ra_radian=self.astr.ra.radian
+      astr_dec_radian=self.astr.dec.radian
+      
     anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24}'.format(
       self.nml_id,#0
       self.cat_no,#1
@@ -193,10 +211,10 @@ class AnlPosition(AcqPosition):
       self.pressure,
       self.temperature,
       self.humidity,#20
-      self.sxtr.ra.radian,
-      self.sxtr.dec.radian,
-      self.astr.ra.radian,
-      self.astr.dec.radian,#24
+      sxtr_ra_radian,
+      sxtr_dec_radian,
+      astr_ra_radian,
+      astr_dec_radian,#24
     )
     return anl_str
 

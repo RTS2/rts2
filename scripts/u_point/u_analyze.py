@@ -78,7 +78,6 @@ class Analysis(Script):
       ccd_size=None,
       ccd_angle=None,
       mount_type_eq=None,
-      u_point_positions_base=None,
       verbose_astrometry=None,
       ds9_display=None,
       solver=None,
@@ -89,7 +88,6 @@ class Analysis(Script):
     self.ccd_size=ccd_size
     self.ccd_angle=args.ccd_angle
     self.mount_type_eq=mount_type_eq
-    self.u_point_positions_base=u_point_positions_base
     self.verbose_astrometry=verbose_astrometry
     self.ds9_display=ds9_display
     self.solver=solver
@@ -318,7 +316,7 @@ if __name__ == "__main__":
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
-  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
   # group plot
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
@@ -333,7 +331,6 @@ if __name__ == "__main__":
   parser.add_argument('--ccd-angle', dest='ccd_angle', default=0., type=float, help=': %(default)s [deg], ccd angle measured anti clock wise relative to positive Alt or Dec axis, rotation of 180. ')
   parser.add_argument('--mount-type-eq', dest='mount_type_eq', action='store_true',default=False, help=': %(default)s, True: equatorial mount, False: altaz. Only used together with SExtractor.')
   # group SExtractor, astrometry.net
-  parser.add_argument('--u-point-positions-base', dest='u_point_positions_base', action='store', default='u_point_positions_', help=': %(default)s, base file name for SExtractor, astrometry.net output files')
   parser.add_argument('--timeout', dest='timeout', action='store', default=120,type=int, help=': %(default)s [sec], astrometry timeout for finding a solution')
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
@@ -378,7 +375,6 @@ if __name__ == "__main__":
     mount_type_eq=args.mount_type_eq,
     acquired_positions=args.acquired_positions,
     analyzed_positions=args.analyzed_positions,
-    u_point_positions_base=args.u_point_positions_base,
     break_after=args.break_after,
     ds9_display=args.ds9_display,
     base_path=args.base_path,

@@ -39,8 +39,7 @@ u_point's use cases are:
 
 - unattended data acquisition and analysis done
   with astrometry.net. In this case do not use
-  data from SExtractor (stored in file
-  u_point_positions_sxtr.anl, see u_point.py).
+  data from SExtractor (see u_point.py).
 
 - a CCD FoV which is too small for astrometry.net
   or similar to work reliably.
@@ -292,13 +291,6 @@ Created by u_analyze.py contains the book keeping of all
 SExtracted and astrometry position information.
 
 
-u_point_positions_sxtr.anl, u_point_positions_astr.anl
-------------------------------------------------------
-Created by u_analyze.py contain about same info as
-analyzed_positions.anl but are suitable as input for
-u_point.py.
-
-
 Status u_point as of 2016-11-23
 ===============================
 I just completed the first release. Missing are:
@@ -475,12 +467,11 @@ task of u_analyze.py.
 
 u_analyze.py writes RA/Dec coordinates of the
 brightest star and the field center, obtained by
-astrometry.net, to a second set of files, usually
-named:
+astrometry.net, to a second file, usually named:
 
  analyzed_positions.anl
- u_point_positions_sxtr.anl
- u_point_positions_astr.anl
+
+This is the input to u_point.py.
 
 In case the analysis was interrupted, analyzed
 positions are read back from analyzed_positions.anl
@@ -488,27 +479,16 @@ and dropped if the measurement is complete. In
 case SExtractor and astrometry.net are used both
 results must be present.
 
-The files u_point_positions*.anl provide the data of
-SExtractor (sxtr) and astrometry.net (astr) separately
-and can be read in by u_point.py.
-
 If process u_acquire.py is still in progress, you may
 analyze the already acquired data. 
 
 
 Pointing model: u_point.py
 ==========================
-The files
+The file analyzed_positions.anl, prepared in the
+previous step, is read by
 
- u_point_positions_sxtr.anl
- u_point_positions_astr.anl
-
-prepared in the previous step can be fed into
-
- ./u_point.py --base-path /tmp/u_point \
-    --u_point_analyzed_position  u_point_positions_sxtr.anl --plot 
- ./u_point.py --base-path /tmp/u_point \
-    --u_point_analyzed_position  u_point_positions_astr.anl --plot 
+ ./u_point.py --base-path /tmp/u_point --plot 
 
 and the plots will show the result of the fitted
 parameters as well as the raw data.

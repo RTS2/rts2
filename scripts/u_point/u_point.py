@@ -105,8 +105,8 @@ ln_hrz_posn=LN_hrz_posn()
 
 
 class PointingModel(Script):
-  def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None,u_point_analyzed_positions=None):
-    Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,analyzed_positions=analyzed_positions,u_point_analyzed_positions=u_point_analyzed_positions,)
+  def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None):##,u_point_analyzed_positions=None):
+    Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,analyzed_positions=analyzed_positions)##,u_point_analyzed_positions=u_point_analyzed_positions,)
     #
     self.ln_obs=LN_lnlat_posn()    
     self.ln_obs.lng=obs.longitude.degree # deg
@@ -207,58 +207,39 @@ class PointingModel(Script):
 
     This method uses the optional items in case they are present.
     '''
-    df_data=self.fetch_u_point_analyzed_positions()
+    #df_data=self.fetch_u_point_analyzed_positions()
+    self.fetch_analyzed_positions()
     
-    if df_data is None:
-      return None,None,None,None
-
     cats=list()
     mnts=list()
     imgs=list()
     nmls=list()
-    for i,rw in df_data.iterrows():
+    for i,anl in enumerate(self.anl):
       if i > self.break_after:
         break
-      dt_utc = Time(rw['utc'],format='iso', scale='utc',location=self.obs)
-      if pd.notnull(rw['exp']):
-        dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
 
-      cat_eq=SkyCoord(ra=rw['cat_ra'],dec=rw['cat_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
-      cat_eq_sp=cat_eq.represent_as(SphericalRepresentation)
-
-      if pd.notnull(rw['mnt_ra']) and pd.notnull(rw['mnt_dc']):
-        # replace icrs by cirs (intermediate frame, mount apparent coordinates)
-        mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='cirs',obstime=dt_utc,location=self.obs)
-        # use this to check the internal accuracy of astropy
-        #mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
-      else:
-        self.lg.warn('fetch_coordinates: no analyzed position on line: {}\n{}'.format(i,rw))
-        continue
+      cat_eq=anl.eq
+      # ToDo: chcek that replace icrs by cirs (intermediate frame, mount apparent coordinates)
+      mnt_eq=anl.eq_mnt
+      # use this to check the internal accuracy of astropy
+      #mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
       
-      if pd.isnull(rw['pre']):
-        pre=tem=hum=0.
-      else:
-        pre=rw['pre']
-        tem=rw['tem']
-        hum=rw['hum']
-        
       if fit_eq:
-        cat_ha=self.transform_to_hadec(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
+        cat_ha=self.transform_to_hadec(eq=cat_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=True)
         # to be sure :-))
         pre=tem=hum=0.
-        mnt_ha=self.transform_to_hadec(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
+        mnt_ha=self.transform_to_hadec(eq=mnt_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=False)
         cats.append(cat_ha)
         mnts.append(mnt_ha)
       else:
-        cat_aa=self.transform_to_altaz(eq=cat_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=True)
+        cat_aa=self.transform_to_altaz(eq=cat_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=True)
         pre=tem=hum=0.
-        mnt_aa=self.transform_to_altaz(eq=mnt_eq,tem=tem,pre=pre,hum=hum,astropy_f=astropy_f,correct_cat_f=False)
+        mnt_aa=self.transform_to_altaz(eq=mnt_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=False)
         cats.append(cat_aa)
         mnts.append(mnt_aa)
 
-      if pd.notnull(rw['image_fn']):
-        imgs.append(rw['image_fn'])
-        nmls.append(i)
+      imgs.append(anl.image_fn)
+      nmls.append(anl.nml_id)
     
     return cats,mnts,imgs,nmls
 
@@ -556,8 +537,9 @@ class PointingModel(Script):
         ds9_display=args.ds9_display,
         lg=self.lg,
         annotate_fn=True,
-        delete_one=self.delete_one_u_point_analyzed_positions,)
-    
+        #delete_one=self.delete_one_u_point_analyzed_positions,)
+        delete_one=self.delete_one_analyzed_position,)
+      
       fig05.canvas.mpl_connect('button_press_event', af05.mouse_event)
       if args.delete:
         fig05.canvas.mpl_connect('key_press_event',af05.keyboard_event)
@@ -589,7 +571,8 @@ class PointingModel(Script):
         ds9_display=args.ds9_display,
         lg=self.lg,
         annotate_fn=True,
-        delete_one=self.delete_one_u_point_analyzed_positions,)
+        ##delete_one=self.delete_one_u_point_analyzed_positions,)
+        delete_one=self.delete_one_analyzed_position)
     
       fig10.canvas.mpl_connect('button_press_event', af10.mouse_event)
       if args.delete:
@@ -642,7 +625,7 @@ if __name__ == "__main__":
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
-  parser.add_argument('--u_point_analyzed_positions', dest='u_point_analyzed_positions', action='store', default=None, required=True,help=': %(default)s, filename with analyzed_positions u_point format')
+  ##parser.add_argument('--u_point_analyzed_positions', dest='u_point_analyzed_positions', action='store', default=None, required=True,help=': %(default)s, filename with analyzed_positions u_point format')
   parser.add_argument('--fit-eq', dest='fit_eq', action='store_true', default=False, help=': %(default)s, True fit EQ model, else AltAz')
   parser.add_argument('--t-point', dest='t_point', action='store_true', default=False, help=': %(default)s, fit EQ model with T-point compatible model')
   parser.add_argument('--fit-plus-poly', dest='fit_plus_poly', action='store_true', default=False, help=': %(default)s, True: Condon 1992 with polynom')
@@ -679,7 +662,7 @@ if __name__ == "__main__":
     os.makedirs(args.base_path)
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)  
-  pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions,u_point_analyzed_positions=args.u_point_analyzed_positions,)
+  pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions)##,u_point_analyzed_positions=args.u_point_analyzed_positions,)
 
 
   if args.t_point:

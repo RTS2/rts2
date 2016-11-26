@@ -43,7 +43,6 @@ class Script(object):
       obs=None,
       acquired_positions=None,
       analyzed_positions=None,
-      u_point_analyzed_positions=None,
       acq_e_h=None,):
 
     self.lg=lg
@@ -52,7 +51,6 @@ class Script(object):
     self.obs=obs
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
-    self.u_point_analyzed_positions=u_point_analyzed_positions
     self.acq_e_h=acq_e_h
 
   # ToDo see callback.py
@@ -129,6 +127,42 @@ class Script(object):
           aa_nml=SkyCoord(az=azr,alt=altr,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
           self.nml.append(NmlPosition(nml_id=nml_id,aa_nml=aa_nml))
 
+  def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True,with_nml_id=True):
+    # ToDo simplify that
+    df_data=None
+    if not os.path.isfile(ptfn):
+      if sys_exit:
+        self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
+        sys.exit(1)
+      return None
+    if with_nml_id:
+      try:
+        df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col='nml_id',header=None)
+      except ValueError as e:
+        self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
+        return None
+      except OSError as e:
+        self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
+        return None
+      except Exception as e:
+        self.lg.debug('fetch_pandas: {}, Exceptio: {}, exiting'.format(ptfn, e))
+        sys.exit(1)
+        
+      return df_data.sort_index()
+    else:
+      try:
+        df_data = pd.read_csv(ptfn,sep=',',names=columns,header=None)
+      except ValueError as e:
+        self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
+        return None
+      except OSError as e:
+        self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
+        return None
+      except Exception as e:
+        self.lg.debug('fetch_pandas: {}, Exceptio: {}, exiting'.format(ptfn, e))
+        sys.exit(1)
+      return df_data
+        
   def fetch_nominal_altaz(self,fn=None):
     ptfn=self.expand_base_path(fn=fn)
     self.nml=list()
@@ -171,7 +205,7 @@ class Script(object):
       acq_aa_mnt=SkyCoord(az=rw['aa_mnt_az'],alt=rw['aa_mnt_alt'],unit=(u.radian,u.radian),frame='altaz',obstime=dt_end,location=self.obs)
 
       acq=AcqPosition(
-        nml_id=i,#rw['nml_id'], 
+        nml_id=i,
         cat_no=rw['cat_no'],
         aa_nml=aa_nml,
         eq=acq_eq,
@@ -193,11 +227,11 @@ class Script(object):
   def delete_one_acquired_position(self, nml_id=None):
     self.fetch_acquired_positions()
     for i,acq in enumerate(self.acq): 
-      if nml_id==int(acq.nml_id):# ToDo nml_id are float 
+      if nml_id==acq.nml_id:
         del self.acq[i]
         break
     self.store_acquired_positions()
-    self.lg.info('deleted item: {} from file: {}'.format(int(nml_id), self.acquired_positions))
+    self.lg.info('deleted item: {} from file: {}'.format(nml_id, self.acquired_positions))
   # all acqs
   def store_acquired_positions(self,acq=None):
     if self.acq_e_h is not None:  
@@ -217,69 +251,14 @@ class Script(object):
     with  open(ptfn, 'a') as wfl:
       wfl.write('{0}\n'.format(acq))
 
-  def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True,with_nml_id=True):
-    df_data=None
-    if not os.path.isfile(ptfn):
-      if sys_exit:
-        self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
-        sys.exit(1)
-      return None
-    if with_nml_id:
-      try:
-        df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col='nml_id',header=None)
-      except ValueError as e:
-        self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
-        return None
-      except OSError as e:
-        self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
-        return None
-      except Exception as e:
-        self.lg.debug('fetch_pandas: {}, Exceptio: {}, exiting'.format(ptfn, e))
-        sys.exit(1)
-        
-      return df_data.sort_index()
-    else:
-      try:
-        df_data = pd.read_csv(ptfn,sep=',',names=columns,header=None)
-      except ValueError as e:
-        self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
-        return None
-      except OSError as e:
-        self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
-        return None
-      except Exception as e:
-        self.lg.debug('fetch_pandas: {}, Exceptio: {}, exiting'.format(ptfn, e))
-        sys.exit(1)
-      return df_data
-        
-
-  def store_u_point(self,fn=None,acq=None,ra=None,dec=None):
-    ptfn=self.expand_base_path(fn=fn)
-
-    with  open(ptfn, 'a') as wfl:
-      wfl.write('{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}\n'.format(
-        acq.dt_end,#1
-        acq.eq.ra.radian,
-        acq.eq.dec.radian,
-        ra,
-        dec,
-        acq.exp,
-        acq.pressure, 
-        acq.temperature,
-        acq.humidity,#9
-        acq.nml_id,
-        acq.cat_no,
-        acq.image_fn,#12
-      ))
-
   def delete_one_analyzed_position(self, nml_id=None):
     self.fetch_analyzed_positions()
     for i,anl in enumerate(self.anl): 
-      if nml_id==int(anl.nml_id):# ToDo nml_id are float 
+      if nml_id==anl.nml_id:
         del self.anl[i]
         break
     self.store_analyzed_positions()
-    self.lg.info('deleted item: {} from file: {}'.format(int(nml_id), self.analyzed_positions))
+    self.lg.info('deleted item: {} from file: {}'.format(nml_id, self.analyzed_positions))
 
   def store_analyzed_positions(self,anl=None):
     if self.acq_e_h is not None:  
@@ -297,14 +276,11 @@ class Script(object):
     # append, one by one
     with  open(ptfn, 'a') as wfl:
       wfl.write('{},{},{},{},{}\n'.format(acq,sxtr_ra,sxtr_dec,astr_ra,astr_dec))
-    
-    # SExtractor
-    self.store_u_point(fn=self.u_point_positions_base+'sxtr.anl',acq=acq,ra=sxtr_ra,dec=sxtr_dec)
-    if self.solver is not None:
-      # astrometry.net
-      self.store_u_point(fn=self.u_point_positions_base+'astr.anl',acq=acq,ra=astr_ra,dec=astr_dec)
 
   def fetch_analyzed_positions(self,sys_exit=None):
+    # ToDo!
+    # dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
+
     ptfn=self.expand_base_path(fn=self.analyzed_positions)
     df_data = self.fetch_pandas(ptfn=ptfn,columns=cl_nms_anl,sys_exit=sys_exit)
     self.anl=list()
@@ -322,16 +298,19 @@ class Script(object):
       aa_nml=SkyCoord(az=rw['aa_nml_az'],alt=rw['aa_nml_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
       acq_eq=SkyCoord(ra=rw['eq_ra'],dec=rw['eq_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
       acq_eq_woffs=SkyCoord(ra=rw['eq_woffs_ra'],dec=rw['eq_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_mnt=SkyCoord(ra=rw['eq_mnt_ra'],dec=rw['eq_mnt_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      # replace icrs by cirs (intermediate frame, mount apparent coordinates)
+      acq_eq_mnt=SkyCoord(ra=rw['eq_mnt_ra'],dec=rw['eq_mnt_dec'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
       acq_aa_mnt=SkyCoord(az=rw['aa_mnt_az'],alt=rw['aa_mnt_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
 
       if pd.notnull(rw['sxtr_ra']) and pd.notnull(rw['sxtr_dec']):
+        # ToDO icrs, cirs
         sxtr_eq=SkyCoord(ra=rw['sxtr_ra'],dec=rw['sxtr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
       else:
         sxtr_eq=None
         self.lg.debug('fetch_positions: sxtr None')
         
       if pd.notnull(rw['astr_ra']) and pd.notnull(rw['astr_dec']):
+        # ToDO icrs, cirs
         astr_eq=SkyCoord(ra=rw['astr_ra'],dec=rw['astr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
       else:
         astr_eq=None
@@ -340,7 +319,7 @@ class Script(object):
         #continue
         
       anls=AnlPosition(
-          nml_id=i,#['nml_id'],
+          nml_id=i,
           cat_no=rw['cat_no'],
           aa_nml=aa_nml,
           eq=acq_eq,
@@ -361,27 +340,4 @@ class Script(object):
       )
       self.anl.append(anls)
 
-  def fetch_u_point_analyzed_positions(self):
-    ptfn=self.expand_base_path(fn=self.u_point_analyzed_positions)
-    df_data = self.fetch_pandas(ptfn=ptfn,columns=['utc','cat_ra','cat_dc','mnt_ra','mnt_dc','exp','pre','tem','hum','nml_id','cat_no','image_fn'],sys_exit=True)
     
-    return df_data
-   
-  def delete_one_u_point_analyzed_positions(self,nml_id=None):
-
-    df_data=self.fetch_u_point_analyzed_positions()
-    if df_data is None:
-      return
-
-    for i,rw in df_data.iterrows():
-      if int(rw['nml_id'])==int(nml_id):
-        df_data_r=df_data.drop([i])
-        self.lg.debug('delete_one_u_point_analyzed_positions: deleted nml_id: {}'.format(nml_id))
-        break
-      
-    self.store_u_point_analyzed_positions(df_data=pd_cat_r)
-    
-  def store_u_point_analyzed_positions(self,pd_cat=None):
-
-    ptfn=self.expand_base_path(fn=self.u_point_analyzed_positions)
-    pd_cat.to_csv(ptfn, sep=',',header=None,index=False)
