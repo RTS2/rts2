@@ -39,9 +39,8 @@ import scipy.optimize
 import pandas as pd
 
 from astropy import units as u
-from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,EarthLocation
-from astropy.coordinates import AltAz,CIRS,ITRS
+from astropy.coordinates import AltAz
 from astropy.coordinates import Longitude,Latitude,Angle
 from astropy.coordinates.representation import SphericalRepresentation
 from astropy.utils import iers
@@ -105,13 +104,14 @@ ln_hrz_posn=LN_hrz_posn()
 
 
 class PointingModel(Script):
-  def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None):##,u_point_analyzed_positions=None):
-    Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,analyzed_positions=analyzed_positions)##,u_point_analyzed_positions=u_point_analyzed_positions,)
+  def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None,fit_astr=None):
+    Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,analyzed_positions=analyzed_positions)
     #
     self.ln_obs=LN_lnlat_posn()    
     self.ln_obs.lng=obs.longitude.degree # deg
     self.ln_obs.lat=obs.latitude.degree  # deg
     self.ln_hght=obs.height  # hm, no .meter?? m, not a libnova quantity
+    self.fit_astr=fit_astr
     
   def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,correct_cat=False):
 
@@ -157,28 +157,26 @@ class PointingModel(Script):
     pos_ha=SkyCoord(ra=ha, dec=Latitude(ln_pos_eq.dec,u.deg).radian,unit=(u.radian,u.radian),frame='cirs')
     return pos_ha
   
-  def transform_to_hadec(self,eq=None,tem=None,pre=None,hum=None,astropy_f=False,correct_cat_f=None):
+  def transform_to_hadec(self,ic=None,tem=None,pre=None,hum=None,astropy_f=False,correct_cat_f=None):
     pre_qfe=0.
     if correct_cat_f: # ToDo: again
       pre_qfe=pre # to make it clear what is used
 
     if astropy_f:
-      pos_aa_ap=pos_aa=eq.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+      aa=ic.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
       # ToDo: check that if correct!
       # debug:
-      pos_eqc=pos_aa.transform_to(CIRS())
-      ha= eq.obstime.sidereal_time('apparent') - pos_eqc.ra
-      pos_ha=pos_ha_ap=SkyCoord(ra=ha,dec=pos_eqc.dec, unit=(u.rad,u.rad), frame='cirs',obstime=eq.obstime,location=self.obs)
-      # print('LN: {0:.3f}, {1:.3f}, {2:.3f}, {3:.3f}'.format(pos_ha_ln.ra.degree,pos_ha_ln.dec.degree,pos_aa_ln.az.degree,pos_aa_ln.alt.degree))
-      # print('AP: {0:.3f}, {1:.3f}, {2:.3f}, {3:.3f}'.format(pos_ha_ap.ra.degree,pos_ha_ap.dec.degree,pos_aa_ap.az.degree,pos_aa_ap.alt.degree))
+      ci=aa.cirs 
+      HA= ic.obstime.sidereal_time('apparent') - ci.ra
+      ha=SkyCoord(ra=HA,dec=pos_eqc.dec, unit=(u.rad,u.rad), frame='cirs',obstime=eq.obstime,location=self.obs)
     else:
       # debug:
-      pos_aa_ln=pos_aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
-      pos_ha=pos_ha_ln=self.LN_AltAz_to_HA(az=pos_aa.az.degree,alt=pos_aa.alt.degree,obstime=eq.obstime)
+      aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
+      ha==self.LN_AltAz_to_HA(az=aa.az.degree,alt=aa.alt.degree,obstime=eq.obstime)
       
-    return pos_ha
+    return ha
   
-  def transform_to_altaz(self,eq=None,tem=None,pre=None,hum=None,astropy_f=False,correct_cat_f=None):
+  def transform_to_altaz(self,ic=None,tem=None,pre=None,hum=None,astropy_f=False,correct_cat_f=None):
     '''
     There are substancial differences between astropy and libnova apparent coordinates. 
     Choose option --astropy for Astropy, default is Libnova
@@ -190,25 +188,16 @@ class PointingModel(Script):
     if astropy_f:      
       # https://github.com/liberfa/erfa/blob/master/src/refco.c
       # phpa   double    pressure at the observer (hPa = millibar)
-      pos_aa=eq.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+      aa=ic.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
     else:
-      pos_aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
+      aa=self.LN_EQ_to_AltAz(ra=Longitude(ic.ra.radian,u.radian).degree,dec=Latitude(ic.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=ic.obstime,correct_cat=correct_cat_f)
 
-    return pos_aa
+    return aa
 
   def fetch_coordinates(self,ptfn=None,astropy_f=False,fit_eq=False):
     '''
-    Data structure, one per line:
-    date time UTC begin exposure [format iso], catalog RA [rad], catalog DEC [rad], mount position RA [rad], mount position DEC [rad], [exposure time [sec], temperature [deg C], pressure QFE [hPa], humidity [%]]
-    
-    Mount position coordinates are the apparent telescope coordinates as read at the setting circles.
-
-    Exposure, temperature, pressure and humidity are optional.
-
-    This method uses the optional items in case they are present.
     '''
-    #df_data=self.fetch_u_point_analyzed_positions()
-    self.fetch_analyzed_positions()
+    self.fetch_positions(sys_exit=True,analyzed=True)
     
     cats=list()
     mnts=list()
@@ -218,25 +207,33 @@ class PointingModel(Script):
       if i > self.break_after:
         break
 
-      cat_eq=anl.eq
+      cat_ic=anl.cat_ic
       # ToDo: chcek that replace icrs by cirs (intermediate frame, mount apparent coordinates)
-      mnt_eq=anl.eq_mnt
+      #mnt_ic=anl.mnt_ic
+      if self.fit_astr:
+        if anl.astr is None:
+          continue
+        mnt_ic=anl.astr
+      else:
+        if anl.sxtr is None:
+          continue
+        mnt_ic=anl.sxtr
       # use this to check the internal accuracy of astropy
       #mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
       
       if fit_eq:
-        cat_ha=self.transform_to_hadec(eq=cat_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=True)
-        # to be sure :-))
-        pre=tem=hum=0.
-        mnt_ha=self.transform_to_hadec(eq=mnt_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=False)
-        cats.append(cat_ha)
-        mnts.append(mnt_ha)
+        tr_t_tf=self.transform_to_hadec
       else:
-        cat_aa=self.transform_to_altaz(eq=cat_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=True)
-        pre=tem=hum=0.
-        mnt_aa=self.transform_to_altaz(eq=mnt_eq,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=False)
-        cats.append(cat_aa)
-        mnts.append(mnt_aa)
+        tr_t_tf=self.transform_to_altaz
+        
+      cat_tf=tr_t_tf(ic=cat_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=True)
+      # to be sure :-))
+      pre=tem=hum=0.
+      print(cat_ic)
+      print(mnt_ic)
+      mnt_tf=tr_t_tf(ic=mnt_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=False)
+      cats.append(cat_tf)
+      mnts.append(mnt_tf)
 
       imgs.append(anl.image_fn)
       nmls.append(anl.nml_id)
@@ -305,8 +302,8 @@ class PointingModel(Script):
       cts=ct.represent_as(SphericalRepresentation)
       mts=mt.represent_as(SphericalRepresentation)
       df_lat= Latitude(cts.lat.radian-mts.lat.radian,u.radian)
-      df_lat= Latitude(cts.lat.radian-mts.lat.radian,u.radian)
       df_lon= Longitude(cts.lon.radian-mts.lon.radian,u.radian, wrap_angle=Angle(np.pi,u.radian))
+      #print(df_lat,df_lon)
       #if df_lat.radian < 0./60./180.*np.pi:
       #  pass
       #elif df_lat.radian > 20./60./180.*np.pi:
@@ -347,6 +344,37 @@ class PointingModel(Script):
                       
     return stars
 
+  def annotate_plot(self,fig=None,ax=None,aps=None,ds9_display=None,delete=None):
+    i=-1
+    for i,ap in enumerate(aps):
+      if ax is ap.xx:
+        break
+    af =  AnnoteFinder(
+      nml_id=aps[i].nml_id,
+      a_lon=aps[i].x,
+      a_lat=aps[i].y,
+      annotes=aps[i].annotes,
+      ax=ax, # leading plot, put it on the list
+      aps=aps,
+      xtol=1.,
+      ytol=1.,
+      ds9_display=ds9_display,
+      lg=self.lg,
+      annotate_fn=False,
+      analyzed=True,
+      delete_one=self.delete_one_position,)
+    return af
+
+  def create_plot(self,fig=None,ax=None,title=None,xlabel=None,ylabel=None,lon=None,lat=None,fn=None):
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.grid(True)
+    ax.scatter(lon,lat)
+    #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
+    fig.savefig(os.path.join(self.base_path,fn))
+
+  
   def plot_results(self, stars=None,args=None):
     '''
     Plot the differences and residues as a function of lon,lat or dlon,dlat or a combination of them.
@@ -378,206 +406,187 @@ class PointingModel(Script):
       else:
         lon_label='S=0,W=90 azimuth'
         
-    az_cat_deg=[x.cat_lon.degree for x in stars]
-    alt_cat_deg=[x.cat_lat.degree for x in stars]
-    
     if args.fit_plus_poly:
       fit_title='C+PP'
       fn_frac='c_plus_poly'
 
-    # call back version
-    fig00 = plt.figure()
-    ax00 = fig00.add_subplot(111)
-    ax00.set_title('A1 difference: catalog_not_corrected - star')
-    ax00.set_xlabel('d({}) [arcmin]'.format(lon_label))
-    ax00.set_ylabel('d({}) [arcmin]'.format(lat_label))
-    ax00_lon=lon=[x.df_lon.arcmin for x in stars]
-    ax00_lat=lat=[x.df_lat.arcmin for x in stars]
-    ax00.scatter(lon,lat)
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
-    fig00.savefig(os.path.join(self.base_path,'difference_catalog_not_corrected_star.png'))
 
-    fig01 = plt.figure()
-    ax01 = fig01.add_subplot(111)
-    ax01.set_title('B1 difference {}: catalog_not_corrected - star'.format(lon_label))
-    ax01.set_xlabel('{} [deg]'.format(lon_label))
-    ax01.set_ylabel('d({}) [arcmin]'.format(lon_label))
-    ax01_lon=lon=az_cat_deg
-    ax01_lat=lat=[x.df_lon.arcmin for x in stars]
-    ax01.scatter(lon,lat)
-    fig01.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lon_label)))
+    az_cat_deg=[x.cat_lon.degree for x in stars]
+    alt_cat_deg=[x.cat_lat.degree for x in stars]
+    
+    plots=list()
+    elements=list()
+    elements.append('A1 difference: catalog_not_corrected - star')
+    elements.append('d({}) [arcmin]'.format(lon_label))
+    elements.append('d({}) [arcmin]'.format(lat_label))
+    lon=[x.df_lon.arcmin for x in stars]
+    lat=[x.df_lat.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('difference_catalog_not_corrected_star.png')
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.df_lon.arcmin,x.df_lat.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
+    
+    elements=list()
+    elements.append('B1 difference {}: catalog_not_corrected - star'.format(lon_label))
+    elements.append('{} [deg]'.format(lon_label))
+    elements.append('d({}) [arcmin]'.format(lon_label))
+    lon=az_cat_deg
+    lat=[x.df_lon.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('difference_catalog_not_corrected_star.png')
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.df_lon.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
 
-    fig02 = plt.figure()
-    ax02 = fig02.add_subplot(111)
-    ax02.set_title('C1 difference {}: catalog_not_corrected - star'.format(lat_label))
-    ax02.set_xlabel('{} [deg]'.format(lon_label))
-    ax02.set_ylabel('d({}) [arcmin]'.format(lat_label))
-    ax02_lon=lon=az_cat_deg
-    ax02_lat=lat=[x.df_lat.arcmin for x in stars]
-    ax02.scatter(lon,lat)
-    fig02.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lon_label,lat_label)))
+    elements=list()
+    elements.append('C1 difference {}: catalog_not_corrected - star'.format(lat_label))
+    elements.append('{} [deg]'.format(lon_label))
+    elements.append('d({}) [arcmin]'.format(lat_label))
+    lon=az_cat_deg
+    lat=[x.df_lat.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lon_label,lat_label))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.df_lat.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
 
-    fig03 = plt.figure()
-    ax03 = fig03.add_subplot(111)
-    ax03.set_title('D1 difference {}: catalog_not_corrected - star'.format(lon_label))
-    ax03.set_xlabel('{} [deg]'.format(lat_label))
-    ax03.set_ylabel('d({}) [arcmin]'.format(lon_label))
-    ax03_lon=lon=alt_cat_deg
-    ax03_lat=lat=[x.df_lon.arcmin for x in stars]
-    ax03.scatter(lon,lat)
+    elements=list()
+    elements.append('D1 difference {}: catalog_not_corrected - star'.format(lon_label))
+    elements.append('{} [deg]'.format(lat_label))
+    elements.append('d({}) [arcmin]'.format(lon_label))
+    lon=alt_cat_deg
+    lat=[x.df_lon.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
     # ToDo: think about that:
     #ax.scatter(alt_cat_deg ,[x.df_lon.arcmin/ np.tan(x.mnt_lat.radian) for x in stars])
-    fig03.savefig(os.path.join(self.base_path,'difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lat_label,lon_label)))
+    elements.append('difference_{0}_d{1}_catalog_not_corrected_star.png'.format(lat_label,lon_label))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lat.degree,x.df_lon.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
 
-    fig04 = plt.figure()
-    ax04 = fig04.add_subplot(111)
-    ax04.set_title('E1 difference {}: catalog_not_corrected - star'.format(lat_label))
-    ax04.set_xlabel('{} [deg]'.format(lat_label))
-    ax04.set_ylabel('d({}) [arcmin]'.format(lat_label))
-    ax04_lon=lon=alt_cat_deg
-    ax04_lat=lat=[x.df_lat.arcmin for x in stars]
-    ax04.scatter(lon,lat)
-    fig04.savefig(os.path.join(self.base_path,'difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lat_label)))
+    elements=list()
+    elements.append('E1 difference {}: catalog_not_corrected - star'.format(lat_label))
+    elements.append('{} [deg]'.format(lat_label))
+    elements.append('d({}) [arcmin]'.format(lat_label))
+    lon=alt_cat_deg
+    lat=[x.df_lat.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('difference_{0}_d{0}_catalog_not_corrected_star.png'.format(lat_label))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lat.degree,x.df_lat.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
     
+    elements=list()
     ## residuum, ax05 is below
-    fig05 = plt.figure()
-    ax05 = fig05.add_subplot(111)
-    ax05.set_title('A2 residuum: catalog_corrected - star {}, CLICK ME'.format(fit_title))
-    ax05.set_xlabel('d({}) [arcmin]'.format(lon_label))
-    ax05.set_ylabel('d({}) [arcmin]'.format(lat_label))
-    ax05_lon=lon=[x.res_lon.arcmin for x in stars]
-    ax05_lat=lat=[x.res_lat.arcmin for x in stars]
-    ax05.scatter(lon,lat)
+    elements.append('A2 residuum: catalog_corrected - star {}'.format(fit_title))
+    elements.append('d({}) [arcmin]'.format(lon_label))
+    elements.append('d({}) [arcmin]'.format(lat_label))
+    lon=[x.res_lon.arcmin for x in stars]
+    lat=[x.res_lat.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
     annotes05=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
-    fig05.savefig(os.path.join(self.base_path,'residuum_catalog_corrected_star_{}.png'.format(fn_frac)))
+    elements.append('residuum_catalog_corrected_star_{}.png'.format(fn_frac))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.res_lon.arcmin,x.res_lat.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
     
-    fig06 = plt.figure()
-    ax06 = fig06.add_subplot(111)
-    ax06.set_title('B2 residuum {} catalog_corrected - star, fit: {}'.format(lon_label,fit_title))
-    ax06.set_xlabel('{} [deg]'.format(lon_label))
-    ax06.set_ylabel('d({}) [arcmin]'.format(lon_label))
-    ax06_lon=lon=az_cat_deg
-    ax06_lat=lat=[x.res_lon.arcmin for x in stars]
-    ax06.scatter(lon,lat)
-    fig06.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lon_label,fn_frac)))
+    elements=list()
+    elements.append('B2 residuum {} catalog_corrected - star, fit: {}'.format(lon_label,fit_title))
+    elements.append('{} [deg]'.format(lon_label))
+    elements.append('d({}) [arcmin]'.format(lon_label))
+    lon=az_cat_deg
+    lat=[x.res_lon.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lon_label,fn_frac))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.res_lon.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
 
-    fig07 = plt.figure()
-    ax07 = fig07.add_subplot(111)
-    ax07.set_title('D2 residuum {} catalog_corrected - star, fit: {}'.format(lon_label,fit_title))
-    ax07.set_xlabel('{} [deg]'.format(lat_label))
-    ax07.set_ylabel('d({}) [arcmin]'.format(lon_label))
-    ax07_lon=lon=alt_cat_deg
-    ax07_lat=lat=[x.res_lon.arcmin for x in stars]
-    ax07.scatter(lon,lat)
-    fig07.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lat_label,lon_label,fn_frac)))
+    elements=list()
+    elements.append('D2 residuum {} catalog_corrected - star, fit: {}'.format(lon_label,fit_title))
+    elements.append('{} [deg]'.format(lat_label))
+    elements.append('d({}) [arcmin]'.format(lon_label))
+    lon=alt_cat_deg
+    lat=[x.res_lon.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lat_label,lon_label,fn_frac))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lat.degree,x.res_lon.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
 
-    fig08 = plt.figure()
-    ax08 = fig08.add_subplot(111)
-    ax08.set_title('C2 residuum {} catalog_corrected - star, fit: {}'.format(lat_label,fit_title))
-    ax08.set_xlabel('{} [deg]'.format(lon_label))
-    ax08.set_ylabel('d({}) [arcmin]'.format(lat_label))
-    ax08_lon=lon=az_cat_deg
-    ax08_lat=lat=[x.res_lat.arcmin for x in stars]
-    ax08.scatter(lon,lat)
-    fig08.savefig(os.path.join(self.base_path,'residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lon_label,lat_label,fn_frac)))
+    elements=list()
+    elements.append('C2 residuum {} catalog_corrected - star, fit: {}'.format(lat_label,fit_title))
+    elements.append('{} [deg]'.format(lon_label))
+    elements.append('d({}) [arcmin]'.format(lat_label))
+    lon=az_cat_deg
+    lat=[x.res_lat.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('residuum_{0}_d{1}_catalog_corrected_star_{2}.png'.format(lon_label,lat_label,fn_frac))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.res_lat.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
           
-    fig09 = plt.figure()
-    ax09 = fig09.add_subplot(111)
-    ax09.set_title('E2 residuum {} catalog_corrected - star, fit: {}'.format(lat_label,fit_title))
-    ax09.set_xlabel('{}  [deg]'.format(lat_label))
-    ax09.set_ylabel('d({}) [arcmin]'.format(lat_label))
-    ax09_lon=lon=alt_cat_deg
-    ax09_lat=lat=[x.res_lat.arcmin for x in stars]
-    ax09.scatter(lon,lat)
-    fig09.savefig(os.path.join(self.base_path,'residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lat_label,fn_frac)))
-    cnnotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
+    elements=list()
+    elements.append('E2 residuum {} catalog_corrected - star, fit: {}'.format(lat_label,fit_title))
+    elements.append('{}  [deg]'.format(lat_label))
+    elements.append('d({}) [arcmin]'.format(lat_label))
+    lon=alt_cat_deg
+    lat=[x.res_lat.arcmin for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('residuum_{0}_d{0}_catalog_corrected_star_{1}.png'.format(lat_label,fn_frac))
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lat.degree,x.res_lat.arcmin,x.image_fn) for x in stars])
+    plots.append(elements)
 
-    fig10 = plt.figure()
-    ax10 = fig10.add_subplot(111)
-    ax10.set_title('K measurement locations catalog, CLICK ME')
-    ax10.set_xlabel('{} [deg]'.format(lon_label))
-    ax10.set_ylabel('{} [deg]'.format(lat_label))
-    ax10_lon=lon=[x.cat_lon.degree for x in stars]
-    ax10_lat=lat=[x.cat_lat.degree for x in stars]
-    ax10.scatter(lon,lat)
-    ax10.grid(True)
+    elements=list()
+    elements.append('K measurement locations catalog')
+    elements.append('{} [deg]'.format(lon_label))
+    elements.append('{} [deg]'.format(lat_label))
+    lon=[x.cat_lon.degree for x in stars]
+    lat=[x.cat_lat.degree for x in stars]
+    elements.append(lon)
+    elements.append(lat)
+    elements.append('measurement_locations_catalog.png')
+    elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.cat_lat.degree,x.image_fn) for x in stars])
+    plots.append(elements)
 
-    fig10.savefig(os.path.join(self.base_path,'measurement_locations_catalog.png'))
+    annotes_skycoords=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.cat_lat.degree,x.image_fn) for x in stars]
+    figs=list()
+    axs=list()
+    aps=list()
+    nml_ids=[x.nml_id for x in stars]
+    # aps must be complete
+    for elements in plots:
+      lon=elements[3]
+      lat=elements[4]
+      fig = plt.figure()
+      ax = fig.add_subplot(111)
+      self.create_plot(fig=fig,ax=ax,title=elements[0],xlabel=elements[1],ylabel=elements[2],lon=lon,lat=lat,fn=elements[5])
+      figs.append(fig)
+      axs.append(ax)
+      # it deppends what is needed:
+      #annotes=elements[6]
+      annotes=annotes_skycoords
+      aps.append(AnnotatedPlot(xx=ax,nml_id=nml_ids,x=lon,y=lat,annotes=annotes))
+      
+    afs=list()
+    for i,ax in enumerate(axs):
+      af=self.annotate_plot(fig=figs[i],ax=axs[i],aps=aps,ds9_display=args.ds9_display,delete=args.delete)
+      afs.append(af)
+      figs[i].canvas.mpl_connect('button_press_event',af.mouse_event)
+      if args.delete:
+        figs[i].canvas.mpl_connect('key_press_event',af.keyboard_event)
 
+    # ToDo why that?
+    figs[0].canvas.mpl_connect('button_press_event',afs[0].mouse_event)
+    if args.delete:
+      figs[0].canvas.mpl_connect('key_press_event',afs[0].keyboard_event)
 
     self.fit_projection_and_plot(vals=[x.df_lon.arcsec for x in stars], bins=args.bins,axis='{}'.format(lon_label), fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P1',plt=plt)
     self.fit_projection_and_plot(vals=[x.df_lat.arcsec for x in stars], bins=args.bins,axis='{}'.format(lat_label),fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P2',plt=plt)
     self.fit_projection_and_plot(vals=[x.res_lon.arcsec for x in stars],bins=args.bins,axis='{}'.format(lon_label), fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q1',plt=plt)
     self.fit_projection_and_plot(vals=[x.res_lat.arcsec for x in stars],bins=args.bins,axis='{}'.format(lat_label),fit_title=fit_title,fn_frac=fn_frac,prefix='residuum',plt_no='Q2',plt=plt)
-
-    self.fetch_analyzed_positions(sys_exit=True)
-    if True:
-      aps=list()
-      aps.append(AnnotatedPlot(xx=ax00,x=ax00_lon,y=ax00_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax01,x=ax01_lon,y=ax01_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax02,x=ax02_lon,y=ax02_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax03,x=ax03_lon,y=ax03_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax04,x=ax04_lon,y=ax04_lat,annotes=annotes))
-      # no 05
-      aps.append(AnnotatedPlot(xx=ax06,x=ax06_lon,y=ax06_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax07,x=ax07_lon,y=ax07_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax08,x=ax08_lon,y=ax08_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax09,x=ax09_lon,y=ax09_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax10,x=ax10_lon,y=ax10_lat,annotes=annotes))
-    
-      af05 =  AnnoteFinder(
-        nml_id=[x.nml_id for x in stars],
-        a_lon=ax05_lon,
-        a_lat=ax05_lat,
-        annotes=annotes05,
-        ax=ax05, # leading plot, put it on the list
-        aps=aps,
-        xtol=5.,
-        ytol=5.,
-        ds9_display=args.ds9_display,
-        lg=self.lg,
-        annotate_fn=True,
-        #delete_one=self.delete_one_u_point_analyzed_positions,)
-        delete_one=self.delete_one_analyzed_position,)
-      
-      fig05.canvas.mpl_connect('button_press_event', af05.mouse_event)
-      if args.delete:
-        fig05.canvas.mpl_connect('key_press_event',af05.keyboard_event)
-
-    if True:
-      aps=list()
-      aps.append(AnnotatedPlot(xx=ax00,x=ax00_lon,y=ax00_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax01,x=ax01_lon,y=ax01_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax02,x=ax02_lon,y=ax02_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax03,x=ax03_lon,y=ax03_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax04,x=ax04_lon,y=ax04_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax05,x=ax05_lon,y=ax05_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax06,x=ax06_lon,y=ax06_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax07,x=ax07_lon,y=ax07_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax08,x=ax08_lon,y=ax08_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax09,x=ax09_lon,y=ax09_lat,annotes=annotes))
-      aps.append(AnnotatedPlot(xx=ax10,x=ax10_lon,y=ax10_lat,annotes=annotes))
-      # no 10
-
-      af10 =  AnnoteFinder(
-        nml_id=[x.nml_id for x in stars],
-        a_lon=ax10_lon,
-        a_lat=ax10_lat,
-        annotes=annotes05, # ok
-        ax=ax10, # leading plot
-        aps=aps,
-        xtol=5.,
-        ytol=5.,
-        ds9_display=args.ds9_display,
-        lg=self.lg,
-        annotate_fn=True,
-        ##delete_one=self.delete_one_u_point_analyzed_positions,)
-        delete_one=self.delete_one_analyzed_position)
-    
-      fig10.canvas.mpl_connect('button_press_event', af10.mouse_event)
-      if args.delete:
-        fig10.canvas.mpl_connect('key_press_event',af10.keyboard_event)
-
     
     plt.show()
 
@@ -621,20 +630,24 @@ if __name__ == "__main__":
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
   parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
-
+  parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
+  parser.add_argument('--astropy', dest='astropy', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with astropy, default libnova')
+  parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
+  #
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
-  ##parser.add_argument('--u_point_analyzed_positions', dest='u_point_analyzed_positions', action='store', default=None, required=True,help=': %(default)s, filename with analyzed_positions u_point format')
+  #
+  parser.add_argument('--fit-astr', dest='fit_astr', action='store_true', default=False, help=': %(default)s, True fit astrometry results')
+  # group coordinate system
   parser.add_argument('--fit-eq', dest='fit_eq', action='store_true', default=False, help=': %(default)s, True fit EQ model, else AltAz')
+  # group model
   parser.add_argument('--t-point', dest='t_point', action='store_true', default=False, help=': %(default)s, fit EQ model with T-point compatible model')
   parser.add_argument('--fit-plus-poly', dest='fit_plus_poly', action='store_true', default=False, help=': %(default)s, True: Condon 1992 with polynom')
-  parser.add_argument('--astropy', dest='astropy', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with astropy, default libnova')
-  parser.add_argument('--bins', dest='bins', action='store', default=40,type=int, help=': %(default)s, number of bins used in the projection histograms')
+  # group plot
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
-  parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
+  parser.add_argument('--bins', dest='bins', action='store', default=40,type=int, help=': %(default)s, number of bins used in the projection histograms')
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
-  parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
   parser.add_argument('--delete', dest='delete', action='store_true', default=False, help=': %(default)s, True: click on data point followed by keyboard <Delete> deletes selected ananlyzed point from file --analyzed-positions')
         
   args=parser.parse_args()
@@ -662,7 +675,7 @@ if __name__ == "__main__":
     os.makedirs(args.base_path)
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)  
-  pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions)##,u_point_analyzed_positions=args.u_point_analyzed_positions,)
+  pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions,fit_astr=args.fit_astr)
 
 
   if args.t_point:
@@ -684,8 +697,12 @@ if __name__ == "__main__":
   if args.fit_eq:
     res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
   else:
-    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
-    
+    try:
+      res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
+    except TypeError as e:
+      ptfn=pm.expand_base_path(fn=args.analyzed_positions)
+      logger.error('u_point: presumably empty file: {}, exception: {},exiting'.format(ptfn,e))
+      sys.exit(1)
   stars=pm.prepare_plot(cats=cats,mnts=mnts,imgs=imgs,nmls=nmls,selected=selected,model=mdl)
     
   if args.plot:

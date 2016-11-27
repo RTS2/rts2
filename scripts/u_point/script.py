@@ -32,7 +32,7 @@ from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,AltAz
 import pandas as pd
 
-from structures import NmlPosition,CatPosition,AcqPosition,AnlPosition,cl_nms_acq,cl_nms_anl
+from structures import NmlPosition,CatPosition,AnlPosition,cl_nms,cl_acq
 
 class Script(object):
   def __init__(
@@ -59,15 +59,26 @@ class Script(object):
     # Todo: ugly
     ds9.run(fn,x=x,y=y,color=color)
       
-  def to_altaz(self,eq=None):
+  def to_altaz(self,ic=None):
     # http://docs.astropy.org/en/stable/api/astropy.coordinates.AltAz.html
     #  Azimuth is oriented East of North (i.e., N=0, E=90 degrees)
     # RTS2 follows IAU S=0, W=90
-    return eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
-
-  def to_eq(self,aa=None):
+    return ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
+  # ic
+  def to_ic(self,aa=None):
+    # strictly spoken it is not ICRS if refraction was corrected in aa
     return aa.transform_to('icrs') 
 
+  # ToDo goes away
+  def rebase_base_path(self,ptfn=None):
+    if self.base_path in ptfn:
+      new_ptfn=ptfn
+    else:
+      fn=os.path.basename(ptfn)
+      new_ptfn=os.path.join(self.base_path,fn)
+      self.lg.debug('rebase_base_path: file: {}'.format(new_ptfn))
+    return new_ptfn
+    
   def expand_base_path(self,fn=None):
     if self.base_path in fn:
       ptfn=fn
@@ -85,8 +96,8 @@ class Script(object):
       if i > self.break_after:
         break
       
-      cat_eq=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
-      self.cat.append(CatPosition(cat_no=int(rw['cat_no']),cat_eq=cat_eq,mag_v=rw['mag_v'] ))
+      cat_ic=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
+      self.cat.append(CatPosition(cat_no=int(rw['cat_no']),cat_ic=cat_ic,mag_v=rw['mag_v'] ))
 
   def store_nominal_altaz(self,az_step=None,alt_step=None,azimuth_interval=None,altitude_interval=None,fn=None):
     # ToDo from pathlib import Path, fp=Path(ptfb),if fp.is_file())
@@ -124,8 +135,8 @@ class Script(object):
           altr=alt/180.*np.pi
           #          | is the id
           wfl.write('{},{},{}\n'.format(nml_id,azr,altr))
-          aa_nml=SkyCoord(az=azr,alt=altr,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-          self.nml.append(NmlPosition(nml_id=nml_id,aa_nml=aa_nml))
+          nml_aa=SkyCoord(az=azr,alt=altr,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
+          self.nml.append(NmlPosition(nml_id=nml_id,nml_aa=nml_aa))
 
   def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True,with_nml_id=True):
     # ToDo simplify that
@@ -135,32 +146,31 @@ class Script(object):
         self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
         sys.exit(1)
       return None
+    if os.path.getsize(ptfn)==0:
+        self.lg.debug('fetch_pandas: {} file is empty, exiting'.format(ptfn))
+    
+    #print(columns)
+    #df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col='nml_id',header=None)
     if with_nml_id:
-      try:
-        df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col='nml_id',header=None)
-      except ValueError as e:
-        self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
-        return None
-      except OSError as e:
-        self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
-        return None
-      except Exception as e:
-        self.lg.debug('fetch_pandas: {}, Exceptio: {}, exiting'.format(ptfn, e))
-        sys.exit(1)
+      idx='nml_id'
+    else:
+      idx=None
+      
+    try:
+      df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col=[idx],header=None,engine='python')
+    except ValueError as e:
+      self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
+      return None
+    except OSError as e:
+      self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
+      return None
+    except Exception as e:
+      self.lg.debug('>>>>fetch_pandas: {}, Exception: {}, exiting'.format(ptfn, e))
+      sys.exit(1)
         
+    if with_nml_id:
       return df_data.sort_index()
     else:
-      try:
-        df_data = pd.read_csv(ptfn,sep=',',names=columns,header=None)
-      except ValueError as e:
-        self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
-        return None
-      except OSError as e:
-        self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
-        return None
-      except Exception as e:
-        self.lg.debug('fetch_pandas: {}, Exceptio: {}, exiting'.format(ptfn, e))
-        sys.exit(1)
       return df_data
         
   def fetch_nominal_altaz(self,fn=None):
@@ -171,8 +181,8 @@ class Script(object):
       return
 
     for i,rw in df_data.iterrows():
-      aa_nml=SkyCoord(az=rw['az'],alt=rw['alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-      self.nml.append(NmlPosition(nml_id=i,aa_nml=aa_nml))
+      nml_aa=SkyCoord(az=rw['az'],alt=rw['alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs)
+      self.nml.append(NmlPosition(nml_id=i,nml_aa=nml_aa))
 
   def drop_nominal_altaz(self):
     obs=[int(x.nml_id)  for x in self.acq]
@@ -180,114 +190,68 @@ class Script(object):
     for i in observed:
       del self.nml[i]
       #self.lg.debug('drop_nominal_altaz: deleted: {}'.format(i))
-  
-  def fetch_acquired_positions(self,sys_exit=None):
 
-    if self.acq_e_h is not None:  
-      while self.acq_e_h.not_writable:
-        time.sleep(.1)
+  def delete_one_position(self, nml_id=None,analyzed=None):
+    if analyzed:
+      ptfn=self.expand_base_path(fn=self.analyzed_positions)
+      pos=self.anl
+    else:
+      ptfn=self.expand_base_path(fn=self.acquired_positions)
+      pos=self.acq
       
-    ptfn=self.expand_base_path(fn=self.acquired_positions)
-    self.acq=list()
-    df_data = self.fetch_pandas(ptfn=ptfn,columns=cl_nms_acq,sys_exit=sys_exit)
-    if df_data is None:
+    self.fetch_positions(analyzed=analyzed)
+    for i,ps in enumerate(pos): 
+      if nml_id==ps.nml_id:
+        del pos[i]
+        break
+    else:
+      self.lg.info('deleted item: item {} not found in file: {}'.format(nml_id, ptfn))
       return
-    for i,rw in df_data.iterrows():
-      dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-      dt_end=Time(rw['dt_end'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
-      dt_end_query=Time(rw['dt_end_query'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
 
-      # ToDo set best time point
-      aa_nml=SkyCoord(az=rw['aa_nml_az'],alt=rw['aa_nml_alt'],unit=(u.radian,u.radian),frame='altaz',obstime=dt_end,location=self.obs)
-      acq_eq=SkyCoord(ra=rw['eq_ra'],dec=rw['eq_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_woffs=SkyCoord(ra=rw['eq_woffs_ra'],dec=rw['eq_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_mnt=SkyCoord(ra=rw['eq_mnt_ra'],dec=rw['eq_mnt_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_aa_mnt=SkyCoord(az=rw['aa_mnt_az'],alt=rw['aa_mnt_alt'],unit=(u.radian,u.radian),frame='altaz',obstime=dt_end,location=self.obs)
+    self.store_positions(analyzed=analyzed)
+    self.lg.info('deleted item: {} from file: {}'.format(nml_id, ptfn))
 
-      acq=AcqPosition(
-        nml_id=i,
-        cat_no=rw['cat_no'],
-        aa_nml=aa_nml,
-        eq=acq_eq,
-        dt_begin=dt_begin,
-        dt_end=dt_end,
-        dt_end_query=dt_end_query,
-        JD=rw['JD'],
-        eq_woffs=acq_eq_woffs,
-        eq_mnt=acq_eq_mnt,
-        aa_mnt=acq_aa_mnt,
-        image_fn=rw['image_fn'],
-        exp=rw['exp'],
-        pressure=rw['pressure'],
-        temperature=rw['temperature'],
-        humidity=rw['humidity'],
-      )
-      self.acq.append(acq)
+  def store_positions(self,pos=None,analyzed=None):
+    if analyzed:
+      ptfn=self.expand_base_path(fn=self.analyzed_positions)
+      pos=self.anl
+    else:
+      ptfn=self.expand_base_path(fn=self.acquired_positions)
+      pos=self.acq
 
-  def delete_one_acquired_position(self, nml_id=None):
-    self.fetch_acquired_positions()
-    for i,acq in enumerate(self.acq): 
-      if nml_id==acq.nml_id:
-        del self.acq[i]
-        break
-    self.store_acquired_positions()
-    self.lg.info('deleted item: {} from file: {}'.format(nml_id, self.acquired_positions))
-  # all acqs
-  def store_acquired_positions(self,acq=None):
-    if self.acq_e_h is not None:  
-      while self.acq_e_h.not_writable:
-        time.sleep(.1)
-      
-    ptfn=self.expand_base_path(fn=self.acquired_positions)
+      if self.acq_e_h is not None:  
+        while self.acq_e_h.not_writable:
+          time.sleep(.1)      
     # append, one by one
     with  open(ptfn, 'w') as wfl:
-      for acq in self.acq:
-        wfl.write('{0}\n'.format(acq))
-  # append
-  def append_acquired_position(self,acq=None):
+      for ps in pos:
+        wfl.write('{0}\n'.format(ps))
     
-    ptfn=self.expand_base_path(fn=self.acquired_positions)
-    # append, one by one
-    with  open(ptfn, 'a') as wfl:
-      wfl.write('{0}\n'.format(acq))
-
-  def delete_one_analyzed_position(self, nml_id=None):
-    self.fetch_analyzed_positions()
-    for i,anl in enumerate(self.anl): 
-      if nml_id==anl.nml_id:
-        del self.anl[i]
-        break
-    self.store_analyzed_positions()
-    self.lg.info('deleted item: {} from file: {}'.format(nml_id, self.analyzed_positions))
-
-  def store_analyzed_positions(self,anl=None):
-    if self.acq_e_h is not None:  
-      while self.acq_e_h.not_writable:
-        time.sleep(.1)
+  def append_position(self,pos=None,analyzed=None):
+    if analyzed:
+      ptfn=self.expand_base_path(fn=self.analyzed_positions)
+    else:
+      ptfn=self.expand_base_path(fn=self.acquired_positions)
       
-    ptfn=self.expand_base_path(fn=self.analyzed_positions)
-    # append, one by one
-    with  open(ptfn, 'w') as wfl:
-      for anl in self.anl:
-        wfl.write('{0}\n'.format(anl))
-    
-  def append_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_ra=None,astr_dec=None):
-    ptfn=self.expand_base_path(fn=self.analyzed_positions)
     # append, one by one
     with  open(ptfn, 'a') as wfl:
-      wfl.write('{},{},{},{},{}\n'.format(acq,sxtr_ra,sxtr_dec,astr_ra,astr_dec))
+      wfl.write('{0}\n'.format(pos))
 
-  def fetch_analyzed_positions(self,sys_exit=None):
+  def fetch_positions(self,sys_exit=None,analyzed=None):
     # ToDo!
     # dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
 
-    ptfn=self.expand_base_path(fn=self.analyzed_positions)
-    df_data = self.fetch_pandas(ptfn=ptfn,columns=cl_nms_anl,sys_exit=sys_exit)
-    self.anl=list()
+    if analyzed:
+      ptfn=self.expand_base_path(fn=self.analyzed_positions)
+      pos=self.anl=list()
+      cols=cl_nms
+    else:
+      ptfn=self.expand_base_path(fn=self.acquired_positions)
+      pos=self.acq=list()    
+      cols=cl_acq
+    df_data = self.fetch_pandas(ptfn=ptfn,columns=cols,sys_exit=sys_exit)
     if df_data is None:
       return
-    self.anl=list()
-    
     for i,rw in df_data.iterrows():
       # ToDo why not out_subfmt='fits'
       dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
@@ -295,49 +259,53 @@ class Script(object):
       dt_end_query=Time(rw['dt_end_query'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
 
       # ToDo set best time point
-      aa_nml=SkyCoord(az=rw['aa_nml_az'],alt=rw['aa_nml_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-      acq_eq=SkyCoord(ra=rw['eq_ra'],dec=rw['eq_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      acq_eq_woffs=SkyCoord(ra=rw['eq_woffs_ra'],dec=rw['eq_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      nml_aa=SkyCoord(az=rw['nml_aa_az'],alt=rw['nml_aa_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
+      cat_ic=SkyCoord(ra=rw['cat_ic_ra'],dec=rw['cat_ic_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      cat_ic_woffs=SkyCoord(ra=rw['cat_ic_woffs_ra'],dec=rw['cat_ic_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
       # replace icrs by cirs (intermediate frame, mount apparent coordinates)
-      acq_eq_mnt=SkyCoord(ra=rw['eq_mnt_ra'],dec=rw['eq_mnt_dec'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
-      acq_aa_mnt=SkyCoord(az=rw['aa_mnt_az'],alt=rw['aa_mnt_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-
-      if pd.notnull(rw['sxtr_ra']) and pd.notnull(rw['sxtr_dec']):
+      mnt_ic=SkyCoord(ra=rw['mnt_ic_ra'],dec=rw['mnt_ic_dec'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
+      mnt_aa=SkyCoord(az=rw['mnt_aa_az'],alt=rw['mnt_aa_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
+      
+      if 'sxtr_ra' in cols and pd.notnull(rw['sxtr_ra']) and pd.notnull(rw['sxtr_dec']):
         # ToDO icrs, cirs
-        sxtr_eq=SkyCoord(ra=rw['sxtr_ra'],dec=rw['sxtr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+        sxtr=SkyCoord(ra=rw['sxtr_ra'],dec=rw['sxtr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
       else:
-        sxtr_eq=None
-        self.lg.debug('fetch_positions: sxtr None')
+        sxtr=None
+        self.lg.debug('fetch_positions: sxtr None: {}'.format(ptfn))
         
-      if pd.notnull(rw['astr_ra']) and pd.notnull(rw['astr_dec']):
+      if 'astr_ra' in cols and pd.notnull(rw['astr_ra']) and pd.notnull(rw['astr_dec']):
         # ToDO icrs, cirs
-        astr_eq=SkyCoord(ra=rw['astr_ra'],dec=rw['astr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+        astr=SkyCoord(ra=rw['astr_ra'],dec=rw['astr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+        #print(cat_ic,sxtr)
+        #print('DIFF c-s',(cat_ic.ra.radian-sxtr.ra.radian)*180./np.pi)
+        #print('DIFF c-a',(cat_ic.ra.radian-astr.ra.radian)*180./np.pi)
+        #print('DIFF s-a',(sxtr.ra.radian-astr.ra.radian)*180./np.pi)
       else:
-        astr_eq=None
+        astr=None
         #self.lg.debug('fetch_positions: astr None,nml_d: {}, ra:{}, dec: {}'.format(i,rw['astr_ra'],rw['astr_dec']))
         # to create more or less identical plots:
         #continue
         
-      anls=AnlPosition(
+      image_ptfn=self.rebase_base_path(ptfn=rw['image_fn'])
+      spos=AnlPosition(
           nml_id=i,
           cat_no=rw['cat_no'],
-          aa_nml=aa_nml,
-          eq=acq_eq,
+          nml_aa=nml_aa,
+          cat_ic=cat_ic,
           dt_begin=dt_begin,
           dt_end=dt_end,
           dt_end_query=dt_end_query,
           JD=rw['JD'],
-          eq_woffs=acq_eq_woffs,
-          eq_mnt=acq_eq_mnt,
-          aa_mnt=acq_aa_mnt,
-          image_fn=rw['image_fn'],
+          cat_ic_woffs=cat_ic_woffs,
+          mnt_ic=mnt_ic,
+          mnt_aa=mnt_aa,
+          image_fn=image_ptfn,
           exp=rw['exp'],
           pressure=rw['pressure'],
           temperature=rw['temperature'],
           humidity=rw['humidity'],
-          sxtr= sxtr_eq,
-          astr= astr_eq,
+          sxtr= sxtr,
+          astr= astr,
       )
-      self.anl.append(anls)
-
+      pos.append(spos)
     

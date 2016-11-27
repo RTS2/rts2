@@ -39,15 +39,67 @@ u_point's use cases are:
 
 - unattended data acquisition and analysis done
   with astrometry.net. In this case do not use
-  data from SExtractor (see u_point.py).
+  results from SExtractor (see u_point.py).
 
 - a CCD FoV which is too small for astrometry.net
   or similar to work reliably.
   As targets serve "lonely" objects from Yale's
-  Bright Star Catalog which can even be identified
-  by a human being by looking at the CCD image.
+  Bright Star Catalog which are identified as
+  brightest object on an CCD image.
   SExtractor will select the brightest star which
   serves as the measured mount apparent location.
+
+Coordinates
+===========
+See http://docs.astropy.org/en/stable/coordinates/
+
+The catalog data (ICRS), labeled as cat_ic, are transformed
+to apparent, either AltAz (cat_aa) or HA,Dec (cat_ha),
+coordinates (apparent is not CIRS). Apparent means
+applying all necessary corrections including refraction.
+In some cases refraction is not applied (see pressure=0.)
+
+If a mount/telescope without any deficiencies is set
+with theses coordinates, the object is centered. 
+
+Coordinates read back from the mount, labeled as mnt_ci
+(CIRS,RA), mnt_ha (CIRS, HA) or mnt_aa (AltAz), in frames
+EQ/RA, EQ/HA or AltAz, have no corrections applied, e.g.
+for anual aberration or refraction etc.. Usually ICRS
+coordinates are set at the mount. The transformation to
+EQ/HA or to AltAz are mount coordinates and not apparent.
+
+The coordinates exist in u_point source code as follows:
+
+Grid positions:
+---------------
+nml_ic: nominal position ICRS, it is almost ICRS since
+        refraction is not corrected. But any value
+	is ok because nml_ic is copied to cat_ic: this
+	is the starting point.
+	
+nml_aa: nominal position AltAz
+
+Catalog positions:
+------------------
+cat_ic: catalog position ICRS
+cat_ci: catalog position CIRS (used only for grid)
+cat_ha: apparent position HA/Dec
+cat_aa: apparent position AltAz 
+
+Mount positions:
+----------------
+These values are read back from the mount.
+
+mnt_ic: while cat_ic pleonasm mnt_ic seems to be
+        a contradiction. mnt_ic is set by cat_ic
+	initially. In all other situations mnt_ic
+	plays the same role as cat_ic - being a
+	pair of RA,Dec values.
+	
+mnt_ha: HA,Dec read from the setting circles
+mnt_aa: AltAz read from the setting circles
+
 
 Very quick tour: do_it_all_dss.sh
 =================================
@@ -225,9 +277,10 @@ Scripts not listed here are part of the supporting
 infrastructure may be are not interesting at first
 sight.
 
-u_point is a silent system. At the beginning it
-is a good idea to use option --toconsole which
-enables --level DEBUG and logs to console.
+u_point is a silent system with sensible default
+values. At the beginning it is a good idea to use
+option --toconsole which enables --level DEBUG and
+logs to console.
 
 Study --help of the following scripts since their options
 will provide more flexibility than described in this
@@ -264,8 +317,8 @@ and for working implementations:
 
 Meteo
 -----
-meteo.py  is a dummy device and meteo_dome_c.py real
-example querying a weather station's web page.
+meteo.py is a dummy device while meteo_dome_c.py is
+an example querying a weather station's web page.
 
 Data files
 ==========
@@ -493,7 +546,7 @@ previous step, is read by
 and the plots will show the result of the fitted
 parameters as well as the raw data.
 
-Plots labled A2 and K (title upper left) provide
+Plots labeled A2 and K (title upper left) provide
 a call back function. If a data point is clicked,
 it is annotated on all other plots. This feature
 is still in it's infancy.

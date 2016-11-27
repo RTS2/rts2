@@ -52,15 +52,12 @@ except:
   sys.exit(1)
 
 from astropy import units as u
-from astropy.time import Time,TimeDelta
+from astropy.time import Time
 from astropy.coordinates import SkyCoord,EarthLocation
 from astropy.coordinates import AltAz
-from astropy.coordinates import Longitude,Latitude,Angle
-import astropy.coordinates as coord
 
 from notify import ImageEventHandler 
 from notify import EventHandler 
-from structures import CatPosition,NmlPosition
 from callback import AnnoteFinder
 from script import Script
 
@@ -91,8 +88,8 @@ class Acquisition(Script):
     #
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     
-  def now_observable(self,cat_eq=None, altitude_interval=None):
-    cat_aa=cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
+  def now_observable(self,cat_ic=None, altitude_interval=None):
+    cat_aa=cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
     #self.lg.debug('now_observable: altitude: {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
     if altitude_interval[0]<cat_aa.alt.radian<altitude_interval[1]:
       return cat_aa
@@ -173,36 +170,31 @@ class Acquisition(Script):
 
     return cmd,exp
 
-  def expose(self,nml_id=None,cat_no=None,cat_eq=None,exp=None):
+  def expose(self,nml_id=None,cat_no=None,cat_ic=None,exp=None):
 
-    self.device.store_mount_data(cat_eq=cat_eq,nml_id=nml_id,cat_no=cat_no)
-
+    self.device.store_mount_data(cat_ic=cat_ic,nml_id=nml_id,cat_no=cat_no)
     pressure=temperature=humidity=None
     if self.meteo is not None:
       pressure,temperature,humidity=meteo.retrieve()
-      
-    image_relfn,exp=self.device.ccd_expose(exp=exp,pressure=pressure,temperature=temperature,humidity=humidity)
+
+    exp=self.device.ccd_expose(exp=exp,pressure=pressure,temperature=temperature,humidity=humidity)
     # ToDo
+    # whatch out for image_fn absolute relative path
     if self.mode_watchdog:
       self.lg.info('expose: waiting for image_fn from acq_queue')
       image_fn=self.acq_queue.get(acq)
       self.lg.info('expose: image_fn from queue acq_queue: {}'.format(image_fn))
 
-    if self.base_path in image_relfn:
-      image_fn=image_relfn
-    else:
-      image_fn=os.path.join(self.base_path,image_relfn)
-    
     acq=self.device.fetch_mount_data()
-    self.append_acquired_position(acq=acq)
+    self.append_position(acq=acq,analyzed=False)
 
-  def find_near_neighbor(self,eq_nml=None,altitude_interval=None,max_separation=None):
+  def find_near_neighbor(self,mnl_ic=None,altitude_interval=None,max_separation=None):
     il=iu=None
     max_separation2= max_separation * max_separation # lazy
     for i,o in enumerate(self.cat): # catalog is RA sorted
-      if il is None and o.cat_eq.ra.radian > eq_nml.ra.radian - max_separation:
+      if il is None and o.cat_ic.ra.radian > mnl_ic.ra.radian - max_separation:
         il=i
-      if iu is None and o.cat_eq.ra.radian > eq_nml.ra.radian + max_separation:
+      if iu is None and o.cat_ic.ra.radian > mnl_ic.ra.radian + max_separation:
         iu=i
         break
     else:
@@ -210,10 +202,10 @@ class Acquisition(Script):
 
     dist=list()
     for o in self.cat[il:iu]:
-      dra2=pow(o.cat_eq.ra.radian-eq_nml.ra.radian,2)
-      ddec2=pow(o.cat_eq.dec.radian-eq_nml.dec.radian,2)
+      dra2=pow(o.cat_ic.ra.radian-mnl_ic.ra.radian,2)
+      ddec2=pow(o.cat_ic.dec.radian-mnl_ic.dec.radian,2)
 
-      cat_aa=self.now_observable(cat_eq=o.cat_eq,altitude_interval=altitude_interval)
+      cat_aa=self.now_observable(cat_ic=o.cat_ic,altitude_interval=altitude_interval)
       if cat_aa is None:
         val= 2.* np.pi
       else:
@@ -227,7 +219,7 @@ class Acquisition(Script):
     
     i_min=dist.index(dist_min)
 
-    return self.cat[il+i_min].cat_no,self.cat[il+i_min].cat_eq
+    return self.cat[il+i_min].cat_no,self.cat[il+i_min].cat_ic
       
   def acquire(self,altitude_interval=None,max_separation=None):
     if not self.mode_continues:
@@ -238,22 +230,21 @@ class Acquisition(Script):
     last_exposure=exp=.1
     not_first=False
     for nml in self.nml:
-      aa_nml=nml.aa_nml
       # astropy N=0,E=90
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
-      aa=SkyCoord(az=aa_nml.az.radian,alt=aa_nml.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
-      eq_nml=self.to_eq(aa=aa)
+      nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
+      mnl_ic=self.to_ic(aa=nml_aa)
       cat_no=None
       if self.use_bright_stars:
-        cat_no,cat_eq=self.find_near_neighbor(eq_nml=eq_nml,altitude_interval=altitude_interval,max_separation=max_separation)
+        cat_no,cat_ic=self.find_near_neighbor(mnl_ic=mnl_ic,altitude_interval=altitude_interval,max_separation=max_separation)
       else:
-        cat_eq=eq_nml # observe at the current nominal position
+        cat_ic=mnl_ic # observe at the current nominal position
         
-      if cat_eq: # else no suitable object found, try next
+      if cat_ic: # else no suitable object found, try next
         if not self.mode_continues:
             while True:
               if not_first:
-                self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_eq=cat_eq,exp=exp)
+                self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
               else:
                 not_first=True
               
@@ -267,40 +258,40 @@ class Acquisition(Script):
                 self.lg.debug('acquire: redoing same position')
    
         else:
-          self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_eq=cat_eq,exp=exp)
+          self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
 
   def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
-    self.fetch_acquired_positions(sys_exit=False)
+    self.fetch_positions(sys_exit=False,analyzed=False)
     self.fetch_nominal_altaz(fn=ptfn)
     self.drop_nominal_altaz()
     
-    acq_az = [x.aa_mnt.az.degree for x in self.acq if x.aa_mnt is not None]
-    acq_alt = [x.aa_mnt.alt.degree for x in self.acq if x.aa_mnt is not None]
-    acq_nml_az = [x.aa_nml.az.degree for x in self.nml]
-    acq_nml_alt = [x.aa_nml.alt.degree for x in self.nml]
+    mnt_aa_az = [x.mnt_aa.az.degree for x in self.acq if x.mnt_aa is not None]
+    mnt_aa_alt= [x.mnt_aa.alt.degree for x in self.acq if x.mnt_aa is not None]
+    nml_aa_az = [x.nml_aa.az.degree for x in self.nml]
+    nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml]
     
     self.ax.clear()
     self.ax.set_title(self.title, fontsize=10)
     self.ax.set_xlim([-az_step,360.+az_step]) # ToDo use args.az_step for that
-    self.ax.scatter(acq_nml_az, acq_nml_alt,color='red')
+    self.ax.scatter(nml_aa_az, nml_aa_alt,color='red')
 
-    if len(acq_az) > 0:
-      self.ax.scatter(acq_az[-1], acq_alt[-1],color='magenta',s=240.)
-      self.ax.scatter(acq_az, acq_alt,color='blue')
+    if len(mnt_aa_az) > 0:
+      self.ax.scatter(mnt_aa_az[-1], mnt_aa_alt[-1],color='magenta',s=240.)
+      self.ax.scatter(mnt_aa_az, mnt_aa_alt,color='blue')
     
     if animate:
-      eq_mnt=self.device.fetch_mount_position()
-      if eq_mnt is None:
+      mnt_ic=self.device.fetch_mount_position()
+      if mnt_ic is None:
         #self.lg.debug('re_plot: mount position is None')
         # shorten it
         now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
         self.ax.set_xlabel('azimuth [deg] (N=0,E=90), at: {0} [UTC]'.format(now))
       else:      
-        aa_mnt=self.to_altaz(eq=eq_mnt)
-        self.lg.debug('re_plot: mount position: {0:.2f}, {1:.2f} [deg]'.format(aa_mnt.az.degree,aa_mnt.alt.degree))
-        self.ax.scatter(aa_mnt.az.degree,aa_mnt.alt.degree,color='green',facecolors='none', edgecolors='g',s=240.)
-        self.ax.scatter(aa_mnt.az.degree,aa_mnt.alt.degree,color='green',marker='+',s=600.)
-        self.ax.set_xlabel('azimut [deg] (N=0,E=90), pos: {0:.1f}, {1:.1f} [deg], at: {2} [UTC]'.format(aa_mnt.az.degree,aa_mnt.alt.degree,str(eq_mnt.obstime)[:-7]))
+        mnt_aa=self.to_altaz(eq=mnt_ic)
+        self.lg.debug('re_plot: mount position: {0:.2f}, {1:.2f} [deg]'.format(mnt_aa.az.degree,mnt_aa.alt.degree))
+        self.ax.scatter(mnt_aa.az.degree,mnt_aa.alt.degree,color='green',facecolors='none', edgecolors='g',s=240.)
+        self.ax.scatter(mnt_aa.az.degree,mnt_aa.alt.degree,color='green',marker='+',s=600.)
+        self.ax.set_xlabel('azimut [deg] (N=0,E=90), pos: {0:.1f}, {1:.1f} [deg], at: {2} [UTC]'.format(mnt_aa.az.degree,mnt_aa.alt.degree,str(mnt_ic.obstime)[:-7]))
 
       self.ax.text(0., 0., 'positions:',color='black', fontsize=12,verticalalignment='bottom')
       self.ax.text(80., 0., 'nominal,',color='red', fontsize=12,verticalalignment='bottom')
@@ -314,16 +305,16 @@ class Acquisition(Script):
     self.ax.set_ylabel('altitude [deg]')  
     self.ax.grid(True)
     # same if expression as above
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq if x.aa_mnt is not None]
-    nml_ids=[x.nml_id for x in self.acq if x.aa_mnt is not None]
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree, x.mnt_aa.alt.degree,x.image_fn) for x in self.acq if x.mnt_aa is not None]
+    nml_ids=[x.nml_id for x in self.acq if x.mnt_aa is not None]
     ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
     # does not exits at the beginning
     try:
-      self.af.data = list(zip(nml_ids,acq_az,acq_alt,annotes))
+      self.af.data = list(zip(nml_ids,mnt_aa_az,mnt_aa_alt,annotes))
     except AttributeError:
-      return nml_ids,acq_az,acq_alt,annotes
+      return nml_ids,mnt_aa_az,mnt_aa_alt,annotes
 
-  
+
   def plot(self,title=None,ptfn=None,az_step=None,ds9_display=None,animate=None,delete=None):
     import matplotlib
     import matplotlib.animation as animation
@@ -338,9 +329,9 @@ class Acquisition(Script):
     if animate:
       ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate,),interval=5000)
     
-    (nml_ids,acq_az,acq_alt,annotes)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
+    (nml_ids,mnt_aa_az,mnt_aa_alt,annotes)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
-    self.af = AnnoteFinder(nml_ids,acq_az,acq_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True,delete_one=self.delete_one_acquired_position)
+    self.af = AnnoteFinder(nml_ids,mnt_aa_az,mnt_aa_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     ##self.af =  SimpleAnnoteFinder(acq_nml_az,acq_nml_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=False,lg=self.lg)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
@@ -373,7 +364,7 @@ if __name__ == "__main__":
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
-  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--acquired-positions', dest='acquired_positions', action='store', default='acquired_positions.acq', help=': %(default)s, already observed positions')
   # group plot
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
@@ -484,7 +475,7 @@ if __name__ == "__main__":
     sys.exit(1)
 
   ac.fetch_nominal_altaz(fn=args.nominal_positions)
-  ac.fetch_acquired_positions(sys_exit=False)
+  ac.fetch_positions(sys_exit=False,analyzed=False)
   # drop already observed positions
   ac.drop_nominal_altaz()
 

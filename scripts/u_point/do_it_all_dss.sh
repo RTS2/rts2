@@ -176,6 +176,7 @@ if ps -p $pid_u_acquire >/dev/null; then
     wait $pid_u_acquire
     #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 fi
+
 echo
 echo "<<<<<<<<<<<<<<<<<<<<<<<<"
 echo "DONE u_acquire.py"

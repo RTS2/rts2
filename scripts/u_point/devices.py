@@ -32,7 +32,7 @@ from collections import OrderedDict
 import requests
 import numpy as np
 from astropy import units as u
-from astropy.coordinates import SkyCoord,EarthLocation
+from astropy.coordinates import SkyCoord
 # ToDo unify AltAz altaz
 from astropy.coordinates import AltAz
 from datetime import datetime
@@ -40,7 +40,7 @@ from astropy.time import Time
 
 # python 3 version
 import scriptcomm_3
-from structures import CatPosition,NmlPosition,AcqPosition,cl_nms_acq,cl_nms_anl
+from structures import AcqPosition
 
 class DeviceDss(object):
   def __init__(
@@ -59,8 +59,9 @@ class DeviceDss(object):
     self.ccd_size=ccd_size
     self.base_path=base_path
     self.fetch_dss_image=fetch_dss_image
-    self.cat_eq=None
-    self.dss_fn=None
+    self.cat_ic=None
+    self.dss_image_ptfn=None
+    self.dss_image_fn=None
     self.exp=.1 
     self.dt_begin=None
     self.dt_end=None
@@ -74,10 +75,10 @@ class DeviceDss(object):
     return True
 
   def fetch_mount_position(self):
-    if self.cat_eq is None:
+    if self.cat_ic is None:
       return None
 
-    return self.cat_eq
+    return self.cat_ic
                   
   def ccd_init(self):
     pass
@@ -93,15 +94,15 @@ class DeviceDss(object):
     height= '{}'.format(float(self.ccd_size[1]) * self.px_scale_arcmin) # DSS [arcmin]
     args=OrderedDict()
     # 
-    args['ra']='{0:.6f}'.format(self.cat_eq.ra.degree)
-    args['dec']='{0:.6f}'.format(self.cat_eq.dec.degree)
+    args['ra']='{0:.6f}'.format(self.cat_ic.ra.degree)
+    args['dec']='{0:.6f}'.format(self.cat_ic.dec.degree)
     args['x']='{0:.2f}'.format(float(width))
     args['y']='{0:.2f}'.format(float(height))
     # compressed fits files SExtractor does not understand
     #args['mime-type']='image/x-gfits'
     args['mime-type']='image/x-fits'
-    dfn='dss_{}_{}.fits'.format(args['ra'],args['dec']).replace('-','m').replace('.','_').replace('_fits','.fits') #ToDo lazy
-    self.dss_fn=os.path.join(self.base_path,dfn)
+    self.dss_image_fn='dss_{}_{}.fits'.format(args['ra'],args['dec']).replace('-','m').replace('.','_').replace('_fits','.fits') #ToDo lazy
+    self.dss_image_ptfn=os.path.join(self.base_path,self.dss_image_fn)
     self.dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
     if self.fetch_dss_image: # e.g., Done Concordia almost offline
       r=requests.get(self.dss_base_url, params=args, stream=True)
@@ -110,7 +111,7 @@ class DeviceDss(object):
       #self.lg.debug('expose: DSS: {}'.format(r.url))
       while True:
         if r.status_code == 200:
-          with open(self.dss_fn, 'wb') as f:
+          with open(self.dss_image_ptfn, 'wb') as f:
             #for data in tqdm(r.iter_content()):
             f.write(r.content)
             for block in r.iter_content(1024):
@@ -121,42 +122,43 @@ class DeviceDss(object):
       self.lg.debug('expose: DSS: saved {}'.format(r.url))
     else:
       self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-      self.lg.debug('expose: not fetching from DSS and not storing: {}'.format(self.dss_fn))
+      self.lg.debug('expose: not fetching from DSS and not storing: {}'.format(self.dss_image_ptfn))
         
     
-    return self.dss_fn,self.exp
+    return self.exp
     
-  def store_mount_data(self,cat_eq=None,nml_id=None,cat_no=None):
+  def store_mount_data(self,cat_ic=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
-    self.cat_eq=cat_eq
+    self.cat_ic=cat_ic
   
   def fetch_mount_data(self):
-    if self.cat_eq is None:
+    if self.cat_ic is None:
       return None
     JD=-1.      
-    acq_eq=SkyCoord(ra=self.cat_eq.ra.radian,dec=self.cat_eq.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
-    acq_eq_woffs=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
-    acq_eq_mnt=acq_eq
+    cat_ic=SkyCoord(ra=self.cat_ic.ra.radian,dec=self.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
+    cat_ic_woffs=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
+    # ToDo think about
+    mnt_ic=cat_ic
     #
-    acq_aa_mnt=self.cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
+    mnt_aa=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
     # ToDo wrong?:
-    aa_nml=self.cat_eq.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_eq
+    nml_aa=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
       
     dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
     acq=AcqPosition(
       nml_id=self.nml_id,
       cat_no=self.cat_no,
-      aa_nml=aa_nml,
-      eq=acq_eq,
+      nml_aa=nml_aa,
+      cat_ic=cat_ic,
       dt_begin=self.dt_begin,
       dt_end=self.dt_end,
       dt_end_query=dt_end_query,
       JD=JD,
-      eq_woffs=acq_eq_woffs,
-      eq_mnt=acq_eq_mnt,
-      aa_mnt=acq_aa_mnt,
-      image_fn=self.dss_fn,
+      cat_ic_woffs=cat_ic_woffs,
+      mnt_ic=mnt_ic,
+      mnt_aa=mnt_aa,
+      image_fn=self.dss_image_fn, # only fn
       exp=self.exp,
       pressure=self.pressure,
       temperature=self.temperature,
@@ -187,8 +189,7 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.mnt_nm=None
     self.ccd_nm=None
     self.dt_begin=None
-    self.cat_eq=None
-    self.dss_fn=None
+    self.cat_ic=None
     self.exp=None
     self.dt_begin=None
     self.dt_end=None
@@ -225,12 +226,13 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     return cont
   
   def fetch_mount_position(self):
-    #  self.cat_eq is None!
+    #  self.cat_ic is None!
     now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     ras,decs=self.getValue('TEL',self.mnt_nm).split()
     self.lg.debug('fetch_mount_position: TEL ra: {0:.3f},: dec: {1:.3f}'.format(float(ras),float(decs)))
-    eq_mnt=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
-    return eq_mnt
+    # ToDo strictly not correct ?mnt_ci (CIRS)
+    mnt_ic=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    return mnt_ic
   
   def ccd_init(self):
     # full area
@@ -252,69 +254,76 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.lg.debug('expose: time {}'.format(self.exp))
     self.setValue('exposure',self.exp)
     self.dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
-    self.image_fn = self.exposure()
+    image_ptfn = self.exposure()
     self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     self.lg.debug('expose: image from RTS2: {}'.format(self.image_fn))
     # fetch image from DSS
     if self.fetch_dss_image:
       try:
-          os.unlink(self.image_fn) # the noisy CCD image
-          self.lg.debug('expose: unlinking image from RTS2: {}'.format(self.image_fn))
+          os.unlink(image_ptfn) # the noisy CCD image
+          self.lg.debug('expose: unlinking image from RTS2: {}'.format(image_ptfn))
       except:
           pass # do not care
 
-      self.d_dss.store_mount_data(cat_eq=self.cat_eq,nml_id=self.nml_id,cat_no=self.cat_no)
-      self.image_fn,self.exp=self.d_dss.ccd_expose(exp=self.exp,pressure=self.pressure,temperature=self.temperature,humidity=self.humidity)
+      self.d_dss.store_mount_data(cat_ic=self.cat_ic,nml_id=self.nml_id,cat_no=self.cat_no)
+      self.exp=self.d_dss.ccd_expose(exp=self.exp,pressure=self.pressure,temperature=self.temperature,humidity=self.humidity)
+      self.image_fn=self.d_dss.dss_image_fn # only fn
       self.lg.debug('expose: image from DSS: {}'.format(self.image_fn))
-
-    return self.image_fn,self.exp
+    else:
+      self.image_fn=os.path.basename(image_ptfn)
+    
+    return self.exp
   
-  def store_mount_data(self,cat_eq=None,nml_id=None,cat_no=None):
+  def store_mount_data(self,cat_ic=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
-    self.cat_eq=cat_eq
+    self.cat_ic=cat_ic
 
-    self.setValue('ORI','{0} {1}'.format(self.cat_eq.ra.degree,self.cat_eq.dec.degree),self.mnt_nm)
+    self.setValue('ORI','{0} {1}'.format(self.cat_ic.ra.degree,self.cat_ic.dec.degree),self.mnt_nm)
     ra_oris,dec_oris=self.getValue('ORI',self.mnt_nm).split()
     self.lg.debug('ORI: {0:.3f},{1:.3f}'.format(float(ra_oris),float(dec_oris)))
     # ToD return
     
   def fetch_mount_data(self):
-    if self.cat_eq is None:
+    if self.cat_ic is None:
       return None
     
     JD=float(self.getValue('JD',self.mnt_nm))
     ras,decs=self.getValue('ORI',self.mnt_nm).split()
     now = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
-    acq_eq=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    # cat_ic and mnt_ic have the same value mnt_ic is set by cat_ic
+    cat_ic=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
     
     ras,decs=self.getValue('WOFFS',self.mnt_nm).split()
-    acq_eq_woffs=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    cat_ic_woffs=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
 
     ras,decs=self.getValue('TEL',self.mnt_nm).split()
-    acq_eq_mnt=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    # ToDo in RTS2: ORI + WOFFS + ...=TEL
+    # all corrections must be turned off
+    # see cat_ic above!
+    mnt_ic=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
 
     alts,azs=self.getValue('TEL_',self.mnt_nm).split()
     # RTS2 and IAU: S=0,W=90
     # astropy: N=0,E=90
-    acq_aa_mnt=SkyCoord(az=float(azs)-180.,alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
+    mnt_aa=SkyCoord(az=float(azs)-180.,alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
 
     # ToDo,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
     # ToDo wrong:
-    aa_nml=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
+    nml_aa=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
     dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
     acq=AcqPosition(
       nml_id=self.nml_id,
       cat_no=self.cat_no,
-      aa_nml=aa_nml,
-      eq=acq_eq,
+      nml_aa=nml_aa,
+      cat_ic=cat_ic,
       dt_begin=self.dt_begin,
       dt_end=self.dt_end,
       dt_end_query=dt_end_query,
       JD=JD,
-      eq_woffs=acq_eq_woffs,
-      eq_mnt=acq_eq_mnt,
-      aa_mnt=acq_aa_mnt,
+      cat_ic_woffs=cat_ic_woffs,
+      mnt_ic=mnt_ic,
+      mnt_aa=mnt_aa,
       image_fn=self.image_fn,
       exp=self.exp,
       pressure=self.pressure,

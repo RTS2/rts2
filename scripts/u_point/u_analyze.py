@@ -35,14 +35,11 @@ import pyinotify
 
 from multiprocessing import Lock, Queue, cpu_count
 
-from collections import OrderedDict
 from datetime import datetime
 from astropy import units as u
-from astropy.time import Time,TimeDelta
+from astropy.time import Time
 from astropy.coordinates import SkyCoord,EarthLocation
-from astropy.coordinates import AltAz
-from astropy.coordinates import Longitude,Latitude,Angle
-import astropy.coordinates as coord
+
 from astropy.utils import iers
 # astropy pre 1.2.1 may not work correctly
 #  wget http://maia.usno.navy.mil/ser7/finals2000A.all
@@ -57,7 +54,6 @@ except:
 
 import ds9region
 import sextractor_3
-from structures import CatPosition,NmlPosition,AcqPosition,AnlPosition,cl_nms_acq,cl_nms_anl
 from callback import AnnoteFinder
 from notify import EventHandler 
 from worker import Worker
@@ -96,23 +92,20 @@ class Analysis(Script):
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
     self.dt_utc=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
-    self.acq=list()
-    self.anl=list()
-
                     
   def rot(self,rads):
     s=np.sin(rads)
     c=np.cos(rads)
     return np.matrix([[c, -s],[s,  c]])
     
-  def xy2lonlat_appr(self,px=None,py=None,acq=None,pcn=None):
-    # mnt_eq: read back from mount
+  def xy2lonlat_appr(self,px=None,py=None,pos=None,pcn=None):
+    # mnt_ic: read back from mount
     # in case of RTS2 it includes any OFFS, these are manual corrections
     if self.mount_type_eq:
-      ln0=acq.eq_mnt.ra.radian
-      lt0=acq.eq_mnt.dec.radian
+      ln0=pos.cat_ic.ra.radian
+      lt0=pos.cat_ic.dec.radian
     else:
-      aa=self.to_altaz(eq=acq.eq_mnt)
+      aa=self.to_altaz(ic=pos.cat_ic)
       ln0=aa.az.radian
       lt0=aa.alt.radian
     
@@ -144,30 +137,27 @@ class Analysis(Script):
       #self.lg.debug('{0}: sextract   star  : {1:.6f} {2:.6f}'.format(pcn,az*180./np.pi,alt*180./np.pi))
       
       # ToDo exptime: dt_end - exp/2.
-      aa=SkyCoord(az=az,alt=alt,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=acq.dt_end)
-      eq=self.to_eq(aa=aa)
-      lon=eq.ra.radian
-      lat=eq.dec.radian
+      aa=SkyCoord(az=az,alt=alt,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=pos.dt_end)
+      ic=self.to_ic(aa=aa)
+      lon=ic.ra.radian
+      lat=ic.dec.radian
       
-    if self.base_path in acq.image_fn:
-      fn=acq.image_fn
+    ptfn=self.expand_base_path(fn=pos.image_fn)
+    self.lg.debug('{0}: sextract   result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,ptfn))
+    if self.mount_type_eq:
+      pos.sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='cirs',location=self.obs)
     else:
-      fn=os.path.join(self.base_path,acq.image_fn)
-    self.lg.debug('{0}: sextract   result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,fn))
-    
-    return lon,lat
+      pos.sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
+
   
-  def sextract(self,acq=None,pcn='single'):
+  def sextract(self,pos=None,pcn='single'):
     #if self.ds9_display:
-    #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(acq.cat_no)))
-      
-    if self.base_path in acq.image_fn:
-      fn=acq.image_fn
-    else:
-      fn=os.path.join(self.base_path,acq.image_fn)
+    #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(pos.cat_no)))
+
     sx = sextractor_3.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+    ptfn=self.expand_base_path(fn=pos.image_fn)
     try:
-      sx.runSExtractor(filename=fn)
+      sx.runSExtractor(filename=ptfn)
     except Exception as e:
       self.lg.error('exception: {}'.format(e))
       return None,None
@@ -181,7 +171,7 @@ class Analysis(Script):
     try:
       brst = sx.objects[0]
     except:
-      self.lg.warn('{0}: no sextract result for: {} '.format(pcn,fn))
+      self.lg.warn('{0}: no sextract result for: {} '.format(pcn,ptfn))
       return None,None
     # relative to the image center
     # Attention: AltAz of in x
@@ -191,58 +181,53 @@ class Analysis(Script):
     self.lg.debug('{0}: sextract relative to center: {1:4.1f} px,{2:4.1f} px,{3:4.3f} mag'.format(pcn,x,y,brst[i_m]))
     if self.ds9_display:
       # absolute
-      self.display_fits(fn=fn, x=brst[i_x],y=brst[i_y],color='red')
+      self.display_fits(fn=ptfn, x=brst[i_x],y=brst[i_y],color='red')
     return x,y
     
-  def astrometry(self,acq=None,pcn=None):
+  def astrometry(self,pos=None,pcn=None):
     if self.solver is None:
       return
 
-    if self.base_path in acq.image_fn:
-      fn=acq.image_fn
-    else:
-      fn=os.path.join(self.base_path,acq.image_fn)
+    ptfn=self.expand_base_path(fn=pos.image_fn)
 
-    self.lg.debug('{0}:         mount set: {1:.6f} {2:.6f}, file: {3}'.format(pcn,acq.eq.ra.degree,acq.eq.dec.degree,fn))
-    if acq.eq_mnt.ra.radian != 0. and acq.eq_mnt.dec.radian != 0.:
-      self.lg.debug('{0}:   mount read back: {1:.6f} {2:.6f}, file: {3}'.format(pcn,acq.eq_mnt.ra.degree,acq.eq_mnt.dec.degree,fn))
+    self.lg.debug('{0}:         mount set: {1:.6f} {2:.6f}, file: {3}'.format(pcn,pos.cat_ic.ra.degree,pos.cat_ic.dec.degree,ptfn))
+    if pos.mnt_ic.ra.radian != 0. and pos.mnt_ic.dec.radian != 0.:
+      self.lg.debug('{0}:   mount read back: {1:.6f} {2:.6f}, file: {3}'.format(pcn,pos.mnt_ic.ra.degree,pos.mnt_ic.dec.degree,ptfn))
 
-    sr= self.solver.solve_field(fn=acq.image_fn,ra=acq.eq.ra.degree,dec=acq.eq.dec.degree,)
+    sr= self.solver.solve_field(fn=ptfn,ra=pos.cat_ic.ra.degree,dec=pos.cat_ic.dec.degree,)
     if sr is not None:
-      self.lg.debug('{0}: astrometry result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sr.ra,sr.dec,fn))
-      astr_mnt_eq=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs)
-      return astr_mnt_eq
+      self.lg.debug('{0}: astrometry result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
+      pos.astr=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs)
     else:
-      self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,fn))
-      return None
+      self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,ptfn))
 
   def re_plot(self,i=0,animate=None):
     
-    self.fetch_acquired_positions(sys_exit=True)
-    self.fetch_analyzed_positions(sys_exit=False)
+    self.fetch_positions(sys_exit=True,analyzed=False)
+    self.fetch_positions(sys_exit=False,analyzed=True)
     #                                                               if self.anl=[]
-    anl_sxtr_eq_ra=[x.sxtr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.sxtr is not None]
-    anl_sxtr_eq_dec=[x.sxtr.dec.degree for x in self.anl if x is not None and x.sxtr is not None]
+    sxtr_mnt_ic_ra=[x.sxtr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.sxtr is not None]
+    sxtr_mnt_ic_dec=[x.sxtr.dec.degree for x in self.anl if x is not None and x.sxtr is not None]
 
-    anl_astr_eq_ra=[x.astr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.astr is not None]  
-    anl_astr_eq_dec=[x.astr.dec.degree for x in self.anl if x is not None and x.astr is not None]
+    astr_mnt_ic_ra=[x.astr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.astr is not None]  
+    astr_mnt_ic_dec=[x.astr.dec.degree for x in self.anl if x is not None and x.astr is not None]
 
-    acq_eq_ra =[x.eq.ra.degree for x in self.acq]
-    acq_eq_dec = [x.eq.dec.degree for x in self.acq]
+    cat_ic_ra =[x.cat_ic.ra.degree for x in self.acq]
+    cat_ic_dec = [x.cat_ic.dec.degree for x in self.acq]
     #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
     # ToDo: was nu? debug?
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_mnt.az.degree, x.aa_mnt.alt.degree,x.image_fn) for x in self.acq]
-    nml_ids=[x.nml_id for x in self.acq if x.aa_mnt is not None]
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree, x.mnt_aa.alt.degree,x.image_fn) for x in self.acq]
+    nml_ids=[x.nml_id for x in self.acq if x.mnt_aa is not None]
 
     self.ax.clear()
-    self.ax.scatter(acq_eq_ra, acq_eq_dec,color='blue',s=120.)
-    self.ax.scatter(anl_sxtr_eq_ra, anl_sxtr_eq_dec,color='red',s=40.)
-    self.ax.scatter(anl_astr_eq_ra, anl_astr_eq_dec,color='yellow',s=10.)
+    self.ax.scatter(cat_ic_ra, cat_ic_dec,color='blue',s=120.)
+    self.ax.scatter(sxtr_mnt_ic_ra, sxtr_mnt_ic_dec,color='red',s=40.)
+    self.ax.scatter(astr_mnt_ic_ra, astr_mnt_ic_dec,color='yellow',s=10.)
     # mark last positions
-    if len(anl_sxtr_eq_ra) > 0:
-      self.ax.scatter(anl_sxtr_eq_ra[-1],anl_sxtr_eq_dec[-1],color='green',facecolors='none', edgecolors='green',s=300.)
-    if len(anl_astr_eq_ra) > 0:
-      self.ax.scatter(anl_astr_eq_ra[-1],anl_astr_eq_dec[-1],color='green',facecolors='none', edgecolors='magenta',s=400.)
+    if len(sxtr_mnt_ic_ra) > 0:
+      self.ax.scatter(sxtr_mnt_ic_ra[-1],sxtr_mnt_ic_dec[-1],color='green',facecolors='none', edgecolors='green',s=300.)
+    if len(astr_mnt_ic_ra) > 0:
+      self.ax.scatter(astr_mnt_ic_ra[-1],astr_mnt_ic_dec[-1],color='green',facecolors='none', edgecolors='magenta',s=400.)
 
     self.ax.set_xlim([0.,360.]) 
 
@@ -266,9 +251,9 @@ class Analysis(Script):
       
     # does not exits at the beginning
     try:
-      self.af.data = list(zip(nml_ids,acq_eq_ra,acq_eq_dec,annotes))
+      self.af.data = list(zip(nml_ids,cat_ic_ra,cat_ic_dec,annotes))
     except AttributeError:
-      return nml_ids,acq_eq_ra,acq_eq_dec,annotes
+      return nml_ids,cat_ic_ra,cat_ic_dec,annotes
 
     
   def plot(self,title=None,animate=None,delete=None):
@@ -286,9 +271,9 @@ class Analysis(Script):
     if animate:
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
 
-    (nml_ids,acq_eq_ra,acq_eq_dec,annotes)=self.re_plot(animate=animate)
-    
-    self.af = AnnoteFinder(nml_ids,acq_eq_ra,acq_eq_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,delete_one=self.delete_one_acquired_position)
+    (nml_ids,cat_ic_ra,cat_ic_dec,annotes)=self.re_plot(animate=animate)
+    # analyzed=False means: delete a position in acquired 
+    self.af = AnnoteFinder(nml_ids,cat_ic_ra,cat_ic_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
@@ -385,8 +370,6 @@ if __name__ == "__main__":
   if not os.path.exists(args.base_path):
     os.makedirs(args.base_path)
 
-  anl.fetch_acquired_positions(sys_exit=True)
-  anl.fetch_analyzed_positions(sys_exit=False)
 
   if args.plot:
     title='progress: analyzed positions'
@@ -399,8 +382,7 @@ if __name__ == "__main__":
     sys.exit(1)
     
   lock=Lock()
-  work_queue=Queue()
-  
+  work_queue=Queue()  
   ds9_queue=None    
   next_queue=None    
   cpus=int(cpu_count())
@@ -409,6 +391,8 @@ if __name__ == "__main__":
     next_queue=Queue()
     cpus=2 # one worker
 
+  anl.fetch_positions(sys_exit=True,analyzed=False)
+  anl.fetch_positions(sys_exit=False,analyzed=True)
   sxtr_analyzed=[x.nml_id for x in anl.anl if x.sxtr is not None]
   astr_analyzed=[x.nml_id for x in anl.anl if x.astr is not None]
     
@@ -418,7 +402,7 @@ if __name__ == "__main__":
         logger.debug('skiping analyzed position: {}'.format(o.image_fn))
         continue
       else:
-        logger.debug('xxx adding position: {},{}'.format(i,o.image_fn))
+        logger.debug('adding position: {},{}'.format(i,o.image_fn))
     else:
       if o.nml_id in sxtr_analyzed and o.nml_id in astr_analyzed:
         continue
@@ -430,7 +414,7 @@ if __name__ == "__main__":
     work_queue.put(o)
     
   if len(anl.anl) and args.ds9_display:
-    logger.warn('deleted positions will appear again, these are deliberately not stored file: {}'.format(args.analyzed_positions))
+    logger.warn('deleted positions will appear again, these are deliberately not stored, file: {}'.format(args.analyzed_positions))
     
   processes = list()
   for w in range(1,cpus,1):

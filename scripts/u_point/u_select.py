@@ -37,11 +37,9 @@ import numpy as np
 
 from datetime import datetime
 from astropy import units as u
-from astropy.time import Time,TimeDelta
+from astropy.time import Time
 from astropy.coordinates import SkyCoord,EarthLocation
-from astropy.coordinates import AltAz,CIRS,ITRS
-from astropy.coordinates import Longitude,Latitude,Angle
-import astropy.coordinates as coord
+from astropy.coordinates import Longitude,Latitude
 
 from structures import CatPosition
 
@@ -55,12 +53,12 @@ class Catalog(object):
     self.obs=EarthLocation(lon=float(obs_lng)*u.degree, lat=float(obs_lat)*u.degree, height=float(obs_height)*u.m)
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
 
-  def observable(self,cat_eq=None):
+  def observable(self,cat_ic=None):
     if self.obs.latitude.radian >= 0.:
-      if -(np.pi/2.-self.obs.latitude.radian) < cat_eq.dec.radian:
+      if -(np.pi/2.-self.obs.latitude.radian) < cat_ic.dec.radian:
         return True
     else:
-      if -(-np.pi/2.-self.obs.latitude.radian) > cat_eq.dec.radian:
+      if -(-np.pi/2.-self.obs.latitude.radian) > cat_ic.dec.radian:
         return True
 
     return False
@@ -101,13 +99,13 @@ class Catalog(object):
       if bgrightness[0]<mag_v<bgrightness[1]:
         ra='{} {} {} hours'.format(ra_h,ra_m,ra_s)
         dec='{}{} {} {} '.format(dec_n,dec_d,dec_m,dec_s)
-        cat_eq=SkyCoord(ra=ra,dec=dec, unit=(u.hour,u.deg), frame='icrs',obstime=self.dt_utc,location=self.obs)
+        cat_ic=SkyCoord(ra=ra,dec=dec, unit=(u.hour,u.deg), frame='icrs',obstime=self.dt_utc,location=self.obs)
 
-        if self.observable(cat_eq=cat_eq):
-          cat=CatPosition(cat_no=cat_no,cat_eq=cat_eq,mag_v=mag_v)
+        if self.observable(cat_ic=cat_ic):
+          cat=CatPosition(cat_no=cat_no,cat_ic=cat_ic,mag_v=mag_v)
           cats.append(cat)
     # prepare for u_acquire.py
-    self.cats=sorted(cats, key=lambda x: x.cat_eq.ra.radian)
+    self.cats=sorted(cats, key=lambda x: x.cat_ic.ra.radian)
     
   def remove_objects(self,min_sep=None):
     # remove too close objects
@@ -118,8 +116,8 @@ class Catalog(object):
       if i == 0:
         break
       # lazy
-      if abs(self.cats[i].cat_eq.ra.radian-self.cats[i-1].cat_eq.ra.radian) < min_sep_r:
-        if abs(self.cats[i].cat_eq.dec.radian-self.cats[i-1].cat_eq.dec.radian) < min_sep_r:
+      if abs(self.cats[i].cat_ic.ra.radian-self.cats[i-1].cat_ic.ra.radian) < min_sep_r:
+        if abs(self.cats[i].cat_ic.dec.radian-self.cats[i-1].cat_ic.dec.radian) < min_sep_r:
           to_delete.append(i)
           to_delete.append(i-1)
   
@@ -136,12 +134,12 @@ class Catalog(object):
       fn=os.path.join(self.base_path,ptfn)
     with  open(fn, 'w') as wfl:
       for i,o in enumerate(self.cats):
-        wfl.write('{0},{1},{2},{3}\n'.format(o.cat_no,o.cat_eq.ra.radian,o.cat_eq.dec.radian,o.mag_v))
+        wfl.write('{0},{1},{2},{3}\n'.format(o.cat_no,o.cat_ic.ra.radian,o.cat_ic.dec.radian,o.mag_v))
 
   def plot(self):
-    ra = coord.Angle([x.cat_eq.ra.radian for x in self.cats], unit=u.radian)
+    ra = Longitude([x.cat_ic.ra.radian for x in self.cats], unit=u.radian)
     ra = ra.wrap_at(180*u.degree)
-    dec = coord.Angle([x.cat_eq.dec.radian for x in self.cats],unit=u.radian)
+    dec = Latitude([x.cat_ic.dec.radian for x in self.cats],unit=u.radian)
 
     import matplotlib.mlab as mlab
     import matplotlib
@@ -187,7 +185,7 @@ if __name__ == "__main__":
   parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0], type=arg_floats, help=': %(default)s, visual star brightness [mag], format "p1 p2"')
   parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, store the  observable objects')
   parser.add_argument('--minimum-separation', dest='minimum_separation', action='store', default=1.,type=arg_float, help=': %(default)s [deg], minimum separation between catalog stars')
-  parser.add_argument('--base-path', dest='base_path', action='store', default='./u_point_data/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
   
   args=parser.parse_args()
   if args.toconsole:

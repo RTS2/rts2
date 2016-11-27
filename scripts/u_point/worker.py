@@ -39,18 +39,13 @@ class Worker(Process):
     self.dbg=dbg
     self.lg=lg
 
-  def append_analyzed_position(self,acq=None,sxtr_ra=None,sxtr_dec=None,astr_mnt_eq=None):
+  def append_position(self,pos=None):
     self.lock.acquire()
-    if astr_mnt_eq is None and sxtr_ra is None and sxtr_dec is None:
-      pass
-    elif astr_mnt_eq is None:
-      self.anl.append_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=np.nan,astr_dec=np.nan)
-    else:
-      self.anl.append_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_ra=astr_mnt_eq.ra.radian,astr_dec=astr_mnt_eq.dec.radian)
+    self.anl.append_position(pos=pos,analyzed=True)
     self.lock.release()
 
   def run(self):
-    acq=acq_image_fn=None
+    pos=acq_image_fn=None
     while not self.exit.is_set():
       if self.ds9_queue is not None:
         try:
@@ -61,24 +56,24 @@ class Worker(Process):
         # 'q'
         if isinstance(cmd, str):
           if 'dl' in cmd:
-            self.lg.info('{}: got {}, delete last: {}'.format(current_process().name, cmd,acq.image_fn))
-            acq_image_fn=acq.image_fn
+            self.lg.info('{}: got {}, delete last: {}'.format(current_process().name, cmd,pos.image_fn))
+            acq_image_fn=pos.image_fn
             acq=None
           elif 'q' in cmd:
-            self.append_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
+            self.append_position(pos=pos)
             self.lg.error('{}: got {}, call shutdown'.format(current_process().name, cmd))
             self.shutdown()
             return
           else:
             self.lg.error('{}: got {}, continue'.format(current_process().name, cmd))
-        if acq:
-          self.append_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
+        if pos:
+          self.append_position(pos=pos)
         elif acq_image_fn is not None:
           self.lg.info('{}: not storing {}'.format(current_process().name, acq_image_fn))
           acq_image_fn=None
-      acq=None
+      pos=None
       try:
-        acq=self.work_queue.get()
+        pos=self.work_queue.get()
       except Queue.Empty:
         self.lg.info('{}: queue empty, returning'.format(current_process().name))
         return
@@ -86,20 +81,19 @@ class Worker(Process):
         self.lg.error('{}: queue error: {}, returning'.format(current_process().name, e))
         return
       # 'STOP'
-      if isinstance(acq, str):
-        self.lg.error('{}: got {}, call shutdown_on_STOP'.format(current_process().name, acq))
+      if isinstance(pos, str):
+        self.lg.error('{}: got {}, call shutdown_on_STOP'.format(current_process().name, pos))
         self.shutdown_on_STOP()
         return
       # analysis part
-      x,y=self.anl.sextract(acq=acq,pcn=current_process().name)
-      sxtr_ra=sxtr_dec=None
+      x,y=self.anl.sextract(pos=pos,pcn=current_process().name)
       if x is not None and y is not None:
-        sxtr_ra,sxtr_dec=self.anl.xy2lonlat_appr(px=x,py=y,acq=acq,pcn=current_process().name)
-      
-      astr_mnt_eq=self.anl.astrometry(acq=acq,pcn=current_process().name)
+        self.anl.xy2lonlat_appr(px=x,py=y,pos=pos,pcn=current_process().name)
+
+      self.anl.astrometry(pos=pos,pcn=current_process().name)
       # ToDo why this condition
       if self.ds9_queue is None:
-        self.append_analyzed_position(acq=acq,sxtr_ra=sxtr_ra,sxtr_dec=sxtr_dec,astr_mnt_eq=astr_mnt_eq)
+        self.append_position(pos=pos)
       else:
         self.next_queue.put('c')
       # end analysis part
