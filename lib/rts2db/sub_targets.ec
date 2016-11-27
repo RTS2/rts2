@@ -180,6 +180,8 @@ int ConstTarget::selectedAsGood ()
 		int d_tar_id = target_id;
 		double d_tar_ra;
 		double d_tar_dec;
+		int d_tar_ra_ind;
+		int d_tar_dec_ind;
 	EXEC SQL END DECLARE SECTION;
 	// check if we are still enabled..
 	EXEC SQL
@@ -187,20 +189,27 @@ int ConstTarget::selectedAsGood ()
 			tar_ra,
 			tar_dec
 		INTO
-			:d_tar_ra,
-			:d_tar_dec
+			:d_tar_ra :d_tar_ra_ind,
+			:d_tar_dec :d_tar_dec_ind
 		FROM
 			targets
 		WHERE
 			tar_id = :d_tar_id;
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "error while loading target positions for target with it ID " << d_tar_id << " observation target ID " << getObsTargetID () << sendLog;
+		logStream (MESSAGE_ERROR) << "error while loading target positions for target with ID " << d_tar_id << " observation target ID " << getObsTargetID () << sendLog;
 		logMsgDb ("ConstTarget::selectedAsGood", MESSAGE_ERROR);
 		return -1;
 	}
-	position.ra = d_tar_ra;
-	position.dec = d_tar_dec;
+	if (d_tar_ra_ind)
+		position.ra = NAN;
+	else
+		position.ra = d_tar_ra;
+
+	if (d_tar_dec_ind)
+		position.dec = NAN;
+	else
+		position.dec = d_tar_dec;
 	return Target::selectedAsGood ();
 }
 
