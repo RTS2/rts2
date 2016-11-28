@@ -173,6 +173,7 @@ int SX::initHardware ()
 		return -1;
 
 	model->setValueInteger (sxGetCameraModel (sxHandle));
+	serialNumber->setValueInteger (sxGetBuildNumber (sxHandle));
 	interlaced->setValueBool (sxIsInterlaced (model->getValueInteger ()));
 	//interlaced->setValueBool (false);
 
