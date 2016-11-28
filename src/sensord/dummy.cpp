@@ -64,6 +64,9 @@ class Dummy:public SensorWeather
 			stopMoveErr->addSelVal ("warning");
 			stopMoveErr->addSelVal ("error");
 
+			createValue (testRaDec, "ra_dec_test", "test ra dec value", false, RTS2_VALUE_WRITABLE);
+			createValue (testRaDecArcSec, "ra_dec_arcsec", "test ra dec value", false, RTS2_VALUE_WRITABLE | RTS2_DT_ARCSEC);
+
 			createValue (testOnOff, "test_on_off", "test true/false displayed as on/off", false, RTS2_VALUE_WRITABLE | RTS2_VWHEN_TRIGGERED | RTS2_DT_ONOFF);
 
 			goodWeather->setValueBool (false);
@@ -206,6 +209,8 @@ class Dummy:public SensorWeather
 		rts2core::ValueBool *wrCloud;
 		rts2core::ValueBool *stopMove;
 		rts2core::ValueSelection *stopMoveErr;
+		rts2core::ValueRaDec *testRaDec;
+		rts2core::ValueRaDec *testRaDecArcSec;
 		rts2core::ValueBool *testOnOff;
 		rts2core::ValueDoubleStat *statTest;
 		rts2core::DoubleArray *statContent1;

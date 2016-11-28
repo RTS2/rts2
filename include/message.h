@@ -65,6 +65,7 @@ typedef uint32_t messageType_t;
 #define INFO_MOUNT_SLEW_ALTAZ           0x001100
 #define INFO_MOUNT_SLEW_END             0x001200
 #define DEBUG_MOUNT_TRACKING_LOG        0x001300
+#define DEBUG_MOUNT_TRACKING_SHORT_LOG  0x001400
 
 #define MESSAGE_MASK_ALL                0xFFFFFF
 

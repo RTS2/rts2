@@ -138,6 +138,11 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 					LibnovaDeg90 v_dd (((rts2core::ValueRaDec *) value)->getDec ());
 					_os << v_rd << " " << v_dd;
 				}
+				else if (value->getValueDisplayType () == RTS2_DT_ARCSEC)
+				{
+					double v_rd ();
+					_os << std::fixed << std::setprecision (3) << ((rts2core::ValueRaDec *) value)->getRa () * 3600 << "\" " << ((rts2core::ValueRaDec *) value)->getDec () * 3600 << "\"";
+				}
 				else 
 				{
 					LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());

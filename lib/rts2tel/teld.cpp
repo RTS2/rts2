@@ -87,6 +87,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
+	createValue (pmRaDec, "PM", "proper motion/year", true, RTS2_VALUE_WRITABLE);
+	pmRaDec->setValueRaDec (0, 0);
 	// users offset
 	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	offsRaDec->setValueRaDec (0, 0);
@@ -203,10 +205,12 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST_180);
 
+#ifndef RTS2_LIBERFA
 	createValue (precessed, "precessed", "target coordinates, aberated and precessed", false);
 	createValue (nutated, "nutated", "target coordinates, nutated", false);
 	createValue (aberated, "aberated", "target coordinates, aberated", false);
 	createValue (refraction, "refraction", "[deg] refraction (in altitude)", false, RTS2_DT_DEG_DIST_180);
+#endif
 
 	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true, RTS2_DT_DEGREES, 0);
 	modelRaDec->setValueRaDec (0, 0);
@@ -905,6 +909,7 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 	rts2core::Device::valueChanged (changed_value);
 }
 
+#ifndef RTS2_LIBERFA
 void Telescope::applyAberation (struct ln_equ_posn *pos, double JD, bool writeValue)
 {
 	ln_get_equ_aber (pos, JD, pos);
@@ -933,7 +938,6 @@ void Telescope::applyNutation (struct ln_equ_posn *pos, double JD, bool writeVal
 
 	pos->ra += d_ra;
 	pos->dec += d_dec;
-
 	if (writeValue)
 		nutated->setValueRaDec (pos->ra, pos->dec);
 }
@@ -963,6 +967,7 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 		refraction->setValueDouble (ref);
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
+#endif
 
 void Telescope::afterMovementStart ()
 {
@@ -1239,9 +1244,12 @@ int Telescope::initValues ()
 	tarRaDec->setFromValue (telRaDec);
 	oriRaDec->setFromValue (telRaDec);
 	objRaDec->setFromValue (telRaDec);
+#ifndef RTS2_LIBERFA
 	aberated->setFromValue (telRaDec);
+	nutated->setFromValue (telRaDec);
 	precessed->setFromValue (telRaDec);
 	refraction->setValueDouble (NAN);
+#endif
 	modelRaDec->setValueRaDec (0, 0);
 	telTargetRaDec->setFromValue (telRaDec);
 
@@ -1555,6 +1563,13 @@ void Telescope::runTracking ()
 
 void Telescope::logTracking ()
 {
+#ifdef RTS2_LIBERFA
+	rts2core::LogStream ls = logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_SHORT_LOG);
+		// 1                            2
+	ls	<< tarRaDec->getRa () << " " << tarRaDec->getDec () << " "
+		// 3                          4
+		<< modelRaDec->getRa () << " " << modelRaDec->getDec () << " ";
+#else
 	rts2core::LogStream ls = logStream (MESSAGE_DEBUG | DEBUG_MOUNT_TRACKING_LOG);
 		// 1                            2
 	ls	<< tarRaDec->getRa () << " " << tarRaDec->getDec () << " "
@@ -1568,6 +1583,7 @@ void Telescope::logTracking ()
 		<< refraction->getValueDouble () << " "
 		// 10                             11 
 		<< modelRaDec->getRa () << " " << modelRaDec->getDec () << " ";
+#endif
 	if (tarTelRaDec != NULL)
 		//    12                              13
 		ls << tarTelRaDec->getRa () << " " << tarTelRaDec->getDec () << " ";
@@ -1836,7 +1852,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 	double rc = ln_deg_to_rad (pos->ra);
 	double dc = ln_deg_to_rad (pos->dec);
 
-	int status = eraAtco13 (rc, dc, 0, 0, 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &aob, &zob, &hob, &dob, &rob, &co);
+	int status = eraAtco13 (rc, dc, pmRaDec->getRa () * 3600.0, pmRaDec->getDec () * 3600.0, 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &aob, &zob, &hob, &dob, &rob, &co);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot apply corrections to " << pos->ra << " " << pos->dec << sendLog;
@@ -1855,6 +1871,13 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 	// apply all posible corrections
 	if (calPrecession->getValueBool () == true)
 		applyPrecession (pos, JD, writeValues);
+	
+	// always apply proper motion - if set
+	struct ln_equ_posn pm;
+	pm.ra = pmRaDec->getRa ();
+	pm.dec = pmRaDec->getDec ();
+	ln_get_equ_pm (pos, &pm, JD, pos);
+
 	if (calNutation->getValueBool () == true)
 		applyNutation (pos, JD, writeValues);
 	if (calAberation->getValueBool () == true)
@@ -2352,6 +2375,22 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		pmRaDec->setValueRaDec (0, 0);
+		resetMpecTLE ();
+		startTracking (true);
+		ret = startResyncMove (conn, 0);
+		if (ret)
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+		return ret;
+	}
+	else if (conn->isCommand (COMMAND_TELD_MOVE_PM))
+	{
+		double pmRa, pmDec;
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || conn->paramNextDouble (&pmRa) || conn->paramNextDouble (&pmDec) || !conn->paramEnd ())
+			return DEVDEM_E_PARAMSNUM;
+		modelOn ();
+		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		pmRaDec->setValueRaDec (pmRa / 3600.0, pmDec / 3600.0);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2367,6 +2406,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		obj_ra = getLocSidTime ( JD) * 15. - obj_ha ;
 
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		pmRaDec->setValueRaDec (0, 0);
 		resetMpecTLE ();
 		tarRaDec->setValueRaDec (NAN, NAN);
 		return startResyncMove (conn, 0);
@@ -2377,6 +2417,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return DEVDEM_E_PARAMSNUM;
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		pmRaDec->setValueRaDec (0, 0);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);

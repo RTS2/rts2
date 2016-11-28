@@ -71,6 +71,12 @@
 #define COMMAND_TELD_MOVE       "move"
 
 /**
+ * Move with proper motion data (in arcsec/year)
+ * move_pm 1:20:35 -85:21:14 0.211 0.356
+ */
+#define COMMAND_TELD_MOVE_PM    "move_pm"
+
+/**
  * Move to HA DEC coordinates.
  */
 #define COMMAND_TELD_HADEC      "hadec"

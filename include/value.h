@@ -188,6 +188,8 @@
 #define RTS2_DT_DEGREES               0x00030000
 #define RTS2_DT_DEG_DIST              0x00040000
 #define RTS2_DT_PERCENTS              0x00050000
+//* display degrees as arcseconds
+#define RTS2_DT_ARCSEC                0x00060000
 
 #define RTS2_DT_HEX                   0x00070000
 #define RTS2_DT_BYTESIZE              0x00080000

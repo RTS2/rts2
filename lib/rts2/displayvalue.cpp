@@ -52,6 +52,9 @@ std::string rts2core::getDisplayValue (rts2core::Value * value)
 		case RTS2_DT_PERCENTS:
 			_os << std::setw (6) << value->getValueDouble () << "%";
 			break;
+		case RTS2_DT_ARCSEC:
+			_os << std::setprecision (3) << value->getValueDouble () * 3600.0 << "\"";
+			break;
 		case RTS2_DT_HEX:
 			_os << "0x" << std::setw (8) << std::hex << value->getValueInteger ();
 			break;

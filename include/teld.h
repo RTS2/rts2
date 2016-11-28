@@ -1056,6 +1056,7 @@ class Telescope:public rts2core::Device
 		void getHrzFromEquST (struct ln_equ_posn *pos, double ST, struct ln_hrz_posn *hrz);
 		void getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos);
 
+#ifndef RTS2_LIBERFA
 		/**
 		 * Apply aberation correction.
 		 */
@@ -1075,6 +1076,7 @@ class Telescope:public rts2core::Device
 		 * Apply refraction correction.
 		 */
 		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
+#endif
 
 		virtual void afterMovementStart ();
 
@@ -1127,6 +1129,11 @@ class Telescope:public rts2core::Device
 		 * Object we are observing original positions (in J2000).
 		 */
 		rts2core::ValueRaDec *oriRaDec;
+
+		/**
+		 * Object proper motion. (mas/year)
+		 */
+		rts2core::ValueRaDec *pmRaDec;
 
 		/**
 		 * User offsets, used to create dithering pattern.
@@ -1190,11 +1197,13 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueRaDec *total_offsets;
 
+#ifndef RTS2_LIBERFA
 		rts2core::ValueRaDec *precessed;
 		rts2core::ValueRaDec *nutated;
 		rts2core::ValueRaDec *aberated;
 
 		rts2core::ValueDouble *refraction;
+#endif
 
 		/**
 		 * Modelling changes.
