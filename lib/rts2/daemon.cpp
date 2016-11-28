@@ -242,7 +242,7 @@ int Daemon::doDaemonize ()
 	if (ret < 0)
 	{
 		logStream (MESSAGE_ERROR) << "Daemon::int daemonize fork " << strerror (errno) << sendLog;
-		exit (2);
+		exit (6);
 	}
 	if (ret)
 	{
@@ -414,13 +414,13 @@ void Daemon::initDaemon ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot init daemon, exiting" << sendLog;
-		exit (ret);
+		exit (10);
 	}
 	ret = initValues ();
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot init values in daemon, exiting" << sendLog;
-		exit (ret);
+		exit (11);
 	}
 }
 
