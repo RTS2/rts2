@@ -101,7 +101,7 @@ class AnnoteFinder(object):
           #self.drawAnnote(event.inaxes, x, y, annote,i)
           
           self.drawAnnote(x,y,annote,i_q,nml_id)
-          self.lg.debug(annote)
+          self.lg.debug('nml_id: {}, {}'.format(nml_id,annote))
           # ToDo understand
           #for l in self.links:
           #  l.drawSpecificAnnote(annote)
@@ -130,56 +130,37 @@ class AnnoteFinder(object):
     """
     Draw the annotation on the plot
     """
-    print(annote)
+    self.lg.debug(annote)
+    if self.aps is None:
+      return
+    
     fn=annote.split()[1]
     if self.ds9_display:
       self.display_fits(fn=fn, x=0,y=0,color='red')
+    stop=False    
+    print(i_q)
+    for apo in self.aps:
+      if (apo.x[i_q], apo.y[i_q]) in self.drawnAnnotations:
+        for api in self.aps:
+          markers = self.drawnAnnotations[(api.x[i_q], api.y[i_q])]
+          if len(markers)> 0:
+            stop=True
+          for m in markers:
+            #print(m)
+            # ToDO not yet working
+            m.set_visible(not m.get_visible())
           
-    if (x, y) in self.drawnAnnotations:
-      markers = self.drawnAnnotations[(x, y)]
-      for m in markers:
-        #m.set_visible(not m.get_visible())
-        if self.aps is not None:
-          for ap in self.aps:
-            ap.xx.figure.canvas.draw_idle()       
-    else:
+        api.xx.figure.canvas.draw_idle()
+
+    if stop:
+      return
+    
+    for ap in self.aps:
       if self.annotate_fn:
-        if self.aps is not None:
-          for i,ap in enumerate(self.aps):
-            t=ap.xx.text(ap.x[i_q], ap.y[i_q], "%s,%s\n%s" % (nml_id,annote.split()[0],fn),)
-          
+        t=ap.xx.text(ap.x[i_q], ap.y[i_q], "%s,%s\n%s" % (int(nml_id),annote.split()[0],fn),)
       else:
-        # ToDoS t,m
-        if self.aps is not None:
-          for i,ap in enumerate(self.aps):
-            t = ap.xx.text(ap.x[i_q], ap.y[i_q], "%s,%s" % (nml_id,annote.split()[0]),)
-        
-      if self.aps is not None:
-        for i,ap in enumerate(self.aps):
-          m=ap.xx.scatter([ap.x[i_q]], [ap.y[i_q]], marker='d', c='r', zorder=100)
-        
-      self.drawnAnnotations[(x, y)] = (t, m)
-      if self.aps is not None:
-        for i,ap in enumerate(self.aps):
-          self.drawnAnnotations[(ap.x[i_q], ap.y[i_q])] = (t, m)
-          try:
-            ap.xx.figure.canvas.draw_idle()
-          #except TclError:
-          except:
-            pass
-            
-      if self.aps is not None:
-        for i,ap in enumerate(self.aps):
-          try:
-            ap.xx.figure.canvas.draw_idle()
-          #except TclError:
-          except:
-            self.lg.warn('callback: drawAnnote: something went wrong, most likely plot window closed by user')
-
-  # ToDo understand
-  # def drawSpecificAnnote(self, annote):
-  #  annotesToDraw = [(x, y, a) for x, y, a in self.data if a == annote]
-  #  for x, y, a in annotesToDraw:
-  #    self.drawAnnote(self.ax, x, y, a)
-
-
+        t = ap.xx.text(ap.x[i_q], ap.y[i_q], "%s,%s" % (int(nml_id),annote.split()[0]),)
+      m=ap.xx.scatter([ap.x[i_q]], [ap.y[i_q]], marker='d', c='r', zorder=100)
+      ap.xx.figure.canvas.draw_idle()
+      self.drawnAnnotations[(ap.x[i_q], ap.y[i_q])] = (t, m)
+  

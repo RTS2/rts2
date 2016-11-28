@@ -203,7 +203,7 @@ class PointingModel(Script):
     mnts=list()
     imgs=list()
     nmls=list()
-    for i,anl in enumerate(self.anl):
+    for i,anl in enumerate(self.sky_anl):
       if i > self.break_after:
         break
 
@@ -229,8 +229,6 @@ class PointingModel(Script):
       cat_tf=tr_t_tf(ic=cat_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=True)
       # to be sure :-))
       pre=tem=hum=0.
-      print(cat_ic)
-      print(mnt_ic)
       mnt_tf=tr_t_tf(ic=mnt_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=False)
       cats.append(cat_tf)
       mnts.append(mnt_tf)

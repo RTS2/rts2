@@ -32,7 +32,7 @@ from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,AltAz
 import pandas as pd
 
-from structures import NmlPosition,CatPosition,AnlPosition,cl_nms,cl_acq
+from structures import NmlPosition,CatPosition,SkyPosition,cl_nms,cl_acq
 
 class Script(object):
   def __init__(
@@ -52,7 +52,7 @@ class Script(object):
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
     self.acq_e_h=acq_e_h
-
+    
   # ToDo see callback.py
   def display_fits(self,fn=None, x=None,y=None,color=None):
     ds9=ds9region.Ds9DisplayThread(debug=True,logger=self.lg)
@@ -185,73 +185,75 @@ class Script(object):
       self.nml.append(NmlPosition(nml_id=i,nml_aa=nml_aa))
 
   def drop_nominal_altaz(self):
-    obs=[int(x.nml_id)  for x in self.acq]
+    obs=[int(x.nml_id)  for x in self.sky_acq]
     observed=sorted(set(obs),reverse=True)
     for i in observed:
       del self.nml[i]
       #self.lg.debug('drop_nominal_altaz: deleted: {}'.format(i))
 
-  def delete_one_position(self, nml_id=None,analyzed=None):
+  def distinguish(self,analyzed=None):
     if analyzed:
       ptfn=self.expand_base_path(fn=self.analyzed_positions)
-      pos=self.anl
+      try:
+        self.sky_anl
+      except AttributeError:
+        sky=self.sky_anl=list()
+      else:
+        sky=self.sky_anl        
     else:
       ptfn=self.expand_base_path(fn=self.acquired_positions)
-      pos=self.acq
-      
-    self.fetch_positions(analyzed=analyzed)
-    for i,ps in enumerate(pos): 
+      try:
+        self.sky_acq
+      except AttributeError:
+        sky=self.sky_acq=list()
+      else:
+        sky=self.sky_acq
+
+    return sky, ptfn
+ 
+  def delete_one_position(self, nml_id=None,analyzed=None):
+    sky,ptfn=self.distinguish(analyzed=analyzed)
+    for i,ps in enumerate(sky): 
       if nml_id==ps.nml_id:
-        del pos[i]
+        del sky[i]
         break
     else:
-      self.lg.info('deleted item: item {} not found in file: {}'.format(nml_id, ptfn))
+      self.lg.info('delete_one_position:  nml_id {} not found in file: {}'.format(nml_id, ptfn))
       return
 
     self.store_positions(analyzed=analyzed)
-    self.lg.info('deleted item: {} from file: {}'.format(nml_id, ptfn))
+    self.lg.info('delete_one_position deleted nml_id: {} from file: {}'.format(nml_id, ptfn))
 
-  def store_positions(self,pos=None,analyzed=None):
-    if analyzed:
-      ptfn=self.expand_base_path(fn=self.analyzed_positions)
-      pos=self.anl
-    else:
-      ptfn=self.expand_base_path(fn=self.acquired_positions)
-      pos=self.acq
-
-      if self.acq_e_h is not None:  
-        while self.acq_e_h.not_writable:
-          time.sleep(.1)      
+  def store_positions(self,analyzed=None):
+    sky,ptfn=self.distinguish(analyzed=analyzed)
+    
+    if self.acq_e_h is not None:  
+      while self.acq_e_h.not_writable:
+        time.sleep(.1)      
     # append, one by one
     with  open(ptfn, 'w') as wfl:
-      for ps in pos:
+      for ps in sky:
         wfl.write('{0}\n'.format(ps))
     
-  def append_position(self,pos=None,analyzed=None):
-    if analyzed:
-      ptfn=self.expand_base_path(fn=self.analyzed_positions)
-    else:
-      ptfn=self.expand_base_path(fn=self.acquired_positions)
-      
+  def append_position(self,analyzed=None):
+    sky,ptfn=self.distinguish(analyzed=analyzed)
     # append, one by one
     with  open(ptfn, 'a') as wfl:
-      wfl.write('{0}\n'.format(pos))
+      wfl.write('{0}\n'.format(sky))
 
   def fetch_positions(self,sys_exit=None,analyzed=None):
     # ToDo!
     # dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
-
+    sky,ptfn=self.distinguish(analyzed=analyzed)
+    # legacy
+    cols=cl_acq
     if analyzed:
-      ptfn=self.expand_base_path(fn=self.analyzed_positions)
-      pos=self.anl=list()
       cols=cl_nms
-    else:
-      ptfn=self.expand_base_path(fn=self.acquired_positions)
-      pos=self.acq=list()    
-      cols=cl_acq
+    
     df_data = self.fetch_pandas(ptfn=ptfn,columns=cols,sys_exit=sys_exit)
     if df_data is None:
       return
+
     for i,rw in df_data.iterrows():
       # ToDo why not out_subfmt='fits'
       dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
@@ -271,7 +273,7 @@ class Script(object):
         sxtr=SkyCoord(ra=rw['sxtr_ra'],dec=rw['sxtr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
       else:
         sxtr=None
-        self.lg.debug('fetch_positions: sxtr None: {}'.format(ptfn))
+        #self.lg.debug('fetch_positions: sxtr None: {}'.format(ptfn))
         
       if 'astr_ra' in cols and pd.notnull(rw['astr_ra']) and pd.notnull(rw['astr_dec']):
         # ToDO icrs, cirs
@@ -287,7 +289,7 @@ class Script(object):
         #continue
         
       image_ptfn=self.rebase_base_path(ptfn=rw['image_fn'])
-      spos=AnlPosition(
+      s_sky=SkyPosition(
           nml_id=i,
           cat_no=rw['cat_no'],
           nml_aa=nml_aa,
@@ -307,5 +309,5 @@ class Script(object):
           sxtr= sxtr,
           astr= astr,
       )
-      pos.append(spos)
+      sky.append(s_sky)
     

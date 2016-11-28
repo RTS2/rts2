@@ -59,6 +59,7 @@ from astropy.coordinates import AltAz
 from notify import ImageEventHandler 
 from notify import EventHandler 
 from callback import AnnoteFinder
+from callback import  AnnotatedPlot
 from script import Script
 
 class Acquisition(Script):
@@ -182,11 +183,11 @@ class Acquisition(Script):
     # whatch out for image_fn absolute relative path
     if self.mode_watchdog:
       self.lg.info('expose: waiting for image_fn from acq_queue')
-      image_fn=self.acq_queue.get(acq)
+      image_fn=self.acq_queue.get()
       self.lg.info('expose: image_fn from queue acq_queue: {}'.format(image_fn))
 
-    acq=self.device.fetch_mount_data()
-    self.append_position(acq=acq,analyzed=False)
+    sky=self.device.fetch_mount_data()
+    self.append_position(sky=sky,analyzed=False)
 
   def find_near_neighbor(self,mnl_ic=None,altitude_interval=None,max_separation=None):
     il=iu=None
@@ -265,8 +266,8 @@ class Acquisition(Script):
     self.fetch_nominal_altaz(fn=ptfn)
     self.drop_nominal_altaz()
     
-    mnt_aa_az = [x.mnt_aa.az.degree for x in self.acq if x.mnt_aa is not None]
-    mnt_aa_alt= [x.mnt_aa.alt.degree for x in self.acq if x.mnt_aa is not None]
+    mnt_aa_az = [x.mnt_aa.az.degree for x in self.sky_acq if x.mnt_aa is not None]
+    mnt_aa_alt= [x.mnt_aa.alt.degree for x in self.sky_acq if x.mnt_aa is not None]
     nml_aa_az = [x.nml_aa.az.degree for x in self.nml]
     nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml]
     
@@ -305,14 +306,16 @@ class Acquisition(Script):
     self.ax.set_ylabel('altitude [deg]')  
     self.ax.grid(True)
     # same if expression as above
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree, x.mnt_aa.alt.degree,x.image_fn) for x in self.acq if x.mnt_aa is not None]
-    nml_ids=[x.nml_id for x in self.acq if x.mnt_aa is not None]
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree, x.mnt_aa.alt.degree,x.image_fn) for x in self.sky_acq if x.mnt_aa is not None]
+    nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa is not None]
     ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
     # does not exits at the beginning
+    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,x=mnt_aa_az,y=mnt_aa_alt,annotes=annotes)]
     try:
       self.af.data = list(zip(nml_ids,mnt_aa_az,mnt_aa_alt,annotes))
     except AttributeError:
-      return nml_ids,mnt_aa_az,mnt_aa_alt,annotes
+      return nml_ids,mnt_aa_az,mnt_aa_alt,annotes,aps
+
 
 
   def plot(self,title=None,ptfn=None,az_step=None,ds9_display=None,animate=None,delete=None):
@@ -329,9 +332,9 @@ class Acquisition(Script):
     if animate:
       ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate,),interval=5000)
     
-    (nml_ids,mnt_aa_az,mnt_aa_alt,annotes)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
+    (nml_ids,mnt_aa_az,mnt_aa_alt,annotes,aps)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
-    self.af = AnnoteFinder(nml_ids,mnt_aa_az,mnt_aa_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
+    self.af = AnnoteFinder(nml_ids,mnt_aa_az,mnt_aa_alt, annotes, ax=self.ax,aps=aps,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     ##self.af =  SimpleAnnoteFinder(acq_nml_az,acq_nml_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=False,lg=self.lg)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
@@ -474,10 +477,6 @@ if __name__ == "__main__":
       ac.plot(title='to be observed nominal positions',ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=False,delete=False) # no images yet
     sys.exit(1)
 
-  ac.fetch_nominal_altaz(fn=args.nominal_positions)
-  ac.fetch_positions(sys_exit=False,analyzed=False)
-  # drop already observed positions
-  ac.drop_nominal_altaz()
 
   if args.plot:
     title='progress: acquired positions'
@@ -492,6 +491,11 @@ if __name__ == "__main__":
   # candidate objects, predefined with u_select.py
   if args.use_bright_stars:
     ac.fetch_observable_catalog(fn=args.observable_catalog)
+
+  ac.fetch_nominal_altaz(fn=args.nominal_positions)
+  ac.fetch_positions(sys_exit=False,analyzed=False)
+  # drop already observed positions
+  ac.drop_nominal_altaz()
   # acquire unobserved positions
   ac.acquire(
     altitude_interval=altitude_interval,

@@ -40,7 +40,7 @@ from astropy.time import Time
 
 # python 3 version
 import scriptcomm_3
-from structures import AcqPosition
+from structures import SkyPosition
 
 class DeviceDss(object):
   def __init__(
@@ -146,7 +146,7 @@ class DeviceDss(object):
     nml_aa=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
       
     dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-    acq=AcqPosition(
+    sky=SkyPosition(
       nml_id=self.nml_id,
       cat_no=self.cat_no,
       nml_aa=nml_aa,
@@ -164,7 +164,7 @@ class DeviceDss(object):
       temperature=self.temperature,
       humidity=self.humidity,
     )
-    return acq
+    return sky
 
 
 class DeviceRts2(scriptcomm_3.Rts2Comm):
@@ -312,7 +312,7 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     # ToDo wrong:
     nml_aa=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
     dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
-    acq=AcqPosition(
+    sky=SkyPosition(
       nml_id=self.nml_id,
       cat_no=self.cat_no,
       nml_aa=nml_aa,
@@ -330,4 +330,4 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
       temperature=self.temperature,
       humidity=self.humidity,
     )
-    return acq
+    return sky

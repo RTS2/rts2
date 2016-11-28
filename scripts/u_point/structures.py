@@ -66,39 +66,7 @@ class NmlPosition(object):
     self.nml_aa=nml_aa # nominal position (grid created with store_nominal_altaz())
     self.count=count
 
-
-    # ToDo a bit ugly, think about that
-      
-    anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24}'.format(
-      self.nml_id,#0
-      self.cat_no,#1
-      self.nml_aa.az.radian,#2
-      self.nml_aa.alt.radian,#3
-      self.cat_ic.ra.radian,#4
-      self.cat_ic.dec.radian,#5
-      self.dt_begin,#6
-      self.dt_end,#7
-      self.dt_end_query,#8
-      self.JD,#9
-      self.cat_ic_woffs.ra.radian,#10
-      self.cat_ic_woffs.dec.radian,#11
-      self.mnt_ic.ra.radian,#12
-      self.mnt_ic.dec.radian,#13
-      self.mnt_aa.az.radian,#14
-      self.mnt_aa.alt.radian,#15
-      self.image_fn,#16
-      self.exp,#17
-      self.pressure,
-      self.temperature,
-      self.humidity,#20
-      sxtr_lon_radian,
-      sxtr_lat_radian,
-      astr_lon_radian,
-      astr_lat_radian,#24
-    )
-    return anl_str
-
-class AnlPosition(object):
+class SkyPosition(object):
   def __init__(
       self,
       nml_id=None,
@@ -216,7 +184,7 @@ cl_nms= [
   'astr_ra',#23
   'astr_dec',#24
 ]
-
+# legacy, will go away
 cl_acq= [
   'nml_id',#0
   'cat_no',#1

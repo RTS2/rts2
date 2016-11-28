@@ -55,6 +55,7 @@ except:
 import ds9region
 import sextractor_3
 from callback import AnnoteFinder
+from callback import  AnnotatedPlot
 from notify import EventHandler 
 from worker import Worker
 from solver import SolverResult,Solver
@@ -206,18 +207,14 @@ class Analysis(Script):
     self.fetch_positions(sys_exit=True,analyzed=False)
     self.fetch_positions(sys_exit=False,analyzed=True)
     #                                                               if self.anl=[]
-    sxtr_mnt_ic_ra=[x.sxtr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.sxtr is not None]
-    sxtr_mnt_ic_dec=[x.sxtr.dec.degree for x in self.anl if x is not None and x.sxtr is not None]
+    sxtr_mnt_ic_ra=[x.sxtr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.sxtr is not None]
+    sxtr_mnt_ic_dec=[x.sxtr.dec.degree for x in self.sky_anl if x is not None and x.sxtr is not None]
 
-    astr_mnt_ic_ra=[x.astr.ra.degree for i,x in enumerate(self.anl) if x is not None and x.astr is not None]  
-    astr_mnt_ic_dec=[x.astr.dec.degree for x in self.anl if x is not None and x.astr is not None]
+    astr_mnt_ic_ra=[x.astr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.astr is not None]  
+    astr_mnt_ic_dec=[x.astr.dec.degree for x in self.sky_anl if x is not None and x.astr is not None]
 
-    cat_ic_ra =[x.cat_ic.ra.degree for x in self.acq]
-    cat_ic_dec = [x.cat_ic.dec.degree for x in self.acq]
-    #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
-    # ToDo: was nu? debug?
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree, x.mnt_aa.alt.degree,x.image_fn) for x in self.acq]
-    nml_ids=[x.nml_id for x in self.acq if x.mnt_aa is not None]
+    cat_ic_ra =[x.cat_ic.ra.degree for x in self.sky_acq]
+    cat_ic_dec = [x.cat_ic.dec.degree for x in self.sky_acq]
 
     self.ax.clear()
     self.ax.scatter(cat_ic_ra, cat_ic_dec,color='blue',s=120.)
@@ -248,12 +245,17 @@ class Analysis(Script):
 
     self.ax.set_ylabel('declination [deg]')  
     self.ax.grid(True)
-      
+    # ToDo: was nu? debug?
+    #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ic.ra.degree,x.cat_ic.dec.degree,x.image_fn) for x in self.sky_acq]
+    nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_ic is not None]
+    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,x=cat_ic_ra,y=cat_ic_dec,annotes=annotes)]
+  
     # does not exits at the beginning
     try:
       self.af.data = list(zip(nml_ids,cat_ic_ra,cat_ic_dec,annotes))
     except AttributeError:
-      return nml_ids,cat_ic_ra,cat_ic_dec,annotes
+      return nml_ids,cat_ic_ra,cat_ic_dec,annotes,aps
 
     
   def plot(self,title=None,animate=None,delete=None):
@@ -271,9 +273,9 @@ class Analysis(Script):
     if animate:
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
 
-    (nml_ids,cat_ic_ra,cat_ic_dec,annotes)=self.re_plot(animate=animate)
+    (nml_ids,cat_ic_ra,cat_ic_dec,annotes,aps)=self.re_plot(animate=animate)
     # analyzed=False means: delete a position in acquired 
-    self.af = AnnoteFinder(nml_ids,cat_ic_ra,cat_ic_dec, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
+    self.af = AnnoteFinder(nml_ids,cat_ic_ra,cat_ic_dec, annotes, ax=self.ax,xtol=5.,aps=aps, ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
