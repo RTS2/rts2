@@ -991,12 +991,11 @@ int Andor::initChips ()
 }
 
 
-void initCooling ()
+void Andor::initCooling ()
 {
-// Jak na tebe, ty drzko? :) Dokud neni aktivovanej HW nemam limity, ale na tempSet muzu sahat jen v konstruktoru
-//      tempSet->setMin (-100);
-//      tempSet->setMax (40);
-//      updateMetaInformations (tempSet);
+	tempSet->setMin (-100);
+	tempSet->setMax (40);
+	updateMetaInformations (tempSet);
 }
 
 void Andor::temperatureCheck ()
