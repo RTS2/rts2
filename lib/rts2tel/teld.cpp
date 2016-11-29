@@ -87,7 +87,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
-	createValue (pmRaDec, "PM", "proper motion/year", true, RTS2_VALUE_WRITABLE);
+	createValue (pmRaDec, "PM", "proper motion/year", true, RTS2_VALUE_WRITABLE | RTS2_DT_ARCSEC);
 	pmRaDec->setValueRaDec (0, 0);
 	// users offset
 	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
@@ -1860,7 +1860,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 	double rc = ln_deg_to_rad (pos->ra);
 	double dc = ln_deg_to_rad (pos->dec);
 
-	int status = eraAtco13 (rc, dc, pmRaDec->getRa () * 3600.0, pmRaDec->getDec () * 3600.0, 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &aob, &zob, &hob, &dob, &rob, &co);
+	int status = eraAtco13 (rc, dc, ln_deg_to_rad (pmRaDec->getRa ()), ln_deg_to_rad (pmRaDec->getDec ()), 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &aob, &zob, &hob, &dob, &rob, &co);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot apply corrections to " << pos->ra << " " << pos->dec << sendLog;
