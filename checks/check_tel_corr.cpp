@@ -90,25 +90,43 @@ START_TEST(test_refraction)
 
 	gemTest->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 43.8698, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -18.5601, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 43.8687, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -18.5595, 10e-4);
+#endif
 
 	gemTest->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 20.0296, 10e-4);
+#else
 	ck_assert_dbl_eq (tpos.alt, 20.0308, 10e-4);
-
+#endif
 	teq.ra += 1;
 
 	gemTest->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 44.8417, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -18.5443, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 44.8395, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -18.5430, 10e-4);
+#endif
 
 	gemTest->test_getHrzFromEqu (&teq, JD, &tpos);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.az, 299.4814, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 19.2484, 10e-4);
+#else
 	ck_assert_dbl_eq (tpos.az, 299.4803, 10e-4);
 	ck_assert_dbl_eq (tpos.alt, 19.2508, 10e-4);
+#endif
 
 	tpos.alt = 89;
 	tpos.az = 231;
@@ -136,13 +154,22 @@ START_TEST(test_refraction)
 
 	gemTest->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 240.6780, 10e-4);
+	ck_assert_dbl_eq (teq.dec, 38.5064, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 240.8070, 10e-4);
 	ck_assert_dbl_eq (teq.dec, 38.5529, 10e-4);
+#endif
 
 	gemTest->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 130.5580, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 2.4205, 10e-4);
+#else
 	ck_assert_dbl_eq (tpos.alt, 2.5315, 10e-4);
+#endif
 }
 END_TEST
 
@@ -163,26 +190,42 @@ START_TEST(test_refraction1850)
 
 	altazTest1850->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 248.6309, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -35.4680, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 248.6293, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -35.4686, 10e-4);
-
+#endif
 	altazTest1850->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 20.0344, 10e-5);
+#else
 	ck_assert_dbl_eq (tpos.alt, 20.0358, 10e-5);
+#endif
 
 	teq.ra += 1;
 
 	altazTest1850->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 249.5917, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -35.4841, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 249.5885, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -35.4853, 10e-4);
+#endif
 
 	altazTest1850->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.3856, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 19.3412, 10e-4);
+#else
 	ck_assert_dbl_eq (tpos.alt, 19.3444, 10e-4);
-
+#endif
 	tpos.alt = 40;
 	tpos.az = 300;
 	altazTest1850->test_getEquFromHrz (&tpos, JD, &teq);
@@ -192,8 +235,11 @@ START_TEST(test_refraction1850)
 	altazTest1850->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 40.0150, 10e-5);
+#else
 	ck_assert_dbl_eq (tpos.alt, 40.0155, 10e-5);
-
+#endif
 	tpos.alt = 89;
 	tpos.az = 231;
 	altazTest1850->test_getEquFromHrz (&tpos, JD, &teq);
@@ -220,13 +266,21 @@ START_TEST(test_refraction1850)
 
 	altazTest1850->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 98.0906, 10e-4);
+	ck_assert_dbl_eq (teq.dec, 31.6718, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 98.2020, 10e-4);
 	ck_assert_dbl_eq (teq.dec, 31.5887, 10e-4);
-
+#endif
 	altazTest1850->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 130.5580, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 2.4363, 10e-4);
+#else
 	ck_assert_dbl_eq (tpos.alt, 2.5623, 10e-4);
+#endif
 }
 END_TEST
 
@@ -247,13 +301,21 @@ START_TEST(test_refraction1680)
 
 	altazTest1680->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 248.6301, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -35.4683, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 248.6293, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -35.4686, 10e-4);
-
+#endif
 	altazTest1680->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 20.0352, 10e-5);
+#else
 	ck_assert_dbl_eq (tpos.alt, 20.0365, 10e-5);
+#endif
 
 	tpos.alt = 40;
 	tpos.az = 300;
@@ -264,7 +326,11 @@ START_TEST(test_refraction1680)
 	altazTest1680->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 40.0154, 10e-5);
+#else
 	ck_assert_dbl_eq (tpos.alt, 40.0159, 10e-5);
+#endif
 }
 END_TEST
 
@@ -493,16 +559,24 @@ START_TEST(test_refraction4000)
 	gemTest4000->test_getHrzFromEqu (&teq, JD, &tpos);
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (tpos.alt, 40.0762, 10e-4);
+#else
 	ck_assert_dbl_eq (tpos.alt, 40.0789, 10e-4);
+#endif
 
 	teq.ra = 27.7491;
 	teq.dec = -7.5267;
 
 	gemTest4000->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 27.6840, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -7.4822, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 27.6816, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -7.4805, 10e-4);
-
+#endif
 	teq.ra = 27.7491;
 	teq.dec = -7.5267;
 
@@ -516,8 +590,13 @@ START_TEST(test_refraction4000)
 
 	gemTest4000->test_applyRefraction (&teq, JD, false);
 
+#ifdef RTS2_LIBERFA
+	ck_assert_dbl_eq (teq.ra, 30.6765, 10e-4);
+	ck_assert_dbl_eq (teq.dec, -7.4801, 10e-4);
+#else
 	ck_assert_dbl_eq (teq.ra, 30.6738, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -7.4784, 10e-4);
+#endif
 
 	teq.ra = 30.7491;
 	teq.dec = -7.5267;

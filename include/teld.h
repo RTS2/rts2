@@ -1071,12 +1071,12 @@ class Telescope:public rts2core::Device
 		 * Apply precision correction.
 		 */
 		void applyPrecession (struct ln_equ_posn *pos, double JD, bool writeValue);
+#endif
 
 		/**
 		 * Apply refraction correction.
 		 */
 		void applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue);
-#endif
 
 		virtual void afterMovementStart ();
 

@@ -948,6 +948,7 @@ void Telescope::applyPrecession (struct ln_equ_posn *pos, double JD, bool writeV
 	if (writeValue)
 		precessed->setValueRaDec (pos->ra, pos->dec);
 }
+#endif
 
 void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue)
 {
@@ -961,13 +962,20 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	double ast = ln_get_apparent_sidereal_time(JD);
 
 	ln_get_hrz_from_equ_sidereal_time (pos, &obs, ast, &hrz);
+#ifdef RTS2_LIBERFA
+	double refa, refb;
+	double zd = ln_deg_to_rad (90 - hrz.alt);
+	double tzd = tan (zd);
+	eraRefco (getPressure (), 10, 0.1, 50, &refa, &refb);
+	ref = ln_rad_to_deg (refa * tzd + refb * tzd * tzd * tzd);
+#else
 	ref = ln_get_refraction_adj (hrz.alt, getPressure (), 10);
-	hrz.alt += ref;
 	if (writeValue)
 		refraction->setValueDouble (ref);
+#endif
+	hrz.alt += ref;
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
-#endif
 
 void Telescope::afterMovementStart ()
 {

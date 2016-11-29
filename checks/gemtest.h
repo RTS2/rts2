@@ -17,7 +17,6 @@ class GemTest:public rts2teld::GEM
 		void test_getEquFromHrz (struct ln_hrz_posn *hrz, double JD, struct ln_equ_posn *pos) { return getEquFromHrz (hrz, JD, pos); };
 
 		void test_applyRefraction (struct ln_equ_posn *pos, double JD, bool writeValue) { return applyRefraction (pos, JD, writeValue); };
-
 		/**
 		 * Test movement to given target position, from counts in ac dc parameters.
 		 */
