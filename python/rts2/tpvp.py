@@ -122,7 +122,7 @@ class TPVP:
 		print _('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(ra,dec,lst,self.__mag_max,self.__mag_min)
 		# find bsc..
 		bsc=bsc.find_nearest(ra,dec,self.__mag_max,self.__mag_min)
-		print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f}').format(bsc[0],bsc[1],bsc[2],bsc[3])
+		print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0],bsc[1],bsc[2],bsc[3],bsc[7],bsc[8])
 		return bsc
 	
 	def __check_model_firstline(self,modelname):
@@ -156,13 +156,13 @@ class TPVP:
 			print _('run #{0}').format(mn)
 		return mn
 
-	def __run(self,tarf_ra,tarf_dec,timeout,modelname,maxspiral,imagescript,mn,useDS9):
+	def __run(self,tarf_ra,tarf_dec,pm_ra,pm_dec,timeout,modelname,maxspiral,imagescript,mn,useDS9):
 		import ds9
 		d = None
 		if useDS9:
 			d = ds9.ds9('Model')
 	
-		self.j.executeCommand(self.telescope, _('move {0} {1}').format(tarf_ra,tarf_dec))
+		self.j.executeCommand(self.telescope, _('move_pm {0} {1} {2} {3}').format(tarf_ra,tarf_dec,pm_ra,pm_dec))
 		time.sleep(2)
 		self.j.refresh(self.telescope)
 		tmout = 120
@@ -259,10 +259,14 @@ class TPVP:
 			s = self.find_bright_star(alt,az)
 			tarf_ra = s[1]
 			tarf_dec = s[2]
+			pm_ra = s[7]
+			pm_dec = s[8]
 		else:
 			tarf_ra,tarf_dec = self.tel_hrz_to_equ(alt,az)
+			pm_ra = 0
+			pm_dec = 0
 
-		fn,mn=self.__run(tarf_ra,tarf_dec,timeout,modelname,maxspiral,imagescript,mn,useDS9)
+		fn,mn=self.__run(tarf_ra,tarf_dec,pm_ra,pm_dec,timeout,modelname,maxspiral,imagescript,mn,useDS9)
 		return fn,mn,s
 
 	def run_manual_bsc(self,bscnum,timeout,modelname,maxspiral,imagescript,mn,useDS9):
@@ -272,8 +276,10 @@ class TPVP:
 		s = bsc.get_star(bscnum)
 		tarf_ra = s[1]
 		tarf_dec = s[2]
+		pm_ra = s[7]
+		pm_dec = s[8]
 
-		fn,mn=self.__run(tarf_ra,tarf_dec,timeout,modelname,maxspiral,imagescript,mn,useDS9)
+		fn,mn=self.__run(tarf_ra,tarf_dec,pm_ra,pm_dec,timeout,modelname,maxspiral,imagescript,mn,useDS9)
 		return fn,mn,s
 
 	def __get_offset_by_image(self,fn,useDS9,mn,center):

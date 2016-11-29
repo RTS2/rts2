@@ -50,7 +50,7 @@ parser.add_argument('--timeout', help=_('timeout after move'), action='store', t
 parser.add_argument('--imagescript', help=_('RTS2 script for camera exposure'), action='store', dest='imagescript', default='E 1')
 parser.add_argument('--camera', help=_('name of camera to take exposures'), action='store', dest='camera', default='C0')
 parser.add_argument('--center', help=_('image center (rotator center, if on alt-az)'), action='store', dest='center', default=None)
-parser.add_argument('action', help=_('action (line,spiral,model,bright-star,verify-brights'), action='store', default=None, choices=['line','spiral','model','bright-star','verify-brights'], nargs=1)
+parser.add_argument('action', help=_('action (line,spiral,model,bright-star,verify-brights,'), action='store', default=None, choices=['line','spiral','model','bright-star','verify-brights','print-stars'], nargs=1)
 
 options = parser.parse_args()
 
@@ -99,10 +99,14 @@ try:
 	elif options.action[0] == 'bright-star':
 		for p in path:
 			bsc = tp.find_bright_star(p[0],p[1])
-			j.executeCommand(tp.telescope,'move {0} {1}'.format(bsc[1],bsc[2]))
+			j.executeCommand(tp.telescope,'move_pm {0} {1} {2} {3}'.format(bsc[1],bsc[2],bsc[7],bsc[8]))
 			rts2.tpvp.wait_for_key(options.timeout)
 	elif options.action[0] == 'verify-brights':
 		tp.run_verify_brigths(options.timeout,path,options.modelname,options.imagescript,options.useDS9,options.maxverify,options.verifyradius,options.maxspiral,options.minflux)
+	elif options.action[0] == 'print-stars':
+		for p in path:
+			bsc = tp.find_bright_star(p[0],p[1])
+			print 'move_pm {0} {1} {2} {3}'.format(bsc[1],bsc[2],bsc[7],bsc[8])
 	else:
 		argparse.help()
 		sys.exit(1)
