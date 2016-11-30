@@ -684,7 +684,7 @@ bool TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strcmp (device_name, "WF4"))
+	if (!strcmp (device_name, "WF6"))
 	{
 		std::ostringstream _os;
 	 	_os << "filter=B ";
