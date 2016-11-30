@@ -32,6 +32,16 @@ Prerequisites
   astrometry-data-2mass-06 (16'-22')
   astrometry-data-2mass-07 (22'-30')
 
+Welcome to users of libindi, ASCOM or any other system
+======================================================
+
+98% of the code is independent of any specific system,
+like RTS2, libindi or ASCOM.
+
+Python lives on many OSs and architectures, hence
+using u_point with a diffrent combination is likely
+to work, or very soon.
+
 libnova versus astropy
 ======================
 
@@ -368,7 +378,10 @@ If in trouble enable --toconsole.
 Scripts u_acqurie.py and u_analyze.py can be
 interrupted and resumed at any time, or while
 u_acquire.py is still running, u_analyze.py
-can be started several times, saving time.
+can be started several times, saving time -
+use script do_loop_analize.sh or an adapted
+version.
+
 
 If options --plot and --animate are specified
 u_acqurie.py and u_analyze.py show an updated
@@ -645,22 +658,6 @@ observatory's latitude has to be passed:
       else:
         self.lg.error('got unexpected key word: {0}={1}, exiting'.format(name, value))
         sys.exit(1)
-
-Main differences to Petr's gpoint
-=================================
-
-u_point includes meteo data and has Python
-bindings for libnova.so, as far as I used it.
-
-Interestingly the AltAz model fits well without
-meteo data since the tube droop parameter is
-a function of Alt too. But as temperature varies
-the model will fail to correct the position.
-
-Adding a different model, e.g. J. Condon (1992)
-suggested to use a Fourier transformed function,
-can be done easily (see section Defining a model).
-
 
 Walk through with RTS2 dummy devices
 ====================================

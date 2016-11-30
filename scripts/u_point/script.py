@@ -33,6 +33,7 @@ from astropy.coordinates import SkyCoord,AltAz
 import pandas as pd
 
 from structures import NmlPosition,CatPosition,SkyPosition,cl_nms,cl_acq
+import ds9region
 
 class Script(object):
   def __init__(

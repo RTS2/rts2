@@ -121,7 +121,7 @@ if [ -z ${skip+x} ]; then
     echo ""
     echo "./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40"
     #
-    ./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40
+    ./u_acquire.py --base-path $BASE_PATH --create --plot --alt-step 5 #--az-step 40
     #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
     #
     echo "DONE grid creation"
@@ -165,7 +165,7 @@ if ! [ -z ${RTS2+x} ]; then
     #
     rts2-scriptexec -d C0 -s " exe $plt_script " &
 else
-    ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole &
+    ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole --level DEBUG &
 fi
 echo ""
 echo "^^^^^^^^^^^^^^^^^^^^^^"
@@ -175,7 +175,10 @@ echo "click on blue points to see FITS being displayed with DS9"
 if ps -p $pid_u_acquire >/dev/null; then
     echo ""
     echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-    echo "waiting for u_acquire to terminate"
+    echo "waiting for u_acquire to terminate, PID $pid_u_acquire"
+    echo "if plot is not clickable, like in my case, open another,"
+    echo "issue: "
+    echo " cd $HOME/rts2/scripts/u_point ; ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole "
     wait $pid_u_acquire
     #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 fi
