@@ -10,7 +10,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
 	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity \
 	rts2-sensor-thermocube rts2-sensor-reinhardt rts2-sensor-davis \
-	rts2-sensor-servodrive-r272 rts2-sensor-tbt
+	rts2-sensor-servodrive-r272 rts2-sensor-tbt rts2-sensor-binder
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
 
@@ -133,6 +133,8 @@ rts2_sensor_servodrive_r272_SOURCES = servodrive-r272.cpp
 
 rts2_sensor_tbt_SOURCES = tbt.cpp
 
+rts2_sensor_binder_SOURCES = binder.cpp
+
 if LIBUSB
 bin_PROGRAMS += rts2-sensor-fows
 rts2_sensor_fows_SOURCES = fows.cpp
@@ -153,7 +155,7 @@ rts2_sensor_lpnhe_LDFLAGS = @LIB_COMEDI@ @LIB_M@
 rts2_sensor_lpnhe_CPPFLAGS = @INC_COMEDI@ -I../../include
 
 else
-EXTRA_DIST += bootes2.cpp
+EXTRA_DIST += bootes2.cpp lpnhe.cpp
 endif
 
 if GPIBLIB
