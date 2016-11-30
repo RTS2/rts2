@@ -27,49 +27,34 @@ Callbacks for matplotlib
 
 __author__ = 'wildi.markus@bluewin.ch'
 
-import math
 import ds9region
 from operator import itemgetter
+
 class AnnotatedPlot(object):
-  def __init__(self,xx=None,nml_id=None,x=None,y=None,annotes=None):
+  def __init__(self,xx=None,nml_id=None,lon=None,lat=None,annotes=None):
     self.xx=xx # sie ax....
     self.nml_id=nml_id
-    self.x=x
-    self.y=y
+    self.lon=lon
+    self.lat=lat
     self.annotes=annotes
 
 class AnnoteFinder(object):
 
-  def __init__(self, nml_id=None,a_lon=None,a_lat=None, annotes=None, ax=None, aps=None, xtol=None, ytol=None,ds9_display=None,lg=None, annotate_fn=False,analyzed=None,delete_one=None):
-    self.nml_id=nml_id
-    self.data = list(zip(nml_id,a_lon,a_lat,annotes))
-    self.a_lon=a_lon
+  drawnAnnotations = {}
+  def __init__(self,ax=None, aps=None, xtol=None, ytol=None,ds9_display=None,lg=None, annotate_fn=False,analyzed=None,delete_one=None):
     self.xtol = xtol
     self.ytol = ytol
     self.ax = ax # 'leading' plot
     self.aps=aps # depending plots
-    self.drawnAnnotations = {}
-    self.links = []
     self.ds9_display=ds9_display
     self.lg=lg
     self.annotate_fn=annotate_fn
     self.analyzed=analyzed
     self.delete_one=delete_one
-    self.point_annotation=None
     self.nml_id_delete=None
     
-  def distance(self, x1, x2, y1, y2):# lon,lat
-    #a = sin²(Δφ/2) + cos φ1 ⋅ cos φ2 ⋅ sin²(Δλ/2)
-    #c = 2 ⋅ atan2( √a, √(1−a) )
-    #xx1= x1 /180.*math.pi
-    #xx2= x2/180.*math.pi
-    #yy1= y1/180.*math.pi
-    #yy2= y2/180.*math.pi
-    #a=pow(math.sin((yy2-yy1)/2.),2) + math.cos(yy1) * math.cos(yy2) * pow(math.sin(xx2-xx1),2)
-    #c= 2. * math.atan2(math.sqrt(a),math.sqrt(1.-a))
-    #return abs(c * 180. /math.pi)
-    # better
-    return(math.sqrt((x1 - x2)**2 + (y1 - y2)**2))
+  def distance(self, x1=None, x2=None, y1=None, y2=None):# lon,lat
+    return(x1 - x2)**2 + (y1 - y2)**2
   
   def mouse_event(self, event):
     if event.inaxes:
@@ -78,45 +63,84 @@ class AnnoteFinder(object):
       clickY = event.ydata
       if (self.ax is None) or (self.ax is event.inaxes):
 
-        annotes = []
-        ##print('candidates: {}'.format(annotes))
-        for i,(nml_id, x, y, a) in enumerate(self.data):
-        #  print('event  x, y: {},{}'.format(clickX, clickY))
-        #  print('event dx,dy: {},{}'.format(abs(clickX-x),abs(clickY-y)))
-        #  print('event xt,yt: {},{}'.format(self.xtol,self.ytol))
-        #  if ((clickX-self.xtol < x < clickX+self.xtol) and (clickY-self.ytol < y < clickY+self.ytol)):
-          annotes.append((self.distance(x,clickX,y,clickY),nml_id,x, y, a,i))
-            
-        #print('candidates: {}'.format(annotes))
-        if annotes:
-          # ToDo not yet good
-          a_s=sorted(annotes, key=itemgetter(0))
-          #annotes.sort()
-          distance,nml_id,x, y,annote,i_q=a_s[0]
-          #print('dist : {}, {}'.format(distance,a_s[1][0]))
-          #print('click: {}, {}'.format(clickX,clickY))
-          #print('sel  : {}, {}'.format(x,y))
-          self.point_annotation=a_s[0]
-          self.nml_id_delete=nml_id
-          #self.drawAnnote(event.inaxes, x, y, annote,i)
-          
-          self.drawAnnote(x,y,annote,i_q,nml_id)
-          self.lg.debug('nml_id: {}, {}'.format(nml_id,annote))
-          # ToDo understand
-          #for l in self.links:
-          #  l.drawSpecificAnnote(annote)
+        for ap in self.aps:
+          if event.inaxes is ap.xx:
+            ap_ax=ap
+            break
+        else:
+          return
 
+        points=list()
+        for i,nid in enumerate(ap_ax.nml_id):
+          dst=self.distance(x1=ap_ax.lon[i],x2=clickX,y1=ap_ax.lat[i],y2=clickY)
+          points.append([dst,nid])
+            
+        if points:
+          # ToDo
+          p_s=sorted(points, key=itemgetter(0))
+          #for d,n in p_s:
+          #  if d > 100.:
+          #    break
+          #  print(d,n)
+          distance,nml_id=p_s[0]#sorted(points, key=itemgetter(0))[0]
+          #print(clickX,clickY,distance,nml_id)
+          i_ap_ax_nml_id=ap_ax.nml_id.index(nml_id)
+          self.nml_id_delete=nml_id
+          self.lg.debug('nml_id: {}'.format(nml_id))
+          
+          self.drawAnnote(nml_id,i_ap_ax_nml_id)
+
+  def drawAnnote(self,nml_id,i_ap_ax_nml_id):
+    if self.aps is None:
+      return
+    # i_ap_ax_nml_id fn:  1:1
+    fn=self.aps[0].annotes[i_ap_ax_nml_id].split()[1]
+    self.lg.debug(self.aps[0].annotes[i_ap_ax_nml_id])
+    if self.ds9_display:
+      self.display_fits(fn=fn,x=0,y=0,color='red')
+    stop=False    
+
+    for ap in self.aps:          
+      #print('api ',i_q,i_ap_ax_nml_id)
+      if (ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id]) in AnnoteFinder.drawnAnnotations:
+        stop=True
+        an = AnnoteFinder.drawnAnnotations[(ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id])]
+        #print(an.get_visible())
+        an.set_visible(not an.get_visible())
+        ap.xx.figure.canvas.draw()
+        break
+      
+    if stop:
+      return
+    
+    for ap in self.aps:
+      if self.annotate_fn:
+        an=ap.xx.text(ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id], "%s,%s\n%s" % (int(nml_id),ap.annotes[i_ap_ax_nml_id].split()[0],fn),)
+      else:
+        an= ap.xx.text(ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id], "%s,%s" % (int(nml_id),ap.annotes[i_ap_ax_nml_id].split()[0]),)
+      ap.xx.figure.canvas.draw()
+      AnnoteFinder.drawnAnnotations[(ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id])] = an
+  
   def keyboard_event(self,event):
     self.lg.debug('key board pressed: {}'.format(event.key))
 
     if event.key == 'delete':
       if self.nml_id_delete is not None:
-        self.lg.debug('keyboard_event: delete nml_id: {}, {}'.format(self.nml_id_delete,self.point_annotation))
+        self.lg.debug('keyboard_event: delete nml_id: {}'.format(self.nml_id_delete))
         if self.nml_id_delete is not None:
           self.delete_one(nml_id=self.nml_id_delete,analyzed=self.analyzed)#ToDo nml_id are float
         self.nml_id_delete=None
-        self.point_annotation=None
         
+    elif event.key == 'c':
+      for k,an in self.drawnAnnotations.items():
+        an.set_visible(False)
+        
+      for ap in self.aps:
+        #ap.xx.figure.canvas.draw()
+        ap.xx.figure.canvas.show()
+        
+      self.drawnAnnotations = {}
+      
     # ToDO not yet decided
     #ax.plot(self.randoms, 'o', picker=5)
     #fig.canvas.draw()
@@ -126,41 +150,3 @@ class AnnoteFinder(object):
     # Todo: ugly
     ds9.run(fn,x=x,y=y,color=color)
 
-  def drawAnnote(self, x, y, annote,i_q,nml_id):
-    """
-    Draw the annotation on the plot
-    """
-    self.lg.debug(annote)
-    if self.aps is None:
-      return
-    
-    fn=annote.split()[1]
-    if self.ds9_display:
-      self.display_fits(fn=fn, x=0,y=0,color='red')
-    stop=False    
-    print(i_q)
-    for apo in self.aps:
-      if (apo.x[i_q], apo.y[i_q]) in self.drawnAnnotations:
-        for api in self.aps:
-          markers = self.drawnAnnotations[(api.x[i_q], api.y[i_q])]
-          if len(markers)> 0:
-            stop=True
-          for m in markers:
-            #print(m)
-            # ToDO not yet working
-            m.set_visible(not m.get_visible())
-          
-        api.xx.figure.canvas.draw_idle()
-
-    if stop:
-      return
-    
-    for ap in self.aps:
-      if self.annotate_fn:
-        t=ap.xx.text(ap.x[i_q], ap.y[i_q], "%s,%s\n%s" % (int(nml_id),annote.split()[0],fn),)
-      else:
-        t = ap.xx.text(ap.x[i_q], ap.y[i_q], "%s,%s" % (int(nml_id),annote.split()[0]),)
-      m=ap.xx.scatter([ap.x[i_q]], [ap.y[i_q]], marker='d', c='r', zorder=100)
-      ap.xx.figure.canvas.draw_idle()
-      self.drawnAnnotations[(ap.x[i_q], ap.y[i_q])] = (t, m)
-  

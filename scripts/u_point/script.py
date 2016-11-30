@@ -76,7 +76,7 @@ class Script(object):
     else:
       fn=os.path.basename(ptfn)
       new_ptfn=os.path.join(self.base_path,fn)
-      self.lg.debug('rebase_base_path: file: {}'.format(new_ptfn))
+      #self.lg.debug('rebase_base_path: file: {}'.format(new_ptfn))
     return new_ptfn
     
   def expand_base_path(self,fn=None):
@@ -146,18 +146,19 @@ class Script(object):
         self.lg.debug('fetch_pandas: {} does not exist, exiting'.format(ptfn))
         sys.exit(1)
       return None
+    
     if os.path.getsize(ptfn)==0:
         self.lg.debug('fetch_pandas: {} file is empty, exiting'.format(ptfn))
-    
-    #print(columns)
-    #df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col='nml_id',header=None)
-    if with_nml_id:
-      idx='nml_id'
-    else:
-      idx=None
-      
+
     try:
-      df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col=[idx],header=None,engine='python')
+      if with_nml_id:
+        #df_data = pd.read_csv(ptfn,sep=',',names=columns,index_col=['nml_id'],header=None,engine='python')
+        # above is not equivalent to (nml_id is dropped from keys)
+        df_data = pd.read_csv(ptfn,sep=',',names=columns,header=None,engine='python')
+        df_data.set_index('nml_id')
+        
+      else:
+        df_data = pd.read_csv(ptfn,sep=',',names=columns,header=None,engine='python')
     except ValueError as e:
       self.lg.debug('fetch_pandas: {}, ValueError: {}, columnns: {}'.format(ptfn,e,columns))
       return None
@@ -165,7 +166,7 @@ class Script(object):
       self.lg.debug('fetch_pandas: {}, OSError: {}'.format(ptfn, e))
       return None
     except Exception as e:
-      self.lg.debug('>>>>fetch_pandas: {}, Exception: {}, exiting'.format(ptfn, e))
+      self.lg.debug('fetch_pandas: {}, Exception: {}, exiting'.format(ptfn, e))
       sys.exit(1)
         
     if with_nml_id:
@@ -176,13 +177,13 @@ class Script(object):
   def fetch_nominal_altaz(self,fn=None):
     ptfn=self.expand_base_path(fn=fn)
     self.nml=list()
-    df_data = self.fetch_pandas(ptfn=ptfn,columns=['nml_id','az','alt'],sys_exit=True)
+    df_data = self.fetch_pandas(ptfn=ptfn,columns=['nml_id','az','alt'],sys_exit=True,with_nml_id=True)
     if df_data is None:
       return
 
     for i,rw in df_data.iterrows():
       nml_aa=SkyCoord(az=rw['az'],alt=rw['alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-      self.nml.append(NmlPosition(nml_id=i,nml_aa=nml_aa))
+      self.nml.append(NmlPosition(nml_id=df_data.index[i],nml_aa=nml_aa))
 
   def drop_nominal_altaz(self):
     obs=[int(x.nml_id)  for x in self.sky_acq]
@@ -194,49 +195,48 @@ class Script(object):
   def distinguish(self,analyzed=None):
     if analyzed:
       ptfn=self.expand_base_path(fn=self.analyzed_positions)
-      try:
-        self.sky_anl
-      except AttributeError:
-        sky=self.sky_anl=list()
-      else:
-        sky=self.sky_anl        
     else:
       ptfn=self.expand_base_path(fn=self.acquired_positions)
-      try:
-        self.sky_acq
-      except AttributeError:
-        sky=self.sky_acq=list()
-      else:
-        sky=self.sky_acq
 
-    return sky, ptfn
+    return ptfn
  
   def delete_one_position(self, nml_id=None,analyzed=None):
-    sky,ptfn=self.distinguish(analyzed=analyzed)
-    for i,ps in enumerate(sky): 
-      if nml_id==ps.nml_id:
-        del sky[i]
+    ptfn=self.distinguish(analyzed=analyzed)
+    # ToDo something like: i=list.index()??
+    self.fetch_positions(sys_exit=True,analyzed=analyzed)
+    if analyzed:
+      sky_a=self.sky_anl        
+    else:
+      sky_a=self.sky_acq
+    
+    for i,sk in enumerate(sky_a):
+      if nml_id==sk.nml_id:
+        del sky_a[i]
         break
     else:
       self.lg.info('delete_one_position:  nml_id {} not found in file: {}'.format(nml_id, ptfn))
       return
-
+    
     self.store_positions(analyzed=analyzed)
     self.lg.info('delete_one_position deleted nml_id: {} from file: {}'.format(nml_id, ptfn))
 
   def store_positions(self,analyzed=None):
-    sky,ptfn=self.distinguish(analyzed=analyzed)
-    
+    ptfn=self.distinguish(analyzed=analyzed)
     if self.acq_e_h is not None:  
       while self.acq_e_h.not_writable:
+        self.lg.debug('waiting for file')
         time.sleep(.1)      
+    if analyzed:
+      sky_a=self.sky_anl        
+    else:
+      sky_a=self.sky_acq
     # append, one by one
     with  open(ptfn, 'w') as wfl:
-      for ps in sky:
+      for ps in sky_a:
         wfl.write('{0}\n'.format(ps))
     
-  def append_position(self,analyzed=None):
-    sky,ptfn=self.distinguish(analyzed=analyzed)
+  def append_position(self,sky=None,analyzed=None):
+    ptfn=self.distinguish(analyzed=analyzed)
     # append, one by one
     with  open(ptfn, 'a') as wfl:
       wfl.write('{0}\n'.format(sky))
@@ -244,16 +244,19 @@ class Script(object):
   def fetch_positions(self,sys_exit=None,analyzed=None):
     # ToDo!
     # dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
-    sky,ptfn=self.distinguish(analyzed=analyzed)
-    # legacy
-    cols=cl_acq
     if analyzed:
-      cols=cl_nms
-    
-    df_data = self.fetch_pandas(ptfn=ptfn,columns=cols,sys_exit=sys_exit)
+      sky_a=self.sky_anl=list()
+    else:
+      sky_a=self.sky_acq=list()
+
+
+    ptfn=self.distinguish(analyzed=analyzed)
+      
+    cols=cl_nms
+    df_data = self.fetch_pandas(ptfn=ptfn,columns=cols,sys_exit=sys_exit,with_nml_id=True)
     if df_data is None:
       return
-
+    
     for i,rw in df_data.iterrows():
       # ToDo why not out_subfmt='fits'
       dt_begin=Time(rw['dt_begin'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
@@ -287,10 +290,10 @@ class Script(object):
         #self.lg.debug('fetch_positions: astr None,nml_d: {}, ra:{}, dec: {}'.format(i,rw['astr_ra'],rw['astr_dec']))
         # to create more or less identical plots:
         #continue
-        
+
       image_ptfn=self.rebase_base_path(ptfn=rw['image_fn'])
       s_sky=SkyPosition(
-          nml_id=i,
+          nml_id=rw['nml_id'], # there might be holes
           cat_no=rw['cat_no'],
           nml_aa=nml_aa,
           cat_ic=cat_ic,
@@ -309,5 +312,5 @@ class Script(object):
           sxtr= sxtr,
           astr= astr,
       )
-      sky.append(s_sky)
+      sky_a.append(s_sky)
     

@@ -31,9 +31,25 @@ Prerequisites
   astrometry-data-2mass-05 (11'-16')
   astrometry-data-2mass-06 (16'-22')
   astrometry-data-2mass-07 (22'-30')
-  
-Use case
-========
+
+libnova versus astropy
+======================
+
+At the moment it is still unclear where the
+differences between libnova and astropy stems
+from. u_point uses per default astropy but
+for u_point.py --libnova can be specified.
+
+SExtractor versus astrometry.net
+================================
+
+When ever possible use astrometry.net (default)
+and not SExtractor. u_point.py uses per default
+results from astrometry.net, but --fit-sextr can
+be specified to obtain those results.
+
+Use cases
+=========
 
 u_point's use cases are:
 
@@ -48,6 +64,10 @@ u_point's use cases are:
   brightest object on an CCD image.
   SExtractor will select the brightest star which
   serves as the measured mount apparent location.
+
+- u_point is written in a way, that libindi or
+  ASCOM users can easily extend u_point (see
+  devices.py or contact wildi.markus@bluewin.ch)
 
 Coordinates
 ===========
@@ -67,7 +87,8 @@ Coordinates read back from the mount, labeled as mnt_ci
 EQ/RA, EQ/HA or AltAz, have no corrections applied, e.g.
 for anual aberration or refraction etc.. Usually ICRS
 coordinates are set at the mount. The transformation to
-EQ/HA or to AltAz are mount coordinates and not apparent.
+EQ/HA or to AltAz are mount coordinates and not apparent
+coordinates.
 
 The coordinates exist in u_point source code as follows:
 
@@ -103,6 +124,8 @@ mnt_aa: AltAz read from the setting circles
 
 Very quick tour: do_it_all_dss.sh
 =================================
+NOTE: do_it_all_dss.sh is solely used for demonstration.
+
 Script do_it_all_dss.sh needs only optionally a running
 installation of RTS2 and after the above mentioned packages
 have been installed, it is ready to use.
@@ -194,7 +217,7 @@ Cases:
 - statistical outliers
 - ...
 No problem as long as the data in the base path
-is available. u_acquire.py and u_analyze.py check \
+is available. u_acquire.py and u_analyze.py check 
 the relevant files and continue there where they
 got stuck.
 
@@ -204,12 +227,19 @@ on screen that both are visible side by side.
 
 Deleting acquired positions on progress plots
 ---------------------------------------------
+Options --animate and --delte have to specified to
+watch the following behavior.
+
 Choose plot "analyzed positions" and click on a
-data point. DS9 will open and display the FITS
-image. Then press <Delete> on the keyboard. The blue
-data point disappears indicating that this position
-has been deleted. The red or ev. yellow dot represent
-an analysis (SExtractor, astrometry.net and remain).
+data point. The annotation appers and DS9 will
+open and display the FITS image. Then press <Delete>
+on the keyboard. The blue data point disappears
+indicating that this position has been deleted. The
+red or ev. yellow dot represent an analysis (SExtractor,
+astrometry.net) and remain.
+
+If there are to many annotations on the plot, press
+<c> to clear them.
 
 On plot "acquired positions" the same thing happened
 the nominal position is shown in red indicating that
@@ -225,13 +255,17 @@ Having deleted several acquired data points, how
 about a redo of the data acquisition. u_acquire.py
 and u_analysis.py can be interrupted at any time.
 
-Close all open matplotlib windows and restart the
-process with argument '-p':
+Close all open matplotlib windows
+
+ killall python3 # if appropriate
+
+and restart the process with argument '-p':
 
  ./do_it_all_dss.sh -p
 
 In this case the data in base path, usually /tmp/u_point,
 is not deleted.
+
 Again u_acquire.py tries to make measurements on all
 missing locations (red on plot acquired positions). 
 u_analysis.py completes as well the missing points.
@@ -244,43 +278,110 @@ Just restart the process.
 Deleting analyzed positions on u_point.py plots
 -----------------------------------------------
 Once the analysis has been finished the u_point.py
-result plots are displayed. There are two special
-plots
+result plots are displayed.
 
- "K measurement locations catalog CLICK ME"
- "A2 residuum: catalog_corrected - star ... CLICK ME"
+Click a point and it's annotation appears as well as
+on all other plots. This feature allows a quick
+identification of interesting or bad measurements.
+Those analyzed positions can be dropped from the file
 
-As the title suggest the points are clickable. The
-clicked point is annotated on all other plots. This
-feature allows a quick identification of bad
-measurements. Those can be dropped either in plot
-"acquired positions" or "analyzed positions" and
-acquisition can be repeated as described above.
+ analyzed_positions.anl
+
+by hitting key <Delete>.
 
 Having cleaned the data restart u_point.py with
 e.g.
 
  ./u_point.py --base-path /tmp/u_point\
- --u_point_analyzed_positions  u_point_positions_astr.anl \
- --plot --level DEBUG --toc --delete
+ --plot  --ds9-display --delete --toconsole
 
 to see the effect.
 
+If there are to many annotations on the plot, press
+<c> to clear them.
+
 NOTE: if the CPUs are loaded the annotations do not
-make it to the plot, while DS9 is updated. In these
-cases start the scripts with option --toconsole and
-the texts there.
+make it to the plot, nevertheless DS9 is updated. In
+these cases start the scripts with option --toconsole
+and see the annotations on the console.
 
 Scripts
 =======
-Scripts not listed here are part of the supporting
-infrastructure may be are not interesting at first
-sight.
+Only scripts named u_*.py are interesting from a
+user's perspective. All other are part of the
+supporting infrastructure.
 
 u_point is a silent system with sensible default
-values. At the beginning it is a good idea to use
-option --toconsole which enables --level DEBUG and
-logs to console.
+values with exception of
+
+ --obs-longitude (all)
+ --obs-latitude  (all)
+ --obs-height    (all)
+ --pixel-scale   (u_acquire.py,u_analyze.py)
+ --ccd-size      (u_acquire.py,u_analyze.py)
+ --ccd-angle     (u_acquire.py,u_analyze.py)
+
+The last three options need only be specified
+if SExtractor is used (see u_point.py). 
+
+ --use-bright-stars (u_acquire.py)
+ --fetch-dss-image  (u_acquire.py)
+ --device-class     (u_acquire.py)
+ --meteo-class      (u_acquire.py)
+
+If option --use-bright-stars is specified then
+the nearest Yale Bright Star Catalog is selected
+as target. The default, suitable for any reasonable
+telescope/mount configuration, uses the nominal
+grid positions to take an FITS image.
+
+If --fetch-dss-image is specified images are
+always fetched from DSS (see devices.py) even
+
+ --device-class DeviceRts2
+
+is specified. Default of option --meteo-class
+is the dummy meteo device. Most likely you
+want to write your own.
+
+Options
+
+ --animate
+ --delete
+ --ds9_display
+ 
+modifying --plot are disabled be default.
+
+Common features
+---------------
+All scripts read and write best to a common
+subdirectory. Set --base-path (/tmp/u_point)
+for all scripts identically and do not change
+the defaults of the file names.
+
+The log files are written to /tmp/<script_name>.log
+Logging to console is enabled with --toconsole. If
+specified the level is set to DEBUG. Default is
+INFO which means the scripts are almost silent.
+If in trouble enable --toconsole.
+
+Scripts u_acqurie.py and u_analyze.py can be
+interrupted and resumed at any time, or while
+u_acquire.py is still running, u_analyze.py
+can be started several times, saving time.
+
+If options --plot and --animate are specified
+u_acqurie.py and u_analyze.py show an updated
+(animated) plot e.g. where the mount actually
+points to or which position is currently
+analyzed. If --ds9-display is specified then
+FITS images will be displayed through DS9.
+u_point.py behaves in the same way but has no
+progress report.
+
+At the beginning it is a good idea to use option
+--toconsole which enables --level DEBUG and logs
+to console.
 
 Study --help of the following scripts since their options
 will provide more flexibility than described in this
@@ -290,7 +391,7 @@ README.
 - u_acquire.py
 - u_analyze.py
 - u_point.py
-- u_simulate.py
+- (u_simulate.py)
 
 RTS2 rts2-scriptexec
 --------------------
@@ -302,26 +403,11 @@ adapt them:
 - u_acquire_plot.sh
 - u_acquire_fetch_dss_continuous.sh
 
-Pointing Model
---------------
-If a different pointing model should be created,
-study:
-
-- model_base.py
-
-and for working implementations:
-
-- model_altaz.py
-- model_buie.py
-- model_u_point.py
-
-Meteo
------
-meteo.py is a dummy device while meteo_dome_c.py is
-an example querying a weather station's web page.
-
 Data files
 ==========
+The structure of the following files ins described
+in file sutructures.py.
+
 
 observable.cat
 --------------
@@ -382,47 +468,32 @@ any major failures if a real AltAz mount is used.
 u_acquire.py is suitable for AltAz mounts but
 soon EQ mounts can be used too.
 
-Main differences to Petr's gpoint
-=================================
 
-u_point includes meteo data and has Python
-bindings for libnova.so, as far as I used it.
+Pointing Model
+==============
+If a different pointing model should be created,
+study:
 
-Interestingly the AltAz model fits well without
-meteo data since the tube droop parameter is
-a function of Alt too. But as temperature varies
-the model will fail to correct the position.
+- model_base.py
 
-Adding a different model, e.g. J. Condon (1992)
-suggested to use a Fourier transformed function,
-can be done easily (see section Defining a model).
+and for working implementations:
 
-Common features
-===============
-All scripts read and write best to a common
-subdirectory. Set --base-path for all scripts
-identically and do not change the defaults of
-the file names.
+- model_altaz.py
+- model_buie.py
+- model_u_point.py
 
-The log files are written to /tmp/<script_name>.log
-Logging to console is enabled with --toconsole. If
-specified the level is set to DEBUG. Default is
-INFO which means the scripts are almost silent.
-If in trouble enable --toconsole.
+Meteo
+=====
+Often meteo data are acquired from a separate
+system. Either provided by RTS2 or an external
+source. See classes Meteo() in meteo.py (dummy)
+or e.g. meteo_dome_c.py for a real implementation.
 
-Scripts u_acqurie.py and u_analyze.py can be
-interrupted and resumed at any time, or while
-u_acquire.py is still running, u_analyze.py
-can be started several times, saving time.
+As default Meteo() from meteo.py is used if not
+specified with --meteo-class.
 
-If options --plot and --animate are specified
-u_acqurie.py and u_analyze.py show an updated
-(animate) plot e.g. where the mount actually
-points to or which position is analyzed. If
---ds9-display is specified then FITS images
-will be displayed through DS9. u_point.py
-behaves in the same way but has no progress
-report.
+meteo.py is a dummy device while meteo_dome_c.py is
+an example querying a weather station's web page.
 
 
 Preparation: u_select.py, u_acquire.py
@@ -452,15 +523,6 @@ not satisfied see options --altitude-interval,
 --azimuth-interval, --az-step and --alt-step for
 further refinements.
 
-Meteo data
-==========
-Often meteo data are acquired from a separate
-system. Either provided by RTS2 or an external
-source. See classes Meteo() in meteo.py (dummy)
-or e.g. meteo_dome_c.py for a real implementation.
-
-As default Meteo() from meteo.py is used if not
-specified with --meteo-class.
 
 Data acquisition: u_acquire.py
 ==============================
@@ -469,16 +531,16 @@ at any time.
 
 Two modes of operations exist:
 
-1) non continuous mode (default)
-2) continuous mode (--mode-continues)
+1) non continuous mode (--mode-user)
+2) continuous mode (default)
 
-If operated in continuous mode, no user interaction
+If operated in default mode, no user interaction
 is required.
 To watch the mount acquiring data, in case of
 --device-class DeviceDss (default), use
 
 ./u_acquire.py --base-path $BASE_PATH --plot \
-  --ds9-display --animate  --level DEBUG --toc
+  --ds9-display --animate  --toconcsole
 
 with option --device-class DeviceRts2 (adapt
 u_acquire_plot.sh to your needs)
@@ -486,8 +548,8 @@ u_acquire_plot.sh to your needs)
  plt_script="$HOME/rts2/scripts/u_point/u_acquire_plot.sh"
  rts2-scriptexec -d C0 -s " exe $plt_script" 
 
-If operated in non continuous mode, user interaction
-is required and it is done via telnet 127.0.0.1 usually
+If operated in user  mode, user interaction is
+required and it is done via telnet 127.0.0.1 usually
 on port 9999 (see /tmp/u_acquire.log for the actual
 setting). Allowed commands are setting a different
 exposure time or redo a given nominal position ev.
@@ -546,10 +608,9 @@ previous step, is read by
 and the plots will show the result of the fitted
 parameters as well as the raw data.
 
-Plots labeled A2 and K (title upper left) provide
-a call back function. If a data point is clicked,
-it is annotated on all other plots. This feature
-is still in it's infancy.
+All plots have a call back function. If a data point
+is clicked, it is annotated on all other plots.
+
 
 Defining a model
 ================
@@ -585,18 +646,20 @@ observatory's latitude has to be passed:
         self.lg.error('got unexpected key word: {0}={1}, exiting'.format(name, value))
         sys.exit(1)
 
+Main differences to Petr's gpoint
+=================================
 
-Format of the coordinates file and units
-========================================
-The data formats of the various files and objects
-are best described in structures.py.
+u_point includes meteo data and has Python
+bindings for libnova.so, as far as I used it.
 
-Mount coordinates are the apparent coordinates as read
-at the setting circles, while catalog coordinates are
-J2000 (ICRS).
-Exposure, temperature, pressure and humidity are optional
-as input to u_point.py. QFE is the pressure at the
-observatory (not sea level).
+Interestingly the AltAz model fits well without
+meteo data since the tube droop parameter is
+a function of Alt too. But as temperature varies
+the model will fail to correct the position.
+
+Adding a different model, e.g. J. Condon (1992)
+suggested to use a Fourier transformed function,
+can be done easily (see section Defining a model).
 
 
 Walk through with RTS2 dummy devices
@@ -643,6 +706,8 @@ or at any time for a progress report plot (check option
 Red dots are remaining nominal and blue dots are acquired positions
 To see DSS catalog FITS images, click on a blue point.
 
+
+
 Recommended terminal set up
 ---------------------------
 
@@ -652,15 +717,14 @@ viewed "in parallel":
  tail -f /tmp/u_acquire.log 
  telnet 127.0.0.1 9999
  ./u_acquire.py --plot;ds9 -zscale dss*fits
- rts2-scriptexec -d C0 -s " exe ./u_acquire_fetch_dss_continuous.s "
-
-
+ rts2-scriptexec -d C0 -s " exe ./u_acquire_fetch_dss_continuous.sh "
 
 
 Pointing model analysis: u_point.py
 ===================================
 
 The current version does not support the old data format.
+This section is informative only
 
 I will update this section as soon I converted the data.
 
@@ -668,7 +732,7 @@ Fetch real data and fit them
 
  cd ~/rts2/scripts/u_point/
  wget http://azug.minpet.unibas.ch/~wildi/mount_data_meteo.txt
- ./u_point.py --toc  --u_point_analyzed_position mount_data_meteo.txt --plot
+ ./u_point.py --toc mount_data_meteo.txt --plot
 
 the output should be similar to:
 

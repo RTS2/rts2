@@ -77,14 +77,13 @@ class DeviceDss(object):
   def fetch_mount_position(self):
     if self.cat_ic is None:
       return None
-
     return self.cat_ic
                   
   def ccd_init(self):
     pass
 
   def ccd_expose(self,exp=None, pressure=None,temperature=None,humidity=None):
-
+    
     self.exp=exp # not really used
     self.pressure=pressure
     self.temperature=temperature

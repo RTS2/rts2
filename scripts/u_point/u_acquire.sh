@@ -12,5 +12,5 @@
 #
 cd $HOME/rts2/scripts/u_point/
 #
-./u_acquire.py --base /tmp/u_point/ --mode-contin --device-class DeviceRts2 --use-bright-stars --delete --level DEBUG
+./u_acquire.py --base /tmp/u_point/ --device-class DeviceRts2 --use-bright-stars --delete --level DEBUG
 #

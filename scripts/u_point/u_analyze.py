@@ -99,14 +99,14 @@ class Analysis(Script):
     c=np.cos(rads)
     return np.matrix([[c, -s],[s,  c]])
     
-  def xy2lonlat_appr(self,px=None,py=None,pos=None,pcn=None):
+  def xy2lonlat_appr(self,px=None,py=None,sky=None,pcn=None):
     # mnt_ic: read back from mount
     # in case of RTS2 it includes any OFFS, these are manual corrections
     if self.mount_type_eq:
-      ln0=pos.cat_ic.ra.radian
-      lt0=pos.cat_ic.dec.radian
+      ln0=sky.cat_ic.ra.radian
+      lt0=sky.cat_ic.dec.radian
     else:
-      aa=self.to_altaz(ic=pos.cat_ic)
+      aa=self.to_altaz(ic=sky.cat_ic)
       ln0=aa.az.radian
       lt0=aa.alt.radian
     
@@ -138,25 +138,25 @@ class Analysis(Script):
       #self.lg.debug('{0}: sextract   star  : {1:.6f} {2:.6f}'.format(pcn,az*180./np.pi,alt*180./np.pi))
       
       # ToDo exptime: dt_end - exp/2.
-      aa=SkyCoord(az=az,alt=alt,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=pos.dt_end)
+      aa=SkyCoord(az=az,alt=alt,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=sky.dt_end)
       ic=self.to_ic(aa=aa)
       lon=ic.ra.radian
       lat=ic.dec.radian
       
-    ptfn=self.expand_base_path(fn=pos.image_fn)
+    ptfn=self.expand_base_path(fn=sky.image_fn)
     self.lg.debug('{0}: sextract   result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,ptfn))
     if self.mount_type_eq:
-      pos.sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='cirs',location=self.obs)
+      sky.sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='cirs',location=self.obs)
     else:
-      pos.sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
+      sky.sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
 
   
-  def sextract(self,pos=None,pcn='single'):
+  def sextract(self,sky=None,pcn='single'):
     #if self.ds9_display:
-    #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(pos.cat_no)))
+    #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(sky.cat_no)))
 
     sx = sextractor_3.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
-    ptfn=self.expand_base_path(fn=pos.image_fn)
+    ptfn=self.expand_base_path(fn=sky.image_fn)
     try:
       sx.runSExtractor(filename=ptfn)
     except Exception as e:
@@ -185,20 +185,20 @@ class Analysis(Script):
       self.display_fits(fn=ptfn, x=brst[i_x],y=brst[i_y],color='red')
     return x,y
     
-  def astrometry(self,pos=None,pcn=None):
+  def astrometry(self,sky=None,pcn=None):
     if self.solver is None:
       return
 
-    ptfn=self.expand_base_path(fn=pos.image_fn)
+    ptfn=self.expand_base_path(fn=sky.image_fn)
 
-    self.lg.debug('{0}:         mount set: {1:.6f} {2:.6f}, file: {3}'.format(pcn,pos.cat_ic.ra.degree,pos.cat_ic.dec.degree,ptfn))
-    if pos.mnt_ic.ra.radian != 0. and pos.mnt_ic.dec.radian != 0.:
-      self.lg.debug('{0}:   mount read back: {1:.6f} {2:.6f}, file: {3}'.format(pcn,pos.mnt_ic.ra.degree,pos.mnt_ic.dec.degree,ptfn))
+    self.lg.debug('{0}:         mount set: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sky.cat_ic.ra.degree,sky.cat_ic.dec.degree,ptfn))
+    if sky.mnt_ic.ra.radian != 0. and sky.mnt_ic.dec.radian != 0.:
+      self.lg.debug('{0}:   mount read back: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sky.mnt_ic.ra.degree,sky.mnt_ic.dec.degree,ptfn))
 
-    sr= self.solver.solve_field(fn=ptfn,ra=pos.cat_ic.ra.degree,dec=pos.cat_ic.dec.degree,)
+    sr= self.solver.solve_field(fn=ptfn,ra=sky.cat_ic.ra.degree,dec=sky.cat_ic.dec.degree,)
     if sr is not None:
       self.lg.debug('{0}: astrometry result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
-      pos.astr=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs)
+      sky.astr=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs)
     else:
       self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,ptfn))
 
@@ -246,16 +246,13 @@ class Analysis(Script):
     self.ax.set_ylabel('declination [deg]')  
     self.ax.grid(True)
     # ToDo: was nu? debug?
-    #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.eq.ra.degree, x.eq.dec.degree,x.image_fn) for x in self.acq]
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ic.ra.degree,x.cat_ic.dec.degree,x.image_fn) for x in self.sky_acq]
+    #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ic.ra.degree,x.cat_ic.dec.degree,x.image_fn) for x in self.sky_acq]
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree,x.mnt_aa.alt.degree,x.image_fn) for x in self.sky_acq]
     nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_ic is not None]
-    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,x=cat_ic_ra,y=cat_ic_dec,annotes=annotes)]
+    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=cat_ic_ra,lat=cat_ic_dec,annotes=annotes)]
   
     # does not exits at the beginning
-    try:
-      self.af.data = list(zip(nml_ids,cat_ic_ra,cat_ic_dec,annotes))
-    except AttributeError:
-      return nml_ids,cat_ic_ra,cat_ic_dec,annotes,aps
+    return aps
 
     
   def plot(self,title=None,animate=None,delete=None):
@@ -273,9 +270,9 @@ class Analysis(Script):
     if animate:
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
 
-    (nml_ids,cat_ic_ra,cat_ic_dec,annotes,aps)=self.re_plot(animate=animate)
+    aps=self.re_plot(animate=animate)
     # analyzed=False means: delete a position in acquired 
-    self.af = AnnoteFinder(nml_ids,cat_ic_ra,cat_ic_dec, annotes, ax=self.ax,xtol=5.,aps=aps, ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
+    self.af = AnnoteFinder(ax=self.ax,xtol=5.,aps=aps, ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
@@ -395,10 +392,10 @@ if __name__ == "__main__":
 
   anl.fetch_positions(sys_exit=True,analyzed=False)
   anl.fetch_positions(sys_exit=False,analyzed=True)
-  sxtr_analyzed=[x.nml_id for x in anl.anl if x.sxtr is not None]
-  astr_analyzed=[x.nml_id for x in anl.anl if x.astr is not None]
+  sxtr_analyzed=[x.nml_id for x in anl.sky_anl if x.sxtr is not None]
+  astr_analyzed=[x.nml_id for x in anl.sky_anl if x.astr is not None]
     
-  for i,o in enumerate(anl.acq):
+  for i,o in enumerate(anl.sky_acq):
     if args.do_not_use_astrometry: # double neg
       if o.nml_id in sxtr_analyzed:
         logger.debug('skiping analyzed position: {}'.format(o.image_fn))
@@ -415,7 +412,7 @@ if __name__ == "__main__":
     
     work_queue.put(o)
     
-  if len(anl.anl) and args.ds9_display:
+  if len(anl.sky_anl) and args.ds9_display:
     logger.warn('deleted positions will appear again, these are deliberately not stored, file: {}'.format(args.analyzed_positions))
     
   processes = list()

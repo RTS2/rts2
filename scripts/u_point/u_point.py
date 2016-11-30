@@ -104,14 +104,14 @@ ln_hrz_posn=LN_hrz_posn()
 
 
 class PointingModel(Script):
-  def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None,fit_astr=None):
+  def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None,fit_sxtr=None):
     Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,analyzed_positions=analyzed_positions)
     #
     self.ln_obs=LN_lnlat_posn()    
     self.ln_obs.lng=obs.longitude.degree # deg
     self.ln_obs.lat=obs.latitude.degree  # deg
     self.ln_hght=obs.height  # hm, no .meter?? m, not a libnova quantity
-    self.fit_astr=fit_astr
+    self.fit_sxtr=fit_sxtr
     
   def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,correct_cat=False):
 
@@ -157,26 +157,26 @@ class PointingModel(Script):
     pos_ha=SkyCoord(ra=ha, dec=Latitude(ln_pos_eq.dec,u.deg).radian,unit=(u.radian,u.radian),frame='cirs')
     return pos_ha
   
-  def transform_to_hadec(self,ic=None,tem=None,pre=None,hum=None,astropy_f=False,correct_cat_f=None):
+  def transform_to_hadec(self,ic=None,tem=None,pre=None,hum=None,libnova_f=False,correct_cat_f=None):
     pre_qfe=0.
     if correct_cat_f: # ToDo: again
       pre_qfe=pre # to make it clear what is used
 
-    if astropy_f:
+    if libnova_f:
+      # debug:
+      aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
+      ha==self.LN_AltAz_to_HA(az=aa.az.degree,alt=aa.alt.degree,obstime=eq.obstime)
+    else:
       aa=ic.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
       # ToDo: check that if correct!
       # debug:
       ci=aa.cirs 
       HA= ic.obstime.sidereal_time('apparent') - ci.ra
       ha=SkyCoord(ra=HA,dec=pos_eqc.dec, unit=(u.rad,u.rad), frame='cirs',obstime=eq.obstime,location=self.obs)
-    else:
-      # debug:
-      aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
-      ha==self.LN_AltAz_to_HA(az=aa.az.degree,alt=aa.alt.degree,obstime=eq.obstime)
       
     return ha
   
-  def transform_to_altaz(self,ic=None,tem=None,pre=None,hum=None,astropy_f=False,correct_cat_f=None):
+  def transform_to_altaz(self,ic=None,tem=None,pre=None,hum=None,libnova_f=False,correct_cat_f=None):
     '''
     There are substancial differences between astropy and libnova apparent coordinates. 
     Choose option --astropy for Astropy, default is Libnova
@@ -185,16 +185,16 @@ class PointingModel(Script):
     if correct_cat_f: # ToDo: again
       pre_qfe=pre # to make it clear what is used
       
-    if astropy_f:      
+    if libnova_f:      
+      aa=self.LN_EQ_to_AltAz(ra=Longitude(ic.ra.radian,u.radian).degree,dec=Latitude(ic.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=ic.obstime,correct_cat=correct_cat_f)
+    else:
       # https://github.com/liberfa/erfa/blob/master/src/refco.c
       # phpa   double    pressure at the observer (hPa = millibar)
       aa=ic.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
-    else:
-      aa=self.LN_EQ_to_AltAz(ra=Longitude(ic.ra.radian,u.radian).degree,dec=Latitude(ic.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=ic.obstime,correct_cat=correct_cat_f)
 
     return aa
 
-  def fetch_coordinates(self,ptfn=None,astropy_f=False,fit_eq=False):
+  def fetch_coordinates(self,ptfn=None,libnova_f=False,fit_eq=False):
     '''
     '''
     self.fetch_positions(sys_exit=True,analyzed=True)
@@ -210,7 +210,7 @@ class PointingModel(Script):
       cat_ic=anl.cat_ic
       # ToDo: chcek that replace icrs by cirs (intermediate frame, mount apparent coordinates)
       #mnt_ic=anl.mnt_ic
-      if self.fit_astr:
+      if self.fit_sxtr:
         if anl.astr is None:
           continue
         mnt_ic=anl.astr
@@ -226,10 +226,10 @@ class PointingModel(Script):
       else:
         tr_t_tf=self.transform_to_altaz
         
-      cat_tf=tr_t_tf(ic=cat_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=True)
+      cat_tf=tr_t_tf(ic=cat_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,libnova_f=libnova_f,correct_cat_f=True)
       # to be sure :-))
       pre=tem=hum=0.
-      mnt_tf=tr_t_tf(ic=mnt_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,astropy_f=astropy_f,correct_cat_f=False)
+      mnt_tf=tr_t_tf(ic=mnt_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,libnova_f=libnova_f,correct_cat_f=False)
       cats.append(cat_tf)
       mnts.append(mnt_tf)
 
@@ -343,15 +343,7 @@ class PointingModel(Script):
     return stars
 
   def annotate_plot(self,fig=None,ax=None,aps=None,ds9_display=None,delete=None):
-    i=-1
-    for i,ap in enumerate(aps):
-      if ax is ap.xx:
-        break
     af =  AnnoteFinder(
-      nml_id=aps[i].nml_id,
-      a_lon=aps[i].x,
-      a_lat=aps[i].y,
-      annotes=aps[i].annotes,
       ax=ax, # leading plot, put it on the list
       aps=aps,
       xtol=1.,
@@ -383,23 +375,23 @@ class PointingModel(Script):
     import matplotlib.pyplot as plt
     plt.ioff()
     if args.fit_eq:
-      fit_title='buie2003, LN'
+      fit_title='buie2003, AP'
       fn_frac='buie2003LN'
-      if args.astropy:
-        fit_title='buie2003, AP'
+      if args.libnova:
+        fit_title='buie2003,Nova'
         fn_frac='buie2003AP'
         
       lon_label='hour angle'
       lat_label='declination'
     else:
-      fit_title='condon1992, LN'
+      fit_title='condon1992, AP'
       fn_frac='condon1992LN'
-      if args.astropy:
-        fit_title='condon1992, AP'
+      if args.libnova:
+        fit_title='condon1992,Nova'
         fn_frac='condon1992AP'
       
       lat_label='altitude'
-      if args.astropy:
+      if args.libnova:
         lon_label='N=0,E=90 azimuth'
       else:
         lon_label='S=0,W=90 azimuth'
@@ -566,7 +558,7 @@ class PointingModel(Script):
       # it deppends what is needed:
       #annotes=elements[6]
       annotes=annotes_skycoords
-      aps.append(AnnotatedPlot(xx=ax,nml_id=nml_ids,x=lon,y=lat,annotes=annotes))
+      aps.append(AnnotatedPlot(xx=ax,nml_id=nml_ids,lon=lon,lat=lat,annotes=annotes))
       
     afs=list()
     for i,ax in enumerate(axs):
@@ -629,17 +621,17 @@ if __name__ == "__main__":
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
   parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
-  parser.add_argument('--astropy', dest='astropy', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with astropy, default libnova')
-  parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
+  parser.add_argument('--libnova', dest='libnova', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with libnova, default astropy')
   #
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   #
-  parser.add_argument('--fit-astr', dest='fit_astr', action='store_true', default=False, help=': %(default)s, True fit astrometry results')
+  parser.add_argument('--fit-sextr', dest='fit_sxtr', action='store_true', default=False, help=': %(default)s, True fit SExtractor results')
   # group coordinate system
   parser.add_argument('--fit-eq', dest='fit_eq', action='store_true', default=False, help=': %(default)s, True fit EQ model, else AltAz')
   # group model
+  parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
   parser.add_argument('--t-point', dest='t_point', action='store_true', default=False, help=': %(default)s, fit EQ model with T-point compatible model')
   parser.add_argument('--fit-plus-poly', dest='fit_plus_poly', action='store_true', default=False, help=': %(default)s, True: Condon 1992 with polynom')
   # group plot
@@ -673,14 +665,14 @@ if __name__ == "__main__":
     os.makedirs(args.base_path)
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)  
-  pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions,fit_astr=args.fit_astr)
+  pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions,fit_sxtr=args.fit_sxtr)
 
 
   if args.t_point:
     args.fit_eq=True
   
   # cat,mnt: AltAz, or HA,dec coordinates
-  cats,mnts,imgs,nmls=pm.fetch_coordinates(astropy_f=args.astropy,fit_eq=args.fit_eq)
+  cats,mnts,imgs,nmls=pm.fetch_coordinates(libnova_f=args.libnova,fit_eq=args.fit_eq)
 
   if cats is None:
     logger.error('u_point: nothing to analyze, exiting')

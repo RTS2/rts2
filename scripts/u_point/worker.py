@@ -39,13 +39,13 @@ class Worker(Process):
     self.dbg=dbg
     self.lg=lg
 
-  def append_position(self,pos=None):
+  def append_position(self,sky=None):
     self.lock.acquire()
-    self.anl.append_position(pos=pos,analyzed=True)
+    self.anl.append_position(sky=sky,analyzed=True)
     self.lock.release()
 
   def run(self):
-    pos=acq_image_fn=None
+    sky=acq_image_fn=None
     while not self.exit.is_set():
       if self.ds9_queue is not None:
         try:
@@ -56,24 +56,24 @@ class Worker(Process):
         # 'q'
         if isinstance(cmd, str):
           if 'dl' in cmd:
-            self.lg.info('{}: got {}, delete last: {}'.format(current_process().name, cmd,pos.image_fn))
-            acq_image_fn=pos.image_fn
+            self.lg.info('{}: got {}, delete last: {}'.format(current_process().name, cmd,sky.image_fn))
+            acq_image_fn=sky.image_fn
             acq=None
           elif 'q' in cmd:
-            self.append_position(pos=pos)
+            self.append_position(sky=sky)
             self.lg.error('{}: got {}, call shutdown'.format(current_process().name, cmd))
             self.shutdown()
             return
           else:
             self.lg.error('{}: got {}, continue'.format(current_process().name, cmd))
-        if pos:
-          self.append_position(pos=pos)
+        if sky:
+          self.append_position(sky=sky)
         elif acq_image_fn is not None:
           self.lg.info('{}: not storing {}'.format(current_process().name, acq_image_fn))
           acq_image_fn=None
-      pos=None
+      sky=None
       try:
-        pos=self.work_queue.get()
+        sky=self.work_queue.get()
       except Queue.Empty:
         self.lg.info('{}: queue empty, returning'.format(current_process().name))
         return
@@ -81,19 +81,19 @@ class Worker(Process):
         self.lg.error('{}: queue error: {}, returning'.format(current_process().name, e))
         return
       # 'STOP'
-      if isinstance(pos, str):
-        self.lg.error('{}: got {}, call shutdown_on_STOP'.format(current_process().name, pos))
+      if isinstance(sky, str):
+        self.lg.error('{}: got {}, call shutdown_on_STOP'.format(current_process().name, sky))
         self.shutdown_on_STOP()
         return
       # analysis part
-      x,y=self.anl.sextract(pos=pos,pcn=current_process().name)
+      x,y=self.anl.sextract(sky=sky,pcn=current_process().name)
       if x is not None and y is not None:
-        self.anl.xy2lonlat_appr(px=x,py=y,pos=pos,pcn=current_process().name)
+        self.anl.xy2lonlat_appr(px=x,py=y,sky=sky,pcn=current_process().name)
 
-      self.anl.astrometry(pos=pos,pcn=current_process().name)
+      self.anl.astrometry(sky=sky,pcn=current_process().name)
       # ToDo why this condition
       if self.ds9_queue is None:
-        self.append_position(pos=pos)
+        self.append_position(sky=sky)
       else:
         self.next_queue.put('c')
       # end analysis part

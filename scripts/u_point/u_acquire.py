@@ -71,7 +71,7 @@ class Acquisition(Script):
       obs=None,
       acquired_positions=None,
       acq_e_h=None,
-      mode_continues=None,
+      mode_user=None,
       acq_queue=None,
       mode_watchdog=None,
       meteo=None,
@@ -80,7 +80,7 @@ class Acquisition(Script):
   ):
 
     Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,acquired_positions=acquired_positions,acq_e_h=acq_e_h)
-    self.mode_continues=mode_continues
+    self.mode_user=mode_user
     self.acq_queue=acq_queue
     self.mode_watchdog=mode_watchdog
     self.meteo=meteo
@@ -223,7 +223,7 @@ class Acquisition(Script):
     return self.cat[il+i_min].cat_no,self.cat[il+i_min].cat_ic
       
   def acquire(self,altitude_interval=None,max_separation=None):
-    if not self.mode_continues:
+    if self.mode_user:
       user_input=self.create_socket()
     #
     self.device.ccd_init()  
@@ -238,28 +238,29 @@ class Acquisition(Script):
       cat_no=None
       if self.use_bright_stars:
         cat_no,cat_ic=self.find_near_neighbor(mnl_ic=mnl_ic,altitude_interval=altitude_interval,max_separation=max_separation)
+        if cat_ic is None:
+          continue # no suitable object found, try next
       else:
         cat_ic=mnl_ic # observe at the current nominal position
         
-      if cat_ic: # else no suitable object found, try next
-        if not self.mode_continues:
-            while True:
-              if not_first:
+      if self.mode_user:
+        while True:
+          if not_first:
                 self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
-              else:
-                not_first=True
+          else:
+            not_first=True
               
-              self.lg.info('acquire: mount synchronized, waiting for user input')
-              cmd,exp=self.wait_for_user(user_input=user_input,last_exposure=last_exposure)
-              last_exposure=exp
-              self.lg.debug('acquire: user input received: {}, {}'.format(cmd,exp))
-              if 'r' not in cmd:
-                break
-              else:
-                self.lg.debug('acquire: redoing same position')
+          self.lg.info('acquire: mount synchronized, waiting for user input')
+          cmd,exp=self.wait_for_user(user_input=user_input,last_exposure=last_exposure)
+          last_exposure=exp
+          self.lg.debug('acquire: user input received: {}, {}'.format(cmd,exp))
+          if 'r' not in cmd:
+            break
+          else:
+            self.lg.debug('acquire: redoing same position')
    
-        else:
-          self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
+      else:
+        self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
 
   def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
     self.fetch_positions(sys_exit=False,analyzed=False)
@@ -268,8 +269,8 @@ class Acquisition(Script):
     
     mnt_aa_az = [x.mnt_aa.az.degree for x in self.sky_acq if x.mnt_aa is not None]
     mnt_aa_alt= [x.mnt_aa.alt.degree for x in self.sky_acq if x.mnt_aa is not None]
-    nml_aa_az = [x.nml_aa.az.degree for x in self.nml]
-    nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml]
+    nml_aa_az = [x.nml_aa.az.degree for x in self.nml ]
+    nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml ]
     
     self.ax.clear()
     self.ax.set_title(self.title, fontsize=10)
@@ -288,7 +289,7 @@ class Acquisition(Script):
         now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
         self.ax.set_xlabel('azimuth [deg] (N=0,E=90), at: {0} [UTC]'.format(now))
       else:      
-        mnt_aa=self.to_altaz(eq=mnt_ic)
+        mnt_aa=self.to_altaz(ic=mnt_ic)
         self.lg.debug('re_plot: mount position: {0:.2f}, {1:.2f} [deg]'.format(mnt_aa.az.degree,mnt_aa.alt.degree))
         self.ax.scatter(mnt_aa.az.degree,mnt_aa.alt.degree,color='green',facecolors='none', edgecolors='g',s=240.)
         self.ax.scatter(mnt_aa.az.degree,mnt_aa.alt.degree,color='green',marker='+',s=600.)
@@ -310,11 +311,9 @@ class Acquisition(Script):
     nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa is not None]
     ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
     # does not exits at the beginning
-    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,x=mnt_aa_az,y=mnt_aa_alt,annotes=annotes)]
-    try:
-      self.af.data = list(zip(nml_ids,mnt_aa_az,mnt_aa_alt,annotes))
-    except AttributeError:
-      return nml_ids,mnt_aa_az,mnt_aa_alt,annotes,aps
+    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=mnt_aa_az,lat=mnt_aa_alt,annotes=annotes)]
+
+    return aps
 
 
 
@@ -332,9 +331,9 @@ class Acquisition(Script):
     if animate:
       ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate,),interval=5000)
     
-    (nml_ids,mnt_aa_az,mnt_aa_alt,annotes,aps)=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
+    aps=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
-    self.af = AnnoteFinder(nml_ids,mnt_aa_az,mnt_aa_alt, annotes, ax=self.ax,aps=aps,xtol=5., ytol=5., ds9_display=ds9_display,lg=self.lg, annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
+    self.af = AnnoteFinder(ax=self.ax,aps=aps,xtol=5.,ytol=5.,ds9_display=ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     ##self.af =  SimpleAnnoteFinder(acq_nml_az,acq_nml_alt, annotes, ax=self.ax,xtol=5., ytol=5., ds9_display=False,lg=self.lg)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
@@ -382,7 +381,7 @@ if __name__ == "__main__":
   # group device
   parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your devices (mount,ccd), see devices.py')
   parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, astrometry.net or simulation mode: images fetched from DSS')
-  parser.add_argument('--mode-continues', dest='mode_continues', action='store_true', default=False, help=': %(default)s, True: pure astrometry.net or simulation mode: no user input, no images fetched from DSS, simulation: image download specify: --fetch-dss-image')
+  parser.add_argument('--mode-user', dest='mode_user', action='store_true', default=False, help=': %(default)s, True: user input required False: pure astrometry.net or simulation mode: no user input, no images fetched from DSS, simulation: image download specify: --fetch-dss-image')
   # group create
   parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, True: create positions to be observed, see --nominal-positions')
   parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
@@ -449,7 +448,7 @@ if __name__ == "__main__":
     obs=obs,
     acquired_positions=args.acquired_positions,
     break_after=args.break_after,
-    mode_continues=args.mode_continues,
+    mode_user=args.mode_user,
     acq_queue=acq_queue,
     mode_watchdog=args.mode_watchdog,
     meteo=meteo,
@@ -493,6 +492,7 @@ if __name__ == "__main__":
     ac.fetch_observable_catalog(fn=args.observable_catalog)
 
   ac.fetch_nominal_altaz(fn=args.nominal_positions)
+
   ac.fetch_positions(sys_exit=False,analyzed=False)
   # drop already observed positions
   ac.drop_nominal_altaz()
