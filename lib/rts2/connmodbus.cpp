@@ -52,7 +52,7 @@ void ConnModbus::callFunction (char func, const void *data, size_t data_size, vo
 		if (reply_data[7] & 0x80)
 		{
 			std::ostringstream _os;
-			_os << "Error executiong function " << func 
+			_os << "Error executing function " << func 
 				<< " error code is: 0x" << std::hex << (int) reply_data[8];
 			throw ModbusError (this, _os.str ().c_str ());
 		}

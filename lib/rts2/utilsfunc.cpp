@@ -530,3 +530,23 @@ std::string string_format(const char *fmt, ...)
 	}
 	return str;
 }
+
+#define CRC_16     0xA001			 /* crc-16 mask */
+
+uint16_t getMsgBufCRC16 (char *msgBuf, int msgLen)
+{
+	uint16_t ret = 0xffff;
+	for (int l = 0; l < msgLen; l++)
+	{
+		char ch = msgBuf[l];
+		for (int i = 0; i < 8; i++)
+		{
+			if ((ret ^ ch) & 0x01)
+				ret = (ret >> 1) ^ CRC_16;
+			else
+				ret >>= 1;
+			ch >>= 1;
+		}
+	}
+	return ret;
+}

@@ -1,5 +1,5 @@
 /* 
- * Driver for Binder thermocontrolled cage
+ * Driver for Binder enviromental test chamber
  * Copyright (C) 2016 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +25,7 @@ namespace rts2sensord
 {
 
 /**
- * Binder cage controller.
+ * Binder enviromental test chamber.
  *
  * Current private IP: 10.26.210.189 10001
  * Current rack IP: 192.168.1.11 10001

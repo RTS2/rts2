@@ -21,6 +21,7 @@
 #ifndef __RTS_UTILSFUNC__
 #define __RTS_UTILSFUNC__
 
+#include <inttypes.h>
 #include <string>
 #include <vector>
 #include <sys/types.h>
@@ -391,5 +392,10 @@ std::string string_format (const char* format, ...);
  * Converts speed in miles/hour to meters/second.
  */
 float mphToMs (float mph);
+
+/**
+ * Calculates CRC-16.
+ */
+uint16_t getMsgBufCRC16 (char *msgBuf, int msgLen);
 
 #endif							 /* !__RTS_UTILSFUNC__ */

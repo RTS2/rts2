@@ -26,7 +26,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define M16     0xA001			 /* crc-16 mask */
 #define SLAVE     0x01
 
 #define REG_READ    0x03
@@ -65,7 +64,6 @@ class Mark:public Cupola
 		const char *device_file;
 		int cop_desc;
 
-		uint16_t getMsgBufCRC16 (char *msgBuf, int msgLen);
 		// communication functions
 		int write_read (char *w_buf, int w_buf_len, char *r_buf, int r_buf_len);
 		int readReg (int reg_id, uint16_t * reg_val);
@@ -114,26 +112,6 @@ class Mark:public Cupola
 };
 
 }
-
-uint16_t
-Mark::getMsgBufCRC16 (char *msgBuf, int msgLen)
-{
-	uint16_t ret = 0xffff;
-	for (int l = 0; l < msgLen; l++)
-	{
-		char znakp = msgBuf[l];
-		for (int i = 0; i < 8; i++)
-		{
-			if ((ret ^ znakp) & 0x01)
-				ret = (ret >> 1) ^ M16;
-			else
-				ret >>= 1;
-			znakp >>= 1;
-		}
-	}
-	return ret;
-}
-
 
 // last 2 bits are reserved for crc! They are counted in w_buf_len and r_buf_len, and
 // will be modified by this function
