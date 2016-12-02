@@ -20,6 +20,9 @@ START_TEST(crc16)
 	ck_assert_int_eq (getMsgBufCRC16 ("\x14\x03\x04\x03\xe8\x01\xf4", 7), 0x953e);
 
 	ck_assert_int_eq (getMsgBufCRC16 ("\x14\x05\x00\x18\xff\x00", 6), 0xf80e);
+
+	// Modbus wikipedia
+	ck_assert_int_eq (getMsgBufCRC16 ("\x01\x04\x02\xFF\xFF", 5), 0x80b8);
 }
 END_TEST
 
