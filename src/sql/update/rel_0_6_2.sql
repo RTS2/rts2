@@ -15,7 +15,7 @@ ALTER TABLE images ADD COLUMN img_fwhm float4;
 ALTER TABLE images ADD COLUMN img_limmag float4;
 ALTER TABLE images ADD COLUMN img_qmagmax float4;
 
-ALTER TABLE targets ADD COLUMN tar_next_observable timestamp;
+ALTER TABLE targets ADD COLUMN tar_next_observable timestamp with time zone;
 
 -- relation for follow-up calibration observations
 CREATE TABLE calibration_observation (

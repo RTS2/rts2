@@ -3,6 +3,7 @@ ALTER TABLE queues_targets ADD COLUMN repeat_n integer NOT NULL default -1;
 ALTER TABLE queues_targets ADD COLUMN repeat_separation float;
 
 ALTER TABLE targets ALTER COLUMN tar_bonus_time TYPE timestamp with time zone;
+ALTER TABLE targets ALTER COLUMN tar_next_observable TYPE timestamp with time zone;
 
 -- fix timestamps; future database will be build with time zone data, but for old ones, we need to alter tables
 -- this can be done on fly
