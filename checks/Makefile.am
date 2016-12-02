@@ -5,8 +5,8 @@ TESTS = check_python_libnova check_python_gpoint check_python_rts2
 EXTRA_DIST = gpoint_in_altaz gpoint_in_gem
 
 if LIBCHECK
-TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message
-check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message
+TESTS += check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16
+check_PROGRAMS = check_tel_corr check_gem_hko check_gem_mlo check_altaz check_tle check_sgp4 check_timestamp check_gpointmodel check_message check_crc16
 
 noinst_HEADERS = check_utils.h gemtest.h altaztest.h
 
@@ -23,6 +23,8 @@ check_gpointmodel_SOURCES = check_gpointmodel.cpp
 
 check_message_SOURCES = check_message.cpp
 
+check_crc16_SOURCES = check_crc16.cpp
+
 else
-EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp
+EXTRA_DIST+=gemtest.h gemtest.cpp check_gem_mlo.cpp check_gem_hko.cpp check_altaz.cpp check_tle.cpp check_sgp4.cpp check_timestamp.cpp check_gpointmodel.cpp check_message.cpp check_crc16.cpp
 endif
