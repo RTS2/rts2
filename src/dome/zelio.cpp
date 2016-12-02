@@ -89,6 +89,9 @@
 #define ZI_FRAM_Q9       0x0200
 #define ZI_FRAM_QA       0x0400
 
+#define ZI_ELYA_48V      0x0002
+#define ZI_ELYA_12V      0x0004
+
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN   0x8000
 
@@ -206,6 +209,9 @@ class Zelio:public Dome
 		rts2core::ValueFloat *humidity;
 
 		// ELYA values
+		rts2core::ValueBool *dc12;
+		rts2core::ValueBool *dc48;
+
 		rts2core::ValueBool *lowOil;
 		rts2core::ValueBool *batteryFault;
 		rts2core::ValueBool *onBattery;
@@ -401,8 +407,8 @@ bool Zelio::isGoodWeather ()
 		if (lowOil->getValueBool ())
 		{
 			valueError (lowOil);
-			setWeatherTimeout (60, "low oil level");
-			return false;
+			//setWeatherTimeout (60, "low oil level");
+			//return false;
 		}
 		else
 		{
@@ -732,6 +738,8 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	blockCloseLeft = NULL;
 	blockCloseRight = NULL;
 
+	dc12 = NULL;
+	dc48 = NULL;
 	lowOil = NULL;
 	batteryFault = NULL;
 	onBattery = NULL;
@@ -1046,15 +1054,21 @@ void Zelio::createZelioValues ()
 		createValue (humidity, "humidity", "Humidity sensor raw output", false);
 	}
 
-	if (zelioModel == ZELIO_FRAM || zelioModel == ZELIO_BOOTES3)
+	switch (zelioModel)
 	{
-		createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE);
-		createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
-		createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE);
-	}
-	else 
-	{
-		createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
+		case ZELIO_FRAM:
+		case ZELIO_BOOTES3:
+			createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE);
+			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
+			createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE);
+			break;
+		case ZELIO_ELYA:
+			createValue (dc12, "12VDC", "12V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			createValue (dc48, "48VDC", "48V DC power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			break;
+		default:
+			createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
+			break;
 	}
 
 	// create rain values only if rain sensor is present
@@ -1086,19 +1100,27 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == emergencyReset)
 	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-	if (zelioModel == ZELIO_FRAM || zelioModel == ZELIO_BOOTES3)
+	switch (zelioModel)
 	{
-		if (oldValue == Q8)
-		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-		if (oldValue == Q9)
-		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-		if (oldValue == QA)
-		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-	}
-	else
-	{
-		if (oldValue == Q9)
-		  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		case ZELIO_FRAM:
+		case ZELIO_BOOTES3:
+			if (oldValue == Q8)
+				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			if (oldValue == Q9)
+				return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			if (oldValue == QA)
+				return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			break;
+		case ZELIO_ELYA:
+			if (oldValue == dc12)
+				return setBitsInput (ZREG_J2XT1, ZI_ELYA_12V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			if (oldValue == dc48)
+				return setBitsInput (ZREG_J2XT1, ZI_ELYA_48V, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			break;
+		default:
+			if (oldValue == Q9)
+				return setBitsInput (ZREG_J1XT1, ZI_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			break;
 	}
 	if (oldValue == ignoreRain)
 	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
