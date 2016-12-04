@@ -44,7 +44,7 @@ class Script(object):
       obs=None,
       acquired_positions=None,
       analyzed_positions=None,
-      acq_e_h=None,):
+      acq_e_h=None):
 
     self.lg=lg
     self.break_after=break_after
@@ -53,23 +53,13 @@ class Script(object):
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
     self.acq_e_h=acq_e_h
-    
+
   # ToDo see callback.py
   def display_fits(self,fn=None, x=None,y=None,color=None):
     ds9=ds9region.Ds9DisplayThread(debug=True,logger=self.lg)
     # Todo: ugly
     ds9.run(fn,x=x,y=y,color=color)
       
-  def to_altaz(self,ic=None):
-    # http://docs.astropy.org/en/stable/api/astropy.coordinates.AltAz.html
-    #  Azimuth is oriented East of North (i.e., N=0, E=90 degrees)
-    # RTS2 follows IAU S=0, W=90
-    return ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
-  # ic
-  def to_ic(self,aa=None):
-    # strictly spoken it is not ICRS if refraction was corrected in aa
-    return aa.transform_to('icrs') 
-
   # ToDo goes away
   def rebase_base_path(self,ptfn=None):
     if self.base_path in ptfn:
@@ -87,9 +77,20 @@ class Script(object):
       ptfn=os.path.join(self.base_path,fn)
     return ptfn
   
+  def to_altaz(self,ic=None):
+    # http://docs.astropy.org/en/stable/api/astropy.coordinates.AltAz.html
+    #  Azimuth is oriented East of North (i.e., N=0, E=90 degrees)
+    # RTS2 follows IAU S=0, W=90
+    return ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
+  # ic
+  
+  def to_ic(self,aa=None):
+    # strictly spoken it is not ICRS if refraction was corrected in aa
+    return aa.transform_to('icrs') 
+
   def fetch_observable_catalog(self, fn=None):
     ptfn=self.expand_base_path(fn=fn)
-    self.cat=list()
+    self.cat_observable=list()
     df_data = self.fetch_pandas(ptfn=ptfn,columns=['cat_no','ra','dec','mag_v',],sys_exit=True,with_nml_id=False)
     if df_data is None:
       return
@@ -98,7 +99,7 @@ class Script(object):
         break
       
       cat_ic=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
-      self.cat.append(CatPosition(cat_no=int(rw['cat_no']),cat_ic=cat_ic,mag_v=rw['mag_v'] ))
+      self.cat_observable.append(CatPosition(cat_no=int(rw['cat_no']),cat_ic=cat_ic,mag_v=rw['mag_v'] ))
 
   def store_nominal_altaz(self,az_step=None,alt_step=None,azimuth_interval=None,altitude_interval=None,fn=None):
     # ToDo from pathlib import Path, fp=Path(ptfb),if fp.is_file())
@@ -267,31 +268,39 @@ class Script(object):
       # ToDo set best time point
       nml_aa=SkyCoord(az=rw['nml_aa_az'],alt=rw['nml_aa_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
       cat_ic=SkyCoord(ra=rw['cat_ic_ra'],dec=rw['cat_ic_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-      cat_ic_woffs=SkyCoord(ra=rw['cat_ic_woffs_ra'],dec=rw['cat_ic_woffs_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
       # replace icrs by cirs (intermediate frame, mount apparent coordinates)
-      mnt_ic=SkyCoord(ra=rw['mnt_ic_ra'],dec=rw['mnt_ic_dec'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
-      mnt_aa=SkyCoord(az=rw['mnt_aa_az'],alt=rw['mnt_aa_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-      
-      if 'sxtr_ra' in cols and pd.notnull(rw['sxtr_ra']) and pd.notnull(rw['sxtr_dec']):
-        # ToDO icrs, cirs
-        sxtr=SkyCoord(ra=rw['sxtr_ra'],dec=rw['sxtr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      mnt_ra_rdb=SkyCoord(ra=rw['mnt_ra_rdb_ra'],dec=rw['mnt_ra_rdb_dec'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
+      # ToDo: replace above mnt_ic with mnt_ci the transform to mnt_aa_transformed
+      #       and do mnt_aa_transformed - mnt_aa
+      mnt_aa_rdb=SkyCoord(az=rw['mnt_aa_rdb_az'],alt=rw['mnt_aa_rdb_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
+      mount_type_eq=rw['mount_type_eq']
+      if 'cat_ll_ap_lon' in cols and pd.notnull(rw['cat_ll_ap_lon']) and pd.notnull(rw['cat_ll_ap_lat']):
+        if mount_type_eq:
+          # ToDO icrs, cirs
+          cat_ll_ap=SkyCoord(ra=rw['cat_ll_ap_lon'],dec=rw['cat_ll_ap_lat'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
+        else:
+          cat_ll_ap=SkyCoord(az=rw['cat_ll_ap_lon'],alt=rw['cat_ll_ap_lat'], unit=(u.radian,u.radian), frame='altaz',obstime=dt_end,location=self.obs)
       else:
-        sxtr=None
-        #self.lg.debug('fetch_positions: sxtr None: {}'.format(ptfn))
+        cat_ll_ap=None
         
-      if 'astr_ra' in cols and pd.notnull(rw['astr_ra']) and pd.notnull(rw['astr_dec']):
-        # ToDO icrs, cirs
-        astr=SkyCoord(ra=rw['astr_ra'],dec=rw['astr_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
-        #print(cat_ic,sxtr)
-        #print('DIFF c-s',(cat_ic.ra.radian-sxtr.ra.radian)*180./np.pi)
-        #print('DIFF c-a',(cat_ic.ra.radian-astr.ra.radian)*180./np.pi)
-        #print('DIFF s-a',(sxtr.ra.radian-astr.ra.radian)*180./np.pi)
+      if 'mnt_ll_sxtr_lon' in cols and pd.notnull(rw['mnt_ll_sxtr_lon']) and pd.notnull(rw['mnt_ll_sxtr_lat']):
+        if mount_type_eq:
+          # ToDO icrs, cirs
+          mnt_ll_sxtr=SkyCoord(ra=rw['mnt_ll_sxtr_lon'],dec=rw['mnt_ll_sxtr_lat'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
+        else:
+          mnt_ll_sxtr=SkyCoord(az=rw['mnt_ll_sxtr_lon'],alt=rw['mnt_ll_sxtr_lat'], unit=(u.radian,u.radian), frame='altaz',obstime=dt_end,location=self.obs)
       else:
-        astr=None
-        #self.lg.debug('fetch_positions: astr None,nml_d: {}, ra:{}, dec: {}'.format(i,rw['astr_ra'],rw['astr_dec']))
-        # to create more or less identical plots:
-        #continue
+        mnt_ll_sxtr=None
 
+      if 'mnt_ll_astr_lon' in cols and pd.notnull(rw['mnt_ll_astr_lon']) and pd.notnull(rw['mnt_ll_astr_lat']):
+        if mount_type_eq:
+          # ToDO icrs, cirs
+          mnt_ll_astr=SkyCoord(ra=rw['mnt_ll_astr_lon'],dec=rw['mnt_ll_astr_lat'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
+        else:
+          mnt_ll_astr=SkyCoord(az=rw['mnt_ll_astr_lon'],alt=rw['mnt_ll_astr_lat'], unit=(u.radian,u.radian), frame='altaz',obstime=dt_end,location=self.obs)
+      else:
+        mnt_ll_astr=None
+      
       image_ptfn=self.rebase_base_path(ptfn=rw['image_fn'])
       s_sky=SkyPosition(
           nml_id=rw['nml_id'], # there might be holes
@@ -302,16 +311,94 @@ class Script(object):
           dt_end=dt_end,
           dt_end_query=dt_end_query,
           JD=rw['JD'],
-          cat_ic_woffs=cat_ic_woffs,
-          mnt_ic=mnt_ic,
-          mnt_aa=mnt_aa,
+          mnt_ra_rdb=mnt_ra_rdb,
+          mnt_aa_rdb=mnt_aa_rdb,
           image_fn=image_ptfn,
           exp=rw['exp'],
           pressure=rw['pressure'],
           temperature=rw['temperature'],
           humidity=rw['humidity'],
-          sxtr= sxtr,
-          astr= astr,
+          mount_type_eq=mount_type_eq,
+          transform_name=rw['transform_name'],
+          cat_ll_ap=cat_ll_ap,
+          mnt_ll_sxtr=mnt_ll_sxtr,
+          mnt_ll_astr=mnt_ll_astr,
       )
       sky_a.append(s_sky)
+  
+  def fetch_mount_meteo(self,sys_exit=None,analyzed=None,with_nml_id=False):
+    # --fit-sxtr !
+    # test purpose only
+    # ToDo!
+    # dt_utc=dt_utc - TimeDelta(rw['exp']/2.,format='sec') # exp. time is small
+    if analyzed:
+      sky_a=self.sky_anl=list()
+    else:
+      sky_a=self.sky_acq=list()
+
+    ptfn='./mount_data_meteo.txt'
+      
+    cols= [
+      'dt_end',#7
+      #  'nml_id',#0
+      #  'cat_no',#1
+      #  'nml_aa_az',#2
+      #  'nml_aa_alt',#3
+      'cat_ic_ra',#4
+      'cat_ic_dec',#5
+      #  'dt_begin',#6
+      #  'dt_end',#7
+      #  'dt_end_query',#8
+      #  'JD',#9
+      #  'cat_ic_woffs_ra',#10
+      #  'cat_ic_woffs_dec',#11
+      ##'mnt_ic_ra',#12
+      ##'mnt_ic_dec',#13
+      'astr_ra',#23
+      'astr_dec',#24
+      #  'mnt_aa_az',#14
+      #  'mnt_aa_alt',#15
+      #  'image_fn',#16
+      'exp',#17
+      'pressure',#18
+      'temperature',#19
+      'humidity',#20
+      #  'sxtr_ra',#21
+      #  'sxtr_dec',#22
+    ]
+
+    df_data = self.fetch_pandas(ptfn=ptfn,columns=cols,sys_exit=sys_exit,with_nml_id=with_nml_id)
+    if df_data is None:
+      return
     
+    for i,rw in df_data.iterrows():
+      # ToDo why not out_subfmt='fits'
+      dt_end=Time(rw['dt_end'],format='iso', scale='utc',location=self.obs,out_subfmt='date_hms')
+      # ToDo set best time point
+      cat_ic=SkyCoord(ra=rw['cat_ic_ra'],dec=rw['cat_ic_dec'], unit=(u.radian,u.radian), frame='icrs',obstime=dt_end,location=self.obs)
+      # replace icrs by cirs (intermediate frame, mount apparent coordinates)
+      mnt_ic=SkyCoord(ra=rw['mnt_ic_ra'],dec=rw['mnt_ic_dec'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
+      
+      #image_ptfn=self.rebase_base_path(ptfn=rw['image_fn'])
+      s_sky=SkyPosition(
+          nml_id=i, # there might be holes
+          cat_no=None,
+          nml_aa=None,
+          cat_ic=cat_ic,
+          dt_begin=None,
+          dt_end=dt_end,
+          dt_end_query=None,
+          JD=None,
+          cat_ic_woffs=None,
+          mnt_ic=mnt_ic,
+          mnt_aa=None,
+          image_fn=None,
+          exp=rw['exp'],
+          pressure=rw['pressure'],
+          temperature=rw['temperature'],
+          humidity=rw['humidity'],
+          mount_type_eq=False,
+          sxtr= mnt_ic,
+          astr= None,
+      )
+      sky_a.append(s_sky)

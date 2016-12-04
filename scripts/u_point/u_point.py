@@ -40,7 +40,6 @@ import pandas as pd
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord,EarthLocation
-from astropy.coordinates import AltAz
 from astropy.coordinates import Longitude,Latitude,Angle
 from astropy.coordinates.representation import SphericalRepresentation
 from astropy.utils import iers
@@ -64,177 +63,53 @@ from script import Script
 #from astropy.utils import iers
 #iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_URL)
 
-# Python bindings for libnova
-from ctypes import *
-class LN_equ_posn(Structure):
-  _fields_ = [("ra", c_double),("dec", c_double)]
-
-class LN_hrz_posn(Structure):
-  _fields_ = [("az", c_double),("alt", c_double)]
-
-class LN_lnlat_posn(Structure):
-  _fields_ = [("lng", c_double),("lat", c_double)]
-
-# add full path if it is not on LD_PATH
-ln=cdll.LoadLibrary("libnova.so")
-ln.ln_get_equ_aber.restype = None
-ln.ln_get_equ_prec.restype = None
-ln.ln_get_refraction_adj.restype = c_double
-# ln_get_angular_separation (struct ln_equ_posn *posn1, struct ln_equ_posn *posn2)
-ln.ln_get_angular_separation.restype = c_double
-
-#ln_equ_posn1=LN_equ_posn()
-#ln_equ_posn2=LN_equ_posn()
-#def LN_ln_get_angular_separation(ra1=None,dec1=None,ra2=None,dec2=None):
-#  ln_equ_posn1.ra=ra1
-#  ln_equ_posn1.dec=dec1
-#  ln_equ_posn2.ra=ra2
-#  ln_equ_posn2.dec=dec2
-#  sep=ln.ln_get_angular_separation( byref(ln_equ_posn1), byref(ln_equ_posn2))
-#  return sep
-
-
-ln_pos_eq=LN_equ_posn()
-ln_pos_eq_ab=LN_equ_posn()
-ln_pos_eq_pm=LN_equ_posn()
-ln_pos_eq_app=LN_equ_posn()
-ln_pos_eq_pr=LN_equ_posn()
-ln_pos_aa_pr=LN_hrz_posn()
-ln_hrz_posn=LN_hrz_posn()
-
 
 class PointingModel(Script):
   def __init__(self, lg=None,break_after=None, base_path=None, obs=None,analyzed_positions=None,fit_sxtr=None):
     Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,analyzed_positions=analyzed_positions)
     #
-    self.ln_obs=LN_lnlat_posn()    
-    self.ln_obs.lng=obs.longitude.degree # deg
-    self.ln_obs.lat=obs.latitude.degree  # deg
-    self.ln_hght=obs.height  # hm, no .meter?? m, not a libnova quantity
     self.fit_sxtr=fit_sxtr
-    
-  def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,correct_cat=False):
-
-    ln_pos_eq.ra=ra
-    ln_pos_eq.dec=dec
-    if correct_cat:
-      # libnova corrections for catalog data ...
-      # ToDo missing (see P.T. Wallace: Telescope Pointing)
-      # propper motion
-      # annual aberration
-      # light deflection
-      # annual parallax
-      # diurnal aberration
-      # polar motion 
-      ln.ln_get_equ_aber(byref(ln_pos_eq), c_double(obstime.jd), byref(ln_pos_eq_ab))
-      ln.ln_get_equ_prec(byref(ln_pos_eq_ab), c_double(obstime.jd), byref(ln_pos_eq_pr))
-      ln.ln_get_hrz_from_equ(byref(ln_pos_eq_pr), byref(self.ln_obs), c_double(obstime.jd), byref(ln_pos_aa_pr))
-      # here we use QFE not pressure at sea level!
-      # E.g. at Dome-C this formula:
-      ###ln_pressure=ln_see_pres * pow(1. - (0.0065 * ln_alt) / 288.15, (9.80665 * 0.0289644) / (8.31447 * 0.0065));
-      # is not precise.
-      d_alt_deg= ln.ln_get_refraction_adj(c_double(ln_pos_aa_pr.alt),c_double(ln_pressure_qfe),c_double(ln_temperature))
-    else:
-      # ... but not for the star position as measured in mount frame
-      ln.ln_get_hrz_from_equ(byref(ln_pos_eq), byref(self.ln_obs), c_double(obstime.jd), byref(ln_pos_aa_pr));
-      d_alt_deg=0.
+    self.transform_name=None
   
-    a_az=Longitude(ln_pos_aa_pr.az,u.deg)
-    # add refraction
-    a_alt=Latitude(ln_pos_aa_pr.alt + d_alt_deg,u.deg)
-    #
-    pos_aa=SkyCoord(az=a_az.radian,alt=a_alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=obstime,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
-    return pos_aa
 
-  def LN_AltAz_to_HA(self,az=None,alt=None,obstime=None):
-    ln_hrz_posn.alt=alt
-    ln_hrz_posn.az=az
-    ln.ln_get_equ_from_hrz(byref(ln_hrz_posn),byref(self.ln_obs), c_double(obstime.jd),byref(ln_pos_eq))
-    # calculate HA
-    ra=Longitude(ln_pos_eq.ra,u.deg)
-    ha= obstime.sidereal_time('apparent') - ra
-    # hm, ra=ha a bit ugly
-    pos_ha=SkyCoord(ra=ha, dec=Latitude(ln_pos_eq.dec,u.deg).radian,unit=(u.radian,u.radian),frame='cirs')
-    return pos_ha
-  
-  def transform_to_hadec(self,ic=None,tem=None,pre=None,hum=None,libnova_f=False,correct_cat_f=None):
-    pre_qfe=0.
-    if correct_cat_f: # ToDo: again
-      pre_qfe=pre # to make it clear what is used
-
-    if libnova_f:
-      # debug:
-      aa=self.LN_EQ_to_AltAz(ra=Longitude(eq.ra.radian,u.radian).degree,dec=Latitude(eq.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=eq.obstime,correct_cat=correct_cat_f)
-      ha==self.LN_AltAz_to_HA(az=aa.az.degree,alt=aa.alt.degree,obstime=eq.obstime)
-    else:
-      aa=ic.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
-      # ToDo: check that if correct!
-      # debug:
-      ci=aa.cirs 
-      HA= ic.obstime.sidereal_time('apparent') - ci.ra
-      ha=SkyCoord(ra=HA,dec=pos_eqc.dec, unit=(u.rad,u.rad), frame='cirs',obstime=eq.obstime,location=self.obs)
-      
-    return ha
-  
-  def transform_to_altaz(self,ic=None,tem=None,pre=None,hum=None,libnova_f=False,correct_cat_f=None):
-    '''
-    There are substancial differences between astropy and libnova apparent coordinates. 
-    Choose option --astropy for Astropy, default is Libnova
-    '''
-    pre_qfe=0.
-    if correct_cat_f: # ToDo: again
-      pre_qfe=pre # to make it clear what is used
-      
-    if libnova_f:      
-      aa=self.LN_EQ_to_AltAz(ra=Longitude(ic.ra.radian,u.radian).degree,dec=Latitude(ic.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=ic.obstime,correct_cat=correct_cat_f)
-    else:
-      # https://github.com/liberfa/erfa/blob/master/src/refco.c
-      # phpa   double    pressure at the observer (hPa = millibar)
-      aa=ic.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
-
-    return aa
-
-  def fetch_coordinates(self,ptfn=None,libnova_f=False,fit_eq=False):
+  def fetch_coordinates(self,ptfn=None):
     '''
     '''
     self.fetch_positions(sys_exit=True,analyzed=True)
-    
+    # old irait data do not enable
+    #self.fetch_mount_meteo(sys_exit=True,analyzed=True,with_nml_id=False)
+
     cats=list()
     mnts=list()
     imgs=list()
     nmls=list()
-    for i,anl in enumerate(self.sky_anl):
+    
+    self.mount_type_eq=False
+    if self.sky_anl[0].mount_type_eq:
+      self.mount_type_eq=True
+      
+    self.transform_name=None
+    if self.sky_anl[0].transform_name:
+      self.transform_name=self.sky_anl[0].transform_name
+
+    for i,sky in enumerate(self.sky_anl):
       if i > self.break_after:
         break
 
-      cat_ic=anl.cat_ic
-      # ToDo: chcek that replace icrs by cirs (intermediate frame, mount apparent coordinates)
-      #mnt_ic=anl.mnt_ic
       if self.fit_sxtr:
-        if anl.astr is None:
+        if sky.mnt_ll_sxtr is None:
           continue
-        mnt_ic=anl.astr
+        mnt_ll=sky.mnt_ll_sxtr
       else:
-        if anl.sxtr is None:
-          continue
-        mnt_ic=anl.sxtr
-      # use this to check the internal accuracy of astropy
-      #mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
+        if sky.mnt_ll_astr is None:
+          continue        
+        mnt_ll=sky.mnt_ll_astr
       
-      if fit_eq:
-        tr_t_tf=self.transform_to_hadec
-      else:
-        tr_t_tf=self.transform_to_altaz
-        
-      cat_tf=tr_t_tf(ic=cat_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,libnova_f=libnova_f,correct_cat_f=True)
-      # to be sure :-))
-      pre=tem=hum=0.
-      mnt_tf=tr_t_tf(ic=mnt_ic,tem=anl.temperature,pre=anl.pressure,hum=anl.humidity,libnova_f=libnova_f,correct_cat_f=False)
-      cats.append(cat_tf)
-      mnts.append(mnt_tf)
-
-      imgs.append(anl.image_fn)
-      nmls.append(anl.nml_id)
+      cats.append(sky.cat_ll_ap)
+      mnts.append(mnt_ll)
+      
+      imgs.append(sky.image_fn)
+      nmls.append(sky.nml_id)
     
     return cats,mnts,imgs,nmls
 
@@ -296,11 +171,11 @@ class PointingModel(Script):
         continue
       
       mt=mnts[i] # readability
+      mts=mt.represent_as(SphericalRepresentation)
       # ToDo may not the end of the story
       cts=ct.represent_as(SphericalRepresentation)
-      mts=mt.represent_as(SphericalRepresentation)
-      df_lat= Latitude(cts.lat.radian-mts.lat.radian,u.radian)
       df_lon= Longitude(cts.lon.radian-mts.lon.radian,u.radian, wrap_angle=Angle(np.pi,u.radian))
+      df_lat= Latitude(cts.lat.radian-mts.lat.radian,u.radian)
       #print(df_lat,df_lon)
       #if df_lat.radian < 0./60./180.*np.pi:
       #  pass
@@ -374,32 +249,27 @@ class PointingModel(Script):
     matplotlib.rcParams["backend"] = "TkAgg"
     import matplotlib.pyplot as plt
     plt.ioff()
-    if args.fit_eq:
-      fit_title='buie2003, AP'
-      fn_frac='buie2003LN'
-      if args.libnova:
-        fit_title='buie2003,Nova'
-        fn_frac='buie2003AP'
-        
+    
+    fit_title=model.fit_title
+    if args.fit_plus_poly:
+      fit_title +='C+PP'
+    print(self.transform_name)
+    lib='_' + self.transform_name.upper()[0:2]
+
+    fit_title += lib
+    fn_frac=fit_title + lib
+    if args.fit_plus_poly:
+      fn_frac+='c_plus_poly'
+      
+    if self.mount_type_eq:
       lon_label='hour angle'
       lat_label='declination'
     else:
-      fit_title='condon1992, AP'
-      fn_frac='condon1992LN'
-      if args.libnova:
-        fit_title='condon1992,Nova'
-        fn_frac='condon1992AP'
-      
       lat_label='altitude'
-      if args.libnova:
+      lon_label='S=0,W=90 azimuth'
+      if self.transform_name is None:
         lon_label='N=0,E=90 azimuth'
-      else:
-        lon_label='S=0,W=90 azimuth'
-        
-    if args.fit_plus_poly:
-      fit_title='C+PP'
-      fn_frac='c_plus_poly'
-
+      
 
     az_cat_deg=[x.cat_lon.degree for x in stars]
     alt_cat_deg=[x.cat_lat.degree for x in stars]
@@ -621,18 +491,14 @@ if __name__ == "__main__":
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
   parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--analyzed-positions', dest='analyzed_positions', action='store', default='analyzed_positions.anl', help=': %(default)s, already observed positions')
-  parser.add_argument('--libnova', dest='libnova', action='store_true', default=False, help=': %(default)s,True: calculate apparent position with libnova, default astropy')
   #
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
   #
-  parser.add_argument('--fit-sextr', dest='fit_sxtr', action='store_true', default=False, help=': %(default)s, True fit SExtractor results')
-  # group coordinate system
-  parser.add_argument('--fit-eq', dest='fit_eq', action='store_true', default=False, help=': %(default)s, True fit EQ model, else AltAz')
+  parser.add_argument('--fit-sxtr', dest='fit_sxtr', action='store_true', default=False, help=': %(default)s, True fit SExtractor results')
   # group model
   parser.add_argument('--model-class', dest='model_class', action='store', default='model_altaz', help=': %(default)s, specify your model, see e.g. model_altaz.py')
-  parser.add_argument('--t-point', dest='t_point', action='store_true', default=False, help=': %(default)s, fit EQ model with T-point compatible model')
   parser.add_argument('--fit-plus-poly', dest='fit_plus_poly', action='store_true', default=False, help=': %(default)s, True: Condon 1992 with polynom')
   # group plot
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
@@ -656,44 +522,50 @@ if __name__ == "__main__":
     soh.setLevel(args.level)
     logger.addHandler(soh)
 
-  # ToDo: do this with argparse
-  if args.fit_eq and args.fit_plus_poly:
-    logger.error('--fit-plus-poly can not be specified with --fit-eq, drop either')
-    sys.exit(1)
     
   if not os.path.exists(args.base_path):
     os.makedirs(args.base_path)
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)  
+  # now load model class
+  md = importlib.import_module(args.model_class)
+  logger.info('model loaded: {}'.format(args.model_class))
+  # required methods: fit_model, d_lon, d_lat
+  model=md.Model(lg=logger)
+      
+
   pm= PointingModel(lg=logger,break_after=args.break_after,base_path=args.base_path,obs=obs,analyzed_positions=args.analyzed_positions,fit_sxtr=args.fit_sxtr)
 
-
-  if args.t_point:
-    args.fit_eq=True
-  
   # cat,mnt: AltAz, or HA,dec coordinates
-  cats,mnts,imgs,nmls=pm.fetch_coordinates(libnova_f=args.libnova,fit_eq=args.fit_eq)
+  cats,mnts,imgs,nmls=pm.fetch_coordinates()
+
+  # check model type, mount type
+  if pm.mount_type_eq:
+    if 'hadec' not in model.model_type():
+      logger.error('u_point: model: {}, type: {}'.format(args.model_class, model.model_type()))
+      logger.error('u_point: specify hadec model type, exiting')
+      sys.exit(1)
+  else:
+    if 'altaz' not in model.model_type():
+      logger.error('u_point: model: {}, type: {}'.format(args.model_class, model.model_type()))
+      logger.error('u_point: specify altaz model type, exiting')
+      sys.exit(1)
 
   if cats is None:
     logger.error('u_point: nothing to analyze, exiting')
     sys.exit(1)
-  # now load model class
-  md = importlib.import_module(args.model_class)
-  logger.info('loaded: {}'.format(args.model_class))
-  # required methods: fit_model, d_lon, d_lat
-  mdl=md.Model(lg=logger)
 
   selected=list(range(0,len(cats))) # all  
-  if args.fit_eq:
-    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
+  if pm.mount_type_eq:
+    res=model.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
   else:
     try:
-      res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
+      res=model.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
     except TypeError as e:
       ptfn=pm.expand_base_path(fn=args.analyzed_positions)
       logger.error('u_point: presumably empty file: {}, exception: {},exiting'.format(ptfn,e))
       sys.exit(1)
-  stars=pm.prepare_plot(cats=cats,mnts=mnts,imgs=imgs,nmls=nmls,selected=selected,model=mdl)
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,imgs=imgs,nmls=nmls,selected=selected,model=model)
     
   if args.plot:
     pm.plot_results(stars=stars,args=args)
@@ -703,20 +575,20 @@ if __name__ == "__main__":
   selected,dropped=pm.select_stars(stars=stars)
   logger.info('number of selected: {}, dropped: {} '.format(len(selected),len(dropped)))
 
-  if args.fit_eq:
-    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
+  if pm.mount_type_eq:
+    res=model.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
   else:
-    res=mdl.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
+    res=model.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
     
-  stars=pm.prepare_plot(cats=cats,mnts=mnts,nmls=nmls,selected=selected,model=mdl)
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,nmls=nmls,selected=selected,model=model)
   pm.plot_results(stars=stars,args=args)
   
   logger.info('number of selected: {}, dropped: {} '.format(len(selected),len(dropped)))
-  if args.fit_eq:
-    res=mdl.fit_model(cats=cats,mnts=mnts,selected=dropped,obs=pm.obs)
+  if pm.mount_type_eq:
+    res=model.fit_model(cats=cats,mnts=mnts,selected=dropped,obs=pm.obs)
   else:
-    res=mdl.fit_model(cats=cats,mnts=mnts,selected=dropped,fit_plus_poly=args.fit_plus_poly)
+    res=model.fit_model(cats=cats,mnts=mnts,selected=dropped,fit_plus_poly=args.fit_plus_poly)
   
-  stars=pm.prepare_plot(cats=cats,mnts=mnts,nmls=nmls,selected=dropped,model=mdl)
+  stars=pm.prepare_plot(cats=cats,mnts=mnts,nmls=nmls,selected=dropped,model=model)
   pm.plot_results(stars=stars,args=args)
   sys.exit(0)

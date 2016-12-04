@@ -98,8 +98,8 @@ class AnnoteFinder(object):
     self.lg.debug(self.aps[0].annotes[i_ap_ax_nml_id])
     if self.ds9_display:
       self.display_fits(fn=fn,x=0,y=0,color='red')
-    stop=False    
 
+    stop=False    
     for ap in self.aps:          
       #print('api ',i_q,i_ap_ax_nml_id)
       if (ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id]) in AnnoteFinder.drawnAnnotations:

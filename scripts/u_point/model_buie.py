@@ -21,12 +21,13 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import numpy as np
 from structures import Parameter
-from model_base import ModelBase
+from model_base import ModelHADec
 
-class Model(ModelBase):
+class Model(ModelHADec):
   def __init__(self,dbg=None,lg=None):
-    ModelBase.__init__(self,dbg=dbg,lg=lg)
+    ModelHADec.__init__(self,dbg=dbg,lg=lg)
     
+    self.fit_title='buie2003'
     self.Dd=Parameter(0.)
     self.gamma=Parameter(0.)
     self.theta=Parameter(0.)

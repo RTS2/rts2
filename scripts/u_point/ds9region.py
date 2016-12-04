@@ -58,7 +58,7 @@ class Ds9DisplayThread(threading.Thread):
             self.display.set('file {0}'.format(fitsFn))
 
         except Exception as e:
-            self.logger.warn('analyze: plotting fits with regions failed:\n{0}'.format(e))
+            self.logger.warn('ds9region: plotting fits with regions failed:\n{0}'.format(e))
             return False
 
         try:

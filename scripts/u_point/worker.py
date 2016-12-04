@@ -25,7 +25,8 @@ Multiprocesser Worker
 __author__ = 'wildi.markus@bluewin.ch'
 
 import numpy as np
-from multiprocessing import Process,Event,current_process
+from multiprocessing import Process,Event,current_process,Queue
+
 
 class Worker(Process):
   def __init__(self, work_queue=None,ds9_queue=None,next_queue=None,lock=None, dbg=None, lg=None, anl=None):
@@ -50,6 +51,7 @@ class Worker(Process):
       if self.ds9_queue is not None:
         try:
           cmd=self.ds9_queue.get()
+        # ToDO Empty is not correct
         except Queue.Empty:
           self.lg.info('{}: ds9 queue empty, returning'.format(current_process().name))
           return
@@ -85,7 +87,9 @@ class Worker(Process):
         self.lg.error('{}: got {}, call shutdown_on_STOP'.format(current_process().name, sky))
         self.shutdown_on_STOP()
         return
+      
       # analysis part
+      self.anl.catalog_to_apparent(sky=sky,pcn=current_process().name)
       x,y=self.anl.sextract(sky=sky,pcn=current_process().name)
       if x is not None and y is not None:
         self.anl.xy2lonlat_appr(px=x,py=y,sky=sky,pcn=current_process().name)

@@ -94,56 +94,52 @@ cd $HOME/rts2/scripts/u_point
 #
 if [ -z ${skip+x} ]; then
     #
-    echo "------------------------------------------------"
+    echo "-----------------------------------------------------------------"
     echo "first step, create site specific observable objects catalog and plot it"
     echo "fetching 9109 objects"
-    echo "./u_select.py --base-path $BASE_PATH --brightness-interval "5.0 7.0" --plot"
     #
     echo ""
-    echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-    echo "takes several 15 seconds..."
-    echo "close plot window to continue"
+    echo "-----------------------------------------------------------------"
+    echo "takes several 5 seconds..."
+    echo "CLOSE plot window to continue"
     echo ""
-    echo "./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot"
+    #echo "./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot"
     #
-    ./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot 
+    ./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot > /dev/null 2>&1
     #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
     #
     echo "DONE selecting stars"
 fi
 if [ -z ${skip+x} ]; then
-    echo "------------------------------------------------"
+    echo "-----------------------------------------------------------------"
     echo "second step, define a nominal grid of alt az positions and plot it"
-    echo "the grid as an az step of 40. deg (fewer objects)"
+    echo "the grid has an az step of 40. deg (fewer objects)"
     echo ""
-    echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-    echo "close plot window to continue"
+    echo "-----------------------------------------------------------------"
+    echo "CLOSE plot window to continue"
     echo ""
-    echo "./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40"
+    #echo "./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40"
     #
-    ./u_acquire.py --base-path $BASE_PATH --create --plot --alt-step 5 #--az-step 40
+    ./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40
     #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
     #
     echo "DONE grid creation"
 fi
-echo "------------------------------------------------"
+echo "-----------------------------------------------------------------"
 echo "third step, acquire positions from DSS: http://archive.eso.org/dss/dss"
 echo "since we do not use real equipment"
 echo "dummy meteo data are provided by meteo.py"
-echo "once u_acquire.py is running:"
-echo "- open an new terminal and do a: tail -f /tmp/u_acquire.log"
-echo "or just watch the progress in the plot window"
 echo ""
 if ! [ -z ${RTS2+x} ]; then
     #
     acq_script=" $HOME/rts2/scripts/u_point/u_acquire_fetch_dss_continuous.sh "
     #
-    echo "rts2-scriptexec -d C0 -s " exe $acq_script "  &"
+    #echo "rts2-scriptexec -d C0 -s " exe $acq_script "  &"
     #
     rts2-scriptexec -d C0 -s " exe $acq_script "  &
     export pid_u_acquire=$!
 else
-    echo "./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image --use-bright-stars &"
+    #echo "./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image --use-bright-stars &"
     #
     ./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image  --use-bright-stars &
     #
@@ -168,79 +164,69 @@ else
     ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole --level DEBUG &
 fi
 echo ""
-echo "^^^^^^^^^^^^^^^^^^^^^^"
+echo "-----------------------------------------------------------------"
 echo "leave plot window open"
 echo "click on blue points to see FITS being displayed with DS9"
 #
 if ps -p $pid_u_acquire >/dev/null; then
     echo ""
-    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "-----------------------------------------------------------------"
     echo "waiting for u_acquire to terminate, PID $pid_u_acquire"
-    echo "if plot is not clickable, like in my case, open another,"
-    echo "issue: "
+    echo "if plot is not clickable, issue: "
+    echo ""
     echo " cd $HOME/rts2/scripts/u_point ; ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole "
+    echo "-----------------------------------------------------------------"
     wait $pid_u_acquire
     #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 fi
 echo ""
-echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+echo "-----------------------------------------------------------------"
 echo "DONE u_acquire.py"
-echo
-echo "------------------------------------------------"
+echo "-----------------------------------------------------------------"
 echo "forth step, analyze the acquired position"
 echo "in this demo astrometry.net is disabled, since it is too slow for this purpose"
-echo "once u_analyze.py is running:"
-echo "- open an new terminal and do a: tail -f /tmp/u_analzse.log"
-echo "or just watch the progress in the plot window"
 echo ""
 if ! [ -z ${ASTROMETRY+x} ]; then
-    echo "./u_analyze.py  --base-path $BASE_PATH --toconsole --mount-type-eq&"
     #
-    ./u_analyze.py  --base-path $BASE_PATH   --timeout 30 --toconsole --mount-type-eq&
+    ./u_analyze.py  --base-path $BASE_PATH   --timeout 30 --toconsole --transform-with-class transform_libnova&
     export pid_u_analyze=$!
 else
-    echo "./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --toconsole --mount-type-eq&"
     #
-    ./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --toconsole --mount-type-eq&
+    ./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --toconsole&
     export pid_u_analyze=$!
 fi
 #
 ./u_analyze.py --base-path $BASE_PATH --plot --ds9-display --animate --delete&
 echo ""
-echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+echo "-----------------------------------------------------------------"
 echo "leave plot window open"
 echo "click on blue points to see FITS being displayed with DS9"
 if ps -p $pid_u_analyze >/dev/null; then
     echo ""
-    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "-----------------------------------------------------------------"
     echo "waiting for u_analyze.py to terminate, PID $pid_u_analyze"
     wait $pid_u_analyze
     #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 fi
 #
+echo "-----------------------------------------------------------------"
 echo "DONE u_analyze.py"
-echo "------------------------------------------------"
+echo ""
+echo "-----------------------------------------------------------------"
 echo "fifth step, create pointing model"
 echo ""
-echo "display results from SExtractor"
-
-echo "./u_point.py --base-path $BASE_PATH  --plot --ds9-display --delete --toconsole"
-./u_point.py --base-path $BASE_PATH  --plot --ds9-display --delete --toconsole  &
 #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 if ! [ -z ${ASTROMETRY+x} ]; then
     echo ""
-    echo "to continue with SExtractor analysis, press any key."
-    echo "pherhaps close all u_point.py plot windows first."
-    echo ""
-    read cont
-    
-    echo ""
-    echo "now displaying results from SExtractor, wait a moment"
-    echo "./u_point.py --base-path $BASE_PATH --fit-sextr --ds9-display --delete --plot --toconsole"
-    ./u_point.py --base-path $BASE_PATH  --fit-sextr --plot --ds9-display --delete --toconsole --ds9 &
+    echo "displaying results from astrometry.net"
+    ./u_point.py --base-path $BASE_PATH  --plot --ds9-display --delete --toconsole --model-class model_u_point --ds9& 
+else
+    echo "displaying results from SExtractor"
+    ./u_point.py --base-path $BASE_PATH  --plot --ds9-display --delete --toconsole  --model-class model_u_point --fit-sxtr& 
+
 fi
 echo ""
-echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+echo "-----------------------------------------------------------------"
 echo "leave plot windows open"
 echo "click on blue points to see FITS being displayed with DS9"
 echo ""

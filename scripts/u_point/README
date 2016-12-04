@@ -18,6 +18,7 @@ Prerequisites
 	      matplotlib
               pyds9
 	      pyfits
+	      pyephem
 	      
  libnova needs to be on LD_PATH as libnova.so
 
@@ -31,32 +32,6 @@ Prerequisites
   astrometry-data-2mass-05 (11'-16')
   astrometry-data-2mass-06 (16'-22')
   astrometry-data-2mass-07 (22'-30')
-
-Welcome to users of libindi, ASCOM or any other system
-======================================================
-
-98% of the code is independent of any specific system,
-like RTS2, libindi or ASCOM.
-
-Python lives on many OSs and architectures, hence
-using u_point with a diffrent combination is likely
-to work, or very soon.
-
-libnova versus astropy
-======================
-
-At the moment it is still unclear where the
-differences between libnova and astropy stems
-from. u_point uses per default astropy but
-for u_point.py --libnova can be specified.
-
-SExtractor versus astrometry.net
-================================
-
-When ever possible use astrometry.net (default)
-and not SExtractor. u_point.py uses per default
-results from astrometry.net, but --fit-sextr can
-be specified to obtain those results.
 
 Use cases
 =========
@@ -79,26 +54,93 @@ u_point's use cases are:
   ASCOM users can easily extend u_point (see
   devices.py or contact wildi.markus@bluewin.ch)
 
+For quick introduction see section: Very quick
+tour: do_it_all_dss.sh
+This script performs a full acquisition, position
+analysis and fit a pointing model. Progress and results
+are plotted.
+
+
+Welcome to users of libindi, ASCOM or any other system
+======================================================
+
+98% of the code is independent of any specific system,
+like RTS2, libindi or ASCOM.
+
+Python lives on many OSs and architectures, hence
+using u_point with a diffrent combination is likely
+to work, or very soon.
+
+libnova, astropy, PyEphem, Toshimi Taki
+=======================================
+
+At the moment it is still unclear where the
+differences between libnova and astropy stems
+from.
+In order to simplify sorting out these difference
+there are several 'transformers' available
+
+ ./u_analyze.py  --transform-with-class TRANSFORM
+
+where TRANSFORM is one of f the following options
+
+ transform_libnova
+ transform_astropy
+ transform_pyephem
+ (transform_taki_san)
+
+TRANSFORM is loaded at run time.
+
+Model selection
+===============
+
+There are several optimization models available:
+
+ u_point.py --model-class MODEL
+
+where MODEL is one of the following options
+
+ model_altaz
+
+for AltAz and for HA/Dec
+
+ model_buie
+ model_u_point
+
+Like TRANSFORM, MODEL is loaded at run time.
+
+SExtractor versus astrometry.net
+================================
+
+When ever possible use astrometry.net (default)
+and not SExtractor. u_point.py uses per default
+results from astrometry.net, but --fit-sextr can
+be specified to obtain those results.
+
 Coordinates
 ===========
-See http://docs.astropy.org/en/stable/coordinates/
+
+E.g. RTS2 provides corrections for (see libnova)
+
+ precession
+ nutation
+ aberration
+ refraction
+
+and can be considered as "apparent" coordinates as
+long as the resulting pointing error is greater than
+1 arcsec. Libnova's calculation of refraction needs
+to be revisited. If a mount controller does not
+provide these corrections the coordinates set at
+mount must be calculated and set.
 
 The catalog data (ICRS), labeled as cat_ic, are transformed
-to apparent, either AltAz (cat_aa) or HA,Dec (cat_ha),
-coordinates (apparent is not CIRS). Apparent means
-applying all necessary corrections including refraction.
-In some cases refraction is not applied (see pressure=0.)
+to apparent/observed, either AltAz (cat_aa) or HA,Dec (cat_ha).
 
-If a mount/telescope without any deficiencies is set
-with theses coordinates, the object is centered. 
-
-Coordinates read back from the mount, labeled as mnt_ci
-(CIRS,RA), mnt_ha (CIRS, HA) or mnt_aa (AltAz), in frames
-EQ/RA, EQ/HA or AltAz, have no corrections applied, e.g.
-for anual aberration or refraction etc.. Usually ICRS
-coordinates are set at the mount. The transformation to
-EQ/HA or to AltAz are mount coordinates and not apparent
-coordinates.
+Coordinates read back from the mount are labeled as mnt_ci
+(RA,Dec), mnt_ha (HA,Dec) or mnt_aa (AltAz), in frames
+EQ/RA, EQ/HA or AltAz. Usually values of ICRS coordinates
+are set at the mount.
 
 The coordinates exist in u_point source code as follows:
 
@@ -113,23 +155,67 @@ nml_aa: nominal position AltAz
 
 Catalog positions:
 ------------------
-cat_ic: catalog position ICRS
-cat_ci: catalog position CIRS (used only for grid)
+cat_ic: catalog position ICRS, RA,Dec
 cat_ha: apparent position HA/Dec
 cat_aa: apparent position AltAz 
 
-Mount positions:
-----------------
-These values are read back from the mount.
+cat_ra_ap: apparent position RA,Dec
+cat_az_ap: apparent position AltAz
 
-mnt_ic: while cat_ic pleonasm mnt_ic seems to be
-        a contradiction. mnt_ic is set by cat_ic
-	initially. In all other situations mnt_ic
-	plays the same role as cat_ic - being a
-	pair of RA,Dec values.
-	
-mnt_ha: HA,Dec read from the setting circles
-mnt_aa: AltAz read from the setting circles
+Mount positions:
+----------------	
+mnt_ap_set: input to the mount, values from cat_ap
+mnt_ra_rdb: read back from the mount
+
+mnt_ha_clc: HA,Dec calculated from cat_ap
+mnt_aa_rdb: AltAz read back from mount
+ 
+observed mount position:
+mnt_ll_sxtr: RA,Dec or AltAz, derived from SExtractor 
+mnt_ll_astr: RA,Dec or AltAz, derived from astrometry.net
+
+Measurement and Optimization
+============================
+
+Coordinates cat_ic are transformed to apparent AltAz
+cat_aa or to apparent HA,Dec cat_ha. In both
+cases refraction is included if meteo data is available.
+
+cat_ap is set at the mount (mnt_ap_set), assuming the
+mount controller does not applay any corrections. The
+differences
+
+ d_az  = cat_az_ap.az -  X.az
+ d_alt = cat_az_ap.alt - X.alt
+
+where X is either mnt_ll_sxtr or mnt_ll_astr, resp.
+
+ d_ha  = cat_ha_ap.ha - X.ha
+ d_dec = cat_ha_ap.dec - X.dec
+
+are minimized simultaneously. 
+
+Apparent coordinates
+====================
+
+According to http://www.iausofa.org/publications/sofa_pn.pdf
+the following steps are between ICRS and apparent/observed AltAz:
+ step                                              target system
+ space motion                                      BCRS
+ prallax (0".8)                                    astrometric RA,Dec
+ light deflection (<0".003,dist sun>15deg)
+ and aberration                                    GCRS
+  a) frame bias, equinox based precession-nutation geocentric apparent
+  b) frame bias, CIO based precession-nutation     CIRS
+  a) Greenwich apparent sidereal time              TIRS
+  b) Earth rotation angle                          TIRS
+ polar motion (0".1)                               ITRS
+ longitude                                         loacal apparent HA,Dec
+ diurnal aberration (0".3), paralax                topocentric HA,Dec
+ latitude                                          topocentric Az,Alt
+ refraction                                        observed Az,Alt
+And in addition 
+ latitude                                          observed HA,Dec
 
 
 Very quick tour: do_it_all_dss.sh

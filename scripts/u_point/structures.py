@@ -77,16 +77,18 @@ class SkyPosition(object):
       dt_end=None,
       dt_end_query=None,
       JD=None,
-      cat_ic_woffs=None,
-      mnt_ic=None,
-      mnt_aa=None,
+      mnt_ra_rdb=None,
+      mnt_aa_rdb=None,
       image_fn=None,
       exp=None,
       pressure=None,
       temperature=None,
       humidity=None,
-      sxtr=None,
-      astr=None):
+      mount_type_eq=None,
+      transform_name=None,
+      cat_ll_ap=None,
+      mnt_ll_sxtr=None,
+      mnt_ll_astr=None):
     
     self.nml_id=nml_id
     self.cat_no=cat_no
@@ -96,38 +98,54 @@ class SkyPosition(object):
     self.dt_end=dt_end
     self.dt_end_query=dt_end_query
     self.JD=JD
-    self.cat_ic_woffs=cat_ic_woffs # OFFS, offsets set manually
     # ToDo may wrong name
-    self.mnt_ic=mnt_ic # TEL, read back from encodes
-    self.mnt_aa=mnt_aa # TEL_ altaz 
+    self.mnt_ra_rdb=mnt_ra_rdb # TEL, read back from encodes
+    self.mnt_aa_rdb=mnt_aa_rdb # TEL_ altaz 
     self.image_fn=image_fn
     self.exp=exp
     self.pressure=pressure
     self.temperature=temperature
     self.humidity=humidity
-    self.sxtr=sxtr
-    self.astr=astr
+    self.mount_type_eq=mount_type_eq
+    self.transform_name=transform_name
+    self.cat_ll_ap=cat_ll_ap
+    self.mnt_ll_sxtr=mnt_ll_sxtr
+    self.mnt_ll_astr=mnt_ll_astr
     
   # ToDo still ugly
   def __str__(self):
     # ToDo a bit ugly, think about that
-    if self.sxtr is None:
-      sxtr_lat_radian=np.nan
-      sxtr_lon_radian=np.nan
+    # to compare sxtr and astr values sxtr is in RA,Dec!
+    if self.cat_ll_ap is None:
+      cat_ll_ap_lon=np.nan
+      cat_ll_ap_lat=np.nan
     else:
-      ssxtr=self.sxtr.represent_as(SphericalRepresentation)
-      sxtr_lon_radian=ssxtr.lon.radian
-      sxtr_lat_radian=ssxtr.lat.radian
-      
-    if self.astr is None:
-      astr_lon_radian=np.nan
-      astr_lat_radian=np.nan
+      scat_ll_ap=self.cat_ll_ap.represent_as(SphericalRepresentation)
+      cat_ll_ap_lon=scat_ll_ap.lon.radian
+      cat_ll_ap_lat=scat_ll_ap.lat.radian
+
+    if self.mnt_ll_sxtr is None:
+      mnt_ll_sxtr_lon=np.nan
+      mnt_ll_sxtr_lat=np.nan
     else:
-      sastr=self.astr.represent_as(SphericalRepresentation)
-      astr_lon_radian=sastr.lon.radian
-      astr_lat_radian=sastr.lat.radian
+      smnt_ll_sxtr=self.mnt_ll_sxtr.represent_as(SphericalRepresentation)
+      mnt_ll_sxtr_lon=smnt_ll_sxtr.lon.radian
+      mnt_ll_sxtr_lat=smnt_ll_sxtr.lat.radian
       
-    anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24}'.format(
+    if self.mnt_ll_astr is None:
+      mnt_ll_astr_lon=np.nan
+      mnt_ll_astr_lat=np.nan
+    else:
+      smnt_ll_astr=self.mnt_ll_astr.represent_as(SphericalRepresentation)
+      mnt_ll_astr_lon=smnt_ll_astr.lon.radian
+      mnt_ll_astr_lat=smnt_ll_astr.lat.radian
+
+    if self.transform_name is None:
+      transform_name='no_transform'
+    else:
+      transform_name=self.transform_name
+      
+    anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24},{25},{26}'.format(
       self.nml_id,#0
       self.cat_no,#1
       self.nml_aa.az.radian,#2
@@ -138,21 +156,23 @@ class SkyPosition(object):
       self.dt_end,#7
       self.dt_end_query,#8
       self.JD,#9
-      self.cat_ic_woffs.ra.radian,#10
-      self.cat_ic_woffs.dec.radian,#11
-      self.mnt_ic.ra.radian,#12
-      self.mnt_ic.dec.radian,#13
-      self.mnt_aa.az.radian,#14
-      self.mnt_aa.alt.radian,#15
-      self.image_fn,#16
-      self.exp,#17
-      self.pressure,
-      self.temperature,
-      self.humidity,#20
-      sxtr_lon_radian,
-      sxtr_lat_radian,
-      astr_lon_radian,
-      astr_lat_radian,#24
+      self.mnt_ra_rdb.ra.radian,#10
+      self.mnt_ra_rdb.dec.radian,#11
+      self.mnt_aa_rdb.az.radian,#12
+      self.mnt_aa_rdb.alt.radian,#13
+      self.image_fn,#14
+      self.exp,#15
+      self.pressure,#16
+      self.temperature,#17
+      self.humidity,#18
+      self.mount_type_eq,#19
+      transform_name,#20
+      cat_ll_ap_lon,#21
+      cat_ll_ap_lat,#22
+      mnt_ll_sxtr_lon,#23
+      mnt_ll_sxtr_lat,#24
+      mnt_ll_astr_lon,#25
+      mnt_ll_astr_lat,#26
     )
     return anl_str
 
@@ -168,21 +188,23 @@ cl_nms= [
   'dt_end',#7
   'dt_end_query',#8
   'JD',#9
-  'cat_ic_woffs_ra',#10
-  'cat_ic_woffs_dec',#11
-  'mnt_ic_ra',#12
-  'mnt_ic_dec',#13
-  'mnt_aa_az',#14
-  'mnt_aa_alt',#15
-  'image_fn',#16
-  'exp',#17
-  'pressure',#18
-  'temperature',#19
-  'humidity',#20
-  'sxtr_ra',#21
-  'sxtr_dec',#22
-  'astr_ra',#23
-  'astr_dec',#24
+  'mnt_ra_rdb_ra',#10
+  'mnt_ra_rdb_dec',#11
+  'mnt_aa_rdb_az',#12
+  'mnt_aa_rdb_alt',#13
+  'image_fn',#14
+  'exp',#15
+  'pressure',#16
+  'temperature',#17
+  'humidity',#18
+  'mount_type_eq',#19
+  'transform_name',#20
+  'cat_ll_ap_lon',#21
+  'cat_ll_ap_lat',#22
+  'mnt_ll_sxtr_lon',#23
+  'mnt_ll_sxtr_lat',#24
+  'mnt_ll_astr_lon',#25
+  'mnt_ll_astr_lat',#26
 ]
 # legacy, will go away
 cl_acq= [
@@ -196,16 +218,14 @@ cl_acq= [
   'dt_end',#7
   'dt_end_query',#8
   'JD',#9
-  'cat_ic_woffs_ra',#10
-  'cat_ic_woffs_dec',#11
-  'mnt_ic_ra',#12
-  'mnt_ic_dec',#13
-  'mnt_aa_az',#14
-  'mnt_aa_alt',#15
-  'image_fn',#16
-  'exp',#17
-  'pressure',#18
-  'temperature',#19
-  'humidity',#20
+  'mnt_ic_ra',#10
+  'mnt_ic_dec',#11
+  'mnt_aa_az',#12
+  'mnt_aa_alt',#13
+  'image_fn',#14
+  'exp',#15
+  'pressure',#16
+  'temperature',#17
+  'humidity',#28
 ]
 

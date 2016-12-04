@@ -25,6 +25,8 @@ from astropy.coordinates.representation import SphericalRepresentation
 
 
 class ModelBase(object):
+  model_type='base'
+
   def __init__(self,dbg=None,lg=None):
     self.dbg=dbg
     self.lg=lg
@@ -67,3 +69,20 @@ class ModelBase(object):
 
     p = [param() for param in self.parameters]
     return scipy.optimize.leastsq(local_f, p)#,full_output=True)
+
+
+class ModelAltAz(ModelBase):
+  model_type_name='altaz'
+  def __init__(self,dbg=None,lg=None):
+    ModelBase.__init__(self,dbg=dbg,lg=lg)
+
+  def model_type(self):
+    return ModelAltAz.model_type_name
+  
+class ModelHADec(ModelBase):
+  model_type_name='hadec'  
+  def __init__(self,dbg=None,lg=None):
+    ModelBase.__init__(self,dbg=dbg,lg=lg)
+    
+  def model_type(self):
+    return ModelHADec.model_type_name

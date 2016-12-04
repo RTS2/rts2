@@ -59,6 +59,7 @@ class DeviceDss(object):
     self.ccd_size=ccd_size
     self.base_path=base_path
     self.fetch_dss_image=fetch_dss_image
+    self.mount_type_eq=True
     self.cat_ic=None
     self.dss_image_ptfn=None
     self.dss_image_fn=None
@@ -67,9 +68,6 @@ class DeviceDss(object):
     self.dt_end=None
     self.nml_id=None
     self.cat_no=None
-    self.pressure=None
-    self.temperature=None
-    self.humidity=None
     
   def check_presence(self,**kwargs):
     return True
@@ -82,12 +80,9 @@ class DeviceDss(object):
   def ccd_init(self):
     pass
 
-  def ccd_expose(self,exp=None, pressure=None,temperature=None,humidity=None):
+  def ccd_expose(self,exp=None):
     
     self.exp=exp # not really used
-    self.pressure=pressure
-    self.temperature=temperature
-    self.humidity=humidity
     
     width= '{}'.format(float(self.ccd_size[0]) * self.px_scale_arcmin) # DSS [arcmin]
     height= '{}'.format(float(self.ccd_size[1]) * self.px_scale_arcmin) # DSS [arcmin]
@@ -130,38 +125,31 @@ class DeviceDss(object):
     self.nml_id=nml_id
     self.cat_no=cat_no
     self.cat_ic=cat_ic
+    self.mnt_ap_set=cat_ic
   
   def fetch_mount_data(self):
     if self.cat_ic is None:
       return None
-    JD=-1.      
-    cat_ic=SkyCoord(ra=self.cat_ic.ra.radian,dec=self.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
-    cat_ic_woffs=SkyCoord(ra=0.,dec=0., unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
-    # ToDo think about
-    mnt_ic=cat_ic
-    #
-    mnt_aa=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
-    # ToDo wrong?:
+    JD=np.nan
+    # simulation
+    mnt_ra_rdb=SkyCoord(ra=self.cat_ic.ra.radian,dec=self.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
+    mnt_aa_rdb=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
     nml_aa=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
-      
-    dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
+    dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     sky=SkyPosition(
       nml_id=self.nml_id,
       cat_no=self.cat_no,
       nml_aa=nml_aa,
-      cat_ic=cat_ic,
+      cat_ic=self.cat_ic,
       dt_begin=self.dt_begin,
       dt_end=self.dt_end,
       dt_end_query=dt_end_query,
       JD=JD,
-      cat_ic_woffs=cat_ic_woffs,
-      mnt_ic=mnt_ic,
-      mnt_aa=mnt_aa,
+      mnt_ra_rdb=mnt_ra_rdb,
+      mnt_aa_rdb=mnt_aa_rdb,
       image_fn=self.dss_image_fn, # only fn
       exp=self.exp,
-      pressure=self.pressure,
-      temperature=self.temperature,
-      humidity=self.humidity,
+      mount_type_eq=self.mount_type_eq,
     )
     return sky
 
@@ -185,18 +173,17 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.ccd_size=ccd_size
     self.fetch_dss_image=fetch_dss_image
 
+    self.mount_type_eq=True #, init? ToDo, ev. fetch it from RTS2
     self.mnt_nm=None
     self.ccd_nm=None
     self.dt_begin=None
     self.cat_ic=None
+    self.mnt_ap_set=None
     self.exp=None
     self.dt_begin=None
     self.dt_end=None
     self.nml_id=None
     self.cat_no=None
-    self.pressure=None
-    self.temperature=None
-    self.humidity=None
     self.image_fn=None
     # a bit a murcks
     # RTS2 dummy driver has only noisy pictures
@@ -241,14 +228,11 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     # make sure we are taking light images..
     self.setValue('SHUTTER','LIGHT')
 
-  def ccd_expose(self,exp=None,pressure=None,temperature=None,humidity=None):
+  def ccd_expose(self,exp=None):
     # ToDo check if Morvian can be read out in parallel (RTS2, VM Windows)
     # ToDo if not use maa-2015-10-18.py
 
     self.exp=exp
-    self.pressure=pressure
-    self.temperature=temperature
-    self.humidity=humidity
     # RTS2 does synchronization mount/CCD
     self.lg.debug('expose: time {}'.format(self.exp))
     self.setValue('exposure',self.exp)
@@ -265,7 +249,7 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
           pass # do not care
 
       self.d_dss.store_mount_data(cat_ic=self.cat_ic,nml_id=self.nml_id,cat_no=self.cat_no)
-      self.exp=self.d_dss.ccd_expose(exp=self.exp,pressure=self.pressure,temperature=self.temperature,humidity=self.humidity)
+      self.exp=self.d_dss.ccd_expose(exp=self.exp)
       self.image_fn=self.d_dss.dss_image_fn # only fn
       self.lg.debug('expose: image from DSS: {}'.format(self.image_fn))
     else:
@@ -276,8 +260,10 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
   def store_mount_data(self,cat_ic=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
+    # ToDo transform from cat_ic to cat_ap and disable the corrections in RTS2 mount
     self.cat_ic=cat_ic
-
+    self.mnt_ap_set=cat_ic
+    
     self.setValue('ORI','{0} {1}'.format(self.cat_ic.ra.degree,self.cat_ic.dec.degree),self.mnt_nm)
     ra_oris,dec_oris=self.getValue('ORI',self.mnt_nm).split()
     self.lg.debug('ORI: {0:.3f},{1:.3f}'.format(float(ra_oris),float(dec_oris)))
@@ -288,26 +274,18 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
       return None
     
     JD=float(self.getValue('JD',self.mnt_nm))
-    ras,decs=self.getValue('ORI',self.mnt_nm).split()
     now = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
-    # cat_ic and mnt_ic have the same value mnt_ic is set by cat_ic
-    cat_ic=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
-    
-    ras,decs=self.getValue('WOFFS',self.mnt_nm).split()
-    cat_ic_woffs=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
-
     ras,decs=self.getValue('TEL',self.mnt_nm).split()
     # ToDo in RTS2: ORI + WOFFS + ...=TEL
     # all corrections must be turned off
     # see cat_ic above!
-    mnt_ic=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    mnt_ra_rdb=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
 
     alts,azs=self.getValue('TEL_',self.mnt_nm).split()
     # RTS2 and IAU: S=0,W=90
-    # astropy: N=0,E=90
-    mnt_aa=SkyCoord(az=float(azs)-180.,alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
+    # astropy: N=0,E=90               |||
+    mnt_aa_rdb=SkyCoord(az=float(azs)-180.,alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
 
-    # ToDo,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)
     # ToDo wrong:
     nml_aa=SkyCoord(az=float(azs),alt=float(alts),unit=(u.degree,u.degree),frame='altaz',location=self.obs,obstime=now)
     dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
@@ -315,18 +293,15 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
       nml_id=self.nml_id,
       cat_no=self.cat_no,
       nml_aa=nml_aa,
-      cat_ic=cat_ic,
+      cat_ic=self.cat_ic,
       dt_begin=self.dt_begin,
       dt_end=self.dt_end,
       dt_end_query=dt_end_query,
       JD=JD,
-      cat_ic_woffs=cat_ic_woffs,
-      mnt_ic=mnt_ic,
-      mnt_aa=mnt_aa,
+      mnt_ra_rdb=mnt_ra_rdb,
+      mnt_aa_rdb=mnt_aa_rdb,
       image_fn=self.image_fn,
       exp=self.exp,
-      pressure=self.pressure,
-      temperature=self.temperature,
-      humidity=self.humidity,
+      mount_type_eq=self.mount_type_eq,
     )
     return sky

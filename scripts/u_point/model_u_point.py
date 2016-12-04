@@ -21,11 +21,13 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import numpy as np
 from structures import Parameter
-from model_base import ModelBase
+from model_base import ModelHADec
 
-class Model(ModelBase):
+class Model(ModelHADec):
   def __init__(self,dbg=None,lg=None):
-    ModelBase.__init__(self,dbg=dbg,lg=lg)
+    ModelHADec.__init__(self,dbg=dbg,lg=lg)
+
+    self.fit_title='u_point'
     self.IH=Parameter(0.)
     self.ID=Parameter(0.)
     self.CH=Parameter(0.)
@@ -44,7 +46,7 @@ class Model(ModelBase):
   # CH collimation error CH * sec(delta)
   # NP ha/delta non-perpendicularity NP*tan(delta)
   # MA polar axis left-right misalignment ha: -MA* cos(ha)*tan(delta), dec: MA*sin(ha)
-  # ME polar axis verticsl misalignment: ha: ME*sin(ha)*tan(delta), dec: ME*cos(ha)
+  # ME polar axis vertical misalignment: ha: ME*sin(ha)*tan(delta), dec: ME*cos(ha)
   # TF tube flexure, ha: TF*cos(phi)*sin(ha)*sec(delta), dec: TF*(cos(phi)*cos(ha)*sind(delta)-sin(phi)*cos(delta)
   # FO fork flexure, dec: FO*cos(ha)
   # DAF dec axis flexure, ha: -DAF*(cos(phi)*cos(ha) + sin(phi)*tan(dec)
@@ -96,7 +98,7 @@ class Model(ModelBase):
     self.lg.info('CH : collimation error              :{0:+12.4f} [arcsec]'.format(self.CH()*180.*3600./np.pi))
     self.lg.info('NP : ha/delta non-perpendicularity  :{0:+12.4f} [arcsec]'.format(self.NP()*180.*3600./np.pi))
     self.lg.info('MA : polar axis left-right alignment:{0:+12.4f} [arcsec]'.format(self.MA()*180.*3600./np.pi))
-    self.lg.info('ME : polar axis verticsl alignment  :{0:+12.4f} [arcsec]'.format(self.ME()*180.*3600./np.pi))
+    self.lg.info('ME : polar axis vertical alignment  :{0:+12.4f} [arcsec]'.format(self.ME()*180.*3600./np.pi))
     self.lg.info('TF : tube flexure                   :{0:+12.4f} [arcsec]'.format(self.TF()*180.*3600./np.pi))
     self.lg.info('FO : fork flexure                   :{0:+12.4f} [arcsec]'.format(self.FO()*180.*3600./np.pi))
     self.lg.info('DAF: dec axis flexure               :{0:+12.4f} [arcsec]'.format(self.DAF()*180.*3600./np.pi))

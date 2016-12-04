@@ -32,18 +32,23 @@ import socket
 import numpy as np
 import requests
 import pyinotify
+import importlib
 
 from multiprocessing import Lock, Queue, cpu_count
 
 from datetime import datetime
 from astropy import units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord,EarthLocation
+from astropy.coordinates import EarthLocation
+from astropy.coordinates import SkyCoord,Longitude,Latitude
 
 from astropy.utils import iers
 # astropy pre 1.2.1 may not work correctly
 #  wget http://maia.usno.navy.mil/ser7/finals2000A.all
 # together with IERS_A_FILE
+# see Working Offline
+#     http://docs.astropy.org/en/stable/utils/iers.html#utils-iers
+### iers.conf.auto_download = False  
 try:
   iers.IERS.iers_table = iers.IERS_A.open(iers.IERS_A_FILE)
 #                                               ###########
@@ -61,6 +66,7 @@ from worker import Worker
 from solver import SolverResult,Solver
 from script import Script
 
+
 class Analysis(Script):
   def __init__(
       self, dbg=None,
@@ -74,26 +80,44 @@ class Analysis(Script):
       px_scale=None,
       ccd_size=None,
       ccd_angle=None,
-      mount_type_eq=None,
       verbose_astrometry=None,
       ds9_display=None,
       solver=None,
+      transform=None,
   ):
     Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,acquired_positions=acquired_positions,analyzed_positions=analyzed_positions,acq_e_h=acq_e_h)
     #
     self.px_scale=px_scale
     self.ccd_size=ccd_size
     self.ccd_angle=args.ccd_angle
-    self.mount_type_eq=mount_type_eq
     self.verbose_astrometry=verbose_astrometry
     self.ds9_display=ds9_display
     self.solver=solver
+    self.transform=transform
     #
     self.ccd_rotation=self.rot(self.ccd_angle)
     self.acquired_positions=acquired_positions
     self.analyzed_positions=analyzed_positions
     self.dt_utc=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
-                    
+
+
+  def catalog_to_apparent(self,sky=None,pcn=None):
+    # use this to check the internal accuracy of astropy
+    #mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
+      
+    if sky.mount_type_eq:
+      tr_t_tf=self.transform.transform_to_hadec
+    else:
+      tr_t_tf=self.transform.transform_to_altaz
+
+    # cat_tf is either cat_aa or cat_ha
+    sky.cat_ll_ap=tr_t_tf(ic=sky.cat_ic,tem=sky.temperature,pre=sky.pressure,hum=sky.humidity,apparent=True)
+    #sim=SkyCoord(ra=sky.cat_ic.ra.radian,dec=sky.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=sky.dt_end,location=self.obs)
+    #sky.cat_ll_ap=tr_t_tf(ic=sim,tem=sky.temperature,pre=sky.pressure,hum=sky.humidity,apparent=True)
+    #print('CAT IC   ', sky.cat_ic)
+    #print('CAT ll ap', sky.cat_ll_ap)
+    
+  # rotation matrix for xy2lonlat
   def rot(self,rads):
     s=np.sin(rads)
     c=np.cos(rads)
@@ -102,13 +126,9 @@ class Analysis(Script):
   def xy2lonlat_appr(self,px=None,py=None,sky=None,pcn=None):
     # mnt_ic: read back from mount
     # in case of RTS2 it includes any OFFS, these are manual corrections
-    if self.mount_type_eq:
-      ln0=sky.cat_ic.ra.radian
-      lt0=sky.cat_ic.dec.radian
-    else:
-      aa=self.to_altaz(ic=sky.cat_ic)
-      ln0=aa.az.radian
-      lt0=aa.alt.radian
+    # ToDo transform cat_ic to cat_
+    ln0=sky.cat_ll_ap.ra.radian
+    lt0=sky.cat_ll_ap.dec.radian
     
     # ccd angle relative to +dec, +alt
     p=np.array([px,py])
@@ -123,33 +143,25 @@ class Analysis(Script):
     # FITS with astrometry:
     #  +x: -ra
     #  +y: +dec
-    if self.mount_type_eq:
-      lon=ln0 - (px_r * self.px_scale/np.cos(lt0))
+    # HA is right handed too
+    if sky.mount_type_eq:
+      lon=ln0 + (px_r * self.px_scale/np.cos(lt0))
       lat=lt0 + py_r * self.px_scale
-      #self.lg.debug('{0}: sextract   center: {1:.6f} {2:.6f}'.format(pcn,ln0*180./np.pi,lt0*180./np.pi))
-      #self.lg.debug('{0}: sextract   star  : {1:.6f} {2:.6f}'.format(pcn,lon*180./np.pi,lat*180./np.pi))
+      #self.lg.debug('{0}: sextract   center: {1:12.7f} {2:12.7f}'.format(pcn,ln0*180./np.pi,lt0*180./np.pi))
+      #self.lg.debug('{0}: sextract   star  : {1:12.7f} {2:12.7f}'.format(pcn,lon*180./np.pi,lat*180./np.pi))
     else:
       # astropy AltAz frame is right handed
       # +x: +az
       # +y: +alt
-      az=ln0 + px_r * self.px_scale/np.cos(lt0)
-      alt=lt0 + py_r * self.px_scale
-      #self.lg.debug('{0}: sextract   center: {1:.6f} {2:.6f}'.format(pcn,ln0*180./np.pi,lt0*180./np.pi))
-      #self.lg.debug('{0}: sextract   star  : {1:.6f} {2:.6f}'.format(pcn,az*180./np.pi,alt*180./np.pi))
-      
-      # ToDo exptime: dt_end - exp/2.
-      aa=SkyCoord(az=az,alt=alt,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=sky.dt_end)
-      ic=self.to_ic(aa=aa)
-      lon=ic.ra.radian
-      lat=ic.dec.radian
+      lon=ln0 + px_r * self.px_scale/np.cos(lt0)
+      lat=lt0 + py_r * self.px_scale
       
     ptfn=self.expand_base_path(fn=sky.image_fn)
-    self.lg.debug('{0}: sextract   result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,ptfn))
-    if self.mount_type_eq:
-      sky.sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='cirs',location=self.obs)
+    self.lg.debug('{0}:   sextract   result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,ptfn))
+    if sky.mount_type_eq:
+      sky.mnt_ll_sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='cirs',location=self.obs)
     else:
-      sky.sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
-
+      sky.mnt_ll_sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
   
   def sextract(self,sky=None,pcn='single'):
     #if self.ds9_display:
@@ -179,7 +191,7 @@ class Analysis(Script):
     x=brst[i_x]-self.ccd_size[0]/2.
     y=brst[i_y]-self.ccd_size[1]/2.
 
-    self.lg.debug('{0}: sextract relative to center: {1:4.1f} px,{2:4.1f} px,{3:4.3f} mag'.format(pcn,x,y,brst[i_m]))
+    self.lg.debug('{0}:   sextract relative to center: {1:4.1f} px,{2:4.1f} px,{3:4.3f} mag'.format(pcn,x,y,brst[i_m]))
     if self.ds9_display:
       # absolute
       self.display_fits(fn=ptfn, x=brst[i_x],y=brst[i_y],color='red')
@@ -191,50 +203,76 @@ class Analysis(Script):
 
     ptfn=self.expand_base_path(fn=sky.image_fn)
 
-    self.lg.debug('{0}:         mount set: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sky.cat_ic.ra.degree,sky.cat_ic.dec.degree,ptfn))
-    if sky.mnt_ic.ra.radian != 0. and sky.mnt_ic.dec.radian != 0.:
-      self.lg.debug('{0}:   mount read back: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sky.mnt_ic.ra.degree,sky.mnt_ic.dec.degree,ptfn))
+    self.lg.debug('{0}:           mount set: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sky.cat_ic.ra.degree,sky.cat_ic.dec.degree,ptfn))
+    if sky.mnt_ra_rdb.ra.radian != 0. and sky.mnt_ra_rdb.dec.radian != 0.:
+      self.lg.debug('{0}:     mount read back: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sky.mnt_ra_rdb.ra.degree,sky.mnt_ra_rdb.dec.degree,ptfn))
 
     sr= self.solver.solve_field(fn=ptfn,ra=sky.cat_ic.ra.degree,dec=sky.cat_ic.dec.degree,)
     if sr is not None:
-      self.lg.debug('{0}: astrometry result: {1:.6f} {2:.6f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
-      sky.astr=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs)
+      self.lg.debug('{0}:ic astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
+
+      mnt_ll=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='cirs',location=self.obs,obstime=sky.dt_end)
+      if sky.mount_type_eq:
+        tr_t_tf=self.transform.transform_to_hadec
+      else:
+        tr_t_tf=self.transform.transform_to_altaz
+
+      sky.mnt_ll_astr=self.transform.transform_to_hadec(ic=mnt_ll,apparent=False)
+
+      if sky.mount_type_eq:
+        self.lg.debug('{0}:ha astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sky.mnt_ll_astr.ra.degree,sky.mnt_ll_astr.dec.degree,ptfn))
+      else:
+        self.lg.debug('{0}:aa astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
+    
     else:
       self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,ptfn))
 
   def re_plot(self,i=0,animate=None):
     
-    self.fetch_positions(sys_exit=True,analyzed=False)
     self.fetch_positions(sys_exit=False,analyzed=True)
     #                                                               if self.anl=[]
-    sxtr_mnt_ic_ra=[x.sxtr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.sxtr is not None]
-    sxtr_mnt_ic_dec=[x.sxtr.dec.degree for x in self.sky_anl if x is not None and x.sxtr is not None]
+    # sxtr is RA,Dec to compare with astr
+    # ToDo think about tranforming astr to AltAz,pressure=0.
+    # use SphericalRepr..
+    # ToDo [0] ugly
+    if self.sky_acq[0].mount_type_eq:
+      mnt_ll_sxtr_lon=[x.mnt_ll_sxtr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_sxtr is not None]
+      mnt_ll_sxtr_lat=[x.mnt_ll_sxtr.dec.degree for x in self.sky_anl if x is not None and x.mnt_ll_sxtr is not None]
+    else:
+      mnt_ll_sxtr_lon=[x.mnt_ll_sxtr.az.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_sxtr is not None]
+      mnt_ll_sxtr_lat=[x.mnt_ll_sxtr.alt.degree for x in self.sky_anl if x is not None and x.mnt_ll_sxtr is not None]
+      
+    if self.sky_acq[0].mount_type_eq:
+      mnt_ll_astr_lon=[x.mnt_ll_astr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_astr is not None]  
+      mnt_ll_astr_lat=[x.mnt_ll_astr.dec.degree for x in self.sky_anl if x is not None and x.mnt_ll_astr is not None]
+    else:
+      mnt_ll_astr_lon=[x.mnt_ll_astr.az.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_astr is not None]  
+      mnt_ll_astr_lat=[x.mnt_ll_astr.alt.degree for x in self.sky_anl if x is not None and x.mnt_ll_astr is not None]
 
-    astr_mnt_ic_ra=[x.astr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.astr is not None]  
-    astr_mnt_ic_dec=[x.astr.dec.degree for x in self.sky_anl if x is not None and x.astr is not None]
-
-    cat_ic_ra =[x.cat_ic.ra.degree for x in self.sky_acq]
-    cat_ic_dec = [x.cat_ic.dec.degree for x in self.sky_acq]
-
+      
     self.ax.clear()
-    self.ax.scatter(cat_ic_ra, cat_ic_dec,color='blue',s=120.)
-    self.ax.scatter(sxtr_mnt_ic_ra, sxtr_mnt_ic_dec,color='red',s=40.)
-    self.ax.scatter(astr_mnt_ic_ra, astr_mnt_ic_dec,color='yellow',s=10.)
+    self.ax.scatter(self.cat_ll_ap_lon, self.cat_ll_ap_lat,color='blue',s=120.)
+    self.ax.scatter(mnt_ll_sxtr_lon, mnt_ll_sxtr_lat,color='red',s=40.)
+    self.ax.scatter(mnt_ll_astr_lon, mnt_ll_astr_lat,color='yellow',s=10.)
     # mark last positions
-    if len(sxtr_mnt_ic_ra) > 0:
-      self.ax.scatter(sxtr_mnt_ic_ra[-1],sxtr_mnt_ic_dec[-1],color='green',facecolors='none', edgecolors='green',s=300.)
-    if len(astr_mnt_ic_ra) > 0:
-      self.ax.scatter(astr_mnt_ic_ra[-1],astr_mnt_ic_dec[-1],color='green',facecolors='none', edgecolors='magenta',s=400.)
+    if len(mnt_ll_sxtr_lon) > 0:
+      self.ax.scatter(mnt_ll_sxtr_lon[-1],mnt_ll_sxtr_lat[-1],color='green',facecolors='none', edgecolors='green',s=300.)
+    if len(mnt_ll_astr_lon) > 0:
+      self.ax.scatter(mnt_ll_astr_lon[-1],mnt_ll_astr_lat[-1],color='green',facecolors='none', edgecolors='magenta',s=400.)
 
     self.ax.set_xlim([0.,360.]) 
+
+    ttl_frg='azimuth'
+    if self.sky_acq[0].mount_type_eq:
+      ttl_frg='HA'
 
     if animate:
       self.ax.set_title(self.title, fontsize=10)
       now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
-      self.ax.set_xlabel('RA [deg], at: {0} [UTC]'.format(now))
+      self.ax.set_xlabel('{0} [deg], at: {1} [UTC]'.format(ttl_frg,now))
     else:
       self.ax.set_title(self.title)
-      self.ax.set_xlabel('RA [deg]')
+      self.ax.set_xlabel('{0} [deg]'.format(ttl_frg))
     
     self.ax.annotate('positions:',color='black', xy=(0.03, 0.05), xycoords='axes fraction')
     self.ax.annotate('acquired',color='blue', xy=(0.16, 0.05), xycoords='axes fraction')
@@ -243,13 +281,17 @@ class Analysis(Script):
     self.ax.annotate('last sxtr',color='green', xy=(0.63, 0.05), xycoords='axes fraction')
     self.ax.annotate('last astr',color='magenta', xy=(0.83, 0.05), xycoords='axes fraction')
 
-    self.ax.set_ylabel('declination [deg]')  
+    ttl_frg='altitude'
+    if self.sky_acq[0].mount_type_eq:
+      ttl_frg='declination'
+    self.ax.set_ylabel('{0} [deg]'.format(ttl_frg))
+                       
     self.ax.grid(True)
     # ToDo: was nu? debug?
     #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ic.ra.degree,x.cat_ic.dec.degree,x.image_fn) for x in self.sky_acq]
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree,x.mnt_aa.alt.degree,x.image_fn) for x in self.sky_acq]
-    nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_ic is not None]
-    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=cat_ic_ra,lat=cat_ic_dec,annotes=annotes)]
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa_rdb.az.degree,x.mnt_aa_rdb.alt.degree,x.image_fn) for x in self.sky_acq]
+    nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa_rdb is not None]
+    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=self.cat_ll_ap_lon,lat=self.cat_ll_ap_lat,annotes=annotes)]
   
     # does not exits at the beginning
     return aps
@@ -266,6 +308,17 @@ class Analysis(Script):
     fig = plt.figure(figsize=(8,6))
     self.ax = fig.add_subplot(111)
     self.title=title
+    # we want to see something, values are only for the plot
+    # this is cat not apparent
+    
+    self.fetch_positions(sys_exit=True,analyzed=False)
+    if self.sky_acq[0].mount_type_eq:
+      self.cat_ll_ap_lon=[self.transform.transform_to_hadec(ic=x.cat_ic,pre=0.).ra.degree for x in self.sky_acq]
+      self.cat_ll_ap_lat=[self.transform.transform_to_hadec(ic=x.cat_ic).dec.degree for x in self.sky_acq]
+    else:
+      #cat_ll_ap_lat,cat_ll_ap_lat=[(self.to_altaz(ic=x.cat_ic).az.degree,self.to_altaz(ic=x.cat_ic).alt.degree) for x in self.sky_acq]
+      self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic).az.degree for x in self.sky_acq]
+      self.cat_ll_ap_lat=[self.to_altaz(ic=x.cat_ic).alt.degree for x in self.sky_acq]
 
     if animate:
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
@@ -313,12 +366,13 @@ if __name__ == "__main__":
   # angle is defined relative to the positive dec or alt direction
   # the rotation is anti clock wise (right hand coordinate system)
   parser.add_argument('--ccd-angle', dest='ccd_angle', default=0., type=float, help=': %(default)s [deg], ccd angle measured anti clock wise relative to positive Alt or Dec axis, rotation of 180. ')
-  parser.add_argument('--mount-type-eq', dest='mount_type_eq', action='store_true',default=False, help=': %(default)s, True: equatorial mount, False: altaz. Only used together with SExtractor.')
+
   # group SExtractor, astrometry.net
   parser.add_argument('--timeout', dest='timeout', action='store', default=120,type=int, help=': %(default)s [sec], astrometry timeout for finding a solution')
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
+  parser.add_argument('--transform-with-class', dest='transform_with_class', action='store', default='transform_astropy', help=': %(default)s, one of transform_(astropy|libnova|pyephem)')
 
   args=parser.parse_args()
   
@@ -350,13 +404,17 @@ if __name__ == "__main__":
     nt.start()
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
+
+  tf = importlib.import_module(args.transform_with_class)
+  logger.info('transformation loaded: {}'.format(args.transform_with_class))
+  transform=tf.Transformation(lg=logger,obs=obs)
+
   anl= Analysis(
     lg=logger,
     obs=obs,
     px_scale=px_scale,
     ccd_size=args.ccd_size,
     ccd_angle=args.ccd_angle/180. * np.pi,
-    mount_type_eq=args.mount_type_eq,
     acquired_positions=args.acquired_positions,
     analyzed_positions=args.analyzed_positions,
     break_after=args.break_after,
@@ -364,6 +422,7 @@ if __name__ == "__main__":
     base_path=args.base_path,
     solver=solver,
     acq_e_h=acq_e_h,
+    transform=transform
   )
 
   if not os.path.exists(args.base_path):
@@ -392,8 +451,19 @@ if __name__ == "__main__":
 
   anl.fetch_positions(sys_exit=True,analyzed=False)
   anl.fetch_positions(sys_exit=False,analyzed=True)
-  sxtr_analyzed=[x.nml_id for x in anl.sky_anl if x.sxtr is not None]
-  astr_analyzed=[x.nml_id for x in anl.sky_anl if x.astr is not None]
+  
+  # ToDo not the ideal place
+  for o in anl.sky_acq: # this is the origin
+    if 'no_transform' in o.transform_name:
+      o.transform_name=transform.name
+    elif o.transform_name in transform.name:
+      continue
+    else:
+      logger.error('u_analyze: can not mix transformations: {}, {}, exiting'.format(o.o.transform_name,transform.name))
+      sys.exit(1)
+      
+  sxtr_analyzed=[x.nml_id for x in anl.sky_anl if x.mnt_ll_sxtr is not None]
+  astr_analyzed=[x.nml_id for x in anl.sky_anl if x.mnt_ll_astr is not None]
     
   for i,o in enumerate(anl.sky_acq):
     if args.do_not_use_astrometry: # double neg

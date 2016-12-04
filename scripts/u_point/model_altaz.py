@@ -23,12 +23,13 @@ import sys
 import numpy as np
 
 from structures import Parameter
-from model_base import ModelBase
+from model_base import ModelAltAz
 
-class Model(ModelBase):
+class Model(ModelAltAz):
   def __init__(self,dbg=None,lg=None):
-    ModelBase.__init__(self,dbg=dbg,lg=lg)
+    ModelAltAz.__init__(self,dbg=dbg,lg=lg)
 
+    self.fit_title='condon1992'
     self.C1=Parameter(0.)
     self.C2=Parameter(0.)
     self.C3=Parameter(0.)
@@ -81,7 +82,8 @@ class Model(ModelBase):
       if 'fit_plus_poly' in name:
         self.fit_plus_poly=value
       else:
-        self.lg.error('got unexpected key word: {0} = {1},exiting'.format(name, value))
+        self.lg.error('altaz: got unexpected key word: {0} = {1}, exiting'.format(name, value))
+        self.lg.error('altaz: is selected model: model_altaz, correct?')
         sys.exit(1)
 
     res,stat=self.fit_helper(cats=cats,mnts=mnts,selected=selected)

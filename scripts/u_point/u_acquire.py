@@ -35,7 +35,6 @@ import importlib
 import queue
 import time
 # ToDo revisit:
-from watchdog.observers import Observer
 import pyinotify
 
 from datetime import datetime
@@ -174,11 +173,7 @@ class Acquisition(Script):
   def expose(self,nml_id=None,cat_no=None,cat_ic=None,exp=None):
 
     self.device.store_mount_data(cat_ic=cat_ic,nml_id=nml_id,cat_no=cat_no)
-    pressure=temperature=humidity=None
-    if self.meteo is not None:
-      pressure,temperature,humidity=meteo.retrieve()
-
-    exp=self.device.ccd_expose(exp=exp,pressure=pressure,temperature=temperature,humidity=humidity)
+    exp=self.device.ccd_expose(exp=exp)
     # ToDo
     # whatch out for image_fn absolute relative path
     if self.mode_watchdog:
@@ -187,12 +182,20 @@ class Acquisition(Script):
       self.lg.info('expose: image_fn from queue acq_queue: {}'.format(image_fn))
 
     sky=self.device.fetch_mount_data()
+    pressure=temperature=humidity=None
+    if self.meteo is not None:
+      pressure,temperature,humidity=meteo.retrieve()
+       
+    sky.pressure=pressure
+    sky.temperature=temperature
+    sky.humidity=humidity
+
     self.append_position(sky=sky,analyzed=False)
 
   def find_near_neighbor(self,mnl_ic=None,altitude_interval=None,max_separation=None):
     il=iu=None
     max_separation2= max_separation * max_separation # lazy
-    for i,o in enumerate(self.cat): # catalog is RA sorted
+    for i,o in enumerate(self.cat_observable): # catalog is RA sorted
       if il is None and o.cat_ic.ra.radian > mnl_ic.ra.radian - max_separation:
         il=i
       if iu is None and o.cat_ic.ra.radian > mnl_ic.ra.radian + max_separation:
@@ -202,7 +205,7 @@ class Acquisition(Script):
       iu=-1
 
     dist=list()
-    for o in self.cat[il:iu]:
+    for o in self.cat_observable[il:iu]:
       dra2=pow(o.cat_ic.ra.radian-mnl_ic.ra.radian,2)
       ddec2=pow(o.cat_ic.dec.radian-mnl_ic.dec.radian,2)
 
@@ -220,7 +223,7 @@ class Acquisition(Script):
     
     i_min=dist.index(dist_min)
 
-    return self.cat[il+i_min].cat_no,self.cat[il+i_min].cat_ic
+    return self.cat_observable[il+i_min].cat_no,self.cat_observable[il+i_min].cat_ic
       
   def acquire(self,altitude_interval=None,max_separation=None):
     if self.mode_user:
@@ -234,15 +237,17 @@ class Acquisition(Script):
       # astropy N=0,E=90
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
       nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
+      # only for book keeping
       mnl_ic=self.to_ic(aa=nml_aa)
       cat_no=None
+      # only catalog coordinates are needed here
       if self.use_bright_stars:
         cat_no,cat_ic=self.find_near_neighbor(mnl_ic=mnl_ic,altitude_interval=altitude_interval,max_separation=max_separation)
         if cat_ic is None:
           continue # no suitable object found, try next
       else:
         cat_ic=mnl_ic # observe at the current nominal position
-        
+  
       if self.mode_user:
         while True:
           if not_first:
@@ -267,8 +272,8 @@ class Acquisition(Script):
     self.fetch_nominal_altaz(fn=ptfn)
     self.drop_nominal_altaz()
     
-    mnt_aa_az = [x.mnt_aa.az.degree for x in self.sky_acq if x.mnt_aa is not None]
-    mnt_aa_alt= [x.mnt_aa.alt.degree for x in self.sky_acq if x.mnt_aa is not None]
+    mnt_aa_rdb_az = [x.mnt_aa_rdb.az.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
+    mnt_aa_rdb_alt= [x.mnt_aa_rdb.alt.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
     nml_aa_az = [x.nml_aa.az.degree for x in self.nml ]
     nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml ]
     
@@ -277,9 +282,9 @@ class Acquisition(Script):
     self.ax.set_xlim([-az_step,360.+az_step]) # ToDo use args.az_step for that
     self.ax.scatter(nml_aa_az, nml_aa_alt,color='red')
 
-    if len(mnt_aa_az) > 0:
-      self.ax.scatter(mnt_aa_az[-1], mnt_aa_alt[-1],color='magenta',s=240.)
-      self.ax.scatter(mnt_aa_az, mnt_aa_alt,color='blue')
+    if len(mnt_aa_rdb_az) > 0:
+      self.ax.scatter(mnt_aa_rdb_az[-1], mnt_aa_rdb_alt[-1],color='magenta',s=240.)
+      self.ax.scatter(mnt_aa_rdb_az, mnt_aa_rdb_alt,color='blue')
     
     if animate:
       mnt_ic=self.device.fetch_mount_position()
@@ -288,12 +293,13 @@ class Acquisition(Script):
         # shorten it
         now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
         self.ax.set_xlabel('azimuth [deg] (N=0,E=90), at: {0} [UTC]'.format(now))
-      else:      
-        mnt_aa=self.to_altaz(ic=mnt_ic)
-        self.lg.debug('re_plot: mount position: {0:.2f}, {1:.2f} [deg]'.format(mnt_aa.az.degree,mnt_aa.alt.degree))
-        self.ax.scatter(mnt_aa.az.degree,mnt_aa.alt.degree,color='green',facecolors='none', edgecolors='g',s=240.)
-        self.ax.scatter(mnt_aa.az.degree,mnt_aa.alt.degree,color='green',marker='+',s=600.)
-        self.ax.set_xlabel('azimut [deg] (N=0,E=90), pos: {0:.1f}, {1:.1f} [deg], at: {2} [UTC]'.format(mnt_aa.az.degree,mnt_aa.alt.degree,str(mnt_ic.obstime)[:-7]))
+      else:
+        # cross hair current mount position
+        mnt_aa_rdb=self.to_altaz(ic=mnt_ic)
+        self.lg.debug('re_plot: mount position: {0:.2f}, {1:.2f} [deg]'.format(mnt_aa_rdb.az.degree,mnt_aa_rdb.alt.degree))
+        self.ax.scatter(mnt_aa_rdb.az.degree,mnt_aa_rdb.alt.degree,color='green',facecolors='none', edgecolors='g',s=240.)
+        self.ax.scatter(mnt_aa_rdb.az.degree,mnt_aa_rdb.alt.degree,color='green',marker='+',s=600.)
+        self.ax.set_xlabel('azimut [deg] (N=0,E=90), pos: {0:.1f}, {1:.1f} [deg], at: {2} [UTC]'.format(mnt_aa_rdb.az.degree,mnt_aa_rdb.alt.degree,str(mnt_ic.obstime)[:-7]))
 
       self.ax.text(0., 0., 'positions:',color='black', fontsize=12,verticalalignment='bottom')
       self.ax.text(80., 0., 'nominal,',color='red', fontsize=12,verticalalignment='bottom')
@@ -307,11 +313,11 @@ class Acquisition(Script):
     self.ax.set_ylabel('altitude [deg]')  
     self.ax.grid(True)
     # same if expression as above
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa.az.degree, x.mnt_aa.alt.degree,x.image_fn) for x in self.sky_acq if x.mnt_aa is not None]
-    nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa is not None]
+    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa_rdb.az.degree, x.mnt_aa_rdb.alt.degree,x.image_fn) for x in self.sky_acq if x.mnt_aa_rdb is not None]
+    nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa_rdb is not None]
     ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
     # does not exits at the beginning
-    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=mnt_aa_az,lat=mnt_aa_alt,annotes=annotes)]
+    aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=mnt_aa_rdb_az,lat=mnt_aa_rdb_alt,annotes=annotes)]
 
     return aps
 
