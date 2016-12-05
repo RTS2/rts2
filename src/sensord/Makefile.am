@@ -135,10 +135,11 @@ rts2_sensor_tbt_SOURCES = tbt.cpp
 
 rts2_sensor_binder_SOURCES = binder.cpp
 
-if LIBUSB
+if LIBUSB1
 bin_PROGRAMS += rts2-sensor-fows
 rts2_sensor_fows_SOURCES = fows.cpp
-rts2_sensor_fows_LDADD = @USB_LIBS@ ${LDADD}
+rts2_sensor_fows_LDADD = @USB1_LIBS@ ${LDADD}
+rts2_sensor_fows_CPPFLAGS = @USB1_CFLAGS@ -I../../include
 else
 EXTRA_DIST += fows.cpp
 endif

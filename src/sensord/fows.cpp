@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include <usb.h>
+#include <libusb-1.0/libusb.h>
 
 #define OPT_WIND_BAD        OPT_LOCAL + 370
 #define OPT_PEEKWIND_BAD    OPT_LOCAL + 371
@@ -151,7 +151,7 @@ class FOWS:public SensorWeather
 		virtual int initHardware ();
 		virtual bool isGoodWeather ();
 	private:
-		struct usb_dev_handle *devh;
+		struct libusb_device_handle *devh;
 
 		// values with FOWS data
 		rts2core::ValueFloat *barometer;
@@ -250,7 +250,7 @@ int FOWS::info ()
 {
 	CWS_Read ();
 
-	time_t timestamp = m_timestamp - m_timestamp % 60; // Set to current minute
+	//time_t timestamp = m_timestamp - m_timestamp % 60; // Set to current minute
 	unsigned short current_pos = CWS_unsigned_short (&m_buf[WS_CURRENT_POS]);
 
 	insideHumidity->setValueFloat (decode (m_buf + current_pos + WS_HUMIDITY_IN, ub, 1.0));
@@ -291,73 +291,49 @@ int FOWS::processOption (int opt)
 	return 0;
 }
 
-struct usb_device *find_device (int vendor, int product)
-{
-	struct usb_bus *bus;
-    
-	for (bus = usb_get_busses (); bus; bus = bus->next)
-	{
-		struct usb_device *dev;
-	
-		for (dev = bus->devices; dev; dev = dev->next)
-		{
-			if (dev->descriptor.idVendor == vendor && dev->descriptor.idProduct == product)
-				return dev;
-		}
-	}
-	return NULL;
-}
-
 int FOWS::initHardware ()
 {
-	usb_init ();
+	libusb_init (NULL);
 	if (getDebug ())
-		usb_set_debug (getDebug ());
-	usb_find_busses ();
-	usb_find_devices ();
+		libusb_set_debug (NULL, LIBUSB_LOG_LEVEL_DEBUG);
 
-	struct usb_device *dev = find_device (FOWS_VENDOR, FOWS_PRODUCT);
-	if (dev == NULL)
+	devh = libusb_open_device_with_vid_pid (NULL, FOWS_VENDOR, FOWS_PRODUCT);
+	if (devh == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "cannot find any device with VID 0x" << std::hex << FOWS_VENDOR << " and PID 0x" << std::hex << FOWS_PRODUCT << sendLog;
 		return -1;
 	}
-	devh = usb_open (dev);
-	if (devh == NULL)
+
+	int ret = libusb_set_auto_detach_kernel_driver (devh, 1);
+	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR) << "open USB device failed" << sendLog;
-		return -1;
+		logStream (MESSAGE_WARNING) << "cannot set auto detach kernel driver " << ret << sendLog;
 	}
 
-	int ret = usb_claim_interface (devh, 0);
+	ret = libusb_claim_interface (devh, 0);
 	if (ret < 0)
 	{
 		logStream (MESSAGE_ERROR) << "claim failed with error " << ret << sendLog;
 		return -1;
 	}
-	ret = usb_set_altinterface (devh, 0);
-	if (ret < 0)
-	{
-		logStream (MESSAGE_ERROR) << "set_altinterface failed with error " << ret << sendLog;
-		return -1;
-	}
 
-	char buf[1000];
+	unsigned char buf[1000];
+	memset (buf, '\0', sizeof(buf));
 
-	ret = usb_get_descriptor(devh, 1, 0, buf, 0x12);
-	ret = usb_get_descriptor(devh, 2, 0, buf, 0x09);
-	ret = usb_get_descriptor(devh, 2, 0, buf, 0x22);
-	ret = usb_release_interface(devh, 0);
+	ret = libusb_get_descriptor(devh, LIBUSB_DT_DEVICE, 0, buf, 0x09);
+	ret = libusb_get_descriptor(devh, LIBUSB_DT_CONFIG, 0, buf, 0x09);
+	ret = libusb_get_descriptor(devh, LIBUSB_DT_CONFIG, 0, buf, 0x22);
+	ret = libusb_release_interface(devh, 0);
 	if (ret)
 		logStream (MESSAGE_WARNING) << "failed to release interface before set_configuration: " << ret << sendLog;
 
-	ret = usb_set_configuration(devh, 1);
-	ret = usb_claim_interface(devh, 0);
+	ret = libusb_set_configuration(devh, 1);
+	ret = libusb_claim_interface(devh, 0);
 	if (ret)
 		logStream (MESSAGE_WARNING) << "claim after set_configuration failed with error " << ret << sendLog;
-	ret = usb_set_altinterface(devh, 0);
-	ret = usb_control_msg(devh, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0xa, 0, 0, buf, 0, 1000);
-	ret = usb_get_descriptor(devh, 0x22, 0, buf, 0x74);
+	//ret = libusb_set_altinterface(devh, 0);
+	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_CLASS + LIBUSB_RECIPIENT_INTERFACE, 0xa, 0, 0, buf, 0, 1000);
+	ret = libusb_get_descriptor(devh, LIBUSB_DT_REPORT, 0, buf, 0x74);
 
 	return 0;
 }
@@ -421,7 +397,7 @@ If not, then it means the command has not been received correctly.
 */
 	char buf_1 = (char)(ptr / 256);
 	char buf_2 = (char)(ptr & 0xFF);
-	char tbuf[8];
+	unsigned char tbuf[8];
 	tbuf[0] = 0xA1;		// READ COMMAND
 	tbuf[1] = buf_1;	// READ ADDRESS HIGH
 	tbuf[2] = buf_2;	// READ ADDRESS LOW
@@ -432,15 +408,16 @@ If not, then it means the command has not been received correctly.
 	tbuf[7] = 0x20;		// END MARK
 
 	// Prepare read of 32-byte chunk from position ptr
-	int ret = usb_control_msg (devh, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 9, 0x200, 0, tbuf, 8, 1000);
+	int ret = libusb_control_transfer (devh, LIBUSB_REQUEST_TYPE_CLASS + LIBUSB_RECIPIENT_INTERFACE, 9, 0x200, 0, tbuf, 8, 1000);
 	if (ret < 0)
 	{
 		logStream (MESSAGE_ERROR) << "usb_control_msg failed (" << ret << ") whithin readBblock: " << std::hex << ptr << sendLog;
 	}
 	else
 	{
+		int transferred = 0;
 		// Read 32-byte chunk and place in buffer buf
-		ret = usb_interrupt_read (devh, 0x81, (char *) buf, 0x20, 1000);
+		ret = libusb_interrupt_transfer (devh, 0x81, buf, 0x20, &transferred, 1000);
 		if (ret < 0)
 			logStream (MESSAGE_ERROR) << "usb_interrupt_read failed (" << ret << ") whithin readBlock: " << std::hex << ptr << sendLog;
 	}
@@ -449,10 +426,9 @@ If not, then it means the command has not been received correctly.
 
 void FOWS::USBClose ()
 {
-	int ret = usb_release_interface (devh, 0);
+	int ret = libusb_release_interface (devh, 0);
 	logStream (MESSAGE_DEBUG) << "usb_release_interface ret:" << ret << sendLog;
-	ret = usb_close (devh);
-	logStream (MESSAGE_DEBUG) << "usb_close ret:" << ret << sendLog;
+	libusb_close (devh);
 }
 
 short FOWS::dataHasChanged (unsigned char OldBuf[], unsigned char NewBuf[], size_t size)
