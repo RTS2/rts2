@@ -295,7 +295,7 @@ int FOWS::initHardware ()
 {
 	libusb_init (NULL);
 	if (getDebug ())
-		libusb_set_debug (NULL, LIBUSB_LOG_LEVEL_DEBUG);
+		libusb_set_debug (NULL, LIBUSB_LOG_LEVEL_INFO);
 
 	devh = libusb_open_device_with_vid_pid (NULL, FOWS_VENDOR, FOWS_PRODUCT);
 	if (devh == NULL)
@@ -411,7 +411,7 @@ If not, then it means the command has not been received correctly.
 	int ret = libusb_control_transfer (devh, LIBUSB_REQUEST_TYPE_CLASS + LIBUSB_RECIPIENT_INTERFACE, 9, 0x200, 0, tbuf, 8, 1000);
 	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR) << "usb_control_msg failed (" << ret << ") whithin readBblock: " << std::hex << ptr << sendLog;
+		logStream (MESSAGE_ERROR) << "usb_control_msg failed (" << ret << ") within readBblock: " << std::hex << ptr << sendLog;
 	}
 	else
 	{
@@ -420,8 +420,10 @@ If not, then it means the command has not been received correctly.
 		ret = libusb_interrupt_transfer (devh, 0x81, buf, 0x20, &transferred, 1000);
 		if (ret < 0)
 			logStream (MESSAGE_ERROR) << "usb_interrupt_read failed (" << ret << ") whithin readBlock: " << std::hex << ptr << sendLog;
+		else
+			return transferred;
 	}
-	return ret;
+	return 0;
 }
 
 void FOWS::USBClose ()
