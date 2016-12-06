@@ -49,6 +49,7 @@ class Binder:public Sensor
 
 	private:
 		HostString *host;
+		uint8_t unitId;
 
 		rts2core::ConnModbus *binderConn;
 };
@@ -61,6 +62,7 @@ Binder::Binder (int argc, char **argv):Sensor (argc, argv)
 {
 	binderConn = NULL;
 	host = NULL;
+	unitId = 0;
 
 	addOption ('z', NULL, 1, "Binder TCP/IP address and port (separated by :)");
 }
@@ -89,7 +91,7 @@ int Binder::info ()
 	uint16_t regs[8];
 	try
 	{
-		binderConn->readHoldingRegisters (16, 8, regs);
+		binderConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -107,15 +109,15 @@ int Binder::initHardware ()
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
 		return -1;
 	}
-	binderConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
-	binderConn->setDebug (getDebug ());
+//	binderConn = new rts2core::ConnModbusRS232 (this, host->getHostname (), host->getPort ());
+//	binderConn->setDebug (getDebug ());
 	
 	uint16_t regs[8];
 
 	try
 	{
 		binderConn->init ();
-		binderConn->readHoldingRegisters (16, 8, regs);
+		binderConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
 	catch (rts2core::ConnError er)
 	{
