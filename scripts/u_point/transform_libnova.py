@@ -63,30 +63,35 @@ ln_hrz_posn=LN_hrz_posn()
 
 
 class Transformation(object):
-  def __init__(self, lg=None,obs=None):
+  def __init__(self, lg=None,obs=None,refraction_method=None):
     #
     self.lg=lg
     self.name='LN Libnova'
-
+    self.refraction_method=refraction_method
     self.obs=obs
     self.ln_obs=LN_lnlat_posn()    
     self.ln_obs.lng=obs.longitude.degree # deg
     self.ln_obs.lat=obs.latitude.degree  # deg
     self.ln_hght=obs.height  # hm, no .meter?? m, not a libnova quantity
 
-
-  def transform_to_hadec(self,ic=None,tem=0.,pre=0.,hum=0.,apparent=None):
+  def transform_to_hadec(self,tf=None,sky=None,apparent=None):
+    tem=sky.temperature
+    pre=sky.pressure
+    hum=sky.humidity
     pre_qfe=pre # to make it clear what is used
-    aa=self.LN_EQ_to_AltAz(ra=Longitude(ic.ra.radian,u.radian).degree,dec=Latitude(ic.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=ic.obstime)
-    ha=self.LN_AltAz_to_HA(az=aa.az.degree,alt=aa.alt.degree,obstime=ic.obstime)  
+    aa=self.LN_EQ_to_AltAz(ra=Longitude(tf.ra.radian,u.radian).degree,dec=Latitude(tf.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=tf.obstime)
+    ha=self.LN_AltAz_to_HA(az=aa.az.degree,alt=aa.alt.degree,obstime=tf.obstime)  
     return ha
 
-  def transform_to_altaz(self,ic=None,tem=0.,pre=0.,hum=0.,apparent=None):
-    aa=self.LN_EQ_to_AltAz(ra=Longitude(ic.ra.radian,u.radian).degree,dec=Latitude(ic.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=ic.obstime,apparent=apparent)
+  def transform_to_altaz(self,tf=None,sky=None,apparent=None):
+    tem=sky.temperature
+    pre=sky.pressure
+    hum=sky.humidity
+    aa=self.LN_EQ_to_AltAz(ra=Longitude(tf.ra.radian,u.radian).degree,dec=Latitude(tf.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=tf.obstime,apparent=apparent)
     return aa
 
   def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,apparent=False):
-
+    # use ev. other refraction methods
     ln_pos_eq.ra=ra
     ln_pos_eq.dec=dec
     if apparent:
@@ -114,7 +119,6 @@ class Transformation(object):
       d_alt_deg=0.
   
     a_az=Longitude(ln_pos_aa_pr.az,u.deg)
-    # add refraction
     a_alt=Latitude(ln_pos_aa_pr.alt + d_alt_deg,u.deg)
     #
     pos_aa=SkyCoord(az=a_az.radian,alt=a_alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=obstime,obswl=0.5*u.micron, pressure=ln_pressure_qfe*u.hPa,temperature=ln_temperature*u.deg_C,relative_humidity=ln_humidity)

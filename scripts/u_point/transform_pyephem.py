@@ -29,11 +29,12 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 class Transformation(object):
-  def __init__(self, lg=None,obs=None):
+  def __init__(self, lg=None,obs=None,refraction_method=None):
     #
     self.lg=lg
     self.name='PE PyEphem'
     self.obs_astropy=obs
+    self.refraction_method=refraction_method
     self.obs=ephem.Observer()
     # positive values are used for eastern longitudes
     longitude,latitude,height=self.obs_astropy.to_geodetic()
@@ -49,25 +50,32 @@ class Transformation(object):
     # do that later
     #self.obs.date
 
-  def transform_to_hadec(self,ic=None,tem=0.,pre=0.,hum=0.,apparent=None):
+  def transform_to_hadec(self,tf=None,sky=None,apparent=None):
+    tem=sky.temperature
+    pre=sky.pressure
+    hum=sky.humidity
     star=self.create_star(ic=ic,tem=tem,pre=pre)
     HA= self.obs.sidereal_time() - star.ra 
-    ha=SkyCoord(ra=HA,dec=star.dec, unit=(u.radian,u.radian), frame='cirs',location=ic.location,obstime=ic.obstime,pressure=pre,temperature=tem,relative_humidity=hum)
+    ha=SkyCoord(ra=HA,dec=star.dec, unit=(u.radian,u.radian), frame='cirs',location=tf.location,obstime=tf.obstime,pressure=pre,temperature=tem,relative_humidity=hum)
 
     return ha
 
-  def transform_to_altaz(self,ic=None,tem=0.,pre=0.,hum=0.,apparent=None):
+  def transform_to_altaz(self,tf=None,sky=None,apparent=None):
+    # use ev. other refraction methods
+    tem=sky.temperature
+    pre=sky.pressure
+    hum=sky.humidity
     star=self.create_star(ic=ic,tem=tem,pre=pre)
-    aa=SkyCoord(az=star.az,alt=star.alt, unit=(u.radian,u.radian), frame='altaz',location=ic.location,obstime=ic.obstime,pressure=pre,temperature=tem,relative_humidity=hum)    
+    aa=SkyCoord(az=star.az,alt=star.alt, unit=(u.radian,u.radian), frame='altaz',location=tf.location,obstime=tf.obstime,pressure=pre,temperature=tem,relative_humidity=hum)    
     return aa
 
-  def create_star(self,ic=None,tem=0.,pre=0.):
-    dt=str(ic.obstime).replace('-','/')
+  def create_star(self,tf=None,tem=0.,pre=0.):
+    dt=str(tf.obstime).replace('-','/')
     self.obs.date=ephem.Date(dt)
     self.obs.pressure=pre
     self.obs.temp=tem
     star = ephem.FixedBody()
-    star._ra = ic.ra.radian
-    star._dec = ic.dec.radian
+    star._ra = tf.ra.radian
+    star._dec = tf.dec.radian
     star.compute(self.obs)
     return star

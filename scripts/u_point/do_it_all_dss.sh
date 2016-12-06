@@ -28,6 +28,8 @@
 #
 # No RTS2 installation required
 #
+export latitude="--obs-latitude 47.5"
+export latitude=""
 quit()
 {
     echo "signal received, exiting"
@@ -105,8 +107,7 @@ if [ -z ${skip+x} ]; then
     echo ""
     #echo "./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot"
     #
-    ./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot > /dev/null 2>&1
-    #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+    ./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" $latitude --plot > /dev/null 2>&1
     #
     echo "DONE selecting stars"
 fi
@@ -120,8 +121,7 @@ if [ -z ${skip+x} ]; then
     echo ""
     #echo "./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40"
     #
-    ./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40
-    #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+    ./u_acquire.py --base-path $BASE_PATH $latitude --create --plot --alt-step 5 #--az-step 40
     #
     echo "DONE grid creation"
 fi
@@ -141,7 +141,7 @@ if ! [ -z ${RTS2+x} ]; then
 else
     #echo "./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image --use-bright-stars &"
     #
-    ./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image  --use-bright-stars &
+    ./u_acquire.py --base-path $BASE_PATH  $latitude --fetch-dss-image  --use-bright-stars &
     #
     # no bright stars:
     #./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image --toconsole &
@@ -161,7 +161,7 @@ if ! [ -z ${RTS2+x} ]; then
     #
     rts2-scriptexec -d C0 -s " exe $plt_script " &
 else
-    ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole --level DEBUG &
+    ./u_acquire.py --base-path $BASE_PATH $latitude --plot --ds9-display --animate --delete --toconsole --level DEBUG &
 fi
 echo ""
 echo "-----------------------------------------------------------------"
@@ -177,7 +177,6 @@ if ps -p $pid_u_acquire >/dev/null; then
     echo " cd $HOME/rts2/scripts/u_point ; ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole "
     echo "-----------------------------------------------------------------"
     wait $pid_u_acquire
-    #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 fi
 echo ""
 echo "-----------------------------------------------------------------"
@@ -188,11 +187,11 @@ echo "in this demo astrometry.net is disabled, since it is too slow for this pur
 echo ""
 if ! [ -z ${ASTROMETRY+x} ]; then
     #
-    ./u_analyze.py  --base-path $BASE_PATH   --timeout 30 --toconsole --transform-with-class transform_libnova&
+    ./u_analyze.py  --base-path $BASE_PATH  $latitude  --timeout 30 --toconsole --transform-with-class transform_astropy&
     export pid_u_analyze=$!
 else
     #
-    ./u_analyze.py  --base-path $BASE_PATH  --do-not-use-astrometry --toconsole&
+    ./u_analyze.py  --base-path $BASE_PATH $latitude --do-not-use-astrometry --toconsole&
     export pid_u_analyze=$!
 fi
 #
@@ -206,7 +205,6 @@ if ps -p $pid_u_analyze >/dev/null; then
     echo "-----------------------------------------------------------------"
     echo "waiting for u_analyze.py to terminate, PID $pid_u_analyze"
     wait $pid_u_analyze
-    #rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 fi
 #
 echo "-----------------------------------------------------------------"
@@ -215,14 +213,13 @@ echo ""
 echo "-----------------------------------------------------------------"
 echo "fifth step, create pointing model"
 echo ""
-#rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 if ! [ -z ${ASTROMETRY+x} ]; then
     echo ""
     echo "displaying results from astrometry.net"
-    ./u_point.py --base-path $BASE_PATH  --plot --ds9-display --delete --toconsole --model-class model_u_point --ds9& 
+    ./u_point.py --base-path $BASE_PATH  $latitude --plot --ds9-display --delete --toconsole --model-class model_u_point --ds9& 
 else
     echo "displaying results from SExtractor"
-    ./u_point.py --base-path $BASE_PATH  --plot --ds9-display --delete --toconsole  --model-class model_u_point --fit-sxtr& 
+    ./u_point.py --base-path $BASE_PATH  $latitude --plot --ds9-display --delete --toconsole  --model-class model_u_point --fit-sxtr& 
 
 fi
 echo ""

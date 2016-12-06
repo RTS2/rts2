@@ -91,6 +91,8 @@ class PointingModel(Script):
     self.transform_name=None
     if self.sky_anl[0].transform_name:
       self.transform_name=self.sky_anl[0].transform_name
+      
+    logger.info('transformation done with: {}'.format(self.transform_name))
 
     for i,sky in enumerate(self.sky_anl):
       if i > self.break_after:
@@ -253,11 +255,16 @@ class PointingModel(Script):
     fit_title=model.fit_title
     if args.fit_plus_poly:
       fit_title +='C+PP'
-    print(self.transform_name)
+      
     lib='_' + self.transform_name.upper()[0:2]
-
     fit_title += lib
     fn_frac=fit_title + lib
+    sx='_AS'
+    if args.fit_sxtr:
+      sx='_SX'
+    fit_title += sx
+    fn_frac=fit_title + sx
+    
     if args.fit_plus_poly:
       fn_frac+='c_plus_poly'
       
@@ -266,9 +273,9 @@ class PointingModel(Script):
       lat_label='declination'
     else:
       lat_label='altitude'
-      lon_label='S=0,W=90 azimuth'
-      if self.transform_name is None:
-        lon_label='N=0,E=90 azimuth'
+      lon_label='N=0,E=90 azimuth'
+      if 'nova' in self.transform_name:
+        lon_label='S=0,W=90 azimuth'
       
 
     az_cat_deg=[x.cat_lon.degree for x in stars]

@@ -65,7 +65,7 @@ from notify import EventHandler
 from worker import Worker
 from solver import SolverResult,Solver
 from script import Script
-
+from refraction import Refraction
 
 class Analysis(Script):
   def __init__(
@@ -111,9 +111,9 @@ class Analysis(Script):
       tr_t_tf=self.transform.transform_to_altaz
 
     # cat_tf is either cat_aa or cat_ha
-    sky.cat_ll_ap=tr_t_tf(ic=sky.cat_ic,tem=sky.temperature,pre=sky.pressure,hum=sky.humidity,apparent=True)
+    sky.cat_ll_ap=tr_t_tf(tf=sky.cat_ic,sky=sky,apparent=True)
     #sim=SkyCoord(ra=sky.cat_ic.ra.radian,dec=sky.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=sky.dt_end,location=self.obs)
-    #sky.cat_ll_ap=tr_t_tf(ic=sim,tem=sky.temperature,pre=sky.pressure,hum=sky.humidity,apparent=True)
+    #sky.cat_ll_ap=tr_t_tf(sky=sky,apparent=True)
     #print('CAT IC   ', sky.cat_ic)
     #print('CAT ll ap', sky.cat_ll_ap)
     
@@ -216,8 +216,8 @@ class Analysis(Script):
         tr_t_tf=self.transform.transform_to_hadec
       else:
         tr_t_tf=self.transform.transform_to_altaz
-
-      sky.mnt_ll_astr=self.transform.transform_to_hadec(ic=mnt_ll,apparent=False)
+        
+      sky.mnt_ll_astr=self.transform.transform_to_hadec(tf=mnt_ll,sky=sky,apparent=False)
 
       if sky.mount_type_eq:
         self.lg.debug('{0}:ha astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sky.mnt_ll_astr.ra.degree,sky.mnt_ll_astr.dec.degree,ptfn))
@@ -260,7 +260,7 @@ class Analysis(Script):
     if len(mnt_ll_astr_lon) > 0:
       self.ax.scatter(mnt_ll_astr_lon[-1],mnt_ll_astr_lat[-1],color='green',facecolors='none', edgecolors='magenta',s=400.)
 
-    self.ax.set_xlim([0.,360.]) 
+    #self.ax.set_xlim([0.,360.]) 
 
     ttl_frg='azimuth'
     if self.sky_acq[0].mount_type_eq:
@@ -306,19 +306,19 @@ class Analysis(Script):
     import matplotlib.pyplot as plt
     plt.ioff()
     fig = plt.figure(figsize=(8,6))
-    self.ax = fig.add_subplot(111)
+    self.ax = fig.add_subplot(111)#, projection="mollweide")
     self.title=title
     # we want to see something, values are only for the plot
     # this is cat not apparent
     
     self.fetch_positions(sys_exit=True,analyzed=False)
     if self.sky_acq[0].mount_type_eq:
-      self.cat_ll_ap_lon=[self.transform.transform_to_hadec(ic=x.cat_ic,pre=0.).ra.degree for x in self.sky_acq]
-      self.cat_ll_ap_lat=[self.transform.transform_to_hadec(ic=x.cat_ic).dec.degree for x in self.sky_acq]
+      self.cat_ll_ap_lon=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x,apparent=True).ra.degree for x in self.sky_acq]
+      self.cat_ll_ap_lat=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x,apparent=True).dec.degree for x in self.sky_acq]
     else:
       #cat_ll_ap_lat,cat_ll_ap_lat=[(self.to_altaz(ic=x.cat_ic).az.degree,self.to_altaz(ic=x.cat_ic).alt.degree) for x in self.sky_acq]
-      self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic).az.degree for x in self.sky_acq]
-      self.cat_ll_ap_lat=[self.to_altaz(ic=x.cat_ic).alt.degree for x in self.sky_acq]
+      self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic,sky=x,apparent=True).az.degree for x in self.sky_acq]
+      self.cat_ll_ap_lat=[self.to_altaz(ic=x.cat_ic,sky=x,apparent=True).alt.degree for x in self.sky_acq]
 
     if animate:
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
@@ -372,7 +372,8 @@ if __name__ == "__main__":
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
-  parser.add_argument('--transform-with-class', dest='transform_with_class', action='store', default='transform_astropy', help=': %(default)s, one of transform_(astropy|libnova|pyephem)')
+  parser.add_argument('--transform-class', dest='transform_class', action='store', default='transform_astropy', help=': %(default)s, one of transform_(astropy|libnova|pyephem)')
+  parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='bennett', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
 
   args=parser.parse_args()
   
@@ -404,10 +405,12 @@ if __name__ == "__main__":
     nt.start()
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
-
-  tf = importlib.import_module(args.transform_with_class)
-  logger.info('transformation loaded: {}'.format(args.transform_with_class))
-  transform=tf.Transformation(lg=logger,obs=obs)
+  rf=Refraction(lg=logger,obs=obs)
+  rf_m=getattr(rf, 'refraction_'+args.refraction_method)
+  logger.info('refraction method loaded: {}'.format(args.refraction_method))
+  tf = importlib.import_module(args.transform_class)
+  logger.info('transformation loaded: {}'.format(args.transform_class))
+  transform=tf.Transformation(lg=logger,obs=obs,refraction_method=rf_m)
 
   anl= Analysis(
     lg=logger,

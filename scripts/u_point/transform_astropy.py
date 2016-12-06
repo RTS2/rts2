@@ -26,29 +26,47 @@ from astropy.coordinates import AltAz
 from astropy.coordinates import SkyCoord
 
 class Transformation(object):
-  def __init__(self, lg=None,obs=None):
+  def __init__(self, lg=None,obs=None,refraction_method=None):
     #
     self.lg=lg
     self.name='AP astropy'
     self.obs=obs
-
-  def transform_to_hadec(self,ic=None,tem=0.,pre=0.,hum=0.,apparent=None):
-    pre_qfe=pre # to make it clear what is used
-
-    aa=ic.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+    self.refraction_method=refraction_method
+    
+  def transform_to_hadec(self,tf=None,sky=None,apparent=None):
+    tem=sky.temperature
+    pre=sky.pressure
+    hum=sky.humidity
+    if apparent:
+      pre_qfe=pre # to make it clear what is used
+      aa=tf.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+    else:
+      pre_qfe=0.
+      # ToDo: still hoping that no precession etc. is applied
+      ra=tf.ra.radian
+      dec=tf.dec.radian
+      ti=SkyCoord(ra=ra,dec=dec,unit=(u.rad,u.rad), frame='cirs',obstime=tf.obstime,location=tf.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
+      aa=ti.transform_to(AltAz(obswl=0.5*u.micron,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.))
+      
     # ToDo: check that if correct!
     #       if pressure is non zero refraction is subtracted
     # wrong:
     #ci=aa.cirs
     # from apparent AltAz to apparent 'CIRS': do not correct subtract refraction
     # pressure=temperature=humidiy=0.
+    #
     aa_no_pressure=SkyCoord(az=aa.az,alt=aa.alt, unit=(u.radian,u.radian), frame='altaz',obstime=aa.obstime,location=aa.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
     ci=aa_no_pressure.cirs
     HA= ci.obstime.sidereal_time('apparent') - ci.ra
     ha=SkyCoord(ra=HA,dec=ci.dec, unit=(u.rad,u.rad), frame='cirs',obstime=ci.obstime,location=aa.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
+      
     return ha
 
-  def transform_to_altaz(self,ic=None,tem=0.,pre=0.,hum=0.,apparent=None):
+  def transform_to_altaz(self,tf=None,sky=None,apparent=None):
+    # use ev. other refraction methods
+    tem=sky.temperature
+    pre=sky.pressure
+    hum=sky.humidity
     '''
     There are substancial differences between astropy and libnova apparent coordinates. 
     Choose option --astropy for Astropy, default is Libnova
@@ -58,5 +76,11 @@ class Transformation(object):
     # from https://github.com/liberfa/erfa/blob/master/src/refco.c
     # phpa   double    pressure at the observer (hPa = millibar)
     # this is QFE
-    aa=ic.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron,pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+    if apparent:
+      ti=ic # ic is icrs, including meteo data      
+    else:
+      # ToDo: still hoping that no precession etc. is applied
+      ti=SkyCoord(ra=tf.ra.radian,dec=tf.dec.radian, unit=(u.rad,u.rad), frame='cirs',obstime=tf.obstime,location=tf.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
+      
+    aa=ti.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron,pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
     return aa

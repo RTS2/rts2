@@ -138,7 +138,7 @@ class Catalog(object):
 
   def plot(self):
     ra = Longitude([x.cat_ic.ra.radian for x in self.cats], unit=u.radian)
-    ra = ra.wrap_at(180*u.degree)
+    ra = ra.wrap_at(180.*u.degree)
     dec = Latitude([x.cat_ic.dec.radian for x in self.cats],unit=u.radian)
 
     import matplotlib.mlab as mlab
