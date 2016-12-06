@@ -458,7 +458,7 @@ short FOWS::readFixedBlock ()
 
 	for (i = WS_FIXED_BLOCK_START;i < WS_FIXED_BLOCK_SIZE;i += WS_BUFFER_CHUNK)
 		if (USBReadBlock (i, &fb_buf[i]) < 0)
-			return 0; //failure while reading data
+			return -1; //failure while reading data
 	// Check for new data
 	memcpy (&m_buf[WS_FIXED_BLOCK_START], fb_buf, 0x10); //disables change detection on the rain val positions 
 	NewDataFlg = dataHasChanged (&m_buf[WS_FIXED_BLOCK_START], fb_buf, sizeof(fb_buf));
@@ -607,8 +607,8 @@ int FOWS::CWS_Read ()
 		{
 			// Read 2 records on even position
 			n = USBReadBlock (current_pos, DataBuf);
-			if(n<32)
-				exit(1);
+			if (n<32)
+				return -1;
 			i += 2;
 			NewDataFlg |= dataHasChanged (&m_buf[current_pos], DataBuf, sizeof(DataBuf));
 		}

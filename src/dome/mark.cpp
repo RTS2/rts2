@@ -529,26 +529,20 @@ Mark::parkCupola ()
 	}
 }
 
-
-int
-Mark::standby ()
+int Mark::standby ()
 {
 	parkCupola ();
 	return Cupola::standby ();
 }
 
-
-int
-Mark::off ()
+int Mark::off ()
 {
 	parkCupola ();
 	return Cupola::off ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Mark device = Mark (argc, argv);
+	Mark device (argc, argv);
 	return device.run ();
 }

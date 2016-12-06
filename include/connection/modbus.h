@@ -51,6 +51,8 @@ class ConnModbus
 
 		virtual int init () = 0;
 
+		virtual void setDebug (int d) = 0;
+
 		/**
 		 * Call Modbus function.
 		 *
@@ -185,6 +187,8 @@ class ConnModbusTCP: public ConnTCP, public ConnModbus
 
 		virtual int init ();
 
+		virtual void setDebug (int d);
+
 	protected:
 		virtual void exchangeData (const void *modbusPayload, size_t payloadSize, void *reply, size_t replySize);
 
@@ -192,9 +196,24 @@ class ConnModbusTCP: public ConnTCP, public ConnModbus
 		int16_t transId;
 };
 
-//class ConnModbusTCP
+class ConnModbusRTUTCP: public ConnTCP, public ConnModbus
+{
+	public:
+		/**
+		 * Create connection to TCP/IP modbus server.
+		 *
+		 * @param _master     Reference to master holding this connection.
+		 * @param _hostname   Modbus server IP address or hostname.
+		 * @param _port       Modbus server port number (default is 502).
+		 */
+		ConnModbusRTUTCP (rts2core::Block *_master, const char *_hostname, int _port);
 
+		virtual int init ();
 
-//class ConnModbusSerial
+		virtual void setDebug (int d);
+
+	protected:
+		virtual void exchangeData (const void *modbusPayload, size_t payloadSize, void *reply, size_t replySize);
+};
 
 }

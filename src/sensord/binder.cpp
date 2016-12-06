@@ -64,7 +64,7 @@ Binder::Binder (int argc, char **argv):Sensor (argc, argv)
 	host = NULL;
 	unitId = 0;
 
-	addOption ('z', NULL, 1, "Binder TCP/IP address and port (separated by :)");
+	addOption ('b', NULL, 1, "Binder TCP/IP address and port (separated by :)");
 }
 
 Binder::~Binder (void)
@@ -77,7 +77,7 @@ int Binder::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'z':
+		case 'b':
 			host = new HostString (optarg, "502");
 			break;
 		default:
@@ -109,8 +109,8 @@ int Binder::initHardware ()
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
 		return -1;
 	}
-//	binderConn = new rts2core::ConnModbusRS232 (this, host->getHostname (), host->getPort ());
-//	binderConn->setDebug (getDebug ());
+	binderConn = new rts2core::ConnModbusRTUTCP (this, host->getHostname (), host->getPort ());
+	binderConn->setDebug (getDebug ());
 	
 	uint16_t regs[8];
 

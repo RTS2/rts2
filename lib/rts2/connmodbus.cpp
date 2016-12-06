@@ -146,6 +146,11 @@ int ConnModbusTCP::init ()
 	return ConnTCP::init ();
 }
 
+void ConnModbusTCP::setDebug (int d)
+{
+	return ConnTCP::setDebug (d);
+}
+
 void ConnModbusTCP::exchangeData (const void *payloadData, size_t payloadSize, void *reply, size_t replySize)
 {
 	char send_data[6 + payloadSize];
@@ -179,4 +184,42 @@ void ConnModbusTCP::exchangeData (const void *payloadData, size_t payloadSize, v
 		throw (err);
 	}
 
+}
+
+ConnModbusRTUTCP::ConnModbusRTUTCP (Block * _master, const char *_hostname, int _port):ConnTCP (_master, _hostname, _port), ConnModbus ()
+{
+}
+
+int ConnModbusRTUTCP::init ()
+{
+	return ConnTCP::init ();
+}
+
+void ConnModbusRTUTCP::setDebug (int d)
+{
+	return ConnTCP::setDebug (d);
+}
+
+void ConnModbusRTUTCP::exchangeData (const void *payloadData, size_t payloadSize, void *reply, size_t replySize)
+{
+	uint16_t crc16 = htons (getMsgBufCRC16 ((char *) payloadData, payloadSize));
+	try
+	{
+		sendData (payloadData, payloadSize);
+		sendData (&crc16, 2);
+		replySize += 2;
+		char reply_data[replySize];
+		receiveData (reply_data, replySize, 50);
+		crc16 = htons (getMsgBufCRC16 (reply_data, replySize - 2));
+		if (crc16 != *((uint16_t*) &(reply_data[replySize - 2])))
+		{
+			throw ModbusError ("invalid CRC");
+		}
+		bcopy (reply_data, reply, replySize - 2);
+	}
+	catch (ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
+		throw (err);
+	}
 }

@@ -129,7 +129,7 @@ class ConnTCP:public ConnNoSend
 		 * to and from the socket will be logged using standard RTS2
 		 * logging with MESSAGE_DEBUG type.
 		 */
-		void setDebug (bool _debug = true) { debug = _debug; }
+		void setDebug (int _debug = true) { debug = _debug; }
 
 		/**
 		 * Send data to TCP/IP socket.
