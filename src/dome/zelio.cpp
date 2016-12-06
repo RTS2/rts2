@@ -142,6 +142,8 @@ class Zelio:public Dome
 		int16_t deadManNum;
 		bool restartDuringOpening;
 
+		uint8_t unitId;
+
 		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR_WOUTPLUGS, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM, ZELIO_ELYA } zelioModel;
 
 		// if model have hardware rain signal
@@ -248,12 +250,12 @@ int Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 	uint16_t oldValue;
 	try
 	{
-		zelioConn->readHoldingRegisters (reg, 1, &oldValue);
+		zelioConn->readHoldingRegisters (unitId, reg, 1, &oldValue);
 		// switch mask..
 		oldValue &= ~mask;
 		if (value)
 			oldValue |= mask;
-		zelioConn->writeHoldingRegister (reg, oldValue);
+		zelioConn->writeHoldingRegister (unitId, reg, oldValue);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -273,8 +275,8 @@ int Zelio::startOpen ()
 
 	try
 	{
-		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
-		zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &reg_J1);
+		zelioConn->readHoldingRegisters (unitId, ZREG_O4XT1, 1, &reg);
+		zelioConn->readHoldingRegisters (unitId, ZREG_J1XT1, 1, &reg_J1);
 		if (!(reg & ZS_SW_AUTO))
 		{
 			logStream (MESSAGE_WARNING) << "dome not in auto mode" << sendLog;
@@ -306,9 +308,9 @@ int Zelio::startOpen ()
 			logStream (MESSAGE_WARNING) << "current battery level (" << battery->getValueFloat () << ") is bellow minimal level (" << batteryMin->getValueFloat () << sendLog;
 		}
 
-		zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, deadTimeout->getValueInteger ());
-		zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_DEADN_MASK, 0);
-		zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_DEADN_MASK, 1);
+		zelioConn->writeHoldingRegisterMask (unitId, ZREG_J1XT1, ZI_DEADMAN_MASK, deadTimeout->getValueInteger ());
+		zelioConn->writeHoldingRegisterMask (unitId, ZREG_J2XT1, ZI_DEADN_MASK, 0);
+		zelioConn->writeHoldingRegisterMask (unitId, ZREG_J2XT1, ZI_DEADN_MASK, 1);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -330,9 +332,9 @@ bool Zelio::isGoodWeather ()
 	uint16_t reg3;
 	try
 	{
-		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+		zelioConn->readHoldingRegisters (unitId, ZREG_O4XT1, 1, &reg);
 		if (haveBatteryLevel || haveHumidityOutput || zelioModel == ZELIO_ELYA)
-			zelioConn->readHoldingRegisters (ZREG_O3XT1, 1, &reg3);
+			zelioConn->readHoldingRegisters (unitId, ZREG_O3XT1, 1, &reg3);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -484,7 +486,7 @@ long Zelio::isOpened ()
 	uint16_t regs[2];
 	try
 	{
-		zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+		zelioConn->readHoldingRegisters (unitId, ZREG_O1XT1, 2, regs);
 		sendSwInfo (regs);
 	}
 	catch (rts2core::ConnError err)
@@ -501,7 +503,7 @@ long Zelio::isOpened ()
 		try
 		{
 			zelioConn->init ();
-			zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+			zelioConn->readHoldingRegisters (unitId, ZREG_O1XT1, 2, regs);
 			sendSwInfo (regs);
 		}
 		catch (rts2core::ConnError er)
@@ -547,15 +549,15 @@ int Zelio::startClose ()
 		{
 			case ZELIO_ELYA:
 				// ELYA needs to set timeout to some small value, not 0
-				zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, 1);
+				zelioConn->writeHoldingRegisterMask (unitId, ZREG_J1XT1, ZI_DEADMAN_MASK, 1);
 				break;
 			default:
-				zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, 0);
+				zelioConn->writeHoldingRegisterMask (unitId, ZREG_J1XT1, ZI_DEADMAN_MASK, 0);
 		}
 		try
 		{
 			// update automode status..
-			zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+			zelioConn->readHoldingRegisters (unitId, ZREG_O4XT1, 1, &reg);
 			automode->setValueBool (reg & ZS_SW_AUTO);
 			// reset ignore rain value
 			if (ignoreRain && ignoreRain->getValueBool ())
@@ -593,7 +595,7 @@ long Zelio::isClosed ()
 	uint16_t regs[2];
 	try
 	{
-		zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+		zelioConn->readHoldingRegisters (unitId, ZREG_O1XT1, 2, regs);
 		sendSwInfo (regs);
 	}
 	catch (rts2core::ConnError err)
@@ -670,7 +672,7 @@ void Zelio::postEvent (rts2core::Event *event)
 			{
 			  	try
 				{
-					zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_DEADN_MASK, deadManNum);
+					zelioConn->writeHoldingRegisterMask (unitId, ZREG_J2XT1, ZI_DEADN_MASK, deadManNum);
 				}
 				catch (rts2core::ConnError err)
 				{
@@ -692,6 +694,8 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	haveBatteryLevel = false;
 	haveHumidityOutput = false;
 	closeErrorReported = false;
+
+	unitId = 0;
 
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
@@ -768,7 +772,7 @@ int Zelio::info ()
 	uint16_t regs[8];
 	try
 	{
-		zelioConn->readHoldingRegisters (16, 8, regs);
+		zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -866,14 +870,14 @@ int Zelio::initHardware ()
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
 		return -1;
 	}
-	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
+	zelioConn = new rts2core::ConnModbusTCP (this, host->getHostname (), host->getPort ());
 	
 	uint16_t regs[8];
 
 	try
 	{
 		zelioConn->init ();
-		zelioConn->readHoldingRegisters (16, 8, regs);
+		zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
 	catch (rts2core::ConnError er)
 	{
@@ -1130,22 +1134,22 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	{
 		if (oldValue == J1XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J1XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J1XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		else if (oldValue == J2XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J2XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J2XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		else if (oldValue == J3XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J3XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J3XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		else if (oldValue == J4XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J4XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J4XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		else if (oldValue == domeTimeout)
@@ -1158,11 +1162,11 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 				// user switched timeout
 				nreg |= 0x8000;
 				// put in value
-				zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_USER_TIO_MASK | ZI_TIMEOUT_MASK, nreg);
+				zelioConn->writeHoldingRegisterMask (unitId, ZREG_J2XT1, ZI_USER_TIO_MASK | ZI_TIMEOUT_MASK, nreg);
 			}
 			else
 			{
-				zelioConn->writeHoldingRegisterMask (ZREG_J2XT1, ZI_USER_TIO_MASK, 0);
+				zelioConn->writeHoldingRegisterMask (unitId, ZREG_J2XT1, ZI_USER_TIO_MASK, 0);
 			}
 		}
 	}

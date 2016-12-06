@@ -67,6 +67,7 @@ class TBT:public SensorWeather
 
 	private:
 		HostString *host;
+		uint8_t unitId;
 
 		rts2core::ValueInteger *J1XT1;
 		rts2core::ValueInteger *J2XT1;
@@ -102,6 +103,7 @@ TBT::TBT (int argc, char **argv):SensorWeather (argc, argv)
 {
 	zelioConn = NULL;
 	host = NULL;
+	unitId = 0;
 
 	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX | RTS2_VALUE_WRITABLE);
 	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX | RTS2_VALUE_WRITABLE);
@@ -160,7 +162,7 @@ int TBT::info ()
 	uint16_t regs[8];
 	try
 	{
-		zelioConn->readHoldingRegisters (16, 8, regs);
+		zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -210,14 +212,14 @@ int TBT::initHardware ()
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
 		return -1;
 	}
-	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
+	zelioConn = new rts2core::ConnModbusTCP (this, host->getHostname (), host->getPort ());
 	
 	uint16_t regs[8];
 
 	try
 	{
 		zelioConn->init ();
-		zelioConn->readHoldingRegisters (16, 8, regs);
+		zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
 	}
 	catch (rts2core::ConnError er)
 	{
@@ -251,22 +253,22 @@ int TBT::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	{
 		if (oldValue == J1XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J1XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J1XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		else if (oldValue == J2XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J2XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J2XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		else if (oldValue == J3XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J3XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J3XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		else if (oldValue == J4XT1)
 		{
-			zelioConn->writeHoldingRegister (ZREG_J4XT1, newValue->getValueInteger ());
+			zelioConn->writeHoldingRegister (unitId, ZREG_J4XT1, newValue->getValueInteger ());
 			return 0;
 		}
 		if (oldValue == Q1)
@@ -289,12 +291,12 @@ int TBT::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 	uint16_t oldValue;
 	try
 	{
-		zelioConn->readHoldingRegisters (reg, 1, &oldValue);
+		zelioConn->readHoldingRegisters (unitId, reg, 1, &oldValue);
 		// switch mask..
 		oldValue &= ~mask;
 		if (value)
 			oldValue |= mask;
-		zelioConn->writeHoldingRegister (reg, oldValue);
+		zelioConn->writeHoldingRegister (unitId, reg, oldValue);
 	}
 	catch (rts2core::ConnError err)
 	{

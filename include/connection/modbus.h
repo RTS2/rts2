@@ -27,52 +27,29 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ModbusError:public ConnError
+class ModbusError:public Error
 {
 	public:
-		ModbusError (Connection *conn, const char *desc):ConnError (conn, desc)
+		ModbusError (const char *desc):Error (desc)
 		{
 		}
 };
 
 /**
- * Modbus TCP/IP connection class.
- *
- * This class is for TCP/IP connectin to an Modbus enabled device. It provides
- * methods to easy read and write Modbus coils etc..
+ * Abstract class for Modbus connection. Ancestor of various Modbus implementations.
  *
  * @ingroup RTS2Block
  *
- * @author Petr Kubanek <petr@kubanek.net>
+ * @author Petr Kubánek <kubanek@fzu.cz>
  */
-class ConnModbus: public ConnTCP
+class ConnModbus
 {
-	private:
-		bool debugModbusComm;
-
-		int16_t transId;
-		char unitId;
-
 	public:
-		/**
-		 * Create connection to TCP/IP modbus server.
-		 *
-		 * @param _master     Reference to master holding this connection.
-		 * @param _hostname   Modbus server IP address or hostname.
-		 * @param _port       Modbus server port number (default is 502).
-		 */
-		ConnModbus (rts2core::Block *_master, const char *_hostname, int _port);
+		ConnModbus ();
 
+		virtual ~ConnModbus ();
 
-		/**
-		 * Set if debug messages from port communication will be printed.
-		 *
-		 * @param printDebug  True if all port communication should be written to log.
-		 */
-		void setDebug (bool printDebug = true)
-		{
-			debugModbusComm = printDebug;
-		}
+		virtual int init () = 0;
 
 		/**
 		 * Call Modbus function.
@@ -85,7 +62,7 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw ConnError if connection error occured.
 		 */
-		void callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size);
+		void callFunction (uint8_t slaveId, int8_t func, const unsigned char *data, size_t data_size, unsigned char *reply, size_t reply_size);
 
 		/**
 		 * Call modbus function with two unsigned integer parameters and return expected as char array.
@@ -98,7 +75,7 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw ConnError if connection error occured.
 		 */
-		void callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size);
+		void callFunction (uint8_t slaveId, int8_t func, int16_t p1, int16_t p2, unsigned char *reply, size_t reply_size);
 
 		/**
 		 * Call modbus function with two unsigned integer parameters and return expected as array of unsigned interger.
@@ -109,7 +86,7 @@ class ConnModbus: public ConnTCP
 		 * @param reply      Data returned from function call.
 		 * @param qty        Number of returned integers expected from the call.
 		 */
-		void callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty);
+		void callFunction (uint8_t slaveId, int8_t func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty);
 
 		/**
 		 * Read Modbus PLC coil states.
@@ -119,7 +96,7 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw         ConnError on error.
 		 */
-		void readCoils (int16_t start, int16_t size);
+		void readCoils (uint8_t slaveId, int16_t start, int16_t size);
 
 		/**
 		 * Read Modbus PLC discrete input states.
@@ -129,7 +106,7 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw         ConnError on error.
 		 */
-		void readDiscreteInputs (int16_t start, int16_t size);
+		void readDiscreteInputs (uint8_t slaveId, int16_t start, int16_t size);
 
 		/**
 		 * Read holding registers.
@@ -140,7 +117,7 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw            ConnError on error.
 		 */
-		void readHoldingRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
+		void readHoldingRegisters (uint8_t slaveId, int16_t start, int16_t qty, uint16_t *reply_data);
 
 		/**
 		 * Read input registers.
@@ -151,7 +128,7 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw            ConnError on error.
 		 */
-		void readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
+		void readInputRegisters (uint8_t slaveId, int16_t start, int16_t qty, uint16_t *reply_data);
 
 		/**
 		 * Write value to a register.
@@ -161,7 +138,7 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw            ConnError on error.
 		 */
-		void writeHoldingRegister (int16_t reg, int16_t val);
+		void writeHoldingRegister (uint8_t slaveId, int16_t reg, int16_t val);
 
 		/**
 		 * Write masked value to a register. Actually read register,
@@ -173,7 +150,46 @@ class ConnModbus: public ConnTCP
 		 *
 		 * @throw            ConnError on error.
 		 */
-		void writeHoldingRegisterMask (int16_t reg, int16_t mask, int16_t val);
+		void writeHoldingRegisterMask (uint8_t slaveId, int16_t reg, int16_t mask, int16_t val);
+
+	protected:
+
+		/**
+		 * Sends data to client, waits for answer and receives reply.
+		 * Must be overwritten in descendants, according to underlying transport mechanism.
+		 */
+		virtual void exchangeData (const void *modbusPayload, size_t payloadSize, void *reply, size_t replySize) = 0;
+};
+
+/**
+ * Modbus TCP/IP connection class.
+ *
+ * This class is for TCP/IP connectin to an Modbus enabled device. It provides
+ * methods to easy read and write Modbus coils etc..
+ *
+ * @ingroup RTS2Block
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnModbusTCP: public ConnTCP, public ConnModbus
+{
+	public:
+		/**
+		 * Create connection to TCP/IP modbus server.
+		 *
+		 * @param _master     Reference to master holding this connection.
+		 * @param _hostname   Modbus server IP address or hostname.
+		 * @param _port       Modbus server port number (default is 502).
+		 */
+		ConnModbusTCP (rts2core::Block *_master, const char *_hostname, int _port);
+
+		virtual int init ();
+
+	protected:
+		virtual void exchangeData (const void *modbusPayload, size_t payloadSize, void *reply, size_t replySize);
+
+	private:
+		int16_t transId;
 };
 
 //class ConnModbusTCP
