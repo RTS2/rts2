@@ -107,5 +107,6 @@ src/rotad/rts2-rotad-*
 src/scheduler/rts2-scheduler
 src/sensord/rts2-sensor-*
 src/teld/rts2-*
+checks/*.log
 stamp-h1
 test-driver
