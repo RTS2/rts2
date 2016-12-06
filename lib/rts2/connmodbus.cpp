@@ -42,16 +42,22 @@ void ConnModbus::callFunction (uint8_t slaveId, int8_t func, const unsigned char
 	send_data[1] = func;
 	bcopy (data, send_data + 2, data_size);
 	exchangeData (send_data, data_size + 2, reply_data, reply_size + 2);
-	if ((uint8_t) reply_data[0] != func)
+	if (reply_data[0] != slaveId)
 	{
 		std::ostringstream _os;
-		_os << "Invalid reply from modbus read, reply function is 0x" << std::hex << (int) reply_data[0] << ", expected 0x" << std::hex << (int) func;
+		_os << "invalid reply ID " << reply_data[0] << " " << slaveId;
 		throw ModbusError (_os.str ().c_str ());
 	}
 	if (reply_data[1] & 0x80)
 	{
 		std::ostringstream _os;
 		_os << "Error executing function " << func << " error code is: 0x" << std::hex << (int) reply_data[1];
+		throw ModbusError (_os.str ().c_str ());
+	}
+	if ((uint8_t) reply_data[1] != func)
+	{
+		std::ostringstream _os;
+		_os << "Invalid reply from modbus read, reply function is 0x" << std::hex << (int) reply_data[1] << ", expected 0x" << std::hex << (int) func;
 		throw ModbusError (_os.str ().c_str ());
 	}
 	bcopy (reply_data + 2, reply, reply_size);
@@ -66,16 +72,18 @@ void ConnModbus::callFunction (uint8_t slaveId, int8_t func, int16_t p1, int16_t
 	callFunction (slaveId, func, (unsigned char*) req_data, 4, reply, reply_size);
 }
 
-void ConnModbus::callFunction (uint8_t slaveId, int8_t func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty)
+void ConnModbus::callFunction16 (uint8_t slaveId, int8_t func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty)
 {
 	int reply_size = 1 + qty * 2;
 	unsigned char reply[reply_size];
 
 	callFunction (slaveId, func, p1, p2, reply, reply_size);
 
-	if (reply[0] != qty * 2)
+	if (qty * 2 != reply[0])
 	{
-		throw ModbusError ("Invalid quantity in reply packet!");
+		std::ostringstream _os;
+		_os << "invalid lenght in read reply: " << (int) reply[0] << " " << (qty * 2);
+		throw ModbusError(_os.str ().c_str ());
 	}
 
 	unsigned char *rtop = reply + 1;
@@ -105,17 +113,17 @@ void ConnModbus::readDiscreteInputs (uint8_t slaveId, int16_t start, int16_t siz
 
 void ConnModbus::readHoldingRegisters (uint8_t slaveId, int16_t start, int16_t qty, uint16_t *reply_data)
 {
-	callFunction (slaveId, 0x03, start, qty, reply_data, qty);
+	callFunction16 (slaveId, 0x03, start, qty, reply_data, qty);
 }
 
 void ConnModbus::readInputRegisters (uint8_t slaveId, int16_t start, int16_t qty, uint16_t *reply_data)
 {
-	callFunction (slaveId, 0x04, start, qty, reply_data, qty);
+	callFunction16 (slaveId, 0x04, start, qty, reply_data, qty);
 }
 
 void ConnModbus::writeHoldingRegister (uint8_t slaveId, int16_t reg, int16_t val)
 {
-  	uint16_t reply[2];
+	unsigned char reply[4];
 	callFunction (slaveId, 0x06, reg, val, reply, 4);
 }
 
@@ -154,9 +162,13 @@ void ConnModbusTCP::exchangeData (const void *payloadData, size_t payloadSize, v
 		char reply_data[replySize];
 		receiveData (reply_data, replySize, 50);
 
-		uint16_t replyId = ntohs (*reply_data);
+		uint16_t replyId = ntohs (*((uint16_t *) reply_data));
 		if (replyId != transId)
-			throw ModbusError ("invalid ID in reply data");
+		{
+			std::ostringstream _os;
+			_os << "invalid ID in reply data " << replyId << " " << transId;
+			throw ModbusError (_os.str ().c_str ());
+		}
 
 		bcopy (reply_data + 6, reply, replySize - 6);
 		transId++;

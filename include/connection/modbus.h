@@ -86,7 +86,7 @@ class ConnModbus
 		 * @param reply      Data returned from function call.
 		 * @param qty        Number of returned integers expected from the call.
 		 */
-		void callFunction (uint8_t slaveId, int8_t func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty);
+		void callFunction16 (uint8_t slaveId, int8_t func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty);
 
 		/**
 		 * Read Modbus PLC coil states.
