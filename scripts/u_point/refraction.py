@@ -25,7 +25,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 import numpy as np
 
 class Refraction(object):
-  def __init__(self, lg=None,obs=None):
+  def __init__(self, lg=None,obs=None,refraction_method='built_in'):
       
     self.lg=lg
     self.obs_astropy=obs
@@ -40,6 +40,8 @@ class Refraction(object):
         # AttributeError: 'Quantity' object has no 'meter' member
         self.height=float(str(height).replace('m','').replace('meter',''))
 
+    self.refraction_method=refraction_method
+    
   def refractive_index(self,pressure_qfe=None,temperature=None,humidity=None,obswl=0.5):
     # refraction: J.C. Owens, 1967, Optical Refractive Index of Air: Dependence on Pressure, Temperature and Composition  
     # pressure_t = pressure_o+1013.25*pow((1.-(0.0065* hm/288.)), 5.255)  
