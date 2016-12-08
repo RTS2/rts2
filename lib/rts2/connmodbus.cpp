@@ -202,7 +202,7 @@ void ConnModbusRTUTCP::setDebug (int d)
 
 void ConnModbusRTUTCP::exchangeData (const void *payloadData, size_t payloadSize, void *reply, size_t replySize)
 {
-	uint16_t crc16 = htons (getMsgBufCRC16 ((char *) payloadData, payloadSize));
+	uint16_t crc16 = htole16 (getMsgBufCRC16 ((char *) payloadData, payloadSize));
 	try
 	{
 		sendData (payloadData, payloadSize);
@@ -210,7 +210,7 @@ void ConnModbusRTUTCP::exchangeData (const void *payloadData, size_t payloadSize
 		replySize += 2;
 		char reply_data[replySize];
 		receiveData (reply_data, replySize, 50);
-		crc16 = htons (getMsgBufCRC16 (reply_data, replySize - 2));
+		crc16 = htole16 (getMsgBufCRC16 (reply_data, replySize - 2));
 		if (crc16 != *((uint16_t*) &(reply_data[replySize - 2])))
 		{
 			throw ModbusError ("invalid CRC");
