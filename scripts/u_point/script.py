@@ -176,10 +176,10 @@ class Script(object):
     else:
       return df_data
         
-  def fetch_nominal_altaz(self,fn=None):
+  def fetch_nominal_altaz(self,fn=None,sys_exit=True):
     ptfn=self.expand_base_path(fn=fn)
     self.nml=list()
-    df_data = self.fetch_pandas(ptfn=ptfn,columns=['nml_id','az','alt'],sys_exit=True,with_nml_id=True)
+    df_data = self.fetch_pandas(ptfn=ptfn,columns=['nml_id','az','alt'],sys_exit=sys_exit,with_nml_id=True)
     if df_data is None:
       return
 
@@ -320,6 +320,7 @@ class Script(object):
           humidity=rw['humidity'],
           mount_type_eq=mount_type_eq,
           transform_name=rw['transform_name'],
+          refraction_method=rw['refraction_method'],
           cat_ll_ap=cat_ll_ap,
           mnt_ll_sxtr=mnt_ll_sxtr,
           mnt_ll_astr=mnt_ll_astr,

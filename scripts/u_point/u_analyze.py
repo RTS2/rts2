@@ -228,7 +228,7 @@ class Analysis(Script):
       self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,ptfn))
 
   def re_plot(self,i=0,animate=None):
-    
+
     self.fetch_positions(sys_exit=False,analyzed=True)
     #                                                               if self.anl=[]
     # sxtr is RA,Dec to compare with astr
@@ -310,7 +310,7 @@ class Analysis(Script):
     self.title=title
     # we want to see something, values are only for the plot
     # this is cat not apparent
-    
+
     self.fetch_positions(sys_exit=True,analyzed=False)
     if self.sky_acq[0].mount_type_eq:
       self.cat_ll_ap_lon=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x,apparent=True).ra.degree for x in self.sky_acq]
@@ -373,7 +373,7 @@ if __name__ == "__main__":
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
   parser.add_argument('--transform-class', dest='transform_class', action='store', default='transform_astropy', help=': %(default)s, one of transform_(astropy|libnova|pyephem)')
-  parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='bennett', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
+  parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='built_in', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
 
   args=parser.parse_args()
   
@@ -398,18 +398,28 @@ if __name__ == "__main__":
 
   acq_e_h=None
   if args.delete:
+    # ToDo in case directory is not there
+    #try:
     wm=pyinotify.WatchManager()
     wm.add_watch(args.base_path,pyinotify.ALL_EVENTS, rec=True)
     acq_e_h=EventHandler(lg=logger,fn=args.acquired_positions)
     nt=pyinotify.ThreadedNotifier(wm,acq_e_h)
     nt.start()
+    #except Exception as e:
+    #  logger.error('directory: {}, das not exist, error: {}'.format(args.base_path,e))
+    #  sys.exit(1)
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
-  rf=Refraction(lg=logger,obs=obs)
-  rf_m=getattr(rf, 'refraction_'+args.refraction_method)
-  logger.info('refraction method loaded: {}'.format(args.refraction_method))
+
+  rf_m=None
+  if 'built_in' not in args.refraction_method:
+    rf=Refraction(lg=logger,obs=obs,refraction_method=args.refraction_method)
+    rf_m=getattr(rf, 'refraction_'+args.refraction_method)
+    logger.info('refraction method loaded: {}'.format(args.refraction_method))
+    
   tf = importlib.import_module(args.transform_class)
   logger.info('transformation loaded: {}'.format(args.transform_class))
+
   transform=tf.Transformation(lg=logger,obs=obs,refraction_method=rf_m)
 
   anl= Analysis(
@@ -430,7 +440,6 @@ if __name__ == "__main__":
 
   if not os.path.exists(args.base_path):
     os.makedirs(args.base_path)
-
 
   if args.plot:
     title='progress: analyzed positions'
@@ -454,34 +463,42 @@ if __name__ == "__main__":
 
   anl.fetch_positions(sys_exit=True,analyzed=False)
   anl.fetch_positions(sys_exit=False,analyzed=True)
-  
+
   # ToDo not the ideal place
   for o in anl.sky_acq: # this is the origin
     if 'no_transform' in o.transform_name:
       o.transform_name=transform.name
     elif o.transform_name in transform.name:
+      pass
+    else:
+      logger.error('u_analyze: can not mix transformations: {} (from anl file), {}, exiting'.format(o.transform_name,transform.name))
+      sys.exit(1)
+  
+    if 'no_refraction' in o.refraction_method:
+      o.refraction_method=args.refraction_method
+    elif o.refraction_method in args.refraction_method:
       continue
     else:
-      logger.error('u_analyze: can not mix transformations: {}, {}, exiting'.format(o.o.transform_name,transform.name))
+      logger.error('u_analyze: can not mix refraction methods: {} (from anl file), {}, exiting'.format(o.transform_name,transform.name))
       sys.exit(1)
-      
+
   sxtr_analyzed=[x.nml_id for x in anl.sky_anl if x.mnt_ll_sxtr is not None]
   astr_analyzed=[x.nml_id for x in anl.sky_anl if x.mnt_ll_astr is not None]
     
   for i,o in enumerate(anl.sky_acq):
     if args.do_not_use_astrometry: # double neg
       if o.nml_id in sxtr_analyzed:
-        logger.debug('skiping analyzed position: {}'.format(o.image_fn))
+        #logger.debug('skiping analyzed position: {}'.format(o.image_fn))
         continue
       else:
-        logger.debug('adding position: {},{}'.format(i,o.image_fn))
+        pass
+        # logger.debug('adding position: {},{}'.format(i,o.image_fn))
     else:
       if o.nml_id in sxtr_analyzed and o.nml_id in astr_analyzed:
         continue
       else:
-        logger.debug('adding position: {}, {}'.format(i,o.image_fn))
-        work_queue.put(o)
-        continue
+        pass
+        # logger.debug('adding position: {}, {}'.format(i,o.image_fn))
     
     work_queue.put(o)
     

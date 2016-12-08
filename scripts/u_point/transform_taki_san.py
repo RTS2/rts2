@@ -23,7 +23,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 # Transform with Toshimi Taki
 # geocentric, puerly geometrical plus refraction
 #
-
+import sys
 import numpy as np
 
 from datetime import datetime
@@ -72,7 +72,10 @@ class Transformation(object):
     self.MAA=y_rot(self.latitude-np.pi/2.)
     self.MAA_I=np.linalg.inv(self.MAA)
     self.lg.warn('status not yet prime time!!!!!!!!!!!!!!')
-    
+    if self.refraction_method is None:
+      self.lg.error('for transform_taki_san specify a refraction method: see --refraction-method, exiting')
+      sys.exit(1)
+      
   def transform_to_hadec(self,tf=None,sky=None,apparent=None):
     tem=sky.temperature
     pre=sky.pressure
@@ -109,8 +112,9 @@ class Transformation(object):
     if apparent:
       #d_alt=refraction_bennett(alt=alt,tem=tem,pre=pre,hum=hum)
       #self.lg.debug('B: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+
       d_alt=self.refraction_method(alt=alt,tem=tem,pre=pre,hum=hum)
-      self.lg.debug('O:d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+      self.lg.debug('d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
 
     aa=SkyCoord(az=az,alt=alt+d_alt, unit=(u.radian,u.radian), frame='altaz',location=tf.location,obstime=tf.obstime,pressure=pre*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum)    
 

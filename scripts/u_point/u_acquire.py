@@ -215,8 +215,13 @@ class Acquisition(Script):
       else:
         val=dra2 + ddec2
       dist.append(val)
- 
-    dist_min=min(dist)
+
+    try:
+      dist_min=min(dist)
+    except ValueError as e:
+      self.lg.warn('find_near_neighbor: NO object found, maximal distance: {0:.3f} deg'.format(max_separation*180./np.pi))
+      return None,None
+      
     if dist_min> max_separation2:
       self.lg.warn('find_near_neighbor: NO suitable object found, {0:.3f} deg, maximal distance: {1:.3f} deg'.format(np.sqrt(dist_min)*180./np.pi,max_separation*180./np.pi))
       return None,None
@@ -269,7 +274,7 @@ class Acquisition(Script):
 
   def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
     self.fetch_positions(sys_exit=False,analyzed=False)
-    self.fetch_nominal_altaz(fn=ptfn)
+    self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
     self.drop_nominal_altaz()
     
     mnt_aa_rdb_az = [x.mnt_aa_rdb.az.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
@@ -480,7 +485,7 @@ if __name__ == "__main__":
     ac.store_nominal_altaz(az_step=args.az_step,alt_step=args.alt_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,fn=args.nominal_positions)
     if args.plot:
       ac.plot(title='to be observed nominal positions',ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=False,delete=False) # no images yet
-    sys.exit(1)
+    sys.exit(0)
 
 
   if args.plot:
@@ -491,13 +496,13 @@ if __name__ == "__main__":
       title += '\n then press <Delete> to remove from the list of acquired positions'
       
     ac.plot(title=title,ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=args.animate,delete=args.delete)
-    sys.exit(1)
+    sys.exit(0)
    
   # candidate objects, predefined with u_select.py
   if args.use_bright_stars:
     ac.fetch_observable_catalog(fn=args.observable_catalog)
 
-  ac.fetch_nominal_altaz(fn=args.nominal_positions)
+  ac.fetch_nominal_altaz(fn=args.nominal_positions,sys_exit=True)
 
   ac.fetch_positions(sys_exit=False,analyzed=False)
   # drop already observed positions

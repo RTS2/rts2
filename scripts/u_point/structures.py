@@ -85,7 +85,8 @@ class SkyPosition(object):
       temperature=None,
       humidity=None,
       mount_type_eq=None,
-      transform_name=None,
+      transform_name='no_transform',
+      refraction_method='no_refraction',
       cat_ll_ap=None,
       mnt_ll_sxtr=None,
       mnt_ll_astr=None):
@@ -108,6 +109,7 @@ class SkyPosition(object):
     self.humidity=humidity
     self.mount_type_eq=mount_type_eq
     self.transform_name=transform_name
+    self.refraction_method=refraction_method
     self.cat_ll_ap=cat_ll_ap
     self.mnt_ll_sxtr=mnt_ll_sxtr
     self.mnt_ll_astr=mnt_ll_astr
@@ -140,12 +142,8 @@ class SkyPosition(object):
       mnt_ll_astr_lon=smnt_ll_astr.lon.radian
       mnt_ll_astr_lat=smnt_ll_astr.lat.radian
 
-    if self.transform_name is None:
-      transform_name='no_transform'
-    else:
-      transform_name=self.transform_name
       
-    anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24},{25},{26}'.format(
+    anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24},{25},{26},{27}'.format(
       self.nml_id,#0
       self.cat_no,#1
       self.nml_aa.az.radian,#2
@@ -166,13 +164,14 @@ class SkyPosition(object):
       self.temperature,#17
       self.humidity,#18
       self.mount_type_eq,#19
-      transform_name,#20
-      cat_ll_ap_lon,#21
-      cat_ll_ap_lat,#22
-      mnt_ll_sxtr_lon,#23
-      mnt_ll_sxtr_lat,#24
-      mnt_ll_astr_lon,#25
-      mnt_ll_astr_lat,#26
+      self.transform_name,#20
+      self.refraction_method,#21
+      cat_ll_ap_lon,#22
+      cat_ll_ap_lat,#23
+      mnt_ll_sxtr_lon,#24
+      mnt_ll_sxtr_lat,#25
+      mnt_ll_astr_lon,#26
+      mnt_ll_astr_lat,#27
     )
     return anl_str
 
@@ -199,12 +198,13 @@ cl_nms= [
   'humidity',#18
   'mount_type_eq',#19
   'transform_name',#20
-  'cat_ll_ap_lon',#21
-  'cat_ll_ap_lat',#22
-  'mnt_ll_sxtr_lon',#23
-  'mnt_ll_sxtr_lat',#24
-  'mnt_ll_astr_lon',#25
-  'mnt_ll_astr_lat',#26
+  'refraction_method',#21
+  'cat_ll_ap_lon',#22
+  'cat_ll_ap_lat',#23
+  'mnt_ll_sxtr_lon',#24
+  'mnt_ll_sxtr_lat',#25
+  'mnt_ll_astr_lon',#26
+  'mnt_ll_astr_lat',#27
 ]
 # legacy, will go away
 cl_acq= [

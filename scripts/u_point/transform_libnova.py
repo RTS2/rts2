@@ -112,7 +112,10 @@ class Transformation(object):
       # E.g. at Dome-C this formula:
       ###ln_pressure=ln_see_pres * pow(1. - (0.0065 * ln_alt) / 288.15, (9.80665 * 0.0289644) / (8.31447 * 0.0065));
       # is not precise.
-      d_alt_deg= ln.ln_get_refraction_adj(c_double(ln_pos_aa_pr.alt),c_double(ln_pressure_qfe),c_double(ln_temperature))
+      if self.refraction_method is None:
+        d_alt_deg=ln.ln_get_refraction_adj(c_double(ln_pos_aa_pr.alt),c_double(ln_pressure_qfe),c_double(ln_temperature))
+      else:
+        d_alt_deg=180./np.pi* self.refraction_method(alt=ln_pos_aa_pr.alt,tem=ln_temperature,pre=ln_pressure_qfe,hum=ln_humidity)
     else:
       # ... but not for the star position as measured in mount frame
       ln.ln_get_hrz_from_equ(byref(ln_pos_eq), byref(self.ln_obs), c_double(obstime.jd), byref(ln_pos_aa_pr));

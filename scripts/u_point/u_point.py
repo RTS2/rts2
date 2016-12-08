@@ -70,11 +70,11 @@ class PointingModel(Script):
     #
     self.fit_sxtr=fit_sxtr
     self.transform_name=None
+    self.refraction_method=None
   
 
   def fetch_coordinates(self,ptfn=None):
-    '''
-    '''
+    
     self.fetch_positions(sys_exit=True,analyzed=True)
     # old irait data do not enable
     #self.fetch_mount_meteo(sys_exit=True,analyzed=True,with_nml_id=False)
@@ -83,16 +83,25 @@ class PointingModel(Script):
     mnts=list()
     imgs=list()
     nmls=list()
-    
+
+    if len(self.sky_anl)==0:
+      self.lg.error('fetch_coordinates: nothing to analyze, exiting')
+      sys.exit(1)
+      
     self.mount_type_eq=False
     if self.sky_anl[0].mount_type_eq:
       self.mount_type_eq=True
       
     self.transform_name=None
     if self.sky_anl[0].transform_name:
-      self.transform_name=self.sky_anl[0].transform_name
-      
+      self.transform_name=self.sky_anl[0].transform_name      
     logger.info('transformation done with: {}'.format(self.transform_name))
+
+    self.refraction_method=None
+    if self.sky_anl[0].refraction_method:
+      self.refraction_method=self.sky_anl[0].refraction_method
+      
+    logger.info('refraction_method: {}'.format(self.refraction_method))
 
     for i,sky in enumerate(self.sky_anl):
       if i > self.break_after:
@@ -256,14 +265,19 @@ class PointingModel(Script):
     if args.fit_plus_poly:
       fit_title +='C+PP'
       
-    lib='_' + self.transform_name.upper()[0:2]
-    fit_title += lib
-    fn_frac=fit_title + lib
+    frag='_' + self.transform_name.upper()[0:2]
+    fit_title += frag
+    fn_frac=fit_title + frag
+    
     sx='_AS'
     if args.fit_sxtr:
       sx='_SX'
     fit_title += sx
     fn_frac=fit_title + sx
+
+    frag += '_'+ self.refraction_method.upper()[0:2]
+    fit_title += frag
+    fn_frac=fit_title + frag
     
     if args.fit_plus_poly:
       fn_frac+='c_plus_poly'

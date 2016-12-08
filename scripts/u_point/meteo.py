@@ -37,6 +37,7 @@ class Meteo(object):
     
   def retrieve(self,atmosphere=False): # False: used for simulation
     # fetch the data from external source, e.g. RTS2 weather station
+    #atmosphere=True
     if atmosphere:
       return self.pressure,self.temperature,self.humidity
     else:
