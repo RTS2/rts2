@@ -318,15 +318,17 @@ class Acquisition(Script):
     self.ax.set_ylabel('altitude [deg]')  
     self.ax.grid(True)
     # same if expression as above
+    
     annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa_rdb.az.degree, x.mnt_aa_rdb.alt.degree,x.image_fn) for x in self.sky_acq if x.mnt_aa_rdb is not None]
     nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa_rdb is not None]
     ##annotes=['{0:.1f},{1:.1f}: {2}'.format(x.aa_nml.az.radian, x.aa_nml.alt.radian,x.nml_id) for x in self.nml]
-    # does not exits at the beginning
+    # does not exits at the beginning    
     aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=mnt_aa_rdb_az,lat=mnt_aa_rdb_alt,annotes=annotes)]
-
-    return aps
-
-
+    try:
+      self.af.aps=aps
+      return
+    except AttributeError:
+      return aps
 
   def plot(self,title=None,ptfn=None,az_step=None,ds9_display=None,animate=None,delete=None):
     import matplotlib
@@ -340,8 +342,14 @@ class Acquisition(Script):
     self.title=title # ToDo could be passed via animation.F...
 
     if animate:
-      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate,),interval=5000)
-    
+      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate),interval=5000)
+      #while True:
+      #  self.fetch_positions(sys_exit=False,analyzed=False)
+      #  if self.sky_acq is not None and len(self.sky_acq)>0:
+      #    break
+      #  self.lg.debug('plot: waiting for data')
+      #  time.sleep(1)
+        
     aps=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
     self.af = AnnoteFinder(ax=self.ax,aps=aps,xtol=5.,ytol=5.,ds9_display=ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)

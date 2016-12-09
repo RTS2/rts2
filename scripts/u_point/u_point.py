@@ -71,7 +71,6 @@ class PointingModel(Script):
     self.fit_sxtr=fit_sxtr
     self.transform_name=None
     self.refraction_method=None
-  
 
   def fetch_coordinates(self,ptfn=None):
     
@@ -267,17 +266,16 @@ class PointingModel(Script):
       
     frag='_' + self.transform_name.upper()[0:2]
     fit_title += frag
-    fn_frac=fit_title + frag
     
     sx='_AS'
     if args.fit_sxtr:
       sx='_SX'
     fit_title += sx
-    fn_frac=fit_title + sx
 
-    frag += '_'+ self.refraction_method.upper()[0:2]
+    frag= '_'+ self.refraction_method.upper()[0:2]
     fit_title += frag
-    fn_frac=fit_title + frag
+
+    fn_frac=fit_title.replace(' ','_').replace('+','_')
     
     if args.fit_plus_poly:
       fn_frac+='c_plus_poly'

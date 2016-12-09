@@ -292,10 +292,12 @@ class Analysis(Script):
     annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa_rdb.az.degree,x.mnt_aa_rdb.alt.degree,x.image_fn) for x in self.sky_acq]
     nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa_rdb is not None]
     aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=self.cat_ll_ap_lon,lat=self.cat_ll_ap_lat,annotes=annotes)]
-  
-    # does not exits at the beginning
-    return aps
 
+    try:
+      self.af.aps=aps
+      return
+    except AttributeError:
+      return aps
     
   def plot(self,title=None,animate=None,delete=None):
 
@@ -320,12 +322,12 @@ class Analysis(Script):
       self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic,sky=x,apparent=True).az.degree for x in self.sky_acq]
       self.cat_ll_ap_lat=[self.to_altaz(ic=x.cat_ic,sky=x,apparent=True).alt.degree for x in self.sky_acq]
 
-    if animate:
+    if animate: #                                                    do not remove ","
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
 
     aps=self.re_plot(animate=animate)
     # analyzed=False means: delete a position in acquired 
-    self.af = AnnoteFinder(ax=self.ax,xtol=5.,aps=aps, ytol=5., ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
+    self.af = AnnoteFinder(ax=self.ax,aps=aps,xtol=5., ytol=5.,ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)

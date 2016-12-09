@@ -28,8 +28,16 @@
 #
 # No RTS2 installation required
 #
-export latitude="--obs-latitude 89.5"
-#export latitude=""
+alt_az_steps="--alt-step 5 --az-step 20"
+#alt_az_steps="--alt-step 10 --az-step 40"
+LATITUDE="--obs-latitude m75.1"
+PLOT="--plot"
+SKIP_ACQUISITION=
+BASE_PATH=/tmp/u_point
+MODEL_CLASS="--model-class model_u_point"
+
+trap "exit 1" TERM
+export TOP_PID=$$
 quit()
 {
     echo "signal received, exiting"
@@ -54,13 +62,13 @@ function cont_exit {
     "$@"
     local status=$?
     if [ $status -ne 0 ]; then
-	echo "error with $1, status $status" >&2
-	exit
+	#echo "error with $1, status $status" >&2
+	kill -s TERM $TOP_PID > /dev/null 2>&1
     fi
     return $status
 }
 
-while getopts :sapr:t:m: opt; do
+while getopts ":apsrdl:o:m:t:f:c:" opt; do
     case ${opt} in
 	a )
 	    ASTROMETRY=true
@@ -71,43 +79,62 @@ while getopts :sapr:t:m: opt; do
 	s )
 	    SKIP_ACQUISITION=true
 	    ;;
-	r ) 
+	r )	    
 	    RTS2=true
+	    ;;
+	d )
+	    PLOT=
+	    ;;
+	l )
+	    LATITUDE="--obs-latitude $OPTARG"
 	    ;;
 	m )
 	    REFRACTION_METHOD=$OPTARG
-	    echo $REFRACTION_METHOD
 	    ;;
 	t )
 	    TRANSFORMATION_CLASS=$OPTARG
-	    echo $TRANSFORMATION_CLASS
 	    ;;
-       
+	o )
+	    FN=$OPTARG
+	    ANALYSIS_OUTPUT_FILE="--analyzed-positions $FN"
+	    ;;
+	f )
+	    BASE_PATH=$OPTARG
+	    ;;
+	c )
+	    MODEL_CLASS="--model-class $OPTARG"
+	    ;;
+
 	\? ) echo "usage: do_it_all_dss.sh  OPTION"
 	     echo ""
 	     echo "OPTION:"
 	     echo ""
 	     echo "-a use astrometry.net and SExtractor"
 	     echo "-p do not delete base path"
+	     echo "-s skip selecting stars, creation of nominal position and acquisition of data"
 	     echo "-r use RTS2 devices"
+	     echo "-d do not plot intermediate steps"
+	     echo "-l observatory latitude"
+	     echo "-o analysis output filename"
 	     echo "-m refraction method, if applicable (see -t), see u_analyze.py --help: --refraction-method"
 	     echo "-t transformation class, see u_analyze.py --help --help: --transform-class "
 	     echo "   transform_taki_san: a refraction method must be specified"
 	     echo "   transform_libnova : a refraction method can be specified"
 	     echo "   transform_pyephem : a refraction method can not yet be specified"
 	     echo "   transform_astropy : no refraction method can be specified"
+	     echo "-f base path"
+	     echo "-z pointing model, one of model_(u_point|buie|altaz)"
 	     exit 1
 	     ;;
+	:)
+	    echo "Option -$OPTARG requires an argument." >&2
+	    exit 1
     esac
 done
-echo""
-export BASE_PATH=/tmp/u_point
-##export BASE_PATH=$HOME/u_point
 
-if ! [ -z ${SKIP_ACQUISITION+x} ]; then
+if ! [ -z ${SKIP_ACQUISITION} ]; then
     echo "do not delete base directory $BASE_PATH"
     echo "skipping u_select.py, u_acquire.py --create and u_acquire.py (no data fetching)"
-    skip_acquisition=true
     PRESERVE=true
 fi
 echo ""
@@ -139,56 +166,56 @@ else
     transform_class="--transform-class $TRANSFORMATION_CLASS"
 fi
 echo ""
-if  [ -z ${PRESERVE+x} ] ; then
+if  [ -z ${PRESERVE} ] ; then
     echo "clean sweep in base directory $BASE_PATH"
     rm -fr $BASE_PATH
 else
     echo "do not delete base directory $BASE_PATH"
 fi
-#
-#
+echo
+echo "exit"
 #
 # since u_point is not yet a python package
 cd $HOME/rts2/scripts/u_point
-#
-if [ -z ${skip_acquisition+x} ]; then
+if [ -z ${SKIP_ACQUISITION} ]; then
     #
+    if  [ -z ${PRESERVE} ] ; then
+
+	echo "-----------------------------------------------------------------"
+	echo "first step, create site specific observable objects catalog"
+	echo "fetching 9109 objects"
+	echo "takes several 5 seconds..."
+	if ! [ -z ${PLOT} ]; then
+	    echo "plotting the results"
+	    echo "-----------------------------------------------------------------"
+	    echo "takes several 5 seconds..."
+	    echo "CLOSE plot window to continue"
+	    echo ""
+	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE $PLOT > /dev/null 2>&1
+	else
+	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE  > /dev/null 2>&1
+	fi
+	#
+	echo "DONE selecting stars"
+	echo "-----------------------------------------------------------------"
+	if ! [ -z ${PLOT} ]; then
+	    echo "second step, define a nominal grid of alt az positions and plot it"
+	    echo "-----------------------------------------------------------------"
+	    echo "CLOSE plot window to continue"
+	    echo ""
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $PLOT $alt_az_steps
+	else
+	    echo "second step, define a nominal grid of alt az positions"
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps    
+	fi
+	#
+	echo "DONE grid creation"
+    fi
     echo "-----------------------------------------------------------------"
-    echo "first step, create site specific observable objects catalog and plot it"
-    echo "fetching 9109 objects"
-    #
+    echo "third step, acquire positions from DSS: http://archive.eso.org/dss/dss"
+    echo "since we do not use real equipment"
+    echo "dummy meteo data are provided by meteo.py"
     echo ""
-    echo "-----------------------------------------------------------------"
-    echo "takes several 5 seconds..."
-    echo "CLOSE plot window to continue"
-    echo ""
-    #echo "./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" --plot"
-    #
-    #cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "5.5 6.5" $latitude --plot > /dev/null 2>&1
-    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $latitude --plot > /dev/null 2>&1
-    #
-    echo "DONE selecting stars"
-fi
-if [ -z ${skip_acquisition+x} ]; then
-    echo "-----------------------------------------------------------------"
-    echo "second step, define a nominal grid of alt az positions and plot it"
-    echo "the grid has an az step of 40. deg (fewer objects)"
-    echo ""
-    echo "-----------------------------------------------------------------"
-    echo "CLOSE plot window to continue"
-    echo ""
-    #echo "cont_exit ./u_acquire.py --base-path $BASE_PATH --create --plot --az-step 40"
-    #
-    cont_exit ./u_acquire.py --base-path $BASE_PATH $latitude --create --plot --az-step 40
-    #
-    echo "DONE grid creation"
-fi
-echo "-----------------------------------------------------------------"
-echo "third step, acquire positions from DSS: http://archive.eso.org/dss/dss"
-echo "since we do not use real equipment"
-echo "dummy meteo data are provided by meteo.py"
-echo ""
-if  [ -z ${SKIP_ACQUISITION+x} ]; then
     if ! [ -z ${RTS2+x} ]; then
 	#
 	acq_script=" $HOME/rts2/scripts/u_point/u_acquire_fetch_dss_continuous.sh "
@@ -198,9 +225,9 @@ if  [ -z ${SKIP_ACQUISITION+x} ]; then
 	rts2-scriptexec -d C0 -s " exe $acq_script "  &
 	export pid_u_acquire=$!
     else
-	#echo "cont_exit ./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image --use-bright-stars &"
 	#
-	cont_exit ./u_acquire.py --base-path $BASE_PATH  $latitude --fetch-dss-image  --use-bright-stars --toconsole&
+	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE --fetch-dss-image  --use-bright-stars --toconsole &
+	export pid_u_acquire=$!
 	#
 	# no bright stars:
 	#cont_exit ./u_acquire.py --base-path $BASE_PATH  --fetch-dss-image --toconsole &
@@ -208,7 +235,6 @@ if  [ -z ${SKIP_ACQUISITION+x} ]; then
 	# no internet connection:
 	#cont_exit ./u_acquire.py --base-path $BASE_PATH --toconsole &
 	#
-	export pid_u_acquire=$!
     fi
     if ! [ -z ${RTS2+x} ]; then
 	
@@ -220,22 +246,20 @@ if  [ -z ${SKIP_ACQUISITION+x} ]; then
 	#
 	rts2-scriptexec -d C0 -s " exe $plt_script " &
     else
-	cont_exit ./u_acquire.py --base-path $BASE_PATH $latitude --plot --ds9-display --animate --delete --toconsole --level DEBUG &
+	echo ""
+	if ! [ -z ${PLOT} ]; then
+	    # nap is necessary for callback to work
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $PLOT --ds9-display --animate --delete --level DEBUG &
+	    echo "-----------------------------------------------------------------"
+	    echo "leave acquire plot window open"
+	    echo "click on blue points to see FITS being displayed with DS9"
+	fi
     fi
-
-    echo ""
-    echo "-----------------------------------------------------------------"
-    echo "leave plot window open"
-    echo "click on blue points to see FITS being displayed with DS9"
     #
     if ps -p $pid_u_acquire >/dev/null; then
 	echo ""
 	echo "-----------------------------------------------------------------"
 	echo "waiting for u_acquire to terminate, PID $pid_u_acquire"
-	echo "if plot is not clickable, issue: "
-	echo ""
-	echo " cd $HOME/rts2/scripts/u_point ; ./u_acquire.py --base-path $BASE_PATH --plot --ds9-display --animate --delete --toconsole "
-	echo "-----------------------------------------------------------------"
 	wait $pid_u_acquire
     fi
     echo ""
@@ -246,23 +270,21 @@ fi
 echo "forth step, analyze the acquired position"
 if ! [ -z ${ASTROMETRY+x} ]; then
     #
-    set -x
-    cont_exit ./u_analyze.py  --base-path $BASE_PATH  $latitude  --timeout 30 --toconsole $transform_class $refraction_method &
-    set +x
+    cont_exit ./u_analyze.py  --base-path $BASE_PATH  $LATITUDE  --timeout 30 --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method &
     export pid_u_analyze=$!
 else
     #
-    set -x
-    cont_exit ./u_analyze.py  --base-path $BASE_PATH $latitude --do-not-use-astrometry  --toconsole $transform_class $refraction_method &
-    set +x
+    cont_exit ./u_analyze.py  --base-path $BASE_PATH $LATITUDE --do-not-use-astrometry  --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method &
     export pid_u_analyze=$!
 fi
 #
-cont_exit ./u_analyze.py --base-path $BASE_PATH --plot --ds9-display --animate --delete $transform_class $refraction_method &
-echo ""
-echo "-----------------------------------------------------------------"
-echo "leave plot window open"
-echo "click on blue points to see FITS being displayed with DS9"
+if ! [ -z ${PLOT} ]; then
+    cont_exit ./u_analyze.py --base-path $BASE_PATH $PLOT --ds9-display --animate --delete $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method &
+    echo ""
+    echo "-----------------------------------------------------------------"
+    echo "leave analysis plot window open"
+    echo "click on blue points to see FITS being displayed with DS9"
+fi
 if ps -p $pid_u_analyze >/dev/null; then
     echo ""
     echo "-----------------------------------------------------------------"
@@ -279,15 +301,9 @@ echo ""
 if ! [ -z ${ASTROMETRY+x} ]; then
     echo ""
     echo "displaying results from astrometry.net"
-    cont_exit ./u_point.py --base-path $BASE_PATH  $latitude --plot --ds9-display --delete --toconsole --model-class model_u_point --ds9& 
+    cont_exit ./u_point.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole $MODEL_CLASS --ds9 $ANALYSIS_OUTPUT_FILE& 
 else
     echo "displaying results from SExtractor"
-    cont_exit ./u_point.py --base-path $BASE_PATH  $latitude --plot --ds9-display --delete --toconsole  --model-class model_u_point --fit-sxtr& 
+    cont_exit ./u_point.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole  --fit-sxtr $MODEL_CLASS  $ANALYSIS_OUTPUT_FILE& 
 
 fi
-echo ""
-echo "-----------------------------------------------------------------"
-echo "leave plot windows open"
-echo "click on blue points to see FITS being displayed with DS9"
-echo ""
-echo ""
