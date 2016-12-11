@@ -25,7 +25,7 @@ from transform.u_libnova import Transformation as LibnovaTF
 from transform.u_taki_san import Transformation as TakiSanTF
 
 
-def plot(r_x=None,r_y=None,g_x=None,g_y=None,b_x=None,b_y=None,m_x=None,m_y=None,ln_apparent=None):
+def plot(r_x=None,r_y=None,g_x=None,g_y=None,b_x=None,b_y=None,m_x=None,m_y=None,c_x=None,c_y=None,ln_apparent=None):
 
     import matplotlib
     import matplotlib.animation as animation
@@ -36,17 +36,18 @@ def plot(r_x=None,r_y=None,g_x=None,g_y=None,b_x=None,b_y=None,m_x=None,m_y=None
     fig = plt.figure(figsize=(8,6))
     ax1 = fig.add_subplot(111)#, projection="mollweide")
 
-    title='red: TS-AS, green: LN-AS, blue: LN-TS, magenta: TS-PYE'
+    title='red: TS-AS, green: LN-AS, blue: LN-TS, magenta: TS-PYE, cyan:LN-PYE'
     if ln_apparent:
       title += ',LN:TF to apparent'
     else:
       title += ',LN:TF geometrical'
       
-    ax1.set_title(title)
+    ax1.set_title(title,fontsize=10)
     ax1.scatter(r_x,r_y,color='red')
     ax1.scatter(g_x,g_y,color='green')
     ax1.scatter(b_x,b_y,color='blue')
     ax1.scatter(m_x,m_y,color='magenta')
+    ax1.scatter(c_x,c_y,color='cyan')
     #
     ax1.set_xlabel('d_azimuth [arcmin]')
     ax1.set_ylabel('d_altitude [arcmin]')
@@ -107,9 +108,12 @@ if __name__ == "__main__":
   ln_ts_y=list()
   ts_py_x=list()
   ts_py_y=list()
+  ln_py_x=list()
+  ln_py_y=list()
 
   for RA in range(0,360,10):
-    gc=SkyCoord(float(RA)*u.degree,args.declination*u.degree, frame='gcrs',location=obs,obstime=now,pressure=0.)
+    #gc=SkyCoord(float(RA)*u.degree,args.declination*u.degree, frame='gcrs',location=obs,obstime=now,pressure=0.)
+    gc=SkyCoord(float(RA)*u.degree,args.declination*u.degree, frame='icrs',location=obs,obstime=now,pressure=0.)
     ast_aa=ast.transform_to_altaz(tf=gc,sky=None,apparent=None)
     ln_aa=lbn.LN_GCRS_to_AltAz(ra=gc.ra.degree,dec=gc.dec.degree,ln_pressure_qfe=0.,ln_temperature=0.,ln_humidity=0.,obstime=gc.obstime,apparent=args.ln_apparent)   
     # Taki - astropy
@@ -143,9 +147,15 @@ if __name__ == "__main__":
       daz -= 2.*np.pi 
     ts_py_x.append(daz *60.* 180./np.pi) # westward from south
     ts_py_y.append(tks_aa.alt.arcmin-pye_aa.alt.arcmin)
+    # Libnova - PyEphem
+    daz=(ln_aa.az.radian-np.pi)-pye_aa.az.radian
+    if daz < -np.pi:
+      daz += 2.*np.pi 
+    ln_py_x.append(daz *60.* 180./np.pi) # westward from south
+    ln_py_y.append(ln_aa.alt.arcmin-pye_aa.alt.arcmin)
     
     
-  plot(r_x=ts_as_x,r_y=ts_as_y,g_x=ln_as_x,g_y=ln_as_y,b_x=ln_ts_x,b_y=ln_ts_y,m_x=ts_py_x,m_y=ts_py_y,ln_apparent=args.ln_apparent)
+  plot(r_x=ts_as_x,r_y=ts_as_y,g_x=ln_as_x,g_y=ln_as_y,b_x=ln_ts_x,b_y=ln_ts_y,m_x=ts_py_x,m_y=ts_py_y,c_x=ln_py_x,c_y=ln_py_y,ln_apparent=args.ln_apparent)
 
 
 

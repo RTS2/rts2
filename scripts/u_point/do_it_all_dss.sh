@@ -35,7 +35,8 @@ PLOT="--plot"
 SKIP_ACQUISITION=
 BASE_PATH=/tmp/u_point
 MODEL_CLASS="--model-class point"
-FETCH_DDS_IMAGE="--fetch-dss-image"
+FETCH_DSS_IMAGE="--fetch-dss-image"
+
 trap "exit 1" TERM
 export TOP_PID=$$
 quit()
@@ -86,7 +87,7 @@ while getopts ":apsrdil:o:m:t:f:c:" opt; do
 	    PLOT=
 	    ;;
 	i )
-	    FETCH_DDS_IMAGE=
+	    FETCH_DSS_IMAGE=
 	    ;;
 	l )
 	    LATITUDE="--obs-latitude $OPTARG"
@@ -176,8 +177,6 @@ if  [ -z ${PRESERVE} ] ; then
 else
     echo "do not delete base directory $BASE_PATH"
 fi
-echo
-echo "exit"
 #
 # since u_point is not yet a python package
 cd $HOME/rts2/scripts/u_point
