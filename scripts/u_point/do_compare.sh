@@ -33,19 +33,19 @@ cd $HOME/rts2/scripts/u_point
 #
 #
 #
-./do_it_all_dss.sh -a -t transform_taki_san  -m bennett -o transform_taki_san_bennett
+##./do_it_all_dss.sh -a -f /home/wildi/c_point -t transform_taki_san  -m bennett -o transform_taki_san_bennett
 #
-./do_it_all_dss.sh -s -a -t transform_taki_san  -m stone -o transform_taki_stone
+##./do_it_all_dss.sh -s -a -f /home/wildi/c_point -t transform_taki_san  -m stone -o transform_taki_stone
 #
-./do_it_all_dss.sh -s -a -t transform_taki_san  -m saemundsson -o transform_taki_saemundsson
+##./do_it_all_dss.sh -s -a -f /home/wildi/c_point -t transform_taki_san  -m saemundsson -o transform_taki_saemundsson
 #
-./do_it_all_dss.sh -s -a -t transform_libnova  -m bennett -o transform_libnova_bennett
+##./do_it_all_dss.sh -s -a -f /home/wildi/c_point -t transform_libnova  -m bennett -o transform_libnova_bennett
 #
-./do_it_all_dss.sh -s -a -t transform_libnova  -m stone -o transform_libnova_stone
+##./do_it_all_dss.sh -s -a -f /home/wildi/c_point -t transform_libnova  -m stone -o transform_libnova_stone
 #
-./do_it_all_dss.sh -s -a -l 47.5 -t transform_libnova  -m saemundsson -o transform_libnova_saemundsson
+##/do_it_all_dss.sh -s -a -f /home/wildi/c_point -l 47.5 -t transform_libnova  -m saemundsson -o transform_libnova_saemundsson
 #
-./do_it_all_dss.sh -s -a -t transform_astropy -o transform_astropy
+./do_it_all_dss.sh -s -a -f /home/wildi/c_point -t transform_astropy -o transform_astropy
 # 
-./do_it_all_dss.sh -s -a -t transform_pyephen -o transform_pyephen
+##./do_it_all_dss.sh -s -a -f /home/wildi/c_point -t transform_pyephen -o transform_pyephen
 #

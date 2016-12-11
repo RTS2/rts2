@@ -41,7 +41,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord,EarthLocation
 from astropy.coordinates import Longitude,Latitude
 
-from structures import CatPosition
+from u_point.structures import CatPosition
 
 class Catalog(object):
   def __init__(self, dbg=None,lg=None, obs_lng=None, obs_lat=None, obs_height=None,break_after=None,base_path=None):

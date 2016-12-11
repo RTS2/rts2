@@ -55,11 +55,11 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord,EarthLocation
 from astropy.coordinates import AltAz
 
-from notify import ImageEventHandler 
-from notify import EventHandler 
-from callback import AnnoteFinder
-from callback import  AnnotatedPlot
-from script import Script
+from u_point.notify import ImageEventHandler 
+from u_point.notify import EventHandler 
+from u_point.callback import AnnoteFinder
+from u_point.callback import  AnnotatedPlot
+from u_point.script import Script
 
 class Acquisition(Script):
   def __init__(
@@ -452,10 +452,10 @@ if __name__ == "__main__":
     
   # ToD revisit dynamical loding
   # now load meteo class ...
-  mt = importlib.import_module(args.meteo_class)
+  mt = importlib.import_module('meteo.'+args.meteo_class)
   meteo=mt.Meteo(lg=logger)
   # ... and device, ToDo revisit
-  mod =importlib. __import__('devices', fromlist=[args.device_class])
+  mod =importlib. __import__('u_point.devices', fromlist=[args.device_class])
   Device = getattr(mod, args.device_class)
 
   px_scale=args.pixel_scale/3600./180.*np.pi # arcsec, radian

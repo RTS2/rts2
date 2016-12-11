@@ -57,15 +57,15 @@ except:
   print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
   sys.exit(1)
 
-import ds9region
-import sextractor_3
-from callback import AnnoteFinder
-from callback import  AnnotatedPlot
-from notify import EventHandler 
-from worker import Worker
-from solver import SolverResult,Solver
-from script import Script
-from refraction import Refraction
+import u_point.ds9region
+import u_point.sextractor_3 as sextractor_3
+from u_point.callback import AnnoteFinder
+from u_point.callback import  AnnotatedPlot
+from u_point.notify import EventHandler 
+from u_point.worker import Worker
+from u_point.solver import SolverResult,Solver
+from u_point.script import Script
+from u_point.refraction import Refraction
 
 class Analysis(Script):
   def __init__(
@@ -159,7 +159,7 @@ class Analysis(Script):
     ptfn=self.expand_base_path(fn=sky.image_fn)
     self.lg.debug('{0}:   sextract   result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,ptfn))
     if sky.mount_type_eq:
-      sky.mnt_ll_sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='cirs',location=self.obs)
+      sky.mnt_ll_sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='gcrs',location=self.obs)
     else:
       sky.mnt_ll_sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
   
@@ -211,7 +211,7 @@ class Analysis(Script):
     if sr is not None:
       self.lg.debug('{0}:ic astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
 
-      mnt_ll=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='cirs',location=self.obs,obstime=sky.dt_end)
+      mnt_ll=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='gcrs',location=self.obs,obstime=sky.dt_end)
       if sky.mount_type_eq:
         tr_t_tf=self.transform.transform_to_hadec
       else:
@@ -374,7 +374,7 @@ if __name__ == "__main__":
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
-  parser.add_argument('--transform-class', dest='transform_class', action='store', default='transform_astropy', help=': %(default)s, one of transform_(astropy|libnova|pyephem)')
+  parser.add_argument('--transform-class', dest='transform_class', action='store', default='u_astropy', help=': %(default)s, one of (u_astropy|u_libnova|u_pyephem)')
   parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='built_in', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
 
   args=parser.parse_args()
@@ -419,7 +419,7 @@ if __name__ == "__main__":
     rf_m=getattr(rf, 'refraction_'+args.refraction_method)
     logger.info('refraction method loaded: {}'.format(args.refraction_method))
     
-  tf = importlib.import_module(args.transform_class)
+  tf = importlib.import_module('transform.'+args.transform_class)
   logger.info('transformation loaded: {}'.format(args.transform_class))
 
   transform=tf.Transformation(lg=logger,obs=obs,refraction_method=rf_m)

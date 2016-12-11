@@ -40,11 +40,11 @@ u_point's use cases are:
 
 - unattended data acquisition and analysis done
   with astrometry.net. In this case do not use
-  results from SExtractor (see u_point.py).
+  results from SExtractor (see u_model.py).
 
 - a CCD FoV which is too small for astrometry.net
   or similar to work reliably.
-  As targets serve "lonely" objects from Yale's
+  As targets serve "not so lonely" objects from Yale's
   Bright Star Catalog which are identified as
   brightest object on an CCD image.
   SExtractor will select the brightest star which
@@ -52,7 +52,7 @@ u_point's use cases are:
 
 - u_point is written in a way, that libindi or
   ASCOM users can easily extend u_point (see
-  devices.py or contact wildi.markus@bluewin.ch)
+  u_point/devices.py or contact wildi.markus@bluewin.ch)
 
 For quick introduction see section: Very quick
 tour: do_it_all_dss.sh
@@ -67,9 +67,6 @@ Welcome to users of libindi, ASCOM or any other system
 98% of the code is independent of any specific system,
 like RTS2, libindi or ASCOM.
 
-Python lives on many OSs and architectures, hence
-using u_point with a diffrent combination is likely
-to work, or very soon.
 
 libnova, astropy, PyEphem, Toshimi Taki
 =======================================
@@ -84,28 +81,32 @@ there are several 'transformers' available
 
 where TRANSFORM is one of f the following options
 
- transform_libnova
- transform_astropy
- transform_pyephem
- (transform_taki_san)
+ u_libnova
+ u_astropy
+ u_pyephem
+ u_taki_san
 
-TRANSFORM is loaded at run time.
+TRANSFORM is loaded at run time. As of 2016-12-11
+I'm investigating the differences with scripts
+
+ - test_coordinates.py
+ - test_coordinates_altaz.py
 
 Model selection
 ===============
 
 There are several optimization models available:
 
- u_point.py --model-class MODEL
+ u_model.py --model-class MODEL
 
 where MODEL is one of the following options
 
- model_altaz
+ model/altaz
 
 for AltAz and for HA/Dec
 
- model_buie
- model_u_point
+ model/buie
+ model/point
 
 Like TRANSFORM, MODEL is loaded at run time.
 
@@ -113,7 +114,7 @@ SExtractor versus astrometry.net
 ================================
 
 When ever possible use astrometry.net (default)
-and not SExtractor. u_point.py uses per default
+and not SExtractor. u_model.py uses per default
 results from astrometry.net, but --fit-sextr can
 be specified to obtain those results.
 
@@ -129,10 +130,10 @@ E.g. RTS2 provides corrections for (see libnova)
 
 and can be considered as "apparent" coordinates as
 long as the resulting pointing error is greater than
-1 arcsec. Libnova's calculation of refraction needs
+10 arcsec. Libnova's calculation of refraction needs
 to be revisited. If a mount controller does not
 provide these corrections the coordinates set at
-mount must be calculated and set.
+mount must be calculated as apparent.
 
 The catalog data (ICRS), labeled as cat_ic, are transformed
 to apparent/observed, either AltAz (cat_aa) or HA,Dec (cat_ha).
@@ -146,11 +147,7 @@ The coordinates exist in u_point source code as follows:
 
 Grid positions:
 ---------------
-nml_ic: nominal position ICRS, it is almost ICRS since
-        refraction is not corrected. But any value
-	is ok because nml_ic is copied to cat_ic: this
-	is the starting point.
-	
+nml_ic: nominal position "ICRS".
 nml_aa: nominal position AltAz
 
 Catalog positions:
@@ -164,7 +161,7 @@ cat_az_ap: apparent position AltAz
 
 Mount positions:
 ----------------	
-mnt_ap_set: input to the mount, values from cat_ap
+mnt_ap_set: input to the mount, values from cat_ra_ap
 mnt_ra_rdb: read back from the mount
 
 mnt_ha_clc: HA,Dec calculated from cat_ap
@@ -181,8 +178,8 @@ Coordinates cat_ic are transformed to apparent AltAz
 cat_aa or to apparent HA,Dec cat_ha. In both
 cases refraction is included if meteo data is available.
 
-cat_ap is set at the mount (mnt_ap_set), assuming the
-mount controller does not applay any corrections. The
+cat_ra_ap is set at the mount (mnt_ap_set), assuming the
+mount controller does not apply any corrections. The
 differences
 
  d_az  = cat_az_ap.az -  X.az
@@ -229,8 +226,7 @@ have been installed, it is ready to use.
  cd $HOME/rts2/scripts
  ./do_it_all_dss.sh
 
-If astrometry.net should be used, start with
-option '-a'
+If astrometry.net should be used, start with option '-a'
 
  ./do_it_all_dss.sh -a
 
@@ -294,7 +290,10 @@ log information is only available with command
 
  tail -f /tmp/u_acquire.log
 
-Read the --help texts for more options.
+rts2-scriptexec reads/writes to STDOUT/STDIN of the
+executed script, hence logging to console is read
+by rts2-scriptexec (and confuses it) Read the --help
+texts for more options.
 
 NOTE: if you are using do_it_all_dss.sh may be there are
 processes hanging around in the background, do
@@ -306,8 +305,8 @@ if no other python3 process is hit but u_point.
 
 Advanced quick tour: something went bad
 =======================================
-Cases:
 
+Cases:
 - real mount crashed
 - bad measurements
 - statistical outliers
@@ -371,9 +370,9 @@ telescope, u_acquire.py may fail for many reasons.
 Just restart the process.
 
 
-Deleting analyzed positions on u_point.py plots
+Deleting analyzed positions on u_model.py plots
 -----------------------------------------------
-Once the analysis has been finished the u_point.py
+Once the analysis has been finished the u_model.py
 result plots are displayed.
 
 Click a point and it's annotation appears as well as
@@ -385,10 +384,10 @@ Those analyzed positions can be dropped from the file
 
 by hitting key <Delete>.
 
-Having cleaned the data restart u_point.py with
+Having cleaned the data restart u_model.py with
 e.g.
 
- ./u_point.py --base-path /tmp/u_point\
+ ./u_model.py --base-path /tmp/u_point\
  --plot  --ds9-display --delete --toconsole
 
 to see the effect.
@@ -403,8 +402,8 @@ and see the annotations on the console.
 
 Scripts
 =======
-Only scripts named u_*.py are interesting from a
-user's perspective. All other are part of the
+Only scripts named u_*.py are interesting from a user's
+perspective (at first). All other are part of the
 supporting infrastructure.
 
 u_point is a silent system with sensible default
@@ -418,7 +417,7 @@ values with exception of
  --ccd-angle     (u_acquire.py,u_analyze.py)
 
 The last three options need only be specified
-if SExtractor is used (see u_point.py). 
+if SExtractor is used (see u_model.py). 
 
  --use-bright-stars (u_acquire.py)
  --fetch-dss-image  (u_acquire.py)
@@ -475,7 +474,7 @@ u_acqurie.py and u_analyze.py show an updated
 points to or which position is currently
 analyzed. If --ds9-display is specified then
 FITS images will be displayed through DS9.
-u_point.py behaves in the same way but has no
+u_model.py behaves in the same way but has no
 progress report.
 
 At the beginning it is a good idea to use option
@@ -489,7 +488,7 @@ README.
 - u_select.py
 - u_acquire.py
 - u_analyze.py
-- u_point.py
+- u_model.py
 - (u_simulate.py)
 
 RTS2 rts2-scriptexec
@@ -498,14 +497,14 @@ These scripts need your attention if you steer
 a RTS2 mount, it is likely that you have to
 adapt them: 
 
-- u_acquire.sh
-- u_acquire_plot.sh
-- u_acquire_fetch_dss_continuous.sh
+- rts2_script/u_acquire.sh
+- rts2_script/u_acquire_plot.sh
+- rts2_script/u_acquire_fetch_dss_continuous.sh
 
 Data files
 ==========
 The structure of the following files ins described
-in file sutructures.py.
+in file u_point/sutructures.py.
 
 
 observable.cat
@@ -539,14 +538,14 @@ I just completed the first release. Missing are:
 
 Please feel free to contact me (wildi.markus@bluewin.ch)
 
-Status u_point.py as of 2016-11-23
+Status u_model.py as of 2016-11-23
 ==================================
 I started with astropy and found that there are
 differences e.g. between EQ (CIRS) to AltAz
 transformations I could not explain nor did
 someone on astropy@scipy.org answer.
 
-I developed u_point.py based on libnova and added
+I developed u_model.py based on libnova and added
 later the astropy code for comparison again. There
 are still differences and I'd be glad if someone
 can point me into the right direction.
@@ -573,22 +572,22 @@ Pointing Model
 If a different pointing model should be created,
 study:
 
-- model_base.py
+- u_point/model_base.py
 
 and for working implementations:
 
-- model_altaz.py
-- model_buie.py
-- model_u_point.py
+- model/altaz.py
+- model/buie.py
+- model/point.py
 
 Meteo
 =====
 Often meteo data are acquired from a separate
 system. Either provided by RTS2 or an external
 source. See classes Meteo() in meteo.py (dummy)
-or e.g. meteo_dome_c.py for a real implementation.
+or e.g. meteo/meteo_dome_c.py for a real implementation.
 
-As default Meteo() from meteo.py is used if not
+As default Meteo() from meteo/meteo.py is used if not
 specified with --meteo-class.
 
 meteo.py is a dummy device while meteo_dome_c.py is
@@ -685,7 +684,7 @@ astrometry.net, to a second file, usually named:
 
  analyzed_positions.anl
 
-This is the input to u_point.py.
+This is the input to u_model.py.
 
 In case the analysis was interrupted, analyzed
 positions are read back from analyzed_positions.anl
@@ -697,12 +696,12 @@ If process u_acquire.py is still in progress, you may
 analyze the already acquired data. 
 
 
-Pointing model: u_point.py
+Pointing model: u_model.py
 ==========================
 The file analyzed_positions.anl, prepared in the
 previous step, is read by
 
- ./u_point.py --base-path /tmp/u_point --plot 
+ ./u_model.py --base-path /tmp/u_point --plot 
 
 and the plots will show the result of the fitted
 parameters as well as the raw data.
@@ -715,9 +714,9 @@ Defining a model
 ================
 Not satisfied with the existing models:
 
- model_buie.py
- model_u_point.py
- model_altaz.py
+ model/buie.py
+ model/point.py
+ model/altaz.py
 
 create your own. Create class Model(ModelBase) and
 implement three methods (see e.g. model_altaz.py):
@@ -729,7 +728,7 @@ implement three methods (see e.g. model_altaz.py):
 where cat_* are apparent and d_* are the differences
 between cat_* - mnt_*, where mnt_* are the coordinates
 read at the setting circles of the mount. If method fit_model()
-is implemented for a EQ style fit (see model_u_point.py), 
+is implemented for a EQ style fit (see model/point.py), 
 observatory's latitude has to be passed:
 
   def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
@@ -803,7 +802,7 @@ viewed "in parallel":
  rts2-scriptexec -d C0 -s " exe ./u_acquire_fetch_dss_continuous.sh "
 
 
-Pointing model analysis: u_point.py
+Pointing model analysis: u_model.py
 ===================================
 
 The current version does not support the old data format.
@@ -815,7 +814,7 @@ Fetch real data and fit them
 
  cd ~/rts2/scripts/u_point/
  wget http://azug.minpet.unibas.ch/~wildi/mount_data_meteo.txt
- ./u_point.py --toc mount_data_meteo.txt --plot
+ ./u_model.py --toc mount_data_meteo.txt --plot
 
 the output should be similar to:
 
@@ -851,7 +850,7 @@ and the output should be similar to:
 
 and finally fit the simulated data with
 
- ./u_point.py --toc  --u_point_analyzed_position test.dat
+ ./u_model.py --toc  --u_point_analyzed_position test.dat
 
 and the output shows the parameters in good agreement
 

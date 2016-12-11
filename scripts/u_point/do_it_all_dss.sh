@@ -29,13 +29,13 @@
 # No RTS2 installation required
 #
 alt_az_steps="--alt-step 5 --az-step 20"
-#alt_az_steps="--alt-step 10 --az-step 40"
-LATITUDE="--obs-latitude m75.1"
+alt_az_steps="--alt-step 10 --az-step 40"
+#LATITUDE="--obs-latitude m75.1"
 PLOT="--plot"
 SKIP_ACQUISITION=
 BASE_PATH=/tmp/u_point
-MODEL_CLASS="--model-class model_u_point"
-
+MODEL_CLASS="--model-class point"
+FETCH_DDS_IMAGE="--fetch-dss-image"
 trap "exit 1" TERM
 export TOP_PID=$$
 quit()
@@ -68,7 +68,7 @@ function cont_exit {
     return $status
 }
 
-while getopts ":apsrdl:o:m:t:f:c:" opt; do
+while getopts ":apsrdil:o:m:t:f:c:" opt; do
     case ${opt} in
 	a )
 	    ASTROMETRY=true
@@ -85,18 +85,21 @@ while getopts ":apsrdl:o:m:t:f:c:" opt; do
 	d )
 	    PLOT=
 	    ;;
+	i )
+	    FETCH_DDS_IMAGE=
+	    ;;
 	l )
 	    LATITUDE="--obs-latitude $OPTARG"
+	    ;;
+	o )
+	    FN=$OPTARG
+	    ANALYSIS_OUTPUT_FILE="--analyzed-positions $FN"
 	    ;;
 	m )
 	    REFRACTION_METHOD=$OPTARG
 	    ;;
 	t )
 	    TRANSFORMATION_CLASS=$OPTARG
-	    ;;
-	o )
-	    FN=$OPTARG
-	    ANALYSIS_OUTPUT_FILE="--analyzed-positions $FN"
 	    ;;
 	f )
 	    BASE_PATH=$OPTARG
@@ -114,16 +117,17 @@ while getopts ":apsrdl:o:m:t:f:c:" opt; do
 	     echo "-s skip selecting stars, creation of nominal position and acquisition of data"
 	     echo "-r use RTS2 devices"
 	     echo "-d do not plot intermediate steps"
+	     echo "-i do not fetch DSS image from http://archive.eso.org/dss/dss"
 	     echo "-l observatory latitude"
 	     echo "-o analysis output filename"
 	     echo "-m refraction method, if applicable (see -t), see u_analyze.py --help: --refraction-method"
 	     echo "-t transformation class, see u_analyze.py --help --help: --transform-class "
-	     echo "   transform_taki_san: a refraction method must be specified"
-	     echo "   transform_libnova : a refraction method can be specified"
-	     echo "   transform_pyephem : a refraction method can not yet be specified"
-	     echo "   transform_astropy : no refraction method can be specified"
+	     echo "   u_taki_san: a refraction method must be specified"
+	     echo "   u_libnova : a refraction method can be specified"
+	     echo "   u_pyephem : a refraction method can not yet be specified"
+	     echo "   u_astropy : no refraction method can be specified"
 	     echo "-f base path"
-	     echo "-z pointing model, one of model_(u_point|buie|altaz)"
+	     echo "-c pointing model, one of (point|buie|altaz)"
 	     exit 1
 	     ;;
 	:)
@@ -218,7 +222,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
     echo ""
     if ! [ -z ${RTS2+x} ]; then
 	#
-	acq_script=" $HOME/rts2/scripts/u_point/u_acquire_fetch_dss_continuous.sh "
+	acq_script=" $HOME/rts2/scripts/u_point/rts2_script/u_acquire_fetch_dss_continuous.sh "
 	#
 	#echo "rts2-scriptexec -d C0 -s " exe $acq_script "  &"
 	#
@@ -226,7 +230,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	export pid_u_acquire=$!
     else
 	#
-	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE --fetch-dss-image  --use-bright-stars --toconsole &
+	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $FETCH_DSS_IMAGE  --use-bright-stars --toconsole &
 	export pid_u_acquire=$!
 	#
 	# no bright stars:
@@ -238,7 +242,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
     fi
     if ! [ -z ${RTS2+x} ]; then
 	
-	plt_script=" $HOME/rts2/scripts/u_point/u_acquire_plot.sh "
+	plt_script=" $HOME/rts2/scripts/u_point/rts2_script/u_acquire_plot.sh "
 	#
 	echo "rts2-scriptexec -d C0 -s " exe $plt_script " &"
 	#
@@ -301,9 +305,9 @@ echo ""
 if ! [ -z ${ASTROMETRY+x} ]; then
     echo ""
     echo "displaying results from astrometry.net"
-    cont_exit ./u_point.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole $MODEL_CLASS --ds9 $ANALYSIS_OUTPUT_FILE& 
+    cont_exit ./u_model.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole $MODEL_CLASS --ds9 $ANALYSIS_OUTPUT_FILE& 
 else
     echo "displaying results from SExtractor"
-    cont_exit ./u_point.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole  --fit-sxtr $MODEL_CLASS  $ANALYSIS_OUTPUT_FILE& 
+    cont_exit ./u_model.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole  --fit-sxtr $MODEL_CLASS  $ANALYSIS_OUTPUT_FILE& 
 
 fi
