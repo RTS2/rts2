@@ -19,6 +19,9 @@ START_TEST(crc16)
 	ck_assert_int_eq (getMsgBufCRC16 ("\x14\x03\x00\x01\x00\x02", 6), 0x0e97);
 	ck_assert_int_eq (getMsgBufCRC16 ("\x14\x03\x04\x03\xe8\x01\xf4", 7), 0x953e);
 
+	uint16_t crc = getMsgBufCRC16 ("\x14\x03\x00\x01\x00\x02", 6);
+	ck_assert_int_eq (crc, 0x0e97);
+
 	ck_assert_int_eq (getMsgBufCRC16 ("\x14\x05\x00\x18\xff\x00", 6), 0xf80e);
 
 	// Modbus wikipedia

@@ -299,20 +299,12 @@ esac],[epics=no])
 AM_CONDITIONAL(EPICS, test x$epics != xno)
 
 libusb1="no"
-libusb="no"
 PKG_CHECK_MODULES(USB1, [libusb-1.0],,AC_MSG_RESULT(not found))
-PKG_CHECK_MODULES(USB, [libusb],,AC_MSG_RESULT(not found))
 
 AM_CONDITIONAL(LIBUSB1, test "x$USB1_LIBS" != x)
 AS_IF([test "x$USB1_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBUSB1, "1", [libusb1])
   libusb1="yes"
-])
-
-AM_CONDITIONAL(LIBUSB, test "x$USB_LIBS" != x)
-AS_IF([test "x$USB_LIBS" != x], [
-  AC_DEFINE_UNQUOTED(LIBUSB, "1", [libusb])
-  libusb="yes"
 ])
 
 SBIG=yes
@@ -1021,7 +1013,6 @@ echo "
   psql          ${psql}
   libnova       ${libnova}
   libusb1	${libusb1}
-  libusb	${libusb}
   ncurses       ${NCURSES_CFLAGS} ${NCURSES_LIBS}
   cfitsio       ${CFITSIO_CFLAGS} ${CFITSIO_LIBS}
   libwcstools   ${libwcstools}

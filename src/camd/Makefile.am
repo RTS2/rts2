@@ -95,6 +95,15 @@ else
 EXTRA_DIST += miccd.cpp
 endif
 
+if GXCCD
+bin_PROGRAMS += rts2-camd-gxccd
+rts2_camd_gxccd_SOURCES = gxccd.cpp
+rts2_camd_gxccd_LDFLAGS = @GXCCD_LIBS@
+rts2_camd_gxccd_CXXFLAGS = @GXCCD_CFLAGS@
+else
+EXTRA_DIST += gxccd.cpp
+endif
+
 if EDTPDV
 bin_PROGRAMS += rts2-camd-edtsao rts2-camd-reflex
 

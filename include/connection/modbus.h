@@ -27,10 +27,10 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ModbusError:public Error
+class ModbusError:public ConnError
 {
 	public:
-		ModbusError (const char *desc):Error (desc)
+		ModbusError (Connection *conn, const char *desc):ConnError (conn, desc)
 		{
 		}
 };
@@ -42,7 +42,7 @@ class ModbusError:public Error
  *
  * @author Petr Kubánek <kubanek@fzu.cz>
  */
-class ConnModbus
+class ConnModbus:public ConnNoSend
 {
 	public:
 		ConnModbus ();

@@ -1696,7 +1696,7 @@ void Connection::connectionError (int last_data_size)
 	if (sock >= 0)
 		close (sock);
 	sock = -1;
-	if (strlen (getName ()))
+	if (strlen (getName ()) && master)
 		master->deleteAddress (getCentraldNum (), getName ());
 }
 

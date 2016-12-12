@@ -25,7 +25,7 @@
 
 using namespace rts2core;
 
-ConnModbus::ConnModbus ()
+ConnModbus::ConnModbus ():ConnNoSend (NULL)
 {
 }
 
@@ -46,19 +46,19 @@ void ConnModbus::callFunction (uint8_t slaveId, int8_t func, const unsigned char
 	{
 		std::ostringstream _os;
 		_os << "invalid reply ID " << reply_data[0] << " " << slaveId;
-		throw ModbusError (_os.str ().c_str ());
+		throw ModbusError (this, _os.str ().c_str ());
 	}
 	if (reply_data[1] & 0x80)
 	{
 		std::ostringstream _os;
 		_os << "Error executing function " << func << " error code is: 0x" << std::hex << (int) reply_data[1];
-		throw ModbusError (_os.str ().c_str ());
+		throw ModbusError (this, _os.str ().c_str ());
 	}
 	if ((uint8_t) reply_data[1] != func)
 	{
 		std::ostringstream _os;
 		_os << "Invalid reply from modbus read, reply function is 0x" << std::hex << (int) reply_data[1] << ", expected 0x" << std::hex << (int) func;
-		throw ModbusError (_os.str ().c_str ());
+		throw ModbusError (this, _os.str ().c_str ());
 	}
 	bcopy (reply_data + 2, reply, reply_size);
 }
@@ -83,7 +83,7 @@ void ConnModbus::callFunction16 (uint8_t slaveId, int8_t func, int16_t p1, int16
 	{
 		std::ostringstream _os;
 		_os << "invalid lenght in read reply: " << (int) reply[0] << " " << (qty * 2);
-		throw ModbusError(_os.str ().c_str ());
+		throw ModbusError(this, _os.str ().c_str ());
 	}
 
 	unsigned char *rtop = reply + 1;
@@ -172,7 +172,7 @@ void ConnModbusTCP::exchangeData (const void *payloadData, size_t payloadSize, v
 		{
 			std::ostringstream _os;
 			_os << "invalid ID in reply data " << replyId << " " << transId;
-			throw ModbusError (_os.str ().c_str ());
+			throw ModbusError (static_cast<ConnTCP *> (this), _os.str ().c_str ());
 		}
 
 		bcopy (reply_data + 6, reply, replySize - 6);
@@ -213,7 +213,7 @@ void ConnModbusRTUTCP::exchangeData (const void *payloadData, size_t payloadSize
 		crc16 = htole16 (getMsgBufCRC16 (reply_data, replySize - 2));
 		if (crc16 != *((uint16_t*) &(reply_data[replySize - 2])))
 		{
-			throw ModbusError ("invalid CRC");
+			throw ModbusError (static_cast<ConnTCP *> (this), "invalid CRC");
 		}
 		bcopy (reply_data, reply, replySize - 2);
 	}
