@@ -239,6 +239,14 @@ class Acquisition(Script):
     mnl_ic=self.to_ic(aa=strt_nml_aa)
     now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
+    #
+    # avoid crossing through the center region:
+    # if the sun is above mount altitude (alt_mnt_cur):
+    # search next position with alt_mnt_cur > alt_mnt_target
+    #
+    # if the sun is below mount altitude:
+    # search next position with  alt_mnt_cur < alt_mnt_target
+    # 
     if ((strt_nml_aa.alt > sun_aa.alt and
          trgt_nml_aa.alt > sun_aa.alt) or
         (strt_nml_aa.alt < sun_aa.alt and
