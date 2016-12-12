@@ -450,6 +450,18 @@ AC_SUBST(MICCD)
 AC_SUBST(LIB_MICCD)
 AC_SUBST(INC_MICCD)
 
+AC_ARG_WITH(gxccd,
+[  --with-gxccd           path to GX CCD driver, build GX CCD driver],
+GXCCD="${withval}";
+GXCCD_LIBS="-L${GXCCD}/lib -lgxccd";
+GXCCD_CFLAGS="-I${GXCCD}/include",
+[GXCCD=no])
+
+AM_CONDITIONAL(GXCCD, test x$GXCCD != xno)
+AC_SUBST(GXCCD)
+AC_SUBST(GXCCD_LIBS)
+AC_SUBST(GXCCD_CFLAGS)
+
 AC_ARG_WITH(k8055,
 [  --with-k8055           path to Velleman k8055 library],
 K8055="${withval}";
@@ -1041,6 +1053,7 @@ CCDs:
   edtpdv        ${EDTPDV}
   fli           ${FLI}
   miccd         ${MICCD}
+  gxccd         ${GXCCD}
   sbig          ${SBIG}
   sbig include  ${SBIG_INC}
   sbig lib      ${SBIG_LIB}
