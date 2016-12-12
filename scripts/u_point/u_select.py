@@ -151,8 +151,9 @@ class Catalog(object):
     fig = plt.figure(figsize=(8,6))
     ax = fig.add_subplot(111, projection='mollweide')
     # eye candy
-    npa=np.asarray([np.exp(x.mag_v)/80. for x in self.cats])
-    
+    mag_min=min([x.mag_v for x in self.cats])
+    mag_max=max([x.mag_v for x in self.cats])
+    npa=np.asarray([np.power(2.512,(x.mag_v-mag_min)/(mag_max-mag_min))*5. for x in self.cats])
     ax.set_title('selected stars for observatory latitude: {0:.2f} deg'.format(self.obs.latitude.degree))
     ax.scatter(ra.radian, dec.radian,s=npa)
     ax.set_xticklabels(['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h'])

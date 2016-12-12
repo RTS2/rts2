@@ -52,7 +52,7 @@ except:
 
 from astropy import units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord,EarthLocation
+from astropy.coordinates import SkyCoord,Angle,EarthLocation,get_sun
 from astropy.coordinates import AltAz
 
 from u_point.notify import ImageEventHandler 
@@ -76,6 +76,7 @@ class Acquisition(Script):
       meteo=None,
       device=None,
       use_bright_stars=None,
+      sun_separation=None,
   ):
 
     Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,acquired_positions=acquired_positions,acq_e_h=acq_e_h)
@@ -85,6 +86,7 @@ class Acquisition(Script):
     self.meteo=meteo
     self.device=device
     self.use_bright_stars=use_bright_stars
+    self.sun_separation=sun_separation
     #
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     
@@ -229,7 +231,35 @@ class Acquisition(Script):
     i_min=dist.index(dist_min)
 
     return self.cat_observable[il+i_min].cat_no,self.cat_observable[il+i_min].cat_ic
+
+  def move_safely_to_next_position(self,strt_nml_aa=None,trgt_nml_aa=None):
+    # make U or a capital PI movement, this happens once per sessin.
+    # stay on the "same" great circle
+    
+    mnl_ic=self.to_ic(aa=strt_nml_aa)
+    now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
+    sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
+    if ((strt_nml_aa.alt > sun_aa.alt and
+         trgt_nml_aa.alt > sun_aa.alt) or
+        (strt_nml_aa.alt < sun_aa.alt and
+         trgt_nml_aa.alt < sun_aa.alt)):
       
+      sep= sun_aa.separation(trgt_nml_aa)
+    
+      if sep.radian < self.sun_separation.radian:
+        self.lg.error('move_safely_to_next_position: can NOT move safely around, separation {} < {},exiting'.format(sep.degree,self.sun_separation.degree))
+        sys.exit(1)
+        
+      trgt_mnl_ic=self.to_ic(aa=trgt_nml_aa)
+      
+      self.device.store_mount_data(cat_ic=trgt_mnl_ic,nml_id=None,cat_no=None)
+      
+      self.device.store_mount_data(cat_ic=None,nml_id=None,cat_no=None)
+      return True
+    else:
+      # continue searching
+      return False
+    
   def acquire(self,altitude_interval=None,max_separation=None):
     if self.mode_user:
       user_input=self.create_socket()
@@ -238,12 +268,32 @@ class Acquisition(Script):
     # self.nml contains only positions which need to be observed
     last_exposure=exp=.1
     not_first=False
+    trgt_nml_aa=strt_nml_aa=None
     for nml in self.nml:
       # astropy N=0,E=90
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
       nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
-      # only for book keeping
+      sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
+        
       mnl_ic=self.to_ic(aa=nml_aa)
+      if sun_aa.alt > 0.:
+        sep= sun_aa.separation(nml_aa)
+        if strt_nml_aa is None and sep.radian < self.sun_separation.radian:
+          strt_nml_aa=nml_aa
+          continue
+        elif strt_nml_aa is not None and sep.radian > self.sun_separation.radian:
+          trgt_nml_aa=nml_aa
+                  
+        if strt_nml_aa is not None and trgt_nml_aa is not None:
+          search_further_position=self.move_safely_to_next_position(strt_nml_aa=strt_nml_aa,trgt_nml_aa=trgt_nml_aa)
+          if search_further_position:
+            trgt_nml_aa=None
+            continue
+          else:
+            trgt_nml_aa=strt_nml_aa=None
+        elif strt_nml_aa is not None:
+          continue
+        
       cat_no=None
       # only catalog coordinates are needed here
       if self.use_bright_stars:
@@ -272,6 +322,7 @@ class Acquisition(Script):
       else:
         self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
 
+   
   def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
     self.fetch_positions(sys_exit=False,analyzed=False)
     self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
@@ -290,14 +341,22 @@ class Acquisition(Script):
     if len(mnt_aa_rdb_az) > 0:
       self.ax.scatter(mnt_aa_rdb_az[-1], mnt_aa_rdb_alt[-1],color='magenta',s=240.)
       self.ax.scatter(mnt_aa_rdb_az, mnt_aa_rdb_alt,color='blue')
-    
-    if animate:
+      
+    now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
+    sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
+    if sun_aa.alt > 0.:
+      self.ax.scatter(sun_aa.az.degree,sun_aa.alt.degree,color='yellow',s=240.)
+      self.ax.scatter(sun_aa.az.degree,sun_aa.alt.degree,color='red',s=100.)
+      self.ax.scatter(sun_aa.az.degree,sun_aa.alt.degree,color='yellow',s=30.)
+      # ToDo very ugly!
+      self.ax.add_patch(self.patches.Circle((sun_aa.az.degree,sun_aa.alt.degree), self.sun_separation.degree,fill=False))
+    if animate:        
       mnt_ic=self.device.fetch_mount_position()
       if mnt_ic is None:
         #self.lg.debug('re_plot: mount position is None')
         # shorten it
-        now=str(Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date'))[:-7]
-        self.ax.set_xlabel('azimuth [deg] (N=0,E=90), at: {0} [UTC]'.format(now))
+        now_str=str(now)[:-7]
+        self.ax.set_xlabel('azimuth [deg] (N=0,E=90), at: {0} [UTC]'.format(now_str))
       else:
         # cross hair current mount position
         mnt_aa_rdb=self.to_altaz(ic=mnt_ic)
@@ -336,6 +395,9 @@ class Acquisition(Script):
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
     import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    # ToDo very ugly!
+    self.patches=patches
     plt.ioff()
     fig = plt.figure(figsize=(8,6))
     self.ax = fig.add_subplot(111)
@@ -404,7 +466,7 @@ if __name__ == "__main__":
   # group create
   parser.add_argument('--create-nominal', dest='create_nominal', action='store_true', default=False, help=': %(default)s, True: create positions to be observed, see --nominal-positions')
   parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
-  parser.add_argument('--azimuth-interval',   dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg],  allowed azimuth, format "p1 p2"')
+  parser.add_argument('--azimuth-interval', dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg],  allowed azimuth, format "p1 p2"')
   # see Ronald C. Stone, Publications of the Astronomical Society of the Pacific 108: 1051-1058, 1996 November
   parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[30.,80.],type=arg_floats,help=': %(default)s [deg],  allowed altitude, format "p1 p2"')
   parser.add_argument('--az-step', dest='az_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
@@ -416,6 +478,7 @@ if __name__ == "__main__":
   #
   parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s, ccd pixel size x,y[px], format "p1 p2"')
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=arg_float, help=': %(default)s [arcsec/pixel], pixel scale of the CCD camera')
+  parser.add_argument('--sun-separation', dest='sun_separation', action='store', default=30.,type=float, help=': %(default)s [deg], angular separation between sun and observed object')
 
   args=parser.parse_args()
 
@@ -462,6 +525,7 @@ if __name__ == "__main__":
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
   device= Device(lg=logger,obs=obs,px_scale=px_scale,ccd_size=args.ccd_size,base_path=args.base_path,fetch_dss_image=args.fetch_dss_image)
+  sun_separation=Angle(args.sun_separation, u.degree)
   ac= Acquisition(
     lg=logger,
     obs=obs,
@@ -475,6 +539,7 @@ if __name__ == "__main__":
     device=device,
     use_bright_stars=args.use_bright_stars,
     acq_e_h=acq_e_h,
+    sun_separation=sun_separation
   )
   
   if not device.check_presence():
