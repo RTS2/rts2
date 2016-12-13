@@ -37,7 +37,7 @@ AZ_HIGH=360.
 #AZ_LOW=130.
 #AZ_HIGH=270.
 # brightness limits
-MAG_LOW=3.
+MAG_LOW=4.
 MAG_HIGH=-5.
 # do not fetch images
 FETCH_DSS_IMAGE=
@@ -75,6 +75,7 @@ else
 	fi
     fi
     ./u_select.py --base-path $BASE_PATH --brightness-interval "$MAG_HIGH $MAG_LOW" $LATITUDE --plot > /dev/null 2>&1 &
+    sleep 10
     ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH"
 fi
 ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION &

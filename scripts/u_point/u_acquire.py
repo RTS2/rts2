@@ -234,7 +234,7 @@ class Acquisition(Script):
 
   def drop_nml_due_to_suns_position(self):
     now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
-    sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))        
+    sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
     nml_aa_max_alt=max([x.nml_aa.alt.radian for x in self.nml if x.nml_aa is not None])
     # in order not trespassing forbidden area ther must be
     # nml_aa positions above sun outsid sun.aa.alt self.sun_separation
@@ -322,7 +322,11 @@ class Acquisition(Script):
     self.fetch_positions(sys_exit=False,analyzed=False)
     self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
     self.drop_nominal_altaz()
-    self.drop_nml_due_to_suns_position()
+    try:
+      self.drop_nml_due_to_suns_position()
+    except AttributeError as e:
+      self.lg.debug('re_plot: data not yet ready')
+      return
     
     mnt_aa_rdb_az = [x.mnt_aa_rdb.az.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
     mnt_aa_rdb_alt= [x.mnt_aa_rdb.alt.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
@@ -401,7 +405,7 @@ class Acquisition(Script):
     self.title=title # ToDo could be passed via animation.F...
     
     if animate:
-      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate),interval=1000)
+      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate),interval=3000)
       #while True:
       #  self.fetch_positions(sys_exit=False,analyzed=False)
       #  if self.sky_acq is not None and len(self.sky_acq)>0:
