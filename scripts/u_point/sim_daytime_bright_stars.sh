@@ -24,22 +24,7 @@
 # Demonstrate day time acquisition avoiding position
 # within --sun-separation and usin bright stars
 #
-BASE_PATH=/tmp/u_point
-alt_az_steps="--alt-step 10 --az-step 20"
-LATITUDE="--obs-latitude m75.1"
-LONGITUDE="--obs-longitude 350."
-SUN_SEPARATION="--sun-separation 30."
-# altitude limits 
-LOW=30.
-HIGH=80.
-# brightness limits
-MAG_LOW=2.
-MAG_HIGH=-5.
-# do not fetch images
-FETCH_DSS_IMAGE=
 cd $HOME/rts2/scripts/u_point
-echo "close plot window to continue"
-echo "-----------------------------"
 while getopts ":d" opt; do
     case ${opt} in
 	d )
@@ -51,6 +36,7 @@ while getopts ":d" opt; do
 	     echo ""
 	     echo "-d delete $BASE_PATH"
 	     echo ""
+	     echo ""
 	     exit 1
 	     ;;
 
@@ -60,11 +46,20 @@ if  [ -z ${DELETE} ]; then
     echo "do not delete base directory $BASE_PATH"
 else
     echo "delete base directory $BASE_PATH"
-    rm -fr $BASE_PATH
-    ./u_select.py --base-path $BASE_PATH --brightness-interval "$MAG_HIGH $MAG_LOW" $LATITUDE --plot > /dev/null 2>&1
+    if [ -d "$BASE_PATH" ]; then
+	if [[ $BASE_PATH == "/tmp"* ]]
+	then
+	    echo "delete inside /tmp"
+	    rm -fr $BASE_PATH;
+	else
+	    echo "do not delete outside /tmp, exiting"
+	    exit
+	fi
+    fi
+    ./u_select.py --base-path $BASE_PATH --brightness-interval "$MAG_HIGH $MAG_LOW" $LATITUDE --plot > /dev/null 2>&1 &
     ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH"
 fi
-./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION&
+./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION &
 ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE $SUN_SEPARATION --use-bright-stars --toconsole
 
 

@@ -24,20 +24,57 @@
 # Demonstrate day time acquisition avoiding position
 # within --sun-separation 
 #
-BASE_PATH=/tmp/u_point
-alt_az_steps="--alt-step 5 --az-step 10"
-LATITUDE="--obs-latitude m75.1"
-LONGITUDE="--obs-longitude 350."
-SUN_SEPARATION="--sun-separation 30."
-# altitude limits 
-LOW=10.
-HIGH=50.
-# do not fetch images
-FETCH_DSS_IMAGE=
-rm -fr $BASE_PATH
 cd $HOME/rts2/scripts/u_point
-./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH"
-./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION&
-./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE $SUN_SEPARATION 
+#
+source ./sim_settings.sh
+
+while getopts ":apsrdil:o:m:t:f:c:" opt; do
+    case ${opt} in
+	r )	    
+	    RTS2=true
+	    ;;
+	\? ) echo "usage: do_it_all_dss.sh  OPTION"
+	     echo ""
+	     echo "OPTION:"
+	     echo ""
+	     echo "-r use RTS2 devices"
+    esac
+done
+
+
+if [ -d "$BASE_PATH" ]; then
+    if [[ $BASE_PATH == "/tmp"* ]]
+    then
+	echo "delete inside /tmp"
+	rm -fr $BASE_PATH;
+    else
+	echo "do not delete outside /tmp, exiting"
+	exit
+    fi
+fi
+
+if ! [ -z ${RTS2+x} ]; then
+    echo "using real or dummy RTS2 devices"
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
+    #
+    plt_script=" $HOME/rts2/scripts/u_point/rts2_script/sim_u_acquire_plot.sh "
+    #
+    rts2-scriptexec -d C0 -s " exe $plt_script " &
+    #
+    acq_script=" $HOME/rts2/scripts/u_point/rts2_script/sim_u_acquire_no_fetch_dss_continuous.sh "
+    #
+    #
+    rts2-scriptexec -d C0 -s " exe $acq_script "  &
+else
+    echo "using built in simulation device: DeviceDss"
+    #
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
+    set -x
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION &
+    #
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE $SUN_SEPARATION --toconsole
+fi
+
+
 
 

@@ -232,42 +232,35 @@ class Acquisition(Script):
 
     return self.cat_observable[il+i_min].cat_no,self.cat_observable[il+i_min].cat_ic
 
-  def move_safely_to_next_position(self,strt_nml_aa=None,trgt_nml_aa=None):
-    # make U or a capital PI movement, this happens once per sessin.
-    # stay on the "same" great circle
-    
-    mnl_ic=self.to_ic(aa=strt_nml_aa)
+  def drop_nml_due_to_suns_position(self):
     now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
-    sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
-    #
-    # avoid crossing through the center region:
-    # if the sun is above mount altitude (alt_mnt_cur):
-    # search next position with alt_mnt_cur > alt_mnt_target
-    #
-    # if the sun is below mount altitude:
-    # search next position with  alt_mnt_cur < alt_mnt_target
-    # 
-    if ((strt_nml_aa.alt > sun_aa.alt and
-         trgt_nml_aa.alt > sun_aa.alt) or
-        (strt_nml_aa.alt < sun_aa.alt and
-         trgt_nml_aa.alt < sun_aa.alt)):
+    sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))        
+    nml_aa_max_alt=max([x.nml_aa.alt.radian for x in self.nml if x.nml_aa is not None])
+    # in order not trespassing forbidden area ther must be
+    # nml_aa positions above sun outsid sun.aa.alt self.sun_separation
+    if nml_aa_max_alt < sun_aa.alt.radian + self.sun_separation.radian:
+      self.lg.error('drop_nml_due_to_suns_position: specified nml_aa.alt:{0:6.2f} is below sun\'s forbidden area: {1:6.2f}, exiting '.format(nml_aa_max_alt*180./np.pi,(sun_aa.alt.radian + self.sun_separation.radian)*180./np.pi))
+      self.lg.warn('drop_nml_due_to_suns_position: this situation can not be handled by u_acquire.py')
+      self.lg.info('drop_nml_due_to_suns_position: set option --altitude-interval atleast to: {0:6.2f} + 5 deg'.format(nml_aa_max_alt*180./np.pi))
+      sys.exit(1)
       
-      sep= sun_aa.separation(trgt_nml_aa)
-    
+    for nml in self.nml:
+      if nml.nml_aa is None:
+        continue
+              
+      nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
+      sep= sun_aa.separation(nml_aa)
       if sep.radian < self.sun_separation.radian:
-        self.lg.error('move_safely_to_next_position: can NOT move safely around, separation {} < {},exiting'.format(sep.degree,self.sun_separation.degree))
-        sys.exit(1)
+        nml.nml_aa=None
+        #self.lg.debug('set None: {}, {}'.format(nml.nml_id,sep.degree))
+        continue
+      
+      if sun_aa.az.radian - self.sun_separation.radian < nml_aa.az.radian  < sun_aa.az.radian + self.sun_separation.radian:
+        if nml_aa.alt.radian <  sun_aa.alt.radian:
+          nml.nml_aa=None
+          #self.lg.debug('set None below sun altitude: {}, {}'.format(nml.nml_id,nml_aa.alt.degree))
+          
         
-      trgt_mnl_ic=self.to_ic(aa=trgt_nml_aa)
-      
-      self.device.store_mount_data(cat_ic=trgt_mnl_ic,nml_id=None,cat_no=None)
-      
-      self.device.store_mount_data(cat_ic=None,nml_id=None,cat_no=None)
-      return True
-    else:
-      # continue searching
-      return False
-    
   def acquire(self,altitude_interval=None,max_separation=None):
     if self.mode_user:
       user_input=self.create_socket()
@@ -277,30 +270,23 @@ class Acquisition(Script):
     last_exposure=exp=.1
     not_first=False
     trgt_nml_aa=strt_nml_aa=None
+    # do not remove:
+    self.drop_nml_due_to_suns_position()
     for nml in self.nml:
+      if nml.nml_aa is None:
+        continue
+      self.drop_nml_due_to_suns_position()
       # astropy N=0,E=90
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
       nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
-      sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
-        
+      sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))        
       mnl_ic=self.to_ic(aa=nml_aa)
       if sun_aa.alt > 0.:
         sep= sun_aa.separation(nml_aa)
-        if strt_nml_aa is None and sep.radian < self.sun_separation.radian:
-          strt_nml_aa=nml_aa
+        if sep.radian < self.sun_separation.radian:
+          self.lg.warn('acquire: {}, {} too close, continuing'.format(nml.nml_id,sep.degree))
           continue
-        elif strt_nml_aa is not None and sep.radian > self.sun_separation.radian:
-          trgt_nml_aa=nml_aa
                   
-        if strt_nml_aa is not None and trgt_nml_aa is not None:
-          search_further_position=self.move_safely_to_next_position(strt_nml_aa=strt_nml_aa,trgt_nml_aa=trgt_nml_aa)
-          if search_further_position:
-            trgt_nml_aa=None
-            continue
-          else:
-            trgt_nml_aa=strt_nml_aa=None
-        elif strt_nml_aa is not None:
-          continue
         
       cat_no=None
       # only catalog coordinates are needed here
@@ -310,7 +296,7 @@ class Acquisition(Script):
           continue # no suitable object found, try next
       else:
         cat_ic=mnl_ic # observe at the current nominal position
-  
+        
       if self.mode_user:
         while True:
           if not_first:
@@ -332,14 +318,16 @@ class Acquisition(Script):
 
    
   def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
+
     self.fetch_positions(sys_exit=False,analyzed=False)
     self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
     self.drop_nominal_altaz()
+    self.drop_nml_due_to_suns_position()
     
     mnt_aa_rdb_az = [x.mnt_aa_rdb.az.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
     mnt_aa_rdb_alt= [x.mnt_aa_rdb.alt.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
-    nml_aa_az = [x.nml_aa.az.degree for x in self.nml ]
-    nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml ]
+    nml_aa_az = [x.nml_aa.az.degree for x in self.nml if x.nml_aa is not None]
+    nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml if x.nml_aa is not None]
     
     self.ax.clear()
     self.ax.set_title(self.title, fontsize=10)
@@ -358,6 +346,7 @@ class Acquisition(Script):
       self.ax.scatter(sun_aa.az.degree,sun_aa.alt.degree,color='yellow',s=30.)
       # ToDo very ugly!
       self.ax.add_patch(self.patches.Circle((sun_aa.az.degree,sun_aa.alt.degree), self.sun_separation.degree,fill=False))
+
     if animate:        
       mnt_ic=self.device.fetch_mount_position()
       if mnt_ic is None:
@@ -410,9 +399,9 @@ class Acquisition(Script):
     fig = plt.figure(figsize=(8,6))
     self.ax = fig.add_subplot(111)
     self.title=title # ToDo could be passed via animation.F...
-
+    
     if animate:
-      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate),interval=5000)
+      ani = animation.FuncAnimation(fig,self.re_plot,fargs=(ptfn,az_step,animate),interval=1000)
       #while True:
       #  self.fetch_positions(sys_exit=False,analyzed=False)
       #  if self.sky_acq is not None and len(self.sky_acq)>0:
@@ -569,7 +558,7 @@ if __name__ == "__main__":
     sys.exit(0)
 
 
-  if args.plot:
+  if args.plot:      
     title='progress: acquired positions'
     if args.ds9_display:
       title += ':\n click on blue dots to watch image (DS9)'
@@ -578,7 +567,8 @@ if __name__ == "__main__":
       
     ac.plot(title=title,ptfn=args.nominal_positions,az_step=args.az_step,ds9_display=args.ds9_display,animate=args.animate,delete=args.delete)
     sys.exit(0)
-   
+
+
   # candidate objects, predefined with u_select.py
   if args.use_bright_stars:
     ac.fetch_observable_catalog(fn=args.observable_catalog)

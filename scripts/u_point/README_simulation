@@ -1,0 +1,28 @@
+Data acquisition simulation 
+===========================
+
+Files:
+
+sim_settings.sh: contains settings which are sorced by
+all other sim_* scripts
+
+
+sim_daytime.sh: demonstrates that u_point does not
+approach the sun within a certain radius. Specify
+option -r for RTS2 real or dummy devices.
+
+sim_daytime_bright_stars.sh: demonstrates how a
+day time data acquisition can be carried out. Yes,
+it is cumbersome.
+
+
+If RTS2 is involved the these two scripts are called
+via rts2-scriptexec:
+
+ rts2_script/sim_u_acquire_no_fetch_dss_continuous.sh
+ rts2_script/sim_u_acquire_plot.sh
+
+Check default settings in sim_settings.sh, it is
+configured for Dome Concordia, Antarctica, there is no
+sun between May and early August.
+

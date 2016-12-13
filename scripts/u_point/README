@@ -50,6 +50,10 @@ u_point's use cases are:
   SExtractor will select the brightest star which
   serves as the measured mount apparent location.
 
+- u_point can be used even if the sun is above horizon. The
+  mount never points to a location within a configurable
+  radius around the sun (see README_simulation).
+  
 - u_point is written in a way, that libindi or
   ASCOM users can easily extend u_point (see
   u_point/devices.py or contact wildi.markus@bluewin.ch)
@@ -217,7 +221,11 @@ And in addition
 
 Very quick tour: do_it_all_dss.sh
 =================================
-NOTE: do_it_all_dss.sh is solely used for demonstration.
+NOTE:
+- do_it_all_dss.sh is solely used for demonstration.
+- check the log file in /tmp/
+- be patient, even in simulation mode it takes time
+  to set up
 
 Script do_it_all_dss.sh needs only optionally a running
 installation of RTS2 and after the above mentioned packages
