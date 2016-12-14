@@ -30,8 +30,8 @@ LATITUDE="--obs-latitude m75.1"
 LONGITUDE="--obs-longitude 123.1"
 SUN_SEPARATION="--sun-separation 40."
 # altitude limits 
-LOW=0.
-HIGH=80.
+ALT_LOW=0.
+ALT_HIGH=80.
 AZ_LOW=0.
 AZ_HIGH=360.
 #AZ_LOW=130.
@@ -76,7 +76,7 @@ else
     fi
     ./u_select.py --base-path $BASE_PATH --brightness-interval "$MAG_HIGH $MAG_LOW" $LATITUDE --plot > /dev/null 2>&1 &
     sleep 10
-    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH"
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$ALT_LOW $ALT_HIGH"
 fi
 ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION &
 ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE $SUN_SEPARATION --use-bright-stars --toconsole

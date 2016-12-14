@@ -189,10 +189,8 @@ class Script(object):
       self.nml.append(NmlPosition(nml_id=df_data.index[i],nml_aa=nml_aa))
 
   def drop_nominal_altaz(self):
-    obs=[int(x.nml_id)  for x in self.sky_acq]
-    observed=sorted(set(obs),reverse=True)
-    for i in observed:
-      del self.nml[i]
+    for nml_id in [int(x.nml_id)  for x in self.sky_acq]:
+      self.nml[nml_id].nml_aa=None
       #self.lg.debug('drop_nominal_altaz: deleted: {}'.format(i))
 
   def distinguish(self,analyzed=None):

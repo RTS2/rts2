@@ -90,15 +90,6 @@ class Acquisition(Script):
     #
     self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     
-  def now_observable(self,cat_ic=None, altitude_interval=None):
-    cat_aa=cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
-    #self.lg.debug('now_observable: altitude: {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
-    if altitude_interval[0]<cat_aa.alt.radian<altitude_interval[1]:
-      return cat_aa
-    else:
-      #self.lg.debug('now_observable: out of altitude range {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
-      return None
-  
   
   def create_socket(self, port=9999):
     # acquire runs as a subprocess of rts2-script-exec and has no
@@ -194,6 +185,15 @@ class Acquisition(Script):
 
     self.append_position(sky=sky,analyzed=False)
 
+  def now_observable(self,cat_ic=None, altitude_interval=None):
+    cat_aa=cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
+    #self.lg.debug('now_observable: altitude: {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
+    if altitude_interval[0]<cat_aa.alt.radian<altitude_interval[1]:
+      return cat_aa
+    else:
+      #self.lg.debug('now_observable: out of altitude range {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
+      return None
+  
   def find_near_neighbor(self,mnl_ic=None,altitude_interval=None,max_separation=None):
     il=iu=None
     max_separation2= max_separation * max_separation # lazy
@@ -235,31 +235,28 @@ class Acquisition(Script):
   def drop_nml_due_to_suns_position(self):
     now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
+    # 
+    if sun_aa.alt.radian < -2.: # ToDo
+      return
+    
     nml_aa_max_alt=max([x.nml_aa.alt.radian for x in self.nml if x.nml_aa is not None])
-    # in order not trespassing forbidden area ther must be
-    # nml_aa positions above sun outsid sun.aa.alt self.sun_separation
-    if nml_aa_max_alt < sun_aa.alt.radian + self.sun_separation.radian:
-      self.lg.error('drop_nml_due_to_suns_position: specified nml_aa.alt:{0:6.2f} is below sun\'s forbidden area: {1:6.2f}, exiting '.format(nml_aa_max_alt*180./np.pi,(sun_aa.alt.radian + self.sun_separation.radian)*180./np.pi))
-      self.lg.warn('drop_nml_due_to_suns_position: this situation can not be handled by u_acquire.py')
-      self.lg.info('drop_nml_due_to_suns_position: set option --altitude-interval atleast to: {0:6.2f} + 5 deg'.format(nml_aa_max_alt*180./np.pi))
-      sys.exit(1)
-      
     for nml in self.nml:
       if nml.nml_aa is None:
         continue
               
       nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
       sep= sun_aa.separation(nml_aa)
+      # drop all within
       if sep.radian < self.sun_separation.radian:
         nml.nml_aa=None
         #self.lg.debug('set None: {}, {}'.format(nml.nml_id,sep.degree))
         continue
       
+      # drop all below sun
       if sun_aa.az.radian - self.sun_separation.radian < nml_aa.az.radian  < sun_aa.az.radian + self.sun_separation.radian:
         if nml_aa.alt.radian <  sun_aa.alt.radian:
           nml.nml_aa=None
           #self.lg.debug('set None below sun altitude: {}, {}'.format(nml.nml_id,nml_aa.alt.degree))
-          
         
   def acquire(self,altitude_interval=None,max_separation=None):
     if self.mode_user:
@@ -272,10 +269,18 @@ class Acquisition(Script):
     trgt_nml_aa=strt_nml_aa=None
     # do not remove:
     self.drop_nml_due_to_suns_position()
+    last_nml_aa=None
+    dt_last=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     for nml in self.nml:
       if nml.nml_aa is None:
         continue
-      self.drop_nml_due_to_suns_position()
+      dt_now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
+      diff= dt_now - dt_last
+      if diff.sec > 900: # 15 minutes
+        self.drop_nml_due_to_suns_position()
+        self.lg.debug('acquire: calling drop_nml_due_to_suns_position')
+        dt_last=dt_now
+        
       # astropy N=0,E=90
       now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
       nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
@@ -283,11 +288,62 @@ class Acquisition(Script):
       mnl_ic=self.to_ic(aa=nml_aa)
       if sun_aa.alt > 0.:
         sep= sun_aa.separation(nml_aa)
-        if sep.radian < self.sun_separation.radian:
-          self.lg.warn('acquire: {}, {} too close, continuing'.format(nml.nml_id,sep.degree))
-          continue
-                  
         
+        if sep.radian < self.sun_separation.radian:
+          self.lg.warn('acquire: {0}, {1:6.2f} too close, continuing'.format(nml.nml_id,sep.degree))
+          continue
+        # if there are no target between current az, sun_aa.az+self.sun_separation
+        # above th sun_alt + self.sun_separation
+        # move the mount in two -120 deg steps to the other side
+        #
+        # first time we are not to close to sun (see above)
+        if last_nml_aa is None:
+          last_nml_aa=nml_aa
+        # conditions:
+        # was last position on the other side 
+        # does the mount cross sun az AND
+        if last_nml_aa.az.radian < sun_aa.az.radian-self.sun_separation.radian and \
+          nml_aa.az.radian > sun_aa.az.radian+self.sun_separation.radian and \
+          nml_aa.alt.radian < sun_aa.alt.radian+self.sun_separation.radian:
+            
+          self.lg.info('acquire: moving mount to: {0:6.2f},{1:6.2f}'.format(sun_aa.az.degree+self.sun_separation.degree,sun_aa.alt.degree+self.sun_separation.degree))
+          i=-2
+          # move from current az to az -120
+          # -120 deg to avoid shortest path
+          aa_plus_alt=SkyCoord(
+            az=last_nml_aa.az.radian - 2 * np.pi/3. -8.33/180.*np.pi, # make it visible 
+            alt=last_nml_aa.alt.radian,
+            unit=(u.radian,u.radian),
+            frame='altaz',
+            location=self.obs,obstime=now)
+          sep= sun_aa.separation(aa_plus_alt)
+          # last resort
+          if sep.radian < self.sun_separation.radian:
+            self.lg.warn('acquire: target to close while increasing altitude: {0:6.2f}, {1:6.2f} too close, exiting'.format(nml.nml_id,sep.degree))
+            sys.exit(1)
+          self.lg.warn('acquire: make -120 deg turn, setting azimuth: {0:6.2f}, {1:6.2f}'.format(aa_plus_alt.az.degree,aa_plus_alt.alt.degree))
+          #
+          nml_ic_tmp=self.to_ic(aa=aa_plus_alt)
+          # RTS2 synchronizes (waits until the mount moved)
+          # ToDo check e.g. libindi if it does it in the same way
+          self.expose(nml_id=i,cat_no=i,cat_ic=nml_ic_tmp,exp=1.)
+          i=-1
+          # move from current az to -120 deg
+          aa_plus_az_plus_alt=SkyCoord(
+            az=last_nml_aa.az.radian - 2 * np.pi/3. - 2 * np.pi/3. -8.33/180.*np.pi,  # again -120 deg to avoid shortest path,  make it visible
+            alt=last_nml_aa.alt.radian,
+            unit=(u.radian,u.radian),
+            frame='altaz',
+            location=self.obs,obstime=now)
+          sep= sun_aa.separation(aa_plus_az_plus_alt)
+          # last resort
+          if sep.radian < self.sun_separation.radian:
+            self.lg.error('acquire: target to close while increasing azimuth: {0:6.2f}, {1:6.2f} too close, exiting'.format(nml.nml_id,sep.degree))
+            sys.exit(1)
+          self.lg.error('acquire: again make -120 deg turn, setting azimuth: {0:6.2f}, {1:6.2f}'.format(aa_plus_az_plus_alt.az.degree,aa_plus_az_plus_alt.alt.degree))
+          nml_ic_tmp=self.to_ic(aa=aa_plus_az_plus_alt)
+          self.expose(nml_id=i,cat_no=i,cat_ic=nml_ic_tmp,exp=1.)
+
       cat_no=None
       # only catalog coordinates are needed here
       if self.use_bright_stars:
@@ -315,18 +371,26 @@ class Acquisition(Script):
    
       else:
         self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
+        
+      last_nml_aa=nml_aa
 
    
   def re_plot(self,i=0,ptfn=None,az_step=None,animate=None):
 
     self.fetch_positions(sys_exit=False,analyzed=False)
-    self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
     self.drop_nominal_altaz()
-    try:
+    dt_now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
+    #              ugly
+    diff= dt_now - self.dt_last
+    if diff.sec > 900: # 15 minutes
       self.drop_nml_due_to_suns_position()
-    except AttributeError as e:
-      self.lg.debug('re_plot: data not yet ready')
-      return
+      self.lg.debug('acquire: calling drop_nml_due_to_suns_position')
+      try:
+        self.drop_nml_due_to_suns_position()
+        self.dt_last=dt_now
+      except AttributeError as e:
+        self.lg.debug('re_plot: data not yet ready')
+        return
     
     mnt_aa_rdb_az = [x.mnt_aa_rdb.az.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
     mnt_aa_rdb_alt= [x.mnt_aa_rdb.alt.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
@@ -412,7 +476,15 @@ class Acquisition(Script):
       #    break
       #  self.lg.debug('plot: waiting for data')
       #  time.sleep(1)
-        
+    # do that only once
+    self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
+    # ugly
+    self.dt_last=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
+    try:
+      self.drop_nml_due_to_suns_position()
+    except AttributeError as e:
+      self.lg.debug('plot: data not yet ready')
+
     aps=self.re_plot(ptfn=ptfn,az_step=az_step,animate=animate)
 
     self.af = AnnoteFinder(ax=self.ax,aps=aps,xtol=5.,ytol=5.,ds9_display=ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)

@@ -55,7 +55,7 @@ fi
 
 if ! [ -z ${RTS2+x} ]; then
     echo "using real or dummy RTS2 devices"
-    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$ALT_LOW $ALT_HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
     #
     plt_script=" $HOME/rts2/scripts/u_point/rts2_script/sim_u_acquire_plot.sh "
     #
@@ -68,7 +68,7 @@ if ! [ -z ${RTS2+x} ]; then
 else
     echo "using built in simulation device: DeviceDss"
     #
-    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$LOW $HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$ALT_LOW $ALT_HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
     set -x
     ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION &
     #

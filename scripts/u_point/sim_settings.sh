@@ -1,13 +1,14 @@
 #!/bin/bash
 
 BASE_PATH=/tmp/u_point
-alt_az_steps="--alt-step 10 --az-step 40"
+alt_az_steps="--alt-step 10 --az-step 20"
 LATITUDE="--obs-latitude m75.1"
 LONGITUDE="--obs-longitude 123.1"
+LONGITUDE="--obs-longitude 180.1"
 SUN_SEPARATION="--sun-separation 40."
 # altitude limits 
-LOW=0.
-HIGH=80.
+ALT_LOW=0.
+ALT_HIGH=80.
 AZ_LOW=0.
 AZ_HIGH=360.
 #AZ_LOW=130.
