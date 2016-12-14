@@ -52,6 +52,8 @@ class Binder:public Sensor
 		uint8_t unitId;
 
 		rts2core::ConnModbus *binderConn;
+
+		rts2core::ValueFloat *temperature;
 };
 
 }
@@ -63,6 +65,8 @@ Binder::Binder (int argc, char **argv):Sensor (argc, argv)
 	binderConn = NULL;
 	host = NULL;
 	unitId = 0;
+
+	createValue (temperature, "temperature", "[C] temperature in chamber", false);
 
 	addOption ('b', NULL, 1, "Binder TCP/IP address and port (separated by :)");
 }
@@ -86,12 +90,22 @@ int Binder::processOption (int in_opt)
 	return 0;
 }
 
+float getFloat (const uint16_t regs[2])
+{
+	float rf;
+	((uint16_t *) &rf)[0] = regs[1];
+	((uint16_t *) &rf)[1] = regs[0];
+	return rf;
+}
+
 int Binder::info ()
 {
-	uint16_t regs[8];
+	uint16_t regs[2];
 	try
 	{
-		binderConn->readHoldingRegisters (unitId, 16, 8, regs);
+		binderConn->readHoldingRegisters (unitId, 0x11a9, 2, regs);
+		temperature->setValueFloat (getFloat (regs));
+		sendValueAll (temperature);
 	}
 	catch (rts2core::ConnError err)
 	{
