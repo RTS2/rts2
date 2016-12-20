@@ -85,7 +85,7 @@ class AnnoteFinder(object):
           #print(clickX,clickY,distance,nml_id)
           i_ap_ax_nml_id=ap_ax.nml_id.index(nml_id)
           self.nml_id_delete=nml_id
-          self.lg.debug('nml_id: {}'.format(nml_id))
+          self.lg.debug('callback::mouse_event: nml_id: {}'.format(nml_id))
           
           self.drawAnnote(nml_id,i_ap_ax_nml_id)
 
@@ -94,7 +94,7 @@ class AnnoteFinder(object):
       return
     # i_ap_ax_nml_id fn:  1:1
     fn=self.aps[0].annotes[i_ap_ax_nml_id].split()[1]
-    self.lg.debug(self.aps[0].annotes[i_ap_ax_nml_id])
+    self.lg.debug('callback::drawAnnote: {}'.format(self.aps[0].annotes[i_ap_ax_nml_id]))
     if self.ds9_display:
       self.display_fits(fn=fn)
 
@@ -121,11 +121,11 @@ class AnnoteFinder(object):
       AnnoteFinder.drawnAnnotations[(ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id])] = an
   
   def keyboard_event(self,event):
-    self.lg.debug('key board pressed: {}'.format(event.key))
+    self.lg.debug('callback::keyboard_event: key board pressed: {}'.format(event.key))
 
     if event.key == 'delete':
       if self.nml_id_delete is not None:
-        self.lg.debug('keyboard_event: delete nml_id: {}'.format(self.nml_id_delete))
+        self.lg.debug('callback::keyboard_event: delete nml_id: {}'.format(self.nml_id_delete))
         if self.nml_id_delete is not None:
           self.delete_one(nml_id=self.nml_id_delete,analyzed=self.analyzed)#ToDo nml_id are float
         self.nml_id_delete=None
