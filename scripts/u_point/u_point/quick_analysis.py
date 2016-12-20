@@ -139,6 +139,7 @@ class QuickAnalysis(object):
     self.objects_min=objects_min
     self.exposure_interval=exposure_interval
     self.ratio_interval=ratio_interval
+    self.display=None
     
   def analyze(self,nml_id=None,exposure_last=None,ptfn=None):
 
@@ -242,12 +243,13 @@ class QuickAnalysis(object):
 
 
   def display_fits(self,fn=None,sxobjs=None,i_x=None,i_y=None):
-    from pyds9 import DS9
-    try:
-      self.display = DS9()
-    except ValueError as e:
-      self.lg.info('display_fits: ds9 died, retrying, errorL {}'.format(e))
-      #return
+    if self.display is None:
+      from pyds9 import DS9
+      try:
+        self.display = DS9()
+      except ValueError as e:
+        self.lg.info('display_fits: ds9 died, retrying, error: {}'.format(e))
+    
     
     self.display.set('file {0}'.format(fn))
     self.display.set('scale zscale')
