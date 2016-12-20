@@ -11,6 +11,7 @@
 # This is the production version.
 #
 cd $HOME/rts2/scripts/u_point/
-#
-./u_acquire.py --base /tmp/u_point/ --device-class DeviceRts2 --use-bright-stars --delete --level DEBUG
+source ./rts2_script/u_acquire_settings.sh
+# close stderr
+./u_acquire.py --base-path  $BASE_PATH $LATITUDE  $LONGITUDE --device-class DeviceRts2 $USE_BRIGHT_STARS $FETCH_DSS_IMAGES $SUN_SEPARATION $DO_QUICK_ANALYSIS $ACQUIRE_DS9_DISPLAY --level DEBUG
 #

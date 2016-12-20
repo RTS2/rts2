@@ -34,7 +34,7 @@
 # 2016-12-12, wildi.markus@bluewin.ch
 cd $HOME/rts2/scripts/u_point/
 #
-source ./sim_settings.sh
+source ./sim/sim_settings.sh
 #
 ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE $SUN_SEPARATION --device DeviceRts2 --level DEBUG 
 

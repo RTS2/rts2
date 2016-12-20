@@ -28,14 +28,25 @@
 #
 # No RTS2 installation required
 #
-alt_az_steps="--alt-step 5 --az-step 20"
-alt_az_steps="--alt-step 10 --az-step 40"
-#LATITUDE="--obs-latitude m75.1"
+STEPS="--lat-step 5 --lon-step 20"
+#STEPS="--lat-step 10 --lon-step 40"
+LATITUDE="--obs-latitude m75.1"
+LONGITUDE="--obs-longitude 123.1"
 PLOT="--plot"
 SKIP_ACQUISITION=
 BASE_PATH=/tmp/u_point
 MODEL_CLASS="--model-class point"
 FETCH_DSS_IMAGE="--fetch-dss-image"
+TRANSFORMATION_CLASS="u_libnova"
+REFRACTION_METHOD="stone"
+REFRACTIVE_INDEX_METHOD="owens"
+MOUNT_SET_ICRS="--mount-set-icrs"
+MOUNT_SET_ICRS=
+MOUNT_TYPE_EQ="--mount-type-eq"
+USE_BRIGHT_STARS="--use-bright-stars"
+USE_BRIGHT_STARS=
+DO_QUICK_ANALYSIS="--do-quick-analysis"
+ACQUIRE_DS9_DISPLAY="--ds9-display"
 
 trap "exit 1" TERM
 export TOP_PID=$$
@@ -68,8 +79,8 @@ function cont_exit {
     fi
     return $status
 }
-
-while getopts ":apsrdil:o:m:t:f:c:" opt; do
+#set -x
+while getopts ":apsrdil:o:m:n:t:f:c:" opt; do
     case ${opt} in
 	a )
 	    ASTROMETRY=true
@@ -99,6 +110,9 @@ while getopts ":apsrdil:o:m:t:f:c:" opt; do
 	m )
 	    REFRACTION_METHOD=$OPTARG
 	    ;;
+	n )
+	    REFRACTIVE_INDEX_METHOD=$OPTARG
+	    ;;
 	t )
 	    TRANSFORMATION_CLASS=$OPTARG
 	    ;;
@@ -122,6 +136,7 @@ while getopts ":apsrdil:o:m:t:f:c:" opt; do
 	     echo "-l observatory latitude"
 	     echo "-o analysis output filename"
 	     echo "-m refraction method, if applicable (see -t), see u_analyze.py --help: --refraction-method"
+	     echo "-n refraction index method, if applicable (see -m), see u_analyze.py --help: --refractive-index-method"
 	     echo "-t transformation class, see u_analyze.py --help --help: --transform-class "
 	     echo "   u_taki_san: a refraction method must be specified"
 	     echo "   u_libnova : a refraction method can be specified"
@@ -162,6 +177,13 @@ else
     echo "using refraction method: $REFRACTION_METHOD"
     refraction_method="--refraction-method $REFRACTION_METHOD"
 fi
+if  [ -z ${REFRACTIVE_INDEX_METHOD+x} ]; then
+    echo "using refractive index method: default"
+    refractive_index_nethod=
+else
+    echo "using refractive index method: $REFRACTIVE_INDEX_METHOD"
+    refractive_index_method="--refractive-index-method $REFRACTIVE_INDEX_METHOD"
+fi
 echo ""
 if  [ -z ${TRANSFORMATION_CLASS+x} ]; then
     echo "using transformation class: default"
@@ -177,7 +199,15 @@ if  [ -z ${PRESERVE} ] ; then
 else
     echo "do not delete base directory $BASE_PATH"
 fi
+if  [ -z ${DO_QUICK_ANALYSIS} ] ; then
+    echo "do quick analyis"
+    rm -fr $BASE_PATH
+else
+    echo "do not quickly analze images"
+fi
+
 #
+#set -x
 # since u_point is not yet a python package
 cd $HOME/rts2/scripts/u_point
 if [ -z ${SKIP_ACQUISITION} ]; then
@@ -194,9 +224,9 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	    echo "takes several 5 seconds..."
 	    echo "CLOSE plot window to continue"
 	    echo ""
-	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE $PLOT > /dev/null 2>&1
+	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE $LONGITUDE $PLOT > /dev/null 2>&1
 	else
-	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE  > /dev/null 2>&1
+	    cont_exit ./u_select.py --base-path $BASE_PATH --brightness-interval "6.0 7.0" $LATITUDE $LONGITUDE > /dev/null 2>&1
 	fi
 	#
 	echo "DONE selecting stars"
@@ -206,10 +236,10 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	    echo "-----------------------------------------------------------------"
 	    echo "CLOSE plot window to continue"
 	    echo ""
-	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $PLOT $alt_az_steps
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --create-nominal-altaz $MOUNT_TYPE_EQ $PLOT $STEPS
 	else
 	    echo "second step, define a nominal grid of alt az positions"
-	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps    
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --create-nominal-altaz $MOUNT_TYPE_EQ $STEPS    
 	fi
 	#
 	echo "DONE grid creation"
@@ -223,13 +253,11 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	#
 	acq_script=" $HOME/rts2/scripts/u_point/rts2_script/u_acquire_fetch_dss_continuous.sh "
 	#
-	#echo "rts2-scriptexec -d C0 -s " exe $acq_script "  &"
-	#
 	rts2-scriptexec -d C0 -s " exe $acq_script "  &
 	export pid_u_acquire=$!
     else
 	#
-	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $FETCH_DSS_IMAGE  --use-bright-stars --toconsole &
+	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE  $USE_BRIGHT_STARS $DO_QUICK_ANALYSIS $ACQUIRE_DS9_DISPLAY --toconsole &
 	export pid_u_acquire=$!
 	#
 	# no bright stars:
@@ -252,7 +280,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	echo ""
 	if ! [ -z ${PLOT} ]; then
 	    # nap is necessary for callback to work
-	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $PLOT --ds9-display --animate --delete --level DEBUG &
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $PLOT --ds9-display --animate --delete --level DEBUG &
 	    echo "-----------------------------------------------------------------"
 	    echo "leave acquire plot window open"
 	    echo "click on blue points to see FITS being displayed with DS9"
@@ -273,16 +301,16 @@ fi
 echo "forth step, analyze the acquired position"
 if ! [ -z ${ASTROMETRY+x} ]; then
     #
-    cont_exit ./u_analyze.py  --base-path $BASE_PATH  $LATITUDE  --timeout 30 --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method &
+    cont_exit ./u_analyze.py  --base-path $BASE_PATH  $LATITUDE  $LONGITUDE --timeout 30 --toconsole $ANALYSIS_OUTPUT_FILE $MOUNT_SET_ICRS $transform_class $refraction_method $refractive_index_method&
     export pid_u_analyze=$!
 else
     #
-    cont_exit ./u_analyze.py  --base-path $BASE_PATH $LATITUDE --do-not-use-astrometry  --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method &
+    cont_exit ./u_analyze.py  --base-path $BASE_PATH $LATITUDE $LONGITUDE --do-not-use-astrometry  --toconsole $ANALYSIS_OUTPUT_FILE $MOUNT_SET_ICRS $transform_class $refraction_method $refractive_index_method&
     export pid_u_analyze=$!
 fi
 #
 if ! [ -z ${PLOT} ]; then
-    cont_exit ./u_analyze.py --base-path $BASE_PATH $PLOT --ds9-display --animate --delete $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method &
+    cont_exit ./u_analyze.py --base-path $BASE_PATH $PLOT --ds9-display --animate --delete $ANALYSIS_OUTPUT_FILE $MOUNT_SET_ICRS $transform_class $refraction_method $refractive_index_method&
     echo ""
     echo "-----------------------------------------------------------------"
     echo "leave analysis plot window open"
@@ -304,9 +332,9 @@ echo ""
 if ! [ -z ${ASTROMETRY+x} ]; then
     echo ""
     echo "displaying results from astrometry.net"
-    cont_exit ./u_model.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole $MODEL_CLASS --ds9 $ANALYSIS_OUTPUT_FILE& 
+    cont_exit ./u_model.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --ds9-display --delete --toconsole $MODEL_CLASS --ds9 $ANALYSIS_OUTPUT_FILE& 
 else
     echo "displaying results from SExtractor"
-    cont_exit ./u_model.py --base-path $BASE_PATH  $LATITUDE --plot --ds9-display --delete --toconsole  --fit-sxtr $MODEL_CLASS  $ANALYSIS_OUTPUT_FILE& 
+    cont_exit ./u_model.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --ds9-display --delete --toconsole  --fit-sxtr $MODEL_CLASS  $ANALYSIS_OUTPUT_FILE& 
 
 fi

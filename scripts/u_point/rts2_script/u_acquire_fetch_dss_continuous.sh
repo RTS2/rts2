@@ -12,8 +12,11 @@
 #            purposes ONLY.
 # 
 cd $HOME/rts2/scripts/u_point/
+source ./rts2_script/u_acquire_settings.sh
+# overriding
+USE_BRIGHT_STARS="--use-bright-stars"
 #
 #
 # same with DSS image retrieval
-./u_acquire.py --base-path  /tmp/u_point --device DeviceRts2 --use-bright-stars --fetch-dss-image --level DEBUG 
+./u_acquire.py --base-path  $BASE_PATH $LATITUDE  $LONGITUDE --device DeviceRts2 $USE_BRIGHT_STARS $FETCH_DSS_IMAGES $SUN_SEPARATION $DO_QUICK_ANALYSIS $ACQUIRE_DS9_DISPLAY --level DEBUG 
 

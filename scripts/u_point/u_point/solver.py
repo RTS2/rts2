@@ -23,7 +23,7 @@ Multiprocesser Worker
 '''
 from multiprocessing import current_process
 import numpy as np
-import u_point.astrometry_3
+import u_point.astrometry_3 as astrometry_3
 
 class SolverResult():
   """Results of astrometry.net including necessary fits headers"""

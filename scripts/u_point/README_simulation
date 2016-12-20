@@ -3,7 +3,7 @@ Data acquisition simulation
 
 Files:
 
-sim_settings.sh: contains settings which are sorced by
+sim/sim_settings.sh: contains settings which are sorced by
 all other sim_* scripts
 
 

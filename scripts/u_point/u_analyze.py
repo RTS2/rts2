@@ -57,7 +57,6 @@ except:
   print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
   sys.exit(1)
 
-import u_point.ds9region
 import u_point.sextractor_3 as sextractor_3
 from u_point.callback import AnnoteFinder
 from u_point.callback import  AnnotatedPlot
@@ -84,6 +83,7 @@ class Analysis(Script):
       ds9_display=None,
       solver=None,
       transform=None,
+      mount_set_icrs=None,
   ):
     Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,acquired_positions=acquired_positions,analyzed_positions=analyzed_positions,acq_e_h=acq_e_h)
     #
@@ -94,6 +94,7 @@ class Analysis(Script):
     self.ds9_display=ds9_display
     self.solver=solver
     self.transform=transform
+    self.mount_set_icrs=args.mount_set_icrs
     #
     self.ccd_rotation=self.rot(self.ccd_angle)
     self.acquired_positions=acquired_positions
@@ -110,8 +111,11 @@ class Analysis(Script):
     else:
       tr_t_tf=self.transform.transform_to_altaz
 
+    apparent=False
+    if self.mount_set_icrs:
+      apparent=True
     # cat_tf is either cat_aa or cat_ha
-    sky.cat_ll_ap=tr_t_tf(tf=sky.cat_ic,sky=sky,apparent=True)
+    sky.cat_ll_ap=tr_t_tf(tf=sky.cat_ic,sky=sky,apparent=apparent)
     #sim=SkyCoord(ra=sky.cat_ic.ra.radian,dec=sky.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=sky.dt_end,location=self.obs)
     #sky.cat_ll_ap=tr_t_tf(sky=sky,apparent=True)
     #print('CAT IC   ', sky.cat_ic)
@@ -135,7 +139,7 @@ class Analysis(Script):
     p_r= self.ccd_rotation.dot(p)               
     px_r=p_r[0,0]
     py_r=p_r[0,1]
-    self.lg.debug('{0}: xy2lonlat_appr: px: {1}, py: {2}, px_r: {3}, py_r: {4}'.format(pcn,int(px),int(py),int(px_r),int(py_r)))
+    self.lg.debug('{0}:id: {1}, xy2lonlat_appr: px: {2}, py: {3}, px_r: {4}, py_r: {5}'.format(pcn,sky.nml_id,int(px),int(py),int(px_r),int(py_r)))
     # small angle approximation for inverse gnomonic projection
     # ln0,lt0: field center
     # scale: angle/pixel [radian]
@@ -157,14 +161,13 @@ class Analysis(Script):
       lat=lt0 + py_r * self.px_scale
       
     ptfn=self.expand_base_path(fn=sky.image_fn)
-    self.lg.debug('{0}:   sextract   result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,lon*180./np.pi,lat*180./np.pi,ptfn))
+    self.lg.debug('{0}:id: {1}   sextract   result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,lon*180./np.pi,lat*180./np.pi,ptfn))
     if sky.mount_type_eq:
       sky.mnt_ll_sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='gcrs',location=self.obs)
     else:
       sky.mnt_ll_sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
   
   def sextract(self,sky=None,pcn='single'):
-    #if self.ds9_display:
     #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(sky.cat_no)))
 
     sx = sextractor_3.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
@@ -178,23 +181,27 @@ class Analysis(Script):
       return None,None
     
     sx.sortObjects(sx.get_field('MAG_BEST'))
+    try:
+      brst = sx.objects[0]
+      self.lg.warn('{0}:id: {1}, number of sextract objects: {2}, fn: {3} '.format(pcn,sky.nml_id,len(sx.objects),ptfn))
+    except:
+      self.lg.warn('{0}:id: {1}, no sextract result for: {2} '.format(pcn,sky.nml_id,ptfn))
+      return None,None
     i_x = sx.get_field('X_IMAGE')
     i_y = sx.get_field('Y_IMAGE')
     i_m = sx.get_field('MAG_BEST')
-    try:
-      brst = sx.objects[0]
-    except:
-      self.lg.warn('{0}: no sextract result for: {} '.format(pcn,ptfn))
-      return None,None
+    i_f = sx.get_field('FLAGS')
     # relative to the image center
     # Attention: AltAz of in x
     x=brst[i_x]-self.ccd_size[0]/2.
     y=brst[i_y]-self.ccd_size[1]/2.
-
-    self.lg.debug('{0}:   sextract relative to center: {1:4.1f} px,{2:4.1f} px,{3:4.3f} mag'.format(pcn,x,y,brst[i_m]))
+    self.lg.debug('{0}:id: {1},   sextract relative to center: {2:4.1f} px,{3:4.1f} px,{4:4.3f} mag, SX flag: {5}'.format(pcn,sky.nml_id,x,y,brst[i_m],brst[i_f]))
+    #ToDo prov.
     if self.ds9_display:
-      # absolute
-      self.display_fits(fn=ptfn, x=brst[i_x],y=brst[i_y],color='red')
+      from pyds9 import DS9
+      display = DS9()
+      display.set('file {0}'.format(fn))
+
     return x,y
     
   def astrometry(self,sky=None,pcn=None):
@@ -203,13 +210,13 @@ class Analysis(Script):
 
     ptfn=self.expand_base_path(fn=sky.image_fn)
 
-    self.lg.debug('{0}:           mount set: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sky.cat_ic.ra.degree,sky.cat_ic.dec.degree,ptfn))
+    self.lg.debug('{0}:id: {1},           mount set: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sky.cat_ic.ra.degree,sky.cat_ic.dec.degree,ptfn))
     if sky.mnt_ra_rdb.ra.radian != 0. and sky.mnt_ra_rdb.dec.radian != 0.:
-      self.lg.debug('{0}:     mount read back: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sky.mnt_ra_rdb.ra.degree,sky.mnt_ra_rdb.dec.degree,ptfn))
+      self.lg.debug('{0}:id: {1},     mount read back: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sky.mnt_ra_rdb.ra.degree,sky.mnt_ra_rdb.dec.degree,ptfn))
 
     sr= self.solver.solve_field(fn=ptfn,ra=sky.cat_ic.ra.degree,dec=sky.cat_ic.dec.degree,)
     if sr is not None:
-      self.lg.debug('{0}:ic astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
+      self.lg.debug('{0}:id: {1},ic astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sr.ra,sr.dec,ptfn))
 
       mnt_ll=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='gcrs',location=self.obs,obstime=sky.dt_end)
       if sky.mount_type_eq:
@@ -220,12 +227,12 @@ class Analysis(Script):
       sky.mnt_ll_astr=self.transform.transform_to_hadec(tf=mnt_ll,sky=sky,apparent=False)
 
       if sky.mount_type_eq:
-        self.lg.debug('{0}:ha astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sky.mnt_ll_astr.ra.degree,sky.mnt_ll_astr.dec.degree,ptfn))
+        self.lg.debug('{0}:id: {1},ha astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sky.mnt_ll_astr.ra.degree,sky.mnt_ll_astr.dec.degree,ptfn))
       else:
-        self.lg.debug('{0}:aa astrometry result: {1:12.7f} {2:12.7f}, file: {3}'.format(pcn,sr.ra,sr.dec,ptfn))
+        self.lg.debug('{0}:id: {1},aa astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sr.ra,sr.dec,ptfn))
     
     else:
-      self.lg.debug('{}: no astrometry result: file: {}'.format(pcn,ptfn))
+      self.lg.debug('{0}:id: {1}, no astrometry result: file: {2}'.format(pcn,sky.nml_id,ptfn))
 
   def re_plot(self,i=0,animate=None):
 
@@ -374,8 +381,11 @@ if __name__ == "__main__":
   parser.add_argument('--radius', dest='radius', action='store', default=1.,type=float, help=': %(default)s [deg], astrometry search radius')
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
+  # transforms, coordinates
   parser.add_argument('--transform-class', dest='transform_class', action='store', default='u_astropy', help=': %(default)s, one of (u_astropy|u_libnova|u_pyephem)')
   parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='built_in', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
+  parser.add_argument('--refractive-index-method', dest='refractive_index_method', action='store', default='owens', help=': %(default)s, one of (owens|ciddor|edlen) if --refraction-method stone is specified, see refraction.py')
+  parser.add_argument('--mount-set-icrs', dest='mount_set_icrs', action='store_true', default=False, help=': %(default)s, True: coordinates set at mount are ICRS (or J2000)')
 
   args=parser.parse_args()
   
@@ -414,8 +424,10 @@ if __name__ == "__main__":
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
 
   rf_m=None
+  ri_m=None
   if 'built_in' not in args.refraction_method:
-    rf=Refraction(lg=logger,obs=obs,refraction_method=args.refraction_method)
+    # refraction index method is set within Refraction
+    rf=Refraction(lg=logger,obs=obs,refraction_method=args.refraction_method,refractive_index_method=args.refractive_index_method)
     rf_m=getattr(rf, 'refraction_'+args.refraction_method)
     logger.info('refraction method loaded: {}'.format(args.refraction_method))
     
@@ -437,7 +449,8 @@ if __name__ == "__main__":
     base_path=args.base_path,
     solver=solver,
     acq_e_h=acq_e_h,
-    transform=transform
+    transform=transform,
+    mount_set_icrs=args.mount_set_icrs
   )
 
   if not os.path.exists(args.base_path):

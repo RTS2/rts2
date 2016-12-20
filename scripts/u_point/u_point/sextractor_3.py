@@ -64,9 +64,10 @@ class Sextractor:
     if not(self.verbose):
       cmd.append('-VERBOSE_TYPE')
       cmd.append('QUIET')
+    stdo=stde=None
     try:
-      proc = subprocess.Popen(cmd)
-      proc.wait()
+      proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+      stdo,stde=proc.communicate()
     except OSError as err:
       print ('canot run command: "', ' '.join(cmd), '", error ',err)
       raise err
@@ -77,7 +78,7 @@ class Sextractor:
     while (True):
       x=of.readline()
       if self.verbose:
-        print (x)
+        pass#print (x)
       if x == '':
         break
       if x[0] == '#':
@@ -90,7 +91,8 @@ class Sextractor:
 
     os.unlink(pfn)
     os.unlink(output)
-
+    return stdo,stde
+  
   def sortObjects(self,col):
     from operator import itemgetter
     """Sort objects by given collumn."""

@@ -23,26 +23,39 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 
 import numpy as np
+import_message=None
+try:
+  import ref_index.ref_index as ref_index
+except:
+  # exit only in case it is used
+  import_message='ref_index.py not available on local system, see README, exiting'
 
-class Refraction(object):
-  def __init__(self, lg=None,obs=None,refraction_method='built_in'):
-      
+  
+class RefractiveIndex(object):
+  def __init__(self, lg=None):
     self.lg=lg
-    self.obs_astropy=obs
-    if self.obs_astropy is not None:
-        longitude,latitude,height=self.obs_astropy.to_geodetic()
-        self.latitude=latitude.radian
-        # ToDo
-        # print(type(height))
-        # print(str(height))
-        # 3236.9999999999477 m
-        # print(height.meter)
-        # AttributeError: 'Quantity' object has no 'meter' member
-        self.height=float(str(height).replace('m','').replace('meter',''))
-
-    self.refraction_method=refraction_method
-    
-  def refractive_index(self,pressure_qfe=None,temperature=None,humidity=None,obswl=0.5):
+    if import_message is not None:
+      self.lg.error(import_message)
+      sys.exit(1)
+      
+  def refractive_index_ciddor(self,pressure_qfe=None,temperature=None,humidity=None,obswl=0.5):
+    # includes CO2  450micro-mole/mole
+    # https://oneau.wordpress.com/2011/10/12/ref-index/
+    # pressure [Pa], pressure_qfe [hPa]
+    #ref_index.ciddor(wave=633.0, t=20, p=101325, rh=20)
+    #ref_index.edlen(wave=633.0, t=20, p=101325, rh=80)
+    if pressure_qfe==0.:
+        return np.nan
+    NC=ref_index.ciddor(wave=obswl*1000.,t=temperature,p=pressure_qfe*100.,rh=humidity)
+    return NC-1.
+  
+  def refractive_index_edlen(self,pressure_qfe=None,temperature=None,humidity=None,obswl=0.5):
+    if pressure_qfe==0.:
+        return np.nan
+    NE=ref_index.edlen(wave=obswl*1000.,t=temperature,p=pressure_qfe*100.,rh=humidity)
+    return NE-1.
+  
+  def refractive_index_owens(self,pressure_qfe=None,temperature=None,humidity=None,obswl=0.5):
     # refraction: J.C. Owens, 1967, Optical Refractive Index of Air: Dependence on Pressure, Temperature and Composition  
     # pressure_t = pressure_o+1013.25*pow((1.-(0.0065* hm/288.)), 5.255)  
     # Calculate the partial pressures for H2O ONLY
@@ -73,15 +86,37 @@ class Refraction(object):
     u2=d_w*(6487.31+58.058 * pow( obswl, -2.)-0.7115*pow(obswl,-4.)+0.08851*pow(obswl,-6.))
 
     n_minus_1=u1+u2
-    return n_minus_1*1.e-8  ;
+    return n_minus_1*1.e-8
 
+
+class Refraction(object):
+  def __init__(self, lg=None,obs=None,refraction_method='built_in',refractive_index_method='built_in'):
+    self.lg=lg
+    self.obs_astropy=obs
+    if self.obs_astropy is not None:
+        longitude,latitude,height=self.obs_astropy.to_geodetic()
+        self.latitude=latitude.radian
+        # ToDo
+        # print(type(height))
+        # print(str(height))
+        # 3236.9999999999477 m
+        # print(height.meter)
+        # AttributeError: 'Quantity' object has no 'meter' member
+        self.height=float(str(height).replace('m','').replace('meter',''))
+
+    self.refraction_method=refraction_method
+    self.refractive_index_method=refractive_index_method
+    ri=RefractiveIndex(lg=self.lg)
+    self.ri_m=getattr(ri, 'refractive_index_'+self.refractive_index_method)
+
+    
   def refraction_stone(self,alt=None,tem=None,pre=None,hum=None):
     # An Accurate Method for Computing Atmospheric Refraction
     # Ronald C. Stone
     # Publications of the Astronomical Society of the Pacific
     # 108: 1051-1058, 1996 November
   
-    gamma=n_minus_1=self.refractive_index(pressure_qfe=pre,temperature=tem,humidity=hum,obswl=0.5)
+    gamma=n_minus_1=self.ri_m(pressure_qfe=pre,temperature=tem,humidity=hum,obswl=0.5)
     if np.isnan(n_minus_1) :
         return np.nan
     # eq (9)
@@ -132,3 +167,12 @@ if __name__ == "__main__":
     print('S: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
     d_alt=rf.refraction_stone(alt=alt,tem=tem,pre=pre,hum=hum)
     print('O:d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+
+
+  for item in range(-80,40,5):
+    tem=float(item)/180.*np.pi
+    NO=rf.refractive_index_owens(temperature=tem,pressure_qfe=pre,humidity=hum)
+    print('NO: NO: {0:15.10f} , temparature: {1}, deg'.format(NO,item))
+    NC,NE=rf.refractive_index_Comfort_at_1_AU(temperature=tem,pressure_qfe=pre,humidity=hum)
+    print('1U: NC: {0:15.10f} , temperature: {1}, deg'.format(NC,item))
+    print('1U: NE: {0:15.10f} , temperature: {1}, deg'.format(NE,item))

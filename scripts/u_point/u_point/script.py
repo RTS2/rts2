@@ -33,7 +33,7 @@ from astropy.coordinates import SkyCoord,AltAz
 import pandas as pd
 
 from u_point.structures import NmlPosition,CatPosition,SkyPosition,cl_nms,cl_acq
-import u_point.ds9region
+#from transform.u_taki_san import Transformation
 
 class Script(object):
   def __init__(
@@ -54,11 +54,6 @@ class Script(object):
     self.analyzed_positions=analyzed_positions
     self.acq_e_h=acq_e_h
 
-  # ToDo see callback.py
-  def display_fits(self,fn=None, x=None,y=None,color=None):
-    ds9=ds9region.Ds9DisplayThread(debug=True,logger=self.lg)
-    # Todo: ugly
-    ds9.run(fn,x=x,y=y,color=color)
       
   # ToDo goes away
   def rebase_base_path(self,ptfn=None):
@@ -101,9 +96,9 @@ class Script(object):
       cat_ic=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
       self.cat_observable.append(CatPosition(cat_no=int(rw['cat_no']),cat_ic=cat_ic,mag_v=rw['mag_v'] ))
 
-  def store_nominal_altaz(self,az_step=None,alt_step=None,azimuth_interval=None,altitude_interval=None,fn=None):
+  def store_nominal_altaz(self,lon_step=None,lat_step=None,longitude_interval=None,latitude_interval=None,mount_type_eq=None,excluded_ha_interval=None,fn=None):
     # ToDo from pathlib import Path, fp=Path(ptfb),if fp.is_file())
-    # format az_nml,alt_nml
+    # format lon_nml,lat_nml
     ptfn=self.expand_base_path(fn=fn)
 
     if os.path.isfile(ptfn):
@@ -112,34 +107,73 @@ class Script(object):
         self.lg.info('exiting')
         sys.exit(0)
 
-    # ToDo candidate for pandas
-    with  open(ptfn, 'w') as wfl:
-      self.nml=list()
-      # ToDo input as int?
-      az_rng=range(int(azimuth_interval[0]),int(azimuth_interval[1]),az_step) # No, exclusive + az_step
-      
-      alt_rng_up=range(int(altitude_interval[0]),int(altitude_interval[1]+alt_step),alt_step)
-      alt_rng_down=range(int(altitude_interval[1]),int(altitude_interval[0])-alt_step,-alt_step)
-      lir=len(alt_rng_up)
-      up=True
-      for i,az in enumerate(az_rng):
+    self.nml=list()      
+    up=True
+    #tfts=Transformation(lg=self.lg,obs=self.obs)
+    nml_id=-1
+    if mount_type_eq:
+      min_az=longitude_interval[0]/180.*np.pi
+      max_az=longitude_interval[1]/180.*np.pi
+      min_alt=latitude_interval[0]/180.*np.pi
+      max_alt=latitude_interval[1]/180.*np.pi
+      low_ha=excluded_ha_interval[0]
+      high_ha=excluded_ha_interval[1]
+
+      lon_rng=range(0,360,lon_step)
+      lat_rng_up=range(int(-90+lat_step),int(90.-lat_step),lat_step)
+      lat_rng_down=range(int(90.-lat_step),int(-90+lat_step),-lat_step)
+      for lon in lon_rng:
+        if low_ha <lon < high_ha:
+          continue
+        
         # Epson MX-80
         if up:
           up=False
-          rng=alt_rng_up
+          rng=lat_rng_up
         else:
           up=True
-          rng=alt_rng_down
+          rng=lat_rng_down
+        for lat in rng:
+          hadec=SkyCoord(ra=lon,dec=lat,unit=(u.degree,u.degree),frame='gcrs',location=self.obs)
+          #altaz=tfts.transform_hadec_to_altaz(tf=hadec)
+          altaz=hadec.altaz
+          lon_r=altaz.az.radian
+          lat_r=altaz.alt.radian
+          if min_az < lon_r < max_az:
+            if min_alt < lat_r < max_alt:
+              nml_id +=1
+              nml_aa=SkyCoord(az=lon_r,alt=lat_r,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
+              nml=NmlPosition(nml_id=nml_id,nml_aa=nml_aa)
+              self.nml.append(nml)
+    else:
+      # ToDo input as int?
+      lon_rng=range(int(longitude_interval[0]),int(longitude_interval[1]),lon_step) # No, exclusive + lon_step  
+      lat_rng_up=range(int(latitude_interval[0]),int(latitude_interval[1]+lat_step),lat_step)
+      lat_rng_down=range(int(latitude_interval[1]),int(latitude_interval[0])-lat_step,-lat_step)
+      lir=len(lat_rng_up)
+      for i,lon in enumerate(lon_rng):
+        # Epson MX-80
+        if up:
+          up=False
+          rng=lat_rng_up
+        else:
+          up=True
+          rng=lat_rng_down
           
-        for j,alt in enumerate(rng):
-          nml_id=i*lir+j
-          azr=az/180.*np.pi
-          altr=alt/180.*np.pi
-          #          | is the id
-          wfl.write('#{0},{1:12.6f},{2:12.6f}\n'.format(nml_id,az,alt))
-          wfl.write('{},{},{}\n'.format(nml_id,azr,altr))
-          nml_aa=SkyCoord(az=azr,alt=altr,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-          self.nml.append(NmlPosition(nml_id=nml_id,nml_aa=nml_aa))
+        lon_r=lon/180.*np.pi
+        for j,lat in enumerate(rng):
+          nml_id +=1
+          lat_r=lat/180.*np.pi
+          nml_aa=SkyCoord(az=lon_r,alt=lat_r,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
+          nl=NmlPosition(nml_id=nml_id,nml_aa=nml_aa)
+          self.nml.append(nl)
+
+    # ToDo candidate for pandas
+    with  open(ptfn, 'w') as wfl:
+      for nl in self.nml:
+        #          | is the id
+        wfl.write('#{0},{1:12.6f},{2:12.6f}\n'.format(nl.nml_id,nl.nml_aa.az.degree,nl.nml_aa.alt.degree))
+        wfl.write('{},{},{}\n'.format(nl.nml_id,nl.nml_aa.az.radian,nl.nml_aa.alt.radian))
 
   def fetch_pandas(self, ptfn=None,columns=None,sys_exit=True,with_nml_id=True):
     # ToDo simplify that

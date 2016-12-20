@@ -28,7 +28,6 @@ Callbacks for matplotlib
 __author__ = 'wildi.markus@bluewin.ch'
 
 from operator import itemgetter
-import u_point.ds9region as ds9region
 
 class AnnotatedPlot(object):
   def __init__(self,xx=None,nml_id=None,lon=None,lat=None,annotes=None):
@@ -97,7 +96,7 @@ class AnnoteFinder(object):
     fn=self.aps[0].annotes[i_ap_ax_nml_id].split()[1]
     self.lg.debug(self.aps[0].annotes[i_ap_ax_nml_id])
     if self.ds9_display:
-      self.display_fits(fn=fn,x=0,y=0,color='red')
+      self.display_fits(fn=fn)
 
     stop=False    
     for ap in self.aps:          
@@ -144,9 +143,17 @@ class AnnoteFinder(object):
     # ToDO not yet decided
     #ax.plot(self.randoms, 'o', picker=5)
     #fig.canvas.draw()
-
-  def display_fits(self,fn=None, x=None,y=None,color=None):
-    ds9=ds9region.Ds9DisplayThread(debug=True,logger=self.lg)
+  # ToDo generalize
+  def display_fits(self,fn=None,sxobjs=None,i_x=None,i_y=None):
+    from pyds9 import DS9
+    #ds9=ds9region.Ds9DisplayThread(debug=True,logger=self.lg)
+    #ds9.run(fn)
     # Todo: ugly
-    ds9.run(fn,x=x,y=y,color=color)
+    self.display = DS9()
+    self.display.set('file {0}'.format(fn))
+    self.display.set('scale zscale')
+
+    if sxobjs is not None:
+      for x in sxobjs:
+        self.display.set('regions', 'image; circle {0} {1} 10'.format(x[i_x],x[i_y]))
 

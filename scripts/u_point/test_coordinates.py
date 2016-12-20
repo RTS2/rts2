@@ -108,6 +108,7 @@ if __name__ == "__main__":
     ln_x.append(ln_gc.ra.arcsec-ln_gc_0.ra.arcsec)
     ln_y.append(ln_gc.dec.arcsec-ln_gc_0.dec.arcsec)
     #
+    # difference
     frac=100.
     ln_as_x.append((ln_gc.ra.arcsec-as_gc.ra.arcsec)*frac+150.)
     ln_as_y.append((ln_gc.dec.arcsec-as_gc.dec.arcsec)*frac-20.)

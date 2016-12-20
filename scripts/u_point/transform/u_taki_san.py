@@ -71,10 +71,6 @@ class Transformation(object):
     self.latitude=latitude.radian
     self.MAA=y_rot(self.latitude-np.pi/2.)
     self.MAA_I=np.linalg.inv(self.MAA)
-    self.lg.warn('status not yet prime time!!!!!!!!!!!!!!')
-    if self.refraction_method is None:
-      self.lg.error('for transform_taki_san specify a refraction method: see --refraction-method, exiting')
-      sys.exit(1)
       
   def transform_to_hadec(self,tf=None,sky=None,apparent=None):
     tem=sky.temperature
@@ -101,7 +97,7 @@ class Transformation(object):
       tem=sky.temperature
       pre=sky.pressure
       hum=sky.humidity
-      
+    
     dt = tf.obstime
     sid=dt.sidereal_time(kind='apparent',longitude=self.obs_astropy.longitude)
     #
@@ -116,8 +112,44 @@ class Transformation(object):
     if apparent:
       #d_alt=refraction_bennett(alt=alt,tem=tem,pre=pre,hum=hum)
       #self.lg.debug('B: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+      d_alt=0.
+      if sky is not None:
+        if self.refraction_method is None:
+          self.lg.error('for transform_taki_san specify a refraction method: see --refraction-method, exiting')
+          sys.exit(1)
+          
+        d_alt=self.refraction_method(alt=alt,tem=tem,pre=pre,hum=hum)
+      self.lg.debug('d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
 
-      d_alt=self.refraction_method(alt=alt,tem=tem,pre=pre,hum=hum)
+    aa=SkyCoord(az=az,alt=alt+d_alt, unit=(u.radian,u.radian), frame='altaz',location=tf.location,obstime=tf.obstime,pressure=pre*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum)    
+
+    return aa
+
+  def transform_hadec_to_altaz(self,tf=None,sky=None,apparent=None):
+    if sky is None:
+      tem=pre=hum=0.
+    else:
+      tem=sky.temperature
+      pre=sky.pressure
+      hum=sky.humidity
+    
+  
+    cs=cosine(lat=tf.dec.radian,lon=tf.ra.radian)
+
+    t = self.MAA * cs
+    alt=np.arcsin(float(t[2]))
+    az= -np.arctan2(float(t[1]),float(t[0]))
+    d_alt=0.
+    if apparent:
+      #d_alt=refraction_bennett(alt=alt,tem=tem,pre=pre,hum=hum)
+      #self.lg.debug('B: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+      d_alt=0.
+      if sky is not None:
+        if self.refraction_method is None:
+          self.lg.error('for transform_taki_san specify a refraction method: see --refraction-method, exiting')
+          sys.exit(1)
+          
+        d_alt=self.refraction_method(alt=alt,tem=tem,pre=pre,hum=hum)
       self.lg.debug('d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
 
     aa=SkyCoord(az=az,alt=alt+d_alt, unit=(u.radian,u.radian), frame='altaz',location=tf.location,obstime=tf.obstime,pressure=pre*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum)    

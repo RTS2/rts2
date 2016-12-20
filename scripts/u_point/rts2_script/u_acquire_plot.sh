@@ -22,5 +22,6 @@
 # 2016-11-22, wildi.markus@bluewin.ch
 
 cd $HOME/rts2/scripts/u_point
+source ./rts2_script/u_acquire_settings.sh
 #
-./u_acquire.py --device-class DeviceRts2 --base-path /tmp/u_point --plot --ds9-display --animate  --level DEBUG
+./u_acquire.py  --base-path $BASE_PATH $LATITUDE  $LONGITUDE $SUN_SEPARATION --plot --ds9-display --animate  --level DEBUG

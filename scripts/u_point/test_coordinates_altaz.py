@@ -25,7 +25,7 @@ from transform.u_libnova import Transformation as LibnovaTF
 from transform.u_taki_san import Transformation as TakiSanTF
 
 
-def plot(r_x=None,r_y=None,g_x=None,g_y=None,b_x=None,b_y=None,m_x=None,m_y=None,c_x=None,c_y=None,ln_apparent=None):
+def plot(red_x=None,red_y=None,green_x=None,green_y=None,blue_xx=None,blue_xy=None,magenta_x=None,magenta_y=None,cyan_x=None,cyan_y=None,black_x=None,black_y=None,ln_apparent=None):
 
     import matplotlib
     import matplotlib.animation as animation
@@ -36,18 +36,19 @@ def plot(r_x=None,r_y=None,g_x=None,g_y=None,b_x=None,b_y=None,m_x=None,m_y=None
     fig = plt.figure(figsize=(8,6))
     ax1 = fig.add_subplot(111)#, projection="mollweide")
 
-    title='red: TS-AS, green: LN-AS, blue: LN-TS, magenta: TS-PYE, cyan:LN-PYE'
+    title='red:TS-AS,green:LN-AS,blue:LN-TS,magenta:TS-PYE,cyan:LN-PYE,black:AS-PYE'
     if ln_apparent:
       title += ',LN:TF to apparent'
     else:
       title += ',LN:TF geometrical'
       
     ax1.set_title(title,fontsize=10)
-    ax1.scatter(r_x,r_y,color='red')
-    ax1.scatter(g_x,g_y,color='green')
-    ax1.scatter(b_x,b_y,color='blue')
-    ax1.scatter(m_x,m_y,color='magenta')
-    ax1.scatter(c_x,c_y,color='cyan')
+    ax1.scatter(red_x,red_y,color='red')
+    ax1.scatter(green_x,green_y,color='green')
+    ax1.scatter(blue_xx,blue_xy,color='blue')
+    ax1.scatter(magenta_x,magenta_y,color='magenta')
+    ax1.scatter(cyan_x,cyan_y,color='cyan')
+    ax1.scatter(black_x,black_y,color='black')
     #
     ax1.set_xlabel('d_azimuth [arcmin]')
     ax1.set_ylabel('d_altitude [arcmin]')
@@ -110,6 +111,8 @@ if __name__ == "__main__":
   ts_py_y=list()
   ln_py_x=list()
   ln_py_y=list()
+  as_py_x=list()
+  as_py_y=list()
 
   for RA in range(0,360,10):
     #gc=SkyCoord(float(RA)*u.degree,args.declination*u.degree, frame='gcrs',location=obs,obstime=now,pressure=0.)
@@ -154,8 +157,21 @@ if __name__ == "__main__":
     ln_py_x.append(daz *60.* 180./np.pi) # westward from south
     ln_py_y.append(ln_aa.alt.arcmin-pye_aa.alt.arcmin)
     
+    # astropy - PyEphem
+    daz=(ast_aa.az.radian)-pye_aa.az.radian
+    if daz < -np.pi:
+      daz += 2.*np.pi 
+    as_py_x.append(daz *60.* 180./np.pi) 
+    as_py_y.append(ast_aa.alt.arcmin-pye_aa.alt.arcmin)
     
-  plot(r_x=ts_as_x,r_y=ts_as_y,g_x=ln_as_x,g_y=ln_as_y,b_x=ln_ts_x,b_y=ln_ts_y,m_x=ts_py_x,m_y=ts_py_y,c_x=ln_py_x,c_y=ln_py_y,ln_apparent=args.ln_apparent)
+    
+  plot(red_x=ts_as_x,red_y=ts_as_y,
+       green_x=ln_as_x,green_y=ln_as_y,
+       blue_xx=ln_ts_x,blue_xy=ln_ts_y,
+       magenta_x=ts_py_x,magenta_y=ts_py_y,
+       cyan_x=ln_py_x,cyan_y=ln_py_y,
+       black_x=as_py_x,black_y=as_py_y,
+       ln_apparent=args.ln_apparent)
 
 
 

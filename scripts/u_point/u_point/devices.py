@@ -50,7 +50,8 @@ class DeviceDss(object):
     px_scale=None,
     ccd_size=None,
     base_path=None,
-    fetch_dss_image=None, 
+    fetch_dss_image=None,
+    quick_analysis=None,
   ):
     self.lg=lg
     self.dss_base_url='http://archive.eso.org/dss/dss/'
@@ -60,14 +61,15 @@ class DeviceDss(object):
     self.base_path=base_path
     self.fetch_dss_image=fetch_dss_image
     self.mount_type_eq=True
+    self.quick_analysis=quick_analysis
     self.cat_ic=None
     self.dss_image_ptfn=None
     self.dss_image_fn=None
-    self.exp=.1 
     self.dt_begin=None
     self.dt_end=None
     self.nml_id=None
     self.cat_no=None
+
     
   def check_presence(self,**kwargs):
     return True
@@ -80,10 +82,7 @@ class DeviceDss(object):
   def ccd_init(self):
     pass
 
-  def ccd_expose(self,exp=None):
-    
-    self.exp=exp # not really used
-    
+  def __expose(self,exp=None):
     width= '{}'.format(float(self.ccd_size[0]) * self.px_scale_arcmin) # DSS [arcmin]
     height= '{}'.format(float(self.ccd_size[1]) * self.px_scale_arcmin) # DSS [arcmin]
     args=OrderedDict()
@@ -99,6 +98,9 @@ class DeviceDss(object):
     self.dss_image_ptfn=os.path.join(self.base_path,self.dss_image_fn)
     self.dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
     if self.fetch_dss_image: # e.g., Done Concordia almost offline
+      dbglvl=self.lg.level
+      # do not want all the messages
+      self.lg.setLevel('ERROR')
       r=requests.get(self.dss_base_url, params=args, stream=True)
       
       self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
@@ -113,14 +115,40 @@ class DeviceDss(object):
             break
         else:
           self.lg.warn('expose: could not retrieve DSS: {}, continuing to retrieve'.format(r.url))
+      self.lg.level=dbglvl
+
       self.lg.debug('expose: DSS: saved {}'.format(r.url))
     else:
       self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='fits')
       self.lg.debug('expose: not fetching from DSS and not storing: {}'.format(self.dss_image_ptfn))
         
-    
+    # for DeviceRts2 in simulation mode
+    return exp
+  
+  def ccd_expose(self,exp=None):
+    self.exp=exp
+    if self.quick_analysis is not None:
+      # since this is virtual device we can not change exposure, break after second trial
+      i_break=0
+      while True:
+        self.exp=self.__expose(exp=self.exp)
+        self.exp,redo=self.quick_analysis.analyze(nml_id=self.nml_id,exposure_last=self.exp,ptfn=self.dss_image_ptfn)
+        if self.exp <= self.quick_analysis.exposure_interval[0]:
+          self.lg.warn('ccd_expose: giving up, exposure time reached lower limit: {}'.format(self.quick_analysis.exposure_interval[0]))
+          break
+        if self.exp >= self.quick_analysis.exposure_interval[1]:
+          self.lg.warn('ccd_expose: giving up, exposure time reached upper limit: {}'.format(self.quick_analysis.exposure_interval[1]))
+          break
+        if not redo:
+          break
+        if i_break > 2:
+          break
+        i_break +=1
+    else:
+      self.exp=self.__expose(exp=self.exp)
+    # for DeviceRts2 in simulation mode
     return self.exp
-    
+  
   def store_mount_data(self,cat_ic=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
@@ -163,7 +191,8 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
       base_path=None,
       px_scale=None, 
       ccd_size=None, 
-      fetch_dss_image=None, 
+      fetch_dss_image=None,
+      quick_analysis=None,
   ):
     scriptcomm_3.Rts2Comm.__init__(self)
     self.lg=lg
@@ -172,6 +201,7 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.px_scale=px_scale
     self.ccd_size=ccd_size
     self.fetch_dss_image=fetch_dss_image
+    self.quick_analysis=quick_analysis
 
     self.mount_type_eq=True #, init? ToDo, ev. fetch it from RTS2
     self.mnt_nm=None
@@ -191,6 +221,8 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     if fetch_dss_image:
         self.d_dss=DeviceDss(lg=self.lg,obs=self.obs,px_scale=self.px_scale,ccd_size=self.ccd_size,base_path=self.base_path,fetch_dss_image=self.fetch_dss_image)
 
+    self.exposure_attempts=0
+    self.modulo=9
     
   def check_presence(self):
     cont=True
@@ -228,35 +260,67 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     # make sure we are taking light images..
     self.setValue('SHUTTER','LIGHT')
 
-  def ccd_expose(self,exp=None):
+  def __expose(self,exp=None):
     # ToDo check if Morvian can be read out in parallel (RTS2, VM Windows)
     # ToDo if not use maa-2015-10-18.py
-
-    self.exp=exp
     # RTS2 does synchronization mount/CCD
-    self.lg.debug('expose: time {}'.format(self.exp))
+    self.lg.debug('expose: {0:6.3f}'.format(self.exp))
     self.setValue('exposure',self.exp)
     self.dt_begin = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
-    image_ptfn = self.exposure()
+    rts2_image_ptfn = self.exposure()
     self.dt_end = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
-    self.lg.debug('expose: image from RTS2: {}'.format(self.image_fn))
-    # fetch image from DSS
+    self.lg.debug('expose: image from RTS2: {}'.format(rts2_image_ptfn))
+    # fetch image from DSS (simulation only)
     if self.fetch_dss_image:
       try:
-          os.unlink(image_ptfn) # the noisy CCD image
-          self.lg.debug('expose: unlinking image from RTS2: {}'.format(image_ptfn))
+          os.unlink(rts2_image_ptfn) # the noisy CCD image
+          self.lg.debug('expose: unlinking image from RTS2: {}'.format(rts2_image_ptfn))
       except:
           pass # do not care
 
       self.d_dss.store_mount_data(cat_ic=self.cat_ic,nml_id=self.nml_id,cat_no=self.cat_no)
       self.exp=self.d_dss.ccd_expose(exp=self.exp)
       self.image_fn=self.d_dss.dss_image_fn # only fn
+      self.image_ptfn=os.path.join(self.base_path,self.image_fn)
       self.lg.debug('expose: image from DSS: {}'.format(self.image_fn))
     else:
-      self.image_fn=os.path.basename(image_ptfn)
-    
-    return self.exp
-  
+      self.image_fn=os.path.basename(rts2_image_ptfn)
+      self.image_ptfn=rts2_image_ptfn
+      
+  def ccd_expose(self,exp=None):
+    self.exp=exp
+    if self.quick_analysis is not None:
+      first=True
+      while True:  
+        self.__expose()
+        self.exp,redo=self.quick_analysis.analyze(nml_id=self.nml_id,exposure_last=self.exp,ptfn=self.image_ptfn)
+        # simulation mode
+        #if self.fetch_dss_image:
+        #  break
+        if self.exp <= self.quick_analysis.exposure_interval[0]:
+          self.lg.warn('ccd_expose: giving up, exposure time reached lower limit: {}'.format(self.quick_analysis.exposure_interval[0]))
+          if first:
+            first=False
+          else:
+            break
+        if self.exp >= self.quick_analysis.exposure_interval[1]:
+          self.lg.warn('ccd_expose: giving up, exposure time reached upper limit: {}'.format(self.quick_analysis.exposure_interval[1]))
+          if first:
+            first=False
+          else:
+            break
+        if not redo:
+          break
+        else:
+          self.lg.warn('ccd_expose: re doing nml_id: {}'.format(self.nml_id))
+          
+        self.exposure_attempts +=1
+        if not  self.exposure_attempts % self.modulo:
+          self.lg.warn('ccd_expose: giving up after: {} attempts'.format(self.modulo))
+          break
+    else:
+      self.exp=self.__expose(exp=self.exp)
+
   def store_mount_data(self,cat_ic=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
