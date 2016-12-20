@@ -111,8 +111,9 @@ float getFloat (const uint16_t regs[2])
 
 void setFloat (const float fv, uint16_t regs[2])
 {
-	regs[0] = ((uint16_t *) &fv)[0];
-	regs[1] = ((uint16_t *) &fv)[1];
+	memcpy (regs, &fv, 4);
+	regs[0] = htobe16 (regs[0]);
+	regs[1] = htobe16 (regs[1]);
 }
 
 int Binder::info ()
@@ -128,10 +129,10 @@ int Binder::info ()
 		humidity->setValueFloat (getFloat (regs));
 		sendValueAll (humidity);
 
-		binderConn->readHoldingRegisters (unitId, 0x1a69, 2, regs);
+		binderConn->readHoldingRegisters (unitId, 0x1581, 2, regs);
 		set_temp->setValueFloat (getFloat (regs));
 
-		binderConn->readHoldingRegisters (unitId, 0x1a6d, 2, regs);
+		binderConn->readHoldingRegisters (unitId, 0x1583, 2, regs);
 		set_hum->setValueFloat (getFloat (regs));
 	}
 	catch (rts2core::ConnError err)
@@ -179,12 +180,12 @@ int Binder::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	if (oldValue == set_temp)
 	{
 		setFloat (newValue->getValueFloat (), regs);
-		binderConn->writeHoldingRegisters (unitId, 0x1a69, 2, regs);
+		binderConn->writeHoldingRegisters (unitId, 0x1581, 2, regs);
 	}
 	if (oldValue == set_hum)
 	{
 		setFloat (newValue->getValueFloat (), regs);
-		binderConn->writeHoldingRegisters (unitId, 0x1a6d, 2, regs);
+		binderConn->writeHoldingRegisters (unitId, 0x1583, 2, regs);
 	}
 	return Sensor::setValue (oldValue, newValue);
 }
