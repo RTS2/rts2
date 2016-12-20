@@ -257,6 +257,7 @@ class QuickAnalysis(object):
       self.display.set('file {0}'.format(fn))
       self.display.set('scale zscale')
     except ValueError as e:
+      self.display=None
       self.lg.info('display_fits: ds9 died, retrying, error: {}'.format(e))
       return
 
