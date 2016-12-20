@@ -85,6 +85,7 @@ Binder::Binder (int argc, char **argv):Sensor (argc, argv)
 	createValue (set_hum, "set_humidity", "[%] humidity setpoint", false, RTS2_VALUE_WRITABLE);
 
 	createValue (grad_temp, "grad_temperature", "[C/min] temperature gradient", false, RTS2_VALUE_WRITABLE);
+	grad_temp->setValueFloat (0.5);
 
 	createValue (tar_temp, "target_temperature", "[C] temperature target", false, RTS2_VALUE_WRITABLE);
 
@@ -150,6 +151,8 @@ int Binder::info ()
 	catch (rts2core::ConnError err)
 	{
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
+		delete binderConn;
+		initHardware ();
 		return -1;
 	}
 	
