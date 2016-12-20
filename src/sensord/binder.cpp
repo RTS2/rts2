@@ -66,6 +66,8 @@ class Binder:public Sensor
 		rts2core::ValueFloat *grad_temp;
 
 		rts2core::ValueFloat *tar_temp;
+
+		int reinit ();
 };
 
 }
@@ -129,9 +131,16 @@ void setFloat (const float fv, uint16_t regs[2])
 	regs[1] = htobe16 (regs[1]);
 }
 
+
 int Binder::info ()
 {
 	uint16_t regs[2];
+	if (binderConn == NULL)
+	{
+		int ret = reinit ();
+		if (ret)
+			return ret;
+	}
 	try
 	{
 		binderConn->readHoldingRegisters (unitId, 0x11a9, 2, regs);
@@ -151,10 +160,6 @@ int Binder::info ()
 	catch (rts2core::ConnError err)
 	{
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
-		delete binderConn;
-
-		binderConn = new rts2core::ConnModbusRTUTCP (this, host->getHostname (), host->getPort ());
-		binderConn->setDebug (getDebug ());
 
 		return -1;
 	}
@@ -169,7 +174,7 @@ void Binder::postEvent (rts2core::Event *event)
 	{
 		case BINDER_TIMER_TEMP:
 			ret = info ();
-			if (ret == 0)
+			if (ret == 0 && binderConn != NULL)
 			{
 				if (grad_temp->getValueFloat () != 0 && !isnan (grad_temp->getValueFloat ()) && !isnan (set_temp->getValueFloat ()) && !isnan (tar_temp->getValueFloat ()))
 				{
@@ -200,21 +205,8 @@ int Binder::initHardware ()
 		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
 		return -1;
 	}
-	binderConn = new rts2core::ConnModbusRTUTCP (this, host->getHostname (), host->getPort ());
-	binderConn->setDebug (getDebug ());
-	
-	uint16_t regs[8];
 
-	try
-	{
-		binderConn->init ();
-		binderConn->readHoldingRegisters (unitId, 0x11a9, 2, regs);
-	}
-	catch (rts2core::ConnError er)
-	{
-		logStream (MESSAGE_ERROR) << "initHardware " << er << sendLog;
-		return -1;
-	}
+	binderConn = NULL;
 
 	int ret = info ();
 	if (ret)
@@ -231,15 +223,41 @@ int Binder::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	uint16_t regs[2];
 	if (oldValue == set_temp)
 	{
+		if (binderConn == NULL)
+			return -2;
 		setFloat (newValue->getValueFloat (), regs);
 		binderConn->writeHoldingRegisters (unitId, 0x1581, 2, regs);
 	}
 	if (oldValue == set_hum)
 	{
+		if (binderConn == NULL)
+			return -2;
 		setFloat (newValue->getValueFloat (), regs);
 		binderConn->writeHoldingRegisters (unitId, 0x1583, 2, regs);
 	}
 	return Sensor::setValue (oldValue, newValue);
+}
+
+int Binder::reinit ()
+{
+	uint16_t regs[2];
+	delete binderConn;
+
+	binderConn = new rts2core::ConnModbusRTUTCP (this, host->getHostname (), host->getPort ());
+	binderConn->setDebug (getDebug ());
+	try
+	{
+		binderConn->init ();
+		binderConn->readHoldingRegisters (unitId, 0x11a9, 2, regs);
+	}
+	catch (rts2core::ConnError er)
+	{
+		logStream (MESSAGE_ERROR) << "reinit " << er << sendLog;
+		delete binderConn;
+		binderConn = NULL;
+		return -1;
+	}
+	return 0;
 }
 
 int main (int argc, char **argv)
