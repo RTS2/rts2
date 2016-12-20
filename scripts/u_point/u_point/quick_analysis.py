@@ -253,8 +253,12 @@ class QuickAnalysis(object):
         self.lg.info('display_fits: ds9 died, retrying, error: {}'.format(e))
         return
     
-    self.display.set('file {0}'.format(fn))
-    self.display.set('scale zscale')
+    try:
+      self.display.set('file {0}'.format(fn))
+      self.display.set('scale zscale')
+    except ValueError as e:
+      self.lg.info('display_fits: ds9 died, retrying, error: {}'.format(e))
+      return
 
     for x in sxobjs:
       self.display.set('regions', 'image; circle {0} {1} 10'.format(x[i_x],x[i_y]))
