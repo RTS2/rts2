@@ -152,7 +152,10 @@ int Binder::info ()
 	{
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
 		delete binderConn;
-		initHardware ();
+
+		binderConn = new rts2core::ConnModbusRTUTCP (this, host->getHostname (), host->getPort ());
+		binderConn->setDebug (getDebug ());
+
 		return -1;
 	}
 	
@@ -217,6 +220,7 @@ int Binder::initHardware ()
 	if (ret)
 		return ret;
 
+	deleteTimers (BINDER_TIMER_TEMP);
 	addTimer (15, new rts2core::Event (BINDER_TIMER_TEMP));
 
 	return 0;
