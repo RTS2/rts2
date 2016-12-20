@@ -431,7 +431,7 @@ if __name__ == "__main__":
   rf_m=None
   ri_m=None
   if 'built_in' not in args.refraction_method:
-    if 'ciddor' in  args.refraction_method or 'edlen' in  args.refraction_method:
+    if 'ciddor' in  args.refractive_index_method or 'edlen' in  args.refractive_index_method:
       if import_message is not None:
         self.lg.error(import_message)
         sys.exit(1)
