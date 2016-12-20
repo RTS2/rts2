@@ -152,7 +152,7 @@ class QuickAnalysis(object):
       return None,None
 
     if len(sx.objects)==0:
-      self.lg.error('analyze: no sextracted objects: {}'.format(ptfn))
+      self.lg.warn('analyze: no sextracted objects: {}'.format(ptfn))
       return None,None
   
     stde_str=stde.decode('utf-8').replace('\n','')
@@ -169,20 +169,20 @@ class QuickAnalysis(object):
     background_f=True
     if background > self.background_max:
       background_f=False
-      self.lg.warn('sextract: background {0:6.1f} > {1:6.1f}'.format(background,self.background_max))
+      self.lg.info('sextract: background {0:6.1f} > {1:6.1f}'.format(background,self.background_max))
     
     sx.sortObjects(sx.get_field('MAG_BEST'))
     i_f = sx.get_field('FLAGS')
     try:
         sxobjs=[x for x in sx.objects if x[i_f]==0] # only the good ones
         sxobjs_len=len(sxobjs)
-        self.lg.warn('analyze:id: {0}, number of sextract objects: {1}, fn: {2} '.format(nml_id,sxobjs_len,ptfn))
+        self.lg.debug('analyze:id: {0}, number of sextract objects: {1}, fn: {2} '.format(nml_id,sxobjs_len,ptfn))
     except:
       self.lg.warn('analyze:id: {0}, no sextract result for: {1} '.format(nml_id,ptfn))
       return None,None
   
     if sxobjs_len < self.objects_min:
-      self.lg.warn('sextract: found objects {0:6.1f} < {1:6.1f}'.format(len(sxobjs),self.objects_min))
+      self.lg.debug('sextract: found objects {0:6.1f} < {1:6.1f}'.format(len(sxobjs),self.objects_min))
 
     i_x = sx.get_field('X_IMAGE')
     i_y = sx.get_field('Y_IMAGE')
@@ -210,7 +210,7 @@ class QuickAnalysis(object):
     peak_f=True
     if peak > self.peak_max:
       peak_f=False
-      self.lg.warn('sextract: peak {0:6.1f} > {1:6.1f}'.format(peak,self.peak_max))
+      self.lg.info('sextract: peak {0:6.1f} > {1:6.1f}'.format(peak,self.peak_max))
     
     ratio= (max(pixel_values)-background)/(self.peak_max-background)
     if self.ratio_interval[0] < ratio < self.ratio_interval[0]:
@@ -247,9 +247,9 @@ class QuickAnalysis(object):
       self.display = DS9()
     except ValueError as e:
       self.lg.info('display_fits: ds9 died, retrying, errorL {}'.format(e))
-      return
+      #return
     
-      self.display.set('file {0}'.format(fn))
+    self.display.set('file {0}'.format(fn))
     self.display.set('scale zscale')
 
     for x in sxobjs:
