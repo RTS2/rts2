@@ -433,7 +433,7 @@ if __name__ == "__main__":
   if 'built_in' not in args.refraction_method:
     if 'ciddor' in  args.refractive_index_method or 'edlen' in  args.refractive_index_method:
       if import_message is not None:
-        self.lg.error(import_message)
+        self.lg.error('u_analyze: {}'.format(import_message))
         sys.exit(1)
 
     # refraction index method is set within Refraction
