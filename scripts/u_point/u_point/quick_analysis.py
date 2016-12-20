@@ -245,8 +245,10 @@ class QuickAnalysis(object):
   def display_fits(self,fn=None,sxobjs=None,i_x=None,i_y=None):
     if self.display is None:
       from pyds9 import DS9
+      import time
       try:
         self.display = DS9()
+        time.sleep(10.)
       except ValueError as e:
         self.lg.info('display_fits: ds9 died, retrying, error: {}'.format(e))
     
