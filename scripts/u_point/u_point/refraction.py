@@ -21,7 +21,7 @@
 #
 __author__ = 'wildi.markus@bluewin.ch'
 
-
+import sys
 import numpy as np
 import_message=None
 try:
@@ -34,6 +34,7 @@ except:
 class RefractiveIndex(object):
   def __init__(self, lg=None):
     self.lg=lg
+    # last resort
     if import_message is not None:
       self.lg.error(import_message)
       sys.exit(1)

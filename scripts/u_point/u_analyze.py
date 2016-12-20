@@ -65,6 +65,11 @@ from u_point.worker import Worker
 from u_point.solver import SolverResult,Solver
 from u_point.script import Script
 from u_point.refraction import Refraction
+try:
+  import ref_index.ref_index as ref_index
+except:
+  # exit only in case it is used
+  import_message='ref_index.py not available on local system, see README, exiting'
 
 class Analysis(Script):
   def __init__(
@@ -426,6 +431,11 @@ if __name__ == "__main__":
   rf_m=None
   ri_m=None
   if 'built_in' not in args.refraction_method:
+    if 'ciddor' in  args.refraction_method or 'edlen' in  args.refraction_method:
+      if import_message is not None:
+        self.lg.error(import_message)
+        sys.exit(1)
+
     # refraction index method is set within Refraction
     rf=Refraction(lg=logger,obs=obs,refraction_method=args.refraction_method,refractive_index_method=args.refractive_index_method)
     rf_m=getattr(rf, 'refraction_'+args.refraction_method)
