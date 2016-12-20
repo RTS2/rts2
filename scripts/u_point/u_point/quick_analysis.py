@@ -243,8 +243,13 @@ class QuickAnalysis(object):
 
   def display_fits(self,fn=None,sxobjs=None,i_x=None,i_y=None):
     from pyds9 import DS9
-    self.display = DS9()
-    self.display.set('file {0}'.format(fn))
+    try:
+      self.display = DS9()
+    except ValueError as e:
+      self.lg.info('display_fits: ds9 died, retrying, errorL {}'.format(e))
+      return
+    
+      self.display.set('file {0}'.format(fn))
     self.display.set('scale zscale')
 
     for x in sxobjs:
