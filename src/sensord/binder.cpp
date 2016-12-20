@@ -21,6 +21,8 @@
 #include "connection/modbus.h"
 #include <bitset>
 
+#define BINDER_TIMER_TEMP    RTS2_LOCAL_EVENT + 5200
+
 namespace rts2sensord
 {
 
@@ -40,6 +42,8 @@ class Binder:public Sensor
 
 		virtual int info ();
 
+		virtual void postEvent (rts2core::Event *event);
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -58,6 +62,10 @@ class Binder:public Sensor
 
 		rts2core::ValueFloat *set_temp;
 		rts2core::ValueFloat *set_hum;
+
+		rts2core::ValueFloat *grad_temp;
+
+		rts2core::ValueFloat *tar_temp;
 };
 
 }
@@ -75,6 +83,10 @@ Binder::Binder (int argc, char **argv):Sensor (argc, argv)
 
 	createValue (set_temp, "set_temperature", "[C] temperature setpoint", false, RTS2_VALUE_WRITABLE);
 	createValue (set_hum, "set_humidity", "[%] humidity setpoint", false, RTS2_VALUE_WRITABLE);
+
+	createValue (grad_temp, "grad_temperature", "[C/min] temperature gradient", false, RTS2_VALUE_WRITABLE);
+
+	createValue (tar_temp, "target_temperature", "[C] temperature target", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('b', NULL, 1, "Binder TCP/IP address and port (separated by :)");
 	addOption ('u', NULL, 1, "unit id/adress (default 1)");
@@ -144,6 +156,37 @@ int Binder::info ()
 	return Sensor::info ();
 }
 
+void Binder::postEvent (rts2core::Event *event)
+{
+	int ret = 0;
+	switch (event->getType ())
+	{
+		case BINDER_TIMER_TEMP:
+			ret = info ();
+			if (ret == 0)
+			{
+				if (grad_temp->getValueFloat () != 0 && !isnan (grad_temp->getValueFloat ()) && !isnan (set_temp->getValueFloat ()) && !isnan (tar_temp->getValueFloat ()))
+				{
+					float diff = tar_temp->getValueFloat () - set_temp->getValueFloat ();
+					if (diff != 0)
+					{
+						uint16_t regs[2];
+
+						if (diff > grad_temp->getValueFloat () / 4.0)
+							diff = grad_temp->getValueFloat () / 4.0;
+						if (diff < -grad_temp->getValueFloat () / 4.0)
+							diff = -grad_temp->getValueFloat () / 4.0;
+						set_temp->setValueFloat (set_temp->getValueFloat () + diff);
+						setFloat (set_temp->getValueFloat (), regs);
+						binderConn->writeHoldingRegisters (unitId, 0x1581, 2, regs);
+					}
+				}
+			}
+			addTimer (15, event);
+			return;
+	}
+}
+
 int Binder::initHardware ()
 {
 	if (host == NULL)
@@ -170,6 +213,8 @@ int Binder::initHardware ()
 	int ret = info ();
 	if (ret)
 		return ret;
+
+	addTimer (15, new rts2core::Event (BINDER_TIMER_TEMP));
 
 	return 0;
 }
