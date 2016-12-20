@@ -143,6 +143,16 @@ class ConnModbus:public ConnNoSend
 		void writeHoldingRegister (uint8_t slaveId, int16_t reg, int16_t val);
 
 		/**
+		 * Write value to a register.
+		 *
+		 * @param start starting register address
+		 * @param vals  new register value
+		 *
+		 * @throw            ConnError on error.
+		 */
+		void writeHoldingRegisters (uint8_t slaveId, int16_t start, int8_t len, uint16_t *vals);
+
+		/**
 		 * Write masked value to a register. Actually read register,
 		 * mask out mask values, or with masked val, and write it back.
 		 *

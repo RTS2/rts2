@@ -127,6 +127,18 @@ void ConnModbus::writeHoldingRegister (uint8_t slaveId, int16_t reg, int16_t val
 	callFunction (slaveId, 0x06, reg, val, reply, 4);
 }
 
+void ConnModbus::writeHoldingRegisters (uint8_t slaveId, int16_t start, int8_t len, uint16_t *vals)
+{
+	unsigned char data[len * 2 + 5];
+	unsigned char reply[4];
+	*((int16_t *) data) = htons (start);
+	*((int16_t *) (data + 2)) = htons ((int16_t) len);
+	data[4] = len * 2;
+	memcpy (data + 5, vals, len * 2);
+
+	callFunction (slaveId, 0x10, data, len * 2 + 5, reply, 4);
+}
+
 void ConnModbus::writeHoldingRegisterMask (uint8_t slaveId, int16_t reg, int16_t mask, int16_t val)
 {
 	uint16_t old_value;

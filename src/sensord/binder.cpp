@@ -54,6 +54,10 @@ class Binder:public Sensor
 		rts2core::ConnModbus *binderConn;
 
 		rts2core::ValueFloat *temperature;
+		rts2core::ValueFloat *humidity;	
+
+		rts2core::ValueFloat *set_temp;
+		rts2core::ValueFloat *set_hum;
 };
 
 }
@@ -64,11 +68,16 @@ Binder::Binder (int argc, char **argv):Sensor (argc, argv)
 {
 	binderConn = NULL;
 	host = NULL;
-	unitId = 0;
+	unitId = 1;
 
 	createValue (temperature, "temperature", "[C] temperature in chamber", false);
+	createValue (humidity, "humidity", "[%] relative humidity", false);
+
+	createValue (set_temp, "set_temperature", "[C] temperature setpoint", false, RTS2_VALUE_WRITABLE);
+	createValue (set_hum, "set_humidity", "[%] humidity setpoint", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('b', NULL, 1, "Binder TCP/IP address and port (separated by :)");
+	addOption ('u', NULL, 1, "unit id/adress (default 1)");
 }
 
 Binder::~Binder (void)
@@ -84,6 +93,8 @@ int Binder::processOption (int in_opt)
 		case 'b':
 			host = new HostString (optarg, "502");
 			break;
+		case 'u':
+			unitId = atoi (optarg);
 		default:
 			return Sensor::processOption (in_opt);
 	}
@@ -93,9 +104,15 @@ int Binder::processOption (int in_opt)
 float getFloat (const uint16_t regs[2])
 {
 	float rf;
-	((uint16_t *) &rf)[0] = regs[1];
-	((uint16_t *) &rf)[1] = regs[0];
+	((uint16_t *) &rf)[0] = regs[0];
+	((uint16_t *) &rf)[1] = regs[1];
 	return rf;
+}
+
+void setFloat (const float fv, uint16_t regs[2])
+{
+	regs[0] = ((uint16_t *) &fv)[0];
+	regs[1] = ((uint16_t *) &fv)[1];
 }
 
 int Binder::info ()
@@ -106,6 +123,16 @@ int Binder::info ()
 		binderConn->readHoldingRegisters (unitId, 0x11a9, 2, regs);
 		temperature->setValueFloat (getFloat (regs));
 		sendValueAll (temperature);
+
+		binderConn->readHoldingRegisters (unitId, 0x11cd, 2, regs);
+		humidity->setValueFloat (getFloat (regs));
+		sendValueAll (humidity);
+
+		binderConn->readHoldingRegisters (unitId, 0x1a69, 2, regs);
+		set_temp->setValueFloat (getFloat (regs));
+
+		binderConn->readHoldingRegisters (unitId, 0x1a6d, 2, regs);
+		set_hum->setValueFloat (getFloat (regs));
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -131,7 +158,7 @@ int Binder::initHardware ()
 	try
 	{
 		binderConn->init ();
-		binderConn->readHoldingRegisters (unitId, 16, 8, regs);
+		binderConn->readHoldingRegisters (unitId, 0x11a9, 2, regs);
 	}
 	catch (rts2core::ConnError er)
 	{
@@ -148,6 +175,17 @@ int Binder::initHardware ()
 
 int Binder::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
+	uint16_t regs[2];
+	if (oldValue == set_temp)
+	{
+		setFloat (newValue->getValueFloat (), regs);
+		binderConn->writeHoldingRegisters (unitId, 0x1a69, 2, regs);
+	}
+	if (oldValue == set_hum)
+	{
+		setFloat (newValue->getValueFloat (), regs);
+		binderConn->writeHoldingRegisters (unitId, 0x1a6d, 2, regs);
+	}
 	return Sensor::setValue (oldValue, newValue);
 }
 
