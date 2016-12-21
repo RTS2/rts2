@@ -3,13 +3,16 @@ Data acquisition simulation
 
 Files:
 
-sim/sim_settings.sh: contains settings which are sorced by
-all other sim_* scripts
-
 
 sim_daytime.sh: demonstrates that u_point does not
 approach the sun within a certain radius. Specify
-option -r for RTS2 real or dummy devices.
+option -s e.g. with
+
+ sim_settings_below_sun.sh
+ sim_settings_above_sun.sh
+
+and check longitude if no sun is visible. Specify option
+-r for RTS2 real or dummy devices.
 
 sim_daytime_bright_stars.sh: demonstrates how a
 day time data acquisition can be carried out. Yes,

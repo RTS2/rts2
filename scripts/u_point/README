@@ -19,15 +19,27 @@ Prerequisites
               pyds9
 	      pyfits
 	      pyephem
-	      
- libnova needs to be on LD_PATH as libnova.so
+	      ref_index
 
- Do a:
+Install ref_index with
+
+ git clone https://github.com/phn/ref_index.git
+
+in the main u_point directory. According to
+
+https://oneau.wordpress.com/2011/10/12/ref-index/
+
+NIST adopted the methods for their refractive index
+calculator.
+
+libnova needs to be on LD_PATH as libnova.so
+
+Do a:
  wget http://maia.usno.navy.mil/ser7/finals2000A.all  
 
- astrometry.net:
- For the default CCD pixel size (862,655 or 24.4x18.56 arcmin2)
- chose packages:
+astrometry.net:
+For the default CCD pixel size (862,655 or 24.4x18.56 arcmin2)
+chose packages:
  
   astrometry-data-2mass-05 (11'-16')
   astrometry-data-2mass-06 (16'-22')
@@ -38,38 +50,28 @@ Use cases
 
 u_point's use cases are:
 
-- unattended data acquisition and analysis done
-  with astrometry.net. In this case do not use
-  results from SExtractor (see u_model.py).
+- unattended data acquisition and analysis and fit
+  of a configurable mount/telescope pointing model.
 
-- a CCD FoV which is too small for astrometry.net
-  or similar to work reliably.
+- if the CCD FoV is too small for astrometry.net
+  or similar to work reliably an 
   As targets serve "not so lonely" objects from Yale's
   Bright Star Catalog which are identified as
   brightest object on an CCD image.
   SExtractor will select the brightest star which
   serves as the measured mount apparent location.
 
-- u_point can be used even if the sun is above horizon. The
-  mount never points to a location within a configurable
+- u_point can be used during day time. The mount
+  never points to a location within a configurable
   radius around the sun (see README_simulation).
   
 - u_point is written in a way, that libindi or
-  ASCOM users can easily extend u_point (see
-  u_point/devices.py or contact wildi.markus@bluewin.ch)
+  ASCOM users can easily extend it (see contact
+  wildi.markus@bluewin.ch or have a look at
+  u_point/devices.py or)
 
 For quick introduction see section: Very quick
 tour: do_it_all_dss.sh
-This script performs a full acquisition, position
-analysis and fit a pointing model. Progress and results
-are plotted.
-
-
-Welcome to users of libindi, ASCOM or any other system
-======================================================
-
-98% of the code is independent of any specific system,
-like RTS2, libindi or ASCOM.
 
 
 libnova, astropy, PyEphem, Toshimi Taki
@@ -85,16 +87,31 @@ there are several 'transformers' available
 
 where TRANSFORM is one of f the following options
 
- u_libnova
+ u_libnova  recommended
  u_astropy
- u_pyephem
+ u_pyephem  recommended
  u_taki_san
 
-TRANSFORM is loaded at run time. As of 2016-12-11
-I'm investigating the differences with scripts
+TRANSFORM is loaded at run time. For u_libnova and
+u_taki_san the calculation of refraction can be
+choosen from
 
- - test_coordinates.py
- - test_coordinates_altaz.py
+ bennett     (Jean Meeus)
+ saemundsson (Jean Meeus)
+ stone       recommended (Ronald C. Stone)
+
+and for stone the refractive index can be calculated
+with one of
+
+ owens
+ ciddor recommended
+ edlen  recommended
+
+As of 2016-12-21 I'm investigating the differences
+among the transormations with scripts
+
+ test_coordinates.py
+ test_coordinates_altaz.py
 
 Model selection
 ===============

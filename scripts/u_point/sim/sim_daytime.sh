@@ -50,6 +50,9 @@ done
 if [ -f "$SIM_SETTINGS" ]; then
     source $SIM_SETTINGS
 else
+    echo "$0 is executed in $HOME/rts2/script/u_point"
+    echo "specify settings path relative to the main"
+    echo "u_point directory"
     echo "$SIM_SETTINGS does not exist, exiting"
     exit
 fi
@@ -64,11 +67,11 @@ if [ -d "$BASE_PATH" ]; then
 	exit
     fi
 fi
-
+echo "if no sun is visible, change longitide"
 
 if ! [ -z ${RTS2+x} ]; then
     echo "using real or dummy RTS2 devices"
-    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$ALT_LOW $ALT_HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --latitude-interval "$ALT_LOW $ALT_HIGH" --longitude-interval "$AZ_LOW $AZ_HIGH"
     #
     plt_script=" $HOME/rts2/scripts/u_point/rts2_script/sim_u_acquire_plot.sh "
     #
@@ -81,7 +84,7 @@ if ! [ -z ${RTS2+x} ]; then
 else
     echo "using built in simulation device: DeviceDss"
     #
-    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --altitude-interval "$ALT_LOW $ALT_HIGH" --azimuth-interval "$AZ_LOW $AZ_HIGH"
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $alt_az_steps --latitude-interval "$ALT_LOW $ALT_HIGH" --longitude-interval "$AZ_LOW $AZ_HIGH"
     set -x
     ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION &
     #
