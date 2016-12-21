@@ -50,11 +50,12 @@ Use cases
 
 u_point's use cases are:
 
-- unattended data acquisition and analysis and fit
+- unattended data acquisitionm analysis and fit
   of a configurable mount/telescope pointing model.
 
 - if the CCD FoV is too small for astrometry.net
-  or similar to work reliably an 
+  or similar to work reliably then the mount can be
+  driven interactively.
   As targets serve "not so lonely" objects from Yale's
   Bright Star Catalog which are identified as
   brightest object on an CCD image.
@@ -66,7 +67,7 @@ u_point's use cases are:
   radius around the sun (see README_simulation).
   
 - u_point is written in a way, that libindi or
-  ASCOM users can easily extend it (see contact
+  ASCOM users can easily extend it (contact
   wildi.markus@bluewin.ch or have a look at
   u_point/devices.py or)
 
@@ -85,7 +86,7 @@ there are several 'transformers' available
 
  ./u_analyze.py  --transform-with-class TRANSFORM
 
-where TRANSFORM is one of f the following options
+where TRANSFORM is one of the following options
 
  u_libnova  recommended
  u_astropy
