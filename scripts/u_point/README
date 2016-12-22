@@ -50,7 +50,7 @@ Use cases
 
 u_point's use cases are:
 
-- unattended data acquisitionm analysis and fit
+- unattended data acquisition analysis and fit
   of a configurable mount/telescope pointing model.
 
 - if the CCD FoV is too small for astrometry.net
