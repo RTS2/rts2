@@ -339,11 +339,23 @@ bool Zelio::isGoodWeather ()
 	catch (rts2core::ConnError err)
 	{
 		logStream (MESSAGE_ERROR) << "isGoodWeather " << err << sendLog;
-		// problem occured during opening, and we can restart connection - wait until
-		// until it is restarted in isOpened call, don't check for values we cannot receive
-		if (restartDuringOpening == true && (getState () & DOME_DOME_MASK) == DOME_OPENING)
-			return Dome::isGoodWeather ();
-		return false;
+		sleep (2);
+		try
+		{
+			zelioConn->init ();
+			zelioConn->readHoldingRegisters (unitId, ZREG_O4XT1, 1, &reg);
+			if (haveBatteryLevel || haveHumidityOutput || zelioModel == ZELIO_ELYA)
+				zelioConn->readHoldingRegisters (unitId, ZREG_O3XT1, 1, &reg3);
+		}
+		catch (rts2core::ConnError err2)
+		{
+			logStream (MESSAGE_ERROR) << "isGoodWeather reinit failed " << err << sendLog;
+			// problem occured during opening, and we can restart connection - wait until
+			// until it is restarted in isOpened call, don't check for values we cannot receive
+			if (restartDuringOpening == true && (getState () & DOME_DOME_MASK) == DOME_OPENING)
+				return Dome::isGoodWeather ();
+			return false;
+		}
 	}
 	if (haveRainSignal)
 	{
@@ -777,7 +789,17 @@ int Zelio::info ()
 	catch (rts2core::ConnError err)
 	{
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
-		return -1;
+		try
+		{
+			sleep (2);
+			zelioConn->init ();
+			zelioConn->readHoldingRegisters (unitId, 16, 8, regs);
+		}
+		catch (rts2core::ConnError err2)
+		{
+			logStream (MESSAGE_ERROR) << "info 2nd call failed " << err2 << sendLog;
+			return -1;
+		}
 	}
 
 	if (haveRainSignal)
