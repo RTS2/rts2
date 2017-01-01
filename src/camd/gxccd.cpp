@@ -1,6 +1,6 @@
 /* 
- * Dummy camera for testing purposes.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * MI CCD driver, compiled with official GXCCD drivers.
+ * Copyright (C) 2016 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,17 +18,10 @@
  */
 
 #include "camd.h"
+#include "gxccd.h"
 #include "utilsfunc.h"
-#include "rts2fits/image.h"
 
-#define OPT_WIDTH        OPT_LOCAL + 1
-#define OPT_HEIGHT       OPT_LOCAL + 2
-#define OPT_DATA_SIZE    OPT_LOCAL + 3
-#define OPT_CHANNELS     OPT_LOCAL + 4
-#define OPT_REMOVE_TEMP  OPT_LOCAL + 5
-#define OPT_INFOSLEEP    OPT_LOCAL + 6
-#define OPT_READSLEEP    OPT_LOCAL + 7
-#define OPT_FRAMETRANS   OPT_LOCAL + 8
+#define EVENT_TE_RAMP	      RTS2_LOCAL_EVENT + 678
 
 namespace rts2camd
 {
@@ -38,222 +31,22 @@ namespace rts2camd
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Dummy:public Camera
+class GXCCD:public Camera
 {
 	public:
-		Dummy (int in_argc, char **in_argv):Camera (in_argc, in_argv)
-		{
-			createTempCCD ();
+		GXCCD (int argc, char **argv);
+		virtual ~GXCCD ();
 
-			showTemp = true;
+		virtual void postEvent (rts2core::Event *event);
 
-			supportFrameT = false;
-			infoSleep = 0;
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
-			createValue (callReadout, "call_readout", "call emulated readout; for tests of non-reading CCDs", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
-			callReadout->setValueBool (true);
-
-			createValue (readoutSleep, "readout", "readout sleep in sec", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-			readoutSleep->setValueDouble (0);
-
-			createValue (callReadoutSize, "readout_size", "[pixels] number of pixels send on a single read", false, RTS2_VALUE_WRITABLE);
-			callReadoutSize->setValueLong (100000);
-
-			createValue (expMin, "exp_min", "[s] minimal exposure time", false, RTS2_VALUE_WRITABLE);
-			createValue (expMax, "exp_max", "[s] maximal exposure time", false, RTS2_VALUE_WRITABLE);
-			tempMin = tempMax = NULL;
-
-			createValue (genType, "gen_type", "data generation algorithm", true, RTS2_VALUE_WRITABLE);
-			genType->addSelVal ("random");
-			genType->addSelVal ("linear");
-			genType->addSelVal ("linear shifted");
-			genType->addSelVal ("flats dusk");
-			genType->addSelVal ("flats dawn");
-			genType->addSelVal ("astar");
-			genType->setValueInteger (0);
-
-			createValue (fitsTransfer, "fits_transfer", "write FITS file directly in camera", false, RTS2_VALUE_WRITABLE);
-			fitsTransfer->setValueBool (false);
-
-			createValue (astar_num, "astar_num", "number of artificial stars", false, RTS2_VALUE_WRITABLE);
-			astar_num->setValueInteger (1);
-
-			createValue (astar_Xp, "astar_x", "[x] artificial star position", false);
-			createValue (astar_Yp, "astar_y", "[y] artificial star position", false);
-
-			createValue (astarX, "astar_sx", "[pixels] artificial star width along X axis", false, RTS2_VALUE_WRITABLE);
-			astarX->setValueDouble (5);
-
-			createValue (astarY, "astar_sy", "[pixels] artificial star width along Y axis", false, RTS2_VALUE_WRITABLE);
-			astarY->setValueDouble (5);
-
-			createValue (aamp, "astar_amp", "[adu] artificial star amplitude", false, RTS2_VALUE_WRITABLE);
-			aamp->setValueInteger (20000);
-
-			createValue (noiseBias, "noise_bias", "[ADU] noise base level", false, RTS2_VALUE_WRITABLE);
-			noiseBias->setValueDouble (400);
-
-			createValue (noiseRange, "noise_range", "readout noise range", false, RTS2_VALUE_WRITABLE);
-			noiseRange->setValueDouble (300);
-
-			createValue (hasError, "has_error", "if true, info will report error", false, RTS2_VALUE_WRITABLE);
-			hasError->setValueBool (false);
-
-			createExpType ();
-
-			createShiftStore ();
-
-			width = 200;
-			height = 100;
-			dataSize = -1;
-			written = NULL;
-
-			addOption (OPT_FRAMETRANS, "frame-transfer", 0, "when set, dummy CCD will act as frame transfer device");
-			addOption (OPT_INFOSLEEP, "info-sleep", 1, "device will sleep <param> seconds before each info and baseInfo return");
-			addOption (OPT_READSLEEP, "read-sleep", 1, "device will sleep <parame> seconds before each readout");
-			addOption (OPT_WIDTH, "width", 1, "width of simulated CCD");
-			addOption (OPT_HEIGHT, "height", 1, "height of simulated CCD");
-			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
-			addOption (OPT_CHANNELS, "channels", 1, "number of data channels");
-			addOption (OPT_REMOVE_TEMP, "no-temp", 0, "do not show temperature related fields");
-		}
-
-		virtual ~Dummy (void)
-		{
-			readoutSleep = NULL;
-			delete[] written;
-		}
-
-		virtual int processOption (int in_opt)
-		{
-			switch (in_opt)
-			{
-				case OPT_FRAMETRANS:
-					supportFrameT = true;
-					break;
-				case OPT_INFOSLEEP:
-					infoSleep = atoi (optarg);
-					break;
-				case OPT_READSLEEP:
-					readoutSleep->setValueDouble (atoi (optarg));
-					break;
-				case OPT_WIDTH:
-					width = atoi (optarg);
-					break;
-				case OPT_HEIGHT:
-					height = atoi (optarg);
-					break;
-				case OPT_DATA_SIZE:
-					dataSize = atoi (optarg);
-					break;
-				case OPT_CHANNELS:
-					createDataChannels ();
-					setNumChannels (atoi (optarg));
-					break;
-				case OPT_REMOVE_TEMP:
-					showTemp = false;
-					break;
-				default:
-					return Camera::processOption (in_opt);
-			}
-			return 0;
-		}
-		virtual int initHardware ()
-		{
-			if (showTemp)
-			{
-				createTempAir ();
-				createTempSet ();
-
-				createValue (tempMin, "temp_min", "[C] minimal set temperature", false, RTS2_VALUE_WRITABLE);
-				createValue (tempMax, "temp_max", "[C] maximal set temperature", false, RTS2_VALUE_WRITABLE);
-
-				tempMin->setValueDouble (-257);
-				tempMax->setValueDouble (50);
-
-				tempSet->setMin (-257);
-				tempSet->setMax (50);
-			}
-
-			if (channels)
-			{
-				written = new ssize_t[channels->size ()];
-				for (unsigned int i = 1; i < channels->size (); i++)
-					written[i] = -1;
-			}
-			else
-			{
-				written = new ssize_t[1];
-			}
-			written[0] = -1;
-
-			setExposureMinMax (0,3600);
-			expMin->setValueDouble (0);
-			expMax->setValueDouble (3600);
-
-			usleep (infoSleep);
-			ccdRealType->setValueCharArr ("Dummy");
-			serialNumber->setValueCharArr ("1");
-
-			srand (time (NULL));
-
-			return initChips ();
-		}
-		virtual int initChips ()
-		{
-			initCameraChip (width, height, 0, 0);
-			return Camera::initChips ();
-		}
-		virtual int info ()
-		{
-			if (hasError->getValueBool ())
-			{
-				raiseHWError ();
-				return -1;
-			}
-			clearHWError ();
-			usleep (infoSleep);
-			float t = tempSet->getValueFloat ();
-			if (isnan (t))
-				t = 30;
-			tempCCD->setValueFloat (t + random_num() * 3);
-			if (tempAir)
-			{
-				tempAir->setValueFloat (t + random_num () * 3);
-			}
-			return Camera::info ();
-		}
-		virtual int startExposure ()
-		{
-			if (fitsTransfer->getValueBool ())
-				setFitsTransfer ();
-			written[0] = -1;
-			if (channels)
-			{
-				for (unsigned int i = 1; i < channels->size (); i++)
-					written[i] = -1;
-			}
-			return callReadout->getValueBool () ? 0 : 1;
-		}
-
-		virtual long isExposing ()
-		{
-			long ret = Camera::isExposing ();
-			if (ret == -2)
-				return (callReadout->getValueBool () == true) ? -2 : -4;
-			return ret;
-		}
-
-		virtual size_t suggestBufferSize ()
-		{
-			if (dataSize < 0)
-				return Camera::suggestBufferSize ();
-			return dataSize;
-		}
-		virtual int doReadout ();
-
-		virtual bool supportFrameTransfer () { return supportFrameT; }
 	protected:
+		virtual int processOption (int opt);
+		virtual int initHardware ();
+		virtual int initValues ();
+		virtual void initDataTypes ();
+
 		virtual void initBinnings ()
 		{
 			Camera::initBinnings ();
@@ -261,387 +54,418 @@ class Dummy:public Camera
 			addBinning2D (2, 2);
 			addBinning2D (3, 3);
 			addBinning2D (4, 4);
-			addBinning2D (1, 2);
 			addBinning2D (2, 1);
+			addBinning2D (3, 1);
 			addBinning2D (4, 1);
+			addBinning2D (1, 2);
+			addBinning2D (1, 3);
+			addBinning2D (1, 4);
 		}
 
-		virtual void initDataTypes ()
-		{
-			Camera::initDataTypes ();
-			addDataType (RTS2_DATA_BYTE);
-			addDataType (RTS2_DATA_SHORT);
-			addDataType (RTS2_DATA_LONG);
-			addDataType (RTS2_DATA_LONGLONG);
-			addDataType (RTS2_DATA_FLOAT);
-			addDataType (RTS2_DATA_DOUBLE);
-			addDataType (RTS2_DATA_SBYTE);
-			addDataType (RTS2_DATA_ULONG);
+		virtual int info ();
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
-			setDataTypeWritable ();
-		}
+		virtual int setCoolTemp (float new_temp);
+		virtual void afterNight ();
 
-		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+		virtual int setFilterNum (int new_filter, const char *fn = NULL);
 
-		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
+		virtual int startExposure ();
 
-		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
+		virtual int stopExposure ();
 
-		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
+		virtual int doReadout ();
+
+		virtual int scriptEnds ();
 
 	private:
-		bool supportFrameT;
-		int infoSleep;
-		rts2core::ValueBool *callReadout;
-		rts2core::ValueDouble *readoutSleep;
-		rts2core::ValueLong *callReadoutSize;
-		rts2core::ValueSelection *genType;
-		rts2core::ValueDouble *noiseRange;
-		rts2core::ValueDouble *noiseBias;
-		rts2core::ValueBool *hasError;
+		int clearCCD (double pref_time, int nclears);
 
-		rts2core::ValueDouble *expMin;
-		rts2core::ValueDouble *expMax;
-		rts2core::ValueDouble *tempMin;
-		rts2core::ValueDouble *tempMax;
+		int reinitCamera ();
 
-		rts2core::ValueInteger *astar_num;
+		rts2core::ValueInteger *id;
+		rts2core::ValueSelection *mode;
+		rts2core::ValueBool *fan;
+		rts2core::ValueFloat *tempRamp;
+		rts2core::ValueFloat *tempTarget;
+		rts2core::ValueFloat *power;
+		rts2core::ValueFloat *gain;
 
-		rts2core::ValueRectangle *astarLimits;
+		camera_t *camera;
 
-		rts2core::DoubleArray *astar_Xp;
-		rts2core::DoubleArray *astar_Yp;
-
-		rts2core::ValueDouble *astarX;
-		rts2core::ValueDouble *astarY;
-
-		rts2core::ValueDouble *aamp;
-
-		rts2core::ValueBool *fitsTransfer;
-
-		int width;
-		int height;
-
-		long dataSize;
-
-		bool showTemp;
-
-		void generateImage (size_t pixelsize, int chan);
-
-		template <typename dt> void generateData (dt *data, size_t pixelsize);
-
-		// data written during readout
-		ssize_t *written;
+		bool reseted_shutter;
+		bool internalTimer;
 };
 
-};
+}
 
 using namespace rts2camd;
 
-int Dummy::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+GXCCD::GXCCD (int argc, char **argv):Camera (argc, argv)
 {
-	if (old_value == expMin)
-	{
-		setExposureMinMax (new_value->getValueDouble (), expMax->getValueDouble ());
-		return 0;
-	}
-	else if (old_value == expMax)
-	{
-		setExposureMinMax (expMin->getValueDouble (), new_value->getValueDouble ());
-		return 0;
-	}
-	else if (old_value == tempMin)
-	{
-		tempSet->setMin (new_value->getValueDouble ());
-		updateMetaInformations (tempSet);
-		return 0;
-	}
-	else if (old_value == tempMax)
-	{
-		tempSet->setMax (new_value->getValueDouble ());
-		updateMetaInformations (tempSet);
-		return 0;
-	}
-	return Camera::setValue (old_value, new_value);
+	createExpType ();
+	createFilter ();
+	createTempAir ();
+	createTempCCD ();
+	createTempSet ();
+
+	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	tempRamp->setValueFloat (1.0);
+
+	createValue (tempTarget, "TETAR", "[C] current target temperature", false);
+	createValue (power, "TEMPPWR", "[%] utilization of cooling power", true);
+	createValue (gain, "GAIN", "[e-ADU] gain", true);
+
+	createValue (id, "product_id", "camera product identification", true);
+	id->setValueInteger (0);
+
+	addOption ('p', NULL, 1, "MI CCD product ID");
+	addOption ('f', NULL, 1, "filter names (separated with :)");
+
+	reseted_shutter = false;
+	internalTimer = false;
 }
 
-int Dummy::shiftStoreStart (rts2core::Connection *conn, float exptime)
+GXCCD::~GXCCD ()
 {
-	return Camera::shiftStoreStart (conn, exptime);
+	gxccd_release (camera);
 }
 
-int Dummy::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
+void GXCCD::postEvent (rts2core::Event *event)
 {
-	return Camera::shiftStoreShift (conn, shift, exptime);
+	float change = 0;
+	switch (event->getType ())
+	{
+		case EVENT_TE_RAMP:
+			if (tempTarget->getValueFloat () < tempSet->getValueFloat ())
+				change = tempRamp->getValueFloat ();
+			else if (tempTarget->getValueFloat () > tempSet->getValueFloat ())
+				change = -1 * tempRamp->getValueFloat ();
+			if (change != 0)
+			{
+				tempTarget->setValueFloat (tempTarget->getValueFloat () + change);
+				if (fabs (tempTarget->getValueFloat () - tempSet->getValueFloat ()) < fabs (change))
+					tempTarget->setValueFloat (tempSet->getValueFloat ());
+				sendValueAll (tempTarget);
+				if (gxccd_set_temperature (camera, tempTarget->getValueFloat ()))
+				{
+					char err[200];
+					gxccd_get_last_error (camera, err, sizeof(err));
+					logStream (MESSAGE_ERROR) << "cannot set target temperature: " << err << sendLog;
+				}
+				addTimer (60, event);
+				return;
+			}
+			break;
+	}
+	Camera::postEvent (event);
 }
 
-int Dummy::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+int GXCCD::processOption (int opt)
 {
-	return Camera::shiftStoreEnd (conn, shift, exptime);
+	switch (opt)
+	{
+		case 'p':
+			id->setValueCharArr (optarg);
+			break;
+		case 'f':
+			addFilters (optarg);
+			setFilterWorking (true);
+			break;
+		default:
+			return Camera::processOption (opt);
+	}
+	return 0;
 }
 
-int Dummy::doReadout ()
+int GXCCD::initHardware ()
+{
+	camera = gxccd_initialize_usb (id->getValueInteger ());
+	if (camera == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueInteger () << sendLog;
+		return -1;
+	}
+
+	bool val;
+	gxccd_get_boolean_parameter (camera, GBP_FAN, &val);
+	if (val)
+	{
+		createValue (fan, "FAN", "camera fan", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+		gxccd_set_fan (camera, 1);
+		fan->setValueBool (true);
+	}
+
+	gxccd_get_boolean_parameter (camera, GBP_READ_MODES, &val);
+	if (val)
+	{
+		createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+
+		int rdm = 0;
+		gxccd_get_integer_parameter (camera, GIP_READ_MODES, &rdm);
+		if (rdm >= 2)
+		{
+			mode->addSelVal ("NORMAL");
+			mode->addSelVal ("LOW NOISE");
+		}
+
+		if (rdm == 3)
+		{
+			mode->addSelVal ("ULTRA LOW NOISE");
+		}
+
+		mode->setValueInteger (1);
+
+		if (gxccd_set_read_mode (camera, mode->getValueInteger ()))
+		{
+			logStream (MESSAGE_ERROR) << "cannot set requested camera mode " << mode->getValueInteger () << sendLog;
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int GXCCD::initValues ()
 {
 	int ret;
-	ssize_t usedSize = chipByteSize ();
-	size_t pixelSize = chipUsedSize ();
-	int nch = 0;
-	rts2image::Image *image = NULL;
-	if (fitsTransfer->getValueBool ())
+	char buf[200];
+
+	ret = gxccd_get_string_parameter (camera, GSP_CAMERA_DESCRIPTION, buf, sizeof (buf));
+	if (ret)
+		return -1;
+
+	ccdRealType->setValueCharArr (buf);
+
+	ret = gxccd_get_string_parameter (camera, GSP_CAMERA_SERIAL, buf, sizeof (buf));
+	if (ret)
+		return -1;
+	serialNumber->setValueCharArr (buf);
+
+	ret = gxccd_get_string_parameter (camera, GSP_CHIP_DESCRIPTION, buf, sizeof (buf));
+	if (ret)
+		return -1;
+	ccdChipType->setValueCharArr (buf);
+
+	int ival;
+	ret = gxccd_get_integer_parameter (camera, GIP_CAMERA_ID, &ival);
+	if (ret)
+		return -1;
+	id->setValueInteger (ival);
+
+	int w, h, pw, ph;
+	ret = gxccd_get_integer_parameter (camera, GIP_CHIP_W, &w);
+	if (ret)
+		return -1;
+	ret = gxccd_get_integer_parameter (camera, GIP_CHIP_D, &h);
+	if (ret)
+		return -1;
+	ret = gxccd_get_integer_parameter (camera, GIP_PIXEL_W, &pw);
+	if (ret)
+		return -1;
+	ret = gxccd_get_integer_parameter (camera, GIP_PIXEL_D, &ph);
+	if (ret)
+		return -1;
+	
+	initCameraChip (w, h, pw, ph);
+
+	return Camera::initValues ();
+}
+
+void GXCCD::initDataTypes ()
+{
+	if (mode->selSize () == 3)
 	{
-		struct timeval expStart;
-		gettimeofday (&expStart, NULL);
-		image = new rts2image::Image ("/tmp/fits_data.fits", &expStart, true);
+		addDataType (RTS2_DATA_USHORT);
+		addDataType (RTS2_DATA_BYTE);
 	}
-	if (channels)
+	else if (mode->selSize () == 2)
 	{
-		// generate image
-		if (written[0] == -1)
-		{
-			for (unsigned int ch = 0; ch < channels->size (); ch++)
-			{
-				if (channels && (*channels)[ch] == false)
-					continue;
-				generateImage (pixelSize, ch);
-				written[ch] = 0;
-			}
-		}
-		// send data from channel..
-		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-		if (image == NULL)
-		{
-			for (unsigned int ch = 0; ch < channels->size (); ch++)
-			{
-				size_t s = usedSize - written[ch] < callReadoutSize->getValueLong () ? usedSize - written[ch] : callReadoutSize->getValueLong ();
-				ret = sendReadoutData (getDataTop (ch), s, nch);
-
-				if (ret < 0)
-					return ret;
-				written[ch] += s;
-				nch++;
-			}
-		}
-		else
-		{
-			for (unsigned int ch = 0; ch < channels->size (); ch++)
-			{
-				long sizes[2];
-				sizes[0] = getUsedWidthBinned ();
-				sizes[1] = getUsedHeightBinned ();
-
-				int fits_status = 0;
-
-				fits_resize_img (image->getFitsFile (), getDataType (), 2, sizes, &fits_status);
-
-				switch (getDataType ())
-				{
-					case RTS2_DATA_BYTE:
-						fits_write_img_byt (image->getFitsFile (), 0, 1, pixelSize, (unsigned char *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_SHORT:
-						fits_write_img_sht (image->getFitsFile (), 0, 1, pixelSize, (int16_t *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_LONG:
-						fits_write_img_int (image->getFitsFile (), 0, 1, pixelSize, (int *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_LONGLONG:
-						fits_write_img_lnglng (image->getFitsFile (), 0, 1, pixelSize, (LONGLONG *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_FLOAT:
-						fits_write_img_flt (image->getFitsFile (), 0, 1, pixelSize, (float *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_DOUBLE:
-						fits_write_img_dbl (image->getFitsFile (), 0, 1, pixelSize, (double *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_SBYTE:
-						fits_write_img_sbyt (image->getFitsFile (), 0, 1, pixelSize, (signed char *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_USHORT:
-						fits_write_img_usht (image->getFitsFile (), 0, 1, pixelSize, (short unsigned int *) getDataBuffer (ch), &fits_status);
-						break;
-					case RTS2_DATA_ULONG:
-						fits_write_img_uint (image->getFitsFile (), 0, 1, pixelSize, (unsigned int *) getDataBuffer (ch), &fits_status);
-						break;
-					default:
-						logStream (MESSAGE_ERROR) << "Unknow dataType " << getDataType () << sendLog;
-						return -1;
-				}
-				if (fits_status)
-				{
-					logStream (MESSAGE_ERROR) << "cannot write channel " << ch << sendLog;
-				}
-			}
-			image->closeFile ();
-			delete image;
-			fitsDataTransfer ("/tmp/fits_data.fits");
-			return -2;
-		}
+		addDataType (RTS2_DATA_USHORT);
 	}
+}
+
+
+int GXCCD::info ()
+{
+	if (!isIdle ())
+		return Camera::info ();
+	int ret;
+	float val;
+	ret = gxccd_get_value (camera, GV_CHIP_TEMPERATURE, &val);
+	if (ret)
+	{
+		ret = reinitCamera ();
+		if (ret)
+			return -1;
+		ret = gxccd_get_value (camera, GV_CHIP_TEMPERATURE, &val);
+		if (ret)
+			return -1;
+	}
+	tempCCD->setValueFloat (val);
+	ret = gxccd_get_value (camera, GV_ENVIRONMENT_TEMPERATURE, &val);
+	if (ret)
+		return -1;
+	tempAir->setValueFloat (val);
+
+	ret = gxccd_get_value (camera, GV_ADC_GAIN, &val);
+	if (ret)
+		return -1;
+	gain->setValueFloat (val);
+
+	ret = gxccd_get_value (camera, GV_POWER_UTILIZATION, &val);
+	if (ret)
+		return -1;
+	power->setValueFloat (val);
+	return Camera::info ();
+}
+
+int GXCCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == mode)
+		return gxccd_set_read_mode (camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	if (oldValue == fan)
+		return gxccd_set_fan (camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	return Camera::setValue (oldValue, newValue);
+}
+
+int GXCCD::setCoolTemp (float new_temp)
+{
+	float val;
+	int ret = gxccd_get_value (camera, GV_CHIP_TEMPERATURE, &val);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot retrieve chip temperature, cannot start cooling" << sendLog;
+		return -1;
+	}
+	deleteTimers (EVENT_TE_RAMP);
+	tempTarget->setValueFloat (val);
+	addTimer (1, new rts2core::Event (EVENT_TE_RAMP));
+	return Camera::setCoolTemp (new_temp);
+}
+
+void GXCCD::afterNight ()
+{
+	setCoolTemp (+50);
+}
+
+int GXCCD::setFilterNum (int new_filter, const char *fn)
+{
+	if (fn != NULL)
+		return Camera::setFilterNum (new_filter, fn);
+	logStream (MESSAGE_INFO) << "moving filter from #" << camFilterVal->getValueInteger () << " (" << camFilterVal->getSelName () << ")" << " to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << sendLog;
+	int ret = gxccd_set_filter (camera, new_filter) ? -1 : 0;
+	if (ret == 0)
+		logStream (MESSAGE_INFO) << "filter moved to #" << new_filter << " (" << camFilterVal->getSelName (new_filter) << ")" << sendLog;
 	else
+		logStream (MESSAGE_INFO) << "filter movement error?" << sendLog;
+	checkQueuedExposures ();
+	return ret;
+}
+
+int GXCCD::startExposure ()
+{
+	int ret;
+
+	setUsedHeight (getHeight ());
+
+	ret = gxccd_set_read_mode (camera, mode->getValueInteger ());
+	if (ret)
 	{
-		if (written[0] == -1)
-		{
-			generateImage (usedSize / 2, 0);
-			written[0] = 0;
-		}
-		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-		if (image == NULL)
-		{
-			if (written[0] < (ssize_t) chipByteSize ())
-			{
-				size_t s = (ssize_t) chipByteSize () - written[0] < callReadoutSize->getValueLong () ? chipByteSize () - written[0] : callReadoutSize->getValueLong ();
-				ret = sendReadoutData (getDataTop (0), s, 0);
-				std::cout << "ret " << ret << " " << s << std::endl;
-
-				if (ret < 0)
-					return ret;
-				written[0] += s;
-			}
-		}
-		else
-		{
-			long sizes[2];
-			sizes[0] = getUsedWidthBinned ();
-			sizes[1] = getUsedHeightBinned ();
-
-			int fits_status = 0;
-
-			fits_resize_img (image->getFitsFile (), RTS2_DATA_USHORT, 2, sizes, &fits_status);
-			fits_write_img_usht (image->getFitsFile (), 0, 1, usedSize / 2, (uint16_t *) getDataTop (0), &fits_status);
-			if (fits_status)
-			{
-				logStream (MESSAGE_ERROR) << "cannot write FITS file" << sendLog;
-			}
-			image->closeFile ();
-			delete image;
-			fitsDataTransfer ("/tmp/fits_data.fits");
-			return -2;
-		}
+		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_read_mode " << sendLog;
+		return -1;
 	}
 
+	ret = gxccd_start_exposure (camera, getExposure (), getExpType () == 1, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight ());
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_start_exposure " << sendLog;
+		return -1;
+	}
+	return 0;
+}
+
+int GXCCD::stopExposure ()
+{
+ 	int ret;
+	ret = gxccd_abort_exposure (camera, false);
+	if (ret)
+		return -1;
+	return Camera::stopExposure ();
+}
+
+int GXCCD::doReadout ()
+{
+	int ret;
+	bool ready;
+
+	ret = gxccd_image_ready (camera, &ready);
+	if (ret)
+		return -1;
+	if (ready == false)
+		return 100;
+
+	ssize_t s = 2 * getUsedWidth () * getUsedHeight ();
+
+	if (getWriteBinaryDataSize () == s)
+	{
+		ret = gxccd_read_image (camera, getDataBuffer (0), s);
+		if (ret < 0)
+			return -1;
+	}
+
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
+	if (ret < 0)
+		return ret;
 	if (getWriteBinaryDataSize () == 0)
-		return -2;				 // no more data..
-	return 0;					 // imediately send new data
+		return -2;
+	return 0;
 }
 
-void Dummy::generateImage (size_t pixelsize, int chan)
+int GXCCD::scriptEnds ()
 {
-	// artifical star center
-	astar_Xp->clear ();
-	astar_Yp->clear ();
-
-	for (int i = 0; i < astar_num->getValueInteger (); i++)
-	{
-		astar_Xp->addValue (random_num () * getUsedWidthBinned ());
-		astar_Yp->addValue (random_num () * getUsedHeightBinned ());
-	}
-
-	sendValueAll (astar_Xp);
-	sendValueAll (astar_Yp);
-
-	switch (getDataType ())
-	{
-		case RTS2_DATA_BYTE:
-			generateData ((unsigned char *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_SHORT:
-			generateData ((uint16_t *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_LONG:
-			generateData ((int32_t *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_LONGLONG:
-			generateData ((LONGLONG *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_FLOAT:
-			generateData ((float *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_DOUBLE:
-			generateData ((double *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_SBYTE:
-			generateData ((uint8_t *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_USHORT:
-			generateData ((uint16_t *) getDataBuffer (chan), pixelsize);
-			break;
-		case RTS2_DATA_ULONG:
-			generateData ((uint32_t *) getDataBuffer (chan), pixelsize);
-			break;
-	}
+	return Camera::scriptEnds ();
 }
 
-template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
+int GXCCD::clearCCD (double pref_time, int nclear)
 {
-	double sx = astarX->getValueDouble ();
-	int xmax = ceil (sx * 10);
-	sx *= sx;
-
-	double sy = astarY->getValueDouble ();
-	int ymax = ceil (sy * 10);
-	sy *= sy;
-
-	for (size_t i = 0; i < pixelSize; i++, data++)
-	{
-		double n;
-		if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
-			n = noiseRange->getValueDouble ();
-		// generate data
-		switch (genType->getValueInteger ())
-		{
-			case 0:  // random
-			case 5:  // artificial star
-				*data = noiseBias->getValueDouble () + n * random_num () - n / 2;
-				break;
-			case 1:  // linear
-				*data = i;
-				break;
-			case 2:
-				// linear shifted
-				*data = i + (int) (getExposureNumber () * 10);
-				break;
-			case 3:
-				// flats dusk
-				*data = n * random_num ();
-				if (getScriptExposureNumber () < 55)
-					*data += (56 - getScriptExposureNumber ()) * 1000;
-				*data -= n / 2;
-				break;
-			case 4:
-				// flats dawn
-				*data = n * random_num ();
-				if (getScriptExposureNumber () < 55)
-					*data += getScriptExposureNumber () * 1000;
-				else
-				  	*data += 55000;
-				*data -= n / 2;
-				break;
-		}
-		// genarate artificial star - using cos
-		if (genType->getValueInteger () == 5)
-		{
-			int x = i % getUsedWidthBinned ();
-			int y = i / getUsedWidthBinned ();
-
-			for (int j = 0; j < astar_num->getValueInteger (); j++)
-			{
-				double aax = x - (*astar_Xp)[j];
-				double aay = y - (*astar_Yp)[j];
-
-				if (fabs (aax) < xmax && fabs (aay) < ymax)
-				{
-					aax *= aax;
-					aay *= aay;
-
-					*data += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy)));
-				}
-			}
-		}
-	}
+	int ret = gxccd_set_preflash (camera, pref_time, nclear);
+	if (ret)
+		return -1;
+	return 0;
 }
 
+int GXCCD::reinitCamera ()
+{
+	logStream (MESSAGE_WARNING) << "reinitiliazing camera - this should not happen" << sendLog;
+	gxccd_release (camera);
+	camera = gxccd_initialize_usb (id->getValueInteger ());
+	if (camera == NULL)
+		return -1;
+	int ret = gxccd_set_fan (camera, fan->getValueInteger ());
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set fan" << sendLog;
+		return -1;
+	}
+	maskState (DEVICE_ERROR_MASK, 0, "all errors cleared");
+	return 0;
+}
+
+int GXCCD::commandAuthorized (rts2core::Connection * conn)
+{
+	if (conn->isCommand ("clear"))
+	{
+		double pref_time;
+		int nclear;
+		if (conn->paramNextDouble (&pref_time) || conn->paramNextInteger (&nclear) || !conn->paramEnd ())
+			return -2;
+		return clearCCD (pref_time, nclear);
+	}
+	return Camera::commandAuthorized (conn);
+}
+	
 int main (int argc, char **argv)
 {
-	Dummy device (argc, argv);
+	GXCCD device (argc, argv);
 	return device.run ();
 }

@@ -450,6 +450,13 @@ AC_SUBST(MICCD)
 AC_SUBST(LIB_MICCD)
 AC_SUBST(INC_MICCD)
 
+AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
+AC_SUBST(LIB_PTHREAD), [cat << EOF
+**** You don't have pthread library installed.
+**** Please try to get it somewhere.
+EOF
+exit 1])
+
 AC_ARG_WITH(gxccd,
 [  --with-gxccd           path to GX CCD driver, build GX CCD driver],
 GXCCD="${withval}";
@@ -457,7 +464,7 @@ GXCCD_LIBS="-L${GXCCD}/lib -lgxccd";
 GXCCD_CFLAGS="-I${GXCCD}/include",
 [GXCCD=no])
 
-AM_CONDITIONAL(GXCCD, test x$GXCCD != xno)
+AM_CONDITIONAL(GXCCD, test x$GXCCD != xno -a "x$USB1_LIBS" != x)
 AC_SUBST(GXCCD)
 AC_SUBST(GXCCD_LIBS)
 AC_SUBST(GXCCD_CFLAGS)
@@ -695,14 +702,6 @@ AS_IF([test "x${libnova}" != "xyes"], [
 ])
 AC_SUBST(LIB_NOVA)
 AC_SUBST(NOVA_CFLAGS)
-
-AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
-AC_SUBST(LIB_PTHREAD), [cat << EOF
-**** You don't have pthread library installed.
-**** Please try to get it somewhere.
-EOF
-exit 1])
-
 
 AH_TEMPLATE([HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF],[If Libnova provides ln_get_heliocentric_time_diff function])
 

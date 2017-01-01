@@ -98,8 +98,8 @@ endif
 if GXCCD
 bin_PROGRAMS += rts2-camd-gxccd
 rts2_camd_gxccd_SOURCES = gxccd.cpp
-rts2_camd_gxccd_LDFLAGS = @GXCCD_LIBS@
-rts2_camd_gxccd_CXXFLAGS = @GXCCD_CFLAGS@
+rts2_camd_gxccd_LDFLAGS = @GXCCD_LIBS@ @USB1_LIBS@ -lpthread ${LDADD}
+rts2_camd_gxccd_CXXFLAGS = @GXCCD_CFLAGS@ -I../../include
 else
 EXTRA_DIST += gxccd.cpp
 endif
@@ -140,6 +140,7 @@ if LIBUSB1
 bin_PROGRAMS += rts2-camd-sx
 rts2_camd_sx_SOURCES = sx.cpp
 rts2_camd_sx_LDADD = -Lsxccd -lsxccdusb @USB1_LIBS@ ${LDADD}
+rts2_camd_sx_CXXFLAGS = @USB1_CFLAGS@ -I../../include
 else
 EXTRA_DIST += sx.cpp
 endif
