@@ -460,7 +460,7 @@ exit 1])
 AC_ARG_WITH(gxccd,
 [  --with-gxccd           path to GX CCD driver, build GX CCD driver],
 GXCCD="${withval}";
-GXCCD_LIBS="-L${GXCCD}/lib -lgxccd";
+GXCCD_LIBS="${GXCCD}/lib/libgxccd.a -lrt";
 GXCCD_CFLAGS="-I${GXCCD}/include",
 [GXCCD=no])
 
