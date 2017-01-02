@@ -180,6 +180,10 @@ int GXCCD::processOption (int opt)
 
 int GXCCD::initHardware ()
 {
+	int ret = rts2core::Device::doDaemonize ();
+	if (ret)
+		exit (ret);
+
 	camera = gxccd_initialize_usb (id->getValueInteger ());
 	if (camera == NULL)
 	{
@@ -366,19 +370,21 @@ int GXCCD::startExposure ()
 {
 	int ret;
 
-	setUsedHeight (getHeight ());
-
 	ret = gxccd_set_read_mode (camera, mode->getValueInteger ());
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_read_mode " << sendLog;
+		char err[200];
+		gxccd_get_last_error (camera, err, sizeof(err));
+		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_read_mode " << err << sendLog;
 		return -1;
 	}
 
-	ret = gxccd_start_exposure (camera, getExposure (), getExpType () == 1, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight ());
+	ret = gxccd_start_exposure (camera, getExposure (), getExpType () == 0, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight ());
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_start_exposure " << sendLog;
+		char err[200];
+		gxccd_get_last_error (camera, err, sizeof(err));
+		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_start_exposure " << err << sendLog;
 		return -1;
 	}
 	return 0;
