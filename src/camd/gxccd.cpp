@@ -47,20 +47,7 @@ class GXCCD:public Camera
 		virtual int initValues ();
 		virtual void initDataTypes ();
 
-		virtual void initBinnings ()
-		{
-			Camera::initBinnings ();
-
-			addBinning2D (2, 2);
-			addBinning2D (3, 3);
-			addBinning2D (4, 4);
-			addBinning2D (2, 1);
-			addBinning2D (3, 1);
-			addBinning2D (4, 1);
-			addBinning2D (1, 2);
-			addBinning2D (1, 3);
-			addBinning2D (1, 4);
-		}
+		virtual void initBinnings ();
 
 		virtual int info ();
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
@@ -206,16 +193,14 @@ int GXCCD::initHardware ()
 		createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
 		int rdm = 0;
-		gxccd_get_integer_parameter (camera, GIP_READ_MODES, &rdm);
-		if (rdm >= 2)
+		while (true)
 		{
-			mode->addSelVal ("NORMAL");
-			mode->addSelVal ("LOW NOISE");
-		}
-
-		if (rdm == 3)
-		{
-			mode->addSelVal ("ULTRA LOW NOISE");
+			char moden[200];
+			ret = gxccd_enumerate_read_modes (camera, rdm, moden, sizeof (moden));
+			if (ret)
+				break;
+			mode->addSelVal (moden);
+			rdm++;
 		}
 
 		mode->setValueInteger (1);
@@ -288,6 +273,20 @@ void GXCCD::initDataTypes ()
 	}
 }
 
+void GXCCD::initBinnings ()
+{
+	int max_bin_x, max_bin_y;
+	int ret = gxccd_get_integer_parameter (camera, GIP_MAX_BINNING_X, &max_bin_x);
+	if (ret)
+		return;
+	ret = gxccd_get_integer_parameter (camera, GIP_MAX_BINNING_Y, &max_bin_y);
+	if (ret)
+		return;
+	for (int i = 1; i <= max_bin_x; i++)
+		for (int j = 1; j <= max_bin_y; j++)
+			addBinning2D (i, j);
+	setBinning (1, 1);
+}
 
 int GXCCD::info ()
 {
@@ -376,6 +375,15 @@ int GXCCD::startExposure ()
 		char err[200];
 		gxccd_get_last_error (camera, err, sizeof(err));
 		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_read_mode " << err << sendLog;
+		return -1;
+	}
+
+	ret = gxccd_set_binning (camera, binningHorizontal (), binningVertical ());
+	if (ret)
+	{
+		char err[200];
+		gxccd_get_last_error (camera, err, sizeof(err));
+		logStream (MESSAGE_ERROR) << "GXCCD::startExposure error calling gxccd_set_binning " << err << sendLog;
 		return -1;
 	}
 
