@@ -203,7 +203,7 @@ int GXCCD::initHardware ()
 			rdm++;
 		}
 
-		mode->setValueInteger (1);
+		mode->setValueInteger (0);
 
 		if (gxccd_set_read_mode (camera, mode->getValueInteger ()))
 		{
