@@ -204,6 +204,7 @@ ConnModbusRTUTCP::ConnModbusRTUTCP (Block * _master, const char *_hostname, int 
 
 int ConnModbusRTUTCP::init ()
 {
+	ConnTCP::setReconnectTime (0);
 	return ConnTCP::init ();
 }
 

@@ -160,6 +160,7 @@ int Binder::info ()
 	catch (rts2core::ConnError err)
 	{
 		logStream (MESSAGE_ERROR) << "info " << err << sendLog;
+		binderConn = NULL;
 
 		return -1;
 	}
@@ -241,7 +242,6 @@ int Binder::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 int Binder::reinit ()
 {
 	uint16_t regs[2];
-	delete binderConn;
 
 	binderConn = new rts2core::ConnModbusRTUTCP (this, host->getHostname (), host->getPort ());
 	binderConn->setDebug (getDebug ());
@@ -253,7 +253,6 @@ int Binder::reinit ()
 	catch (rts2core::ConnError er)
 	{
 		logStream (MESSAGE_ERROR) << "reinit " << er << sendLog;
-		delete binderConn;
 		binderConn = NULL;
 		return -1;
 	}

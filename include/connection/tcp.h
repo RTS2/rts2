@@ -132,6 +132,11 @@ class ConnTCP:public ConnNoSend
 		void setDebug (int _debug = true) { debug = _debug; }
 
 		/**
+		 * Set time during which connection will be reconnected.
+		 */
+		void setReconnectTime (float _reconnectTime) { reconnectTime = _reconnectTime; }
+
+		/**
 		 * Send data to TCP/IP socket.
 		 *
 		 * @param data   Data to send to the socket.
@@ -203,6 +208,7 @@ class ConnTCP:public ConnNoSend
 		int port;
 
 		bool debug;
+		float reconnectTime;
 
 		bool checkBufferForChar (std::istringstream **_is, char end_char);
 };

@@ -31,12 +31,14 @@ ConnTCP::ConnTCP (rts2core::Block *_master, const char *_hostname, int _port):Co
 {
 	port = _port;
 	debug = false;
+	reconnectTime = 60;
 }
 
 ConnTCP::ConnTCP (rts2core::Block *_master, int _port):ConnNoSend (_master), hostname ("")
 {
 	port = _port;
 	debug = false;
+	reconnectTime = 60;
 }
 
 bool ConnTCP::checkBufferForChar (std::istringstream **_is, char end_char)
@@ -342,7 +344,7 @@ void ConnTCP::postEvent (Event *event)
 
 void ConnTCP::connectionError (int last_data_size)
 {
-	if (sock > 0)
-		getMaster()->addTimer (60, new Event (EVENT_TCP_RECONECT_TIMER, this));
+	if (sock > 0 && reconnectTime > 0)
+		getMaster()->addTimer (reconnectTime, new Event (EVENT_TCP_RECONECT_TIMER, this));
 	ConnNoSend::connectionError (last_data_size);
 }
