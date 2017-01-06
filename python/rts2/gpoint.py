@@ -234,8 +234,7 @@ class GPoint:
 			- params['daf']*(np.sin(self.latitude_r) * np.tan(a_dec) + np.cos(self.latitude_r) * np.cos(a_ha))
 		for e in self.extra:
 			if e.axis == 'ha':
-				ret += params[pi] * self.cal_extra(e, 'ha', a_ha, a_dec, self.rad_aa_az, self.rad_aa_el)
-			pi += e.parnum()
+				ret += params[e.parname()] * self.cal_extra(e, 'ha', a_ha, a_dec, self.rad_aa_az, self.rad_aa_alt)
 		return ret
 
 	def model_dec(self,params,a_ha,a_dec):
@@ -246,8 +245,7 @@ class GPoint:
 			- params['fo']*np.cos(a_ha)
 		for e in self.extra:
 			if e.axis == 'dec':
-				ret += params[pi] * self.cal_extra(e, 'dec', a_ha, a_dec, self.rad_aa_az, self.rad_aa_el)
-			pi += e.parnum()
+				ret += params[e.parname()] * self.cal_extra(e, 'dec', a_ha, a_dec, self.rad_aa_az, self.rad_aa_alt)
 		return ret
 
 	def model_az(self,params,a_az,a_el):
@@ -477,6 +475,9 @@ class GPoint:
 			self.params.add('tf', value = 0)
 			self.params.add('fo', value = 0)
 			self.params.add('daf', value = 0)
+
+			for ep in self.extra:
+				self.params.add(ep.parname(), value = 0)
 
 			self.best = minimize(self.fit_model_gem, self.params, args=(self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=maxfev,ftol=ftol,xtol=xtol,gtol=gtol)
 

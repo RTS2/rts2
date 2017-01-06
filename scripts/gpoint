@@ -68,7 +68,10 @@ def generate_model(args):
 		out_dat = model.indata
 		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_ha),axis=1)
 		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_dec),axis=1)
-		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_angular),axis=1)
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_angular_hadec),axis=1)
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_alt),axis=1)
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_az),axis=1)
+		out_dat = np.append(out_dat,map(lambda x:[x*3600],model.diff_angular_altaz),axis=1)
 		for b in out_dat:
 			f.write('{0}\n'.format('\t'.join(b)))
 		f.close()
