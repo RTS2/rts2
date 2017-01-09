@@ -83,7 +83,7 @@ class TCSNG:public Telescope
 
 		virtual int setTracking(int track, bool addTrackingTimer = false, bool send = true);
 
-		virtual int parseTLE (rts2core::Connection * conn, const char *l1, const char *l2);
+		virtual int moveTLE (const char *l1, const char *l2);
 		
 	private:
 		rts2core::ConnTCSNG *ngconn;
@@ -340,7 +340,7 @@ int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	return Telescope::setValue (oldValue, newValue);
 }
 
-int TCSNG::parseTLE (rts2core::Connection * conn, const char *l1, const char *l2)
+int TCSNG::moveTLE (const char *l1, const char *l2)
 {
 	char cmd[300];
 	//tle_l1->setValueString (l1);
@@ -352,7 +352,8 @@ int TCSNG::parseTLE (rts2core::Connection * conn, const char *l1, const char *l2
 	ngconn->command( cmd );
 	logStream (MESSAGE_INFO) << cmd << sendLog;
 	snprintf (cmd, 300, "SATTRACK START");
-	ngconn->command( cmd );
+	ngconn->command(cmd);
+
 	return 0;
 }
 

@@ -976,7 +976,9 @@ class Telescope:public rts2core::Device
 		 */
 		void updateTrackingFrequency ();
 
-		virtual int parseTLE (rts2core::Connection *conn, const char *l1, const char *l2);
+		virtual int moveTLE (const char *l1, const char *l2);
+
+		int parseTLE (rts2core::Connection *conn, const char *l1, const char *l2);
 
 		void setTLE (const char *l1, const char *l2);
 

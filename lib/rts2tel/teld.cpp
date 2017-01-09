@@ -1620,7 +1620,8 @@ void Telescope::updateTrackingFrequency ()
 	lastTrackingRun = n;
 }
 
-int Telescope::parseTLE (rts2core::Connection *conn, const char *l1, const char *l2)
+
+int Telescope::moveTLE (const char *l1, const char *l2)
 {
 	int ret = parse_elements (l1, l2, &tle);
 	if (ret != 0)
@@ -1630,6 +1631,12 @@ int Telescope::parseTLE (rts2core::Connection *conn, const char *l1, const char 
 		logStream (MESSAGE_ERROR) << "Line 2: " << l2 << sendLog;
 		return DEVDEM_E_PARAMSVAL;
 	}
+	return 0;
+}
+
+int Telescope::parseTLE (rts2core::Connection *conn, const char *l1, const char *l2)
+{
+	int ret = moveTLE (l1, l2);
 
 	setTLE (l1, l2);
 
