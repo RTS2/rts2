@@ -1637,6 +1637,8 @@ int Telescope::moveTLE (const char *l1, const char *l2)
 int Telescope::parseTLE (rts2core::Connection *conn, const char *l1, const char *l2)
 {
 	int ret = moveTLE (l1, l2);
+	if (ret)
+		return ret;
 
 	setTLE (l1, l2);
 
