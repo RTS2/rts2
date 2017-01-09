@@ -322,7 +322,7 @@ int TCSNG::isMoving ()
 
 int TCSNG::setTracking( int track, bool addTrackingTimer, bool send)
 {
-	return 0;
+	return Telescope::setTracking (track, addTrackingTimer, send);
 }
 
 int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -354,7 +354,7 @@ int TCSNG::moveTLE (const char *l1, const char *l2)
 	snprintf (cmd, 300, "SATTRACK START");
 	ngconn->command(cmd);
 
-	return 0;
+	return Telescope::moveTLE (l1, l2);
 }
 
 int main (int argc, char **argv)
