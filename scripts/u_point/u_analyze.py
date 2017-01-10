@@ -387,10 +387,10 @@ if __name__ == "__main__":
   parser.add_argument('--do-not-use-astrometry', dest='do_not_use_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry')
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
   # transforms, coordinates
-  parser.add_argument('--transform-class', dest='transform_class', action='store', default='u_astropy', help=': %(default)s, one of (u_astropy|u_libnova|u_pyephem)')
+  parser.add_argument('--transform-class', dest='transform_class', action='store', default='u_astropy', help=': %(default)s, one of (u_sofa|u_astropy|u_libnova|u_pyephem)')
   parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='built_in', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
   parser.add_argument('--refractive-index-method', dest='refractive_index_method', action='store', default='owens', help=': %(default)s, one of (owens|ciddor|edlen) if --refraction-method stone is specified, see refraction.py')
-  parser.add_argument('--mount-set-icrs', dest='mount_set_icrs', action='store_true', default=False, help=': %(default)s, True: coordinates set at mount are ICRS (or J2000)')
+  parser.add_argument('--mount-set-icrs', dest='mount_set_icrs', action='store_true', default=False, help=': %(default)s type apparent, True: coordinates set at mount are ICRS (or J2000)')
 
   args=parser.parse_args()
   

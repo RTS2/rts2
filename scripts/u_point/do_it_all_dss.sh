@@ -34,17 +34,20 @@ LATITUDE="--obs-latitude m75.1"
 LONGITUDE="--obs-longitude 123.1"
 PLOT="--plot"
 SKIP_ACQUISITION=
+SKIP_ANALYSIS=
 BASE_PATH=/tmp/u_point
 MODEL_CLASS="--model-class point"
 FETCH_DSS_IMAGE="--fetch-dss-image"
-TRANSFORMATION_CLASS="u_libnova"
+TRANSFORMATION_CLASS="u_sofa"
+# if u_libnova or u_sofa is specfied, REFRACTION_METHOD, REFRACTIVE_INDEX_METHOD
+# are ignored
 REFRACTION_METHOD="stone"
 REFRACTIVE_INDEX_METHOD="owens"
 MOUNT_SET_ICRS="--mount-set-icrs"
 MOUNT_SET_ICRS=
 MOUNT_TYPE_EQ="--mount-type-eq"
 USE_BRIGHT_STARS="--use-bright-stars"
-USE_BRIGHT_STARS=
+#USE_BRIGHT_STARS=
 DO_QUICK_ANALYSIS="--do-quick-analysis"
 ACQUIRE_DS9_DISPLAY="--ds9-display"
 
@@ -80,7 +83,7 @@ function cont_exit {
     return $status
 }
 #set -x
-while getopts ":apsrdil:o:m:n:t:f:c:" opt; do
+while getopts ":apsurdil:o:m:n:t:f:c:" opt; do
     case ${opt} in
 	a )
 	    ASTROMETRY=true
@@ -90,6 +93,9 @@ while getopts ":apsrdil:o:m:n:t:f:c:" opt; do
 	    ;;
 	s )
 	    SKIP_ACQUISITION=true
+	    ;;
+	u )
+	    SKIP_ANALYSIS=true
 	    ;;
 	r )	    
 	    RTS2=true
@@ -164,6 +170,14 @@ else
     echo "using built in simulation device: DeviceDss"
 fi
 echo ""
+if ! [ -z ${SKIP_ANALYSIS} ]; then
+    SKIP_ACQUISITION=true
+    PRESERVE=true
+    echo "skipping acquisition and analysis"
+else
+    echo "do analysis"
+fi
+echo ""
 if ! [ -z ${ASTROMETRY+x} ]; then
     echo "using SExtractor and astrometry.net"
 else
@@ -205,7 +219,6 @@ if  [ -z ${DO_QUICK_ANALYSIS} ] ; then
 else
     echo "do not quickly analze images"
 fi
-
 #
 #set -x
 # since u_point is not yet a python package
@@ -298,6 +311,8 @@ if [ -z ${SKIP_ACQUISITION} ]; then
     echo "DONE u_acquire.py"
     echo "-----------------------------------------------------------------"
 fi
+if [ -z ${SKIP_ANALYSIS} ]; then
+
 echo "forth step, analyze the acquired position"
 if ! [ -z ${ASTROMETRY+x} ]; then
     #
@@ -327,6 +342,7 @@ echo "-----------------------------------------------------------------"
 echo "DONE u_analyze.py"
 echo ""
 echo "-----------------------------------------------------------------"
+fi
 echo "fifth step, create pointing model"
 echo ""
 if ! [ -z ${ASTROMETRY+x} ]; then

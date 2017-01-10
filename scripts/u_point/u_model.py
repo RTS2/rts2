@@ -250,7 +250,7 @@ class PointingModel(Script):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.grid(True)
-    ax.scatter(lon,lat)
+    ax.scatter(lon,lat,picker=20)
     fig.savefig(os.path.join(self.base_path,fn.replace(' ','_').replace('+','_')))
 
   
@@ -368,7 +368,6 @@ class PointingModel(Script):
     lat=[x.res_lat.arcmin for x in stars]
     elements.append(lon)
     elements.append(lat)
-    annotes05=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree, x.cat_lat.degree,x.image_fn) for x in stars]
     elements.append('residuum_catalog_corrected_star_{}.png'.format(fn_frac))
     elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.res_lon.arcmin,x.res_lat.arcmin,x.image_fn) for x in stars])
     plots.append(elements)
@@ -432,7 +431,7 @@ class PointingModel(Script):
     elements.append('measurement_locations_catalog_{0}.png'.format(fn_frac))
     elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.cat_lat.degree,x.image_fn) for x in stars])
     plots.append(elements)
-
+    
     annotes_skycoords=['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.cat_lat.degree,x.image_fn) for x in stars]
     figs=list()
     axs=list()
@@ -455,15 +454,16 @@ class PointingModel(Script):
     afs=list()
     for i,ax in enumerate(axs):
       af=self.annotate_plot(fig=figs[i],ax=axs[i],aps=aps,ds9_display=args.ds9_display,delete=args.delete)
+      # ToDo ??removing this list inhibits call back on all but one plot
       afs.append(af)
       figs[i].canvas.mpl_connect('button_press_event',af.mouse_event)
       if args.delete:
         figs[i].canvas.mpl_connect('key_press_event',af.keyboard_event)
 
     # ToDo why that?
-    figs[0].canvas.mpl_connect('button_press_event',afs[0].mouse_event)
-    if args.delete:
-      figs[0].canvas.mpl_connect('key_press_event',afs[0].keyboard_event)
+    #figs[0].canvas.mpl_connect('button_press_event',afs[0].mouse_event)
+    #if args.delete:
+    #  figs[0].canvas.mpl_connect('key_press_event',afs[0].keyboard_event)
 
     self.fit_projection_and_plot(vals=[x.df_lon.arcsec for x in stars], bins=args.bins,axis='{}'.format(lon_label), fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P1',plt=plt)
     self.fit_projection_and_plot(vals=[x.df_lat.arcsec for x in stars], bins=args.bins,axis='{}'.format(lat_label),fit_title=fit_title,fn_frac=fn_frac,prefix='difference',plt_no='P2',plt=plt)

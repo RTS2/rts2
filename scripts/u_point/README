@@ -12,15 +12,20 @@ Prerequisites
 	      telnet
 	      saods9
 	      
- pip3 install astropy (1.2.1 or newer)
+ pip3 install astropy (1.3)
               numpy
 	      scipy
 	      matplotlib
               pyds9
 	      pyfits
 	      pyephem
-	      ref_index
-
+	      if --transform-class u_pyephem
+	      ref_index:
+	      if --refractive-index-method  (ciddor|edlen)
+              skyfield
+	      only used in test_coordinates_altaz.py
+	      astroquery
+	      
 Install ref_index with
 
  git clone https://github.com/phn/ref_index.git
