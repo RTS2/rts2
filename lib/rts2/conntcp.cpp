@@ -67,6 +67,12 @@ int ConnTCP::init (bool reportConn)
 	struct sockaddr_in apc_addr;
 	struct hostent *hp;
 
+	if (sock != -1)
+	{
+		logStream (MESSAGE_ERROR) << "TCP connection already connected: " << sock << sendLog;
+		return 0;
+	}
+
 	sock = socket (AF_INET, SOCK_STREAM, 0);
         if (sock == -1)
 		throw ConnCreateError (this, "cannot create socket for TCP/IP connection", errno);
@@ -132,7 +138,7 @@ int ConnTCP::init (bool reportConn)
 	{   
 		setConnState (CONN_CONNECTED);
 		if (reportConn)
-			logStream (MESSAGE_INFO) << "connected to " << hostname << ":" << port << sendLog;
+			logStream (MESSAGE_INFO) << "connected to " << hostname << ":" << port << " socket " << sock << sendLog;
 	}
         return 0;
 }
