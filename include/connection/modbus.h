@@ -203,7 +203,7 @@ class ConnModbusTCP: public ConnTCP, public ConnModbus
 		virtual void exchangeData (const void *modbusPayload, size_t payloadSize, void *reply, size_t replySize);
 
 	private:
-		int16_t transId;
+		uint16_t transId;
 };
 
 class ConnModbusRTUTCP: public ConnTCP, public ConnModbus
