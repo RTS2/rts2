@@ -66,10 +66,13 @@ class TPVP:
 			self.telescope = telescope
 
 	def __wait(self,st):
-		for sec in range(st,0,-1):
+		if st <= 0:
+			return
+		for sec in range(int(st),0,-1):
 			print _('waiting {0} seconds                                                                \r'.format(sec)),
 			sys.stdout.flush()
 			time.sleep(1)
+		time.sleep(st - int(st))
 
 	def set_mags(self,mmax,mmin):
 		self.__mag_max = mmax
