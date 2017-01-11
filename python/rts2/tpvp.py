@@ -45,7 +45,7 @@ def wait_for_key(t):
 	return False
 
 class TPVP:
-	def __init__(self,jsonProxy,camera,telescope=None,verbose=0):
+	def __init__(self,jsonProxy,camera,sleeptime=0,telescope=None,verbose=0):
 		# wide magnitude limit is the default
 		self.__mag_max = -10
 		self.__mag_min = 10
@@ -55,6 +55,7 @@ class TPVP:
 		self.__verifywcs_rotang = None
 		self.__verifywcs_flip = None
 		self.camera = camera
+		self.sleeptime = sleeptime
 		self.verbose = verbose
 		if telescope is None:
 			try:
@@ -63,7 +64,13 @@ class TPVP:
 				raise Exception(_('cannot find any telescope'))
 		else:
 			self.telescope = telescope
-	
+
+	def __wait(self,st):
+		for sec in range(st,0,-1):
+			print _('waiting {0} seconds                                                                \r'.format(sec)),
+			sys.stdout.flush()
+			time.sleep(1)
+
 	def set_mags(self,mmax,mmin):
 		self.__mag_max = mmax
 		self.__mag_min = mmin
@@ -182,10 +189,7 @@ class TPVP:
 			print _('destination not reached, continue with new target                         ')
 			return None,None
 
-		for sec in range(15,0,-1):
-			print _('waiting {0} seconds                                                                \r'.format(sec)),
-			sys.stdout.flush()
-			time.sleep(1)
+		self.__wait(self.sleeptime)
 	
 		print _('moved to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
 		if imagescript is not None:
@@ -299,10 +303,10 @@ class TPVP:
 		history_alt = []
 		history_az = []
 		for vn in range(maxverify):
-			time.sleep(15)
+			self.__wait(self.sleeptime)
 			# verify ve really center on star
 			vfn = 'verify_{0:03}_{1:02}.fits'.format(mn,vn)
-			print _('taking verify exposure {0} # {1}').format(vfn,vn)
+			print _('taking verify exposure {0} # {1}         ').format(vfn,vn)
 			if os.path.isfile(vfn):
 				print _('removing {0}').format(vfn)
 				os.unlink(vfn)
