@@ -332,17 +332,17 @@ class TPVP:
 			flux_ratio_history.append(b_flux_ratio)
 			history_x.append(off_x)
 			history_y.append(off_y)
+			# calculate offsets in alt-az, increment offsets
+			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(vfn,useDS9,mn,self.fov_center)
+			if off_radec is None:
+				return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
+			print _('Brightest flux {0:.2f}').format(flux)
+			history_alt.append(off_azalt[1])
+			history_az.append(off_azalt[0])
 			if pixdist < verifyradius:
 				print _('converged')
 				return True,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
-			# calculate offsets in alt-az, increment offsets
-			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(vfn,useDS9,mn,self.fov_center)
-			print _('Brightest flux {0:.2f}').format(flux)
-			if off_radec is None:
-				return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
 			print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
-			history_alt.append(off_azalt[1])
-			history_az.append(off_azalt[0])
 			self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 	
 		return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
@@ -393,7 +393,7 @@ class TPVP:
 					modelf.write('# BSC #{0} RA {1:.5f} DEC {2:.5f} mag {3} flux history {4} flux ratio history {5}\n'.format(p,bsc[1],bsc[2],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
 				else:
 					modelf.write('# BSC #{0} alt {1:.3f} az {2:.3f} mag {3} flux history {4} flux ratio history {5}\n'.format(bsc[0],p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
-				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5} alt {6} az {7} \n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y)),' '.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_alt)),' '.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_az))))
+				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5} alt {6} az {7} \n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y)),','.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_alt)),','.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_az))))
 				# comment lines
 				if ver == False:
 					modelf.write('# ')
