@@ -181,6 +181,11 @@ class TPVP:
 		if tmout <= 0:
 			print _('destination not reached, continue with new target                         ')
 			return None,None
+
+		for sec in range(15,0,-1):
+			print _('waiting {0} seconds                                                                \r'.format(sec)),
+			sys.stdout.flush()
+			time.sleep(1)
 	
 		print _('moved to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
 		if imagescript is not None:
@@ -291,6 +296,8 @@ class TPVP:
 		flux_ratio_history = []
 		history_x = []
 		history_y = []
+		history_alt = []
+		history_az = []
 		for vn in range(maxverify):
 			time.sleep(15)
 			# verify ve really center on star
@@ -312,7 +319,7 @@ class TPVP:
 			print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
 			if minflux is not None and b_flux < minflux:
 				print _('brightest star too faint, its flux is {0}, should be at least {1}').format(b_flux, minflux)
-				return False,flux_history,flux_ratio_history,history_x,history_y
+				return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_alt
 	
 			flux_history.append(b_flux)
 			flux_ratio_history.append(b_flux_ratio)
@@ -320,16 +327,18 @@ class TPVP:
 			history_y.append(off_y)
 			if pixdist < verifyradius:
 				print _('converged')
-				return True,flux_history,flux_ratio_history,history_x,history_y
+				return True,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
 			# calculate offsets in alt-az, increment offsets
 			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(vfn,useDS9,mn,self.fov_center)
 			print _('Brightest flux {0:.2f}').format(flux)
 			if off_radec is None:
-				return False,flux_history,flux_ratio_history,history_x,history_y
+				return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
 			print _('Incrementing offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
+			history_alt.append(off_azalt[1])
+			history_az.append(off_azalt[0])
 			self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
 	
-		return False,flux_history,flux_ratio_history,history_x,history_y
+		return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
 
 	def run_verify_brigths(self,timeout,path,modelname,imagescript,useDS9,maxverify,verifyradius,maxspiral,minflux):
 		self.j.setValue(self.telescope,'AZALOFFS','0 0')
@@ -369,15 +378,15 @@ class TPVP:
 	
 			print _('Will offset by alt {0:.3f} az {1:.3f} arcsec').format(off_azalt[1] * 3600, off_azalt[0] * 3600)
 			self.j.incValue(self.telescope,'AZALOFFS','{0} {1}'.format(off_azalt[1], off_azalt[0]))
-			ver,flux_history,flux_ratio_history,history_x,history_y = self.__verify(mn,timeout,imagescript,useDS9,maxverify,verifyradius,minflux)
+			ver,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az = self.__verify(mn,timeout,imagescript,useDS9,maxverify,verifyradius,minflux)
 			if modelname is not None:
 				self.__check_model_firstline(modelname)
 				modelf = open(modelname,'a')
 				if type(p) == int:
 					modelf.write('# BSC #{0} RA {1:.5f} DEC {2:.5f} mag {3} flux history {4} flux ratio history {5}\n'.format(p,bsc[1],bsc[2],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
 				else:
-					modelf.write('# alt {0:.3f} az {1:.3f} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
-				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5}\n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y))))
+					modelf.write('# BSC #{0} alt {1:.3f} az {2:.3f} mag {3} flux history {4} flux ratio history {5}\n'.format(bsc[0],p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
+				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5} alt {6} az {7} \n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y)),' '.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_alt)),' '.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_az))))
 				# comment lines
 				if ver == False:
 					modelf.write('# ')
