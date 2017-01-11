@@ -373,8 +373,11 @@ class TPVP:
 			if modelname is not None:
 				self.__check_model_firstline(modelname)
 				modelf = open(modelname,'a')
-				modelf.write('# alt {0:.3f} az {1:.3f} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
-				modelf.write('# fx {0} fy {1} x {2} y {3}\n'.format(first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y))))
+				if type(p) == int:
+					modelf.write('# BSC #{0} RA {1:.5f} DEC {2:.5f} mag {3} flux history {4} flux ratio history {5}\n'.format(p,bsc[1],bsc[2],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
+				else:
+					modelf.write('# alt {0:.3f} az {1:.3f} mag {2} flux history {3} flux ratio history {4}\n'.format(p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
+				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5}\n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y))))
 				# comment lines
 				if ver == False:
 					modelf.write('# ')
