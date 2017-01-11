@@ -1,5 +1,5 @@
 /* 
- * Astro-Physics GTO mount daemon 
+ * Astro-Physics GTO mount driver 
  * Copyright (C) 2009-2017, Markus Wildi, Petr Kubanek and INDI
  *
  * This program is free software; you can redistribute it and/or
@@ -108,6 +108,7 @@ private:
   double localSiderealTime ();
   int checkSiderealTime (double limit) ;
   int checkLongitudeLatitude (double limit) ;
+  int dateTime ();
   int setBasicData ();
   int tel_slew_to (double ra, double dec);
   // ToDo: no ToDo??
@@ -613,13 +614,10 @@ int APGTO::tel_slew_to (double ra, double dec)
   }
 
   double target_HA= fmod(localSiderealTime()- target_equ.ra+ 360., 360.) ;
-
   if((target_HA > 180.) && (target_HA <= 360.)) {
     strcpy(target_DECaxis_HAcoordinate, "West");
-    //logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to assumed target is 180. < HA <= 360." << sendLog;
   } else {
     strcpy(target_DECaxis_HAcoordinate, "East");
-    //logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to assumed target is 0. < HA <= 180." << sendLog;
   }
 
   if(!(strcmp("West", target_DECaxis_HAcoordinate))) {
@@ -1267,23 +1265,9 @@ int APGTO::info ()
 
     logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   telAltAz->getAlt() << " az " << telAltAz->getAz()  <<sendLog;
 
-    char date_time[256];
-    struct ln_date utm;
-    struct ln_zonedate ltm;
-    ln_get_date_from_sys(&utm) ;
-    ln_date_to_zonedate(&utm, &ltm, -1 * timezone + 3600 * daylight); 
-
-    if((ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
-      logStream (MESSAGE_WARNING) << "APGTO::info setting local time failed" << sendLog;
+    if(dateTime()<0)
       return -1;
-    }
-    if((ret= setAPCalenderDate(ltm.days, ltm.months, ltm.years) < 0)) {
-      logStream (MESSAGE_WARNING) << "APGTO::info setting local date failed" << sendLog;
-      return -1;
-    }
-    sprintf(date_time, "%4d-%02d-%02dT%02d:%02d:%02d", ltm.years, ltm.months, ltm.days, ltm.hours, ltm.minutes, (int) ltm.seconds) ;
-    logStream (MESSAGE_DEBUG) << "APGTO::info local date and time set :" << date_time << sendLog ;
-
+    
     // read the coordinates times again
     if(tel_read_ra () || tel_read_dec ())
       return -1;
@@ -1321,7 +1305,7 @@ int APGTO::info ()
     }
   }
   if((ret= getAPlocalSiderealTime()) != 0)
-	return -1;
+    return -1;
   
   APhourAngle->setValueDouble (APlocalSiderealTime->getValueDouble ()-getTelRa());
   return TelLX200::info ();
@@ -1336,9 +1320,9 @@ APGTO::idle ()
 
 double APGTO::localSiderealTime()
 {
-  double JD  = ln_get_julian_from_sys ();
+  double JD  = ln_get_julian_from_sys ();  
   double lng = telLongitude->getValueDouble ();
-  return fmod((ln_get_mean_sidereal_time(JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
+  return fmod((ln_get_apparent_sidereal_time(JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
 }
 
 int APGTO::checkSiderealTime(double limit) 
@@ -1346,7 +1330,6 @@ int APGTO::checkSiderealTime(double limit)
   int ret ;
   // Check if the sidereal time read from the mount is correct 
   double local_sidereal_time= localSiderealTime() ;
-
   if((ret= getAPlocalSiderealTime()) != 0) {
     logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime could not retrieve sidereal time  " << sendLog;
     return -1 ;
@@ -1428,6 +1411,40 @@ int APGTO::getAPlocalSiderealTime ()
   return 0;
 }
 
+int APGTO::dateTime()
+{
+  //struct ln_date utm;
+  //struct ln_zonedate ltm;
+  //ln_get_date_from_sys(&utm) ; // That's UTC, good
+  //ln_date_to_zonedate (&utm, &ltm, -1 * timezone + 3600 * daylight);
+  //2017-01-06T18:23:49.661 CET            utc time h: 17 m: 23 s: 49.661122
+  //2017-01-06T18:23:49.661 CET  setting local time h: 19 m: 23 s: 49.661152 timezone (val):-3600 daylight: 1 timezone name: CET, CEST
+  // 
+  time_t urt=  time (NULL);
+  tm utm;
+  gmtime_r(&urt,&utm);
+  time_t lrt=  time (NULL);
+  tm ltm;
+  localtime_r(&lrt,&ltm);
+  char l_date_time[256];  
+  sprintf(l_date_time, "%4d-%02d-%02dT%02d:%02d:%02d", ltm.tm_year+1900, ltm.tm_mon+1, ltm.tm_mday, ltm.tm_hour, ltm.tm_min, (int) ltm.tm_sec) ;
+  logStream (MESSAGE_INFO) << "APGTO::dateTime  local" << l_date_time <<sendLog;
+
+  char u_date_time[256];
+  sprintf(u_date_time, "%4d-%02d-%02dT%02d:%02d:%02d", utm.tm_year+1900, utm.tm_mon+1, utm.tm_mday, utm.tm_hour, utm.tm_min, (int) utm.tm_sec) ;
+  logStream (MESSAGE_INFO) << "APGTO::dateTime    utc" << u_date_time <<sendLog;
+  
+  // this is local time including dst
+  if(setAPLocalTime(ltm.tm_hour, ltm.tm_min, (int) ltm.tm_sec) < 0) {
+    logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting local time failed" << sendLog;
+    return -1;
+  }
+  if(setAPCalenderDate(ltm.tm_mday, ltm.tm_mon+1, ltm.tm_year+1900) < 0) {
+    logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting local date failed" << sendLog;
+    return -1;
+  }
+  return 0;
+}
 int APGTO::setBasicData()
 {
   // 600 slew speed, 0.25x guide, 12x centering
@@ -1452,24 +1469,8 @@ int APGTO::setBasicData()
     logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting back lash compensation failed" << sendLog;
     return -1;
   }
-
-  struct ln_date utm;
-  struct ln_zonedate ltm;
-
-  ln_get_date_from_sys(&utm) ; // That's UTC, good
-  ln_date_to_zonedate (&utm, &ltm, -1 * timezone + 3600 * daylight); 
-  logStream (MESSAGE_INFO) << "APGTO::setBasicData           utc time h: "<<utm.hours << " m: "<<utm.minutes<<" s: "<<utm.seconds << sendLog;
-  logStream (MESSAGE_INFO) << "APGTO::setBasicData setting local time h: "<<ltm.hours << " m: "<<ltm.minutes<<" s: "<<ltm.seconds << " timezone (val):" << timezone << " daylight: " << daylight << " timezone name: " << tzname[0] << ", "<< tzname[1] << sendLog;
-  // this is local time including dst
-  if(setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0) {
-    logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting local time failed" << sendLog;
-    return -1;
-  }
-
-  if(setAPCalenderDate(ltm.days, ltm.months, ltm.years) < 0) {
-    logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting local date failed" << sendLog;
-    return -1;
-  }
+  if( dateTime() <0)
+    return -1 ;  
   // AP mount counts positive and only to the west, RTS2 to east
   if(setAPLongitude() < 0) {  
     logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
@@ -1511,11 +1512,25 @@ int APGTO::setBasicData()
     return -1;
 
   if(APfirmware->getValueString().compare("D") ==0){
-    double off;
-    off= -1.065;
-    if(daylight==1) 
+    double off= -1.065;
+    //time.h
+    //The value of tm_isdst shall be positive if Daylight Savings Time is in effect,
+    // 0 if Daylight Savings Time is not in effect,
+    // and negative if the information is not available.
+    // 2017-01-11: daylight=1, which is wrong
+    time_t lrt=  time (NULL);
+    tm ltm;
+    localtime_r(&lrt,&ltm);
+    //tm_isdst is greater than zero if DST is in effect,
+    //         zero if DST is not in effect
+    //         less than zero if the information is not available.
+    // restart apgto, if DST changes
+    if( ltm.tm_isdst < 0){
+      logStream (MESSAGE_WARNING) << "APGTO::setBasicData DST information not available, ignoring"<< sendLog;
+    } else if(ltm.tm_isdst > 1){ 
+      logStream (MESSAGE_DEBUG) << "APGTO::setBasicData DST is in effect"<< sendLog;
       off= -2.065;
-    
+    }
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData This is a version D chip, seting UTC offset to:"<< off << sendLog;
     if((ret = setAPUTCOffset(off)) < 0) {
       logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
@@ -1551,7 +1566,6 @@ int APGTO::initHardware ()
     return -1;
   serConn->flushPortIO ();
 
-  tzset ();
   logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete" << sendLog;
   return 0;
 }
@@ -1583,7 +1597,7 @@ int APGTO::initValues ()
       exit (1) ; // do not go beyond, at least for the moment
   }
   // Check if the sidereal time read from the mount is correct 
-  if(checkSiderealTime (1./100.) != 0) {
+  if(checkSiderealTime (1./120.) != 0) {
     logStream (MESSAGE_WARNING) << "initValues sidereal time difference larger than 1./120, exiting" << sendLog;
     exit (1) ; // do not go beyond, at least for the moment
   }
