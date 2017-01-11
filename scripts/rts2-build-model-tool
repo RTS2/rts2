@@ -46,7 +46,7 @@ parser.add_argument('--maxverify', help=_('maximal number of tries to verify off
 parser.add_argument('--verifyradius', help=_('radius fore sucessfull verify (in pixels)'), action='store', type=float, dest='verifyradius', default=5)
 parser.add_argument('--verifywcs', help=_('WCS for verify images - arcseconds per pixel:rotang:flip'), action='store', dest='verifywcs', type=str, default='0.335:270:X')
 parser.add_argument('--minflux', help=_('minimal flux for star to be considered as bright star. You can use k and m to indicate thousands and milions'), action='store', type=rts2.kmparse.kmparse, dest='minflux')
-parser.add_argument('--sleeptime', help=_('sleep time after move'), action='store', type=float, dest='timeout', default=0)
+parser.add_argument('--sleeptime', help=_('sleep time after move'), action='store', type=float, dest='sleeptime', default=0)
 parser.add_argument('--timeout', help=_('timeout after move'), action='store', type=float, dest='timeout', default=7)
 parser.add_argument('--imagescript', help=_('RTS2 script for camera exposure'), action='store', dest='imagescript', default='E 1')
 parser.add_argument('--camera', help=_('name of camera to take exposures'), action='store', dest='camera', default='C0')
