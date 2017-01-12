@@ -53,7 +53,8 @@ def generate_model(args):
 			if removed is None:
 				print 'model within bounds'
 				break
-			print 'removed line {0}'.format(removed)
+			for r in removed:
+				print 'removed line:\n{0}'.format('\n'.join(r))
 	model.print_stat()
 
 	if args.model_output is not None:

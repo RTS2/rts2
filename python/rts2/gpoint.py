@@ -116,7 +116,7 @@ class GPoint:
 	def __init__(self,verbose=0,latitude=None,longitude=None,altitude=None):
 		self.aa_ha = None
 		self.verbose = verbose
-		self.indata = []
+		self.lines = []
 		# telescope latitude - north positive
 		self.latitude = self.def_latitude = latitude
 		self.longitude = self.def_longitude = longitude
@@ -320,6 +320,7 @@ class GPoint:
 			# skip first line
 			f.readline()
 			line = f.readline()
+			curr_lines = []
 			while not(line == ''):
 				if line[0] == '#':
 					m = obsmatch.match(line)
@@ -332,6 +333,7 @@ class GPoint:
 							self.altaz = True
 							frmt = "manual"
 						else:
+							curr_lines.append(line.rstrip())
 							line = f.readline()
 							continue
 
@@ -344,9 +346,13 @@ class GPoint:
 							self.longitude=float(m.group(2))
 						if self.altitude is None:
 							self.altitude=float(m.group(4))
+					else:
+						curr_lines.append(line.rstrip())
 				else:
+					curr_lines.append(line.rstrip())
+					self.lines.append(curr_lines)
+					curr_lines = []
 					s = line.split()
-					self.indata.append(s)
 					rdata.append(s[:9])
 
 				line = f.readline()
@@ -557,6 +563,11 @@ class GPoint:
 
 		self.mjd = np.delete(self.mjd, ind)
 
+		ret = self.lines[ind]
+		self.lines = np.delete(self.lines,ind)
+
+		return ret
+
 	def filter(self,axis,error,num):
 		# find max error
 		ax_d = []
@@ -565,6 +576,8 @@ class GPoint:
 			ax_d.append(self.diff_model_alt)
 		else:
 			ax_d.append(self.__get_data(axis)[0])
+
+		removed = []
 
 		while num > 0:
 			mi = np.argmax(np.abs(ax_d[0]))
@@ -580,14 +593,17 @@ class GPoint:
 				print 'axis {0} found maximal value {1} at index {2}'.format(axis, max_v, mi)
 
 			if max_v < error:
-				return None
+				if len(removed) == 0:
+					return None
+				return removed
 
-			self.remove_line(mi)
+			removed.append(self.remove_line(mi))
 			self.fit()
 			self.print_params()
 			self.print_stat()
 			num -= 1
-		return ['aa']
+
+		return removed
 
 	def print_params(self):
 		if self.verbose == False:
