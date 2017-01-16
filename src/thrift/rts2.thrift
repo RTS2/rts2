@@ -30,7 +30,19 @@ struct MountInfo {
   7: double JulianDay
 }
 
-service MountService {
-  MountInfo info(),
-  i32 Slew(1: RaDec target)
+struct DerotatorInfo {
+  1: double infotime,
+// parallactic angle offset
+  2: double PA,
+// derotator offset
+  3: double offset,
+  4: double current,
+  5: double target
+}
+
+service ObservatoryService {
+  MountInfo infoMount(),
+  DerotatorInfo infoDerotator(),
+  i32 Slew(1: RaDec target),
+  i32 Park()
 }
