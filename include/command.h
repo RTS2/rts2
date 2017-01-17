@@ -168,6 +168,8 @@
 
 #define COMMAND_CUPOLA_MOVE     "move"
 #define COMMAND_CUPOLA_SYNCTEL  "synctel"
+#define COMMAND_CUPOLA_STOP     "stop"
+#define COMMAND_CUPOLA_PARK     "park"
 
 /**
  * Distribution of the new parallactic angle. @ingroup RTS2Command

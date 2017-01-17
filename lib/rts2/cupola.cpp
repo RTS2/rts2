@@ -36,6 +36,9 @@ Cupola::Cupola (int in_argc, char **in_argv, bool inhibit_auto_close):Dome (in_a
 	createValue (trackDuringDay, "track_day", "track even during daytime", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	trackDuringDay->setValueBool (false);
 
+	createValue (parkAz, "park_az", "[deg] park azimuth", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	parkAz->setValueFloat (NAN);
+
 	observer = NULL;
 
 	configFile = NULL;
@@ -213,7 +216,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 		if (trackTelescope->getValueBool () == false)
 			return -2;
 	}
-	if (conn->isCommand (COMMAND_CUPOLA_MOVE) || conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
+	else if (conn->isCommand (COMMAND_CUPOLA_MOVE) || conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
 	{
 		double tar_ra;
 		double tar_dec;
@@ -222,7 +225,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return moveTo (conn, tar_ra, tar_dec);
 	}
-	if (conn->isCommand (COMMAND_CUPOLA_AZ))
+	else if (conn->isCommand (COMMAND_CUPOLA_AZ))
 	{
 		double tar_az;
 		if (conn->paramNextDMS (&tar_az) || !conn->paramEnd ())
@@ -231,9 +234,17 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 		setTargetAz (tar_az);
 		return moveStart ();
 	}
-	else if (conn->isCommand ("stop"))
+	else if (conn->isCommand (COMMAND_CUPOLA_STOP))
 	{
 	        return moveStop() ;
+	}
+	else if (conn->isCommand (COMMAND_CUPOLA_PARK))
+	{
+		if (isnan (parkAz->getValueFloat ())
+			return DEVDEM_E_SYSTEM;
+		tarRaDec->setValueRaDec (NAN, NAN);
+		setTargetAz (parkAz->getValueFloat ());
+		return moveStart ();
 	}
 	return Dome::commandAuthorized (conn);
 }
