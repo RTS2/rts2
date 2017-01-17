@@ -574,6 +574,9 @@ class GPoint:
 		if axis == 'm-azel' or axis == 'm-altaz':
 			ax_d.append(self.diff_model_corr_az)
 			ax_d.append(self.diff_model_alt)
+		elif axis == 'm-hadec':
+			ax_d.append(self.diff_model_corr_ha)
+			ax_d.append(self.diff_model_dec)
 		else:
 			ax_d.append(self.__get_data(axis)[0])
 

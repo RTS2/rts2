@@ -26,6 +26,7 @@ import rts2.json
 import kmparse
 import time
 import os.path
+import logging
 
 import gettext
 gettext.install('rts2-build-model-tool')
