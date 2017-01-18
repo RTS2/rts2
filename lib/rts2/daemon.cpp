@@ -397,7 +397,7 @@ int Daemon::initValues ()
 	ret = loadModefile ();
 	if (ret)
 		return ret;
-	ret = loadValuesFile (optDefaultsFile);
+	ret = loadValuesFile (optDefaultsFile, true);
 	if (ret)
 		return ret;
 	ret = loadValuesFile (optAutosaveFile);
@@ -1286,7 +1286,7 @@ int Daemon::loadCreateFile ()
 	return ret;
 }
 
-int Daemon::loadValuesFile (const char *filename)
+int Daemon::loadValuesFile (const char *filename, bool use_extenstions)
 {
 	if (filename == NULL)
 		return 0;
@@ -1305,7 +1305,7 @@ int Daemon::loadValuesFile (const char *filename)
 		return 0;
 	}
 
-	ret = setSectionValues ((*autosave)[0], 0, false);
+	ret = setSectionValues ((*autosave)[0], 0, use_extenstions);
 
 	delete autosave;
 	return ret;

@@ -207,7 +207,7 @@ class Daemon:public Block
 		 * Load value file, specified as argument.
 		 * Value file list variable names and values on "variable_name=value " lines.
 		 */
-		int loadValuesFile (const char *valuefile);
+		int loadValuesFile (const char *valuefile, bool use_extensions = false);
 
 		/**
 		 * Autosave values marked for autosaving.
