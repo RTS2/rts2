@@ -396,7 +396,7 @@ class TPVP:
 					modelf.write('# BSC #{0} alt {1:.3f} az {2:.3f} mag {3} flux history {4} flux ratio history {5}\n'.format(bsc[0],p[0],p[1],bsc[3],','.join(map(str,flux_history)),','.join(map(str,flux_ratio_history))))
 				modelf.write('# f_alt {0:.3f}" f_az {1:.3f}" fx {2} fy {3} x {4} y {5} alt {6} az {7} \n'.format(off_azalt[1] * 3600,off_azalt[0] * 3600,first_xy[0],first_xy[1],','.join(map(str,history_x)),','.join(map(str,history_y)),','.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_alt)),','.join(map(lambda x:'{0:.3f}"'.format(x*3600),history_az))))
 				# comment lines
-				if ver == False:
+				if ver == False and maxverify > 0:
 					modelf.write('# ')
 				modelf.close()
 			self.__save_modeline(modelname,mn)
