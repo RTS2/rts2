@@ -240,7 +240,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand (COMMAND_CUPOLA_PARK))
 	{
-		if (isnan (parkAz->getValueFloat ())
+		if (isnan (parkAz->getValueFloat ()))
 			return DEVDEM_E_SYSTEM;
 		tarRaDec->setValueRaDec (NAN, NAN);
 		setTargetAz (parkAz->getValueFloat ());
