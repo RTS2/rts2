@@ -216,7 +216,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 		if (trackTelescope->getValueBool () == false)
 			return -2;
 	}
-	else if (conn->isCommand (COMMAND_CUPOLA_MOVE) || conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
+	if (conn->isCommand (COMMAND_CUPOLA_MOVE) || conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
 	{
 		double tar_ra;
 		double tar_dec;
