@@ -77,6 +77,12 @@
 #define COMMAND_TELD_MOVE_PM    "move_pm"
 
 /**
+ * Move to position in given epoch, with proper motions (arcsec/year).
+ * Proper motions are defined in arcseconds.
+ */
+#define COMMAND_TELD_MOVE_EPOCH_PM  "move_epoch_pm"
+
+/**
  * Move to HA DEC coordinates.
  */
 #define COMMAND_TELD_HADEC      "hadec"

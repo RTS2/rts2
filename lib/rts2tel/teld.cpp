@@ -86,7 +86,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	telWavelength->setValueFloat (0.1);
 
 	// object
-	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
+	createValue (oriRaDec, "ORI", "original position (epoch)", true, RTS2_VALUE_WRITABLE);
+	createValue (oriEpoch, "OEPOCH", "epoch (2000,..)", true);
+	oriEpoch->setValueDouble (2000.0);
 	createValue (pmRaDec, "PM", "proper motion/year", true, RTS2_VALUE_WRITABLE | RTS2_DT_ARCSEC);
 	pmRaDec->setValueRaDec (0, 0);
 	// users offset
@@ -577,6 +579,31 @@ void Telescope::createDecPAN ()
 	createValue (decPANSpeed, "dec_pan_speed", "speed of DEC panning", false, RTS2_VALUE_WRITABLE);
 }
 
+
+void Telescope::applyOffsets (struct ln_equ_posn *pos, bool oriSet)
+{
+	pos->ra = oriRaDec->getRa ();
+	pos->dec = oriRaDec->getDec ();
+
+	if (oriSet == false && oriEpoch->getValueDouble () != 2000.0)
+	{
+		struct ln_date ld;
+		struct ln_equ_posn ori;
+		ori.ra = pos->ra;
+		ori.dec = pos->dec;
+		ld.years = floor (oriEpoch->getValueDouble ());
+		ld.months = 1;
+		ld.days = 1;
+		ld.hours = 0;
+		ld.minutes = 0;
+		ld.seconds = 0;
+		double JDfrom = ln_get_julian_day (&ld) + (oriEpoch->getValueDouble () - ld.years) * 365.24219;
+		ln_get_equ_prec2 (&ori, JDfrom, JD2000, pos);
+	}
+
+	pos->ra += offsRaDec->getRa ();
+	pos->dec += offsRaDec->getDec ();
+}
 
 
 int Telescope::processOption (int in_opt)
@@ -1250,7 +1277,7 @@ int Telescope::initValues ()
 	if (ret)
 		return ret;
 	tarRaDec->setFromValue (telRaDec);
-	oriRaDec->setFromValue (telRaDec);
+	setOri (telRaDec->getRa (), telRaDec->getDec ());
 	objRaDec->setFromValue (telRaDec);
 #ifndef RTS2_LIBERFA
 	aberated->setFromValue (telRaDec);
@@ -1984,6 +2011,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	// apply computed corrections (precession, aberation, refraction)
 	double utc1, utc2;
+	bool oriSet = false;
 
 #ifdef RTS2_LIBERFA
 	getEraUTC (utc1, utc2);
@@ -2001,7 +2029,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		observer.lng = telLongitude->getValueDouble ();
 		LibnovaCurrentFromOrbit (&pos, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
 
-		oriRaDec->setValueRaDec (pos.ra, pos.dec);
+		setOri (pos.ra, pos.dec);
+		oriSet = true;
 	}
 
 	// calculate from TLE..
@@ -2009,8 +2038,9 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	{
 		double ra, dec, dist_to_satellite;
 		calculateTLE (utc1 + utc2, ra, dec, dist_to_satellite);
-		oriRaDec->setValueRaDec (ln_rad_to_deg (ra), ln_rad_to_deg (dec));
+		setOri (ln_rad_to_deg (ra), ln_rad_to_deg (dec));
 		tle_distance->setValueDouble (dist_to_satellite);
+		oriSet = true;
 	}
 
 	// if object was not specified, do not move
@@ -2057,7 +2087,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
 
 	// first apply offset
-	applyOffsets (&pos);
+	applyOffsets (&pos, oriSet);
+
 	pos.ra = ln_range_degrees (pos.ra);
 
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
@@ -2122,7 +2153,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		{
 			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az " << LibnovaHrz (&hrztar) << sendLog;
-			oriRaDec->setValueRaDec (NAN, NAN);
+			setOri (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
 			stopMove ();
@@ -2141,7 +2172,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		{
 			useParkFlipping = false;
 			logStream (MESSAGE_ERROR) << "target declination is outside of allowed values, is " << pos.dec << " limit is " << decUpperLimit->getValueFloat () << sendLog;
-			oriRaDec->setValueRaDec (NAN, NAN);
+			setOri (NAN, NAN);
 			objRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->setValueRaDec (NAN, NAN);
 			stopMove ();
@@ -2374,7 +2405,7 @@ int Telescope::moveAltAz ()
 
 	ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &target);
 
-	oriRaDec->setValueRaDec (target.ra, target.dec);
+	setOri (target.ra, target.dec);
 	return startResyncMove (NULL, 0);
 }
 
@@ -2391,8 +2422,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
-		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		pmRaDec->setValueRaDec (0, 0);
+		setOri (obj_ra, obj_dec);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2406,8 +2436,29 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || conn->paramNextDouble (&pmRa) || conn->paramNextDouble (&pmDec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		modelOn ();
-		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		pmRaDec->setValueRaDec (pmRa / 3600.0, pmDec / 3600.0);
+		setOri (obj_ra, obj_dec, 2000.0, pmRa / 3600.0, pmDec / 3600.0);
+		resetMpecTLE ();
+		startTracking (true);
+		ret = startResyncMove (conn, 0);
+		if (ret)
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+		return ret;
+	}
+	else if (conn->isCommand (COMMAND_TELD_MOVE_EPOCH_PM))
+	{
+		double epoch, pmRa, pmDec;
+		pmRa = 0;
+		pmDec = 0;
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || conn->paramNextDouble (&epoch))
+			return DEVDEM_E_PARAMSNUM;
+
+		if (conn->paramEnd ())
+		{
+			if (conn->paramNextDouble (&pmRa) || conn->paramNextDouble (&pmDec) || !conn->paramEnd ())
+				return DEVDEM_E_PARAMSNUM;
+		}
+		modelOn ();
+		setOri (obj_ra, obj_dec, epoch, pmRa / 3600.0, pmDec / 3600.0);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2422,8 +2473,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		double JD = ln_get_julian_from_sys ();
 		obj_ra = getLocSidTime ( JD) * 15. - obj_ha ;
 
-		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		pmRaDec->setValueRaDec (0, 0);
+		setOri (obj_ra, obj_dec);
 		resetMpecTLE ();
 		tarRaDec->setValueRaDec (NAN, NAN);
 		return startResyncMove (conn, 0);
@@ -2433,8 +2483,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 		modelOff ();
-		oriRaDec->setValueRaDec (obj_ra, obj_dec);
-		pmRaDec->setValueRaDec (0, 0);
+		setOri (obj_ra, obj_dec);
 		resetMpecTLE ();
 		startTracking (true);
 		ret = startResyncMove (conn, 0);
@@ -2480,7 +2529,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
-		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		setOri (obj_ra, obj_dec);
 		resetMpecTLE ();
 		return startResyncMove (conn, 0);
 	}
@@ -2663,6 +2712,13 @@ void Telescope::setFullBopState (rts2_status_t new_state)
 	rts2core::Device::setFullBopState (new_state);
 	if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()) && !(new_state & BOP_TEL_MOVE))
 		startResyncMove (NULL, (woffsRaDec->wasChanged () ? 1 : 0) | (wcorrRaDec->wasChanged () ? 2 : 0));
+}
+
+void Telescope::setOri (double obj_ra, double obj_dec, double epoch, double pmRa, double pmDec)
+{
+	oriRaDec->setValueRaDec (obj_ra, obj_dec);
+	oriEpoch->setValueDouble (epoch);
+	pmRaDec->setValueRaDec (pmRa, pmDec);
 }
 
 void Telescope::resetMpecTLE ()
