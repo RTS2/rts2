@@ -564,7 +564,7 @@ class GPoint:
 		self.mjd = np.delete(self.mjd, ind)
 
 		ret = self.lines[ind]
-		self.lines = np.delete(self.lines,ind)
+		del self.lines[ind]
 
 		return ret
 
