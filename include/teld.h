@@ -217,11 +217,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *raPANSpeed;
 		rts2core::ValueDouble *decPANSpeed;
 
-		void applyOffsets (struct ln_equ_posn *pos)
-		{
-			pos->ra = oriRaDec->getRa () + offsRaDec->getRa ();
-			pos->dec = oriRaDec->getDec () + offsRaDec->getDec ();
-		}
+		void applyOffsets (struct ln_equ_posn *pos, bool oriSet = false);
 
 		void applyAltAzOffsets (struct ln_hrz_posn *hrz)
 		{
@@ -1133,6 +1129,11 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *oriRaDec;
 
 		/**
+		 * Origin epoch.
+		 */
+		rts2core::ValueDouble *oriEpoch;
+
+		/**
 		 * Object proper motion. (mas/year)
 		 */
 		rts2core::ValueRaDec *pmRaDec;
@@ -1385,6 +1386,8 @@ class Telescope:public rts2core::Device
 		char wcs_multi;
 
 		rts2core::ValueFloat *decUpperLimit;
+
+		void setOri (double obj_ra, double obj_dec, double epoch = 2000.0, double pmRa = 0, double pmDec = 0);
 
 		void resetMpecTLE ();
 
