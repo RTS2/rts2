@@ -723,7 +723,7 @@ class GPoint:
 				Z = self.diff_model_angular * 3600
 				polar.set_title('Model differences')
 			elif contour == 'real':
-				Z = self.diff_angular * 3600
+				Z = self.diff_angular_altaz * 3600 if self.altaz else self.diff_angular_hadec * 3600
 				polar.set_title('Real differences')
 
 			xi = np.linspace(np.radians(-90),np.radians(271),num = 360 * pfact)
