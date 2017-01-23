@@ -248,7 +248,11 @@ class GPoint:
 				ret += params[e.parname()] * self.cal_extra(e, 'dec', a_ha, a_dec, self.rad_aa_az, self.rad_aa_alt)
 		return ret
 
+
 	def model_az(self,params,a_az,a_el):
+		return self.model_az_hadec(params,a_az,a_el,self.rad_aa_ha,self.rad_aa_dec)
+
+	def model_az_hadec(self,params,a_az,a_el,a_ha,a_dec):
 		tan_el = np.tan(a_el)
 		ret = - params['ia'] \
 			+ params['tn']*np.sin(a_az)*tan_el \
@@ -257,17 +261,20 @@ class GPoint:
 			+ params['npoa']/np.cos(a_el)
 		for e in self.extra:
 			if e.axis == 'az':
-				ret += params[e.parname()] * self.cal_extra(e, 'az', self.rad_aa_ha, self.rad_aa_dec, a_az, a_el)
+				ret += params[e.parname()] * self.cal_extra(e, 'az', a_ha, a_dec, a_az, a_el)
 		return ret
 
 	def model_el(self,params,a_az,a_el):
+		return self.model_el_hadec(params, a_az, a_el, self.rad_aa_ha, self.rad_aa_dec)
+
+	def model_el_hadec(self,params,a_az,a_el,a_ha,a_dec):
 		ret = - params['ie'] \
 			+ params['tn']*np.cos(a_az) \
 			+ params['te']*np.sin(a_az) \
 			+ params['tf']*np.cos(a_el)
 		for e in self.extra:
 			if e.axis == 'el':
-				ret += params[e.parname()] * self.cal_extra(e, 'el', self.rad_aa_ha, self.rad_aa_dec, a_az, a_el)
+				ret += params[e.parname()] * self.cal_extra(e, 'el', a_ha, a_dec, a_az, a_el)
 		return ret
 
 	# Fit functions.
@@ -874,14 +881,27 @@ class GPoint:
 	def plotoffsets(self,best,ha_start,ha_end,dec):
 		import pylab
 
-		ha_range = np.arange(ha_start,ha_end,0.02)
-		ha_offsets = []
-		dec_offsets = []
-		for ha in ha_range:
-			ha_offsets.append(self.model_ha(best,ha,dec))
-			dec_offsets.append(self.model_dec(best,ha,dec))
+		ha_range = np.arange(ha_start,ha_end,0.01)
+		dec_r = np.radians(dec)
+		if self.altaz:
+			el_offsets = []
+			az_offsets = []
+			for ha in ha_range:
+				ha_r = np.radians(ha)
+				el,az = libnova.equ_to_hrz(-ha,dec,0,self.latitude)
+				el_offsets.append(self.model_el_hadec(best,np.radians(az),np.radians(el),ha_r,dec_r))
+				az_offsets.append(self.model_az_hadec(best,np.radians(az),np.radians(el),ha_r,dec_r))
 
-		pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
+			pylab.plot(ha_range,np.array(az_offsets) * 3600.0,'b-',ha_range,np.array(el_offsets) * 3600.0,'g-')
+		else:
+			ha_offsets = []
+			dec_offsets = []
+			for ha in ha_range:
+				ha_offsets.append(self.model_ha(best,np.radians(ha),dec_r))
+				dec_offsets.append(self.model_dec(best,np.radians(ha),dec_r))
+
+			pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
+
 		pylab.show()
 
 	def to_string(self,unit='arcseconds'):

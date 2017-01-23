@@ -98,13 +98,15 @@ def plot_offsets(args):
 	if args.latitude == None:
 		sys.exit('you must specify latitude as parameter')
 	# load model..
+	model = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
 	for fn in args.inputfiles:
-		params = load_model(fn)
+		model.load(fn)
+
+	model.fit_to_extra()
 	
 	ha_b,ha_e,dec = map(lambda f:float(f),args.plot_offsets.split(':'))
 	
-	model = rts2.gpoint.GPoint(args.verbose,latitude=args.latitude)
-	model.plotoffsets(params,ha_b,ha_e,dec)
+	model.plotoffsets(model.best.params,ha_b,ha_e,dec)
 
 def add_models(args):
 	if len(args.inputfiles) < 2:
