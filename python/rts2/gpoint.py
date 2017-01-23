@@ -878,7 +878,7 @@ class GPoint:
 		else:
 			pylab.savefig(ofile)
 
-	def plotoffsets(self,best,ha_start,ha_end,dec):
+	def plot_offsets(self,best,subplot,ha_start,ha_end,dec):
 		import pylab
 
 		ha_range = np.arange(ha_start,ha_end,0.01)
@@ -886,23 +886,34 @@ class GPoint:
 		if self.altaz:
 			el_offsets = []
 			az_offsets = []
+			if self.verbose:
+				print 'ha\taz\tel\taz_off\tel_off'
 			for ha in ha_range:
 				ha_r = np.radians(ha)
 				el,az = libnova.equ_to_hrz(-ha,dec,0,self.latitude)
-				el_offsets.append(self.model_el_hadec(best,np.radians(az),np.radians(el),ha_r,dec_r))
-				az_offsets.append(self.model_az_hadec(best,np.radians(az),np.radians(el),ha_r,dec_r))
-
-			pylab.plot(ha_range,np.array(az_offsets) * 3600.0,'b-',ha_range,np.array(el_offsets) * 3600.0,'g-')
+				el_off = self.model_el_hadec(best,np.radians(az),np.radians(el),ha_r,dec_r)
+				az_off = self.model_az_hadec(best,np.radians(az),np.radians(el),ha_r,dec_r)
+				if self.verbose:
+					print '{0}\t{1}\t{2}\t{3}\t{4}'.format(ha,az,el,az_off * 3600.0,el_off * 3600.0)
+				el_offsets.append(np.degrees(el_off))
+				az_offsets.append(np.degrees(az_off))
+				
+			subplot.plot(ha_range,np.array(az_offsets) * 3600.0,'b-',ha_range,np.array(el_offsets) * 3600.0,'g-')
 		else:
 			ha_offsets = []
 			dec_offsets = []
+			if self.verbose:
+				print 'ha\tha_off\tdec_off'
 			for ha in ha_range:
-				ha_offsets.append(self.model_ha(best,np.radians(ha),dec_r))
-				dec_offsets.append(self.model_dec(best,np.radians(ha),dec_r))
+				ha_r = np.radians(ha)
+				ha_off = self.model_ha(best,ha_r,dec_r)
+				dec_off = self.model_dec(best,ha_r,dec_r)
+				if self.verbose:
+					print '{0}\t{1}\t{2}'.format(ha,ha_off * 3600.0,dec_off * 3600.0)
+				ha_offsets.append(np.degrees(ha_off))
+				dec_offsets.append(np.degrees(dec_off))
 
-			pylab.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
-
-		pylab.show()
+			subplot.plot(ha_range,np.array(ha_offsets) * 3600.0,'b-',ha_range, np.array(dec_offsets) * 3600.0,'g-')
 
 	def to_string(self,unit='arcseconds'):
 		if self.altaz:

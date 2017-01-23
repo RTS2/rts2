@@ -105,8 +105,36 @@ def plot_offsets(args):
 	model.fit_to_extra()
 	
 	ha_b,ha_e,dec = map(lambda f:float(f),args.plot_offsets.split(':'))
-	
-	model.plotoffsets(model.best.params,ha_b,ha_e,dec)
+	import pylab
+
+	terms = []
+
+	if args.show_offset_terms == None:
+		plotgrid = (1,1)
+	else:
+		if args.show_offset_terms == '*':
+			terms = model.best.params.keys()
+		else:
+			terms = args.show_offset_terms.split(',')
+		plotgrid = (1+len(terms),1)
+
+	subplot = pylab.subplot2grid(plotgrid,(0,0),colspan=1,rowspan=1)
+	model.plot_offsets(model.best.params,subplot,ha_b,ha_e,dec)
+
+	r = 1
+	for t in terms:
+		print 'plotting term {0}'.format(t)
+		b = model.best.params
+		for ti in b.keys():
+			if not(ti == t):
+				b[ti].value = 0
+		if model.verbose > 1:
+			print b
+		subplot = pylab.subplot2grid(plotgrid,(r,0),colspan=1,rowspan=1)
+		model.plot_offsets(b,subplot,ha_b,ha_e,dec)
+		r += 1
+
+	pylab.show()
 
 def add_models(args):
 	if len(args.inputfiles) < 2:
@@ -141,6 +169,7 @@ parser.add_argument('--mnt-flip',dest='mnt_flip',action='store',help='select onl
 parser.add_argument('--latitude',dest='latitude',action='store',default=None,type=float,help='observatory latitude (north is positive)')
 parser.add_argument('--model-input',dest='model_input',action='store_true',default=False,help='input file(s) are existing model file(s) to load and investigate')
 parser.add_argument('--plot-offsets',dest='plot_offsets',action='store',default=None,type=str,help='plot offsets from the model file; either specify ha start-end-dec, or start interactive mode')
+parser.add_argument('--show-offset-terms',dest='show_offset_terms',action='store',default=None,type=str,help='terms to show on subplot')
 parser.add_argument('--filter',dest='filter',action='store',default=None,help='filter values which does not fit the model. Those can be errornous measurements')
 parser.add_argument('--band',dest='plot_band',action='store',help='put on plots rectange with given height around 0. Specify band height in arcsec')
 parser.add_argument('--add-models',dest='add_models',action='store_true',default=False,help='add input models together, produce output model combining both')
