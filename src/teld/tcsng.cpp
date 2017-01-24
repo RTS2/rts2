@@ -343,10 +343,8 @@ int TCSNG::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 int TCSNG::moveTLE (const char *l1, const char *l2)
 {
 	char cmd[300];
-	//tle_l1->setValueString (l1);
-	//tle_l2->setValueString (l2);
 
-	logStream (MESSAGE_INFO) << "TLE incoming" << l1 << sendLog;
+	logStream (MESSAGE_INFO) << "TLE incoming" << l1 << " " << l2 << sendLog;
 
 	snprintf (cmd, 300, "TLE\n%s\n%s", l1, l2 );
 	ngconn->command( cmd );
