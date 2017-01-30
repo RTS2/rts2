@@ -903,6 +903,11 @@ class ConstTarget:public Target
 		virtual void load ();
 		virtual int saveWithID (bool overwrite, int tar_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
+
+		/**
+		 * Returns true if the target has nan position - this is usually case with scripted targets.
+		 */
+		bool hasNaNPosition () { return isnan (position.ra) || isnan (position.dec); }
 		
 		/**
 		 * Retrieve target proper motion.

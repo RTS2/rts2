@@ -928,6 +928,10 @@ float OportunityTarget::getBonus (double JD)
 	double lastObs;
 	time_t now;
 	time_t start_t;
+
+	if (hasNaNPosition ())
+		return ConstTarget::getBonus (JD);
+
 	getAltAz (&hrz, JD);
 	lunarDist = getLunarDistance (JD);
 	ha = getHourAngle ();
