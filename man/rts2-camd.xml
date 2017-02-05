@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2009</year>
+      <year>2009,2017</year>
       <holder>&dhusername;</holder>
     </copyright>
     &legal;
@@ -47,12 +47,12 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      &basicapp;
+      &deviceapp;
       <arg choice="opt">
-	<arg choice="plain"><option>-F <replaceable>focuser name</replaceable></option></arg>
+	<arg choice="plain"><option>--focdev <replaceable>focuser name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>-W <replaceable>filter wheel</replaceable></option></arg>
+	<arg choice="plain"><option>--wheeldev <replaceable>filter wheel</replaceable></option></arg>
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>-e <replaceable>default exposure</replaceable></option></arg>
@@ -68,6 +68,12 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--detsize <replaceable>x:y:w:h</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--filter-offsets <replaceable>fo1:fo2:..</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--offsets-file <replaceable>filename</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
 
@@ -114,24 +120,59 @@
   <refsect1 id="options">
     <title>OPTIONS</title>
 
-    <para>
-      RTS2 follows the usual &gnu; command line syntax, with long options
-      starting with two dashes (`--').  A summary of options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
-      &basicapplist;
+
+      &deviceapplist;
+
       <varlistentry>
-        <term><option>--server <replaceable class="parameter">server-name[:port]</replaceable></option></term>
+        <term><option>--wheeldev <replaceable>filter wheel device name</replaceable></option></term>
         <listitem>
           <para>
-	    Specify name of the host and possibly port, which runs
-	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
-	    This option is needed only for setups that use multiple computers.
-	    Its default is localhost for hostname and 617 for port number. If
-	    only hostname is provided, default port number - 617 - is used. 
-	    Default will work for simple setups.
+            Name of attached (external) filter wheel device.
 	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--focdev <replaceable>focuser device name</replaceable></option></term>
+        <listitem>
+          <para>
+            Name of attached (external) focuser device.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--filter-offsets <replaceable>fo1:fo2:..</replaceable></option></term>
+        <listitem>
+          <para>
+            Filter offsets. Offsets are specified in filter order (see -f option), and applicable 
+            only if camera has either embedded filter wheel, or a wheel is attached to camera using <emphasis>--wheeldev</emphasis>
+            option. And of course you need to add focuser with <emphasis>--focdev</emphasis> option.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--offsets-file <replaceable>filename</replaceable></option></term>
+        <listitem>
+          <para>
+	    File with filter offsets. Line in the file represents one entry,
+	    and consists of filter name and offset (in focuser steps). Lines
+            starting with # are ignored.  Applicable only when
+            <emphasis>--focdev</emphasis> and <emphasis>--wheeldev</emphasis> are provided.
+	  </para>
+          <para>
+            Example filter offset file:
+<programlisting>
+<![CDATA[
+# Simple filter offset file
+# R filter, -200 steps
+R -200
+# B filter, +20 steps
+B 20
+]]>
+</programlisting>
+          </para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -152,6 +193,21 @@
       </citerefentry>
       STA Reflex controller RTS2 driver.
     </para>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-camd-gxccd</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      MI CCD (GX CCD) RTS2 driver.
+    </para>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-camd-andor</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      Andor CCDs RTS2 driver.
+    </para>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

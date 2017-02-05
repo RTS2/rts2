@@ -2162,6 +2162,8 @@ void Camera::setFilterOffsetFile (const char *filename)
 			break;
 		std::string fn;
 		double fo;
+		if (line[0] == '#')
+			continue;
 		std::istringstream iifs (line);
 		iifs >> fn >> fo;
 		if (iifs.fail ())
