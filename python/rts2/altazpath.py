@@ -35,7 +35,7 @@ def random_path(altitudes=[25.3,36.2,45.1,54.7,63.2,73.1,82.2],azimuth_separatio
 		if i==len(altaz):
 			i=len(altaz) - 1
 		path.append(altaz[i])
-		altaz=altaz[0:i] + altaz[i+1:]
+		del altaz[i]
 	
 	return path
 
