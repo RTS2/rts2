@@ -14,7 +14,8 @@ import sys
 import subprocess
 import os
 import rts2.scriptcomm
-import brights
+import rts2.brights
+import math
 
 class GuideScript (rts2.scriptcomm.Rts2Comm):
 	"""Guiding script."""
@@ -76,6 +77,12 @@ class GuideScript (rts2.scriptcomm.Rts2Comm):
 			x = self.getValueFloat('center_X')
 			y = self.getValueFloat('center_Y')
 
+			pa = self.getValueFloat('PA',self.derotator)
+			pa_r = math.radians(pa)
+
+			sin_pa = math.sin(pa_r)
+			cos_pa = math.cos(pa_r)
+
 			ch_x = x - self.w / 2.0 * self.ps_x
 			ch_y = y - self.h / 2.0 * self.ps_y
 
@@ -84,10 +91,10 @@ class GuideScript (rts2.scriptcomm.Rts2Comm):
 				self.delete(image)
 				continue
 
-			ch_ra = ch_x * self.ra_aggresivity
-			ch_dec = ch_y * self.dec_aggresivity
+			ch_ra = (ch_x * cos_pa + ch_y * sin_pa) * self.ra_aggresivity
+			ch_dec = (ch_x * sin_pa + ch_x * cos_pa) * self.dec_aggresivity
 
-			self.log('I','guiding * center {0:+} {1:+} change {2:.3}" {3:.2}"'.format(x,y,ch_ra,ch_dec))
+			self.log('I','guiding * center {0:+} {1:+} PA {2} change {3:.3}" {4:.2}"'.format(x,y,pa,ch_ra,ch_dec))
 			self.incrementValueType(rts2.scriptcomm.DEVICE_TELESCOPE,'OFFS','%f %f' % (ch_ra / 3600.0, ch_dec / 3600.0))
 			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
 			self.delete(image)
