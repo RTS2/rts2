@@ -2,7 +2,7 @@ bin_SCRIPTS = rts2-queue rts2-json rts2-bb-json rts2-astrometry.net rts2-sextrac
 	imgp_analysis.py rts2-focusing gpoint mosaic-combine satvis rts2-bsc-wcs rts2-build-model-verify \
 	rts2-build-model-tool rts2-verify-tracking rts2-fits2model rts2-start rts2-stop
 
-EXTRA_DIST = flat.py guide.py masterflat.py center.py match.py systemtest.py \
+EXTRA_DIST = flat.py guide.py guide-altaz.py masterflat.py center.py match.py systemtest.py \
 	rts2-queue rts2-json rts2-astrometry.net rts2-sextractor imgp_analysis.py rts2-focusing \
 	acquire.py \
 	rts2-queue rts2-json rts2-bb-json rts2-astrometry.net rts2-log subtract.py \
