@@ -309,14 +309,11 @@ int GXCCD::info ()
 	tempAir->setValueFloat (ret ? NAN : val);
 
 	ret = gxccd_get_value (camera, GV_ADC_GAIN, &val);
-	if (ret)
-		return -1;
-	gain->setValueFloat (val);
+	gain->setValueFloat (ret ? NAN : val);
 
 	ret = gxccd_get_value (camera, GV_POWER_UTILIZATION, &val);
-	if (ret)
-		return -1;
-	power->setValueFloat (val);
+	power->setValueFloat (ret ? NAN : val);
+
 	return Camera::info ();
 }
 
