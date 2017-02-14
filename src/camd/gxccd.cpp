@@ -306,9 +306,7 @@ int GXCCD::info ()
 	}
 	tempCCD->setValueFloat (val);
 	ret = gxccd_get_value (camera, GV_ENVIRONMENT_TEMPERATURE, &val);
-	if (ret)
-		return -1;
-	tempAir->setValueFloat (val);
+	tempAir->setValueFloat (ret ? NAN : val);
 
 	ret = gxccd_get_value (camera, GV_ADC_GAIN, &val);
 	if (ret)
