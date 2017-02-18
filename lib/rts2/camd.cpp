@@ -1548,6 +1548,7 @@ int Camera::camStartExposure (bool careBlock)
 {
 	// check if we aren't blocked
 	// we can allow this test as camStartExposure is called only after quedExpNumber was decreased
+	bool fm = filterMoving ();
 	if (careBlock == true
 		&& (!expType || expType->getValueInteger () == 0)
 		&& (
@@ -1555,8 +1556,8 @@ int Camera::camStartExposure (bool careBlock)
 			|| (getMasterStateFull () & BOP_EXPOSURE)
 			|| (getDeviceBopState () & BOP_TRIG_EXPOSE)
 			|| (getMasterStateFull () & BOP_TRIG_EXPOSE)
-			|| filterMoving ()
-			|| (focuserMoving && focuserMoving->getValueBool () == true)
+			|| fm
+			|| focuserMoving && focuserMoving->getValueBool ()
 		))
 	{
 		// no conflict, as when we are called, quedExpNumber will already be decreased
@@ -1569,7 +1570,7 @@ int Camera::camStartExposure (bool careBlock)
 			sendValueAll (waitingForNotBop);
 		}
 
-		logStream (MESSAGE_DEBUG) << "should ask for exposure block " << (getDeviceBopState () & BOP_EXPOSURE) << " " << (getMasterStateFull () & BOP_EXPOSURE) << " " << (getDeviceBopState () & BOP_TRIG_EXPOSE) << " " << (getMasterStateFull () & BOP_TRIG_EXPOSE) << sendLog;
+		logStream (MESSAGE_DEBUG) << "should ask for exposure block " << (getDeviceBopState () & BOP_EXPOSURE) << " " << (getMasterStateFull () & BOP_EXPOSURE) << " " << (getDeviceBopState () & BOP_TRIG_EXPOSE) << " " << (getMasterStateFull () & BOP_TRIG_EXPOSE) << " " << fm << " " << focuserMoving->getValueBool () << sendLog;
 
 		if (!((getDeviceBopState () & BOP_EXPOSURE) || (getMasterStateFull () & BOP_EXPOSURE)) && ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
 			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", NAN, NAN, exposureConn);
