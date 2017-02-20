@@ -143,23 +143,23 @@ class Sextract(object):
         try:
             naxis1 = float(hdr['NAXIS1'])
         except Exception, e:
-            self.logger.warn( 'sextract: no NAXIS1 information found: {0{, error: {1}'.format(fitsFn, focPos, e))
+            self.logger.warn( 'sextract: no NAXIS1 information found: {0}, focPos: {1}, error: {2}'.format(fitsFn, focPos, e))
             naxis1=None
         try:
             naxis2 = float(hdr['NAXIS2'])
         except Exception, e:
-            self.logger.warn( 'sextract: no NAXIS2 information found: {0}, errot: {1}'.format(fitsFn, focPos, e))
+            self.logger.warn( 'sextract: no NAXIS2 information found: {0}, focPos: {1}, errot: {2}'.format(fitsFn, focPos, e))
             naxis2=None
         try:
             ftName = hdr['FILTER']
         except Exception, e:
-            self.logger.warn( 'sextract: no filter name information found: {0}, error:{1}'.format(fitsFn, focPos, e))
+            self.logger.warn( 'sextract: no filter name information found: {0}, focPos: {1}, error:{2}'.format(fitsFn, focPos, e))
             ftName=None
 
         try:
             date = hdr['DATE'] # DATE-OBS
         except Exception, e:
-            self.logger.warn( 'sextract: no date information found: {0}, error: {1}'.format(fitsFn, focPos, e))
+            self.logger.warn( 'sextract: no date information found: {0}, focPos: {1}, error: {2}'.format(fitsFn, focPos, e))
             date=None
 
 
@@ -169,7 +169,7 @@ class Sextract(object):
             try:
                 ftAName = hdr['FILTA']
             except Exception, e:
-                if self.debug: self.logger.debug( 'sextract: no FILTA name information found: {0}, error: {1}'.format(fitsFn, focPos, e))
+                if self.debug: self.logger.debug( 'sextract: no FILTA name information found: {0}, focPos: {1}, error: {2}'.format(fitsFn, focPos, e))
 
         # ToDo clumsy
         ftBName=None
@@ -193,9 +193,8 @@ class Sextract(object):
         stde= sex.runSExtractor(fitsFn, assocFn=assocFn)
 
         if stde:
-            self.logger.error( 'sextract: {0} not found, returning, {1}'.format(fitsFn,stde))
-            self.logger.error( 'sextract: message rts2saf.sextractor: {0}'.format(stde))
-            return None
+            self.logger.error( 'sextract: returning, message rts2saf.sextractor: {0}'.format(stde))
+            #return None
         
         # find the sextractor counts
         objectCount = len(sex.cleanedObjects)
@@ -251,7 +250,7 @@ class Sextract(object):
             i_flux = dataSxtr.fields.index('FLUX_MAX')
             dataSxtr.fillFlux(i_flux=i_flux, logger=self.logger) #
         except Exception, e:
-            if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}, error: {1]'.format(fitsFn, e))
+            if self.debug: self.logger.debug( 'sextract: no FLUX_MAX available: {0}, error: {1}'.format(fitsFn, e))
 
         if self.debug: self.logger.debug( 'sextract:  {0}, FOC_POS: {1:5.0f}, SX cleaned objects: {2:4d}, nstars {3:4d}, FWHM: {4:5.1f}, stdFwhm: {5:5.1f}'.format(fitsFn, focPos, len(sex.cleanedObjects), nstars, fwhm, stdFwhm))
 

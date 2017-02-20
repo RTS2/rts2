@@ -425,7 +425,7 @@ class Acquire(object):
                     self.logger.warn('acquire: disabled writing filter_offsets: {0} '.format(offsets[:-1]))
 
         else:
-            if self.debug: self.logger.debug('acquire:ft.name: {0} is not the main wheel'.format(ftn, theWheel))
+            if self.debug: self.logger.debug('acquire:ftw.name: {0} is not the main wheel'.format(ftw.name))
 
     def startScan(self, exposure=None, blind=False):
         """Save RTS2 devices initial state. Start acquisition thread :py:mod:`rts2saf.acquire.ScanThread`.
