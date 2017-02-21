@@ -46,11 +46,12 @@ def waitForFocuser(foc=None, focPosCalc=None, focDef=None, proxy=None, debug=Non
         if debug: logger.debug('waitForFocuser: not yet reached focuser position: {0}, now:{1}, sleeping'.format(focPosCalc, focPos))
         time.sleep(.1) # leave it alone
         commitSucide -= 1
+        logger.info('waitForFocuser: focuser position NOT YET reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(int(focPosCalc), focPos, abs( focPosCalc- focPos), foc.resolution, focDef, slt))
         if commitSucide < 0:
             logger.error('waitForFocuser: can not reach FOC_TAR: {} after {} seconds, exiting'.format(focPosCalc, commitSucide * .1))
             sys.exit(1)
-        else:
-            if debug: logger.debug('waitForFocuser: focuser position reached: abs({0:5d}- {1:5.0f}= {2:5.0f} <= {3:5.0f} FOC_DEF:{4}, sleep time: {5:4.2f} sec'.format(int(focPosCalc), focPos, abs( focPosCalc- focPos), foc.resolution, focDef, slt))
+            
+    logger.info('waitForFocuser: focuser position reached')
 
 
 

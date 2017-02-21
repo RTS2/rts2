@@ -160,7 +160,6 @@ class SimpleAnalysis(object):
             ambientTemp='noAmbientTemp'
 
         plotFn = self.ev.expandToPlotFileName(plotFn='{0}/{1}.png'.format(bPth,ftName))
-        self.logger.info('analyze: storing plot file: {0}'.format(plotFn))
         # fwhm
         if len(self.dataSxtr)>0:
             ftName = self.dataSxtr[0].ftName

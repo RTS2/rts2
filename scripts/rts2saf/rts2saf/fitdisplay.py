@@ -88,6 +88,7 @@ class  FitDisplay(object):
             
         try:
             self.fig.savefig(dataFit.plotFn)
+            self.logger.info('fitDisplay: storing plot file: {0}'.format(dataFit.plotFn))
             return dataFit.plotFn
         except Exception, e:
             self.logger.error('fitDisplay: can not save plot to: {0}, matplotlib error:\n{1}'.format(dataFit.plotFn,e))
