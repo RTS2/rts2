@@ -45,11 +45,32 @@ void ClientFocusCamera::postEvent (rts2core::Event * event)
 			if (!strcmp (getName (), fm->focuserName))
 			{
 				if (event->getType () == EVENT_FOCUSER_SET)
+				{
+					if (connection->getValueDouble ("FOC_TAR") == fm->value)
+					{
+						rts2core::DevClientFocus::postEvent (event);
+						return;
+					}
 					connection->queCommand (new rts2core::CommandChangeValue (this, "FOC_TAR", '=', fm->value));
+				}
 				else if (event->getType () == EVENT_FOCUSER_FILTEROFFSET)
+				{
+					if (connection->getValueDouble ("FOC_FILTEROFF") == fm->value)
+					{
+						rts2core::DevClientFocus::postEvent (event);
+						return;
+					}
 					connection->queCommand (new rts2core::CommandChangeValue (this, "FOC_FILTEROFF", '=', fm->value));
+				}
 				else
+				{
+					if (connection->getValueDouble ("FOC_TOFF") == fm->value)
+					{
+						rts2core::DevClientFocus::postEvent (event);
+						return;
+					}
 					connection->queCommand (new rts2core::CommandChangeValue (this, "FOC_TOFF", '=', fm->value));
+				}
 				// we process message
 				fm->focuserName = NULL;
 				activeConn = fm->conn;
