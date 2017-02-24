@@ -343,6 +343,7 @@ class Camera:public rts2core::ScriptDevice
 
 		rts2core::ValueSelection * camFilterVal;
 		rts2core::DoubleArray *camFilterOffsets;
+		rts2core::ValueBool *useFilterOffsets;
 
 		rts2core::ValueString *filterOffsetFile;
 
@@ -807,6 +808,12 @@ class Camera:public rts2core::ScriptDevice
 				createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, working ? CAM_WORKING : CAM_EXPOSING);
 			if (camFilterOffsets == NULL)
 				createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
+
+			if (useFilterOffsets == NULL)
+			{
+				createValue (useFilterOffsets, "apply_filter_offs", "apply filter offsets", false, RTS2_VALUE_WRITABLE);
+				useFilterOffsets->setValueBool (true);
+			}
 		}
 
 		/**

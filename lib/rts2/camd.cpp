@@ -544,8 +544,9 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 
 	createValue (camFocVal, "focpos", "position of focuser", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 
-        camFilterVal = NULL;
+	camFilterVal = NULL;
 	camFilterOffsets = NULL;
+	useFilterOffsets = NULL;
 	focuserDevice = NULL;
 
 	exposureConn = NULL;
@@ -1840,7 +1841,7 @@ int Camera::setFilterNum (int new_filter, const char *fn)
 
 void Camera::offsetForFilter (int new_filter, std::list <FilterVal>::iterator fvi)
 {
-	if (!focuserDevice)
+	if (!focuserDevice || useFilterOffsets->getValueBool () == false)
 		return;
 	struct focuserMove fm;
 	if (fvi == camFilterVals.end ())
