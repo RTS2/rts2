@@ -262,7 +262,7 @@ This Postgres user is necessary since an almost complete RTS2 environment is cre
 the execution of the ``unittest``. A better way to execute ``unittest`` would be to create and destroy the Postgres DB
 on  the fly as well - this is a ToDo.
 
-Configure pg_haba.conf (Ubuntu: /etc/postgresql/9.1/main/pg_hba.conf) to
+deprecated: Configure pg_haba.conf (Ubuntu: /etc/postgresql/9.1/main/pg_hba.conf) to
 
 .. code-block:: bash
 

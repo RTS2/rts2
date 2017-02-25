@@ -21,8 +21,8 @@
 __author__ = 'markus.wildi@bluewin.ch'
 
 import threading
-from ds9 import ds9
-
+##from ds9 import ds9
+from pyds9 import DS9 
 # on first call of DS9 a frame is already open
 first = True
 

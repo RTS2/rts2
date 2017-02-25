@@ -65,7 +65,7 @@ class  FitDisplay(object):
             return e
 
         self.ax1.plot(dataFit.pos, dataFit.val, 'ro', color=resultFit.color)
-        self.ax1.errorbar(dataFit.pos, dataFit.val, xerr=dataFit.errx, yerr=dataFit.erry, ecolor='black', fmt=None)
+        self.ax1.errorbar(dataFit.pos, dataFit.val, xerr=dataFit.errx, yerr=dataFit.erry, ecolor='black', fmt='none')
 
         if resultFit.fitFlag:
             line, = self.ax1.plot(x_pos, dataFit.fitFunc(x_pos, p=resultFit.fitPar), 'r-', color=resultFit.color)

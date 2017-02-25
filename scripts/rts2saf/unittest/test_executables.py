@@ -39,8 +39,8 @@ def suite_no_connection():
 def suite_with_connection():
     suite = unittest.TestSuite()
     suite.addTest(TestRTS2Environment('test_rts2saf_fwhm'))
-#    suite.addTest(TestRTS2Environment('test_rts2saf_imgp'))
-#    suite.addTest(TestRTS2Environment('test_rts2saf_focus'))
+    suite.addTest(TestRTS2Environment('test_rts2saf_imgp'))
+    suite.addTest(TestRTS2Environment('test_rts2saf_focus'))
 
     return suite
 

@@ -186,7 +186,12 @@ class ScanThread(threading.Thread):
                 
         self.proxy.refresh()
         fn=self.proxy.getDevice('HTTPD')['{0}_lastimage'.format(self.ccd.name)][1]
-
+        if len(fn)>0:
+            self.logger.info('____ScanThread, expose: from HTTPD received fits file name: {}'.format(fn))
+        else:
+            self.logger.warn('____ScanThread, expose: from HTTPD received NO fits file name')
+            return None 
+        
         if self.ftw and self.ft:
             if not self.ev.createAcquisitionBasePath(ftwName=self.ftw.name, ftName=self.ft.name):
                 return None 

@@ -377,14 +377,14 @@ class AnalyzeRuns(object):
                 if self.args.flux: self.logger.warn('flux fitFocDef: no fitted minimum found')
 
         # on e.g. Bootes-2 creating a plot and write takes 30 seconds, too long
-        if self.rt.cfg['WITH_MATHPLOTLIB']:
-            if self.args.catalogAnalysis:
-                if rFtFwhm.fitFlag:
-                    an.anAcc.display()
-            else:
-                if rFtFwhm.fitFlag:
-                    an.display()
-
+        # bad idea if self.rt.cfg['WITH_MATHPLOTLIB']:
+        if self.args.catalogAnalysis:
+            #if rFtFwhm.fitFlag:
+            an.anAcc.display()
+        else:
+            #if rFtFwhm.fitFlag:
+            an.display()
+            
         # ToDo expand to Flux?
         if self.rt.cfg['WEIGHTED_MEANS']:
             # ToDo what is that:
