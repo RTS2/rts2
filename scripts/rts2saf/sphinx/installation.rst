@@ -173,7 +173,7 @@ to write to focuser, CCD, and filter wheel are granted with
  UPDATE users SET usr_execute_permission='t', allowed_devices = 'F0 C0 W0' WHERE usr_login='YOUR_RTS2_HTTPD_USERNAME' ;
 
 if default device names are configured in ``/etc/rts2/devices``. At this point an authorized
-connection to XMLRPC with
+connection to HTTPD with
 
 .. code-block:: bash
 
