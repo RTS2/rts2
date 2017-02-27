@@ -1,0 +1,5 @@
+[default] 
+
+foc_min = -1111.
+foc_max = 9999.
+focstep= 1000
