@@ -166,7 +166,7 @@ class TestCheckDevices(unittest.TestCase):
         self.rt = Configuration(logger=logger)
         self.fileName='./rts2saf-bootes-2.cfg'
         self.success=self.rt.readConfiguration(fileName=self.fileName)
-        self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
+        self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['RTS2_HTTPD_USERNAME'],password=self.rt.cfg['PASSWORD'])
         self.rts2safFoc= CheckDevices(debug=False, proxy=self.proxy, blind=None, verbose=None, ccd=None, ftws=None, foc=None, logger=logger)
 
 

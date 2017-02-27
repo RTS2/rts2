@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Status and open issues (2014-04-19)
+Status and open issues (2017-02-27)
 -----------------------------------
 This description is not yet meant to be complete. Comments and corrections are very welcome.
 
@@ -66,8 +66,8 @@ or some of these commands
 Overview
 --------
 This is the description of the rts2saf auto focuser package.
-The latest version is available at the RTS2 svn repo:
-http://sourceforge.net/p/rts-2/code/HEAD/tree/trunk/rts-2/scripts/rts2saf/
+The latest version is available at the RTS2 git repo:
+https://github.com/RTS2/rts2/scripts/rts2saf
 including this description.
 
 

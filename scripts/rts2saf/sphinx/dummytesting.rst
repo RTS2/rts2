@@ -25,15 +25,15 @@ bunch of filters.  In file ``/etc/rts2/devices`` add dummy devices (at least the
  filterd	dummy	W0	-F "open:R:g:r:i:z:Y:empty8" -s 10 --localhost localhost
  focusd	        dummy	F0      --modefile /usr/local/etc/rts2/rts2saf/f0.modefile 
 
-or copy ``~/rts-2/scripts/rts2saf/configs/one-filter-wheel/devices`` to ``/etc/rts2``.
+or copy ``~/rts2/scripts/rts2saf/configs/one-filter-wheel/devices`` to ``/etc/rts2``.
 The ``rts2saf`` configuration needs to be copied:
 
 .. code-block:: bash
 
-   sudo cp ~/rts-2/scripts/rts2saf/configs/one-filter-wheel/rts2saf.cfg /usr/local/etc/rts2/rts2saf
-   cd ~/rts-2/conf/rts2saf/
+   sudo cp ~/rts2/scripts/rts2saf/configs/one-filter-wheel/rts2saf.cfg /usr/local/etc/rts2/rts2saf
+   cd ~/rts2/conf/rts2saf/
    sudo cp rts2saf-sex.cfg rts2saf-sex.nnw  /usr/local/etc/rts2/rts2saf
-   sudo cp ~/rts-2/scripts/rts2saf/unittest/f0.modefile  /usr/local/etc/rts2/rts2saf/f0.modefile
+   sudo cp ~/rts2/scripts/rts2saf/unittest/f0.modefile  /usr/local/etc/rts2/rts2saf/f0.modefile
 
 The focuser configuration file ``f0.modefile`` sets ``focstep`` of the dummy focuser to
 a reasonable value which shortens execution time.
@@ -43,7 +43,7 @@ as content. In order to test the whole analysis chain download the 'dry FITS fil
 
 .. code-block:: bash
 
- cd ~/rts-2/scripts/rts2saf
+ cd ~/rts2/scripts/rts2saf
  wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
  tar zxvf rts2saf-test-focus-2013-09-14.tgz
 
@@ -78,7 +78,7 @@ the following commands
 
 .. code-block:: bash
 
-  cd ~/rts-2/scripts/rts2saf
+  cd ~/rts2/scripts/rts2saf
   rts2saf_focus.py --toconsole --dryfitsfiles  ./samples/  --exp 1.  --fitdisplay --ds9display
 
 After a while a matplotlib window appears containing the fit. In parallel a ``DS9`` window appears 

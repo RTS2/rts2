@@ -9,7 +9,7 @@ The ``unittest`` rely on the presence of the files in directories ``samples`` an
 
 .. code-block:: bash
 
- cd ~/rts-2/scripts/rts2saf
+ cd ~/rts2/scripts/rts2saf
  wget http://azug.minpet.unibas.ch/~wildi/rts2saf-test-focus-2013-09-14.tgz
  tar zxvf rts2saf-test-focus-2013-09-14.tgz
  cd imgp
@@ -19,7 +19,7 @@ To verify the installation use
 
 .. code-block:: bash
 
- cd ~/rts-2/scripts/rts2saf
+ cd ~/rts2/scripts/rts2saf
  ./rts2saf_unittest.py
 
 Every test should be ``ok``. From time to time tests using JSON/proxy may fail. Please repeat the test once more. If the failure persists contact the author. 
@@ -28,7 +28,7 @@ To run a complete focus run within an RTS2 environment created on the fly change
 
 .. code-block:: bash
 
- cd ~/rts-2/scripts/rts2saf/unittest
+ cd ~/rts2/scripts/rts2saf/unittest
 
 and edit in file ``test_focus.py`` the line from
 
@@ -66,7 +66,7 @@ If you create this documentation
 
 .. code-block:: bash
 
- cd ~/rts-2/scripts/rts2saf/sphinx
+ cd ~/rts2/scripts/rts2saf/sphinx
  make -f Makefile.sphinx  html
  
 the commands ``rts2saf_unittest.sh`` and ``rts2saf_coverage.sh`` within ``unittest.rst`` (source of this page) produce the below presented outputs. The output of the tests go to file  ``/tmp/rts2saf_log/unittest.log``.

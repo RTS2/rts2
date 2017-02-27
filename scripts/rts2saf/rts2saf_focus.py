@@ -154,11 +154,11 @@ if __name__ == '__main__':
             sys.exit(1)
 
     # establish a connection
-    proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
+    proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['RTS2_HTTPD_USERNAME'],password=rt.cfg['PASSWORD'])
     try:
         proxy.refresh()
     except Exception, e:
-        logger.error('rts2saf_focus: no JSON connection for: {0}, {1}, {2}'.format(rt.cfg['URL'],rt.cfg['USERNAME'],rt.cfg['PASSWORD']))
+        logger.error('rts2saf_focus: no JSON connection for: {0}, {1}, {2}'.format(rt.cfg['URL'],rt.cfg['RTS2_HTTPD_USERNAME'],rt.cfg['PASSWORD']))
         sys.exit(1)
 
     # create all devices

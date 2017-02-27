@@ -181,7 +181,7 @@ class RTS2Environment(unittest.TestCase):
         self.args.flux=True
         self.args.dryFitsFiles='../samples_bootes2'
         # JSON
-        self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['USERNAME'],password=self.rt.cfg['PASSWORD'])
+        self.proxy=JSONProxy(url=self.rt.cfg['URL'],username=self.rt.cfg['RTS2_HTTPD_USERNAME'],password=self.rt.cfg['PASSWORD'])
         # create Focuser 
         self.foc= CreateFocuser(debug=False, proxy=self.proxy, check=self.args.check, rt=self.rt, logger=logger).create()
         # create filters

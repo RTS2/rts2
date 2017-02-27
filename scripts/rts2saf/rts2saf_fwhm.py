@@ -98,7 +98,7 @@ if __name__ == '__main__':
             logger.info('rts2af_fwhm: no focus run  queued, no FWHM calculated, error: {}'.format(e))
 
         q = None
-        rts2.createProxy(url=rt.cfg['URL'], username=rt.cfg['USERNAME'], password=rt.cfg['PASSWORD'])
+        rts2.createProxy(url=rt.cfg['URL'], username=rt.cfg['RTS2_HTTPD_USERNAME'], password=rt.cfg['PASSWORD'])
         try:
             q = rts2.Queue(rts2.json.getProxy(), args.queue)
         except Exception, e:
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                     logger.info('rts2af_fwhm: cleared queue: {}'.format(args.queue))
                     break
     else:
-        proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['USERNAME'],password=rt.cfg['PASSWORD'])
+        proxy=JSONProxy(url=rt.cfg['URL'],username=rt.cfg['RTS2_HTTPD_USERNAME'],password=rt.cfg['PASSWORD'])
         try:
             proxy.refresh()
         except Exception, e:
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
         else:
             q = None
-            rts2.createProxy(url=rt.cfg['URL'], username=rt.cfg['USERNAME'], password=rt.cfg['PASSWORD'])
+            rts2.createProxy(url=rt.cfg['URL'], username=rt.cfg['RTS2_HTTPD_USERNAME'], password=rt.cfg['PASSWORD'])
             try:
                 q = rts2.Queue(rts2.json.getProxy(), args.queue)
             except Exception, e:
