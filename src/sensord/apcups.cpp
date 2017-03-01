@@ -202,14 +202,12 @@ time_t ConnApcUps::getDate (const char *val)
 {
 	const char *v = getString (val);
 	struct tm _tm;
-	char *te = strptime (v, "%a %b %d %X NZST %Y", &_tm);
+	char *te = strptime (v, "%Y-%m-%d %X %Z", &_tm);
 	if (te == NULL || *te != '\0')
 	{
-		te = strptime (v, "%a %b %d %X UTC %Y", &_tm);
-		if (te == NULL || *te != '\0')
-		{
-			throw rts2core::ConnError (this, "Cannot convert date");
-		}
+	    {
+		throw rts2core::ConnError (this, "Cannot convert date");
+	    }
 	}
 	return mktime (&_tm);
 }
