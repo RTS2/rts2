@@ -24,7 +24,9 @@ Call slitazimuth.c as shared library                                            
                                      
 
 '''
+
 __author__ = 'wildi.markus@bluewin.ch'
+
 import sys
 import argparse
 import numpy as np
