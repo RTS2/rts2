@@ -248,7 +248,7 @@ int ApcUps::info ()
     ConnApcUps *connApc = new ConnApcUps (this, host->getHostname (), host->getPort ());
     try
     {
-	connApc->init ();
+	connApc->init (false);
 	ret = connApc->command ("status");
 	if (ret)
 	{
