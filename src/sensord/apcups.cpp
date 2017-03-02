@@ -103,9 +103,6 @@ namespace rts2sensord
 
 	    rts2core::ValueFloat *minbcharge;
 	    rts2core::ValueInteger *mintimeleft;
-
-	    rts2core::ValueTime *xOnBatt;
-	    rts2core::ValueTime *xOffBatt;
     };
 
 }
@@ -205,13 +202,14 @@ time_t ConnApcUps::getDate (const char *val)
 {
     const char *v = getString (val);
     struct tm _tm;
-    char *te = strptime (v, "%Y-%m-%d %X %Z", &_tm);
+    char *te = strptime (v, "%Y-%m-%d %H:%M:%S %Z", &_tm);
     if (te == NULL || *te != '\0')
     {
 	{
 	    throw rts2core::ConnError (this, "Cannot convert date");
 	}
     }
+    _tm.tm_isdst=-1;
     return mktime (&_tm);
 }
 
@@ -269,8 +267,6 @@ int ApcUps::info ()
 	itemp->setValueFloat (connApc->getTemp ("ITEMP"));
 	tonbatt->setValueInteger (connApc->getTime ("TONBATT"));
 	status->setValueString (connApc->getString ("STATUS"));
-	xOnBatt->setValueTime (connApc->getDate ("XONBATT"));
-	xOffBatt->setValueTime (connApc->getDate ("XOFFBATT"));
 	setInfoTime (connApc->getDate ("DATE"));
     }
     catch (rts2core::ConnError er)
@@ -325,9 +321,6 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
     createValue (itemp, "temperature", "internal UPS temperature", false);
     createValue (tonbatt, "tonbatt", "time on battery", false);
     createValue (status, "status", "UPS status", false);
-
-    createValue (xOnBatt, "xonbatt", "time of last on battery event", false);
-    createValue (xOffBatt, "xoffbatt", "time of last off battery event", false);
 
     createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false, RTS2_VALUE_WRITABLE);
     battimeout->setValueInteger (60);
