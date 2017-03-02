@@ -89,6 +89,9 @@ namespace rts2sensord
 
 	    rts2core::ValueString *model;
 
+	    rts2core::ValueFloat *linev;
+	    rts2core::ValueFloat *outputv;
+	    rts2core::ValueFloat *battv;
 	    rts2core::ValueFloat *loadpct;
 	    rts2core::ValueFloat *bcharge;
 	    rts2core::ValueInteger *timeleft;
@@ -257,6 +260,9 @@ int ApcUps::info ()
 	    return ret;
 	}
 	model->setValueString (connApc->getString ("MODEL"));
+	linev->setValueFloat (connApc->getPercents( "LINEV"));
+	outputv->setValueFloat (connApc->getPercents( "OUTPUTV"));
+	battv->setValueFloat (connApc->getPercents( "BATTV"));
 	loadpct->setValueFloat (connApc->getPercents ("LOADPCT"));
 	bcharge->setValueFloat (connApc->getPercents ("BCHARGE"));
 	timeleft->setValueInteger (connApc->getTime ("TIMELEFT"));
@@ -310,6 +316,9 @@ int ApcUps::info ()
 ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 {
     createValue (model, "model", "UPS mode", false);
+    createValue (linev, "linev", "Line voltage", false);
+    createValue (outputv, "outputv", "Output voltage", false);
+    createValue (battv, "battv", "Battery voltage", false);
     createValue (loadpct, "load", "UPS load", false);
     createValue (bcharge, "bcharge", "battery charge", false);
     createValue (timeleft, "timeleft", "time left for on-UPS operations", false);
