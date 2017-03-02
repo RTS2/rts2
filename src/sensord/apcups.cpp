@@ -296,7 +296,7 @@ int ApcUps::info ()
     }
 
     // if there is any UPS error, set big timeout..
-    if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
+    if (strcmp(status->getValue(), "BOOST ONLINE") && strcmp (status->getValue(), "ONLINE") && strcmp (status->getValue(), "ONBATT"))
     {
 	logStream (MESSAGE_WARNING) <<  "unknown status " << status->getValue () << sendLog;
 	setWeatherTimeout (1200, "unknown status");
