@@ -36,12 +36,6 @@ import numpy as np
 #
 # Python bindings for shared libs
 from ctypes import *
-# const struct geometry obsvermes = {
-#  -0.0684, // xd [m]
-#  -0.1934, // zd [m]
-#   0.338,  // rdec [m]
-#   1.265   // rdome [m]
-#} ;
 class Geometry_obs(Structure):
   _fields_ = [("xd", c_double),("zd", c_double),("rdec", c_double),("rdome", c_double)]
 
@@ -49,8 +43,14 @@ class LN_lnlat(Structure):
   _fields_ = [("lng", c_double),("lat", c_double)]
 
 # add full path if it is not on LD_PATH
-sl=cdll.LoadLibrary('/home/wildi/rts2/lib/rts2/libslitazimuth.so')
-#sl=cdll.LoadLibrary('libslitazimuth.so')
+try:
+    sl=cdll.LoadLibrary('libslitazimuth.so')
+except Exception as e:
+    print('libslitazimuth.so not found')
+    print('set full path, e.g.: /your/home/rts2/lib/rts2/libslitazimuth.so')
+    sys.exit(1)
+
+
 sl.dome_target_az.restype=c_double
 sl.ln_get_julian_from_sys.restype=c_double
 sl.ln_get_mean_sidereal_time.restype=c_double
