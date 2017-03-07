@@ -47,6 +47,7 @@ def userInConfigFile():
     with open('./unittest/rts2saf-bootes-2-autonomous.cfg', 'r') as cfg:
         lines = cfg.readlines()
 
+        global sex
         for ln in lines:
             if '#' in ln:
                 continue
@@ -61,6 +62,8 @@ def userInConfigFile():
             if 'PASSWORD' in k and 'YOUR_PASSWD' in v:
                 exit = True
                 print 'PASSWORD needs a real password as argument'
+            if 'SEXPATH' in k:
+                sex=v
     cfg.close()
 
     if exit:

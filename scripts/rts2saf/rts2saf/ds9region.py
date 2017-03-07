@@ -22,7 +22,7 @@ __author__ = 'markus.wildi@bluewin.ch'
 
 import threading
 ##from ds9 import ds9
-from pyds9 import DS9 
+from pyds9 import DS9 as ds9 
 # on first call of DS9 a frame is already open
 first = True
 
@@ -42,6 +42,7 @@ class Ds9DisplayThread(threading.Thread):
         self.dataSxtr = dataSxtr
         self.logger = logger
         self.stoprequest = threading.Event()
+        self.display=None
         try:
             self.display = ds9()
         except Exception, e:
@@ -124,13 +125,22 @@ class Ds9DisplayThread(threading.Thread):
             
             self.display.set('zoom to fit')
         # do not remove me: enough is not enough
-        self.display.set('blink')
+        try:
+            self.display.set('blink')
+        except Exception, e:
+            # warning has been issued already
+            #pass
+            if self.debug: self.logger.debug('____DisplayThread:run: no ds9 display possible: {}'.format(e))
 
     def join(self, timeout=None):
         """Stop thread on request.
         """
         self.display.set('blink no')
-        self.display.set('frame delete all')
+        try:
+            self.display.set('frame delete all')
+        except Exception, e:
+            self.logger.error('____DisplayThread: error: {0}'.format(e))
+            
         if self.debug: self.logger.debug('____DisplayThread: join, timeout {0}, stopping thread on request'.format(timeout))
         self.stoprequest.set()
         super(Ds9DisplayThread, self).join(timeout)
