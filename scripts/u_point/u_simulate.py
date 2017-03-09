@@ -110,14 +110,20 @@ if __name__ == "__main__":
   # required methods: fit_model, d_lon, d_lat
   if args.model_class in 'altaz':
     parameters=args.aa_params
+    mount_type_eq=False # mount_type_eq=True, aa=False,
   else:
     parameters=args.eq_params
+    mount_type_eq=True 
 
   if args.all_params_zero:
     # quick and dirty
     parameters=[0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
-
-  model=md.Model(lg=logger,parameters=parameters,fit_plus_poly=None, parameters_plus_poly=None)  
+  # ToDo very ugly
+  if args.model_class in 'altaz':
+    model=md.Model(lg=logger,parameters=parameters,fit_plus_poly=None, parameters_plus_poly=None)
+  else:
+    model=md.Model(lg=logger,parameters=parameters, obs_lat=obs.latitude.radian)
+    
   model.log_parameters()
   
 
@@ -161,7 +167,7 @@ if __name__ == "__main__":
         pressure=args.pressure_qfe,
         temperature=args.temperature,
         humidity=args.humidity,
-        mount_type_eq=False, # mount_type_eq=True, aa=False,
+        mount_type_eq=mount_type_eq,
         transform_name='u_astropy',
         # ToDo
         refraction_method='built_in', 

@@ -571,7 +571,7 @@ if __name__ == "__main__":
     if 'altaz' not in model.model_type():
       logger.error('u_model: model: {}, type: {}'.format(args.model_class, model.model_type()))
       logger.error('u_model: specify altaz model type, exiting')
-      sys.exit(1)
+      #sys.exit(1)
 
   if cats is None or len(cats)==0:
     logger.error('u_model: nothing to analyze, exiting')

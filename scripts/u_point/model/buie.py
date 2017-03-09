@@ -19,12 +19,13 @@
 
 __author__ = 'wildi.markus@bluewin.ch'
 
+import sys
 import numpy as np
 from u_point.structures import Parameter
 from model.model_base import ModelHADec
 
 class Model(ModelHADec):
-  def __init__(self,lg=None,parameters=None):
+  def __init__(self,lg=None,parameters=None,obs_lat=None):
     ModelHADec.__init__(self,lg=lg)
     
     self.fit_title='buie2003'
@@ -50,7 +51,7 @@ class Model(ModelHADec):
       self.r=Parameter(parameters[8]/3600./180.*np.pi)
 
     self.parameters=[self.Dd,self.gamma,self.theta,self.e,self.Dt,self.c,self.ip,self.l,self.r]
-    self.phi=None
+    self.phi=obs_lat
     
   # Marc W. Buie 2003
   def d_lon(self,cat_lons,cat_lats,d_lons):
