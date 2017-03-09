@@ -72,7 +72,7 @@ class Transformation(object):
     self.ln_obs.lat=obs.latitude.degree  # deg
     self.ln_hght=obs.height  # hm, no .meter?? m, not a libnova quantity
 
-  def transform_to_hadec(self,tf=None,sky=None,apparent=None):
+  def transform_to_hadec(self,tf=None,sky=None,mount_set_icrs=None):
     tem=sky.temperature
     pre=sky.pressure
     hum=sky.humidity
@@ -81,11 +81,11 @@ class Transformation(object):
     ha=self.LN_AltAz_to_HA(az=aa.az.degree,alt=aa.alt.degree,obstime=tf.obstime)  
     return ha
 
-  def transform_to_altaz(self,tf=None,sky=None,apparent=None):
+  def transform_to_altaz(self,tf=None,sky=None,mount_set_icrs=None):
     tem=sky.temperature
     pre=sky.pressure
     hum=sky.humidity
-    aa=self.LN_EQ_to_AltAz(ra=Longitude(tf.ra.radian,u.radian).degree,dec=Latitude(tf.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=tf.obstime,apparent=apparent)
+    aa=self.LN_EQ_to_AltAz(ra=Longitude(tf.ra.radian,u.radian).degree,dec=Latitude(tf.dec.radian,u.radian).degree,ln_pressure_qfe=pre_qfe,ln_temperature=tem,ln_humidity=hum,obstime=tf.obstime,mount_set_icrs=mount_set_icrs)
     return aa
 
   def LN_nutation_meeus(self,eq_pr,JD=None):
@@ -104,10 +104,10 @@ class Transformation(object):
 
     return ln_pos_eq_nut
   
-  def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,apparent=False):
+  def LN_EQ_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,mount_set_icrs=False):
     ln_pos_eq.ra=ra
     ln_pos_eq.dec=dec
-    if apparent:
+    if mount_set_icrs:
       # ToDo missing see Jean Meeus, Astronomical Algorithms, chapter 23
       # proper motion
       # annual paralax (0".8)
@@ -158,10 +158,10 @@ class Transformation(object):
 
     return gcrs
 
-  def LN_ICRS_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,apparent=False):
+  def LN_ICRS_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,mount_set_icrs=False):
     ln_pos_eq.ra=ra
     ln_pos_eq.dec=dec
-    if apparent:
+    if mount_set_icrs:
       # libnova corrections for catalog data ...
       # ToDo missing see Jean Meeus, Astronomical Algorithms, chapter 23
       # proper motion

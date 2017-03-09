@@ -50,7 +50,8 @@ class Transformation(object):
     # do that later
     #self.obs.date
 
-  def transform_to_hadec(self,tf=None,sky=None,apparent=None):
+  def transform_to_hadec(self,tf=None,sky=None,mount_set_icrs=None):
+    # only GCRS coordinates supported (mount_set_icrs: unused)
     tem=sky.temperature
     pre=sky.pressure
     hum=sky.humidity
@@ -60,7 +61,8 @@ class Transformation(object):
 
     return ha
 
-  def transform_to_altaz(self,tf=None,sky=None,apparent=None):
+  def transform_to_altaz(self,tf=None,sky=None,mount_set_icrs=None):
+    # only GCRS coordinates supported (mount_set_icrs: unused)
     # use ev. other refraction methods
     if sky is None:
       tem=pre=hum=0.

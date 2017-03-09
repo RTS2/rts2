@@ -23,26 +23,46 @@ import sys
 import numpy as np
 
 from u_point.structures import Parameter
-from u_point.model_base import ModelAltAz
+from model.model_base import ModelAltAz
 
 class Model(ModelAltAz):
-  def __init__(self,dbg=None,lg=None):
-    ModelAltAz.__init__(self,dbg=dbg,lg=lg)
+  def __init__(self,lg=None,parameters=None, fit_plus_poly=None, parameters_plus_poly=None):
+    ModelAltAz.__init__(self,lg=lg)
 
+    self.fit_plus_poly=fit_plus_poly
     self.fit_title='condon1992'
-    self.C1=Parameter(0.)
-    self.C2=Parameter(0.)
-    self.C3=Parameter(0.)
-    self.C4=Parameter(0.)
-    self.C5=Parameter(0.)
-    self.C6=Parameter(0.)
-    self.C7=Parameter(0.)
-    self.A0=Parameter(0.)
-    self.A1=Parameter(0.)
-    self.A2=Parameter(0.)
-    self.A3=Parameter(0.)
+    if parameters is None:
+      self.C1=Parameter(0.)
+      self.C2=Parameter(0.)
+      self.C3=Parameter(0.)
+      self.C4=Parameter(0.)
+      self.C5=Parameter(0.)
+      self.C6=Parameter(0.)
+      self.C7=Parameter(0.)
+      self.A0=Parameter(0.)
+      self.A1=Parameter(0.)
+      self.A2=Parameter(0.)
+      self.A3=Parameter(0.)
+    else:
+      self.C1=Parameter(parameters[0]/3600./180.*np.pi)
+      self.C2=Parameter(parameters[1]/3600./180.*np.pi)
+      self.C3=Parameter(parameters[2]/3600./180.*np.pi)
+      self.C4=Parameter(parameters[3]/3600./180.*np.pi)
+      self.C5=Parameter(parameters[4]/3600./180.*np.pi)
+      self.C6=Parameter(parameters[5]/3600./180.*np.pi)
+      self.C7=Parameter(parameters[6]/3600./180.*np.pi)
+      if self.fit_plus_poly:
+        self.A0=Parameter(parameters_plus_poly[0])
+        self.A1=Parameter(parameters_plus_poly[1])
+        self.A2=Parameter(parameters_plus_poly[2])
+        self.A3=Parameter(parameters_plus_poly[3])
+      else:
+        self.A0=Parameter(0.)
+        self.A1=Parameter(0.)
+        self.A2=Parameter(0.)
+        self.A3=Parameter(0.)
+        
     self.parameters=[self.C1,self.C2,self.C3,self.C4,self.C5,self.C6,self.C7,self.A0,self.A1,self.A2,self.A3]
-    self.fit_plus_poly=None
     
   # J. Condon 1992
   # Hamburg:
@@ -95,13 +115,16 @@ class Model(ModelAltAz):
       else:
         self.lg.warn('fit converged with status: {}'.format(stat))
     # output used in telescope driver
-    if self.dbg:
-      for i,c in enumerate(pars):
-        if i == 7 and not self.fit_plus_poly:
-          break
-      self.lg.info('C{0:02d}={1};'.format(i+1,res[i]))
-
-    self.lg.info('fitted values:')
+    #if self.dbg:
+    #  for i,c in enumerate(pars):
+    #    if i == 7 and not self.fit_plus_poly:
+    #      break
+    #  self.lg.info('C{0:02d}={1};'.format(i+1,res[i]))
+    self.log_parameters()
+    return res
+    
+  def log_parameters(self): 
+    self.lg.info('values:')
     self.lg.info('C1: horizontal telescope collimation:{0:+10.4f} [arcsec]'.format(self.C1()*180.*3600./np.pi))
     self.lg.info('C2: constant azimuth offset         :{0:+10.4f} [arcsec]'.format(self.C2()*180.*3600./np.pi))
     self.lg.info('C3: tipping-mount collimation       :{0:+10.4f} [arcsec]'.format(self.C3()*180.*3600./np.pi))
@@ -115,4 +138,3 @@ class Model(ModelAltAz):
       self.lg.info('A2: a2 (polynom)                    :{0:+10.4f}'.format(self.A2()))
       self.lg.info('A3: a3 (polynom)                    :{0:+10.4f}'.format(self.A3()))
       
-    return res

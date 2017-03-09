@@ -92,6 +92,10 @@ class Model(ModelHADec):
       else:
         self.lg.warn('fit converged with status: {}'.format(stat))
 
+    self.log_parameters()
+    return res
+    
+  def log_parameters(self): 
     self.lg.info('fitted values:')
     self.lg.info('IH : ha index error                 :{0:+12.4f} [arcsec]'.format(self.IH()*180.*3600./np.pi))
     self.lg.info('ID : delta index error              :{0:+12.4f} [arcsec]'.format(self.ID()*180.*3600./np.pi))

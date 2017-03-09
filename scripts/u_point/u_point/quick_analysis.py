@@ -149,11 +149,11 @@ class QuickAnalysis(object):
     try:
       stdo,stde=sx.runSExtractor(filename=ptfn)
     except Exception as e:
-      self.lg.error('exception: {}, stde: {}'.format(e,stde))
+      self.lg.error('quick analyze exception: {}, stde: {}'.format(e,stde))
       return None,None
 
     if len(sx.objects)==0:
-      self.lg.warn('analyze: no sextracted objects: {}'.format(ptfn))
+      self.lg.warn('quick analyze: no sextracted objects: {}'.format(ptfn))
       return None,None
   
     stde_str=stde.decode('utf-8').replace('\n','')
@@ -164,26 +164,26 @@ class QuickAnalysis(object):
       background_rms=float(m.group(2))
       treshold=float(m.group(3))
     else:
-      self.lg.warn('sextract: no background found for file: {}'.format(ptfn))
+      self.lg.warn('quick analyze sextract: no background found for file: {}'.format(ptfn))
       return None,None
   
     background_f=True
     if background > self.background_max:
       background_f=False
-      self.lg.info('sextract: background {0:6.1f} > {1:6.1f}'.format(background,self.background_max))
+      self.lg.info('quick analyze sextract: background {0:6.1f} > {1:6.1f}'.format(background,self.background_max))
     
     sx.sortObjects(sx.get_field('MAG_BEST'))
     i_f = sx.get_field('FLAGS')
     try:
         sxobjs=[x for x in sx.objects if x[i_f]==0] # only the good ones
         sxobjs_len=len(sxobjs)
-        self.lg.debug('analyze:id: {0}, number of sextract objects: {1}, fn: {2} '.format(nml_id,sxobjs_len,ptfn))
+        self.lg.debug('quick analyze:id: {0}, number of sextract objects: {1}, fn: {2} '.format(nml_id,sxobjs_len,ptfn))
     except:
-      self.lg.warn('analyze:id: {0}, no sextract result for: {1} '.format(nml_id,ptfn))
+      self.lg.warn('quick analyze:id: {0}, no sextract result for: {1} '.format(nml_id,ptfn))
       return None,None
   
     if sxobjs_len < self.objects_min:
-      self.lg.debug('sextract: found objects {0:6.1f} < {1:6.1f}'.format(len(sxobjs),self.objects_min))
+      self.lg.debug('quick analyze sextract: found objects {0:6.1f} < {1:6.1f}'.format(len(sxobjs),self.objects_min))
 
     i_x = sx.get_field('X_IMAGE')
     i_y = sx.get_field('Y_IMAGE')
@@ -211,23 +211,23 @@ class QuickAnalysis(object):
     peak_f=True
     if peak > self.peak_max:
       peak_f=False
-      self.lg.info('sextract: peak {0:6.1f} > {1:6.1f}'.format(peak,self.peak_max))
+      self.lg.info('quick analyze sextract: peak {0:6.1f} > {1:6.1f}'.format(peak,self.peak_max))
     
     ratio= (max(pixel_values)-background)/(self.peak_max-background)
     if self.ratio_interval[0] < ratio < self.ratio_interval[0]:
       redo=False
       exposure_current=exposure_last
-      self.lg.debug('analyze: exposure unchanged, not redoing')
+      self.lg.debug('quick analyze: exposure unchanged, not redoing')
     else:
       redo=True
       exposure_current=exposure_last / ratio
       if exposure_current > self.exposure_interval[1]:
         exposure_current=self.exposure_interval[1]
-        self.lg.warn('analyze: exposure exceeds maximum, limiting')
+        self.lg.warn('quick analyze: exposure exceeds maximum, limiting')
       elif exposure_current < self.exposure_interval[0]:
         exposure_current=self.exposure_interval[0]
-        self.lg.warn('analyze: exposure exceeds minimum, limiting')
-      self.lg.info('analyze: exposure last: {0:6.3f}, current: {1:6.3f}, min: {2:6.3f}, max: {3:6.3f}, peak image: {4:6.1f}, value max: {5:6.1f}, ratio: {6:6.4f}'.format(exposure_last, exposure_current,self.exposure_interval[0],self.exposure_interval[1],peak,self.peak_max,ratio))
+        self.lg.warn('quick analyze: exposure exceeds minimum, limiting')
+      self.lg.info('quick analyze: exposure last: {0:6.3f}, current: {1:6.3f}, min: {2:6.3f}, max: {3:6.3f}, peak image: {4:6.1f}, value max: {5:6.1f}, ratio: {6:6.4f}'.format(exposure_last, exposure_current,self.exposure_interval[0],self.exposure_interval[1],peak,self.peak_max,ratio))
 
     if False:  # for debugging only
       import matplotlib.pyplot as plt
@@ -250,7 +250,7 @@ class QuickAnalysis(object):
         self.display = DS9()
         time.sleep(10.)
       except ValueError as e:
-        self.lg.info('display_fits: ds9 died, retrying, error: {}'.format(e))
+        self.lg.info('quick analyze display_fits: ds9 died, retrying, error: {}'.format(e))
         return
     
     try:
@@ -258,10 +258,11 @@ class QuickAnalysis(object):
       self.display.set('scale zscale')
     except ValueError as e:
       self.display=None
-      self.lg.info('display_fits: ds9 died, retrying, error: {}'.format(e))
+      self.lg.info('quick analyze display_fits: ds9 died, retrying, error: {}'.format(e))
       return
 
     for x in sxobjs:
+      # the brightest is first
       self.display.set('regions', 'image; circle {0} {1} 10'.format(x[i_x],x[i_y]))
       break
                                       

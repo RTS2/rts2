@@ -407,6 +407,7 @@ class Acquisition(Script):
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
       
+    #plt.show(block=False)
     plt.show()
     
 

@@ -20,6 +20,14 @@
 #
 __author__ = 'wildi.markus@bluewin.ch'
 
+
+'''
+u_sofa.py's purpose is solely to check the astropy transformation.
+
+'''
+
+
+
 # Transform with iauAtco13
 # http://www.iausofa.org/2016_0503_C/sofa/sofa_ast_c.pdf
 # /* ICRS to observed. */
@@ -92,19 +100,19 @@ class Transformation(object):
     #print(smbd.get_votable_fields())
 
 
-  def transform_to_radec(self,tf=None,sky=None,apparent=None,simbad=False):
-    aa,hd,rd=self.sofa(tf=tf,sky=sky,apparent=apparent,simbad=simbad)
+  def transform_to_radec(self,tf=None,sky=None,simbad=False):
+    aa,hd,rd=self.sofa(tf=tf,sky=sky,simbad=simbad)
     return rd
   
-  def transform_to_hadec(self,tf=None,sky=None,apparent=None,simbad=False):
-    aa,hd,rd=self.sofa(tf=tf,sky=sky,apparent=apparent,simbad=simbad)
+  def transform_to_hadec(self,tf=None,sky=None,simbad=False):
+    aa,hd,rd=self.sofa(tf=tf,sky=sky,simbad=simbad)
     return hd
 
-  def transform_to_altaz(self,tf=None,sky=None,apparent=None,simbad=False):
-    aa,hd,rd=self.sofa(tf=tf,sky=sky,apparent=apparent,simbad=simbad)
+  def transform_to_altaz(self,tf=None,sky=None,simbad=False):
+    aa,hd,rd=self.sofa(tf=tf,sky=sky,simbad=simbad)
     return aa
     
-  def sofa(self,tf=None,sky=None,apparent=None,simbad=False):
+  def sofa(self,tf=None,sky=None,simbad=False):
     tc=phpa=rh=0.
     if sky is not None:
       tc=sky.temperature
@@ -282,7 +290,7 @@ if __name__ == "__main__":
   # propper motion 3.90 -2.40 [2.70 2.20 0] B
   # Radial velocity / Redshift / cz : V(km/s) 0.341 [1.933]
   
-  star=SkyCoord('23h21m32.1685s -79d31m09.138s',frame='icrs')
+  star=SkyCoord('23h21m32.1685s -79d31m09.138s',frame='icrs',obstime=Time(dt_now))
 
   sky=SkyPosition(
     nml_id=-1,
@@ -303,8 +311,8 @@ if __name__ == "__main__":
     mount_type_eq=None,
   )
   simbad=True
-  aa=sofa.transform_to_altaz(tf=star,sky=sky,apparent=False,simbad=simbad)
-  star_obs=sofa.transform_to_radec(tf=star,sky=sky,apparent=False,simbad=simbad)
+  aa=sofa.transform_to_altaz(tf=star,sky=sky,simbad=simbad)
+  star_obs=sofa.transform_to_radec(tf=star,sky=sky,simbad=simbad)
 
   print(star.ra.arcsec-star_obs.ra.arcsec)
   print(star.dec.arcsec-star_obs.dec.arcsec)

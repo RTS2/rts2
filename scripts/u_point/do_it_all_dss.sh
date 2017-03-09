@@ -38,13 +38,11 @@ SKIP_ANALYSIS=
 BASE_PATH=/tmp/u_point
 MODEL_CLASS="--model-class point"
 FETCH_DSS_IMAGE="--fetch-dss-image"
-TRANSFORMATION_CLASS="u_sofa"
+TRANSFORMATION_CLASS="u_astropy"
 # if u_libnova or u_sofa is specfied, REFRACTION_METHOD, REFRACTIVE_INDEX_METHOD
 # are ignored
 REFRACTION_METHOD="stone"
 REFRACTIVE_INDEX_METHOD="owens"
-MOUNT_SET_ICRS="--mount-set-icrs"
-MOUNT_SET_ICRS=
 MOUNT_TYPE_EQ="--mount-type-eq"
 USE_BRIGHT_STARS="--use-bright-stars"
 #USE_BRIGHT_STARS=
@@ -295,6 +293,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	    # nap is necessary for callback to work
 	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $PLOT --ds9-display --animate --delete --level DEBUG &
 	    echo "-----------------------------------------------------------------"
+	    echo "showing progress with a second u_acquire.py instance (see different options)"
 	    echo "leave acquire plot window open"
 	    echo "click on blue points to see FITS being displayed with DS9"
 	fi
@@ -316,18 +315,19 @@ if [ -z ${SKIP_ANALYSIS} ]; then
 echo "forth step, analyze the acquired position"
 if ! [ -z ${ASTROMETRY+x} ]; then
     #
-    cont_exit ./u_analyze.py  --base-path $BASE_PATH  $LATITUDE  $LONGITUDE --timeout 30 --toconsole $ANALYSIS_OUTPUT_FILE $MOUNT_SET_ICRS $transform_class $refraction_method $refractive_index_method&
+    cont_exit ./u_analyze.py  --base-path $BASE_PATH  $LATITUDE  $LONGITUDE --timeout 30 --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method $refractive_index_method&
     export pid_u_analyze=$!
 else
     #
-    cont_exit ./u_analyze.py  --base-path $BASE_PATH $LATITUDE $LONGITUDE --do-not-use-astrometry  --toconsole $ANALYSIS_OUTPUT_FILE $MOUNT_SET_ICRS $transform_class $refraction_method $refractive_index_method&
+    cont_exit ./u_analyze.py  --base-path $BASE_PATH $LATITUDE $LONGITUDE --do-not-use-astrometry  --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method $refractive_index_method&
     export pid_u_analyze=$!
 fi
 #
 if ! [ -z ${PLOT} ]; then
-    cont_exit ./u_analyze.py --base-path $BASE_PATH $PLOT --ds9-display --animate --delete $ANALYSIS_OUTPUT_FILE $MOUNT_SET_ICRS $transform_class $refraction_method $refractive_index_method&
+    cont_exit ./u_analyze.py --base-path $BASE_PATH $PLOT --ds9-display --animate --delete $ANALYSIS_OUTPUT_FILE  $transform_class $refraction_method $refractive_index_method&
     echo ""
     echo "-----------------------------------------------------------------"
+    echo "showing progress with a second u_analyze.py instance (see different options)"
     echo "leave analysis plot window open"
     echo "click on blue points to see FITS being displayed with DS9"
 fi

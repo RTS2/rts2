@@ -112,17 +112,17 @@ if __name__ == "__main__":
 
   RA_0= now.sidereal_time('apparent') - 0. # HA=0.
   ra_0=SkyCoord(ra=RA_0,dec=0., unit=(u.rad,u.rad),frame='icrs',location=obs,obstime=now,pressure=0.)
-  ln_aa_0=lbn.LN_ICRS_to_AltAz(ra=ra_0.ra.degree,dec=ra_0.dec.degree,ln_pressure_qfe=0.,ln_temperature=0.,ln_humidity=0.,obstime=now,apparent=False)   
+  ln_aa_0=lbn.LN_ICRS_to_AltAz(ra=ra_0.ra.degree,dec=ra_0.dec.degree,ln_pressure_qfe=0.,ln_temperature=0.,ln_humidity=0.,obstime=now)   
   logger.info('LN  HA=0.: {0:+11.6f}, {1:+11.6f}'.format(ln_aa_0.az.deg,ln_aa_0.alt.deg))
-  ast_aa_0=ast.transform_to_altaz(tf=ra_0,sky=None,apparent=None)
+  ast_aa_0=ast.transform_to_altaz(tf=ra_0,sky=None)
   logger.info('AS  HA=0.: {0:+11.6f}, {1:+11.6f}'.format(ast_aa_0.az.deg,ast_aa_0.alt.deg))
-  tks_aa_0=tks.transform_to_altaz(tf=ra_0,sky=None,apparent=None)
+  tks_aa_0=tks.transform_to_altaz(tf=ra_0,sky=None)
   logger.info('TS  HA=0.: {0:+11.6f}, {1:+11.6f}'.format(tks_aa_0.az.deg,tks_aa_0.alt.deg))
-  pye_aa_0=pye.transform_to_altaz(tf=ra_0,sky=None,apparent=None)
+  pye_aa_0=pye.transform_to_altaz(tf=ra_0,sky=None)
   logger.info('PYE HA=0.: {0:+11.6f}, {1:+11.6f}'.format(pye_aa_0.az.deg,pye_aa_0.alt.deg))
-  skf_aa_0=skf.transform_to_altaz(tf=ra_0,sky=None,apparent=None)
+  skf_aa_0=skf.transform_to_altaz(tf=ra_0,sky=None)
   logger.info('SKF HA=0.: {0:+11.6f}, {1:+11.6f}'.format(skf_aa_0.az.deg,skf_aa_0.alt.deg))
-  sfa_aa_0=sfa.transform_to_altaz(tf=ra_0,sky=None,apparent=None)
+  sfa_aa_0=sfa.transform_to_altaz(tf=ra_0,sky=None)
   logger.info('SFA HA=0.: {0:+11.6f}, {1:+11.6f}'.format(sfa_aa_0.az.deg,sfa_aa_0.alt.deg))
 
   ts_as_x=list()
@@ -147,13 +147,13 @@ if __name__ == "__main__":
     icrs=SkyCoord(RA*u.degree,args.declination*u.degree, frame='icrs',location=obs,obstime=now,pressure=0.)
     rs=icrs.gcrs
     
-    ast_aa=ast.transform_to_altaz(tf=rs,sky=None,apparent=None)
-    ln_aa=lbn.LN_ICRS_to_AltAz(ra=rs.ra.degree,dec=rs.dec.degree,ln_pressure_qfe=0.,ln_temperature=0.,ln_humidity=0.,obstime=rs.obstime,apparent=args.ln_apparent)   
-    pye_aa=pye.transform_to_altaz(tf=rs,sky=None,apparent=None)
-    skf_aa=skf.transform_to_altaz(tf=rs,sky=None,apparent=None)
-    sfa_aa=sfa.transform_to_altaz(tf=rs,sky=None,apparent=None)
+    ast_aa=ast.transform_to_altaz(tf=rs,sky=None,mount_set_icrs=None)
+    ln_aa=lbn.LN_ICRS_to_AltAz(ra=rs.ra.degree,dec=rs.dec.degree,ln_pressure_qfe=0.,ln_temperature=0.,ln_humidity=0.,obstime=rs.obstime,mount_set_icrs=args.ln_apparent)   
+    pye_aa=pye.transform_to_altaz(tf=rs,sky=None,mount_set_icrs=None)
+    skf_aa=skf.transform_to_altaz(tf=rs,sky=None,mount_set_icrs=None)
+    sfa_aa=sfa.transform_to_altaz(tf=rs,sky=None,mount_set_icrs=None)
     # Taki - astropy
-    tks_aa=tks.transform_to_altaz(tf=rs,sky=None,apparent=None)
+    tks_aa=tks.transform_to_altaz(tf=rs,sky=None,mount_set_icrs=None)
     daz=(tks_aa.az.radian+np.pi)-ast_aa.az.radian
     if daz > np.pi:
       daz -= 2.*np.pi 
@@ -181,33 +181,33 @@ if __name__ == "__main__":
     #if daz > np.pi:
     #  daz -= 2.*np.pi 
     #ts_py_x.append(daz *60.* 180./np.pi) # westward from south
-    #ts_py_y.append(tks_aa.alt.arcsec-pye_aa.alt.arcsec)
+    #ts_py_y.append(tks_aa.alt.arcsec-sfa_aa.alt.arcsec)
     # Libnova - PyEphem
     daz=(ln_aa.az.radian-np.pi)-pye_aa.az.radian
     if daz < -np.pi:
       daz += 2.*np.pi 
     ln_py_x.append(daz *60.* 180./np.pi) # westward from south
-    ln_py_y.append(ln_aa.alt.arcsec-pye_aa.alt.arcsec)
+    ln_py_y.append(ln_aa.alt.arcsec-sfa_aa.alt.arcsec)
     
     # astropy - PyEphem
     daz=(ast_aa.az.radian)-pye_aa.az.radian
     if daz < -np.pi:
       daz += 2.*np.pi 
     as_py_x.append(daz *60.* 180./np.pi) 
-    as_py_y.append(ast_aa.alt.arcsec-pye_aa.alt.arcsec)
+    as_py_y.append(ast_aa.alt.arcsec-sfa_aa.alt.arcsec)
 
     # Skyfield - PyEphem
     daz=(skf_aa.az.radian)-pye_aa.az.radian
     if daz > np.pi:
       daz -= 2.*np.pi 
     sk_py_x.append(daz *60.* 180./np.pi) 
-    sk_py_y.append(skf_aa.alt.arcsec-pye_aa.alt.arcsec)
+    sk_py_y.append(skf_aa.alt.arcsec-sfa_aa.alt.arcsec)
     # SOFA - Astropy
     daz=(ast_aa.az.radian)-sfa_aa.az.radian
     if daz > np.pi:
       daz -= 2.*np.pi 
     sf_as_x.append(daz *60.* 180./np.pi) 
-    sf_as_y.append(skf_aa.alt.arcsec-pye_aa.alt.arcsec)
+    sf_as_y.append(skf_aa.alt.arcsec-sfa_aa.alt.arcsec)
 
     
   plot(red_x=ts_as_x,red_y=ts_as_y,

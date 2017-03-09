@@ -72,11 +72,11 @@ class Transformation(object):
     self.MAA=y_rot(self.latitude-np.pi/2.)
     self.MAA_I=np.linalg.inv(self.MAA)
       
-  def transform_to_hadec(self,tf=None,sky=None,apparent=None):
+  def transform_to_hadec(self,tf=None,sky=None,mount_set_icrs=None):
     tem=sky.temperature
     pre=sky.pressure
     hum=sky.humidity
-    aa=self.transform_to_altaz(tf=tf,sky=sky,apparent=apparent)
+    aa=self.transform_to_altaz(tf=tf,sky=sky,mount_set_icrs=mount_set_icrs)
     #
     # ToDO chack right handed                  
     cs=cosine(lat=aa.alt.radian,lon=aa.az.radian)
@@ -90,7 +90,7 @@ class Transformation(object):
 
     return ha
 
-  def transform_to_altaz(self,tf=None,sky=None,apparent=None):
+  def transform_to_altaz(self,tf=None,sky=None,mount_set_icrs=None):
     if sky is None:
       tem=pre=hum=0.
     else:
@@ -109,7 +109,7 @@ class Transformation(object):
     alt=np.arcsin(float(t[2]))
     az= -np.arctan2(float(t[1]),float(t[0]))
     d_alt=0.
-    if apparent:
+    if mount_set_icrs:
       #d_alt=refraction_bennett(alt=alt,tem=tem,pre=pre,hum=hum)
       #self.lg.debug('B: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
       d_alt=0.
@@ -125,7 +125,7 @@ class Transformation(object):
 
     return aa
 
-  def transform_hadec_to_altaz(self,tf=None,sky=None,apparent=None):
+  def transform_hadec_to_altaz(self,tf=None,sky=None,mount_set_icrs=None):
     if sky is None:
       tem=pre=hum=0.
     else:
@@ -140,7 +140,7 @@ class Transformation(object):
     alt=np.arcsin(float(t[2]))
     az= -np.arctan2(float(t[1]),float(t[0]))
     d_alt=0.
-    if apparent:
+    if mount_set_icrs:
       #d_alt=refraction_bennett(alt=alt,tem=tem,pre=pre,hum=hum)
       #self.lg.debug('B: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
       d_alt=0.

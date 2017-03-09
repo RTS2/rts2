@@ -288,9 +288,9 @@ class PointingModel(Script):
       lat_label='declination'
     else:
       lat_label='altitude'
-      lon_label='N=0,E=90 azimuth'
+      lon_label='azimuth N=0,E=90'
       if 'nova' in self.transform_name:
-        lon_label='S=0,W=90 azimuth'
+        lon_label='azimuth S=0,W=90'
       
 
     az_cat_deg=[x.cat_lon.degree for x in stars]

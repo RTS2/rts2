@@ -67,7 +67,7 @@ class Worker(Process):
             self.shutdown()
             return
           else:
-            self.lg.error('{}: got {}, continue'.format(current_process().name, cmd))
+            self.lg.warn('{}: got {}, continue'.format(current_process().name, cmd))
         if sky:
           self.append_position(sky=sky)
         elif acq_image_fn is not None:
@@ -92,7 +92,7 @@ class Worker(Process):
       self.anl.catalog_to_apparent(sky=sky,pcn=current_process().name)
       x,y=self.anl.sextract(sky=sky,pcn=current_process().name)
       if x is not None and y is not None:
-        self.anl.xy2lonlat_appr(px=x,py=y,sky=sky,pcn=current_process().name)
+        self.anl.xy2lonlat_apparent(px=x,py=y,sky=sky,pcn=current_process().name)
 
       self.anl.astrometry(sky=sky,pcn=current_process().name)
       # ToDo why this condition

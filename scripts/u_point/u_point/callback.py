@@ -90,10 +90,10 @@ class AnnoteFinder(object):
     if self.aps is None:
       return
     # i_ap_ax_nml_id fn:  1:1
-    self.lg.debug('callback::drawAnnote: nml_id {}'.format(self.aps[0].annotes[i_ap_ax_nml_id]))
+    self.lg.debug('callback::drawAnnote: nml_id: {}'.format(self.aps[0].annotes[i_ap_ax_nml_id]))
     
+    fn=self.aps[0].annotes[i_ap_ax_nml_id].split()[1]
     if self.ds9_display:
-      fn=self.aps[0].annotes[i_ap_ax_nml_id].split()[1]
       self.display_fits(fn=fn)
       
     stop=False

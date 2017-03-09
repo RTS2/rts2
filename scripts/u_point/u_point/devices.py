@@ -153,7 +153,7 @@ class DeviceDss(object):
     self.nml_id=nml_id
     self.cat_no=cat_no
     self.cat_ic=cat_ic
-    self.mnt_ap_set=cat_ic
+    self.mnt_ic_set=cat_ic
   
   def fetch_mount_data(self):
     if self.cat_ic is None:
@@ -162,7 +162,7 @@ class DeviceDss(object):
     # simulation
     mnt_ra_rdb=SkyCoord(ra=self.cat_ic.ra.radian,dec=self.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_begin,location=self.obs)
     mnt_aa_rdb=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
-    nml_aa=self.cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
+    nml_aa=mnt_aa_rdb
     dt_end_query = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     sky=SkyPosition(
       nml_id=self.nml_id,
@@ -208,7 +208,7 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     self.ccd_nm=None
     self.dt_begin=None
     self.cat_ic=None
-    self.mnt_ap_set=None
+    self.mnt_ic_set=None
     self.exp=None
     self.dt_begin=None
     self.dt_end=None
@@ -249,8 +249,8 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
     ras,decs=self.getValue('TEL',self.mnt_nm).split()
     self.lg.debug('fetch_mount_position: TEL ra: {0:.3f},: dec: {1:.3f}'.format(float(ras),float(decs)))
     # ToDo strictly not correct ?mnt_ci (CIRS)
-    mnt_ic=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
-    return mnt_ic
+    mnt_ra_rdb=SkyCoord(ra=float(ras),dec=float(decs), unit=(u.degree,u.degree), frame='icrs',obstime=now,location=self.obs)
+    return mnt_ra_rdb
   
   def ccd_init(self):
     # full area
@@ -324,9 +324,9 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
   def store_mount_data(self,cat_ic=None,nml_id=None,cat_no=None):
     self.nml_id=nml_id
     self.cat_no=cat_no
-    # ToDo transform from cat_ic to cat_ap and disable the corrections in RTS2 mount
+    # apparent coordinates are calculated by RTS2 (SOFA/ERFA)
     self.cat_ic=cat_ic
-    self.mnt_ap_set=cat_ic
+    self.mnt_ic_set=cat_ic
     
     self.setValue('ORI','{0} {1}'.format(self.cat_ic.ra.degree,self.cat_ic.dec.degree),self.mnt_nm)
     ra_oris,dec_oris=self.getValue('ORI',self.mnt_nm).split()

@@ -88,7 +88,6 @@ class Analysis(Script):
       ds9_display=None,
       solver=None,
       transform=None,
-      mount_set_icrs=None,
   ):
     Script.__init__(self,lg=lg,break_after=break_after,base_path=base_path,obs=obs,acquired_positions=acquired_positions,analyzed_positions=analyzed_positions,acq_e_h=acq_e_h)
     #
@@ -99,7 +98,6 @@ class Analysis(Script):
     self.ds9_display=ds9_display
     self.solver=solver
     self.transform=transform
-    self.mount_set_icrs=args.mount_set_icrs
     #
     self.ccd_rotation=self.rot(self.ccd_angle)
     self.acquired_positions=acquired_positions
@@ -115,16 +113,9 @@ class Analysis(Script):
       tr_t_tf=self.transform.transform_to_hadec
     else:
       tr_t_tf=self.transform.transform_to_altaz
-
-    apparent=False
-    if self.mount_set_icrs:
-      apparent=True
-    # cat_tf is either cat_aa or cat_ha
-    sky.cat_ll_ap=tr_t_tf(tf=sky.cat_ic,sky=sky,apparent=apparent)
-    #sim=SkyCoord(ra=sky.cat_ic.ra.radian,dec=sky.cat_ic.dec.radian, unit=(u.radian,u.radian), frame='icrs',obstime=sky.dt_end,location=self.obs)
-    #sky.cat_ll_ap=tr_t_tf(sky=sky,apparent=True)
-    #print('CAT IC   ', sky.cat_ic)
-    #print('CAT ll ap', sky.cat_ll_ap)
+      
+    # cat_ll_ap is either cat_aa or cat_ha
+    sky.cat_ll_ap=tr_t_tf(tf=sky.cat_ic,sky=sky)
     
   # rotation matrix for xy2lonlat
   def rot(self,rads):
@@ -132,19 +123,16 @@ class Analysis(Script):
     c=np.cos(rads)
     return np.matrix([[c, -s],[s,  c]])
     
-  def xy2lonlat_appr(self,px=None,py=None,sky=None,pcn=None):
-    # mnt_ic: read back from mount
-    # in case of RTS2 it includes any OFFS, these are manual corrections
-    # ToDo transform cat_ic to cat_
+  def xy2lonlat_apparent(self,px=None,py=None,sky=None,pcn=None):
     ln0=sky.cat_ll_ap.ra.radian
     lt0=sky.cat_ll_ap.dec.radian
     
-    # ccd angle relative to +dec, +alt
+    # ccd angle relative to +dec or +alt
     p=np.array([px,py])
     p_r= self.ccd_rotation.dot(p)               
     px_r=p_r[0,0]
     py_r=p_r[0,1]
-    self.lg.debug('{0}:id: {1}, xy2lonlat_appr: px: {2}, py: {3}, px_r: {4}, py_r: {5}'.format(pcn,sky.nml_id,int(px),int(py),int(px_r),int(py_r)))
+    self.lg.debug('{0}:id: {1}, xy2lonlat_apparent: px: {2}, py: {3}, px_r: {4}, py_r: {5}'.format(pcn,sky.nml_id,int(px),int(py),int(px_r),int(py_r)))
     # small angle approximation for inverse gnomonic projection
     # ln0,lt0: field center
     # scale: angle/pixel [radian]
@@ -152,7 +140,7 @@ class Analysis(Script):
     # FITS with astrometry:
     #  +x: -ra
     #  +y: +dec
-    # HA is right handed too
+    # HA/Dec, AltAz both left handed coordinate systems
     if sky.mount_type_eq:
       lon=ln0 + (px_r * self.px_scale/np.cos(lt0))
       lat=lt0 + py_r * self.px_scale
@@ -166,15 +154,15 @@ class Analysis(Script):
       lat=lt0 + py_r * self.px_scale
       
     ptfn=self.expand_base_path(fn=sky.image_fn)
-    self.lg.debug('{0}:id: {1}   sextract   result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,lon*180./np.pi,lat*180./np.pi,ptfn))
+    self.lg.debug('{0}:id: {1}    sextract   result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,lon*180./np.pi,lat*180./np.pi,ptfn))
     if sky.mount_type_eq:
+      # apparent "plus corrections"
       sky.mnt_ll_sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='gcrs',location=self.obs)
     else:
       sky.mnt_ll_sxtr=SkyCoord(az=lon,alt=lat, unit=(u.radian,u.radian), frame='altaz',location=self.obs)
   
   def sextract(self,sky=None,pcn='single'):
     #  self.lg.debug('sextract: Yale catalog number: {}'.format(int(sky.cat_no)))
-
     sx = sextractor_3.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
     ptfn=self.expand_base_path(fn=sky.image_fn)
     try:
@@ -205,7 +193,8 @@ class Analysis(Script):
     if self.ds9_display:
       from pyds9 import DS9
       display = DS9()
-      display.set('file {0}'.format(fn))
+      display.set('file {0}'.format(ptfn))
+      display.set('regions', 'image; circle {0} {1} 10'.format(brst[i_x],brst[i_y]))
 
     return x,y
     
@@ -222,14 +211,15 @@ class Analysis(Script):
     sr= self.solver.solve_field(fn=ptfn,ra=sky.cat_ic.ra.degree,dec=sky.cat_ic.dec.degree,)
     if sr is not None:
       self.lg.debug('{0}:id: {1},ic astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sr.ra,sr.dec,ptfn))
-
-      mnt_ll=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='gcrs',location=self.obs,obstime=sky.dt_end)
+      # astrometry.net returns ICRS coordinates, not GCRS
+      mnt_ll=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs,obstime=sky.dt_end)
       if sky.mount_type_eq:
         tr_t_tf=self.transform.transform_to_hadec
       else:
         tr_t_tf=self.transform.transform_to_altaz
         
-      sky.mnt_ll_astr=self.transform.transform_to_hadec(tf=mnt_ll,sky=sky,apparent=False)
+      # astrometry.net returns ICRS coordinates, ICRS to apparent, including refraction
+      sky.mnt_ll_astr=tr_t_tf(tf=mnt_ll,sky=sky)
 
       if sky.mount_type_eq:
         self.lg.debug('{0}:id: {1},ha astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sky.mnt_ll_astr.ra.degree,sky.mnt_ll_astr.dec.degree,ptfn))
@@ -240,7 +230,7 @@ class Analysis(Script):
       self.lg.debug('{0}:id: {1}, no astrometry result: file: {2}'.format(pcn,sky.nml_id,ptfn))
 
   def re_plot(self,i=0,animate=None):
-
+    self.lg.debug('replot')
     self.fetch_positions(sys_exit=False,analyzed=True)
     #                                                               if self.anl=[]
     # sxtr is RA,Dec to compare with astr
@@ -312,7 +302,6 @@ class Analysis(Script):
       return aps
     
   def plot(self,title=None,animate=None,delete=None):
-
     import matplotlib
     import matplotlib.animation as animation
     # this varies from distro to distro:
@@ -327,15 +316,15 @@ class Analysis(Script):
 
     self.fetch_positions(sys_exit=True,analyzed=False)
     if self.sky_acq[0].mount_type_eq:
-      self.cat_ll_ap_lon=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x,apparent=True).ra.degree for x in self.sky_acq]
-      self.cat_ll_ap_lat=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x,apparent=True).dec.degree for x in self.sky_acq]
+      self.cat_ll_ap_lon=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x).ra.degree for x in self.sky_acq]
+      self.cat_ll_ap_lat=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x).dec.degree for x in self.sky_acq]
     else:
       #cat_ll_ap_lat,cat_ll_ap_lat=[(self.to_altaz(ic=x.cat_ic).az.degree,self.to_altaz(ic=x.cat_ic).alt.degree) for x in self.sky_acq]
-      self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic,sky=x,apparent=True).az.degree for x in self.sky_acq]
-      self.cat_ll_ap_lat=[self.to_altaz(ic=x.cat_ic,sky=x,apparent=True).alt.degree for x in self.sky_acq]
+      self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic,sky=x).az.degree for x in self.sky_acq]
+      self.cat_ll_ap_lat=[self.to_altaz(ic=x.cat_ic,sky=x).alt.degree for x in self.sky_acq]
 
-    if animate: #                                                    do not remove ","
-      ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=5000)
+    if animate: #                                     do not remove ","
+      ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=2000)
 
     aps=self.re_plot(animate=animate)
     # analyzed=False means: delete a position in acquired 
@@ -344,8 +333,9 @@ class Analysis(Script):
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
 
-    plt.show()
-
+    plt.show(block=False)
+    return 
+    
 # really ugly!
 def arg_floats(value):
   return list(map(float, value.split()))
@@ -390,7 +380,6 @@ if __name__ == "__main__":
   parser.add_argument('--transform-class', dest='transform_class', action='store', default='u_astropy', help=': %(default)s, one of (u_sofa|u_astropy|u_libnova|u_pyephem)')
   parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='built_in', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
   parser.add_argument('--refractive-index-method', dest='refractive_index_method', action='store', default='owens', help=': %(default)s, one of (owens|ciddor|edlen) if --refraction-method stone is specified, see refraction.py')
-  parser.add_argument('--mount-set-icrs', dest='mount_set_icrs', action='store_true', default=False, help=': %(default)s type apparent, True: coordinates set at mount are ICRS (or J2000)')
 
   args=parser.parse_args()
   
@@ -460,7 +449,6 @@ if __name__ == "__main__":
     solver=solver,
     acq_e_h=acq_e_h,
     transform=transform,
-    mount_set_icrs=args.mount_set_icrs
   )
 
   if not os.path.exists(args.base_path):
@@ -474,13 +462,12 @@ if __name__ == "__main__":
       title += '\n then press <Delete> to remove from the list of acquired positions'
 
     anl.plot(title=title,animate=args.animate,delete=args.delete)
-    sys.exit(1)
     
   lock=Lock()
   work_queue=Queue()  
   ds9_queue=None    
   next_queue=None    
-  cpus=int(cpu_count())
+  cpus=int(cpu_count())-1 # one left for the user :-))
   if args.ds9_display:
     ds9_queue=Queue()
     next_queue=Queue()

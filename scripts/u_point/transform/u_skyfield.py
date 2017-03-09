@@ -56,7 +56,7 @@ class Transformation(object):
       )
     self.ts=load.timescale()
 
-  def transform_to_hadec(self,tf=None,sky=None,apparent=None):
+  def transform_to_hadec(self,tf=None,sky=None,mount_set_icrs=None):
     tem=sky.temperature
     pre=sky.pressure
     hum=sky.humidity
@@ -71,7 +71,7 @@ class Transformation(object):
 
     #return
 
-  def transform_to_altaz(self,tf=None,sky=None,apparent=None):
+  def transform_to_altaz(self,tf=None,sky=None,mount_set_icrs=None):
     # use ev. other refraction methods
     if sky is None:
       tem=pre=hum=0.
@@ -85,9 +85,12 @@ class Transformation(object):
     star=Star(ra=ra,dec=dec)
     t=self.ts.utc(tf.obstime.datetime.replace(tzinfo=utc))
 
-    if apparent:
+    if mount_set_icrs:
+      # Apparent GCRS ("J2000.0") coordinates
       alt, az, distance=self.obs.at(t).observe(star).apparent().altaz()
     else:
+      # is already apparent
+      #
       alt, az, distance=self.obs.at(t).observe(star).apparent().altaz()
       
     aa=SkyCoord(az=az.to(u.radian),alt=alt.to(u.radian), unit=(u.radian,u.radian), frame='altaz',location=tf.location,obstime=tf.obstime,pressure=pre,temperature=tem,relative_humidity=hum)    
