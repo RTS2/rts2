@@ -21,22 +21,35 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import numpy as np
 from u_point.structures import Parameter
-from u_point.model_base import ModelHADec
+from model.model_base import ModelHADec
 
 class Model(ModelHADec):
-  def __init__(self,dbg=None,lg=None):
-    ModelHADec.__init__(self,dbg=dbg,lg=lg)
+  def __init__(self,lg=None,parameters=None):
+    ModelHADec.__init__(self,lg=lg)
 
     self.fit_title='u_point'
-    self.IH=Parameter(0.)
-    self.ID=Parameter(0.)
-    self.CH=Parameter(0.)
-    self.NP=Parameter(0.)
-    self.MA=Parameter(0.)
-    self.ME=Parameter(0.)
-    self.TF=Parameter(0.)
-    self.FO=Parameter(0.)
-    self.DAF=Parameter(0.)
+    if parameters is None:
+      self.IH=Parameter(0.)
+      self.ID=Parameter(0.)
+      self.CH=Parameter(0.)
+      self.NP=Parameter(0.)
+      self.MA=Parameter(0.)
+      self.ME=Parameter(0.)
+      self.TF=Parameter(0.)
+      self.FO=Parameter(0.)
+      self.DAF=Parameter(0.)
+    else:
+      self.IH=Parameter(parameters[0]/3600./180.*np.pi)
+      self.ID=Parameter(parameters[1]/3600./180.*np.pi)
+      self.CH=Parameter(parameters[2]/3600./180.*np.pi)
+      self.NP=Parameter(parameters[3]/3600./180.*np.pi)
+      self.MA=Parameter(parameters[4]/3600./180.*np.pi)
+      self.ME=Parameter(parameters[5]/3600./180.*np.pi)
+      self.TF=Parameter(parameters[6]/3600./180.*np.pi)
+      self.FO=Parameter(parameters[7]/3600./180.*np.pi)
+      self.DAF=Parameter(parameters[8]/3600./180.*np.pi)
+
+
     self.parameters=[self.IH,self.ID,self.CH,self.NP,self.MA,self.ME,self.TF,self.FO,self.DAF]
     self.phi=None
     

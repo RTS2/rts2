@@ -21,22 +21,33 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import numpy as np
 from u_point.structures import Parameter
-from u_point.model_base import ModelHADec
+from model.model_base import ModelHADec
 
 class Model(ModelHADec):
-  def __init__(self,dbg=None,lg=None):
-    ModelHADec.__init__(self,dbg=dbg,lg=lg)
+  def __init__(self,lg=None,parameters=None):
+    ModelHADec.__init__(self,lg=lg)
     
     self.fit_title='buie2003'
-    self.Dd=Parameter(0.)
-    self.gamma=Parameter(0.)
-    self.theta=Parameter(0.)
-    self.e=Parameter(0.)
-    self.Dt=Parameter(0.)
-    self.c=Parameter(0.)
-    self.ip=Parameter(0.)
-    self.l=Parameter(0.)
-    self.r=Parameter(0.)
+    if parameters is None:
+      self.Dd=Parameter(0.)
+      self.gamma=Parameter(0.)
+      self.theta=Parameter(0.)
+      self.e=Parameter(0.)
+      self.Dt=Parameter(0.)
+      self.c=Parameter(0.)
+      self.ip=Parameter(0.)
+      self.l=Parameter(0.)
+      self.r=Parameter(0.)
+    else:
+      self.Dd=Parameter(parameters[0]/3600./180.*np.pi)
+      self.gamma=Parameter(parameters[1]/3600./180.*np.pi)
+      self.theta=Parameter(parameters[2]/3600./180.*np.pi)
+      self.e=Parameter(parameters[3]/3600./180.*np.pi)
+      self.Dt=Parameter(parameters[4]/3600./180.*np.pi)
+      self.c=Parameter(parameters[5]/3600./180.*np.pi)
+      self.ip=Parameter(parameters[6]/3600./180.*np.pi)
+      self.l=Parameter(parameters[7]/3600./180.*np.pi)
+      self.r=Parameter(parameters[8]/3600./180.*np.pi)
 
     self.parameters=[self.Dd,self.gamma,self.theta,self.e,self.Dt,self.c,self.ip,self.l,self.r]
     self.phi=None
