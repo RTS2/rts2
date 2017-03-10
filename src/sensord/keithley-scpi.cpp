@@ -86,7 +86,7 @@ using namespace rts2sensord;
 
 void Keithley::getGPIB (const char *buf, rts2core::ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count)
 {
-	int bsize = 20000;
+	int bsize = 40000;
 	char *rbuf = new char[bsize];
 	gpibWrite (buf);
 	gpibRead (rbuf, bsize);

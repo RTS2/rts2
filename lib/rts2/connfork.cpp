@@ -26,7 +26,7 @@
 
 using namespace rts2core;
 
-ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout):ConnNoSend (_master)
+ConnFork::ConnFork (Block *_master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout):ConnNoSend (_master)
 {
 	childPid = -1;
 	sockerr = -1;
@@ -387,6 +387,21 @@ int ConnFork::init ()
 		logStream (MESSAGE_ERROR) << "ConnFork::init " << exePath << " newProcess return : " <<
 			ret << " " << strerror (errno) << sendLog;
 	exit (0);
+}
+
+int ConnFork::run ()
+{
+	int ret;
+	ret = init ();
+	if (ret)
+		return ret;
+	
+	while (sock > 0)
+	{
+	  	getMaster ()->oneRunLoop ();
+	}
+
+	return 0;
 }
 
 void ConnFork::stop ()
