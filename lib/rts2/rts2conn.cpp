@@ -89,7 +89,6 @@ Rts2Connection::Rts2Connection (int in_sock, Block * in_master):Connection (in_m
 	buf_size = MAX_DATA;
 
 	sock = in_sock;
-	master = in_master;
 	buf_top = buf;
 	full_data_end = NULL;
 
