@@ -59,48 +59,139 @@ u_point's use cases are:
   of a configurable mount/telescope pointing model.
 
 - if the CCD FoV is too small for astrometry.net
-  or similar to work reliably then the mount can be
-  driven interactively.
-  As targets serve "not so lonely" objects from Yale's
-  Bright Star Catalog which are identified as
+  to work reliably then the mount can be driven
+  interactively.
+  As targets serve objects from Yale's Bright Star
+  Catalog which are identified by SExtractor as
   brightest object on an CCD image.
-  SExtractor will select the brightest star which
-  serves as the measured mount apparent location.
 
-- u_point can be used during day time. The mount
-  never points to a location within a configurable
-  radius around the sun (see README_simulation).
+- u_point can be used together with Yale's Bright Star
+  Catalog during day time. The mount never points to
+  a location within a configurable radius around the
+  sun (see README_demo).
   
-- u_point is written in a way, that libindi or
+- u_point is written in a way, that indilib or
   ASCOM users can easily extend it (contact
   wildi.markus@bluewin.ch or have a look at
-  u_point/devices.py or)
+  u_point/devices.py)
 
 For quick introduction see section: Very quick
 tour: do_it_all_dss.sh
 
+Verification and simulation
+===========================
 
-libnova, astropy, PyEphem, Toshimi Taki
-=======================================
+Start script
 
-At the moment it is still unclear where the
-differences between libnova and astropy stems
-from.
-In order to simplify sorting out these difference
-there are several 'transformers' available
+./do_it_all_dss.sh -a
 
- ./u_analyze.py  --transform-with-class TRANSFORM
+for a full data acquisition, analysis and fitting the
+model parameters. The result will be comparable with
+
+transformation done with: AP astropy
+-------------------------------------------------------------
+fitted values:
+IH : ha index error                 :     -1.2614 [arcsec]
+ID : delta index error              :     +0.1989 [arcsec]
+CH : collimation error              :     +4.5304 [arcsec]
+NP : ha/delta non-perpendicularity  :     +3.9076 [arcsec]
+MA : polar axis left-right alignment:     -0.4807 [arcsec]
+ME : polar axis vertical alignment  :     +0.0382 [arcsec]
+TF : tube flexure                   :     -0.1469 [arcsec]
+FO : fork flexure                   :     -0.3330 [arcsec]
+DAF: dec axis flexure               :     -0.0600 [arcsec]
+
+Since images are fetched from http://archive.eso.org/dss/dss/
+and refraction has been turned off all the above values must
+be close to zero.
+
+Create simulated data with
+
+./u_simulate.py --toc  --sigma 0. --pressure 0.
+model loaded: altaz
+values:
+C1: horizontal telescope collimation:  -60.0000 [arcsec]
+C2: constant azimuth offset         : +120.0000 [arcsec]
+C3: tipping-mount collimation       :  -60.0000 [arcsec]
+C4: azimuth axis tilt West          :  +60.0000 [arcsec]
+C5: azimuth axis tilt North         :  -60.0000 [arcsec]
+C6: vertical telescope collimation  : +120.0000 [arcsec]
+C7: gravitational tube bending      : -120.0000 [arcsec]
+
+and analyze them with
+
+./u_model.py --plot --toc  --base-path ./ \
+ --analyzed-positions simulation_data.txt \
+ --model altaz
+
+model loaded: altaz
+transformation done with: u_astropy
+--------------------------------------------------------
+fit converged with status: 2
+values:
+C1: horizontal telescope collimation:  -60.0000 [arcsec]
+C2: constant azimuth offset         : +120.0000 [arcsec]
+C3: tipping-mount collimation       :  -60.0000 [arcsec]
+C4: azimuth axis tilt West          :  +60.0000 [arcsec]
+C5: azimuth axis tilt North         :  -60.0000 [arcsec]
+C6: vertical telescope collimation  : +120.0000 [arcsec]
+C7: gravitational tube bending      : -120.0000 [arcsec]
+fit projection not converged, status: 3
+
+with residues in
+
+ azimuth:  mu=0. arcsec, sigma=1. arcsec
+ altitude: mu=0. arcsec, sigma=1. arcsec
+
+
+Assumption about the mount
+==========================
+A mount comprises a driver and a "silly" hardware controller
+which turns both axes by an angle defined by the driver. ICRS
+coordinates are delivered to the driver. The driver provides
+apparent and after u_point succeeded mount coordinates. 
+
+
+Transformation
+==============
+Guided by Standards of Fundamental Astronomy (http://www.iausofa.org)
+I wrote transform/u_sofa.py to interface SOFA's iauAtco13 routine.
+A comparison between astropy and iauAtco13 showed that results are
+in good agreement (e.g. below 1...2 arcsec, see test_coordinates_altaz.py).
+
+RTS2 uses SOFA/ERFA libraries after
+
+ apt-get install liberfa-dev
+ make distclean
+ ./autogen.sh
+ configure ...
+ make
+
+
+Deprecated transformations
+==========================
+u_point uses astropy as default for transformations, hence a call
+to 
+
+./u_analyze.py  --transform-with-class TRANSFORM
 
 where TRANSFORM is one of the following options
 
- u_libnova  recommended
- u_astropy
- u_pyephem  recommended
+ u_libnova
+ u_pyephem
+ u_skyfiel
  u_taki_san
 
-TRANSFORM is loaded at run time. For u_libnova and
-u_taki_san the calculation of refraction can be
-choosen from
+is deprecated. 
+
+
+Refraction calculation
+======================
+From astropy:docs, section AltAz, Notes:
+"The refraction model is based on that implemented in ERFA, which 
+is fast but becomes inaccurate for altitudes below about 5 degrees."
+
+In near future refraction calculations will be available:
 
  bennett     (Jean Meeus)
  saemundsson (Jean Meeus)
@@ -113,11 +204,108 @@ with one of
  ciddor recommended
  edlen  recommended
 
-As of 2016-12-21 I'm investigating the differences
-among the transormations with scripts
 
- test_coordinates.py
- test_coordinates_altaz.py
+Coordinates
+===========
+E.g. RTS2 provides corrections for
+
+ precession
+ nutation
+ aberration
+ refraction
+
+and can be considered as "apparent" coordinates as long as the
+resulting pointing error is greater than 10 arcsec. SOFA/ERFA's
+calculation of refraction needs to be revisited. 
+
+Grid coordinates:
+-----------------
+nml_ic: nominal position "ICRS".
+nml_aa: nominal position AltAz
+
+If not Yale Bright Star Catalog coordinates are used
+a "nominal" grid used to set coordinates.
+
+Catalog coordinates:
+------------------
+To ease programming coordinates containing '_ll_' are generic.
+'ll' stands for longitude,latitude and can be either HA/Dec
+or AltAz coordinates.
+
+cat_ic: catalog position ICRS, RA/Dec
+cat_ll_ap: apparent position either HA/Dec or AltAz 
+
+Mount coordinates:
+----------------	
+mnt_ic_set: input to the driver, value: cat_ic
+
+for cross checking/redundancy, if available:
+mnt_ra_rdb: RA/Dec read back from driver
+mnt_ha_rdb: HA/Dec read back from driver
+mnt_aa_rdb: AltAz read back from driver
+
+Observed mount coordinates:
+--------------------------
+The term "observed" denotes coordinates read at the mount's setting
+circle after the object has been centered. Since there are no setting
+circles these coordinates are derived from the CCD image using either
+SExtractor or astrometry.net.
+
+mnt_ll_sxtr: RA,Dec or AltAz, derived from SExtractor 
+mnt_ll_astr: RA,Dec or AltAz, derived from astrometry.net
+
+The center coordinates defined by astrometry.net are ICRS. These
+coordinates have to be transformed to apparent.
+
+In case of a SEXtractor measurement cat_ic (ICRS) is transformed
+to apparent. The relative offset of the star to the center is added
+to the apparent center coordinates.
+
+Measurement and Optimization
+============================
+Coordinates set at the mount must be apparent. Depending on the
+desired accuracy local pressure (QFE), temperature and humidity
+need to measured.
+
+In case of RTS2, compiled with SOFA/ERFA, ICRS coordinates are set
+in field T0:ORI and the transformation to apparent can be switched
+on with e.g. T0:CAL_ABER etc. The hardware controller just turns
+the axis without doing further calculations like e.g. refraction.
+
+In case a mount controller does not behave like this the apparent
+coordinates need to be calculated based on SOFA/ERFA routines (e.g.
+with astropy).
+
+Two types of measurements
+-------------------------
+A) If the coordinates denote a point like object, that could be a star,
+its center offset is the measurand.
+
+B) Output of astrometry.net (center) coordinates are ICRS which need to
+be transformed to apparent either to HA or AltAz. The difference
+between the set and measured center coordinates, both transformed to
+apparent, is the measurand.
+
+u_point supports both measurement types. SExtractor is used to carry
+out measurement A). 
+
+As of 2017-03-05: when ever possible use astrometry.net (default).
+
+u_model.py uses per default results from astrometry.net, but specifying
+--fit-sextr SExtractor derived positions are used as input.
+
+cat_ic is set at the mount, assuming the driver transforms to apparent.
+The differences
+
+ d_az  = cat_aa.az -  X.az
+ d_alt = cat_aa.alt - X.alt
+
+where X is either mnt_ll_sxtr or mnt_ll_astr, resp., or
+
+ d_ha  = cat_ha.ha - X.ha
+ d_dec = cat_ha.dec - X.dec
+
+are minimized simultaneously. 
 
 Model selection
 ===============
@@ -135,89 +323,7 @@ for AltAz and for HA/Dec
  model/buie
  model/point
 
-Like TRANSFORM, MODEL is loaded at run time.
-
-SExtractor versus astrometry.net
-================================
-
-When ever possible use astrometry.net (default)
-and not SExtractor. u_model.py uses per default
-results from astrometry.net, but --fit-sextr can
-be specified to obtain those results.
-
-Coordinates
-===========
-
-E.g. RTS2 provides corrections for (see libnova)
-
- precession
- nutation
- aberration
- refraction
-
-and can be considered as "apparent" coordinates as
-long as the resulting pointing error is greater than
-10 arcsec. Libnova's calculation of refraction needs
-to be revisited. If a mount controller does not
-provide these corrections the coordinates set at
-mount must be calculated as apparent.
-
-The catalog data (ICRS), labeled as cat_ic, are transformed
-to apparent/observed, either AltAz (cat_aa) or HA,Dec (cat_ha).
-
-Coordinates read back from the mount are labeled as mnt_ci
-(RA,Dec), mnt_ha (HA,Dec) or mnt_aa (AltAz), in frames
-EQ/RA, EQ/HA or AltAz. Usually values of ICRS coordinates
-are set at the mount.
-
-The coordinates exist in u_point source code as follows:
-
-Grid positions:
----------------
-nml_ic: nominal position "ICRS".
-nml_aa: nominal position AltAz
-
-Catalog positions:
-------------------
-cat_ic: catalog position ICRS, RA,Dec
-cat_ha: apparent position HA/Dec
-cat_aa: apparent position AltAz 
-
-cat_ra_ap: apparent position RA,Dec
-cat_az_ap: apparent position AltAz
-
-Mount positions:
-----------------	
-mnt_ap_set: input to the mount, values from cat_ra_ap
-mnt_ra_rdb: read back from the mount
-
-mnt_ha_clc: HA,Dec calculated from cat_ap
-mnt_aa_rdb: AltAz read back from mount
- 
-observed mount position:
-mnt_ll_sxtr: RA,Dec or AltAz, derived from SExtractor 
-mnt_ll_astr: RA,Dec or AltAz, derived from astrometry.net
-
-Measurement and Optimization
-============================
-
-Coordinates cat_ic are transformed to apparent AltAz
-cat_aa or to apparent HA,Dec cat_ha. In both
-cases refraction is included if meteo data is available.
-
-cat_ra_ap is set at the mount (mnt_ap_set), assuming the
-mount controller does not apply any corrections. The
-differences
-
- d_az  = cat_az_ap.az -  X.az
- d_alt = cat_az_ap.alt - X.alt
-
-where X is either mnt_ll_sxtr or mnt_ll_astr, resp.
-
- d_ha  = cat_ha_ap.ha - X.ha
- d_dec = cat_ha_ap.dec - X.dec
-
-are minimized simultaneously. 
+Module MODEL is loaded at run time.
 
 Apparent coordinates
 ====================
@@ -261,10 +367,10 @@ If astrometry.net should be used, start with option '-a'
 
  ./do_it_all_dss.sh -a
 
-Although u_analysis.py uses all but one CPUs, it is slower
+Although u_analyze.py uses all but one CPUs, it is slower
 even if search radius, pixel scale and image center are
-specified. do_it_all_dss.sh limits the execution time to
-30 sec.
+specified. do_it_all_dss.sh limits astrometry.net's
+execution time to 30 sec.
 
 This script performs all necessary steps to get
 a pointing model fit. Steps:
@@ -520,7 +626,7 @@ README.
 - u_acquire.py
 - u_analyze.py
 - u_model.py
-- (u_simulate.py)
+- u_simulate.py
 
 RTS2 rts2-scriptexec
 --------------------
@@ -569,26 +675,8 @@ I just completed the first release. Missing are:
 
 Please feel free to contact me (wildi.markus@bluewin.ch)
 
-Status u_model.py as of 2016-11-23
-==================================
-I started with astropy and found that there are
-differences e.g. between EQ (CIRS) to AltAz
-transformations I could not explain nor did
-someone on astropy@scipy.org answer.
 
-I developed u_model.py based on libnova and added
-later the astropy code for comparison again. There
-are still differences and I'd be glad if someone
-can point me into the right direction.
-
-The EQ models are not usable yet.
-
-The AltAz model does not always converge. Repeat
-the fitting several times to gain confidence. I
-observed that fits on simulated data do not
-converge. In such cases repeat the data generation.
-
-Status u_acquire.py as of 2016-11-23
+Status u_acquire.py as of 2017-03-15
 ====================================
 I dry tested u_acquire.py in simulation mode and
 together with RTS2 dummy devices. I do not expect
@@ -818,8 +906,6 @@ or at any time for a progress report plot (check option
 
 Red dots are remaining nominal and blue dots are acquired positions
 To see DSS catalog FITS images, click on a blue point.
-
-
 
 Recommended terminal set up
 ---------------------------
