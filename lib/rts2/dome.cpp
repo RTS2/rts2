@@ -102,7 +102,7 @@ int Dome::init ()
 			logStream (MESSAGE_ERROR) << "multiple central server specified, but none identified as master - please add state-master option" << sendLog;
 			return -1;
 		}
-		rts2core::Connection *conn = getCentraldConn (stateMaster->getValue ());
+		rts2core::Rts2Connection *conn = getCentraldConn (stateMaster->getValue ());
 		if (conn == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "cannot find state-master " << stateMaster->getValue () << " in list of central connections" << sendLog;
@@ -424,7 +424,7 @@ void Dome::setWeatherTimeout (time_t wait_time, const char *msg)
 	}
 }
 
-int Dome::commandAuthorized (rts2core::Connection * conn)
+int Dome::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand (COMMAND_OPEN))
 	{

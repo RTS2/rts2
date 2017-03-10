@@ -59,7 +59,7 @@ class Trencin:public Fork
 		virtual int startPark ();
 		virtual int endPark ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -1353,7 +1353,7 @@ int Trencin::endPark ()
 	return 0;
 }
 
-int Trencin::commandAuthorized (rts2core::Connection *conn)
+int Trencin::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("reset"))
 	{

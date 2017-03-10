@@ -56,7 +56,7 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	trackingFSize->setValueInteger (20);
 }
 
-int Rotator::commandAuthorized (rts2core::Connection * conn)
+int Rotator::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand (COMMAND_PARALLACTIC_UPDATE))
 	{

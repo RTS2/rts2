@@ -25,12 +25,14 @@
 #define OPT_MATCHTIME      OPT_LOCAL + 2001
 #define OPT_MATCHTIMEZONE  OPT_LOCAL + 2002
 #define OPT_SETTIMEZONE    OPT_LOCAL + 2003
+#define OPT_TCPIP          OPT_LOCAL + 2004
 
 using namespace rts2teld;
 
 TelLX200::TelLX200 (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? 1 : 0)
 {
-	device_file = "/dev/ttyS0";
+	device_file = NULL;
+	host = NULL;
 	connDebug = false;
 
 	autoMatchTime = false;
@@ -46,11 +48,12 @@ TelLX200::TelLX200 (int in_argc, char **in_argv, bool diffTrack, bool hasTrackin
 	addOption (OPT_MATCHTIME, "match-time", 0, "match telescope clocks to local time");
 	addOption (OPT_MATCHTIMEZONE, "match-timezone", 0, "match telescope timezone with local timezone");
 	addOption (OPT_SETTIMEZONE, "set-timezone", 1, "set telescope timezone to the provided value");
+	addOption (OPT_TCPIP, "tcp-address", 1, "address for TCP/IP interface");
 }
 
 TelLX200::~TelLX200 (void)
 {
-	delete serConn;
+	delete telConn;
 }
 
 int TelLX200::processOption (int in_opt)
@@ -59,6 +62,9 @@ int TelLX200::processOption (int in_opt)
 	{
 		case 'f':
 			device_file = optarg;
+			break;
+		case OPT_TCPIP:
+			host = new HostString (optarg, "3490");
 			break;
 		case OPT_CONN_DEBUG:
 			connDebug = true;
@@ -80,13 +86,26 @@ int TelLX200::processOption (int in_opt)
 
 int TelLX200::initHardware ()
 {
-	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5, 5);
+	if (host != NULL)
+		return initTcpIp ();
+	else
+		return initSerial ();
+}
+
+int TelLX200::initTcpIp ()
+{
+
+}
+
+int TelLX200::initSerial ()
+{
+	telConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5, 5);
 	if (connDebug == true)
-		serConn->setDebug (true);
-	int ret = serConn->init ();
+		telConn->setDebug (true);
+	int ret = telConn->init ();
 	if (ret)
 		return -1;
-	serConn->flushPortIO ();
+	telConn->flushPortIO ();
 
 	if (autoMatchTime)
 	{
@@ -122,7 +141,7 @@ int TelLX200::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	return Telescope::setValue (oldValue, newValue);
 }
 
-int TelLX200::commandAuthorized (rts2core::Connection *conn)
+int TelLX200::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("matchtime"))
 	{
@@ -135,7 +154,7 @@ int TelLX200::tel_read_hms (double *hmsptr, const char *command, bool allowZ)
 {
 	char wbuf[256];
 	int len;
-	if ((len = serConn->writeRead (command, strlen (command), wbuf, 200, '#')) < 0)
+	if ((len = telConn->writeRead (command, strlen (command), wbuf, 200, '#')) < 0)
 		return -1;
 
 	wbuf[len - 1] = '\0';
@@ -146,7 +165,7 @@ int TelLX200::tel_read_hms (double *hmsptr, const char *command, bool allowZ)
 	if (isnan (*hmsptr))
 	{
 		logStream (MESSAGE_ERROR) << "invalid character for HMS: " << wbuf << sendLog;
-		serConn->flushPortIO ();
+		telConn->flushPortIO ();
 		return -1;
 	}
 	return 0;
@@ -232,7 +251,7 @@ int TelLX200::tel_rep_write (char *command)
 	char retstr;
 	for (count = 0; count < 3; count++)
 	{
-		if (serConn->writeRead (command, strlen (command), &retstr, 1) < 0)
+		if (telConn->writeRead (command, strlen (command), &retstr, 1) < 0)
 			return -1;
 		if (retstr == '1')
 			return 0;
@@ -302,21 +321,21 @@ int TelLX200::tel_set_slew_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate); // slew
-	return serConn->writePort (command, 5);
+	return telConn->writePort (command, 5);
 }
 
 int TelLX200::tel_start_slew_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:M%c#", direction);
-	return serConn->writePort (command, 5) == 0 ? 0 : -1;
+	return telConn->writePort (command, 5) == 0 ? 0 : -1;
 }
 
 int TelLX200::tel_stop_slew_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
-	return serConn->writePort (command, 5) == 0 ? 0 : -1;
+	return telConn->writePort (command, 5) == 0 ? 0 : -1;
 }
 
 int TelLX200::matchTime ()
@@ -327,14 +346,14 @@ int TelLX200::matchTime ()
 	int ret;
 	char rep;
 
-	int ovtime = serConn->getVTime ();
-	serConn->setVTime (10);
+	int ovtime = telConn->getVTime ();
+	telConn->setVTime (10);
 
 	t = time (NULL);
 	gmtime_r (&t, &ts);
 
 	// set local zone to 0
-	ret = serConn->writeRead (":SG+00.0#", 9, &rep, 1);
+	ret = telConn->writeRead (":SG+00.0#", 9, &rep, 1);
 	if (ret < 0)
 		return ret;
 	if (rep != '1')
@@ -343,7 +362,7 @@ int TelLX200::matchTime ()
 		return -1;
 	}
 	snprintf (buf, 14, ":SL%02d:%02d:%02d#", ts.tm_hour, ts.tm_min, ts.tm_sec);
-	ret = serConn->writeRead (buf, strlen (buf), &rep, 1);
+	ret = telConn->writeRead (buf, strlen (buf), &rep, 1);
 	if (ret < 0)
 		return ret;
 	if (rep != '1')
@@ -352,7 +371,7 @@ int TelLX200::matchTime ()
 		return -1;
 	}
 	snprintf (buf, 14, ":SC%02d/%02d/%02d#", ts.tm_mon + 1, ts.tm_mday, ts.tm_year - 100);
-	ret = serConn->writeRead (buf, strlen (buf), buf, 55, '#');
+	ret = telConn->writeRead (buf, strlen (buf), buf, 55, '#');
 	if (ret < 0)
 		return ret;
 	if (*buf != '1')
@@ -362,14 +381,14 @@ int TelLX200::matchTime ()
 	}
 	usleep (USEC_SEC / 15);
 	// read spaces
-	ret = serConn->readPort (buf, 40, '#');
+	ret = telConn->readPort (buf, 40, '#');
 	if (ret <= 0)
 	{
 		return ret;
 	}
 	logStream (MESSAGE_INFO) << "matched telescope time to UT time" << sendLog;
 
-	serConn->setVTime (ovtime);
+	telConn->setVTime (ovtime);
 
 	return 0;
 }
@@ -388,7 +407,7 @@ int TelLX200::setTimeZone (float offset)
 	char rep;
 
 	snprintf (buf, 10, ":SG%+05.1f#", offset);
-	int ret = serConn->writeRead (buf, 9, &rep, 1);
+	int ret = telConn->writeRead (buf, 9, &rep, 1);
 	if (ret < 0)
 		return ret;
 	if (rep != '1')
@@ -408,7 +427,7 @@ int TelLX200::getTimeZone ()
 	char buf[13];
 	float offset;
 
-	int ret = serConn->writeRead (":GG#", 4, buf, 12, '#');
+	int ret = telConn->writeRead (":GG#", 4, buf, 12, '#');
 	if (ret < 0)
 		return ret;
 

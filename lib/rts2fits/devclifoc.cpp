@@ -12,7 +12,7 @@
 
 using namespace rts2image;
 
-DevClientCameraFoc::DevClientCameraFoc (rts2core::Connection * in_connection, const char *in_exe):DevClientCameraImage (in_connection)
+DevClientCameraFoc::DevClientCameraFoc (rts2core::Rts2Connection * in_connection, const char *in_exe):DevClientCameraImage (in_connection)
 {
 	if (in_exe)
 	{
@@ -36,7 +36,7 @@ DevClientCameraFoc::~DevClientCameraFoc (void)
 
 void DevClientCameraFoc::postEvent (rts2core::Event * event)
 {
-	rts2core::Connection *focus;
+	rts2core::Rts2Connection *focus;
 	DevClientFocusFoc *focuser;
 	ConnFocus *eventConn;
 	const char *focName;
@@ -94,7 +94,7 @@ imageProceRes DevClientCameraFoc::processImage (Image * image)
 	return res;
 }
 
-void DevClientCameraFoc::focusChange (rts2core::Connection * focus)
+void DevClientCameraFoc::focusChange (rts2core::Rts2Connection * focus)
 {
 	int change = focConn->getChange ();
 	if (change == INT_MAX || !focus)
@@ -105,7 +105,7 @@ void DevClientCameraFoc::focusChange (rts2core::Connection * focus)
 	isFocusing = 1;
 }
 
-DevClientFocusFoc::DevClientFocusFoc (rts2core::Connection * in_connection):DevClientFocusImage (in_connection)
+DevClientFocusFoc::DevClientFocusFoc (rts2core::Rts2Connection * in_connection):DevClientFocusImage (in_connection)
 {
 }
 
@@ -207,7 +207,7 @@ void ConnFocus::processLine ()
 	return;
 }
 
-DevClientPhotFoc::DevClientPhotFoc (rts2core::Connection * in_conn, char *in_photometerFile, float in_photometerTime, int in_photometerFilterChange, std::vector < int >in_skipFilters):rts2core::DevClientPhot (in_conn)
+DevClientPhotFoc::DevClientPhotFoc (rts2core::Rts2Connection * in_conn, char *in_photometerFile, float in_photometerTime, int in_photometerFilterChange, std::vector < int >in_skipFilters):rts2core::DevClientPhot (in_conn)
 {
 	photometerFile = in_photometerFile;
 	photometerTime = in_photometerTime;

@@ -40,7 +40,7 @@ class FocusClient:public rts2core::Client
 		FocusClient (int argc, char **argv);
 		virtual ~ FocusClient (void);
 
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 		virtual int init ();
 
 		virtual void postEvent (rts2core::Event *event);
@@ -61,7 +61,7 @@ class FocusClient:public rts2core::Client
 
 		char *focExe;
 
-		virtual FocusCameraClient *createFocCamera (rts2core::Connection * conn);
+		virtual FocusCameraClient *createFocCamera (rts2core::Rts2Connection * conn);
 		FocusCameraClient *initFocCamera (FocusCameraClient * cam);
 
 	private:
@@ -111,7 +111,7 @@ class fwhmData
 class FocusCameraClient:public rts2image::DevClientCameraFoc
 {
 	public:
-		FocusCameraClient (rts2core::Connection * in_connection, FocusClient * in_master);
+		FocusCameraClient (rts2core::Rts2Connection * in_connection, FocusClient * in_master);
 		virtual ~ FocusCameraClient (void);
 
 		virtual void postEvent (rts2core::Event *event);

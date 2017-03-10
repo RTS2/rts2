@@ -43,7 +43,7 @@ class Sitech:public GEM
 	protected:
 		virtual int processOption (int in_opt);
 
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 
 		virtual int initHardware ();
 
@@ -781,7 +781,7 @@ int Sitech::processOption (int in_opt)
 	return 0;
 }
 
-int Sitech::commandAuthorized (rts2core::Connection *conn)
+int Sitech::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("zero_motor"))
 	{

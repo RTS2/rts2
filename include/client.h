@@ -43,7 +43,7 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnClient:public Connection
+class ConnClient:public Rts2Connection
 {
 	private:
 		NetworkAddress * address;
@@ -78,7 +78,7 @@ class ConnClient:public Connection
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnCentraldClient:public Connection
+class ConnCentraldClient:public Rts2Connection
 {
 	public:
 		ConnCentraldClient (Block * in_master, const char *in_login, const char *in_name, const char *in_password, const char *in_master_host, const char *in_master_port);
@@ -101,7 +101,7 @@ class CommandLogin:public Command
 {
 	public:
 		CommandLogin (Block * master, const char *in_login, const char *name, const char *in_password);
-		virtual int commandReturnOK (Connection * conn);
+		virtual int commandReturnOK (Rts2Connection * conn);
 
 	private:
 		enum { LOGIN_SEND, PASSWORD_SEND, INFO_SEND } state;
@@ -129,7 +129,7 @@ class Client:public Block
 
 	protected:
 		virtual ConnClient * createClientConnection (int _centrald_num, char *_deviceName);
-		virtual Connection *createClientConnection (NetworkAddress * in_addr);
+		virtual Rts2Connection *createClientConnection (NetworkAddress * in_addr);
 		virtual int willConnect (NetworkAddress * in_addr);
 
 		virtual int processOption (int in_opt);

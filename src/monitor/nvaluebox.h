@@ -42,7 +42,7 @@ class ValueBox
 		virtual ~ValueBox (void);
 		virtual keyRet injectKey (int key) = 0;
 		virtual void draw () = 0;
-		virtual void sendValue (rts2core::Connection * connection) = 0;
+		virtual void sendValue (rts2core::Rts2Connection * connection) = 0;
 		virtual bool setCursor () = 0;
 	protected:
 		rts2core::Value * getValue () { return val; }
@@ -62,7 +62,7 @@ class ValueBoxBool:public ValueBox, NSelWindow
 		ValueBoxBool (NWindow * top, rts2core::ValueBool * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 };
 
@@ -77,7 +77,7 @@ class ValueBoxString:public ValueBox, NWindowEdit
 		ValueBoxString (NWindow * top, rts2core::Value * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 };
 
@@ -92,7 +92,7 @@ class ValueBoxInteger:public ValueBox, NWindowEditIntegers
 		ValueBoxInteger (NWindow * top, rts2core::ValueInteger * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 };
 
@@ -107,7 +107,7 @@ class ValueBoxLongInteger:public ValueBox, NWindowEditIntegers
 		ValueBoxLongInteger (NWindow * top, rts2core::ValueLong * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 };
 
@@ -123,7 +123,7 @@ class ValueBoxFloat:public ValueBox, NWindowEditDigits
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 };
 
@@ -139,7 +139,7 @@ class ValueBoxDouble:public ValueBox, NWindowEditDigits
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 };
 
@@ -168,7 +168,7 @@ class ValueBoxSelection:public AbstractBoxSelection
 	public:
 		ValueBoxSelection (NWindow * top, rts2core::ValueSelection * _val, int _x, int _y);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 };
 
 /**
@@ -181,7 +181,7 @@ class ValueBoxTimeDiff:public AbstractBoxSelection
 	public:
 		ValueBoxTimeDiff (NWindow * top, rts2core::ValueTime *_val, int _x, int _y);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 };
 
 /**
@@ -196,7 +196,7 @@ class ValueBoxRectangle:public ValueBox, NWindowEdit
 		virtual ~ValueBoxRectangle ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 	private:
 		NWindowEditIntegers * edt[4];
@@ -215,7 +215,7 @@ class ValueBoxArray:public ValueBox, NWindowEdit
 		virtual ~ValueBoxArray ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 	private:
 		std::vector <NWindowEdit *> edt;
@@ -234,7 +234,7 @@ class ValueBoxPair:public ValueBox, NWindowEdit
 		virtual ~ValueBoxPair ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void sendValue (rts2core::Connection * connection);
+		virtual void sendValue (rts2core::Rts2Connection * connection);
 		virtual bool setCursor ();
 	private:
 		NWindowEditDigits * edt[2];

@@ -90,7 +90,7 @@ int SitechFocuser::info ()
 	return Focusd::info ();	
 }
 
-int SitechFocuser::commandAuthorized (rts2core::Connection *conn)
+int SitechFocuser::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("go_auto"))
 	{

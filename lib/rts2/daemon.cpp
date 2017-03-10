@@ -55,7 +55,7 @@ using namespace rts2core;
 
 void Daemon::addConnectionSock (int in_sock)
 {
-	Connection *conn = createConnection (in_sock);
+	Rts2Connection *conn = createConnection (in_sock);
 	if (sendMetaInfo (conn))
 	{
 		delete conn;
@@ -588,7 +588,7 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 	}
 }
 
-void Daemon::centraldConnRunning (Connection *conn)
+void Daemon::centraldConnRunning (Rts2Connection *conn)
 {
 	if (daemonize == IS_DAEMONIZED)
 	{
@@ -596,7 +596,7 @@ void Daemon::centraldConnRunning (Connection *conn)
 	}
 }
 
-void Daemon::centraldConnBroken (Connection *conn)
+void Daemon::centraldConnBroken (Rts2Connection *conn)
 {
 	if (daemonize == CENTRALD_OK)
 	{
@@ -605,7 +605,7 @@ void Daemon::centraldConnBroken (Connection *conn)
 	}
 }
 
-void Daemon::sendStatusMessage (rts2_status_t new_state, const char * msg, Connection *commandedConn)
+void Daemon::sendStatusMessage (rts2_status_t new_state, const char * msg, Rts2Connection *commandedConn)
 {
 	std::ostringstream _os;
 	if (!(isnan (state_start) && isnan (state_expected_end)))
@@ -630,7 +630,7 @@ void Daemon::sendStatusMessage (rts2_status_t new_state, const char * msg, Conne
 	}
 }
 
-void Daemon::sendStatusMessageConn (rts2_status_t new_state, Connection * conn)
+void Daemon::sendStatusMessageConn (rts2_status_t new_state, Rts2Connection * conn)
 {
  	std::ostringstream _os;
 	if (!(isnan (state_start) && isnan (state_expected_end)))
@@ -943,7 +943,7 @@ int Daemon::baseInfo ()
 	return 0;
 }
 
-int Daemon::baseInfo (Connection * conn)
+int Daemon::baseInfo (Rts2Connection * conn)
 {
 	int ret;
 	ret = baseInfo ();
@@ -955,7 +955,7 @@ int Daemon::baseInfo (Connection * conn)
 	return sendBaseInfo (conn);
 }
 
-int Daemon::sendBaseInfo (Connection * conn)
+int Daemon::sendBaseInfo (Rts2Connection * conn)
 {
 	for (ValueVector::iterator iter = constValues.begin ();
 		iter != constValues.end (); iter++)
@@ -972,7 +972,7 @@ int Daemon::info ()
 	return 0;
 }
 
-int Daemon::info (Connection * conn)
+int Daemon::info (Rts2Connection * conn)
 {
 	int ret;
 	try
@@ -1032,7 +1032,7 @@ void Daemon::constInfoAll ()
 		sendBaseInfo (*iter);
 }
 
-int Daemon::sendInfo (Connection * conn, bool forceSend)
+int Daemon::sendInfo (Rts2Connection * conn, bool forceSend)
 {
 	if (!isRunning (conn))
 		return -1;
@@ -1066,7 +1066,7 @@ void Daemon::sendValueAll (Value * value)
 	}
 }
 
-void Daemon::sendProgressAll (double start, double end, Connection *except)
+void Daemon::sendProgressAll (double start, double end, Rts2Connection *except)
 {
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
@@ -1081,7 +1081,7 @@ void Daemon::sendProgressAll (double start, double end, Connection *except)
 	}
 }
 
-int Daemon::sendMetaInfo (Connection * conn)
+int Daemon::sendMetaInfo (Rts2Connection * conn)
 {
 	int ret;
 	ret = info_time->sendMetaInfo (conn);
@@ -1107,7 +1107,7 @@ int Daemon::sendMetaInfo (Connection * conn)
 	return 0;
 }
 
-int Daemon::setValue (Connection * conn)
+int Daemon::setValue (Rts2Connection * conn)
 {
 	char *v_name;
 	char *op;
@@ -1214,19 +1214,19 @@ err:
 	return ret;
 }
 
-void Daemon::setState (rts2_status_t new_state, const char *description, Connection *commandedConn)
+void Daemon::setState (rts2_status_t new_state, const char *description, Rts2Connection *commandedConn)
 {
 	if (state == new_state)
 		return;
 	stateChanged (new_state, state, description, commandedConn);
 }
 
-void Daemon::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn)
+void Daemon::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Rts2Connection *commandedConn)
 {
 	state = new_state;
 }
 
-void Daemon::maskState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Connection *commandedConn)
+void Daemon::maskState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Rts2Connection *commandedConn)
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)

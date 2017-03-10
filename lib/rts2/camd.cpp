@@ -205,7 +205,7 @@ int Camera::processData (char *data, size_t size)
 	return size;
 }
 
-int Camera::deleteConnection (rts2core::Connection * conn)
+int Camera::deleteConnection (rts2core::Rts2Connection * conn)
 {
 	if (conn == exposureConn)
 	{
@@ -275,7 +275,7 @@ int Camera::getPhysicalChannel (int ch)
 	return j;
 }
 
-void Camera::startImageData (rts2core::Connection * conn)
+void Camera::startImageData (rts2core::Rts2Connection * conn)
 {
 	if (currentImageTransfer == FITS)
 		return;
@@ -605,7 +605,7 @@ int Camera::willConnect (rts2core::NetworkAddress * in_addr)
 	return rts2core::ScriptDevice::willConnect (in_addr);
 }
 
-rts2core::DevClient *Camera::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient *Camera::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -1453,7 +1453,7 @@ void Camera::addTempCCDHistory (float temp)
 	sendValueAll (tempCCD);
 }
 
-void Camera::deviceReady (rts2core::Connection * conn)
+void Camera::deviceReady (rts2core::Rts2Connection * conn)
 {
 	// if that's filter wheel
 	if (wheelDevices.size () > 0 && conn->getOtherDevClient ())
@@ -1558,7 +1558,7 @@ int Camera::camStartExposure (bool careBlock)
 			|| (getDeviceBopState () & BOP_TRIG_EXPOSE)
 			|| (getMasterStateFull () & BOP_TRIG_EXPOSE)
 			|| fm
-			|| focuserMoving && focuserMoving->getValueBool ()
+			|| (focuserMoving && focuserMoving->getValueBool ())
 		))
 	{
 		// no conflict, as when we are called, quedExpNumber will already be decreased
@@ -1659,7 +1659,7 @@ int Camera::camStartExposureWithoutCheck ()
 	return 0;
 }
 
-int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue, bool careBlock)
+int Camera::camExpose (rts2core::Rts2Connection * conn, int chipState, bool fromQue, bool careBlock)
 {
 	int ret;
 
@@ -1703,7 +1703,7 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue,
 	return ret;
 }
 
-int Camera::camBox (rts2core::Connection * conn, int x, int y, int width, int height)
+int Camera::camBox (rts2core::Rts2Connection * conn, int x, int y, int width, int height)
 {
 	int ret;
 	ret = box (x, y, width, height);
@@ -1713,7 +1713,7 @@ int Camera::camBox (rts2core::Connection * conn, int x, int y, int width, int he
 	return ret;
 }
 
-int Camera::camCenter (rts2core::Connection * conn, int in_h, int in_w)
+int Camera::camCenter (rts2core::Rts2Connection * conn, int in_h, int in_w)
 {
 	int ret;
 	ret = center (in_h, in_w);
@@ -1734,7 +1734,7 @@ int Camera::readoutStart ()
 	return ret;
 }
 
-int Camera::camReadout (rts2core::Connection * conn)
+int Camera::camReadout (rts2core::Rts2Connection * conn)
 {
 	timeTransferStart = getNow ();
 	// if we can do exposure, do it..
@@ -1787,7 +1787,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	return -1;
 }
 
-int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
+int Camera::shiftStoreStart (rts2core::Rts2Connection *conn, float exptime)
 {
 	shiftstoreLines->clear ();
 	sendValueAll (shiftstoreLines);
@@ -1795,7 +1795,7 @@ int Camera::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	return 0;
 }
 
-int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
+int Camera::shiftStoreShift (rts2core::Rts2Connection *conn, int shift, float exptime)
 {
 	shiftstoreLines->addValue (shift);
 	sendValueAll (shiftstoreLines);
@@ -1803,7 +1803,7 @@ int Camera::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 	return 0;
 }
 
-int Camera::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+int Camera::shiftStoreEnd (rts2core::Rts2Connection *conn, int shift, float exptime)
 {
 	shiftstoreLines->addValue (shift);
 	sendValueAll (shiftstoreLines);
@@ -1940,7 +1940,7 @@ bool Camera::isIdle ()
 		(CAM_NOEXPOSURE | CAM_NOTREADING));
 }
 
-int Camera::commandAuthorized (rts2core::Connection * conn)
+int Camera::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("help"))
 	{

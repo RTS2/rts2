@@ -21,7 +21,7 @@
 
 using namespace rts2logd;
 
-DevClientLogger::DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames):rts2core::DevClient (in_conn)
+DevClientLogger::DevClientLogger (rts2core::Rts2Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames):rts2core::DevClient (in_conn)
 {
 	exp = NULL;
 
@@ -202,7 +202,7 @@ int LoggerBase::willConnect (rts2core::NetworkAddress * in_addr)
 	return 0;
 }
 
-rts2core::DevClient * LoggerBase::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient * LoggerBase::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	LogValName *val = getLogVal (conn->getName ());
 	if (val)

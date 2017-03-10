@@ -152,7 +152,7 @@ void jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os);
  *
  * @param time from which changed values will be reported. nan means that all values will be reported.
  */
-void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = NAN, bool extended = false);
+void sendConnectionValues (std::ostringstream &os, rts2core::Rts2Connection * conn, XmlRpc::HttpParams *params, double from = NAN, bool extended = false);
 }
 
 #endif // !__RTS2_JSONVALUE__

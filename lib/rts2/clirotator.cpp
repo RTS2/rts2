@@ -22,7 +22,7 @@
 
 using namespace rts2teld;
 
-ClientRotator::ClientRotator (rts2core::Connection * conn):rts2core::DevClientRotator (conn)
+ClientRotator::ClientRotator (rts2core::Rts2Connection * conn):rts2core::DevClientRotator (conn)
 {
 }
 

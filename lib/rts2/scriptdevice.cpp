@@ -46,7 +46,7 @@ ScriptDevice::ScriptDevice (int in_argc, char **in_argv, int in_device_type, con
 	createValue (elementPosition, "elementPosition", "position of element within the script", false, RTS2_VALUE_WRITABLE);
 }
 
-int ScriptDevice::commandAuthorized (Connection * conn)
+int ScriptDevice::commandAuthorized (Rts2Connection * conn)
 {
 	if (conn->isCommand ("block_enter"))
 	{

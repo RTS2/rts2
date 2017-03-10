@@ -41,7 +41,7 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 	public:
 		APMAux (const char *name, rts2core::ConnAPM *apmConn, bool hasFan, bool hasBaffle, bool hasRelays, bool hasTemp);
 
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
 		virtual void postEvent (rts2core::Event *event);

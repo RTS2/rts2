@@ -47,7 +47,7 @@ int cmpuint16_t (const void *a, const void *b)
 #undef B
 }
 
-XFitsImage::XFitsImage (rts2core::Connection *_connection)
+XFitsImage::XFitsImage (rts2core::Rts2Connection *_connection)
 {
 	connection = _connection;
 

@@ -109,6 +109,9 @@ def plot_offsets(args):
 
 	terms = []
 
+	if model.oplot and model.oplot[-4:] == '.pdf':
+		
+
 	if args.show_offset_terms == None:
 		plotgrid = (1,1)
 	else:
@@ -133,6 +136,8 @@ def plot_offsets(args):
 		subplot = pylab.subplot2grid(plotgrid,(r,0),colspan=1,rowspan=1)
 		model.plot_offsets(b,subplot,ha_b,ha_e,dec)
 		r += 1
+
+	if args.oplot:
 
 	pylab.show()
 

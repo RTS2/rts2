@@ -20,7 +20,7 @@
 #include <algorithm>
 
 #include "valuestat.h"
-#include "connection.h"
+#include "rts2conn.h"
 
 using namespace rts2core;
 
@@ -78,7 +78,7 @@ ValueDoubleStat::ValueDoubleStat (std::string in_val_name, std::string in_descri
 	rts2Type |= RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE;
 }
 
-int ValueDoubleStat::setValue (Connection * connection)
+int ValueDoubleStat::setValue (Rts2Connection * connection)
 {
 	if (connection->paramNextDouble (&value)
 		|| connection->paramNextInteger (&numMes)
@@ -102,7 +102,7 @@ const char * ValueDoubleStat::getDisplayValue ()
 	return buf;
 }
 
-void ValueDoubleStat::send (Connection * connection)
+void ValueDoubleStat::send (Rts2Connection * connection)
 {
 	if (numMes != (int) valueList.size ())
 		calculate ();
@@ -201,7 +201,7 @@ ValueDoubleTimeserie::ValueDoubleTimeserie (std::string in_val_name, std::string
 	rts2Type |= RTS2_VALUE_TIMESERIE | RTS2_VALUE_DOUBLE;
 }
 
-int ValueDoubleTimeserie::setValue (Connection * connection)
+int ValueDoubleTimeserie::setValue (Rts2Connection * connection)
 {
 	if (connection->paramNextDouble (&value)
 		|| connection->paramNextInteger (&numMes)
@@ -228,7 +228,7 @@ const char * ValueDoubleTimeserie::getDisplayValue ()
 	return buf;
 }
 
-void ValueDoubleTimeserie::send (Connection * connection)
+void ValueDoubleTimeserie::send (Rts2Connection * connection)
 {
 	if (numMes != (int) valueList.size ())
 		calculate ();

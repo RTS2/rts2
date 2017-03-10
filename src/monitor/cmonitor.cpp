@@ -66,7 +66,7 @@ class CommandInfo:public rts2core::Command
 		CommandInfo (rts2core::Block * in_owner):rts2core::Command (in_owner, "info")
 		{
 		}
-		virtual int commandReturnOK (rts2core::Connection * conn)
+		virtual int commandReturnOK (rts2core::Rts2Connection * conn)
 		{
 			owner->queAll ("base_info");
 			owner->queAll ("info");

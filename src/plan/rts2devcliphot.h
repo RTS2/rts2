@@ -28,7 +28,7 @@ namespace rts2script
 class DevClientPhotExec:public rts2core::DevClientPhot, public DevScript
 {
 	public:
-		DevClientPhotExec (rts2core::Connection * in_connection);
+		DevClientPhotExec (rts2core::Rts2Connection * in_connection);
 		virtual ~ DevClientPhotExec (void);
 		virtual void postEvent (rts2core::Event * event);
 		virtual void integrationFailed (int status);

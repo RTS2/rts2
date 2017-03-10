@@ -33,7 +33,7 @@ namespace rts2teld
 class ClientRotator:public rts2core::DevClientRotator
 {
 	public:
-		ClientRotator (rts2core::Connection * conn);
+		ClientRotator (rts2core::Rts2Connection * conn);
 		virtual ~ ClientRotator ();
 };
 

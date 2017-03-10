@@ -100,8 +100,8 @@ class NCentraldWindow:public NSelWindow
 		virtual void draw ();
 	private:
 		rts2core::Client * client;
-		void printState (rts2core::Connection * conn);
-		void drawDevice (rts2core::Connection * conn);
+		void printState (rts2core::Rts2Connection * conn);
+		void drawDevice (rts2core::Rts2Connection * conn);
 };
 
 }

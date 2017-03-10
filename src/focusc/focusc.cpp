@@ -32,13 +32,13 @@
 class CFocusClient:public FocusClient
 {
 	protected:
-		virtual FocusCameraClient * createFocCamera (rts2core::Connection * conn);
+		virtual FocusCameraClient * createFocCamera (rts2core::Rts2Connection * conn);
 		virtual void help ();
 	public:
 		CFocusClient (int argc, char **argv);
 };
 
-FocusCameraClient * CFocusClient::createFocCamera (rts2core::Connection * conn)
+FocusCameraClient * CFocusClient::createFocCamera (rts2core::Rts2Connection * conn)
 {
 	return new FocusCameraClient (conn, this);
 }

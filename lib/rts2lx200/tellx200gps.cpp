@@ -64,7 +64,7 @@ int TelLX200GPS::initHardware ()
 	char rbuf[10];
 	// we get 12:34:4# while we're in short mode
 	// and 12:34:45 while we're in long mode
-	if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+	if (telConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
 		return -1;
 
 	if (rbuf[7] == '\0' || rbuf[7] == '#')
@@ -72,7 +72,7 @@ int TelLX200GPS::initHardware ()
 		// that could be used to distinguish between long
 		// short mode
 		// we are in short mode, set the long on
-		if (serConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
+		if (telConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
 			return -1;
 		return 0;
 	}
@@ -144,7 +144,7 @@ int TelLX200GPS::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
-	return serConn->writePort (command, 5);
+	return telConn->writePort (command, 5);
 }
 
 void tel_normalize (double *ra, double *dec)
@@ -173,7 +173,7 @@ int TelLX200GPS::tel_slew_to (double ra, double dec)
 
 	if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
 		return -1;
-	if (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
+	if (telConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
 		return -1;
 	if (retstr == '0')
 		return 0;
@@ -258,7 +258,7 @@ int TelLX200GPS::startResync ()
 int TelLX200GPS::isMoving ()
 {
 	char buf[2];
-	serConn->writeRead (":D#", 3, buf, 2, '#');
+	telConn->writeRead (":D#", 3, buf, 2, '#');
 	switch (*buf)
 	{
 		case '#':
@@ -301,7 +301,7 @@ int TelLX200GPS::setTo (double ra, double dec)
 
 	if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
 		return -1;
-	if (serConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0)
+	if (telConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0)
 		return -1;
 	// since we are carring operation critical for next movements of telescope,
 	// we are obliged to check its correctness
@@ -371,7 +371,7 @@ int TelLX200GPS::setTrackingSpeed(double trac_speed)
        return -1;
 
    char rbuf[1];
-   int ret = serConn->writeRead (command, 17, rbuf, 1);
+   int ret = telConn->writeRead (command, 17, rbuf, 1);
    if(ret != 1)
        return -1;
 
@@ -385,7 +385,7 @@ int TelLX200GPS::setTrackingSpeed(double trac_speed)
  */
 int TelLX200GPS::sleepTelescope()
 {
-    int ret = serConn->writePort (":hN#",4);
+    int ret = telConn->writePort (":hN#",4);
 	if (ret > 0)
 		return -1;
     
@@ -400,7 +400,7 @@ int TelLX200GPS::sleepTelescope()
  */
 int TelLX200GPS::wakeTelescope()
 {
-    int ret = serConn->writePort (":hW#",4);
+    int ret = telConn->writePort (":hW#",4);
 	if (ret > 0)
 		return -1;
     

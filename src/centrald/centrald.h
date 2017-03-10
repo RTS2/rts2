@@ -70,7 +70,7 @@ class Centrald:public Daemon
 		virtual int info ();
 		virtual int idle ();
 
-		virtual void deviceReady (rts2core::Connection * conn);
+		virtual void deviceReady (rts2core::Rts2Connection * conn);
 
 		virtual void postEvent (rts2core::Event * event);
 
@@ -114,7 +114,7 @@ class Centrald:public Daemon
 			return changeState (SERVERD_SOFT_OFF | ((next_event_type + 5) % 6), user);
 		}
 
-		virtual rts2core::Connection *createConnection (int in_sock);
+		virtual rts2core::Rts2Connection *createConnection (int in_sock);
 		void connAdded (ConnCentrald * added);
 
 		/**
@@ -125,7 +125,7 @@ class Centrald:public Daemon
 		 *
 		 * @return Connection with given connection number.
 		 */
-		rts2core::Connection *getConnection (int conn_num);
+		rts2core::Rts2Connection *getConnection (int conn_num);
 
 		void sendMessage (messageType_t in_messageType, const char *in_messageString);
 
@@ -156,7 +156,7 @@ class Centrald:public Daemon
 		/**
 		 * Call to update weather state of a connection.
 		 */
-		int weatherUpdate (rts2core::Connection *conn);
+		int weatherUpdate (rts2core::Rts2Connection *conn);
 
 		/**
 		 * Called when some device signal stop state.
@@ -179,7 +179,7 @@ class Centrald:public Daemon
 		 */
 		void openCloseChanged (const char *device, const char *msg);
 
-		virtual int statusInfo (rts2core::Connection * conn);
+		virtual int statusInfo (rts2core::Rts2Connection * conn);
 
 		/**
 		 * Return state of system, as seen from device identified by connection.
@@ -194,7 +194,7 @@ class Centrald:public Daemon
 		 *
 		 * @param conn Connection which is asking for state.
 		 */
-		int getStateForConnection (rts2core::Connection * conn);
+		int getStateForConnection (rts2core::Rts2Connection * conn);
 
 		/**
 		 * Open/close sequence calls.
@@ -215,12 +215,12 @@ class Centrald:public Daemon
 		 * NULL. They can be used in future to link two centrald to enable
 		 * cooperative observation.
 		 */
-		virtual rts2core::Connection *createClientConnection (char *in_deviceName)
+		virtual rts2core::Rts2Connection *createClientConnection (char *in_deviceName)
 		{
 			return NULL;
 		}
 
-		virtual rts2core::Connection *createClientConnection (NetworkAddress * in_addr)
+		virtual rts2core::Rts2Connection *createClientConnection (NetworkAddress * in_addr)
 		{
 			return NULL;
 		}
@@ -228,22 +228,22 @@ class Centrald:public Daemon
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual bool isRunning (rts2core::Connection *conn)
+		virtual bool isRunning (rts2core::Rts2Connection *conn)
 		{
 			return conn->isConnState (CONN_CONNECTED);
 		}
 
-		virtual void connectionRemoved (rts2core::Connection * conn);
+		virtual void connectionRemoved (rts2core::Rts2Connection * conn);
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
-		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, rts2core::Connection *commandedConn);
+		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, rts2core::Rts2Connection *commandedConn);
 
 		virtual void signaledHUP ();
 
 	private:
 		// called to change state, check if last_night_on should be set
-		void maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
+		void maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description = NULL, double start = NAN, double end = NAN, Rts2Connection *commandedConn = NULL);
 
 		// -1 if no connection has priority, -2 if the process is exiting and there aren't any valid connections,
 		// otherwise connection number of priority client
@@ -335,7 +335,7 @@ class Centrald:public Daemon
  *
  * It is used in Centrald.
  */
-class ConnCentrald:public rts2core::Connection
+class ConnCentrald:public rts2core::Rts2Connection
 {
 	private:
 		int authorized;
@@ -383,9 +383,9 @@ class ConnCentrald:public rts2core::Connection
 		 */
 		virtual ~ ConnCentrald (void);
 		virtual int sendMessage (Message & msg);
-		int sendConnectedInfo (rts2core::Connection * conn);
+		int sendConnectedInfo (rts2core::Rts2Connection * conn);
 
-		virtual void updateStatusWait (rts2core::Connection * conn);
+		virtual void updateStatusWait (rts2core::Rts2Connection * conn);
 
 		void statusCommandSend ()
 		{

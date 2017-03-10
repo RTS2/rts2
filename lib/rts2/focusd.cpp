@@ -271,7 +271,7 @@ int Focusd::scriptEnds ()
 	return rts2core::Device::scriptEnds ();
 }
 
-int Focusd::commandAuthorized (rts2core::Connection * conn)
+int Focusd::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("help"))
 	{

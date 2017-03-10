@@ -25,7 +25,7 @@
 
 using namespace rts2core;
 
-DevClient::DevClient (Connection * in_connection):Object ()
+DevClient::DevClient (Rts2Connection * in_connection):Object ()
 {
 	connection = in_connection;
 	processedBaseInfo = NOT_PROCESED;
@@ -131,7 +131,7 @@ void DevClient::idle ()
 {
 }
 
-DevClientCamera::DevClientCamera (Connection * _connection):DevClient (_connection)
+DevClientCamera::DevClientCamera (Rts2Connection * _connection):DevClient (_connection)
 {
 	lastExpectImage = false;
 }
@@ -215,7 +215,7 @@ bool DevClientCamera::isExposing ()
 }
 
 
-DevClientTelescope::DevClientTelescope (Connection * _connection):DevClient (_connection)
+DevClientTelescope::DevClientTelescope (Rts2Connection * _connection):DevClient (_connection)
 {
 	moveWasCorrecting = false;
 }
@@ -276,11 +276,11 @@ void DevClientTelescope::postEvent (Event * event)
 	DevClient::postEvent (event);
 }
 
-DevClientDome::DevClientDome (Connection * _connection):DevClient (_connection)
+DevClientDome::DevClientDome (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
-DevClientCupola::DevClientCupola (Connection * _connection):DevClientDome (_connection)
+DevClientCupola::DevClientCupola (Rts2Connection * _connection):DevClientDome (_connection)
 {
 }
 
@@ -320,7 +320,7 @@ void DevClientCupola::stateChanged (ServerState * state)
 }
 
 
-DevClientMirror::DevClientMirror (Connection * _connection):DevClient (_connection)
+DevClientMirror::DevClientMirror (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
@@ -355,7 +355,7 @@ void DevClientMirror::moveFailed (int status)
 {
 }
 
-DevClientPhot::DevClientPhot (Connection * _connection):DevClient (_connection)
+DevClientPhot::DevClientPhot (Rts2Connection * _connection):DevClient (_connection)
 {
 	lastCount = -1;
 	lastExp = -1.0;
@@ -458,7 +458,7 @@ void DevClientPhot::valueChanged (Value * value)
 	DevClient::valueChanged (value);
 }
 
-DevClientFilter::DevClientFilter (Connection * _connection):DevClient (_connection)
+DevClientFilter::DevClientFilter (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
@@ -497,11 +497,11 @@ void DevClientFilter::stateChanged (ServerState * state)
 	}
 }
 
-DevClientAugerShooter::DevClientAugerShooter (Connection * _connection):DevClient (_connection)
+DevClientAugerShooter::DevClientAugerShooter (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
-DevClientRotator::DevClientRotator (Connection * _connection):DevClient (_connection)
+DevClientRotator::DevClientRotator (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
@@ -510,7 +510,7 @@ DevClientRotator::~DevClientRotator ()
 }
 
 
-DevClientFocus::DevClientFocus (Connection * _connection):DevClient (_connection)
+DevClientFocus::DevClientFocus (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
@@ -549,7 +549,7 @@ void DevClientFocus::stateChanged (ServerState * state)
 	DevClient::stateChanged (state);
 }
 
-DevClientExecutor::DevClientExecutor (Connection * _connection):DevClient (_connection)
+DevClientExecutor::DevClientExecutor (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
@@ -568,18 +568,18 @@ void DevClientExecutor::stateChanged (ServerState * state)
 	DevClient::stateChanged (state);
 }
 
-DevClientSelector::DevClientSelector (Connection * _connection):DevClient (_connection)
+DevClientSelector::DevClientSelector (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
-DevClientImgproc::DevClientImgproc (Connection * _connection):DevClient (_connection)
+DevClientImgproc::DevClientImgproc (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
-DevClientGrb::DevClientGrb (Connection * _connection):DevClient (_connection)
+DevClientGrb::DevClientGrb (Rts2Connection * _connection):DevClient (_connection)
 {
 }
 
-DevClientBB::DevClientBB (Connection * _connection):DevClient (_connection)
+DevClientBB::DevClientBB (Rts2Connection * _connection):DevClient (_connection)
 {
 }

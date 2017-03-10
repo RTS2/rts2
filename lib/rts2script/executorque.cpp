@@ -857,7 +857,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 	return -1;
 }
 
-int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start, bool withNRep)
+int ExecutorQueue::queueFromConn (rts2core::Rts2Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start, bool withNRep)
 {
 	double t_start = NAN;
 	double t_end = NAN;
@@ -920,7 +920,7 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, int index, bool wi
 	return failed;
 }
 
-int ExecutorQueue::queueFromConnQids (rts2core::Connection *conn)
+int ExecutorQueue::queueFromConnQids (rts2core::Rts2Connection *conn)
 {
 	int failed = 0;
 	ExecutorQueue::iterator iter = begin ();

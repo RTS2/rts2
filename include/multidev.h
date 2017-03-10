@@ -49,11 +49,11 @@ class MultiBase:public Daemon
 
 	protected:
 		virtual int processOption (int opt);
-		virtual bool isRunning (rts2core::Connection *conn) { return false; }
-		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr) { return NULL; }
+		virtual bool isRunning (Rts2Connection *conn) { return false; }
+		virtual Rts2Connection *createClientConnection (NetworkAddress * in_addr) { return NULL; }
 
 	private:
-		rts2core::MultiDev md;
+		MultiDev md;
 		const char *multi_name;
 };
 

@@ -209,11 +209,11 @@ namespace rts2core
 
 /**
  * Base class which represents commands send over network to other component.
- * This object is usually send through Connection::queCommand to connection,
+ * This object is usually send through Rts2Connection::queCommand to connection,
  * which process it, wait for the other side to reply, pass return code to
- * Connection::commandReturn callback and delete it.
+ * Rts2Connection::commandReturn callback and delete it.
  *
- * @see Connection
+ * @see Rts2Connection
  *
  * @ingroup RTS2Block
  * @ingroup RTS2Command
@@ -241,12 +241,12 @@ class Command
 		 */
 		void setCommand (const char * _text);
 
-		void setConnection (Connection * conn) { connection = conn; }
+		void setConnection (Rts2Connection * conn) { connection = conn; }
 
-		Connection * getConnection () { return connection; }
+		Rts2Connection * getConnection () { return connection; }
 
 		virtual int send ();
-		int commandReturn (int status, Connection * conn);
+		int commandReturn (int status, Rts2Connection * conn);
 
 		/**
 		 * Returns command text.
@@ -275,7 +275,7 @@ class Command
 		 * @param _originator Call originator. Call originator is issued
 		 *   EVENT_COMMAND_OK or EVENT_COMMAND_FAILED event.
 		 *
-		 * @see Connection::queCommand
+		 * @see Rts2Connection::queCommand
 		 *
 		 * @callergraph
 		 */
@@ -322,13 +322,13 @@ class Command
 		 * This function is overwritten in childrens to react on
 		 * command returning OK.
 		 *
-		 * @param conn Connection on which command returns.
+		 * @param conn Rts2Connection on which command returns.
 		 *
 		 * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
 		 *
 		 * @callgraph
 		 */
-		virtual int commandReturnOK (Connection * conn);
+		virtual int commandReturnOK (Rts2Connection * conn);
 
 		/**
 		 * Called when command returns with status indicating that it will be
@@ -338,13 +338,13 @@ class Command
 		 * function is overwritten in childrens to react on command which will be
 		 * executed later.
 		 *
-		 * @param conn Connection on which command returns.
+		 * @param conn Rts2Connection on which command returns.
 		 *
 		 * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
 		 *
 		 * @callgraph
 		 */
-		virtual int commandReturnQued (Connection * conn);
+		virtual int commandReturnQued (Rts2Connection * conn);
 
 		/**
 		 * Called when command returns with error.
@@ -352,23 +352,23 @@ class Command
 		 * This function is overwritten in childrens to react on
 		 * command returning OK.
 		 *
-		 * @param conn Connection on which command returns.
+		 * @param conn Rts2Connection on which command returns.
 		 *
 		 * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
 		 *
 		 * @callgraph
 		 */
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 
 		/**
 		 * Called to remove reference to deleted connection.
 		 *
-		 * @param conn Connection which will be removed.
+		 * @param conn Rts2Connection which will be removed.
 		 */
-		virtual void deleteConnection (Connection * conn);
+		virtual void deleteConnection (Rts2Connection * conn);
 	protected:
 		Block * owner;
-		Connection * connection;
+		Rts2Connection * connection;
 		char * text;
 	private:
 		int bopMask;
@@ -405,12 +405,12 @@ class CommandSendKey:public Command
 		CommandSendKey (Block * _master, int _centrald_id, int _centrald_num, int _key);
 		virtual int send ();
 
-		virtual int commandReturnOK (Connection * conn)
+		virtual int commandReturnOK (Rts2Connection * conn)
 		{
 			connection->setConnState (CONN_AUTH_OK);
 			return -1;
 		}
-		virtual int commandReturnFailed (int status, Connection * conn)
+		virtual int commandReturnFailed (int status, Rts2Connection * conn)
 		{
 			connection->setConnState (CONN_AUTH_FAILED);
 			return -1;
@@ -426,7 +426,7 @@ class CommandAuthorize:public Command
 {
 	public:
 		CommandAuthorize (Block * _master, int centralId, int key);
-		virtual int commandReturnFailed (int status, Connection * conn)
+		virtual int commandReturnFailed (int status, Rts2Connection * conn)
 		{
 			logStream (MESSAGE_ERROR) << "authentification failed for connection " << conn->getName ()
 				<< " centrald num " << conn->getCentraldNum ()
@@ -475,8 +475,8 @@ class CommandExposure:public Command
 		 */
 		CommandExposure (Block * _master, DevClientCamera * _camera, int _bopMask);
 
-		virtual int commandReturnOK (Connection *conn);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnOK (Rts2Connection *conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 	private:
 		DevClientCamera * camera;
 };
@@ -537,8 +537,8 @@ class CommandFilter:public Command
 		CommandFilter (DevClientPhot * _phot, int filter);
 		CommandFilter (DevClientFilter * _filter, int filter);
 
-		virtual int commandReturnOK (Connection * conn);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnOK (Rts2Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 class CommandBox:public CommandCameraSettings
@@ -588,7 +588,7 @@ class CommandMove:public Command
 {
 	public:
 		CommandMove (Block * _master, DevClientTelescope * _tel, double ra, double dec);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 	protected:
 		CommandMove (Block * _master, DevClientTelescope * _tel);
 	private:
@@ -663,7 +663,7 @@ class CommandChange:public Command
 		CommandChange (Block * _master, double ra, double dec);
 		CommandChange (DevClientTelescope * _tel, double ra, double dec);
 		CommandChange (CommandChange * _command, DevClientTelescope * _tel);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 class CommandCorrect:public Command
@@ -704,7 +704,7 @@ class CommandCupolaNotMove:public Command
 	DevClientCupola * copula;
 	public:
 		CommandCupolaNotMove (DevClientCupola * _copula);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 class CommandChangeFocus:public Command
@@ -716,7 +716,7 @@ class CommandChangeFocus:public Command
 	public:
 		CommandChangeFocus (DevClientFocus * _focuser, int _steps);
 		CommandChangeFocus (DevClientCamera * _camera, int _steps);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 class CommandSetFocus:public Command
@@ -728,7 +728,7 @@ class CommandSetFocus:public Command
 	public:
 		CommandSetFocus (DevClientFocus * _focuser, int _steps);
 		CommandSetFocus (DevClientCamera * _camera, int _steps);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 class CommandMirror:public Command
@@ -737,7 +737,7 @@ class CommandMirror:public Command
 		DevClientMirror * mirror;
 	public:
 		CommandMirror (DevClientMirror * _mirror, int _pos);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 class CommandIntegrate:public Command
@@ -749,7 +749,7 @@ class CommandIntegrate:public Command
 			float _exp, int _count);
 		CommandIntegrate (DevClientPhot * _phot, float _exp,
 			int _count);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 class CommandExecNext:public Command
@@ -846,8 +846,8 @@ class CommandInfo:public Command
 {
 	public:
 		CommandInfo (Block * _master);
-		virtual int commandReturnOK (Connection * conn);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		virtual int commandReturnOK (Rts2Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 };
 
 /**
@@ -874,18 +874,18 @@ class CommandInfo:public Command
 class CommandStatusInfo:public Command
 {
 	private:
-		Connection * control_conn;
+		Rts2Connection * control_conn;
 	public:
-		CommandStatusInfo (Block * master, Connection * _control_conn);
-		virtual int commandReturnOK (Connection * conn);
-		virtual int commandReturnFailed (Connection * conn);
+		CommandStatusInfo (Block * master, Rts2Connection * _control_conn);
+		virtual int commandReturnOK (Rts2Connection * conn);
+		virtual int commandReturnFailed (Rts2Connection * conn);
 
 		const char * getCentralName()
 		{
 			return control_conn->getName ();
 		}
 
-		virtual void deleteConnection (Connection * conn);
+		virtual void deleteConnection (Rts2Connection * conn);
 };
 
 /**
@@ -896,7 +896,7 @@ class CommandStatusInfo:public Command
 class CommandDeviceStatus:public CommandStatusInfo
 {
 	public:
-		CommandDeviceStatus (Block * master, Connection * _control_conn);
+		CommandDeviceStatus (Block * master, Rts2Connection * _control_conn);
 };
 
 /**

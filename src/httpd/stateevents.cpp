@@ -26,14 +26,14 @@ using namespace rts2xmlrpc;
 
 #ifndef RTS2_HAVE_PGSQL
 
-void StateChangeRecord::run (HttpD *_master, rts2core::Connection *_conn, double validTime)
+void StateChangeRecord::run (HttpD *_master, rts2core::Rts2Connection *_conn, double validTime)
 {
 	std::cout << Timestamp (validTime) << " state of device: " << _conn->getName () << " " << _conn->getStateString () << std::endl;
 }
 
 #endif /* RTS2_HAVE_PGSQL */
 
-void StateChangeCommand::run (HttpD *_master, rts2core::Connection *_conn, double validTime)
+void StateChangeCommand::run (HttpD *_master, rts2core::Rts2Connection *_conn, double validTime)
 {
 	int ret;
 	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, false, 100);

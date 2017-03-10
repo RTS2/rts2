@@ -54,7 +54,7 @@ class Photometer:public rts2core::ScriptDevice
 
 		virtual int idle ();
 
-		virtual int deleteConnection (rts2core::Connection * conn)
+		virtual int deleteConnection (rts2core::Rts2Connection * conn)
 		{
 			if (integrateConn == conn)
 				integrateConn = NULL;
@@ -91,18 +91,18 @@ class Photometer:public rts2core::ScriptDevice
 		virtual int enableMove ();
 		virtual int disableMove ();
 
-		int startIntegrate (rts2core::Connection * conn, float in_req_time, int _req_count);
+		int startIntegrate (rts2core::Rts2Connection * conn, float in_req_time, int _req_count);
 		virtual int stopIntegrate ();
 
-		int homeFilter (rts2core::Connection * conn);
+		int homeFilter (rts2core::Rts2Connection * conn);
 		int moveFilter (int new_filter);
-		int enableFilter (rts2core::Connection * conn);
+		int enableFilter (rts2core::Rts2Connection * conn);
 
 		virtual int scriptEnds ();
 
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		float getExposure () { return exp->getValueFloat (); }
 
@@ -111,7 +111,7 @@ class Photometer:public rts2core::ScriptDevice
 		rts2core::ValueInteger *count;
 		rts2core::ValueFloat *exp;
 		rts2core::ValueBool *is_ov;
-		rts2core::Connection * integrateConn;
+		rts2core::Rts2Connection * integrateConn;
 };
 
 }

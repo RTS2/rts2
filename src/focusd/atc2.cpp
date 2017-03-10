@@ -81,7 +81,7 @@ class ATC2:public Focusd
 		virtual int setTo (double num);
 		virtual double tcOffset () {return 0.;};
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int isFocusing ();
@@ -254,7 +254,7 @@ int ATC2::info ()
 	return Focusd::info ();
 }
 
-int ATC2::commandAuthorized (rts2core::Connection * conn)
+int ATC2::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("home"))
 	{

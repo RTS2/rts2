@@ -60,7 +60,7 @@ bool read100 = false;
 class ClientCameraScript:public rts2script::DevClientCameraExec
 {
 	public:
-		ClientCameraScript (rts2core::Connection *conn, rts2core::ValueString *_expandPath, std::string templateFile, bool write_conn, bool write_rts2):rts2script::DevClientCameraExec (conn, _expandPath, templateFile)
+		ClientCameraScript (rts2core::Rts2Connection *conn, rts2core::ValueString *_expandPath, std::string templateFile, bool write_conn, bool write_rts2):rts2script::DevClientCameraExec (conn, _expandPath, templateFile)
 		{
 			setWriteConnnection (write_conn, write_rts2);
 			totalExp = -1;
@@ -353,7 +353,7 @@ int ScriptExec::doProcessing ()
 	return 0;
 }
 
-rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient *ScriptExec::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	rts2core::DevClient *cli;
 	switch (other_device_type)
@@ -434,7 +434,7 @@ void ScriptExec::postEvent (rts2core::Event * event)
 	rts2core::Client::postEvent (event);
 }
 
-void ScriptExec::deviceReady (rts2core::Connection * conn)
+void ScriptExec::deviceReady (rts2core::Rts2Connection * conn)
 {
 	conn->postEvent (new rts2core::Event (callScriptEnd ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) currentTarget));
 	conn->postEvent (new rts2core::Event (EVENT_OBSERVE));
@@ -456,7 +456,7 @@ int ScriptExec::idle ()
 	return rts2core::Client::idle ();
 }
 
-void ScriptExec::deviceIdle (rts2core::Connection * conn)
+void ScriptExec::deviceIdle (rts2core::Rts2Connection * conn)
 {
 	if (!isScriptRunning ())
 		endRunLoop ();

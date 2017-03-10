@@ -72,7 +72,7 @@ class NIRatir:public Sensor
 		virtual int info ();
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	private:
 		const char *boardPCI;
@@ -317,7 +317,7 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	return Sensor::setValue (old_value, new_value);
 }
 
-int NIRatir::commandAuthorized (rts2core::Connection * conn)
+int NIRatir::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("reset"))
 	{

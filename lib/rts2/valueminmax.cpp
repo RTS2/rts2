@@ -18,7 +18,7 @@
  */
 
 #include "valueminmax.h"
-#include "connection.h"
+#include "rts2conn.h"
 
 using namespace rts2core;
 
@@ -36,7 +36,7 @@ ValueDoubleMinMax::ValueDoubleMinMax (std::string in_val_name, std::string in_de
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
-int ValueDoubleMinMax::setValue (Connection * connection)
+int ValueDoubleMinMax::setValue (Rts2Connection * connection)
 {
 	double new_val;
 	if (connection->paramNextDouble (&new_val))
@@ -133,7 +133,7 @@ ValueIntegerMinMax::ValueIntegerMinMax (std::string in_val_name, std::string in_
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
-int ValueIntegerMinMax::setValue (Connection * connection)
+int ValueIntegerMinMax::setValue (Rts2Connection * connection)
 {
 	int new_val;
 	if (connection->paramNextInteger (&new_val))
@@ -196,7 +196,7 @@ int ValueIntegerMinMax::doOpValue (char op, Value * old_value)
 
 const char * ValueIntegerMinMax::getValue ()
 {
-	sprintf (buf, "%.20le %.20le %.20le", getValueInteger (), getMin (), getMax ());
+	sprintf (buf, "%d %d %d", getValueInteger (), getMin (), getMax ());
 	return buf;
 }
 

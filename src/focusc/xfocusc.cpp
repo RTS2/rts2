@@ -46,7 +46,7 @@
 
 using namespace rts2core;
 
-XFocusClientCamera::XFocusClientCamera (Connection * in_connection, double in_change_val, XFocusClient * in_master):FocusCameraClient (in_connection, in_master)
+XFocusClientCamera::XFocusClientCamera (Rts2Connection * in_connection, double in_change_val, XFocusClient * in_master):FocusCameraClient (in_connection, in_master)
 {
 	master = in_master;
 
@@ -205,7 +205,7 @@ int XFocusClient::init ()
 	return 0;
 }
 
-FocusCameraClient * XFocusClient::createFocCamera (Connection * conn)
+FocusCameraClient * XFocusClient::createFocCamera (Rts2Connection * conn)
 {
 	XFocusClientCamera *cam;
 	cam = new XFocusClientCamera (conn, changeVal, this);

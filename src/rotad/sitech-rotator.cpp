@@ -87,7 +87,7 @@ int SitechRotator::info ()
 	return Rotator::info ();
 }
 
-int SitechRotator::commandAuthorized (rts2core::Connection *conn)
+int SitechRotator::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("stop"))
 	{

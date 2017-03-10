@@ -292,7 +292,7 @@ using namespace rts2teld;
 int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 {
 	int ret;
-	ret = serConn->writeRead (buf, wcount, rbuf, rcount);
+	ret = telConn->writeRead (buf, wcount, rbuf, rcount);
 	usleep (USEC_SEC / 15);
 	if (ret < 0)
 	{
@@ -300,7 +300,7 @@ int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 		// try rebooting
 		tel_gemini_reset ();
 		usleep (USEC_SEC / 5);
-		ret = serConn->writeRead (buf, wcount, rbuf, rcount);
+		ret = telConn->writeRead (buf, wcount, rbuf, rcount);
 		usleep (USEC_SEC / 15);
 	}
 	return ret;
@@ -308,7 +308,7 @@ int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 
 int Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
-	int tmp_rcount = serConn->writeRead (wbuf, wcount, rbuf, rcount, '#');
+	int tmp_rcount = telConn->writeRead (wbuf, wcount, rbuf, rcount, '#');
 	usleep (USEC_SEC / 15);
 	if (tmp_rcount < 0)
 	{
@@ -377,7 +377,7 @@ int Gemini::tel_gemini_setch (int id, const char *in_buf)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	ret = serConn->writePort (buf, len);
+	ret = telConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	free (buf);
 	return ret;
@@ -394,7 +394,7 @@ int Gemini::tel_gemini_set (int id, int32_t val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	ret = serConn->writePort (buf, len);
+	ret = telConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -410,7 +410,7 @@ int Gemini::tel_gemini_set (int id, double val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	ret = serConn->writePort (buf, len);
+	ret = telConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -474,7 +474,7 @@ int Gemini::tel_gemini_get (int id, int32_t & val)
 		logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
 			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
 		sleep (5);
-		serConn->flushPortIO ();
+		telConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
 	}
@@ -503,7 +503,7 @@ int Gemini::tel_gemini_get (int id, double &val)
 		logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
 			tel_gemini_checksum2 (buf) << " is " << checksum << sendLog;
 		sleep (5);
-		serConn->flushPortIO ();
+		telConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
 	}
@@ -554,17 +554,17 @@ int Gemini::tel_gemini_reset ()
 	sleep (5);
 
 	// write_read_hash
-	if (serConn->flushPortIO () < 0)
+	if (telConn->flushPortIO () < 0)
 	{
 		logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
 		return -1;
 	}
 	usleep (USEC_SEC / 15);
 
-	if (serConn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
+	if (telConn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
 	{
 		sleep (5);
-		serConn->flushPortIO ();
+		telConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 		return -1;
 	}
@@ -575,15 +575,15 @@ int Gemini::tel_gemini_reset ()
 		switch (resetState->getValueInteger ())
 		{
 			case 0:
-				serConn->writePort ("bR#", 3);
+				telConn->writePort ("bR#", 3);
 				sleep (5);
 				break;
 			case 1:
-				serConn->writePort ("bW#", 3);
+				telConn->writePort ("bW#", 3);
 				sleep (5);
 				break;
 			case 2:
-				serConn->writePort ("bC#", 3);
+				telConn->writePort ("bC#", 3);
 				sleep (20);
 				break;
 		}
@@ -595,7 +595,7 @@ int Gemini::tel_gemini_reset ()
 		// something is wrong, reset all comm
 		logStream (MESSAGE_ERROR) << "system is not after reboot nor completed startup, making 10s sleep & flushPortIO" << sendLog;
 		sleep (10);
-		serConn->flushPortIO ();
+		telConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 	}
 	return -1;
@@ -644,7 +644,7 @@ Gemini::Gemini (int in_argc, char **in_argv):TelLX200 (in_argc, in_argv, false, 
 	telMotorState = TEL_OK;
 	infoCount = 0;
 
-	serConn = NULL;
+	telConn = NULL;
 
 	worm = 0;
 	worm_move_needed = 0;
@@ -858,16 +858,16 @@ int Gemini::setCorrection ()
 	
 	int ret = -1;
 #ifdef RTS2_LIBERFA
-	ret = serConn->writePort (":p3#", 4);
+	ret = telConn->writePort (":p3#", 4);
 #else
 	if (calculateAberation () && calculatePrecession () && calculateRefraction ())
-		ret = serConn->writePort (":p0#", 4);
+		ret = telConn->writePort (":p0#", 4);
 	else if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())	
-		ret = serConn->writePort (":p1#", 4);
+		ret = telConn->writePort (":p1#", 4);
 	else if (calculateAberation () && calculatePrecession () && !calculateRefraction ())
-		ret = serConn->writePort (":p2#", 4);
+		ret = telConn->writePort (":p2#", 4);
 	else if (!calculateAberation () && !calculatePrecession () && !calculateRefraction ())
-		ret = serConn->writePort (":p3#", 4);
+		ret = telConn->writePort (":p3#", 4);
 #endif
 	usleep (USEC_SEC / 15);
 	return ret;
@@ -877,16 +877,16 @@ int Gemini::initHardware ()
 {
 	int ret;
 
-	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
-	serConn->setDebug (getDebug ());
+	telConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
+	telConn->setDebug (getDebug ());
 
-	ret = serConn->init ();
+	ret = telConn->init ();
 	if (ret)
 		return ret;
 
 	while (1)
 	{
-		serConn->flushPortIO ();
+		telConn->flushPortIO ();
 		usleep (USEC_SEC / 15);
 
 		ret = geminiInit ();
@@ -900,7 +900,7 @@ int Gemini::initHardware ()
 				return ret;
 			setCorrection ();
 
-			serConn->writePort (":hW#", 4);
+			telConn->writePort (":hW#", 4);
 			usleep (USEC_SEC / 15);
 
 			return ret;
@@ -1143,7 +1143,7 @@ int Gemini::info ()
 void Gemini::tel_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
-	serConn->writePort (":Q#", 3);
+	telConn->writePort (":Q#", 3);
 	usleep (USEC_SEC * 2.5);	// give time to stop mount... (#99 seems not to reflect real state of motors, checking it is meaningless)
 	tel_gemini_get (99, lastMotorState);
 	//if (lastMotorState & 8)
@@ -1160,7 +1160,7 @@ int Gemini::tel_start_move ()
 	char buf[55];
 
 	if ((tel_write_ra (lastMoveRa) < 0) || usleep (USEC_SEC / 15)
-		|| (serConn->writePort (":ONtest#", 8) < 0) || usleep (USEC_SEC / 15)
+		|| (telConn->writePort (":ONtest#", 8) < 0) || usleep (USEC_SEC / 15)
 		|| (tel_write_dec (lastMoveDec) < 0) || usleep (USEC_SEC / 15))
 		return -1;
 	if (willFlip)
@@ -1181,7 +1181,7 @@ int Gemini::tel_start_move ()
 		return 0;
 	}
 	// otherwise read reply..
-	serConn->readPort (buf, 53, '#');
+	telConn->readPort (buf, 53, '#');
 	usleep (USEC_SEC / 15);
 	if (retstr == '3')			 // manual control..
 		return 0;
@@ -1582,7 +1582,7 @@ int Gemini::guide (char direction, unsigned int val)
 	int len;
 	int ret;
 	len = sprintf (buf, ":Mi%c%i#", direction, val);
-	ret = serConn->writePort (buf, len);
+	ret = telConn->writePort (buf, len);
 	usleep (USEC_SEC / 15);
 	return ret;
 }
@@ -1833,7 +1833,7 @@ int Gemini::startPark ()
 	if (telMotorState != TEL_OK)
 		return -1;
 	stopMove ();
-	ret = serConn->writePort (":hP#", 4);
+	ret = telConn->writePort (":hP#", 4);
 	usleep (USEC_SEC / 15);
 	if (ret < 0)
 		return -1;
@@ -1959,7 +1959,7 @@ extern int Gemini::loadModel ()
 	}
 	free (line);
 	usleep (USEC_SEC * 5);
-	if (serConn->flushPortIO () < 0)
+	if (telConn->flushPortIO () < 0)
 	{
 		logStream (MESSAGE_ERROR) << "flushPortIO error" << sendLog;
 		return -1;

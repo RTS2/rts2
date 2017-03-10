@@ -29,7 +29,7 @@ namespace rts2ncurses
 class NDeviceWindow:public NSelWindow
 {
 	public:
-		NDeviceWindow (rts2core::Connection * in_connection, bool _hide_debug);
+		NDeviceWindow (rts2core::Rts2Connection * in_connection, bool _hide_debug);
 		virtual ~ NDeviceWindow (void);
 
 		virtual keyRet injectKey (int key);
@@ -42,7 +42,7 @@ class NDeviceWindow:public NSelWindow
 		double now;
 		struct timeval tvNow;
 
-		rts2core::Connection *getConnection ()
+		rts2core::Rts2Connection *getConnection ()
 		{
 			return connection;
 		}
@@ -69,7 +69,7 @@ class NDeviceWindow:public NSelWindow
 
 	private:
 		WINDOW * valueList;
-		rts2core::Connection *connection;
+		rts2core::Rts2Connection *connection;
 		void printState ();
 		rts2core::Value *getSelValue ();
 		void printValueDesc (rts2core::Value * val);
@@ -107,7 +107,7 @@ class FutureStateChange
 class NDeviceCentralWindow:public NDeviceWindow
 {
 	public:
-		NDeviceCentralWindow (rts2core::Connection * in_connection);
+		NDeviceCentralWindow (rts2core::Rts2Connection * in_connection);
 		virtual ~ NDeviceCentralWindow (void);
 
 	protected:

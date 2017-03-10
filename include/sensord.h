@@ -83,7 +83,7 @@ class SensorWeather:public Sensor
 	protected:
 		virtual int idle ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		/**
 		 * Called to check if sensor does not block observing. This is

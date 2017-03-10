@@ -41,7 +41,7 @@ struct filterStart
 class ClientFilterCamera:public rts2core::DevClientFilter
 {
 	public:
-		ClientFilterCamera (rts2core::Connection * conn, FilterVal *fv);
+		ClientFilterCamera (rts2core::Rts2Connection * conn, FilterVal *fv);
 		virtual ~ ClientFilterCamera (void);
 		virtual void filterMoveFailed (int status);
 		virtual void postEvent (rts2core::Event * event);

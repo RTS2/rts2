@@ -27,7 +27,7 @@ using namespace rts2centrald;
 
 void ConnCentrald::setState (rts2_status_t in_value, char *msg)
 {
-	rts2core::Connection::setState (in_value, msg);
+	rts2core::Rts2Connection::setState (in_value, msg);
 	// distribute weather updates..
 	if (serverState->maskValueChanged (WEATHER_MASK))
 		master->weatherChanged (getName (), msg);
@@ -39,7 +39,7 @@ void ConnCentrald::setState (rts2_status_t in_value, char *msg)
 		master->openCloseChanged (getName (), msg);
 }
 
-ConnCentrald::ConnCentrald (int in_sock, Centrald * in_master, int in_centrald_id):rts2core::Connection (in_sock, in_master)
+ConnCentrald::ConnCentrald (int in_sock, Centrald * in_master, int in_centrald_id):rts2core::Rts2Connection (in_sock, in_master)
 {
 	master = in_master;
 	setCentraldId (in_centrald_id);
@@ -61,7 +61,7 @@ int ConnCentrald::sendDeviceKey ()
 	std::ostringstream _os;	
 	// device number could change..device names don't
 	char *dev_name;
-	rts2core::Connection *dev;
+	rts2core::Rts2Connection *dev;
 	if (paramNextString (&dev_name) || !paramEnd ())
 		return -2;
 	// find device, set it authorization key
@@ -80,7 +80,7 @@ int ConnCentrald::sendDeviceKey ()
 int ConnCentrald::sendMessage (Message & msg)
 {
 	if (msg.passMask (messageMask))
-		return rts2core::Connection::sendMessage (msg);
+		return rts2core::Rts2Connection::sendMessage (msg);
 	return -1;
 }
 
@@ -99,7 +99,7 @@ int ConnCentrald::sendInfo ()
 	return 0;
 }
 
-int ConnCentrald::sendConnectedInfo (rts2core::Connection * conn)
+int ConnCentrald::sendConnectedInfo (rts2core::Rts2Connection * conn)
 {
 	std::ostringstream _os;
 	int ret = -1;
@@ -129,7 +129,7 @@ int ConnCentrald::sendConnectedInfo (rts2core::Connection * conn)
 	return ret;
 }
 
-void ConnCentrald::updateStatusWait (rts2core::Connection * conn)
+void ConnCentrald::updateStatusWait (rts2core::Rts2Connection * conn)
 {
 	if (conn)
 	{
@@ -164,7 +164,7 @@ int ConnCentrald::commandDevice ()
 			return -2;
 		}
 
-		rts2core::Connection *conn = master->getConnection (client);
+		rts2core::Rts2Connection *conn = master->getConnection (client);
 
 		// client vanished when we processed data..
 		if (conn == NULL)
@@ -221,7 +221,7 @@ int ConnCentrald::commandDevice ()
 	{
 		return (master->weatherUpdate (this));
 	}
-	return rts2core::Connection::command ();
+	return rts2core::Rts2Connection::command ();
 }
 
 int ConnCentrald::sendStatusInfo ()
@@ -302,7 +302,7 @@ int ConnCentrald::commandClient ()
 			return master->startClose () ? DEVDEM_E_PARAMSVAL : DEVDEM_OK;
 		}
 	}
-	return rts2core::Connection::command ();
+	return rts2core::Rts2Connection::command ();
 }
 
 int ConnCentrald::command ()
@@ -348,7 +348,7 @@ int ConnCentrald::command ()
 				|| !paramEnd ())
 				return -2;
 
-			if (rts2core::Connection *c = master->findName (reg_device))
+			if (rts2core::Rts2Connection *c = master->findName (reg_device))
 			{
 				std::ostringstream _os;
 				_os << "name " << reg_device << " already registered with id " << c->getCentraldId ();
@@ -387,7 +387,7 @@ int ConnCentrald::command ()
 	else if (getType () == CLIENT_SERVER)
 		return commandClient ();
 	// else
-	return rts2core::Connection::command ();
+	return rts2core::Rts2Connection::command ();
 }
 
 Centrald::Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF | BAD_WEATHER)
@@ -627,7 +627,7 @@ int Centrald::initValues ()
 	return Daemon::initValues ();
 }
 
-void Centrald::connectionRemoved (rts2core::Connection * conn)
+void Centrald::connectionRemoved (rts2core::Rts2Connection * conn)
 {
 	// update weather
 	weatherChanged (conn->getName (), "connection removed");
@@ -670,7 +670,7 @@ int Centrald::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	return rts2core::Daemon::setValue (old_value, new_value);
 }
 
-void Centrald::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, rts2core::Connection *commandedConn)
+void Centrald::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, rts2core::Rts2Connection *commandedConn)
 {
 	Daemon::stateChanged (new_state, old_state, description, commandedConn);
 	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
@@ -683,7 +683,7 @@ void Centrald::stateChanged (rts2_status_t new_state, rts2_status_t old_state, c
 	}
 }
 
-rts2core::Connection * Centrald::createConnection (int in_sock)
+rts2core::Rts2Connection * Centrald::createConnection (int in_sock)
 {
 	connNum++;
 	return new ConnCentrald (in_sock, this, connNum);
@@ -694,12 +694,12 @@ void Centrald::connAdded (ConnCentrald * added)
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
-		rts2core::Connection *conn = *iter;
+		rts2core::Rts2Connection *conn = *iter;
 		added->sendConnectedInfo (conn);
 	}
 }
 
-rts2core::Connection * Centrald::getConnection (int conn_num)
+rts2core::Rts2Connection * Centrald::getConnection (int conn_num)
 {
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
@@ -815,7 +815,7 @@ int Centrald::idle ()
 	return Daemon::idle ();
 }
 
-void Centrald::deviceReady (rts2core::Connection * conn)
+void Centrald::deviceReady (rts2core::Rts2Connection * conn)
 {
 	Daemon::deviceReady (conn);
 	// check again for weather state..
@@ -934,7 +934,7 @@ void Centrald::weatherChanged (const char * device, const char * msg)
 	sendValueAll (badWeatherDevice);
 }
 
-int Centrald::weatherUpdate (rts2core::Connection *conn)
+int Centrald::weatherUpdate (rts2core::Rts2Connection *conn)
 {
 	char *w_device;
 	char *w_update;
@@ -1018,7 +1018,7 @@ void Centrald::openCloseChanged (const char *device, const char *msg)
 	}
 }
 
-int Centrald::statusInfo (rts2core::Connection * conn)
+int Centrald::statusInfo (rts2core::Rts2Connection * conn)
 {
 	ConnCentrald *c_conn = (ConnCentrald *) conn;
 	int s_count = 0;
@@ -1053,7 +1053,7 @@ int Centrald::statusInfo (rts2core::Connection * conn)
 	return -1;
 }
 
-int Centrald::getStateForConnection (rts2core::Connection * conn)
+int Centrald::getStateForConnection (rts2core::Rts2Connection * conn)
 {
 	if (conn->getType () != DEVICE_SERVER)
 		return getState ();
@@ -1064,7 +1064,7 @@ int Centrald::getStateForConnection (rts2core::Connection * conn)
 	// cretae BOP mask for device
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
-		rts2core::Connection *test_conn = *iter;
+		rts2core::Rts2Connection *test_conn = *iter;
 		if (Configuration::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
 			continue;
 		sta |= test_conn->getBopState ();
@@ -1089,7 +1089,7 @@ int Centrald::doOpen ()
 	for (std::vector <std::string>::iterator iter = openSequence->valueBegin (); iter != openSequence->valueEnd (); iter++)
 	{
 		// first device which blocks opening shall be opened
-		rts2core::Connection *dconn = getOpenConnection (iter->c_str ());
+		rts2core::Rts2Connection *dconn = getOpenConnection (iter->c_str ());
 		if (dconn == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "missing " << *iter << " from opening sequence, stopping opening" << sendLog;
@@ -1122,7 +1122,7 @@ int Centrald::doClose ()
 	{
 		iter--;
 		// first device which blocks opening shall be opened
-		rts2core::Connection *dconn = getOpenConnection (iter->c_str ());
+		rts2core::Rts2Connection *dconn = getOpenConnection (iter->c_str ());
 		if (dconn == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "missing " << *iter << " from close sequence, ignoring" << sendLog;
@@ -1162,7 +1162,7 @@ void Centrald::updateOpenClose (bool clear)
 	sendValueAll (openCloseTimeout);
 }
 
-void Centrald::maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Connection *commandedConn)
+void Centrald::maskCentralState (rts2_status_t state_mask, rts2_status_t new_state, const char *description, double start, double end, Rts2Connection *commandedConn)
 {
 	if (!(getState () & SERVERD_STANDBY))
 	{

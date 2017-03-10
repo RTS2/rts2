@@ -17,8 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_DEVCLIENT__
-#define __RTS2_DEVCLIENT__
+#pragma once
 
 #include "object.h"
 #include "block.h"
@@ -38,7 +37,7 @@ class Command;
 class DevClient:public Object
 {
 	public:
-		DevClient (Connection * in_connection);
+		DevClient (Rts2Connection * in_connection);
 		virtual ~ DevClient (void);
 
 		virtual void postEvent (Event * event);
@@ -74,7 +73,7 @@ class DevClient:public Object
 
 		virtual void stateChanged (ServerState * state);
 
-		Connection *getConnection () { return connection; }
+		Rts2Connection *getConnection () { return connection; }
 
 		const char *getName () { return connection->getName (); }
 
@@ -111,10 +110,10 @@ class DevClient:public Object
 
 		virtual void valueChanged (Value * value) {}
 
-		virtual void deleteConnection (Connection *conn) {};
+		virtual void deleteConnection (Rts2Connection *conn) {};
 
 	protected:
-		Connection * connection;
+		Rts2Connection * connection;
 		enum { NOT_PROCESED, PROCESED } processedBaseInfo;
 		virtual void died ();
 
@@ -144,7 +143,7 @@ class DevClient:public Object
 class DevClientCamera:public DevClient
 {
 	public:
-		DevClientCamera (Connection * in_connection);
+		DevClientCamera (Rts2Connection * in_connection);
 
 		/**
 		 * Called when exposure (dark of light) command finished without error.
@@ -187,7 +186,7 @@ class DevClientCamera:public DevClient
 class DevClientTelescope:public DevClient
 {
 	public:
-		DevClientTelescope (Connection * in_connection);
+		DevClientTelescope (Rts2Connection * in_connection);
 		virtual ~ DevClientTelescope (void);
 		/*! gets calledn when move finished without success */
 		virtual void moveFailed (int status)
@@ -206,13 +205,13 @@ class DevClientTelescope:public DevClient
 class DevClientDome:public DevClient
 {
 	public:
-		DevClientDome (Connection * in_connection);
+		DevClientDome (Rts2Connection * in_connection);
 };
 
 class DevClientCupola:public DevClientDome
 {
 	public:
-		DevClientCupola (Connection * in_connection);
+		DevClientCupola (Rts2Connection * in_connection);
 		virtual void syncFailed (int status);
 		virtual void notMoveFailed (int status);
 		virtual void stateChanged (ServerState * state);
@@ -225,7 +224,7 @@ class DevClientCupola:public DevClientDome
 class DevClientMirror:public DevClient
 {
 	public:
-		DevClientMirror (Connection * in_connection);
+		DevClientMirror (Rts2Connection * in_connection);
 		virtual ~ DevClientMirror (void);
 		virtual void moveFailed (int status);
 		virtual void stateChanged (ServerState * state);
@@ -237,14 +236,14 @@ class DevClientMirror:public DevClient
 class DevClientRotator:public DevClient
 {
 	public:
-		DevClientRotator (Connection * in_connection);
+		DevClientRotator (Rts2Connection * in_connection);
 		virtual ~ DevClientRotator (void);
 };
 
 class DevClientFocus:public DevClient
 {
 	public:
-		DevClientFocus (Connection * in_connection);
+		DevClientFocus (Rts2Connection * in_connection);
 		virtual ~ DevClientFocus (void);
 		virtual void focusingFailed (int status);
 		virtual void stateChanged (ServerState * state);
@@ -257,7 +256,7 @@ class DevClientFocus:public DevClient
 class DevClientPhot:public DevClient
 {
 	public:
-		DevClientPhot (Connection * in_connection);
+		DevClientPhot (Rts2Connection * in_connection);
 		virtual ~ DevClientPhot (void);
 		virtual void integrationFailed (int status);
 		virtual void filterMoveFailed (int status);
@@ -283,7 +282,7 @@ class DevClientPhot:public DevClient
 class DevClientFilter:public DevClient
 {
 	public:
-		DevClientFilter (Connection * in_connection);
+		DevClientFilter (Rts2Connection * in_connection);
 		virtual ~ DevClientFilter (void);
 		virtual void filterMoveFailed (int status);
 		virtual void stateChanged (ServerState * state);
@@ -298,13 +297,13 @@ class DevClientFilter:public DevClient
 class DevClientAugerShooter:public DevClient
 {
 	public:
-		DevClientAugerShooter (Connection * in_connection);
+		DevClientAugerShooter (Rts2Connection * in_connection);
 };
 
 class DevClientExecutor:public DevClient
 {
 	public:
-		DevClientExecutor (Connection * in_connection);
+		DevClientExecutor (Rts2Connection * in_connection);
 		virtual void stateChanged (ServerState * state);
 
 	protected:
@@ -314,26 +313,25 @@ class DevClientExecutor:public DevClient
 class DevClientSelector:public DevClient
 {
 	public:
-		DevClientSelector (Connection * in_connection);
+		DevClientSelector (Rts2Connection * in_connection);
 };
 
 class DevClientImgproc:public DevClient
 {
 	public:
-		DevClientImgproc (Connection * in_connection);
+		DevClientImgproc (Rts2Connection * in_connection);
 };
 
 class DevClientGrb:public DevClient
 {
 	public:
-		DevClientGrb (Connection * in_connection);
+		DevClientGrb (Rts2Connection * in_connection);
 };
 
 class DevClientBB:public DevClient
 {
 	public:
-		DevClientBB (Connection * in_connection);
+		DevClientBB (Rts2Connection * in_connection);
 };
 
 }
-#endif							 /* !__RTS2_DEVCLIENT__ */

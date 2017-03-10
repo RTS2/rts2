@@ -241,7 +241,7 @@ class EdtSao:public Camera
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -1522,7 +1522,7 @@ int EdtSao::initValues ()
 	return Camera::initValues ();
 }
 
-int EdtSao::commandAuthorized (rts2core::Connection * conn)
+int EdtSao::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("reset"))
 	{

@@ -22,7 +22,7 @@
 
 using namespace rts2script;
 
-DevScript::DevScript (rts2core::Connection * in_script_connection) : script ()
+DevScript::DevScript (rts2core::Rts2Connection * in_script_connection) : script ()
 {
 	scriptKillCommand = NULL;
 	scriptKillcallScriptEnds = false;

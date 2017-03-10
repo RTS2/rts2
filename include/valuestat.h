@@ -49,10 +49,10 @@ class ValueDoubleStat:public ValueDouble
 		 */
 		void calculate ();
 
-		virtual int setValue (Connection * connection);
+		virtual int setValue (Rts2Connection * connection);
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
-		virtual void send (Connection * connection);
+		virtual void send (Rts2Connection * connection);
 		virtual void setFromValue (Value * newValue);
 
 		int getNumMes () { return numMes; }
@@ -134,10 +134,10 @@ class ValueDoubleTimeserie:public ValueDouble
 		 */
 		void calculate ();
 
-		virtual int setValue (Connection * connection);
+		virtual int setValue (Rts2Connection * connection);
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
-		virtual void send (Connection * connection);
+		virtual void send (Rts2Connection * connection);
 		virtual void setFromValue (Value * newValue);
 
 		int getNumMes () { return numMes; }

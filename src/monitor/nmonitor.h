@@ -96,9 +96,9 @@ class NMonitor:public rts2core::Client
 		virtual void postEvent (rts2core::Event *event);
 
 		virtual rts2core::ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 
-		virtual int deleteConnection (rts2core::Connection * conn);
+		virtual int deleteConnection (rts2core::Rts2Connection * conn);
 
 		virtual void deleteClient (int p_centraldId);
 
@@ -182,9 +182,9 @@ class NMonitor:public rts2core::Client
 		 *
 		 * @param i Number of connection which will be returned.
 		 *
-		 * @return NULL if connection with given number does not exists, or @see rts2core::Connection reference if it does.
+		 * @return NULL if connection with given number does not exists, or @see rts2core::Rts2Connection reference if it does.
 		 */
-		rts2core::Connection *connectionAt (unsigned int i);
+		rts2core::Rts2Connection *connectionAt (unsigned int i);
 
 		double refresh_rate;
 

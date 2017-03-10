@@ -45,7 +45,7 @@ class ConnExe:public rts2core::ConnFork
 
 		virtual void processErrorLine (char *errbuf);
 
-		rts2core::Connection *getConnectionForScript (const char *name);
+		rts2core::Rts2Connection *getConnectionForScript (const char *name);
 		int getDeviceType (const char *name);
 
 		bool checkActive (bool report = false);

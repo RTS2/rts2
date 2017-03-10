@@ -222,7 +222,7 @@ int ConnFork::newProcess ()
 	return execv (exePath, args);
 }
 
-void ConnFork::fillConnectionEnv (Connection *conn, const char *prefix)
+void ConnFork::fillConnectionEnv (Rts2Connection *conn, const char *prefix)
 {
 	std::ostringstream _os;
 	_os << conn->getState ();

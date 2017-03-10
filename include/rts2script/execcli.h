@@ -73,7 +73,7 @@ class GuidingParams
 class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScript
 {
 	public:
-		DevClientCameraExec (rts2core::Connection * in_connection, rts2core::ValueString * in_expandPath = NULL, std::string templateFile = std::string (""));
+		DevClientCameraExec (rts2core::Rts2Connection * in_connection, rts2core::ValueString * in_expandPath = NULL, std::string templateFile = std::string (""));
 		virtual ~ DevClientCameraExec (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (rts2core::Event * event);
@@ -165,7 +165,7 @@ class DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 	protected:
 		virtual void moveEnd ();
 	public:
-		DevClientTelescopeExec (rts2core::Connection * in_connection);
+		DevClientTelescopeExec (rts2core::Rts2Connection * in_connection);
 		virtual void postEvent (rts2core::Event * event);
 		virtual void moveFailed (int status);
 };

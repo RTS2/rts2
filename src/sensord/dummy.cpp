@@ -189,7 +189,7 @@ class Dummy:public SensorWeather
 			return SensorWeather::setValue (old_value, newValue);
 		}
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int initHardware ();
@@ -284,7 +284,7 @@ void Dummy::setFullBopState (rts2_status_t new_state)
  	SensorWeather::setFullBopState (new_state);
 }
 
-int Dummy::commandAuthorized (rts2core::Connection * conn)
+int Dummy::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("add"))
 	{

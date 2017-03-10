@@ -75,7 +75,7 @@ class D50:public Fork
 		
 		virtual int scriptEnds ();
 		virtual void postEvent (rts2core::Event *event);
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 	protected:
 		virtual void usage ();
 		virtual int processOption (int in_opt);
@@ -293,7 +293,7 @@ void D50::postEvent (rts2core::Event *event)
         Fork::postEvent (event);
 }
 
-int D50::commandAuthorized (rts2core::Connection * conn)
+int D50::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	logStream (MESSAGE_DEBUG) << "****** commandAuthorized (): " << conn->getCommand () << sendLog;
         if (conn->isCommand ("writeeeprom"))

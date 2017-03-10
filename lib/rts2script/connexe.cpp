@@ -108,7 +108,7 @@ void ConnExe::processCommand (char *cmd)
 			return;
 		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
 			return;
-		rts2core::Connection *conn = getConnectionForScript (device);
+		rts2core::Rts2Connection *conn = getConnectionForScript (device);
 		if (conn)
 		{
 			conn->queCommand (new rts2core::Command (getMaster (), comm));
@@ -130,7 +130,7 @@ void ConnExe::processCommand (char *cmd)
 			return;
 		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
 			return;
-		rts2core::Connection *conn = getConnectionForScript (device);
+		rts2core::Rts2Connection *conn = getConnectionForScript (device);
 		if (conn)
 		{
 			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
@@ -193,7 +193,7 @@ void ConnExe::processCommand (char *cmd)
 		if (paramNextString (&device))
 			return;
 
-		rts2core::Connection *conn = getConnectionForScript (device);
+		rts2core::Rts2Connection *conn = getConnectionForScript (device);
 		if (conn)
 			writeToProcessInt (conn->getState ());
 		else
@@ -204,7 +204,7 @@ void ConnExe::processCommand (char *cmd)
 		int tom;
 		if (paramNextString (&device) || paramNextInteger (&tom))
 			return;
-		rts2core::Connection *conn = getConnectionForScript (device);
+		rts2core::Rts2Connection *conn = getConnectionForScript (device);
 		if (conn)
 		{
 			tom += time (NULL);
@@ -230,7 +230,7 @@ void ConnExe::processCommand (char *cmd)
 		int tom, mask;
 		if (paramNextString (&device) || paramNextInteger (&mask) || paramNextInteger (&tom))
 			return;
-		rts2core::Connection *conn = getConnectionForScript (device);
+		rts2core::Rts2Connection *conn = getConnectionForScript (device);
 		if (conn)
 		{
 			tom += time (NULL);
@@ -597,7 +597,7 @@ void ConnExe::processErrorLine (char *errbuf)
 	logStream (MESSAGE_ERROR) << "from script " << getExePath () << " received " << errbuf << sendLog;
 }
 
-rts2core::Connection *ConnExe::getConnectionForScript (const char *_name)
+rts2core::Rts2Connection *ConnExe::getConnectionForScript (const char *_name)
 {
 	if (isCentraldName (_name))
 		return getMaster ()->getSingleCentralConn ();

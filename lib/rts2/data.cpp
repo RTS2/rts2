@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "connection.h"
+#include "rts2conn.h"
 #include "data.h"
 
 #include <strings.h>
@@ -28,7 +28,7 @@
 
 using namespace rts2core;
 
-int DataRead::readDataSize (Connection *conn)
+int DataRead::readDataSize (Rts2Connection *conn)
 {
 	return conn->paramNextSSizeT (&binaryReadChunkSize);
 }
@@ -246,7 +246,7 @@ DataChannels::~DataChannels ()
 		delete (*iter);
 }
 
-void DataChannels::initFromConnection (Connection *conn)
+void DataChannels::initFromConnection (Rts2Connection *conn)
 {
 	int data_type, channum;
 	if (conn->paramNextInteger (&data_type) || conn->paramNextInteger (&channum))
@@ -262,7 +262,7 @@ void DataChannels::initFromConnection (Connection *conn)
 		throw Error ("too much parameters in PROTO_BINARY data header");
 }
 
-void DataChannels::initSharedFromConnection (Connection *conn, DataSharedRead *shm)
+void DataChannels::initSharedFromConnection (Rts2Connection *conn, DataSharedRead *shm)
 {
 	int channum;
 	if (conn->paramNextInteger (&channum))

@@ -300,7 +300,7 @@ int Grbd::newGcnGrb (int tar_id)
 		logStream (MESSAGE_WARNING) << "GRB was not passed to executor, as this feature is disabled" << sendLog;
 		return -1;
 	}
-	rts2core::Connection *exec;
+	rts2core::Rts2Connection *exec;
 	exec = getOpenConnection (DEVICE_TYPE_EXECUTOR);
 	if (exec)
 	{
@@ -326,7 +326,7 @@ int Grbd::newGcnGrb (int tar_id)
 	return 0;
 }
 
-int Grbd::commandAuthorized (rts2core::Connection * conn)
+int Grbd::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("test"))
 	{

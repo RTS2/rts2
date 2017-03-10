@@ -45,7 +45,7 @@ void ValueChange::postEvent (Event *event)
 		case EVENT_XMLRPC_VALUE_TIMER:
 			if (lastTime + cadency <= time(NULL))
 			{
-				rts2core::Connection *conn = master->getOpenConnection (deviceName.c_str ());
+				rts2core::Rts2Connection *conn = master->getOpenConnection (deviceName.c_str ());
 				if (conn)
 					conn->queCommand (new rts2core::CommandInfo (master));
 			}

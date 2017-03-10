@@ -40,7 +40,7 @@ class Rotator:public rts2core::Device
 		 */
 		Rotator (int argc, char **argv, const char *defname = "R0", bool ownTimer = false);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		/**
 		 * Update tracking frequency. Should be run after new tracking vector

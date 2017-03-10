@@ -46,7 +46,7 @@ class DevClientLogger:public rts2core::DevClient
 		 * @param in_fileCreationInterval  Interval between file creation.
 		 * @param in_logNames              String with space separated names of values which will be logged.
 		 */
-		DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
+		DevClientLogger (rts2core::Rts2Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
 
 		virtual ~ DevClientLogger (void);
 		virtual void infoOK ();
@@ -134,7 +134,7 @@ class LoggerBase
 {
 	public:
 		LoggerBase ();
-		rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 	protected:
 		int readDevices (std::istream & is);
 

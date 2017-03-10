@@ -28,7 +28,7 @@ class Logger:public rts2core::Client, public LoggerBase
 	public:
 		Logger (int in_argc, char **in_argv);
 
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -81,7 +81,7 @@ int Logger::willConnect (rts2core::NetworkAddress * in_addr)
 	return LoggerBase::willConnect (in_addr);
 }
 
-rts2core::DevClient * Logger::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient * Logger::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	rts2core::DevClient *cli = LoggerBase::createOtherType (conn, other_device_type);
 	if (cli)

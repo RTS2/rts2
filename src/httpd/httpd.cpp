@@ -91,7 +91,7 @@ void XmlDevInterface::valueChanged (rts2core::Value * value)
 	(getMaster ())->valueChangedEvent (getConnection (), value);
 }
 
-XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), screxpand (""), currentTarget (this)
+XmlDevCameraClient::XmlDevCameraClient (rts2core::Rts2Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), screxpand (""), currentTarget (this)
 {
 	previmage = NULL;
 	scriptKillCommand = NULL;
@@ -134,7 +134,7 @@ XmlDevCameraClient::~XmlDevCameraClient ()
 	}
 }
 
-void XmlDevCameraClient::deleteConnection (Connection *_conn)
+void XmlDevCameraClient::deleteConnection (rts2core::Rts2Connection *_conn)
 {
 	if (_conn == getConnection ())
 	{
@@ -214,25 +214,25 @@ void HttpD::doOpValue (const char *v_name, char oper, const char *operand)
 	delete nv;
 }
 
-void HttpD::clientNewDataConn (rts2core::Connection *conn, int data_conn)
+void HttpD::clientNewDataConn (rts2core::Rts2Connection *conn, int data_conn)
 {
 	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->newDataConn (conn, data_conn);
 }
 
-void HttpD::clientDataReceived (rts2core::Connection *conn, rts2core::DataAbstractRead *data)
+void HttpD::clientDataReceived (rts2core::Rts2Connection *conn, rts2core::DataAbstractRead *data)
 {
 	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->dataReceived (conn, data);
 }
 
-void HttpD::clientFullDataReceived (rts2core::Connection *conn, rts2core::DataChannels *data)
+void HttpD::clientFullDataReceived (rts2core::Rts2Connection *conn, rts2core::DataChannels *data)
 {
 	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->fullDataReceived (conn, data);
 }
 
-void HttpD::clientExposureFailed (Connection *conn, int status)
+void HttpD::clientExposureFailed (rts2core::Rts2Connection *conn, int status)
 {
 	for (std::list <rts2json::AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->exposureFailed (conn, status);
@@ -247,7 +247,7 @@ void HttpD::bbSend (double t)
 #ifdef RTS2_HAVE_PGSQL
 void HttpD::confirmSchedule (rts2db::Plan &_plan)
 {
-	rts2core::Connection *selConn = getOpenConnection (DEVICE_TYPE_SELECTOR);
+	rts2core::Rts2Connection *selConn = getOpenConnection (DEVICE_TYPE_SELECTOR);
 	if (selConn == NULL)
 		throw rts2core::Error ("cannot find selector connection");
 	std::ostringstream os;
@@ -649,7 +649,7 @@ void HttpD::signaledHUP ()
 	reloadEventsFile ();
 }
 
-void HttpD::connectionRemoved (rts2core::Connection *conn)
+void HttpD::connectionRemoved (rts2core::Rts2Connection *conn)
 {
 	for (std::list <XmlDevCameraClient *>::iterator iter = camClis.begin (); iter != camClis.end ();)
 	{
@@ -833,7 +833,7 @@ HttpD::~HttpD ()
 #endif /* RTS2_HAVE_LIBJPEG */
 }
 
-rts2core::DevClient * HttpD::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient * HttpD::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -852,7 +852,7 @@ rts2core::DevClient * HttpD::createOtherType (rts2core::Connection * conn, int o
 	}
 }
 
-void HttpD::deviceReady (rts2core::Connection * conn)
+void HttpD::deviceReady (rts2core::Rts2Connection * conn)
 {
 #ifdef RTS2_HAVE_PGSQL
 	DeviceDb::deviceReady (conn);
@@ -899,7 +899,7 @@ int HttpD::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 #endif
 }
 
-void HttpD::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerState * new_state)
+void HttpD::stateChangedEvent (rts2core::Rts2Connection * conn, rts2core::ServerState * new_state)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -920,7 +920,7 @@ void HttpD::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerStat
 		(*iter)->stateChanged (conn);
 }
 
-void HttpD::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * new_value)
+void HttpD::valueChangedEvent (rts2core::Rts2Connection * conn, rts2core::Value * new_value)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -994,7 +994,7 @@ void HttpD::message (Message & msg)
 	messages.push_back (msg);
 }
 
-int HttpD::commandAuthorized (rts2core::Connection *conn)
+int HttpD::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("test_restart"))
 	{

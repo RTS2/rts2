@@ -42,7 +42,7 @@ class Device;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DevConnection:public Connection
+class DevConnection:public Rts2Connection
 {
 	public:
 		DevConnection (int in_sock, Device * in_master);
@@ -74,7 +74,7 @@ class DevConnection:public Connection
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DevConnectionMaster:public Connection
+class DevConnectionMaster:public Rts2Connection
 {
 	public:
 		/**
@@ -137,13 +137,13 @@ class CommandRegister:public Command
 			setCommand (_os);
 		}
 
-		virtual int commandReturnOK (Connection *conn)
+		virtual int commandReturnOK (Rts2Connection *conn)
 		{
 			conn->setConnState (CONN_AUTH_OK);
 			return Command::commandReturnOK (conn);
 		}
 
-		virtual int commandReturnFailed (int status, Connection *conn)
+		virtual int commandReturnFailed (int status, Rts2Connection *conn)
 		{
 			conn->endConnection ();
 			return Command::commandReturnFailed (status, conn);
@@ -179,18 +179,18 @@ class CommandRegister:public Command
 class CommandDeviceStatusInfo:public Command
 {
 	public:
-		CommandDeviceStatusInfo (Device * master, Connection * in_owner_conn);
-		virtual int commandReturnOK (Connection * conn);
-		virtual int commandReturnFailed (int status, Connection * conn);
+		CommandDeviceStatusInfo (Device * master, Rts2Connection * in_owner_conn);
+		virtual int commandReturnOK (Rts2Connection * conn);
+		virtual int commandReturnFailed (int status, Rts2Connection * conn);
 
-		Connection *getOwnerConn ()
+		Rts2Connection *getOwnerConn ()
 		{
 			return owner_conn;
 		}
 
-		virtual void deleteConnection (Connection * conn);
+		virtual void deleteConnection (Rts2Connection * conn);
 	private:
-		Connection * owner_conn;
+		Rts2Connection * owner_conn;
 };
 
 class MultiDev;
@@ -220,7 +220,7 @@ class Device:public Daemon
 		 * be left to processing.
 		 *
 		 */
-		virtual int commandAuthorized (Connection * conn);
+		virtual int commandAuthorized (Rts2Connection * conn);
 
 		int authorize (int centrald_num, DevConnection * conn);
 
@@ -233,12 +233,12 @@ class Device:public Daemon
 		 */
 		int sendMasters (const char *msg);
 
-		virtual void centraldConnRunning (Connection *conn);
+		virtual void centraldConnRunning (Rts2Connection *conn);
 
 		/**
 		 * Send full state, including device full BOP state.
 		 */
-		void sendFullStateInfo (Connection * conn);
+		void sendFullStateInfo (Rts2Connection * conn);
 
 		// only devices can send messages
 		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);
@@ -264,7 +264,7 @@ class Device:public Daemon
 		const char *getDeviceName () { return device_name; }
 		int getDeviceType () { return device_type; }
 
-		virtual int statusInfo (Connection * conn);
+		virtual int statusInfo (Rts2Connection * conn);
 
 		/**
 		 * Called to set current device BOP state.
@@ -331,7 +331,7 @@ class Device:public Daemon
 
 		virtual void beforeRun ();
 
-		virtual bool isRunning (Connection *conn) { return conn->isConnState (CONN_AUTH_OK) || requireAuthorization () == false; }
+		virtual bool isRunning (Rts2Connection *conn) { return conn->isConnState (CONN_AUTH_OK) || requireAuthorization () == false; }
 
 		/**
 		 * Return device BOP state.
@@ -343,9 +343,9 @@ class Device:public Daemon
 		/**
 		 * Return central connection for given central server name.
 		 */
-		Connection *getCentraldConn (const char *server);
+		Rts2Connection *getCentraldConn (const char *server);
 
-		void queDeviceStatusCommand (Connection *in_owner_conn);
+		void queDeviceStatusCommand (Rts2Connection *in_owner_conn);
 
 		// sends operation block commands to master
 		// this functions should mark critical blocks during device execution
@@ -367,7 +367,7 @@ class Device:public Daemon
 		void blockTelMove () { maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible"); }
 		void clearTelMove () { maskState (BOP_TEL_MOVE, 0, "telescope move possible"); }
 
-		virtual Connection *createClientConnection (NetworkAddress * in_addr);
+		virtual Rts2Connection *createClientConnection (NetworkAddress * in_addr);
 
 		/**
 		 * Loop through que values and tries to free as much of them as is possible.
@@ -377,7 +377,7 @@ class Device:public Daemon
 		 */
 		virtual void checkQueChanges (rts2_status_t fakeState);
 
-		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn);
+		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Rts2Connection *commandedConn);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 

@@ -57,8 +57,8 @@ class Scriptor:public rts2core::Device, public ScriptInterface
 		virtual int init ();
 		virtual int processOption (int in_opt);
 		virtual int willConnect (NetworkAddress * in_addr);
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection *conn, int other_device_type);
-		virtual void deviceReady (rts2core::Connection * conn);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection *conn, int other_device_type);
+		virtual void deviceReady (rts2core::Rts2Connection * conn);
 	public:
 		Scriptor (int argc, char **argv);
 		virtual ~Scriptor (void);
@@ -130,7 +130,7 @@ int Scriptor::willConnect (NetworkAddress * in_addr)
 	return 0;
 }
 
-rts2core::DevClient * Scriptor::createOtherType (rts2core::Connection *conn, int other_device_type)
+rts2core::DevClient * Scriptor::createOtherType (rts2core::Rts2Connection *conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -141,7 +141,7 @@ rts2core::DevClient * Scriptor::createOtherType (rts2core::Connection *conn, int
 	}
 }
 
-void Scriptor::deviceReady (rts2core::Connection * conn)
+void Scriptor::deviceReady (rts2core::Rts2Connection * conn)
 {
 	// add variable for this device..
 	rts2core::ValueString *stringVal;

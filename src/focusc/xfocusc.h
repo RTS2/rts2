@@ -93,13 +93,13 @@ class XFocusClient:public FocusClient
 		// initially in arcsec, but converted (and used) in degrees
 		double changeVal;
 
-		virtual FocusCameraClient * createFocCamera (rts2core::Connection * conn);
+		virtual FocusCameraClient * createFocCamera (rts2core::Rts2Connection * conn);
 };
 
 class XFocusClientCamera:public FocusCameraClient
 {
 	public:
-		XFocusClientCamera (rts2core::Connection * in_connection, double in_change_val, XFocusClient * in_master);
+		XFocusClientCamera (rts2core::Rts2Connection * in_connection, double in_change_val, XFocusClient * in_master);
 		virtual ~XFocusClientCamera ();
 
 		void setCrossType (int in_crossType);

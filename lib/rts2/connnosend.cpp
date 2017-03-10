@@ -21,13 +21,13 @@
 
 using namespace rts2core;
 
-ConnNoSend::ConnNoSend (Block * in_master):Connection (in_master)
+ConnNoSend::ConnNoSend (Block * in_master):Rts2Connection (in_master)
 {
 	setConnTimeout (-1);
 }
 
 
-ConnNoSend::ConnNoSend (int in_sock, Block * in_master):Connection (in_sock, in_master)
+ConnNoSend::ConnNoSend (int in_sock, Block * in_master):Rts2Connection (in_sock, in_master)
 {
 	setConnTimeout (-1);
 }

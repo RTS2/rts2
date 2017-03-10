@@ -44,7 +44,7 @@
 
 #define CHECK_TIMER         0.1
 
-FocusCameraClient::FocusCameraClient (rts2core::Connection * in_connection, FocusClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
+FocusCameraClient::FocusCameraClient (rts2core::Rts2Connection * in_connection, FocusClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
 	master = in_master;
 
@@ -249,7 +249,7 @@ int FocusClient::processOption (int in_opt)
 	return 0;
 }
 
-FocusCameraClient * FocusClient::createFocCamera (rts2core::Connection * conn)
+FocusCameraClient * FocusClient::createFocCamera (rts2core::Rts2Connection * conn)
 {
 	return new FocusCameraClient (conn, this);
 }
@@ -291,7 +291,7 @@ FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 	return cam;
 }
 
-rts2core::DevClient *FocusClient::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient *FocusClient::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{

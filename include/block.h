@@ -44,6 +44,7 @@
 #include "event.h"
 #include "object.h"
 #include "connection.h"
+#include "rts2conn.h"
 #include "networkaddress.h"
 #include "connuser.h"
 #include "devclient.h"
@@ -96,8 +97,8 @@ class LogStream;
 namespace rts2core
 {
 
-/** Hold list of connections. It is used to store @see Connection objects. */
-typedef std::vector < Connection * > connections_t;
+/** Hold list of connections. It is used to store @see Rts2Connection objects. */
+typedef std::vector < Rts2Connection * > connections_t;
 
 typedef std::list <ConnUser * > clients_t;
 
@@ -157,25 +158,25 @@ class Block: public App
 		 * account connections file descriptor and call hooks either
 		 * when data arrives or writing on connection is possible.
 		 *
-		 * @param conn Connection which will be added to connections of
+		 * @param conn Rts2Connection which will be added to connections of
 		 * the block.
 		 */
-		void addConnection (Connection *_conn);
+		void addConnection (Rts2Connection *_conn);
 
 		/**
 		 * Remove connection from list of connections. The programme is then
 		 * responsible to call destructor for the connection. This is handy
 		 * when destructor is called for some other reason.
 		 */
-		void removeConnection (Connection *_conn);
+		void removeConnection (Rts2Connection *_conn);
 
 		/**
 		 * Add connection as connection to central server,
 		 *
-		 * @param _conn Connection which will be added.
+		 * @param _conn Rts2Connection which will be added.
 		 * @param added True if connection can be added directly
 		 */
-		void addCentraldConnection (Connection *_conn, bool added);
+		void addCentraldConnection (Rts2Connection *_conn, bool added);
 
 		/**
 		 * Return number of connections in connections structure.
@@ -193,7 +194,7 @@ class Block: public App
 		 * Enable application to add arbitary sockets.
 		 * This hook is usefull for various applications that gets input
 		 * from other then connection sockets, and for which creating
-		 * extra Connection instance will be too heavy solution.
+		 * extra Rts2Connection instance will be too heavy solution.
 		 */
 		virtual void addPollSocks ();
 
@@ -235,9 +236,9 @@ class Block: public App
 		 *
 		 * @param in_sock Socket file descriptor which holds connection.
 		 *
-		 * @return Connection or descenand object.
+		 * @return Rts2Connection or descenand object.
 		 */
-		virtual Connection *createConnection (int in_sock);
+		virtual Rts2Connection *createConnection (int in_sock);
 
 		/**
 		 * Finds connection with given name.
@@ -246,7 +247,7 @@ class Block: public App
 		 *
 		 * @return NULL if connection cannot be found, otherwise reference to connection object.
 		 */
-		Connection *findName (const char *in_name);
+		Rts2Connection *findName (const char *in_name);
 
 		/**
 		 * Find connection with a given centrald ID.
@@ -255,7 +256,7 @@ class Block: public App
 		 *
 		 * @return    connection with the given ID, or NULL if such connection does not exists
 		 */
-		Connection *findCentralId (int in_id);
+		Rts2Connection *findCentralId (int in_id);
 
 		/**
 		 * Send BOP state to all connections.
@@ -272,13 +273,13 @@ class Block: public App
 		 * Send BOP message to a single connection.
 		 *
 		 * @param bop_state
-		 * @param conn Connection which will receive BOP state.
+		 * @param conn Rts2Connection which will receive BOP state.
 		 *
 		 * @callergraph
 		 *
 		 * @see PROTO_BOP_STATE
 		 */
-		void sendBopMessage (rts2_status_t state, rts2_status_t bop_state, Connection *conn);
+		void sendBopMessage (rts2_status_t state, rts2_status_t bop_state, Rts2Connection *conn);
 
 		/**
 		 * Send message to all connections.
@@ -289,7 +290,7 @@ class Block: public App
 		 */
 		int sendAll (const char *msg);
 
-		int sendAllExcept (const char *msg, Connection *exceptConn);
+		int sendAllExcept (const char *msg, Rts2Connection *exceptConn);
 
 		/**
 		 * Send message to all connections.
@@ -303,7 +304,7 @@ class Block: public App
 			return sendAll (_os.str ().c_str ());
 		}
 
-		int sendAllExcept (std::ostringstream &_os, Connection *exceptConn)
+		int sendAllExcept (std::ostringstream &_os, Rts2Connection *exceptConn)
 		{
 			return sendAllExcept (_os.str ().c_str (), exceptConn);
 		}
@@ -343,14 +344,14 @@ class Block: public App
 		 *
 		 * @param conn connection representing device which became ready
 		 */
-		virtual void deviceReady (Connection * conn);
+		virtual void deviceReady (Rts2Connection * conn);
 
 		/**
 		 * Called when some device connected to us become idle.
 		 *
 		 * @param conn connection representing device which became idle
 		 */
-		virtual void deviceIdle (Connection * conn);
+		virtual void deviceIdle (Rts2Connection * conn);
 
 		/**
 		 * Called when master state is changed.
@@ -363,7 +364,7 @@ class Block: public App
 		/**
 		 * Called when new state information arrives.
 		 */
-		virtual int setMasterState (Connection *_conn, rts2_status_t new_state);
+		virtual int setMasterState (Rts2Connection *_conn, rts2_status_t new_state);
 
 		/**
 		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
@@ -438,7 +439,7 @@ class Block: public App
 
 		void deleteAddress (int p_centrald_num, const char *p_name);
 
-		virtual DevClient *createOtherType (Connection * conn, int other_device_type);
+		virtual DevClient *createOtherType (Rts2Connection * conn, int other_device_type);
 		void addClient (int p_centraldId, const char *p_login, const char *p_name);
 		int addClient (ConnUser * in_user);
 
@@ -452,9 +453,9 @@ class Block: public App
 		 *
 		 * @param deviceName Device which will be looked on.
 		 *
-		 * @return Connection pointer to opened device connection.
+		 * @return Rts2Connection pointer to opened device connection.
 		 */
-		Connection *getOpenConnection (const char *deviceName);
+		Rts2Connection *getOpenConnection (const char *deviceName);
 
 		/**
 		 * Return next established connection to device of given type.
@@ -497,9 +498,9 @@ class Block: public App
 		 *
 		 * @param device_type  Type of device (see DEVICE_XXX constants).
 		 *
-		 * @return Connection pointer to opened device connection with given type.
+		 * @return Rts2Connection pointer to opened device connection with given type.
 		 */
-		Connection *getOpenConnection (int device_type);
+		Rts2Connection *getOpenConnection (int device_type);
 
 		/**
 		 * Return connection to given device.
@@ -513,11 +514,11 @@ class Block: public App
 		 *
 		 * @param deviceName Device which will be looked on.
 		 *
-		 * @return Connection pointer to device connection.
+		 * @return Rts2Connection pointer to device connection.
 		 *
 		 * @callgraph
 		 */
-		Connection *getConnection (char *deviceName);
+		Rts2Connection *getConnection (char *deviceName);
 
 		/**
 		 * Return vector of active connections to devices and clients.
@@ -546,7 +547,7 @@ class Block: public App
 			return &centraldConns;
 		}
 
-		Connection *getSingleCentralConn ()
+		Rts2Connection *getSingleCentralConn ()
 		{
 			if (centraldConns.size () != 1)
 			{
@@ -576,14 +577,14 @@ class Block: public App
 		/**
 		 * Return connection with minimum (integer) value.
 		 */
-		Connection *getMinConn (const char *valueName);
+		Rts2Connection *getMinConn (const char *valueName);
 
 		/**
 		 * Called when connection to centrald is established and running.
 		 *
 		 * @param conn centrald connection
 		 */
-		virtual void centraldConnRunning (Connection *conn)
+		virtual void centraldConnRunning (Rts2Connection *conn)
 		{
 		}
 
@@ -594,11 +595,11 @@ class Block: public App
 		 *
 		 * @param conn broken centrald connection
 		 */
-		virtual void centraldConnBroken (Connection *conn)
+		virtual void centraldConnBroken (Rts2Connection *conn)
 		{
 		}
 
-		virtual int setValue (Connection * conn)
+		virtual int setValue (Rts2Connection * conn)
 		{
 			return -2;
 		}
@@ -628,21 +629,21 @@ class Block: public App
 			setEndLoop (true);
 		}
 
-		virtual int statusInfo (Connection * conn);
+		virtual int statusInfo (Rts2Connection * conn);
 
-		virtual int progress (Connection *conn, double start, double end) { return -1; }
+		virtual int progress (Rts2Connection *conn, double start, double end) { return -1; }
 
 		/**
 		 * Check if command was not replied.
 		 *
 		 * @param object Object which orignated command.
-		 * @param exclude_conn Connection which should be excluded from check.
+		 * @param exclude_conn Rts2Connection which should be excluded from check.
 		 *
 		 * @return True if command was not send or command reply was not received, false otherwise.
 		 *
 		 * @callergraph
 		 */
-		bool commandOriginatorPending (Object * object, Connection * exclude_conn);
+		bool commandOriginatorPending (Object * object, Rts2Connection * exclude_conn);
 
 		/**
 		 * Add new user timer.
@@ -674,7 +675,7 @@ class Block: public App
 		/**
 		 * Return vector of failed values.
 		 */
-		std::map <Connection *, std::vector <Value *> > failedValues ();
+		std::map <Rts2Connection *, std::vector <Value *> > failedValues ();
 
 		/**
 		 * Called when modified file entry is read from inotify file descriptor.
@@ -708,7 +709,7 @@ class Block: public App
 
 	protected:
 
-		virtual Connection *createClientConnection (NetworkAddress * in_addr) = 0;
+		virtual Rts2Connection *createClientConnection (NetworkAddress * in_addr) = 0;
 
 		virtual void childReturned (pid_t child_pid);
 
@@ -753,17 +754,17 @@ class Block: public App
 		 * @post conn is removed from the list, @see Block::connectionRemoved is
 		 * called, and conn is deleted.
 		 */
-		virtual int deleteConnection (Connection * conn);
+		virtual int deleteConnection (Rts2Connection * conn);
 
 		/**
 		 * Called when connection is removed from connection list, but before connection object is deleted.
 		 *
-		 * @param conn Connection which is removed from connection list, and will be deleted after this command returns.
+		 * @param conn Rts2Connection which is removed from connection list, and will be deleted after this command returns.
 		 *
 		 * @pre conn is removed from connection list.
 		 * @post conn instance is deleted.
 		 */
-		virtual void connectionRemoved (Connection * conn);
+		virtual void connectionRemoved (Rts2Connection * conn);
 
 		/**
 		 * Called when BOP state is changed.
@@ -779,7 +780,7 @@ class Block: public App
 		 *
 		 * @param _conn New master state connection.
 		 */
-		void setMasterConn (Connection *_conn) { stateMasterConn = _conn; }
+		void setMasterConn (Rts2Connection *_conn) { stateMasterConn = _conn; }
 
 		/**
 		 * Check if some of the central connections is in given server
@@ -830,7 +831,7 @@ class Block: public App
 		clients_t blockUsers;
 
 		rts2_status_t masterState;
-		Connection *stateMasterConn;
+		Rts2Connection *stateMasterConn;
 
 		/**
 		 * Set value error mask.
@@ -860,4 +861,4 @@ void getMasterAddPollFD (int fd, short events);
 
 short getMasterGetEvents (int fd);
 
-#endif							 // !__RTS2_NETBLOCK__
+#endif // !__RTS2_BLOCK__

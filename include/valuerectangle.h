@@ -120,7 +120,7 @@ class ValueRectangle: public Value
 
 		void setInts (int in_x, int in_y, int in_w, int in_h);
 
-		virtual int setValue (Connection *connection);
+		virtual int setValue (Rts2Connection *connection);
 
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);

@@ -62,7 +62,7 @@ class Focusd:public rts2core::Device
 
 		virtual int scriptEnds ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		std::string focType;

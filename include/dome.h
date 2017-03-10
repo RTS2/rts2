@@ -59,7 +59,7 @@ class Dome:public rts2core::Device
 
 		double getNextOpen () { return nextGoodWeather->getValueDouble (); }
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		virtual int ready () { return 0; }
 

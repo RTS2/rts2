@@ -90,7 +90,7 @@ int APMAux::initHardware ()
 	return 0;
 }
 
-int APMAux::commandAuthorized (rts2core::Connection * conn)
+int APMAux::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand (COMMAND_OPEN))
 		return open ();

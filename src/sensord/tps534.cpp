@@ -130,7 +130,7 @@ TPS534::info ()
   //  Measurment make only sense in case the door is open
   //  otherwise the temperature of the door is read
   bool doorOpen= false ;
-  rts2core::Connection * conn_door = getOpenConnection (doorDevice);
+  rts2core::Rts2Connection * conn_door = getOpenConnection (doorDevice);
   if( conn_door) {
     rts2core::Value * doorState =  conn_door->getValue ("DOORSTATE");
     if( doorState) {

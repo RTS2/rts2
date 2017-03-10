@@ -134,7 +134,7 @@ class Image:public FitsFile
 		 * @param in_exposureStart  Starting time of the exposure.
 		 * @param in_connection     Connection of camera requesting exposure.
 		 */
-		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite = false, bool _writeConnection = true, bool _writeRTS2Values = true);
+		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Rts2Connection * in_connection, bool _overwrite = false, bool _writeConnection = true, bool _writeRTS2Values = true);
 
 		/**
 		 * Create image for a given target.
@@ -651,7 +651,7 @@ class Image:public FitsFile
 		 */
 		void setEnvironmentalValues ();
 
-		void writeConn (rts2core::Connection * conn, imageWriteWhich_t which = EXPOSURE_START);
+		void writeConn (rts2core::Rts2Connection * conn, imageWriteWhich_t which = EXPOSURE_START);
 
 		/**
 		 * Sets image errors.
@@ -803,15 +803,15 @@ class Image:public FitsFile
 		 * Either prepare array data to be written, or write them to header if those are simple
 		 * data.
 		 */
-		void prepareArrayData (const std::string name, rts2core::Connection *conn, rts2core::Value *val);
+		void prepareArrayData (const std::string name, rts2core::Rts2Connection *conn, rts2core::Value *val);
 
 		void writeConnArray (TableData *tableData);
 
 		// writes one value to image
-		void writeConnValue (rts2core::Connection *conn, rts2core::Value *val);
+		void writeConnValue (rts2core::Rts2Connection *conn, rts2core::Value *val);
 
 		// record value changes
-		void recordChange (rts2core::Connection *conn, rts2core::Value *val);
+		void recordChange (rts2core::Rts2Connection *conn, rts2core::Value *val);
 };
 
 }

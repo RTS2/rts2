@@ -25,7 +25,7 @@
 
 using namespace rts2teld;
 
-ClientCupola::ClientCupola (rts2core::Connection * conn):rts2core::DevClientCupola (conn)
+ClientCupola::ClientCupola (rts2core::Rts2Connection * conn):rts2core::DevClientCupola (conn)
 {
 }
 

@@ -93,7 +93,7 @@ class DS21: public Sensor
 		/**
 		 * Handles camera commands.
 		 */
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		int writePort (char anum, const char *msg);
 		int readPort (char *buf, int blen);
@@ -321,7 +321,7 @@ int DS21::home ()
 	return writePort (0, "GH");
 }
 
-int DS21::commandAuthorized (rts2core::Connection *conn)
+int DS21::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("home"))
 	{

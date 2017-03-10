@@ -95,7 +95,7 @@ class Execute:public Element
 
 		virtual int defnextCommand (rts2core::DevClient * _client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		rts2core::Connection *getConnection () { return client->getConnection (); }
+		rts2core::Rts2Connection *getConnection () { return client->getConnection (); }
 		rts2core::DevClient *getClient () { return client; }
 
 		virtual void errorReported (int current_state, int old_state);

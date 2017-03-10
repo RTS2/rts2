@@ -95,8 +95,8 @@ class Daemon:public Block
 
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);
-		virtual void centraldConnRunning (Connection *conn);
-		virtual void centraldConnBroken (Connection *conn);
+		virtual void centraldConnRunning (Rts2Connection *conn);
+		virtual void centraldConnBroken (Rts2Connection *conn);
 
 		/**
 		 * Send status message to all connected clients.
@@ -107,36 +107,36 @@ class Daemon:public Block
 		 *
 		 * @see PROTO_STATUS
 		 */
-		void sendStatusMessage (rts2_status_t state, const char * msg = NULL, Connection *commandedConn = NULL);
+		void sendStatusMessage (rts2_status_t state, const char * msg = NULL, Rts2Connection *commandedConn = NULL);
 
 		/**
 		 * Send status message to one connection.
 		 *
 		 * @param state State value which will be send.
-		 * @param conn Connection to which the state will be send.
+		 * @param conn Rts2Connection to which the state will be send.
 		 *
 		 * @callergraph
 		 *
 		 * @see PROTO_STATUS
 		 */
-		void sendStatusMessageConn (rts2_status_t state, Connection *conn);
+		void sendStatusMessageConn (rts2_status_t state, Rts2Connection *conn);
 
 		virtual int baseInfo ();
-		int baseInfo (Connection * conn);
-		int sendBaseInfo (Connection * conn);
+		int baseInfo (Rts2Connection * conn);
+		int sendBaseInfo (Rts2Connection * conn);
 
 		virtual int info ();
-		int info (Connection * conn);
+		int info (Rts2Connection * conn);
 		int infoAll ();
 		void constInfoAll ();
-		int sendInfo (Connection * conn, bool forceSend = false);
+		int sendInfo (Rts2Connection * conn, bool forceSend = false);
 
-		int sendMetaInfo (Connection * conn);
+		int sendMetaInfo (Rts2Connection * conn);
 
 		virtual void addPollSocks ();
 		virtual void pollSuccess ();
 
-		virtual int setValue (Connection * conn);
+		virtual int setValue (Rts2Connection * conn);
 
 		/**
 		 * Return full device state. You are then responsible
@@ -197,7 +197,7 @@ class Daemon:public Block
 		/**
 		 * Send progress to newly created connections.
 		 */
-		void resendProgress (rts2core::Connection *conn)
+		void resendProgress (Rts2Connection *conn)
 		{
 			if (!(isnan (state_start) && isnan (state_expected_end)))
 				conn->sendProgress (state_start, state_expected_end);
@@ -230,7 +230,7 @@ class Daemon:public Block
 		 * @param start  operation start time
 		 * @param end    operation end time
 		 */
-		void sendProgressAll (double start, double end, Connection *except);
+		void sendProgressAll (double start, double end, Rts2Connection *except);
 
 		int checkLockFile (const char *_lock_fname);
 
@@ -267,7 +267,7 @@ class Daemon:public Block
 		/**
 		 * Returns true if connection is running.
 		 */
-		virtual bool isRunning (Connection *conn) = 0;
+		virtual bool isRunning (Rts2Connection *conn) = 0;
 
 		virtual int checkNotNulls ();
 
@@ -513,7 +513,7 @@ class Daemon:public Block
 		/**
 		 * Called to set new state value
 		 */
-		void setState (rts2_status_t new_state, const char *description, Connection *commandedConn);
+		void setState (rts2_status_t new_state, const char *description, Rts2Connection *commandedConn);
 
 		/**
 		 * Called when state of the device is changed.
@@ -522,7 +522,7 @@ class Daemon:public Block
 		 * @param old_state   Old device state.
 		 * @param description Text description of state change.
 		 */
-		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn);
+		virtual void stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Rts2Connection *commandedConn);
 
 		/**
 		 * Called from idle loop after HUP signal occured.
@@ -537,7 +537,7 @@ class Daemon:public Block
 		/**
 		 * Send state change to all connection.
 		 */
-		void maskState (rts2_status_t state_mask, rts2_status_t new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
+		void maskState (rts2_status_t state_mask, rts2_status_t new_state, const char *description = NULL, double start = NAN, double end = NAN, Rts2Connection *commandedConn = NULL);
 
 		/**
 		 * Raise hardware error status bit.

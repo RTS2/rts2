@@ -32,7 +32,7 @@ namespace rts2teld
 class ClientCupola:public rts2core::DevClientCupola
 {
 	public:
-		ClientCupola (rts2core::Connection * conn);
+		ClientCupola (rts2core::Rts2Connection * conn);
 		virtual ~ ClientCupola ();
 		virtual void syncFailed (int status);
 		virtual void notMoveFailed (int status);

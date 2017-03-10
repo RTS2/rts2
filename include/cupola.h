@@ -46,7 +46,7 @@ class Cupola:public Dome
 		virtual int info ();
 		virtual int idle ();
 
-		int moveTo (rts2core::Connection * conn, double ra, double dec);
+		int moveTo (double ra, double dec);
 		virtual int moveStop ();
 
 		// returns target current alt & az
@@ -61,7 +61,7 @@ class Cupola:public Dome
 		// calculate split width in arcdeg for given altititude; when copula don't have split at given altitude, returns -1
 		virtual double getSlitWidth (double alt) = 0;
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		// called to bring copula in sync with target az

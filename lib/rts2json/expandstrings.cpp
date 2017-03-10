@@ -60,7 +60,7 @@ ExpandStringDevice::ExpandStringDevice (const char *_deviceName)
 
 void ExpandStringDevice::writeTo (std::ostream &os)
 {
-	rts2core::Connection *conn = ((rts2core::Block *) getMasterApp ())->getOpenConnection (deviceName);
+	rts2core::Rts2Connection *conn = ((rts2core::Block *) getMasterApp ())->getOpenConnection (deviceName);
 	if (conn == NULL)
 	{
 		os << "unknow device " << deviceName << std::endl;

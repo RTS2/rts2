@@ -248,7 +248,7 @@ void DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	{
 		logStream (MESSAGE_WARNING) << "Triggering is disabled, trigger " << LibnovaDateDouble (lastDate) << "not executed." << sendLog;
 	}
-	rts2core::Connection *exec;
+	rts2core::Rts2Connection *exec;
 	lastAugerDate->setValueDouble (lastDate);
 	lastAugerRa->setValueDouble (ra);
 	lastAugerDec->setValueDouble (dec);

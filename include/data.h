@@ -30,7 +30,7 @@
 namespace rts2core
 {
 
-class Connection;
+class Rts2Connection;
 
 /**
  * Interface for varius DataRead classes.
@@ -46,7 +46,7 @@ class DataAbstractRead
 		/**
 		 * Read data size from connection.
 		 */
-		virtual int readDataSize (Connection *conn) = 0;
+		virtual int readDataSize (Rts2Connection *conn) = 0;
 
 		/**
 		 * Adds data to the buffer.
@@ -103,7 +103,7 @@ class DataRead:public DataAbstractRead
 			delete[] binaryReadBuff;
 		}
 
-		virtual int readDataSize (Connection *conn);
+		virtual int readDataSize (Rts2Connection *conn);
 
 		void setChunkSizeFromData () { binaryReadChunkSize = binaryReadDataSize; }
 
@@ -252,7 +252,7 @@ class DataSharedRead: public DataAbstractRead, public DataAbstractShared
 
 		int attach (int _shm_id);
 
-		virtual int readDataSize (Connection *conn) { return 0; }
+		virtual int readDataSize (Rts2Connection *conn) { return 0; }
 		virtual ssize_t addData (char *_data, ssize_t _data_size) { return -1; }
 		virtual int getData (int sock) { return -1; }
 		virtual char *getDataBuff () { return ((char *) data) + activeSegment->offset; }
@@ -370,12 +370,12 @@ class DataChannels:public std::vector <DataAbstractRead *>
 		 *
 		 * @param conn connection from which data channel will be initialized
 		 */
-		void initFromConnection (Connection *conn);
+		void initFromConnection (Rts2Connection *conn);
 
 		/**
 		 * Initiliaze shared channels. Expect to find channels and shared memory segments.
 		 */
-		void initSharedFromConnection (Connection *conn, DataSharedRead *shm);
+		void initSharedFromConnection (Rts2Connection *conn, DataSharedRead *shm);
 
 		/**
 		 * Read data for given channel.
@@ -383,7 +383,7 @@ class DataChannels:public std::vector <DataAbstractRead *>
 		 * @param chan  channel number
 		 * @param conn  connection which will be used to read the data
 		 */
-		int readChannel (int chan, Connection *conn) { return at(chan)->readDataSize (conn); }
+		int readChannel (int chan, Rts2Connection *conn) { return at(chan)->readDataSize (conn); }
 
 		ssize_t addData (int chan, char *_data, ssize_t data_size) { return at(chan)->addData (_data, data_size); }
 

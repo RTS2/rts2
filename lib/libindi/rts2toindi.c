@@ -425,9 +425,9 @@ void rts2closeINDIServer()
 	resw= fclose( gwfp) ;
 	resr= fclose( grfp) ;		 // necessary see valgrind
 
-	if(resw)
+	if(resw || resr)
 	{
-		fprintf( stderr, "Close failed %d\n", resw) ;
+		fprintf( stderr, "Close failed %d %d\n", resw, resr) ;
 		perror("Closing") ;
 	}
 	return ;

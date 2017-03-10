@@ -283,11 +283,11 @@ class Dummy:public Camera
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
-		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
+		virtual int shiftStoreStart (rts2core::Rts2Connection *conn, float exptime);
 
-		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
+		virtual int shiftStoreShift (rts2core::Rts2Connection *conn, int shift, float exptime);
 
-		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
+		virtual int shiftStoreEnd (rts2core::Rts2Connection *conn, int shift, float exptime);
 
 	private:
 		bool supportFrameT;
@@ -365,17 +365,17 @@ int Dummy::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-int Dummy::shiftStoreStart (rts2core::Connection *conn, float exptime)
+int Dummy::shiftStoreStart (rts2core::Rts2Connection *conn, float exptime)
 {
 	return Camera::shiftStoreStart (conn, exptime);
 }
 
-int Dummy::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
+int Dummy::shiftStoreShift (rts2core::Rts2Connection *conn, int shift, float exptime)
 {
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
-int Dummy::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+int Dummy::shiftStoreEnd (rts2core::Rts2Connection *conn, int shift, float exptime)
 {
 	return Camera::shiftStoreEnd (conn, shift, exptime);
 }

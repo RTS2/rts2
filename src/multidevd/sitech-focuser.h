@@ -34,7 +34,7 @@ class SitechFocuser:public Focusd, public SitechMultidev
 
 		virtual int info ();
 
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 
 		virtual int setTo (double num);
 		virtual double tcOffset ();

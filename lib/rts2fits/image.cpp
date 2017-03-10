@@ -219,7 +219,7 @@ Image::Image (const char *_filename, const struct timeval *in_exposureStart, boo
 	writeExposureStart ();
 }
 
-Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite, bool _writeConnection, bool _writeRTS2Values):FitsFile (in_exposureStart)
+Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Rts2Connection * in_connection, bool _overwrite, bool _writeConnection, bool _writeRTS2Values):FitsFile (in_exposureStart)
 {
 	initData ();
 	setWriteConnection (_writeConnection, _writeRTS2Values);
@@ -2407,7 +2407,7 @@ ColumnData *getColumnData (const char *name, rts2core::Value * val)
 	throw rts2core::Error ("unknow array datatype");
 }
 
-void Image::prepareArrayData (const std::string sname, rts2core::Connection *conn, rts2core::Value *val)
+void Image::prepareArrayData (const std::string sname, rts2core::Rts2Connection *conn, rts2core::Value *val)
 {
 	const char *name = sname.c_str ();
 	// if it's simple array, just write as header cards
@@ -2477,7 +2477,7 @@ void Image::writeConnArray (TableData *tableData)
 	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
 }
 
-void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
+void Image::writeConnValue (rts2core::Rts2Connection * conn, rts2core::Value * val)
 {
 	std::string desc = val->getDescription ();
 	std::string name = val->getName ();
@@ -2561,7 +2561,7 @@ void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 	}
 }
 
-void Image::recordChange (rts2core::Connection * conn, rts2core::Value * val)
+void Image::recordChange (rts2core::Rts2Connection * conn, rts2core::Value * val)
 {
 	char *name;
 	// construct name
@@ -2601,7 +2601,7 @@ void Image::setEnvironmentalValues ()
 	}
 }
 
-void Image::writeConn (rts2core::Connection * conn, imageWriteWhich_t which)
+void Image::writeConn (rts2core::Rts2Connection * conn, imageWriteWhich_t which)
 {
 	if (writeConnection)
 	{

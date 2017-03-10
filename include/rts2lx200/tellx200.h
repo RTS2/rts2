@@ -42,7 +42,7 @@ class TelLX200:public Telescope
 		TelLX200 (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = false);
 		virtual ~TelLX200 (void);
 
-		rts2core::ConnSerial *getSerialConn () { return serConn; }
+		rts2core::ConnSerial *getTelConn () { return telConn; }
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -58,9 +58,9 @@ class TelLX200:public Telescope
 		virtual int initHardware ();
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 
-		rts2core::ConnSerial *serConn;
+		rts2core::ConnSerial *telConn;
 
 		/**
 		 * Reads some value from LX200 in hms format.
@@ -178,8 +178,11 @@ class TelLX200:public Telescope
 		int matchTime ();
 
 		const char *device_file;
+		HostString *host;
 		bool connDebug;
 	private:
+		int initTcpIp ();
+		int initSerial ();
 
 		rts2core::ValueTime *timeZone;
 		rts2core::ValueDouble *localTime;

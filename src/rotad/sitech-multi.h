@@ -48,8 +48,8 @@ class SitechMulti:public rts2core::MultiBase
 		virtual int processOption (int opt);
 		virtual int initHardware ();
 
-		virtual bool isRunning (rts2core::Connection *conn) { return false; }
-		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr) { return NULL; }
+		virtual bool isRunning (rts2core::Rts2Connection *conn) { return false; }
+		virtual rts2core::Rts2Connection *createClientConnection (rts2core::NetworkAddress * in_addr) { return NULL; }
 
 	private:
 		void derSetTarget ();

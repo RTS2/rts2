@@ -37,7 +37,7 @@
 
 using namespace rts2core;
 
-ConnClient::ConnClient (Block * in_master, int _centrald_num, char *_name):Connection (in_master)
+ConnClient::ConnClient (Block * in_master, int _centrald_num, char *_name):Rts2Connection (in_master)
 {
 	setName (_centrald_num, _name);
 	setConnState (CONN_RESOLVING_DEVICE);
@@ -98,14 +98,14 @@ void ConnClient::setAddress (NetworkAddress * in_addr)
 
 void ConnClient::connConnected ()
 {
- 	Connection::connConnected ();
+ 	Rts2Connection::connConnected ();
 	master->getSingleCentralConn ()->queCommand (new CommandKey (master, getName ()));
 	setConnState (CONN_AUTH_PENDING);
 }
 
 void ConnClient::setKey (int in_key)
 {
-	Connection::setKey (in_key);
+	Rts2Connection::setKey (in_key);
 	if (isConnState (CONN_AUTH_PENDING))
 	{
 		// que to begining, send command
@@ -119,7 +119,7 @@ ConnClient * Client::createClientConnection (int _centrald_num, char *_deviceNam
 	return new ConnClient (this, _centrald_num, _deviceName);
 }
 
-Connection * Client::createClientConnection (NetworkAddress * in_addr)
+Rts2Connection * Client::createClientConnection (NetworkAddress * in_addr)
 {
 	ConnClient *conn;
 	conn = createClientConnection (in_addr->getCentraldNum (), in_addr->getName ());
@@ -213,7 +213,7 @@ int Client::run ()
 	return 0;
 }
 
-ConnCentraldClient::ConnCentraldClient (Block * in_master, const char *in_login, const char *in_name, const char *in_password, const char *in_master_host, const char *in_master_port):Connection (in_master)
+ConnCentraldClient::ConnCentraldClient (Block * in_master, const char *in_login, const char *in_name, const char *in_password, const char *in_master_host, const char *in_master_port):Rts2Connection (in_master)
 {
 	master_host = in_master_host;
 	master_port = in_master_port;
@@ -273,7 +273,7 @@ int ConnCentraldClient::command ()
 	{
 		char *p_device_name;
 		int p_key;
-		Connection *conn;
+		Rts2Connection *conn;
 		if (paramNextString (&p_device_name)
 			|| paramNextInteger (&p_key) || !paramEnd ())
 			return -2;
@@ -283,12 +283,12 @@ int ConnCentraldClient::command ()
 		setCommandInProgress (false);
 		return -1;
 	}
-	return Connection::command ();
+	return Rts2Connection::command ();
 }
 
 void ConnCentraldClient::setState (rts2_status_t in_value, char * msg)
 {
-	Connection::setState (in_value, msg);
+	Rts2Connection::setState (in_value, msg);
 	master->setMasterState (this, in_value);
 }
 
@@ -302,7 +302,7 @@ CommandLogin::CommandLogin (Block * in_master, const char *in_login, const char 
 	state = LOGIN_SEND;
 }
 
-int CommandLogin::commandReturnOK (Connection * conn)
+int CommandLogin::commandReturnOK (Rts2Connection * conn)
 {
 	std::ostringstream _os;
 	switch (state)

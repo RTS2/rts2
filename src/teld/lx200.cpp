@@ -93,14 +93,14 @@ int LX200::initHardware ()
 	if (ret)
 		return ret;
 
-	int ovtime = serConn->getVTime ();
+	int ovtime = telConn->getVTime ();
 
-	serConn->setVTime (100);
+	telConn->setVTime (100);
 
 	char rbuf[100];
 	// we get 12:34:4# while we're in short mode
 	// and 12:34:45 while we're in long mode
-	if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+	if (telConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
 		return -1;
 
 	if (rbuf[7] == '\0' || rbuf[7] == '#')
@@ -108,10 +108,10 @@ int LX200::initHardware ()
 		// that could be used to distinguish between long
 		// short mode
 		// we are in short mode, set the long on
-		if (serConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
+		if (telConn->writeRead ("#:U#", 5, rbuf, 0) < 0)
 			return -1;
 		
-		if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
+		if (telConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
 			return -1;
 		if (rbuf[7] == '\0' || rbuf[7] == '#')
 		{
@@ -121,7 +121,7 @@ int LX200::initHardware ()
 	}
 
 	// get product name
-	ret = serConn->writeRead (":GVP#", 5, rbuf, 99, '#');
+	ret = telConn->writeRead (":GVP#", 5, rbuf, 99, '#');
 	if (ret < 0)
 		return -1;
 	if (ret > 0)
@@ -134,7 +134,7 @@ int LX200::initHardware ()
 	if (strncmp (productName->getValue (), "10micron", 8) == 0)
 		hasAstroPhysicsExtensions = true;
 
-	serConn->setVTime (ovtime);
+	telConn->setVTime (ovtime);
 
 	return 0;
 }
@@ -169,8 +169,8 @@ int LX200::info ()
 		return -1;
 	
 	//char rbuff[100];	
-	//int ret = serConn->writeRead (":hS#", 4, rbuff, 99, '#');
-	//int ret = serConn->writeRead (":pS#", 4, rbuff, 99, '#');
+	//int ret = telConn->writeRead (":hS#", 4, rbuff, 99, '#');
+	//int ret = telConn->writeRead (":pS#", 4, rbuff, 99, '#');
 	//cout << "ret " << ret << endl;
 	//	if (ret < 0)
 	//	return -1;
@@ -210,7 +210,7 @@ int LX200::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
-	return serConn->writePort (command, 5);
+	return telConn->writePort (command, 5);
 }
 
 /*!
@@ -229,7 +229,7 @@ int LX200::tel_slew_to (double ra, double dec)
 
 	if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
 		return -1;
-	if (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
+	if (telConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
 		return -1;
 	if (retstr == '0')
 		return 0;
@@ -300,7 +300,7 @@ void LX200::set_move_timeout (time_t plus_time)
 int LX200::startResync ()
 {
 	if (hasAstroPhysicsExtensions)
-		serConn->writePort (":PO#", 4);
+		telConn->writePort (":PO#", 4);
 
 	tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 
@@ -311,7 +311,7 @@ int LX200::startResync ()
 int LX200::isMoving ()
 {
 	char buf[2];
-	serConn->writeRead (":D#", 3, buf, 2, '#');
+	telConn->writeRead (":D#", 3, buf, 2, '#');
 	switch (*buf)
 	{
 		case '#':
@@ -354,7 +354,7 @@ int LX200::setTo (double ra, double dec)
 
 	if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
 		return -1;
-	if (serConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0)
+	if (telConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0)
 		return -1;
 	// since we are carring operation critical for next movements of telescope,
 	// we are obliged to check its correctness
@@ -389,8 +389,8 @@ int LX200::correct (double cor_ra, double cor_dec, double real_ra, double real_d
  */
 int LX200::startPark ()
 {
-  //int ret = serConn->writePort (":KA#", 4);
-  int ret = serConn->writePort (":hP#", 4);
+  //int ret = telConn->writePort (":KA#", 4);
+  int ret = telConn->writePort (":hP#", 4);
   if (ret < 0)
     return -1;
   sleep (1);
@@ -400,9 +400,9 @@ int LX200::startPark ()
 int LX200::isParking ()
 {
 	char buf[2];
-	//serConn->writeRead (":D#", 3, buf, 2, '#');
-	//serConn->writeRead (":h?#", 3, buf, 2, '#');
-	serConn->writeRead (":h?#", 4, buf, 1);
+	//telConn->writeRead (":D#", 3, buf, 2, '#');
+	//telConn->writeRead (":h?#", 3, buf, 2, '#');
+	telConn->writeRead (":h?#", 4, buf, 1);
 
 	switch (*buf)
 	{
@@ -417,7 +417,7 @@ int LX200::isParking ()
 
 int LX200::endPark ()
 {
-	int ret = serConn->writePort (":AL#", 4);
+	int ret = telConn->writePort (":AL#", 4);
 	if (ret < 0)
 		return -1;
 	sleep (1);

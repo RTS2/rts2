@@ -47,7 +47,7 @@ typedef enum { IMAGE_DO_BASIC_PROCESSING, IMAGE_KEEP_COPY } imageProceRes;
 class DevClientCameraImage:public rts2core::DevClientCamera
 {
 	public:
-		DevClientCameraImage (rts2core::Connection * in_connection, std::string templateFile = std::string (""));
+		DevClientCameraImage (rts2core::Rts2Connection * in_connection, std::string templateFile = std::string (""));
 		virtual ~DevClientCameraImage (void);
 		virtual void postEvent (rts2core::Event * event);
 
@@ -168,7 +168,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 class DevClientTelescopeImage:public rts2core::DevClientTelescope
 {
 	public:
-		DevClientTelescopeImage (rts2core::Connection * in_connection);
+		DevClientTelescopeImage (rts2core::Rts2Connection * in_connection);
 		virtual void postEvent (rts2core::Event * event);
 		/**
 		 * Get target coordinates.
@@ -182,14 +182,14 @@ class DevClientTelescopeImage:public rts2core::DevClientTelescope
 class DevClientFocusImage:public rts2core::DevClientFocus
 {
 	public:
-		DevClientFocusImage (rts2core::Connection * in_connection);
+		DevClientFocusImage (rts2core::Rts2Connection * in_connection);
 		virtual void postEvent (rts2core::Event * event);
 };
 
 class DevClientWriteImage:public rts2core::DevClient
 {
 	public:
-		DevClientWriteImage (rts2core::Connection * in_connection);
+		DevClientWriteImage (rts2core::Rts2Connection * in_connection);
 		virtual void postEvent (rts2core::Event * event);
 
 		virtual void infoOK ();

@@ -23,7 +23,7 @@ EXEC SQL include sqlca;
 
 using namespace rts2script;
 
-DevClientPhotExec::DevClientPhotExec (rts2core::Connection * in_connection):DevClientPhot (in_connection),DevScript (in_connection)
+DevClientPhotExec::DevClientPhotExec (rts2core::Rts2Connection * in_connection):DevClientPhot (in_connection),DevScript (in_connection)
 {
 	minFlux = 20;
 }

@@ -1440,7 +1440,7 @@ int Telescope::willConnect (rts2core::NetworkAddress * in_addr)
 	return rts2core::Device::willConnect (in_addr);
 }
 
-rts2core::DevClient *Telescope::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient *Telescope::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -1661,7 +1661,7 @@ int Telescope::moveTLE (const char *l1, const char *l2)
 	return 0;
 }
 
-int Telescope::parseTLE (rts2core::Connection *conn, const char *l1, const char *l2)
+int Telescope::parseTLE (rts2core::Rts2Connection *conn, const char *l1, const char *l2)
 {
 	int ret = moveTLE (l1, l2);
 	if (ret)
@@ -2003,7 +2003,7 @@ int Telescope::abortMoveTracking ()
 	return 0;
 }
 
-int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
+int Telescope::startResyncMove (rts2core::Rts2Connection * conn, int correction)
 {
 	int ret;
 
@@ -2266,7 +2266,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	return ret;
 }
 
-int Telescope::setTo (rts2core::Connection * conn, double set_ra, double set_dec)
+int Telescope::setTo (rts2core::Rts2Connection * conn, double set_ra, double set_dec)
 {
 	int ret;
 	ret = setTo (set_ra, set_dec);
@@ -2276,7 +2276,7 @@ int Telescope::setTo (rts2core::Connection * conn, double set_ra, double set_dec
 	return ret;
 }
 
-int Telescope::setToPark (rts2core::Connection * conn)
+int Telescope::setToPark (rts2core::Rts2Connection * conn)
 {
 	int ret;
 	ret = setToPark ();
@@ -2286,7 +2286,7 @@ int Telescope::setToPark (rts2core::Connection * conn)
 	return ret;
 }
 
-int Telescope::startPark (rts2core::Connection * conn)
+int Telescope::startPark (rts2core::Rts2Connection * conn)
 {
 	if (blockMove->getValueBool () == true)
 	{
@@ -2409,7 +2409,7 @@ int Telescope::moveAltAz ()
 	return startResyncMove (NULL, 0);
 }
 
-int Telescope::commandAuthorized (rts2core::Connection * conn)
+int Telescope::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	double obj_ra;
 	double obj_ha;

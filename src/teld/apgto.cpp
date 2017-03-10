@@ -30,8 +30,8 @@
 #define OPT_APGTO_KEEP_HORIZON   OPT_LOCAL + 58
 #define OPT_APGTO_TIMEOUT_SLEW_START     OPT_LOCAL + 60
 
-#define setAPUnPark()       serConn->writePort ("#:PO#", 5)// ok, no response
-#define setAPLongFormat()   serConn->writePort ("#:U#", 4) // ok, no response
+#define setAPUnPark()       telConn->writePort ("#:PO#", 5)// ok, no response
+#define setAPLongFormat()   telConn->writePort ("#:U#", 4) // ok, no response
 
 #define DIFFERENCE_MAX_WHILE_NOT_TRACKING 1.  // [deg]
 #define PARK_POSITION_RA -270.
@@ -147,7 +147,7 @@ private:
 
   virtual void startCupolaSync ();
   int checkAPRelativeAngle() ;
-  virtual int commandAuthorized (rts2core::Connection * conn);
+  virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
   int f_scansexa (const char *str0, double *dp);
   virtual int startDir (char *dir);
@@ -200,7 +200,7 @@ int APGTO::getAPVersionNumber()
 
 	char version[32];
 	APfirmware->setValueString ("none");
-	if((ret = serConn->writeRead ("#:V#", 4, version, 32, '#')) < 1 )
+	if((ret = telConn->writeRead ("#:V#", 4, version, 32, '#')) < 1 )
 		return -1 ;
 	version[ret - 1] = '\0';
 	APfirmware->setValueString (version); //version);
@@ -219,7 +219,7 @@ int APGTO::getAPUTCOffset()
   double offset ;
   char temp_string[16];
 
-  if((nbytes_read = serConn->writeRead ("#:GG#", 5, temp_string, 11, '#')) < 1 )
+  if((nbytes_read = telConn->writeRead ("#:GG#", 5, temp_string, 11, '#')) < 1 )
     return -1 ;
   // Negative offsets, see AP keypad manual p. 77
   if((temp_string[0]== 'A') || ((temp_string[0]== '0') && (temp_string[1]== '0')) || (temp_string[0]== '@'))
@@ -329,7 +329,7 @@ int APGTO::setAPUTCOffset(double hours)
   dtoints (hours, &h, &m, &s);
   snprintf(temp_string, sizeof(temp_string), "#:SG %+03d:%02d:%02d#", h, m, s);
 
-  if((ret = serConn->writeRead (temp_string, sizeof (temp_string), retstr, 1)) < 0){
+  if((ret = telConn->writeRead (temp_string, sizeof (temp_string), retstr, 1)) < 0){
     logStream (MESSAGE_ERROR) << "APGTO::setAPUTCOffset writing failed." << sendLog;
     return -1;
   }
@@ -345,7 +345,7 @@ int APGTO::setAPTrackingMode ()
   int ret;
   char *v = (char *) trackingMode->getData ();
 
-  ret = serConn->writePort (v, strlen (v));
+  ret = telConn->writePort (v, strlen (v));
   if(ret != 0)
     return -1;
   if(!strcmp(v, ":RT9#")) {  //ToDo find a better solution
@@ -377,7 +377,7 @@ int APGTO::setAPLongitude ()
   snprintf (temp_string, sizeof(temp_string), "#:Sg %03d*%02d:%02d#", d, m, s);
   logStream (MESSAGE_DEBUG) << "APGTO::setAPLongitude :"<<temp_string << sendLog;
   
-  if((ret= serConn->writeRead(temp_string, sizeof(temp_string),retstr,1)) < 0)
+  if((ret= telConn->writeRead(temp_string, sizeof(temp_string),retstr,1)) < 0)
     return -1;
   
   return 0;
@@ -400,7 +400,7 @@ int APGTO::setAPLatitude()
   double APLat= telLatitude->getValueDouble();
   dtoints (APLat, &d, &m, &s);
   snprintf (temp_string, sizeof(temp_string), "#:St %+02d*%02d:%02d#", d, m, s);
-  if((ret = serConn->writeRead (temp_string, sizeof(temp_string), retstr, 1)) < 0)
+  if((ret = telConn->writeRead (temp_string, sizeof(temp_string), retstr, 1)) < 0)
     return -1 ;
   return 0;
 }
@@ -423,7 +423,7 @@ int APGTO::setAPBackLashCompensation(int x, int y, int z)
   
   snprintf(temp_string,sizeof(temp_string),"%s %02d:%02d:%02d#","#:Br",x,y,z);
   
-  if((ret = serConn->writeRead(temp_string,sizeof(temp_string),retstr,1)) < 0)
+  if((ret = telConn->writeRead(temp_string,sizeof(temp_string),retstr,1)) < 0)
     return -1 ;
   return 0;
 }
@@ -444,7 +444,7 @@ int APGTO::setAPLocalTime(int x, int y, int z)
   char retstr[1];
   
   snprintf (temp_string, sizeof(temp_string), "%s %02d:%02d:%02d#", "#:SL" , x, y, z);
-  if((ret = serConn->writeRead (temp_string, sizeof(temp_string), retstr, 1)) < 0)
+  if((ret = telConn->writeRead (temp_string, sizeof(temp_string), retstr, 1)) < 0)
     return -1;
   return 0;
 }
@@ -471,9 +471,9 @@ int APGTO::setAPCalenderDate(int dd, int mm, int yy)
   yy = yy % 100;
   snprintf(cmd_string, sizeof(cmd_string), "#:SC %02d/%02d/%02d#", mm, dd, yy);
   
-  if(serConn->writeRead (cmd_string, 14, temp_string, 33, '#') < 1)
+  if(telConn->writeRead (cmd_string, 14, temp_string, 33, '#') < 1)
     return -1;
-  if(serConn->readPort (temp_string, 33, '#') < 1)
+  if(telConn->readPort (temp_string, 33, '#') < 1)
     return -1 ;
   return 0;
 }
@@ -489,7 +489,7 @@ int APGTO::getAPRelativeAngle ()
   int ret ;
   char new_declination_axis[32] ;
   
-  ret = serConn->writeRead ("#:pS#", 5, new_declination_axis, 5, '#');
+  ret = telConn->writeRead ("#:pS#", 5, new_declination_axis, 5, '#');
   if(ret < 0)
     return -1;
   new_declination_axis[ret-1] = '\0';
@@ -668,7 +668,7 @@ int APGTO::tel_slew_to (double ra, double dec)
     logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled, cupola synced." << sendLog;
   }
   // slew now
-  if(serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0){
+  if(telConn->writeRead ("#:MS#", 5, &retstr, 1) < 0){
     logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to, not slewing, tel_write_read #:MS# failed" << sendLog;
     return -1;
   }
@@ -796,7 +796,7 @@ int APGTO::stopMove ()
 {
   int error_type;
     
-  if((error_type = serConn->writePort ("#:Q#", 4)) < 0)
+  if((error_type = telConn->writePort ("#:Q#", 4)) < 0)
     return error_type;
   
   notMoveCupola ();
@@ -849,7 +849,7 @@ int APGTO::setTo (double ra, double dec)
   //          (there are 5 spaces between “Coordinates” and “matched”, and 8 trailing spaces before the “#”, 
   //          the total response length is 32 character plus the “#”.	  
 
-  if(serConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0){
+  if(telConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0){
     logStream (MESSAGE_WARNING) <<"APGTO::setTo #:CM# failed" << sendLog;
     return -1;
   }
@@ -869,7 +869,7 @@ int APGTO::syncAPCMR(char *matchedObject)
 {
   int error_type;
   
-  if((error_type = serConn->writeRead ("#:CMR#", 6, matchedObject, 33, '#')) < 0)
+  if((error_type = telConn->writeRead ("#:CMR#", 6, matchedObject, 33, '#')) < 0)
     return error_type;
   return 0;
 }
@@ -912,7 +912,7 @@ int APGTO::endPark ()
   // From experience I know that the Astro-Physics controller saves the last position
   // without #:KA#, but not always!
   // so no #:KA# is sent
-  // serConn->writePort (":KA#", 4);
+  // telConn->writePort (":KA#", 4);
 
   logStream (MESSAGE_INFO) << "APGTO::endPark telescope parked successfully" << sendLog;
   return 0;
@@ -976,7 +976,7 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 		cmd[3] = '0' + newValue->getValueInteger ();
 		logStream (MESSAGE_ERROR) << "APGTO::setValue, sending cmd: " << cmd << sendLog; 
 		// 5 was 9 
-		return serConn->writePort (cmd, 5) ? -2 : 0;
+		return telConn->writePort (cmd, 5) ? -2 : 0;
 	}
 	if(oldValue == raPAN || oldValue == decPAN)
 	{
@@ -986,7 +986,7 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 			c = cmd[0][newValue->getValueInteger ()];
 		else
 			c = cmd[1][newValue->getValueInteger ()];
-		return serConn->writePort (c, strlen (c)) ? -2 : 0;
+		return telConn->writePort (c, strlen (c)) ? -2 : 0;
 	}
 	return TelLX200::setValue (oldValue, newValue);
 }
@@ -995,7 +995,7 @@ int APGTO::willConnect (rts2core::NetworkAddress * in_addr)
 {
   return TelLX200::willConnect (in_addr);
 }
-int APGTO::commandAuthorized (rts2core::Connection *conn)
+int APGTO::commandAuthorized (rts2core::Rts2Connection *conn)
 {
   int ret = -1 ;
 
@@ -1449,7 +1449,7 @@ int APGTO::setBasicData()
 {
   // 600 slew speed, 0.25x guide, 12x centering
   // ToDo: see if 0.25 is a good value for guiding
-  int ret = serConn->writePort (":RS0#:RG0#:RC0#", 15);
+  int ret = telConn->writePort (":RS0#:RG0#:RC0#", 15);
   if(ret < 0)
     return -1;
 	
@@ -1559,12 +1559,12 @@ int APGTO::initHardware ()
   // Controller Revision D is incompatible with an ordinary LX200 controller
   // see "TAG TIME UTC OFFSET" and "TAG TIME UPDATE"
   // status = TelLX200::initHardware ();
-  serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5, 5);
+  telConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5, 5);
   if(connDebug == true)
-    serConn->setDebug (true);
-  if(serConn->init ())
+    telConn->setDebug (true);
+  if(telConn->init ())
     return -1;
-  serConn->flushPortIO ();
+  telConn->flushPortIO ();
 
   logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete" << sendLog;
   return 0;

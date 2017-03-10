@@ -39,7 +39,7 @@ class ScriptDevice:public Device
 	public:
 		ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name);
 
-		virtual int commandAuthorized (Connection * conn);
+		virtual int commandAuthorized (Rts2Connection * conn);
 
 	private:
 		rts2core::ValueInteger * scriptRepCount;

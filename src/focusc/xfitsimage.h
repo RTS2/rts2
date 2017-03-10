@@ -35,7 +35,7 @@
 class XFitsImage
 {
 	public:
-		XFitsImage (rts2core::Connection *_connection);
+		XFitsImage (rts2core::Rts2Connection *_connection);
 		virtual ~XFitsImage ();
 
 		void setCrossType (int in_crossType);
@@ -57,7 +57,7 @@ class XFitsImage
 	private:
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
 
-		rts2core::Connection *connection;
+		rts2core::Rts2Connection *connection;
 
 		// X11 stuff
 		Window window;

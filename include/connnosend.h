@@ -21,12 +21,12 @@
 #define __RTS2_CONN_NOSEND__
 
 #include "block.h"
-#include "connection.h"
+#include "rts2conn.h"
 
 namespace rts2core
 {
 
-class Connection;
+class Rts2Connection;
 
 /**
  * Class which does not send out anything. This class have sendMsg method
@@ -37,7 +37,7 @@ class Connection;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnNoSend:public Connection
+class ConnNoSend:public Rts2Connection
 {
 	public:
 		ConnNoSend (Block * in_master);

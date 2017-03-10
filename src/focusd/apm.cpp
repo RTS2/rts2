@@ -24,7 +24,7 @@ namespace rts2focusd
 
 			virtual int processOption (int in_opt);
 			virtual int initHardware ();
-			virtual int commandAuthorized (rts2core::Connection *conn);
+			virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 			virtual int info ();
 			virtual int setTo (double num);
 			virtual double tcOffset () { return 0.;};
@@ -92,7 +92,7 @@ int APMFocuser::initHardware ()
 	return 0;
 }
 
-int APMFocuser::commandAuthorized (rts2core::Connection * conn)
+int APMFocuser::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("calib"))
 	{

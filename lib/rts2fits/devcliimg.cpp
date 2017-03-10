@@ -27,7 +27,7 @@
 
 using namespace rts2image;
 
-DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection, std::string templateFile):rts2core::DevClientCamera (in_connection)
+DevClientCameraImage::DevClientCameraImage (rts2core::Rts2Connection * in_connection, std::string templateFile):rts2core::DevClientCamera (in_connection)
 {
 	chipNumbers = 0;
 	saveImage = 1;
@@ -685,7 +685,7 @@ rts2core::ValueRectangle * DevClientCameraImage::getRectangle (const char *name)
 	return (rts2core::ValueRectangle *) v;
 }
 
-DevClientTelescopeImage::DevClientTelescopeImage (rts2core::Connection * in_connection):rts2core::DevClientTelescope (in_connection)
+DevClientTelescopeImage::DevClientTelescopeImage (rts2core::Rts2Connection * in_connection):rts2core::DevClientTelescope (in_connection)
 {
 }
 
@@ -761,7 +761,7 @@ double DevClientTelescopeImage::getDistance (struct ln_equ_posn *in_pos)
 	return ln_get_angular_separation (&tel, in_pos);
 }
 
-DevClientFocusImage::DevClientFocusImage (rts2core::Connection * in_connection):rts2core::DevClientFocus (in_connection)
+DevClientFocusImage::DevClientFocusImage (rts2core::Rts2Connection * in_connection):rts2core::DevClientFocus (in_connection)
 {
 }
 
@@ -796,7 +796,7 @@ void DevClientFocusImage::postEvent (rts2core::Event * event)
 	rts2core::DevClientFocus::postEvent (event);
 }
 
-DevClientWriteImage::DevClientWriteImage (rts2core::Connection * in_connection):rts2core::DevClient (in_connection)
+DevClientWriteImage::DevClientWriteImage (rts2core::Rts2Connection * in_connection):rts2core::DevClient (in_connection)
 {
 }
 

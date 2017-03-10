@@ -33,7 +33,7 @@ class SitechMirror:public Mirror, public SitechMultidev
 	protected:
 		virtual int info ();
 
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 
 		virtual int movePosition (int pos);
 		virtual int isMoving ();

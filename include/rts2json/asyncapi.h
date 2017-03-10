@@ -37,25 +37,25 @@ namespace rts2json
 class AsyncAPI:public rts2core::Object
 {
 	public:
-		AsyncAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext);
+		AsyncAPI (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext);
 		virtual ~AsyncAPI ();
 		
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual void newDataConn (rts2core::Connection *_conn, int data_conn) {}
-		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *data) {}
-		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data) {}
-		virtual void exposureFailed (rts2core::Connection *_conn, int status) {}
-		virtual void exposureEnd (rts2core::Connection *_conn) {}
+		virtual void newDataConn (rts2core::Rts2Connection *_conn, int data_conn) {}
+		virtual void dataReceived (rts2core::Rts2Connection *_conn, rts2core::DataAbstractRead *data) {}
+		virtual void fullDataReceived (rts2core::Rts2Connection *_conn, rts2core::DataChannels *data) {}
+		virtual void exposureFailed (rts2core::Rts2Connection *_conn, int status) {}
+		virtual void exposureEnd (rts2core::Rts2Connection *_conn) {}
 
-		virtual void stateChanged (rts2core::Connection *_conn) {};
-		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value) {};
+		virtual void stateChanged (rts2core::Rts2Connection *_conn) {};
+		virtual void valueChanged (rts2core::Rts2Connection *_conn, rts2core::Value *_value) {};
 
 		/**
 		 * Check if the request is for connection or source..
 		 */
 		bool isForSource (XmlRpc::XmlRpcServerConnection *_source) { return source == _source; }
-		bool isForConnection (rts2core::Connection *_conn) { return conn == _conn; }
+		bool isForConnection (rts2core::Rts2Connection *_conn) { return conn == _conn; }
 
 		/**
 		 * Null XMLRPC source. This also marks source for deletion.
@@ -80,7 +80,7 @@ class AsyncAPI:public rts2core::Object
 	protected:
 		JSONRequest *req;
 		XmlRpc::XmlRpcServerConnection *source;
-		rts2core::Connection *conn;
+		rts2core::Rts2Connection *conn;
 
 	private:
 		bool ext;
@@ -117,9 +117,9 @@ class AsyncValueAPI:public AsyncAPI
 	public:
 		AsyncValueAPI (JSONRequest *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params);
 
-		virtual void stateChanged (rts2core::Connection *_conn);
+		virtual void stateChanged (rts2core::Rts2Connection *_conn);
 
-		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value);
+		virtual void valueChanged (rts2core::Rts2Connection *_conn, rts2core::Value *_value);
 		/**
 		 * Send all registered values and states on JSON connection. Throw an error if value/connection
 		 * cannot be found.
@@ -132,7 +132,7 @@ class AsyncValueAPI:public AsyncAPI
 		std::vector <std::string> devices;
 		std::vector <std::pair <std::string, std::string> > values;
 
-		void sendState (std::list <AsyncState>::iterator astate, rts2core::Connection *_conn);
+		void sendState (std::list <AsyncState>::iterator astate, rts2core::Rts2Connection *_conn);
 		void sendValue (const std::string &device, rts2core::Value *_value);
 };
 
@@ -155,8 +155,8 @@ class AsyncSimulateAPI:public AsyncValueAPI
 class AsyncDataAPI:public AsyncAPI
 {
 	public:
-		AsyncDataAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
-		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
+		AsyncDataAPI (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
+		virtual void fullDataReceived (rts2core::Rts2Connection *_conn, rts2core::DataChannels *data);
 
 		virtual void nullSource () { data = NULL; AsyncAPI::nullSource (); }
 
@@ -201,25 +201,25 @@ class AsyncDataAPI:public AsyncAPI
 class AsyncCurrentAPI:public AsyncDataAPI
 {
 	public:
-		AsyncCurrentAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
+		AsyncCurrentAPI (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
 		virtual ~AsyncCurrentAPI ();
 
-		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *_data);
-		virtual void exposureFailed (rts2core::Connection *_conn, int status);
+		virtual void dataReceived (rts2core::Rts2Connection *_conn, rts2core::DataAbstractRead *_data);
+		virtual void exposureFailed (rts2core::Rts2Connection *_conn, int status);
 };
 
 class AsyncExposeAPI:public AsyncDataAPI
 {
 	public:
-		AsyncExposeAPI (JSONRequest *_req, rts2core::Connection *conn, XmlRpc::XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
+		AsyncExposeAPI (JSONRequest *_req, rts2core::Rts2Connection *conn, XmlRpc::XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
 		virtual ~AsyncExposeAPI ();
 
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *_data);
+		virtual void dataReceived (rts2core::Rts2Connection *_conn, rts2core::DataAbstractRead *_data);
 
-		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
-		virtual void exposureFailed (rts2core::Connection *_conn, int status);
+		virtual void fullDataReceived (rts2core::Rts2Connection *_conn, rts2core::DataChannels *data);
+		virtual void exposureFailed (rts2core::Rts2Connection *_conn, int status);
 
 		virtual int idle ();
 
@@ -230,7 +230,7 @@ class AsyncExposeAPI:public AsyncDataAPI
 class AsyncAPIMSet:public AsyncAPI
 {
 	public:
-		AsyncAPIMSet (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext): AsyncAPI (_req, _conn, _source, _ext)
+		AsyncAPIMSet (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext): AsyncAPI (_req, _conn, _source, _ext)
 		{
 			pendingCalls = 0;
 			succ = 0;

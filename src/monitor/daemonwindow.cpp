@@ -185,7 +185,7 @@ void NDevListWindow::draw ()
 	winrefresh ();
 }
 
-void NCentraldWindow::printState (rts2core::Connection * conn)
+void NCentraldWindow::printState (rts2core::Rts2Connection * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
@@ -194,7 +194,7 @@ void NCentraldWindow::printState (rts2core::Connection * conn)
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
 
-void NCentraldWindow::drawDevice (rts2core::Connection * conn)
+void NCentraldWindow::drawDevice (rts2core::Rts2Connection * conn)
 {
 	printState (conn);
 	maxrow++;

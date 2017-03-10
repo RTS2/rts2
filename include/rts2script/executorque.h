@@ -302,7 +302,7 @@ class ExecutorQueue:public TargetQueue
 		 * @param n_start              start of the night
 		 * @param withNRep             accept number of repetitions and separations as extra arguments
 		 */
-		int queueFromConn (rts2core::Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start, bool withNRep);
+		int queueFromConn (rts2core::Rts2Connection *conn, int index, bool withTimes, bool tryFirstPossible, double n_start, bool withNRep);
 
 		/**
 		 * Updates queue. Each queue entry record consists of four parameters:
@@ -314,7 +314,7 @@ class ExecutorQueue:public TargetQueue
 		 * If queud ID is 0, new entry is created. Negative GUIds are
 		 * for removal of given QUID from the queue.
 		 */
-		int queueFromConnQids (rts2core::Connection *conn);
+		int queueFromConnQids (rts2core::Rts2Connection *conn);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
 

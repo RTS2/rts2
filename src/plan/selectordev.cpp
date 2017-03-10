@@ -43,7 +43,7 @@ namespace rts2selector
 class Rts2DevClientTelescopeSel:public rts2core::DevClientTelescope
 {
 	public:
-		Rts2DevClientTelescopeSel (rts2core::Connection * in_connection):rts2core::DevClientTelescope (in_connection) {}
+		Rts2DevClientTelescopeSel (rts2core::Rts2Connection * in_connection):rts2core::DevClientTelescope (in_connection) {}
 
 	protected:
 		virtual void moveEnd ()
@@ -57,7 +57,7 @@ class Rts2DevClientTelescopeSel:public rts2core::DevClientTelescope
 class Rts2DevClientExecutorSel:public rts2core::DevClientExecutor
 {
 	public:
-		Rts2DevClientExecutorSel (rts2core::Connection * in_connection):rts2core::DevClientExecutor (in_connection) {}
+		Rts2DevClientExecutorSel (rts2core::Rts2Connection * in_connection):rts2core::DevClientExecutor (in_connection) {}
 
 	protected:
 		virtual void lastReadout ()
@@ -73,7 +73,7 @@ class SelectorDev:public rts2db::DeviceDb
 		SelectorDev (int argc, char **argv);
 		virtual ~ SelectorDev (void);
 
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 		virtual void postEvent (rts2core::Event * event);
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
@@ -94,7 +94,7 @@ class SelectorDev:public rts2db::DeviceDb
 
 		virtual void message (Message & msg);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -462,7 +462,7 @@ int SelectorDev::idle ()
 	return rts2db::DeviceDb::idle ();
 }
 
-rts2core::DevClient *SelectorDev::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient *SelectorDev::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	rts2core::DevClient *ret;
 	switch (other_device_type)
@@ -765,7 +765,7 @@ void SelectorDev::updateSelectLength ()
 {
 	if (!isnan (selectUntil->getValueDouble ()) && selectUntil->getValueDouble () > getNow ())
 		return;
-	rts2core::Connection *centralConn = getSingleCentralConn ();
+	rts2core::Rts2Connection *centralConn = getSingleCentralConn ();
 	if (centralConn != NULL)
 	{
 		rts2core::Value *night_ending = centralConn->getValue ("night_ending");
@@ -807,7 +807,7 @@ void SelectorDev::message (Message & msg)
 	}
 }
 
-int SelectorDev::commandAuthorized (rts2core::Connection * conn)
+int SelectorDev::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	char *name;
 	if (conn->isCommand ("next"))
@@ -1088,7 +1088,7 @@ void SelectorDev::afterQueueChange (rts2plan::ExecutorQueue *q)
 	else
 	{
 		time_t now;
-		rts2core::Connection *centralConn = getSingleCentralConn ();
+		rts2core::Rts2Connection *centralConn = getSingleCentralConn ();
 		if (centralConn == NULL)
 		{
 			time (&now);

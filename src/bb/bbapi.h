@@ -50,7 +50,7 @@ class BBAPI:public rts2json::JSONDBRequest
 class AsyncObsAPI:public rts2json::AsyncAPI
 {
 	public:
-		AsyncObsAPI (rts2json::JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext):rts2json::AsyncAPI (_req, _conn, _source, _ext)
+		AsyncObsAPI (rts2json::JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext):rts2json::AsyncAPI (_req, _conn, _source, _ext)
 		{
 			
 		}

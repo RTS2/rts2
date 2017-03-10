@@ -32,8 +32,8 @@
 
 #define EVENT_TELESCOPE_LIMITS   RTS2_LOCAL_EVENT + 201
 
-#define setAPUnPark()       serConn->writePort ("#:PO#", 5)// ok, no response
-#define setAPLongFormat()   serConn->writePort ("#:U#", 4) // ok, no response
+#define setAPUnPark()       telConn->writePort ("#:PO#", 5)// ok, no response
+#define setAPLongFormat()   telConn->writePort ("#:U#", 4) // ok, no response
 
 #define DIFFERENCE_MAX_WHILE_NOT_TRACKING 1.  // [deg]
 
@@ -174,7 +174,7 @@ int APGTO::getAPVersionNumber()
 
 	char version[32];
 	APfirmware->setValueString ("none");
-	if (( ret = serConn->writeRead ( "#:V#", 4, version, 32, '#')) < 1 )
+	if (( ret = telConn->writeRead ( "#:V#", 4, version, 32, '#')) < 1 )
 		return -1 ;
 	version[ret - 1] = '\0';
 	APfirmware->setValueString (version); //version);
@@ -194,7 +194,7 @@ int APGTO::getAPUTCOffset()
 
 	char temp_string[16];
 
-	if ((nbytes_read = serConn->writeRead ("#:GG#", 5, temp_string, 11, '#')) < 1 )
+	if ((nbytes_read = telConn->writeRead ("#:GG#", 5, temp_string, 11, '#')) < 1 )
 		return -1 ;
 	// Negative offsets, see AP keypad manual p. 77
 	if ((temp_string[0]== 'A') || ((temp_string[0]== '0') && (temp_string[1]== '0')) || (temp_string[0]== '@'))
@@ -310,7 +310,7 @@ int APGTO::setAPUTCOffset (int hours)
     
 	snprintf (temp_string, sizeof(temp_string), "#:SG %+03d#", h);
 
-	if ((ret = serConn->writeRead (temp_string, sizeof (temp_string), retstr, 1)) < 0)
+	if ((ret = telConn->writeRead (temp_string, sizeof (temp_string), retstr, 1)) < 0)
 		return -1;
 	return 0;
 }
@@ -328,7 +328,7 @@ int APGTO::APSyncCMR(char *matchedObject)
 {
 	int error_type;
     
-	if ( (error_type = serConn->writeRead ("#:CMR#", 6, matchedObject, 33, '#')) < 0)
+	if ( (error_type = telConn->writeRead ("#:CMR#", 6, matchedObject, 33, '#')) < 0)
 		return error_type;
 	return 0;
 }
@@ -344,7 +344,7 @@ int APGTO::selectAPTrackingMode ()
 
 	char *v = (char *) trackingRate->getData ();
 
-	ret = serConn->writePort (v, strlen (v));
+	ret = telConn->writePort (v, strlen (v));
 	if (ret != 0)
 		return -1;
 	return 0;
@@ -371,7 +371,7 @@ int APGTO::setAPSiteLongitude (double Long)
 
 	dtoints (Long, &d, &m, &s);
 	snprintf (temp_string, sizeof( temp_string ), "#:Sg %03d*%02d:%02d#", d, m, s);
-  	if (( ret= serConn->writeRead ( temp_string, sizeof( temp_string ), retstr, 1)) < 0)
+  	if (( ret= telConn->writeRead ( temp_string, sizeof( temp_string ), retstr, 1)) < 0)
 		return -1;
 	return 0;
 }
@@ -393,7 +393,7 @@ int APGTO::setAPSiteLatitude(double Lat)
 
 	dtoints (Lat, &d, &m, &s);
 	snprintf (temp_string, sizeof( temp_string ), "#:St %+02d*%02d:%02d#", d, m, s);
-	if (( ret = serConn->writeRead ( temp_string, sizeof(temp_string), retstr, 1)) < 0)
+	if (( ret = telConn->writeRead ( temp_string, sizeof(temp_string), retstr, 1)) < 0)
 		return -1 ;
 	return 0;
 }
@@ -416,7 +416,7 @@ int APGTO::setAPBackLashCompensation( int x, int y, int z)
   
 	snprintf(temp_string, sizeof( temp_string ), "%s %02d:%02d:%02d#", "#:Br", x, y, z);
   
-	if ((ret = serConn->writeRead ( temp_string, sizeof(temp_string), retstr, 1)) < 0)
+	if ((ret = telConn->writeRead ( temp_string, sizeof(temp_string), retstr, 1)) < 0)
 		return -1 ;
 	return 0;
 }
@@ -437,7 +437,7 @@ int APGTO::setAPLocalTime(int x, int y, int z)
 	char retstr[1];
   
 	snprintf (temp_string, sizeof( temp_string ), "%s %02d:%02d:%02d#", "#:SL" , x, y, z);
-	if ((ret = serConn->writeRead (temp_string, sizeof(temp_string), retstr, 1)) < 0)
+	if ((ret = telConn->writeRead (temp_string, sizeof(temp_string), retstr, 1)) < 0)
 		return -1;
 	return 0;
 }
@@ -464,9 +464,9 @@ int APGTO::setCalenderDate(int dd, int mm, int yy)
 	yy = yy % 100;
 	snprintf(cmd_string, sizeof(cmd_string), "#:SC %02d/%02d/%02d#", mm, dd, yy);
 
-	if (serConn->writeRead (cmd_string, 14, temp_string, 33, '#') < 1)
+	if (telConn->writeRead (cmd_string, 14, temp_string, 33, '#') < 1)
 		return -1;
-	if (serConn->readPort (temp_string, 33, '#') < 1)
+	if (telConn->readPort (temp_string, 33, '#') < 1)
 		return -1 ;
 	return 0;
 }
@@ -498,7 +498,7 @@ int APGTO::tel_read_declination_axis ()
 	int ret ;
 	char new_declination_axis[32] ;
 
-	ret = serConn->writeRead ("#:pS#", 5, new_declination_axis, 5, '#');
+	ret = telConn->writeRead ("#:pS#", 5, new_declination_axis, 5, '#');
 	if (ret < 0)
 		return -1;
 	new_declination_axis[ret - 1] = '\0';
@@ -600,7 +600,7 @@ int APGTO::tel_slew_to (double ra, double dec)
     }
   }*/
 	// slew now
-	if ((ret = serConn->writeRead ("#:MS#", 5, &retstr, 1)) < 0)
+	if ((ret = telConn->writeRead ("#:MS#", 5, &retstr, 1)) < 0)
 		return -1;
 
   //logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to #:MS# on ra " << ra << ", dec " << dec << sendLog ;
@@ -672,7 +672,7 @@ APGTO::tel_slew_to_altaz(double alt, double az)
 		logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_azimuth("<< az<< ") failed"<< sendLog;
                 return -1;
 	}
-	if (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
+	if (telConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
         {
                 logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_read #:MS# failed"<< sendLog;
                 return -1;
@@ -1043,7 +1043,7 @@ int APGTO::stopMove ()
 {
 	int error_type;
     
-	if ((error_type = serConn->writePort ("#:Q#", 4)) < 0)
+	if ((error_type = telConn->writePort ("#:Q#", 4)) < 0)
 		return error_type;
 
 	notMoveCupola ();
@@ -1052,7 +1052,7 @@ int APGTO::stopMove ()
 	// check for limit switch states..
 	if (limitSwitchName)
 	{
-		rts2core::Connection *conn = getOpenConnection (limitSwitchName);
+		rts2core::Rts2Connection *conn = getOpenConnection (limitSwitchName);
 		if (conn != NULL)
 		{
 			rts2core::Value *vral = conn->getValue ("RA_LIMIT");
@@ -1112,7 +1112,7 @@ int APGTO::setTo (double ra, double dec)
 
 	//logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# doing SYNC" << sendLog;
 
-	if (serConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0)
+	if (telConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0)
 		return -1;
 	return 0 ;
 }
@@ -1146,7 +1146,7 @@ int APGTO::endPark ()
 	if (ret)
 		return -1;
 
-	serConn->writePort (":KA#", 4);
+	telConn->writePort (":KA#", 4);
 
 	return 0;
 }
@@ -1191,7 +1191,7 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 		// else oldValue == APguide_rate
 
 		cmd[3] = '0' + newValue->getValueInteger ();
-		return serConn->writePort (cmd, 9) ? -2 : 0;
+		return telConn->writePort (cmd, 9) ? -2 : 0;
 	}
 	if (oldValue == raPAN || oldValue == decPAN)
 	{
@@ -1201,7 +1201,7 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 			c = cmd[0][newValue->getValueInteger ()];
 		else
 			c = cmd[1][newValue->getValueInteger ()];
-		return serConn->writePort (c, strlen (c)) ? -2 : 0;
+		return telConn->writePort (c, strlen (c)) ? -2 : 0;
 	}
 	return TelLX200::setValue (oldValue, newValue);
 }
@@ -1487,7 +1487,7 @@ int APGTO::checkSiderealTime( double limit)
 int APGTO::setBasicData()
 {
 	// 600 slew speed, 0.25x guide, 12x centering
-	int ret = serConn->writePort (":RS0#:RG0#:RC0#", 15);
+	int ret = telConn->writePort (":RS0#:RG0#:RC0#", 15);
 	if (ret < 0)
 		return -1;
 	
@@ -1622,7 +1622,7 @@ void APGTO::postEvent (rts2core::Event *event)
 	{
 		case EVENT_TELESCOPE_LIMITS:
 			{
-				rts2core::Connection *conn = getOpenConnection (limitSwitchName);
+				rts2core::Rts2Connection *conn = getOpenConnection (limitSwitchName);
 				if (conn != NULL)
 				{
 					rts2core::Value *vral = conn->getValue ("RA_LIMIT");

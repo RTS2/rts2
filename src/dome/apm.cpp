@@ -45,7 +45,7 @@ class APMDome:public Dome
 	public:
 		APMDome (int argc, char **argv);
 		virtual int initHardware ();
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
                 virtual int info ();
 		virtual void postEvent (rts2core::Event *event);
                 virtual int startOpen ();
@@ -92,7 +92,7 @@ APMDome::APMDome (int argc, char **argv):Dome (argc, argv)
 	createValue(sideBpos, "sideB_pos", "last known side B position", true);
 }
 
-int APMDome::commandAuthorized (rts2core::Connection * conn)
+int APMDome::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("stop"))
 	{

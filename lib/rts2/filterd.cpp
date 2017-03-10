@@ -129,7 +129,7 @@ int Filterd::setFilterNumMask (int new_filter)
 	return ret;
 }
 
-int Filterd::setFilterNum (rts2core::Connection * conn, int new_filter)
+int Filterd::setFilterNum (rts2core::Rts2Connection * conn, int new_filter)
 {
 	int ret;
 	ret = setFilterNumMask (new_filter);
@@ -140,7 +140,7 @@ int Filterd::setFilterNum (rts2core::Connection * conn, int new_filter)
 	return ret;
 }
 
-int Filterd::commandAuthorized (rts2core::Connection * conn)
+int Filterd::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("filter"))
 	{

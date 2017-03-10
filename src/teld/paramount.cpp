@@ -159,7 +159,7 @@ class Paramount:public GEM
 
 		virtual int processOption (int in_opt);
 
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 
 		virtual int isMoving ();
 		virtual int isParking ();
@@ -818,7 +818,7 @@ int Paramount::basicInfo()
 	return ret;
 }
 
-int Paramount::commandAuthorized (rts2core::Connection *conn)
+int Paramount::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	//logStream (MESSAGE_DEBUG) << "Paramount::commandAuthorized" << sendLog;
 	if (conn->isCommand ("sleep"))

@@ -227,7 +227,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 					image->getValue ("CORR_IMG", corr_img);
 					if (telescopeName)
 					{
-						rts2core::Connection *telConn;
+						rts2core::Rts2Connection *telConn;
 						telConn = master->findName (telescopeName);
 
 						rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_correction");

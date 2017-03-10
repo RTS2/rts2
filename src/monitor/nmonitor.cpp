@@ -49,7 +49,7 @@ void NMonitor::sendCommand ()
 	int curX = comWindow->getCurX ();
 	char command[curX + 1];
 	char *cmd_top = command;
-	rts2core::Connection *conn = NULL;
+	rts2core::Rts2Connection *conn = NULL;
 	comWindow->getWinString (command, curX);
 	command[curX] = '\0';
 	// try to find ., which show DEVICE.command notation..
@@ -83,7 +83,7 @@ void NMonitor::sendCommand ()
 class sortConnName
 {
 	public:
-		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
+		bool operator () (rts2core::Rts2Connection *con1, rts2core::Rts2Connection *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
 };
 
 void NMonitor::refreshConnections ()
@@ -102,7 +102,7 @@ void NMonitor::refreshConnections ()
 	daemonWindow = NULL;
 }
 
-rts2core::Connection *NMonitor::connectionAt (unsigned int i)
+rts2core::Rts2Connection *NMonitor::connectionAt (unsigned int i)
 {
 	if (i < getCentraldConns ()->size ())
 		return (*getCentraldConns ())[i];
@@ -348,7 +348,7 @@ void NMonitor::changeActive (NWindow * new_active)
 
 void NMonitor::changeListConnection ()
 {
-	rts2core::Connection *conn = connectionAt (deviceList->getSelRow ());
+	rts2core::Rts2Connection *conn = connectionAt (deviceList->getSelRow ());
 	if (conn)
 	{
 		delete daemonWindow;
@@ -584,7 +584,7 @@ rts2core::ConnClient * NMonitor::createClientConnection (int _centrald_num, char
 	return new NMonConn (this, _centrald_num, _deviceName);
 }
 
-rts2core::DevClient * NMonitor::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient * NMonitor::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	rts2core::DevClient *retC = rts2core::Client::createOtherType (conn, other_device_type);
 	if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
@@ -603,7 +603,7 @@ rts2core::DevClient * NMonitor::createOtherType (rts2core::Connection * conn, in
 	return retC;
 }
 
-int NMonitor::deleteConnection (rts2core::Connection * conn)
+int NMonitor::deleteConnection (rts2core::Rts2Connection * conn)
 {
 	if (conn == connectionAt (deviceList->getSelRow ()))
 	{

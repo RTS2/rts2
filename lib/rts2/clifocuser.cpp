@@ -22,7 +22,7 @@
 
 using namespace rts2camd;
 
-ClientFocusCamera::ClientFocusCamera (rts2core::Connection * in_connection):rts2core::DevClientFocus (in_connection)
+ClientFocusCamera::ClientFocusCamera (rts2core::Rts2Connection * in_connection):rts2core::DevClientFocus (in_connection)
 {
 	activeConn = NULL;
 }

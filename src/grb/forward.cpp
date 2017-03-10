@@ -285,7 +285,7 @@ int Rts2ConnFwGrb::add (rts2core::Block *block)
 		block->addPollFD (gcn_listen_sock, POLLIN | POLLPRI);
 		return 0;
 	}
-	return rts2core::Connection::add (block);
+	return rts2core::Rts2Connection::add (block);
 }
 
 void Rts2ConnFwGrb::connectionError (int last_data_size)
@@ -408,11 +408,11 @@ class Rts2AppFw:public rts2core::Block
 		int forwardPort;
 
 	protected:
-		virtual rts2core::Connection * createClientConnection (char *in_deviceName)
+		virtual rts2core::Rts2Connection * createClientConnection (char *in_deviceName)
 		{
 			return NULL;
 		}
-		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr)
+		virtual rts2core::Rts2Connection *createClientConnection (rts2core::NetworkAddress * in_addr)
 		{
 			return NULL;
 		}

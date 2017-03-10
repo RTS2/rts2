@@ -51,11 +51,11 @@ class Filterd:public rts2core::Device
 
 		virtual int info ();
 
-		int setFilterNum (rts2core::Connection * conn, int new_filter);
+		int setFilterNum (rts2core::Rts2Connection * conn, int new_filter);
 
 		virtual int homeFilter ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int processOption (int in_opt);

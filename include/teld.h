@@ -94,7 +94,7 @@ class Telescope:public rts2core::Device
 
 		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
 
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 
 		double getLatitude () { return telLatitude->getValueDouble (); }
 		double getLongitude () { return telLongitude->getValueDouble (); }
@@ -116,10 +116,10 @@ class Telescope:public rts2core::Device
 
 		virtual int scriptEnds ();
 
-		int setTo (rts2core::Connection * conn, double set_ra, double set_dec);
-		int setToPark (rts2core::Connection * conn);
+		int setTo (rts2core::Rts2Connection * conn, double set_ra, double set_dec);
+		int setToPark (rts2core::Rts2Connection * conn);
 
-		int startPark (rts2core::Connection * conn);
+		int startPark (rts2core::Rts2Connection * conn);
 
 		virtual int getFlip ();
 
@@ -183,7 +183,7 @@ class Telescope:public rts2core::Device
 
 		bool isModelOn () { return (calModel->getValueBool ()); }
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		virtual void setFullBopState (rts2_status_t new_state);
 
@@ -761,7 +761,7 @@ class Telescope:public rts2core::Device
 
 		virtual void valueChanged (rts2core::Value * changed_value);
 
-		virtual int deleteConnection (rts2core::Connection * in_conn)
+		virtual int deleteConnection (rts2core::Rts2Connection * in_conn)
 		{
 			if (in_conn == move_connection)
 				move_connection = NULL;
@@ -974,7 +974,7 @@ class Telescope:public rts2core::Device
 
 		virtual int moveTLE (const char *l1, const char *l2);
 
-		int parseTLE (rts2core::Connection *conn, const char *l1, const char *l2);
+		int parseTLE (rts2core::Rts2Connection *conn, const char *l1, const char *l2);
 
 		void setTLE (const char *l1, const char *l2);
 
@@ -1079,7 +1079,7 @@ class Telescope:public rts2core::Device
 		virtual void afterMovementStart ();
 
 	private:
-		rts2core::Connection * move_connection;
+		rts2core::Rts2Connection * move_connection;
 		int moveInfoCount;
 		int moveInfoMax;
 
@@ -1302,7 +1302,7 @@ class Telescope:public rts2core::Device
 		 *
 		 * @param correction   correction type bitmask - 0 for no corerction, 1 for offsets, 2 for correction
 		 */
-		int startResyncMove (rts2core::Connection * conn, int correction);
+		int startResyncMove (rts2core::Rts2Connection * conn, int correction);
 
 		/**
 		 * Date and time when last park command was issued.

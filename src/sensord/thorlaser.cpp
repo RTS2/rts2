@@ -37,7 +37,7 @@ class ThorLaser:public Sensor
 		ThorLaser (int argc, char **argv);
 		virtual ~ThorLaser ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int processOption (int opt);
@@ -216,7 +216,7 @@ ThorLaser::~ThorLaser ()
 	delete laserConn;
 }
 
-int ThorLaser::commandAuthorized (rts2core::Connection * conn)
+int ThorLaser::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("reset"))
 	{

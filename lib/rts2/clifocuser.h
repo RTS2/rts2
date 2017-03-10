@@ -41,7 +41,7 @@ struct focuserMove
 class ClientFocusCamera:public rts2core::DevClientFocus
 {
 	public:
-		ClientFocusCamera (rts2core::Connection * in_connection);
+		ClientFocusCamera (rts2core::Rts2Connection * in_connection);
 		virtual ~ ClientFocusCamera (void);
 		virtual void postEvent (rts2core::Event * event);
 		virtual void focusingFailed (int status);

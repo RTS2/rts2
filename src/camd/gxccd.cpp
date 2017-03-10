@@ -39,7 +39,7 @@ class GXCCD:public Camera
 
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int processOption (int opt);
@@ -460,7 +460,7 @@ int GXCCD::reinitCamera ()
 	return 0;
 }
 
-int GXCCD::commandAuthorized (rts2core::Connection * conn)
+int GXCCD::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("clear"))
 	{

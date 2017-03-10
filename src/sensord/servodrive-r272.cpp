@@ -37,7 +37,7 @@ class ServoDrive:public Sensor
 		virtual int initHardware ();
 		virtual int info ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
@@ -142,7 +142,7 @@ int ServoDrive::info ()
 	return Sensor::info ();
 }
 
-int ServoDrive::commandAuthorized (rts2core::Connection * conn)
+int ServoDrive::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("home"))
 	{

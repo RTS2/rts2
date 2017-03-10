@@ -69,10 +69,10 @@ int DevConnection::command ()
 		setCommandInProgress (false);
 		return -1;
 	}
-	return Connection::command ();
+	return Rts2Connection::command ();
 }
 
-DevConnection::DevConnection (int in_sock, Device * in_master):Connection (in_sock, in_master)
+DevConnection::DevConnection (int in_sock, Device * in_master):Rts2Connection (in_sock, in_master)
 {
 	address = NULL;
 	master = in_master;
@@ -85,7 +85,7 @@ DevConnection::DevConnection (int in_sock, Device * in_master):Connection (in_so
 int DevConnection::init ()
 {
 	if (getType () != DEVICE_DEVICE)
-		return Connection::init ();
+		return Rts2Connection::init ();
 	int ret;
 	struct addrinfo *device_addr;
 	if (!address)
@@ -199,7 +199,7 @@ void DevConnection::connConnected ()
 
 void DevConnection::setDeviceKey (int _centraldId, int _key)
 {
-	Connection::setKey (_key);
+	Rts2Connection::setKey (_key);
 	if (getType () == DEVICE_DEVICE)
 	{
 		if (isConnState (CONN_AUTH_PENDING))
@@ -222,8 +222,8 @@ void DevConnection::setDeviceKey (int _centraldId, int _key)
 void DevConnection::setConnState (conn_state_t new_conn_state)
 {
 	if (getType () != DEVICE_DEVICE)
-		return Connection::setConnState (new_conn_state);
-	Connection::setConnState (new_conn_state);
+		return Rts2Connection::setConnState (new_conn_state);
+	Rts2Connection::setConnState (new_conn_state);
 	if (new_conn_state == CONN_AUTH_OK)
 	{
 	 	std::ostringstream _os;
@@ -236,7 +236,7 @@ void DevConnection::setConnState (conn_state_t new_conn_state)
 	}
 }
 
-DevConnectionMaster::DevConnectionMaster (Device * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum):Connection (-1, _master)
+DevConnectionMaster::DevConnectionMaster (Device * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum):Rts2Connection (-1, _master)
 {
 	master = _master;
 	device_host = _device_host;
@@ -363,12 +363,12 @@ int DevConnectionMaster::idle ()
 			setConnTimeout (300);
 			break;
 	}
-	return Connection::idle ();
+	return Rts2Connection::idle ();
 }
 
 int DevConnectionMaster::command ()
 {
-	Connection *auth_conn;
+	Rts2Connection *auth_conn;
 	if (isCommand (PROTO_AUTH))
 	{
 		char *a_type;
@@ -412,7 +412,7 @@ int DevConnectionMaster::command ()
 	{
 		char *p_device_name;
 		int p_key;
-		Connection *conn;
+		Rts2Connection *conn;
 		if (paramNextString (&p_device_name)
 			|| paramNextInteger (&p_key) || !paramEnd ())
 			return -2;
@@ -427,18 +427,18 @@ int DevConnectionMaster::command ()
 		return master->commandAuthorized (this);
 	}
 
-	return Connection::command ();
+	return Rts2Connection::command ();
 }
 
 void DevConnectionMaster::setState (rts2_status_t in_value, char * msg)
 {
-	Connection::setState (in_value, msg);
+	Rts2Connection::setState (in_value, msg);
 	master->setMasterState (this, in_value);
 }
 
 void DevConnectionMaster::setBopState (rts2_status_t in_value)
 {
-	Connection::setBopState (in_value);
+	Rts2Connection::setBopState (in_value);
 	((Device *) master)->setFullBopState (in_value);
 }
 
@@ -450,32 +450,32 @@ int DevConnectionMaster::authorize (DevConnection * conn)
 
 void DevConnectionMaster::setConnState (conn_state_t new_conn_state)
 {
-        Connection::setConnState (new_conn_state);
+        Rts2Connection::setConnState (new_conn_state);
         if (isConnState (CONN_AUTH_OK))
         {
                 master->statusInfo (this);
         }
 }
 
-CommandDeviceStatusInfo::CommandDeviceStatusInfo (Device * master, Connection * in_owner_conn):Command (master)
+CommandDeviceStatusInfo::CommandDeviceStatusInfo (Device * master, Rts2Connection * in_owner_conn):Command (master)
 {
 	owner_conn = in_owner_conn;
 	setCommand ("status_info");
 }
 
-int CommandDeviceStatusInfo::commandReturnOK (Connection * conn)
+int CommandDeviceStatusInfo::commandReturnOK (Rts2Connection * conn)
 {
 	((Device *) owner)->endDeviceStatusCommand ();
 	return Command::commandReturnOK (conn);
 }
 
-int CommandDeviceStatusInfo::commandReturnFailed (int status, Connection * conn)
+int CommandDeviceStatusInfo::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	((Device *) owner)->endDeviceStatusCommand ();
 	return Command::commandReturnFailed (status, conn);
 }
 
-void CommandDeviceStatusInfo::deleteConnection (Connection * conn)
+void CommandDeviceStatusInfo::deleteConnection (Rts2Connection * conn)
 {
 	if (conn == owner_conn)
 		owner_conn = NULL;
@@ -522,7 +522,7 @@ DevConnection * Device::createConnection (int in_sock)
 	return new DevConnection (in_sock, this);
 }
 
-int Device::commandAuthorized (Connection * conn)
+int Device::commandAuthorized (Rts2Connection * conn)
 {
 	if (conn->isCommand (COMMAND_INFO))
 	{
@@ -625,7 +625,7 @@ int Device::processOption (int in_opt)
 	return 0;
 }
 
-Connection *Device::getCentraldConn (const char *server)
+Rts2Connection *Device::getCentraldConn (const char *server)
 {
 	std::list <HostString>::iterator iter_h;
 	connections_t::iterator iter_c;
@@ -639,7 +639,7 @@ Connection *Device::getCentraldConn (const char *server)
 	return NULL;
 }
 
-void Device::queDeviceStatusCommand (Connection *in_owner_conn)
+void Device::queDeviceStatusCommand (Rts2Connection *in_owner_conn)
 {
 	deviceStatusCommand = new CommandDeviceStatusInfo (this, in_owner_conn);
 	(*getCentraldConns ()->begin ())->queCommand (deviceStatusCommand);
@@ -650,7 +650,7 @@ int Device::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	return Daemon::setValue (old_value, new_value);
 }
 
-Connection * Device::createClientConnection (NetworkAddress * in_addres)
+Rts2Connection * Device::createClientConnection (NetworkAddress * in_addres)
 {
 	DevConnection *conn;
 	if (in_addres->isAddress (device_name))
@@ -705,7 +705,7 @@ void Device::checkQueChanges (rts2_status_t fakeState)
 	}
 }
 
-void Device::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Connection *commandedConn)
+void Device::stateChanged (rts2_status_t new_state, rts2_status_t old_state, const char *description, Rts2Connection *commandedConn)
 {
 	Daemon::stateChanged (new_state, old_state, description, commandedConn);
 	// try to wake-up queued changes..
@@ -713,7 +713,7 @@ void Device::stateChanged (rts2_status_t new_state, rts2_status_t old_state, con
 	sendStatusMessage (getState (), description, commandedConn);
 }
 
-void Device::sendFullStateInfo (Connection * conn)
+void Device::sendFullStateInfo (Rts2Connection * conn)
 {
 	sendBopMessage (getState (), fullBopState, conn);
 }
@@ -736,7 +736,7 @@ int Device::init ()
 	std::list <HostString>::iterator iter = centraldHosts.begin ();
 	for (int i = 0; iter != centraldHosts.end (); iter++, i++)
 	{
-		Connection * conn_master = new DevConnectionMaster (this, device_host, getPort (), device_name, device_type, (*iter).getHostname (), (*iter).getPort (), i);
+		Rts2Connection * conn_master = new DevConnectionMaster (this, device_host, getPort (), device_name, device_type, (*iter).getHostname (), (*iter).getPort (), i);
 		conn_master->init ();
 		addCentraldConnection (conn_master, true);
 	}
@@ -798,7 +798,7 @@ int Device::sendMasters (const char *msg)
 	return 0;
 }
 
-void Device::centraldConnRunning (Connection *conn)
+void Device::centraldConnRunning (Rts2Connection *conn)
 {
 	Daemon::centraldConnRunning (conn);
 	sendMetaInfo (conn);
@@ -843,7 +843,7 @@ int Device::scriptEnds ()
 	return 0;
 }
 
-int Device::statusInfo (Connection * conn)
+int Device::statusInfo (Rts2Connection * conn)
 {
 	sendStatusMessageConn (getState (), conn);
 	return 0;

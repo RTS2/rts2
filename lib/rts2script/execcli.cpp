@@ -32,7 +32,7 @@ using namespace rts2script;
 // to add more debugging
 // #define DEBUG_EXTRA
 
-DevClientCameraExec::DevClientCameraExec (rts2core::Connection * _connection, rts2core::ValueString *_expandPath, std::string templateFile):rts2image::DevClientCameraImage (_connection, templateFile), DevScript (_connection)
+DevClientCameraExec::DevClientCameraExec (rts2core::Rts2Connection * _connection, rts2core::ValueString *_expandPath, std::string templateFile):rts2image::DevClientCameraImage (_connection, templateFile), DevScript (_connection)
 {
 	expandPathValue = _expandPath;
 	expandPathString = std::string ("");
@@ -170,7 +170,7 @@ int DevClientCameraExec::getNextCommand ()
 				}
 				else
 				{
-					rts2core::Connection *cmdC = getMaster ()->getOpenConnection (cmd_device);
+					rts2core::Rts2Connection *cmdC = getMaster ()->getOpenConnection (cmd_device);
 					if (cmdC != NULL)
 						cmdConns.push_back (cmdC);
 				}
@@ -249,7 +249,7 @@ void DevClientCameraExec::queImage (rts2image::Image * image, bool run_after)
 	}
 
 	// find image processor with lowest que number..
-	rts2core::Connection *minConn = getMaster ()->getMinConn ("queue_size");
+	rts2core::Rts2Connection *minConn = getMaster ()->getMinConn ("queue_size");
 	if (!minConn)
 	{
 		logStream (MESSAGE_WARNING) << "cannot find IMGP connection for image" << sendLog;
@@ -528,7 +528,7 @@ int DevClientCameraExec::doNextCommand ()
 	return ret;
 }
 
-DevClientTelescopeExec::DevClientTelescopeExec (rts2core::Connection * _connection):DevClientTelescopeImage (_connection)
+DevClientTelescopeExec::DevClientTelescopeExec (rts2core::Rts2Connection * _connection):DevClientTelescopeImage (_connection)
 {
 	currentTarget = NULL;
 	cmdChng = NULL;

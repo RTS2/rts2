@@ -48,14 +48,14 @@ class ScriptExec:public rts2core::Client, public rts2script::ScriptInterface
 
 		virtual int findScript (std::string deviceName, std::string & buf);
 
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 
 		virtual void postEvent (rts2core::Event * event);
 
-		virtual void deviceReady (rts2core::Connection * conn);
+		virtual void deviceReady (rts2core::Rts2Connection * conn);
 
 		virtual int idle ();
-		virtual void deviceIdle (rts2core::Connection * conn);
+		virtual void deviceIdle (rts2core::Rts2Connection * conn);
 
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 

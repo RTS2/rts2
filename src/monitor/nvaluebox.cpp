@@ -75,7 +75,7 @@ void ValueBoxBool::draw ()
 	winrefresh ();
 }
 
-void ValueBoxBool::sendValue (rts2core::Connection * connection)
+void ValueBoxBool::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -104,7 +104,7 @@ void ValueBoxString::draw ()
 	winrefresh ();
 }
 
-void ValueBoxString::sendValue (rts2core::Connection * connection)
+void ValueBoxString::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -136,7 +136,7 @@ void ValueBoxInteger::draw ()
 	winrefresh ();
 }
 
-void ValueBoxInteger::sendValue (rts2core::Connection * connection)
+void ValueBoxInteger::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -164,7 +164,7 @@ void ValueBoxLongInteger::draw ()
 	winrefresh ();
 }
 
-void ValueBoxLongInteger::sendValue (rts2core::Connection * connection)
+void ValueBoxLongInteger::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -201,7 +201,7 @@ void ValueBoxFloat::draw ()
 	winrefresh ();
 }
 
-void ValueBoxFloat::sendValue (rts2core::Connection * connection)
+void ValueBoxFloat::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -242,7 +242,7 @@ void ValueBoxDouble::draw ()
 	winrefresh ();
 }
 
-void ValueBoxDouble::sendValue (rts2core::Connection * connection)
+void ValueBoxDouble::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -311,7 +311,7 @@ void ValueBoxSelection::draw ()
 	winrefresh ();
 }
 
-void ValueBoxSelection::sendValue (rts2core::Connection * connection)
+void ValueBoxSelection::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -335,7 +335,7 @@ void ValueBoxTimeDiff::draw ()
 	winrefresh ();
 }
 
-void ValueBoxTimeDiff::sendValue (rts2core::Connection * connection)
+void ValueBoxTimeDiff::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -415,7 +415,7 @@ void ValueBoxRectangle::draw ()
 		edt[i]->winrefresh ();
 }
 
-void ValueBoxRectangle::sendValue (rts2core::Connection * connection)
+void ValueBoxRectangle::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -528,7 +528,7 @@ void ValueBoxArray::draw ()
 		edt[i]->winrefresh ();
 }
 
-void ValueBoxArray::sendValue (rts2core::Connection * connection)
+void ValueBoxArray::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
@@ -623,7 +623,7 @@ void ValueBoxPair::draw ()
 		edt[i]->winrefresh ();
 }
 
-void ValueBoxPair::sendValue (rts2core::Connection * connection)
+void ValueBoxPair::sendValue (rts2core::Rts2Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;

@@ -46,11 +46,11 @@ class Executor:public rts2db::DeviceDb
 	public:
 		Executor (int argc, char **argv);
 		virtual ~ Executor (void);
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 
 		virtual void postEvent (rts2core::Event * event);
 
-		virtual void deviceReady (rts2core::Connection * conn);
+		virtual void deviceReady (rts2core::Rts2Connection * conn);
 
 		virtual int info ();
 
@@ -64,7 +64,7 @@ class Executor:public rts2db::DeviceDb
 
 		int stop ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 #ifdef RTS2_HAVE_SYS_INOTIFY_H
 		virtual void fileModified (struct inotify_event *event);
@@ -313,7 +313,7 @@ int Executor::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	return rts2db::DeviceDb::setValue (oldValue, newValue);
 }
 
-rts2core::DevClient * Executor::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient * Executor::createOtherType (rts2core::Rts2Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -493,7 +493,7 @@ void Executor::postEvent (rts2core::Event * event)
 	rts2db::DeviceDb::postEvent (event);
 }
 
-void Executor::deviceReady (rts2core::Connection * conn)
+void Executor::deviceReady (rts2core::Rts2Connection * conn)
 {
 	if (currentTarget)
 		conn->postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
@@ -1050,7 +1050,7 @@ void Executor::updateScriptCount ()
 	scriptCount->setValueInteger (scriptRunning);
 }
 
-int Executor::commandAuthorized (rts2core::Connection * conn)
+int Executor::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	int tar_id;
 	if (conn->isCommand ("grb"))

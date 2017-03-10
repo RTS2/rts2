@@ -24,7 +24,7 @@
 
 using namespace rts2json;
 
-AsyncAPI::AsyncAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext):Object ()
+AsyncAPI::AsyncAPI (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, bool _ext):Object ()
 {
 	// that's legal - requests are statically allocated and will cease exists with the end of application
 	req = _req;
@@ -89,7 +89,7 @@ AsyncValueAPI::AsyncValueAPI (JSONRequest *_req, XmlRpc::XmlRpcServerConnection 
 	}
 }
 
-void AsyncValueAPI::stateChanged (rts2core::Connection *_conn)
+void AsyncValueAPI::stateChanged (rts2core::Rts2Connection *_conn)
 {
 	if (source == NULL)
 		return;
@@ -103,7 +103,7 @@ void AsyncValueAPI::stateChanged (rts2core::Connection *_conn)
 	}
 }
 
-void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *_value)
+void AsyncValueAPI::valueChanged (rts2core::Rts2Connection *_conn, rts2core::Value *_value)
 {
 	if (source == NULL)
 		return;
@@ -129,7 +129,7 @@ void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *
 void AsyncValueAPI::sendAll (rts2core::Device *device)
 {
 	rts2core::Value *val;
-	rts2core::Connection *_conn;
+	rts2core::Rts2Connection *_conn;
 	for (std::list <AsyncState>::iterator iter = states.begin (); iter != states.end (); iter++)
 	{
 		if (iter->name == "centrald")
@@ -171,7 +171,7 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 		}
 		else
 		{
-			rts2core::Connection *con = device->getOpenConnection (iter->first.c_str ());
+			rts2core::Rts2Connection *con = device->getOpenConnection (iter->first.c_str ());
 			if (con == NULL)
 				throw XmlRpc::JSONException ("cannot find opened connection with name " + iter->first);
 			val = con->getValue (iter->second.c_str ());
@@ -182,7 +182,7 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 	}
 }
 
-void AsyncValueAPI::sendState (std::list <AsyncState>::iterator astate, rts2core::Connection *_conn)
+void AsyncValueAPI::sendState (std::list <AsyncState>::iterator astate, rts2core::Rts2Connection *_conn)
 {
 	if (astate->value == _conn->getState () && astate->status_start == _conn->getProgressStart () && astate->status_expected_end == _conn->getProgressEnd ())
 		return;
@@ -215,7 +215,7 @@ AsyncSimulateAPI::AsyncSimulateAPI (JSONRequest *_req, XmlRpc::XmlRpcServerConne
 {
 }
 
-AsyncDataAPI::AsyncDataAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
+AsyncDataAPI::AsyncDataAPI (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
 {
 	data = _data;
 	channel = _chan;
@@ -230,7 +230,7 @@ AsyncDataAPI::AsyncDataAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlR
 	headerSend = false;
 }
 
-void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
+void AsyncDataAPI::fullDataReceived (rts2core::Rts2Connection *_conn, rts2core::DataChannels *_data)
 {
 	AsyncAPI::fullDataReceived (_conn, _data);
 
@@ -367,7 +367,7 @@ void AsyncDataAPI::sendData ()
 	doSendData (data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
 }
 
-AsyncCurrentAPI::AsyncCurrentAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax, _scaling, _newType)
+AsyncCurrentAPI::AsyncCurrentAPI (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax, _scaling, _newType)
 {
 	// try to send data
 	sendData ();
@@ -377,13 +377,13 @@ AsyncCurrentAPI::~AsyncCurrentAPI ()
 {
 }
 
-void AsyncCurrentAPI::dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *_data)
+void AsyncCurrentAPI::dataReceived (rts2core::Rts2Connection *_conn, rts2core::DataAbstractRead *_data)
 {
 	if (_data == data)
 		sendData ();
 }
 
-void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
+void AsyncCurrentAPI::exposureFailed (rts2core::Rts2Connection *_conn, int status)
 {
 	if (isForConnection (_conn))
 	{
@@ -395,7 +395,7 @@ void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
 	}
 }
 
-AsyncExposeAPI::AsyncExposeAPI (JSONRequest *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax, _scaling, _newType)
+AsyncExposeAPI::AsyncExposeAPI (JSONRequest *_req, rts2core::Rts2Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax, _scaling, _newType)
 {
 	callState = waitForExpReturn;
 }
@@ -428,7 +428,7 @@ void AsyncExposeAPI::postEvent (rts2core::Event *event)
 	Object::postEvent (event);
 }
 
-void AsyncExposeAPI::dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *_data)
+void AsyncExposeAPI::dataReceived (rts2core::Rts2Connection *_conn, rts2core::DataAbstractRead *_data)
 {
 	if (_data == data)
 		sendData ();
@@ -445,7 +445,7 @@ void AsyncExposeAPI::dataReceived (rts2core::Connection *_conn, rts2core::DataAb
 	}
 }
 
-void AsyncExposeAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
+void AsyncExposeAPI::fullDataReceived (rts2core::Rts2Connection *_conn, rts2core::DataChannels *_data)
 {
 	// in case idle loop was not called
 	if (isForConnection (_conn) && callState == waitForImage && data == NULL)
@@ -457,7 +457,7 @@ void AsyncExposeAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Da
 	AsyncDataAPI::fullDataReceived (_conn, _data);
 }
 
-void AsyncExposeAPI::exposureFailed (rts2core::Connection *_conn, int status)
+void AsyncExposeAPI::exposureFailed (rts2core::Rts2Connection *_conn, int status)
 {
 	if (isForConnection (_conn))
 	{

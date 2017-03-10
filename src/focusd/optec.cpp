@@ -39,7 +39,7 @@ class Optec:public Focusd
 		Optec (int argc, char **argv);
 		~Optec (void);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int info ();
@@ -150,7 +150,7 @@ int Optec::initHardware ()
 	return -1;
 }
 
-int Optec::commandAuthorized (rts2core::Connection * conn)
+int Optec::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("home"))
 	{

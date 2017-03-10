@@ -57,9 +57,9 @@ void NStatusWindow::draw ()
 		double lst = ln_get_apparent_sidereal_time (JD) * 15.0 + rts2core::Configuration::instance ()->getObserver ()->lng;
 		struct ln_hms hms;
 		ln_deg_to_hms (lst, &hms);
-		std::map <rts2core::Connection *, std::vector < rts2core::Value *> > failed = master->failedValues ();
+		std::map <rts2core::Rts2Connection *, std::vector < rts2core::Value *> > failed = master->failedValues ();
 		int f = 0;
-		for (std::map <rts2core::Connection *, std::vector < rts2core::Value *> >::iterator i = failed.begin (); i != failed.end (); i++)
+		for (std::map <rts2core::Rts2Connection *, std::vector < rts2core::Value *> >::iterator i = failed.begin (); i != failed.end (); i++)
 			f += i->second.size ();
 
 		mvwprintw (window, 0, COLS - 38, "%2i %2i", failed.size (), f);

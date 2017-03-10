@@ -84,7 +84,7 @@ int Command::send ()
 	return connection->sendMsg (text);
 }
 
-int Command::commandReturn (int status, Connection * conn)
+int Command::commandReturn (int status, Rts2Connection * conn)
 {
 	#ifdef DEBUG_EXTRA
 	logStream(MESSAGE_DEBUG) << "commandReturn status: " << status << " connection: " << conn->getName () << " command: " << text << sendLog;
@@ -100,28 +100,28 @@ int Command::commandReturn (int status, Connection * conn)
 	}
 }
 
-int Command::commandReturnOK (Connection * conn)
+int Command::commandReturnOK (Rts2Connection * conn)
 {
 	if (originator)
 		originator->postEvent (new Event (EVENT_COMMAND_OK, (void *) this));
 	return -1;
 }
 
-int Command::commandReturnQued (Connection * conn)
+int Command::commandReturnQued (Rts2Connection * conn)
 {
 	if (originator)
 		originator->postEvent (new Event (EVENT_COMMAND_OK, (void *) this));
 	return commandReturnOK (conn);
 }
 
-int Command::commandReturnFailed (int status, Connection * conn)
+int Command::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (originator)
 		originator->postEvent (new Event (EVENT_COMMAND_FAILED, (void *) this));
 	return -1;
 }
 
-void Command::deleteConnection (Connection * conn)
+void Command::deleteConnection (Rts2Connection * conn)
 {
 	if (conn == originator)
 		originator = NULL;
@@ -169,13 +169,13 @@ CommandExposure::CommandExposure (Block * _master, DevClientCamera * _camera, in
 	setBopMask (_bopMask);
 }
 
-int CommandExposure::commandReturnOK (Connection *conn)
+int CommandExposure::commandReturnOK (Rts2Connection *conn)
 {
 	camera->exposureCommandOK ();
 	return Command::commandReturnOK (conn);
 }
 
-int CommandExposure::commandReturnFailed (int status, Connection * conn)
+int CommandExposure::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	camera->exposureFailed (status);
 	return Command::commandReturnFailed (status, conn);
@@ -248,7 +248,7 @@ CommandFilter::CommandFilter (DevClientFilter * _filter, int filter):Command (_f
 	setCommandFilter (filter);
 }
 
-int CommandFilter::commandReturnOK (Connection * conn)
+int CommandFilter::commandReturnOK (Rts2Connection * conn)
 {
 	if (camera)
 		camera->filterOK ();
@@ -259,7 +259,7 @@ int CommandFilter::commandReturnOK (Connection * conn)
 	return Command::commandReturnOK (conn);
 }
 
-int CommandFilter::commandReturnFailed (int status, Connection * conn)
+int CommandFilter::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (camera)
 		camera->filterFailed (status);
@@ -360,7 +360,7 @@ CommandMove::CommandMove (Block * _master, DevClientTelescope * _tel, double ra,
 	tel = _tel;
 }
 
-int CommandMove::commandReturnFailed (int status, Connection * conn)
+int CommandMove::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	tel->moveFailed (status);
 	return Command::commandReturnFailed (status, conn);
@@ -429,7 +429,7 @@ CommandChange::CommandChange (CommandChange * _command, DevClientTelescope * _te
 	tel = _tel;
 }
 
-int CommandChange::commandReturnFailed (int status, Connection * conn)
+int CommandChange::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (tel)
 		tel->moveFailed (status);
@@ -474,7 +474,7 @@ CommandCupolaNotMove::CommandCupolaNotMove (DevClientCupola * _copula):Command (
 	setCommand (_os);
 }
 
-int CommandCupolaNotMove::commandReturnFailed (int status, Connection * conn)
+int CommandCupolaNotMove::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (copula)
 		copula->notMoveFailed (status);
@@ -502,7 +502,7 @@ CommandChangeFocus::CommandChangeFocus (DevClientCamera * _camera, int _steps):C
 	change (_steps);
 }
 
-int CommandChangeFocus::commandReturnFailed (int status, Connection * conn)
+int CommandChangeFocus::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (focuser)
 		focuser->focusingFailed (status);
@@ -532,7 +532,7 @@ CommandSetFocus::CommandSetFocus (DevClientCamera * _camera, int _steps):Command
 	set (_steps);
 }
 
-int CommandSetFocus::commandReturnFailed (int status, Connection * conn)
+int CommandSetFocus::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (focuser)
 		focuser->focusingFailed (status);
@@ -549,7 +549,7 @@ CommandMirror::CommandMirror (DevClientMirror * _mirror, int _pos):Command (_mir
 	setCommand (_os);
 }
 
-int CommandMirror::commandReturnFailed (int status, Connection * conn)
+int CommandMirror::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (mirror)
 		mirror->moveFailed (status);
@@ -572,7 +572,7 @@ CommandIntegrate::CommandIntegrate (DevClientPhot * _phot, float _exp, int _coun
 	setCommand (_os);
 }
 
-int CommandIntegrate::commandReturnFailed (int status, Connection * conn)
+int CommandIntegrate::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (phot)
 		phot->integrationFailed (status);
@@ -654,48 +654,48 @@ CommandInfo::CommandInfo (Block * _master):Command (_master)
 	setCommand (COMMAND_INFO);
 }
 
-int CommandInfo::commandReturnOK (Connection * conn)
+int CommandInfo::commandReturnOK (Rts2Connection * conn)
 {
 	if (connection && connection->getOtherDevClient ())
 		connection->getOtherDevClient ()->infoOK ();
 	return Command::commandReturnOK (conn);
 }
 
-int CommandInfo::commandReturnFailed (int status, Connection * conn)
+int CommandInfo::commandReturnFailed (int status, Rts2Connection * conn)
 {
 	if (connection && connection->getOtherDevClient ())
 		connection->getOtherDevClient ()->infoFailed ();
 	return Command::commandReturnFailed (status, conn);
 }
 
-CommandStatusInfo::CommandStatusInfo (Block * master, Connection * _control_conn):Command(master)
+CommandStatusInfo::CommandStatusInfo (Block * master, Rts2Connection * _control_conn):Command(master)
 {
 	control_conn = _control_conn;
 	setCommand ("status_info");
 }
 
-int CommandStatusInfo::commandReturnOK (Connection * conn)
+int CommandStatusInfo::commandReturnOK (Rts2Connection * conn)
 {
 	if (control_conn)
 		control_conn->updateStatusWait (conn);
 	return Command::commandReturnOK (conn);
 }
 
-int CommandStatusInfo::commandReturnFailed (Connection * conn)
+int CommandStatusInfo::commandReturnFailed (Rts2Connection * conn)
 {
 	if (control_conn)
 		control_conn->updateStatusWait (conn);
 	return Command::commandReturnOK (conn);
 }
 
-void CommandStatusInfo::deleteConnection (Connection * conn)
+void CommandStatusInfo::deleteConnection (Rts2Connection * conn)
 {
 	if (control_conn == conn)
 		control_conn = NULL;
 	Command::deleteConnection (conn);
 }
 
-CommandDeviceStatus::CommandDeviceStatus (Block * master, Connection * _control_conn):CommandStatusInfo (master, _control_conn)
+CommandDeviceStatus::CommandDeviceStatus (Block * master, Rts2Connection * _control_conn):CommandStatusInfo (master, _control_conn)
 {
 	setCommand ("device_status");
 }

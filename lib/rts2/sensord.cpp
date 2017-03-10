@@ -50,7 +50,7 @@ int SensorWeather::idle ()
 	return Sensor::idle ();
 }
 
-int SensorWeather::commandAuthorized (rts2core::Connection *conn)
+int SensorWeather::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("reset_next"))
 	{

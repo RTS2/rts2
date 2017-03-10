@@ -103,7 +103,7 @@ class Cryocon:public Gpib
 
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int initHardware ();
@@ -407,7 +407,7 @@ int Cryocon::info ()
 	return Gpib::info ();
 }
 
-int Cryocon::commandAuthorized (rts2core::Connection * conn)
+int Cryocon::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	try
 	{

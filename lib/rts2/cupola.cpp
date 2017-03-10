@@ -130,7 +130,7 @@ int Cupola::idle ()
 	return Dome::idle ();
 }
 
-int Cupola::moveTo (rts2core::Connection * conn, double ra, double dec)
+int Cupola::moveTo (double ra, double dec)
 {
 	int ret;
 	tarRaDec->setValueRaDec (ra, dec);
@@ -209,7 +209,7 @@ bool Cupola::needSlitChange ()
 	return true;
 }
 
-int Cupola::commandAuthorized (rts2core::Connection * conn)
+int Cupola::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand (COMMAND_CUPOLA_SYNCTEL))
 	{
@@ -223,7 +223,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextHMS (&tar_ra) || conn->paramNextDMS (&tar_dec)
 			|| !conn->paramEnd ())
 			return -2;
-		return moveTo (conn, tar_ra, tar_dec);
+		return moveTo (tar_ra, tar_dec);
 	}
 	else if (conn->isCommand (COMMAND_CUPOLA_AZ))
 	{

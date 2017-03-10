@@ -72,7 +72,7 @@ int LX200Foc::setTo (double num)
 		return 0;
 	start_focusing = getNow ();
 	expected_end = start_focusing + estimateOffsetDuration (num);
-	if (telConn->getSerialConn ()->writePort (offset > 0 ? ":F+#" : ":F-#", 4) < 0)
+	if (telConn->getTelConn ()->writePort (offset > 0 ? ":F+#" : ":F-#", 4) < 0)
 		return -1;
 	return 0;
 }
@@ -86,7 +86,7 @@ int LX200Foc::isFocusing ()
 
 int LX200Foc::endFocusing ()
 {
-	telConn->getSerialConn ()->writePort (":FQ#", 4);
+	telConn->getTelConn ()->writePort (":FQ#", 4);
 	return rts2focusd::Focusd::endFocusing ();
 }
 

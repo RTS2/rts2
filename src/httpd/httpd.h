@@ -96,7 +96,7 @@ class XmlDevInterface:public rts2json::DevInterface
 
 	protected:
 		virtual HttpD *getMaster () = 0;
-		virtual rts2core::Connection *getConnection () = 0;
+		virtual rts2core::Rts2Connection *getConnection () = 0;
 
 	private:
 		// value change times
@@ -114,7 +114,7 @@ class XmlDevInterface:public rts2json::DevInterface
 class XmlDevClient:public rts2image::DevClientWriteImage, XmlDevInterface
 {
 	public:
-		XmlDevClient (rts2core::Connection *conn):rts2image::DevClientWriteImage (conn), XmlDevInterface () {}
+		XmlDevClient (rts2core::Rts2Connection *conn):rts2image::DevClientWriteImage (conn), XmlDevInterface () {}
 
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
@@ -134,7 +134,7 @@ class XmlDevClient:public rts2image::DevClientWriteImage, XmlDevInterface
 			return (HttpD *) rts2core::DevClient::getMaster ();
 		}
 
-		virtual rts2core::Connection *getConnection () { return rts2core::DevClient::getConnection (); }
+		virtual rts2core::Rts2Connection *getConnection () { return rts2core::DevClient::getConnection (); }
 };
 
 /**
@@ -148,7 +148,7 @@ class XmlDevClient:public rts2image::DevClientWriteImage, XmlDevInterface
 class XmlDevTelescopeClient:public rts2image::DevClientTelescopeImage, XmlDevInterface
 {
 	public:
-		XmlDevTelescopeClient (rts2core::Connection *conn):rts2image::DevClientTelescopeImage (conn), XmlDevInterface () {}
+		XmlDevTelescopeClient (rts2core::Rts2Connection *conn):rts2image::DevClientTelescopeImage (conn), XmlDevInterface () {}
 
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
@@ -168,7 +168,7 @@ class XmlDevTelescopeClient:public rts2image::DevClientTelescopeImage, XmlDevInt
 			return (HttpD *) rts2image::DevClientTelescopeImage::getMaster ();
 		}
 
-		virtual rts2core::Connection *getConnection () { return rts2image::DevClientTelescopeImage::getConnection (); }
+		virtual rts2core::Rts2Connection *getConnection () { return rts2image::DevClientTelescopeImage::getConnection (); }
 };
 
 /**
@@ -182,7 +182,7 @@ class XmlDevTelescopeClient:public rts2image::DevClientTelescopeImage, XmlDevInt
 class XmlDevFocusClient:public rts2image::DevClientFocusImage, XmlDevInterface
 {
 	public:
-		XmlDevFocusClient (rts2core::Connection *conn):rts2image::DevClientFocusImage (conn), XmlDevInterface () {}
+		XmlDevFocusClient (rts2core::Rts2Connection *conn):rts2image::DevClientFocusImage (conn), XmlDevInterface () {}
 
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
@@ -202,7 +202,7 @@ class XmlDevFocusClient:public rts2image::DevClientFocusImage, XmlDevInterface
 			return (HttpD *) rts2image::DevClientFocusImage::getMaster ();
 		}
 
-		virtual rts2core::Connection *getConnection () { return rts2image::DevClientFocusImage::getConnection (); }
+		virtual rts2core::Rts2Connection *getConnection () { return rts2image::DevClientFocusImage::getConnection (); }
 };
 
 /**
@@ -214,11 +214,11 @@ class XmlDevFocusClient:public rts2image::DevClientFocusImage, XmlDevInterface
 class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::ScriptInterface, XmlDevInterface
 {
 	public:
-		XmlDevCameraClient (rts2core::Connection *conn);
+		XmlDevCameraClient (rts2core::Rts2Connection *conn);
 
 		virtual ~XmlDevCameraClient ();
 
-		virtual void deleteConnection (Connection *_conn);
+		virtual void deleteConnection (rts2core::Rts2Connection *_conn);
 
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
@@ -305,7 +305,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 			return (HttpD *) rts2script::DevClientCameraExec::getMaster ();
 		}
 
-		virtual rts2core::Connection *getConnection () { return rts2script::DevClientCameraExec::getConnection (); }
+		virtual rts2core::Rts2Connection *getConnection () { return rts2script::DevClientCameraExec::getConnection (); }
 
 	private:
 		// path for storing XMLRPC produced images
@@ -349,7 +349,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		rts2core::Command *scriptKillCommand;
 
-		template < typename T > void createOrReplaceValue (T * &val, rts2core::Connection *conn, int32_t expectedType, const char *suffix, const char *description, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
+		template < typename T > void createOrReplaceValue (T * &val, rts2core::Rts2Connection *conn, int32_t expectedType, const char *suffix, const char *description, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
 		{
 			std::string vn = std::string (conn->getName ()) + suffix;
 			rts2core::Value *v = ((rts2core::Daemon *) conn->getMaster ())->getOwnValue (vn.c_str ());
@@ -386,22 +386,22 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		HttpD (int argc, char **argv);
 		virtual ~HttpD ();
 
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 
-		virtual void deviceReady (rts2core::Connection *conn);
+		virtual void deviceReady (rts2core::Rts2Connection *conn);
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
-		void stateChangedEvent (rts2core::Connection *conn, rts2core::ServerState *new_state);
+		void stateChangedEvent (rts2core::Rts2Connection *conn, rts2core::ServerState *new_state);
 
-		void valueChangedEvent (rts2core::Connection *conn, rts2core::Value *new_value);
+		void valueChangedEvent (rts2core::Rts2Connection *conn, rts2core::Value *new_value);
 
 		virtual void addPollSocks ();
 		virtual void pollSuccess ();
 
 		virtual void message (Message & msg);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		virtual void fileModified (struct inotify_event *event);
 
@@ -469,10 +469,10 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 		 */
 		void doOpValue (const char *v_name, char oper, const char *operand);
 
-		void clientNewDataConn (Connection *conn, int data_conn);
-		void clientDataReceived (Connection *conn, DataAbstractRead *data);
-		void clientFullDataReceived (Connection *conn, DataChannels *data);
-		void clientExposureFailed (Connection *conn, int status);
+		void clientNewDataConn (rts2core::Rts2Connection *conn, int data_conn);
+		void clientDataReceived (rts2core::Rts2Connection *conn, DataAbstractRead *data);
+		void clientFullDataReceived (rts2core::Rts2Connection *conn, DataChannels *data);
+		void clientExposureFailed (rts2core::Rts2Connection *conn, int status);
 
 		virtual void addExecutedPage () { numRequests->inc (); }
 
@@ -497,7 +497,7 @@ class HttpD:public rts2core::Device, XmlRpc::XmlRpcServer, rts2json::HTTPServer
 
 		virtual void signaledHUP ();
 
-		virtual void connectionRemoved (rts2core::Connection *coon);
+		virtual void connectionRemoved (rts2core::Rts2Connection *coon);
 
 		virtual void asyncFinished (XmlRpcServerConnection *source);
 

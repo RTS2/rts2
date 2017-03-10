@@ -78,7 +78,7 @@ class SitechRotator: public Rotator
 	protected:
 		virtual int info ();
 
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 

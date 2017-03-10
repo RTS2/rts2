@@ -62,7 +62,7 @@ class Hlohovec:public GEM
 
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 	protected:
 		virtual void usage ();
 		virtual int processOption (int opt);
@@ -183,7 +183,7 @@ void Hlohovec::postEvent (rts2core::Event *event)
 	GEM::postEvent (event);
 }
 
-int Hlohovec::commandAuthorized (rts2core::Connection * conn)
+int Hlohovec::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	if (conn->isCommand ("writeeeprom"))
 	{

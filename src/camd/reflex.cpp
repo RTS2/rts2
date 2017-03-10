@@ -199,7 +199,7 @@ class Reflex:public Camera
 
 		virtual int initValues ();
 
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -926,7 +926,7 @@ int Reflex::initValues ()
 	return Camera::initValues ();
 }
 
-int Reflex::commandAuthorized (rts2core::Connection * conn)
+int Reflex::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	std::string s;
 	if (conn->isCommand ("warmboot"))

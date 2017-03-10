@@ -75,13 +75,13 @@ Block::~Block (void)
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end ();)
 	{
-		Connection *conn = *iter;
+		Rts2Connection *conn = *iter;
 		iter = connections.erase (iter);
 		delete conn;
 	}
 	for (iter = centraldConns.begin (); iter != centraldConns.end ();)
 	{
-		Connection *conn = *iter;
+		Rts2Connection *conn = *iter;
 		iter = centraldConns.erase (iter);
 		delete conn;
 	}
@@ -141,17 +141,17 @@ void Block::postEvent (Event * event)
 	return App::postEvent (event);
 }
 
-Connection * Block::createConnection (int in_sock)
+Rts2Connection * Block::createConnection (int in_sock)
 {
-	return new Connection (in_sock, this);
+	return new Rts2Connection (in_sock, this);
 }
 
-void Block::addConnection (Connection *_conn)
+void Block::addConnection (Rts2Connection *_conn)
 {
 	connections_added.push_back (_conn);
 }
 
-void Block::removeConnection (Connection *_conn)
+void Block::removeConnection (Rts2Connection *_conn)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end ();)
@@ -171,7 +171,7 @@ void Block::removeConnection (Connection *_conn)
 	}
 }
 
-void Block::addCentraldConnection (Connection *_conn, bool added)
+void Block::addCentraldConnection (Rts2Connection *_conn, bool added)
 {
 	if (added)
 	  	centraldConns.push_back (_conn);
@@ -179,12 +179,12 @@ void Block::addCentraldConnection (Connection *_conn, bool added)
 		centraldConns_added.push_back (_conn);
 }
 
-Connection * Block::findName (const char *in_name)
+Rts2Connection * Block::findName (const char *in_name)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
-		Connection *conn = *iter;
+		Rts2Connection *conn = *iter;
 		if (!strcmp (conn->getName (), in_name))
 			return conn;
 	}
@@ -193,12 +193,12 @@ Connection * Block::findName (const char *in_name)
 	return NULL;
 }
 
-Connection * Block::findCentralId (int in_id)
+Rts2Connection * Block::findCentralId (int in_id)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
-		Connection *conn = *iter;
+		Rts2Connection *conn = *iter;
 		if (conn->getCentraldId () == in_id)
 			return conn;
 	}
@@ -215,7 +215,7 @@ int Block::sendAll (const char *msg)
 	return 0;
 }
 
-int Block::sendAllExcept (const char *msg, Connection *exceptConn)
+int Block::sendAllExcept (const char *msg, Rts2Connection *exceptConn)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
@@ -252,7 +252,7 @@ void Block::sendBopMessage (rts2_status_t state, rts2_status_t bopState)
 	sendAll (_os);
 }
 
-void Block::sendBopMessage (rts2_status_t state, rts2_status_t bopState, Connection * conn)
+void Block::sendBopMessage (rts2_status_t state, rts2_status_t bopState, Rts2Connection * conn)
 {
 	std::ostringstream _os;
 	_os << PROTO_BOP_STATE << " " << state << " " << bopState;
@@ -310,7 +310,7 @@ int Block::idle ()
 
 void Block::pollSuccess ()
 {
-	Connection *conn;
+	Rts2Connection *conn;
 	int ret;
 
 	connections_t::iterator iter;
@@ -414,7 +414,7 @@ void Block::oneRunLoop ()
 		endRunLoop ();
 }
 
-int Block::deleteConnection (Connection * conn)
+int Block::deleteConnection (Rts2Connection * conn)
 {
 	if (conn->isConnState (CONN_DELETE))
 	{
@@ -436,15 +436,15 @@ int Block::deleteConnection (Connection * conn)
 	return -1;
 }
 
-void Block::connectionRemoved (Connection * conn)
+void Block::connectionRemoved (Rts2Connection * conn)
 {
 }
 
-void Block::deviceReady (Connection * conn)
+void Block::deviceReady (Rts2Connection * conn)
 {
 }
 
-void Block::deviceIdle (Connection * conn)
+void Block::deviceIdle (Rts2Connection * conn)
 {
 }
 
@@ -477,9 +477,9 @@ void Block::updateMetaInformations (Value *value)
 		value->sendMetaInfo (*iter);
 }
 
-std::map <Connection *, std::vector <Value *> > Block::failedValues ()
+std::map <Rts2Connection *, std::vector <Value *> > Block::failedValues ()
 {
-	std::map <Connection *, std::vector <Value *> > ret;
+	std::map <Rts2Connection *, std::vector <Value *> > ret;
 	ValueVector::iterator viter;
 	for (connections_t::iterator iter = connections.begin (); iter != connections.end (); iter++)
 	{
@@ -538,7 +538,7 @@ bool Block::centralServerInState (rts2_status_t state)
 	return false;
 }
 
-int Block::setMasterState (Connection *_conn, rts2_status_t new_state)
+int Block::setMasterState (Rts2Connection *_conn, rts2_status_t new_state)
 {
 	rts2_status_t old_state = masterState;
 	// ignore connections from wrong master..
@@ -706,7 +706,7 @@ void Block::addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, c
 
 int Block::addAddress (NetworkAddress * in_addr)
 {
-	Connection *conn;
+	Rts2Connection *conn;
 	// recheck all connections waiting for our address
 	conn = getOpenConnection (in_addr->getName ());
 	if (conn)
@@ -736,7 +736,7 @@ void Block::deleteAddress (int p_centrald_num, const char *p_name)
 	}
 }
 
-DevClient * Block::createOtherType (Connection * conn, int other_device_type)
+DevClient * Block::createOtherType (Rts2Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -799,14 +799,14 @@ void Block::deleteClient (int p_centraldId)
 	}
 }
 
-Connection * Block::getOpenConnection (const char *deviceName)
+Rts2Connection * Block::getOpenConnection (const char *deviceName)
 {
 	connections_t::iterator iter;
 
 	// try to find active connection..
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
-		Connection *conn = *iter;
+		Rts2Connection *conn = *iter;
 		if (conn->isName (deviceName))
 			return conn;
 	}
@@ -822,22 +822,22 @@ void Block::getOpenConnectionType (int deviceType, connections_t::iterator &curr
 	}
 }
 
-Connection * Block::getOpenConnection (int device_type)
+Rts2Connection * Block::getOpenConnection (int device_type)
 {
 	connections_t::iterator iter;
 
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
-		Connection *conn = *iter;
+		Rts2Connection *conn = *iter;
 		if (conn->getOtherType () == device_type)
 			return conn;
 	}
 	return NULL;
 }
 
-Connection * Block::getConnection (char *deviceName)
+Rts2Connection * Block::getConnection (char *deviceName)
 {
-	Connection *conn;
+	Rts2Connection *conn;
 	NetworkAddress *devAddr;
 
 	conn = getOpenConnection (deviceName);
@@ -878,7 +878,7 @@ int Block::queAll (Command * command)
 {
 	// go throught all adresses
 	std::list < NetworkAddress * >::iterator addr_iter;
-	Connection *conn;
+	Rts2Connection *conn;
 
 	for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
 		addr_iter++)
@@ -912,15 +912,15 @@ void Block::queAllCentralds (const char *command)
 		(*iter)->queCommand (new Command (this, command));
 }
 
-Connection * Block::getMinConn (const char *valueName)
+Rts2Connection * Block::getMinConn (const char *valueName)
 {
 	int lovestValue = INT_MAX;
-	Connection *minConn = NULL;
+	Rts2Connection *minConn = NULL;
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
 		Value *que_size;
-		Connection *conn = *iter;
+		Rts2Connection *conn = *iter;
 		que_size = conn->getValue (valueName);
 		if (que_size)
 		{
@@ -937,7 +937,7 @@ Connection * Block::getMinConn (const char *valueName)
 
 Value * Block::getValue (const char *device_name, const char *value_name)
 {
-	Connection *conn = getOpenConnection (device_name);
+	Rts2Connection *conn = getOpenConnection (device_name);
 	if (!conn)
 		return NULL;
 	return conn->getValue (value_name);
@@ -957,12 +957,12 @@ Value * Block::getValueExpression (std::string expression, const char *defaultDe
 	return getValue (defaultDevice, expression.c_str ());
 }
 
-int Block::statusInfo (Connection * conn)
+int Block::statusInfo (Rts2Connection * conn)
 {
 	return 0;
 }
 
-bool Block::commandOriginatorPending (Object * object, Connection * exclude_conn)
+bool Block::commandOriginatorPending (Object * object, Rts2Connection * exclude_conn)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)

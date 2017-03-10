@@ -127,7 +127,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
-	rts2core::Connection *conn = NULL;
+	rts2core::Rts2Connection *conn = NULL;
 
 	HttpD * master = (HttpD*) getMasterApp ();
 

@@ -1445,7 +1445,7 @@ int ConnGrb::add (rts2core::Block *block)
 		block->addPollFD (gcn_listen_sock, POLLIN | POLLPRI);
 		return 0;
 	}
-	return rts2core::Connection::add (block);
+	return rts2core::Rts2Connection::add (block);
 }
 
 void ConnGrb::connectionError (int last_data_size)

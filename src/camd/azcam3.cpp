@@ -118,9 +118,9 @@ class AzCam3:public rts2camd::Camera
 		virtual long isExposing ();
 		virtual int doReadout ();
 
-		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
-		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
-		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
+		virtual int shiftStoreStart (rts2core::Rts2Connection *conn, float exptime);
+		virtual int shiftStoreShift (rts2core::Rts2Connection *conn, int shift, float exptime);
+		virtual int shiftStoreEnd (rts2core::Rts2Connection *conn, int shift, float exptime);
 
 	private:
 		rts2core::ConnTCP *commandConn;
@@ -468,7 +468,7 @@ int AzCam3::doReadout ()
 	return -1;
 }
 
-int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
+int AzCam3::shiftStoreStart (rts2core::Rts2Connection *conn, float exptime)
 {
 	int ret = setupDataConnection ();
 	if (ret)
@@ -502,7 +502,7 @@ int AzCam3::shiftStoreStart (rts2core::Connection *conn, float exptime)
 	return 0;
 }
 
-int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptime)
+int AzCam3::shiftStoreShift (rts2core::Rts2Connection *conn, int shift, float exptime)
 {
 	int ret;
 	if (lastShiftExpTime != exptime)
@@ -522,7 +522,7 @@ int AzCam3::shiftStoreShift (rts2core::Connection *conn, int shift, float exptim
 	return Camera::shiftStoreShift (conn, shift, exptime);
 }
 
-int AzCam3::shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime)
+int AzCam3::shiftStoreEnd (rts2core::Rts2Connection *conn, int shift, float exptime)
 {
 	int ret;
 	if (lastShiftExpTime != exptime)

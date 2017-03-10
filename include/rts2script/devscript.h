@@ -37,7 +37,7 @@ class DevScript
 {
 
 	public:
-		DevScript (rts2core::Connection * in_script_connection);
+		DevScript (rts2core::Rts2Connection * in_script_connection);
 		virtual ~ DevScript (void);
 		void postEvent (rts2core::Event * event);
 		virtual void nextCommand (rts2core::Command *triggerCommand = NULL) = 0;
@@ -130,7 +130,7 @@ class DevScript
 	private:
 		Rts2Target *nextTarget;
 
-		rts2core::Connection * script_connection;
+		rts2core::Rts2Connection * script_connection;
 		ScriptPtr script;
 		int dont_execute_for;
 		int dont_execute_for_obsid;

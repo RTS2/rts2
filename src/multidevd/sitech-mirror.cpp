@@ -91,7 +91,7 @@ int SitechMirror::info ()
 	return Mirror::info ();
 }
 
-int SitechMirror::commandAuthorized (rts2core::Connection *conn)
+int SitechMirror::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("go_auto"))
 	{

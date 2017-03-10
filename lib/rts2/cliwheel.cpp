@@ -23,7 +23,7 @@
 
 using namespace rts2camd;
 
-ClientFilterCamera::ClientFilterCamera (rts2core::Connection * conn, FilterVal *fv):rts2core::DevClientFilter (conn)
+ClientFilterCamera::ClientFilterCamera (rts2core::Rts2Connection * conn, FilterVal *fv):rts2core::DevClientFilter (conn)
 {
 	filterVal = fv;
 }

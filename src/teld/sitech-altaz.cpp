@@ -43,7 +43,7 @@ class SitechAltAz:public AltAz
 
 		virtual int initHardware ();
 
-		virtual int commandAuthorized (rts2core::Connection *conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection *conn);
 
 		virtual int info ();
 
@@ -385,7 +385,7 @@ int SitechAltAz::initHardware ()
 	return 0;
 }
 
-int SitechAltAz::commandAuthorized (rts2core::Connection *conn)
+int SitechAltAz::commandAuthorized (rts2core::Rts2Connection *conn)
 {
 	if (conn->isCommand ("zero_motor"))
 	{

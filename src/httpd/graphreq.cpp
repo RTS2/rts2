@@ -78,7 +78,7 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 
 	// get current target position..
 	HttpD *serv = (HttpD *) getMasterApp ();
-	rts2core::Connection *conn = serv->getOpenConnection (DEVICE_TYPE_MOUNT);
+	rts2core::Rts2Connection *conn = serv->getOpenConnection (DEVICE_TYPE_MOUNT);
 	rts2core::Value *val;
 	if (conn)
 	{

@@ -202,7 +202,7 @@ class Camera:public rts2core::ScriptDevice
 		Camera (int argc, char **argv, rounding_t binning_rounding = CEIL);
 		virtual ~ Camera (void);
 
-		virtual int deleteConnection (rts2core::Connection * conn);
+		virtual int deleteConnection (rts2core::Rts2Connection * conn);
 		/**
 		 * If chip support frame transfer.
 		 *
@@ -217,7 +217,7 @@ class Camera:public rts2core::ScriptDevice
 		void checkExposures ();
 		void checkReadouts ();
 
-		virtual void deviceReady (rts2core::Connection * conn);
+		virtual void deviceReady (rts2core::Rts2Connection * conn);
 
 		virtual void postEvent (rts2core::Event * event);
 
@@ -225,7 +225,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual int idle ();
 
-		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Rts2Connection * conn, int other_device_type);
 		virtual int info ();
 
 		virtual int killAll (bool callScriptEnds);
@@ -274,7 +274,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual int readoutStart ();
 
-		int camReadout (rts2core::Connection * conn);
+		int camReadout (rts2core::Rts2Connection * conn);
 
 		// focuser functions
 		int setFocuser (int new_set);
@@ -299,7 +299,7 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * Handles camera commands.
 		 */
-		virtual int commandAuthorized (rts2core::Connection * conn);
+		virtual int commandAuthorized (rts2core::Rts2Connection * conn);
 
 		virtual int maskQueValueBopState (rts2_status_t new_state, int valueQueCondition);
 
@@ -933,11 +933,11 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void createShiftStore () { createValue (shiftstoreLines, "shiftstore", "pixels of shiftstore", true); }
 
-		virtual int shiftStoreStart (rts2core::Connection *conn, float exptime);
+		virtual int shiftStoreStart (rts2core::Rts2Connection *conn, float exptime);
 
-		virtual int shiftStoreShift (rts2core::Connection *conn, int shift, float exptime);
+		virtual int shiftStoreShift (rts2core::Rts2Connection *conn, int shift, float exptime);
 
-		virtual int shiftStoreEnd (rts2core::Connection *conn, int shift, float exptime);
+		virtual int shiftStoreEnd (rts2core::Rts2Connection *conn, int shift, float exptime);
 
 		/**
 		 * Set camera filter.
@@ -1015,7 +1015,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueDouble *transferTime;
 
 		// connection which requries data to be send after end of exposure
-		rts2core::Connection *exposureConn;
+		rts2core::Rts2Connection *exposureConn;
 
 		rts2core::ValueString *lastImagePath;
 
@@ -1276,9 +1276,9 @@ class Camera:public rts2core::ScriptDevice
 
 
 		// callback functions from camera connection
-		int camExpose (rts2core::Connection * conn, int chipState, bool fromQue, bool careBlock);
-		int camBox (rts2core::Connection * conn, int x, int y, int width, int height);
-		int camCenter (rts2core::Connection * conn, int in_w, int in_h);
+		int camExpose (rts2core::Rts2Connection * conn, int chipState, bool fromQue, bool careBlock);
+		int camBox (rts2core::Rts2Connection * conn, int x, int y, int width, int height);
+		int camCenter (rts2core::Rts2Connection * conn, int in_w, int in_h);
 
 		/**
 		 * Return physical channel associated with
@@ -1288,7 +1288,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		int getPhysicalChannel (int ch);
 
-		void startImageData (rts2core::Connection * conn);
+		void startImageData (rts2core::Rts2Connection * conn);
 
 		/**
 		 * @param chan    channel number (0..nchan)

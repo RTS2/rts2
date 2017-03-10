@@ -111,7 +111,7 @@ int Photometer::startIntegrate ()
 	return -1;
 }
 
-int Photometer::startIntegrate (rts2core::Connection * conn, float _req_time, int _req_count)
+int Photometer::startIntegrate (rts2core::Rts2Connection * conn, float _req_time, int _req_count)
 {
 	int ret;
 	req_count->setValueInteger (_req_count);
@@ -141,7 +141,7 @@ int Photometer::stopIntegrate ()
 	return 0;
 }
 
-int Photometer::homeFilter (rts2core::Connection * conn)
+int Photometer::homeFilter (rts2core::Rts2Connection * conn)
 {
 	int ret;
 	ret = homeFilter ();
@@ -171,7 +171,7 @@ int Photometer::moveFilter (int new_filter)
 	return 0;
 }
 
-int Photometer::enableFilter (rts2core::Connection * conn)
+int Photometer::enableFilter (rts2core::Rts2Connection * conn)
 {
 	int ret;
 	ret = enableMove ();
@@ -251,7 +251,7 @@ void Photometer::sendCount (int in_count, float in_exp, bool in_is_ov)
 		endIntegrate ();
 }
 
-int Photometer::commandAuthorized (rts2core::Connection * conn)
+int Photometer::commandAuthorized (rts2core::Rts2Connection * conn)
 {
 	int ret;
 	if (conn->isCommand ("home"))

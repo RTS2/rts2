@@ -28,7 +28,7 @@ namespace rts2script
 class DevClientCameraExecDb:public DevClientCameraExec
 {
 	public:
-		DevClientCameraExecDb (rts2core::Connection * in_connection);
+		DevClientCameraExecDb (rts2core::Rts2Connection * in_connection);
 		virtual ~ DevClientCameraExecDb (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (rts2image::Image * image);
