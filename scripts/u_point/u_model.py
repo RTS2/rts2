@@ -99,8 +99,8 @@ class PointingModel(Script):
     self.refraction_method=None
     if self.sky_anl[0].refraction_method:
       self.refraction_method=self.sky_anl[0].refraction_method
-      
-    logger.info('refraction_method: {}'.format(self.refraction_method))
+    # ToDo 
+    #logger.info('refraction_method: {}'.format(self.refraction_method))
 
     for i,sky in enumerate(self.sky_anl):
       if i > self.break_after:
