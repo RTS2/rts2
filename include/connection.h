@@ -1,6 +1,6 @@
 /* 
  * Basic Connection class.
- * Copyright (C) 2003-2015 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2017 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,23 +24,16 @@
  * @file Contains Connection class.
  */
 
-#include <algorithm>
-#include <map>
 #include <string>
 #include <string.h>
 #include <time.h>
 #include <list>
-#include <netinet/in.h>
 
 #include <status.h>
 
 #include "error.h"
 #include "data.h"
 #include "object.h"
-#include "serverstate.h"
-#include "message.h"
-#include "logstream.h"
-#include "valuelist.h"
 
 namespace rts2core
 {
@@ -67,9 +60,8 @@ class ConnError: public Error
 };
 
 /**
- * Represents one connection. It keeps connection running, check it states, and
- * handles various TCP/IP issues.  Connection is primary network connection,
- * but there are descendand classes which holds forked instance output.
+ * Represents one connection. It keeps connection running. It is a generic
+ * entry point for any character device.
  *
  * Connection is used primarly in @see Block, which holds list of connections
  * and provide function to manage them.

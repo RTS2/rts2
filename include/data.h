@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include <map>
 #include <vector>
 
 // maximal number of shared clients
