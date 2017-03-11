@@ -104,7 +104,7 @@ class Model(ModelHADec):
     return res
     
   def log_parameters(self): 
-    self.lg.info('fitted values:')
+    self.lg.info('values:')
     self.lg.info('Dd:    declination zero-point offset    :{0:+12.4f} [arcsec]'.format(self.Dd()*180.*3600./np.pi))
     self.lg.info('Dt:    hour angle zero-point offset     :{0:+12.4f} [arcsec]'.format(self.Dt()*180.*3600./np.pi))
     self.lg.info('ip:    angle(polar,declination) axis    :{0:+12.4f} [arcsec]'.format(self.ip()*180.*3600./np.pi))

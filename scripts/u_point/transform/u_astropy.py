@@ -38,26 +38,6 @@ class Transformation(object):
     pre_qfe=pre=sky.pressure
     hum=sky.humidity
 
-    # 2017-03-15: deprecated:
-    #if mount_set_icrs:
-    #  pre_qfe=pre # to make it clear what is used
-    #  aa=tf.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
-    #else:
-    #  pre_qfe=0.
-    #  # ToDo: still hoping that no precession etc. is applied
-    #  ra=tf.ra.radian
-    #  dec=tf.dec.radian
-    #  # ToDo: clarify icrs vs. gcrs
-    #  ti=SkyCoord(ra=ra,dec=dec,unit=(u.rad,u.rad), frame='cirs',obstime=tf.obstime,location=tf.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
-    #  aa=ti.transform_to(AltAz(obswl=0.5*u.micron,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.))
-      
-    # ToDo: check that if correct!
-    #       if pressure is non zero refraction is subtracted
-    # wrong:
-    #ci=aa.cirs
-    # from apparent AltAz to apparent 'CIRS': do not correct subtract refraction
-    # pressure=temperature=humidiy=0.
-    #
     
     aa=tf.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
     aa_no_pressure=SkyCoord(az=aa.az,alt=aa.alt, unit=(u.radian,u.radian), frame='altaz',obstime=aa.obstime,location=aa.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
@@ -66,44 +46,24 @@ class Transformation(object):
     ha=SkyCoord(ra=HA,dec=gc.dec, unit=(u.rad,u.rad), frame='gcrs',obstime=gc.obstime,location=aa.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
       
     return ha
-
+  # ToD mount_set_icrs will disappear
   def transform_to_altaz(self,tf=None,sky=None,mount_set_icrs=None):
-    # use ev. other refraction methods
-    if sky is None:
-      tem=pre=hum=0.
-    else:
-      tem=sky.temperature
-      pre=sky.pressure
-      hum=sky.humidity
-    '''
-    There are substancial differences between astropy and libnova apparent coordinates. 
-    Choose option --astropy for Astropy, default is Libnova
-    '''
-    pre_qfe=pre # to make it clear what is used
-      
     # from https://github.com/liberfa/erfa/blob/master/src/refco.c
     # phpa   double    pressure at the observer (hPa = millibar)
     # this is QFE
-
-    # ToDo check that
-    aa=tf.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron,pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+    if sky is None:
+      tem=pre_qfe=hum=0.
+    else:
+      tem=sky.temperature
+      pre_qfe=sky.pressure # to make it clear what is used
+      hum=sky.humidity
+      
+    if self.refraction_method is None:
+      # ToDo check that
+      aa=tf.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron,pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+    else:
+      # transform to altaz and add refraction
+      aa=tf.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.))
+      d_alt=self.refraction_method(alt=aa.alt,tem=tem,pre=pre_qfe,hum=hum)
+      aa.alt += d_alt
     return aa
-    # 2017-03-15: deprecated:
-    # reminder astropy transforms from any ICRS,GCRS to Altaz
-    # set tf to the correct coordinate system
-    
-    #if mount_set_icrs:
-    #  # tf is already GCRS (apparent)
-    #  # ToDo: still hoping that no precession etc. is applied: see test_coordinates_altaz.p
-    #  # astropy gcrs:
-    #  # A coordinate or frame in the Geocentric Celestial Reference System (GCRS).
-    #  # GCRS is distinct form ICRS mainly in that it is relative to the Earth’s center-of-mass rather than the solar system Barycenter.
-    #  # That means this frame includes the effects of aberration (unlike ICRS).
-    #  # here I want simply RA,Dec to AltAz (geometrical, plus refraction)
-    #  ti=SkyCoord(ra=tf.ra.radian,dec=tf.dec.radian, unit=(u.rad,u.rad), frame='gcrs',obstime=tf.obstime,location=tf.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
-    #else:
-    #  # tf,ic are ICRS, including meteo data
-    #  ti=tf 
-
-    #aa=ti.transform_to(AltAz(location=self.obs,obswl=0.5*u.micron,pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
-    #return aa

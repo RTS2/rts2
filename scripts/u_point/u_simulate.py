@@ -137,18 +137,19 @@ if __name__ == "__main__":
       # nominal EQ
       cat_ic=nml_aa.transform_to(ICRS())
       # apparent AltAz (mnt), includes refraction etc.
+      # only SOFA/ERFA built in refraction is supported
       cat_ll_ap=cat_ic.transform_to(AltAz(pressure=args.pressure_qfe*u.hPa,temperature=args.temperature*u.deg_C,relative_humidity=args.humidity))
       #
       # subtract the correction
       #               |
-      #               |                                                   | 0. here
+      #               |                                                    | 0. here
       vd_lon=Longitude(-model.d_lon(cat_ll_ap.az.radian,cat_ll_ap.alt.radian,0.),u.radian)
       vd_lat=Latitude(-model.d_lat(cat_ll_ap.az.radian,cat_ll_ap.alt.radian,0.),u.radian)
       # noise
       if sigma!=0.:
         vn_lon=Longitude(np.random.normal(loc=0.,scale=sigma),u.radian)
         vn_lat=Latitude(np.random.normal(loc=0.,scale=sigma),u.radian)
-      # mount apparent AltAz
+      # mount apparent AltAz (HA/Dec is not required to find corrections for EQ mount)
       mnt_ll=SkyCoord(az=cat_ll_ap.az+vd_lon+vn_lon,alt=cat_ll_ap.alt+vd_lat+vn_lat,unit=(u.radian,u.radian),frame='altaz',location=obs,obstime=dt_utc)
 
       s_sky=SkyPosition(
