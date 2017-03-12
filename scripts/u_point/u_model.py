@@ -252,7 +252,6 @@ class PointingModel(Script):
     ax.grid(True)
     ax.scatter(lon,lat,picker=20)
     fig.savefig(os.path.join(self.base_path,fn.replace(' ','_').replace('+','_')))
-
   
   def plot_results(self, stars=None,args=None):
     '''
@@ -317,7 +316,7 @@ class PointingModel(Script):
     lat=[x.df_lon.arcmin for x in stars]
     elements.append(lon)
     elements.append(lat)
-    elements.append('difference_catalog_not_corrected_star{0}.png'.format(fn_frac))
+    elements.append('difference_{0}_d{0}_catalog_not_corrected_star{1}.png'.format(lon_label,fn_frac))
     elements.append(['{0:.1f},{1:.1f}: {2}'.format(x.cat_lon.degree,x.df_lon.arcmin,x.image_fn) for x in stars])
     plots.append(elements)
 
@@ -591,7 +590,7 @@ if __name__ == "__main__":
     
   if args.plot:
     pm.plot_results(stars=stars,args=args)
-
+    print('plot')
   # for the moment
   sys.exit(1)
   selected,dropped=pm.select_stars(stars=stars)

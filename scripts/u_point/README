@@ -81,7 +81,7 @@ tour: do_it_all_dss.sh
 Verification and simulation
 ===========================
 
-Start script
+Start script (needs Internet)
 
 ./do_it_all_dss.sh -a
 
@@ -143,6 +143,10 @@ with residues in
  azimuth:  mu=0. arcsec, sigma=1. arcsec
  altitude: mu=0. arcsec, sigma=1. arcsec
 
+The gallery of plots:
+http://azug.minpet.unibas.ch/~wildi/verification/
+
+
 Test EQ mount model: create simulated data HA/Dec with
 
 ./u_simulate.py --toc  --sigma 0. --pressure 0. --model point
@@ -174,7 +178,8 @@ TF : tube flexure                   :    -12.0000 [arcsec]
 FO : fork flexure                   :    +60.0000 [arcsec]
 DAF: dec axis flexure               :    -60.0000 [arcsec]
 
-
+The gallery of plots:
+http://azug.minpet.unibas.ch/~wildi/simulation/
 
 Assumption about the mount
 ==========================
