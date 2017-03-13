@@ -105,6 +105,43 @@ Since images are fetched from http://archive.eso.org/dss/dss/
 and refraction has been turned off all the above values must
 be close to zero.
 
+The gallery of plots:
+http://azug.minpet.unibas.ch/~wildi/verification/
+
+Test EQ mount model: create simulated data HA/Dec with
+
+./u_simulate.py --toc  --sigma 0. --pressure 0. --model point
+model loaded: point
+values:
+IH : ha index error                 :    -60.0000 [arcsec]
+ID : delta index error              :    +12.0000 [arcsec]
+CH : collimation error              :    -60.0000 [arcsec]
+NP : ha/delta non-perpendicularity  :    +60.0000 [arcsec]
+MA : polar axis left-right alignment:    +30.0000 [arcsec]
+ME : polar axis vertical alignment  :    +12.0000 [arcsec]
+TF : tube flexure                   :    -12.0000 [arcsec]
+FO : fork flexure                   :    +60.0000 [arcsec]
+DAF: dec axis flexure               :    -60.0000 [arcsec]
+
+./u_model.py --plot --toc  --base-path ./ \
+ --analyzed-positions simulation_data.txt \
+ --model point
+transformation done with: u_astropy
+-------------------------------------------------------------
+values:
+IH : ha index error                 :    -60.0000 [arcsec]
+ID : delta index error              :    +12.0000 [arcsec]
+CH : collimation error              :    -60.0000 [arcsec]
+NP : ha/delta non-perpendicularity  :    +60.0000 [arcsec]
+MA : polar axis left-right alignment:    +30.0000 [arcsec]
+ME : polar axis vertical alignment  :    +12.0000 [arcsec]
+TF : tube flexure                   :    -12.0000 [arcsec]
+FO : fork flexure                   :    +60.0000 [arcsec]
+DAF: dec axis flexure               :    -60.0000 [arcsec]
+
+The gallery of plots:
+http://azug.minpet.unibas.ch/~wildi/simulation/
+
 Test AltAz mount model: create simulated data AltAz with
 
 ./u_simulate.py --toc  --sigma 0. --pressure 0.
@@ -143,43 +180,6 @@ with residues in
  azimuth:  mu=0. arcsec, sigma=1. arcsec
  altitude: mu=0. arcsec, sigma=1. arcsec
 
-The gallery of plots:
-http://azug.minpet.unibas.ch/~wildi/verification/
-
-
-Test EQ mount model: create simulated data HA/Dec with
-
-./u_simulate.py --toc  --sigma 0. --pressure 0. --model point
-model loaded: point
-values:
-IH : ha index error                 :    -60.0000 [arcsec]
-ID : delta index error              :    +12.0000 [arcsec]
-CH : collimation error              :    -60.0000 [arcsec]
-NP : ha/delta non-perpendicularity  :    +60.0000 [arcsec]
-MA : polar axis left-right alignment:    +30.0000 [arcsec]
-ME : polar axis vertical alignment  :    +12.0000 [arcsec]
-TF : tube flexure                   :    -12.0000 [arcsec]
-FO : fork flexure                   :    +60.0000 [arcsec]
-DAF: dec axis flexure               :    -60.0000 [arcsec]
-
-./u_model.py --plot --toc  --base-path ./ \
- --analyzed-positions simulation_data.txt \
- --model point
-transformation done with: u_astropy
--------------------------------------------------------------
-values:
-IH : ha index error                 :    -60.0000 [arcsec]
-ID : delta index error              :    +12.0000 [arcsec]
-CH : collimation error              :    -60.0000 [arcsec]
-NP : ha/delta non-perpendicularity  :    +60.0000 [arcsec]
-MA : polar axis left-right alignment:    +30.0000 [arcsec]
-ME : polar axis vertical alignment  :    +12.0000 [arcsec]
-TF : tube flexure                   :    -12.0000 [arcsec]
-FO : fork flexure                   :    +60.0000 [arcsec]
-DAF: dec axis flexure               :    -60.0000 [arcsec]
-
-The gallery of plots:
-http://azug.minpet.unibas.ch/~wildi/simulation/
 
 Assumption about the mount
 ==========================
