@@ -23,9 +23,9 @@
 
 start rts2asaf exclusively (now)
 
-e.g. in crontab
-rts2-scriptexec -d C0 -s '$HOME/rts2/script/rts2saf/rts2saf_start.py
-rts2-scriptexec -d C0 -s '$HOME/rts2/script/rts2saf/rts2saf_stop.py
+e.g. in crontab (replace $HOME by full path) 
+rts2-scriptexec -d C0 -s ' exe $HOME/rts2/script/rts2saf/rts2saf_start.py '
+rts2-scriptexec -d C0 -s ' exe $HOME/rts2/script/rts2saf/rts2saf_stop.py '
 
 '''
 
