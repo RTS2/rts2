@@ -48,9 +48,19 @@ class Script (rts2.scriptcomm.Rts2Comm):
     def initial_values(self):
 	selector_enabled=self.getValue('selector_enabled', 'SEL')
         current=self.getValueFloat('current','EXEC')
-        self.lg.info('initial_values: EXEC current: {}'.format(current))
+        current_name=self.getValue('current_name','EXEC')
+        current_type=self.getValue('current_type','EXEC')
+        self.lg.info('initial_values: EXEC current: {}, current_name: {}, current_type: {}'.format(current,current_name,current_type))
         # check for GLORIA and GRB, and exit if so
-        
+        if 'GLORIA teleoperation' in current_name: # reserved observing time
+            self.lg.info('initial_values: there is a ongoing GLORIA teleoperation, exiting')
+            sys.exit(1)
+        elif 'G' in current_type: # it is a GRB
+            self.lg.info('initial_values: there is now a GRB target selected, exiting')
+            sys.exit(1)
+        else:
+            self.lg.info('initial_values: neither GLORIA teleoperation nor GRB target')
+
         selector_next=self.getValueFloat('selector_next','EXEC')
         self.lg.info('initial_values: EXEC selector_next: {}'.format(selector_next))
 
