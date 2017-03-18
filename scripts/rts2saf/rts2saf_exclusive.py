@@ -41,10 +41,11 @@ import datetime
 
 
 class Script (rts2.scriptcomm.Rts2Comm):
-    def __init__(self,lg=None):
+    def __init__(self,lg=None,tar_id=None):
         rts2.scriptcomm.Rts2Comm.__init__(self)
         self.lg=lg
-    
+        self.tar_id=tar_id
+        
     def initial_values(self):
 	selector_enabled=self.getValue('selector_enabled', 'SEL')
         current=self.getValueFloat('current','EXEC')
@@ -70,6 +71,9 @@ class Script (rts2.scriptcomm.Rts2Comm):
     def start_rts2saf(self):
 	self.setValue('selector_enabled', '0', 'SEL')
 	self.setValue('selector_next', '0', 'EXEC')
+	self.sendCommand('now {}'.format(self.tar_id), 'EXEC')
+        # ToDo ad hoc ok for B2.
+        time.sleep(20.)
 	self.sendCommand('now 5', 'EXEC')
         self.lg.info('start_rts2saf: disabled SEL, EXEC and sent "now 5" to EXEC')
 
@@ -89,6 +93,7 @@ if __name__ == '__main__':
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--start', dest='start', action='store_true', default=False, help=': %(default)s, start rts2saf')
     group.add_argument('--stop', dest='stop', action='store_true', default=False, help=': %(default)s, stop rts2saf')
+    parser.add_argument('--tar-id', dest='tar_id', action='store', default=539, help=': %(default)s, set mount to tar_id=xxx, see your postgres database')
 
     args=parser.parse_args()
 
@@ -111,7 +116,7 @@ if __name__ == '__main__':
         logger.addHandler(soh)
 
         
-    sc=Script(lg=logger)
+    sc=Script(lg=logger,tar_id=args.tar_id)
     sc.initial_values()
 
     if 'start' in script or args.start:
