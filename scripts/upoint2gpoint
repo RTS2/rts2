@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+import argparse
+from astropy.time import Time
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,description='Converts upoint input file to gpoint')
+
+parser.add_argument('inputfiles',help='input (upoint) files',type=str,nargs='*')
+parser.add_argument('--observatory',help='observatory position (longitude latitude altitude)',type=str)
+parser.add_argument('-o',dest='gpoint_out',action='store',default=None,help='name of output file (gpoint format')
+
+args = parser.parse_args()
+
+for a in args.inputfiles:
+	print 'processing {0}'.format(a)
+	f = open(a)
+	line = f.readline()
+	print 'skipping first line ({0})',line
+	gout = None
+
+	if args.gpoint_out:
+		gout = open(args.gpoint_out,'w')
+		gout.write('# name JD LST(0) az alt tilt_x tilt_y az_real alt_real\n')
+		gout.write('# altaz {0}\n'.format(args.observatory))
+
+	line = f.readline()
+	while line:
+		name,alt_real,az_real,delta_alt_center,delta_az_center,tilt_x,tilt_y,alt_teoric,az_teoric,time,rest = line.split('\t',10)
+		t = Time(time,format='isot')
+		if gout:
+			gout.write('\t'.join([name,str(t.jd),'x',az_teoric,alt_teoric,tilt_x,tilt_y,az_real,alt_real]))
+			gout.write('\n')
+		else:
+			print name,t.jd,0,az_teoric,alt_teoric,tilt_x,tilt_y,az_real,alt_real
+		line = f.readline()
+	
+	if gout:
+		gout.close()
