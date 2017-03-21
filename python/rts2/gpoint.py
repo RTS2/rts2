@@ -827,7 +827,6 @@ class GPoint:
 				raise Exception('empty plot specifier')
 			plot_s = re.split('([@%])', mg)
 			plot.append(plot_s[0])
-			i = 1
 			while i < len(plot_s) - 1:
 				if plot_s[i] == '@':
 					i += 1
@@ -853,11 +852,15 @@ class GPoint:
 			i += 1
 
 		self.plotgrid = (rows,cols)
+		if self.verbose:
+			print 'row {0} cols {1}'.format(rows,cols)
 		for i in range(0,len(plot)):
 			axnam=plot[i].split(':')
 			if len(axnam) < 2:
 				sys.exit('invalid plot name - {0} does not contain at least one :'.format(plot[i]))
 			g = grid[i]
+			if self.verbose:
+				print 'grid {0}'.format(g)
 			p = pylab.subplot2grid(self.plotgrid,g[:2],colspan=g[2],rowspan=g[3])
 			if axnam[0] == 'paz':
 				ax=axnam[1].split('-')
