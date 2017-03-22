@@ -139,7 +139,7 @@ endif
 if LIBUSB1
 bin_PROGRAMS += rts2-camd-sx
 rts2_camd_sx_SOURCES = sx.cpp
-rts2_camd_sx_LDADD = -Lsxccd -lsxccdusb @USB1_LIBS@ ${LDADD}
+rts2_camd_sx_LDADD = -Lsxccd -lsxccdusb ${LDADD} @USB1_LIBS@
 rts2_camd_sx_CXXFLAGS = @USB1_CFLAGS@ -I../../include
 else
 EXTRA_DIST += sx.cpp
