@@ -12,7 +12,7 @@
 #/var/log/rts2-data.log
 #/var/log/rts2-exec.log
 #/var/log/rts2-foc.log
-/var/log/rts2-debug{
+@LOG_FILE@{
         size 1k
         daily
         missingok

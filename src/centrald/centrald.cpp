@@ -504,7 +504,7 @@ int Centrald::reloadConfig ()
 
 	if (logFileSource != LOGFILE_ARG)
 	{
-		config->getString ("centrald", "logfile", logFile, "/var/log/rts2-debug");
+		config->getString ("centrald", "logfile", logFile, RTS2_LOG_FILE);
 		logFileSource = LOGFILE_CNF;
 	}
 

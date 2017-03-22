@@ -1,0 +1,15 @@
+#!/bin/bash
+echo "Creating and populating /etc/rts2"
+mkdir @CONFDIR@/rts2
+cp --no-clobber -v conf/rts2.ini conf/services conf/devices conf/centrald @CONFDIR@/rts2
+echo "Copying startup script"
+if [ -d @CONFDIR@/systemd ]; then
+	rm @CONFDIR@/init.d/rts2
+	cp -v conf/rts2.service conf/rts2@.service @CONFDIR@/systemd/system/
+	systemctl daemon-reload
+else
+	cp --no-clobber -v rts2.initd @CONFDIR@/init.d/rts2
+fi
+chmod -v a+x @CONFDIR@/init.d/rts2
+echo "Copying flats and guiding scripts"
+cp --no-clobber -v scripts/guide.py scripts/flat.py @CONFDIR@/rts2
