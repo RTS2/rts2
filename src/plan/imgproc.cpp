@@ -401,8 +401,6 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 		// rts2core::Device::deleteConnection will delete runningImage
 		switch (runningImage->getAstrometryStat ())
 		{
-			case NOT_ASTROMETRY:
-				break;	
 			case GET:
 				goodImages->inc ();
 				nightGoodImages->inc ();
@@ -418,6 +416,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 					sendValueAll (lastGood);
 				}
 				break;
+			case NOT_ASTROMETRY:
 			case TRASH:
 				trashImages->inc ();
 				nightTrashImages->inc ();
