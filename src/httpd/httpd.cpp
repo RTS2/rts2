@@ -603,7 +603,7 @@ int HttpD::init ()
 		return ret;
 	// load users-login pairs
 	std::string lf;
-	Configuration::instance ()->getString ("xmlrpcd", "logins", lf, RTS2_PREFIX "/etc/rts2/logins");
+	Configuration::instance ()->getString ("xmlrpcd", "logins", lf, RTS2_CONFDIR "/rts2/logins");
 
 	userLogins.load (lf.c_str ());
 #endif
