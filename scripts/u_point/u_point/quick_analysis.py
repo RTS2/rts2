@@ -28,7 +28,6 @@ Make decision about exposure
 __author__ = 'wildi.markus@bluewin.ch'
 
 import re
-import numpy as np
 from astropy.io import fits
 
 import u_point.sextractor_3 as sextractor_3
@@ -36,99 +35,6 @@ import u_point.sextractor_3 as sextractor_3
 #  Background: 4085.92    RMS: 241.384    / Threshold: 651.737 
 pat = re.compile('.*?Background:[ ]+([0-9.]+)[ ]+RMS:[ ]+([0-9.]+)[ /]+Threshold:[ ]+([0-9.]+).*?')
 
-class UserControl(object):
-  def __init__(self,lg=None,base_path=None):
-    self.lg=lg
-    self.base_path=base_path
-  def create_socket(self, port=9999):
-    # acquire runs as a subprocess of rts2-script-exec and has no
-    # stdin available from controlling TTY.
-    sckt=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # use telnet 127.0.0.1 9999 to connect
-    for p in range(port,port-10,-1):
-      try:
-        sckt.bind(('0.0.0.0',p)) # () tupple!
-        self.lg.info('create_socket port to connect for user input: {0}, use telnet 127.0.0.1 {0}'.format(p))
-        break
-      except Exception as e :
-        self.lg.debug('create_socket: can not bind socket {}'.format(e))
-        continue
-      
-    sckt.listen(1)
-    (user_input, address) = sckt.accept()
-    return user_input
-
-  def wait_for_user(self,user_input=None, last_exposure=None,):
-    menu=bytearray('mount synchronized\n',encoding='UTF-8')
-    user_input.sendall(menu)
-    menu=bytearray('current exposure: {0:.1f}\n'.format(last_exposure),encoding='UTF-8')
-    user_input.sendall(menu)
-    menu=bytearray('r [exp]: redo current position, [exposure [sec]]\n',encoding='UTF-8')
-    user_input.sendall(menu)
-    menu=bytearray('[exp]:  <RETURN> current exposure, [exposure [sec]],\n',encoding='UTF-8')
-    user_input.sendall(menu)
-    menu=bytearray('q: quit\n\n',encoding='UTF-8')
-    user_input.sendall(menu)
-    cmd=None
-    while True:
-      menu=bytearray('your choice: ',encoding='UTF-8')
-      user_input.sendall(menu)
-      uir=user_input.recv(512)
-      user_input.sendall(uir)
-      ui=uir.decode('utf-8').replace('\r\n','')
-      self.lg.debug('user input:>>{}<<, len: {}'.format(ui,len(ui)))
-
-      if 'q' in ui or 'Q' in ui: 
-        user_input.close()
-        self.lg.info('wait_for_user: quit, exiting')
-        sys.exit(1)
-
-      if len(ui)==0: #<ENTER> 
-        exp=last_exposure
-        cmd='e'
-        break
-      
-      if len(ui)==1 and 'r' in ui: # 'r' alone
-        exp=last_exposure
-        cmd='r'
-        break
-      
-      try:
-        cmd,exps=ui.split()
-        exp=float(exps)
-        break
-      except Exception as e:
-        self.lg.debug('exception: {} '.format(e))
-
-      try:
-        cmd='e'
-        exp=float(ui)
-        break
-      except:
-        # ignore bad input
-        menu=bytearray('no acceptable input: >>{}<<,try again\n'.format(ui),encoding='UTF-8')
-        user_input.sendall(menu)
-        continue
-    return cmd,exp
-
-  def save_code(self):
-      user_input=self.create_socket()
-
-      if self.mode_user:
-        while True:
-          if not_first:
-                self.expose(nml_id=nml.nml_id,cat_no=cat_no,cat_ic=cat_ic,exp=exp)
-          else:
-            not_first=True
-              
-          self.lg.info('acquire: mount synchronized, waiting for user input')
-          cmd,exp=self.wait_for_user(user_input=user_input,last_exposure=last_exposure)
-          last_exposure=exp
-          self.lg.debug('acquire: user input received: {}, {}'.format(cmd,exp))
-          if 'r' not in cmd:
-            break
-          else:
-            self.lg.debug('acquire: redoing same position')
 
 class QuickAnalysis(object):
   def __init__(self,lg=None,ds9_display=None,background_max=None,peak_max=None,objects_min=None,exposure_interval=None,ratio_interval=None):

@@ -158,7 +158,7 @@ class Transformation(object):
 
     return gcrs
 
-  def LN_ICRS_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,mount_set_icrs=False):
+  def LN_ICRS_to_AltAz(self,ra=None,dec=None,ln_pressure_qfe=None,ln_temperature=None,ln_humidity=None,obstime=None,mount_set_icrs=True):
     ln_pos_eq.ra=ra
     ln_pos_eq.dec=dec
     if mount_set_icrs:

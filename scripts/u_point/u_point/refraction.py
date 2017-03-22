@@ -37,7 +37,7 @@ class RefractiveIndex(object):
     # last resort
     if import_message is not None:
       self.lg.warn('ReafractiveIndex: {}'.format(import_message))
-      
+      sys.exit(1)
       
   def refractive_index_ciddor(self,pressure_qfe=None,temperature=None,humidity=None,obswl=0.5):
     # includes CO2  450micro-mole/mole
@@ -108,8 +108,10 @@ class Refraction(object):
     self.refraction_method=refraction_method
     self.refractive_index_method=refractive_index_method
     ri=RefractiveIndex(lg=self.lg)
-    self.ri_m=getattr(ri, 'refractive_index_'+self.refractive_index_method)
-
+    try:
+      self.ri_m=getattr(ri, 'refractive_index_'+self.refractive_index_method)
+    except AttributeError:
+      pass
     
   def refraction_stone(self,alt=None,tem=None,pre=None,hum=None):
     # An Accurate Method for Computing Atmospheric Refraction
@@ -152,8 +154,25 @@ class Refraction(object):
 
 
 if __name__ == "__main__":
+  import logging,sys
+  import argparse
+  parser= argparse.ArgumentParser(prog=sys.argv[0], description='Check exposure analysis')
+  parser.add_argument('--level', dest='level', default='DEBUG', help=': %(default)s, debug level')
+  parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
+  args=parser.parse_args()
 
-  rf=Refraction()
+  filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
+  logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
+  logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
+  logger=logging.getLogger()
+    
+  if args.toconsole:
+    # http://www.mglerner.com/blog/?p=8
+    soh=logging.StreamHandler(sys.stdout)
+    soh.setLevel(args.level)
+    logger.addHandler(soh)
+  # ToDo not cleanly solved refractive_index_method 
+  rf=Refraction(lg=logger,refractive_index_method='owens')
   tem=10.
   pre=1010.
   hum=0.5
@@ -163,17 +182,19 @@ if __name__ == "__main__":
   for ialt in range(0,95,5):
     alt=float(ialt)/180.*np.pi
     d_alt=rf.refraction_bennett(alt=alt,tem=tem,pre=pre,hum=hum)
-    print('B: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+    #print('B: d_alt: {0:3.7f} arcmin, alt: {1:3.7f}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
     d_alt=rf.refraction_saemundsson(alt=alt,tem=tem,pre=pre,hum=hum)
-    print('S: d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+    #print('S: d_alt: {0:3.7f} arcmin, alt: {1:3.7f}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
     d_alt=rf.refraction_stone(alt=alt,tem=tem,pre=pre,hum=hum)
-    print('O:d_alt: {} arcmin, alt: {}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+    #print('O: d_alt: {0:3.7f} arcmin, alt: {1:3.7f}, deg'.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
+    print('{1:3.7f}: {0:3.7f} '.format(d_alt*60.*180./np.pi,alt * 180./np.pi))
 
-
+  # ToDo check against ref_index
+  ri=RefractiveIndex(lg=logger)
   for item in range(-80,40,5):
     tem=float(item)/180.*np.pi
-    NO=rf.refractive_index_owens(temperature=tem,pressure_qfe=pre,humidity=hum)
+    NO=ri.refractive_index_owens(temperature=tem,pressure_qfe=pre,humidity=hum)
     print('NO: NO: {0:15.10f} , temparature: {1}, deg'.format(NO,item))
-    NC,NE=rf.refractive_index_Comfort_at_1_AU(temperature=tem,pressure_qfe=pre,humidity=hum)
+    NC,NE=ri.refractive_index_Comfort_at_1_AU(temperature=tem,pressure_qfe=pre,humidity=hum)
     print('1U: NC: {0:15.10f} , temperature: {1}, deg'.format(NC,item))
     print('1U: NE: {0:15.10f} , temperature: {1}, deg'.format(NE,item))

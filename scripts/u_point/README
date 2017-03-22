@@ -50,12 +50,16 @@ chose packages:
   astrometry-data-2mass-06 (16'-22')
   astrometry-data-2mass-07 (22'-30')
 
+Presentation Hackaton, Aosta 2017:
+http://azug.minpet.unibas.ch/~wildi/2017-03-aosta.pdf
+
+
 Use cases
 =========
 
 u_point's use cases are:
 
-- unattended data acquisition analysis and fit
+- unattended data acquisition, analysis and fit
   of a configurable mount/telescope pointing model.
 
 - if the CCD FoV is too small for astrometry.net
@@ -334,13 +338,13 @@ u_model.py uses per default results from astrometry.net, but specifying
 cat_ic is set at the mount, assuming the driver transforms to apparent.
 The differences
 
- d_az  = cat_aa.az -  X.az
- d_alt = cat_aa.alt - X.alt
+ d_az  = cat_ll_ap.az -  X.az
+ d_alt = cat_ll_ap.alt - X.alt
 
 where X is either mnt_ll_sxtr or mnt_ll_astr, resp., or
 
- d_ha  = cat_ha.ha - X.ha
- d_dec = cat_ha.dec - X.dec
+ d_ha  = cat_ll_ap.ha - X.ha
+ d_dec = cat_ll_ap.dec - X.dec
 
 are minimized simultaneously. 
 
@@ -725,16 +729,37 @@ soon EQ mounts can be used too.
 
 Pointing Model
 ==============
-If a different pointing model should be created,
-study:
+Not satisfied with the existing models:
 
-- u_point/model_base.py
+ model/buie.py
+ model/point.py
+ model/altaz.py
 
-and for working implementations:
+create your own. Create class Model(ModelBase) and
+implement three methods (see e.g. model_altaz.py):
 
-- model/altaz.py
-- model/buie.py
-- model/point.py
+  def d_lon(self,cat_lons,cat_lats,d_lons):
+  def d_lat(self,cat_lons,cat_lats,d_lats):
+  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
+
+where cat_* are apparent and d_* are the differences
+between cat_* - mnt_*, where mnt_* are the coordinates
+read at the setting circles of the mount. If method fit_model()
+is implemented for a EQ style fit (see model/point.py), 
+observatory's latitude has to be passed:
+
+  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
+    if kwargs is None:
+      self.lg.error('expected key word: obs, exiting'.format(name, value))
+      sys.exit(1)
+
+    for name, value in kwargs.items():
+      if 'obs' in name:
+        self.phi=value.latitude.radian
+        break
+      else:
+        self.lg.error('got unexpected key word: {0}={1}, exiting'.format(name, value))
+        sys.exit(1)
 
 Meteo
 =====
@@ -866,40 +891,6 @@ All plots have a call back function. If a data point
 is clicked, it is annotated on all other plots.
 
 
-Defining a model
-================
-Not satisfied with the existing models:
-
- model/buie.py
- model/point.py
- model/altaz.py
-
-create your own. Create class Model(ModelBase) and
-implement three methods (see e.g. model_altaz.py):
-
-  def d_lon(self,cat_lons,cat_lats,d_lons):
-  def d_lat(self,cat_lons,cat_lats,d_lats):
-  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
-
-where cat_* are apparent and d_* are the differences
-between cat_* - mnt_*, where mnt_* are the coordinates
-read at the setting circles of the mount. If method fit_model()
-is implemented for a EQ style fit (see model/point.py), 
-observatory's latitude has to be passed:
-
-  def fit_model(self,cats=None,mnts=None,selected=None,**kwargs):
-    if kwargs is None:
-      self.lg.error('expected key word: obs, exiting'.format(name, value))
-      sys.exit(1)
-
-    for name, value in kwargs.items():
-      if 'obs' in name:
-        self.phi=value.latitude.radian
-        break
-      else:
-        self.lg.error('got unexpected key word: {0}={1}, exiting'.format(name, value))
-        sys.exit(1)
-
 Walk through with RTS2 dummy devices
 ====================================
 
@@ -954,71 +945,3 @@ viewed "in parallel":
  telnet 127.0.0.1 9999
  ./u_acquire.py --plot;ds9 -zscale dss*fits
  rts2-scriptexec -d C0 -s " exe ./u_acquire_fetch_dss_continuous.sh "
-
-
-Pointing model analysis: u_model.py
-===================================
-
-The current version does not support the old data format.
-This section is informative only
-
-I will update this section as soon I converted the data.
-
-Fetch real data and fit them
-
- cd ~/rts2/scripts/u_point/
- wget http://azug.minpet.unibas.ch/~wildi/mount_data_meteo.txt
- ./u_model.py --toc mount_data_meteo.txt --plot
-
-the output should be similar to:
-
- --------------------------------------------------------
- fitted values:
- C1: horizontal telescope collimation: -339.9976 [arcsec]
- C2: constant azimuth offset         :+1024.7588 [arcsec]
- C3: tipping-mount collimation       :   +3.1370 [arcsec]
- C4: azimuth axis tilt West          : +719.9432 [arcsec]
- C5: azimuth axis tilt North         : +422.3190 [arcsec]
- C6: vertical telescope collimation  : +579.9046 [arcsec]
- C7: gravitational tube bending      :  -85.1722 [arcsec]
- /home/wildi/sw/python/v_point/lib/python3.5/site-packages/scipy/optimize/minpack.py:427: RuntimeWarning: Number of calls to function has reached maxfev = 800.
-  warnings.warn(errors[info][0], RuntimeWarning)
-  fit projection not converged, status: 5
-
-and the plots appear. Ignore the warning since it is related
-to a Gaussian fit. Then do a simulation
-
-  ./u_simulate.py --sigma 0. --aa "-339.99 1024.75 3.13  719.9 422.31 579.9 -85.17" --mount-data test.dat  --step 12
-  
-and the output should be similar to:
-
- input parameters
- C1: horizontal telescope collimation: -339.9900 [arcsec]
- C2: constant azimuth offset         :+1024.7500 [arcsec]
- C3: tipping-mount collimation       :   +3.1300 [arcsec]
- C4: azimuth axis tilt West          : +719.9000 [arcsec]
- C5: azimuth axis tilt North         : +422.3100 [arcsec]
- C6: vertical telescope collimation  : +579.9000 [arcsec]
- C7: gravitational tube bending      :  -85.1700 [arcsec]
- end input parameters
-
-and finally fit the simulated data with
-
- ./u_model.py --toc  --u_point_analyzed_position test.dat
-
-and the output shows the parameters in good agreement
-
- --------------------------------------------------------
- fitted values:
- C1: horizontal telescope collimation: -339.9803 [arcsec]
- C2: constant azimuth offset         :+1031.2422 [arcsec]
- C3: tipping-mount collimation       :   +3.1193 [arcsec]
- C4: azimuth axis tilt West          : +718.4110 [arcsec]
- C5: azimuth axis tilt North         : +422.1173 [arcsec]
- C6: vertical telescope collimation  : +579.8966 [arcsec]
- C7: gravitational tube bending      :  -85.1844 [arcsec]
- /home/wildi/sw/python/v_point/lib/python3.5/site-packages/scipy/optimize/minpack.py:427: RuntimeWarning: Number of calls to function has reached maxfev = 800.
-  warnings.warn(errors[info][0], RuntimeWarning)
-  fit projection not converged, status: 5
-
-And the simulated plots are as "ugly" as the data.
