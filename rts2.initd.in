@@ -181,7 +181,7 @@ DEVICE_CONFIG=@CONFDIR@/rts2/devices
 SERVICE_CONFIG=@CONFDIR@/rts2/services
 RTS2_BIN_PREFIX=@prefix@/bin
 RTS2_PID_PREFIX=@LOCK_PREFIX@
-RTS2_LOG=@prefix@/var/log/rts2-debug
+RTS2_LOG=@LOG_FILE@
 
 rts2_log_daemon_msg()
 {
