@@ -58,12 +58,12 @@ int Configuration::getSpecialValues ()
 
 	getString ("observatory", "header_replace", obs_header_replace, "");
 
-	getString ("observatory", "target_path", targetDir, RTS2_PREFIX "/etc/rts2/targets");
+	getString ("observatory", "target_path", targetDir, RTS2_CONFDIR "/rts2/targets");
 	masterConsFile = targetDir + "/constraints.xml";
 
 	targetConstraintsWithName = getBoolean ("observatory", "target_constraints_with_name", targetConstraintsWithName);
 
-	getString ("observatory", "nightlogs", nightDir, RTS2_PREFIX "/etc/rts2/nights/%N.fits");
+	getString ("observatory", "nightlogs", nightDir, RTS2_CONFDIR "/rts2/nights/%N.fits");
 
 	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
 

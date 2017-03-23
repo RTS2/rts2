@@ -33,6 +33,18 @@ class Transformation(object):
     self.obs=obs
     self.refraction_method=refraction_method
     
+  def transform_to_radec(self,tf=None,sky=None,mount_set_icrs=None):
+    tem=sky.temperature
+    pre_qfe=pre=sky.pressure
+    hum=sky.humidity
+    # ToD deduplicate
+      
+    aa=tf.transform_to(AltAz(obswl=0.5*u.micron, pressure=pre_qfe*u.hPa,temperature=tem*u.deg_C,relative_humidity=hum))
+    aa_no_pressure=SkyCoord(az=aa.az,alt=aa.alt, unit=(u.radian,u.radian), frame='altaz',obstime=aa.obstime,location=aa.location,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
+    gc=aa_no_pressure.gcrs
+      
+    return gc
+  
   def transform_to_hadec(self,tf=None,sky=None,mount_set_icrs=None):
     tem=sky.temperature
     pre_qfe=pre=sky.pressure

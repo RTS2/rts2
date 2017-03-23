@@ -167,12 +167,15 @@ class PointingModel(Script):
     ax.set_xlabel('{} {} [arcsec]'.format(prefix,axis))
     ax.set_ylabel('number of events normalized')
     if prefix in 'difference': # ToDo ugly
-      ax.set_title('{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec] \n catalog_not_corrected - star'.format(plt_no,prefix,axis,self.mu(), self.sigma()))
+      # as of 2017-03-18 TeX does not work
+      #ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec] \n catalog_not_corrected - star'.format(plt_no,prefix,axis,self.mu(), self.sigma()))
+      ax.set_title(r'{0} {1} {2} mu={3:.2f},sigma={4:.2f} [arcsec] \n catalog_not_corrected - star'.format(plt_no,prefix,axis,self.mu(), self.sigma()))
       fn_ftmp=fn_frac.replace(' ','_').replace('+','_')
       axis_tmp=axis.replace(' ','_').replace('+','_')
       fig.savefig(os.path.join(self.base_path,'{}_catalog_not_corrected_projection_{}_{}.png'.format(prefix,axis_tmp,fn_ftmp)))
     else:
-      ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,self.mu(), self.sigma(),fit_title))
+      #ax.set_title(r'{0} {1} {2} $\mu$={3:.2f},$\sigma$={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,self.mu(), self.sigma(),fit_title))
+      ax.set_title(r'{0} {1} {2} mu={3:.2f},sigma={4:.2f} [arcsec], fit: {5}'.format(plt_no,prefix,axis,self.mu(), self.sigma(),fit_title))
       #ToDo ugly
       fn_ftmp=fn_frac.replace(' ','_').replace('+','_')
       axis_tmp=axis.replace(' ','_').replace('+','_')
@@ -261,6 +264,13 @@ class PointingModel(Script):
     # this varies from distro to distro:
     matplotlib.rcParams["backend"] = "TkAgg"
     import matplotlib.pyplot as plt
+    #matplotlib.rc('text', usetex = True)
+    #matplotlib.rc('font', **{'family':"sans-serif"})
+    #params = {'text.latex.preamble': [r'\usepackage{siunitx}',
+    #                                  r'\usepackage{sfmath}', r'\sisetup{detect-family = true}',
+    #                                  r'\usepackage{amsmath}']}
+    #plt.rcParams.update(params)
+    
     plt.ioff()
     
     fit_title=model.fit_title
@@ -519,7 +529,7 @@ if __name__ == "__main__":
   #
   parser.add_argument('--fit-sxtr', dest='fit_sxtr', action='store_true', default=False, help=': %(default)s, True fit SExtractor results')
   # group model
-  parser.add_argument('--model-class', dest='model_class', action='store', default='altaz', help=': %(default)s, specify your model, see e.g. model/altaz.py')
+  parser.add_argument('--model-class', dest='model_class', action='store', default='u_upoint', help=': %(default)s, specify your model, see e.g. model/altaz.py')
   parser.add_argument('--fit-plus-poly', dest='fit_plus_poly', action='store_true', default=False, help=': %(default)s, True: Condon 1992 with polynom')
   # group plot
   parser.add_argument('--plot', dest='plot', action='store_true', default=False, help=': %(default)s, plot results')
@@ -570,7 +580,7 @@ if __name__ == "__main__":
     if 'altaz' not in model.model_type():
       logger.error('u_model: model: {}, type: {}'.format(args.model_class, model.model_type()))
       logger.error('u_model: specify altaz model type, exiting')
-      #sys.exit(1)
+      sys.exit(1)
 
   if cats is None or len(cats)==0:
     logger.error('u_model: nothing to analyze, exiting')

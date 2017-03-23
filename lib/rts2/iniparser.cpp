@@ -304,7 +304,7 @@ int IniParser::loadFile (const char *filename, bool parseFullLine)
 
 	if (!filename)
 		// default
-		filename = RTS2_PREFIX "/etc/rts2/rts2.ini";
+		filename = RTS2_CONFDIR "/rts2/rts2.ini";
 	std::ifstream *configStream = new std::ifstream ();
 	configStream->open (filename);
 	if (configStream->fail ())

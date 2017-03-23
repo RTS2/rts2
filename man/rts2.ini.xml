@@ -454,7 +454,7 @@
 	      database.
 	    </para><para>  
 	      The file contains : separated login names and passwords. Default
-	      is RTS2_PREFIX/etc/rts2/logins.
+	      is RTS2_CONFDIR/etc/rts2/logins.
 	    </para>
 	  </listitem>  
 	</varlistentry>

@@ -605,24 +605,28 @@ AC_SUBST(INC_BIGNG)
 
 # Define prefix variable
 
-AH_TEMPLATE([PREFIX],[prefix])
+AH_TEMPLATE([CONFDIR],[configuration directory])
 AH_TEMPLATE([SHARE_PREFIX],[share prefix])
 
+AC_ARG_WITH(confdir,
+[  --with-confdir          path to RTS2 configuration directory],
+CONFDIR="${withval}",
+CONFDIR="/etc")
+
 AS_IF([test "x${prefix}" = "x/"], [
-        AC_DEFINE_UNQUOTED(PREFIX, "", [prefix])
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "/usr/share", [share prefix])
 ], [
 	AS_IF([test "x${prefix}" = "x" -o "x${prefix}" = "xNONE"], [
 		loc_prefix="/usr/local"
-		main_prefix=""
 	], [
 		loc_prefix="${prefix}"
-		main_prefix="${prefix}"
 	])
-        AC_DEFINE_UNQUOTED(PREFIX, "${main_prefix}", [prefix])
         AC_DEFINE_UNQUOTED(SHARE_PREFIX, "${loc_prefix}/share", [share prefix])
 ])
-AC_SUBST(PREFIX)
+
+AC_DEFINE_UNQUOTED(CONFDIR,"${CONFDIR}", [configuration directory])
+
+AC_SUBST(CONFDIR)
 AC_SUBST(SHARE_PREFIX)
 
 # Define lock file prefix
@@ -635,6 +639,16 @@ AH_TEMPLATE([LOCK_PREFIX],[Lock file prefix path])
 
 AC_DEFINE_UNQUOTED(LOCK_PREFIX, "$LOCK_PREFIX", [Lock file prefix path])
 AC_SUBST(LOCK_PREFIX)
+
+AC_ARG_WITH(log,
+[  --with-log              specify log file path prefix, default to /var/log/rts2-debug.log],
+LOG_FILE="${withval}",
+LOG_FILE="/var/log/rts2-debug.log")
+
+AH_TEMPLATE([LOG_FILE],[Log file])
+
+AC_DEFINE_UNQUOTED(LOG_FILE, "$LOG_FILE", [Log file])
+AC_SUBST(LOG_FILE)
 
 # Default centrald port
 AC_ARG_WITH(port,
@@ -924,6 +938,7 @@ AM_CONDITIONAL(SUNCYGMAC, test x${target_os} = xcygwin -o x${target_os} = xsolar
 AM_CONDITIONAL(ARMCPU, test x${target_cpu/arm} != x${target_cpu})
 
 AC_OUTPUT([Makefile
+	   rts2-init
 	   rts2.initd
 	   scripts/rts2-start
 	   scripts/rts2-stop
@@ -944,6 +959,8 @@ AC_OUTPUT([Makefile
 	   conf/event.d/Makefile
 	   conf/rts2.service
 	   conf/rts2@.service
+	   conf/logrotate/Makefile
+	   conf/logrotate/logrotate-rts2.conf
 	   contrib/Makefile
 	   doc/Makefile
 	   doc/doxyfile
@@ -1072,7 +1089,9 @@ SENSORs:
   K8055         ${K8055}
 
   prefix        ${prefix}
+  confdir	${CONFDIR}
   lock prefix   ${LOCK_PREFIX}
+  log file      ${LOG_FILE}
   centrald port	${CENTRALD_PORT}
 
 DocBook stylesheets:

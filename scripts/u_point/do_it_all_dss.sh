@@ -43,10 +43,12 @@ TRANSFORMATION_CLASS="u_astropy"
 # are ignored
 REFRACTION_METHOD="stone"
 REFRACTIVE_INDEX_METHOD="owens"
-MOUNT_TYPE_EQ="--mount-type-eq"
+#MOUNT_TYPE_EQ="--mount-type-eq"
+MOUNT_TYPE_EQ=
 USE_BRIGHT_STARS="--use-bright-stars"
 #USE_BRIGHT_STARS=
-DO_QUICK_ANALYSIS="--do-quick-analysis"
+#DO_QUICK_ANALYSIS="--do-quick-analysis"
+DO_QUICK_ANALYSIS=
 ACQUIRE_DS9_DISPLAY="--ds9-display"
 
 trap "exit 1" TERM

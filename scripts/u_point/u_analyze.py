@@ -230,7 +230,8 @@ class Analysis(Script):
       self.lg.debug('{0}:id: {1}, no astrometry result: file: {2}'.format(pcn,sky.nml_id,ptfn))
 
   def re_plot(self,i=0,animate=None):
-    self.lg.debug('replot')
+    self.lg.debug('re_plot: reploting')
+    self.fetch_positions(sys_exit=True,analyzed=False)
     self.fetch_positions(sys_exit=False,analyzed=True)
     #                                                               if self.anl=[]
     # sxtr is RA,Dec to compare with astr
@@ -251,7 +252,7 @@ class Analysis(Script):
       mnt_ll_astr_lon=[x.mnt_ll_astr.az.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_astr is not None]  
       mnt_ll_astr_lat=[x.mnt_ll_astr.alt.degree for x in self.sky_anl if x is not None and x.mnt_ll_astr is not None]
 
-      
+    # attention: ax.clear deltetes annotations too
     self.ax.clear()
     self.ax.scatter(self.cat_ll_ap_lon, self.cat_ll_ap_lat,color='blue',s=120.)
     self.ax.scatter(mnt_ll_sxtr_lon, mnt_ll_sxtr_lat,color='red',s=40.)
@@ -291,10 +292,17 @@ class Analysis(Script):
     self.ax.grid(True)
     # ToDo: was nu? debug?
     #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ic.ra.degree,x.cat_ic.dec.degree,x.image_fn) for x in self.sky_acq]
-    annotes=['{0:.1f},{1:.1f}: {2}'.format(x.mnt_aa_rdb.az.degree,x.mnt_aa_rdb.alt.degree,x.image_fn) for x in self.sky_acq]
+    # ToDo: use AltAz, HA coordinates
+    
+    if self.sky_acq[0].mount_type_eq:
+      annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.ra.degree,x.cat_ll_ap.dec.degree,x.image_fn) for x in self.sky_anl]
+    else:
+      annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.az.degree,x.cat_ll_ap.alt.degree,x.image_fn) for x in self.sky_anl]
+
     nml_ids=[x.nml_id for x in self.sky_acq if x.mnt_aa_rdb is not None]
     aps=[AnnotatedPlot(xx=self.ax,nml_id=nml_ids,lon=self.cat_ll_ap_lon,lat=self.cat_ll_ap_lat,annotes=annotes)]
 
+    self.lg.debug('re_plot: end')
     try:
       self.af.aps=aps
       return
@@ -314,7 +322,9 @@ class Analysis(Script):
     # we want to see something, values are only for the plot
     # this is cat not apparent
 
+    self.lg.debug('plot: fetching catalog positions from file')
     self.fetch_positions(sys_exit=True,analyzed=False)
+    self.lg.debug('plot: transforming catalog to apparent positions')
     if self.sky_acq[0].mount_type_eq:
       self.cat_ll_ap_lon=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x).ra.degree for x in self.sky_acq]
       self.cat_ll_ap_lat=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x).dec.degree for x in self.sky_acq]
@@ -322,16 +332,19 @@ class Analysis(Script):
       #cat_ll_ap_lat,cat_ll_ap_lat=[(self.to_altaz(ic=x.cat_ic).az.degree,self.to_altaz(ic=x.cat_ic).alt.degree) for x in self.sky_acq]
       self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic,sky=x).az.degree for x in self.sky_acq]
       self.cat_ll_ap_lat=[self.to_altaz(ic=x.cat_ic,sky=x).alt.degree for x in self.sky_acq]
-
+    self.lg.debug('plot: catalog apparent positions fetched')
     if animate: #                                     do not remove ","
       ani = animation.FuncAnimation(fig, self.re_plot, fargs=(animate,),interval=2000)
+      self.lg.debug('plot: plot animation started')
 
+    self.lg.debug('plot: building plots')
     aps=self.re_plot(animate=animate)
     # analyzed=False means: delete a position in acquired 
     self.af = AnnoteFinder(ax=self.ax,aps=aps,xtol=5., ytol=5.,ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)
+    self.lg.debug('plot: annotations created')
 
     #plt.show(block=False)
     plt.show()
@@ -365,6 +378,8 @@ if __name__ == "__main__":
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, inspect image and region with ds9')
   parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
   parser.add_argument('--delete', dest='delete', action='store_true', default=False, help=': %(default)s, True: click on data point followed by keyboard <Delete> deletes selected acquired measurements from file --acquired-positions')
+  parser.add_argument('--pos-by-position', dest='pos_by_position', action='store_true', default=False, help=': %(default)s, no multiprocessing, single worker mode with display of each measurement')
+
   #
   parser.add_argument('--pixel-scale', dest='pixel_scale', action='store', default=1.7,type=float, help=': %(default)s [arcsec/pixel], arcmin/pixel of the CCD camera')
   parser.add_argument('--ccd-size', dest='ccd_size', default=[862.,655.], type=arg_floats, help=': %(default)s [px], ccd pixel size x,y[px], format "p1 p2"')
@@ -379,6 +394,7 @@ if __name__ == "__main__":
   parser.add_argument('--verbose-astrometry', dest='verbose_astrometry', action='store_true', default=False, help=': %(default)s, use astrometry in verbose mode')
   # transforms, coordinates
   parser.add_argument('--transform-class', dest='transform_class', action='store', default='u_astropy', help=': %(default)s, one of (u_sofa|u_astropy|u_libnova|u_pyephem)')
+  # see Ronald C. Stone, Publications of the Astronomical Society of the Pacific 108: 1051-1058, 1996 November
   parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='built_in', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
   parser.add_argument('--refractive-index-method', dest='refractive_index_method', action='store', default='owens', help=': %(default)s, one of (owens|ciddor|edlen) if --refraction-method stone is specified, see refraction.py')
 
@@ -398,23 +414,30 @@ if __name__ == "__main__":
     soh.setLevel(args.level)
     logger.addHandler(soh)
     
+  if args.delete:
+    args.animate=True
+    
   px_scale=args.pixel_scale/3600./180.*np.pi
   solver=None
   if not args.do_not_use_astrometry: # double neg
     solver= Solver(lg=logger,blind=False,scale=px_scale,radius=args.radius,replace=False,verbose=args.verbose_astrometry,timeout=args.timeout)
 
+  if not os.path.exists(args.base_path):
+    os.makedirs(args.base_path)
+    
+  # ToDo: not yet ready for prime time 
   acq_e_h=None
-  if args.delete:
-    # ToDo in case directory is not there
-    #try:
-    wm=pyinotify.WatchManager()
-    wm.add_watch(args.base_path,pyinotify.ALL_EVENTS, rec=True)
-    acq_e_h=EventHandler(lg=logger,fn=args.acquired_positions)
-    nt=pyinotify.ThreadedNotifier(wm,acq_e_h)
-    nt.start()
-    #except Exception as e:
-    #  logger.error('directory: {}, das not exist, error: {}'.format(args.base_path,e))
-    #  sys.exit(1)
+  #if args.delete:
+  #  # ToDo in case directory is not there
+  #  #try:
+  #  wm=pyinotify.WatchManager()
+  #  wm.add_watch(args.base_path,pyinotify.ALL_EVENTS, rec=True)
+  #  acq_e_h=EventHandler(lg=logger,fn=args.acquired_positions)
+  #  nt=pyinotify.ThreadedNotifier(wm,acq_e_h)
+  #  nt.start()
+  #  #except Exception as e:
+  #  #  logger.error('directory: {}, das not exist, error: {}'.format(args.base_path,e))
+  #  #  sys.exit(1)
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
 
@@ -451,28 +474,18 @@ if __name__ == "__main__":
     acq_e_h=acq_e_h,
     transform=transform,
   )
+  logger.info('analysis object created')
 
-  if not os.path.exists(args.base_path):
-    os.makedirs(args.base_path)
-
-  if args.plot:
+  if args.plot and not args.pos_by_position:
     title='progress: analyzed positions'
     if args.ds9_display:
       title += ':\n click on blue dots to watch image (DS9)'
     if args.delete:
       title += '\n then press <Delete> to remove from the list of acquired positions'
 
+    logger.info('creating plots')
     anl.plot(title=title,animate=args.animate,delete=args.delete)
-    
-  lock=Lock()
-  work_queue=Queue()  
-  ds9_queue=None    
-  next_queue=None    
-  cpus=int(cpu_count())-1 # one left for the user :-))
-  if args.ds9_display:
-    ds9_queue=Queue()
-    next_queue=Queue()
-    cpus=2 # one worker
+    sys.exit(0)
 
   anl.fetch_positions(sys_exit=True,analyzed=False)
   anl.fetch_positions(sys_exit=False,analyzed=True)
@@ -497,7 +510,9 @@ if __name__ == "__main__":
 
   sxtr_analyzed=[x.nml_id for x in anl.sky_anl if x.mnt_ll_sxtr is not None]
   astr_analyzed=[x.nml_id for x in anl.sky_anl if x.mnt_ll_astr is not None]
-    
+
+  lock=Lock()
+  work_queue=Queue()  
   for i,o in enumerate(anl.sky_acq):
     if args.do_not_use_astrometry: # double neg
       if o.nml_id in sxtr_analyzed:
@@ -518,9 +533,18 @@ if __name__ == "__main__":
   if len(anl.sky_anl) and args.ds9_display:
     logger.warn('deleted positions will appear again, these are deliberately not stored, file: {}'.format(args.analyzed_positions))
     
+  cpus=int(cpu_count())-1 # one left for the user :-))
+  cmd_queue=None    
+  next_queue=None    
+  if args.pos_by_position:
+    cmd_queue=Queue()  
+    next_queue=Queue()
+    cpus=2 # one worker
+    
   processes = list()
+  
   for w in range(1,cpus,1):
-    p=Worker(work_queue=work_queue,ds9_queue=ds9_queue,next_queue=next_queue,lock=lock,lg=logger,anl=anl)
+    p=Worker(work_queue=work_queue,cmd_queue=cmd_queue,next_queue=next_queue,lock=lock,lg=logger,anl=anl)
     logger.debug('starting process: {}'.format(p.name))
     p.start()
     processes.append(p)
@@ -528,20 +552,22 @@ if __name__ == "__main__":
 
   logger.debug('number of processes started: {}'.format(len(processes)))
 
-  if args.ds9_display:
-    ds9_queue.put('c')
+  if args.pos_by_position:
+    cmd_queue.put('c')
     while True:
       next_queue.get()
-      y = input('<RETURN> for next, dl for delete last, q for quit\n')
+      y = input('<RETURN> for next, \'Delete\' for delete last, \'q\' for quit\n')
+      print('key: {0}'.format(":".join("{:02x}".format(ord(c)) for c in y)))
       if 'q' in y:
         for p in processes:
-          ds9_queue.put('q')
+          cmd_queue.put('q')
           p.shutdown()
         break
-      elif 'dl' in y:
-        ds9_queue.put('dl')
+      # ToDo ugly
+      elif '1b:5b:33:7e' in ":".join("{:02x}".format(ord(c)) for c in y): # Delete
+        cmd_queue.put('dl')
       else:
-        ds9_queue.put('c')
+        cmd_queue.put('c')
   
   for p in processes:
     logger.debug('waiting for process: {} to join'.format(p.name))

@@ -38,7 +38,7 @@ class AnnotatedPlot(object):
     self.annotes=annotes
 
 class AnnoteFinder(object):
-
+  
   drawnAnnotations = {}
   def __init__(self,ax=None, aps=None, xtol=None, ytol=None,ds9_display=None,lg=None, annotate_fn=False,analyzed=None,delete_one=None):
     self.xtol = xtol
@@ -90,7 +90,7 @@ class AnnoteFinder(object):
     if self.aps is None:
       return
     # i_ap_ax_nml_id fn:  1:1
-    self.lg.debug('callback::drawAnnote: nml_id: {}'.format(self.aps[0].annotes[i_ap_ax_nml_id]))
+    self.lg.debug('callback::drawAnnote: nml_id: {}, {}'.format(nml_id,self.aps[0].annotes[i_ap_ax_nml_id]))
     
     fn=self.aps[0].annotes[i_ap_ax_nml_id].split()[1]
     if self.ds9_display:
@@ -98,13 +98,14 @@ class AnnoteFinder(object):
       
     stop=False
     for ap in self.aps:          
+      # attention: ax.clear() clears annotations too
       if (ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id]) in AnnoteFinder.drawnAnnotations:
         an = AnnoteFinder.drawnAnnotations[(ap.lon[i_ap_ax_nml_id], ap.lat[i_ap_ax_nml_id])]
         an.set_visible(not an.get_visible())
         ap.xx.figure.canvas.draw()
         # update all plots first
         stop=True
-      
+        
     if stop:
       return
     
@@ -126,16 +127,16 @@ class AnnoteFinder(object):
         if self.nml_id_delete is not None:
           self.delete_one(nml_id=self.nml_id_delete,analyzed=self.analyzed)#ToDo nml_id are float
         self.nml_id_delete=None
-        
+    # attention: ax.clear() clears annotations too
     elif event.key == 'c':
-      for k,an in self.drawnAnnotations.items():
+      for k,an in AnnoteFinder.drawnAnnotations.items():
         an.set_visible(False)
         
       for ap in self.aps:
         #ap.xx.figure.canvas.draw()
         ap.xx.figure.canvas.show()
         
-      self.drawnAnnotations = {}
+      AnnoteFinder.drawnAnnotations = {}
       
     # ToDO not yet decided
     #ax.plot(self.randoms, 'o', picker=5)

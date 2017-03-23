@@ -54,9 +54,9 @@ from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord,Angle,EarthLocation,get_sun
 from astropy.coordinates import AltAz
-
-from u_point.notify import ImageEventHandler 
-from u_point.notify import EventHandler 
+# ToDo not yet ready for prime time
+#from u_point.notify import ImageEventHandler 
+#from u_point.notify import EventHandler 
 from u_point.callback import AnnoteFinder
 from u_point.callback import  AnnotatedPlot
 from u_point.script import Script
@@ -285,7 +285,7 @@ class Acquisition(Script):
 
    
   def re_plot(self,i=0,ptfn=None,lon_step=None,animate=None):
-
+    self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
     self.fetch_positions(sys_exit=False,analyzed=False)
     self.drop_nominal_altaz()
     dt_now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
@@ -305,8 +305,10 @@ class Acquisition(Script):
     mnt_aa_rdb_alt= [x.mnt_aa_rdb.alt.degree for x in self.sky_acq if x.mnt_aa_rdb is not None]
     nml_aa_az = [x.nml_aa.az.degree for x in self.nml if x.nml_aa is not None]
     nml_aa_alt= [x.nml_aa.alt.degree for x in self.nml if x.nml_aa is not None]
-    
+    # attention: clears annotations in plot too
     self.ax.clear()
+    AnnoteFinder.drawnAnnotations ={} # a bit brutal
+    
     self.ax.set_title(self.title, fontsize=10)
     self.ax.set_xlim([-lon_step,360.+lon_step]) # ToDo use args.lon_step for that
     self.ax.scatter(nml_aa_az, nml_aa_alt,color='red')
@@ -390,8 +392,6 @@ class Acquisition(Script):
       #    break
       #  self.lg.debug('plot: waiting for data')
       #  time.sleep(1)
-    # do that only once
-    self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
     # ugly
     self.dt_last=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     try:
@@ -409,7 +409,6 @@ class Acquisition(Script):
       
     #plt.show(block=False)
     plt.show()
-    
 
 # Ja, ja,..
 # ToDo test it!
@@ -442,9 +441,9 @@ if __name__ == "__main__":
   parser.add_argument('--ds9-display', dest='ds9_display', action='store_true', default=False, help=': %(default)s, True: and if --plot is specified: click on data point opens FITS with DS9')
   parser.add_argument('--animate', dest='animate', action='store_true', default=False, help=': %(default)s, True: plot will be updated whil acquisition is in progress')
   parser.add_argument('--delete', dest='delete', action='store_true', default=False, help=': %(default)s, True: click on data point followed by keyboard <Delete> deletes selected acquired measurements from file --acquired-positions')
-  #
+  # ToDO not yet ready fro prime time
   parser.add_argument('--mode-watchdog', dest='mode_watchdog', action='store_true', default=False, help=': %(default)s, True: an RTS2 external CCD camera must be used')
-  parser.add_argument('--watchdog-directory', dest='watchdog_directory', action='store', default='.',type=str, help=': %(default)s , directory where the RTS2 external CCD camera writes the images')
+  #parser.add_argument('--watchdog-directory', dest='watchdog_directory', action='store', default='.',type=str, help=': %(default)s , directory where the RTS2 external CCD camera writes the images')
   #
   parser.add_argument('--meteo-class', dest='meteo_class', action='store', default='meteo', help=': %(default)s, specify your meteo data collector, see meteo.py for a stub')
   # group device
@@ -458,7 +457,7 @@ if __name__ == "__main__":
   parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
   parser.add_argument('--excluded-ha-interval', dest='excluded_ha_interval',   default=[120.,240.],type=arg_floats,help=': %(default)s [deg],  EQ mount excluded HA interval (avoid observations below NCP), format "p1 p2"')
   parser.add_argument('--longitude-interval', dest='longitude_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg], EQ,AltAz mount allowed longitude, format "p1 p2"')
-  # see Ronald C. Stone, Publications of the Astronomical Society of the Pacific 108: 1051-1058, 1996 November
+
   parser.add_argument('--latitude-interval',   dest='latitude_interval',   default=[30.,80.],type=arg_floats,help=': %(default)s [deg], EQ,AltAz mount, allowed altitude, format "p1 p2"')
   parser.add_argument('--lon-step', dest='lon_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
   parser.add_argument('--lat-step', dest='lat_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
@@ -494,22 +493,32 @@ if __name__ == "__main__":
     soh.setLevel(args.level)
     soh.setLevel(args.level)
     logger.addHandler(soh)
-
-  acq_queue=None
-  if args.mode_watchdog:
-    acq_queue=queue.Queue(maxsize=10)
-    image_event_handler = ImageEventHandler(lg=logger,acq_queue=acq_queue)
-    image_observer = Observer()
-    image_observer.schedule(image_event_handler,args.watchdog_directory,recursive=True)
-    image_observer.start()
     
-  acq_e_h=None
+  if not os.path.exists(args.base_path):
+    os.makedirs(args.base_path)
+        
+
+  # ToDo
   if args.delete:
-    wm=pyinotify.WatchManager()
-    wm.add_watch(args.base_path,pyinotify.ALL_EVENTS, rec=True)
-    acq_e_h=EventHandler(lg=logger,fn=args.acquired_positions)
-    nt=pyinotify.ThreadedNotifier(wm,acq_e_h)
-    nt.start()
+    args.animate=True
+    
+  # ToDo not yet ready for prime time
+  acq_queue=None
+  #if args.mode_watchdog:
+  #  acq_queue=queue.Queue(maxsize=10)
+  #  image_event_handler = ImageEventHandler(lg=logger,acq_queue=acq_queue)
+  #  image_observer = Observer()
+  #  image_observer.schedule(image_event_handler,args.watchdog_directory,recursive=True)
+  #  image_observer.start()
+    
+  # ToDo not yet ready for prime time
+  acq_e_h=None
+  #if args.delete:
+  #  wm=pyinotify.WatchManager()
+  #  wm.add_watch(args.base_path,pyinotify.ALL_EVENTS, rec=True)
+  #  acq_e_h=EventHandler(lg=logger,fn=args.acquired_positions)
+  #  nt=pyinotify.ThreadedNotifier(wm,acq_e_h)
+  #  nt.start()
     
   # ToD revisit dynamical loding
   # now load meteo class ...
@@ -542,25 +551,14 @@ if __name__ == "__main__":
     sun_separation=sun_separation,
     exposure_start=args.exposure_start
   )
-  
-  if not device.check_presence():
-    logger.error('no device present: {}, exiting'.format(args.device_class))
-    sys.exit(1)
-
-  max_separation=args.max_separation/180.*np.pi
-  latitude_interval=list()
-  for v in args.latitude_interval:
-    latitude_interval.append(v/180.*np.pi)
-
-  if not os.path.exists(args.base_path):
-    os.makedirs(args.base_path)
-        
   if args.create_nominal_altaz:
     ac.store_nominal_altaz(lon_step=args.lon_step,lat_step=args.lat_step,longitude_interval=args.longitude_interval,latitude_interval=args.latitude_interval,mount_type_eq=args.mount_type_eq,excluded_ha_interval=args.excluded_ha_interval,fn=args.nominal_positions)
-    if args.plot:
-      ac.plot(title='to be observed nominal positions',ptfn=args.nominal_positions,lon_step=args.lon_step,ds9_display=args.ds9_display,animate=False,delete=False) # no images yet
+    if not args.plot:
+      sys.exit(0)
+      
+  if args.plot and not args.animate:
+    ac.plot(title='to be observed nominal positions',ptfn=args.nominal_positions,lon_step=args.lon_step,ds9_display=args.ds9_display,animate=False,delete=False) # no images yet
     sys.exit(0)
-
 
   if args.plot:      
     title='progress: acquired positions'
@@ -571,7 +569,15 @@ if __name__ == "__main__":
       
     ac.plot(title=title,ptfn=args.nominal_positions,lon_step=args.lon_step,ds9_display=args.ds9_display,animate=args.animate,delete=args.delete)
     sys.exit(0)
+      
+  if not device.check_presence():
+    logger.error('no device present: {}, exiting'.format(args.device_class))
+    sys.exit(1)
 
+  max_separation=args.max_separation/180.*np.pi
+  latitude_interval=list()
+  for v in args.latitude_interval:
+    latitude_interval.append(v/180.*np.pi)
 
   # candidate objects, predefined with u_select.py
   if args.use_bright_stars:

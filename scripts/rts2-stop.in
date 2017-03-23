@@ -2,10 +2,10 @@
 
 # script to stop service by name
 
-CENTRALD_FILE=@PREFIX@/etc/rts2/centrald
-DEVICE_CONFIG=@PREFIX@/etc/rts2/devices
-SERVICE_CONFIG=@PREFIX@/etc/rts2/services
-RTS2_BIN_PREFIX=@prefix@/bin
+CENTRALD_FILE=@CONFDIR@/rts2/centrald
+DEVICE_CONFIG=@CONFDIR@/rts2/devices
+SERVICE_CONFIG=@CONFDIR@/rts2/services
+RTS2_BIN_CONFDIR=@prefix@/bin
 
 if [ "x$1" == "x" ]; then
 	echo "stopping everything"

@@ -257,6 +257,8 @@ def arg_float(value):
 if __name__ == "__main__":
   sys.path.append('../')
   from u_point.structures import SkyPosition
+  from transform.u_astropy import Transformation as AstroPyTF
+
 
   parser= argparse.ArgumentParser(prog=sys.argv[0], description='Analyze observed positions')
   parser.add_argument('--level', dest='level', default='WARN', help=': %(default)s, debug level')
@@ -283,6 +285,8 @@ if __name__ == "__main__":
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
   sofa=Transformation(lg=logger,obs=obs)
+  astr=AstroPyTF(lg=logger,obs=obs)
+
   #star=SkyCoord.from_name('Achernar', frame='icrs')
   dt_now=dateutil.parser.parse('2016-12-31T09:15:57.0Z')
   #CPD-80 1068
@@ -290,7 +294,7 @@ if __name__ == "__main__":
   # propper motion 3.90 -2.40 [2.70 2.20 0] B
   # Radial velocity / Redshift / cz : V(km/s) 0.341 [1.933]
   
-  star=SkyCoord('23h21m32.1685s -79d31m09.138s',frame='icrs',obstime=Time(dt_now))
+  star=SkyCoord('23h21m32.1685s -79d31m09.138s',frame='icrs',obstime=Time(dt_now), location=obs)
 
   sky=SkyPosition(
     nml_id=-1,
@@ -312,7 +316,15 @@ if __name__ == "__main__":
   )
   simbad=True
   aa=sofa.transform_to_altaz(tf=star,sky=sky,simbad=simbad)
-  star_obs=sofa.transform_to_radec(tf=star,sky=sky,simbad=simbad)
+  star_obs_sofa=sofa.transform_to_radec(tf=star,sky=sky,simbad=simbad)
 
-  print(star.ra.arcsec-star_obs.ra.arcsec)
-  print(star.dec.arcsec-star_obs.dec.arcsec)
+  print(star.ra.arcsec-star_obs_sofa.ra.arcsec)
+  print(star.dec.arcsec-star_obs_sofa.dec.arcsec)
+
+
+
+
+  
+  star_obs_astr=astr.transform_to_radec(tf=star,sky=sky)
+  print(star.ra.arcsec-star_obs_astr.ra.arcsec)
+  print(star.dec.arcsec-star_obs_astr.dec.arcsec)

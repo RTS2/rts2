@@ -59,14 +59,21 @@ if __name__ == "__main__":
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
   parser.add_argument('--simulation-data', dest='simulation_data', action='store', default='./simulation_data.txt', help=': %(default)s,  data filename (output)')
-  parser.add_argument('--step', dest='step', action='store', default=10, type=int,help=': %(default)s, AltAz points: range(0,360,step), range(0,90,step) [deg]')
+  parser.add_argument('--lon-step', dest='lon_step', action='store', default=10, type=int,help=': %(default)s,  longitute step size: range(0,360,step) [deg]')
+  parser.add_argument('--lat-step', dest='lat_step', action='store', default=10, type=int,help=': %(default)s, latitude step size: range(0,90,step) [deg]')
+  parser.add_argument('--lat-minimum', dest='lat_minimum', action='store', default=30, type=int,help=': %(default)s, latitude minimum [deg]')
+  parser.add_argument('--lat-maximum', dest='lat_maximum', action='store', default=80, type=int,help=': %(default)s, latitude maximum [deg]')
   #
   parser.add_argument('--obs-longitude', dest='obs_lng', action='store', default=123.2994166666666,type=arg_float, help=': %(default)s [deg], observatory longitude + to the East [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-latitude', dest='obs_lat', action='store', default=-75.1,type=arg_float, help=': %(default)s [deg], observatory latitude [deg], negative value: m10. equals to -10.')
   parser.add_argument('--obs-height', dest='obs_height', action='store', default=3237.,type=arg_float, help=': %(default)s [m], observatory height above sea level [m], negative value: m10. equals to -10.')
 
 
-  parser.add_argument('--model-class', dest='model_class', action='store', default='altaz', help=': %(default)s, specify your model, see e.g. model/altaz.py')
+  parser.add_argument('--model-class', dest='model_class', action='store', default='u_altaz', help=': %(default)s, specify your model, see e.g. model/u_altaz.py')
+  parser.add_argument('--transform-class', dest='transform_class', action='store', default='u_astropy', help=': %(default)s, one of (u_sofa|u_astropy|u_libnova|u_pyephem)')
+  # ToDo only astro.py supported refraction is built_in
+  #parser.add_argument('--refraction-method', dest='refraction_method', action='store', default='built_in', help=': %(default)s, one of (bennett|saemundsson|stone), see refraction.py')
+  #parser.add_argument('--refractive-index-method', dest='refractive_index_method', action='store', default='owens', help=': %(default)s, one of (owens|ciddor|edlen) if --refraction-method stone is specified, see refraction.py')
   group = parser.add_mutually_exclusive_group()
   # here: NO  nargs=1!!
   group.add_argument('--eq-params', dest='eq_params', default=[-60.,+12.,-60.,+60.,+30.,+12.,-12.,+60.,-60.], type=arg_floats, help=': %(default)s, EQ list of parameters [arcsec], format "p1 p2...p9"')
@@ -79,6 +86,7 @@ if __name__ == "__main__":
   parser.add_argument('--temperature', dest='temperature', action='store', default=-60., type=float,help=': %(default)s, temperature [degC]')
   parser.add_argument('--humidity', dest='humidity', action='store', default=0.5, type=float,help=': %(default)s, humidity [0.,1.]')
   parser.add_argument('--exposure', dest='exposure', action='store', default=5.5, type=float,help=': %(default)s, CCD exposure time')
+  parser.add_argument('--data-point', dest='data_points', action='store', default=1, type=int,help=': %(default)s, number of data points per grid point, specify a non zero value for --sigma')
             
   args=parser.parse_args()
   
@@ -95,7 +103,6 @@ if __name__ == "__main__":
     soh = logging.StreamHandler(sys.stdout)
     soh.setLevel(args.level)
     logger.addHandler(soh)
-    
 
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
   dt_utc = Time(args.utc,format='iso', scale='utc',location=obs)
@@ -104,7 +111,30 @@ if __name__ == "__main__":
   vn_lon=0.
   vn_lat=0.
 
-  # now load model class
+  #rf_m=None
+  #ri_m=None
+  #if 'built_in' not in args.refraction_method:
+  #  if 'ciddor' in  args.refractive_index_method or 'edlen' in  args.refractive_index_method:
+  #    if import_message is not None:
+  #      self.lg.error('u_analyze: {}'.format(import_message))
+  #      sys.exit(1)
+  #
+  #  # refraction index method is set within Refraction
+  #  rf=Refraction(lg=logger,obs=obs,refraction_method=args.refraction_method,refractive_index_method=args.refractive_index_method)
+  #  rf_m=getattr(rf, 'refraction_'+args.refraction_method)
+  #  logger.info('refraction method loaded: {}'.format(args.refraction_method))
+
+  tf = importlib.import_module('transform.'+args.transform_class)
+  logger.info('transformation loaded: {}'.format(args.transform_class))
+  # ToDo
+  #transform=tf.Transformation(lg=logger,obs=obs,refraction_method=rf_m)
+  transform=tf.Transformation(lg=logger,obs=obs,refraction_method=None)
+  if args.model_class in 'altaz':
+    tr_t_tf=transform.transform_to_altaz
+  else:
+    tr_t_tf=transform.transform_to_hadec
+
+  # load model class
   md = importlib.import_module('model.'+args.model_class)
   logger.info('model loaded: {}'.format(args.model_class))
   # required methods: fit_model, d_lon, d_lat
@@ -115,6 +145,10 @@ if __name__ == "__main__":
     parameters=args.eq_params
     mount_type_eq=True 
 
+  if args.sigma == 0. and args.data_points > 1:
+    logger.info('--sigma {}) and  --data-points {} do not make sense, exiting'.format(args.sigma, args.data_points))
+    sys.exit(1)
+    
   if args.all_params_zero:
     # quick and dirty
     parameters=[0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
@@ -124,58 +158,83 @@ if __name__ == "__main__":
   else:
     model=md.Model(lg=logger,parameters=parameters, obs_lat=obs.latitude.radian)
     
+  # log inital settings
   model.log_parameters()
   
+  # ToDo ugly
+  meteo_only_sky=SkyPosition(
+    pressure=args.pressure_qfe,
+    temperature=args.temperature,
+    humidity=args.humidity,
+  )
+  # ToDo toxic
+  mnt_ra_rdb=SkyCoord(ra=0.,dec=0.,unit=(u.radian,u.radian),frame='icrs')
+  mnt_aa_rdb=SkyCoord(az=0.,alt=0.,unit=(u.radian,u.radian),frame='altaz')
 
+  #sys.exit(1)
   nml_id=0
-  for az in range(0,360-args.step,args.step):
-    for alt in range(30,90-args.step,args.step):
-      r_lon=uniform(0, args.step) 
-      r_lat=uniform(0, args.step)
+  for az in range(0,360-args.lon_step,args.lon_step):
+    for alt in range(args.lat_minimum,args.lat_maximum-args.lat_step,args.lat_step):
+      r_lon=uniform(0, args.lon_step) 
+      r_lat=uniform(0, args.lat_step)
       # nominal AltAz
       nml_aa=SkyCoord(az=az+r_lon,alt=alt+r_lat,unit=(u.deg,u.deg),frame='altaz',location=obs,obstime=dt_utc,pressure=0.*u.hPa,temperature=0.*u.deg_C,relative_humidity=0.)
       # nominal EQ
       cat_ic=nml_aa.transform_to(ICRS())
       # apparent AltAz (mnt), includes refraction etc.
       # only SOFA/ERFA built in refraction is supported
-      cat_ll_ap=cat_ic.transform_to(AltAz(pressure=args.pressure_qfe*u.hPa,temperature=args.temperature*u.deg_C,relative_humidity=args.humidity))
-      #
-      # subtract the correction
-      #               |
-      #               |                                                    | 0. here
-      vd_lon=Longitude(-model.d_lon(cat_ll_ap.az.radian,cat_ll_ap.alt.radian,0.),u.radian)
-      vd_lat=Latitude(-model.d_lat(cat_ll_ap.az.radian,cat_ll_ap.alt.radian,0.),u.radian)
-      # noise
-      if sigma!=0.:
-        vn_lon=Longitude(np.random.normal(loc=0.,scale=sigma),u.radian)
-        vn_lat=Latitude(np.random.normal(loc=0.,scale=sigma),u.radian)
-      # mount apparent AltAz (HA/Dec is not required to find corrections for EQ mount)
-      mnt_ll=SkyCoord(az=cat_ll_ap.az+vd_lon+vn_lon,alt=cat_ll_ap.alt+vd_lat+vn_lat,unit=(u.radian,u.radian),frame='altaz',location=obs,obstime=dt_utc)
-
-      s_sky=SkyPosition(
-        nml_id=nml_id, 
-        cat_no=None,
-        nml_aa=nml_aa,
-        cat_ic=cat_ic,
-        dt_begin=dt_utc,
-        dt_end=dt_utc,
-        dt_end_query=dt_utc,
-        JD=dt_utc.jd,
-        mnt_ra_rdb=cat_ic,
-        mnt_aa_rdb=cat_ll_ap, 
-        image_fn=None,
-        exp=args.exposure,
-        pressure=args.pressure_qfe,
-        temperature=args.temperature,
-        humidity=args.humidity,
-        mount_type_eq=mount_type_eq,
-        transform_name='u_astropy',
-        # ToDo
-        refraction_method='built_in', 
-        cat_ll_ap=cat_ll_ap,
-        mnt_ll_sxtr=mnt_ll, 
-        mnt_ll_astr=mnt_ll, 
-      )
-      nml_id +=1
-      wfl.write('{0}\n'.format(s_sky))
+      #cat_ll_ap=cat_ic.transform_to(AltAz(pressure=args.pressure_qfe*u.hPa,temperature=args.temperature*u.deg_C,relative_humidity=args.humidity))
+      # cat_ll_ap is either cat_aa or cat_ha
+      cat_ll_ap=tr_t_tf(tf=cat_ic,sky=meteo_only_sky)
+      if args.model_class in 'altaz':
+        #
+        # subtract the correction
+        #                |
+        #                |                                                     | 0. here
+        vd_lon=Longitude(-model.d_lon(cat_ll_ap.az.radian,cat_ll_ap.alt.radian,0.),u.radian)
+        vd_lat=Latitude(-model.d_lat(cat_ll_ap.az.radian,cat_ll_ap.alt.radian,0.),u.radian)
+      else:
+        vd_lon=Longitude(-model.d_lon(cat_ll_ap.ra.radian,cat_ll_ap.dec.radian,0.),u.radian)
+        vd_lat=Latitude(-model.d_lat(cat_ll_ap.ra.radian,cat_ll_ap.dec.radian,0.),u.radian)
+        
+      for i in range(0,args.data_points):
+        # noise
+        if sigma!=0.:
+          vn_lon=Longitude(np.random.normal(loc=0.,scale=sigma),u.radian)
+          vn_lat=Latitude(np.random.normal(loc=0.,scale=sigma),u.radian)
+          # mount apparent AltAz (HA/Dec is not required to find corrections for EQ mount)
+          
+        if args.model_class in 'altaz':
+          mnt_ll=SkyCoord(az=cat_ll_ap.az+vd_lon+vn_lon,alt=cat_ll_ap.alt+vd_lat+vn_lat,unit=(u.radian,u.radian),frame='altaz',location=obs,obstime=dt_utc)
+        else:
+          # it is HA!
+          mnt_ll=SkyCoord(ra=cat_ll_ap.ra+vd_lon+vn_lon,dec=cat_ll_ap.dec+vd_lat+vn_lat,unit=(u.radian,u.radian),frame='gcrs',location=obs,obstime=dt_utc)
+          
+        s_sky=SkyPosition(
+          nml_id=nml_id, 
+          cat_no=None,
+          nml_aa=nml_aa,
+          cat_ic=cat_ic,
+          dt_begin=dt_utc,
+          dt_end=dt_utc,
+          dt_end_query=dt_utc,
+          JD=dt_utc.jd,
+          mnt_ra_rdb=mnt_ra_rdb,
+          mnt_aa_rdb=mnt_aa_rdb, 
+          image_fn=None,
+          exp=args.exposure,
+          pressure=args.pressure_qfe,
+          temperature=args.temperature,
+          humidity=args.humidity,
+          mount_type_eq=mount_type_eq,
+          transform_name='u_astropy',
+          # ToDo
+          refraction_method='built_in', 
+          cat_ll_ap=cat_ll_ap,
+          mnt_ll_sxtr=mnt_ll, 
+          mnt_ll_astr=mnt_ll, 
+        )
+        nml_id +=1
+        wfl.write('{0}\n'.format(s_sky))
+        
   wfl.close()

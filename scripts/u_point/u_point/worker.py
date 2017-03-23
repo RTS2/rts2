@@ -29,11 +29,11 @@ from multiprocessing import Process,Event,current_process,Queue
 
 
 class Worker(Process):
-  def __init__(self, work_queue=None,ds9_queue=None,next_queue=None,lock=None, dbg=None, lg=None, anl=None):
+  def __init__(self, work_queue=None,cmd_queue=None,next_queue=None,lock=None, dbg=None, lg=None, anl=None):
     Process.__init__(self)
     self.exit=Event()
     self.work_queue=work_queue
-    self.ds9_queue=ds9_queue
+    self.cmd_queue=cmd_queue
     self.next_queue=next_queue
     self.anl=anl
     self.lock=lock
@@ -48,19 +48,19 @@ class Worker(Process):
   def run(self):
     sky=acq_image_fn=None
     while not self.exit.is_set():
-      if self.ds9_queue is not None:
+      if self.cmd_queue is not None:
         try:
-          cmd=self.ds9_queue.get()
+          cmd=self.cmd_queue.get()
         # ToDO Empty is not correct
         except Queue.Empty:
-          self.lg.info('{}: ds9 queue empty, returning'.format(current_process().name))
+          self.lg.info('{}: cmd queue empty, returning'.format(current_process().name))
           return
-        # 'q'
+        #
         if isinstance(cmd, str):
           if 'dl' in cmd:
-            self.lg.info('{}: got {}, delete last: {}'.format(current_process().name, cmd,sky.image_fn))
+            self.lg.info('{}: got \'Delete\', delete last: {}'.format(current_process().name,sky.image_fn))
             acq_image_fn=sky.image_fn
-            acq=None
+            sky=None
           elif 'q' in cmd:
             self.append_position(sky=sky)
             self.lg.error('{}: got {}, call shutdown'.format(current_process().name, cmd))
@@ -96,7 +96,7 @@ class Worker(Process):
 
       self.anl.astrometry(sky=sky,pcn=current_process().name)
       # ToDo why this condition
-      if self.ds9_queue is None:
+      if self.cmd_queue is None:
         self.append_position(sky=sky)
       else:
         self.next_queue.put('c')

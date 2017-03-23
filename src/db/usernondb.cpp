@@ -208,7 +208,7 @@ int UserApp::run ()
 	if (userfile == NULL)
 	{
 		std::string lf;
-		rts2core::Configuration::instance ()->getString ("observatory", "logins", lf, RTS2_PREFIX "/etc/rts2/logins");
+		rts2core::Configuration::instance ()->getString ("observatory", "logins", lf, RTS2_CONFDIR "/rts2/logins");
 		userfile = new char[lf.length() + 1];
 		strcpy (userfile, lf.c_str ());
 	}

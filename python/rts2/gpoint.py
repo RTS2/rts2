@@ -827,20 +827,23 @@ class GPoint:
 				raise Exception('empty plot specifier')
 			plot_s = re.split('([@%])', mg)
 			plot.append(plot_s[0])
-			while i < len(plot_s) - 1:
-				if plot_s[i] == '@':
-					i += 1
+			j = 0
+			while j < len(plot_s):
+				if plot_s[j] == '@':
+					j += 1
 					if len(draw) < len(plot):
 						draw.append([])
-					draw[len(plot) - 1].append(plot_s[i])
-				elif plot_s[i] == '%':
+					draw[len(plot) - 1].append(plot_s[j])
+				elif plot_s[j] == '%':
 					if g is None:
 						raise Exception('grid can be specified only once')
-					i += 1
-					grids = plot_s[i].split(':')
+					j += 1
+					grids = plot_s[j].split(':')
+					if self.verbose:
+						print 'grids',grids
 					grid.append(map(int, grids) + g[len(grids):])
 					g = None
-				i += 1
+				j += 1
 			if g is not None:
 				grid.append(g)
 			if len(draw) < len(plot):
@@ -860,7 +863,7 @@ class GPoint:
 				sys.exit('invalid plot name - {0} does not contain at least one :'.format(plot[i]))
 			g = grid[i]
 			if self.verbose:
-				print 'grid {0}'.format(g)
+				print 'grid',g
 			p = pylab.subplot2grid(self.plotgrid,g[:2],colspan=g[2],rowspan=g[3])
 			if axnam[0] == 'paz':
 				ax=axnam[1].split('-')
