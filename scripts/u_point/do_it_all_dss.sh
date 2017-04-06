@@ -28,6 +28,7 @@
 #
 # No RTS2 installation required
 #
+DEVICE_CLASS="--device-class DeviceDss"
 STEPS="--lat-step 5 --lon-step 20"
 #STEPS="--lat-step 10 --lon-step 40"
 LATITUDE="--obs-latitude m75.1"
@@ -273,7 +274,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	export pid_u_acquire=$!
     else
 	#
-	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE  $USE_BRIGHT_STARS $DO_QUICK_ANALYSIS $ACQUIRE_DS9_DISPLAY  --device-class DeviceRts2Httpd&
+	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE  $USE_BRIGHT_STARS $DO_QUICK_ANALYSIS $ACQUIRE_DS9_DISPLAY  $DEVICE_CLASS&
 	export pid_u_acquire=$!
 	#
 	# no bright stars:
@@ -296,7 +297,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	echo ""
 	if ! [ -z ${PLOT} ]; then
 	    # nap is necessary for callback to work
-	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $PLOT --ds9-display --animate --delete --level DEBUG --device-class DeviceRts2Httpd&
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $PLOT --ds9-display --animate --delete --level DEBUG $DEVICE_CLASS&
 	    echo "-----------------------------------------------------------------"
 	    echo "showing progress with a second u_acquire.py instance (see different options)"
 	    echo "leave acquire plot window open"
