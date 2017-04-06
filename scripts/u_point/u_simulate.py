@@ -140,10 +140,10 @@ if __name__ == "__main__":
   # required methods: fit_model, d_lon, d_lat
   if args.model_class in 'altaz':
     parameters=args.aa_params
-    mount_type_eq=False # mount_type_eq=True, aa=False,
+    eq_mount=False # eq_mount=True, aa=False,
   else:
     parameters=args.eq_params
-    mount_type_eq=True 
+    eq_mount=True 
 
   if args.sigma == 0. and args.data_points > 1:
     logger.info('--sigma {}) and  --data-points {} do not make sense, exiting'.format(args.sigma, args.data_points))
@@ -226,7 +226,7 @@ if __name__ == "__main__":
           pressure=args.pressure_qfe,
           temperature=args.temperature,
           humidity=args.humidity,
-          mount_type_eq=mount_type_eq,
+          eq_mount=eq_mount,
           transform_name='u_astropy',
           # ToDo
           refraction_method='built_in', 

@@ -87,9 +87,9 @@ class PointingModel(Script):
       self.lg.error('fetch_coordinates: nothing to analyze, exiting')
       sys.exit(1)
       
-    self.mount_type_eq=False
-    if self.sky_anl[0].mount_type_eq:
-      self.mount_type_eq=True
+    self.eq_mount=False
+    if self.sky_anl[0].eq_mount:
+      self.eq_mount=True
       
     self.transform_name=None
     if self.sky_anl[0].transform_name:
@@ -292,7 +292,7 @@ class PointingModel(Script):
     if args.fit_plus_poly:
       fn_frac+='c_plus_poly'
       
-    if self.mount_type_eq:
+    if self.eq_mount:
       lon_label='hour angle'
       lat_label='declination'
     else:
@@ -571,7 +571,7 @@ if __name__ == "__main__":
   cats,mnts,imgs,nmls=pm.fetch_coordinates()
 
   # check model type, mount type
-  if pm.mount_type_eq:
+  if pm.eq_mount:
     if 'hadec' not in model.model_type():
       logger.error('u_model: model: {}, type: {}'.format(args.model_class, model.model_type()))
       logger.error('u_model: specify hadec model type, exiting')
@@ -587,7 +587,7 @@ if __name__ == "__main__":
     sys.exit(1)
 
   selected=list(range(0,len(cats))) # all  
-  if pm.mount_type_eq:
+  if pm.eq_mount:
     res=model.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
   else:
     try:
@@ -606,7 +606,7 @@ if __name__ == "__main__":
   selected,dropped=pm.select_stars(stars=stars)
   logger.info('number of selected: {}, dropped: {} '.format(len(selected),len(dropped)))
 
-  if pm.mount_type_eq:
+  if pm.eq_mount:
     res=model.fit_model(cats=cats,mnts=mnts,selected=selected,obs=pm.obs)
   else:
     res=model.fit_model(cats=cats,mnts=mnts,selected=selected,fit_plus_poly=args.fit_plus_poly)
@@ -615,7 +615,7 @@ if __name__ == "__main__":
   pm.plot_results(stars=stars,args=args)
   
   logger.info('number of selected: {}, dropped: {} '.format(len(selected),len(dropped)))
-  if pm.mount_type_eq:
+  if pm.eq_mount:
     res=model.fit_model(cats=cats,mnts=mnts,selected=dropped,obs=pm.obs)
   else:
     res=model.fit_model(cats=cats,mnts=mnts,selected=dropped,fit_plus_poly=args.fit_plus_poly)

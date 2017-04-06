@@ -125,7 +125,10 @@ class AnnoteFinder(object):
       if self.nml_id_delete is not None:
         self.lg.debug('callback::keyboard_event: delete nml_id: {}'.format(self.nml_id_delete))
         if self.nml_id_delete is not None:
-          self.delete_one(nml_id=self.nml_id_delete,analyzed=self.analyzed)#ToDo nml_id are float
+          self.delete_one(nml_id=self.nml_id_delete,analyzed=False)
+          if self.analyzed:
+            self.delete_one(nml_id=self.nml_id_delete,analyzed=self.analyzed)#ToDo nml_id are float
+            
         self.nml_id_delete=None
     # attention: ax.clear() clears annotations too
     elif event.key == 'c':

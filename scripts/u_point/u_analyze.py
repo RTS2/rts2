@@ -109,7 +109,7 @@ class Analysis(Script):
     # use this to check the internal accuracy of astropy
     #mnt_eq=SkyCoord(ra=rw['mnt_ra'],dec=rw['mnt_dc'], unit=(u.rad,u.rad), frame='icrs',obstime=dt_utc,location=self.obs)
       
-    if sky.mount_type_eq:
+    if sky.eq_mount:
       tr_t_tf=self.transform.transform_to_hadec
     else:
       tr_t_tf=self.transform.transform_to_altaz
@@ -141,7 +141,7 @@ class Analysis(Script):
     #  +x: -ra
     #  +y: +dec
     # HA/Dec, AltAz both left handed coordinate systems
-    if sky.mount_type_eq:
+    if sky.eq_mount:
       lon=ln0 + (px_r * self.px_scale/np.cos(lt0))
       lat=lt0 + py_r * self.px_scale
       #self.lg.debug('{0}: sextract   center: {1:12.7f} {2:12.7f}'.format(pcn,ln0*180./np.pi,lt0*180./np.pi))
@@ -155,7 +155,7 @@ class Analysis(Script):
       
     ptfn=self.expand_base_path(fn=sky.image_fn)
     self.lg.debug('{0}:id: {1}    sextract   result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,lon*180./np.pi,lat*180./np.pi,ptfn))
-    if sky.mount_type_eq:
+    if sky.eq_mount:
       # apparent "plus corrections"
       sky.mnt_ll_sxtr=SkyCoord(ra=lon,dec=lat, unit=(u.radian,u.radian), frame='gcrs',location=self.obs)
     else:
@@ -213,7 +213,7 @@ class Analysis(Script):
       self.lg.debug('{0}:id: {1},ic astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sr.ra,sr.dec,ptfn))
       # astrometry.net returns ICRS coordinates, not GCRS
       mnt_ll=SkyCoord(ra=sr.ra,dec=sr.dec, unit=(u.degree,u.degree), frame='icrs',location=self.obs,obstime=sky.dt_end)
-      if sky.mount_type_eq:
+      if sky.eq_mount:
         tr_t_tf=self.transform.transform_to_hadec
       else:
         tr_t_tf=self.transform.transform_to_altaz
@@ -221,7 +221,7 @@ class Analysis(Script):
       # astrometry.net returns ICRS coordinates, ICRS to apparent, including refraction
       sky.mnt_ll_astr=tr_t_tf(tf=mnt_ll,sky=sky)
 
-      if sky.mount_type_eq:
+      if sky.eq_mount:
         self.lg.debug('{0}:id: {1},ha astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sky.mnt_ll_astr.ra.degree,sky.mnt_ll_astr.dec.degree,ptfn))
       else:
         self.lg.debug('{0}:id: {1},aa astrometry result: {2:12.7f} {3:12.7f}, file: {4}'.format(pcn,sky.nml_id,sr.ra,sr.dec,ptfn))
@@ -233,26 +233,27 @@ class Analysis(Script):
     self.lg.debug('re_plot: reploting')
     self.fetch_positions(sys_exit=True,analyzed=False)
     self.fetch_positions(sys_exit=False,analyzed=True)
+    self.lg.debug('re_plot: positions fetched')
     #                                                               if self.anl=[]
     # sxtr is RA,Dec to compare with astr
     # ToDo think about tranforming astr to AltAz,pressure=0.
     # use SphericalRepr..
     # ToDo [0] ugly
-    if self.sky_acq[0].mount_type_eq:
+    if self.sky_acq[0].eq_mount:
       mnt_ll_sxtr_lon=[x.mnt_ll_sxtr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_sxtr is not None]
       mnt_ll_sxtr_lat=[x.mnt_ll_sxtr.dec.degree for x in self.sky_anl if x is not None and x.mnt_ll_sxtr is not None]
     else:
       mnt_ll_sxtr_lon=[x.mnt_ll_sxtr.az.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_sxtr is not None]
       mnt_ll_sxtr_lat=[x.mnt_ll_sxtr.alt.degree for x in self.sky_anl if x is not None and x.mnt_ll_sxtr is not None]
       
-    if self.sky_acq[0].mount_type_eq:
+    if self.sky_acq[0].eq_mount:
       mnt_ll_astr_lon=[x.mnt_ll_astr.ra.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_astr is not None]  
       mnt_ll_astr_lat=[x.mnt_ll_astr.dec.degree for x in self.sky_anl if x is not None and x.mnt_ll_astr is not None]
     else:
       mnt_ll_astr_lon=[x.mnt_ll_astr.az.degree for i,x in enumerate(self.sky_anl) if x is not None and x.mnt_ll_astr is not None]  
       mnt_ll_astr_lat=[x.mnt_ll_astr.alt.degree for x in self.sky_anl if x is not None and x.mnt_ll_astr is not None]
 
-    # attention: ax.clear deltetes annotations too
+    # attention: ax.clear deletes annotations too
     self.ax.clear()
     self.ax.scatter(self.cat_ll_ap_lon, self.cat_ll_ap_lat,color='blue',s=120.)
     self.ax.scatter(mnt_ll_sxtr_lon, mnt_ll_sxtr_lat,color='red',s=40.)
@@ -266,7 +267,7 @@ class Analysis(Script):
     #self.ax.set_xlim([0.,360.]) 
 
     ttl_frg='azimuth'
-    if self.sky_acq[0].mount_type_eq:
+    if self.sky_acq[0].eq_mount:
       ttl_frg='HA'
 
     if animate:
@@ -285,7 +286,7 @@ class Analysis(Script):
     self.ax.annotate('last astr',color='magenta', xy=(0.83, 0.05), xycoords='axes fraction')
 
     ttl_frg='altitude'
-    if self.sky_acq[0].mount_type_eq:
+    if self.sky_acq[0].eq_mount:
       ttl_frg='declination'
     self.ax.set_ylabel('{0} [deg]'.format(ttl_frg))
                        
@@ -294,7 +295,7 @@ class Analysis(Script):
     #annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ic.ra.degree,x.cat_ic.dec.degree,x.image_fn) for x in self.sky_acq]
     # ToDo: use AltAz, HA coordinates
     
-    if self.sky_acq[0].mount_type_eq:
+    if self.sky_acq[0].eq_mount:
       annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.ra.degree,x.cat_ll_ap.dec.degree,x.image_fn) for x in self.sky_anl]
     else:
       annotes=['{0:.1f},{1:.1f}: {2}'.format(x.cat_ll_ap.az.degree,x.cat_ll_ap.alt.degree,x.image_fn) for x in self.sky_anl]
@@ -325,9 +326,17 @@ class Analysis(Script):
     self.lg.debug('plot: fetching catalog positions from file')
     self.fetch_positions(sys_exit=True,analyzed=False)
     self.lg.debug('plot: transforming catalog to apparent positions')
-    if self.sky_acq[0].mount_type_eq:
+    if self.sky_acq[0].eq_mount:
       self.cat_ll_ap_lon=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x).ra.degree for x in self.sky_acq]
       self.cat_ll_ap_lat=[self.transform.transform_to_hadec(tf=x.cat_ic,sky=x).dec.degree for x in self.sky_acq]
+      # ToDo not faster:
+      # May be: http://chriskiehl.com/article/parallelism-in-one-line/
+      #self.cat_ll_ap_lon=list()
+      #self.cat_ll_ap_lat=list()
+      #for x in self.sky_acq:
+      #  y=self.transform.transform_to_hadec(tf=x.cat_ic,sky=x)
+      #  self.cat_ll_ap_lon.append(y.ra.degree)
+      #  self.cat_ll_ap_lat.append(y.dec.degree)
     else:
       #cat_ll_ap_lat,cat_ll_ap_lat=[(self.to_altaz(ic=x.cat_ic).az.degree,self.to_altaz(ic=x.cat_ic).alt.degree) for x in self.sky_acq]
       self.cat_ll_ap_lon=[self.to_altaz(ic=x.cat_ic,sky=x).az.degree for x in self.sky_acq]
@@ -339,8 +348,8 @@ class Analysis(Script):
 
     self.lg.debug('plot: building plots')
     aps=self.re_plot(animate=animate)
-    # analyzed=False means: delete a position in acquired 
-    self.af = AnnoteFinder(ax=self.ax,aps=aps,xtol=5., ytol=5.,ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=False,delete_one=self.delete_one_position)
+    # analyzed=False means: delete a position only in acquired 
+    self.af = AnnoteFinder(ax=self.ax,aps=aps,xtol=5., ytol=5.,ds9_display=self.ds9_display,lg=self.lg,annotate_fn=True,analyzed=True,delete_one=self.delete_one_position)
     fig.canvas.mpl_connect('button_press_event',self.af.mouse_event)
     if delete:
       fig.canvas.mpl_connect('key_press_event',self.af.keyboard_event)

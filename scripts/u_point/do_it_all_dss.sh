@@ -36,17 +36,17 @@ PLOT="--plot"
 SKIP_ACQUISITION=
 SKIP_ANALYSIS=
 BASE_PATH=/tmp/u_point
-MODEL_CLASS="--model-class point"
+MODEL_CLASS="--model-class u_upoint"
 FETCH_DSS_IMAGE="--fetch-dss-image"
 TRANSFORMATION_CLASS="u_astropy"
 # if u_libnova or u_sofa is specfied, REFRACTION_METHOD, REFRACTIVE_INDEX_METHOD
 # are ignored
 REFRACTION_METHOD="stone"
 REFRACTIVE_INDEX_METHOD="owens"
-#MOUNT_TYPE_EQ="--mount-type-eq"
-MOUNT_TYPE_EQ=
-USE_BRIGHT_STARS="--use-bright-stars"
-#USE_BRIGHT_STARS=
+EQ_MOUNT="--eq-mount"
+#EQ_MOUNT=
+#USE_BRIGHT_STARS="--use-bright-stars"
+USE_BRIGHT_STARS=
 #DO_QUICK_ANALYSIS="--do-quick-analysis"
 DO_QUICK_ANALYSIS=
 ACQUIRE_DS9_DISPLAY="--ds9-display"
@@ -83,7 +83,7 @@ function cont_exit {
     return $status
 }
 #set -x
-while getopts ":apsurdil:o:m:n:t:f:c:" opt; do
+while getopts ":apsurdik:l:o:m:n:t:f:c:" opt; do
     case ${opt} in
 	a )
 	    ASTROMETRY=true
@@ -105,6 +105,9 @@ while getopts ":apsurdil:o:m:n:t:f:c:" opt; do
 	    ;;
 	i )
 	    FETCH_DSS_IMAGE=
+	    ;;
+	k )
+	    LONGITUDE="--obs-longitude $OPTARG"
 	    ;;
 	l )
 	    LATITUDE="--obs-latitude $OPTARG"
@@ -139,6 +142,7 @@ while getopts ":apsurdil:o:m:n:t:f:c:" opt; do
 	     echo "-r use RTS2 devices"
 	     echo "-d do not plot intermediate steps"
 	     echo "-i do not fetch DSS image from http://archive.eso.org/dss/dss"
+	     echo "-k observatory longitude"
 	     echo "-l observatory latitude"
 	     echo "-o analysis output filename"
 	     echo "-m refraction method, if applicable (see -t), see u_analyze.py --help: --refraction-method"
@@ -215,7 +219,6 @@ else
 fi
 if  [ -z ${DO_QUICK_ANALYSIS} ] ; then
     echo "do quick analyis"
-    rm -fr $BASE_PATH
 else
     echo "do not quickly analze images"
 fi
@@ -249,10 +252,10 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	    echo "-----------------------------------------------------------------"
 	    echo "CLOSE plot window to continue"
 	    echo ""
-	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --create-nominal-altaz $MOUNT_TYPE_EQ $PLOT $STEPS
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --create-nominal-altaz $EQ_MOUNT $PLOT $STEPS
 	else
 	    echo "second step, define a nominal grid of alt az positions"
-	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --create-nominal-altaz $MOUNT_TYPE_EQ $STEPS    
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE --create-nominal-altaz $EQ_MOUNT $STEPS    
 	fi
 	#
 	echo "DONE grid creation"
@@ -270,7 +273,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	export pid_u_acquire=$!
     else
 	#
-	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE  $USE_BRIGHT_STARS $DO_QUICK_ANALYSIS $ACQUIRE_DS9_DISPLAY --toconsole &
+	cont_exit ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE  $USE_BRIGHT_STARS $DO_QUICK_ANALYSIS $ACQUIRE_DS9_DISPLAY  --device-class DeviceRts2Httpd&
 	export pid_u_acquire=$!
 	#
 	# no bright stars:
@@ -293,7 +296,7 @@ if [ -z ${SKIP_ACQUISITION} ]; then
 	echo ""
 	if ! [ -z ${PLOT} ]; then
 	    # nap is necessary for callback to work
-	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $PLOT --ds9-display --animate --delete --level DEBUG &
+	    cont_exit ./u_acquire.py --base-path $BASE_PATH $LATITUDE $LONGITUDE $PLOT --ds9-display --animate --delete --level DEBUG --device-class DeviceRts2Httpd&
 	    echo "-----------------------------------------------------------------"
 	    echo "showing progress with a second u_acquire.py instance (see different options)"
 	    echo "leave acquire plot window open"
@@ -315,6 +318,15 @@ fi
 if [ -z ${SKIP_ANALYSIS} ]; then
 
 echo "forth step, analyze the acquired position"
+if ! [ -z ${PLOT} ]; then
+    cont_exit ./u_analyze.py --base-path $BASE_PATH $PLOT --ds9-display --animate --delete $ANALYSIS_OUTPUT_FILE  $transform_class $refraction_method $refractive_index_method&
+    echo ""
+    echo "-----------------------------------------------------------------"
+    echo "showing progress with a second u_analyze.py instance (see different options)"
+    echo "leave analysis plot window open"
+    echo "click on blue points to see FITS being displayed with DS9"
+fi
+
 if ! [ -z ${ASTROMETRY+x} ]; then
     #
     cont_exit ./u_analyze.py  --base-path $BASE_PATH  $LATITUDE  $LONGITUDE --timeout 30 --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method $refractive_index_method&
@@ -324,21 +336,13 @@ else
     cont_exit ./u_analyze.py  --base-path $BASE_PATH $LATITUDE $LONGITUDE --do-not-use-astrometry  --toconsole $ANALYSIS_OUTPUT_FILE $transform_class $refraction_method $refractive_index_method&
     export pid_u_analyze=$!
 fi
-#
-if ! [ -z ${PLOT} ]; then
-    cont_exit ./u_analyze.py --base-path $BASE_PATH $PLOT --ds9-display --animate --delete $ANALYSIS_OUTPUT_FILE  $transform_class $refraction_method $refractive_index_method&
-    echo ""
-    echo "-----------------------------------------------------------------"
-    echo "showing progress with a second u_analyze.py instance (see different options)"
-    echo "leave analysis plot window open"
-    echo "click on blue points to see FITS being displayed with DS9"
-fi
 if ps -p $pid_u_analyze >/dev/null; then
     echo ""
     echo "-----------------------------------------------------------------"
     echo "waiting for u_analyze.py to terminate, PID $pid_u_analyze"
     wait $pid_u_analyze
 fi
+#
 #
 echo "-----------------------------------------------------------------"
 echo "DONE u_analyze.py"

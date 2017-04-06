@@ -89,7 +89,7 @@ class Acquisition(Script):
     self.sun_separation=sun_separation
     self.exposure_start=exposure_start
     #
-    self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
+    #self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     
   
 
@@ -115,16 +115,16 @@ class Acquisition(Script):
 
     self.append_position(sky=sky,analyzed=False)
 
-  def now_observable(self,cat_ic=None, latitude_interval=None):
+  def now_observable(self,cat_ic=None, altitude_interval=None):
     cat_aa=cat_ic.transform_to(AltAz(location=self.obs, pressure=0.)) # no refraction here, UTC is in cat_ic
-    #self.lg.debug('now_observable: altitude: {0:.2f},{1},{2}'.format(cat_aa.alt.degree, latitude_interval[0]*180./np.pi,latitude_interval[1]*180./np.pi))
-    if latitude_interval[0]<cat_aa.alt.radian<latitude_interval[1]:
+    #self.lg.debug('now_observable: altitude: {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
+    if altitude_interval[0]<cat_aa.alt.radian<altitude_interval[1]:
       return cat_aa
     else:
-      #self.lg.debug('now_observable: out of altitude range {0:.2f},{1},{2}'.format(cat_aa.alt.degree, latitude_interval[0]*180./np.pi,latitude_interval[1]*180./np.pi))
+      #self.lg.debug('now_observable: out of altitude range {0:.2f},{1},{2}'.format(cat_aa.alt.degree, altitude_interval[0]*180./np.pi,altitude_interval[1]*180./np.pi))
       return None
   
-  def find_near_neighbor(self,mnl_ic=None,latitude_interval=None,max_separation=None):
+  def find_near_neighbor(self,mnl_ic=None,altitude_interval=None,max_separation=None):
     il=iu=None
     max_separation2= max_separation * max_separation # lazy
     for i,o in enumerate(self.cat_observable): # catalog is RA sorted
@@ -141,7 +141,7 @@ class Acquisition(Script):
       dra2=pow(o.cat_ic.ra.radian-mnl_ic.ra.radian,2)
       ddec2=pow(o.cat_ic.dec.radian-mnl_ic.dec.radian,2)
 
-      cat_aa=self.now_observable(cat_ic=o.cat_ic,latitude_interval=latitude_interval)
+      cat_aa=self.now_observable(cat_ic=o.cat_ic,altitude_interval=altitude_interval)
       if cat_aa is None:
         val= 2.* np.pi
       else:
@@ -165,13 +165,16 @@ class Acquisition(Script):
   def drop_nml_due_to_suns_position(self):
     now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     sun_aa= get_sun(now).transform_to(AltAz(obstime=now,location=self.obs))
-    # 
-    if sun_aa.alt.radian < -2.: # ToDo
+    #
+    sun_max_alt=-2.
+    if sun_aa.alt.degree < sun_max_alt: # ToDo
+      self.lg.error('drop_nml_due_to_suns_position: sun altitude: {} deg, below max: {} deg'.format(sun_aa.alt.degree,sun_max_alt))
       return
     
     #nml_aa_max_alt=max([x.nml_aa.alt.radian for x in self.nml if x.nml_aa is not None])
     for nml in self.nml:
       if nml.nml_aa is None:
+        self.lg.debug('drop_nml_due_to_suns_position: sun altitude: {} deg, below max: {} deg'.format(sun_aa.alt.degree,sun_max_alt))
         continue
               
       nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
@@ -179,16 +182,16 @@ class Acquisition(Script):
       # drop all within
       if sep.radian < self.sun_separation.radian:
         nml.nml_aa=None
-        #self.lg.debug('set None: {}, {}'.format(nml.nml_id,sep.degree))
+        #self.lg.dbug('set None: {}, {}'.format(nml.nml_id,sep.degree))
         continue
       
       # drop all below sun
       if sun_aa.az.radian - self.sun_separation.radian < nml_aa.az.radian  < sun_aa.az.radian + self.sun_separation.radian:
         if nml_aa.alt.radian <  sun_aa.alt.radian:
+          self.lg.debug('set None below sun altitude: {}, {}'.format(nml.nml_id,nml_aa.alt.degree))
           nml.nml_aa=None
-          #self.lg.debug('set None below sun altitude: {}, {}'.format(nml.nml_id,nml_aa.alt.degree))
         
-  def acquire(self,latitude_interval=None,max_separation=None):
+  def acquire(self,altitude_interval=None,max_separation=None):
     #
     self.device.ccd_init()  
     # self.nml contains only positions which need to be observed
@@ -203,8 +206,8 @@ class Acquisition(Script):
       dt_now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
       diff= dt_now - dt_last
       if diff.sec > 900: # 15 minutes
-        self.drop_nml_due_to_suns_position()
         self.lg.debug('acquire: calling drop_nml_due_to_suns_position')
+        self.drop_nml_due_to_suns_position()
         dt_last=dt_now
         
       # astropy N=0,E=90
@@ -274,7 +277,7 @@ class Acquisition(Script):
       cat_no=None
       # only catalog coordinates are needed here
       if self.use_bright_stars:
-        cat_no,cat_ic=self.find_near_neighbor(mnl_ic=mnl_ic,latitude_interval=latitude_interval,max_separation=max_separation)
+        cat_no,cat_ic=self.find_near_neighbor(mnl_ic=mnl_ic,altitude_interval=altitude_interval,max_separation=max_separation)
         if cat_ic is None:
           continue # no suitable object found, try next
       else:
@@ -288,12 +291,12 @@ class Acquisition(Script):
     self.fetch_nominal_altaz(fn=ptfn,sys_exit=False)
     self.fetch_positions(sys_exit=False,analyzed=False)
     self.drop_nominal_altaz()
+    self.drop_nml_due_to_suns_position()
     dt_now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date_hms')
     #              ugly
     diff= dt_now - self.dt_last
     if diff.sec > 900: # 15 minutes
-      self.drop_nml_due_to_suns_position()
-      self.lg.debug('acquire: calling drop_nml_due_to_suns_position')
+      self.lg.error('acquire:re_plot: calling drop_nml_due_to_suns_position')
       try:
         self.drop_nml_due_to_suns_position()
         self.dt_last=dt_now
@@ -447,18 +450,19 @@ if __name__ == "__main__":
   #
   parser.add_argument('--meteo-class', dest='meteo_class', action='store', default='meteo', help=': %(default)s, specify your meteo data collector, see meteo.py for a stub')
   # group device
-  parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your devices (mount,ccd), see devices.py')
+  parser.add_argument('--device-class', dest='device_class', action='store', default='DeviceDss', help=': %(default)s, specify your device (RTS2,INDI), see devices.py')
   parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, astrometry.net or simulation mode: images fetched from DSS')
   parser.add_argument('--mode-user', dest='mode_user', action='store_true', default=False, help=': %(default)s, True: user input required False: pure astrometry.net or simulation mode: no user input, no images fetched from DSS, simulation: image download specify: --fetch-dss-image')
   # group create
   parser.add_argument('--create-nominal-altaz', dest='create_nominal_altaz', action='store_true', default=False, help=': %(default)s, True: create AltAz positions to be observed, see --nominal-positions')
-  parser.add_argument('--mount-type-eq', dest='mount_type_eq', action='store_true', default=False, help=': %(default)s, True: create AltAz positions to be observed from HA/Dec grid, see --nominal-positions')
+  parser.add_argument('--eq-mount', dest='eq_mount', action='store_true', default=False, help=': %(default)s, True: create AltAz positions to be observed from HA/Dec grid, see --nominal-positions')
 
   parser.add_argument('--nominal-positions', dest='nominal_positions', action='store', default='nominal_positions.nml', help=': %(default)s, to be observed positions (AltAz coordinates)')
-  parser.add_argument('--excluded-ha-interval', dest='excluded_ha_interval',   default=[120.,240.],type=arg_floats,help=': %(default)s [deg],  EQ mount excluded HA interval (avoid observations below NCP), format "p1 p2"')
-  parser.add_argument('--longitude-interval', dest='longitude_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg], EQ,AltAz mount allowed longitude, format "p1 p2"')
+  parser.add_argument('--eq-excluded-ha-interval', dest='eq_excluded_ha_interval',   default=[120.,240.],type=arg_floats,help=': %(default)s [deg],  EQ mount excluded HA interval (avoid observations below NCP), format "p1 p2"')
+  parser.add_argument('--eq-minimum-altitude', dest='eq_minimum_altitude',   default=30.,type=float,help=': %(default)s [deg],  EQ mount minimum altitude')
 
-  parser.add_argument('--latitude-interval',   dest='latitude_interval',   default=[30.,80.],type=arg_floats,help=': %(default)s [deg], EQ,AltAz mount, allowed altitude, format "p1 p2"')
+  parser.add_argument('--azimuth-interval', dest='azimuth_interval',   default=[0.,360.],type=arg_floats,help=': %(default)s [deg], AltAz mount allowed azimuth interval, format "p1 p2"')
+  parser.add_argument('--altitude-interval',   dest='altitude_interval',   default=[30.,80.],type=arg_floats,help=': %(default)s [deg], AltAz mount, allowed altitude, format "p1 p2"')
   parser.add_argument('--lon-step', dest='lon_step', action='store', default=20, type=int,help=': %(default)s [deg], Az points: step is used as range(LL,UL,step), LL,UL defined by --azimuth-interval')
   parser.add_argument('--lat-step', dest='lat_step', action='store', default=10, type=int,help=': %(default)s [deg], Alt points: step is used as: range(LL,UL,step), LL,UL defined by --altitude-interval ')
   # 
@@ -524,17 +528,21 @@ if __name__ == "__main__":
   # now load meteo class ...
   mt = importlib.import_module('meteo.'+args.meteo_class)
   meteo=mt.Meteo(lg=logger)
-  # ... and device, ToDo revisit
-  mod =importlib. __import__('u_point.devices', fromlist=[args.device_class])
-  Device = getattr(mod, args.device_class)
+
   quick_analysis=None
   if args.do_quick_analysis:
     quick_analysis=QuickAnalysis(lg=logger,ds9_display=args.ds9_display,background_max=args.background_max,peak_max=args.peak_max,objects_min=args.objects_min,exposure_interval=args.exposure_interval,ratio_interval=args.ratio_interval)
     
   px_scale=args.pixel_scale/3600./180.*np.pi # arcsec, radian
-
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
+  # ... and device, ToDo revisit
+  mod =importlib. __import__('u_point.devices', fromlist=[args.device_class])
+  Device = getattr(mod, args.device_class)
   device= Device(lg=logger,obs=obs,px_scale=px_scale,ccd_size=args.ccd_size,base_path=args.base_path,fetch_dss_image=args.fetch_dss_image,quick_analysis=quick_analysis)
+  if not device.check_presence():
+    logger.error('no device present: {}, exiting'.format(args.device_class))
+    sys.exit(1)
+  
   sun_separation=Angle(args.sun_separation, u.degree)
   ac= Acquisition(
     lg=logger,
@@ -552,7 +560,7 @@ if __name__ == "__main__":
     exposure_start=args.exposure_start
   )
   if args.create_nominal_altaz:
-    ac.store_nominal_altaz(lon_step=args.lon_step,lat_step=args.lat_step,longitude_interval=args.longitude_interval,latitude_interval=args.latitude_interval,mount_type_eq=args.mount_type_eq,excluded_ha_interval=args.excluded_ha_interval,fn=args.nominal_positions)
+    ac.store_nominal_altaz(lon_step=args.lon_step,lat_step=args.lat_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,eq_mount=args.eq_mount,eq_excluded_ha_interval=args.eq_excluded_ha_interval,eq_minimum_altitude=args.eq_minimum_altitude,fn=args.nominal_positions)
     if not args.plot:
       sys.exit(0)
       
@@ -570,14 +578,11 @@ if __name__ == "__main__":
     ac.plot(title=title,ptfn=args.nominal_positions,lon_step=args.lon_step,ds9_display=args.ds9_display,animate=args.animate,delete=args.delete)
     sys.exit(0)
       
-  if not device.check_presence():
-    logger.error('no device present: {}, exiting'.format(args.device_class))
-    sys.exit(1)
 
   max_separation=args.max_separation/180.*np.pi
-  latitude_interval=list()
-  for v in args.latitude_interval:
-    latitude_interval.append(v/180.*np.pi)
+  altitude_interval=list()
+  for v in args.altitude_interval:
+    altitude_interval.append(v/180.*np.pi)
 
   # candidate objects, predefined with u_select.py
   if args.use_bright_stars:
@@ -590,7 +595,7 @@ if __name__ == "__main__":
   ac.drop_nominal_altaz()
   # acquire unobserved positions
   ac.acquire(
-    latitude_interval=latitude_interval,
+    altitude_interval=altitude_interval,
     max_separation=max_separation,
   )
   logger.info('DONE: {}'.format(sys.argv[0].replace('.py','')))

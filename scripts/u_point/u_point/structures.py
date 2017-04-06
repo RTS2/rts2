@@ -84,7 +84,7 @@ class SkyPosition(object):
       pressure=None,
       temperature=None,
       humidity=None,
-      mount_type_eq=None,
+      eq_mount=None,
       transform_name='no_transform',
       refraction_method='no_refraction',
       cat_ll_ap=None,
@@ -107,7 +107,7 @@ class SkyPosition(object):
     self.pressure=pressure
     self.temperature=temperature
     self.humidity=humidity
-    self.mount_type_eq=mount_type_eq
+    self.eq_mount=eq_mount
     self.transform_name=transform_name
     self.refraction_method=refraction_method
     self.cat_ll_ap=cat_ll_ap
@@ -142,7 +142,7 @@ class SkyPosition(object):
       mnt_ll_astr_lon=smnt_ll_astr.lon.radian
       mnt_ll_astr_lat=smnt_ll_astr.lat.radian
 
-    cmt_str='#{0:12.6f},{1:12.6f},{2:12.6f},{3:12.6f}\n'.format(self.nml_aa.az.degree, self.nml_aa.alt.degree, self.cat_ic.ra.degree,self.cat_ic.dec.degree)
+    cmt_str='# az: {0:12.6f},alt:{1:12.6f},icrs ra:{2:12.6f},dec:{3:12.6f}\n'.format(self.nml_aa.az.degree, self.nml_aa.alt.degree, self.cat_ic.ra.degree,self.cat_ic.dec.degree)
       
     anl_str='{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24},{25},{26},{27}'.format(
       self.nml_id,#0
@@ -164,7 +164,7 @@ class SkyPosition(object):
       self.pressure,#16
       self.temperature,#17
       self.humidity,#18
-      self.mount_type_eq,#19
+      self.eq_mount,#19
       self.transform_name,#20
       self.refraction_method,#21
       cat_ll_ap_lon,#22
@@ -197,7 +197,7 @@ cl_nms= [
   'pressure',#16
   'temperature',#17
   'humidity',#18
-  'mount_type_eq',#19
+  'eq_mount',#19
   'transform_name',#20
   'refraction_method',#21
   'cat_ll_ap_lon',#22

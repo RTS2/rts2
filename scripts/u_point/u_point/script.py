@@ -30,6 +30,7 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time,TimeDelta
 from astropy.coordinates import SkyCoord,AltAz
+from datetime import datetime
 import pandas as pd
 
 from u_point.structures import NmlPosition,CatPosition,SkyPosition,cl_nms,cl_acq
@@ -96,7 +97,7 @@ class Script(object):
       cat_ic=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
       self.cat_observable.append(CatPosition(cat_no=int(rw['cat_no']),cat_ic=cat_ic,mag_v=rw['mag_v'] ))
 
-  def store_nominal_altaz(self,lon_step=None,lat_step=None,longitude_interval=None,latitude_interval=None,mount_type_eq=None,excluded_ha_interval=None,fn=None):
+  def store_nominal_altaz(self,lon_step=None,lat_step=None,azimuth_interval=None,altitude_interval=None,eq_mount=None,eq_excluded_ha_interval=None,eq_minimum_altitude=None,fn=None):
     # ToDo from pathlib import Path, fp=Path(ptfb),if fp.is_file())
     # format lon_nml,lat_nml
     ptfn=self.expand_base_path(fn=fn)
@@ -111,19 +112,19 @@ class Script(object):
     up=True
     #tfts=Transformation(lg=self.lg,obs=self.obs)
     nml_id=-1
-    if mount_type_eq:
-      min_az=longitude_interval[0]/180.*np.pi
-      max_az=longitude_interval[1]/180.*np.pi
-      min_alt=latitude_interval[0]/180.*np.pi
-      max_alt=latitude_interval[1]/180.*np.pi
-      low_ha=excluded_ha_interval[0]
-      high_ha=excluded_ha_interval[1]
+    if eq_mount:
+      min_alt=eq_minimum_altitude/180.*np.pi
+      low_ha=eq_excluded_ha_interval[0]
+      high_ha=eq_excluded_ha_interval[1]
 
       lon_rng=range(0,360,lon_step)
       lat_rng_up=range(int(-90+lat_step),int(90.-lat_step),lat_step)
       lat_rng_down=range(int(90.-lat_step),int(-90+lat_step),-lat_step)
+      now=Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
+      sdt=now.sidereal_time('apparent')
       for lon in lon_rng:
-        if low_ha <lon < high_ha:
+        if low_ha <=lon <= high_ha:
+          self.lg.debug('store_nominal_altaz: dropped ha: {} (interval: {}, {})'.format(lon,low_ha,high_ha))
           continue
         
         # Epson MX-80
@@ -134,22 +135,25 @@ class Script(object):
           up=True
           rng=lat_rng_down
         for lat in rng:
-          hadec=SkyCoord(ra=lon,dec=lat,unit=(u.degree,u.degree),frame='gcrs',location=self.obs)
-          #altaz=tfts.transform_hadec_to_altaz(tf=hadec)
+          # this is a murks
+          ra= sdt.radian - lon/180.*np.pi
+          hadec=SkyCoord(ra=ra,dec=lat,unit=(u.radian,u.degree),frame='icrs',location=self.obs,obstime=now)
           altaz=hadec.altaz
           lon_r=altaz.az.radian
           lat_r=altaz.alt.radian
-          if min_az < lon_r < max_az:
-            if min_alt < lat_r < max_alt:
-              nml_id +=1
-              nml_aa=SkyCoord(az=lon_r,alt=lat_r,unit=(u.radian,u.radian),frame='altaz',location=self.obs)
-              nml=NmlPosition(nml_id=nml_id,nml_aa=nml_aa)
-              self.nml.append(nml)
+          if min_alt < lat_r:
+            nml_id +=1
+            nml_aa=altaz
+            nml=NmlPosition(nml_id=nml_id,nml_aa=nml_aa)
+            self.nml.append(nml)
+            continue
+          #self.lg.debug('store_nominal_altaz: min alt, dropped ha: {}, dec: {}, alt: {}, min_alt: {}'.format(lon,lat,lat_r*180./np.pi,min_alt*180./np.pi))
+
     else:
       # ToDo input as int?
-      lon_rng=range(int(longitude_interval[0]),int(longitude_interval[1]),lon_step) # No, exclusive + lon_step  
-      lat_rng_up=range(int(latitude_interval[0]),int(latitude_interval[1]+lat_step),lat_step)
-      lat_rng_down=range(int(latitude_interval[1]),int(latitude_interval[0])-lat_step,-lat_step)
+      lon_rng=range(int(azimuth_interval[0]),int(azimuth_interval[1]),lon_step) # No, exclusive + lon_step  
+      lat_rng_up=range(int(altitude_interval[0]),int(altitude_interval[1]+lat_step),lat_step)
+      lat_rng_down=range(int(altitude_interval[1]),int(altitude_interval[0])-lat_step,-lat_step)
       lir=len(lat_rng_up)
       for i,lon in enumerate(lon_rng):
         # Epson MX-80
@@ -306,9 +310,9 @@ class Script(object):
       # ToDo: replace above mnt_ic with mnt_ci the transform to mnt_aa_transformed
       #       and do mnt_aa_transformed - mnt_aa
       mnt_aa_rdb=SkyCoord(az=rw['mnt_aa_rdb_az'],alt=rw['mnt_aa_rdb_alt'],unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=dt_end)
-      mount_type_eq=rw['mount_type_eq']
+      eq_mount=rw['eq_mount']
       if 'cat_ll_ap_lon' in cols and pd.notnull(rw['cat_ll_ap_lon']) and pd.notnull(rw['cat_ll_ap_lat']):
-        if mount_type_eq:
+        if eq_mount:
           # ToDO icrs, cirs
           cat_ll_ap=SkyCoord(ra=rw['cat_ll_ap_lon'],dec=rw['cat_ll_ap_lat'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
         else:
@@ -317,7 +321,7 @@ class Script(object):
         cat_ll_ap=None
         
       if 'mnt_ll_sxtr_lon' in cols and pd.notnull(rw['mnt_ll_sxtr_lon']) and pd.notnull(rw['mnt_ll_sxtr_lat']):
-        if mount_type_eq:
+        if eq_mount:
           # ToDO icrs, cirs
           mnt_ll_sxtr=SkyCoord(ra=rw['mnt_ll_sxtr_lon'],dec=rw['mnt_ll_sxtr_lat'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
         else:
@@ -326,7 +330,7 @@ class Script(object):
         mnt_ll_sxtr=None
 
       if 'mnt_ll_astr_lon' in cols and pd.notnull(rw['mnt_ll_astr_lon']) and pd.notnull(rw['mnt_ll_astr_lat']):
-        if mount_type_eq:
+        if eq_mount:
           # ToDO icrs, cirs
           mnt_ll_astr=SkyCoord(ra=rw['mnt_ll_astr_lon'],dec=rw['mnt_ll_astr_lat'], unit=(u.radian,u.radian), frame='cirs',obstime=dt_end,location=self.obs)
         else:
@@ -351,7 +355,7 @@ class Script(object):
           pressure=rw['pressure'],
           temperature=rw['temperature'],
           humidity=rw['humidity'],
-          mount_type_eq=mount_type_eq,
+          eq_mount=eq_mount,
           transform_name=rw['transform_name'],
           refraction_method=rw['refraction_method'],
           cat_ll_ap=cat_ll_ap,
@@ -431,7 +435,7 @@ class Script(object):
           pressure=rw['pressure'],
           temperature=rw['temperature'],
           humidity=rw['humidity'],
-          mount_type_eq=False,
+          eq_mount=False,
           sxtr= mnt_ic,
           astr= None,
       )

@@ -76,7 +76,7 @@ else
     fi
     ./u_select.py --base-path $BASE_PATH --brightness-interval "$MAG_HIGH $MAG_LOW" $LATITUDE --plot > /dev/null 2>&1 &
     sleep 10
-    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $lat_lon_steps --latitude-interval "$ALT_LOW $ALT_HIGH"
+    ./u_acquire.py --base-path $BASE_PATH $LATITUDE --create $lat_lon_steps --altitude-interval "$ALT_LOW $ALT_HIGH"
 fi
 ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE --plot --animate $SUN_SEPARATION &
 ./u_acquire.py --base-path $BASE_PATH  $LATITUDE $LONGITUDE $FETCH_DSS_IMAGE $SUN_SEPARATION --use-bright-stars --toconsole
