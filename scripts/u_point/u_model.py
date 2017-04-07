@@ -542,7 +542,8 @@ if __name__ == "__main__":
   if args.toconsole:
     args.level='DEBUG'
     
-  filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
+  pth, fn = os.path.split(sys.argv[0])
+  filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()

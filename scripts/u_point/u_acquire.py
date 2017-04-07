@@ -48,6 +48,7 @@ try:
 except:
   print('download:')
   print('wget http://maia.usno.navy.mil/ser7/finals2000A.all')
+  print('exiting')
   sys.exit(1)
 
 from astropy import units as u
@@ -454,6 +455,7 @@ if __name__ == "__main__":
   parser.add_argument('--fetch-dss-image', dest='fetch_dss_image', action='store_true', default=False, help=': %(default)s, astrometry.net or simulation mode: images fetched from DSS')
   parser.add_argument('--mode-user', dest='mode_user', action='store_true', default=False, help=': %(default)s, True: user input required False: pure astrometry.net or simulation mode: no user input, no images fetched from DSS, simulation: image download specify: --fetch-dss-image')
   # group create
+  parser.add_argument('--force-overwrite', dest='force_overwrite', action='store_true', default=False, help=': %(default)s, force overwrite nominal catalog file')
   parser.add_argument('--create-nominal-altaz', dest='create_nominal_altaz', action='store_true', default=False, help=': %(default)s, True: create AltAz positions to be observed, see --nominal-positions')
   parser.add_argument('--eq-mount', dest='eq_mount', action='store_true', default=False, help=': %(default)s, True: create AltAz positions to be observed from HA/Dec grid, see --nominal-positions')
 
@@ -486,7 +488,8 @@ if __name__ == "__main__":
   if args.toconsole:
     args.level='DEBUG'
     
-  filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
+  pth, fn = os.path.split(sys.argv[0])
+  filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()
@@ -560,7 +563,7 @@ if __name__ == "__main__":
     exposure_start=args.exposure_start
   )
   if args.create_nominal_altaz:
-    ac.store_nominal_altaz(lon_step=args.lon_step,lat_step=args.lat_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,eq_mount=args.eq_mount,eq_excluded_ha_interval=args.eq_excluded_ha_interval,eq_minimum_altitude=args.eq_minimum_altitude,fn=args.nominal_positions)
+    ac.store_nominal_altaz(lon_step=args.lon_step,lat_step=args.lat_step,azimuth_interval=args.azimuth_interval,altitude_interval=args.altitude_interval,eq_mount=args.eq_mount,eq_excluded_ha_interval=args.eq_excluded_ha_interval,eq_minimum_altitude=args.eq_minimum_altitude,fn=args.nominal_positions, force_overwrite=args.force_overwrite)
     if not args.plot:
       sys.exit(0)
       

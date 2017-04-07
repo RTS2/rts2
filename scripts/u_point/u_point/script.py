@@ -97,16 +97,16 @@ class Script(object):
       cat_ic=SkyCoord(ra=rw['ra'],dec=rw['dec'], unit=(u.radian,u.radian), frame='icrs',obstime=self.dt_utc,location=self.obs)
       self.cat_observable.append(CatPosition(cat_no=int(rw['cat_no']),cat_ic=cat_ic,mag_v=rw['mag_v'] ))
 
-  def store_nominal_altaz(self,lon_step=None,lat_step=None,azimuth_interval=None,altitude_interval=None,eq_mount=None,eq_excluded_ha_interval=None,eq_minimum_altitude=None,fn=None):
+  def store_nominal_altaz(self,lon_step=None,lat_step=None,azimuth_interval=None,altitude_interval=None,eq_mount=None,eq_excluded_ha_interval=None,eq_minimum_altitude=None,fn=None,force_overwrite=False):
     # ToDo from pathlib import Path, fp=Path(ptfb),if fp.is_file())
     # format lon_nml,lat_nml
     ptfn=self.expand_base_path(fn=fn)
-
-    if os.path.isfile(ptfn):
-      a=input('overwriting existing file: {} [N/y]'.format(ptfn))
-      if a not in 'y':
-        self.lg.info('exiting')
-        sys.exit(0)
+    if not force_overwrite:
+      if os.path.isfile(ptfn):
+        a=input('overwriting existing file: {} [N/y]'.format(ptfn))
+        if a not in 'y':
+          self.lg.info('exiting')
+          sys.exit(0)
 
     self.nml=list()      
     up=True

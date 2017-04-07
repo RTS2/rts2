@@ -424,6 +424,7 @@ class DeviceRts2Httpd():
     self.proxy=None
     try:
       self.proxy=JSONProxy(url='http://127.0.0.1:8889',username='pghttpd',password='vahnag8b',verbose=False)
+      #self.proxy=JSONProxy(url='http://127.0.0.1:9999',username='pghttpd',password='vahnag8b',verbose=False)
       self.proxy.refresh()
     except Exception as e:
       self.lg.error('no JSON connection for: {0}, {1}: error {2}'.format('127.0.0.1:8889','pghttpd', e))

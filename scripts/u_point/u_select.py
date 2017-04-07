@@ -186,14 +186,15 @@ if __name__ == "__main__":
   parser.add_argument('--brightness-interval', dest='brightness_interval', default=[0.,7.0], type=arg_floats, help=': %(default)s, visual star brightness [mag], format "p1 p2"')
   parser.add_argument('--observable-catalog', dest='observable_catalog', action='store', default='observable.cat', help=': %(default)s, store the  observable objects')
   parser.add_argument('--minimum-separation', dest='minimum_separation', action='store', default=1.,type=arg_float, help=': %(default)s [deg], minimum separation between catalog stars')
-  parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where data and images are stored')
   
   args=parser.parse_args()
   if args.toconsole:
     args.level='DEBUG'
 
-
-  filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
+  pth, fn = os.path.split(sys.argv[0])
+  filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script
+  print('FIL', filename)
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()
