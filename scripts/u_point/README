@@ -5,7 +5,8 @@ Prerequisites
  apt install  python3-watchdog (maybe disappears)
               python3-pyinotify	(has all events)
               python3-requests
-	      python3-pandas  
+	      python3-pandas
+	      python3-bcrypt
               yale # bright star catalog
 	           # http://tdc-www.harvard.edu/catalogs/bsc5.html
 	      libnova-dev
@@ -25,7 +26,7 @@ Prerequisites
               skyfield
 	      only used in test_coordinates_altaz.py
 	      astroquery
-	      
+
 Install ref_index with
 
  git clone https://github.com/phn/ref_index.git

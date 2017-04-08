@@ -26,8 +26,8 @@ import signal
 import logging
 import time
 import glob
+import psycopg2
 
-from u_point.json_3 import JSONProxy
 basepath='/tmp/u_point_unittest'
 os.makedirs(basepath, exist_ok=True)
 
@@ -94,7 +94,7 @@ class RTS2Environment(unittest.TestCase):
               '--config', './rts2-unittest.ini',
               '--server', '127.0.0.1:1617', 
               '-p', '9999', 
-              '--noauth'
+              '--noauth',# seems not to work
         ]
         self.p_httpd= subprocess.Popen(cmd)
 
@@ -105,7 +105,8 @@ class RTS2Environment(unittest.TestCase):
               '--lock-prefix', self.lockPrefix, 
               '--server', '127.0.0.1:1617', 
               '-d', focName, 
-              '--modefile', './f0.modefile'
+              '--modefile', './f0.modefile',
+              #'--config', './rts2-unittest.ini'
         ]
         self.p_focusd_dummy= subprocess.Popen(cmd)
 
@@ -115,7 +116,8 @@ class RTS2Environment(unittest.TestCase):
               '--run-as', '{}.{}'.format(self.uid,self.gid), 
               '--lock-prefix', self.lockPrefix, 
               '--server', '127.0.0.1:1617', 
-              '-d', ftwnName 
+              '-d', ftwnName, 
+              #'--config', './rts2-unittest.ini'
         ]
 
         ftnames = 'U:B:V:R:I:H:X'
@@ -132,7 +134,9 @@ class RTS2Environment(unittest.TestCase):
               '--lock-prefix', self.lockPrefix, 
               '--server', '127.0.0.1:1617', 
               '-d', name,  
-              '--focdev', focName
+              '--focdev', focName,
+              # not available
+              #'--config', './rts2-unittest.ini'
         ]
         cmd.append('--wheeldev')
         cmd.append(ftwnName)
@@ -148,7 +152,8 @@ class RTS2Environment(unittest.TestCase):
               '--lock-prefix', self.lockPrefix, 
               '--server', '127.0.0.1:1617', 
               '-d', mntName, 
-              '--modefile', './t0.modefile'
+              '--modefile', './t0.modefile',
+              #'--config', './rts2-unittest.ini'
         ]
         self.p_teld_dummy= subprocess.Popen(cmd)
         #

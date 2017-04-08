@@ -35,17 +35,18 @@ from rts2_environment import RTS2Environment
 # sequence matters
 def suite_with_connection():
     suite = unittest.TestSuite()
-    suite.addTest(TestAcquisition('test_u_acquire'))
-    suite.addTest(TestAcquisition('test_u_acquire_dss'))
-    suite.addTest(TestAcquisition('test_u_acquire_rts2_dummy_dss'))
-    suite.addTest(TestAcquisition('test_u_acquire_rts2_dummy_httpd_dss'))
-    suite.addTest(TestAcquisition('test_acquisition'))
+    #suite.addTest(TestAcquisition('test_u_acquire'))
+    #suite.addTest(TestAcquisition('test_u_acquire_dss'))
+    #suite.addTest(TestAcquisition('test_u_acquire_rts2_dummy_dss'))
+    #suite.addTest(TestAcquisition('test_u_acquire_rts2_dummy_httpd_dss'))
+    suite.addTest(TestAcquisition('test_u_acquire_rts2_dummy_httpd_dss_bright_stars'))
+    #suite.addTest(TestAcquisition('test_acquisition'))
     return suite
 
 def suite_no_connection():
     suite = unittest.TestSuite()
     suite.addTest(TestAnalysisModel('test_u_analyze_u_model'))
-    suite.addTest(TestAnalysisModel('test_analysis_model'))
+    #suite.addTest(TestAnalysisModel('test_analysis_model'))
     return suite
 
 #@unittest.skip('class not yet implemented')
@@ -69,17 +70,34 @@ class TestAnalysisModel(unittest.TestCase):
         for ln  in stde_l:
             logger.info('TestAcquisition::setUp:stde:{}: {}'.format(cmd[0],ln))
 
-        return stdo_l, stde_l
+        return stdo_l,stde_l
     
     #@unittest.skip('feature not yet implemented')
     def test_u_analyze_u_model(self):
         logger.info('== {} =='.format(self._testMethodName))
         cmd=['../u_analyze.py','--toc','--base-path', basepath, '--level', 'DEBUG']
-        self.exec_cmd(cmd=cmd)
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
+        # ToDo only quick, add meaningful asserts
         
         cmd=['../u_model.py','--toc','--base-path', basepath, '--level', 'DEBUG']
-        self.exec_cmd(cmd=cmd)
-    
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
+        # ToDo only quick, add meaningful asserts
+        #ToDo somting wrong, float: ([ -+]?\d*\.\d+|\d+)
+        m=re.compile('MA : polar axis left-right alignment[ ]?:([-+]?\d*.*?)\[arcsec\]')
+        val=None
+        for o_l in stdo_l:
+            print(o_l)
+            v = m.match(o_l)
+            if v:
+                print('match')
+                val = abs(float(v.group(1)))
+                break
+        val_max=3.
+        if val is not None:
+            self.assertLess(val,val_max, msg='return value: {}, instead of max: {}'.format(val, val_max))
+        else:
+            self.assertEqual(1.,val_max, msg='return value: None, instead of max: {}'.format(val_max))
+            
     @unittest.skip('feature not yet implemented')
     def test_analysis_model(self):
         logger.info('== {} =='.format(self._testMethodName))
@@ -99,7 +117,7 @@ class TestAcquisition(RTS2Environment):
         fn=Path(os.path.join(basepath,'nominal_positions.nml'))
         if not fn.is_file():
             # ./u_acquire.py  --create --toc --eq-mount
-            cmd=[ '../u_acquire.py', '--create','--toc', '--eq-mount', '--base-path', basepath, '--force-overwrite']
+            cmd=[ '../u_acquire.py', '--create','--toc', '--eq-mount', '--base-path', basepath, '--force-overwrite', '--lon-step', '40', '--lat-step', '20']
             self.exec_cmd(cmd=cmd)
             
         self.exec_cmd(cmd=cmd)
@@ -117,21 +135,21 @@ class TestAcquisition(RTS2Environment):
         for ln  in stde_l:
             logger.info('TestAcquisition::setUp:stde:{}: {}'.format(cmd[0],ln))
 
-        return stdo_l, stde_l
+        return stdo_l,stde_l
     
     @unittest.skip('feature not yet implemented')
     def test_u_acquire(self):
         logger.info('== {} =='.format(self._testMethodName))
         self.setUpCmds()
         cmd=['../u_acquire.py','--toc','--device-class','DeviceDss','--base-path', basepath]
-        self.exec_cmd(cmd=cmd)
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
 
     @unittest.skip('feature not yet implemented')
     def test_u_acquire_dss(self):
         logger.info('== {} =='.format(self._testMethodName))
         self.setUpCmds()
         cmd=['../u_acquire.py','--toc','--device-class','DeviceDss','--fetch-dss','--base-path', basepath]
-        self.exec_cmd(cmd=cmd)
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
 
     @unittest.skip('feature not yet implemented')
     def test_u_acquire_rts2_dummy_dss(self):
@@ -141,14 +159,21 @@ class TestAcquisition(RTS2Environment):
         uid=self.uid=pwd.getpwuid(os.getuid())[0]
         acq_script='/home/{}/rts2/scripts/u_point/unittest/u_acquire_fetch_dss_continuous.sh'.format(uid)
         cmd=['rts2-scriptexec', '--port', '1617','-d','C0','-s',' exe {} '.format(acq_script)]
-        self.exec_cmd(cmd=cmd, using_shell=False)
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd, using_shell=False)
         
     @unittest.skip('feature not yet implemented')
     def test_u_acquire_rts2_dummy_httpd_dss(self):
         logger.info('== {} =='.format(self._testMethodName))
         self.setUpCmds()
         cmd=['../u_acquire.py','--toc','--device-class','DeviceRts2Httpd','--fetch-dss','--base-path', basepath, '--level', 'DEBUG']
-        self.exec_cmd(cmd=cmd)
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
+
+    #@unittest.skip('feature not yet implemented')
+    def test_u_acquire_rts2_dummy_httpd_dss_bright_stars(self):
+        logger.info('== {} =='.format(self._testMethodName))
+        self.setUpCmds()
+        cmd=['../u_acquire.py','--toc','--device-class','DeviceRts2Httpd','--fetch-dss','--use-bright-stars', '--base-path', basepath, '--level', 'DEBUG']
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
 
     @unittest.skip('feature not yet implemented')
     def test_acquisition(self):
@@ -161,4 +186,5 @@ if __name__ == '__main__':
     suiteWithConnection = suite_with_connection()
     # a list is a list: breaking unittest independency, ok it's Python
     alltests = unittest.TestSuite([suiteWithConnection,suiteNoConnection])
-    unittest.TextTestRunner(verbosity=0).run(alltests)
+    #unittest.TextTestRunner(verbosity=0).run(alltests)
+    unittest.TextTestRunner(verbosity=0).run(suiteNoConnection)

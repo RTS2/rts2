@@ -89,8 +89,8 @@ class Acquisition(Script):
     self.use_bright_stars=use_bright_stars
     self.sun_separation=sun_separation
     self.exposure_start=exposure_start
-    #
-    #self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
+    # used in script.py
+    self.dt_utc = Time(datetime.utcnow(), scale='utc',location=self.obs,out_subfmt='date')
     
   
 
@@ -169,13 +169,13 @@ class Acquisition(Script):
     #
     sun_max_alt=-2.
     if sun_aa.alt.degree < sun_max_alt: # ToDo
-      self.lg.error('drop_nml_due_to_suns_position: sun altitude: {} deg, below max: {} deg'.format(sun_aa.alt.degree,sun_max_alt))
+      #self.lg.debug('drop_nml_due_to_suns_position: sun altitude: {} deg, below max: {} deg'.format(sun_aa.alt.degree,sun_max_alt))
       return
     
     #nml_aa_max_alt=max([x.nml_aa.alt.radian for x in self.nml if x.nml_aa is not None])
     for nml in self.nml:
       if nml.nml_aa is None:
-        self.lg.debug('drop_nml_due_to_suns_position: sun altitude: {} deg, below max: {} deg'.format(sun_aa.alt.degree,sun_max_alt))
+        #self.lg.debug('drop_nml_due_to_suns_position: sun altitude: {} deg, below max: {} deg'.format(sun_aa.alt.degree,sun_max_alt))
         continue
               
       nml_aa=SkyCoord(az=nml.nml_aa.az.radian,alt=nml.nml_aa.alt.radian,unit=(u.radian,u.radian),frame='altaz',location=self.obs,obstime=now)
@@ -189,7 +189,7 @@ class Acquisition(Script):
       # drop all below sun
       if sun_aa.az.radian - self.sun_separation.radian < nml_aa.az.radian  < sun_aa.az.radian + self.sun_separation.radian:
         if nml_aa.alt.radian <  sun_aa.alt.radian:
-          self.lg.debug('set None below sun altitude: {}, {}'.format(nml.nml_id,nml_aa.alt.degree))
+          #self.lg.debug('set None below sun altitude: {}, {}'.format(nml.nml_id,nml_aa.alt.degree))
           nml.nml_aa=None
         
   def acquire(self,altitude_interval=None,max_separation=None):
@@ -543,7 +543,7 @@ if __name__ == "__main__":
   Device = getattr(mod, args.device_class)
   device= Device(lg=logger,obs=obs,px_scale=px_scale,ccd_size=args.ccd_size,base_path=args.base_path,fetch_dss_image=args.fetch_dss_image,quick_analysis=quick_analysis)
   if not device.check_presence():
-    logger.error('no device present: {}, exiting'.format(args.device_class))
+    logger.error('something went wrong, ev. no device present in: {}, exiting'.format(args.device_class))
     sys.exit(1)
   
   sun_separation=Angle(args.sun_separation, u.degree)

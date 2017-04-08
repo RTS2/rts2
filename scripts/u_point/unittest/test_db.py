@@ -97,22 +97,29 @@ class TestDatabase(unittest.TestCase):
         self.assertTrue(self.openedRts2Ini,'return value: {},  coud not read rts2.ini'.format(self.openedRts2Ini))
     #@unittest.skip('feature not yet implemented')
     def test_db_read_access_users(self):
-        logger.info('== {} =='.format(self._testMethodName))  
-        entry=('pghttpd', None, 'abc@cde.ch', 3, True, '$6$WyQQAQr3$PKw3sF.mJSuh73PPzgkYuCmOSpGwj8mGrBn3yx2pBaeuM.tSCmtGETEQLQGweyQCtzsI2YjApeCpEkXeLfwqq0', 'W0 C0 F0 W0 T0 HTTPD')
+        logger.info('== {} =='.format(self._testMethodName))
+        # unittest  |         | unittest@example.com    |      2 | t                      | $6$wjbCFzib$FZ8VTaZMZ/eC4eRY7d.BFNHUm5Jxc3ItUDJWdenUzYmBTPC3sy6n3Do6mdorxsy0ISfCGMWNNJGhBi0Lv4hKL/ | C0 T0
+        entry=('unittest', None, 'unittest@example.com', 1001, True, '$6$WyQQAQr3$PKw3sF.mJSuh73PPzgkYuCmOSpGwj8mGrBn3yx2pBaeuM.tSCmtGETEQLQGweyQCtzsI2YjApeCpEkXeLfwqq0', 'C0 T0 HTTPD')
         conn = psycopg2.connect('dbname={} user={} password={}'.format(self.dbName, self.dbUser, self.dbPasswd))
         crsr = conn.cursor()
-        crsr.execute('SELECT *  FROM users WHERE usr_login=\'pghttpd\';')
+        crsr.execute('SELECT *  FROM users WHERE usr_login=\'unittest\';')
         result=crsr.fetchone()
         crsr.close()
         conn.close()
-        self.assertEqual(entry, result, 'return value:{}'.format(result))
+        if result is not None:
+            self.assertEqual(entry[0], result[0], 'return value:{}, exp: {}'.format(result[0],entry[0]))
+            self.assertEqual(entry[2], result[2], 'return value:{}, exp: {}'.format(result[2],entry[2]))
+            self.assertEqual(entry[6], result[6], 'return value:{}, exp: {}'.format(result[6],entry[0]))
+        else:
+            self.assertEqual(entry, result, 'return value:{}, exp: {}'.format(result,entry))
+            
     #@unittest.skip('feature not yet implemented')
     def test_db_write_access_users(self):
         #  UPDATE users SET usr_execute_permission='t', allowed_devices = 'W0 C0 F0 W0 T0 HTTPD' WHERE usr_login='pghttpd' ;
         logger.info('== {} =='.format(self._testMethodName))  
         conn = psycopg2.connect('dbname={} user={} password={}'.format(self.dbName, self.dbUser, self.dbPasswd))
         crsr = conn.cursor()
-        crsr.execute('UPDATE users SET usr_execute_permission=\'t\', allowed_devices = \'W0 C0 F0 W0 T0 HTTPD\' WHERE usr_login=\'pghttpd\' ;')
+        crsr.execute('UPDATE users SET usr_execute_permission=\'t\', allowed_devices = \'W0 C0 F0 W0 T0 HTTPD\' WHERE usr_login=\'unittest\' ;')
         rc=crsr.rowcount
         self.assertEqual(1, rc, 'return value:{}'.format(rc))
         

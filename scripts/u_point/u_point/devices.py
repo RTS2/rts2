@@ -379,6 +379,8 @@ class DeviceRts2(scriptcomm_3.Rts2Comm):
 # Communication over HTTPD
 #
 #
+import configparser
+from pathlib import Path
 from u_point.timeout import timeout
 from u_point.json_3 import DEVICE_TYPE_FOCUS,DEVICE_TYPE_CCD,DEVICE_TYPE_MOUNT
 
@@ -422,12 +424,29 @@ class DeviceRts2Httpd():
     self.modulo=9
     from u_point.json_3 import JSONProxy
     self.proxy=None
+    # ToDo do not mix unittest and production
+    cfgfns=['/tmp/u_point_unittest/httpd.cfg', './httpd.cfg','/usr/local/etc/rts2/u_point/httpd.cfg']
+    cfgfn=None
+    for fn in cfgfns:
+      pfn=Path(fn)
+      if pfn.is_file():
+        cfgfn=fn
+        self.lg.debug('DeviceRts2Httpd: using cfg file: {}'.format(os.path.realpath(fn)))
+        break
+    else:
+      self.lg.error('DeviceRts2Httpd: cfg files: {} not found, exiting'.format(cfgfns))
+      sys.exit(1)
+      
+    cfg=configparser.ConfigParser()
+    cfg.read(cfgfn)
+    url=cfg.get('proxy', 'host')
+    username=cfg.get('proxy', 'user')
+    password=cfg.get('proxy', 'passwd')
     try:
-      self.proxy=JSONProxy(url='http://127.0.0.1:8889',username='pghttpd',password='vahnag8b',verbose=False)
-      #self.proxy=JSONProxy(url='http://127.0.0.1:9999',username='pghttpd',password='vahnag8b',verbose=False)
+      self.proxy=JSONProxy(url=url,username=username,password=password,verbose=False)
       self.proxy.refresh()
     except Exception as e:
-      self.lg.error('no JSON connection for: {0}, {1}: error {2}'.format('127.0.0.1:8889','pghttpd', e))
+      self.lg.error('no JSON connection for: {0}, {1}: error {2}'.format(url,username,e))
       self.lg.info('create a user/passwd in PostgresDB, table users:')
       self.lg.info('rts2-user -a YOUR_RTS2_HTTPD_USERNAME')
       self.lg.info('UPDATE users SET usr_execute_permission=\'t\', allowed_devices = \'C0 T0 \' WHERE usr_login=\'YOUR_RTS2_HTTPD_USERNAME\' ;')
@@ -441,11 +460,15 @@ class DeviceRts2Httpd():
   @timeout(seconds=10, error_message=os.strerror(errno.ETIMEDOUT))
   def check_presence(self):
     cont=True
-    self.ccd_name=self.proxy.getDevicesByType(DEVICE_TYPE_CCD)[0]
-    self.lg.debug('__deviceWriteAccessCCD: asking   from {0}: calculate_stat'.format(self.ccd_name))
-    cs=self.proxy.getDevice(self.ccd_name)['calculate_stat'][1]
-    self.lg.debug('__deviceWriteAccessCCD: response from {0}: calculate_stat: {1}'.format(self.ccd_name, cs))
-    
+    try:
+      self.ccd_name=self.proxy.getDevicesByType(DEVICE_TYPE_CCD)[0]
+      self.lg.debug('__deviceWriteAccessCCD: asking   from {0}: calculate_stat'.format(self.ccd_name))
+      cs=self.proxy.getDevice(self.ccd_name)['calculate_stat'][1]
+      self.lg.debug('__deviceWriteAccessCCD: response from {0}: calculate_stat: {1}'.format(self.ccd_name, cs))
+    except Exception as e:
+      self.lg.error('__deviceWriteAccessCCD: error from: {0}, : {1}'.format(self.ccd_name, e))
+      cont=False
+      
     try:
       self.proxy.setValue(self.ccd_name,'calculate_stat', 3) # no statistics
       self .proxy.setValue(self.ccd_name,'calculate_stat', str(cs)) 
@@ -454,11 +477,14 @@ class DeviceRts2Httpd():
       cont=False
     
     self.lg.debug('__deviceWriteAccessCCD: CCD {} is writable'.format(self.ccd_name))
-                                                                                                
-    self.mnt_name=self.proxy.getDevicesByType(DEVICE_TYPE_MOUNT)[0]
-    self.lg.debug('__deviceWriteAccessMNT: asking   from {0}: WAVELENGTH'.format(self.mnt_name))
-    cs=self.proxy.getDevice(self.mnt_name)['WAVELENGTH'][1]
-    self.lg.debug('__deviceWriteAccessMNT: response from {0}: WAVELENGTH: {1}'.format(self.mnt_name, cs))
+    try:
+      self.mnt_name=self.proxy.getDevicesByType(DEVICE_TYPE_MOUNT)[0]
+      self.lg.debug('__deviceWriteAccessMNT: asking   from {0}: WAVELENGTH'.format(self.mnt_name))
+      cs=self.proxy.getDevice(self.mnt_name)['WAVELENGTH'][1]
+      self.lg.debug('__deviceWriteAccessMNT: response from {0}: WAVELENGTH: {1}'.format(self.mnt_name, cs))
+    except Exception as e:
+      self.lg.error('__deviceWriteAccessMNT: error from: {0}, : {1}'.format(self.ccd_name, e))
+      cont=False
     
     try:
       self.proxy.setValue(self.mnt_name,'WAVELENGTH', str(.5)) 
