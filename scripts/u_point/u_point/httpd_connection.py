@@ -35,6 +35,7 @@ from string import ascii_letters
 
 
 def create_cfg(httpd_connect_string=None, user_name=None,passwd=None,pth_cfg=None,lg=None):
+    lg.error('>>>>>>>> {}'.format(pth_cfg))
     if not os.path.isfile(pth_cfg):
         cfgf = open(pth_cfg, 'w')
         cfg = configparser.ConfigParser()

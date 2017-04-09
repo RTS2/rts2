@@ -53,6 +53,7 @@ signal.signal(signal.SIGQUIT, receive_signal)
 signal.signal(signal.SIGINT,  receive_signal)
 
 unittest_dir = './unittest'
+
 unittest_files = [
     '/tmp/centrald_1617', 
     '/tmp/T0', 
@@ -67,16 +68,8 @@ def unittest_directory():
         lg.error('u_point_unittest.py: {} not found in local directory, change to ~/rts2/scripts/u_point, exiting'.format(unittest_dir))
         sys.exit(1)
         
-def delete_unittest_output(base_path=None,lg=None):
+def delete_unittest_output(lg=None):
     ret = True
-    if os.path.isdir(base_path):
-        try:
-            shutil.rmtree(base_path)
-        except Exception as e:
-            lg.error(e)
-            lg.warn('u_point_unittest.py: can not remove directory: {}, remove it manually'.format(dr))
-            ret = False
-
     for fn in unittest_files:
         if os.path.exists(fn):
             try:
@@ -124,6 +117,24 @@ if __name__ == '__main__':
     parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point_unittest',type=str, help=': %(default)s, directory where config file is stored')
     args=parser.parse_args()
 
+    if os.path.exists(args.base_path):
+        if args.do_not_delete:
+            pass
+        else:
+            print('recreate base path')
+            # ok, not unittest like but effective
+            try:
+                shutil.rmtree(args.base_path)
+            except Exception as e:
+                print(e)
+                print('u_point_unittest.py: can not remove directory: {}, remove it manually'.format(args.base_path))
+    
+    # make sure that it is writabel (ssh user@host)
+    try:
+        os.makedirs(args.base_path, mode=0o0777)
+    except:
+        pass
+        
     pth, fn = os.path.split(sys.argv[0])
     filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script
     logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
@@ -136,13 +147,9 @@ if __name__ == '__main__':
         soh.setLevel(args.level)
         soh.setLevel(args.level)
         logger.addHandler(soh)
-
+        
     unittest_directory()
-    if not args.do_not_delete:
-        # ok, not unittest like but effective
-        delete_unittest_output(base_path=args.base_path,lg=logger)
-        # make sure that it is writabel (ssh user@host)
-        ret=os.makedirs(args.base_path, mode=0o0777,exist_ok=True)
+    #delete_unittest_output(lg=logger)
     
     user_name='unittest'
     passwd=''.join(choice(ascii_letters) for i in range(8))

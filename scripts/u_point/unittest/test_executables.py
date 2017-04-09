@@ -25,7 +25,10 @@ import pwd
 import os
 import re
 basepath='/tmp/u_point_unittest'
-os.makedirs(basepath, exist_ok=True)
+if not os.path.exists(basepath):
+    # make sure that it is writabel (ssh user@host)
+    ret=os.makedirs(basepath, mode=0o0777)
+
 import logging
 logging.basicConfig(filename=os.path.join(basepath,'unittest.log'), level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()
@@ -46,6 +49,7 @@ def suite_with_connection():
 def suite_no_connection():
     suite = unittest.TestSuite()
     suite.addTest(TestAnalysisModel('test_u_analyze_u_model'))
+    suite.addTest(TestAnalysisModel('test_u_simulate_u_model'))
     #suite.addTest(TestAnalysisModel('test_analysis_model'))
     return suite
 
@@ -97,6 +101,33 @@ class TestAnalysisModel(unittest.TestCase):
             self.assertLess(val,val_max, msg='return value: {}, instead of max: {}'.format(val, val_max))
         else:
             self.assertEqual(1.,val_max, msg='return value: None, instead of max: {}'.format(val_max))
+    #@unittest.skip('feature not yet implemented')
+    def test_u_simulate_u_model(self):
+        logger.info('== {} =='.format(self._testMethodName))
+        cmd=['../u_simulate.py','--toc','--base-path', basepath, '--level', 'DEBUG', '--model-class', 'u_upoint']
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
+        # ToDo only quick, add meaningful asserts
+        
+        cmd=['../u_model.py','--toc','--base-path', basepath, '--analyzed-positions', 'simulation_data.txt', '--level', 'DEBUG', '--model-class', 'u_upoint']
+        stdo_l,stde_l=self.exec_cmd(cmd=cmd)
+        # ToDo only quick, add meaningful asserts
+        #ToDo somting wrong, float: ([ -+]?\d*\.\d+|\d+)
+        m=re.compile('MA : polar axis left-right alignment[ ]?:([-+]?\d*.*?)\[arcsec\]')
+        val=None
+        for o_l in stdo_l:
+            print(o_l)
+            v = m.match(o_l)
+            if v:
+                print('match')
+                val = abs(float(v.group(1)))
+                break
+        val_max=3.
+        if val is not None:
+            # ToDo quick
+            diff=abs(30.-val)
+            self.assertLess(difffg,val_max, msg='return value: {}, instead of max: {}'.format(val, val_max))
+        else:
+            self.assertEqual(1.,val_max, msg='return value: None, instead of max: {}'.format(val_max))
             
     @unittest.skip('feature not yet implemented')
     def test_analysis_model(self):
@@ -120,8 +151,6 @@ class TestAcquisition(RTS2Environment):
             cmd=[ '../u_acquire.py', '--create','--toc', '--eq-mount', '--base-path', basepath, '--force-overwrite', '--lon-step', '40', '--lat-step', '20']
             self.exec_cmd(cmd=cmd)
             
-        self.exec_cmd(cmd=cmd)
-        
     def exec_cmd(self,cmd=None,using_shell=False):
         logger.info('== setUp: {} ==='.format(cmd[0]))
         logger.info('executing: {}'.format(cmd))

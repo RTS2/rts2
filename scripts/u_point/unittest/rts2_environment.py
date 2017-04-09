@@ -29,7 +29,9 @@ import glob
 import psycopg2
 
 basepath='/tmp/u_point_unittest'
-os.makedirs(basepath, exist_ok=True)
+if not os.path.exists(basepath):
+    # make sure that it is writabel (ssh user@host)
+    ret=os.makedirs(basepath, mode=0o0777)
 
 logging.basicConfig(filename=os.path.join(basepath,'unittest.log'), level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger()

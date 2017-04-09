@@ -27,6 +27,7 @@ AltAz: Astropy N=0,E=pi/2, Libnova S=0,W=pi/1
 __author__ = 'wildi.markus@bluewin.ch'
 
 import sys
+import os
 import argparse
 import logging
 import importlib
@@ -57,6 +58,7 @@ if __name__ == "__main__":
   parser.add_argument('--debug', dest='debug', action='store_true', default=False, help=': %(default)s,add more output')
   parser.add_argument('--level', dest='level', default='DEBUG', help=': %(default)s, debug level')
   parser.add_argument('--toconsole', dest='toconsole', action='store_true', default=False, help=': %(default)s, log to console')
+  parser.add_argument('--base-path', dest='base_path', action='store', default='/tmp/u_point/',type=str, help=': %(default)s , directory where images are stored')
   parser.add_argument('--break_after', dest='break_after', action='store', default=10000000, type=int, help=': %(default)s, read max. positions, mostly used for debuging')
   parser.add_argument('--simulation-data', dest='simulation_data', action='store', default='./simulation_data.txt', help=': %(default)s,  data filename (output)')
   parser.add_argument('--lon-step', dest='lon_step', action='store', default=10, type=int,help=': %(default)s,  longitute step size: range(0,360,step) [deg]')
@@ -93,7 +95,8 @@ if __name__ == "__main__":
   if args.toconsole:
     args.level='DEBUG'
 
-  filename='/tmp/{}.log'.format(sys.argv[0].replace('.py','')) # ToDo datetime, name of the script
+  pth, fn = os.path.split(sys.argv[0])
+  filename=os.path.join(args.base_path,'{}.log'.format(fn.replace('.py',''))) # ToDo datetime, name of the script
   logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
   logging.basicConfig(filename=filename, level=args.level.upper(), format= logformat)
   logger = logging.getLogger()
@@ -107,7 +110,8 @@ if __name__ == "__main__":
   obs=EarthLocation(lon=float(args.obs_lng)*u.degree, lat=float(args.obs_lat)*u.degree, height=float(args.obs_height)*u.m)
   dt_utc = Time(args.utc,format='iso', scale='utc',location=obs)
   sigma= args.sigma/3600./180.*np.pi
-  wfl=open(args.simulation_data, 'w')
+  simulation_data=os.path.join(args.base_path,args.simulation_data)
+  wfl=open(simulation_data, 'w')
   vn_lon=0.
   vn_lat=0.
 
