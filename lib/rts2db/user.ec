@@ -189,22 +189,20 @@ User::User ()
 {
  	id = -1;
 	types = NULL;
-	userPermissions = NULL;
 }
 
-User::User (int in_id, std::string in_login, std::string in_email)
+User::User (int in_id, std::string in_login, std::string in_email, const char *in_userPermissions)
 {
 	id = in_id;
 	login = in_login;
 	email = in_email;
 
 	types = NULL;
-	userPermissions = NULL;
+	userPermissions.parsePermissions (in_userPermissions);
 }
 
 User::~User (void)
 {
-	delete userPermissions;
 	delete types;
 }
 
@@ -250,13 +248,10 @@ int User::load (const char * in_login)
 	login = std::string (in_login);
 	email = std::string (db_email.arr);
 
-	delete userPermissions;
-	userPermissions = new rts2core::UserPermissions ();
-
 	if (db_allowed_devices_ind == 0)
 	{
 		db_allowed_devices.arr[db_allowed_devices.len] = '\0';
-		userPermissions->parsePermissions (db_allowed_devices.arr);
+		userPermissions.parsePermissions (db_allowed_devices.arr);
 	}
 
 	return loadTypes ();

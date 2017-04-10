@@ -77,7 +77,6 @@ class TypeUser
 		{
 			_os << usr.type << " " << std::hex << std::setw (4) << usr.eventMask << " ";
 			printEventMask (usr.eventMask, _os);
-			_os << std::endl;
 			return _os;
 		}
 	private:
@@ -155,7 +154,7 @@ class User
 		 * @param in_login  User login.
 		 * @param in_email  User email.
 		 */
-		User (int in_id, std::string in_login, std::string in_email);
+		User (int in_id, std::string in_login, std::string in_email, const char *in_userPermissions);
 		~User (void);
 
 		/**
@@ -247,8 +246,10 @@ class User
 		{
 			_os << std::left << std::setw (5) << user.id
 				<< " " << std::setw (25) << user.login << std::right
-				<< " " << user.email
-				<< std::endl;
+				<< " " << user.email << " "
+				<< " " << user.userPermissions;
+
+			_os << std::endl;
 			// print user set
 			_os << (*(user.types));
 			return _os;
@@ -260,7 +261,7 @@ class User
 		std::string email;
 
 		TypeUserSet *types;
-		rts2core::UserPermissions *userPermissions;
+		rts2core::UserPermissions userPermissions;
 };
 
 }

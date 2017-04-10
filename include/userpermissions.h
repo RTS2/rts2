@@ -20,6 +20,7 @@
 #ifndef __RTS2_USERPERMISSIONS__
 #define __RTS2_USERPERMISSIONS__
 
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -55,6 +56,24 @@ class UserPermissions
 		void parsePermissions (const char *permissionString);
 
 		bool canWriteDevice (const std::string &deviceName);
+
+		friend std::ostream & operator << (std::ostream & os, UserPermissions & up)
+		{
+			if (up.allowedDevices.empty ())
+			{
+				os << "none";
+			}
+			else
+			{
+				for (std::vector<std::string>::iterator iter = up.allowedDevices.begin (); iter != up.allowedDevices.end (); iter++)
+				{
+					if (iter != up.allowedDevices.begin ())
+						os << " ";
+					os << *iter;
+				}
+			}
+			return os;
+		}
 
 	private:
 		std::vector <std::string> allowedDevices;

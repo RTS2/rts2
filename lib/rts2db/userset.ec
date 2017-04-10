@@ -33,6 +33,8 @@ int UserSet::load ()
 	int db_id;
 	VARCHAR db_login[25];
 	VARCHAR db_email[200];
+	VARCHAR db_allowed_devices[2000];
+	int db_allowed_devices_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL BEGIN TRANSACTION;
@@ -41,7 +43,8 @@ int UserSet::load ()
 		SELECT
 			usr_id,
 			usr_login,
-			usr_email
+			usr_email,
+			allowed_devices
 		FROM
 			users
 			ORDER BY
@@ -54,10 +57,19 @@ int UserSet::load ()
 		EXEC SQL FETCH next FROM user_cur INTO
 				:db_id,
 				:db_login,
-				:db_email;
+				:db_email,
+				:db_allowed_devices :db_allowed_devices_ind;
 		if (sqlca.sqlcode)
 			break;
-		push_back (User (db_id, std::string (db_login.arr), std::string (db_email.arr)));
+		if (db_allowed_devices_ind == 0)
+		{
+			db_allowed_devices.arr[db_allowed_devices.len] = '\0';
+			push_back (User (db_id, std::string (db_login.arr), std::string (db_email.arr), db_allowed_devices.arr));
+		}
+		else
+		{
+			push_back (User (db_id, std::string (db_login.arr), std::string (db_email.arr), NULL));
+		}
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
