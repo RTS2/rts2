@@ -22,6 +22,7 @@
 #include "configuration.h"
 
 #define OPT_MOVE_FAST      OPT_LOCAL + 510
+#define OPT_CONFIG      OPT_LOCAL + 511
 
 /*!
  * Dummy teld for testing purposes.
@@ -47,7 +48,7 @@ class Dummy:public Telescope
 		{
 			rts2core::Configuration *config;
 			config = rts2core::Configuration::instance ();
-			config->loadFile ();
+			config->loadFile (configFile);
 			setTelLongLat (config->getObserver ()->lng, config->getObserver ()->lat);
 			setTelAltitude (config->getObservatoryAltitude ());
 			trackingInterval->setValueFloat (0.5);
@@ -121,6 +122,8 @@ class Dummy:public Telescope
 
 		rts2core::ValueLong *t_axRa;
 		rts2core::ValueLong *t_axDec;
+  		char *configFile;
+
 };
 
 }
@@ -148,6 +151,8 @@ Dummy::Dummy (int argc, char **argv):Telescope (argc, argv, true, true)
 	dummyPos.dec = 0;
 
 	addOption (OPT_MOVE_FAST, "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
+	configFile = NULL;
+	addOption (OPT_CONFIG, "config", 1, "read configuration from file");
 }
 
 int Dummy::processOption (int in_opt)
@@ -158,6 +163,10 @@ int Dummy::processOption (int in_opt)
 			if (!strcmp( "fast", optarg)) move_fast->setValueBool ( true );
 				else move_fast->setValueBool ( false );
 			break;
+		case OPT_CONFIG:
+			configFile = optarg;
+			break;
+
 		default:
 			return Telescope::processOption (in_opt);
 	}
