@@ -1263,10 +1263,12 @@ int APGTO::info ()
 				<< APlocalSiderealTime->getValueDouble() 
 				<< " difference " << diff_loc_time <<sendLog;
 
-    logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   telAltAz->getAlt() << " az " << telAltAz->getAz()  <<sendLog;
+    HA= fmod(localSiderealTime()-getTelRa()+ 360.,360.) ;
+    logStream (MESSAGE_DEBUG) << "APGTO::info HA: "<< HA << ",ra: " << getTelRa() << ", dec: " << getTelDec() << ", alt: " <<   telAltAz->getAlt() << ", az: " << telAltAz->getAz()  <<sendLog;
 
     if(dateTime()<0)
       return -1;
+    logStream (MESSAGE_DEBUG) << "APGTO::info HA: "<< HA << ",ra: " << getTelRa() << ", dec: " << getTelDec() << ", alt: " <<   telAltAz->getAlt() << ", az: " << telAltAz->getAz() << ", after dateTime()"  <<sendLog;
     
     // read the coordinates times again
     if(tel_read_ra () || tel_read_dec ())
@@ -1525,13 +1527,15 @@ int APGTO::setBasicData()
     //         zero if DST is not in effect
     //         less than zero if the information is not available.
     // restart apgto, if DST changes
+    logStream (MESSAGE_WARNING) << "APGTO::setBasicData DST information: "<<ltm.tm_isdst<< sendLog;
     if( ltm.tm_isdst < 0){
       logStream (MESSAGE_WARNING) << "APGTO::setBasicData DST information not available, ignoring"<< sendLog;
-    } else if(ltm.tm_isdst > 1){ 
-      logStream (MESSAGE_DEBUG) << "APGTO::setBasicData DST is in effect"<< sendLog;
+    } else if(ltm.tm_isdst >= 1){ 
+      logStream (MESSAGE_WARNING) << "APGTO::setBasicData DST is in effect"<< sendLog;
       off= -2.065;
     }
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData This is a version D chip, seting UTC offset to:"<< off << sendLog;
+
     if((ret = setAPUTCOffset(off)) < 0) {
       logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
       return -1;
@@ -1733,7 +1737,10 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
         addOption (OPT_APGTO_TIMEOUT_SLEW_START, "tracking timeout",  1, "if no new slew occurs within tracking timeout, tracking is stopped");
 	// 
         createValue (block_sync_apgto,         "BLOCK_SYNC_APGTO", "true inhibits any sync", false, RTS2_VALUE_WRITABLE);
+	block_sync_apgto->setValueBool (true);
         createValue (block_move_apgto,         "BLOCK_MOVE_APGTO", "true inhibits any slew", false, RTS2_VALUE_WRITABLE);
+	block_move_apgto->setValueBool (true);
+
         createValue (slew_state,               "SLEW",        "true: mount is slewing",      false);
         createValue (tracking,                 "TRACKING",    "true: mount is tracking",     false);
         createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",   false);
