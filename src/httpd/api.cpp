@@ -348,6 +348,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				if (conn == NULL)
 					throw JSONException ("cannot find device with given name");
 				os << "\"type\":" << conn->getOtherType ();
+				os << ",\"readonly\":" << (canWriteDevice (device) ? "false" : "true");
 			}
 			// set or increment variable
 			else if (vals[0] == "set" || vals[0] == "inc" || vals[0] == "dec")
