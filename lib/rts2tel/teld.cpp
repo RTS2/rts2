@@ -1961,7 +1961,7 @@ void Telescope::getEraUTC (double &utc1, double &utc2)
 
 	struct tm *gt = gmtime (&(tv.tv_sec));
 
-	int status = eraDtf2d ("UTC", gt->tm_year + 1900, gt->tm_mon + 1, gt->tm_mday, gt->tm_hour, gt->tm_min, gt->tm_sec + tv.tv_usec / USEC_SEC, &utc1, &utc2);
+	int status = eraDtf2d ("UTC", gt->tm_year + 1900, gt->tm_mon + 1, gt->tm_mday, gt->tm_hour, gt->tm_min, gt->tm_sec + (double) tv.tv_usec / USEC_SEC, &utc1, &utc2);
 
 	if (status)
 		logStream (MESSAGE_ERROR) << "cannot get system time" << sendLog;
