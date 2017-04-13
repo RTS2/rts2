@@ -641,9 +641,9 @@ AC_DEFINE_UNQUOTED(LOCK_PREFIX, "$LOCK_PREFIX", [Lock file prefix path])
 AC_SUBST(LOCK_PREFIX)
 
 AC_ARG_WITH(log,
-[  --with-log              specify log file path prefix, default to /var/log/rts2-debug.log],
+[  --with-log              specify log file path prefix, default to /var/log/rts2-debug],
 LOG_FILE="${withval}",
-LOG_FILE="/var/log/rts2-debug.log")
+LOG_FILE="/var/log/rts2-debug")
 
 AH_TEMPLATE([LOG_FILE],[Log file])
 
