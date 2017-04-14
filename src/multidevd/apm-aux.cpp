@@ -52,6 +52,9 @@ APMAux::APMAux (const char *name, rts2core::ConnAPM *conn, bool hasFan, bool has
 
 	commandInProgress = NONE;
 
+	createValue (autoOpen, "auto", "if true, opens automatically during night", false, RTS2_VALUE_WRITABLE);
+	autoOpen->setValueBool (!hasBaffle); // currently only models without baffle autoopens
+
 	createValue (coverState, "cover", "mirror cover state", true);
 	coverState->addSelVal ("CLOSED");
 	coverState->addSelVal ("OPENING");

@@ -53,6 +53,8 @@ class APMAux : public Sensor, rts2multidev::APMMultidev
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
+		rts2core::ValueBool *autoOpen;
+
 		rts2core::ValueSelection *coverState;
 		rts2core::ValueBool *fan;
 		rts2core::ValueSelection *baffle;
