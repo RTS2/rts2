@@ -112,26 +112,29 @@ int APMAux::commandAuthorized (rts2core::Connection * conn)
 
 void APMAux::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
 {
-	switch (new_state & SERVERD_STATUS_MASK)
+	if (autoOpen->getValueBool () != false)
 	{
-		case SERVERD_DUSK:
-		case SERVERD_NIGHT:
-		case SERVERD_DAWN:
-			{
-				switch (new_state & SERVERD_ONOFF_MASK)
+		switch (new_state & SERVERD_STATUS_MASK)
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
 				{
-					case SERVERD_ON:
-						open ();
-						break;
-					default:
-						close();
-						break;
+					switch (new_state & SERVERD_ONOFF_MASK)
+					{
+						case SERVERD_ON:
+							open ();
+							break;
+						default:
+							close();
+							break;
+					}
 				}
-			}
-			break;
-		default:
-			close();
-			break;
+				break;
+			default:
+				close();
+				break;
+		}
 	}
 	Sensor::changeMasterState (old_state, new_state);
 }
