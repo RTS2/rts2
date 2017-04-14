@@ -39,7 +39,7 @@ Dome::Dome (int in_argc, char **in_argv, int in_device_type, bool inhibit_auto_c
 	if (inhibit_auto_close)
 	{
 		createValue (domeAutoClose, "auto_close", "if false, ignore commands to close dome from centrald", false, RTS2_VALUE_WRITABLE);
-		domeAutoClose->setValueBool (true);
+		domeAutoClose->setValueBool (false);
 	}
 	else
 	{
@@ -315,7 +315,9 @@ int Dome::closeDomeWeather ()
 
 int Dome::observing ()
 {
-	return domeOpenStart ();
+	if (domeAutoClose == NULL || domeAutoClose->getValueBool () == true)
+		return domeOpenStart ();
+	return 0;
 }
 
 int Dome::standby ()

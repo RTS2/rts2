@@ -681,6 +681,19 @@ void Centrald::stateChanged (rts2_status_t new_state, rts2_status_t old_state, c
 			<< sendLog;
 		sendStatusMessage (getState (), description);
 	}
+
+	// open if needed
+	if ((new_state & WEATHER_MASK) == GOOD_WEATHER && (new_state & SERVERD_ONOFF_MASK) == SERVERD_ON)
+	{
+		switch (new_state & SERVERD_STATUS_MASK)
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
+				startOpen ();
+				break;
+		}
+	}
 }
 
 rts2core::Connection * Centrald::createConnection (int in_sock)
