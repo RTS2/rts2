@@ -718,12 +718,12 @@ class GPoint:
 	def plot_alt_az(self,grid,contour='',pfact=4):
 		import pylab
 		polar = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3],projection='polar')
-		polar.plot(np.radians(self.aa_az - 90),90 - self.aa_alt,'r.')
-		polar.plot(np.radians(self.ar_az - 90),90 - self.ar_alt,'g.')
+		polar.plot(np.radians(270 - self.aa_az),90 - self.aa_alt,'r.')
+		polar.plot(np.radians(270 - self.ar_az),90 - self.ar_alt,'g.')
 		polar.set_rmax(90)
-		polar.set_xticklabels(['E','SE','S','SW','W','NW','N','NE'])
+		polar.set_xticklabels(['E','NE','N','NW','W','SW','S','SE'])
 		if contour:
-			X = np.radians(self.ar_az - 90)
+			X = np.radians(270 - self.ar_az)
 			Y = 90 - self.ar_alt
 
 			if contour == 'model':
