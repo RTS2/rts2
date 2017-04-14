@@ -516,6 +516,8 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	if (ret)
 		return ret;
 
+	//std::cout << "calculateTracking " << utc1 << " " << utc2 << " " << LibnovaRaDec (&eqpos) << " " << LibnovaRaDec (&t_eqpos) << " " << sec_step << " " << t_ac << " " << t_dc << std::endl;
+
 	// for speed vector calculation..
 	double ra_diff = t_eqpos.ra - eqpos.ra;
 	double dec_diff = t_eqpos.dec - eqpos.dec;
@@ -764,6 +766,12 @@ double Telescope::getTargetDistance ()
 		tar.dec = hrz_tar.alt;
 		tel.ra = hrz_tel.az;
 		tel.dec = hrz_tel.alt;
+
+		if (offsAltAz != NULL)
+		{
+			tel.ra += offsAltAz->getAz ();
+			tel.dec += offsAltAz->getAlt ();
+		}
 	}
 	else
 	{
