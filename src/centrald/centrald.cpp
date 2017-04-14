@@ -692,7 +692,14 @@ void Centrald::stateChanged (rts2_status_t new_state, rts2_status_t old_state, c
 			case SERVERD_DAWN:
 				startOpen ();
 				break;
+			default:
+				startClose ();
+				break;
 		}
+	}
+	else
+	{
+		startClose ();
 	}
 }
 
