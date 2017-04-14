@@ -235,6 +235,8 @@ int APMAux::close ()
 
 int APMAux::openCover ()
 {
+	logStream(MESSAGE_INFO) << "opening cover" << sendLog;
+
 	sendUDPMessage ("C001");
 	if (coverState->getValueInteger () == 0)
 	{
@@ -251,6 +253,8 @@ int APMAux::openCover ()
 
 int APMAux::closeCover ()
 {
+	logStream(MESSAGE_INFO) << "closing cover" << sendLog;
+
 	sendUDPMessage ("C000");
 	if (coverState->getValueInteger () == 2)
 	{
@@ -267,6 +271,8 @@ int APMAux::closeCover ()
 
 int APMAux::openBaffle ()
 {
+	logStream(MESSAGE_INFO) << "opening baffle" << sendLog;
+
 	if (sendUDPMessage ("B001"))
 		return -1;
 
@@ -285,6 +291,8 @@ int APMAux::openBaffle ()
 
 int APMAux::closeBaffle ()
 {
+	logStream(MESSAGE_INFO) << "closing baffle" << sendLog;
+
 	if (sendUDPMessage ("B000"))
 		return -1;
 
