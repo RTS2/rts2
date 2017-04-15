@@ -256,6 +256,16 @@ typedef uint32_t rts2_status_t;
 #define TEL_NO_PAN          0x000
 #define TEL_PANNING         0x100
 
+// when telescope does not reach offset location
+#define TEL_MASK_OFFSETING  0x200
+#define TEL_NO_OFFSETING    0x000
+#define TEL_OFFSETING       0x200
+
+// when pointing is unstable
+#define TEL_MASK_UNSTABLE   0x400
+#define TEL_STABLE          0x000
+#define TEL_UNSTABLE        0x400
+
 // sensor performing command
 #define SENSOR_INPROGRESS   0x001
 

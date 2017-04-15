@@ -300,6 +300,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (targetDistance, "target_distance", "distance to the target in degrees", false, RTS2_DT_DEG_DIST);
 	createValue (targetStarted, "move_started", "time when movement was started", false);
 	createValue (targetReached, "move_end", "expected time when telescope will reach the destination", false);
+	createValue (targetDistanceStat, "tdist_stat", "statistics of target distances", false);
 
 	targetDistance->setValueDouble (NAN);
 	targetStarted->setValueDouble (NAN);
@@ -409,6 +410,35 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 Telescope::~Telescope (void)
 {
 	delete model;
+}
+
+int Telescope::checkTracking (double maxDist)
+{
+	// check tracking stability
+	if ((getState () & (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_OFFSETING)) == TEL_OBSERVING)
+	{
+		if ((getState () & TEL_MASK_UNSTABLE) == TEL_UNSTABLE)
+		{
+			if (targetDistanceStat->getMax () <= maxDist)
+			{
+				valueGood (targetDistanceStat);
+				maskState (TEL_MASK_UNSTABLE, TEL_STABLE, "stable pointing");
+				logStream (MESSAGE_INFO) << "stable telescope tracking - max distance " << targetDistanceStat->getMax () << sendLog;
+				return 1;
+			}
+		}
+		else
+		{
+			if (targetDistanceStat->getMax () > maxDist)
+			{
+				valueWarning (targetDistanceStat);
+				maskState (TEL_MASK_UNSTABLE, TEL_UNSTABLE, "unstable poiting");
+				logStream (MESSAGE_WARNING) << "unstable telescope tracking - max distance " << targetDistanceStat->getMax () << sendLog;
+				return -1;
+			}
+		}
+	}
+	return 0;
 }
 
 double Telescope::getLocSidTime (double JD)
@@ -914,6 +944,10 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 			setDiffTrack (speed.ra, speed.dec);
 		}
 	}
+	else if (old_value == offsAltAz)
+	{
+		maskState (TEL_MASK_OFFSETING, TEL_OFFSETING, "offseting telescope");
+	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
 
@@ -1404,6 +1438,15 @@ void Telescope::checkMoves ()
 			setIdleInfoInterval (refreshIdle->getValueDouble ());
 		}
 	}
+
+	if ((getState () & TEL_MASK_OFFSETING) == TEL_OFFSETING)
+	{
+		ret = isOffseting();
+		if (ret < 0)
+		{
+			maskState (TEL_MASK_OFFSETING, TEL_NO_OFFSETING, "offseting finished");
+		}
+	}
 }
 
 int Telescope::idle ()
@@ -1861,7 +1904,11 @@ int Telescope::infoUTCLST (const double utc1, const double utc2, double telLST)
 	jdVal->setValueDouble (utc1 + utc2);
 	lst->setValueDouble (telLST);
 	hourAngle->setValueDouble (ln_range_degrees (lst->getValueDouble () - telRaDec->getRa ()));
-	targetDistance->setValueDouble (getTargetDistance ());
+
+	double tdist = getTargetDistance ();
+	targetDistance->setValueDouble (tdist);
+	targetDistanceStat->addValue (tdist, 20);
+	targetDistanceStat->calculate ();
 
 	// check if we aren't bellow hard horizon - if yes, stop tracking..
 	if (hardHorizon)
@@ -2087,6 +2134,8 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	{
 		offsRaDec->setValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
 	}
+
+	targetDistanceStat->clearStat ();
 
 	// update total_offsets
 	total_offsets->setValueRaDec (offsRaDec->getRa () - corrRaDec->getRa (), offsRaDec->getDec () - corrRaDec->getDec ());

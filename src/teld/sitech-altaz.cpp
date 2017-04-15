@@ -69,6 +69,8 @@ class SitechAltAz:public AltAz
 
 		virtual int isParking ();
 
+		virtual int isOffseting ();
+
 		virtual void runTracking ();
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
@@ -557,6 +559,19 @@ int SitechAltAz::isParking ()
 	return -2;
 }
 
+
+int SitechAltAz::isOffseting ()
+{
+	if (wasStopped)
+		return -1;
+
+	double tdist = getTargetDistance ();
+	
+	if (tdist > trackingDist->getValueDouble ())
+		return USEC_SEC / 1000;
+	return -2;
+}	
+
 int SitechAltAz::startPark ()
 {
 	if (parkPos == NULL)
@@ -574,6 +589,8 @@ void SitechAltAz::runTracking ()
 		return;
 	internalTracking (2.0, trackingFactor->getValueFloat ());
 	AltAz::runTracking ();
+
+	checkTracking (trackingDist->getValueDouble ());
 }
 
 int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)

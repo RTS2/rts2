@@ -474,6 +474,10 @@ class Telescope:public rts2core::Device
 		 */
 		virtual int isParking () { return -2; }
 
+		virtual int isOffseting () { return isMoving (); }
+
+		int checkTracking (double maxDist);
+
 		/**
 		 * Returns local sidereal time in hours (0-24 range).
 		 * Multiply return by 15 to get degrees.
@@ -1287,6 +1291,11 @@ class Telescope:public rts2core::Device
 		 * Distance to target in degrees.
 		 */
 		rts2core::ValueDouble *targetDistance;
+
+		/**
+		 * Statistics of target distances.
+		 */
+		rts2core::ValueDoubleStat *targetDistanceStat;
 
 		/**
 		 * Time when movement was started.
