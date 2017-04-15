@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "sep.h"
 #include "sepcore.h"
 
@@ -50,6 +51,11 @@ PIXTYPE convert_byt(void *ptr)
   return *(BYTE *)ptr;
 }
 
+PIXTYPE convert_uint16(void *ptr)
+{
+  return *(uint16_t *)ptr;
+}
+
 /* return the correct converter depending on the datatype code */
 int get_converter(int dtype, converter *f, int *size)
 {
@@ -64,6 +70,11 @@ int get_converter(int dtype, converter *f, int *size)
     {
       *f = convert_int;
       *size = sizeof(int);
+    }
+  else if (dtype == SEP_TUINT16)
+    {
+      *f = convert_uint16;
+      *size = sizeof(uint16_t);
     }
   else if (dtype == SEP_TDOUBLE)
     {
@@ -109,6 +120,14 @@ void convert_array_int(void *ptr, int n, PIXTYPE *target)
     target[i] = *source;
 }
 
+void convert_array_uint16(void *ptr, int n, PIXTYPE *target)
+{
+  uint16_t *source = (uint16_t *)ptr;
+  int i;
+  for (i=0; i<n; i++, source++)
+    target[i] = *source;
+}
+
 void convert_array_byt(void *ptr, int n, PIXTYPE *target)
 {
   BYTE *source = (BYTE *)ptr;
@@ -135,6 +154,11 @@ int get_array_converter(int dtype, array_converter *f, int *size)
     {
       *f = convert_array_int;
       *size = sizeof(int);
+    }
+  else if (dtype == SEP_TUINT16)
+    {
+      *f = convert_array_uint16;
+      *size = sizeof(uint16_t);
     }
   else if (dtype == SEP_TDOUBLE)
     {
@@ -170,6 +194,14 @@ void write_array_int(float *ptr, int n, void *target)
     t[i] = (int)(*ptr+0.5);
 }
 
+void write_array_uint16(float *ptr, int n, void *target)
+{
+  uint16_t *t = (uint16_t *)target;
+  int i;
+  for (i=0; i<n; i++, ptr++)
+    t[i] = (uint16_t)(*ptr+0.5);
+}
+
 /* return the correct writer depending on the datatype code */
 int get_array_writer(int dtype, array_writer *f, int *size)
 {
@@ -179,6 +211,11 @@ int get_array_writer(int dtype, array_writer *f, int *size)
     {
       *f = write_array_int;
       *size = sizeof(int);
+    }
+  else if (dtype == SEP_TUINT16)
+    {
+      *f = write_array_uint16;
+      *size = sizeof(uint16_t);
     }
   else if (dtype == SEP_TDOUBLE)
     {
@@ -220,6 +257,14 @@ void subtract_array_int(float *ptr, int n, void *target)
     t[i] -= (int)(*ptr+0.5);
 }
 
+void subtract_array_uint16(float *ptr, int n, void *target)
+{
+  uint16_t *t = (uint16_t *)target;
+  int i;
+  for (i=0; i<n; i++, ptr++)
+    t[i] -= (uint16_t)(*ptr+0.5);
+}
+
 /* return the correct subtractor depending on the datatype code */
 int get_array_subtractor(int dtype, array_writer *f, int *size)
 {
@@ -235,6 +280,11 @@ int get_array_subtractor(int dtype, array_writer *f, int *size)
     {
       *f = subtract_array_int;
       *size = sizeof(int);
+    }
+  else if (dtype == SEP_TUINT16)
+    {
+      *f = subtract_array_uint16;
+      *size = sizeof(uint16_t);
     }
   else if (dtype == SEP_TDOUBLE)
     {

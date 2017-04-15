@@ -22,6 +22,7 @@
 
 /* datatype codes */
 #define SEP_TBYTE        11  /* 8-bit unsigned byte */
+#define SEP_TUINT16      15  /* 16-bit unsigned */
 #define SEP_TINT         31  /* native int type */
 #define SEP_TFLOAT       42
 #define SEP_TDOUBLE      82
@@ -51,6 +52,10 @@
 /* filter types for sep_extract */
 #define SEP_FILTER_CONV    0
 #define SEP_FILTER_MATCHED 1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* structs ------------------------------------------------------------------*/
 
@@ -406,3 +411,7 @@ void sep_get_errmsg(int status, char *errtext);
  * The message may be up to 512 characters.
  */
 void sep_get_errdetail(char *errtext);
+
+#ifdef __cplusplus
+};
+#endif
