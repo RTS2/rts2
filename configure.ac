@@ -955,6 +955,7 @@ AC_OUTPUT([Makefile
 	   include/vermes/Makefile
 	   include/xmlrpc++/Makefile
 	   include/pluto/Makefile
+	   include/sep/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
 	   conf/rts2.service
@@ -978,6 +979,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2json/Makefile
 	   lib/rts2tel/Makefile
 	   lib/libindi/Makefile 
+	   lib/sep/Makefile
 	   python/Makefile
 	   python/rts2/Makefile
 	   python/rts2/db/Makefile
