@@ -1444,6 +1444,7 @@ void Telescope::checkMoves ()
 		ret = isOffseting();
 		if (ret < 0)
 		{
+			targetDistanceStat->clearStat ();
 			maskState (TEL_MASK_OFFSETING, TEL_NO_OFFSETING, "offseting finished");
 		}
 	}
@@ -2037,6 +2038,7 @@ void Telescope::startCupolaSync ()
 
 int Telescope::endMove ()
 {
+	targetDistanceStat->clearStat ();
 	startTracking ();
 	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
 	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
