@@ -486,7 +486,7 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 	createValue (sepY, "sep_Y", "Y positions of stars", false);
 	createValue (sepFluxes, "sep_fluxes", "star fluxes", false);
 
-	sepFind->setValueBool (true);
+	sepFind->setValueBool (false);
 
 	createValue (slitPosX, "slitposx", "[pixels] slit position along dithering axis", true, RTS2_VALUE_WRITABLE);
 	slitPosX->setValueDouble (-1);
