@@ -1589,7 +1589,9 @@ void Camera::findSepStars (uint16_t *data)
 	float conv[] = {1,2,1, 2,4,2, 1,2,1};
 	sep_catalog *catalog = NULL;
 
-	status = sep_extract(&im, 1.5*bkg->globalrms, SEP_THRESH_ABS, 5, conv, 3, 3, SEP_FILTER_CONV, 32, 0.005, 1, 1.0, &catalog);
+	im.noise = &(bkg->globalrms);  /* set image noise level */
+
+	status = sep_extract(&im, 1.5*bkg->globalrms, SEP_THRESH_REL, 5, conv, 3, 3, SEP_FILTER_CONV, 32, 0.005, 1, 1.0, &catalog);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "SEP: cannot extract sources:" << status << sendLog;
