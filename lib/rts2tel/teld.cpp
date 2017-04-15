@@ -423,7 +423,7 @@ int Telescope::checkTracking (double maxDist)
 			{
 				valueGood (targetDistanceStat);
 				maskState (TEL_MASK_UNSTABLE, TEL_STABLE, "stable pointing");
-				logStream (MESSAGE_INFO) << "stable telescope tracking - max distance " << targetDistanceStat->getMax () << sendLog;
+				logStream (MESSAGE_INFO) << "stable telescope tracking - max distance " << LibnovaDegDist (targetDistanceStat->getMax ()) << sendLog;
 				return 1;
 			}
 		}
@@ -433,7 +433,7 @@ int Telescope::checkTracking (double maxDist)
 			{
 				valueWarning (targetDistanceStat);
 				maskState (TEL_MASK_UNSTABLE, TEL_UNSTABLE, "unstable poiting");
-				logStream (MESSAGE_WARNING) << "unstable telescope tracking - max distance " << targetDistanceStat->getMax () << sendLog;
+				logStream (MESSAGE_WARNING) << "unstable telescope tracking - max distance " << LibnovaDegDist (targetDistanceStat->getMax ()) << sendLog;
 				return -1;
 			}
 		}
