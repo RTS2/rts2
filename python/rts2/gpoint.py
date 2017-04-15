@@ -737,9 +737,9 @@ class GPoint:
 			yi = np.linspace(min(Y),max(Y),num = 90 * pfact)
 			zi = pylab.griddata(X, Y, Z, xi, yi, interp='linear')
 			ctf = polar.contourf(xi,yi,zi,cmap='hot')
-			cbar = pylab.colorbar(ctf, orientation='horizontal', pad=0.05)
-			cbar.set_ticks(range(0,int(max(Z)),60))
-			cbar.ax.set_xticklabels(map("{0}'".format,range(0,int(max(Z) / 60))))
+			cbar = pylab.colorbar(ctf, orientation='vertical', pad=0.05)
+			cbar.set_ticks(range(0,int(max(Z)),int(max(Z) / 10.0)))
+			cbar.ax.set_xticklabels(map("{0}'".format,range(0,int(max(Z)))))
 		else:
 			polar.set_title('Alt-Az distribution')
                 return polar
