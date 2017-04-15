@@ -993,6 +993,11 @@ class Camera:public rts2core::ScriptDevice
 
 		void startExposureConnImageData () { startImageData (exposureConn); }
 
+		/**
+		 * Runs SEP on stars, find stars centers.
+		 */
+		void findSepStars (uint16_t *data);
+
 	private:
 
 		size_t readoutPixels;
@@ -1066,6 +1071,14 @@ class Camera:public rts2core::ScriptDevice
 		 * Calculate image center statistics.
 		 */
 		rts2core::ValueBool *calculateCenter;
+
+		/**
+		 * Find stars with sep library.
+		 */
+		rts2core::ValueBool *sepFind;
+		rts2core::DoubleArray *sepX;
+		rts2core::DoubleArray *sepY;
+		rts2core::DoubleArray *sepFluxes;
 
 		/**
 		 * Center box. Statistics is not calculated and values
