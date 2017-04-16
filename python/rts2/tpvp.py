@@ -46,7 +46,7 @@ def wait_for_key(t):
 	return False
 
 class TPVP:
-	def __init__(self,jsonProxy,camera,sleeptime=0,telescope=None,verbose=0):
+	def __init__(self,jsonProxy,camera,sleeptime=20,telescope=None,verbose=0):
 		# wide magnitude limit is the default
 		self.__mag_max = -10
 		self.__mag_min = 10
@@ -66,13 +66,18 @@ class TPVP:
 		else:
 			self.telescope = telescope
 
-	def __wait(self,st):
+	def __stable(self,st):
 		if st <= 0:
 			return
 		for sec in range(int(st),0,-1):
 			print _('waiting {0} seconds                                                                \r'.format(sec)),
 			sys.stdout.flush()
 			time.sleep(1)
+			self.j.refresh(self.telescope)
+			if self.j.getState(self.telescope) & 0x01000620 == 0x01000000:
+				print _('stable telescope                                                                      ')
+				return
+		print _('Telescope still unstable                        ')
 		time.sleep(st - int(st))
 
 	def set_mags(self,mmax,mmin):
@@ -193,7 +198,7 @@ class TPVP:
 			print _('destination not reached, continue with new target                         ')
 			return None,None
 
-		self.__wait(self.sleeptime)
+		self.__stable(self.sleeptime)
 	
 		print _('moved to {0:.4f} {1:.4f}...at {2:.4f} {3:.4f} HRZ {4:.4f} {5:.4f}                      ').format(tarf_ra,tarf_dec,tel['ra'],tel['dec'],hrz['alt'],hrz['az'])
 		if imagescript is not None:
@@ -307,7 +312,7 @@ class TPVP:
 		history_alt = []
 		history_az = []
 		for vn in range(maxverify):
-			self.__wait(self.sleeptime)
+			self.__stable(self.sleeptime)
 			# verify ve really center on star
 			vfn = 'verify_{0:03}_{1:02}.fits'.format(mn,vn)
 			print _('taking verify exposure {0} # {1}         ').format(vfn,vn)
