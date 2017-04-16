@@ -550,11 +550,24 @@ int SitechAltAz::isMoving ()
 
 int SitechAltAz::isParking ()
 {
+	if (parkPos == NULL)
+		return -1;
+
 	info ();
-	double tdist = getTargetDistance ();
+	struct ln_equ_posn eq1, eq2;
+
+	eq1.ra = telAltAz->getAz ();
+	eq1.dec = telAltAz->getAlt ();
+	eq2.ra = parkPos->getAz ();
+	eq2.dec = parkPos->getAlt ();
+
+	double tdist = ln_get_angular_separation (&eq1, &eq2);
 
 	if (tdist > trackingDist->getValueDouble ())
+	{
+		startPark ();
 		return USEC_SEC / 1000;
+	}
 
 	return -2;
 }
