@@ -2366,7 +2366,7 @@ int Telescope::startPark (rts2core::Connection * conn)
 	}
 	int ret;
 	resetMpecTLE ();
-	maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking while telescope is being parked");
+	maskState (TEL_MASK_TRACK | TEL_MASK_OFFSETING | TEL_MASK_UNSTABLE, TEL_NOTRACK | TEL_NO_OFFSETING | TEL_STABLE , "stop tracking while telescope is being parked");
 	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = stopMove ();
