@@ -2556,7 +2556,7 @@ def find_nearest(ra,dec,mag_min=None,mag_max=None,lst=None,latitude=None,minalt=
 		for s in data:
 			if minalt < libnova.equ_to_hrz(s[1],s[2],lst,latitude):
 				return s
-	return min(data,lambda x:libnova.angular_separation(x[1],x[2],ra,dec))
+	return min(data,key=lambda x:libnova.angular_separation(x[1],x[2],ra,dec))
 
 def get_star(num):
 	"""Get star with given BSC number. Raises IndexError if the star cannot be found."""
