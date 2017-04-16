@@ -131,13 +131,14 @@ class TPVP:
 		ra = (lst - ha) % 360.0
 		return ra,dec
 	
-	def find_bright_star(self,alt,az):
+	def find_bright_star(self,alt,az,minalt=None):
 		import bsc
 		ra,dec = self.tel_hrz_to_equ(alt,az)
 		lst = self.j.getValue(self.telescope,'LST')
+		lat = self.j.getValue(self.telescope,'LATITUDE')
 		print _('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(ra,dec,lst,self.__mag_max,self.__mag_min)
 		# find bsc..
-		bsc=bsc.find_nearest(ra,dec,self.__mag_max,self.__mag_min)
+		bsc=bsc.find_nearest(ra,dec,self.__mag_max,self.__mag_min,lst,lat,minalt)
 		print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0],bsc[1],bsc[2],bsc[3],bsc[7],bsc[8])
 		return bsc
 	
@@ -267,14 +268,14 @@ class TPVP:
 					print _('unknow command {0}, please try again').format(ans)
 		return None,None
 	
-	def run_manual_altaz(self,alt,az,timeout,modelname,maxspiral,imagescript,mn,useDS9):
+	def run_manual_altaz(self,alt,az,timeout,modelname,maxspiral,imagescript,mn,useDS9,minalt):
 		s = None
 
 		mn = self.__get_mn(mn)
 
 		if maxspiral >= -1:
 			print _('Next model point at altitude {0:.3f} azimuth {1:.3f}').format(alt,az)
-			s = self.find_bright_star(alt,az)
+			s = self.find_bright_star(alt,az,minalt)
 			tarf_ra = s[1]
 			tarf_dec = s[2]
 			pm_ra = s[7]
@@ -353,13 +354,13 @@ class TPVP:
 	
 		return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_az
 
-	def run_verify_brigths(self,timeout,path,modelname,imagescript,useDS9,maxverify,verifyradius,maxspiral,minflux):
+	def run_verify_brigths(self,timeout,path,modelname,imagescript,useDS9,maxverify,verifyradius,maxspiral,minflux,minalt):
 		self.j.setValue(self.telescope,'AZALOFFS','0 0')
 		for p in path:
 			if type(p) == int:
 				fn,mn,bsc = self.run_manual_bsc(p,timeout,None,-1,imagescript,None,useDS9)
 			else:
-				fn,mn,bsc = self.run_manual_altaz(p[0],p[1],timeout,None,-1,imagescript,None,useDS9)
+				fn,mn,bsc = self.run_manual_altaz(p[0],p[1],timeout,None,-1,imagescript,None,useDS9,minalt)
 
 			off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(fn,useDS9,mn,self.fov_center)
 			if minflux is not None and (flux is None or flux < minflux) and maxspiral >= -1:
