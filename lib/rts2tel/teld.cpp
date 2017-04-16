@@ -85,7 +85,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	telHumidity->setValueFloat (0.7);
 
 	createValue (telWavelength, "WAVELENGTH", "[nm] incoming radiation wavelength", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	telWavelength->setValueFloat (0.1);
+	telWavelength->setValueFloat (0.5);
 
 	// object
 	createValue (oriRaDec, "ORI", "original position (epoch)", true, RTS2_VALUE_WRITABLE);
