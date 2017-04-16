@@ -74,7 +74,7 @@ class TPVP:
 			sys.stdout.flush()
 			time.sleep(1)
 			self.j.refresh(self.telescope)
-			if self.j.getState(self.telescope) & 0x01000620 == 0x01000000:
+			if self.j.getState(self.telescope) & 0x01000620 == 0x01000020:
 				print _('stable telescope                                                                      ')
 				return
 		print _('Telescope still unstable                        ')
