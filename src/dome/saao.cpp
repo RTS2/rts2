@@ -517,6 +517,8 @@ int SAAO::stop ()
 	data[0] = 0x0200;
 	data[1] = 0x8000;
 	setRegisters (1, 0x1064, 2, data);
+
+//	setDome (lightsOn->getValueBool (), false, false, false, false, getCurrentAz ());
 	return 0;
 }
 

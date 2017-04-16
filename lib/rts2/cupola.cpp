@@ -234,10 +234,6 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 		setTargetAz (tar_az);
 		return moveStart ();
 	}
-	else if (conn->isCommand (COMMAND_CUPOLA_STOP))
-	{
-	        return moveStop() ;
-	}
 	else if (conn->isCommand (COMMAND_CUPOLA_PARK))
 	{
 		if (isnan (parkAz->getValueFloat ()))
