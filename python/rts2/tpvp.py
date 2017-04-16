@@ -209,7 +209,7 @@ class TPVP:
 				try:
 					d.set('file {0}'.format(fn))
 				except Exception,ex:
-					d = ds9.ds9()
+					d = ds9.ds9('Model')
 					d.set('file {0}'.format(fn))
 			return fn,mn
 		print _('Slew finished, starting search now')
@@ -371,12 +371,11 @@ class TPVP:
 					fn = 'spiral_{0:03}_{1:03}.fits'.format(mn,last_step)
 					os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(self.camera,imagescript,fn))
 					if useDS9:
-						if d is not None:
-							try:
-								d.set('file {0}'.format(fn))
-							except Exception,ex:
-								d = ds9.ds9()
-						d.set('file {0}'.format(fn))
+						try:
+							d.set('file {0}'.format(fn))
+						except Exception,ex:
+							d = ds9.ds9('Model')
+							d.set('file {0}'.format(fn))
 					off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(fn,useDS9,mn,self.fov_center)
 					print _('Brightest in {0} flux {1:.1f}').format(fn,flux)
 					last_step += 1
