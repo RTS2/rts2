@@ -587,7 +587,7 @@ void SitechAltAz::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
-	internalTracking (2.0, trackingFactor->getValueFloat ());
+	internalTracking (1.0, trackingFactor->getValueFloat ());
 	AltAz::runTracking ();
 
 	checkTracking (trackingDist->getValueDouble ());

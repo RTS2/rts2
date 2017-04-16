@@ -422,7 +422,7 @@ int Telescope::checkTracking (double maxDist)
 			if (targetDistanceStat->getMax () <= maxDist)
 			{
 				valueGood (targetDistanceStat);
-				maskState (TEL_MASK_UNSTABLE, TEL_STABLE, "stable pointing");
+				maskState (DEVICE_ERROR_MASK | TEL_MASK_UNSTABLE, TEL_STABLE, "stable pointing");
 				logStream (MESSAGE_INFO) << "stable telescope tracking - max distance " << LibnovaDegDist (targetDistanceStat->getMax ()) << sendLog;
 				return 1;
 			}
@@ -432,7 +432,7 @@ int Telescope::checkTracking (double maxDist)
 			if (targetDistanceStat->getMax () > maxDist)
 			{
 				valueWarning (targetDistanceStat);
-				maskState (TEL_MASK_UNSTABLE, TEL_UNSTABLE, "unstable poiting");
+				maskState (DEVICE_ERROR_MASK | TEL_MASK_UNSTABLE, DEVICE_ERROR_HW | TEL_UNSTABLE, "unstable poiting");
 				logStream (MESSAGE_WARNING) << "unstable telescope tracking - max distance " << LibnovaDegDist (targetDistanceStat->getMax ()) << sendLog;
 				return -1;
 			}
@@ -536,9 +536,11 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	struct ln_equ_posn eqpos, t_eqpos;
 	// refresh current target..
 
+	int32_t c_ac = ac;
+	int32_t c_dc = dc;
 	int32_t t_ac = ac;
 	int32_t t_dc = dc;
-	int ret = calculateTarget (utc1, utc2, &eqpos, t_ac, t_dc, true, 0, true);
+	int ret = calculateTarget (utc1, utc2, &eqpos, c_ac, c_dc, true, 0, true);
 	if (ret)
 		return ret;
 
@@ -546,7 +548,7 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	if (ret)
 		return ret;
 
-	//std::cout << "calculateTracking " << utc1 << " " << utc2 << " " << LibnovaRaDec (&eqpos) << " " << LibnovaRaDec (&t_eqpos) << " " << sec_step << " " << t_ac << " " << t_dc << std::endl;
+	//std::cout << "calculateTracking " << utc1 << " " << utc2 << " " << LibnovaRaDec (&eqpos) << " " << LibnovaRaDec (&t_eqpos) << " " << sec_step << " current " << c_ac << " " < c_dc << " target " << t_ac << " " << t_dc << std::endl;
 
 	// for speed vector calculation..
 	double ra_diff = t_eqpos.ra - eqpos.ra;
@@ -559,8 +561,16 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 
 	skyVect->setValueRaDec (3600 * ra_diff / sec_step, 3600 * dec_diff / sec_step);
 
-	ac_speed = (ac - t_ac) / sec_step;
-	dc_speed = (dc - t_dc) / sec_step;
+	double agresivity_ac = fabs ((double) (ac - c_ac) / (ac - t_ac));
+	double agresivity_dc = fabs ((double) (dc - c_dc) / (dc - t_dc));
+
+/*	if (agresivity_ac > 1)
+		agresivity_ac = 1;
+	if (agresivity_dc > 1)
+		agresivity_dc = 1; */
+
+	ac_speed = ((c_ac - t_ac) + agresivity_ac * (ac - c_ac)) / sec_step;
+	dc_speed = ((c_dc - t_dc) + agresivity_dc * (dc - c_dc)) / sec_step;
 
 	ac = t_ac;
 	dc = t_dc;
