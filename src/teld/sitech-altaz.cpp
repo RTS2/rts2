@@ -202,7 +202,7 @@ class SitechAltAz:public AltAz
 
 using namespace rts2teld;
 
-SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, true)
+SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, true, true, false)
 {
 	unlockPointing ();
 

@@ -87,7 +87,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false, bool parkingBlock = true);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (rts2core::Event * event);
@@ -1231,6 +1231,8 @@ class Telescope:public rts2core::Device
 		 * If this value is true, any software move of the telescope is blocked.
 		 */
 		rts2core::ValueBool *blockMove;
+
+		bool parkingBlockMove;
 
 		rts2core::ValueBool *blockOnStandby;
 

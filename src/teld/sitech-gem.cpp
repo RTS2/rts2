@@ -246,7 +246,7 @@ class Sitech:public GEM
 
 using namespace rts2teld;
 
-Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_status (), radec_Yrequest (), radec_Xrequest ()
+Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true, true, false), radec_status (), radec_Yrequest (), radec_Xrequest ()
 {
 	unlockPointing ();
 

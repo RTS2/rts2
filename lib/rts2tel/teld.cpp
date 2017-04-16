@@ -56,8 +56,10 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, int hasUnTelCoordinates, bool hasAltAzDiff):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, int hasUnTelCoordinates, bool hasAltAzDiff, bool parkingBlock):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
+	parkingBlockMove = parkingBlock;
+
 	for (int i = 0; i < 4; i++)
 	{
 		timerclear (dir_timeouts + i);
@@ -2198,7 +2200,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		return -1;
 	}
 
-	if ((getState () & TEL_MASK_MOVING) == TEL_PARKING)
+	if (parkingBlockMove && (getState () & TEL_MASK_MOVING) == TEL_PARKING)
 	{
 		logStream (MESSAGE_ERROR) << "telescope cannot move during parking" << sendLog;
 		if (conn)

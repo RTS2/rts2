@@ -193,7 +193,7 @@ int Fork::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip
 	return 0;
 }
 
-Fork::Fork (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? 1 : 0)
+Fork::Fork (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool parkingBlock):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? 1 : 0, false, parkingBlock)
 {
 	haZero = decZero = haCpd = decCpd = NAN;
 

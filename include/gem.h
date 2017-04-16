@@ -32,7 +32,7 @@ namespace rts2teld
 class GEM: public Telescope
 {
 	public:
-		GEM (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
+		GEM (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true, bool parkingBlock = true);
 		virtual ~GEM (void);
 
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const double utc1, const double utc2, int used_flipping, bool &use_flipped, bool writeValues, double haMargin);
