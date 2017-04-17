@@ -46,7 +46,7 @@ def find_stars(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 	else:
 		data = np.array(hdu[0].data[cube],np.int32)
 
-	return find_stars_on_data(data, verbosem useDS9)
+	return find_stars_on_data(data, verbose, useDS9)
 
 def get_brightest(s_objects, verbose = 0, useDS9 = False):
 	if len(s_objects) == 0:
@@ -80,7 +80,7 @@ def get_brightest(s_objects, verbose = 0, useDS9 = False):
 	return b_x,b_y,b_flux,b_flux / bb_flux
 
 def find_brightest_on_data(data, verbose = 0, useDS9 = False):
-	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
+	s_objects = find_stars_on_data(data, verbose, useDS9)
 	return get_brightest(s_objects, verbose, useDS9)
 
 def find_brightest(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):

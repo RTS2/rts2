@@ -10,6 +10,7 @@ import rts2.brights
 import sys
 import argparse
 import gettext
+import numpy
 gettext.install('rts2-guide')
 
 parser = argparse.ArgumentParser(description=_('Command line guiding'))
@@ -30,22 +31,22 @@ def found_star(ccd):
 	j.setValue(ccd, 'center_box', '-1 -1 -1 -1')
 	j.setValue(ccd, 'WINDOW', '-1 -1 -1 -1')
 	j.setValue(ccd, 'exposure', 3)
-	data = j.takeImage(ccd)
+	data = numpy.array(j.takeImage(ccd), dtype=numpy.int32)
 
 	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, options.useDS9)
 	if x is None:
 		print _('No suitable guiding star')
 		sys.exit(1)
 
-	j.setValue(options.camera, 'WINDOW', '{0} {1} {2} {3}'.format(x - 20, y - 20, 40, 40))
+	j.setValue(ccd, 'WINDOW', '{0} {1} {2} {3}'.format(x - 20, y - 20, 40, 40))
 
 def guide_loop(ccd):
 	j.setValue(ccd, 'center_cal', 1)
 	while True:
 		data = j.takeImage(ccd)
 		j.refresh()
-		print 'center {0} {1} flux {2}'.format(j.getValue(ccd, 'center_X'), j.getValue(ccd, 'center_Y'), j.getValue(ccd, 'center_max')
+		print 'center {0} {1} flux {2}'.format(j.getValue(ccd, 'center_X'), j.getValue(ccd, 'center_Y'), j.getValue(ccd, 'center_max'))
 
-found_star(options.camera)
+found_star(options.ccd)
 
-guide_loop(options.camera)
+guide_loop(options.ccd)
