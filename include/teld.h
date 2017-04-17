@@ -631,8 +631,9 @@ class Telescope:public rts2core::Device
 		 * @param dc             current (intput) and target (output) second axis (DEC, ALT) count value
 		 * @param ac_speed       first axis speed in counts per second
 		 * @param dc_speed       second axis speed in counts per second
+		 * @param speed_angle    tracking angle
 		 */
-		int calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed);
+		int calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, double &speed_angle);
 
 		/**
 		 * Transform sky coordinates to axis coordinates. Implemented in classes

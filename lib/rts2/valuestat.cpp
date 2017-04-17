@@ -106,6 +106,10 @@ const char * ValueDoubleStat::getDisplayValue ()
 			os << LibnovaDeg (getValueDouble ()) << " " << numMes << " " << LibnovaDeg (mode) << " " << LibnovaDeg (min) << " " << LibnovaDeg (max) << " " << LibnovaDeg (stdev);
 			memcpy (buf, os.str ().c_str (), sizeof (buf));
 			break;
+		case RTS2_DT_DEG_DIST:
+			os << LibnovaDegDist (getValueDouble ()) << " " << numMes << " " << LibnovaDegDist (mode) << " " << LibnovaDegDist (min) << " " << LibnovaDegDist (max) << " " << LibnovaDegDist (stdev);
+			memcpy (buf, os.str ().c_str (), sizeof (buf));
+			break;
 		default:
 			snprintf (buf, sizeof(buf), "%f %i %f %f %f %f", getValueDouble (), numMes, mode, min, max, stdev);
 	}

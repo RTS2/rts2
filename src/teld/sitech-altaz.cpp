@@ -104,7 +104,8 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueDouble *trackingDist;
 		rts2core::ValueFloat *trackingLook;
-		rts2core::ValueFloat *trackingAngle;
+		rts2core::ValueDoubleStat *trackingAngle;
+		rts2core::ValueDoubleStat *speedAngle;
 		rts2core::ValueDouble *slowSyncDistance;
 		rts2core::ValueFloat *fastSyncSpeed;
 		rts2core::ValueFloat *trackingFactor;
@@ -238,7 +239,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
 
-	createValue (trackingAngle, "tracking_angle", "[deg] tracking direction", false, RTS2_DT_DEGREES);
+	createValue (trackingAngle, "tracking_angle", "[deg] tracking direction", false, RTS2_DT_DEG_DIST);
+	createValue (speedAngle, "speed_angle", "[deg] speed direction", false, RTS2_DT_DEG_DIST);
 
 	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	slowSyncDistance->setValueDouble (0.1);  // 6 arcmin
@@ -649,7 +651,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t azc_speed = 0;
 	int32_t altc_speed = 0;
 
-	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed);
+	double speed_angle = 0;
+
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed, speed_angle);
 	if (ret)
 	{
 		if (ret < 0)
@@ -683,11 +687,17 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	}
 	else
 	{
-		az_change = labs (a_azc - r_az_pos->getValueLong ());
-		alt_change = labs (a_altc - r_alt_pos->getValueLong ());
+		az_change = a_azc - r_az_pos->getValueLong ();
+		alt_change = a_altc - r_alt_pos->getValueLong ();
 
-		altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed));
-		altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed));
+		if (sec_step < 1)
+		{
+			a_azc += az_change * 500;
+			a_altc += alt_change * 500;
+		}
+
+		altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
+		altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
 
 		altaz_Xrequest.y_dest = a_azc;
 		altaz_Xrequest.x_dest = a_altc;
@@ -717,7 +727,11 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	t_az_pos->setValueLong (altaz_Xrequest.y_dest);
 	t_alt_pos->setValueLong (altaz_Xrequest.x_dest);
 
-	trackingAngle->setValueFloat (ln_rad_to_deg (atan2 (az_change, alt_change)));
+	trackingAngle->addValue (-ln_rad_to_deg (atan2 (az_change, -alt_change)), 15);
+	speedAngle->addValue (speed_angle, 15);
+
+	trackingAngle->calculate ();
+	speedAngle->calculate ();
 
 	try
 	{

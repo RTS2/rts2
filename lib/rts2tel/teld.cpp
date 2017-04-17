@@ -302,7 +302,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (targetDistance, "target_distance", "distance to the target in degrees", false, RTS2_DT_DEG_DIST);
 	createValue (targetStarted, "move_started", "time when movement was started", false);
 	createValue (targetReached, "move_end", "expected time when telescope will reach the destination", false);
-	createValue (targetDistanceStat, "tdist_stat", "statistics of target distances", false);
+	createValue (targetDistanceStat, "tdist_stat", "statistics of target distances", false, RTS2_DT_DEG_DIST);
 
 	targetDistance->setValueDouble (NAN);
 	targetStarted->setValueDouble (NAN);
@@ -533,7 +533,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	return sky2counts (utc1, utc2, out_tar, ac, dc, writeValues, haMargin, forceShortest);
 }
 
-int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed)
+int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, double &speed_angle)
 {
 	struct ln_equ_posn eqpos, t_eqpos;
 	// refresh current target..
@@ -573,6 +573,8 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 
 	ac_speed = ((c_ac - t_ac) + agresivity_ac * (ac - c_ac)) / sec_step;
 	dc_speed = ((c_dc - t_dc) + agresivity_dc * (dc - c_dc)) / sec_step;
+
+	speed_angle = ln_rad_to_deg (atan2 (ac_speed, dc_speed));
 
 	ac = t_ac;
 	dc = t_dc;
