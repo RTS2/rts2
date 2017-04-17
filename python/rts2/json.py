@@ -335,6 +335,36 @@ class JSONProxy(Rts2JSON):
 	def lastImage(self, device):
 		"""Returns image from the last exposure."""
 		return self.getResponse('/api/lastimage',{'ccd':device}).read()
+	
+	def takeImage(self, camera):
+		"""Returns image from camera as array. Exposure parameters should be set before starting exposure with setValue calls."""
+		r = self.getResponse('/api/exposedata',{'ccd':camera})
+		return self.getImage(r)
+
+	def getImage(self, r):
+		import struct
+		import numpy
+
+		if not(r.getheader('Content-type') == 'binary/data'):
+			raise Exception('wrong header, expecting binary/data, received:',r.getheader('Content-type'),r.read())
+
+		tb = int(r.getheader('Content-length'))
+
+		imh = r.read(44)
+
+		data_type,naxes,w,h,a3,a4,a5,bv,bh,b3,b4,b5,shutter,filt,x,y,chan=struct.unpack('!hhiiiiihhhhhhhhhH',imh)
+
+		# map data_typ to numpy type
+		rts2_2_numpy = {8:numpy.uint8,16:numpy.int16,32:numpy.int32,64:numpy.int64,-32:numpy.float,-64:numpy.double,10:numpy.uint8,20:numpy.uint16,40:numpy.uint32}
+		dt = rts2_2_numpy[data_type]
+
+		a = numpy.empty((h,w),dt)
+
+		for row in range(h):
+			line = r.read(a.itemsize * w)
+			a[row] = numpy.fromstring(line, dtype=dt)
+
+		return a
 
 def getProxy():
 	global __jsonProxy

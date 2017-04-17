@@ -40,7 +40,7 @@ parser.add_argument('--run-script', help='run script on device. Device must be s
 parser.add_argument('--kill-script', help='attempt to kill currently running script', action='store_true', dest='kill_script', default=False)
 parser.add_argument('--list-minmax', help='list miminal/maximal values', action='store_true', dest='list_minmax', default=False)
 parser.add_argument('--device', help='device for cmd and run-script options', action='store', dest='device')
-parser.add_argument('--expose', help='start exposure on device', action='store', dest='expose', default=None)
+parser.add_argument('--expose', help='start exposure on camera', action='store', dest='expose', default=None)
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
 parser.add_argument('--create-tle-target', help='create TLE target. Target name, first and second line of TLE must be entered as command line arguments', action='store_true', dest='create_tle_target')
@@ -143,7 +143,9 @@ try:
 		print 'Created target with ID {0}'.format(tid)
 
 	if options.expose:
-		r = j.getResponse
+		r = j.takeImage(options.expose)
+		print "{0}x{1}: mean {2} stdev {3} max {4} min {5}".format(len(r), len(r[0]), r.mean(), r.std(), r.max(), r.min())
+			
 
 	sys.exit(0)
 
