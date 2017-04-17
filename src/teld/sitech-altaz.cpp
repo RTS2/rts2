@@ -680,42 +680,14 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	}
 	else
 	{
-		// 1 step change
-//		az_change = labs (a_azc - r_az_pos->getValueLong ());
-//		alt_change = labs (a_altc - r_alt_pos->getValueLong ());
-
-//		int32_t az_step = speed_factor * az_change / sec_step;
-//		int32_t alt_step = speed_factor * alt_change / sec_step;
+		az_change = labs (a_azc - r_az_pos->getValueLong ());
+		alt_change = labs (a_altc - r_alt_pos->getValueLong ());
 
 		altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed));
 		altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed));
 
 		altaz_Xrequest.y_dest = a_azc;
 		altaz_Xrequest.x_dest = a_altc;
-
-/*		if (altaz_Xrequest.y_speed != 0)
-		{
-			if (a_azc > r_az_pos->getValueLong ())
-				altaz_Xrequest.y_dest = r_az_pos->getValueLong () + az_step * 10;
-			else
-				altaz_Xrequest.y_dest = r_az_pos->getValueLong () - az_step * 10;
-		}
-		else
-		{
-			altaz_Xrequest.y_dest = r_az_pos->getValueLong ();
-		}
-
-		if (altaz_Xrequest.x_speed != 0)
-		{
-			if (a_altc > r_alt_pos->getValueLong ())
-				altaz_Xrequest.x_dest = r_alt_pos->getValueLong () + alt_step * 10;
-			else
-				altaz_Xrequest.x_dest = r_alt_pos->getValueLong () - alt_step * 10;
-		}
-		else
-		{
-			altaz_Xrequest.x_dest = r_alt_pos->getValueLong ();
-		} */
 	}
 
 	az_sitech_speed->setValueLong (altaz_Xrequest.y_speed);
