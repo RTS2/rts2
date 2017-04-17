@@ -84,7 +84,7 @@ class Dummy:public SensorWeather
 
 			createValue (timeArray, "times", "tests of time array", true, RTS2_VALUE_WRITABLE);
 
-			createValue (statTest5, "test_stat_5", "test statiscal value", true);
+			createValue (statTest5, "test_stat_5", "test statiscal value", true, RTS2_DT_DEGREES);
 			createValue (timeserieTest6, "test_timeserie_6", "test timeserie value (with trending)", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
 			createValue (degMinMax, "deg_minmax", "[deg] degrees test minmax value", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);

@@ -32,6 +32,15 @@ std::string rts2core::getDisplayValue (rts2core::Value * value)
 	const char munits[] = {' ', 'k', 'M', 'G', 'T', 'P'};
 	int sind = 0;
 	double sval;
+	// always display composite values with their own routine
+	if (value->getValueExtType () == RTS2_VALUE_STAT)
+	{
+			tmp_val = value->getDisplayValue ();
+			if (tmp_val)
+				return std::string (tmp_val);
+			return std::string ("");
+	}
+		
 	switch (value->getValueDisplayType ())
 	{
 		case RTS2_DT_RA:
