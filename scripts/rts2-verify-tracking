@@ -37,6 +37,7 @@ parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='v
 parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
 parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
 parser.add_argument('--center-radius', help=_('select stars only that far from center'), action='store', dest='center_radius', default=None, type=float)
+parser.add_argument('--split', help=_('split graphs/data if matching stars cannot be found'), action='store_true', dest='split', default=False)
 parser.add_argument('--cube', help=_('process FITS cubes'), action='store_true', dest='cube', default=False)
 parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
 parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
@@ -77,7 +78,7 @@ class ProcessFiles:
 		for si in range(nstars):
 			self.sb.append([])
 
-	def process_file(self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds, center_radius, ci=None):
+	def process_file(self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds, center_radius, split, ci=None):
 		objects = rts2.brights.find_stars(fn, hdu, verbose, useDS9, ci)
 		if verbose > 1:
 			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
@@ -126,11 +127,15 @@ class ProcessFiles:
 			if len(found_sb) < stars:
 				if self.skipped < skip_clouds:
 					self.skipped += 1
-					return
-				sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), self.skipped))
+					return 1
+				if split == False:
+					sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), self.skipped))
+				return -1
 
 			for si in range(stars):
 				self.sb[si].append(found_sb[si])
+
+			return 0
 
 	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot):
 		if verbose == 0:
@@ -250,6 +255,8 @@ for fn in options.files:
 		d_y = len(hdu[0].data[0])
 		c_y = d_y / 2.0
 	else:
+		options.cube = True
+		print _('Detected cube image, switch to cube mode')
 		d_x = len(hdu[0].data[0])
 		c_x = d_x / 2.0
 		d_y = len(hdu[0].data[0][0])
@@ -260,9 +267,14 @@ for fn in options.files:
 
 	if options.cube:
 		for ci in range(len(hdu[0].data)):
-			pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, ci)
+			ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci)
+			if ret == -1:
+				# split graphs
+				pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)
+				pf = ProcessFiles(options.stars)
+
 	else:
-		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius)
+		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
 
 	if options.cube:
 		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)
