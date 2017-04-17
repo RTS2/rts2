@@ -104,6 +104,7 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueDouble *trackingDist;
 		rts2core::ValueFloat *trackingLook;
+		rts2core::ValueFloat *trackingAngle;
 		rts2core::ValueDouble *slowSyncDistance;
 		rts2core::ValueFloat *fastSyncSpeed;
 		rts2core::ValueFloat *trackingFactor;
@@ -236,6 +237,8 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
+
+	createValue (trackingAngle, "tracking_angle", "[deg] tracking direction", false, RTS2_DT_DEGREES);
 
 	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	slowSyncDistance->setValueDouble (0.1);  // 6 arcmin
@@ -713,6 +716,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	t_az_pos->setValueLong (altaz_Xrequest.y_dest);
 	t_alt_pos->setValueLong (altaz_Xrequest.x_dest);
+
+	trackingAngle->setValueFloat (ln_rad_to_deg (atan2 (az_change, alt_change)));
+
 	try
 	{
 		telConn->sendXAxisRequest (altaz_Xrequest);
