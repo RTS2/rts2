@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+# Guiding script.
+# (C) 2017 Petr Kubanek
+#
+
+import rts2.json
+import rts2.brights
+
+import sys
+import argparse
+import gettext
+gettext.install('rts2-guide')
+
+parser = argparse.ArgumentParser(description=_('Command line guiding'))
+
+parser.add_argument('--server', help=_('URL to RTS2 XML-RPC server'), action='store', dest='server', default='http://localhost:8889')
+parser.add_argument('--user', help=_('RTS2 web server username'), action='store', dest='user', default=None)
+parser.add_argument('--password', help=_('password for web user'), action='store', dest='password', default=None)
+parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
+parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
+parser.add_argument('--camera', help=_('guide camera'), action='store', dest='ccd', default='AG1CCD')
+
+options = parser.parse_args()
+
+j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
+
+# first, found a star
+def found_star(ccd):
+	j.setValue(ccd, 'center_box', '-1 -1 -1 -1')
+	j.setValue(ccd, 'WINDOW', '-1 -1 -1 -1')
+	j.setValue(ccd, 'exposure', 3)
+	data = j.takeImage(ccd)
+
+	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, options.useDS9)
+	if x is None:
+		print _('No suitable guiding star')
+		sys.exit(1)
+
+	j.setValue(options.camera, 'WINDOW', '{0} {1} {2} {3}'.format(x - 20, y - 20, 40, 40))
+
+def guide_loop(ccd):
+	j.setValue(ccd, 'center_cal', 1)
+	while True:
+		data = j.takeImage(ccd)
+		j.refresh()
+		print 'center {0} {1} flux {2}'.format(j.getValue(ccd, 'center_X'), j.getValue(ccd, 'center_Y'), j.getValue(ccd, 'center_max')
+
+found_star(options.camera)
+
+guide_loop(options.camera)
