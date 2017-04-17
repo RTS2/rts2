@@ -39,7 +39,7 @@ def random_path(altitudes=[25.3,36.2,45.1,54.7,63.2,73.1,82.2],azimuth_separatio
 	
 	return path
 
-def constant_path(altitudes=[20,40,75]):
+def constant_path(altitudes=[30,45,75]):
 	"""Generate constant path at given altitudes."""
 	path=[]
 	az_r=range(0,360,30)
