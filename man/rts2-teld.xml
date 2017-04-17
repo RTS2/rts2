@@ -162,6 +162,19 @@
 
    <variablelist>
       <varlistentry>
+        <term>OFFS</term>
+	<para>
+	  Offsets applied to ORI coordinates.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>GOFFS</term>
+	<para>
+	  Guiding offsets. Has similar effects as OFFS, but are intended
+	  primarly for storing guiding data.
+	</para>
+      </varlistentry>
+      <varlistentry>
         <term>FLIPPING</term>
 	<para>
 	  This variable specifies flipping strategy used by the mount. Flip is
