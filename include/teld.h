@@ -1148,6 +1148,8 @@ class Telescope:public rts2core::Device
 		 */
 		rts2core::ValueRaDec *offsRaDec;
 
+		rts2core::ValueRaDec *gOffsRaDec;
+
 		/**
 		 * User alt-az offsets. Supported primary on alt-az mounts.
 		 */

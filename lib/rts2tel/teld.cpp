@@ -97,6 +97,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	offsRaDec->setValueRaDec (0, 0);
 
+	createValue (gOffsRaDec, "GOFFS", "guiding offsets", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
+	gOffsRaDec->setValueRaDec (0, 0);
+
 	if (hasAltAzDiff)
 	{
 		createValue (offsAltAz, "AZALOFFS", "alt-azimuth offsets", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
@@ -512,8 +515,8 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	}
 
 	// offsets, corrections,..
-	out_tar->ra += getOffsetRa ();
-	out_tar->dec += getOffsetDec ();
+	out_tar->ra += getOffsetRa () + gOffsRaDec->getRa ();
+	out_tar->dec += getOffsetDec () + gOffsRaDec->getDec ();
 
 	// crossed pole, put on opposite side..
 	if (out_tar->dec > 90)
@@ -647,8 +650,8 @@ void Telescope::applyOffsets (struct ln_equ_posn *pos, bool oriSet)
 		ln_get_equ_prec2 (&ori, JDfrom, JD2000, pos);
 	}
 
-	pos->ra += offsRaDec->getRa ();
-	pos->dec += offsRaDec->getDec ();
+	pos->ra += offsRaDec->getRa () + gOffsRaDec->getRa ();
+	pos->dec += offsRaDec->getDec () + gOffsRaDec->getDec ();
 }
 
 
@@ -1089,6 +1092,9 @@ void Telescope::incMoveNum ()
 	// reset offsets
 	offsRaDec->setValueRaDec (0, 0);
 	offsRaDec->resetValueChanged ();
+
+	gOffsRaDec->setValueRaDec (0, 0);
+	gOffsRaDec->resetValueChanged ();
 
 	if (offsAltAz)
 	{

@@ -21,22 +21,36 @@ parser.add_argument('--password', help=_('password for web user'), action='store
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
 parser.add_argument('--camera', help=_('guide camera'), action='store', dest='ccd', default='AG1CCD')
+parser.add_argument('--pixelscale', help=('camera pixels scale (arcsec/pixel)'), action='store', dest='pixscale', default=0.3, type=float)
+parser.add_argument('--sensibility', help=('guiding sensibility [arcsec]'), action='store', dest='sensibility', default=0.2, type=float)
+parser.add_argument('--agressivity', help=('guiding agressivity'), action='store', dest='agressivity', default=0.7, type=float)
 
 options = parser.parse_args()
 
 j = rts2.json.JSONProxy(options.server, options.user, options.password, verbose=options.verbose)
 
+tn = j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)
+if tn is None:
+	sys.exit(_('Telescope not connected?'))
+
+tn = tn[0]
+
 # first, found a star
-def found_star(ccd):
+def find_star(ccd):
 	j.setValue(ccd, 'center_box', '-1 -1 -1 -1')
 	j.setValue(ccd, 'WINDOW', '-1 -1 -1 -1')
 	j.setValue(ccd, 'exposure', 3)
 	data = numpy.array(j.takeImage(ccd), dtype=numpy.int32)
 
-	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, options.useDS9)
+	if options.useDS9:
+		import ds9
+		d = ds9.ds9('Guiding {0}'.format(ccd))
+		d.set('frame 0')
+		d.set_np2arr(data)
+
+	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, exclusion=30)
 	if x is None:
-		print _('No suitable guiding star')
-		sys.exit(1)
+		sys.exit(_('No suitable guiding star'))
 
 	j.setValue(ccd, 'WINDOW', '{0} {1} {2} {3}'.format(x - 20, y - 20, 40, 40))
 
@@ -44,9 +58,27 @@ def guide_loop(ccd):
 	j.setValue(ccd, 'center_cal', 1)
 	while True:
 		data = j.takeImage(ccd)
-		j.refresh()
-		print 'center {0} {1} flux {2}'.format(j.getValue(ccd, 'center_X'), j.getValue(ccd, 'center_Y'), j.getValue(ccd, 'center_max'))
+		if options.useDS9:
+			import ds9
+			d = ds9.ds9('Guiding {0}'.format(ccd))
+			d.set('frame 0')
+			d.set_np2arr(data)
 
-found_star(options.ccd)
+		j.refresh()
+		c_x = float(j.getValue(ccd, 'center_X'))
+		c_y = float(j.getValue(ccd, 'center_Y'))
+		x_dev = (c_x - 20) * options.pixscale
+		y_dev = (c_y - 20) * options.pixscale
+		print 'center {0:.3} {1:.3} deviations {2:.2} {3:.2} flux {4}'.format(c_x, c_y, x_dev, y_dev, float(j.getValue(ccd, 'center_max')))
+		ra = 0
+		dec = 0
+
+		if abs(x_dev) > options.sensibility or abs(y_dev) > options.sensibility:
+			ra = y_dev * options.agressivity
+			dec = -1 * (x_dev * options.agressivity)
+			print _('sending offset {0:.2}" {1:.2}" to {2}').format(ra, dec, tn)
+			j.incValue(tn, 'GOFFS', '{0} {1}'.format(ra / 3600.0, dec / 3600.0))
+
+find_star(options.ccd)
 
 guide_loop(options.ccd)
