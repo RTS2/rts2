@@ -1049,7 +1049,7 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	double refa, refb;
 	double zd = ln_deg_to_rad (90 - hrz.alt);
 	double tzd = tan (zd);
-	eraRefco (getPressure (), 10, 0.1, 50, &refa, &refb);
+	eraRefco (getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &refa, &refb);
 	ref = ln_rad_to_deg (refa * tzd + refb * tzd * tzd * tzd);
 #else
 	ref = ln_get_refraction_adj (hrz.alt, getPressure (), 10);
