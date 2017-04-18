@@ -18,6 +18,7 @@
  */
 
 #include "xfitsimage.h"
+#include "command.h"
 
 #include <rts2-config.h>
 
@@ -47,9 +48,10 @@ int cmpuint16_t (const void *a, const void *b)
 #undef B
 }
 
-XFitsImage::XFitsImage (rts2core::Connection *_connection)
+XFitsImage::XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client)
 {
 	connection = _connection;
+	client = _client;
 
 	window = 0L;
 	pixmap = 0L;
@@ -103,47 +105,47 @@ void XFitsImage::XeventLoop ()
 				ks = XLookupKeysym ((XKeyEvent *) & event, 0);
 				switch (ks)
 				{
-/**					case XK_1:
-						queCommand (new rts2core::CommandChangeValue (this, "binning", '=', 0));
+					case XK_1:
+						connection->queCommand (new rts2core::CommandChangeValue (client, "binning", '=', 0));
 						break;
 					case XK_2:
-						queCommand (new rts2core::CommandChangeValue (this, "binning", '=', 1));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "binning", '=', 1));
 						break;
 					case XK_3:
-						queCommand (new rts2core::CommandChangeValue (this, "binning", '=', 2));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "binning", '=', 2));
 						break;
-					case XK_9:
-						master->GoNine = !master->GoNine;
-						break;
+	/*				case XK_9:
+						connection->GoNine = !master->GoNine;
+						break; */
 					case XK_e:
-						queCommand (new rts2core::CommandChangeValue (this, "exposure", '+', 1));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '+', 1));
 						break;
 					case XK_d:
-						queCommand (new rts2core::CommandChangeValue (this, "exposure", '-', 1));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '-', 1));
 						break;
 					case XK_w:
-						queCommand (new rts2core::CommandChangeValue (this, "exposure", '+', 0.1));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '+', 0.1));
 						break;
 					case XK_s:
-						queCommand (new rts2core::CommandChangeValue (this, "exposure", '-', 0.1));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '-', 0.1));
 						break;
 					case XK_q:
-						queCommand (new rts2core::CommandChangeValue (this, "exposure", '+', 0.01));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '+', 0.01));
 						break;
 					case XK_a:
-						queCommand (new rts2core::CommandChangeValue (this, "exposure", '-', 0.01));
+						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '-', 0.01));
 						break;
-					case XK_f:
-						connection->queCommand (new rts2core::Command (master, "box 0 -1 -1 -1 -1"));
+/*					case XK_f:
+						connection->queCommand (new rts2core::Command (connection, "box 0 -1 -1 -1 -1"));
 						break;
 					case XK_c:
-						connection->queCommand (new rts2core::Command (master, "center 0"));
+						connection->queCommand (new rts2core::Command (client, "center 0"));
 						break;
 					case XK_p:
-						master->postEvent (new rts2core::Event (EVENT_INTEGRATE_START));
+						connection->postEvent (new rts2core::Event (EVENT_INTEGRATE_START));
 						break;
 					case XK_o:
-						master->postEvent (new rts2core::Event (EVENT_INTEGRATE_STOP));
+						connection->postEvent (new rts2core::Event (EVENT_INTEGRATE_STOP));
 						break;
 					case XK_y:
 						setSaveImage (1);
@@ -186,8 +188,7 @@ void XFitsImage::XeventLoop ()
 					case XK_minus:
 					case XK_KP_Subtract:
 						master->zoom = master->zoom / 2.0;
-						break;
-*/
+						break; */
 					default:
 						break;
 				}
@@ -232,12 +233,16 @@ void XFitsImage::XeventLoop ()
 						timerclear (&buttonImageTime);
 					}
 				}
-				else
+				else if (((XButtonPressedEvent *) & event)->button == Button1)
 				{
 					// move by given direction
 					mouseTelChange_x = mouseX;
 					mouseTelChange_y = mouseY;
 					std::cout << "Change" << std::endl;
+				}
+				else
+				{
+					markers.push_back (Marker (mouseX, mouseY));
 				}
 
 				printf ("%i %i\n", mouseX, mouseY);
@@ -606,6 +611,12 @@ void XFitsImage::buildWindow ()
 	rgb[256].green = 0;
 	rgb[256].blue = 0;
 	rgb[256].flags = DoRed | DoGreen | DoBlue;
+
+	rgb[257].red = 0;
+	rgb[257].green = USHRT_MAX;
+	rgb[257].blue = 0;
+	rgb[257].flags = DoRed | DoGreen | DoBlue;
+
 	ret = XAllocColor (display, colormap, &rgb[256]);
 	if (!ret)
 		throw rts2core::Error ("cannot allocate foreground color");
@@ -774,6 +785,13 @@ void XFitsImage::drawCross4 ()
 	}
 }
 
+void XFitsImage::drawMarkers ()
+{
+	XSetForeground (display, gc, rgb[257].pixel);
+
+	for (std::list <Marker>::iterator i = markers.begin (); i != markers.end (); i++)
+		drawCenterCross (i->x, i->y);
+}
 
 void XFitsImage::drawStars (rts2image::Image * image)
 {

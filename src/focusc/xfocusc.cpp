@@ -79,7 +79,7 @@ void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 		std::map <int, XFitsImage>::iterator iter = ximages.find (channum);
 		if (iter == ximages.end ())
 		{
-			ximages.insert (std::pair <int, XFitsImage> (channum, XFitsImage (getConnection ())));
+			ximages.insert (std::pair <int, XFitsImage> (channum, XFitsImage (getConnection (), this)));
 			iter = ximages.find (channum);
 		}
 		iter->second.drawImage (image, ch, master->getDisplay (), master->getVisual (), master->getDepth (), master->zoom, crossType, master->GoNine);

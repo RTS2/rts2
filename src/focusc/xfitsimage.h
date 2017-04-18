@@ -27,6 +27,14 @@
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
 
+class Marker
+{
+	public:
+		Marker (int _x, int _y) { x = _x; y = _y; }
+		int x;
+		int y;
+};
+
 /**
  * Class holding a single channel image.
  *
@@ -35,7 +43,7 @@
 class XFitsImage
 {
 	public:
-		XFitsImage (rts2core::Connection *_connection);
+		XFitsImage (rts2core::Connection *_connection, rts2core::DevClient *_client);
 		virtual ~XFitsImage ();
 
 		void setCrossType (int in_crossType);
@@ -58,6 +66,7 @@ class XFitsImage
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
 
 		rts2core::Connection *connection;
+		rts2core::DevClient *client;
 
 		// X11 stuff
 		Window window;
@@ -66,7 +75,7 @@ class XFitsImage
 		Visual * visual;
 		int depth;
 
-		XColor rgb[260];		 // <= 255 - images, 256 - red line
+		XColor rgb[260];		 // <= 255 - images, 256 - red line, 257 - green
 		Colormap colormap;
 
 		GC gc;
@@ -89,6 +98,7 @@ class XFitsImage
 		void drawCross2 ();
 		void drawCross3 ();
 		void drawCross4 ();
+		void drawMarkers ();
 		void drawStars (rts2image::Image * image);
 		void printInfo ();
 		void printMouse ();
@@ -119,6 +129,9 @@ class XFitsImage
 		// image statistics
 		int low, high, max, min;
 		double median, average;
+
+		// marked pixels
+		std::list <Marker> markers;
 
 		// image channel
 		int channelnum;
