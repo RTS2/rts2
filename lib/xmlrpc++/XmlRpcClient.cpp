@@ -58,10 +58,15 @@ XmlRpcClient::XmlRpcClient(const char *path, const char **uri)
 	{
 		port = atoi (str + 1);
 		*str = '\0';
+		str++;
+	}
+	else
+	{
+		str = host;
 	}
 
 	// separate host and uri
-	str = strchr (host, '/');
+	str = strchr (str, '/');
 	if (str)
 	{
 		*str = '\0';
@@ -568,7 +573,7 @@ std::string XmlRpcClient::generateGetPostHeader(std::string const& path, size_t 
 		header += '/';
 	header += path + " HTTP/1.1\r\nUser-Agent: ";
 	header += XMLRPC_VERSION;
-	header += "\r\nHost: ";
+	header += "\r\nAccept: */*\r\nAccept-Encoding: identity\r\nHost: ";
 	header += _host;
 	header += buff;
 	header += "\r\n";
@@ -584,6 +589,7 @@ std::string XmlRpcClient::generateGetPostHeader(std::string const& path, size_t 
 
 		header += "Authorization: Basic " + auth + "\r\n";
 	}
+
 	header += "Content-Type: text/xml\r\nContent-Length: ";
 
 	sprintf(buff,"%zu\r\n\r\n", contentLength);
