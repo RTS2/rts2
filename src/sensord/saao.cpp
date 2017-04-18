@@ -43,6 +43,7 @@ class SAAO:public Sensor
 		rts2core::ValueFloat *humidity;
 		rts2core::ValueFloat *windDirection;
 		rts2core::ValueFloat *windSpeed;
+		rts2core::ValueFloat *pressure;
 
 		const char *url;
 };
@@ -57,6 +58,7 @@ SAAO::SAAO (int argc, char **argv):Sensor (argc, argv)
 	createValue (humidity, "HUMIDITY", "[%] relative humidity", true);
 	createValue (windDirection, "WIND_DIR", "wind direction", true, RTS2_DT_DEGREES);
 	createValue (windSpeed, "WINDSPEED", "[km/h] wind speed", true);
+	createValue (pressure, "PRESSURE", "[mbar] atmospheric pressure", true);
 
 	addOption ('u', NULL, 1, "URL to parse data");
 
@@ -144,6 +146,13 @@ int SAAO::info ()
 			{
 				data += 3;
 				humidity->setValueFloat (strtod (data, &endptr));
+				data = endptr;
+			}
+			else if (strncmp (data, "BP,", 3) == 0)
+			{
+				data += 4;
+				// pressure is in mmHg
+				pressure->setValueFloat (1.333224 * strtod (data, &endptr));
 				data = endptr;
 			}
 		}
