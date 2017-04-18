@@ -243,6 +243,9 @@ void XFitsImage::XeventLoop ()
 				else
 				{
 					markers.push_back (Marker (mouseX, mouseY));
+					std::cout << "Adding marker " << mouseX << " " << mouseY << std::endl;
+					drawMarkers ();
+					XClearArea (display, window, mouseX - 20, mouseY - 20, mouseX + 20, mouseY + 20, False);
 				}
 
 				printf ("%i %i\n", mouseX, mouseY);
@@ -612,14 +615,18 @@ void XFitsImage::buildWindow ()
 	rgb[256].blue = 0;
 	rgb[256].flags = DoRed | DoGreen | DoBlue;
 
+	ret = XAllocColor (display, colormap, &rgb[256]);
+	if (!ret)
+		throw rts2core::Error ("cannot allocate foreground color");
+
 	rgb[257].red = 0;
 	rgb[257].green = USHRT_MAX;
 	rgb[257].blue = 0;
 	rgb[257].flags = DoRed | DoGreen | DoBlue;
 
-	ret = XAllocColor (display, colormap, &rgb[256]);
+	ret = XAllocColor (display, colormap, &rgb[257]);
 	if (!ret)
-		throw rts2core::Error ("cannot allocate foreground color");
+		throw rts2core::Error ("cannot allocate greencolor");
 
 	window = XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100, 100, 0, depth, InputOutput, visual, 0, &xswa);
 	pixmap = XCreatePixmap (display, window, windowWidth, windowHeight, depth);
@@ -864,6 +871,8 @@ void XFitsImage::redraw ()
 		printInfo ();
 	// draw plots over stars..
 	//drawStars (getActualImage ());
+
+	drawMarkers ();
 
 	printMouse ();
 
