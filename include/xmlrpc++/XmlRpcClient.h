@@ -133,6 +133,7 @@ namespace XmlRpc
 			virtual bool writeRequest();
 			virtual bool readHeader();
 			virtual bool readResponse();
+			virtual bool processChunk();
 			virtual bool parseResponse(XmlRpcValue& result);
 
 			// Possible IO states for the connection
