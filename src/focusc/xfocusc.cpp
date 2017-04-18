@@ -104,7 +104,7 @@ XFocusClient::XFocusClient (int in_argc, char **in_argv):FocusClient (in_argc, i
 
 	addOption (OPT_DISPLAY, "display", 1, "name of X display");
 	addOption (OPT_STARS, "stars", 0, "draw stars over image (default to don't)");
-	addOption ('x', NULL, 1, "cross type (default to 1; possible values 0 no cross, 1 rectangles 2 circles, 3 BOOTES special");
+	addOption ('x', NULL, 1, "cross type (default to 1; possible values 0 no cross, 1 rectangles 2 circles, 3 BOOTES special; 4 - crossboard");
 	addOption (OPT_SAVE, "save", 0, "save filenames (default don't save");
 	addOption (OPT_CHANGE, "change_val", 1, "change value (in arcseconds; default to 15 arcsec");
 	addOption ('Z', NULL, 1, "Zoom (float number 0-xx)");

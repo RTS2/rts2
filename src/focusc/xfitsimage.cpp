@@ -760,6 +760,21 @@ void XFitsImage::drawCross3 ()
 	XDrawLine (display, pixmap, gc, xc, yc - pixmapHeight / 15, xc, yc + pixmapHeight / 15);
 }
 
+void XFitsImage::drawCross4 ()
+{
+	XSetForeground (display, gc, rgb[256].pixel);
+	int i;
+
+	drawCenterCross (pixmapWidth / 2, pixmapHeight / 2);
+
+	for (i = 0; i < pixmapWidth; i += 20)
+	{
+		XDrawLine (display, pixmap, gc, i, 0, i, pixmapHeight);
+		XDrawLine (display, pixmap, gc, 0, i, pixmapHeight, i);
+	}
+}
+
+
 void XFitsImage::drawStars (rts2image::Image * image)
 {
 	struct rts2image::stardata *sr;
@@ -822,6 +837,9 @@ void XFitsImage::redraw ()
 			break;
 		case 3:
 			drawCross3 ();
+			break;
+		case 4:
+			drawCross4 ();
 			break;
 	}
 	if (crossType > 0)

@@ -88,6 +88,7 @@ class XFitsImage
 		void drawCross1 ();
 		void drawCross2 ();
 		void drawCross3 ();
+		void drawCross4 ();
 		void drawStars (rts2image::Image * image);
 		void printInfo ();
 		void printMouse ();
