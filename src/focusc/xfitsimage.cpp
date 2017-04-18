@@ -135,6 +135,9 @@ void XFitsImage::XeventLoop ()
 					case XK_a:
 						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '-', 0.01));
 						break;
+					case XK_Delete:
+						markers.clear ();
+						break;
 /*					case XK_f:
 						connection->queCommand (new rts2core::Command (connection, "box 0 -1 -1 -1 -1"));
 						break;
