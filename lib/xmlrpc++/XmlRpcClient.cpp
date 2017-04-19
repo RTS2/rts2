@@ -292,7 +292,10 @@ unsigned XmlRpcClient::handleEvent(unsigned eventType)
 
 	// got chunk, which is already closed..
 	if (_eof)
+	{
+		XmlRpcSocket::close(getfd());
 		return 0;
+	}
 
 	if (_connectionState == READ_RESPONSE)
 		if ( ! readResponse()) return 0;
