@@ -77,6 +77,8 @@ class Cupola:public Dome
 
 		virtual int cupolaPark ();
 
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
+
 		void setTargetAz (double in_az) { tarAltAz->setAz (in_az); }
 		double getTargetAz () { return tarAltAz->getAz (); }
 
