@@ -21,8 +21,10 @@ parser.add_argument('--password', help=_('password for web user'), action='store
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
 parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
 parser.add_argument('--camera', help=_('guide camera'), action='store', dest='ccd', default='AG1CCD')
-parser.add_argument('--pixelscale', help=('camera pixels scale (arcsec/pixel)'), action='store', dest='pixscale', default=0.3, type=float)
-parser.add_argument('--sensibility', help=('guiding sensibility [arcsec]'), action='store', dest='sensibility', default=0.2, type=float)
+parser.add_argument('--rotator', help=('guiding camera rotator'), action='store', dest='rotator', default='DER1')
+parser.add_argument('--min-flux', help=('minimal guiding star flux'), action='store', dest='min_flux', default=3000)
+parser.add_argument('--pixelscale', help=('camera pixels scale (arcsec/pixel)'), action='store', dest='pixscale', default=0.21, type=float)
+parser.add_argument('--sensibility', help=('guiding sensibility [arcsec]'), action='store', dest='sensibility', default=0.1, type=float)
 parser.add_argument('--agressivity', help=('guiding agressivity'), action='store', dest='agressivity', default=0.7, type=float)
 
 options = parser.parse_args()
@@ -44,12 +46,13 @@ def find_star(ccd):
 
 	if options.useDS9:
 		import ds9
-		d = ds9.ds9('Guiding {0}'.format(ccd))
+		d = ds9.ds9('Guiding')
 		d.set('frame 0')
 		d.set_np2arr(data)
 
 	x,y,flux,ratio = rts2.brights.find_brightest_on_data(data, options.verbose, exclusion=30)
-	if x is None:
+	print _('Found star: {0} {1} {2:.1}').format(x, y, flux)
+	if x is None or flux < options.min_flux:
 		sys.exit(_('No suitable guiding star'))
 
 	j.setValue(ccd, 'WINDOW', '{0} {1} {2} {3}'.format(x - 20, y - 20, 40, 40))
@@ -57,28 +60,46 @@ def find_star(ccd):
 def guide_loop(ccd):
 	j.setValue(ccd, 'center_cal', 1)
 	while True:
+		pa = 0
+		if options.rotator:
+			j.executeCommand(options.rotator, 'info')
+			pa = float(j.getValue(options.rotator, 'PA'))
+
 		data = j.takeImage(ccd)
 		if options.useDS9:
 			import ds9
-			d = ds9.ds9('Guiding {0}'.format(ccd))
+			d = ds9.ds9('Guiding')
 			d.set('frame 0')
 			d.set_np2arr(data)
 
 		j.refresh()
 		c_x = float(j.getValue(ccd, 'center_X'))
 		c_y = float(j.getValue(ccd, 'center_Y'))
+
+		c_max = float(j.getValue(ccd, 'center_max'))
+
+		if c_x == 0 or c_y == 0:
+			print 'lost guide star?'
+			return
+
 		x_dev = (c_x - 20) * options.pixscale
 		y_dev = (c_y - 20) * options.pixscale
-		print 'center {0:.3} {1:.3} deviations {2:.2} {3:.2} flux {4}'.format(c_x, c_y, x_dev, y_dev, float(j.getValue(ccd, 'center_max')))
+		print 'center {0:.3} {1:.3} deviations {2:.2} {3:.2} flux {4}'.format(c_x, c_y, x_dev, y_dev, c_max)
 		ra = 0
 		dec = 0
 
+		pa_r = numpy.radians(pa)
+
+		pa_sin = numpy.sin(pa_r)
+		pa_cos = numpy.cos(pa_r)
+
 		if abs(x_dev) > options.sensibility or abs(y_dev) > options.sensibility:
-			ra = y_dev * options.agressivity
-			dec = -1 * (x_dev * options.agressivity)
-			print _('sending offset {0:.2}" {1:.2}" to {2}').format(ra, dec, tn)
+			ra = (pa_cos * y_dev - pa_sin * x_dev) * options.agressivity
+			dec = (-1 * pa_cos * x_dev - pa_sin * y_dev) * options.agressivity
+			print _('sending offset {0:.2}" {1:.2}" to {2}, PA: {3}').format(ra, dec, tn, pa)
 			j.incValue(tn, 'GOFFS', '{0} {1}'.format(ra / 3600.0, dec / 3600.0))
 
-find_star(options.ccd)
+while True:
+	find_star(options.ccd)
 
-guide_loop(options.ccd)
+	guide_loop(options.ccd)
