@@ -103,6 +103,7 @@ class Cupola:public Dome
 		rts2core::ValueBool *trackDuringDay;
 
 		rts2core::ValueFloat *parkAz;
+		rts2core::ValueFloat *dontTrackAbove;
 
 		char *configFile;
 };

@@ -39,6 +39,9 @@ Cupola::Cupola (int in_argc, char **in_argv, bool inhibit_auto_close):Dome (in_a
 	createValue (parkAz, "park_az", "[deg] park azimuth", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	parkAz->setValueFloat (NAN);
 
+	createValue (dontTrackAbove, "dont_track", "[deg] don't track above give altitude", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	dontTrackAbove->setValueFloat (85);
+
 	observer = NULL;
 
 	configFile = NULL;
@@ -187,6 +190,8 @@ bool Cupola::needSlitChange ()
 	if (isnan (tarRaDec->getRa ()) || isnan (tarRaDec->getDec ()))
 		return false;
 	getTargetAltAz (&targetHrz);
+	if (targetHrz.alt > dontTrackAbove->getValueFloat ())
+		return false;
 	splitWidth = getSlitWidth (targetHrz.alt);
 	if (splitWidth < 0)
 		return false;
