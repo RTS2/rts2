@@ -308,6 +308,7 @@ rts2core::DevClient *FocusClient::createOtherType (rts2core::Connection * conn, 
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_MIRROR:
 		case DEVICE_TYPE_SENSOR:
+		case DEVICE_TYPE_ROTATOR:
 			return new rts2image::DevClientWriteImage (conn);
 		default:
 			return rts2core::Client::createOtherType (conn, other_device_type);
