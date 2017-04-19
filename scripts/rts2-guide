@@ -26,6 +26,7 @@ parser.add_argument('--min-flux', help=('minimal guiding star flux'), action='st
 parser.add_argument('--pixelscale', help=('camera pixels scale (arcsec/pixel)'), action='store', dest='pixscale', default=0.21, type=float)
 parser.add_argument('--sensibility', help=('guiding sensibility [arcsec]'), action='store', dest='sensibility', default=0.1, type=float)
 parser.add_argument('--agressivity', help=('guiding agressivity'), action='store', dest='agressivity', default=0.7, type=float)
+parser.add_argument('--not-guide', help=('only record changes, do not guide'), action='store_true', dest='not_guide', default=False)
 
 options = parser.parse_args()
 
@@ -96,8 +97,11 @@ def guide_loop(ccd):
 		if abs(x_dev) > options.sensibility or abs(y_dev) > options.sensibility:
 			ra = (pa_cos * y_dev - pa_sin * x_dev) * options.agressivity
 			dec = (-1 * pa_cos * x_dev - pa_sin * y_dev) * options.agressivity
-			print _('sending offset {0:.2}" {1:.2}" to {2}, PA: {3}').format(ra, dec, tn, pa)
-			j.incValue(tn, 'GOFFS', '{0} {1}'.format(ra / 3600.0, dec / 3600.0))
+			if options.not_guide:
+				print _('would send offset {0:.2}" {1:.2}" to {2}, PA: {3}').format(ra, dec, tn, pa)
+			else:
+				print _('sending offset {0:.2}" {1:.2}" to {2}, PA: {3}').format(ra, dec, tn, pa)
+				j.incValue(tn, 'GOFFS', '{0} {1}'.format(ra / 3600.0, dec / 3600.0))
 
 while True:
 	find_star(options.ccd)
