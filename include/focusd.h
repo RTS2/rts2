@@ -41,6 +41,8 @@ class Focusd:public rts2core::Device
 	public:
 		Focusd (int argc, char **argv);
 
+		virtual ~Focusd ();
+
 		/**
 		 * Provides estimate for the offseting duration, based on
 		 * offseting speed.
@@ -71,6 +73,9 @@ class Focusd:public rts2core::Device
 		rts2core::ValueDoubleMinMax *target;
 		rts2core::ValueFloat *temperature;
 
+		char *extTempDevice;
+		char *extTempVariable;
+
 		/** parameters for linear temperature - offset position function */
 		rts2core::ValueBool *linearOffset;
 		rts2core::ValueFloat *slope;
@@ -88,6 +93,8 @@ class Focusd:public rts2core::Device
 
 		virtual int setTo (double num) = 0;
 		virtual double tcOffset () = 0;
+
+		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 
 		/**
 		 * Set FOC_POS writable. Call this in constructor.
@@ -127,11 +134,14 @@ class Focusd:public rts2core::Device
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		void createTemperature ()
-		{
-			createValue (temperature, "FOC_TEMP", "focuser temperature");
-		}
-
+		/**
+		 * Create temperature value. If val is provided, will connect its 
+		 * content to fiven DEVICE.VALUE (so for example if TEMP.OUT is provided and
+		 * TEMP devices with OUT value exists, the value will be
+		 * taken from this variable.
+		 */
+		int createTemperature (const char *val = NULL);
+	
 		/**
 		 * Creates values for linear, temperature based offseting.
 		 */

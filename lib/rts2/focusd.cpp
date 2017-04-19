@@ -19,13 +19,17 @@
 
 #include "focusd.h"
 
-#define OPT_START  OPT_LOCAL + 235
+#define OPT_START     OPT_LOCAL + 235
+#define OPT_EXTTEMP   OPT_LOCAL + 236
 
 using namespace rts2focusd;
 
 Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
 	temperature = NULL;
+
+	extTempDevice = NULL;
+	extTempVariable = NULL;
 
 	linearOffset = NULL;
 	slope = NULL;
@@ -48,6 +52,13 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 	tempOffset->setValueDouble (0);
 
 	addOption (OPT_START, "start-position", 1, "focuser start position (focuser will be set to this one, if initial position is detected");
+	addOption (OPT_EXTTEMP, "temperature-variable", 1, "RTS2 temperature variable, given as DEVICE.VARIABLE");
+}
+
+Focusd::~Focusd ()
+{
+	delete[] extTempDevice;
+	delete[] extTempVariable;
 }
 
 int Focusd::processOption (int in_opt)
@@ -56,6 +67,11 @@ int Focusd::processOption (int in_opt)
 	{
 		case OPT_START:
 			defaultPosition->setValueCharArr (optarg);
+			break;
+		case OPT_EXTTEMP:
+			if (createTemperature (optarg))
+				return -1;
+			createLinearOffset ();
 			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
@@ -67,6 +83,13 @@ void Focusd::positionWritable ()
 {
 	position->setWritable ();
 	updateMetaInformations (position);
+}
+
+int Focusd::willConnect (rts2core::NetworkAddress * in_addr)
+{
+	if (extTempDevice != NULL && in_addr->isAddress (extTempDevice))
+		return 1;
+	return rts2core::Device::willConnect (in_addr);
 }
 
 int Focusd::initValues ()
@@ -95,6 +118,17 @@ int Focusd::initValues ()
 
 int Focusd::idle ()
 {
+	if (extTempDevice != NULL && extTempVariable != NULL)
+	{
+		rts2core::Connection *devConn = getOpenConnection (extTempDevice);
+		if (devConn != NULL)
+		{
+			rts2core::Value *val = devConn->getValue (extTempVariable);
+			if (val != NULL)
+				temperature->setValueFloat (val->getValueFloat ());
+		}
+	}
+
 	if ((getState () & FOC_MASK_FOCUSING) == FOC_FOCUSING)
 	{
 		int ret;
@@ -251,6 +285,31 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		return setPosition (defaultPosition->getValueFloat () + filterOffset->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat () + tco )? -2 : 0;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
+}
+
+int Focusd::createTemperature (const char *val)
+{
+	if (val != NULL)
+	{
+		const char *sep = strchr (val, '.');
+		if (sep == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "cannot use external temperature " << val << ", check if it contains '.'" << sendLog;
+			return -1;
+		}
+
+		size_t len = sep - val;
+		extTempDevice = new char[len];
+		memset (extTempDevice, '\0', len);
+		memcpy (extTempDevice, val, sep - val - 1);
+
+		len = strlen (val) - (sep - val);
+		extTempVariable = new char[len];
+		memset (extTempVariable, 0, len);
+		memcpy (extTempVariable, sep + 1, len - 1);
+	}
+	createValue (temperature, "FOC_TEMP", "focuser temperature");
+	return 0;
 }
 
 void Focusd::createLinearOffset ()
