@@ -151,6 +151,8 @@ int Cupola::moveTo (rts2core::Connection * conn, double ra, double dec)
 	int ret;
 	tarRaDec->setValueRaDec (ra, dec);
 	infoAll ();
+	if (needSlitChange () == false)
+		return moveEnd ();
 	ret = moveStart ();
 	if (ret)
 		return ret;
