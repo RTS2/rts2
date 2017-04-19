@@ -68,6 +68,7 @@ class SitechMultiBase:public rts2core::MultiBase
 
 		const char *defaultM3;
 		const char *defaultFoc;
+		const char *extTemp;
 };
 
 #endif //!__RTS2_SITECH_MULTIDEV__

@@ -25,6 +25,7 @@
 
 #define OPT_CONFIG_M3     OPT_LOCAL + 1243
 #define OPT_CONFIG_FOC    OPT_LOCAL + 1244
+#define OPT_CONFIG_EXTEMP OPT_LOCAL + 1245
 
 SitechMultiBase::SitechMultiBase (int argc, char **argv):rts2core::MultiBase (argc, argv, "SMF")
 {
@@ -35,10 +36,12 @@ SitechMultiBase::SitechMultiBase (int argc, char **argv):rts2core::MultiBase (ar
 
 	defaultM3 = NULL;
 	defaultFoc = NULL;
+	extTemp = NULL;
 
 	addOption ('f', NULL, 1, "sitech device file");
 	addOption (OPT_CONFIG_M3, "defaults-m3", 1, "defaults for device");
 	addOption (OPT_CONFIG_FOC, "defaults-foc", 1, "defaults for focuser");
+	addOption (OPT_CONFIG_EXTEMP, "temperature-variable", 1, "RTS2 temperature variable, given as DEVICE.VARIABLE");
 }
 
 SitechMultiBase::~SitechMultiBase ()
@@ -70,6 +73,9 @@ int SitechMultiBase::processOption (int opt)
 		case OPT_CONFIG_FOC:
 			defaultFoc = optarg;
 			break;
+		case OPT_CONFIG_EXTEMP:
+			extTemp = optarg;
+			break;
 		default:
 			return MultiBase::processOption (opt);
 	}
@@ -88,7 +94,7 @@ int SitechMultiBase::initHardware ()
 		return -1;
 	sitechConn->flushPortIO ();
 
-	md.push_back (new rts2focusd::SitechFocuser (focName, sitechConn, defaultFoc));
+	md.push_back (new rts2focusd::SitechFocuser (focName, sitechConn, defaultFoc, extTemp));
 	md.push_back (new rts2mirror::SitechMirror (mirrorName, sitechConn, defaultM3));
 
 	return 0;
