@@ -560,7 +560,7 @@ int NMonitor::init ()
 
 	setMessageMask (MESSAGE_MASK_ALL);
 
-	if (!isnan (refresh_rate) && refresh_rate >= 0)
+	if (!std::isnan (refresh_rate) && refresh_rate >= 0)
 		addTimer (refresh_rate, new rts2core::Event (EVENT_MONITOR_REFRESH));
 
 	return 0;
@@ -572,7 +572,7 @@ void NMonitor::postEvent (rts2core::Event *event)
 	{
 		case EVENT_MONITOR_REFRESH:
 			repaint ();
-			if (!isnan (refresh_rate) && refresh_rate >= 0)
+			if (!std::isnan (refresh_rate) && refresh_rate >= 0)
 				addTimer (refresh_rate, event);
 			return;
 	}

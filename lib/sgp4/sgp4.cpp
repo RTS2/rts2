@@ -212,7 +212,7 @@ int rts2sgp4::init (const char *tle1, const char *tle2, elsetrec *satrec)
 	days2mdhms (epoch.years, satrec->epochdays, epoch.months, epoch.days, epoch.hours, epoch.minutes, epoch.seconds);
 	satrec->jdsatepoch = ln_get_julian_day (&epoch);
 
-	char opsmode;
+	char opsmode = 0;
 	sgp4init (wgs84, opsmode, satrec->satnum, satrec->jdsatepoch-2433281.5, satrec->bstar, satrec->ecco, satrec->argpo, satrec->inclo, satrec->mo, satrec->no, satrec->nodeo, *satrec);
 
 	return 0;

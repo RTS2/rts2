@@ -217,7 +217,7 @@ void BBServer::sendUpdate ()
 
 void addNonNan (std::ostringstream &os, double val, const char *vname)
 {
-	if (!isnan (val))
+	if (!std::isnan (val))
 		os << "&" << vname << "=" << val;
 }
 

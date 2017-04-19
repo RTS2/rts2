@@ -60,12 +60,12 @@ int ValueDoubleMinMax::setValue (Connection * connection)
 int ValueDoubleMinMax::checkNotNull ()
 {
 	int local_failures = 0;
-	if (isnan (min))
+	if (std::isnan (min))
 	{
 		local_failures ++;
 		logStream (MESSAGE_ERROR) << getName () << " limit (minimum) is not set" << sendLog;
 	}
-	if (isnan (max))
+	if (std::isnan (max))
 	{
 		local_failures ++;
 		logStream (MESSAGE_ERROR) << getName () << " limit (maximum) is not set" << sendLog;

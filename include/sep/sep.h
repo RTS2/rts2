@@ -20,6 +20,8 @@
 *
 *%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
+#include <stdio.h>
+
 /* datatype codes */
 #define SEP_TBYTE        11  /* 8-bit unsigned byte */
 #define SEP_TUINT16      15  /* 16-bit unsigned */

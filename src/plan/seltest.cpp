@@ -186,7 +186,7 @@ int SelectorApp::doProcessing ()
 
 	if (next_tar < 0)
 	{
-		if (!isnan (maxLength))
+		if (!std::isnan (maxLength))
 			std::cout << "cannot find any possible targets with maximal length " << TimeDiff (maxLength) << std::endl;
 		else
 			std::cout << "cannot find any possible targets" << std::endl;

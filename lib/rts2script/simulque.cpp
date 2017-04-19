@@ -99,7 +99,7 @@ double SimulQueue::step ()
 				// check if there is target in upper queues..
 				for (std::vector <SimulQueueTargets>::iterator sq2 = sqs.begin (); sq2 != sq; sq2++)
 				{
-					if (!(sq2->empty ()) && !isnan (sq2->front ().t_start) && sq2->front ().t_start < e_end && sq2->front ().t_start > t)
+					if (!(sq2->empty ()) && !std::isnan (sq2->front ().t_start) && sq2->front ().t_start < e_end && sq2->front ().t_start > t)
 					{
 						e_end = sq2->front ().t_start;
 						break;		
@@ -118,11 +118,11 @@ double SimulQueue::step ()
 				break;
 			}
 			// e_end holds possible start of next target..
-			if (!isnan (e_end) && e_end < to)
+			if (!std::isnan (e_end) && e_end < to)
 				t_to = e_end;
 			sq++;
 		}
-		if (found && !isnan (e_end) && e_end > t)
+		if (found && !std::isnan (e_end) && e_end > t)
 			t = e_end;
 		else
 			t += 60;

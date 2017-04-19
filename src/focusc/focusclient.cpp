@@ -266,7 +266,7 @@ FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 	{
 		cam->queCommand (new rts2core::CommandBox (cam, xOffset, yOffset, imageWidth, imageHeight));
 	}
-	if (!isnan (defExposure))
+	if (!std::isnan (defExposure))
 	{
 		cam->queCommand (new rts2core::CommandChangeValue (cam, "exposure", '=', defExposure));
 

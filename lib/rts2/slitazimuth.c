@@ -53,7 +53,6 @@ int    LDCheckHorizon( double HA, double dec, double phi) ;
 /* East: DECaxis== HA - M_PI/2, RA=RA, DEC= DEC + M_PI */
 double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_location, struct geometry obs)
 {
-  double ret;
   double target_az ;
   double target_ZD ;
   struct ln_equ_posn tmp_equ ;
@@ -73,7 +72,7 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
   obs_location.lng *= M_PI/180. ;
   obs_location.lat *= M_PI/180. ;
 
-  ret= LDRAtoDomeAZ( tmp_equ, obs_location, obs, &target_az, &target_ZD) ;
+  LDRAtoDomeAZ( tmp_equ, obs_location, obs, &target_az, &target_ZD) ;
 
   // This call is for a quick check
   //double star_az ;
@@ -137,23 +136,20 @@ double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double R
 
 int LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) 
 {
-    int res ;
-
     double HA ;
 
     HA= LDRAtoHA( tmp_equ.ra, obs_location.lng) ;
 
-    res= LDHAtoDomeAZ( obs_location.lat, HA, tmp_equ.dec, obs, Az, ZD) ;
+    LDHAtoDomeAZ( obs_location.lat, HA, tmp_equ.dec, obs, Az, ZD) ;
     return 0 ;
 }
 int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) 
 {
-    int res ;
     double HA ;
 
     HA= LDRAtoHA( tmp_equ.ra, obs_location.lng) ;
     
-    res= LDHAtoStarAZ( obs_location.lat, HA, tmp_equ.dec, Az, ZD) ;
+    LDHAtoStarAZ( obs_location.lat, HA, tmp_equ.dec, Az, ZD) ;
     
     return 0 ;
 }

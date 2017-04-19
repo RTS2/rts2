@@ -11,7 +11,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor
 	rts2-sensor-agilent-e3631a rts2-sensor-aws-mlab rts2-sensor-clarity \
 	rts2-sensor-thermocube rts2-sensor-reinhardt rts2-sensor-davis \
 	rts2-sensor-servodrive-r272 rts2-sensor-tbt rts2-sensor-binder \
-	rts2-sensor-saao
+	rts2-sensor-saao rts2-sensor-allnet
 
 noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
 
@@ -94,6 +94,20 @@ rts2_sensor_clarity_SOURCES = clarity.cpp
 
 rts2_sensor_saao_SOURCES = saao.cpp
 rts2_sensor_saao_LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc ${LDADD}
+
+if LIBJSONCPP
+
+rts2_sensor_allnet_SOURCES = allnet.cpp
+rts2_sensor_allnet_LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc @JSONCPP_LIBS@ ${LDADD}
+rts2_sensor_allnet_CPPFLAGS = @JSONCPP_CFLAGS@ -I../../include
+
+bin_PROGRAMS += rts2-sensor-allnet
+
+else
+
+EXTRA_DIST += allnet.cpp
+
+endif
 
 if SUNCYGMAC
 EXTRA_DIST += tps534.cpp tps534-oak.c niratir.cpp

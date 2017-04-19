@@ -95,7 +95,7 @@ int TelLX200::initHardware ()
 			return ret;
 	}
 
-	if (!isnan (defaultTimeZone))
+	if (!std::isnan (defaultTimeZone))
 	{
 		ret = setTimeZone (defaultTimeZone);
 		if (ret)
@@ -143,7 +143,7 @@ int TelLX200::tel_read_hms (double *hmsptr, const char *command, bool allowZ)
 		*hmsptr = hmstod (wbuf + 1);
 	else
 		*hmsptr = hmstod (wbuf);
-	if (isnan (*hmsptr))
+	if (std::isnan (*hmsptr))
 	{
 		logStream (MESSAGE_ERROR) << "invalid character for HMS: " << wbuf << sendLog;
 		serConn->flushPortIO ();

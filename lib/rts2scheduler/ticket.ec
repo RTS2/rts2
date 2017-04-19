@@ -119,13 +119,13 @@ void Ticket::load ()
 
 bool Ticket::violateSchedule (double _from, double _to)
 {
-	if (isnan (sched_from))
+	if (std::isnan (sched_from))
 	{
-		if (isnan (sched_to))
+		if (std::isnan (sched_to))
 			return false;
 		return _to > sched_to;
 	}
-	if (isnan (sched_to))
+	if (std::isnan (sched_to))
 	{
 		return _from < sched_from;
 	}

@@ -322,7 +322,7 @@ class ExecutorQueue:public TargetQueue
 		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
 		{
 			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " block until visible " << eq->blockUntilVisible->getValueBool () << " check target lenght " << eq->checkTargetLength->getValueBool () << " enabled " << eq->queueEnabled->getValueBool ();
-			if (!isnan (eq->queueWindow->getValueFloat ()))
+			if (!std::isnan (eq->queueWindow->getValueFloat ()))
 				os << " with window " << eq->queueWindow->getValueFloat () << "s";
 			os << " contains";
 			std::vector <int>::iterator niditer = eq->nextIds->valueBegin ();

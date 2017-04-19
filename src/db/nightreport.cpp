@@ -273,14 +273,14 @@ void NightReport::printObsList (time_t *t_end)
 	{
 		double o_next = obs_set->getNextCtime ();
 		double m_next = messages.getNextCtime ();
-		if (isnan (o_next) && isnan (m_next))
+		if (std::isnan (o_next) && std::isnan (m_next))
 			break;
-		if (isnan (o_next))
+		if (std::isnan (o_next))
 		{
 			messages.printUntil (*t_end + 1, std::cout);
 			break;
 		}
-		if (isnan (m_next))
+		if (std::isnan (m_next))
 		{
 			obs_set->printUntil (*t_end + 1, std::cout);
 			break;

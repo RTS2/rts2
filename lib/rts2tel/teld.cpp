@@ -510,7 +510,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 		default:
 			// get from ORI, if constant..
 			getOrigin (out_tar);
-			if (!isnan (diffTrackStart->getValueDouble ()))
+			if (!std::isnan (diffTrackStart->getValueDouble ()))
 				addDiffRaDec (out_tar, (utc1 + utc2 - diffTrackStart->getValueDouble ()) * 86400.0);
 	}
 
@@ -827,7 +827,7 @@ double Telescope::getTargetDistance ()
 		normalizeRaDec (tel.ra, tel.dec);
 	}
 
-	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))
+	if (std::isnan(tar.ra) || std::isnan(tar.dec) || std::isnan(tel.ra) || std::isnan(tel.dec))
 		return -1;
 
 	return ln_get_angular_separation (&tel, &tar);
@@ -1708,7 +1708,7 @@ void Telescope::logTracking ()
 void Telescope::updateTrackingFrequency ()
 {
 	double n = getNow ();
-	if (!isnan (lastTrackingRun) && n != lastTrackingRun)
+	if (!std::isnan (lastTrackingRun) && n != lastTrackingRun)
 	{
 		double tv = 1 / (n - lastTrackingRun);
 		trackingFrequency->addValue (tv, trackingFSize->getValueInteger ());
@@ -2121,7 +2121,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	}
 
 	// if object was not specified, do not move
-	if (isnan (oriRaDec->getRa ()) || isnan (oriRaDec->getDec ()))
+	if (std::isnan (oriRaDec->getRa ()) || std::isnan (oriRaDec->getDec ()))
 	{
 		logStream (MESSAGE_ERROR) << "cannot move, null RA or DEC " << oriRaDec->getRa () << " " << oriRaDec->getDec () << sendLog;
 		return -1;
@@ -2244,7 +2244,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	}
 
 	//check if decupperlimit option exists -if yes, apply declination constraints
-	if (decUpperLimit && !isnan (decUpperLimit->getValueFloat ()))
+	if (decUpperLimit && !std::isnan (decUpperLimit->getValueFloat ()))
 	{
 		if ((telLatitude->getValueDouble () > 0 && pos.dec > decUpperLimit->getValueFloat ())
 				|| (telLatitude->getValueDouble () < 0 && pos.dec < decUpperLimit->getValueFloat ()))

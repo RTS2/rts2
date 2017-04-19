@@ -310,7 +310,7 @@ int Trencin::startWorm ()
 
 int Trencin::stopWorm ()
 {
-	if (!isnan (raWormStart->getValueDouble ()))
+	if (!std::isnan (raWormStart->getValueDouble ()))
 	{
 		tel_write_ra ('\\');
 		worm_start_unit_ra += (getNow () - raWormStart->getValueDouble ()) * haCpd / (240.0 * LN_SIDEREAL_DAY_SEC / 86400);
@@ -334,7 +334,7 @@ int Trencin::stopWorm ()
 void Trencin::addPollSocks ()
 {
 	Telescope::addPollSocks ();
-	if (raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ()))
+	if (raMoving->getValueInteger () != 0 || !std::isnan (raWormStart->getValueDouble ()))
 		trencinConnRa->add (this);
 	if (decMoving->getValueInteger () != 0)
 		trencinConnDec->add (this);
@@ -343,7 +343,7 @@ void Trencin::addPollSocks ()
 void Trencin::pollSuccess ()
 {
 	// old axis value
-	if ((raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ())) && trencinConnRa->receivedData (this))
+	if ((raMoving->getValueInteger () != 0 || !std::isnan (raWormStart->getValueDouble ())) && trencinConnRa->receivedData (this))
 	{
 		int old_axis = unitRa->getValueInteger ();
 		if (readAxis (trencinConnRa, unitRa, false) == 0)
@@ -351,7 +351,7 @@ void Trencin::pollSuccess ()
 #ifdef DEBUG_MOVE
 			logStream (MESSAGE_DEBUG) << "selectSuccess cycleRa " << cycleRa->getValueInteger () << sendLog;
 #endif
-			if (!isnan (raWormStart->getValueDouble ()))
+			if (!std::isnan (raWormStart->getValueDouble ()))
 			{
 				// moves backward..so if reading becomes higher, we crosed a full cycle..
 				if (unitRa->getValueInteger () > old_axis && unitRa->getValueInteger () > (MAX_MOVE - 100000) && old_axis < 100000)
@@ -1070,7 +1070,7 @@ int Trencin::info ()
 	int32_t left_track;
 
 	// update axRa and axDec
-	if (isnan (raWormStart->getValueDouble ()))
+	if (std::isnan (raWormStart->getValueDouble ()))
 	{
 #ifdef DEBUG_MOVE
 		logStream (MESSAGE_DEBUG) << "cycleRa " << cycleRa->getValueInteger () << " cycleMoveRa " << cycleMoveRa << sendLog;
@@ -1183,7 +1183,7 @@ int Trencin::info ()
 	logStream (MESSAGE_DEBUG) << "cycleDec " << cycleDec->getValueInteger () << " info_u_dec " << info_u_dec << " u_dec " << u_dec << sendLog;
 #endif
 
-	if (decMoving->getValueInteger () == 0 && raMoving->getValueInteger () == 0 && isnan (raWormStart->getValueDouble ()))
+	if (decMoving->getValueInteger () == 0 && raMoving->getValueInteger () == 0 && std::isnan (raWormStart->getValueDouble ()))
 		setIdleInfoInterval (60);
 
 	counts2sky (u_ra, u_dec, t_telRa, t_telDec, t_telFlip, ut_telRa, ut_telDec);

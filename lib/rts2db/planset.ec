@@ -118,7 +118,7 @@ void PlanSet::planFromTo (double t_from, double t_to)
 	os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
 	os << " EXTRACT (EPOCH FROM plan_start) >= " << t_from;
-	if (!isnan (t_to))
+	if (!std::isnan (t_to))
 		os << " AND EXTRACT (EPOCH FROM plan_start) <= " << t_to;
 	where = os.str ();
 }

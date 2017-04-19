@@ -56,7 +56,7 @@ void ConnGpibPrologix::gpibRead (void *reply, int &blen)
 {
 	std::stringstream os;
 	os << "++addr " << pad;
-	if (!isnan (timeout))
+	if (!std::isnan (timeout))
 		os << "\n++read_tmo_ms " << ((int) (timeout * 1000));
 	os << "\n++read eoi\n";
 	if (rts2core::ConnSerial::writePort (os.str ().c_str (), os.str ().length ()) < 0)
@@ -68,7 +68,7 @@ void ConnGpibPrologix::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
 	std::stringstream os;
 	os << "++addr " << pad << "\n++auto 0\n" << cmd << "\n";
-	if (!isnan (timeout))
+	if (!std::isnan (timeout))
 		os << "++read_tmo_ms " << ((int) (timeout * 1000)) << "\n";
 	if (rts2core::ConnSerial::writePort (os.str ().c_str (), os.str ().length ()) < 0)
 		throw rts2core::Error ("cannot write to port");

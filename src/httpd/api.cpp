@@ -414,7 +414,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 				if (num <= 0)
 					throw rts2core::Error ("missing or negative num parameter");
 				double v = params->getDouble ("v", NAN);
-				if (isnan (v))
+				if (std::isnan (v))
 					throw rts2core::Error ("missing or invalid v parameter");
 				rts2core::Value *val = ((HttpD *) getMasterApp())->getOwnValue (vn);
 				if (val == NULL)

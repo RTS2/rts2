@@ -47,8 +47,8 @@ START_TEST(test_gem_hko_1)
 	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
-	ck_assert_int_eq (ac, -78292145);
-	ck_assert_int_eq (dc, -51101387);
+	ck_assert_int_eq (ac, -78286187);
+	ck_assert_int_eq (dc, -51098017);
 #else
 	ck_assert_int_eq (ac, -78244743);
 	ck_assert_int_eq (dc, -51111083);

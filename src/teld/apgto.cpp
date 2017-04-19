@@ -299,7 +299,7 @@ int APGTO::getAPUTCOffset()
     temp_string[nbytes_read - 1] = '\0';
   
   offset = hmstod (temp_string);
-  if(isnan (offset))
+  if(std::isnan (offset))
     {
       logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset string not handled  >" << temp_string << "<END" <<sendLog;
       return -1;

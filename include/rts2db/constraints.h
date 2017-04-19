@@ -59,14 +59,14 @@ class ConstraintDoubleInterval
 		bool satisfy (double val);
 		friend std::ostream & operator << (std::ostream & os, ConstraintDoubleInterval &cons)
 		{
-			if (!isnan (cons.lower))
+			if (!std::isnan (cons.lower))
 				os << cons.lower << " < ";
-			if (!isnan (cons.upper))
+			if (!std::isnan (cons.upper))
 			  	os << " < " << cons.upper;
 			return os;
 		}
 
-		bool isInvalid () { return isnan (lower) && isnan (upper); }
+		bool isInvalid () { return std::isnan (lower) && std::isnan (upper); }
 
 		/**
 		 * Print interval.

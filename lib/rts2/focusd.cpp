@@ -73,7 +73,7 @@ int Focusd::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
 
-	if (isnan (defaultPosition->getValueDouble ()))
+	if (std::isnan (defaultPosition->getValueDouble ()))
 	{
 		// refresh position values
 		if (info ())
@@ -122,7 +122,7 @@ int Focusd::idle ()
 			}
 		}
 	}
-	else if (linearOffset != NULL && slope != NULL && intercept != NULL && temperature != NULL && temperatureNightOnly != NULL && linearOffset->getValueBool () == true && !isnan (slope->getValueFloat ()) && !isnan (intercept->getValueFloat ()) && !isnan (temperature->getValueDouble ()))
+	else if (linearOffset != NULL && slope != NULL && intercept != NULL && temperature != NULL && temperatureNightOnly != NULL && linearOffset->getValueBool () == true && !std::isnan (slope->getValueFloat ()) && !std::isnan (intercept->getValueFloat ()) && !std::isnan (temperature->getValueDouble ()))
 	{
 		if (temperatureNightOnly->getValueBool () == false || getMasterState () == (SERVERD_NIGHT | SERVERD_ON) )
 		{
@@ -146,7 +146,7 @@ int Focusd::setPosition (float num)
 	sendValueAll (target);
 	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started", estimateOffsetDuration (num));
 	logStream (MESSAGE_INFO) << "changing focuser position to " << num << sendLog;
-	if ((!isnan (getFocusMin ()) && num < getFocusMin ()) || (!isnan (getFocusMax ()) && num > getFocusMax ()))
+	if ((!std::isnan (getFocusMin ()) && num < getFocusMin ()) || (!std::isnan (getFocusMax ()) && num > getFocusMax ()))
 	{
 		logStream (MESSAGE_ERROR) << "focuser outside of focuser extend " << num << sendLog;
 		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE | DEVICE_ERROR_HW, DEVICE_ERROR_HW, "focus change is not possible - outside of the range");

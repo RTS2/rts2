@@ -34,7 +34,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, const 
 	// when set to true, will use flipped coordinates
 	use_flipped = false;
 
-	if (isnan(pos->ra) || isnan(pos->dec))
+	if (std::isnan(pos->ra) || std::isnan(pos->dec))
 	{
 		logStream (MESSAGE_ERROR) << "sky2counts called with nan ra/dec" << sendLog;
 		return -1;

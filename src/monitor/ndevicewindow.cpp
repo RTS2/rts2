@@ -58,7 +58,7 @@ void NDeviceWindow::printState ()
 	wcolor_set (window, CLR_DEFAULT, NULL);
 	wattroff (window, A_REVERSE);
 	double p = connection->getProgress (getNow ());
-	if (!isnan (p))
+	if (!std::isnan (p))
 	{
 		std::ostringstream os;
 		os << ProgressIndicator (p, getWidth () - getWindowX () - 7) << std::fixed << std::setw (5) << std::setprecision (1) << p << "%";
@@ -399,7 +399,7 @@ void NDeviceCentralWindow::drawValuesList ()
 	rts2core::Value *valLng = getConnection ()->getValue ("longitude");
 	rts2core::Value *valLat = getConnection ()->getValue ("latitude");
 
-	if (valLng && valLat && !isnan (valLng->getValueDouble ()) && !isnan (valLat->getValueDouble ()))
+	if (valLng && valLat && !std::isnan (valLng->getValueDouble ()) && !std::isnan (valLat->getValueDouble ()))
 	{
 		struct ln_lnlat_posn observer;
 
@@ -416,8 +416,8 @@ void NDeviceCentralWindow::drawValuesList ()
 
 		if (valNightHorizon
 			&& valDayHorizon
-			&& !isnan (valNightHorizon->getValueDouble ())
-			&& !isnan (valDayHorizon->getValueDouble ()) && valEveningTime
+			&& !std::isnan (valNightHorizon->getValueDouble ())
+			&& !std::isnan (valDayHorizon->getValueDouble ()) && valEveningTime
 			&& valMorningTime)
 		{
 			stateChanges.clear ();

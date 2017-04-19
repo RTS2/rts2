@@ -2260,7 +2260,7 @@ bool Connection::existWriteType (int w_type)
 
 double Connection::getProgress (double now)
 {
-	if (isnan (statusStart) || isnan (statusExpectedEnd))
+	if (std::isnan (statusStart) || std::isnan (statusExpectedEnd))
 		return NAN;
 	if (now > statusExpectedEnd)
 		return 100;

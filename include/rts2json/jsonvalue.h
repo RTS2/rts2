@@ -41,7 +41,7 @@ class JsonDouble
 
 		friend std::ostream & operator << (std::ostream &os, JsonDouble d)
 		{
-			if (isnan (d.v) || isinf (d.v))
+			if (std::isnan (d.v) || std::isinf (d.v))
 				os << "null";
 			else
 				os << std::setprecision (20) << d.v;

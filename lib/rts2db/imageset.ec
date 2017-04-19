@@ -157,7 +157,7 @@ int ImageSet::load (std::string in_where)
 
 		allStat.img_alt += d_img_alt;
 		allStat.img_az  += d_img_az;
-		if (!isnan (d_img_err))
+		if (!std::isnan (d_img_err))
 		{
 			allStat.img_err += d_img_err;
 			allStat.img_err_ra  += d_img_err_ra;
@@ -171,7 +171,7 @@ int ImageSet::load (std::string in_where)
 
 		(*iter).img_alt += d_img_alt;
 		(*iter).img_az  += d_img_az;
-		if (!isnan (d_img_err))
+		if (!std::isnan (d_img_err))
 		{
 			(*iter).img_err += d_img_err;
 			(*iter).img_err_ra  += d_img_err_ra;
@@ -352,9 +352,9 @@ int ImageSetLabel::load ()
 {
 	std::ostringstream _os;
 	_os << "exists (select * from target_labels where observations.tar_id = target_labels.tar_id and target_labels.label_id = " << label << ")";
-	if (!isnan (from))
+	if (!std::isnan (from))
 		_os << " and observations.obs_slew >= to_timestamp (" << from << ")";
-	if (!isnan (to))
+	if (!std::isnan (to))
 		_os << " and (observations.obs_end is NULL OR observations.obs_end < to_timestamp (" << to << "))";
 
 

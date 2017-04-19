@@ -349,6 +349,7 @@ int sep_extract(sep_image *image, float thresh, int thresh_type,
   /*----- at the beginning, "free" object fills the whole pixel list */
   freeinfo.firstpix = 0;
   freeinfo.lastpix = nposize-plistsize;
+  printf("lastpix %d %d\n",freeinfo.lastpix,nposize);
   pixt = pixel;
   for (i=plistsize; i<nposize; i += plistsize, pixt += plistsize)
     PLIST(pixt, nextpix) = i;

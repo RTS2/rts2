@@ -548,15 +548,15 @@ int AAG::initHardware ()
 		}
 	}
 
-	if (!isnan (triggerDry->getValueDouble ()))
+	if (!std::isnan (triggerDry->getValueDouble ()))
 		setWeatherState (false, "rain trigger unspecified");
-	if (!isnan (triggerWet->getValueDouble ()))
+	if (!std::isnan (triggerWet->getValueDouble ()))
 		setWeatherState (false, "rain trigger unspecified");
-	if (!isnan (triggerClear->getValueDouble ()))
+	if (!std::isnan (triggerClear->getValueDouble ()))
 		setWeatherState (false, "cloud trigger unspecified");
-	if (!isnan (triggerCloud->getValueDouble ()))
+	if (!std::isnan (triggerCloud->getValueDouble ()))
 		setWeatherState (false, "cloud trigger unspecified");
-	if (!isnan (triggerNoSnow->getValueDouble ()))
+	if (!std::isnan (triggerNoSnow->getValueDouble ()))
 		setWeatherState (false, "no snow trigger unspecified");
 	return 0;
 }

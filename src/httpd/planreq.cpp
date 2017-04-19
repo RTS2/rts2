@@ -48,7 +48,7 @@ void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &resp
 
 	std::ostringstream title;
 	title << "Plan entries from " << Timestamp (t_from);
-	if (!isnan (t_to))
+	if (!std::isnan (t_to))
 		title << "to " << Timestamp (t_to);
 
 	printHeader (_os, title.str ().c_str (), NULL, "/css/table.css", "allPlans.refresh();");
@@ -58,7 +58,7 @@ void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &resp
 
 	_os << "<script type='text/javascript'>\n"
 		"allPlans = new Table('../api/plan?from=" << t_from;
-	if (!isnan (t_to))
+	if (!std::isnan (t_to))
 		_os << "&to=" << t_to;
 
 	_os << "','plan','allPlans');\n"
@@ -112,7 +112,7 @@ void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 		"<table><tr><td>From</td><td class='time'>" << Timestamp (p.getPlanStart ()) << "</td></tr>"
 		"<tr><td>To</td><td class='time'>" << Timestamp (p.getPlanEnd ()) << "</td></tr>"
 		"<tr><td>At the beginning</td><td>" << printTarget (tar, p.getPlanStart ()) << "</td></tr>";
-	if (!isnan (p.getPlanEnd ()))
+	if (!std::isnan (p.getPlanEnd ()))
 		_os << "<tr><td>At the end</td><td>" << printTarget (tar, p.getPlanEnd ()) << "</td></tr>";
 	_os << "</table>";
 

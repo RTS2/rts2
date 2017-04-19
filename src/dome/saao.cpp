@@ -620,7 +620,7 @@ void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, 
 	if (lights)
 		data[0] |= 0x0100;
 
-	if (!isnan (reqPosition) && reqPosition > 0 && reqPosition < 360)
+	if (!std::isnan (reqPosition) && reqPosition > 0 && reqPosition < 360)
 	{
 		data[0] |= 0x0008;
 		data[2] = num2hex (ln_range_degrees (reqPosition + 180) * 10);

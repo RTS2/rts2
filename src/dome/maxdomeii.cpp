@@ -405,7 +405,7 @@ int MaxDomeII::info ()
         tel_equ.ra= getTargetRa() ;
         tel_equ.dec= getTargetDec() ;
 
-        if(! (isnan (tel_equ.ra) || isnan (tel_equ.dec))){
+        if(! (std::isnan (tel_equ.ra) || std::isnan (tel_equ.dec))){
 
            double target_az= domeTargetAz( tel_equ) ;
 	   double targetDifference = getCurrentAz () - target_az;
@@ -778,7 +778,7 @@ bool MaxDomeII::needSlitChange ()
        tel_equ.ra= getTargetRa() ;
        tel_equ.dec= getTargetDec() ;
 
-       if (isnan (tel_equ.ra) || isnan (tel_equ.dec)){
+       if (std::isnan (tel_equ.ra) || std::isnan (tel_equ.dec)){
 	 return false;
        }
        double target_az= domeTargetAz( tel_equ) ;

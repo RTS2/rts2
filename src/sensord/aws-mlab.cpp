@@ -344,7 +344,7 @@ int AWSmlab::initHardware ()
 	
 	AWSConn->flushPortIO ();
 
-	//if (!isnan (triggerGood->getValueDouble ()))
+	//if (!std::isnan (triggerGood->getValueDouble ()))
 	//	setWeatherState (false, "TRIGGOOD unspecified");
 	return 0;
 }
@@ -360,7 +360,7 @@ int AWSmlab::info ()
 		return -1;
 	}
 
-	if (sensorTempHum2Enable->getValueBool() && !isnan (triggerHumGood->getValueDouble ()) && !isnan (triggerHumBad->getValueDouble ()))
+	if (sensorTempHum2Enable->getValueBool() && !std::isnan (triggerHumGood->getValueDouble ()) && !std::isnan (triggerHumBad->getValueDouble ()))
 	{
 		// humidity checks...
 		if (humOut->getNumMes () >= numVal->getValueInteger ())
@@ -406,7 +406,7 @@ int AWSmlab::info ()
 		lastHumOut = humOut->getValueDouble ();
 
 	}
-	if (sensorAnemoEnable->getValueBool() && !isnan (triggerWindGood->getValueDouble ()) && !isnan (triggerWindBad->getValueDouble ()))
+	if (sensorAnemoEnable->getValueBool() && !std::isnan (triggerWindGood->getValueDouble ()) && !std::isnan (triggerWindBad->getValueDouble ()))
 	{
 		// wind speed (average and peek) checks...
 		if (windSpeed->getNumMes () >= numVal->getValueInteger ())

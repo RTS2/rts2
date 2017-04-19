@@ -28,7 +28,7 @@
 #include <sys/time.h>
 #include <libnova/libnova.h>
 #include <time.h>
-#include <math.h>
+#include <cmath>
 
 /**
  * Provides support timestamps obtained from DB.
@@ -90,7 +90,7 @@ class TimeJD:public Timestamp
 		 */
 		TimeJD (double JD):Timestamp ()
 		{
-			if (isnan (JD))
+			if (std::isnan (JD))
 			{
 				setTs (NAN);
 			}

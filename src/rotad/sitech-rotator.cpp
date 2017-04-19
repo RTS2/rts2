@@ -142,17 +142,17 @@ void SitechRotator::setTarget (double tv)
 
 	double t_angle = tv - paOff;
 
-	if (!isnan (getTargetMax ()))
+	if (!std::isnan (getTargetMax ()))
 	{
 		while (t_angle > getTargetMax ())
 			t_angle -= 360.0;
 	}
-	if (!isnan (getTargetMin ()))
+	if (!std::isnan (getTargetMin ()))
 	{
 		while (t_angle < getTargetMin ())
 			t_angle += 360.0;
 	}
-	if (!isnan (getTargetMin ()) && !isnan (getTargetMax ()))
+	if (!std::isnan (getTargetMin ()) && !std::isnan (getTargetMax ()))
 	{
 		if (t_angle < getTargetMin ())
 		{

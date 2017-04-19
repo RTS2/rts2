@@ -257,7 +257,7 @@ bool FlwoWeather::isGoodWeather ()
 	  	std::ostringstream os;
 		os << "weather data not received, Pairitel:" << Timestamp (lastPool->getValueDouble ());
 		setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not received");
-		if (isnan (lastPool->getValueDouble ()) || lastPool->getValueDouble () < lastNow)
+		if (std::isnan (lastPool->getValueDouble ()) || lastPool->getValueDouble () < lastNow)
 		{
 			humidity->setValueFloat (NAN);
 			valueError (humidity);

@@ -349,7 +349,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 			_os << ",";
 		const char *tar_name = tar->getTargetName ();
 		_os << "[" << tar->getTargetID () << ",\"" << (tar_name == NULL ? "(null)" : tar_name) << "\",";
-		if (isnan (pos.ra) || isnan (pos.dec) || isnan (hrz.alt) || isnan (hrz.az))
+		if (std::isnan (pos.ra) || std::isnan (pos.dec) || std::isnan (hrz.alt) || std::isnan (hrz.az))
 			_os << "0,0,0,0";
 		else
 			_os << pos.ra << "," << pos.dec << "," << hrz.alt << "," << hrz.az;
@@ -357,7 +357,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		_os << "," << std::setprecision (3) << tar->getTargetPriority ()
 			<< ",";
 		double b = tar->getBonus (JD);
-		if (isnan (b))
+		if (std::isnan (b))
 			_os << -1;
 		else
 			_os << tar->getBonus ();
@@ -399,7 +399,7 @@ void Targets::callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const ch
 		struct ln_hrz_posn hp;
 		double JD = NAN;
 		JD = atof (e);
-		if (isnan (JD))
+		if (std::isnan (JD))
 			JD = ln_get_julian_from_sys ();
 
 		tar->getPosition (&tp, JD);

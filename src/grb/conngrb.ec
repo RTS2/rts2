@@ -102,10 +102,12 @@ int ConnGrb::pr_integral_point ()
 
 int ConnGrb::pr_agile_point ()
 {
+	return -1;
 }
 
 int ConnGrb::pr_fermi_point ()
 {
+	return -1;
 }
 
 int ConnGrb::pr_hete ()
@@ -421,7 +423,7 @@ int ConnGrb::pr_fermi_lat ()
 
 int ConnGrb::pr_fermi_sc ()
 {
-
+	return -1;
 }
 
 int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float merit)
@@ -768,7 +770,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	{
 		// create new GCN entry..
 		d_grb_errorbox = grb_errorbox;
-		if (isnan (d_grb_errorbox))
+		if (std::isnan (d_grb_errorbox))
 		{
 			d_grb_errorbox_ind = -1;
 			d_grb_errorbox = 0;
@@ -909,7 +911,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		// do updates only when new position is better than old one
 		if (
 			(d_grb_errorbox_ind < 0
-			|| isnan (grb_errorbox)
+			|| std::isnan (grb_errorbox)
 			|| grb_errorbox <= d_grb_errorbox
 			)
 			&& d_grb_ra > -300
@@ -953,7 +955,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			// update grb informations..
 			// do updates only when new position is better then old one
 			if (gcnContainsGrbPos (d_grb_type)
-				&& !isnan(grb_errorbox)
+				&& !std::isnan(grb_errorbox)
 				&& (d_grb_errorbox_ind < 0
 				|| grb_errorbox <= d_grb_errorbox)
 				)

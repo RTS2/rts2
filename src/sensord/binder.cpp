@@ -177,7 +177,7 @@ void Binder::postEvent (rts2core::Event *event)
 			ret = info ();
 			if (ret == 0 && binderConn != NULL)
 			{
-				if (grad_temp->getValueFloat () != 0 && !isnan (grad_temp->getValueFloat ()) && !isnan (set_temp->getValueFloat ()) && !isnan (tar_temp->getValueFloat ()))
+				if (grad_temp->getValueFloat () != 0 && !std::isnan (grad_temp->getValueFloat ()) && !std::isnan (set_temp->getValueFloat ()) && !std::isnan (tar_temp->getValueFloat ()))
 				{
 					float diff = tar_temp->getValueFloat () - set_temp->getValueFloat ();
 					if (diff != 0)

@@ -97,7 +97,7 @@ void CurrentPosition::authorizedExecute (XmlRpc::XmlRpcSource *source, std::stri
 			pos.ra = ((rts2core::ValueRaDec *) val)->getRa ();
 			pos.dec  = ((rts2core::ValueRaDec *) val)->getDec ();
 
-			if (!(isnan (pos.ra) || isnan (pos.dec)))
+			if (!(std::isnan (pos.ra) || std::isnan (pos.dec)))
 			{
 				ln_get_hrz_from_equ (&pos, Configuration::instance ()->getObserver (), JD, &hrz);
 				altaz.plotCross (&hrz, NULL, "blue");

@@ -83,7 +83,7 @@ int Cupola::init ()
 int Cupola::info ()
 {
 	// target ra+dec
-	if (!isnan (tarRaDec->getRa ()) && !isnan (tarRaDec->getDec ()))
+	if (!std::isnan (tarRaDec->getRa ()) && !std::isnan (tarRaDec->getDec ()))
 	{
 		struct ln_hrz_posn hrz;
 		getTargetAltAz (&hrz);
@@ -220,7 +220,7 @@ bool Cupola::needSlitChange ()
 	int ret;
 	struct ln_hrz_posn targetHrz;
 	double splitWidth;
-	if (isnan (tarRaDec->getRa ()) || isnan (tarRaDec->getDec ()))
+	if (std::isnan (tarRaDec->getRa ()) || std::isnan (tarRaDec->getDec ()))
 		return false;
 	getTargetAltAz (&targetHrz);
 	if (targetHrz.alt > dontTrackAbove->getValueFloat ())
@@ -274,7 +274,7 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand (COMMAND_CUPOLA_PARK))
 	{
-		if (isnan (parkAz->getValueFloat ()))
+		if (std::isnan (parkAz->getValueFloat ()))
 			return DEVDEM_E_SYSTEM;
 		return cupolaPark ();
 	}

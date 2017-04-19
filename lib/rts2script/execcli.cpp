@@ -643,7 +643,7 @@ int DevClientTelescopeExec::syncTarget (bool now, int plan_id)
 	getEqu (&coord);
 	// startSlew fills coordinates, if needed..
 	ret = currentTarget->startSlew (&coord, p1, p2, true, plan_id);
-	if (isnan (coord.ra) || isnan (coord.dec))
+	if (std::isnan (coord.ra) || std::isnan (coord.dec))
 	{
 #ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "DevClientTelescopeExec::syncTarget: ra, dec were NaN " << sendLog;

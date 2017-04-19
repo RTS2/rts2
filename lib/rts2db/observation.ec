@@ -365,7 +365,7 @@ void Observation::printObsHeader (std::ostream & _os)
 	else
 		_os << std::setw (12) << "not" << SEP;
 
-	if (!isnan (obs_end))
+	if (!std::isnan (obs_end))
 		_os << std::setw (12) << TimeDiff (obs_start, obs_end) << SEP;
 	else
 		_os << std::setw (12) << "not" << SEP;
@@ -437,7 +437,7 @@ double Observation::altitudeMerit (double _start, double _end)
 			<< std::endl;
 	}
 
-	if (isnan (hrz.alt) || isnan (minA) || isnan (maxA))
+	if (std::isnan (hrz.alt) || std::isnan (minA) || std::isnan (maxA))
 	{
 		std::cout << "nan hrz.alt: " << hrz.alt
 			<< " minA: " << minA
@@ -478,7 +478,7 @@ int Observation::checkUnprocessedImages (rts2core::Block *master)
 {
 	int ret;
 	load ();
-	if (isnan (obs_end))
+	if (std::isnan (obs_end))
 		return -1;
 	// obs_end is not null - observation ends sucessfully
 	// get unprocessed counts..
@@ -590,9 +590,9 @@ double Observation::getPrevSeparation ()
 double Observation::getSlewSpeed ()
 {
 	double prevSep = getPrevSeparation ();
-	if (isnan (prevSep)
-		|| isnan(obs_slew)
-		|| isnan (obs_start)
+	if (std::isnan (prevSep)
+		|| std::isnan(obs_slew)
+		|| std::isnan (obs_start)
 		|| (obs_start - obs_slew) <= 0)
 		return NAN;
 	return prevSep / (obs_start - obs_slew);
@@ -600,14 +600,14 @@ double Observation::getSlewSpeed ()
 
 double Observation::getSlewTime ()
 {
-	if (isnan (obs_slew) || isnan (obs_start))
+	if (std::isnan (obs_slew) || std::isnan (obs_start))
 		return NAN;
 	return obs_start - obs_slew;
 }
 
 double Observation::getObsTime ()
 {
-	if (isnan (obs_start) || isnan (obs_end))
+	if (std::isnan (obs_start) || std::isnan (obs_end))
 		return NAN;
 	return obs_end - obs_slew;
 }

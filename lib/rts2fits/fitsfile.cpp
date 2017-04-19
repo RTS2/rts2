@@ -450,7 +450,7 @@ void FitsFile::setValue (const char *name, float value, const char *comment)
 			return;
 		openFile ();
 	}
-	if (isnan (val) || isinf (val))
+	if (std::isnan (val) || std::isinf (val))
 		val = FLOATNULLVALUE;
 	fits_update_key (getFitsFile (), TFLOAT, (char *) replaceHeader (name).c_str (), &val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
@@ -466,7 +466,7 @@ void FitsFile::setValue (const char *name, double value, const char *comment)
 			return;
 		openFile ();
 	}
-	if (isnan (val) || isinf (val))
+	if (std::isnan (val) || std::isinf (val))
 		val = DOUBLENULLVALUE;
 	fits_update_key (getFitsFile (), TDOUBLE, (char *) replaceHeader (name).c_str (), &val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;

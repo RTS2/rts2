@@ -109,7 +109,7 @@ TPS534::init ()
 	addConstValue ("DOOR", doorDevice, "door device name to monitor its state (open/closed)");
 	connectDevice(device_file, 1);
 
-	if (!isnan (triggerSky->getValueDouble ()))
+	if (!std::isnan (triggerSky->getValueDouble ()))
 		setWeatherState (false, "cloud trigger unspecified");
 
 	

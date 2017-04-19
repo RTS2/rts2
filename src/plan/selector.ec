@@ -299,7 +299,7 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose, double length)
 	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
 		rts2db::Target *tar = (*target_list)->target;
-		if (cameraList && !isnan (length))
+		if (cameraList && !std::isnan (length))
 		{
 			if (rts2script::getMaximalScriptDuration (tar, *cameraList) > length)
 			{

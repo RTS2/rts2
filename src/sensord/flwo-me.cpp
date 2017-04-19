@@ -137,7 +137,7 @@ void MEarthWeather::paramNextFloatME (rts2core::ValueFloat *val)
 void MEarthWeather::paramNextSkyME (rts2core::ValueDoubleStat *val, rts2core::ValueBool *rainv, int nv)
 {
 	double v = paramNextDouble ();
-	if (isnan (v))
+	if (std::isnan (v))
 	{
 		logStream (MESSAGE_WARNING) << "nan weather value received" << sendLog;
 		return;

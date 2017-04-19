@@ -119,12 +119,12 @@ process_file (char *filename)
 	{
 		if (verbose)
 			printf ("No CAM_NAME in %s, default will be used\n", filename);
-		if (isnan (min))
+		if (std::isnan (min))
 		{
 			if (config->getDouble ("flatprocess", "min", min))
 				min = -INFINITY;
 		}
-		if (isnan (max))
+		if (std::isnan (max))
 		{
 			if (config->getDouble ("flatprocess", "max", max))
 				max = INFINITY;
@@ -133,12 +133,12 @@ process_file (char *filename)
 	}
 	else
 	{
-		if (isnan (min))
+		if (std::isnan (min))
 		{
 			if (config->getDouble (camera_name, "flatmin", min))
 				min = -INFINITY;
 		}
-		if (isnan (max))
+		if (std::isnan (max))
 		{
 			if (config->getDouble (camera_name, "flatmax", max))
 				max = INFINITY;

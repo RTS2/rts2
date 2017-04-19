@@ -329,25 +329,25 @@ void Cryocon::postEvent (rts2core::Event *event)
 				ts[i]->addValue (v, getNow (), 20);
 				ts[i]->calculate ();
 
-				if (isnan(trendMin[i]->getValueDouble ()) || ts[i]->getMin () < trendMin[i]->getValueDouble ())
+				if (std::isnan(trendMin[i]->getValueDouble ()) || ts[i]->getMin () < trendMin[i]->getValueDouble ())
 				{
 					trendMin[i]->setValueDouble (ts[i]->getMin ());
 					sendValueAll (trendMin[i]);
 				}
 
-				if (isnan(trendMax[i]->getValueDouble ()) || ts[i]->getMax () > trendMax[i]->getValueDouble ())
+				if (std::isnan(trendMax[i]->getValueDouble ()) || ts[i]->getMax () > trendMax[i]->getValueDouble ())
 				{
 					trendMax[i]->setValueDouble (ts[i]->getMax ());
 					sendValueAll (trendMax[i]);
 				}
 
-				if (isnan(trendRateMin[i]->getValueDouble ()) || ts[i]->getBeta () < trendRateMin[i]->getValueDouble ())
+				if (std::isnan(trendRateMin[i]->getValueDouble ()) || ts[i]->getBeta () < trendRateMin[i]->getValueDouble ())
 				{
 					trendRateMin[i]->setValueDouble (ts[i]->getBeta ());
 					sendValueAll (trendRateMin[i]);
 				}
 
-				if (isnan(trendRateMax[i]->getValueDouble ()) || ts[i]->getBeta () > trendRateMax[i]->getValueDouble ())
+				if (std::isnan(trendRateMax[i]->getValueDouble ()) || ts[i]->getBeta () > trendRateMax[i]->getValueDouble ())
 				{
 					trendRateMax[i]->setValueDouble (ts[i]->getBeta ());
 					sendValueAll (trendRateMax[i]);

@@ -361,7 +361,7 @@ int ImageSkyDb::updateAstrometry ()
 
 	d_img_err_ra = ra_err;
 	d_img_err_dec = dec_err;
-	if (isnan (img_err))
+	if (std::isnan (img_err))
 		d_img_err = getAstrometryErr ();
 	else	
 		d_img_err = img_err;

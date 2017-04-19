@@ -59,8 +59,8 @@ END_TEST
 
 START_TEST(derotator_2)
 {
-	test_pa (1, -40, 0, 4.8211);
-	test_pa (-1, -40, 0, 4.8211);
+	test_pa (1, -40, 90.3213, 4.8211);
+	test_pa (-1, -40, -90.3213, 4.8211);
 	test_pa (0, -39.99, 180, -65836.6706);
 	test_pa (0, -40.01, 0, 65836.6705);
 	test_pa (0.01, -40.01, 37.4549, 41493.6137);
@@ -171,7 +171,7 @@ START_TEST(test_altaz_1)
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, 16135692);
-	ck_assert_int_eq (altc, 27308043);
+	ck_assert_int_eq (altc, 27318632);
 #else
 	ck_assert_int_eq (azc, 16147947);
 	ck_assert_int_eq (altc, 27349159);
@@ -197,7 +197,7 @@ START_TEST(test_altaz_1)
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
 	ck_assert_int_eq (azc, 49514704);
-	ck_assert_int_eq (altc, 12300262);
+	ck_assert_int_eq (altc, 12305112);
 #else
 	ck_assert_int_eq (azc, 49510274);
 	ck_assert_int_eq (altc, 12292285);

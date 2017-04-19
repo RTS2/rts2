@@ -30,13 +30,13 @@ double ln_get_alt_from_airmass (double X, double airmass_scale)
 
 bool between (double val, double low, double upper)
 {
-	if (isnan (val))
+	if (std::isnan (val))
 		return false;
-	if (isnan (low) && isnan (upper))
+	if (std::isnan (low) && std::isnan (upper))
 		return true;
-	if (isnan (low))
+	if (std::isnan (low))
 		return val < upper;
-	if (isnan (upper))
+	if (std::isnan (upper))
 		return val >= low;
 	return val >= low && val < upper;
 }
@@ -51,9 +51,9 @@ bool ConstraintDoubleInterval::satisfy (double val)
 void ConstraintDoubleInterval::printXML (std::ostream &os)
 {
 	os << "    <interval>";
-	if (!isnan (lower))
+	if (!std::isnan (lower))
 		os << std::endl << "      <lower>" << lower << "</lower>";
-	if (!isnan (upper))
+	if (!std::isnan (upper))
 		os << std::endl << "      <upper>" << upper << "</upper>";
 	os << std::endl << "    </interval>" << std::endl;
 }
@@ -61,11 +61,11 @@ void ConstraintDoubleInterval::printXML (std::ostream &os)
 void ConstraintDoubleInterval::printJSON (std::ostream &os)
 {
 	os << "[";
-	if (!isnan (lower))
+	if (!std::isnan (lower))
 		os << lower << ",";
 	else
 		os << "null,";
-	if (!isnan (upper))
+	if (!std::isnan (upper))
 		os << upper;
 	else
 		os << "null";
@@ -280,24 +280,24 @@ void Constraint::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int
 		double nextJD;
 		if (satisfy (tar, t, &nextJD))
 		{
-			if (isnan (vf))
+			if (std::isnan (vf))
 				vf = t;
 		}
-		else if (!isnan (vf))
+		else if (!std::isnan (vf))
 		{
 			ln_get_timet_from_julian (vf, &from);
 			ln_get_timet_from_julian (t, &to);
 			ret.push_back (std::pair <time_t, time_t> (from, to));
 			vf = NAN;
 		}
-		if (isnan (nextJD))
+		if (std::isnan (nextJD))
 			t = to_JD;
 		else if (nextJD > 0)
 			t = nextJD;
 		else
 			t += step / 86400.0;
 	}
-	if (!isnan (vf))
+	if (!std::isnan (vf))
 	{
 		ln_get_timet_from_julian (vf, &from);
 		ln_get_timet_from_julian (t, &to);
@@ -327,28 +327,28 @@ void Constraint::getAltitudeViolatedIntervals (std::vector <ConstraintDoubleInte
 		{
 			std::vector <ConstraintDoubleInterval>::iterator highest = si.begin ();
 			double ah = highest->getUpper ();
-			if (isnan (ah))
+			if (std::isnan (ah))
 				ah = -90;
 			// find highest altitude..
 			for (std::vector <ConstraintDoubleInterval>::iterator iter = highest + 1; iter != si.end (); iter++)
 			{
-				if (!isnan (iter->getUpper ()) && iter->getUpper () > ah)
+				if (!std::isnan (iter->getUpper ()) && iter->getUpper () > ah)
 				{
 					highest = iter;
 					ah = iter->getUpper ();
 				}
-				else if (isnan (iter->getUpper ()) && !isnan (iter->getLower ()) && iter->getLower () > ah)
+				else if (std::isnan (iter->getUpper ()) && !std::isnan (iter->getLower ()) && iter->getLower () > ah)
 				{
 					highest = iter;
 					ah = iter->getLower ();
 				}
 			}
 			// decide which part is violated..
-			if (!isnan (highest->getUpper ()) && ah < alt)
+			if (!std::isnan (highest->getUpper ()) && ah < alt)
 			{
 				ac.push_back (ConstraintDoubleInterval (alt, ah));
 			}
-			if (!isnan (highest->getLower ()))
+			if (!std::isnan (highest->getLower ()))
 				alt = highest->getLower ();
 			else
 				alt = -90;
@@ -405,11 +405,11 @@ void ConstraintTime::getSatisfiedIntervals (Target *tar, time_t from, time_t to,
 	{
 		double l = iter->getUpper ();
 		double u = iter->getLower ();
-		if (!isnan (l) && l >= from && !isnan (u) && u <= to)
+		if (!std::isnan (l) && l >= from && !std::isnan (u) && u <= to)
 			ret.push_back (std::pair <time_t, time_t> (l, u));
-		if (isnan (l) && !isnan (u) && u <= to)
+		if (std::isnan (l) && !std::isnan (u) && u <= to)
 			ret.push_back (std::pair <time_t, time_t> (from, u));
-		if (!isnan (l) && l >= from  && isnan (u))
+		if (!std::isnan (l) && l >= from  && std::isnan (u))
 			ret.push_back (std::pair <time_t, time_t> (l, to));
 	}
 }
@@ -417,7 +417,7 @@ void ConstraintTime::getSatisfiedIntervals (Target *tar, time_t from, time_t to,
 bool ConstraintAirmass::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double am = tar->getAirmass (JD);
-	if (isnan (am))
+	if (std::isnan (am))
 	{
 		if (nextJD)
 			*nextJD = NAN;
@@ -434,9 +434,9 @@ void ConstraintAirmass::getAltitudeIntervals (std::vector <ConstraintDoubleInter
 	{
 		double l = iter->getUpper ();
 		double u = iter->getLower ();
-		if (!isnan (l))
+		if (!std::isnan (l))
 			l = ln_get_alt_from_airmass (l, 750.0);
-		if (!isnan (u))
+		if (!std::isnan (u))
 			u = ln_get_alt_from_airmass (u, 750.0);
 		ac.push_back (ConstraintDoubleInterval (l, u));
 	}
@@ -445,7 +445,7 @@ void ConstraintAirmass::getAltitudeIntervals (std::vector <ConstraintDoubleInter
 bool ConstraintZenithDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double zd = tar->getZenitDistance (JD);
-	if (isnan (zd))
+	if (std::isnan (zd))
 	{
 		if (nextJD)
 			*nextJD = NAN;
@@ -462,9 +462,9 @@ void ConstraintZenithDistance::getAltitudeIntervals (std::vector <ConstraintDoub
 	{
 		double l = iter->getUpper ();
 		double u = iter->getLower ();
-		if (!isnan (l))
+		if (!std::isnan (l))
 			l = 90 - l;
-		if (!isnan (u))
+		if (!std::isnan (u))
 			u = 90 - u;
 		ac.push_back (ConstraintDoubleInterval (l, u));
 	}
@@ -473,7 +473,7 @@ void ConstraintZenithDistance::getAltitudeIntervals (std::vector <ConstraintDoub
 bool ConstraintHA::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double ha = tar->getHourAngle (JD);
-	if (isnan (ha))
+	if (std::isnan (ha))
 	{
 	 	if (nextJD)
 			*nextJD = NAN;
@@ -488,7 +488,7 @@ bool ConstraintDec::satisfy (Target *tar, double JD, double *nextJD)
 {
 	struct ln_equ_posn pos;
 	tar->getPosition (&pos, JD);
-	if (isnan (pos.dec))
+	if (std::isnan (pos.dec))
 	{
 	 	if (nextJD)
 			*nextJD = NAN;
@@ -502,7 +502,7 @@ bool ConstraintDec::satisfy (Target *tar, double JD, double *nextJD)
 bool ConstraintLunarDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double ld = tar->getLunarDistance (JD);
-	if (isnan (ld))
+	if (std::isnan (ld))
 	{
 		if (nextJD)
 			*nextJD = NAN;
@@ -547,7 +547,7 @@ bool ConstraintLunarPhase::satisfy (Target *tar, double JD, double *nextJD)
 bool ConstraintSolarDistance::satisfy (Target *tar, double JD, double *nextJD)
 {
 	double sd = tar->getSolarDistance (JD);
-	if (isnan (sd))
+	if (std::isnan (sd))
 	{
 		if (nextJD)
 		  	*nextJD = NAN;

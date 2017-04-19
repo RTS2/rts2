@@ -170,7 +170,7 @@ bool Bootes1B::isGoodWeather ()
 		else
 		{
 			// if we are not in ignoreRainSensorTime period..
-			if (isnan (ignoreRainSensorTime->getValueDouble ()) || getNow () > ignoreRainSensorTime->getValueDouble ())
+			if (std::isnan (ignoreRainSensorTime->getValueDouble ()) || getNow () > ignoreRainSensorTime->getValueDouble ())
 			{
 				lastWeatherCheckState = weatherCheckState;
 				setWeatherTimeout (3600, "raining");

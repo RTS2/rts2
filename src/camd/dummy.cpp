@@ -214,7 +214,7 @@ class Dummy:public Camera
 			clearHWError ();
 			usleep (infoSleep);
 			float t = tempSet->getValueFloat ();
-			if (isnan (t))
+			if (std::isnan (t))
 				t = 30;
 			tempCCD->setValueFloat (t + random_num() * 3);
 			if (tempAir)

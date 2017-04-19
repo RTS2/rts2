@@ -173,12 +173,12 @@ void rts2json::sendConnectionValues (std::ostringstream & os, rts2core::Connecti
 
 	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
-		if ((isnan (from) || from > 0) && conn->getOtherDevClient ())
+		if ((std::isnan (from) || from > 0) && conn->getOtherDevClient ())
 		{
 			double ch = ((DevInterface *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
-			if (isnan (mfrom) || ch > mfrom)
+			if (std::isnan (mfrom) || ch > mfrom)
 				mfrom = ch;
-			if (!isnan (from) && !isnan (ch) && ch < from)
+			if (!std::isnan (from) && !std::isnan (ch) && ch < from)
 				continue;
 		}
 

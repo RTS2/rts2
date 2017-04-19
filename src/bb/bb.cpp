@@ -157,7 +157,7 @@ void BB::processSchedule (ObservatorySchedule *obs_sched)
 			}
 			else if (iter->getState () == BB_SCHEDULE_OBSERVABLE)
 			{
-				if (!isnan (iter->getFrom ()) && (isnan (min_time) || iter->getFrom () < min_time))
+				if (!std::isnan (iter->getFrom ()) && (std::isnan (min_time) || iter->getFrom () < min_time))
 				{
 					min_time = iter->getFrom ();
 					min_observatory = iter->getObservatoryId ();

@@ -1850,7 +1850,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
-		if (isnan (timeReadoutStart))
+		if (std::isnan (timeReadoutStart))
 			timeReadoutStart = getNow ();
 		return readoutStart ();
 	}

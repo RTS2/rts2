@@ -359,7 +359,7 @@ double ObservationSet::altitudeMerit ()
 	for (ObservationSet::iterator iter = begin (); iter != end (); iter++)
 	{
 		double am = (*iter).altitudeMerit (getJDStart (), getJDEnd ());
-		if (isnan (am))
+		if (std::isnan (am))
 			continue;
 		altMerit += am;
 		s++;

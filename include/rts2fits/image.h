@@ -546,7 +546,7 @@ class Image:public FitsFile
 		 */
 		void addWcs (double delta, int i)
 		{
-			if (isnan (total_wcs[i]))
+			if (std::isnan (total_wcs[i]))
 				total_wcs[i] = delta;
 			else
 				total_wcs[i] += delta;

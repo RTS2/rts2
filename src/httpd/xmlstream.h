@@ -85,7 +85,7 @@ class XmlStream: public Rts2InfoValStream
 		virtual void printInfoVal (const char *desc, Timestamp &val)
 		{
 			struct tm tm_s;
-			if (isnan (val.getTs ()))
+			if (std::isnan (val.getTs ()))
 			{
 				(*rpcval)[desc]="NULL";
 			}
