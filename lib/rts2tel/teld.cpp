@@ -2050,10 +2050,10 @@ void Telescope::startCupolaSync ()
 	if (nextCupSync > n)
 		return;
 	struct ln_equ_posn tar;
-	getTarget (&tar);
+	getOrigin (&tar);
 	rts2core::CommandCupolaSyncTel cmd (this, tar.ra, tar.dec);
 	queueCommandForType (DEVICE_TYPE_CUPOLA, cmd, NULL, true);
-	nextCupSync = n + 20;
+	nextCupSync = n + 2;
 }
 
 int Telescope::endMove ()
