@@ -195,6 +195,16 @@ int Cupola::cupolaPark ()
 	return moveStart ();
 }
 
+int Cupola::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == trackTelescope)
+	{
+		if ((dynamic_cast<rts2core::ValueBool *> (newValue))->getValueBool () == false)
+			moveEnd ();
+	}
+	return Dome::setValue (oldValue, newValue);
+}
+
 void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
 	double JD;
