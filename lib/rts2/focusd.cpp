@@ -298,10 +298,10 @@ int Focusd::createTemperature (const char *val)
 			return -1;
 		}
 
-		size_t len = sep - val;
+		size_t len = sep - val + 1;
 		extTempDevice = new char[len];
 		memset (extTempDevice, '\0', len);
-		memcpy (extTempDevice, val, sep - val - 1);
+		memcpy (extTempDevice, val, len - 1);
 
 		len = strlen (val) - (sep - val);
 		extTempVariable = new char[len];
