@@ -46,6 +46,9 @@ class AllNet:public Sensor
 		rts2core::ValueFloat *mirror;
 		rts2core::ValueFloat *ambient;
 
+		rts2core::ValueFloat *mirrorMin;
+		rts2core::ValueFloat *mirrorMax;
+
 		const char *url;
 };
 
@@ -57,6 +60,9 @@ AllNet::AllNet (int argc, char **argv):Sensor (argc, argv)
 {
 	createValue (mirror, "MIRROR", "[C] mirror temperature", true);
 	createValue (ambient, "AMBIENT", "[C] ambient temperature", true);
+
+	createValue (mirrorMin, "md_min", "[C] mirror daily min temperature", false);
+	createValue (mirrorMax, "md_max", "[C] mirror daily max temperature", false);
 
 	addOption ('u', NULL, 1, "URL to parse data");
 
@@ -94,7 +100,10 @@ int AllNet::info ()
 
 	const char *_uri;
 
-	XmlRpc::XmlRpcClient httpClient (url, &_uri);
+	std::ostringstream os;
+	os << url << "/xml/json.php?mode=all&simple";
+
+	XmlRpc::XmlRpcClient httpClient (os.str ().c_str (), &_uri);
 
 	ret = httpClient.executeGet (_uri, reply, reply_length);
 	if (!ret)
@@ -106,14 +115,53 @@ int AllNet::info ()
 	if (getDebug ())
 		logStream (MESSAGE_DEBUG) << "received:" << reply << sendLog;
 
-//2017-04-18 21:52:36, CPT, OKTOOPEN, , T, 12.9, WS, 4.4, WD, 79, H, 44.3, DP, 1, PY, 0, BP, 647, WET, FALSE
+// [{"id":"1","name":"Internal","unit":"\u00b0C","type":"1","value":"14.26","error":0},{"id":"104","name":"Port 1","unit":"\u00b0C","type":"1","value":"11.56","error":0}]
 
-	struct tm wsdate;
+	Json::Value root;
+	Json::Reader reader;
 
+	bool parsed = reader.parse (reply, root);
+	if (!parsed)
+	{
+		free (reply);
+		return -1;
+	}
+
+	int readed = 0;
+
+	for (int i = 0; i < (int) root.size(); i++)
+	{
+		Json::Value item = root[i];
+		Json::Value name = item["name"];
+		Json::Value val = item["value"];
+		if (item["error"].asInt () != 0)
+			continue;
+
+		if (name.asString () == "Internal")
+		{
+			ambient->setValueFloat (atof (val.asCString ()));
+			readed |= 0x01;
+		}
+		else if (name.asString () == "Port 1")
+		{
+			mirror->setValueFloat (atof (val.asCString ()));
+			readed |= 0x02;
+		}
+		else if (name.asString () == "Mirror Min")
+		{
+			mirrorMin->setValueFloat (atof (val.asCString ()));
+		}
+		else if (name.asString () == "Mirror Max")
+		{
+			mirrorMax->setValueFloat (atof (val.asCString ()));
+		}
+	}
 
 	free (reply);
-	setInfoTime (&wsdate);
-	return 0;
+	if (readed != 0x03)
+		return -1;
+
+	return Sensor::info ();
 }
 
 int main (int argc, char **argv)
