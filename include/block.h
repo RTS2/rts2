@@ -459,7 +459,7 @@ class Block: public App
 		/**
 		 * Return next established connection to device of given type.
 		 *
-		 * Type represents device class. For list of types, please look to RTS2_DEVICE_xxx defines in rts2/include/status.h.
+		 * Type represents device class. For list of types, please look to DEVICE_TYPE_xxx defines in rts2/include/status.h.
 		 *
 		 * @param  deviceType Type of device to search for.
 		 * @param  current    Current iterator. If called to find all devices of given type, pass this along to keep references.On return.

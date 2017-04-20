@@ -40,6 +40,8 @@ class SAAO:public SensorWeather
 
 		virtual bool isGoodWeather ();
 
+		int willConnect (rts2core::NetworkAddress * in_addr);
+
 	private:
 		rts2core::ValueFloat *temperature;
 		rts2core::ValueFloat *humidity;
@@ -134,6 +136,8 @@ int SAAO::info ()
 
 	int parsed = 0;
 
+	rts2core::Connection *telConn = getOpenConnection (DEVICE_TYPE_MOUNT);
+
 	while (*data)
 	{
 		char *endptr;
@@ -168,12 +172,15 @@ int SAAO::info ()
 			{
 				data += 3;
 				temperature->setValueFloat (strtod (data, &endptr));
+				if (telConn)
+					telConn->queCommand (new rts2core::CommandChangeValue (telConn->getOtherDevClient (), "AMBTEMP", '=', temperature->getValueFloat ()));
 				data = endptr;
 			}
 			else if (strncmp (data, "H,", 2) == 0)
 			{
 				data += 3;
 				humidity->setValueFloat (strtod (data, &endptr));
+
 				if (humidity->getValueFloat () > humidityLimit->getValueFloat ())
 				{
 					setWeatherTimeout (120, "humidity above limit");
@@ -184,6 +191,8 @@ int SAAO::info ()
 					valueGood (humidity);
 				}
 				parsed |= 0x02;
+				if (telConn)
+					telConn->queCommand (new rts2core::CommandChangeValue (telConn->getOtherDevClient (), "AMBHUMIDITY", '=', humidity->getValueFloat ()));
 				data = endptr;
 			}
 			else if (strncmp (data, "BP,", 3) == 0)
@@ -226,6 +235,13 @@ bool SAAO::isGoodWeather ()
 		return false;
 	}
 	return SensorWeather::isGoodWeather ();
+}
+
+int SAAO::willConnect (rts2core::NetworkAddress * in_addr)
+{
+	if (in_addr->getType () == DEVICE_TYPE_MOUNT)
+		return 1;
+	return rts2core::Device::willConnect (in_addr);
 }
 
 int main (int argc, char **argv)

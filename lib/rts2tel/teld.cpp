@@ -82,10 +82,10 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	telAmbientTemperature->setValueFloat (10);
 
 	createValue (telHumidity, "AMBHUMIDITY", "[%] observatory relative humidity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	telHumidity->setValueFloat (0.7);
+	telHumidity->setValueFloat (70);
 
 	createValue (telWavelength, "WAVELENGTH", "[nm] incoming radiation wavelength", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
-	telWavelength->setValueFloat (0.5);
+	telWavelength->setValueFloat (500);
 
 	// object
 	createValue (oriRaDec, "ORI", "original position (epoch)", true, RTS2_VALUE_WRITABLE);
@@ -1060,7 +1060,7 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD, bool writeV
 	double refa, refb;
 	double zd = ln_deg_to_rad (90 - hrz.alt);
 	double tzd = tan (zd);
-	eraRefco (getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &refa, &refb);
+	eraRefco (getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &refa, &refb);
 	ref = ln_rad_to_deg (refa * tzd + refb * tzd * tzd * tzd);
 #else
 	ref = ln_get_refraction_adj (hrz.alt, getPressure (), 10);
@@ -1982,7 +1982,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 	double rc = ln_deg_to_rad (pos->ra);
 	double dc = ln_deg_to_rad (pos->dec);
 
-	int status = eraAtco13 (rc, dc, ln_deg_to_rad (pmRaDec->getRa ()), ln_deg_to_rad (pmRaDec->getDec ()), 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat (), telWavelength->getValueFloat (), &aob, &zob, &hob, &dob, &rob, &co);
+	int status = eraAtco13 (rc, dc, ln_deg_to_rad (pmRaDec->getRa ()), ln_deg_to_rad (pmRaDec->getDec ()), 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &aob, &zob, &hob, &dob, &rob, &co);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot apply corrections to " << pos->ra << " " << pos->dec << sendLog;
