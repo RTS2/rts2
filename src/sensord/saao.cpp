@@ -28,7 +28,7 @@ namespace rts2sensord
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class SAAO:public Sensor
+class SAAO:public SensorWeather
 {
 	public:
 		SAAO (int argc, char **argv);
@@ -38,12 +38,19 @@ class SAAO:public Sensor
 		virtual int initHardware ();
 		virtual int info ();
 
+		virtual bool isGoodWeather ();
+
 	private:
 		rts2core::ValueFloat *temperature;
 		rts2core::ValueFloat *humidity;
 		rts2core::ValueFloat *windDirection;
 		rts2core::ValueFloat *windSpeed;
 		rts2core::ValueFloat *pressure;
+
+		rts2core::ValueFloat *humidityLimit;
+		rts2core::ValueFloat *windLimit;
+
+		rts2core::ValueBool *okToOpen;
 
 		const char *url;
 };
@@ -52,13 +59,22 @@ class SAAO:public Sensor
 
 using namespace rts2sensord;
 
-SAAO::SAAO (int argc, char **argv):Sensor (argc, argv)
+SAAO::SAAO (int argc, char **argv):SensorWeather (argc, argv)
 {
 	createValue (temperature, "TEMPERATURE", "[C] ambient temperature", true);
 	createValue (humidity, "HUMIDITY", "[%] relative humidity", true);
 	createValue (windDirection, "WIND_DIR", "wind direction", true, RTS2_DT_DEGREES);
 	createValue (windSpeed, "WINDSPEED", "[km/h] wind speed", true);
 	createValue (pressure, "PRESSURE", "[mbar] atmospheric pressure", true);
+
+	createValue (humidityLimit, "humidity_limit", "[%] relative humidity limit", false, RTS2_VALUE_WRITABLE);
+	humidityLimit->setValueFloat (90);
+
+	createValue (windLimit, "wind_limit", "[km/h] windspeed limit", false, RTS2_VALUE_WRITABLE);
+	windLimit->setValueFloat (60);
+
+	createValue (okToOpen, "OKTOOPEN", "OK to open", false);
+	okToOpen->setValueBool (false);
 
 	addOption ('u', NULL, 1, "URL to parse data");
 
@@ -116,6 +132,8 @@ int SAAO::info ()
 
 	char *data = strptime (reply, "%Y-%m-%d %H:%M:%S", &wsdate);
 
+	int parsed = 0;
+
 	while (*data)
 	{
 		char *endptr;
@@ -128,6 +146,16 @@ int SAAO::info ()
 			{
 				data += 4;
 				windSpeed->setValueFloat (strtod (data, &endptr));
+				if (windSpeed->getValueFloat () > windLimit->getValueFloat ())
+				{
+					setWeatherTimeout (120, "wind over limit");
+					valueError (windSpeed);
+				}
+				else
+				{
+					valueGood (windSpeed);
+				}
+				parsed |= 0x01;
 				data = endptr;
 			}
 			else if (strncmp (data, "WD,", 3) == 0)
@@ -146,6 +174,16 @@ int SAAO::info ()
 			{
 				data += 3;
 				humidity->setValueFloat (strtod (data, &endptr));
+				if (humidity->getValueFloat () > humidityLimit->getValueFloat ())
+				{
+					setWeatherTimeout (120, "humidity above limit");
+					valueError (humidity);
+				}
+				else
+				{
+					valueGood (humidity);
+				}
+				parsed |= 0x02;
 				data = endptr;
 			}
 			else if (strncmp (data, "BP,", 3) == 0)
@@ -155,6 +193,12 @@ int SAAO::info ()
 				pressure->setValueFloat (1.333224 * strtod (data, &endptr));
 				data = endptr;
 			}
+			else if (strncmp (data, "OKTOOPEN", 8) == 0)
+			{
+				data += 9;
+				okToOpen->setValueBool (false);
+				parsed |= 0x04;
+			}
 		}
 		else
 		{
@@ -162,9 +206,26 @@ int SAAO::info ()
 		}
 	}
 
+	if (parsed != 0x07)
+	{
+		okToOpen->setValueBool (false);
+		setWeatherTimeout (120, "not OK to open");
+		valueError (okToOpen);
+	}
+
 	free (reply);
 	setInfoTime (&wsdate);
 	return 0;
+}
+
+bool SAAO::isGoodWeather ()
+{
+	if (getLastInfoTime () > 1800)
+	{
+		setWeatherTimeout (80, "unable to receive data");
+		return false;
+	}
+	return SensorWeather::isGoodWeather ();
 }
 
 int main (int argc, char **argv)
