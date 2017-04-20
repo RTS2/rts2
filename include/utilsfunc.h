@@ -398,4 +398,9 @@ float mphToMs (float mph);
  */
 uint16_t getMsgBufCRC16 (char *msgBuf, int msgLen);
 
+/**
+ * Split string into device.variable parts. Parts must be freed.
+ */
+int parseVariableName (const char *name, char **device, char **variable);
+
 #endif							 /* !__RTS_UTILSFUNC__ */

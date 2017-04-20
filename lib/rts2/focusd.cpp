@@ -291,22 +291,11 @@ int Focusd::createTemperature (const char *val)
 {
 	if (val != NULL)
 	{
-		const char *sep = strchr (val, '.');
-		if (sep == NULL)
+		if (parseVariableName (val, &extTempDevice, &extTempVariable))
 		{
 			logStream (MESSAGE_ERROR) << "cannot use external temperature " << val << ", check if it contains '.'" << sendLog;
 			return -1;
 		}
-
-		size_t len = sep - val + 1;
-		extTempDevice = new char[len];
-		memset (extTempDevice, '\0', len);
-		memcpy (extTempDevice, val, len - 1);
-
-		len = strlen (val) - (sep - val);
-		extTempVariable = new char[len];
-		memset (extTempVariable, 0, len);
-		memcpy (extTempVariable, sep + 1, len - 1);
 	}
 	createValue (temperature, "FOC_TEMP", "focuser temperature");
 	return 0;

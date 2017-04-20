@@ -100,6 +100,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (gOffsRaDec, "GOFFS", "guiding offsets", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	gOffsRaDec->setValueRaDec (0, 0);
 
+	createValue (guidingTime, "GTIME", "time the telescope is guiding", false, RTS2_VALUE_WRITABLE);
+
 	if (hasAltAzDiff)
 	{
 		createValue (offsAltAz, "AZALOFFS", "alt-azimuth offsets", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
@@ -965,6 +967,10 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 	{
 		maskState (TEL_MASK_OFFSETING, TEL_OFFSETING, "offseting telescope");
 	}
+	else if (old_value == gOffsRaDec && std::isnan (guidingTime->getValueDouble ()))
+	{
+		guidingTime->setNow ();
+	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
 
@@ -1095,6 +1101,8 @@ void Telescope::incMoveNum ()
 
 	gOffsRaDec->setValueRaDec (0, 0);
 	gOffsRaDec->resetValueChanged ();
+
+	guidingTime->setValueDouble (NAN);
 
 	if (offsAltAz)
 	{

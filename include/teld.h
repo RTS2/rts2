@@ -434,7 +434,6 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *telHumidity;
 		rts2core::ValueFloat *telWavelength;
 
-
 		/**
 		 * Precalculated latitude values..
 		 */
@@ -1149,6 +1148,8 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *offsRaDec;
 
 		rts2core::ValueRaDec *gOffsRaDec;
+
+		rts2core::ValueTime *guidingTime;
 
 		/**
 		 * User alt-az offsets. Supported primary on alt-az mounts.
