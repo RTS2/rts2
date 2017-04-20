@@ -1627,7 +1627,7 @@ int Telescope::setTracking (int track, bool addTrackingTimer, bool send)
 		tracking->setValueInteger (track);
 		// make sure we will not run two timers
 		deleteTimers (EVENT_TRACKING_TIMER);
-		if (track > 0)
+		if (track == 1 || track == 2)
 		{
 			maskState (TEL_MASK_TRACK, TEL_TRACKING, "tracking started");
 			if (addTrackingTimer == true)
