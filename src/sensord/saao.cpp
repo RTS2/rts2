@@ -205,7 +205,8 @@ int SAAO::info ()
 			else if (strncmp (data, "OKTOOPEN", 8) == 0)
 			{
 				data += 9;
-				okToOpen->setValueBool (false);
+				okToOpen->setValueBool (true);
+				valueGood (okToOpen);
 				parsed |= 0x04;
 			}
 		}
