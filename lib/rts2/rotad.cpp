@@ -34,7 +34,7 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	createValue (zeroOffs, "zero_offs", "[deg] zero offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	zeroOffs->setValueDouble (0);
 
-	createValue (offset, "OFFSET", "[deg] custom offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	createValue (offset, "OFFSET", "[deg] custom offset", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	offset->setValueDouble (0);
 
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);

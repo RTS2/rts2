@@ -79,6 +79,8 @@ class AltAz: public Telescope
 		 */
 		virtual void runTracking ();
 
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
+
 		/**
 		 * Sends new target parallactic angle to 
 		 * devices requiring it (rotators,..).

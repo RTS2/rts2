@@ -40,6 +40,7 @@ parser.add_argument('--run-script', help='run script on device. Device must be s
 parser.add_argument('--kill-script', help='attempt to kill currently running script', action='store_true', dest='kill_script', default=False)
 parser.add_argument('--list-minmax', help='list miminal/maximal values', action='store_true', dest='list_minmax', default=False)
 parser.add_argument('--device', help='device for cmd and run-script options', action='store', dest='device')
+parser.add_argument('--dump', help='dump all variables in JSON', action='store_true', dest='dump')
 parser.add_argument('--expose', help='start exposure on camera', action='store', dest='expose', default=None)
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
@@ -141,6 +142,10 @@ try:
 			sys.exit('the program expect 3 or 4 arguments for target creation')
 		tid=j.db.createTLETarget(*options.args)
 		print 'Created target with ID {0}'.format(tid)
+
+	if options.dump:
+		j.refresh()
+		print j.devices
 
 	if options.expose:
 		r = j.takeImage(options.expose)

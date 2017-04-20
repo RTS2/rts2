@@ -702,8 +702,8 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 			a_altc += alt_change * 500;
 		}
 
-		a_azc += az_change * 20;
-		a_altc += alt_change * 20;
+		a_azc += az_change * 60;
+		a_altc += alt_change * 60;
 
 		if (a_azc > azMax->getValueLong ())
 			a_azc = azMax->getValueLong ();
@@ -727,6 +727,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	az_sitech_speed_stat->addValue (altaz_Xrequest.y_speed, 15);
 	alt_sitech_speed_stat->addValue (altaz_Xrequest.x_speed, 15);
+
+	az_sitech_speed_stat->calculate ();
+	alt_sitech_speed_stat->calculate ();
 
 	altaz_Xrequest.x_bits = xbits;
 	altaz_Xrequest.y_bits = ybits;

@@ -203,10 +203,7 @@ void AltAz::parallactic_angle (double ha, double dec, double &pa, double &parate
 	else
 		pa = ln_rad_to_deg (atan2 (cos_lat * sin_ha, div));
 	double par1 = (tan_lat * cos_dec - sin_dec * cos_ha);
-	if (trackingRequested () == 3)
-		parate = 0;
-	else
-		parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
+	parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
 }
 
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)
@@ -386,6 +383,17 @@ void AltAz::runTracking ()
 {
 	parallacticTracking ();
 	Telescope::runTracking ();
+}
+
+int AltAz::setTracking (int track, bool addTrackingTimer, bool send)
+{
+	if (track == 3)
+	{
+		rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), 0);
+		queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
+		parallacticTracking ();
+	}
+	return Telescope::setTracking (track, addTrackingTimer, send);
 }
 
 void AltAz::parallacticTracking ()
