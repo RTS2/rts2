@@ -155,6 +155,9 @@ class SitechAltAz:public AltAz
 		rts2core::ValueLong *az_sitech_speed;
 		rts2core::ValueLong *alt_sitech_speed;
 
+		rts2core::ValueDoubleStat *az_sitech_speed_stat;
+		rts2core::ValueDoubleStat *alt_sitech_speed_stat;
+
 		rts2core::ValueBool *computed_only_speed;
 
 		rts2core::ValueDouble *az_acceleration;
@@ -304,6 +307,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (az_sitech_speed, "az_sitech_speed", "speed in controller units", false);
 	createValue (alt_sitech_speed, "alt_sitech_speed", "speed in controller units", false);
+
+	createValue (az_sitech_speed_stat, "az_s_speed_stat", "sitech speed statistics", false);
+	createValue (alt_sitech_speed_stat, "alt_s_speed_stat", "sitech speed statistics", false);
 
 	createValue (computed_only_speed, "computed_speed", "base speed vector calculations only on calculations, do not factor current target position", false);
 	computed_only_speed->setValueBool (false);
@@ -718,6 +724,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	az_sitech_speed->setValueLong (altaz_Xrequest.y_speed);
 	alt_sitech_speed->setValueLong (altaz_Xrequest.x_speed);
+
+	az_sitech_speed_stat->addValue (altaz_Xrequest.y_speed, 15);
+	alt_sitech_speed_stat->addValue (altaz_Xrequest.x_speed, 15);
 
 	altaz_Xrequest.x_bits = xbits;
 	altaz_Xrequest.y_bits = ybits;
