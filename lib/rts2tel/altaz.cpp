@@ -25,7 +25,7 @@
 
 using namespace rts2teld;
 
-AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool hasAltAzDiff, bool parkingBlock):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0, hasAltAzDiff, parkingBlock)
+AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool hasAltAzDiff, bool parkingBlock):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0, hasAltAzDiff, parkingBlock, true)
 {
 	createValue (parallAngle, "PANGLE", "[deg] parallactic angle", true, RTS2_DT_DEGREES);
 	createValue (derRate, "DERRATE", "[deg/hour] derotator rate", false, RTS2_DT_DEGREES);
@@ -203,7 +203,10 @@ void AltAz::parallactic_angle (double ha, double dec, double &pa, double &parate
 	else
 		pa = ln_rad_to_deg (atan2 (cos_lat * sin_ha, div));
 	double par1 = (tan_lat * cos_dec - sin_dec * cos_ha);
-	parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
+	if (trackingRequested () == 3)
+		parate = 0;
+	else
+		parate = (15 * (tan_lat * cos_dec * cos_ha - sin_dec) / (sin_ha * sin_ha + par1 * par1));
 }
 
 int AltAz::checkTrajectory (double JD, int32_t azc, int32_t altc, int32_t &azt, int32_t &altt, int32_t azs, int32_t alts, unsigned int steps, double alt_margin, double az_margin, bool ignore_soft_beginning)

@@ -87,7 +87,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false, bool parkingBlock = true);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false, bool parkingBlock = true, bool hasDerotators = false);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (rts2core::Event * event);
@@ -930,7 +930,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal
+		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal 3 - no tracking, including derotators
 		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
 		 * @param send		 if true, set rts2value and send in to all connections
 		 * @return 0 on success, -1 on error
@@ -942,7 +942,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Returns if tracking is requested.
 		 *
-		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking
+		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking 3 - no tracking, including derotators stop
 		 */
 		int trackingRequested () { return tracking->getValueInteger (); }
 
