@@ -13,6 +13,7 @@ rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp stateevent
 	valueeventsdb.cpp emailaction.cpp valueplot.cpp augerreq.cpp devicesreq.cpp planreq.cpp graphreq.cpp \
 	bbserver.cpp api.cpp bbapi.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp
+rts2_httpd_LDFLAGS = @LIB_PTHREAD@
 rts2_httpd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_httpd_LDADD= -L../../lib/rts2json -lrts2json -L../../lib/rts2scheduler -lrts2scheduler -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db -L../../lib/pluto -lpluto \
 	-L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIBPG_LIBS@ \
@@ -28,6 +29,7 @@ else
 rts2_httpd_SOURCES = httpd.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
 	devicesreq.cpp graphreq.cpp bbserver.cpp api.cpp messageevents.cpp switchstatereq.cpp \
 	xmlapi.cpp
+rts2_httpd_LDFLAGS = @LIB_PTHREAD@
 rts2_httpd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_httpd_LDADD = -L../../lib/rts2json -lrts2json -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \
 	@LIB_NOVA@ @CFITSIO_LIBS@ @MAGIC_LIBS@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ @LIB_CRYPT@ @LIB_PTHREAD@ ${LDADD}
