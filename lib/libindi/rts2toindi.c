@@ -421,9 +421,8 @@ rts2openINDIServer (const char *host, int port)
 void rts2closeINDIServer()
 {
 	int resw=0 ;
-	int resr=0 ;
 	resw= fclose( gwfp) ;
-	resr= fclose( grfp) ;		 // necessary see valgrind
+	fclose( grfp) ;		 // necessary see valgrind
 
 	if(resw)
 	{

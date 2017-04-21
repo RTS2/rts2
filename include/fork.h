@@ -33,7 +33,7 @@ namespace rts2teld
 class Fork: public Telescope
 {
 	public:
-		Fork (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true);
+		Fork (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true, bool parkingBlock = true);
 		virtual ~Fork (void);
 
 	protected:

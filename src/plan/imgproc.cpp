@@ -445,7 +445,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn, int slot)
 				sendValueAll (nightGoodImages);
 				sendValueAll (lastRaDec);
 				sendValueAll (lastCorrections);
-				if (isnan (lastGood->getValueDouble ()) || rImage->getExposureEnd () > lastGood->getValueDouble ())
+				if (std::isnan (lastGood->getValueDouble ()) || rImage->getExposureEnd () > lastGood->getValueDouble ())
 				{
 					lastGood->setValueDouble (rImage->getExposureEnd ());
 					sendValueAll (lastGood);
@@ -457,7 +457,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn, int slot)
 				nightTrashImages->inc ();
 				sendValueAll (trashImages);
 				sendValueAll (nightTrashImages);
-				if (isnan (lastTrash->getValueDouble ()) || rImage->getExposureEnd () > lastTrash->getValueDouble ())
+				if (std::isnan (lastTrash->getValueDouble ()) || rImage->getExposureEnd () > lastTrash->getValueDouble ())
 				{
 					lastTrash->setValueDouble (rImage->getExposureEnd ());
 					sendValueAll (lastTrash);
@@ -558,9 +558,9 @@ void ImageProc::changeRunning (ConnProcess * newImage, int slot)
 	else if (ret == 0)
 	{
 #ifdef RTS2_HAVE_LIBJPEG
-		if (isnan (lastGood->getValueDouble ()) || lastGood->getValueDouble () < rImage->getExposureEnd ())
+		if (std::isnan (lastGood->getValueDouble ()) || lastGood->getValueDouble () < rImage->getExposureEnd ())
 			rImage->setLastGoodJpeg (last_good_jpeg);
-		if (isnan (lastGood->getValueDouble ()) || lastTrash->getValueDouble() < rImage->getExposureEnd ())
+		if (std::isnan (lastGood->getValueDouble ()) || lastTrash->getValueDouble() < rImage->getExposureEnd ())
 			rImage->setLastTrashJpeg (last_trash_jpeg);
 #endif
 		addConnection (rImage);

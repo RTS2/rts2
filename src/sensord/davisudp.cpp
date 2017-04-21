@@ -284,7 +284,7 @@ int DavisUdp::receive (rts2core::Block *block)
 		master->setWindDir (rtWindDir);
 		master->setBaroCurr (rtBaroCurr);
 		master->updateInfoTime ();
-		if (!isnan (cloud))
+		if (!std::isnan (cloud))
 		{
 			master->setCloud (cloud, rtCloudTop, rtCloudBottom);
 		}

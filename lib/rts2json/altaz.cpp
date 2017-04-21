@@ -159,7 +159,7 @@ void AltAz::plot (struct ln_hrz_posn *hrz, const char* label, const char* color,
 	double az;
 	int x, y, ann_x, ann_y, ann_w, ann_h;
 
-	if (isnan (hrz->alt) || isnan (hrz->az))
+	if (std::isnan (hrz->alt) || std::isnan (hrz->az))
 	{
 		std::cerr << "Cannot plot nan coordinates: " << hrz->alt << " " << hrz->az << std::endl;
 		return;

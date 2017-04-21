@@ -161,7 +161,7 @@ int Mrakomer::init ()
 	
 	mrakConn->flushPortIO ();
 
-	if (!isnan (triggerGood->getValueDouble ()))
+	if (!std::isnan (triggerGood->getValueDouble ()))
 		setWeatherState (false, "TRIGGOOD value unspecified");
 
 	return 0;
@@ -227,7 +227,7 @@ int Mrakomer::idle ()
 		}
 		else
 		{
-			if (isnan (heatStateChangeTime->getValueDouble ()))
+			if (std::isnan (heatStateChangeTime->getValueDouble ()))
 			{
 				heatStateChangeTime->setValueDouble (getNow () + heatDuration->getValueInteger ());
 				heater->setValueBool (true);

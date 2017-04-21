@@ -250,7 +250,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual void beforeNight ()
 		{
-			if (nightCoolTemp && !isnan (nightCoolTemp->getValueFloat ()))
+			if (nightCoolTemp && !std::isnan (nightCoolTemp->getValueFloat ()))
 			{
 				switchCooling (true);
 				setCoolTemp (nightCoolTemp->getValueFloat ());
@@ -963,7 +963,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void updateReadoutSpeed (size_t computedPixels)
 		{
-			if (!isnan (timeReadoutStart))
+			if (!std::isnan (timeReadoutStart))
 			{
 				readoutTime->setValueDouble (getNow () - timeReadoutStart);
 				sendValueAll (readoutTime);
@@ -992,6 +992,11 @@ class Camera:public rts2core::ScriptDevice
 		int realTimeDataTransferCount;
 
 		void startExposureConnImageData () { startImageData (exposureConn); }
+
+		/**
+		 * Runs SEP on stars, find stars centers.
+		 */
+		void findSepStars (uint16_t *data);
 
 	private:
 
@@ -1066,6 +1071,14 @@ class Camera:public rts2core::ScriptDevice
 		 * Calculate image center statistics.
 		 */
 		rts2core::ValueBool *calculateCenter;
+
+		/**
+		 * Find stars with sep library.
+		 */
+		rts2core::ValueBool *sepFind;
+		rts2core::DoubleArray *sepX;
+		rts2core::DoubleArray *sepY;
+		rts2core::DoubleArray *sepFluxes;
 
 		/**
 		 * Center box. Statistics is not calculated and values
@@ -1181,7 +1194,7 @@ class Camera:public rts2core::ScriptDevice
 						sx[col] += *tData;
 						rs += *tData;
 						center_npix++;
-						if (isnan (center_max) || *tData > center_max)
+						if (std::isnan (center_max) || *tData > center_max)
 							center_max = *tData;
 					}
 				}

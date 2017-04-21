@@ -357,7 +357,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 		logStream (MESSAGE_DEBUG) << "response 2: " << response << sendLog;
 	}
 
-	if (baffleCommand != NULL && !isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
+	if (baffleCommand != NULL && !std::isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
 	{
 		if (baffle->getValueInteger () == 1)
 			baffle->setValueInteger (2);
@@ -374,7 +374,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 		switch (response[3])
 		{
 			case '0':
-				if (!isnan (coverCommand->getValueDouble ()))
+				if (!std::isnan (coverCommand->getValueDouble ()))
 				{
 					if (coverCommand->getValueInteger () > time (NULL))
 						break;
@@ -386,7 +386,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 				setOCBlock ();
 				break;
 			case '1':
-				if (!isnan (coverCommand->getValueDouble ()))
+				if (!std::isnan (coverCommand->getValueDouble ()))
 				{
 					if (coverCommand->getValueInteger () > time (NULL))
 						break;

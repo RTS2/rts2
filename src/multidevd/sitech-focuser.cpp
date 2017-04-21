@@ -22,12 +22,18 @@
 
 using namespace rts2focusd;
 
-SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c, const char *defaults):Focusd (0, NULL), SitechMultidev ()
+SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c, const char *defaults, const char *extTemp):Focusd (0, NULL), SitechMultidev ()
 {
 	setDeviceName (name);
 	setSitechConnection (sitech_c);
 
 	last_errors = 0;
+
+	if (extTemp != NULL)
+	{
+		if (createTemperature (extTemp) == 0)
+			createLinearOffset ();
+	}
 
 	setDefaultsFile (defaults);
 

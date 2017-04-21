@@ -141,7 +141,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 		delete target;
 
 		// print new target
-		if (! (isnan (pos.ra) || isnan (pos.dec)))
+		if (! (std::isnan (pos.ra) || std::isnan (pos.dec)))
 		{
 			_os << "<p>If you would like to enter new target with RA DEC " << LibnovaRaDec (pos.ra, pos.dec)
 				<< ", then fill fields bellow and click submit: <form name='new_target' action='new_target' method='get'><input type='hidden' name='ra' value='"

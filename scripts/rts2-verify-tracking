@@ -37,6 +37,8 @@ parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='v
 parser.add_argument('files', help=_('files to process'), action='store', default=[], nargs='+')
 parser.add_argument('--stars', help=_('number of stars to use'), action='store', dest='stars', default=1, type=int)
 parser.add_argument('--center-radius', help=_('select stars only that far from center'), action='store', dest='center_radius', default=None, type=float)
+parser.add_argument('--split', help=_('split graphs/data if matching stars cannot be found'), action='store_true', dest='split', default=False)
+parser.add_argument('--cube', help=_('process FITS cubes'), action='store_true', dest='cube', default=False)
 parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
 parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
 
@@ -67,42 +69,30 @@ def calculate_angels(sb):
 					continue
 				angels[i,s1,s2] = np.arctan2(sb[s1][i][0] - sb[s2][i][0], sb[s1][i][1] - sb[s2][i][1])
 	return angels
-	
 
-for fn in options.files:
-	print _('Processing {0}').format(fn)
-	hdu = fits.open(fn)
-	sb = [] # contains selected x, y, flux as members
-	for si in range(options.stars):
-		sb.append([])
 
-	if options.verbose:
-		hdu.info()
-		if options.verbose < 2:
-			rts2.progressbar.progress(0, len(hdu[0].data))
-	d_x = len(hdu[0].data[0])
-	c_x = d_x / 2.0
-	d_y = len(hdu[0].data[0][0])
-	c_y = d_y / 2.0
-	if options.verbose:
-		print _('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y)
-	skipped = 0
-	for ci in range(len(hdu[0].data)):
-		objects = rts2.brights.find_stars(fn, hdu, options.verbose, options.useDS9, ci)
-		if options.verbose > 1:
+class ProcessFiles:
+	def __init__(self, nstars):
+		self.sb = [] # contains selected x, y, flux as members
+		self.skipped = 0
+		for si in range(nstars):
+			self.sb.append([])
+
+	def process_file(self, fn, hdu, verbose, useDS9, stars, radius, skip_clouds, center_radius, split, ci=None):
+		objects = rts2.brights.find_stars(fn, hdu, verbose, useDS9, ci)
+		if verbose > 1:
 			print _('file {0} cube {1} brightest star on {2:.2f} {3:.2f}').format(fn, ci, objects[0]['x'],objects[0]['y'])
-		else:
+		elif ci is not None:
 			rts2.progressbar.progress(ci + 1, len(hdu[0].data))
-		if len(sb[0]) == 0:
+		if len(self.sb[0]) == 0:
 			si = 0
 			bsi = 0
-			self.detections = objects
-			while si < options.stars:
+			while si < stars:
 				if bsi == len(objects):
-					if skipped < options.skip_clouds:
-						if options.verbose:
+					if self.skipped < skip_clouds:
+						if verbose:
 							print _('skipping frame #{0}').format(ci)
-						skipped += 1
+						self.skipped += 1
 						continue
 					sys.exit(_('too few stars matching criteria'))
 				x = objects[bsi]['x']
@@ -110,132 +100,183 @@ for fn in options.files:
 				flux = objects[bsi]['flux']
 				c_d = pixel_distance(x, y, c_x, c_y)
 				bsi += 1
-				if options.verbose:
+				if verbose:
 					print _('star x {0:.3f} y {1:.3f} center distance {2:.3f}').format(x, y, c_d)
-				if options.center_radius is not None and c_d > options.center_radius:
-					if options.verbose:
+				if center_radius is not None and c_d > center_radius:
+					if verbose:
 						print _('star too far from center')
 					continue
-				sb[si].append([x, y, flux])
+				self.sb[si].append([x, y, flux])
 				si += 1
 		else:
 			found_sb = []
-			for si in range(options.stars):
-				b_x = sb[si][-1][0]
-				b_y = sb[si][-1][1]
+			for si in range(stars):
+				b_x = self.sb[si][-1][0]
+				b_y = self.sb[si][-1][1]
 				star_find = False
 				for star in objects:
 					dist = pixel_distance(b_x, b_y, star['x'], star['y'])
-					if options.verbose > 1:
+					if verbose > 1:
 						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
-					if dist < options.radius:
+					if dist < radius:
 						found_sb.append([star['x'], star['y'], star['flux']])
 						star_find = True
 						break
-				if star_find == False and options.verbose:
+				if star_find == False and verbose:
 					print(_('cube {0}: cannot find star #{1} close to {2:.2f} {3:.2f}').format(ci + 1, si + 1, b_x, b_y))
-			if len(found_sb) < options.stars:
-				if skipped < options.skip_clouds:
-					skipped += 1
-					continue
-				sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), skipped))
+			if len(found_sb) < stars:
+				if self.skipped < skip_clouds:
+					self.skipped += 1
+					return 1
+				if split == False:
+					sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), self.skipped))
+				return -1
 
-			for si in range(options.stars):
-				sb[si].append(found_sb[si])
-	if options.verbose == 0:
-		print 'Done'
+			for si in range(stars):
+				self.sb[si].append(found_sb[si])
 
-	np_sb = np.array(sb)
-	# calculate average position
-	a_x = [0] * options.stars
-	a_y = [0] * options.stars
-	a_flux = [0] * options.stars
-	max_x = [0] * options.stars
-	max_y = [0] * options.stars
-	max_flux = [0] * options.stars
-	min_x = [0] * options.stars
-	min_y = [0] * options.stars
-	min_flux = [0] * options.stars
+			return 0
 
-	a_dist = [0] * options.stars
+	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot):
+		if verbose == 0:
+			print 'Done'
 
-	dist = [0] * options.stars
+		np_sb = np.array(self.sb)
+		# calculate average position
+		a_x = [0] * stars
+		a_y = [0] * stars
+		a_flux = [0] * stars
+		max_x = [0] * stars
+		max_y = [0] * stars
+		max_flux = [0] * stars
+		min_x = [0] * stars
+		min_y = [0] * stars
+		min_flux = [0] * stars
 
-	ang_deviations = None
-	max_deviation = 0
+		a_dist = [0] * stars
 
-	for si in range(options.stars):
-		data_x = np_sb[si,:,0]
-		data_y = np_sb[si,:,1]
-		data_flux = np_sb[si,:,2]
+		dist = [0] * stars
 
-		max_x[si] = np.max(data_x)
-		max_y[si] = np.max(data_y)
-		max_flux[si] = np.max(data_flux)
+		ang_deviations = None
+		max_deviation = 0
 
-		a_x[si] = np.average(data_x)
-		a_y[si] = np.average(data_y)
-		a_flux[si] = np.average(data_flux)
+		for si in range(stars):
+			data_x = np_sb[si,:,0]
+			data_y = np_sb[si,:,1]
+			data_flux = np_sb[si,:,2]
 
-		min_x[si] = np.min(data_x)
-		min_y[si] = np.min(data_y)
-		min_flux[si] = np.min(data_flux)
+			max_x[si] = np.max(data_x)
+			max_y[si] = np.max(data_y)
+			max_flux[si] = np.max(data_flux)
 
-		if options.verbose > 0:
-			print _('star # {0} max x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, max_x[si], max_y[si], max_flux[si])
-			print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
-			print _('star # {0} min x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, min_x[si], min_y[si], min_flux[si])
-		# now get some stats..
-		dist[si] = map(lambda s: pixel_distance(max_x[si], max_y[si], s[0], s[1]), sb[si])
-		a_dist[si] = np.average(dist[si])
+			a_x[si] = np.average(data_x)
+			a_y[si] = np.average(data_y)
+			a_flux[si] = np.average(data_flux)
 
-		print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
+			min_x[si] = np.min(data_x)
+			min_y[si] = np.min(data_y)
+			min_flux[si] = np.min(data_flux)
 
-		if options.max_angle > 0 and options.stars > 1:
-			angels = calculate_angels(np_sb)
-			average_ang = np.average(angels, axis=0)
-			ang_deviations = np.degrees(angels - average_ang)
-			max_deviation = max(abs(np.nanmax(ang_deviations)), abs(np.nanmin(ang_deviations)))
-			if options.verbose:
-				print _('maximal angle deviation: {0:.3f}').format(max_deviation)
+			if verbose > 0:
+				print _('star # {0} max x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, max_x[si], max_y[si], max_flux[si])
+				print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
+				print _('star # {0} min x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, min_x[si], min_y[si], min_flux[si])
+			# now get some stats..
+			dist[si] = map(lambda s: pixel_distance(max_x[si], max_y[si], s[0], s[1]), pf.sb[si])
+			a_dist[si] = np.average(dist[si])
 
-	if options.plot or options.saveplot or options.stars_plot:
-		import pylab
-		pylab.ioff()
-		fig = pylab.figure()
-		plotgrid = (3 if ang_deviations is None else 4, 1)
-		print _('generating plots')
-		rts2.progressbar.progress(0, options.stars + 1)
-		p_x = pylab.subplot2grid(plotgrid,[0,0])
-		p_y = pylab.subplot2grid(plotgrid,[1,0])
-		p_dist = pylab.subplot2grid(plotgrid,[2,0])
+			print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
 
-		if ang_deviations is not None:
-			p_ang = pylab.subplot2grid(plotgrid,[3,0])
-			p_ang.plot (range(len(sb[0])), np.average(ang_deviations, axis=1), '-')
-			p_ang.fill_between (range(len(sb[0])), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
+			if max_angle > 0 and stars > 1:
+				angels = calculate_angels(np_sb)
+				average_ang = np.average(angels, axis=0)
+				ang_deviations = np.degrees(angels - average_ang)
+				max_deviation = max(abs(np.nanmax(ang_deviations)), abs(np.nanmin(ang_deviations)))
+				if verbose:
+					print _('maximal angle deviation: {0:.3f}').format(max_deviation)
 
-		rts2.progressbar.progress(1, options.stars + 1)
+		if plot or saveplot or stars_plot:
+			import pylab
+			pylab.ioff()
+			fig = pylab.figure()
+			plotgrid = (3 if ang_deviations is None else 4, 1)
+			print _('generating plots')
+			rts2.progressbar.progress(0, stars + 1)
+			p_x = pylab.subplot2grid(plotgrid,[0,0])
+			p_y = pylab.subplot2grid(plotgrid,[1,0])
+			p_dist = pylab.subplot2grid(plotgrid,[2,0])
 
-		for si in range(options.stars):
-			p_x.plot (range(len(sb[si])), np_sb[si,:,0] - a_x[si], '-')
-			p_y.plot (range(len(sb[si])), np_sb[si,:,1] - a_y[si], '-')
-			p_dist.plot (range(len(sb[si])), a_dist[si] - dist[si], '-')
-			rts2.progressbar.progress(si + 1, options.stars + 1)
+			if ang_deviations is not None:
+				p_ang = pylab.subplot2grid(plotgrid,[3,0])
+				p_ang.plot (range(len(pf.sb[0])), np.average(ang_deviations, axis=1), '-')
+				p_ang.fill_between (range(len(pf.sb[0])), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
 
-		pylab.tight_layout()
+			rts2.progressbar.progress(1, stars + 1)
 
-		rts2.progressbar.progress(options.stars + 1, options.stars + 1)
+			for si in range(stars):
+				p_x.plot (range(len(pf.sb[si])), np_sb[si,:,0] - a_x[si], '-')
+				p_y.plot (range(len(pf.sb[si])), np_sb[si,:,1] - a_y[si], '-')
+				p_dist.plot (range(len(pf.sb[si])), a_dist[si] - dist[si], '-')
+				rts2.progressbar.progress(si + 1, stars + 1)
 
-		if options.saveplot is not None:
-			print _('saving plots to {0}').format(options.saveplot),
-			pylab.savefig(options.saveplot)
-			print _('done')
+			pylab.tight_layout()
 
-		if options.plot:
-			pylab.show()
+			rts2.progressbar.progress(stars + 1, stars + 1)
 
-		pylab.close(fig)
+			if saveplot is not None:
+				print _('saving plots to {0}').format(saveplot),
+				pylab.savefig(saveplot)
+				print _('done')
 
-	if options.stars > 1 and options.max_angle < max_deviation:
-		sys.exit(_('allowed angle deviation not met, measured maximal deviation: {0:.3f}').format(max_deviation))
+			if plot:
+				pylab.show()
+
+			pylab.close(fig)
+
+		if stars > 1 and max_angle < max_deviation:
+			sys.exit(_('allowed angle deviation not met, measured maximal deviation: {0:.3f}').format(max_deviation))
+
+pf = ProcessFiles(options.stars)
+
+for fn in options.files:
+	print _('Processing {0}').format(fn)
+	hdu = fits.open(fn)
+
+	if options.verbose:
+		hdu.info()
+		if options.verbose < 2:
+			rts2.progressbar.progress(0, len(hdu[0].data))
+	if hdu[0].data.ndim == 2:
+		if options.cube:
+			sys.exit(_("File {0} data have only {1} dimensions, not a cube").format(fn,hdu[0].data.ndim))
+
+		d_x = len(hdu[0].data)
+		c_x = d_x / 2.0
+		d_y = len(hdu[0].data[0])
+		c_y = d_y / 2.0
+	else:
+		options.cube = True
+		print _('Detected cube image, switch to cube mode')
+		d_x = len(hdu[0].data[0])
+		c_x = d_x / 2.0
+		d_y = len(hdu[0].data[0][0])
+		c_y = d_y / 2.0
+
+	if options.verbose:
+		print _('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y)
+
+	if options.cube:
+		for ci in range(len(hdu[0].data)):
+			ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci)
+			if ret == -1:
+				# split graphs
+				pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)
+				pf = ProcessFiles(options.stars)
+
+	else:
+		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
+
+	if options.cube:
+		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)
+
+pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)

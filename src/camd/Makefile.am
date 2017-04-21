@@ -6,7 +6,7 @@ bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-
 
 noinst_HEADERS = ccd_msg.h reflex.h
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
+LDADD = -L../../lib/sep -lsep -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ -I../../include
 
 rts2_camd_miniccd_SOURCES = miniccd.cpp

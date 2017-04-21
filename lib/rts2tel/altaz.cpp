@@ -25,7 +25,7 @@
 
 using namespace rts2teld;
 
-AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool hasAltAzDiff):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0, hasAltAzDiff)
+AltAz::AltAz (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool hasAltAzDiff, bool parkingBlock):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? -1 : 0, hasAltAzDiff, parkingBlock, true)
 {
 	createValue (parallAngle, "PANGLE", "[deg] parallactic angle", true, RTS2_DT_DEGREES);
 	createValue (derRate, "DERRATE", "[deg/hour] derotator rate", false, RTS2_DT_DEGREES);
@@ -383,6 +383,17 @@ void AltAz::runTracking ()
 {
 	parallacticTracking ();
 	Telescope::runTracking ();
+}
+
+int AltAz::setTracking (int track, bool addTrackingTimer, bool send)
+{
+	if (track == 3)
+	{
+		rts2core::CommandParallacticAngle cmd (this, getInfoTime (), parallAngle->getValueDouble (), 0);
+		queueCommandForType (DEVICE_TYPE_ROTATOR, cmd, NULL, true);
+		parallacticTracking ();
+	}
+	return Telescope::setTracking (track, addTrackingTimer, send);
 }
 
 void AltAz::parallacticTracking ()

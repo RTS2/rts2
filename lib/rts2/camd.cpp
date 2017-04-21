@@ -33,6 +33,7 @@
 #include "cliwheel.h"
 #include "clifocuser.h"
 #include "timestamp.h"
+#include "sep/sep.h"
 
 #define OPT_WCS_MULTI         OPT_LOCAL + 400
 #define OPT_WCS_CDELT         OPT_LOCAL + 402
@@ -479,6 +480,13 @@ Camera::Camera (int in_argc, char **in_argv, rounding_t binning_rounding):rts2co
 
 	createValue (centerBox, "center_box", "calculate center box coordinates", false, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE);
 	centerBox->setInts (-1, -1, -1, -1);
+
+	createValue (sepFind, "sep_cal", "find stars with SEP", false, RTS2_VALUE_WRITABLE);
+	createValue (sepX, "sep_X", "X positions of stars", false);
+	createValue (sepY, "sep_Y", "Y positions of stars", false);
+	createValue (sepFluxes, "sep_fluxes", "star fluxes", false);
+
+	sepFind->setValueBool (false);
 
 	createValue (slitPosX, "slitposx", "[pixels] slit position along dithering axis", true, RTS2_VALUE_WRITABLE);
 	slitPosX->setValueDouble (-1);
@@ -1545,6 +1553,67 @@ void Camera::changeMasterState (rts2_status_t old_state, rts2_status_t new_state
 	rts2core::ScriptDevice::changeMasterState (old_state, new_state);
 }
 
+void Camera::findSepStars (uint16_t *data)
+{
+	if (sepFind->getValueBool () == false)
+		return;
+
+	sepX->clear ();
+	sepY->clear ();
+	sepFluxes->clear ();
+
+	sep_image im = {data, NULL, NULL, SEP_TUINT16, 0, 0, getUsedWidthBinned (), getUsedHeightBinned (), 0.0, SEP_NOISE_NONE, 1.0, 0.0};
+	sep_bkg *bkg = NULL;
+	int status = sep_background (&im, 64, 64, 3, 3, 0.0, &bkg);
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "SEP: unable to estimate background:" << status << sendLog;
+		return;
+	}
+
+	uint16_t *imback = (uint16_t *) malloc (getUsedWidthBinned () * getUsedHeightBinned () * sizeof (uint16_t));
+	status = sep_bkg_array (bkg, imback, SEP_TUINT16);
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "SEP: cannot construct background array:" << status << sendLog;
+		return;
+	}
+
+	status = sep_bkg_subarray (bkg, im.data, im.dtype);
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "SEP: cannot subtract background:" << status << sendLog;
+		return;
+	}
+
+	float conv[] = {1,2,1, 2,4,2, 1,2,1};
+	sep_catalog *catalog = NULL;
+
+	im.noise = &(bkg->globalrms);  /* set image noise level */
+
+	status = sep_extract(&im, 1.5*bkg->globalrms, SEP_THRESH_REL, 5, conv, 3, 3, SEP_FILTER_CONV, 32, 0.005, 1, 1.0, &catalog);
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "SEP: cannot extract sources:" << status << sendLog;
+		return;
+	}
+
+	/* aperture photometry */
+	double *flux, *fluxerr, *fluxt, *fluxerrt, *area, *areat;
+	short *flag, *flagt;
+
+	im.noise = &(bkg->globalrms);  /* set image noise level */
+	im.ndtype = SEP_TUINT16;
+	fluxt = flux = (double *)malloc(catalog->nobj * sizeof(double));
+	fluxerrt = fluxerr = (double *)malloc(catalog->nobj * sizeof(double));
+	areat = area = (double *)malloc(catalog->nobj * sizeof(double));
+	flagt = flag = (short *)malloc(catalog->nobj * sizeof(short));
+	for (int i=0; i<catalog->nobj; i++, fluxt++, fluxerrt++, flagt++, areat++)
+		sep_sum_circle(&im, catalog->x[i], catalog->y[i], 5.0, 5, 0, fluxt, fluxerrt, areat, flagt);
+
+
+}
+
 int Camera::camStartExposure (bool careBlock)
 {
 	// check if we aren't blocked
@@ -1558,7 +1627,7 @@ int Camera::camStartExposure (bool careBlock)
 			|| (getDeviceBopState () & BOP_TRIG_EXPOSE)
 			|| (getMasterStateFull () & BOP_TRIG_EXPOSE)
 			|| fm
-			|| focuserMoving && focuserMoving->getValueBool ()
+			|| (focuserMoving && focuserMoving->getValueBool ())
 		))
 	{
 		// no conflict, as when we are called, quedExpNumber will already be decreased
@@ -1623,6 +1692,10 @@ int Camera::camStartExposureWithoutCheck ()
 		setBinning (bin->horizontal, bin->vertical);
 		needReload->setValueBool (false);
 	}
+
+	sepX->clear ();
+	sepY->clear ();
+	sepFluxes->clear ();
 
 	ret = startExposure ();
 	if (!(ret == 0 || ret == 1))
@@ -1777,7 +1850,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
-		if (isnan (timeReadoutStart))
+		if (std::isnan (timeReadoutStart))
 			timeReadoutStart = getNow ();
 		return readoutStart ();
 	}

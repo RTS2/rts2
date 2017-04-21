@@ -316,7 +316,7 @@ bool ValueDouble::isEqual (Value *other_value)
 
 int ValueDouble::checkNotNull ()
 {
-	if (!isnan (value))
+	if (!std::isnan (value))
 		return 0;
 	return Value::checkNotNull ();
 }

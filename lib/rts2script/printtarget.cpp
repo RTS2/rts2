@@ -451,15 +451,15 @@ void PrintTarget::printTarget (rts2db::Target *target)
 			}
 		}
 		// print how long target will be visible
-		if (!isnan (printVisible))
+		if (!std::isnan (printVisible))
 		{
 			time_t now;
 			time (&now);
 			time_t to = now + printVisible;
 			double visible = target->getSatisfiedDuration (now, to, 0, 60);
-			if (isinf (visible))
+			if (std::isinf (visible))
 				std::cout << "satisfied constraints for full specified interval" << std::endl;
-			else if (isnan (visible))
+			else if (std::isnan (visible))
 				std::cout << "is not visible during from start of the specified interval" << std::endl;
 			else	
 				std::cout << "satisifed constraints for " << TimeDiff (visible - now) << " (" << (visible - now) << ") seconds, until " << Timestamp (visible) << std::endl;
@@ -706,7 +706,7 @@ int PrintTarget::printTargets (rts2db::TargetSet & set)
 	}
 
 	jd_start = ((int) JD) - 0.5;
-	if (isnan (step))
+	if (std::isnan (step))
 		step = 0.2;
 
 	if (printDS9)
@@ -773,7 +773,7 @@ int PrintTarget::init ()
 		obs = config->getObserver ();
 	}
 
-	if (isnan (obs_altitude))
+	if (std::isnan (obs_altitude))
 	{
 		obs_altitude = config->getObservatoryAltitude ();
 	}

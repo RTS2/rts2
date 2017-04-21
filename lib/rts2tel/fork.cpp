@@ -45,7 +45,7 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	int ret;
 	bool flip = false;
 
-	if (isnan(pos->ra) || isnan(pos->dec))
+	if (std::isnan(pos->ra) || std::isnan(pos->dec))
 	{
 		logStream (MESSAGE_ERROR) << "sky2counts called with nan ra/dec" << sendLog;
 		return -1;
@@ -193,7 +193,7 @@ int Fork::counts2sky (int32_t ac, int32_t dc, double &ra, double &dec, int &flip
 	return 0;
 }
 
-Fork::Fork (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? 1 : 0)
+Fork::Fork (int in_argc, char **in_argv, bool diffTrack, bool hasTracking, bool hasUnTelCoordinates, bool parkingBlock):Telescope (in_argc, in_argv, diffTrack, hasTracking, hasUnTelCoordinates ? 1 : 0, false, parkingBlock)
 {
 	haZero = decZero = haCpd = decCpd = NAN;
 

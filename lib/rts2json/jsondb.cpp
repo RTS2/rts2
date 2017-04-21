@@ -106,7 +106,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 		pos.ra = params->getDouble ("ra", NAN);
 		pos.dec = params->getDouble ("dec", NAN);
 		double radius = params->getDouble ("radius", NAN);
-		if (isnan (pos.ra) || isnan (pos.dec) || isnan (radius))
+		if (std::isnan (pos.ra) || std::isnan (pos.dec) || std::isnan (radius))
 			throw XmlRpc::JSONException ("invalid ra, dec or radius parameter");
 		rts2db::TargetSet ts (&pos, radius, rts2core::Configuration::instance ()->getObserver ());
 		ts.load ();
@@ -410,7 +410,7 @@ void JSONDBRequest::dbJSON (const std::vector <std::string> vals, XmlRpc::XmlRpc
 					tar->setTargetName (tn);
 				if (ra > -1000 && dec > -1000)
 					tar->setPosition (ra, dec);
-				if (!(isnan (pm_ra) && isnan (pm_dec)))
+				if (!(std::isnan (pm_ra) && std::isnan (pm_dec)))
 				{
 					switch (tar->getTargetType ())
 					{
@@ -776,7 +776,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 		{
 				oradec.ra = params->getDouble ("ra", NAN);
 				oradec.dec = params->getDouble ("dec", NAN);
-				if (!isnan (oradec.ra) && !isnan (oradec.dec))
+				if (!std::isnan (oradec.ra) && !std::isnan (oradec.dec))
 					dfrom = &oradec;
 		}
 		if (dfrom)
@@ -867,7 +867,7 @@ void JSONDBRequest::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream 
 		
 			tar->getViolatedConstraints (JD).printJSON (os);
 
-			if (isnan (equ.ra) || isnan (equ.dec))
+			if (std::isnan (equ.ra) || std::isnan (equ.dec))
 			{
 				os << ",null,true";
 			}

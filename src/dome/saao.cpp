@@ -517,6 +517,8 @@ int SAAO::stop ()
 	data[0] = 0x0200;
 	data[1] = 0x8000;
 	setRegisters (1, 0x1064, 2, data);
+
+//	setDome (lightsOn->getValueBool (), false, false, false, false, getCurrentAz ());
 	return 0;
 }
 
@@ -618,7 +620,7 @@ void SAAO::setDome (bool lights, bool rotatP, bool shutterP, bool shutterClose, 
 	if (lights)
 		data[0] |= 0x0100;
 
-	if (!isnan (reqPosition) && reqPosition > 0 && reqPosition < 360)
+	if (!std::isnan (reqPosition) && reqPosition > 0 && reqPosition < 360)
 	{
 		data[0] |= 0x0008;
 		data[2] = num2hex (ln_range_degrees (reqPosition + 180) * 10);

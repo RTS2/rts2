@@ -199,7 +199,7 @@ class Daemon:public Block
 		 */
 		void resendProgress (rts2core::Connection *conn)
 		{
-			if (!(isnan (state_start) && isnan (state_expected_end)))
+			if (!(std::isnan (state_start) && std::isnan (state_expected_end)))
 				conn->sendProgress (state_start, state_expected_end);
 		}
 
@@ -504,7 +504,7 @@ class Daemon:public Block
 		 */
 		double getLastInfoTime ()
 		{
-			if (isnan (info_time->getValueDouble ()))
+			if (std::isnan (info_time->getValueDouble ()))
 				return 86400;
 			return getNow () - info_time->getValueDouble ();	
 		}

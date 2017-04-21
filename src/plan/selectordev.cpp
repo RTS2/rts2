@@ -521,7 +521,7 @@ int SelectorDev::selectNext ()
 		double next_length = NAN;
 		double selectLength = selectUntil->getValueDouble ();
 		bool removeObserved = true;
-		if (!isnan (selectLength))
+		if (!std::isnan (selectLength))
 		{
 			selectLength -= getNow ();
 		  	next_length = selectLength;
@@ -541,7 +541,7 @@ int SelectorDev::selectNext ()
 				bool hard;
 				id = iter->selectNextObservation (n_pid, n_qid, hard, next_time, next_length, removeObserved);
 				// don't remove target from the queue, if the queue will be interrupted
-				if (!isnan (next_time))
+				if (!std::isnan (next_time))
 					removeObserved = false;
 
 				if (id >= 0)
@@ -562,7 +562,7 @@ int SelectorDev::selectNext ()
 					return id;
 				}
 				double n = getNow ();
-				if (!isnan (next_time) && next_time > n && next_length > next_time - n)
+				if (!std::isnan (next_time) && next_time > n && next_length > next_time - n)
 				{
 					next_length = next_time - n;
 				}
@@ -763,7 +763,7 @@ rts2plan::Queues::iterator SelectorDev::findQueue (const char *name)
 
 void SelectorDev::updateSelectLength ()
 {
-	if (!isnan (selectUntil->getValueDouble ()) && selectUntil->getValueDouble () > getNow ())
+	if (!std::isnan (selectUntil->getValueDouble ()) && selectUntil->getValueDouble () > getNow ())
 		return;
 	rts2core::Connection *centralConn = getSingleCentralConn ();
 	if (centralConn != NULL)
@@ -792,7 +792,7 @@ void SelectorDev::message (Message & msg)
 			if (current_queue->getValueInteger () > 0 && current_target->getValueInteger () == msg.getMessageArgInt (1))
 			{
 				rts2plan::ExecutorQueue *eq = &(queues[current_queue->getValueInteger () - 1]);
-				if (!(isnan (current_start->getValueDouble ()) && isnan (current_end->getValueDouble ())) && eq->size () > 0 && eq->front ().target->getTargetID () == current_target->getValueInteger ())
+				if (!(std::isnan (current_start->getValueDouble ()) && std::isnan (current_end->getValueDouble ())) && eq->size () > 0 && eq->front ().target->getTargetID () == current_target->getValueInteger ())
 				{
 					logStream (MESSAGE_INFO) << "not re-queueing target #" << current_target->getValueInteger () << ", as it is still in the queue" << sendLog;
 					return;

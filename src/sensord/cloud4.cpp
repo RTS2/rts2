@@ -160,17 +160,17 @@ int Cloud4::readSensor (bool update)
 
 	temp0 /= 100.0;
 	temp1 /= 100.0;
-	if (!isnan (temp2))
+	if (!std::isnan (temp2))
 		temp2 /= 100.0;
-	if (!isnan (temp_amb))
+	if (!std::isnan (temp_amb))
 		temp_amb /= 100.0;
 
-	if (!isnan (temp2))
+	if (!std::isnan (temp2))
 		temp_sky = (temp1 + temp2) / 2.0;
 	else
 		temp_sky = temp1;
 
-	if (!isnan (temp_amb))
+	if (!std::isnan (temp_amb))
 		tempDiff->addValue (temp_amb * tempAmbCoeff->getValueDouble () + temp0 * tempInCoeff->getValueDouble () - temp_sky, numVal->getValueInteger ());
 	else
 	{
@@ -185,7 +185,7 @@ int Cloud4::readSensor (bool update)
 	tempIn->addValue (temp0, numVal->getValueInteger ());
 	tempSky->addValue (temp_sky, numVal->getValueInteger ());
 	tempSky1->addValue (temp1, numVal->getValueInteger ());
-	if (!isnan (temp2))
+	if (!std::isnan (temp2))
 	{
 		if (tempSky2 == NULL)
 		{
@@ -194,7 +194,7 @@ int Cloud4::readSensor (bool update)
 		}
 		tempSky2->addValue (temp2, numVal->getValueInteger ());
 	}
-	if (!isnan (temp_amb))
+	if (!std::isnan (temp_amb))
 	{
 		if (tempAmb == NULL)
 		{
@@ -383,7 +383,7 @@ int Cloud4::init ()
 	
 	mrakConn->flushPortIO ();
 
-	if (!isnan (triggerGood->getValueDouble ()))
+	if (!std::isnan (triggerGood->getValueDouble ()))
 		setWeatherState (false, "TRIGGOOD unspecified");
 	return 0;
 }

@@ -69,6 +69,8 @@ class SitechAltAz:public AltAz
 
 		virtual int isParking ();
 
+		virtual int isOffseting ();
+
 		virtual void runTracking ();
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
@@ -101,6 +103,9 @@ class SitechAltAz:public AltAz
 		rts2core::ValueLong *t_alt_pos;
 
 		rts2core::ValueDouble *trackingDist;
+		rts2core::ValueFloat *trackingLook;
+		rts2core::ValueDoubleStat *trackingAngle;
+		rts2core::ValueDoubleStat *speedAngle;
 		rts2core::ValueDouble *slowSyncDistance;
 		rts2core::ValueFloat *fastSyncSpeed;
 		rts2core::ValueFloat *trackingFactor;
@@ -149,6 +154,9 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueLong *az_sitech_speed;
 		rts2core::ValueLong *alt_sitech_speed;
+
+		rts2core::ValueDoubleStat *az_sitech_speed_stat;
+		rts2core::ValueDoubleStat *alt_sitech_speed_stat;
 
 		rts2core::ValueBool *computed_only_speed;
 
@@ -200,7 +208,7 @@ class SitechAltAz:public AltAz
 
 using namespace rts2teld;
 
-SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, true)
+SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, true, true, false)
 {
 	unlockPointing ();
 
@@ -228,8 +236,14 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 
+	createValue (trackingLook, "tracking_look", "[s] future position", false, RTS2_VALUE_WRITABLE);
+	trackingLook->setValueFloat (2);
+
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
+
+	createValue (trackingAngle, "tracking_angle", "[deg] tracking direction", false, RTS2_DT_DEG_DIST);
+	createValue (speedAngle, "speed_angle", "[deg] speed direction", false, RTS2_DT_DEG_DIST);
 
 	createValue (slowSyncDistance, "slow_track_distance", "distance for slow sync (at the end of movement, to catch with sky)", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	slowSyncDistance->setValueDouble (0.1);  // 6 arcmin
@@ -293,6 +307,9 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (az_sitech_speed, "az_sitech_speed", "speed in controller units", false);
 	createValue (alt_sitech_speed, "alt_sitech_speed", "speed in controller units", false);
+
+	createValue (az_sitech_speed_stat, "az_s_speed_stat", "sitech speed statistics", false);
+	createValue (alt_sitech_speed_stat, "alt_s_speed_stat", "sitech speed statistics", false);
 
 	createValue (computed_only_speed, "computed_speed", "base speed vector calculations only on calculations, do not factor current target position", false);
 	computed_only_speed->setValueBool (false);
@@ -531,7 +548,7 @@ int SitechAltAz::isMoving ()
 		if (tdist < 0.5)
 		{
 			if (tdist < slowSyncDistance->getValueDouble ())
-				internalTracking (2.0, trackingFactor->getValueFloat ());
+				internalTracking (trackingLook->getValueFloat (), trackingFactor->getValueFloat ());
 			else
 				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
 			return USEC_SEC * trackingInterval->getValueFloat () / 1000;
@@ -548,14 +565,40 @@ int SitechAltAz::isMoving ()
 
 int SitechAltAz::isParking ()
 {
+	if (parkPos == NULL)
+		return -1;
+
 	info ();
-	double tdist = getTargetDistance ();
+	struct ln_equ_posn eq1, eq2;
+
+	eq1.ra = telAltAz->getAz ();
+	eq1.dec = telAltAz->getAlt ();
+	eq2.ra = parkPos->getAz ();
+	eq2.dec = parkPos->getAlt ();
+
+	double tdist = ln_get_angular_separation (&eq1, &eq2);
 
 	if (tdist > trackingDist->getValueDouble ())
+	{
+		startPark ();
 		return USEC_SEC / 1000;
+	}
 
 	return -2;
 }
+
+
+int SitechAltAz::isOffseting ()
+{
+	if (wasStopped)
+		return -1;
+
+	double tdist = getTargetDistance ();
+	
+	if (tdist > trackingDist->getValueDouble ())
+		return USEC_SEC / 1000;
+	return -2;
+}	
 
 int SitechAltAz::startPark ()
 {
@@ -572,8 +615,10 @@ void SitechAltAz::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
-	internalTracking (2.0, trackingFactor->getValueFloat ());
+	internalTracking (trackingLook->getValueFloat (), trackingFactor->getValueFloat ());
 	AltAz::runTracking ();
+
+	checkTracking (trackingDist->getValueDouble ());
 }
 
 int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
@@ -612,7 +657,9 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t azc_speed = 0;
 	int32_t altc_speed = 0;
 
-	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed);
+	double speed_angle = 0;
+
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed, speed_angle);
 	if (ret)
 	{
 		if (ret < 0)
@@ -646,45 +693,43 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	}
 	else
 	{
-		// 1 step change
-		az_change = labs (a_azc - r_az_pos->getValueLong ());
-		alt_change = labs (a_altc - r_alt_pos->getValueLong ());
+		az_change = a_azc - r_az_pos->getValueLong ();
+		alt_change = a_altc - r_alt_pos->getValueLong ();
 
-		int32_t az_step = speed_factor * az_change / sec_step;
-		int32_t alt_step = speed_factor * alt_change / sec_step;
-
-		altaz_Xrequest.y_speed = telConn->ticksPerSec2MotorSpeed (az_step);
-		altaz_Xrequest.x_speed = telConn->ticksPerSec2MotorSpeed (alt_step);
-
-		// put axis in future
-
-		if (altaz_Xrequest.y_speed != 0)
+		if (sec_step < 1)
 		{
-			if (a_azc > r_az_pos->getValueLong ())
-				altaz_Xrequest.y_dest = r_az_pos->getValueLong () + az_step * 10;
-			else
-				altaz_Xrequest.y_dest = r_az_pos->getValueLong () - az_step * 10;
-		}
-		else
-		{
-			altaz_Xrequest.y_dest = r_az_pos->getValueLong ();
+			a_azc += az_change * 500;
+			a_altc += alt_change * 500;
 		}
 
-		if (altaz_Xrequest.x_speed != 0)
-		{
-			if (a_altc > r_alt_pos->getValueLong ())
-				altaz_Xrequest.x_dest = r_alt_pos->getValueLong () + alt_step * 10;
-			else
-				altaz_Xrequest.x_dest = r_alt_pos->getValueLong () - alt_step * 10;
-		}
-		else
-		{
-			altaz_Xrequest.x_dest = r_alt_pos->getValueLong ();
-		}
+		a_azc += az_change * 60;
+		a_altc += alt_change * 60;
+
+		if (a_azc > azMax->getValueLong ())
+			a_azc = azMax->getValueLong ();
+		if (a_azc < azMin->getValueLong ())
+			a_azc = azMin->getValueLong ();
+
+		if (a_altc > altMax->getValueLong ())
+			a_altc = altMax->getValueLong ();
+		if (a_altc < altMin->getValueLong ())
+			a_altc = altMin->getValueLong ();
+
+		altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
+		altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
+
+		altaz_Xrequest.y_dest = a_azc;
+		altaz_Xrequest.x_dest = a_altc;
 	}
 
 	az_sitech_speed->setValueLong (altaz_Xrequest.y_speed);
 	alt_sitech_speed->setValueLong (altaz_Xrequest.x_speed);
+
+	az_sitech_speed_stat->addValue (altaz_Xrequest.y_speed, 15);
+	alt_sitech_speed_stat->addValue (altaz_Xrequest.x_speed, 15);
+
+	az_sitech_speed_stat->calculate ();
+	alt_sitech_speed_stat->calculate ();
 
 	altaz_Xrequest.x_bits = xbits;
 	altaz_Xrequest.y_bits = ybits;
@@ -706,6 +751,13 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 
 	t_az_pos->setValueLong (altaz_Xrequest.y_dest);
 	t_alt_pos->setValueLong (altaz_Xrequest.x_dest);
+
+	trackingAngle->addValue (-ln_rad_to_deg (atan2 (az_change, -alt_change)), 15);
+	speedAngle->addValue (speed_angle, 15);
+
+	trackingAngle->calculate ();
+	speedAngle->calculate ();
+
 	try
 	{
 		telConn->sendXAxisRequest (altaz_Xrequest);

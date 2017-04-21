@@ -21,6 +21,7 @@
 import sys
 import urllib
 import rts2.json
+import json as sysjson
 import time
 
 import argparse
@@ -40,7 +41,9 @@ parser.add_argument('--run-script', help='run script on device. Device must be s
 parser.add_argument('--kill-script', help='attempt to kill currently running script', action='store_true', dest='kill_script', default=False)
 parser.add_argument('--list-minmax', help='list miminal/maximal values', action='store_true', dest='list_minmax', default=False)
 parser.add_argument('--device', help='device for cmd and run-script options', action='store', dest='device')
-parser.add_argument('--expose', help='start exposure on device', action='store', dest='expose', default=None)
+parser.add_argument('--dump', help='dump all variables in JSON', action='store_true', dest='dump')
+parser.add_argument('--load', help='load JSON dump, gets variables', action='store_true', dest='load')
+parser.add_argument('--expose', help='start exposure on camera', action='store', dest='expose', default=None)
 
 parser.add_argument('--create-target', help='create target. Target name, ra, dec and possible info must be entered as command line arguments',action='store_true',dest='create_target')
 parser.add_argument('--create-tle-target', help='create TLE target. Target name, first and second line of TLE must be entered as command line arguments', action='store_true', dest='create_tle_target')
@@ -59,7 +62,7 @@ if (options.runscript or options.list_minmax) and not (options.device):
 	sys.exit(1)
 
 try:
-	if options.get_array:
+	if options.get_array and not options.load:
 		for g in options.get_array:
 			device,value = g.split('.')
 			print j.getValue(device, value, refresh_not_found=True)
@@ -102,7 +105,7 @@ try:
 			else:
 				print j.loadJson(us[0])
 
-	if not(options.get_array) and not(options.get_int_array) and not(options.push) and not(options.create_target) and not(options.create_tle_target):
+	if not(options.get_array) and not(options.get_int_array) and not(options.push) and not(options.create_target) and not(options.create_tle_target) and not(options.load):
 	  	for a in options.args:
 			try:
 				a=j.loadJson(a)
@@ -142,8 +145,32 @@ try:
 		tid=j.db.createTLETarget(*options.args)
 		print 'Created target with ID {0}'.format(tid)
 
+	if options.dump:
+		j.refresh()
+		for d in j.devices.keys():
+			try:
+				j.getDeviceInfo(d)
+				j.executeCommand('DER1', 'info')
+			except Exception,ex:
+				if options.verbose:
+					print 'Error requesting info from',d
+					
+		print sysjson.dumps(j.devices)
+
+	if options.load:
+		for fn in options.args:
+			f = open(fn, 'r')
+			for line in f.readlines():
+				js = sysjson.loads(line)
+				for g in options.get_array:
+					dn,vn = g.split('.')
+					print js[dn][vn][1],
+				print
+
 	if options.expose:
-		r = j.getResponse
+		r = j.takeImage(options.expose)
+		print "{0}x{1}: mean {2} stdev {3} max {4} min {5}".format(len(r), len(r[0]), r.mean(), r.std(), r.max(), r.min())
+			
 
 	sys.exit(0)
 

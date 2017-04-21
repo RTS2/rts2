@@ -130,7 +130,7 @@ class Observation
 
 		double getObsJDStart ()
 		{
-			if (isnan (getObsStart ()))
+			if (std::isnan (getObsStart ()))
 				return getObsStart ();
 			time_t s = (time_t) getObsStart ();
 			return ln_get_julian_from_timet (&s);
@@ -141,7 +141,7 @@ class Observation
 		 */
 		double getObsJDMid ()
 		{
-			if (isnan (getObsStart ()) || isnan (getObsStart ()))
+			if (std::isnan (getObsStart ()) || std::isnan (getObsStart ()))
 				return NAN;
 			time_t mid = (time_t) ((getObsStart () + getObsEnd ()) / 2.0);
 			return ln_get_julian_from_timet (&mid);
@@ -151,7 +151,7 @@ class Observation
 
 		double getObsJDEnd ()
 		{
-			if (isnan (getObsEnd ()))
+			if (std::isnan (getObsEnd ()))
 				return getObsEnd ();
 			time_t e = (time_t) getObsEnd ();
 			return ln_get_julian_from_timet (&e);
@@ -176,7 +176,7 @@ class Observation
 		 */
 		int getStartPosition (struct ln_equ_posn &_pos)
 		{
-			if (isnan (getObsJDStart ()))
+			if (std::isnan (getObsJDStart ()))
 				return -1;
 			getTarget ()->getPosition (&_pos, getObsJDStart ());
 			return 0;
@@ -191,7 +191,7 @@ class Observation
 		 */
 		int getEndPosition (struct ln_equ_posn &_pos)
 		{
-			if (isnan (getObsJDEnd ()))
+			if (std::isnan (getObsJDEnd ()))
 				return -1;
 			getTarget ()->getPosition (&_pos, getObsJDEnd ());
 			return 0;

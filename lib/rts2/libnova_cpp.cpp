@@ -59,7 +59,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 		return _os;
 	}
 
-	if (isnan (l_ra.ra))
+	if (std::isnan (l_ra.ra))
 	{
 		_os << std::setw (11) << "nan";
 		return _os;
@@ -189,7 +189,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra)
 		return _os;
 	}
 
-	if (isnan (l_ra.ra))
+	if (std::isnan (l_ra.ra))
 	{
 		_os << std::setw (6) << "nan";
 		return _os;
@@ -228,7 +228,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (13) << "nan";
 		return _os;
@@ -323,7 +323,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaAA l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (13) << "nan";
 		return _os;
@@ -357,7 +357,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (12) << "nan";
 		return _os;
@@ -388,7 +388,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (11) << "nan";
 		return _os;
@@ -419,7 +419,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (11) << "nan";
 		return _os;
@@ -461,7 +461,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 		return _os;
 	}
 
-	if (isnan (l_dec.deg))
+	if (std::isnan (l_dec.deg))
 	{
 		_os << std::setw (11) << "nan";
 		return _os;
@@ -506,7 +506,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (7) << "nan";
 		return _os;
@@ -536,7 +536,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (11) << "nan";
 		return _os;
@@ -573,7 +573,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 		return _os;
 	}
 
-	if (isnan (l_deg.deg))
+	if (std::isnan (l_deg.deg))
 	{
 		_os << std::setw (11) << "nan";
 		return _os;
@@ -779,7 +779,7 @@ Rts2Night::Rts2Night (struct ln_date * ln_night, struct ln_lnlat_posn * obs)
 
 Rts2Night::Rts2Night (double JD, struct ln_lnlat_posn *obs)
 {
-	if (isnan (JD))
+	if (std::isnan (JD))
 		JD = ln_get_julian_from_sys ();  
 	struct ln_date l_date;
 	// let's calculate time from..t_from will contains start of night

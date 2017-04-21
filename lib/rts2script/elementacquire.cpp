@@ -61,7 +61,7 @@ void ElementAcquire::postEvent (rts2core::Event * event)
 			{
 				// we get below required errror?
 				double img_prec = image->getPrecision ();
-				if (isnan (img_prec))
+				if (std::isnan (img_prec))
 				{
 					processingState = FAILED;
 					break;
@@ -80,7 +80,7 @@ void ElementAcquire::postEvent (rts2core::Event * event)
 				else
 				{
 					// test if precision is better then previous one..
-					if (isnan (lastPrecision) || img_prec < lastPrecision / 2)
+					if (std::isnan (lastPrecision) || img_prec < lastPrecision / 2)
 					{
 						processingState = PRECISION_BAD;
 						lastPrecision = img_prec;
@@ -116,7 +116,7 @@ int ElementAcquire::nextCommand (rts2core::DevClientCamera * camera, rts2core::C
 	switch (processingState)
 	{
 		case NEED_IMAGE:
-			if (isnan (lastPrecision))
+			if (std::isnan (lastPrecision))
 			{
 				bool en = false;
 				script->getMaster ()->postEvent (new rts2core::Event (EVENT_QUICK_ENABLE, (void *) &en));

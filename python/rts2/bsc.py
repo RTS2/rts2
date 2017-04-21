@@ -2546,12 +2546,17 @@ __bsc_data = [
 [9098,0.935,-17.3361111111,4.55,-0.05,-0.12,-0.04,0.026,-0.009,'2    Cet',225132,147059],
 ]
 
-def find_nearest(ra,dec,mag_min=None,mag_max=None):
+def find_nearest(ra,dec,mag_min=None,mag_max=None,lst=None,latitude=None,minalt=None):
 	"""Find nearest BSC star to given RA DEC coordinates. Min and maximal magnitude can be specified (make sure min < max)."""
 	data = __bsc_data
 	if mag_min is not None and mag_max is not None:
 		data = filter(lambda x: mag_min < x[3] < mag_max, data)
-	return min(data, key=lambda x: libnova.angular_separation(x[1],x[2],ra,dec))
+	if lst is not None and latitude is not None and minalt is not None:
+		data.sort(lambda x,y:cmp(libnova.angular_separation(x[1],x[2],ra,dec),libnova.angular_separation(y[1],y[2],ra,dec)))
+		for s in data:
+			if minalt < libnova.equ_to_hrz(s[1],s[2],lst,latitude):
+				return s
+	return min(data,key=lambda x:libnova.angular_separation(x[1],x[2],ra,dec))
 
 def get_star(num):
 	"""Get star with given BSC number. Raises IndexError if the star cannot be found."""

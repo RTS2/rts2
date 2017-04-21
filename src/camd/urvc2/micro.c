@@ -407,7 +407,7 @@ ValidateMicroResponse (MICRO_COMMAND command, CAMERA_TYPE camera,
 		       void *dataPtr, void *txDataPtr)
 {
   PAR_ERROR result = CE_NO_ERROR;
-  ActivateRelayParams *arp;
+  //ActivateRelayParams *arp;
 
   MicroOut (0);
 
@@ -429,7 +429,7 @@ ValidateMicroResponse (MICRO_COMMAND command, CAMERA_TYPE camera,
 	if (result != 0)
 	  break;
 
-	arp = (ActivateRelayParams *) txDataPtr;
+	//arp = (ActivateRelayParams *) txDataPtr;
 	//if((arp->tXPlus != 0) || (arp->tXMinus != 0)
 	//   || (arp->tYPlus != 0) || (arp->tYMinus != 0))
 	//    RelayClick();
@@ -885,7 +885,6 @@ GetEEPROM (CAMERA_TYPE camera, EEPROMContents * eePtr)
   EEPROMParams eep;
   EEPROMResults eer;
   unsigned short cs;
-  MY_LOGICAL init = 0;
 
   if (camera == ST237A_CAMERA)
     {
@@ -925,12 +924,10 @@ GetEEPROM (CAMERA_TYPE camera, EEPROMContents * eePtr)
 //    {
   if (eePtr->checksum != cs)
     {
-      init = 1;
       res = CE_CHECKSUM_ERROR;
     }
   else if (eePtr->version == 0)
     {
-      init = 1;
       res = CE_EEPROM_ERROR;
     }
   else if (eePtr->version > 1)

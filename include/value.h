@@ -28,7 +28,7 @@
 
 #include <string.h>
 #include <string>
-#include <math.h>
+#include <cmath>
 #include <time.h>
 #include <vector>
 #include <iostream>
@@ -631,13 +631,13 @@ class ValueDouble:public Value
 		virtual float getValueFloat () { return value; }
 		virtual int getValueInteger ()
 		{
-			if (isnan (value))
+			if (std::isnan (value))
 				return -1;
 			return (int) value;
 		}
 		virtual long int getValueLong ()
 		{
-			if (isnan (value))
+			if (std::isnan (value))
 				return -1;
 			return (long int) value;
 		}
@@ -721,7 +721,7 @@ class ValueFloat:public Value
 		virtual float getValueFloat () { return value; }
 		virtual int getValueInteger ()
 		{
-			if (isnan (value))
+			if (std::isnan (value))
 				return -1;
 			return (int) value;
 		}

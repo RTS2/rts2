@@ -295,9 +295,9 @@ int Rts2ScheduleApp::init ()
 	srandom (time (NULL));
 
 	// initialize schedules..
-	if (isnan (startDate))
+	if (std::isnan (startDate))
 		startDate = ln_get_julian_from_sys ();
-	if (isnan (endDate))
+	if (std::isnan (endDate))
 	  	endDate = startDate + 0.5;
 	if (startDate >= endDate)
 	{

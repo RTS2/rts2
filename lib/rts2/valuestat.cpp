@@ -21,6 +21,7 @@
 
 #include "valuestat.h"
 #include "connection.h"
+#include "libnova_cpp.h"
 
 using namespace rts2core;
 
@@ -98,7 +99,20 @@ const char * ValueDoubleStat::getValue ()
 
 const char * ValueDoubleStat::getDisplayValue ()
 {
-	sprintf (buf, "%f %i %f %f %f %f", getValueDouble (), numMes, mode, min, max, stdev);
+	std::ostringstream os;
+	switch (getValueDisplayType ())
+	{
+		case RTS2_DT_DEGREES:
+			os << LibnovaDeg (getValueDouble ()) << " " << numMes << " " << LibnovaDeg (mode) << " " << LibnovaDeg (min) << " " << LibnovaDeg (max) << " " << LibnovaDeg (stdev);
+			memcpy (buf, os.str ().c_str (), sizeof (buf));
+			break;
+		case RTS2_DT_DEG_DIST:
+			os << LibnovaDegDist (getValueDouble ()) << " " << numMes << " " << LibnovaDegDist (mode) << " " << LibnovaDegDist (min) << " " << LibnovaDegDist (max) << " " << LibnovaDegDist (stdev);
+			memcpy (buf, os.str ().c_str (), sizeof (buf));
+			break;
+		default:
+			snprintf (buf, sizeof(buf), "%f %i %f %f %f %f", getValueDouble (), numMes, mode, min, max, stdev);
+	}
 	return buf;
 }
 

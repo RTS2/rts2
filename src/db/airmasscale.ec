@@ -84,12 +84,12 @@ int Rts2AirmasScale::processOption (int in_opt)
 int Rts2AirmasScale::processArgs (const char *arg)
 {
 	// we expected steps-max
-	if (isnan (steps))
+	if (std::isnan (steps))
 	{
 		steps = atof (arg);
 		return steps == 0 ? -1 : 0;
 	}
-	else if (isnan (max))
+	else if (std::isnan (max))
 	{
 		max = atof (arg);
 		return max == 0 ? -1 : 0;

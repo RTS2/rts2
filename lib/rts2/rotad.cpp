@@ -34,7 +34,7 @@ Rotator::Rotator (int argc, char **argv, const char *defname, bool ownTimer):rts
 	createValue (zeroOffs, "zero_offs", "[deg] zero offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	zeroOffs->setValueDouble (0);
 
-	createValue (offset, "OFFSET", "[deg] custom offset", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	createValue (offset, "OFFSET", "[deg] custom offset", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	offset->setValueDouble (0);
 
 	createValue (currentPosition, "CUR_POS", "[deg] current rotator position", true, RTS2_DT_DEGREES);
@@ -154,7 +154,7 @@ void Rotator::checkRotators ()
 	{
 		double t = getNow ();
 		double pa = getPA (t);
-		if (!isnan (pa))
+		if (!std::isnan (pa))
 		{
 			setTarget (getPA (t));
 			int ret = isRotating ();
@@ -178,12 +178,12 @@ void Rotator::checkRotators ()
 			{
 				if (autoPlus == true)
 				{
-					setTarget (isnan (getTargetMax ()) ? 180 : getTargetMax () + getOffset ());
+					setTarget (std::isnan (getTargetMax ()) ? 180 : getTargetMax () + getOffset ());
 					autoPlus = false;
 				}
 				else
 				{
-					setTarget (isnan (getTargetMin ()) ? -180 : getTargetMin () + getOffset ());
+					setTarget (std::isnan (getTargetMin ()) ? -180 : getTargetMin () + getOffset ());
 					autoPlus = true;
 				}
 			}
@@ -238,7 +238,7 @@ void Rotator::updateToGo ()
 void Rotator::updateTrackingFrequency ()
 {
 	double n = getNow ();
-	if (!isnan (lastTrackingRun) && n != lastTrackingRun)
+	if (!std::isnan (lastTrackingRun) && n != lastTrackingRun)
 	{
 		double tv = 1 / (n - lastTrackingRun);
 		trackingFrequency->addValue (tv, trackingFSize->getValueInteger ());

@@ -53,6 +53,8 @@ class SX:public Camera
 		virtual long isExposing ();
 		virtual int doReadout ();
 
+		virtual int commandAuthorized (rts2core::Connection * conn);
+
 	private:
 		const char *sxName;
 		bool listNames;
@@ -344,8 +346,23 @@ int SX::doReadout ()
 	if (ret < 0)
 		return -1;
 	if (getWriteBinaryDataSize () == 0)
+	{
+		findSepStars ((uint16_t *) getDataBuffer (0));
 		return -2;
+	}
 	return 0;
+}
+
+int SX::commandAuthorized (rts2core::Connection * conn)
+{
+	if (conn->isCommand ("reset"))
+	{
+		int ret = sxReset (sxHandle);
+		if (!ret)
+			return -2;
+		return 0;
+	}
+	return Camera::commandAuthorized (conn);
 }
 
 int main (int argc, char **argv)

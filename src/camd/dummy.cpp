@@ -70,7 +70,7 @@ class Dummy:public Camera
 			genType->addSelVal ("flats dusk");
 			genType->addSelVal ("flats dawn");
 			genType->addSelVal ("astar");
-			genType->setValueInteger (0);
+			genType->setValueInteger (5);
 
 			createValue (fitsTransfer, "fits_transfer", "write FITS file directly in camera", false, RTS2_VALUE_WRITABLE);
 			fitsTransfer->setValueBool (false);
@@ -214,7 +214,7 @@ class Dummy:public Camera
 			clearHWError ();
 			usleep (infoSleep);
 			float t = tempSet->getValueFloat ();
-			if (isnan (t))
+			if (std::isnan (t))
 				t = 30;
 			tempCCD->setValueFloat (t + random_num() * 3);
 			if (tempAir)
@@ -520,7 +520,11 @@ int Dummy::doReadout ()
 	}
 
 	if (getWriteBinaryDataSize () == 0)
+	{
+		if (getDataType () == RTS2_DATA_USHORT)
+			findSepStars ((uint16_t *) getDataBuffer (0));
 		return -2;				 // no more data..
+	}
 	return 0;					 // imediately send new data
 }
 

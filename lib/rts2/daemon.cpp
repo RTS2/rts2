@@ -608,7 +608,7 @@ void Daemon::centraldConnBroken (Connection *conn)
 void Daemon::sendStatusMessage (rts2_status_t new_state, const char * msg, Connection *commandedConn)
 {
 	std::ostringstream _os;
-	if (!(isnan (state_start) && isnan (state_expected_end)))
+	if (!(std::isnan (state_start) && std::isnan (state_expected_end)))
 	{
 		_os.precision (6);
 		_os << PROTO_STATUS_PROGRESS << " " << new_state << " " << std::fixed << state_start << " " << state_expected_end;
@@ -633,7 +633,7 @@ void Daemon::sendStatusMessage (rts2_status_t new_state, const char * msg, Conne
 void Daemon::sendStatusMessageConn (rts2_status_t new_state, Connection * conn)
 {
  	std::ostringstream _os;
-	if (!(isnan (state_start) && isnan (state_expected_end)))
+	if (!(std::isnan (state_start) && std::isnan (state_expected_end)))
 	{
 		_os.precision (6);
 		_os << PROTO_STATUS_PROGRESS << " " << new_state << " " << std::fixed << state_start << " " << state_expected_end;
@@ -1247,7 +1247,7 @@ void Daemon::maskState (rts2_status_t state_mask, rts2_status_t new_state, const
 
 	setState (masked_state, description, commandedConn);
 
-	if (!(isnan (start) && isnan(end)))
+	if (!(std::isnan (start) && std::isnan(end)))
 		sendProgressAll (start, end, commandedConn);
 }
 

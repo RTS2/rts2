@@ -214,7 +214,7 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
     
     float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
     float getpoint ;
-    if(isnan( getpoint= set_setpoint( setpoint)))  {
+    if(std::isnan( getpoint= set_setpoint( setpoint)))  {
       logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< getpoint << sendLog ;
     } else {
       if( setpoint == 0.) {

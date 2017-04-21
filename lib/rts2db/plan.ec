@@ -215,13 +215,16 @@ int Plan::save ()
 	int db_prop_id_ind;
 	double db_plan_start = plan_start;
 	double db_plan_end = plan_end;
-	int db_plan_end_ind = (isnan (plan_end) ? -1 : 0);
+	int db_plan_end_ind = 0;
 	int db_plan_status = plan_status;
 	int db_bb_observatory_id = bb_observatory_id;
 	int db_bb_observatory_id_ind;
 	int db_bb_schedule_id = bb_schedule_id;
 	int db_bb_schedule_id_ind;
 	EXEC SQL END DECLARE SECTION;
+
+	if (std::isnan (db_plan_end))
+		db_plan_id = -1;
 
 	// don't save entries with same target id as master plan
 	if (db_tar_id == TARGET_PLAN)

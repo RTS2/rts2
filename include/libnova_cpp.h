@@ -25,7 +25,7 @@
 #include <libnova/libnova.h>
 #include <ostream>
 #include <time.h>
-#include <math.h>
+#include <cmath>
 
 /**
  * Modified Julian Day offset - JD = MJD + offset
@@ -581,7 +581,7 @@ class LibnovaDateDouble:public LibnovaDate
 		 */
 		LibnovaDateDouble (double t):LibnovaDate (false)
 		{
-			if (isnan (t))
+			if (std::isnan (t))
 			{
 				date.seconds = -60;
 			}

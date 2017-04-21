@@ -237,12 +237,18 @@ std::string Connection::getStateString ()
 				default:
 					_os << "unknow state " << real_state;
 			}
+			if (real_state & TEL_UNSTABLE)
+				_os << " | UNS.TRACKING";
 			if (real_state & TEL_CORRECTING)
 				_os << " | CORRECTING";
 			if (real_state & TEL_WAIT_CUP)
 				_os << " | WAIT_FOR_CUPOLA";
 			if (real_state & TEL_NEED_STOP)
 				_os << " | NEED_FLIP";
+			if (real_state & TEL_PANNING)
+				_os << " | PANNING";
+			if (real_state & TEL_OFFSETING)
+				_os << " | OFFSETING";
 			break;
 		case DEVICE_TYPE_CCD:
 			chipN = getValueInteger ("chips");
@@ -2254,7 +2260,7 @@ bool Connection::existWriteType (int w_type)
 
 double Connection::getProgress (double now)
 {
-	if (isnan (statusStart) || isnan (statusExpectedEnd))
+	if (std::isnan (statusStart) || std::isnan (statusExpectedEnd))
 		return NAN;
 	if (now > statusExpectedEnd)
 		return 100;

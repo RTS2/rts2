@@ -58,10 +58,15 @@ XmlRpcClient::XmlRpcClient(const char *path, const char **uri)
 	{
 		port = atoi (str + 1);
 		*str = '\0';
+		str++;
+	}
+	else
+	{
+		str = host;
 	}
 
 	// separate host and uri
-	str = strchr (host, '/');
+	str = strchr (str, '/');
 	if (str)
 	{
 		*str = '\0';
@@ -284,6 +289,13 @@ unsigned XmlRpcClient::handleEvent(unsigned eventType)
 
 	if (_connectionState == READ_HEADER)
 		if ( ! readHeader()) return 0;
+
+	// got chunk, which is already closed..
+	if (_eof)
+	{
+		XmlRpcSocket::close(getfd());
+		return 0;
+	}
 
 	if (_connectionState == READ_RESPONSE)
 		if ( ! readResponse()) return 0;
@@ -568,7 +580,7 @@ std::string XmlRpcClient::generateGetPostHeader(std::string const& path, size_t 
 		header += '/';
 	header += path + " HTTP/1.1\r\nUser-Agent: ";
 	header += XMLRPC_VERSION;
-	header += "\r\nHost: ";
+	header += "\r\nAccept: */*\r\nAccept-Encoding: identity\r\nHost: ";
 	header += _host;
 	header += buff;
 	header += "\r\n";
@@ -584,11 +596,15 @@ std::string XmlRpcClient::generateGetPostHeader(std::string const& path, size_t 
 
 		header += "Authorization: Basic " + auth + "\r\n";
 	}
-	header += "Content-Type: text/xml\r\nContent-Length: ";
 
-	sprintf(buff,"%zu\r\n\r\n", contentLength);
+	if (contentLength > 0)
+	{
+		header += "Content-Type: text/xml\r\nContent-Length: ";
+		sprintf(buff,"%zu\r\n", contentLength);
+		header += buff;
+	}
 
-	header += buff;
+	header += "Connection: Close\r\n\r\n";
 
 	return header;
 }
@@ -722,6 +738,7 @@ bool XmlRpcClient::readHeader()
 				_response_buf = (char *) malloc (_response_length);
 				memcpy (_response_buf, bp, _response_length);
 				_chunkStart = _response_buf;
+				processChunk();
 			}
 			else
 			{
@@ -798,45 +815,7 @@ bool XmlRpcClient::readResponse()
 		}
 		else
 		{
-			_chunkStart = _response_buf + _chunkReceivedLength;
-			while (true)
-			{
-				for (_chunkEnd = _chunkStart; (_chunkEnd < _response_buf + _response_length) && *_chunkEnd != '\n' && *_chunkEnd != '\0'; _chunkEnd++) {}
-				// chunk end not yet found..
-				if (_chunkEnd == _response_buf + _response_length + 2)
-					return true;
-				// get chunkLenght
-				*_chunkEnd = '\0';
-				char *baseEnd;
-				_chunkLength = strtol (_chunkStart, &baseEnd, 16);
-				if (baseEnd == NULL || !(*baseEnd == '\0' || *baseEnd == '\r' || *baseEnd == ';'))
-				{
-					XmlRpcUtil::error ("Cannot decode chunk length: %s", _chunkStart);
-					return false;
-				}
-				// end of chunk transfer
-				if (_chunkLength == 0)
-				{
-					*_chunkStart = '\0';
-					break;
-				}
-				if (_chunkLength < 0)
-				{
-					XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: negative chunk length specified (%d)", _chunkLength);
-					return false;
-				}
-				if (_chunkEnd + 1 + _chunkLength > _response_buf + _response_length)
-				{
-					return true;
-				}
-				// delete chunk..
-				memmove (_chunkStart, _chunkEnd + 1, _response_buf + _response_length - _chunkEnd - 1);
-				_response_length -= _chunkEnd + 1 - _chunkStart;
-				_chunkStart += _chunkLength;
-				_chunkReceivedLength += _chunkLength;
-				memmove (_chunkStart, _chunkStart + 2, _response_buf + _response_length - _chunkStart - 2);
-				_response_length -= 2;
-			}
+			return processChunk();
 		}
 	}
 	// If we dont have the entire response yet, read available data
@@ -868,6 +847,51 @@ bool XmlRpcClient::readResponse()
 		_connectionState = IDLE;
 
 	return false;				 // Stop monitoring this source (causes return from work)
+}
+
+bool XmlRpcClient::processChunk()
+{
+	_chunkStart = _response_buf + _chunkReceivedLength;
+	while (true)
+	{
+		for (_chunkEnd = _chunkStart; (_chunkEnd < _response_buf + _response_length) && *_chunkEnd != '\n' && *_chunkEnd != '\0'; _chunkEnd++) {}
+		// chunk end not yet found..
+		if (_chunkEnd == _response_buf + _response_length + 2)
+			return true;
+		// get chunkLenght
+		*_chunkEnd = '\0';
+		char *baseEnd;
+		_chunkLength = strtol (_chunkStart, &baseEnd, 16);
+		if (baseEnd == NULL || !(*baseEnd == '\0' || *baseEnd == '\r' || *baseEnd == ';'))
+		{
+			XmlRpcUtil::error ("Cannot decode chunk length: %s", _chunkStart);
+			return false;
+		}
+		// end of chunk transfer
+		if (_chunkLength == 0)
+		{
+			*_chunkStart = '\0';
+			_eof = true;
+			break;
+		}
+		if (_chunkLength < 0)
+		{
+			XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: negative chunk length specified (%d)", _chunkLength);
+			return false;
+		}
+		if (_chunkEnd + 1 + _chunkLength > _response_buf + _response_length)
+		{
+			return true;
+		}
+		// delete chunk..
+		memmove (_chunkStart, _chunkEnd + 1, _response_buf + _response_length - _chunkEnd - 1);
+		_response_length -= _chunkEnd + 1 - _chunkStart;
+		_chunkStart += _chunkLength;
+		_chunkReceivedLength += _chunkLength;
+		memmove (_chunkStart, _chunkStart + 2, _response_buf + _response_length - _chunkStart - 2);
+		_response_length -= 2;
+	}
+	return false;
 }
 
 // Convert the response xml into a result value

@@ -498,7 +498,7 @@ void TargetGRB::printExtra (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<bool> ("AUTODISABLED", autodisabled)
 		<< std::endl;
 	// get information about obsering time..
-	if (isnan (firstObs))
+	if (std::isnan (firstObs))
 	{
 		_os << "GRB without observation";
 	}

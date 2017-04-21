@@ -550,3 +550,21 @@ uint16_t getMsgBufCRC16 (char *msgBuf, int msgLen)
 	}
 	return ret;
 }
+
+int parseVariableName (const char *name, char **device, char **variable)
+{
+	const char *sep = strchr (name, '.');
+	if (sep == NULL)
+		return -1;
+
+	size_t len = sep - name + 1;
+	*device = new char[len];
+	memcpy (*device, name, len - 1);
+	*device[len - 1] = '\0';
+
+	len = strlen (name) - (sep - name);
+	*variable = new char[len];
+	memcpy (*variable, sep + 1, len - 1);
+	*variable[len - 1] = '\0';
+	return 0;
+}

@@ -539,7 +539,7 @@ int Gemini::tel_gemini_get_deg (int id, double &val)
 		return ret;
 	// parse returned string
 	val2 = hmstod (buf);
-	if (isnan (val))
+	if (std::isnan (val))
 		return -1;
 	val = val2;
 	return 0;
@@ -1682,7 +1682,7 @@ int Gemini::change_ra (double chng_ra)
 	int ret;
 	// slew speed to 1 - 0.25 arcmin / sec
 	direction = (chng_ra > 0) ? DIR_EAST : DIR_WEST;
-	if (!isnan (fixed_ha))
+	if (!std::isnan (fixed_ha))
 	{
 		if (fabs (chng_ra) > guideLimit->getValueDouble ())
 			centeringSpeed->setValueInteger (20);
@@ -1702,7 +1702,7 @@ int Gemini::change_ra (double chng_ra)
 	}
 	changeTimeRa.tv_sec = (long) (u_sleep / USEC_SEC);
 	changeTimeRa.tv_usec = (long) (u_sleep - changeTimeRa.tv_sec);
-	if (!isnan (fixed_ha))
+	if (!std::isnan (fixed_ha))
 	{
 		if (direction == DIR_EAST)
 		{
@@ -1926,8 +1926,9 @@ extern int Gemini::loadModel ()
 	line = (char *) malloc (numchar);
 	while (getline (&line, &numchar, config_file) != -1)
 	{
-		char *buf;
-		ret = sscanf (line, "%i:%as", &id, &buf);
+		char buf[20];
+		memset (buf, 0, sizeof (buf));
+		ret = sscanf (line, "%i:%20s", &id, buf);
 		if (ret == 2)
 		{
 			#ifdef DEBUG_EXTRA_CHECKSUM
@@ -1949,8 +1950,6 @@ extern int Gemini::loadModel ()
 
 			if (ret)
 				logStream (MESSAGE_ERROR) << "Gemini loadModel setch return " << ret << " on " << buf << sendLog;
-
-			free (buf);
 		}
 		else
 		{

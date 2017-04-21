@@ -17,6 +17,7 @@ AM_MAINTAINER_MODE
 # Checks for programs.
 AM_PROG_CC_C_O
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_11
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
@@ -29,6 +30,15 @@ AM_CONDITIONAL(LIBCHECK, test "x$CHECK_LIBS" != x)
 AS_IF([test "x$CHECK_LIBS" != x], [
   AC_DEFINE_UNQUOTED(LIBCHECK, "1", [use libcheck checking])
   libcheck="yes"
+])
+
+libjsoncpp="no"
+
+PKG_CHECK_MODULES([JSONCPP],[jsoncpp >= 0.9.6],,AC_MSG_RESULT(not found))
+AM_CONDITIONAL(LIBJSONCPP, test "x$CHECK_LIBS" != x)
+AS_IF([test "x$CHECK_LIBS" != x], [
+  AC_DEFINE_UNQUOTED(LIBJSONCPP, "1", [use libjsoncpp])
+  libjsoncpp="yes"
 ])
 
 liberfa="no"
@@ -63,7 +73,7 @@ AC_LANG_CPLUSPLUS
 
 CFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Wshadow -g"
+CXXFLAGS="-Wall -Wshadow -g -std=c++11 -lm"
 AC_SUBST(CXXFLAGS)
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -955,6 +965,7 @@ AC_OUTPUT([Makefile
 	   include/vermes/Makefile
 	   include/xmlrpc++/Makefile
 	   include/pluto/Makefile
+	   include/sep/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
 	   conf/rts2.service
@@ -978,6 +989,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2json/Makefile
 	   lib/rts2tel/Makefile
 	   lib/libindi/Makefile 
+	   lib/sep/Makefile
 	   python/Makefile
 	   python/rts2/Makefile
 	   python/rts2/db/Makefile
@@ -1056,6 +1068,7 @@ echo "
   libgjson	${JSONGLIB_CFLAGS} ${JSONGLIB_LIBS}
   openssl       ${ssl}
   libcheck	${libcheck}
+  libjsoncpp	${libjsoncpp}
   libwebsockets	${libwebsockets}
   libthrift     ${libthrift} ${THRIFT_CFLAGS} ${THRIFT_LIBS}
   hiredis	${hiredis}

@@ -111,7 +111,7 @@ START_TEST(test_refraction)
 	gemTest->test_applyRefraction (&teq, JD, false);
 
 #ifdef RTS2_LIBERFA
-	ck_assert_dbl_eq (teq.ra, 44.8417, 10e-4);
+	ck_assert_dbl_eq (teq.ra, 44.8405, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -18.5443, 10e-4);
 #else
 	ck_assert_dbl_eq (teq.ra, 44.8395, 10e-4);
@@ -122,7 +122,7 @@ START_TEST(test_refraction)
 
 #ifdef RTS2_LIBERFA
 	ck_assert_dbl_eq (tpos.az, 299.4814, 10e-4);
-	ck_assert_dbl_eq (tpos.alt, 19.2484, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 19.2497, 10e-4);
 #else
 	ck_assert_dbl_eq (tpos.az, 299.4803, 10e-4);
 	ck_assert_dbl_eq (tpos.alt, 19.2508, 10e-4);
@@ -155,7 +155,7 @@ START_TEST(test_refraction)
 	gemTest->test_applyRefraction (&teq, JD, false);
 
 #ifdef RTS2_LIBERFA
-	ck_assert_dbl_eq (teq.ra, 240.6780, 10e-4);
+	ck_assert_dbl_eq (teq.ra, 240.6804, 10e-4);
 	ck_assert_dbl_eq (teq.dec, 38.5064, 10e-4);
 #else
 	ck_assert_dbl_eq (teq.ra, 240.8070, 10e-4);
@@ -166,7 +166,7 @@ START_TEST(test_refraction)
 
 	ck_assert_dbl_eq (tpos.az, 130.5580, 10e-4);
 #ifdef RTS2_LIBERFA
-	ck_assert_dbl_eq (tpos.alt, 2.4205, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 2.4226, 10e-4);
 #else
 	ck_assert_dbl_eq (tpos.alt, 2.5315, 10e-4);
 #endif
@@ -201,7 +201,7 @@ START_TEST(test_refraction1850)
 
 	ck_assert_dbl_eq (tpos.az, 300.0000, 10e-4);
 #ifdef RTS2_LIBERFA
-	ck_assert_dbl_eq (tpos.alt, 20.0344, 10e-5);
+	ck_assert_dbl_eq (tpos.alt, 20.0352, 10e-5);
 #else
 	ck_assert_dbl_eq (tpos.alt, 20.0358, 10e-5);
 #endif
@@ -211,7 +211,7 @@ START_TEST(test_refraction1850)
 	altazTest1850->test_applyRefraction (&teq, JD, false);
 
 #ifdef RTS2_LIBERFA
-	ck_assert_dbl_eq (teq.ra, 249.5917, 10e-4);
+	ck_assert_dbl_eq (teq.ra, 249.5899, 10e-4);
 	ck_assert_dbl_eq (teq.dec, -35.4841, 10e-4);
 #else
 	ck_assert_dbl_eq (teq.ra, 249.5885, 10e-4);
@@ -222,7 +222,7 @@ START_TEST(test_refraction1850)
 
 	ck_assert_dbl_eq (tpos.az, 300.3856, 10e-4);
 #ifdef RTS2_LIBERFA
-	ck_assert_dbl_eq (tpos.alt, 19.3412, 10e-4);
+	ck_assert_dbl_eq (tpos.alt, 19.3427, 10e-4);
 #else
 	ck_assert_dbl_eq (tpos.alt, 19.3444, 10e-4);
 #endif

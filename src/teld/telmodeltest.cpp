@@ -533,10 +533,10 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 			latLine = true;
 			os << " " << LibnovaDeg90 (ln_dms_to_deg (&lat)) << " "
 				<< date.years << " " << date.months << " " << date.days;
-			if (!isnan (temp))
+			if (!std::isnan (temp))
 			{
 				os << " " << temp;
-				if (!isnan (press))
+				if (!std::isnan (press))
 					os << " " << press;
 			}
 			os << std::endl;
@@ -591,7 +591,7 @@ void TelModelTest::runOnTPDatFile (std::string filename, std::ostream & os)
 					pos_out.dec = (pos_out.dec > 0 ? 180 : -180) - pos_out.dec;
 				}
 
-				if (!isnan (JD0))
+				if (!std::isnan (JD0))
 				{
 					if ( includeRefraction )
 						JD = JD0 + ln_range_degrees (lst.getRa () - (15. * telescope->getLST (JD0)))/15.0/24.06570949;

@@ -30,6 +30,9 @@ Cupola::Cupola (int in_argc, char **in_argv, bool inhibit_auto_close):Dome (in_a
 	createValue (currentAz, "CUP_AZ", "cupola azimut", true, RTS2_DT_DEGREES);
 	createValue (targetDistance, "TARDIST", "target distance", false, RTS2_DT_DEGREES);
 
+	createValue (parkStandby, "park_standby", "park cupola on standby", false, RTS2_VALUE_WRITABLE);
+	parkStandby->setValueBool (false);
+
 	createValue (trackTelescope, "track_telescope", "track telescope movements", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	trackTelescope->setValueBool (true);
 
@@ -38,6 +41,9 @@ Cupola::Cupola (int in_argc, char **in_argv, bool inhibit_auto_close):Dome (in_a
 
 	createValue (parkAz, "park_az", "[deg] park azimuth", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	parkAz->setValueFloat (NAN);
+
+	createValue (dontTrackAbove, "dont_track", "[deg] don't track above give altitude", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	dontTrackAbove->setValueFloat (85);
 
 	observer = NULL;
 
@@ -77,7 +83,7 @@ int Cupola::init ()
 int Cupola::info ()
 {
 	// target ra+dec
-	if (!isnan (tarRaDec->getRa ()) && !isnan (tarRaDec->getDec ()))
+	if (!std::isnan (tarRaDec->getRa ()) && !std::isnan (tarRaDec->getDec ()))
 	{
 		struct ln_hrz_posn hrz;
 		getTargetAltAz (&hrz);
@@ -130,11 +136,23 @@ int Cupola::idle ()
 	return Dome::idle ();
 }
 
+void Cupola::changeMasterState (rts2_status_t old_state, rts2_status_t new_state)
+{
+	if (((new_state & SERVERD_ONOFF_MASK) != SERVERD_ON) || (new_state & SERVERD_STATUS_MASK) == SERVERD_MORNING)
+	{
+		if (parkStandby->getValueBool () == true)
+			cupolaPark ();
+	}
+	Dome::changeMasterState (old_state, new_state);
+}
+
 int Cupola::moveTo (rts2core::Connection * conn, double ra, double dec)
 {
 	int ret;
 	tarRaDec->setValueRaDec (ra, dec);
 	infoAll ();
+	if (needSlitChange () == false)
+		return moveEnd ();
 	ret = moveStart ();
 	if (ret)
 		return ret;
@@ -169,6 +187,24 @@ int Cupola::moveEnd ()
 	return 0;
 }
 
+
+int Cupola::cupolaPark ()
+{
+	tarRaDec->setValueRaDec (NAN, NAN);
+	setTargetAz (parkAz->getValueFloat ());
+	return moveStart ();
+}
+
+int Cupola::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
+{
+	if (oldValue == trackTelescope)
+	{
+		if ((dynamic_cast<rts2core::ValueBool *> (newValue))->getValueBool () == false)
+			moveEnd ();
+	}
+	return Dome::setValue (oldValue, newValue);
+}
+
 void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
 	double JD;
@@ -184,9 +220,11 @@ bool Cupola::needSlitChange ()
 	int ret;
 	struct ln_hrz_posn targetHrz;
 	double splitWidth;
-	if (isnan (tarRaDec->getRa ()) || isnan (tarRaDec->getDec ()))
+	if (std::isnan (tarRaDec->getRa ()) || std::isnan (tarRaDec->getDec ()))
 		return false;
 	getTargetAltAz (&targetHrz);
+	if (targetHrz.alt > dontTrackAbove->getValueFloat ())
+		return false;
 	splitWidth = getSlitWidth (targetHrz.alt);
 	if (splitWidth < 0)
 		return false;
@@ -234,17 +272,11 @@ int Cupola::commandAuthorized (rts2core::Connection * conn)
 		setTargetAz (tar_az);
 		return moveStart ();
 	}
-	else if (conn->isCommand (COMMAND_CUPOLA_STOP))
-	{
-	        return moveStop() ;
-	}
 	else if (conn->isCommand (COMMAND_CUPOLA_PARK))
 	{
-		if (isnan (parkAz->getValueFloat ()))
+		if (std::isnan (parkAz->getValueFloat ()))
 			return DEVDEM_E_SYSTEM;
-		tarRaDec->setValueRaDec (NAN, NAN);
-		setTargetAz (parkAz->getValueFloat ());
-		return moveStart ();
+		return cupolaPark ();
 	}
 	return Dome::commandAuthorized (conn);
 }

@@ -939,7 +939,7 @@ int ConnShooter::receive (rts2core::Block *block)
 
 		nbuf_pos = it - nbuf;
 
-		if (!isnan (last_auger_date))
+		if (!std::isnan (last_auger_date))
 		{
 			((DevAugerShooter*) master)->newShower (last_auger_date, last_auger_ra, last_auger_dec);
 		}

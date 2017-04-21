@@ -119,13 +119,13 @@ class Ticket
 		 */
 		bool shouldBeObservedDuring (double _start, double _end)
 		{
-			if (isnan (sched_from))
+			if (std::isnan (sched_from))
 			{
-				if (isnan (sched_to))
+				if (std::isnan (sched_to))
 					return false;
 				return sched_to > _start;
 			}
-			if (isnan (sched_to))
+			if (std::isnan (sched_to))
 				return _end > sched_from;
 			return !(_start > sched_to || _end < sched_from);
 		}

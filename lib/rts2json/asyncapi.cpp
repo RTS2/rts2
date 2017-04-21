@@ -193,9 +193,9 @@ void AsyncValueAPI::sendState (std::list <AsyncState>::iterator astate, rts2core
 
 	std::ostringstream os;
 	os << std::fixed << "{\"d\":\"" << (_conn->getOtherType () == DEVICE_TYPE_SERVERD ? "centrald" : _conn->getName ()) << "\",\"s\":" << _conn->getState () << ",\"t\":" << getNow ();
-	if (!isnan (_conn->getProgressStart ()))
+	if (!std::isnan (_conn->getProgressStart ()))
 		os << ",\"sf\":" << _conn->getProgressStart ();
-	if (!isnan (_conn->getProgressEnd ()))
+	if (!std::isnan (_conn->getProgressEnd ()))
 		os << ",\"st\":" << _conn->getProgressEnd ();
 	os << "}";
 	source->sendChunked (os.str ());

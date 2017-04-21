@@ -445,7 +445,7 @@ int Target::saveWithID (bool overwrite, int tar_id)
 		db_tar_comment_ind = -1;
 	}
 
-	if (isnan (db_tar_bonus))
+	if (std::isnan (db_tar_bonus))
 	{
 		db_tar_bonus = 0;
 		db_tar_bonus_ind =-1;
@@ -577,7 +577,7 @@ moveType Target::startSlew (struct ln_equ_posn *position, std::string &p1, std::
 	if (getObsId () > 0)		 // we already observe that target
 		return OBS_ALREADY_STARTED;
 
-	if (isnan (position->ra) || isnan (position->dec))
+	if (std::isnan (position->ra) || std::isnan (position->dec))
 	{
 		d_obs_ra = d_obs_dec = d_obs_alt = d_obs_az = NAN;
 		d_pos_ind = -1;
@@ -991,7 +991,7 @@ void Target::getAltAz (struct ln_hrz_posn *hrz, double JD, struct ln_lnlat_posn 
 
 	getPosition (&object, JD);
 
-	if (isnan (object.ra) || isnan (object.dec))
+	if (std::isnan (object.ra) || std::isnan (object.dec))
 	{
 		hrz->alt = hrz->az = NAN;
 	}
@@ -1213,7 +1213,7 @@ bool Target::isAboveHorizon (double JD)
 bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 {
 	// assume that undefined objects are always above horizon
-	if (isnan (hrz->alt))
+	if (std::isnan (hrz->alt))
 		return true;
 	if (hrz->alt < getMinObsAlt ())
 		return false;
@@ -2044,12 +2044,12 @@ void Target::getSatisfiedIntervals (time_t from, time_t to, int length, int step
 
 double Target::getSatisfiedDuration (double from, double to, double length, double step)
 {
-	if (!isnan (satisfiedFrom) && !isnan (satisfiedProbedUntil))
+	if (!std::isnan (satisfiedFrom) && !std::isnan (satisfiedProbedUntil))
 	{
 		if (from >= satisfiedFrom && from <= satisfiedProbedUntil)
 		{
 			// did not find end of interval..
-			if (!isinf (satisfiedTo) || isnan (satisfiedTo) || to <= satisfiedProbedUntil)
+			if (!std::isinf (satisfiedTo) || std::isnan (satisfiedTo) || to <= satisfiedProbedUntil)
 				return satisfiedTo;
 			// don't recalculate full interval
 			from = satisfiedProbedUntil;
@@ -2057,17 +2057,17 @@ double Target::getSatisfiedDuration (double from, double to, double length, doub
 	}
 	satisfiedTo = getConstraints ()->getSatisfiedDuration (this, from, to, length, step);
 	// update boundaries where we probed..
-	if (isnan (satisfiedFrom) || from < satisfiedFrom)
+	if (std::isnan (satisfiedFrom) || from < satisfiedFrom)
 		satisfiedFrom = from;
 	// visible during full interval
-	if (isinf (satisfiedTo))
+	if (std::isinf (satisfiedTo))
 	{
 		satisfiedProbedUntil = to;
 		// visible during full interval
 		return INFINITY;
 	}
 	// not visible at all..
-	else if (isnan (satisfiedTo))
+	else if (std::isnan (satisfiedTo))
 	{
 		satisfiedProbedUntil = from;
 		return NAN;

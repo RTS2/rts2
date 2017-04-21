@@ -533,7 +533,7 @@ int Image::closeFile ()
 		try
 		{
 			// save astrometry error
-			if (!isnan (ra_err) && !isnan (dec_err))
+			if (!std::isnan (ra_err) && !std::isnan (dec_err))
 			{
 				setValue ("RA_ERR", ra_err, "RA error in position");
 				setValue ("DEC_ERR", dec_err, "DEC error in position");
@@ -906,7 +906,7 @@ void Image::writeWCS (double mods[NUM_WCS_VALUES])
 	const char *wcs_desc[NUM_WCS_VALUES] = {"reference value on 1st axis", "reference value on 2nd axis", "reference pixel of the 1st axis", "reference pixel of the 2nd axis", "delta along 1st axis", "delta along 2nd axis", "rotational angle"};
 	for (int i = 0; i < NUM_WCS_VALUES; i++)
 	{
-		if (!isnan (total_wcs[i]))
+		if (!std::isnan (total_wcs[i]))
 		{
 			double v = total_wcs[i];
 			if (i == 4 || i == 5)
@@ -2185,7 +2185,7 @@ long Image::getSumNPixels ()
 
 int Image::getError (double &eRa, double &eDec, double &eRad)
 {
-	if (isnan (ra_err) || isnan (dec_err) || isnan (img_err))
+	if (std::isnan (ra_err) || std::isnan (dec_err) || std::isnan (img_err))
 		return -1;
 	eRa = ra_err;
 	eDec = dec_err;

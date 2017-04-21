@@ -27,7 +27,7 @@ namespace rts2focusd
 class SitechFocuser:public Focusd, public SitechMultidev
 {
 	public:
-		SitechFocuser (const char *dev_name, rts2core::ConnSitech *sitech_c, const char *defaults);
+		SitechFocuser (const char *dev_name, rts2core::ConnSitech *sitech_c, const char *defaults, const char *extTemp);
 
 	protected:
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);

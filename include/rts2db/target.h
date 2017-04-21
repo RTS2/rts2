@@ -907,7 +907,7 @@ class ConstTarget:public Target
 		/**
 		 * Returns true if the target has nan position - this is usually case with scripted targets.
 		 */
-		bool hasNaNPosition () { return isnan (position.ra) || isnan (position.dec); }
+		bool hasNaNPosition () { return std::isnan (position.ra) || std::isnan (position.dec); }
 		
 		/**
 		 * Retrieve target proper motion.

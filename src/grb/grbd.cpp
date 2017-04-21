@@ -244,7 +244,7 @@ int Grbd::info ()
 	last_packet->setValueDouble (gcncnn->lastPacket ());
 	
 	if (last_target_id->getValueInteger () != gcncnn->lastTargetId () ||
-		((isnan (last_target_time->getValueDouble ()) || last_target_time->getValueDouble () < gcncnn->lastTargetTime ()) && last_target_errorbox->getValueDouble () > gcncnn->lastTargetErrobox ()))
+		((std::isnan (last_target_time->getValueDouble ()) || last_target_time->getValueDouble () < gcncnn->lastTargetTime ()) && last_target_errorbox->getValueDouble () > gcncnn->lastTargetErrobox ()))
 	{
 		last_target->setValueCharArr (gcncnn->lastTarget ());
 		last_target_id->setValueInteger (gcncnn->lastTargetId ());

@@ -121,17 +121,17 @@ bool sortByOutOfLimits::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
 	double v1 = tar1->getSatisfiedDuration (from, from + 86400, 0, 60);
 	double v2 = tar2->getSatisfiedDuration (from, from + 86400, 0, 60);
 	std::cout << "sorting " << tar1->getTargetName () << " " << v1 << " 2: " << tar2->getTargetName () << " " << v2 << std::endl;
-	if ((isnan (v1) && isnan (v2)) || (isinf (v1) && isinf (v2)))
+	if ((std::isnan (v1) && std::isnan (v2)) || (std::isinf (v1) && std::isinf (v2)))
 	{
 		// if both are not visible, order west-east..
 		return sortWestEast::doSort (tar1, tar2);
 	}
 	// only one is not visible..
-	else if (isnan (v1) || isinf (v2))
+	else if (std::isnan (v1) || std::isinf (v2))
 	{
 		return false;
 	}
-	else if (isnan (v2) || isinf (v1))
+	else if (std::isnan (v2) || std::isinf (v1))
 	{
 		return true;
 	}
@@ -140,7 +140,7 @@ bool sortByOutOfLimits::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
 
 bool QueuedTarget::notExpired (double now)
 {
-	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end > now);
+	return (std::isnan (t_start) || t_start <= now) && (std::isnan (t_end) || t_end > now);
 }
 
 double TargetQueue::getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn *currentp, int runnum)
@@ -168,7 +168,7 @@ void TargetQueue::beforeChange (double now)
 				if (front ().rep_n > 0)
 				{
 					front ().rep_n--;
-					if (!isnan (front ().rep_separation))
+					if (!std::isnan (front ().rep_separation))
 					{
 						front ().t_start = now + front ().rep_separation;
 					}
@@ -187,7 +187,7 @@ void TargetQueue::beforeChange (double now)
 			if (!empty () && front ().rep_n > 1)
 			{
 				front ().rep_n--;
-				if (!isnan (front ().rep_separation))
+				if (!std::isnan (front ().rep_separation))
 				{
 					front ().t_start = now + front ().rep_separation;
 				}
@@ -237,9 +237,9 @@ bool TargetQueue::filter (double now, double maxLength, bool removeObserved, dou
 	filterUnobservable (now, maxLength, skipped, removeObserved);
 	TargetQueue::iterator it = begin ();
 	// there is some observation which needs to be observed at correct time
-	if (next_time && !empty () && !isnan (front().t_start))
+	if (next_time && !empty () && !std::isnan (front().t_start))
 		*next_time = front().t_start;
-	if (!empty () && (isnan (front().t_start) || front().t_start <= now))
+	if (!empty () && (std::isnan (front().t_start) || front().t_start <= now))
 	{
 		ret = true;
 		it++;
@@ -412,7 +412,7 @@ void TargetQueue::filterExpired (double now)
 			{
 				double t_start = iter->t_start;
 				double t_end = iter->t_end;
-				if ((!isnan (t_start) && t_start <= now) || (!isnan (t_end) && t_end <= now))
+				if ((!std::isnan (t_start) && t_start <= now) || (!std::isnan (t_end) && t_end <= now))
 				{
 					logStream (MESSAGE_DEBUG) << "target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") has start and end times set (" << LibnovaDateDouble (t_start) << " " << LibnovaDateDouble (t_end) << ", removing previous targets." << sendLog;
 					for (TargetQueue::iterator irem = begin (); irem != iter;)
@@ -427,7 +427,7 @@ void TargetQueue::filterExpired (double now)
 	for (;iter != end ();)
 	{
 		double t_end = iter->t_end;
-		if (!isnan (t_end) && t_end <= now)
+		if (!std::isnan (t_end) && t_end <= now)
 			iter = removeEntry (iter, REMOVED_TIMES_EXPIRED);
 		else if (iter->target->observationStarted () && getRemoveAfterExecution () == true)
 		  	iter = removeEntry (iter, REMOVED_STARTED);
@@ -448,12 +448,12 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 			// isAboveHorizon changes jd parameter - we would like to keep the current time
 		  	double tjd = JD;
 			bool shift_circular = false;
-			if (getQueueType () == QUEUE_CIRCULAR && !isnan (iter->t_start) && iter->t_start > now)
+			if (getQueueType () == QUEUE_CIRCULAR && !std::isnan (iter->t_start) && iter->t_start > now)
 			{
 				// don't do anything, just make sure we will get to horizon check
 				shift_circular = true;
 			}
-			else if (isnan (maxLength))
+			else if (std::isnan (maxLength))
 			{
 				if (isAboveHorizon (*iter, tjd))
 				{
@@ -483,7 +483,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 					case QUEUE_CIRCULAR:
 						break;
 					default:
-						if (!(isnan (iter->t_start) && isnan (iter->t_end)) && iter->target->observationStarted ())
+						if (!(std::isnan (iter->t_start) && std::isnan (iter->t_end)) && iter->target->observationStarted ())
 						{
 							logStream (MESSAGE_WARNING) << "target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") was observed, and as it has specified start or end times (" << LibnovaDateDouble (iter->t_start) << " to " << LibnovaDateDouble (iter->t_end) << "), and queue is not circular (" << getQueueType () << "), it will be removed" << sendLog;
 							iter->remove ();
@@ -513,7 +513,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength, std::list <Q
 bool TargetQueue::isAboveHorizon (QueuedTarget &qt, double &JD)
 {
 	struct ln_hrz_posn hrz;
-	if (!isnan (qt.t_start))
+	if (!std::isnan (qt.t_start))
 	{
 		time_t t = qt.t_start;
 		double njd = ln_get_julian_from_timet (&t);
@@ -681,7 +681,7 @@ int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_s
 {
 	// find entry in queue to put target
 	double now = n_start;
-	if (!isnan (t_start))
+	if (!std::isnan (t_start))
 		now = t_start;
 	// total script length
 	double tl = rts2script::getMaximalScriptDuration (nt, master->cameras);
@@ -693,7 +693,7 @@ int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_s
 		double JD = ln_get_julian_from_timet (&tnow);
 
 		double to;
-		if (!isnan (iter->t_start))
+		if (!std::isnan (iter->t_start))
 			to = iter->t_start + tl;
 		else
 			to = now + tl;
@@ -712,7 +712,7 @@ int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_s
 			case ORDER_NONE:
 				break;
 		}
-		if (skip == false && (isinf (satDuration) || satDuration))
+		if (skip == false && (std::isinf (satDuration) || satDuration))
 		{
 			insert (iter, QueuedTarget (queue_id, nt, t_start, t_end, plan_id, hard));
 			updateVals ();
@@ -752,7 +752,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 		double t_start = NAN;
 		if (filter (now, next_length, removeObserved, &t_start) && front ().notExpired (now))
 		{
-			if (isnan (next_length))
+			if (std::isnan (next_length))
 			{
 				pid = front ().plan_id;
 				qid = front ().qid;
@@ -768,7 +768,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 				{
 					pid = front ().plan_id;
 					qid = front ().qid;
-					if (isnan (front().t_start))
+					if (std::isnan (front().t_start))
 					{
 						hard = false;
 					}
@@ -786,12 +786,12 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 		{
 			double t = now + 60;
 			// add timers..
-			if (!isnan (t_start) && (isnan (timerAdded) || t_start != timerAdded) && t_start > t)
+			if (!std::isnan (t_start) && (std::isnan (timerAdded) || t_start != timerAdded) && t_start > t)
 			{
 				// if queue has window, add timer event to the end of the window
 				// before window expires, right target should be selected on its own on observation end
 				timerAdded = t_start;
-				if (!isnan (queueWindow->getValueFloat ()))
+				if (!std::isnan (queueWindow->getValueFloat ()))
 				{
 					t += queueWindow->getValueFloat ();
 				}
@@ -800,16 +800,16 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 			else
 			{
 				double t_end = front ().t_end;
-				if (!isnan (t_end) && (isnan (timerAdded) || t_end != timerAdded) && t_end > t)
+				if (!std::isnan (t_end) && (std::isnan (timerAdded) || t_end != timerAdded) && t_end > t)
 				{
 					master->addTimer (t_end - t, new rts2core::Event (EVENT_NEXT_END));
 					timerAdded = t_end;
 				}
 			}
-			if (!isnan (t_start) && (isnan(next_time) || next_time > t_start))
+			if (!std::isnan (t_start) && (std::isnan(next_time) || next_time > t_start))
 			{
 				next_time = t_start;
-				if (!isnan (queueWindow->getValueFloat ()))
+				if (!std::isnan (queueWindow->getValueFloat ()))
 					next_time += queueWindow->getValueFloat ();
 			}
 		}
@@ -837,7 +837,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 			// otherwise, put end to either time_end, 
 			else
 			{
-				if (!isnan (sq.front ().t_end))
+				if (!std::isnan (sq.front ().t_end))
 				{
 				  	e_end = sq.front ().t_end;
 				}
@@ -845,7 +845,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 				else
 				{
 					e_end = sq.front ().target->getSatisfiedDuration (from, to, md, 60);
-					if (isnan (e_end))
+					if (std::isnan (e_end))
 						e_end = to;
 				}
 			}

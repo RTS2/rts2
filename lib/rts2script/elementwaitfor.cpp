@@ -59,7 +59,7 @@ int ElementWaitFor::idle ()
 
 int ElementSleep::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	if (!isnan (sec))
+	if (!std::isnan (sec))
 	{
 		// this caused idle to be called after sec..
 		// Element keep care that it will not be called before sec expires

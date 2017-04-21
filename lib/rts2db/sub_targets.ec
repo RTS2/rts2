@@ -156,7 +156,7 @@ int ConstTarget::saveWithID (bool overwrite, int tar_id)
 void ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = position;
-	if (!isnan (proper_motion.ra) && !isnan (proper_motion.dec))
+	if (!std::isnan (proper_motion.ra) && !std::isnan (proper_motion.dec))
 		ln_get_equ_pm (pos, &proper_motion, JD, pos);
 }
 
@@ -264,9 +264,9 @@ moveType DarkTarget::startSlew (struct ln_equ_posn *position, std::string &p1, s
 	currPos.ra = position->ra;
 	currPos.dec = position->dec;
 	// when telescope isn't initialized to point when we get ra | dec - put some defaults
-	if (isnan (currPos.ra))
+	if (std::isnan (currPos.ra))
 		currPos.ra = -999;
-	if (isnan (currPos.dec))
+	if (std::isnan (currPos.dec))
 		currPos.dec = -999;
 	Target::startSlew (position, p1, p2, update_position, plan_id);
 	return OBS_DONT_MOVE;

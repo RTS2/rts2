@@ -54,7 +54,7 @@ class Davis: public SensorWeather
 		void setHumidity (float in_humidity)
 		{
 			humidity->setValueFloat (in_humidity);
-			if (!isnan (maxHumidity->getValueFloat ()) && humidity->getValueFloat () > maxHumidity->getValueFloat ())
+			if (!std::isnan (maxHumidity->getValueFloat ()) && humidity->getValueFloat () > maxHumidity->getValueFloat ())
 			{
 				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining");
 				valueError (humidity);
@@ -91,13 +91,13 @@ class Davis: public SensorWeather
 			avgWindSpeed->setValueFloat (_avgWindSpeed);
 			avgWindSpeedStat->addValue (_avgWindSpeed, 20);
 			avgWindSpeedStat->calculate ();
-			if (!isnan (avgWindSpeedStat->getValueFloat ()) && avgWindSpeedStat->getValueFloat () >= maxWindSpeed->getValueFloat ())
+			if (!std::isnan (avgWindSpeedStat->getValueFloat ()) && avgWindSpeedStat->getValueFloat () >= maxWindSpeed->getValueFloat ())
 			{
 				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high average wind");
 				valueError (avgWindSpeed);
 				valueError (avgWindSpeedStat);
 			}
-			else if (!isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
+			else if (!std::isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
 			{
 				valueError (avgWindSpeed);
 				valueWarning (avgWindSpeedStat);
@@ -112,7 +112,7 @@ class Davis: public SensorWeather
 		void setPeekWindSpeed (float _peekWindSpeed)
 		{
 			peekWindSpeed->setValueFloat (_peekWindSpeed);
-			if (!isnan (maxPeekWindSpeed->getValueFloat ()) && _peekWindSpeed >= maxPeekWindSpeed->getValueFloat ())
+			if (!std::isnan (maxPeekWindSpeed->getValueFloat ()) && _peekWindSpeed >= maxPeekWindSpeed->getValueFloat ())
 			{
 				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high peek wind");
 				valueError (peekWindSpeed);

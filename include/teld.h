@@ -87,7 +87,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false, int hasUnTelCoordinates = 0, bool hasAltAzDiff = false, bool parkingBlock = true, bool hasDerotators = false);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (rts2core::Event * event);
@@ -434,7 +434,6 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *telHumidity;
 		rts2core::ValueFloat *telWavelength;
 
-
 		/**
 		 * Precalculated latitude values..
 		 */
@@ -473,6 +472,10 @@ class Telescope:public rts2core::Device
 		 * call.
 		 */
 		virtual int isParking () { return -2; }
+
+		virtual int isOffseting () { return isMoving (); }
+
+		int checkTracking (double maxDist);
 
 		/**
 		 * Returns local sidereal time in hours (0-24 range).
@@ -627,8 +630,9 @@ class Telescope:public rts2core::Device
 		 * @param dc             current (intput) and target (output) second axis (DEC, ALT) count value
 		 * @param ac_speed       first axis speed in counts per second
 		 * @param dc_speed       second axis speed in counts per second
+		 * @param speed_angle    tracking angle
 		 */
-		int calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed);
+		int calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, double &speed_angle);
 
 		/**
 		 * Transform sky coordinates to axis coordinates. Implemented in classes
@@ -926,7 +930,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Set telescope tracking.
 		 *
-		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal
+		 * @param track		0 - no tracking, 1 - on object, 2 - sidereal 3 - no tracking, including derotators
 		 * @param addTrackingTimer     if true and tracking, add tracking timer; cannot be set when called from tracking function!
 		 * @param send		 if true, set rts2value and send in to all connections
 		 * @return 0 on success, -1 on error
@@ -938,7 +942,7 @@ class Telescope:public rts2core::Device
 		/**
 		 * Returns if tracking is requested.
 		 *
-		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking
+		 * @return 0 - no tracking, 1 - tracking to object, 2 - sidereal tracking 3 - no tracking, including derotators stop
 		 */
 		int trackingRequested () { return tracking->getValueInteger (); }
 
@@ -1143,6 +1147,10 @@ class Telescope:public rts2core::Device
 		 */
 		rts2core::ValueRaDec *offsRaDec;
 
+		rts2core::ValueRaDec *gOffsRaDec;
+
+		rts2core::ValueTime *guidingTime;
+
 		/**
 		 * User alt-az offsets. Supported primary on alt-az mounts.
 		 */
@@ -1228,6 +1236,8 @@ class Telescope:public rts2core::Device
 		 */
 		rts2core::ValueBool *blockMove;
 
+		bool parkingBlockMove;
+
 		rts2core::ValueBool *blockOnStandby;
 
 		// object + telescope position
@@ -1287,6 +1297,11 @@ class Telescope:public rts2core::Device
 		 * Distance to target in degrees.
 		 */
 		rts2core::ValueDouble *targetDistance;
+
+		/**
+		 * Statistics of target distances.
+		 */
+		rts2core::ValueDoubleStat *targetDistanceStat;
 
 		/**
 		 * Time when movement was started.

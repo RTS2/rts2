@@ -246,7 +246,7 @@ class Sitech:public GEM
 
 using namespace rts2teld;
 
-Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true), radec_status (), radec_Yrequest (), radec_Xrequest ()
+Sitech::Sitech (int argc, char **argv):GEM (argc, argv, true, true, true, false), radec_status (), radec_Yrequest (), radec_Xrequest ()
 {
 	unlockPointing ();
 
@@ -980,7 +980,9 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 	int32_t ac_speed = 0;
 	int32_t dc_speed = 0;
 
-	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, ac, dc, ac_speed, dc_speed);
+	double speed_angle = 0;
+
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, ac, dc, ac_speed, dc_speed, speed_angle);
 	if (ret)
 	{
 		if (ret < 0)

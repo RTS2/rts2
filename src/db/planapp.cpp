@@ -94,7 +94,7 @@ int Rts2PlanApp::addPlan ()
 	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 	{
 		// check if new plan was fully specifed and can be saved
-		if (addedplan && !isnan (addedplan->getPlanStart ()) && !isnan (addedplan->getPlanEnd ()))
+		if (addedplan && !std::isnan (addedplan->getPlanStart ()) && !std::isnan (addedplan->getPlanEnd ()))
 		{
 			doAddPlan (addedplan);  
 			delete addedplan;
@@ -127,7 +127,7 @@ int Rts2PlanApp::addPlan ()
 				return -1;
 			}
 		}
-		else if (isnan (addedplan->getPlanStart ()))
+		else if (std::isnan (addedplan->getPlanStart ()))
 		{
 		  	addedplan->setPlanStart (parsePlanDate (*iter, getNow ()));
 		}
@@ -137,7 +137,7 @@ int Rts2PlanApp::addPlan ()
 		}
 	}
 
-	if (addedplan && !isnan (addedplan->getPlanStart ()))
+	if (addedplan && !std::isnan (addedplan->getPlanStart ()))
 	{
 		doAddPlan (addedplan);
 		delete addedplan;
@@ -227,7 +227,7 @@ int Rts2PlanApp::generatePlan ()
 
 int Rts2PlanApp::copyPlan (bool st_offsets)
 {
-	if (isnan (JD))
+	if (std::isnan (JD))
 	{
 	  	std::cerr << "you must specify source night with -n" << std::endl;
 		return -1;
@@ -271,7 +271,7 @@ int Rts2PlanApp::copyPlan (bool st_offsets)
 			rts2db::Plan np;
 			np.setTargetId (pi->getTargetId ());
 			np.setPlanStart (pi->getPlanStart () + d);
-			if (!isnan (pi->getPlanEnd ()))
+			if (!std::isnan (pi->getPlanEnd ()))
 				np.setPlanEnd (pi->getPlanEnd () + d);
 			ret = np.save ();
 			if (ret)
@@ -288,7 +288,7 @@ int Rts2PlanApp::copyPlan (bool st_offsets)
 int Rts2PlanApp::deletePlan ()
 {
 	// delete night..  
-	if (!isnan (JD))
+	if (!std::isnan (JD))
 	{
 		rts2db::PlanSetNight pn (JD);
 		pn.load ();
@@ -366,7 +366,7 @@ int Rts2PlanApp::processOption (int in_opt)
 			operation = OP_ADD;
 			break;
 		case 'n':
-			if (!isnan (JD))
+			if (!std::isnan (JD))
 			{
 				std::cerr << "you can specify night (-n parameter) only once" << std::endl; 
 				return -1;

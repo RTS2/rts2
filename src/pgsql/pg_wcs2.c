@@ -162,10 +162,11 @@ wcs2_in (PG_FUNCTION_ARGS)
       ARG_INT (equinox);
       else
       {
-	char *warning = malloc (200 + strlen (cmd) + strlen (arg));
-	sprintf (warning, "unknow string %s %s", cmd, arg);
-	elog (NOTICE, warning);
-	free (warning);
+	//char *warning = malloc (200 + strlen (cmd) + strlen (arg));
+	//sprintf (warning, "unknow string %s %s", cmd, arg);
+	//elog (NOTICE, warning);
+	//free (warning);
+	return -1;
       }
       imhead = next_start;
     }

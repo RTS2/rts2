@@ -32,7 +32,7 @@ namespace rts2teld
 class AltAz: public Telescope
 {
 	public:
-		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true, bool hasAltAzDiff = true);
+		AltAz (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false, bool hasUnTelCoordinates = true, bool hasAltAzDiff = true, bool parkingBlock = true);
 		virtual ~AltAz (void);
 
 		virtual int infoUTCLST (const double utc1, const double utc2, double telLST);
@@ -78,6 +78,8 @@ class AltAz: public Telescope
 		 * Sends updates to derotators.
 		 */
 		virtual void runTracking ();
+
+		virtual int setTracking (int track, bool addTrackingTimer = false, bool send = true);
 
 		/**
 		 * Sends new target parallactic angle to 

@@ -266,7 +266,7 @@ FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 	{
 		cam->queCommand (new rts2core::CommandBox (cam, xOffset, yOffset, imageWidth, imageHeight));
 	}
-	if (!isnan (defExposure))
+	if (!std::isnan (defExposure))
 	{
 		cam->queCommand (new rts2core::CommandChangeValue (cam, "exposure", '=', defExposure));
 
@@ -308,6 +308,7 @@ rts2core::DevClient *FocusClient::createOtherType (rts2core::Connection * conn, 
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_MIRROR:
 		case DEVICE_TYPE_SENSOR:
+		case DEVICE_TYPE_ROTATOR:
 			return new rts2image::DevClientWriteImage (conn);
 		default:
 			return rts2core::Client::createOtherType (conn, other_device_type);

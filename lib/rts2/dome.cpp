@@ -222,6 +222,7 @@ int Dome::checkOpening ()
 			else
 			{
 				maskState (DOME_DOME_MASK | BOP_EXPOSURE | DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DOME_OPENED | DEVICE_BLOCK_CLOSE, "dome opened");
+				logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "dome opened" << sendLog;
 			}
 		}
 	}

@@ -50,7 +50,7 @@ bool CameraImage::waitingFor (rts2core::DevClient * devClient)
 	for (std::vector < ImageDeviceWait * >::iterator iter = deviceWaits.begin (); iter != deviceWaits.end ();)
 	{
 		ImageDeviceWait *idw = *iter;
-		if (idw->getClient () == devClient && (isnan (devClient->getConnection ()->getInfoTime ()) || idw->getAfter () <= devClient->getConnection ()->getInfoTime ()))
+		if (idw->getClient () == devClient && (std::isnan (devClient->getConnection ()->getInfoTime ()) || idw->getAfter () <= devClient->getConnection ()->getInfoTime ()))
 		{
 			delete idw;
 			iter = deviceWaits.erase (iter);
@@ -106,7 +106,7 @@ bool CameraImage::wasTriggered (rts2core::DevClient * devClient)
 
 bool CameraImage::canDelete ()
 {
-	if (isnan (exEnd) || !dataWriten)
+	if (std::isnan (exEnd) || !dataWriten)
 		return false;
 	return !waitForMetaData ();
 }

@@ -25,14 +25,7 @@ import libnova
 
 __DS9 = 'brights'
 
-def find_stars(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
-	"""Find stars on the image. Returns flux ordered list of stars."""
-	if hdu is None:
-		hdu = fits.open(fn)
-	if cube is None:
-		data = np.array(hdu[0].data,np.int32)
-	else:
-		data = np.array(hdu[0].data[cube],np.int32)
+def find_stars_on_data(data, verbose = 0, useDS9 = False):
 	bkg = sep.Background(data)
 	bkg.subfrom(data)
 	thres = 1.5 * bkg.globalrms
@@ -44,9 +37,18 @@ def find_stars(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 		return []
 	return sorted(objects, cmp=lambda x,y: cmp(y['flux'],x['flux']))
 
-def find_brightest(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
-	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
-	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
+def find_stars(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
+	"""Find stars on the image. Returns flux ordered list of stars."""
+	if hdu is None:
+		hdu = fits.open(fn)
+	if cube is None:
+		data = np.array(hdu[0].data,np.int32)
+	else:
+		data = np.array(hdu[0].data[cube],np.int32)
+
+	return find_stars_on_data(data, verbose, useDS9)
+
+def get_brightest(s_objects, verbose = 0, useDS9 = False, exclusion = None):
 	if len(s_objects) == 0:
 		return None, None, None, None
 	b_x = s_objects[0]['x']
@@ -54,6 +56,33 @@ def find_brightest(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 	b_flux = s_objects[0]['flux']
 	if verbose:
 		print 'detected {0} objects'.format(len(s_objects))
+
+	if exclusion is not None:
+		def dist(x1,y1,x2,y2):
+			return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+		found = False
+
+		for i in range(0, len(s_objects) / 2):
+			b_x = s_objects[i]['x']
+			b_y = s_objects[i]['y']
+			b_flux = s_objects[i]['flux']
+			for j in range(i, len(s_objects)):
+				if i != j:
+					s_x = s_objects[j]['x']
+					s_y = s_objects[j]['y']
+					if dist(s_x,s_y,b_x,b_y) < exclusion:
+						if verbose:
+							print 'rejecting star at {0} {1}, too close to {2} {3}'.format(b_x, b_y, s_x, s_y)
+							break
+			if j == len(s_objects) - 1:
+				found = True
+				break
+
+		if found == False:
+			return None, None, None, None
+
+	if verbose:
 		print 'brightest at {0:.2f} {1:.2f}'.format(b_x,b_y)
 		if verbose > 1:
 			for o in s_objects:
@@ -76,6 +105,15 @@ def find_brightest(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 				w = w if w > 1 else 1
 				d.set('regions','image; point({0},{1}) # point=cross {2},color=green'.format(o['x'],o['y'],int(w)))
 	return b_x,b_y,b_flux,b_flux / bb_flux
+
+def find_brightest_on_data(data, verbose = 0, useDS9 = False, exclusion = None):
+	s_objects = find_stars_on_data(data, verbose, useDS9)
+	return get_brightest(s_objects, verbose, useDS9, exclusion)
+
+def find_brightest(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
+	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
+	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
+	return get_brightest(s_objects, verbose, useDS9)
 
 def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits', save_regions=None, center=None):
 	"""Add WCS solution to the image."""

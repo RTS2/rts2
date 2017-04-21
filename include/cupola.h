@@ -46,6 +46,8 @@ class Cupola:public Dome
 		virtual int info ();
 		virtual int idle ();
 
+		virtual void changeMasterState (rts2_status_t old_state, rts2_status_t new_state);
+
 		int moveTo (rts2core::Connection * conn, double ra, double dec);
 		virtual int moveStop ();
 
@@ -72,6 +74,10 @@ class Cupola:public Dome
 			return -2;
 		}
 		virtual int moveEnd ();
+
+		virtual int cupolaPark ();
+
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		void setTargetAz (double in_az) { tarAltAz->setAz (in_az); }
 		double getTargetAz () { return tarAltAz->getAz (); }
@@ -103,6 +109,9 @@ class Cupola:public Dome
 		rts2core::ValueBool *trackDuringDay;
 
 		rts2core::ValueFloat *parkAz;
+		rts2core::ValueFloat *dontTrackAbove;
+
+		rts2core::ValueBool *parkStandby;
 
 		char *configFile;
 };

@@ -272,7 +272,7 @@ Rts2Schedule::iterator Rts2Schedule::findShortest ()
 
 double Rts2Schedule::visibilityRatio ()
 {
-	if (!isnan (visRatio))
+	if (!std::isnan (visRatio))
 		return visRatio;
 
 	visible = 0;
@@ -291,7 +291,7 @@ double Rts2Schedule::visibilityRatio ()
 
 double Rts2Schedule::altitudeMerit ()
 {
-	if (!isnan (altMerit))
+	if (!std::isnan (altMerit))
 		return altMerit;
 
 	altMerit = 0;
@@ -305,7 +305,7 @@ double Rts2Schedule::altitudeMerit ()
 
 double Rts2Schedule::accountMerit ()
 {
-	if (!isnan (accMerit))
+	if (!std::isnan (accMerit))
 		return accMerit;
 
 	AccountSet *accountset = AccountSet::instance ();
@@ -344,7 +344,7 @@ double Rts2Schedule::accountMerit ()
 
 double Rts2Schedule::distanceMerit ()
 {
-	if (!isnan (distMerit))
+	if (!std::isnan (distMerit))
 		return distMerit;
 
 	if (size () <= 1)
@@ -403,7 +403,7 @@ double Rts2Schedule::averageDistance ()
 
 double Rts2Schedule::diversityTargetMerit ()
 {
-	if (!isnan (divTargetMerit))
+	if (!std::isnan (divTargetMerit))
 		return divTargetMerit;
 
 	divTargetMerit = 0;

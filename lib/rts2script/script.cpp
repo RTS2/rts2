@@ -961,7 +961,7 @@ Script::iterator Script::findElement (const char *name, Script::iterator start)
 double Script::getExpectedDuration (struct ln_equ_posn *tel, int runnum)
 {
 	double ret = 0;
-	if (tel && !isnan (target_pos.ra) && !isnan (target_pos.dec))
+	if (tel && !std::isnan (target_pos.ra) && !std::isnan (target_pos.dec))
 	{
 		double dist = ln_get_angular_separation (tel, &target_pos);
 		ret += getTelescopeSettleTime () + dist * getTelescopeSpeed ();

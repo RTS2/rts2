@@ -183,7 +183,7 @@ int Rts2NewTarget::saveTarget ()
 	}
 	target->setTargetName (target_name.c_str ());
 
-	if (!isnan (radius))
+	if (!std::isnan (radius))
 	{
 		rts2db::TargetSet tarset = target->getTargets (radius);
 		tarset.load ();
@@ -253,7 +253,7 @@ int Rts2NewTarget::saveTarget ()
 int Rts2NewTarget::doProcessing ()
 {
 	double t_radius = 10.0 / 60.0;
-	if (!isnan (radius))
+	if (!std::isnan (radius))
 		t_radius = radius;
 	int ret;
 	// ask for target name..
