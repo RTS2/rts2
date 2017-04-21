@@ -950,8 +950,8 @@ void SitechAltAz::getTel ()
 					break;
 			}
 
-			az_pos_error->setValueInteger (*(uint16_t*) &altaz_status.y_last[2]);
-			alt_pos_error->setValueInteger (*(uint16_t*) &altaz_status.x_last[2]);
+			az_pos_error->setValueInteger (*(int16_t*) &altaz_status.y_last[2]);
+			alt_pos_error->setValueInteger (*(int16_t*) &altaz_status.x_last[2]);
 			break;
 		}
 	}

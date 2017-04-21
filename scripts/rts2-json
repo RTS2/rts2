@@ -163,8 +163,11 @@ try:
 			for line in f.readlines():
 				js = sysjson.loads(line)
 				for g in options.get_array:
-					dn,vn = g.split('.')
-					print js[dn][vn][1],
+					vara = g.split('.')
+					if len(vara) == 2:
+						print js[vara[0]][vara[1]][1],
+					elif len(vara) == 3:
+						print js[vara[0]][vara[1]][1][vara[2]],
 				print
 
 	if options.expose:
