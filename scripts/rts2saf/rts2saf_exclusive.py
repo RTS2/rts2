@@ -33,6 +33,7 @@ __author__ = 'wildi.markus@bluewin.ch'
 
 import os
 import sys
+import time
 import logging
 import rts2.scriptcomm
 import argparse
@@ -47,10 +48,24 @@ class Script (rts2.scriptcomm.Rts2Comm):
         self.tar_id=tar_id
         
     def initial_values(self):
+        # ToDo:
+        avoid_tar_ids=[15,32,]
+        try:
+            state = self.getState('centrald')
+            if (state & 0x3f) < 10 and not(state & 0x80000000):
+                self.lg.info('good weather and on')
+            else:
+                self.lg.info('either bad weather or system not on, exiting')
+                sys.exit(1)
+        except Exception as ex:
+            self.lg.error('exception: {}',ex)
+            sys.exit(1)
+
 	selector_enabled=self.getValue('selector_enabled', 'SEL')
-        current=self.getValueFloat('current','EXEC')
+        current=self.getValue('current','EXEC')
         current_name=self.getValue('current_name','EXEC')
         current_type=self.getValue('current_type','EXEC')
+        current_id=self.getValue('current','EXEC')
         self.lg.info('initial_values: EXEC current: {}, current_name: {}, current_type: {}'.format(current,current_name,current_type))
         # check for GLORIA and GRB, and exit if so
         if 'GLORIA teleoperation' in current_name: # reserved observing time
@@ -59,8 +74,11 @@ class Script (rts2.scriptcomm.Rts2Comm):
         elif 'G' in current_type: # it is a GRB
             self.lg.info('initial_values: there is now a GRB target selected, exiting')
             sys.exit(1)
+        elif int(current_id) in avoid_tar_ids:
+            self.lg.info('found tar_id: {} in list of excluded targets, exiting'.format(current_id))
+            sys.exit(1)
         else:
-            self.lg.info('initial_values: neither GLORIA teleoperation nor GRB target')
+            self.lg.info('initial_values: neither GLORIA teleoperation, nor GRB target, nor target to avoid (avoid_tar_ids)')
 
         selector_next=self.getValueFloat('selector_next','EXEC')
         self.lg.info('initial_values: EXEC selector_next: {}'.format(selector_next))
@@ -94,7 +112,9 @@ if __name__ == '__main__':
     group.add_argument('--start', dest='start', action='store_true', default=False, help=': %(default)s, start rts2saf')
     group.add_argument('--stop', dest='stop', action='store_true', default=False, help=': %(default)s, stop rts2saf')
     parser.add_argument('--tar-id', dest='tar_id', action='store', default=539, help=': %(default)s, set mount to tar_id=xxx, see your postgres database')
-
+    # ToDo
+    # targets not to interrupt:
+    # B2  >50000, 15 and ... 18
     args=parser.parse_args()
 
     
@@ -117,6 +137,7 @@ if __name__ == '__main__':
 
         
     sc=Script(lg=logger,tar_id=args.tar_id)
+    logger.info('rts2saf_exclusiv: query initial state')
     sc.initial_values()
 
     if 'start' in script or args.start:
