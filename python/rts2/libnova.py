@@ -65,3 +65,10 @@ def hrz_to_equ(az,alt,latitude):
 	dec = arcsin(dec)
 
 	return (degrees(ha) + 360.0) % 360.0, degrees(dec)
+
+def parallalactic_angle(latitude, ha, dec):
+	latitude_r = radians(latitude)
+	ha_r = radians(ha)
+	dec_r = radians(dec)
+	div = sin(latitude_r) * cos(dec_r) - cos(latitude_r) * sin(dec_r) * cos(ha_r)
+	return degrees(arctan2(cos(latitude_r) * sin(ha_r), div))
