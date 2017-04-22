@@ -2554,7 +2554,7 @@ def find_nearest(ra,dec,mag_min=None,mag_max=None,lst=None,latitude=None,minalt=
 	if lst is not None and latitude is not None and minalt is not None:
 		data.sort(lambda x,y:cmp(libnova.angular_separation(x[1],x[2],ra,dec),libnova.angular_separation(y[1],y[2],ra,dec)))
 		for s in data:
-			if minalt < libnova.equ_to_hrz(s[1],s[2],lst,latitude):
+			if minalt < libnova.equ_to_hrz(s[1],s[2],lst,latitude)[0]:
 				return s
 	return min(data,key=lambda x:libnova.angular_separation(x[1],x[2],ra,dec))
 
