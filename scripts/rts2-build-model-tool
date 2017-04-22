@@ -84,6 +84,9 @@ try:
 		path = rts2.altazpath.random_path()
 	if options.path[:6] == 'const[':
 		path = rts2.altazpath.constant_path(map(float,options.path[6:-1].split(',')))
+	if options.path[:6] == 'azsep[':
+		az,rest = options.path[6:].split(':')
+		path = rts2.altazpath.constant_path(map(float,rest.split(',')), azimuth_separation=float(az))
 	elif type(options.path) == str:
 		path = []
 		for p in options.path.split(','):
@@ -109,7 +112,7 @@ try:
 		tp.run_verify_brigths(options.timeout,path,options.modelname,options.imagescript,options.useDS9,options.maxverify,options.verifyradius,options.maxspiral,options.minflux,options.minalt)
 	elif options.action[0] == 'print-stars':
 		for p in path:
-			bsc = tp.find_bright_star(p[0],p[1])
+			bsc = tp.find_bright_star(p[0],p[1],options.minalt)
 			print 'move_pm {0} {1} {2} {3}'.format(bsc[1],bsc[2],bsc[7],bsc[8])
 	else:
 		argparse.help()
