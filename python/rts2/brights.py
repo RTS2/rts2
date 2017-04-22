@@ -22,6 +22,7 @@ import numpy as np
 from astropy import wcs
 from astropy.io import fits
 import libnova
+import time
 
 __DS9 = 'brights'
 
@@ -48,7 +49,7 @@ def find_stars(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 
 	return find_stars_on_data(data, verbose, useDS9)
 
-def get_brightest(s_objects, verbose = 0, useDS9 = False, exclusion = None):
+def get_brightest(s_objects, fn, verbose = 0, useDS9 = False, exclusion = None):
 	if len(s_objects) == 0:
 		return None, None, None, None
 	b_x = s_objects[0]['x']
@@ -94,7 +95,14 @@ def get_brightest(s_objects, verbose = 0, useDS9 = False, exclusion = None):
 	if useDS9:
 		import ds9
 		d=ds9.ds9(__DS9)
-		d.set('file {0}'.format(fn))
+		try:
+			d.set('file {0}'.format(fn))
+		except Exception,ex:
+			time.sleep(4)
+			try:
+				d.set('file {0}'.format(fn))
+			except Exception,ex:
+				pass
 		d.set('regions','image; point({0},{1}) # point=cross 25, color=green'.format(b_x,b_y))
 		if verbose > 1:
 			w_flux = s_objects[-1]['flux']
@@ -108,12 +116,12 @@ def get_brightest(s_objects, verbose = 0, useDS9 = False, exclusion = None):
 
 def find_brightest_on_data(data, verbose = 0, useDS9 = False, exclusion = None):
 	s_objects = find_stars_on_data(data, verbose, useDS9)
-	return get_brightest(s_objects, verbose, useDS9, exclusion)
+	return get_brightest(s_objects, None, verbose, useDS9, exclusion)
 
 def find_brightest(fn, hdu = None, verbose = 0, useDS9 = False, cube = None):
 	"""Find brightest star on the image. Returns tuple of X,Y,flux and ratio of the flux to the second brightest star."""
 	s_objects = find_stars(fn, hdu, verbose, useDS9, cube)
-	return get_brightest(s_objects, verbose, useDS9)
+	return get_brightest(s_objects, fn, verbose, useDS9)
 
 def add_wcs(fn, asecpix, rotang, flip = '', verbose = 0, dss = False, useDS9 = False, outfn='out.fits', save_regions=None, center=None):
 	"""Add WCS solution to the image."""

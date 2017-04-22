@@ -206,12 +206,9 @@ class TPVP:
 			print _('taking script {0}').format(imagescript)
 			fn = 'model_{0:03}.fits'.format(mn)
 			os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(self.camera,imagescript,fn))
-			if d is not None:
-				try:
-					d.set('file {0}'.format(fn))
-				except Exception,ex:
-					d = ds9.ds9('Model')
-					d.set('file {0}'.format(fn))
+			if useDS9 is not None:
+				d = ds9.ds9('Model')
+				d.set('file {0}'.format(fn))
 			return fn,mn
 		print _('Slew finished, starting search now')
 		next_please = False
@@ -368,15 +365,14 @@ class TPVP:
 				last_step = 1
 				while last_step < maxspiral and (flux is None or flux < minflux):
 					self.run_spiral(timeout,last_step,last_step+1)
+					self.__stable(self.sleeptime)
 					print _('taking script {0}').format(imagescript)
 					fn = 'spiral_{0:03}_{1:03}.fits'.format(mn,last_step)
 					os.system("rts2-scriptexec --reset -d {0} -s '{1}' -e '{2}'".format(self.camera,imagescript,fn))
 					if useDS9:
-						try:
-							d.set('file {0}'.format(fn))
-						except Exception,ex:
-							d = ds9.ds9('Model')
-							d.set('file {0}'.format(fn))
+						import ds9
+						d = ds9.ds9('Model')
+						d.set('file {0}'.format(fn))
 					off_radec,off_azalt,flux,flux_ratio,first_xy = self.__get_offset_by_image(fn,useDS9,mn,self.fov_center)
 					print _('Brightest in {0} flux {1:.1f}').format(fn,flux)
 					last_step += 1
@@ -385,7 +381,10 @@ class TPVP:
 				print _('Bright star not found - continue')
 				if modelname is not None:
 					modelf = open(modelname,'a')
-					modelf.write('# bright star not found on image - continue, BS RA {0:.2} DEC {1:.2} mag {2}\n'.format(bsc[1],bsc[2],bsc[3]))
+					if type(p) == int:
+						modelf.write('# bright star not found on image - continue, target BS RA {0:.2f} DEC {1:.2f} mag {2:.2f}\n'.format(bsc[1],bsc[2],bsc[3]))
+					else:
+						modelf.write('# bright star not found on image - continue, target ALT {0:.2f} AZ {1:.2f} BS RA {2:.2f} DEC {3:.2f} mag {4:.2f}\n'.format(p[0],p[1],bsc[1],bsc[2],bsc[3]))
 					modelf.close()
 				continue
 	
