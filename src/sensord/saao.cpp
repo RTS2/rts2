@@ -43,6 +43,10 @@ class SAAO:public SensorWeather
 		int willConnect (rts2core::NetworkAddress * in_addr);
 
 	private:
+		void checkWeatherTimeout (float timeout, const char *msg);
+
+		rts2core::ValueTime *lastGood;
+		rts2core::ValueInteger *ignoreTime;
 		rts2core::ValueFloat *temperature;
 		rts2core::ValueFloat *humidity;
 		rts2core::ValueFloat *windDirection;
@@ -63,8 +67,14 @@ using namespace rts2sensord;
 
 SAAO::SAAO (int argc, char **argv):SensorWeather (argc, argv)
 {
+	createValue (lastGood, "good_till", "observing till at least", false);
+	createValue (ignoreTime, "ignore_time", "[s] time when bad weather will be ignored", false, RTS2_VALUE_AUTOSAVE | RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
+	ignoreTime->setValueInteger (1200);
+
+	lastGood->setValueDouble (getNow () + ignoreTime->getValueInteger ());
+
 	createValue (temperature, "TEMPERATURE", "[C] ambient temperature", true);
-	createValue (humidity, "HUMIDITY", "[%] relative humidity", true);
+	createValue (humidity, "HUMIDITY", "[%] relative humidity", true, RTS2_DT_PERCENTS);
 	createValue (windDirection, "WIND_DIR", "wind direction", true, RTS2_DT_DEGREES);
 	createValue (windSpeed, "WINDSPEED", "[km/h] wind speed", true);
 	createValue (pressure, "PRESSURE", "[mbar] atmospheric pressure", true);
@@ -152,14 +162,14 @@ int SAAO::info ()
 				windSpeed->setValueFloat (strtod (data, &endptr));
 				if (windSpeed->getValueFloat () > windLimit->getValueFloat ())
 				{
-					setWeatherTimeout (120, "wind over limit");
+					checkWeatherTimeout (120, "wind over limit");
 					valueError (windSpeed);
 				}
 				else
 				{
 					valueGood (windSpeed);
+					parsed |= 0x01;
 				}
-				parsed |= 0x01;
 				data = endptr;
 			}
 			else if (strncmp (data, "WD,", 3) == 0)
@@ -183,14 +193,14 @@ int SAAO::info ()
 
 				if (humidity->getValueFloat () > humidityLimit->getValueFloat ())
 				{
-					setWeatherTimeout (120, "humidity above limit");
+					checkWeatherTimeout (120, "humidity above limit");
 					valueError (humidity);
 				}
 				else
 				{
 					valueGood (humidity);
+					parsed |= 0x02;
 				}
-				parsed |= 0x02;
 				if (telConn)
 					telConn->queCommand (new rts2core::CommandChangeValue (telConn->getOtherDevClient (), "AMBHUMIDITY", '=', humidity->getValueFloat ()));
 				data = endptr;
@@ -216,10 +226,14 @@ int SAAO::info ()
 		}
 	}
 
-	if (parsed != 0x07)
+	if (parsed == 0x07)
+	{
+		lastGood->setValueDouble (getNow () + ignoreTime->getValueInteger ());
+	}
+	else
 	{
 		okToOpen->setValueBool (false);
-		setWeatherTimeout (120, "not OK to open");
+		checkWeatherTimeout (120, "not OK to open");
 		valueError (okToOpen);
 	}
 
@@ -228,11 +242,25 @@ int SAAO::info ()
 	return 0;
 }
 
+void SAAO::checkWeatherTimeout (float timeout, const char *msg)
+{
+	time_t now;
+	time (&now);
+	if (lastGood->getValueDouble () > getNow ())
+		return;
+	setWeatherTimeout (timeout, msg);
+}
+
 bool SAAO::isGoodWeather ()
 {
-	if (getLastInfoTime () > 1800)
+	time_t now;
+	time (&now);
+	if (lastGood->getValueDouble () > now)
+		return true;
+
+	if (getLastInfoTime () > 120)
 	{
-		setWeatherTimeout (80, "unable to receive data");
+		checkWeatherTimeout (80, "unable to receive data");
 		return false;
 	}
 	return SensorWeather::isGoodWeather ();
