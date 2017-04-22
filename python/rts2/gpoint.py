@@ -470,11 +470,18 @@ class GPoint:
 	def set_vary(self, variable):
 		self.variable = variable
 
-	def print_parameters(self):
-		print 'Name       value    fixed'
-		for k in self.params.keys():
-			print '{0}   {1}   {2}'.format(k,self.params[k].value,self.params[k].vary)
-
+	def print_parameters(self,pars,stderr=False):
+		print 'Name       value(") fixed',
+		if stderr:
+			print 'stderr(")'
+		else:
+			print
+		for k in pars.keys():
+			print '{0:9}{1:10.2f}    {2}'.format(k,np.degrees(pars[k].value) * 3600.0,'   ' if pars[k].vary else '  *'),
+			if stderr:
+				print '{0:8.2f}'.format(np.degrees(pars[k].stderr) * 3600.0)
+			else:
+				print
 
 	def process_params(self):
 		for ep in self.extra:
@@ -487,7 +494,7 @@ class GPoint:
 			for f in self.fixed:
 				self.params[f].vary = False
 
-		self.print_parameters()
+		self.print_parameters(self.params)
 
 	def fit(self, ftol=1.49012e-08, xtol=1.49012e-08, gtol=0.0, maxfev=1000):
 		"""Runs least square fit on input data."""
@@ -524,7 +531,7 @@ class GPoint:
 		if self.verbose:
 			print 'Fit result', self.best.params
 
-		self.print_parameters()
+		self.print_parameters(self.best.params,True)
 
 		if self.altaz:
 			self.f_model_az = self.fit_model_az(self.best.params,self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt)
@@ -690,7 +697,7 @@ class GPoint:
 			return np.sqrt(np.mean(np.square(vector)))
 
 		def print_vect_stat(v):
-			return 'MIN {0} MAX {1} MEAN {2} RMS {3}'.format(np.min(v),np.max(v),np.mean(v),RMS(v))
+			return 'MIN {0} MAX {1} MEAN {2} RMS {3} STDEV {4}'.format(np.min(v),np.max(v),np.mean(v),RMS(v),np.std(v))
 
 		print 'OBSERVATIONS {0}'.format(len(self.diff_angular_hadec))
 		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
