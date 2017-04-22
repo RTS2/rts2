@@ -86,7 +86,7 @@ try:
 		path = rts2.altazpath.constant_path(map(float,options.path[6:-1].split(',')))
 	if options.path[:6] == 'azsep[':
 		az,rest = options.path[6:].split(':')
-		path = rts2.altazpath.constant_path(map(float,rest.split(',')), azimuth_separation=float(az))
+		path = rts2.altazpath.constant_path(map(float,rest[:-1].split(',')), azimuth_separation=float(az))
 	elif type(options.path) == str:
 		path = []
 		for p in options.path.split(','):

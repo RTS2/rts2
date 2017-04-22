@@ -471,15 +471,18 @@ class GPoint:
 		self.variable = variable
 
 	def print_parameters(self,pars,stderr=False):
-		print 'Name       value(") fixed',
+		print 'Name                      value(") fixed',
 		if stderr:
-			print 'stderr(")'
+			print 'stderr(")  fr(%) m'
+			np.seterr(divide='ignore')
+			mv = max(pars, key=lambda p:abs(np.divide(pars[p].stderr,pars[p].value)))
 		else:
 			print
 		for k in pars.keys():
-			print '{0:9}{1:10.2f}    {2}'.format(k,np.degrees(pars[k].value) * 3600.0,'   ' if pars[k].vary else '  *'),
+			print '{0:24}{1:10.2f}    {2}'.format(k,np.degrees(pars[k].value) * 3600.0,'   ' if pars[k].vary else '  *'),
 			if stderr:
-				print '{0:8.2f}'.format(np.degrees(pars[k].stderr) * 3600.0)
+				fr = abs(np.divide(pars[k].stderr,pars[k].value))
+				print '{0:8.2f}  {1:>5.1f}{2}'.format(np.degrees(pars[k].stderr) * 3600.0, 100 * fr, ' *' if mv == k else '  ')
 			else:
 				print
 
