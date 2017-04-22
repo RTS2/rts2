@@ -271,7 +271,7 @@ class TPVP:
 		mn = self.__get_mn(mn)
 
 		if maxspiral >= -1:
-			print _('Next model point at altitude {0:.3f} azimuth {1:.3f}').format(alt,az)
+			print _('Next model point at altitude {0:.3g} azimuth {1:.3g}').format(alt,az)
 			s = self.find_bright_star(alt,az,minalt)
 			tarf_ra = s[1]
 			tarf_dec = s[2]
@@ -327,7 +327,7 @@ class TPVP:
 				off_x = self.fov_center[0] - b_x
 				off_y = self.fov_center[1] - b_y
 			pixdist = math.sqrt(off_x ** 2 + off_y ** 2)
-			print _('brightest X {0:2} Y {1:2} offset from center {2:2} {3:2} distance {4:2} flux {5:2} {6:2}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
+			print _('brightest X {0:.2f} Y {1:.2f} offset from center {2:.2f} {3:.2f} distance {4:.2f} flux {5:.2f} {6:.2f}').format(b_x, b_y, off_x, off_y, pixdist, b_flux, b_flux_ratio)
 			if minflux is not None and b_flux < minflux:
 				print _('brightest star too faint, its flux is {0}, should be at least {1}').format(b_flux, minflux)
 				return False,flux_history,flux_ratio_history,history_x,history_y,history_alt,history_alt
