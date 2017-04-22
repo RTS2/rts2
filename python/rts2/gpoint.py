@@ -128,6 +128,8 @@ class GPoint:
 		self.name_map = None
 		# addtional terms for model - ExtraParam
 		self.extra = []
+		self.fixed = []
+		self.variable = None
 		self.modelfile = None
 
 	def equ_to_hrz(self,ha,dec):
@@ -461,7 +463,34 @@ class GPoint:
 		self.diff_az = normalize_az_err(self.aa_az - self.ar_az)
 		self.diff_corr_az = self.diff_az * np.cos(self.rad_aa_alt)
 
+	def set_fixed(self, fixed):
+		"""Sets fixed parameters."""
+		self.fixed.extend(fixed)
+
+	def set_vary(self, variable):
+		self.variable = variable
+
+	def print_parameters(self):
+		print 'Name       value    fixed'
+		for k in self.params.keys():
+			print '{0}   {1}   {2}'.format(k,self.params[k].value,self.params[k].vary)
+
+
+	def process_params(self):
+		for ep in self.extra:
+			self.params.add(ep.parname(), value = 0)
+
+		if self.variable:
+			for p in self.params.keys():
+				self.params[p].vary = p in self.variable
+		else:
+			for f in self.fixed:
+				self.params[f].vary = False
+
+		self.print_parameters()
+
 	def fit(self, ftol=1.49012e-08, xtol=1.49012e-08, gtol=0.0, maxfev=1000):
+		"""Runs least square fit on input data."""
 		self.params = Parameters()
 		if self.altaz:
 			self.params.add('ia', value = 0)
@@ -472,8 +501,7 @@ class GPoint:
 			self.params.add('npoa', value = 0)
 			self.params.add('tf', value = 0)
 
-			for ep in self.extra:
-				self.params.add(ep.parname(), value = 0)
+			self.process_params()
 
 			self.best = minimize(self.fit_model_altaz, self.params, args=(self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt),full_output=True,maxfev=maxfev,ftol=ftol,xtol=xtol,gtol=gtol)
 
@@ -489,14 +517,14 @@ class GPoint:
 			self.params.add('fo', value = 0)
 			self.params.add('daf', value = 0)
 
-			for ep in self.extra:
-				self.params.add(ep.parname(), value = 0)
+			self.process_params()
 
 			self.best = minimize(self.fit_model_gem, self.params, args=(self.rad_aa_ha,self.rad_ar_ha,self.rad_aa_dec,self.rad_ar_dec),full_output=True,maxfev=maxfev,ftol=ftol,xtol=xtol,gtol=gtol)
 
-
 		if self.verbose:
 			print 'Fit result', self.best.params
+
+		self.print_parameters()
 
 		if self.altaz:
 			self.f_model_az = self.fit_model_az(self.best.params,self.rad_aa_az,self.rad_ar_az,self.rad_aa_alt,self.rad_ar_alt)
