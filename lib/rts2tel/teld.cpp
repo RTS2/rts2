@@ -81,7 +81,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (telAmbientTemperature, "AMBTEMP", "[C] observatory ambient temperature", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telAmbientTemperature->setValueFloat (10);
 
-	createValue (telHumidity, "AMBHUMIDITY", "[%] observatory relative humidity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (telHumidity, "AMBHUMIDITY", "[%] observatory relative humidity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE | RTS2_DT_PERCENTS);
 	telHumidity->setValueFloat (70);
 
 	createValue (telWavelength, "WAVELENGTH", "[nm] incoming radiation wavelength", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
