@@ -257,9 +257,9 @@ for fn in options.files:
 	else:
 		options.cube = True
 		print _('Detected cube image, switch to cube mode')
-		d_x = len(hdu[0].data[0])
+		d_x = hdu[0].header['NAXIS1']
 		c_x = d_x / 2.0
-		d_y = len(hdu[0].data[0][0])
+		d_y = hdu[0].header['NAXIS2']
 		c_y = d_y / 2.0
 
 	if options.verbose:
