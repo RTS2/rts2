@@ -70,11 +70,6 @@ class Rotator:public rts2core::Device
 		double getPA (double t);
 
 		/**
-		 * Runs PA tracking.
-		 */
-		void runPATracking ();
-
-		/**
 		 * Returns >0 if rotator is rotating image.
 		 */
 		virtual long isRotating () = 0;
