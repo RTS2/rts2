@@ -105,6 +105,7 @@ class SitechAltAz:public AltAz
 		rts2core::ValueDouble *trackingDist;
 		rts2core::ValueFloat *trackingLook;
 		rts2core::ValueBool *userTrackingLook;
+		int lastTrackingNum;
 		rts2core::ValueDoubleStat *trackingAngle;
 		rts2core::ValueDoubleStat *speedAngle;
 		rts2core::ValueDouble *slowSyncDistance;
@@ -239,6 +240,10 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (trackingLook, "tracking_look", "[s] future position", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 	createValue (userTrackingLook, "look_user", "user specified tracking lookahead", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
+	trackingLook->setValueDouble (2);
+	userTrackingLook->setValueBool (false);
+	lastTrackingNum = 0;
 
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
@@ -544,7 +549,7 @@ int SitechAltAz::isMoving ()
 	double tdist = getTargetDistanceMax ();
 
 	// change tracking lookahead
-	if (userTrackingLook->getValueBool () == false && trackingNum % 5 == 0)
+	if (userTrackingLook->getValueBool () == false && abs (trackingNum - lastTrackingNum) > 5)
 	{
 		float change = 0;
 		double trackSep = ln_range_degrees (fabs (userTrackingLook->getValueDouble () - speedAngle->getValueDouble ()));
@@ -577,6 +582,7 @@ int SitechAltAz::isMoving ()
 
 		if (change != 0)
 		{
+			logStream (MESSAGE_DEBUG) << "changing tracking look by " << change << "s from " << trackingLook->getValueFloat () << ", stdecs " << trackingAngle->getStdev () << " " << speedAngle->getStdev () << " tracksep " << trackSep << sendLog;
 			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
 			if (trackingLook->getValueFloat () > 15)
 				trackingLook->setValueFloat (15);
@@ -584,6 +590,7 @@ int SitechAltAz::isMoving ()
 				trackingLook->setValueFloat (0.5);
 		}
 		sendValueAll (trackingLook);
+		lastTrackingNum = trackingNum;
 	}
 
 	if (tdist > trackingDist->getValueDouble ())
