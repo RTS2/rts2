@@ -1,0 +1,46 @@
+#!/usr/bin/python
+
+# List catalogue entries
+#
+# (C) 2017 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+import rts2.scat
+import argparse
+import gettext
+gettext.install('rts2-scat')
+
+parser = argparse.ArgumentParser(description=_('Search Hiparcos catalogue for a stars'))
+parser.add_argument('--radius', help=_('Search radius (deg,\',")'), action='store', dest='radius', default='1')
+parser.add_argument('objects', help=_('Object coordinates (ra/dec pairs,..) to search'), type=str, nargs='*')
+
+args = parser.parse_args()
+
+degdist = 1
+
+if args.radius[-1] == '\'':
+	degdist = float(args.radius[:-1]) * 60.0
+elif args.radius[-1] == '"':
+	degdist = float(args.radius[:-1]) * 3600.0
+else:
+	degdist = float(args.radius)
+
+for radec in args.objects:
+	ra, dec = map(float,radec.split(':'))
+	print _('Searching for stars around {0:.5f} {1:.5f} in {2:4.0f}"').format(ra, dec, degdist * 3600.0)
+	stars = rts2.scat.search_catalogue(ra, dec, degdist)
+	for s in stars:
+		print s

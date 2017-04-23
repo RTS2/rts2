@@ -25,15 +25,16 @@ def angular_separation(ra1,dec1,ra2,dec2):
 	a2 = radians(ra2)
 	d2 = radians(dec2)
 
+	return degrees(angular_separation_rad(a1,d1,a2,d2))
+
+def angular_separation_rad(a1,d1,a2,d2):
 	x = (cos(d1) * sin(d2)) - (sin(d1) * cos(d2) * cos(a2-a1))
 	y = cos(d2) * sin(a2-a1)
 	z = (sin(d1) * sin(d2)) + (cos(d1) * cos(d2) * cos(a2-a1))
 
 	x = x * x;
 	y = y * y;
-	d = arctan2(sqrt(x+y),z)
-
-	return degrees(d)
+	return arctan2(sqrt(x+y),z)
 
 def equ_to_hrz(ra,dec,lst,latitude):
 	""" Transform RA-DEC (in degrees) vector to ALT-AZ (in degrees) vector"""
