@@ -955,6 +955,8 @@ class Telescope:public rts2core::Device
 		 */
 		void stopTracking (const char *msg = "tracking stopped");
 
+		int trackingNum;
+
 		/**
 		 * Called to run tracking. It is up to driver implementation
 		 * to send updated position to telescope driver.

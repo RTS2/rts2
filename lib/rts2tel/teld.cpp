@@ -181,6 +181,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	}
 
 	lastTrackingRun = NAN;
+	trackingNum = 0;
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J2000) - with offsets applied", true);
 
@@ -1130,6 +1131,8 @@ void Telescope::incMoveNum ()
 
 	corrImgId->setValueInteger (0);
 	wCorrImgId->setValueInteger (0);
+
+	trackingNum = 0;
 }
 
 void Telescope::recalculateMpecDIffs ()
@@ -1676,6 +1679,7 @@ void Telescope::runTracking ()
 		lastTrackLog = n + trackingLogInterval->getValueDouble ();
 	}
 	startCupolaSync ();
+	trackingNum++;
 }
 
 void Telescope::logTracking ()
