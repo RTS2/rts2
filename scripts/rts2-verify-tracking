@@ -240,13 +240,13 @@ pf = ProcessFiles(options.stars)
 
 for fn in options.files:
 	print _('Processing {0}').format(fn)
-	hdu = fits.open(fn)
+	hdu = fits.open(fn, mmap=True)
 
 	if options.verbose:
 		hdu.info()
 		if options.verbose < 2:
 			rts2.progressbar.progress(0, len(hdu[0].data))
-	if hdu[0].data.ndim == 2:
+	if hdu[0].header['NAXIS'] == 2:
 		if options.cube:
 			sys.exit(_("File {0} data have only {1} dimensions, not a cube").format(fn,hdu[0].data.ndim))
 
@@ -266,7 +266,7 @@ for fn in options.files:
 		print _('dim {0} {1} center {2} {3}').format(d_x, d_y, c_x, c_y)
 
 	if options.cube:
-		for ci in range(len(hdu[0].data)):
+		for ci in range(hdu[0].header['NAXIS3']):
 			ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci)
 			if ret == -1:
 				# split graphs
