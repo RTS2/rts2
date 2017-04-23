@@ -159,7 +159,7 @@ int SAAO::info ()
 			if (strncmp (data, "WS,", 3) == 0)
 			{
 				data += 4;
-				windSpeed->setValueFloat (strtod (data, &endptr));
+				windSpeed->setValueFloat (strtod (data, &endptr) * 3.6);
 				if (windSpeed->getValueFloat () > windLimit->getValueFloat ())
 				{
 					checkWeatherTimeout (120, "wind over limit");

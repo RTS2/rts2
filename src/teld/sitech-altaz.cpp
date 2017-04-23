@@ -540,7 +540,7 @@ int SitechAltAz::isMoving ()
 	}
 
 	info ();
-	double tdist = getTargetDistance ();
+	double tdist = getTargetDistanceMax ();
 
 	if (tdist > trackingDist->getValueDouble ())
 	{
