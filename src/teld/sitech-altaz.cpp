@@ -670,7 +670,7 @@ void SitechAltAz::scaleTrackingLook ()
 	if (userTrackingLook->getValueBool () == false && abs (trackingNum - lastTrackingNum) > 5)
 	{
 		float change = 0;
-		double trackSep = ln_range_degrees (fabs (userTrackingLook->getValueDouble () - speedAngle->getValueDouble ()));
+		double trackSep = ln_range_degrees (fabs (trackingAngle->getValueDouble () - speedAngle->getValueDouble ()));
 		if (trackSep > 180.0)
 			trackSep = fabs (trackSep - 360);
 
