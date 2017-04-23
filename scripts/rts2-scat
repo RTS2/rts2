@@ -38,9 +38,11 @@ elif args.radius[-1] == '"':
 else:
 	degdist = float(args.radius)
 
+hip = rts2.scat.Hipparcos('/home/petr/hipparcos/hipparcos')
+
 for radec in args.objects:
 	ra, dec = map(float,radec.split(':'))
 	print _('Searching for stars around {0:.5f} {1:.5f} in {2:4.0f}"').format(ra, dec, degdist * 3600.0)
-	stars = rts2.scat.search_catalogue(ra, dec, degdist)
+	stars = hip.search_catalogue(ra, dec, degdist)
 	for s in stars:
 		print s

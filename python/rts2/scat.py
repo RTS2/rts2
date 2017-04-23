@@ -36,26 +36,31 @@ class Star:
 	def get_separation(self, ra, dec):
 		return rts2.libnova.angular_separation_rad(ra, dec, self.sra0, self.sdec0)
 
-def search_catalogue(ra0,dec0,degdist=0.5,mag0=None,mag1=None):
-	#fn=astropy.utils.data.download_file('http://tdc-www.harvard.edu/catalogs/hipparcos.tar.gz',True)
-	#f = gzip.GzipFile(fn,'r')
+class Hipparcos:
+	def __init__(self, fn):
+		#fn=astropy.utils.data.download_file('http://tdc-www.harvard.edu/catalogs/hipparcos.tar.gz',True)
+		f = open('/home/petr/hipparcos/hipparcos','rb')
 
-	f = open('/home/petr/hipparcos/hipparcos','rb')
+		self.starlist = []
 
-	star0,star1,starn,stnum,mprop,nmag,nbent=struct.unpack('!iiiiiii',f.read(28))
+		star0,star1,starn,stnum,mprop,nmag,nbent=struct.unpack('!iiiiiii',f.read(28))
 
-	sn = star1
+		sn = star1
 
-	ra = numpy.radians(ra0)
-	dec = numpy.radians(dec0)
-	rad_dist = numpy.radians(degdist)
-
-	aret = []
-
-	while sn < starn:
-		astar = Star(f.read(nbent))
-		if astar.get_separation(ra, dec) < rad_dist:
-			aret.append(astar)
-		sn += 1
+		while sn < starn:
+			self.starlist.append(Star(f.read(nbent)))
+			sn += 1
 	
-	return aret
+	def search_catalogue(self,ra0, dec0, degdist=0.5, mag1=None, mag2=None):
+		aret = []
+
+		ra = numpy.radians(ra0)
+		dec = numpy.radians(dec0)
+		rad_dist = numpy.radians(degdist)
+
+		for s in self.starlist:
+			if s.get_separation(ra, dec) < rad_dist:
+				aret.append(s)
+
+		aret.sort(lambda x,y:cmp(x.get_separation(ra, dec), y.get_separation(ra, dec)))
+		return aret
