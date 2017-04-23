@@ -81,6 +81,7 @@ class SitechAltAz:public AltAz
 		}
 
 	private:
+		void scaleTrackingLook ();
 		void internalTracking (double sec_step, float speed_factor);
 
 		const char *tel_tty;
@@ -548,50 +549,9 @@ int SitechAltAz::isMoving ()
 	info ();
 	double tdist = getTargetDistanceMax ();
 
-	// change tracking lookahead
-	if (userTrackingLook->getValueBool () == false && abs (trackingNum - lastTrackingNum) > 5)
-	{
-		float change = 0;
-		double trackSep = ln_range_degrees (fabs (userTrackingLook->getValueDouble () - speedAngle->getValueDouble ()));
-		if (trackSep > 180.0)
-			trackSep = fabs (trackSep - 360);
+	scaleTrackingLook ();
 
-		if (trackingAngle->getStdev () > 2 || speedAngle->getStdev () > 2)
-		{
-			trackingLook->setValueFloat (15);
-		}
-		// scale trackingLook as needed
-		else if (trackingLook->getValueFloat () > 0.5 && trackSep < 1)
-		{
-			if (trackingLook->getValueFloat () > 5)
-				change = -1;
-			else if (trackingLook->getValueFloat () > 1)
-				change = -0.25;
-			else
-				change = -0.1;
-		}
-		else if (trackSep > 1)
-		{
-			if (trackingLook->getValueFloat () < 1)
-				change = 0.1;
-			else if (trackingLook->getValueFloat () < 5)
-				change = 0.25;
-			else
-				change = 1;
-		}
-
-		if (change != 0)
-		{
-			logStream (MESSAGE_DEBUG) << "changing tracking look by " << change << "s from " << trackingLook->getValueFloat () << ", stdecs " << trackingAngle->getStdev () << " " << speedAngle->getStdev () << " tracksep " << trackSep << sendLog;
-			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
-			if (trackingLook->getValueFloat () > 15)
-				trackingLook->setValueFloat (15);
-			else if (trackingLook->getValueFloat () < 0.5)
-				trackingLook->setValueFloat (0.5);
-		}
-		sendValueAll (trackingLook);
-		lastTrackingNum = trackingNum;
-	}
+	trackingNum++;
 
 	if (tdist > trackingDist->getValueDouble ())
 	{
@@ -601,7 +561,7 @@ int SitechAltAz::isMoving ()
 			if (tdist < slowSyncDistance->getValueDouble ())
 				internalTracking (trackingLook->getValueFloat (), trackingFactor->getValueFloat ());
 			else
-				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
+				internalTracking (15.0, fastSyncSpeed->getValueFloat ());
 			return USEC_SEC * trackingInterval->getValueFloat () / 1000;
 		}
 
@@ -666,6 +626,7 @@ void SitechAltAz::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
+	scaleTrackingLook ();
 	internalTracking (trackingLook->getValueFloat (), trackingFactor->getValueFloat ());
 	AltAz::runTracking ();
 
@@ -702,6 +663,55 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 	return AltAz::setValue (oldValue, newValue);
 }
+
+void SitechAltAz::scaleTrackingLook ()
+{
+	// change tracking lookahead
+	if (userTrackingLook->getValueBool () == false && abs (trackingNum - lastTrackingNum) > 5)
+	{
+		float change = 0;
+		double trackSep = ln_range_degrees (fabs (userTrackingLook->getValueDouble () - speedAngle->getValueDouble ()));
+		if (trackSep > 180.0)
+			trackSep = fabs (trackSep - 360);
+
+		if (trackingAngle->getStdev () > 2 || speedAngle->getStdev () > 2)
+		{
+			trackingLook->setValueFloat (15);
+		}
+		// scale trackingLook as needed
+		else if (trackingLook->getValueFloat () > 0.5 && trackSep < 1)
+		{
+			if (trackingLook->getValueFloat () > 5)
+				change = -1;
+			else if (trackingLook->getValueFloat () > 1)
+				change = -0.25;
+			else
+				change = -0.1;
+		}
+		else if (trackSep > 1)
+		{
+			if (trackingLook->getValueFloat () < 1)
+				change = 0.1;
+			else if (trackingLook->getValueFloat () < 5)
+				change = 0.25;
+			else
+				change = 1;
+		}
+
+		if (change != 0)
+		{
+			logStream (MESSAGE_DEBUG) << "changing tracking look by " << change << "s from " << trackingLook->getValueFloat () << ", stdecs " << trackingAngle->getStdev () << " " << speedAngle->getStdev () << " tracksep " << trackSep << sendLog;
+			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
+			if (trackingLook->getValueFloat () > 15)
+				trackingLook->setValueFloat (15);
+			else if (trackingLook->getValueFloat () < 0.5)
+				trackingLook->setValueFloat (0.5);
+		}
+		sendValueAll (trackingLook);
+		lastTrackingNum = trackingNum;
+	}
+}
+
 
 void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 {
