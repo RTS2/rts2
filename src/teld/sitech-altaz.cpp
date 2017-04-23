@@ -667,40 +667,32 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 void SitechAltAz::scaleTrackingLook ()
 {
 	// change tracking lookahead
-	if (userTrackingLook->getValueBool () == false && abs (trackingNum - lastTrackingNum) > 5)
+	if (userTrackingLook->getValueBool () == false && abs (trackingNum - lastTrackingNum) > 3)
 	{
 		float change = 0;
-		double trackSep = ln_range_degrees (fabs (trackingAngle->getValueDouble () - speedAngle->getValueDouble ()));
-		if (trackSep > 180.0)
-			trackSep = fabs (trackSep - 360);
 
-		if (trackingAngle->getStdev () > 5 || speedAngle->getStdev () > 5)
-		{
-			trackingLook->setValueFloat (15);
-		}
 		// scale trackingLook as needed
-		else if (trackingLook->getValueFloat () > 0.5 && trackSep < 3)
-		{
-			if (trackingLook->getValueFloat () > 5)
-				change = -1;
-			else if (trackingLook->getValueFloat () > 1)
-				change = -0.25;
-			else
-				change = -0.1;
-		}
-		else if (trackSep > 3)
+		if (trackingAngle->getStdev () > 2 || speedAngle->getStdev () > 2)
 		{
 			if (trackingLook->getValueFloat () < 1)
 				change = 0.1;
 			else if (trackingLook->getValueFloat () < 5)
-				change = 0.25;
+				change = 0.5;
 			else
-				change = 1;
+				change = 2;
+		}
+		else if (trackingLook->getValueFloat () > 0.5)
+		{
+			if (trackingLook->getValueFloat () > 5)
+				change = -2;
+			else if (trackingLook->getValueFloat () > 1)
+				change = -0.5;
+			else
+				change = -0.1;
 		}
 
 		if (change != 0)
 		{
-			logStream (MESSAGE_DEBUG) << "changing tracking look by " << change << "s from " << trackingLook->getValueFloat () << ", stdecs " << trackingAngle->getStdev () << " " << speedAngle->getStdev () << " tracksep " << trackSep << sendLog;
 			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
 			if (trackingLook->getValueFloat () > 15)
 				trackingLook->setValueFloat (15);
