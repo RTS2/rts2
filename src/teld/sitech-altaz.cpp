@@ -674,12 +674,12 @@ void SitechAltAz::scaleTrackingLook ()
 		if (trackSep > 180.0)
 			trackSep = fabs (trackSep - 360);
 
-		if (trackingAngle->getStdev () > 2 || speedAngle->getStdev () > 2)
+		if (trackingAngle->getStdev () > 5 || speedAngle->getStdev () > 5)
 		{
 			trackingLook->setValueFloat (15);
 		}
 		// scale trackingLook as needed
-		else if (trackingLook->getValueFloat () > 0.5 && trackSep < 1)
+		else if (trackingLook->getValueFloat () > 0.5 && trackSep < 3)
 		{
 			if (trackingLook->getValueFloat () > 5)
 				change = -1;
@@ -688,7 +688,7 @@ void SitechAltAz::scaleTrackingLook ()
 			else
 				change = -0.1;
 		}
-		else if (trackSep > 1)
+		else if (trackSep > 3)
 		{
 			if (trackingLook->getValueFloat () < 1)
 				change = 0.1;
