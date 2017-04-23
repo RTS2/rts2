@@ -395,6 +395,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	wcs_multi = '!';
 
+	useOEpoch = true;
+
 	addOption (OPT_RTS2_MODEL, "rts2-model", 1, "RTS2 pointing model filename");
 	addOption (OPT_T_POINT_MODEL, "t-point-model", 1, "T-Point model filename");
 	addOption ('l', NULL, 1, "separation limit (corrections above that number in degrees will be ignored)");
@@ -520,8 +522,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	}
 
 	// offsets, corrections,..
-	out_tar->ra += getOffsetRa () + gOffsRaDec->getRa ();
-	out_tar->dec += getOffsetDec () + gOffsRaDec->getDec ();
+	applyOffsets (out_tar);
 
 	// crossed pole, put on opposite side..
 	if (out_tar->dec > 90)
@@ -634,12 +635,9 @@ void Telescope::createDecPAN ()
 }
 
 
-void Telescope::applyOffsets (struct ln_equ_posn *pos, bool oriSet)
+void Telescope::applyOffsets (struct ln_equ_posn *pos)
 {
-	pos->ra = oriRaDec->getRa ();
-	pos->dec = oriRaDec->getDec ();
-
-	if (oriSet == false && oriEpoch->getValueDouble () != 2000.0)
+	if (useOEpoch && oriEpoch->getValueDouble () != 2000.0)
 	{
 		struct ln_date ld;
 		struct ln_equ_posn ori;
@@ -2102,7 +2100,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 
 	// apply computed corrections (precession, aberation, refraction)
 	double utc1, utc2;
-	bool oriSet = false;
+	useOEpoch = true;
 
 #ifdef RTS2_LIBERFA
 	getEraUTC (utc1, utc2);
@@ -2121,7 +2119,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		LibnovaCurrentFromOrbit (&pos, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
 
 		setOri (pos.ra, pos.dec);
-		oriSet = true;
+		useOEpoch = false;
 	}
 
 	// calculate from TLE..
@@ -2131,7 +2129,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 		calculateTLE (utc1 + utc2, ra, dec, dist_to_satellite);
 		setOri (ln_rad_to_deg (ra), ln_rad_to_deg (dec));
 		tle_distance->setValueDouble (dist_to_satellite);
-		oriSet = true;
+		useOEpoch = false;
 	}
 
 	// if object was not specified, do not move
@@ -2180,7 +2178,10 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
 
 	// first apply offset
-	applyOffsets (&pos, oriSet);
+	pos.ra = oriRaDec->getRa ();
+	pos.dec = oriRaDec->getDec ();
+
+	applyOffsets (&pos);
 
 	pos.ra = ln_range_degrees (pos.ra);
 

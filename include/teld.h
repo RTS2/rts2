@@ -217,7 +217,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *raPANSpeed;
 		rts2core::ValueDouble *decPANSpeed;
 
-		void applyOffsets (struct ln_equ_posn *pos, bool oriSet = false);
+		void applyOffsets (struct ln_equ_posn *pos);
 
 		void applyAltAzOffsets (struct ln_hrz_posn *hrz)
 		{
@@ -1407,6 +1407,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *decUpperLimit;
 
 		void setOri (double obj_ra, double obj_dec, double epoch = 2000.0, double pmRa = 0, double pmDec = 0);
+		bool useOEpoch;
 
 		void resetMpecTLE ();
 
