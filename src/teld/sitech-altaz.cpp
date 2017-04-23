@@ -544,7 +544,7 @@ int SitechAltAz::isMoving ()
 	double tdist = getTargetDistanceMax ();
 
 	// change tracking lookahead
-	if (userTrackingLook->getValueBool () == false && trackingNum % 15 == 0)
+	if (userTrackingLook->getValueBool () == false && trackingNum % 5 == 0)
 	{
 		float change = 0;
 		double trackSep = ln_range_degrees (fabs (userTrackingLook->getValueDouble () - speedAngle->getValueDouble ()));
