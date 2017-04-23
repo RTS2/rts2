@@ -125,6 +125,7 @@ int SX::processOption (int in_opt)
 			break;
 		case 'r':
 			rebootable = true;
+			break;
 		default:
 			return Camera::processOption (in_opt);
 	}
