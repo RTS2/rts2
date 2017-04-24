@@ -285,7 +285,8 @@ void SitechRotator::processAxisStatus (rts2core::SitechAxisStatus *der_status)
 					break;
 			}
 
-			pos_error->setValueInteger (*(uint16_t*) &(axis == 'X' ? der_status->x_last[2] : der_status->y_last[2]));
+			pos_error->addValue (*(int16_t*) &(axis == 'X' ? der_status->x_last[2] : der_status->y_last[2]), 20);
+			pos_error->calculate ();
 			break;
 		}
 	}
