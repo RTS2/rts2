@@ -1,4 +1,4 @@
-	/**
+/**
  * Driver for APM auxiliary devices (mirror covers, fans,..)
  * Copyright (C) 2015 Stanislav Vitek
  * Copyright (C) 2016 Petr Kubanek
@@ -360,9 +360,15 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 	if (baffleCommand != NULL && !std::isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
 	{
 		if (baffle->getValueInteger () == 1)
+		{
 			baffle->setValueInteger (2);
+			logStream (MESSAGE_INFO) << "baffle opened" << sendLog;
+		}
 		if (baffle->getValueInteger () == 3)
+		{
 			baffle->setValueInteger (0);
+			logStream (MESSAGE_INFO) << "baffle closed" << sendLog;
+		}
 		baffleCommand->setValueDouble (NAN);
 		sendValueAll (baffle);
 		sendValueAll (baffleCommand);
@@ -384,6 +390,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 				coverState->setValueInteger (0);
 				sendValueAll (coverState);
 				setOCBlock ();
+				logStream (MESSAGE_INFO) << "cover closed" << sendLog;
 				break;
 			case '1':
 				if (!std::isnan (coverCommand->getValueDouble ()))
@@ -396,6 +403,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 				coverState->setValueInteger (2);
 				sendValueAll (coverState);
 				setOCBlock ();
+				logStream (MESSAGE_INFO) << "cover opened" << sendLog;
 				break;
 			case '2':
 				// ignore, probably after startup..
