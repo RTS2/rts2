@@ -256,7 +256,11 @@ bool SAAO::isGoodWeather ()
 	time_t now;
 	time (&now);
 	if (lastGood->getValueDouble () > now)
+	{
+		// forced safe weather - even when weather is in timeout
+		SensorWeather::isGoodWeather ();
 		return true;
+	}
 
 	if (getLastInfoTime () > 120)
 	{
