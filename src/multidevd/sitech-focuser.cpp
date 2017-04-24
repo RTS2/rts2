@@ -22,6 +22,8 @@
 
 using namespace rts2focusd;
 
+#define POSITION_FACTOR     100
+
 SitechFocuser::SitechFocuser (const char *name, rts2core::ConnSitech *sitech_c, const char *defaults, const char *extTemp):Focusd (0, NULL), SitechMultidev ()
 {
 	setDeviceName (name);
@@ -63,7 +65,7 @@ int SitechFocuser::info ()
 {
 	sitech->getAxisStatus ('X', axisStatus);
 
-	position->setValueInteger (axisStatus.y_pos);
+	position->setValueDouble (axisStatus.y_pos / POSITION_FACTOR);
 	encoder->setValueLong (axisStatus.y_enc);
 
 	autoMode->setValueBool ((axisStatus.extra_bits & AUTO_Y) == 0);
@@ -110,7 +112,7 @@ int SitechFocuser::commandAuthorized (rts2core::Connection *conn)
 
 int SitechFocuser::setTo (double num)
 {
-	sitech->setPosition ('Y', num, focSpeed->getValueLong ());
+	sitech->setPosition ('Y', num * POSITION_FACTOR, focSpeed->getValueLong ());
 
 	return 0;
 }
