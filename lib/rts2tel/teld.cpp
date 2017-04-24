@@ -2538,19 +2538,29 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
 		return ret;
 	}
+	else if (conn->isCommand (COMMAND_TELD_MOVE_EPOCH))
+	{
+		double epoch, pmRa, pmDec;
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || conn->paramNextDouble (&epoch))
+			return DEVDEM_E_PARAMSNUM;
+
+		modelOn ();
+		setOri (obj_ra, obj_dec, epoch, 0, 0);
+		resetMpecTLE ();
+		startTracking (true);
+		ret = startResyncMove (conn, 0);
+		if (ret)
+			maskState (TEL_MASK_TRACK, TEL_NOTRACK, "stop tracking, move cannot be perfomed");
+		return ret;
+	}
 	else if (conn->isCommand (COMMAND_TELD_MOVE_EPOCH_PM))
 	{
 		double epoch, pmRa, pmDec;
 		pmRa = 0;
 		pmDec = 0;
-		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || conn->paramNextDouble (&epoch))
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || conn->paramNextDouble (&epoch) || conn->paramNextDouble (&pmRa) || conn->paramNextDouble (&pmDec) || !conn->paramEnd ())
 			return DEVDEM_E_PARAMSNUM;
 
-		if (conn->paramEnd ())
-		{
-			if (conn->paramNextDouble (&pmRa) || conn->paramNextDouble (&pmDec) || !conn->paramEnd ())
-				return DEVDEM_E_PARAMSNUM;
-		}
 		modelOn ();
 		setOri (obj_ra, obj_dec, epoch, pmRa / 3600.0, pmDec / 3600.0);
 		resetMpecTLE ();

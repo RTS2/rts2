@@ -76,6 +76,8 @@
  */
 #define COMMAND_TELD_MOVE_PM    "move_pm"
 
+#define COMMAND_TELD_MOVE_EPOCH  "move_epoch"
+
 /**
  * Move to position in given epoch, with proper motions (arcsec/year).
  * Proper motions are defined in arcseconds.
