@@ -51,8 +51,7 @@ SitechRotator::SitechRotator (const char ax, const char *name, rts2core::ConnSit
 
 	createValue (pos_error, "pos_error", "derotator position error", false);
 	createValue (supply, "supply", "[V] derotator position error", false);
-	createValue (temp, "temp", "[F] derotator temperature", false);
-	createValue (pid_out, "pid_out", "1st derotator PID output", false);
+	createValue (pid_out, "pid_out", "derotator PID output", false);
 	createValue (autoMode, "auto", "derotator auto mode", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	createValue (ticks, "_ticks", "[cnts] counts per full turn", false);
 	createValue (mclock, "mclock", "derotator clocks", false);
