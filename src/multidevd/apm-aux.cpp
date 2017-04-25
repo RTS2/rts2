@@ -220,7 +220,6 @@ int APMAux::open ()
 		return -2;
 	commandInProgress = OPENING;
 	maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_OPEN);
-	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 	return openBaffle ();
 }
 
@@ -230,7 +229,6 @@ int APMAux::close ()
 	{
 		commandInProgress = CLOSING;
 		maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
-		addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 		return closeCover ();
 	}
 	if (baffleCommand->getValueInteger () > time (NULL))
@@ -254,6 +252,8 @@ int APMAux::openCover ()
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
 	sendValueAll (coverCommand);
 
+	addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
+
 	return 0;
 }
 
@@ -271,6 +271,8 @@ int APMAux::closeCover ()
 
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
 	sendValueAll (coverCommand);
+
+	addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 
 	return 0;
 }
@@ -292,6 +294,8 @@ int APMAux::openBaffle ()
 	baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
 	sendValueAll (baffleCommand);
 
+	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
+
 	return 0;
 }
 
@@ -310,6 +314,8 @@ int APMAux::closeBaffle ()
 		sendValueAll (baffleCommand);
 		setOCBlock ();
 	}
+
+	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 
 	return 0;
 }
