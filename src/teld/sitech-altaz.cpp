@@ -871,8 +871,8 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 	altaz_Xrequest.y_dest = ac;
 	altaz_Xrequest.x_dest = dc;
 
-	altaz_Xrequest.y_speed = telConn->degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI;
-	altaz_Xrequest.x_speed = telConn->degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI;
+	altaz_Xrequest.y_speed = labs (telConn->degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI);
+	altaz_Xrequest.x_speed = labs (telConn->degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI);
 
 	// clear bit 4, tracking
 	xbits &= ~(0x01 << 4);
