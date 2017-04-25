@@ -561,8 +561,8 @@ bool ValueBoxArray::setCursor ()
 
 ValueBoxPair::ValueBoxPair (NWindow * top, rts2core::ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
 {
-	edt[0] = new NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
-	edt[1] = new NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[0] = new NWindowEditDegrees (top->getX () + _x + 5, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[1] = new NWindowEditDegrees (top->getX () + _x + 20, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
 
 	edt[0]->setValueDouble (_val->getRa ());
 	edt[1]->setValueDouble (_val->getDec ());
@@ -600,7 +600,7 @@ keyRet ValueBoxPair::injectKey (int key)
 			return RKEY_HANDLED;
 	}
 
-	return edt[edtSelected]->injectKey (key);	
+	return edt[edtSelected]->injectKey (key);
 }
 
 void ValueBoxPair::draw ()

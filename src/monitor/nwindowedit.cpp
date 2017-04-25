@@ -169,6 +169,11 @@ NWindowEditDigits::NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int
 {
 }
 
+void NWindowEditDigits::setValueDouble (double _val)
+{
+	wprintw (getWriteWindow (), "%f", _val);
+}
+
 bool NWindowEditDigits::passKey (int key)
 {
 	if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
@@ -189,6 +194,57 @@ double NWindowEditDigits::getValueDouble ()
 	}
 	return tval;
 }
+
+NWindowEditDegrees::NWindowEditDegrees (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEditDigits (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+{
+}
+
+void NWindowEditDegrees::setValueDouble (double _val)
+{
+	wprintw (getWriteWindow (), "%f", _val);
+}
+
+bool NWindowEditDegrees::passKey (int key)
+{
+	if (key == '"' || key == '\'' || key == 'd' || key == 'm' || key == 's')
+		return true;
+	return NWindowEditDigits::passKey (key);
+}
+
+double NWindowEditDegrees::getValueDouble ()
+{
+	char buf[200];
+	char *endptr;
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	char *p = buf;
+	double tval = 0;
+	while (*p != '\0')
+	{
+		double v = strtod (p, &endptr);
+		switch (*endptr)
+		{
+			case 'd':
+			case '\0':
+				tval += v;
+				break;
+			case 'm':
+			case '\'':
+				tval += v / 60.0;
+				break;
+			case 's':
+			case '"':
+				tval += v / 3600.0;
+				break;
+			default:
+				return tval;
+		}
+		p = endptr;
+		if (*p != '\0')
+			p++;
+	}
+	return tval;
+}
+
 
 NWindowEditBool::NWindowEditBool (int _type, int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
