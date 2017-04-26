@@ -69,8 +69,7 @@ keyRet NWindowEdit::injectKey (int key)
 				wmove (getWriteWindow (), getCurY (), x + 1);
 			break;
 		default:
-			if (isalnum (key) || isspace (key) || key == '+' || key == '-'
-				|| key == '.' || key == ',' || key == '_' || key == '/' || key == '\\')
+			if (isalnum (key) || isspace (key) || key == '+' || key == '-' || key == '.' || key == ',' || key == '_' || key == '/' || key == '\\' || key == '"' || key == '\'')
 			{
 				if (passKey (key))
 				{
