@@ -156,7 +156,7 @@ void Rotator::checkRotators ()
 		double pa = getPA (t);
 		if (!std::isnan (pa))
 		{
-			setTarget (getPA (t));
+			setTarget (pa);
 			int ret = isRotating ();
 			if (ret >= 0)
 			{
