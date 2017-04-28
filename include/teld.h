@@ -1042,6 +1042,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *jdVal;
 
 		rts2core::ValueFloat *trackingInterval;
+		rts2core::ValueFloat *corrAgresivityCap;
 
 		/**
 		 * Returns differential tracking values. Telescope must support

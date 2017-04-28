@@ -164,6 +164,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
+		createValue (corrAgresivityCap, "tracking_agressivity", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
+		corrAgresivityCap->setValueFloat (50);
+
 		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
 		createValue (trackingWarning, "tracking_warning", "issue warning if tracking frequency drops bellow this number", false, RTS2_VALUE_WRITABLE);
@@ -176,6 +179,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
+		corrAgresivityCap = NULL;
 		trackingFrequency = NULL;
 		trackingWarning = NULL;
 		skyVect = NULL;
@@ -581,10 +585,12 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	double agresivity_ac = fabs ((double) (ac - c_ac) / (ac - t_ac));
 	double agresivity_dc = fabs ((double) (dc - c_dc) / (dc - t_dc));
 
-/*	if (agresivity_ac > 1)
-		agresivity_ac = 1;
-	if (agresivity_dc > 1)
-		agresivity_dc = 1; */
+	double agCap = corrAgresivityCap->getValueFloat () / 100.0;
+
+	if (agresivity_ac > agCap)
+		agresivity_ac = agCap;
+	if (agresivity_dc > agCap)
+		agresivity_dc = agCap;
 
 	ac_speed = ((c_ac - t_ac) + agresivity_ac * (ac - c_ac)) / sec_step;
 	dc_speed = ((c_dc - t_dc) + agresivity_dc * (dc - c_dc)) / sec_step;
