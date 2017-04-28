@@ -224,6 +224,7 @@ double NWindowEditDegrees::getValueDouble ()
 		{
 			case 'd':
 			case '\0':
+			case ' ':
 				tval += v;
 				break;
 			case 'm':
