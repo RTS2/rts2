@@ -33,6 +33,7 @@
     <copyright>
       <year>2015</year>
       <year>2016</year>
+      <year>2017</year>
       <holder>&dhusername;</holder>
     </copyright>
     &legal;
@@ -58,6 +59,7 @@
       <arg choice="plain"><option>-p <replaceable class="parameter">plots</replaceable></option></arg>
       <arg choice="plain"><option>-v</option></arg>
       <arg choice="plain"><option>--latitude <replaceable class="parameter">observatory latitude</replaceable></option></arg>
+      <arg choice="plain"><option>--refine <replaceable class="parameter">existing model</replaceable></option></arg>
     </cmdsynopsis>
 
     <cmdsynopsis>
@@ -82,26 +84,102 @@
     
     <para>
       Purpose of the pointing model is to correct for various missaligement,
-      caused either by mechanical or electronics components of the telescope.
+      caused either by mechanical or electronic components of the telescope.
       GPoint is a tool to generate and verify such poiting model.
     </para>
 
     <para>
       For model generation, input file is needed. This can be prepared from
-      pointing run images, where correct WCS is recorded. GPoint itself cannot
-      prepare the input file. Input file must contain local sidereal time,
-      relevant RA and DEC of the telescope (in telescope coordinates, where
-      e.g. on GEM DEC axis values continue to count above 90/below -90) and
-      true RA DEC coordinates (of center pixel on camera).
+      pointing run images, where correct WCS is recorded, or from run poiting
+      and centering bright stars.  GPoint itself cannot prepare the input file.
+      Input file must contain local sidereal time, relevant RA and DEC of the
+      telescope (in telescope coordinates, where e.g. on GEM DEC axis values
+      continue to count above 90/below -90) and true RA DEC coordinates (of
+      center pixel on camera).
     </para>
 
     <para>
-      RTS2 provides a way to run pointing model target. In
-      scripts/build-model.py is a Python script, which if executed as exe
+      RTS2 provides a way to run pointing model target. Either by getting
+      offsets through astrometry, or better by getting offsets from astrometry
+      of bright stars with a given proper motion. The paragraph
+      <citerefentry><refentrytitle>Acquiring data</refentrytitle></citerefentry> describes 
+      those procedurs in a slightly bigger detail.
+    </para>
+
+    <para>
+      Input data are fit with least square method. The program provides ways to
+      plot various graphs, limit and discards bad lines in the input and bad
+      pointing terms, and save various results.
+    </para>
+
+    <para>
+      GPoint can be run in interactive mode, so the user can modify model
+      fitting parametrs and see the results.
+    </para>
+  </refsect1>
+
+  <refsect1 id="Acquiring data">
+    <title>Acquiring data</title>
+    <para>
+      In scripts/build-model.py is a Python script, which if executed as exe
       (<emphasis>exe /etc/rts2/build-model.py</emphasis>) will take exposures
       distributed on the sky. If those files are processed by for example
       <citerefentry><refentrytitle>astrometry.net</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-      to obtain true WCS coordinates, they can be feeded to gpoint.
+      to obtain true WCS coordinates, they can be feeded to gpoint. For this,
+      rts2-fits2gpoint is provided.
+    </para>
+
+    <para>
+      To build model from bright stars, use
+      <emphasis>rts2-built-model-tool</emphasis>. Various input parameters
+      govern the script use, please consult program help for details. In a nutshel, the script:
+      <orderedlist>
+        <listitem>
+	  <para>
+	    picks a alt-az coordinates (either random, or from a given path)
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    finds closest bright star above minimal altitude limit (defaults to
+	    15 degrees, as only fanatic GRB observers look for object below
+	    that limit).
+          </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    points telescope to the bright star
+	  </para>
+	</listitem>
+	<listitem>
+          <para>
+	    tooks image of the field
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    finds stars on the image. If there isn't a star with flux above
+	    the flux limit, continues with the step number 1
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    select the brightests star, calculate its X Y coordinates
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    if the star is closer to specified center than specified limit
+	    distance, record az alt offsets, and continues with the step number 1
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    otherwise computes alt/az or ha/dec offsets, feeds those to
+	    telescope, and continues with the step number 4
+	  </para>
+	</listitem>
+      </orderedlist>
     </para>
 
   </refsect1>
@@ -132,8 +210,9 @@
     <para>
       Lines starting with # are treated as comments and are ignored. The only exception is for
       lines providing telescope type (gem or altaz) and observatory coordinates. Those are identified by
-      starting #, followed by either "gem" or "altaz", then followed by longitude, latitude and altitude
-      of the telescope.
+      starting #, followed by either "gem", "altaz" or "altaz-manual" and then
+      followed by longitude, latitude (in degrees east / toward noth) and
+      altitude (in meters above see level) of the telescope.
     </para>
   </refsect1>
   <refsect1>
@@ -141,10 +220,12 @@
   </refsect1>
   <refsect1>
     <title>Input files examples</title>
-    <para>
-      Following is an example of GEM file, where only offsets in RA and DEC are set:
-    </para>
-    <programlisting>
+    <refsect2>
+      <title>GEM</title>
+      <para>
+        Following is an example of GEM file, where only offsets in RA and DEC are set:
+      </para>
+      <programlisting>
 <![CDATA[
 # 15 degrees E, 50 degrees N, 600 m altitude
 # gem 15 50 600
@@ -159,11 +240,14 @@
 9    50000.8 280.800  340.000 60.000 -55800 55080 341.000  59.000
 10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
 ]]>
-    </programlisting>
-    <para>
-      And this is an example alt-az file, also with only offsets in AZ and ALT:
-    </para>
-    <programlisting>
+      </programlisting>
+    </refsect2>
+    <refsect2>
+      <title>AltAz</title>
+      <para>
+	This is an example alt-az file, also with only offsets in AZ and ALT.
+      </para>
+      <programlisting>
 <![CDATA[
 # 15 degrees E, 50 degrees N, 600 m altitude
 # altaz 15 50 600
@@ -178,7 +262,24 @@
 9    50000.8 280.800  340.000 60.000 -55800 55080 341.000  59.000
 10   50000.9 280.900  0.000   50.000 -55900 55090 1.000    49.000
 ]]>
-    </programlisting>
+      </programlisting>
+    </refsect2>
+    <refsect2>
+      <title>AltAz manual example</title>
+      <para>
+	There is an example of altaz input file, acquired in manual mode. This
+	differs from simple AltAz by listing RA DEC coordinates, skipping axis
+	counts, and listing azimuth and altitude errors instead of real
+	altitude and azimuth.
+      </para>
+      <programlisting>
+<![CDATA[
+# observatory 20.8 degrees W, 32.53 degrees S, 1850 m altitude
+# altaz-manual -20.8 -32.53 1850.0
+1    50000.0 356.214  -23.34 1.000 1.000 10.000 20.000
+]]>
+      </programlisting>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
