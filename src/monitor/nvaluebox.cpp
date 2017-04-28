@@ -187,7 +187,7 @@ bool ValueBoxLongInteger::setCursor ()
 
 ValueBoxFloat::ValueBoxFloat (NWindow * top, rts2core::ValueFloat * _val, int _x, int _y):ValueBox (top, _val),NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
-	wprintw (getWriteWindow (), "%f", _val->getValueFloat ());
+	wprintw (getWriteWindow (), "%g", _val->getValueFloat ());
 }
 
 keyRet ValueBoxFloat::injectKey (int key)
@@ -228,7 +228,7 @@ bool ValueBoxFloat::setCursor ()
 
 ValueBoxDouble::ValueBoxDouble (NWindow * top, rts2core::ValueDouble * _val, int _x, int _y):ValueBox (top, _val),NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
-	wprintw (getWriteWindow (), "%f", _val->getValueDouble ());
+	wprintw (getWriteWindow (), "%g", _val->getValueDouble ());
 }
 
 keyRet ValueBoxDouble::injectKey (int key)
