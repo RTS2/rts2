@@ -111,7 +111,7 @@ const char * ValueDoubleStat::getDisplayValue ()
 			memcpy (buf, os.str ().c_str (), sizeof (buf));
 			break;
 		default:
-			snprintf (buf, sizeof(buf), "%g %i %g %g %g %g", getValueDouble (), numMes, mode, min, max, stdev);
+			snprintf (buf, sizeof(buf), "%g %i %g %g %g %g %g", getValueDouble (), numMes, mode, min, max, stdev, max - min);
 	}
 	return buf;
 }
