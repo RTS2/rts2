@@ -1413,6 +1413,7 @@ class Telescope:public rts2core::Device
 
 		double nextCupSync;
 		double lastTrackLog;
+		double unstableDist;
 };
 
 };

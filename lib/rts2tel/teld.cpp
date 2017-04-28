@@ -70,6 +70,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	nextCupSync = 0;
 	lastTrackLog = 0;
+	unstableDist = 0;
 
 	useParkFlipping = false;
 	
@@ -435,8 +436,13 @@ int Telescope::checkTracking (double maxDist)
 			{
 				valueGood (targetDistanceStat);
 				maskState (DEVICE_ERROR_MASK | TEL_MASK_UNSTABLE, TEL_STABLE, "stable pointing");
-				logStream (MESSAGE_INFO) << "stable telescope tracking - max distance " << LibnovaDegDist (targetDistanceStat->getMax ()) << sendLog;
+				logStream (MESSAGE_INFO) << "stable telescope tracking - max distance " << LibnovaDegDist (unstableDist) << ", current " << LibnovaDegDist (targetDistanceStat->getMax ()) << sendLog;
 				return 1;
+			}
+			else
+			{
+				if (targetDistanceStat->getMax () > unstableDist)
+					unstableDist = targetDistanceStat->getMax ();
 			}
 		}
 		else
@@ -2540,7 +2546,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 	}
 	else if (conn->isCommand (COMMAND_TELD_MOVE_EPOCH))
 	{
-		double epoch, pmRa, pmDec;
+		double epoch;
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || conn->paramNextDouble (&epoch))
 			return DEVDEM_E_PARAMSNUM;
 
