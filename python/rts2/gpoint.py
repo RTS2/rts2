@@ -662,31 +662,31 @@ class GPoint:
 			print 'Ier: {0}'.format(self.best.ier)
 
 		if self.altaz:
-			print 'Zero point in AZ (") {0}'.format(degrees(self.best.params['ia'])*3600.0)
-			print 'Zero point in ALT (") {0}'.format(degrees(self.best.params['ie'])*3600.0)
-			print 'Tilt of az-axis against N (") {0}'.format(degrees(self.best.params['tn'])*3600.0)
-			print 'Tilt of az-axis against E (") {0}'.format(degrees(self.best.params['te'])*3600.0)
-			print 'Non-perpendicularity of alt to az axis (") {0}'.format(degrees(self.best.params['npae'])*3600.0)
-			print 'Non-perpendicularity of optical axis to alt axis (") {0}'.format(degrees(self.best.params['npoa'])*3600.0)
-			print 'Tube flexure (") {0}'.format(degrees(self.best.params['tf'])*3600.0)
+			print 'Zero point in AZ ................................. {0:>9.2f}"'.format(degrees(self.best.params['ia'])*3600.0)
+			print 'Zero point in ALT ................................ {0:>9.2f}"'.format(degrees(self.best.params['ie'])*3600.0)
+			print 'Tilt of az-axis against N ........................ {0:>9.2f}"'.format(degrees(self.best.params['tn'])*3600.0)
+			print 'Tilt of az-axis against E ........................ {0:>9.2f}"'.format(degrees(self.best.params['te'])*3600.0)
+			print 'Non-perpendicularity of alt to az axis ........... {0:>9.2f}"'.format(degrees(self.best.params['npae'])*3600.0)
+			print 'Non-perpendicularity of optical axis to alt axis . {0:>9.2f}"'.format(degrees(self.best.params['npoa'])*3600.0)
+			print 'Tube flexure ..................................... {0:>9.2f}"'.format(degrees(self.best.params['tf'])*3600.0)
 		else:
-			print 'Zero point in DEC (") {0}'.format(degrees(self.best.params['id'])*3600.0)
-			print 'Zero point in RA (") {0}'.format(degrees(self.best.params['ih'])*3600.0)
+			print 'Zero point in DEC ............................ {0:>9.2f}"'.format(degrees(self.best.params['id'])*3600.0)
+			print 'Zero point in RA ............................. {0:>9.2f}"'.format(degrees(self.best.params['ih'])*3600.0)
 			i = sqrt(self.best.params['me']**2 + self.best.params['ma']**2)
-			print 'Angle between true and instrumental poles (") {0}'.format(degrees(i)*3600.0)
-			print 'Angle between line of pole and true meridian (deg) {0}'.format(degrees(atan2(self.best.params['ma'],self.best.params['me']))*3600.0)
-			print 'Telescope tube drop in HA and DEC (") {0}'.format(degrees(self.best.params['tf'])*3600.0)
-			print 'Angle between optical and telescope tube axes (") {0}'.format(degrees(self.best.params['np'])*3600.0)
-			print 'Mechanical orthogonality of RA and DEC axes (") {0}'.format(degrees(self.best.params['ma'])*3600.0)
-			print 'Dec axis flexure (") {0}'.format(degrees(self.best.params['daf'])*3600.0)
-			print 'Fork flexure (") {0}'.format(degrees(self.best.params['fo'])*3600.0)
+			print 'Angle between true and instrumental poles .... {0:>9.2f}"'.format(degrees(i)*3600.0)
+			print 'Angle between line of pole and true meridian . {0:>9.2f}"'.format(degrees(atan2(self.best.params['ma'],self.best.params['me']))*3600.0)
+			print 'Telescope tube drop in HA and DEC ............ {0:>9.2f}"'.format(degrees(self.best.params['tf'])*3600.0)
+			print 'Angle between optical and telescope tube axes  {0:>9.2f}"'.format(degrees(self.best.params['np'])*3600.0)
+			print 'Mechanical orthogonality of RA and DEC axes .. {0:>9.2f}"'.format(degrees(self.best.params['ma'])*3600.0)
+			print 'DEC axis flexure ............................. {0:>9.2f}"'.format(degrees(self.best.params['daf'])*3600.0)
+			print 'Fork flexure ................................. {0:>9.2f}"'.format(degrees(self.best.params['fo'])*3600.0)
 
 			print 'DIFF_MODEL RA',' '.join(map(str,self.diff_model_ha*3600))
 			print 'DIFF_MODEL DEC',' '.join(map(str,self.diff_model_dec*3600))
 			print self.get_model_type(),' '.join(map(str,self.best.params))
 
 		for e in self.extra:
-			print '{0}\t{1}"\t{2}'.format(e.axis.upper(),np.degrees(self.best.params[e.parname()].value)*3600.0,e)
+			print '{0}\t{1:.2f}"\t{2}'.format(e.axis.upper(),np.degrees(self.best.params[e.parname()].value)*3600.0,e)
 
 	def get_model_type(self):
 		if self.altaz:
@@ -700,27 +700,27 @@ class GPoint:
 			return np.sqrt(np.mean(np.square(vector)))
 
 		def print_vect_stat(v):
-			return 'MIN {0} MAX {1} MEAN {2} RMS {3} STDEV {4}'.format(np.min(v),np.max(v),np.mean(v),RMS(v),np.std(v))
+			return 'MIN {0:.3f}" MAX {1:.3f}" MEAN {2:.3f}" RMS {3:.3f}" STDEV {4:.3f}"'.format(np.min(v),np.max(v),np.mean(v),RMS(v),np.std(v))
 
 		print 'OBSERVATIONS {0}'.format(len(self.diff_angular_hadec))
-		print 'RMS RA DIFF',print_vect_stat(self.diff_ha*3600)
-		print 'RMS RA CORRECTED DIFF',print_vect_stat(self.diff_corr_ha*3600)
-		print 'RMS DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
-		print 'RMS AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
-		print 'RMS AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_corr_az*3600)
-		print 'RMS ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
-		print 'RMS ANGULAR RADEC SEP DIFF',print_vect_stat(self.diff_angular_hadec*3600)
-		print 'RMS ANGULAR ALTAZ SEP DIFF',print_vect_stat(self.diff_angular_altaz*3600)
-		print 'RMS ANGULAR SEP DIFF',print_vect_stat((self.diff_angular_altaz if self.altaz else self.diff_angular_hadec)*3600)
+		print 'RA DIFF',print_vect_stat(self.diff_ha*3600)
+		print 'RA CORRECTED DIFF',print_vect_stat(self.diff_corr_ha*3600)
+		print 'DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
+		print 'AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
+		print 'AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_corr_az*3600)
+		print 'ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
+		print 'ANGULAR RADEC SEP DIFF',print_vect_stat(self.diff_angular_hadec*3600)
+		print 'ANGULAR ALTAZ SEP DIFF',print_vect_stat(self.diff_angular_altaz*3600)
+		print 'ANGULAR SEP DIFF',print_vect_stat((self.diff_angular_altaz if self.altaz else self.diff_angular_hadec)*3600)
 
 		if self.best is not None:
-			print 'RMS MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
-			print 'RMS MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_corr_ha*3600)
-			print 'RMS MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
-			print 'RMS MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
-			print 'RMS MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_corr_az*3600)
-			print 'RMS MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
-			print 'RMS MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
+			print 'MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
+			print 'MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_corr_ha*3600)
+			print 'MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
+			print 'MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
+			print 'MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_corr_az*3600)
+			print 'MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
+			print 'MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
 
 	# set X axis to MJD data
 	def set_x_axis(self,plot):
