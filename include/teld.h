@@ -1416,6 +1416,9 @@ class Telescope:public rts2core::Device
 		double nextCupSync;
 		double lastTrackLog;
 		double unstableDist;
+
+		void updateDUT1 ();
+		const char *dut1fn;
 };
 
 };

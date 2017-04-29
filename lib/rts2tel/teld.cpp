@@ -38,6 +38,8 @@
 #include "gpointmodel.h"
 #include "tpointmodel.h"
 
+#include "dut1.h"
+
 #ifdef RTS2_LIBERFA
 #include "erfa.h"
 #endif
@@ -50,6 +52,7 @@
 #define OPT_DEC_UPPER_LIMIT   OPT_LOCAL + 122
 #define OPT_RTS2_MODEL	OPT_LOCAL + 123
 #define OPT_T_POINT_MODEL	 OPT_LOCAL + 124
+#define OPT_DUT1_USNO       OPT_LOCAL + 125
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 1200
 #define EVENT_TRACKING_TIMER	 RTS2_LOCAL_EVENT + 1201
@@ -75,6 +78,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	useParkFlipping = false;
 	
 	decUpperLimit = NULL;
+	dut1fn = NULL;
 
 	createValue (telPressure, "PRESSURE", "observatory atmospheric pressure", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telPressure->setValueFloat (1000);
@@ -420,6 +424,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	addOption (OPT_CORRECTION, "max-correction", 1, "correction limit (in arcsec)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z,-)");
 	addOption (OPT_DEC_UPPER_LIMIT, "dec-upper-limit", 1, "maximal declination the telescope is able to point to");
+	addOption (OPT_DUT1_USNO, "dut1-filename", 1, "filename of USNO DUT1 offset file");
 
 	setIdleInfoInterval (refreshIdle->getValueDouble ());
 
@@ -756,6 +761,9 @@ int Telescope::processOption (int in_opt)
 					parkFlip->setValueInteger (flip);
 				}
 			}
+			break;
+		case OPT_DUT1_USNO:
+			dut1fn = optarg;
 			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
@@ -1354,6 +1362,8 @@ int Telescope::init ()
 	{
 		hardHorizon = new ObjectCheck (horizonFile);
 	}
+
+	updateDUT1 ();
 
 	return 0;
 }
@@ -2845,4 +2855,19 @@ void Telescope::resetMpecTLE ()
 	mpec->setValueString ("");
 	tle_l1->setValueString ("");
 	tle_l2->setValueString ("");
+}
+
+void Telescope::updateDUT1 ()
+{
+	if (dut1fn == NULL)
+		return;
+
+	time_t now;
+
+	time (&now);
+	struct tm *gmt = gmtime (&now);
+
+	double dut1 = getDUT1 (dut1fn, gmt);
+	if (!std::isnan (dut1))
+		telDUT1->setValueDouble (dut1);
 }
