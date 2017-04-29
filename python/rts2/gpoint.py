@@ -479,7 +479,7 @@ class GPoint:
 		else:
 			print
 		for k in pars.keys():
-			print '{0:24}{1:10.2f}    {2}'.format(k,np.degrees(pars[k].value) * 3600.0,'   ' if pars[k].vary else '  *'),
+			print '{0:24}{1:10.2f}    {2}'.format(k,np.degrees(pars[k].value) * 3600.0,'   ' if pars[k].vary else '*  '),
 			if stderr:
 				fr = abs(np.divide(pars[k].stderr,pars[k].value))
 				print '{0:8.2f}  {1:>5.1f}{2}'.format(np.degrees(pars[k].stderr) * 3600.0, 100 * fr, ' *' if mv == k else '  ')
