@@ -700,27 +700,32 @@ class GPoint:
 			return np.sqrt(np.mean(np.square(vector)))
 
 		def print_vect_stat(v):
-			return 'MIN {0:.3f}" MAX {1:.3f}" MEAN {2:.3f}" RMS {3:.3f}" STDEV {4:.3f}"'.format(np.min(v),np.max(v),np.mean(v),RMS(v),np.std(v))
+			return 'MIN {0:>9.3f}" MAX {1:>9.3f}" MEAN {2:>9.3f}" RMS {3:>9.3f}" STDEV {4:>9.3f}"'.format(np.min(v),np.max(v),np.mean(v),RMS(v),np.std(v))
 
-		print 'OBSERVATIONS {0}'.format(len(self.diff_angular_hadec))
-		print 'RA DIFF',print_vect_stat(self.diff_ha*3600)
-		print 'RA CORRECTED DIFF',print_vect_stat(self.diff_corr_ha*3600)
-		print 'DEC DIFF RMS',print_vect_stat(self.diff_dec*3600)
-		print 'AZ DIFF RMS',print_vect_stat(self.diff_az*3600)
-		print 'AZ CORRECTED DIFF RMS',print_vect_stat(self.diff_corr_az*3600)
-		print 'ALT DIFF RMS',print_vect_stat(self.diff_alt*3600)
-		print 'ANGULAR RADEC SEP DIFF',print_vect_stat(self.diff_angular_hadec*3600)
-		print 'ANGULAR ALTAZ SEP DIFF',print_vect_stat(self.diff_angular_altaz*3600)
-		print 'ANGULAR SEP DIFF',print_vect_stat((self.diff_angular_altaz if self.altaz else self.diff_angular_hadec)*3600)
+		print
+		print '=========== OBSERVATION DATA ============ OBSERVATION DATA ===================== OBSERVATION DATA ======'
+
+		print 'OBSERVATIONS ............ {0}'.format(len(self.diff_angular_hadec))
+		print 'RA DIFF .................',print_vect_stat(self.diff_ha*3600)
+		print 'RA CORRECTED DIFF .......',print_vect_stat(self.diff_corr_ha*3600)
+		print 'DEC DIFF RMS ............',print_vect_stat(self.diff_dec*3600)
+		print 'AZ DIFF RMS .............',print_vect_stat(self.diff_az*3600)
+		print 'AZ CORRECTED DIFF RMS ...',print_vect_stat(self.diff_corr_az*3600)
+		print 'ALT DIFF RMS ............',print_vect_stat(self.diff_alt*3600)
+		print 'ANGULAR RADEC SEP DIFF ..',print_vect_stat(self.diff_angular_hadec*3600)
+		print 'ANGULAR ALTAZ SEP DIFF ..',print_vect_stat(self.diff_angular_altaz*3600)
+		print 'ANGULAR SEP DIFF ........',print_vect_stat((self.diff_angular_altaz if self.altaz else self.diff_angular_hadec)*3600)
 
 		if self.best is not None:
-			print 'MODEL RA DIFF',print_vect_stat(self.diff_model_ha*3600)
-			print 'MODEL RA CORRECTED DIFF',print_vect_stat(self.diff_model_corr_ha*3600)
-			print 'MODEL DEC DIFF',print_vect_stat(self.diff_model_dec*3600)
-			print 'MODEL AZ DIFF',print_vect_stat(self.diff_model_az*3600)
-			print 'MODEL AZ CORRECTED DIFF',print_vect_stat(self.diff_model_corr_az*3600)
-			print 'MODEL ALT DIFF',print_vect_stat(self.diff_model_alt*3600)
-			print 'MODEL ANGULAR SEP DIFF',print_vect_stat(self.diff_model_angular*3600)
+			print
+			print '=========== MODEL ======================= MODEL ==================================== MODEL ============='
+			print 'MODEL RA DIFF ...........',print_vect_stat(self.diff_model_ha*3600)
+			print 'MODEL RA CORRECTED DIFF .',print_vect_stat(self.diff_model_corr_ha*3600)
+			print 'MODEL DEC DIFF ..........',print_vect_stat(self.diff_model_dec*3600)
+			print 'MODEL AZ DIFF ...........',print_vect_stat(self.diff_model_az*3600)
+			print 'MODEL AZ CORRECTED DIFF .',print_vect_stat(self.diff_model_corr_az*3600)
+			print 'MODEL ALT DIFF ..........',print_vect_stat(self.diff_model_alt*3600)
+			print 'MODEL ANGULAR SEP DIFF ..',print_vect_stat(self.diff_model_angular*3600)
 
 	# set X axis to MJD data
 	def set_x_axis(self,plot):
