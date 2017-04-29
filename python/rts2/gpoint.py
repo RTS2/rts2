@@ -782,6 +782,18 @@ class GPoint:
 			polar.set_title('Alt-Az distribution')
                 return polar
 
+	def plot_hist(self,grid,dn,bins):
+		import pylab
+		hist = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
+		if bins is None:
+			n,bin,patches = hist.hist(self.__get_data(dn)[0])
+		else:
+			n,bin,patches = hist.hist(self.__get_data(dn)[0],bins-1)
+		hist.set_title('{0} histogram binned {1}'.format(dn,len(bin)))
+		hist.set_ylabel('Occurence')
+		hist.set_xlabel('{0} arcsec'.format(dn))
+		return hist
+
 	def __get_data(self,name):
 		if self.name_map is None:
 			# maps name to data,plot style,label
@@ -909,6 +921,11 @@ class GPoint:
 					self.plot_alt_az(g,ax[1])
 				else:
 					self.plot_alt_az(g)
+			elif axnam[0] == 'hist':
+				bins = None
+				if len(axnam) > 2:
+					bins=int(axnam[2])
+				self.plot_hist(g,axnam[1],bins)
 			else:
 				for j in axnam[1:]:
 					self.plot_data(p,axnam[0],j,band,draw[i])
