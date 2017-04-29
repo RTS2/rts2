@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+void updateDUT1 (const char *fn, const char *url);
+
 /**
  * Retrieves DUT from filename stored on HDD for given GM date.
  * File with offsets can be downloaded from: 

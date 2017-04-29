@@ -2870,4 +2870,7 @@ void Telescope::updateDUT1 ()
 	double dut1 = getDUT1 (dut1fn, gmt);
 	if (!std::isnan (dut1))
 		telDUT1->setValueDouble (dut1);
+	else
+		valueError (telDUT1);
+	sendValueAll (telDUT1);
 }
