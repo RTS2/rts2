@@ -42,7 +42,12 @@ class AltAz: public Telescope
 
 		virtual int sky2counts (const double utc1, const double utc2, struct ln_equ_posn *pos, int32_t &azc, int32_t &altc, bool writeValue, double haMargin, bool forceShortest);
 
-		virtual int hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin, bool az_zero);
+		/**
+		 * Converts horizontal position into axis counts.
+		 *
+		 * @param az_zero - 0 don't care, -1 put az to -ticks/2..ticks/2 range, 1 put az to 0..ticks range
+		 */
+		virtual int hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin, int az_zero);
 
 		void counts2hrz (int32_t azc, int32_t altc, double &az, double &alt, double &un_az, double &un_zd);
 
