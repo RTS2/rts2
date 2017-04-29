@@ -433,6 +433,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *telAmbientTemperature;
 		rts2core::ValueFloat *telHumidity;
 		rts2core::ValueFloat *telWavelength;
+		rts2core::ValueDouble *telDUT1;
 
 		/**
 		 * Precalculated latitude values..

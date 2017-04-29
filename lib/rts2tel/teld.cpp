@@ -88,6 +88,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (telWavelength, "WAVELENGTH", "[nm] incoming radiation wavelength", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	telWavelength->setValueFloat (500);
 
+	createValue (telDUT1, "DUT1", "[s] UT1 - UTC", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	telDUT1->setValueDouble (0);
+
 	// object
 	createValue (oriRaDec, "ORI", "original position (epoch)", true, RTS2_VALUE_WRITABLE);
 	createValue (oriEpoch, "OEPOCH", "epoch (2000,..)", true);
@@ -1996,7 +1999,7 @@ void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD, double utc
 	double rc = ln_deg_to_rad (pos->ra);
 	double dc = ln_deg_to_rad (pos->dec);
 
-	int status = eraAtco13 (rc, dc, ln_deg_to_rad (pmRaDec->getRa ()), ln_deg_to_rad (pmRaDec->getDec ()), 0, 0, JD, utc2, 0, ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &aob, &zob, &hob, &dob, &rob, &co);
+	int status = eraAtco13 (rc, dc, ln_deg_to_rad (pmRaDec->getRa ()), ln_deg_to_rad (pmRaDec->getDec ()), 0, 0, JD, utc2, telDUT1->getValueDouble (), ln_deg_to_rad (getLongitude ()), ln_deg_to_rad (getLatitude ()), getAltitude (), 0, 0, getPressure (), telAmbientTemperature->getValueFloat (), telHumidity->getValueFloat () / 100.0, telWavelength->getValueFloat () / 1000.0, &aob, &zob, &hob, &dob, &rob, &co);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot apply corrections to " << pos->ra << " " << pos->dec << sendLog;

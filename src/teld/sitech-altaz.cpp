@@ -507,7 +507,7 @@ int SitechAltAz::moveAltAz ()
 
 	bool flip;
 
-	int ret = hrz2counts (&hrz, taz, talt, 0, flip, false, 0);
+	int ret = hrz2counts (&hrz, taz, talt, 0, flip, false, 0, getState () & TEL_PARKING);
 	if (ret)
 		return ret;
 
