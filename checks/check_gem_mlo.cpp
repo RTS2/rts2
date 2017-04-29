@@ -71,7 +71,7 @@ START_TEST(test_gem_mlo)
 	pos.dec = -3.51601;
 
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
-	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
+	ck_assert_msg (!std::isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
 	struct ln_hrz_posn hrz;
 

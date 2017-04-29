@@ -208,7 +208,7 @@ START_TEST(test_altaz_1)
 	pos.dec = -80.51601;
 
 	float e = altAzTest->test_move (JD, &pos, azc, altc, 2.0, 200);
-	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
+	ck_assert_msg (!std::isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
 	struct ln_equ_posn curr;
 	curr.ra = curr.dec = 0;

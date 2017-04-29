@@ -45,7 +45,7 @@ int AltAzTest::test_sky2counts (const double utc1, const double utc2, struct ln_
 int AltAzTest::test_hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc)
 {
 	bool use_flipped = false;
-	return hrz2counts (hrz, azc, altc, false, use_flipped, false, 0);
+	return hrz2counts (hrz, azc, altc, false, use_flipped, false, 0, 0);
 }
 
 void AltAzTest::test_counts2sky (double JD, int32_t azc, int32_t altc, double &ra, double &dec)
