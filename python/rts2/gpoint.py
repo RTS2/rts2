@@ -497,6 +497,8 @@ class GPoint:
 			for f in self.fixed:
 				self.params[f].vary = False
 
+		print
+		print '====== INITIAL MODEL VALUES ================'
 		self.print_parameters(self.params)
 
 	def fit(self, ftol=1.49012e-08, xtol=1.49012e-08, gtol=0.0, maxfev=1000):
@@ -534,6 +536,8 @@ class GPoint:
 		if self.verbose:
 			print 'Fit result', self.best.params
 
+		print
+		print '====== MODEL FITTED VALUES ================='
 		self.print_parameters(self.best.params,True)
 
 		if self.altaz:
@@ -655,11 +659,14 @@ class GPoint:
 
 	def print_params(self):
 		if self.verbose == False:
+			print
 			print 'Covariance: {0}'.format(self.best.covar)
 			print 'Status: {0}'.format(self.best.status)
 			print 'Message: {0}'.format(self.best.lmdif_message)
 			print 'Number of evalutaions: {0}'.format(self.best.nfev)
 			print 'Ier: {0}'.format(self.best.ier)
+
+		print
 
 		if self.altaz:
 			print 'Zero point in AZ ................................. {0:>9.2f}"'.format(degrees(self.best.params['ia'])*3600.0)
