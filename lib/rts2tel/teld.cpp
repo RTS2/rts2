@@ -1363,8 +1363,6 @@ int Telescope::init ()
 		hardHorizon = new ObjectCheck (horizonFile);
 	}
 
-	updateDUT1 ();
-
 	return 0;
 }
 
@@ -1399,7 +1397,11 @@ int Telescope::initValues ()
 	tle_rho_cos_phi->setValueDouble (r_c);
 	tle_rho_sin_phi->setValueDouble (r_s);
 
-	return rts2core::Device::initValues ();
+	ret = rts2core::Device::initValues ();
+
+	updateDUT1 ();
+
+	return ret;
 }
 
 void Telescope::checkMoves ()
