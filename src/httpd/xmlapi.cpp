@@ -560,7 +560,7 @@ void SessionMethodValue::setXmlValutRts2 (rts2core::Connection *conn, std::strin
 				s_val = (std::string) (x_val);
 				i_val = atoi (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '=', i_val));
 			break;
 		case RTS2_VALUE_DOUBLE:
 			if (x_val.getType () == XmlRpcValue::TypeDouble)
@@ -572,7 +572,7 @@ void SessionMethodValue::setXmlValutRts2 (rts2core::Connection *conn, std::strin
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '=', d_val));
 			break;
 
 		case RTS2_VALUE_FLOAT:
@@ -585,13 +585,13 @@ void SessionMethodValue::setXmlValutRts2 (rts2core::Connection *conn, std::strin
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '=', (float) d_val));
 			break;
 		case RTS2_VALUE_STRING:
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val)));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '=', (std::string) (x_val)));
 			break;
 		default:
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val), true));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '=', (std::string) (x_val), true));
 			break;
 	}
 }
@@ -660,7 +660,7 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 				s_val = (std::string) (x_val);
 				i_val = atoi (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', i_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '+', i_val));
 			break;
 		case RTS2_VALUE_DOUBLE:
 			if (x_val.getType () == XmlRpcValue::TypeDouble)
@@ -672,7 +672,7 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '+', d_val));
 			break;
 
 		case RTS2_VALUE_FLOAT:
@@ -685,13 +685,13 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (float) d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '+', (float) d_val));
 			break;
 		case RTS2_VALUE_STRING:
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2])));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '+', (std::string) (params[2])));
 			break;
 		default:
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2]), true));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), valueName, '+', (std::string) (params[2]), true));
 			break;
 	}
 }

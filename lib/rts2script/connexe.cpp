@@ -133,7 +133,7 @@ void ConnExe::processCommand (char *cmd)
 		rts2core::Connection *conn = getConnectionForScript (device);
 		if (conn)
 		{
-			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), std::string (value), *operat, std::string (operand), true));
 		}
 	}
 	else if (!strcmp (cmd, "set_own"))

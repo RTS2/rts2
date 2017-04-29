@@ -15,6 +15,7 @@ struct AltAz {
 }
 
 enum TrackType {
+     OFF = 0,
      SIDEREAL = 1,
      NONSIDEREAL = 2
 }
@@ -29,11 +30,10 @@ struct MountInfo {
   7: double JulianDay,          // Telescope julian date
   8: double Focus,              // The current focus value
   9: TrackType TrackingType,    // The type of tracking being used
-  10: bool TrackingState,       // The tracking state 
-  11: RaDec ns_params,          // The parameters used for non-sidereal tracking
-  12: bool autoguide_state,     // The autoguide state
-  13: bool slewing,             // Whether the telescope is currently slewing to a new position
-  14: i32 instrumentport,       // The instrument port in use
+  10: RaDec ns_params,          // The parameters used for non-sidereal tracking
+  11: bool autoguide_state,     // The autoguide state
+  12: bool slewing,             // Whether the telescope is currently slewing to a new position
+  13: i32 instrumentport,       // The instrument port in use
 }
 
 struct DerotatorInfo {
@@ -65,8 +65,7 @@ service ObservatoryService {
   i32 SlewAltAz(1: AltAz pos) throws (1: RTS2Exception e),   // Slew to the given altitude and azimuth
   i32 AdjustAltAz(1: AltAz delta),                      // Adjust the altitude and azimuth by delta
   i32 RotateDome(1: double angle),                      // Rotate the dome to the specified angle
-  i32 TrackType(1: TrackType val),                      // Set tracking to SIDEREAL or NONSIDEREAL
-  i32 Track(1: bool val),                               // Set tracking on (true) or off (false)
+  i32 TrackType(1: TrackType val),                      // Set tracking to OFF, SIDEREAL or NONSIDEREAL
   i32 NonSiderealParams(1: RaDec ns_diff),              // Set the differential RA and dec
                                                         // used for non-sidereal tracking
   i32 AutoGuide(1: bool val),                           // Set autoguide on (true) or off (false)

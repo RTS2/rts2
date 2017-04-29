@@ -268,16 +268,16 @@ FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 	}
 	if (!std::isnan (defExposure))
 	{
-		cam->queCommand (new rts2core::CommandChangeValue (cam, "exposure", '=', defExposure));
+		cam->queCommand (new rts2core::CommandChangeValue (cam->getMaster (), "exposure", '=', defExposure));
 
 	}
 	if (darks)
 	{
-		cam->queCommand (new rts2core::CommandChangeValue (cam, "SHUTTER", '=', 1));
+		cam->queCommand (new rts2core::CommandChangeValue (cam->getMaster (), "SHUTTER", '=', 1));
 	}
 	if (defBin >= 0)
 	{
-		cam->queCommand (new rts2core::CommandChangeValue (cam, "binning", '=', defBin));
+		cam->queCommand (new rts2core::CommandChangeValue (cam->getMaster (), "binning", '=', defBin));
 	}
 	// post exposure event..if name agree
 	for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end (); cam_iter++)

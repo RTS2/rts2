@@ -391,7 +391,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 						throw JSONException ("cannot find variable");
 					if (async)
 					{
-						conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
+						conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), std::string (variable), op, std::string (value), true));
 						rts2json::sendConnectionValues (os, conn, params, ext);
 					}
 					else
@@ -399,7 +399,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 						rts2json::AsyncAPI *aa = new rts2json::AsyncAPI (this, conn, connection, ext);
 						getServer ()->registerAPI (aa);
 
-						conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
+						conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), std::string (variable), op, std::string (value), true), 0, aa);
 						throw XmlRpc::XmlRpcAsynchronous ();
 					}
 				}
@@ -488,7 +488,7 @@ void API::executeJSON (XmlRpc::XmlRpcSource *source, std::string path, XmlRpc::H
 
 							}
 
-							conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), vn, '=', std::string (iter->getValue ()), true), 0, aa);
+							conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient ()->getMaster (), vn, '=', std::string (iter->getValue ()), true), 0, aa);
 							vcc++;
 						}
 					}

@@ -47,6 +47,7 @@ class ThriftD: public rts2core::Device
 
 		MountInfo mountInfo;
 		DerotatorInfo derotatorInfo;
+		DomeInfo domeInfo;
 
 	protected:
 		virtual int init ();
@@ -67,10 +68,62 @@ class ObservatoryServiceHandler : virtual public ObservatoryServiceIf {
 			_return = rts2Device->mountInfo;
 		}
 
+		void infoDerotator(DerotatorInfo& _return) {
+			_return = rts2Device->derotatorInfo;
+		}
+
+		void infoDome(DomeInfo& _return) {
+			_return = rts2Device->domeInfo;
+		}
+
 		int32_t Slew(const RaDec& target) {
 			rts2core::CommandMove cmd (rts2Device, NULL, target.ra, target.dec);
 			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
 			return 0;
+		}
+
+		int32_t AdjustRADec(const RaDec& delta) {
+			rts2core::CommandChangeValue cmd (rts2Device, "OFFS", '+', delta.ra, delta.dec);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
+			return 0;
+		}
+
+		int32_t SlewAltAz(const AltAz& pos) {
+			rts2core::CommandMoveAltAz cmd (rts2Device, NULL, pos.alt, pos.az);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
+			return 0;
+		}
+
+		int32_t AdjustAltAz(const AltAz& delta) {
+			rts2core::CommandChangeValue cmd (rts2Device, "AZALOFFS", '+', delta.alt, delta.az);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
+			return 0;
+		}
+
+		int32_t RotateDome(const double angle) {
+			rts2core::CommandMoveAz cmd (rts2Device, angle);
+			rts2Device->queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
+			return 0;
+		}
+
+		int32_t TrackType(const rts2::TrackType::type val) {
+			rts2core::CommandChangeValue cmd (rts2Device, "TRACKING", '=', val);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
+			return 0;
+		}
+
+		int32_t NonSiderealParams(const RaDec &ns_diff) {
+			rts2core::CommandChangeValue cmd (rts2Device, "DRATE", '=', ns_diff.ra, ns_diff.dec);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
+			return 0;
+		}
+
+		int32_t AutoGuide(bool val) {
+			return -1;
+		}
+
+		int32_t SetFocus(double focus) {
+			return -1;
 		}
 
 		int32_t Park() {
@@ -79,8 +132,38 @@ class ObservatoryServiceHandler : virtual public ObservatoryServiceIf {
 			return 0;
 		}
 
-		void infoDerotator(DerotatorInfo& _return) {
-			_return = rts2Device->derotatorInfo;
+		int32_t DomeStatus(bool val) {
+			return -1;
+		}
+
+		int32_t DomeLights(bool val) {
+			rts2core::CommandChangeValue cmd (rts2Device, "lights", '=', val);
+			rts2Device->queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
+			return 0;
+		}
+
+		int32_t DomeShutters(bool val) {
+			rts2core::Command cmd (rts2Device, val ? COMMAND_OPEN : COMMAND_CLOSE);
+			rts2Device->queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
+			return 0;
+		}
+
+		int32_t MirrorCovers(bool val) {
+			rts2core::Command cmd (rts2Device, val ? COMMAND_OPEN : COMMAND_CLOSE);
+			rts2Device->queueCommandForType (DEVICE_TYPE_SENSOR, cmd);
+			return 0;
+		}
+
+		int32_t SelectPort(int32_t port) {
+			return 0;
+		}
+
+		int32_t Reset() {
+			return 0;
+		}
+
+		int32_t Abort() {
+			return 0;
 		}
 };
 
@@ -154,13 +237,22 @@ int ThriftD::idle ()
 			mountInfo.HRZ.alt = altAz->getAlt ();
 			mountInfo.HRZ.az = ln_range_degrees (altAz->getAz () + 180.0);
 		}
+		altAz = (rts2core::ValueAltAz *) telConn->getValue ("AZALOFFS");
+		if (altAz != NULL)
+		{
+			mountInfo.altAzOffsets.alt = altAz->getAlt ();
+			mountInfo.altAzOffsets.az = ln_range_degrees (altAz->getAz () + 180.0);
+		}
 		val = telConn->getValue ("JD");
 		if (val != NULL)
 		{
 			mountInfo.JulianDay = val->getValueDouble ();
 		}
-
-
+		val = telConn->getValue ("TRACKING");
+		if (val != NULL)
+		{
+			mountInfo.TrackingType = rts2::TrackType::type (val->getValueInteger ());
+		}
 	}
 	return Device::idle ();
 }

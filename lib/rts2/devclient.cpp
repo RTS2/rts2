@@ -270,7 +270,7 @@ void DevClientTelescope::postEvent (Event * event)
 	{
 		case EVENT_QUICK_ENABLE:
 			qe = *((bool *) event->getArg ());
-			connection->queCommand (new CommandChangeValue (this, std::string ("quick_enabled"), '=', qe ? std::string ("2") : std::string ("1")));
+			connection->queCommand (new CommandChangeValue (getMaster (), std::string ("quick_enabled"), '=', qe ? std::string ("2") : std::string ("1")));
 			break;
 	}
 	DevClient::postEvent (event);

@@ -106,34 +106,34 @@ void XFitsImage::XeventLoop ()
 				switch (ks)
 				{
 					case XK_1:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "binning", '=', 0));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "binning", '=', 0));
 						break;
 					case XK_2:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "binning", '=', 1));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "binning", '=', 1));
 						break;
 					case XK_3:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "binning", '=', 2));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "binning", '=', 2));
 						break;
 	/*				case XK_9:
 						connection->GoNine = !master->GoNine;
 						break; */
 					case XK_e:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '+', 1));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '+', 1));
 						break;
 					case XK_d:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '-', 1));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '-', 1));
 						break;
 					case XK_w:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '+', 0.1));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '+', 0.1));
 						break;
 					case XK_s:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '-', 0.1));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '-', 0.1));
 						break;
 					case XK_q:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '+', 0.01));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '+', 0.01));
 						break;
 					case XK_a:
-						connection->queCommand (new rts2core::CommandChangeValue (client, "exposure", '-', 0.01));
+						connection->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "exposure", '-', 0.01));
 						break;
 					case XK_Delete:
 						markers.clear ();

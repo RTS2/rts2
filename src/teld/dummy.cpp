@@ -22,7 +22,6 @@
 #include "configuration.h"
 
 #define OPT_MOVE_FAST      OPT_LOCAL + 510
-#define OPT_CONFIG      OPT_LOCAL + 511
 
 /*!
  * Dummy teld for testing purposes.

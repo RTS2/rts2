@@ -302,13 +302,13 @@ void DevScript::scriptBegin ()
 	}
 	if (script.get () == NULL)
 	{
-		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPREP"), '=', 0));
-		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPT"), '=', std::string ("")));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli->getMaster (), std::string ("SCRIPREP"), '=', 0));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli->getMaster (), std::string ("SCRIPT"), '=', std::string ("")));
 	}
 	else
 	{
-		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPREP"), '=', scriptLoopCount));
-		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPT"), '=', script->getWholeScript ()));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli->getMaster (), std::string ("SCRIPREP"), '=', scriptLoopCount));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli->getMaster (), std::string ("SCRIPT"), '=', script->getWholeScript ()));
 	}
 }
 

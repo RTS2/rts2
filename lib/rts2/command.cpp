@@ -284,56 +284,56 @@ CommandCenter::CommandCenter (DevClientCamera * _camera, int width = -1, int hei
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, int _operand):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, char op, int _operand):Command (_master)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " <<  _valName << " " << op << " " << _operand;
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, long _operand):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, char op, long _operand):Command (_master)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, float _operand):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, char op, float _operand):Command (_master)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << std::fixed << _operand;
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, char op, double _operand):Command (_master)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << std::fixed << _operand;
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand1, double _operand2):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, char op, double _operand1, double _operand2):Command (_master)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << std::fixed << _operand1 << " " << _operand2;
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client,std::string _valName, char op, bool _operand):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master,std::string _valName, char op, bool _operand):Command (_master)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << (_operand ? 1 : 0);
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client,std::string _valName, char op, int x, int y, int w, int h):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master,std::string _valName, char op, int x, int y, int w, int h):Command (_master)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << x << " " << y << " " << w << " " << h;
 	setCommand (_os);
 }
 
-CommandChangeValue::CommandChangeValue (DevClient * _client, std::string _valName, char op, std::string _operand, bool raw):Command (_client->getMaster ())
+CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, char op, std::string _operand, bool raw):Command (_master)
 {
 	std::ostringstream _os;
 	if (raw)
@@ -704,5 +704,12 @@ CommandParallacticAngle::CommandParallacticAngle (Block * _master, double reftim
 {
 	std::ostringstream _os;
 	_os << COMMAND_PARALLACTIC_UPDATE " " << std::fixed << reftime << " " << pa << " " << rate;
+	setCommand (_os);
+}
+
+CommandMoveAz::CommandMoveAz (Block *_master, double az):Command (_master)
+{
+	std::ostringstream _os;
+	_os << COMMAND_CUPOLA_AZ " " << std::fixed << az;
 	setCommand (_os);
 }
