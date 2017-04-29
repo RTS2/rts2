@@ -200,7 +200,18 @@ NWindowEditDegrees::NWindowEditDegrees (int _x, int _y, int w, int h, int _ex, i
 
 void NWindowEditDegrees::setValueDouble (double _val)
 {
-	wprintw (getWriteWindow (), "%f", _val);
+	struct ln_dms dms;
+	ln_deg_to_dms (_val, &dms);
+	wprintw (getWriteWindow (), dms.neg ? "-" : "+");
+	if (dms.degrees > 0)
+		wprintw (getWriteWindow (), "%id", dms.degrees);
+	if (dms.minutes > 0)
+		wprintw (getWriteWindow (), "%i'", dms.minutes);
+	if (dms.seconds > 0)
+		wprintw (getWriteWindow (), "%g\"", dms.seconds);
+
+	if (dms.degrees == 0 && dms.minutes == 0 && dms.seconds == 0)
+		wprintw (getWriteWindow (), "0");
 }
 
 bool NWindowEditDegrees::passKey (int key)
