@@ -1,6 +1,6 @@
 /* 
  * Telescope control daemon.
- * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2017 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -171,8 +171,11 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
-		createValue (corrAgresivityCap, "tracking_agressivity", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
-		corrAgresivityCap->setValueFloat (50);
+		createValue (corrRaAgresivityCap, "ra_agressivity", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
+		corrRaAgresivityCap->setValueFloat (50);
+
+		createValue (corrDecAgresivityCap, "dec_agressivity", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
+		corrDecAgresivityCap->setValueFloat (50);
 
 		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
@@ -186,7 +189,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
-		corrAgresivityCap = NULL;
+		corrRaAgresivityCap = NULL;
+		corrDecAgresivityCap = NULL;
 		trackingFrequency = NULL;
 		trackingWarning = NULL;
 		skyVect = NULL;
@@ -594,15 +598,34 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	double agresivity_ac = fabs ((double) (ac - c_ac) / (ac - t_ac));
 	double agresivity_dc = fabs ((double) (dc - c_dc) / (dc - t_dc));
 
-	double agCap = corrAgresivityCap->getValueFloat () / 100.0;
+	double agCapRa = corrRaAgresivityCap->getValueFloat () / 100.0;
+	if (fabs(ac - c_ac) < 100 && agresivity_ac > agCapRa)
+		agresivity_ac = agCapRa;
 
-	if (agresivity_ac > agCap)
-		agresivity_ac = agCap;
-	if (agresivity_dc > agCap)
-		agresivity_dc = agCap;
+	double agCapDec = corrDecAgresivityCap->getValueFloat () / 100.0;
+	if (fabs(dc - c_dc) < 100 && agresivity_dc > agCapDec)
+		agresivity_dc = agCapDec;
 
-	ac_speed = ((c_ac - t_ac) + agresivity_ac * (ac - c_ac)) / sec_step;
-	dc_speed = ((c_dc - t_dc) + agresivity_dc * (dc - c_dc)) / sec_step;
+	ac_speed = (c_ac - t_ac) / sec_step;
+	dc_speed = (c_dc - t_dc) / sec_step;
+
+	int32_t ac_adder = (ac - c_ac) / sec_step;
+	int32_t dc_adder = (dc - c_dc) / sec_step;
+
+	int32_t maxAc = labs (agresivity_ac * ac_speed);
+	if (ac_adder > maxAc)
+		ac_adder = maxAc;
+	if (ac_adder < -maxAc)
+		ac_adder = -maxAc;
+
+	int32_t maxDc = labs (agresivity_dc * dc_speed);
+	if (dc_adder > maxDc)
+		dc_adder = maxDc;
+	if (dc_adder < -maxAc)
+		dc_adder = -maxDc;
+
+	ac_speed += ac_adder;
+	dc_speed += dc_adder;
 
 	speed_angle = ln_rad_to_deg (atan2 (ac_speed, dc_speed));
 
