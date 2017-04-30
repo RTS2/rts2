@@ -406,10 +406,13 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 					coverCommand->setValueDouble (NAN);
 					sendValueAll (coverCommand);
 				}
-				coverState->setValueInteger (2);
-				sendValueAll (coverState);
+				if (coverState->getValueInteger () != 2)
+				{
+					coverState->setValueInteger (2);
+					sendValueAll (coverState);
+					logStream (MESSAGE_INFO) << "cover opened" << sendLog;
+				}
 				setOCBlock ();
-				logStream (MESSAGE_INFO) << "cover opened" << sendLog;
 				break;
 			case '2':
 				// ignore, probably after startup..
