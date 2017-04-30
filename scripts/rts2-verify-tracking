@@ -185,7 +185,7 @@ class ProcessFiles:
 			dist[si] = map(lambda s: pixel_distance(max_x[si], max_y[si], s[0], s[1]), pf.sb[si])
 			a_dist[si] = np.average(dist[si])
 
-			print _('star # {0} pixel distance min {1} max {2} average {3} median {4} std {5} RMS {6}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
+			print _('star # {0} pixel distance min {1:.2f} max {2:.2f} average {3:.2f} median {4:.2f} std {5:.2f} RMS {6:.2f}').format(si + 1, min(dist[si]), max(dist[si]), a_dist[si], np.median(dist[si]), np.std(dist[si]), RMS(dist[si] - a_dist[si]))
 
 			if max_angle > 0 and stars > 1:
 				angels = calculate_angels(np_sb)
@@ -206,10 +206,15 @@ class ProcessFiles:
 			p_y = pylab.subplot2grid(plotgrid,[1,0])
 			p_dist = pylab.subplot2grid(plotgrid,[2,0])
 
+			p_x.set_ylabel ('X (px)')
+			p_y.set_ylabel ('Y (px)')
+			p_dist.set_ylabel ('Dist. (px)')
+
 			if ang_deviations is not None:
 				p_ang = pylab.subplot2grid(plotgrid,[3,0])
 				p_ang.plot (range(len(pf.sb[0])), np.average(ang_deviations, axis=1), '-')
 				p_ang.fill_between (range(len(pf.sb[0])), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
+				p_ang.set_ylabel ('Rot. (deg)')
 
 			rts2.progressbar.progress(1, stars + 1)
 
