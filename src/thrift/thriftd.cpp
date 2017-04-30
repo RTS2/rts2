@@ -221,31 +221,31 @@ int ThriftD::idle ()
 		{
 			mountInfo.infotime = val->getValueDouble ();
 		}
-		raDec = (rts2core::ValueRaDec *) telConn->getValue ("ORI");
+		raDec = dynamic_cast<rts2core::ValueRaDec *> (telConn->getValue ("ORI"));
 		if (raDec != NULL)
 		{
 			mountInfo.ORI.ra = raDec->getRa ();
 			mountInfo.ORI.dec = raDec->getDec ();
 		}
-		raDec = (rts2core::ValueRaDec *) telConn->getValue ("OFFS");
+		raDec = dynamic_cast<rts2core::ValueRaDec *> (telConn->getValue ("OFFS"));
 		if (raDec != NULL)
 		{
 			mountInfo.offsets.ra = raDec->getRa ();
 			mountInfo.offsets.dec = raDec->getDec ();
 		}
-		raDec = (rts2core::ValueRaDec *) telConn->getValue ("TEL");
+		raDec = dynamic_cast<rts2core::ValueRaDec *> (telConn->getValue ("TEL"));
 		if (raDec != NULL)
 		{
 			mountInfo.TEL.ra = raDec->getRa ();
 			mountInfo.TEL.dec = raDec->getDec ();
 		}
-		altAz = (rts2core::ValueAltAz *) telConn->getValue ("TEL_");
+		altAz = dynamic_cast<rts2core::ValueAltAz *> (telConn->getValue ("TEL_"));
 		if (altAz != NULL)
 		{
 			mountInfo.HRZ.alt = altAz->getAlt ();
 			mountInfo.HRZ.az = ln_range_degrees (altAz->getAz () + 180.0);
 		}
-		altAz = (rts2core::ValueAltAz *) telConn->getValue ("AZALOFFS");
+		altAz = dynamic_cast<rts2core::ValueAltAz *> (telConn->getValue ("AZALOFFS"));
 		if (altAz != NULL)
 		{
 			mountInfo.altAzOffsets.alt = altAz->getAlt ();
