@@ -171,11 +171,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 		createValue (trackingInterval, "tracking_interval", "[s] interval for tracking loop", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 		trackingInterval->setValueFloat (0.5);
 
-		createValue (corrRaAgresivityCap, "ra_agressivity", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
-		corrRaAgresivityCap->setValueFloat (50);
-
-		createValue (corrDecAgresivityCap, "dec_agressivity", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
-		corrDecAgresivityCap->setValueFloat (50);
+		createValue (corrAgresivityCap, "tracking_agr", "[%] scale for target - actual position correction", false, RTS2_VALUE_WRITABLE | RTS2_DT_PERCENTS);
+		corrAgresivityCap->setValueFloat (50);
 
 		createValue (trackingFrequency, "tracking_frequency", "[Hz] tracking frequency", false);
 		createValue (trackingFSize, "tracking_num", "numbers of tracking request to calculate tracking stat", false, RTS2_VALUE_WRITABLE);
@@ -189,8 +186,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	{
 		tracking = NULL;
 		trackingInterval = NULL;
-		corrRaAgresivityCap = NULL;
-		corrDecAgresivityCap = NULL;
+		corrAgresivityCap = NULL;
 		trackingFrequency = NULL;
 		trackingWarning = NULL;
 		skyVect = NULL;
@@ -565,7 +561,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	return sky2counts (utc1, utc2, out_tar, ac, dc, writeValues, haMargin, forceShortest);
 }
 
-int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, double &speed_angle)
+int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, double &speed_angle, int32_t slowDist_a, int32_t slowDist_d)
 {
 	struct ln_equ_posn eqpos, t_eqpos;
 	// refresh current target..
@@ -598,13 +594,12 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 	double agresivity_ac = fabs ((double) (ac - c_ac) / (ac - t_ac));
 	double agresivity_dc = fabs ((double) (dc - c_dc) / (dc - t_dc));
 
-	double agCapRa = corrRaAgresivityCap->getValueFloat () / 100.0;
-	if (fabs(ac - c_ac) < 100 && agresivity_ac > agCapRa)
-		agresivity_ac = agCapRa;
+	double agCap = corrAgresivityCap->getValueFloat () / 100.0;
 
-	double agCapDec = corrDecAgresivityCap->getValueFloat () / 100.0;
-	if (fabs(dc - c_dc) < 100 && agresivity_dc > agCapDec)
-		agresivity_dc = agCapDec;
+	if (fabs(ac - c_ac) < slowDist_a && agresivity_ac > agCap)
+		agresivity_ac = agCap;
+	if (fabs(dc - c_dc) < slowDist_d && agresivity_dc > agCap)
+		agresivity_dc = agCap;
 
 	ac_speed = (c_ac - t_ac) / sec_step;
 	dc_speed = (c_dc - t_dc) / sec_step;

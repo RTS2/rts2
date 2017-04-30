@@ -982,7 +982,7 @@ void Sitech::internalTracking (double sec_step, float speed_factor)
 
 	double speed_angle = 0;
 
-	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, ac, dc, ac_speed, dc_speed, speed_angle);
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, ac, dc, ac_speed, dc_speed, speed_angle, trackingDist->getValueDouble () * haCpd->getValueDouble (), trackingDist->getValueDouble () * decCpd->getValueDouble ());
 	if (ret)
 	{
 		if (ret < 0)
