@@ -22,6 +22,10 @@
 
 #include <libusb-1.0/libusb.h>
 
+#include <unistd.h>
+#include <linux/reboot.h>
+#include <sys/reboot.h>
+
 #define MAX_CAM   5
 
 #define W  10
@@ -67,6 +71,8 @@ class SX:public Camera
 		rts2core::ValueLong *wipeDelay;
 
 		char *evenBuffer, *oddBuffer;
+
+		bool rebootable;
 };
 
 };
@@ -83,8 +89,11 @@ SX::SX (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	evenBuffer = NULL;
 	oddBuffer = NULL;
 
+	rebootable = false;
+
 	addOption ('n', NULL, 1, "camera name (for systems with multiple CCDs)");
 	addOption ('l', NULL, 0, "list available camera names");
+	addOption ('r', NULL, 0, "allow reboot command");
 	
 	createExpType ();
 
@@ -113,6 +122,9 @@ int SX::processOption (int in_opt)
 			break;
 		case 'l':
 			listNames = true;
+			break;
+		case 'r':
+			rebootable = true;
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -361,6 +373,11 @@ int SX::commandAuthorized (rts2core::Connection * conn)
 		if (!ret)
 			return -2;
 		return 0;
+	}
+	else if (conn->isCommand ("reboot") && rebootable)
+	{
+		sync ();
+		reboot (LINUX_REBOOT_CMD_RESTART);
 	}
 	return Camera::commandAuthorized (conn);
 }

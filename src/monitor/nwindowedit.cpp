@@ -69,8 +69,7 @@ keyRet NWindowEdit::injectKey (int key)
 				wmove (getWriteWindow (), getCurY (), x + 1);
 			break;
 		default:
-			if (isalnum (key) || isspace (key) || key == '+' || key == '-'
-				|| key == '.' || key == ',' || key == '_' || key == '/' || key == '\\')
+			if (isalnum (key) || isspace (key) || key == '+' || key == '-' || key == '.' || key == ',' || key == '_' || key == '/' || key == '\\' || key == '"' || key == '\'')
 			{
 				if (passKey (key))
 				{
@@ -169,6 +168,11 @@ NWindowEditDigits::NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int
 {
 }
 
+void NWindowEditDigits::setValueDouble (double _val)
+{
+	wprintw (getWriteWindow (), "%f", _val);
+}
+
 bool NWindowEditDigits::passKey (int key)
 {
 	if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
@@ -189,6 +193,69 @@ double NWindowEditDigits::getValueDouble ()
 	}
 	return tval;
 }
+
+NWindowEditDegrees::NWindowEditDegrees (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEditDigits (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+{
+}
+
+void NWindowEditDegrees::setValueDouble (double _val)
+{
+	struct ln_dms dms;
+	ln_deg_to_dms (_val, &dms);
+	wprintw (getWriteWindow (), dms.neg ? "-" : "+");
+	if (dms.degrees > 0)
+		wprintw (getWriteWindow (), "%id", dms.degrees);
+	if (dms.minutes > 0)
+		wprintw (getWriteWindow (), "%i'", dms.minutes);
+	if (dms.seconds > 0)
+		wprintw (getWriteWindow (), "%g\"", dms.seconds);
+
+	if (dms.degrees == 0 && dms.minutes == 0 && dms.seconds == 0)
+		wprintw (getWriteWindow (), "0");
+}
+
+bool NWindowEditDegrees::passKey (int key)
+{
+	if (key == '"' || key == '\'' || key == 'd' || key == 'm' || key == 's')
+		return true;
+	return NWindowEditDigits::passKey (key);
+}
+
+double NWindowEditDegrees::getValueDouble ()
+{
+	char buf[200];
+	char *endptr;
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	char *p = buf;
+	double tval = 0;
+	while (*p != '\0')
+	{
+		double v = strtod (p, &endptr);
+		switch (*endptr)
+		{
+			case 'd':
+			case '\0':
+			case ' ':
+				tval += v;
+				break;
+			case 'm':
+			case '\'':
+				tval += v / 60.0;
+				break;
+			case 's':
+			case '"':
+				tval += v / 3600.0;
+				break;
+			default:
+				return tval;
+		}
+		p = endptr;
+		if (*p != '\0')
+			p++;
+	}
+	return tval;
+}
+
 
 NWindowEditBool::NWindowEditBool (int _type, int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {

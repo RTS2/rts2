@@ -81,6 +81,7 @@ class SitechAltAz:public AltAz
 		}
 
 	private:
+		void scaleTrackingLook ();
 		void internalTracking (double sec_step, float speed_factor);
 
 		const char *tel_tty;
@@ -104,6 +105,8 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueDouble *trackingDist;
 		rts2core::ValueFloat *trackingLook;
+		rts2core::ValueBool *userTrackingLook;
+		int lastTrackingNum;
 		rts2core::ValueDoubleStat *trackingAngle;
 		rts2core::ValueDoubleStat *speedAngle;
 		rts2core::ValueDouble *slowSyncDistance;
@@ -132,8 +135,8 @@ class SitechAltAz:public AltAz
 		rts2core::ValueInteger *az_errors_val;
 		rts2core::ValueInteger *alt_errors_val;
 
-		rts2core::ValueInteger *az_pos_error;
-		rts2core::ValueInteger *alt_pos_error;
+		rts2core::ValueDoubleStat *az_pos_error;
+		rts2core::ValueDoubleStat *alt_pos_error;
 
 		rts2core::ValueInteger *az_supply;
 		rts2core::ValueInteger *alt_supply;
@@ -234,10 +237,14 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 	createValue (t_az_pos, "T_AXAZ", "target AZ motor axis count", true, RTS2_VALUE_WRITABLE);
 	createValue (t_alt_pos, "T_AXALT", "target ALT motor axis count", true, RTS2_VALUE_WRITABLE);
 
-	createValue (trackingDist, "tracking_dist", "tracking error budged (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	createValue (trackingDist, "tracking_dist", "tracking error budget (bellow this value, telescope will start tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 
-	createValue (trackingLook, "tracking_look", "[s] future position", false, RTS2_VALUE_WRITABLE);
-	trackingLook->setValueFloat (2);
+	createValue (trackingLook, "tracking_look", "[s] future position", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
+	createValue (userTrackingLook, "look_user", "user specified tracking lookahead", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
+	trackingLook->setValueDouble (2);
+	userTrackingLook->setValueBool (false);
+	lastTrackingNum = 0;
 
 	// default to 1 arcsec
 	trackingDist->setValueDouble (1 / 60.0 / 60.0);
@@ -500,7 +507,7 @@ int SitechAltAz::moveAltAz ()
 
 	bool flip;
 
-	int ret = hrz2counts (&hrz, taz, talt, 0, flip, false, 0);
+	int ret = hrz2counts (&hrz, taz, talt, 0, flip, false, 0, (getState () & TEL_PARKING) ? 1 : 0);
 	if (ret)
 		return ret;
 
@@ -540,7 +547,11 @@ int SitechAltAz::isMoving ()
 	}
 
 	info ();
-	double tdist = getTargetDistance ();
+	double tdist = getTargetDistanceMax ();
+
+	scaleTrackingLook ();
+
+	trackingNum++;
 
 	if (tdist > trackingDist->getValueDouble ())
 	{
@@ -550,7 +561,7 @@ int SitechAltAz::isMoving ()
 			if (tdist < slowSyncDistance->getValueDouble ())
 				internalTracking (trackingLook->getValueFloat (), trackingFactor->getValueFloat ());
 			else
-				internalTracking (2.0, fastSyncSpeed->getValueFloat ());
+				internalTracking (15.0, fastSyncSpeed->getValueFloat ());
 			return USEC_SEC * trackingInterval->getValueFloat () / 1000;
 		}
 
@@ -615,6 +626,7 @@ void SitechAltAz::runTracking ()
 {
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 		return;
+	scaleTrackingLook ();
 	internalTracking (trackingLook->getValueFloat (), trackingFactor->getValueFloat ());
 	AltAz::runTracking ();
 
@@ -642,10 +654,56 @@ int SitechAltAz::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	{
 		telConn->siTechCommand ('X', ((rts2core::ValueBool *) newValue)->getValueBool () ? "A" : "M0");
 		return 0;
-	}	
+	}
+	if (oldValue == trackingLook)
+	{
+		userTrackingLook->setValueBool (true);
+		return 0;
+	}
 
 	return AltAz::setValue (oldValue, newValue);
 }
+
+void SitechAltAz::scaleTrackingLook ()
+{
+	// change tracking lookahead
+	if (userTrackingLook->getValueBool () == false && abs (trackingNum - lastTrackingNum) > 3)
+	{
+		float change = 0;
+
+		// scale trackingLook as needed
+		if (trackingAngle->getStdev () > 2 || speedAngle->getStdev () > 2)
+		{
+			if (trackingLook->getValueFloat () < 1)
+				change = 0.1;
+			else if (trackingLook->getValueFloat () < 5)
+				change = 0.5;
+			else
+				change = 2;
+		}
+		else if (trackingLook->getValueFloat () > 0.5)
+		{
+			if (trackingLook->getValueFloat () > 5)
+				change = -2;
+			else if (trackingLook->getValueFloat () > 1)
+				change = -0.5;
+			else
+				change = -0.1;
+		}
+
+		if (change != 0)
+		{
+			trackingLook->setValueFloat (trackingLook->getValueFloat () + change);
+			if (trackingLook->getValueFloat () > 15)
+				trackingLook->setValueFloat (15);
+			else if (trackingLook->getValueFloat () < 0.5)
+				trackingLook->setValueFloat (0.5);
+		}
+		sendValueAll (trackingLook);
+		lastTrackingNum = trackingNum;
+	}
+}
+
 
 void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 {
@@ -813,8 +871,8 @@ void SitechAltAz::telSetTarget (int32_t ac, int32_t dc)
 	altaz_Xrequest.y_dest = ac;
 	altaz_Xrequest.x_dest = dc;
 
-	altaz_Xrequest.y_speed = telConn->degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI;
-	altaz_Xrequest.x_speed = telConn->degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI;
+	altaz_Xrequest.y_speed = labs (telConn->degsPerSec2MotorSpeed (az_speed->getValueDouble (), az_ticks->getValueLong (), 360) * SPEED_MULTI);
+	altaz_Xrequest.x_speed = labs (telConn->degsPerSec2MotorSpeed (alt_speed->getValueDouble (), alt_ticks->getValueLong (), 360) * SPEED_MULTI);
 
 	// clear bit 4, tracking
 	xbits &= ~(0x01 << 4);
@@ -950,8 +1008,11 @@ void SitechAltAz::getTel ()
 					break;
 			}
 
-			az_pos_error->setValueInteger (*(int16_t*) &altaz_status.y_last[2]);
-			alt_pos_error->setValueInteger (*(int16_t*) &altaz_status.x_last[2]);
+			az_pos_error->addValue (*(int16_t*) &altaz_status.y_last[2], 20);
+			alt_pos_error->addValue (*(int16_t*) &altaz_status.x_last[2], 20);
+			
+			az_pos_error->calculate ();
+			alt_pos_error->calculate ();
 			break;
 		}
 	}

@@ -217,7 +217,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *raPANSpeed;
 		rts2core::ValueDouble *decPANSpeed;
 
-		void applyOffsets (struct ln_equ_posn *pos, bool oriSet = false);
+		void applyOffsets (struct ln_equ_posn *pos);
 
 		void applyAltAzOffsets (struct ln_hrz_posn *hrz)
 		{
@@ -433,6 +433,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *telAmbientTemperature;
 		rts2core::ValueFloat *telHumidity;
 		rts2core::ValueFloat *telWavelength;
+		rts2core::ValueDouble *telDUT1;
 
 		/**
 		 * Precalculated latitude values..
@@ -744,6 +745,8 @@ class Telescope:public rts2core::Device
 
 		double getStoredTargetDistance () { return targetDistance->getValueDouble (); }
 
+		double getTargetDistanceMax () { return targetDistanceStat->getMax (); }
+
 		/**
 		 * Returns ALT AZ coordinates of target.
 		 *
@@ -953,6 +956,8 @@ class Telescope:public rts2core::Device
 		 */
 		void stopTracking (const char *msg = "tracking stopped");
 
+		int trackingNum;
+
 		/**
 		 * Called to run tracking. It is up to driver implementation
 		 * to send updated position to telescope driver.
@@ -1038,6 +1043,7 @@ class Telescope:public rts2core::Device
 		rts2core::ValueDouble *jdVal;
 
 		rts2core::ValueFloat *trackingInterval;
+		rts2core::ValueFloat *corrAgresivityCap;
 
 		/**
 		 * Returns differential tracking values. Telescope must support
@@ -1403,11 +1409,16 @@ class Telescope:public rts2core::Device
 		rts2core::ValueFloat *decUpperLimit;
 
 		void setOri (double obj_ra, double obj_dec, double epoch = 2000.0, double pmRa = 0, double pmDec = 0);
+		bool useOEpoch;
 
 		void resetMpecTLE ();
 
 		double nextCupSync;
 		double lastTrackLog;
+		double unstableDist;
+
+		void updateDUT1 ();
+		const char *dut1fn;
 };
 
 };

@@ -76,6 +76,8 @@
  */
 #define COMMAND_TELD_MOVE_PM    "move_pm"
 
+#define COMMAND_TELD_MOVE_EPOCH  "move_epoch"
+
 /**
  * Move to position in given epoch, with proper motions (arcsec/year).
  * Proper motions are defined in arcseconds.
@@ -560,22 +562,22 @@ class CommandCenter:public CommandCameraSettings
 class CommandChangeValue:public Command
 {
 	public:
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, int _operand);
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, long int _operand);
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, float _operand);
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand);
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand1, double _operand2);
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, bool _operand);
+		CommandChangeValue (Block * _master, std::string _valName, char op, int _operand);
+		CommandChangeValue (Block * _master, std::string _valName, char op, long int _operand);
+		CommandChangeValue (Block * _master, std::string _valName, char op, float _operand);
+		CommandChangeValue (Block * _master, std::string _valName, char op, double _operand);
+		CommandChangeValue (Block * _master, std::string _valName, char op, double _operand1, double _operand2);
+		CommandChangeValue (Block * _master, std::string _valName, char op, bool _operand);
 		/**
 		 * Change rectangle value.
 		 */
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, int x, int y, int w, int h);
+		CommandChangeValue (Block * _master, std::string _valName, char op, int x, int y, int w, int h);
 		/**
 		 * Create command to change value from string.
 		 *
 		 * @param raw If true, string will be send without escaping.
 		 */
-		CommandChangeValue (DevClient * _client, std::string _valName, char op, std::string _operand, bool raw = false);
+		CommandChangeValue (Block * _master, std::string _valName, char op, std::string _operand, bool raw = false);
 };
 
 /**
@@ -911,6 +913,12 @@ class CommandParallacticAngle:public Command
 {
 	public:
 		CommandParallacticAngle (Block * _master, double reftime, double pa, double rate);
+};
+
+class CommandMoveAz:public Command
+{
+	public:
+		CommandMoveAz (Block * _master, double az);
 };
 
 }

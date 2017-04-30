@@ -247,7 +247,7 @@ void DevClientCameraImage::newDataConn (int data_conn)
 
 			const char *last_filename = image->getAbsoluteFileName ();
 			if (last_filename)
-				queCommand (new rts2core::CommandChangeValue (this, "last_image", '=', std::string (last_filename)));
+				queCommand (new rts2core::CommandChangeValue (getMaster (), "last_image", '=', std::string (last_filename)));
 
 			// delete old image
 			delete actualImage;
@@ -595,7 +595,7 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 
 		const char *last_filename = image->getAbsoluteFileName ();
 		if (last_filename)
-			queCommand (new rts2core::CommandChangeValue (this, "last_image", '=', std::string (last_filename)));
+			queCommand (new rts2core::CommandChangeValue (getMaster (), "last_image", '=', std::string (last_filename)));
 
 		// delete old image
 		delete actualImage;

@@ -79,7 +79,7 @@ void ValueBoxBool::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', getSelRow () == 0));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', getSelRow () == 0));
 }
 
 bool ValueBoxBool::setCursor ()
@@ -112,7 +112,7 @@ void ValueBoxString::sendValue (rts2core::Connection * connection)
 	char buf[cx + 1];
 	mvwinnstr (getWriteWindow (), 0, 0, buf, cx);
 	buf[cx] = '\0';
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', std::string (buf)));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', std::string (buf)));
 }
 
 bool ValueBoxString::setCursor ()
@@ -140,7 +140,7 @@ void ValueBoxInteger::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', getValueInteger ()));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', getValueInteger ()));
 }
 
 bool ValueBoxInteger::setCursor ()
@@ -177,7 +177,7 @@ void ValueBoxLongInteger::sendValue (rts2core::Connection * connection)
 		// log error;
 		return;
 	}
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', tval));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', tval));
 }
 
 bool ValueBoxLongInteger::setCursor ()
@@ -187,7 +187,7 @@ bool ValueBoxLongInteger::setCursor ()
 
 ValueBoxFloat::ValueBoxFloat (NWindow * top, rts2core::ValueFloat * _val, int _x, int _y):ValueBox (top, _val),NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
-	wprintw (getWriteWindow (), "%f", _val->getValueFloat ());
+	wprintw (getWriteWindow (), "%g", _val->getValueFloat ());
 }
 
 keyRet ValueBoxFloat::injectKey (int key)
@@ -218,7 +218,7 @@ void ValueBoxFloat::sendValue (rts2core::Connection * connection)
 		// log error;
 		return;
 	}
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', tval));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', tval));
 }
 
 bool ValueBoxFloat::setCursor ()
@@ -228,7 +228,7 @@ bool ValueBoxFloat::setCursor ()
 
 ValueBoxDouble::ValueBoxDouble (NWindow * top, rts2core::ValueDouble * _val, int _x, int _y):ValueBox (top, _val),NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
-	wprintw (getWriteWindow (), "%f", _val->getValueDouble ());
+	wprintw (getWriteWindow (), "%g", _val->getValueDouble ());
 }
 
 keyRet ValueBoxDouble::injectKey (int key)
@@ -255,7 +255,7 @@ void ValueBoxDouble::sendValue (rts2core::Connection * connection)
 		// log error;
 		return;
 	}
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', tval));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', tval));
 }
 
 bool ValueBoxDouble::setCursor ()
@@ -315,7 +315,7 @@ void ValueBoxSelection::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', getSelRow ()));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', getSelRow ()));
 }
 
 ValueBoxTimeDiff::ValueBoxTimeDiff (NWindow * top, rts2core::ValueTime *_val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
@@ -339,7 +339,7 @@ void ValueBoxTimeDiff::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', time (NULL) + (getSelRow () + 1) * 120));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', time (NULL) + (getSelRow () + 1) * 120));
 }
 
 ValueBoxRectangle::ValueBoxRectangle (NWindow * top, rts2core::ValueRectangle * _val, int _x, int _y):ValueBox (top, _val), NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 4, 1, 1, 300, 2)
@@ -419,9 +419,7 @@ void ValueBoxRectangle::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (),
-		getValue ()->getName (), '=', edt[0]->getValueInteger (), edt[1]->getValueInteger (),
-		edt[2]->getValueInteger (), edt[3]->getValueInteger ()));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', edt[0]->getValueInteger (), edt[1]->getValueInteger (), edt[2]->getValueInteger (), edt[3]->getValueInteger ()));
 }
 
 bool ValueBoxRectangle::setCursor ()
@@ -549,7 +547,7 @@ void ValueBoxArray::sendValue (rts2core::Connection * connection)
 		}
 		os << " ";
 	}
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', os.str (), true));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', os.str (), true));
 }
 
 bool ValueBoxArray::setCursor ()
@@ -561,8 +559,8 @@ bool ValueBoxArray::setCursor ()
 
 ValueBoxPair::ValueBoxPair (NWindow * top, rts2core::ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
 {
-	edt[0] = new NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
-	edt[1] = new NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[0] = new NWindowEditDegrees (top->getX () + _x + 5, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[1] = new NWindowEditDegrees (top->getX () + _x + 20, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
 
 	edt[0]->setValueDouble (_val->getRa ());
 	edt[1]->setValueDouble (_val->getDec ());
@@ -600,7 +598,7 @@ keyRet ValueBoxPair::injectKey (int key)
 			return RKEY_HANDLED;
 	}
 
-	return edt[edtSelected]->injectKey (key);	
+	return edt[edtSelected]->injectKey (key);
 }
 
 void ValueBoxPair::draw ()
@@ -627,7 +625,7 @@ void ValueBoxPair::sendValue (rts2core::Connection * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', edt[0]->getValueDouble (), edt[1]->getValueDouble ()));
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', edt[0]->getValueDouble (), edt[1]->getValueDouble ()));
 }
 
 bool ValueBoxPair::setCursor ()

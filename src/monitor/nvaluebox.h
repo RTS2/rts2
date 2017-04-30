@@ -237,7 +237,7 @@ class ValueBoxPair:public ValueBox, NWindowEdit
 		virtual void sendValue (rts2core::Connection * connection);
 		virtual bool setCursor ();
 	private:
-		NWindowEditDigits * edt[2];
+		NWindowEditDegrees * edt[2];
 		int edtSelected;
 
 		const char *p1name;

@@ -103,7 +103,7 @@ int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn 
 
 	applyModelAltAz (&hrz_modelled, &model_change);
 
-	int ret = hrz2counts (&hrz_modelled, azc, altc, used_flipping, use_flipped, writeValue, haMargin);
+	int ret = hrz2counts (&hrz_modelled, azc, altc, used_flipping, use_flipped, writeValue, haMargin, false);
 	if (ret)
 		return ret;
 
@@ -116,7 +116,7 @@ int AltAz::sky2counts (const double utc1, const double utc2, struct ln_equ_posn 
 	return 0;
 }
 
-int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin)
+int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int used_flipping, bool &use_flipped, bool writeValue, double haMargin, int az_zero)
 {
 	applyAltAzOffsets (hrz);
 
@@ -138,6 +138,22 @@ int AltAz::hrz2counts (struct ln_hrz_posn *hrz, int32_t &azc, int32_t &altc, int
 
 	int32_t t_alt = altc - d_alt;
 	int32_t t_az = azc - d_az;
+
+	// put target closer to 0 than az_ticks / 2.0
+	if (az_zero < 0)
+	{
+		while (t_az > az_ticks->getValueLong () / 2.0)
+			t_az -= az_ticks->getValueLong ();
+		while (t_az < -az_ticks->getValueLong () / 2.0)
+			t_az += az_ticks->getValueLong ();
+	}
+	else if (az_zero > 0)
+	{
+		while (t_az > az_ticks->getValueLong ())
+			t_az -= az_ticks->getValueLong ();
+		while (t_az < 0)
+			t_az += az_ticks->getValueLong ();
+	}
 
 	while (t_az < azMin->getValueLong ())
 		t_az += az_ticks->getValueLong ();

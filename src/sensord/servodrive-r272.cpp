@@ -158,11 +158,17 @@ int ServoDrive::commandAuthorized (rts2core::Connection * conn)
 			return home ('L');
 		}
 	}
-	if (conn->isCommand ("r"))
+	else if (conn->isCommand ("r"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
 		return sendCommand ("ST1*") == 0 ? 0 : -2;
+	}
+	else if (conn->isCommand (COMMAND_STOP))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return sendCommand ("SP*") == 0 ? 0 : -2;
 	}
 	return Sensor::commandAuthorized (conn);
 }

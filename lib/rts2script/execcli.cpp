@@ -104,7 +104,7 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
 		case EVENT_OBSERVE:
 			if (currentTarget && currentTarget->getTargetName ())
-				queCommand (new rts2core::CommandChangeValue (this, "OBJECT", '=', std::string (currentTarget->getTargetName ())));
+				queCommand (new rts2core::CommandChangeValue (getMaster (), "OBJECT", '=', std::string (currentTarget->getTargetName ())));
 			break;
 	}
 	// must be done after processing trigger in parent

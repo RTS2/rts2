@@ -304,10 +304,11 @@ int Dome::idle ()
 
 int Dome::closeDomeWeather ()
 {
-	int ret;
+	int ret = 0;
 	if (getIgnoreMeteo () == false)
 	{
-		ret = domeCloseStart ();
+		if (domeAutoClose == NULL || domeAutoClose->getValueBool () == true)
+			ret = domeCloseStart ();
 		setMasterStandby ();
 		return ret;
 	}

@@ -41,9 +41,18 @@ int main (int argc, char **argv)
 	MountInfo mi;
 
 	client.infoMount(mi);
-	transport->close();
 
 	printf ("Mount RA: %.5f DEC %.5f\n", mi.TEL.ra, mi.TEL.dec);
+
+	client.DomeLights(1);
+	printf ("Lights on\n");
+
+	sleep (10);
+
+	client.DomeLights(0);
+	printf ("Lights off\n");
+
+	transport->close();
 
 	return 0;
 }

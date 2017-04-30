@@ -74,7 +74,7 @@ START_TEST(test_gem_hko_1)
 	pos.dec = -3.51601;
 
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
-	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
+	ck_assert_msg (!std::isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
 	struct ln_equ_posn curr;
 	curr.ra = curr.dec = 0;
@@ -140,7 +140,7 @@ START_TEST(test_gem_hko_2)
 	pos.dec = -17.5675;
 
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
-	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
+	ck_assert_msg (!std::isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
 #ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -51445419);
@@ -203,7 +203,7 @@ START_TEST(test_gem_hko_3)
 	pos.dec = 52.837;
 
 	float e = gemTest->test_move (JD, &pos, ac, dc, 2.0, 200);
-	ck_assert_msg (!isnan (e), "position %f %f not reached", pos.ra, pos.dec);
+	ck_assert_msg (!std::isnan (e), "position %f %f not reached", pos.ra, pos.dec);
 
 #ifdef RTS2_LIBERFA
 	ck_assert_int_eq (ac, -80576113);

@@ -112,12 +112,35 @@ class NWindowEditDigits:public NWindowEdit
 		/**
 		 * Sets edit window value.
 		 */
-		void setValueDouble (double _val) { wprintw (getWriteWindow (), "%f", _val); }
+		virtual void setValueDouble (double _val);
 
 		/**
 		 * Returns integer value of the field. Returns 0 if field is empty.
 		 */
-		double getValueDouble ();
+		virtual double getValueDouble ();
+	protected:
+		virtual bool passKey (int key);
+};
+
+/**
+ * Window with edit box for degrees (d,' and ")
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
+ */
+class NWindowEditDegrees:public NWindowEditDigits
+{
+	public:
+		NWindowEditDegrees (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
+
+		/**
+		 * Sets edit window value.
+		 */
+		virtual void setValueDouble (double _val);
+
+		/**
+		 * Returns degrees value of the field. Returns 0 if field is empty.
+		 */
+		virtual double getValueDouble ();
 	protected:
 		virtual bool passKey (int key);
 };

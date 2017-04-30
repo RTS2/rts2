@@ -46,7 +46,7 @@ parser.add_argument('--maxverify', help=_('maximal number of tries to verify off
 parser.add_argument('--verifyradius', help=_('radius fore sucessfull verify (in pixels)'), action='store', type=float, dest='verifyradius', default=5)
 parser.add_argument('--verifywcs', help=_('WCS for verify images - arcseconds per pixel:rotang:flip'), action='store', dest='verifywcs', type=str, default='0.335:270:X')
 parser.add_argument('--minflux', help=_('minimal flux for star to be considered as bright star. You can use k and m to indicate thousands and milions'), action='store', type=rts2.kmparse.kmparse, dest='minflux')
-parser.add_argument('--minalt', help=_('minimal altitude (in degrees)'), action='store', type=float, dest='minalt')
+parser.add_argument('--minalt', help=_('minimal altitude (in degrees)'), action='store', type=float, dest='minalt', default=15)
 parser.add_argument('--sleeptime', help=_('sleep time after move'), action='store', type=float, dest='sleeptime', default=20)
 parser.add_argument('--timeout', help=_('timeout after move'), action='store', type=float, dest='timeout', default=7)
 parser.add_argument('--imagescript', help=_('RTS2 script for camera exposure'), action='store', dest='imagescript', default='E 1')
@@ -82,9 +82,9 @@ try:
 
 	if options.path == 'random':
 		path = rts2.altazpath.random_path()
-	if options.path[:6] == 'const[':
+	elif options.path[:6] == 'const[':
 		path = rts2.altazpath.constant_path(map(float,options.path[6:-1].split(',')))
-	if options.path[:6] == 'azsep[':
+	elif options.path[:6] == 'azsep[':
 		az,rest = options.path[6:].split(':')
 		path = rts2.altazpath.constant_path(map(float,rest[:-1].split(',')), azimuth_separation=float(az))
 	elif type(options.path) == str:

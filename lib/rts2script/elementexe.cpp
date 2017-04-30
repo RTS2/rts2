@@ -355,14 +355,14 @@ void ConnExecute::processCommand (char *cmd)
 		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getClient () == NULL)
 			return;
 		int deviceTypeNum = getDeviceType (device);
-		rts2core::CommandChangeValue cmdch (masterElement->getClient (), std::string (value), *operat, std::string (operand), true);
+		rts2core::CommandChangeValue cmdch (masterElement->getClient ()->getMaster (), std::string (value), *operat, std::string (operand), true);
 		getMaster ()->queueCommandForType (deviceTypeNum, cmdch);
 	}
 	else if (!strcmp (cmd, "value"))
 	{
 		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
-		masterElement->getConnection ()->queCommand (new rts2core::CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
+		masterElement->getConnection ()->queCommand (new rts2core::CommandChangeValue (masterElement->getClient ()->getMaster (), std::string (value), *operat, std::string (operand), true));
 	}
 	else if (!strcmp (cmd, "device_by_type"))
 	{

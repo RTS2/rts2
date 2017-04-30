@@ -122,9 +122,9 @@ int ElementAcquire::nextCommand (rts2core::DevClientCamera * camera, rts2core::C
 				script->getMaster ()->postEvent (new rts2core::Event (EVENT_QUICK_ENABLE, (void *) &en));
 			}
 
-			camera->getConnection ()->queCommand (new rts2core::CommandChangeValue (camera, "SHUTTER", '=', 0));
+			camera->getConnection ()->queCommand (new rts2core::CommandChangeValue (camera->getMaster (), "SHUTTER", '=', 0));
 			// change values of the exposur
-			camera->getConnection ()->queCommand (new rts2core::CommandChangeValue (camera, "exposure", '=', expTime));
+			camera->getConnection ()->queCommand (new rts2core::CommandChangeValue (camera->getMaster (), "exposure", '=', expTime));
 
 			*new_command = new rts2core::CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 			getDevice (new_device);

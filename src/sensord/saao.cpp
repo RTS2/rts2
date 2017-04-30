@@ -159,7 +159,7 @@ int SAAO::info ()
 			if (strncmp (data, "WS,", 3) == 0)
 			{
 				data += 4;
-				windSpeed->setValueFloat (strtod (data, &endptr));
+				windSpeed->setValueFloat (strtod (data, &endptr) * 3.6);
 				if (windSpeed->getValueFloat () > windLimit->getValueFloat ())
 				{
 					checkWeatherTimeout (120, "wind over limit");
@@ -183,7 +183,7 @@ int SAAO::info ()
 				data += 3;
 				temperature->setValueFloat (strtod (data, &endptr));
 				if (telConn)
-					telConn->queCommand (new rts2core::CommandChangeValue (telConn->getOtherDevClient (), "AMBTEMP", '=', temperature->getValueFloat ()));
+					telConn->queCommand (new rts2core::CommandChangeValue (telConn->getOtherDevClient ()->getMaster (), "AMBTEMP", '=', temperature->getValueFloat ()));
 				data = endptr;
 			}
 			else if (strncmp (data, "H,", 2) == 0)
@@ -202,7 +202,7 @@ int SAAO::info ()
 					parsed |= 0x02;
 				}
 				if (telConn)
-					telConn->queCommand (new rts2core::CommandChangeValue (telConn->getOtherDevClient (), "AMBHUMIDITY", '=', humidity->getValueFloat ()));
+					telConn->queCommand (new rts2core::CommandChangeValue (telConn->getOtherDevClient ()->getMaster (), "AMBHUMIDITY", '=', humidity->getValueFloat ()));
 				data = endptr;
 			}
 			else if (strncmp (data, "BP,", 3) == 0)
@@ -256,7 +256,11 @@ bool SAAO::isGoodWeather ()
 	time_t now;
 	time (&now);
 	if (lastGood->getValueDouble () > now)
+	{
+		// forced safe weather - even when weather is in timeout
+		SensorWeather::isGoodWeather ();
 		return true;
+	}
 
 	if (getLastInfoTime () > 120)
 	{

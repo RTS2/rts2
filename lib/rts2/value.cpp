@@ -386,7 +386,7 @@ const char * ValueFloat::getDisplayValue ()
 {
 	double absv = fabs (value);
 	if ((absv > 10e-3 && absv < 10e+5) || absv == 0)
-		sprintf (buf, "%lf", value);
+		sprintf (buf, "%lg", value);
 	else
 		sprintf (buf, "%.20le", value);
 	return buf;

@@ -1,4 +1,4 @@
-	/**
+/**
  * Driver for APM auxiliary devices (mirror covers, fans,..)
  * Copyright (C) 2015 Stanislav Vitek
  * Copyright (C) 2016 Petr Kubanek
@@ -220,7 +220,6 @@ int APMAux::open ()
 		return -2;
 	commandInProgress = OPENING;
 	maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_OPEN);
-	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 	return openBaffle ();
 }
 
@@ -230,7 +229,6 @@ int APMAux::close ()
 	{
 		commandInProgress = CLOSING;
 		maskState (DEVICE_BLOCK_OPEN | DEVICE_BLOCK_CLOSE, DEVICE_BLOCK_CLOSE);
-		addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 		return closeCover ();
 	}
 	if (baffleCommand->getValueInteger () > time (NULL))
@@ -254,6 +252,8 @@ int APMAux::openCover ()
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
 	sendValueAll (coverCommand);
 
+	addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
+
 	return 0;
 }
 
@@ -271,6 +271,8 @@ int APMAux::closeCover ()
 
 	coverCommand->setValueTime (time (NULL) + COVER_TIME);
 	sendValueAll (coverCommand);
+
+	addTimer (COVER_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 
 	return 0;
 }
@@ -292,6 +294,8 @@ int APMAux::openBaffle ()
 	baffleCommand->setValueTime (time (NULL) + BAFFLE_TIME);
 	sendValueAll (baffleCommand);
 
+	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
+
 	return 0;
 }
 
@@ -310,6 +314,8 @@ int APMAux::closeBaffle ()
 		sendValueAll (baffleCommand);
 		setOCBlock ();
 	}
+
+	addTimer (BAFFLE_TIME + 1, new rts2core::Event (COMMAND_TIMER));
 
 	return 0;
 }
@@ -360,9 +366,15 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 	if (baffleCommand != NULL && !std::isnan (baffleCommand->getValueDouble ()) && baffleCommand->getValueInteger () < time (NULL))
 	{
 		if (baffle->getValueInteger () == 1)
+		{
 			baffle->setValueInteger (2);
+			logStream (MESSAGE_INFO) << "baffle opened" << sendLog;
+		}
 		if (baffle->getValueInteger () == 3)
+		{
 			baffle->setValueInteger (0);
+			logStream (MESSAGE_INFO) << "baffle closed" << sendLog;
+		}
 		baffleCommand->setValueDouble (NAN);
 		sendValueAll (baffle);
 		sendValueAll (baffleCommand);
@@ -384,6 +396,7 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 				coverState->setValueInteger (0);
 				sendValueAll (coverState);
 				setOCBlock ();
+				logStream (MESSAGE_INFO) << "cover closed" << sendLog;
 				break;
 			case '1':
 				if (!std::isnan (coverCommand->getValueDouble ()))
@@ -393,8 +406,12 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 					coverCommand->setValueDouble (NAN);
 					sendValueAll (coverCommand);
 				}
-				coverState->setValueInteger (2);
-				sendValueAll (coverState);
+				if (coverState->getValueInteger () != 2)
+				{
+					coverState->setValueInteger (2);
+					sendValueAll (coverState);
+					logStream (MESSAGE_INFO) << "cover opened" << sendLog;
+				}
 				setOCBlock ();
 				break;
 			case '2':

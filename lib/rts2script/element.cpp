@@ -138,7 +138,7 @@ int ElementSequence::nextCommand (rts2core::DevClientCamera * camera, rts2core::
 		callProgress = SHUTTER;
 		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
 		{
-			*new_command = new rts2core::CommandChangeValue (camera, "SHUTTER", '=', 0);
+			*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "SHUTTER", '=', 0);
 			(*new_command)->setBopMask (BOP_TEL_MOVE);
 			return NEXT_COMMAND_KEEP;
 		}
@@ -148,7 +148,7 @@ int ElementSequence::nextCommand (rts2core::DevClientCamera * camera, rts2core::
 		callProgress = FILTER;
 		if (camera->getConnection ()->getValue ("filter") != NULL)
 		{
-			*new_command = new rts2core::CommandChangeValue (camera, "filter", '=', filter);
+			*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "filter", '=', filter);
 			(*new_command)->setBopMask (BOP_TEL_MOVE);
 			return NEXT_COMMAND_KEEP;
 		}
@@ -157,7 +157,7 @@ int ElementSequence::nextCommand (rts2core::DevClientCamera * camera, rts2core::
 	if (callProgress == FILTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
 	{
 		callProgress = EXPOSURE;
-		*new_command = new rts2core::CommandChangeValue (camera, "exposure", '=', expTime);
+		*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "exposure", '=', expTime);
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 		return NEXT_COMMAND_KEEP;
 	}
@@ -206,7 +206,7 @@ int ElementImage::nextCommand (rts2core::DevClientCamera * camera, rts2core::Com
 
 		if (targetShutter >= 0 && camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != targetShutter)
 		{
-			*new_command = new rts2core::CommandChangeValue (camera, "SHUTTER", '=', targetShutter);
+			*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "SHUTTER", '=', targetShutter);
 			(*new_command)->setBopMask (BOP_TEL_MOVE);
 			return NEXT_COMMAND_KEEP;
 		}
@@ -215,7 +215,7 @@ int ElementImage::nextCommand (rts2core::DevClientCamera * camera, rts2core::Com
 	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
 	{
 		callProgress = EXPOSURE;
-		*new_command = new rts2core::CommandChangeValue (camera, "exposure", '=', expTime);
+		*new_command = new rts2core::CommandChangeValue (camera->getMaster (), "exposure", '=', expTime);
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 		return NEXT_COMMAND_KEEP;
 	}
@@ -490,12 +490,12 @@ int ElementChangeValue::defnextCommand (rts2core::DevClient * client, rts2core::
 		rawString = true;
 	if (valName[0] == '!')
 	{
-		*new_command = new rts2core::CommandChangeValue (client, valName.substr (1), op, _os.str(), rawString);
+		*new_command = new rts2core::CommandChangeValue (client->getMaster (), valName.substr (1), op, _os.str(), rawString);
 		(*new_command)->setBopMask (BOP_TEL_MOVE | BOP_WHILE_STATE);
 	}
 	else
 	{
-		*new_command = new rts2core::CommandChangeValue (client, valName, op, _os.str(), rawString);
+		*new_command = new rts2core::CommandChangeValue (client->getMaster (), valName, op, _os.str(), rawString);
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 	}
 	getDevice (new_device);
@@ -544,9 +544,9 @@ ElementComment::~ElementComment (void)
 
 int ElementComment::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	client->getConnection ()->queCommand (new rts2core::CommandChangeValue (client, "COMM_NUM", '=', cnum));
+	client->getConnection ()->queCommand (new rts2core::CommandChangeValue (client->getMaster (), "COMM_NUM", '=', cnum));
 	// script comment value
-	*new_command = new rts2core::CommandChangeValue (client, "SCR_COMM", '=', std::string (comment));
+	*new_command = new rts2core::CommandChangeValue (client->getMaster (), "SCR_COMM", '=', std::string (comment));
 	getDevice (new_device);
 	return 0;
 }

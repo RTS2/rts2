@@ -106,7 +106,7 @@ const char * ValueDoubleMinMax::getValue ()
 
 const char * ValueDoubleMinMax::getDisplayValue ()
 {
-	sprintf (buf, "%f %f %f", getValueDouble (), getMin (), getMax ());
+	sprintf (buf, "%g %g %g", getValueDouble (), getMin (), getMax ());
 	return buf;
 }
 

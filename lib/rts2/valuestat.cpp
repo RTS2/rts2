@@ -103,15 +103,15 @@ const char * ValueDoubleStat::getDisplayValue ()
 	switch (getValueDisplayType ())
 	{
 		case RTS2_DT_DEGREES:
-			os << LibnovaDeg (getValueDouble ()) << " " << numMes << " " << LibnovaDeg (mode) << " " << LibnovaDeg (min) << " " << LibnovaDeg (max) << " " << LibnovaDeg (stdev);
+			os << LibnovaDeg (getValueDouble ()) << " " << numMes << " " << LibnovaDeg (mode) << " " << LibnovaDeg (min) << " " << LibnovaDeg (max) << " " << LibnovaDeg (stdev) << " " << LibnovaDeg (max - min);
 			memcpy (buf, os.str ().c_str (), sizeof (buf));
 			break;
 		case RTS2_DT_DEG_DIST:
-			os << LibnovaDegDist (getValueDouble ()) << " " << numMes << " " << LibnovaDegDist (mode) << " " << LibnovaDegDist (min) << " " << LibnovaDegDist (max) << " " << LibnovaDegDist (stdev);
+			os << LibnovaDegDist (getValueDouble ()) << " " << numMes << " " << LibnovaDegDist (mode) << " " << LibnovaDegDist (min) << " " << LibnovaDegDist (max) << " " << LibnovaDegDist (stdev) << " " << LibnovaDegDist (max - min);
 			memcpy (buf, os.str ().c_str (), sizeof (buf));
 			break;
 		default:
-			snprintf (buf, sizeof(buf), "%f %i %f %f %f %f", getValueDouble (), numMes, mode, min, max, stdev);
+			snprintf (buf, sizeof(buf), "%g %i %g %g %g %g %g", getValueDouble (), numMes, mode, min, max, stdev, max - min);
 	}
 	return buf;
 }
