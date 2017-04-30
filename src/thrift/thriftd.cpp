@@ -208,10 +208,11 @@ int ThriftD::init ()
 
 int ThriftD::idle ()
 {
+	rts2core::Value *val;
+
 	rts2core::Connection *telConn = getOpenConnection (DEVICE_TYPE_MOUNT);
 	if (telConn != NULL)
 	{
-		rts2core::Value *val;
 		rts2core::ValueRaDec *raDec;
 		rts2core::ValueAltAz *altAz;
 
@@ -260,7 +261,33 @@ int ThriftD::idle ()
 		{
 			mountInfo.TrackingType = rts2::TrackType::type (val->getValueInteger ());
 		}
+		mountInfo.slewing = ((telConn->getState () & TEL_MASK_MOVING) == TEL_MOVING) || ((telConn->getState () & TEL_MASK_MOVING) == TEL_PARKING);
 	}
+	rts2core::Connection *cupConn = getOpenConnection (DEVICE_TYPE_CUPOLA);
+	if (cupConn != NULL)
+	{
+		val = cupConn->getValue ("lights");
+		if (val != NULL)
+		{
+			domeInfo.lights = val->getValueInteger ();
+		}
+		val = cupConn->getValue ("shutter_closed");
+		if (val != NULL && val->getValueInteger ())
+		{
+			domeInfo.domeshutters = 0;
+		}
+		val = cupConn->getValue ("shutter_opened");
+		if (val != NULL && val->getValueInteger ())
+		{
+			domeInfo.domeshutters = 1;
+		}
+		val = cupConn->getValue ("CUP_AZ");
+		if (val != NULL)
+		{
+			domeInfo.DomeAngle = ln_range_degrees (val->getValueDouble () + 180.0);
+		}
+	}
+	
 	return Device::idle ();
 }
 
