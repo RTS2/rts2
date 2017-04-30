@@ -393,10 +393,13 @@ int APMAux::sendUDPMessage (const char * _message, bool expectSecond)
 					coverCommand->setValueDouble (NAN);
 					sendValueAll (coverCommand);
 				}
-				coverState->setValueInteger (0);
-				sendValueAll (coverState);
+				if (coverState->getValueInteger () != 0)
+				{
+					coverState->setValueInteger (0);
+					sendValueAll (coverState);
+					logStream (MESSAGE_INFO) << "cover closed" << sendLog;
+				}
 				setOCBlock ();
-				logStream (MESSAGE_INFO) << "cover closed" << sendLog;
 				break;
 			case '1':
 				if (!std::isnan (coverCommand->getValueDouble ()))
