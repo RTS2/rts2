@@ -155,6 +155,8 @@ class ObservatoryServiceHandler : virtual public ObservatoryServiceIf {
 		}
 
 		int32_t SelectPort(int32_t port) {
+			rts2core::CommandChangeValue cmd (rts2Device, "MIRP", '=', port);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MIRROR, cmd);
 			return 0;
 		}
 
@@ -163,6 +165,11 @@ class ObservatoryServiceHandler : virtual public ObservatoryServiceIf {
 		}
 
 		int32_t Abort() {
+			rts2core::Command cmd (rts2Device, COMMAND_STOP);
+			rts2Device->queueCommandForType (DEVICE_TYPE_MOUNT, cmd);
+			rts2Device->queueCommandForType (DEVICE_TYPE_CUPOLA, cmd);
+			rts2Device->queueCommandForType (DEVICE_TYPE_DOME, cmd);
+			rts2Device->queueCommandForType (DEVICE_TYPE_ROTATOR, cmd);
 			return 0;
 		}
 };
