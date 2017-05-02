@@ -94,9 +94,6 @@ class SitechAltAz:public AltAz
 		rts2core::ValueDouble *sitechVersion;
 		rts2core::ValueInteger *sitechSerial;
 
-		rts2core::ValueLong *az_pos;
-		rts2core::ValueLong *alt_pos;
-
 		rts2core::ValueLong *r_az_pos;
 		rts2core::ValueLong *r_alt_pos;
 
@@ -160,8 +157,6 @@ class SitechAltAz:public AltAz
 
 		rts2core::ValueDoubleStat *az_sitech_speed_stat;
 		rts2core::ValueDoubleStat *alt_sitech_speed_stat;
-
-		rts2core::ValueBool *computed_only_speed;
 
 		rts2core::ValueDouble *az_acceleration;
 		rts2core::ValueDouble *alt_acceleration;
@@ -227,9 +222,6 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (sitechVersion, "sitech_version", "SiTech controller firmware version", false);
 	createValue (sitechSerial, "sitech_serial", "SiTech controller serial number", false);
-
-	createValue (az_pos, "AXAZ", "AZ motor axis count", true, RTS2_VALUE_WRITABLE);
-	createValue (alt_pos, "AXALT", "ALT motor axis count", true, RTS2_VALUE_WRITABLE);
 
 	createValue (r_az_pos, "R_AXAZ", "real AZ motor axis count", true);
 	createValue (r_alt_pos, "R_AXALT", "real ALT motor axis count", true);
@@ -317,9 +309,6 @@ SitechAltAz::SitechAltAz (int argc, char **argv):AltAz (argc,argv, true, true, t
 
 	createValue (az_sitech_speed_stat, "az_s_speed_stat", "sitech speed statistics", false);
 	createValue (alt_sitech_speed_stat, "alt_s_speed_stat", "sitech speed statistics", false);
-
-	createValue (computed_only_speed, "computed_speed", "base speed vector calculations only on calculations, do not factor current target position", false);
-	computed_only_speed->setValueBool (false);
 
 	firstSlewCall = true;
 	wasStopped = false;
@@ -729,56 +718,27 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t az_change = 0;
 	int32_t alt_change = 0;
 
-	if (computed_only_speed->getValueBool () == true)
-	{
-		// constant 2 degrees tracking..
-		az_change = fabs (azCpd->getValueDouble ()) * 2.0;
-		alt_change = fabs (altCpd->getValueDouble ()) * 2.0;
+	az_change = a_azc - r_az_pos->getValueLong ();
+	alt_change = a_altc - r_alt_pos->getValueLong ();
 
-		altaz_Xrequest.y_speed = fabs (az_track_speed->getValueDouble ()) * SPEED_MULTI * speed_factor;
-		altaz_Xrequest.x_speed = fabs (alt_track_speed->getValueDouble ()) * SPEED_MULTI * speed_factor;
+	a_azc += az_change * 60;
+	a_altc += alt_change * 60;
 
-		// 2 degrees in ra; will be called periodically..
-		if (az_track_speed->getValueDouble () > 0)
-			altaz_Xrequest.y_dest = r_az_pos->getValueLong () + azCpd->getValueDouble () * 2.0;
-		else
-			altaz_Xrequest.y_dest = r_az_pos->getValueLong () - azCpd->getValueDouble () * 2.0;
+	if (a_azc > azMax->getValueLong ())
+		a_azc = azMax->getValueLong ();
+	if (a_azc < azMin->getValueLong ())
+		a_azc = azMin->getValueLong ();
 
-		if (alt_track_speed->getValueDouble () > 0)
-			altaz_Xrequest.x_dest = r_alt_pos->getValueLong () + altCpd->getValueDouble () * 2.0;
-		else
-			altaz_Xrequest.x_dest = r_alt_pos->getValueLong () - altCpd->getValueDouble () * 2.0;
-	}
-	else
-	{
-		az_change = a_azc - r_az_pos->getValueLong ();
-		alt_change = a_altc - r_alt_pos->getValueLong ();
+	if (a_altc > altMax->getValueLong ())
+		a_altc = altMax->getValueLong ();
+	if (a_altc < altMin->getValueLong ())
+		a_altc = altMin->getValueLong ();
 
-		if (sec_step < 1)
-		{
-			a_azc += az_change * 500;
-			a_altc += alt_change * 500;
-		}
+	altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
+	altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
 
-		a_azc += az_change * 60;
-		a_altc += alt_change * 60;
-
-		if (a_azc > azMax->getValueLong ())
-			a_azc = azMax->getValueLong ();
-		if (a_azc < azMin->getValueLong ())
-			a_azc = azMin->getValueLong ();
-
-		if (a_altc > altMax->getValueLong ())
-			a_altc = altMax->getValueLong ();
-		if (a_altc < altMin->getValueLong ())
-			a_altc = altMin->getValueLong ();
-
-		altaz_Xrequest.y_speed = labs (telConn->ticksPerSec2MotorSpeed (azc_speed * speed_factor));
-		altaz_Xrequest.x_speed = labs (telConn->ticksPerSec2MotorSpeed (altc_speed * speed_factor));
-
-		altaz_Xrequest.y_dest = a_azc;
-		altaz_Xrequest.x_dest = a_altc;
-	}
+	altaz_Xrequest.y_dest = a_azc;
+	altaz_Xrequest.x_dest = a_altc;
 
 	az_sitech_speed->setValueLong (altaz_Xrequest.y_speed);
 	alt_sitech_speed->setValueLong (altaz_Xrequest.x_speed);
@@ -892,9 +852,6 @@ void SitechAltAz::getTel ()
 
 	r_az_pos->setValueLong (altaz_status.y_pos);
 	r_alt_pos->setValueLong (altaz_status.x_pos);
-
-	az_pos->setValueLong (altaz_status.y_pos + azZero->getValueDouble () * azCpd->getValueDouble ());
-	alt_pos->setValueLong (altaz_status.x_pos + zdZero->getValueDouble () * altCpd->getValueDouble ());
 
 	az_enc->setValueLong (altaz_status.y_enc);
 	alt_enc->setValueLong (altaz_status.x_enc);
