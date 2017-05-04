@@ -812,12 +812,17 @@ class GPoint:
 		hist.set_xlabel('{0} arcsec'.format(self.__get_data(dn)[2]))
 		return hist
 
-	def plot_vect(self,grid,x,y,u,v,draw):
+	def plot_vect(self,grid,x1,y1,x2,y2,draw):
 		import pylab
+		u = self.__get_data(x2)[0] - self.__get_data(x1)[0]
+		v = self.__get_data(y2)[0] - self.__get_data(y1)[0]
+		dist = np.sqrt(u ** 2 + v ** 2)
+		if draw is None:
+			draw = ['c{0}!red'.format(np.mean(dist)),'c{0}!green'.format(np.max(dist))]
 		vect = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
-		vect.quiver(self.__get_data(x)[0],self.__get_data(y)[0],self.__get_data(u)[0] - self.__get_data(x)[0],self.__get_data(v)[0] - self.__get_data(y)[0])
-		vect.set_xlabel('{0} - {1}'.format(self.__get_data(x)[2],self.__get_data(u)[2]))
-		vect.set_ylabel('{0} - {1}'.format(self.__get_data(y)[2],self.__get_data(v)[2]))
+		vect.quiver(self.__get_data(x1)[0],self.__get_data(y1)[0],u,v,dist)
+		vect.set_xlabel('{0} - {1}'.format(self.__get_data(x1)[2],self.__get_data(x2)[2]))
+		vect.set_ylabel('{0} - {1}'.format(self.__get_data(y1)[2],self.__get_data(y2)[2]))
 
 		self.__draw(vect,draw)
 
@@ -876,13 +881,18 @@ class GPoint:
 			return
 		import matplotlib.pyplot as plt
 		for d in draw:
+			ci = d.find('!')
+			color = None
+			if ci > 1:
+				color = d[ci + 1:]
+				d = d[:ci]
 			if d[0] == 'c':
 				try:
 					x,y,r = map(float,d[1:].split(':'))
 				except ValueError,ve:
 					x = y = 0
 					r = float(d[1:])
-				p.add_artist(plt.Circle((x,y), r, fill=False, color='blue'))
+				p.add_artist(plt.Circle((x,y), r, fill=False, color=color))
 			elif d[0] == 'x':
 				try:
 					x,y,r = map(float,d[1:].split(':'))
@@ -892,8 +902,8 @@ class GPoint:
 						r = float(d[1:])
 					except ValueError,ve2:
 						r = np.max(np.abs([p.get_ylim(),p.get_xlim()]))
-				p.add_artist(plt.Line2D([x,x],[y+r,y-r],color='red'))
-				p.add_artist(plt.Line2D([x-r,x+r],[y,y],color='red'))
+				p.add_artist(plt.Line2D([x,x],[y+r,y-r],color=color))
+				p.add_artist(plt.Line2D([x-r,x+r],[y,y],color=color))
 			else:
 				raise Exception('unknow draw element {0}'.format(d))
 
@@ -967,8 +977,6 @@ class GPoint:
 				if not len(axnam) == 5:
 					self.plot_vect(g,'az-corr-err','alt-err','az-corr-merr','alt-merr',draw[i])
 				else:
-					if draw[i] is None:
-						draw[i] = ['c10','c20']
 					self.plot_vect(g,axnam[1],axnam[2],axnam[3],axnam[4],draw[i])
 			else:
 				for j in axnam[1:]:
