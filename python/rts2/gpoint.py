@@ -706,13 +706,18 @@ class GPoint:
 		def RMS(vector):
 			return np.sqrt(np.mean(np.square(vector)))
 
+		def print_header():
+			return "                           {0:>9s}  {1:>9s}  {2:>9s}  {3:>9s}  {4:>9s}".format("MIN", "MAX", "MEAN", "RMS", "STDEV")
+
 		def print_vect_stat(v):
-			return 'MIN {0:>9.3f}" MAX {1:>9.3f}" MEAN {2:>9.3f}" RMS {3:>9.3f}" STDEV {4:>9.3f}"'.format(np.min(v),np.max(v),np.mean(v),RMS(v),np.std(v))
+			return '{0:>9.3f}" {1:>9.3f}" {2:>9.3f}" {3:>9.3f}" {4:>9.3f}"'.format(np.min(v),np.max(v),np.mean(v),RMS(v),np.std(v))
 
 		print
 		print '=========== OBSERVATION DATA ============ OBSERVATION DATA ===================== OBSERVATION DATA ======'
 
 		print 'OBSERVATIONS ............ {0}'.format(len(self.diff_angular_hadec))
+		print print_header()
+
 		print 'RA DIFF .................',print_vect_stat(self.diff_ha*3600)
 		print 'RA CORRECTED DIFF .......',print_vect_stat(self.diff_corr_ha*3600)
 		print 'DEC DIFF RMS ............',print_vect_stat(self.diff_dec*3600)
@@ -726,6 +731,7 @@ class GPoint:
 		if self.best is not None:
 			print
 			print '=========== MODEL ======================= MODEL ==================================== MODEL ============='
+			print print_header()
 			print 'MODEL RA DIFF ...........',print_vect_stat(self.diff_model_ha*3600)
 			print 'MODEL RA CORRECTED DIFF .',print_vect_stat(self.diff_model_corr_ha*3600)
 			print 'MODEL DEC DIFF ..........',print_vect_stat(self.diff_model_dec*3600)
@@ -801,10 +807,21 @@ class GPoint:
 			n,bin,patches = hist.hist(self.__get_data(dn)[0])
 		else:
 			n,bin,patches = hist.hist(self.__get_data(dn)[0],bins-1)
-		hist.set_title('{0} histogram binned {1}'.format(dn,len(bin)))
+		hist.set_title('{0} histogram binned {1}'.format(self.__get_data(dn)[2],len(bin)))
 		hist.set_ylabel('Occurence')
-		hist.set_xlabel('{0} arcsec'.format(dn))
+		hist.set_xlabel('{0} arcsec'.format(self.__get_data(dn)[2]))
 		return hist
+
+	def plot_vect(self,grid,x,y,u,v,draw):
+		import pylab
+		vect = pylab.subplot2grid(self.plotgrid,grid[:2],colspan=grid[2],rowspan=grid[3])
+		vect.quiver(self.__get_data(x)[0],self.__get_data(y)[0],self.__get_data(u)[0] - self.__get_data(x)[0],self.__get_data(v)[0] - self.__get_data(y)[0])
+		vect.set_xlabel('{0} - {1}'.format(self.__get_data(x)[2],self.__get_data(u)[2]))
+		vect.set_ylabel('{0} - {1}'.format(self.__get_data(y)[2],self.__get_data(v)[2]))
+
+		self.__draw(vect,draw)
+
+		return vect
 
 	def __get_data(self,name):
 		if self.name_map is None:
@@ -851,27 +868,35 @@ class GPoint:
 			import matplotlib.patches as patches
 			band = float(band)
 			p.add_patch(patches.Rectangle((min(xdata[0]), -band), max(xdata[0]) - min(xdata[0]), 2*band, alpha=0.7, facecolor='red', edgecolor='none'))
-		if draw is not None:
-			import matplotlib.pyplot as plt
-			for d in draw:
-				if d[0] == 'c':
-					try:
-						x,y,r = map(float,d[1:].split(':'))
-					except ValueError,ve:
-						x = y = 0
-						r = float(d[1:])
-					p.add_artist(plt.Circle((x,y), r, fill=False))
-				elif d[0] == 'x':
-					try:
-						x,y,r = map(float,d[1:].split(':'))
-					except ValueError,ve:
-						x = y = 0
-						r = float(d[1:])
-					p.add_artist(plt.Line2D([x,x],[y+r,y-r]))
-					p.add_artist(plt.Line2D([x-r,x+r],[y,y]))
-				else:
-					raise Exception('unknow draw element {0}'.format(d))
+		self.__draw(p,draw)
 		return p
+
+	def __draw(self,p,draw):
+		if draw is None:
+			return
+		import matplotlib.pyplot as plt
+		for d in draw:
+			if d[0] == 'c':
+				try:
+					x,y,r = map(float,d[1:].split(':'))
+				except ValueError,ve:
+					x = y = 0
+					r = float(d[1:])
+				p.add_artist(plt.Circle((x,y), r, fill=False, color='blue'))
+			elif d[0] == 'x':
+				try:
+					x,y,r = map(float,d[1:].split(':'))
+				except ValueError,ve:
+					x = y = 0
+					try:
+						r = float(d[1:])
+					except ValueError,ve2:
+						r = np.max(np.abs([p.get_ylim(),p.get_xlim()]))
+				p.add_artist(plt.Line2D([x,x],[y+r,y-r],color='red'))
+				p.add_artist(plt.Line2D([x-r,x+r],[y,y],color='red'))
+			else:
+				raise Exception('unknow draw element {0}'.format(d))
+
 
 	def __gen_plot(self,plots,band):
 		import pylab
@@ -938,6 +963,13 @@ class GPoint:
 				if len(axnam) > 2:
 					bins=int(axnam[2])
 				self.plot_hist(g,axnam[1],bins)
+			elif axnam[0] == 'vect':
+				if not len(axnam) == 5:
+					self.plot_vect(g,'az-corr-err','alt-err','az-corr-merr','alt-merr',draw[i])
+				else:
+					if draw[i] is None:
+						draw[i] = ['c10','c20']
+					self.plot_vect(g,axnam[1],axnam[2],axnam[3],axnam[4],draw[i])
 			else:
 				for j in axnam[1:]:
 					self.plot_data(p,axnam[0],j,band,draw[i])

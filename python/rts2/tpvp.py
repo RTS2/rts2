@@ -26,7 +26,8 @@ import rts2.json
 import kmparse
 import time
 import os.path
-import logging
+import scat
+import numpy
 
 import gettext
 gettext.install('rts2-build-model-tool')
@@ -46,7 +47,7 @@ def wait_for_key(t):
 	return False
 
 class TPVP:
-	def __init__(self,jsonProxy,camera,sleeptime=20,telescope=None,verbose=0):
+	def __init__(self,jsonProxy,camera,sleeptime=20,telescope=None,verbose=0,catalog='BSC'):
 		# wide magnitude limit is the default
 		self.__mag_max = -10
 		self.__mag_min = 10
@@ -58,6 +59,9 @@ class TPVP:
 		self.camera = camera
 		self.sleeptime = sleeptime
 		self.verbose = verbose
+		self.catalog = catalog
+		if self.catalog == 'hip':
+			self.hipparcos = rts2.scat.Hipparcos('/home/petr/hipparcos/hipparcos')
 		if telescope is None:
 			try:
 				self.telescope = self.j.getDevicesByType(rts2.json.DEVICE_TYPE_MOUNT)[0]
@@ -138,8 +142,15 @@ class TPVP:
 		lat = self.j.getValue(self.telescope,'LATITUDE')
 		print _('Looking for star around RA {0:.3f} DEC {1:.2f} (LST {2:.3f}), magnitude {3:.2f} to {4:.2f}').format(ra,dec,lst,self.__mag_max,self.__mag_min)
 		# find bsc..
-		bsc=bsc.find_nearest(ra,dec,self.__mag_max,self.__mag_min,lst,lat,minalt)
-		print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0],bsc[1],bsc[2],bsc[3],bsc[7],bsc[8])
+		bsc = None
+		if self.catalog == 'hip':
+			bsc=self.hipparcos.search_catalogue(ra, dec, 10,self.__mag_max, self.__mag_min)
+			if len(bsc) == 0:
+				return None
+			print _('Found HIP #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0].xno,numpy.degrees(bsc[0].sra0),numpy.degrees(bsc[0].sdec0),bsc[0].mag,numpy.degrees(bsc[0].xrpm),numpy.degrees(bsc[0].xdpm))
+		else:
+			bsc=bsc.find_nearest(ra,dec,self.__mag_max,self.__mag_min,lst,lat,minalt)
+			print _('Found BSC #{0} at RA {1:.3f} DEC {2:.2f} mag {3:.2f} proper motion RA {4:.3f} Dec {5:.3f} arcsec/year').format(bsc[0],bsc[1],bsc[2],bsc[3],bsc[7],bsc[8])
 		return bsc
 	
 	def __check_model_firstline(self,modelname):
@@ -273,10 +284,16 @@ class TPVP:
 		if maxspiral >= -1:
 			print _('Next model point at altitude {0:.3g} azimuth {1:.3g}').format(alt,az)
 			s = self.find_bright_star(alt,az,minalt)
-			tarf_ra = s[1]
-			tarf_dec = s[2]
-			pm_ra = s[7]
-			pm_dec = s[8]
+			if self.catalog == 'hip':
+				tarf_ra = numpy.degrees(s[0].sra0)
+				tarf_dec = numpy.degrees(s[0].sdec0)
+				pm_ra = numpy.degrees(s[0].xrpm)
+				pm_dec = numpy.degrees(s[0].xdpm)
+			else:
+				tarf_ra = s[1]
+				tarf_dec = s[2]
+				pm_ra = s[7]
+				pm_dec = s[8]
 		else:
 			tarf_ra,tarf_dec = self.tel_hrz_to_equ(alt,az)
 			pm_ra = 0
