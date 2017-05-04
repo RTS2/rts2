@@ -883,7 +883,7 @@ class GPoint:
 		for d in draw:
 			ci = d.find('!')
 			color = None
-			if ci > 1:
+			if ci > 0:
 				color = d[ci + 1:]
 				d = d[:ci]
 			if d[0] == 'c':
