@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description=_('Find brightests star on the firs
 
 parser.add_argument('--radius', help=_('search stars on next image in given radius (in pixels)'), action='store', dest='radius', type=float, default=15)
 parser.add_argument('--ds9', help=_('use DS9 to display images'), action='store_true', dest='useDS9', default=False)
-parser.add_argument('--plot', help=_('plot results (x,y,pixel distances)'), action='store_true', dest='plot', default=False)
+parser.add_argument('--plot', help=_('plot results (x,y,pixel distances,angles,a,b,theta)'), action='store_true', dest='plot', default=False)
 parser.add_argument('--stars-plot', help=_('generate plot with stars positions'), action='store_true', dest='stars_plot', default=False)
 parser.add_argument('--save-plot', help=_('do not display plot results, save plots to a file'), action='store', dest='saveplot')
 parser.add_argument('-v', help=_('increases verbosity'), action='count', dest='verbose', default=0)
@@ -41,6 +41,7 @@ parser.add_argument('--split', help=_('split graphs/data if matching stars canno
 parser.add_argument('--cube', help=_('process FITS cubes'), action='store_true', dest='cube', default=False)
 parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
 parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
+parser.add_argument('--elipses', help=_('plot star fit elipsis parameters'), action='store_true', dest='elipses', default=False)
 
 options = parser.parse_args()
 
@@ -106,7 +107,7 @@ class ProcessFiles:
 					if verbose:
 						print _('star too far from center')
 					continue
-				self.sb[si].append([x, y, flux])
+				self.sb[si].append([x, y, flux, objects[bsi]['a'], objects[bsi]['b'], objects[bsi]['theta']])
 				si += 1
 		else:
 			found_sb = []
@@ -119,7 +120,7 @@ class ProcessFiles:
 					if verbose > 1:
 						print _('examining star # {0} x {1:.2f} y {2:.2f} flux {3:.2f} distance {4:.2f}').format(si, star['x'], star['y'], star['flux'], dist)
 					if dist < radius:
-						found_sb.append([star['x'], star['y'], star['flux']])
+						found_sb.append([star['x'], star['y'], star['flux'], star['a'], star['b'], star['theta']])
 						star_find = True
 						break
 				if star_find == False and verbose:
@@ -137,7 +138,7 @@ class ProcessFiles:
 
 			return 0
 
-	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot):
+	def done(self, verbose, stars, max_angle, plot, saveplot, stars_plot, elipses):
 		if verbose == 0:
 			print 'Done'
 
@@ -146,12 +147,23 @@ class ProcessFiles:
 		a_x = [0] * stars
 		a_y = [0] * stars
 		a_flux = [0] * stars
+		a_a = [0] * stars
+		a_b = [0] * stars
+		a_theta = [0] * stars
+
 		max_x = [0] * stars
 		max_y = [0] * stars
 		max_flux = [0] * stars
+		max_a = [0] * stars
+		max_b = [0] * stars
+		max_theta = [0] * stars
+
 		min_x = [0] * stars
 		min_y = [0] * stars
 		min_flux = [0] * stars
+		min_a = [0] * stars
+		min_b = [0] * stars
+		min_theta = [0] * stars
 
 		a_dist = [0] * stars
 
@@ -164,23 +176,37 @@ class ProcessFiles:
 			data_x = np_sb[si,:,0]
 			data_y = np_sb[si,:,1]
 			data_flux = np_sb[si,:,2]
+			data_a = np_sb[si,:,3]
+			data_b = np_sb[si,:,4]
+			data_theta = np_sb[si,:,5]
 
 			max_x[si] = np.max(data_x)
 			max_y[si] = np.max(data_y)
 			max_flux[si] = np.max(data_flux)
+			max_a[si] = np.max(data_a)
+			max_b[si] = np.max(data_b)
+			max_theta[si] = np.max(data_theta)
 
 			a_x[si] = np.average(data_x)
 			a_y[si] = np.average(data_y)
 			a_flux[si] = np.average(data_flux)
+			a_a[si] = np.average(data_a)
+			a_b[si] = np.average(data_b)
+			a_theta[si] = np.average(data_theta)
 
 			min_x[si] = np.min(data_x)
 			min_y[si] = np.min(data_y)
 			min_flux[si] = np.min(data_flux)
+			min_a[si] = np.min(data_a)
+			min_b[si] = np.min(data_b)
+			min_theta[si] = np.min(data_theta)
 
 			if verbose > 0:
-				print _('star # {0} max x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, max_x[si], max_y[si], max_flux[si])
-				print _('star # {0} average x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, a_x[si], a_y[si], a_flux[si])
-				print _('star # {0} min x {1:.2f} y {2:.2f} flux {3:.2f}').format(si + 1, min_x[si], min_y[si], min_flux[si])
+				print '  # stat {0:^8s} {1:^8s} {2:^8s} {3:^8s} {4:^s8} {5:^8s}'.format('x','y','flux','a','b','theta')
+				print '{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'max', max_x[si], max_y[si], max_flux[si], max_a[si], max_b[si], max_theta[si])
+				print '{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'avg', a_x[si], a_y[si], a_flux[si], a_a[si], a_b[si], a_theta[si])
+				print '{0:>3d} {1:^4s} {1:>8.2f} {2:>8.2f} {3:8>.2f} {4:8>.2f} {5:8>.2f}'.format(si + 1, 'min', min_x[si], min_y[si], min_flux[si], min_a[si], min_b[si], min_theta[si])
+
 			# now get some stats..
 			dist[si] = map(lambda s: pixel_distance(max_x[si], max_y[si], s[0], s[1]), pf.sb[si])
 			a_dist[si] = np.average(dist[si])
@@ -199,7 +225,8 @@ class ProcessFiles:
 			import pylab
 			pylab.ioff()
 			fig = pylab.figure()
-			plotgrid = (3 if ang_deviations is None else 4, 1)
+			pa = 3 if elipses else 0
+			plotgrid = ((3 + pa) if ang_deviations is None else (4 + pa), 1)
 			print _('generating plots')
 			rts2.progressbar.progress(0, stars + 1)
 			p_x = pylab.subplot2grid(plotgrid,[0,0])
@@ -210,11 +237,23 @@ class ProcessFiles:
 			p_y.set_ylabel ('Y (px)')
 			p_dist.set_ylabel ('Dist. (px)')
 
+			devoffs = 0
+
 			if ang_deviations is not None:
 				p_ang = pylab.subplot2grid(plotgrid,[3,0])
 				p_ang.plot (range(len(pf.sb[0])), np.average(ang_deviations, axis=1), '-')
 				p_ang.fill_between (range(len(pf.sb[0])), np.nanmax(ang_deviations, axis=(2,1)), np.nanmin(ang_deviations, axis=(2,1)))
 				p_ang.set_ylabel ('Rot. (deg)')
+				devoffs = 1
+
+			if elipses:
+				p_a = pylab.subplot2grid(plotgrid,[3+devoffs,0])
+				p_b = pylab.subplot2grid(plotgrid,[4+devoffs,0])
+				p_theta = pylab.subplot2grid(plotgrid,[5+devoffs,0])
+
+				p_a.set_ylabel('A (px)')
+				p_b.set_ylabel('B (px)')
+				p_theta.set_ylabel('Th. (deg)')
 
 			rts2.progressbar.progress(1, stars + 1)
 
@@ -222,6 +261,11 @@ class ProcessFiles:
 				p_x.plot (range(len(pf.sb[si])), np_sb[si,:,0] - a_x[si], '-')
 				p_y.plot (range(len(pf.sb[si])), np_sb[si,:,1] - a_y[si], '-')
 				p_dist.plot (range(len(pf.sb[si])), a_dist[si] - dist[si], '-')
+				if elipses:
+					p_a.plot (range(len(pf.sb[si])), np_sb[si,:,3], '-')
+					p_b.plot (range(len(pf.sb[si])), np_sb[si,:,4], '-')
+					p_theta.plot (range(len(pf.sb[si])), np.degrees(np_sb[si,:,5]), '-')
+
 				rts2.progressbar.progress(si + 1, stars + 1)
 
 			pylab.tight_layout()
@@ -261,7 +305,7 @@ for fn in options.files:
 		c_y = d_y / 2.0
 	else:
 		options.cube = True
-		print _('Detected cube image, switch to cube mode')
+		print _('Detected cube image, switching to cube mode')
 		d_x = hdu[0].header['NAXIS1']
 		c_x = d_x / 2.0
 		d_y = hdu[0].header['NAXIS2']
@@ -275,13 +319,13 @@ for fn in options.files:
 			ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci)
 			if ret == -1:
 				# split graphs
-				pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)
+				pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses)
 				pf = ProcessFiles(options.stars)
 
 	else:
 		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
 
 	if options.cube:
-		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)
+		pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses)
 
-pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot)
+pf.done(options.verbose, options.stars, options.max_angle, options.plot, options.saveplot, options.stars_plot, options.elipses)
