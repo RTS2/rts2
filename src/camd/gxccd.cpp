@@ -78,6 +78,8 @@ class GXCCD:public Camera
 		rts2core::ValueFloat *power;
 		rts2core::ValueFloat *gain;
 
+		rts2core::ValueInteger *filterFailed;
+
 		camera_t *camera;
 
 		bool reseted_shutter;
@@ -108,6 +110,9 @@ GXCCD::GXCCD (int argc, char **argv):Camera (argc, argv)
 
 	createValue (id, "product_id", "camera product identification", true);
 	id->setValueInteger (0);
+
+	createValue (filterFailed, "filter_err", "filter failed count", false);
+	filterFailed->setValueInteger (0);
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
 	addOption ('f', NULL, 1, "filter names (separated with :)");
@@ -397,6 +402,9 @@ int GXCCD::setFilterNum (int new_filter, const char *fn)
 	{
 		gxccd_get_last_error (camera, gx_err, sizeof (gx_err));
 		logStream (MESSAGE_INFO) << "filter movement error " << gx_err << sendLog;
+		filterFailed->inc ();
+		valueError (filterFailed);
+		sendValueAll (filterFailed);
 	}
 	checkQueuedExposures ();
 	return ret;
