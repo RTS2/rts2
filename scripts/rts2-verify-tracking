@@ -131,7 +131,7 @@ class ProcessFiles:
 					self.skipped += 1
 					return 1
 				if split == False:
-					sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting').format(len(found_sb), self.skipped))
+					sys.exit(_('too few stars ({0}) and too much clouded frames ({1}), exiting at frame {2}').format(len(found_sb), self.skipped, ci))
 				return -1
 
 			for si in range(stars):
