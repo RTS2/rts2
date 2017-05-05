@@ -1,7 +1,7 @@
 LDADD = @CHECK_LIBS@ -L../lib/rts2tel -lrts2tel -L../lib/sgp4 -lsgp4 -L../lib/pluto -lpluto -L../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 AM_CXXFLAGS= @CHECK_CFLAGS@ ${CPPFLAGS} -I../include
 
-TESTS = check_python_libnova check_python_gpoint check_python_rts2
+TESTS = check_python_libnova check_python_gpoint check_python_rts2 check_python_bsc
 EXTRA_DIST = gpoint_in_altaz gpoint_in_gem finals2000A.daily
 
 if LIBCHECK

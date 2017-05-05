@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+import sys
+sys.path.append('../python/rts2')
+
+import bsc
+import unittest
+
+class BSCTest(unittest.TestCase):
+	def testNearest(self):
+		# check for stars on local meridian
+		self.assertEqual(bsc.find_nearest(16.4033,-9.9791,4,7,16.40,-9.97,25)[0],315)
+		self.assertEqual(bsc.find_nearest(346.6704,-23.74,4,4.5,346,-23,25)[0],8789)
+
+		self.assertEqual(bsc.find_nearest(346.6704,-23.74,4,4.5,346,45,25)[0],8679)
+		self.assertEqual(bsc.find_nearest(346.6704,-23.74,4,4.5,346,45,35)[0],8858)
+
+		self.assertEqual(bsc.find_nearest(346.6704,-23.74,0,7,346,45,25)[0],8649)
+		self.assertEqual(bsc.find_nearest(346.6704,-23.74,0,7,346,45,27)[0],8709)
+
+	def testFiltered(self):
+		self.assertAlmostEqual(bsc.min_sep(bsc.get_star(8709)),2.5419,3)
+		# running full scale test will take too long to be practical
+		data = bsc.filter_mindist(4/60.0,bsc.BSCS[:200])
+		# estimates to check that filter does not filter everything, but filter something
+		self.assertTrue(len(data) > 4)
+		self.assertTrue(len(data) < 200)
+		for s in data:
+			self.assertTrue(bsc.min_sep(s,data) > 4/60.0)
+
+unittest.main()

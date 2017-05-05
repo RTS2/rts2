@@ -18,7 +18,7 @@ import numpy as np
 import libnova
 
 # Bright Star catalogue data, from http://pages.astronomy.ua.edu/keel/talks/skyplot/ybs.degbv
-__bsc_data = [
+BSCS = [
 #HR RA Dec VMag B-V U-B R-I pmRA pmDec Name HD SAO
 [3,1.33375,-5.7075,4.61,1.04,0.89,0.54,-0.009,0.089,'33    Psc',28,128572],
 [15,2.09708333333,29.0905555556,2.06,-0.11,-0.46,-0.1,0.136,-0.163,'21Alp And',358,73765],
@@ -2546,7 +2546,7 @@ __bsc_data = [
 [9098,0.935,-17.3361111111,4.55,-0.05,-0.12,-0.04,0.026,-0.009,'2    Cet',225132,147059],
 ]
 
-__filtered_bsc = __bsc_data
+__filtered_bsc = BSCS
 
 def find_nearest(ra,dec,mag_min=None,mag_max=None,lst=None,latitude=None,minalt=None):
 	"""Find nearest BSC star to given RA DEC coordinates. Min and maximal magnitude can be specified (make sure min < max)."""
@@ -2563,8 +2563,18 @@ def find_nearest(ra,dec,mag_min=None,mag_max=None,lst=None,latitude=None,minalt=
 
 def get_star(num):
 	"""Get star with given BSC number. Raises IndexError if the star cannot be found."""
-	data = filter(lambda x: x[0] == num, __bsc_data)
+	data = filter(lambda x: x[0] == num, BSCS)
 	return data[0]
 
-def filter_mindist(mindist):
-	__filtered_bsc = filter(lambda x:min_sep(x) > mindist, __bsc_data)
+def min_sep(x,data=BSCS):
+	return min(map(lambda y:libnova.angular_separation(x[1],x[2],y[1],y[2]), filter(lambda z:not z[0] == x[0],data)))
+
+def star_nums(data=BSCS):
+	return map(lambda z:z[0],data)
+
+def filter_mindist(mindist,data=BSCS):
+	__filtered_bsc=[]
+	for s in data:
+		if min_sep(s,filter(lambda z:not z[0] in star_nums(__filtered_bsc),data)) > mindist:
+			__filtered_bsc.append(s)
+	return __filtered_bsc
