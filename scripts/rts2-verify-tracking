@@ -42,6 +42,7 @@ parser.add_argument('--cube', help=_('process FITS cubes'), action='store_true',
 parser.add_argument('--max-angle', help=_('allowed deviation in degrees of angel between stars (negative to not compute at all)'), action='store', dest='max_angle', default=0.1, type=float)
 parser.add_argument('--skip-clouds', help=_('allowed number of images without detection - those will be skipped'), action='store', dest='skip_clouds', default=2, type=int)
 parser.add_argument('--elipses', help=_('plot star fit elipsis parameters'), action='store_true', dest='elipses', default=False)
+parser.add_argument('--range', help=_('process given range of images'), action='store', dest='range', default=None)
 
 options = parser.parse_args()
 
@@ -264,7 +265,7 @@ class ProcessFiles:
 				if elipses:
 					p_a.plot (range(len(pf.sb[si])), np_sb[si,:,3], '-')
 					p_b.plot (range(len(pf.sb[si])), np_sb[si,:,4], '-')
-					p_theta.plot (range(len(pf.sb[si])), np.degrees(np_sb[si,:,5]), '-')
+					p_theta.plot (range(len(pf.sb[si])), np.degrees (np_sb[si,:,5]) + 180, '-')
 
 				rts2.progressbar.progress(si + 1, stars + 1)
 
@@ -286,6 +287,16 @@ class ProcessFiles:
 			sys.exit(_('allowed angle deviation not met, measured maximal deviation: {0:.3f}').format(max_deviation))
 
 pf = ProcessFiles(options.stars)
+
+imgranges = None
+
+def ranges(s):
+	return sum(((list(range(*[int(j) + k for k,j in enumerate(i.split('-'))])) if '-' in i else [int(i)]) for i in s.split(',')), [])
+
+if options.range is not None:
+	imgranges = ranges(options.range)
+
+imgn = 0 # image number
 
 for fn in options.files:
 	print _('Processing {0}').format(fn)
@@ -316,6 +327,9 @@ for fn in options.files:
 
 	if options.cube:
 		for ci in range(hdu[0].header['NAXIS3']):
+			imgn += 1
+			if imgranges is not None and imgn not in imgranges:
+				continue
 			ret = pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split, ci)
 			if ret == -1:
 				# split graphs
@@ -323,6 +337,9 @@ for fn in options.files:
 				pf = ProcessFiles(options.stars)
 
 	else:
+		img += 1
+		if imgranges is not None and imgn not in imgranges:
+			continue
 		pf.process_file(fn, hdu, options.verbose, options.useDS9, options.stars, options.radius, options.skip_clouds, options.center_radius, options.split)
 
 	if options.cube:
