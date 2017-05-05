@@ -47,8 +47,8 @@ START_TEST(test_gem_mlo)
 	int ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
-	ck_assert_int_eq (ac, -47625764);
-	ck_assert_int_eq (dc, -38649844);
+	ck_assert_int_eq (ac, -47612189);
+	ck_assert_int_eq (dc, -38646680);
 #else
 	ck_assert_int_eq (ac, -47564851);
 	ck_assert_int_eq (dc, -38659919);
@@ -60,8 +60,8 @@ START_TEST(test_gem_mlo)
 	ret = gemTest->test_sky2counts (JD, 0, &pos, ac, dc);
 	ck_assert_int_eq (ret, 0);
 #ifdef RTS2_LIBERFA
-	ck_assert_int_eq (ac, -40894838);
-	ck_assert_int_eq (dc, -53111268);
+	ck_assert_int_eq (ac, -40889405);
+	ck_assert_int_eq (dc, -53113230);
 #else
 	ck_assert_int_eq (ac, -40884933);
 	ck_assert_int_eq (dc, -53131138);
