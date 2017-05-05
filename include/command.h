@@ -567,6 +567,7 @@ class CommandChangeValue:public Command
 		CommandChangeValue (Block * _master, std::string _valName, char op, float _operand);
 		CommandChangeValue (Block * _master, std::string _valName, char op, double _operand);
 		CommandChangeValue (Block * _master, std::string _valName, char op, double _operand1, double _operand2);
+		CommandChangeValue (Block * _master, std::string _valName, char op, int _operand1, int _operand2, int _operand3);
 		CommandChangeValue (Block * _master, std::string _valName, char op, bool _operand);
 		/**
 		 * Change rectangle value.

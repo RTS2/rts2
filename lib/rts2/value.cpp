@@ -935,6 +935,114 @@ bool ValueAltAz::isEqual (Value *other_value)
 	return false;
 }
 
+ValuePID::ValuePID (std::string in_val_name):Value (in_val_name)
+{
+	factor = 1000000;
+	rts2Type |= RTS2_VALUE_PID;
+}
+
+ValuePID::ValuePID (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Value (in_val_name, in_description, writeToFits, flags)
+{
+	factor = 1000000;
+	rts2Type |= RTS2_VALUE_PID;
+}
+
+int ValuePID::setValue (Connection * connection)
+{
+	int p, i, d;
+	if (connection->paramNextInteger (&p) || connection->paramNextInteger (&i) || connection->paramNextInteger (&d) || !connection->paramEnd ())
+		return -2;
+	setPID (p, i, d);
+
+	return 0;
+}
+
+int ValuePID::setValueCharArr (const char *in_value)
+{
+	int p, i, d;
+	if (sscanf (in_value, "%d %d %d", &p, &i, &d) != 3)
+		return -1;
+	setPID (p, i, d);
+	return 0;
+}
+
+int ValuePID::setPID (int p, int i, int d)
+{
+	if (getP () != p || getI () != i || getD () != d)
+	{
+		pid.setPID ((double) p / factor, (double) i / factor, (double) d / factor);
+		changed ();
+	}
+	return 0;
+}
+
+int ValuePID::doOpValue (char op, Value *old_value)
+{
+	switch (old_value->getValueType ())
+	{
+		case RTS2_VALUE_PID:
+			switch (op)
+			{
+				case '+':
+					setPID(getP () + dynamic_cast<ValuePID *> (old_value)->getP (), getI () + dynamic_cast<ValuePID *> (old_value)->getI (), getD () + dynamic_cast<ValuePID *> (old_value)->getD ());
+					return 0;
+				case '-':
+					setPID(getP () - dynamic_cast<ValuePID *> (old_value)->getP (), getI () - dynamic_cast<ValuePID *> (old_value)->getI (), getD () - dynamic_cast<ValuePID *> (old_value)->getD ());
+					return 0;
+				default:
+					return Value::doOpValue (op, old_value);
+			}
+		case RTS2_VALUE_DOUBLE:
+		case RTS2_VALUE_FLOAT:
+		case RTS2_VALUE_INTEGER:
+		case RTS2_VALUE_LONGINT:
+			switch (op)
+			{
+				case '+':
+					setPID (getP () + old_value->getValueInteger (), getI () + old_value->getValueInteger (), getD () + old_value->getValueInteger ());
+					return 0;
+				case '-':
+					setPID (getP () - old_value->getValueInteger (), getI () - old_value->getValueInteger (), getD () - old_value->getValueInteger ());
+					return 0;
+				default:
+					return Value::doOpValue (op, old_value);
+			}
+		default:
+			logStream (MESSAGE_ERROR) << "Do not know how to handle operation '" << op
+				<< "' between PID value and " << old_value->getValueType ()
+				<< sendLog;
+			return -1;
+	}
+}
+
+const char * ValuePID::getValue ()
+{
+	snprintf (buf, VALUE_BUF_LEN, "%d %d %d", getP (), getI (), getD ());
+	return buf;
+}
+
+void ValuePID::setFromValue (Value * newValue)
+{
+	if (newValue->getValueType () == RTS2_VALUE_PID)
+	{
+		setPID (dynamic_cast<ValuePID *> (newValue)->getP (), dynamic_cast<ValuePID *> (newValue)->getI (), dynamic_cast<ValuePID *> (newValue)->getD ());
+	}
+	else
+	{
+		setValueCharArr (newValue->getValue ());
+	}
+}
+
+bool ValuePID::isEqual (Value *other_value)
+{
+	if (other_value->getValueType () == RTS2_VALUE_PID)
+	{
+		return (getP () == dynamic_cast<ValuePID *> (other_value)->getP () && getI () == dynamic_cast<ValuePID *> (other_value)->getI () && getD () == dynamic_cast<ValuePID *> (other_value)->getD ());
+
+	}
+	return false;
+}
+
 Value *newValue (int rts2Type, std::string name, std::string desc)
 {
 	switch (rts2Type & RTS2_BASE_TYPE)
@@ -959,6 +1067,8 @@ Value *newValue (int rts2Type, std::string name, std::string desc)
 			return new ValueRaDec (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 		case RTS2_VALUE_ALTAZ:
 			return new ValueAltAz (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_PID:
+			return new ValuePID (name, desc, rts2Type & RTS2_VALUE_FLOAT, rts2Type);
 	}
 	logStream (MESSAGE_ERROR) << "unknow value name: " << name << " type: " << rts2Type << sendLog;
 	return NULL;

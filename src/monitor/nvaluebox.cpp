@@ -632,3 +632,79 @@ bool ValueBoxPair::setCursor ()
 {
 	return edt[edtSelected]->setCursor ();
 }
+
+ValueBoxPID::ValueBoxPID (NWindow * top, rts2core::ValuePID * _val, int _x, int _y):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 39, 3, 1, 1, 300, 1)
+{
+	edt[0] = new NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 1, 9, 1, 0, 0, 300, 1, false);
+	edt[1] = new NWindowEditIntegers (top->getX () + _x + 15, top->getY () + _y + 1, 9, 1, 0, 0, 300, 1, false);
+	edt[2] = new NWindowEditIntegers (top->getX () + _x + 27, top->getY () + _y + 1, 9, 1, 0, 0, 300, 1, false);
+
+	edt[0]->setValueInteger (_val->getP ());
+	edt[1]->setValueInteger (_val->getI ());
+	edt[2]->setValueInteger (_val->getD ());
+
+	edtSelected = 0;
+}
+
+ValueBoxPID::~ValueBoxPID ()
+{
+	edtSelected = -1;
+	for (int i = 0; i < 3; i++)
+		delete edt[i];
+}
+
+keyRet ValueBoxPID::injectKey (int key)
+{
+	switch (key)
+	{
+		case '\t':
+		case KEY_STAB:
+			edt[edtSelected]->setNormal ();
+			edtSelected = (edtSelected + 1) % 3;
+			draw ();
+			return RKEY_HANDLED;
+		case KEY_BTAB:
+			edt[edtSelected]->setNormal ();
+			if (edtSelected == 0)
+				edtSelected = 1;
+			else
+				edtSelected--;
+			draw ();
+			return RKEY_HANDLED;
+	}
+
+	return edt[edtSelected]->injectKey (key);
+}
+
+void ValueBoxPID::draw ()
+{
+	// draw border..
+	NWindowEdit::draw ();
+	werase (getWriteWindow ());
+	// draws entry boxes..
+	for (int i = 0; i < 3; i++)
+		edt[i]->draw ();
+
+	edt[edtSelected]->setUnderline ();
+
+	// draws labels..
+	mvwprintw (getWriteWindow (), 0, 0, "P:");
+	mvwprintw (getWriteWindow (), 0, 12, "I:");
+	mvwprintw (getWriteWindow (), 0, 24, "D:");
+
+	winrefresh ();
+	for (int i = 0; i < 3; i++)
+		edt[i]->winrefresh ();
+}
+
+void ValueBoxPID::sendValue (rts2core::Connection * connection)
+{
+	if (!connection->getOtherDevClient ())
+		return;
+	connection->queCommand (new rts2core::CommandChangeValue (connection->getOtherDevClient ()->getMaster (), getValue ()->getName (), '=', edt[0]->getValueInteger (), edt[1]->getValueInteger (), edt[2]->getValueInteger ()));
+}
+
+bool ValueBoxPID::setCursor ()
+{
+	return edt[edtSelected]->setCursor ();
+}

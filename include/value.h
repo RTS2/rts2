@@ -34,6 +34,7 @@
 #include <iostream>
 
 #include "utilsfunc.h"
+#include "pid.h"
 
 /**
  * @file Various value classes.
@@ -102,6 +103,11 @@
  * @ingroup RTS2Value
  */
 #define RTS2_VALUE_ALTAZ              0x0000000A
+
+/**
+ * Value contains PID parameters.
+ */
+#define RTS2_VALUE_PID                0x0000000B
 
 /**
  * Value have statistics nature (include mean, average, min and max values and number of measurements taken for value).
@@ -1142,6 +1148,53 @@ class ValueAltAz: public Value
 	private:
 		double alt;
 		double az;
+};
+
+class ValuePID:public Value
+{
+	public:
+		ValuePID (std::string in_val_name);
+		ValuePID (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		virtual int setValue (Connection * connection);
+
+		/**
+		 * Set value from string, uses parsing from
+		 * input stream, so it recognized various forms of the value.
+		 *
+		 * @param in_value String represenation of altitude and azimuth.
+		 */
+		virtual int setValueCharArr (const char *in_value);
+
+		/**
+		 * @return 0 on sucess.
+		 */
+		int setPID (int p, int i, int d);
+
+		int getP () { return pid.getP () * factor; }
+		int getI () { return pid.getI () * factor; }
+		int getD () { return pid.getD () * factor; }
+
+		virtual int doOpValue (char op, Value * old_value);
+
+		virtual const char *getValue ();
+		virtual double getValueDouble () { return NAN; }
+		virtual float getValueFloat () { return NAN; }
+		virtual int getValueInteger () { return INT_MAX; }
+		virtual long int getValueLong () { return INT_MAX; }
+		long inc () { return INT_MAX; }
+		long dec () { return INT_MAX; }
+
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
+
+		/**
+		 * Runs PID loop.
+		 */
+		virtual int32_t loop (int32_t error, double step = 1) { return pid.loop ((double) error / factor, step) * factor; }
+
+	private:
+		PID pid;
+		int factor;
 };
 
 

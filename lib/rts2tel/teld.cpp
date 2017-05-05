@@ -561,7 +561,7 @@ int Telescope::calculateTarget (const double utc1, const double utc2, struct ln_
 	return sky2counts (utc1, utc2, out_tar, ac, dc, writeValues, haMargin, forceShortest);
 }
 
-int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, double &speed_angle, int32_t slowDist_a, int32_t slowDist_d)
+int Telescope::calculateTracking (const double utc1, const double utc2, double sec_step, int32_t &ac, int32_t &dc, int32_t &ac_speed, int32_t &dc_speed, int32_t &ea_speed, int32_t &ed_speed, double &speed_angle, double &err_angle)
 {
 	struct ln_equ_posn eqpos, t_eqpos;
 	// refresh current target..
@@ -591,38 +591,14 @@ int Telescope::calculateTracking (const double utc1, const double utc2, double s
 
 	skyVect->setValueRaDec (3600 * ra_diff / sec_step, 3600 * dec_diff / sec_step);
 
-	double agresivity_ac = fabs ((double) (ac - c_ac) / (ac - t_ac));
-	double agresivity_dc = fabs ((double) (dc - c_dc) / (dc - t_dc));
-
-	double agCap = corrAgresivityCap->getValueFloat () / 100.0;
-
-	if (fabs(ac - c_ac) < slowDist_a && agresivity_ac > agCap)
-		agresivity_ac = agCap;
-	if (fabs(dc - c_dc) < slowDist_d && agresivity_dc > agCap)
-		agresivity_dc = agCap;
-
 	ac_speed = (c_ac - t_ac) / sec_step;
 	dc_speed = (c_dc - t_dc) / sec_step;
 
-	int32_t ac_adder = (ac - c_ac) / sec_step;
-	int32_t dc_adder = (dc - c_dc) / sec_step;
-
-	int32_t maxAc = labs (agresivity_ac * ac_speed);
-	if (ac_adder > maxAc)
-		ac_adder = maxAc;
-	if (ac_adder < -maxAc)
-		ac_adder = -maxAc;
-
-	int32_t maxDc = labs (agresivity_dc * dc_speed);
-	if (dc_adder > maxDc)
-		dc_adder = maxDc;
-	if (dc_adder < -maxAc)
-		dc_adder = -maxDc;
-
-	ac_speed += ac_adder;
-	dc_speed += dc_adder;
+	ea_speed = (ac - c_ac) / sec_step;
+	ed_speed = (dc - c_dc) / sec_step;
 
 	speed_angle = ln_rad_to_deg (atan2 (ac_speed, dc_speed));
+	err_angle = ln_rad_to_deg (atan2 (ea_speed, ed_speed));
 
 	ac = t_ac;
 	dc = t_dc;

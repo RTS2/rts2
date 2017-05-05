@@ -88,6 +88,7 @@ class Dummy:public SensorWeather
 			createValue (timeserieTest6, "test_timeserie_6", "test timeserie value (with trending)", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
 			createValue (degMinMax, "deg_minmax", "[deg] degrees test minmax value", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+			createValue (testPID, "test_PID", "test PID value", true, RTS2_VALUE_WRITABLE);
 			createValue (hwError, "hw_error", "device current hardware error", false, RTS2_VALUE_WRITABLE);
 
 			createValue (timerEnabled, "timer_enabled", "enable timer every 5 seconds", false, RTS2_VALUE_WRITABLE);
@@ -222,6 +223,7 @@ class Dummy:public SensorWeather
 		rts2core::ValueDoubleTimeserie *timeserieTest6;
 		rts2core::ValueDoubleMinMax *minMaxTest;
 		rts2core::ValueDoubleMinMax *degMinMax;
+		rts2core::ValuePID *testPID;
 		rts2core::ValueBool *hwError;
 
 		rts2core::ValueBool *timerEnabled;

@@ -244,6 +244,23 @@ class ValueBoxPair:public ValueBox, NWindowEdit
 		const char *p2name;
 };
 
+/**
+ * Edit box for PID value.
+ */
+class ValueBoxPID:public ValueBox, NWindowEdit
+{
+	public:
+		ValueBoxPID (NWindow * top, rts2core::ValuePID * _val, int _x, int _y);
+		virtual ~ValueBoxPID ();
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (rts2core::Connection * connection);
+		virtual bool setCursor ();
+	private:
+		NWindowEditIntegers * edt[3];
+		int edtSelected;
+};
+
 }
 
 #endif // !__RTS2_NVALUEBOX__ 

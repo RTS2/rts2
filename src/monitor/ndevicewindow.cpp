@@ -276,6 +276,9 @@ void NDeviceWindow::createValueBox ()
 		case RTS2_VALUE_ALTAZ:
 			valueBox = new ValueBoxPair (this, (rts2core::ValueRaDec *) val, 21, s, "ALT", "AZ");
 			break;
+		case RTS2_VALUE_PID:
+			valueBox = new ValueBoxPID (this, dynamic_cast <rts2core::ValuePID*> (val), 21, s);
+			break;
 		default:
 			switch (val->getValueExtType ())
 			{

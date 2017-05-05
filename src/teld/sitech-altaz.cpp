@@ -103,6 +103,8 @@ class SitechAltAz:public AltAz
 		rts2core::ValueDouble *trackingDist;
 		rts2core::ValueFloat *trackingLook;
 		rts2core::ValueBool *userTrackingLook;
+		rts2core::ValuePID *azErrPID;
+		rts2core::ValuePID *altErrPID;
 		int lastTrackingNum;
 		rts2core::ValueDoubleStat *trackingAngle;
 		rts2core::ValueDoubleStat *speedAngle;
@@ -704,9 +706,13 @@ void SitechAltAz::internalTracking (double sec_step, float speed_factor)
 	int32_t azc_speed = 0;
 	int32_t altc_speed = 0;
 
-	double speed_angle = 0;
+	int32_t aze_speed = 0;
+	int32_t alte_speed = 0;
 
-	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed, speed_angle, trackingDist->getValueDouble () * azCpd->getValueDouble (), trackingDist->getValueDouble () * altCpd->getValueDouble ());
+	double speed_angle = 0;
+	double err_angle = 0;
+
+	int ret = calculateTracking (getTelUTC1, getTelUTC2, sec_step, a_azc, a_altc, azc_speed, altc_speed, aze_speed, alte_speed, speed_angle, err_angle);
 	if (ret)
 	{
 		if (ret < 0)

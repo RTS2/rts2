@@ -51,6 +51,7 @@ class ServoDrive:public Sensor
 		rts2core::ValueLong *homeHigh;
 		rts2core::ValueLong *minTarget;
 		rts2core::ValueLong *maxTarget;
+		rts2core::ValueTime *lastCommand;
 
 		int sendCommand (const char *cmd);
 
@@ -58,6 +59,7 @@ class ServoDrive:public Sensor
 		int executeProgramme ();
 
 		int home (char d);
+		int lastDiff;
 };
 
 };
@@ -78,6 +80,10 @@ ServoDrive::ServoDrive (int argc, char **argv):Sensor (argc, argv)
 	createValue (maxTarget, "MAX", "maximal target value", false, RTS2_VALUE_WRITABLE);
 	minTarget->setValueLong (INT_MIN);
 	maxTarget->setValueLong (INT_MAX);
+
+	createValue (lastCommand, "last_cmd", "start last movement", false);
+
+	lastDiff = 0;
 }
 
 ServoDrive::~ServoDrive (void)
@@ -107,6 +113,8 @@ int ServoDrive::setValue (rts2core::Value * old_value, rts2core::Value * new_val
 		sendCommand (cmd);
 		sendCommand ("ED*");
 		executeProgramme ();
+		lastCommand->setNow ();
+		lastDiff = new_value->getValueInteger () - old_value->getValueInteger ();
 		return 0;
 	}
 	return Sensor::setValue (old_value, new_value);
@@ -139,6 +147,10 @@ int ServoDrive::initHardware ()
 
 int ServoDrive::info ()
 {
+	if (lastDiff != 0)
+	{
+		
+	}
 	return Sensor::info ();
 }
 

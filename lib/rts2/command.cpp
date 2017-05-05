@@ -319,6 +319,13 @@ CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, c
 	setCommand (_os);
 }
 
+CommandChangeValue::CommandChangeValue (Block * _master, std::string _valName, char op, int _operand1, int _operand2, int _operand3):Command (_master)
+{
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand1 << " " << _operand2 << " " << _operand3;
+	setCommand (_os);
+}
+
 CommandChangeValue::CommandChangeValue (Block * _master,std::string _valName, char op, bool _operand):Command (_master)
 {
 	std::ostringstream _os;
